@@ -26,29 +26,8 @@
     }
   },
   "plugins": {
-    "dialog": {
-      "open": true,
-      "save": true
-    },
-    "fs": {
-      "scope": {
-        "allow": ["**"],
-        "deny": []
-      }
-    },
     "shell": {
-      "open": false,
-      "scope": [
-        {
-          "name": "cmd",
-          "cmd": "cmd",
-          "args": [
-            "/C",
-            { "validator": ".*" }
-          ],
-          "sidecar": false
-        }
-      ]
+      "open": false
     }
   }
 }

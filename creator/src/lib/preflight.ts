@@ -18,7 +18,7 @@ export interface PortConflict {
  */
 async function detectJava(): Promise<{ version: string | null; error: string | null }> {
   try {
-    const output = await Command.create("cmd", ["/C", "java", "-version"]).execute();
+    const output = await Command.create("cmd", ["/C", "java -version"]).execute();
     // java -version prints to stderr
     const text = output.stderr || output.stdout;
     const match = text.match(/version "(\d+(?:\.\d+)*)/);
@@ -44,7 +44,7 @@ async function findPortConflicts(
 ): Promise<PortConflict[]> {
   try {
     const output = await Command.create("cmd", [
-      "/C", "netstat", "-ano", "-p", "TCP",
+      "/C", "netstat -ano -p TCP",
     ]).execute();
     const lines = output.stdout.split("\n");
     return ports.filter(({ port }) =>

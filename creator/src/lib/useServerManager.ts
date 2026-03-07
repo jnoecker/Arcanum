@@ -53,7 +53,7 @@ export function useServerManager() {
     addLog("INFO", `Starting server: ${gradlew} run`);
 
     try {
-      const command = Command.create("cmd", ["/C", gradlew, "run"], {
+      const command = Command.create("cmd", ["/C", `${gradlew} run`], {
         cwd: mudDir,
       });
 

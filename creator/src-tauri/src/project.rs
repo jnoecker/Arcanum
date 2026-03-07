@@ -1,5 +1,5 @@
 use serde::Serialize;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 #[derive(Serialize)]
 pub struct ValidationResult {
@@ -43,4 +43,51 @@ pub fn validate_mud_dir(path: String) -> ValidationResult {
         errors,
         gradle_wrapper: gradle_path.to_string_lossy().to_string(),
     }
+}
+
+const IMAGE_EXTENSIONS: &[&str] = &["png", "jpg", "jpeg", "webp"];
+
+fn collect_images(dir: &Path, base: &Path, out: &mut Vec<LegacyImage>) {
+    let entries = match std::fs::read_dir(dir) {
+        Ok(e) => e,
+        Err(_) => return,
+    };
+    for entry in entries.flatten() {
+        let path = entry.path();
+        if path.is_dir() {
+            collect_images(&path, base, out);
+        } else if let Some(ext) = path.extension().and_then(|e| e.to_str()) {
+            if IMAGE_EXTENSIONS.contains(&ext.to_ascii_lowercase().as_str()) {
+                let relative = path.strip_prefix(base).unwrap_or(&path);
+                out.push(LegacyImage {
+                    absolute_path: path.to_string_lossy().to_string(),
+                    relative_path: relative.to_string_lossy().replace('\\', "/"),
+                });
+            }
+        }
+    }
+}
+
+#[derive(Serialize)]
+pub struct LegacyImage {
+    pub absolute_path: String,
+    pub relative_path: String,
+}
+
+/// List all image files under the MUD project's resource directories.
+/// Checks both src/main/resources/world/images/ and src/main/resources/images/.
+#[tauri::command]
+pub fn list_legacy_images(mud_dir: String) -> Vec<LegacyImage> {
+    let base = PathBuf::from(&mud_dir).join("src/main/resources");
+    let candidates = [
+        base.join("world/images"),
+        base.join("images"),
+    ];
+    let mut results = Vec::new();
+    for dir in &candidates {
+        if dir.is_dir() {
+            collect_images(dir, dir, &mut results);
+        }
+    }
+    results
 }

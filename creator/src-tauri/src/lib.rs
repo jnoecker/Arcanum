@@ -13,6 +13,7 @@ pub fn run() {
         .plugin(tauri_plugin_window_state::Builder::new().build())
         .invoke_handler(tauri::generate_handler![
             project::validate_mud_dir,
+            project::list_legacy_images,
             settings::get_settings,
             settings::save_settings,
             deepinfra::generate_image,

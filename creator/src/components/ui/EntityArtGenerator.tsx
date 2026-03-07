@@ -1,7 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { invoke } from "@tauri-apps/api/core";
+import { open } from "@tauri-apps/plugin-dialog";
 import { useAssetStore } from "@/stores/assetStore";
-import { useImageSrc } from "@/lib/useImageSrc";
+import { useProjectStore } from "@/stores/projectStore";
+import { useImageSrc, isLegacyImagePath } from "@/lib/useImageSrc";
 import { getEnhanceSystemPrompt, ART_STYLE_LABELS, type ArtStyle } from "@/lib/arcanumPrompts";
 import { IMAGE_MODELS } from "@/types/assets";
 import type { AssetContext, GeneratedImage } from "@/types/assets";
@@ -31,16 +33,45 @@ export function EntityArtGenerator({
   const settings = useAssetStore((s) => s.settings);
   const artStyle = useAssetStore((s) => s.artStyle);
   const setArtStyle = useAssetStore((s) => s.setArtStyle);
+  const assetsDir = useAssetStore((s) => s.assetsDir);
+  const importAsset = useAssetStore((s) => s.importAsset);
+  const mudDir = useProjectStore((s) => s.project?.mudDir);
   const [stage, setStage] = useState<Stage>("idle");
   const [result, setResult] = useState<GeneratedImage | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [editedPrompt, setEditedPrompt] = useState<string | null>(null);
   const [showPrompt, setShowPrompt] = useState(false);
   const [enhancing, setEnhancing] = useState(false);
+  const [importing, setImporting] = useState(false);
 
   const hasApiKey = settings && settings.deepinfra_api_key.length > 0;
   const basePrompt = getPrompt(artStyle);
   const activePrompt = editedPrompt ?? basePrompt;
+
+  // ─── Auto-import legacy images ───────────────────────────────────
+  const importedRef = useRef<Set<string>>(new Set());
+
+  useEffect(() => {
+    if (!currentImage || !mudDir || !isLegacyImagePath(currentImage)) return;
+    if (importedRef.current.has(currentImage)) return;
+    importedRef.current.add(currentImage);
+
+    // Try world/images/ first, fall back to images/
+    const candidates = [
+      `${mudDir}/src/main/resources/world/images/${currentImage}`,
+      `${mudDir}/src/main/resources/images/${currentImage}`,
+    ];
+    (async () => {
+      for (const sourcePath of candidates) {
+        try {
+          await importAsset(sourcePath, assetType ?? "background", context);
+          return;
+        } catch {
+          // Try next candidate
+        }
+      }
+    })();
+  }, [currentImage, mudDir, assetType, context, importAsset]);
 
   // Reset edited prompt when style changes
   const handleStyleChange = (style: ArtStyle) => {
@@ -85,6 +116,29 @@ export function EntityArtGenerator({
     }
   };
 
+  const handlePickImage = async () => {
+    const path = await open({
+      filters: [{ name: "Images", extensions: ["png", "jpg", "jpeg", "webp"] }],
+      multiple: false,
+    });
+    if (!path) return;
+
+    setImporting(true);
+    setError(null);
+    try {
+      const entry = await importAsset(
+        path,
+        assetType ?? "background",
+        context,
+      );
+      onAccept(`${assetsDir}\\images\\${entry.file_name}`);
+    } catch (e) {
+      setError(String(e));
+    } finally {
+      setImporting(false);
+    }
+  };
+
   const acceptAsset = useAssetStore((s) => s.acceptAsset);
 
   const handleAccept = async () => {
@@ -111,16 +165,6 @@ export function EntityArtGenerator({
     ? result.data_url
     : savedImageSrc;
 
-  if (!hasApiKey) {
-    return (
-      <div className="mt-1">
-        <p className="text-[10px] text-text-muted">
-          Set API key in Config &rarr; API Settings to generate art
-        </p>
-      </div>
-    );
-  }
-
   return (
     <div className="flex flex-col gap-2">
       {/* Current / preview image */}
@@ -141,40 +185,53 @@ export function EntityArtGenerator({
       {stage === "idle" && (
         <div className="flex flex-col gap-1">
           {/* Style toggle */}
-          <div className="flex gap-0.5 rounded bg-bg-primary p-0.5">
-            {(Object.entries(ART_STYLE_LABELS) as [ArtStyle, string][]).map(
-              ([key, label]) => (
-                <button
-                  key={key}
-                  onClick={() => handleStyleChange(key)}
-                  className={`flex-1 rounded px-1.5 py-0.5 text-[10px] transition-colors ${
-                    artStyle === key
-                      ? "bg-accent/20 text-accent"
-                      : "text-text-muted hover:text-text-secondary"
-                  }`}
-                >
-                  {label}
-                </button>
-              ),
+          {hasApiKey && (
+            <div className="flex gap-0.5 rounded bg-bg-primary p-0.5">
+              {(Object.entries(ART_STYLE_LABELS) as [ArtStyle, string][]).map(
+                ([key, label]) => (
+                  <button
+                    key={key}
+                    onClick={() => handleStyleChange(key)}
+                    className={`flex-1 rounded px-1.5 py-0.5 text-[10px] transition-colors ${
+                      artStyle === key
+                        ? "bg-accent/20 text-accent"
+                        : "text-text-muted hover:text-text-secondary"
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ),
+              )}
+            </div>
+          )}
+
+          <div className="flex gap-1">
+            {hasApiKey && (
+              <button
+                onClick={handleGenerate}
+                className="flex-1 rounded bg-accent/15 px-2 py-1 text-[10px] font-medium text-accent transition-colors hover:bg-accent/25"
+              >
+                Generate Art
+              </button>
+            )}
+            <button
+              onClick={handlePickImage}
+              disabled={importing}
+              className="flex-1 rounded bg-bg-elevated px-2 py-1 text-[10px] font-medium text-text-secondary transition-colors hover:bg-bg-hover hover:text-text-primary disabled:opacity-50"
+            >
+              {importing ? "Importing..." : "Pick Image"}
+            </button>
+            {hasApiKey && (
+              <button
+                onClick={() => setShowPrompt((v) => !v)}
+                className="rounded px-1.5 py-1 text-[10px] text-text-muted transition-colors hover:text-text-secondary"
+              >
+                {showPrompt ? "Hide" : "Prompt"}
+              </button>
             )}
           </div>
 
-          <div className="flex gap-1">
-            <button
-              onClick={handleGenerate}
-              className="flex-1 rounded bg-accent/15 px-2 py-1 text-[10px] font-medium text-accent transition-colors hover:bg-accent/25"
-            >
-              Generate Art
-            </button>
-            <button
-              onClick={() => setShowPrompt((v) => !v)}
-              className="rounded px-1.5 py-1 text-[10px] text-text-muted transition-colors hover:text-text-secondary"
-            >
-              {showPrompt ? "Hide" : "Prompt"}
-            </button>
-          </div>
-
-          {showPrompt && (
+          {showPrompt && hasApiKey && (
             <div className="flex flex-col gap-1">
               <textarea
                 value={activePrompt}

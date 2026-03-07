@@ -13,6 +13,7 @@ import { ErrorDialog } from "./ErrorDialog";
 import { ValidationPanel } from "./ValidationPanel";
 import { DiffModal } from "./ui/DiffModal";
 import { useAssetStore } from "@/stores/assetStore";
+import { BatchLegacyImport } from "./BatchLegacyImport";
 
 const STATUS_COLORS: Record<string, string> = {
   stopped: "bg-server-stopped",
@@ -45,6 +46,7 @@ export function Toolbar() {
   const [errors, setErrors] = useState<string[] | null>(null);
   const [saving, setSaving] = useState(false);
   const [showDiff, setShowDiff] = useState(false);
+  const [showLegacyImport, setShowLegacyImport] = useState(false);
   const openGenerator = useAssetStore((s) => s.openGenerator);
   const openGallery = useAssetStore((s) => s.openGallery);
 
@@ -121,6 +123,12 @@ export function Toolbar() {
 
       {/* Right side actions */}
       <button
+        onClick={() => setShowLegacyImport(true)}
+        className="rounded px-3 py-1 text-xs font-medium text-text-secondary transition-colors hover:bg-bg-elevated hover:text-text-primary"
+      >
+        Import Images
+      </button>
+      <button
         onClick={openGallery}
         className="rounded px-3 py-1 text-xs font-medium text-text-secondary transition-colors hover:bg-bg-elevated hover:text-text-primary"
       >
@@ -188,6 +196,10 @@ export function Toolbar() {
           messages={errors}
           onClose={() => setErrors(null)}
         />
+      )}
+
+      {showLegacyImport && (
+        <BatchLegacyImport onClose={() => setShowLegacyImport(false)} />
       )}
     </div>
   );

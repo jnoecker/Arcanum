@@ -18,7 +18,7 @@ interface AssetState {
 
   loadAssets: () => Promise<void>;
   acceptAsset: (image: GeneratedImage, assetType: string, enhancedPrompt?: string, context?: AssetContext) => Promise<void>;
-  importAsset: (sourcePath: string, assetType: string, context?: AssetContext) => Promise<void>;
+  importAsset: (sourcePath: string, assetType: string, context?: AssetContext) => Promise<AssetEntry>;
   deleteAsset: (id: string) => Promise<void>;
 
   syncToR2: () => Promise<SyncProgress>;
@@ -77,12 +77,13 @@ export const useAssetStore = create<AssetState>((set, get) => ({
   },
 
   importAsset: async (sourcePath, assetType, context) => {
-    await invoke("import_asset", {
+    const entry = await invoke<AssetEntry>("import_asset", {
       sourcePath,
       assetType,
       context: context ?? null,
     });
     await get().loadAssets();
+    return entry;
   },
 
   deleteAsset: async (id: string) => {

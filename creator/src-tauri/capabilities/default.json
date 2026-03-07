@@ -1,0 +1,54 @@
+{
+  "$schema": "https://raw.githubusercontent.com/nicoverbruggen/tauri-v2-schema/main/capabilities-schema.json",
+  "identifier": "default",
+  "description": "Default permissions for the AmbonMUD Creator",
+  "windows": ["main"],
+  "permissions": [
+    "core:default",
+    "dialog:default",
+    "dialog:allow-open",
+    "dialog:allow-save",
+    "dialog:allow-message",
+    "dialog:allow-ask",
+    "fs:default",
+    {
+      "identifier": "fs:allow-read-text-file",
+      "allow": [{ "path": "**" }]
+    },
+    {
+      "identifier": "fs:allow-read-dir",
+      "allow": [{ "path": "**" }]
+    },
+    {
+      "identifier": "fs:allow-write-text-file",
+      "allow": [{ "path": "**" }]
+    },
+    "fs:allow-exists",
+    "fs:allow-mkdir",
+    "shell:default",
+    {
+      "identifier": "shell:allow-spawn",
+      "allow": [
+        {
+          "name": "cmd",
+          "cmd": "cmd",
+          "args": ["/C", { "validator": ".*" }],
+          "sidecar": false
+        }
+      ]
+    },
+    "shell:allow-stdin-write",
+    "shell:allow-kill",
+    {
+      "identifier": "shell:allow-execute",
+      "allow": [
+        {
+          "name": "cmd",
+          "cmd": "cmd",
+          "args": ["/C", { "validator": ".*" }],
+          "sidecar": false
+        }
+      ]
+    }
+  ]
+}

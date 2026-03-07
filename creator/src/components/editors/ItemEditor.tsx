@@ -216,7 +216,7 @@ export function ItemEditor({
         </div>
       </Section>
 
-      <MediaSection image={item.image} onImageChange={(v) => patch({ image: v })} getPrompt={(style) => itemPrompt(itemId, item, style)} assetType="entity_portrait" context={zoneId ? { zone: zoneId, entity_type: "item", entity_id: itemId } : undefined} />
+      <MediaSection image={item.image} onImageChange={(v) => patch({ image: v })} video={item.video} onVideoChange={(v) => patch({ video: v })} getPrompt={(style) => itemPrompt(itemId, item, style)} assetType="entity_portrait" context={zoneId ? { zone: zoneId, entity_type: "item", entity_id: itemId } : undefined} />
       <DeleteEntityButton onClick={handleDelete} label="Delete Item" />
     </>
   );

@@ -48,9 +48,13 @@ pub fn validate_mud_dir(path: String) -> ValidationResult {
     }
 }
 
-const IMAGE_EXTENSIONS: &[&str] = &["png", "jpg", "jpeg", "webp"];
+const MEDIA_EXTENSIONS: &[&str] = &[
+    "png", "jpg", "jpeg", "webp",
+    "mp4", "webm",
+    "mp3", "ogg", "flac", "wav",
+];
 
-fn collect_images(dir: &Path, base: &Path, out: &mut Vec<LegacyImage>) {
+fn collect_media(dir: &Path, base: &Path, out: &mut Vec<LegacyMedia>) {
     let entries = match std::fs::read_dir(dir) {
         Ok(e) => e,
         Err(_) => return,
@@ -58,11 +62,11 @@ fn collect_images(dir: &Path, base: &Path, out: &mut Vec<LegacyImage>) {
     for entry in entries.flatten() {
         let path = entry.path();
         if path.is_dir() {
-            collect_images(&path, base, out);
+            collect_media(&path, base, out);
         } else if let Some(ext) = path.extension().and_then(|e| e.to_str()) {
-            if IMAGE_EXTENSIONS.contains(&ext.to_ascii_lowercase().as_str()) {
+            if MEDIA_EXTENSIONS.contains(&ext.to_ascii_lowercase().as_str()) {
                 let relative = path.strip_prefix(base).unwrap_or(&path);
-                out.push(LegacyImage {
+                out.push(LegacyMedia {
                     absolute_path: path.to_string_lossy().to_string(),
                     relative_path: relative.to_string_lossy().replace('\\', "/"),
                 });
@@ -72,7 +76,7 @@ fn collect_images(dir: &Path, base: &Path, out: &mut Vec<LegacyImage>) {
 }
 
 #[derive(Serialize)]
-pub struct LegacyImage {
+pub struct LegacyMedia {
     pub absolute_path: String,
     pub relative_path: String,
 }
@@ -80,7 +84,7 @@ pub struct LegacyImage {
 /// List all image files under the MUD project's resource directories.
 /// Checks both src/main/resources/world/images/ and src/main/resources/images/.
 #[tauri::command]
-pub fn list_legacy_images(mud_dir: String) -> Vec<LegacyImage> {
+pub fn list_legacy_images(mud_dir: String) -> Vec<LegacyMedia> {
     let base = PathBuf::from(&mud_dir).join("src/main/resources");
     let candidates = [
         base.join("world/images"),
@@ -89,7 +93,26 @@ pub fn list_legacy_images(mud_dir: String) -> Vec<LegacyImage> {
     let mut results = Vec::new();
     for dir in &candidates {
         if dir.is_dir() {
-            collect_images(dir, dir, &mut results);
+            collect_media(dir, dir, &mut results);
+        }
+    }
+    results
+}
+
+/// List all media files (images, audio, video) under the MUD project's resource directories.
+#[tauri::command]
+pub fn list_legacy_media(mud_dir: String) -> Vec<LegacyMedia> {
+    let base = PathBuf::from(&mud_dir).join("src/main/resources");
+    let candidates = [
+        "world/images", "images",
+        "world/audio", "audio",
+        "world/video", "video",
+    ];
+    let mut results = Vec::new();
+    for subdir in &candidates {
+        let dir = base.join(subdir);
+        if dir.is_dir() {
+            collect_media(&dir, &dir, &mut results);
         }
     }
     results
@@ -149,20 +172,24 @@ fn resolve_to_r2(path: &Path, hash_map: &HashMap<String, String>) -> Option<Stri
     hash_map.get(&hash).cloned()
 }
 
-/// Find the local file for a legacy image path.
-/// Tries both world/images/ and images/ directories.
-fn find_image_file(relative_path: &str, resources: &Path) -> Option<PathBuf> {
-    let candidates = [
-        resources.join("world/images").join(relative_path),
-        resources.join("images").join(relative_path),
-    ];
-    candidates.into_iter().find(|p| p.is_file())
+/// Find the local file for a legacy media path.
+/// Tries world/images/, images/, world/audio/, audio/, world/video/, and video/ directories.
+fn find_media_file(relative_path: &str, resources: &Path) -> Option<PathBuf> {
+    let prefixes = ["world/images", "images", "world/audio", "audio", "world/video", "video"];
+    for prefix in &prefixes {
+        let path = resources.join(prefix).join(relative_path);
+        if path.is_file() {
+            return Some(path);
+        }
+    }
+    None
 }
 
-/// Rewrite image references in a YAML string.
-/// Scans for `image:` keys and replaces legacy relative paths with R2 hash filenames.
+/// Rewrite media references in a YAML string.
+/// Scans for `image:`, `video:`, `music:`, `ambient:`, and `audio:` keys
+/// and replaces legacy relative paths with R2 hash filenames.
 /// Returns the updated content and the count of replacements made.
-fn rewrite_yaml_images(
+fn rewrite_yaml_media(
     content: &str,
     resources: &Path,
     hash_map: &HashMap<String, String>,
@@ -170,7 +197,7 @@ fn rewrite_yaml_images(
     file_label: &str,
 ) -> (String, usize) {
     use regex::Regex;
-    let re = Regex::new(r#"(?m)^(\s*image:\s*)(?:"([^"]+)"|'([^']+)'|(\S+))\s*$"#).unwrap();
+    let re = Regex::new(r#"(?m)^(\s*(?:image|video|music|ambient|audio):\s*)(?:"([^"]+)"|'([^']+)'|(\S+))\s*$"#).unwrap();
 
     let mut count = 0;
     let result = re
@@ -193,7 +220,7 @@ fn rewrite_yaml_images(
                 .strip_prefix("/images/")
                 .unwrap_or(path);
 
-            if let Some(file_path) = find_image_file(relative, resources) {
+            if let Some(file_path) = find_media_file(relative, resources) {
                 if let Some(r2_name) = resolve_to_r2(&file_path, hash_map) {
                     count += 1;
                     return format!("{prefix}{r2_name}");
@@ -274,7 +301,7 @@ pub fn migrate_images_to_r2(
             };
 
             let (updated, count) =
-                rewrite_yaml_images(&content, &resources, &hash_map, &mut report.errors, name);
+                rewrite_yaml_media(&content, &resources, &hash_map, &mut report.errors, name);
             if count > 0 {
                 if let Err(e) = std::fs::write(&path, &updated) {
                     report
@@ -293,7 +320,7 @@ pub fn migrate_images_to_r2(
         let content = std::fs::read_to_string(&config_path)
             .map_err(|e| format!("Failed to read application.yaml: {e}"))?;
 
-        let (updated, count) = rewrite_yaml_images(
+        let (updated, count) = rewrite_yaml_media(
             &content,
             &resources,
             &hash_map,
@@ -307,9 +334,10 @@ pub fn migrate_images_to_r2(
         }
     }
 
-    // ─── Delete local image directories ────────────────────────
-    report.images_deleted += remove_dir_all_best_effort(&resources.join("world/images"));
-    report.images_deleted += remove_dir_all_best_effort(&resources.join("images"));
+    // ─── Delete local media directories ─────────────────────────
+    for subdir in &["world/images", "images", "world/audio", "audio", "world/video", "video"] {
+        report.images_deleted += remove_dir_all_best_effort(&resources.join(subdir));
+    }
 
     Ok(report)
 }

@@ -381,7 +381,7 @@ export function MobEditor({
         onWorldChange={onWorldChange}
       />
 
-      <MediaSection image={mob.image} onImageChange={(v) => patch({ image: v })} getPrompt={(style) => mobPrompt(mobId, mob, style)} assetType="entity_portrait" context={zoneId ? { zone: zoneId, entity_type: "mob", entity_id: mobId } : undefined} />
+      <MediaSection image={mob.image} onImageChange={(v) => patch({ image: v })} video={mob.video} onVideoChange={(v) => patch({ video: v })} getPrompt={(style) => mobPrompt(mobId, mob, style)} assetType="entity_portrait" context={zoneId ? { zone: zoneId, entity_type: "mob", entity_id: mobId } : undefined} />
       <DeleteEntityButton onClick={handleDelete} label="Delete Mob" />
     </>
   );

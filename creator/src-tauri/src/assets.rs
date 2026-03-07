@@ -1,3 +1,4 @@
+use base64::Engine;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
@@ -131,12 +132,16 @@ pub async fn delete_asset(app: AppHandle, id: String) -> Result<(), String> {
     let entry = manifest.assets.iter().find(|a| a.id == id).cloned();
 
     if let Some(entry) = &entry {
-        // Delete the file
-        let file_path = assets_dir(&app)?.join("images").join(&entry.file_name);
-        if file_path.exists() {
-            tokio::fs::remove_file(&file_path)
-                .await
-                .map_err(|e| format!("Failed to delete file: {e}"))?;
+        // Delete the file — check all subdirectories
+        let base = assets_dir(&app)?;
+        for subdir in &["images", "video", "audio"] {
+            let file_path = base.join(subdir).join(&entry.file_name);
+            if file_path.exists() {
+                tokio::fs::remove_file(&file_path)
+                    .await
+                    .map_err(|e| format!("Failed to delete file: {e}"))?;
+                break;
+            }
         }
     }
 
@@ -151,6 +156,20 @@ pub async fn get_assets_dir(app: AppHandle) -> Result<String, String> {
     Ok(dir.to_string_lossy().to_string())
 }
 
+/// Resolve a media asset filename to its absolute local path.
+/// Searches images/, video/, and audio/ subdirectories.
+#[tauri::command]
+pub async fn resolve_media_path(app: AppHandle, file_name: String) -> Result<String, String> {
+    let base = assets_dir(&app)?;
+    for subdir in &["images", "video", "audio"] {
+        let path = base.join(subdir).join(&file_name);
+        if path.exists() {
+            return Ok(path.to_string_lossy().to_string());
+        }
+    }
+    Err(format!("Asset file not found: {file_name}"))
+}
+
 /// Update the sync_status of an asset by ID. Called from r2 module.
 pub async fn update_sync_status(app: AppHandle, id: &str, status: &str) -> Result<(), String> {
     let mut manifest = load_manifest(&app).await?;
@@ -161,18 +180,83 @@ pub async fn update_sync_status(app: AppHandle, id: &str, status: &str) -> Resul
 }
 
 fn detect_extension(bytes: &[u8]) -> &'static str {
+    // Images
     if bytes.starts_with(&[0x89, 0x50, 0x4E, 0x47]) {
         "png"
     } else if bytes.starts_with(&[0xFF, 0xD8, 0xFF]) {
         "jpg"
     } else if bytes.starts_with(b"RIFF") && bytes.len() > 12 && &bytes[8..12] == b"WEBP" {
         "webp"
+    // Video
+    } else if bytes.len() > 12 && &bytes[4..8] == b"ftyp" {
+        "mp4"
+    } else if bytes.starts_with(b"\x1a\x45\xdf\xa3") {
+        "webm"
+    // Audio
+    } else if bytes.starts_with(b"OggS") {
+        "ogg"
+    } else if bytes.starts_with(b"ID3") || (bytes.len() >= 2 && bytes[0] == 0xFF && (bytes[1] & 0xE0) == 0xE0) {
+        "mp3"
+    } else if bytes.starts_with(b"fLaC") {
+        "flac"
+    } else if bytes.starts_with(b"RIFF") && bytes.len() > 12 && &bytes[8..12] == b"WAVE" {
+        "wav"
     } else {
-        "png"
+        "bin"
     }
 }
 
-/// Import an existing image file from disk into the asset library.
+fn extension_from_path(path: &str) -> Option<&str> {
+    std::path::Path::new(path)
+        .extension()
+        .and_then(|e| e.to_str())
+}
+
+fn mime_from_ext(ext: &str) -> &'static str {
+    match ext {
+        "png" => "image/png",
+        "jpg" | "jpeg" => "image/jpeg",
+        "webp" => "image/webp",
+        "mp4" => "video/mp4",
+        "webm" => "video/webm",
+        "mp3" => "audio/mpeg",
+        "ogg" => "audio/ogg",
+        "flac" => "audio/flac",
+        "wav" => "audio/wav",
+        _ => "application/octet-stream",
+    }
+}
+
+/// Read any media file from disk and return it as a data URL.
+/// Works for images, audio, and video.
+#[tauri::command]
+pub async fn read_media_data_url(path: String) -> Result<String, String> {
+    let bytes = tokio::fs::read(&path)
+        .await
+        .map_err(|e| format!("Failed to read file: {e}"))?;
+
+    let detected = detect_extension(&bytes);
+    let ext = if detected == "bin" {
+        extension_from_path(&path).unwrap_or("bin")
+    } else {
+        detected
+    };
+    let mime = mime_from_ext(ext);
+    let b64 = base64::engine::general_purpose::STANDARD.encode(&bytes);
+    Ok(format!("data:{mime};base64,{b64}"))
+}
+
+/// Determine the storage subdirectory for an asset based on its extension.
+fn media_subdir(ext: &str) -> &'static str {
+    match ext {
+        "mp4" | "webm" => "video",
+        "mp3" | "ogg" | "flac" | "wav" => "audio",
+        _ => "images",
+    }
+}
+
+/// Import an existing file from disk into the asset library.
+/// Works for images, audio, and video files.
 #[tauri::command]
 pub async fn import_asset(
     app: AppHandle,
@@ -189,27 +273,33 @@ pub async fn import_asset(
     hasher.update(&bytes);
     let hash = format!("{:x}", hasher.finalize());
 
-    // Determine extension and filename
-    let ext = detect_extension(&bytes);
+    // Determine extension — prefer magic bytes, fall back to source extension
+    let detected = detect_extension(&bytes);
+    let ext = if detected == "bin" {
+        extension_from_path(&source_path).unwrap_or("bin")
+    } else {
+        detected
+    };
     let file_name = format!("{hash}.{ext}");
 
-    // Read dimensions from image header
+    // Read dimensions from image header (0x0 for non-image files)
     let (width, height) = match imagesize::blob_size(&bytes) {
         Ok(size) => (size.width as u32, size.height as u32),
         Err(_) => (0, 0),
     };
 
-    // Copy to assets/images
-    let img_dir = assets_dir(&app)?.join("images");
-    tokio::fs::create_dir_all(&img_dir)
+    // Copy to assets/<subdir>
+    let subdir = media_subdir(ext);
+    let dest_dir = assets_dir(&app)?.join(subdir);
+    tokio::fs::create_dir_all(&dest_dir)
         .await
-        .map_err(|e| format!("Failed to create images dir: {e}"))?;
+        .map_err(|e| format!("Failed to create {subdir} dir: {e}"))?;
 
-    let dest = img_dir.join(&file_name);
+    let dest = dest_dir.join(&file_name);
     if !dest.exists() {
         tokio::fs::copy(&source_path, &dest)
             .await
-            .map_err(|e| format!("Failed to copy image: {e}"))?;
+            .map_err(|e| format!("Failed to copy file: {e}"))?;
     }
 
     // Extract original filename for the prompt field

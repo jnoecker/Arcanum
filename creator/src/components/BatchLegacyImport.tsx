@@ -4,13 +4,13 @@ import { useProjectStore } from "@/stores/projectStore";
 import { useAssetStore } from "@/stores/assetStore";
 import type { AssetEntry } from "@/types/assets";
 
-interface LegacyImage {
+interface LegacyMedia {
   absolute_path: string;
   relative_path: string;
 }
 
 interface ImportTarget {
-  image: LegacyImage;
+  image: LegacyMedia;
   status: "pending" | "importing" | "done" | "skipped" | "error";
   error?: string;
 }
@@ -50,12 +50,12 @@ export function BatchLegacyImport({ onClose }: { onClose: () => void }) {
     if (!mudDir) return;
     setScanning(true);
     try {
-      const images = await invoke<LegacyImage[]>("list_legacy_images", { mudDir });
+      const media = await invoke<LegacyMedia[]>("list_legacy_media", { mudDir });
       setTargets(
-        images.map((image) => ({ image, status: "pending" as const })),
+        media.map((image) => ({ image, status: "pending" as const })),
       );
-      if (images.length === 0) {
-        // No local images — skip straight to migrate
+      if (media.length === 0) {
+        // No local media — skip straight to migrate
         setPhase("migrate");
       }
     } catch {
@@ -81,9 +81,14 @@ export function BatchLegacyImport({ onClose }: { onClose: () => void }) {
       );
 
       try {
+        const ext = target.image.relative_path.split(".").pop()?.toLowerCase() ?? "";
+        const assetType = ["mp4", "webm"].includes(ext) ? "video"
+          : ["mp3", "ogg", "flac", "wav"].includes(ext) ? "audio"
+          : "background";
+
         const entry = await invoke<AssetEntry>("import_asset", {
           sourcePath: target.image.absolute_path,
-          assetType: "background",
+          assetType,
           context: null,
         });
 
@@ -178,7 +183,7 @@ export function BatchLegacyImport({ onClose }: { onClose: () => void }) {
           {phase === "scan" && !targets && !scanning && (
             <div className="flex flex-col items-center gap-3 py-6">
               <p className="text-sm text-text-secondary">
-                Scan for local images, import them, sync to R2, then rewrite all YAML references to use R2 filenames.
+                Scan for local media (images, audio, video), import them, sync to R2, then rewrite all YAML references to use R2 filenames.
               </p>
               <p className="rounded bg-bg-primary px-3 py-1.5 font-mono text-[10px] text-text-muted">
                 {mudDir}/src/main/resources/
@@ -187,7 +192,7 @@ export function BatchLegacyImport({ onClose }: { onClose: () => void }) {
                 onClick={handleScan}
                 className="rounded bg-accent/15 px-4 py-1.5 text-xs font-medium text-accent transition-colors hover:bg-accent/25"
               >
-                Scan for Images
+                Scan for Media
               </button>
             </div>
           )}

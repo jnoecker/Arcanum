@@ -16,6 +16,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             project::validate_mud_dir,
             project::list_legacy_images,
+            project::list_legacy_media,
             project::migrate_images_to_r2,
             settings::get_settings,
             settings::save_settings,
@@ -26,6 +27,8 @@ pub fn run() {
             assets::list_assets,
             assets::delete_asset,
             assets::get_assets_dir,
+            assets::resolve_media_path,
+            assets::read_media_data_url,
             assets::import_asset,
             r2::sync_assets,
             r2::get_sync_status,

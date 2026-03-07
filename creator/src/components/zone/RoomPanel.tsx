@@ -10,9 +10,10 @@ import {
   addGatheringNode,
   generateEntityId,
 } from "@/lib/zoneEdits";
-import { EditableField, EditableTextArea, Section, IconButton } from "@/components/ui/FormWidgets";
+import { EditableField, EditableTextArea, Section, IconButton, FieldRow, TextInput } from "@/components/ui/FormWidgets";
 import { YamlPreview } from "@/components/ui/YamlPreview";
 import { EntityArtGenerator } from "@/components/ui/EntityArtGenerator";
+import { MediaPicker } from "@/components/ui/MediaPicker";
 import { roomPrompt } from "@/lib/entityPrompts";
 
 export type EntityKind = "mob" | "item" | "shop" | "quest" | "gatheringNode" | "recipe";
@@ -387,15 +388,64 @@ export function RoomPanel({
             assetType="background"
             context={{ zone: zoneId, entity_type: "room", entity_id: roomId }}
           />
-          {room.music && (
-            <p className="text-xs text-text-muted">Music: {room.music}</p>
-          )}
-          {room.ambient && (
-            <p className="text-xs text-text-muted">Ambient: {room.ambient}</p>
-          )}
-          {room.audio && (
-            <p className="text-xs text-text-muted">Audio: {room.audio}</p>
-          )}
+          <FieldRow label="Video">
+            <TextInput
+              value={room.video ?? ""}
+              onCommit={(v) => onWorldChange(updateRoom(world, roomId, { video: v || undefined }))}
+              placeholder="none"
+            />
+          </FieldRow>
+          <MediaPicker
+            value={room.video}
+            onChange={(v) => onWorldChange(updateRoom(world, roomId, { video: v }))}
+            mediaType="video"
+            assetType="video"
+          />
+        </div>
+      </Section>
+
+      {/* Audio */}
+      <Section title="Audio">
+        <div className="flex flex-col gap-1.5">
+          <FieldRow label="Music">
+            <TextInput
+              value={room.music ?? ""}
+              onCommit={(v) => onWorldChange(updateRoom(world, roomId, { music: v || undefined }))}
+              placeholder="none"
+            />
+          </FieldRow>
+          <MediaPicker
+            value={room.music}
+            onChange={(v) => onWorldChange(updateRoom(world, roomId, { music: v }))}
+            mediaType="audio"
+            assetType="music"
+          />
+          <FieldRow label="Ambient">
+            <TextInput
+              value={room.ambient ?? ""}
+              onCommit={(v) => onWorldChange(updateRoom(world, roomId, { ambient: v || undefined }))}
+              placeholder="none"
+            />
+          </FieldRow>
+          <MediaPicker
+            value={room.ambient}
+            onChange={(v) => onWorldChange(updateRoom(world, roomId, { ambient: v }))}
+            mediaType="audio"
+            assetType="ambient"
+          />
+          <FieldRow label="Audio">
+            <TextInput
+              value={room.audio ?? ""}
+              onCommit={(v) => onWorldChange(updateRoom(world, roomId, { audio: v || undefined }))}
+              placeholder="none"
+            />
+          </FieldRow>
+          <MediaPicker
+            value={room.audio}
+            onChange={(v) => onWorldChange(updateRoom(world, roomId, { audio: v }))}
+            mediaType="audio"
+            assetType="audio"
+          />
         </div>
       </Section>
 

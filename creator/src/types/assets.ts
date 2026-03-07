@@ -38,6 +38,7 @@ export type AssetType =
   | "status_art"
   | "empty_state"
   | "entity_portrait"
+  | "ability_sprite"
   | "zone_map"
   | "splash_hero"
   | "loading_vignette"

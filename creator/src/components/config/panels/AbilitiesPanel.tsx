@@ -8,6 +8,9 @@ import {
   SelectInput,
 } from "@/components/ui/FormWidgets";
 import { RegistryPanel } from "./RegistryPanel";
+import { EntityArtGenerator } from "@/components/ui/EntityArtGenerator";
+import { getPreamble } from "@/lib/arcanumPrompts";
+import type { ArtStyle } from "@/lib/arcanumPrompts";
 
 const TARGET_TYPES = [
   { value: "ENEMY", label: "Enemy" },
@@ -22,6 +25,12 @@ const EFFECT_TYPES = [
   { value: "AREA_DAMAGE", label: "Area Damage" },
   { value: "TAUNT", label: "Taunt" },
 ];
+
+function abilityPrompt(ability: AbilityDefinitionConfig, style: ArtStyle): string {
+  const preamble = getPreamble(style);
+  const effectDesc = ability.effect.type.toLowerCase().replace(/_/g, " ");
+  return `${preamble}, a game ability icon for "${ability.displayName}" — ${effectDesc} spell, ${ability.description || "magical ability"}, centered square composition like an RPG ability sprite, iconic symbol rendered as flowing energy, no text, no figures`;
+}
 
 export function AbilitiesPanel({ config, onChange }: ConfigPanelProps) {
   const statusEffectOptions = Object.keys(config.statusEffects).map((id) => ({
@@ -75,7 +84,7 @@ export function AbilitiesPanel({ config, onChange }: ConfigPanelProps) {
         effect: { type: "DIRECT_DAMAGE", value: 3 },
       })}
       renderSummary={(_id, a) => a.effect.type}
-      renderDetail={(_id, a, patch) => (
+      renderDetail={(id, a, patch) => (
         <>
           <FieldRow label="Display Name">
             <TextInput
@@ -191,6 +200,29 @@ export function AbilitiesPanel({ config, onChange }: ConfigPanelProps) {
                   </FieldRow>
                 </>
               )}
+            </div>
+          </div>
+
+          {/* Sprite section */}
+          <div className="mt-1 border-t border-border-muted pt-1.5">
+            <h5 className="mb-1 text-[10px] font-display uppercase tracking-widest text-text-muted">
+              Sprite
+            </h5>
+            <div className="flex flex-col gap-1.5">
+              <FieldRow label="Image">
+                <TextInput
+                  value={a.image ?? ""}
+                  onCommit={(v) => patch({ image: v || undefined })}
+                  placeholder="none"
+                />
+              </FieldRow>
+              <EntityArtGenerator
+                getPrompt={(style) => abilityPrompt(a, style)}
+                currentImage={a.image}
+                onAccept={(filePath) => patch({ image: filePath })}
+                assetType="ability_sprite"
+                context={{ zone: "", entity_type: "ability", entity_id: id }}
+              />
             </div>
           </div>
         </>

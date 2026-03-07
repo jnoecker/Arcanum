@@ -1,3 +1,4 @@
+import { useCallback } from "react";
 import type { ConfigPanelProps } from "./types";
 import type { RaceDefinitionConfig } from "@/types/config";
 import type { StatMap } from "@/types/world";
@@ -9,11 +10,23 @@ export function RacesPanel({ config, onChange }: ConfigPanelProps) {
   const statDefs = config.stats.definitions;
   const statIds = Object.keys(statDefs);
 
+  const handleRename = useCallback(
+    (oldId: string, newId: string) => {
+      const races: Record<string, RaceDefinitionConfig> = {};
+      for (const [k, v] of Object.entries(config.races)) {
+        races[k === oldId ? newId : k] = v;
+      }
+      onChange({ races });
+    },
+    [config.races, onChange],
+  );
+
   return (
     <RegistryPanel<RaceDefinitionConfig>
       title="Races"
       items={config.races}
       onItemsChange={(races) => onChange({ races })}
+      onRenameId={handleRename}
       placeholder="New race"
       idTransform={(raw) => raw.trim().toUpperCase().replace(/\s+/g, "_")}
       getDisplayName={(r) => r.displayName}

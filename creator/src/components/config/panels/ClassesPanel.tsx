@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useCallback } from "react";
 import type { ConfigPanelProps } from "./types";
 import type { ClassDefinitionConfig } from "@/types/config";
 import {
@@ -9,6 +9,7 @@ import {
   CheckboxInput,
 } from "@/components/ui/FormWidgets";
 import { RegistryPanel } from "./RegistryPanel";
+import { renameClassInConfig } from "@/lib/refactorId";
 
 export function ClassesPanel({ config, onChange }: ConfigPanelProps) {
   const statOptions = useMemo(
@@ -22,11 +23,20 @@ export function ClassesPanel({ config, onChange }: ConfigPanelProps) {
 
   const maxLevel = config.progression.maxLevel;
 
+  const handleRenameClass = useCallback(
+    (oldId: string, newId: string) => {
+      const updated = renameClassInConfig(config, oldId, newId);
+      onChange({ classes: updated.classes, abilities: updated.abilities });
+    },
+    [config, onChange],
+  );
+
   return (
     <RegistryPanel<ClassDefinitionConfig>
       title="Classes"
       items={config.classes}
       onItemsChange={(classes) => onChange({ classes })}
+      onRenameId={handleRenameClass}
       placeholder="New class"
       idTransform={(raw) => raw.trim().toUpperCase().replace(/\s+/g, "_")}
       getDisplayName={(cls) => cls.displayName}

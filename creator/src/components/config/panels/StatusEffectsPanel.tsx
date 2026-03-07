@@ -1,3 +1,4 @@
+import { useCallback } from "react";
 import type { ConfigPanelProps } from "./types";
 import type { StatusEffectDefinitionConfig } from "@/types/config";
 import type { StatMap } from "@/types/world";
@@ -10,6 +11,7 @@ import {
   IconButton,
 } from "@/components/ui/FormWidgets";
 import { RegistryPanel } from "./RegistryPanel";
+import { renameStatusEffectInConfig } from "@/lib/refactorId";
 
 const EFFECT_TYPES = [
   { value: "DOT", label: "Damage Over Time" },
@@ -30,11 +32,20 @@ const STACK_BEHAVIORS = [
 export function StatusEffectsPanel({ config, onChange }: ConfigPanelProps) {
   const statIds = Object.keys(config.stats.definitions);
 
+  const handleRename = useCallback(
+    (oldId: string, newId: string) => {
+      const updated = renameStatusEffectInConfig(config, oldId, newId);
+      onChange({ statusEffects: updated.statusEffects, abilities: updated.abilities });
+    },
+    [config, onChange],
+  );
+
   return (
     <RegistryPanel<StatusEffectDefinitionConfig>
       title="Status Effects"
       items={config.statusEffects}
       onItemsChange={(statusEffects) => onChange({ statusEffects })}
+      onRenameId={handleRename}
       placeholder="New effect"
       idTransform={(raw) => raw.trim().toLowerCase().replace(/\s+/g, "_")}
       getDisplayName={(e) => e.displayName}

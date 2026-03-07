@@ -23,6 +23,8 @@ export interface RegistryPanelProps<T> {
   searchThreshold?: number;
   /** Return the display name from an item for search matching. */
   getDisplayName?: (item: T) => string;
+  /** Called when user renames an ID. If provided, shows rename UI. */
+  onRenameId?: (oldId: string, newId: string) => void;
 }
 
 export function RegistryPanel<T>({
@@ -36,11 +38,14 @@ export function RegistryPanel<T>({
   placeholder = "New item",
   searchThreshold = 3,
   getDisplayName,
+  onRenameId,
 }: RegistryPanelProps<T>) {
   const allIds = Object.keys(items);
   const [expanded, setExpanded] = useState<string | null>(null);
   const [newId, setNewId] = useState("");
   const [search, setSearch] = useState("");
+  const [renaming, setRenaming] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState("");
 
   const filteredIds = useMemo(() => {
     if (!search.trim() || !getDisplayName) return allIds;
@@ -156,6 +161,58 @@ export function RegistryPanel<T>({
                     <div className="flex flex-col gap-1.5">
                       {renderDetail(id, item, (p) => patch(id, p))}
                     </div>
+                    {onRenameId && (
+                      <div className="mt-2 border-t border-border-muted pt-2">
+                        {renaming === id ? (
+                          <div className="flex items-center gap-1">
+                            <input
+                              className="w-32 rounded border border-border-default bg-bg-primary px-1.5 py-0.5 text-xs text-text-primary outline-none focus:border-accent/50"
+                              value={renameValue}
+                              onChange={(e) => setRenameValue(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter" && renameValue.trim() && renameValue.trim() !== id && !items[renameValue.trim()]) {
+                                  onRenameId(id, renameValue.trim());
+                                  setExpanded(renameValue.trim());
+                                  setRenaming(null);
+                                }
+                                if (e.key === "Escape") setRenaming(null);
+                              }}
+                              placeholder="new_id"
+                              autoFocus
+                            />
+                            <button
+                              onClick={() => {
+                                const nid = renameValue.trim();
+                                if (nid && nid !== id && !items[nid]) {
+                                  onRenameId(id, nid);
+                                  setExpanded(nid);
+                                  setRenaming(null);
+                                }
+                              }}
+                              className="rounded bg-accent/20 px-1.5 py-0.5 text-[10px] text-accent hover:bg-accent/30"
+                            >
+                              Rename
+                            </button>
+                            <button
+                              onClick={() => setRenaming(null)}
+                              className="rounded px-1.5 py-0.5 text-[10px] text-text-muted hover:text-text-primary"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => {
+                              setRenaming(id);
+                              setRenameValue(id);
+                            }}
+                            className="text-[10px] text-text-muted hover:text-text-primary"
+                          >
+                            Rename ID...
+                          </button>
+                        )}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

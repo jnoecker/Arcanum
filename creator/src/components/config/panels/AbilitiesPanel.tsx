@@ -1,3 +1,4 @@
+import { useCallback } from "react";
 import type { ConfigPanelProps } from "./types";
 import type { AbilityDefinitionConfig, AbilityEffectConfig } from "@/types/config";
 import {
@@ -28,6 +29,17 @@ export function AbilitiesPanel({ config, onChange }: ConfigPanelProps) {
     label: config.statusEffects[id]!.displayName,
   }));
 
+  const handleRename = useCallback(
+    (oldId: string, newId: string) => {
+      const abilities: Record<string, AbilityDefinitionConfig> = {};
+      for (const [k, v] of Object.entries(config.abilities)) {
+        abilities[k === oldId ? newId : k] = v;
+      }
+      onChange({ abilities });
+    },
+    [config.abilities, onChange],
+  );
+
   const classOptions = Object.keys(config.classes).map((id) => ({
     value: id,
     label: config.classes[id]!.displayName,
@@ -50,6 +62,7 @@ export function AbilitiesPanel({ config, onChange }: ConfigPanelProps) {
       title="Abilities"
       items={config.abilities}
       onItemsChange={(abilities) => onChange({ abilities })}
+      onRenameId={handleRename}
       placeholder="New ability"
       idTransform={(raw) => raw.trim().toLowerCase().replace(/\s+/g, "_")}
       getDisplayName={(a) => a.displayName}

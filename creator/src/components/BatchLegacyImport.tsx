@@ -15,20 +15,36 @@ interface ImportTarget {
   error?: string;
 }
 
+interface MigrationReport {
+  zone_files_updated: number;
+  zone_refs_rewritten: number;
+  config_refs_rewritten: number;
+  images_deleted: number;
+  errors: string[];
+}
+
+type Phase = "scan" | "import" | "sync" | "migrate" | "done";
+
 export function BatchLegacyImport({ onClose }: { onClose: () => void }) {
   const mudDir = useProjectStore((s) => s.project?.mudDir);
   const assets = useAssetStore((s) => s.assets);
   const loadAssets = useAssetStore((s) => s.loadAssets);
+  const syncToR2 = useAssetStore((s) => s.syncToR2);
 
+  const [phase, setPhase] = useState<Phase>("scan");
   const [targets, setTargets] = useState<ImportTarget[] | null>(null);
   const [scanning, setScanning] = useState(false);
   const [running, setRunning] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [syncStatus, setSyncStatus] = useState<string | null>(null);
+  const [migrationReport, setMigrationReport] = useState<MigrationReport | null>(null);
+  const [migrating, setMigrating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const doneCount = targets?.filter((t) => t.status === "done").length ?? 0;
   const skippedCount = targets?.filter((t) => t.status === "skipped").length ?? 0;
   const errorCount = targets?.filter((t) => t.status === "error").length ?? 0;
-  const finished = targets !== null && !running && (doneCount + skippedCount + errorCount) === targets.length;
+  const importFinished = targets !== null && !running && (doneCount + skippedCount + errorCount) === targets.length;
 
   const handleScan = useCallback(async () => {
     if (!mudDir) return;
@@ -38,6 +54,10 @@ export function BatchLegacyImport({ onClose }: { onClose: () => void }) {
       setTargets(
         images.map((image) => ({ image, status: "pending" as const })),
       );
+      if (images.length === 0) {
+        // No local images — skip straight to migrate
+        setPhase("migrate");
+      }
     } catch {
       setTargets([]);
     } finally {
@@ -47,9 +67,9 @@ export function BatchLegacyImport({ onClose }: { onClose: () => void }) {
 
   const handleImport = useCallback(async () => {
     if (!targets || targets.length === 0) return;
+    setPhase("import");
     setRunning(true);
 
-    // Build a set of known hashes to detect already-imported
     const knownHashes = new Set(assets.map((a) => a.hash));
 
     for (let i = 0; i < targets.length; i++) {
@@ -88,17 +108,54 @@ export function BatchLegacyImport({ onClose }: { onClose: () => void }) {
     setRunning(false);
   }, [targets, assets, loadAssets]);
 
+  const handleSync = useCallback(async () => {
+    setPhase("sync");
+    setSyncStatus("Syncing to R2...");
+    try {
+      const result = await syncToR2();
+      setSyncStatus(
+        `Synced: ${result.uploaded} uploaded, ${result.skipped} already in R2` +
+          (result.failed > 0 ? `, ${result.failed} failed` : ""),
+      );
+      if (result.failed === 0) {
+        setPhase("migrate");
+      }
+    } catch (e) {
+      setSyncStatus(`Sync failed: ${e}`);
+    }
+  }, [syncToR2]);
+
+  const handleMigrate = useCallback(async () => {
+    if (!mudDir) return;
+    setMigrating(true);
+    setError(null);
+    try {
+      const report = await invoke<MigrationReport>("migrate_images_to_r2", { mudDir });
+      setMigrationReport(report);
+      setPhase("done");
+    } catch (e) {
+      setError(String(e));
+    } finally {
+      setMigrating(false);
+    }
+  }, [mudDir]);
+
+  const hasLocalImages = targets !== null && targets.length > 0;
+  const needsImport = hasLocalImages && !importFinished;
+  const needsSync = importFinished && phase === "import";
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
       <div className="mx-4 flex max-h-[80vh] w-full max-w-lg flex-col rounded-lg border border-border-default bg-bg-secondary shadow-xl">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-border-default px-5 py-3">
           <h2 className="font-display text-sm tracking-wide text-text-primary">
-            Import Legacy Images
+            Migrate Images to R2
           </h2>
           <button
             onClick={onClose}
-            className="text-xs text-text-muted hover:text-text-primary"
+            disabled={running || migrating}
+            className="text-xs text-text-muted hover:text-text-primary disabled:opacity-50"
           >
             &times;
           </button>
@@ -106,13 +163,25 @@ export function BatchLegacyImport({ onClose }: { onClose: () => void }) {
 
         {/* Body */}
         <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
-          {!targets && !scanning && (
+          {/* Step indicators */}
+          <div className="mb-4 flex items-center gap-1 text-[10px]">
+            <StepBadge label="1. Scan" active={phase === "scan"} done={targets !== null} />
+            <span className="text-text-muted">&rarr;</span>
+            <StepBadge label="2. Import" active={phase === "import"} done={importFinished && hasLocalImages} />
+            <span className="text-text-muted">&rarr;</span>
+            <StepBadge label="3. Sync" active={phase === "sync"} done={phase === "migrate" || phase === "done"} />
+            <span className="text-text-muted">&rarr;</span>
+            <StepBadge label="4. Migrate" active={phase === "migrate"} done={phase === "done"} />
+          </div>
+
+          {/* Scan phase */}
+          {phase === "scan" && !targets && !scanning && (
             <div className="flex flex-col items-center gap-3 py-6">
               <p className="text-sm text-text-secondary">
-                Scan the server&rsquo;s images directory and import all artwork into the asset library for R2 sync.
+                Scan for local images, import them, sync to R2, then rewrite all YAML references to use R2 filenames.
               </p>
               <p className="rounded bg-bg-primary px-3 py-1.5 font-mono text-[10px] text-text-muted">
-                {mudDir}/src/main/resources/world/images/
+                {mudDir}/src/main/resources/
               </p>
               <button
                 onClick={handleScan}
@@ -130,16 +199,10 @@ export function BatchLegacyImport({ onClose }: { onClose: () => void }) {
             </div>
           )}
 
-          {targets !== null && targets.length === 0 && (
-            <p className="py-6 text-center text-sm text-text-muted">
-              No images found in the server&rsquo;s images directory.
-            </p>
-          )}
-
-          {targets !== null && targets.length > 0 && (
+          {/* Import phase */}
+          {hasLocalImages && (
             <>
-              {/* Progress bar */}
-              {(running || finished) && (
+              {(running || importFinished) && (
                 <div className="mb-3">
                   <div className="mb-1 flex items-center justify-between text-xs">
                     <span className="text-text-secondary">
@@ -163,50 +226,84 @@ export function BatchLegacyImport({ onClose }: { onClose: () => void }) {
                 </div>
               )}
 
-              {/* File list */}
-              <div className="flex flex-col gap-0.5">
-                {targets.map((target, i) => (
-                  <div
-                    key={i}
-                    className="flex items-center gap-2 rounded px-2 py-0.5 text-xs"
-                  >
-                    <span className="w-4 shrink-0 text-center">
-                      {target.status === "pending" && (
-                        <span className="text-text-muted">&middot;</span>
-                      )}
-                      {target.status === "importing" && (
-                        <span className="inline-block h-3 w-3 rounded-full border border-accent border-t-transparent animate-spin" />
-                      )}
-                      {target.status === "done" && (
-                        <span className="text-status-success">&#x2713;</span>
-                      )}
-                      {target.status === "skipped" && (
-                        <span className="text-text-muted">&#x2013;</span>
-                      )}
-                      {target.status === "error" && (
-                        <span className="text-status-error">&#x2717;</span>
-                      )}
-                    </span>
-                    <span className="min-w-0 flex-1 truncate font-mono text-text-secondary">
-                      {target.image.relative_path}
-                    </span>
-                    {target.status === "skipped" && (
-                      <span className="shrink-0 text-[10px] text-text-muted">
-                        already imported
+              {!running && !importFinished && (
+                <div className="flex flex-col gap-0.5 max-h-40 overflow-y-auto">
+                  {targets.map((target, i) => (
+                    <div key={i} className="flex items-center gap-2 rounded px-2 py-0.5 text-xs">
+                      <span className="text-text-muted">&middot;</span>
+                      <span className="min-w-0 flex-1 truncate font-mono text-text-secondary">
+                        {target.image.relative_path}
                       </span>
-                    )}
-                    {target.error && (
-                      <span
-                        className="shrink-0 truncate text-[10px] text-status-error"
-                        title={target.error}
-                      >
-                        {target.error.slice(0, 30)}
-                      </span>
-                    )}
-                  </div>
-                ))}
-              </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </>
+          )}
+
+          {/* No local images — skip to migrate */}
+          {targets !== null && targets.length === 0 && phase !== "migrate" && phase !== "done" && (
+            <p className="py-2 text-center text-sm text-text-muted">
+              No local images found. Proceeding to migrate YAML references.
+            </p>
+          )}
+
+          {/* Sync phase */}
+          {syncStatus && (
+            <div className="mt-3 rounded bg-bg-primary px-3 py-2 text-xs text-text-secondary">
+              {syncStatus}
+            </div>
+          )}
+
+          {/* Migrate phase */}
+          {phase === "migrate" && !migrating && !migrationReport && (
+            <div className="mt-3 flex flex-col items-center gap-3 py-4">
+              <p className="text-sm text-text-secondary">
+                Ready to rewrite all YAML image references to R2 hash filenames and delete local image files.
+              </p>
+              <p className="rounded bg-bg-primary px-3 py-2 text-[10px] text-text-muted">
+                This will modify zone YAMLs and application.yaml in place.
+              </p>
+            </div>
+          )}
+
+          {migrating && (
+            <div className="mt-3 flex items-center gap-2 py-4">
+              <div className="h-4 w-4 rounded-full border-2 border-accent border-t-transparent animate-spin" />
+              <span className="text-xs text-text-secondary">Migrating YAML references...</span>
+            </div>
+          )}
+
+          {error && (
+            <div className="mt-3 rounded bg-status-error/10 px-3 py-2 text-xs text-status-error">
+              {error}
+            </div>
+          )}
+
+          {/* Done phase */}
+          {migrationReport && (
+            <div className="mt-3 flex flex-col gap-2">
+              <div className="rounded bg-bg-primary px-3 py-2 text-xs">
+                <div className="mb-1 font-medium text-text-primary">Migration Complete</div>
+                <div className="flex flex-col gap-0.5 text-text-secondary">
+                  <span>{migrationReport.zone_files_updated} zone files updated ({migrationReport.zone_refs_rewritten} image references)</span>
+                  <span>{migrationReport.config_refs_rewritten} config image references rewritten</span>
+                  <span>{migrationReport.images_deleted} local image files deleted</span>
+                </div>
+              </div>
+              {migrationReport.errors.length > 0 && (
+                <div className="rounded bg-status-error/10 px-3 py-2 text-xs">
+                  <div className="mb-1 font-medium text-status-error">
+                    {migrationReport.errors.length} warnings
+                  </div>
+                  <div className="flex max-h-32 flex-col gap-0.5 overflow-y-auto text-text-muted">
+                    {migrationReport.errors.map((err, i) => (
+                      <span key={i}>{err}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
           )}
         </div>
 
@@ -214,21 +311,59 @@ export function BatchLegacyImport({ onClose }: { onClose: () => void }) {
         <div className="flex justify-end gap-2 border-t border-border-default px-5 py-3">
           <button
             onClick={onClose}
-            disabled={running}
+            disabled={running || migrating}
             className="rounded bg-bg-elevated px-4 py-1.5 text-xs font-medium text-text-primary transition-colors hover:bg-bg-hover disabled:opacity-50"
           >
-            {finished ? "Done" : "Cancel"}
+            {phase === "done" ? "Done" : "Cancel"}
           </button>
-          {targets !== null && targets.length > 0 && !running && !finished && (
+
+          {/* Import button */}
+          {needsImport && !running && (
             <button
               onClick={handleImport}
               className="rounded bg-gradient-to-r from-accent-muted to-accent px-4 py-1.5 text-xs font-medium text-accent-emphasis transition-all hover:shadow-[var(--glow-aurum)] hover:brightness-110"
             >
-              Import {targets.length} Images
+              Import {targets!.length} Images
+            </button>
+          )}
+
+          {/* Sync button */}
+          {needsSync && (
+            <button
+              onClick={handleSync}
+              className="rounded bg-gradient-to-r from-accent-muted to-accent px-4 py-1.5 text-xs font-medium text-accent-emphasis transition-all hover:shadow-[var(--glow-aurum)] hover:brightness-110"
+            >
+              Sync to R2
+            </button>
+          )}
+
+          {/* Migrate button */}
+          {phase === "migrate" && !migrating && (
+            <button
+              onClick={handleMigrate}
+              className="rounded bg-gradient-to-r from-accent-muted to-accent px-4 py-1.5 text-xs font-medium text-accent-emphasis transition-all hover:shadow-[var(--glow-aurum)] hover:brightness-110"
+            >
+              Migrate YAMLs
             </button>
           )}
         </div>
       </div>
     </div>
+  );
+}
+
+function StepBadge({ label, active, done }: { label: string; active: boolean; done: boolean }) {
+  return (
+    <span
+      className={`rounded px-1.5 py-0.5 ${
+        done
+          ? "bg-status-success/15 text-status-success"
+          : active
+            ? "bg-accent/15 text-accent"
+            : "bg-bg-primary text-text-muted"
+      }`}
+    >
+      {label}
+    </span>
   );
 }

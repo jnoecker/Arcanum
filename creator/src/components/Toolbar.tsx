@@ -2,9 +2,12 @@ import { useState } from "react";
 import { useProjectStore } from "@/stores/projectStore";
 import { useServerStore } from "@/stores/serverStore";
 import { useZoneStore } from "@/stores/zoneStore";
+import { useValidationStore } from "@/stores/validationStore";
 import { useServerManager } from "@/lib/useServerManager";
 import { saveAllZones } from "@/lib/saveZone";
+import { validateAllZones } from "@/lib/validateZone";
 import { ErrorDialog } from "./ErrorDialog";
+import { ValidationPanel } from "./ValidationPanel";
 
 const STATUS_COLORS: Record<string, string> = {
   stopped: "bg-server-stopped",
@@ -28,6 +31,9 @@ export function Toolbar() {
   const dirtyCount = useZoneStore(
     (s) => Array.from(s.zones.values()).filter((z) => z.dirty).length,
   );
+  const zones = useZoneStore((s) => s.zones);
+  const setValidationResults = useValidationStore((s) => s.setResults);
+  const openValidationPanel = useValidationStore((s) => s.openPanel);
   const { startServer, stopServer } = useServerManager();
   const [errors, setErrors] = useState<string[] | null>(null);
   const [saving, setSaving] = useState(false);
@@ -120,9 +126,19 @@ export function Toolbar() {
       >
         {saving ? "Saving..." : dirtyCount > 0 ? `Save All (${dirtyCount})` : "Save All"}
       </button>
-      <button className="rounded px-3 py-1 text-xs font-medium text-text-primary transition-colors hover:bg-bg-elevated">
+      <button
+        onClick={() => {
+          const results = validateAllZones(zones);
+          setValidationResults(results);
+          openValidationPanel();
+        }}
+        disabled={zones.size === 0}
+        className="rounded px-3 py-1 text-xs font-medium transition-colors enabled:text-text-primary enabled:hover:bg-bg-elevated disabled:cursor-not-allowed disabled:opacity-40"
+      >
         Validate
       </button>
+
+      <ValidationPanel />
 
       {errors && (
         <ErrorDialog

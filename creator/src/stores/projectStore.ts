@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { saveUIState } from "@/lib/uiPersistence";
 import type { Project, Tab, ConfigSubTab } from "@/types/project";
 
 interface ProjectStore {
@@ -13,6 +14,9 @@ interface ProjectStore {
   openTab: (tab: Tab) => void;
   closeTab: (tabId: string) => void;
   setActiveTab: (tabId: string) => void;
+
+  /** Restore previously open tabs after project load. */
+  restoreTabs: (tabs: Tab[], activeTabId: string | null) => void;
   setConfigSubTab: (subTab: ConfigSubTab) => void;
 }
 
@@ -54,5 +58,21 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
 
   setActiveTab: (tabId) => set({ activeTabId: tabId }),
 
+  restoreTabs: (tabs, activeTabId) => set({ tabs, activeTabId }),
   setConfigSubTab: (subTab) => set({ configSubTab: subTab }),
 }));
+
+// ─── Debounced persistence ─────────────────────────────────────────
+let persistTimer: ReturnType<typeof setTimeout> | null = null;
+
+useProjectStore.subscribe((state) => {
+  if (!state.project) return;
+  if (persistTimer) clearTimeout(persistTimer);
+  persistTimer = setTimeout(() => {
+    saveUIState({
+      lastProjectPath: state.project!.mudDir,
+      tabs: state.tabs,
+      activeTabId: state.activeTabId,
+    });
+  }, 500);
+});

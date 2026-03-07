@@ -2,6 +2,7 @@ import { useState, useCallback, useMemo } from "react";
 import type { ConfigPanelProps } from "./types";
 import type { RaceDefinitionConfig } from "@/types/config";
 import type { StatMap } from "@/types/world";
+import { useStatMods } from "@/lib/useStatMods";
 import {
   Section,
   FieldRow,
@@ -189,19 +190,9 @@ function RaceStatMods({
   statDefs: Record<string, { displayName: string; baseStat: number }>;
   onChange: (mods: StatMap | undefined) => void;
 }) {
-  const mods = statMods ?? {};
+  const { mods, updateMod } = useStatMods(statMods, onChange);
 
   const netTotal = Object.values(mods).reduce((sum, v) => sum + v, 0);
-
-  const updateMod = (statId: string, value: number) => {
-    const next = { ...mods };
-    if (value === 0) {
-      delete next[statId];
-    } else {
-      next[statId] = value;
-    }
-    onChange(Object.keys(next).length > 0 ? next : undefined);
-  };
 
   return (
     <div className="mt-1 border-t border-border-muted pt-1.5">

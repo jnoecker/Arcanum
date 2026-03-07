@@ -1,6 +1,8 @@
 import { Section, FieldRow, TextInput } from "@/components/ui/FormWidgets";
 import { EntityArtGenerator } from "@/components/ui/EntityArtGenerator";
 import { MediaPicker } from "@/components/ui/MediaPicker";
+import { MusicGenerator } from "@/components/ui/MusicGenerator";
+import { VideoGenerator } from "@/components/ui/VideoGenerator";
 import type { ArtStyle } from "@/lib/arcanumPrompts";
 import type { AssetContext } from "@/types/assets";
 
@@ -31,6 +33,7 @@ export function MediaSection({
   getPrompt,
   assetType,
   context,
+  vibe,
 }: {
   image: string | undefined;
   onImageChange: (v: string | undefined) => void;
@@ -39,6 +42,7 @@ export function MediaSection({
   getPrompt?: (style: ArtStyle) => string;
   assetType?: string;
   context?: AssetContext;
+  vibe?: string;
 }) {
   return (
     <Section title="Media">
@@ -57,6 +61,7 @@ export function MediaSection({
             onAccept={(filePath) => onImageChange(filePath)}
             assetType={assetType}
             context={context}
+            vibe={vibe}
           />
         )}
         {onVideoChange && (
@@ -74,6 +79,12 @@ export function MediaSection({
               mediaType="video"
               assetType="video"
             />
+            {image && (
+              <VideoGenerator
+                imagePath={image}
+                onAccept={(filePath) => onVideoChange(filePath)}
+              />
+            )}
           </>
         )}
       </div>
@@ -88,6 +99,9 @@ export function AudioSection({
   onAmbientChange,
   audio,
   onAudioChange,
+  roomTitle,
+  roomDescription,
+  vibe,
 }: {
   music?: string;
   onMusicChange?: (v: string | undefined) => void;
@@ -95,6 +109,9 @@ export function AudioSection({
   onAmbientChange?: (v: string | undefined) => void;
   audio?: string;
   onAudioChange?: (v: string | undefined) => void;
+  roomTitle?: string;
+  roomDescription?: string;
+  vibe?: string;
 }) {
   const hasAny = onMusicChange || onAmbientChange || onAudioChange;
   if (!hasAny) return null;
@@ -116,6 +133,13 @@ export function AudioSection({
               onChange={onMusicChange}
               mediaType="audio"
               assetType="music"
+            />
+            <MusicGenerator
+              roomTitle={roomTitle}
+              roomDescription={roomDescription}
+              vibe={vibe}
+              currentAudio={music}
+              onAccept={(filePath) => onMusicChange(filePath)}
             />
           </>
         )}

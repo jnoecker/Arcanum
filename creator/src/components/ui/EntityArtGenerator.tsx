@@ -1,26 +1,30 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
 import { useAssetStore } from "@/stores/assetStore";
 import { useProjectStore } from "@/stores/projectStore";
 import { useImageSrc, isLegacyImagePath } from "@/lib/useImageSrc";
 import { getEnhanceSystemPrompt, ART_STYLE_LABELS, type ArtStyle } from "@/lib/arcanumPrompts";
-import { IMAGE_MODELS } from "@/types/assets";
+import { IMAGE_MODELS, ENTITY_DIMENSIONS, DIMENSION_PRESETS } from "@/types/assets";
 import type { AssetContext, GeneratedImage } from "@/types/assets";
+import { VariantStrip } from "./VariantStrip";
 
 type Stage = "idle" | "generating" | "preview";
 
 interface EntityArtGeneratorProps {
-  /** Returns the composed prompt for the given art style */
   getPrompt: (style: ArtStyle) => string;
-  /** Current image value (path or URL) */
   currentImage?: string;
-  /** Called when user accepts a generated image */
   onAccept: (filePath: string) => void;
-  /** Asset type for manifest (e.g. "entity_portrait", "background") */
   assetType?: string;
-  /** Context tags for the asset manifest */
   context?: AssetContext;
+  vibe?: string;
+}
+
+function computeVariantGroup(context?: AssetContext): string {
+  if (!context) return "";
+  const { entity_type, zone, entity_id } = context;
+  if (!entity_type || !entity_id) return "";
+  return `${entity_type}:${zone}:${entity_id}`;
 }
 
 export function EntityArtGenerator({
@@ -29,6 +33,7 @@ export function EntityArtGenerator({
   onAccept,
   assetType,
   context,
+  vibe,
 }: EntityArtGeneratorProps) {
   const settings = useAssetStore((s) => s.settings);
   const artStyle = useAssetStore((s) => s.artStyle);
@@ -43,12 +48,34 @@ export function EntityArtGenerator({
   const [showPrompt, setShowPrompt] = useState(false);
   const [enhancing, setEnhancing] = useState(false);
   const [importing, setImporting] = useState(false);
+  const [dimOverride, setDimOverride] = useState<{ width: number; height: number } | null>(null);
 
-  const hasApiKey = settings && settings.deepinfra_api_key.length > 0;
+  const imageProvider = settings?.image_provider ?? "deepinfra";
+  const hasApiKey = settings && (
+    (imageProvider === "deepinfra" && settings.deepinfra_api_key.length > 0) ||
+    (imageProvider === "runware" && settings.runware_api_key.length > 0)
+  );
+  const hasLlmKey = settings && (
+    settings.deepinfra_api_key.length > 0 ||
+    settings.anthropic_api_key.length > 0 ||
+    settings.openrouter_api_key.length > 0
+  );
   const basePrompt = getPrompt(artStyle);
   const activePrompt = editedPrompt ?? basePrompt;
+  const variantGroup = computeVariantGroup(context);
 
-  // ─── Auto-import legacy images ───────────────────────────────────
+  // Determine dimensions from entity type
+  const entityType = context?.entity_type ?? "";
+  const defaultDims = ENTITY_DIMENSIONS[entityType] ?? { width: 1024, height: 1024, label: "1024×1024" };
+  const activeDims = dimOverride ?? defaultDims;
+
+  // Filter models by configured provider
+  const availableModels = useMemo(
+    () => IMAGE_MODELS.filter((m) => m.provider === imageProvider),
+    [imageProvider],
+  );
+
+  // Auto-import legacy images
   const importedRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
@@ -56,7 +83,6 @@ export function EntityArtGenerator({
     if (importedRef.current.has(currentImage)) return;
     importedRef.current.add(currentImage);
 
-    // Try world/images/ first, fall back to images/
     const candidates = [
       `${mudDir}/src/main/resources/world/images/${currentImage}`,
       `${mudDir}/src/main/resources/images/${currentImage}`,
@@ -73,7 +99,6 @@ export function EntityArtGenerator({
     })();
   }, [currentImage, mudDir, assetType, context, importAsset]);
 
-  // Reset edited prompt when style changes
   const handleStyleChange = (style: ArtStyle) => {
     setArtStyle(style);
     setEditedPrompt(null);
@@ -83,14 +108,22 @@ export function EntityArtGenerator({
     setStage("generating");
     setError(null);
     try {
-      const model = IMAGE_MODELS[0]; // FLUX Schnell for fast iteration
-      const image = await invoke<GeneratedImage>("generate_image", {
+      const model = availableModels[0];
+      if (!model) {
+        throw new Error(`No models available for provider: ${imageProvider}`);
+      }
+
+      const command = imageProvider === "runware"
+        ? "runware_generate_image"
+        : "generate_image";
+
+      const image = await invoke<GeneratedImage>(command, {
         prompt: activePrompt,
         model: model.id,
-        width: 1024,
-        height: 1024,
+        width: activeDims.width,
+        height: activeDims.height,
         steps: model.defaultSteps,
-        guidance: null,
+        guidance: "defaultGuidance" in model ? model.defaultGuidance : null,
       });
       setResult(image);
       setStage("preview");
@@ -104,9 +137,16 @@ export function EntityArtGenerator({
     setEnhancing(true);
     setError(null);
     try {
-      const enhanced = await invoke<string>("enhance_prompt", {
-        prompt: activePrompt,
-        systemPrompt: getEnhanceSystemPrompt(artStyle),
+      const systemPrompt = getEnhanceSystemPrompt(artStyle);
+      // Inject zone vibe as additional context for the LLM
+      const vibeContext = vibe
+        ? `\n\nZone atmosphere/vibe to weave into the image prompt:\n${vibe}`
+        : "";
+      const userPrompt = `${activePrompt}${vibeContext}`;
+
+      const enhanced = await invoke<string>("llm_complete", {
+        systemPrompt,
+        userPrompt,
       });
       setEditedPrompt(enhanced);
     } catch (e) {
@@ -144,9 +184,8 @@ export function EntityArtGenerator({
   const handleAccept = async () => {
     if (!result) return;
     onAccept(result.file_path);
-    // Save to asset manifest with context (best-effort)
     if (assetType) {
-      await acceptAsset(result, assetType, undefined, context).catch(() => {});
+      await acceptAsset(result, assetType, undefined, context, variantGroup, true).catch(() => {});
     }
     setStage("idle");
     setResult(null);
@@ -157,17 +196,14 @@ export function EntityArtGenerator({
     setStage("idle");
   };
 
-  // Load saved image from disk via IPC
   const savedImageSrc = useImageSrc(currentImage);
 
-  // Show generated preview (data_url) or saved image
   const previewSrc = stage === "preview" && result
     ? result.data_url
     : savedImageSrc;
 
   return (
     <div className="flex flex-col gap-2">
-      {/* Current / preview image */}
       {previewSrc && (
         <div className="overflow-hidden rounded border border-border-default">
           <img
@@ -181,11 +217,20 @@ export function EntityArtGenerator({
         </div>
       )}
 
-      {/* Controls */}
+      {/* Variant history strip */}
+      {variantGroup && stage === "idle" && (
+        <VariantStrip
+          variantGroup={variantGroup}
+          onSelect={(entry) => {
+            onAccept(`${assetsDir}\\images\\${entry.file_name}`);
+          }}
+        />
+      )}
+
       {stage === "idle" && (
         <div className="flex flex-col gap-1">
           {/* Style toggle */}
-          {hasApiKey && (
+          {(hasApiKey || hasLlmKey) && (
             <div className="flex gap-0.5 rounded bg-bg-primary p-0.5">
               {(Object.entries(ART_STYLE_LABELS) as [ArtStyle, string][]).map(
                 ([key, label]) => (
@@ -205,6 +250,30 @@ export function EntityArtGenerator({
             </div>
           )}
 
+          {/* Dimension override */}
+          {hasApiKey && (
+            <div className="flex items-center gap-1">
+              <span className="text-[10px] text-text-muted">{activeDims.width}×{activeDims.height}</span>
+              <select
+                value={dimOverride ? `${dimOverride.width}x${dimOverride.height}` : ""}
+                onChange={(e) => {
+                  if (!e.target.value) {
+                    setDimOverride(null);
+                  } else {
+                    const parts = e.target.value.split("x").map(Number);
+                    setDimOverride({ width: parts[0]!, height: parts[1]! });
+                  }
+                }}
+                className="rounded border border-border-default bg-bg-primary px-1 py-0.5 text-[10px] text-text-secondary outline-none"
+              >
+                <option value="">Default</option>
+                {DIMENSION_PRESETS.map((p) => (
+                  <option key={p.label} value={`${p.width}x${p.height}`}>{p.label}</option>
+                ))}
+              </select>
+            </div>
+          )}
+
           <div className="flex gap-1">
             {hasApiKey && (
               <button
@@ -221,7 +290,7 @@ export function EntityArtGenerator({
             >
               {importing ? "Importing..." : "Pick Image"}
             </button>
-            {hasApiKey && (
+            {(hasApiKey || hasLlmKey) && (
               <button
                 onClick={() => setShowPrompt((v) => !v)}
                 className="rounded px-1.5 py-1 text-[10px] text-text-muted transition-colors hover:text-text-secondary"
@@ -231,7 +300,7 @@ export function EntityArtGenerator({
             )}
           </div>
 
-          {showPrompt && hasApiKey && (
+          {showPrompt && (hasApiKey || hasLlmKey) && (
             <div className="flex flex-col gap-1">
               <textarea
                 value={activePrompt}
@@ -256,6 +325,11 @@ export function EntityArtGenerator({
                   </button>
                 )}
               </div>
+              {vibe && (
+                <p className="text-[10px] italic text-text-muted">
+                  Zone vibe will be injected during enhancement
+                </p>
+              )}
             </div>
           )}
         </div>

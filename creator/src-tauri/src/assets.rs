@@ -24,6 +24,10 @@ pub struct AssetEntry {
     pub height: u32,
     #[serde(default = "default_sync_status")]
     pub sync_status: String,
+    #[serde(default)]
+    pub variant_group: String,
+    #[serde(default)]
+    pub is_active: bool,
 }
 
 fn default_sync_status() -> String {
@@ -95,7 +99,12 @@ pub async fn accept_asset(
     file_name: String,
     width: u32,
     height: u32,
+    variant_group: Option<String>,
+    is_active: Option<bool>,
 ) -> Result<AssetEntry, String> {
+    let vg = variant_group.unwrap_or_default();
+    let active = is_active.unwrap_or(false);
+
     let entry = AssetEntry {
         id,
         hash,
@@ -109,11 +118,21 @@ pub async fn accept_asset(
         width,
         height,
         sync_status: "local".to_string(),
+        variant_group: vg.clone(),
+        is_active: active,
     };
 
     let mut manifest = load_manifest(&app).await?;
     // Avoid duplicates by hash
     manifest.assets.retain(|a| a.hash != entry.hash);
+    // If setting as active, deactivate other variants in the same group
+    if active && !vg.is_empty() {
+        for a in manifest.assets.iter_mut() {
+            if a.variant_group == vg {
+                a.is_active = false;
+            }
+        }
+    }
     manifest.assets.push(entry.clone());
     save_manifest(&app, &manifest).await?;
 
@@ -321,10 +340,103 @@ pub async fn import_asset(
         width,
         height,
         sync_status: "local".to_string(),
+        variant_group: String::new(),
+        is_active: false,
     };
 
     let mut manifest = load_manifest(&app).await?;
     // Dedup by hash — update existing entry if same content
+    manifest.assets.retain(|a| a.hash != entry.hash);
+    manifest.assets.push(entry.clone());
+    save_manifest(&app, &manifest).await?;
+
+    Ok(entry)
+}
+
+#[tauri::command]
+pub async fn set_active_variant(
+    app: AppHandle,
+    variant_group: String,
+    asset_id: String,
+) -> Result<(), String> {
+    let mut manifest = load_manifest(&app).await?;
+    for a in manifest.assets.iter_mut() {
+        if a.variant_group == variant_group {
+            a.is_active = a.id == asset_id;
+        }
+    }
+    save_manifest(&app, &manifest).await
+}
+
+#[tauri::command]
+pub async fn list_variants(
+    app: AppHandle,
+    variant_group: String,
+) -> Result<Vec<AssetEntry>, String> {
+    let manifest = load_manifest(&app).await?;
+    Ok(manifest
+        .assets
+        .into_iter()
+        .filter(|a| a.variant_group == variant_group)
+        .collect())
+}
+
+#[tauri::command]
+pub async fn save_bytes_as_asset(
+    app: AppHandle,
+    bytes_b64: String,
+    asset_type: String,
+    context: Option<AssetContext>,
+    variant_group: Option<String>,
+) -> Result<AssetEntry, String> {
+    let bytes = base64::engine::general_purpose::STANDARD
+        .decode(&bytes_b64)
+        .map_err(|e| format!("Failed to decode base64: {e}"))?;
+
+    let mut hasher = Sha256::new();
+    hasher.update(&bytes);
+    let hash = format!("{:x}", hasher.finalize());
+
+    let detected = detect_extension(&bytes);
+    let ext = if detected == "bin" { "png" } else { detected };
+    let file_name = format!("{hash}.{ext}");
+
+    let (width, height) = match imagesize::blob_size(&bytes) {
+        Ok(size) => (size.width as u32, size.height as u32),
+        Err(_) => (0, 0),
+    };
+
+    let subdir = media_subdir(ext);
+    let dest_dir = assets_dir(&app)?.join(subdir);
+    tokio::fs::create_dir_all(&dest_dir)
+        .await
+        .map_err(|e| format!("Failed to create {subdir} dir: {e}"))?;
+
+    let dest = dest_dir.join(&file_name);
+    if !dest.exists() {
+        tokio::fs::write(&dest, &bytes)
+            .await
+            .map_err(|e| format!("Failed to write file: {e}"))?;
+    }
+
+    let entry = AssetEntry {
+        id: uuid::Uuid::new_v4().to_string(),
+        hash,
+        prompt: "Background removed".to_string(),
+        enhanced_prompt: String::new(),
+        model: "bg-removal".to_string(),
+        asset_type,
+        context: context.unwrap_or_default(),
+        created_at: Utc::now(),
+        file_name,
+        width,
+        height,
+        sync_status: "local".to_string(),
+        variant_group: variant_group.unwrap_or_default(),
+        is_active: false,
+    };
+
+    let mut manifest = load_manifest(&app).await?;
     manifest.assets.retain(|a| a.hash != entry.hash);
     manifest.assets.push(entry.clone());
     save_manifest(&app, &manifest).await?;

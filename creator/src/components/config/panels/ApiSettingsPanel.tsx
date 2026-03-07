@@ -3,6 +3,17 @@ import { useAssetStore } from "@/stores/assetStore";
 import { IMAGE_MODELS } from "@/types/assets";
 import type { Settings } from "@/types/assets";
 
+const LLM_PROVIDERS = [
+  { id: "deepinfra", label: "DeepInfra", keyField: "deepinfra_api_key" as const },
+  { id: "anthropic", label: "Anthropic (Claude)", keyField: "anthropic_api_key" as const },
+  { id: "openrouter", label: "OpenRouter", keyField: "openrouter_api_key" as const },
+];
+
+const IMAGE_PROVIDERS = [
+  { id: "deepinfra", label: "DeepInfra" },
+  { id: "runware", label: "Runware" },
+];
+
 export function ApiSettingsPanel() {
   const settings = useAssetStore((s) => s.settings);
   const loadSettings = useAssetStore((s) => s.loadSettings);
@@ -39,34 +50,161 @@ export function ApiSettingsPanel() {
 
   const isDirty = JSON.stringify(draft) !== JSON.stringify(settings);
 
+  const filteredModels = IMAGE_MODELS.filter(
+    (m) => m.provider === draft.image_provider,
+  );
+
   return (
     <div className="flex flex-col gap-6">
-      {/* API Key */}
+      {/* ─── API Keys ─────────────────────────────────────────── */}
       <div>
-        <label className="mb-1 block font-display text-[10px] uppercase tracking-widest text-text-muted">
-          DeepInfra API Key
-        </label>
-        <input
-          type="password"
-          value={draft.deepinfra_api_key}
-          onChange={(e) =>
-            setDraft({ ...draft, deepinfra_api_key: e.target.value })
-          }
-          placeholder="Enter your DeepInfra API key"
-          className="w-full rounded border border-border-default bg-bg-primary px-3 py-1.5 text-xs text-text-primary placeholder:text-text-muted outline-none focus:border-accent/50"
-        />
-        <p className="mt-1 text-[10px] text-text-muted">
-          Get your key at deepinfra.com/dash/api_keys
-        </p>
+        <h3 className="mb-3 font-display text-xs uppercase tracking-widest text-text-muted">
+          API Keys
+        </h3>
+        <div className="flex flex-col gap-3">
+          <div>
+            <label className="mb-1 block text-[10px] uppercase tracking-wider text-text-muted">
+              DeepInfra API Key
+            </label>
+            <input
+              type="password"
+              value={draft.deepinfra_api_key}
+              onChange={(e) =>
+                setDraft({ ...draft, deepinfra_api_key: e.target.value })
+              }
+              placeholder="Enter your DeepInfra API key"
+              className="w-full rounded border border-border-default bg-bg-primary px-3 py-1.5 text-xs text-text-primary placeholder:text-text-muted outline-none focus:border-accent/50"
+            />
+            <p className="mt-1 text-[10px] text-text-muted">
+              Get your key at deepinfra.com/dash/api_keys
+            </p>
+          </div>
+
+          <div>
+            <label className="mb-1 block text-[10px] uppercase tracking-wider text-text-muted">
+              Anthropic API Key
+            </label>
+            <input
+              type="password"
+              value={draft.anthropic_api_key}
+              onChange={(e) =>
+                setDraft({ ...draft, anthropic_api_key: e.target.value })
+              }
+              placeholder="Enter your Anthropic API key"
+              className="w-full rounded border border-border-default bg-bg-primary px-3 py-1.5 text-xs text-text-primary placeholder:text-text-muted outline-none focus:border-accent/50"
+            />
+          </div>
+
+          <div>
+            <label className="mb-1 block text-[10px] uppercase tracking-wider text-text-muted">
+              OpenRouter API Key
+            </label>
+            <input
+              type="password"
+              value={draft.openrouter_api_key}
+              onChange={(e) =>
+                setDraft({ ...draft, openrouter_api_key: e.target.value })
+              }
+              placeholder="Enter your OpenRouter API key"
+              className="w-full rounded border border-border-default bg-bg-primary px-3 py-1.5 text-xs text-text-primary placeholder:text-text-muted outline-none focus:border-accent/50"
+            />
+          </div>
+
+          <div>
+            <label className="mb-1 block text-[10px] uppercase tracking-wider text-text-muted">
+              Runware API Key
+            </label>
+            <input
+              type="password"
+              value={draft.runware_api_key}
+              onChange={(e) =>
+                setDraft({ ...draft, runware_api_key: e.target.value })
+              }
+              placeholder="Enter your Runware API key"
+              className="w-full rounded border border-border-default bg-bg-primary px-3 py-1.5 text-xs text-text-primary placeholder:text-text-muted outline-none focus:border-accent/50"
+            />
+          </div>
+        </div>
       </div>
 
-      {/* Default Image Model */}
-      <div>
+      {/* ─── Provider Selection ───────────────────────────────── */}
+      <div className="border-t border-border-default pt-4">
+        <h3 className="mb-3 font-display text-xs uppercase tracking-widest text-text-muted">
+          Providers
+        </h3>
+        <div className="flex flex-col gap-3">
+          <div>
+            <label className="mb-1 block text-[10px] uppercase tracking-wider text-text-muted">
+              Prompt Enhancement LLM
+            </label>
+            <div className="flex flex-col gap-1">
+              {LLM_PROVIDERS.map((p) => (
+                <label
+                  key={p.id}
+                  className={`flex cursor-pointer items-center gap-2 rounded px-3 py-1.5 text-xs transition-colors ${
+                    draft.prompt_llm_provider === p.id
+                      ? "bg-accent/10 text-text-primary"
+                      : "text-text-secondary hover:bg-bg-elevated"
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="llm_provider"
+                    value={p.id}
+                    checked={draft.prompt_llm_provider === p.id}
+                    onChange={() =>
+                      setDraft({ ...draft, prompt_llm_provider: p.id })
+                    }
+                    className="accent-accent"
+                  />
+                  <span className="font-medium">{p.label}</span>
+                  {!draft[p.keyField] && (
+                    <span className="text-[10px] text-text-muted">(no key)</span>
+                  )}
+                </label>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <label className="mb-1 block text-[10px] uppercase tracking-wider text-text-muted">
+              Image Generation Provider
+            </label>
+            <div className="flex flex-col gap-1">
+              {IMAGE_PROVIDERS.map((p) => (
+                <label
+                  key={p.id}
+                  className={`flex cursor-pointer items-center gap-2 rounded px-3 py-1.5 text-xs transition-colors ${
+                    draft.image_provider === p.id
+                      ? "bg-accent/10 text-text-primary"
+                      : "text-text-secondary hover:bg-bg-elevated"
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="image_provider"
+                    value={p.id}
+                    checked={draft.image_provider === p.id}
+                    onChange={() =>
+                      setDraft({ ...draft, image_provider: p.id })
+                    }
+                    className="accent-accent"
+                  />
+                  <span className="font-medium">{p.label}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ─── Image Model ──────────────────────────────────────── */}
+      <div className="border-t border-border-default pt-4">
         <label className="mb-1 block font-display text-[10px] uppercase tracking-widest text-text-muted">
           Default Image Model
         </label>
         <div className="flex flex-col gap-1.5">
-          {IMAGE_MODELS.map((model) => (
+          {filteredModels.map((model) => (
             <label
               key={model.id}
               className={`flex cursor-pointer items-center gap-2 rounded px-3 py-2 text-xs transition-colors ${
@@ -94,7 +232,7 @@ export function ApiSettingsPanel() {
         </div>
       </div>
 
-      {/* Enhance Model */}
+      {/* ─── Enhance Model ────────────────────────────────────── */}
       <div>
         <label className="mb-1 block font-display text-[10px] uppercase tracking-widest text-text-muted">
           Prompt Enhancement Model
@@ -107,9 +245,51 @@ export function ApiSettingsPanel() {
           }
           className="w-full rounded border border-border-default bg-bg-primary px-3 py-1.5 text-xs text-text-primary outline-none focus:border-accent/50"
         />
+        <p className="mt-1 text-[10px] text-text-muted">
+          Used by DeepInfra and OpenRouter providers
+        </p>
       </div>
 
-      {/* R2 Section */}
+      {/* ─── Generation Options ───────────────────────────────── */}
+      <div className="border-t border-border-default pt-4">
+        <h3 className="mb-3 font-display text-xs uppercase tracking-widest text-text-muted">
+          Generation Options
+        </h3>
+        <div className="flex flex-col gap-3">
+          <div>
+            <label className="mb-1 block text-[10px] uppercase tracking-wider text-text-muted">
+              Batch Concurrency
+            </label>
+            <input
+              type="number"
+              min={1}
+              max={20}
+              value={draft.batch_concurrency}
+              onChange={(e) =>
+                setDraft({ ...draft, batch_concurrency: parseInt(e.target.value) || 5 })
+              }
+              className="w-20 rounded border border-border-default bg-bg-primary px-3 py-1.5 text-xs text-text-primary outline-none focus:border-accent/50"
+            />
+            <p className="mt-1 text-[10px] text-text-muted">
+              Max parallel image generations during batch operations
+            </p>
+          </div>
+
+          <label className="flex cursor-pointer items-center gap-2 text-xs text-text-secondary">
+            <input
+              type="checkbox"
+              checked={draft.auto_remove_bg}
+              onChange={(e) =>
+                setDraft({ ...draft, auto_remove_bg: e.target.checked })
+              }
+              className="accent-accent"
+            />
+            Auto-remove background for mob/item sprites during batch generation
+          </label>
+        </div>
+      </div>
+
+      {/* ─── R2 Section ───────────────────────────────────────── */}
       <div className="border-t border-border-default pt-4">
         <h3 className="mb-3 font-display text-xs uppercase tracking-widest text-text-muted">
           Cloudflare R2 (Asset CDN)

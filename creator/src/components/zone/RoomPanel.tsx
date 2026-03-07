@@ -1,6 +1,23 @@
-import { useState, useCallback } from "react";
+import { useCallback } from "react";
 import type { WorldFile, ExitValue } from "@/types/world";
-import { updateRoom, deleteRoom, deleteExit } from "@/lib/zoneEdits";
+import {
+  updateRoom,
+  deleteRoom,
+  deleteExit,
+  addMob,
+  addItem,
+  addShop,
+  addGatheringNode,
+  generateEntityId,
+} from "@/lib/zoneEdits";
+import { EditableField, EditableTextArea, Section, IconButton } from "@/components/ui/FormWidgets";
+
+export type EntityKind = "mob" | "item" | "shop" | "quest" | "gatheringNode" | "recipe";
+
+export interface EntitySelection {
+  kind: EntityKind;
+  id: string;
+}
 
 interface RoomPanelProps {
   zoneId: string;
@@ -8,6 +25,7 @@ interface RoomPanelProps {
   world: WorldFile;
   onWorldChange: (world: WorldFile) => void;
   onRoomDeleted: () => void;
+  onSelectEntity: (selection: EntitySelection) => void;
 }
 
 function resolveExitTarget(exit: string | ExitValue): {
@@ -33,6 +51,7 @@ export function RoomPanel({
   world,
   onWorldChange,
   onRoomDeleted,
+  onSelectEntity,
 }: RoomPanelProps) {
   const room = world.rooms[roomId];
   if (!room) return null;
@@ -91,6 +110,41 @@ export function RoomPanel({
       // Cannot delete start room — error is swallowed, button is hidden anyway
     }
   }, [world, roomId, onWorldChange, onRoomDeleted]);
+
+  // ─── Entity creation ──────────────────────────────────────────
+  const handleAddMob = useCallback(() => {
+    const id = generateEntityId(world, "mobs");
+    const next = addMob(world, id, { name: "New Mob", room: roomId });
+    onWorldChange(next);
+    onSelectEntity({ kind: "mob", id });
+  }, [world, roomId, onWorldChange, onSelectEntity]);
+
+  const handleAddItem = useCallback(() => {
+    const id = generateEntityId(world, "items");
+    const next = addItem(world, id, { displayName: "New Item", room: roomId });
+    onWorldChange(next);
+    onSelectEntity({ kind: "item", id });
+  }, [world, roomId, onWorldChange, onSelectEntity]);
+
+  const handleAddShop = useCallback(() => {
+    const id = generateEntityId(world, "shops");
+    const next = addShop(world, id, { name: "New Shop", room: roomId });
+    onWorldChange(next);
+    onSelectEntity({ kind: "shop", id });
+  }, [world, roomId, onWorldChange, onSelectEntity]);
+
+  const handleAddGatheringNode = useCallback(() => {
+    const id = generateEntityId(world, "gatheringNodes");
+    const next = addGatheringNode(world, id, {
+      displayName: "New Node",
+      keyword: "node",
+      skill: "MINING",
+      yields: [],
+      room: roomId,
+    });
+    onWorldChange(next);
+    onSelectEntity({ kind: "gatheringNode", id });
+  }, [world, roomId, onWorldChange, onSelectEntity]);
 
   return (
     <div className="flex w-72 shrink-0 flex-col overflow-y-auto border-l border-border-default bg-bg-secondary">
@@ -166,83 +220,134 @@ export function RoomPanel({
       </Section>
 
       {/* Mobs */}
-      {mobs.length > 0 && (
-        <Section title={`Mobs (${mobs.length})`}>
-          <ul className="flex flex-col gap-1">
+      <Section
+        title={`Mobs (${mobs.length})`}
+        actions={<IconButton onClick={handleAddMob} title="Add mob">+</IconButton>}
+      >
+        {mobs.length === 0 ? (
+          <p className="text-xs text-text-muted">No mobs in this room</p>
+        ) : (
+          <ul className="flex flex-col gap-0.5">
             {mobs.map(([id, mob]) => (
-              <li key={id} className="text-xs text-text-secondary">
-                <span className="font-medium text-text-primary">{mob.name}</span>
-                <span className="ml-1 text-text-muted">
-                  {mob.tier ?? "standard"} L{mob.level ?? 1}
-                </span>
+              <li key={id}>
+                <button
+                  onClick={() => onSelectEntity({ kind: "mob", id })}
+                  className="w-full rounded px-1 py-0.5 text-left text-xs transition-colors hover:bg-bg-tertiary"
+                >
+                  <span className="font-medium text-text-primary">{mob.name}</span>
+                  <span className="ml-1 text-text-muted">
+                    {mob.tier ?? "standard"} L{mob.level ?? 1}
+                  </span>
+                </button>
               </li>
             ))}
           </ul>
-        </Section>
-      )}
+        )}
+      </Section>
 
       {/* Items */}
-      {items.length > 0 && (
-        <Section title={`Items (${items.length})`}>
-          <ul className="flex flex-col gap-1">
+      <Section
+        title={`Items (${items.length})`}
+        actions={<IconButton onClick={handleAddItem} title="Add item">+</IconButton>}
+      >
+        {items.length === 0 ? (
+          <p className="text-xs text-text-muted">No items in this room</p>
+        ) : (
+          <ul className="flex flex-col gap-0.5">
             {items.map(([id, item]) => (
-              <li key={id} className="text-xs text-text-secondary">
-                <span className="font-medium text-text-primary">
-                  {item.displayName}
-                </span>
-                {item.slot && (
-                  <span className="ml-1 text-text-muted">[{item.slot}]</span>
-                )}
+              <li key={id}>
+                <button
+                  onClick={() => onSelectEntity({ kind: "item", id })}
+                  className="w-full rounded px-1 py-0.5 text-left text-xs transition-colors hover:bg-bg-tertiary"
+                >
+                  <span className="font-medium text-text-primary">
+                    {item.displayName}
+                  </span>
+                  {item.slot && (
+                    <span className="ml-1 text-text-muted">[{item.slot}]</span>
+                  )}
+                </button>
               </li>
             ))}
           </ul>
-        </Section>
-      )}
+        )}
+      </Section>
 
       {/* Shops */}
-      {shops.length > 0 && (
-        <Section title={`Shops (${shops.length})`}>
-          <ul className="flex flex-col gap-1">
+      <Section
+        title={`Shops (${shops.length})`}
+        actions={<IconButton onClick={handleAddShop} title="Add shop">+</IconButton>}
+      >
+        {shops.length === 0 ? (
+          <p className="text-xs text-text-muted">No shops in this room</p>
+        ) : (
+          <ul className="flex flex-col gap-0.5">
             {shops.map(([id, shop]) => (
-              <li key={id} className="text-xs text-text-secondary">
-                <span className="font-medium text-text-primary">{shop.name}</span>
-                <span className="ml-1 text-text-muted">
-                  ({shop.items?.length ?? 0} items)
-                </span>
+              <li key={id}>
+                <button
+                  onClick={() => onSelectEntity({ kind: "shop", id })}
+                  className="w-full rounded px-1 py-0.5 text-left text-xs transition-colors hover:bg-bg-tertiary"
+                >
+                  <span className="font-medium text-text-primary">{shop.name}</span>
+                  <span className="ml-1 text-text-muted">
+                    ({shop.items?.length ?? 0} items)
+                  </span>
+                </button>
               </li>
             ))}
           </ul>
-        </Section>
-      )}
+        )}
+      </Section>
 
       {/* Gathering Nodes */}
-      {gatheringNodes.length > 0 && (
-        <Section title={`Gathering (${gatheringNodes.length})`}>
-          <ul className="flex flex-col gap-1">
+      <Section
+        title={`Gathering (${gatheringNodes.length})`}
+        actions={
+          <IconButton onClick={handleAddGatheringNode} title="Add gathering node">
+            +
+          </IconButton>
+        }
+      >
+        {gatheringNodes.length === 0 ? (
+          <p className="text-xs text-text-muted">No gathering nodes</p>
+        ) : (
+          <ul className="flex flex-col gap-0.5">
             {gatheringNodes.map(([id, node]) => (
-              <li key={id} className="text-xs text-text-secondary">
-                <span className="font-medium text-text-primary">
-                  {node.displayName}
-                </span>
-                <span className="ml-1 text-text-muted">{node.skill}</span>
+              <li key={id}>
+                <button
+                  onClick={() => onSelectEntity({ kind: "gatheringNode", id })}
+                  className="w-full rounded px-1 py-0.5 text-left text-xs transition-colors hover:bg-bg-tertiary"
+                >
+                  <span className="font-medium text-text-primary">
+                    {node.displayName}
+                  </span>
+                  <span className="ml-1 text-text-muted">{node.skill}</span>
+                </button>
               </li>
             ))}
           </ul>
-        </Section>
-      )}
+        )}
+      </Section>
 
       {/* Quests */}
-      {quests.length > 0 && (
-        <Section title={`Quests (${quests.length})`}>
-          <ul className="flex flex-col gap-1">
+      <Section title={`Quests (${quests.length})`}>
+        {quests.length === 0 ? (
+          <p className="text-xs text-text-muted">No quests from this room</p>
+        ) : (
+          <ul className="flex flex-col gap-0.5">
             {quests.map(([id, quest]) => (
-              <li key={id} className="text-xs text-text-secondary">
-                <span className="font-medium text-text-primary">{quest.name}</span>
+              <li key={id}>
+                <button
+                  onClick={() => onSelectEntity({ kind: "quest", id })}
+                  className="w-full rounded px-1 py-0.5 text-left text-xs transition-colors hover:bg-bg-tertiary"
+                >
+                  <span className="font-medium text-text-primary">{quest.name}</span>
+                </button>
               </li>
             ))}
           </ul>
-        </Section>
-      )}
+        )}
+      </Section>
 
       {/* Media */}
       <Section title="Media">
@@ -278,120 +383,3 @@ export function RoomPanel({
   );
 }
 
-// ─── Inline editing components ───────────────────────────────────────
-
-function EditableField({
-  value,
-  onCommit,
-  placeholder,
-  className,
-}: {
-  value: string;
-  onCommit: (value: string) => void;
-  placeholder?: string;
-  className?: string;
-}) {
-  const [editing, setEditing] = useState(false);
-  const [draft, setDraft] = useState(value);
-
-  if (!editing) {
-    return (
-      <div
-        className={`cursor-text rounded px-1 -mx-1 hover:bg-bg-tertiary ${className ?? ""}`}
-        onClick={() => {
-          setDraft(value);
-          setEditing(true);
-        }}
-        title="Click to edit"
-      >
-        {value || <span className="text-text-muted">{placeholder ?? "empty"}</span>}
-      </div>
-    );
-  }
-
-  return (
-    <input
-      autoFocus
-      className={`w-full rounded border border-accent/50 bg-bg-primary px-1 -mx-1 outline-none ${className ?? ""}`}
-      value={draft}
-      onChange={(e) => setDraft(e.target.value)}
-      onBlur={() => {
-        setEditing(false);
-        if (draft !== value) onCommit(draft);
-      }}
-      onKeyDown={(e) => {
-        if (e.key === "Enter") {
-          setEditing(false);
-          if (draft !== value) onCommit(draft);
-        }
-        if (e.key === "Escape") {
-          setEditing(false);
-          setDraft(value);
-        }
-      }}
-    />
-  );
-}
-
-function EditableTextArea({
-  value,
-  onCommit,
-}: {
-  value: string;
-  onCommit: (value: string) => void;
-}) {
-  const [editing, setEditing] = useState(false);
-  const [draft, setDraft] = useState(value);
-
-  if (!editing) {
-    return (
-      <div
-        className="cursor-text rounded px-1 -mx-1 text-xs leading-relaxed text-text-secondary hover:bg-bg-tertiary"
-        onClick={() => {
-          setDraft(value);
-          setEditing(true);
-        }}
-        title="Click to edit"
-      >
-        {value || <span className="text-text-muted">empty</span>}
-      </div>
-    );
-  }
-
-  return (
-    <textarea
-      autoFocus
-      rows={4}
-      className="w-full resize-y rounded border border-accent/50 bg-bg-primary px-1 -mx-1 text-xs leading-relaxed text-text-secondary outline-none"
-      value={draft}
-      onChange={(e) => setDraft(e.target.value)}
-      onBlur={() => {
-        setEditing(false);
-        if (draft !== value) onCommit(draft);
-      }}
-      onKeyDown={(e) => {
-        if (e.key === "Escape") {
-          setEditing(false);
-          setDraft(value);
-        }
-      }}
-    />
-  );
-}
-
-function Section({
-  title,
-  children,
-}: {
-  title: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="border-b border-border-muted px-4 py-3">
-      <h4 className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-text-muted">
-        {title}
-      </h4>
-      {children}
-    </div>
-  );
-}

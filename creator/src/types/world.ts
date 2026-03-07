@@ -88,6 +88,7 @@ export interface BehaviorParams {
   fleeHpPercent?: number;
   aggroMessage?: string;
   fleeMessage?: string;
+  maxWanderDistance?: number;
 }
 
 export interface ItemFile {
@@ -181,6 +182,7 @@ export interface RecipeFile {
   station?: string;
   stationBonus?: number;
   xpReward?: number;
+  image?: string;
 }
 
 export interface RecipeMaterialFile {

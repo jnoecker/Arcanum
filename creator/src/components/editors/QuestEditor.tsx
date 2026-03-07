@@ -1,0 +1,235 @@
+import { useCallback } from "react";
+import type {
+  WorldFile,
+  QuestFile,
+  QuestObjectiveFile,
+  QuestRewardsFile,
+} from "@/types/world";
+import { updateQuest, deleteQuest } from "@/lib/zoneEdits";
+import {
+  Section,
+  FieldRow,
+  TextInput,
+  NumberInput,
+  SelectInput,
+  IconButton,
+} from "@/components/ui/FormWidgets";
+
+interface QuestEditorProps {
+  zoneId: string;
+  questId: string;
+  world: WorldFile;
+  onWorldChange: (world: WorldFile) => void;
+  onDelete: () => void;
+}
+
+const COMPLETION_OPTIONS = [
+  { value: "AUTO", label: "Auto" },
+  { value: "NPC_TURN_IN", label: "NPC Turn-in" },
+];
+
+const OBJECTIVE_TYPES = [
+  { value: "KILL", label: "Kill" },
+  { value: "COLLECT", label: "Collect" },
+];
+
+export function QuestEditor({
+  zoneId: _zoneId,
+  questId,
+  world,
+  onWorldChange,
+  onDelete,
+}: QuestEditorProps) {
+  const quest = world.quests?.[questId];
+  if (!quest) return null;
+
+  const zoneMobs = Object.entries(world.mobs ?? {}).map(([id, m]) => ({
+    value: id,
+    label: `${m.name} (${id})`,
+  }));
+
+  const patch = useCallback(
+    (p: Partial<QuestFile>) => onWorldChange(updateQuest(world, questId, p)),
+    [world, questId, onWorldChange],
+  );
+
+  const handleDelete = useCallback(() => {
+    onWorldChange(deleteQuest(world, questId));
+    onDelete();
+  }, [world, questId, onWorldChange, onDelete]);
+
+  // ─── Objective helpers ────────────────────────────────────────
+  const objectives = quest.objectives ?? [];
+
+  const handleAddObjective = useCallback(() => {
+    const next: QuestObjectiveFile[] = [
+      ...objectives,
+      { type: "KILL", targetKey: "", count: 1 },
+    ];
+    patch({ objectives: next });
+  }, [objectives, patch]);
+
+  const handleUpdateObjective = useCallback(
+    (index: number, field: keyof QuestObjectiveFile, value: string | number) => {
+      const next = [...objectives];
+      next[index] = { ...next[index], [field]: value } as QuestObjectiveFile;
+      patch({ objectives: next });
+    },
+    [objectives, patch],
+  );
+
+  const handleDeleteObjective = useCallback(
+    (index: number) => {
+      const next = objectives.filter((_, i) => i !== index);
+      patch({ objectives: next.length > 0 ? next : undefined });
+    },
+    [objectives, patch],
+  );
+
+  // ─── Rewards helpers ──────────────────────────────────────────
+  const rewards = quest.rewards ?? {};
+
+  const handleRewardChange = useCallback(
+    (field: keyof QuestRewardsFile, value: number | undefined) => {
+      const next: QuestRewardsFile = { ...rewards, [field]: value };
+      const hasReward = (next.xp ?? 0) > 0 || (next.gold ?? 0) > 0;
+      patch({ rewards: hasReward ? next : undefined });
+    },
+    [rewards, patch],
+  );
+
+  return (
+    <>
+      <Section title="Basics">
+        <div className="flex flex-col gap-1.5">
+          <FieldRow label="Name">
+            <TextInput value={quest.name} onCommit={(v) => patch({ name: v })} />
+          </FieldRow>
+          <FieldRow label="Description">
+            <TextInput
+              value={quest.description ?? ""}
+              onCommit={(v) => patch({ description: v || undefined })}
+              placeholder="none"
+            />
+          </FieldRow>
+          <FieldRow label="Giver (mob)">
+            <SelectInput
+              value={quest.giver}
+              options={zoneMobs}
+              onCommit={(v) => patch({ giver: v })}
+              placeholder="— select mob —"
+            />
+          </FieldRow>
+          <FieldRow label="Completion">
+            <SelectInput
+              value={quest.completionType ?? "AUTO"}
+              options={COMPLETION_OPTIONS}
+              onCommit={(v) => patch({ completionType: v })}
+            />
+          </FieldRow>
+        </div>
+      </Section>
+
+      <Section
+        title={`Objectives (${objectives.length})`}
+        actions={
+          <IconButton onClick={handleAddObjective} title="Add objective">
+            +
+          </IconButton>
+        }
+      >
+        {objectives.length === 0 ? (
+          <p className="text-xs text-text-muted">No objectives</p>
+        ) : (
+          <div className="flex flex-col gap-2">
+            {objectives.map((obj, i) => (
+              <div
+                key={i}
+                className="rounded border border-border-muted p-1.5"
+              >
+                <div className="mb-1 flex items-center justify-between">
+                  <span className="text-[10px] font-medium text-text-muted">
+                    #{i + 1}
+                  </span>
+                  <IconButton
+                    onClick={() => handleDeleteObjective(i)}
+                    title="Remove objective"
+                    danger
+                  >
+                    &times;
+                  </IconButton>
+                </div>
+                <div className="flex flex-col gap-1">
+                  <FieldRow label="Type">
+                    <SelectInput
+                      value={obj.type}
+                      options={OBJECTIVE_TYPES}
+                      onCommit={(v) => handleUpdateObjective(i, "type", v)}
+                    />
+                  </FieldRow>
+                  <FieldRow label="Target">
+                    <TextInput
+                      value={obj.targetKey}
+                      onCommit={(v) =>
+                        handleUpdateObjective(i, "targetKey", v)
+                      }
+                      placeholder="mob/item ID"
+                    />
+                  </FieldRow>
+                  <FieldRow label="Count">
+                    <NumberInput
+                      value={obj.count}
+                      onCommit={(v) =>
+                        handleUpdateObjective(i, "count", v ?? 1)
+                      }
+                      min={1}
+                    />
+                  </FieldRow>
+                  <FieldRow label="Description">
+                    <TextInput
+                      value={obj.description ?? ""}
+                      onCommit={(v) =>
+                        handleUpdateObjective(i, "description", v)
+                      }
+                      placeholder="optional"
+                    />
+                  </FieldRow>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </Section>
+
+      <Section title="Rewards">
+        <div className="flex flex-col gap-1.5">
+          <FieldRow label="XP">
+            <NumberInput
+              value={rewards.xp}
+              onCommit={(v) => handleRewardChange("xp", v)}
+              placeholder="0"
+              min={0}
+            />
+          </FieldRow>
+          <FieldRow label="Gold">
+            <NumberInput
+              value={rewards.gold}
+              onCommit={(v) => handleRewardChange("gold", v)}
+              placeholder="0"
+              min={0}
+            />
+          </FieldRow>
+        </div>
+      </Section>
+
+      <div className="px-4 py-3">
+        <button
+          onClick={handleDelete}
+          className="w-full rounded border border-status-danger/40 px-2 py-1.5 text-xs text-status-danger transition-colors hover:bg-status-danger/10"
+        >
+          Delete Quest
+        </button>
+      </div>
+    </>
+  );
+}

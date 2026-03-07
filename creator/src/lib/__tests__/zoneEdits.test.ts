@@ -6,6 +6,25 @@ import {
   addExit,
   deleteExit,
   generateRoomId,
+  addMob,
+  updateMob,
+  deleteMob,
+  addItem,
+  updateItem,
+  deleteItem,
+  addShop,
+  updateShop,
+  deleteShop,
+  addQuest,
+  updateQuest,
+  deleteQuest,
+  addGatheringNode,
+  updateGatheringNode,
+  deleteGatheringNode,
+  addRecipe,
+  updateRecipe,
+  deleteRecipe,
+  generateEntityId,
 } from "../zoneEdits";
 import type { WorldFile } from "@/types/world";
 
@@ -164,5 +183,182 @@ describe("generateRoomId", () => {
     const id = generateRoomId(world);
     expect(id).toMatch(/^test_room\d+$/);
     expect(world.rooms[id]).toBeUndefined();
+  });
+});
+
+// ─── Mob CRUD ─────────────────────────────────────────────────────────
+
+describe("addMob", () => {
+  it("adds a mob to the world", () => {
+    const world = makeWorld();
+    const next = addMob(world, "goblin", { name: "Goblin", room: "room1" });
+    expect(next.mobs?.goblin?.name).toBe("Goblin");
+    expect(world.mobs?.goblin).toBeUndefined();
+  });
+
+  it("throws if mob already exists", () => {
+    const world = makeWorld();
+    expect(() =>
+      addMob(world, "rat", { name: "Rat2", room: "room1" }),
+    ).toThrow("already exists");
+  });
+
+  it("throws if room does not exist", () => {
+    const world = makeWorld();
+    expect(() =>
+      addMob(world, "goblin", { name: "Goblin", room: "no_room" }),
+    ).toThrow("does not exist");
+  });
+});
+
+describe("updateMob", () => {
+  it("patches mob fields immutably", () => {
+    const world = makeWorld();
+    const next = updateMob(world, "rat", { name: "Giant Rat", level: 5 });
+    expect(next.mobs?.rat?.name).toBe("Giant Rat");
+    expect(next.mobs?.rat?.level).toBe(5);
+    expect(world.mobs?.rat?.name).toBe("Rat");
+  });
+});
+
+describe("deleteMob", () => {
+  it("removes the mob", () => {
+    const world = makeWorld();
+    const next = deleteMob(world, "rat");
+    expect(next.mobs?.rat).toBeUndefined();
+  });
+});
+
+// ─── Item CRUD ────────────────────────────────────────────────────────
+
+describe("addItem", () => {
+  it("adds an item to the world", () => {
+    const world = makeWorld();
+    const next = addItem(world, "shield", {
+      displayName: "Shield",
+      room: "room1",
+    });
+    expect(next.items?.shield?.displayName).toBe("Shield");
+  });
+});
+
+describe("deleteItem", () => {
+  it("removes item and cleans up shop inventories and mob drops", () => {
+    const world = makeWorld();
+    world.mobs!.rat.drops = [{ itemId: "sword", chance: 50 }];
+    const next = deleteItem(world, "sword");
+    expect(next.items?.sword).toBeUndefined();
+    expect(next.shops?.vendor?.items).toEqual([]);
+    expect(next.mobs?.rat?.drops).toEqual([]);
+  });
+});
+
+// ─── Shop CRUD ────────────────────────────────────────────────────────
+
+describe("addShop", () => {
+  it("adds a shop", () => {
+    const world = makeWorld();
+    const next = addShop(world, "market", { name: "Market", room: "room1" });
+    expect(next.shops?.market?.name).toBe("Market");
+  });
+});
+
+describe("deleteShop", () => {
+  it("removes the shop", () => {
+    const world = makeWorld();
+    const next = deleteShop(world, "vendor");
+    expect(next.shops?.vendor).toBeUndefined();
+  });
+});
+
+// ─── Quest CRUD ───────────────────────────────────────────────────────
+
+describe("quest CRUD", () => {
+  it("adds, updates, and deletes a quest", () => {
+    let world = makeWorld();
+    world = addQuest(world, "quest1", {
+      name: "Kill Rats",
+      giver: "rat",
+      objectives: [{ type: "KILL", targetKey: "rat", count: 5 }],
+    });
+    expect(world.quests?.quest1?.name).toBe("Kill Rats");
+
+    world = updateQuest(world, "quest1", { name: "Kill More Rats" });
+    expect(world.quests?.quest1?.name).toBe("Kill More Rats");
+
+    // Assign quest to mob
+    world = updateMob(world, "rat", { quests: ["quest1"] });
+
+    // Delete quest should clean up mob references
+    world = deleteQuest(world, "quest1");
+    expect(world.quests?.quest1).toBeUndefined();
+    expect(world.mobs?.rat?.quests).toEqual([]);
+  });
+});
+
+// ─── GatheringNode CRUD ─────────────────────────────────────────────
+
+describe("gathering node CRUD", () => {
+  it("adds and deletes a gathering node", () => {
+    let world = makeWorld();
+    world = addGatheringNode(world, "ore1", {
+      displayName: "Iron Ore",
+      keyword: "ore",
+      skill: "MINING",
+      yields: [{ itemId: "iron_ore" }],
+      room: "room1",
+    });
+    expect(world.gatheringNodes?.ore1?.displayName).toBe("Iron Ore");
+
+    world = deleteGatheringNode(world, "ore1");
+    expect(world.gatheringNodes?.ore1).toBeUndefined();
+  });
+
+  it("throws if room does not exist", () => {
+    const world = makeWorld();
+    expect(() =>
+      addGatheringNode(world, "ore1", {
+        displayName: "Ore",
+        keyword: "ore",
+        skill: "MINING",
+        yields: [],
+        room: "no_room",
+      }),
+    ).toThrow("does not exist");
+  });
+});
+
+// ─── Recipe CRUD ────────────────────────────────────────────────────
+
+describe("recipe CRUD", () => {
+  it("adds, updates, and deletes a recipe", () => {
+    let world = makeWorld();
+    world = addRecipe(world, "recipe1", {
+      displayName: "Iron Sword",
+      skill: "SMITHING",
+      materials: [{ itemId: "iron_ore", quantity: 3 }],
+      outputItemId: "sword",
+    });
+    expect(world.recipes?.recipe1?.displayName).toBe("Iron Sword");
+
+    world = updateRecipe(world, "recipe1", { xpReward: 50 });
+    expect(world.recipes?.recipe1?.xpReward).toBe(50);
+
+    world = deleteRecipe(world, "recipe1");
+    expect(world.recipes?.recipe1).toBeUndefined();
+  });
+});
+
+// ─── generateEntityId ────────────────────────────────────────────────
+
+describe("generateEntityId", () => {
+  it("generates unique IDs for each collection", () => {
+    const world = makeWorld();
+    expect(generateEntityId(world, "mobs")).toMatch(/^test_mob\d+$/);
+    expect(generateEntityId(world, "items")).toMatch(/^test_item\d+$/);
+    expect(generateEntityId(world, "shops")).toMatch(/^test_shop\d+$/);
+    expect(generateEntityId(world, "quests")).toMatch(/^test_quest\d+$/);
+    expect(generateEntityId(world, "gatheringNodes")).toMatch(/^test_node\d+$/);
+    expect(generateEntityId(world, "recipes")).toMatch(/^test_recipe\d+$/);
   });
 });

@@ -1,0 +1,336 @@
+import { useState, type ReactNode } from "react";
+
+// ─── Shared form primitives used across all entity editors ──────────
+
+/** Click-to-edit single-line text field. */
+export function EditableField({
+  value,
+  onCommit,
+  placeholder,
+  className,
+}: {
+  value: string;
+  onCommit: (value: string) => void;
+  placeholder?: string;
+  className?: string;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(value);
+
+  if (!editing) {
+    return (
+      <div
+        className={`cursor-text rounded px-1 -mx-1 hover:bg-bg-tertiary ${className ?? ""}`}
+        onClick={() => {
+          setDraft(value);
+          setEditing(true);
+        }}
+        title="Click to edit"
+      >
+        {value || (
+          <span className="text-text-muted">{placeholder ?? "empty"}</span>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <input
+      autoFocus
+      className={`w-full rounded border border-accent/50 bg-bg-primary px-1 -mx-1 outline-none ${className ?? ""}`}
+      value={draft}
+      onChange={(e) => setDraft(e.target.value)}
+      onBlur={() => {
+        setEditing(false);
+        if (draft !== value) onCommit(draft);
+      }}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") {
+          setEditing(false);
+          if (draft !== value) onCommit(draft);
+        }
+        if (e.key === "Escape") {
+          setEditing(false);
+          setDraft(value);
+        }
+      }}
+    />
+  );
+}
+
+/** Click-to-edit multi-line textarea. */
+export function EditableTextArea({
+  value,
+  onCommit,
+}: {
+  value: string;
+  onCommit: (value: string) => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(value);
+
+  if (!editing) {
+    return (
+      <div
+        className="cursor-text rounded px-1 -mx-1 text-xs leading-relaxed text-text-secondary hover:bg-bg-tertiary"
+        onClick={() => {
+          setDraft(value);
+          setEditing(true);
+        }}
+        title="Click to edit"
+      >
+        {value || <span className="text-text-muted">empty</span>}
+      </div>
+    );
+  }
+
+  return (
+    <textarea
+      autoFocus
+      rows={4}
+      className="w-full resize-y rounded border border-accent/50 bg-bg-primary px-1 -mx-1 text-xs leading-relaxed text-text-secondary outline-none"
+      value={draft}
+      onChange={(e) => setDraft(e.target.value)}
+      onBlur={() => {
+        setEditing(false);
+        if (draft !== value) onCommit(draft);
+      }}
+      onKeyDown={(e) => {
+        if (e.key === "Escape") {
+          setEditing(false);
+          setDraft(value);
+        }
+      }}
+    />
+  );
+}
+
+/** Collapsible section with a header label. */
+export function Section({
+  title,
+  children,
+  actions,
+}: {
+  title: string;
+  children: ReactNode;
+  actions?: ReactNode;
+}) {
+  return (
+    <div className="border-b border-border-muted px-4 py-3">
+      <div className="mb-1.5 flex items-center gap-2">
+        <h4 className="text-[10px] font-semibold uppercase tracking-wider text-text-muted">
+          {title}
+        </h4>
+        {actions && <div className="ml-auto flex items-center gap-1">{actions}</div>}
+      </div>
+      {children}
+    </div>
+  );
+}
+
+/** Labeled text input for forms. */
+export function FieldRow({
+  label,
+  children,
+}: {
+  label: string;
+  children: ReactNode;
+}) {
+  return (
+    <label className="flex items-center gap-2 py-0.5 text-xs">
+      <span className="w-24 shrink-0 text-text-muted">{label}</span>
+      <div className="min-w-0 flex-1">{children}</div>
+    </label>
+  );
+}
+
+/** Compact text input that commits on blur/enter. */
+export function TextInput({
+  value,
+  onCommit,
+  placeholder,
+  className,
+  type = "text",
+}: {
+  value: string;
+  onCommit: (value: string) => void;
+  placeholder?: string;
+  className?: string;
+  type?: "text" | "number";
+}) {
+  const [draft, setDraft] = useState(value);
+  const [focused, setFocused] = useState(false);
+
+  // Sync external value changes when not focused
+  if (!focused && draft !== value) {
+    setDraft(value);
+  }
+
+  const commit = () => {
+    if (draft !== value) onCommit(draft);
+  };
+
+  return (
+    <input
+      type={type}
+      className={`w-full rounded border border-border-default bg-bg-primary px-1.5 py-0.5 text-xs text-text-primary outline-none focus:border-accent/50 ${className ?? ""}`}
+      value={draft}
+      placeholder={placeholder}
+      onChange={(e) => setDraft(e.target.value)}
+      onFocus={() => setFocused(true)}
+      onBlur={() => {
+        setFocused(false);
+        commit();
+      }}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") commit();
+        if (e.key === "Escape") {
+          setDraft(value);
+          (e.target as HTMLInputElement).blur();
+        }
+      }}
+    />
+  );
+}
+
+/** Compact number input that commits on blur/enter. */
+export function NumberInput({
+  value,
+  onCommit,
+  placeholder,
+  min,
+  max,
+  step,
+}: {
+  value: number | undefined;
+  onCommit: (value: number | undefined) => void;
+  placeholder?: string;
+  min?: number;
+  max?: number;
+  step?: number;
+}) {
+  const strVal = value != null ? String(value) : "";
+  const [draft, setDraft] = useState(strVal);
+  const [focused, setFocused] = useState(false);
+
+  if (!focused && draft !== strVal) {
+    setDraft(strVal);
+  }
+
+  const commit = () => {
+    const trimmed = draft.trim();
+    if (trimmed === "") {
+      if (value != null) onCommit(undefined);
+    } else {
+      const n = Number(trimmed);
+      if (!isNaN(n) && n !== value) onCommit(n);
+    }
+  };
+
+  return (
+    <input
+      type="number"
+      className="w-full rounded border border-border-default bg-bg-primary px-1.5 py-0.5 text-xs text-text-primary outline-none focus:border-accent/50"
+      value={draft}
+      placeholder={placeholder}
+      min={min}
+      max={max}
+      step={step}
+      onChange={(e) => setDraft(e.target.value)}
+      onFocus={() => setFocused(true)}
+      onBlur={() => {
+        setFocused(false);
+        commit();
+      }}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") commit();
+        if (e.key === "Escape") {
+          setDraft(strVal);
+          (e.target as HTMLInputElement).blur();
+        }
+      }}
+    />
+  );
+}
+
+/** Dropdown select that commits on change. */
+export function SelectInput({
+  value,
+  onCommit,
+  options,
+  placeholder,
+  allowEmpty,
+}: {
+  value: string;
+  onCommit: (value: string) => void;
+  options: { value: string; label: string }[];
+  placeholder?: string;
+  allowEmpty?: boolean;
+}) {
+  return (
+    <select
+      className="w-full rounded border border-border-default bg-bg-primary px-1 py-0.5 text-xs text-text-primary outline-none focus:border-accent/50"
+      value={value}
+      onChange={(e) => onCommit(e.target.value)}
+    >
+      {(allowEmpty || !value) && (
+        <option value="">{placeholder ?? "— none —"}</option>
+      )}
+      {options.map((opt) => (
+        <option key={opt.value} value={opt.value}>
+          {opt.label}
+        </option>
+      ))}
+    </select>
+  );
+}
+
+/** Checkbox with label. */
+export function CheckboxInput({
+  checked,
+  onCommit,
+  label,
+}: {
+  checked: boolean;
+  onCommit: (value: boolean) => void;
+  label: string;
+}) {
+  return (
+    <label className="flex items-center gap-1.5 text-xs text-text-secondary">
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={(e) => onCommit(e.target.checked)}
+        className="accent-accent"
+      />
+      {label}
+    </label>
+  );
+}
+
+/** Small icon button used for add/delete actions in lists. */
+export function IconButton({
+  onClick,
+  title,
+  danger,
+  children,
+}: {
+  onClick: () => void;
+  title: string;
+  danger?: boolean;
+  children: ReactNode;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      title={title}
+      className={`h-5 w-5 rounded text-xs transition-colors ${
+        danger
+          ? "text-text-muted hover:bg-status-danger/10 hover:text-status-danger"
+          : "text-text-muted hover:bg-bg-elevated hover:text-text-primary"
+      }`}
+    >
+      {children}
+    </button>
+  );
+}

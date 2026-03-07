@@ -9,6 +9,7 @@ import {
   SelectInput,
   IconButton,
 } from "@/components/ui/FormWidgets";
+import { DialogueEditor } from "./DialogueEditor";
 
 interface MobEditorProps {
   zoneId: string;
@@ -387,6 +388,13 @@ export function MobEditor({
           </div>
         </Section>
       )}
+
+      {/* Dialogue */}
+      <DialogueEditor
+        mobId={mobId}
+        world={world}
+        onWorldChange={onWorldChange}
+      />
 
       {/* Media */}
       <Section title="Media">

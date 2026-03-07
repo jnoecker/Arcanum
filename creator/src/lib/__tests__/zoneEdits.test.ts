@@ -221,6 +221,36 @@ describe("updateMob", () => {
   });
 });
 
+describe("updateMob — dialogue", () => {
+  it("sets dialogue on a mob", () => {
+    const world = makeWorld();
+    const next = updateMob(world, "rat", {
+      dialogue: {
+        root: {
+          text: "Hello!",
+          choices: [{ text: "Hi", next: "greeting" }],
+        },
+        greeting: { text: "Nice day." },
+      },
+    });
+    expect(Object.keys(next.mobs!.rat.dialogue!)).toEqual([
+      "root",
+      "greeting",
+    ]);
+    expect(next.mobs!.rat.dialogue!.root.choices).toHaveLength(1);
+  });
+
+  it("clears dialogue when set to undefined", () => {
+    let world = makeWorld();
+    world = updateMob(world, "rat", {
+      dialogue: { root: { text: "Hi" } },
+    });
+    expect(world.mobs!.rat.dialogue).toBeDefined();
+    world = updateMob(world, "rat", { dialogue: undefined });
+    expect(world.mobs!.rat.dialogue).toBeUndefined();
+  });
+});
+
 describe("deleteMob", () => {
   it("removes the mob", () => {
     const world = makeWorld();

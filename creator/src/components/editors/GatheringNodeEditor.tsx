@@ -1,6 +1,6 @@
-import { useCallback } from "react";
 import type { WorldFile, GatheringNodeFile, GatheringYieldFile } from "@/types/world";
 import { updateGatheringNode, deleteGatheringNode } from "@/lib/zoneEdits";
+import { useEntityEditor } from "@/lib/useEntityEditor";
 import { useArrayField } from "@/lib/useArrayField";
 import {
   Section,
@@ -10,9 +10,9 @@ import {
   SelectInput,
   IconButton,
 } from "@/components/ui/FormWidgets";
+import { DeleteEntityButton } from "./EditorShared";
 
 interface GatheringNodeEditorProps {
-  zoneId: string;
   nodeId: string;
   world: WorldFile;
   onWorldChange: (world: WorldFile) => void;
@@ -25,30 +25,22 @@ const GATHERING_SKILLS = [
 ];
 
 export function GatheringNodeEditor({
-  zoneId: _zoneId,
   nodeId,
   world,
   onWorldChange,
   onDelete,
 }: GatheringNodeEditorProps) {
-  const node = world.gatheringNodes?.[nodeId];
+  const { entity: node, patch, handleDelete, rooms } =
+    useEntityEditor<GatheringNodeFile>(
+      world,
+      nodeId,
+      (w) => w.gatheringNodes?.[nodeId],
+      updateGatheringNode,
+      deleteGatheringNode,
+      onWorldChange,
+      onDelete,
+    );
   if (!node) return null;
-
-  const rooms = Object.keys(world.rooms).map((r) => ({
-    value: r,
-    label: r,
-  }));
-
-  const patch = useCallback(
-    (p: Partial<GatheringNodeFile>) =>
-      onWorldChange(updateGatheringNode(world, nodeId, p)),
-    [world, nodeId, onWorldChange],
-  );
-
-  const handleDelete = useCallback(() => {
-    onWorldChange(deleteGatheringNode(world, nodeId));
-    onDelete();
-  }, [world, nodeId, onWorldChange, onDelete]);
 
   // ─── Yield helpers ────────────────────────────────────────────
   const {
@@ -180,14 +172,7 @@ export function GatheringNodeEditor({
         )}
       </Section>
 
-      <div className="px-4 py-3">
-        <button
-          onClick={handleDelete}
-          className="w-full rounded border border-status-danger/40 px-2 py-1.5 text-xs text-status-danger transition-colors hover:bg-status-danger/10"
-        >
-          Delete Gathering Node
-        </button>
-      </div>
+      <DeleteEntityButton onClick={handleDelete} label="Delete Gathering Node" />
     </>
   );
 }

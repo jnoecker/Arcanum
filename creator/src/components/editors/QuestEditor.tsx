@@ -6,6 +6,7 @@ import type {
   QuestRewardsFile,
 } from "@/types/world";
 import { updateQuest, deleteQuest } from "@/lib/zoneEdits";
+import { useEntityEditor } from "@/lib/useEntityEditor";
 import { useArrayField } from "@/lib/useArrayField";
 import {
   Section,
@@ -15,9 +16,9 @@ import {
   SelectInput,
   IconButton,
 } from "@/components/ui/FormWidgets";
+import { DeleteEntityButton } from "./EditorShared";
 
 interface QuestEditorProps {
-  zoneId: string;
   questId: string;
   world: WorldFile;
   onWorldChange: (world: WorldFile) => void;
@@ -35,29 +36,26 @@ const OBJECTIVE_TYPES = [
 ];
 
 export function QuestEditor({
-  zoneId: _zoneId,
   questId,
   world,
   onWorldChange,
   onDelete,
 }: QuestEditorProps) {
-  const quest = world.quests?.[questId];
+  const { entity: quest, patch, handleDelete } = useEntityEditor<QuestFile>(
+    world,
+    questId,
+    (w) => w.quests?.[questId],
+    updateQuest,
+    deleteQuest,
+    onWorldChange,
+    onDelete,
+  );
   if (!quest) return null;
 
   const zoneMobs = Object.entries(world.mobs ?? {}).map(([id, m]) => ({
     value: id,
     label: `${m.name} (${id})`,
   }));
-
-  const patch = useCallback(
-    (p: Partial<QuestFile>) => onWorldChange(updateQuest(world, questId, p)),
-    [world, questId, onWorldChange],
-  );
-
-  const handleDelete = useCallback(() => {
-    onWorldChange(deleteQuest(world, questId));
-    onDelete();
-  }, [world, questId, onWorldChange, onDelete]);
 
   // ─── Objective helpers ────────────────────────────────────────
   const {
@@ -208,14 +206,7 @@ export function QuestEditor({
         </div>
       </Section>
 
-      <div className="px-4 py-3">
-        <button
-          onClick={handleDelete}
-          className="w-full rounded border border-status-danger/40 px-2 py-1.5 text-xs text-status-danger transition-colors hover:bg-status-danger/10"
-        >
-          Delete Quest
-        </button>
-      </div>
+      <DeleteEntityButton onClick={handleDelete} label="Delete Quest" />
     </>
   );
 }

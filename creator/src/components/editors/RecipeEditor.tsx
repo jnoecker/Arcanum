@@ -1,6 +1,6 @@
-import { useCallback } from "react";
 import type { WorldFile, RecipeFile, RecipeMaterialFile } from "@/types/world";
 import { updateRecipe, deleteRecipe } from "@/lib/zoneEdits";
+import { useEntityEditor } from "@/lib/useEntityEditor";
 import { useArrayField } from "@/lib/useArrayField";
 import {
   Section,
@@ -10,9 +10,9 @@ import {
   SelectInput,
   IconButton,
 } from "@/components/ui/FormWidgets";
+import { DeleteEntityButton, MediaSection } from "./EditorShared";
 
 interface RecipeEditorProps {
-  zoneId: string;
   recipeId: string;
   world: WorldFile;
   onWorldChange: (world: WorldFile) => void;
@@ -31,25 +31,21 @@ const STATION_OPTIONS = [
 ];
 
 export function RecipeEditor({
-  zoneId: _zoneId,
   recipeId,
   world,
   onWorldChange,
   onDelete,
 }: RecipeEditorProps) {
-  const recipe = world.recipes?.[recipeId];
-  if (!recipe) return null;
-
-  const patch = useCallback(
-    (p: Partial<RecipeFile>) =>
-      onWorldChange(updateRecipe(world, recipeId, p)),
-    [world, recipeId, onWorldChange],
+  const { entity: recipe, patch, handleDelete } = useEntityEditor<RecipeFile>(
+    world,
+    recipeId,
+    (w) => w.recipes?.[recipeId],
+    updateRecipe,
+    deleteRecipe,
+    onWorldChange,
+    onDelete,
   );
-
-  const handleDelete = useCallback(() => {
-    onWorldChange(deleteRecipe(world, recipeId));
-    onDelete();
-  }, [world, recipeId, onWorldChange, onDelete]);
+  if (!recipe) return null;
 
   // ─── Material helpers ─────────────────────────────────────────
   const {
@@ -187,27 +183,8 @@ export function RecipeEditor({
         )}
       </Section>
 
-      {/* Media */}
-      <Section title="Media">
-        <div className="flex flex-col gap-1.5">
-          <FieldRow label="Image">
-            <TextInput
-              value={recipe.image ?? ""}
-              onCommit={(v) => patch({ image: v || undefined })}
-              placeholder="none"
-            />
-          </FieldRow>
-        </div>
-      </Section>
-
-      <div className="px-4 py-3">
-        <button
-          onClick={handleDelete}
-          className="w-full rounded border border-status-danger/40 px-2 py-1.5 text-xs text-status-danger transition-colors hover:bg-status-danger/10"
-        >
-          Delete Recipe
-        </button>
-      </div>
+      <MediaSection image={recipe.image} onImageChange={(v) => patch({ image: v })} />
+      <DeleteEntityButton onClick={handleDelete} label="Delete Recipe" />
     </>
   );
 }

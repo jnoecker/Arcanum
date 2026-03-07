@@ -1,6 +1,7 @@
 import { useCallback } from "react";
 import type { WorldFile, MobFile, MobDropFile } from "@/types/world";
 import { updateMob, deleteMob } from "@/lib/zoneEdits";
+import { useEntityEditor } from "@/lib/useEntityEditor";
 import { useArrayField } from "@/lib/useArrayField";
 import {
   Section,
@@ -11,9 +12,9 @@ import {
   IconButton,
 } from "@/components/ui/FormWidgets";
 import { DialogueEditor } from "./DialogueEditor";
+import { DeleteEntityButton, MediaSection } from "./EditorShared";
 
 interface MobEditorProps {
-  zoneId: string;
   mobId: string;
   world: WorldFile;
   onWorldChange: (world: WorldFile) => void;
@@ -37,34 +38,26 @@ const BEHAVIOR_TEMPLATES = [
 ];
 
 export function MobEditor({
-  zoneId: _zoneId,
   mobId,
   world,
   onWorldChange,
   onDelete,
 }: MobEditorProps) {
-  const mob = world.mobs?.[mobId];
+  const { entity: mob, patch, handleDelete, rooms } = useEntityEditor<MobFile>(
+    world,
+    mobId,
+    (w) => w.mobs?.[mobId],
+    updateMob,
+    deleteMob,
+    onWorldChange,
+    onDelete,
+  );
   if (!mob) return null;
-
-  const rooms = Object.keys(world.rooms).map((r) => ({
-    value: r,
-    label: r,
-  }));
 
   const zoneQuests = Object.entries(world.quests ?? {}).map(([id, q]) => ({
     id,
     name: q.name,
   }));
-
-  const patch = useCallback(
-    (p: Partial<MobFile>) => onWorldChange(updateMob(world, mobId, p)),
-    [world, mobId, onWorldChange],
-  );
-
-  const handleDelete = useCallback(() => {
-    onWorldChange(deleteMob(world, mobId));
-    onDelete();
-  }, [world, mobId, onWorldChange, onDelete]);
 
   // ─── Drop helpers ──────────────────────────────────────────────
   const {
@@ -385,28 +378,8 @@ export function MobEditor({
         onWorldChange={onWorldChange}
       />
 
-      {/* Media */}
-      <Section title="Media">
-        <div className="flex flex-col gap-1.5">
-          <FieldRow label="Image">
-            <TextInput
-              value={mob.image ?? ""}
-              onCommit={(v) => patch({ image: v || undefined })}
-              placeholder="none"
-            />
-          </FieldRow>
-        </div>
-      </Section>
-
-      {/* Delete */}
-      <div className="px-4 py-3">
-        <button
-          onClick={handleDelete}
-          className="w-full rounded border border-status-danger/40 px-2 py-1.5 text-xs text-status-danger transition-colors hover:bg-status-danger/10"
-        >
-          Delete Mob
-        </button>
-      </div>
+      <MediaSection image={mob.image} onImageChange={(v) => patch({ image: v })} />
+      <DeleteEntityButton onClick={handleDelete} label="Delete Mob" />
     </>
   );
 }

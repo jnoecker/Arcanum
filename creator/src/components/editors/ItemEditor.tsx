@@ -1,6 +1,7 @@
 import { useCallback, useState } from "react";
 import type { WorldFile, ItemFile, ItemOnUse } from "@/types/world";
 import { updateItem, deleteItem } from "@/lib/zoneEdits";
+import { useEntityEditor } from "@/lib/useEntityEditor";
 import {
   Section,
   FieldRow,
@@ -9,9 +10,9 @@ import {
   SelectInput,
   CheckboxInput,
 } from "@/components/ui/FormWidgets";
+import { DeleteEntityButton, MediaSection } from "./EditorShared";
 
 interface ItemEditorProps {
-  zoneId: string;
   itemId: string;
   world: WorldFile;
   onWorldChange: (world: WorldFile) => void;
@@ -25,29 +26,21 @@ const SLOT_OPTIONS = [
 ];
 
 export function ItemEditor({
-  zoneId: _zoneId,
   itemId,
   world,
   onWorldChange,
   onDelete,
 }: ItemEditorProps) {
-  const item = world.items?.[itemId];
-  if (!item) return null;
-
-  const rooms = Object.keys(world.rooms).map((r) => ({
-    value: r,
-    label: r,
-  }));
-
-  const patch = useCallback(
-    (p: Partial<ItemFile>) => onWorldChange(updateItem(world, itemId, p)),
-    [world, itemId, onWorldChange],
+  const { entity: item, patch, handleDelete, rooms } = useEntityEditor<ItemFile>(
+    world,
+    itemId,
+    (w) => w.items?.[itemId],
+    updateItem,
+    deleteItem,
+    onWorldChange,
+    onDelete,
   );
-
-  const handleDelete = useCallback(() => {
-    onWorldChange(deleteItem(world, itemId));
-    onDelete();
-  }, [world, itemId, onWorldChange, onDelete]);
+  if (!item) return null;
 
   // ─── Stat helpers ─────────────────────────────────────────────
   const stats = item.stats ?? {};
@@ -220,28 +213,8 @@ export function ItemEditor({
         </div>
       </Section>
 
-      {/* Media */}
-      <Section title="Media">
-        <div className="flex flex-col gap-1.5">
-          <FieldRow label="Image">
-            <TextInput
-              value={item.image ?? ""}
-              onCommit={(v) => patch({ image: v || undefined })}
-              placeholder="none"
-            />
-          </FieldRow>
-        </div>
-      </Section>
-
-      {/* Delete */}
-      <div className="px-4 py-3">
-        <button
-          onClick={handleDelete}
-          className="w-full rounded border border-status-danger/40 px-2 py-1.5 text-xs text-status-danger transition-colors hover:bg-status-danger/10"
-        >
-          Delete Item
-        </button>
-      </div>
+      <MediaSection image={item.image} onImageChange={(v) => patch({ image: v })} />
+      <DeleteEntityButton onClick={handleDelete} label="Delete Item" />
     </>
   );
 }

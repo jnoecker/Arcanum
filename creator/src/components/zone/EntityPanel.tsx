@@ -9,7 +9,6 @@ import { GatheringNodeEditor } from "@/components/editors/GatheringNodeEditor";
 import { RecipeEditor } from "@/components/editors/RecipeEditor";
 
 interface EntityPanelProps {
-  zoneId: string;
   selection: EntitySelection;
   world: WorldFile;
   onWorldChange: (world: WorldFile) => void;
@@ -17,7 +16,6 @@ interface EntityPanelProps {
 }
 
 export function EntityPanel({
-  zoneId,
   selection,
   world,
   onWorldChange,
@@ -49,7 +47,6 @@ export function EntityPanel({
       {/* Delegate to specific editor */}
       {selection.kind === "mob" && (
         <MobEditor
-          zoneId={zoneId}
           mobId={selection.id}
           world={world}
           onWorldChange={onWorldChange}
@@ -58,7 +55,6 @@ export function EntityPanel({
       )}
       {selection.kind === "item" && (
         <ItemEditor
-          zoneId={zoneId}
           itemId={selection.id}
           world={world}
           onWorldChange={onWorldChange}
@@ -67,7 +63,6 @@ export function EntityPanel({
       )}
       {selection.kind === "shop" && (
         <ShopEditor
-          zoneId={zoneId}
           shopId={selection.id}
           world={world}
           onWorldChange={onWorldChange}
@@ -76,7 +71,6 @@ export function EntityPanel({
       )}
       {selection.kind === "quest" && (
         <QuestEditor
-          zoneId={zoneId}
           questId={selection.id}
           world={world}
           onWorldChange={onWorldChange}
@@ -85,7 +79,6 @@ export function EntityPanel({
       )}
       {selection.kind === "gatheringNode" && (
         <GatheringNodeEditor
-          zoneId={zoneId}
           nodeId={selection.id}
           world={world}
           onWorldChange={onWorldChange}
@@ -94,7 +87,6 @@ export function EntityPanel({
       )}
       {selection.kind === "recipe" && (
         <RecipeEditor
-          zoneId={zoneId}
           recipeId={selection.id}
           world={world}
           onWorldChange={onWorldChange}

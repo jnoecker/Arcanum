@@ -1,6 +1,7 @@
 import { useCallback } from "react";
 import type { WorldFile, ShopFile } from "@/types/world";
 import { updateShop, deleteShop } from "@/lib/zoneEdits";
+import { useEntityEditor } from "@/lib/useEntityEditor";
 import {
   Section,
   FieldRow,
@@ -8,9 +9,9 @@ import {
   SelectInput,
   IconButton,
 } from "@/components/ui/FormWidgets";
+import { DeleteEntityButton } from "./EditorShared";
 
 interface ShopEditorProps {
-  zoneId: string;
   shopId: string;
   world: WorldFile;
   onWorldChange: (world: WorldFile) => void;
@@ -18,34 +19,26 @@ interface ShopEditorProps {
 }
 
 export function ShopEditor({
-  zoneId: _zoneId,
   shopId,
   world,
   onWorldChange,
   onDelete,
 }: ShopEditorProps) {
-  const shop = world.shops?.[shopId];
+  const { entity: shop, patch, handleDelete, rooms } = useEntityEditor<ShopFile>(
+    world,
+    shopId,
+    (w) => w.shops?.[shopId],
+    updateShop,
+    deleteShop,
+    onWorldChange,
+    onDelete,
+  );
   if (!shop) return null;
-
-  const rooms = Object.keys(world.rooms).map((r) => ({
-    value: r,
-    label: r,
-  }));
 
   const zoneItems = Object.entries(world.items ?? {}).map(([id, item]) => ({
     value: id,
     label: `${item.displayName} (${id})`,
   }));
-
-  const patch = useCallback(
-    (p: Partial<ShopFile>) => onWorldChange(updateShop(world, shopId, p)),
-    [world, shopId, onWorldChange],
-  );
-
-  const handleDelete = useCallback(() => {
-    onWorldChange(deleteShop(world, shopId));
-    onDelete();
-  }, [world, shopId, onWorldChange, onDelete]);
 
   const handleAddItem = useCallback(() => {
     const items = [...(shop.items ?? []), ""];
@@ -120,14 +113,7 @@ export function ShopEditor({
         )}
       </Section>
 
-      <div className="px-4 py-3">
-        <button
-          onClick={handleDelete}
-          className="w-full rounded border border-status-danger/40 px-2 py-1.5 text-xs text-status-danger transition-colors hover:bg-status-danger/10"
-        >
-          Delete Shop
-        </button>
-      </div>
+      <DeleteEntityButton onClick={handleDelete} label="Delete Shop" />
     </>
   );
 }

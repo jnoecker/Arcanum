@@ -386,7 +386,6 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
 
         {selectedEntity ? (
           <EntityPanel
-            zoneId={zoneId}
             selection={selectedEntity}
             world={zoneState.data}
             onWorldChange={applyWorldChange}

@@ -7,6 +7,7 @@ import type {
 } from "@/types/world";
 import { updateQuest, deleteQuest } from "@/lib/zoneEdits";
 import { useEntityEditor } from "@/lib/useEntityEditor";
+import { useArrayField } from "@/lib/useArrayField";
 import {
   Section,
   FieldRow,
@@ -57,31 +58,16 @@ export function QuestEditor({
   }));
 
   // ─── Objective helpers ────────────────────────────────────────
-  const objectives = quest.objectives ?? [];
-
-  const handleAddObjective = useCallback(() => {
-    const next: QuestObjectiveFile[] = [
-      ...objectives,
-      { type: "KILL", targetKey: "", count: 1 },
-    ];
-    patch({ objectives: next });
-  }, [objectives, patch]);
-
-  const handleUpdateObjective = useCallback(
-    (index: number, field: keyof QuestObjectiveFile, value: string | number) => {
-      const next = [...objectives];
-      next[index] = { ...next[index], [field]: value } as QuestObjectiveFile;
-      patch({ objectives: next });
-    },
-    [objectives, patch],
-  );
-
-  const handleDeleteObjective = useCallback(
-    (index: number) => {
-      const next = objectives.filter((_, i) => i !== index);
-      patch({ objectives: next.length > 0 ? next : undefined });
-    },
-    [objectives, patch],
+  const {
+    items: objectives,
+    add: handleAddObjective,
+    update: handleUpdateObjective,
+    remove: handleDeleteObjective,
+  } = useArrayField<QuestObjectiveFile>(
+    quest.objectives,
+    (objectives) => patch({ objectives }),
+    { type: "KILL", targetKey: "", count: 1 },
+    true, // clear to undefined when empty
   );
 
   // ─── Rewards helpers ──────────────────────────────────────────

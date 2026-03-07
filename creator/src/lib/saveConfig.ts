@@ -34,6 +34,10 @@ export async function saveConfig(mudDir: string): Promise<void> {
     setIn(engine, ["combat", "feedback", "enabled"], config.combat.feedback.enabled);
     setIn(engine, ["combat", "feedback", "roomBroadcastEnabled"], config.combat.feedback.roomBroadcastEnabled);
 
+    // Mob action delay
+    setIn(engine, ["mob", "minActionDelayMillis"], config.mobActionDelay.minActionDelayMillis);
+    setIn(engine, ["mob", "maxActionDelayMillis"], config.mobActionDelay.maxActionDelayMillis);
+
     // Mob tiers
     for (const tier of ["weak", "standard", "elite", "boss"] as const) {
       const t = config.mobTiers[tier];
@@ -85,10 +89,7 @@ export async function saveConfig(mudDir: string): Promise<void> {
     saveMapSection(engine, ["abilities", "definitions"], config.abilities,
       (a) => {
         const effect: Record<string, unknown> = { type: a.effect.type };
-        if (a.effect.minDamage != null) effect.minDamage = a.effect.minDamage;
-        if (a.effect.maxDamage != null) effect.maxDamage = a.effect.maxDamage;
-        if (a.effect.minHeal != null) effect.minHeal = a.effect.minHeal;
-        if (a.effect.maxHeal != null) effect.maxHeal = a.effect.maxHeal;
+        if (a.effect.value != null) effect.value = a.effect.value;
         if (a.effect.statusEffectId) effect.statusEffectId = a.effect.statusEffectId;
         if (a.effect.flatThreat != null) effect.flatThreat = a.effect.flatThreat;
         if (a.effect.margin != null) effect.margin = a.effect.margin;
@@ -101,7 +102,7 @@ export async function saveConfig(mudDir: string): Promise<void> {
           effect,
         };
         if (a.description) obj.description = a.description;
-        if (a.requiredClass) obj.requiredClass = a.requiredClass;
+        if (a.classRestriction) obj.classRestriction = a.classRestriction;
         if (a.image) obj.image = a.image;
         return obj;
       },
@@ -116,8 +117,7 @@ export async function saveConfig(mudDir: string): Promise<void> {
           durationMs: e.durationMs,
         };
         if (e.tickIntervalMs != null) obj.tickIntervalMs = e.tickIntervalMs;
-        if (e.tickMinValue != null) obj.tickMinValue = e.tickMinValue;
-        if (e.tickMaxValue != null) obj.tickMaxValue = e.tickMaxValue;
+        if (e.tickValue != null) obj.tickValue = e.tickValue;
         if (e.shieldAmount != null) obj.shieldAmount = e.shieldAmount;
         if (e.stackBehavior) obj.stackBehavior = e.stackBehavior;
         if (e.maxStacks != null) obj.maxStacks = e.maxStacks;
@@ -139,6 +139,7 @@ export async function saveConfig(mudDir: string): Promise<void> {
         if (cls.primaryStat) obj.primaryStat = cls.primaryStat;
         if (cls.selectable != null) obj.selectable = cls.selectable;
         if (cls.startRoom) obj.startRoom = cls.startRoom;
+        if (cls.threatMultiplier != null) obj.threatMultiplier = cls.threatMultiplier;
         return obj;
       },
     );
@@ -155,6 +156,9 @@ export async function saveConfig(mudDir: string): Promise<void> {
         return obj;
       },
     );
+
+    // Character Creation
+    setIn(engine, ["characterCreation", "startingGold"], config.characterCreation.startingGold);
   }
 
   // ─── Progression ────────────────────────────────────────────
@@ -168,6 +172,8 @@ export async function saveConfig(mudDir: string): Promise<void> {
   setIn(root, ["progression", "rewards", "manaPerLevel"], config.progression.rewards.manaPerLevel);
   setIn(root, ["progression", "rewards", "fullHealOnLevelUp"], config.progression.rewards.fullHealOnLevelUp);
   setIn(root, ["progression", "rewards", "fullManaOnLevelUp"], config.progression.rewards.fullManaOnLevelUp);
+  setIn(root, ["progression", "rewards", "baseHp"], config.progression.rewards.baseHp);
+  setIn(root, ["progression", "rewards", "baseMana"], config.progression.rewards.baseMana);
 
   await writeTextFile(configPath, doc.toString());
   state.markClean();

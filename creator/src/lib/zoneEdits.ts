@@ -30,6 +30,81 @@ export const OPPOSITE: Record<string, string> = {
   d: "u",
 };
 
+// ─── Generic entity CRUD ────────────────────────────────────────────
+
+type EntityCollection = "mobs" | "items" | "shops" | "quests" | "gatheringNodes" | "recipes";
+
+const ENTITY_LABELS: Record<EntityCollection, string> = {
+  mobs: "Mob",
+  items: "Item",
+  shops: "Shop",
+  quests: "Quest",
+  gatheringNodes: "Gathering node",
+  recipes: "Recipe",
+};
+
+function addEntity<T>(
+  world: WorldFile,
+  collection: EntityCollection,
+  id: string,
+  entity: T,
+  roomField?: string,
+): WorldFile {
+  const label = ENTITY_LABELS[collection];
+  if (world[collection]?.[id]) {
+    throw new Error(`${label} "${id}" already exists`);
+  }
+  if (roomField && !world.rooms[roomField]) {
+    throw new Error(`Room "${roomField}" does not exist`);
+  }
+  const next = clone(world);
+  if (!next[collection]) (next as any)[collection] = {};
+  (next[collection] as Record<string, T>)[id] = entity;
+  return next;
+}
+
+function updateEntity<T>(
+  world: WorldFile,
+  collection: EntityCollection,
+  id: string,
+  patch: Partial<T>,
+): WorldFile {
+  const label = ENTITY_LABELS[collection];
+  if (!world[collection]?.[id]) {
+    throw new Error(`${label} "${id}" does not exist`);
+  }
+  const next = clone(world);
+  const col = next[collection] as Record<string, T>;
+  col[id] = { ...col[id], ...patch } as T;
+  return next;
+}
+
+function removeEntity(
+  world: WorldFile,
+  collection: EntityCollection,
+  id: string,
+): WorldFile {
+  const label = ENTITY_LABELS[collection];
+  if (!world[collection]?.[id]) {
+    throw new Error(`${label} "${id}" does not exist`);
+  }
+  const next = clone(world);
+  delete (next[collection] as Record<string, unknown>)[id];
+  return next;
+}
+
+/** Remove all entities in a given room across room-bound collections. */
+function removeEntitiesInRoom(world: WorldFile, roomId: string): void {
+  const collections: EntityCollection[] = ["mobs", "items", "shops", "gatheringNodes"];
+  for (const col of collections) {
+    const map = world[col] as Record<string, { room?: string }> | undefined;
+    if (!map) continue;
+    for (const [id, entity] of Object.entries(map)) {
+      if (entity.room === roomId) delete map[id];
+    }
+  }
+}
+
 // ─── Room operations ─────────────────────────────────────────────────
 
 export function addRoom(
@@ -66,27 +141,8 @@ export function deleteRoom(world: WorldFile, roomId: string): WorldFile {
     }
   }
 
-  // Remove mobs/items/shops/gatheringNodes in this room
-  if (next.mobs) {
-    for (const [id, mob] of Object.entries(next.mobs)) {
-      if (mob.room === roomId) delete next.mobs[id];
-    }
-  }
-  if (next.items) {
-    for (const [id, item] of Object.entries(next.items)) {
-      if (item.room === roomId) delete next.items[id];
-    }
-  }
-  if (next.shops) {
-    for (const [id, shop] of Object.entries(next.shops)) {
-      if (shop.room === roomId) delete next.shops[id];
-    }
-  }
-  if (next.gatheringNodes) {
-    for (const [id, node] of Object.entries(next.gatheringNodes)) {
-      if (node.room === roomId) delete next.gatheringNodes[id];
-    }
-  }
+  // Remove entities in this room
+  removeEntitiesInRoom(next, roomId);
 
   return next;
 }
@@ -190,43 +246,16 @@ export function exitTarget(exit: string | ExitValue): string {
 
 // ─── Mob operations ─────────────────────────────────────────────────
 
-export function addMob(
-  world: WorldFile,
-  mobId: string,
-  mob: MobFile,
-): WorldFile {
-  if (world.mobs?.[mobId]) {
-    throw new Error(`Mob "${mobId}" already exists`);
-  }
-  if (!world.rooms[mob.room]) {
-    throw new Error(`Room "${mob.room}" does not exist`);
-  }
-  const next = clone(world);
-  if (!next.mobs) next.mobs = {};
-  next.mobs[mobId] = mob;
-  return next;
+export function addMob(world: WorldFile, mobId: string, mob: MobFile): WorldFile {
+  return addEntity(world, "mobs", mobId, mob, mob.room);
 }
 
-export function updateMob(
-  world: WorldFile,
-  mobId: string,
-  patch: Partial<MobFile>,
-): WorldFile {
-  if (!world.mobs?.[mobId]) {
-    throw new Error(`Mob "${mobId}" does not exist`);
-  }
-  const next = clone(world);
-  next.mobs![mobId] = { ...next.mobs![mobId], ...patch } as MobFile;
-  return next;
+export function updateMob(world: WorldFile, mobId: string, patch: Partial<MobFile>): WorldFile {
+  return updateEntity(world, "mobs", mobId, patch);
 }
 
 export function deleteMob(world: WorldFile, mobId: string): WorldFile {
-  if (!world.mobs?.[mobId]) {
-    throw new Error(`Mob "${mobId}" does not exist`);
-  }
-  const next = clone(world);
-  delete next.mobs![mobId];
-
+  const next = removeEntity(world, "mobs", mobId);
   // Clear quest giver references pointing to this mob
   if (next.quests) {
     for (const quest of Object.values(next.quests)) {
@@ -240,43 +269,16 @@ export function deleteMob(world: WorldFile, mobId: string): WorldFile {
 
 // ─── Item operations ────────────────────────────────────────────────
 
-export function addItem(
-  world: WorldFile,
-  itemId: string,
-  item: ItemFile,
-): WorldFile {
-  if (world.items?.[itemId]) {
-    throw new Error(`Item "${itemId}" already exists`);
-  }
-  if (item.room && !world.rooms[item.room]) {
-    throw new Error(`Room "${item.room}" does not exist`);
-  }
-  const next = clone(world);
-  if (!next.items) next.items = {};
-  next.items[itemId] = item;
-  return next;
+export function addItem(world: WorldFile, itemId: string, item: ItemFile): WorldFile {
+  return addEntity(world, "items", itemId, item, item.room || undefined);
 }
 
-export function updateItem(
-  world: WorldFile,
-  itemId: string,
-  patch: Partial<ItemFile>,
-): WorldFile {
-  if (!world.items?.[itemId]) {
-    throw new Error(`Item "${itemId}" does not exist`);
-  }
-  const next = clone(world);
-  next.items![itemId] = { ...next.items![itemId], ...patch } as ItemFile;
-  return next;
+export function updateItem(world: WorldFile, itemId: string, patch: Partial<ItemFile>): WorldFile {
+  return updateEntity(world, "items", itemId, patch);
 }
 
 export function deleteItem(world: WorldFile, itemId: string): WorldFile {
-  if (!world.items?.[itemId]) {
-    throw new Error(`Item "${itemId}" does not exist`);
-  }
-  const next = clone(world);
-  delete next.items![itemId];
-
+  const next = removeEntity(world, "items", itemId);
   // Remove from shop inventories
   if (next.shops) {
     for (const shop of Object.values(next.shops)) {
@@ -298,81 +300,30 @@ export function deleteItem(world: WorldFile, itemId: string): WorldFile {
 
 // ─── Shop operations ────────────────────────────────────────────────
 
-export function addShop(
-  world: WorldFile,
-  shopId: string,
-  shop: ShopFile,
-): WorldFile {
-  if (world.shops?.[shopId]) {
-    throw new Error(`Shop "${shopId}" already exists`);
-  }
-  if (!world.rooms[shop.room]) {
-    throw new Error(`Room "${shop.room}" does not exist`);
-  }
-  const next = clone(world);
-  if (!next.shops) next.shops = {};
-  next.shops[shopId] = shop;
-  return next;
+export function addShop(world: WorldFile, shopId: string, shop: ShopFile): WorldFile {
+  return addEntity(world, "shops", shopId, shop, shop.room);
 }
 
-export function updateShop(
-  world: WorldFile,
-  shopId: string,
-  patch: Partial<ShopFile>,
-): WorldFile {
-  if (!world.shops?.[shopId]) {
-    throw new Error(`Shop "${shopId}" does not exist`);
-  }
-  const next = clone(world);
-  next.shops![shopId] = { ...next.shops![shopId], ...patch } as ShopFile;
-  return next;
+export function updateShop(world: WorldFile, shopId: string, patch: Partial<ShopFile>): WorldFile {
+  return updateEntity(world, "shops", shopId, patch);
 }
 
 export function deleteShop(world: WorldFile, shopId: string): WorldFile {
-  if (!world.shops?.[shopId]) {
-    throw new Error(`Shop "${shopId}" does not exist`);
-  }
-  const next = clone(world);
-  delete next.shops![shopId];
-  return next;
+  return removeEntity(world, "shops", shopId);
 }
 
 // ─── Quest operations ───────────────────────────────────────────────
 
-export function addQuest(
-  world: WorldFile,
-  questId: string,
-  quest: QuestFile,
-): WorldFile {
-  if (world.quests?.[questId]) {
-    throw new Error(`Quest "${questId}" already exists`);
-  }
-  const next = clone(world);
-  if (!next.quests) next.quests = {};
-  next.quests[questId] = quest;
-  return next;
+export function addQuest(world: WorldFile, questId: string, quest: QuestFile): WorldFile {
+  return addEntity(world, "quests", questId, quest);
 }
 
-export function updateQuest(
-  world: WorldFile,
-  questId: string,
-  patch: Partial<QuestFile>,
-): WorldFile {
-  if (!world.quests?.[questId]) {
-    throw new Error(`Quest "${questId}" does not exist`);
-  }
-  const next = clone(world);
-  next.quests![questId] = { ...next.quests![questId], ...patch } as QuestFile;
-  return next;
+export function updateQuest(world: WorldFile, questId: string, patch: Partial<QuestFile>): WorldFile {
+  return updateEntity(world, "quests", questId, patch);
 }
 
 export function deleteQuest(world: WorldFile, questId: string): WorldFile {
-  if (!world.quests?.[questId]) {
-    throw new Error(`Quest "${questId}" does not exist`);
-  }
-  const next = clone(world);
-  delete next.quests![questId];
-
+  const next = removeEntity(world, "quests", questId);
   // Remove quest references from mobs
   if (next.mobs) {
     for (const mob of Object.values(next.mobs)) {
@@ -386,91 +337,37 @@ export function deleteQuest(world: WorldFile, questId: string): WorldFile {
 
 // ─── Gathering node operations ──────────────────────────────────────
 
-export function addGatheringNode(
-  world: WorldFile,
-  nodeId: string,
-  node: GatheringNodeFile,
-): WorldFile {
-  if (world.gatheringNodes?.[nodeId]) {
-    throw new Error(`Gathering node "${nodeId}" already exists`);
-  }
-  if (!world.rooms[node.room]) {
-    throw new Error(`Room "${node.room}" does not exist`);
-  }
-  const next = clone(world);
-  if (!next.gatheringNodes) next.gatheringNodes = {};
-  next.gatheringNodes[nodeId] = node;
-  return next;
+export function addGatheringNode(world: WorldFile, nodeId: string, node: GatheringNodeFile): WorldFile {
+  return addEntity(world, "gatheringNodes", nodeId, node, node.room);
 }
 
-export function updateGatheringNode(
-  world: WorldFile,
-  nodeId: string,
-  patch: Partial<GatheringNodeFile>,
-): WorldFile {
-  if (!world.gatheringNodes?.[nodeId]) {
-    throw new Error(`Gathering node "${nodeId}" does not exist`);
-  }
-  const next = clone(world);
-  next.gatheringNodes![nodeId] = { ...next.gatheringNodes![nodeId], ...patch } as GatheringNodeFile;
-  return next;
+export function updateGatheringNode(world: WorldFile, nodeId: string, patch: Partial<GatheringNodeFile>): WorldFile {
+  return updateEntity(world, "gatheringNodes", nodeId, patch);
 }
 
-export function deleteGatheringNode(
-  world: WorldFile,
-  nodeId: string,
-): WorldFile {
-  if (!world.gatheringNodes?.[nodeId]) {
-    throw new Error(`Gathering node "${nodeId}" does not exist`);
-  }
-  const next = clone(world);
-  delete next.gatheringNodes![nodeId];
-  return next;
+export function deleteGatheringNode(world: WorldFile, nodeId: string): WorldFile {
+  return removeEntity(world, "gatheringNodes", nodeId);
 }
 
 // ─── Recipe operations ──────────────────────────────────────────────
 
-export function addRecipe(
-  world: WorldFile,
-  recipeId: string,
-  recipe: RecipeFile,
-): WorldFile {
-  if (world.recipes?.[recipeId]) {
-    throw new Error(`Recipe "${recipeId}" already exists`);
-  }
-  const next = clone(world);
-  if (!next.recipes) next.recipes = {};
-  next.recipes[recipeId] = recipe;
-  return next;
+export function addRecipe(world: WorldFile, recipeId: string, recipe: RecipeFile): WorldFile {
+  return addEntity(world, "recipes", recipeId, recipe);
 }
 
-export function updateRecipe(
-  world: WorldFile,
-  recipeId: string,
-  patch: Partial<RecipeFile>,
-): WorldFile {
-  if (!world.recipes?.[recipeId]) {
-    throw new Error(`Recipe "${recipeId}" does not exist`);
-  }
-  const next = clone(world);
-  next.recipes![recipeId] = { ...next.recipes![recipeId], ...patch } as RecipeFile;
-  return next;
+export function updateRecipe(world: WorldFile, recipeId: string, patch: Partial<RecipeFile>): WorldFile {
+  return updateEntity(world, "recipes", recipeId, patch);
 }
 
 export function deleteRecipe(world: WorldFile, recipeId: string): WorldFile {
-  if (!world.recipes?.[recipeId]) {
-    throw new Error(`Recipe "${recipeId}" does not exist`);
-  }
-  const next = clone(world);
-  delete next.recipes![recipeId];
-  return next;
+  return removeEntity(world, "recipes", recipeId);
 }
 
 // ─── ID generation helpers ──────────────────────────────────────────
 
 export function generateEntityId(
   world: WorldFile,
-  collection: "mobs" | "items" | "shops" | "quests" | "gatheringNodes" | "recipes",
+  collection: EntityCollection,
   prefix?: string,
 ): string {
   const base = prefix ?? world.zone.replace(/[^a-zA-Z0-9]/g, "_");

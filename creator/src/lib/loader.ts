@@ -65,6 +65,7 @@ export async function loadAppConfig(
       statusEffects: parseMapSection(engine.statusEffects, "definitions"),
       combat: parseCombatConfig(engine.combat),
       mobTiers: parseMobTiersConfig(engine.mob),
+      mobActionDelay: parseMobActionDelayConfig(engine.mob),
       progression: parseProgressionConfig(progression),
       economy: parseSimpleSection(engine.economy, { buyMultiplier: 1.0, sellMultiplier: 0.5 }),
       regen: parseRegenConfig(engine.regen),
@@ -72,6 +73,7 @@ export async function loadAppConfig(
       group: parseSimpleSection(engine.group, { maxSize: 5, inviteTimeoutMs: 60000, xpBonusPerMember: 0.1 }),
       classes: parseMapSection(engine.classes, "definitions"),
       races: parseMapSection(engine.races, "definitions"),
+      characterCreation: parseCharacterCreationConfig(engine.characterCreation),
       rawSections: collectRawSections(root, engine),
     };
 
@@ -150,27 +152,35 @@ function parseCombatConfig(raw: unknown): AppConfig["combat"] {
 function parseMobTiersConfig(raw: unknown): AppConfig["mobTiers"] {
   const s = (raw ?? {}) as Record<string, unknown>;
   const tiers = (s.tiers ?? {}) as Record<string, unknown>;
-  const parseTier = (t: unknown): AppConfig["mobTiers"]["weak"] => {
+  const parseTier = (t: unknown, defaults: AppConfig["mobTiers"]["weak"]): AppConfig["mobTiers"]["weak"] => {
     const r = (t ?? {}) as Record<string, unknown>;
     return {
-      baseHp: asNumber(r.baseHp, 10),
-      hpPerLevel: asNumber(r.hpPerLevel, 3),
-      baseMinDamage: asNumber(r.baseMinDamage, 1),
-      baseMaxDamage: asNumber(r.baseMaxDamage, 4),
-      damagePerLevel: asNumber(r.damagePerLevel, 1),
-      baseArmor: asNumber(r.baseArmor, 0),
-      baseXpReward: asNumber(r.baseXpReward, 30),
-      xpRewardPerLevel: asNumber(r.xpRewardPerLevel, 10),
-      baseGoldMin: asNumber(r.baseGoldMin, 0),
-      baseGoldMax: asNumber(r.baseGoldMax, 0),
-      goldPerLevel: asNumber(r.goldPerLevel, 0),
+      baseHp: asNumber(r.baseHp, defaults.baseHp),
+      hpPerLevel: asNumber(r.hpPerLevel, defaults.hpPerLevel),
+      baseMinDamage: asNumber(r.baseMinDamage, defaults.baseMinDamage),
+      baseMaxDamage: asNumber(r.baseMaxDamage, defaults.baseMaxDamage),
+      damagePerLevel: asNumber(r.damagePerLevel, defaults.damagePerLevel),
+      baseArmor: asNumber(r.baseArmor, defaults.baseArmor),
+      baseXpReward: asNumber(r.baseXpReward, defaults.baseXpReward),
+      xpRewardPerLevel: asNumber(r.xpRewardPerLevel, defaults.xpRewardPerLevel),
+      baseGoldMin: asNumber(r.baseGoldMin, defaults.baseGoldMin),
+      baseGoldMax: asNumber(r.baseGoldMax, defaults.baseGoldMax),
+      goldPerLevel: asNumber(r.goldPerLevel, defaults.goldPerLevel),
     };
   };
   return {
-    weak: parseTier(tiers.weak),
-    standard: parseTier(tiers.standard),
-    elite: parseTier(tiers.elite),
-    boss: parseTier(tiers.boss),
+    weak: parseTier(tiers.weak, { baseHp: 5, hpPerLevel: 2, baseMinDamage: 1, baseMaxDamage: 2, damagePerLevel: 0, baseArmor: 0, baseXpReward: 15, xpRewardPerLevel: 5, baseGoldMin: 1, baseGoldMax: 3, goldPerLevel: 1 }),
+    standard: parseTier(tiers.standard, { baseHp: 10, hpPerLevel: 3, baseMinDamage: 1, baseMaxDamage: 4, damagePerLevel: 1, baseArmor: 0, baseXpReward: 30, xpRewardPerLevel: 10, baseGoldMin: 2, baseGoldMax: 8, goldPerLevel: 2 }),
+    elite: parseTier(tiers.elite, { baseHp: 20, hpPerLevel: 5, baseMinDamage: 2, baseMaxDamage: 6, damagePerLevel: 1, baseArmor: 1, baseXpReward: 75, xpRewardPerLevel: 20, baseGoldMin: 10, baseGoldMax: 25, goldPerLevel: 5 }),
+    boss: parseTier(tiers.boss, { baseHp: 50, hpPerLevel: 10, baseMinDamage: 3, baseMaxDamage: 8, damagePerLevel: 2, baseArmor: 3, baseXpReward: 200, xpRewardPerLevel: 50, baseGoldMin: 50, baseGoldMax: 100, goldPerLevel: 15 }),
+  };
+}
+
+function parseMobActionDelayConfig(raw: unknown): AppConfig["mobActionDelay"] {
+  const s = (raw ?? {}) as Record<string, unknown>;
+  return {
+    minActionDelayMillis: asNumber(s.minActionDelayMillis, 8000),
+    maxActionDelayMillis: asNumber(s.maxActionDelayMillis, 20000),
   };
 }
 
@@ -192,6 +202,8 @@ function parseProgressionConfig(raw: unknown): AppConfig["progression"] {
       manaPerLevel: asNumber(rewards.manaPerLevel, 5),
       fullHealOnLevelUp: asBool(rewards.fullHealOnLevelUp, true),
       fullManaOnLevelUp: asBool(rewards.fullManaOnLevelUp, true),
+      baseHp: asNumber(rewards.baseHp, 10),
+      baseMana: asNumber(rewards.baseMana, 20),
     },
   };
 }
@@ -215,11 +227,18 @@ function parseRegenConfig(raw: unknown): AppConfig["regen"] {
 function parseCraftingConfig(raw: unknown): AppConfig["crafting"] {
   const s = (raw ?? {}) as Record<string, unknown>;
   return {
-    maxSkillLevel: asNumber(s.maxSkillLevel, 100),
-    baseXpPerLevel: asNumber(s.baseXpPerLevel, 50),
+    maxSkillLevel: asNumber(s.maxSkillLevel, 10),
+    baseXpPerLevel: asNumber(s.baseXpPerLevel, 100),
     xpExponent: asNumber(s.xpExponent, 1.5),
-    gatherCooldownMs: asNumber(s.gatherCooldownMs, 3000),
+    gatherCooldownMs: asNumber(s.gatherCooldownMs, 30000),
     stationBonusQuantity: asNumber(s.stationBonusQuantity, 1),
+  };
+}
+
+function parseCharacterCreationConfig(raw: unknown): AppConfig["characterCreation"] {
+  const s = (raw ?? {}) as Record<string, unknown>;
+  return {
+    startingGold: asNumber(s.startingGold, 0),
   };
 }
 
@@ -248,7 +267,7 @@ function collectRawSections(
   const knownEngine = new Set([
     "stats", "abilities", "statusEffects", "combat", "mob",
     "regen", "economy", "crafting", "group", "guild", "classes",
-    "races", "scheduler", "friends", "debug", "classStartRooms",
+    "races", "characterCreation", "scheduler", "friends", "debug", "classStartRooms",
   ]);
 
   const raw: Record<string, unknown> = {};

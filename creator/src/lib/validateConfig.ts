@@ -71,11 +71,11 @@ export function validateConfig(config: AppConfig): ValidationIssue[] {
         message: `Effect references unknown status effect "${a.effect.statusEffectId}"`,
       });
     }
-    if (a.requiredClass && classIds.size > 0 && !classIds.has(a.requiredClass)) {
+    if (a.classRestriction && classIds.size > 0 && !classIds.has(a.classRestriction)) {
       issues.push({
         severity: "warning",
         entity: `ability:${id}`,
-        message: `Required class "${a.requiredClass}" is not defined`,
+        message: `Class restriction "${a.classRestriction}" is not defined`,
       });
     }
   }
@@ -104,6 +104,13 @@ export function validateConfig(config: AppConfig): ValidationIssue[] {
         message: `Primary stat "${cls.primaryStat}" is not defined`,
       });
     }
+    if (cls.threatMultiplier != null && cls.threatMultiplier < 0) {
+      issues.push({
+        severity: "error",
+        entity: `class:${id}`,
+        message: "Threat multiplier must be >= 0",
+      });
+    }
   }
 
   // ─── Races ────────────────────────────────────────────────────
@@ -130,12 +137,44 @@ export function validateConfig(config: AppConfig): ValidationIssue[] {
     });
   }
 
+  // ─── Mob action delay ────────────────────────────────────────
+  if (config.mobActionDelay.minActionDelayMillis > config.mobActionDelay.maxActionDelayMillis) {
+    issues.push({
+      severity: "warning",
+      entity: "mobActionDelay",
+      message: "Min action delay exceeds max action delay",
+    });
+  }
+
   // ─── Progression ──────────────────────────────────────────────
   if (config.progression.maxLevel < 1) {
     issues.push({
       severity: "error",
       entity: "progression",
       message: "Max level must be at least 1",
+    });
+  }
+  if (config.progression.rewards.baseHp < 1) {
+    issues.push({
+      severity: "error",
+      entity: "progression",
+      message: "Base HP must be at least 1",
+    });
+  }
+  if (config.progression.rewards.baseMana < 0) {
+    issues.push({
+      severity: "error",
+      entity: "progression",
+      message: "Base mana must be >= 0",
+    });
+  }
+
+  // ─── Character creation ─────────────────────────────────────
+  if (config.characterCreation.startingGold < 0) {
+    issues.push({
+      severity: "error",
+      entity: "characterCreation",
+      message: "Starting gold must be >= 0",
     });
   }
 

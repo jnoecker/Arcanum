@@ -2,6 +2,7 @@ import { useState, useCallback } from "react";
 import type { ConfigPanelProps } from "./types";
 import type { StatusEffectDefinitionConfig } from "@/types/config";
 import type { StatMap } from "@/types/world";
+import { useStatMods } from "@/lib/useStatMods";
 import {
   Section,
   FieldRow,
@@ -191,20 +192,11 @@ export function StatusEffectsPanel({ config, onChange }: ConfigPanelProps) {
                               min={100}
                             />
                           </FieldRow>
-                          <FieldRow label="Tick Min">
+                          <FieldRow label="Tick Value">
                             <NumberInput
-                              value={e.tickMinValue}
+                              value={e.tickValue}
                               onCommit={(v) =>
-                                patchEffect(id, { tickMinValue: v ?? 1 })
-                              }
-                              min={0}
-                            />
-                          </FieldRow>
-                          <FieldRow label="Tick Max">
-                            <NumberInput
-                              value={e.tickMaxValue}
-                              onCommit={(v) =>
-                                patchEffect(id, { tickMaxValue: v ?? 3 })
+                                patchEffect(id, { tickValue: v ?? 1 })
                               }
                               min={0}
                             />
@@ -254,23 +246,9 @@ function StatModsEditor({
   statIds: string[];
   onChange: (mods: StatMap | undefined) => void;
 }) {
-  const mods = statMods ?? {};
+  const { mods, addMod, removeMod, updateMod } = useStatMods(statMods, onChange);
   const modKeys = Object.keys(mods);
   const available = statIds.filter((id) => !(id in mods));
-
-  const addMod = (statId: string) => {
-    onChange({ ...mods, [statId]: 1 });
-  };
-
-  const removeMod = (statId: string) => {
-    const next = { ...mods };
-    delete next[statId];
-    onChange(Object.keys(next).length > 0 ? next : undefined);
-  };
-
-  const updateMod = (statId: string, value: number) => {
-    onChange({ ...mods, [statId]: value });
-  };
 
   return (
     <div className="mt-1 border-t border-border-muted pt-1.5">

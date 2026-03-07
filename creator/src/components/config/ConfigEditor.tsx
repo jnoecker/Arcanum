@@ -17,6 +17,7 @@ import { StatusEffectsPanel } from "./panels/StatusEffectsPanel";
 import { RawYamlPanel } from "./panels/RawYamlPanel";
 import { ClassesPanel } from "./panels/ClassesPanel";
 import { RacesPanel } from "./panels/RacesPanel";
+import { CharacterCreationPanel } from "./panels/CharacterCreationPanel";
 
 const CONFIG_TABS = [
   { id: "server", label: "Server" },
@@ -32,6 +33,7 @@ const CONFIG_TABS = [
   { id: "regen", label: "Regen" },
   { id: "crafting", label: "Crafting" },
   { id: "group", label: "Group" },
+  { id: "charCreate", label: "Char Create" },
   { id: "rawYaml", label: "Raw YAML" },
 ] as const;
 
@@ -158,6 +160,9 @@ export function ConfigEditor() {
           )}
           {activeTab === "group" && (
             <GroupPanel config={config} onChange={handleChange} />
+          )}
+          {activeTab === "charCreate" && (
+            <CharacterCreationPanel config={config} onChange={handleChange} />
           )}
           {activeTab === "rawYaml" && (
             <RawYamlPanel config={config} onChange={handleChange} />

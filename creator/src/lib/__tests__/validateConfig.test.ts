@@ -52,7 +52,7 @@ const BASE_CONFIG: AppConfig = {
   progression: {
     maxLevel: 50,
     xp: { baseXp: 100, exponent: 2, linearXp: 0, multiplier: 1, defaultKillXp: 50 },
-    rewards: { hpPerLevel: 2, manaPerLevel: 5, fullHealOnLevelUp: true, fullManaOnLevelUp: true },
+    rewards: { hpPerLevel: 2, manaPerLevel: 5, fullHealOnLevelUp: true, fullManaOnLevelUp: true, baseHp: 10, baseMana: 20 },
   },
   economy: { buyMultiplier: 1.0, sellMultiplier: 0.5 },
   regen: {
@@ -66,6 +66,8 @@ const BASE_CONFIG: AppConfig = {
   group: { maxSize: 5, inviteTimeoutMs: 60000, xpBonusPerMember: 0.1 },
   classes: {},
   races: {},
+  mobActionDelay: { minActionDelayMillis: 8000, maxActionDelayMillis: 20000 },
+  characterCreation: { startingGold: 0 },
   rawSections: {},
 };
 
@@ -176,7 +178,7 @@ describe("validateConfig", () => {
     expect(issues.filter((i) => i.entity.startsWith("ability:"))).toEqual([]);
   });
 
-  it("warns about ability with unknown required class", () => {
+  it("warns about ability with unknown class restriction", () => {
     const cfg = {
       ...BASE_CONFIG,
       classes: { WARRIOR: { displayName: "Warrior", hpPerLevel: 3, manaPerLevel: 1 } },
@@ -187,8 +189,8 @@ describe("validateConfig", () => {
           cooldownMs: 0,
           levelRequired: 1,
           targetType: "ENEMY",
-          requiredClass: "PALADIN",
-          effect: { type: "DIRECT_DAMAGE", minDamage: 1, maxDamage: 5 },
+          classRestriction: "PALADIN",
+          effect: { type: "DIRECT_DAMAGE", value: 5 },
         },
       },
     };

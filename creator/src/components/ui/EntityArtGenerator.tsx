@@ -12,11 +12,19 @@ import { VariantStrip } from "./VariantStrip";
 type Stage = "idle" | "generating" | "preview";
 
 interface EntityArtGeneratorProps {
+  /** Returns the fallback prompt template for the given art style (used when no LLM available) */
   getPrompt: (style: ArtStyle) => string;
+  /** Rich entity context description for the LLM to craft an image prompt from */
+  entityContext?: string;
+  /** Current image value (path or URL) */
   currentImage?: string;
+  /** Called when user accepts a generated image */
   onAccept: (filePath: string) => void;
+  /** Asset type for manifest (e.g. "entity_portrait", "background") */
   assetType?: string;
+  /** Context tags for the asset manifest */
   context?: AssetContext;
+  /** Zone vibe text to inject into LLM prompt generation */
   vibe?: string;
 }
 
@@ -29,6 +37,7 @@ function computeVariantGroup(context?: AssetContext): string {
 
 export function EntityArtGenerator({
   getPrompt,
+  entityContext,
   currentImage,
   onAccept,
   assetType,
@@ -49,6 +58,8 @@ export function EntityArtGenerator({
   const [enhancing, setEnhancing] = useState(false);
   const [importing, setImporting] = useState(false);
   const [dimOverride, setDimOverride] = useState<{ width: number; height: number } | null>(null);
+  // Track the final prompt that was actually sent to the image model
+  const [lastEnhancedPrompt, setLastEnhancedPrompt] = useState<string | null>(null);
 
   const imageProvider = settings?.image_provider ?? "deepinfra";
   const hasApiKey = settings && (
@@ -104,6 +115,21 @@ export function EntityArtGenerator({
     setEditedPrompt(null);
   };
 
+  /** Enhance a prompt via LLM, injecting entity context, style guide, and zone vibe. */
+  const enhancePrompt = async (prompt: string): Promise<string> => {
+    const systemPrompt = getEnhanceSystemPrompt(artStyle);
+    const parts: string[] = [prompt];
+    if (entityContext) {
+      parts.push(`\nEntity details:\n${entityContext}`);
+    }
+    if (vibe) {
+      parts.push(`\nZone atmosphere/vibe to weave into the image prompt:\n${vibe}`);
+    }
+    const userPrompt = parts.join("\n");
+
+    return invoke<string>("llm_complete", { systemPrompt, userPrompt });
+  };
+
   const handleGenerate = async () => {
     setStage("generating");
     setError(null);
@@ -113,12 +139,25 @@ export function EntityArtGenerator({
         throw new Error(`No models available for provider: ${imageProvider}`);
       }
 
+      // Auto-enhance via LLM if available — this is the key change.
+      // The LLM gets the entity description, style guide, and zone vibe
+      // and crafts a proper image prompt from all three.
+      let finalPrompt = activePrompt;
+      if (hasLlmKey) {
+        try {
+          finalPrompt = await enhancePrompt(activePrompt);
+          setLastEnhancedPrompt(finalPrompt);
+        } catch {
+          // Fall back to base prompt if LLM fails
+        }
+      }
+
       const command = imageProvider === "runware"
         ? "runware_generate_image"
         : "generate_image";
 
       const image = await invoke<GeneratedImage>(command, {
-        prompt: activePrompt,
+        prompt: finalPrompt,
         model: model.id,
         width: activeDims.width,
         height: activeDims.height,
@@ -137,17 +176,7 @@ export function EntityArtGenerator({
     setEnhancing(true);
     setError(null);
     try {
-      const systemPrompt = getEnhanceSystemPrompt(artStyle);
-      // Inject zone vibe as additional context for the LLM
-      const vibeContext = vibe
-        ? `\n\nZone atmosphere/vibe to weave into the image prompt:\n${vibe}`
-        : "";
-      const userPrompt = `${activePrompt}${vibeContext}`;
-
-      const enhanced = await invoke<string>("llm_complete", {
-        systemPrompt,
-        userPrompt,
-      });
+      const enhanced = await enhancePrompt(activePrompt);
       setEditedPrompt(enhanced);
     } catch (e) {
       setError(String(e));
@@ -185,15 +214,17 @@ export function EntityArtGenerator({
     if (!result) return;
     onAccept(result.file_path);
     if (assetType) {
-      await acceptAsset(result, assetType, undefined, context, variantGroup, true).catch(() => {});
+      await acceptAsset(result, assetType, lastEnhancedPrompt ?? undefined, context, variantGroup, true).catch(() => {});
     }
     setStage("idle");
     setResult(null);
+    setLastEnhancedPrompt(null);
   };
 
   const handleReject = () => {
     setResult(null);
     setStage("idle");
+    setLastEnhancedPrompt(null);
   };
 
   const savedImageSrc = useImageSrc(currentImage);
@@ -325,9 +356,11 @@ export function EntityArtGenerator({
                   </button>
                 )}
               </div>
-              {vibe && (
+              {(entityContext || vibe) && (
                 <p className="text-[10px] italic text-text-muted">
-                  Zone vibe will be injected during enhancement
+                  {hasLlmKey
+                    ? "Entity details + zone vibe auto-injected during generation"
+                    : "Configure an LLM provider to enable auto-enhanced prompts"}
                 </p>
               )}
             </div>
@@ -338,7 +371,9 @@ export function EntityArtGenerator({
       {stage === "generating" && (
         <div className="flex items-center gap-2 py-2">
           <div className="h-4 w-4 rounded-full border-2 border-accent border-t-transparent animate-spin" />
-          <span className="text-[10px] text-text-secondary">Generating...</span>
+          <span className="text-[10px] text-text-secondary">
+            {hasLlmKey ? "Crafting prompt & generating..." : "Generating..."}
+          </span>
         </div>
       )}
 

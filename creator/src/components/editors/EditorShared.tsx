@@ -31,6 +31,7 @@ export function MediaSection({
   video,
   onVideoChange,
   getPrompt,
+  entityContext,
   assetType,
   context,
   vibe,
@@ -40,6 +41,7 @@ export function MediaSection({
   video?: string;
   onVideoChange?: (v: string | undefined) => void;
   getPrompt?: (style: ArtStyle) => string;
+  entityContext?: string;
   assetType?: string;
   context?: AssetContext;
   vibe?: string;
@@ -57,6 +59,7 @@ export function MediaSection({
         {getPrompt && (
           <EntityArtGenerator
             getPrompt={getPrompt}
+            entityContext={entityContext}
             currentImage={image}
             onAccept={(filePath) => onImageChange(filePath)}
             assetType={assetType}

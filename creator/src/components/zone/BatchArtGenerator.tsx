@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import type { WorldFile } from "@/types/world";
-import { entityPrompt, roomPrompt } from "@/lib/entityPrompts";
+import { entityPrompt, entityContext, roomPrompt, roomContext } from "@/lib/entityPrompts";
 import { ART_STYLE_LABELS, getEnhanceSystemPrompt, type ArtStyle } from "@/lib/arcanumPrompts";
 import { useAssetStore } from "@/stores/assetStore";
 import { useVibeStore } from "@/stores/vibeStore";
@@ -85,6 +85,16 @@ function getTargetPrompt(target: BatchTarget, world: WorldFile, style: ArtStyle)
   return entityPrompt(kind, id, entity, style);
 }
 
+function getTargetContext(target: BatchTarget, world: WorldFile): string {
+  const { kind, id } = target;
+  if (kind === "room") {
+    return roomContext(id, world.rooms[id]!);
+  }
+  const collection = kind === "mob" ? "mobs" : kind === "item" ? "items" : "shops";
+  const entity = (world as unknown as Record<string, Record<string, unknown> | undefined>)[collection]?.[id];
+  return entityContext(kind, id, entity);
+}
+
 export function BatchArtGenerator({
   zoneId,
   world,
@@ -137,15 +147,17 @@ export function BatchArtGenerator({
 
         try {
           const basePrompt = getTargetPrompt(target, updatedWorld, artStyle);
+          const context = getTargetContext(target, updatedWorld);
 
-          // Enhance with LLM + vibe
+          // Enhance with LLM + entity context + vibe
           let finalPrompt = basePrompt;
           try {
             const systemPrompt = getEnhanceSystemPrompt(artStyle);
+            const contextBlock = context ? `\n\nEntity details:\n${context}` : "";
             const vibeContext = vibe ? `\n\nZone atmosphere/vibe:\n${vibe}` : "";
             finalPrompt = await invoke<string>("llm_complete", {
               systemPrompt,
-              userPrompt: `${basePrompt}${vibeContext}`,
+              userPrompt: `${basePrompt}${contextBlock}${vibeContext}`,
             });
           } catch {
             // Fall back to base prompt

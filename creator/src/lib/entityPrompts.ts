@@ -1,6 +1,71 @@
 import type { RoomFile, MobFile, ItemFile, ShopFile } from "@/types/world";
 import { type ArtStyle, getPreamble } from "./arcanumPrompts";
 
+// ─── Context Builders ────────────────────────────────────────────
+// These build rich entity descriptions for the LLM to work with.
+// They are NOT image prompts — the LLM turns them into image prompts.
+
+/** Build a context description for a room. */
+export function roomContext(roomId: string, room: RoomFile): string {
+  const parts = [`Room "${room.title}" (id: ${roomId})`];
+  if (room.description) parts.push(`Description: ${room.description}`);
+  if (room.station) parts.push(`Contains a ${room.station.toLowerCase()} crafting station`);
+  parts.push("Composition: wide landscape, suitable for a game room background");
+  return parts.join("\n");
+}
+
+/** Build a context description for a mob. */
+export function mobContext(mobId: string, mob: MobFile): string {
+  const parts = [`Mob "${mob.name}" (id: ${mobId})`];
+  if (mob.description) parts.push(`Description: ${mob.description}`);
+  parts.push(`Tier: ${mob.tier ?? "standard"}, Level: ${mob.level ?? 1}`);
+  if (mob.hp) parts.push(`HP: ${mob.hp}`);
+  if (mob.behavior?.template) parts.push(`Behavior: ${mob.behavior.template}`);
+  if (mob.drops && mob.drops.length > 0) {
+    parts.push(`Drops: ${mob.drops.map((d) => d.itemId).join(", ")}`);
+  }
+  parts.push("Composition: vertical portrait of the creature");
+  return parts.join("\n");
+}
+
+/** Build a context description for an item. */
+export function itemContext(itemId: string, item: ItemFile): string {
+  const parts = [`Item "${item.displayName}" (id: ${itemId})`];
+  if (item.description) parts.push(`Description: ${item.description}`);
+  if (item.slot) parts.push(`Slot: ${item.slot}`);
+  if (item.damage && item.damage > 0) parts.push(`Weapon — damage: ${item.damage}`);
+  if (item.armor && item.armor > 0) parts.push(`Armor — defense: ${item.armor}`);
+  if (item.consumable) parts.push("Consumable item");
+  parts.push("Composition: centered, suitable for an inventory icon");
+  return parts.join("\n");
+}
+
+/** Build a context description for a shop. */
+export function shopContext(shopId: string, shop: ShopFile): string {
+  const parts = [`Shop "${shop.name}" (id: ${shopId})`];
+  if (shop.items && shop.items.length > 0) {
+    parts.push(`Sells: ${shop.items.join(", ")}`);
+  }
+  parts.push("Composition: wide landscape, a marketplace scene");
+  return parts.join("\n");
+}
+
+/** Dispatch to the right context builder by entity kind. */
+export function entityContext(kind: string, id: string, entity: unknown): string {
+  switch (kind) {
+    case "room": return roomContext(id, entity as RoomFile);
+    case "mob": return mobContext(id, entity as MobFile);
+    case "item": return itemContext(id, entity as ItemFile);
+    case "shop": return shopContext(id, entity as ShopFile);
+    default: return `${kind} entity "${id}"`;
+  }
+}
+
+// ─── Fallback Prompt Builders ────────────────────────────────────
+// These are the original direct-to-image prompts, kept as fallbacks
+// when no LLM is available. They include the style preamble + entity
+// details in a format that works directly with FLUX.
+
 /** Build a full prompt for a room image. */
 export function roomPrompt(_roomId: string, room: RoomFile, style: ArtStyle = "gentle_magic"): string {
   const preamble = getPreamble(style);

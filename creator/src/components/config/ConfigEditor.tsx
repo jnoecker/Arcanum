@@ -79,7 +79,7 @@ export function ConfigEditor() {
   }
 
   return (
-    <div className="flex flex-1 flex-col">
+    <div className="flex min-h-0 flex-1 flex-col">
       {/* Tab bar + save */}
       <div className="flex shrink-0 items-center border-b border-border-default bg-bg-secondary">
         <div className="flex items-end gap-0 overflow-x-auto">
@@ -114,7 +114,7 @@ export function ConfigEditor() {
       </div>
 
       {/* Panel content */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="min-h-0 flex-1 overflow-y-auto">
         <div className="mx-auto max-w-2xl px-6 py-4">
           {activeTab === "server" && (
             <ServerPanel config={config} onChange={handleChange} />

@@ -96,7 +96,7 @@ export function useServerManager() {
       activeChild = child;
       setPid(child.pid);
       // Register PID with Rust so the process tree is killed on app exit
-      await invoke("set_server_pid", { pid: child.pid });
+      await invoke("set_server_pid", { pid: child.pid, mudDir });
       addLog("INFO", `Server process started (PID: ${child.pid})`);
       return { success: true };
     } catch (err) {

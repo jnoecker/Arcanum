@@ -12,7 +12,7 @@ pub fn run() {
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_window_state::Builder::new().build())
-        .manage(server::ServerPid::default())
+        .manage(server::ServerState::default())
         .invoke_handler(tauri::generate_handler![
             project::validate_mud_dir,
             project::list_legacy_images,

@@ -22,11 +22,18 @@ import type { WorldFile } from "@/types/world";
 import { RoomNode } from "./RoomNode";
 import { CrossZoneNode } from "./CrossZoneNode";
 import { RoomPanel } from "./RoomPanel";
+import { DirectionPicker } from "./DirectionPicker";
 
 const nodeTypes = {
   room: RoomNode,
   crossZone: CrossZoneNode,
 };
+
+interface PendingConnection {
+  source: string;
+  target: string;
+  inferredDir: string;
+}
 
 interface ZoneEditorProps {
   zoneId: string;
@@ -39,6 +46,8 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
   const [showAddRoom, setShowAddRoom] = useState(false);
   const [newRoomId, setNewRoomId] = useState("");
   const addRoomInputRef = useRef<HTMLInputElement>(null);
+  const [pendingConnection, setPendingConnection] =
+    useState<PendingConnection | null>(null);
 
   // Rebuild graph when WorldFile changes
   const { layoutNodes, layoutEdges } = useMemo(() => {
@@ -86,16 +95,31 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
       if (target.startsWith("xzone:")) return;
 
       // Extract direction from sourceHandle (e.g. "source-n" → "n")
-      const dir = sourceHandle?.replace("source-", "") ?? "n";
+      const inferredDir = sourceHandle?.replace("source-", "") ?? "n";
 
+      // Show direction picker instead of immediately creating exit
+      setPendingConnection({ source, target, inferredDir });
+    },
+    [zoneState],
+  );
+
+  const handleConfirmConnection = useCallback(
+    (direction: string) => {
+      if (!zoneState || !pendingConnection) return;
       try {
-        const next = addExit(zoneState.data, source, dir, target);
+        const next = addExit(
+          zoneState.data,
+          pendingConnection.source,
+          direction,
+          pendingConnection.target,
+        );
         applyWorldChange(next);
       } catch {
         // Exit already exists or invalid — ignore
       }
+      setPendingConnection(null);
     },
-    [zoneState, applyWorldChange],
+    [zoneState, pendingConnection, applyWorldChange],
   );
 
   const onSelectionChange = useCallback(
@@ -208,7 +232,7 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
 
       {/* Map + Panel */}
       <div className="flex min-h-0 flex-1">
-        <div className="flex-1">
+        <div className="relative flex-1">
           <ReactFlow
             nodes={nodes}
             edges={edges}
@@ -244,6 +268,17 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
               style={{ background: "#161b22", border: "1px solid #30363d" }}
             />
           </ReactFlow>
+
+          {/* Direction picker overlay */}
+          {pendingConnection && (
+            <DirectionPicker
+              source={pendingConnection.source}
+              target={pendingConnection.target}
+              initialDirection={pendingConnection.inferredDir}
+              onConfirm={handleConfirmConnection}
+              onCancel={() => setPendingConnection(null)}
+            />
+          )}
         </div>
 
         {selectedRoomId && (

@@ -1,7 +1,7 @@
 use chrono::Utc;
 use hmac::{Hmac, Mac};
 use sha2::{Digest, Sha256};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use tauri::{AppHandle, Manager};
 
 use crate::assets::{self, AssetEntry};
@@ -199,6 +199,18 @@ fn detect_content_type(file_name: &str) -> &'static str {
         "image/jpeg"
     } else if file_name.ends_with(".webp") {
         "image/webp"
+    } else if file_name.ends_with(".mp4") {
+        "video/mp4"
+    } else if file_name.ends_with(".webm") {
+        "video/webm"
+    } else if file_name.ends_with(".mp3") {
+        "audio/mpeg"
+    } else if file_name.ends_with(".ogg") {
+        "audio/ogg"
+    } else if file_name.ends_with(".flac") {
+        "audio/flac"
+    } else if file_name.ends_with(".wav") {
+        "audio/wav"
     } else {
         "image/png"
     }
@@ -255,12 +267,23 @@ async fn upload_object(
 
 // ─── Tauri commands ─────────────────────────────────────────────────
 
-fn images_dir(app: &AppHandle) -> Result<PathBuf, String> {
+fn assets_base_dir(app: &AppHandle) -> Result<PathBuf, String> {
     let dir = app
         .path()
         .app_data_dir()
         .map_err(|e| format!("Failed to get app data dir: {e}"))?;
-    Ok(dir.join("assets").join("images"))
+    Ok(dir.join("assets"))
+}
+
+/// Find a media file across all asset subdirectories.
+fn find_asset_file(base: &Path, file_name: &str) -> Option<PathBuf> {
+    for subdir in &["images", "video", "audio"] {
+        let path = base.join(subdir).join(file_name);
+        if path.exists() {
+            return Some(path);
+        }
+    }
+    None
 }
 
 #[tauri::command]
@@ -272,7 +295,7 @@ pub async fn sync_assets(app: AppHandle) -> Result<SyncProgress, String> {
 
     let assets = assets::list_assets(app.clone()).await?;
     let unsynced: Vec<&AssetEntry> = assets.iter().filter(|a| a.sync_status != "synced").collect();
-    let img_dir = images_dir(&app)?;
+    let base_dir = assets_base_dir(&app)?;
     let client = reqwest::Client::new();
 
     let mut progress = SyncProgress {
@@ -303,7 +326,14 @@ pub async fn sync_assets(app: AppHandle) -> Result<SyncProgress, String> {
         }
 
         // Read local file
-        let file_path = img_dir.join(&asset.file_name);
+        let file_path = match find_asset_file(&base_dir, &asset.file_name) {
+            Some(p) => p,
+            None => {
+                progress.failed += 1;
+                progress.errors.push(format!("{}: File not found in asset dirs", asset.file_name));
+                continue;
+            }
+        };
         let body = match tokio::fs::read(&file_path).await {
             Ok(b) => b,
             Err(e) => {

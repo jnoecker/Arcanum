@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { useAssetStore } from "@/stores/assetStore";
-import type { AssetEntry } from "@/types/assets";
+import type { AssetEntry, SyncProgress } from "@/types/assets";
 
 /** Triggers image loading when the element scrolls into view. */
 function LazyImage({
@@ -44,12 +44,19 @@ export function AssetGallery({ onClose }: { onClose: () => void }) {
   const assetsDir = useAssetStore((s) => s.assetsDir);
   const loadAssets = useAssetStore((s) => s.loadAssets);
   const deleteAsset = useAssetStore((s) => s.deleteAsset);
+  const syncing = useAssetStore((s) => s.syncing);
+  const syncToR2 = useAssetStore((s) => s.syncToR2);
+  const settings = useAssetStore((s) => s.settings);
 
   const [selected, setSelected] = useState<AssetEntry | null>(null);
   const [filter, setFilter] = useState<string>("all");
   const [sort, setSort] = useState<SortKey>("newest");
   const [deleting, setDeleting] = useState(false);
   const [imageCache, setImageCache] = useState<Record<string, string>>({});
+  const [syncResult, setSyncResult] = useState<SyncProgress | null>(null);
+
+  const hasR2 = !!(settings?.r2_account_id && settings?.r2_bucket && settings?.r2_access_key_id);
+  const unsyncedCount = assets.filter((a) => a.sync_status !== "synced").length;
 
   useEffect(() => {
     loadAssets();
@@ -113,6 +120,29 @@ export function AssetGallery({ onClose }: { onClose: () => void }) {
             <span className="text-xs text-text-muted">
               {sorted.length} asset{sorted.length !== 1 ? "s" : ""}
             </span>
+            {hasR2 && (
+              <>
+                <div className="mx-1 h-4 w-px bg-border-default" />
+                <button
+                  onClick={async () => {
+                    const result = await syncToR2();
+                    setSyncResult(result);
+                  }}
+                  disabled={syncing || unsyncedCount === 0}
+                  className="rounded px-2 py-0.5 text-[10px] font-medium transition-colors enabled:bg-accent/15 enabled:text-accent enabled:hover:bg-accent/25 disabled:cursor-not-allowed disabled:text-text-muted disabled:opacity-50"
+                >
+                  {syncing ? "Syncing..." : unsyncedCount > 0 ? `Sync ${unsyncedCount} to R2` : "All synced"}
+                </button>
+                {syncResult && !syncing && (
+                  <span className="text-[10px] text-text-muted">
+                    {syncResult.uploaded} uploaded, {syncResult.skipped} deduped
+                    {syncResult.failed > 0 && (
+                      <span className="text-status-error"> ({syncResult.failed} failed)</span>
+                    )}
+                  </span>
+                )}
+              </>
+            )}
           </div>
           <button
             onClick={onClose}
@@ -274,6 +304,15 @@ export function AssetGallery({ onClose }: { onClose: () => void }) {
                     </p>
                     <p className="truncate font-mono text-[10px] text-text-muted">
                       {selected.hash.slice(0, 16)}...
+                    </p>
+                  </div>
+
+                  <div>
+                    <p className="text-[10px] uppercase tracking-wider text-text-muted">
+                      Sync
+                    </p>
+                    <p className={`text-xs ${selected.sync_status === "synced" ? "text-status-success" : "text-text-muted"}`}>
+                      {selected.sync_status === "synced" ? "Synced to R2" : "Local only"}
                     </p>
                   </div>
 

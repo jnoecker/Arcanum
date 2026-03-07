@@ -45,6 +45,20 @@ export interface Settings {
   deepinfra_api_key: string;
   image_model: string;
   enhance_model: string;
+  r2_account_id: string;
+  r2_access_key_id: string;
+  r2_secret_access_key: string;
+  r2_bucket: string;
+  r2_custom_domain: string;
+}
+
+/** Mirrors the Rust SyncProgress struct */
+export interface SyncProgress {
+  total: number;
+  uploaded: number;
+  skipped: number;
+  failed: number;
+  errors: string[];
 }
 
 export const IMAGE_MODELS = [

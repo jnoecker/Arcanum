@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { invoke } from "@tauri-apps/api/core";
-import type { AssetEntry, GeneratedImage, Settings } from "@/types/assets";
+import type { AssetEntry, GeneratedImage, Settings, SyncProgress } from "@/types/assets";
 import type { ArtStyle } from "@/lib/arcanumPrompts";
 
 interface AssetState {
@@ -10,6 +10,8 @@ interface AssetState {
   generatorOpen: boolean;
   galleryOpen: boolean;
   artStyle: ArtStyle;
+  syncing: boolean;
+  lastSyncResult: SyncProgress | null;
 
   loadSettings: () => Promise<void>;
   saveSettings: (settings: Settings) => Promise<void>;
@@ -17,6 +19,9 @@ interface AssetState {
   loadAssets: () => Promise<void>;
   acceptAsset: (image: GeneratedImage, assetType: string, enhancedPrompt?: string) => Promise<void>;
   deleteAsset: (id: string) => Promise<void>;
+
+  syncToR2: () => Promise<SyncProgress>;
+  getSyncStatus: () => Promise<SyncProgress>;
 
   setArtStyle: (style: ArtStyle) => void;
   openGenerator: () => void;
@@ -32,6 +37,8 @@ export const useAssetStore = create<AssetState>((set, get) => ({
   generatorOpen: false,
   galleryOpen: false,
   artStyle: "gentle_magic" as ArtStyle,
+  syncing: false,
+  lastSyncResult: null,
 
   loadSettings: async () => {
     const settings = await invoke<Settings>("get_settings");
@@ -71,6 +78,25 @@ export const useAssetStore = create<AssetState>((set, get) => ({
   deleteAsset: async (id: string) => {
     await invoke("delete_asset", { id });
     await get().loadAssets();
+  },
+
+  syncToR2: async () => {
+    set({ syncing: true });
+    try {
+      const result = await invoke<SyncProgress>("sync_assets");
+      set({ lastSyncResult: result, syncing: false });
+      await get().loadAssets(); // refresh sync_status
+      return result;
+    } catch (e) {
+      const err: SyncProgress = { total: 0, uploaded: 0, skipped: 0, failed: 0, errors: [String(e)] };
+      set({ lastSyncResult: err, syncing: false });
+      return err;
+    }
+  },
+
+  getSyncStatus: async () => {
+    const result = await invoke<SyncProgress>("get_sync_status");
+    return result;
   },
 
   setArtStyle: (artStyle) => set({ artStyle }),

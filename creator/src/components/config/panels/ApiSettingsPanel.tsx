@@ -109,6 +109,90 @@ export function ApiSettingsPanel() {
         />
       </div>
 
+      {/* R2 Section */}
+      <div className="border-t border-border-default pt-4">
+        <h3 className="mb-3 font-display text-xs uppercase tracking-widest text-text-muted">
+          Cloudflare R2 (Asset CDN)
+        </h3>
+        <div className="flex flex-col gap-3">
+          <div>
+            <label className="mb-1 block text-[10px] uppercase tracking-wider text-text-muted">
+              Account ID
+            </label>
+            <input
+              type="text"
+              value={draft.r2_account_id}
+              onChange={(e) =>
+                setDraft({ ...draft, r2_account_id: e.target.value })
+              }
+              placeholder="Cloudflare account ID"
+              className="w-full rounded border border-border-default bg-bg-primary px-3 py-1.5 text-xs text-text-primary placeholder:text-text-muted outline-none focus:border-accent/50"
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="mb-1 block text-[10px] uppercase tracking-wider text-text-muted">
+                Access Key ID
+              </label>
+              <input
+                type="text"
+                value={draft.r2_access_key_id}
+                onChange={(e) =>
+                  setDraft({ ...draft, r2_access_key_id: e.target.value })
+                }
+                placeholder="R2 access key"
+                className="w-full rounded border border-border-default bg-bg-primary px-3 py-1.5 text-xs text-text-primary placeholder:text-text-muted outline-none focus:border-accent/50"
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-[10px] uppercase tracking-wider text-text-muted">
+                Secret Access Key
+              </label>
+              <input
+                type="password"
+                value={draft.r2_secret_access_key}
+                onChange={(e) =>
+                  setDraft({ ...draft, r2_secret_access_key: e.target.value })
+                }
+                placeholder="R2 secret key"
+                className="w-full rounded border border-border-default bg-bg-primary px-3 py-1.5 text-xs text-text-primary placeholder:text-text-muted outline-none focus:border-accent/50"
+              />
+            </div>
+          </div>
+          <div>
+            <label className="mb-1 block text-[10px] uppercase tracking-wider text-text-muted">
+              Bucket Name
+            </label>
+            <input
+              type="text"
+              value={draft.r2_bucket}
+              onChange={(e) =>
+                setDraft({ ...draft, r2_bucket: e.target.value })
+              }
+              placeholder="my-assets-bucket"
+              className="w-full rounded border border-border-default bg-bg-primary px-3 py-1.5 text-xs text-text-primary placeholder:text-text-muted outline-none focus:border-accent/50"
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-[10px] uppercase tracking-wider text-text-muted">
+              Custom Domain
+            </label>
+            <input
+              type="text"
+              value={draft.r2_custom_domain}
+              onChange={(e) =>
+                setDraft({ ...draft, r2_custom_domain: e.target.value })
+              }
+              placeholder="https://assets.example.com"
+              className="w-full rounded border border-border-default bg-bg-primary px-3 py-1.5 text-xs text-text-primary placeholder:text-text-muted outline-none focus:border-accent/50"
+            />
+            <p className="mt-1 text-[10px] text-text-muted">
+              Public URL for the game client to load images from
+            </p>
+          </div>
+        </div>
+      </div>
+
       {/* Save */}
       <div className="flex items-center gap-2">
         <button

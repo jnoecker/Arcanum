@@ -12,6 +12,16 @@ pub struct Settings {
     pub image_model: String,
     #[serde(default = "default_enhance_model")]
     pub enhance_model: String,
+    #[serde(default)]
+    pub r2_account_id: String,
+    #[serde(default)]
+    pub r2_access_key_id: String,
+    #[serde(default)]
+    pub r2_secret_access_key: String,
+    #[serde(default)]
+    pub r2_bucket: String,
+    #[serde(default)]
+    pub r2_custom_domain: String,
 }
 
 fn default_image_model() -> String {
@@ -28,6 +38,11 @@ impl Default for Settings {
             deepinfra_api_key: String::new(),
             image_model: default_image_model(),
             enhance_model: default_enhance_model(),
+            r2_account_id: String::new(),
+            r2_access_key_id: String::new(),
+            r2_secret_access_key: String::new(),
+            r2_bucket: String::new(),
+            r2_custom_domain: String::new(),
         }
     }
 }

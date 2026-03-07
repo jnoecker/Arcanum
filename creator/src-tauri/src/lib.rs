@@ -1,6 +1,7 @@
 mod assets;
 mod deepinfra;
 mod project;
+mod r2;
 mod settings;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -20,6 +21,9 @@ pub fn run() {
             assets::list_assets,
             assets::delete_asset,
             assets::get_assets_dir,
+            r2::sync_assets,
+            r2::get_sync_status,
+            r2::resolve_asset_url,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

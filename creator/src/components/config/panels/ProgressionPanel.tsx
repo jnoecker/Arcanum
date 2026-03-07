@@ -100,6 +100,28 @@ export function ProgressionPanel({ config, onChange }: ConfigPanelProps) {
               min={0}
             />
           </FieldRow>
+          <FieldRow label="Base HP">
+            <NumberInput
+              value={p.rewards.baseHp}
+              onCommit={(v) =>
+                patchProg({
+                  rewards: { ...p.rewards, baseHp: v ?? 10 },
+                })
+              }
+              min={1}
+            />
+          </FieldRow>
+          <FieldRow label="Base Mana">
+            <NumberInput
+              value={p.rewards.baseMana}
+              onCommit={(v) =>
+                patchProg({
+                  rewards: { ...p.rewards, baseMana: v ?? 20 },
+                })
+              }
+              min={0}
+            />
+          </FieldRow>
           <CheckboxInput
             checked={p.rewards.fullHealOnLevelUp}
             onCommit={(v) =>

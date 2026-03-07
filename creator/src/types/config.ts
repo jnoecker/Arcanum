@@ -34,10 +34,7 @@ export interface StatBindings {
 
 export interface AbilityEffectConfig {
   type: string;
-  minDamage?: number;
-  maxDamage?: number;
-  minHeal?: number;
-  maxHeal?: number;
+  value?: number;
   statusEffectId?: string;
   flatThreat?: number;
   margin?: number;
@@ -51,7 +48,7 @@ export interface AbilityDefinitionConfig {
   levelRequired: number;
   targetType: string;
   effect: AbilityEffectConfig;
-  requiredClass?: string;
+  classRestriction?: string;
   image?: string;
 }
 
@@ -62,8 +59,7 @@ export interface StatusEffectDefinitionConfig {
   effectType: string;
   durationMs: number;
   tickIntervalMs?: number;
-  tickMinValue?: number;
-  tickMaxValue?: number;
+  tickValue?: number;
   shieldAmount?: number;
   stackBehavior?: string;
   maxStacks?: number;
@@ -106,6 +102,11 @@ export interface MobTiersConfig {
   boss: MobTierConfig;
 }
 
+export interface MobActionDelayConfig {
+  minActionDelayMillis: number;
+  maxActionDelayMillis: number;
+}
+
 // ─── Progression ────────────────────────────────────────────────────
 
 export interface XpCurveConfig {
@@ -121,6 +122,8 @@ export interface LevelRewardsConfig {
   manaPerLevel: number;
   fullHealOnLevelUp: boolean;
   fullManaOnLevelUp: boolean;
+  baseHp: number;
+  baseMana: number;
 }
 
 export interface ProgressionConfig {
@@ -178,6 +181,13 @@ export interface ClassDefinitionConfig {
   primaryStat?: string;
   selectable?: boolean;
   startRoom?: string;
+  threatMultiplier?: number;
+}
+
+// ─── Character Creation ────────────────────────────────────────────
+
+export interface CharacterCreationConfig {
+  startingGold: number;
 }
 
 export interface RaceDefinitionConfig {
@@ -205,6 +215,7 @@ export interface AppConfig {
   statusEffects: Record<string, StatusEffectDefinitionConfig>;
   combat: CombatConfig;
   mobTiers: MobTiersConfig;
+  mobActionDelay: MobActionDelayConfig;
   progression: ProgressionConfig;
   economy: EconomyConfig;
   regen: RegenConfig;
@@ -212,6 +223,7 @@ export interface AppConfig {
   group: GroupConfig;
   classes: Record<string, ClassDefinitionConfig>;
   races: Record<string, RaceDefinitionConfig>;
+  characterCreation: CharacterCreationConfig;
   /** Raw YAML content for unrecognized sections */
   rawSections: Record<string, unknown>;
 }

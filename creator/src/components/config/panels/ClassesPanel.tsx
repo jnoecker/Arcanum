@@ -199,6 +199,16 @@ export function ClassesPanel({ config, onChange }: ConfigPanelProps) {
                           placeholder="zone:room_id"
                         />
                       </FieldRow>
+                      <FieldRow label="Threat Mult.">
+                        <NumberInput
+                          value={cls.threatMultiplier ?? 1.0}
+                          onCommit={(v) =>
+                            patchClass(id, { threatMultiplier: v ?? 1.0 })
+                          }
+                          min={0}
+                          step={0.1}
+                        />
+                      </FieldRow>
                       <CheckboxInput
                         checked={cls.selectable ?? true}
                         onCommit={(v) =>
@@ -212,6 +222,8 @@ export function ClassesPanel({ config, onChange }: ConfigPanelProps) {
                         hpPerLevel={cls.hpPerLevel}
                         manaPerLevel={cls.manaPerLevel}
                         maxLevel={maxLevel}
+                        baseHp={config.progression.rewards.baseHp}
+                        baseMana={config.progression.rewards.baseMana}
                       />
                     </div>
                   </div>
@@ -234,13 +246,15 @@ function HpManaCurve({
   hpPerLevel,
   manaPerLevel,
   maxLevel,
+  baseHp,
+  baseMana,
 }: {
   hpPerLevel: number;
   manaPerLevel: number;
   maxLevel: number;
+  baseHp: number;
+  baseMana: number;
 }) {
-  const baseHp = 10;
-  const baseMana = 10;
   const levels = Math.max(maxLevel, 2);
 
   const hpAt = (lvl: number) => baseHp + (lvl - 1) * hpPerLevel;

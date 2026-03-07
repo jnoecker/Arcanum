@@ -29,6 +29,38 @@ export function MobTiersPanel({ config, onChange }: ConfigPanelProps) {
 
   return (
     <>
+      <Section title="Action Delay">
+        <div className="flex flex-col gap-1.5">
+          <FieldRow label="Min Delay (ms)">
+            <NumberInput
+              value={config.mobActionDelay.minActionDelayMillis}
+              onCommit={(v) =>
+                onChange({
+                  mobActionDelay: {
+                    ...config.mobActionDelay,
+                    minActionDelayMillis: v ?? 8000,
+                  },
+                })
+              }
+              min={0}
+            />
+          </FieldRow>
+          <FieldRow label="Max Delay (ms)">
+            <NumberInput
+              value={config.mobActionDelay.maxActionDelayMillis}
+              onCommit={(v) =>
+                onChange({
+                  mobActionDelay: {
+                    ...config.mobActionDelay,
+                    maxActionDelayMillis: v ?? 20000,
+                  },
+                })
+              }
+              min={0}
+            />
+          </FieldRow>
+        </div>
+      </Section>
       {TIER_NAMES.map((tier) => (
         <Section key={tier} title={tier.charAt(0).toUpperCase() + tier.slice(1)}>
           <div className="flex flex-col gap-1.5">

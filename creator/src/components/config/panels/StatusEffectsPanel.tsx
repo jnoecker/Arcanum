@@ -191,20 +191,11 @@ export function StatusEffectsPanel({ config, onChange }: ConfigPanelProps) {
                               min={100}
                             />
                           </FieldRow>
-                          <FieldRow label="Tick Min">
+                          <FieldRow label="Tick Value">
                             <NumberInput
-                              value={e.tickMinValue}
+                              value={e.tickValue}
                               onCommit={(v) =>
-                                patchEffect(id, { tickMinValue: v ?? 1 })
-                              }
-                              min={0}
-                            />
-                          </FieldRow>
-                          <FieldRow label="Tick Max">
-                            <NumberInput
-                              value={e.tickMaxValue}
-                              onCommit={(v) =>
-                                patchEffect(id, { tickMaxValue: v ?? 3 })
+                                patchEffect(id, { tickValue: v ?? 1 })
                               }
                               min={0}
                             />

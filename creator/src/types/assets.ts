@@ -38,7 +38,10 @@ export type AssetType =
   | "status_art"
   | "empty_state"
   | "entity_portrait"
-  | "zone_map";
+  | "zone_map"
+  | "splash_hero"
+  | "loading_vignette"
+  | "panel_header";
 
 /** Mirrors the Rust Settings struct */
 export interface Settings {

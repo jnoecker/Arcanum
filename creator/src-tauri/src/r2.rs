@@ -143,6 +143,55 @@ fn build_signed_head(
     Ok((url, headers))
 }
 
+/// Build a signed DELETE request for R2.
+fn build_signed_delete(
+    account_id: &str,
+    bucket: &str,
+    access_key: &str,
+    secret_key: &str,
+    object_key: &str,
+) -> Result<(String, Vec<(String, String)>), String> {
+    let host = format!("{bucket}.{account_id}.r2.cloudflarestorage.com");
+    let url = format!("https://{host}/{object_key}");
+    let now = Utc::now();
+    let date_stamp = now.format("%Y%m%d").to_string();
+    let amz_date = now.format("%Y%m%dT%H%M%SZ").to_string();
+    let region = "auto";
+    let service = "s3";
+
+    let payload_hash = sha256_hex(b""); // empty body for DELETE
+
+    let canonical_headers = format!(
+        "host:{host}\nx-amz-content-sha256:{payload_hash}\nx-amz-date:{amz_date}\n"
+    );
+    let signed_headers = "host;x-amz-content-sha256;x-amz-date";
+    let canonical_request = format!(
+        "DELETE\n/{object_key}\n\n{canonical_headers}\n{signed_headers}\n{payload_hash}"
+    );
+
+    let credential_scope = format!("{date_stamp}/{region}/{service}/aws4_request");
+    let string_to_sign = format!(
+        "AWS4-HMAC-SHA256\n{amz_date}\n{credential_scope}\n{}",
+        sha256_hex(canonical_request.as_bytes())
+    );
+
+    let signing_key = sign_key(secret_key.as_bytes(), &date_stamp, region, service);
+    let signature = hex::encode(hmac_sha256(&signing_key, string_to_sign.as_bytes()));
+
+    let authorization = format!(
+        "AWS4-HMAC-SHA256 Credential={access_key}/{credential_scope}, SignedHeaders={signed_headers}, Signature={signature}"
+    );
+
+    let headers = vec![
+        ("Host".to_string(), host),
+        ("x-amz-date".to_string(), amz_date),
+        ("x-amz-content-sha256".to_string(), payload_hash),
+        ("Authorization".to_string(), authorization),
+    ];
+
+    Ok((url, headers))
+}
+
 // ─── R2 operations ──────────────────────────────────────────────────
 
 fn detect_content_type(file_name: &str) -> &'static str {
@@ -303,6 +352,53 @@ pub async fn get_sync_status(app: AppHandle) -> Result<SyncProgress, String> {
         failed: unsynced,
         errors: Vec::new(),
     })
+}
+
+/// Delete an object from R2.
+async fn delete_object(
+    client: &reqwest::Client,
+    account_id: &str,
+    bucket: &str,
+    access_key: &str,
+    secret_key: &str,
+    object_key: &str,
+) -> Result<(), String> {
+    let (url, headers) = build_signed_delete(account_id, bucket, access_key, secret_key, object_key)?;
+
+    let mut req = client.delete(&url);
+    for (k, v) in headers {
+        req = req.header(&k, &v);
+    }
+
+    let resp = req.send().await.map_err(|e| format!("DELETE request failed: {e}"))?;
+    // R2 returns 204 on success, 404 if already gone — both are fine
+    if !resp.status().is_success() && resp.status().as_u16() != 404 {
+        let status = resp.status();
+        let text = resp.text().await.unwrap_or_default();
+        return Err(format!("R2 delete failed ({status}): {text}"));
+    }
+    Ok(())
+}
+
+/// Delete an asset from R2 by its file_name. Best-effort: does not fail the
+/// overall delete if R2 credentials are missing or the request errors.
+#[tauri::command]
+pub async fn delete_from_r2(app: AppHandle, file_name: String) -> Result<(), String> {
+    let s = settings::get_settings(app).await?;
+    if s.r2_account_id.is_empty() || s.r2_access_key_id.is_empty() || s.r2_secret_access_key.is_empty() || s.r2_bucket.is_empty() {
+        // No R2 configured — nothing to delete remotely
+        return Ok(());
+    }
+
+    let client = reqwest::Client::new();
+    delete_object(
+        &client,
+        &s.r2_account_id,
+        &s.r2_bucket,
+        &s.r2_access_key_id,
+        &s.r2_secret_access_key,
+        &file_name,
+    ).await
 }
 
 /// Resolve an asset file_name to its public R2 URL via custom domain.

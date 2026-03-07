@@ -76,6 +76,11 @@ export const useAssetStore = create<AssetState>((set, get) => ({
   },
 
   deleteAsset: async (id: string) => {
+    // Delete from R2 first (best-effort — no-ops if R2 not configured)
+    const asset = get().assets.find((a) => a.id === id);
+    if (asset?.sync_status === "synced") {
+      await invoke("delete_from_r2", { fileName: asset.file_name }).catch(() => {});
+    }
     await invoke("delete_asset", { id });
     await get().loadAssets();
   },

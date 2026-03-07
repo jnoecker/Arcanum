@@ -126,6 +126,35 @@ export async function saveConfig(mudDir: string): Promise<void> {
         return obj;
       },
     );
+
+    // Classes
+    saveMapSection(engine, ["classes", "definitions"], config.classes,
+      (cls) => {
+        const obj: Record<string, unknown> = {
+          displayName: cls.displayName,
+          hpPerLevel: cls.hpPerLevel,
+          manaPerLevel: cls.manaPerLevel,
+        };
+        if (cls.description) obj.description = cls.description;
+        if (cls.primaryStat) obj.primaryStat = cls.primaryStat;
+        if (cls.selectable != null) obj.selectable = cls.selectable;
+        if (cls.startRoom) obj.startRoom = cls.startRoom;
+        return obj;
+      },
+    );
+
+    // Races
+    saveMapSection(engine, ["races", "definitions"], config.races,
+      (race) => {
+        const obj: Record<string, unknown> = {
+          displayName: race.displayName,
+        };
+        if (race.description) obj.description = race.description;
+        if (race.statMods && Object.keys(race.statMods).length > 0)
+          obj.statMods = race.statMods;
+        return obj;
+      },
+    );
   }
 
   // ─── Progression ────────────────────────────────────────────

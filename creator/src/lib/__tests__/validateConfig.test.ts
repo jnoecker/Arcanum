@@ -1,4 +1,4 @@
-import { describe, it, expect } from "bun:test";
+import { describe, it, expect } from "vitest";
 import { validateConfig } from "../validateConfig";
 import type { AppConfig } from "@/types/config";
 

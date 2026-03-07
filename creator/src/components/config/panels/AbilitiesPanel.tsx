@@ -82,6 +82,11 @@ export function AbilitiesPanel({ config, onChange }: ConfigPanelProps) {
     label: config.statusEffects[id]!.displayName,
   }));
 
+  const classOptions = Object.keys(config.classes).map((id) => ({
+    value: id,
+    label: config.classes[id]!.displayName,
+  }));
+
   return (
     <Section
       title={`Abilities (${abilityIds.length})`}
@@ -196,14 +201,16 @@ export function AbilitiesPanel({ config, onChange }: ConfigPanelProps) {
                         />
                       </FieldRow>
                       <FieldRow label="Req. Class">
-                        <TextInput
+                        <SelectInput
                           value={a.requiredClass ?? ""}
                           onCommit={(v) =>
                             patchAbility(id, {
                               requiredClass: v || undefined,
                             })
                           }
-                          placeholder="optional"
+                          options={classOptions}
+                          allowEmpty
+                          placeholder="-- any class --"
                         />
                       </FieldRow>
 

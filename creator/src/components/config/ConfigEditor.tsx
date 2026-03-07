@@ -15,10 +15,14 @@ import { StatsPanel } from "./panels/StatsPanel";
 import { AbilitiesPanel } from "./panels/AbilitiesPanel";
 import { StatusEffectsPanel } from "./panels/StatusEffectsPanel";
 import { RawYamlPanel } from "./panels/RawYamlPanel";
+import { ClassesPanel } from "./panels/ClassesPanel";
+import { RacesPanel } from "./panels/RacesPanel";
 
 const CONFIG_TABS = [
   { id: "server", label: "Server" },
   { id: "stats", label: "Stats" },
+  { id: "classes", label: "Classes" },
+  { id: "races", label: "Races" },
   { id: "abilities", label: "Abilities" },
   { id: "statusEffects", label: "Status FX" },
   { id: "combat", label: "Combat" },
@@ -121,6 +125,12 @@ export function ConfigEditor() {
           )}
           {activeTab === "stats" && (
             <StatsPanel config={config} onChange={handleChange} />
+          )}
+          {activeTab === "classes" && (
+            <ClassesPanel config={config} onChange={handleChange} />
+          )}
+          {activeTab === "races" && (
+            <RacesPanel config={config} onChange={handleChange} />
           )}
           {activeTab === "abilities" && (
             <AbilitiesPanel config={config} onChange={handleChange} />

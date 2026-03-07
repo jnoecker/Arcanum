@@ -46,7 +46,7 @@ export function EntityPanel({
   }, [world, selection]);
 
   return (
-    <div className="flex w-80 shrink-0 flex-col border-l border-border-default bg-bg-secondary">
+    <div className="flex min-h-0 w-80 shrink-0 flex-col border-l border-border-default bg-bg-secondary">
       {/* Header with back button */}
       <div className="shrink-0 flex items-center gap-2 border-b border-border-default px-4 py-2">
         <button

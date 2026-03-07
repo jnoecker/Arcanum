@@ -1,174 +1,52 @@
-import { useState, useCallback, useMemo } from "react";
 import type { ConfigPanelProps } from "./types";
 import type { RaceDefinitionConfig } from "@/types/config";
 import type { StatMap } from "@/types/world";
-import {
-  Section,
-  FieldRow,
-  TextInput,
-  IconButton,
-} from "@/components/ui/FormWidgets";
+import { FieldRow, TextInput } from "@/components/ui/FormWidgets";
+import { RegistryPanel } from "./RegistryPanel";
 
 export function RacesPanel({ config, onChange }: ConfigPanelProps) {
-  const races = config.races;
-  const raceIds = Object.keys(races);
-  const [expanded, setExpanded] = useState<string | null>(null);
-  const [newId, setNewId] = useState("");
-  const [search, setSearch] = useState("");
-
   const statDefs = config.stats.definitions;
   const statIds = Object.keys(statDefs);
 
-  const filteredIds = useMemo(() => {
-    const ids = Object.keys(races);
-    if (!search.trim()) return ids;
-    const q = search.toLowerCase();
-    return ids.filter(
-      (id) =>
-        id.toLowerCase().includes(q) ||
-        races[id]!.displayName.toLowerCase().includes(q),
-    );
-  }, [races, search]);
-
-  const patchRace = (id: string, p: Partial<RaceDefinitionConfig>) =>
-    onChange({
-      races: { ...races, [id]: { ...races[id]!, ...p } },
-    });
-
-  const deleteRace = (id: string) => {
-    const next = { ...races };
-    delete next[id];
-    onChange({ races: next });
-    if (expanded === id) setExpanded(null);
-  };
-
-  const addRace = useCallback(() => {
-    const id = newId.trim().toUpperCase().replace(/\s+/g, "_");
-    if (!id || races[id]) return;
-    onChange({
-      races: {
-        ...races,
-        [id]: {
-          displayName: newId.trim(),
-        },
-      },
-    });
-    setNewId("");
-    setExpanded(id);
-  }, [newId, races, onChange]);
-
   return (
-    <Section
-      title={`Races (${raceIds.length})`}
-      actions={
-        <div className="flex items-center gap-1">
-          <input
-            className="w-28 rounded border border-border-default bg-bg-primary px-1.5 py-0.5 text-xs text-text-primary outline-none focus:border-accent/50"
-            placeholder="New race"
-            value={newId}
-            onChange={(e) => setNewId(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") addRace();
-            }}
+    <RegistryPanel<RaceDefinitionConfig>
+      title="Races"
+      items={config.races}
+      onItemsChange={(races) => onChange({ races })}
+      placeholder="New race"
+      idTransform={(raw) => raw.trim().toUpperCase().replace(/\s+/g, "_")}
+      getDisplayName={(r) => r.displayName}
+      defaultItem={(raw) => ({ displayName: raw })}
+      renderSummary={(_id, race) => {
+        const mods = race.statMods ?? {};
+        return Object.entries(mods)
+          .map(([k, v]) => `${k}${v >= 0 ? "+" : ""}${v}`)
+          .join(" ");
+      }}
+      renderDetail={(_id, race, patch) => (
+        <>
+          <FieldRow label="Display Name">
+            <TextInput
+              value={race.displayName}
+              onCommit={(v) => patch({ displayName: v })}
+            />
+          </FieldRow>
+          <FieldRow label="Description">
+            <TextInput
+              value={race.description ?? ""}
+              onCommit={(v) => patch({ description: v || undefined })}
+              placeholder="optional"
+            />
+          </FieldRow>
+          <RaceStatMods
+            statMods={race.statMods}
+            statIds={statIds}
+            statDefs={statDefs}
+            onChange={(mods) => patch({ statMods: mods })}
           />
-          <IconButton onClick={addRace} title="Add race">
-            +
-          </IconButton>
-        </div>
-      }
-    >
-      {raceIds.length > 3 && (
-        <input
-          className="mb-2 w-full rounded border border-border-default bg-bg-primary px-1.5 py-0.5 text-xs text-text-primary outline-none focus:border-accent/50"
-          placeholder="Search races..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
+        </>
       )}
-      {filteredIds.length === 0 ? (
-        <p className="text-xs text-text-muted">
-          {raceIds.length === 0 ? "No races defined" : "No matches"}
-        </p>
-      ) : (
-        <div className="flex flex-col gap-1">
-          {filteredIds.map((id) => {
-            const race = races[id]!;
-            const isOpen = expanded === id;
-            const mods = race.statMods ?? {};
-            const modSummary = Object.entries(mods)
-              .map(([k, v]) => `${k}${v >= 0 ? "+" : ""}${v}`)
-              .join(" ");
-
-            return (
-              <div
-                key={id}
-                className="rounded border border-border-muted bg-bg-primary"
-              >
-                <div
-                  className="flex cursor-pointer items-center justify-between px-2 py-1.5"
-                  onClick={() => setExpanded(isOpen ? null : id)}
-                >
-                  <span className="text-xs text-text-primary">
-                    <span className="font-semibold">{race.displayName}</span>
-                    <span className="ml-2 text-text-muted">{id}</span>
-                  </span>
-                  <div className="flex items-center gap-1">
-                    {modSummary && (
-                      <span className="text-[10px] text-text-muted">
-                        {modSummary}
-                      </span>
-                    )}
-                    <span onClick={(ev) => ev.stopPropagation()}>
-                      <IconButton
-                        onClick={() => deleteRace(id)}
-                        title="Delete"
-                        danger
-                      >
-                        x
-                      </IconButton>
-                    </span>
-                  </div>
-                </div>
-                {isOpen && (
-                  <div className="border-t border-border-muted px-2 py-2">
-                    <div className="flex flex-col gap-1.5">
-                      <FieldRow label="Display Name">
-                        <TextInput
-                          value={race.displayName}
-                          onCommit={(v) =>
-                            patchRace(id, { displayName: v })
-                          }
-                        />
-                      </FieldRow>
-                      <FieldRow label="Description">
-                        <TextInput
-                          value={race.description ?? ""}
-                          onCommit={(v) =>
-                            patchRace(id, {
-                              description: v || undefined,
-                            })
-                          }
-                          placeholder="optional"
-                        />
-                      </FieldRow>
-
-                      <RaceStatMods
-                        statMods={race.statMods}
-                        statIds={statIds}
-                        statDefs={statDefs}
-                        onChange={(mods) =>
-                          patchRace(id, { statMods: mods })
-                        }
-                      />
-                    </div>
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      )}
-    </Section>
+    />
   );
 }
 

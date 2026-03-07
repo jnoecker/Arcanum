@@ -1,23 +1,16 @@
-import { useState, useCallback, useMemo } from "react";
+import { useMemo } from "react";
 import type { ConfigPanelProps } from "./types";
 import type { ClassDefinitionConfig } from "@/types/config";
 import {
-  Section,
   FieldRow,
   NumberInput,
   TextInput,
   SelectInput,
   CheckboxInput,
-  IconButton,
 } from "@/components/ui/FormWidgets";
+import { RegistryPanel } from "./RegistryPanel";
 
 export function ClassesPanel({ config, onChange }: ConfigPanelProps) {
-  const classes = config.classes;
-  const classIds = Object.keys(classes);
-  const [expanded, setExpanded] = useState<string | null>(null);
-  const [newId, setNewId] = useState("");
-  const [search, setSearch] = useState("");
-
   const statOptions = useMemo(
     () =>
       Object.entries(config.stats.definitions).map(([id, def]) => ({
@@ -27,208 +20,90 @@ export function ClassesPanel({ config, onChange }: ConfigPanelProps) {
     [config.stats.definitions],
   );
 
-  const filteredIds = useMemo(() => {
-    const ids = Object.keys(classes);
-    if (!search.trim()) return ids;
-    const q = search.toLowerCase();
-    return ids.filter(
-      (id) =>
-        id.toLowerCase().includes(q) ||
-        classes[id]!.displayName.toLowerCase().includes(q),
-    );
-  }, [classes, search]);
-
-  const patchClass = (id: string, p: Partial<ClassDefinitionConfig>) =>
-    onChange({
-      classes: { ...classes, [id]: { ...classes[id]!, ...p } },
-    });
-
-  const deleteClass = (id: string) => {
-    const next = { ...classes };
-    delete next[id];
-    onChange({ classes: next });
-    if (expanded === id) setExpanded(null);
-  };
-
-  const addClass = useCallback(() => {
-    const id = newId.trim().toUpperCase().replace(/\s+/g, "_");
-    if (!id || classes[id]) return;
-    onChange({
-      classes: {
-        ...classes,
-        [id]: {
-          displayName: newId.trim(),
-          hpPerLevel: 6,
-          manaPerLevel: 8,
-          selectable: true,
-        },
-      },
-    });
-    setNewId("");
-    setExpanded(id);
-  }, [newId, classes, onChange]);
-
   const maxLevel = config.progression.maxLevel;
 
   return (
-    <Section
-      title={`Classes (${classIds.length})`}
-      actions={
-        <div className="flex items-center gap-1">
-          <input
-            className="w-28 rounded border border-border-default bg-bg-primary px-1.5 py-0.5 text-xs text-text-primary outline-none focus:border-accent/50"
-            placeholder="New class"
-            value={newId}
-            onChange={(e) => setNewId(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") addClass();
-            }}
-          />
-          <IconButton onClick={addClass} title="Add class">
-            +
-          </IconButton>
-        </div>
+    <RegistryPanel<ClassDefinitionConfig>
+      title="Classes"
+      items={config.classes}
+      onItemsChange={(classes) => onChange({ classes })}
+      placeholder="New class"
+      idTransform={(raw) => raw.trim().toUpperCase().replace(/\s+/g, "_")}
+      getDisplayName={(cls) => cls.displayName}
+      defaultItem={(raw) => ({
+        displayName: raw,
+        hpPerLevel: 6,
+        manaPerLevel: 8,
+        selectable: true,
+      })}
+      renderSummary={(_id, cls) =>
+        `HP+${cls.hpPerLevel} / MP+${cls.manaPerLevel}`
       }
-    >
-      {classIds.length > 3 && (
-        <input
-          className="mb-2 w-full rounded border border-border-default bg-bg-primary px-1.5 py-0.5 text-xs text-text-primary outline-none focus:border-accent/50"
-          placeholder="Search classes..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
-      )}
-      {filteredIds.length === 0 ? (
-        <p className="text-xs text-text-muted">
-          {classIds.length === 0 ? "No classes defined" : "No matches"}
-        </p>
-      ) : (
-        <div className="flex flex-col gap-1">
-          {filteredIds.map((id) => {
-            const cls = classes[id]!;
-            const isOpen = expanded === id;
-            return (
-              <div
-                key={id}
-                className="rounded border border-border-muted bg-bg-primary"
-              >
-                <div
-                  className="flex cursor-pointer items-center justify-between px-2 py-1.5"
-                  onClick={() => setExpanded(isOpen ? null : id)}
-                >
-                  <span className="text-xs text-text-primary">
-                    <span className="font-semibold">{cls.displayName}</span>
-                    <span className="ml-2 text-text-muted">{id}</span>
-                  </span>
-                  <div className="flex items-center gap-1">
-                    <span className="text-[10px] text-text-muted">
-                      HP+{cls.hpPerLevel} / MP+{cls.manaPerLevel}
-                    </span>
-                    <span onClick={(ev) => ev.stopPropagation()}>
-                      <IconButton
-                        onClick={() => deleteClass(id)}
-                        title="Delete"
-                        danger
-                      >
-                        x
-                      </IconButton>
-                    </span>
-                  </div>
-                </div>
-                {isOpen && (
-                  <div className="border-t border-border-muted px-2 py-2">
-                    <div className="flex flex-col gap-1.5">
-                      <FieldRow label="Display Name">
-                        <TextInput
-                          value={cls.displayName}
-                          onCommit={(v) =>
-                            patchClass(id, { displayName: v })
-                          }
-                        />
-                      </FieldRow>
-                      <FieldRow label="Description">
-                        <TextInput
-                          value={cls.description ?? ""}
-                          onCommit={(v) =>
-                            patchClass(id, {
-                              description: v || undefined,
-                            })
-                          }
-                          placeholder="optional"
-                        />
-                      </FieldRow>
-                      <FieldRow label="HP / Level">
-                        <NumberInput
-                          value={cls.hpPerLevel}
-                          onCommit={(v) =>
-                            patchClass(id, { hpPerLevel: v ?? 6 })
-                          }
-                          min={0}
-                        />
-                      </FieldRow>
-                      <FieldRow label="Mana / Level">
-                        <NumberInput
-                          value={cls.manaPerLevel}
-                          onCommit={(v) =>
-                            patchClass(id, { manaPerLevel: v ?? 8 })
-                          }
-                          min={0}
-                        />
-                      </FieldRow>
-                      <FieldRow label="Primary Stat">
-                        <SelectInput
-                          value={cls.primaryStat ?? ""}
-                          onCommit={(v) =>
-                            patchClass(id, {
-                              primaryStat: v || undefined,
-                            })
-                          }
-                          options={statOptions}
-                          allowEmpty
-                          placeholder="-- none --"
-                        />
-                      </FieldRow>
-                      <FieldRow label="Start Room">
-                        <TextInput
-                          value={cls.startRoom ?? ""}
-                          onCommit={(v) =>
-                            patchClass(id, {
-                              startRoom: v || undefined,
-                            })
-                          }
-                          placeholder="zone:room_id"
-                        />
-                      </FieldRow>
-                      <CheckboxInput
-                        checked={cls.selectable ?? true}
-                        onCommit={(v) =>
-                          patchClass(id, { selectable: v })
-                        }
-                        label="Selectable at character creation"
-                      />
+      renderDetail={(_id, cls, patch) => (
+        <>
+          <FieldRow label="Display Name">
+            <TextInput
+              value={cls.displayName}
+              onCommit={(v) => patch({ displayName: v })}
+            />
+          </FieldRow>
+          <FieldRow label="Description">
+            <TextInput
+              value={cls.description ?? ""}
+              onCommit={(v) => patch({ description: v || undefined })}
+              placeholder="optional"
+            />
+          </FieldRow>
+          <FieldRow label="HP / Level">
+            <NumberInput
+              value={cls.hpPerLevel}
+              onCommit={(v) => patch({ hpPerLevel: v ?? 6 })}
+              min={0}
+            />
+          </FieldRow>
+          <FieldRow label="Mana / Level">
+            <NumberInput
+              value={cls.manaPerLevel}
+              onCommit={(v) => patch({ manaPerLevel: v ?? 8 })}
+              min={0}
+            />
+          </FieldRow>
+          <FieldRow label="Primary Stat">
+            <SelectInput
+              value={cls.primaryStat ?? ""}
+              onCommit={(v) => patch({ primaryStat: v || undefined })}
+              options={statOptions}
+              allowEmpty
+              placeholder="-- none --"
+            />
+          </FieldRow>
+          <FieldRow label="Start Room">
+            <TextInput
+              value={cls.startRoom ?? ""}
+              onCommit={(v) => patch({ startRoom: v || undefined })}
+              placeholder="zone:room_id"
+            />
+          </FieldRow>
+          <CheckboxInput
+            checked={cls.selectable ?? true}
+            onCommit={(v) => patch({ selectable: v })}
+            label="Selectable at character creation"
+          />
 
-                      {/* HP / Mana curve graph */}
-                      <HpManaCurve
-                        hpPerLevel={cls.hpPerLevel}
-                        manaPerLevel={cls.manaPerLevel}
-                        maxLevel={maxLevel}
-                      />
-                    </div>
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
+          <HpManaCurve
+            hpPerLevel={cls.hpPerLevel}
+            manaPerLevel={cls.manaPerLevel}
+            maxLevel={maxLevel}
+          />
+        </>
       )}
-    </Section>
+    />
   );
 }
 
 /**
  * Simple SVG line chart showing HP and Mana growth from level 1 to maxLevel.
  * Formula: basePool + (level - 1) * perLevel
- * Uses base HP=10, base Mana=10 as typical starting values.
  */
 function HpManaCurve({
   hpPerLevel,
@@ -271,7 +146,6 @@ function HpManaCurve({
     return `M${points.join("L")}`;
   };
 
-  // Y-axis ticks (deduplicate to avoid duplicate keys when maxVal is small)
   const tickCount = 4;
   const yTicks = [
     ...new Set(
@@ -291,7 +165,6 @@ function HpManaCurve({
         className="w-full"
         style={{ maxWidth: w }}
       >
-        {/* Grid lines + Y labels */}
         {yTicks.map((tick) => (
           <g key={tick}>
             <line
@@ -314,7 +187,6 @@ function HpManaCurve({
             </text>
           </g>
         ))}
-        {/* X-axis labels */}
         <text
           x={pad.left}
           y={h - 2}
@@ -333,21 +205,18 @@ function HpManaCurve({
         >
           Lv{levels}
         </text>
-        {/* HP line */}
         <path
           d={buildPath(hpAt)}
           fill="none"
           stroke="#ef4444"
           strokeWidth={1.5}
         />
-        {/* Mana line */}
         <path
           d={buildPath(manaAt)}
           fill="none"
           stroke="#3b82f6"
           strokeWidth={1.5}
         />
-        {/* Legend */}
         <line x1={pad.left} y1={pad.top - 2} x2={pad.left + 14} y2={pad.top - 2} stroke="#ef4444" strokeWidth={1.5} />
         <text x={pad.left + 17} y={pad.top + 1} className="fill-text-secondary" fontSize={8}>
           HP ({hpAt(levels)})

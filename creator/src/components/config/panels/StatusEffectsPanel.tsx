@@ -1,15 +1,14 @@
-import { useState, useCallback } from "react";
 import type { ConfigPanelProps } from "./types";
 import type { StatusEffectDefinitionConfig } from "@/types/config";
 import type { StatMap } from "@/types/world";
 import {
-  Section,
   FieldRow,
   NumberInput,
   TextInput,
   SelectInput,
   IconButton,
 } from "@/components/ui/FormWidgets";
+import { RegistryPanel } from "./RegistryPanel";
 
 const EFFECT_TYPES = [
   { value: "DOT", label: "Damage Over Time" },
@@ -28,220 +27,115 @@ const STACK_BEHAVIORS = [
 ];
 
 export function StatusEffectsPanel({ config, onChange }: ConfigPanelProps) {
-  const effects = config.statusEffects;
-  const effectIds = Object.keys(effects);
-  const [expanded, setExpanded] = useState<string | null>(null);
-  const [newId, setNewId] = useState("");
-
-  const patchEffect = (
-    id: string,
-    p: Partial<StatusEffectDefinitionConfig>,
-  ) =>
-    onChange({
-      statusEffects: { ...effects, [id]: { ...effects[id]!, ...p } },
-    });
-
-  const deleteEffect = (id: string) => {
-    const next = { ...effects };
-    delete next[id];
-    onChange({ statusEffects: next });
-    if (expanded === id) setExpanded(null);
-  };
-
-  const addEffect = useCallback(() => {
-    const id = newId.trim().toLowerCase().replace(/\s+/g, "_");
-    if (!id || effects[id]) return;
-    onChange({
-      statusEffects: {
-        ...effects,
-        [id]: {
-          displayName: newId.trim(),
-          effectType: "DOT",
-          durationMs: 10000,
-          stackBehavior: "REFRESH",
-        },
-      },
-    });
-    setNewId("");
-    setExpanded(id);
-  }, [newId, effects, onChange]);
-
   const statIds = Object.keys(config.stats.definitions);
 
   return (
-    <Section
-      title={`Status Effects (${effectIds.length})`}
-      actions={
-        <div className="flex items-center gap-1">
-          <input
-            className="w-28 rounded border border-border-default bg-bg-primary px-1.5 py-0.5 text-xs text-text-primary outline-none focus:border-accent/50"
-            placeholder="New effect"
-            value={newId}
-            onChange={(e) => setNewId(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") addEffect();
-            }}
-          />
-          <IconButton onClick={addEffect} title="Add effect">
-            +
-          </IconButton>
-        </div>
-      }
-    >
-      {effectIds.length === 0 ? (
-        <p className="text-xs text-text-muted">No status effects defined</p>
-      ) : (
-        <div className="flex flex-col gap-1">
-          {effectIds.map((id) => {
-            const e = effects[id]!;
-            const isOpen = expanded === id;
-            const showTick =
-              e.effectType === "DOT" || e.effectType === "HOT";
-            const showStatMods =
-              e.effectType === "STAT_BUFF" || e.effectType === "STAT_DEBUFF";
+    <RegistryPanel<StatusEffectDefinitionConfig>
+      title="Status Effects"
+      items={config.statusEffects}
+      onItemsChange={(statusEffects) => onChange({ statusEffects })}
+      placeholder="New effect"
+      idTransform={(raw) => raw.trim().toLowerCase().replace(/\s+/g, "_")}
+      getDisplayName={(e) => e.displayName}
+      defaultItem={(raw) => ({
+        displayName: raw,
+        effectType: "DOT",
+        durationMs: 10000,
+        stackBehavior: "REFRESH",
+      })}
+      renderSummary={(_id, e) => e.effectType}
+      renderDetail={(_id, e, patch) => {
+        const showTick =
+          e.effectType === "DOT" || e.effectType === "HOT";
+        const showStatMods =
+          e.effectType === "STAT_BUFF" || e.effectType === "STAT_DEBUFF";
 
-            return (
-              <div
-                key={id}
-                className="rounded border border-border-muted bg-bg-primary"
-              >
-                <div
-                  className="flex cursor-pointer items-center justify-between px-2 py-1.5"
-                  onClick={() => setExpanded(isOpen ? null : id)}
-                >
-                  <span className="text-xs text-text-primary">
-                    <span className="font-semibold">{e.displayName}</span>
-                    <span className="ml-2 text-text-muted">{id}</span>
-                  </span>
-                  <div className="flex items-center gap-1">
-                    <span className="text-[10px] text-text-muted">
-                      {e.effectType}
-                    </span>
-                    <span onClick={(ev) => ev.stopPropagation()}>
-                      <IconButton
-                        onClick={() => deleteEffect(id)}
-                        title="Delete"
-                        danger
-                      >
-                        x
-                      </IconButton>
-                    </span>
-                  </div>
-                </div>
-                {isOpen && (
-                  <div className="border-t border-border-muted px-2 py-2">
-                    <div className="flex flex-col gap-1.5">
-                      <FieldRow label="Display Name">
-                        <TextInput
-                          value={e.displayName}
-                          onCommit={(v) =>
-                            patchEffect(id, { displayName: v })
-                          }
-                        />
-                      </FieldRow>
-                      <FieldRow label="Effect Type">
-                        <SelectInput
-                          value={e.effectType}
-                          onCommit={(v) =>
-                            patchEffect(id, { effectType: v })
-                          }
-                          options={EFFECT_TYPES}
-                        />
-                      </FieldRow>
-                      <FieldRow label="Duration (ms)">
-                        <NumberInput
-                          value={e.durationMs}
-                          onCommit={(v) =>
-                            patchEffect(id, { durationMs: v ?? 10000 })
-                          }
-                          min={0}
-                        />
-                      </FieldRow>
-                      <FieldRow label="Stack Behavior">
-                        <SelectInput
-                          value={e.stackBehavior ?? "REFRESH"}
-                          onCommit={(v) =>
-                            patchEffect(id, { stackBehavior: v })
-                          }
-                          options={STACK_BEHAVIORS}
-                        />
-                      </FieldRow>
-                      {(e.stackBehavior === "STACK") && (
-                        <FieldRow label="Max Stacks">
-                          <NumberInput
-                            value={e.maxStacks}
-                            onCommit={(v) =>
-                              patchEffect(id, { maxStacks: v ?? 3 })
-                            }
-                            min={1}
-                          />
-                        </FieldRow>
-                      )}
+        return (
+          <>
+            <FieldRow label="Display Name">
+              <TextInput
+                value={e.displayName}
+                onCommit={(v) => patch({ displayName: v })}
+              />
+            </FieldRow>
+            <FieldRow label="Effect Type">
+              <SelectInput
+                value={e.effectType}
+                onCommit={(v) => patch({ effectType: v })}
+                options={EFFECT_TYPES}
+              />
+            </FieldRow>
+            <FieldRow label="Duration (ms)">
+              <NumberInput
+                value={e.durationMs}
+                onCommit={(v) => patch({ durationMs: v ?? 10000 })}
+                min={0}
+              />
+            </FieldRow>
+            <FieldRow label="Stack Behavior">
+              <SelectInput
+                value={e.stackBehavior ?? "REFRESH"}
+                onCommit={(v) => patch({ stackBehavior: v })}
+                options={STACK_BEHAVIORS}
+              />
+            </FieldRow>
+            {e.stackBehavior === "STACK" && (
+              <FieldRow label="Max Stacks">
+                <NumberInput
+                  value={e.maxStacks}
+                  onCommit={(v) => patch({ maxStacks: v ?? 3 })}
+                  min={1}
+                />
+              </FieldRow>
+            )}
 
-                      {showTick && (
-                        <>
-                          <FieldRow label="Tick Interval">
-                            <NumberInput
-                              value={e.tickIntervalMs}
-                              onCommit={(v) =>
-                                patchEffect(id, {
-                                  tickIntervalMs: v ?? 2000,
-                                })
-                              }
-                              min={100}
-                            />
-                          </FieldRow>
-                          <FieldRow label="Tick Min">
-                            <NumberInput
-                              value={e.tickMinValue}
-                              onCommit={(v) =>
-                                patchEffect(id, { tickMinValue: v ?? 1 })
-                              }
-                              min={0}
-                            />
-                          </FieldRow>
-                          <FieldRow label="Tick Max">
-                            <NumberInput
-                              value={e.tickMaxValue}
-                              onCommit={(v) =>
-                                patchEffect(id, { tickMaxValue: v ?? 3 })
-                              }
-                              min={0}
-                            />
-                          </FieldRow>
-                        </>
-                      )}
+            {showTick && (
+              <>
+                <FieldRow label="Tick Interval">
+                  <NumberInput
+                    value={e.tickIntervalMs}
+                    onCommit={(v) => patch({ tickIntervalMs: v ?? 2000 })}
+                    min={100}
+                  />
+                </FieldRow>
+                <FieldRow label="Tick Min">
+                  <NumberInput
+                    value={e.tickMinValue}
+                    onCommit={(v) => patch({ tickMinValue: v ?? 1 })}
+                    min={0}
+                  />
+                </FieldRow>
+                <FieldRow label="Tick Max">
+                  <NumberInput
+                    value={e.tickMaxValue}
+                    onCommit={(v) => patch({ tickMaxValue: v ?? 3 })}
+                    min={0}
+                  />
+                </FieldRow>
+              </>
+            )}
 
-                      {e.effectType === "SHIELD" && (
-                        <FieldRow label="Shield Amount">
-                          <NumberInput
-                            value={e.shieldAmount}
-                            onCommit={(v) =>
-                              patchEffect(id, { shieldAmount: v ?? 20 })
-                            }
-                            min={0}
-                          />
-                        </FieldRow>
-                      )}
+            {e.effectType === "SHIELD" && (
+              <FieldRow label="Shield Amount">
+                <NumberInput
+                  value={e.shieldAmount}
+                  onCommit={(v) => patch({ shieldAmount: v ?? 20 })}
+                  min={0}
+                />
+              </FieldRow>
+            )}
 
-                      {showStatMods && (
-                        <StatModsEditor
-                          statMods={e.statMods}
-                          statIds={statIds}
-                          onChange={(mods) =>
-                            patchEffect(id, { statMods: mods })
-                          }
-                        />
-                      )}
-                    </div>
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      )}
-    </Section>
+            {showStatMods && (
+              <StatModsEditor
+                statMods={e.statMods}
+                statIds={statIds}
+                onChange={(mods) => patch({ statMods: mods })}
+              />
+            )}
+          </>
+        );
+      }}
+    />
   );
 }
 

@@ -50,6 +50,7 @@ export function AssetGallery({ onClose }: { onClose: () => void }) {
 
   const [selected, setSelected] = useState<AssetEntry | null>(null);
   const [filter, setFilter] = useState<string>("all");
+  const [zoneFilter, setZoneFilter] = useState<string>("all");
   const [sort, setSort] = useState<SortKey>("newest");
   const [deleting, setDeleting] = useState(false);
   const [imageCache, setImageCache] = useState<Record<string, string>>({});
@@ -63,9 +64,12 @@ export function AssetGallery({ onClose }: { onClose: () => void }) {
   }, [loadAssets]);
 
   const types = Array.from(new Set(assets.map((a) => a.asset_type)));
+  const zones = Array.from(new Set(assets.map((a) => a.context?.zone).filter(Boolean))) as string[];
 
   const filtered = assets.filter(
-    (a) => filter === "all" || a.asset_type === filter,
+    (a) =>
+      (filter === "all" || a.asset_type === filter) &&
+      (zoneFilter === "all" || a.context?.zone === zoneFilter),
   );
 
   const sorted = [...filtered].sort((a, b) => {
@@ -179,6 +183,36 @@ export function AssetGallery({ onClose }: { onClose: () => void }) {
               </button>
             ))}
           </div>
+          {zones.length > 0 && (
+            <>
+              <div className="mx-1 h-4 w-px bg-border-default" />
+              <div className="flex gap-1">
+                <button
+                  onClick={() => setZoneFilter("all")}
+                  className={`rounded px-2 py-0.5 text-[10px] transition-colors ${
+                    zoneFilter === "all"
+                      ? "bg-accent/20 text-accent"
+                      : "text-text-muted hover:text-text-secondary"
+                  }`}
+                >
+                  All zones
+                </button>
+                {zones.map((zone) => (
+                  <button
+                    key={zone}
+                    onClick={() => setZoneFilter(zone)}
+                    className={`rounded px-2 py-0.5 text-[10px] transition-colors ${
+                      zoneFilter === zone
+                        ? "bg-accent/20 text-accent"
+                        : "text-text-muted hover:text-text-secondary"
+                    }`}
+                  >
+                    {zone.replace(/_/g, " ")}
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
           <div className="ml-auto flex gap-1">
             {(["newest", "oldest", "type"] as SortKey[]).map((key) => (
               <button
@@ -315,6 +349,22 @@ export function AssetGallery({ onClose }: { onClose: () => void }) {
                       {selected.sync_status === "synced" ? "Synced to R2" : "Local only"}
                     </p>
                   </div>
+
+                  {selected.context?.zone && (
+                    <div>
+                      <p className="text-[10px] uppercase tracking-wider text-text-muted">
+                        Context
+                      </p>
+                      <p className="text-xs text-text-secondary">
+                        {selected.context.zone.replace(/_/g, " ")}
+                        {selected.context.entity_type && (
+                          <span className="text-text-muted">
+                            {" / "}{selected.context.entity_type}{selected.context.entity_id ? `: ${selected.context.entity_id}` : ""}
+                          </span>
+                        )}
+                      </p>
+                    </div>
+                  )}
 
                   <div>
                     <p className="text-[10px] uppercase tracking-wider text-text-muted">

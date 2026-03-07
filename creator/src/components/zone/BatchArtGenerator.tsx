@@ -7,6 +7,14 @@ import { useAssetStore } from "@/stores/assetStore";
 import type { GeneratedImage } from "@/types/assets";
 import { IMAGE_MODELS } from "@/types/assets";
 
+function assetTypeForKind(kind: string): string {
+  if (kind === "room") return "background";
+  if (kind === "mob") return "entity_portrait";
+  if (kind === "item") return "entity_portrait";
+  if (kind === "shop") return "background";
+  return "background";
+}
+
 interface BatchTarget {
   kind: string;
   id: string;
@@ -103,6 +111,8 @@ export function BatchArtGenerator({
   const doneCount = targets.filter((t) => t.status === "done").length;
   const errorCount = targets.filter((t) => t.status === "error").length;
 
+  const acceptAsset = useAssetStore((s) => s.acceptAsset);
+
   const handleRun = useCallback(async () => {
     setRunning(true);
     const model = IMAGE_MODELS[0]; // FLUX Schnell for batch
@@ -132,6 +142,13 @@ export function BatchArtGenerator({
             j === i ? { ...t, status: "done", result: image } : t,
           ),
         );
+
+        // Save to asset manifest with context
+        await acceptAsset(image, assetTypeForKind(target.kind), undefined, {
+          zone: zoneId,
+          entity_type: target.kind,
+          entity_id: target.id,
+        }).catch(() => {}); // best-effort
 
         // Update world with image path
         const { kind, id } = target;

@@ -384,6 +384,8 @@ export function RoomPanel({
             getPrompt={(style) => roomPrompt(roomId, room, style)}
             currentImage={room.image}
             onAccept={(filePath) => onWorldChange(updateRoom(world, roomId, { image: filePath }))}
+            assetType="background"
+            context={{ zone: zoneId, entity_type: "room", entity_id: roomId }}
           />
           {room.music && (
             <p className="text-xs text-text-muted">Music: {room.music}</p>

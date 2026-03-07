@@ -18,6 +18,7 @@ interface RecipeEditorProps {
   world: WorldFile;
   onWorldChange: (world: WorldFile) => void;
   onDelete: () => void;
+  zoneId?: string;
 }
 
 const CRAFTING_SKILLS = [
@@ -36,6 +37,7 @@ export function RecipeEditor({
   world,
   onWorldChange,
   onDelete,
+  zoneId,
 }: RecipeEditorProps) {
   const { entity: recipe, patch, handleDelete } = useEntityEditor<RecipeFile>(
     world,
@@ -189,7 +191,7 @@ export function RecipeEditor({
         return style === "gentle_magic"
           ? `${preamble}\n\nStill life of a crafted creation called "${recipe.displayName}" — a warmly glowing artifact resting on a soft surface, gentle ambient light diffusing around it, floating motes of gold, lavender and pale blue tones, dreamlike quality, painterly, centered composition`
           : `${preamble}\n\nStill life of a crafted creation called "${recipe.displayName}" — a luminous artifact emerging from baroque scrollwork, aurum-gold energy threads weaving through its form, deep indigo background, painterly, centered composition`;
-      }} />
+      }} assetType="entity_portrait" context={zoneId ? { zone: zoneId, entity_type: "recipe", entity_id: recipeId } : undefined} />
       <DeleteEntityButton onClick={handleDelete} label="Delete Recipe" />
     </>
   );

@@ -18,6 +18,7 @@ interface ItemEditorProps {
   world: WorldFile;
   onWorldChange: (world: WorldFile) => void;
   onDelete: () => void;
+  zoneId?: string;
 }
 
 const SLOT_OPTIONS = [
@@ -28,6 +29,7 @@ const SLOT_OPTIONS = [
 
 export function ItemEditor({
   itemId,
+  zoneId,
   world,
   onWorldChange,
   onDelete,
@@ -214,7 +216,7 @@ export function ItemEditor({
         </div>
       </Section>
 
-      <MediaSection image={item.image} onImageChange={(v) => patch({ image: v })} getPrompt={(style) => itemPrompt(itemId, item, style)} />
+      <MediaSection image={item.image} onImageChange={(v) => patch({ image: v })} getPrompt={(style) => itemPrompt(itemId, item, style)} assetType="entity_portrait" context={zoneId ? { zone: zoneId, entity_type: "item", entity_id: itemId } : undefined} />
       <DeleteEntityButton onClick={handleDelete} label="Delete Item" />
     </>
   );

@@ -17,6 +17,7 @@ interface ShopEditorProps {
   world: WorldFile;
   onWorldChange: (world: WorldFile) => void;
   onDelete: () => void;
+  zoneId?: string;
 }
 
 export function ShopEditor({
@@ -24,6 +25,7 @@ export function ShopEditor({
   world,
   onWorldChange,
   onDelete,
+  zoneId,
 }: ShopEditorProps) {
   const { entity: shop, patch, handleDelete, rooms } = useEntityEditor<ShopFile>(
     world,
@@ -114,7 +116,7 @@ export function ShopEditor({
         )}
       </Section>
 
-      <MediaSection image={shop.image} onImageChange={(v) => patch({ image: v })} getPrompt={(style) => shopPrompt(shopId, shop, style)} />
+      <MediaSection image={shop.image} onImageChange={(v) => patch({ image: v })} getPrompt={(style) => shopPrompt(shopId, shop, style)} assetType="background" context={zoneId ? { zone: zoneId, entity_type: "shop", entity_id: shopId } : undefined} />
       <DeleteEntityButton onClick={handleDelete} label="Delete Shop" />
     </>
   );

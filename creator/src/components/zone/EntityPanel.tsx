@@ -23,6 +23,7 @@ interface EntityPanelProps {
   world: WorldFile;
   onWorldChange: (world: WorldFile) => void;
   onClose: () => void;
+  zoneId?: string;
 }
 
 export function EntityPanel({
@@ -30,6 +31,7 @@ export function EntityPanel({
   world,
   onWorldChange,
   onClose,
+  zoneId,
 }: EntityPanelProps) {
   const [showYaml, setShowYaml] = useState(false);
 
@@ -88,6 +90,7 @@ export function EntityPanel({
           world={world}
           onWorldChange={onWorldChange}
           onDelete={handleDelete}
+          zoneId={zoneId}
         />
       )}
       {selection.kind === "item" && (
@@ -96,6 +99,7 @@ export function EntityPanel({
           world={world}
           onWorldChange={onWorldChange}
           onDelete={handleDelete}
+          zoneId={zoneId}
         />
       )}
       {selection.kind === "shop" && (
@@ -104,6 +108,7 @@ export function EntityPanel({
           world={world}
           onWorldChange={onWorldChange}
           onDelete={handleDelete}
+          zoneId={zoneId}
         />
       )}
       {selection.kind === "quest" && (
@@ -128,6 +133,7 @@ export function EntityPanel({
           world={world}
           onWorldChange={onWorldChange}
           onDelete={handleDelete}
+          zoneId={zoneId}
         />
       )}
       </>

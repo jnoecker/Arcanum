@@ -374,6 +374,7 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
             world={zoneState.data}
             onWorldChange={applyWorldChange}
             onClose={() => setSelectedEntity(null)}
+            zoneId={zoneId}
           />
         ) : selectedRoomId ? (
           <RoomPanel

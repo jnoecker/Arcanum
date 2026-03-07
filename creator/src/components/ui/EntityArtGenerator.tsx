@@ -4,7 +4,7 @@ import { useAssetStore } from "@/stores/assetStore";
 import { useImageSrc } from "@/lib/useImageSrc";
 import { getEnhanceSystemPrompt, ART_STYLE_LABELS, type ArtStyle } from "@/lib/arcanumPrompts";
 import { IMAGE_MODELS } from "@/types/assets";
-import type { GeneratedImage } from "@/types/assets";
+import type { AssetContext, GeneratedImage } from "@/types/assets";
 
 type Stage = "idle" | "generating" | "preview";
 
@@ -15,12 +15,18 @@ interface EntityArtGeneratorProps {
   currentImage?: string;
   /** Called when user accepts a generated image */
   onAccept: (filePath: string) => void;
+  /** Asset type for manifest (e.g. "entity_portrait", "background") */
+  assetType?: string;
+  /** Context tags for the asset manifest */
+  context?: AssetContext;
 }
 
 export function EntityArtGenerator({
   getPrompt,
   currentImage,
   onAccept,
+  assetType,
+  context,
 }: EntityArtGeneratorProps) {
   const settings = useAssetStore((s) => s.settings);
   const artStyle = useAssetStore((s) => s.artStyle);
@@ -79,9 +85,15 @@ export function EntityArtGenerator({
     }
   };
 
-  const handleAccept = () => {
+  const acceptAsset = useAssetStore((s) => s.acceptAsset);
+
+  const handleAccept = async () => {
     if (!result) return;
     onAccept(result.file_path);
+    // Save to asset manifest with context (best-effort)
+    if (assetType) {
+      await acceptAsset(result, assetType, undefined, context).catch(() => {});
+    }
     setStage("idle");
     setResult(null);
   };

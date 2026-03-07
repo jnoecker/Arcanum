@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { invoke } from "@tauri-apps/api/core";
-import type { AssetEntry, GeneratedImage, Settings, SyncProgress } from "@/types/assets";
+import type { AssetContext, AssetEntry, GeneratedImage, Settings, SyncProgress } from "@/types/assets";
 import type { ArtStyle } from "@/lib/arcanumPrompts";
 
 interface AssetState {
@@ -17,7 +17,7 @@ interface AssetState {
   saveSettings: (settings: Settings) => Promise<void>;
 
   loadAssets: () => Promise<void>;
-  acceptAsset: (image: GeneratedImage, assetType: string, enhancedPrompt?: string) => Promise<void>;
+  acceptAsset: (image: GeneratedImage, assetType: string, enhancedPrompt?: string, context?: AssetContext) => Promise<void>;
   deleteAsset: (id: string) => Promise<void>;
 
   syncToR2: () => Promise<SyncProgress>;
@@ -56,7 +56,7 @@ export const useAssetStore = create<AssetState>((set, get) => ({
     set({ assets });
   },
 
-  acceptAsset: async (image, assetType, enhancedPrompt) => {
+  acceptAsset: async (image, assetType, enhancedPrompt, context) => {
     // Extract just the filename from the full path
     const fileName = image.file_path.split(/[\\/]/).pop() ?? image.hash;
 
@@ -67,7 +67,7 @@ export const useAssetStore = create<AssetState>((set, get) => ({
       enhancedPrompt: enhancedPrompt ?? null,
       model: image.model,
       assetType,
-      context: null,
+      context: context ?? null,
       fileName,
       width: image.width,
       height: image.height,

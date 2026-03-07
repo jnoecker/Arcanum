@@ -1,6 +1,7 @@
 import { Section, FieldRow, TextInput } from "@/components/ui/FormWidgets";
 import { EntityArtGenerator } from "@/components/ui/EntityArtGenerator";
 import type { ArtStyle } from "@/lib/arcanumPrompts";
+import type { AssetContext } from "@/types/assets";
 
 export function DeleteEntityButton({
   onClick,
@@ -25,10 +26,14 @@ export function MediaSection({
   image,
   onImageChange,
   getPrompt,
+  assetType,
+  context,
 }: {
   image: string | undefined;
   onImageChange: (v: string | undefined) => void;
   getPrompt?: (style: ArtStyle) => string;
+  assetType?: string;
+  context?: AssetContext;
 }) {
   return (
     <Section title="Media">
@@ -45,6 +50,8 @@ export function MediaSection({
             getPrompt={getPrompt}
             currentImage={image}
             onAccept={(filePath) => onImageChange(filePath)}
+            assetType={assetType}
+            context={context}
           />
         )}
       </div>

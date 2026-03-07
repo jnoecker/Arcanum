@@ -20,6 +20,7 @@ interface MobEditorProps {
   world: WorldFile;
   onWorldChange: (world: WorldFile) => void;
   onDelete: () => void;
+  zoneId?: string;
 }
 
 const TIER_OPTIONS = [
@@ -43,6 +44,7 @@ export function MobEditor({
   world,
   onWorldChange,
   onDelete,
+  zoneId,
 }: MobEditorProps) {
   const { entity: mob, patch, handleDelete, rooms } = useEntityEditor<MobFile>(
     world,
@@ -379,7 +381,7 @@ export function MobEditor({
         onWorldChange={onWorldChange}
       />
 
-      <MediaSection image={mob.image} onImageChange={(v) => patch({ image: v })} getPrompt={(style) => mobPrompt(mobId, mob, style)} />
+      <MediaSection image={mob.image} onImageChange={(v) => patch({ image: v })} getPrompt={(style) => mobPrompt(mobId, mob, style)} assetType="entity_portrait" context={zoneId ? { zone: zoneId, entity_type: "mob", entity_id: mobId } : undefined} />
       <DeleteEntityButton onClick={handleDelete} label="Delete Mob" />
     </>
   );

@@ -24,6 +24,7 @@ pub fn run() {
             r2::sync_assets,
             r2::get_sync_status,
             r2::resolve_asset_url,
+            r2::delete_from_r2,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -1,5 +1,6 @@
 import { useProjectStore } from "@/stores/projectStore";
 import { Console } from "./Console";
+import { ZoneEditor } from "./zone/ZoneEditor";
 
 export function MainArea() {
   const tabs = useProjectStore((s) => s.tabs);
@@ -17,12 +18,10 @@ export function MainArea() {
   switch (activeTab.kind) {
     case "console":
       return <Console />;
-    case "zone":
-      return (
-        <div className="flex flex-1 items-center justify-center text-text-muted">
-          Zone editor: {activeTab.label} (Phase 2)
-        </div>
-      );
+    case "zone": {
+      const zoneId = activeTab.id.replace(/^zone:/, "");
+      return <ZoneEditor key={zoneId} zoneId={zoneId} />;
+    }
     case "config":
       return (
         <div className="flex flex-1 items-center justify-center text-text-muted">

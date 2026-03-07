@@ -1,5 +1,6 @@
 import { useCallback } from "react";
 import { Command, type Child } from "@tauri-apps/plugin-shell";
+import { invoke } from "@tauri-apps/api/core";
 import { useProjectStore } from "@/stores/projectStore";
 import { useServerStore } from "@/stores/serverStore";
 import { useConfigStore } from "@/stores/configStore";
@@ -72,6 +73,7 @@ export function useServerManager() {
         addLog("INFO", `Server process exited with code ${data.code}`);
         setPid(null);
         activeChild = null;
+        invoke("clear_server_pid").catch(() => {});
 
         const currentStatus = useServerStore.getState().status;
         if (currentStatus === "stopping") {
@@ -93,6 +95,8 @@ export function useServerManager() {
       const child = await command.spawn();
       activeChild = child;
       setPid(child.pid);
+      // Register PID with Rust so the process tree is killed on app exit
+      await invoke("set_server_pid", { pid: child.pid, mudDir });
       addLog("INFO", `Server process started (PID: ${child.pid})`);
       return { success: true };
     } catch (err) {
@@ -105,8 +109,7 @@ export function useServerManager() {
   }, [project, config, setStatus, setPid, setLastError, addLog]);
 
   const stopServer = useCallback(async () => {
-    const child = activeChild;
-    if (!child) {
+    if (!activeChild) {
       setStatus("stopped");
       return;
     }
@@ -115,7 +118,9 @@ export function useServerManager() {
     addLog("INFO", "Stopping server...");
 
     try {
-      await child.kill();
+      // Kill the entire process tree (cmd → gradle → java)
+      await invoke("kill_server_tree");
+      activeChild = null;
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       addLog("ERROR", `Failed to stop server: ${message}`);

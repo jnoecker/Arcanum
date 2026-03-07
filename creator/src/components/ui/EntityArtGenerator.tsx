@@ -1,18 +1,21 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
 import { useAssetStore } from "@/stores/assetStore";
 import { useProjectStore } from "@/stores/projectStore";
 import { useImageSrc, isLegacyImagePath } from "@/lib/useImageSrc";
 import { getEnhanceSystemPrompt, ART_STYLE_LABELS, type ArtStyle } from "@/lib/arcanumPrompts";
-import { IMAGE_MODELS } from "@/types/assets";
+import { IMAGE_MODELS, ENTITY_DIMENSIONS, DIMENSION_PRESETS } from "@/types/assets";
 import type { AssetContext, GeneratedImage } from "@/types/assets";
+import { VariantStrip } from "./VariantStrip";
 
 type Stage = "idle" | "generating" | "preview";
 
 interface EntityArtGeneratorProps {
-  /** Returns the composed prompt for the given art style */
+  /** Returns the fallback prompt template for the given art style (used when no LLM available) */
   getPrompt: (style: ArtStyle) => string;
+  /** Rich entity context description for the LLM to craft an image prompt from */
+  entityContext?: string;
   /** Current image value (path or URL) */
   currentImage?: string;
   /** Called when user accepts a generated image */
@@ -21,14 +24,25 @@ interface EntityArtGeneratorProps {
   assetType?: string;
   /** Context tags for the asset manifest */
   context?: AssetContext;
+  /** Zone vibe text to inject into LLM prompt generation */
+  vibe?: string;
+}
+
+function computeVariantGroup(context?: AssetContext): string {
+  if (!context) return "";
+  const { entity_type, zone, entity_id } = context;
+  if (!entity_type || !entity_id) return "";
+  return `${entity_type}:${zone}:${entity_id}`;
 }
 
 export function EntityArtGenerator({
   getPrompt,
+  entityContext,
   currentImage,
   onAccept,
   assetType,
   context,
+  vibe,
 }: EntityArtGeneratorProps) {
   const settings = useAssetStore((s) => s.settings);
   const artStyle = useAssetStore((s) => s.artStyle);
@@ -43,12 +57,36 @@ export function EntityArtGenerator({
   const [showPrompt, setShowPrompt] = useState(false);
   const [enhancing, setEnhancing] = useState(false);
   const [importing, setImporting] = useState(false);
+  const [dimOverride, setDimOverride] = useState<{ width: number; height: number } | null>(null);
+  // Track the final prompt that was actually sent to the image model
+  const [lastEnhancedPrompt, setLastEnhancedPrompt] = useState<string | null>(null);
 
-  const hasApiKey = settings && settings.deepinfra_api_key.length > 0;
+  const imageProvider = settings?.image_provider ?? "deepinfra";
+  const hasApiKey = settings && (
+    (imageProvider === "deepinfra" && settings.deepinfra_api_key.length > 0) ||
+    (imageProvider === "runware" && settings.runware_api_key.length > 0)
+  );
+  const hasLlmKey = settings && (
+    settings.deepinfra_api_key.length > 0 ||
+    settings.anthropic_api_key.length > 0 ||
+    settings.openrouter_api_key.length > 0
+  );
   const basePrompt = getPrompt(artStyle);
   const activePrompt = editedPrompt ?? basePrompt;
+  const variantGroup = computeVariantGroup(context);
 
-  // ─── Auto-import legacy images ───────────────────────────────────
+  // Determine dimensions from entity type
+  const entityType = context?.entity_type ?? "";
+  const defaultDims = ENTITY_DIMENSIONS[entityType] ?? { width: 1024, height: 1024, label: "1024×1024" };
+  const activeDims = dimOverride ?? defaultDims;
+
+  // Filter models by configured provider
+  const availableModels = useMemo(
+    () => IMAGE_MODELS.filter((m) => m.provider === imageProvider),
+    [imageProvider],
+  );
+
+  // Auto-import legacy images
   const importedRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
@@ -56,7 +94,6 @@ export function EntityArtGenerator({
     if (importedRef.current.has(currentImage)) return;
     importedRef.current.add(currentImage);
 
-    // Try world/images/ first, fall back to images/
     const candidates = [
       `${mudDir}/src/main/resources/world/images/${currentImage}`,
       `${mudDir}/src/main/resources/images/${currentImage}`,
@@ -73,24 +110,68 @@ export function EntityArtGenerator({
     })();
   }, [currentImage, mudDir, assetType, context, importAsset]);
 
-  // Reset edited prompt when style changes
   const handleStyleChange = (style: ArtStyle) => {
     setArtStyle(style);
     setEditedPrompt(null);
+  };
+
+  /** Enhance a prompt via LLM, injecting entity context, style guide, and zone vibe. */
+  const enhancePrompt = async (prompt: string): Promise<string> => {
+    const systemPrompt = getEnhanceSystemPrompt(artStyle);
+    const parts: string[] = [];
+
+    // When we have rich entity context, lead with that so the LLM
+    // prioritizes the actual entity description over the style template
+    if (entityContext) {
+      parts.push(`Generate an image prompt for this entity:\n${entityContext}`);
+      if (vibe) {
+        parts.push(`\nZone atmosphere/vibe:\n${vibe}`);
+      }
+      parts.push(`\nReference style template (adapt but prioritize the entity description above):\n${prompt}`);
+    } else {
+      parts.push(prompt);
+      if (vibe) {
+        parts.push(`\nZone atmosphere/vibe to weave into the image prompt:\n${vibe}`);
+      }
+    }
+
+    const userPrompt = parts.join("\n");
+    return invoke<string>("llm_complete", { systemPrompt, userPrompt });
   };
 
   const handleGenerate = async () => {
     setStage("generating");
     setError(null);
     try {
-      const model = IMAGE_MODELS[0]; // FLUX Schnell for fast iteration
-      const image = await invoke<GeneratedImage>("generate_image", {
-        prompt: activePrompt,
+      const model = availableModels[0];
+      if (!model) {
+        throw new Error(`No models available for provider: ${imageProvider}`);
+      }
+
+      // Auto-enhance via LLM if available — this is the key change.
+      // The LLM gets the entity description, style guide, and zone vibe
+      // and crafts a proper image prompt from all three.
+      let finalPrompt = activePrompt;
+      if (hasLlmKey) {
+        try {
+          finalPrompt = await enhancePrompt(activePrompt);
+          setLastEnhancedPrompt(finalPrompt);
+        } catch {
+          // Fall back to base prompt if LLM fails
+        }
+      }
+
+      const command = imageProvider === "runware"
+        ? "runware_generate_image"
+        : "generate_image";
+
+      const image = await invoke<GeneratedImage>(command, {
+        prompt: finalPrompt,
         model: model.id,
-        width: 1024,
-        height: 1024,
+        width: activeDims.width,
+        height: activeDims.height,
         steps: model.defaultSteps,
-        guidance: null,
+        guidance: "defaultGuidance" in model ? model.defaultGuidance : null,
       });
       setResult(image);
       setStage("preview");
@@ -104,10 +185,7 @@ export function EntityArtGenerator({
     setEnhancing(true);
     setError(null);
     try {
-      const enhanced = await invoke<string>("enhance_prompt", {
-        prompt: activePrompt,
-        systemPrompt: getEnhanceSystemPrompt(artStyle),
-      });
+      const enhanced = await enhancePrompt(activePrompt);
       setEditedPrompt(enhanced);
     } catch (e) {
       setError(String(e));
@@ -144,30 +222,28 @@ export function EntityArtGenerator({
   const handleAccept = async () => {
     if (!result) return;
     onAccept(result.file_path);
-    // Save to asset manifest with context (best-effort)
     if (assetType) {
-      await acceptAsset(result, assetType, undefined, context).catch(() => {});
+      await acceptAsset(result, assetType, lastEnhancedPrompt ?? undefined, context, variantGroup, true).catch(() => {});
     }
     setStage("idle");
     setResult(null);
+    setLastEnhancedPrompt(null);
   };
 
   const handleReject = () => {
     setResult(null);
     setStage("idle");
+    setLastEnhancedPrompt(null);
   };
 
-  // Load saved image from disk via IPC
   const savedImageSrc = useImageSrc(currentImage);
 
-  // Show generated preview (data_url) or saved image
   const previewSrc = stage === "preview" && result
     ? result.data_url
     : savedImageSrc;
 
   return (
     <div className="flex flex-col gap-2">
-      {/* Current / preview image */}
       {previewSrc && (
         <div className="overflow-hidden rounded border border-border-default">
           <img
@@ -181,11 +257,20 @@ export function EntityArtGenerator({
         </div>
       )}
 
-      {/* Controls */}
+      {/* Variant history strip */}
+      {variantGroup && stage === "idle" && (
+        <VariantStrip
+          variantGroup={variantGroup}
+          onSelect={(entry) => {
+            onAccept(`${assetsDir}\\images\\${entry.file_name}`);
+          }}
+        />
+      )}
+
       {stage === "idle" && (
         <div className="flex flex-col gap-1">
           {/* Style toggle */}
-          {hasApiKey && (
+          {(hasApiKey || hasLlmKey) && (
             <div className="flex gap-0.5 rounded bg-bg-primary p-0.5">
               {(Object.entries(ART_STYLE_LABELS) as [ArtStyle, string][]).map(
                 ([key, label]) => (
@@ -205,6 +290,30 @@ export function EntityArtGenerator({
             </div>
           )}
 
+          {/* Dimension override */}
+          {hasApiKey && (
+            <div className="flex items-center gap-1">
+              <span className="text-[10px] text-text-muted">{activeDims.width}×{activeDims.height}</span>
+              <select
+                value={dimOverride ? `${dimOverride.width}x${dimOverride.height}` : ""}
+                onChange={(e) => {
+                  if (!e.target.value) {
+                    setDimOverride(null);
+                  } else {
+                    const parts = e.target.value.split("x").map(Number);
+                    setDimOverride({ width: parts[0]!, height: parts[1]! });
+                  }
+                }}
+                className="rounded border border-border-default bg-bg-primary px-1 py-0.5 text-[10px] text-text-secondary outline-none"
+              >
+                <option value="">Default</option>
+                {DIMENSION_PRESETS.map((p) => (
+                  <option key={p.label} value={`${p.width}x${p.height}`}>{p.label}</option>
+                ))}
+              </select>
+            </div>
+          )}
+
           <div className="flex gap-1">
             {hasApiKey && (
               <button
@@ -221,7 +330,7 @@ export function EntityArtGenerator({
             >
               {importing ? "Importing..." : "Pick Image"}
             </button>
-            {hasApiKey && (
+            {(hasApiKey || hasLlmKey) && (
               <button
                 onClick={() => setShowPrompt((v) => !v)}
                 className="rounded px-1.5 py-1 text-[10px] text-text-muted transition-colors hover:text-text-secondary"
@@ -231,7 +340,7 @@ export function EntityArtGenerator({
             )}
           </div>
 
-          {showPrompt && hasApiKey && (
+          {showPrompt && (hasApiKey || hasLlmKey) && (
             <div className="flex flex-col gap-1">
               <textarea
                 value={activePrompt}
@@ -256,6 +365,13 @@ export function EntityArtGenerator({
                   </button>
                 )}
               </div>
+              {(entityContext || vibe) && (
+                <p className="text-[10px] italic text-text-muted">
+                  {hasLlmKey
+                    ? "Entity details + zone vibe auto-injected during generation"
+                    : "Configure an LLM provider to enable auto-enhanced prompts"}
+                </p>
+              )}
             </div>
           )}
         </div>
@@ -264,7 +380,9 @@ export function EntityArtGenerator({
       {stage === "generating" && (
         <div className="flex items-center gap-2 py-2">
           <div className="h-4 w-4 rounded-full border-2 border-accent border-t-transparent animate-spin" />
-          <span className="text-[10px] text-text-secondary">Generating...</span>
+          <span className="text-[10px] text-text-secondary">
+            {hasLlmKey ? "Crafting prompt & generating..." : "Generating..."}
+          </span>
         </div>
       )}
 

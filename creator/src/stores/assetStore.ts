@@ -3,6 +3,13 @@ import { invoke } from "@tauri-apps/api/core";
 import type { AssetContext, AssetEntry, GeneratedImage, Settings, SyncProgress } from "@/types/assets";
 import type { ArtStyle } from "@/lib/arcanumPrompts";
 
+interface BatchProgress {
+  total: number;
+  completed: number;
+  failed: number;
+  errors: string[];
+}
+
 interface AssetState {
   assets: AssetEntry[];
   assetsDir: string;
@@ -12,17 +19,27 @@ interface AssetState {
   artStyle: ArtStyle;
   syncing: boolean;
   lastSyncResult: SyncProgress | null;
+  batchProgress: BatchProgress | null;
+  batchAbortController: AbortController | null;
 
   loadSettings: () => Promise<void>;
   saveSettings: (settings: Settings) => Promise<void>;
 
   loadAssets: () => Promise<void>;
-  acceptAsset: (image: GeneratedImage, assetType: string, enhancedPrompt?: string, context?: AssetContext) => Promise<void>;
+  acceptAsset: (image: GeneratedImage, assetType: string, enhancedPrompt?: string, context?: AssetContext, variantGroup?: string, isActive?: boolean) => Promise<void>;
   importAsset: (sourcePath: string, assetType: string, context?: AssetContext) => Promise<AssetEntry>;
   deleteAsset: (id: string) => Promise<void>;
 
+  setActiveVariant: (variantGroup: string, assetId: string) => Promise<void>;
+  listVariants: (variantGroup: string) => Promise<AssetEntry[]>;
+
   syncToR2: () => Promise<SyncProgress>;
   getSyncStatus: () => Promise<SyncProgress>;
+
+  startBatch: (progress: BatchProgress) => void;
+  updateBatch: (update: Partial<BatchProgress>) => void;
+  abortBatch: () => void;
+  clearBatch: () => void;
 
   setArtStyle: (style: ArtStyle) => void;
   openGenerator: () => void;
@@ -40,6 +57,8 @@ export const useAssetStore = create<AssetState>((set, get) => ({
   artStyle: "gentle_magic" as ArtStyle,
   syncing: false,
   lastSyncResult: null,
+  batchProgress: null,
+  batchAbortController: null,
 
   loadSettings: async () => {
     const settings = await invoke<Settings>("get_settings");
@@ -57,8 +76,7 @@ export const useAssetStore = create<AssetState>((set, get) => ({
     set({ assets });
   },
 
-  acceptAsset: async (image, assetType, enhancedPrompt, context) => {
-    // Extract just the filename from the full path
+  acceptAsset: async (image, assetType, enhancedPrompt, context, variantGroup, isActive) => {
     const fileName = image.file_path.split(/[\\/]/).pop() ?? image.hash;
 
     await invoke<AssetEntry>("accept_asset", {
@@ -72,6 +90,8 @@ export const useAssetStore = create<AssetState>((set, get) => ({
       fileName,
       width: image.width,
       height: image.height,
+      variantGroup: variantGroup ?? null,
+      isActive: isActive ?? null,
     });
     await get().loadAssets();
   },
@@ -87,7 +107,6 @@ export const useAssetStore = create<AssetState>((set, get) => ({
   },
 
   deleteAsset: async (id: string) => {
-    // Delete from R2 first (best-effort — no-ops if R2 not configured)
     const asset = get().assets.find((a) => a.id === id);
     if (asset?.sync_status === "synced") {
       await invoke("delete_from_r2", { fileName: asset.file_name }).catch(() => {});
@@ -96,12 +115,21 @@ export const useAssetStore = create<AssetState>((set, get) => ({
     await get().loadAssets();
   },
 
+  setActiveVariant: async (variantGroup, assetId) => {
+    await invoke("set_active_variant", { variantGroup, assetId });
+    await get().loadAssets();
+  },
+
+  listVariants: async (variantGroup) => {
+    return invoke<AssetEntry[]>("list_variants", { variantGroup });
+  },
+
   syncToR2: async () => {
     set({ syncing: true });
     try {
       const result = await invoke<SyncProgress>("sync_assets");
       set({ lastSyncResult: result, syncing: false });
-      await get().loadAssets(); // refresh sync_status
+      await get().loadAssets();
       return result;
     } catch (e) {
       const err: SyncProgress = { total: 0, uploaded: 0, skipped: 0, failed: 0, errors: [String(e)] };
@@ -113,6 +141,27 @@ export const useAssetStore = create<AssetState>((set, get) => ({
   getSyncStatus: async () => {
     const result = await invoke<SyncProgress>("get_sync_status");
     return result;
+  },
+
+  startBatch: (progress) => {
+    const controller = new AbortController();
+    set({ batchProgress: progress, batchAbortController: controller });
+  },
+
+  updateBatch: (update) => {
+    const current = get().batchProgress;
+    if (current) {
+      set({ batchProgress: { ...current, ...update } });
+    }
+  },
+
+  abortBatch: () => {
+    get().batchAbortController?.abort();
+    set({ batchAbortController: null });
+  },
+
+  clearBatch: () => {
+    set({ batchProgress: null, batchAbortController: null });
   },
 
   setArtStyle: (artStyle) => set({ artStyle }),

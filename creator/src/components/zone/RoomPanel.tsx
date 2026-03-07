@@ -14,7 +14,10 @@ import { EditableField, EditableTextArea, Section, IconButton, FieldRow, TextInp
 import { YamlPreview } from "@/components/ui/YamlPreview";
 import { EntityArtGenerator } from "@/components/ui/EntityArtGenerator";
 import { MediaPicker } from "@/components/ui/MediaPicker";
-import { roomPrompt } from "@/lib/entityPrompts";
+import { roomPrompt, roomContext } from "@/lib/entityPrompts";
+import { EnhanceDescriptionButton } from "@/components/editors/EditorShared";
+import { useVibeStore } from "@/stores/vibeStore";
+import { ZoneVibePanel } from "./ZoneVibePanel";
 
 export type EntityKind = "mob" | "item" | "shop" | "quest" | "gatheringNode" | "recipe";
 
@@ -189,7 +192,17 @@ export function RoomPanel({
       ) : (
       <>
       {/* Description */}
-      <Section title="Description">
+      <Section
+        title="Description"
+        actions={
+          <EnhanceDescriptionButton
+            entitySummary={`Room "${room.title}"${room.station ? `, crafting station: ${room.station}` : ""}`}
+            currentDescription={room.description}
+            onAccept={(v) => handleFieldChange("description", v)}
+            vibe={useVibeStore.getState().getVibe(zoneId)}
+          />
+        }
+      >
         <EditableTextArea
           value={room.description}
           onCommit={(v) => handleFieldChange("description", v)}
@@ -374,6 +387,11 @@ export function RoomPanel({
         )}
       </Section>
 
+      {/* Zone Vibe */}
+      <Section title="Zone Vibe">
+        <ZoneVibePanel zoneId={zoneId} world={world} />
+      </Section>
+
       {/* Media */}
       <Section title="Media">
         <div className="flex flex-col gap-1.5">
@@ -383,10 +401,12 @@ export function RoomPanel({
           </div>
           <EntityArtGenerator
             getPrompt={(style) => roomPrompt(roomId, room, style)}
+            entityContext={roomContext(roomId, room)}
             currentImage={room.image}
             onAccept={(filePath) => onWorldChange(updateRoom(world, roomId, { image: filePath }))}
             assetType="background"
             context={{ zone: zoneId, entity_type: "room", entity_id: roomId }}
+            vibe={useVibeStore.getState().getVibe(zoneId)}
           />
           <FieldRow label="Video">
             <TextInput

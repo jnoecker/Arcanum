@@ -10,8 +10,9 @@ import {
   SelectInput,
   CheckboxInput,
 } from "@/components/ui/FormWidgets";
-import { DeleteEntityButton, MediaSection } from "./EditorShared";
-import { itemPrompt } from "@/lib/entityPrompts";
+import { DeleteEntityButton, EnhanceDescriptionButton, MediaSection } from "./EditorShared";
+import { itemPrompt, itemContext } from "@/lib/entityPrompts";
+import { useVibeStore } from "@/stores/vibeStore";
 
 interface ItemEditorProps {
   itemId: string;
@@ -90,11 +91,21 @@ export function ItemEditor({
             />
           </FieldRow>
           <FieldRow label="Description">
-            <TextInput
-              value={item.description ?? ""}
-              onCommit={(v) => patch({ description: v || undefined })}
-              placeholder="none"
-            />
+            <div className="flex items-center gap-1">
+              <div className="min-w-0 flex-1">
+                <TextInput
+                  value={item.description ?? ""}
+                  onCommit={(v) => patch({ description: v || undefined })}
+                  placeholder="none"
+                />
+              </div>
+              <EnhanceDescriptionButton
+                entitySummary={`Item "${item.displayName}"${item.slot ? `, slot: ${item.slot}` : ""}${item.damage ? `, damage: ${item.damage}` : ""}${item.armor ? `, armor: ${item.armor}` : ""}${item.consumable ? ", consumable" : ""}`}
+                currentDescription={item.description}
+                onAccept={(v) => patch({ description: v })}
+                vibe={zoneId ? useVibeStore.getState().getVibe(zoneId) : undefined}
+              />
+            </div>
           </FieldRow>
           <FieldRow label="Room">
             <SelectInput
@@ -216,7 +227,7 @@ export function ItemEditor({
         </div>
       </Section>
 
-      <MediaSection image={item.image} onImageChange={(v) => patch({ image: v })} video={item.video} onVideoChange={(v) => patch({ video: v })} getPrompt={(style) => itemPrompt(itemId, item, style)} assetType="entity_portrait" context={zoneId ? { zone: zoneId, entity_type: "item", entity_id: itemId } : undefined} />
+      <MediaSection image={item.image} onImageChange={(v) => patch({ image: v })} video={item.video} onVideoChange={(v) => patch({ video: v })} getPrompt={(style) => itemPrompt(itemId, item, style)} entityContext={itemContext(itemId, item)} assetType="entity_portrait" context={zoneId ? { zone: zoneId, entity_type: "item", entity_id: itemId } : undefined} vibe={zoneId ? useVibeStore.getState().getVibe(zoneId) : undefined} />
       <DeleteEntityButton onClick={handleDelete} label="Delete Item" />
     </>
   );

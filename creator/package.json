@@ -16,6 +16,7 @@
     "@fontsource/cinzel": "^5.2.8",
     "@fontsource/crimson-pro": "^5.2.8",
     "@fontsource/jetbrains-mono": "^5.2.8",
+    "@imgly/background-removal": "^1.7.0",
     "@tauri-apps/api": "^2",
     "@tauri-apps/plugin-dialog": "^2",
     "@tauri-apps/plugin-fs": "^2",

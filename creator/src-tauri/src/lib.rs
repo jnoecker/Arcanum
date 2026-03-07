@@ -1,9 +1,14 @@
+mod anthropic;
 mod assets;
 mod deepinfra;
+mod llm;
+mod openrouter;
 mod project;
 mod r2;
+mod runware;
 mod server;
 mod settings;
+mod vibes;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -23,6 +28,10 @@ pub fn run() {
             deepinfra::generate_image,
             deepinfra::enhance_prompt,
             deepinfra::read_image_data_url,
+            llm::llm_complete,
+            runware::runware_generate_image,
+            runware::runware_generate_audio,
+            runware::runware_generate_video,
             assets::accept_asset,
             assets::list_assets,
             assets::delete_asset,
@@ -30,6 +39,9 @@ pub fn run() {
             assets::resolve_media_path,
             assets::read_media_data_url,
             assets::import_asset,
+            assets::set_active_variant,
+            assets::list_variants,
+            assets::save_bytes_as_asset,
             r2::sync_assets,
             r2::get_sync_status,
             r2::resolve_asset_url,
@@ -37,6 +49,8 @@ pub fn run() {
             server::set_server_pid,
             server::clear_server_pid,
             server::kill_server_tree,
+            vibes::save_zone_vibe,
+            vibes::load_zone_vibe,
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application")

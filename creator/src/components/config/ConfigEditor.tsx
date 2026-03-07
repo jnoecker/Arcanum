@@ -79,7 +79,7 @@ export function ConfigEditor() {
   }
 
   return (
-    <div className="flex flex-1 flex-col">
+    <div className="flex min-h-0 flex-1 flex-col">
       {/* Tab bar + save */}
       <div className="flex shrink-0 items-center border-b border-border-default bg-bg-secondary">
         <div className="flex items-end gap-0 overflow-x-auto">
@@ -97,22 +97,24 @@ export function ConfigEditor() {
             </button>
           ))}
         </div>
-        <div className="ml-auto flex items-center gap-2 px-3">
-          {dirty && (
-            <span className="text-xs text-accent">modified</span>
-          )}
-          <button
-            onClick={handleSave}
-            disabled={!dirty || saving}
-            className="h-6 rounded px-2 text-xs transition-colors enabled:bg-accent/20 enabled:text-accent enabled:hover:bg-accent/30 disabled:text-text-muted disabled:opacity-30"
-          >
-            {saving ? "Saving..." : "Save Config"}
-          </button>
-        </div>
+        {activeTab !== "apiSettings" && (
+          <div className="ml-auto flex items-center gap-2 px-3">
+            {dirty && (
+              <span className="text-xs text-accent">modified</span>
+            )}
+            <button
+              onClick={handleSave}
+              disabled={!dirty || saving}
+              className="h-6 rounded px-2 text-xs transition-colors enabled:bg-accent/20 enabled:text-accent enabled:hover:bg-accent/30 disabled:text-text-muted disabled:opacity-30"
+            >
+              {saving ? "Saving..." : "Save Config"}
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Panel content */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="min-h-0 flex-1 overflow-y-auto">
         <div className="mx-auto max-w-2xl px-6 py-4">
           {activeTab === "server" && (
             <ServerPanel config={config} onChange={handleChange} />

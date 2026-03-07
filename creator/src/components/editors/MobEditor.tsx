@@ -12,8 +12,9 @@ import {
   IconButton,
 } from "@/components/ui/FormWidgets";
 import { DialogueEditor } from "./DialogueEditor";
-import { DeleteEntityButton, MediaSection } from "./EditorShared";
-import { mobPrompt } from "@/lib/entityPrompts";
+import { DeleteEntityButton, EnhanceDescriptionButton, MediaSection } from "./EditorShared";
+import { mobPrompt, mobContext } from "@/lib/entityPrompts";
+import { useVibeStore } from "@/stores/vibeStore";
 
 interface MobEditorProps {
   mobId: string;
@@ -105,6 +106,23 @@ export function MobEditor({
         <div className="flex flex-col gap-1.5">
           <FieldRow label="Name">
             <TextInput value={mob.name} onCommit={(v) => patch({ name: v })} />
+          </FieldRow>
+          <FieldRow label="Desc">
+            <div className="flex items-center gap-1">
+              <div className="min-w-0 flex-1">
+                <TextInput
+                  value={mob.description ?? ""}
+                  onCommit={(v) => patch({ description: v || undefined })}
+                  placeholder="Visual description for art generation"
+                />
+              </div>
+              <EnhanceDescriptionButton
+                entitySummary={`Mob "${mob.name}", tier: ${mob.tier ?? "standard"}, level: ${mob.level ?? 1}${mob.behavior?.template ? `, behavior: ${mob.behavior.template}` : ""}`}
+                currentDescription={mob.description}
+                onAccept={(v) => patch({ description: v })}
+                vibe={zoneId ? useVibeStore.getState().getVibe(zoneId) : undefined}
+              />
+            </div>
           </FieldRow>
           <FieldRow label="Room">
             <SelectInput
@@ -381,7 +399,7 @@ export function MobEditor({
         onWorldChange={onWorldChange}
       />
 
-      <MediaSection image={mob.image} onImageChange={(v) => patch({ image: v })} video={mob.video} onVideoChange={(v) => patch({ video: v })} getPrompt={(style) => mobPrompt(mobId, mob, style)} assetType="entity_portrait" context={zoneId ? { zone: zoneId, entity_type: "mob", entity_id: mobId } : undefined} />
+      <MediaSection image={mob.image} onImageChange={(v) => patch({ image: v })} video={mob.video} onVideoChange={(v) => patch({ video: v })} getPrompt={(style) => mobPrompt(mobId, mob, style)} entityContext={mobContext(mobId, mob)} assetType="entity_portrait" context={zoneId ? { zone: zoneId, entity_type: "mob", entity_id: mobId } : undefined} vibe={zoneId ? useVibeStore.getState().getVibe(zoneId) : undefined} />
       <DeleteEntityButton onClick={handleDelete} label="Delete Mob" />
     </>
   );

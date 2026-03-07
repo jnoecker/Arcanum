@@ -54,6 +54,7 @@ export interface DoorFile {
 
 export interface MobFile {
   name: string;
+  description?: string;
   room: string;
   tier?: string;
   level?: number;

@@ -24,6 +24,8 @@ export interface AssetEntry {
   width: number;
   height: number;
   sync_status: string;
+  variant_group: string;
+  is_active: boolean;
 }
 
 export interface AssetContext {
@@ -47,8 +49,16 @@ export type AssetType =
 /** Mirrors the Rust Settings struct */
 export interface Settings {
   deepinfra_api_key: string;
+  runware_api_key: string;
+  anthropic_api_key: string;
+  openrouter_api_key: string;
   image_model: string;
   enhance_model: string;
+  prompt_llm_provider: string;
+  image_provider: string;
+  video_model: string;
+  batch_concurrency: number;
+  auto_remove_bg: boolean;
   r2_account_id: string;
   r2_access_key_id: string;
   r2_secret_access_key: string;
@@ -70,13 +80,48 @@ export const IMAGE_MODELS = [
     id: "black-forest-labs/FLUX-1-schnell",
     label: "FLUX Schnell",
     description: "Fast, ~$0.0005/image",
+    provider: "deepinfra" as const,
     defaultSteps: 4,
   },
   {
     id: "black-forest-labs/FLUX-1-dev",
     label: "FLUX Dev",
     description: "Quality, ~$0.012/image",
+    provider: "deepinfra" as const,
     defaultSteps: 28,
     defaultGuidance: 3.5,
   },
+  {
+    id: "runware:100@1",
+    label: "FLUX Schnell (Runware)",
+    description: "Fast via Runware",
+    provider: "runware" as const,
+    defaultSteps: 4,
+  },
+  {
+    id: "runware:101@1",
+    label: "FLUX Dev (Runware)",
+    description: "Quality via Runware",
+    provider: "runware" as const,
+    defaultSteps: 28,
+    defaultGuidance: 3.5,
+  },
+] as const;
+
+/** Default image dimensions per entity type */
+export const ENTITY_DIMENSIONS: Record<string, { width: number; height: number; label: string }> = {
+  room: { width: 1920, height: 1080, label: "1920×1080 (Landscape)" },
+  mob: { width: 512, height: 512, label: "512×512 (Portrait)" },
+  item: { width: 256, height: 256, label: "256×256 (Icon)" },
+  ability: { width: 256, height: 256, label: "256×256 (Icon)" },
+  shop: { width: 1920, height: 1080, label: "1920×1080 (Landscape)" },
+};
+
+/** Common dimension presets for override dropdown */
+export const DIMENSION_PRESETS = [
+  { width: 256, height: 256, label: "256×256" },
+  { width: 512, height: 512, label: "512×512" },
+  { width: 1024, height: 1024, label: "1024×1024" },
+  { width: 1920, height: 1080, label: "1920×1080" },
+  { width: 1080, height: 1920, label: "1080×1920" },
 ] as const;

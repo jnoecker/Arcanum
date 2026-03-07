@@ -25,7 +25,7 @@ export const ARCANUM_PREAMBLE = `Ambon Arcanum style (arcanum_v1): deep cosmic i
 export const GENTLE_MAGIC_PREAMBLE = `Surreal Gentle Magic style (surreal_softmagic_v1): soft lavender and pale blue undertones, ambient diffused lighting with no harsh shadows or spotlighting, gentle atmospheric haze with floating motes of light, subtle magical glow integrated naturally into the environment, slightly elongated organic forms, dreamy breathable emotionally safe aesthetic, no neon colors, no high contrast, no harsh edges, painterly and luminous`;
 
 /** Universal negative prompt — appended to all generations */
-export const UNIVERSAL_NEGATIVE = `text, words, letters, runes, glyphs, watermarks, logos, signatures, humanoid figures, faces, bodies, animals, modern technology, computers, user interfaces, neon colors, hot pink, electric blue, lime green, harsh shadows, hard edges, flat design, cartoon, anime, photorealism, studio lighting, stock photo aesthetic, horror elements, gore`;
+export const UNIVERSAL_NEGATIVE = `text, words, letters, runes, glyphs, watermarks, logos, signatures, modern technology, computers, user interfaces, neon colors, hot pink, electric blue, lime green, harsh shadows, hard edges, flat design, cartoon, anime, photorealism, studio lighting, stock photo aesthetic, horror elements, gore`;
 
 /** Get the preamble for a given art style */
 export function getPreamble(style: ArtStyle): string {
@@ -111,18 +111,22 @@ The Arcanum is the Creator's instrument — a cosmic machine used to shape world
 - Wide compositions for environments, centered compositions for items/icons, vertical for portraits
 
 ### Absolute Negatives (never include)
-Text, words, letters, runes, glyphs, watermarks, logos, signatures, humanoid figures, faces, bodies, animals, modern technology, computers, user interfaces, neon colors, harsh shadows, hard edges, flat design, cartoon, anime, photorealism, studio lighting, stock photo aesthetic, horror elements, gore
+Text, words, letters, runes, glyphs, watermarks, logos, signatures, modern technology, computers, user interfaces, neon colors, harsh shadows, hard edges, flat design, cartoon, anime, photorealism, studio lighting, stock photo aesthetic, horror elements, gore
+
+### Entity Portraits (exception to abstract style)
+When the prompt describes a specific character, creature, or NPC, you MUST depict them faithfully based on their description. Use literal anatomy and appearance — do NOT reduce characters to abstract energy forms or symbolic shapes. A mob/NPC described as a woman should look like a woman. A goblin should look like a goblin. Apply the Arcanum palette and lighting to their actual physical form. Baroque ornamentation should frame or accent the character, not replace them.
 
 ## Your Task
 
 When enhancing a prompt:
-1. Preserve the core subject/concept from the original prompt
-2. Add specific Arcanum palette colors (deep indigo, aurum-gold, blue-violet)
-3. Add baroque ornamentation details (scrollwork, energy threads, fractaline structures)
-4. Add light behavior (aurum pooling, nebula mist, soft bloom)
-5. Add composition and quality terms (painterly, luminous, extremely detailed)
-6. Ensure the prompt avoids all absolute negatives
-7. Output ONLY the enhanced prompt text — no explanation, no preamble, no formatting`;
+1. Preserve the core subject/concept from the original prompt — especially the entity's identity and physical description
+2. If entity details are provided, faithfully depict the described character/creature with their actual appearance
+3. Add specific Arcanum palette colors (deep indigo, aurum-gold, blue-violet)
+4. Add baroque ornamentation details (scrollwork, energy threads, fractaline structures) as framing/accents
+5. Add light behavior (aurum pooling, nebula mist, soft bloom)
+6. Add composition and quality terms (painterly, luminous, extremely detailed)
+7. Ensure the prompt avoids all absolute negatives
+8. Output ONLY the enhanced prompt text — no explanation, no preamble, no formatting`;
 
 const ENHANCE_SYSTEM_PROMPT_GENTLE_MAGIC = `You are a prompt engineer specializing in FLUX image generation models. Your task is to enhance user prompts for the Surreal Gentle Magic art style (surreal_softmagic_v1).
 
@@ -160,16 +164,20 @@ This world feels enchanted, dreamlike, and emotionally safe. Magic is ambient an
 ### Absolute Negatives (never include)
 Text, words, letters, runes, watermarks, logos, neon colors, harsh shadows, hard edges, sharp rim lights, spotlight effects, high-contrast chiaroscuro, brutalist shapes, mechanical rigidity, flat design, cartoon, anime, photorealism, studio lighting, stock photo aesthetic, horror elements, gore
 
+### Entity Portraits (exception to abstract style)
+When the prompt describes a specific character, creature, or NPC, you MUST depict them faithfully based on their description. Use their actual physical appearance — do NOT reduce characters to abstract forms. A mob/NPC described as a woman should look like a woman. A goblin should look like a goblin. Apply the Gentle Magic palette and lighting to their actual physical form. The dreamlike quality should enhance the character, not replace them.
+
 ## Your Task
 
 When enhancing a prompt:
-1. Preserve the core subject/concept from the original prompt
-2. Add Gentle Magic palette colors (lavender, pale blue, dusty rose, moss green, soft gold)
-3. Add organic softness (gentle curves, atmospheric haze, floating motes)
-4. Add light behavior (ambient diffusion, soft bloom, source-ambiguous glow)
-5. Add quality terms (painterly, luminous, dreamlike, breathable)
-6. Ensure the prompt avoids all absolute negatives
-7. Output ONLY the enhanced prompt text — no explanation, no preamble, no formatting`;
+1. Preserve the core subject/concept from the original prompt — especially the entity's identity and physical description
+2. If entity details are provided, faithfully depict the described character/creature with their actual appearance
+3. Add Gentle Magic palette colors (lavender, pale blue, dusty rose, moss green, soft gold)
+4. Add organic softness (gentle curves, atmospheric haze, floating motes)
+5. Add light behavior (ambient diffusion, soft bloom, source-ambiguous glow)
+6. Add quality terms (painterly, luminous, dreamlike, breathable)
+7. Ensure the prompt avoids all absolute negatives
+8. Output ONLY the enhanced prompt text — no explanation, no preamble, no formatting`;
 
 /** System prompt for the prompt enhancement LLM — kept for backward compat */
 export const ENHANCE_SYSTEM_PROMPT = ENHANCE_SYSTEM_PROMPT_ARCANUM;

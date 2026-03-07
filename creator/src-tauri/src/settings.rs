@@ -8,10 +8,26 @@ const SETTINGS_FILE: &str = "settings.json";
 pub struct Settings {
     #[serde(default)]
     pub deepinfra_api_key: String,
+    #[serde(default)]
+    pub runware_api_key: String,
+    #[serde(default)]
+    pub anthropic_api_key: String,
+    #[serde(default)]
+    pub openrouter_api_key: String,
     #[serde(default = "default_image_model")]
     pub image_model: String,
     #[serde(default = "default_enhance_model")]
     pub enhance_model: String,
+    #[serde(default = "default_prompt_llm_provider")]
+    pub prompt_llm_provider: String,
+    #[serde(default = "default_image_provider")]
+    pub image_provider: String,
+    #[serde(default = "default_video_model")]
+    pub video_model: String,
+    #[serde(default = "default_batch_concurrency")]
+    pub batch_concurrency: u32,
+    #[serde(default)]
+    pub auto_remove_bg: bool,
     #[serde(default)]
     pub r2_account_id: String,
     #[serde(default)]
@@ -32,12 +48,36 @@ fn default_enhance_model() -> String {
     "Qwen/Qwen2.5-7B-Instruct".to_string()
 }
 
+fn default_prompt_llm_provider() -> String {
+    "deepinfra".to_string()
+}
+
+fn default_image_provider() -> String {
+    "deepinfra".to_string()
+}
+
+fn default_video_model() -> String {
+    "runware:2".to_string()
+}
+
+fn default_batch_concurrency() -> u32 {
+    5
+}
+
 impl Default for Settings {
     fn default() -> Self {
         Self {
             deepinfra_api_key: String::new(),
+            runware_api_key: String::new(),
+            anthropic_api_key: String::new(),
+            openrouter_api_key: String::new(),
             image_model: default_image_model(),
             enhance_model: default_enhance_model(),
+            prompt_llm_provider: default_prompt_llm_provider(),
+            image_provider: default_image_provider(),
+            video_model: default_video_model(),
+            batch_concurrency: default_batch_concurrency(),
+            auto_remove_bg: false,
             r2_account_id: String::new(),
             r2_access_key_id: String::new(),
             r2_secret_access_key: String::new(),

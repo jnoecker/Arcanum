@@ -6,6 +6,8 @@ import { useValidationStore } from "@/stores/validationStore";
 import { useServerManager } from "@/lib/useServerManager";
 import { saveAllZones } from "@/lib/saveZone";
 import { validateAllZones } from "@/lib/validateZone";
+import { validateConfig } from "@/lib/validateConfig";
+import { useConfigStore } from "@/stores/configStore";
 import { ErrorDialog } from "./ErrorDialog";
 import { ValidationPanel } from "./ValidationPanel";
 
@@ -34,6 +36,7 @@ export function Toolbar() {
   const zones = useZoneStore((s) => s.zones);
   const setValidationResults = useValidationStore((s) => s.setResults);
   const openValidationPanel = useValidationStore((s) => s.openPanel);
+  const hasConfig = useConfigStore((s) => !!s.config);
   const { startServer, stopServer } = useServerManager();
   const [errors, setErrors] = useState<string[] | null>(null);
   const [saving, setSaving] = useState(false);
@@ -129,10 +132,17 @@ export function Toolbar() {
       <button
         onClick={() => {
           const results = validateAllZones(zones);
+          const config = useConfigStore.getState().config;
+          if (config) {
+            const configIssues = validateConfig(config);
+            if (configIssues.length > 0) {
+              results.set("Config", configIssues);
+            }
+          }
           setValidationResults(results);
           openValidationPanel();
         }}
-        disabled={zones.size === 0}
+        disabled={zones.size === 0 && !hasConfig}
         className="rounded px-3 py-1 text-xs font-medium transition-colors enabled:text-text-primary enabled:hover:bg-bg-elevated disabled:cursor-not-allowed disabled:opacity-40"
       >
         Validate

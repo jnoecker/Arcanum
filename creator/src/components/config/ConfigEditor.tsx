@@ -14,6 +14,7 @@ import { GroupPanel } from "./panels/GroupPanel";
 import { StatsPanel } from "./panels/StatsPanel";
 import { AbilitiesPanel } from "./panels/AbilitiesPanel";
 import { StatusEffectsPanel } from "./panels/StatusEffectsPanel";
+import { RawYamlPanel } from "./panels/RawYamlPanel";
 
 const CONFIG_TABS = [
   { id: "server", label: "Server" },
@@ -27,6 +28,7 @@ const CONFIG_TABS = [
   { id: "regen", label: "Regen" },
   { id: "crafting", label: "Crafting" },
   { id: "group", label: "Group" },
+  { id: "rawYaml", label: "Raw YAML" },
 ] as const;
 
 type ConfigTabId = (typeof CONFIG_TABS)[number]["id"];
@@ -146,6 +148,9 @@ export function ConfigEditor() {
           )}
           {activeTab === "group" && (
             <GroupPanel config={config} onChange={handleChange} />
+          )}
+          {activeTab === "rawYaml" && (
+            <RawYamlPanel config={config} onChange={handleChange} />
           )}
         </div>
       </div>

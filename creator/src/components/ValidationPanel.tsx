@@ -36,7 +36,7 @@ export function ValidationPanel() {
               </span>
             )}
             {isClean && (
-              <span className="text-status-success">All zones valid</span>
+              <span className="text-status-success">All valid</span>
             )}
           </div>
         </div>
@@ -45,7 +45,7 @@ export function ValidationPanel() {
         <div className="flex-1 overflow-y-auto px-5 py-3">
           {isClean ? (
             <p className="py-4 text-center text-sm text-text-muted">
-              No issues found across all loaded zones.
+              No issues found.
             </p>
           ) : (
             <div className="flex flex-col gap-4">

@@ -2,6 +2,7 @@ mod assets;
 mod deepinfra;
 mod project;
 mod r2;
+mod server;
 mod settings;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -11,6 +12,7 @@ pub fn run() {
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_window_state::Builder::new().build())
+        .manage(server::ServerPid::default())
         .invoke_handler(tauri::generate_handler![
             project::validate_mud_dir,
             project::list_legacy_images,
@@ -28,7 +30,15 @@ pub fn run() {
             r2::get_sync_status,
             r2::resolve_asset_url,
             r2::delete_from_r2,
+            server::set_server_pid,
+            server::clear_server_pid,
+            server::kill_server_tree,
         ])
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .build(tauri::generate_context!())
+        .expect("error while building tauri application")
+        .run(|app, event| {
+            if let tauri::RunEvent::Exit = event {
+                server::kill_on_exit(app);
+            }
+        });
 }

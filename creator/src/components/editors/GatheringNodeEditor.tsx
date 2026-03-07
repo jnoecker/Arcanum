@@ -1,6 +1,7 @@
 import { useCallback } from "react";
 import type { WorldFile, GatheringNodeFile, GatheringYieldFile } from "@/types/world";
 import { updateGatheringNode, deleteGatheringNode } from "@/lib/zoneEdits";
+import { useArrayField } from "@/lib/useArrayField";
 import {
   Section,
   FieldRow,
@@ -50,30 +51,14 @@ export function GatheringNodeEditor({
   }, [world, nodeId, onWorldChange, onDelete]);
 
   // ─── Yield helpers ────────────────────────────────────────────
-  const yields = node.yields ?? [];
-
-  const handleAddYield = useCallback(() => {
-    const next: GatheringYieldFile[] = [
-      ...yields,
-      { itemId: "", minQuantity: 1, maxQuantity: 1 },
-    ];
-    patch({ yields: next });
-  }, [yields, patch]);
-
-  const handleUpdateYield = useCallback(
-    (index: number, field: keyof GatheringYieldFile, value: string | number) => {
-      const next = [...yields];
-      next[index] = { ...next[index], [field]: value } as GatheringYieldFile;
-      patch({ yields: next });
-    },
-    [yields, patch],
-  );
-
-  const handleDeleteYield = useCallback(
-    (index: number) => {
-      patch({ yields: yields.filter((_, i) => i !== index) });
-    },
-    [yields, patch],
+  const {
+    add: handleAddYield,
+    update: handleUpdateYield,
+    remove: handleDeleteYield,
+  } = useArrayField<GatheringYieldFile>(
+    node.yields,
+    (yields) => patch({ yields }),
+    { itemId: "", minQuantity: 1, maxQuantity: 1 },
   );
 
   return (

@@ -1,6 +1,7 @@
 import { useCallback } from "react";
 import type { WorldFile, MobFile, MobDropFile } from "@/types/world";
 import { updateMob, deleteMob } from "@/lib/zoneEdits";
+import { useArrayField } from "@/lib/useArrayField";
 import {
   Section,
   FieldRow,
@@ -66,26 +67,14 @@ export function MobEditor({
   }, [world, mobId, onWorldChange, onDelete]);
 
   // ─── Drop helpers ──────────────────────────────────────────────
-  const handleAddDrop = useCallback(() => {
-    const drops: MobDropFile[] = [...(mob.drops ?? []), { itemId: "", chance: 100 }];
-    patch({ drops });
-  }, [mob.drops, patch]);
-
-  const handleUpdateDrop = useCallback(
-    (index: number, field: keyof MobDropFile, value: string | number) => {
-      const drops = [...(mob.drops ?? [])];
-      drops[index] = { ...drops[index], [field]: value } as MobDropFile;
-      patch({ drops });
-    },
-    [mob.drops, patch],
-  );
-
-  const handleDeleteDrop = useCallback(
-    (index: number) => {
-      const drops = (mob.drops ?? []).filter((_, i) => i !== index);
-      patch({ drops });
-    },
-    [mob.drops, patch],
+  const {
+    add: handleAddDrop,
+    update: handleUpdateDrop,
+    remove: handleDeleteDrop,
+  } = useArrayField<MobDropFile>(
+    mob.drops,
+    (drops) => patch({ drops }),
+    { itemId: "", chance: 100 },
   );
 
   // ─── Behavior helpers ─────────────────────────────────────────

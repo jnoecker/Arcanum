@@ -1,6 +1,7 @@
 import { useCallback } from "react";
 import type { WorldFile, RecipeFile, RecipeMaterialFile } from "@/types/world";
 import { updateRecipe, deleteRecipe } from "@/lib/zoneEdits";
+import { useArrayField } from "@/lib/useArrayField";
 import {
   Section,
   FieldRow,
@@ -51,30 +52,14 @@ export function RecipeEditor({
   }, [world, recipeId, onWorldChange, onDelete]);
 
   // ─── Material helpers ─────────────────────────────────────────
-  const materials = recipe.materials ?? [];
-
-  const handleAddMaterial = useCallback(() => {
-    const next: RecipeMaterialFile[] = [
-      ...materials,
-      { itemId: "", quantity: 1 },
-    ];
-    patch({ materials: next });
-  }, [materials, patch]);
-
-  const handleUpdateMaterial = useCallback(
-    (index: number, field: keyof RecipeMaterialFile, value: string | number) => {
-      const next = [...materials];
-      next[index] = { ...next[index], [field]: value } as RecipeMaterialFile;
-      patch({ materials: next });
-    },
-    [materials, patch],
-  );
-
-  const handleDeleteMaterial = useCallback(
-    (index: number) => {
-      patch({ materials: materials.filter((_, i) => i !== index) });
-    },
-    [materials, patch],
+  const {
+    add: handleAddMaterial,
+    update: handleUpdateMaterial,
+    remove: handleDeleteMaterial,
+  } = useArrayField<RecipeMaterialFile>(
+    recipe.materials,
+    (materials) => patch({ materials }),
+    { itemId: "", quantity: 1 },
   );
 
   return (

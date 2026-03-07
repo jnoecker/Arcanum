@@ -190,7 +190,7 @@ describe("validateConfig", () => {
           levelRequired: 1,
           targetType: "ENEMY",
           classRestriction: "PALADIN",
-          effect: { type: "DIRECT_DAMAGE", minDamage: 1, maxDamage: 5 },
+          effect: { type: "DIRECT_DAMAGE", value: 5 },
         },
       },
     };

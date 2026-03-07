@@ -156,6 +156,9 @@ export async function saveConfig(mudDir: string): Promise<void> {
         return obj;
       },
     );
+
+    // Character Creation
+    setIn(engine, ["characterCreation", "startingGold"], config.characterCreation.startingGold);
   }
 
   // ─── Progression ────────────────────────────────────────────
@@ -171,11 +174,6 @@ export async function saveConfig(mudDir: string): Promise<void> {
   setIn(root, ["progression", "rewards", "fullManaOnLevelUp"], config.progression.rewards.fullManaOnLevelUp);
   setIn(root, ["progression", "rewards", "baseHp"], config.progression.rewards.baseHp);
   setIn(root, ["progression", "rewards", "baseMana"], config.progression.rewards.baseMana);
-
-  // ─── Character Creation ───────────────────────────────────
-  if (engine) {
-    setIn(engine, ["characterCreation", "startingGold"], config.characterCreation.startingGold);
-  }
 
   await writeTextFile(configPath, doc.toString());
   state.markClean();

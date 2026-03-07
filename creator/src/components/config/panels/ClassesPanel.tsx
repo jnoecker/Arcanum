@@ -240,7 +240,6 @@ export function ClassesPanel({ config, onChange }: ConfigPanelProps) {
 /**
  * Simple SVG line chart showing HP and Mana growth from level 1 to maxLevel.
  * Formula: basePool + (level - 1) * perLevel
- * Uses base HP=10, base Mana=10 as typical starting values.
  */
 function HpManaCurve({
   hpPerLevel,

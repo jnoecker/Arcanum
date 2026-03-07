@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { useProjectStore } from "@/stores/projectStore";
 import { useServerStore } from "@/stores/serverStore";
+import { useZoneStore } from "@/stores/zoneStore";
 import { useServerManager } from "@/lib/useServerManager";
+import { saveAllZones } from "@/lib/saveZone";
 import { ErrorDialog } from "./ErrorDialog";
 
 const STATUS_COLORS: Record<string, string> = {
@@ -23,8 +25,12 @@ const STATUS_LABELS: Record<string, string> = {
 export function Toolbar() {
   const project = useProjectStore((s) => s.project);
   const status = useServerStore((s) => s.status);
+  const dirtyCount = useZoneStore(
+    (s) => Array.from(s.zones.values()).filter((z) => z.dirty).length,
+  );
   const { startServer, stopServer } = useServerManager();
   const [errors, setErrors] = useState<string[] | null>(null);
+  const [saving, setSaving] = useState(false);
 
   const handleStart = async () => {
     const result = await startServer();
@@ -98,8 +104,21 @@ export function Toolbar() {
       <div className="flex-1" />
 
       {/* Right side actions */}
-      <button className="rounded px-3 py-1 text-xs font-medium text-text-primary transition-colors hover:bg-bg-elevated">
-        Save All
+      <button
+        onClick={async () => {
+          setSaving(true);
+          try {
+            await saveAllZones();
+          } catch (err) {
+            console.error("Save failed:", err);
+          } finally {
+            setSaving(false);
+          }
+        }}
+        disabled={dirtyCount === 0 || saving}
+        className="rounded px-3 py-1 text-xs font-medium transition-colors enabled:bg-bg-elevated enabled:text-text-primary enabled:hover:bg-bg-hover disabled:cursor-not-allowed disabled:opacity-40"
+      >
+        {saving ? "Saving..." : dirtyCount > 0 ? `Save All (${dirtyCount})` : "Save All"}
       </button>
       <button className="rounded px-3 py-1 text-xs font-medium text-text-primary transition-colors hover:bg-bg-elevated">
         Validate

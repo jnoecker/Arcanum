@@ -1,4 +1,4 @@
-import { useMemo, useState, useCallback, useRef } from "react";
+import { useMemo, useState, useCallback, useRef, useEffect } from "react";
 import {
   ReactFlow,
   ReactFlowProvider,
@@ -18,15 +18,23 @@ import { useZoneStore } from "@/stores/zoneStore";
 import { zoneToGraph } from "@/lib/zoneToGraph";
 import { compassLayout } from "@/lib/dagreLayout";
 import { addRoom, addExit, generateRoomId } from "@/lib/zoneEdits";
+import { saveZone } from "@/lib/saveZone";
 import type { WorldFile } from "@/types/world";
 import { RoomNode } from "./RoomNode";
 import { CrossZoneNode } from "./CrossZoneNode";
 import { RoomPanel } from "./RoomPanel";
+import { DirectionPicker } from "./DirectionPicker";
 
 const nodeTypes = {
   room: RoomNode,
   crossZone: CrossZoneNode,
 };
+
+interface PendingConnection {
+  source: string;
+  target: string;
+  inferredDir: string;
+}
 
 interface ZoneEditorProps {
   zoneId: string;
@@ -35,10 +43,50 @@ interface ZoneEditorProps {
 function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
   const zoneState = useZoneStore((s) => s.zones.get(zoneId));
   const updateZone = useZoneStore((s) => s.updateZone);
+  const undo = useZoneStore((s) => s.undo);
+  const redo = useZoneStore((s) => s.redo);
+  const canUndo = useZoneStore((s) => s.canUndo(zoneId));
+  const canRedo = useZoneStore((s) => s.canRedo(zoneId));
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
   const [showAddRoom, setShowAddRoom] = useState(false);
   const [newRoomId, setNewRoomId] = useState("");
   const addRoomInputRef = useRef<HTMLInputElement>(null);
+  const [pendingConnection, setPendingConnection] =
+    useState<PendingConnection | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  // ─── Keyboard shortcuts ──────────────────────────────────────────
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      const mod = e.ctrlKey || e.metaKey;
+      if (!mod) return;
+
+      if (e.key === "s") {
+        e.preventDefault();
+        if (zoneState?.dirty && !saving) {
+          setSaving(true);
+          saveZone(zoneId)
+            .catch((err) => console.error("Save failed:", err))
+            .finally(() => setSaving(false));
+        }
+        return;
+      }
+
+      // Skip undo/redo when typing in an input or textarea
+      const tag = (e.target as HTMLElement)?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA") return;
+
+      if (e.key === "z" && !e.shiftKey) {
+        e.preventDefault();
+        undo(zoneId);
+      } else if ((e.key === "z" && e.shiftKey) || e.key === "y") {
+        e.preventDefault();
+        redo(zoneId);
+      }
+    }
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [zoneId, zoneState?.dirty, saving, undo, redo]);
 
   // Rebuild graph when WorldFile changes
   const { layoutNodes, layoutEdges } = useMemo(() => {
@@ -86,16 +134,31 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
       if (target.startsWith("xzone:")) return;
 
       // Extract direction from sourceHandle (e.g. "source-n" → "n")
-      const dir = sourceHandle?.replace("source-", "") ?? "n";
+      const inferredDir = sourceHandle?.replace("source-", "") ?? "n";
 
+      // Show direction picker instead of immediately creating exit
+      setPendingConnection({ source, target, inferredDir });
+    },
+    [zoneState],
+  );
+
+  const handleConfirmConnection = useCallback(
+    (direction: string) => {
+      if (!zoneState || !pendingConnection) return;
       try {
-        const next = addExit(zoneState.data, source, dir, target);
+        const next = addExit(
+          zoneState.data,
+          pendingConnection.source,
+          direction,
+          pendingConnection.target,
+        );
         applyWorldChange(next);
       } catch {
         // Exit already exists or invalid — ignore
       }
+      setPendingConnection(null);
     },
-    [zoneState, applyWorldChange],
+    [zoneState, pendingConnection, applyWorldChange],
   );
 
   const onSelectionChange = useCallback(
@@ -139,6 +202,19 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
     }
   }, [zoneState, newRoomId, applyWorldChange]);
 
+  // ─── Save ────────────────────────────────────────────────────────
+  const handleSave = useCallback(async () => {
+    if (!zoneState?.dirty || saving) return;
+    setSaving(true);
+    try {
+      await saveZone(zoneId);
+    } catch (err) {
+      console.error("Save failed:", err);
+    } finally {
+      setSaving(false);
+    }
+  }, [zoneId, zoneState?.dirty, saving]);
+
   if (!zoneState) {
     return (
       <div className="flex flex-1 items-center justify-center text-text-muted">
@@ -162,6 +238,36 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
         {zoneState.dirty && (
           <span className="text-xs text-accent">modified</span>
         )}
+
+        {/* Undo / Redo */}
+        <div className="flex items-center gap-0.5">
+          <button
+            onClick={() => undo(zoneId)}
+            disabled={!canUndo}
+            className="h-6 w-6 rounded text-xs text-text-muted transition-colors enabled:hover:bg-bg-elevated enabled:hover:text-text-primary disabled:opacity-30"
+            title="Undo (Ctrl+Z)"
+          >
+            &#x21B6;
+          </button>
+          <button
+            onClick={() => redo(zoneId)}
+            disabled={!canRedo}
+            className="h-6 w-6 rounded text-xs text-text-muted transition-colors enabled:hover:bg-bg-elevated enabled:hover:text-text-primary disabled:opacity-30"
+            title="Redo (Ctrl+Shift+Z)"
+          >
+            &#x21B7;
+          </button>
+        </div>
+
+        {/* Save */}
+        <button
+          onClick={handleSave}
+          disabled={!zoneState.dirty || saving}
+          className="h-6 rounded px-2 text-xs transition-colors enabled:bg-accent/20 enabled:text-accent enabled:hover:bg-accent/30 disabled:text-text-muted disabled:opacity-30"
+          title="Save (Ctrl+S)"
+        >
+          {saving ? "Saving..." : "Save"}
+        </button>
 
         <div className="ml-auto flex items-center gap-2">
           {showAddRoom ? (
@@ -208,7 +314,7 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
 
       {/* Map + Panel */}
       <div className="flex min-h-0 flex-1">
-        <div className="flex-1">
+        <div className="relative flex-1">
           <ReactFlow
             nodes={nodes}
             edges={edges}
@@ -244,6 +350,17 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
               style={{ background: "#161b22", border: "1px solid #30363d" }}
             />
           </ReactFlow>
+
+          {/* Direction picker overlay */}
+          {pendingConnection && (
+            <DirectionPicker
+              source={pendingConnection.source}
+              target={pendingConnection.target}
+              initialDirection={pendingConnection.inferredDir}
+              onConfirm={handleConfirmConnection}
+              onCancel={() => setPendingConnection(null)}
+            />
+          )}
         </div>
 
         {selectedRoomId && (

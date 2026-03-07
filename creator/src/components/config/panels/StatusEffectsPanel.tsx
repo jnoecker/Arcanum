@@ -2,6 +2,7 @@ import { useState, useCallback } from "react";
 import type { ConfigPanelProps } from "./types";
 import type { StatusEffectDefinitionConfig } from "@/types/config";
 import type { StatMap } from "@/types/world";
+import { useStatMods } from "@/lib/useStatMods";
 import {
   Section,
   FieldRow,
@@ -245,23 +246,9 @@ function StatModsEditor({
   statIds: string[];
   onChange: (mods: StatMap | undefined) => void;
 }) {
-  const mods = statMods ?? {};
+  const { mods, addMod, removeMod, updateMod } = useStatMods(statMods, onChange);
   const modKeys = Object.keys(mods);
   const available = statIds.filter((id) => !(id in mods));
-
-  const addMod = (statId: string) => {
-    onChange({ ...mods, [statId]: 1 });
-  };
-
-  const removeMod = (statId: string) => {
-    const next = { ...mods };
-    delete next[statId];
-    onChange(Object.keys(next).length > 0 ? next : undefined);
-  };
-
-  const updateMod = (statId: string, value: number) => {
-    onChange({ ...mods, [statId]: value });
-  };
 
   return (
     <div className="mt-1 border-t border-border-muted pt-1.5">

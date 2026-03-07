@@ -118,7 +118,7 @@ export function Section({
   return (
     <div className="border-b border-border-muted px-4 py-3">
       <div className="mb-1.5 flex items-center gap-2">
-        <h4 className="text-[10px] font-semibold uppercase tracking-wider text-text-muted">
+        <h4 className="font-display text-[10px] uppercase tracking-widest text-text-muted">
           {title}
         </h4>
         {actions && <div className="ml-auto flex items-center gap-1">{actions}</div>}

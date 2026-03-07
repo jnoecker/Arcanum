@@ -130,7 +130,7 @@ export function AbilitiesPanel({ config, onChange }: ConfigPanelProps) {
 
           {/* Effect sub-section */}
           <div className="mt-1 border-t border-border-muted pt-1.5">
-            <h5 className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-text-muted">
+            <h5 className="mb-1 text-[10px] font-display uppercase tracking-widest text-text-muted">
               Effect
             </h5>
             <div className="flex flex-col gap-1.5">

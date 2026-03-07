@@ -18,6 +18,7 @@ import { RawYamlPanel } from "./panels/RawYamlPanel";
 import { ClassesPanel } from "./panels/ClassesPanel";
 import { RacesPanel } from "./panels/RacesPanel";
 import { CharacterCreationPanel } from "./panels/CharacterCreationPanel";
+import { ApiSettingsPanel } from "./panels/ApiSettingsPanel";
 
 const CONFIG_TABS = [
   { id: "server", label: "Server" },
@@ -35,6 +36,7 @@ const CONFIG_TABS = [
   { id: "group", label: "Group" },
   { id: "charCreate", label: "Char Create" },
   { id: "rawYaml", label: "Raw YAML" },
+  { id: "apiSettings", label: "API Settings" },
 ] as const;
 
 export function ConfigEditor() {
@@ -155,6 +157,7 @@ export function ConfigEditor() {
           {activeTab === "rawYaml" && (
             <RawYamlPanel config={config} onChange={handleChange} />
           )}
+          {activeTab === "apiSettings" && <ApiSettingsPanel />}
         </div>
       </div>
     </div>

@@ -29,7 +29,7 @@ export function DiffModal({ onConfirm, onCancel }: DiffModalProps) {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
       <div className="mx-4 flex max-h-[80vh] w-full max-w-3xl flex-col rounded-lg border border-border-default bg-bg-secondary shadow-xl">
         <div className="flex items-center justify-between border-b border-border-default px-5 py-3">
-          <h2 className="text-sm font-semibold text-text-primary">
+          <h2 className="font-display text-sm tracking-wide text-text-primary">
             Review Changes
           </h2>
           <span className="text-xs text-text-muted">
@@ -60,9 +60,9 @@ export function DiffModal({ onConfirm, onCancel }: DiffModalProps) {
                     key={i}
                     className={
                       line.kind === "add"
-                        ? "bg-[#1a3a2a] text-[#7ee787]"
+                        ? "bg-[#0a2a2a] text-[#4aaa7a]"
                         : line.kind === "del"
-                          ? "bg-[#3a1a1a] text-[#f47067]"
+                          ? "bg-[#2a0a14] text-[#c05060]"
                           : "text-text-muted"
                     }
                   >
@@ -87,7 +87,7 @@ export function DiffModal({ onConfirm, onCancel }: DiffModalProps) {
           <button
             onClick={onConfirm}
             disabled={!diffs}
-            className="rounded bg-accent px-4 py-1.5 text-xs font-medium text-white transition-colors hover:bg-accent-emphasis disabled:opacity-50"
+            className="rounded bg-gradient-to-r from-accent-muted to-accent px-4 py-1.5 text-xs font-medium text-accent-emphasis transition-all hover:shadow-[var(--glow-aurum)] hover:brightness-110 disabled:opacity-50"
           >
             Save All
           </button>

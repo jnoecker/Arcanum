@@ -10,22 +10,32 @@ export function MainArea() {
 
   if (!activeTab) {
     return (
-      <div className="flex flex-1 items-center justify-center text-text-muted">
+      <div className="flex min-h-0 flex-1 items-center justify-center text-text-muted">
         Open a zone or config tab from the sidebar
       </div>
     );
   }
 
+  let content: React.ReactNode;
   switch (activeTab.kind) {
     case "console":
-      return <Console />;
+      content = <Console />;
+      break;
     case "zone": {
       const zoneId = activeTab.id.replace(/^zone:/, "");
-      return <ZoneEditor key={zoneId} zoneId={zoneId} />;
+      content = <ZoneEditor key={zoneId} zoneId={zoneId} />;
+      break;
     }
     case "config":
-      return <ConfigEditor />;
+      content = <ConfigEditor />;
+      break;
     default:
-      return null;
+      content = null;
   }
+
+  return (
+    <div className="flex min-h-0 flex-1 flex-col">
+      {content}
+    </div>
+  );
 }

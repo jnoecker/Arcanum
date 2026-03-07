@@ -24,7 +24,8 @@ export type TabKind = "zone" | "config" | "console";
 export type ConfigSubTab =
   | "server" | "stats" | "classes" | "races" | "abilities"
   | "statusEffects" | "combat" | "mobTiers" | "progression"
-  | "economy" | "regen" | "crafting" | "group" | "charCreate" | "rawYaml";
+  | "economy" | "regen" | "crafting" | "group" | "charCreate" | "rawYaml"
+  | "apiSettings";
 
 export interface Tab {
   id: string;

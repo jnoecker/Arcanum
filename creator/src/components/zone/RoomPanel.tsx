@@ -12,6 +12,8 @@ import {
 } from "@/lib/zoneEdits";
 import { EditableField, EditableTextArea, Section, IconButton } from "@/components/ui/FormWidgets";
 import { YamlPreview } from "@/components/ui/YamlPreview";
+import { EntityArtGenerator } from "@/components/ui/EntityArtGenerator";
+import { roomPrompt } from "@/lib/entityPrompts";
 
 export type EntityKind = "mob" | "item" | "shop" | "quest" | "gatheringNode" | "recipe";
 
@@ -149,9 +151,9 @@ export function RoomPanel({
   }, [world, roomId, onWorldChange, onSelectEntity]);
 
   return (
-    <div className="flex w-72 shrink-0 flex-col overflow-y-auto border-l border-border-default bg-bg-secondary">
+    <div className="flex w-72 shrink-0 flex-col border-l border-border-default bg-bg-secondary">
       {/* Header */}
-      <div className="border-b border-border-default px-4 py-3">
+      <div className="shrink-0 border-b border-border-default px-4 py-3">
         <div className="flex items-start justify-between">
           <div>
             <EditableField
@@ -180,6 +182,7 @@ export function RoomPanel({
         </div>
       </div>
 
+      <div className="min-h-0 flex-1 overflow-y-auto">
       {showYaml ? (
         <YamlPreview data={{ [roomId]: room }} label={`room: ${roomId}`} />
       ) : (
@@ -372,21 +375,26 @@ export function RoomPanel({
 
       {/* Media */}
       <Section title="Media">
-        {room.image && (
-          <p className="text-xs text-text-muted">Image: {room.image}</p>
-        )}
-        {room.music && (
-          <p className="text-xs text-text-muted">Music: {room.music}</p>
-        )}
-        {room.ambient && (
-          <p className="text-xs text-text-muted">Ambient: {room.ambient}</p>
-        )}
-        {room.audio && (
-          <p className="text-xs text-text-muted">Audio: {room.audio}</p>
-        )}
-        {!room.image && !room.music && !room.ambient && !room.audio && (
-          <p className="text-xs text-text-muted">None</p>
-        )}
+        <div className="flex flex-col gap-1.5">
+          <div className="flex items-center gap-1 text-xs">
+            <span className="w-12 shrink-0 text-text-muted">Image</span>
+            <span className="truncate text-text-secondary">{room.image || "none"}</span>
+          </div>
+          <EntityArtGenerator
+            getPrompt={(style) => roomPrompt(roomId, room, style)}
+            currentImage={room.image}
+            onAccept={(filePath) => onWorldChange(updateRoom(world, roomId, { image: filePath }))}
+          />
+          {room.music && (
+            <p className="text-xs text-text-muted">Music: {room.music}</p>
+          )}
+          {room.ambient && (
+            <p className="text-xs text-text-muted">Ambient: {room.ambient}</p>
+          )}
+          {room.audio && (
+            <p className="text-xs text-text-muted">Audio: {room.audio}</p>
+          )}
+        </div>
       </Section>
 
       {/* Delete Room */}
@@ -402,6 +410,7 @@ export function RoomPanel({
       )}
       </>
       )}
+      </div>
     </div>
   );
 }

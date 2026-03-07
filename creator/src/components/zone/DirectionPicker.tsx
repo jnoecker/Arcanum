@@ -62,7 +62,7 @@ export function DirectionPicker({
         ref={panelRef}
         className="rounded-lg border border-border-default bg-bg-secondary p-4 shadow-xl"
       >
-        <p className="mb-1 text-xs font-medium text-text-primary">
+        <p className="mb-1 font-display text-xs tracking-wide text-text-primary">
           New exit direction
         </p>
         <p className="mb-3 text-[10px] text-text-muted">

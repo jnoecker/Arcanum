@@ -25,7 +25,7 @@ export function ShortcutsHelp({ onClose }: ShortcutsHelpProps) {
         onClick={(e) => e.stopPropagation()}
       >
         <div className="border-b border-border-default px-5 py-3">
-          <h2 className="text-sm font-semibold text-text-primary">
+          <h2 className="font-display text-sm tracking-wide text-text-primary">
             Keyboard Shortcuts
           </h2>
         </div>

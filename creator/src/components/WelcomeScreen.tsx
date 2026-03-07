@@ -35,20 +35,20 @@ export function WelcomeScreen() {
   };
 
   return (
-    <div className="flex h-screen items-center justify-center bg-bg-primary">
+    <div className="flex h-screen items-center justify-center bg-bg-abyss">
       <div className="flex flex-col items-center gap-8">
         <div className="flex flex-col items-center gap-2">
-          <h1 className="text-3xl font-bold text-text-primary">
+          <h1 className="font-display text-4xl font-semibold tracking-wide text-accent-emphasis">
             AmbonMUD Creator
           </h1>
-          <p className="text-text-secondary">
+          <p className="text-lg text-text-secondary">
             World building and server management tool
           </p>
         </div>
         <div className="flex flex-col items-center gap-3">
           <button
             onClick={handleOpen}
-            className="rounded-lg bg-accent px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-accent-emphasis"
+            className="rounded-lg bg-gradient-to-r from-accent-muted to-accent px-6 py-3 font-display text-sm font-medium tracking-wide text-accent-emphasis transition-all hover:shadow-[var(--glow-aurum)] hover:brightness-110"
           >
             Open AmbonMUD Project
           </button>

@@ -11,6 +11,7 @@ import {
   IconButton,
 } from "@/components/ui/FormWidgets";
 import { DeleteEntityButton, MediaSection } from "./EditorShared";
+import { getPreamble, type ArtStyle } from "@/lib/arcanumPrompts";
 
 interface RecipeEditorProps {
   recipeId: string;
@@ -183,7 +184,12 @@ export function RecipeEditor({
         )}
       </Section>
 
-      <MediaSection image={recipe.image} onImageChange={(v) => patch({ image: v })} />
+      <MediaSection image={recipe.image} onImageChange={(v) => patch({ image: v })} getPrompt={(style: ArtStyle) => {
+        const preamble = getPreamble(style);
+        return style === "gentle_magic"
+          ? `${preamble}\n\nStill life of a crafted creation called "${recipe.displayName}" — a warmly glowing artifact resting on a soft surface, gentle ambient light diffusing around it, floating motes of gold, lavender and pale blue tones, dreamlike quality, painterly, centered composition`
+          : `${preamble}\n\nStill life of a crafted creation called "${recipe.displayName}" — a luminous artifact emerging from baroque scrollwork, aurum-gold energy threads weaving through its form, deep indigo background, painterly, centered composition`;
+      }} />
       <DeleteEntityButton onClick={handleDelete} label="Delete Recipe" />
     </>
   );

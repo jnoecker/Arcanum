@@ -11,6 +11,7 @@ import {
   CheckboxInput,
 } from "@/components/ui/FormWidgets";
 import { DeleteEntityButton, MediaSection } from "./EditorShared";
+import { itemPrompt } from "@/lib/entityPrompts";
 
 interface ItemEditorProps {
   itemId: string;
@@ -213,7 +214,7 @@ export function ItemEditor({
         </div>
       </Section>
 
-      <MediaSection image={item.image} onImageChange={(v) => patch({ image: v })} />
+      <MediaSection image={item.image} onImageChange={(v) => patch({ image: v })} getPrompt={(style) => itemPrompt(itemId, item, style)} />
       <DeleteEntityButton onClick={handleDelete} label="Delete Item" />
     </>
   );

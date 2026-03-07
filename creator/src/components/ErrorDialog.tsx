@@ -9,7 +9,7 @@ export function ErrorDialog({ title, messages, onClose }: ErrorDialogProps) {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
       <div className="mx-4 max-w-lg rounded-lg border border-border-default bg-bg-secondary shadow-xl">
         <div className="border-b border-border-default px-5 py-3">
-          <h2 className="text-sm font-semibold text-status-error">{title}</h2>
+          <h2 className="font-display text-sm tracking-wide text-status-error">{title}</h2>
         </div>
         <div className="px-5 py-4">
           <ul className="flex flex-col gap-2">

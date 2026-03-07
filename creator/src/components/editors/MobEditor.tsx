@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/FormWidgets";
 import { DialogueEditor } from "./DialogueEditor";
 import { DeleteEntityButton, MediaSection } from "./EditorShared";
+import { mobPrompt } from "@/lib/entityPrompts";
 
 interface MobEditorProps {
   mobId: string;
@@ -378,7 +379,7 @@ export function MobEditor({
         onWorldChange={onWorldChange}
       />
 
-      <MediaSection image={mob.image} onImageChange={(v) => patch({ image: v })} />
+      <MediaSection image={mob.image} onImageChange={(v) => patch({ image: v })} getPrompt={(style) => mobPrompt(mobId, mob, style)} />
       <DeleteEntityButton onClick={handleDelete} label="Delete Mob" />
     </>
   );

@@ -22,7 +22,13 @@
       }
     ],
     "security": {
-      "csp": null
+      "csp": null,
+      "assetProtocol": {
+        "scope": {
+          "allow": ["$APPDATA/**"],
+          "deny": []
+        }
+      }
     }
   },
   "plugins": {

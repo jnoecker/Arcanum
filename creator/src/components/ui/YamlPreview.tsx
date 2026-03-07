@@ -16,7 +16,7 @@ export function YamlPreview({ data, label }: YamlPreviewProps) {
     <div className="flex flex-1 flex-col">
       {label && (
         <div className="border-b border-border-default px-4 py-1.5">
-          <span className="text-[10px] font-semibold uppercase tracking-wider text-text-muted">
+          <span className="font-display text-[10px] uppercase tracking-widest text-text-muted">
             {label}
           </span>
         </div>

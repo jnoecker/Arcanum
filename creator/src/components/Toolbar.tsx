@@ -12,6 +12,7 @@ import { useConfigStore } from "@/stores/configStore";
 import { ErrorDialog } from "./ErrorDialog";
 import { ValidationPanel } from "./ValidationPanel";
 import { DiffModal } from "./ui/DiffModal";
+import { useAssetStore } from "@/stores/assetStore";
 
 const STATUS_COLORS: Record<string, string> = {
   stopped: "bg-server-stopped",
@@ -44,6 +45,8 @@ export function Toolbar() {
   const [errors, setErrors] = useState<string[] | null>(null);
   const [saving, setSaving] = useState(false);
   const [showDiff, setShowDiff] = useState(false);
+  const openGenerator = useAssetStore((s) => s.openGenerator);
+  const openGallery = useAssetStore((s) => s.openGallery);
 
   const handleStart = async () => {
     const result = await startServer();
@@ -75,7 +78,7 @@ export function Toolbar() {
   return (
     <div className="flex h-11 shrink-0 items-center gap-3 border-b border-border-default bg-bg-secondary px-4">
       {/* Project name */}
-      <span className="text-sm font-medium text-text-primary">
+      <span className="font-display text-sm font-semibold tracking-wide text-accent-emphasis">
         {project?.name ?? "AmbonMUD Creator"}
       </span>
 
@@ -108,8 +111,8 @@ export function Toolbar() {
 
       {/* Server status badge */}
       <div className="flex items-center gap-2">
-        <div className={`h-2 w-2 rounded-full ${STATUS_COLORS[status]}`} />
-        <span className="text-xs text-text-secondary">
+        <div className={`h-2 w-2 rounded-full ${STATUS_COLORS[status]} ${status === "running" ? "animate-aurum-pulse" : ""} ${status === "error" ? "animate-crimson-pulse" : ""}`} />
+        <span className="font-display text-xs tracking-wide text-text-secondary uppercase">
           {STATUS_LABELS[status]}
         </span>
       </div>
@@ -117,6 +120,19 @@ export function Toolbar() {
       <div className="flex-1" />
 
       {/* Right side actions */}
+      <button
+        onClick={openGallery}
+        className="rounded px-3 py-1 text-xs font-medium text-text-secondary transition-colors hover:bg-bg-elevated hover:text-text-primary"
+      >
+        Gallery
+      </button>
+      <button
+        onClick={openGenerator}
+        className="rounded px-3 py-1 text-xs font-medium text-accent transition-colors hover:bg-accent/10"
+      >
+        Generate Art
+      </button>
+      <div className="mx-1 h-4 w-px bg-border-default" />
       <button
         onClick={() => setShowDiff(true)}
         disabled={(dirtyCount === 0 && !configDirty) || saving}

@@ -21,7 +21,7 @@ export function ValidationPanel() {
       <div className="mx-4 flex max-h-[80vh] w-full max-w-xl flex-col rounded-lg border border-border-default bg-bg-secondary shadow-xl">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-border-default px-5 py-3">
-          <h2 className="text-sm font-semibold text-text-primary">
+          <h2 className="font-display text-sm tracking-wide text-text-primary">
             Validation Results
           </h2>
           <div className="flex items-center gap-3 text-xs">
@@ -87,7 +87,7 @@ function ZoneIssueGroup({
   return (
     <div>
       <div className="mb-1 flex items-center gap-2">
-        <h3 className="text-xs font-semibold text-text-primary">{zoneId}</h3>
+        <h3 className="font-display text-xs text-text-primary">{zoneId}</h3>
         <span className="text-[10px] text-text-muted">
           {errs.length}E / {warns.length}W
         </span>

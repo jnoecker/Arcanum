@@ -25,6 +25,7 @@ import { CrossZoneNode } from "./CrossZoneNode";
 import { RoomPanel, type EntitySelection } from "./RoomPanel";
 import { EntityPanel } from "./EntityPanel";
 import { DirectionPicker } from "./DirectionPicker";
+import { BatchArtGenerator } from "./BatchArtGenerator";
 
 const nodeTypes = {
   room: RoomNode,
@@ -56,6 +57,7 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
   const [pendingConnection, setPendingConnection] =
     useState<PendingConnection | null>(null);
   const [saving, setSaving] = useState(false);
+  const [showBatchArt, setShowBatchArt] = useState(false);
 
   // Auto-close entity panel if the selected entity was removed (e.g. by undo)
   useEffect(() => {
@@ -217,7 +219,7 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
     <div className="flex flex-1 flex-col">
       {/* Zone toolbar */}
       <div className="flex shrink-0 items-center gap-3 border-b border-border-default bg-bg-secondary px-3 py-1.5">
-        <span className="text-xs font-medium text-text-primary">
+        <span className="font-display text-xs font-medium tracking-wide text-text-primary">
           {zoneState.data.zone}
         </span>
         <span className="text-xs text-text-muted">
@@ -258,6 +260,13 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
         </button>
 
         <div className="ml-auto flex items-center gap-2">
+          <button
+            onClick={() => setShowBatchArt(true)}
+            className="h-6 rounded px-2 text-xs text-accent transition-colors hover:bg-accent/10"
+            title="Generate art for all entities"
+          >
+            Batch Art
+          </button>
           {showAddRoom ? (
             <form
               onSubmit={(e) => {
@@ -318,26 +327,34 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
             minZoom={0.1}
             maxZoom={2}
             proOptions={{ hideAttribution: true }}
-            style={{ background: "#0d1117" }}
+            style={{ background: "#080c1c" }}
           >
             <Background
               variant={BackgroundVariant.Dots}
               gap={20}
               size={1}
-              color="#21262d"
+              color="#1e2748"
             />
             <Controls
               showInteractive={false}
-              style={{ background: "#161b22", border: "1px solid #30363d" }}
             />
             <MiniMap
               nodeColor={(node) =>
-                node.type === "crossZone" ? "#a371f7" : "#30363d"
+                node.type === "crossZone" ? "#c8972e" : "#2a3460"
               }
-              maskColor="rgba(13, 17, 23, 0.8)"
-              style={{ background: "#161b22", border: "1px solid #30363d" }}
+              maskColor="rgba(8, 12, 28, 0.8)"
             />
           </ReactFlow>
+
+          {/* Batch art generator */}
+          {showBatchArt && zoneState && (
+            <BatchArtGenerator
+              zoneId={zoneId}
+              world={zoneState.data}
+              onWorldChange={applyWorldChange}
+              onClose={() => setShowBatchArt(false)}
+            />
+          )}
 
           {/* Direction picker overlay */}
           {pendingConnection && (

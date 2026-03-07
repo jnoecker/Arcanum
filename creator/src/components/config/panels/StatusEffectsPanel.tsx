@@ -160,7 +160,7 @@ function StatModsEditor({
   return (
     <div className="mt-1 border-t border-border-muted pt-1.5">
       <div className="mb-1 flex items-center gap-2">
-        <h5 className="text-[10px] font-semibold uppercase tracking-wider text-text-muted">
+        <h5 className="text-[10px] font-display uppercase tracking-widest text-text-muted">
           Stat Modifiers
         </h5>
         {available.length > 0 && (

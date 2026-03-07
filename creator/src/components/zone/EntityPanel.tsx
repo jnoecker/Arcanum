@@ -44,9 +44,9 @@ export function EntityPanel({
   }, [world, selection]);
 
   return (
-    <div className="flex w-80 shrink-0 flex-col overflow-y-auto border-l border-border-default bg-bg-secondary">
+    <div className="flex w-80 shrink-0 flex-col border-l border-border-default bg-bg-secondary">
       {/* Header with back button */}
-      <div className="flex items-center gap-2 border-b border-border-default px-4 py-2">
+      <div className="shrink-0 flex items-center gap-2 border-b border-border-default px-4 py-2">
         <button
           onClick={onClose}
           className="h-5 w-5 rounded text-xs text-text-muted transition-colors hover:bg-bg-elevated hover:text-text-primary"
@@ -54,7 +54,7 @@ export function EntityPanel({
         >
           &#x2190;
         </button>
-        <span className="text-[10px] font-semibold uppercase tracking-wider text-text-muted">
+        <span className="font-display text-[10px] uppercase tracking-widest text-text-muted">
           {selection.kind}
         </span>
         <span className="text-xs font-medium text-text-primary">
@@ -74,6 +74,7 @@ export function EntityPanel({
       </div>
 
       {/* YAML preview or editor */}
+      <div className="min-h-0 flex-1 overflow-y-auto">
       {showYaml ? (
         <YamlPreview
           data={entityData ? { [selection.id]: entityData } : null}
@@ -131,6 +132,7 @@ export function EntityPanel({
       )}
       </>
       )}
+      </div>
     </div>
   );
 }

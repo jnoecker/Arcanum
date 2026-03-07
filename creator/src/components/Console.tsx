@@ -85,7 +85,7 @@ export function Console() {
           placeholder="Filter logs..."
           value={searchText}
           onChange={(e) => setSearchText(e.target.value)}
-          className="rounded border border-border-default bg-bg-primary px-2 py-0.5 text-xs text-text-primary placeholder-text-muted outline-none focus:border-border-focus"
+          className="rounded border border-border-default bg-bg-primary px-2 py-0.5 text-xs text-text-primary placeholder:text-text-muted outline-none focus:border-border-focus"
         />
 
         <div className="flex-1" />

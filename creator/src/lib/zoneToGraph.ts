@@ -172,19 +172,19 @@ export function zoneToGraph(
       animated: isCrossZone,
       markerEnd: isBidirectional
         ? undefined
-        : { type: MarkerType.ArrowClosed, color: "#8b949e" },
+        : { type: MarkerType.ArrowClosed, color: "#6a7aac" },
       style: {
-        stroke: isCrossZone ? "#a371f7" : exit.hasDoor ? "#e3b341" : "#8b949e",
+        stroke: isCrossZone ? "#c8972e" : exit.hasDoor ? "#e2bc6a" : "#6a7aac",
         strokeDasharray: exit.hasDoor ? "6 3" : undefined,
         strokeWidth: 1.5,
       },
       labelStyle: {
-        fill: "#8b949e",
+        fill: "#6a7aac",
         fontSize: 10,
         fontWeight: 500,
       },
       labelBgStyle: {
-        fill: "#0d1117",
+        fill: "#080c1c",
         fillOpacity: 0.9,
       },
     });

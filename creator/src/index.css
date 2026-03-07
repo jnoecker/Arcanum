@@ -1,63 +1,96 @@
 @import "tailwindcss";
 
 @theme {
-  /* Core palette - dark arcane theme */
-  --color-bg-primary: #0d1117;
-  --color-bg-secondary: #161b22;
-  --color-bg-tertiary: #1c2128;
-  --color-bg-elevated: #21262d;
-  --color-bg-hover: #292e36;
+  /* ─── Typography ─── */
+  --font-sans: 'Crimson Pro', Georgia, serif;
+  --font-display: 'Cinzel', Palatino, serif;
+  --font-mono: 'JetBrains Mono', Consolas, monospace;
 
-  /* Borders */
-  --color-border-default: #30363d;
-  --color-border-muted: #21262d;
-  --color-border-focus: #58a6ff;
+  /* ─── Deep Space (Backgrounds) ─── */
+  --color-bg-abyss:     #080c1c;
+  --color-bg-primary:   #0f1428;
+  --color-bg-secondary: #161b38;
+  --color-bg-tertiary:  #1e2748;
+  --color-bg-elevated:  #1e2748;
+  --color-bg-hover:     #2a3460;
 
-  /* Text */
-  --color-text-primary: #e6edf3;
-  --color-text-secondary: #8b949e;
-  --color-text-muted: #6e7681;
-  --color-text-link: #58a6ff;
+  /* ─── Borders ─── */
+  --color-border-default: #2a3460;
+  --color-border-muted:   #1e2748;
+  --color-border-focus:   #c8972e;
 
-  /* Accent - arcane purple */
-  --color-accent: #a371f7;
-  --color-accent-muted: #8957e5;
-  --color-accent-emphasis: #bc8cff;
+  /* ─── Text ─── */
+  --color-text-primary:   #c2cef0;
+  --color-text-secondary: #6a7aac;
+  --color-text-muted:     #3a4880;
+  --color-text-link:      #4e7fd4;
 
-  /* Status colors */
-  --color-status-success: #3fb950;
-  --color-status-warning: #d29922;
-  --color-status-error: #f85149;
-  --color-status-info: #58a6ff;
+  /* ─── Accent — Aurum (the creative force) ─── */
+  --color-accent:          #c8972e;
+  --color-accent-muted:    #a07820;
+  --color-accent-emphasis: #e2bc6a;
 
-  /* Server status */
-  --color-server-stopped: #6e7681;
-  --color-server-starting: #d29922;
-  --color-server-running: #3fb950;
-  --color-server-error: #f85149;
+  /* ─── Cool Accents ─── */
+  --color-violet:       #7a5fc0;
+  --color-stellar-blue: #4e7fd4;
+  --color-arcane-teal:  #3aa8b8;
+
+  /* ─── Status Colors ─── */
+  --color-status-success: #3a8a6a;
+  --color-status-warning: #e2bc6a;
+  --color-status-error:   #8a2a3c;
+  --color-status-info:    #4e7fd4;
+  --color-status-danger:  #8a2a3c;
+
+  /* ─── Server Status ─── */
+  --color-server-stopped:  #6a7aac;
+  --color-server-starting: #e2bc6a;
+  --color-server-running:  #c8972e;
+  --color-server-error:    #8a2a3c;
+}
+
+/* ─── Arcanum Design Tokens ─── */
+:root {
+  /* Glows */
+  --glow-aurum:        0 0 32px rgba(200, 151, 46, 0.35);
+  --glow-aurum-strong: 0 0 48px rgba(226, 188, 106, 0.5);
+  --glow-violet:       0 0 28px rgba(122, 95, 192, 0.3);
+  --glow-blue:         0 0 24px rgba(78, 127, 212, 0.25);
+
+  /* Shadows */
+  --shadow-deep:  0 8px 32px rgba(4, 6, 18, 0.7);
+  --shadow-panel: 0 16px 56px rgba(4, 6, 18, 0.8);
+
+  /* Easing */
+  --ease-unfurl:   cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-dissolve: cubic-bezier(0.7, 0, 0.84, 0);
+  --ease-cosmic:   cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Border accents (semi-transparent) */
+  --border-aurum:  rgba(200, 151, 46, 0.4);
+  --border-violet: rgba(122, 95, 192, 0.35);
 }
 
 body {
   margin: 0;
   padding: 0;
-  background-color: var(--color-bg-primary);
+  background-color: var(--color-bg-abyss);
   color: var(--color-text-primary);
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial,
-    sans-serif;
-  font-size: 14px;
-  line-height: 1.5;
+  font-family: 'Crimson Pro', Georgia, serif;
+  font-size: 15px;
+  line-height: 1.6;
   overflow: hidden;
   user-select: none;
 }
 
-/* Scrollbar styling */
+/* ─── Scrollbar ─── */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--color-bg-secondary);
+  background: var(--color-bg-primary);
 }
 
 ::-webkit-scrollbar-thumb {
@@ -75,4 +108,72 @@ textarea,
 select,
 [contenteditable] {
   user-select: text;
+}
+
+/* ─── Animation Keyframes ─── */
+@keyframes aurum-pulse {
+  0%, 100% { opacity: 0.7; box-shadow: 0 0 8px rgba(200, 151, 46, 0.3); }
+  50%      { opacity: 1;   box-shadow: 0 0 20px rgba(200, 151, 46, 0.6); }
+}
+
+@keyframes crimson-pulse {
+  0%, 100% { opacity: 0.7; box-shadow: 0 0 6px rgba(138, 42, 60, 0.2); }
+  50%      { opacity: 1;   box-shadow: 0 0 16px rgba(138, 42, 60, 0.5); }
+}
+
+@keyframes slow-rotate {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+@keyframes thread-trace {
+  0%   { background-position: 0% 50%; }
+  100% { background-position: 200% 50%; }
+}
+
+/* ─── Utility Classes ─── */
+.animate-aurum-pulse {
+  animation: aurum-pulse 3s var(--ease-cosmic) infinite;
+}
+
+.animate-crimson-pulse {
+  animation: crimson-pulse 4s var(--ease-cosmic) infinite;
+}
+
+.animate-slow-rotate {
+  animation: slow-rotate 60s linear infinite;
+}
+
+/* ─── Focus ring (Aurum unfurl) ─── */
+*:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(200, 151, 46, 0.3);
+  transition: box-shadow 200ms var(--ease-unfurl);
+}
+
+/* ─── ReactFlow Overrides ─── */
+.react-flow__controls button {
+  background-color: var(--color-bg-secondary) !important;
+  border-color: var(--color-border-default) !important;
+  color: var(--color-text-secondary) !important;
+  fill: var(--color-text-secondary) !important;
+}
+
+.react-flow__controls button:hover {
+  background-color: var(--color-bg-elevated) !important;
+  color: var(--color-text-primary) !important;
+  fill: var(--color-text-primary) !important;
+}
+
+.react-flow__edge-path {
+  stroke: var(--color-border-default) !important;
+}
+
+.react-flow__edge.selected .react-flow__edge-path {
+  stroke: var(--color-accent) !important;
+}
+
+.react-flow__minimap {
+  background-color: var(--color-bg-secondary) !important;
+  border-color: var(--color-border-default) !important;
 }

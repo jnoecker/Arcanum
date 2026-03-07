@@ -1,9 +1,10 @@
-import { useRef, useEffect, useCallback } from "react";
+import { useRef, useState, useEffect, useCallback } from "react";
 import { useZoneStore } from "@/stores/zoneStore";
 import { useConfigStore } from "@/stores/configStore";
 import { useProjectStore } from "@/stores/projectStore";
 import type { Tab, ConfigSubTab } from "@/types/project";
 import { useGlobalSearch, ENTITY_TYPE_LABELS } from "@/lib/useGlobalSearch";
+import { NewZoneDialog } from "./NewZoneDialog";
 
 export function Sidebar() {
   const zones = useZoneStore((s) => s.zones);
@@ -15,6 +16,8 @@ export function Sidebar() {
   const { query, setQuery, clearQuery, grouped, isSearching } =
     useGlobalSearch();
   const searchRef = useRef<HTMLInputElement>(null);
+  const [showNewZone, setShowNewZone] = useState(false);
+  const hasProject = !!useProjectStore((s) => s.project);
 
   // Ctrl+K to focus search
   useEffect(() => {
@@ -76,7 +79,7 @@ export function Sidebar() {
             ) : (
               [...grouped.entries()].map(([zoneId, entries]) => (
                 <div key={zoneId} className="mb-3">
-                  <h3 className="mb-1 text-xs font-semibold text-text-muted">
+                  <h3 className="mb-1 font-display text-xs text-text-muted">
                     {zoneId}
                   </h3>
                   <ul className="flex flex-col gap-0.5">
@@ -114,9 +117,20 @@ export function Sidebar() {
         ) : (
         <>
         <div className="px-3 py-2">
-          <h2 className="mb-2 text-xs font-semibold uppercase tracking-wider text-text-muted">
-            Zones
-          </h2>
+          <div className="mb-2 flex items-center justify-between">
+            <h2 className="font-display text-xs uppercase tracking-widest text-text-muted">
+              Zones
+            </h2>
+            {hasProject && (
+              <button
+                onClick={() => setShowNewZone(true)}
+                className="rounded px-1.5 py-0.5 text-xs text-text-muted transition-colors hover:bg-bg-elevated hover:text-text-primary"
+                title="New Zone"
+              >
+                +
+              </button>
+            )}
+          </div>
           {sortedZones.length === 0 ? (
             <p className="text-xs text-text-muted">No zones loaded</p>
           ) : (
@@ -159,7 +173,7 @@ export function Sidebar() {
 
         {/* Config section */}
         <div className="px-3 py-2">
-          <h2 className="mb-2 text-xs font-semibold uppercase tracking-wider text-text-muted">
+          <h2 className="mb-2 font-display text-xs uppercase tracking-widest text-text-muted">
             Config
           </h2>
           <ul className="flex flex-col gap-0.5">
@@ -210,6 +224,8 @@ export function Sidebar() {
           Console
         </button>
       </div>
+
+      {showNewZone && <NewZoneDialog onClose={() => setShowNewZone(false)} />}
     </div>
   );
 }

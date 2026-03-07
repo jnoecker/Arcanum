@@ -9,7 +9,8 @@ import {
   SelectInput,
   IconButton,
 } from "@/components/ui/FormWidgets";
-import { DeleteEntityButton } from "./EditorShared";
+import { DeleteEntityButton, MediaSection } from "./EditorShared";
+import { shopPrompt } from "@/lib/entityPrompts";
 
 interface ShopEditorProps {
   shopId: string;
@@ -113,6 +114,7 @@ export function ShopEditor({
         )}
       </Section>
 
+      <MediaSection image={shop.image} onImageChange={(v) => patch({ image: v })} getPrompt={(style) => shopPrompt(shopId, shop, style)} />
       <DeleteEntityButton onClick={handleDelete} label="Delete Shop" />
     </>
   );

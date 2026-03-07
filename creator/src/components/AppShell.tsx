@@ -3,8 +3,12 @@ import { Sidebar } from "./Sidebar";
 import { TabBar } from "./TabBar";
 import { MainArea } from "./MainArea";
 import { StatusBar } from "./StatusBar";
+import { ShortcutsHelp } from "./ui/ShortcutsHelp";
+import { useKeyboardShortcuts } from "@/lib/useKeyboardShortcuts";
 
 export function AppShell() {
+  const { showHelp, setShowHelp } = useKeyboardShortcuts();
+
   return (
     <div className="flex h-screen flex-col bg-bg-primary">
       <Toolbar />
@@ -16,6 +20,7 @@ export function AppShell() {
         </div>
       </div>
       <StatusBar />
+      {showHelp && <ShortcutsHelp onClose={() => setShowHelp(false)} />}
     </div>
   );
 }

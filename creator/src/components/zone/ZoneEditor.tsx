@@ -57,39 +57,6 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
     useState<PendingConnection | null>(null);
   const [saving, setSaving] = useState(false);
 
-  // ─── Keyboard shortcuts ──────────────────────────────────────────
-  useEffect(() => {
-    function handleKeyDown(e: KeyboardEvent) {
-      const mod = e.ctrlKey || e.metaKey;
-      if (!mod) return;
-
-      if (e.key === "s") {
-        e.preventDefault();
-        if (zoneState?.dirty && !saving) {
-          setSaving(true);
-          saveZone(zoneId)
-            .catch((err) => console.error("Save failed:", err))
-            .finally(() => setSaving(false));
-        }
-        return;
-      }
-
-      // Skip undo/redo when typing in an input or textarea
-      const tag = (e.target as HTMLElement)?.tagName;
-      if (tag === "INPUT" || tag === "TEXTAREA") return;
-
-      if (e.key === "z" && !e.shiftKey) {
-        e.preventDefault();
-        undo(zoneId);
-      } else if ((e.key === "z" && e.shiftKey) || e.key === "y") {
-        e.preventDefault();
-        redo(zoneId);
-      }
-    }
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [zoneId, zoneState?.dirty, saving, undo, redo]);
-
   // Auto-close entity panel if the selected entity was removed (e.g. by undo)
   useEffect(() => {
     if (!selectedEntity || !zoneState) return;

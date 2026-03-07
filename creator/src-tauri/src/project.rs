@@ -1,5 +1,8 @@
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
+use sha2::{Digest, Sha256};
+use std::collections::HashMap;
 use std::path::{Path, PathBuf};
+use tauri::Manager;
 
 #[derive(Serialize)]
 pub struct ValidationResult {
@@ -90,4 +93,223 @@ pub fn list_legacy_images(mud_dir: String) -> Vec<LegacyImage> {
         }
     }
     results
+}
+
+// ─── R2 Migration ──────────────────────────────────────────────────
+
+#[derive(Debug, Default, Deserialize)]
+struct Manifest {
+    assets: Vec<ManifestEntry>,
+}
+
+#[derive(Debug, Deserialize)]
+struct ManifestEntry {
+    hash: String,
+    file_name: String,
+}
+
+#[derive(Debug, Default, Serialize)]
+pub struct MigrationReport {
+    pub zone_files_updated: usize,
+    pub zone_refs_rewritten: usize,
+    pub config_refs_rewritten: usize,
+    pub images_deleted: usize,
+    pub errors: Vec<String>,
+}
+
+/// Build a map from content SHA-256 hash to the R2 filename (hash.ext).
+fn load_hash_map(app: &tauri::AppHandle) -> Result<HashMap<String, String>, String> {
+    let manifest_path = app
+        .path()
+        .app_data_dir()
+        .map_err(|e| format!("Failed to get app data dir: {e}"))?
+        .join("assets")
+        .join("manifest.json");
+
+    if !manifest_path.exists() {
+        return Err("Asset manifest not found. Import images first.".to_string());
+    }
+
+    let data =
+        std::fs::read_to_string(&manifest_path).map_err(|e| format!("Read manifest: {e}"))?;
+    let manifest: Manifest =
+        serde_json::from_str(&data).map_err(|e| format!("Parse manifest: {e}"))?;
+
+    let mut map = HashMap::new();
+    for entry in manifest.assets {
+        map.insert(entry.hash, entry.file_name);
+    }
+    Ok(map)
+}
+
+/// Hash a file and look up the R2 filename in the manifest.
+fn resolve_to_r2(path: &Path, hash_map: &HashMap<String, String>) -> Option<String> {
+    let bytes = std::fs::read(path).ok()?;
+    let hash = format!("{:x}", Sha256::digest(&bytes));
+    hash_map.get(&hash).cloned()
+}
+
+/// Find the local file for a legacy image path.
+/// Tries both world/images/ and images/ directories.
+fn find_image_file(relative_path: &str, resources: &Path) -> Option<PathBuf> {
+    let candidates = [
+        resources.join("world/images").join(relative_path),
+        resources.join("images").join(relative_path),
+    ];
+    candidates.into_iter().find(|p| p.is_file())
+}
+
+/// Rewrite image references in a YAML string.
+/// Scans for `image:` keys and replaces legacy relative paths with R2 hash filenames.
+/// Returns the updated content and the count of replacements made.
+fn rewrite_yaml_images(
+    content: &str,
+    resources: &Path,
+    hash_map: &HashMap<String, String>,
+    errors: &mut Vec<String>,
+    file_label: &str,
+) -> (String, usize) {
+    use regex::Regex;
+    let re = Regex::new(r#"(?m)^(\s*image:\s*)(?:"([^"]+)"|'([^']+)'|(\S+))\s*$"#).unwrap();
+
+    let mut count = 0;
+    let result = re
+        .replace_all(content, |caps: &regex::Captures| {
+            let prefix = &caps[1];
+            let path = caps
+                .get(2)
+                .or_else(|| caps.get(3))
+                .or_else(|| caps.get(4))
+                .map(|m| m.as_str())
+                .unwrap_or("");
+
+            // Skip if already a hash filename (64 hex chars + ext)
+            if path.len() > 60 && !path.contains('/') {
+                return caps[0].to_string();
+            }
+
+            // For ability paths like /images/abilities/power_strike.png, strip prefix
+            let relative = path
+                .strip_prefix("/images/")
+                .unwrap_or(path);
+
+            if let Some(file_path) = find_image_file(relative, resources) {
+                if let Some(r2_name) = resolve_to_r2(&file_path, hash_map) {
+                    count += 1;
+                    return format!("{prefix}{r2_name}");
+                }
+                errors.push(format!(
+                    "{file_label}: image '{path}' not found in asset manifest"
+                ));
+            } else {
+                errors.push(format!(
+                    "{file_label}: image file not found for '{path}'"
+                ));
+            }
+            caps[0].to_string()
+        })
+        .to_string();
+
+    (result, count)
+}
+
+/// Recursively delete a directory.
+fn remove_dir_all_best_effort(dir: &Path) -> usize {
+    let mut count = 0;
+    if !dir.exists() {
+        return count;
+    }
+    for entry in std::fs::read_dir(dir).into_iter().flatten().flatten() {
+        let path = entry.path();
+        if path.is_dir() {
+            count += remove_dir_all_best_effort(&path);
+        } else {
+            if std::fs::remove_file(&path).is_ok() {
+                count += 1;
+            }
+        }
+    }
+    let _ = std::fs::remove_dir(dir);
+    count
+}
+
+/// Migrate all image references from legacy relative paths to R2 hash filenames.
+/// Rewrites zone YAMLs and application.yaml, then deletes local image directories.
+#[tauri::command]
+pub fn migrate_images_to_r2(
+    app: tauri::AppHandle,
+    mud_dir: String,
+) -> Result<MigrationReport, String> {
+    let hash_map = load_hash_map(&app)?;
+    if hash_map.is_empty() {
+        return Err("Asset manifest is empty. Import and sync images first.".to_string());
+    }
+
+    let resources = PathBuf::from(&mud_dir).join("src/main/resources");
+    let world_dir = resources.join("world");
+    let config_path = resources.join("application.yaml");
+
+    let mut report = MigrationReport::default();
+
+    // ─── Rewrite zone YAMLs ────────────────────────────────────
+    if let Ok(entries) = std::fs::read_dir(&world_dir) {
+        for entry in entries.flatten() {
+            let path = entry.path();
+            let name = path
+                .file_name()
+                .and_then(|n| n.to_str())
+                .unwrap_or_default();
+            if !name.ends_with(".yaml") && !name.ends_with(".yml") {
+                continue;
+            }
+
+            let content = match std::fs::read_to_string(&path) {
+                Ok(c) => c,
+                Err(e) => {
+                    report
+                        .errors
+                        .push(format!("Failed to read {name}: {e}"));
+                    continue;
+                }
+            };
+
+            let (updated, count) =
+                rewrite_yaml_images(&content, &resources, &hash_map, &mut report.errors, name);
+            if count > 0 {
+                if let Err(e) = std::fs::write(&path, &updated) {
+                    report
+                        .errors
+                        .push(format!("Failed to write {name}: {e}"));
+                } else {
+                    report.zone_files_updated += 1;
+                    report.zone_refs_rewritten += count;
+                }
+            }
+        }
+    }
+
+    // ─── Rewrite application.yaml ability images ───────────────
+    if config_path.exists() {
+        let content = std::fs::read_to_string(&config_path)
+            .map_err(|e| format!("Failed to read application.yaml: {e}"))?;
+
+        let (updated, count) = rewrite_yaml_images(
+            &content,
+            &resources,
+            &hash_map,
+            &mut report.errors,
+            "application.yaml",
+        );
+        if count > 0 {
+            std::fs::write(&config_path, &updated)
+                .map_err(|e| format!("Failed to write application.yaml: {e}"))?;
+            report.config_refs_rewritten = count;
+        }
+    }
+
+    // ─── Delete local image directories ────────────────────────
+    report.images_deleted += remove_dir_all_best_effort(&resources.join("world/images"));
+    report.images_deleted += remove_dir_all_best_effort(&resources.join("images"));
+
+    Ok(report)
 }

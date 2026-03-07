@@ -18,6 +18,7 @@ import { RawYamlPanel } from "./panels/RawYamlPanel";
 import { ClassesPanel } from "./panels/ClassesPanel";
 import { RacesPanel } from "./panels/RacesPanel";
 import { CharacterCreationPanel } from "./panels/CharacterCreationPanel";
+import { ImagesPanel } from "./panels/ImagesPanel";
 import { ApiSettingsPanel } from "./panels/ApiSettingsPanel";
 
 const CONFIG_TABS = [
@@ -35,6 +36,7 @@ const CONFIG_TABS = [
   { id: "crafting", label: "Crafting" },
   { id: "group", label: "Group" },
   { id: "charCreate", label: "Char Create" },
+  { id: "images", label: "Images" },
   { id: "rawYaml", label: "Raw YAML" },
   { id: "apiSettings", label: "API Settings" },
 ] as const;
@@ -153,6 +155,9 @@ export function ConfigEditor() {
           )}
           {activeTab === "charCreate" && (
             <CharacterCreationPanel config={config} onChange={handleChange} />
+          )}
+          {activeTab === "images" && (
+            <ImagesPanel config={config} onChange={handleChange} />
           )}
           {activeTab === "rawYaml" && (
             <RawYamlPanel config={config} onChange={handleChange} />

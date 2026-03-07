@@ -74,6 +74,7 @@ export async function loadAppConfig(
       classes: parseMapSection(engine.classes, "definitions"),
       races: parseMapSection(engine.races, "definitions"),
       characterCreation: parseCharacterCreationConfig(engine.characterCreation),
+      images: parseImagesConfig(root.images),
       rawSections: collectRawSections(root, engine),
     };
 
@@ -242,6 +243,13 @@ function parseCharacterCreationConfig(raw: unknown): AppConfig["characterCreatio
   };
 }
 
+function parseImagesConfig(raw: unknown): AppConfig["images"] {
+  const s = (raw ?? {}) as Record<string, unknown>;
+  return {
+    baseUrl: asString(s.baseUrl, "/images/"),
+  };
+}
+
 function parseMapSection<T>(raw: unknown, key: string): Record<string, T> {
   if (!raw || typeof raw !== "object") return {};
   const section = (raw as Record<string, unknown>)[key];
@@ -260,7 +268,7 @@ function collectRawSections(
   engine: Record<string, unknown>,
 ): Record<string, unknown> {
   const knownRoot = new Set([
-    "server", "engine", "progression", "world", "persistence",
+    "server", "engine", "progression", "images", "world", "persistence",
     "login", "transport", "demo", "observability", "admin",
     "logging", "database", "redis", "grpc", "gateway", "sharding",
   ]);

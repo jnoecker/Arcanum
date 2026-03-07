@@ -14,6 +14,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             project::validate_mud_dir,
             project::list_legacy_images,
+            project::migrate_images_to_r2,
             settings::get_settings,
             settings::save_settings,
             deepinfra::generate_image,

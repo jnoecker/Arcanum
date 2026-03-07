@@ -1,5 +1,5 @@
 import { readTextFile, writeTextFile } from "@tauri-apps/plugin-fs";
-import { parseDocument } from "yaml";
+import { parseDocument, YAMLMap } from "yaml";
 import { useConfigStore } from "@/stores/configStore";
 
 /**
@@ -161,6 +161,9 @@ export async function saveConfig(mudDir: string): Promise<void> {
     setIn(engine, ["characterCreation", "startingGold"], config.characterCreation.startingGold);
   }
 
+  // ─── Images ────────────────────────────────────────────────
+  setIn(root, ["images", "baseUrl"], config.images.baseUrl);
+
   // ─── Progression ────────────────────────────────────────────
   setIn(root, ["progression", "maxLevel"], config.progression.maxLevel);
   setIn(root, ["progression", "xp", "baseXp"], config.progression.xp.baseXp);
@@ -206,7 +209,7 @@ function setIn(node: any, path: string[], value: unknown): void {
   for (let i = 0; i < path.length - 1; i++) {
     let child = current.get(path[i], true);
     if (!child) {
-      current.set(path[i], {});
+      current.set(path[i], new YAMLMap());
       child = current.get(path[i], true);
     }
     current = child;

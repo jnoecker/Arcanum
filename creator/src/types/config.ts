@@ -196,6 +196,12 @@ export interface RaceDefinitionConfig {
   statMods?: StatMap;
 }
 
+// ─── Images ─────────────────────────────────────────────────────────
+
+export interface ImagesConfig {
+  baseUrl: string;
+}
+
 // ─── Server ─────────────────────────────────────────────────────────
 
 export interface ServerConfig {
@@ -224,6 +230,7 @@ export interface AppConfig {
   classes: Record<string, ClassDefinitionConfig>;
   races: Record<string, RaceDefinitionConfig>;
   characterCreation: CharacterCreationConfig;
+  images: ImagesConfig;
   /** Raw YAML content for unrecognized sections */
   rawSections: Record<string, unknown>;
 }

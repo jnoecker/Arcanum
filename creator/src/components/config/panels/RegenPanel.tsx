@@ -1,12 +1,7 @@
-import type { AppConfig } from "@/types/config";
+import type { ConfigPanelProps, AppConfig } from "./types";
 import { Section, FieldRow, NumberInput } from "@/components/ui/FormWidgets";
 
-interface PanelProps {
-  config: AppConfig;
-  onChange: (patch: Partial<AppConfig>) => void;
-}
-
-export function RegenPanel({ config, onChange }: PanelProps) {
+export function RegenPanel({ config, onChange }: ConfigPanelProps) {
   const r = config.regen;
   const patch = (p: Partial<AppConfig["regen"]>) =>
     onChange({ regen: { ...r, ...p } });

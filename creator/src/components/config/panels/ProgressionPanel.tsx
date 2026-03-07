@@ -1,4 +1,4 @@
-import type { AppConfig } from "@/types/config";
+import type { ConfigPanelProps, AppConfig } from "./types";
 import {
   Section,
   FieldRow,
@@ -6,12 +6,7 @@ import {
   CheckboxInput,
 } from "@/components/ui/FormWidgets";
 
-interface PanelProps {
-  config: AppConfig;
-  onChange: (patch: Partial<AppConfig>) => void;
-}
-
-export function ProgressionPanel({ config, onChange }: PanelProps) {
+export function ProgressionPanel({ config, onChange }: ConfigPanelProps) {
   const p = config.progression;
 
   const patchProg = (patch: Partial<AppConfig["progression"]>) =>

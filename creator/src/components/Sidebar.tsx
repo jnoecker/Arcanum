@@ -1,9 +1,11 @@
 import { useZoneStore } from "@/stores/zoneStore";
+import { useConfigStore } from "@/stores/configStore";
 import { useProjectStore } from "@/stores/projectStore";
 import type { Tab } from "@/types/project";
 
 export function Sidebar() {
   const zones = useZoneStore((s) => s.zones);
+  const configDirty = useConfigStore((s) => s.dirty);
   const openTab = useProjectStore((s) => s.openTab);
   const activeTabId = useProjectStore((s) => s.activeTabId);
 
@@ -82,6 +84,9 @@ export function Sidebar() {
                   }`}
                 >
                   {tab.label}
+                  {tab.id === "config" && configDirty && (
+                    <span className="ml-1 text-accent">*</span>
+                  )}
                 </button>
               </li>
             ))}

@@ -1,12 +1,7 @@
-import type { AppConfig } from "@/types/config";
+import type { ConfigPanelProps, AppConfig } from "./types";
 import { Section, FieldRow, NumberInput } from "@/components/ui/FormWidgets";
 
-interface PanelProps {
-  config: AppConfig;
-  onChange: (patch: Partial<AppConfig>) => void;
-}
-
-export function EconomyPanel({ config, onChange }: PanelProps) {
+export function EconomyPanel({ config, onChange }: ConfigPanelProps) {
   const e = config.economy;
   const patch = (p: Partial<AppConfig["economy"]>) =>
     onChange({ economy: { ...e, ...p } });

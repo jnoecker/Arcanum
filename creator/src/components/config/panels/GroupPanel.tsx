@@ -1,12 +1,7 @@
-import type { AppConfig } from "@/types/config";
+import type { ConfigPanelProps, AppConfig } from "./types";
 import { Section, FieldRow, NumberInput } from "@/components/ui/FormWidgets";
 
-interface PanelProps {
-  config: AppConfig;
-  onChange: (patch: Partial<AppConfig>) => void;
-}
-
-export function GroupPanel({ config, onChange }: PanelProps) {
+export function GroupPanel({ config, onChange }: ConfigPanelProps) {
   const g = config.group;
   const patch = (p: Partial<AppConfig["group"]>) =>
     onChange({ group: { ...g, ...p } });

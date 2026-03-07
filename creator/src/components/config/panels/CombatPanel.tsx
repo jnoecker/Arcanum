@@ -1,4 +1,4 @@
-import type { AppConfig } from "@/types/config";
+import type { ConfigPanelProps, AppConfig } from "./types";
 import {
   Section,
   FieldRow,
@@ -6,12 +6,7 @@ import {
   CheckboxInput,
 } from "@/components/ui/FormWidgets";
 
-interface PanelProps {
-  config: AppConfig;
-  onChange: (patch: Partial<AppConfig>) => void;
-}
-
-export function CombatPanel({ config, onChange }: PanelProps) {
+export function CombatPanel({ config, onChange }: ConfigPanelProps) {
   const c = config.combat;
   const patch = (p: Partial<AppConfig["combat"]>) =>
     onChange({ combat: { ...c, ...p } });

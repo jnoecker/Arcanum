@@ -1,12 +1,7 @@
-import type { AppConfig } from "@/types/config";
+import type { ConfigPanelProps, AppConfig } from "./types";
 import { Section, FieldRow, NumberInput } from "@/components/ui/FormWidgets";
 
-interface PanelProps {
-  config: AppConfig;
-  onChange: (patch: Partial<AppConfig>) => void;
-}
-
-export function ServerPanel({ config, onChange }: PanelProps) {
+export function ServerPanel({ config, onChange }: ConfigPanelProps) {
   const s = config.server;
   const patch = (p: Partial<AppConfig["server"]>) =>
     onChange({ server: { ...s, ...p } });

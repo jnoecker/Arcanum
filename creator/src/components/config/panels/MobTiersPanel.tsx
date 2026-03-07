@@ -1,10 +1,6 @@
-import type { AppConfig, MobTierConfig } from "@/types/config";
+import type { MobTierConfig } from "@/types/config";
+import type { ConfigPanelProps } from "./types";
 import { Section, FieldRow, NumberInput } from "@/components/ui/FormWidgets";
-
-interface PanelProps {
-  config: AppConfig;
-  onChange: (patch: Partial<AppConfig>) => void;
-}
 
 const TIER_NAMES = ["weak", "standard", "elite", "boss"] as const;
 
@@ -22,7 +18,7 @@ const TIER_FIELDS: { key: keyof MobTierConfig; label: string }[] = [
   { key: "goldPerLevel", label: "Gold / Level" },
 ];
 
-export function MobTiersPanel({ config, onChange }: PanelProps) {
+export function MobTiersPanel({ config, onChange }: ConfigPanelProps) {
   const patchTier = (tier: (typeof TIER_NAMES)[number], p: Partial<MobTierConfig>) =>
     onChange({
       mobTiers: {

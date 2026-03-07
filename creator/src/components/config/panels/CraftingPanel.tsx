@@ -1,12 +1,7 @@
-import type { AppConfig } from "@/types/config";
+import type { ConfigPanelProps, AppConfig } from "./types";
 import { Section, FieldRow, NumberInput } from "@/components/ui/FormWidgets";
 
-interface PanelProps {
-  config: AppConfig;
-  onChange: (patch: Partial<AppConfig>) => void;
-}
-
-export function CraftingPanel({ config, onChange }: PanelProps) {
+export function CraftingPanel({ config, onChange }: ConfigPanelProps) {
   const c = config.crafting;
   const patch = (p: Partial<AppConfig["crafting"]>) =>
     onChange({ crafting: { ...c, ...p } });

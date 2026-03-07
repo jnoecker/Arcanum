@@ -287,6 +287,23 @@ pub async fn enhance_prompt(
 
     resp.choices
         .first()
-        .map(|c| c.message.content.trim().to_string())
+        .map(|c| strip_think_tags(c.message.content.trim()))
         .ok_or_else(|| "No response from model".to_string())
+}
+
+/// Strip `<think>...</think>` reasoning blocks that some models emit.
+fn strip_think_tags(text: &str) -> String {
+    let result = text;
+    while let Some(start) = result.find("<think>") {
+        if let Some(end) = result.find("</think>") {
+            let before = &result[..start];
+            let after = &result[end + "</think>".len()..];
+            let combined = format!("{before}{after}");
+            return strip_think_tags(combined.trim());
+        } else {
+            // Unclosed <think> — strip from <think> to end
+            return result[..start].trim().to_string();
+        }
+    }
+    result.to_string()
 }

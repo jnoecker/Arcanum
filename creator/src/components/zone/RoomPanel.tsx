@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import type { WorldFile, ExitValue } from "@/types/world";
 import {
   updateRoom,
@@ -11,6 +11,7 @@ import {
   generateEntityId,
 } from "@/lib/zoneEdits";
 import { EditableField, EditableTextArea, Section, IconButton } from "@/components/ui/FormWidgets";
+import { YamlPreview } from "@/components/ui/YamlPreview";
 
 export type EntityKind = "mob" | "item" | "shop" | "quest" | "gatheringNode" | "recipe";
 
@@ -53,6 +54,7 @@ export function RoomPanel({
   onRoomDeleted,
   onSelectEntity,
 }: RoomPanelProps) {
+  const [showYaml, setShowYaml] = useState(false);
   const room = world.rooms[roomId];
   if (!room) return null;
 
@@ -150,19 +152,38 @@ export function RoomPanel({
     <div className="flex w-72 shrink-0 flex-col overflow-y-auto border-l border-border-default bg-bg-secondary">
       {/* Header */}
       <div className="border-b border-border-default px-4 py-3">
-        <EditableField
-          value={room.title}
-          onCommit={(v) => handleFieldChange("title", v)}
-          className="text-sm font-semibold text-text-primary"
-        />
-        <p className="mt-0.5 text-xs text-text-muted">{roomId}</p>
-        {isStartRoom && (
-          <span className="mt-1 inline-block rounded bg-accent/20 px-1.5 py-0.5 text-[10px] font-medium text-accent">
-            Start Room
-          </span>
-        )}
+        <div className="flex items-start justify-between">
+          <div>
+            <EditableField
+              value={room.title}
+              onCommit={(v) => handleFieldChange("title", v)}
+              className="text-sm font-semibold text-text-primary"
+            />
+            <p className="mt-0.5 text-xs text-text-muted">{roomId}</p>
+            {isStartRoom && (
+              <span className="mt-1 inline-block rounded bg-accent/20 px-1.5 py-0.5 text-[10px] font-medium text-accent">
+                Start Room
+              </span>
+            )}
+          </div>
+          <button
+            onClick={() => setShowYaml((v) => !v)}
+            className={`shrink-0 rounded px-1.5 py-0.5 font-mono text-[10px] transition-colors ${
+              showYaml
+                ? "bg-accent/20 text-accent"
+                : "text-text-muted hover:bg-bg-elevated hover:text-text-primary"
+            }`}
+            title="Toggle YAML preview"
+          >
+            YAML
+          </button>
+        </div>
       </div>
 
+      {showYaml ? (
+        <YamlPreview data={{ [roomId]: room }} label={`room: ${roomId}`} />
+      ) : (
+      <>
       {/* Description */}
       <Section title="Description">
         <EditableTextArea
@@ -378,6 +399,8 @@ export function RoomPanel({
             Delete Room
           </button>
         </div>
+      )}
+      </>
       )}
     </div>
   );

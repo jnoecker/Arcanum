@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback, useState, useMemo } from "react";
 import type { WorldFile } from "@/types/world";
 import type { EntitySelection } from "./RoomPanel";
 import { MobEditor } from "@/components/editors/MobEditor";
@@ -7,6 +7,16 @@ import { ShopEditor } from "@/components/editors/ShopEditor";
 import { QuestEditor } from "@/components/editors/QuestEditor";
 import { GatheringNodeEditor } from "@/components/editors/GatheringNodeEditor";
 import { RecipeEditor } from "@/components/editors/RecipeEditor";
+import { YamlPreview } from "@/components/ui/YamlPreview";
+
+const COLLECTION_MAP: Record<string, string> = {
+  mob: "mobs",
+  item: "items",
+  shop: "shops",
+  quest: "quests",
+  gatheringNode: "gatheringNodes",
+  recipe: "recipes",
+};
 
 interface EntityPanelProps {
   selection: EntitySelection;
@@ -21,9 +31,17 @@ export function EntityPanel({
   onWorldChange,
   onClose,
 }: EntityPanelProps) {
+  const [showYaml, setShowYaml] = useState(false);
+
   const handleDelete = useCallback(() => {
     onClose();
   }, [onClose]);
+
+  const entityData = useMemo(() => {
+    const collection = COLLECTION_MAP[selection.kind];
+    if (!collection) return null;
+    return (world as unknown as Record<string, Record<string, unknown>>)[collection]?.[selection.id] ?? null;
+  }, [world, selection]);
 
   return (
     <div className="flex w-80 shrink-0 flex-col overflow-y-auto border-l border-border-default bg-bg-secondary">
@@ -42,9 +60,27 @@ export function EntityPanel({
         <span className="text-xs font-medium text-text-primary">
           {selection.id}
         </span>
+        <button
+          onClick={() => setShowYaml((v) => !v)}
+          className={`ml-auto rounded px-1.5 py-0.5 font-mono text-[10px] transition-colors ${
+            showYaml
+              ? "bg-accent/20 text-accent"
+              : "text-text-muted hover:bg-bg-elevated hover:text-text-primary"
+          }`}
+          title="Toggle YAML preview"
+        >
+          YAML
+        </button>
       </div>
 
-      {/* Delegate to specific editor */}
+      {/* YAML preview or editor */}
+      {showYaml ? (
+        <YamlPreview
+          data={entityData ? { [selection.id]: entityData } : null}
+          label={`${selection.kind}: ${selection.id}`}
+        />
+      ) : (
+      <>
       {selection.kind === "mob" && (
         <MobEditor
           mobId={selection.id}
@@ -92,6 +128,8 @@ export function EntityPanel({
           onWorldChange={onWorldChange}
           onDelete={handleDelete}
         />
+      )}
+      </>
       )}
     </div>
   );

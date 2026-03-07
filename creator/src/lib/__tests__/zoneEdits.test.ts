@@ -140,6 +140,18 @@ describe("deleteExit", () => {
     expect(next.rooms.room2.exits?.s).toBe("room1");
   });
 
+  it("handles ExitValue objects with doors", () => {
+    const world = makeWorld();
+    // Replace the string exit with an ExitValue that has a door
+    world.rooms.room1.exits = {
+      n: { to: "room2", door: { locked: true, key: "iron_key" } },
+    };
+    world.rooms.room2.exits = { s: "room1" };
+    const next = deleteExit(world, "room1", "n");
+    expect(next.rooms.room1.exits?.n).toBeUndefined();
+    expect(next.rooms.room2.exits?.s).toBeUndefined();
+  });
+
   it("throws for non-existent exit", () => {
     const world = makeWorld();
     expect(() => deleteExit(world, "room1", "w")).toThrow("does not exist");

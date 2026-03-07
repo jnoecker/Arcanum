@@ -1,5 +1,6 @@
 import { MarkerType, type Node, type Edge } from "@xyflow/react";
 import type { WorldFile, ExitValue } from "@/types/world";
+import { OPPOSITE } from "@/lib/zoneEdits";
 
 // ─── Node data types ────────────────────────────────────────────────
 
@@ -36,19 +37,6 @@ function resolveExit(exit: string | ExitValue): {
     isLocked: !!exit.door?.locked,
   };
 }
-
-const OPPOSITE: Record<string, string> = {
-  n: "s",
-  s: "n",
-  e: "w",
-  w: "e",
-  ne: "sw",
-  sw: "ne",
-  nw: "se",
-  se: "nw",
-  u: "d",
-  d: "u",
-};
 
 function oppositeDir(dir: string): string {
   return OPPOSITE[dir] ?? "n";

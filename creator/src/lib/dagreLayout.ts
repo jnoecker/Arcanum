@@ -1,5 +1,6 @@
 import type { Node } from "@xyflow/react";
-import type { WorldFile, ExitValue } from "@/types/world";
+import type { WorldFile } from "@/types/world";
+import { exitTarget } from "@/lib/zoneEdits";
 
 const CELL_W = 300;
 const CELL_H = 140;
@@ -97,10 +98,6 @@ export function compassLayout(nodes: Node[], world: WorldFile): Node[] {
       position: { x: p[0] * CELL_W, y: p[1] * CELL_H },
     };
   });
-}
-
-function exitTarget(exit: string | ExitValue): string {
-  return typeof exit === "string" ? exit : exit.to;
 }
 
 /** Spiral outward from (x, y) to find the nearest unoccupied grid cell. */

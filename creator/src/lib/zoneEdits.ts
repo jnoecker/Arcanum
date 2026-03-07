@@ -7,7 +7,7 @@ function clone(world: WorldFile): WorldFile {
   return structuredClone(world);
 }
 
-const OPPOSITE: Record<string, string> = {
+export const OPPOSITE: Record<string, string> = {
   n: "s",
   s: "n",
   e: "w",

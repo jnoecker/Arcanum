@@ -2,11 +2,16 @@
 
 These files are copied from the AmbonMUD server codebase for reference when building the Creator tool. The Creator's TypeScript types and validation rules must mirror these Kotlin sources.
 
+## Planning Documents
+
+- **[FINAL_PLAN.md](docs/FINAL_PLAN.md)** — Agreed-upon implementation plan for the Creator app (tech stack, architecture, phases, data model)
+- **[WORLD_YAML_SPEC.md](docs/WORLD_YAML_SPEC.md)** — YAML format specification for world zone files
+- **[STAT_SYSTEM_SPEC.md](docs/STAT_SYSTEM_SPEC.md)** — Data-driven stat system spec (dynamic stats, bindings, formulas)
+
 ## Directory Layout
 
 ### `docs/`
-- **CREATOR_PLAN.md** — Full design plan for the Creator app
-- **WORLD_YAML_SPEC.md** — YAML format specification for world zone files
+Planning and specification documents (see above).
 
 ### `world-yaml-dtos/` (14 files)
 Kotlin data classes that define the YAML schema for world zone files. These are the **primary source of truth** for TypeScript type generation.
@@ -17,12 +22,12 @@ Kotlin data classes that define the YAML schema for world zone files. These are 
 - `DoorFile.kt` — Door on an exit: closed/locked state, key item
 - `MobFile.kt` — Mob spawn: name, room, tier, level, stats, drops, behavior, dialogue, quests
 - `MobDropFile.kt` — Mob drop: item ID + chance percentage
-- `ItemFile.kt` — Item: displayName, slot, 6 stats, damage, armor, consumable, onUse, basePrice
+- `ItemFile.kt` — Item: displayName, slot, stats (StatMap), damage, armor, consumable, onUse, basePrice
 - `ShopFile.kt` — Shop: name, room, item list
 - `BehaviorFile.kt` — Mob behavior: template + params (patrol, flee, aggro, wander)
 - `DialogueNodeFile.kt` — Dialogue tree: text, choices with conditions and actions
-- `QuestFile.kt` — Quest: objectives, rewards
-- `FeatureFile.kt` — Room feature: CONTAINER/LEVER/SIGN with state, key, items, text
+- `QuestFile.kt` — Quest: name, giver, objectives, rewards, completionType
+- `FeatureFile.kt` — Room feature: CONTAINER/LEVER/SIGN with state, key, items, text (deferred)
 - `GatheringNodeFile.kt` — Gathering node: skill, yields, respawn
 - `RecipeFile.kt` — Crafting recipe: skill, materials, output, station
 
@@ -30,30 +35,29 @@ Kotlin data classes that define the YAML schema for world zone files. These are 
 Core domain types used throughout the engine. These define enums, value objects, and runtime models.
 
 Key files for TypeScript mirroring:
-- `StatBlock.kt` — 6-stat block (str/dex/con/int/wis/cha)
+- `StatBlock.kt` — Stat block (being replaced by dynamic StatMap — see STAT_SYSTEM_SPEC.md)
 - `ItemSlot.kt` — Equipment slots enum
 - `Direction.kt` — Movement directions (N/S/E/W/U/D)
 - `Gender.kt` — Gender enum
-- `PlayerClassDef.kt` / `RaceDef.kt` — Data-driven class/race definitions (new, from feature branch)
-- `PlayerClass.kt` / `Race.kt` — Old enums (being replaced, included for migration reference)
+- `PlayerClassDef.kt` / `RaceDef.kt` — Data-driven class/race definitions
 - `DamageRange.kt`, `Rewards.kt`, `Progress.kt` — Value types
 - `QuestDef.kt`, `AchievementDef.kt` — Quest/achievement definitions
 - `CraftingSkill.kt`, `CraftingStationType.kt`, `GatheringNodeDef.kt`, `RecipeDef.kt` — Crafting types
 - `Room.kt`, `World.kt` — Runtime world model (post-loading)
 - `MobTemplate.kt`, `MobSpawn.kt`, `MobDrop.kt`, `ItemSpawn.kt`, `ShopDefinition.kt` — Runtime entities
-- `RoomFeature.kt`, `FeatureState.kt` — Room feature model
+- `RoomFeature.kt`, `FeatureState.kt` — Room feature model (deferred)
 
 ### `config/` (2 files)
-- **AppConfig.kt** — Full configuration schema (~33K). Contains all config data classes: abilities, status effects, combat, mob tiers, progression, economy, regen, classes, races. The Creator must parse and write the managed sections.
-- **application.yaml** — Default config with all 104 ability definitions, 27 status effects, combat params, mob tiers, progression curve, economy, regen, class/race definitions.
+- **AppConfig.kt** — Full configuration schema (~33K). Contains all config data classes: abilities, status effects, combat, mob tiers, progression, economy, regen, classes, races, stats, bindings.
+- **application.yaml** — Default config with all ability definitions, status effects, combat params, mob tiers, progression curve, economy, regen, class/race definitions, stat definitions and bindings.
 
 ### `registries/` (11 files)
 Registry and loader patterns — shows how config is parsed into runtime data. Useful for understanding data relationships.
 
 - `AbilityDefinition.kt` / `AbilityRegistry.kt` / `AbilityRegistryLoader.kt` — Ability system
 - `StatusEffectDefinition.kt` / `StatusEffectRegistry.kt` / `StatusEffectRegistryLoader.kt` — Status effects
-- `PlayerClassRegistry.kt` / `PlayerClassRegistryLoader.kt` — Class registry (new, from feature branch)
-- `RaceRegistry.kt` / `RaceRegistryLoader.kt` — Race registry (new, from feature branch)
+- `PlayerClassRegistry.kt` / `PlayerClassRegistryLoader.kt` — Class registry
+- `RaceRegistry.kt` / `RaceRegistryLoader.kt` — Race registry
 - `PlayerProgression.kt` — XP curve, level-up rewards, class-specific HP/mana scaling
 
 ### `world-loader/` (1 file)

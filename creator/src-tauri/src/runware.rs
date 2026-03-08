@@ -15,6 +15,7 @@ const API_URL: &str = "https://api.runware.ai/v1";
 #[serde(rename_all = "camelCase")]
 struct RunwareImageTask {
     task_type: String,
+    task_uuid: String,
     positive_prompt: String,
     width: u32,
     height: u32,
@@ -68,6 +69,7 @@ pub async fn runware_generate_image(
 
     let task = RunwareImageTask {
         task_type: "imageInference".to_string(),
+        task_uuid: uuid::Uuid::new_v4().to_string(),
         positive_prompt: prompt.clone(),
         width: w,
         height: h,
@@ -152,6 +154,7 @@ pub async fn runware_generate_image(
 #[serde(rename_all = "camelCase")]
 struct RunwareAudioTask {
     task_type: String,
+    task_uuid: String,
     positive_prompt: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     seconds_total: Option<u32>,
@@ -183,6 +186,7 @@ pub async fn runware_generate_audio(
 
     let task = RunwareAudioTask {
         task_type: "audioInference".to_string(),
+        task_uuid: uuid::Uuid::new_v4().to_string(),
         positive_prompt: prompt,
         seconds_total: duration_seconds,
         output_format: "MP3".to_string(),
@@ -255,6 +259,7 @@ pub async fn runware_generate_audio(
 #[serde(rename_all = "camelCase")]
 struct RunwareVideoTask {
     task_type: String,
+    task_uuid: String,
     input_image: String,
     positive_prompt: String,
     model: String,
@@ -297,6 +302,7 @@ pub async fn runware_generate_video(
 
     let task = RunwareVideoTask {
         task_type: "imageToVideo".to_string(),
+        task_uuid: uuid::Uuid::new_v4().to_string(),
         input_image,
         positive_prompt: prompt,
         model: model.unwrap_or(s.video_model),

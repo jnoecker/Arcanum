@@ -237,15 +237,19 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
       {/* Zone toolbar */}
       <div className="relative flex shrink-0 items-center gap-3 overflow-hidden border-b border-border-default bg-bg-secondary px-3 py-1.5">
         <img src={subtoolbarBg} alt="" className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-[0.10]" />
-        <span className="font-display text-xs font-medium tracking-wide text-text-primary">
-          {zoneState.data.zone}
-        </span>
-        <span className="text-xs text-text-muted">
-          {roomCount} room{roomCount !== 1 ? "s" : ""}
-        </span>
-        {zoneState.dirty && (
-          <span className="text-xs text-accent">modified</span>
-        )}
+
+        {/* Centered zone name */}
+        <div className="pointer-events-none absolute inset-0 flex items-center justify-center gap-2">
+          <span className="font-display text-sm font-semibold tracking-widest text-text-primary uppercase">
+            {zoneState.data.zone}
+          </span>
+          <span className="text-xs text-text-muted">
+            {roomCount} room{roomCount !== 1 ? "s" : ""}
+          </span>
+          {zoneState.dirty && (
+            <span className="text-xs text-accent">modified</span>
+          )}
+        </div>
 
         {/* Undo / Redo */}
         <div className="flex items-center gap-0.5">

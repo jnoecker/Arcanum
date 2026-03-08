@@ -27,8 +27,11 @@ import { RoomPanel, type EntitySelection } from "./RoomPanel";
 import { EntityPanel } from "./EntityPanel";
 import { DirectionPicker } from "./DirectionPicker";
 import { BatchArtGenerator } from "./BatchArtGenerator";
+import { AssetBrowser } from "./AssetBrowser";
 import builderBg from "@/assets/builder-bg.jpg";
 import subtoolbarBg from "@/assets/subtoolbar-bg.jpg";
+
+type ViewMode = "map" | "assets";
 
 const nodeTypes = {
   room: RoomNode,
@@ -61,6 +64,7 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
     useState<PendingConnection | null>(null);
   const [saving, setSaving] = useState(false);
   const [showBatchArt, setShowBatchArt] = useState(false);
+  const [viewMode, setViewMode] = useState<ViewMode>("map");
 
   // Auto-close entity panel if the selected entity was removed (e.g. by undo)
   useEffect(() => {
@@ -283,6 +287,30 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
         </button>
 
         <div className="ml-auto flex items-center gap-2">
+          {/* View toggle */}
+          <div className="flex rounded border border-border-default bg-bg-primary">
+            <button
+              onClick={() => setViewMode("map")}
+              className={`h-6 rounded-l px-2 text-[10px] font-medium tracking-wide transition-colors ${
+                viewMode === "map"
+                  ? "bg-accent/20 text-accent"
+                  : "text-text-muted hover:text-text-secondary"
+              }`}
+            >
+              Map
+            </button>
+            <button
+              onClick={() => setViewMode("assets")}
+              className={`h-6 rounded-r px-2 text-[10px] font-medium tracking-wide transition-colors ${
+                viewMode === "assets"
+                  ? "bg-accent/20 text-accent"
+                  : "text-text-muted hover:text-text-secondary"
+              }`}
+            >
+              Assets
+            </button>
+          </div>
+
           <button
             onClick={() => setShowBatchArt(true)}
             className="h-6 rounded px-2 text-xs text-accent transition-colors hover:bg-accent/10"
@@ -332,91 +360,95 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
         </div>
       </div>
 
-      {/* Map + Panel */}
-      <div className="flex min-h-0 flex-1">
-        <div className="relative flex-1">
-          <ReactFlow
-            nodes={nodes}
-            edges={edges}
-            onNodesChange={onNodesChange}
-            onEdgesChange={onEdgesChange}
-            onConnect={onConnect}
-            nodeTypes={nodeTypes}
-            onSelectionChange={onSelectionChange}
-            onNodeClick={onNodeClick}
-            onPaneClick={onPaneClick}
-            fitView
-            fitViewOptions={{ padding: 0.2 }}
-            minZoom={0.1}
-            maxZoom={2}
-            proOptions={{ hideAttribution: true }}
-            style={{ background: "#080c1c" }}
-          >
-            <Background
-              variant={BackgroundVariant.Dots}
-              gap={20}
-              size={1}
-              color="#1e2748"
-            />
-            <Controls
-              showInteractive={false}
-            />
-            <MiniMap
-              nodeColor={(node) =>
-                node.type === "crossZone" ? "#c8972e" : "#2a3460"
-              }
-              maskColor="rgba(8, 12, 28, 0.8)"
-            />
-          </ReactFlow>
+      {/* Map + Panel or Asset Browser */}
+      {viewMode === "assets" ? (
+        <AssetBrowser zoneId={zoneId} world={zoneState.data} onWorldChange={applyWorldChange} />
+      ) : (
+        <div className="flex min-h-0 flex-1">
+          <div className="relative flex-1">
+            <ReactFlow
+              nodes={nodes}
+              edges={edges}
+              onNodesChange={onNodesChange}
+              onEdgesChange={onEdgesChange}
+              onConnect={onConnect}
+              nodeTypes={nodeTypes}
+              onSelectionChange={onSelectionChange}
+              onNodeClick={onNodeClick}
+              onPaneClick={onPaneClick}
+              fitView
+              fitViewOptions={{ padding: 0.2 }}
+              minZoom={0.1}
+              maxZoom={2}
+              proOptions={{ hideAttribution: true }}
+              style={{ background: "#080c1c" }}
+            >
+              <Background
+                variant={BackgroundVariant.Dots}
+                gap={20}
+                size={1}
+                color="#1e2748"
+              />
+              <Controls
+                showInteractive={false}
+              />
+              <MiniMap
+                nodeColor={(node) =>
+                  node.type === "crossZone" ? "#c8972e" : "#2a3460"
+                }
+                maskColor="rgba(8, 12, 28, 0.8)"
+              />
+            </ReactFlow>
 
-          {/* Atmospheric background overlay */}
-          <img
-            src={builderBg}
-            alt=""
-            className="pointer-events-none absolute inset-0 z-[1] h-full w-full object-cover opacity-[0.18] mix-blend-screen"
-          />
+            {/* Atmospheric background overlay */}
+            <img
+              src={builderBg}
+              alt=""
+              className="pointer-events-none absolute inset-0 z-[1] h-full w-full object-cover opacity-[0.18] mix-blend-screen"
+            />
 
-          {/* Batch art generator */}
-          {showBatchArt && zoneState && (
-            <BatchArtGenerator
-              zoneId={zoneId}
+            {/* Batch art generator */}
+            {showBatchArt && zoneState && (
+              <BatchArtGenerator
+                zoneId={zoneId}
+                world={zoneState.data}
+                onWorldChange={applyWorldChange}
+                onClose={() => setShowBatchArt(false)}
+              />
+            )}
+
+            {/* Direction picker overlay */}
+            {pendingConnection && (
+              <DirectionPicker
+                source={pendingConnection.source}
+                target={pendingConnection.target}
+                initialDirection={pendingConnection.inferredDir}
+                onConfirm={handleConfirmConnection}
+                onCancel={() => setPendingConnection(null)}
+              />
+            )}
+          </div>
+
+          {selectedEntity ? (
+            <EntityPanel
+              selection={selectedEntity}
               world={zoneState.data}
               onWorldChange={applyWorldChange}
-              onClose={() => setShowBatchArt(false)}
+              onClose={() => setSelectedEntity(null)}
+              zoneId={zoneId}
             />
-          )}
-
-          {/* Direction picker overlay */}
-          {pendingConnection && (
-            <DirectionPicker
-              source={pendingConnection.source}
-              target={pendingConnection.target}
-              initialDirection={pendingConnection.inferredDir}
-              onConfirm={handleConfirmConnection}
-              onCancel={() => setPendingConnection(null)}
+          ) : selectedRoomId ? (
+            <RoomPanel
+              zoneId={zoneId}
+              roomId={selectedRoomId}
+              world={zoneState.data}
+              onWorldChange={applyWorldChange}
+              onRoomDeleted={() => setSelectedRoomId(null)}
+              onSelectEntity={setSelectedEntity}
             />
-          )}
+          ) : null}
         </div>
-
-        {selectedEntity ? (
-          <EntityPanel
-            selection={selectedEntity}
-            world={zoneState.data}
-            onWorldChange={applyWorldChange}
-            onClose={() => setSelectedEntity(null)}
-            zoneId={zoneId}
-          />
-        ) : selectedRoomId ? (
-          <RoomPanel
-            zoneId={zoneId}
-            roomId={selectedRoomId}
-            world={zoneState.data}
-            onWorldChange={applyWorldChange}
-            onRoomDeleted={() => setSelectedRoomId(null)}
-            onSelectEntity={setSelectedEntity}
-          />
-        ) : null}
-      </div>
+      )}
     </div>
   );
 }

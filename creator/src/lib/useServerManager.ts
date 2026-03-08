@@ -60,7 +60,7 @@ export function useServerManager() {
 
       command.stdout.on("data", (line) => {
         addLog("STDOUT", line);
-        if (line.includes("Server started") || line.includes("Listening on")) {
+        if (line.includes("AmbonMUD listening on telnet port")) {
           setStatus("running");
         }
       });

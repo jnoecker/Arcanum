@@ -80,8 +80,9 @@ export interface MobDropFile {
 }
 
 export interface BehaviorFile {
-  template: string;
+  template?: string;
   params?: BehaviorParams;
+  tree?: BtNodeFile;
 }
 
 export interface BehaviorParams {
@@ -90,6 +91,28 @@ export interface BehaviorParams {
   aggroMessage?: string;
   fleeMessage?: string;
   maxWanderDistance?: number;
+}
+
+export type BtNodeType =
+  | "selector" | "sequence" | "inverter" | "cooldown"
+  | "is_in_combat" | "is_player_in_room" | "is_hp_below"
+  | "stationary" | "aggro" | "flee" | "say" | "patrol" | "wander";
+
+export interface BtNodeFile {
+  type: BtNodeType;
+  children?: BtNodeFile[];
+  /** cooldown node: cooldown duration in ms */
+  cooldownMs?: number;
+  /** cooldown node: unique key for cooldown tracking */
+  key?: string;
+  /** is_hp_below node: HP threshold percent (default 20) */
+  percent?: number;
+  /** say node: message text */
+  message?: string;
+  /** patrol node: ordered list of room IDs */
+  route?: string[];
+  /** wander node: max rooms from origin (default 3) */
+  maxDistance?: number;
 }
 
 export interface ItemFile {

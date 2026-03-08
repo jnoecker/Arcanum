@@ -27,6 +27,8 @@ import { ImagesPanel } from "./panels/ImagesPanel";
 import { GlobalAssetsPanel } from "./panels/GlobalAssetsPanel";
 import { ApiSettingsPanel } from "./panels/ApiSettingsPanel";
 import { WorldPanel } from "./panels/WorldPanel";
+import { NavigationPanel } from "./panels/NavigationPanel";
+import { CommandsPanel } from "./panels/CommandsPanel";
 
 const CONFIG_TABS = [
   { id: "server", label: "Server" },
@@ -43,6 +45,8 @@ const CONFIG_TABS = [
   { id: "economy", label: "Economy" },
   { id: "regen", label: "Regen" },
   { id: "crafting", label: "Crafting" },
+  { id: "navigation", label: "Navigation" },
+  { id: "commands", label: "Commands" },
   { id: "group", label: "Group" },
   { id: "charCreate", label: "Char Create" },
   { id: "achievements", label: "Achievements" },
@@ -180,6 +184,12 @@ export function ConfigEditor() {
           )}
           {activeTab === "crafting" && (
             <CraftingPanel config={config} onChange={handleChange} />
+          )}
+          {activeTab === "navigation" && (
+            <NavigationPanel config={config} onChange={handleChange} />
+          )}
+          {activeTab === "commands" && (
+            <CommandsPanel config={config} onChange={handleChange} />
           )}
           {activeTab === "group" && (
             <GroupPanel config={config} onChange={handleChange} />

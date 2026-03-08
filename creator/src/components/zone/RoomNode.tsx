@@ -1,6 +1,7 @@
 import { Handle, Position, type NodeProps, type Node } from "@xyflow/react";
 import type { RoomNodeData, EntitySprite } from "@/lib/zoneToGraph";
 import { useImageSrc } from "@/lib/useImageSrc";
+import missingRoomBg from "@/assets/missing-room.jpg";
 
 type RoomNodeType = Node<RoomNodeData, "room">;
 
@@ -181,8 +182,13 @@ export function RoomNode({ data, selected }: NodeProps<RoomNodeType>) {
           <InfoBadge d={d} />
         </div>
       ) : (
-        /* No image: classic layout */
+        /* No image: placeholder background + classic layout */
         <div className="relative px-3 py-2">
+          <img
+            src={missingRoomBg}
+            alt=""
+            className="pointer-events-none absolute inset-0 h-full w-full rounded object-cover opacity-15"
+          />
           {/* Title row */}
           <div className="flex items-center gap-1.5">
             {d.isStartRoom && (

@@ -7,6 +7,7 @@ import type { WorldFile } from "@/types/world";
 import { useGlobalSearch, ENTITY_TYPE_LABELS } from "@/lib/useGlobalSearch";
 import { NewZoneDialog } from "./NewZoneDialog";
 import panelHeader from "@/assets/panel-header.jpg";
+import sidebarBg from "@/assets/sidebar-bg.png";
 import {
   addRoom,
   addMob,
@@ -245,9 +246,15 @@ export function Sidebar() {
   );
 
   return (
-    <div className="flex h-full w-56 shrink-0 flex-col border-r border-border-default bg-bg-secondary">
+    <div className="relative flex h-full w-56 shrink-0 flex-col border-r border-border-default bg-bg-secondary">
+      {/* Background image */}
+      <img
+        src={sidebarBg}
+        alt=""
+        className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-[0.12]"
+      />
       {/* Search */}
-      <div className="shrink-0 border-b border-border-default px-3 py-2">
+      <div className="relative z-10 shrink-0 border-b border-border-default px-3 py-2">
         <div className="relative">
           <input
             ref={searchRef}
@@ -270,7 +277,7 @@ export function Sidebar() {
       </div>
 
       {/* Zones section (or search results) */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="relative z-10 flex-1 overflow-y-auto">
         {isSearching ? (
           <div className="px-3 py-2">
             {grouped.size === 0 ? (
@@ -395,7 +402,7 @@ export function Sidebar() {
       </div>
 
       {/* Console shortcut at bottom */}
-      <div className="border-t border-border-default px-3 py-2">
+      <div className="relative z-10 border-t border-border-default px-3 py-2">
         <button
           onClick={() =>
             openTab({ id: "console", kind: "console", label: "Console" })

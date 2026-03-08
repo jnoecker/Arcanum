@@ -4,6 +4,7 @@ import { useProjectStore } from "@/stores/projectStore";
 import { saveConfig } from "@/lib/saveConfig";
 import type { AppConfig } from "@/types/config";
 import configBg from "@/assets/config-bg.png";
+import toolbarBg from "@/assets/toolbar-bg.jpg";
 import { ServerPanel } from "./panels/ServerPanel";
 import { CombatPanel } from "./panels/CombatPanel";
 import { MobTiersPanel } from "./panels/MobTiersPanel";
@@ -88,7 +89,8 @@ export function ConfigEditor() {
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       {/* Tab bar + save */}
-      <div className="flex shrink-0 items-center border-b border-border-default bg-bg-secondary">
+      <div className="relative flex shrink-0 items-center overflow-hidden border-b border-border-default bg-bg-secondary">
+        <img src={toolbarBg} alt="" className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-[0.10]" />
         <div className="flex items-end gap-0 overflow-x-auto">
           {CONFIG_TABS.map((tab) => (
             <button

@@ -1,4 +1,5 @@
 import { useProjectStore } from "@/stores/projectStore";
+import toolbarBg from "@/assets/toolbar-bg.jpg";
 
 export function TabBar() {
   const tabs = useProjectStore((s) => s.tabs);
@@ -9,7 +10,8 @@ export function TabBar() {
   if (tabs.length === 0) return null;
 
   return (
-    <div className="flex h-9 shrink-0 items-end gap-0 overflow-x-auto border-b border-border-default bg-bg-secondary">
+    <div className="relative flex h-9 shrink-0 items-end gap-0 overflow-x-auto border-b border-border-default bg-bg-secondary">
+      <img src={toolbarBg} alt="" className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-[0.10]" />
       {tabs.map((tab) => {
         const isActive = tab.id === activeTabId;
         return (

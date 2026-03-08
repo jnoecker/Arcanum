@@ -28,6 +28,7 @@ import { EntityPanel } from "./EntityPanel";
 import { DirectionPicker } from "./DirectionPicker";
 import { BatchArtGenerator } from "./BatchArtGenerator";
 import builderBg from "@/assets/builder-bg.jpg";
+import toolbarBg from "@/assets/toolbar-bg.jpg";
 
 const nodeTypes = {
   room: RoomNode,
@@ -234,7 +235,8 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       {/* Zone toolbar */}
-      <div className="flex shrink-0 items-center gap-3 border-b border-border-default bg-bg-secondary px-3 py-1.5">
+      <div className="relative flex shrink-0 items-center gap-3 overflow-hidden border-b border-border-default bg-bg-secondary px-3 py-1.5">
+        <img src={toolbarBg} alt="" className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-[0.10]" />
         <span className="font-display text-xs font-medium tracking-wide text-text-primary">
           {zoneState.data.zone}
         </span>

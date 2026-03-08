@@ -171,6 +171,80 @@ export interface GroupConfig {
   xpBonusPerMember: number;
 }
 
+// ─── Equipment Slots ────────────────────────────────────────────────
+
+export interface EquipmentSlotDefinition {
+  displayName: string;
+  order: number;
+}
+
+// ─── Gender ─────────────────────────────────────────────────────────
+
+export interface GenderDefinition {
+  displayName: string;
+  spriteCode?: string;
+}
+
+// ─── Achievements ───────────────────────────────────────────────────
+
+export interface AchievementCategoryDefinition {
+  displayName: string;
+}
+
+export interface AchievementCriterionTypeDefinition {
+  displayName: string;
+  progressFormat?: string;
+}
+
+// ─── Quests ─────────────────────────────────────────────────────────
+
+export interface QuestObjectiveTypeDefinition {
+  displayName: string;
+}
+
+export interface QuestCompletionTypeDefinition {
+  displayName: string;
+}
+
+// ─── Status Effect Types ────────────────────────────────────────────
+
+export interface StatusEffectTypeDefinition {
+  displayName: string;
+  tickBehavior?: string;
+  preventsActions?: boolean;
+  preventsMovement?: boolean;
+  absorbsDamage?: boolean;
+}
+
+export interface StackBehaviorDefinition {
+  displayName: string;
+}
+
+// ─── Ability Target Types ───────────────────────────────────────────
+
+export interface AbilityTargetTypeDefinition {
+  displayName: string;
+}
+
+// ─── Crafting Skills & Stations ─────────────────────────────────────
+
+export interface CraftingSkillDefinition {
+  displayName: string;
+  type: string;
+}
+
+export interface CraftingStationTypeDefinition {
+  displayName: string;
+}
+
+// ─── Guild Ranks ────────────────────────────────────────────────────
+
+export interface GuildRankDefinition {
+  displayName: string;
+  level: number;
+  permissions?: string[];
+}
+
 // ─── Classes & Races ────────────────────────────────────────────────
 
 export interface ClassDefinitionConfig {
@@ -230,6 +304,18 @@ export interface AppConfig {
   classes: Record<string, ClassDefinitionConfig>;
   races: Record<string, RaceDefinitionConfig>;
   characterCreation: CharacterCreationConfig;
+  equipmentSlots: Record<string, EquipmentSlotDefinition>;
+  genders: Record<string, GenderDefinition>;
+  achievementCategories: Record<string, AchievementCategoryDefinition>;
+  achievementCriterionTypes: Record<string, AchievementCriterionTypeDefinition>;
+  questObjectiveTypes: Record<string, QuestObjectiveTypeDefinition>;
+  questCompletionTypes: Record<string, QuestCompletionTypeDefinition>;
+  statusEffectTypes: Record<string, StatusEffectTypeDefinition>;
+  stackBehaviors: Record<string, StackBehaviorDefinition>;
+  abilityTargetTypes: Record<string, AbilityTargetTypeDefinition>;
+  craftingSkills: Record<string, CraftingSkillDefinition>;
+  craftingStationTypes: Record<string, CraftingStationTypeDefinition>;
+  guildRanks: Record<string, GuildRankDefinition>;
   images: ImagesConfig;
   /** Raw YAML content for unrecognized sections */
   rawSections: Record<string, unknown>;

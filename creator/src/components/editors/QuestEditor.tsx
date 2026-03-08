@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback, useMemo } from "react";
 import type {
   WorldFile,
   QuestFile,
@@ -17,6 +17,7 @@ import {
   IconButton,
 } from "@/components/ui/FormWidgets";
 import { DeleteEntityButton } from "./EditorShared";
+import { useConfigStore } from "@/stores/configStore";
 
 interface QuestEditorProps {
   questId: string;
@@ -25,14 +26,14 @@ interface QuestEditorProps {
   onDelete: () => void;
 }
 
-const COMPLETION_OPTIONS = [
-  { value: "AUTO", label: "Auto" },
-  { value: "NPC_TURN_IN", label: "NPC Turn-in" },
+const FALLBACK_COMPLETION_OPTIONS = [
+  { value: "auto", label: "Auto" },
+  { value: "npc_turn_in", label: "NPC Turn-in" },
 ];
 
-const OBJECTIVE_TYPES = [
-  { value: "KILL", label: "Kill" },
-  { value: "COLLECT", label: "Collect" },
+const FALLBACK_OBJECTIVE_TYPES = [
+  { value: "kill", label: "Kill" },
+  { value: "collect", label: "Collect" },
 ];
 
 export function QuestEditor({
@@ -50,6 +51,22 @@ export function QuestEditor({
     onWorldChange,
     onDelete,
   );
+  const completionTypes = useConfigStore((s) => s.config?.questCompletionTypes);
+  const completionOptions = useMemo(() => {
+    if (completionTypes && Object.keys(completionTypes).length > 0) {
+      return Object.entries(completionTypes).map(([id, def]) => ({ value: id, label: def.displayName }));
+    }
+    return FALLBACK_COMPLETION_OPTIONS;
+  }, [completionTypes]);
+
+  const objectiveTypes = useConfigStore((s) => s.config?.questObjectiveTypes);
+  const objectiveTypeOptions = useMemo(() => {
+    if (objectiveTypes && Object.keys(objectiveTypes).length > 0) {
+      return Object.entries(objectiveTypes).map(([id, def]) => ({ value: id, label: def.displayName }));
+    }
+    return FALLBACK_OBJECTIVE_TYPES;
+  }, [objectiveTypes]);
+
   if (!quest) return null;
 
   const zoneMobs = Object.entries(world.mobs ?? {}).map(([id, m]) => ({
@@ -107,7 +124,7 @@ export function QuestEditor({
           <FieldRow label="Completion">
             <SelectInput
               value={quest.completionType ?? "AUTO"}
-              options={COMPLETION_OPTIONS}
+              options={completionOptions}
               onCommit={(v) => patch({ completionType: v })}
             />
           </FieldRow>
@@ -147,7 +164,7 @@ export function QuestEditor({
                   <FieldRow label="Type">
                     <SelectInput
                       value={obj.type}
-                      options={OBJECTIVE_TYPES}
+                      options={objectiveTypeOptions}
                       onCommit={(v) => handleUpdateObjective(i, "type", v)}
                     />
                   </FieldRow>

@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import type { WorldFile, ItemFile, ItemOnUse } from "@/types/world";
 import { updateItem, deleteItem } from "@/lib/zoneEdits";
 import { useEntityEditor } from "@/lib/useEntityEditor";
@@ -13,6 +13,7 @@ import {
 import { DeleteEntityButton, EnhanceDescriptionButton, MediaSection } from "./EditorShared";
 import { itemPrompt, itemContext } from "@/lib/entityPrompts";
 import { useVibeStore } from "@/stores/vibeStore";
+import { useConfigStore } from "@/stores/configStore";
 
 interface ItemEditorProps {
   itemId: string;
@@ -21,12 +22,6 @@ interface ItemEditorProps {
   onDelete: () => void;
   zoneId?: string;
 }
-
-const SLOT_OPTIONS = [
-  { value: "HEAD", label: "Head" },
-  { value: "BODY", label: "Body" },
-  { value: "HAND", label: "Hand" },
-];
 
 export function ItemEditor({
   itemId,
@@ -44,6 +39,20 @@ export function ItemEditor({
     onWorldChange,
     onDelete,
   );
+  const equipmentSlots = useConfigStore((s) => s.config?.equipmentSlots);
+  const slotOptions = useMemo(() => {
+    if (equipmentSlots && Object.keys(equipmentSlots).length > 0) {
+      return Object.entries(equipmentSlots)
+        .sort(([, a], [, b]) => a.order - b.order)
+        .map(([id, def]) => ({ value: id, label: def.displayName }));
+    }
+    return [
+      { value: "head", label: "Head" },
+      { value: "body", label: "Body" },
+      { value: "hand", label: "Hand" },
+    ];
+  }, [equipmentSlots]);
+
   if (!item) return null;
 
   // ─── Stat helpers ─────────────────────────────────────────────
@@ -138,7 +147,7 @@ export function ItemEditor({
           <FieldRow label="Slot">
             <SelectInput
               value={item.slot ?? ""}
-              options={SLOT_OPTIONS}
+              options={slotOptions}
               onCommit={(v) => patch({ slot: v || undefined })}
               allowEmpty
               placeholder="— none —"

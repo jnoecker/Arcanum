@@ -1,4 +1,5 @@
 mod anthropic;
+mod arcanum_meta;
 mod assets;
 mod deepinfra;
 mod llm;
@@ -51,6 +52,8 @@ pub fn run() {
             server::kill_server_tree,
             vibes::save_zone_vibe,
             vibes::load_zone_vibe,
+            arcanum_meta::load_arcanum_meta,
+            arcanum_meta::save_arcanum_meta,
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application")

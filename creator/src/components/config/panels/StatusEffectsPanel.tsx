@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback, useMemo } from "react";
 import type { ConfigPanelProps } from "./types";
 import type { StatusEffectDefinitionConfig } from "@/types/config";
 import type { StatMap } from "@/types/world";
@@ -13,24 +13,40 @@ import {
 import { RegistryPanel } from "./RegistryPanel";
 import { renameStatusEffectInConfig } from "@/lib/refactorId";
 
-const EFFECT_TYPES = [
-  { value: "DOT", label: "Damage Over Time" },
-  { value: "HOT", label: "Heal Over Time" },
-  { value: "STAT_BUFF", label: "Stat Buff" },
-  { value: "STAT_DEBUFF", label: "Stat Debuff" },
-  { value: "STUN", label: "Stun" },
-  { value: "ROOT", label: "Root" },
-  { value: "SHIELD", label: "Shield" },
+const FALLBACK_EFFECT_TYPES = [
+  { value: "dot", label: "Damage Over Time" },
+  { value: "hot", label: "Heal Over Time" },
+  { value: "stat_buff", label: "Stat Buff" },
+  { value: "stat_debuff", label: "Stat Debuff" },
+  { value: "stun", label: "Stun" },
+  { value: "root", label: "Root" },
+  { value: "shield", label: "Shield" },
 ];
 
-const STACK_BEHAVIORS = [
-  { value: "REFRESH", label: "Refresh" },
-  { value: "STACK", label: "Stack" },
-  { value: "NONE", label: "None" },
+const FALLBACK_STACK_BEHAVIORS = [
+  { value: "refresh", label: "Refresh" },
+  { value: "stack", label: "Stack" },
+  { value: "none", label: "None" },
 ];
 
 export function StatusEffectsPanel({ config, onChange }: ConfigPanelProps) {
   const statIds = Object.keys(config.stats.definitions);
+
+  const effectTypeOptions = useMemo(() => {
+    const entries = Object.entries(config.statusEffectTypes);
+    if (entries.length > 0) {
+      return entries.map(([id, def]) => ({ value: id, label: def.displayName }));
+    }
+    return FALLBACK_EFFECT_TYPES;
+  }, [config.statusEffectTypes]);
+
+  const stackBehaviorOptions = useMemo(() => {
+    const entries = Object.entries(config.stackBehaviors);
+    if (entries.length > 0) {
+      return entries.map(([id, def]) => ({ value: id, label: def.displayName }));
+    }
+    return FALLBACK_STACK_BEHAVIORS;
+  }, [config.stackBehaviors]);
 
   const handleRename = useCallback(
     (oldId: string, newId: string) => {
@@ -74,7 +90,7 @@ export function StatusEffectsPanel({ config, onChange }: ConfigPanelProps) {
               <SelectInput
                 value={e.effectType}
                 onCommit={(v) => patch({ effectType: v })}
-                options={EFFECT_TYPES}
+                options={effectTypeOptions}
               />
             </FieldRow>
             <FieldRow label="Duration (ms)">
@@ -88,7 +104,7 @@ export function StatusEffectsPanel({ config, onChange }: ConfigPanelProps) {
               <SelectInput
                 value={e.stackBehavior ?? "REFRESH"}
                 onCommit={(v) => patch({ stackBehavior: v })}
-                options={STACK_BEHAVIORS}
+                options={stackBehaviorOptions}
               />
             </FieldRow>
             {e.stackBehavior === "STACK" && (

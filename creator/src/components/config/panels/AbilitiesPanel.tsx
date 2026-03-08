@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback, useMemo } from "react";
 import type { ConfigPanelProps } from "./types";
 import type { AbilityDefinitionConfig, AbilityEffectConfig } from "@/types/config";
 import {
@@ -12,10 +12,10 @@ import { EntityArtGenerator } from "@/components/ui/EntityArtGenerator";
 import { getPreamble } from "@/lib/arcanumPrompts";
 import type { ArtStyle } from "@/lib/arcanumPrompts";
 
-const TARGET_TYPES = [
-  { value: "ENEMY", label: "Enemy" },
-  { value: "SELF", label: "Self" },
-  { value: "ALLY", label: "Ally" },
+const FALLBACK_TARGET_TYPES = [
+  { value: "enemy", label: "Enemy" },
+  { value: "self", label: "Self" },
+  { value: "ally", label: "Ally" },
 ];
 
 const EFFECT_TYPES = [
@@ -33,6 +33,14 @@ function abilityPrompt(ability: AbilityDefinitionConfig, style: ArtStyle): strin
 }
 
 export function AbilitiesPanel({ config, onChange }: ConfigPanelProps) {
+  const targetTypeOptions = useMemo(() => {
+    const entries = Object.entries(config.abilityTargetTypes);
+    if (entries.length > 0) {
+      return entries.map(([id, def]) => ({ value: id, label: def.displayName }));
+    }
+    return FALLBACK_TARGET_TYPES;
+  }, [config.abilityTargetTypes]);
+
   const statusEffectOptions = Object.keys(config.statusEffects).map((id) => ({
     value: id,
     label: config.statusEffects[id]!.displayName,
@@ -124,7 +132,7 @@ export function AbilitiesPanel({ config, onChange }: ConfigPanelProps) {
             <SelectInput
               value={a.targetType}
               onCommit={(v) => patch({ targetType: v })}
-              options={TARGET_TYPES}
+              options={targetTypeOptions}
             />
           </FieldRow>
           <FieldRow label="Req. Class">

@@ -128,6 +128,109 @@ export function validateConfig(config: AppConfig): ValidationIssue[] {
     }
   }
 
+  // ─── Equipment Slots ────────────────────────────────────────────
+  const seenOrders = new Map<number, string>();
+  for (const [id, slot] of Object.entries(config.equipmentSlots)) {
+    if (!slot.displayName?.trim()) {
+      issues.push({
+        severity: "error",
+        entity: `equipmentSlot:${id}`,
+        message: "Display name is required",
+      });
+    }
+    const existing = seenOrders.get(slot.order);
+    if (existing) {
+      issues.push({
+        severity: "warning",
+        entity: `equipmentSlot:${id}`,
+        message: `Duplicate order value ${slot.order} (also used by "${existing}")`,
+      });
+    } else {
+      seenOrders.set(slot.order, id);
+    }
+  }
+
+  // ─── Data-driven registries (empty displayName check) ──────────
+  const registryChecks: [string, Record<string, { displayName: string }>][] = [
+    ["gender", config.genders],
+    ["achievementCategory", config.achievementCategories],
+    ["achievementCriterionType", config.achievementCriterionTypes],
+    ["questObjectiveType", config.questObjectiveTypes],
+    ["questCompletionType", config.questCompletionTypes],
+    ["statusEffectType", config.statusEffectTypes],
+    ["stackBehavior", config.stackBehaviors],
+    ["abilityTargetType", config.abilityTargetTypes],
+    ["craftingSkill", config.craftingSkills],
+    ["craftingStationType", config.craftingStationTypes],
+    ["guildRank", config.guildRanks],
+  ];
+  for (const [prefix, items] of registryChecks) {
+    for (const [id, item] of Object.entries(items)) {
+      if (!item.displayName?.trim()) {
+        issues.push({
+          severity: "error",
+          entity: `${prefix}:${id}`,
+          message: "Display name is required",
+        });
+      }
+    }
+  }
+
+  // ─── Guild ranks ──────────────────────────────────────────────
+  const seenLevels = new Map<number, string>();
+  for (const [id, rank] of Object.entries(config.guildRanks)) {
+    const existing = seenLevels.get(rank.level);
+    if (existing) {
+      issues.push({
+        severity: "warning",
+        entity: `guildRank:${id}`,
+        message: `Duplicate rank level ${rank.level} (also used by "${existing}")`,
+      });
+    } else {
+      seenLevels.set(rank.level, id);
+    }
+  }
+
+  // ─── Status effect definitions → effect type cross-ref ────────
+  const effectTypeIds = new Set(Object.keys(config.statusEffectTypes));
+  const stackBehaviorIds = new Set(Object.keys(config.stackBehaviors));
+  if (effectTypeIds.size > 0) {
+    for (const [id, e] of Object.entries(config.statusEffects)) {
+      if (!effectTypeIds.has(e.effectType)) {
+        issues.push({
+          severity: "warning",
+          entity: `statusEffect:${id}`,
+          message: `Effect type "${e.effectType}" is not a defined effect type`,
+        });
+      }
+    }
+  }
+  if (stackBehaviorIds.size > 0) {
+    for (const [id, e] of Object.entries(config.statusEffects)) {
+      if (e.stackBehavior && !stackBehaviorIds.has(e.stackBehavior)) {
+        issues.push({
+          severity: "warning",
+          entity: `statusEffect:${id}`,
+          message: `Stack behavior "${e.stackBehavior}" is not a defined stack behavior`,
+        });
+      }
+    }
+  }
+
+  // ─── Ability definitions → target type cross-ref ──────────────
+  const targetTypeIds = new Set(Object.keys(config.abilityTargetTypes));
+  if (targetTypeIds.size > 0) {
+    for (const [id, a] of Object.entries(config.abilities)) {
+      if (!targetTypeIds.has(a.targetType)) {
+        issues.push({
+          severity: "warning",
+          entity: `ability:${id}`,
+          message: `Target type "${a.targetType}" is not a defined target type`,
+        });
+      }
+    }
+  }
+
   // ─── Combat ───────────────────────────────────────────────────
   if (config.combat.minDamage > config.combat.maxDamage) {
     issues.push({

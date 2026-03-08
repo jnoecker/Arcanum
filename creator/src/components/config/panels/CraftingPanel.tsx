@@ -1,5 +1,7 @@
 import type { ConfigPanelProps, AppConfig } from "./types";
-import { Section, FieldRow, NumberInput } from "@/components/ui/FormWidgets";
+import type { CraftingSkillDefinition, CraftingStationTypeDefinition } from "@/types/config";
+import { Section, FieldRow, NumberInput, TextInput, SelectInput } from "@/components/ui/FormWidgets";
+import { RegistryPanel } from "./RegistryPanel";
 
 export function CraftingPanel({ config, onChange }: ConfigPanelProps) {
   const c = config.crafting;
@@ -53,6 +55,56 @@ export function CraftingPanel({ config, onChange }: ConfigPanelProps) {
           </FieldRow>
         </div>
       </Section>
+
+      <RegistryPanel<CraftingSkillDefinition>
+        title="Crafting Skills"
+        items={config.craftingSkills}
+        onItemsChange={(craftingSkills) => onChange({ craftingSkills })}
+        placeholder="New skill"
+        idTransform={(raw) => raw.trim().toLowerCase().replace(/\s+/g, "_")}
+        getDisplayName={(s) => s.displayName}
+        defaultItem={(raw) => ({ displayName: raw, type: "crafting" })}
+        renderSummary={(_id, s) => s.type}
+        renderDetail={(_id, s, patch) => (
+          <>
+            <FieldRow label="Display Name">
+              <TextInput
+                value={s.displayName}
+                onCommit={(v) => patch({ displayName: v })}
+              />
+            </FieldRow>
+            <FieldRow label="Type">
+              <SelectInput
+                value={s.type}
+                onCommit={(v) => patch({ type: v })}
+                options={[
+                  { value: "gathering", label: "Gathering" },
+                  { value: "crafting", label: "Crafting" },
+                ]}
+              />
+            </FieldRow>
+          </>
+        )}
+      />
+
+      <RegistryPanel<CraftingStationTypeDefinition>
+        title="Station Types"
+        items={config.craftingStationTypes}
+        onItemsChange={(craftingStationTypes) => onChange({ craftingStationTypes })}
+        placeholder="New station type"
+        idTransform={(raw) => raw.trim().toLowerCase().replace(/\s+/g, "_")}
+        getDisplayName={(s) => s.displayName}
+        defaultItem={(raw) => ({ displayName: raw })}
+        renderSummary={() => ""}
+        renderDetail={(_id, s, patch) => (
+          <FieldRow label="Display Name">
+            <TextInput
+              value={s.displayName}
+              onCommit={(v) => patch({ displayName: v })}
+            />
+          </FieldRow>
+        )}
+      />
     </>
   );
 }

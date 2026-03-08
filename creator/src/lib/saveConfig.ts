@@ -157,6 +157,85 @@ export async function saveConfig(mudDir: string): Promise<void> {
       },
     );
 
+    // Equipment Slots
+    saveMapSection(engine, ["equipment", "slots"], config.equipmentSlots,
+      (slot) => ({ displayName: slot.displayName, order: slot.order }),
+    );
+
+    // Genders
+    saveMapSection(engine, ["genders"], config.genders,
+      (g) => {
+        const obj: Record<string, unknown> = { displayName: g.displayName };
+        if (g.spriteCode) obj.spriteCode = g.spriteCode;
+        return obj;
+      },
+    );
+
+    // Achievement Categories
+    saveMapSection(engine, ["achievementCategories"], config.achievementCategories,
+      (c) => ({ displayName: c.displayName }),
+    );
+
+    // Achievement Criterion Types
+    saveMapSection(engine, ["achievementCriterionTypes"], config.achievementCriterionTypes,
+      (c) => {
+        const obj: Record<string, unknown> = { displayName: c.displayName };
+        if (c.progressFormat) obj.progressFormat = c.progressFormat;
+        return obj;
+      },
+    );
+
+    // Quest Objective Types
+    saveMapSection(engine, ["questObjectiveTypes"], config.questObjectiveTypes,
+      (t) => ({ displayName: t.displayName }),
+    );
+
+    // Quest Completion Types
+    saveMapSection(engine, ["questCompletionTypes"], config.questCompletionTypes,
+      (t) => ({ displayName: t.displayName }),
+    );
+
+    // Status Effect Types
+    saveMapSection(engine, ["statusEffects", "effectTypes"], config.statusEffectTypes,
+      (t) => {
+        const obj: Record<string, unknown> = { displayName: t.displayName };
+        if (t.tickBehavior && t.tickBehavior !== "none") obj.tickBehavior = t.tickBehavior;
+        if (t.preventsActions) obj.preventsActions = true;
+        if (t.preventsMovement) obj.preventsMovement = true;
+        if (t.absorbsDamage) obj.absorbsDamage = true;
+        return obj;
+      },
+    );
+
+    // Stack Behaviors
+    saveMapSection(engine, ["statusEffects", "stackBehaviors"], config.stackBehaviors,
+      (b) => ({ displayName: b.displayName }),
+    );
+
+    // Ability Target Types
+    saveMapSection(engine, ["abilities", "targetTypes"], config.abilityTargetTypes,
+      (t) => ({ displayName: t.displayName }),
+    );
+
+    // Crafting Skills
+    saveMapSection(engine, ["crafting", "skills"], config.craftingSkills,
+      (s) => ({ displayName: s.displayName, type: s.type }),
+    );
+
+    // Crafting Station Types
+    saveMapSection(engine, ["crafting", "stationTypes"], config.craftingStationTypes,
+      (s) => ({ displayName: s.displayName }),
+    );
+
+    // Guild Ranks
+    saveMapSection(engine, ["guild", "ranks"], config.guildRanks,
+      (r) => {
+        const obj: Record<string, unknown> = { displayName: r.displayName, level: r.level };
+        if (r.permissions && r.permissions.length > 0) obj.permissions = r.permissions;
+        return obj;
+      },
+    );
+
     // Character Creation
     setIn(engine, ["characterCreation", "startingGold"], config.characterCreation.startingGold);
   }

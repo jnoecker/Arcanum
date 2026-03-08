@@ -366,6 +366,7 @@ export function Sidebar() {
                 { label: "Game Config", subTab: "server" as ConfigSubTab },
                 { label: "Classes", subTab: "classes" as ConfigSubTab },
                 { label: "Races", subTab: "races" as ConfigSubTab },
+                { label: "Equipment", subTab: "equipmentSlots" as ConfigSubTab },
               ]
             ).map((entry) => (
               <li key={entry.subTab}>

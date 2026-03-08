@@ -150,8 +150,8 @@ export function Toolbar() {
       </button>
       <button
         onClick={() => {
-          const results = validateAllZones(zones);
           const config = useConfigStore.getState().config;
+          const results = validateAllZones(zones, config?.equipmentSlots);
           if (config) {
             const configIssues = validateConfig(config);
             if (configIssues.length > 0) {

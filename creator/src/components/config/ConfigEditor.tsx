@@ -17,7 +17,10 @@ import { StatusEffectsPanel } from "./panels/StatusEffectsPanel";
 import { RawYamlPanel } from "./panels/RawYamlPanel";
 import { ClassesPanel } from "./panels/ClassesPanel";
 import { RacesPanel } from "./panels/RacesPanel";
+import { EquipmentSlotsPanel } from "./panels/EquipmentSlotsPanel";
 import { CharacterCreationPanel } from "./panels/CharacterCreationPanel";
+import { AchievementsPanel } from "./panels/AchievementsPanel";
+import { QuestsPanel } from "./panels/QuestsPanel";
 import { ImagesPanel } from "./panels/ImagesPanel";
 import { ApiSettingsPanel } from "./panels/ApiSettingsPanel";
 
@@ -26,6 +29,7 @@ const CONFIG_TABS = [
   { id: "stats", label: "Stats" },
   { id: "classes", label: "Classes" },
   { id: "races", label: "Races" },
+  { id: "equipmentSlots", label: "Equipment" },
   { id: "abilities", label: "Abilities" },
   { id: "statusEffects", label: "Status FX" },
   { id: "combat", label: "Combat" },
@@ -36,6 +40,8 @@ const CONFIG_TABS = [
   { id: "crafting", label: "Crafting" },
   { id: "group", label: "Group" },
   { id: "charCreate", label: "Char Create" },
+  { id: "achievements", label: "Achievements" },
+  { id: "quests", label: "Quests" },
   { id: "images", label: "Images" },
   { id: "rawYaml", label: "Raw YAML" },
   { id: "apiSettings", label: "API Settings" },
@@ -115,7 +121,7 @@ export function ConfigEditor() {
 
       {/* Panel content */}
       <div className="min-h-0 flex-1 overflow-y-auto">
-        <div className="mx-auto max-w-2xl px-6 py-4">
+        <div className={`mx-auto px-6 py-4 ${activeTab === "equipmentSlots" ? "max-w-5xl" : "max-w-2xl"}`}>
           {activeTab === "server" && (
             <ServerPanel config={config} onChange={handleChange} />
           )}
@@ -127,6 +133,9 @@ export function ConfigEditor() {
           )}
           {activeTab === "races" && (
             <RacesPanel config={config} onChange={handleChange} />
+          )}
+          {activeTab === "equipmentSlots" && (
+            <EquipmentSlotsPanel config={config} onChange={handleChange} />
           )}
           {activeTab === "abilities" && (
             <AbilitiesPanel config={config} onChange={handleChange} />
@@ -157,6 +166,12 @@ export function ConfigEditor() {
           )}
           {activeTab === "charCreate" && (
             <CharacterCreationPanel config={config} onChange={handleChange} />
+          )}
+          {activeTab === "achievements" && (
+            <AchievementsPanel config={config} onChange={handleChange} />
+          )}
+          {activeTab === "quests" && (
+            <QuestsPanel config={config} onChange={handleChange} />
           )}
           {activeTab === "images" && (
             <ImagesPanel config={config} onChange={handleChange} />

@@ -1,4 +1,5 @@
 import type { WorldFile } from "@/types/world";
+import type { EquipmentSlotDefinition } from "@/types/config";
 import { exitTarget } from "./zoneEdits";
 
 export type Severity = "error" | "warning";
@@ -14,7 +15,10 @@ export interface ValidationIssue {
  * Validate a single zone's WorldFile for referential integrity and
  * common mistakes. Returns an array of issues (empty = valid).
  */
-export function validateZone(world: WorldFile): ValidationIssue[] {
+export function validateZone(
+  world: WorldFile,
+  equipmentSlots?: Record<string, EquipmentSlotDefinition>,
+): ValidationIssue[] {
   const issues: ValidationIssue[] = [];
   const roomIds = new Set(Object.keys(world.rooms));
   const mobIds = new Set(Object.keys(world.mobs ?? {}));
@@ -197,6 +201,15 @@ export function validateZone(world: WorldFile): ValidationIssue[] {
         message: `Room "${item.room}" does not exist`,
       });
     }
+    if (item.slot && equipmentSlots && Object.keys(equipmentSlots).length > 0) {
+      if (!equipmentSlots[item.slot]) {
+        issues.push({
+          severity: "warning",
+          entity: `item:${itemId}`,
+          message: `Slot "${item.slot}" is not a defined equipment slot`,
+        });
+      }
+    }
   }
 
   // ─── Shop checks ───────────────────────────────────────────────
@@ -368,10 +381,11 @@ export function validateZone(world: WorldFile): ValidationIssue[] {
 /** Validate all zones and return a map of zoneId -> issues. */
 export function validateAllZones(
   zones: Map<string, { data: WorldFile }>,
+  equipmentSlots?: Record<string, EquipmentSlotDefinition>,
 ): Map<string, ValidationIssue[]> {
   const results = new Map<string, ValidationIssue[]>();
   for (const [zoneId, zone] of zones) {
-    const issues = validateZone(zone.data);
+    const issues = validateZone(zone.data, equipmentSlots);
     if (issues.length > 0) {
       results.set(zoneId, issues);
     }

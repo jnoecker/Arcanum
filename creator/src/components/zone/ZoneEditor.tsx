@@ -257,7 +257,7 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
           <button
             onClick={() => undo(zoneId)}
             disabled={!canUndo}
-            className="h-6 w-6 rounded text-xs text-text-muted transition-colors enabled:hover:bg-bg-elevated enabled:hover:text-text-primary disabled:opacity-30"
+            className="h-6 w-6 rounded text-xs text-accent transition-colors enabled:hover:bg-accent/10 disabled:opacity-30"
             title="Undo (Ctrl+Z)"
           >
             &#x21B6;
@@ -265,7 +265,7 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
           <button
             onClick={() => redo(zoneId)}
             disabled={!canRedo}
-            className="h-6 w-6 rounded text-xs text-text-muted transition-colors enabled:hover:bg-bg-elevated enabled:hover:text-text-primary disabled:opacity-30"
+            className="h-6 w-6 rounded text-xs text-accent transition-colors enabled:hover:bg-accent/10 disabled:opacity-30"
             title="Redo (Ctrl+Shift+Z)"
           >
             &#x21B7;

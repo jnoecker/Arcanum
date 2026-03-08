@@ -19,8 +19,8 @@ export function TabBar() {
             key={tab.id}
             className={`group flex h-full cursor-pointer items-center gap-2 border-r border-border-muted px-3 text-xs transition-colors ${
               isActive
-                ? "border-b-2 border-b-accent bg-bg-primary text-text-primary"
-                : "text-text-secondary hover:text-text-primary"
+                ? "border-b-2 border-b-accent bg-bg-primary text-accent-emphasis"
+                : "text-accent-muted hover:text-accent"
             }`}
             onClick={() => setActiveTab(tab.id)}
           >

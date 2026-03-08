@@ -1,5 +1,6 @@
 import { Handle, Position, type NodeProps, type Node } from "@xyflow/react";
-import type { RoomNodeData } from "@/lib/zoneToGraph";
+import type { RoomNodeData, EntitySprite } from "@/lib/zoneToGraph";
+import { useImageSrc } from "@/lib/useImageSrc";
 
 type RoomNodeType = Node<RoomNodeData, "room">;
 
@@ -28,12 +29,37 @@ const handleStyle: React.CSSProperties = {
   border: "none",
 };
 
+function SpriteThumb({ sprite }: { sprite: EntitySprite }) {
+  const src = useImageSrc(sprite.image);
+  if (!src) return null;
+  return (
+    <img
+      src={src}
+      alt={sprite.name}
+      title={`${sprite.kind}: ${sprite.name}`}
+      className="h-6 w-6 rounded-sm border border-border-default/50 object-cover"
+    />
+  );
+}
+
+function RoomBackground({ image }: { image?: string }) {
+  const src = useImageSrc(image);
+  if (!src) return null;
+  return (
+    <img
+      src={src}
+      alt=""
+      className="pointer-events-none absolute inset-0 h-full w-full rounded object-cover opacity-25"
+    />
+  );
+}
+
 export function RoomNode({ data, selected }: NodeProps<RoomNodeType>) {
   const d = data as RoomNodeData;
 
   return (
     <div
-      className={`rounded border px-3 py-2 transition-colors ${
+      className={`relative overflow-hidden rounded border px-3 py-2 transition-colors ${
         selected
           ? "border-accent bg-bg-elevated shadow-lg shadow-accent/20"
           : d.isStartRoom
@@ -42,6 +68,9 @@ export function RoomNode({ data, selected }: NodeProps<RoomNodeType>) {
       }`}
       style={{ width: 220 }}
     >
+      {/* Room background image */}
+      <RoomBackground image={d.image} />
+
       {/* Handles */}
       {HANDLES.map((h) => (
         <Handle
@@ -65,7 +94,7 @@ export function RoomNode({ data, selected }: NodeProps<RoomNodeType>) {
       ))}
 
       {/* Title row */}
-      <div className="flex items-center gap-1.5">
+      <div className="relative flex items-center gap-1.5">
         {d.isStartRoom && (
           <span className="text-accent text-xs" title="Start room">
             ★
@@ -77,11 +106,20 @@ export function RoomNode({ data, selected }: NodeProps<RoomNodeType>) {
       </div>
 
       {/* Room ID */}
-      <div className="truncate text-[10px] text-text-muted">{d.roomId}</div>
+      <div className="relative truncate text-[10px] text-text-muted">{d.roomId}</div>
 
-      {/* Entity badges */}
+      {/* Entity sprites */}
+      {d.entities.length > 0 && (
+        <div className="relative mt-1 flex flex-wrap gap-1">
+          {d.entities.map((e) => (
+            <SpriteThumb key={`${e.kind}:${e.id}`} sprite={e} />
+          ))}
+        </div>
+      )}
+
+      {/* Entity badges (for entities without images) */}
       {(d.mobCount > 0 || d.itemCount > 0 || d.shopCount > 0 || d.station) && (
-        <div className="mt-1 flex items-center gap-2 text-[10px] text-text-muted">
+        <div className="relative mt-1 flex items-center gap-2 text-[10px] text-text-muted">
           {d.mobCount > 0 && <span title="Mobs">⚔{d.mobCount}</span>}
           {d.itemCount > 0 && <span title="Items">◆{d.itemCount}</span>}
           {d.shopCount > 0 && <span title="Shops">⛋{d.shopCount}</span>}

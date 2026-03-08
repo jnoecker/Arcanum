@@ -4,6 +4,13 @@ import { OPPOSITE } from "@/lib/zoneEdits";
 
 // ─── Node data types ────────────────────────────────────────────────
 
+export interface EntitySprite {
+  id: string;
+  kind: "mob" | "item" | "shop";
+  name: string;
+  image?: string;
+}
+
 export interface RoomNodeData extends Record<string, unknown> {
   roomId: string;
   title: string;
@@ -13,6 +20,8 @@ export interface RoomNodeData extends Record<string, unknown> {
   itemCount: number;
   shopCount: number;
   station?: string;
+  image?: string;
+  entities: EntitySprite[];
 }
 
 export interface CrossZoneNodeData extends Record<string, unknown> {
@@ -75,6 +84,25 @@ export function zoneToGraph(
     shopsPerRoom.set(shop.room, (shopsPerRoom.get(shop.room) ?? 0) + 1);
   }
 
+  // Collect entity sprites per room
+  const entitiesPerRoom = new Map<string, EntitySprite[]>();
+  const pushEntity = (roomId: string, sprite: EntitySprite) => {
+    let arr = entitiesPerRoom.get(roomId);
+    if (!arr) { arr = []; entitiesPerRoom.set(roomId, arr); }
+    arr.push(sprite);
+  };
+  for (const [id, mob] of Object.entries(world.mobs ?? {})) {
+    pushEntity(mob.room, { id, kind: "mob", name: mob.name, image: mob.image });
+  }
+  for (const [id, item] of Object.entries(world.items ?? {})) {
+    if (item.room) {
+      pushEntity(item.room, { id, kind: "item", name: item.displayName, image: item.image });
+    }
+  }
+  for (const [id, shop] of Object.entries(world.shops ?? {})) {
+    pushEntity(shop.room, { id, kind: "shop", name: shop.name, image: shop.image });
+  }
+
   // Build room nodes
   const nodes: Node[] = [];
   for (const [roomId, room] of Object.entries(world.rooms)) {
@@ -91,6 +119,8 @@ export function zoneToGraph(
         itemCount: itemsPerRoom.get(roomId) ?? 0,
         shopCount: shopsPerRoom.get(roomId) ?? 0,
         station: room.station,
+        image: room.image,
+        entities: entitiesPerRoom.get(roomId) ?? [],
       } satisfies RoomNodeData,
     });
   }

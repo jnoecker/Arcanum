@@ -328,12 +328,6 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
       {/* Map + Panel */}
       <div className="flex min-h-0 flex-1">
         <div className="relative flex-1">
-          {/* Background image behind graph */}
-          <img
-            src={builderBg}
-            alt=""
-            className="pointer-events-none absolute inset-0 z-0 h-full w-full object-cover opacity-[0.12]"
-          />
           <ReactFlow
             nodes={nodes}
             edges={edges}
@@ -349,7 +343,7 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
             minZoom={0.1}
             maxZoom={2}
             proOptions={{ hideAttribution: true }}
-            style={{ background: "rgba(8, 12, 28, 0.85)" }}
+            style={{ background: "#080c1c" }}
           >
             <Background
               variant={BackgroundVariant.Dots}
@@ -367,6 +361,13 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
               maskColor="rgba(8, 12, 28, 0.8)"
             />
           </ReactFlow>
+
+          {/* Atmospheric background overlay */}
+          <img
+            src={builderBg}
+            alt=""
+            className="pointer-events-none absolute inset-0 z-[1] h-full w-full object-cover opacity-[0.08] mix-blend-screen"
+          />
 
           {/* Batch art generator */}
           {showBatchArt && zoneState && (

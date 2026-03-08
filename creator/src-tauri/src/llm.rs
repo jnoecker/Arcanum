@@ -24,7 +24,9 @@ pub async fn llm_complete(
     app: AppHandle,
     system_prompt: String,
     user_prompt: String,
+    max_tokens: Option<u32>,
 ) -> Result<String, String> {
+    let max_tokens = max_tokens.unwrap_or(1024);
     let s = settings::get_settings(app.clone()).await?;
 
     let raw = match s.prompt_llm_provider.as_str() {
@@ -37,6 +39,7 @@ pub async fn llm_complete(
                 "claude-sonnet-4-20250514",
                 &system_prompt,
                 &user_prompt,
+                max_tokens,
             )
             .await?
         }
@@ -49,6 +52,7 @@ pub async fn llm_complete(
                 &s.enhance_model,
                 &system_prompt,
                 &user_prompt,
+                max_tokens,
             )
             .await?
         }
@@ -67,7 +71,7 @@ pub async fn llm_complete(
                     { "role": "system", "content": system_prompt },
                     { "role": "user", "content": user_prompt }
                 ],
-                "max_tokens": 1024,
+                "max_tokens": max_tokens,
                 "temperature": 0.7
             });
 

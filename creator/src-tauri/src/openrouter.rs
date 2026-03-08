@@ -36,6 +36,7 @@ pub async fn complete(
     model: &str,
     system_prompt: &str,
     user_prompt: &str,
+    max_tokens: u32,
 ) -> Result<String, String> {
     let body = ChatRequest {
         model: model.to_string(),
@@ -49,7 +50,7 @@ pub async fn complete(
                 content: user_prompt.to_string(),
             },
         ],
-        max_tokens: 1024,
+        max_tokens,
         temperature: 0.7,
     };
 

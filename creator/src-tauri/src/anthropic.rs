@@ -32,10 +32,11 @@ pub async fn complete(
     model: &str,
     system_prompt: &str,
     user_prompt: &str,
+    max_tokens: u32,
 ) -> Result<String, String> {
     let body = AnthropicRequest {
         model: model.to_string(),
-        max_tokens: 1024,
+        max_tokens,
         system: system_prompt.to_string(),
         messages: vec![AnthropicMessage {
             role: "user".to_string(),

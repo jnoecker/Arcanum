@@ -443,3 +443,162 @@ pub async fn save_bytes_as_asset(
 
     Ok(entry)
 }
+
+/// Import result for bulk sprite import.
+#[derive(Debug, Default, Serialize)]
+pub struct SpriteImportResult {
+    pub imported: u32,
+    pub retagged: u32,
+    pub skipped: u32,
+    pub errors: Vec<String>,
+}
+
+/// Bulk-import player sprites from the old tool's export structure.
+///
+/// The old format uses directories like:
+///   `{source_dir}/player_sprites/player_sprites_{race}_{gender}_{class}_l{tier}/v1.png`
+///
+/// Each sprite is imported into the asset library with a variant_group of
+/// `player_sprite:{race}_{gender}_{class}_l{tier}` for management.
+#[tauri::command]
+pub async fn import_player_sprites(
+    app: AppHandle,
+    source_dir: String,
+) -> Result<SpriteImportResult, String> {
+    let sprites_dir = std::path::Path::new(&source_dir);
+    if !sprites_dir.is_dir() {
+        return Err(format!("Directory not found: {source_dir}"));
+    }
+
+    let mut result = SpriteImportResult::default();
+    let mut manifest = load_manifest(&app).await?;
+    let images_dir = assets_dir(&app)?.join("images");
+    tokio::fs::create_dir_all(&images_dir)
+        .await
+        .map_err(|e| format!("Failed to create images dir: {e}"))?;
+
+    let entries = std::fs::read_dir(sprites_dir)
+        .map_err(|e| format!("Failed to read directory: {e}"))?;
+
+    for entry in entries.flatten() {
+        let dir_name = entry.file_name().to_string_lossy().to_string();
+
+        // Match directories like player_sprites_{race}_{gender}_{class}_l{tier}
+        let sprite_key = match dir_name.strip_prefix("player_sprites_") {
+            Some(k) if k.contains('_') && k.contains("_l") => k,
+            _ => continue, // skip non-sprite dirs like "entrance", "apprentice_hall", etc.
+        };
+
+        let subdir = entry.path();
+        if !subdir.is_dir() {
+            continue;
+        }
+
+        // Find the image file inside (v1.png, v1.jpg, etc.)
+        let image_file = std::fs::read_dir(&subdir)
+            .ok()
+            .and_then(|mut r| r.find_map(|e| {
+                let e = e.ok()?;
+                let name = e.file_name().to_string_lossy().to_string();
+                if name.starts_with("v1.") {
+                    Some(e.path())
+                } else {
+                    None
+                }
+            }));
+
+        let image_path = match image_file {
+            Some(p) => p,
+            None => {
+                result.errors.push(format!("No v1.* image in {dir_name}"));
+                continue;
+            }
+        };
+
+        // Read the image
+        let bytes = match std::fs::read(&image_path) {
+            Ok(b) => b,
+            Err(e) => {
+                result.errors.push(format!("Failed to read {dir_name}: {e}"));
+                continue;
+            }
+        };
+
+        // Content-addressed hash
+        let mut hasher = Sha256::new();
+        hasher.update(&bytes);
+        let hash = format!("{:x}", hasher.finalize());
+
+        let variant_group = format!("player_sprite:{sprite_key}");
+
+        // Check if already in manifest by hash
+        if let Some(existing) = manifest.assets.iter_mut().find(|a| a.hash == hash) {
+            // Already tagged correctly — skip
+            if existing.asset_type == "player_sprite" && existing.variant_group == variant_group {
+                result.skipped += 1;
+                continue;
+            }
+            // Re-tag the existing asset with sprite metadata
+            existing.asset_type = "player_sprite".to_string();
+            existing.variant_group = variant_group;
+            existing.is_active = true;
+            existing.context = AssetContext {
+                zone: String::new(),
+                entity_type: "player_sprite".to_string(),
+                entity_id: sprite_key.to_string(),
+            };
+            existing.prompt = format!("Player sprite: {}", sprite_key.replace('_', " "));
+            result.retagged += 1;
+            continue;
+        }
+
+        let detected = detect_extension(&bytes);
+        let ext = if detected == "bin" {
+            extension_from_path(image_path.to_str().unwrap_or("")).unwrap_or("png")
+        } else {
+            detected
+        };
+        let file_name = format!("{hash}.{ext}");
+
+        let (width, height) = match imagesize::blob_size(&bytes) {
+            Ok(size) => (size.width as u32, size.height as u32),
+            Err(_) => (0, 0),
+        };
+
+        // Copy to assets/images/
+        let dest = images_dir.join(&file_name);
+        if !dest.exists() {
+            if let Err(e) = std::fs::copy(&image_path, &dest) {
+                result.errors.push(format!("Failed to copy {dir_name}: {e}"));
+                continue;
+            }
+        }
+
+        let entry = AssetEntry {
+            id: uuid::Uuid::new_v4().to_string(),
+            hash,
+            prompt: format!("Player sprite: {}", sprite_key.replace('_', " ")),
+            enhanced_prompt: String::new(),
+            model: "imported".to_string(),
+            asset_type: "player_sprite".to_string(),
+            context: AssetContext {
+                zone: String::new(),
+                entity_type: "player_sprite".to_string(),
+                entity_id: sprite_key.to_string(),
+            },
+            created_at: Utc::now(),
+            file_name,
+            width,
+            height,
+            sync_status: "local".to_string(),
+            variant_group,
+            is_active: true,
+        };
+
+        manifest.assets.push(entry);
+        result.imported += 1;
+    }
+
+    save_manifest(&app, &manifest).await?;
+    Ok(result)
+}

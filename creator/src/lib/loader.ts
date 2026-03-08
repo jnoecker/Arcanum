@@ -60,6 +60,8 @@ export async function loadAppConfig(
 
     const config: AppConfig = {
       server: parseServerConfig(root.server),
+      world: parseWorldConfig(root.world),
+      classStartRooms: parseClassStartRooms(engine.classStartRooms),
       stats: parseStatsConfig(engine.stats),
       abilities: parseMapSection(engine.abilities, "definitions"),
       statusEffects: parseMapSection(engine.statusEffects, "definitions"),
@@ -106,6 +108,22 @@ function parseServerConfig(raw: unknown): AppConfig["server"] {
     telnetPort: asNumber(s.telnetPort, 4000),
     webPort: asNumber(s.webPort, 8080),
   };
+}
+
+function parseWorldConfig(raw: unknown): AppConfig["world"] {
+  const s = (raw ?? {}) as Record<string, unknown>;
+  return {
+    startRoom: asString(s.startRoom, ""),
+  };
+}
+
+function parseClassStartRooms(raw: unknown): Record<string, string> {
+  if (!raw || typeof raw !== "object") return {};
+  const result: Record<string, string> = {};
+  for (const [k, v] of Object.entries(raw as Record<string, unknown>)) {
+    if (typeof v === "string") result[k] = v;
+  }
+  return result;
 }
 
 function parseStatsConfig(raw: unknown): AppConfig["stats"] {
@@ -260,6 +278,8 @@ function parseImagesConfig(raw: unknown): AppConfig["images"] {
   const s = (raw ?? {}) as Record<string, unknown>;
   return {
     baseUrl: asString(s.baseUrl, "/images/"),
+    spriteLevelTiers: parseNumberArray(s.spriteLevelTiers, [50, 40, 30, 20, 10, 1]),
+    staffSpriteTier: asNumber(s.staffSpriteTier, 60),
   };
 }
 
@@ -331,4 +351,9 @@ function asString(val: unknown, fallback: string): string {
 
 function asBool(val: unknown, fallback: boolean): boolean {
   return typeof val === "boolean" ? val : fallback;
+}
+
+function parseNumberArray(val: unknown, fallback: number[]): number[] {
+  if (!Array.isArray(val)) return fallback;
+  return val.filter((v): v is number => typeof v === "number");
 }

@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { saveUIState } from "@/lib/uiPersistence";
+import { saveUIState, loadUIState } from "@/lib/uiPersistence";
 import type { Project, Tab, ConfigSubTab } from "@/types/project";
 
 /** Navigation target for sidebar -> zone editor entity selection. */
@@ -92,10 +92,12 @@ useProjectStore.subscribe((state) => {
   if (!state.project) return;
   if (persistTimer) clearTimeout(persistTimer);
   persistTimer = setTimeout(() => {
+    const existing = loadUIState();
     saveUIState({
       lastProjectPath: state.project!.mudDir,
       tabs: state.tabs,
       activeTabId: state.activeTabId,
+      recentProjects: existing?.recentProjects ?? [],
     });
   }, 500);
 });

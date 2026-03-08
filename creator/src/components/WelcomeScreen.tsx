@@ -1,17 +1,24 @@
 import { useState } from "react";
 import { useOpenProject } from "@/lib/useOpenProject";
-import { loadUIState } from "@/lib/uiPersistence";
+import {
+  loadUIState,
+  removeRecentProject,
+  type RecentProject,
+} from "@/lib/uiPersistence";
 import { ErrorDialog } from "./ErrorDialog";
 import splashHero from "@/assets/splash-hero.jpg";
 
-export function WelcomeScreen() {
+interface WelcomeScreenProps {
+  onNewProject: () => void;
+}
+
+export function WelcomeScreen({ onNewProject }: WelcomeScreenProps) {
   const { openWithPicker, openDir } = useOpenProject();
   const [errors, setErrors] = useState<string[] | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState<string | null>(null);
 
   const saved = loadUIState();
-  const lastPath = saved?.lastProjectPath;
-  const lastName = lastPath?.split(/[\\/]/).pop();
+  const recentProjects = saved?.recentProjects ?? [];
 
   const handleOpen = async () => {
     const result = await openWithPicker();
@@ -20,19 +27,26 @@ export function WelcomeScreen() {
     }
   };
 
-  const handleReopen = async () => {
-    if (!lastPath) return;
-    setLoading(true);
+  const handleOpenRecent = async (project: RecentProject) => {
+    setLoading(project.path);
     try {
-      const result = await openDir(lastPath);
+      const result = await openDir(project.path);
       if (!result.success && result.errors) {
         setErrors(result.errors);
       }
     } catch {
-      setErrors([`Could not open ${lastPath}`]);
+      setErrors([
+        `Could not open ${project.path}. The project may have been moved or deleted.`,
+      ]);
     } finally {
-      setLoading(false);
+      setLoading(null);
     }
+  };
+
+  const handleRemoveRecent = (path: string) => {
+    removeRecentProject(path);
+    // Force re-render by clearing errors
+    setErrors(null);
   };
 
   return (
@@ -54,32 +68,74 @@ export function WelcomeScreen() {
             World building &amp; server management
           </p>
         </div>
+
+        {/* Action buttons */}
         <div className="relative z-10 flex flex-col items-center gap-3">
           <button
-            onClick={handleOpen}
+            onClick={onNewProject}
             className="rounded-lg bg-gradient-to-r from-accent-muted to-accent px-6 py-3 font-display text-sm font-medium tracking-wide text-accent-emphasis transition-all hover:shadow-[var(--glow-aurum)] hover:brightness-110"
           >
-            Open AmbonMUD Project
+            Create New Project
           </button>
-          {lastPath && (
-            <button
-              onClick={handleReopen}
-              disabled={loading}
-              className="rounded-lg border border-border-default px-6 py-2.5 text-sm text-text-secondary transition-colors hover:bg-bg-elevated hover:text-text-primary disabled:opacity-50"
-            >
-              {loading ? "Opening..." : `Reopen ${lastName}`}
-            </button>
-          )}
+          <button
+            onClick={handleOpen}
+            className="rounded-lg border border-border-default px-6 py-2.5 text-sm text-text-secondary transition-colors hover:bg-bg-elevated hover:text-text-primary"
+          >
+            Open Existing Project
+          </button>
         </div>
+
+        {/* Recent projects */}
+        {recentProjects.length > 0 && (
+          <div className="w-80">
+            <h3 className="mb-2 font-display text-[10px] uppercase tracking-widest text-text-muted">
+              Recent Projects
+            </h3>
+            <ul className="flex flex-col gap-1">
+              {recentProjects.map((project) => (
+                <li
+                  key={project.path}
+                  className="group flex items-center gap-2 rounded-md border border-border-default/50 bg-bg-secondary/40 px-3 py-2 backdrop-blur-sm transition-colors hover:bg-bg-elevated/60"
+                >
+                  <button
+                    onClick={() => handleOpenRecent(project)}
+                    disabled={loading === project.path}
+                    className="min-w-0 flex-1 text-left"
+                  >
+                    <div className="truncate text-xs text-text-primary">
+                      {loading === project.path
+                        ? "Opening..."
+                        : project.name}
+                    </div>
+                    <div className="truncate text-[10px] text-text-muted">
+                      {project.path}
+                    </div>
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleRemoveRecent(project.path);
+                    }}
+                    className="hidden shrink-0 rounded px-1 text-xs text-text-muted transition-colors hover:text-status-error group-hover:block"
+                    title="Remove from recent"
+                  >
+                    &times;
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
       </div>
 
       {errors && (
         <ErrorDialog
-          title="Invalid AmbonMUD Directory"
+          title="Project Error"
           messages={errors}
           onClose={() => setErrors(null)}
         />
       )}
+
     </div>
   );
 }

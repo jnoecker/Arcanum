@@ -23,6 +23,11 @@ export async function saveConfig(mudDir: string): Promise<void> {
   setIn(root, ["server", "telnetPort"], config.server.telnetPort);
   setIn(root, ["server", "webPort"], config.server.webPort);
 
+  // ─── World ──────────────────────────────────────────────────
+  if (config.world.startRoom) {
+    setIn(root, ["world", "startRoom"], config.world.startRoom);
+  }
+
   // ─── Engine sections ────────────────────────────────────────
   const engine = root.get("engine", true);
   if (engine) {
@@ -238,10 +243,17 @@ export async function saveConfig(mudDir: string): Promise<void> {
 
     // Character Creation
     setIn(engine, ["characterCreation", "startingGold"], config.characterCreation.startingGold);
+
+    // Class Start Rooms
+    if (Object.keys(config.classStartRooms).length > 0) {
+      setIn(engine, ["classStartRooms"], config.classStartRooms);
+    }
   }
 
   // ─── Images ────────────────────────────────────────────────
   setIn(root, ["images", "baseUrl"], config.images.baseUrl);
+  setIn(root, ["images", "spriteLevelTiers"], config.images.spriteLevelTiers);
+  setIn(root, ["images", "staffSpriteTier"], config.images.staffSpriteTier);
 
   // ─── Global Assets ────────────────────────────────────────
   if (Object.keys(config.globalAssets).length > 0) {

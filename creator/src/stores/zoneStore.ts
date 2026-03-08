@@ -17,6 +17,7 @@ interface ZoneStore {
   loadZone: (zoneId: string, filePath: string, data: WorldFile) => void;
   updateZone: (zoneId: string, data: WorldFile) => void;
   markClean: (zoneId: string) => void;
+  removeZone: (zoneId: string) => void;
   clearZones: () => void;
   undo: (zoneId: string) => void;
   redo: (zoneId: string) => void;
@@ -59,6 +60,13 @@ export const useZoneStore = create<ZoneStore>((set, get) => ({
       if (existing) {
         zones.set(zoneId, { ...existing, dirty: false });
       }
+      return { zones };
+    }),
+
+  removeZone: (zoneId) =>
+    set((state) => {
+      const zones = new Map(state.zones);
+      zones.delete(zoneId);
       return { zones };
     }),
 

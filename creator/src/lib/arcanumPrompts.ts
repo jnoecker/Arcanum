@@ -118,6 +118,13 @@ export const ASSET_TEMPLATES: Record<AssetType, { label: string; templates: Reco
       gentle_magic: `A fantastical creature or character in a relaxed natural pose within a gentle environment, the subject rendered with faithful anatomy and physical detail — armor, fur, scales, or clothing depicted with soft ambient lighting in the Gentle Magic palette, lavender and pale blue atmospheric haze surrounds the figure creating depth, soft gold light highlights key features without harsh shadows, small magical details accent the character — glowing eyes, luminous trinkets, faintly shimmering fabric, floating motes of light nearby, moss or small flowers growing at their feet, the figure occupies the center of a square portrait composition, the overall feeling is approachable and characterful rather than threatening, painterly, luminous, dreamlike`,
     },
   },
+  player_sprite: {
+    label: "Player Sprite",
+    templates: {
+      arcanum: `A heroic fantasy character portrait against deep cosmic indigo void — the character stands in a confident adventuring pose, rendered with faithful anatomy and detailed equipment appropriate to their class and level, baroque aurum-gold energy scrollwork frames the figure as an ornate portrait border, warm golden light illuminates the character from a central point creating soft bloom, cool blue-violet atmospheric fill provides depth, the character's race and gender are clearly depicted with distinct physical features, equipment quality and ornamentation reflects their power tier, centered square portrait composition, painterly, luminous, extremely detailed, heroic`,
+      gentle_magic: `A fantasy character portrait in a gentle enchanted setting — the character stands in a natural adventuring pose, rendered with faithful anatomy and detailed equipment appropriate to their class and level, soft ambient light in lavender and pale blue creates a dreamlike atmosphere, the character's race and gender are clearly depicted with warm approachable features, equipment has a handcrafted quality with subtle magical glow, floating motes of light and gentle atmospheric haze surround the figure, small organic details like moss or tiny flowers at their feet, centered square portrait composition, painterly, luminous, dreamlike, characterful`,
+    },
+  },
   item: {
     label: "Item / Object",
     templates: {

@@ -5,7 +5,7 @@ import { useProjectStore } from "@/stores/projectStore";
 import { useZoneStore } from "@/stores/zoneStore";
 import { useConfigStore } from "@/stores/configStore";
 import { loadAllZones, loadAppConfig } from "@/lib/loader";
-import { loadUIState } from "@/lib/uiPersistence";
+import { loadUIState, addRecentProject } from "@/lib/uiPersistence";
 import type { Project, Tab } from "@/types/project";
 
 interface ValidationResult {
@@ -64,6 +64,7 @@ export function useOpenProject() {
     };
 
     setProject(project);
+    addRecentProject(mudDir, project.name);
 
     // Restore previously saved tabs (filter out stale zone refs)
     const saved = loadUIState();

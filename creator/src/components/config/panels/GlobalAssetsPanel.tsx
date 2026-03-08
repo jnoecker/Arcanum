@@ -1,7 +1,12 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
+import { invoke } from "@tauri-apps/api/core";
+import { open } from "@tauri-apps/plugin-dialog";
 import type { ConfigPanelProps } from "./types";
 import { Section } from "@/components/ui/FormWidgets";
 import { useImageSrc } from "@/lib/useImageSrc";
+import { useAssetStore } from "@/stores/assetStore";
+import { AssetPickerModal } from "@/components/ui/AssetPickerModal";
+import type { SyncProgress } from "@/types/assets";
 
 function AssetThumbnail({ filename }: { filename: string }) {
   const src = useImageSrc(filename);
@@ -23,7 +28,11 @@ function AssetThumbnail({ filename }: { filename: string }) {
 
 export function GlobalAssetsPanel({ config, onChange }: ConfigPanelProps) {
   const assets = config.globalAssets;
+  const importAsset = useAssetStore((s) => s.importAsset);
   const [newKey, setNewKey] = useState("");
+  const [deploying, setDeploying] = useState(false);
+  const [deployResult, setDeployResult] = useState<SyncProgress | null>(null);
+  const [pickingFor, setPickingFor] = useState<string | null>(null);
 
   const updateAssets = (next: Record<string, string>) => {
     onChange({ globalAssets: next });
@@ -52,6 +61,33 @@ export function GlobalAssetsPanel({ config, onChange }: ConfigPanelProps) {
       handleAdd();
     }
   };
+
+  const handleDeploy = useCallback(async () => {
+    setDeploying(true);
+    setDeployResult(null);
+    try {
+      const result = await invoke<SyncProgress>("deploy_global_assets_to_r2", {
+        globalAssets: assets,
+      });
+      setDeployResult(result);
+    } catch (e) {
+      setDeployResult({ total: 0, uploaded: 0, skipped: 0, failed: 1, errors: [String(e)] });
+    } finally {
+      setDeploying(false);
+    }
+  }, [assets]);
+
+  const handlePickFromFile = useCallback(async (key: string) => {
+    const selected = await open({
+      multiple: false,
+      filters: [{ name: "Images", extensions: ["png", "jpg", "jpeg", "webp"] }],
+    });
+    if (!selected) return;
+    const entry = await importAsset(selected as string, "background");
+    if (entry) {
+      updateAssets({ ...assets, [key]: entry.file_name });
+    }
+  }, [assets, importAsset]);
 
   const sortedEntries = Object.entries(assets).sort(([a], [b]) =>
     a.localeCompare(b),
@@ -83,7 +119,53 @@ export function GlobalAssetsPanel({ config, onChange }: ConfigPanelProps) {
           >
             + Add
           </button>
+          <button
+            onClick={handleDeploy}
+            disabled={deploying || sortedEntries.length === 0}
+            className="rounded border border-accent/40 px-3 py-1.5 text-xs text-accent transition-colors hover:bg-accent/10 disabled:opacity-50"
+          >
+            {deploying ? "Deploying..." : "Deploy to R2"}
+          </button>
         </div>
+
+        {/* Deploy result banner */}
+        {deployResult && (
+          <div className="mb-4 rounded border border-border-default bg-bg-elevated px-3 py-2">
+            <div className="flex items-center gap-3 text-xs">
+              {deployResult.uploaded > 0 && (
+                <span className="text-status-success">
+                  {deployResult.uploaded} uploaded
+                </span>
+              )}
+              {deployResult.skipped > 0 && (
+                <span className="text-text-muted">
+                  {deployResult.skipped} already synced
+                </span>
+              )}
+              {deployResult.failed > 0 && (
+                <span className="text-status-error">
+                  {deployResult.failed} failed
+                </span>
+              )}
+              <button
+                onClick={() => setDeployResult(null)}
+                className="ml-auto text-text-muted hover:text-text-primary"
+              >
+                &times;
+              </button>
+            </div>
+            {deployResult.errors.length > 0 && (
+              <div className="mt-1 max-h-20 overflow-y-auto text-[10px] text-status-error">
+                {deployResult.errors.slice(0, 10).map((e, i) => (
+                  <div key={i}>{e}</div>
+                ))}
+                {deployResult.errors.length > 10 && (
+                  <div>...and {deployResult.errors.length - 10} more</div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Asset list */}
         {sortedEntries.length === 0 ? (
@@ -102,13 +184,25 @@ export function GlobalAssetsPanel({ config, onChange }: ConfigPanelProps) {
                   <span className="font-mono text-xs font-medium text-accent">
                     {key}
                   </span>
-                  <input
-                    type="text"
-                    value={value}
-                    onChange={(e) => handleValueChange(key, e.target.value)}
-                    placeholder="filename.png (e.g. abc123def456.png)"
-                    className="w-full rounded border border-border-default bg-bg-primary px-2 py-1 font-mono text-[11px] text-text-secondary placeholder:text-text-muted outline-none focus:border-accent/50"
-                  />
+                  <div className="flex items-center gap-1.5">
+                    <span className="min-w-0 flex-1 truncate font-mono text-[11px] text-text-muted">
+                      {value || "No image selected"}
+                    </span>
+                    <button
+                      onClick={() => setPickingFor(key)}
+                      className="shrink-0 rounded border border-border-default px-2 py-0.5 text-[10px] text-text-secondary transition-colors hover:border-accent/50 hover:text-accent"
+                      title="Pick from asset gallery"
+                    >
+                      Gallery
+                    </button>
+                    <button
+                      onClick={() => handlePickFromFile(key)}
+                      className="shrink-0 rounded border border-border-default px-2 py-0.5 text-[10px] text-text-secondary transition-colors hover:border-accent/50 hover:text-accent"
+                      title="Import from file system"
+                    >
+                      File...
+                    </button>
+                  </div>
                 </div>
                 <button
                   onClick={() => handleRemove(key)}
@@ -122,6 +216,15 @@ export function GlobalAssetsPanel({ config, onChange }: ConfigPanelProps) {
           </div>
         )}
       </Section>
+
+      {pickingFor && (
+        <AssetPickerModal
+          onSelect={(fileName) => {
+            handleValueChange(pickingFor, fileName);
+          }}
+          onClose={() => setPickingFor(null)}
+        />
+      )}
     </>
   );
 }

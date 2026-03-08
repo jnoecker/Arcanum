@@ -2,6 +2,7 @@ import { useProjectStore } from "@/stores/projectStore";
 import { Console } from "./Console";
 import { ZoneEditor } from "./zone/ZoneEditor";
 import { ConfigEditor } from "./config/ConfigEditor";
+import { PlayerSpriteManager } from "./PlayerSpriteManager";
 
 export function MainArea() {
   const tabs = useProjectStore((s) => s.tabs);
@@ -28,6 +29,9 @@ export function MainArea() {
     }
     case "config":
       content = <ConfigEditor />;
+      break;
+    case "sprites":
+      content = <PlayerSpriteManager />;
       break;
     default:
       content = null;

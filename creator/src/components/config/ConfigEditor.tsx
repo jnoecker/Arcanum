@@ -26,9 +26,11 @@ import { QuestsPanel } from "./panels/QuestsPanel";
 import { ImagesPanel } from "./panels/ImagesPanel";
 import { GlobalAssetsPanel } from "./panels/GlobalAssetsPanel";
 import { ApiSettingsPanel } from "./panels/ApiSettingsPanel";
+import { WorldPanel } from "./panels/WorldPanel";
 
 const CONFIG_TABS = [
   { id: "server", label: "Server" },
+  { id: "world", label: "World" },
   { id: "stats", label: "Stats" },
   { id: "classes", label: "Classes" },
   { id: "races", label: "Races" },
@@ -139,6 +141,9 @@ export function ConfigEditor() {
         <div className={`relative z-10 mx-auto px-6 py-4 ${activeTab === "equipmentSlots" ? "max-w-5xl" : "max-w-2xl"}`}>
           {activeTab === "server" && (
             <ServerPanel config={config} onChange={handleChange} />
+          )}
+          {activeTab === "world" && (
+            <WorldPanel config={config} onChange={handleChange} />
           )}
           {activeTab === "stats" && (
             <StatsPanel config={config} onChange={handleChange} />

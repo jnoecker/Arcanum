@@ -19,10 +19,10 @@ export interface ServerState {
   lastError?: string;
 }
 
-export type TabKind = "zone" | "config" | "console";
+export type TabKind = "zone" | "config" | "console" | "sprites";
 
 export type ConfigSubTab =
-  | "server" | "stats" | "classes" | "races" | "equipmentSlots" | "abilities"
+  | "server" | "world" | "stats" | "classes" | "races" | "equipmentSlots" | "abilities"
   | "statusEffects" | "combat" | "mobTiers" | "progression"
   | "economy" | "regen" | "crafting" | "group" | "charCreate" | "images"
   | "achievements" | "quests" | "globalAssets"

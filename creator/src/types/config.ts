@@ -274,6 +274,14 @@ export interface RaceDefinitionConfig {
 
 export interface ImagesConfig {
   baseUrl: string;
+  spriteLevelTiers: number[];
+  staffSpriteTier: number;
+}
+
+// ─── World ──────────────────────────────────────────────────────────
+
+export interface WorldConfig {
+  startRoom: string;
 }
 
 // ─── Server ─────────────────────────────────────────────────────────
@@ -287,6 +295,8 @@ export interface ServerConfig {
 
 export interface AppConfig {
   server: ServerConfig;
+  world: WorldConfig;
+  classStartRooms: Record<string, string>;
   stats: {
     definitions: Record<string, StatDefinition>;
     bindings: StatBindings;

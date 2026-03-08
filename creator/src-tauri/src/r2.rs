@@ -431,6 +431,183 @@ pub async fn delete_from_r2(app: AppHandle, file_name: String) -> Result<(), Str
     ).await
 }
 
+/// Deploy player sprites to R2 under their canonical path names.
+/// Each sprite asset with variant_group "player_sprite:{key}" gets uploaded
+/// as "player_sprites/{key}.png" so the game server can find them.
+#[tauri::command]
+pub async fn deploy_sprites_to_r2(app: AppHandle) -> Result<SyncProgress, String> {
+    let s = settings::get_settings(app.clone()).await?;
+    if s.r2_account_id.is_empty()
+        || s.r2_access_key_id.is_empty()
+        || s.r2_secret_access_key.is_empty()
+        || s.r2_bucket.is_empty()
+    {
+        return Err("R2 credentials not configured. Set them in Settings.".to_string());
+    }
+
+    let all_assets = assets::list_assets(app.clone()).await?;
+    let sprites: Vec<&AssetEntry> = all_assets
+        .iter()
+        .filter(|a| a.asset_type == "player_sprite" && a.variant_group.starts_with("player_sprite:"))
+        .collect();
+
+    let base_dir = assets_base_dir(&app)?;
+    let client = reqwest::Client::new();
+
+    let mut progress = SyncProgress {
+        total: sprites.len(),
+        uploaded: 0,
+        skipped: 0,
+        failed: 0,
+        errors: Vec::new(),
+    };
+
+    for asset in &sprites {
+        // Derive canonical R2 path: "player_sprite:human_male_warrior_l1" → "player_sprites/human_male_warrior_l1.png"
+        let sprite_key = asset.variant_group.strip_prefix("player_sprite:").unwrap();
+        let object_key = format!("player_sprites/{sprite_key}.png");
+
+        // Read local file
+        let file_path = match find_asset_file(&base_dir, &asset.file_name) {
+            Some(p) => p,
+            None => {
+                progress.failed += 1;
+                progress
+                    .errors
+                    .push(format!("{object_key}: Local file not found"));
+                continue;
+            }
+        };
+        let body = match tokio::fs::read(&file_path).await {
+            Ok(b) => b,
+            Err(e) => {
+                progress.failed += 1;
+                progress
+                    .errors
+                    .push(format!("{object_key}: Failed to read: {e}"));
+                continue;
+            }
+        };
+
+        // Upload under canonical path
+        match upload_object(
+            &client,
+            &s.r2_account_id,
+            &s.r2_bucket,
+            &s.r2_access_key_id,
+            &s.r2_secret_access_key,
+            &object_key,
+            body,
+            "image/png",
+        )
+        .await
+        {
+            Ok(()) => {
+                progress.uploaded += 1;
+            }
+            Err(e) => {
+                progress.failed += 1;
+                progress.errors.push(format!("{object_key}: {e}"));
+            }
+        }
+    }
+
+    Ok(progress)
+}
+
+/// Deploy global assets to R2 under their canonical path names.
+/// Each entry in the global_assets map (key → hash filename) gets uploaded
+/// as "global_assets/{key}.{ext}" so the game server can find them.
+#[tauri::command]
+pub async fn deploy_global_assets_to_r2(
+    app: AppHandle,
+    global_assets: std::collections::HashMap<String, String>,
+) -> Result<SyncProgress, String> {
+    let s = settings::get_settings(app.clone()).await?;
+    if s.r2_account_id.is_empty()
+        || s.r2_access_key_id.is_empty()
+        || s.r2_secret_access_key.is_empty()
+        || s.r2_bucket.is_empty()
+    {
+        return Err("R2 credentials not configured. Set them in Settings.".to_string());
+    }
+
+    // Filter out entries with empty filenames
+    let entries: Vec<(&String, &String)> = global_assets
+        .iter()
+        .filter(|(_, v)| !v.is_empty())
+        .collect();
+
+    let base_dir = assets_base_dir(&app)?;
+    let client = reqwest::Client::new();
+
+    let mut progress = SyncProgress {
+        total: entries.len(),
+        uploaded: 0,
+        skipped: 0,
+        failed: 0,
+        errors: Vec::new(),
+    };
+
+    for (key, file_name) in &entries {
+        // Determine extension from the hash filename, default to .png
+        let ext = file_name
+            .rsplit('.')
+            .next()
+            .filter(|e| !e.is_empty() && e.len() <= 4)
+            .unwrap_or("png");
+        let object_key = format!("global_assets/{key}.{ext}");
+
+        // Read local file
+        let file_path = match find_asset_file(&base_dir, file_name) {
+            Some(p) => p,
+            None => {
+                progress.failed += 1;
+                progress
+                    .errors
+                    .push(format!("{object_key}: Local file not found"));
+                continue;
+            }
+        };
+        let body = match tokio::fs::read(&file_path).await {
+            Ok(b) => b,
+            Err(e) => {
+                progress.failed += 1;
+                progress
+                    .errors
+                    .push(format!("{object_key}: Failed to read: {e}"));
+                continue;
+            }
+        };
+
+        let content_type = detect_content_type(file_name);
+
+        // Upload under canonical path
+        match upload_object(
+            &client,
+            &s.r2_account_id,
+            &s.r2_bucket,
+            &s.r2_access_key_id,
+            &s.r2_secret_access_key,
+            &object_key,
+            body,
+            content_type,
+        )
+        .await
+        {
+            Ok(()) => {
+                progress.uploaded += 1;
+            }
+            Err(e) => {
+                progress.failed += 1;
+                progress.errors.push(format!("{object_key}: {e}"));
+            }
+        }
+    }
+
+    Ok(progress)
+}
+
 /// Resolve an asset file_name to its public R2 URL via custom domain.
 #[tauri::command]
 pub async fn resolve_asset_url(app: AppHandle, file_name: String) -> Result<String, String> {

@@ -5,6 +5,8 @@ import type { AppConfig } from "@/types/config";
 /** Minimal valid config for tests to spread over */
 const BASE_CONFIG: AppConfig = {
   server: { telnetPort: 4000, webPort: 8080 },
+  world: { startRoom: "" },
+  classStartRooms: {},
   stats: {
     definitions: {
       STR: { id: "STR", displayName: "Strength", abbreviation: "STR", description: "", baseStat: 10 },
@@ -80,7 +82,7 @@ const BASE_CONFIG: AppConfig = {
   guildRanks: {},
   mobActionDelay: { minActionDelayMillis: 8000, maxActionDelayMillis: 20000 },
   characterCreation: { startingGold: 0 },
-  images: { baseUrl: "/images/" },
+  images: { baseUrl: "/images/", spriteLevelTiers: [50, 40, 30, 20, 10, 1], staffSpriteTier: 60 },
   globalAssets: {},
   rawSections: {},
 };

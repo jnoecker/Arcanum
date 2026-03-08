@@ -3,6 +3,7 @@ use sha2::{Digest, Sha256};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use tauri::Manager;
+use tokio::process::Command;
 
 #[derive(Serialize)]
 pub struct ValidationResult {
@@ -340,4 +341,98 @@ pub fn migrate_images_to_r2(
     }
 
     Ok(report)
+}
+
+// ─── New Project Commands ────────────────────────────────────────────
+
+/// Check if git is installed and return the version string.
+#[tauri::command]
+pub async fn check_git_installed() -> Result<String, String> {
+    let output = Command::new("git")
+        .arg("--version")
+        .output()
+        .await
+        .map_err(|e| format!("Git is not installed or not in PATH: {e}"))?;
+
+    if !output.status.success() {
+        return Err("Git command failed".to_string());
+    }
+
+    String::from_utf8(output.stdout)
+        .map(|s| s.trim().to_string())
+        .map_err(|e| format!("Failed to parse git version: {e}"))
+}
+
+/// Clone the AmbonMUD repository into `{target_dir}/{project_name}`.
+#[tauri::command]
+pub async fn clone_mud_project(
+    target_dir: String,
+    project_name: String,
+) -> Result<String, String> {
+    let target = PathBuf::from(&target_dir).join(&project_name);
+    if target.exists() {
+        return Err(format!(
+            "Directory already exists: {}",
+            target.to_string_lossy()
+        ));
+    }
+
+    let output = Command::new("git")
+        .args([
+            "clone",
+            "--depth",
+            "1",
+            "https://github.com/jnoecker/AmbonMUD.git",
+            &project_name,
+        ])
+        .current_dir(&target_dir)
+        .output()
+        .await
+        .map_err(|e| format!("Failed to run git clone: {e}"))?;
+
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        return Err(format!("Git clone failed: {stderr}"));
+    }
+
+    Ok(target.to_string_lossy().to_string())
+}
+
+/// Delete all zone YAML files from the world directory.
+/// Returns the count of deleted files.
+#[tauri::command]
+pub async fn clear_world_zones(mud_dir: String) -> Result<u32, String> {
+    let world_dir = PathBuf::from(&mud_dir).join("src/main/resources/world");
+    if !world_dir.exists() {
+        return Ok(0);
+    }
+
+    let mut count = 0u32;
+    let entries = std::fs::read_dir(&world_dir)
+        .map_err(|e| format!("Failed to read world directory: {e}"))?;
+
+    for entry in entries.flatten() {
+        let path = entry.path();
+        let name = path
+            .file_name()
+            .and_then(|n| n.to_str())
+            .unwrap_or_default();
+        if name.ends_with(".yaml") || name.ends_with(".yml") {
+            if std::fs::remove_file(&path).is_ok() {
+                count += 1;
+            }
+        }
+    }
+
+    Ok(count)
+}
+
+/// Delete a single zone file.
+#[tauri::command]
+pub async fn delete_zone_file(file_path: String) -> Result<(), String> {
+    let path = PathBuf::from(&file_path);
+    if !path.exists() {
+        return Err(format!("File not found: {file_path}"));
+    }
+    std::fs::remove_file(&path).map_err(|e| format!("Failed to delete {file_path}: {e}"))
 }

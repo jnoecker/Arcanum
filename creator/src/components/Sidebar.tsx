@@ -1,4 +1,5 @@
 import { useRef, useState, useEffect, useCallback } from "react";
+import { invoke } from "@tauri-apps/api/core";
 import { useZoneStore, type ZoneState } from "@/stores/zoneStore";
 import { useConfigStore } from "@/stores/configStore";
 import { useProjectStore } from "@/stores/projectStore";
@@ -6,6 +7,7 @@ import type { Tab, ConfigSubTab } from "@/types/project";
 import type { WorldFile } from "@/types/world";
 import { useGlobalSearch, ENTITY_TYPE_LABELS } from "@/lib/useGlobalSearch";
 import { NewZoneDialog } from "./NewZoneDialog";
+import { ConfirmDialog } from "./ConfirmDialog";
 import panelHeader from "@/assets/panel-header.jpg";
 import sidebarBg from "@/assets/sidebar-bg.png";
 import {
@@ -82,10 +84,12 @@ function ZoneTree({
   zoneId,
   zoneState,
   isActive,
+  onDelete,
 }: {
   zoneId: string;
   zoneState: ZoneState;
   isActive: boolean;
+  onDelete: (zoneId: string) => void;
 }) {
   const openTab = useProjectStore((s) => s.openTab);
   const navigateTo = useProjectStore((s) => s.navigateTo);
@@ -130,7 +134,7 @@ function ZoneTree({
   };
 
   return (
-    <li>
+    <li className="group/zone">
       <div className="flex items-center">
         <button
           onClick={() => setExpanded((v) => !v)}
@@ -148,6 +152,13 @@ function ZoneTree({
         >
           <span className="truncate">{zoneId}</span>
           {zoneState.dirty && <span className="ml-1 text-accent">*</span>}
+        </button>
+        <button
+          onClick={() => onDelete(zoneId)}
+          className="ml-0.5 hidden rounded px-1 text-[10px] text-text-muted transition-colors hover:bg-status-danger/10 hover:text-status-danger group-hover/zone:block"
+          title="Delete zone"
+        >
+          &times;
         </button>
       </div>
 
@@ -213,10 +224,13 @@ export function Sidebar() {
   const setConfigSubTab = useProjectStore((s) => s.setConfigSubTab);
   const activeTabId = useProjectStore((s) => s.activeTabId);
 
+  const closeTab = useProjectStore((s) => s.closeTab);
+  const removeZone = useZoneStore((s) => s.removeZone);
   const { query, setQuery, clearQuery, grouped, isSearching } =
     useGlobalSearch();
   const searchRef = useRef<HTMLInputElement>(null);
   const [showNewZone, setShowNewZone] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const hasProject = !!useProjectStore((s) => s.project);
 
   // Ctrl+K to focus search
@@ -240,6 +254,19 @@ export function Sidebar() {
     },
     [clearQuery],
   );
+
+  const handleDeleteZone = useCallback(async (zoneId: string) => {
+    const zoneState = zones.get(zoneId);
+    if (!zoneState) return;
+    try {
+      await invoke("delete_zone_file", { filePath: zoneState.filePath });
+    } catch (err) {
+      console.error("Failed to delete zone file:", err);
+    }
+    closeTab(`zone:${zoneId}`);
+    removeZone(zoneId);
+    setDeleteTarget(null);
+  }, [zones, closeTab, removeZone]);
 
   const sortedZones = [...zones.entries()].sort(([a], [b]) =>
     a.localeCompare(b),
@@ -347,6 +374,7 @@ export function Sidebar() {
                   zoneId={zoneId}
                   zoneState={zoneState}
                   isActive={activeTabId === `zone:${zoneId}`}
+                  onDelete={(id) => setDeleteTarget(id)}
                 />
               ))}
             </ul>
@@ -371,6 +399,7 @@ export function Sidebar() {
             {(
               [
                 { label: "Game Config", subTab: "server" as ConfigSubTab },
+                { label: "World", subTab: "world" as ConfigSubTab },
                 { label: "Classes", subTab: "classes" as ConfigSubTab },
                 { label: "Races", subTab: "races" as ConfigSubTab },
                 { label: "Equipment", subTab: "equipmentSlots" as ConfigSubTab },
@@ -401,8 +430,20 @@ export function Sidebar() {
         )}
       </div>
 
-      {/* Console shortcut at bottom */}
+      {/* Bottom shortcuts */}
       <div className="relative z-10 border-t border-border-default px-3 py-2">
+        <button
+          onClick={() =>
+            openTab({ id: "sprites", kind: "sprites", label: "Sprites" })
+          }
+          className={`w-full rounded px-2 py-1 text-left text-sm transition-colors ${
+            activeTabId === "sprites"
+              ? "bg-bg-hover text-text-primary"
+              : "text-text-secondary hover:bg-bg-hover hover:text-text-primary"
+          }`}
+        >
+          Player Sprites
+        </button>
         <button
           onClick={() =>
             openTab({ id: "console", kind: "console", label: "Console" })
@@ -418,6 +459,16 @@ export function Sidebar() {
       </div>
 
       {showNewZone && <NewZoneDialog onClose={() => setShowNewZone(false)} />}
+      {deleteTarget && (
+        <ConfirmDialog
+          title="Delete Zone"
+          message={`Delete zone "${deleteTarget}"? This will remove the YAML file from disk. Any cross-zone references to this zone will break.`}
+          confirmLabel="Delete"
+          destructive
+          onConfirm={() => handleDeleteZone(deleteTarget)}
+          onCancel={() => setDeleteTarget(null)}
+        />
+      )}
     </div>
   );
 }

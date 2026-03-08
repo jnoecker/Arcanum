@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import type { WorldFile, GatheringNodeFile, GatheringYieldFile } from "@/types/world";
 import { updateGatheringNode, deleteGatheringNode } from "@/lib/zoneEdits";
 import { useEntityEditor } from "@/lib/useEntityEditor";
@@ -11,6 +12,7 @@ import {
   IconButton,
 } from "@/components/ui/FormWidgets";
 import { DeleteEntityButton } from "./EditorShared";
+import { useConfigStore } from "@/stores/configStore";
 
 interface GatheringNodeEditorProps {
   nodeId: string;
@@ -19,9 +21,9 @@ interface GatheringNodeEditorProps {
   onDelete: () => void;
 }
 
-const GATHERING_SKILLS = [
-  { value: "MINING", label: "Mining" },
-  { value: "HERBALISM", label: "Herbalism" },
+const FALLBACK_GATHERING_SKILLS = [
+  { value: "mining", label: "Mining" },
+  { value: "herbalism", label: "Herbalism" },
 ];
 
 export function GatheringNodeEditor({
@@ -40,6 +42,17 @@ export function GatheringNodeEditor({
       onWorldChange,
       onDelete,
     );
+
+  const craftingSkills = useConfigStore((s) => s.config?.craftingSkills);
+  const gatheringSkillOptions = useMemo(() => {
+    if (craftingSkills && Object.keys(craftingSkills).length > 0) {
+      return Object.entries(craftingSkills)
+        .filter(([, def]) => def.type === "gathering")
+        .map(([id, def]) => ({ value: id, label: def.displayName }));
+    }
+    return FALLBACK_GATHERING_SKILLS;
+  }, [craftingSkills]);
+
   if (!node) return null;
 
   // ─── Yield helpers ────────────────────────────────────────────
@@ -74,7 +87,7 @@ export function GatheringNodeEditor({
           <FieldRow label="Skill">
             <SelectInput
               value={node.skill}
-              options={GATHERING_SKILLS}
+              options={gatheringSkillOptions}
               onCommit={(v) => patch({ skill: v })}
             />
           </FieldRow>

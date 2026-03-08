@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import type { WorldFile, RecipeFile, RecipeMaterialFile } from "@/types/world";
 import { updateRecipe, deleteRecipe } from "@/lib/zoneEdits";
 import { useEntityEditor } from "@/lib/useEntityEditor";
@@ -12,6 +13,7 @@ import {
 } from "@/components/ui/FormWidgets";
 import { DeleteEntityButton, MediaSection } from "./EditorShared";
 import { getPreamble, type ArtStyle } from "@/lib/arcanumPrompts";
+import { useConfigStore } from "@/stores/configStore";
 
 interface RecipeEditorProps {
   recipeId: string;
@@ -21,15 +23,15 @@ interface RecipeEditorProps {
   zoneId?: string;
 }
 
-const CRAFTING_SKILLS = [
-  { value: "SMITHING", label: "Smithing" },
-  { value: "ALCHEMY", label: "Alchemy" },
+const FALLBACK_CRAFTING_SKILLS = [
+  { value: "smithing", label: "Smithing" },
+  { value: "alchemy", label: "Alchemy" },
 ];
 
-const STATION_OPTIONS = [
-  { value: "FORGE", label: "Forge" },
-  { value: "ALCHEMY_TABLE", label: "Alchemy Table" },
-  { value: "WORKBENCH", label: "Workbench" },
+const FALLBACK_STATION_OPTIONS = [
+  { value: "forge", label: "Forge" },
+  { value: "alchemy_table", label: "Alchemy Table" },
+  { value: "workbench", label: "Workbench" },
 ];
 
 export function RecipeEditor({
@@ -48,6 +50,24 @@ export function RecipeEditor({
     onWorldChange,
     onDelete,
   );
+  const craftingSkills = useConfigStore((s) => s.config?.craftingSkills);
+  const craftingSkillOptions = useMemo(() => {
+    if (craftingSkills && Object.keys(craftingSkills).length > 0) {
+      return Object.entries(craftingSkills)
+        .map(([id, def]) => ({ value: id, label: def.displayName }));
+    }
+    return FALLBACK_CRAFTING_SKILLS;
+  }, [craftingSkills]);
+
+  const stationTypes = useConfigStore((s) => s.config?.craftingStationTypes);
+  const stationOptions = useMemo(() => {
+    if (stationTypes && Object.keys(stationTypes).length > 0) {
+      return Object.entries(stationTypes)
+        .map(([id, def]) => ({ value: id, label: def.displayName }));
+    }
+    return FALLBACK_STATION_OPTIONS;
+  }, [stationTypes]);
+
   if (!recipe) return null;
 
   // ─── Material helpers ─────────────────────────────────────────
@@ -75,7 +95,7 @@ export function RecipeEditor({
           <FieldRow label="Skill">
             <SelectInput
               value={recipe.skill}
-              options={CRAFTING_SKILLS}
+              options={craftingSkillOptions}
               onCommit={(v) => patch({ skill: v })}
             />
           </FieldRow>
@@ -98,7 +118,7 @@ export function RecipeEditor({
           <FieldRow label="Station">
             <SelectInput
               value={recipe.station ?? ""}
-              options={STATION_OPTIONS}
+              options={stationOptions}
               onCommit={(v) => patch({ station: v || undefined })}
               allowEmpty
               placeholder="— none —"

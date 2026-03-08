@@ -3,6 +3,7 @@ import { useConfigStore } from "@/stores/configStore";
 import { useProjectStore } from "@/stores/projectStore";
 import { saveConfig } from "@/lib/saveConfig";
 import type { AppConfig } from "@/types/config";
+import configBg from "@/assets/config-bg.png";
 import { ServerPanel } from "./panels/ServerPanel";
 import { CombatPanel } from "./panels/CombatPanel";
 import { MobTiersPanel } from "./panels/MobTiersPanel";
@@ -120,8 +121,18 @@ export function ConfigEditor() {
       </div>
 
       {/* Panel content */}
-      <div className="min-h-0 flex-1 overflow-y-auto">
-        <div className={`mx-auto px-6 py-4 ${activeTab === "equipmentSlots" ? "max-w-5xl" : "max-w-2xl"}`}>
+      <div className="relative min-h-0 flex-1 overflow-y-auto">
+        {/* Background image — sticky so it stays visible while scrolling */}
+        <div className="pointer-events-none sticky top-0 z-0 -mb-[100vh] h-[100vh] w-full overflow-hidden">
+          <img
+            src={configBg}
+            alt=""
+            className="h-full w-full object-cover opacity-[0.14]"
+            style={{ objectPosition: "center 40%" }}
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-bg-primary via-bg-primary/60 to-transparent" />
+        </div>
+        <div className={`relative z-10 mx-auto px-6 py-4 ${activeTab === "equipmentSlots" ? "max-w-5xl" : "max-w-2xl"}`}>
           {activeTab === "server" && (
             <ServerPanel config={config} onChange={handleChange} />
           )}

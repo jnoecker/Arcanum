@@ -1,7 +1,7 @@
 import { useCallback } from "react";
 import type { ConfigPanelProps, AppConfig } from "./types";
 import type { GuildRankDefinition } from "@/types/config";
-import { Section, FieldRow, NumberInput, TextInput } from "@/components/ui/FormWidgets";
+import { Section, FieldRow, NumberInput, TextInput, SelectInput } from "@/components/ui/FormWidgets";
 import { RegistryPanel } from "./RegistryPanel";
 
 const GUILD_PERMISSIONS = [
@@ -49,6 +49,31 @@ export function GroupPanel({ config, onChange }: ConfigPanelProps) {
               onCommit={(v) => patch({ xpBonusPerMember: v ?? 0.1 })}
               min={0}
               step={0.01}
+            />
+          </FieldRow>
+        </div>
+      </Section>
+
+      <Section title="Guild Settings">
+        <div className="flex flex-col gap-1.5">
+          <FieldRow label="Founder Rank">
+            <SelectInput
+              value={config.guild.founderRank}
+              onCommit={(v) => onChange({ guild: { ...config.guild, founderRank: v } })}
+              options={Object.keys(config.guildRanks).map((id) => ({
+                value: id,
+                label: config.guildRanks[id]!.displayName,
+              }))}
+            />
+          </FieldRow>
+          <FieldRow label="Default Rank">
+            <SelectInput
+              value={config.guild.defaultRank}
+              onCommit={(v) => onChange({ guild: { ...config.guild, defaultRank: v } })}
+              options={Object.keys(config.guildRanks).map((id) => ({
+                value: id,
+                label: config.guildRanks[id]!.displayName,
+              }))}
             />
           </FieldRow>
         </div>

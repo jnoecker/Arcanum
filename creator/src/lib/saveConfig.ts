@@ -71,6 +71,27 @@ export async function saveConfig(mudDir: string): Promise<void> {
     setIn(engine, ["crafting", "gatherCooldownMs"], config.crafting.gatherCooldownMs);
     setIn(engine, ["crafting", "stationBonusQuantity"], config.crafting.stationBonusQuantity);
 
+    // Navigation
+    setIn(engine, ["navigation", "recall", "cooldownMs"], config.navigation.recall.cooldownMs);
+    const rm = config.navigation.recall.messages;
+    for (const [key, val] of Object.entries(rm)) {
+      setIn(engine, ["navigation", "recall", "messages", key], val);
+    }
+
+    // Commands
+    if (Object.keys(config.commands).length > 0) {
+      saveMapSection(engine, ["commands", "entries"], config.commands,
+        (cmd) => {
+          const obj: Record<string, unknown> = {
+            usage: cmd.usage,
+            category: cmd.category,
+            staff: cmd.staff,
+          };
+          return obj;
+        },
+      );
+    }
+
     // Group
     setIn(engine, ["group", "maxSize"], config.group.maxSize);
     setIn(engine, ["group", "inviteTimeoutMs"], config.group.inviteTimeoutMs);
@@ -156,6 +177,10 @@ export async function saveConfig(mudDir: string): Promise<void> {
           displayName: race.displayName,
         };
         if (race.description) obj.description = race.description;
+        if (race.backstory) obj.backstory = race.backstory;
+        if (race.traits && race.traits.length > 0) obj.traits = race.traits;
+        if (race.abilities && race.abilities.length > 0) obj.abilities = race.abilities;
+        if (race.image) obj.image = race.image;
         if (race.statMods && Object.keys(race.statMods).length > 0)
           obj.statMods = race.statMods;
         return obj;
@@ -204,10 +229,12 @@ export async function saveConfig(mudDir: string): Promise<void> {
     saveMapSection(engine, ["statusEffects", "effectTypes"], config.statusEffectTypes,
       (t) => {
         const obj: Record<string, unknown> = { displayName: t.displayName };
-        if (t.tickBehavior && t.tickBehavior !== "none") obj.tickBehavior = t.tickBehavior;
+        if (t.ticksDamage) obj.ticksDamage = true;
+        if (t.ticksHealing) obj.ticksHealing = true;
+        if (t.modifiesStats) obj.modifiesStats = true;
+        if (t.absorbsDamage) obj.absorbsDamage = true;
         if (t.preventsActions) obj.preventsActions = true;
         if (t.preventsMovement) obj.preventsMovement = true;
-        if (t.absorbsDamage) obj.absorbsDamage = true;
         return obj;
       },
     );
@@ -231,6 +258,10 @@ export async function saveConfig(mudDir: string): Promise<void> {
     saveMapSection(engine, ["crafting", "stationTypes"], config.craftingStationTypes,
       (s) => ({ displayName: s.displayName }),
     );
+
+    // Guild settings
+    setIn(engine, ["guild", "founderRank"], config.guild.founderRank);
+    setIn(engine, ["guild", "defaultRank"], config.guild.defaultRank);
 
     // Guild Ranks
     saveMapSection(engine, ["guild", "ranks"], config.guildRanks,

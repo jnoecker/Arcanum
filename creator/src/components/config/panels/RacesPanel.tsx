@@ -1,10 +1,13 @@
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import type { ConfigPanelProps } from "./types";
 import type { RaceDefinitionConfig } from "@/types/config";
 import type { StatMap } from "@/types/world";
 import { useStatMods } from "@/lib/useStatMods";
-import { FieldRow, TextInput } from "@/components/ui/FormWidgets";
+import { FieldRow, TextInput, IconButton } from "@/components/ui/FormWidgets";
 import { RegistryPanel } from "./RegistryPanel";
+import { EntityArtGenerator } from "@/components/ui/EntityArtGenerator";
+import { composePrompt, type ArtStyle } from "@/lib/arcanumPrompts";
+import { useAssetStore } from "@/stores/assetStore";
 
 export function RacesPanel({ config, onChange }: ConfigPanelProps) {
   const statDefs = config.stats.definitions;
@@ -33,34 +36,235 @@ export function RacesPanel({ config, onChange }: ConfigPanelProps) {
       defaultItem={(raw) => ({ displayName: raw })}
       renderSummary={(_id, race) => {
         const mods = race.statMods ?? {};
-        return Object.entries(mods)
+        const parts: string[] = [];
+        const modStr = Object.entries(mods)
           .map(([k, v]) => `${k}${v >= 0 ? "+" : ""}${v}`)
           .join(" ");
+        if (modStr) parts.push(modStr);
+        if (race.traits?.length) parts.push(`${race.traits.length} traits`);
+        if (race.image) parts.push("art");
+        return parts.join(" | ");
       }}
-      renderDetail={(_id, race, patch) => (
-        <>
-          <FieldRow label="Display Name">
-            <TextInput
-              value={race.displayName}
-              onCommit={(v) => patch({ displayName: v })}
-            />
-          </FieldRow>
-          <FieldRow label="Description">
-            <TextInput
-              value={race.description ?? ""}
-              onCommit={(v) => patch({ description: v || undefined })}
-              placeholder="optional"
-            />
-          </FieldRow>
-          <RaceStatMods
-            statMods={race.statMods}
-            statIds={statIds}
-            statDefs={statDefs}
-            onChange={(mods) => patch({ statMods: mods })}
-          />
-        </>
+      renderDetail={(id, race, patch) => (
+        <RaceDetail
+          id={id}
+          race={race}
+          patch={patch}
+          statIds={statIds}
+          statDefs={statDefs}
+        />
       )}
     />
+  );
+}
+
+function RaceDetail({
+  id,
+  race,
+  patch,
+  statIds,
+  statDefs,
+}: {
+  id: string;
+  race: RaceDefinitionConfig;
+  patch: (p: Partial<RaceDefinitionConfig>) => void;
+  statIds: string[];
+  statDefs: Record<string, { displayName: string; baseStat: number }>;
+}) {
+  const assetsDir = useAssetStore((s) => s.assetsDir);
+
+  // Build the full image path for display
+  const imagePath = race.image && assetsDir
+    ? `${assetsDir}\\images\\${race.image}`
+    : undefined;
+
+  const buildContext = () => {
+    const parts = [`Race: ${race.displayName}`];
+    if (race.description) parts.push(`Description: ${race.description}`);
+    if (race.backstory) parts.push(`Backstory: ${race.backstory}`);
+    if (race.traits?.length) parts.push(`Traits: ${race.traits.join(", ")}`);
+    if (race.statMods) {
+      const mods = Object.entries(race.statMods)
+        .map(([k, v]) => `${k}${v >= 0 ? "+" : ""}${v}`)
+        .join(", ");
+      if (mods) parts.push(`Stat modifiers: ${mods}`);
+    }
+    return parts.join("\n");
+  };
+
+  return (
+    <>
+      <FieldRow label="Display Name">
+        <TextInput
+          value={race.displayName}
+          onCommit={(v) => patch({ displayName: v })}
+        />
+      </FieldRow>
+      <FieldRow label="Description">
+        <TextInput
+          value={race.description ?? ""}
+          onCommit={(v) => patch({ description: v || undefined })}
+          placeholder="Short tagline"
+        />
+      </FieldRow>
+
+      {/* Backstory */}
+      <RaceBackstory
+        value={race.backstory ?? ""}
+        onChange={(v) => patch({ backstory: v || undefined })}
+      />
+
+      {/* Traits */}
+      <StringListEditor
+        label="Traits"
+        items={race.traits ?? []}
+        onChange={(traits) => patch({ traits: traits.length > 0 ? traits : undefined })}
+        placeholder="e.g. Darkvision"
+      />
+
+      {/* Abilities */}
+      <StringListEditor
+        label="Abilities"
+        items={race.abilities ?? []}
+        onChange={(abilities) => patch({ abilities: abilities.length > 0 ? abilities : undefined })}
+        placeholder="e.g. STONE_FORM"
+      />
+
+      {/* Stat Mods */}
+      <RaceStatMods
+        statMods={race.statMods}
+        statIds={statIds}
+        statDefs={statDefs}
+        onChange={(mods) => patch({ statMods: mods })}
+      />
+
+      {/* Concept Art */}
+      <div className="mt-1 border-t border-border-muted pt-1.5">
+        <h5 className="mb-1 text-[10px] font-display uppercase tracking-widest text-text-muted">
+          Concept Art
+        </h5>
+        <EntityArtGenerator
+          getPrompt={(style: ArtStyle) =>
+            composePrompt("race_portrait", style, `Race: ${race.displayName}`)
+          }
+          entityContext={buildContext()}
+          currentImage={imagePath}
+          onAccept={(filePath) => {
+            const fileName = filePath.split(/[\\/]/).pop() ?? "";
+            patch({ image: fileName });
+          }}
+          assetType="race_portrait"
+          context={{ zone: "", entity_type: "race", entity_id: id }}
+        />
+      </div>
+    </>
+  );
+}
+
+/** Multi-line backstory editor */
+function RaceBackstory({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  const [draft, setDraft] = useState(value);
+  const [focused, setFocused] = useState(false);
+
+  if (!focused && draft !== value) {
+    setDraft(value);
+  }
+
+  return (
+    <div className="mt-1">
+      <label className="text-xs text-text-muted">Backstory</label>
+      <textarea
+        rows={3}
+        className="mt-0.5 w-full resize-y rounded border border-border-default bg-bg-primary px-1.5 py-1 text-xs leading-relaxed text-text-primary outline-none focus:border-accent/50"
+        placeholder="Lore, history, and cultural background..."
+        value={draft}
+        onChange={(e) => setDraft(e.target.value)}
+        onFocus={() => setFocused(true)}
+        onBlur={() => {
+          setFocused(false);
+          if (draft !== value) onChange(draft);
+        }}
+      />
+    </div>
+  );
+}
+
+/** Editable list of strings (for traits, abilities) */
+function StringListEditor({
+  label,
+  items,
+  onChange,
+  placeholder,
+}: {
+  label: string;
+  items: string[];
+  onChange: (items: string[]) => void;
+  placeholder?: string;
+}) {
+  const [newValue, setNewValue] = useState("");
+
+  const addItem = () => {
+    const v = newValue.trim();
+    if (!v || items.includes(v)) return;
+    onChange([...items, v]);
+    setNewValue("");
+  };
+
+  const removeItem = (index: number) => {
+    onChange(items.filter((_, i) => i !== index));
+  };
+
+  const updateItem = (index: number, value: string) => {
+    const next = [...items];
+    next[index] = value;
+    onChange(next);
+  };
+
+  return (
+    <div className="mt-1 border-t border-border-muted pt-1.5">
+      <div className="mb-1 flex items-center gap-2">
+        <h5 className="text-[10px] font-display uppercase tracking-widest text-text-muted">
+          {label}
+        </h5>
+        <span className="text-[10px] text-text-muted">({items.length})</span>
+      </div>
+      {items.length > 0 && (
+        <div className="mb-1 flex flex-col gap-0.5">
+          {items.map((item, i) => (
+            <div key={i} className="flex items-center gap-1">
+              <input
+                className="min-w-0 flex-1 rounded border border-border-default bg-bg-primary px-1.5 py-0.5 text-xs text-text-primary outline-none focus:border-accent/50"
+                value={item}
+                onChange={(e) => updateItem(i, e.target.value)}
+              />
+              <IconButton onClick={() => removeItem(i)} title="Remove" danger>
+                x
+              </IconButton>
+            </div>
+          ))}
+        </div>
+      )}
+      <div className="flex items-center gap-1">
+        <input
+          className="min-w-0 flex-1 rounded border border-border-default bg-bg-primary px-1.5 py-0.5 text-xs text-text-primary outline-none focus:border-accent/50"
+          placeholder={placeholder}
+          value={newValue}
+          onChange={(e) => setNewValue(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") addItem();
+          }}
+        />
+        <IconButton onClick={addItem} title={`Add ${label.toLowerCase()}`}>
+          +
+        </IconButton>
+      </div>
+    </div>
   );
 }
 

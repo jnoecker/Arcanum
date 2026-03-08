@@ -72,6 +72,8 @@ export async function loadAppConfig(
       economy: parseSimpleSection(engine.economy, { buyMultiplier: 1.0, sellMultiplier: 0.5 }),
       regen: parseRegenConfig(engine.regen),
       crafting: parseCraftingConfig(engine.crafting),
+      navigation: parseNavigationConfig(engine.navigation),
+      commands: parseMapSection(engine.commands, "entries"),
       group: parseSimpleSection(engine.group, { maxSize: 5, inviteTimeoutMs: 60000, xpBonusPerMember: 0.1 }),
       classes: parseMapSection(engine.classes, "definitions"),
       races: parseMapSection(engine.races, "definitions"),
@@ -87,6 +89,7 @@ export async function loadAppConfig(
       abilityTargetTypes: parseMapSection(engine.abilities, "targetTypes"),
       craftingSkills: parseMapSection(engine.crafting, "skills"),
       craftingStationTypes: parseMapSection(engine.crafting, "stationTypes"),
+      guild: parseGuildConfig(engine.guild),
       guildRanks: parseMapSection(engine.guild, "ranks"),
       images: parseImagesConfig(root.images),
       globalAssets: parseGlobalAssets(root.globalAssets),
@@ -316,7 +319,8 @@ function collectRawSections(
   ]);
   const knownEngine = new Set([
     "stats", "abilities", "statusEffects", "combat", "mob",
-    "regen", "economy", "crafting", "group", "guild", "classes",
+    "regen", "economy", "crafting", "navigation", "commands",
+    "group", "guild", "classes",
     "races", "characterCreation", "equipment", "genders",
     "achievementCategories", "achievementCriterionTypes",
     "questObjectiveTypes", "questCompletionTypes",
@@ -337,6 +341,34 @@ function collectRawSections(
   }
 
   return raw;
+}
+
+function parseNavigationConfig(raw: unknown): AppConfig["navigation"] {
+  const s = (raw ?? {}) as Record<string, unknown>;
+  const recall = (s.recall ?? {}) as Record<string, unknown>;
+  const msgs = (recall.messages ?? {}) as Record<string, unknown>;
+  return {
+    recall: {
+      cooldownMs: asNumber(recall.cooldownMs, 300000),
+      messages: {
+        combatBlocked: asString(msgs.combatBlocked, "You are fighting for your life..."),
+        cooldownRemaining: asString(msgs.cooldownRemaining, "You need to rest... ({seconds} seconds remaining)"),
+        castBegin: asString(msgs.castBegin, "You close your eyes and whisper a prayer..."),
+        unreachable: asString(msgs.unreachable, "Your recall point is unreachable."),
+        departNotice: asString(msgs.departNotice, "vanishes in a flash of light."),
+        arriveNotice: asString(msgs.arriveNotice, "appears in a flash of light."),
+        arrival: asString(msgs.arrival, "You feel a familiar warmth..."),
+      },
+    },
+  };
+}
+
+function parseGuildConfig(raw: unknown): AppConfig["guild"] {
+  const s = (raw ?? {}) as Record<string, unknown>;
+  return {
+    founderRank: asString(s.founderRank, "leader"),
+    defaultRank: asString(s.defaultRank, "member"),
+  };
 }
 
 // ─── Type coercion helpers ──────────────────────────────────────────

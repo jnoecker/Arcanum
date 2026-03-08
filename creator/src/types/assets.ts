@@ -48,7 +48,8 @@ export type AssetType =
   | "room"
   | "mob"
   | "item"
-  | "player_sprite";
+  | "player_sprite"
+  | "race_portrait";
 
 /** Mirrors the Rust Settings struct */
 export interface Settings {
@@ -120,6 +121,7 @@ export const ENTITY_DIMENSIONS: Record<string, { width: number; height: number; 
   ability: { width: 256, height: 256, label: "256×256 (Icon)" },
   shop: { width: 1920, height: 1080, label: "1920×1080 (Landscape)" },
   player_sprite: { width: 512, height: 512, label: "512×512 (Portrait)" },
+  race_portrait: { width: 512, height: 768, label: "512×768 (Portrait)" },
 };
 
 /** Common dimension presets for override dropdown */

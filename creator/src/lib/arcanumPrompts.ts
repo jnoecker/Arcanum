@@ -125,6 +125,13 @@ export const ASSET_TEMPLATES: Record<AssetType, { label: string; templates: Reco
       gentle_magic: `A fantasy character portrait in a gentle enchanted setting — the character stands in a natural adventuring pose, rendered with faithful anatomy and detailed equipment appropriate to their class and level, soft ambient light in lavender and pale blue creates a dreamlike atmosphere, the character's race and gender are clearly depicted with warm approachable features, equipment has a handcrafted quality with subtle magical glow, floating motes of light and gentle atmospheric haze surround the figure, small organic details like moss or tiny flowers at their feet, centered square portrait composition, painterly, luminous, dreamlike, characterful`,
     },
   },
+  race_portrait: {
+    label: "Race Portrait",
+    templates: {
+      arcanum: `A full-body concept art portrait of a fantasy race representative standing in a dramatic heroic pose against deep cosmic indigo void, the figure rendered with faithful anatomy showcasing the race's distinctive physical features — build, skin tone, ears, height, musculature — wearing culturally distinct armor or garments that reflect their heritage, baroque aurum-gold energy scrollwork frames the figure as an ornate vertical portrait border, warm golden light illuminates the subject from a central point creating soft bloom on key features, cool blue-violet atmospheric fill provides depth, vertical portrait composition with the full figure visible head to toe, painterly, luminous, extremely detailed, archetypal and iconic`,
+      gentle_magic: `A full-body concept art portrait of a fantasy race representative in a natural confident pose within a gentle enchanted setting, the figure rendered with faithful anatomy showcasing the race's distinctive physical features — build, skin tone, ears, height, musculature — wearing culturally distinct clothing that reflects their heritage and traditions, soft ambient light in lavender and pale blue creates a dreamlike atmosphere around the figure, small organic details like floating motes of light and gentle atmospheric haze frame the composition, the character feels approachable and dignified, vertical portrait composition with the full figure visible head to toe, painterly, luminous, dreamlike, characterful and iconic`,
+    },
+  },
   item: {
     label: "Item / Object",
     templates: {

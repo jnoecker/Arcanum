@@ -163,6 +163,35 @@ export interface CraftingConfig {
   stationBonusQuantity: number;
 }
 
+// ─── Navigation ────────────────────────────────────────────────────
+
+export interface RecallMessagesConfig {
+  combatBlocked: string;
+  cooldownRemaining: string;
+  castBegin: string;
+  unreachable: string;
+  departNotice: string;
+  arriveNotice: string;
+  arrival: string;
+}
+
+export interface RecallConfig {
+  cooldownMs: number;
+  messages: RecallMessagesConfig;
+}
+
+export interface NavigationConfig {
+  recall: RecallConfig;
+}
+
+// ─── Commands ──────────────────────────────────────────────────────
+
+export interface CommandEntryConfig {
+  usage: string;
+  category: string;
+  staff: boolean;
+}
+
 // ─── Group ──────────────────────────────────────────────────────────
 
 export interface GroupConfig {
@@ -210,10 +239,12 @@ export interface QuestCompletionTypeDefinition {
 
 export interface StatusEffectTypeDefinition {
   displayName: string;
-  tickBehavior?: string;
+  ticksDamage?: boolean;
+  ticksHealing?: boolean;
+  modifiesStats?: boolean;
+  absorbsDamage?: boolean;
   preventsActions?: boolean;
   preventsMovement?: boolean;
-  absorbsDamage?: boolean;
 }
 
 export interface StackBehaviorDefinition {
@@ -238,6 +269,11 @@ export interface CraftingStationTypeDefinition {
 }
 
 // ─── Guild Ranks ────────────────────────────────────────────────────
+
+export interface GuildConfig {
+  founderRank: string;
+  defaultRank: string;
+}
 
 export interface GuildRankDefinition {
   displayName: string;
@@ -267,6 +303,10 @@ export interface CharacterCreationConfig {
 export interface RaceDefinitionConfig {
   displayName: string;
   description?: string;
+  backstory?: string;
+  traits?: string[];
+  abilities?: string[];
+  image?: string;
   statMods?: StatMap;
 }
 
@@ -310,6 +350,8 @@ export interface AppConfig {
   economy: EconomyConfig;
   regen: RegenConfig;
   crafting: CraftingConfig;
+  navigation: NavigationConfig;
+  commands: Record<string, CommandEntryConfig>;
   group: GroupConfig;
   classes: Record<string, ClassDefinitionConfig>;
   races: Record<string, RaceDefinitionConfig>;
@@ -325,6 +367,7 @@ export interface AppConfig {
   abilityTargetTypes: Record<string, AbilityTargetTypeDefinition>;
   craftingSkills: Record<string, CraftingSkillDefinition>;
   craftingStationTypes: Record<string, CraftingStationTypeDefinition>;
+  guild: GuildConfig;
   guildRanks: Record<string, GuildRankDefinition>;
   images: ImagesConfig;
   globalAssets: Record<string, string>;

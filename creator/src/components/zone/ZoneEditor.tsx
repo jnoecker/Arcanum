@@ -27,6 +27,7 @@ import { RoomPanel, type EntitySelection } from "./RoomPanel";
 import { EntityPanel } from "./EntityPanel";
 import { DirectionPicker } from "./DirectionPicker";
 import { BatchArtGenerator } from "./BatchArtGenerator";
+import builderBg from "@/assets/builder-bg.jpg";
 
 const nodeTypes = {
   room: RoomNode,
@@ -327,6 +328,12 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
       {/* Map + Panel */}
       <div className="flex min-h-0 flex-1">
         <div className="relative flex-1">
+          {/* Background image behind graph */}
+          <img
+            src={builderBg}
+            alt=""
+            className="pointer-events-none absolute inset-0 z-0 h-full w-full object-cover opacity-[0.12]"
+          />
           <ReactFlow
             nodes={nodes}
             edges={edges}
@@ -342,7 +349,7 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
             minZoom={0.1}
             maxZoom={2}
             proOptions={{ hideAttribution: true }}
-            style={{ background: "#080c1c" }}
+            style={{ background: "rgba(8, 12, 28, 0.85)" }}
           >
             <Background
               variant={BackgroundVariant.Dots}

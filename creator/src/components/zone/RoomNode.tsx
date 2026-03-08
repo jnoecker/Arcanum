@@ -65,7 +65,7 @@ function SpriteThumb({ sprite }: { sprite: EntitySprite }) {
       src={src}
       alt={sprite.name}
       title={`${sprite.kind}: ${sprite.name}`}
-      className="h-6 w-6 rounded-sm border border-border-default/50 object-cover"
+      className="h-6 w-6 rounded-sm border border-white/20 object-cover"
     />
   );
 }
@@ -74,11 +74,58 @@ function RoomBackground({ image }: { image?: string }) {
   const src = useImageSrc(image);
   if (!src) return null;
   return (
-    <img
-      src={src}
-      alt=""
-      className="pointer-events-none absolute inset-0 h-full w-full rounded object-cover opacity-25"
-    />
+    <>
+      <img
+        src={src}
+        alt=""
+        className="pointer-events-none absolute inset-0 h-full w-full rounded object-cover"
+      />
+      {/* Gradient fade at bottom so the badge is readable */}
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-1/2 rounded-b bg-gradient-to-t from-black/70 to-transparent" />
+    </>
+  );
+}
+
+/** Compact info badge shown at the bottom of image-backed nodes */
+function InfoBadge({ d }: { d: RoomNodeData }) {
+  const hasEntities = d.mobCount > 0 || d.itemCount > 0 || d.shopCount > 0 || d.station;
+
+  return (
+    <div className="relative mt-auto flex flex-col gap-0.5">
+      {/* Title */}
+      <div className="flex items-center gap-1">
+        {d.isStartRoom && (
+          <span className="text-accent text-[10px]" title="Start room">★</span>
+        )}
+        <span className="truncate text-[11px] font-semibold text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
+          {d.title}
+        </span>
+      </div>
+
+      {/* Room ID + entity counts in a single row */}
+      <div className="flex items-center gap-1.5">
+        <span className="truncate text-[9px] text-white/60">{d.roomId}</span>
+        {hasEntities && (
+          <div className="flex items-center gap-1.5 text-[9px] text-white/70">
+            {d.mobCount > 0 && <span title="Mobs">⚔{d.mobCount}</span>}
+            {d.itemCount > 0 && <span title="Items">◆{d.itemCount}</span>}
+            {d.shopCount > 0 && <span title="Shops">⛋{d.shopCount}</span>}
+            {d.station && (
+              <span className="text-status-info" title={`Station: ${d.station}`}>⚒</span>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Entity sprite thumbnails */}
+      {d.entities.length > 0 && (
+        <div className="flex flex-wrap gap-1">
+          {d.entities.map((e) => (
+            <SpriteThumb key={`${e.kind}:${e.id}`} sprite={e} />
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -86,19 +133,20 @@ function RoomBackground({ image }: { image?: string }) {
 
 export function RoomNode({ data, selected }: NodeProps<RoomNodeType>) {
   const d = data as RoomNodeData;
+  const hasImage = !!d.image;
 
   return (
     <div
-      className={`group/room relative overflow-hidden rounded border px-3 py-2 transition-colors ${
+      className={`group/room relative flex flex-col overflow-hidden rounded border transition-colors ${
         selected
-          ? "border-accent bg-bg-elevated shadow-lg shadow-accent/20"
+          ? "border-accent shadow-lg shadow-accent/20"
           : d.isStartRoom
-            ? "border-accent/50 bg-bg-elevated"
-            : "border-border-default bg-bg-elevated"
-      }`}
-      style={{ width: 220 }}
+            ? "border-accent/50"
+            : "border-border-default"
+      } ${hasImage ? "bg-black" : "bg-bg-elevated"}`}
+      style={{ width: 220, minHeight: hasImage ? 100 : undefined }}
     >
-      {/* Room background image */}
+      {/* Room background image — full opacity */}
       <RoomBackground image={d.image} />
 
       {/* Source handles (drag from these to create exits) */}
@@ -127,40 +175,46 @@ export function RoomNode({ data, selected }: NodeProps<RoomNodeType>) {
         />
       ))}
 
-      {/* Title row */}
-      <div className="relative flex items-center gap-1.5">
-        {d.isStartRoom && (
-          <span className="text-accent text-xs" title="Start room">
-            ★
-          </span>
-        )}
-        <span className="truncate text-xs font-medium text-text-primary">
-          {d.title}
-        </span>
-      </div>
-
-      {/* Room ID */}
-      <div className="relative truncate text-[10px] text-text-muted">{d.roomId}</div>
-
-      {/* Entity sprites */}
-      {d.entities.length > 0 && (
-        <div className="relative mt-1 flex flex-wrap gap-1">
-          {d.entities.map((e) => (
-            <SpriteThumb key={`${e.kind}:${e.id}`} sprite={e} />
-          ))}
+      {hasImage ? (
+        /* Image mode: badge overlay at the bottom */
+        <div className="relative flex min-h-0 flex-1 flex-col justify-end px-2.5 py-2">
+          <InfoBadge d={d} />
         </div>
-      )}
-
-      {/* Entity badges (for entities without images) */}
-      {(d.mobCount > 0 || d.itemCount > 0 || d.shopCount > 0 || d.station) && (
-        <div className="relative mt-1 flex items-center gap-2 text-[10px] text-text-muted">
-          {d.mobCount > 0 && <span title="Mobs">⚔{d.mobCount}</span>}
-          {d.itemCount > 0 && <span title="Items">◆{d.itemCount}</span>}
-          {d.shopCount > 0 && <span title="Shops">⛋{d.shopCount}</span>}
-          {d.station && (
-            <span className="text-status-info" title={`Station: ${d.station}`}>
-              ⚒
+      ) : (
+        /* No image: classic layout */
+        <div className="relative px-3 py-2">
+          {/* Title row */}
+          <div className="flex items-center gap-1.5">
+            {d.isStartRoom && (
+              <span className="text-accent text-xs" title="Start room">★</span>
+            )}
+            <span className="truncate text-xs font-medium text-text-primary">
+              {d.title}
             </span>
+          </div>
+
+          {/* Room ID */}
+          <div className="truncate text-[10px] text-text-muted">{d.roomId}</div>
+
+          {/* Entity sprites */}
+          {d.entities.length > 0 && (
+            <div className="mt-1 flex flex-wrap gap-1">
+              {d.entities.map((e) => (
+                <SpriteThumb key={`${e.kind}:${e.id}`} sprite={e} />
+              ))}
+            </div>
+          )}
+
+          {/* Entity badges (for entities without images) */}
+          {(d.mobCount > 0 || d.itemCount > 0 || d.shopCount > 0 || d.station) && (
+            <div className="mt-1 flex items-center gap-2 text-[10px] text-text-muted">
+              {d.mobCount > 0 && <span title="Mobs">⚔{d.mobCount}</span>}
+              {d.itemCount > 0 && <span title="Items">◆{d.itemCount}</span>}
+              {d.shopCount > 0 && <span title="Shops">⛋{d.shopCount}</span>}
+              {d.station && (
+                <span className="text-status-info" title={`Station: ${d.station}`}>⚒</span>
+              )}
+            </div>
           )}
         </div>
       )}

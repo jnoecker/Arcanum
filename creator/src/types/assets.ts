@@ -111,6 +111,14 @@ export const IMAGE_MODELS = [
     defaultSteps: 28,
     defaultGuidance: 3.5,
   },
+  {
+    id: "runware:400@2",
+    label: "FLUX2 (Runware)",
+    description: "FLUX2 via Runware",
+    provider: "runware" as const,
+    defaultSteps: 28,
+    defaultGuidance: 3.5,
+  },
 ] as const;
 
 /** Default image dimensions per entity type */

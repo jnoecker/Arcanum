@@ -15,8 +15,11 @@ const API_URL: &str = "https://api.runware.ai/v1";
 #[serde(rename_all = "camelCase")]
 struct RunwareImageTask {
     task_type: String,
+    #[serde(rename = "taskUUID")]
     task_uuid: String,
     positive_prompt: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    negative_prompt: Option<String>,
     width: u32,
     height: u32,
     model: String,
@@ -37,6 +40,7 @@ struct RunwareResponse {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct RunwareImageResult {
+    #[serde(alias = "imageURL", alias = "imageUrl")]
     image_url: Option<String>,
 }
 
@@ -48,10 +52,17 @@ fn assets_dir(app: &AppHandle) -> Result<PathBuf, String> {
     Ok(dir.join("assets").join("images"))
 }
 
+/// Round to nearest multiple of 16, clamped to Runware's 128–2048 range.
+fn round_to_16(v: u32) -> u32 {
+    let rounded = (v + 8) / 16 * 16;
+    rounded.clamp(128, 2048)
+}
+
 #[tauri::command]
 pub async fn runware_generate_image(
     app: AppHandle,
     prompt: String,
+    negative_prompt: Option<String>,
     model: Option<String>,
     width: Option<u32>,
     height: Option<u32>,
@@ -63,14 +74,16 @@ pub async fn runware_generate_image(
         return Err("Runware API key not configured. Set it in Settings.".to_string());
     }
 
-    let w = width.unwrap_or(1024);
-    let h = height.unwrap_or(1024);
-    let mdl = model.unwrap_or_else(|| "runware:100@1".to_string());
+    // Runware requires dimensions as multiples of 16, clamped 128–2048
+    let w = round_to_16(width.unwrap_or(1024));
+    let h = round_to_16(height.unwrap_or(1024));
+    let mdl = model.unwrap_or_else(|| "runware:400@2".to_string());
 
     let task = RunwareImageTask {
         task_type: "imageInference".to_string(),
         task_uuid: uuid::Uuid::new_v4().to_string(),
         positive_prompt: prompt.clone(),
+        negative_prompt,
         width: w,
         height: h,
         model: mdl.clone(),
@@ -95,16 +108,19 @@ pub async fn runware_generate_image(
         return Err(format!("Runware API error ({status}): {text}"));
     }
 
-    let resp: RunwareResponse = response
-        .json()
+    let text = response
+        .text()
         .await
-        .map_err(|e| format!("Failed to parse Runware response: {e}"))?;
+        .map_err(|e| format!("Failed to read Runware response: {e}"))?;
+
+    let resp: RunwareResponse = serde_json::from_str(&text)
+        .map_err(|e| format!("Failed to parse Runware response: {e}\nBody: {text}"))?;
 
     let image_url = resp
         .data
         .first()
         .and_then(|r| r.image_url.as_ref())
-        .ok_or("No image in Runware response")?;
+        .ok_or_else(|| format!("No image in Runware response. Body: {text}"))?;
 
     // Download the image from the URL
     let img_response = client
@@ -154,6 +170,7 @@ pub async fn runware_generate_image(
 #[serde(rename_all = "camelCase")]
 struct RunwareAudioTask {
     task_type: String,
+    #[serde(rename = "taskUUID")]
     task_uuid: String,
     positive_prompt: String,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -170,6 +187,7 @@ struct RunwareAudioResponse {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct RunwareAudioResult {
+    #[serde(alias = "audioURL", alias = "audioUrl")]
     audio_url: Option<String>,
 }
 
@@ -259,6 +277,7 @@ pub async fn runware_generate_audio(
 #[serde(rename_all = "camelCase")]
 struct RunwareVideoTask {
     task_type: String,
+    #[serde(rename = "taskUUID")]
     task_uuid: String,
     input_image: String,
     positive_prompt: String,
@@ -277,6 +296,7 @@ struct RunwareVideoResponse {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct RunwareVideoResult {
+    #[serde(alias = "videoURL", alias = "videoUrl")]
     video_url: Option<String>,
 }
 

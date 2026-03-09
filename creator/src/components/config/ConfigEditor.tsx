@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { useConfigStore } from "@/stores/configStore";
 import { useProjectStore } from "@/stores/projectStore";
 import { saveConfig } from "@/lib/saveConfig";
@@ -65,6 +65,20 @@ export function ConfigEditor() {
   const activeTab = useProjectStore((s) => s.configSubTab);
   const setActiveTab = useProjectStore((s) => s.setConfigSubTab);
   const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+
+  // Auto-save: debounce 3s after last edit
+  const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  useEffect(() => {
+    if (!dirty || !mudDir) return;
+    clearTimeout(autoSaveTimer.current);
+    autoSaveTimer.current = setTimeout(() => {
+      saveConfig(mudDir).catch((err) => {
+        console.error("Auto-save failed:", err);
+      });
+    }, 3000);
+    return () => clearTimeout(autoSaveTimer.current);
+  }, [dirty, config, mudDir]);
 
   const handleChange = useCallback(
     (patch: Partial<AppConfig>) => {
@@ -77,10 +91,13 @@ export function ConfigEditor() {
   const handleSave = useCallback(async () => {
     if (!mudDir || saving) return;
     setSaving(true);
+    setSaveError(null);
     try {
       await saveConfig(mudDir);
     } catch (err) {
-      console.error("Config save failed:", err);
+      const msg = err instanceof Error ? err.message : String(err);
+      console.error("Config save failed:", msg);
+      setSaveError(msg);
     } finally {
       setSaving(false);
     }
@@ -126,6 +143,11 @@ export function ConfigEditor() {
             >
               {saving ? "Saving..." : "Save Config"}
             </button>
+            {saveError && (
+              <span className="max-w-xs truncate text-xs text-red-400" title={saveError}>
+                Save failed: {saveError}
+              </span>
+            )}
           </div>
         )}
       </div>

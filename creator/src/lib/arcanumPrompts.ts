@@ -25,7 +25,7 @@ export const ARCANUM_PREAMBLE = `Ambon Arcanum style (arcanum_v1): deep cosmic i
 export const GENTLE_MAGIC_PREAMBLE = `Surreal Gentle Magic style (surreal_softmagic_v1): soft lavender and pale blue undertones, ambient diffused lighting with no harsh shadows or spotlighting, gentle atmospheric haze with floating motes of light, subtle magical glow integrated naturally into the environment, slightly elongated organic forms, dreamy breathable emotionally safe aesthetic, no neon colors, no high contrast, no harsh edges, painterly and luminous`;
 
 /** Universal negative prompt — appended to all generations */
-export const UNIVERSAL_NEGATIVE = `text, words, letters, runes, glyphs, watermarks, logos, signatures, modern technology, computers, user interfaces, neon colors, hot pink, electric blue, lime green, harsh shadows, hard edges, flat design, cartoon, anime, photorealism, studio lighting, stock photo aesthetic, horror elements, gore`;
+export const UNIVERSAL_NEGATIVE = `text, words, letters, runes, glyphs, watermarks, logos, signatures, modern technology, computers, user interfaces, neon colors, hot pink, electric blue, lime green, harsh shadows, hard edges, flat design, cartoon, anime, photorealism, studio lighting, stock photo aesthetic, horror elements, gore, nudity, nude, naked, bare chest, exposed breasts, cleavage, nsfw, topless, revealing, skimpy, sexualized`;
 
 /** Get the preamble for a given art style */
 export function getPreamble(style: ArtStyle): string {

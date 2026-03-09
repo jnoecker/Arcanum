@@ -4,7 +4,7 @@ import { open } from "@tauri-apps/plugin-dialog";
 import { useAssetStore } from "@/stores/assetStore";
 import { useProjectStore } from "@/stores/projectStore";
 import { useImageSrc, isLegacyImagePath } from "@/lib/useImageSrc";
-import { getEnhanceSystemPrompt, ART_STYLE_LABELS, type ArtStyle } from "@/lib/arcanumPrompts";
+import { getEnhanceSystemPrompt, ART_STYLE_LABELS, UNIVERSAL_NEGATIVE, type ArtStyle } from "@/lib/arcanumPrompts";
 import { IMAGE_MODELS, ENTITY_DIMENSIONS, DIMENSION_PRESETS } from "@/types/assets";
 import type { AssetContext, GeneratedImage } from "@/types/assets";
 import { VariantStrip } from "./VariantStrip";
@@ -58,6 +58,8 @@ export function EntityArtGenerator({
   const [enhancing, setEnhancing] = useState(false);
   const [importing, setImporting] = useState(false);
   const [dimOverride, setDimOverride] = useState<{ width: number; height: number } | null>(null);
+  const [modelOverride, setModelOverride] = useState<string | null>(null);
+  const [customModel, setCustomModel] = useState("");
   // Track the final prompt that was actually sent to the image model
   const [lastEnhancedPrompt, setLastEnhancedPrompt] = useState<string | null>(null);
 
@@ -143,8 +145,14 @@ export function EntityArtGenerator({
     setStage("generating");
     setError(null);
     try {
-      const model = availableModels[0];
-      if (!model) {
+      const selectedModel = modelOverride === "__custom__"
+        ? customModel.trim()
+        : modelOverride;
+      const model = selectedModel
+        ? availableModels.find((m) => m.id === selectedModel)
+        : availableModels[0];
+      const modelId = selectedModel || model?.id;
+      if (!modelId) {
         throw new Error(`No models available for provider: ${imageProvider}`);
       }
 
@@ -167,11 +175,12 @@ export function EntityArtGenerator({
 
       const image = await invoke<GeneratedImage>(command, {
         prompt: finalPrompt,
-        model: model.id,
+        negativePrompt: UNIVERSAL_NEGATIVE,
+        model: modelId,
         width: activeDims.width,
         height: activeDims.height,
-        steps: model.defaultSteps,
-        guidance: "defaultGuidance" in model ? model.defaultGuidance : null,
+        steps: model?.defaultSteps ?? 28,
+        guidance: model && "defaultGuidance" in model ? model.defaultGuidance : null,
       });
       setResult(image);
       setStage("preview");
@@ -311,6 +320,34 @@ export function EntityArtGenerator({
                   <option key={p.label} value={`${p.width}x${p.height}`}>{p.label}</option>
                 ))}
               </select>
+            </div>
+          )}
+
+          {/* Model selector */}
+          {hasApiKey && availableModels.length > 0 && (
+            <div className="flex flex-col gap-0.5">
+              <div className="flex items-center gap-1">
+                <select
+                  value={modelOverride ?? ""}
+                  onChange={(e) => setModelOverride(e.target.value || null)}
+                  className="rounded border border-border-default bg-bg-primary px-1 py-0.5 text-[10px] text-text-secondary outline-none"
+                >
+                  <option value="">{availableModels[0]?.label ?? "Default"}</option>
+                  {availableModels.slice(1).map((m) => (
+                    <option key={m.id} value={m.id}>{m.label}</option>
+                  ))}
+                  <option value="__custom__">Custom...</option>
+                </select>
+              </div>
+              {modelOverride === "__custom__" && (
+                <input
+                  type="text"
+                  value={customModel}
+                  onChange={(e) => setCustomModel(e.target.value)}
+                  placeholder="e.g. runware:400@2"
+                  className="rounded border border-border-default bg-bg-primary px-1.5 py-0.5 font-mono text-[10px] text-text-secondary outline-none focus:border-accent/50"
+                />
+              )}
             </div>
           )}
 

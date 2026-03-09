@@ -49,7 +49,8 @@ export type AssetType =
   | "mob"
   | "item"
   | "player_sprite"
-  | "race_portrait";
+  | "race_portrait"
+  | "class_portrait";
 
 /** Mirrors the Rust Settings struct */
 export interface Settings {

@@ -286,12 +286,14 @@ export interface GuildRankDefinition {
 export interface ClassDefinitionConfig {
   displayName: string;
   description?: string;
+  backstory?: string;
   hpPerLevel: number;
   manaPerLevel: number;
   primaryStat?: string;
   selectable?: boolean;
   startRoom?: string;
   threatMultiplier?: number;
+  image?: string;
 }
 
 // ─── Character Creation ────────────────────────────────────────────

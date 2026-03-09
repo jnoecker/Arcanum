@@ -1,18 +1,26 @@
 import { readTextFile, writeTextFile } from "@tauri-apps/plugin-fs";
+import { exists } from "@tauri-apps/plugin-fs";
 import { parseDocument, YAMLMap } from "yaml";
 import { useConfigStore } from "@/stores/configStore";
 
 /**
- * Save the current AppConfig back to application.yaml.
- * Reads the existing file, patches known sections in-place, and writes back.
+ * Save the current AppConfig to application-local.yaml.
+ * Reads the local override file (or creates it from the base), patches
+ * known sections in-place, and writes back. The base application.yaml
+ * is never modified.
  */
 export async function saveConfig(mudDir: string): Promise<void> {
   const state = useConfigStore.getState();
   const config = state.config;
   if (!config) throw new Error("No config loaded");
 
-  const configPath = `${mudDir}/src/main/resources/application.yaml`;
-  const content = await readTextFile(configPath);
+  const resourcesDir = `${mudDir}/src/main/resources`;
+  const basePath = `${resourcesDir}/application.yaml`;
+  const localPath = `${resourcesDir}/application-local.yaml`;
+
+  // Read local override file if it exists, otherwise start from the base
+  const sourcePath = await exists(localPath) ? localPath : basePath;
+  const content = await readTextFile(sourcePath);
   const doc = parseDocument(content);
 
   // Navigate to the ambonmud root node
@@ -323,7 +331,7 @@ export async function saveConfig(mudDir: string): Promise<void> {
   setIn(root, ["progression", "rewards", "baseHp"], config.progression.rewards.baseHp);
   setIn(root, ["progression", "rewards", "baseMana"], config.progression.rewards.baseMana);
 
-  await writeTextFile(configPath, doc.toString());
+  await writeTextFile(localPath, doc.toString());
   state.markClean();
 }
 

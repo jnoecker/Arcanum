@@ -1,4 +1,5 @@
 import { readDir, readTextFile } from "@tauri-apps/plugin-fs";
+import { exists } from "@tauri-apps/plugin-fs";
 import { parseDocument } from "yaml";
 import type { WorldFile } from "@/types/world";
 import type { AppConfig } from "@/types/config";
@@ -40,21 +41,33 @@ export async function loadAllZones(
 }
 
 /**
- * Load and parse the application.yaml config file.
- * Extracts known sections into typed config and preserves unknown sections as raw YAML.
+ * Load and parse the application config.
+ * Reads application.yaml (checked-in defaults), then deep-merges
+ * application-local.yaml (gitignored operator overrides) on top.
  */
 export async function loadAppConfig(
   mudDir: string,
 ): Promise<AppConfig | null> {
-  const configPath = `${mudDir}/src/main/resources/application.yaml`;
+  const resourcesDir = `${mudDir}/src/main/resources`;
+  const basePath = `${resourcesDir}/application.yaml`;
+  const localPath = `${resourcesDir}/application-local.yaml`;
 
   try {
-    const content = await readTextFile(configPath);
-    const doc = parseDocument(content);
-    const raw = doc.toJS() as Record<string, unknown>;
+    const baseContent = await readTextFile(basePath);
+    const baseDoc = parseDocument(baseContent);
+    const baseRaw = baseDoc.toJS() as Record<string, unknown>;
+
+    // Deep-merge local overrides if the file exists
+    let merged = baseRaw;
+    if (await exists(localPath)) {
+      const localContent = await readTextFile(localPath);
+      const localDoc = parseDocument(localContent);
+      const localRaw = localDoc.toJS() as Record<string, unknown>;
+      merged = deepMergeRaw(baseRaw, localRaw);
+    }
 
     // Navigate into the ambonmud root if present
-    const root = (raw.ambonmud ?? raw) as Record<string, unknown>;
+    const root = (merged.ambonmud ?? merged) as Record<string, unknown>;
     const engine = (root.engine ?? {}) as Record<string, unknown>;
     const progression = (root.progression ?? {}) as Record<string, unknown>;
 
@@ -399,4 +412,29 @@ function asBool(val: unknown, fallback: boolean): boolean {
 function parseNumberArray(val: unknown, fallback: number[]): number[] {
   if (!Array.isArray(val)) return fallback;
   return val.filter((v): v is number => typeof v === "number");
+}
+
+// ─── Deep merge for YAML overlay ────────────────────────────────────
+
+function deepMergeRaw(
+  base: Record<string, unknown>,
+  override: Record<string, unknown>,
+): Record<string, unknown> {
+  const result = { ...base };
+  for (const key of Object.keys(override)) {
+    const bv = base[key];
+    const ov = override[key];
+    if (
+      ov && typeof ov === "object" && !Array.isArray(ov) &&
+      bv && typeof bv === "object" && !Array.isArray(bv)
+    ) {
+      result[key] = deepMergeRaw(
+        bv as Record<string, unknown>,
+        ov as Record<string, unknown>,
+      );
+    } else {
+      result[key] = ov;
+    }
+  }
+  return result;
 }

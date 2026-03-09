@@ -343,6 +343,7 @@ export interface ImagesConfig {
 
 export interface WorldConfig {
   startRoom: string;
+  resources: string[];
 }
 
 // ─── Server ─────────────────────────────────────────────────────────

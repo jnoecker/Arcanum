@@ -35,6 +35,7 @@ export async function saveConfig(mudDir: string): Promise<void> {
   if (config.world.startRoom) {
     setIn(root, ["world", "startRoom"], config.world.startRoom);
   }
+  setIn(root, ["world", "resources"], config.world.resources);
 
   // ─── Engine sections ────────────────────────────────────────
   const engine = root.get("engine", true);

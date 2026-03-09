@@ -126,6 +126,7 @@ function parseWorldConfig(raw: unknown): AppConfig["world"] {
   const s = (raw ?? {}) as Record<string, unknown>;
   return {
     startRoom: asString(s.startRoom, ""),
+    resources: parseStringArray(s.resources, []),
   };
 }
 
@@ -407,5 +408,10 @@ function asBool(val: unknown, fallback: boolean): boolean {
 function parseNumberArray(val: unknown, fallback: number[]): number[] {
   if (!Array.isArray(val)) return fallback;
   return val.filter((v): v is number => typeof v === "number");
+}
+
+function parseStringArray(val: unknown, fallback: string[]): string[] {
+  if (!Array.isArray(val)) return fallback;
+  return val.filter((v): v is string => typeof v === "string");
 }
 

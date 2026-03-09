@@ -647,8 +647,9 @@ pub async fn deploy_config_to_r2(app: AppHandle, mud_dir: String) -> Result<Stri
 }
 
 /// Deploy all zone YAML files to R2 so the demo cluster can pull them.
-/// Reads every .yaml/.yml file from the MUD project's world directory and
-/// uploads to "config/world/{filename}" in the configured R2 bucket.
+/// Reads every .yaml/.yml file from the MUD project's world directory,
+/// uploads to "config/world/{filename}" in the configured R2 bucket,
+/// then writes the explicit zone list to world.resources in application-local.yaml.
 #[tauri::command]
 pub async fn deploy_zones_to_r2(app: AppHandle, mud_dir: String) -> Result<SyncProgress, String> {
     let s = settings::get_settings(app).await?;
@@ -671,6 +672,7 @@ pub async fn deploy_zones_to_r2(app: AppHandle, mud_dir: String) -> Result<SyncP
             zone_files.push((name, entry.path()));
         }
     }
+    zone_files.sort_by(|a, b| a.0.cmp(&b.0));
 
     let client = reqwest::Client::new();
     let mut progress = SyncProgress {
@@ -680,6 +682,8 @@ pub async fn deploy_zones_to_r2(app: AppHandle, mud_dir: String) -> Result<SyncP
         failed: 0,
         errors: Vec::new(),
     };
+
+    let mut deployed_names: Vec<String> = Vec::new();
 
     for (name, path) in &zone_files {
         let body = match tokio::fs::read(path).await {
@@ -704,7 +708,12 @@ pub async fn deploy_zones_to_r2(app: AppHandle, mud_dir: String) -> Result<SyncP
         )
         .await
         {
-            Ok(()) => progress.uploaded += 1,
+            Ok(()) => {
+                // Strip extension for the resource list (server expects bare names)
+                let bare = name.trim_end_matches(".yaml").trim_end_matches(".yml");
+                deployed_names.push(bare.to_string());
+                progress.uploaded += 1;
+            }
             Err(e) => {
                 progress.failed += 1;
                 progress.errors.push(format!("{name}: {e}"));

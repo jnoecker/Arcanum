@@ -2,6 +2,9 @@ import { useState, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { useAssetStore } from "@/stores/assetStore";
 import { useProjectStore } from "@/stores/projectStore";
+import { useZoneStore } from "@/stores/zoneStore";
+import { useConfigStore } from "@/stores/configStore";
+import { saveConfig } from "@/lib/saveConfig";
 import { IMAGE_MODELS } from "@/types/assets";
 import type { Settings, SyncProgress } from "@/types/assets";
 
@@ -425,6 +428,19 @@ export function ApiSettingsPanel() {
                   setZoneDeployResult(null);
                   try {
                     const result = await invoke<SyncProgress>("deploy_zones_to_r2", { mudDir });
+
+                    // Write explicit zone list to world.resources in config
+                    const zones = useZoneStore.getState().zones;
+                    const resources = Array.from(zones.keys()).sort();
+                    const currentConfig = useConfigStore.getState().config;
+                    if (currentConfig && resources.length > 0) {
+                      useConfigStore.getState().updateConfig({
+                        ...currentConfig,
+                        world: { ...currentConfig.world, resources },
+                      });
+                      await saveConfig(mudDir);
+                    }
+
                     setZoneDeployResult(
                       `${result.uploaded} zone${result.uploaded !== 1 ? "s" : ""} deployed` +
                       (result.failed > 0 ? `, ${result.failed} failed` : ""),

@@ -162,10 +162,12 @@ export async function saveConfig(mudDir: string): Promise<void> {
           manaPerLevel: cls.manaPerLevel,
         };
         if (cls.description) obj.description = cls.description;
+        if (cls.backstory) obj.backstory = cls.backstory;
         if (cls.primaryStat) obj.primaryStat = cls.primaryStat;
         if (cls.selectable != null) obj.selectable = cls.selectable;
         if (cls.startRoom) obj.startRoom = cls.startRoom;
         if (cls.threatMultiplier != null) obj.threatMultiplier = cls.threatMultiplier;
+        if (cls.image) obj.image = cls.image;
         return obj;
       },
     );

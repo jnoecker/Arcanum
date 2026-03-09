@@ -23,8 +23,14 @@
       "identifier": "fs:allow-write-text-file",
       "allow": [{ "path": "**" }]
     },
-    "fs:allow-exists",
-    "fs:allow-mkdir",
+    {
+      "identifier": "fs:allow-exists",
+      "allow": [{ "path": "**" }]
+    },
+    {
+      "identifier": "fs:allow-mkdir",
+      "allow": [{ "path": "**" }]
+    },
     "shell:default",
     {
       "identifier": "shell:allow-spawn",

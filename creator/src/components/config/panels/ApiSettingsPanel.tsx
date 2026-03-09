@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
+import { invoke } from "@tauri-apps/api/core";
 import { useAssetStore } from "@/stores/assetStore";
+import { useProjectStore } from "@/stores/projectStore";
 import { IMAGE_MODELS } from "@/types/assets";
 import type { Settings } from "@/types/assets";
 
@@ -23,6 +25,9 @@ export function ApiSettingsPanel() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [deploying, setDeploying] = useState(false);
+  const [deployResult, setDeployResult] = useState<string | null>(null);
+  const mudDir = useProjectStore((s) => s.project?.mudDir);
 
   useEffect(() => {
     loadSettings();
@@ -375,6 +380,39 @@ export function ApiSettingsPanel() {
             />
             <p className="mt-1 text-[10px] text-text-muted">
               Public URL for the game client to load images from
+            </p>
+          </div>
+
+          {/* Deploy Config */}
+          <div className="mt-1 border-t border-border-muted pt-3">
+            <div className="flex items-center gap-2">
+              <button
+                onClick={async () => {
+                  if (!mudDir) return;
+                  setDeploying(true);
+                  setDeployResult(null);
+                  try {
+                    const url = await invoke<string>("deploy_config_to_r2", { mudDir });
+                    setDeployResult(`Deployed to ${url}`);
+                  } catch (e) {
+                    setDeployResult(`Failed: ${e}`);
+                  } finally {
+                    setDeploying(false);
+                  }
+                }}
+                disabled={deploying || !mudDir || !draft.r2_bucket}
+                className="rounded bg-gradient-to-r from-accent-muted to-accent px-4 py-1.5 text-xs font-medium text-accent-emphasis transition-all hover:shadow-[var(--glow-aurum)] hover:brightness-110 disabled:opacity-50"
+              >
+                {deploying ? "Deploying..." : "Deploy Config to R2"}
+              </button>
+              {deployResult && (
+                <span className={`text-[10px] ${deployResult.startsWith("Failed") ? "text-status-error" : "text-status-success"}`}>
+                  {deployResult}
+                </span>
+              )}
+            </div>
+            <p className="mt-1 text-[10px] text-text-muted">
+              Uploads application-local.yaml to R2 for the demo cluster to pull
             </p>
           </div>
         </div>

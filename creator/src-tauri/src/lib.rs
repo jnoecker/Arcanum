@@ -54,6 +54,7 @@ pub fn run() {
             r2::delete_from_r2,
             r2::deploy_sprites_to_r2,
             r2::deploy_global_assets_to_r2,
+            r2::deploy_config_to_r2,
             server::set_server_pid,
             server::clear_server_pid,
             server::kill_server_tree,

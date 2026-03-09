@@ -608,6 +608,44 @@ pub async fn deploy_global_assets_to_r2(
     Ok(progress)
 }
 
+/// Deploy application-local.yaml to R2 so the demo cluster can pull it.
+/// Reads the file from the MUD project's resources directory and uploads
+/// it to "config/application-local.yaml" in the configured R2 bucket.
+#[tauri::command]
+pub async fn deploy_config_to_r2(app: AppHandle, mud_dir: String) -> Result<String, String> {
+    let s = settings::get_settings(app).await?;
+    if s.r2_account_id.is_empty()
+        || s.r2_access_key_id.is_empty()
+        || s.r2_secret_access_key.is_empty()
+        || s.r2_bucket.is_empty()
+    {
+        return Err("R2 credentials not configured. Set them in Settings.".to_string());
+    }
+
+    let local_path = format!("{mud_dir}/src/main/resources/application-local.yaml");
+    let body = tokio::fs::read(&local_path)
+        .await
+        .map_err(|e| format!("Failed to read application-local.yaml: {e}. Save your config first."))?;
+
+    let client = reqwest::Client::new();
+    let object_key = "config/application-local.yaml";
+
+    upload_object(
+        &client,
+        &s.r2_account_id,
+        &s.r2_bucket,
+        &s.r2_access_key_id,
+        &s.r2_secret_access_key,
+        object_key,
+        body,
+        "application/x-yaml",
+    )
+    .await?;
+
+    let domain = s.r2_custom_domain.trim_end_matches('/');
+    Ok(format!("{domain}/{object_key}"))
+}
+
 /// Resolve an asset file_name to its public R2 URL via custom domain.
 #[tauri::command]
 pub async fn resolve_asset_url(app: AppHandle, file_name: String) -> Result<String, String> {

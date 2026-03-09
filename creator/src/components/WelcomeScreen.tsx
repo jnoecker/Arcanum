@@ -16,9 +16,9 @@ export function WelcomeScreen({ onNewProject }: WelcomeScreenProps) {
   const { openWithPicker, openDir } = useOpenProject();
   const [errors, setErrors] = useState<string[] | null>(null);
   const [loading, setLoading] = useState<string | null>(null);
-
-  const saved = loadUIState();
-  const recentProjects = saved?.recentProjects ?? [];
+  const [recentProjects, setRecentProjects] = useState<RecentProject[]>(
+    () => loadUIState()?.recentProjects ?? [],
+  );
 
   const handleOpen = async () => {
     const result = await openWithPicker();
@@ -45,8 +45,7 @@ export function WelcomeScreen({ onNewProject }: WelcomeScreenProps) {
 
   const handleRemoveRecent = (path: string) => {
     removeRecentProject(path);
-    // Force re-render by clearing errors
-    setErrors(null);
+    setRecentProjects((prev) => prev.filter((p) => p.path !== path));
   };
 
   return (

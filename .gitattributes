@@ -1,0 +1,2 @@
+# Normalize line endings to LF on checkout to prevent CRLF diffs on Windows
+* text=auto eol=lf

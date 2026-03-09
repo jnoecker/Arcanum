@@ -138,7 +138,7 @@ export function RoomNode({ data, selected }: NodeProps<RoomNodeType>) {
 
   return (
     <div
-      className={`group/room relative flex flex-col overflow-hidden rounded border transition-colors ${
+      className={`group/room relative flex flex-col rounded border transition-colors ${
         selected
           ? "border-accent shadow-lg shadow-accent/20"
           : d.isStartRoom

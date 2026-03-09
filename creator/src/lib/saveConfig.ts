@@ -117,6 +117,10 @@ export async function saveConfig(mudDir: string): Promise<void> {
         const effect: Record<string, unknown> = { type: a.effect.type };
         if (a.effect.value != null) effect.value = a.effect.value;
         if (a.effect.statusEffectId) effect.statusEffectId = a.effect.statusEffectId;
+        if (a.effect.minDamage != null) effect.minDamage = a.effect.minDamage;
+        if (a.effect.maxDamage != null) effect.maxDamage = a.effect.maxDamage;
+        if (a.effect.minHeal != null) effect.minHeal = a.effect.minHeal;
+        if (a.effect.maxHeal != null) effect.maxHeal = a.effect.maxHeal;
         if (a.effect.flatThreat != null) effect.flatThreat = a.effect.flatThreat;
         if (a.effect.margin != null) effect.margin = a.effect.margin;
         const obj: Record<string, unknown> = {
@@ -128,8 +132,9 @@ export async function saveConfig(mudDir: string): Promise<void> {
           effect,
         };
         if (a.description) obj.description = a.description;
-        if (a.classRestriction) obj.classRestriction = a.classRestriction;
         if (a.image) obj.image = a.image;
+        if (a.requiredClass != null) obj.requiredClass = a.requiredClass;
+        if (a.classRestriction) obj.classRestriction = a.classRestriction;
         return obj;
       },
     );
@@ -144,9 +149,17 @@ export async function saveConfig(mudDir: string): Promise<void> {
         };
         if (e.tickIntervalMs != null) obj.tickIntervalMs = e.tickIntervalMs;
         if (e.tickValue != null) obj.tickValue = e.tickValue;
+        if (e.tickMinValue != null) obj.tickMinValue = e.tickMinValue;
+        if (e.tickMaxValue != null) obj.tickMaxValue = e.tickMaxValue;
         if (e.shieldAmount != null) obj.shieldAmount = e.shieldAmount;
         if (e.stackBehavior) obj.stackBehavior = e.stackBehavior;
         if (e.maxStacks != null) obj.maxStacks = e.maxStacks;
+        if (e.strMod != null) obj.strMod = e.strMod;
+        if (e.dexMod != null) obj.dexMod = e.dexMod;
+        if (e.conMod != null) obj.conMod = e.conMod;
+        if (e.intMod != null) obj.intMod = e.intMod;
+        if (e.wisMod != null) obj.wisMod = e.wisMod;
+        if (e.chaMod != null) obj.chaMod = e.chaMod;
         if (e.statMods && Object.keys(e.statMods).length > 0)
           obj.statMods = e.statMods;
         return obj;
@@ -228,7 +241,7 @@ export async function saveConfig(mudDir: string): Promise<void> {
     );
 
     // Status Effect Types
-    saveMapSection(engine, ["statusEffects", "effectTypes"], config.statusEffectTypes,
+    saveMapSection(engine, ["effectTypes", "types"], config.statusEffectTypes,
       (t) => {
         const obj: Record<string, unknown> = { displayName: t.displayName };
         if (t.ticksDamage) obj.ticksDamage = true;
@@ -242,31 +255,31 @@ export async function saveConfig(mudDir: string): Promise<void> {
     );
 
     // Stack Behaviors
-    saveMapSection(engine, ["statusEffects", "stackBehaviors"], config.stackBehaviors,
+    saveMapSection(engine, ["stackBehaviors", "behaviors"], config.stackBehaviors,
       (b) => ({ displayName: b.displayName }),
     );
 
     // Ability Target Types
-    saveMapSection(engine, ["abilities", "targetTypes"], config.abilityTargetTypes,
+    saveMapSection(engine, ["targetTypes", "types"], config.abilityTargetTypes,
       (t) => ({ displayName: t.displayName }),
     );
 
     // Crafting Skills
-    saveMapSection(engine, ["crafting", "skills"], config.craftingSkills,
+    saveMapSection(engine, ["craftingSkills", "skills"], config.craftingSkills,
       (s) => ({ displayName: s.displayName, type: s.type }),
     );
 
     // Crafting Station Types
-    saveMapSection(engine, ["crafting", "stationTypes"], config.craftingStationTypes,
+    saveMapSection(engine, ["craftingStationTypes", "stationTypes"], config.craftingStationTypes,
       (s) => ({ displayName: s.displayName }),
     );
 
     // Guild settings
-    setIn(engine, ["guild", "founderRank"], config.guild.founderRank);
-    setIn(engine, ["guild", "defaultRank"], config.guild.defaultRank);
+    setIn(engine, ["guildRanks", "founderRank"], config.guild.founderRank);
+    setIn(engine, ["guildRanks", "defaultRank"], config.guild.defaultRank);
 
     // Guild Ranks
-    saveMapSection(engine, ["guild", "ranks"], config.guildRanks,
+    saveMapSection(engine, ["guildRanks", "ranks"], config.guildRanks,
       (r) => {
         const obj: Record<string, unknown> = { displayName: r.displayName, level: r.level };
         if (r.permissions && r.permissions.length > 0) obj.permissions = r.permissions;
@@ -276,6 +289,9 @@ export async function saveConfig(mudDir: string): Promise<void> {
 
     // Character Creation
     setIn(engine, ["characterCreation", "startingGold"], config.characterCreation.startingGold);
+
+    // Friends
+    setIn(engine, ["friends", "maxFriends"], config.friends.maxFriends);
 
     // Class Start Rooms
     if (Object.keys(config.classStartRooms).length > 0) {

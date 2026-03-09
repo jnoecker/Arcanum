@@ -135,10 +135,10 @@ export function AbilitiesPanel({ config, onChange }: ConfigPanelProps) {
               options={targetTypeOptions}
             />
           </FieldRow>
-          <FieldRow label="Req. Class">
+          <FieldRow label="Req. Class" hint="If set, only this class can learn the ability. Leave empty for any class.">
             <SelectInput
-              value={a.classRestriction ?? ""}
-              onCommit={(v) => patch({ classRestriction: v || undefined })}
+              value={a.requiredClass ?? a.classRestriction ?? ""}
+              onCommit={(v) => patch({ requiredClass: v || "", classRestriction: v || undefined })}
               options={classOptions}
               allowEmpty
               placeholder="-- any class --"
@@ -159,9 +159,55 @@ export function AbilitiesPanel({ config, onChange }: ConfigPanelProps) {
                 />
               </FieldRow>
               {(a.effect.type === "DIRECT_DAMAGE" ||
+                a.effect.type === "AREA_DAMAGE") && (
+                <>
+                  <FieldRow label="Min Damage" hint="Minimum damage dealt per hit. 0 means no direct damage.">
+                    <NumberInput
+                      value={a.effect.minDamage ?? 0}
+                      onCommit={(v) =>
+                        patchEffect(a, patch, { minDamage: v ?? 0 })
+                      }
+                      min={0}
+                    />
+                  </FieldRow>
+                  <FieldRow label="Max Damage" hint="Maximum damage dealt per hit. The actual value is rolled between min and max.">
+                    <NumberInput
+                      value={a.effect.maxDamage ?? 0}
+                      onCommit={(v) =>
+                        patchEffect(a, patch, { maxDamage: v ?? 0 })
+                      }
+                      min={0}
+                    />
+                  </FieldRow>
+                </>
+              )}
+              {(a.effect.type === "DIRECT_HEAL" ||
+                a.effect.type === "AREA_DAMAGE") && (
+                <>
+                  <FieldRow label="Min Heal" hint="Minimum healing per cast. 0 means no healing component.">
+                    <NumberInput
+                      value={a.effect.minHeal ?? 0}
+                      onCommit={(v) =>
+                        patchEffect(a, patch, { minHeal: v ?? 0 })
+                      }
+                      min={0}
+                    />
+                  </FieldRow>
+                  <FieldRow label="Max Heal" hint="Maximum healing per cast. The actual value is rolled between min and max.">
+                    <NumberInput
+                      value={a.effect.maxHeal ?? 0}
+                      onCommit={(v) =>
+                        patchEffect(a, patch, { maxHeal: v ?? 0 })
+                      }
+                      min={0}
+                    />
+                  </FieldRow>
+                </>
+              )}
+              {(a.effect.type === "DIRECT_DAMAGE" ||
                 a.effect.type === "AREA_DAMAGE" ||
                 a.effect.type === "DIRECT_HEAL") && (
-                <FieldRow label="Value">
+                <FieldRow label="Value" hint="Legacy flat value. Used when min/max are both 0.">
                   <NumberInput
                     value={a.effect.value}
                     onCommit={(v) =>
@@ -186,20 +232,21 @@ export function AbilitiesPanel({ config, onChange }: ConfigPanelProps) {
                   />
                 </FieldRow>
               )}
-              {a.effect.type === "TAUNT" && (
+              {(a.effect.type === "TAUNT" ||
+                a.effect.type === "AREA_DAMAGE") && (
                 <>
-                  <FieldRow label="Flat Threat">
+                  <FieldRow label="Flat Threat" hint="Fixed threat added to the target's threat table. Forces mob attention.">
                     <NumberInput
-                      value={a.effect.flatThreat}
+                      value={a.effect.flatThreat ?? 0}
                       onCommit={(v) =>
-                        patchEffect(a, patch, { flatThreat: v ?? 10 })
+                        patchEffect(a, patch, { flatThreat: v ?? 0 })
                       }
                       min={0}
                     />
                   </FieldRow>
-                  <FieldRow label="Margin">
+                  <FieldRow label="Margin" hint="Extra threat margin above current highest. Ensures taunt sticks.">
                     <NumberInput
-                      value={a.effect.margin}
+                      value={a.effect.margin ?? 0}
                       onCommit={(v) =>
                         patchEffect(a, patch, { margin: v ?? 0 })
                       }

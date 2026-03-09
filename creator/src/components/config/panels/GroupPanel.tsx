@@ -58,6 +58,21 @@ export function GroupPanel({ config, onChange }: ConfigPanelProps) {
       </Section>
 
       <Section
+        title="Friends"
+        description="The friends system lets players add each other to a friends list to see online status and quickly send messages."
+      >
+        <div className="flex flex-col gap-1.5">
+          <FieldRow label="Max Friends" hint="Maximum number of friends a player can have. 50 is a reasonable default to keep lists manageable.">
+            <NumberInput
+              value={config.friends.maxFriends}
+              onCommit={(v) => onChange({ friends: { ...config.friends, maxFriends: v ?? 50 } })}
+              min={1}
+            />
+          </FieldRow>
+        </div>
+      </Section>
+
+      <Section
         title="Guild Settings"
         description="Guilds are persistent player organizations. The founder rank is assigned to the guild creator, and new members receive the default rank. Configure rank names and permissions below."
       >

@@ -84,13 +84,14 @@ export async function loadAppConfig(
       achievementCriterionTypes: parseMapSection(engine, "achievementCriterionTypes"),
       questObjectiveTypes: parseMapSection(engine, "questObjectiveTypes"),
       questCompletionTypes: parseMapSection(engine, "questCompletionTypes"),
-      statusEffectTypes: parseMapSection(engine.statusEffects, "effectTypes"),
-      stackBehaviors: parseMapSection(engine.statusEffects, "stackBehaviors"),
-      abilityTargetTypes: parseMapSection(engine.abilities, "targetTypes"),
-      craftingSkills: parseMapSection(engine.crafting, "skills"),
-      craftingStationTypes: parseMapSection(engine.crafting, "stationTypes"),
-      guild: parseGuildConfig(engine.guild),
-      guildRanks: parseMapSection(engine.guild, "ranks"),
+      statusEffectTypes: parseMapSection(engine.effectTypes, "types"),
+      stackBehaviors: parseMapSection(engine.stackBehaviors, "behaviors"),
+      abilityTargetTypes: parseMapSection(engine.targetTypes, "types"),
+      craftingSkills: parseMapSection(engine.craftingSkills, "skills"),
+      craftingStationTypes: parseMapSection(engine.craftingStationTypes, "stationTypes"),
+      guild: parseGuildConfig(engine.guildRanks),
+      guildRanks: parseMapSection(engine.guildRanks, "ranks"),
+      friends: parseFriendsConfig(engine.friends),
       images: parseImagesConfig(root.images),
       globalAssets: parseGlobalAssets(root.globalAssets),
       rawSections: collectRawSections(root, engine),
@@ -316,14 +317,17 @@ function collectRawSections(
     "server", "engine", "progression", "images", "globalAssets", "world", "persistence",
     "login", "transport", "demo", "observability", "admin",
     "logging", "database", "redis", "grpc", "gateway", "sharding",
+    "videos", "audio",
   ]);
   const knownEngine = new Set([
     "stats", "abilities", "statusEffects", "combat", "mob",
     "regen", "economy", "crafting", "navigation", "commands",
-    "group", "guild", "classes",
+    "group", "guild", "guildRanks", "classes",
     "races", "characterCreation", "equipment", "genders",
     "achievementCategories", "achievementCriterionTypes",
     "questObjectiveTypes", "questCompletionTypes",
+    "effectTypes", "targetTypes", "stackBehaviors",
+    "craftingSkills", "craftingStationTypes",
     "scheduler", "friends", "debug", "classStartRooms",
   ]);
 
@@ -368,6 +372,13 @@ function parseGuildConfig(raw: unknown): AppConfig["guild"] {
   return {
     founderRank: asString(s.founderRank, "leader"),
     defaultRank: asString(s.defaultRank, "member"),
+  };
+}
+
+function parseFriendsConfig(raw: unknown): AppConfig["friends"] {
+  const s = (raw ?? {}) as Record<string, unknown>;
+  return {
+    maxFriends: asNumber(s.maxFriends, 50),
   };
 }
 

@@ -36,6 +36,10 @@ export interface AbilityEffectConfig {
   type: string;
   value?: number;
   statusEffectId?: string;
+  minDamage?: number;
+  maxDamage?: number;
+  minHeal?: number;
+  maxHeal?: number;
   flatThreat?: number;
   margin?: number;
 }
@@ -48,6 +52,7 @@ export interface AbilityDefinitionConfig {
   levelRequired: number;
   targetType: string;
   effect: AbilityEffectConfig;
+  requiredClass?: string;
   classRestriction?: string;
   image?: string;
 }
@@ -60,9 +65,17 @@ export interface StatusEffectDefinitionConfig {
   durationMs: number;
   tickIntervalMs?: number;
   tickValue?: number;
+  tickMinValue?: number;
+  tickMaxValue?: number;
   shieldAmount?: number;
   stackBehavior?: string;
   maxStacks?: number;
+  strMod?: number;
+  dexMod?: number;
+  conMod?: number;
+  intMod?: number;
+  wisMod?: number;
+  chaMod?: number;
   statMods?: StatMap;
 }
 
@@ -268,6 +281,12 @@ export interface CraftingStationTypeDefinition {
   displayName: string;
 }
 
+// ─── Friends ────────────────────────────────────────────────────────
+
+export interface FriendsConfig {
+  maxFriends: number;
+}
+
 // ─── Guild Ranks ────────────────────────────────────────────────────
 
 export interface GuildConfig {
@@ -371,6 +390,7 @@ export interface AppConfig {
   craftingStationTypes: Record<string, CraftingStationTypeDefinition>;
   guild: GuildConfig;
   guildRanks: Record<string, GuildRankDefinition>;
+  friends: FriendsConfig;
   images: ImagesConfig;
   globalAssets: Record<string, string>;
   /** Raw YAML content for unrecognized sections */

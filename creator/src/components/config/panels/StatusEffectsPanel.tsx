@@ -119,14 +119,28 @@ export function StatusEffectsPanel({ config, onChange }: ConfigPanelProps) {
 
             {showTick && (
               <>
-                <FieldRow label="Tick Interval">
+                <FieldRow label="Tick Interval" hint="Milliseconds between each tick of damage or healing.">
                   <NumberInput
                     value={e.tickIntervalMs}
                     onCommit={(v) => patch({ tickIntervalMs: v ?? 2000 })}
                     min={100}
                   />
                 </FieldRow>
-                <FieldRow label="Tick Value">
+                <FieldRow label="Tick Min Value" hint="Minimum damage/heal per tick. Actual value is rolled between min and max.">
+                  <NumberInput
+                    value={e.tickMinValue ?? 0}
+                    onCommit={(v) => patch({ tickMinValue: v ?? 0 })}
+                    min={0}
+                  />
+                </FieldRow>
+                <FieldRow label="Tick Max Value" hint="Maximum damage/heal per tick.">
+                  <NumberInput
+                    value={e.tickMaxValue ?? 0}
+                    onCommit={(v) => patch({ tickMaxValue: v ?? 0 })}
+                    min={0}
+                  />
+                </FieldRow>
+                <FieldRow label="Tick Value" hint="Legacy flat value per tick. Used when min/max are both 0.">
                   <NumberInput
                     value={e.tickValue}
                     onCommit={(v) => patch({ tickValue: v ?? 1 })}
@@ -137,7 +151,7 @@ export function StatusEffectsPanel({ config, onChange }: ConfigPanelProps) {
             )}
 
             {e.effectType === "SHIELD" && (
-              <FieldRow label="Shield Amount">
+              <FieldRow label="Shield Amount" hint="Total damage the shield absorbs before breaking.">
                 <NumberInput
                   value={e.shieldAmount}
                   onCommit={(v) => patch({ shieldAmount: v ?? 20 })}
@@ -146,6 +160,54 @@ export function StatusEffectsPanel({ config, onChange }: ConfigPanelProps) {
               </FieldRow>
             )}
 
+            {/* Flat stat modifiers — always shown for buff/debuff types */}
+            {showStatMods && (
+              <div className="mt-1 border-t border-border-muted pt-1.5">
+                <h5 className="mb-1 text-[10px] font-display uppercase tracking-widest text-text-muted">
+                  Stat Modifiers
+                </h5>
+                <div className="grid grid-cols-2 gap-1.5">
+                  <FieldRow label="STR">
+                    <NumberInput
+                      value={e.strMod ?? 0}
+                      onCommit={(v) => patch({ strMod: v ?? 0 })}
+                    />
+                  </FieldRow>
+                  <FieldRow label="DEX">
+                    <NumberInput
+                      value={e.dexMod ?? 0}
+                      onCommit={(v) => patch({ dexMod: v ?? 0 })}
+                    />
+                  </FieldRow>
+                  <FieldRow label="CON">
+                    <NumberInput
+                      value={e.conMod ?? 0}
+                      onCommit={(v) => patch({ conMod: v ?? 0 })}
+                    />
+                  </FieldRow>
+                  <FieldRow label="INT">
+                    <NumberInput
+                      value={e.intMod ?? 0}
+                      onCommit={(v) => patch({ intMod: v ?? 0 })}
+                    />
+                  </FieldRow>
+                  <FieldRow label="WIS">
+                    <NumberInput
+                      value={e.wisMod ?? 0}
+                      onCommit={(v) => patch({ wisMod: v ?? 0 })}
+                    />
+                  </FieldRow>
+                  <FieldRow label="CHA">
+                    <NumberInput
+                      value={e.chaMod ?? 0}
+                      onCommit={(v) => patch({ chaMod: v ?? 0 })}
+                    />
+                  </FieldRow>
+                </div>
+              </div>
+            )}
+
+            {/* Legacy generic stat mods map — for any non-standard stat modifiers */}
             {showStatMods && (
               <StatModsEditor
                 statMods={e.statMods}

@@ -334,7 +334,6 @@ export async function saveConfig(mudDir: string): Promise<void> {
   // ─── Images ────────────────────────────────────────────────
   setIn(root, ["images", "baseUrl"], config.images.baseUrl);
   setIn(root, ["images", "spriteLevelTiers"], config.images.spriteLevelTiers);
-  setIn(root, ["images", "staffSpriteTier"], config.images.staffSpriteTier);
 
   // ─── Global Assets ────────────────────────────────────────
   if (Object.keys(config.globalAssets).length > 0) {

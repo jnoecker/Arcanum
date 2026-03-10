@@ -299,7 +299,6 @@ function parseImagesConfig(raw: unknown): AppConfig["images"] {
   return {
     baseUrl: asString(s.baseUrl, "/images/"),
     spriteLevelTiers: parseNumberArray(s.spriteLevelTiers, [50, 40, 30, 20, 10, 1]),
-    staffSpriteTier: asNumber(s.staffSpriteTier, 60),
   };
 }
 

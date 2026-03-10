@@ -34,15 +34,14 @@ interface SpriteImportResult {
 function buildSpriteContext(
   race: string,
   cls: string,
-  tier: number,
-  allTiers: number[],
-  staffTier: number,
+  tier: number | "staff",
+  allTiers: Array<number | "staff">,
   config: ReturnType<typeof useConfigStore.getState>["config"],
 ): string {
   const raceDef = config?.races[race.toUpperCase()];
   const classDef = config?.classes[cls.toUpperCase()];
-  const range = tierRange(tier, allTiers, staffTier);
-  const isStaff = tier === staffTier;
+  const isStaff = tier === "staff";
+  const range = tierRange(tier, allTiers);
 
   const parts = [
     `Race: ${raceDef?.displayName ?? race}`,
@@ -51,16 +50,17 @@ function buildSpriteContext(
     classDef?.description ? `Class description: ${classDef.description}` : null,
     isStaff
       ? `Power tier: Staff (high-level game moderator/administrator)`
-      : `Power tier: Level ${range} (${tierPowerWord(tier, allTiers, staffTier)})`,
-    `Equipment and ornamentation should reflect a ${isStaff ? "powerful staff member" : tierPowerWord(tier, allTiers, staffTier) + " adventurer"} of the ${classDef?.displayName ?? cls} class.`,
+      : `Power tier: Level ${range} (${tierPowerWord(tier, allTiers)})`,
+    `Equipment and ornamentation should reflect a ${isStaff ? "powerful staff member" : tierPowerWord(tier, allTiers) + " adventurer"} of the ${classDef?.displayName ?? cls} class.`,
     `The character should be depicted in a gender-neutral way.`,
   ];
 
   return parts.filter(Boolean).join("\n");
 }
 
-function tierPowerWord(tier: number, allTiers: number[], staffTier: number): string {
-  const sorted = allTiers.filter((t) => t !== staffTier).sort((a, b) => a - b);
+function tierPowerWord(tier: number | "staff", allTiers: Array<number | "staff">): string {
+  if (tier === "staff") return "staff";
+  const sorted = allTiers.filter((t): t is number => t !== "staff").sort((a, b) => a - b);
   const idx = sorted.indexOf(tier);
   const total = sorted.length;
   if (idx < 0) return "adventurer";
@@ -171,7 +171,6 @@ export function PlayerSpriteManager() {
 
   const { races, classes, tiers } = getSpriteAxes(config);
   const allTiers = getAllTiers(config);
-  const staffTier = config.images.staffSpriteTier;
   const total = totalSprites(config);
 
   const imageProvider = settings?.image_provider ?? "deepinfra";
@@ -218,10 +217,10 @@ export function PlayerSpriteManager() {
   const generateSprite = useCallback(async (
     race: string,
     cls: string,
-    tier: number,
+    tier: number | "staff",
   ): Promise<boolean> => {
     const key = spriteKey(race, cls, tier);
-    const context = buildSpriteContext(race, cls, tier, allTiers, staffTier, config);
+    const context = buildSpriteContext(race, cls, tier, allTiers, config);
     const basePrompt = composePrompt("player_sprite", artStyle);
 
     // Enhance via LLM if keys available
@@ -273,13 +272,13 @@ export function PlayerSpriteManager() {
     }
 
     return true;
-  }, [config, artStyle, settings, imageProvider, defaultModel, allTiers, staffTier, acceptAsset]);
+  }, [config, artStyle, settings, imageProvider, defaultModel, allTiers, acceptAsset]);
 
   /** Generate a single sprite cell on click. */
   const handleGenerateOne = useCallback(async (
     race: string,
     cls: string,
-    tier: number,
+    tier: number | "staff",
   ) => {
     const key = spriteKey(race, cls, tier);
     setGenerating(key);
@@ -296,7 +295,7 @@ export function PlayerSpriteManager() {
   /** Batch generate all missing sprites (respects current filters). */
   const handleBatchGenerate = useCallback(async () => {
     // Collect missing sprite slots
-    const missing: Array<{ race: string; cls: string; tier: number }> = [];
+    const missing: Array<{ race: string; cls: string; tier: number | "staff" }> = [];
     for (const race of filteredRaces) {
       for (const cls of filteredClasses) {
         for (const tier of tiers) {
@@ -617,9 +616,9 @@ export function PlayerSpriteManager() {
         <p className="mb-3 text-[10px] text-text-muted">
           Filename format:{" "}
           <code className="font-mono">
-            player_sprites/&#123;race&#125;_&#123;class&#125;_l&#123;tier&#125;.png
+            player_sprites/&#123;race&#125;_&#123;class&#125;_t&#123;tier&#125;.png
           </code>
-          {" | "}Tiers: {allTiers.map((t) => `l${t}`).join(", ")}
+          {" | "}Tiers: {allTiers.map((t) => `t${t}`).join(", ")}
           {" | "}Hover a cell to generate, regenerate, or delete.
         </p>
 
@@ -641,9 +640,9 @@ export function PlayerSpriteManager() {
                         key={tier}
                         className="border border-border-default bg-bg-tertiary px-1 py-1 text-center text-[10px] font-normal text-text-muted"
                       >
-                        <div>{tierLabel(tier, staffTier)}</div>
+                        <div>{tierLabel(tier)}</div>
                         <div className="text-[9px] opacity-60">
-                          {tierRange(tier, allTiers, staffTier)}
+                          {tierRange(tier, allTiers)}
                         </div>
                       </th>
                     ))}

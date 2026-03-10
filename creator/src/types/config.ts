@@ -336,7 +336,6 @@ export interface RaceDefinitionConfig {
 export interface ImagesConfig {
   baseUrl: string;
   spriteLevelTiers: number[];
-  staffSpriteTier: number;
 }
 
 // ─── World ──────────────────────────────────────────────────────────

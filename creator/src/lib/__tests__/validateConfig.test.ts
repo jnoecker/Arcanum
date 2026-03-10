@@ -82,7 +82,7 @@ const BASE_CONFIG: AppConfig = {
   guildRanks: {},
   mobActionDelay: { minActionDelayMillis: 8000, maxActionDelayMillis: 20000 },
   characterCreation: { startingGold: 0 },
-  images: { baseUrl: "/images/", spriteLevelTiers: [50, 40, 30, 20, 10, 1], staffSpriteTier: 60 },
+  images: { baseUrl: "/images/", spriteLevelTiers: [50, 40, 30, 20, 10, 1] },
   globalAssets: {},
   rawSections: {},
 };

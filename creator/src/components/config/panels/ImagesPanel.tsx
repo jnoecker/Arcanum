@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { ConfigPanelProps, AppConfig } from "./types";
-import { Section, FieldRow, TextInput, NumberInput } from "@/components/ui/FormWidgets";
+import { Section, FieldRow, TextInput } from "@/components/ui/FormWidgets";
 
 export function ImagesPanel({ config, onChange }: ConfigPanelProps) {
   const img = config.images;
@@ -40,28 +40,22 @@ export function ImagesPanel({ config, onChange }: ConfigPanelProps) {
 
       <Section
         title="Player Sprite Tiers"
-        description="Player characters use different sprite art at different level ranges, giving visual progression as they advance. The server picks the highest tier threshold at or below the player's level."
+        description="Player characters use different sprite art at different level ranges, giving visual progression as they advance. The server picks the highest tier threshold at or below the player's level. A special 'tstaff' tier is always included for staff/admin sprites."
       >
         <p className="mb-2 text-[10px] text-text-muted">
           Level breakpoints for player sprite art. Sprites use the filename
           format:{" "}
           <code className="font-mono">
-            player_sprites/race_gender_class_l&#123;tier&#125;.png
+            player_sprites/race_class_t&#123;tier&#125;.png
           </code>
+          {" "}(staff sprites use <code className="font-mono">tstaff</code>)
         </p>
         <div className="flex flex-col gap-1.5">
-          <FieldRow label="Level Tiers" hint="Comma-separated descending thresholds. Level 25 matches l20 (highest threshold at or below level). More tiers = more visual variety.">
+          <FieldRow label="Level Tiers" hint="Comma-separated descending thresholds. Level 25 matches t20 (highest threshold at or below level). More tiers = more visual variety.">
             <TextInput
               value={tierDraft}
               onCommit={commitTiers}
               placeholder="50, 40, 30, 20, 10, 1"
-            />
-          </FieldRow>
-          <FieldRow label="Staff Tier" hint="Special tier used for staff/admin sprites. Default 60 is above the normal max (50) so staff always look distinct.">
-            <NumberInput
-              value={img.staffSpriteTier}
-              onCommit={(v) => patch({ staffSpriteTier: v ?? 60 })}
-              min={1}
             />
           </FieldRow>
         </div>

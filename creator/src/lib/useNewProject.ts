@@ -3,16 +3,17 @@ import { invoke } from "@tauri-apps/api/core";
 import { writeTextFile } from "@tauri-apps/plugin-fs";
 import { stringify } from "yaml";
 import { useOpenProject } from "@/lib/useOpenProject";
+import { useProjectStore } from "@/stores/projectStore";
 import { useConfigStore } from "@/stores/configStore";
 import { useZoneStore } from "@/stores/zoneStore";
-import { saveConfig } from "@/lib/saveConfig";
+import { saveProjectConfig } from "@/lib/saveConfig";
 import { addRecentProject } from "@/lib/uiPersistence";
+import { zoneFilePath } from "@/lib/projectPaths";
 import { applyTemplate, type ProjectTemplate } from "@/lib/templates";
 
 export type WizardStage =
   | "idle"
-  | "checking_git"
-  | "cloning"
+  | "creating_structure"
   | "setting_up"
   | "done"
   | "error";
@@ -38,25 +39,20 @@ export function useNewProject() {
       template: ProjectTemplate,
       ports: { telnet: number; web: number },
     ) => {
-      setState({ stage: "checking_git", error: null });
+      setState({ stage: "creating_structure", error: null });
 
       try {
-        // Step 1: Check git
-        await invoke<string>("check_git_installed");
-
-        // Step 2: Clone
-        setState({ stage: "cloning", error: null });
-        const mudDir = await invoke<string>("clone_mud_project", {
+        // Step 1: Create standalone project directory
+        const mudDir = await invoke<string>("create_standalone_project", {
           targetDir,
           projectName,
         });
 
-        // Step 3: Setup
+        // Step 2: Setup
         setState({ stage: "setting_up", error: null });
-        await invoke<number>("clear_world_zones", { mudDir });
 
-        // Open the project
-        const result = await openDir(mudDir);
+        // Open the project (format override since config files don't exist yet)
+        const result = await openDir(mudDir, "standalone");
         if (!result.success) {
           setState({
             stage: "error",
@@ -80,18 +76,22 @@ export function useNewProject() {
         }
 
         // Write starter zones
-        if (template.starterZones) {
-          const worldDir = `${mudDir}/src/main/resources/world`;
+        const project = useProjectStore.getState().project;
+        if (template.starterZones && project) {
           for (const zone of template.starterZones) {
-            const filePath = `${worldDir}/${zone.zone}.yaml`;
+            await invoke("create_zone_directory", {
+              projectDir: mudDir,
+              zoneId: zone.zone,
+            });
+            const filePath = zoneFilePath(project, zone.zone);
             await writeTextFile(filePath, stringify(zone));
             loadZone(zone.zone, filePath, zone);
           }
         }
 
         // Save config to disk
-        if (config) {
-          await saveConfig(mudDir);
+        if (config && project) {
+          await saveProjectConfig(project);
         }
 
         addRecentProject(mudDir, projectName);

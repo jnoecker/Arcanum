@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import { useConfigStore } from "@/stores/configStore";
 import { useProjectStore } from "@/stores/projectStore";
-import { saveConfig } from "@/lib/saveConfig";
+import { saveProjectConfig } from "@/lib/saveConfig";
 import type { AppConfig } from "@/types/config";
 import configBg from "@/assets/config-bg.png";
 import subtoolbarBg from "@/assets/subtoolbar-bg.jpg";
@@ -61,7 +61,7 @@ export function ConfigEditor() {
   const config = useConfigStore((s) => s.config);
   const dirty = useConfigStore((s) => s.dirty);
   const updateConfig = useConfigStore((s) => s.updateConfig);
-  const mudDir = useProjectStore((s) => s.project?.mudDir);
+  const project = useProjectStore((s) => s.project);
   const activeTab = useProjectStore((s) => s.configSubTab);
   const setActiveTab = useProjectStore((s) => s.setConfigSubTab);
   const [saving, setSaving] = useState(false);
@@ -70,15 +70,15 @@ export function ConfigEditor() {
   // Auto-save: debounce 3s after last edit
   const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   useEffect(() => {
-    if (!dirty || !mudDir) return;
+    if (!dirty || !project) return;
     clearTimeout(autoSaveTimer.current);
     autoSaveTimer.current = setTimeout(() => {
-      saveConfig(mudDir).catch((err) => {
+      saveProjectConfig(project).catch((err) => {
         console.error("Auto-save failed:", err);
       });
     }, 3000);
     return () => clearTimeout(autoSaveTimer.current);
-  }, [dirty, config, mudDir]);
+  }, [dirty, config, project]);
 
   const handleChange = useCallback(
     (patch: Partial<AppConfig>) => {
@@ -89,11 +89,11 @@ export function ConfigEditor() {
   );
 
   const handleSave = useCallback(async () => {
-    if (!mudDir || saving) return;
+    if (!project || saving) return;
     setSaving(true);
     setSaveError(null);
     try {
-      await saveConfig(mudDir);
+      await saveProjectConfig(project);
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       console.error("Config save failed:", msg);
@@ -101,7 +101,7 @@ export function ConfigEditor() {
     } finally {
       setSaving(false);
     }
-  }, [mudDir, saving]);
+  }, [project, saving]);
 
   if (!config) {
     return (

@@ -4,7 +4,8 @@ import { useAssetStore } from "@/stores/assetStore";
 import { useProjectStore } from "@/stores/projectStore";
 import { useZoneStore } from "@/stores/zoneStore";
 import { useConfigStore } from "@/stores/configStore";
-import { saveConfig } from "@/lib/saveConfig";
+import { saveProjectConfig } from "@/lib/saveConfig";
+import { buildMonolithicConfig } from "@/lib/exportMud";
 import { IMAGE_MODELS } from "@/types/assets";
 import type { Settings, SyncProgress } from "@/types/assets";
 
@@ -397,7 +398,14 @@ export function ApiSettingsPanel() {
                   setDeploying(true);
                   setDeployResult(null);
                   try {
-                    const url = await invoke<string>("deploy_config_to_r2", { mudDir });
+                    const project = useProjectStore.getState().project;
+                    const configContent = project?.format === "standalone"
+                      ? buildMonolithicConfig()
+                      : undefined;
+                    const url = await invoke<string>("deploy_config_to_r2", {
+                      mudDir,
+                      configContent,
+                    });
                     setDeployResult(`Deployed to ${url}`);
                   } catch (e) {
                     setDeployResult(`Failed: ${e}`);
@@ -427,7 +435,9 @@ export function ApiSettingsPanel() {
                   setDeployingZones(true);
                   setZoneDeployResult(null);
                   try {
-                    const result = await invoke<SyncProgress>("deploy_zones_to_r2", { mudDir });
+                    const project = useProjectStore.getState().project;
+                    const format = project?.format;
+                    const result = await invoke<SyncProgress>("deploy_zones_to_r2", { mudDir, format });
 
                     // Write explicit zone list to world.resources in config
                     const zones = useZoneStore.getState().zones;
@@ -439,7 +449,8 @@ export function ApiSettingsPanel() {
                         ...currentConfig,
                         world: { ...currentConfig.world, resources },
                       });
-                      await saveConfig(mudDir);
+                      const project = useProjectStore.getState().project;
+                      if (project) await saveProjectConfig(project);
                     }
 
                     setZoneDeployResult(

@@ -1,7 +1,30 @@
 import { readTextFile, writeTextFile } from "@tauri-apps/plugin-fs";
 import { exists } from "@tauri-apps/plugin-fs";
-import { parseDocument, YAMLMap } from "yaml";
+import { parseDocument, stringify, YAMLMap } from "yaml";
 import { useConfigStore } from "@/stores/configStore";
+import type { Project } from "@/types/project";
+import {
+  mapEntries,
+  abilityToPlain,
+  statusEffectToPlain,
+  classToPlain,
+  raceToPlain,
+} from "@/lib/exportMud";
+
+const YAML_OPTS = {
+  lineWidth: 120,
+  defaultKeyType: "PLAIN" as const,
+  defaultStringType: "PLAIN" as const,
+};
+
+/**
+ * Save config using the appropriate strategy for the project format.
+ */
+export async function saveProjectConfig(project: Project): Promise<void> {
+  return project.format === "standalone"
+    ? saveSplitConfig(project.mudDir)
+    : saveConfig(project.mudDir);
+}
 
 /**
  * Save the current AppConfig to application-local.yaml.
@@ -369,4 +392,126 @@ function setIn(node: any, path: string[], value: unknown): void {
     current = child;
   }
   current.set(path[path.length - 1], value);
+}
+
+// ─── Split config saver ─────────────────────────────────────────────
+
+/** Filter out entries where all values are undefined/null. */
+function cleanObj(obj: Record<string, unknown>): Record<string, unknown> {
+  const result: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(obj)) {
+    if (v !== undefined && v !== null) result[k] = v;
+  }
+  return result;
+}
+
+/**
+ * Save config to 11 separate YAML files in config/ directory.
+ */
+async function saveSplitConfig(projectDir: string): Promise<void> {
+  const state = useConfigStore.getState();
+  const config = state.config;
+  if (!config) throw new Error("No config loaded");
+
+  const dir = `${projectDir}/config`;
+  const write = (name: string, data: unknown) =>
+    writeTextFile(`${dir}/${name}.yaml`, stringify(data, YAML_OPTS));
+
+  await Promise.all([
+    // classes.yaml
+    write("classes", {
+      definitions: mapEntries(config.classes, classToPlain),
+    }),
+
+    // races.yaml
+    write("races", {
+      definitions: mapEntries(config.races, raceToPlain),
+    }),
+
+    // abilities.yaml
+    write("abilities", {
+      definitions: mapEntries(config.abilities, abilityToPlain),
+    }),
+
+    // status-effects.yaml
+    write("status-effects", {
+      definitions: mapEntries(config.statusEffects, statusEffectToPlain),
+      effectTypes: config.statusEffectTypes,
+      stackBehaviors: config.stackBehaviors,
+      targetTypes: config.abilityTargetTypes,
+    }),
+
+    // stats.yaml
+    write("stats", {
+      definitions: mapEntries(config.stats.definitions, (def) => ({
+        displayName: def.displayName,
+        abbreviation: def.abbreviation,
+        description: def.description,
+        baseStat: def.baseStat,
+      })),
+      bindings: config.stats.bindings,
+    }),
+
+    // equipment.yaml
+    write("equipment", {
+      slots: mapEntries(config.equipmentSlots, (s) => ({
+        displayName: s.displayName,
+        order: s.order,
+      })),
+    }),
+
+    // combat.yaml
+    write("combat", {
+      combat: config.combat,
+      mob: {
+        minActionDelayMillis: config.mobActionDelay.minActionDelayMillis,
+        maxActionDelayMillis: config.mobActionDelay.maxActionDelayMillis,
+        tiers: config.mobTiers,
+      },
+    }),
+
+    // crafting.yaml
+    write("crafting", {
+      ...config.crafting,
+      skills: config.craftingSkills,
+      stationTypes: config.craftingStationTypes,
+    }),
+
+    // progression.yaml
+    write("progression", {
+      progression: config.progression,
+      economy: config.economy,
+      regen: config.regen,
+    }),
+
+    // world.yaml
+    write("world", cleanObj({
+      server: config.server,
+      world: config.world,
+      classStartRooms: Object.keys(config.classStartRooms).length > 0 ? config.classStartRooms : undefined,
+      navigation: config.navigation,
+      commands: Object.keys(config.commands).length > 0 ? config.commands : undefined,
+      group: config.group,
+      guildRanks: {
+        founderRank: config.guild.founderRank,
+        defaultRank: config.guild.defaultRank,
+        ranks: config.guildRanks,
+      },
+      friends: config.friends,
+      genders: config.genders,
+      characterCreation: config.characterCreation,
+      achievementCategories: Object.keys(config.achievementCategories).length > 0 ? config.achievementCategories : undefined,
+      achievementCriterionTypes: Object.keys(config.achievementCriterionTypes).length > 0 ? config.achievementCriterionTypes : undefined,
+      questObjectiveTypes: Object.keys(config.questObjectiveTypes).length > 0 ? config.questObjectiveTypes : undefined,
+      questCompletionTypes: Object.keys(config.questCompletionTypes).length > 0 ? config.questCompletionTypes : undefined,
+    })),
+
+    // assets.yaml
+    write("assets", cleanObj({
+      images: config.images,
+      globalAssets: Object.keys(config.globalAssets).length > 0 ? config.globalAssets : undefined,
+    })),
+  ]);
+
+  state.markClean();
 }

@@ -343,6 +343,114 @@ pub fn migrate_images_to_r2(
     Ok(report)
 }
 
+// ─── Standalone Project Support ──────────────────────────────────────
+
+#[derive(Serialize)]
+pub struct ProjectValidation {
+    pub valid: bool,
+    pub format: String,
+    pub errors: Vec<String>,
+}
+
+/// Auto-detect project format and validate the directory.
+/// Returns format "standalone" if config/ + zones/ exist,
+/// "legacy" if gradlew + src/main/resources/ exist.
+#[tauri::command]
+pub fn validate_project(path: String) -> ProjectValidation {
+    let root = Path::new(&path);
+
+    let has_config_dir = root.join("config").is_dir();
+    let has_zones_dir = root.join("zones").is_dir();
+    let has_gradlew = root.join("gradlew").exists() || root.join("gradlew.bat").exists();
+    let has_resources = root.join("src/main/resources/world").is_dir()
+        && root.join("src/main/resources/application.yaml").exists();
+
+    if has_config_dir && has_zones_dir {
+        ProjectValidation {
+            valid: true,
+            format: "standalone".to_string(),
+            errors: vec![],
+        }
+    } else if has_gradlew && has_resources {
+        ProjectValidation {
+            valid: true,
+            format: "legacy".to_string(),
+            errors: vec![],
+        }
+    } else {
+        let mut errors = Vec::new();
+        if !has_config_dir && !has_resources {
+            errors.push("Not a valid project: missing config/ directory (standalone) or src/main/resources/ (legacy)".to_string());
+        }
+        if !has_zones_dir && !has_resources {
+            errors.push("Not a valid project: missing zones/ directory (standalone) or src/main/resources/world/ (legacy)".to_string());
+        }
+        ProjectValidation {
+            valid: false,
+            format: String::new(),
+            errors,
+        }
+    }
+}
+
+/// Create a new standalone world project directory.
+/// Creates config/ and zones/ subdirectories.
+#[tauri::command]
+pub async fn create_standalone_project(
+    target_dir: String,
+    project_name: String,
+) -> Result<String, String> {
+    let target = PathBuf::from(&target_dir).join(&project_name);
+    if target.exists() {
+        return Err(format!(
+            "Directory already exists: {}",
+            target.to_string_lossy()
+        ));
+    }
+
+    tokio::fs::create_dir_all(target.join("config"))
+        .await
+        .map_err(|e| format!("Failed to create config/: {e}"))?;
+    tokio::fs::create_dir_all(target.join("zones"))
+        .await
+        .map_err(|e| format!("Failed to create zones/: {e}"))?;
+
+    Ok(target.to_string_lossy().to_string())
+}
+
+/// Create a zone directory with an assets subdirectory (standalone format).
+#[tauri::command]
+pub async fn create_zone_directory(
+    project_dir: String,
+    zone_id: String,
+) -> Result<String, String> {
+    let zone_dir = PathBuf::from(&project_dir).join("zones").join(&zone_id);
+    if zone_dir.exists() {
+        return Err(format!("Zone directory already exists: {zone_id}"));
+    }
+
+    tokio::fs::create_dir_all(zone_dir.join("assets"))
+        .await
+        .map_err(|e| format!("Failed to create zone directory: {e}"))?;
+
+    Ok(zone_dir.to_string_lossy().to_string())
+}
+
+/// Delete a standalone zone directory (zone/ + assets/).
+#[tauri::command]
+pub async fn delete_zone_directory(
+    project_dir: String,
+    zone_id: String,
+) -> Result<(), String> {
+    let zone_dir = PathBuf::from(&project_dir).join("zones").join(&zone_id);
+    if !zone_dir.exists() {
+        return Err(format!("Zone directory not found: {zone_id}"));
+    }
+    tokio::fs::remove_dir_all(&zone_dir)
+        .await
+        .map_err(|e| format!("Failed to delete zone directory: {e}"))
+}
+
 // ─── New Project Commands ────────────────────────────────────────────
 
 /// Check if git is installed and return the version string.

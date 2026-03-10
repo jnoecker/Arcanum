@@ -3,6 +3,7 @@ import { exists } from "@tauri-apps/plugin-fs";
 import { parseDocument } from "yaml";
 import type { WorldFile } from "@/types/world";
 import type { AppConfig } from "@/types/config";
+import type { Project } from "@/types/project";
 
 /**
  * Load all zone YAML files from the world directory.
@@ -41,6 +42,59 @@ export async function loadAllZones(
 }
 
 /**
+ * Parse a monolithic application.yaml string into AppConfig.
+ * Handles the ambonmud root + engine subtree structure.
+ */
+export function parseAppConfigYaml(content: string): AppConfig {
+  const doc = parseDocument(content);
+  const raw = doc.toJS() as Record<string, unknown>;
+
+  // Navigate into the ambonmud root if present
+  const root = (raw.ambonmud ?? raw) as Record<string, unknown>;
+  const engine = (root.engine ?? {}) as Record<string, unknown>;
+  const progression = (root.progression ?? {}) as Record<string, unknown>;
+
+  return {
+    server: parseServerConfig(root.server),
+    world: parseWorldConfig(root.world),
+    classStartRooms: parseClassStartRooms(engine.classStartRooms),
+    stats: parseStatsConfig(engine.stats),
+    abilities: parseMapSection(engine.abilities, "definitions"),
+    statusEffects: parseMapSection(engine.statusEffects, "definitions"),
+    combat: parseCombatConfig(engine.combat),
+    mobTiers: parseMobTiersConfig(engine.mob),
+    mobActionDelay: parseMobActionDelayConfig(engine.mob),
+    progression: parseProgressionConfig(progression),
+    economy: parseSimpleSection(engine.economy, { buyMultiplier: 1.0, sellMultiplier: 0.5 }),
+    regen: parseRegenConfig(engine.regen),
+    crafting: parseCraftingConfig(engine.crafting),
+    navigation: parseNavigationConfig(engine.navigation),
+    commands: parseMapSection(engine.commands, "entries"),
+    group: parseSimpleSection(engine.group, { maxSize: 5, inviteTimeoutMs: 60000, xpBonusPerMember: 0.1 }),
+    classes: parseMapSection(engine.classes, "definitions"),
+    races: parseMapSection(engine.races, "definitions"),
+    equipmentSlots: parseMapSection(engine.equipment, "slots"),
+    characterCreation: parseCharacterCreationConfig(engine.characterCreation),
+    genders: parseMapSection(engine, "genders"),
+    achievementCategories: parseMapSection(engine, "achievementCategories"),
+    achievementCriterionTypes: parseMapSection(engine, "achievementCriterionTypes"),
+    questObjectiveTypes: parseMapSection(engine, "questObjectiveTypes"),
+    questCompletionTypes: parseMapSection(engine, "questCompletionTypes"),
+    statusEffectTypes: parseMapSection(engine.effectTypes, "types"),
+    stackBehaviors: parseMapSection(engine.stackBehaviors, "behaviors"),
+    abilityTargetTypes: parseMapSection(engine.targetTypes, "types"),
+    craftingSkills: parseMapSection(engine.craftingSkills, "skills"),
+    craftingStationTypes: parseMapSection(engine.craftingStationTypes, "stationTypes"),
+    guild: parseGuildConfig(engine.guildRanks),
+    guildRanks: parseMapSection(engine.guildRanks, "ranks"),
+    friends: parseFriendsConfig(engine.friends),
+    images: parseImagesConfig(root.images),
+    globalAssets: parseGlobalAssets(root.globalAssets),
+    rawSections: collectRawSections(root, engine),
+  };
+}
+
+/**
  * Load and parse the application config.
  * Uses application-local.yaml (gitignored operator overrides) if it exists,
  * otherwise falls back to application.yaml (checked-in defaults).
@@ -58,54 +112,7 @@ export async function loadAppConfig(
     // Local file takes precedence; fall back to base defaults
     const configPath = await exists(localPath) ? localPath : basePath;
     const content = await readTextFile(configPath);
-    const doc = parseDocument(content);
-    const raw = doc.toJS() as Record<string, unknown>;
-
-    // Navigate into the ambonmud root if present
-    const root = (raw.ambonmud ?? raw) as Record<string, unknown>;
-    const engine = (root.engine ?? {}) as Record<string, unknown>;
-    const progression = (root.progression ?? {}) as Record<string, unknown>;
-
-    const config: AppConfig = {
-      server: parseServerConfig(root.server),
-      world: parseWorldConfig(root.world),
-      classStartRooms: parseClassStartRooms(engine.classStartRooms),
-      stats: parseStatsConfig(engine.stats),
-      abilities: parseMapSection(engine.abilities, "definitions"),
-      statusEffects: parseMapSection(engine.statusEffects, "definitions"),
-      combat: parseCombatConfig(engine.combat),
-      mobTiers: parseMobTiersConfig(engine.mob),
-      mobActionDelay: parseMobActionDelayConfig(engine.mob),
-      progression: parseProgressionConfig(progression),
-      economy: parseSimpleSection(engine.economy, { buyMultiplier: 1.0, sellMultiplier: 0.5 }),
-      regen: parseRegenConfig(engine.regen),
-      crafting: parseCraftingConfig(engine.crafting),
-      navigation: parseNavigationConfig(engine.navigation),
-      commands: parseMapSection(engine.commands, "entries"),
-      group: parseSimpleSection(engine.group, { maxSize: 5, inviteTimeoutMs: 60000, xpBonusPerMember: 0.1 }),
-      classes: parseMapSection(engine.classes, "definitions"),
-      races: parseMapSection(engine.races, "definitions"),
-      equipmentSlots: parseMapSection(engine.equipment, "slots"),
-      characterCreation: parseCharacterCreationConfig(engine.characterCreation),
-      genders: parseMapSection(engine, "genders"),
-      achievementCategories: parseMapSection(engine, "achievementCategories"),
-      achievementCriterionTypes: parseMapSection(engine, "achievementCriterionTypes"),
-      questObjectiveTypes: parseMapSection(engine, "questObjectiveTypes"),
-      questCompletionTypes: parseMapSection(engine, "questCompletionTypes"),
-      statusEffectTypes: parseMapSection(engine.effectTypes, "types"),
-      stackBehaviors: parseMapSection(engine.stackBehaviors, "behaviors"),
-      abilityTargetTypes: parseMapSection(engine.targetTypes, "types"),
-      craftingSkills: parseMapSection(engine.craftingSkills, "skills"),
-      craftingStationTypes: parseMapSection(engine.craftingStationTypes, "stationTypes"),
-      guild: parseGuildConfig(engine.guildRanks),
-      guildRanks: parseMapSection(engine.guildRanks, "ranks"),
-      friends: parseFriendsConfig(engine.friends),
-      images: parseImagesConfig(root.images),
-      globalAssets: parseGlobalAssets(root.globalAssets),
-      rawSections: collectRawSections(root, engine),
-    };
-
-    return config;
+    return parseAppConfigYaml(content);
   } catch (err) {
     console.error("Failed to load application.yaml:", err);
     return null;
@@ -413,5 +420,185 @@ function parseNumberArray(val: unknown, fallback: number[]): number[] {
 function parseStringArray(val: unknown, fallback: string[]): string[] {
   if (!Array.isArray(val)) return fallback;
   return val.filter((v): v is string => typeof v === "string");
+}
+
+// ─── Format-dispatching loaders ─────────────────────────────────────
+
+/**
+ * Load zones using the appropriate strategy for the project format.
+ */
+export async function loadProjectZones(
+  project: Project,
+): Promise<Record<string, { filePath: string; data: WorldFile }>> {
+  return project.format === "standalone"
+    ? loadStandaloneZones(project.mudDir)
+    : loadAllZones(project.mudDir);
+}
+
+/**
+ * Load config using the appropriate strategy for the project format.
+ */
+export async function loadProjectConfig(
+  project: Project,
+): Promise<AppConfig | null> {
+  return project.format === "standalone"
+    ? loadSplitConfig(project.mudDir)
+    : loadAppConfig(project.mudDir);
+}
+
+// ─── Standalone zone loader ─────────────────────────────────────────
+
+/**
+ * Load zones from standalone directory structure: zones/<name>/zone.yaml
+ */
+async function loadStandaloneZones(
+  projectDir: string,
+): Promise<Record<string, { filePath: string; data: WorldFile }>> {
+  const zonesDir = `${projectDir}/zones`;
+  const result: Record<string, { filePath: string; data: WorldFile }> = {};
+
+  try {
+    const entries = await readDir(zonesDir);
+    for (const entry of entries) {
+      if (!entry.isDirectory || !entry.name) continue;
+
+      const filePath = `${zonesDir}/${entry.name}/zone.yaml`;
+      try {
+        if (!(await exists(filePath))) continue;
+        const content = await readTextFile(filePath);
+        const doc = parseDocument(content);
+        const data = doc.toJS() as WorldFile;
+
+        if (data.zone && data.rooms) {
+          result[data.zone] = { filePath, data };
+        }
+      } catch (err) {
+        console.error(`Failed to parse zone ${entry.name}:`, err);
+      }
+    }
+  } catch (err) {
+    console.error("Failed to read zones directory:", err);
+  }
+
+  return result;
+}
+
+// ─── Split config loader ────────────────────────────────────────────
+
+async function readYaml(path: string): Promise<Record<string, unknown>> {
+  try {
+    if (!(await exists(path))) return {};
+    const content = await readTextFile(path);
+    const doc = parseDocument(content);
+    return (doc.toJS() ?? {}) as Record<string, unknown>;
+  } catch {
+    return {};
+  }
+}
+
+/**
+ * Load config from 11 separate YAML files in config/ directory.
+ */
+async function loadSplitConfig(projectDir: string): Promise<AppConfig | null> {
+  const dir = `${projectDir}/config`;
+
+  try {
+    const [
+      classesRaw,
+      racesRaw,
+      abilitiesRaw,
+      statusEffectsRaw,
+      statsRaw,
+      equipmentRaw,
+      combatRaw,
+      craftingRaw,
+      progressionRaw,
+      worldRaw,
+      assetsRaw,
+    ] = await Promise.all([
+      readYaml(`${dir}/classes.yaml`),
+      readYaml(`${dir}/races.yaml`),
+      readYaml(`${dir}/abilities.yaml`),
+      readYaml(`${dir}/status-effects.yaml`),
+      readYaml(`${dir}/stats.yaml`),
+      readYaml(`${dir}/equipment.yaml`),
+      readYaml(`${dir}/combat.yaml`),
+      readYaml(`${dir}/crafting.yaml`),
+      readYaml(`${dir}/progression.yaml`),
+      readYaml(`${dir}/world.yaml`),
+      readYaml(`${dir}/assets.yaml`),
+    ]);
+
+    const config: AppConfig = {
+      // world.yaml
+      server: parseServerConfig(worldRaw.server),
+      world: parseWorldConfig(worldRaw.world),
+      classStartRooms: parseClassStartRooms(worldRaw.classStartRooms),
+      navigation: parseNavigationConfig(worldRaw.navigation),
+      commands: asRecord(worldRaw.commands),
+      group: parseSimpleSection(worldRaw.group, { maxSize: 5, inviteTimeoutMs: 60000, xpBonusPerMember: 0.1 }),
+      guild: parseGuildConfig(worldRaw.guildRanks),
+      guildRanks: parseMapSection(worldRaw.guildRanks, "ranks"),
+      friends: parseFriendsConfig(worldRaw.friends),
+      genders: asRecord(worldRaw.genders),
+      characterCreation: parseCharacterCreationConfig(worldRaw.characterCreation),
+      achievementCategories: asRecord(worldRaw.achievementCategories),
+      achievementCriterionTypes: asRecord(worldRaw.achievementCriterionTypes),
+      questObjectiveTypes: asRecord(worldRaw.questObjectiveTypes),
+      questCompletionTypes: asRecord(worldRaw.questCompletionTypes),
+
+      // stats.yaml
+      stats: parseStatsConfig(statsRaw),
+
+      // abilities.yaml
+      abilities: asRecord(abilitiesRaw.definitions ?? abilitiesRaw),
+
+      // status-effects.yaml
+      statusEffects: asRecord(statusEffectsRaw.definitions ?? statusEffectsRaw),
+      statusEffectTypes: asRecord(statusEffectsRaw.effectTypes),
+      stackBehaviors: asRecord(statusEffectsRaw.stackBehaviors),
+      abilityTargetTypes: asRecord(statusEffectsRaw.targetTypes),
+
+      // combat.yaml
+      combat: parseCombatConfig(combatRaw.combat ?? combatRaw),
+      mobTiers: parseMobTiersConfig(combatRaw.mob ?? combatRaw),
+      mobActionDelay: parseMobActionDelayConfig(combatRaw.mob ?? combatRaw),
+
+      // classes.yaml
+      classes: asRecord(classesRaw.definitions ?? classesRaw),
+
+      // races.yaml
+      races: asRecord(racesRaw.definitions ?? racesRaw),
+
+      // equipment.yaml
+      equipmentSlots: asRecord(equipmentRaw.slots ?? equipmentRaw),
+
+      // crafting.yaml
+      crafting: parseCraftingConfig(craftingRaw.crafting ?? craftingRaw),
+      craftingSkills: asRecord(craftingRaw.skills),
+      craftingStationTypes: asRecord(craftingRaw.stationTypes),
+
+      // progression.yaml
+      progression: parseProgressionConfig(progressionRaw.progression ?? progressionRaw),
+      economy: parseSimpleSection(progressionRaw.economy, { buyMultiplier: 1.0, sellMultiplier: 0.5 }),
+      regen: parseRegenConfig(progressionRaw.regen),
+
+      // assets.yaml
+      images: parseImagesConfig(assetsRaw.images ?? assetsRaw),
+      globalAssets: parseGlobalAssets(assetsRaw.globalAssets),
+
+      rawSections: {},
+    };
+
+    return config;
+  } catch (err) {
+    console.error("Failed to load split config:", err);
+    return null;
+  }
+}
+
+function asRecord<T>(val: unknown): Record<string, T> {
+  if (!val || typeof val !== "object") return {};
+  return val as Record<string, T>;
 }
 

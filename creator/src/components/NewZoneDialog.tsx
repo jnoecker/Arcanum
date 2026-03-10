@@ -1,8 +1,10 @@
 import { useState } from "react";
+import { invoke } from "@tauri-apps/api/core";
 import { writeTextFile } from "@tauri-apps/plugin-fs";
 import { stringify } from "yaml";
 import { useProjectStore } from "@/stores/projectStore";
 import { useZoneStore } from "@/stores/zoneStore";
+import { zoneFilePath } from "@/lib/projectPaths";
 import type { WorldFile } from "@/types/world";
 
 const YAML_OPTS = {
@@ -16,7 +18,7 @@ interface NewZoneDialogProps {
 }
 
 export function NewZoneDialog({ onClose }: NewZoneDialogProps) {
-  const mudDir = useProjectStore((s) => s.project?.mudDir);
+  const project = useProjectStore((s) => s.project);
   const loadZone = useZoneStore((s) => s.loadZone);
   const zones = useZoneStore((s) => s.zones);
   const openTab = useProjectStore((s) => s.openTab);
@@ -32,7 +34,7 @@ export function NewZoneDialog({ onClose }: NewZoneDialogProps) {
   const idTaken = zones.has(trimmedId);
 
   const handleCreate = async () => {
-    if (!mudDir || !idValid || idTaken) return;
+    if (!project || !idValid || idTaken) return;
 
     setCreating(true);
     setError(null);
@@ -49,7 +51,15 @@ export function NewZoneDialog({ onClose }: NewZoneDialogProps) {
         },
       };
 
-      const filePath = `${mudDir}/src/main/resources/world/${trimmedId}.yaml`;
+      // Create zone directory for standalone projects
+      if (project.format === "standalone") {
+        await invoke("create_zone_directory", {
+          projectDir: project.mudDir,
+          zoneId: trimmedId,
+        });
+      }
+
+      const filePath = zoneFilePath(project, trimmedId);
       const yaml = stringify(world, YAML_OPTS);
       await writeTextFile(filePath, yaml);
 
@@ -140,7 +150,7 @@ export function NewZoneDialog({ onClose }: NewZoneDialogProps) {
           </button>
           <button
             onClick={handleCreate}
-            disabled={!idValid || idTaken || creating || !mudDir}
+            disabled={!idValid || idTaken || creating || !project}
             className="rounded bg-gradient-to-r from-accent-muted to-accent px-4 py-1.5 text-xs font-medium text-accent-emphasis transition-all hover:shadow-[var(--glow-aurum)] hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40"
           >
             {creating ? "Creating..." : "Create Zone"}

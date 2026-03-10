@@ -255,18 +255,27 @@ export function Sidebar() {
     [clearQuery],
   );
 
+  const project = useProjectStore((s) => s.project);
+
   const handleDeleteZone = useCallback(async (zoneId: string) => {
     const zoneState = zones.get(zoneId);
     if (!zoneState) return;
     try {
-      await invoke("delete_zone_file", { filePath: zoneState.filePath });
+      if (project?.format === "standalone") {
+        await invoke("delete_zone_directory", {
+          projectDir: project.mudDir,
+          zoneId,
+        });
+      } else {
+        await invoke("delete_zone_file", { filePath: zoneState.filePath });
+      }
     } catch (err) {
-      console.error("Failed to delete zone file:", err);
+      console.error("Failed to delete zone:", err);
     }
     closeTab(`zone:${zoneId}`);
     removeZone(zoneId);
     setDeleteTarget(null);
-  }, [zones, closeTab, removeZone]);
+  }, [zones, closeTab, removeZone, project]);
 
   const sortedZones = [...zones.entries()].sort(([a], [b]) =>
     a.localeCompare(b),

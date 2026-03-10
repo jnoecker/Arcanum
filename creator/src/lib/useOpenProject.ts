@@ -4,14 +4,14 @@ import { invoke } from "@tauri-apps/api/core";
 import { useProjectStore } from "@/stores/projectStore";
 import { useZoneStore } from "@/stores/zoneStore";
 import { useConfigStore } from "@/stores/configStore";
-import { loadAllZones, loadAppConfig } from "@/lib/loader";
+import { loadProjectZones, loadProjectConfig } from "@/lib/loader";
 import { loadUIState, addRecentProject } from "@/lib/uiPersistence";
-import type { Project, Tab } from "@/types/project";
+import type { Project, ProjectFormat, Tab } from "@/types/project";
 
-interface ValidationResult {
+interface ProjectValidation {
   valid: boolean;
+  format: string;
   errors: string[];
-  gradle_wrapper: string;
 }
 
 export interface OpenProjectResult {
@@ -27,9 +27,9 @@ export function useOpenProject() {
   const setConfig = useConfigStore((s) => s.setConfig);
   const clearConfig = useConfigStore((s) => s.clearConfig);
 
-  const openDir = useCallback(async (mudDir: string): Promise<OpenProjectResult> => {
-    // Validate directory structure
-    const result = await invoke<ValidationResult>("validate_mud_dir", {
+  const openDir = useCallback(async (mudDir: string, formatOverride?: ProjectFormat): Promise<OpenProjectResult> => {
+    // Validate directory structure (auto-detect format)
+    const result = await invoke<ProjectValidation>("validate_project", {
       path: mudDir,
     });
 
@@ -37,12 +37,23 @@ export function useOpenProject() {
       return { success: false, errors: result.errors };
     }
 
+    const format = (formatOverride ?? result.format) as ProjectFormat;
+
     // Clear previous state
     clearZones();
     clearConfig();
 
+    // Create project
+    const project: Project = {
+      version: 1,
+      name: mudDir.split(/[\\/]/).pop() ?? "Project",
+      mudDir,
+      format,
+      openZones: [],
+    };
+
     // Load zones
-    const zones = await loadAllZones(mudDir);
+    const zones = await loadProjectZones(project);
     const zoneIds = new Set<string>();
     for (const [zoneId, { filePath, data }] of Object.entries(zones)) {
       loadZone(zoneId, filePath, data);
@@ -50,18 +61,10 @@ export function useOpenProject() {
     }
 
     // Load config
-    const config = await loadAppConfig(mudDir);
+    const config = await loadProjectConfig(project);
     if (config) {
       setConfig(config);
     }
-
-    // Create project
-    const project: Project = {
-      version: 1,
-      name: mudDir.split(/[\\/]/).pop() ?? "AmbonMUD",
-      mudDir,
-      openZones: [],
-    };
 
     setProject(project);
     addRecentProject(mudDir, project.name);

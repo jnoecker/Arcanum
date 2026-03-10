@@ -6,6 +6,7 @@ import {
   type RecentProject,
 } from "@/lib/uiPersistence";
 import { ErrorDialog } from "./ErrorDialog";
+import { ImportFromR2Dialog } from "./ImportFromR2Dialog";
 import splashHero from "@/assets/splash-hero.jpg";
 
 interface WelcomeScreenProps {
@@ -16,6 +17,7 @@ export function WelcomeScreen({ onNewProject }: WelcomeScreenProps) {
   const { openWithPicker, openDir } = useOpenProject();
   const [errors, setErrors] = useState<string[] | null>(null);
   const [loading, setLoading] = useState<string | null>(null);
+  const [showR2Import, setShowR2Import] = useState(false);
   const [recentProjects, setRecentProjects] = useState<RecentProject[]>(
     () => loadUIState()?.recentProjects ?? [],
   );
@@ -82,6 +84,12 @@ export function WelcomeScreen({ onNewProject }: WelcomeScreenProps) {
           >
             Open Existing Project
           </button>
+          <button
+            onClick={() => setShowR2Import(true)}
+            className="rounded-lg border border-border-default/50 px-6 py-2 text-xs text-text-muted transition-colors hover:border-border-default hover:bg-bg-elevated hover:text-text-secondary"
+          >
+            Import from R2
+          </button>
         </div>
 
         {/* Recent projects */}
@@ -135,6 +143,9 @@ export function WelcomeScreen({ onNewProject }: WelcomeScreenProps) {
         />
       )}
 
+      {showR2Import && (
+        <ImportFromR2Dialog onClose={() => setShowR2Import(false)} />
+      )}
     </div>
   );
 }

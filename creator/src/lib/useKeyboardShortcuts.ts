@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useProjectStore } from "@/stores/projectStore";
 import { useZoneStore } from "@/stores/zoneStore";
 import { saveAllZones } from "@/lib/saveZone";
-import { saveConfig } from "@/lib/saveConfig";
+import { saveProjectConfig } from "@/lib/saveConfig";
 import { useConfigStore } from "@/stores/configStore";
 
 export function useKeyboardShortcuts() {
@@ -35,9 +35,9 @@ export function useKeyboardShortcuts() {
         saveAllZones().catch((err) =>
           console.error("Zone save failed:", err),
         );
-        const mudDir = useProjectStore.getState().project?.mudDir;
-        if (mudDir && useConfigStore.getState().dirty) {
-          saveConfig(mudDir).catch((err) =>
+        const project = useProjectStore.getState().project;
+        if (project && useConfigStore.getState().dirty) {
+          saveProjectConfig(project).catch((err) =>
             console.error("Config save failed:", err),
           );
         }

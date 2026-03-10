@@ -608,11 +608,15 @@ pub async fn deploy_global_assets_to_r2(
     Ok(progress)
 }
 
-/// Deploy application-local.yaml to R2 so the demo cluster can pull it.
-/// Reads the file from the MUD project's resources directory and uploads
-/// it to "config/application-local.yaml" in the configured R2 bucket.
+/// Deploy application config to R2 so the demo cluster can pull it.
+/// For legacy projects, reads application-local.yaml from disk.
+/// For standalone projects, accepts pre-assembled config YAML via config_content.
 #[tauri::command]
-pub async fn deploy_config_to_r2(app: AppHandle, mud_dir: String) -> Result<String, String> {
+pub async fn deploy_config_to_r2(
+    app: AppHandle,
+    mud_dir: String,
+    config_content: Option<String>,
+) -> Result<String, String> {
     let s = settings::get_settings(app).await?;
     if s.r2_account_id.is_empty()
         || s.r2_access_key_id.is_empty()
@@ -622,10 +626,16 @@ pub async fn deploy_config_to_r2(app: AppHandle, mud_dir: String) -> Result<Stri
         return Err("R2 credentials not configured. Set them in Settings.".to_string());
     }
 
-    let local_path = format!("{mud_dir}/src/main/resources/application-local.yaml");
-    let body = tokio::fs::read(&local_path)
-        .await
-        .map_err(|e| format!("Failed to read application-local.yaml: {e}. Save your config first."))?;
+    let body = if let Some(content) = config_content {
+        // Standalone: use pre-assembled config
+        content.into_bytes()
+    } else {
+        // Legacy: read from disk
+        let local_path = format!("{mud_dir}/src/main/resources/application-local.yaml");
+        tokio::fs::read(&local_path)
+            .await
+            .map_err(|e| format!("Failed to read application-local.yaml: {e}. Save your config first."))?
+    };
 
     let client = reqwest::Client::new();
     let object_key = "config/application-local.yaml";
@@ -646,12 +656,51 @@ pub async fn deploy_config_to_r2(app: AppHandle, mud_dir: String) -> Result<Stri
     Ok(format!("{domain}/{object_key}"))
 }
 
+/// Collect zone YAML files from a project directory.
+/// For legacy: reads from src/main/resources/world/*.yaml
+/// For standalone: reads from zones/*/zone.yaml, naming each as {zone_id}.yaml
+fn collect_zone_files(mud_dir: &str, format: &str) -> Result<Vec<(String, PathBuf)>, String> {
+    let mut zone_files: Vec<(String, PathBuf)> = Vec::new();
+
+    if format == "standalone" {
+        let zones_dir = PathBuf::from(mud_dir).join("zones");
+        let entries = std::fs::read_dir(&zones_dir)
+            .map_err(|e| format!("Failed to read zones directory: {e}"))?;
+        for entry in entries.flatten() {
+            let path = entry.path();
+            if !path.is_dir() {
+                continue;
+            }
+            let zone_yaml = path.join("zone.yaml");
+            if zone_yaml.exists() {
+                let zone_id = entry.file_name().to_string_lossy().to_string();
+                zone_files.push((format!("{zone_id}.yaml"), zone_yaml));
+            }
+        }
+    } else {
+        let world_dir = PathBuf::from(mud_dir).join("src/main/resources/world");
+        let entries = std::fs::read_dir(&world_dir)
+            .map_err(|e| format!("Failed to read world directory: {e}"))?;
+        for entry in entries.flatten() {
+            let name = entry.file_name().to_string_lossy().to_string();
+            if name.ends_with(".yaml") || name.ends_with(".yml") {
+                zone_files.push((name, entry.path()));
+            }
+        }
+    }
+
+    zone_files.sort_by(|a, b| a.0.cmp(&b.0));
+    Ok(zone_files)
+}
+
 /// Deploy all zone YAML files to R2 so the demo cluster can pull them.
-/// Reads every .yaml/.yml file from the MUD project's world directory,
-/// uploads to "config/world/{filename}" in the configured R2 bucket,
-/// then writes the explicit zone list to world.resources in application-local.yaml.
+/// Supports both legacy (world/*.yaml) and standalone (zones/*/zone.yaml) formats.
 #[tauri::command]
-pub async fn deploy_zones_to_r2(app: AppHandle, mud_dir: String) -> Result<SyncProgress, String> {
+pub async fn deploy_zones_to_r2(
+    app: AppHandle,
+    mud_dir: String,
+    format: Option<String>,
+) -> Result<SyncProgress, String> {
     let s = settings::get_settings(app).await?;
     if s.r2_account_id.is_empty()
         || s.r2_access_key_id.is_empty()
@@ -661,18 +710,8 @@ pub async fn deploy_zones_to_r2(app: AppHandle, mud_dir: String) -> Result<SyncP
         return Err("R2 credentials not configured. Set them in Settings.".to_string());
     }
 
-    let world_dir = PathBuf::from(&mud_dir).join("src/main/resources/world");
-    let entries = std::fs::read_dir(&world_dir)
-        .map_err(|e| format!("Failed to read world directory: {e}"))?;
-
-    let mut zone_files: Vec<(String, PathBuf)> = Vec::new();
-    for entry in entries.flatten() {
-        let name = entry.file_name().to_string_lossy().to_string();
-        if name.ends_with(".yaml") || name.ends_with(".yml") {
-            zone_files.push((name, entry.path()));
-        }
-    }
-    zone_files.sort_by(|a, b| a.0.cmp(&b.0));
+    let fmt = format.as_deref().unwrap_or("legacy");
+    let zone_files = collect_zone_files(&mud_dir, fmt)?;
 
     let client = reqwest::Client::new();
     let mut progress = SyncProgress {
@@ -720,6 +759,108 @@ pub async fn deploy_zones_to_r2(app: AppHandle, mud_dir: String) -> Result<SyncP
     }
 
     Ok(progress)
+}
+
+// ─── Import from R2 ─────────────────────────────────────────────────
+
+#[derive(Debug, Clone, serde::Serialize)]
+pub struct R2ImportResult {
+    pub config_yaml: String,
+    pub zones: Vec<R2ZoneFile>,
+}
+
+#[derive(Debug, Clone, serde::Serialize)]
+pub struct R2ZoneFile {
+    pub zone_id: String,
+    pub yaml: String,
+}
+
+/// Fetch the deployed config and zone files from R2 via the public CDN domain.
+/// Reads application-local.yaml, extracts world.resources to discover zone files,
+/// then fetches each zone. Returns all YAML content for the frontend to parse.
+#[tauri::command]
+pub async fn import_from_r2(app: AppHandle) -> Result<R2ImportResult, String> {
+    let s = settings::get_settings(app).await?;
+    if s.r2_custom_domain.is_empty() {
+        return Err("R2 custom domain not configured. Set it in API Settings.".to_string());
+    }
+
+    let domain = s.r2_custom_domain.trim_end_matches('/');
+    let client = reqwest::Client::new();
+
+    // Fetch config
+    let config_url = format!("{domain}/config/application-local.yaml");
+    let config_resp = client
+        .get(&config_url)
+        .send()
+        .await
+        .map_err(|e| format!("Failed to fetch config from R2: {e}"))?;
+
+    if !config_resp.status().is_success() {
+        return Err(format!(
+            "Config not found on R2 (HTTP {}). Deploy config first.",
+            config_resp.status()
+        ));
+    }
+
+    let config_yaml = config_resp
+        .text()
+        .await
+        .map_err(|e| format!("Failed to read config response: {e}"))?;
+
+    // Extract zone file paths from world.resources
+    let zone_paths = extract_world_resources(&config_yaml);
+
+    // Fetch each zone file
+    let mut zones = Vec::new();
+    for zone_path in &zone_paths {
+        let url = format!("{domain}/{zone_path}");
+        match client.get(&url).send().await {
+            Ok(resp) if resp.status().is_success() => {
+                match resp.text().await {
+                    Ok(yaml) => {
+                        // Extract zone_id from path like "world/tutorial_glade.yaml"
+                        let zone_id = zone_path
+                            .trim_start_matches("world/")
+                            .trim_end_matches(".yaml")
+                            .trim_end_matches(".yml")
+                            .to_string();
+                        zones.push(R2ZoneFile { zone_id, yaml });
+                    }
+                    Err(e) => {
+                        eprintln!("Failed to read zone {zone_path}: {e}");
+                    }
+                }
+            }
+            Ok(resp) => {
+                eprintln!("Zone {zone_path} not found (HTTP {})", resp.status());
+            }
+            Err(e) => {
+                eprintln!("Failed to fetch zone {zone_path}: {e}");
+            }
+        }
+    }
+
+    Ok(R2ImportResult { config_yaml, zones })
+}
+
+/// Parse YAML to extract the world.resources list.
+fn extract_world_resources(yaml: &str) -> Vec<String> {
+    // Simple YAML parsing to find ambonmud.world.resources array
+    let doc: Result<serde_yaml::Value, _> = serde_yaml::from_str(yaml);
+    match doc {
+        Ok(val) => {
+            let resources = &val["ambonmud"]["world"]["resources"];
+            if let Some(arr) = resources.as_sequence() {
+                arr.iter()
+                    .filter_map(|v| v.as_str().map(|s| s.to_string()))
+                    .collect()
+            } else {
+                Vec::new()
+            }
+        }
+        Err(_) => Vec::new(),
+    }
 }
 
 /// Resolve an asset file_name to its public R2 URL via custom domain.

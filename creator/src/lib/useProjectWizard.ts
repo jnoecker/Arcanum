@@ -3,11 +3,13 @@ import { invoke } from "@tauri-apps/api/core";
 import { writeTextFile } from "@tauri-apps/plugin-fs";
 import { stringify } from "yaml";
 import { useOpenProject } from "@/lib/useOpenProject";
+import { useProjectStore } from "@/stores/projectStore";
 import { useConfigStore } from "@/stores/configStore";
 import { useZoneStore } from "@/stores/zoneStore";
-import { saveConfig } from "@/lib/saveConfig";
+import { saveProjectConfig } from "@/lib/saveConfig";
 import { addRecentProject } from "@/lib/uiPersistence";
 import { applyTemplate, TEMPLATES } from "@/lib/templates";
+import { zoneFilePath } from "@/lib/projectPaths";
 import type { ArtStyle } from "@/lib/arcanumPrompts";
 import type {
   StatDefinition,
@@ -20,8 +22,7 @@ import type { WorldFile } from "@/types/world";
 
 export type WizardStage =
   | "idle"
-  | "checking_git"
-  | "cloning"
+  | "creating_structure"
   | "setting_up"
   | "done"
   | "error";
@@ -187,26 +188,21 @@ export function useProjectWizard() {
   }, []);
 
   const create = useCallback(async () => {
-    setStage("checking_git");
+    setStage("creating_structure");
     setError(null);
 
     try {
-      // Step 1: Check git
-      await invoke<string>("check_git_installed");
-
-      // Step 2: Clone
-      setStage("cloning");
-      const mudDir = await invoke<string>("clone_mud_project", {
+      // Step 1: Create standalone project directory
+      const mudDir = await invoke<string>("create_standalone_project", {
         targetDir: data.parentDir,
         projectName: data.projectName,
       });
 
-      // Step 3: Setup
+      // Step 2: Setup
       setStage("setting_up");
-      await invoke<number>("clear_world_zones", { mudDir });
 
-      // Open the project
-      const result = await openDir(mudDir);
+      // Open the project (format override since config files don't exist yet)
+      const result = await openDir(mudDir, "standalone");
       if (!result.success) {
         setStage("error");
         setError(result.errors?.join(", ") ?? "Failed to open project");
@@ -259,17 +255,21 @@ export function useProjectWizard() {
       }
 
       // Write demo zone
+      const project = useProjectStore.getState().project;
       const zoneToWrite = data.demoZone;
-      if (zoneToWrite) {
-        const worldDir = `${mudDir}/src/main/resources/world`;
-        const filePath = `${worldDir}/${zoneToWrite.zone}.yaml`;
+      if (zoneToWrite && project) {
+        await invoke("create_zone_directory", {
+          projectDir: mudDir,
+          zoneId: zoneToWrite.zone,
+        });
+        const filePath = zoneFilePath(project, zoneToWrite.zone);
         await writeTextFile(filePath, stringify(zoneToWrite));
         loadZone(zoneToWrite.zone, filePath, zoneToWrite);
       }
 
       // Save config to disk
-      if (config) {
-        await saveConfig(mudDir);
+      if (config && project) {
+        await saveProjectConfig(project);
       }
 
       addRecentProject(mudDir, data.projectName);

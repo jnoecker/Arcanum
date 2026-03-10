@@ -19,8 +19,7 @@ interface CreationStepProps {
 
 const STAGE_LABELS: Record<WizardStage, string> = {
   idle: "",
-  checking_git: "Checking for git...",
-  cloning: "Cloning AmbonMUD... (this may take a moment)",
+  creating_structure: "Creating project...",
   setting_up: "Setting up project...",
   done: "Project created!",
   error: "Error",

@@ -1,7 +1,10 @@
+export type ProjectFormat = "legacy" | "standalone";
+
 export interface Project {
   version: 1;
   name: string;
   mudDir: string;
+  format: ProjectFormat;
   openZones: string[];
   lastOpenTab?: string;
 }

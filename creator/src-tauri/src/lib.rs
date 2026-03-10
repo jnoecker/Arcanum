@@ -21,6 +21,10 @@ pub fn run() {
         .manage(server::ServerState::default())
         .invoke_handler(tauri::generate_handler![
             project::validate_mud_dir,
+            project::validate_project,
+            project::create_standalone_project,
+            project::create_zone_directory,
+            project::delete_zone_directory,
             project::list_legacy_images,
             project::list_legacy_media,
             project::migrate_images_to_r2,
@@ -48,6 +52,7 @@ pub fn run() {
             assets::list_variants,
             assets::save_bytes_as_asset,
             assets::import_player_sprites,
+            r2::import_from_r2,
             r2::sync_assets,
             r2::get_sync_status,
             r2::resolve_asset_url,

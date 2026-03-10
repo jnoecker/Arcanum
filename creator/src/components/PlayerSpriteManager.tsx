@@ -33,7 +33,6 @@ interface SpriteImportResult {
 /** Build a rich description string for a sprite slot to feed to the LLM enhancer. */
 function buildSpriteContext(
   race: string,
-  genderLabel: string,
   cls: string,
   tier: number,
   allTiers: number[],
@@ -48,13 +47,13 @@ function buildSpriteContext(
   const parts = [
     `Race: ${raceDef?.displayName ?? race}`,
     raceDef?.description ? `Race description: ${raceDef.description}` : null,
-    `Gender: ${genderLabel}`,
     `Class: ${classDef?.displayName ?? cls}`,
     classDef?.description ? `Class description: ${classDef.description}` : null,
     isStaff
       ? `Power tier: Staff (high-level game moderator/administrator)`
       : `Power tier: Level ${range} (${tierPowerWord(tier, allTiers, staffTier)})`,
     `Equipment and ornamentation should reflect a ${isStaff ? "powerful staff member" : tierPowerWord(tier, allTiers, staffTier) + " adventurer"} of the ${classDef?.displayName ?? cls} class.`,
+    `The character should be depicted in a gender-neutral way.`,
   ];
 
   return parts.filter(Boolean).join("\n");
@@ -87,6 +86,59 @@ function SpriteThumbnail({ fileName }: { fileName: string | undefined }) {
   );
 }
 
+function SpriteLightbox({
+  spriteKey: key,
+  fileName,
+  onClose,
+}: {
+  spriteKey: string;
+  fileName: string;
+  onClose: () => void;
+}) {
+  const src = useImageSrc(fileName);
+
+  // Close on Escape
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [onClose]);
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/80"
+      onClick={onClose}
+    >
+      <div
+        className="relative flex max-h-[90vh] max-w-[90vw] flex-col items-center gap-3"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {src ? (
+          <img
+            src={src}
+            alt={key}
+            className="max-h-[80vh] max-w-[80vw] rounded border border-border-default object-contain"
+            style={{ imageRendering: "auto" }}
+          />
+        ) : (
+          <div className="flex h-64 w-64 items-center justify-center rounded border border-border-default bg-bg-tertiary text-text-muted">
+            Loading...
+          </div>
+        )}
+        <span className="font-mono text-xs text-text-secondary">{key}</span>
+        <button
+          onClick={onClose}
+          className="absolute -right-3 -top-3 flex h-7 w-7 items-center justify-center rounded-full bg-bg-elevated text-text-primary shadow hover:bg-bg-hover"
+        >
+          &times;
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export function PlayerSpriteManager() {
   const config = useConfigStore((s) => s.config);
   const assets = useAssetStore((s) => s.assets);
@@ -106,8 +158,8 @@ export function PlayerSpriteManager() {
   const [deploying, setDeploying] = useState(false);
   const [deployResult, setDeployResult] = useState<SyncProgress | null>(null);
   const [filterRace, setFilterRace] = useState<string>("all");
-  const [filterGender, setFilterGender] = useState<string>("all");
   const [filterClass, setFilterClass] = useState<string>("all");
+  const [viewSprite, setViewSprite] = useState<{ key: string; fileName: string } | null>(null);
 
   // Generation state
   const [generating, setGenerating] = useState<string | null>(null); // spriteKey being generated
@@ -117,7 +169,7 @@ export function PlayerSpriteManager() {
 
   if (!config) return null;
 
-  const { races, genders, classes, tiers } = getSpriteAxes(config);
+  const { races, classes, tiers } = getSpriteAxes(config);
   const allTiers = getAllTiers(config);
   const staffTier = config.images.staffSpriteTier;
   const total = totalSprites(config);
@@ -149,32 +201,27 @@ export function PlayerSpriteManager() {
   const coveredCount = useMemo(() => {
     let count = 0;
     for (const race of races) {
-      for (const gender of genders) {
-        for (const cls of classes) {
-          for (const tier of tiers) {
-            if (spriteMap.has(spriteKey(race, gender.id, cls, tier))) count++;
-          }
+      for (const cls of classes) {
+        for (const tier of tiers) {
+          if (spriteMap.has(spriteKey(race, cls, tier))) count++;
         }
       }
     }
     return count;
-  }, [races, genders, classes, tiers, spriteMap]);
+  }, [races, classes, tiers, spriteMap]);
 
   // Apply filters
   const filteredRaces = filterRace === "all" ? races : [filterRace];
-  const filteredGenders = filterGender === "all" ? genders : genders.filter((g) => g.id === filterGender);
   const filteredClasses = filterClass === "all" ? classes : [filterClass];
 
-  /** Generate a single sprite, accept it, and optionally remove background. */
+  /** Generate a single sprite, accept it, and remove background. */
   const generateSprite = useCallback(async (
     race: string,
-    genderId: string,
-    genderLabel: string,
     cls: string,
     tier: number,
   ): Promise<boolean> => {
-    const key = spriteKey(race, genderId, cls, tier);
-    const context = buildSpriteContext(race, genderLabel, cls, tier, allTiers, staffTier, config);
+    const key = spriteKey(race, cls, tier);
+    const context = buildSpriteContext(race, cls, tier, allTiers, staffTier, config);
     const basePrompt = composePrompt("player_sprite", artStyle);
 
     // Enhance via LLM if keys available
@@ -231,15 +278,13 @@ export function PlayerSpriteManager() {
   /** Generate a single sprite cell on click. */
   const handleGenerateOne = useCallback(async (
     race: string,
-    genderId: string,
-    genderLabel: string,
     cls: string,
     tier: number,
   ) => {
-    const key = spriteKey(race, genderId, cls, tier);
+    const key = spriteKey(race, cls, tier);
     setGenerating(key);
     try {
-      await generateSprite(race, genderId, genderLabel, cls, tier);
+      await generateSprite(race, cls, tier);
       await loadAssets();
     } catch (e) {
       console.error(`Failed to generate sprite ${key}:`, e);
@@ -251,15 +296,13 @@ export function PlayerSpriteManager() {
   /** Batch generate all missing sprites (respects current filters). */
   const handleBatchGenerate = useCallback(async () => {
     // Collect missing sprite slots
-    const missing: Array<{ race: string; genderId: string; genderLabel: string; cls: string; tier: number }> = [];
+    const missing: Array<{ race: string; cls: string; tier: number }> = [];
     for (const race of filteredRaces) {
-      for (const gender of filteredGenders) {
-        for (const cls of filteredClasses) {
-          for (const tier of tiers) {
-            const key = spriteKey(race, gender.id, cls, tier);
-            if (!spriteMap.has(key)) {
-              missing.push({ race, genderId: gender.id, genderLabel: gender.label, cls, tier });
-            }
+      for (const cls of filteredClasses) {
+        for (const tier of tiers) {
+          const key = spriteKey(race, cls, tier);
+          if (!spriteMap.has(key)) {
+            missing.push({ race, cls, tier });
           }
         }
       }
@@ -281,11 +324,11 @@ export function PlayerSpriteManager() {
         const slot = queue.shift();
         if (!slot) break;
 
-        const key = spriteKey(slot.race, slot.genderId, slot.cls, slot.tier);
+        const key = spriteKey(slot.race, slot.cls, slot.tier);
         setGenerating(key);
 
         try {
-          await generateSprite(slot.race, slot.genderId, slot.genderLabel, slot.cls, slot.tier);
+          await generateSprite(slot.race, slot.cls, slot.tier);
           done++;
         } catch (e) {
           console.error(`Batch: failed ${key}:`, e);
@@ -304,7 +347,7 @@ export function PlayerSpriteManager() {
     setGenerating(null);
     setBatchRunning(false);
     await loadAssets();
-  }, [filteredRaces, filteredGenders, filteredClasses, tiers, spriteMap, settings, generateSprite, loadAssets]);
+  }, [filteredRaces, filteredClasses, tiers, spriteMap, settings, generateSprite, loadAssets]);
 
   const handleAbortBatch = useCallback(() => {
     abortRef.current = true;
@@ -345,27 +388,21 @@ export function PlayerSpriteManager() {
   const missingInView = useMemo(() => {
     let count = 0;
     for (const race of filteredRaces) {
-      for (const gender of filteredGenders) {
-        for (const cls of filteredClasses) {
-          for (const tier of tiers) {
-            if (!spriteMap.has(spriteKey(race, gender.id, cls, tier))) count++;
-          }
+      for (const cls of filteredClasses) {
+        for (const tier of tiers) {
+          if (!spriteMap.has(spriteKey(race, cls, tier))) count++;
         }
       }
     }
     return count;
-  }, [filteredRaces, filteredGenders, filteredClasses, tiers, spriteMap]);
+  }, [filteredRaces, filteredClasses, tiers, spriteMap]);
 
-  if (races.length === 0 || genders.length === 0 || classes.length === 0) {
+  if (races.length === 0 || classes.length === 0) {
     return (
       <div className="p-6 text-sm text-text-muted">
         <p>
-          Player sprites require races, classes, and genders with sprite codes
-          to be configured. Set these up in the Config tab first.
-        </p>
-        <p className="mt-2 text-[10px]">
-          Genders need a <code className="font-mono">spriteCode</code> field
-          (e.g. "male", "female", "enby") to be included in the sprite matrix.
+          Player sprites require races and classes to be configured.
+          Set these up in the Config tab first.
         </p>
       </div>
     );
@@ -559,21 +596,6 @@ export function PlayerSpriteManager() {
           </select>
         </label>
         <label className="flex items-center gap-1.5 text-xs text-text-muted">
-          Gender:
-          <select
-            value={filterGender}
-            onChange={(e) => setFilterGender(e.target.value)}
-            className="rounded border border-border-default bg-bg-primary px-1.5 py-0.5 text-xs text-text-primary outline-none"
-          >
-            <option value="all">All</option>
-            {genders.map((g) => (
-              <option key={g.id} value={g.id}>
-                {g.label}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="flex items-center gap-1.5 text-xs text-text-muted">
           Class:
           <select
             value={filterClass}
@@ -595,7 +617,7 @@ export function PlayerSpriteManager() {
         <p className="mb-3 text-[10px] text-text-muted">
           Filename format:{" "}
           <code className="font-mono">
-            player_sprites/&#123;race&#125;_&#123;spriteCode&#125;_&#123;class&#125;_l&#123;tier&#125;.png
+            player_sprites/&#123;race&#125;_&#123;class&#125;_l&#123;tier&#125;.png
           </code>
           {" | "}Tiers: {allTiers.map((t) => `l${t}`).join(", ")}
           {" | "}Hover a cell to generate, regenerate, or delete.
@@ -607,101 +629,113 @@ export function PlayerSpriteManager() {
               {config.races[race.toUpperCase()]?.displayName ?? race}
             </h3>
 
-            {filteredGenders.map((gender) => (
-              <div key={gender.id} className="mb-4">
-                <h4 className="mb-1.5 text-[10px] uppercase tracking-wider text-text-muted">
-                  {gender.label}
-                </h4>
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse">
+                <thead>
+                  <tr>
+                    <th className="border border-border-default bg-bg-tertiary px-2 py-1 text-left text-[10px] font-normal text-text-muted">
+                      Class
+                    </th>
+                    {tiers.map((tier) => (
+                      <th
+                        key={tier}
+                        className="border border-border-default bg-bg-tertiary px-1 py-1 text-center text-[10px] font-normal text-text-muted"
+                      >
+                        <div>{tierLabel(tier, staffTier)}</div>
+                        <div className="text-[9px] opacity-60">
+                          {tierRange(tier, allTiers, staffTier)}
+                        </div>
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredClasses.map((cls) => (
+                    <tr key={cls}>
+                      <td className="border border-border-default bg-bg-secondary px-2 py-1 text-xs text-text-secondary">
+                        {config.classes[cls.toUpperCase()]?.displayName ?? cls}
+                      </td>
+                      {tiers.map((tier) => {
+                        const key = spriteKey(race, cls, tier);
+                        const asset = spriteMap.get(key);
+                        const isGenerating = generating === key;
+                        const isEmpty = !asset;
+                        const canGenerate = hasApiKey && !batchRunning && !generating;
+                        const canDelete = !isEmpty && !batchRunning && !generating;
 
-                <div className="overflow-x-auto">
-                  <table className="w-full border-collapse">
-                    <thead>
-                      <tr>
-                        <th className="border border-border-default bg-bg-tertiary px-2 py-1 text-left text-[10px] font-normal text-text-muted">
-                          Class
-                        </th>
-                        {tiers.map((tier) => (
-                          <th
+                        return (
+                          <td
                             key={tier}
-                            className="border border-border-default bg-bg-tertiary px-1 py-1 text-center text-[10px] font-normal text-text-muted"
+                            className="border border-border-default p-0.5"
+                            title={`player_sprites/${key}.png`}
                           >
-                            <div>{tierLabel(tier, staffTier)}</div>
-                            <div className="text-[9px] opacity-60">
-                              {tierRange(tier, allTiers, staffTier)}
-                            </div>
-                          </th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {filteredClasses.map((cls) => (
-                        <tr key={cls}>
-                          <td className="border border-border-default bg-bg-secondary px-2 py-1 text-xs text-text-secondary">
-                            {config.classes[cls.toUpperCase()]?.displayName ?? cls}
-                          </td>
-                          {tiers.map((tier) => {
-                            const key = spriteKey(race, gender.id, cls, tier);
-                            const asset = spriteMap.get(key);
-                            const isGenerating = generating === key;
-                            const isEmpty = !asset;
-                            const canGenerate = hasApiKey && !batchRunning && !generating;
-                            const canDelete = !isEmpty && !batchRunning && !generating;
-
-                            return (
-                              <td
-                                key={tier}
-                                className="border border-border-default p-0.5"
-                                title={`player_sprites/${key}.png`}
-                              >
-                                <div
-                                  className="group relative mx-auto h-12 w-12 overflow-hidden rounded"
-                                >
-                                  {isGenerating ? (
-                                    <div className="flex h-full w-full items-center justify-center bg-bg-tertiary">
-                                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-accent border-t-transparent" />
-                                    </div>
-                                  ) : (
-                                    <>
-                                      <SpriteThumbnail fileName={asset?.file_name} />
-                                      {/* Hover overlay with actions */}
-                                      <div className="absolute inset-0 flex items-center justify-center gap-0.5 bg-black/50 opacity-0 transition-opacity group-hover:opacity-100">
-                                        {canGenerate && (
-                                          <button
-                                            onClick={() => handleGenerateOne(race, gender.id, gender.label, cls, tier)}
-                                            className="rounded px-1 py-0.5 text-[9px] font-medium text-accent hover:bg-accent/20"
-                                            title={isEmpty ? "Generate" : "Regenerate"}
-                                          >
-                                            {isEmpty ? "Gen" : "Regen"}
-                                          </button>
-                                        )}
-                                        {canDelete && (
-                                          <button
-                                            onClick={async () => {
-                                              await deleteAsset(asset.id);
-                                            }}
-                                            className="rounded px-1 py-0.5 text-[9px] font-medium text-status-error hover:bg-status-error/20"
-                                            title="Delete sprite"
-                                          >
-                                            Del
-                                          </button>
-                                        )}
-                                      </div>
-                                    </>
-                                  )}
+                            <div
+                              className="group relative mx-auto h-12 w-12 overflow-hidden rounded"
+                            >
+                              {isGenerating ? (
+                                <div className="flex h-full w-full items-center justify-center bg-bg-tertiary">
+                                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-accent border-t-transparent" />
                                 </div>
-                              </td>
-                            );
-                          })}
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            ))}
+                              ) : (
+                                <>
+                                  <SpriteThumbnail fileName={asset?.file_name} />
+                                  {/* Hover overlay with actions */}
+                                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-0.5 bg-black/50 opacity-0 transition-opacity group-hover:opacity-100">
+                                    {!isEmpty && (
+                                      <button
+                                        onClick={() => setViewSprite({ key, fileName: asset.file_name })}
+                                        className="rounded px-1 py-0.5 text-[9px] font-medium text-text-primary hover:bg-white/20"
+                                        title="View larger"
+                                      >
+                                        View
+                                      </button>
+                                    )}
+                                    <div className="flex gap-0.5">
+                                      {canGenerate && (
+                                        <button
+                                          onClick={() => handleGenerateOne(race, cls, tier)}
+                                          className="rounded px-1 py-0.5 text-[9px] font-medium text-accent hover:bg-accent/20"
+                                          title={isEmpty ? "Generate" : "Regenerate"}
+                                        >
+                                          {isEmpty ? "Gen" : "Regen"}
+                                        </button>
+                                      )}
+                                      {canDelete && (
+                                        <button
+                                          onClick={async () => {
+                                            await deleteAsset(asset.id);
+                                          }}
+                                          className="rounded px-1 py-0.5 text-[9px] font-medium text-status-error hover:bg-status-error/20"
+                                          title="Delete sprite"
+                                        >
+                                          Del
+                                        </button>
+                                      )}
+                                    </div>
+                                  </div>
+                                </>
+                              )}
+                            </div>
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         ))}
       </div>
+
+      {/* Sprite lightbox */}
+      {viewSprite && (
+        <SpriteLightbox
+          spriteKey={viewSprite.key}
+          fileName={viewSprite.fileName}
+          onClose={() => setViewSprite(null)}
+        />
+      )}
     </div>
   );
 }

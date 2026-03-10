@@ -466,13 +466,13 @@ pub struct SpriteImportResult {
     pub errors: Vec<String>,
 }
 
-/// Bulk-import player sprites from the old tool's export structure.
+/// Bulk-import player sprites from a directory export structure.
 ///
-/// The old format uses directories like:
-///   `{source_dir}/player_sprites/player_sprites_{race}_{gender}_{class}_l{tier}/v1.png`
+/// Expected format uses directories like:
+///   `{source_dir}/player_sprites/player_sprites_{race}_{class}_l{tier}/v1.png`
 ///
 /// Each sprite is imported into the asset library with a variant_group of
-/// `player_sprite:{race}_{gender}_{class}_l{tier}` for management.
+/// `player_sprite:{race}_{class}_l{tier}` for management.
 #[tauri::command]
 pub async fn import_player_sprites(
     app: AppHandle,

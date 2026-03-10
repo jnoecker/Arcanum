@@ -26,31 +26,27 @@ export function tierRange(tier: number, allTiers: number[], staffTier: number): 
   return `${tier}–${nextTier - 1}`;
 }
 
-/** Extract race/gender/class/tier values from config. */
+/** Extract race/class/tier values from config for the sprite matrix. */
 export function getSpriteAxes(config: AppConfig) {
   const races = Object.keys(config.races).map((r) => r.toLowerCase());
-  const genders = Object.entries(config.genders).map(([key, g]) => ({
-    id: (g.spriteCode || key).toLowerCase(),
-    label: g.displayName,
-  }));
   const classes = Object.keys(config.classes).map((c) => c.toLowerCase());
   const tiers = getAllTiers(config);
 
-  return { races, genders, classes, tiers };
+  return { races, classes, tiers };
 }
 
 /** Build the sprite key (matches the filename convention without extension). */
-export function spriteKey(race: string, gender: string, cls: string, tier: number): string {
-  return `${race}_${gender}_${cls}_l${tier}`;
+export function spriteKey(race: string, cls: string, tier: number): string {
+  return `${race}_${cls}_l${tier}`;
 }
 
 /** Build the full filename path as the server expects it. */
-export function spriteFilename(race: string, gender: string, cls: string, tier: number): string {
-  return `player_sprites/${spriteKey(race, gender, cls, tier)}.png`;
+export function spriteFilename(race: string, cls: string, tier: number): string {
+  return `player_sprites/${spriteKey(race, cls, tier)}.png`;
 }
 
 /** Total number of sprites in the matrix. */
 export function totalSprites(config: AppConfig): number {
-  const { races, genders, classes, tiers } = getSpriteAxes(config);
-  return races.length * genders.length * classes.length * tiers.length;
+  const { races, classes, tiers } = getSpriteAxes(config);
+  return races.length * classes.length * tiers.length;
 }

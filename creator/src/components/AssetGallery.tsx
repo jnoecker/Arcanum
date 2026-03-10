@@ -69,11 +69,13 @@ export function AssetGallery({ onClose }: { onClose: () => void }) {
 
   const types = Array.from(new Set(assets.map((a) => a.asset_type)));
   const zones = Array.from(new Set(assets.map((a) => a.context?.zone).filter(Boolean))) as string[];
+  const hasGlobalAssets = assets.some((a) => !a.context?.zone);
 
   const filtered = assets.filter(
     (a) =>
       (filter === "all" || a.asset_type === filter) &&
-      (zoneFilter === "all" || a.context?.zone === zoneFilter),
+      (zoneFilter === "all" ||
+        (zoneFilter === "__global__" ? !a.context?.zone : a.context?.zone === zoneFilter)),
   );
 
   const sorted = [...filtered].sort((a, b) => {
@@ -214,10 +216,10 @@ export function AssetGallery({ onClose }: { onClose: () => void }) {
               </button>
             ))}
           </div>
-          {zones.length > 0 && (
+          {(zones.length > 0 || hasGlobalAssets) && (
             <>
               <div className="mx-1 h-4 w-px bg-border-default" />
-              <div className="flex gap-1">
+              <div className="flex flex-wrap gap-1">
                 <button
                   onClick={() => setZoneFilter("all")}
                   className={`rounded px-2 py-0.5 text-[10px] transition-colors ${
@@ -228,6 +230,18 @@ export function AssetGallery({ onClose }: { onClose: () => void }) {
                 >
                   All zones
                 </button>
+                {hasGlobalAssets && (
+                  <button
+                    onClick={() => setZoneFilter("__global__")}
+                    className={`rounded px-2 py-0.5 text-[10px] transition-colors ${
+                      zoneFilter === "__global__"
+                        ? "bg-accent/20 text-accent"
+                        : "text-text-muted hover:text-text-secondary"
+                    }`}
+                  >
+                    Global
+                  </button>
+                )}
                 {zones.map((zone) => (
                   <button
                     key={zone}

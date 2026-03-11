@@ -1,6 +1,6 @@
 import { useMemo, useCallback } from "react";
 import type { ConfigPanelProps } from "./types";
-import type { ClassDefinitionConfig } from "@/types/config";
+import type { AppConfig, ClassDefinitionConfig } from "@/types/config";
 import {
   FieldRow,
   NumberInput,
@@ -14,6 +14,26 @@ import { renameClassInConfig } from "@/lib/refactorId";
 import { EntityArtGenerator } from "@/components/ui/EntityArtGenerator";
 import { composePrompt, type ArtStyle } from "@/lib/arcanumPrompts";
 import { useAssetStore } from "@/stores/assetStore";
+
+export function defaultClassDefinition(raw: string): ClassDefinitionConfig {
+  return {
+    displayName: raw,
+    hpPerLevel: 6,
+    manaPerLevel: 8,
+    selectable: true,
+  };
+}
+
+export function summarizeClass(cls: ClassDefinitionConfig): string {
+  const parts = [`HP+${cls.hpPerLevel} / MP+${cls.manaPerLevel}`];
+  if (cls.primaryStat) parts.push(cls.primaryStat);
+  if (cls.image) parts.push("art");
+  return parts.join(" | ");
+}
+
+export function renameClassDefinition(config: AppConfig, oldId: string, newId: string) {
+  return renameClassInConfig(config, oldId, newId);
+}
 
 export function ClassesPanel({ config, onChange }: ConfigPanelProps) {
   const statOptions = useMemo(
@@ -44,17 +64,8 @@ export function ClassesPanel({ config, onChange }: ConfigPanelProps) {
       placeholder="New class"
       idTransform={(raw) => raw.trim().toUpperCase().replace(/\s+/g, "_")}
       getDisplayName={(cls) => cls.displayName}
-      defaultItem={(raw) => ({
-        displayName: raw,
-        hpPerLevel: 6,
-        manaPerLevel: 8,
-        selectable: true,
-      })}
-      renderSummary={(_id, cls) => {
-        const parts = [`HP+${cls.hpPerLevel} / MP+${cls.manaPerLevel}`];
-        if (cls.image) parts.push("art");
-        return parts.join(" | ");
-      }}
+      defaultItem={defaultClassDefinition}
+      renderSummary={(_id, cls) => summarizeClass(cls)}
       renderDetail={(id, cls, patch) => (
         <ClassDetail
           id={id}
@@ -71,7 +82,7 @@ export function ClassesPanel({ config, onChange }: ConfigPanelProps) {
   );
 }
 
-function ClassDetail({
+export function ClassDetail({
   id,
   cls,
   patch,

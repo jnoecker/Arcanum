@@ -8,6 +8,64 @@ const GUILD_PERMISSIONS = [
   "invite", "kick", "promote", "demote", "disband", "set_motd",
 ];
 
+export function defaultGuildRankDefinition(raw: string): GuildRankDefinition {
+  return { displayName: raw, level: 0 };
+}
+
+export function summarizeGuildRank(rank: GuildRankDefinition): string {
+  return `level ${rank.level}`;
+}
+
+export function GuildRankDetail({
+  rank,
+  patchRank,
+  togglePermission,
+}: {
+  rank: GuildRankDefinition;
+  patchRank: (p: Partial<GuildRankDefinition>) => void;
+  togglePermission: (rank: GuildRankDefinition, perm: string, patchRank: (p: Partial<GuildRankDefinition>) => void) => void;
+}) {
+  return (
+    <>
+      <FieldRow label="Display Name">
+        <TextInput
+          value={rank.displayName}
+          onCommit={(v) => patchRank({ displayName: v })}
+        />
+      </FieldRow>
+      <FieldRow label="Level" hint="Numeric rank level used for ordering. Higher = more authority. The founder rank should have the highest level.">
+        <NumberInput
+          value={rank.level}
+          onCommit={(v) => patchRank({ level: v ?? 0 })}
+        />
+      </FieldRow>
+      <div className="mt-1 border-t border-border-muted pt-1.5">
+        <h5 className="mb-1 text-[10px] font-display uppercase tracking-widest text-text-muted">
+          Permissions
+        </h5>
+        <div className="flex flex-wrap gap-1">
+          {GUILD_PERMISSIONS.map((perm) => {
+            const has = (rank.permissions ?? []).includes(perm);
+            return (
+              <button
+                key={perm}
+                onClick={() => togglePermission(rank, perm, patchRank)}
+                className={`rounded px-1.5 py-0.5 text-[10px] transition-colors ${
+                  has
+                    ? "bg-accent/20 text-accent"
+                    : "bg-bg-tertiary text-text-muted hover:text-text-secondary"
+                }`}
+              >
+                {perm}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    </>
+  );
+}
+
 export function GroupPanel({ config, onChange }: ConfigPanelProps) {
   const g = config.group;
   const patch = (p: Partial<AppConfig["group"]>) =>
@@ -107,46 +165,10 @@ export function GroupPanel({ config, onChange }: ConfigPanelProps) {
         placeholder="New rank"
         idTransform={(raw) => raw.trim().toLowerCase().replace(/\s+/g, "_")}
         getDisplayName={(r) => r.displayName}
-        defaultItem={(raw) => ({ displayName: raw, level: 0 })}
-        renderSummary={(_id, r) => `level ${r.level}`}
+        defaultItem={defaultGuildRankDefinition}
+        renderSummary={(_id, r) => summarizeGuildRank(r)}
         renderDetail={(_id, r, patchRank) => (
-          <>
-            <FieldRow label="Display Name">
-              <TextInput
-                value={r.displayName}
-                onCommit={(v) => patchRank({ displayName: v })}
-              />
-            </FieldRow>
-            <FieldRow label="Level" hint="Numeric rank level used for ordering. Higher = more authority. The founder rank should have the highest level.">
-              <NumberInput
-                value={r.level}
-                onCommit={(v) => patchRank({ level: v ?? 0 })}
-              />
-            </FieldRow>
-            <div className="mt-1 border-t border-border-muted pt-1.5">
-              <h5 className="mb-1 text-[10px] font-display uppercase tracking-widest text-text-muted">
-                Permissions
-              </h5>
-              <div className="flex flex-wrap gap-1">
-                {GUILD_PERMISSIONS.map((perm) => {
-                  const has = (r.permissions ?? []).includes(perm);
-                  return (
-                    <button
-                      key={perm}
-                      onClick={() => togglePermission(r, perm, patchRank)}
-                      className={`rounded px-1.5 py-0.5 text-[10px] transition-colors ${
-                        has
-                          ? "bg-accent/20 text-accent"
-                          : "bg-bg-tertiary text-text-muted hover:text-text-secondary"
-                      }`}
-                    >
-                      {perm}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          </>
+          <GuildRankDetail rank={r} patchRank={patchRank} togglePermission={togglePermission} />
         )}
       />
     </>

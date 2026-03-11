@@ -1,6 +1,6 @@
 import { useCallback, useState } from "react";
 import type { ConfigPanelProps } from "./types";
-import type { RaceDefinitionConfig } from "@/types/config";
+import type { AppConfig, RaceDefinitionConfig } from "@/types/config";
 import type { StatMap } from "@/types/world";
 import { useStatMods } from "@/lib/useStatMods";
 import { FieldRow, TextInput, IconButton, CommitTextarea } from "@/components/ui/FormWidgets";
@@ -9,17 +9,37 @@ import { EntityArtGenerator } from "@/components/ui/EntityArtGenerator";
 import { composePrompt, type ArtStyle } from "@/lib/arcanumPrompts";
 import { useAssetStore } from "@/stores/assetStore";
 
+export function defaultRaceDefinition(raw: string): RaceDefinitionConfig {
+  return { displayName: raw };
+}
+
+export function summarizeRace(race: RaceDefinitionConfig): string {
+  const mods = race.statMods ?? {};
+  const parts: string[] = [];
+  const modStr = Object.entries(mods)
+    .map(([k, v]) => `${k}${v >= 0 ? "+" : ""}${v}`)
+    .join(" ");
+  if (modStr) parts.push(modStr);
+  if (race.traits?.length) parts.push(`${race.traits.length} traits`);
+  if (race.image) parts.push("art");
+  return parts.join(" | ");
+}
+
+export function renameRaceDefinition(config: AppConfig, oldId: string, newId: string) {
+  const races: Record<string, RaceDefinitionConfig> = {};
+  for (const [k, v] of Object.entries(config.races)) {
+    races[k === oldId ? newId : k] = v;
+  }
+  return races;
+}
+
 export function RacesPanel({ config, onChange }: ConfigPanelProps) {
   const statDefs = config.stats.definitions;
   const statIds = Object.keys(statDefs);
 
   const handleRename = useCallback(
     (oldId: string, newId: string) => {
-      const races: Record<string, RaceDefinitionConfig> = {};
-      for (const [k, v] of Object.entries(config.races)) {
-        races[k === oldId ? newId : k] = v;
-      }
-      onChange({ races });
+      onChange({ races: renameRaceDefinition(config, oldId, newId) });
     },
     [config.races, onChange],
   );
@@ -33,18 +53,8 @@ export function RacesPanel({ config, onChange }: ConfigPanelProps) {
       placeholder="New race"
       idTransform={(raw) => raw.trim().toUpperCase().replace(/\s+/g, "_")}
       getDisplayName={(r) => r.displayName}
-      defaultItem={(raw) => ({ displayName: raw })}
-      renderSummary={(_id, race) => {
-        const mods = race.statMods ?? {};
-        const parts: string[] = [];
-        const modStr = Object.entries(mods)
-          .map(([k, v]) => `${k}${v >= 0 ? "+" : ""}${v}`)
-          .join(" ");
-        if (modStr) parts.push(modStr);
-        if (race.traits?.length) parts.push(`${race.traits.length} traits`);
-        if (race.image) parts.push("art");
-        return parts.join(" | ");
-      }}
+      defaultItem={defaultRaceDefinition}
+      renderSummary={(_id, race) => summarizeRace(race)}
       renderDetail={(id, race, patch) => (
         <RaceDetail
           id={id}
@@ -58,7 +68,7 @@ export function RacesPanel({ config, onChange }: ConfigPanelProps) {
   );
 }
 
-function RaceDetail({
+export function RaceDetail({
   id,
   race,
   patch,

@@ -1,0 +1,243 @@
+import { useEffect, useMemo, useState } from "react";
+import type { AppConfig, ClassDefinitionConfig } from "@/types/config";
+import {
+  ClassDetail,
+  defaultClassDefinition,
+  renameClassDefinition,
+  summarizeClass,
+} from "@/components/config/panels/ClassesPanel";
+
+export function ClassDesigner({
+  config,
+  onChange,
+}: {
+  config: AppConfig;
+  onChange: (patch: Partial<AppConfig>) => void;
+}) {
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+  const [newId, setNewId] = useState("");
+  const [renaming, setRenaming] = useState(false);
+  const [renameValue, setRenameValue] = useState("");
+
+  const classIds = useMemo(
+    () =>
+      Object.keys(config.classes).filter((id) => {
+        if (!search.trim()) return true;
+        const q = search.toLowerCase();
+        const cls = config.classes[id]!;
+        return id.toLowerCase().includes(q) || cls.displayName.toLowerCase().includes(q);
+      }),
+    [config.classes, search],
+  );
+
+  useEffect(() => {
+    if (selectedId && config.classes[selectedId]) return;
+    setSelectedId(classIds[0] ?? Object.keys(config.classes)[0] ?? null);
+  }, [classIds, config.classes, selectedId]);
+
+  const selected = selectedId ? config.classes[selectedId] ?? null : null;
+
+  const statOptions = useMemo(
+    () =>
+      Object.entries(config.stats.definitions).map(([id, def]) => ({
+        value: id,
+        label: def.displayName,
+      })),
+    [config.stats.definitions],
+  );
+  const raceOptions = useMemo(
+    () => Object.keys(config.races).map((id) => ({ value: id, label: config.races[id]!.displayName || id })),
+    [config.races],
+  );
+
+  const addClass = () => {
+    const id = newId.trim().toUpperCase().replace(/\s+/g, "_");
+    if (!id || config.classes[id]) return;
+    onChange({
+      classes: {
+        ...config.classes,
+        [id]: defaultClassDefinition(newId.trim()),
+      },
+    });
+    setSelectedId(id);
+    setNewId("");
+  };
+
+  const deleteClass = (id: string) => {
+    const next = { ...config.classes };
+    delete next[id];
+    onChange({ classes: next });
+    if (selectedId === id) setSelectedId(null);
+  };
+
+  const patchClass = (id: string, patch: Partial<ClassDefinitionConfig>) => {
+    onChange({
+      classes: {
+        ...config.classes,
+        [id]: { ...config.classes[id]!, ...patch },
+      },
+    });
+  };
+
+  const commitRename = () => {
+    if (!selectedId) return;
+    const nextId = renameValue.trim().toUpperCase().replace(/\s+/g, "_");
+    if (!nextId || nextId === selectedId || config.classes[nextId]) return;
+    const updated = renameClassDefinition(config, selectedId, nextId);
+    onChange({ classes: updated.classes, abilities: updated.abilities });
+    setSelectedId(nextId);
+    setRenaming(false);
+  };
+
+  return (
+    <div className="grid gap-5 xl:grid-cols-[20rem_minmax(0,1fr)]">
+      <div className="rounded-[24px] border border-white/8 bg-black/12 p-4">
+        <div className="mb-4">
+          <p className="text-[11px] uppercase tracking-[0.24em] text-text-muted">Class roster</p>
+          <h4 className="mt-2 font-display text-xl text-text-primary">{Object.keys(config.classes).length} classes</h4>
+        </div>
+
+        <div className="flex gap-2">
+          <input
+            value={newId}
+            onChange={(event) => setNewId(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") addClass();
+            }}
+            placeholder="New class id"
+            className="min-w-0 flex-1 rounded-full border border-white/10 bg-white/8 px-4 py-2 text-xs text-text-primary outline-none"
+          />
+          <button
+            onClick={addClass}
+            className="rounded-full border border-white/10 bg-white/8 px-4 py-2 text-xs text-text-primary transition hover:bg-white/12"
+          >
+            Add
+          </button>
+        </div>
+
+        <input
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
+          placeholder="Search classes"
+          className="mt-3 w-full rounded-full border border-white/10 bg-white/8 px-4 py-2 text-xs text-text-primary outline-none"
+        />
+
+        <div className="mt-4 flex max-h-[38rem] flex-col gap-2 overflow-y-auto pr-1">
+          {classIds.map((id) => {
+            const cls = config.classes[id]!;
+            const selectedCard = id === selectedId;
+            return (
+              <button
+                key={id}
+                onClick={() => {
+                  setSelectedId(id);
+                  setRenaming(false);
+                }}
+                className={`rounded-[20px] border px-4 py-3 text-left transition ${
+                  selectedCard
+                    ? "border-[rgba(184,216,232,0.35)] bg-[linear-gradient(135deg,rgba(168,151,210,0.16),rgba(140,174,201,0.12))]"
+                    : "border-white/8 bg-white/4 hover:bg-white/8"
+                }`}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="truncate font-display text-lg text-text-primary">{cls.displayName}</div>
+                    <div className="mt-1 truncate text-[11px] text-text-muted">{id}</div>
+                  </div>
+                  {cls.image && (
+                    <span className="rounded-full bg-[rgba(141,169,123,0.16)] px-2 py-1 text-[10px] uppercase tracking-[0.18em] text-[rgb(174,204,152)]">
+                      Art
+                    </span>
+                  )}
+                </div>
+                <div className="mt-3 text-xs text-text-secondary">{summarizeClass(cls)}</div>
+              </button>
+            );
+          })}
+          {classIds.length === 0 && (
+            <div className="rounded-[20px] border border-dashed border-white/12 bg-white/4 px-4 py-6 text-sm text-text-muted">
+              No classes match the current search.
+            </div>
+          )}
+        </div>
+      </div>
+
+      {selectedId && selected ? (
+        <div className="rounded-[24px] border border-white/8 bg-black/12 p-5">
+          <div className="flex flex-wrap items-start justify-between gap-4 border-b border-white/8 pb-4">
+            <div>
+              <p className="text-[11px] uppercase tracking-[0.24em] text-text-muted">Class designer</p>
+              <h4 className="mt-2 font-display text-3xl text-text-primary">{selected.displayName}</h4>
+              <p className="mt-2 max-w-2xl text-sm leading-7 text-text-secondary">
+                Tune progression, identity, and presentation for this class in one place.
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <span className="rounded-full bg-white/8 px-3 py-1 text-xs text-text-secondary">HP +{selected.hpPerLevel}</span>
+              <span className="rounded-full bg-white/8 px-3 py-1 text-xs text-text-secondary">Mana +{selected.manaPerLevel}</span>
+              <span className="rounded-full bg-white/8 px-3 py-1 text-xs text-text-secondary">{selected.primaryStat ?? "No primary stat"}</span>
+            </div>
+          </div>
+
+          <div className="mt-4 flex flex-wrap items-center gap-2">
+            {renaming ? (
+              <>
+                <input
+                  value={renameValue}
+                  onChange={(event) => setRenameValue(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") commitRename();
+                    if (event.key === "Escape") setRenaming(false);
+                  }}
+                  className="rounded-full border border-white/10 bg-white/8 px-4 py-2 text-xs text-text-primary outline-none"
+                />
+                <button onClick={commitRename} className="rounded-full border border-white/10 bg-white/8 px-4 py-2 text-xs text-text-primary hover:bg-white/12">
+                  Rename
+                </button>
+                <button onClick={() => setRenaming(false)} className="rounded-full border border-white/10 bg-transparent px-4 py-2 text-xs text-text-secondary hover:bg-white/8">
+                  Cancel
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  onClick={() => {
+                    setRenameValue(selectedId);
+                    setRenaming(true);
+                  }}
+                  className="rounded-full border border-white/10 bg-white/8 px-4 py-2 text-xs text-text-primary hover:bg-white/12"
+                >
+                  Rename ID
+                </button>
+                <button
+                  onClick={() => deleteClass(selectedId)}
+                  className="rounded-full border border-status-danger/40 bg-status-danger/10 px-4 py-2 text-xs text-status-danger hover:bg-status-danger/15"
+                >
+                  Delete Class
+                </button>
+              </>
+            )}
+          </div>
+
+          <div className="mt-4">
+            <ClassDetail
+              id={selectedId}
+              cls={selected}
+              patch={(patch) => patchClass(selectedId, patch)}
+              statOptions={statOptions}
+              raceOptions={raceOptions}
+              maxLevel={config.progression.maxLevel}
+              baseHp={config.progression.rewards.baseHp}
+              baseMana={config.progression.rewards.baseMana}
+            />
+          </div>
+        </div>
+      ) : (
+        <div className="rounded-[24px] border border-dashed border-white/12 bg-white/4 px-6 py-10 text-sm text-text-muted">
+          Create a class to start designing it.
+        </div>
+      )}
+    </div>
+  );
+}

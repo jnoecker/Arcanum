@@ -30,6 +30,30 @@ const FALLBACK_STACK_BEHAVIORS = [
   { value: "none", label: "None" },
 ];
 
+export function defaultStatusEffectDefinition(raw: string): StatusEffectDefinitionConfig {
+  return {
+    displayName: raw,
+    effectType: "DOT",
+    durationMs: 10000,
+    stackBehavior: "REFRESH",
+  };
+}
+
+export function summarizeStatusEffect(effect: StatusEffectDefinitionConfig): string {
+  const parts = [effect.effectType];
+  if (effect.stackBehavior) parts.push(effect.stackBehavior);
+  if (effect.image) parts.push("art");
+  return parts.filter(Boolean).join(" | ");
+}
+
+export function renameStatusEffectDefinition(
+  config: ConfigPanelProps["config"],
+  oldId: string,
+  newId: string,
+) {
+  return renameStatusEffectInConfig(config, oldId, newId);
+}
+
 export function StatusEffectsPanel({ config, onChange }: ConfigPanelProps) {
   const statIds = Object.keys(config.stats.definitions);
 
@@ -51,7 +75,7 @@ export function StatusEffectsPanel({ config, onChange }: ConfigPanelProps) {
 
   const handleRename = useCallback(
     (oldId: string, newId: string) => {
-      const updated = renameStatusEffectInConfig(config, oldId, newId);
+      const updated = renameStatusEffectDefinition(config, oldId, newId);
       onChange({ statusEffects: updated.statusEffects, abilities: updated.abilities });
     },
     [config, onChange],
@@ -76,181 +100,194 @@ export function StatusEffectsPanel({ config, onChange }: ConfigPanelProps) {
 
   return (
     <>
-    <BulkImportButton
-      assetType="status_effect_icon"
-      entityType="status_effect"
-      label="Import Status Effect Icons"
-      onImported={handleBulkImport}
-    />
-    <RegistryPanel<StatusEffectDefinitionConfig>
-      title="Status Effects"
-      items={config.statusEffects}
-      onItemsChange={(statusEffects) => onChange({ statusEffects })}
-      onRenameId={handleRename}
-      placeholder="New effect"
-      idTransform={(raw) => raw.trim().toLowerCase().replace(/\s+/g, "_")}
-      getDisplayName={(e) => e.displayName}
-      defaultItem={(raw) => ({
-        displayName: raw,
-        effectType: "DOT",
-        durationMs: 10000,
-        stackBehavior: "REFRESH",
-      })}
-      renderSummary={(_id, e) => e.effectType}
-      renderDetail={(_id, e, patch) => {
-        const showTick =
-          e.effectType === "DOT" || e.effectType === "HOT";
-        const showStatMods =
-          e.effectType === "STAT_BUFF" || e.effectType === "STAT_DEBUFF";
+      <BulkImportButton
+        assetType="status_effect_icon"
+        entityType="status_effect"
+        label="Import Status Effect Icons"
+        onImported={handleBulkImport}
+      />
+      <RegistryPanel<StatusEffectDefinitionConfig>
+        title="Status Effects"
+        items={config.statusEffects}
+        onItemsChange={(statusEffects) => onChange({ statusEffects })}
+        onRenameId={handleRename}
+        placeholder="New effect"
+        idTransform={(raw) => raw.trim().toLowerCase().replace(/\s+/g, "_")}
+        getDisplayName={(effect) => effect.displayName}
+        defaultItem={defaultStatusEffectDefinition}
+        renderSummary={(_id, effect) => summarizeStatusEffect(effect)}
+        renderDetail={(_id, effect, patch) => (
+          <StatusEffectDetail
+            effect={effect}
+            patch={patch}
+            statIds={statIds}
+            effectTypeOptions={effectTypeOptions}
+            stackBehaviorOptions={stackBehaviorOptions}
+          />
+        )}
+      />
+    </>
+  );
+}
 
-        return (
-          <>
-            <FieldRow label="Display Name">
-              <TextInput
-                value={e.displayName}
-                onCommit={(v) => patch({ displayName: v })}
-              />
-            </FieldRow>
-            <FieldRow label="Image">
-              <TextInput
-                value={e.image ?? ""}
-                onCommit={(v) => patch({ image: v || undefined })}
-                placeholder="none"
-              />
-            </FieldRow>
-            <FieldRow label="Effect Type">
-              <SelectInput
-                value={e.effectType}
-                onCommit={(v) => patch({ effectType: v })}
-                options={effectTypeOptions}
-              />
-            </FieldRow>
-            <FieldRow label="Duration (ms)">
+export function StatusEffectDetail({
+  effect,
+  patch,
+  statIds,
+  effectTypeOptions,
+  stackBehaviorOptions,
+}: {
+  effect: StatusEffectDefinitionConfig;
+  patch: (p: Partial<StatusEffectDefinitionConfig>) => void;
+  statIds: string[];
+  effectTypeOptions: { value: string; label: string }[];
+  stackBehaviorOptions: { value: string; label: string }[];
+}) {
+  const showTick = effect.effectType === "DOT" || effect.effectType === "HOT";
+  const showStatMods = effect.effectType === "STAT_BUFF" || effect.effectType === "STAT_DEBUFF";
+
+  return (
+    <>
+      <FieldRow label="Display Name">
+        <TextInput
+          value={effect.displayName}
+          onCommit={(v) => patch({ displayName: v })}
+        />
+      </FieldRow>
+      <FieldRow label="Image">
+        <TextInput
+          value={effect.image ?? ""}
+          onCommit={(v) => patch({ image: v || undefined })}
+          placeholder="none"
+        />
+      </FieldRow>
+      <FieldRow label="Effect Type">
+        <SelectInput
+          value={effect.effectType}
+          onCommit={(v) => patch({ effectType: v })}
+          options={effectTypeOptions}
+        />
+      </FieldRow>
+      <FieldRow label="Duration (ms)">
+        <NumberInput
+          value={effect.durationMs}
+          onCommit={(v) => patch({ durationMs: v ?? 10000 })}
+          min={0}
+        />
+      </FieldRow>
+      <FieldRow label="Stack Behavior">
+        <SelectInput
+          value={effect.stackBehavior ?? "REFRESH"}
+          onCommit={(v) => patch({ stackBehavior: v })}
+          options={stackBehaviorOptions}
+        />
+      </FieldRow>
+      {effect.stackBehavior === "STACK" && (
+        <FieldRow label="Max Stacks">
+          <NumberInput
+            value={effect.maxStacks}
+            onCommit={(v) => patch({ maxStacks: v ?? 3 })}
+            min={1}
+          />
+        </FieldRow>
+      )}
+
+      {showTick && (
+        <>
+          <FieldRow label="Tick Interval" hint="Milliseconds between each tick of damage or healing.">
+            <NumberInput
+              value={effect.tickIntervalMs}
+              onCommit={(v) => patch({ tickIntervalMs: v ?? 2000 })}
+              min={100}
+            />
+          </FieldRow>
+          <FieldRow label="Tick Min Value" hint="Minimum damage/heal per tick. Actual value is rolled between min and max.">
+            <NumberInput
+              value={effect.tickMinValue ?? 0}
+              onCommit={(v) => patch({ tickMinValue: v ?? 0 })}
+              min={0}
+            />
+          </FieldRow>
+          <FieldRow label="Tick Max Value" hint="Maximum damage/heal per tick.">
+            <NumberInput
+              value={effect.tickMaxValue ?? 0}
+              onCommit={(v) => patch({ tickMaxValue: v ?? 0 })}
+              min={0}
+            />
+          </FieldRow>
+          <FieldRow label="Tick Value" hint="Legacy flat value per tick. Used when min/max are both 0.">
+            <NumberInput
+              value={effect.tickValue}
+              onCommit={(v) => patch({ tickValue: v ?? 1 })}
+              min={0}
+            />
+          </FieldRow>
+        </>
+      )}
+
+      {effect.effectType === "SHIELD" && (
+        <FieldRow label="Shield Amount" hint="Total damage the shield absorbs before breaking.">
+          <NumberInput
+            value={effect.shieldAmount}
+            onCommit={(v) => patch({ shieldAmount: v ?? 20 })}
+            min={0}
+          />
+        </FieldRow>
+      )}
+
+      {showStatMods && (
+        <div className="mt-1 border-t border-border-muted pt-1.5">
+          <h5 className="mb-1 text-[10px] font-display uppercase tracking-widest text-text-muted">
+            Stat Modifiers
+          </h5>
+          <div className="grid grid-cols-2 gap-1.5">
+            <FieldRow label="STR">
               <NumberInput
-                value={e.durationMs}
-                onCommit={(v) => patch({ durationMs: v ?? 10000 })}
-                min={0}
+                value={effect.strMod ?? 0}
+                onCommit={(v) => patch({ strMod: v ?? 0 })}
               />
             </FieldRow>
-            <FieldRow label="Stack Behavior">
-              <SelectInput
-                value={e.stackBehavior ?? "REFRESH"}
-                onCommit={(v) => patch({ stackBehavior: v })}
-                options={stackBehaviorOptions}
+            <FieldRow label="DEX">
+              <NumberInput
+                value={effect.dexMod ?? 0}
+                onCommit={(v) => patch({ dexMod: v ?? 0 })}
               />
             </FieldRow>
-            {e.stackBehavior === "STACK" && (
-              <FieldRow label="Max Stacks">
-                <NumberInput
-                  value={e.maxStacks}
-                  onCommit={(v) => patch({ maxStacks: v ?? 3 })}
-                  min={1}
-                />
-              </FieldRow>
-            )}
-
-            {showTick && (
-              <>
-                <FieldRow label="Tick Interval" hint="Milliseconds between each tick of damage or healing.">
-                  <NumberInput
-                    value={e.tickIntervalMs}
-                    onCommit={(v) => patch({ tickIntervalMs: v ?? 2000 })}
-                    min={100}
-                  />
-                </FieldRow>
-                <FieldRow label="Tick Min Value" hint="Minimum damage/heal per tick. Actual value is rolled between min and max.">
-                  <NumberInput
-                    value={e.tickMinValue ?? 0}
-                    onCommit={(v) => patch({ tickMinValue: v ?? 0 })}
-                    min={0}
-                  />
-                </FieldRow>
-                <FieldRow label="Tick Max Value" hint="Maximum damage/heal per tick.">
-                  <NumberInput
-                    value={e.tickMaxValue ?? 0}
-                    onCommit={(v) => patch({ tickMaxValue: v ?? 0 })}
-                    min={0}
-                  />
-                </FieldRow>
-                <FieldRow label="Tick Value" hint="Legacy flat value per tick. Used when min/max are both 0.">
-                  <NumberInput
-                    value={e.tickValue}
-                    onCommit={(v) => patch({ tickValue: v ?? 1 })}
-                    min={0}
-                  />
-                </FieldRow>
-              </>
-            )}
-
-            {e.effectType === "SHIELD" && (
-              <FieldRow label="Shield Amount" hint="Total damage the shield absorbs before breaking.">
-                <NumberInput
-                  value={e.shieldAmount}
-                  onCommit={(v) => patch({ shieldAmount: v ?? 20 })}
-                  min={0}
-                />
-              </FieldRow>
-            )}
-
-            {/* Flat stat modifiers — always shown for buff/debuff types */}
-            {showStatMods && (
-              <div className="mt-1 border-t border-border-muted pt-1.5">
-                <h5 className="mb-1 text-[10px] font-display uppercase tracking-widest text-text-muted">
-                  Stat Modifiers
-                </h5>
-                <div className="grid grid-cols-2 gap-1.5">
-                  <FieldRow label="STR">
-                    <NumberInput
-                      value={e.strMod ?? 0}
-                      onCommit={(v) => patch({ strMod: v ?? 0 })}
-                    />
-                  </FieldRow>
-                  <FieldRow label="DEX">
-                    <NumberInput
-                      value={e.dexMod ?? 0}
-                      onCommit={(v) => patch({ dexMod: v ?? 0 })}
-                    />
-                  </FieldRow>
-                  <FieldRow label="CON">
-                    <NumberInput
-                      value={e.conMod ?? 0}
-                      onCommit={(v) => patch({ conMod: v ?? 0 })}
-                    />
-                  </FieldRow>
-                  <FieldRow label="INT">
-                    <NumberInput
-                      value={e.intMod ?? 0}
-                      onCommit={(v) => patch({ intMod: v ?? 0 })}
-                    />
-                  </FieldRow>
-                  <FieldRow label="WIS">
-                    <NumberInput
-                      value={e.wisMod ?? 0}
-                      onCommit={(v) => patch({ wisMod: v ?? 0 })}
-                    />
-                  </FieldRow>
-                  <FieldRow label="CHA">
-                    <NumberInput
-                      value={e.chaMod ?? 0}
-                      onCommit={(v) => patch({ chaMod: v ?? 0 })}
-                    />
-                  </FieldRow>
-                </div>
-              </div>
-            )}
-
-            {/* Legacy generic stat mods map — for any non-standard stat modifiers */}
-            {showStatMods && (
-              <StatModsEditor
-                statMods={e.statMods}
-                statIds={statIds}
-                onChange={(mods) => patch({ statMods: mods })}
+            <FieldRow label="CON">
+              <NumberInput
+                value={effect.conMod ?? 0}
+                onCommit={(v) => patch({ conMod: v ?? 0 })}
               />
-            )}
-          </>
-        );
-      }}
-    />
+            </FieldRow>
+            <FieldRow label="INT">
+              <NumberInput
+                value={effect.intMod ?? 0}
+                onCommit={(v) => patch({ intMod: v ?? 0 })}
+              />
+            </FieldRow>
+            <FieldRow label="WIS">
+              <NumberInput
+                value={effect.wisMod ?? 0}
+                onCommit={(v) => patch({ wisMod: v ?? 0 })}
+              />
+            </FieldRow>
+            <FieldRow label="CHA">
+              <NumberInput
+                value={effect.chaMod ?? 0}
+                onCommit={(v) => patch({ chaMod: v ?? 0 })}
+              />
+            </FieldRow>
+          </div>
+        </div>
+      )}
+
+      {showStatMods && (
+        <StatModsEditor
+          statMods={effect.statMods}
+          statIds={statIds}
+          onChange={(mods) => patch({ statMods: mods })}
+        />
+      )}
     </>
   );
 }

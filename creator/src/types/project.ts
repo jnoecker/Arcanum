@@ -25,11 +25,12 @@ export interface ServerState {
 export type TabKind = "studio" | "zone" | "config" | "console" | "sprites";
 
 export type ConfigSubTab =
-  | "server" | "world" | "stats" | "classes" | "races" | "equipmentSlots" | "abilities"
-  | "statusEffects" | "combat" | "mobTiers" | "playerTiers" | "progression"
-  | "economy" | "regen" | "crafting" | "navigation" | "commands" | "group" | "charCreate" | "images"
-  | "achievements" | "quests" | "globalAssets"
-  | "rawYaml" | "apiSettings";
+  | "characterStudio"
+  | "abilityStudio"
+  | "worldSystems"
+  | "contentStudio"
+  | "operations"
+  | "rawYaml";
 
 export interface Tab {
   id: string;

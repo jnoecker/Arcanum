@@ -314,7 +314,7 @@ export function Sidebar() {
             <button
               key={entry.id}
               onClick={() => {
-                if (entry.id === "config") setConfigSubTab("world");
+                if (entry.id === "config") setConfigSubTab("characterStudio");
                 openTab({ id: entry.id, kind: entry.kind, label: entry.label });
               }}
               className={`rounded-2xl border px-3 py-3 text-left text-sm transition ${
@@ -447,11 +447,11 @@ export function Sidebar() {
           <ul className="flex flex-col gap-0.5">
             {(
               [
-                { label: "Game Config", subTab: "server" as ConfigSubTab },
-                { label: "World", subTab: "world" as ConfigSubTab },
-                { label: "Classes", subTab: "classes" as ConfigSubTab },
-                { label: "Races", subTab: "races" as ConfigSubTab },
-                { label: "Equipment", subTab: "equipmentSlots" as ConfigSubTab },
+                { label: "Character Studio", subTab: "characterStudio" as ConfigSubTab },
+                { label: "Ability Studio", subTab: "abilityStudio" as ConfigSubTab },
+                { label: "World Systems", subTab: "worldSystems" as ConfigSubTab },
+                { label: "Content Studio", subTab: "contentStudio" as ConfigSubTab },
+                { label: "Operations", subTab: "operations" as ConfigSubTab },
               ]
             ).map((entry) => (
               <li key={entry.subTab}>
@@ -467,7 +467,7 @@ export function Sidebar() {
                   }`}
                 >
                   {entry.label}
-                  {entry.subTab === "server" && configDirty && (
+                  {entry.subTab === "characterStudio" && configDirty && (
                     <span className="ml-1 text-accent">*</span>
                   )}
                 </button>

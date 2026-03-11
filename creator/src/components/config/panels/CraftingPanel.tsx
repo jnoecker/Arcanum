@@ -3,6 +3,68 @@ import type { CraftingSkillDefinition, CraftingStationTypeDefinition } from "@/t
 import { Section, FieldRow, NumberInput, TextInput, SelectInput } from "@/components/ui/FormWidgets";
 import { RegistryPanel } from "./RegistryPanel";
 
+export function defaultCraftingSkillDefinition(raw: string): CraftingSkillDefinition {
+  return { displayName: raw, type: "crafting" };
+}
+
+export function summarizeCraftingSkill(skill: CraftingSkillDefinition): string {
+  return skill.type;
+}
+
+export function CraftingSkillDetail({
+  skill,
+  patch,
+}: {
+  skill: CraftingSkillDefinition;
+  patch: (p: Partial<CraftingSkillDefinition>) => void;
+}) {
+  return (
+    <>
+      <FieldRow label="Display Name">
+        <TextInput
+          value={skill.displayName}
+          onCommit={(v) => patch({ displayName: v })}
+        />
+      </FieldRow>
+      <FieldRow label="Type" hint="Gathering skills harvest raw materials; Crafting skills transform materials into items.">
+        <SelectInput
+          value={skill.type}
+          onCommit={(v) => patch({ type: v })}
+          options={[
+            { value: "gathering", label: "Gathering" },
+            { value: "crafting", label: "Crafting" },
+          ]}
+        />
+      </FieldRow>
+    </>
+  );
+}
+
+export function defaultCraftingStationTypeDefinition(raw: string): CraftingStationTypeDefinition {
+  return { displayName: raw };
+}
+
+export function summarizeCraftingStationType(): string {
+  return "";
+}
+
+export function CraftingStationTypeDetail({
+  stationType,
+  patch,
+}: {
+  stationType: CraftingStationTypeDefinition;
+  patch: (p: Partial<CraftingStationTypeDefinition>) => void;
+}) {
+  return (
+    <FieldRow label="Display Name" hint="Name shown to players (e.g. Forge, Alchemy Table, Loom).">
+      <TextInput
+        value={stationType.displayName}
+        onCommit={(v) => patch({ displayName: v })}
+      />
+    </FieldRow>
+  );
+}
+
 export function CraftingPanel({ config, onChange }: ConfigPanelProps) {
   const c = config.crafting;
   const patch = (p: Partial<AppConfig["crafting"]>) =>
@@ -69,27 +131,10 @@ export function CraftingPanel({ config, onChange }: ConfigPanelProps) {
         placeholder="New skill"
         idTransform={(raw) => raw.trim().toLowerCase().replace(/\s+/g, "_")}
         getDisplayName={(s) => s.displayName}
-        defaultItem={(raw) => ({ displayName: raw, type: "crafting" })}
-        renderSummary={(_id, s) => s.type}
+        defaultItem={defaultCraftingSkillDefinition}
+        renderSummary={(_id, s) => summarizeCraftingSkill(s)}
         renderDetail={(_id, s, patch) => (
-          <>
-            <FieldRow label="Display Name">
-              <TextInput
-                value={s.displayName}
-                onCommit={(v) => patch({ displayName: v })}
-              />
-            </FieldRow>
-            <FieldRow label="Type" hint="Gathering skills harvest raw materials; Crafting skills transform materials into items.">
-              <SelectInput
-                value={s.type}
-                onCommit={(v) => patch({ type: v })}
-                options={[
-                  { value: "gathering", label: "Gathering" },
-                  { value: "crafting", label: "Crafting" },
-                ]}
-              />
-            </FieldRow>
-          </>
+          <CraftingSkillDetail skill={s} patch={patch} />
         )}
       />
 
@@ -100,15 +145,10 @@ export function CraftingPanel({ config, onChange }: ConfigPanelProps) {
         placeholder="New station type"
         idTransform={(raw) => raw.trim().toLowerCase().replace(/\s+/g, "_")}
         getDisplayName={(s) => s.displayName}
-        defaultItem={(raw) => ({ displayName: raw })}
-        renderSummary={() => ""}
+        defaultItem={defaultCraftingStationTypeDefinition}
+        renderSummary={summarizeCraftingStationType}
         renderDetail={(_id, s, patch) => (
-          <FieldRow label="Display Name" hint="Name shown to players (e.g. Forge, Alchemy Table, Loom).">
-            <TextInput
-              value={s.displayName}
-              onCommit={(v) => patch({ displayName: v })}
-            />
-          </FieldRow>
+          <CraftingStationTypeDetail stationType={s} patch={patch} />
         )}
       />
     </>

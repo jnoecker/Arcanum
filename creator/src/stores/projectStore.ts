@@ -35,7 +35,7 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
   project: null,
   tabs: [],
   activeTabId: null,
-  configSubTab: "server" as ConfigSubTab,
+  configSubTab: "characterStudio" as ConfigSubTab,
   pendingNavigation: null,
 
   setProject: (project) =>

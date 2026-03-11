@@ -3,6 +3,40 @@ import type { GenderDefinition } from "@/types/config";
 import { Section, FieldRow, NumberInput, TextInput } from "@/components/ui/FormWidgets";
 import { RegistryPanel } from "./RegistryPanel";
 
+export function defaultGenderDefinition(raw: string): GenderDefinition {
+  return { displayName: raw };
+}
+
+export function summarizeGender(gender: GenderDefinition): string {
+  return gender.spriteCode ?? "";
+}
+
+export function GenderDetail({
+  gender,
+  patchGender,
+}: {
+  gender: GenderDefinition;
+  patchGender: (p: Partial<GenderDefinition>) => void;
+}) {
+  return (
+    <>
+      <FieldRow label="Display Name">
+        <TextInput
+          value={gender.displayName}
+          onCommit={(v) => patchGender({ displayName: v })}
+        />
+      </FieldRow>
+      <FieldRow label="Sprite Code" hint="Code used in sprite filenames (e.g. 'm' or 'f'). Defaults to the gender's ID if left blank.">
+        <TextInput
+          value={gender.spriteCode ?? ""}
+          onCommit={(v) => patchGender({ spriteCode: v || undefined })}
+          placeholder="defaults to id"
+        />
+      </FieldRow>
+    </>
+  );
+}
+
 export function CharacterCreationPanel({ config, onChange }: ConfigPanelProps) {
   const cc = config.characterCreation;
   const patch = (p: Partial<AppConfig["characterCreation"]>) =>
@@ -32,24 +66,10 @@ export function CharacterCreationPanel({ config, onChange }: ConfigPanelProps) {
         placeholder="New gender"
         idTransform={(raw) => raw.trim().toLowerCase().replace(/\s+/g, "_")}
         getDisplayName={(g) => g.displayName}
-        defaultItem={(raw) => ({ displayName: raw })}
-        renderSummary={() => ""}
+        defaultItem={defaultGenderDefinition}
+        renderSummary={(_id, g) => summarizeGender(g)}
         renderDetail={(_id, g, patchGender) => (
-          <>
-            <FieldRow label="Display Name">
-              <TextInput
-                value={g.displayName}
-                onCommit={(v) => patchGender({ displayName: v })}
-              />
-            </FieldRow>
-            <FieldRow label="Sprite Code" hint="Code used in sprite filenames (e.g. 'm' or 'f'). Defaults to the gender's ID if left blank.">
-              <TextInput
-                value={g.spriteCode ?? ""}
-                onCommit={(v) => patchGender({ spriteCode: v || undefined })}
-                placeholder="defaults to id"
-              />
-            </FieldRow>
-          </>
+          <GenderDetail gender={g} patchGender={patchGender} />
         )}
       />
     </>

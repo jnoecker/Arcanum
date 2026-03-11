@@ -100,7 +100,7 @@ export function StudioWorkspace() {
                 </button>
                 <button
                   onClick={() => {
-                    setConfigSubTab("world");
+                    setConfigSubTab("worldSystems");
                     openTab({ id: "config", kind: "config", label: "Config" });
                   }}
                   className="rounded-full border border-[rgba(216,222,241,0.14)] bg-white/6 px-5 py-3 text-left text-sm font-medium text-text-primary transition hover:-translate-y-0.5 hover:bg-white/10"

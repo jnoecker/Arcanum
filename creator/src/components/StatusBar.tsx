@@ -23,8 +23,8 @@ export function StatusBar() {
   const warningCount = allIssues.filter((i) => i.severity === "warning").length;
 
   return (
-    <div className="flex h-6 shrink-0 items-center gap-4 border-t border-border-default bg-bg-secondary px-3 text-xs">
-      {/* Zone count */}
+    <div className="relative z-10 px-4 pb-4">
+      <div className="flex min-h-12 items-center gap-4 rounded-[28px] border border-white/10 bg-[linear-gradient(155deg,rgba(50,60,88,0.84),rgba(38,47,71,0.9))] px-5 py-3 text-xs shadow-[0_12px_36px_rgba(8,10,18,0.22)]">
       <span className="text-text-muted">
         {totalZones} zone{totalZones !== 1 ? "s" : ""} loaded
       </span>
@@ -71,8 +71,8 @@ export function StatusBar() {
         <span className="truncate text-status-error">{lastError}</span>
       )}
 
-      {/* Server status */}
-      <span className="text-text-muted capitalize">{status}</span>
+      <span className="rounded-full bg-black/10 px-3 py-1 text-text-muted capitalize">{status}</span>
+      </div>
     </div>
   );
 }

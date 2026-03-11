@@ -151,7 +151,6 @@ export function ProjectWizard({ onClose }: ProjectWizardProps) {
               {step === 2 && (
                 <TemplateStyleStep
                   data={data}
-                  onChange={update}
                   onSelectTemplate={selectTemplate}
                 />
               )}

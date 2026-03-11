@@ -3,6 +3,7 @@ import { Console } from "./Console";
 import { ZoneEditor } from "./zone/ZoneEditor";
 import { ConfigEditor } from "./config/ConfigEditor";
 import { PlayerSpriteManager } from "./PlayerSpriteManager";
+import { StudioWorkspace } from "./StudioWorkspace";
 
 export function MainArea() {
   const tabs = useProjectStore((s) => s.tabs);
@@ -19,6 +20,9 @@ export function MainArea() {
 
   let content: React.ReactNode;
   switch (activeTab.kind) {
+    case "studio":
+      content = <StudioWorkspace />;
+      break;
     case "console":
       content = <Console />;
       break;

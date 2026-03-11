@@ -2,19 +2,16 @@ import { TEMPLATES } from "@/lib/templates";
 import {
   ART_STYLE_LABELS,
   ART_STYLE_DESCRIPTIONS,
-  type ArtStyle,
 } from "@/lib/arcanumPrompts";
 import type { WizardData } from "@/lib/useProjectWizard";
 
 interface TemplateStyleStepProps {
   data: WizardData;
-  onChange: (update: Partial<WizardData>) => void;
   onSelectTemplate: (templateId: string) => void;
 }
 
 export function TemplateStyleStep({
   data,
-  onChange,
   onSelectTemplate,
 }: TemplateStyleStepProps) {
   return (
@@ -58,32 +55,22 @@ export function TemplateStyleStep({
         </div>
       </div>
 
-      {/* Art style toggle */}
+      {/* Art style */}
       <div>
         <label className="mb-2 block text-xs font-medium text-text-muted">
           Art Style
         </label>
-        <div className="flex gap-2">
-          {(Object.entries(ART_STYLE_LABELS) as [ArtStyle, string][]).map(
-            ([key, label]) => (
-              <button
-                key={key}
-                onClick={() => onChange({ artStyle: key })}
-                className={`flex-1 rounded border px-3 py-2 text-left transition-colors ${
-                  data.artStyle === key
-                    ? "border-accent bg-accent/10"
-                    : "border-border-default bg-bg-primary hover:border-border-hover"
-                }`}
-              >
-                <div className="text-xs font-medium text-text-primary">
-                  {label}
-                </div>
-                <div className="mt-0.5 text-[10px] text-text-muted">
-                  {ART_STYLE_DESCRIPTIONS[key]}
-                </div>
-              </button>
-            ),
-          )}
+        <div className="rounded border border-accent/30 bg-accent/10 px-3 py-3">
+          <div className="text-xs font-medium text-text-primary">
+            {ART_STYLE_LABELS.gentle_magic}
+          </div>
+          <div className="mt-0.5 text-[10px] text-text-muted">
+            {ART_STYLE_DESCRIPTIONS.gentle_magic}
+          </div>
+          <div className="mt-2 text-[10px] text-text-secondary">
+            This creator now uses a single visual system. Future style guides can be loaded as data,
+            but Surreal Gentle Magic is the active v1 path.
+          </div>
         </div>
       </div>
     </div>

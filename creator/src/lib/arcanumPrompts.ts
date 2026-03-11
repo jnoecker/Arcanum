@@ -97,7 +97,7 @@ export const UNIVERSAL_NEGATIVE = `text, words, letters, runes, glyphs, watermar
 
 /** Get the preamble for a given art style */
 export function getPreamble(style: ArtStyle): string {
-  return style === "arcanum" ? ARCANUM_PREAMBLE : GENTLE_MAGIC_PREAMBLE;
+  return style === "arcanum" ? GENTLE_MAGIC_PREAMBLE : GENTLE_MAGIC_PREAMBLE;
 }
 
 /** Per-asset-type prompt templates, keyed by art style */
@@ -328,14 +328,14 @@ export const ENHANCE_SYSTEM_PROMPT = ENHANCE_SYSTEM_PROMPT_ARCANUM;
 /** Get the style-aware system prompt for prompt enhancement */
 export function getEnhanceSystemPrompt(style: ArtStyle): string {
   return style === "arcanum"
-    ? ENHANCE_SYSTEM_PROMPT_ARCANUM
+    ? ENHANCE_SYSTEM_PROMPT_GENTLE_MAGIC
     : ENHANCE_SYSTEM_PROMPT_GENTLE_MAGIC;
 }
 
 /** Compose a full prompt from template + context */
 export function composePrompt(
   assetType: AssetType,
-  style: ArtStyle = "arcanum",
+  style: ArtStyle = "gentle_magic",
   customization?: string,
 ): string {
   const template = ASSET_TEMPLATES[assetType].templates[style];

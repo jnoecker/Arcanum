@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef } from "react";
 import type { WorldFile } from "@/types/world";
-import { ART_STYLE_LABELS, type ArtStyle } from "@/lib/arcanumPrompts";
+import { ART_STYLE_LABELS } from "@/lib/arcanumPrompts";
 import { useAssetStore } from "@/stores/assetStore";
 import { useVibeStore } from "@/stores/vibeStore";
 import {
@@ -22,7 +22,6 @@ export function BatchArtGenerator({
   onClose,
 }: BatchArtGeneratorProps) {
   const artStyle = useAssetStore((s) => s.artStyle);
-  const setArtStyle = useAssetStore((s) => s.setArtStyle);
   const settings = useAssetStore((s) => s.settings);
   const vibe = useVibeStore((s) => s.vibes.get(zoneId) ?? "");
   const [targets, setTargets] = useState(() => collectTargets(world));
@@ -111,22 +110,8 @@ export function BatchArtGenerator({
         {/* Style selector + concurrency */}
         {!running && doneCount === 0 && (
           <div className="border-b border-border-default px-5 py-2">
-            <div className="flex gap-1 rounded bg-bg-primary p-0.5">
-              {(Object.entries(ART_STYLE_LABELS) as [ArtStyle, string][]).map(
-                ([key, label]) => (
-                  <button
-                    key={key}
-                    onClick={() => setArtStyle(key)}
-                    className={`flex-1 rounded px-2 py-1 text-xs transition-colors ${
-                      artStyle === key
-                        ? "bg-accent/20 text-accent"
-                        : "text-text-muted hover:text-text-secondary"
-                    }`}
-                  >
-                    {label}
-                  </button>
-                ),
-              )}
+            <div className="rounded border border-border-default/60 bg-bg-primary/60 px-3 py-2 text-xs text-text-secondary">
+              Style system: {ART_STYLE_LABELS[artStyle]}
             </div>
             <div className="mt-2 flex items-center gap-2">
               <label className="text-[10px] text-text-muted">Concurrency:</label>

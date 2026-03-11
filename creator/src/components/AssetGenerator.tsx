@@ -25,11 +25,11 @@ export function AssetGenerator() {
   const updateConfig = useConfigStore((s) => s.updateConfig);
 
   const [stage, setStage] = useState<Stage>("compose");
-  const [artStyle, setArtStyle] = useState<ArtStyle>("arcanum");
+  const [artStyle] = useState<ArtStyle>("gentle_magic");
   const [assetType, setAssetType] = useState<AssetType>("background");
   const [modelId, setModelId] = useState<string>(IMAGE_MODELS[0].id);
   const [customization, setCustomization] = useState("");
-  const [prompt, setPrompt] = useState(() => composePrompt("background", "arcanum"));
+  const [prompt, setPrompt] = useState(() => composePrompt("background", "gentle_magic"));
   const [enhancedPrompt, setEnhancedPrompt] = useState("");
   const [useEnhanced, setUseEnhanced] = useState(false);
   const [enhancing, setEnhancing] = useState(false);
@@ -45,13 +45,6 @@ export function AssetGenerator() {
   const handleTypeChange = (type: AssetType) => {
     setAssetType(type);
     setPrompt(composePrompt(type, artStyle, customization || undefined));
-    setEnhancedPrompt("");
-    setUseEnhanced(false);
-  };
-
-  const handleStyleChange = (style: ArtStyle) => {
-    setArtStyle(style);
-    setPrompt(composePrompt(assetType, style, customization || undefined));
     setEnhancedPrompt("");
     setUseEnhanced(false);
   };
@@ -190,27 +183,12 @@ export function AssetGenerator() {
         <div className="flex-1 overflow-y-auto px-5 py-4">
           {stage === "compose" && (
             <div className="flex flex-col gap-4">
-              {/* Art style */}
-              <div>
-                <label className="mb-1 block font-display text-[10px] uppercase tracking-widest text-text-muted">
-                  Art Style
-                </label>
-                <div className="flex gap-2">
-                  {(Object.entries(ART_STYLE_LABELS) as [ArtStyle, string][]).map(
-                    ([key, label]) => (
-                      <button
-                        key={key}
-                        onClick={() => handleStyleChange(key)}
-                        className={`flex-1 rounded px-3 py-1.5 text-xs transition-colors ${
-                          artStyle === key
-                            ? "bg-accent/20 text-accent"
-                            : "bg-bg-elevated text-text-secondary hover:text-text-primary"
-                        }`}
-                      >
-                        {label}
-                      </button>
-                    ),
-                  )}
+              <div className="rounded-lg border border-border-default/60 bg-bg-primary/60 px-3 py-2">
+                <div className="font-display text-[10px] uppercase tracking-widest text-text-muted">
+                  Style System
+                </div>
+                <div className="mt-1 text-xs text-text-secondary">
+                  {ART_STYLE_LABELS[artStyle]}
                 </div>
               </div>
 

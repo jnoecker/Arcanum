@@ -1,5 +1,7 @@
-import type { RoomFile, MobFile, ItemFile, ShopFile } from "@/types/world";
+import type { RoomFile, MobFile, ItemFile, ShopFile, WorldFile } from "@/types/world";
 import { type ArtStyle, getPreamble, STYLE_SUFFIX, FORMAT_BY_TYPE } from "./arcanumPrompts";
+
+export type DefaultImageKind = "room" | "mob" | "item";
 
 // ─── Context Builders ────────────────────────────────────────────
 // These build rich entity descriptions for the LLM to work with.
@@ -58,6 +60,34 @@ export function entityContext(kind: string, id: string, entity: unknown): string
     case "item": return itemContext(id, entity as ItemFile);
     case "shop": return shopContext(id, entity as ShopFile);
     default: return `${kind} entity "${id}"`;
+  }
+}
+
+function buildZoneSummary(world: WorldFile): string {
+  const roomTitles = Object.values(world.rooms)
+    .map((room) => room.title)
+    .filter(Boolean)
+    .slice(0, 6);
+
+  return [
+    `Zone "${world.zone}"`,
+    `${Object.keys(world.rooms).length} rooms`,
+    `${Object.keys(world.mobs ?? {}).length} mobs`,
+    `${Object.keys(world.items ?? {}).length} items`,
+    roomTitles.length > 0 ? `Representative rooms: ${roomTitles.join(", ")}` : "",
+  ].filter(Boolean).join("\n");
+}
+
+export function defaultImageContext(kind: DefaultImageKind, world: WorldFile): string {
+  const base = buildZoneSummary(world);
+
+  switch (kind) {
+    case "room":
+      return `${base}\nCreate the fallback environment illustration used when a room in this zone has no specific image.`;
+    case "mob":
+      return `${base}\nCreate the fallback creature or NPC portrait used when a mob in this zone has no specific image.`;
+    case "item":
+      return `${base}\nCreate the fallback item icon used when an item in this zone has no specific image.`;
   }
 }
 
@@ -203,5 +233,74 @@ export function entityPrompt(
         ? `${preamble}\n\nDreamlike portrait of a ${kind} entity called "${id}", rendered in soft magical style, lavender and pale blue tones, gentle ambient glow, floating motes of warm light, painterly, luminous\n\n${STYLE_SUFFIX}`
         : `${preamble}\n\nArcane portrait of a ${kind} entity called "${id}", rendered in baroque cosmic style, aurum-gold highlights, deep indigo background, painterly, luminous`;
     }
+  }
+}
+
+export function defaultImagePrompt(
+  kind: DefaultImageKind,
+  world: WorldFile,
+  zoneVibe: string,
+  style: ArtStyle = "gentle_magic",
+): string {
+  const preamble = getPreamble(style);
+  const zoneSummary = buildZoneSummary(world);
+  const vibeSection = zoneVibe
+    ? `Zone atmosphere: ${zoneVibe}`
+    : "Zone atmosphere: soft magical fallback that reflects the zone's dominant mood and palette.";
+
+  if (style === "gentle_magic") {
+    switch (kind) {
+      case "room":
+        return `${FORMAT_BY_TYPE.room}. ${preamble}
+
+Fallback room illustration for ${world.zone}. ${vibeSection}
+${zoneSummary}
+
+No named characters, no specific plot moment, and no readable text. Focus on an atmospheric establishing scene that can gracefully stand in for any unillustrated room in the zone. Painterly, luminous, softly enchanted, emotionally safe.
+
+${STYLE_SUFFIX}`;
+      case "mob":
+        return `${FORMAT_BY_TYPE.mob}. ${preamble}
+
+Fallback mob portrait for ${world.zone}. ${vibeSection}
+${zoneSummary}
+
+Depict a generic inhabitant or creature archetype that feels native to the zone without representing any named NPC. The figure should feel characterful and approachable, with subtle magical details and a soft ambient glow.
+
+${STYLE_SUFFIX}`;
+      case "item":
+        return `${FORMAT_BY_TYPE.item}. ${preamble}
+
+Fallback item icon for ${world.zone}. ${vibeSection}
+${zoneSummary}
+
+Depict a generic magical object or artifact that could plausibly belong anywhere in this zone. Keep the silhouette clear, the materials handcrafted, and the enchantment subtle but visible.
+
+${STYLE_SUFFIX}`;
+    }
+  }
+
+  switch (kind) {
+    case "room":
+      return `${preamble}
+
+Fallback room illustration for ${world.zone}. ${vibeSection}
+${zoneSummary}
+
+Wide atmospheric environment art suitable for any room in the zone.`;
+    case "mob":
+      return `${preamble}
+
+Fallback creature portrait for ${world.zone}. ${vibeSection}
+${zoneSummary}
+
+Generic zone inhabitant portrait suitable for mobs without explicit art.`;
+    case "item":
+      return `${preamble}
+
+Fallback item illustration for ${world.zone}. ${vibeSection}
+${zoneSummary}
+
+Generic zone-themed artifact icon suitable for items without explicit art.`;
   }
 }

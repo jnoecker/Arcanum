@@ -3,14 +3,19 @@ import { invoke } from "@tauri-apps/api/core";
 import { useAssetStore } from "@/stores/assetStore";
 import { getAudioSystemPrompt, getDefaultDuration, type AudioTrackType } from "@/lib/musicPrompts";
 import { useMediaSrc } from "@/lib/useMediaSrc";
+import type { AssetContext } from "@/types/assets";
 
 interface MusicGeneratorProps {
   roomTitle?: string;
   roomDescription?: string;
   vibe?: string;
   currentAudio?: string;
-  onAccept: (filePath: string) => void;
+  onAccept: (fileName: string) => void;
   trackType?: AudioTrackType;
+  assetType?: "music" | "ambient" | "audio";
+  context?: AssetContext;
+  variantGroup?: string;
+  markActive?: boolean;
 }
 
 const TRACK_LABELS: Record<AudioTrackType, string> = {
@@ -25,8 +30,13 @@ export function MusicGenerator({
   currentAudio,
   onAccept,
   trackType = "music",
+  assetType,
+  context,
+  variantGroup,
+  markActive = false,
 }: MusicGeneratorProps) {
   const settings = useAssetStore((s) => s.settings);
+  const importAsset = useAssetStore((s) => s.importAsset);
   const [prompt, setPrompt] = useState("");
   const [duration, setDuration] = useState(getDefaultDuration(trackType));
   const [generating, setGenerating] = useState(false);
@@ -86,10 +96,16 @@ export function MusicGenerator({
     }
   };
 
-  const handleAccept = () => {
-    if (resultPath) {
-      onAccept(resultPath);
+  const handleAccept = async () => {
+    if (!resultPath) return;
+    try {
+      const fileName = assetType
+        ? (await importAsset(resultPath, assetType, context, variantGroup, markActive)).file_name
+        : resultPath.split(/[\\/]/).pop() ?? resultPath;
+      onAccept(fileName);
       setResultPath(null);
+    } catch (e) {
+      setError(String(e));
     }
   };
 

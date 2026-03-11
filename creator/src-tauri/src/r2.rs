@@ -286,15 +286,26 @@ fn find_asset_file(base: &Path, file_name: &str) -> Option<PathBuf> {
     None
 }
 
+fn should_sync_asset(asset: &AssetEntry, scope: &str) -> bool {
+    match scope {
+        "all" => true,
+        _ => asset.is_active || asset.variant_group.is_empty(),
+    }
+}
+
 #[tauri::command]
-pub async fn sync_assets(app: AppHandle) -> Result<SyncProgress, String> {
+pub async fn sync_assets(app: AppHandle, scope: Option<String>) -> Result<SyncProgress, String> {
     let s = settings::get_settings(app.clone()).await?;
     if s.r2_account_id.is_empty() || s.r2_access_key_id.is_empty() || s.r2_secret_access_key.is_empty() || s.r2_bucket.is_empty() {
         return Err("R2 credentials not configured. Set them in Settings.".to_string());
     }
 
+    let sync_scope = scope.unwrap_or_else(|| "approved".to_string());
     let assets = assets::list_assets(app.clone()).await?;
-    let unsynced: Vec<&AssetEntry> = assets.iter().filter(|a| a.sync_status != "synced").collect();
+    let unsynced: Vec<&AssetEntry> = assets
+        .iter()
+        .filter(|a| a.sync_status != "synced" && should_sync_asset(a, &sync_scope))
+        .collect();
     let base_dir = assets_base_dir(&app)?;
     let client = reqwest::Client::new();
 

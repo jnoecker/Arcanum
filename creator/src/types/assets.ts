@@ -55,7 +55,10 @@ export type AssetType =
   | "class_portrait"
   | "music"
   | "ambient"
+  | "audio"
   | "video";
+
+export type SyncScope = "approved" | "all";
 
 /** Mirrors the Rust Settings struct */
 export interface Settings {

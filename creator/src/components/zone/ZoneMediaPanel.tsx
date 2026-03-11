@@ -8,10 +8,6 @@ import { useVibeStore } from "@/stores/vibeStore";
 import { useAssetStore } from "@/stores/assetStore";
 import sidebarBg from "@/assets/sidebar-bg.png";
 
-function basename(filePath: string): string {
-  return filePath.split(/[\\/]/).pop() ?? "";
-}
-
 interface ZoneMediaPanelProps {
   zoneId: string;
   world: WorldFile;
@@ -71,6 +67,9 @@ export function ZoneMediaPanel({ zoneId, world, onWorldChange }: ZoneMediaPanelP
                 onChange={(v) => patchAudio("music", v ?? undefined)}
                 mediaType="audio"
                 assetType="music"
+                context={{ zone: zoneId, entity_type: "zone", entity_id: "defaults" }}
+                variantGroup={`zone-media:${zoneId}:music`}
+                isActive
               />
               <MusicGenerator
                 roomTitle={world.zone}
@@ -78,7 +77,11 @@ export function ZoneMediaPanel({ zoneId, world, onWorldChange }: ZoneMediaPanelP
                 vibe={vibe}
                 currentAudio={world.audio?.music}
                 trackType="music"
-                onAccept={(filePath) => patchAudio("music", basename(filePath))}
+                assetType="music"
+                context={{ zone: zoneId, entity_type: "zone", entity_id: "defaults" }}
+                variantGroup={`zone-media:${zoneId}:music`}
+                markActive
+                onAccept={(fileName) => patchAudio("music", fileName)}
               />
             </div>
           </Section>
@@ -98,6 +101,9 @@ export function ZoneMediaPanel({ zoneId, world, onWorldChange }: ZoneMediaPanelP
                 onChange={(v) => patchAudio("ambient", v ?? undefined)}
                 mediaType="audio"
                 assetType="ambient"
+                context={{ zone: zoneId, entity_type: "zone", entity_id: "defaults" }}
+                variantGroup={`zone-media:${zoneId}:ambient`}
+                isActive
               />
               <MusicGenerator
                 roomTitle={world.zone}
@@ -105,7 +111,11 @@ export function ZoneMediaPanel({ zoneId, world, onWorldChange }: ZoneMediaPanelP
                 vibe={vibe}
                 currentAudio={world.audio?.ambient}
                 trackType="ambient"
-                onAccept={(filePath) => patchAudio("ambient", basename(filePath))}
+                assetType="ambient"
+                context={{ zone: zoneId, entity_type: "zone", entity_id: "defaults" }}
+                variantGroup={`zone-media:${zoneId}:ambient`}
+                markActive
+                onAccept={(fileName) => patchAudio("ambient", fileName)}
               />
             </div>
           </Section>
@@ -119,6 +129,10 @@ export function ZoneMediaPanel({ zoneId, world, onWorldChange }: ZoneMediaPanelP
                 entityDescription={`Zone: ${world.zone}. ${Object.keys(world.rooms).length} rooms.`}
                 videoType="zone_intro"
                 extraContext={`Zone rooms:\n${roomNames}`}
+                assetType="video"
+                context={{ zone: zoneId, entity_type: "zone", entity_id: "zone_intro" }}
+                variantGroup={`zone-media:${zoneId}:zone_intro`}
+                markActive
                 onAccept={(_filePath) => {
                   // Zone intro video is accepted as a generated asset; no zone-level field to set
                   // The file is saved to the assets directory automatically

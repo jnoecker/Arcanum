@@ -5,6 +5,11 @@ import { useZoneStore } from "@/stores/zoneStore";
 import { useVibeStore } from "@/stores/vibeStore";
 import { BatchArtGenerator } from "@/components/zone/BatchArtGenerator";
 import { ZoneVibePanel } from "@/components/zone/ZoneVibePanel";
+import { ZoneAssetWorkbench } from "@/components/zone/ZoneAssetWorkbench";
+import { CustomAssetStudio } from "@/components/CustomAssetStudio";
+import { PortraitStudio } from "@/components/PortraitStudio";
+import { AbilityStudio } from "@/components/AbilityStudio";
+import { MediaStudio } from "@/components/MediaStudio";
 
 export function StudioWorkspace() {
   const zones = useZoneStore((s) => s.zones);
@@ -15,6 +20,7 @@ export function StudioWorkspace() {
   const openGallery = useAssetStore((s) => s.openGallery);
   const openTab = useProjectStore((s) => s.openTab);
   const setConfigSubTab = useProjectStore((s) => s.setConfigSubTab);
+  const loadVibe = useVibeStore((s) => s.loadVibe);
   const [selectedZoneId, setSelectedZoneId] = useState<string | null>(null);
   const [showBatchArt, setShowBatchArt] = useState(false);
 
@@ -31,6 +37,11 @@ export function StudioWorkspace() {
     if (selectedZoneId && zones.has(selectedZoneId)) return;
     setSelectedZoneId(sortedZones[0]?.[0] ?? null);
   }, [selectedZoneId, sortedZones, zones]);
+
+  useEffect(() => {
+    if (!selectedZoneId) return;
+    loadVibe(selectedZoneId).catch(() => {});
+  }, [selectedZoneId, loadVibe]);
 
   const selectedZone = selectedZoneId ? zones.get(selectedZoneId) ?? null : null;
   const selectedZoneAssets = useMemo(
@@ -246,7 +257,11 @@ export function StudioWorkspace() {
 
             <div className="rounded-[28px] border border-white/10 bg-[linear-gradient(160deg,rgba(54,63,90,0.95),rgba(42,53,79,0.92))] p-5 shadow-[0_18px_50px_rgba(9,12,24,0.24)]">
               {selectedZone ? (
-                <ZoneVibePanel zoneId={selectedZoneId!} world={selectedZone.data} />
+                <ZoneVibePanel
+                  zoneId={selectedZoneId!}
+                  world={selectedZone.data}
+                  onWorldChange={(world) => updateZone(selectedZoneId!, world)}
+                />
               ) : (
                 <div className="rounded-[20px] border border-dashed border-white/12 bg-white/4 px-4 py-8 text-sm text-text-muted">
                   Select a zone to generate or edit its Surreal Gentle Magic vibe summary.
@@ -255,43 +270,67 @@ export function StudioWorkspace() {
             </div>
           </div>
 
-          <div className="rounded-[28px] border border-white/10 bg-[linear-gradient(160deg,rgba(54,63,90,0.95),rgba(42,53,79,0.92))] p-5 shadow-[0_18px_50px_rgba(9,12,24,0.24)]">
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="font-display text-xl text-text-primary">Recent assets</h2>
-              <button
-                onClick={openGallery}
-                className="text-xs text-text-secondary transition hover:text-text-primary"
-              >
-                Open gallery
-              </button>
-            </div>
+          <div className="flex flex-col gap-6">
+            <CustomAssetStudio selectedZoneId={selectedZoneId} />
 
-            <div className="grid grid-cols-2 gap-3">
-              {recentAssets.length === 0 ? (
-                <div className="col-span-2 rounded-[20px] border border-dashed border-white/12 bg-white/4 px-4 py-8 text-sm text-text-muted">
-                  Assets accepted into the library will appear here for quick review.
-                </div>
-              ) : (
-                recentAssets.map((asset) => (
-                  <div
-                    key={asset.id}
-                    className="rounded-[20px] border border-white/8 bg-black/12 px-3 py-3"
-                  >
-                    <div className="text-[11px] uppercase tracking-[0.2em] text-text-muted">
-                      {asset.asset_type.replace(/_/g, " ")}
-                    </div>
-                    <div className="mt-2 truncate text-sm text-text-primary">
-                      {asset.context?.entity_id || asset.file_name}
-                    </div>
-                    <div className="mt-1 truncate text-[11px] text-text-secondary">
-                      {asset.context?.zone || "Global"}
-                    </div>
+            <div className="rounded-[28px] border border-white/10 bg-[linear-gradient(160deg,rgba(54,63,90,0.95),rgba(42,53,79,0.92))] p-5 shadow-[0_18px_50px_rgba(9,12,24,0.24)]">
+              <div className="mb-4 flex items-center justify-between">
+                <h2 className="font-display text-xl text-text-primary">Recent assets</h2>
+                <button
+                  onClick={openGallery}
+                  className="text-xs text-text-secondary transition hover:text-text-primary"
+                >
+                  Open gallery
+                </button>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                {recentAssets.length === 0 ? (
+                  <div className="col-span-2 rounded-[20px] border border-dashed border-white/12 bg-white/4 px-4 py-8 text-sm text-text-muted">
+                    Assets accepted into the library will appear here for quick review.
                   </div>
-                ))
-              )}
+                ) : (
+                  recentAssets.map((asset) => (
+                    <div
+                      key={asset.id}
+                      className="rounded-[20px] border border-white/8 bg-black/12 px-3 py-3"
+                    >
+                      <div className="text-[11px] uppercase tracking-[0.2em] text-text-muted">
+                        {asset.asset_type.replace(/_/g, " ")}
+                      </div>
+                      <div className="mt-2 truncate text-sm text-text-primary">
+                        {asset.context?.entity_id || asset.file_name}
+                      </div>
+                      <div className="mt-1 truncate text-[11px] text-text-secondary">
+                        {asset.context?.zone || "Global"}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
             </div>
           </div>
         </section>
+
+        {selectedZone && (
+          <ZoneAssetWorkbench
+            zoneId={selectedZoneId!}
+            world={selectedZone.data}
+            onWorldChange={(world) => updateZone(selectedZoneId!, world)}
+          />
+        )}
+
+        <MediaStudio
+          zoneId={selectedZoneId}
+          world={selectedZone?.data ?? null}
+          onWorldChange={(world) => {
+            if (selectedZoneId) updateZone(selectedZoneId, world);
+          }}
+        />
+
+        <PortraitStudio selectedZoneId={selectedZoneId} />
+
+        <AbilityStudio />
       </div>
 
       {showBatchArt && selectedZone && (

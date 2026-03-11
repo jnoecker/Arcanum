@@ -235,11 +235,12 @@ export async function runBatchArtGeneration(
 
         const { kind, id } = target;
         if (kind === "room") {
+          const fileName = image.file_path.split(/[\\/]/).pop() ?? image.hash;
           updatedWorld = {
             ...updatedWorld,
             rooms: {
               ...updatedWorld.rooms,
-              [id]: { ...updatedWorld.rooms[id]!, image: image.file_path },
+              [id]: { ...updatedWorld.rooms[id]!, image: fileName },
             },
           };
         } else {
@@ -253,9 +254,10 @@ export async function runBatchArtGeneration(
             collection
           ] as Record<string, Record<string, unknown>> | undefined;
           if (entities?.[id]) {
+            const fileName = image.file_path.split(/[\\/]/).pop() ?? image.hash;
             (updatedWorld as Record<string, unknown>)[collection] = {
               ...entities,
-              [id]: { ...entities[id], image: image.file_path },
+              [id]: { ...entities[id], image: fileName },
             };
           }
         }

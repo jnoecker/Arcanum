@@ -27,7 +27,7 @@ import { RoomPanel, type EntitySelection } from "./RoomPanel";
 import { EntityPanel } from "./EntityPanel";
 import { DirectionPicker } from "./DirectionPicker";
 import { BatchArtGenerator } from "./BatchArtGenerator";
-import { AssetBrowser } from "./AssetBrowser";
+import { ZoneAssetWorkbench } from "./ZoneAssetWorkbench";
 import { ZoneMediaPanel } from "./ZoneMediaPanel";
 import builderBg from "@/assets/builder-bg.jpg";
 import subtoolbarBg from "@/assets/subtoolbar-bg.jpg";
@@ -360,7 +360,9 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
       {viewMode === "media" ? (
         <ZoneMediaPanel zoneId={zoneId} world={zoneState.data} onWorldChange={applyWorldChange} />
       ) : viewMode === "assets" ? (
-        <AssetBrowser zoneId={zoneId} world={zoneState.data} onWorldChange={applyWorldChange} />
+        <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
+          <ZoneAssetWorkbench zoneId={zoneId} world={zoneState.data} onWorldChange={applyWorldChange} />
+        </div>
       ) : (
         <div className="flex min-h-0 flex-1">
           <div className="relative flex-1">

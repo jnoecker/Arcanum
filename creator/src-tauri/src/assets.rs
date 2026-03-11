@@ -292,6 +292,8 @@ pub async fn import_asset(
     source_path: String,
     asset_type: String,
     context: Option<AssetContext>,
+    variant_group: Option<String>,
+    is_active: Option<bool>,
 ) -> Result<AssetEntry, String> {
     let bytes = tokio::fs::read(&source_path)
         .await
@@ -336,6 +338,8 @@ pub async fn import_asset(
         .file_stem()
         .map(|s| s.to_string_lossy().to_string())
         .unwrap_or_default();
+    let vg = variant_group.unwrap_or_default();
+    let active = is_active.unwrap_or(false);
 
     let entry = AssetEntry {
         id: uuid::Uuid::new_v4().to_string(),
@@ -350,14 +354,21 @@ pub async fn import_asset(
         width,
         height,
         sync_status: "local".to_string(),
-        variant_group: String::new(),
-        is_active: false,
+        variant_group: vg.clone(),
+        is_active: active,
     };
 
     let _lock = MANIFEST_LOCK.lock().await;
     let mut manifest = load_manifest(&app).await?;
     // Dedup by hash — update existing entry if same content
     manifest.assets.retain(|a| a.hash != entry.hash);
+    if active && !vg.is_empty() {
+        for asset in manifest.assets.iter_mut() {
+            if asset.variant_group == vg {
+                asset.is_active = false;
+            }
+        }
+    }
     manifest.assets.push(entry.clone());
     save_manifest(&app, &manifest).await?;
 

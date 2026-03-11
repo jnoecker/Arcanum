@@ -43,12 +43,15 @@ export function ImagesPanel({ config, onChange }: ConfigPanelProps) {
         description="Player characters use different sprite art at different level ranges, giving visual progression as they advance. The server picks the highest tier threshold at or below the player's level. A special 'tstaff' tier is always included for staff/admin sprites."
       >
         <p className="mb-2 text-[10px] text-text-muted">
-          Level breakpoints for player sprite art. Sprites use the filename
-          format:{" "}
+          Level breakpoints for player sprite art. Class tiers use{" "}
           <code className="font-mono">
             player_sprites/race_class_t&#123;tier&#125;.png
           </code>
-          {" "}(staff sprites use <code className="font-mono">tstaff</code>)
+          . Shared base and staff sprites use{" "}
+          <code className="font-mono">
+            player_sprites/race_base_t&#123;tier&#125;.png
+          </code>
+          .
         </p>
         <div className="flex flex-col gap-1.5">
           <FieldRow label="Level Tiers" hint="Comma-separated descending thresholds. Level 25 matches t20 (highest threshold at or below level). More tiers = more visual variety.">

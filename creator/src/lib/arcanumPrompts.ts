@@ -92,6 +92,31 @@ export const FORMAT_BY_TYPE: Record<string, string> = {
   class_portrait: "2:3 portrait orientation action portrait, mid-shot framing, dynamic or atmospheric pose, richly detailed painterly environment background",
 };
 
+export const FORMAT_BY_ASSET_TYPE: Partial<Record<AssetType, string>> = {
+  background: FORMAT_BY_TYPE.room,
+  ornament: "ultra-wide decorative horizontal ornament, elegant isolated composition, no readable text",
+  status_art: "16:9 atmospheric illustration with a clear focal subject and room for UI overlay",
+  empty_state: "16:9 atmospheric illustration with open negative space and a calm focal point",
+  entity_portrait: FORMAT_BY_TYPE.mob,
+  ability_sprite: FORMAT_BY_TYPE.ability_icon,
+  ability_icon: FORMAT_BY_TYPE.ability_icon,
+  status_effect_icon: FORMAT_BY_TYPE.status_effect_icon,
+  zone_map: "16:9 illustrated fantasy map or cartographic overview, top-down or elevated perspective, no readable labels",
+  splash_hero: "ultra-wide cinematic hero illustration, sweeping composition, welcoming focal vista",
+  loading_vignette: "1:1 square atmospheric vignette, centered focal subject, meditative composition",
+  panel_header: "4:1 ultra-wide horizontal header illustration, decorative and panoramic, readable text forbidden",
+  room: FORMAT_BY_TYPE.room,
+  mob: FORMAT_BY_TYPE.mob,
+  item: FORMAT_BY_TYPE.item,
+  player_sprite: FORMAT_BY_TYPE.mob,
+  race_portrait: FORMAT_BY_TYPE.race_portrait,
+  class_portrait: FORMAT_BY_TYPE.class_portrait,
+};
+
+export function getFormatForAssetType(assetType: AssetType): string {
+  return FORMAT_BY_ASSET_TYPE[assetType] ?? "illustrated fantasy image composition";
+}
+
 /** Universal negative prompt — appended to all generations */
 export const UNIVERSAL_NEGATIVE = `text, words, letters, runes, glyphs, watermarks, logos, signatures, modern technology, computers, user interfaces, neon colors, hot pink, electric blue, lime green, saturated primaries, pure black, harsh shadows, hard edges, sharp rim lights, spotlight effects, high-contrast chiaroscuro, brutalist shapes, mechanical rigidity, flat design, cartoon, anime, photorealism, studio lighting, stock photo aesthetic, horror elements, gore, nudity, nude, naked, bare chest, exposed breasts, cleavage, nsfw, topless, revealing, skimpy, sexualized`;
 
@@ -242,6 +267,13 @@ export const ASSET_TEMPLATES: Record<AssetType, { label: string; templates: Reco
       gentle_magic: `Environmental soundscape — gentle rustling leaves, soft flowing water, distant birdsong, magical chimes`,
     },
   },
+  audio: {
+    label: "Audio Cue",
+    templates: {
+      arcanum: `A short atmospheric audio cue - resonant tones, distant cosmic echoes, and soft reverberant energy`,
+      gentle_magic: `A short atmospheric audio cue - soft natural texture, subtle magical shimmer, and gentle environmental motion`,
+    },
+  },
   video: {
     label: "Video Cinematic",
     templates: {
@@ -322,6 +354,22 @@ When the prompt describes a specific character, creature, or NPC, you MUST depic
 
 Output ONLY the enhanced prompt text — no explanation, no preamble, no formatting.`;
 
+const CUSTOM_ASSET_SYSTEM_PROMPT_GENTLE_MAGIC = `You are an expert image prompt engineer for AI image generators. You work exclusively within the Surreal Gentle Magic design system.
+
+${STYLE_GUIDE_REFERENCE}
+
+The user will provide a free-form description of an asset they want generated for a fantasy worldbuilding tool. Transform it into an optimized image generation prompt that fully conforms to the Surreal Gentle Magic aesthetic.
+
+Rules:
+- Preserve the user's core subject, purpose, and mood
+- Replace harsh, industrial, or mundane details with soft magical equivalents when appropriate
+- Add subtle magical elements such as floating motes, faint luminous particles, atmospheric haze, glowing vegetation, or ambient bloom
+- Keep the palette within lavender, pale blue, dusty rose, moss green, and soft gold over deep misty neutrals
+- Replace any readable text, signage, labels, banners, inscriptions, or interface elements with glowing runes, arcane glyphs, or abstract magical symbols
+- Respect the requested format/composition exactly
+
+Output ONLY the finished prompt text — no explanation, no labels, no markdown.`;
+
 /** System prompt for the prompt enhancement LLM — kept for backward compat */
 export const ENHANCE_SYSTEM_PROMPT = ENHANCE_SYSTEM_PROMPT_ARCANUM;
 
@@ -330,6 +378,40 @@ export function getEnhanceSystemPrompt(style: ArtStyle): string {
   return style === "arcanum"
     ? ENHANCE_SYSTEM_PROMPT_GENTLE_MAGIC
     : ENHANCE_SYSTEM_PROMPT_GENTLE_MAGIC;
+}
+
+export function getCustomAssetSystemPrompt(style: ArtStyle): string {
+  return style === "arcanum"
+    ? CUSTOM_ASSET_SYSTEM_PROMPT_GENTLE_MAGIC
+    : CUSTOM_ASSET_SYSTEM_PROMPT_GENTLE_MAGIC;
+}
+
+export function buildCustomAssetPrompt(
+  assetType: AssetType,
+  description: string,
+  zoneVibe?: string | null,
+  style: ArtStyle = "gentle_magic",
+): string {
+  const formatSpec = getFormatForAssetType(assetType);
+  const vibeSection = zoneVibe
+    ? `Zone atmosphere: ${zoneVibe}`
+    : "Zone atmosphere: softly magical, cohesive with the Surreal Gentle Magic palette and mood.";
+
+  if (style === "gentle_magic") {
+    return `${formatSpec}. ${GENTLE_MAGIC_PREAMBLE}
+
+User brief: ${description}
+${vibeSection}
+
+Transform the brief into a polished worldbuilding asset with clear composition, organic forms, ambient diffused light, and gentle magical detail.
+
+${STYLE_SUFFIX}`;
+  }
+
+  return `${formatSpec}. ${getPreamble(style)}
+
+User brief: ${description}
+${vibeSection}`;
 }
 
 /** Compose a full prompt from template + context */

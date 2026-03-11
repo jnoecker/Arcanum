@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { invoke } from "@tauri-apps/api/core";
-import type { AssetContext, AssetEntry, GeneratedImage, Settings, SyncProgress } from "@/types/assets";
+import type { AssetContext, AssetEntry, GeneratedImage, Settings, SyncProgress, SyncScope } from "@/types/assets";
 import type { ArtStyle } from "@/lib/arcanumPrompts";
 
 interface BatchProgress {
@@ -27,13 +27,19 @@ interface AssetState {
 
   loadAssets: () => Promise<void>;
   acceptAsset: (image: GeneratedImage, assetType: string, enhancedPrompt?: string, context?: AssetContext, variantGroup?: string, isActive?: boolean) => Promise<void>;
-  importAsset: (sourcePath: string, assetType: string, context?: AssetContext) => Promise<AssetEntry>;
+  importAsset: (
+    sourcePath: string,
+    assetType: string,
+    context?: AssetContext,
+    variantGroup?: string,
+    isActive?: boolean,
+  ) => Promise<AssetEntry>;
   deleteAsset: (id: string) => Promise<void>;
 
   setActiveVariant: (variantGroup: string, assetId: string) => Promise<void>;
   listVariants: (variantGroup: string) => Promise<AssetEntry[]>;
 
-  syncToR2: () => Promise<SyncProgress>;
+  syncToR2: (scope?: SyncScope) => Promise<SyncProgress>;
   getSyncStatus: () => Promise<SyncProgress>;
 
   startBatch: (progress: BatchProgress) => void;
@@ -96,11 +102,13 @@ export const useAssetStore = create<AssetState>((set, get) => ({
     await get().loadAssets();
   },
 
-  importAsset: async (sourcePath, assetType, context) => {
+  importAsset: async (sourcePath, assetType, context, variantGroup, isActive) => {
     const entry = await invoke<AssetEntry>("import_asset", {
       sourcePath,
       assetType,
       context: context ?? null,
+      variantGroup: variantGroup ?? null,
+      isActive: isActive ?? null,
     });
     await get().loadAssets();
     return entry;
@@ -124,10 +132,10 @@ export const useAssetStore = create<AssetState>((set, get) => ({
     return invoke<AssetEntry[]>("list_variants", { variantGroup });
   },
 
-  syncToR2: async () => {
+  syncToR2: async (scope = "approved") => {
     set({ syncing: true });
     try {
-      const result = await invoke<SyncProgress>("sync_assets");
+      const result = await invoke<SyncProgress>("sync_assets", { scope });
       set({ lastSyncResult: result, syncing: false });
       await get().loadAssets();
       return result;

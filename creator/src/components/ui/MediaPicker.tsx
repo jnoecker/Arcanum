@@ -2,6 +2,7 @@ import { useState } from "react";
 import { open } from "@tauri-apps/plugin-dialog";
 import { useAssetStore } from "@/stores/assetStore";
 import { useMediaSrc } from "@/lib/useMediaSrc";
+import type { AssetContext } from "@/types/assets";
 
 interface MediaPickerProps {
   /** Current media path (R2 hash, legacy relative, or absolute) */
@@ -12,14 +13,24 @@ interface MediaPickerProps {
   mediaType: "audio" | "video";
   /** Asset type for manifest */
   assetType?: string;
+  context?: AssetContext;
+  variantGroup?: string;
+  isActive?: boolean;
 }
 
 const AUDIO_EXTENSIONS = ["mp3", "ogg", "flac", "wav"];
 const VIDEO_EXTENSIONS = ["mp4", "webm"];
 
-export function MediaPicker({ value, onChange, mediaType, assetType }: MediaPickerProps) {
+export function MediaPicker({
+  value,
+  onChange,
+  mediaType,
+  assetType,
+  context,
+  variantGroup,
+  isActive,
+}: MediaPickerProps) {
   const importAsset = useAssetStore((s) => s.importAsset);
-  const assetsDir = useAssetStore((s) => s.assetsDir);
   const [importing, setImporting] = useState(false);
 
   const dataSrc = useMediaSrc(value);
@@ -38,9 +49,8 @@ export function MediaPicker({ value, onChange, mediaType, assetType }: MediaPick
 
     setImporting(true);
     try {
-      const entry = await importAsset(path, assetType ?? mediaType, undefined);
-      const subdir = mediaType === "audio" ? "audio" : "video";
-      onChange(`${assetsDir}\\${subdir}\\${entry.file_name}`);
+      const entry = await importAsset(path, assetType ?? mediaType, context, variantGroup, isActive);
+      onChange(entry.file_name);
     } catch (e) {
       console.error("Failed to import media:", e);
     } finally {

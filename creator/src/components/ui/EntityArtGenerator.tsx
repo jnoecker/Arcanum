@@ -213,7 +213,7 @@ export function EntityArtGenerator({
         assetType ?? "background",
         context,
       );
-      onAccept(`${assetsDir}\\images\\${entry.file_name}`);
+      onAccept(entry.file_name);
     } catch (e) {
       setError(String(e));
     } finally {
@@ -225,7 +225,8 @@ export function EntityArtGenerator({
 
   const handleAccept = async () => {
     if (!result) return;
-    onAccept(result.file_path);
+    const fileName = result.file_path.split(/[\\/]/).pop() ?? result.hash;
+    onAccept(fileName);
     if (assetType) {
       await acceptAsset(result, assetType, lastEnhancedPrompt ?? undefined, context, variantGroup, true).catch(() => {});
 

@@ -23,11 +23,6 @@ import { useAssetStore } from "@/stores/assetStore";
 import { ZoneVibePanel } from "./ZoneVibePanel";
 import sidebarBg from "@/assets/sidebar-bg.png";
 
-/** Extract filename from a file path (cross-platform). */
-function basename(filePath: string): string {
-  return filePath.split(/[\\/]/).pop() ?? "";
-}
-
 export type EntityKind = "mob" | "item" | "shop" | "quest" | "gatheringNode" | "recipe";
 
 export interface EntitySelection {
@@ -401,7 +396,7 @@ export function RoomPanel({
 
       {/* Zone Vibe */}
       <Section title="Zone Vibe">
-        <ZoneVibePanel zoneId={zoneId} world={world} />
+        <ZoneVibePanel zoneId={zoneId} world={world} onWorldChange={onWorldChange} />
       </Section>
 
       {/* Media */}
@@ -432,14 +427,21 @@ export function RoomPanel({
             onChange={(v) => onWorldChange(updateRoom(world, roomId, { video: v }))}
             mediaType="video"
             assetType="video"
+            context={{ zone: zoneId, entity_type: "room", entity_id: roomId }}
+            variantGroup={`room-media:${zoneId}:${roomId}:video`}
+            isActive
           />
           <VideoGenerator
             imagePath={room.image && assetsDir ? `${assetsDir}\\images\\${room.image}` : undefined}
             entityName={room.title}
             entityDescription={room.description}
             videoType="room_cinematic"
-            onAccept={(filePath) => {
-              onWorldChange(updateRoom(world, roomId, { video: basename(filePath) }));
+            assetType="video"
+            context={{ zone: zoneId, entity_type: "room", entity_id: roomId }}
+            variantGroup={`room-media:${zoneId}:${roomId}:video`}
+            markActive
+            onAccept={(fileName) => {
+              onWorldChange(updateRoom(world, roomId, { video: fileName }));
             }}
           />
         </div>
@@ -460,6 +462,9 @@ export function RoomPanel({
             onChange={(v) => onWorldChange(updateRoom(world, roomId, { music: v }))}
             mediaType="audio"
             assetType="music"
+            context={{ zone: zoneId, entity_type: "room", entity_id: roomId }}
+            variantGroup={`room-media:${zoneId}:${roomId}:music`}
+            isActive
           />
           <MusicGenerator
             roomTitle={room.title}
@@ -467,8 +472,12 @@ export function RoomPanel({
             vibe={vibe}
             currentAudio={room.music}
             trackType="music"
-            onAccept={(filePath) => {
-              onWorldChange(updateRoom(world, roomId, { music: basename(filePath) }));
+            assetType="music"
+            context={{ zone: zoneId, entity_type: "room", entity_id: roomId }}
+            variantGroup={`room-media:${zoneId}:${roomId}:music`}
+            markActive
+            onAccept={(fileName) => {
+              onWorldChange(updateRoom(world, roomId, { music: fileName }));
             }}
           />
           <FieldRow label="Ambient">
@@ -483,6 +492,9 @@ export function RoomPanel({
             onChange={(v) => onWorldChange(updateRoom(world, roomId, { ambient: v }))}
             mediaType="audio"
             assetType="ambient"
+            context={{ zone: zoneId, entity_type: "room", entity_id: roomId }}
+            variantGroup={`room-media:${zoneId}:${roomId}:ambient`}
+            isActive
           />
           <MusicGenerator
             roomTitle={room.title}
@@ -490,8 +502,12 @@ export function RoomPanel({
             vibe={vibe}
             currentAudio={room.ambient}
             trackType="ambient"
-            onAccept={(filePath) => {
-              onWorldChange(updateRoom(world, roomId, { ambient: basename(filePath) }));
+            assetType="ambient"
+            context={{ zone: zoneId, entity_type: "room", entity_id: roomId }}
+            variantGroup={`room-media:${zoneId}:${roomId}:ambient`}
+            markActive
+            onAccept={(fileName) => {
+              onWorldChange(updateRoom(world, roomId, { ambient: fileName }));
             }}
           />
           <FieldRow label="Audio">
@@ -506,6 +522,9 @@ export function RoomPanel({
             onChange={(v) => onWorldChange(updateRoom(world, roomId, { audio: v }))}
             mediaType="audio"
             assetType="audio"
+            context={{ zone: zoneId, entity_type: "room", entity_id: roomId }}
+            variantGroup={`room-media:${zoneId}:${roomId}:audio`}
+            isActive
           />
         </div>
       </Section>

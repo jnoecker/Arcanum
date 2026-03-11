@@ -556,13 +556,13 @@ export function ZoneAssetWorkbench({ zoneId, world, onWorldChange }: ZoneAssetWo
               {zoneVibe && (
                 <div className="mb-3 rounded-[18px] border border-white/8 bg-[rgba(24,30,45,0.46)] px-4 py-3">
                   <div className="text-[11px] uppercase tracking-[0.2em] text-text-muted">Zone vibe</div>
-                  <div className="mt-2 whitespace-pre-wrap text-xs leading-6 text-text-secondary">{zoneVibe}</div>
+                  <div className="mt-2 max-h-40 overflow-y-auto whitespace-pre-wrap text-xs leading-6 text-text-secondary">{zoneVibe}</div>
                 </div>
               )}
               <textarea
                 value={promptDraft}
                 onChange={(event) => setPromptDraft(event.target.value)}
-                rows={14}
+                rows={10}
                 className="w-full resize-y rounded-[20px] border border-white/10 bg-[rgba(24,30,45,0.72)] px-4 py-3 font-mono text-[12px] leading-6 text-text-secondary outline-none transition focus:border-[rgba(184,216,232,0.3)]"
                 placeholder={selectedTarget.mode === "default" ? "Generate a fallback prompt for this zone asset..." : "Generate a prompt for this entity..."}
               />
@@ -571,7 +571,7 @@ export function ZoneAssetWorkbench({ zoneId, world, onWorldChange }: ZoneAssetWo
                 <div className="text-[11px] uppercase tracking-[0.2em] text-text-muted">
                   {selectedTarget.mode === "default" ? "Zone default context" : "Entity context"}
                 </div>
-                <div className="mt-2 whitespace-pre-wrap text-xs leading-6 text-text-secondary">{buildContext()}</div>
+                <div className="mt-2 max-h-44 overflow-y-auto whitespace-pre-wrap text-xs leading-6 text-text-secondary">{buildContext()}</div>
               </div>
 
               <div className="mt-4 flex flex-wrap gap-2">

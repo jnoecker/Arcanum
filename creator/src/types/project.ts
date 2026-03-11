@@ -32,6 +32,14 @@ export type ConfigSubTab =
   | "operations"
   | "rawYaml";
 
+export type StudioSubView =
+  | "home"
+  | "zoneArt"
+  | "customAssets"
+  | "media"
+  | "portraits"
+  | "abilities";
+
 export interface Tab {
   id: string;
   kind: TabKind;

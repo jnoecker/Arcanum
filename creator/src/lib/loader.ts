@@ -76,10 +76,10 @@ export function parseAppConfigYaml(content: string): AppConfig {
     equipmentSlots: parseMapSection(engine.equipment, "slots"),
     characterCreation: parseCharacterCreationConfig(engine.characterCreation),
     genders: parseMapSection(engine, "genders"),
-    achievementCategories: parseMapSection(engine, "achievementCategories"),
-    achievementCriterionTypes: parseMapSection(engine, "achievementCriterionTypes"),
-    questObjectiveTypes: parseMapSection(engine, "questObjectiveTypes"),
-    questCompletionTypes: parseMapSection(engine, "questCompletionTypes"),
+    achievementCategories: parseNestedMapSection(engine, "achievementCategories", "categories"),
+    achievementCriterionTypes: parseNestedMapSection(engine, "achievementCriterionTypes", "types"),
+    questObjectiveTypes: parseNestedMapSection(engine, "questObjectiveTypes", "types"),
+    questCompletionTypes: parseNestedMapSection(engine, "questCompletionTypes", "types"),
     statusEffectTypes: parseMapSection(engine.effectTypes, "types"),
     stackBehaviors: parseMapSection(engine.stackBehaviors, "behaviors"),
     abilityTargetTypes: parseMapSection(engine.targetTypes, "types"),
@@ -335,6 +335,19 @@ function parseMapSection<T>(raw: unknown, key: string): Record<string, T> {
   return section as Record<string, T>;
 }
 
+function parseNestedMapSection<T>(
+  raw: unknown,
+  sectionKey: string,
+  nestedKey: string,
+): Record<string, T> {
+  if (!raw || typeof raw !== "object") return {};
+  const section = (raw as Record<string, unknown>)[sectionKey];
+  if (!section || typeof section !== "object") return {};
+  const nested = (section as Record<string, unknown>)[nestedKey];
+  if (nested && typeof nested === "object") return nested as Record<string, T>;
+  return section as Record<string, T>;
+}
+
 function parseSimpleSection<T>(raw: unknown, defaults: T): T {
   if (!raw || typeof raw !== "object") return defaults;
   return { ...defaults, ...(raw as Partial<T>) };
@@ -346,7 +359,7 @@ function collectRawSections(
   engine: Record<string, unknown>,
 ): Record<string, unknown> {
   const knownRoot = new Set([
-    "server", "engine", "progression", "images", "globalAssets", "playerTiers", "world", "persistence",
+    "mode", "server", "engine", "progression", "images", "globalAssets", "playerTiers", "world", "persistence",
     "login", "transport", "demo", "observability", "admin",
     "logging", "database", "redis", "grpc", "gateway", "sharding",
     "videos", "audio",
@@ -558,10 +571,10 @@ async function loadSplitConfig(projectDir: string): Promise<AppConfig | null> {
       friends: parseFriendsConfig(worldRaw.friends),
       genders: asRecord(worldRaw.genders),
       characterCreation: parseCharacterCreationConfig(worldRaw.characterCreation),
-      achievementCategories: asRecord(worldRaw.achievementCategories),
-      achievementCriterionTypes: asRecord(worldRaw.achievementCriterionTypes),
-      questObjectiveTypes: asRecord(worldRaw.questObjectiveTypes),
-      questCompletionTypes: asRecord(worldRaw.questCompletionTypes),
+      achievementCategories: asRecord((worldRaw.achievementCategories as Record<string, unknown> | undefined)?.categories ?? worldRaw.achievementCategories),
+      achievementCriterionTypes: asRecord((worldRaw.achievementCriterionTypes as Record<string, unknown> | undefined)?.types ?? worldRaw.achievementCriterionTypes),
+      questObjectiveTypes: asRecord((worldRaw.questObjectiveTypes as Record<string, unknown> | undefined)?.types ?? worldRaw.questObjectiveTypes),
+      questCompletionTypes: asRecord((worldRaw.questCompletionTypes as Record<string, unknown> | undefined)?.types ?? worldRaw.questCompletionTypes),
 
       // stats.yaml
       stats: parseStatsConfig(statsRaw),
@@ -618,4 +631,3 @@ function asRecord<T>(val: unknown): Record<string, T> {
   if (!val || typeof val !== "object") return {};
   return val as Record<string, T>;
 }
-

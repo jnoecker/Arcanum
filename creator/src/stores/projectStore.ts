@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { saveUIState, loadUIState } from "@/lib/uiPersistence";
-import type { Project, Tab, ConfigSubTab } from "@/types/project";
+import type { Project, Tab, ConfigSubTab, StudioSubView } from "@/types/project";
 
 /** Navigation target for sidebar -> zone editor entity selection. */
 export interface PendingNavigation {
@@ -15,6 +15,7 @@ interface ProjectStore {
   tabs: Tab[];
   activeTabId: string | null;
   configSubTab: ConfigSubTab;
+  studioSubView: StudioSubView;
   pendingNavigation: PendingNavigation | null;
 
   setProject: (project: Project) => void;
@@ -27,6 +28,7 @@ interface ProjectStore {
   /** Restore previously open tabs after project load. */
   restoreTabs: (tabs: Tab[], activeTabId: string | null) => void;
   setConfigSubTab: (subTab: ConfigSubTab) => void;
+  setStudioSubView: (subView: StudioSubView) => void;
   navigateTo: (nav: PendingNavigation) => void;
   consumeNavigation: () => PendingNavigation | null;
 }
@@ -36,6 +38,7 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
   tabs: [],
   activeTabId: null,
   configSubTab: "characterStudio" as ConfigSubTab,
+  studioSubView: "home",
   pendingNavigation: null,
 
   setProject: (project) =>
@@ -43,6 +46,7 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
       project,
       tabs: [{ id: "studio", kind: "studio", label: "Studio" }],
       activeTabId: "studio",
+      studioSubView: "home",
     }),
 
   closeProject: () =>
@@ -72,6 +76,7 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
 
   restoreTabs: (tabs, activeTabId) => set({ tabs, activeTabId }),
   setConfigSubTab: (subTab) => set({ configSubTab: subTab }),
+  setStudioSubView: (studioSubView) => set({ studioSubView }),
 
   navigateTo: (nav) => {
     const tab: Tab = { id: `zone:${nav.zoneId}`, kind: "zone", label: nav.zoneId };

@@ -330,9 +330,9 @@ export function CustomAssetStudio({ selectedZoneId }: { selectedZoneId: string |
         </p>
       </div>
 
-      <div className="grid gap-5 xl:grid-cols-[1.05fr_0.95fr]">
+      <div className="grid gap-5 2xl:grid-cols-[1.05fr_0.95fr]">
         <div className="flex flex-col gap-4">
-          <div className="grid gap-3 md:grid-cols-2">
+          <div className="grid gap-3 sm:grid-cols-2">
             <div>
               <div className="mb-1 text-[11px] uppercase tracking-[0.22em] text-text-muted">Asset title</div>
               <input
@@ -353,7 +353,7 @@ export function CustomAssetStudio({ selectedZoneId }: { selectedZoneId: string |
             </div>
           </div>
 
-          <div className="grid gap-3 md:grid-cols-[1fr_1fr]">
+          <div className="grid gap-3 sm:grid-cols-2">
             <div>
               <div className="mb-1 text-[11px] uppercase tracking-[0.22em] text-text-muted">Asset type</div>
               <select

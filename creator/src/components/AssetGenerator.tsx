@@ -351,7 +351,7 @@ export function AssetGenerator() {
                   className="w-full rounded border border-border-default bg-bg-primary px-3 py-1.5 text-xs text-text-primary placeholder:text-text-muted outline-none focus:border-accent/50"
                 />
                 <p className="mt-0.5 text-[10px] text-text-muted">
-                  Enter a key name to register this asset in application.yaml under globalAssets
+                  Enter a key name to register this asset in application.yaml under images.globalAssets
                 </p>
               </div>
 

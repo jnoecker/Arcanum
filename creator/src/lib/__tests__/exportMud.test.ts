@@ -156,7 +156,7 @@ describe("buildMonolithicConfigObject", () => {
     expect(runtime.engine.abilities.definitions.shield_bash.image).toBe("shield_bash.png");
     expect(runtime.engine.achievementCategories.categories.combat.displayName).toBe("Combat");
     expect(runtime.engine.questObjectiveTypes.types.kill.displayName).toBe("Kill");
-    expect(runtime.globalAssets).toEqual({});
+    expect(runtime.images.globalAssets).toEqual({});
   });
 });
 
@@ -177,6 +177,8 @@ ambonmud:
   images:
     baseUrl: https://assets.ambon.dev/
     spriteLevelTiers: [50, 40, 30, 20, 10, 1]
+    globalAssets:
+      minimap_unexplored: fog.png
   engine:
     achievementCategories:
       categories:
@@ -198,6 +200,7 @@ ambonmud:
 `;
 
     const config = parseAppConfigYaml(yaml);
+    expect(config.globalAssets.minimap_unexplored).toBe("fog.png");
     expect(config.achievementCategories.combat.displayName).toBe("Combat");
     expect(config.achievementCriterionTypes.kill.progressFormat).toBe("{current}/{required}");
     expect(config.questObjectiveTypes.collect.displayName).toBe("Collect");

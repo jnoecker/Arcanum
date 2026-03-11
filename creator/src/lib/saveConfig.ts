@@ -153,8 +153,10 @@ async function saveSplitConfig(projectDir: string): Promise<void> {
     })),
 
     write("assets", cleanObj({
-      images: config.images,
-      globalAssets: Object.keys(config.globalAssets).length > 0 ? normalizeGlobalAssetMap(config.globalAssets) : undefined,
+      images: cleanObj({
+        ...config.images,
+        globalAssets: Object.keys(config.globalAssets).length > 0 ? normalizeGlobalAssetMap(config.globalAssets) : undefined,
+      }),
       playerTiers: config.playerTiers && Object.keys(config.playerTiers).length > 0 ? config.playerTiers : undefined,
     })),
   ]);

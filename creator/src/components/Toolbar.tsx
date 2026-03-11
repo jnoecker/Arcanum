@@ -6,7 +6,7 @@ import { useZoneStore } from "@/stores/zoneStore";
 import { useValidationStore } from "@/stores/validationStore";
 import { useServerManager } from "@/lib/useServerManager";
 import { invoke } from "@tauri-apps/api/core";
-import { saveAllZones } from "@/lib/saveZone";
+import { saveAllZones, saveZone } from "@/lib/saveZone";
 import { saveProjectConfig } from "@/lib/saveConfig";
 import { exportMudFormat, buildMonolithicConfig } from "@/lib/exportMud";
 import { validateAllZones } from "@/lib/validateZone";
@@ -170,12 +170,16 @@ export function Toolbar() {
                     configContent,
                   });
 
+                  const zones = useZoneStore.getState().zones;
+                  for (const zoneId of zones.keys()) {
+                    await saveZone(zoneId);
+                  }
+
                   const result = await invoke<{ uploaded: number; failed: number }>("deploy_zones_to_r2", {
                     mudDir: project.mudDir,
                     format: project.format,
                   });
 
-                  const zones = useZoneStore.getState().zones;
                   const resources = Array.from(zones.keys()).sort().map((id) => `world/${id}.yaml`);
                   const currentConfig = useConfigStore.getState().config;
                   if (currentConfig && resources.length > 0) {

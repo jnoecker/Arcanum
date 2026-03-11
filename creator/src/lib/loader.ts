@@ -89,7 +89,7 @@ export function parseAppConfigYaml(content: string): AppConfig {
     guildRanks: parseMapSection(engine.guildRanks, "ranks"),
     friends: parseFriendsConfig(engine.friends),
     images: parseImagesConfig(root.images),
-    globalAssets: parseGlobalAssets(root.globalAssets),
+    globalAssets: parseGlobalAssets((root.images as Record<string, unknown> | undefined)?.globalAssets ?? root.globalAssets),
     playerTiers: parsePlayerTiers(root.playerTiers),
     rawSections: collectRawSections(root, engine),
   };
@@ -614,7 +614,7 @@ async function loadSplitConfig(projectDir: string): Promise<AppConfig | null> {
 
       // assets.yaml
       images: parseImagesConfig(assetsRaw.images ?? assetsRaw),
-      globalAssets: parseGlobalAssets(assetsRaw.globalAssets),
+      globalAssets: parseGlobalAssets((assetsRaw.images as Record<string, unknown> | undefined)?.globalAssets ?? assetsRaw.globalAssets),
       playerTiers: parsePlayerTiers(assetsRaw.playerTiers),
 
       rawSections: {},

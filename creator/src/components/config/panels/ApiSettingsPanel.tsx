@@ -5,6 +5,7 @@ import { useProjectStore } from "@/stores/projectStore";
 import { useZoneStore } from "@/stores/zoneStore";
 import { useConfigStore } from "@/stores/configStore";
 import { saveProjectConfig } from "@/lib/saveConfig";
+import { saveZone } from "@/lib/saveZone";
 import { buildMonolithicConfig } from "@/lib/exportMud";
 import { IMAGE_MODELS } from "@/types/assets";
 import type { Settings, SyncProgress } from "@/types/assets";
@@ -443,10 +444,13 @@ export function ApiSettingsPanel({
                   try {
                     const project = useProjectStore.getState().project;
                     const format = project?.format;
+                    const zones = useZoneStore.getState().zones;
+                    for (const zoneId of zones.keys()) {
+                      await saveZone(zoneId);
+                    }
                     const result = await invoke<SyncProgress>("deploy_zones_to_r2", { mudDir, format });
 
                     // Write explicit zone list to world.resources in config
-                    const zones = useZoneStore.getState().zones;
                     const resources = Array.from(zones.keys()).sort()
                       .map((id) => `world/${id}.yaml`);
                     const currentConfig = useConfigStore.getState().config;

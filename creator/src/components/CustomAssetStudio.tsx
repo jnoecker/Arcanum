@@ -458,7 +458,7 @@ export function CustomAssetStudio({ selectedZoneId }: { selectedZoneId: string |
               <div className="text-[11px] uppercase tracking-[0.24em] text-text-muted">Preview</div>
               <h3 className="mt-1 font-display text-2xl text-text-primary">{title.trim() || "Custom asset"}</h3>
               <div className="mt-1 text-xs text-text-secondary">
-                {globalAssetKey.trim() ? `globalAssets.${slugify(globalAssetKey)}` : "Library-only asset"}
+                {globalAssetKey.trim() ? `images.globalAssets.${slugify(globalAssetKey)}` : "Library-only asset"}
               </div>
             </div>
             <span className="rounded-full bg-white/8 px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-text-muted">
@@ -478,7 +478,7 @@ export function CustomAssetStudio({ selectedZoneId }: { selectedZoneId: string |
             <div className="text-[11px] uppercase tracking-[0.2em] text-text-muted">Registration</div>
             <div className="mt-2 text-xs leading-6 text-text-secondary">
               {globalAssetKey.trim()
-                ? `Active variant is written into application config under globalAssets.${slugify(globalAssetKey)}.`
+                ? `Active variant is written into application config under images.globalAssets.${slugify(globalAssetKey)}.`
                 : "Leave the global asset key blank to keep this as a library-only custom asset."}
             </div>
           </div>

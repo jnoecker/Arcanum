@@ -87,190 +87,172 @@ export function Toolbar() {
   };
 
   return (
-    <div className="relative flex h-11 shrink-0 items-center gap-3 overflow-hidden border-b border-border-default bg-bg-secondary px-4">
+    <div className="relative z-10 flex h-20 shrink-0 items-center gap-4 px-4 py-4">
       <img
         src={toolbarBg}
         alt=""
-        className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-[0.15]"
+        className="pointer-events-none absolute inset-x-4 top-4 h-[calc(100%-1rem)] w-[calc(100%-2rem)] rounded-[32px] object-cover opacity-[0.08]"
         style={{ objectPosition: "center center" }}
       />
-      {/* Project name */}
-      <span className="font-display text-sm font-semibold tracking-wide text-accent-emphasis">
-        {project?.name ?? "Ambon Arcanum"}
-      </span>
-
-      <div className="mx-2 h-4 w-px bg-border-default" />
-
-      {/* Server controls (legacy only) */}
-      {!isStandalone && (
-        <>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={handleStart}
-              disabled={status !== "stopped" && status !== "error"}
-              className="rounded px-3 py-1 text-xs font-medium text-text-primary transition-colors enabled:bg-bg-elevated enabled:hover:bg-bg-hover disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              Start
-            </button>
-            <button
-              onClick={stopServer}
-              disabled={status !== "running"}
-              className="rounded px-3 py-1 text-xs font-medium text-text-primary transition-colors enabled:bg-bg-elevated enabled:hover:bg-bg-hover disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              Stop
-            </button>
-            <button
-              onClick={handleRestart}
-              disabled={status !== "running"}
-              className="rounded px-3 py-1 text-xs font-medium text-text-primary transition-colors enabled:bg-bg-elevated enabled:hover:bg-bg-hover disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              Restart
-            </button>
-          </div>
-
-          {/* Server status badge */}
-          <div className="flex items-center gap-2">
-            <div className={`h-2 w-2 rounded-full ${STATUS_COLORS[status]} ${status === "running" ? "animate-aurum-pulse" : ""} ${status === "error" ? "animate-crimson-pulse" : ""}`} />
-            <span className="font-display text-xs tracking-wide text-text-secondary uppercase">
-              {STATUS_LABELS[status]}
+      <div className="flex min-w-0 flex-1 items-center justify-between rounded-[32px] border border-white/10 bg-[linear-gradient(155deg,rgba(50,60,88,0.84),rgba(38,47,71,0.9))] px-6 py-4 shadow-[0_18px_56px_rgba(8,10,18,0.32)] backdrop-blur-xl">
+        <div className="min-w-0">
+          <p className="text-[11px] uppercase tracking-[0.34em] text-text-muted">
+            Ambon Creator
+          </p>
+          <div className="mt-1 flex min-w-0 items-center gap-3">
+            <span className="truncate font-display text-2xl text-text-primary">
+              {project?.name ?? "No world open"}
             </span>
+            {project?.mudDir && (
+              <span className="truncate text-xs text-text-secondary">
+                {project.mudDir}
+              </span>
+            )}
           </div>
-        </>
-      )}
+        </div>
 
-      {/* Export (standalone only) */}
-      {isStandalone && (
-        <button
-          onClick={async () => {
-            const selected = await open({ directory: true, multiple: false });
-            if (!selected) return;
-            setExporting(true);
-            setExportResult(null);
-            try {
-              const result = await exportMudFormat(selected as string);
-              setExportResult(
-                `Exported config + ${result.zonesExported} zone${result.zonesExported !== 1 ? "s" : ""}` +
-                (result.errors.length > 0 ? ` (${result.errors.length} errors)` : ""),
-              );
-            } catch (e) {
-              setExportResult(`Export failed: ${e}`);
-            } finally {
-              setExporting(false);
-            }
-          }}
-          disabled={exporting || !hasConfig}
-          className="rounded px-3 py-1 text-xs font-medium text-text-secondary transition-colors hover:bg-bg-elevated hover:text-text-primary disabled:cursor-not-allowed disabled:opacity-40"
-        >
-          {exporting ? "Exporting..." : "Export for MUD"}
-        </button>
-      )}
-      {isStandalone && (
-        <button
-          onClick={async () => {
-            if (!project) return;
-            setDeploying(true);
-            setDeployResult(null);
-            try {
-              // Deploy config
-              const configContent = buildMonolithicConfig();
-              await invoke<string>("deploy_config_to_r2", {
-                mudDir: project.mudDir,
-                configContent,
-              });
+        <div className="ml-6 flex shrink-0 items-center gap-2">
+          {!isStandalone && (
+            <>
+              <div className="mr-2 flex items-center gap-2 rounded-full border border-white/10 bg-black/10 px-3 py-2">
+                <div className={`h-2.5 w-2.5 rounded-full ${STATUS_COLORS[status]} ${status === "running" ? "animate-aurum-pulse" : ""} ${status === "error" ? "animate-crimson-pulse" : ""}`} />
+                <span className="text-xs uppercase tracking-[0.18em] text-text-secondary">
+                  {STATUS_LABELS[status]}
+                </span>
+              </div>
+              <button onClick={handleStart} disabled={status !== "stopped" && status !== "error"} className="rounded-full border border-white/10 bg-black/10 px-4 py-2 text-xs font-medium text-text-primary transition enabled:hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40">
+                Start
+              </button>
+              <button onClick={stopServer} disabled={status !== "running"} className="rounded-full border border-white/10 bg-black/10 px-4 py-2 text-xs font-medium text-text-primary transition enabled:hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40">
+                Stop
+              </button>
+              <button onClick={handleRestart} disabled={status !== "running"} className="rounded-full border border-white/10 bg-black/10 px-4 py-2 text-xs font-medium text-text-primary transition enabled:hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40">
+                Restart
+              </button>
+            </>
+          )}
 
-              // Deploy zones
-              const result = await invoke<{ uploaded: number; failed: number }>(
-                "deploy_zones_to_r2",
-                { mudDir: project.mudDir, format: project.format },
-              );
+          {isStandalone && (
+            <button
+              onClick={async () => {
+                const selected = await open({ directory: true, multiple: false });
+                if (!selected) return;
+                setExporting(true);
+                setExportResult(null);
+                try {
+                  const result = await exportMudFormat(selected as string);
+                  setExportResult(
+                    `Exported config + ${result.zonesExported} zone${result.zonesExported !== 1 ? "s" : ""}` +
+                    (result.errors.length > 0 ? ` (${result.errors.length} errors)` : ""),
+                  );
+                } catch (e) {
+                  setExportResult(`Export failed: ${e}`);
+                } finally {
+                  setExporting(false);
+                }
+              }}
+              disabled={exporting || !hasConfig}
+              className="rounded-full border border-white/10 bg-black/10 px-4 py-2 text-xs font-medium text-text-primary transition enabled:hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              {exporting ? "Exporting..." : "Export for MUD"}
+            </button>
+          )}
+          {isStandalone && (
+            <button
+              onClick={async () => {
+                if (!project) return;
+                setDeploying(true);
+                setDeployResult(null);
+                try {
+                  const configContent = buildMonolithicConfig();
+                  await invoke<string>("deploy_config_to_r2", {
+                    mudDir: project.mudDir,
+                    configContent,
+                  });
 
-              // Update world.resources in config
-              const zones = useZoneStore.getState().zones;
-              const resources = Array.from(zones.keys()).sort()
-                .map((id) => `world/${id}.yaml`);
-              const currentConfig = useConfigStore.getState().config;
-              if (currentConfig && resources.length > 0) {
-                useConfigStore.getState().updateConfig({
-                  ...currentConfig,
-                  world: { ...currentConfig.world, resources },
-                });
-                await saveProjectConfig(project);
+                  const result = await invoke<{ uploaded: number; failed: number }>("deploy_zones_to_r2", {
+                    mudDir: project.mudDir,
+                    format: project.format,
+                  });
+
+                  const zones = useZoneStore.getState().zones;
+                  const resources = Array.from(zones.keys()).sort().map((id) => `world/${id}.yaml`);
+                  const currentConfig = useConfigStore.getState().config;
+                  if (currentConfig && resources.length > 0) {
+                    useConfigStore.getState().updateConfig({
+                      ...currentConfig,
+                      world: { ...currentConfig.world, resources },
+                    });
+                    await saveProjectConfig(project);
+                  }
+
+                  setDeployResult(
+                    `Deployed config + ${result.uploaded} zone${result.uploaded !== 1 ? "s" : ""}` +
+                    (result.failed > 0 ? ` (${result.failed} failed)` : ""),
+                  );
+                } catch (e) {
+                  setDeployResult(`Deploy failed: ${e}`);
+                } finally {
+                  setDeploying(false);
+                }
+              }}
+              disabled={deploying || !hasConfig}
+              className="rounded-full border border-white/10 bg-black/10 px-4 py-2 text-xs font-medium text-text-primary transition enabled:hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              {deploying ? "Deploying..." : "Export to R2"}
+            </button>
+          )}
+          <button onClick={() => setShowLegacyImport(true)} className="rounded-full border border-white/10 bg-black/10 px-4 py-2 text-xs font-medium text-text-primary transition hover:bg-white/10">
+            Import images
+          </button>
+          <button onClick={openGallery} className="rounded-full border border-white/10 bg-black/10 px-4 py-2 text-xs font-medium text-text-primary transition hover:bg-white/10">
+            Gallery
+          </button>
+          <button onClick={openGenerator} className="rounded-full border border-[rgba(168,151,210,0.35)] bg-[linear-gradient(135deg,rgba(168,151,210,0.26),rgba(140,174,201,0.18))] px-4 py-2 text-xs font-medium text-text-primary transition hover:-translate-y-0.5 hover:shadow-[0_10px_26px_rgba(137,155,214,0.24)]">
+            Generate art
+          </button>
+          <button
+            onClick={() => setShowDiff(true)}
+            disabled={(dirtyCount === 0 && !configDirty) || saving}
+            className="rounded-full border border-white/10 bg-black/10 px-4 py-2 text-xs font-medium text-text-primary transition enabled:hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            {saving ? "Saving..." : dirtyCount > 0 || configDirty ? `Save all (${dirtyCount + (configDirty ? 1 : 0)})` : "Save all"}
+          </button>
+          <button
+            onClick={() => {
+              const config = useConfigStore.getState().config;
+              const results = validateAllZones(zones, config?.equipmentSlots);
+              if (config) {
+                const configIssues = validateConfig(config);
+                if (configIssues.length > 0) {
+                  results.set("Config", configIssues);
+                }
               }
+              setValidationResults(results);
+              openValidationPanel();
+            }}
+            disabled={zones.size === 0 && !hasConfig}
+            className="rounded-full border border-white/10 bg-black/10 px-4 py-2 text-xs font-medium text-text-primary transition enabled:hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            Validate
+          </button>
+        </div>
+      </div>
 
-              setDeployResult(
-                `Deployed config + ${result.uploaded} zone${result.uploaded !== 1 ? "s" : ""}` +
-                (result.failed > 0 ? ` (${result.failed} failed)` : ""),
-              );
-            } catch (e) {
-              setDeployResult(`Deploy failed: ${e}`);
-            } finally {
-              setDeploying(false);
-            }
-          }}
-          disabled={deploying || !hasConfig}
-          className="rounded px-3 py-1 text-xs font-medium text-text-secondary transition-colors hover:bg-bg-elevated hover:text-text-primary disabled:cursor-not-allowed disabled:opacity-40"
-        >
-          {deploying ? "Deploying..." : "Export to R2"}
-        </button>
+      {(exportResult || deployResult) && (
+        <div className="absolute bottom-1 left-8 flex gap-3">
+          {exportResult && (
+            <span className={`rounded-full border px-3 py-1 text-[11px] ${exportResult.includes("failed") ? "border-status-error/30 bg-status-error/10 text-status-error" : "border-status-success/30 bg-status-success/10 text-status-success"}`}>
+              {exportResult}
+            </span>
+          )}
+          {deployResult && (
+            <span className={`rounded-full border px-3 py-1 text-[11px] ${deployResult.includes("failed") ? "border-status-error/30 bg-status-error/10 text-status-error" : "border-status-success/30 bg-status-success/10 text-status-success"}`}>
+              {deployResult}
+            </span>
+          )}
+        </div>
       )}
-      {exportResult && (
-        <span className={`text-[10px] ${exportResult.includes("failed") ? "text-status-error" : "text-status-success"}`}>
-          {exportResult}
-        </span>
-      )}
-      {deployResult && (
-        <span className={`text-[10px] ${deployResult.includes("failed") ? "text-status-error" : "text-status-success"}`}>
-          {deployResult}
-        </span>
-      )}
-
-      <div className="flex-1" />
-
-      {/* Right side actions */}
-      <button
-        onClick={() => setShowLegacyImport(true)}
-        className="rounded px-3 py-1 text-xs font-medium text-text-secondary transition-colors hover:bg-bg-elevated hover:text-text-primary"
-      >
-        Import Images
-      </button>
-      <button
-        onClick={openGallery}
-        className="rounded px-3 py-1 text-xs font-medium text-text-secondary transition-colors hover:bg-bg-elevated hover:text-text-primary"
-      >
-        Gallery
-      </button>
-      <button
-        onClick={openGenerator}
-        className="rounded px-3 py-1 text-xs font-medium text-accent transition-colors hover:bg-accent/10"
-      >
-        Generate Art
-      </button>
-      <div className="mx-1 h-4 w-px bg-border-default" />
-      <button
-        onClick={() => setShowDiff(true)}
-        disabled={(dirtyCount === 0 && !configDirty) || saving}
-        className="rounded px-3 py-1 text-xs font-medium transition-colors enabled:bg-bg-elevated enabled:text-text-primary enabled:hover:bg-bg-hover disabled:cursor-not-allowed disabled:opacity-40"
-      >
-        {saving ? "Saving..." : dirtyCount > 0 || configDirty ? `Save All (${dirtyCount + (configDirty ? 1 : 0)})` : "Save All"}
-      </button>
-      <button
-        onClick={() => {
-          const config = useConfigStore.getState().config;
-          const results = validateAllZones(zones, config?.equipmentSlots);
-          if (config) {
-            const configIssues = validateConfig(config);
-            if (configIssues.length > 0) {
-              results.set("Config", configIssues);
-            }
-          }
-          setValidationResults(results);
-          openValidationPanel();
-        }}
-        disabled={zones.size === 0 && !hasConfig}
-        className="rounded px-3 py-1 text-xs font-medium transition-colors enabled:text-text-primary enabled:hover:bg-bg-elevated disabled:cursor-not-allowed disabled:opacity-40"
-      >
-        Validate
-      </button>
 
       <ValidationPanel />
 

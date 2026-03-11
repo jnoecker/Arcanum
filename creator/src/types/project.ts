@@ -22,7 +22,7 @@ export interface ServerState {
   lastError?: string;
 }
 
-export type TabKind = "zone" | "config" | "console" | "sprites";
+export type TabKind = "studio" | "zone" | "config" | "console" | "sprites";
 
 export type ConfigSubTab =
   | "server" | "world" | "stats" | "classes" | "races" | "equipmentSlots" | "abilities"

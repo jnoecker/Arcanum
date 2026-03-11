@@ -41,8 +41,8 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
   setProject: (project) =>
     set({
       project,
-      tabs: [{ id: "console", kind: "console", label: "Console" }],
-      activeTabId: "console",
+      tabs: [{ id: "studio", kind: "studio", label: "Studio" }],
+      activeTabId: "studio",
     }),
 
   closeProject: () =>

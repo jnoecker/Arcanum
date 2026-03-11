@@ -47,7 +47,6 @@ export function EntityArtGenerator({
 }: EntityArtGeneratorProps) {
   const settings = useAssetStore((s) => s.settings);
   const artStyle = useAssetStore((s) => s.artStyle);
-  const setArtStyle = useAssetStore((s) => s.setArtStyle);
   const assetsDir = useAssetStore((s) => s.assetsDir);
   const importAsset = useAssetStore((s) => s.importAsset);
   const mudDir = useProjectStore((s) => s.project?.mudDir);
@@ -112,11 +111,6 @@ export function EntityArtGenerator({
       }
     })();
   }, [currentImage, mudDir, assetType, context, importAsset]);
-
-  const handleStyleChange = (style: ArtStyle) => {
-    setArtStyle(style);
-    setEditedPrompt(null);
-  };
 
   /** Enhance a prompt via LLM, injecting entity context, style guide, and zone vibe. */
   const enhancePrompt = async (prompt: string): Promise<string> => {
@@ -286,24 +280,9 @@ export function EntityArtGenerator({
 
       {stage === "idle" && (
         <div className="flex flex-col gap-1">
-          {/* Style toggle */}
           {(hasApiKey || hasLlmKey) && (
-            <div className="flex gap-0.5 rounded bg-bg-primary p-0.5">
-              {(Object.entries(ART_STYLE_LABELS) as [ArtStyle, string][]).map(
-                ([key, label]) => (
-                  <button
-                    key={key}
-                    onClick={() => handleStyleChange(key)}
-                    className={`flex-1 rounded px-1.5 py-0.5 text-[10px] transition-colors ${
-                      artStyle === key
-                        ? "bg-accent/20 text-accent"
-                        : "text-text-muted hover:text-text-secondary"
-                    }`}
-                  >
-                    {label}
-                  </button>
-                ),
-              )}
+            <div className="rounded border border-border-default/60 bg-bg-primary/60 px-2 py-1 text-[10px] text-text-secondary">
+              Style system: {ART_STYLE_LABELS[artStyle]}
             </div>
           )}
 

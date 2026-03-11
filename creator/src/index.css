@@ -7,59 +7,59 @@
   --font-mono: 'JetBrains Mono', Consolas, monospace;
 
   /* ─── Deep Space (Backgrounds) ─── */
-  --color-bg-abyss:     #080c1c;
-  --color-bg-primary:   #0f1428;
-  --color-bg-secondary: #161b38;
-  --color-bg-tertiary:  #1e2748;
-  --color-bg-elevated:  #1e2748;
-  --color-bg-hover:     #2a3460;
+  --color-bg-abyss:     #22293c;
+  --color-bg-primary:   #2a3149;
+  --color-bg-secondary: #262f47;
+  --color-bg-tertiary:  #313a56;
+  --color-bg-elevated:  #313a56;
+  --color-bg-hover:     #3a4668;
 
   /* ─── Borders ─── */
-  --color-border-default: #2a3460;
-  --color-border-muted:   #1e2748;
-  --color-border-focus:   #c8972e;
+  --color-border-default: #56617d;
+  --color-border-muted:   #39455f;
+  --color-border-focus:   #b88faa;
 
   /* ─── Text ─── */
-  --color-text-primary:   #c2cef0;
-  --color-text-secondary: #7d8dbe;
-  --color-text-muted:     #4e5e96;
-  --color-text-link:      #4e7fd4;
+  --color-text-primary:   #dbe3f8;
+  --color-text-secondary: #aebada;
+  --color-text-muted:     #7f89a8;
+  --color-text-link:      #b88faa;
 
   /* ─── Accent — Aurum (the creative force) ─── */
-  --color-accent:          #c8972e;
-  --color-accent-muted:    #a07820;
-  --color-accent-emphasis: #e2bc6a;
+  --color-accent:          #a897d2;
+  --color-accent-muted:    #8d79be;
+  --color-accent-emphasis: #dbe3f8;
 
   /* ─── Cool Accents ─── */
-  --color-violet:       #7a5fc0;
-  --color-stellar-blue: #4e7fd4;
-  --color-arcane-teal:  #3aa8b8;
+  --color-violet:       #a897d2;
+  --color-stellar-blue: #8caec9;
+  --color-arcane-teal:  #8da97b;
 
   /* ─── Status Colors ─── */
-  --color-status-success: #3a8a6a;
-  --color-status-warning: #e2bc6a;
-  --color-status-error:   #8a2a3c;
-  --color-status-info:    #4e7fd4;
-  --color-status-danger:  #8a2a3c;
+  --color-status-success: #8da97b;
+  --color-status-warning: #bea873;
+  --color-status-error:   #c5a8a8;
+  --color-status-info:    #8caec9;
+  --color-status-danger:  #c5a8a8;
 
   /* ─── Server Status ─── */
-  --color-server-stopped:  #6a7aac;
-  --color-server-starting: #e2bc6a;
-  --color-server-running:  #c8972e;
-  --color-server-error:    #8a2a3c;
+  --color-server-stopped:  #6f7da1;
+  --color-server-starting: #bea873;
+  --color-server-running:  #8da97b;
+  --color-server-error:    #c5a8a8;
 }
 
 /* ─── Arcanum Design Tokens ─── */
 :root {
   /* Glows */
-  --glow-aurum:        0 0 32px rgba(200, 151, 46, 0.35);
-  --glow-aurum-strong: 0 0 48px rgba(226, 188, 106, 0.5);
-  --glow-violet:       0 0 28px rgba(122, 95, 192, 0.3);
-  --glow-blue:         0 0 24px rgba(78, 127, 212, 0.25);
+  --glow-aurum:        0 0 32px rgba(168, 151, 210, 0.28);
+  --glow-aurum-strong: 0 0 48px rgba(184, 216, 232, 0.32);
+  --glow-violet:       0 0 28px rgba(168, 151, 210, 0.24);
+  --glow-blue:         0 0 24px rgba(140, 174, 201, 0.22);
 
   /* Shadows */
-  --shadow-deep:  0 8px 32px rgba(4, 6, 18, 0.7);
-  --shadow-panel: 0 16px 56px rgba(4, 6, 18, 0.8);
+  --shadow-deep:  0 8px 32px rgba(8, 10, 18, 0.34);
+  --shadow-panel: 0 16px 56px rgba(8, 10, 18, 0.42);
 
   /* Easing */
   --ease-unfurl:   cubic-bezier(0.16, 1, 0.3, 1);
@@ -67,14 +67,18 @@
   --ease-cosmic:   cubic-bezier(0.4, 0, 0.2, 1);
 
   /* Border accents (semi-transparent) */
-  --border-aurum:  rgba(200, 151, 46, 0.4);
-  --border-violet: rgba(122, 95, 192, 0.35);
+  --border-aurum:  rgba(184, 143, 170, 0.34);
+  --border-violet: rgba(168, 151, 210, 0.28);
 }
 
 body {
   margin: 0;
   padding: 0;
-  background-color: var(--color-bg-abyss);
+  background:
+    radial-gradient(circle at 14% 12%, rgba(168, 151, 210, 0.22), transparent 36%),
+    radial-gradient(circle at 84% 14%, rgba(140, 174, 201, 0.18), transparent 34%),
+    radial-gradient(circle at 52% 100%, rgba(184, 143, 170, 0.12), transparent 42%),
+    linear-gradient(180deg, #2a3149 0%, #22293c 100%);
   color: var(--color-text-primary);
   font-family: 'Crimson Pro', Georgia, serif;
   font-size: 15px;

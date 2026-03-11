@@ -17,7 +17,6 @@ import {
   getEnhanceSystemPrompt,
   UNIVERSAL_NEGATIVE,
   ART_STYLE_LABELS,
-  type ArtStyle,
 } from "@/lib/arcanumPrompts";
 import {
   generateSpriteTemplate,
@@ -116,7 +115,6 @@ export function PlayerSpriteManager() {
   const acceptAsset = useAssetStore((s) => s.acceptAsset);
   const deleteAsset = useAssetStore((s) => s.deleteAsset);
   const artStyle = useAssetStore((s) => s.artStyle);
-  const setArtStyle = useAssetStore((s) => s.setArtStyle);
 
   useEffect(() => {
     loadAssets();
@@ -428,16 +426,9 @@ export function PlayerSpriteManager() {
         </span>
 
         <div className="ml-auto flex items-center gap-2">
-          {/* Art style */}
-          <select
-            value={artStyle}
-            onChange={(e) => setArtStyle(e.target.value as ArtStyle)}
-            className="rounded border border-border-default bg-bg-primary px-1.5 py-1 text-[10px] text-text-primary outline-none"
-          >
-            {Object.entries(ART_STYLE_LABELS).map(([id, label]) => (
-              <option key={id} value={id}>{label}</option>
-            ))}
-          </select>
+          <div className="rounded border border-border-default bg-bg-primary px-2 py-1 text-[10px] text-text-secondary">
+            {ART_STYLE_LABELS[artStyle]}
+          </div>
 
           {/* Generate template */}
           <button

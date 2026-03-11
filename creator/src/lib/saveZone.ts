@@ -1,5 +1,6 @@
 import { writeTextFile } from "@tauri-apps/plugin-fs";
 import { stringify } from "yaml";
+import { normalizeWorldAssetRefs } from "@/lib/assetRefs";
 import { useZoneStore } from "@/stores/zoneStore";
 
 const YAML_OPTS = {
@@ -14,7 +15,7 @@ const YAML_OPTS = {
 export function serializeZone(zoneId: string): string {
   const zone = useZoneStore.getState().zones.get(zoneId);
   if (!zone) throw new Error(`Zone "${zoneId}" not found`);
-  return stringify(zone.data, YAML_OPTS);
+  return stringify(normalizeWorldAssetRefs(zone.data), YAML_OPTS);
 }
 
 /**

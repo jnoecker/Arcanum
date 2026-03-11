@@ -47,7 +47,6 @@ export function EntityArtGenerator({
 }: EntityArtGeneratorProps) {
   const settings = useAssetStore((s) => s.settings);
   const artStyle = useAssetStore((s) => s.artStyle);
-  const assetsDir = useAssetStore((s) => s.assetsDir);
   const importAsset = useAssetStore((s) => s.importAsset);
   const mudDir = useProjectStore((s) => s.project?.mudDir);
   const [stage, setStage] = useState<Stage>("idle");
@@ -274,7 +273,7 @@ export function EntityArtGenerator({
         <VariantStrip
           variantGroup={variantGroup}
           onSelect={(entry) => {
-            onAccept(`${assetsDir}\\images\\${entry.file_name}`);
+            onAccept(entry.file_name);
           }}
         />
       )}

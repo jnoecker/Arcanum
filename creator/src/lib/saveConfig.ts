@@ -1,5 +1,6 @@
 import { exists, readTextFile, writeTextFile } from "@tauri-apps/plugin-fs";
 import { parseDocument, stringify } from "yaml";
+import { normalizeConfigAssetRefs, normalizeGlobalAssetMap } from "@/lib/assetRefs";
 import { useConfigStore } from "@/stores/configStore";
 import type { Project } from "@/types/project";
 import {
@@ -34,7 +35,7 @@ export async function saveProjectConfig(project: Project): Promise<void> {
  */
 export async function saveConfig(mudDir: string): Promise<void> {
   const state = useConfigStore.getState();
-  const config = state.config;
+  const config = state.config ? normalizeConfigAssetRefs(state.config) : state.config;
   if (!config) throw new Error("No config loaded");
 
   const resourcesDir = `${mudDir}/src/main/resources`;
@@ -65,7 +66,7 @@ function cleanObj(obj: Record<string, unknown>): Record<string, unknown> {
  */
 async function saveSplitConfig(projectDir: string): Promise<void> {
   const state = useConfigStore.getState();
-  const config = state.config;
+  const config = state.config ? normalizeConfigAssetRefs(state.config) : state.config;
   if (!config) throw new Error("No config loaded");
 
   const dir = `${projectDir}/config`;
@@ -153,7 +154,7 @@ async function saveSplitConfig(projectDir: string): Promise<void> {
 
     write("assets", cleanObj({
       images: config.images,
-      globalAssets: Object.keys(config.globalAssets).length > 0 ? config.globalAssets : undefined,
+      globalAssets: Object.keys(config.globalAssets).length > 0 ? normalizeGlobalAssetMap(config.globalAssets) : undefined,
       playerTiers: config.playerTiers && Object.keys(config.playerTiers).length > 0 ? config.playerTiers : undefined,
     })),
   ]);

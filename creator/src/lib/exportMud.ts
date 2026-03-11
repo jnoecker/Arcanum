@@ -1,5 +1,6 @@
 import { writeTextFile, mkdir } from "@tauri-apps/plugin-fs";
 import { stringify } from "yaml";
+import { normalizeAssetRef, normalizeConfigAssetRefs, normalizeGlobalAssetMap } from "@/lib/assetRefs";
 import { useConfigStore } from "@/stores/configStore";
 import { useZoneStore, type ZoneState } from "@/stores/zoneStore";
 import { serializeZone } from "@/lib/saveZone";
@@ -55,21 +56,6 @@ const DEFAULT_ABILITY_TARGET_TYPES: AppConfig["abilityTargetTypes"] = {
   enemy: { displayName: "Enemy" },
   self: { displayName: "Self" },
   ally: { displayName: "Ally" },
-};
-
-const DEFAULT_GLOBAL_ASSETS: Record<string, string> = {
-  compass_rose: "global_assets/compass_rose.png",
-  direction_marker: "global_assets/direction_marker.png",
-  stairs_up: "global_assets/stairs_up.png",
-  stairs_down: "global_assets/stairs_down.png",
-  video_available_indicator: "global_assets/video_available_indicator.png",
-  shop_kiosk: "global_assets/shop_kiosk.png",
-  dialog_indicator: "global_assets/dialog_indicator.png",
-  aggro_indicator: "global_assets/aggro_indicator.png",
-  quest_available_indicator: "global_assets/quest_available_indicator.png",
-  quest_complete_indicator: "global_assets/quest_complete_indicator.png",
-  minimap_unexplored: "global_assets/minimap-unexplored.png",
-  map_background: "global_assets/map_background.png",
 };
 
 function cloneRecord<T extends Record<string, unknown>>(value: T): T {
@@ -198,7 +184,8 @@ export function buildMonolithicConfigObject(
   config?: AppConfig | null,
   zones?: Map<string, ZoneState>,
 ): Record<string, unknown> {
-  const c = config ?? useConfigStore.getState().config;
+  const rawConfig = config ?? useConfigStore.getState().config;
+  const c = rawConfig ? normalizeConfigAssetRefs(rawConfig) : rawConfig;
   if (!c) throw new Error("No config loaded");
 
   const loadedZones = zones ?? useZoneStore.getState().zones;
@@ -418,7 +405,7 @@ export function buildMonolithicConfigObject(
       baseUrl: imageBaseUrl,
       spriteLevelTiers: c.images.spriteLevelTiers,
     },
-    globalAssets: Object.keys(c.globalAssets).length > 0 ? c.globalAssets : DEFAULT_GLOBAL_ASSETS,
+    globalAssets: normalizeGlobalAssetMap(c.globalAssets),
     videos: {
       baseUrl: siblingMediaBaseUrl(imageBaseUrl, "videos"),
     },
@@ -521,7 +508,7 @@ export function abilityToPlain(a: AppConfig["abilities"][string]): Record<string
     effect,
   };
   if (a.description) obj.description = a.description;
-  if (a.image) obj.image = a.image;
+  if (a.image) obj.image = normalizeAssetRef(a.image);
   if (a.requiredClass != null) obj.requiredClass = a.requiredClass;
   if (a.classRestriction) obj.classRestriction = a.classRestriction;
   return obj;
@@ -533,7 +520,7 @@ export function statusEffectToPlain(e: AppConfig["statusEffects"][string]): Reco
     effectType: normalizeStatusEffectTypeId(e.effectType),
     durationMs: e.durationMs,
   };
-  if (e.image) obj.image = e.image;
+  if (e.image) obj.image = normalizeAssetRef(e.image);
   if (e.tickIntervalMs != null) obj.tickIntervalMs = e.tickIntervalMs;
   if (e.tickValue != null) obj.tickValue = e.tickValue;
   if (e.tickMinValue != null) obj.tickMinValue = e.tickMinValue;
@@ -563,7 +550,7 @@ export function classToPlain(cls: AppConfig["classes"][string]): Record<string, 
   if (cls.selectable != null) obj.selectable = cls.selectable;
   if (cls.startRoom) obj.startRoom = cls.startRoom;
   if (cls.threatMultiplier != null) obj.threatMultiplier = cls.threatMultiplier;
-  if (cls.image) obj.image = cls.image;
+  if (cls.image) obj.image = normalizeAssetRef(cls.image);
   if (cls.outfitDescription) obj.outfitDescription = cls.outfitDescription;
   if (cls.showcaseRace) obj.showcaseRace = cls.showcaseRace;
   return obj;
@@ -575,7 +562,7 @@ export function raceToPlain(race: AppConfig["races"][string]): Record<string, un
   if (race.backstory) obj.backstory = race.backstory;
   if (race.traits && race.traits.length > 0) obj.traits = race.traits;
   if (race.abilities && race.abilities.length > 0) obj.abilities = race.abilities;
-  if (race.image) obj.image = race.image;
+  if (race.image) obj.image = normalizeAssetRef(race.image);
   if (race.statMods && Object.keys(race.statMods).length > 0) obj.statMods = race.statMods;
   if (race.bodyDescription) obj.bodyDescription = race.bodyDescription;
   if (race.staffPrompt) obj.staffPrompt = race.staffPrompt;

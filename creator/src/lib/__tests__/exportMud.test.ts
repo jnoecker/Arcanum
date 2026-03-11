@@ -110,6 +110,17 @@ describe("buildMonolithicConfigObject", () => {
     const config: AppConfig = {
       ...BASE_CONFIG,
       classStartRooms: { BULWARK: "training_grounds" },
+      abilities: {
+        shield_bash: {
+          displayName: "Shield Bash",
+          manaCost: 5,
+          cooldownMs: 1000,
+          levelRequired: 1,
+          targetType: "enemy",
+          effect: { type: "DIRECT_DAMAGE", minDamage: 1, maxDamage: 2 },
+          image: "C:/Users/John Noecker Jr/AppData/Roaming/dev.ambon.creator/assets/images/shield_bash.png",
+        },
+      },
       statusEffects: {
         fortress_stance: {
           displayName: "Fortress Stance",
@@ -142,8 +153,10 @@ describe("buildMonolithicConfigObject", () => {
     expect(runtime.videos.baseUrl).toBe("https://assets.ambon.dev/");
     expect(runtime.engine.classStartRooms.BULWARK).toBe("tutorial_glade:training_grounds");
     expect(runtime.engine.statusEffects.definitions.fortress_stance.effectType).toBe("stat_buff");
+    expect(runtime.engine.abilities.definitions.shield_bash.image).toBe("shield_bash.png");
     expect(runtime.engine.achievementCategories.categories.combat.displayName).toBe("Combat");
     expect(runtime.engine.questObjectiveTypes.types.kill.displayName).toBe("Kill");
+    expect(runtime.globalAssets).toEqual({});
   });
 });
 

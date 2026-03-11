@@ -40,6 +40,26 @@ export type StudioSubView =
   | "portraits"
   | "abilities";
 
+export type WorldSystemsSubView =
+  | "overview"
+  | "world"
+  | "combat"
+  | "progression"
+  | "travel"
+  | "economy"
+  | "social";
+
+export type ContentStudioSubView =
+  | "overview"
+  | "achievements"
+  | "quests"
+  | "assets";
+
+export type OperationsSubView =
+  | "overview"
+  | "services"
+  | "delivery";
+
 export interface Tab {
   id: string;
   kind: TabKind;

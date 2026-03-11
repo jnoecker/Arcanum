@@ -6,31 +6,19 @@ import type { AppConfig } from "@/types/config";
 import type { ConfigSubTab } from "@/types/project";
 import configBg from "@/assets/config-bg.png";
 import subtoolbarBg from "@/assets/subtoolbar-bg.jpg";
-import { ServerPanel } from "./panels/ServerPanel";
-import { CombatPanel } from "./panels/CombatPanel";
-import { MobTiersPanel } from "./panels/MobTiersPanel";
-import { ProgressionPanel } from "./panels/ProgressionPanel";
-import { EconomyPanel } from "./panels/EconomyPanel";
-import { RegenPanel } from "./panels/RegenPanel";
 import { StatsPanel } from "./panels/StatsPanel";
 import { RawYamlPanel } from "./panels/RawYamlPanel";
 import { EquipmentSlotsPanel } from "./panels/EquipmentSlotsPanel";
 import { ImagesPanel } from "./panels/ImagesPanel";
-import { GlobalAssetsPanel } from "./panels/GlobalAssetsPanel";
-import { ApiSettingsPanel } from "./panels/ApiSettingsPanel";
-import { WorldPanel } from "./panels/WorldPanel";
-import { NavigationPanel } from "./panels/NavigationPanel";
 import { PlayerTiersPanel } from "./panels/PlayerTiersPanel";
 import { ClassDesigner } from "./ClassDesigner";
 import { RaceDesigner } from "./RaceDesigner";
 import { AbilityDesigner } from "./AbilityDesigner";
 import { StatusEffectDesigner } from "./StatusEffectDesigner";
-import { AchievementDesigner } from "./AchievementDesigner";
-import { QuestTaxonomyDesigner } from "./QuestTaxonomyDesigner";
 import { CharacterCreationStudio } from "./CharacterCreationStudio";
-import { CraftingStudio } from "./CraftingStudio";
-import { GuildDesigner } from "./GuildDesigner";
-import { CommandDesigner } from "./CommandDesigner";
+import { WorldSystemsStudio } from "./WorldSystemsStudio";
+import { ContentStudio } from "./ContentStudio";
+import { OperationsStudio } from "./OperationsStudio";
 
 interface WorkspaceDef {
   id: ConfigSubTab;
@@ -122,6 +110,12 @@ export function ConfigEditor() {
   const project = useProjectStore((s) => s.project);
   const activeWorkspace = useProjectStore((s) => s.configSubTab);
   const setActiveWorkspace = useProjectStore((s) => s.setConfigSubTab);
+  const worldSystemsSubView = useProjectStore((s) => s.worldSystemsSubView);
+  const setWorldSystemsSubView = useProjectStore((s) => s.setWorldSystemsSubView);
+  const contentStudioSubView = useProjectStore((s) => s.contentStudioSubView);
+  const setContentStudioSubView = useProjectStore((s) => s.setContentStudioSubView);
+  const operationsSubView = useProjectStore((s) => s.operationsSubView);
+  const setOperationsSubView = useProjectStore((s) => s.setOperationsSubView);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
 
@@ -297,85 +291,28 @@ export function ConfigEditor() {
           )}
 
           {activeWorkspace === "worldSystems" && (
-            <>
-              <WorkspaceSection
-                kicker="World"
-                title="World structure and server behavior"
-                description="Core world references, server ports, and global behavior settings sit together because they shape how the game runs."
-              >
-                <div className="flex flex-col gap-6">
-                  <WorldPanel config={config} onChange={handleChange} />
-                  <ServerPanel config={config} onChange={handleChange} />
-                </div>
-              </WorkspaceSection>
-
-              <WorkspaceSection
-                kicker="Combat"
-                title="Combat and progression rules"
-                description="Combat pacing, mob tier scaling, level curve, economy, and regeneration are grouped so balance passes can happen in one place."
-              >
-                <div className="flex flex-col gap-6">
-                  <CombatPanel config={config} onChange={handleChange} />
-                  <MobTiersPanel config={config} onChange={handleChange} />
-                  <ProgressionPanel config={config} onChange={handleChange} />
-                  <RegenPanel config={config} onChange={handleChange} />
-                  <EconomyPanel config={config} onChange={handleChange} />
-                </div>
-              </WorkspaceSection>
-
-              <WorkspaceSection
-                kicker="Flow"
-                title="Travel, crafting, commands, and social rules"
-                description="These are all player-facing systems that shape how the world feels moment to moment."
-              >
-                <div className="flex flex-col gap-6">
-                  <CraftingStudio config={config} onChange={handleChange} />
-                  <NavigationPanel config={config} onChange={handleChange} />
-                  <CommandDesigner config={config} onChange={handleChange} />
-                  <GuildDesigner config={config} onChange={handleChange} />
-                </div>
-              </WorkspaceSection>
-            </>
+            <WorldSystemsStudio
+              config={config}
+              onChange={handleChange}
+              activeView={worldSystemsSubView}
+              onViewChange={setWorldSystemsSubView}
+            />
           )}
 
           {activeWorkspace === "contentStudio" && (
-            <>
-              <WorkspaceSection
-                kicker="Progression content"
-                title="Achievement language"
-                description="Categories and criterion definitions now live in a purpose-built content workbench instead of a pair of flat registries."
-              >
-                <AchievementDesigner config={config} onChange={handleChange} />
-              </WorkspaceSection>
-
-              <WorkspaceSection
-                kicker="Quest language"
-                title="Quest taxonomy designer"
-                description="Objective and completion vocabularies stay together so authored quest structure remains readable and consistent."
-              >
-                <QuestTaxonomyDesigner config={config} onChange={handleChange} />
-              </WorkspaceSection>
-
-              <WorkspaceSection
-                kicker="Shared assets"
-                title="Global presentation assets"
-                description="Keep worldwide UI and presentation assets near the content surfaces they support."
-              >
-                <GlobalAssetsPanel config={config} onChange={handleChange} />
-              </WorkspaceSection>
-            </>
+            <ContentStudio
+              config={config}
+              onChange={handleChange}
+              activeView={contentStudioSubView}
+              onViewChange={setContentStudioSubView}
+            />
           )}
 
           {activeWorkspace === "operations" && (
-            <>
-              <WorkspaceSection
-                kicker="Services"
-                title="API and service credentials"
-                description="External providers live here so they stop intruding on world design workflows."
-              >
-                <ApiSettingsPanel />
-              </WorkspaceSection>
-            </>
+            <OperationsStudio
+              activeView={operationsSubView}
+              onViewChange={setOperationsSubView}
+            />
           )}
 
           {activeWorkspace === "rawYaml" && (

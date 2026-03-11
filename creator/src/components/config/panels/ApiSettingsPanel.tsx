@@ -20,7 +20,11 @@ const IMAGE_PROVIDERS = [
   { id: "runware", label: "Runware" },
 ];
 
-export function ApiSettingsPanel() {
+export function ApiSettingsPanel({
+  initialSection = "providers",
+}: {
+  initialSection?: "providers" | "delivery";
+}) {
   const settings = useAssetStore((s) => s.settings);
   const loadSettings = useAssetStore((s) => s.loadSettings);
   const saveSettings = useAssetStore((s) => s.saveSettings);
@@ -68,11 +72,13 @@ export function ApiSettingsPanel() {
   const filteredModels = IMAGE_MODELS.filter(
     (m) => m.provider === draft.image_provider,
   );
+  const showProviderSections = initialSection !== "delivery";
+  const showDeliverySection = initialSection !== "providers";
 
   return (
     <div className="flex flex-col gap-6">
       {/* ─── API Keys ─────────────────────────────────────────── */}
-      <div>
+      {showProviderSections && <div>
         <h3 className="mb-3 font-display text-xs uppercase tracking-widest text-text-muted">
           API Keys
         </h3>
@@ -140,10 +146,10 @@ export function ApiSettingsPanel() {
             />
           </div>
         </div>
-      </div>
+      </div>}
 
       {/* ─── Provider Selection ───────────────────────────────── */}
-      <div className="border-t border-border-default pt-4">
+      {showProviderSections && <div className="border-t border-border-default pt-4">
         <h3 className="mb-3 font-display text-xs uppercase tracking-widest text-text-muted">
           Providers
         </h3>
@@ -211,10 +217,10 @@ export function ApiSettingsPanel() {
             </div>
           </div>
         </div>
-      </div>
+      </div>}
 
       {/* ─── Image Model ──────────────────────────────────────── */}
-      <div className="border-t border-border-default pt-4">
+      {showProviderSections && <div className="border-t border-border-default pt-4">
         <label className="mb-1 block font-display text-[10px] uppercase tracking-widest text-text-muted">
           Default Image Model
         </label>
@@ -245,10 +251,10 @@ export function ApiSettingsPanel() {
             </label>
           ))}
         </div>
-      </div>
+      </div>}
 
       {/* ─── Enhance Model ────────────────────────────────────── */}
-      <div>
+      {showProviderSections && <div>
         <label className="mb-1 block font-display text-[10px] uppercase tracking-widest text-text-muted">
           Prompt Enhancement Model
         </label>
@@ -263,10 +269,10 @@ export function ApiSettingsPanel() {
         <p className="mt-1 text-[10px] text-text-muted">
           Used by DeepInfra and OpenRouter providers
         </p>
-      </div>
+      </div>}
 
       {/* ─── Generation Options ───────────────────────────────── */}
-      <div className="border-t border-border-default pt-4">
+      {showProviderSections && <div className="border-t border-border-default pt-4">
         <h3 className="mb-3 font-display text-xs uppercase tracking-widest text-text-muted">
           Generation Options
         </h3>
@@ -305,10 +311,10 @@ export function ApiSettingsPanel() {
             Runs client-side AI background removal on sprite-type assets (mobs, items, abilities, player sprites, race/class portraits) after generation. The transparent version is saved as a variant alongside the original.
           </p>
         </div>
-      </div>
+      </div>}
 
       {/* ─── R2 Section ───────────────────────────────────────── */}
-      <div className="border-t border-border-default pt-4">
+      {showDeliverySection && <div className="border-t border-border-default pt-4">
         <h3 className="mb-3 font-display text-xs uppercase tracking-widest text-text-muted">
           Cloudflare R2 (Asset CDN)
         </h3>
@@ -479,7 +485,7 @@ export function ApiSettingsPanel() {
             </p>
           </div>
         </div>
-      </div>
+      </div>}
 
       {/* Save — sticky at bottom */}
       <div className="sticky bottom-0 -mx-6 border-t border-border-default bg-bg-secondary px-6 py-3">

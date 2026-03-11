@@ -1,7 +1,7 @@
 import { writeTextFile, mkdir } from "@tauri-apps/plugin-fs";
 import { stringify } from "yaml";
 import { useConfigStore } from "@/stores/configStore";
-import { useZoneStore } from "@/stores/zoneStore";
+import { useZoneStore, type ZoneState } from "@/stores/zoneStore";
 import { serializeZone } from "@/lib/saveZone";
 import type { AppConfig } from "@/types/config";
 
@@ -11,16 +11,206 @@ const YAML_OPTS = {
   defaultStringType: "PLAIN" as const,
 };
 
-/**
- * Build a monolithic application.yaml string from the in-memory AppConfig.
- * Wraps everything under the `ambonmud` root key with the `engine` sub-tree,
- * matching the structure that AmbonMUD server expects.
- */
-export function buildMonolithicConfig(config?: AppConfig | null): string {
+const DEFAULT_ACHIEVEMENT_CATEGORIES: AppConfig["achievementCategories"] = {
+  combat: { displayName: "Combat" },
+  exploration: { displayName: "Exploration" },
+  social: { displayName: "Social" },
+  crafting: { displayName: "Crafting" },
+  class: { displayName: "Class" },
+};
+
+const DEFAULT_ACHIEVEMENT_CRITERION_TYPES: AppConfig["achievementCriterionTypes"] = {
+  kill: { displayName: "Kill", progressFormat: "{current}/{required}" },
+  reach_level: { displayName: "Reach Level", progressFormat: "level {current}/{required}" },
+  quest_complete: { displayName: "Quest Complete", progressFormat: "{current}/{required}" },
+};
+
+const DEFAULT_QUEST_OBJECTIVE_TYPES: AppConfig["questObjectiveTypes"] = {
+  kill: { displayName: "Kill" },
+  collect: { displayName: "Collect" },
+};
+
+const DEFAULT_QUEST_COMPLETION_TYPES: AppConfig["questCompletionTypes"] = {
+  auto: { displayName: "Automatic" },
+  npc_turn_in: { displayName: "NPC Turn-In" },
+};
+
+const DEFAULT_STATUS_EFFECT_TYPES: AppConfig["statusEffectTypes"] = {
+  dot: { displayName: "Damage Over Time", ticksDamage: true },
+  hot: { displayName: "Heal Over Time", ticksHealing: true },
+  stat_buff: { displayName: "Stat Buff", modifiesStats: true },
+  stat_debuff: { displayName: "Stat Debuff", modifiesStats: true },
+  stun: { displayName: "Stun" },
+  root: { displayName: "Root" },
+  shield: { displayName: "Shield", absorbsDamage: true },
+};
+
+const DEFAULT_STACK_BEHAVIORS: AppConfig["stackBehaviors"] = {
+  refresh: { displayName: "Refresh" },
+  stack: { displayName: "Stack" },
+  none: { displayName: "None" },
+};
+
+const DEFAULT_ABILITY_TARGET_TYPES: AppConfig["abilityTargetTypes"] = {
+  enemy: { displayName: "Enemy" },
+  self: { displayName: "Self" },
+  ally: { displayName: "Ally" },
+};
+
+const DEFAULT_GLOBAL_ASSETS: Record<string, string> = {
+  compass_rose: "global_assets/compass_rose.png",
+  direction_marker: "global_assets/direction_marker.png",
+  stairs_up: "global_assets/stairs_up.png",
+  stairs_down: "global_assets/stairs_down.png",
+  video_available_indicator: "global_assets/video_available_indicator.png",
+  shop_kiosk: "global_assets/shop_kiosk.png",
+  dialog_indicator: "global_assets/dialog_indicator.png",
+  aggro_indicator: "global_assets/aggro_indicator.png",
+  quest_available_indicator: "global_assets/quest_available_indicator.png",
+  quest_complete_indicator: "global_assets/quest_complete_indicator.png",
+  minimap_unexplored: "global_assets/minimap-unexplored.png",
+  map_background: "global_assets/map_background.png",
+};
+
+function cloneRecord<T extends Record<string, unknown>>(value: T): T {
+  return JSON.parse(JSON.stringify(value)) as T;
+}
+
+function withFallbackMap<T>(
+  value: Record<string, T>,
+  fallback: Record<string, T>,
+): Record<string, T> {
+  return Object.keys(value).length > 0 ? value : cloneRecord(fallback);
+}
+
+function normalizeBaseUrl(value: string, fallback: string): string {
+  const trimmed = value.trim();
+  if (!trimmed) return fallback;
+  return trimmed.endsWith("/") ? trimmed : `${trimmed}/`;
+}
+
+function siblingMediaBaseUrl(imagesBaseUrl: string, folder: "videos" | "audio"): string {
+  const normalized = normalizeBaseUrl(imagesBaseUrl, "/images/");
+  if (/^https?:\/\//i.test(normalized) && !/\/images\/?$/i.test(normalized)) {
+    return normalized;
+  }
+  return normalized.replace(/\/images\/?$/i, `/${folder}/`);
+}
+
+function applyRawSections(target: Record<string, unknown>, rawSections: AppConfig["rawSections"]): void {
+  for (const [key, value] of Object.entries(rawSections)) {
+    if (key === "root.mode") {
+      continue;
+    }
+    if (key.startsWith("root.")) {
+      target[key.slice(5)] = value;
+    } else if (key.startsWith("engine.")) {
+      const engine = (target.engine ??= {}) as Record<string, unknown>;
+      engine[key.slice(7)] = value;
+    }
+  }
+}
+
+function resolveRoomId(
+  rawId: string,
+  zones: Map<string, ZoneState>,
+  fallbackZone?: string | null,
+): string {
+  const trimmed = rawId.trim();
+  if (!trimmed || trimmed.includes(":")) return trimmed;
+
+  const matches: string[] = [];
+  for (const [zoneId, zone] of zones) {
+    if (zone.data.rooms && Object.prototype.hasOwnProperty.call(zone.data.rooms, trimmed)) {
+      matches.push(zoneId);
+    }
+  }
+
+  if (matches.length === 1) return `${matches[0]}:${trimmed}`;
+  if (fallbackZone && matches.includes(fallbackZone)) return `${fallbackZone}:${trimmed}`;
+  if (fallbackZone) return `${fallbackZone}:${trimmed}`;
+  return trimmed;
+}
+
+function findFallbackZone(config: AppConfig, zones: Map<string, ZoneState>): string | null {
+  if (config.world.startRoom?.includes(":")) {
+    return config.world.startRoom.split(":", 1)[0] ?? null;
+  }
+
+  for (const roomId of Object.values(config.classStartRooms)) {
+    const resolved = resolveRoomId(roomId, zones, null);
+    if (resolved.includes(":")) return resolved.split(":", 1)[0] ?? null;
+  }
+
+  return zones.size > 0 ? zones.keys().next().value ?? null : null;
+}
+
+function normalizeClassStartRooms(
+  config: AppConfig,
+  zones: Map<string, ZoneState>,
+): Record<string, string> {
+  const fallbackZone = findFallbackZone(config, zones);
+  const result: Record<string, string> = {};
+  for (const [classId, roomId] of Object.entries(config.classStartRooms)) {
+    const resolved = resolveRoomId(roomId, zones, fallbackZone);
+    if (resolved) result[classId] = resolved;
+  }
+  return result;
+}
+
+function normalizeStatusEffectTypeId(effectType: string): string {
+  const normalized = effectType.trim().toLowerCase();
+  if (!normalized) return normalized;
+
+  switch (normalized) {
+    case "buff":
+      return "stat_buff";
+    case "debuff":
+      return "stat_debuff";
+    default:
+      return normalized;
+  }
+}
+
+function normalizedStatusEffectTypes(config: AppConfig): AppConfig["statusEffectTypes"] {
+  const merged = {
+    ...cloneRecord(DEFAULT_STATUS_EFFECT_TYPES),
+    ...config.statusEffectTypes,
+  };
+
+  for (const effect of Object.values(config.statusEffects)) {
+    const normalized = normalizeStatusEffectTypeId(effect.effectType);
+    if (normalized in merged) continue;
+
+    if (normalized === "silence") {
+      merged[normalized] = { displayName: "Silence" };
+    } else if (normalized === "slow") {
+      merged[normalized] = { displayName: "Slow" };
+    } else {
+      merged[normalized] = { displayName: effect.effectType.trim() || normalized };
+    }
+  }
+
+  return merged;
+}
+
+export function buildMonolithicConfigObject(
+  config?: AppConfig | null,
+  zones?: Map<string, ZoneState>,
+): Record<string, unknown> {
   const c = config ?? useConfigStore.getState().config;
   if (!c) throw new Error("No config loaded");
 
-  const engine: Record<string, unknown> = {};
+  const loadedZones = zones ?? useZoneStore.getState().zones;
+  const imageBaseUrl = normalizeBaseUrl(c.images.baseUrl, "/images/");
+  const fallbackZone = findFallbackZone(c, loadedZones);
+  const classStartRooms = normalizeClassStartRooms(c, loadedZones);
+
+  const engine: Record<string, unknown> = {
+    scheduler: { maxActionsPerTick: 100 },
+    guild: { maxSize: 50, inviteTimeoutMs: 60000 },
+    debug: { enableSwarmClass: false },
+  };
 
   // Stats
   engine.stats = {
@@ -34,46 +224,29 @@ export function buildMonolithicConfig(config?: AppConfig | null): string {
   };
 
   // Abilities
-  if (Object.keys(c.abilities).length > 0) {
-    engine.abilities = {
-      definitions: mapEntries(c.abilities, abilityToPlain),
-    };
-  }
+  engine.abilities = {
+    definitions: mapEntries(c.abilities, abilityToPlain),
+  };
 
   // Status Effects
-  if (Object.keys(c.statusEffects).length > 0) {
-    engine.statusEffects = {
-      definitions: mapEntries(c.statusEffects, statusEffectToPlain),
-    };
-  }
+  engine.statusEffects = {
+    definitions: mapEntries(c.statusEffects, statusEffectToPlain),
+  };
 
-  // Effect Types / Stack Behaviors / Target Types
-  if (Object.keys(c.statusEffectTypes).length > 0) {
-    engine.effectTypes = { types: c.statusEffectTypes };
-  }
-  if (Object.keys(c.stackBehaviors).length > 0) {
-    engine.stackBehaviors = { behaviors: c.stackBehaviors };
-  }
-  if (Object.keys(c.abilityTargetTypes).length > 0) {
-    engine.targetTypes = { types: c.abilityTargetTypes };
-  }
+  engine.effectTypes = { types: normalizedStatusEffectTypes(c) };
+  engine.stackBehaviors = { behaviors: withFallbackMap(c.stackBehaviors, DEFAULT_STACK_BEHAVIORS) };
+  engine.targetTypes = { types: withFallbackMap(c.abilityTargetTypes, DEFAULT_ABILITY_TARGET_TYPES) };
 
-  // Combat
   engine.combat = c.combat;
   engine.mob = {
     minActionDelayMillis: c.mobActionDelay.minActionDelayMillis,
     maxActionDelayMillis: c.mobActionDelay.maxActionDelayMillis,
     tiers: c.mobTiers,
   };
-
-  // Economy
   engine.economy = c.economy;
-
-  // Regen
   engine.regen = c.regen;
-
-  // Crafting
   engine.crafting = c.crafting;
+
   if (Object.keys(c.craftingSkills).length > 0) {
     engine.craftingSkills = { skills: c.craftingSkills };
   }
@@ -81,91 +254,190 @@ export function buildMonolithicConfig(config?: AppConfig | null): string {
     engine.craftingStationTypes = { stationTypes: c.craftingStationTypes };
   }
 
-  // Navigation
   engine.navigation = c.navigation;
-
-  // Commands
-  if (Object.keys(c.commands).length > 0) {
-    engine.commands = { entries: c.commands };
-  }
-
-  // Group
+  engine.commands = { entries: c.commands };
   engine.group = c.group;
-
-  // Guild
   engine.guildRanks = {
     founderRank: c.guild.founderRank,
     defaultRank: c.guild.defaultRank,
-    ...(Object.keys(c.guildRanks).length > 0 ? { ranks: c.guildRanks } : {}),
+    ranks: c.guildRanks,
   };
-
-  // Friends
   engine.friends = c.friends;
-
-  // Classes
-  if (Object.keys(c.classes).length > 0) {
-    engine.classes = {
-      definitions: mapEntries(c.classes, classToPlain),
-    };
-  }
-
-  // Races
-  if (Object.keys(c.races).length > 0) {
-    engine.races = {
-      definitions: mapEntries(c.races, raceToPlain),
-    };
-  }
-
-  // Equipment
-  if (Object.keys(c.equipmentSlots).length > 0) {
-    engine.equipment = {
-      slots: mapEntries(c.equipmentSlots, (s) => ({
-        displayName: s.displayName,
-        order: s.order,
+  engine.classes = {
+    definitions: mapEntries(c.classes, (cls) =>
+      classToPlain({
+        ...cls,
+        startRoom: cls.startRoom ? resolveRoomId(cls.startRoom, loadedZones, fallbackZone) : cls.startRoom,
       })),
-    };
-  }
-
-  // Character Creation
+  };
+  engine.races = {
+    definitions: mapEntries(c.races, raceToPlain),
+  };
+  engine.equipment = {
+    slots: mapEntries(c.equipmentSlots, (s) => ({
+      displayName: s.displayName,
+      order: s.order,
+    })),
+  };
   engine.characterCreation = c.characterCreation;
-
-  // Genders
-  if (Object.keys(c.genders).length > 0) {
-    engine.genders = c.genders;
-  }
-
-  // Class Start Rooms
-  if (Object.keys(c.classStartRooms).length > 0) {
-    engine.classStartRooms = c.classStartRooms;
-  }
-
-  // Achievement / Quest enum types
-  if (Object.keys(c.achievementCategories).length > 0) {
-    engine.achievementCategories = c.achievementCategories;
-  }
-  if (Object.keys(c.achievementCriterionTypes).length > 0) {
-    engine.achievementCriterionTypes = c.achievementCriterionTypes;
-  }
-  if (Object.keys(c.questObjectiveTypes).length > 0) {
-    engine.questObjectiveTypes = c.questObjectiveTypes;
-  }
-  if (Object.keys(c.questCompletionTypes).length > 0) {
-    engine.questCompletionTypes = c.questCompletionTypes;
-  }
+  engine.genders = c.genders;
+  engine.classStartRooms = classStartRooms;
+  engine.achievementCategories = { categories: withFallbackMap(c.achievementCategories, DEFAULT_ACHIEVEMENT_CATEGORIES) };
+  engine.achievementCriterionTypes = { types: withFallbackMap(c.achievementCriterionTypes, DEFAULT_ACHIEVEMENT_CRITERION_TYPES) };
+  engine.questObjectiveTypes = { types: withFallbackMap(c.questObjectiveTypes, DEFAULT_QUEST_OBJECTIVE_TYPES) };
+  engine.questCompletionTypes = { types: withFallbackMap(c.questCompletionTypes, DEFAULT_QUEST_COMPLETION_TYPES) };
 
   const ambonmud: Record<string, unknown> = {
-    server: c.server,
-    world: c.world,
-    progression: c.progression,
-    images: c.images,
+    mode: "STANDALONE",
+    sharding: {
+      enabled: false,
+      engineId: "engine-1",
+      zones: [],
+      advertiseHost: "localhost",
+      registry: { type: "STATIC", leaseTtlSeconds: 30, assignments: [] },
+      handoff: { ackTimeoutMs: 2000 },
+      playerIndex: { enabled: false, heartbeatMs: 10000 },
+      instancing: {
+        enabled: false,
+        defaultCapacity: 200,
+        loadReportIntervalMs: 5000,
+        startZoneMinInstances: 1,
+        autoScale: {
+          enabled: false,
+          evaluationIntervalMs: 30000,
+          scaleUpThreshold: 0.8,
+          scaleDownThreshold: 0.2,
+          cooldownMs: 60000,
+        },
+      },
+    },
+    grpc: {
+      server: { port: 9090 },
+      client: { engineHost: "localhost", enginePort: 9090 },
+    },
+    gateway: {
+      id: 0,
+      snowflake: { idLeaseTtlSeconds: 300 },
+      reconnect: {
+        maxAttempts: 10,
+        initialDelayMs: 1000,
+        maxDelayMs: 30000,
+        jitterFactor: 0.2,
+        streamVerifyMs: 2000,
+      },
+      startZone: "",
+      engines: [],
+    },
+    server: {
+      telnetPort: c.server.telnetPort,
+      webPort: c.server.webPort,
+      inboundChannelCapacity: 10000,
+      outboundChannelCapacity: 10000,
+      sessionOutboundQueueCapacity: 200,
+      maxInboundEventsPerTick: 1000,
+      tickMillis: 100,
+      inboundBudgetMs: 30,
+    },
+    world: {
+      startRoom: c.world.startRoom,
+      resources: c.world.resources,
+    },
+    persistence: {
+      backend: "YAML",
+      rootDir: "data/players",
+      worker: {
+        enabled: true,
+        flushIntervalMs: 5000,
+      },
+    },
+    database: {
+      jdbcUrl: "jdbc:postgresql://localhost:5432/ambonmud",
+      username: "ambon",
+      password: "ambon",
+      maxPoolSize: 5,
+      minimumIdle: 1,
+    },
+    login: {
+      maxWrongPasswordRetries: 3,
+      maxFailedAttemptsBeforeDisconnect: 3,
+      maxConcurrentLogins: 150,
+      authThreads: 8,
+    },
     engine,
+    progression: c.progression,
+    transport: {
+      telnet: {
+        maxLineLen: 1024,
+        maxNonPrintablePerLine: 32,
+        socketBacklog: 256,
+      },
+      websocket: {
+        host: "0.0.0.0",
+        stopGraceMillis: 1000,
+        stopTimeoutMillis: 2000,
+      },
+      maxInboundBackpressureFailures: 3,
+    },
+    demo: {
+      autoLaunchBrowser: false,
+      webClientHost: "localhost",
+      webClientUrl: null,
+    },
+    observability: {
+      metricsEnabled: true,
+      metricsEndpoint: "/metrics",
+      metricsHttpPort: 9090,
+      staticTags: {},
+    },
+    admin: {
+      enabled: false,
+      port: 9091,
+      token: "",
+      grafanaUrl: "",
+    },
+    logging: {
+      level: "INFO",
+      packageLevels: {
+        "dev.ambon.transport": "INFO",
+        "dev.ambon.engine": "INFO",
+      },
+    },
+    redis: {
+      enabled: false,
+      uri: "redis://localhost:6379",
+      cacheTtlSeconds: 3600,
+      bus: {
+        enabled: false,
+        inboundChannel: "ambon:inbound",
+        outboundChannel: "ambon:outbound",
+        instanceId: "",
+        sharedSecret: "CHANGE_ME",
+      },
+    },
+    images: {
+      baseUrl: imageBaseUrl,
+      spriteLevelTiers: c.images.spriteLevelTiers,
+    },
+    globalAssets: Object.keys(c.globalAssets).length > 0 ? c.globalAssets : DEFAULT_GLOBAL_ASSETS,
+    videos: {
+      baseUrl: siblingMediaBaseUrl(imageBaseUrl, "videos"),
+    },
+    audio: {
+      baseUrl: siblingMediaBaseUrl(imageBaseUrl, "audio"),
+    },
   };
 
-  if (Object.keys(c.globalAssets).length > 0) {
-    ambonmud.globalAssets = c.globalAssets;
-  }
+  applyRawSections(ambonmud, c.rawSections);
+  return ambonmud;
+}
 
-  return stringify({ ambonmud }, YAML_OPTS);
+/**
+ * Build a monolithic application.yaml string from the in-memory AppConfig.
+ * Wraps everything under the `ambonmud` root key with the `engine` sub-tree,
+ * matching the structure that AmbonMUD server expects.
+ */
+export function buildMonolithicConfig(config?: AppConfig | null): string {
+  return stringify({ ambonmud: buildMonolithicConfigObject(config) }, YAML_OPTS);
 }
 
 /**
@@ -258,7 +530,7 @@ export function abilityToPlain(a: AppConfig["abilities"][string]): Record<string
 export function statusEffectToPlain(e: AppConfig["statusEffects"][string]): Record<string, unknown> {
   const obj: Record<string, unknown> = {
     displayName: e.displayName,
-    effectType: e.effectType,
+    effectType: normalizeStatusEffectTypeId(e.effectType),
     durationMs: e.durationMs,
   };
   if (e.image) obj.image = e.image;

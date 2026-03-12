@@ -1,14 +1,11 @@
 import { useState } from "react";
-import { open } from "@tauri-apps/plugin-dialog";
 import { useProjectStore } from "@/stores/projectStore";
 import { useServerStore } from "@/stores/serverStore";
 import { useZoneStore } from "@/stores/zoneStore";
 import { useValidationStore } from "@/stores/validationStore";
 import { useServerManager } from "@/lib/useServerManager";
-import { invoke } from "@tauri-apps/api/core";
-import { saveAllZones, saveZone } from "@/lib/saveZone";
+import { saveAllZones } from "@/lib/saveZone";
 import { saveProjectConfig } from "@/lib/saveConfig";
-import { exportMudFormat, buildMonolithicConfig } from "@/lib/exportMud";
 import { validateAllZones } from "@/lib/validateZone";
 import { validateConfig } from "@/lib/validateConfig";
 import { useConfigStore } from "@/stores/configStore";
@@ -51,10 +48,6 @@ export function Toolbar() {
   const [saving, setSaving] = useState(false);
   const [showDiff, setShowDiff] = useState(false);
   const [showLegacyImport, setShowLegacyImport] = useState(false);
-  const [exporting, setExporting] = useState(false);
-  const [exportResult, setExportResult] = useState<string | null>(null);
-  const [deploying, setDeploying] = useState(false);
-  const [deployResult, setDeployResult] = useState<string | null>(null);
   const openGenerator = useAssetStore((s) => s.openGenerator);
   const openGallery = useAssetStore((s) => s.openGallery);
   const isStandalone = project?.format === "standalone";
@@ -84,6 +77,13 @@ export function Toolbar() {
       }
     });
     await handleStart();
+  };
+
+  const handleOpenHandoff = () => {
+    const store = useProjectStore.getState();
+    store.openTab({ id: "config", kind: "config", label: "Config" });
+    store.setConfigSubTab("operations");
+    store.setOperationsSubView("delivery");
   };
 
   return (
@@ -134,76 +134,11 @@ export function Toolbar() {
 
           {isStandalone && (
             <button
-              onClick={async () => {
-                const selected = await open({ directory: true, multiple: false });
-                if (!selected) return;
-                setExporting(true);
-                setExportResult(null);
-                try {
-                  const result = await exportMudFormat(selected as string);
-                  setExportResult(
-                    `Exported config + ${result.zonesExported} zone${result.zonesExported !== 1 ? "s" : ""}` +
-                    (result.errors.length > 0 ? ` (${result.errors.length} errors)` : ""),
-                  );
-                } catch (e) {
-                  setExportResult(`Export failed: ${e}`);
-                } finally {
-                  setExporting(false);
-                }
-              }}
-              disabled={exporting || !hasConfig}
+              onClick={handleOpenHandoff}
+              disabled={!hasConfig}
               className="rounded-full border border-white/10 bg-black/10 px-4 py-2 text-xs font-medium text-text-primary transition enabled:hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40"
             >
-              {exporting ? "Exporting..." : "Export for MUD"}
-            </button>
-          )}
-          {isStandalone && (
-            <button
-              onClick={async () => {
-                if (!project) return;
-                setDeploying(true);
-                setDeployResult(null);
-                try {
-                  const configContent = buildMonolithicConfig();
-                  await invoke<string>("deploy_config_to_r2", {
-                    mudDir: project.mudDir,
-                    configContent,
-                  });
-
-                  const zones = useZoneStore.getState().zones;
-                  for (const zoneId of zones.keys()) {
-                    await saveZone(zoneId);
-                  }
-
-                  const result = await invoke<{ uploaded: number; failed: number }>("deploy_zones_to_r2", {
-                    mudDir: project.mudDir,
-                    format: project.format,
-                  });
-
-                  const resources = Array.from(zones.keys()).sort().map((id) => `world/${id}.yaml`);
-                  const currentConfig = useConfigStore.getState().config;
-                  if (currentConfig && resources.length > 0) {
-                    useConfigStore.getState().updateConfig({
-                      ...currentConfig,
-                      world: { ...currentConfig.world, resources },
-                    });
-                    await saveProjectConfig(project);
-                  }
-
-                  setDeployResult(
-                    `Deployed config + ${result.uploaded} zone${result.uploaded !== 1 ? "s" : ""}` +
-                    (result.failed > 0 ? ` (${result.failed} failed)` : ""),
-                  );
-                } catch (e) {
-                  setDeployResult(`Deploy failed: ${e}`);
-                } finally {
-                  setDeploying(false);
-                }
-              }}
-              disabled={deploying || !hasConfig}
-              className="rounded-full border border-white/10 bg-black/10 px-4 py-2 text-xs font-medium text-text-primary transition enabled:hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              {deploying ? "Deploying..." : "Export to R2"}
+              Handoff
             </button>
           )}
           <button onClick={() => setShowLegacyImport(true)} className="rounded-full border border-white/10 bg-black/10 px-4 py-2 text-xs font-medium text-text-primary transition hover:bg-white/10">
@@ -242,21 +177,6 @@ export function Toolbar() {
           </button>
         </div>
       </div>
-
-      {(exportResult || deployResult) && (
-        <div className="absolute bottom-1 left-8 flex gap-3">
-          {exportResult && (
-            <span className={`rounded-full border px-3 py-1 text-[11px] ${exportResult.includes("failed") ? "border-status-error/30 bg-status-error/10 text-status-error" : "border-status-success/30 bg-status-success/10 text-status-success"}`}>
-              {exportResult}
-            </span>
-          )}
-          {deployResult && (
-            <span className={`rounded-full border px-3 py-1 text-[11px] ${deployResult.includes("failed") ? "border-status-error/30 bg-status-error/10 text-status-error" : "border-status-success/30 bg-status-success/10 text-status-success"}`}>
-              {deployResult}
-            </span>
-          )}
-        </div>
-      )}
 
       <ValidationPanel />
 

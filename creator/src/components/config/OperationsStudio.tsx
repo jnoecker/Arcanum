@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import type { OperationsSubView } from "@/types/project";
 import { ApiSettingsPanel } from "./panels/ApiSettingsPanel";
+import { RuntimeHandoffStudio } from "./RuntimeHandoffStudio";
 
 const OPERATIONS_VIEWS: Array<{
   id: OperationsSubView;
@@ -25,10 +26,10 @@ const OPERATIONS_VIEWS: Array<{
   },
   {
     id: "delivery",
-    label: "Delivery",
+    label: "Handoff",
     eyebrow: "Handoff",
-    title: "Handle config and world deployment with explicit runtime intent.",
-    description: "R2 deployment controls live in their own view so export, publish, and sync steps stay visible instead of buried under provider fields.",
+    title: "Run the full world handoff from one explicit workflow.",
+    description: "Save the canonical world, validate it, export a runtime bundle, and publish the exact files the live MUD expects.",
   },
 ];
 
@@ -116,13 +117,23 @@ export function OperationsStudio({
       )}
 
       {activeView === "delivery" && (
-        <StudioSection
-          kicker="Delivery"
-          title="R2 deployment and handoff"
-          description="Use this view for CDN publishing and runtime handoff instead of hunting for deploy buttons inside the provider form."
-        >
-          <ApiSettingsPanel initialSection="delivery" />
-        </StudioSection>
+        <div className="grid gap-6">
+          <StudioSection
+            kicker="Delivery"
+            title="Runtime credentials"
+            description="Keep CDN credentials and public delivery URLs here, then run the handoff below."
+          >
+            <ApiSettingsPanel initialSection="delivery" showDeploymentActions={false} />
+          </StudioSection>
+
+          <StudioSection
+            kicker="Handoff"
+            title="Canonical world to live runtime"
+            description="This workflow replaces the old scattered export and deploy buttons with one guided path."
+          >
+            <RuntimeHandoffStudio />
+          </StudioSection>
+        </div>
       )}
     </div>
   );

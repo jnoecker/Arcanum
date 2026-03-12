@@ -1,14 +1,7 @@
 import { useState, useEffect } from "react";
-import { invoke } from "@tauri-apps/api/core";
 import { useAssetStore } from "@/stores/assetStore";
-import { useProjectStore } from "@/stores/projectStore";
-import { useZoneStore } from "@/stores/zoneStore";
-import { useConfigStore } from "@/stores/configStore";
-import { saveProjectConfig } from "@/lib/saveConfig";
-import { saveZone } from "@/lib/saveZone";
-import { buildMonolithicConfig } from "@/lib/exportMud";
 import { IMAGE_MODELS } from "@/types/assets";
-import type { Settings, SyncProgress } from "@/types/assets";
+import type { Settings } from "@/types/assets";
 
 const LLM_PROVIDERS = [
   { id: "deepinfra", label: "DeepInfra", keyField: "deepinfra_api_key" as const },
@@ -23,8 +16,10 @@ const IMAGE_PROVIDERS = [
 
 export function ApiSettingsPanel({
   initialSection = "providers",
+  showDeploymentActions = true,
 }: {
   initialSection?: "providers" | "delivery";
+  showDeploymentActions?: boolean;
 }) {
   const settings = useAssetStore((s) => s.settings);
   const loadSettings = useAssetStore((s) => s.loadSettings);
@@ -34,11 +29,6 @@ export function ApiSettingsPanel({
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [deploying, setDeploying] = useState(false);
-  const [deployResult, setDeployResult] = useState<string | null>(null);
-  const [deployingZones, setDeployingZones] = useState(false);
-  const [zoneDeployResult, setZoneDeployResult] = useState<string | null>(null);
-  const mudDir = useProjectStore((s) => s.project?.mudDir);
 
   useEffect(() => {
     loadSettings();
@@ -396,98 +386,12 @@ export function ApiSettingsPanel({
             </p>
           </div>
 
-          {/* Deploy Config */}
-          <div className="mt-1 border-t border-border-muted pt-3">
-            <div className="flex items-center gap-2">
-              <button
-                onClick={async () => {
-                  if (!mudDir) return;
-                  setDeploying(true);
-                  setDeployResult(null);
-                  try {
-                    const project = useProjectStore.getState().project;
-                    const configContent = project?.format === "standalone"
-                      ? buildMonolithicConfig()
-                      : undefined;
-                    const url = await invoke<string>("deploy_config_to_r2", {
-                      mudDir,
-                      configContent,
-                    });
-                    setDeployResult(`Deployed to ${url}`);
-                  } catch (e) {
-                    setDeployResult(`Failed: ${e}`);
-                  } finally {
-                    setDeploying(false);
-                  }
-                }}
-                disabled={deploying || !mudDir || !draft.r2_bucket}
-                className="rounded bg-gradient-to-r from-accent-muted to-accent px-4 py-1.5 text-xs font-medium text-accent-emphasis transition-all hover:shadow-[var(--glow-aurum)] hover:brightness-110 disabled:opacity-50"
-              >
-                {deploying ? "Deploying..." : "Deploy Config to R2"}
-              </button>
-              {deployResult && (
-                <span className={`text-[10px] ${deployResult.startsWith("Failed") ? "text-status-error" : "text-status-success"}`}>
-                  {deployResult}
-                </span>
-              )}
+          {showDeploymentActions && (
+            <div className="mt-1 rounded-[20px] border border-white/10 bg-black/10 px-4 py-3 text-[11px] leading-6 text-text-secondary">
+              Runtime config deployment now lives in the dedicated handoff workspace under Operations.
+              Keep credentials here, then use the guided handoff flow to save, validate, export, and deploy from one place.
             </div>
-            <p className="mt-1 text-[10px] text-text-muted">
-              Uploads application-local.yaml to R2 for the demo cluster to pull
-            </p>
-
-            <div className="mt-2 flex items-center gap-2">
-              <button
-                onClick={async () => {
-                  if (!mudDir) return;
-                  setDeployingZones(true);
-                  setZoneDeployResult(null);
-                  try {
-                    const project = useProjectStore.getState().project;
-                    const format = project?.format;
-                    const zones = useZoneStore.getState().zones;
-                    for (const zoneId of zones.keys()) {
-                      await saveZone(zoneId);
-                    }
-                    const result = await invoke<SyncProgress>("deploy_zones_to_r2", { mudDir, format });
-
-                    // Write explicit zone list to world.resources in config
-                    const resources = Array.from(zones.keys()).sort()
-                      .map((id) => `world/${id}.yaml`);
-                    const currentConfig = useConfigStore.getState().config;
-                    if (currentConfig && resources.length > 0) {
-                      useConfigStore.getState().updateConfig({
-                        ...currentConfig,
-                        world: { ...currentConfig.world, resources },
-                      });
-                      const project = useProjectStore.getState().project;
-                      if (project) await saveProjectConfig(project);
-                    }
-
-                    setZoneDeployResult(
-                      `${result.uploaded} zone${result.uploaded !== 1 ? "s" : ""} deployed` +
-                      (result.failed > 0 ? `, ${result.failed} failed` : ""),
-                    );
-                  } catch (e) {
-                    setZoneDeployResult(`Failed: ${e}`);
-                  } finally {
-                    setDeployingZones(false);
-                  }
-                }}
-                disabled={deployingZones || !mudDir || !draft.r2_bucket}
-                className="rounded bg-gradient-to-r from-accent-muted to-accent px-4 py-1.5 text-xs font-medium text-accent-emphasis transition-all hover:shadow-[var(--glow-aurum)] hover:brightness-110 disabled:opacity-50"
-              >
-                {deployingZones ? "Deploying..." : "Deploy Zones to R2"}
-              </button>
-              {zoneDeployResult && (
-                <span className={`text-[10px] ${zoneDeployResult.startsWith("Failed") ? "text-status-error" : "text-status-success"}`}>
-                  {zoneDeployResult}
-                </span>
-              )}
-            </div>
-            <p className="mt-1 text-[10px] text-text-muted">
-              Uploads all zone YAML files to R2 for the demo cluster to pull
-            </p>
-          </div>
+          )}
         </div>
       </div>}
 

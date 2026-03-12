@@ -48,7 +48,7 @@ function formatSyncResult(result: SyncProgress, noun: string): string {
   const parts = [`${result.uploaded} ${noun} uploaded`];
   if (result.skipped > 0) parts.push(`${result.skipped} already synced`);
   if (result.failed > 0) parts.push(`${result.failed} failed`);
-  return parts.join(" • ");
+  return parts.join(" | ");
 }
 
 function StepCard({
@@ -69,20 +69,20 @@ function StepCard({
   children?: ReactNode;
 }) {
   return (
-    <section className="rounded-[24px] border border-white/10 bg-[linear-gradient(160deg,rgba(56,66,96,0.9),rgba(39,48,72,0.92))] p-5 shadow-[0_16px_42px_rgba(9,12,24,0.22)]">
-      <div className="flex flex-wrap items-start justify-between gap-3">
+    <section className="rounded-[24px] border border-white/10 bg-[linear-gradient(160deg,rgba(56,66,96,0.9),rgba(39,48,72,0.92))] p-4 shadow-[0_16px_42px_rgba(9,12,24,0.22)]">
+      <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
-          <h3 className="font-display text-2xl text-text-primary">{title}</h3>
-          <p className="mt-2 max-w-2xl text-sm leading-7 text-text-secondary">{description}</p>
+          <h3 className="font-display text-xl text-text-primary">{title}</h3>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-text-secondary">{description}</p>
         </div>
         <span className={`rounded-full border px-3 py-1 text-[11px] uppercase tracking-[0.22em] ${STATUS_STYLES[state.status]}`}>
           {state.status}
         </span>
       </div>
 
-      {children && <div className="mt-4">{children}</div>}
+      {children && <div className="mt-3">{children}</div>}
 
-      <div className="mt-4 flex flex-wrap items-center gap-3">
+      <div className="mt-3 flex flex-wrap items-center gap-3">
         <button
           onClick={() => void onAction()}
           disabled={disabled || state.status === "running"}
@@ -94,7 +94,7 @@ function StepCard({
       </div>
 
       {state.errors.length > 0 && (
-        <div className="mt-3 rounded-[20px] border border-status-error/20 bg-black/10 p-3 text-[11px] text-status-error">
+        <div className="mt-3 rounded-[18px] border border-status-error/20 bg-black/10 p-3 text-[11px] text-status-error">
           {state.errors.slice(0, 5).map((error, index) => (
             <div key={index}>{error}</div>
           ))}
@@ -186,7 +186,7 @@ export function RuntimeHandoffStudio() {
       details.push(`${result.savedZones.length} zone${result.savedZones.length !== 1 ? "s" : ""} flushed`);
       setStepState("save", {
         status: "success",
-        detail: details.join(" • "),
+        detail: details.join(" | "),
       });
     } catch (error) {
       setStepState("save", {
@@ -216,7 +216,7 @@ export function RuntimeHandoffStudio() {
         status,
         detail:
           summary.errorCount > 0 || summary.warningCount > 0
-            ? `${summary.errorCount} errors • ${summary.warningCount} warnings across ${summary.zonesWithIssues} section${summary.zonesWithIssues !== 1 ? "s" : ""}`
+            ? `${summary.errorCount} errors | ${summary.warningCount} warnings across ${summary.zonesWithIssues} section${summary.zonesWithIssues !== 1 ? "s" : ""}`
             : "No validation issues found.",
         errors: [],
       });
@@ -424,16 +424,14 @@ export function RuntimeHandoffStudio() {
   }
 
   return (
-    <div className="flex flex-col gap-6">
-      <section className="rounded-[24px] border border-white/10 bg-[linear-gradient(145deg,rgba(73,84,118,0.94),rgba(49,60,90,0.92))] p-5 shadow-[0_18px_60px_rgba(9,12,24,0.32)]">
+    <div className="flex flex-col gap-4">
+      <section className="rounded-[24px] border border-white/10 bg-[linear-gradient(145deg,rgba(73,84,118,0.94),rgba(49,60,90,0.92))] p-4 shadow-[0_18px_60px_rgba(9,12,24,0.32)]">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <p className="text-[11px] uppercase tracking-[0.32em] text-text-muted">Guided Handoff</p>
-            <h3 className="mt-3 font-display text-3xl text-text-primary">Save, validate, publish, and deploy from one path.</h3>
-            <p className="mt-3 max-w-3xl text-sm leading-7 text-text-secondary">
-              This is the runtime handoff for <span className="text-text-primary">{project.name}</span>.
-              It keeps the canonical world folder in sync, validates the loaded data, optionally exports a local runtime bundle,
-              then publishes the assets and runtime files the live MUD expects.
+            <p className="text-[11px] uppercase tracking-[0.32em] text-text-muted">Handoff</p>
+            <h3 className="mt-2 font-display text-2xl text-text-primary">Canonical world to live runtime</h3>
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-text-secondary">
+              Save the canonical world, validate it, optionally export a local runtime bundle, then publish the exact runtime files the live MUD expects.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -453,27 +451,27 @@ export function RuntimeHandoffStudio() {
           </div>
         </div>
 
-        <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-          <div className="rounded-[20px] border border-white/10 bg-black/10 p-4">
+        <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+          <div className="rounded-[18px] border border-white/10 bg-black/10 p-3">
             <p className="text-[10px] uppercase tracking-[0.24em] text-text-muted">Canonical world</p>
             <p className="mt-2 text-sm text-text-primary">{project.mudDir}</p>
             <p className="mt-2 text-xs text-text-secondary">
-              {zones.size} loaded zone{zones.size !== 1 ? "s" : ""} • {dirtyZones} dirty
+              {zones.size} loaded zone{zones.size !== 1 ? "s" : ""} | {dirtyZones} dirty
             </p>
           </div>
-          <div className="rounded-[20px] border border-white/10 bg-black/10 p-4">
+          <div className="rounded-[18px] border border-white/10 bg-black/10 p-3">
             <p className="text-[10px] uppercase tracking-[0.24em] text-text-muted">R2 delivery</p>
             <p className="mt-2 text-sm text-text-primary">{settings?.r2_bucket || "No bucket configured"}</p>
             <p className="mt-2 text-xs text-text-secondary">
-              {settings?.r2_custom_domain || "No custom domain"} • {hasR2 ? "ready" : "credentials incomplete"}
+              {settings?.r2_custom_domain || "No custom domain"} | {hasR2 ? "ready" : "credentials incomplete"}
             </p>
           </div>
-          <div className="rounded-[20px] border border-white/10 bg-black/10 p-4">
+          <div className="rounded-[18px] border border-white/10 bg-black/10 p-3">
             <p className="text-[10px] uppercase tracking-[0.24em] text-text-muted">Curated assets</p>
             <p className="mt-2 text-sm text-text-primary">{curatedAssetCount} active assets</p>
             <p className="mt-2 text-xs text-text-secondary">{unsyncedCuratedAssetCount} not yet synced to R2</p>
           </div>
-          <div className="rounded-[20px] border border-white/10 bg-black/10 p-4">
+          <div className="rounded-[18px] border border-white/10 bg-black/10 p-3">
             <p className="text-[10px] uppercase tracking-[0.24em] text-text-muted">Config state</p>
             <p className="mt-2 text-sm text-text-primary">{configDirty ? "Config has unsaved edits" : "Config is clean"}</p>
             <p className="mt-2 text-xs text-text-secondary">{globalAssetCount} registered global asset keys</p>
@@ -481,13 +479,13 @@ export function RuntimeHandoffStudio() {
         </div>
 
         {workflowMessage && (
-          <div className="mt-4 rounded-[20px] border border-white/10 bg-black/10 px-4 py-3 text-sm text-text-secondary">
+          <div className="mt-3 rounded-[18px] border border-white/10 bg-black/10 px-4 py-3 text-sm text-text-secondary">
             {workflowMessage}
           </div>
         )}
       </section>
 
-      <div className="grid gap-5 xl:grid-cols-2">
+      <div className="grid gap-4 xl:grid-cols-2">
         <StepCard
           title="1. Save canonical world"
           description="Flush the in-memory world back to the project folder and keep `world.resources` explicit."
@@ -517,7 +515,7 @@ export function RuntimeHandoffStudio() {
               value={exportDir}
               onChange={(event) => setExportDir(event.target.value)}
               placeholder="Choose a MUD checkout directory"
-              className="min-w-[22rem] flex-1 rounded-full border border-white/10 bg-black/10 px-4 py-2 text-xs text-text-primary placeholder:text-text-muted outline-none focus:border-[rgba(184,216,232,0.35)]"
+              className="min-w-[18rem] flex-1 rounded-full border border-white/10 bg-black/10 px-4 py-2 text-xs text-text-primary placeholder:text-text-muted outline-none focus:border-[rgba(184,216,232,0.35)]"
             />
             <button
               onClick={() => void handleChooseExportDir()}

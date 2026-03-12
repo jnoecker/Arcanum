@@ -260,10 +260,10 @@ export function AssetGallery({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-      <div className="mx-4 flex max-h-[90vh] w-full max-w-6xl flex-col rounded-lg border border-border-default bg-bg-secondary shadow-xl">
+      <div className="mx-4 flex max-h-[90vh] w-full max-w-6xl flex-col rounded-[24px] border border-border-default bg-bg-secondary shadow-xl">
         <div className="flex shrink-0 items-center justify-between border-b border-border-default px-5 py-3">
           <div className="flex flex-wrap items-center gap-3">
-            <h2 className="font-display text-sm tracking-wide text-text-primary">Asset Gallery</h2>
+            <h2 className="font-display text-lg tracking-wide text-text-primary">Asset Gallery</h2>
             <span className="text-xs text-text-muted">
               {sorted.length} visible of {assets.length}
             </span>
@@ -271,7 +271,7 @@ export function AssetGallery({ onClose }: { onClose: () => void }) {
             <button
               onClick={handleImport}
               disabled={importing}
-              className="rounded px-2 py-0.5 text-[10px] font-medium text-accent transition-colors hover:bg-accent/15 disabled:cursor-not-allowed disabled:opacity-50"
+              className="rounded-full border border-white/10 bg-black/10 px-3 py-1.5 text-[10px] font-medium text-accent transition-colors hover:bg-accent/15 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {importing ? "Importing..." : "Import"}
             </button>
@@ -280,7 +280,7 @@ export function AssetGallery({ onClose }: { onClose: () => void }) {
                 <select
                   value={syncScope}
                   onChange={(event) => setSyncScope(event.target.value as SyncScope)}
-                  className="rounded border border-border-default bg-bg-primary px-2 py-1 text-[10px] text-text-secondary outline-none"
+                  className="rounded-full border border-border-default bg-bg-primary px-3 py-1.5 text-[10px] text-text-secondary outline-none"
                 >
                   <option value="approved">Sync curated</option>
                   <option value="all">Sync everything</option>
@@ -291,7 +291,7 @@ export function AssetGallery({ onClose }: { onClose: () => void }) {
                     setSyncResult(result);
                   }}
                   disabled={syncing || unsyncedCount === 0}
-                  className="rounded px-2 py-0.5 text-[10px] font-medium transition-colors enabled:bg-accent/15 enabled:text-accent enabled:hover:bg-accent/25 disabled:cursor-not-allowed disabled:text-text-muted disabled:opacity-50"
+                  className="rounded-full border border-white/10 px-3 py-1.5 text-[10px] font-medium transition-colors enabled:bg-accent/15 enabled:text-accent enabled:hover:bg-accent/25 disabled:cursor-not-allowed disabled:text-text-muted disabled:opacity-50"
                 >
                   {syncing ? "Syncing..." : unsyncedCount > 0 ? `Sync ${unsyncedCount} to R2` : "All synced"}
                 </button>
@@ -311,110 +311,138 @@ export function AssetGallery({ onClose }: { onClose: () => void }) {
           </button>
         </div>
 
-        <div className="flex shrink-0 flex-wrap items-center gap-3 border-b border-border-default px-5 py-2">
-          <div className="flex gap-1">
-            {(["curated", "all"] as ViewMode[]).map((mode) => (
-              <button
-                key={mode}
-                onClick={() => setViewMode(mode)}
-                className={`rounded px-2 py-0.5 text-[10px] transition-colors ${
-                  viewMode === mode ? "bg-accent/20 text-accent" : "text-text-muted hover:text-text-secondary"
-                }`}
-              >
-                {mode === "curated" ? "Curated" : "Everything"}
-              </button>
-            ))}
-          </div>
-
-          <div className="mx-1 h-4 w-px bg-border-default" />
-
-          <div className="flex gap-1">
-            {(["all", "image", "audio", "video"] as MediaKind[]).map((kind) => (
-              <button
-                key={kind}
-                onClick={() => setMediaFilter(kind)}
-                className={`rounded px-2 py-0.5 text-[10px] transition-colors ${
-                  mediaFilter === kind ? "bg-accent/20 text-accent" : "text-text-muted hover:text-text-secondary"
-                }`}
-              >
-                {kind}
-              </button>
-            ))}
-          </div>
-
-          <div className="mx-1 h-4 w-px bg-border-default" />
-
-          <div className="flex flex-wrap gap-1">
-            <button
-              onClick={() => setTypeFilter("all")}
-              className={`rounded px-2 py-0.5 text-[10px] transition-colors ${
-                typeFilter === "all" ? "bg-accent/20 text-accent" : "text-text-muted hover:text-text-secondary"
-              }`}
-            >
-              All types
-            </button>
-            {types.map((type) => (
-              <button
-                key={type}
-                onClick={() => setTypeFilter(type)}
-                className={`rounded px-2 py-0.5 text-[10px] transition-colors ${
-                  typeFilter === type ? "bg-accent/20 text-accent" : "text-text-muted hover:text-text-secondary"
-                }`}
-              >
-                {type.replace(/_/g, " ")}
-              </button>
-            ))}
-          </div>
-
-          {(zones.length > 0 || hasGlobalAssets) && (
-            <>
-              <div className="mx-1 h-4 w-px bg-border-default" />
-              <div className="flex flex-wrap gap-1">
-                <button
-                  onClick={() => setZoneFilter("all")}
-                  className={`rounded px-2 py-0.5 text-[10px] transition-colors ${
-                    zoneFilter === "all" ? "bg-accent/20 text-accent" : "text-text-muted hover:text-text-secondary"
-                  }`}
-                >
-                  All zones
-                </button>
-                {hasGlobalAssets && (
+        <div className="flex shrink-0 flex-col gap-3 border-b border-border-default px-5 py-3">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-[10px] uppercase tracking-[0.24em] text-text-muted">View</span>
+              <div className="flex gap-1 rounded-full border border-white/10 bg-black/10 p-1">
+                {(["curated", "all"] as ViewMode[]).map((mode) => (
                   <button
-                    onClick={() => setZoneFilter("__global__")}
-                    className={`rounded px-2 py-0.5 text-[10px] transition-colors ${
-                      zoneFilter === "__global__" ? "bg-accent/20 text-accent" : "text-text-muted hover:text-text-secondary"
+                    key={mode}
+                    onClick={() => setViewMode(mode)}
+                    className={`rounded-full px-3 py-1.5 text-[10px] transition-colors ${
+                      viewMode === mode
+                        ? "bg-[linear-gradient(135deg,rgba(168,151,210,0.24),rgba(140,174,201,0.16))] text-text-primary"
+                        : "text-text-muted hover:text-text-secondary"
                     }`}
                   >
-                    Global
-                  </button>
-                )}
-                {zones.map((zone) => (
-                  <button
-                    key={zone}
-                    onClick={() => setZoneFilter(zone)}
-                    className={`rounded px-2 py-0.5 text-[10px] transition-colors ${
-                      zoneFilter === zone ? "bg-accent/20 text-accent" : "text-text-muted hover:text-text-secondary"
-                    }`}
-                  >
-                    {zone.replace(/_/g, " ")}
+                    {mode === "curated" ? "Curated" : "Everything"}
                   </button>
                 ))}
               </div>
-            </>
-          )}
+            </div>
 
-          <div className="ml-auto flex gap-1">
-            {(["newest", "oldest", "type"] as SortKey[]).map((key) => (
-              <button
-                key={key}
-                onClick={() => setSort(key)}
-                className={`rounded px-2 py-0.5 text-[10px] transition-colors ${
-                  sort === key ? "bg-accent/20 text-accent" : "text-text-muted hover:text-text-secondary"
-                }`}
-              >
-                {key}
-              </button>
-            ))}
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] uppercase tracking-[0.24em] text-text-muted">Sort</span>
+              <div className="flex gap-1 rounded-full border border-white/10 bg-black/10 p-1">
+                {(["newest", "oldest", "type"] as SortKey[]).map((key) => (
+                  <button
+                    key={key}
+                    onClick={() => setSort(key)}
+                    className={`rounded-full px-3 py-1.5 text-[10px] transition-colors ${
+                      sort === key
+                        ? "bg-[linear-gradient(135deg,rgba(168,151,210,0.24),rgba(140,174,201,0.16))] text-text-primary"
+                        : "text-text-muted hover:text-text-secondary"
+                    }`}
+                  >
+                    {key}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-[10px] uppercase tracking-[0.24em] text-text-muted">Media</span>
+            <div className="flex flex-wrap gap-1">
+              {(["all", "image", "audio", "video"] as MediaKind[]).map((kind) => (
+                <button
+                  key={kind}
+                  onClick={() => setMediaFilter(kind)}
+                  className={`rounded-full border px-3 py-1 text-[10px] transition-colors ${
+                    mediaFilter === kind
+                      ? "border-[rgba(184,216,232,0.35)] bg-[linear-gradient(135deg,rgba(168,151,210,0.18),rgba(140,174,201,0.14))] text-text-primary"
+                      : "border-white/10 bg-black/10 text-text-muted hover:text-text-secondary"
+                  }`}
+                >
+                  {kind}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-start gap-4">
+            <div className="flex min-w-[16rem] flex-1 flex-wrap items-center gap-2">
+              <span className="text-[10px] uppercase tracking-[0.24em] text-text-muted">Types</span>
+              <div className="flex flex-wrap gap-1">
+                <button
+                  onClick={() => setTypeFilter("all")}
+                  className={`rounded-full border px-3 py-1 text-[10px] transition-colors ${
+                    typeFilter === "all"
+                      ? "border-[rgba(184,216,232,0.35)] bg-[linear-gradient(135deg,rgba(168,151,210,0.18),rgba(140,174,201,0.14))] text-text-primary"
+                      : "border-white/10 bg-black/10 text-text-muted hover:text-text-secondary"
+                  }`}
+                >
+                  All types
+                </button>
+                {types.map((type) => (
+                  <button
+                    key={type}
+                    onClick={() => setTypeFilter(type)}
+                    className={`rounded-full border px-3 py-1 text-[10px] transition-colors ${
+                      typeFilter === type
+                        ? "border-[rgba(184,216,232,0.35)] bg-[linear-gradient(135deg,rgba(168,151,210,0.18),rgba(140,174,201,0.14))] text-text-primary"
+                        : "border-white/10 bg-black/10 text-text-muted hover:text-text-secondary"
+                    }`}
+                  >
+                    {type.replace(/_/g, " ")}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {(zones.length > 0 || hasGlobalAssets) && (
+              <div className="flex min-w-[14rem] flex-1 flex-wrap items-center gap-2">
+                <span className="text-[10px] uppercase tracking-[0.24em] text-text-muted">Zone</span>
+                <div className="flex flex-wrap gap-1">
+                  <button
+                    onClick={() => setZoneFilter("all")}
+                    className={`rounded-full border px-3 py-1 text-[10px] transition-colors ${
+                      zoneFilter === "all"
+                        ? "border-[rgba(184,216,232,0.35)] bg-[linear-gradient(135deg,rgba(168,151,210,0.18),rgba(140,174,201,0.14))] text-text-primary"
+                        : "border-white/10 bg-black/10 text-text-muted hover:text-text-secondary"
+                    }`}
+                  >
+                    All zones
+                  </button>
+                  {hasGlobalAssets && (
+                    <button
+                      onClick={() => setZoneFilter("__global__")}
+                      className={`rounded-full border px-3 py-1 text-[10px] transition-colors ${
+                        zoneFilter === "__global__"
+                          ? "border-[rgba(184,216,232,0.35)] bg-[linear-gradient(135deg,rgba(168,151,210,0.18),rgba(140,174,201,0.14))] text-text-primary"
+                          : "border-white/10 bg-black/10 text-text-muted hover:text-text-secondary"
+                      }`}
+                    >
+                      Global
+                    </button>
+                  )}
+                  {zones.map((zone) => (
+                    <button
+                      key={zone}
+                      onClick={() => setZoneFilter(zone)}
+                      className={`rounded-full border px-3 py-1 text-[10px] transition-colors ${
+                        zoneFilter === zone
+                          ? "border-[rgba(184,216,232,0.35)] bg-[linear-gradient(135deg,rgba(168,151,210,0.18),rgba(140,174,201,0.14))] text-text-primary"
+                          : "border-white/10 bg-black/10 text-text-muted hover:text-text-secondary"
+                      }`}
+                    >
+                      {zone.replace(/_/g, " ")}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
 

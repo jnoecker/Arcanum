@@ -66,42 +66,26 @@ export function StudioWorkspace() {
   );
   const vibeCount = [...vibeMap.values()].filter(Boolean).length;
   const dirtyZones = [...zones.values()].filter((zone) => zone.dirty).length;
+  const activeStudioView = STUDIO_VIEWS.find((view) => view.id === studioSubView) ?? STUDIO_VIEWS[0]!;
 
-  const heroActions: Array<{ label: string; description: string; onClick: () => void }> = [
+  const quickActions: Array<{ label: string; description: string; onClick: () => void; emphasis: "primary" | "secondary" }> = [
     {
-      label: "Zone art",
-      description: "Generate vibes, fallbacks, and named entity art.",
+      label: selectedZone ? "Continue zone art" : "Open zone art",
+      description: selectedZone ? `Resume ${selectedZoneId} art direction and fallbacks.` : "Pick a zone and generate vibes, fallbacks, and entity art.",
       onClick: () => setStudioSubView("zoneArt"),
-    },
-    {
-      label: "Custom assets",
-      description: "Create library assets and global art without the long scroll.",
-      onClick: () => setStudioSubView("customAssets"),
-    },
-    {
-      label: "Media studio",
-      description: "Score rooms, ambience, and cinematics in one focused view.",
-      onClick: () => setStudioSubView("media"),
-    },
-    {
-      label: "Portraits",
-      description: "Review race and class portraits as a dedicated workflow.",
-      onClick: () => setStudioSubView("portraits"),
-    },
-    {
-      label: "Ability icons",
-      description: "Focus on combat icon generation without leaving the studio.",
-      onClick: () => setStudioSubView("abilities"),
+      emphasis: "primary",
     },
     {
       label: "Review gallery",
       description: "Approve variants and keep the curated library clean.",
       onClick: openGallery,
+      emphasis: "primary",
     },
     {
       label: "Player sprites",
       description: "Manage race and tier forms without leaving the studio.",
       onClick: () => openTab({ id: "sprites", kind: "sprites", label: "Sprites" }),
+      emphasis: "secondary",
     },
     {
       label: "World systems",
@@ -110,6 +94,7 @@ export function StudioWorkspace() {
         setConfigSubTab("worldSystems");
         openTab({ id: "config", kind: "config", label: "Config" });
       },
+      emphasis: "secondary",
     },
   ];
 
@@ -123,6 +108,62 @@ export function StudioWorkspace() {
       note: selectedZone ? `${selectedZoneAssets.length} linked assets` : "Open a zone to start",
     },
   ];
+
+  const renderMetricsStrip = () => (
+    <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      {metrics.map((metric) => (
+        <div
+          key={metric.label}
+          className="rounded-[22px] border border-white/10 bg-[linear-gradient(155deg,rgba(56,67,96,0.92),rgba(39,48,73,0.92))] px-4 py-3 shadow-[0_14px_34px_rgba(9,12,24,0.18)]"
+        >
+          <div className="text-[10px] uppercase tracking-[0.24em] text-text-muted">{metric.label}</div>
+          <div className="mt-2 truncate font-display text-2xl text-text-primary">{metric.value}</div>
+          <div className="mt-1 text-xs text-text-secondary">{metric.note}</div>
+        </div>
+      ))}
+    </section>
+  );
+
+  const renderSubviewHeader = () => (
+    <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(22rem,0.72fr)]">
+      <div className="rounded-[28px] border border-white/10 bg-[linear-gradient(145deg,rgba(73,84,118,0.94),rgba(49,60,90,0.92))] px-5 py-4 shadow-[0_18px_60px_rgba(9,12,24,0.28)]">
+        <p className="text-[11px] uppercase tracking-[0.35em] text-text-muted">Studio</p>
+        <div className="mt-2 flex flex-wrap items-center gap-3">
+          <h1 className="font-display text-3xl text-text-primary">{activeStudioView.label}</h1>
+          <span className="rounded-full border border-white/10 bg-black/10 px-3 py-1 text-[10px] uppercase tracking-[0.2em] text-text-secondary">
+            Focused workbench
+          </span>
+        </div>
+        <p className="mt-2 max-w-2xl text-sm leading-6 text-text-secondary">{activeStudioView.description}</p>
+      </div>
+
+      <div className="rounded-[28px] border border-white/10 bg-[linear-gradient(145deg,rgba(73,84,118,0.94),rgba(49,60,90,0.92))] px-5 py-4 shadow-[0_18px_60px_rgba(9,12,24,0.28)]">
+        <div className="text-[11px] uppercase tracking-[0.26em] text-text-muted">Selected zone</div>
+        <div className="mt-2 truncate font-display text-2xl text-text-primary">
+          {selectedZone ? selectedZone.data.zone : "No zone selected"}
+        </div>
+        <div className="mt-1 truncate text-xs text-text-secondary">
+          {selectedZoneId ?? "Pick a zone from the atlas to ground the studio."}
+        </div>
+        {selectedZone && (
+          <div className="mt-4 flex flex-wrap gap-2">
+            <button
+              onClick={() => openTab({ id: `zone:${selectedZoneId}`, kind: "zone", label: selectedZoneId! })}
+              className="rounded-full border border-white/12 bg-white/6 px-4 py-2 text-xs font-medium text-text-primary transition hover:bg-white/10"
+            >
+              Open editor
+            </button>
+            <button
+              onClick={() => setShowBatchArt(true)}
+              className="rounded-full border border-[rgba(168,151,210,0.35)] bg-[rgba(168,151,210,0.14)] px-4 py-2 text-xs font-medium text-text-primary transition hover:bg-[rgba(168,151,210,0.2)]"
+            >
+              Batch generate
+            </button>
+          </div>
+        )}
+      </div>
+    </section>
+  );
 
   const renderAtlas = (compact = false) => (
     <div className="rounded-[28px] border border-white/10 bg-[linear-gradient(160deg,rgba(54,63,90,0.95),rgba(42,53,79,0.92))] p-5 shadow-[0_18px_50px_rgba(9,12,24,0.24)]">
@@ -260,46 +301,69 @@ export function StudioWorkspace() {
   return (
     <div className="min-h-0 flex-1 overflow-y-auto px-6 py-6">
       <div className="mx-auto flex max-w-7xl flex-col gap-6">
-        <section className="grid gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(19rem,0.8fr)]">
-          <div className="overflow-hidden rounded-[28px] border border-white/10 bg-[linear-gradient(145deg,rgba(73,84,118,0.94),rgba(49,60,90,0.92))] p-5 shadow-[0_18px_60px_rgba(9,12,24,0.38)]">
-            <div className="grid gap-5 lg:grid-cols-[minmax(0,1.2fr)_minmax(18rem,0.8fr)] lg:items-start">
-              <div className="max-w-2xl">
-                <p className="text-[11px] uppercase tracking-[0.35em] text-text-muted">Surreal Gentle Magic</p>
-                <h1 className="mt-3 font-display text-4xl leading-[1.05] text-text-primary">Build the world from one place.</h1>
-                <p className="mt-3 max-w-xl text-sm leading-7 text-text-secondary">
-                  The studio now behaves like a set of focused workbenches instead of one giant scroll.
-                  Pick the surface you want, then stay in that mode until the task is done.
-                </p>
-              </div>
+        {studioSubView === "home" ? (
+          <section className="grid gap-4 xl:grid-cols-[minmax(0,1.1fr)_minmax(22rem,0.9fr)]">
+            <div className="overflow-hidden rounded-[28px] border border-white/10 bg-[linear-gradient(145deg,rgba(73,84,118,0.94),rgba(49,60,90,0.92))] p-5 shadow-[0_18px_60px_rgba(9,12,24,0.38)]">
+              <div className="grid gap-5 lg:grid-cols-[minmax(0,1.05fr)_minmax(17rem,0.95fr)] lg:items-start">
+                <div className="max-w-2xl">
+                  <p className="text-[11px] uppercase tracking-[0.35em] text-text-muted">Surreal Gentle Magic</p>
+                  <h1 className="mt-3 font-display text-3xl leading-[1.04] text-text-primary lg:text-[2.6rem]">Build the world from one place.</h1>
+                  <p className="mt-3 max-w-xl text-sm leading-7 text-text-secondary">
+                    Move between focused workbenches instead of one giant scroll. Pick the surface you want,
+                    then stay in that mode until the task is done.
+                  </p>
+                  <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                    {quickActions.map((action) => (
+                      <button
+                        key={action.label}
+                        onClick={action.onClick}
+                        className={`rounded-[20px] border px-4 py-4 text-left transition hover:-translate-y-0.5 ${
+                          action.emphasis === "primary"
+                            ? "border-[rgba(168,151,210,0.38)] bg-[linear-gradient(135deg,rgba(168,151,210,0.2),rgba(140,174,201,0.14))] hover:bg-[linear-gradient(135deg,rgba(168,151,210,0.28),rgba(140,174,201,0.18))]"
+                            : "border-[rgba(216,222,241,0.14)] bg-white/6 hover:bg-white/10"
+                        }`}
+                      >
+                        <div className="text-sm font-medium text-text-primary">{action.label}</div>
+                        <div className="mt-1 text-xs leading-5 text-text-secondary">{action.description}</div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
 
-              <div className="grid gap-3 sm:grid-cols-2">
-                {heroActions.map((action) => (
-                  <button
-                    key={action.label}
-                    onClick={action.onClick}
-                    className="rounded-[20px] border border-[rgba(216,222,241,0.14)] bg-white/6 px-4 py-4 text-left transition hover:-translate-y-0.5 hover:bg-white/10"
-                  >
-                    <div className="text-sm font-medium text-text-primary">{action.label}</div>
-                    <div className="mt-1 text-xs leading-5 text-text-secondary">{action.description}</div>
-                  </button>
-                ))}
+                <div className="rounded-[24px] border border-white/10 bg-black/10 p-4">
+                  <div className="text-[11px] uppercase tracking-[0.26em] text-text-muted">Current mode</div>
+                  <div className="mt-3 font-display text-2xl text-text-primary">{activeStudioView.label}</div>
+                  <div className="mt-2 text-sm leading-6 text-text-secondary">{activeStudioView.description}</div>
+                  <div className="mt-4 rounded-[18px] border border-white/8 bg-white/5 px-4 py-3">
+                    <div className="text-[11px] uppercase tracking-[0.22em] text-text-muted">Selected zone</div>
+                    <div className="mt-2 truncate text-lg text-text-primary">{selectedZone ? selectedZone.data.zone : "No zone selected"}</div>
+                    <div className="mt-1 truncate text-xs text-text-secondary">{selectedZoneId ?? "Pick a zone from the atlas to ground the studio."}</div>
+                    {selectedZone && (
+                      <div className="mt-4 flex flex-wrap gap-2">
+                        <button
+                          onClick={() => openTab({ id: `zone:${selectedZoneId}`, kind: "zone", label: selectedZoneId! })}
+                          className="rounded-full border border-white/12 bg-white/6 px-4 py-2 text-xs font-medium text-text-primary transition hover:bg-white/10"
+                        >
+                          Open editor
+                        </button>
+                        <button
+                          onClick={() => setShowBatchArt(true)}
+                          className="rounded-full border border-[rgba(168,151,210,0.35)] bg-[rgba(168,151,210,0.14)] px-4 py-2 text-xs font-medium text-text-primary transition hover:bg-[rgba(168,151,210,0.2)]"
+                        >
+                          Batch generate
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
+          </section>
+        ) : (
+          renderSubviewHeader()
+        )}
 
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-1">
-            {metrics.map((metric) => (
-              <div
-                key={metric.label}
-                className="rounded-[24px] border border-white/10 bg-[linear-gradient(155deg,rgba(56,67,96,0.92),rgba(39,48,73,0.92))] p-4 shadow-[0_14px_40px_rgba(9,12,24,0.22)]"
-              >
-                <div className="text-[11px] uppercase tracking-[0.26em] text-text-muted">{metric.label}</div>
-                <div className="mt-3 truncate font-display text-2xl text-text-primary">{metric.value}</div>
-                <div className="mt-2 text-xs text-text-secondary">{metric.note}</div>
-              </div>
-            ))}
-          </div>
-        </section>
+        {renderMetricsStrip()}
 
         <section className="rounded-[24px] border border-white/10 bg-[linear-gradient(160deg,rgba(49,58,84,0.9),rgba(39,48,73,0.9))] p-3 shadow-[0_18px_40px_rgba(9,12,24,0.2)]">
           <div className="flex flex-wrap items-center gap-2">
@@ -309,7 +373,7 @@ export function StudioWorkspace() {
                 onClick={() => setStudioSubView(view.id)}
                 className={`rounded-full border px-4 py-2 text-xs font-medium transition ${
                   studioSubView === view.id
-                    ? "border-[rgba(184,216,232,0.35)] bg-[linear-gradient(135deg,rgba(168,151,210,0.18),rgba(140,174,201,0.14))] text-text-primary"
+                    ? "border-[rgba(184,216,232,0.48)] bg-[linear-gradient(135deg,rgba(168,151,210,0.3),rgba(140,174,201,0.2))] text-white shadow-[0_10px_24px_rgba(137,155,214,0.18)]"
                     : "border-white/10 bg-black/10 text-text-secondary hover:bg-white/10 hover:text-text-primary"
                 }`}
               >
@@ -348,14 +412,18 @@ export function StudioWorkspace() {
               <div className="rounded-[28px] border border-white/10 bg-[linear-gradient(160deg,rgba(54,63,90,0.95),rgba(42,53,79,0.92))] p-5 shadow-[0_18px_50px_rgba(9,12,24,0.24)]">
                 <div className="mb-4 flex items-center justify-between">
                   <h2 className="font-display text-xl text-text-primary">Focused workbenches</h2>
-                  <span className="text-[11px] uppercase tracking-[0.24em] text-text-muted">Studio map</span>
+                  <span className="text-[11px] uppercase tracking-[0.24em] text-text-muted">Quick switch</span>
                 </div>
                 <div className="grid gap-3 sm:grid-cols-2">
                   {STUDIO_VIEWS.filter((view) => view.id !== "home").map((view) => (
                     <button
                       key={view.id}
                       onClick={() => setStudioSubView(view.id)}
-                      className="rounded-[20px] border border-white/8 bg-black/12 px-4 py-4 text-left transition hover:-translate-y-0.5 hover:bg-white/8"
+                      className={`rounded-[20px] border px-4 py-4 text-left transition hover:-translate-y-0.5 ${
+                        studioSubView === view.id
+                          ? "border-[rgba(184,216,232,0.3)] bg-[linear-gradient(135deg,rgba(168,151,210,0.18),rgba(140,174,201,0.14))]"
+                          : "border-white/8 bg-black/12 hover:bg-white/8"
+                      }`}
                     >
                       <div className="font-display text-lg text-text-primary">{view.label}</div>
                       <div className="mt-2 text-xs leading-6 text-text-secondary">{view.description}</div>

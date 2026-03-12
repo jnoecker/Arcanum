@@ -93,10 +93,10 @@ function WorkspaceSection({
 }) {
   return (
     <section className="rounded-[28px] border border-white/10 bg-[linear-gradient(160deg,rgba(56,66,96,0.9),rgba(39,48,72,0.92))] p-5 shadow-[0_16px_42px_rgba(9,12,24,0.22)]">
-      <div className="mb-4">
+      <div className="mb-3">
         <p className="text-[11px] uppercase tracking-[0.3em] text-text-muted">{kicker}</p>
-        <h3 className="mt-2 font-display text-2xl text-text-primary">{title}</h3>
-        <p className="mt-2 max-w-3xl text-sm leading-7 text-text-secondary">{description}</p>
+        <h3 className="mt-2 font-display text-xl text-text-primary">{title}</h3>
+        <p className="mt-2 max-w-3xl text-sm leading-6 text-text-secondary">{description}</p>
       </div>
       <div>{children}</div>
     </section>
@@ -171,17 +171,20 @@ export function ConfigEditor() {
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="relative shrink-0 overflow-hidden border-b border-border-default bg-bg-secondary">
         <img src={subtoolbarBg} alt="" className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-[0.1]" />
-        <div className="relative z-10 flex items-center justify-between gap-4 px-5 py-4">
+        <div className="relative z-10 flex items-center justify-between gap-4 px-5 py-3">
           <div>
             <p className="text-[11px] uppercase tracking-[0.34em] text-text-muted">Config Studio</p>
-            <h2 className="mt-2 font-display text-2xl text-text-primary">{workspace.label}</h2>
+            <div className="mt-2 flex flex-wrap items-center gap-3">
+              <h2 className="font-display text-2xl text-text-primary">{workspace.label}</h2>
+              <span className="text-xs text-text-secondary">{workspace.description}</span>
+            </div>
           </div>
           <div className="flex items-center gap-2">
             {dirty && <span className="text-xs text-accent">modified</span>}
             <button
               onClick={handleSave}
               disabled={!dirty || saving}
-              className="rounded-full border border-white/10 bg-black/10 px-4 py-2 text-xs font-medium text-text-primary transition enabled:hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40"
+              className="rounded-full border border-[rgba(184,216,232,0.28)] bg-[linear-gradient(135deg,rgba(168,151,210,0.24),rgba(140,174,201,0.16))] px-4 py-2 text-xs font-medium text-text-primary transition enabled:hover:shadow-[0_10px_20px_rgba(137,155,214,0.2)] disabled:cursor-not-allowed disabled:opacity-40"
             >
               {saving ? "Saving..." : "Save Config"}
             </button>
@@ -195,7 +198,7 @@ export function ConfigEditor() {
               onClick={() => setActiveWorkspace(entry.id)}
               className={`rounded-full border px-4 py-2 text-xs font-medium transition ${
                 activeWorkspace === entry.id
-                  ? "border-[rgba(184,216,232,0.35)] bg-[linear-gradient(135deg,rgba(168,151,210,0.2),rgba(140,174,201,0.14))] text-text-primary"
+                  ? "border-[rgba(184,216,232,0.48)] bg-[linear-gradient(135deg,rgba(168,151,210,0.3),rgba(140,174,201,0.2))] text-white shadow-[0_10px_24px_rgba(137,155,214,0.18)]"
                   : "border-white/10 bg-black/10 text-text-secondary hover:bg-white/10 hover:text-text-primary"
               }`}
             >
@@ -222,11 +225,11 @@ export function ConfigEditor() {
           <div className="absolute inset-0 bg-gradient-to-t from-bg-primary via-bg-primary/60 to-transparent" />
         </div>
 
-        <div className={`relative z-10 mx-auto flex flex-col gap-6 px-6 py-6 ${workspace.maxWidth}`}>
-          <section className="rounded-[30px] border border-white/10 bg-[linear-gradient(145deg,rgba(73,84,118,0.94),rgba(49,60,90,0.92))] p-6 shadow-[0_18px_60px_rgba(9,12,24,0.32)]">
+        <div className={`relative z-10 mx-auto flex flex-col gap-6 px-6 py-5 ${workspace.maxWidth}`}>
+          <section className="rounded-[30px] border border-white/10 bg-[linear-gradient(145deg,rgba(73,84,118,0.94),rgba(49,60,90,0.92))] p-5 shadow-[0_18px_60px_rgba(9,12,24,0.32)]">
             <p className="text-[11px] uppercase tracking-[0.35em] text-text-muted">{workspace.eyebrow}</p>
-            <h1 className="mt-3 max-w-4xl font-display text-4xl text-text-primary">{workspace.title}</h1>
-            <p className="mt-3 max-w-3xl text-sm leading-7 text-text-secondary">{workspace.description}</p>
+            <h1 className="mt-2 max-w-4xl font-display text-3xl text-text-primary">{workspace.title}</h1>
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-text-secondary">{workspace.description}</p>
           </section>
 
           {activeWorkspace === "characterStudio" && (

@@ -46,10 +46,10 @@ function StudioSection({
 }) {
   return (
     <section className="rounded-[28px] border border-white/10 bg-[linear-gradient(160deg,rgba(56,66,96,0.9),rgba(39,48,72,0.92))] p-5 shadow-[0_16px_42px_rgba(9,12,24,0.22)]">
-      <div className="mb-4">
+      <div className="mb-3">
         <p className="text-[11px] uppercase tracking-[0.3em] text-text-muted">{kicker}</p>
-        <h3 className="mt-2 font-display text-2xl text-text-primary">{title}</h3>
-        <p className="mt-2 max-w-3xl text-sm leading-7 text-text-secondary">{description}</p>
+        <h3 className="mt-2 font-display text-xl text-text-primary">{title}</h3>
+        <p className="mt-2 max-w-3xl text-sm leading-6 text-text-secondary">{description}</p>
       </div>
       <div>{children}</div>
     </section>
@@ -67,19 +67,25 @@ export function OperationsStudio({
 
   return (
     <div className="flex flex-col gap-6">
-      <section className="rounded-[30px] border border-white/10 bg-[linear-gradient(145deg,rgba(73,84,118,0.94),rgba(49,60,90,0.92))] p-6 shadow-[0_18px_60px_rgba(9,12,24,0.32)]">
-        <p className="text-[11px] uppercase tracking-[0.35em] text-text-muted">{current.eyebrow}</p>
-        <h2 className="mt-3 max-w-4xl font-display text-4xl text-text-primary">{current.title}</h2>
-        <p className="mt-3 max-w-3xl text-sm leading-7 text-text-secondary">{current.description}</p>
+      <section className="rounded-[30px] border border-white/10 bg-[linear-gradient(145deg,rgba(73,84,118,0.94),rgba(49,60,90,0.92))] p-4 shadow-[0_18px_60px_rgba(9,12,24,0.32)]">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <p className="text-[11px] uppercase tracking-[0.35em] text-text-muted">{current.eyebrow}</p>
+            <div className="mt-2 flex flex-wrap items-center gap-3">
+              <h2 className="font-display text-3xl text-text-primary">{current.label}</h2>
+              <span className="text-sm text-text-secondary">{current.description}</span>
+            </div>
+          </div>
+        </div>
 
-        <div className="mt-5 flex flex-wrap gap-2">
+        <div className="mt-4 flex flex-wrap gap-2">
           {OPERATIONS_VIEWS.map((view) => (
             <button
               key={view.id}
               onClick={() => onViewChange(view.id)}
               className={`rounded-full border px-4 py-2 text-xs font-medium transition ${
                 activeView === view.id
-                  ? "border-[rgba(184,216,232,0.35)] bg-[linear-gradient(135deg,rgba(168,151,210,0.2),rgba(140,174,201,0.14))] text-text-primary"
+                  ? "border-[rgba(184,216,232,0.48)] bg-[linear-gradient(135deg,rgba(168,151,210,0.3),rgba(140,174,201,0.2))] text-white shadow-[0_10px_24px_rgba(137,155,214,0.18)]"
                   : "border-white/10 bg-black/10 text-text-secondary hover:bg-white/10 hover:text-text-primary"
               }`}
             >
@@ -90,17 +96,23 @@ export function OperationsStudio({
       </section>
 
       {activeView === "overview" && (
-        <div className="grid gap-5 xl:grid-cols-2">
+        <div className="grid gap-4 xl:grid-cols-2">
           {OPERATIONS_VIEWS.filter((view) => view.id !== "overview").map((view) => (
             <button
               key={view.id}
               onClick={() => onViewChange(view.id)}
-              className="rounded-[26px] border border-white/10 bg-[linear-gradient(160deg,rgba(56,66,96,0.9),rgba(39,48,72,0.92))] p-5 text-left shadow-[0_16px_42px_rgba(9,12,24,0.22)] transition hover:border-[rgba(184,216,232,0.2)] hover:bg-[linear-gradient(160deg,rgba(63,73,105,0.94),rgba(43,52,79,0.96))]"
+              className="rounded-[26px] border border-white/10 bg-[linear-gradient(160deg,rgba(56,66,96,0.9),rgba(39,48,72,0.92))] p-4 text-left shadow-[0_16px_42px_rgba(9,12,24,0.22)] transition hover:border-[rgba(184,216,232,0.2)] hover:bg-[linear-gradient(160deg,rgba(63,73,105,0.94),rgba(43,52,79,0.96))]"
             >
-              <p className="text-[11px] uppercase tracking-[0.3em] text-text-muted">{view.eyebrow}</p>
-              <h3 className="mt-3 font-display text-2xl text-text-primary">{view.label}</h3>
-              <p className="mt-3 text-sm leading-7 text-text-secondary">{view.description}</p>
-              <div className="mt-4 text-xs uppercase tracking-[0.2em] text-accent">Open workspace</div>
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-[11px] uppercase tracking-[0.3em] text-text-muted">{view.eyebrow}</p>
+                  <h3 className="mt-2 font-display text-xl text-text-primary">{view.label}</h3>
+                </div>
+                <div className="rounded-full border border-white/8 bg-black/10 px-3 py-1 text-[10px] uppercase tracking-[0.18em] text-accent">
+                  Open
+                </div>
+              </div>
+              <p className="mt-3 text-sm leading-6 text-text-secondary">{view.description}</p>
             </button>
           ))}
         </div>
@@ -118,21 +130,10 @@ export function OperationsStudio({
 
       {activeView === "delivery" && (
         <div className="grid gap-6">
-          <StudioSection
-            kicker="Delivery"
-            title="Runtime credentials"
-            description="Keep CDN credentials and public delivery URLs here, then run the handoff below."
-          >
+          <StudioSection kicker="Delivery" title="Runtime credentials" description="Keep CDN credentials and public delivery URLs here.">
             <ApiSettingsPanel initialSection="delivery" showDeploymentActions={false} />
           </StudioSection>
-
-          <StudioSection
-            kicker="Handoff"
-            title="Canonical world to live runtime"
-            description="This workflow replaces the old scattered export and deploy buttons with one guided path."
-          >
-            <RuntimeHandoffStudio />
-          </StudioSection>
+          <RuntimeHandoffStudio />
         </div>
       )}
     </div>

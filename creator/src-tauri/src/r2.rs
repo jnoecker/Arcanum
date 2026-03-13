@@ -1,5 +1,9 @@
 use chrono::Utc;
 use hmac::{Hmac, Mac};
+use image::codecs::jpeg::JpegEncoder;
+use image::codecs::png::{CompressionType as PngCompressionType, FilterType as PngFilterType, PngEncoder};
+use image::imageops::FilterType as ResizeFilter;
+use image::{ExtendedColorType, ImageEncoder};
 use sha2::{Digest, Sha256};
 use std::path::{Path, PathBuf};
 use tauri::{AppHandle, Manager};
@@ -18,6 +22,13 @@ pub struct SyncProgress {
     pub skipped: usize,
     pub failed: usize,
     pub errors: Vec<String>,
+}
+
+#[derive(Debug, Clone, Copy)]
+struct RuntimeImageProfile {
+    max_width: u32,
+    max_height: u32,
+    jpeg_quality: u8,
 }
 
 // ─── AWS Signature V4 (minimal, for S3-compatible R2) ───────────────
@@ -216,6 +227,103 @@ fn detect_content_type(file_name: &str) -> &'static str {
     }
 }
 
+fn image_extension(path: &str) -> Option<String> {
+    let ext = path.rsplit('.').next()?.to_ascii_lowercase();
+    match ext.as_str() {
+        "png" | "jpg" | "jpeg" | "webp" => Some(ext),
+        _ => None,
+    }
+}
+
+fn runtime_image_profile(asset_type: &str) -> Option<RuntimeImageProfile> {
+    let profile = match asset_type {
+        "player_sprite" | "ability_icon" | "status_effect_icon" | "ability_sprite" | "item" => {
+            RuntimeImageProfile { max_width: 256, max_height: 256, jpeg_quality: 82 }
+        }
+        "mob" | "entity_portrait" | "race_portrait" | "class_portrait" => {
+            RuntimeImageProfile { max_width: 512, max_height: 768, jpeg_quality: 84 }
+        }
+        "room" | "background" | "zone_map" | "splash_hero" | "panel_header" | "loading_vignette" | "empty_state" | "ornament" => {
+            RuntimeImageProfile { max_width: 1280, max_height: 1280, jpeg_quality: 82 }
+        }
+        _ => return None,
+    };
+    Some(profile)
+}
+
+fn optimized_runtime_image_bytes(
+    asset_type: &str,
+    source_name: &str,
+    object_key: &str,
+    bytes: &[u8],
+) -> Vec<u8> {
+    let Some(profile) = runtime_image_profile(asset_type) else {
+        return bytes.to_vec();
+    };
+
+    let target_ext = image_extension(object_key).or_else(|| image_extension(source_name));
+    let Some(target_ext) = target_ext else {
+        return bytes.to_vec();
+    };
+
+    // Keep WEBP pass-through for now; current runtime optimization only re-encodes PNG/JPEG.
+    if target_ext == "webp" {
+        return bytes.to_vec();
+    }
+
+    let decoded = match image::load_from_memory(bytes) {
+        Ok(img) => img,
+        Err(_) => return bytes.to_vec(),
+    };
+    let original_width = decoded.width();
+    let original_height = decoded.height();
+
+    let resized = if original_width > profile.max_width || original_height > profile.max_height {
+        decoded.resize(profile.max_width, profile.max_height, ResizeFilter::Lanczos3)
+    } else {
+        decoded
+    };
+
+    let mut out = Vec::new();
+    let encode_result = match target_ext.as_str() {
+        "jpg" | "jpeg" => {
+            let rgb = resized.to_rgb8();
+            let mut encoder = JpegEncoder::new_with_quality(&mut out, profile.jpeg_quality);
+            encoder.encode(
+                rgb.as_raw(),
+                rgb.width(),
+                rgb.height(),
+                ExtendedColorType::Rgb8,
+            )
+        }
+        "png" => {
+            let rgba = resized.to_rgba8();
+            let encoder = PngEncoder::new_with_quality(
+                &mut out,
+                PngCompressionType::Best,
+                PngFilterType::Adaptive,
+            );
+            encoder.write_image(
+                rgba.as_raw(),
+                rgba.width(),
+                rgba.height(),
+                ExtendedColorType::Rgba8,
+            )
+        }
+        _ => return bytes.to_vec(),
+    };
+
+    if encode_result.is_err() || out.is_empty() {
+        return bytes.to_vec();
+    }
+
+    if out.len() < bytes.len() || resized.width() != original_width || resized.height() != original_height {
+        out
+    } else {
+        bytes.to_vec()
+    }
+}
+
 /// Check if an object already exists in R2.
 async fn object_exists(
     client: &reqwest::Client,
@@ -353,6 +461,7 @@ pub async fn sync_assets(app: AppHandle, scope: Option<String>) -> Result<SyncPr
                 continue;
             }
         };
+        let body = optimized_runtime_image_bytes(&asset.asset_type, &asset.file_name, object_key, &body);
 
         let content_type = detect_content_type(&asset.file_name);
 
@@ -459,7 +568,7 @@ pub async fn deploy_sprites_to_r2(app: AppHandle) -> Result<SyncProgress, String
     let all_assets = assets::list_assets(app.clone()).await?;
     let sprites: Vec<&AssetEntry> = all_assets
         .iter()
-        .filter(|a| a.asset_type == "player_sprite" && a.variant_group.starts_with("player_sprite:"))
+        .filter(|a| a.asset_type == "player_sprite" && a.variant_group.starts_with("player_sprite:") && a.is_active)
         .collect();
 
     let base_dir = assets_base_dir(&app)?;
@@ -499,6 +608,7 @@ pub async fn deploy_sprites_to_r2(app: AppHandle) -> Result<SyncProgress, String
                 continue;
             }
         };
+        let body = optimized_runtime_image_bytes(&asset.asset_type, &asset.file_name, &object_key, &body);
 
         // Upload under canonical path
         match upload_object(
@@ -548,6 +658,7 @@ pub async fn deploy_global_assets_to_r2(
         .iter()
         .filter(|(_, v)| !v.is_empty())
         .collect();
+    let all_assets = assets::list_assets(app.clone()).await?;
 
     let base_dir = assets_base_dir(&app)?;
     let client = reqwest::Client::new();
@@ -590,6 +701,12 @@ pub async fn deploy_global_assets_to_r2(
                 continue;
             }
         };
+        let asset_type = all_assets
+            .iter()
+            .find(|asset| asset.file_name == **file_name)
+            .map(|asset| asset.asset_type.as_str())
+            .unwrap_or("background");
+        let body = optimized_runtime_image_bytes(asset_type, file_name, &object_key, &body);
 
         let content_type = detect_content_type(file_name);
 

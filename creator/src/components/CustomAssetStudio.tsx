@@ -299,7 +299,13 @@ export function CustomAssetStudio({ selectedZoneId }: { selectedZoneId: string |
     setImporting(true);
     setError(null);
     try {
-      const entry = await importAsset(selected as string, assetType, context);
+      const entry = await importAsset(
+        selected as string,
+        assetType,
+        context,
+        variantGroup || undefined,
+        Boolean(variantGroup),
+      );
       if (variantGroup) {
         await setActiveVariant(variantGroup, entry.id).catch(() => {});
       }

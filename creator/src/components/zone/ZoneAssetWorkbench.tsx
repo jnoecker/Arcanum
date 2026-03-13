@@ -366,7 +366,13 @@ export function ZoneAssetWorkbench({ zoneId, world, onWorldChange }: ZoneAssetWo
     setImporting(true);
     setError(null);
     try {
-      const entry = await importAsset(selected as string, assetTypeForKind(selectedKind), selectedContext);
+      const entry = await importAsset(
+        selected as string,
+        assetTypeForKind(selectedKind),
+        selectedContext,
+        selectedVariantGroup,
+        true,
+      );
       persistImageSelection(entry.file_name);
       await loadAssets();
       await refreshVariants();

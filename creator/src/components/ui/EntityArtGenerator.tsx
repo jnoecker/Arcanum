@@ -102,7 +102,13 @@ export function EntityArtGenerator({
     (async () => {
       for (const sourcePath of candidates) {
         try {
-          await importAsset(sourcePath, assetType ?? "background", context);
+          await importAsset(
+            sourcePath,
+            assetType ?? "background",
+            context,
+            variantGroup || undefined,
+            Boolean(variantGroup),
+          );
           return;
         } catch {
           // Try next candidate
@@ -211,6 +217,8 @@ export function EntityArtGenerator({
         path,
         assetType ?? "background",
         context,
+        variantGroup || undefined,
+        Boolean(variantGroup),
       );
       onAccept(entry.file_name);
     } catch (e) {

@@ -363,7 +363,13 @@ export function AbilityStudio() {
     setImporting(true);
     setError(null);
     try {
-      const entry = await importAsset(selected as string, assetTypeForTarget(selectedTarget), selectedContext);
+      const entry = await importAsset(
+        selected as string,
+        assetTypeForTarget(selectedTarget),
+        selectedContext,
+        selectedVariantGroup,
+        true,
+      );
       persistImage(selectedTarget, entry.file_name);
       await setActiveVariant(selectedVariantGroup, entry.id).catch(() => {});
       await loadAssets();

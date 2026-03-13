@@ -83,7 +83,13 @@ export function GlobalAssetsPanel({ config, onChange }: ConfigPanelProps) {
       filters: [{ name: "Images", extensions: ["png", "jpg", "jpeg", "webp"] }],
     });
     if (!selected) return;
-    const entry = await importAsset(selected as string, "background");
+    const entry = await importAsset(
+      selected as string,
+      "background",
+      { zone: "", entity_type: "global_asset", entity_id: key },
+      `custom:global:${key}`,
+      true,
+    );
     if (entry) {
       updateAssets({ ...assets, [key]: entry.file_name });
     }

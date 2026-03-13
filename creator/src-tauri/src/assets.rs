@@ -108,7 +108,7 @@ pub async fn accept_asset(
     is_active: Option<bool>,
 ) -> Result<AssetEntry, String> {
     let vg = variant_group.unwrap_or_default();
-    let active = is_active.unwrap_or(false);
+    let active = is_active.unwrap_or(!vg.is_empty());
 
     let entry = AssetEntry {
         id,

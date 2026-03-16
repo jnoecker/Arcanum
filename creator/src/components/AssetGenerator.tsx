@@ -8,6 +8,7 @@ import {
   getEnhanceSystemPrompt,
   composePrompt,
   ART_STYLE_LABELS,
+  UNIVERSAL_NEGATIVE,
   type ArtStyle,
 } from "@/lib/arcanumPrompts";
 import { IMAGE_MODELS } from "@/types/assets";
@@ -21,7 +22,6 @@ export function AssetGenerator() {
   const closeGenerator = useAssetStore((s) => s.closeGenerator);
   const acceptAsset = useAssetStore((s) => s.acceptAsset);
 
-  const config = useConfigStore((s) => s.config);
   const updateConfig = useConfigStore((s) => s.updateConfig);
 
   const [stage, setStage] = useState<Stage>("compose");
@@ -97,7 +97,7 @@ export function AssetGenerator() {
       const command = imageProvider === "runware" ? "runware_generate_image" : "generate_image";
       const image = await invoke<GeneratedImage>(command, {
         prompt: finalPrompt,
-        negativePrompt: undefined,
+        negativePrompt: UNIVERSAL_NEGATIVE,
         model: modelId,
         width: 1024,
         height: 1024,
@@ -123,13 +123,16 @@ export function AssetGenerator() {
       );
 
       // Save as global asset in config if key is provided
-      if (globalAssetKey.trim() && config) {
-        const key = globalAssetKey.trim().toLowerCase().replace(/\s+/g, "_");
-        const fileName = result.file_path.split(/[\\/]/).pop() ?? result.hash;
-        updateConfig({
-          ...config,
-          globalAssets: { ...config.globalAssets, [key]: fileName },
-        });
+      if (globalAssetKey.trim()) {
+        const latestConfig = useConfigStore.getState().config;
+        if (latestConfig) {
+          const key = globalAssetKey.trim().toLowerCase().replace(/\s+/g, "_");
+          const fileName = result.file_path.split(/[\\/]/).pop() ?? result.hash;
+          updateConfig({
+            ...latestConfig,
+            globalAssets: { ...latestConfig.globalAssets, [key]: fileName },
+          });
+        }
       }
 
       closeGenerator();

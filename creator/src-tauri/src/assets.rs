@@ -197,10 +197,8 @@ pub async fn resolve_media_path(app: AppHandle, file_name: String) -> Result<Str
 }
 
 /// Update the sync_status of an asset by ID. Called from r2 module.
-/// Update sync_status for a single asset. NOT locked — callers that
-/// invoke this in a loop (e.g. sync_assets) must ensure serialization
-/// themselves or accept that concurrent writes may lose updates.
 pub async fn update_sync_status(app: AppHandle, id: &str, status: &str) -> Result<(), String> {
+    let _lock = MANIFEST_LOCK.lock().await;
     let mut manifest = load_manifest(&app).await?;
     if let Some(entry) = manifest.assets.iter_mut().find(|a| a.id == id) {
         entry.sync_status = status.to_string();

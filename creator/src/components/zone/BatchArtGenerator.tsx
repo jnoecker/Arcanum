@@ -75,7 +75,7 @@ export function BatchArtGenerator({
     );
 
     setRunning(false);
-  }, [targets, world, onWorldChange, artStyle, vibe, imageProvider, concurrency, zoneId, acceptAsset]);
+  }, [targets, world, onWorldChange, artStyle, vibe, imageProvider, concurrency, zoneId, acceptAsset, settings]);
 
   if (targets.length === 0) {
     return (

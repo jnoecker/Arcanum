@@ -115,7 +115,7 @@ export function EntityArtGenerator({
         }
       }
     })();
-  }, [currentImage, mudDir, assetType, context, importAsset]);
+  }, [currentImage, mudDir, assetType, context, importAsset, variantGroup]);
 
   /** Enhance a prompt via LLM, injecting entity context, style guide, and zone vibe. */
   const enhancePrompt = async (prompt: string): Promise<string> => {

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { ConfigPanelProps, AppConfig } from "./types";
 import { Section, FieldRow, TextInput } from "@/components/ui/FormWidgets";
 
@@ -8,6 +8,10 @@ export function ImagesPanel({ config, onChange }: ConfigPanelProps) {
     onChange({ images: { ...img, ...p } });
 
   const [tierDraft, setTierDraft] = useState(img.spriteLevelTiers.join(", "));
+
+  useEffect(() => {
+    setTierDraft(img.spriteLevelTiers.join(", "));
+  }, [img.spriteLevelTiers]);
 
   const commitTiers = (value: string) => {
     const nums = value

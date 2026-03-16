@@ -456,13 +456,17 @@ export function composePrompt(
  * and fixing common formatting issues (e.g. unescaped newlines in strings).
  */
 export function parseLlmJson<T = Record<string, unknown>>(raw: string, label = "LLM"): T {
-  let text = raw.trim().replace(/^```(?:json)?\s*\n?/i, "").replace(/\n?```\s*$/i, "").trim();
-  // Fix unescaped newlines inside JSON string values
-  text = text.replace(/(?<=:\s*"(?:[^"\\]|\\.)*?)(\r?\n)(?=[^"]*")/g, "\\n");
+  const text = raw.trim().replace(/^```(?:json)?\s*\n?/i, "").replace(/\n?```\s*$/i, "").trim();
   try {
     return JSON.parse(text) as T;
-  } catch (e) {
-    console.error(`[${label}] Failed to parse JSON response. Raw text:`, text.slice(0, 500));
-    throw new Error(`Failed to parse ${label} JSON: ${(e as Error).message}. Try regenerating.`);
+  } catch {
+    // Fallback: fix unescaped newlines inside JSON string values and retry
+    const fixed = text.replace(/(?<=:\s*"(?:[^"\\]|\\.)*?)(\r?\n)(?=[^"]*")/g, "\\n");
+    try {
+      return JSON.parse(fixed) as T;
+    } catch (e) {
+      console.error(`[${label}] Failed to parse JSON response. Raw text:`, text.slice(0, 500));
+      throw new Error(`Failed to parse ${label} JSON: ${(e as Error).message}. Try regenerating.`);
+    }
   }
 }

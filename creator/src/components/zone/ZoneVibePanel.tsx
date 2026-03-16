@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { useVibeStore } from "@/stores/vibeStore";
 import { useAssetStore } from "@/stores/assetStore";
@@ -69,6 +69,11 @@ export function ZoneVibePanel({ zoneId, world, onWorldChange }: ZoneVibePanelPro
   const acceptAsset = useAssetStore((s) => s.acceptAsset);
   const loadAssets = useAssetStore((s) => s.loadAssets);
 
+  // Track latest world via ref so sequential generateDefault calls
+  // don't overwrite each other with a stale closure snapshot.
+  const worldRef = useRef(world);
+  worldRef.current = world;
+
   const [draft, setDraft] = useState("");
   const [generating, setGenerating] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -109,13 +114,14 @@ export function ZoneVibePanel({ zoneId, world, onWorldChange }: ZoneVibePanelPro
   const generateDefault = useCallback(async (kind: DefaultImageKind, vibeText: string) => {
     if (!defaultModel) throw new Error(`No image model configured for provider ${imageProvider}.`);
 
+    const currentWorld = worldRef.current;
     setGeneratingDefaults((prev) => ({ ...prev, [kind]: true }));
     try {
-      let prompt = defaultImagePrompt(kind, world, vibeText, artStyle);
+      let prompt = defaultImagePrompt(kind, currentWorld, vibeText, artStyle);
       if (hasLlmKey) {
         const systemPrompt = getEnhanceSystemPrompt(artStyle);
         const userPrompt = [
-          `Generate a fallback/default image prompt for this zone asset:\n${defaultImageContext(kind, world)}`,
+          `Generate a fallback/default image prompt for this zone asset:\n${defaultImageContext(kind, currentWorld)}`,
           vibeText ? `\nZone atmosphere/vibe:\n${vibeText}` : "",
           `\nReference style template (adapt but prioritize the context above):\n${prompt}`,
         ].join("\n");
@@ -141,12 +147,16 @@ export function ZoneVibePanel({ zoneId, world, onWorldChange }: ZoneVibePanelPro
         `default:${zoneId}:${kind}`,
         true,
       );
-      onWorldChange(applyDefaultImage(world, kind, fileName));
+      // Read the latest world from the ref so sequential calls accumulate
+      const latestWorld = worldRef.current;
+      const updated = applyDefaultImage(latestWorld, kind, fileName);
+      worldRef.current = updated;
+      onWorldChange(updated);
       await loadAssets();
     } finally {
       setGeneratingDefaults((prev) => ({ ...prev, [kind]: false }));
     }
-  }, [acceptAsset, artStyle, defaultModel, hasLlmKey, imageProvider, loadAssets, onWorldChange, world, zoneId]);
+  }, [acceptAsset, artStyle, defaultModel, hasLlmKey, imageProvider, loadAssets, onWorldChange, zoneId]);
 
   const generateAllDefaults = useCallback(async (vibeText: string) => {
     if (!hasImageKey) {

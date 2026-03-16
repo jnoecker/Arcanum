@@ -143,8 +143,9 @@ export function StatusEffectDetail({
   effectTypeOptions: { value: string; label: string }[];
   stackBehaviorOptions: { value: string; label: string }[];
 }) {
-  const showTick = effect.effectType === "DOT" || effect.effectType === "HOT";
-  const showStatMods = effect.effectType === "STAT_BUFF" || effect.effectType === "STAT_DEBUFF";
+  const et = effect.effectType?.toUpperCase();
+  const showTick = et === "DOT" || et === "HOT";
+  const showStatMods = et === "STAT_BUFF" || et === "STAT_DEBUFF";
 
   return (
     <>
@@ -182,7 +183,7 @@ export function StatusEffectDetail({
           options={stackBehaviorOptions}
         />
       </FieldRow>
-      {effect.stackBehavior === "STACK" && (
+      {effect.stackBehavior?.toUpperCase() === "STACK" && (
         <FieldRow label="Max Stacks">
           <NumberInput
             value={effect.maxStacks}
@@ -225,7 +226,7 @@ export function StatusEffectDetail({
         </>
       )}
 
-      {effect.effectType === "SHIELD" && (
+      {et === "SHIELD" && (
         <FieldRow label="Shield Amount" hint="Total damage the shield absorbs before breaking.">
           <NumberInput
             value={effect.shieldAmount}

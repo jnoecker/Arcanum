@@ -220,7 +220,7 @@ export function Sidebar() {
   const zones = useZoneStore((s) => s.zones);
   const openTab = useProjectStore((s) => s.openTab);
   const activeTabId = useProjectStore((s) => s.activeTabId);
-
+  const navigateTo = useProjectStore((s) => s.navigateTo);
   const closeTab = useProjectStore((s) => s.closeTab);
   const removeZone = useZoneStore((s) => s.removeZone);
   const { query, setQuery, clearQuery, grouped, isSearching } =
@@ -371,6 +371,11 @@ export function Sidebar() {
                               label: entry.zoneId,
                             };
                             openTab(tab);
+                            if (entry.entityType === "room") {
+                              navigateTo({ zoneId: entry.zoneId, roomId: entry.entityId });
+                            } else {
+                              navigateTo({ zoneId: entry.zoneId, entityKind: entry.entityType, entityId: entry.entityId });
+                            }
                             clearQuery();
                           }}
                           className="flex w-full items-center gap-2 rounded-2xl border border-white/8 bg-black/10 px-3 py-2 text-left text-xs transition hover:bg-white/8 hover:text-text-primary"

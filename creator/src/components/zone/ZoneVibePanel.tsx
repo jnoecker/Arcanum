@@ -41,20 +41,54 @@ function applyDefaultImage(world: WorldFile, kind: DefaultImageKind, fileName: s
 
 function DefaultThumb({ fileName, label, generating }: { fileName?: string; label: string; generating: boolean }) {
   const src = useImageSrc(fileName);
+  const [expanded, setExpanded] = useState(false);
 
   return (
-    <div className="rounded-[16px] border border-white/8 bg-[rgba(24,30,45,0.46)] p-2">
-      <div className="mb-2 text-[10px] uppercase tracking-[0.2em] text-text-muted">{label}</div>
-      <div className="flex aspect-square items-center justify-center overflow-hidden rounded-[14px] border border-white/8 bg-black/20">
-        {generating ? (
-          <div className="h-5 w-5 rounded-full border-2 border-accent border-t-transparent animate-spin" />
-        ) : src ? (
-          <img src={src} alt={label} className="h-full w-full object-cover" />
-        ) : (
-          <span className="text-[10px] text-text-muted">No default</span>
-        )}
+    <>
+      <div className="rounded-[16px] border border-white/8 bg-[rgba(24,30,45,0.46)] p-2">
+        <div className="mb-2 text-[10px] uppercase tracking-[0.2em] text-text-muted">{label}</div>
+        <button
+          type="button"
+          onClick={() => { if (src && !generating) setExpanded(true); }}
+          disabled={!src || generating}
+          className="flex aspect-square w-full items-center justify-center overflow-hidden rounded-[14px] border border-white/8 bg-black/20 transition-opacity enabled:cursor-pointer enabled:hover:opacity-80"
+        >
+          {generating ? (
+            <div className="h-5 w-5 rounded-full border-2 border-accent border-t-transparent animate-spin" />
+          ) : src ? (
+            <img src={src} alt={label} className="h-full w-full object-cover" />
+          ) : (
+            <span className="text-[10px] text-text-muted">No default</span>
+          )}
+        </button>
       </div>
-    </div>
+
+      {expanded && src && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80"
+          onClick={() => setExpanded(false)}
+        >
+          <div className="relative mx-8 max-h-[85vh] max-w-[85vw]" onClick={(e) => e.stopPropagation()}>
+            <img
+              src={src}
+              alt={label}
+              className="max-h-[85vh] max-w-[85vw] rounded-lg object-contain shadow-2xl"
+            />
+            <div className="absolute left-0 right-0 top-full mt-3 text-center">
+              <span className="rounded-full bg-black/60 px-3 py-1 text-[11px] uppercase tracking-[0.2em] text-text-muted backdrop-blur-sm">
+                {label}
+              </span>
+            </div>
+            <button
+              onClick={() => setExpanded(false)}
+              className="absolute -right-3 -top-3 flex h-7 w-7 items-center justify-center rounded-full border border-white/15 bg-bg-secondary text-sm text-text-muted transition-colors hover:text-text-primary"
+            >
+              &times;
+            </button>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
 

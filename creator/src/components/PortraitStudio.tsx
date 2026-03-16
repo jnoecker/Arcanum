@@ -85,7 +85,6 @@ export function PortraitStudio({ selectedZoneId }: { selectedZoneId: string | nu
   const [variants, setVariants] = useState<AssetEntry[]>([]);
   const [previewEntry, setPreviewEntry] = useState<AssetEntry | null>(null);
   const [generatingTemplate, setGeneratingTemplate] = useState(false);
-  const [generatingPrompt] = useState(false);
   const [generatingImage, setGeneratingImage] = useState(false);
   const [batchGenerating, setBatchGenerating] = useState<PortraitKind | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -441,10 +440,9 @@ export function PortraitStudio({ selectedZoneId }: { selectedZoneId: string | nu
               <div className="mt-4 flex flex-wrap gap-2">
                 <button
                   onClick={handleGeneratePrompt}
-                  disabled={generatingPrompt}
-                  className="rounded-full border border-white/10 bg-white/6 px-4 py-2 text-xs font-medium text-text-primary transition enabled:hover:bg-white/10 disabled:opacity-50"
+                  className="rounded-full border border-white/10 bg-white/6 px-4 py-2 text-xs font-medium text-text-primary transition hover:bg-white/10"
                 >
-                  {generatingPrompt ? "Generating prompt..." : "Generate prompt"}
+                  Generate prompt
                 </button>
                 <button
                   onClick={handleGenerateImage}

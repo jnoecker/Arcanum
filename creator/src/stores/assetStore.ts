@@ -20,7 +20,6 @@ interface AssetState {
   syncing: boolean;
   lastSyncResult: SyncProgress | null;
   batchProgress: BatchProgress | null;
-  batchAbortController: AbortController | null;
 
   loadSettings: () => Promise<void>;
   saveSettings: (settings: Settings) => Promise<void>;
@@ -64,7 +63,6 @@ export const useAssetStore = create<AssetState>((set, get) => ({
   syncing: false,
   lastSyncResult: null,
   batchProgress: null,
-  batchAbortController: null,
 
   loadSettings: async () => {
     const settings = await invoke<Settings>("get_settings");
@@ -152,8 +150,7 @@ export const useAssetStore = create<AssetState>((set, get) => ({
   },
 
   startBatch: (progress) => {
-    const controller = new AbortController();
-    set({ batchProgress: progress, batchAbortController: controller });
+    set({ batchProgress: progress });
   },
 
   updateBatch: (update) => {
@@ -164,12 +161,11 @@ export const useAssetStore = create<AssetState>((set, get) => ({
   },
 
   abortBatch: () => {
-    get().batchAbortController?.abort();
-    set({ batchAbortController: null });
+    set({ batchProgress: null });
   },
 
   clearBatch: () => {
-    set({ batchProgress: null, batchAbortController: null });
+    set({ batchProgress: null });
   },
 
   setArtStyle: (artStyle) => set({ artStyle }),

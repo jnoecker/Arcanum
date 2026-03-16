@@ -222,8 +222,10 @@ fn detect_content_type(file_name: &str) -> &'static str {
         "audio/flac"
     } else if file_name.ends_with(".wav") {
         "audio/wav"
-    } else {
+    } else if file_name.ends_with(".png") {
         "image/png"
+    } else {
+        "application/octet-stream"
     }
 }
 

@@ -78,7 +78,7 @@ export function WelcomeScreen({ onNewProject }: WelcomeScreenProps) {
               <div>
                 <h2 className="font-display text-2xl text-text-primary">Enter the studio</h2>
                 <p className="mt-2 text-sm leading-7 text-text-secondary">
-                  Start a new world, reopen the canonical project, or hydrate from R2.
+                  Start a new world, open an existing project, or import from R2.
                 </p>
               </div>
               {recentProjects[0] && (
@@ -98,7 +98,7 @@ export function WelcomeScreen({ onNewProject }: WelcomeScreenProps) {
                 className="rounded-[22px] border border-[rgba(168,151,210,0.45)] bg-[linear-gradient(135deg,rgba(168,151,210,0.34),rgba(140,174,201,0.22))] px-5 py-4 text-left text-sm font-medium text-text-primary transition hover:-translate-y-0.5 hover:shadow-[0_14px_34px_rgba(137,155,214,0.28)]"
               >
                 <div>Create new project</div>
-                <div className="mt-1 text-xs font-normal text-text-secondary">Start a fresh canonical world workspace.</div>
+                <div className="mt-1 text-xs font-normal text-text-secondary">Set up a new world from scratch.</div>
               </button>
               <button
                 onClick={handleOpen}
@@ -112,7 +112,7 @@ export function WelcomeScreen({ onNewProject }: WelcomeScreenProps) {
                 className="rounded-[22px] border border-white/10 bg-black/12 px-5 py-4 text-left text-sm font-medium text-text-primary transition hover:bg-white/10"
               >
                 <div>Import from R2</div>
-                <div className="mt-1 text-xs font-normal text-text-secondary">Hydrate a new local project from the deployed runtime.</div>
+                <div className="mt-1 text-xs font-normal text-text-secondary">Download and set up a world from your R2 deployment.</div>
               </button>
             </div>
           </div>

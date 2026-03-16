@@ -19,7 +19,7 @@ export function QuestTaxonomyDesigner({
   return (
     <div className="flex flex-col gap-6">
       <div className="rounded-[24px] border border-[rgba(184,216,232,0.14)] bg-[linear-gradient(145deg,rgba(92,106,147,0.18),rgba(42,51,79,0.22))] px-5 py-4 text-sm leading-7 text-text-secondary">
-        Quest objective and completion IDs are used directly by zone quest data. This pass keeps editing safe by supporting add, search, edit, and delete within config, but it does not expose rename actions until those changes can cascade through quest files automatically.
+        Objective and completion type IDs are referenced by zone quest data. Renaming is not yet supported — add, edit, or delete types here.
       </div>
 
       <DefinitionWorkbench
@@ -42,7 +42,7 @@ export function QuestTaxonomyDesigner({
       <DefinitionWorkbench
         title="Completion type designer"
         countLabel="Completion types"
-        description="Tune how quests resolve so authors can choose between automatic, turn-in, and future completion flows cleanly."
+        description="How quests are turned in and completed."
         addPlaceholder="New completion type id"
         searchPlaceholder="Search completion types"
         emptyMessage="No completion types match the current search."

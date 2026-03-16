@@ -25,22 +25,22 @@ const WORLD_SYSTEM_VIEWS: Array<{
     id: "overview",
     label: "Overview",
     eyebrow: "Map",
-    title: "Move through world rules by domain instead of by tab strip.",
+    title: "All world rules, grouped by domain.",
     description: "World rules grouped by domain.",
   },
   {
     id: "world",
     label: "World & Server",
     eyebrow: "Foundation",
-    title: "Shape startup, entry points, and server behavior together.",
+    title: "World resources, start rooms, and server settings.",
     description: "World references, start rooms, server ports, and runtime behavior.",
   },
   {
     id: "combat",
     label: "Combat Loop",
     eyebrow: "Conflict",
-    title: "Tune encounter pacing, mob tiers, and survivability in one pass.",
-    description: "Combat flow, mob scaling, and regeneration all contribute to encounter feel and need to be reviewed side by side.",
+    title: "Combat loop, mob tiers, and recovery.",
+    description: "Combat pacing, creature scaling, and regeneration.",
   },
   {
     id: "progression",
@@ -54,7 +54,7 @@ const WORLD_SYSTEM_VIEWS: Array<{
     label: "Travel & Commands",
     eyebrow: "Flow",
     title: "Movement, recall, and commands.",
-    description: "Navigation rules and the commands that expose them are one player-facing conversation, not separate maintenance chores.",
+    description: "Movement, recall rules, and player commands.",
   },
   {
     id: "economy",
@@ -134,7 +134,7 @@ export function WorldSystemsStudio({
             <div className="rounded-[22px] border border-white/10 bg-black/12 p-4">
               <div className="text-[11px] uppercase tracking-[0.24em] text-text-muted">Abilities</div>
               <div className="mt-2 font-display text-3xl text-text-primary">{abilityCount}</div>
-              <div className="mt-2 text-xs text-text-secondary">Current balancing vocabulary</div>
+              <div className="mt-2 text-xs text-text-secondary">Defined abilities</div>
             </div>
           </section>
 
@@ -192,14 +192,14 @@ export function WorldSystemsStudio({
           <StudioSection
             kicker="Creature scaling"
             title="Mob tiers"
-            description="Tier baselines sit next to the combat loop so PvE tuning doesn’t fragment across multiple screens."
+            description="Baseline stats for each mob difficulty tier."
           >
             <MobTiersPanel config={config} onChange={onChange} />
           </StudioSection>
           <StudioSection
             kicker="Recovery"
             title="Regen cadence"
-            description="Health and mana recovery influence encounter tempo and downtime as much as raw combat numbers do."
+            description="HP and mana recovery rates."
           >
             <RegenPanel config={config} onChange={onChange} />
           </StudioSection>
@@ -211,7 +211,7 @@ export function WorldSystemsStudio({
           <StudioSection
             kicker="Level curve"
             title="Progression rewards"
-            description="Level milestones, XP pacing, and baseline HP or mana should be reviewed before class and ability balancing."
+            description="Level curve, XP pacing, and baseline HP and mana scaling."
           >
             <ProgressionPanel config={config} onChange={onChange} />
           </StudioSection>
@@ -249,14 +249,14 @@ export function WorldSystemsStudio({
           <StudioSection
             kicker="Money loop"
             title="Economy tuning"
-            description="Buy and sell pressure define how quickly value circulates through the world and should anchor the crafting loop beside it."
+            description="Gold sinks, buy/sell ratios, and shop behavior."
           >
             <EconomyPanel config={config} onChange={onChange} />
           </StudioSection>
           <StudioSection
             kicker="Production loop"
             title="Crafting and gathering"
-            description="Gathering pace, skill mastery, station types, and discipline lists all live in this single production workspace."
+            description="Gathering, skill leveling, station types, and crafting disciplines."
           >
             <CraftingStudio config={config} onChange={onChange} />
           </StudioSection>

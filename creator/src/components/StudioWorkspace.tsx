@@ -307,7 +307,7 @@ export function StudioWorkspace() {
                   <p className="text-[11px] uppercase tracking-[0.35em] text-text-muted">Surreal Gentle Magic</p>
                   <h1 className="mt-3 font-display text-3xl leading-[1.04] text-text-primary lg:text-[2.6rem]">Build the world.</h1>
                   <p className="mt-3 max-w-xl text-sm leading-7 text-text-secondary">
-                    Pick a surface, stay in that mode, and keep moving.
+                    Generate art, tune systems, and publish your world.
                   </p>
                   <div className="mt-5 grid gap-3 sm:grid-cols-2">
                     {quickActions.map((action) => (

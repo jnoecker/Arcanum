@@ -125,12 +125,12 @@ export function RuntimeHandoffStudio() {
   const [runningAll, setRunningAll] = useState(false);
   const [workflowMessage, setWorkflowMessage] = useState<string | null>(null);
   const [steps, setSteps] = useState<Record<StepKey, StepState>>({
-    save: { status: "idle", detail: "Flush config and dirty zones to the canonical world folder.", errors: [] },
+    save: { status: "idle", detail: "Save config and unsaved zones to the project folder.", errors: [] },
     validate: { status: "idle", detail: "Run config and zone validation before publishing.", errors: [] },
-    export: { status: "idle", detail: "Optional local runtime export for a checked-out MUD.", errors: [] },
-    assets: { status: "idle", detail: "Push curated gallery assets to R2.", errors: [] },
-    globals: { status: "idle", detail: "Publish explicit global asset keys used by the client.", errors: [] },
-    sprites: { status: "idle", detail: "Publish player sprite sheets from the sprite manager.", errors: [] },
+    export: { status: "idle", detail: "Export a server bundle to a local MUD directory.", errors: [] },
+    assets: { status: "idle", detail: "Upload approved gallery assets to R2.", errors: [] },
+    globals: { status: "idle", detail: "Upload global asset files to R2.", errors: [] },
+    sprites: { status: "idle", detail: "Upload player sprite files to R2.", errors: [] },
     config: { status: "idle", detail: "Upload runtime config to R2.", errors: [] },
     zones: { status: "idle", detail: "Upload zone YAML files to R2.", errors: [] },
   });
@@ -183,7 +183,7 @@ export function RuntimeHandoffStudio() {
       const result = await saveWorkspace(project);
       const details: string[] = [];
       details.push(result.configSaved || result.resourcesUpdated ? "config saved" : "config already current");
-      details.push(`${result.savedZones.length} zone${result.savedZones.length !== 1 ? "s" : ""} flushed`);
+      details.push(`${result.savedZones.length} zone${result.savedZones.length !== 1 ? "s" : ""} saved`);
       setStepState("save", {
         status: "success",
         detail: details.join(" | "),
@@ -397,7 +397,7 @@ export function RuntimeHandoffStudio() {
       await runSaveStep();
       const summary = await runValidateStep(true);
       if (summary.errorCount > 0) {
-        setWorkflowMessage("Stopped after validation errors. Fix them, then rerun handoff.");
+        setWorkflowMessage("Stopped after validation errors. Fix them, then try again.");
         return;
       }
 
@@ -420,7 +420,7 @@ export function RuntimeHandoffStudio() {
   if (!project || !config) {
     return (
       <div className="rounded-[24px] border border-white/10 bg-black/10 p-5 text-sm text-text-secondary">
-        Open a world project before using runtime handoff.
+        Open a world project before using the deployment pipeline.
       </div>
     );
   }
@@ -431,7 +431,7 @@ export function RuntimeHandoffStudio() {
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <p className="text-[11px] uppercase tracking-[0.32em] text-text-muted">Handoff</p>
-            <h3 className="mt-2 font-display text-2xl text-text-primary">Canonical world to live runtime</h3>
+            <h3 className="mt-2 font-display text-2xl text-text-primary">Publish to live server</h3>
             <p className="mt-2 max-w-3xl text-sm leading-6 text-text-secondary">
               Save, validate, export, publish, and deploy.
             </p>
@@ -442,7 +442,7 @@ export function RuntimeHandoffStudio() {
               disabled={runningAll}
               className="rounded-full border border-[rgba(168,151,210,0.35)] bg-[linear-gradient(135deg,rgba(168,151,210,0.26),rgba(140,174,201,0.18))] px-4 py-2 text-xs font-medium text-text-primary transition hover:-translate-y-0.5 hover:shadow-[0_10px_26px_rgba(137,155,214,0.24)] disabled:cursor-not-allowed disabled:opacity-40"
             >
-              {runningAll ? "Running handoff..." : "Run full handoff"}
+              {runningAll ? "Publishing..." : "Publish all"}
             </button>
             <button
               onClick={openValidationResults}
@@ -455,7 +455,7 @@ export function RuntimeHandoffStudio() {
 
         <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
           <div className="rounded-[18px] border border-white/10 bg-black/10 p-3">
-            <p className="text-[10px] uppercase tracking-[0.24em] text-text-muted">Canonical world</p>
+            <p className="text-[10px] uppercase tracking-[0.24em] text-text-muted">Project</p>
             <p className="mt-2 text-sm text-text-primary">{project.mudDir}</p>
             <p className="mt-2 text-xs text-text-secondary">
               {zones.size} loaded zone{zones.size !== 1 ? "s" : ""} | {dirtyZones} dirty
@@ -489,8 +489,8 @@ export function RuntimeHandoffStudio() {
 
       <div className="grid gap-4 xl:grid-cols-2">
         <StepCard
-          title="1. Save canonical world"
-          description="Flush the in-memory world back to the project folder and keep `world.resources` explicit."
+          title="1. Save project"
+          description="Save all config and zone data to the project folder."
           state={steps.save}
           actionLabel="Save world"
           onAction={runSaveStep}
@@ -506,7 +506,7 @@ export function RuntimeHandoffStudio() {
 
         <StepCard
           title="3. Export runtime bundle"
-          description="Write a full `application.yaml` plus `world/*.yaml` into a checked-out MUD repo when you want a local boot target."
+          description="Export a complete server bundle to a local MUD directory."
           state={steps.export}
           actionLabel="Export runtime bundle"
           onAction={runExportStep}
@@ -530,7 +530,7 @@ export function RuntimeHandoffStudio() {
 
         <StepCard
           title="4. Publish curated assets"
-          description="Push approved art and media variants to R2 so runtime config points at real published objects."
+          description="Upload approved art and media to R2."
           state={steps.assets}
           actionLabel="Sync curated assets"
           disabled={!hasR2}
@@ -551,7 +551,7 @@ export function RuntimeHandoffStudio() {
 
         <StepCard
           title="5. Publish explicit global assets"
-          description="Upload the registered `ambonmud.images.globalAssets` files so the client does not fall back to missing defaults."
+          description="Upload global asset files to R2."
           state={steps.globals}
           actionLabel="Publish globals"
           disabled={!hasR2}
@@ -578,7 +578,7 @@ export function RuntimeHandoffStudio() {
 
         <StepCard
           title="8. Deploy zone YAML"
-          description="Upload the normalized zone files after the canonical world folder is saved."
+          description="Upload zone files to R2."
           state={steps.zones}
           actionLabel="Deploy zones"
           disabled={!hasR2}

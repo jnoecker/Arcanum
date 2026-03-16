@@ -14,22 +14,22 @@ const OPERATIONS_VIEWS: Array<{
     id: "overview",
     label: "Overview",
     eyebrow: "Ops",
-    title: "Keep external providers and runtime delivery behind a dedicated shell.",
-    description: "Operations work is now separate from world design, with focused views for credentials and deployment handoff.",
+    title: "Provider credentials and deployment pipeline.",
+    description: "Manage external services and publish your world.",
   },
   {
     id: "services",
     label: "Services",
     eyebrow: "Providers",
     title: "Manage image, LLM, and CDN credentials.",
-    description: "Keep provider settings separate from world editing.",
+    description: "API keys for image generation, LLM, and CDN.",
   },
   {
     id: "delivery",
     label: "Handoff",
     eyebrow: "Handoff",
     title: "Save, validate, publish, and deploy.",
-    description: "Save the canonical world, validate it, export a runtime bundle, and publish the exact files the live MUD expects.",
+    description: "Save, validate, export, and publish your world to the live server.",
   },
 ];
 
@@ -100,7 +100,7 @@ export function OperationsStudio({
 
       {activeView === "delivery" && (
         <div className="grid gap-6">
-          <StudioSection kicker="Delivery" title="Runtime credentials" description="Keep CDN credentials and public delivery URLs here.">
+          <StudioSection kicker="Delivery" title="Runtime credentials" description="CDN credentials and public delivery URLs.">
             <ApiSettingsPanel initialSection="delivery" showDeploymentActions={false} />
           </StudioSection>
           <RuntimeHandoffStudio />

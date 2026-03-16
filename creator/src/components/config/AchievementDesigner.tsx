@@ -21,7 +21,7 @@ export function AchievementDesigner({
       <DefinitionWorkbench
         title="Achievement category designer"
         countLabel="Achievement categories"
-        description="Shape the top-level buckets players read when they scan the achievement system."
+        description="Top-level groupings for the achievement system."
         addPlaceholder="New category id"
         searchPlaceholder="Search categories"
         emptyMessage="No categories match the current search."
@@ -38,7 +38,7 @@ export function AchievementDesigner({
       <DefinitionWorkbench
         title="Criterion type designer"
         countLabel="Criterion types"
-        description="Define the verbs and progress formats that achievement tracking can speak."
+        description="Progress tracking types and display formats."
         addPlaceholder="New criterion type id"
         searchPlaceholder="Search criterion types"
         emptyMessage="No criterion types match the current search."

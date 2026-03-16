@@ -415,7 +415,9 @@ export function buildCustomAssetPrompt(
   const formatSpec = getFormatForAssetType(assetType);
   const vibeSection = zoneVibe
     ? `Zone atmosphere: ${zoneVibe}`
-    : "Zone atmosphere: softly magical, cohesive with the Surreal Gentle Magic palette and mood.";
+    : style === "arcanum"
+      ? "Zone atmosphere: cosmic and baroque, cohesive with the Arcanum palette and mood."
+      : "Zone atmosphere: softly magical, cohesive with the Surreal Gentle Magic palette and mood.";
 
   if (style === "gentle_magic") {
     return `${formatSpec}. ${GENTLE_MAGIC_PREAMBLE}
@@ -454,7 +456,7 @@ export function composePrompt(
  * and fixing common formatting issues (e.g. unescaped newlines in strings).
  */
 export function parseLlmJson<T = Record<string, unknown>>(raw: string, label = "LLM"): T {
-  let text = raw.replace(/^```(?:json)?\s*\n?/i, "").replace(/\n?```\s*$/i, "").trim();
+  let text = raw.trim().replace(/^```(?:json)?\s*\n?/i, "").replace(/\n?```\s*$/i, "").trim();
   // Fix unescaped newlines inside JSON string values
   text = text.replace(/(?<=:\s*"(?:[^"\\]|\\.)*?)(\r?\n)(?=[^"]*")/g, "\\n");
   try {

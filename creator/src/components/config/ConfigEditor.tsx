@@ -150,10 +150,11 @@ export function ConfigEditor() {
 
   const handleChange = useCallback(
     (patch: Partial<AppConfig>) => {
-      if (!config) return;
-      updateConfig({ ...config, ...patch });
+      const current = useConfigStore.getState().config;
+      if (!current) return;
+      updateConfig({ ...current, ...patch });
     },
-    [config, updateConfig],
+    [updateConfig],
   );
 
   const handleSave = useCallback(async () => {

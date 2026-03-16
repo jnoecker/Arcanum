@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
 import { useAssetStore } from "@/stores/assetStore";
@@ -150,6 +150,8 @@ function VariantCard({ entry, assetsDir, onClick }: { entry: AssetEntry; assetsD
 }
 
 export function ZoneAssetWorkbench({ zoneId, world, onWorldChange }: ZoneAssetWorkbenchProps) {
+  const worldRef = useRef(world);
+  worldRef.current = world;
   const settings = useAssetStore((s) => s.settings);
   const artStyle = useAssetStore((s) => s.artStyle);
   const acceptAsset = useAssetStore((s) => s.acceptAsset);
@@ -280,12 +282,13 @@ export function ZoneAssetWorkbench({ zoneId, world, onWorldChange }: ZoneAssetWo
 
   const persistImageSelection = useCallback((fileName: string) => {
     if (!selectedTarget) return;
+    const current = worldRef.current;
     if (selectedTarget.mode === "default") {
-      onWorldChange(updateDefaultImage(world, selectedTarget.kind, fileName));
+      onWorldChange(updateDefaultImage(current, selectedTarget.kind, fileName));
       return;
     }
-    onWorldChange(updateEntityImage(world, selectedTarget.entity, fileName));
-  }, [onWorldChange, selectedTarget, world]);
+    onWorldChange(updateEntityImage(current, selectedTarget.entity, fileName));
+  }, [onWorldChange, selectedTarget]);
 
   const runGeneration = useCallback(async (prompt: string, activate: boolean) => {
     if (!selectedTarget || !selectedKind || !defaultModel) return null;

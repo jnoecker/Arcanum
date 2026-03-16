@@ -5,6 +5,7 @@ import type { ConfigPanelProps } from "./types";
 import { Section } from "@/components/ui/FormWidgets";
 import { useImageSrc } from "@/lib/useImageSrc";
 import { useAssetStore } from "@/stores/assetStore";
+import { useConfigStore } from "@/stores/configStore";
 import { AssetPickerModal } from "@/components/ui/AssetPickerModal";
 import type { SyncProgress } from "@/types/assets";
 
@@ -83,17 +84,21 @@ export function GlobalAssetsPanel({ config, onChange }: ConfigPanelProps) {
       filters: [{ name: "Images", extensions: ["png", "jpg", "jpeg", "webp"] }],
     });
     if (!selected) return;
+    const filePath = Array.isArray(selected) ? selected[0] : selected;
+    if (!filePath) return;
     const entry = await importAsset(
-      selected as string,
+      filePath,
       "background",
       { zone: "", entity_type: "global_asset", entity_id: key },
       `custom:global:${key}`,
       true,
     );
     if (entry) {
-      updateAssets({ ...assets, [key]: entry.file_name });
+      const latest = useConfigStore.getState().config;
+      const currentAssets = latest?.globalAssets ?? {};
+      onChange({ globalAssets: { ...currentAssets, [key]: entry.file_name } });
     }
-  }, [assets, importAsset]);
+  }, [importAsset, onChange]);
 
   const sortedEntries = Object.entries(assets).sort(([a], [b]) =>
     a.localeCompare(b),

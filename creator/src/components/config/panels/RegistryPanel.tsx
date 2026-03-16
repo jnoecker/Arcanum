@@ -48,14 +48,15 @@ export function RegistryPanel<T>({
   const [renameValue, setRenameValue] = useState("");
 
   const filteredIds = useMemo(() => {
-    if (!search.trim() || !getDisplayName) return allIds;
+    const ids = Object.keys(items);
+    if (!search.trim() || !getDisplayName) return ids;
     const q = search.toLowerCase();
-    return allIds.filter(
+    return ids.filter(
       (id) =>
         id.toLowerCase().includes(q) ||
         getDisplayName(items[id]!).toLowerCase().includes(q),
     );
-  }, [items, search, allIds, getDisplayName]);
+  }, [items, search, getDisplayName]);
 
   const patch = useCallback(
     (id: string, p: Partial<T>) => {
@@ -170,10 +171,13 @@ export function RegistryPanel<T>({
                               value={renameValue}
                               onChange={(e) => setRenameValue(e.target.value)}
                               onKeyDown={(e) => {
-                                if (e.key === "Enter" && renameValue.trim() && renameValue.trim() !== id && !items[renameValue.trim()]) {
-                                  onRenameId(id, renameValue.trim());
-                                  setExpanded(renameValue.trim());
-                                  setRenaming(null);
+                                if (e.key === "Enter") {
+                                  const nid = idTransform(renameValue);
+                                  if (nid && nid !== id && !items[nid]) {
+                                    onRenameId(id, nid);
+                                    setExpanded(nid);
+                                    setRenaming(null);
+                                  }
                                 }
                                 if (e.key === "Escape") setRenaming(null);
                               }}
@@ -182,7 +186,7 @@ export function RegistryPanel<T>({
                             />
                             <button
                               onClick={() => {
-                                const nid = renameValue.trim();
+                                const nid = idTransform(renameValue);
                                 if (nid && nid !== id && !items[nid]) {
                                   onRenameId(id, nid);
                                   setExpanded(nid);

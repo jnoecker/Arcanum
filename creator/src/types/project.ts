@@ -53,7 +53,6 @@ export type StudioSubView =
   | "abilities";
 
 export type WorldSystemsSubView =
-  | "overview"
   | "world"
   | "combat"
   | "progression"
@@ -62,13 +61,11 @@ export type WorldSystemsSubView =
   | "social";
 
 export type ContentStudioSubView =
-  | "overview"
   | "achievements"
   | "quests"
   | "assets";
 
 export type OperationsSubView =
-  | "overview"
   | "services"
   | "delivery";
 

@@ -194,7 +194,6 @@ export function ConfigEditor() {
       return {
         active: worldSystemsSubView,
         items: [
-          { id: "overview", label: "Overview" },
           { id: "world", label: "World & Server" },
           { id: "combat", label: "Combat Loop" },
           { id: "progression", label: "Progression & Stats" },
@@ -209,7 +208,6 @@ export function ConfigEditor() {
       return {
         active: contentStudioSubView,
         items: [
-          { id: "overview", label: "Overview" },
           { id: "achievements", label: "Achievements" },
           { id: "quests", label: "Quest Taxonomy" },
           { id: "assets", label: "Shared Assets" },
@@ -221,9 +219,8 @@ export function ConfigEditor() {
       return {
         active: operationsSubView,
         items: [
-          { id: "overview", label: "Overview" },
           { id: "services", label: "Services" },
-          { id: "delivery", label: "Handoff" },
+          { id: "delivery", label: "Deployment" },
         ],
         onChange: (id: string) => setOperationsSubView(id as typeof operationsSubView),
       };
@@ -406,7 +403,6 @@ export function ConfigEditor() {
               config={config}
               onChange={handleChange}
               activeView={worldSystemsSubView}
-              onViewChange={setWorldSystemsSubView}
             />
           )}
 
@@ -415,14 +411,12 @@ export function ConfigEditor() {
               config={config}
               onChange={handleChange}
               activeView={contentStudioSubView}
-              onViewChange={setContentStudioSubView}
             />
           )}
 
           {activeWorkspace === "operations" && (
             <OperationsStudio
               activeView={operationsSubView}
-              onViewChange={setOperationsSubView}
             />
           )}
 

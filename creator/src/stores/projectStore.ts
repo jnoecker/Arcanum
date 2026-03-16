@@ -61,9 +61,9 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
   characterStudioSubView: "classes",
   abilityStudioSubView: "stats",
   studioSubView: "home",
-  worldSystemsSubView: "overview",
-  contentStudioSubView: "overview",
-  operationsSubView: "overview",
+  worldSystemsSubView: "world",
+  contentStudioSubView: "achievements",
+  operationsSubView: "services",
   pendingNavigation: null,
 
   setProject: (project) =>
@@ -75,9 +75,9 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
       characterStudioSubView: "classes",
       abilityStudioSubView: "stats",
       studioSubView: "home",
-      worldSystemsSubView: "overview",
-      contentStudioSubView: "overview",
-      operationsSubView: "overview",
+      worldSystemsSubView: "world",
+      contentStudioSubView: "achievements",
+      operationsSubView: "services",
     }),
 
   closeProject: () =>

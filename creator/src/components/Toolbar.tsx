@@ -88,97 +88,101 @@ export function Toolbar() {
   };
 
   return (
-    <div className="relative z-10 flex h-20 shrink-0 items-center gap-4 px-4 py-4">
-      <img
-        src={toolbarBg}
-        alt=""
-        className="pointer-events-none absolute inset-x-4 top-4 h-[calc(100%-1rem)] w-[calc(100%-2rem)] rounded-[32px] object-cover opacity-[0.08]"
-        style={{ objectPosition: "center center" }}
-      />
-      <div className="flex min-w-0 flex-1 items-center justify-between rounded-[32px] border border-white/10 bg-[linear-gradient(155deg,rgba(50,60,88,0.84),rgba(38,47,71,0.9))] px-6 py-4 shadow-[0_18px_56px_rgba(8,10,18,0.32)] backdrop-blur-xl">
-        <div className="min-w-0">
-          <p className="text-[11px] uppercase tracking-[0.34em] text-text-muted">
-            Ambon Creator
-          </p>
-          <div className="mt-1 flex min-w-0 items-center gap-3">
-            <span className="truncate font-display text-2xl text-text-primary">
-              {project?.name ?? "No world open"}
-            </span>
-            {project?.mudDir && (
-              <span className="truncate text-xs text-text-secondary">
-                {project.mudDir}
+    <>
+      <div className="relative z-10 flex h-20 shrink-0 items-center gap-4 px-4 py-4">
+        <img
+          src={toolbarBg}
+          alt=""
+          className="pointer-events-none absolute inset-x-4 top-4 h-[calc(100%-1rem)] w-[calc(100%-2rem)] rounded-[32px] object-cover opacity-[0.08]"
+          style={{ objectPosition: "center center" }}
+        />
+        <div className="flex min-w-0 flex-1 items-center justify-between rounded-[32px] border border-white/10 bg-[linear-gradient(155deg,rgba(50,60,88,0.84),rgba(38,47,71,0.9))] px-6 py-4 shadow-[0_18px_56px_rgba(8,10,18,0.32)] backdrop-blur-xl">
+          <div className="min-w-0">
+            <p className="text-[11px] uppercase tracking-[0.34em] text-text-muted">
+              Ambon Creator
+            </p>
+            <div className="mt-1 flex min-w-0 items-center gap-3">
+              <span className="truncate font-display text-2xl text-text-primary">
+                {project?.name ?? "No world open"}
               </span>
-            )}
-          </div>
-        </div>
-
-        <div className="ml-6 flex shrink-0 items-center gap-2">
-          {!isStandalone && (
-            <>
-              <div className="mr-2 flex items-center gap-2 rounded-full border border-white/10 bg-black/10 px-3 py-2">
-                <div className={`h-2.5 w-2.5 rounded-full ${STATUS_COLORS[status]} ${status === "running" ? "animate-aurum-pulse" : ""} ${status === "error" ? "animate-crimson-pulse" : ""}`} />
-                <span className="text-xs uppercase tracking-[0.18em] text-text-secondary">
-                  {STATUS_LABELS[status]}
+              {project?.mudDir && (
+                <span className="truncate text-xs text-text-secondary">
+                  {project.mudDir}
                 </span>
-              </div>
-              <button onClick={handleStart} disabled={status !== "stopped" && status !== "error"} className="rounded-full border border-white/10 bg-black/10 px-4 py-2 text-xs font-medium text-text-primary transition enabled:hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40">
-                Start
-              </button>
-              <button onClick={stopServer} disabled={status !== "running"} className="rounded-full border border-white/10 bg-black/10 px-4 py-2 text-xs font-medium text-text-primary transition enabled:hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40">
-                Stop
-              </button>
-              <button onClick={handleRestart} disabled={status !== "running"} className="rounded-full border border-white/10 bg-black/10 px-4 py-2 text-xs font-medium text-text-primary transition enabled:hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40">
-                Restart
-              </button>
-            </>
-          )}
+              )}
+            </div>
+          </div>
 
-          {isStandalone && (
+          <div className="ml-6 flex shrink-0 items-center gap-2">
+            {!isStandalone && (
+              <>
+                <div className="mr-2 flex items-center gap-2 rounded-full border border-white/10 bg-black/10 px-3 py-2">
+                  <div className={`h-2.5 w-2.5 rounded-full ${STATUS_COLORS[status]} ${status === "running" ? "animate-aurum-pulse" : ""} ${status === "error" ? "animate-crimson-pulse" : ""}`} />
+                  <span className="text-xs uppercase tracking-[0.18em] text-text-secondary">
+                    {STATUS_LABELS[status]}
+                  </span>
+                </div>
+                <button onClick={handleStart} disabled={status !== "stopped" && status !== "error"} className="rounded-full border border-white/10 bg-black/10 px-4 py-2 text-xs font-medium text-text-primary transition enabled:hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40">
+                  Start
+                </button>
+                <button onClick={stopServer} disabled={status !== "running"} className="rounded-full border border-white/10 bg-black/10 px-4 py-2 text-xs font-medium text-text-primary transition enabled:hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40">
+                  Stop
+                </button>
+                <button onClick={handleRestart} disabled={status !== "running"} className="rounded-full border border-white/10 bg-black/10 px-4 py-2 text-xs font-medium text-text-primary transition enabled:hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40">
+                  Restart
+                </button>
+              </>
+            )}
+
+            {isStandalone && (
+              <button
+                onClick={handleOpenHandoff}
+                disabled={!hasConfig}
+                className="rounded-full border border-white/10 bg-black/10 px-4 py-2 text-xs font-medium text-text-primary transition enabled:hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                Handoff
+              </button>
+            )}
+            <button onClick={() => setShowLegacyImport(true)} className="rounded-full border border-white/10 bg-black/10 px-4 py-2 text-xs font-medium text-text-primary transition hover:bg-white/10">
+              Import images
+            </button>
+            <button onClick={openGallery} className="rounded-full border border-white/10 bg-black/10 px-4 py-2 text-xs font-medium text-text-primary transition hover:bg-white/10">
+              Gallery
+            </button>
+            <button onClick={openGenerator} className="rounded-full border border-[rgba(168,151,210,0.35)] bg-[linear-gradient(135deg,rgba(168,151,210,0.26),rgba(140,174,201,0.18))] px-4 py-2 text-xs font-medium text-text-primary transition hover:-translate-y-0.5 hover:shadow-[0_10px_26px_rgba(137,155,214,0.24)]">
+              Generate art
+            </button>
             <button
-              onClick={handleOpenHandoff}
-              disabled={!hasConfig}
+              onClick={() => setShowDiff(true)}
+              disabled={(dirtyCount === 0 && !configDirty) || saving}
               className="rounded-full border border-white/10 bg-black/10 px-4 py-2 text-xs font-medium text-text-primary transition enabled:hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40"
             >
-              Handoff
+              {saving ? "Saving..." : dirtyCount > 0 || configDirty ? `Save all (${dirtyCount + (configDirty ? 1 : 0)})` : "Save all"}
             </button>
-          )}
-          <button onClick={() => setShowLegacyImport(true)} className="rounded-full border border-white/10 bg-black/10 px-4 py-2 text-xs font-medium text-text-primary transition hover:bg-white/10">
-            Import images
-          </button>
-          <button onClick={openGallery} className="rounded-full border border-white/10 bg-black/10 px-4 py-2 text-xs font-medium text-text-primary transition hover:bg-white/10">
-            Gallery
-          </button>
-          <button onClick={openGenerator} className="rounded-full border border-[rgba(168,151,210,0.35)] bg-[linear-gradient(135deg,rgba(168,151,210,0.26),rgba(140,174,201,0.18))] px-4 py-2 text-xs font-medium text-text-primary transition hover:-translate-y-0.5 hover:shadow-[0_10px_26px_rgba(137,155,214,0.24)]">
-            Generate art
-          </button>
-          <button
-            onClick={() => setShowDiff(true)}
-            disabled={(dirtyCount === 0 && !configDirty) || saving}
-            className="rounded-full border border-white/10 bg-black/10 px-4 py-2 text-xs font-medium text-text-primary transition enabled:hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40"
-          >
-            {saving ? "Saving..." : dirtyCount > 0 || configDirty ? `Save all (${dirtyCount + (configDirty ? 1 : 0)})` : "Save all"}
-          </button>
-          <button
-            onClick={() => {
-              const config = useConfigStore.getState().config;
-              const results = validateAllZones(zones, config?.equipmentSlots);
-              if (config) {
-                const configIssues = validateConfig(config);
-                if (configIssues.length > 0) {
-                  results.set("Config", configIssues);
+            <button
+              onClick={() => {
+                const config = useConfigStore.getState().config;
+                const results = validateAllZones(zones, config?.equipmentSlots);
+                if (config) {
+                  const configIssues = validateConfig(config);
+                  if (configIssues.length > 0) {
+                    results.set("Config", configIssues);
+                  }
                 }
-              }
-              setValidationResults(results);
-              openValidationPanel();
-            }}
-            disabled={zones.size === 0 && !hasConfig}
-            className="rounded-full border border-white/10 bg-black/10 px-4 py-2 text-xs font-medium text-text-primary transition enabled:hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40"
-          >
-            Validate
-          </button>
+                setValidationResults(results);
+                openValidationPanel();
+              }}
+              disabled={zones.size === 0 && !hasConfig}
+              className="rounded-full border border-white/10 bg-black/10 px-4 py-2 text-xs font-medium text-text-primary transition enabled:hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              Validate
+            </button>
+          </div>
         </div>
       </div>
 
+      {/* Modals rendered outside the toolbar's z-10 stacking context
+          so their fixed z-50 overlays appear above the content area */}
       <ValidationPanel />
 
       {showDiff && (
@@ -213,6 +217,6 @@ export function Toolbar() {
       {showLegacyImport && (
         <BatchLegacyImport onClose={() => setShowLegacyImport(false)} />
       )}
-    </div>
+    </>
   );
 }

@@ -120,6 +120,14 @@ export function ZoneVibePanel({ zoneId, world, onWorldChange }: ZoneVibePanelPro
     item: false,
   });
 
+  // Track which zone the spinners belong to so they don't leak across tabs
+  const generatingZoneRef = useRef(zoneId);
+
+  useEffect(() => {
+    generatingZoneRef.current = zoneId;
+    setGeneratingDefaults({ room: false, mob: false, item: false });
+  }, [zoneId]);
+
   useEffect(() => {
     loadVibe(zoneId).catch(() => {});
   }, [zoneId, loadVibe]);
@@ -148,6 +156,7 @@ export function ZoneVibePanel({ zoneId, world, onWorldChange }: ZoneVibePanelPro
   const generateDefault = useCallback(async (kind: DefaultImageKind, vibeText: string) => {
     if (!defaultModel) throw new Error(`No image model configured for provider ${imageProvider}.`);
 
+    const forZone = zoneId;
     const currentWorld = worldRef.current;
     setGeneratingDefaults((prev) => ({ ...prev, [kind]: true }));
     try {
@@ -188,7 +197,9 @@ export function ZoneVibePanel({ zoneId, world, onWorldChange }: ZoneVibePanelPro
       onWorldChange(updated);
       await loadAssets();
     } finally {
-      setGeneratingDefaults((prev) => ({ ...prev, [kind]: false }));
+      if (generatingZoneRef.current === forZone) {
+        setGeneratingDefaults((prev) => ({ ...prev, [kind]: false }));
+      }
     }
   }, [acceptAsset, artStyle, defaultModel, hasLlmKey, imageProvider, loadAssets, onWorldChange, zoneId]);
 

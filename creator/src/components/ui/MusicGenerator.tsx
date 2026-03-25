@@ -111,7 +111,7 @@ export function MusicGenerator({
 
   return (
     <div className="flex flex-col gap-1.5 rounded border border-border-default bg-bg-primary p-2">
-      <span className="text-[10px] font-medium uppercase tracking-wider text-text-muted">
+      <span className="text-2xs font-medium uppercase tracking-wider text-text-muted">
         {TRACK_LABELS[trackType]}
       </span>
 
@@ -120,20 +120,20 @@ export function MusicGenerator({
         onChange={(e) => setPrompt(e.target.value)}
         rows={2}
         placeholder={trackType === "ambient" ? "Describe the ambient soundscape..." : "Describe the music..."}
-        className="w-full resize-y rounded border border-border-default bg-bg-secondary px-2 py-1 font-mono text-[10px] leading-relaxed text-text-secondary placeholder:text-text-muted outline-none focus:border-accent/50"
+        className="w-full resize-y rounded border border-border-default bg-bg-secondary px-2 py-1 font-mono text-2xs leading-relaxed text-text-secondary placeholder:text-text-muted outline-none focus:border-accent/50"
       />
 
       <div className="flex items-center gap-2">
-        <label className="text-[10px] text-text-muted">Duration:</label>
+        <label className="text-2xs text-text-muted">Duration:</label>
         <input
           type="number"
           min={5}
           max={300}
           value={duration}
           onChange={(e) => setDuration(Number(e.target.value))}
-          className="w-16 rounded border border-border-default bg-bg-secondary px-1.5 py-0.5 text-[10px] text-text-secondary outline-none"
+          className="w-16 rounded border border-border-default bg-bg-secondary px-1.5 py-0.5 text-2xs text-text-secondary outline-none"
         />
-        <span className="text-[10px] text-text-muted">sec</span>
+        <span className="text-2xs text-text-muted">sec</span>
       </div>
 
       <div className="flex gap-1">
@@ -141,7 +141,7 @@ export function MusicGenerator({
           <button
             onClick={handleEnhancePrompt}
             disabled={enhancing}
-            className="rounded px-1.5 py-0.5 text-[10px] text-accent transition-colors hover:bg-accent/10 disabled:opacity-50"
+            className="rounded px-1.5 py-0.5 text-2xs text-accent transition-colors hover:bg-accent/10 disabled:opacity-50"
           >
             {enhancing ? "..." : "Auto-Prompt"}
           </button>
@@ -149,7 +149,7 @@ export function MusicGenerator({
         <button
           onClick={handleGenerate}
           disabled={generating || !prompt.trim()}
-          className="rounded bg-accent/15 px-2 py-0.5 text-[10px] font-medium text-accent transition-colors hover:bg-accent/25 disabled:opacity-50"
+          className="rounded bg-accent/15 px-2 py-0.5 text-2xs font-medium text-accent transition-colors hover:bg-accent/25 disabled:opacity-50"
         >
           {generating ? "Generating..." : trackType === "ambient" ? "Generate Ambient" : "Generate Music"}
         </button>
@@ -162,13 +162,13 @@ export function MusicGenerator({
             <div className="flex gap-1">
               <button
                 onClick={handleAccept}
-                className="rounded bg-accent/15 px-2 py-0.5 text-[10px] font-medium text-accent hover:bg-accent/25"
+                className="rounded bg-accent/15 px-2 py-0.5 text-2xs font-medium text-accent hover:bg-accent/25"
               >
                 Accept
               </button>
               <button
                 onClick={() => setResultPath(null)}
-                className="rounded px-2 py-0.5 text-[10px] text-text-muted hover:text-text-secondary"
+                className="rounded px-2 py-0.5 text-2xs text-text-muted hover:text-text-secondary"
               >
                 Reject
               </button>
@@ -178,7 +178,7 @@ export function MusicGenerator({
       )}
 
       {error && (
-        <p className="text-[10px] italic text-status-error">{error}</p>
+        <p className="text-2xs italic text-status-error">{error}</p>
       )}
     </div>
   );

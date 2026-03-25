@@ -5,6 +5,7 @@ import { stringify } from "yaml";
 import { useProjectStore } from "@/stores/projectStore";
 import { useZoneStore } from "@/stores/zoneStore";
 import { zoneFilePath } from "@/lib/projectPaths";
+import { useFocusTrap } from "@/lib/useFocusTrap";
 import type { WorldFile } from "@/types/world";
 
 const YAML_OPTS = {
@@ -28,6 +29,7 @@ export function NewZoneDialog({ onClose }: NewZoneDialogProps) {
   const [roomTitle, setRoomTitle] = useState("Entrance");
   const [error, setError] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
+  const trapRef = useFocusTrap<HTMLDivElement>(onClose);
 
   const trimmedId = zoneId.trim().toLowerCase().replace(/\s+/g, "_");
   const idValid = /^[a-z][a-z0-9_]*$/.test(trimmedId);
@@ -75,9 +77,9 @@ export function NewZoneDialog({ onClose }: NewZoneDialogProps) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-      <div className="mx-4 w-96 rounded-lg border border-border-default bg-bg-secondary shadow-xl">
+      <div ref={trapRef} role="dialog" aria-modal="true" aria-labelledby="new-zone-dialog-title" className="mx-4 w-96 rounded-lg border border-border-default bg-bg-secondary shadow-xl">
         <div className="border-b border-border-default px-5 py-3">
-          <h2 className="font-display text-sm tracking-wide text-text-primary">
+          <h2 id="new-zone-dialog-title" className="font-display text-sm tracking-wide text-text-primary">
             New Zone
           </h2>
         </div>
@@ -85,7 +87,7 @@ export function NewZoneDialog({ onClose }: NewZoneDialogProps) {
         <div className="flex flex-col gap-3 px-5 py-4">
           {/* Zone ID */}
           <div>
-            <label className="mb-1 block text-[10px] uppercase tracking-wider text-text-muted">
+            <label className="mb-1 block text-2xs uppercase tracking-wider text-text-muted">
               Zone ID
             </label>
             <input
@@ -97,12 +99,12 @@ export function NewZoneDialog({ onClose }: NewZoneDialogProps) {
               className="h-8 w-full rounded border border-border-default bg-bg-primary px-2 text-xs text-text-primary outline-none placeholder:text-text-muted focus:border-accent"
             />
             {zoneId && !idValid && (
-              <p className="mt-1 text-[10px] text-status-error">
+              <p className="mt-1 text-2xs text-status-error">
                 Must start with a letter, only lowercase letters, numbers, and underscores.
               </p>
             )}
             {idTaken && (
-              <p className="mt-1 text-[10px] text-status-error">
+              <p className="mt-1 text-2xs text-status-error">
                 Zone "{trimmedId}" already exists.
               </p>
             )}
@@ -110,7 +112,7 @@ export function NewZoneDialog({ onClose }: NewZoneDialogProps) {
 
           {/* Start Room ID */}
           <div>
-            <label className="mb-1 block text-[10px] uppercase tracking-wider text-text-muted">
+            <label className="mb-1 block text-2xs uppercase tracking-wider text-text-muted">
               Start Room ID
             </label>
             <input
@@ -124,7 +126,7 @@ export function NewZoneDialog({ onClose }: NewZoneDialogProps) {
 
           {/* Room Title */}
           <div>
-            <label className="mb-1 block text-[10px] uppercase tracking-wider text-text-muted">
+            <label className="mb-1 block text-2xs uppercase tracking-wider text-text-muted">
               Room Title
             </label>
             <input

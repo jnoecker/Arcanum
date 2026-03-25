@@ -318,7 +318,7 @@ export function PortraitStudio({ selectedZoneId }: { selectedZoneId: string | nu
   }
 
   return (
-    <section className="rounded-[28px] border border-white/10 bg-[linear-gradient(160deg,rgba(54,63,90,0.95),rgba(42,53,79,0.92))] p-5 shadow-[0_18px_50px_rgba(9,12,24,0.24)]">
+    <section className="rounded-[28px] border border-white/10 bg-gradient-panel p-5 shadow-[0_18px_50px_rgba(9,12,24,0.24)]">
       <div className="mb-5 flex items-center justify-between gap-4">
         <div>
           <h2 className="font-display text-xl text-text-primary">Portrait studio</h2>
@@ -360,7 +360,7 @@ export function PortraitStudio({ selectedZoneId }: { selectedZoneId: string | nu
               {(["race", "class"] as PortraitKind[]).map((kind) => (
                 <div key={kind} className="mb-4">
                   <div className="mb-2 flex items-center justify-between">
-                    <div className="text-[11px] uppercase tracking-[0.24em] text-text-muted">{kind === "race" ? "Races" : "Classes"}</div>
+                    <div className="text-[11px] uppercase tracking-ui text-text-muted">{kind === "race" ? "Races" : "Classes"}</div>
                     <div className="text-[11px] text-text-muted">{groupedTargets[kind].length}</div>
                   </div>
                   <div className="flex flex-col gap-2">
@@ -372,7 +372,7 @@ export function PortraitStudio({ selectedZoneId }: { selectedZoneId: string | nu
                           key={key}
                           onClick={() => setSelectedKey(key)}
                           className={`flex items-center gap-3 rounded-[18px] border px-3 py-3 text-left transition ${
-                            selected ? "border-[rgba(184,216,232,0.35)] bg-[linear-gradient(135deg,rgba(168,151,210,0.16),rgba(140,174,201,0.12))]" : "border-white/8 bg-black/10 hover:bg-white/8"
+                            selected ? "border-border-active bg-gradient-active" : "border-white/8 bg-black/10 hover:bg-white/8"
                           }`}
                         >
                           <span className={`h-2.5 w-2.5 rounded-full ${target.image ? "bg-status-success" : "bg-text-muted/50"}`} />
@@ -393,11 +393,11 @@ export function PortraitStudio({ selectedZoneId }: { selectedZoneId: string | nu
             <div className="rounded-[24px] border border-white/8 bg-black/12 p-4">
               <div className="mb-3 flex items-start justify-between gap-3">
                 <div>
-                  <div className="text-[11px] uppercase tracking-[0.24em] text-text-muted">{selectedTarget.kind}</div>
+                  <div className="text-[11px] uppercase tracking-ui text-text-muted">{selectedTarget.kind}</div>
                   <h3 className="mt-1 font-display text-2xl text-text-primary">{selectedTarget.label}</h3>
                   <div className="mt-1 text-xs text-text-secondary">{selectedTarget.id}</div>
                 </div>
-                <span className="rounded-full bg-white/8 px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-text-muted">{variants.length} variants</span>
+                <span className="rounded-full bg-white/8 px-3 py-1 text-[11px] uppercase tracking-label text-text-muted">{variants.length} variants</span>
               </div>
 
               <div className="flex min-h-[22rem] items-center justify-center overflow-hidden rounded-[20px] border border-white/8 bg-[linear-gradient(180deg,rgba(34,41,60,0.8),rgba(28,34,52,0.88))] p-4">
@@ -406,7 +406,7 @@ export function PortraitStudio({ selectedZoneId }: { selectedZoneId: string | nu
 
               {variants.length > 0 && (
                 <div className="mt-4">
-                  <div className="mb-2 text-[11px] uppercase tracking-[0.22em] text-text-muted">Variant strip</div>
+                  <div className="mb-2 text-[11px] uppercase tracking-ui text-text-muted">Variant strip</div>
                   <div className="flex gap-2 overflow-x-auto pb-1">
                     {variants.map((entry) => (
                       <VariantCard key={entry.id} entry={entry} assetsDir={assetsDir} onClick={() => handleVariantSelect(entry)} />
@@ -417,10 +417,10 @@ export function PortraitStudio({ selectedZoneId }: { selectedZoneId: string | nu
             </div>
 
             <div className="rounded-[24px] border border-white/8 bg-black/12 p-4">
-              <div className="mb-3 text-[11px] uppercase tracking-[0.22em] text-text-muted">Prompt engineering</div>
+              <div className="mb-3 text-[11px] uppercase tracking-ui text-text-muted">Prompt engineering</div>
               {vibe && (
-                <div className="mb-3 rounded-[18px] border border-white/8 bg-[rgba(24,30,45,0.46)] px-4 py-3">
-                  <div className="text-[11px] uppercase tracking-[0.2em] text-text-muted">Portrait vibe context</div>
+                <div className="mb-3 rounded-[18px] border border-white/8 bg-surface-scrim-light px-4 py-3">
+                  <div className="text-[11px] uppercase tracking-ui text-text-muted">Portrait vibe context</div>
                   <div className="mt-2 whitespace-pre-wrap text-xs leading-6 text-text-secondary">{vibe}</div>
                 </div>
               )}
@@ -428,12 +428,12 @@ export function PortraitStudio({ selectedZoneId }: { selectedZoneId: string | nu
                 value={promptDraft}
                 onChange={(event) => setPromptDraft(event.target.value)}
                 rows={14}
-                className="w-full resize-y rounded-[20px] border border-white/10 bg-[rgba(24,30,45,0.72)] px-4 py-3 font-mono text-[12px] leading-6 text-text-secondary outline-none transition focus:border-[rgba(184,216,232,0.3)]"
+                className="w-full resize-y rounded-[20px] border border-white/10 bg-surface-scrim px-4 py-3 font-mono text-[12px] leading-6 text-text-secondary outline-none transition focus:border-border-active"
                 placeholder="Generate a portrait prompt..."
               />
 
-              <div className="mt-3 rounded-[18px] border border-white/8 bg-[rgba(24,30,45,0.46)] px-4 py-3">
-                <div className="text-[11px] uppercase tracking-[0.2em] text-text-muted">Portrait context</div>
+              <div className="mt-3 rounded-[18px] border border-white/8 bg-surface-scrim-light px-4 py-3">
+                <div className="text-[11px] uppercase tracking-ui text-text-muted">Portrait context</div>
                 <div className="mt-2 whitespace-pre-wrap text-xs leading-6 text-text-secondary">{selectedTarget.context}</div>
               </div>
 
@@ -447,7 +447,7 @@ export function PortraitStudio({ selectedZoneId }: { selectedZoneId: string | nu
                 <button
                   onClick={handleGenerateImage}
                   disabled={!hasImageKey || !promptDraft.trim() || generatingImage}
-                  className="rounded-full border border-[rgba(168,151,210,0.35)] bg-[linear-gradient(135deg,rgba(168,151,210,0.22),rgba(140,174,201,0.14))] px-4 py-2 text-xs font-medium text-text-primary transition enabled:hover:-translate-y-0.5 disabled:opacity-50"
+                  className="rounded-full border border-[rgba(168,151,210,0.35)] bg-gradient-active-strong px-4 py-2 text-xs font-medium text-text-primary transition enabled:hover:-translate-y-0.5 disabled:opacity-50"
                 >
                   {generatingImage ? "Generating image..." : "Generate image"}
                 </button>

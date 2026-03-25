@@ -141,7 +141,7 @@ export function GatheringNodeEditor({
                 className="rounded border border-border-muted p-1.5"
               >
                 <div className="mb-1 flex items-center justify-between">
-                  <span className="text-[10px] font-medium text-text-muted">
+                  <span className="text-2xs font-medium text-text-muted">
                     #{i + 1}
                   </span>
                   <IconButton

@@ -173,10 +173,10 @@ export function AssetBrowser({ zoneId, world, onWorldChange }: AssetBrowserProps
                   >
                     &#9654;
                   </span>
-                  <span className="flex-1 font-display text-[10px] font-semibold uppercase tracking-widest text-text-secondary">
+                  <span className="flex-1 font-display text-2xs font-semibold uppercase tracking-widest text-text-secondary">
                     {KIND_LABELS[kind]}
                   </span>
-                  <span className="text-[10px] text-text-muted">
+                  <span className="text-2xs text-text-muted">
                     {items.length}
                   </span>
                 </button>
@@ -214,7 +214,7 @@ export function AssetBrowser({ zoneId, world, onWorldChange }: AssetBrowserProps
 
         {/* Bottom stats */}
         <div className="shrink-0 border-t border-border-default px-3 py-2">
-          <div className="flex items-center gap-2 text-[10px] text-text-muted">
+          <div className="flex items-center gap-2 text-2xs text-text-muted">
             <span>
               {withImageCount}/{totalCount} with art
             </span>
@@ -330,7 +330,7 @@ function PreviewPanel({
     <div className="flex min-h-0 flex-1 flex-col">
       {/* Header */}
       <div className="flex shrink-0 items-center gap-3 border-b border-border-default px-4 py-2">
-        <span className="rounded bg-bg-elevated px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-text-muted">
+        <span className="rounded bg-bg-elevated px-1.5 py-0.5 text-2xs font-medium uppercase tracking-wider text-text-muted">
           {entity.kind}
         </span>
         <span className="font-display text-sm tracking-wide text-text-primary">
@@ -359,7 +359,7 @@ function PreviewPanel({
       {variants.length > 0 && (
         <div className="shrink-0 border-t border-border-default px-4 py-2">
           <div className="flex items-center gap-3">
-            <span className="text-[10px] text-text-muted">
+            <span className="text-2xs text-text-muted">
               {variants.length} variant{variants.length !== 1 ? "s" : ""}
             </span>
             <div className="flex gap-1.5 overflow-x-auto pb-0.5">

@@ -19,7 +19,7 @@ export function WizardStepLayout({
 
       {whyItMatters && (
         <div className="mx-6 mb-3 rounded border border-accent/20 bg-accent/5 px-3 py-2">
-          <p className="text-[10px] leading-relaxed text-text-muted">
+          <p className="text-2xs leading-relaxed text-text-muted">
             <span className="font-medium text-accent">Why this matters:</span>{" "}
             {whyItMatters}
           </p>

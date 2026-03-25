@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useProjectWizard } from "@/lib/useProjectWizard";
 import { useAssetStore } from "@/stores/assetStore";
+import { useFocusTrap } from "@/lib/useFocusTrap";
 import { WizardStepLayout } from "./WizardStepLayout";
 import { LocationStep } from "./steps/LocationStep";
 import { TemplateStyleStep } from "./steps/TemplateStyleStep";
@@ -39,6 +40,7 @@ interface ProjectWizardProps {
 }
 
 export function ProjectWizard({ onClose }: ProjectWizardProps) {
+  const trapRef = useFocusTrap<HTMLDivElement>(onClose);
   const [step, setStep] = useState(1);
   const [nameError, setNameError] = useState<string | null>(null);
   const { data, update, selectTemplate, stage, error, create, reset } =
@@ -108,10 +110,10 @@ export function ProjectWizard({ onClose }: ProjectWizardProps) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-      <div className="mx-4 flex max-h-[85vh] w-full max-w-3xl flex-col rounded-lg border border-border-default bg-bg-secondary shadow-xl">
+      <div ref={trapRef} role="dialog" aria-modal="true" aria-labelledby="wizard-title" className="mx-4 flex max-h-[85vh] w-full max-w-3xl flex-col rounded-lg border border-border-default bg-bg-secondary shadow-xl">
         {/* Header */}
         <div className="shrink-0 border-b border-border-default px-6 py-3">
-          <h2 className="font-display text-sm tracking-wide text-accent-emphasis">
+          <h2 id="wizard-title" className="font-display text-sm tracking-wide text-accent-emphasis">
             Create New Project
           </h2>
           {/* Step indicator */}
@@ -129,7 +131,7 @@ export function ProjectWizard({ onClose }: ProjectWizardProps) {
               />
             ))}
           </div>
-          <p className="mt-1 text-[10px] text-text-muted">
+          <p className="mt-1 text-2xs text-text-muted">
             Step {step} of {STEP_COUNT}: {STEP_TITLES[step - 1]}
           </p>
         </div>

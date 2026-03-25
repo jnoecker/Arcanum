@@ -152,7 +152,7 @@ export function RaceDetail({
 
       {/* Sprite / Portrait Descriptions */}
       <div className="mt-1 border-t border-border-muted pt-1.5">
-        <h5 className="mb-1 text-[10px] font-display uppercase tracking-widest text-text-muted">
+        <h5 className="mb-1 text-2xs font-display uppercase tracking-widest text-text-muted">
           Sprite &amp; Portrait Generation
         </h5>
         <CommitTextarea
@@ -172,7 +172,7 @@ export function RaceDetail({
 
       {/* Concept Art */}
       <div className="mt-1 border-t border-border-muted pt-1.5">
-        <h5 className="mb-1 text-[10px] font-display uppercase tracking-widest text-text-muted">
+        <h5 className="mb-1 text-2xs font-display uppercase tracking-widest text-text-muted">
           Concept Art
         </h5>
         <EntityArtGenerator
@@ -229,10 +229,10 @@ function StringListEditor({
   return (
     <div className="mt-1 border-t border-border-muted pt-1.5">
       <div className="mb-1 flex items-center gap-2">
-        <h5 className="text-[10px] font-display uppercase tracking-widest text-text-muted">
+        <h5 className="text-2xs font-display uppercase tracking-widest text-text-muted">
           {label}
         </h5>
-        <span className="text-[10px] text-text-muted">({items.length})</span>
+        <span className="text-2xs text-text-muted">({items.length})</span>
       </div>
       {items.length > 0 && (
         <div className="mb-1 flex flex-col gap-0.5">
@@ -292,11 +292,11 @@ function RaceStatMods({
   return (
     <div className="mt-1 border-t border-border-muted pt-1.5">
       <div className="mb-1 flex items-center gap-2">
-        <h5 className="text-[10px] font-display uppercase tracking-widest text-text-muted">
+        <h5 className="text-2xs font-display uppercase tracking-widest text-text-muted">
           Stat Modifiers
         </h5>
         <span
-          className={`text-[10px] font-medium ${
+          className={`text-2xs font-medium ${
             netTotal === 0
               ? "text-status-success"
               : "text-status-warning"
@@ -308,7 +308,7 @@ function RaceStatMods({
         </span>
       </div>
       {statIds.length === 0 ? (
-        <p className="text-[10px] text-text-muted">No stats defined</p>
+        <p className="text-2xs text-text-muted">No stats defined</p>
       ) : (
         <div className="flex flex-col gap-1">
           {statIds.map((statId) => {
@@ -346,7 +346,7 @@ function RaceStatMods({
                 >
                   +
                 </button>
-                <span className="ml-1 text-[10px] text-text-muted">
+                <span className="ml-1 text-2xs text-text-muted">
                   = {effective}
                 </span>
               </div>

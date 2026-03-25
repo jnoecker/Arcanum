@@ -78,7 +78,7 @@ export function EnhanceDescriptionButton({
     <button
       onClick={handleEnhance}
       disabled={loading}
-      className="shrink-0 rounded px-1.5 py-0.5 text-[10px] text-accent transition-colors hover:bg-accent/10 disabled:opacity-50"
+      className="shrink-0 rounded px-1.5 py-0.5 text-2xs text-accent transition-colors hover:bg-accent/10 disabled:opacity-50"
       title="Use AI to write a description"
     >
       {loading ? "..." : "Enhance"}

@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect, useCallback } from "react";
+import { useRef, useState, useEffect, useCallback, useMemo } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { useZoneStore, type ZoneState } from "@/stores/zoneStore";
 import { useProjectStore } from "@/stores/projectStore";
@@ -136,7 +136,7 @@ function ZoneTree({
       <div className="flex items-center gap-1">
         <button
           onClick={() => setExpanded((v) => !v)}
-          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[10px] text-text-muted transition hover:bg-white/8 hover:text-text-primary"
+          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-2xs text-text-muted transition hover:bg-white/8 hover:text-text-primary"
         >
           {expanded ? "\u25BE" : "\u25B8"}
         </button>
@@ -144,17 +144,17 @@ function ZoneTree({
           onClick={handleZoneClick}
           className={`min-w-0 flex-1 rounded-2xl border px-3 py-2 text-left text-sm transition ${
             isActive
-              ? "border-[rgba(184,216,232,0.35)] bg-[linear-gradient(135deg,rgba(168,151,210,0.16),rgba(140,174,201,0.12))] text-text-primary"
+              ? "border-border-active bg-gradient-active text-text-primary"
               : "border-white/8 bg-black/10 text-text-secondary hover:bg-white/8 hover:text-text-primary"
           }`}
         >
           <span className="truncate font-medium">{zoneState.data.zone || zoneId}</span>
           <span className="ml-2 truncate text-[11px] text-text-muted">{zoneId}</span>
-          {zoneState.dirty && <span className="ml-2 text-[11px] text-[rgb(214,177,193)]">Unsaved</span>}
+          {zoneState.dirty && <span className="ml-2 text-[11px] text-text-dirty">Unsaved</span>}
         </button>
         <button
           onClick={() => onDelete(zoneId)}
-          className="hidden rounded-full border border-white/8 px-2 py-1 text-[10px] text-text-muted transition hover:border-status-danger/40 hover:text-status-danger group-hover/zone:block"
+          className="hidden rounded-full border border-white/8 px-2 py-1 text-2xs text-text-muted transition hover:border-status-danger/40 hover:text-status-danger group-hover/zone:block"
           title="Delete zone"
         >
           Remove
@@ -171,7 +171,7 @@ function ZoneTree({
             return (
               <div key={cat.key}>
                 <div className="flex items-center gap-2">
-                  <span className="text-[11px] uppercase tracking-[0.22em] text-text-muted">
+                  <span className="text-[11px] uppercase tracking-ui text-text-muted">
                     {cat.label}
                   </span>
                   <span className="text-[11px] text-text-muted">
@@ -180,7 +180,7 @@ function ZoneTree({
                   {cat.addFn && (
                     <button
                       onClick={() => handleAdd(cat)}
-                      className="ml-auto rounded-full border border-white/8 px-2 py-1 text-[10px] text-text-muted transition hover:bg-white/8 hover:text-text-primary"
+                      className="ml-auto rounded-full border border-white/8 px-2 py-1 text-2xs text-text-muted transition hover:bg-white/8 hover:text-text-primary"
                       title={`Add ${cat.label.replace(/s$/, "").toLowerCase()}`}
                     >
                       Add
@@ -274,22 +274,23 @@ export function Sidebar() {
     setDeleteTarget(null);
   }, [zones, closeTab, removeZone, project]);
 
-  const sortedZones = [...zones.entries()].sort(([a], [b]) =>
-    a.localeCompare(b),
+  const sortedZones = useMemo(
+    () => [...zones.entries()].sort(([a], [b]) => a.localeCompare(b)),
+    [zones],
   );
 
   return (
-    <aside className="relative flex h-full w-[21rem] shrink-0 flex-col overflow-hidden rounded-[32px] border border-white/10 bg-[linear-gradient(165deg,rgba(53,63,92,0.92),rgba(37,45,68,0.95))] shadow-[0_18px_56px_rgba(8,10,18,0.32)]">
+    <aside className="relative flex h-full w-[21rem] shrink-0 flex-col overflow-hidden rounded-[32px] border border-white/10 bg-gradient-panel shadow-[0_18px_56px_rgba(8,10,18,0.32)]">
       <img
         src={sidebarBg}
         alt=""
         className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-[0.14]"
       />
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-48 bg-[linear-gradient(180deg,rgba(168,151,210,0.18),transparent)]" />
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-48 bg-gradient-glow-top" />
 
       <div className="relative z-10 border-b border-white/10 px-4 py-4">
         <div className="mb-4">
-          <p className="text-[11px] uppercase tracking-[0.32em] text-text-muted">
+          <p className="text-[11px] uppercase tracking-wide-ui text-text-muted">
             Workspace
           </p>
           <h2 className="mt-2 font-display text-2xl text-text-primary">
@@ -315,7 +316,7 @@ export function Sidebar() {
               }}
               className={`rounded-2xl border px-3 py-3 text-left text-sm transition ${
                 activeTabId === entry.id
-                  ? "border-[rgba(184,216,232,0.35)] bg-[linear-gradient(135deg,rgba(168,151,210,0.16),rgba(140,174,201,0.12))] text-text-primary"
+                  ? "border-border-active bg-gradient-active text-text-primary"
                   : "border-white/8 bg-black/10 text-text-secondary hover:bg-white/8 hover:text-text-primary"
               }`}
             >
@@ -334,10 +335,11 @@ export function Sidebar() {
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={handleSearchKeyDown}
             placeholder="Search... (Ctrl+K)"
-            className="h-10 w-full rounded-full border border-white/10 bg-black/15 px-4 pr-10 text-sm text-text-primary outline-none placeholder:text-text-muted focus:border-[rgba(184,216,232,0.38)]"
+            className="h-10 w-full rounded-full border border-white/10 bg-black/15 px-4 pr-10 text-sm text-text-primary outline-none placeholder:text-text-muted focus:border-border-active"
           />
           {query && (
             <button
+              aria-label="Clear search"
               onClick={clearQuery}
               className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-text-muted hover:text-text-primary"
             >
@@ -352,7 +354,7 @@ export function Sidebar() {
           <div className="py-2">
             {grouped.size === 0 ? (
               <p className="rounded-2xl border border-dashed border-white/10 bg-black/10 px-4 py-6 text-sm text-text-muted">
-                No results for that search yet.
+                Nothing matches that query across your zones.
               </p>
             ) : (
               [...grouped.entries()].map(([zoneId, entries]) => (
@@ -380,12 +382,12 @@ export function Sidebar() {
                           }}
                           className="flex w-full items-center gap-2 rounded-2xl border border-white/8 bg-black/10 px-3 py-2 text-left text-xs transition hover:bg-white/8 hover:text-text-primary"
                         >
-                          <span className="shrink-0 rounded-full bg-white/8 px-2 py-1 font-mono text-[10px] text-text-muted">
+                          <span className="shrink-0 rounded-full bg-white/8 px-2 py-1 font-mono text-2xs text-text-muted">
                             {ENTITY_TYPE_LABELS[entry.entityType]}
                           </span>
                           <span className="truncate">{entry.displayName}</span>
                           {entry.entityId !== entry.displayName && (
-                            <span className="ml-auto shrink-0 text-[10px] text-text-muted">
+                            <span className="ml-auto shrink-0 text-2xs text-text-muted">
                               {entry.entityId}
                             </span>
                           )}
@@ -416,7 +418,7 @@ export function Sidebar() {
           </div>
           {sortedZones.length === 0 ? (
             <p className="rounded-2xl border border-dashed border-white/10 bg-black/10 px-4 py-6 text-sm text-text-muted">
-              No zones loaded.
+              Open a world to begin shaping it.
             </p>
           ) : (
             <ul className="flex flex-col gap-0.5">

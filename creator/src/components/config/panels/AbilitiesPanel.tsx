@@ -94,7 +94,7 @@ function ClassColorBadge({ classId }: { classId: string }) {
         className="h-3 w-3 rounded-sm border border-border-default"
         style={{ backgroundColor: color }}
       />
-      <span className="text-[10px] text-text-muted">{classId} palette</span>
+      <span className="text-2xs text-text-muted">{classId} palette</span>
     </div>
   );
 }
@@ -263,7 +263,7 @@ export function AbilityDetail({
       </FieldRow>
 
       <div className="mt-1 border-t border-border-muted pt-1.5">
-        <h5 className="mb-1 text-[10px] font-display uppercase tracking-widest text-text-muted">
+        <h5 className="mb-1 text-2xs font-display uppercase tracking-widest text-text-muted">
           Effect
         </h5>
         <div className="flex flex-col gap-1.5">
@@ -375,7 +375,7 @@ export function AbilityDetail({
       </div>
 
       <div className="mt-1 border-t border-border-muted pt-1.5">
-        <h5 className="mb-1 text-[10px] font-display uppercase tracking-widest text-text-muted">
+        <h5 className="mb-1 text-2xs font-display uppercase tracking-widest text-text-muted">
           Icon
         </h5>
         <div className="flex flex-col gap-1.5">

@@ -58,7 +58,7 @@ export function EntityPanel({
         >
           &#x2190;
         </button>
-        <span className="font-display text-[10px] uppercase tracking-widest text-text-muted">
+        <span className="font-display text-2xs uppercase tracking-widest text-text-muted">
           {selection.kind}
         </span>
         <span className="text-xs font-medium text-text-primary">
@@ -66,7 +66,7 @@ export function EntityPanel({
         </span>
         <button
           onClick={() => setShowYaml((v) => !v)}
-          className={`ml-auto rounded px-1.5 py-0.5 font-mono text-[10px] transition-colors ${
+          className={`ml-auto rounded px-1.5 py-0.5 font-mono text-2xs transition-colors ${
             showYaml
               ? "bg-accent/20 text-accent"
               : "text-text-muted hover:bg-bg-elevated hover:text-text-primary"

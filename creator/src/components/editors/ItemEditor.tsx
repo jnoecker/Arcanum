@@ -174,7 +174,7 @@ export function ItemEditor({
 
       {/* Stat bonuses */}
       <Section title="Stat Bonuses">
-        <p className="mb-1 text-[10px] text-text-muted">
+        <p className="mb-1 text-2xs text-text-muted">
           Only non-zero values are saved
         </p>
         <div className="flex flex-col gap-1">
@@ -276,7 +276,7 @@ function AddStatRow({
           onChange={(e) => setValue(e.target.value)}
           placeholder="e.g. STR, DEX"
           autoFocus
-          className="h-5 flex-1 rounded border border-border-default bg-bg-primary px-1.5 text-[10px] text-text-primary outline-none focus:border-accent"
+          className="h-5 flex-1 rounded border border-border-default bg-bg-primary px-1.5 text-2xs text-text-primary outline-none focus:border-accent"
           onBlur={handleSubmit}
         />
         <button
@@ -285,7 +285,7 @@ function AddStatRow({
             setValue("");
             setEditing(false);
           }}
-          className="text-[10px] text-text-muted hover:text-text-primary"
+          className="text-2xs text-text-muted hover:text-text-primary"
         >
           &times;
         </button>
@@ -296,7 +296,7 @@ function AddStatRow({
   return (
     <button
       onClick={() => setEditing(true)}
-      className="mt-1 rounded border border-border-default px-2 py-0.5 text-[10px] text-text-muted transition-colors hover:bg-bg-tertiary hover:text-text-primary"
+      className="mt-1 rounded border border-border-default px-2 py-0.5 text-2xs text-text-muted transition-colors hover:bg-bg-tertiary hover:text-text-primary"
     >
       + Add Stat Bonus
     </button>

@@ -1,6 +1,9 @@
 import { useMemo, useCallback } from "react";
 import type { ConfigPanelProps } from "./types";
 import type { AppConfig, ClassDefinitionConfig } from "@/types/config";
+
+const CHART_HP = "#c05060";
+const CHART_MANA = "#4e7fd4";
 import {
   FieldRow,
   NumberInput,
@@ -197,7 +200,7 @@ export function ClassDetail({
 
       {/* Sprite / Portrait Descriptions */}
       <div className="mt-1 border-t border-border-muted pt-1.5">
-        <h5 className="mb-1 text-[10px] font-display uppercase tracking-widest text-text-muted">
+        <h5 className="mb-1 text-2xs font-display uppercase tracking-widest text-text-muted">
           Sprite &amp; Portrait Generation
         </h5>
         <CommitTextarea
@@ -219,7 +222,7 @@ export function ClassDetail({
 
       {/* Concept Art */}
       <div className="mt-1 border-t border-border-muted pt-1.5">
-        <h5 className="mb-1 text-[10px] font-display uppercase tracking-widest text-text-muted">
+        <h5 className="mb-1 text-2xs font-display uppercase tracking-widest text-text-muted">
           Concept Art
         </h5>
         <EntityArtGenerator
@@ -298,7 +301,7 @@ function HpManaCurve({
 
   return (
     <div className="mt-1 border-t border-border-muted pt-1.5">
-      <h5 className="mb-1 text-[10px] font-display uppercase tracking-widest text-text-muted">
+      <h5 className="mb-1 text-2xs font-display uppercase tracking-widest text-text-muted">
         HP / Mana Growth (Levels 1-{levels})
       </h5>
       <svg
@@ -349,20 +352,20 @@ function HpManaCurve({
         <path
           d={buildPath(hpAt)}
           fill="none"
-          stroke="#c05060"
+          stroke={CHART_HP}
           strokeWidth={1.5}
         />
         <path
           d={buildPath(manaAt)}
           fill="none"
-          stroke="#4e7fd4"
+          stroke={CHART_MANA}
           strokeWidth={1.5}
         />
-        <line x1={pad.left} y1={pad.top - 2} x2={pad.left + 14} y2={pad.top - 2} stroke="#c05060" strokeWidth={1.5} />
+        <line x1={pad.left} y1={pad.top - 2} x2={pad.left + 14} y2={pad.top - 2} stroke={CHART_HP} strokeWidth={1.5} />
         <text x={pad.left + 17} y={pad.top + 1} className="fill-text-secondary" fontSize={8}>
           HP ({hpAt(levels)})
         </text>
-        <line x1={pad.left + 80} y1={pad.top - 2} x2={pad.left + 94} y2={pad.top - 2} stroke="#4e7fd4" strokeWidth={1.5} />
+        <line x1={pad.left + 80} y1={pad.top - 2} x2={pad.left + 94} y2={pad.top - 2} stroke={CHART_MANA} strokeWidth={1.5} />
         <text x={pad.left + 97} y={pad.top + 1} className="fill-text-secondary" fontSize={8}>
           Mana ({manaAt(levels)})
         </text>

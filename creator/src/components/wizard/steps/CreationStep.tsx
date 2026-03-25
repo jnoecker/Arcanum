@@ -157,7 +157,7 @@ export function CreationStep({
             <h4 className="font-display text-sm tracking-wide text-accent-emphasis">
               Generate Art
             </h4>
-            <span className="rounded bg-accent/10 px-2 py-0.5 text-[10px] font-medium text-accent">
+            <span className="rounded bg-accent/10 px-2 py-0.5 text-2xs font-medium text-accent">
               {ART_STYLE_LABELS[artStyle]}
             </span>
           </div>
@@ -237,7 +237,7 @@ export function CreationStep({
               onClick={() => {
                 abortRef.current = true;
               }}
-              className="mt-3 rounded border border-status-danger/40 px-3 py-1 text-[10px] text-status-danger hover:bg-status-danger/10"
+              className="mt-3 rounded border border-status-danger/40 px-3 py-1 text-2xs text-status-danger hover:bg-status-danger/10"
             >
               Abort
             </button>

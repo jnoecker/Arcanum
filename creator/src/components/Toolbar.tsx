@@ -29,7 +29,7 @@ const STATUS_LABELS: Record<string, string> = {
   starting: "Starting...",
   running: "Running",
   stopping: "Stopping...",
-  error: "Error",
+  error: "Failed",
 };
 
 export function Toolbar() {
@@ -46,6 +46,7 @@ export function Toolbar() {
   const configDirty = useConfigStore((s) => s.dirty);
   const [errors, setErrors] = useState<string[] | null>(null);
   const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
   const [showDiff, setShowDiff] = useState(false);
   const [showLegacyImport, setShowLegacyImport] = useState(false);
   const openGenerator = useAssetStore((s) => s.openGenerator);
@@ -89,95 +90,102 @@ export function Toolbar() {
 
   return (
     <>
-      <div className="relative z-10 flex h-20 shrink-0 items-center gap-4 px-4 py-4">
+      <div className="relative z-10 flex shrink-0 items-center px-4 py-2">
         <img
           src={toolbarBg}
           alt=""
-          className="pointer-events-none absolute inset-x-4 top-4 h-[calc(100%-1rem)] w-[calc(100%-2rem)] rounded-[32px] object-cover opacity-[0.08]"
-          style={{ objectPosition: "center center" }}
+          className="pointer-events-none absolute inset-x-4 inset-y-2 rounded-[24px] object-cover opacity-[0.06]"
         />
-        <div className="flex min-w-0 flex-1 items-center justify-between rounded-[32px] border border-white/10 bg-[linear-gradient(155deg,rgba(50,60,88,0.84),rgba(38,47,71,0.9))] px-6 py-4 shadow-[0_18px_56px_rgba(8,10,18,0.32)] backdrop-blur-xl">
-          <div className="min-w-0">
-            <p className="text-[11px] uppercase tracking-[0.34em] text-text-muted">
-              Ambon Creator
-            </p>
-            <div className="mt-1 flex min-w-0 items-center gap-3">
-              <span className="truncate font-display text-2xl text-text-primary">
-                {project?.name ?? "No world open"}
-              </span>
-              {project?.mudDir && (
-                <span className="truncate text-xs text-text-secondary">
-                  {project.mudDir}
+        <div className="flex min-w-0 flex-1 items-center gap-4 rounded-[24px] border border-white/10 bg-gradient-panel-light px-4 py-2 shadow-[0_12px_36px_rgba(8,10,18,0.28)] backdrop-blur-xl">
+          {/* ── Project identity ── */}
+          <span className="truncate font-display text-sm tracking-wide text-text-primary">
+            {project?.name ?? "No world open"}
+          </span>
+          <div className="h-4 w-px bg-white/10" />
+
+          {/* ── Server cluster ── */}
+          {!isStandalone && (
+            <>
+              <div className="flex items-center gap-1.5">
+                <div className={`h-2 w-2 rounded-full ${STATUS_COLORS[status]} ${status === "running" ? "animate-aurum-pulse" : ""} ${status === "error" ? "animate-crimson-pulse" : ""}`} />
+                <span className="text-2xs uppercase tracking-label text-text-muted">
+                  {STATUS_LABELS[status]}
                 </span>
-              )}
-            </div>
-          </div>
+              </div>
+              <button onClick={handleStart} disabled={status !== "stopped" && status !== "error"} title="Start server" className="rounded-full border border-white/10 bg-black/10 px-3 py-1 text-2xs font-medium text-text-primary transition enabled:hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40">
+                Start
+              </button>
+              <button onClick={stopServer} disabled={status !== "running"} title="Stop server" className="rounded-full border border-white/10 bg-black/10 px-3 py-1 text-2xs font-medium text-text-primary transition enabled:hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40">
+                Stop
+              </button>
+              <button onClick={handleRestart} disabled={status !== "running"} title="Restart server" className="rounded-full border border-white/10 bg-black/10 px-3 py-1 text-2xs font-medium text-text-primary transition enabled:hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40">
+                Restart
+              </button>
+              <div className="h-4 w-px bg-white/10" />
+            </>
+          )}
 
-          <div className="ml-6 flex shrink-0 items-center gap-2">
-            {!isStandalone && (
-              <>
-                <div className="mr-2 flex items-center gap-2 rounded-full border border-white/10 bg-black/10 px-3 py-2">
-                  <div className={`h-2.5 w-2.5 rounded-full ${STATUS_COLORS[status]} ${status === "running" ? "animate-aurum-pulse" : ""} ${status === "error" ? "animate-crimson-pulse" : ""}`} />
-                  <span className="text-xs uppercase tracking-[0.18em] text-text-secondary">
-                    {STATUS_LABELS[status]}
-                  </span>
-                </div>
-                <button onClick={handleStart} disabled={status !== "stopped" && status !== "error"} className="rounded-full border border-white/10 bg-black/10 px-4 py-2 text-xs font-medium text-text-primary transition enabled:hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40">
-                  Start
-                </button>
-                <button onClick={stopServer} disabled={status !== "running"} className="rounded-full border border-white/10 bg-black/10 px-4 py-2 text-xs font-medium text-text-primary transition enabled:hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40">
-                  Stop
-                </button>
-                <button onClick={handleRestart} disabled={status !== "running"} className="rounded-full border border-white/10 bg-black/10 px-4 py-2 text-xs font-medium text-text-primary transition enabled:hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40">
-                  Restart
-                </button>
-              </>
-            )}
-
-            {isStandalone && (
+          {isStandalone && (
+            <>
               <button
                 onClick={handleOpenHandoff}
                 disabled={!hasConfig}
-                className="rounded-full border border-white/10 bg-black/10 px-4 py-2 text-xs font-medium text-text-primary transition enabled:hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40"
+                title="Export for MUD server"
+                className="rounded-full border border-white/10 bg-black/10 px-3 py-1 text-2xs font-medium text-text-primary transition enabled:hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40"
               >
                 Handoff
               </button>
-            )}
-            <button onClick={() => setShowLegacyImport(true)} className="rounded-full border border-white/10 bg-black/10 px-4 py-2 text-xs font-medium text-text-primary transition hover:bg-white/10">
-              Import images
-            </button>
-            <button onClick={openGallery} className="rounded-full border border-white/10 bg-black/10 px-4 py-2 text-xs font-medium text-text-primary transition hover:bg-white/10">
-              Gallery
-            </button>
-            <button onClick={openGenerator} className="rounded-full border border-[rgba(168,151,210,0.35)] bg-[linear-gradient(135deg,rgba(168,151,210,0.26),rgba(140,174,201,0.18))] px-4 py-2 text-xs font-medium text-text-primary transition hover:-translate-y-0.5 hover:shadow-[0_10px_26px_rgba(137,155,214,0.24)]">
-              Generate art
-            </button>
-            <button
-              onClick={() => setShowDiff(true)}
-              disabled={(dirtyCount === 0 && !configDirty) || saving}
-              className="rounded-full border border-white/10 bg-black/10 px-4 py-2 text-xs font-medium text-text-primary transition enabled:hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              {saving ? "Saving..." : dirtyCount > 0 || configDirty ? `Save all (${dirtyCount + (configDirty ? 1 : 0)})` : "Save all"}
-            </button>
-            <button
-              onClick={() => {
-                const config = useConfigStore.getState().config;
-                const results = validateAllZones(zones, config?.equipmentSlots);
-                if (config) {
-                  const configIssues = validateConfig(config);
-                  if (configIssues.length > 0) {
-                    results.set("Config", configIssues);
-                  }
+              <div className="h-4 w-px bg-white/10" />
+            </>
+          )}
+
+          {/* ── Assets cluster ── */}
+          <button onClick={() => setShowLegacyImport(true)} title="Import legacy images" className="rounded-full border border-white/10 bg-black/10 px-3 py-1 text-2xs font-medium text-text-primary transition hover:bg-white/10">
+            Import
+          </button>
+          <button onClick={openGallery} title="Browse asset library" className="rounded-full border border-white/10 bg-black/10 px-3 py-1 text-2xs font-medium text-text-primary transition hover:bg-white/10">
+            Gallery
+          </button>
+          <button onClick={openGenerator} title="Generate new art" className="rounded-full border border-border-active bg-gradient-active-strong px-3 py-1 text-2xs font-medium text-text-primary transition hover:-translate-y-0.5 hover:shadow-[0_10px_26px_rgba(137,155,214,0.24)]">
+            Generate
+          </button>
+
+          <div className="ml-auto h-4 w-px bg-white/10" />
+
+          {/* ── Data cluster (pushed right) ── */}
+          <button
+            onClick={() => {
+              const config = useConfigStore.getState().config;
+              const results = validateAllZones(zones, config?.equipmentSlots);
+              if (config) {
+                const configIssues = validateConfig(config);
+                if (configIssues.length > 0) {
+                  results.set("Config", configIssues);
                 }
-                setValidationResults(results);
-                openValidationPanel();
-              }}
-              disabled={zones.size === 0 && !hasConfig}
-              className="rounded-full border border-white/10 bg-black/10 px-4 py-2 text-xs font-medium text-text-primary transition enabled:hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              Validate
-            </button>
-          </div>
+              }
+              setValidationResults(results);
+              openValidationPanel();
+            }}
+            disabled={zones.size === 0 && !hasConfig}
+            title="Run validation checks"
+            className="rounded-full border border-white/10 bg-black/10 px-3 py-1 text-2xs font-medium text-text-primary transition enabled:hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            Validate
+          </button>
+          <button
+            onClick={() => setShowDiff(true)}
+            disabled={(dirtyCount === 0 && !configDirty) || saving}
+            title="Review and save changes"
+            className={`rounded-full px-3 py-1 text-2xs font-medium transition ${
+              saved
+                ? "border border-status-success/40 bg-status-success/15 text-status-success"
+                : dirtyCount > 0 || configDirty
+                  ? "border border-border-active bg-gradient-active-strong text-text-primary hover:-translate-y-0.5 hover:shadow-[0_10px_26px_rgba(137,155,214,0.24)]"
+                  : "border border-white/10 bg-black/10 text-text-primary enabled:hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40"
+            }`}
+          >
+            {saving ? "Saving..." : saved ? "Saved \u2713" : dirtyCount > 0 || configDirty ? `Save (${dirtyCount + (configDirty ? 1 : 0)})` : "Save"}
+          </button>
         </div>
       </div>
 
@@ -197,6 +205,8 @@ export function Toolbar() {
               if (project && useConfigStore.getState().dirty) {
                 await saveProjectConfig(project);
               }
+              setSaved(true);
+              setTimeout(() => setSaved(false), 2000);
             } catch (err) {
               console.error("Save failed:", err);
             } finally {

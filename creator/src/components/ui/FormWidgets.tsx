@@ -21,9 +21,18 @@ export function EditableField({
     return (
       <div
         className={`cursor-text rounded px-1 -mx-1 hover:bg-bg-tertiary ${className ?? ""}`}
+        role="button"
+        tabIndex={0}
         onClick={() => {
           setDraft(value);
           setEditing(true);
+        }}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            setDraft(value);
+            setEditing(true);
+          }
         }}
         title="Click to edit"
       >
@@ -73,9 +82,18 @@ export function EditableTextArea({
     return (
       <div
         className="cursor-text rounded px-1 -mx-1 text-xs leading-relaxed text-text-secondary hover:bg-bg-tertiary"
+        role="button"
+        tabIndex={0}
         onClick={() => {
           setDraft(value);
           setEditing(true);
+        }}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            setDraft(value);
+            setEditing(true);
+          }
         }}
         title="Click to edit"
       >
@@ -120,7 +138,7 @@ export function Section({
   return (
     <div className="border-b border-border-muted px-4 py-3">
       <div className="mb-1.5 flex items-center gap-2">
-        <h4 className="font-display text-[10px] uppercase tracking-widest text-text-muted">
+        <h4 className="font-display text-2xs uppercase tracking-widest text-text-muted">
           {title}
         </h4>
         {actions && <div className="ml-auto flex items-center gap-1">{actions}</div>}
@@ -150,7 +168,7 @@ export function FieldRow({
         <div className="min-w-0 flex-1">{children}</div>
       </label>
       {hint && (
-        <p className="ml-[6.5rem] mt-0.5 text-[10px] leading-snug text-text-muted/60">{hint}</p>
+        <p className="ml-[6.5rem] mt-0.5 text-2xs leading-snug text-text-muted/60">{hint}</p>
       )}
     </div>
   );

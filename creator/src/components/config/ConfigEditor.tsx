@@ -106,9 +106,9 @@ function WorkspaceSection({
   children: ReactNode;
 }) {
   return (
-    <section className="rounded-[28px] border border-white/10 bg-[linear-gradient(160deg,rgba(56,66,96,0.9),rgba(39,48,72,0.92))] p-5 shadow-[0_16px_42px_rgba(9,12,24,0.22)]">
+    <section className="rounded-[28px] border border-white/10 bg-gradient-panel-light p-5 shadow-[0_16px_42px_rgba(9,12,24,0.22)]">
       <div className="mb-3">
-        <p className="text-[11px] uppercase tracking-[0.3em] text-text-muted">{kicker}</p>
+        <p className="text-[11px] uppercase tracking-wide-ui text-text-muted">{kicker}</p>
         <h3 className="mt-2 font-display text-xl text-text-primary">{title}</h3>
         <p className="mt-2 max-w-3xl text-sm leading-6 text-text-secondary">{description}</p>
       </div>
@@ -282,7 +282,7 @@ export function ConfigEditor() {
             <button
               onClick={handleSave}
               disabled={!dirty || saving}
-              className="rounded-full border border-[rgba(184,216,232,0.28)] bg-[linear-gradient(135deg,rgba(168,151,210,0.24),rgba(140,174,201,0.16))] px-4 py-2 text-xs font-medium text-text-primary transition enabled:hover:shadow-[0_10px_20px_rgba(137,155,214,0.2)] disabled:cursor-not-allowed disabled:opacity-40"
+              className="rounded-full border border-[rgba(184,216,232,0.28)] bg-gradient-active-strong px-4 py-2 text-xs font-medium text-text-primary transition enabled:hover:shadow-[0_10px_20px_rgba(137,155,214,0.2)] disabled:cursor-not-allowed disabled:opacity-40"
             >
               {saving ? "Saving..." : "Save Config"}
             </button>
@@ -291,7 +291,7 @@ export function ConfigEditor() {
 
         {saveError && (
           <div className="relative z-10 px-5 pb-3 text-xs text-status-error">
-            Save failed: {saveError}
+            Could not save config: {saveError}
           </div>
         )}
       </div>

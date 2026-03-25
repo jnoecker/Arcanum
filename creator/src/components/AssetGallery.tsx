@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
 import { useAssetStore } from "@/stores/assetStore";
+import { useFocusTrap } from "@/lib/useFocusTrap";
 import type { AssetEntry, AssetType, SyncProgress, SyncScope } from "@/types/assets";
 
 type SortKey = "newest" | "oldest" | "type";
@@ -80,6 +81,8 @@ export function AssetGallery({ onClose }: { onClose: () => void }) {
   const syncToR2 = useAssetStore((s) => s.syncToR2);
   const settings = useAssetStore((s) => s.settings);
 
+  const trapRef = useFocusTrap<HTMLDivElement>(onClose);
+
   const [selected, setSelected] = useState<AssetEntry | null>(null);
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [zoneFilter, setZoneFilter] = useState<string>("all");
@@ -105,9 +108,18 @@ export function AssetGallery({ onClose }: { onClose: () => void }) {
     }
   }, [assets, selected]);
 
-  const types = Array.from(new Set(assets.map((a) => a.asset_type)));
-  const zones = Array.from(new Set(assets.map((a) => a.context?.zone).filter(Boolean))) as string[];
-  const hasGlobalAssets = assets.some((a) => !a.context?.zone);
+  const types = useMemo(
+    () => Array.from(new Set(assets.map((a) => a.asset_type))),
+    [assets],
+  );
+  const zones = useMemo(
+    () => Array.from(new Set(assets.map((a) => a.context?.zone).filter(Boolean))) as string[],
+    [assets],
+  );
+  const hasGlobalAssets = useMemo(
+    () => assets.some((a) => !a.context?.zone),
+    [assets],
+  );
 
   const filtered = useMemo(
     () =>
@@ -235,7 +247,7 @@ export function AssetGallery({ onClose }: { onClose: () => void }) {
     return (
       <div className="flex h-full w-full flex-col items-center justify-center gap-2 bg-[radial-gradient(circle_at_top,rgba(183,204,231,0.2),rgba(15,18,30,0.82))] px-3 text-center">
         <div className="font-display text-lg text-text-primary">{kind === "audio" ? "Audio" : "Video"}</div>
-        <div className="text-[10px] uppercase tracking-[0.24em] text-text-muted">
+        <div className="text-2xs uppercase tracking-ui text-text-muted">
           {asset.asset_type.replace(/_/g, " ")}
         </div>
       </div>
@@ -263,10 +275,10 @@ export function AssetGallery({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-      <div className="mx-4 flex max-h-[90vh] w-full max-w-6xl flex-col rounded-[24px] border border-border-default bg-bg-secondary shadow-xl">
+      <div ref={trapRef} role="dialog" aria-modal="true" aria-labelledby="gallery-title" className="mx-4 flex max-h-[90vh] w-full max-w-6xl flex-col rounded-[24px] border border-border-default bg-bg-secondary shadow-xl">
         <div className="flex shrink-0 items-center justify-between border-b border-border-default px-5 py-3">
           <div className="flex flex-wrap items-center gap-3">
-            <h2 className="font-display text-lg tracking-wide text-text-primary">Asset Gallery</h2>
+            <h2 id="gallery-title" className="font-display text-lg tracking-wide text-text-primary">Asset Gallery</h2>
             <span className="text-xs text-text-muted">
               {sorted.length} visible of {assets.length}
             </span>
@@ -274,7 +286,7 @@ export function AssetGallery({ onClose }: { onClose: () => void }) {
             <button
               onClick={handleImport}
               disabled={importing}
-              className="rounded-full border border-white/10 bg-black/10 px-3 py-1.5 text-[10px] font-medium text-accent transition-colors hover:bg-accent/15 disabled:cursor-not-allowed disabled:opacity-50"
+              className="rounded-full border border-white/10 bg-black/10 px-3 py-1.5 text-2xs font-medium text-accent transition-colors hover:bg-accent/15 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {importing ? "Importing..." : "Import"}
             </button>
@@ -283,7 +295,7 @@ export function AssetGallery({ onClose }: { onClose: () => void }) {
                 <select
                   value={syncScope}
                   onChange={(event) => setSyncScope(event.target.value as SyncScope)}
-                  className="rounded-full border border-border-default bg-bg-primary px-3 py-1.5 text-[10px] text-text-secondary outline-none"
+                  className="rounded-full border border-border-default bg-bg-primary px-3 py-1.5 text-2xs text-text-secondary outline-none"
                 >
                   <option value="approved">Sync curated</option>
                   <option value="all">Sync everything</option>
@@ -294,12 +306,12 @@ export function AssetGallery({ onClose }: { onClose: () => void }) {
                     setSyncResult(result);
                   }}
                   disabled={syncing || unsyncedCount === 0}
-                  className="rounded-full border border-white/10 px-3 py-1.5 text-[10px] font-medium transition-colors enabled:bg-accent/15 enabled:text-accent enabled:hover:bg-accent/25 disabled:cursor-not-allowed disabled:text-text-muted disabled:opacity-50"
+                  className="rounded-full border border-white/10 px-3 py-1.5 text-2xs font-medium transition-colors enabled:bg-accent/15 enabled:text-accent enabled:hover:bg-accent/25 disabled:cursor-not-allowed disabled:text-text-muted disabled:opacity-50"
                 >
                   {syncing ? "Syncing..." : unsyncedCount > 0 ? `Sync ${unsyncedCount} to R2` : "All synced"}
                 </button>
                 {syncResult && !syncing && (
-                  <span className="text-[10px] text-text-muted">
+                  <span className="text-2xs text-text-muted">
                     {syncResult.uploaded} uploaded, {syncResult.skipped} deduped
                     {syncResult.failed > 0 && (
                       <span className="text-status-error"> ({syncResult.failed} failed)</span>
@@ -309,7 +321,7 @@ export function AssetGallery({ onClose }: { onClose: () => void }) {
               </>
             )}
           </div>
-          <button onClick={onClose} className="text-xs text-text-muted hover:text-text-primary">
+          <button aria-label="Close" onClick={onClose} className="text-xs text-text-muted hover:text-text-primary">
             &times;
           </button>
         </div>
@@ -317,15 +329,15 @@ export function AssetGallery({ onClose }: { onClose: () => void }) {
         <div className="flex shrink-0 flex-col gap-3 border-b border-border-default px-5 py-3">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="text-[10px] uppercase tracking-[0.24em] text-text-muted">View</span>
+              <span className="text-2xs uppercase tracking-ui text-text-muted">View</span>
               <div className="flex gap-1 rounded-full border border-white/10 bg-black/10 p-1">
                 {(["curated", "all"] as ViewMode[]).map((mode) => (
                   <button
                     key={mode}
                     onClick={() => setViewMode(mode)}
-                    className={`rounded-full px-3 py-1.5 text-[10px] transition-colors ${
+                    className={`rounded-full px-3 py-1.5 text-2xs transition-colors ${
                       viewMode === mode
-                        ? "bg-[linear-gradient(135deg,rgba(168,151,210,0.24),rgba(140,174,201,0.16))] text-text-primary"
+                        ? "bg-gradient-active-strong text-text-primary"
                         : "text-text-muted hover:text-text-secondary"
                     }`}
                   >
@@ -336,15 +348,15 @@ export function AssetGallery({ onClose }: { onClose: () => void }) {
             </div>
 
             <div className="flex items-center gap-2">
-              <span className="text-[10px] uppercase tracking-[0.24em] text-text-muted">Sort</span>
+              <span className="text-2xs uppercase tracking-ui text-text-muted">Sort</span>
               <div className="flex gap-1 rounded-full border border-white/10 bg-black/10 p-1">
                 {(["newest", "oldest", "type"] as SortKey[]).map((key) => (
                   <button
                     key={key}
                     onClick={() => setSort(key)}
-                    className={`rounded-full px-3 py-1.5 text-[10px] transition-colors ${
+                    className={`rounded-full px-3 py-1.5 text-2xs transition-colors ${
                       sort === key
-                        ? "bg-[linear-gradient(135deg,rgba(168,151,210,0.24),rgba(140,174,201,0.16))] text-text-primary"
+                        ? "bg-gradient-active-strong text-text-primary"
                         : "text-text-muted hover:text-text-secondary"
                     }`}
                   >
@@ -356,15 +368,15 @@ export function AssetGallery({ onClose }: { onClose: () => void }) {
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-[10px] uppercase tracking-[0.24em] text-text-muted">Media</span>
+            <span className="text-2xs uppercase tracking-ui text-text-muted">Media</span>
             <div className="flex flex-wrap gap-1">
               {(["all", "image", "audio", "video"] as MediaKind[]).map((kind) => (
                 <button
                   key={kind}
                   onClick={() => setMediaFilter(kind)}
-                  className={`rounded-full border px-3 py-1 text-[10px] transition-colors ${
+                  className={`rounded-full border px-3 py-1 text-2xs transition-colors ${
                     mediaFilter === kind
-                      ? "border-[rgba(184,216,232,0.35)] bg-[linear-gradient(135deg,rgba(168,151,210,0.18),rgba(140,174,201,0.14))] text-text-primary"
+                      ? "border-border-active bg-gradient-active-strong text-text-primary"
                       : "border-white/10 bg-black/10 text-text-muted hover:text-text-secondary"
                   }`}
                 >
@@ -376,13 +388,13 @@ export function AssetGallery({ onClose }: { onClose: () => void }) {
 
           <div className="flex flex-wrap items-start gap-4">
             <div className="flex min-w-[16rem] flex-1 flex-wrap items-center gap-2">
-              <span className="text-[10px] uppercase tracking-[0.24em] text-text-muted">Types</span>
+              <span className="text-2xs uppercase tracking-ui text-text-muted">Types</span>
               <div className="flex flex-wrap gap-1">
                 <button
                   onClick={() => setTypeFilter("all")}
-                  className={`rounded-full border px-3 py-1 text-[10px] transition-colors ${
+                  className={`rounded-full border px-3 py-1 text-2xs transition-colors ${
                     typeFilter === "all"
-                      ? "border-[rgba(184,216,232,0.35)] bg-[linear-gradient(135deg,rgba(168,151,210,0.18),rgba(140,174,201,0.14))] text-text-primary"
+                      ? "border-border-active bg-gradient-active-strong text-text-primary"
                       : "border-white/10 bg-black/10 text-text-muted hover:text-text-secondary"
                   }`}
                 >
@@ -392,9 +404,9 @@ export function AssetGallery({ onClose }: { onClose: () => void }) {
                   <button
                     key={type}
                     onClick={() => setTypeFilter(type)}
-                    className={`rounded-full border px-3 py-1 text-[10px] transition-colors ${
+                    className={`rounded-full border px-3 py-1 text-2xs transition-colors ${
                       typeFilter === type
-                        ? "border-[rgba(184,216,232,0.35)] bg-[linear-gradient(135deg,rgba(168,151,210,0.18),rgba(140,174,201,0.14))] text-text-primary"
+                        ? "border-border-active bg-gradient-active-strong text-text-primary"
                         : "border-white/10 bg-black/10 text-text-muted hover:text-text-secondary"
                     }`}
                   >
@@ -406,13 +418,13 @@ export function AssetGallery({ onClose }: { onClose: () => void }) {
 
             {(zones.length > 0 || hasGlobalAssets) && (
               <div className="flex min-w-[14rem] flex-1 flex-wrap items-center gap-2">
-                <span className="text-[10px] uppercase tracking-[0.24em] text-text-muted">Zone</span>
+                <span className="text-2xs uppercase tracking-ui text-text-muted">Zone</span>
                 <div className="flex flex-wrap gap-1">
                   <button
                     onClick={() => setZoneFilter("all")}
-                    className={`rounded-full border px-3 py-1 text-[10px] transition-colors ${
+                    className={`rounded-full border px-3 py-1 text-2xs transition-colors ${
                       zoneFilter === "all"
-                        ? "border-[rgba(184,216,232,0.35)] bg-[linear-gradient(135deg,rgba(168,151,210,0.18),rgba(140,174,201,0.14))] text-text-primary"
+                        ? "border-border-active bg-gradient-active-strong text-text-primary"
                         : "border-white/10 bg-black/10 text-text-muted hover:text-text-secondary"
                     }`}
                   >
@@ -421,9 +433,9 @@ export function AssetGallery({ onClose }: { onClose: () => void }) {
                   {hasGlobalAssets && (
                     <button
                       onClick={() => setZoneFilter("__global__")}
-                      className={`rounded-full border px-3 py-1 text-[10px] transition-colors ${
+                      className={`rounded-full border px-3 py-1 text-2xs transition-colors ${
                         zoneFilter === "__global__"
-                          ? "border-[rgba(184,216,232,0.35)] bg-[linear-gradient(135deg,rgba(168,151,210,0.18),rgba(140,174,201,0.14))] text-text-primary"
+                          ? "border-border-active bg-gradient-active-strong text-text-primary"
                           : "border-white/10 bg-black/10 text-text-muted hover:text-text-secondary"
                       }`}
                     >
@@ -434,9 +446,9 @@ export function AssetGallery({ onClose }: { onClose: () => void }) {
                     <button
                       key={zone}
                       onClick={() => setZoneFilter(zone)}
-                      className={`rounded-full border px-3 py-1 text-[10px] transition-colors ${
+                      className={`rounded-full border px-3 py-1 text-2xs transition-colors ${
                         zoneFilter === zone
-                          ? "border-[rgba(184,216,232,0.35)] bg-[linear-gradient(135deg,rgba(168,151,210,0.18),rgba(140,174,201,0.14))] text-text-primary"
+                          ? "border-border-active bg-gradient-active-strong text-text-primary"
                           : "border-white/10 bg-black/10 text-text-muted hover:text-text-secondary"
                       }`}
                     >
@@ -472,16 +484,16 @@ export function AssetGallery({ onClose }: { onClose: () => void }) {
                     <div className="aspect-square bg-bg-primary">{renderThumb(asset)}</div>
                     <div className="space-y-1 px-2 py-1.5">
                       <div className="flex items-center justify-between gap-2">
-                        <p className="truncate text-[10px] text-text-secondary">
+                        <p className="truncate text-2xs text-text-secondary">
                           {asset.asset_type.replace(/_/g, " ")}
                         </p>
                         {asset.is_active && (
-                          <span className="rounded-full bg-status-success/15 px-1.5 py-0.5 text-[9px] uppercase tracking-[0.18em] text-status-success">
+                          <span className="rounded-full bg-status-success/15 px-1.5 py-0.5 text-3xs uppercase tracking-label text-status-success">
                             Live
                           </span>
                         )}
                       </div>
-                      <p className="truncate text-[9px] text-text-muted">
+                      <p className="truncate text-3xs text-text-muted">
                         {asset.context?.entity_id || asset.file_name}
                       </p>
                     </div>
@@ -502,17 +514,17 @@ export function AssetGallery({ onClose }: { onClose: () => void }) {
               <div className="min-h-0 flex-1 overflow-y-auto p-3">
                 <div className="flex flex-col gap-2">
                   <div>
-                    <p className="text-[10px] uppercase tracking-wider text-text-muted">Type</p>
+                    <p className="text-2xs uppercase tracking-wider text-text-muted">Type</p>
                     <p className="text-xs text-text-secondary">{selected.asset_type.replace(/_/g, " ")}</p>
                   </div>
 
                   <div>
-                    <p className="text-[10px] uppercase tracking-wider text-text-muted">Media</p>
+                    <p className="text-2xs uppercase tracking-wider text-text-muted">Media</p>
                     <p className="text-xs text-text-secondary">{mediaKindForAsset(selected)}</p>
                   </div>
 
                   <div>
-                    <p className="text-[10px] uppercase tracking-wider text-text-muted">Status</p>
+                    <p className="text-2xs uppercase tracking-wider text-text-muted">Status</p>
                     <p className="text-xs text-text-secondary">
                       {shouldShowInCuratedView(selected) ? "Curated" : "Draft variant"}
                       {selected.sync_status === "synced" ? " • Synced to R2" : " • Local only"}
@@ -520,39 +532,39 @@ export function AssetGallery({ onClose }: { onClose: () => void }) {
                   </div>
 
                   <div>
-                    <p className="text-[10px] uppercase tracking-wider text-text-muted">Model</p>
+                    <p className="text-2xs uppercase tracking-wider text-text-muted">Model</p>
                     <p className="text-xs text-text-secondary">{selected.model.split("/").pop()}</p>
                   </div>
 
                   <div>
-                    <p className="text-[10px] uppercase tracking-wider text-text-muted">Size</p>
+                    <p className="text-2xs uppercase tracking-wider text-text-muted">Size</p>
                     <p className="text-xs text-text-secondary">
                       {selected.width > 0 && selected.height > 0 ? `${selected.width}x${selected.height}` : "n/a"}
                     </p>
                   </div>
 
                   <div>
-                    <p className="text-[10px] uppercase tracking-wider text-text-muted">Created</p>
+                    <p className="text-2xs uppercase tracking-wider text-text-muted">Created</p>
                     <p className="text-xs text-text-secondary">{formatDate(selected.created_at)}</p>
                   </div>
 
                   <div>
-                    <p className="text-[10px] uppercase tracking-wider text-text-muted">Variant group</p>
-                    <p className="truncate font-mono text-[10px] text-text-muted">
+                    <p className="text-2xs uppercase tracking-wider text-text-muted">Variant group</p>
+                    <p className="truncate font-mono text-2xs text-text-muted">
                       {selected.variant_group || "single asset"}
                     </p>
                   </div>
 
                   <div>
-                    <p className="text-[10px] uppercase tracking-wider text-text-muted">Hash</p>
-                    <p className="truncate font-mono text-[10px] text-text-muted">{selected.hash.slice(0, 16)}...</p>
+                    <p className="text-2xs uppercase tracking-wider text-text-muted">Hash</p>
+                    <p className="truncate font-mono text-2xs text-text-muted">{selected.hash.slice(0, 16)}...</p>
                   </div>
 
                   {selected.sync_status === "synced" && settings?.r2_custom_domain && (
                     <div>
-                      <p className="text-[10px] uppercase tracking-wider text-text-muted">R2 URL</p>
+                      <p className="text-2xs uppercase tracking-wider text-text-muted">R2 URL</p>
                       <div className="flex items-center gap-1">
-                        <p className="min-w-0 flex-1 truncate font-mono text-[10px] text-accent">
+                        <p className="min-w-0 flex-1 truncate font-mono text-2xs text-accent">
                           {`${settings.r2_custom_domain.replace(/\/$/, "")}/${selected.file_name}`}
                         </p>
                         <button
@@ -562,7 +574,7 @@ export function AssetGallery({ onClose }: { onClose: () => void }) {
                             setCopiedId(selected.id);
                             setTimeout(() => setCopiedId(null), 1500);
                           }}
-                          className="shrink-0 rounded px-1.5 py-0.5 text-[10px] text-text-muted transition-colors hover:bg-bg-elevated hover:text-text-secondary"
+                          className="shrink-0 rounded px-1.5 py-0.5 text-2xs text-text-muted transition-colors hover:bg-bg-elevated hover:text-text-secondary"
                           title="Copy URL"
                         >
                           {copiedId === selected.id ? "Copied" : "Copy"}
@@ -573,7 +585,7 @@ export function AssetGallery({ onClose }: { onClose: () => void }) {
 
                   {(selected.context?.zone || selected.context?.entity_type) && (
                     <div>
-                      <p className="text-[10px] uppercase tracking-wider text-text-muted">Context</p>
+                      <p className="text-2xs uppercase tracking-wider text-text-muted">Context</p>
                       <p className="text-xs text-text-secondary">
                         {selected.context?.zone || "Global"}
                         {selected.context?.entity_type && (
@@ -586,16 +598,16 @@ export function AssetGallery({ onClose }: { onClose: () => void }) {
                   )}
 
                   <div>
-                    <p className="text-[10px] uppercase tracking-wider text-text-muted">Prompt</p>
-                    <p className="text-[10px] leading-relaxed text-text-secondary">
+                    <p className="text-2xs uppercase tracking-wider text-text-muted">Prompt</p>
+                    <p className="text-2xs leading-relaxed text-text-secondary">
                       {selected.prompt.length > 320 ? `${selected.prompt.slice(0, 320)}...` : selected.prompt}
                     </p>
                   </div>
 
                   {selected.enhanced_prompt && (
                     <div>
-                      <p className="text-[10px] uppercase tracking-wider text-text-muted">Enhanced Prompt</p>
-                      <p className="text-[10px] leading-relaxed text-text-secondary">
+                      <p className="text-2xs uppercase tracking-wider text-text-muted">Enhanced Prompt</p>
+                      <p className="text-2xs leading-relaxed text-text-secondary">
                         {selected.enhanced_prompt.length > 320
                           ? `${selected.enhanced_prompt.slice(0, 320)}...`
                           : selected.enhanced_prompt}

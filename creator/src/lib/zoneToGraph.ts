@@ -2,6 +2,20 @@ import { MarkerType, type Node, type Edge } from "@xyflow/react";
 import type { WorldFile, ExitValue } from "@/types/world";
 import { OPPOSITE } from "@/lib/zoneEdits";
 
+// ─── Graph color tokens (match --color-graph-* in index.css) ────────
+
+const GRAPH = {
+  bg:     "#080c1c",
+  edge:   "#6a7aac",
+  edgeUp: "#7a5fc0",
+  cross:  "#c8972e",
+  door:   "#e2bc6a",
+  grid:   "#1e2748",
+  node:   "#2a3460",
+} as const;
+
+export { GRAPH };
+
 // ─── Node data types ────────────────────────────────────────────────
 
 export interface EntitySprite {
@@ -203,19 +217,19 @@ export function zoneToGraph(
       animated: isCrossZone || isVertical,
       markerEnd: isBidirectional
         ? undefined
-        : { type: MarkerType.ArrowClosed, color: isVertical ? "#7a5fc0" : "#6a7aac" },
+        : { type: MarkerType.ArrowClosed, color: isVertical ? GRAPH.edgeUp : GRAPH.edge },
       style: {
-        stroke: isCrossZone ? "#c8972e" : isVertical ? "#7a5fc0" : exit.hasDoor ? "#e2bc6a" : "#6a7aac",
+        stroke: isCrossZone ? GRAPH.cross : isVertical ? GRAPH.edgeUp : exit.hasDoor ? GRAPH.door : GRAPH.edge,
         strokeDasharray: exit.hasDoor ? "6 3" : isVertical ? "4 4" : undefined,
         strokeWidth: isVertical ? 2 : 1.5,
       },
       labelStyle: {
-        fill: "#6a7aac",
+        fill: GRAPH.edge,
         fontSize: 10,
         fontWeight: 500,
       },
       labelBgStyle: {
-        fill: "#080c1c",
+        fill: GRAPH.bg,
         fillOpacity: 0.9,
       },
     });

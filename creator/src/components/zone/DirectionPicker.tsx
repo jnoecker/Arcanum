@@ -65,7 +65,7 @@ export function DirectionPicker({
         <p className="mb-1 font-display text-xs tracking-wide text-text-primary">
           New exit direction
         </p>
-        <p className="mb-3 text-[10px] text-text-muted">
+        <p className="mb-3 text-2xs text-text-muted">
           {source} &rarr; {target}
         </p>
 

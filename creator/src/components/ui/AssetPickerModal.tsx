@@ -1,6 +1,7 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { useAssetStore } from "@/stores/assetStore";
+import { useFocusTrap } from "@/lib/useFocusTrap";
 import type { AssetEntry } from "@/types/assets";
 
 function LazyThumb({
@@ -47,23 +48,28 @@ export function AssetPickerModal({ onSelect, onClose }: AssetPickerModalProps) {
 
   const [filter, setFilter] = useState<string>("all");
   const [imageCache, setImageCache] = useState<Record<string, string>>({});
+  const trapRef = useFocusTrap<HTMLDivElement>(onClose);
 
   useEffect(() => {
     loadAssets();
   }, [loadAssets]);
 
-  const types = Array.from(new Set(assets.map((a) => a.asset_type)));
+  const types = useMemo(
+    () => Array.from(new Set(assets.map((a) => a.asset_type))),
+    [assets],
+  );
 
   // Only show image assets (exclude video/audio by checking file extension)
-  const imageAssets = assets.filter(
-    (a) =>
-      (filter === "all" || a.asset_type === filter) &&
-      /\.(png|jpe?g|webp)$/i.test(a.file_name),
-  );
-
-  const sorted = [...imageAssets].sort((a, b) =>
-    b.created_at.localeCompare(a.created_at),
-  );
+  const sorted = useMemo(() => {
+    const imageAssets = assets.filter(
+      (a) =>
+        (filter === "all" || a.asset_type === filter) &&
+        /\.(png|jpe?g|webp)$/i.test(a.file_name),
+    );
+    return [...imageAssets].sort((a, b) =>
+      b.created_at.localeCompare(a.created_at),
+    );
+  }, [assets, filter]);
 
   const loadImage = useCallback(
     (entry: AssetEntry) => {
@@ -85,11 +91,11 @@ export function AssetPickerModal({ onSelect, onClose }: AssetPickerModalProps) {
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="mx-4 flex max-h-[80vh] w-full max-w-3xl flex-col rounded-lg border border-border-default bg-bg-secondary shadow-xl">
+      <div ref={trapRef} role="dialog" aria-modal="true" aria-labelledby="asset-picker-title" className="mx-4 flex max-h-[80vh] w-full max-w-3xl flex-col rounded-lg border border-border-default bg-bg-secondary shadow-xl">
         {/* Header */}
         <div className="flex shrink-0 items-center justify-between border-b border-border-default px-5 py-3">
           <div className="flex items-center gap-3">
-            <h2 className="font-display text-sm tracking-wide text-text-primary">
+            <h2 id="asset-picker-title" className="font-display text-sm tracking-wide text-text-primary">
               Pick an Asset
             </h2>
             <span className="text-xs text-text-muted">
@@ -97,6 +103,7 @@ export function AssetPickerModal({ onSelect, onClose }: AssetPickerModalProps) {
             </span>
           </div>
           <button
+            aria-label="Close"
             onClick={onClose}
             className="text-xs text-text-muted hover:text-text-primary"
           >
@@ -108,7 +115,7 @@ export function AssetPickerModal({ onSelect, onClose }: AssetPickerModalProps) {
         <div className="flex shrink-0 items-center gap-1 border-b border-border-default px-5 py-2">
           <button
             onClick={() => setFilter("all")}
-            className={`rounded px-2 py-0.5 text-[10px] transition-colors ${
+            className={`rounded px-2 py-0.5 text-2xs transition-colors ${
               filter === "all"
                 ? "bg-accent/20 text-accent"
                 : "text-text-muted hover:text-text-secondary"
@@ -120,7 +127,7 @@ export function AssetPickerModal({ onSelect, onClose }: AssetPickerModalProps) {
             <button
               key={type}
               onClick={() => setFilter(type)}
-              className={`rounded px-2 py-0.5 text-[10px] transition-colors ${
+              className={`rounded px-2 py-0.5 text-2xs transition-colors ${
                 filter === type
                   ? "bg-accent/20 text-accent"
                   : "text-text-muted hover:text-text-secondary"
@@ -136,7 +143,7 @@ export function AssetPickerModal({ onSelect, onClose }: AssetPickerModalProps) {
           {sorted.length === 0 ? (
             <div className="flex h-32 items-center justify-center">
               <p className="text-sm text-text-muted">
-                No image assets found. Generate some art first.
+                No images in the library yet. Use the Generator to conjure some.
               </p>
             </div>
           ) : (
@@ -163,7 +170,7 @@ export function AssetPickerModal({ onSelect, onClose }: AssetPickerModalProps) {
                     )}
                   </div>
                   <div className="px-1.5 py-1">
-                    <p className="truncate text-[9px] text-text-muted">
+                    <p className="truncate text-3xs text-text-muted">
                       {asset.asset_type.replace(/_/g, " ")}
                     </p>
                   </div>

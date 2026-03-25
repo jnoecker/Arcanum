@@ -35,7 +35,7 @@ export function VariantStrip({ variantGroup, onSelect }: VariantStripProps) {
 
   return (
     <div className="flex flex-col gap-1">
-      <span className="text-[10px] text-text-muted">
+      <span className="text-2xs text-text-muted">
         Variants ({variants.length})
       </span>
       <div className="flex gap-1 overflow-x-auto pb-1">

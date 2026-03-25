@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import type { WorldFile, ExitValue } from "@/types/world";
 import {
   updateRoom,
@@ -72,30 +72,45 @@ export function RoomPanel({
 
   const isStartRoom = roomId === world.startRoom;
 
-  const exits = Object.entries(room.exits ?? {}).map(([dir, val]) => ({
-    direction: dir,
-    ...resolveExitTarget(val),
-  }));
+  const exits = useMemo(
+    () =>
+      Object.entries(room.exits ?? {}).map(([dir, val]) => ({
+        direction: dir,
+        ...resolveExitTarget(val),
+      })),
+    [room.exits],
+  );
 
   // Find entities in this room
-  const mobs = Object.entries(world.mobs ?? {}).filter(
-    ([, m]) => m.room === roomId,
+  const mobs = useMemo(
+    () => Object.entries(world.mobs ?? {}).filter(([, m]) => m.room === roomId),
+    [world.mobs, roomId],
   );
-  const items = Object.entries(world.items ?? {}).filter(
-    ([, i]) => i.room === roomId,
+  const items = useMemo(
+    () => Object.entries(world.items ?? {}).filter(([, i]) => i.room === roomId),
+    [world.items, roomId],
   );
-  const shops = Object.entries(world.shops ?? {}).filter(
-    ([, s]) => s.room === roomId,
+  const shops = useMemo(
+    () => Object.entries(world.shops ?? {}).filter(([, s]) => s.room === roomId),
+    [world.shops, roomId],
   );
-  const gatheringNodes = Object.entries(world.gatheringNodes ?? {}).filter(
-    ([, g]) => g.room === roomId,
+  const gatheringNodes = useMemo(
+    () =>
+      Object.entries(world.gatheringNodes ?? {}).filter(
+        ([, g]) => g.room === roomId,
+      ),
+    [world.gatheringNodes, roomId],
   );
-  const quests = Object.entries(world.quests ?? {}).filter(([, q]) => {
-    const giverMob = Object.entries(world.mobs ?? {}).find(
-      ([mobId]) => mobId === q.giver || `${zoneId}:${mobId}` === q.giver,
-    );
-    return giverMob && giverMob[1].room === roomId;
-  });
+  const quests = useMemo(
+    () =>
+      Object.entries(world.quests ?? {}).filter(([, q]) => {
+        const giverMob = Object.entries(world.mobs ?? {}).find(
+          ([mobId]) => mobId === q.giver || `${zoneId}:${mobId}` === q.giver,
+        );
+        return giverMob && giverMob[1].room === roomId;
+      }),
+    [world.quests, world.mobs, zoneId, roomId],
+  );
 
   const handleFieldChange = useCallback(
     (field: "title" | "description" | "station", value: string) => {
@@ -174,14 +189,14 @@ export function RoomPanel({
             />
             <p className="mt-0.5 text-xs text-text-muted">{roomId}</p>
             {isStartRoom && (
-              <span className="mt-1 inline-block rounded bg-accent/20 px-1.5 py-0.5 text-[10px] font-medium text-accent">
+              <span className="mt-1 inline-block rounded bg-accent/20 px-1.5 py-0.5 text-2xs font-medium text-accent">
                 Start Room
               </span>
             )}
           </div>
           <button
             onClick={() => setShowYaml((v) => !v)}
-            className={`shrink-0 rounded px-1.5 py-0.5 font-mono text-[10px] transition-colors ${
+            className={`shrink-0 rounded px-1.5 py-0.5 font-mono text-2xs transition-colors ${
               showYaml
                 ? "bg-accent/20 text-accent"
                 : "text-text-muted hover:bg-bg-elevated hover:text-text-primary"

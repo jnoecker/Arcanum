@@ -68,10 +68,10 @@ export function BulkImportButton({
         onClick={handleImport}
         disabled={importing}
       >
-        {importing ? "Importing…" : label}
+        {importing ? "Importing..." : label}
       </button>
       {lastResult && (
-        <span className="text-[10px] text-text-muted">{lastResult}</span>
+        <span className="text-2xs text-text-muted">{lastResult}</span>
       )}
     </div>
   );

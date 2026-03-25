@@ -24,7 +24,7 @@ export function CraftingStudio({
     <div className="flex flex-col gap-6">
       <div className="grid gap-5 xl:grid-cols-2">
         <div className="rounded-[24px] border border-white/8 bg-black/12 p-5">
-          <p className="text-[11px] uppercase tracking-[0.24em] text-text-muted">Progression</p>
+          <p className="text-[11px] uppercase tracking-ui text-text-muted">Progression</p>
           <h4 className="mt-2 font-display text-2xl text-text-primary">Skill curve</h4>
           <p className="mt-2 text-sm leading-7 text-text-secondary">
             Crafting skills level independently from character level. Shape the time to mastery here before tuning the skill list itself.
@@ -56,7 +56,7 @@ export function CraftingStudio({
         </div>
 
         <div className="rounded-[24px] border border-white/8 bg-black/12 p-5">
-          <p className="text-[11px] uppercase tracking-[0.24em] text-text-muted">Gathering loop</p>
+          <p className="text-[11px] uppercase tracking-ui text-text-muted">Gathering loop</p>
           <h4 className="mt-2 font-display text-2xl text-text-primary">Harvest pacing</h4>
           <p className="mt-2 text-sm leading-7 text-text-secondary">
             Control how quickly players harvest nodes and how much dedicated crafting stations outperform fieldwork.

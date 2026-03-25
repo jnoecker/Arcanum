@@ -1,10 +1,12 @@
 import { useValidationStore } from "@/stores/validationStore";
+import { useFocusTrap } from "@/lib/useFocusTrap";
 import type { ValidationIssue } from "@/lib/validateZone";
 
 export function ValidationPanel() {
   const results = useValidationStore((s) => s.results);
   const panelOpen = useValidationStore((s) => s.panelOpen);
   const closePanel = useValidationStore((s) => s.closePanel);
+  const trapRef = useFocusTrap<HTMLDivElement>(closePanel);
 
   if (!panelOpen || !results) return null;
 
@@ -18,10 +20,10 @@ export function ValidationPanel() {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-      <div className="mx-4 flex max-h-[80vh] w-full max-w-xl flex-col rounded-lg border border-border-default bg-bg-secondary shadow-xl">
+      <div ref={trapRef} role="dialog" aria-modal="true" aria-labelledby="validation-dialog-title" className="mx-4 flex max-h-[80vh] w-full max-w-xl flex-col rounded-lg border border-border-default bg-bg-secondary shadow-xl">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-border-default px-5 py-3">
-          <h2 className="font-display text-sm tracking-wide text-text-primary">
+          <h2 id="validation-dialog-title" className="font-display text-sm tracking-wide text-text-primary">
             Validation Results
           </h2>
           <div className="flex items-center gap-3 text-xs">
@@ -88,7 +90,7 @@ function ZoneIssueGroup({
     <div>
       <div className="mb-1 flex items-center gap-2">
         <h3 className="font-display text-xs text-text-primary">{zoneId}</h3>
-        <span className="text-[10px] text-text-muted">
+        <span className="text-2xs text-text-muted">
           {errs.length}E / {warns.length}W
         </span>
       </div>

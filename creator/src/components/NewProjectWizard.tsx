@@ -2,6 +2,7 @@ import { useState } from "react";
 import { open } from "@tauri-apps/plugin-dialog";
 import { TEMPLATES, type ProjectTemplate } from "@/lib/templates";
 import { useNewProject, type WizardStage } from "@/lib/useNewProject";
+import { useFocusTrap } from "@/lib/useFocusTrap";
 
 interface NewProjectWizardProps {
   onClose: () => void;
@@ -14,7 +15,7 @@ const STAGE_LABELS: Record<WizardStage, string> = {
   creating_structure: "Creating project...",
   setting_up: "Setting up project...",
   done: "Done!",
-  error: "Error",
+  error: "Project creation failed",
 };
 
 export function NewProjectWizard({ onClose }: NewProjectWizardProps) {
@@ -33,6 +34,7 @@ export function NewProjectWizard({ onClose }: NewProjectWizardProps) {
   // Wizard navigation
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const { stage, error, create, reset } = useNewProject();
+  const trapRef = useFocusTrap<HTMLDivElement>(onClose);
 
   const fullPath =
     parentDir && projectName ? `${parentDir}/${projectName}` : "";
@@ -78,13 +80,13 @@ export function NewProjectWizard({ onClose }: NewProjectWizardProps) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-      <div className="mx-4 w-full max-w-lg rounded-lg border border-border-default bg-bg-secondary shadow-xl">
+      <div ref={trapRef} role="dialog" aria-modal="true" aria-labelledby="new-project-title" className="mx-4 w-full max-w-lg rounded-lg border border-border-default bg-bg-secondary shadow-xl">
         {/* Header */}
         <div className="border-b border-border-default px-5 py-3">
-          <h2 className="font-display text-sm tracking-wide text-accent-emphasis">
+          <h2 id="new-project-title" className="font-display text-sm tracking-wide text-accent-emphasis">
             Create New Project
           </h2>
-          <p className="mt-0.5 text-[10px] text-text-muted">
+          <p className="mt-0.5 text-2xs text-text-muted">
             {step === 1 && "Step 1 of 2: Location"}
             {step === 2 && "Step 2 of 2: Template & Ports"}
             {step === 3 && "Creating project..."}
@@ -131,7 +133,7 @@ export function NewProjectWizard({ onClose }: NewProjectWizardProps) {
                 </div>
               </div>
               {fullPath && (
-                <p className="text-[10px] text-text-muted">
+                <p className="text-2xs text-text-muted">
                   Project will be created at:{" "}
                   <code className="font-mono text-text-secondary">
                     {fullPath}
@@ -139,7 +141,7 @@ export function NewProjectWizard({ onClose }: NewProjectWizardProps) {
                 </p>
               )}
               {nameError && (
-                <p className="text-[10px] text-status-error">{nameError}</p>
+                <p className="text-2xs text-status-error">{nameError}</p>
               )}
             </div>
           </div>
@@ -167,7 +169,7 @@ export function NewProjectWizard({ onClose }: NewProjectWizardProps) {
                       <div className="text-xs font-medium text-text-primary">
                         {t.name}
                       </div>
-                      <div className="mt-0.5 text-[10px] text-text-muted">
+                      <div className="mt-0.5 text-2xs text-text-muted">
                         {t.description}
                       </div>
                     </button>

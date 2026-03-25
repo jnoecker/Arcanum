@@ -53,13 +53,13 @@ export function LocationStep({ data, onChange, nameError }: LocationStepProps) {
         </div>
       </div>
       {fullPath && (
-        <p className="text-[10px] text-text-muted">
+        <p className="text-2xs text-text-muted">
           Project will be created at:{" "}
           <code className="font-mono text-text-secondary">{fullPath}</code>
         </p>
       )}
       {nameError && (
-        <p className="text-[10px] text-status-error">{nameError}</p>
+        <p className="text-2xs text-status-error">{nameError}</p>
       )}
     </div>
   );

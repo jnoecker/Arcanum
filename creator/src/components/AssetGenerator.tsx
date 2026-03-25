@@ -1,7 +1,18 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { useAssetStore } from "@/stores/assetStore";
 import { useConfigStore } from "@/stores/configStore";
+import { useFocusTrap } from "@/lib/useFocusTrap";
+
+const GENERATION_MESSAGES = [
+  "The Arcanum renders your vision...",
+  "Weaving light from the void...",
+  "Shaping form from the aether...",
+  "Distilling essence into image...",
+  "The cosmos aligns to your intent...",
+  "Drawing pigment from starlight...",
+  "Illuminating the unseen...",
+];
 import {
   ASSET_TEMPLATES,
   getPreamble,
@@ -38,6 +49,15 @@ export function AssetGenerator() {
   const [enhancing, setEnhancing] = useState(false);
   const [result, setResult] = useState<GeneratedImage | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const trapRef = useFocusTrap<HTMLDivElement>(closeGenerator);
+
+  // Rotate through atmospheric messages during generation
+  const [msgIndex, setMsgIndex] = useState(0);
+  useEffect(() => {
+    if (stage !== "generating") { setMsgIndex(0); return; }
+    const id = setInterval(() => setMsgIndex((i) => (i + 1) % GENERATION_MESSAGES.length), 3500);
+    return () => clearInterval(id);
+  }, [stage]);
   const [accepting, setAccepting] = useState(false);
 
   // Global asset key (if user wants to save as a config global asset)
@@ -151,7 +171,7 @@ export function AssetGenerator() {
   if (!hasApiKey) {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-        <div className="mx-4 w-96 rounded-lg border border-border-default bg-bg-secondary shadow-xl">
+        <div ref={trapRef} role="alertdialog" aria-modal="true" className="mx-4 w-96 rounded-lg border border-border-default bg-bg-secondary shadow-xl">
           <div className="border-b border-border-default px-5 py-3">
             <h2 className="font-display text-sm tracking-wide text-text-primary">
               API Key Required
@@ -177,13 +197,14 @@ export function AssetGenerator() {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-      <div className="mx-4 flex max-h-[90vh] w-full max-w-2xl flex-col rounded-lg border border-border-default bg-bg-secondary shadow-xl">
+      <div ref={trapRef} role="dialog" aria-modal="true" aria-labelledby="asset-gen-title" className="mx-4 flex max-h-[90vh] w-full max-w-2xl flex-col rounded-lg border border-border-default bg-bg-secondary shadow-xl">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-border-default px-5 py-3">
-          <h2 className="font-display text-sm tracking-wide text-text-primary">
+          <h2 id="asset-gen-title" className="font-display text-sm tracking-wide text-text-primary">
             Generate Art
           </h2>
           <button
+            aria-label="Close"
             onClick={closeGenerator}
             className="text-xs text-text-muted hover:text-text-primary"
           >
@@ -196,7 +217,7 @@ export function AssetGenerator() {
           {stage === "compose" && (
             <div className="flex flex-col gap-4">
               <div className="rounded-lg border border-border-default/60 bg-bg-primary/60 px-3 py-2">
-                <div className="font-display text-[10px] uppercase tracking-widest text-text-muted">
+                <div className="font-display text-2xs uppercase tracking-widest text-text-muted">
                   Style System
                 </div>
                 <div className="mt-1 text-xs text-text-secondary">
@@ -206,7 +227,7 @@ export function AssetGenerator() {
 
               {/* Asset type */}
               <div>
-                <label className="mb-1 block font-display text-[10px] uppercase tracking-widest text-text-muted">
+                <label className="mb-1 block font-display text-2xs uppercase tracking-widest text-text-muted">
                   Asset Type
                 </label>
                 <div className="flex flex-wrap gap-1.5">
@@ -230,7 +251,7 @@ export function AssetGenerator() {
 
               {/* Model */}
               <div>
-                <label className="mb-1 block font-display text-[10px] uppercase tracking-widest text-text-muted">
+                <label className="mb-1 block font-display text-2xs uppercase tracking-widest text-text-muted">
                   Model
                 </label>
                 <div className="flex gap-2">
@@ -245,7 +266,7 @@ export function AssetGenerator() {
                       }`}
                     >
                       <div className="font-medium">{model.label}</div>
-                      <div className="text-[10px] opacity-70">{model.description}</div>
+                      <div className="text-2xs opacity-70">{model.description}</div>
                     </button>
                   ))}
                 </div>
@@ -253,7 +274,7 @@ export function AssetGenerator() {
 
               {/* Customization */}
               <div>
-                <label className="mb-1 block font-display text-[10px] uppercase tracking-widest text-text-muted">
+                <label className="mb-1 block font-display text-2xs uppercase tracking-widest text-text-muted">
                   Customization (optional)
                 </label>
                 <input
@@ -268,13 +289,13 @@ export function AssetGenerator() {
               {/* Prompt preview */}
               <div>
                 <div className="mb-1 flex items-center gap-2">
-                  <label className="font-display text-[10px] uppercase tracking-widest text-text-muted">
+                  <label className="font-display text-2xs uppercase tracking-widest text-text-muted">
                     Prompt
                   </label>
                   <button
                     onClick={handleEnhance}
                     disabled={enhancing}
-                    className="ml-auto rounded px-2 py-0.5 text-[10px] text-accent transition-colors hover:bg-accent/10 disabled:opacity-50"
+                    className="ml-auto rounded px-2 py-0.5 text-2xs text-accent transition-colors hover:bg-accent/10 disabled:opacity-50"
                   >
                     {enhancing ? "Enhancing..." : "Enhance with AI"}
                   </button>
@@ -295,13 +316,13 @@ export function AssetGenerator() {
                   <div className="mt-1 flex gap-2">
                     <button
                       onClick={() => setUseEnhanced(true)}
-                      className={`text-[10px] ${useEnhanced ? "text-accent" : "text-text-muted hover:text-text-secondary"}`}
+                      className={`text-2xs ${useEnhanced ? "text-accent" : "text-text-muted hover:text-text-secondary"}`}
                     >
                       Enhanced
                     </button>
                     <button
                       onClick={() => setUseEnhanced(false)}
-                      className={`text-[10px] ${!useEnhanced ? "text-accent" : "text-text-muted hover:text-text-secondary"}`}
+                      className={`text-2xs ${!useEnhanced ? "text-accent" : "text-text-muted hover:text-text-secondary"}`}
                     >
                       Original
                     </button>
@@ -310,7 +331,7 @@ export function AssetGenerator() {
               </div>
 
               {error && (
-                <p className="text-xs italic text-status-error">{error}</p>
+                <p className="text-xs italic text-status-error">Generation failed: {error}</p>
               )}
             </div>
           )}
@@ -324,12 +345,9 @@ export function AssetGenerator() {
               />
               <div className="absolute inset-0 bg-gradient-to-t from-bg-secondary via-bg-secondary/70 to-bg-secondary/50" />
               <div className="relative z-10 flex flex-col items-center gap-4">
-                <div className="h-8 w-8 rounded-full border-2 border-accent border-t-transparent animate-spin" />
-                <p className="font-display text-sm tracking-wide text-text-secondary">
-                  Generating...
-                </p>
-                <p className="text-xs text-text-muted">
-                  This may take a few seconds
+                <div className="h-8 w-8 animate-slow-rotate rounded-full border-2 border-accent/60 border-t-accent" />
+                <p className="font-display text-sm tracking-wide text-text-secondary transition-opacity duration-700">
+                  {GENERATION_MESSAGES[msgIndex]}
                 </p>
               </div>
             </div>
@@ -352,7 +370,7 @@ export function AssetGenerator() {
 
               {/* Save as global asset option */}
               <div>
-                <label className="mb-1 block font-display text-[10px] uppercase tracking-widest text-text-muted">
+                <label className="mb-1 block font-display text-2xs uppercase tracking-widest text-text-muted">
                   Save as Global Asset (optional)
                 </label>
                 <input
@@ -362,13 +380,13 @@ export function AssetGenerator() {
                   placeholder="e.g. compass_rose, login_splash, world_map"
                   className="w-full rounded border border-border-default bg-bg-primary px-3 py-1.5 text-xs text-text-primary placeholder:text-text-muted outline-none focus:border-accent/50"
                 />
-                <p className="mt-0.5 text-[10px] text-text-muted">
+                <p className="mt-0.5 text-2xs text-text-muted">
                   Enter a key name to register this asset in application.yaml under images.globalAssets
                 </p>
               </div>
 
               {error && (
-                <p className="text-xs italic text-status-error">{error}</p>
+                <p className="text-xs italic text-status-error">Generation failed: {error}</p>
               )}
             </div>
           )}

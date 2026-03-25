@@ -35,7 +35,7 @@ export function TemplateStyleStep({
               <div className="text-xs font-medium text-text-primary">
                 {t.name}
               </div>
-              <div className="mt-0.5 text-[10px] text-text-muted">
+              <div className="mt-0.5 text-2xs text-text-muted">
                 {t.description}
               </div>
               {t.features && t.features.length > 0 && (
@@ -43,7 +43,7 @@ export function TemplateStyleStep({
                   {t.features.map((f) => (
                     <span
                       key={f}
-                      className="rounded bg-bg-elevated px-1.5 py-0.5 text-[9px] text-text-muted"
+                      className="rounded bg-bg-elevated px-1.5 py-0.5 text-3xs text-text-muted"
                     >
                       {f}
                     </span>
@@ -64,10 +64,10 @@ export function TemplateStyleStep({
           <div className="text-xs font-medium text-text-primary">
             {ART_STYLE_LABELS.gentle_magic}
           </div>
-          <div className="mt-0.5 text-[10px] text-text-muted">
+          <div className="mt-0.5 text-2xs text-text-muted">
             {ART_STYLE_DESCRIPTIONS.gentle_magic}
           </div>
-          <div className="mt-2 text-[10px] text-text-secondary">
+          <div className="mt-2 text-2xs text-text-secondary">
             This creator now uses a single visual system. Future style guides can be loaded as data,
             but Surreal Gentle Magic is the active v1 path.
           </div>

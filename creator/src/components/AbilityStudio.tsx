@@ -401,7 +401,7 @@ export function AbilityStudio() {
   }
 
   return (
-    <section className="rounded-[28px] border border-white/10 bg-[linear-gradient(160deg,rgba(54,63,90,0.95),rgba(42,53,79,0.92))] p-5 shadow-[0_18px_50px_rgba(9,12,24,0.24)]">
+    <section className="rounded-[28px] border border-white/10 bg-gradient-panel p-5 shadow-[0_18px_50px_rgba(9,12,24,0.24)]">
       <div className="mb-5 flex items-center justify-between gap-4">
         <div>
           <h2 className="font-display text-xl text-text-primary">Ability studio</h2>
@@ -430,9 +430,9 @@ export function AbilityStudio() {
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
-                  className={`rounded-full border px-3 py-1.5 text-[11px] uppercase tracking-[0.18em] transition ${
+                  className={`rounded-full border px-3 py-1.5 text-[11px] uppercase tracking-label transition ${
                     activeTab === tab
-                      ? "border-[rgba(184,216,232,0.35)] bg-[rgba(168,151,210,0.16)] text-text-primary"
+                      ? "border-border-active bg-[rgba(168,151,210,0.16)] text-text-primary"
                       : "border-white/8 bg-black/10 text-text-muted hover:bg-white/8"
                   }`}
                 >
@@ -452,7 +452,7 @@ export function AbilityStudio() {
                       onClick={() => setSelectedKey(key)}
                       className={`flex items-center gap-3 rounded-[18px] border px-3 py-3 text-left transition ${
                         selected
-                          ? "border-[rgba(184,216,232,0.35)] bg-[linear-gradient(135deg,rgba(168,151,210,0.16),rgba(140,174,201,0.12))]"
+                          ? "border-border-active bg-gradient-active"
                           : "border-white/8 bg-black/10 hover:bg-white/8"
                       }`}
                     >
@@ -472,13 +472,13 @@ export function AbilityStudio() {
             <div className="rounded-[24px] border border-white/8 bg-black/12 p-4">
               <div className="mb-3 flex items-start justify-between gap-3">
                 <div>
-                  <div className="text-[11px] uppercase tracking-[0.24em] text-text-muted">
+                  <div className="text-[11px] uppercase tracking-ui text-text-muted">
                     {selectedTarget.kind === "ability" ? "Ability icon" : "Status effect icon"}
                   </div>
                   <h3 className="mt-1 font-display text-2xl text-text-primary">{selectedTarget.label}</h3>
                   <div className="mt-1 text-xs text-text-secondary">{selectedTarget.subtitle}</div>
                 </div>
-                <span className="rounded-full bg-white/8 px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-text-muted">
+                <span className="rounded-full bg-white/8 px-3 py-1 text-[11px] uppercase tracking-label text-text-muted">
                   {variants.length} variants
                 </span>
               </div>
@@ -493,7 +493,7 @@ export function AbilityStudio() {
 
               {variants.length > 0 && (
                 <div className="mt-4">
-                  <div className="mb-2 text-[11px] uppercase tracking-[0.22em] text-text-muted">Variant strip</div>
+                  <div className="mb-2 text-[11px] uppercase tracking-ui text-text-muted">Variant strip</div>
                   <div className="flex gap-2 overflow-x-auto pb-1">
                     {variants.map((entry) => (
                       <VariantCard key={entry.id} entry={entry} assetsDir={assetsDir} onClick={() => handleVariantSelect(entry)} />
@@ -504,17 +504,17 @@ export function AbilityStudio() {
             </div>
 
             <div className="rounded-[24px] border border-white/8 bg-black/12 p-4">
-              <div className="mb-3 text-[11px] uppercase tracking-[0.22em] text-text-muted">Prompt engineering</div>
+              <div className="mb-3 text-[11px] uppercase tracking-ui text-text-muted">Prompt engineering</div>
               <textarea
                 value={promptDraft}
                 onChange={(event) => setPromptDraft(event.target.value)}
                 rows={14}
-                className="w-full resize-y rounded-[20px] border border-white/10 bg-[rgba(24,30,45,0.72)] px-4 py-3 font-mono text-[12px] leading-6 text-text-secondary outline-none transition focus:border-[rgba(184,216,232,0.3)]"
+                className="w-full resize-y rounded-[20px] border border-white/10 bg-surface-scrim px-4 py-3 font-mono text-[12px] leading-6 text-text-secondary outline-none transition focus:border-border-active"
                 placeholder="Generate an icon prompt..."
               />
 
-              <div className="mt-3 rounded-[18px] border border-white/8 bg-[rgba(24,30,45,0.46)] px-4 py-3">
-                <div className="text-[11px] uppercase tracking-[0.2em] text-text-muted">Definition context</div>
+              <div className="mt-3 rounded-[18px] border border-white/8 bg-surface-scrim-light px-4 py-3">
+                <div className="text-[11px] uppercase tracking-ui text-text-muted">Definition context</div>
                 <div className="mt-2 whitespace-pre-wrap text-xs leading-6 text-text-secondary">
                   {selectedTarget.kind === "ability" && selectedTarget.ability
                     ? buildAbilityContext(selectedTarget.id, selectedTarget.ability)
@@ -535,7 +535,7 @@ export function AbilityStudio() {
                 <button
                   onClick={handleGenerateImage}
                   disabled={!hasImageKey || !promptDraft.trim() || generatingPrompt || generatingImage || batchGenerating}
-                  className="rounded-full border border-[rgba(168,151,210,0.35)] bg-[linear-gradient(135deg,rgba(168,151,210,0.22),rgba(140,174,201,0.14))] px-4 py-2 text-xs font-medium text-text-primary transition enabled:hover:-translate-y-0.5 disabled:opacity-50"
+                  className="rounded-full border border-[rgba(168,151,210,0.35)] bg-gradient-active-strong px-4 py-2 text-xs font-medium text-text-primary transition enabled:hover:-translate-y-0.5 disabled:opacity-50"
                 >
                   {generatingImage ? "Generating image..." : "Generate image"}
                 </button>

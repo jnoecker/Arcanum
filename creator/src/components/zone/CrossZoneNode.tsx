@@ -50,7 +50,7 @@ export function CrossZoneNode({ data }: NodeProps<CrossZoneNodeType>) {
       )}
 
       <div className="text-center">
-        <div className="text-[10px] text-accent/80">{d.zone}</div>
+        <div className="text-2xs text-accent/80">{d.zone}</div>
         <div className="truncate text-xs text-accent">{d.room}</div>
       </div>
     </div>

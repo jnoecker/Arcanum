@@ -67,7 +67,7 @@ export function DemoZoneStep({ data, onChange, hasLlmKey }: DemoZoneStepProps) {
       {/* Left: configuration */}
       <div className="flex flex-col gap-3 lg:w-1/2">
         <div>
-          <label className="mb-0.5 block text-[10px] text-text-muted">
+          <label className="mb-0.5 block text-2xs text-text-muted">
             Zone Name
           </label>
           <input
@@ -79,7 +79,7 @@ export function DemoZoneStep({ data, onChange, hasLlmKey }: DemoZoneStepProps) {
         </div>
 
         <div>
-          <label className="mb-0.5 block text-[10px] text-text-muted">
+          <label className="mb-0.5 block text-2xs text-text-muted">
             Zone Theme
           </label>
           <textarea
@@ -93,7 +93,7 @@ export function DemoZoneStep({ data, onChange, hasLlmKey }: DemoZoneStepProps) {
 
         <div className="grid grid-cols-3 gap-3">
           <div>
-            <label className="mb-0.5 block text-[10px] text-text-muted">
+            <label className="mb-0.5 block text-2xs text-text-muted">
               Rooms ({data.roomCount})
             </label>
             <input
@@ -108,7 +108,7 @@ export function DemoZoneStep({ data, onChange, hasLlmKey }: DemoZoneStepProps) {
             />
           </div>
           <div>
-            <label className="mb-0.5 block text-[10px] text-text-muted">
+            <label className="mb-0.5 block text-2xs text-text-muted">
               Mobs ({data.mobCount})
             </label>
             <input
@@ -123,7 +123,7 @@ export function DemoZoneStep({ data, onChange, hasLlmKey }: DemoZoneStepProps) {
             />
           </div>
           <div>
-            <label className="mb-0.5 block text-[10px] text-text-muted">
+            <label className="mb-0.5 block text-2xs text-text-muted">
               Items ({data.itemCount})
             </label>
             <input
@@ -149,27 +149,27 @@ export function DemoZoneStep({ data, onChange, hasLlmKey }: DemoZoneStepProps) {
               {generating ? (
                 <span className="flex items-center gap-1.5">
                   <span className="inline-block h-3 w-3 animate-spin rounded-full border border-accent-emphasis border-t-transparent" />
-                  Generating...
+                  Shaping your first zone...
                 </span>
               ) : (
                 "Generate Zone"
               )}
             </button>
           ) : (
-            <div className="text-[10px] text-text-muted">
+            <div className="text-2xs text-text-muted">
               Configure an API key in Settings to generate content with AI.
             </div>
           )}
           <button
             onClick={handleCreateFallback}
-            className="rounded border border-border-default bg-bg-elevated px-3 py-1.5 text-[10px] text-text-secondary transition-colors hover:bg-bg-hover"
+            className="rounded border border-border-default bg-bg-elevated px-3 py-1.5 text-2xs text-text-secondary transition-colors hover:bg-bg-hover"
           >
             Use Template
           </button>
         </div>
 
         {genError && (
-          <p className="text-[10px] text-status-error">{genError}</p>
+          <p className="text-2xs text-status-error">{genError}</p>
         )}
       </div>
 
@@ -179,7 +179,7 @@ export function DemoZoneStep({ data, onChange, hasLlmKey }: DemoZoneStepProps) {
           <div className="flex flex-col gap-3">
             {/* Rooms */}
             <div>
-              <h4 className="mb-1 text-[10px] font-medium uppercase tracking-wider text-text-muted">
+              <h4 className="mb-1 text-2xs font-medium uppercase tracking-wider text-text-muted">
                 Rooms ({Object.keys(data.demoZone.rooms).length})
               </h4>
               <div className="flex flex-col gap-1.5">
@@ -200,7 +200,7 @@ export function DemoZoneStep({ data, onChange, hasLlmKey }: DemoZoneStepProps) {
                         updateRoom(id, "description", e.target.value)
                       }
                       rows={2}
-                      className="w-full bg-transparent text-[10px] text-text-secondary outline-none"
+                      className="w-full bg-transparent text-2xs text-text-secondary outline-none"
                     />
                     {room.exits && (
                       <div className="mt-0.5 flex gap-1">
@@ -224,7 +224,7 @@ export function DemoZoneStep({ data, onChange, hasLlmKey }: DemoZoneStepProps) {
             {data.demoZone.mobs &&
               Object.keys(data.demoZone.mobs).length > 0 && (
                 <div>
-                  <h4 className="mb-1 text-[10px] font-medium uppercase tracking-wider text-text-muted">
+                  <h4 className="mb-1 text-2xs font-medium uppercase tracking-wider text-text-muted">
                     Mobs ({Object.keys(data.demoZone.mobs).length})
                   </h4>
                   <div className="flex flex-col gap-1.5">
@@ -252,7 +252,7 @@ export function DemoZoneStep({ data, onChange, hasLlmKey }: DemoZoneStepProps) {
                             updateMob(id, "description", e.target.value)
                           }
                           rows={1}
-                          className="mt-0.5 w-full bg-transparent text-[10px] text-text-secondary outline-none"
+                          className="mt-0.5 w-full bg-transparent text-2xs text-text-secondary outline-none"
                         />
                       </div>
                     ))}
@@ -264,7 +264,7 @@ export function DemoZoneStep({ data, onChange, hasLlmKey }: DemoZoneStepProps) {
             {data.demoZone.items &&
               Object.keys(data.demoZone.items).length > 0 && (
                 <div>
-                  <h4 className="mb-1 text-[10px] font-medium uppercase tracking-wider text-text-muted">
+                  <h4 className="mb-1 text-2xs font-medium uppercase tracking-wider text-text-muted">
                     Items ({Object.keys(data.demoZone.items).length})
                   </h4>
                   <div className="flex flex-col gap-1.5">
@@ -287,7 +287,7 @@ export function DemoZoneStep({ data, onChange, hasLlmKey }: DemoZoneStepProps) {
                             updateItem(id, "description", e.target.value)
                           }
                           rows={1}
-                          className="mt-0.5 w-full bg-transparent text-[10px] text-text-secondary outline-none"
+                          className="mt-0.5 w-full bg-transparent text-2xs text-text-secondary outline-none"
                         />
                         <div className="mt-0.5 flex gap-1">
                           {item.slot && (

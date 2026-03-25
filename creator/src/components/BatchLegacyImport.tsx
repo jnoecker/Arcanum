@@ -2,6 +2,7 @@ import { useState, useCallback } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { useProjectStore } from "@/stores/projectStore";
 import { useAssetStore } from "@/stores/assetStore";
+import { useFocusTrap } from "@/lib/useFocusTrap";
 import type { AssetEntry } from "@/types/assets";
 
 interface LegacyMedia {
@@ -149,15 +150,18 @@ export function BatchLegacyImport({ onClose }: { onClose: () => void }) {
   const needsImport = hasLocalImages && !importFinished;
   const needsSync = importFinished && phase === "import";
 
+  const trapRef = useFocusTrap<HTMLDivElement>(onClose);
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-      <div className="mx-4 flex max-h-[80vh] w-full max-w-lg flex-col rounded-lg border border-border-default bg-bg-secondary shadow-xl">
+      <div ref={trapRef} role="dialog" aria-modal="true" aria-labelledby="batch-import-title" className="mx-4 flex max-h-[80vh] w-full max-w-lg flex-col rounded-lg border border-border-default bg-bg-secondary shadow-xl">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-border-default px-5 py-3">
-          <h2 className="font-display text-sm tracking-wide text-text-primary">
+          <h2 id="batch-import-title" className="font-display text-sm tracking-wide text-text-primary">
             Migrate Images to R2
           </h2>
           <button
+            aria-label="Close"
             onClick={onClose}
             disabled={running || migrating}
             className="text-xs text-text-muted hover:text-text-primary disabled:opacity-50"
@@ -169,7 +173,7 @@ export function BatchLegacyImport({ onClose }: { onClose: () => void }) {
         {/* Body */}
         <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
           {/* Step indicators */}
-          <div className="mb-4 flex items-center gap-1 text-[10px]">
+          <div className="mb-4 flex items-center gap-1 text-2xs">
             <StepBadge label="1. Scan" active={phase === "scan"} done={targets !== null} />
             <span className="text-text-muted">&rarr;</span>
             <StepBadge label="2. Import" active={phase === "import"} done={importFinished && hasLocalImages} />
@@ -185,7 +189,7 @@ export function BatchLegacyImport({ onClose }: { onClose: () => void }) {
               <p className="text-sm text-text-secondary">
                 Scan for local media (images, audio, video), import them, sync to R2, then rewrite all YAML references to use R2 filenames.
               </p>
-              <p className="rounded bg-bg-primary px-3 py-1.5 font-mono text-[10px] text-text-muted">
+              <p className="rounded bg-bg-primary px-3 py-1.5 font-mono text-2xs text-text-muted">
                 {mudDir}/src/main/resources/
               </p>
               <button
@@ -266,7 +270,7 @@ export function BatchLegacyImport({ onClose }: { onClose: () => void }) {
               <p className="text-sm text-text-secondary">
                 Ready to rewrite all YAML image references to R2 hash filenames and delete local image files.
               </p>
-              <p className="rounded bg-bg-primary px-3 py-2 text-[10px] text-text-muted">
+              <p className="rounded bg-bg-primary px-3 py-2 text-2xs text-text-muted">
                 This will modify zone YAMLs and application.yaml in place.
               </p>
             </div>

@@ -3,6 +3,7 @@ import type { WorldFile } from "@/types/world";
 import { ART_STYLE_LABELS } from "@/lib/arcanumPrompts";
 import { useAssetStore } from "@/stores/assetStore";
 import { useVibeStore } from "@/stores/vibeStore";
+import { useFocusTrap } from "@/lib/useFocusTrap";
 import {
   collectTargets,
   runBatchArtGeneration,
@@ -28,6 +29,7 @@ export function BatchArtGenerator({
   const [running, setRunning] = useState(false);
   const [concurrency, setConcurrency] = useState(settings?.batch_concurrency ?? 5);
   const abortRef = useRef(false);
+  const trapRef = useFocusTrap<HTMLDivElement>(running ? undefined : onClose);
 
   const checkedTargets = targets.filter((t) => t.checked);
   const doneCount = targets.filter((t) => t.status === "done").length;
@@ -106,9 +108,9 @@ export function BatchArtGenerator({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={running ? undefined : onClose}>
-      <div className="mx-4 flex max-h-[80vh] w-full max-w-lg flex-col rounded-lg border border-border-default bg-bg-secondary shadow-xl" onClick={(e) => e.stopPropagation()}>
+      <div ref={trapRef} role="dialog" aria-modal="true" aria-labelledby="batch-art-title" className="mx-4 flex max-h-[80vh] w-full max-w-lg flex-col rounded-lg border border-border-default bg-bg-secondary shadow-xl" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between border-b border-border-default px-5 py-3">
-          <h2 className="font-display text-sm tracking-wide text-text-primary">
+          <h2 id="batch-art-title" className="font-display text-sm tracking-wide text-text-primary">
             Batch Art — {zoneId}
           </h2>
           <span className="text-xs text-text-muted">
@@ -123,7 +125,7 @@ export function BatchArtGenerator({
               Style system: {ART_STYLE_LABELS[artStyle]}
             </div>
             <div className="mt-2 flex items-center gap-2">
-              <label className="text-[10px] text-text-muted">Concurrency:</label>
+              <label className="text-2xs text-text-muted">Concurrency:</label>
               <input
                 type="range"
                 min={1}
@@ -132,9 +134,9 @@ export function BatchArtGenerator({
                 onChange={(e) => setConcurrency(Number(e.target.value))}
                 className="w-24 accent-accent"
               />
-              <span className="text-[10px] text-text-secondary">{concurrency}</span>
+              <span className="text-2xs text-text-secondary">{concurrency}</span>
               {vibe && (
-                <span className="ml-auto text-[10px] text-accent" title={vibe}>
+                <span className="ml-auto text-2xs text-accent" title={vibe}>
                   vibe active
                 </span>
               )}
@@ -196,7 +198,7 @@ export function BatchArtGenerator({
                   {target.label}
                 </span>
                 {target.error && (
-                  <span className="truncate text-[10px] text-status-error" title={target.error}>
+                  <span className="truncate text-2xs text-status-error" title={target.error}>
                     {target.error.slice(0, 40)}
                   </span>
                 )}

@@ -58,7 +58,9 @@ export function ApiSettingsPanel({
     }
   };
 
-  const isDirty = JSON.stringify(draft) !== JSON.stringify(settings);
+  const isDirty = !settings || (Object.keys(draft) as (keyof Settings)[]).some(
+    (k) => draft[k] !== settings[k],
+  );
 
   const filteredModels = IMAGE_MODELS.filter(
     (m) => m.provider === draft.image_provider,
@@ -75,7 +77,7 @@ export function ApiSettingsPanel({
         </h3>
         <div className="flex flex-col gap-3">
           <div>
-            <label className="mb-1 block text-[10px] uppercase tracking-wider text-text-muted">
+            <label className="mb-1 block text-2xs uppercase tracking-wider text-text-muted">
               DeepInfra API Key
             </label>
             <input
@@ -87,13 +89,13 @@ export function ApiSettingsPanel({
               placeholder="Enter your DeepInfra API key"
               className="w-full rounded border border-border-default bg-bg-primary px-3 py-1.5 text-xs text-text-primary placeholder:text-text-muted outline-none focus:border-accent/50"
             />
-            <p className="mt-1 text-[10px] text-text-muted">
+            <p className="mt-1 text-2xs text-text-muted">
               Get your key at deepinfra.com/dash/api_keys
             </p>
           </div>
 
           <div>
-            <label className="mb-1 block text-[10px] uppercase tracking-wider text-text-muted">
+            <label className="mb-1 block text-2xs uppercase tracking-wider text-text-muted">
               Anthropic API Key
             </label>
             <input
@@ -108,7 +110,7 @@ export function ApiSettingsPanel({
           </div>
 
           <div>
-            <label className="mb-1 block text-[10px] uppercase tracking-wider text-text-muted">
+            <label className="mb-1 block text-2xs uppercase tracking-wider text-text-muted">
               OpenRouter API Key
             </label>
             <input
@@ -123,7 +125,7 @@ export function ApiSettingsPanel({
           </div>
 
           <div>
-            <label className="mb-1 block text-[10px] uppercase tracking-wider text-text-muted">
+            <label className="mb-1 block text-2xs uppercase tracking-wider text-text-muted">
               Runware API Key
             </label>
             <input
@@ -146,7 +148,7 @@ export function ApiSettingsPanel({
         </h3>
         <div className="flex flex-col gap-3">
           <div>
-            <label className="mb-1 block text-[10px] uppercase tracking-wider text-text-muted">
+            <label className="mb-1 block text-2xs uppercase tracking-wider text-text-muted">
               Prompt Enhancement LLM
             </label>
             <div className="flex flex-col gap-1">
@@ -171,7 +173,7 @@ export function ApiSettingsPanel({
                   />
                   <span className="font-medium">{p.label}</span>
                   {!draft[p.keyField] && (
-                    <span className="text-[10px] text-text-muted">(no key)</span>
+                    <span className="text-2xs text-text-muted">(no key)</span>
                   )}
                 </label>
               ))}
@@ -179,7 +181,7 @@ export function ApiSettingsPanel({
           </div>
 
           <div>
-            <label className="mb-1 block text-[10px] uppercase tracking-wider text-text-muted">
+            <label className="mb-1 block text-2xs uppercase tracking-wider text-text-muted">
               Image Generation Provider
             </label>
             <div className="flex flex-col gap-1">
@@ -212,7 +214,7 @@ export function ApiSettingsPanel({
 
       {/* ─── Image Model ──────────────────────────────────────── */}
       {showProviderSections && <div className="border-t border-border-default pt-4">
-        <label className="mb-1 block font-display text-[10px] uppercase tracking-widest text-text-muted">
+        <label className="mb-1 block font-display text-2xs uppercase tracking-widest text-text-muted">
           Default Image Model
         </label>
         <div className="flex flex-col gap-1.5">
@@ -246,7 +248,7 @@ export function ApiSettingsPanel({
 
       {/* ─── Enhance Model ────────────────────────────────────── */}
       {showProviderSections && <div>
-        <label className="mb-1 block font-display text-[10px] uppercase tracking-widest text-text-muted">
+        <label className="mb-1 block font-display text-2xs uppercase tracking-widest text-text-muted">
           Prompt Enhancement Model
         </label>
         <input
@@ -257,7 +259,7 @@ export function ApiSettingsPanel({
           }
           className="w-full rounded border border-border-default bg-bg-primary px-3 py-1.5 text-xs text-text-primary outline-none focus:border-accent/50"
         />
-        <p className="mt-1 text-[10px] text-text-muted">
+        <p className="mt-1 text-2xs text-text-muted">
           Used by DeepInfra and OpenRouter providers
         </p>
       </div>}
@@ -269,7 +271,7 @@ export function ApiSettingsPanel({
         </h3>
         <div className="flex flex-col gap-3">
           <div>
-            <label className="mb-1 block text-[10px] uppercase tracking-wider text-text-muted">
+            <label className="mb-1 block text-2xs uppercase tracking-wider text-text-muted">
               Batch Concurrency
             </label>
             <input
@@ -282,7 +284,7 @@ export function ApiSettingsPanel({
               }
               className="w-20 rounded border border-border-default bg-bg-primary px-3 py-1.5 text-xs text-text-primary outline-none focus:border-accent/50"
             />
-            <p className="mt-1 text-[10px] text-text-muted">
+            <p className="mt-1 text-2xs text-text-muted">
               Max parallel image generations during batch operations
             </p>
           </div>
@@ -298,7 +300,7 @@ export function ApiSettingsPanel({
             />
             Auto-remove background for mob/item sprites
           </label>
-          <p className="ml-6 -mt-1 text-[10px] text-text-muted/60">
+          <p className="ml-6 -mt-1 text-2xs text-text-muted/60">
             Runs client-side AI background removal on sprite-type assets (mobs, items, abilities, player sprites, race/class portraits) after generation. The transparent version is saved as a variant alongside the original.
           </p>
         </div>
@@ -311,7 +313,7 @@ export function ApiSettingsPanel({
         </h3>
         <div className="flex flex-col gap-3">
           <div>
-            <label className="mb-1 block text-[10px] uppercase tracking-wider text-text-muted">
+            <label className="mb-1 block text-2xs uppercase tracking-wider text-text-muted">
               Account ID
             </label>
             <input
@@ -326,7 +328,7 @@ export function ApiSettingsPanel({
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="mb-1 block text-[10px] uppercase tracking-wider text-text-muted">
+              <label className="mb-1 block text-2xs uppercase tracking-wider text-text-muted">
                 Access Key ID
               </label>
               <input
@@ -340,7 +342,7 @@ export function ApiSettingsPanel({
               />
             </div>
             <div>
-              <label className="mb-1 block text-[10px] uppercase tracking-wider text-text-muted">
+              <label className="mb-1 block text-2xs uppercase tracking-wider text-text-muted">
                 Secret Access Key
               </label>
               <input
@@ -355,7 +357,7 @@ export function ApiSettingsPanel({
             </div>
           </div>
           <div>
-            <label className="mb-1 block text-[10px] uppercase tracking-wider text-text-muted">
+            <label className="mb-1 block text-2xs uppercase tracking-wider text-text-muted">
               Bucket Name
             </label>
             <input
@@ -369,7 +371,7 @@ export function ApiSettingsPanel({
             />
           </div>
           <div>
-            <label className="mb-1 block text-[10px] uppercase tracking-wider text-text-muted">
+            <label className="mb-1 block text-2xs uppercase tracking-wider text-text-muted">
               Custom Domain
             </label>
             <input
@@ -381,7 +383,7 @@ export function ApiSettingsPanel({
               placeholder="https://assets.example.com"
               className="w-full rounded border border-border-default bg-bg-primary px-3 py-1.5 text-xs text-text-primary placeholder:text-text-muted outline-none focus:border-accent/50"
             />
-            <p className="mt-1 text-[10px] text-text-muted">
+            <p className="mt-1 text-2xs text-text-muted">
               Public URL for the game client to load images from
             </p>
           </div>

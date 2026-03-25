@@ -6,6 +6,17 @@
   --font-display: 'Cinzel', Palatino, serif;
   --font-mono: 'JetBrains Mono', Consolas, monospace;
 
+  /* ─── Type Scale (supplements Tailwind's built-in sizes) ─── */
+  --font-size-2xs: 10px;
+  --font-size-2xs--line-height: 1.5;
+  --font-size-3xs: 9px;
+  --font-size-3xs--line-height: 1.45;
+
+  /* ─── Tracking (letter-spacing scale) ─── */
+  --letter-spacing-ui:    0.22em;
+  --letter-spacing-label:  0.18em;
+  --letter-spacing-wide-ui: 0.32em;
+
   /* ─── Deep Space (Backgrounds) ─── */
   --color-bg-abyss:     #22293c;
   --color-bg-primary:   #2a3149;
@@ -42,11 +53,41 @@
   --color-status-info:    #8caec9;
   --color-status-danger:  #c5a8a8;
 
+  /* ─── Badge Colors (vivid variants for small text on dark backgrounds) ─── */
+  --color-badge-success:    #aecc98;
+  --color-badge-success-bg: rgba(141, 169, 123, 0.16);
+  --color-badge-dirty-bg:   rgba(184, 143, 170, 0.16);
+
   /* ─── Server Status ─── */
   --color-server-stopped:  #6f7da1;
   --color-server-starting: #bea873;
   --color-server-running:  #8da97b;
   --color-server-error:    #c5a8a8;
+
+  /* ─── Active/Selected State ─── */
+  --color-border-active: rgba(184, 216, 232, 0.35);
+
+  /* ─── Surface Overlays ─── */
+  --color-surface-scrim:       rgba(24, 30, 45, 0.72);
+  --color-surface-scrim-light: rgba(24, 30, 45, 0.46);
+
+  /* ─── Diff (Code Review) ─── */
+  --color-diff-add-bg:   #0a2a2a;
+  --color-diff-add-text: #4aaa7a;
+  --color-diff-del-bg:   #2a0a14;
+  --color-diff-del-text: #c05060;
+
+  /* ─── Graph / Zone Map ─── */
+  --color-graph-bg:      #080c1c;
+  --color-graph-grid:    #1e2748;
+  --color-graph-node:    #2a3460;
+  --color-graph-edge:    #6a7aac;
+  --color-graph-edge-up: #7a5fc0;
+  --color-graph-cross:   #c8972e;
+  --color-graph-door:    #e2bc6a;
+
+  /* ─── Miscellaneous ─── */
+  --color-text-dirty: #d6b1c1;
 }
 
 /* ─── Arcanum Design Tokens ─── */
@@ -69,6 +110,14 @@
   /* Border accents (semi-transparent) */
   --border-aurum:  rgba(184, 143, 170, 0.34);
   --border-violet: rgba(168, 151, 210, 0.28);
+
+  /* Gradient backgrounds */
+  --bg-active:        linear-gradient(135deg, rgba(168,151,210,0.16), rgba(140,174,201,0.12));
+  --bg-active-strong: linear-gradient(135deg, rgba(168,151,210,0.18), rgba(140,174,201,0.14));
+  --bg-panel:         linear-gradient(160deg, rgba(54,63,90,0.95), rgba(42,53,79,0.92));
+  --bg-panel-light:   linear-gradient(160deg, rgba(56,66,96,0.9), rgba(39,48,72,0.92));
+  --bg-glow-top:      linear-gradient(180deg, rgba(168,151,210,0.18), transparent);
+  --graph-minimap-mask: rgba(8, 12, 28, 0.8);
 }
 
 body {
@@ -159,11 +208,38 @@ select,
   animation: slow-rotate 60s linear infinite;
 }
 
+/* ─── Gradient Utilities ─── */
+@utility bg-gradient-active {
+  background: var(--bg-active);
+}
+@utility bg-gradient-active-strong {
+  background: var(--bg-active-strong);
+}
+@utility bg-gradient-panel {
+  background: var(--bg-panel);
+}
+@utility bg-gradient-panel-light {
+  background: var(--bg-panel-light);
+}
+@utility bg-gradient-glow-top {
+  background: var(--bg-glow-top);
+}
+
 /* ─── Focus ring (Accent unfurl) ─── */
 *:focus-visible {
   outline: none;
   box-shadow: 0 0 0 2px rgba(168, 151, 210, 0.3);
   transition: box-shadow 200ms var(--ease-unfurl);
+}
+
+/* ─── Reduced Motion ─── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 /* ─── ReactFlow Overrides ─── */

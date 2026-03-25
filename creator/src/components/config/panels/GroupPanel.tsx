@@ -40,7 +40,7 @@ export function GuildRankDetail({
         />
       </FieldRow>
       <div className="mt-1 border-t border-border-muted pt-1.5">
-        <h5 className="mb-1 text-[10px] font-display uppercase tracking-widest text-text-muted">
+        <h5 className="mb-1 text-2xs font-display uppercase tracking-widest text-text-muted">
           Permissions
         </h5>
         <div className="flex flex-wrap gap-1">
@@ -50,7 +50,7 @@ export function GuildRankDetail({
               <button
                 key={perm}
                 onClick={() => togglePermission(rank, perm, patchRank)}
-                className={`rounded px-1.5 py-0.5 text-[10px] transition-colors ${
+                className={`rounded px-1.5 py-0.5 text-2xs transition-colors ${
                   has
                     ? "bg-accent/20 text-accent"
                     : "bg-bg-tertiary text-text-muted hover:text-text-secondary"

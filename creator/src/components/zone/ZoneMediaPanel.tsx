@@ -139,7 +139,7 @@ export function ZoneMediaPanel({ zoneId, world, onWorldChange }: ZoneMediaPanelP
                 }}
               />
               {!zoneImagePath && (
-                <p className="text-[10px] italic text-text-muted">
+                <p className="text-2xs italic text-text-muted">
                   Generate a room image first — zone intro video needs a source frame.
                 </p>
               )}
@@ -149,7 +149,7 @@ export function ZoneMediaPanel({ zoneId, world, onWorldChange }: ZoneMediaPanelP
           {/* Per-Room Audio Summary */}
           <Section title="Room Audio Overview" description="Quick reference for which rooms have music, ambient, or video tracks assigned.">
             <div className="flex flex-col gap-0.5">
-              <div className="flex items-center gap-2 border-b border-border-muted pb-1 text-[10px] font-medium uppercase tracking-wider text-text-muted">
+              <div className="flex items-center gap-2 border-b border-border-muted pb-1 text-2xs font-medium uppercase tracking-wider text-text-muted">
                 <span className="flex-1">Room</span>
                 <span className="w-16 text-center">Music</span>
                 <span className="w-16 text-center">Ambient</span>

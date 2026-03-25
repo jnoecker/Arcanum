@@ -165,7 +165,7 @@ export function CharacterSystemStep({
           <label className="text-xs font-medium text-text-muted">Stats</label>
           <button
             onClick={addStat}
-            className="text-[10px] text-accent hover:text-accent-emphasis"
+            className="text-2xs text-accent hover:text-accent-emphasis"
           >
             + Add Stat
           </button>
@@ -173,7 +173,7 @@ export function CharacterSystemStep({
         <div className="overflow-hidden rounded border border-border-default">
           <table className="w-full text-xs">
             <thead>
-              <tr className="border-b border-border-default bg-bg-elevated text-[10px] text-text-muted">
+              <tr className="border-b border-border-default bg-bg-elevated text-2xs text-text-muted">
                 <th className="px-2 py-1 text-left font-normal">Display Name</th>
                 <th className="px-2 py-1 text-left font-normal w-16">Abbrev</th>
                 <th className="px-2 py-1 text-left font-normal w-16">Base</th>
@@ -240,7 +240,7 @@ export function CharacterSystemStep({
           <label className="text-xs font-medium text-text-muted">Classes</label>
           <button
             onClick={addClass}
-            className="text-[10px] text-accent hover:text-accent-emphasis"
+            className="text-2xs text-accent hover:text-accent-emphasis"
           >
             + Add Class
           </button>
@@ -248,7 +248,7 @@ export function CharacterSystemStep({
         <div className="overflow-hidden rounded border border-border-default">
           <table className="w-full text-xs">
             <thead>
-              <tr className="border-b border-border-default bg-bg-elevated text-[10px] text-text-muted">
+              <tr className="border-b border-border-default bg-bg-elevated text-2xs text-text-muted">
                 <th className="px-2 py-1 text-left font-normal">Display Name</th>
                 <th className="px-2 py-1 text-left font-normal w-16">HP/Lvl</th>
                 <th className="px-2 py-1 text-left font-normal w-16">MP/Lvl</th>
@@ -329,7 +329,7 @@ export function CharacterSystemStep({
           <label className="text-xs font-medium text-text-muted">Races</label>
           <button
             onClick={addRace}
-            className="text-[10px] text-accent hover:text-accent-emphasis"
+            className="text-2xs text-accent hover:text-accent-emphasis"
           >
             + Add Race
           </button>
@@ -337,7 +337,7 @@ export function CharacterSystemStep({
         <div className="overflow-hidden rounded border border-border-default">
           <table className="w-full text-xs">
             <thead>
-              <tr className="border-b border-border-default bg-bg-elevated text-[10px] text-text-muted">
+              <tr className="border-b border-border-default bg-bg-elevated text-2xs text-text-muted">
                 <th className="px-2 py-1 text-left font-normal">Display Name</th>
                 <th className="px-2 py-1 text-left font-normal">Stat Modifiers</th>
                 <th className="w-8 px-1 py-1" />
@@ -364,7 +364,7 @@ export function CharacterSystemStep({
                         return (
                           <span
                             key={statId}
-                            className="inline-flex items-center gap-0.5 rounded bg-bg-elevated px-1 py-0.5 text-[10px]"
+                            className="inline-flex items-center gap-0.5 rounded bg-bg-elevated px-1 py-0.5 text-2xs"
                           >
                             <span className="text-text-muted">
                               {data.stats[statId]?.abbreviation ?? statId}
@@ -417,7 +417,7 @@ export function CharacterSystemStep({
               <button
                 key={slot}
                 onClick={() => toggleSlot(slot)}
-                className={`rounded border px-2 py-1 text-[10px] transition-colors ${
+                className={`rounded border px-2 py-1 text-2xs transition-colors ${
                   active
                     ? "border-accent bg-accent/10 text-accent"
                     : "border-border-default bg-bg-primary text-text-muted hover:border-border-hover"
@@ -434,7 +434,7 @@ export function CharacterSystemStep({
       <div>
         <button
           onClick={() => setShowBindings(!showBindings)}
-          className="flex items-center gap-1 text-[10px] text-text-muted hover:text-text-secondary"
+          className="flex items-center gap-1 text-2xs text-text-muted hover:text-text-secondary"
         >
           <span className={`transition-transform ${showBindings ? "rotate-90" : ""}`}>
             &#9654;
@@ -446,13 +446,13 @@ export function CharacterSystemStep({
             <div className="grid grid-cols-2 gap-2">
               {STAT_BINDING_KEYS.map(({ key, label }) => (
                 <div key={key} className="flex items-center gap-2">
-                  <label className="min-w-0 flex-1 text-[10px] text-text-muted">
+                  <label className="min-w-0 flex-1 text-2xs text-text-muted">
                     {label}
                   </label>
                   <select
                     value={(data.statBindings[key] as string) ?? ""}
                     onChange={(e) => updateBinding(key, e.target.value)}
-                    className="rounded border border-border-default bg-bg-elevated px-1.5 py-0.5 text-[10px] text-text-secondary outline-none"
+                    className="rounded border border-border-default bg-bg-elevated px-1.5 py-0.5 text-2xs text-text-secondary outline-none"
                   >
                     <option value="">Default</option>
                     {statIds.map((s) => (

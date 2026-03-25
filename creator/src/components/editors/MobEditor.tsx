@@ -159,7 +159,7 @@ export function MobEditor({
 
       {/* Stat overrides */}
       <Section title="Stat Overrides">
-        <p className="mb-1 text-[10px] text-text-muted">
+        <p className="mb-1 text-2xs text-text-muted">
           Leave blank to use tier defaults
         </p>
         <div className="flex flex-col gap-1.5">
@@ -252,7 +252,7 @@ export function MobEditor({
                     max={100}
                   />
                 </div>
-                <span className="text-[10px] text-text-muted">%</span>
+                <span className="text-2xs text-text-muted">%</span>
                 <IconButton
                   onClick={() => handleDeleteDrop(i)}
                   title="Remove drop"

@@ -57,7 +57,7 @@ function MediaField({
           <h4 className="font-display text-lg text-text-primary">{label}</h4>
           <p className="mt-1 text-xs leading-6 text-text-secondary">{description}</p>
         </div>
-        <span className="rounded-full bg-white/8 px-2 py-1 text-[10px] uppercase tracking-[0.2em] text-text-muted">
+        <span className="rounded-full bg-white/8 px-2 py-1 text-2xs uppercase tracking-ui text-text-muted">
           {value ? "Assigned" : "Empty"}
         </span>
       </div>
@@ -138,7 +138,7 @@ export function MediaStudio({ zoneId, world, onWorldChange }: MediaStudioProps) 
 
   if (!zoneId || !world) {
     return (
-      <section className="rounded-[28px] border border-white/10 bg-[linear-gradient(160deg,rgba(54,63,90,0.95),rgba(42,53,79,0.92))] p-5 shadow-[0_18px_50px_rgba(9,12,24,0.24)]">
+      <section className="rounded-[28px] border border-white/10 bg-gradient-panel p-5 shadow-[0_18px_50px_rgba(9,12,24,0.24)]">
         <div className="rounded-[22px] border border-dashed border-white/12 bg-white/4 px-4 py-8 text-sm text-text-muted">
           Select a zone to shape its music, ambience, and cinematics from the studio.
         </div>
@@ -167,10 +167,10 @@ export function MediaStudio({ zoneId, world, onWorldChange }: MediaStudioProps) 
   };
 
   return (
-    <section className="rounded-[28px] border border-white/10 bg-[linear-gradient(160deg,rgba(54,63,90,0.95),rgba(42,53,79,0.92))] p-5 shadow-[0_18px_50px_rgba(9,12,24,0.24)]">
+    <section className="rounded-[28px] border border-white/10 bg-gradient-panel p-5 shadow-[0_18px_50px_rgba(9,12,24,0.24)]">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <p className="text-[11px] uppercase tracking-[0.28em] text-text-muted">Media studio</p>
+          <p className="text-[11px] uppercase tracking-wide-ui text-text-muted">Media studio</p>
           <h2 className="mt-2 font-display text-2xl text-text-primary">Score the world and stage its motion.</h2>
           <p className="mt-2 max-w-3xl text-sm leading-7 text-text-secondary">Zone audio, room audio, and cinematics.</p>
         </div>
@@ -270,7 +270,7 @@ export function MediaStudio({ zoneId, world, onWorldChange }: MediaStudioProps) 
                   onAccept={() => {}}
                 />
                 {!zoneImagePath && (
-                  <p className="mt-2 text-[10px] italic text-text-muted">
+                  <p className="mt-2 text-2xs italic text-text-muted">
                     Generate at least one room image before creating a zone flyover.
                   </p>
                 )}
@@ -414,7 +414,7 @@ export function MediaStudio({ zoneId, world, onWorldChange }: MediaStudioProps) 
                       onAccept={(fileName) => patchRoom("video", fileName)}
                     />
                     {!roomImagePath && (
-                      <p className="mt-2 text-[10px] italic text-text-muted">
+                      <p className="mt-2 text-2xs italic text-text-muted">
                         This room needs an image before you can generate a cinematic.
                       </p>
                     )}

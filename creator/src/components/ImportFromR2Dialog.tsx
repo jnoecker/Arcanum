@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { open } from "@tauri-apps/plugin-dialog";
 import { useImportFromR2, type ImportStage } from "@/lib/useImportFromR2";
+import { useFocusTrap } from "@/lib/useFocusTrap";
 
 const STAGE_LABELS: Record<ImportStage, string> = {
   idle: "",
@@ -8,7 +9,7 @@ const STAGE_LABELS: Record<ImportStage, string> = {
   creating_project: "Creating project...",
   writing_data: "Writing config & zones...",
   done: "Import complete!",
-  error: "Import failed",
+  error: "Import failed — check your R2 credentials in Settings",
 };
 
 interface ImportFromR2DialogProps {
@@ -37,10 +38,12 @@ export function ImportFromR2Dialog({ onClose }: ImportFromR2DialogProps) {
     onClose();
   };
 
+  const trapRef = useFocusTrap<HTMLDivElement>(handleClose);
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-      <div className="w-[420px] rounded-lg border border-border-default bg-bg-secondary p-6 shadow-xl">
-        <h2 className="mb-4 font-display text-lg font-semibold tracking-wide text-accent-emphasis">
+      <div ref={trapRef} role="dialog" aria-modal="true" aria-labelledby="r2-import-title" className="mx-4 w-full max-w-[420px] rounded-lg border border-border-default bg-bg-secondary p-6 shadow-xl">
+        <h2 id="r2-import-title" className="mb-4 font-display text-lg font-semibold tracking-wide text-accent-emphasis">
           Import from R2
         </h2>
         <p className="mb-4 text-xs text-text-secondary">
@@ -49,7 +52,7 @@ export function ImportFromR2Dialog({ onClose }: ImportFromR2DialogProps) {
         </p>
 
         {/* Project name */}
-        <label className="mb-1 block text-[10px] uppercase tracking-widest text-text-muted">
+        <label className="mb-1 block text-2xs uppercase tracking-widest text-text-muted">
           Project Name
         </label>
         <input
@@ -57,11 +60,11 @@ export function ImportFromR2Dialog({ onClose }: ImportFromR2DialogProps) {
           value={projectName}
           onChange={(e) => setProjectName(e.target.value)}
           disabled={busy || stage === "done"}
-          className="mb-3 w-full rounded border border-border-default bg-bg-primary px-3 py-1.5 font-body text-sm text-text-primary outline-none focus:border-accent disabled:opacity-50"
+          className="mb-3 w-full rounded border border-border-default bg-bg-primary px-3 py-1.5 text-sm text-text-primary outline-none focus:border-accent disabled:opacity-50"
         />
 
         {/* Target directory */}
-        <label className="mb-1 block text-[10px] uppercase tracking-widest text-text-muted">
+        <label className="mb-1 block text-2xs uppercase tracking-widest text-text-muted">
           Create In
         </label>
         <div className="mb-4 flex gap-2">
@@ -70,7 +73,7 @@ export function ImportFromR2Dialog({ onClose }: ImportFromR2DialogProps) {
             value={targetDir}
             readOnly
             placeholder="Select a directory..."
-            className="flex-1 rounded border border-border-default bg-bg-primary px-3 py-1.5 font-body text-sm text-text-primary outline-none"
+            className="flex-1 rounded border border-border-default bg-bg-primary px-3 py-1.5 text-sm text-text-primary outline-none"
           />
           <button
             onClick={handlePickDir}
@@ -88,12 +91,12 @@ export function ImportFromR2Dialog({ onClose }: ImportFromR2DialogProps) {
               {STAGE_LABELS[stage]}
             </p>
             {stage === "done" && (
-              <p className="mt-1 text-[10px] text-text-muted">
+              <p className="mt-1 text-2xs text-text-muted">
                 Imported {zoneCount} zone{zoneCount !== 1 ? "s" : ""} with config.
               </p>
             )}
             {error && (
-              <p className="mt-1 text-[10px] text-status-error">{error}</p>
+              <p className="mt-1 text-2xs text-status-error">{error}</p>
             )}
           </div>
         )}

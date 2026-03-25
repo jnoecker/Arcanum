@@ -4,6 +4,7 @@ import { useZoneStore } from "@/stores/zoneStore";
 import { useConfigStore } from "@/stores/configStore";
 import { useProjectStore } from "@/stores/projectStore";
 import { serializeZone } from "@/lib/saveZone";
+import { useFocusTrap } from "@/lib/useFocusTrap";
 import { diffLines, type DiffLine } from "@/lib/diff";
 
 interface FileDiff {
@@ -20,6 +21,7 @@ interface DiffModalProps {
 export function DiffModal({ onConfirm, onCancel }: DiffModalProps) {
   const [diffs, setDiffs] = useState<FileDiff[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const trapRef = useFocusTrap<HTMLDivElement>(onCancel);
 
   useEffect(() => {
     computeDiffs().then(setDiffs).catch((e) => setError(String(e)));
@@ -27,9 +29,9 @@ export function DiffModal({ onConfirm, onCancel }: DiffModalProps) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-      <div className="mx-4 flex max-h-[80vh] w-full max-w-3xl flex-col rounded-lg border border-border-default bg-bg-secondary shadow-xl">
+      <div ref={trapRef} role="dialog" aria-modal="true" aria-labelledby="diff-dialog-title" className="mx-4 flex max-h-[80vh] w-full max-w-3xl flex-col rounded-lg border border-border-default bg-bg-secondary shadow-xl">
         <div className="flex items-center justify-between border-b border-border-default px-5 py-3">
-          <h2 className="font-display text-sm tracking-wide text-text-primary">
+          <h2 id="diff-dialog-title" className="font-display text-sm tracking-wide text-text-primary">
             Review Changes
           </h2>
           <span className="text-xs text-text-muted">
@@ -50,7 +52,7 @@ export function DiffModal({ onConfirm, onCancel }: DiffModalProps) {
                 <span className="text-xs font-semibold text-text-primary">
                   {diff.label}
                 </span>
-                <span className="text-[10px] text-text-muted">
+                <span className="text-2xs text-text-muted">
                   {diff.changeCount} change{diff.changeCount !== 1 ? "s" : ""}
                 </span>
               </div>
@@ -60,9 +62,9 @@ export function DiffModal({ onConfirm, onCancel }: DiffModalProps) {
                     key={i}
                     className={
                       line.kind === "add"
-                        ? "bg-[#0a2a2a] text-[#4aaa7a]"
+                        ? "bg-diff-add-bg text-diff-add-text"
                         : line.kind === "del"
-                          ? "bg-[#2a0a14] text-[#c05060]"
+                          ? "bg-diff-del-bg text-diff-del-text"
                           : "text-text-muted"
                     }
                   >

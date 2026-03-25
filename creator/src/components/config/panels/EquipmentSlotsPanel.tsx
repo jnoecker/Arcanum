@@ -144,7 +144,7 @@ export function EquipmentSlotsPanel({ config, onChange }: ConfigPanelProps) {
   const selected = selectedId ? slots[selectedId] : null;
 
   return (
-    <div className="flex gap-4" style={{ minHeight: 480 }}>
+    <div className="flex gap-4" style={{ minHeight: "min(480px, 60vh)" }}>
       {/* Left side: slot list + detail form */}
       <div className="flex w-72 shrink-0 flex-col gap-3">
         {/* Add new slot */}
@@ -182,10 +182,10 @@ export function EquipmentSlotsPanel({ config, onChange }: ConfigPanelProps) {
                   : "text-text-secondary hover:bg-bg-hover hover:text-text-primary"
               }`}
             >
-              <span className="w-4 shrink-0 text-center text-[10px] text-text-muted">
+              <span className="w-4 shrink-0 text-center text-2xs text-text-muted">
                 {slot.order}
               </span>
-              <span className="font-mono text-[10px] text-text-muted">{id}</span>
+              <span className="font-mono text-2xs text-text-muted">{id}</span>
               <span className="flex-1 truncate">{slot.displayName}</span>
               <button
                 onClick={(e) => {
@@ -234,11 +234,10 @@ export function EquipmentSlotsPanel({ config, onChange }: ConfigPanelProps) {
       </div>
 
       {/* Right side: Mannequin visual */}
-      <div className="flex min-w-[320px] flex-1 items-start justify-center">
+      <div className="flex min-w-0 flex-1 items-start justify-center">
         <div
           ref={containerRef}
-          className="relative select-none overflow-hidden rounded-lg"
-          style={{ width: 420, height: 420 }}
+          className="relative aspect-square w-full max-w-[420px] select-none overflow-hidden rounded-lg"
           onPointerMove={handlePointerMove}
           onPointerUp={handlePointerUp}
         >

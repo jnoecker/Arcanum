@@ -16,7 +16,7 @@ import "@xyflow/react/dist/style.css";
 
 import { useZoneStore } from "@/stores/zoneStore";
 import { useProjectStore } from "@/stores/projectStore";
-import { zoneToGraph } from "@/lib/zoneToGraph";
+import { zoneToGraph, GRAPH } from "@/lib/zoneToGraph";
 import { compassLayout } from "@/lib/dagreLayout";
 import { addRoom, addExit, generateRoomId } from "@/lib/zoneEdits";
 import { saveZone } from "@/lib/saveZone";
@@ -66,6 +66,9 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
   const [saving, setSaving] = useState(false);
   const [showBatchArt, setShowBatchArt] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>("map");
+  const [hintDismissed, setHintDismissed] = useState(
+    () => localStorage.getItem("arcanum:zone-hint-dismissed") === "1",
+  );
 
   // Auto-close entity panel if the selected entity was removed (e.g. by undo)
   useEffect(() => {
@@ -294,7 +297,7 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
               <button
                 key={mode}
                 onClick={() => setViewMode(mode)}
-                className={`h-6 px-2 text-[10px] font-medium tracking-wide transition-colors ${
+                className={`h-6 px-2 text-2xs font-medium tracking-wide transition-colors ${
                   i === 0 ? "rounded-l" : i === arr.length - 1 ? "rounded-r" : ""
                 } ${
                   viewMode === mode
@@ -381,22 +384,22 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
               minZoom={0.1}
               maxZoom={2}
               proOptions={{ hideAttribution: true }}
-              style={{ background: "#080c1c" }}
+              style={{ background: GRAPH.bg }}
             >
               <Background
                 variant={BackgroundVariant.Dots}
                 gap={20}
                 size={1}
-                color="#1e2748"
+                color={GRAPH.grid}
               />
               <Controls
                 showInteractive={false}
               />
               <MiniMap
                 nodeColor={(node) =>
-                  node.type === "crossZone" ? "#c8972e" : "#2a3460"
+                  node.type === "crossZone" ? GRAPH.cross : GRAPH.node
                 }
-                maskColor="rgba(8, 12, 28, 0.8)"
+                maskColor="var(--graph-minimap-mask)"
               />
             </ReactFlow>
 
@@ -406,6 +409,31 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
               alt=""
               className="pointer-events-none absolute inset-0 z-[1] h-full w-full object-cover opacity-[0.18] mix-blend-screen"
             />
+
+            {/* First-zone onboarding hint */}
+            {roomCount <= 1 && !hintDismissed && viewMode === "map" && (
+              <div className="pointer-events-auto absolute inset-x-0 bottom-4 z-[2] flex justify-center">
+                <div className="flex items-center gap-4 rounded-2xl border border-white/10 bg-gradient-panel px-5 py-3 shadow-[0_12px_36px_rgba(8,10,18,0.4)] backdrop-blur-xl">
+                  <div>
+                    <p className="text-sm text-text-primary">
+                      Click the <span className="font-mono text-accent">+</span> handles on a room's edges to create exits to new rooms.
+                    </p>
+                    <p className="mt-1 text-xs text-text-muted">
+                      Select a room to edit its details in the right panel. Use <kbd className="rounded bg-bg-elevated px-1 py-0.5 font-mono text-2xs">+ Room</kbd> above to add disconnected rooms.
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setHintDismissed(true);
+                      localStorage.setItem("arcanum:zone-hint-dismissed", "1");
+                    }}
+                    className="shrink-0 rounded-full border border-white/10 px-3 py-1.5 text-xs text-text-muted transition hover:bg-white/8 hover:text-text-primary"
+                  >
+                    Got it
+                  </button>
+                </div>
+              </div>
+            )}
 
             {/* Batch art generator */}
             {showBatchArt && zoneState && (

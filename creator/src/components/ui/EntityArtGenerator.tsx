@@ -289,7 +289,7 @@ export function EntityArtGenerator({
       {stage === "idle" && (
         <div className="flex flex-col gap-1">
           {(hasApiKey || hasLlmKey) && (
-            <div className="rounded border border-border-default/60 bg-bg-primary/60 px-2 py-1 text-[10px] text-text-secondary">
+            <div className="rounded border border-border-default/60 bg-bg-primary/60 px-2 py-1 text-2xs text-text-secondary">
               Style system: {ART_STYLE_LABELS[artStyle]}
             </div>
           )}
@@ -297,7 +297,7 @@ export function EntityArtGenerator({
           {/* Dimension override */}
           {hasApiKey && (
             <div className="flex items-center gap-1">
-              <span className="text-[10px] text-text-muted">{activeDims.width}×{activeDims.height}</span>
+              <span className="text-2xs text-text-muted">{activeDims.width}×{activeDims.height}</span>
               <select
                 value={dimOverride ? `${dimOverride.width}x${dimOverride.height}` : ""}
                 onChange={(e) => {
@@ -308,7 +308,7 @@ export function EntityArtGenerator({
                     setDimOverride({ width: parts[0]!, height: parts[1]! });
                   }
                 }}
-                className="rounded border border-border-default bg-bg-primary px-1 py-0.5 text-[10px] text-text-secondary outline-none"
+                className="rounded border border-border-default bg-bg-primary px-1 py-0.5 text-2xs text-text-secondary outline-none"
               >
                 <option value="">Default</option>
                 {DIMENSION_PRESETS.map((p) => (
@@ -325,7 +325,7 @@ export function EntityArtGenerator({
                 <select
                   value={modelOverride ?? ""}
                   onChange={(e) => setModelOverride(e.target.value || null)}
-                  className="rounded border border-border-default bg-bg-primary px-1 py-0.5 text-[10px] text-text-secondary outline-none"
+                  className="rounded border border-border-default bg-bg-primary px-1 py-0.5 text-2xs text-text-secondary outline-none"
                 >
                   <option value="">{availableModels[0]?.label ?? "Default"}</option>
                   {availableModels.slice(1).map((m) => (
@@ -340,7 +340,7 @@ export function EntityArtGenerator({
                   value={customModel}
                   onChange={(e) => setCustomModel(e.target.value)}
                   placeholder="e.g. runware:400@2"
-                  className="rounded border border-border-default bg-bg-primary px-1.5 py-0.5 font-mono text-[10px] text-text-secondary outline-none focus:border-accent/50"
+                  className="rounded border border-border-default bg-bg-primary px-1.5 py-0.5 font-mono text-2xs text-text-secondary outline-none focus:border-accent/50"
                 />
               )}
             </div>
@@ -350,7 +350,7 @@ export function EntityArtGenerator({
             {hasApiKey && (
               <button
                 onClick={handleGenerate}
-                className="flex-1 rounded bg-accent/15 px-2 py-1 text-[10px] font-medium text-accent transition-colors hover:bg-accent/25"
+                className="flex-1 rounded bg-accent/15 px-2 py-1 text-2xs font-medium text-accent transition-colors hover:bg-accent/25"
               >
                 Generate Art
               </button>
@@ -358,14 +358,14 @@ export function EntityArtGenerator({
             <button
               onClick={handlePickImage}
               disabled={importing}
-              className="flex-1 rounded bg-bg-elevated px-2 py-1 text-[10px] font-medium text-text-secondary transition-colors hover:bg-bg-hover hover:text-text-primary disabled:opacity-50"
+              className="flex-1 rounded bg-bg-elevated px-2 py-1 text-2xs font-medium text-text-secondary transition-colors hover:bg-bg-hover hover:text-text-primary disabled:opacity-50"
             >
               {importing ? "Importing..." : "Pick Image"}
             </button>
             {(hasApiKey || hasLlmKey) && (
               <button
                 onClick={() => setShowPrompt((v) => !v)}
-                className="rounded px-1.5 py-1 text-[10px] text-text-muted transition-colors hover:text-text-secondary"
+                className="rounded px-1.5 py-1 text-2xs text-text-muted transition-colors hover:text-text-secondary"
               >
                 {showPrompt ? "Hide" : "Prompt"}
               </button>
@@ -378,27 +378,27 @@ export function EntityArtGenerator({
                 value={activePrompt}
                 onChange={(e) => setEditedPrompt(e.target.value)}
                 rows={4}
-                className="w-full resize-y rounded border border-border-default bg-bg-primary px-2 py-1 font-mono text-[10px] leading-relaxed text-text-secondary outline-none focus:border-accent/50"
+                className="w-full resize-y rounded border border-border-default bg-bg-primary px-2 py-1 font-mono text-2xs leading-relaxed text-text-secondary outline-none focus:border-accent/50"
               />
               <div className="flex gap-1">
                 <button
                   onClick={handleEnhance}
                   disabled={enhancing}
-                  className="rounded px-1.5 py-0.5 text-[10px] text-accent transition-colors hover:bg-accent/10 disabled:opacity-50"
+                  className="rounded px-1.5 py-0.5 text-2xs text-accent transition-colors hover:bg-accent/10 disabled:opacity-50"
                 >
                   {enhancing ? "..." : "Enhance"}
                 </button>
                 {editedPrompt && (
                   <button
                     onClick={() => setEditedPrompt(null)}
-                    className="rounded px-1.5 py-0.5 text-[10px] text-text-muted transition-colors hover:text-text-secondary"
+                    className="rounded px-1.5 py-0.5 text-2xs text-text-muted transition-colors hover:text-text-secondary"
                   >
                     Reset
                   </button>
                 )}
               </div>
               {(entityContext || vibe) && (
-                <p className="text-[10px] italic text-text-muted">
+                <p className="text-2xs italic text-text-muted">
                   {hasLlmKey
                     ? "Entity details + zone vibe auto-injected during generation"
                     : "Configure an LLM provider to enable auto-enhanced prompts"}
@@ -412,7 +412,7 @@ export function EntityArtGenerator({
       {stage === "generating" && (
         <div className="flex items-center gap-2 py-2">
           <div className="h-4 w-4 rounded-full border-2 border-accent border-t-transparent animate-spin" />
-          <span className="text-[10px] text-text-secondary">
+          <span className="text-2xs text-text-secondary">
             {hasLlmKey ? "Crafting prompt & generating..." : "Generating..."}
           </span>
         </div>
@@ -422,13 +422,13 @@ export function EntityArtGenerator({
         <div className="flex gap-1">
           <button
             onClick={handleAccept}
-            className="flex-1 rounded bg-accent/15 px-2 py-1 text-[10px] font-medium text-accent transition-colors hover:bg-accent/25"
+            className="flex-1 rounded bg-accent/15 px-2 py-1 text-2xs font-medium text-accent transition-colors hover:bg-accent/25"
           >
             Accept
           </button>
           <button
             onClick={handleReject}
-            className="flex-1 rounded px-2 py-1 text-[10px] text-text-muted transition-colors hover:text-text-secondary"
+            className="flex-1 rounded px-2 py-1 text-2xs text-text-muted transition-colors hover:text-text-secondary"
           >
             Reject
           </button>
@@ -436,7 +436,7 @@ export function EntityArtGenerator({
       )}
 
       {error && (
-        <p className="text-[10px] italic text-status-error">{error}</p>
+        <p className="text-2xs italic text-status-error">{error}</p>
       )}
     </div>
   );

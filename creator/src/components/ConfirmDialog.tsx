@@ -1,3 +1,5 @@
+import { useFocusTrap } from "@/lib/useFocusTrap";
+
 interface ConfirmDialogProps {
   title: string;
   message: string;
@@ -17,11 +19,13 @@ export function ConfirmDialog({
   onConfirm,
   onCancel,
 }: ConfirmDialogProps) {
+  const trapRef = useFocusTrap<HTMLDivElement>(onCancel);
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-      <div className="mx-4 max-w-md rounded-lg border border-border-default bg-bg-secondary shadow-xl">
+      <div ref={trapRef} role="dialog" aria-modal="true" aria-labelledby="confirm-dialog-title" className="mx-4 max-w-md rounded-lg border border-border-default bg-bg-secondary shadow-xl">
         <div className="border-b border-border-default px-5 py-3">
-          <h2 className="font-display text-sm tracking-wide text-text-primary">
+          <h2 id="confirm-dialog-title" className="font-display text-sm tracking-wide text-text-primary">
             {title}
           </h2>
         </div>

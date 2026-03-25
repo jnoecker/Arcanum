@@ -201,7 +201,7 @@ export function DialogueEditor({
       {/* Clear all dialogue */}
       <button
         onClick={() => patchDialogue(undefined)}
-        className="mt-3 w-full rounded border border-status-danger/30 px-2 py-1 text-[10px] text-status-danger/70 transition-colors hover:bg-status-danger/10 hover:text-status-danger"
+        className="mt-3 w-full rounded border border-status-danger/30 px-2 py-1 text-2xs text-status-danger/70 transition-colors hover:bg-status-danger/10 hover:text-status-danger"
       >
         Remove All Dialogue
       </button>
@@ -249,7 +249,7 @@ function DialogueNodeCard({
       <div className="flex items-center gap-1 px-2 py-1">
         <button
           onClick={() => setCollapsed(!collapsed)}
-          className="h-4 w-4 shrink-0 text-[10px] text-text-muted transition-colors hover:text-text-primary"
+          className="h-4 w-4 shrink-0 text-2xs text-text-muted transition-colors hover:text-text-primary"
         >
           {collapsed ? "\u25B6" : "\u25BC"}
         </button>
@@ -258,7 +258,7 @@ function DialogueNodeCard({
         ) : (
           <NodeIdLabel nodeId={nodeId} onRename={onRename} />
         )}
-        <span className="ml-auto text-[10px] text-text-muted">
+        <span className="ml-auto text-2xs text-text-muted">
           {choices.length} choice{choices.length !== 1 ? "s" : ""}
         </span>
         {!isRoot && (
@@ -273,7 +273,7 @@ function DialogueNodeCard({
         <div className="border-t border-border-muted px-2 py-1.5">
           {/* Node text */}
           <div className="mb-1.5">
-            <label className="mb-0.5 block text-[10px] text-text-muted">
+            <label className="mb-0.5 block text-2xs text-text-muted">
               NPC text
             </label>
             <NodeTextArea
@@ -297,7 +297,7 @@ function DialogueNodeCard({
 
           <button
             onClick={onAddChoice}
-            className="mt-1.5 rounded border border-border-default px-2 py-0.5 text-[10px] text-text-muted transition-colors hover:bg-bg-tertiary hover:text-text-primary"
+            className="mt-1.5 rounded border border-border-default px-2 py-0.5 text-2xs text-text-muted transition-colors hover:bg-bg-tertiary hover:text-text-primary"
           >
             + Add Choice
           </button>
@@ -362,7 +362,7 @@ function ChoiceRow({ choice, nextOptions, onUpdate, onDelete }: ChoiceRowProps) 
   return (
     <div className="rounded border border-border-muted bg-bg-secondary px-1.5 py-1">
       <div className="flex items-start gap-1">
-        <span className="mt-0.5 shrink-0 text-[10px] text-text-muted">
+        <span className="mt-0.5 shrink-0 text-2xs text-text-muted">
           &rsaquo;
         </span>
         <div className="min-w-0 flex-1">
@@ -374,7 +374,7 @@ function ChoiceRow({ choice, nextOptions, onUpdate, onDelete }: ChoiceRowProps) 
         </div>
         <button
           onClick={() => setExpanded(!expanded)}
-          className={`mt-0.5 h-4 shrink-0 rounded px-1 text-[9px] transition-colors ${
+          className={`mt-0.5 h-4 shrink-0 rounded px-1 text-3xs transition-colors ${
             hasConditions
               ? "text-accent hover:bg-accent/10"
               : "text-text-muted hover:text-text-primary"
@@ -522,7 +522,7 @@ function AddNodeButton({
           value={value}
           onChange={(e) => setValue(e.target.value)}
           placeholder="node_id"
-          className="h-5 w-20 rounded border border-border-default bg-bg-primary px-1 text-[10px] text-text-primary outline-none focus:border-accent"
+          className="h-5 w-20 rounded border border-border-default bg-bg-primary px-1 text-2xs text-text-primary outline-none focus:border-accent"
           onBlur={handleSubmit}
         />
         <button
@@ -531,7 +531,7 @@ function AddNodeButton({
             setValue("");
             setEditing(false);
           }}
-          className="text-[10px] text-text-muted hover:text-text-primary"
+          className="text-2xs text-text-muted hover:text-text-primary"
         >
           &times;
         </button>

@@ -83,14 +83,14 @@ export function MediaPicker({
         <button
           onClick={handlePick}
           disabled={importing}
-          className="flex-1 rounded bg-bg-elevated px-2 py-1 text-[10px] font-medium text-text-secondary transition-colors hover:bg-bg-hover hover:text-text-primary disabled:opacity-50"
+          className="flex-1 rounded bg-bg-elevated px-2 py-1 text-2xs font-medium text-text-secondary transition-colors hover:bg-bg-hover hover:text-text-primary disabled:opacity-50"
         >
           {importing ? "Importing..." : `Pick ${mediaType === "audio" ? "Audio" : "Video"}`}
         </button>
         {value && (
           <button
             onClick={() => onChange(undefined)}
-            className="rounded px-1.5 py-1 text-[10px] text-text-muted transition-colors hover:text-text-secondary"
+            className="rounded px-1.5 py-1 text-2xs text-text-muted transition-colors hover:text-text-secondary"
           >
             Clear
           </button>

@@ -238,7 +238,7 @@ export function StatusEffectDetail({
 
       {showStatMods && (
         <div className="mt-1 border-t border-border-muted pt-1.5">
-          <h5 className="mb-1 text-[10px] font-display uppercase tracking-widest text-text-muted">
+          <h5 className="mb-1 text-2xs font-display uppercase tracking-widest text-text-muted">
             Stat Modifiers
           </h5>
           <div className="grid grid-cols-2 gap-1.5">
@@ -309,12 +309,12 @@ function StatModsEditor({
   return (
     <div className="mt-1 border-t border-border-muted pt-1.5">
       <div className="mb-1 flex items-center gap-2">
-        <h5 className="text-[10px] font-display uppercase tracking-widest text-text-muted">
+        <h5 className="text-2xs font-display uppercase tracking-widest text-text-muted">
           Stat Modifiers
         </h5>
         {available.length > 0 && (
           <select
-            className="rounded border border-border-default bg-bg-primary px-1 py-0.5 text-[10px] text-text-primary outline-none"
+            className="rounded border border-border-default bg-bg-primary px-1 py-0.5 text-2xs text-text-primary outline-none"
             value=""
             onChange={(e) => {
               if (e.target.value) addMod(e.target.value);
@@ -330,7 +330,7 @@ function StatModsEditor({
         )}
       </div>
       {modKeys.length === 0 ? (
-        <p className="text-[10px] text-text-muted">No modifiers</p>
+        <p className="text-2xs text-text-muted">No modifiers</p>
       ) : (
         <div className="flex flex-col gap-1">
           {modKeys.map((statId) => (

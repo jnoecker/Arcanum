@@ -56,7 +56,7 @@ function SpriteThumbnail({ fileName }: { fileName: string | undefined }) {
   const src = useImageSrc(fileName);
   if (!src) {
     return (
-      <div className="flex h-full w-full items-center justify-center bg-bg-tertiary text-[10px] text-text-muted">
+      <div className="flex h-full w-full items-center justify-center bg-bg-tertiary text-2xs text-text-muted">
         --
       </div>
     );
@@ -133,6 +133,7 @@ function SpriteLightbox({
           </button>
         </div>
         <button
+          aria-label="Close"
           onClick={onClose}
           className="absolute -right-3 -top-3 flex h-7 w-7 items-center justify-center rounded-full bg-bg-elevated text-text-primary shadow hover:bg-bg-hover"
         >
@@ -476,12 +477,12 @@ export function PlayerSpriteManager() {
         <h2 className="font-display text-xs uppercase tracking-widest text-text-muted">
           Player Sprites
         </h2>
-        <span className="text-[10px] text-text-muted">
+        <span className="text-2xs text-text-muted">
           {coveredCount} / {total} sprites
         </span>
 
         <div className="ml-auto flex items-center gap-2">
-          <div className="rounded border border-border-default bg-bg-primary px-2 py-1 text-[10px] text-text-secondary">
+          <div className="rounded border border-border-default bg-bg-primary px-2 py-1 text-2xs text-text-secondary">
             {ART_STYLE_LABELS[artStyle]}
           </div>
 
@@ -595,7 +596,7 @@ export function PlayerSpriteManager() {
             </button>
           </div>
           {importResult.errors.length > 0 && (
-            <div className="mt-1 max-h-20 overflow-y-auto text-[10px] text-status-error">
+            <div className="mt-1 max-h-20 overflow-y-auto text-2xs text-status-error">
               {importResult.errors.slice(0, 10).map((e, i) => (
                 <div key={i}>{e}</div>
               ))}
@@ -634,7 +635,7 @@ export function PlayerSpriteManager() {
             </button>
           </div>
           {deployResult.errors.length > 0 && (
-            <div className="mt-1 max-h-20 overflow-y-auto text-[10px] text-status-error">
+            <div className="mt-1 max-h-20 overflow-y-auto text-2xs text-status-error">
               {deployResult.errors.slice(0, 10).map((e, i) => (
                 <div key={i}>{e}</div>
               ))}
@@ -682,7 +683,7 @@ export function PlayerSpriteManager() {
 
       {/* Sprite grid */}
       <div className="flex-1 overflow-y-auto p-4">
-        <p className="mb-3 text-[10px] text-text-muted">
+        <p className="mb-3 text-2xs text-text-muted">
           Filename format:{" "}
           <code className="font-mono">
             player_sprites/&#123;race&#125;_&#123;class-or-base&#125;_t&#123;tier&#125;.png
@@ -702,16 +703,16 @@ export function PlayerSpriteManager() {
               <table className="w-full border-collapse">
                 <thead>
                   <tr>
-                    <th className="border border-border-default bg-bg-tertiary px-2 py-1 text-left text-[10px] font-normal text-text-muted">
+                    <th className="border border-border-default bg-bg-tertiary px-2 py-1 text-left text-2xs font-normal text-text-muted">
                       Class
                     </th>
                     {tiers.map((tier) => (
                       <th
                         key={tier}
-                        className="border border-border-default bg-bg-tertiary px-1 py-1 text-center text-[10px] font-normal text-text-muted"
+                        className="border border-border-default bg-bg-tertiary px-1 py-1 text-center text-2xs font-normal text-text-muted"
                       >
                         <div>{tierLabel(tier)}</div>
-                        <div className="text-[9px] opacity-60">
+                        <div className="text-3xs opacity-60">
                           {tierRange(tier, allTiers)}
                         </div>
                       </th>
@@ -730,7 +731,7 @@ export function PlayerSpriteManager() {
                         if (isUnavailable) {
                           return (
                             <td key={tier} className="border border-border-default bg-bg-primary/40 p-0.5">
-                              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded text-[9px] text-text-muted/60">
+                              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded text-3xs text-text-muted/60">
                                 --
                               </div>
                             </td>
@@ -775,14 +776,14 @@ export function PlayerSpriteManager() {
                                       canGenerate && (
                                         <button
                                           onClick={() => handleGenerateOne(race, slotClass, tier)}
-                                          className="rounded px-1.5 py-0.5 text-[9px] font-medium text-accent hover:bg-accent/20"
+                                          className="rounded px-1.5 py-0.5 text-3xs font-medium text-accent hover:bg-accent/20"
                                           title="Generate"
                                         >
                                           Generate
                                         </button>
                                       )
                                     ) : (
-                                      <div className="rounded px-1.5 py-0.5 text-[9px] font-medium text-text-primary">
+                                      <div className="rounded px-1.5 py-0.5 text-3xs font-medium text-text-primary">
                                         View
                                       </div>
                                     )}

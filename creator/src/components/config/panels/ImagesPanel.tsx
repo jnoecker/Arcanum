@@ -51,7 +51,7 @@ export function ImagesPanel({ config, onChange }: ConfigPanelProps) {
         title="Player Sprite Tiers"
         description="Player characters use different sprite art at different level ranges, giving visual progression as they advance. The server picks the highest tier threshold at or below the player's level. A special 'tstaff' tier is always included for staff/admin sprites."
       >
-        <p className="mb-2 text-[10px] text-text-muted">
+        <p className="mb-2 text-2xs text-text-muted">
           Level breakpoints for player sprite art. Class tiers use{" "}
           <code className="font-mono">
             player_sprites/race_class_t&#123;tier&#125;.png

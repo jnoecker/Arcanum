@@ -46,8 +46,7 @@ export type AbilityStudioSubView =
 
 export type StudioSubView =
   | "home"
-  | "zoneArt"
-  | "customAssets"
+  | "art"
   | "media"
   | "portraits"
   | "abilities";

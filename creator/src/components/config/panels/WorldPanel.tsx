@@ -28,7 +28,7 @@ export function WorldPanel({ config, onChange }: ConfigPanelProps) {
               placeholder="zone:room"
             />
           </FieldRow>
-          <p className="text-[10px] text-text-muted">
+          <p className="text-2xs text-text-muted">
             Format: <code className="font-mono">zone_id:room_id</code> — where
             new players spawn by default.
           </p>
@@ -36,7 +36,7 @@ export function WorldPanel({ config, onChange }: ConfigPanelProps) {
       </Section>
 
       <Section title="Class Start Rooms">
-        <p className="mb-2 text-[10px] text-text-muted">
+        <p className="mb-2 text-2xs text-text-muted">
           Override the default start room per class. Leave empty to use the
           default.
         </p>

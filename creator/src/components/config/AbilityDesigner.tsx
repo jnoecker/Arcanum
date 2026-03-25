@@ -134,7 +134,7 @@ export function AbilityDesigner({
     <div className="grid gap-5 xl:grid-cols-[20rem_minmax(0,1fr)]">
       <div className="rounded-[24px] border border-white/8 bg-black/12 p-4">
         <div className="mb-4">
-          <p className="text-[11px] uppercase tracking-[0.24em] text-text-muted">Ability roster</p>
+          <p className="text-[11px] uppercase tracking-ui text-text-muted">Ability roster</p>
           <h4 className="mt-2 font-display text-xl text-text-primary">{Object.keys(config.abilities).length} abilities</h4>
         </div>
 
@@ -177,7 +177,7 @@ export function AbilityDesigner({
                 }}
                 className={`rounded-[20px] border px-4 py-3 text-left transition ${
                   selectedCard
-                    ? "border-[rgba(184,216,232,0.35)] bg-[linear-gradient(135deg,rgba(168,151,210,0.16),rgba(140,174,201,0.12))]"
+                    ? "border-border-active bg-gradient-active"
                     : "border-white/8 bg-white/4 hover:bg-white/8"
                 }`}
               >
@@ -187,12 +187,12 @@ export function AbilityDesigner({
                     <div className="mt-1 truncate text-[11px] text-text-muted">{id}</div>
                   </div>
                   {ability.image && (
-                    <span className="rounded-full bg-[rgba(141,169,123,0.16)] px-2 py-1 text-[10px] uppercase tracking-[0.18em] text-[rgb(174,204,152)]">
+                    <span className="rounded-full bg-badge-success-bg px-2 py-1 text-2xs uppercase tracking-label text-badge-success">
                       Art
                     </span>
                   )}
                 </div>
-                <div className="mt-3 flex flex-wrap gap-2 text-[10px] uppercase tracking-[0.18em] text-text-muted">
+                <div className="mt-3 flex flex-wrap gap-2 text-2xs uppercase tracking-label text-text-muted">
                   <span>{ability.effect.type}</span>
                   <span>{ability.targetType}</span>
                   <span>Lvl {ability.levelRequired}</span>
@@ -214,7 +214,7 @@ export function AbilityDesigner({
         <div className="rounded-[24px] border border-white/8 bg-black/12 p-5">
           <div className="flex flex-wrap items-start justify-between gap-4 border-b border-white/8 pb-4">
             <div>
-              <p className="text-[11px] uppercase tracking-[0.24em] text-text-muted">Ability designer</p>
+              <p className="text-[11px] uppercase tracking-ui text-text-muted">Ability designer</p>
               <h4 className="mt-2 font-display text-3xl text-text-primary">{selected.displayName}</h4>
               <p className="mt-2 max-w-2xl text-sm leading-7 text-text-secondary">
                 Target rules, class access, effects, and icon identity.

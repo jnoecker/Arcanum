@@ -17,7 +17,7 @@ export function CharacterCreationStudio({
   return (
     <div className="flex flex-col gap-6">
       <div className="rounded-[24px] border border-white/8 bg-black/12 p-5">
-        <p className="text-[11px] uppercase tracking-[0.24em] text-text-muted">Character creation</p>
+        <p className="text-[11px] uppercase tracking-ui text-text-muted">Character creation</p>
         <h4 className="mt-2 font-display text-2xl text-text-primary">Starting resources</h4>
         <p className="mt-2 max-w-3xl text-sm leading-7 text-text-secondary">
           Set the baseline economy for new characters before class, race, and equipment decisions start differentiating them.

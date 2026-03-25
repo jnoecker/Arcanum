@@ -35,7 +35,7 @@ export function ProgressionBalanceStep({
         </label>
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="mb-0.5 block text-[10px] text-text-muted">
+            <label className="mb-0.5 block text-2xs text-text-muted">
               Max Level
             </label>
             <input
@@ -48,7 +48,7 @@ export function ProgressionBalanceStep({
             />
           </div>
           <div>
-            <label className="mb-0.5 block text-[10px] text-text-muted">
+            <label className="mb-0.5 block text-2xs text-text-muted">
               Base XP
             </label>
             <input
@@ -63,7 +63,7 @@ export function ProgressionBalanceStep({
             />
           </div>
           <div>
-            <label className="mb-0.5 block text-[10px] text-text-muted">
+            <label className="mb-0.5 block text-2xs text-text-muted">
               Exponent
             </label>
             <input
@@ -82,7 +82,7 @@ export function ProgressionBalanceStep({
             />
           </div>
           <div>
-            <label className="mb-0.5 block text-[10px] text-text-muted">
+            <label className="mb-0.5 block text-2xs text-text-muted">
               Linear XP
             </label>
             <input
@@ -103,7 +103,7 @@ export function ProgressionBalanceStep({
 
         {/* XP Curve Chart */}
         <div className="mt-3 rounded border border-border-default bg-bg-primary p-2">
-          <div className="mb-1 text-[10px] text-text-muted">
+          <div className="mb-1 text-2xs text-text-muted">
             XP required per level (1-10)
           </div>
           <div className="flex h-16 items-end gap-1">
@@ -137,7 +137,7 @@ export function ProgressionBalanceStep({
         </label>
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="mb-0.5 block text-[10px] text-text-muted">
+            <label className="mb-0.5 block text-2xs text-text-muted">
               HP / Level
             </label>
             <input
@@ -155,7 +155,7 @@ export function ProgressionBalanceStep({
             />
           </div>
           <div>
-            <label className="mb-0.5 block text-[10px] text-text-muted">
+            <label className="mb-0.5 block text-2xs text-text-muted">
               Mana / Level
             </label>
             <input
@@ -173,7 +173,7 @@ export function ProgressionBalanceStep({
             />
           </div>
           <div>
-            <label className="mb-0.5 block text-[10px] text-text-muted">
+            <label className="mb-0.5 block text-2xs text-text-muted">
               Base HP
             </label>
             <input
@@ -191,7 +191,7 @@ export function ProgressionBalanceStep({
             />
           </div>
           <div>
-            <label className="mb-0.5 block text-[10px] text-text-muted">
+            <label className="mb-0.5 block text-2xs text-text-muted">
               Base Mana
             </label>
             <input
@@ -218,7 +218,7 @@ export function ProgressionBalanceStep({
         </label>
         <div className="grid grid-cols-3 gap-3">
           <div>
-            <label className="mb-0.5 block text-[10px] text-text-muted">
+            <label className="mb-0.5 block text-2xs text-text-muted">
               Starting Gold
             </label>
             <input
@@ -231,7 +231,7 @@ export function ProgressionBalanceStep({
             />
           </div>
           <div>
-            <label className="mb-0.5 block text-[10px] text-text-muted">
+            <label className="mb-0.5 block text-2xs text-text-muted">
               Buy Multiplier
             </label>
             <input
@@ -245,7 +245,7 @@ export function ProgressionBalanceStep({
             />
           </div>
           <div>
-            <label className="mb-0.5 block text-[10px] text-text-muted">
+            <label className="mb-0.5 block text-2xs text-text-muted">
               Sell Multiplier
             </label>
             <input

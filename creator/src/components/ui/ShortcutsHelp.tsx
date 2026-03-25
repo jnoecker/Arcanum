@@ -1,3 +1,5 @@
+import { useFocusTrap } from "@/lib/useFocusTrap";
+
 interface ShortcutsHelpProps {
   onClose: () => void;
 }
@@ -15,17 +17,23 @@ const shortcuts = [
 ];
 
 export function ShortcutsHelp({ onClose }: ShortcutsHelpProps) {
+  const trapRef = useFocusTrap<HTMLDivElement>(onClose);
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
       onClick={onClose}
     >
       <div
+        ref={trapRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="shortcuts-dialog-title"
         className="mx-4 w-96 rounded-lg border border-border-default bg-bg-secondary shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="border-b border-border-default px-5 py-3">
-          <h2 className="font-display text-sm tracking-wide text-text-primary">
+          <h2 id="shortcuts-dialog-title" className="font-display text-sm tracking-wide text-text-primary">
             Keyboard Shortcuts
           </h2>
         </div>

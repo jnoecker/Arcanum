@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { Handle, Position, type NodeProps, type Node } from "@xyflow/react";
 import type { RoomNodeData, EntitySprite } from "@/lib/zoneToGraph";
 import { useImageSrc } from "@/lib/useImageSrc";
@@ -96,7 +97,7 @@ function InfoBadge({ d }: { d: RoomNodeData }) {
       {/* Title */}
       <div className="flex items-center gap-1">
         {d.isStartRoom && (
-          <span className="text-accent text-[10px]" title="Start room">★</span>
+          <span className="text-accent text-2xs" title="Start room">★</span>
         )}
         <span className="truncate text-[11px] font-semibold text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
           {d.title}
@@ -105,9 +106,9 @@ function InfoBadge({ d }: { d: RoomNodeData }) {
 
       {/* Room ID + entity counts in a single row */}
       <div className="flex items-center gap-1.5">
-        <span className="truncate text-[9px] text-white/60">{d.roomId}</span>
+        <span className="truncate text-3xs text-white/60">{d.roomId}</span>
         {hasEntities && (
-          <div className="flex items-center gap-1.5 text-[9px] text-white/70">
+          <div className="flex items-center gap-1.5 text-3xs text-white/70">
             {d.mobCount > 0 && <span title="Mobs">⚔{d.mobCount}</span>}
             {d.itemCount > 0 && <span title="Items">◆{d.itemCount}</span>}
             {d.shopCount > 0 && <span title="Shops">⛋{d.shopCount}</span>}
@@ -132,7 +133,7 @@ function InfoBadge({ d }: { d: RoomNodeData }) {
 
 // ─── RoomNode ────────────────────────────────────────────────────────
 
-export function RoomNode({ data, selected }: NodeProps<RoomNodeType>) {
+export const RoomNode = memo(function RoomNode({ data, selected }: NodeProps<RoomNodeType>) {
   const d = data as RoomNodeData;
   const hasImage = !!d.image;
 
@@ -200,7 +201,7 @@ export function RoomNode({ data, selected }: NodeProps<RoomNodeType>) {
           </div>
 
           {/* Room ID */}
-          <div className="truncate text-[10px] text-text-muted">{d.roomId}</div>
+          <div className="truncate text-2xs text-text-muted">{d.roomId}</div>
 
           {/* Entity sprites */}
           {d.entities.length > 0 && (
@@ -213,7 +214,7 @@ export function RoomNode({ data, selected }: NodeProps<RoomNodeType>) {
 
           {/* Entity badges (for entities without images) */}
           {(d.mobCount > 0 || d.itemCount > 0 || d.shopCount > 0 || d.station) && (
-            <div className="mt-1 flex items-center gap-2 text-[10px] text-text-muted">
+            <div className="mt-1 flex items-center gap-2 text-2xs text-text-muted">
               {d.mobCount > 0 && <span title="Mobs">⚔{d.mobCount}</span>}
               {d.itemCount > 0 && <span title="Items">◆{d.itemCount}</span>}
               {d.shopCount > 0 && <span title="Shops">⛋{d.shopCount}</span>}
@@ -226,4 +227,4 @@ export function RoomNode({ data, selected }: NodeProps<RoomNodeType>) {
       )}
     </div>
   );
-}
+});

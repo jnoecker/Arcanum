@@ -19,7 +19,7 @@ export function WorldIdentityStep({ data, onChange }: WorldIdentityStepProps) {
           rows={4}
           className="w-full rounded border border-border-default bg-bg-primary px-2 py-1.5 text-xs text-text-primary outline-none placeholder:text-text-muted focus:border-accent/50"
         />
-        <p className="mt-1 text-[10px] text-text-muted">
+        <p className="mt-1 text-2xs text-text-muted">
           Describe the feel, setting, and atmosphere of your world. This guides
           AI-generated content and art.
         </p>

@@ -166,7 +166,7 @@ export function GlobalAssetsPanel({ config, onChange }: ConfigPanelProps) {
               </button>
             </div>
             {deployResult.errors.length > 0 && (
-              <div className="mt-1 max-h-20 overflow-y-auto text-[10px] text-status-error">
+              <div className="mt-1 max-h-20 overflow-y-auto text-2xs text-status-error">
                 {deployResult.errors.slice(0, 10).map((e, i) => (
                   <div key={i}>{e}</div>
                 ))}
@@ -201,14 +201,14 @@ export function GlobalAssetsPanel({ config, onChange }: ConfigPanelProps) {
                     </span>
                     <button
                       onClick={() => setPickingFor(key)}
-                      className="shrink-0 rounded border border-border-default px-2 py-0.5 text-[10px] text-text-secondary transition-colors hover:border-accent/50 hover:text-accent"
+                      className="shrink-0 rounded border border-border-default px-2 py-0.5 text-2xs text-text-secondary transition-colors hover:border-accent/50 hover:text-accent"
                       title="Pick from asset gallery"
                     >
                       Gallery
                     </button>
                     <button
                       onClick={() => handlePickFromFile(key)}
-                      className="shrink-0 rounded border border-border-default px-2 py-0.5 text-[10px] text-text-secondary transition-colors hover:border-accent/50 hover:text-accent"
+                      className="shrink-0 rounded border border-border-default px-2 py-0.5 text-2xs text-text-secondary transition-colors hover:border-accent/50 hover:text-accent"
                       title="Import from file system"
                     >
                       File...

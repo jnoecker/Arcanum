@@ -128,9 +128,11 @@ export function RegistryPanel<T>({
                 key={id}
                 className="rounded border border-border-muted bg-bg-primary"
               >
-                <div
-                  className="flex cursor-pointer items-center justify-between px-2 py-1.5"
+                <button
+                  type="button"
+                  className="flex w-full cursor-pointer items-center justify-between px-2 py-1.5 text-left"
                   onClick={() => setExpanded(isOpen ? null : id)}
+                  aria-expanded={isOpen}
                 >
                   <span className="text-xs text-text-primary">
                     <span className="font-semibold">
@@ -140,9 +142,9 @@ export function RegistryPanel<T>({
                     </span>
                     <span className="ml-2 text-text-muted">{id}</span>
                   </span>
-                  <div className="flex items-center gap-1">
+                  <span className="flex items-center gap-1">
                     {summary && (
-                      <span className="text-[10px] text-text-muted">
+                      <span className="text-2xs text-text-muted">
                         {summary}
                       </span>
                     )}
@@ -155,8 +157,8 @@ export function RegistryPanel<T>({
                         x
                       </IconButton>
                     </span>
-                  </div>
-                </div>
+                  </span>
+                </button>
                 {isOpen && (
                   <div className="border-t border-border-muted px-2 py-2">
                     <div className="flex flex-col gap-1.5">
@@ -193,13 +195,13 @@ export function RegistryPanel<T>({
                                   setRenaming(null);
                                 }
                               }}
-                              className="rounded bg-accent/20 px-1.5 py-0.5 text-[10px] text-accent hover:bg-accent/30"
+                              className="rounded bg-accent/20 px-1.5 py-0.5 text-2xs text-accent hover:bg-accent/30"
                             >
                               Rename
                             </button>
                             <button
                               onClick={() => setRenaming(null)}
-                              className="rounded px-1.5 py-0.5 text-[10px] text-text-muted hover:text-text-primary"
+                              className="rounded px-1.5 py-0.5 text-2xs text-text-muted hover:text-text-primary"
                             >
                               Cancel
                             </button>
@@ -210,7 +212,7 @@ export function RegistryPanel<T>({
                               setRenaming(id);
                               setRenameValue(id);
                             }}
-                            className="text-[10px] text-text-muted hover:text-text-primary"
+                            className="text-2xs text-text-muted hover:text-text-primary"
                           >
                             Rename ID...
                           </button>

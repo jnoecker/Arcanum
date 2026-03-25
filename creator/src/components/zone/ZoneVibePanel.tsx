@@ -45,8 +45,8 @@ function DefaultThumb({ fileName, label, generating }: { fileName?: string; labe
 
   return (
     <>
-      <div className="rounded-[16px] border border-white/8 bg-[rgba(24,30,45,0.46)] p-2">
-        <div className="mb-2 text-[10px] uppercase tracking-[0.2em] text-text-muted">{label}</div>
+      <div className="rounded-[16px] border border-white/8 bg-surface-scrim-light p-2">
+        <div className="mb-2 text-2xs uppercase tracking-ui text-text-muted">{label}</div>
         <button
           type="button"
           onClick={() => { if (src && !generating) setExpanded(true); }}
@@ -58,7 +58,7 @@ function DefaultThumb({ fileName, label, generating }: { fileName?: string; labe
           ) : src ? (
             <img src={src} alt={label} className="h-full w-full object-cover" />
           ) : (
-            <span className="text-[10px] text-text-muted">No default</span>
+            <span className="text-2xs text-text-muted">No default</span>
           )}
         </button>
       </div>
@@ -75,7 +75,7 @@ function DefaultThumb({ fileName, label, generating }: { fileName?: string; labe
               className="max-h-[85vh] max-w-[85vw] cursor-pointer rounded-lg object-contain shadow-2xl"
             />
             <div className="absolute left-0 right-0 top-full mt-3 text-center">
-              <span className="rounded-full bg-black/60 px-3 py-1 text-[11px] uppercase tracking-[0.2em] text-text-muted backdrop-blur-sm">
+              <span className="rounded-full bg-black/60 px-3 py-1 text-[11px] uppercase tracking-ui text-text-muted backdrop-blur-sm">
                 {label}
               </span>
             </div>
@@ -253,7 +253,7 @@ export function ZoneVibePanel({ zoneId, world, onWorldChange }: ZoneVibePanelPro
   };
 
   if (isLoading) {
-    return <div className="text-[10px] text-text-muted">Loading vibe...</div>;
+    return <div className="text-2xs text-text-muted">Loading vibe...</div>;
   }
 
   const anyDefaultGenerating = DEFAULT_TYPES.some((kind) => generatingDefaults[kind]);
@@ -261,8 +261,8 @@ export function ZoneVibePanel({ zoneId, world, onWorldChange }: ZoneVibePanelPro
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-center justify-between">
-        <span className="font-display text-[10px] uppercase tracking-widest text-text-muted">Zone Vibe</span>
-        {saved && <span className="text-[10px] text-status-success">Saved</span>}
+        <span className="font-display text-2xs uppercase tracking-widest text-text-muted">Zone Vibe</span>
+        {saved && <span className="text-2xs text-status-success">Saved</span>}
       </div>
 
       <textarea
@@ -270,21 +270,21 @@ export function ZoneVibePanel({ zoneId, world, onWorldChange }: ZoneVibePanelPro
         onChange={(e) => setDraft(e.target.value)}
         rows={4}
         placeholder="Atmospheric description for this zone — injected into all entity and fallback prompts for visual coherence..."
-        className="w-full resize-y rounded border border-border-default bg-bg-primary px-2 py-1 font-mono text-[10px] leading-relaxed text-text-secondary placeholder:text-text-muted outline-none focus:border-accent/50"
+        className="w-full resize-y rounded border border-border-default bg-bg-primary px-2 py-1 font-mono text-2xs leading-relaxed text-text-secondary placeholder:text-text-muted outline-none focus:border-accent/50"
       />
 
       <div className="flex flex-wrap gap-1">
         <button
           onClick={handleGenerate}
           disabled={generating || anyDefaultGenerating}
-          className="rounded bg-accent/15 px-2 py-0.5 text-[10px] font-medium text-accent transition-colors hover:bg-accent/25 disabled:opacity-50"
+          className="rounded bg-accent/15 px-2 py-0.5 text-2xs font-medium text-accent transition-colors hover:bg-accent/25 disabled:opacity-50"
         >
           {generating ? "Generating vibe..." : "Generate vibe + defaults"}
         </button>
         <button
           onClick={() => generateAllDefaults(draft)}
           disabled={!draft.trim() || anyDefaultGenerating || generating || !hasImageKey}
-          className="rounded bg-bg-elevated px-2 py-0.5 text-[10px] font-medium text-text-secondary transition-colors hover:bg-bg-hover disabled:opacity-50"
+          className="rounded bg-bg-elevated px-2 py-0.5 text-2xs font-medium text-text-secondary transition-colors hover:bg-bg-hover disabled:opacity-50"
         >
           {anyDefaultGenerating ? "Generating defaults..." : "Generate defaults"}
         </button>
@@ -292,7 +292,7 @@ export function ZoneVibePanel({ zoneId, world, onWorldChange }: ZoneVibePanelPro
           <button
             onClick={handleSave}
             disabled={saving}
-            className="rounded bg-bg-elevated px-2 py-0.5 text-[10px] font-medium text-text-secondary transition-colors hover:bg-bg-hover disabled:opacity-50"
+            className="rounded bg-bg-elevated px-2 py-0.5 text-2xs font-medium text-text-secondary transition-colors hover:bg-bg-hover disabled:opacity-50"
           >
             {saving ? "Saving..." : "Save"}
           </button>
@@ -305,10 +305,10 @@ export function ZoneVibePanel({ zoneId, world, onWorldChange }: ZoneVibePanelPro
         <DefaultThumb fileName={world.image?.item} label="Item default" generating={generatingDefaults.item} />
       </div>
 
-      {error && <p className="text-[10px] italic text-status-error">{error}</p>}
-      {defaultError && <p className="text-[10px] italic text-status-error">{defaultError}</p>}
+      {error && <p className="text-2xs italic text-status-error">{error}</p>}
+      {defaultError && <p className="text-2xs italic text-status-error">{defaultError}</p>}
       {!hasImageKey && (
-        <p className="text-[10px] italic text-text-muted">
+        <p className="text-2xs italic text-text-muted">
           Add an image provider API key to auto-generate zone fallback art after vibe generation.
         </p>
       )}

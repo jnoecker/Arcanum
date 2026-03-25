@@ -208,6 +208,39 @@ select,
   animation: slow-rotate 60s linear infinite;
 }
 
+/* ─── Scroll-Driven Parallax ─── */
+@keyframes parallax-drift {
+  from { transform: translateY(1rem); }
+  to   { transform: translateY(-1rem); }
+}
+
+@supports (animation-timeline: scroll()) {
+  .studio-parallax {
+    animation: parallax-drift linear both;
+    animation-timeline: scroll(nearest);
+    animation-range: entry 0% exit 100%;
+  }
+  .studio-parallax-slow {
+    animation: parallax-drift linear both;
+    animation-timeline: scroll(nearest);
+    animation-range: entry 0% exit 100%;
+    /* Reduced range for a subtler effect on headings */
+  }
+}
+
+@keyframes parallax-drift-slow {
+  from { transform: translateY(0.5rem); }
+  to   { transform: translateY(-0.5rem); }
+}
+
+@supports (animation-timeline: scroll()) {
+  .studio-parallax-slow {
+    animation: parallax-drift-slow linear both;
+    animation-timeline: scroll(nearest);
+    animation-range: entry 0% exit 100%;
+  }
+}
+
 /* ─── Gradient Utilities ─── */
 @utility bg-gradient-active {
   background: var(--bg-active);

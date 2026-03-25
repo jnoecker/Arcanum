@@ -213,8 +213,8 @@ export function StudioWorkspace() {
 
         {studioSubView === "home" && (
           <section className="grid items-start gap-6 xl:grid-cols-12">
-            <div className="xl:col-span-3">{renderAtlas()}</div>
-            <div className="flex flex-col gap-6 xl:col-span-5">
+            <div className="studio-parallax xl:col-span-3">{renderAtlas()}</div>
+            <div className="studio-parallax-slow flex flex-col gap-6 xl:col-span-5">
               {renderSelectedZoneCard()}
               <div className="rounded-[28px] border border-white/10 bg-gradient-panel p-5 shadow-[0_18px_50px_rgba(9,12,24,0.24)]">
                 {selectedZone ? (
@@ -230,7 +230,7 @@ export function StudioWorkspace() {
                 )}
               </div>
             </div>
-            <div className="xl:col-span-4">
+            <div className="studio-parallax xl:col-span-4">
               {renderRecentAssets()}
             </div>
           </section>

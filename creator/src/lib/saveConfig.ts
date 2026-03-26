@@ -133,6 +133,14 @@ async function saveSplitConfig(projectDir: string): Promise<void> {
 
     write("world", cleanObj({
       server: config.server,
+      admin: config.admin,
+      observability: config.observability,
+      logging: cleanObj({
+        level: config.logging.level,
+        packageLevels: Object.keys(config.logging.packageLevels).length > 0
+          ? config.logging.packageLevels
+          : undefined,
+      }),
       world: config.world,
       classStartRooms: Object.keys(config.classStartRooms).length > 0 ? config.classStartRooms : undefined,
       navigation: config.navigation,

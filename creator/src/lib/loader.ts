@@ -56,6 +56,9 @@ export function parseAppConfigYaml(content: string): AppConfig {
 
   return {
     server: parseServerConfig(root.server),
+    admin: parseAdminConfig(root.admin),
+    observability: parseObservabilityConfig(root.observability),
+    logging: parseLoggingConfig(root.logging),
     world: parseWorldConfig(root.world),
     classStartRooms: parseClassStartRooms(engine.classStartRooms),
     stats: parseStatsConfig(engine.stats),
@@ -127,6 +130,38 @@ function parseServerConfig(raw: unknown): AppConfig["server"] {
   return {
     telnetPort: asNumber(s.telnetPort, 4000),
     webPort: asNumber(s.webPort, 8080),
+  };
+}
+
+function parseAdminConfig(raw: unknown): AppConfig["admin"] {
+  const s = (raw ?? {}) as Record<string, unknown>;
+  return {
+    enabled: s.enabled === true,
+    port: asNumber(s.port, 9091),
+    token: asString(s.token, ""),
+    grafanaUrl: asString(s.grafanaUrl, ""),
+  };
+}
+
+function parseObservabilityConfig(raw: unknown): AppConfig["observability"] {
+  const s = (raw ?? {}) as Record<string, unknown>;
+  return {
+    metricsEnabled: s.metricsEnabled === true,
+    metricsEndpoint: asString(s.metricsEndpoint, "/metrics"),
+    metricsHttpPort: asNumber(s.metricsHttpPort, 9090),
+  };
+}
+
+function parseLoggingConfig(raw: unknown): AppConfig["logging"] {
+  const s = (raw ?? {}) as Record<string, unknown>;
+  const packageLevels = (s.packageLevels ?? {}) as Record<string, unknown>;
+  const parsed: Record<string, string> = {};
+  for (const [k, v] of Object.entries(packageLevels)) {
+    parsed[k] = String(v ?? "INFO");
+  }
+  return {
+    level: asString(s.level, "INFO"),
+    packageLevels: parsed,
   };
 }
 
@@ -561,6 +596,9 @@ async function loadSplitConfig(projectDir: string): Promise<AppConfig | null> {
     const config: AppConfig = {
       // world.yaml
       server: parseServerConfig(worldRaw.server),
+      admin: parseAdminConfig(worldRaw.admin),
+      observability: parseObservabilityConfig(worldRaw.observability),
+      logging: parseLoggingConfig(worldRaw.logging),
       world: parseWorldConfig(worldRaw.world),
       classStartRooms: parseClassStartRooms(worldRaw.classStartRooms),
       navigation: parseNavigationConfig(worldRaw.navigation),

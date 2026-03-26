@@ -1,3 +1,4 @@
+import { useAdminStore } from "@/stores/adminStore";
 import type { ZoneDetail } from "@/types/admin";
 
 export function AdminZoneDetail({
@@ -7,6 +8,15 @@ export function AdminZoneDetail({
   zone: ZoneDetail;
   onBack: () => void;
 }) {
+  const fetchRoomDetail = useAdminStore((s) => s.fetchRoomDetail);
+
+  const handleRoomClick = (roomId: string) => {
+    // Room ID format is "zone:room" — extract the room part
+    const parts = roomId.split(":");
+    const roomPart = parts.length > 1 ? parts.slice(1).join(":") : roomId;
+    fetchRoomDetail(zone.name, roomPart);
+  };
+
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center gap-3">
@@ -22,13 +32,16 @@ export function AdminZoneDetail({
         </span>
       </div>
 
+      <p className="text-xs text-text-muted">Click a room to inspect its full detail.</p>
+
       <div className="flex flex-col gap-1.5">
         {zone.rooms.map((room) => (
-          <div
+          <button
             key={room.id}
-            className={`rounded-2xl border px-4 py-3 transition-colors duration-200 ${
+            onClick={() => handleRoomClick(room.id)}
+            className={`w-full rounded-2xl border px-4 py-3 text-left transition-all duration-200 hover:border-accent/20 hover:bg-accent/[0.04] hover:shadow-[inset_3px_0_0_var(--color-accent)] focus-visible:ring-2 focus-visible:ring-border-active focus-visible:outline-none ${
               room.players.length > 0
-                ? "border-accent/15 bg-accent/[0.03] shadow-[inset_3px_0_0_var(--color-accent)]"
+                ? "border-accent/15 bg-accent/[0.03]"
                 : "border-white/8 bg-white/4"
             }`}
           >
@@ -68,7 +81,7 @@ export function AdminZoneDetail({
                 ))}
               </div>
             )}
-          </div>
+          </button>
         ))}
       </div>
     </div>

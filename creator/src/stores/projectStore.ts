@@ -11,6 +11,7 @@ import type {
   ContentStudioSubView,
   OperationsSubView,
   AdminSubView,
+  AdminContentSubView,
 } from "@/types/project";
 
 /** Navigation target for sidebar -> zone editor entity selection. */
@@ -33,6 +34,7 @@ interface ProjectStore {
   contentStudioSubView: ContentStudioSubView;
   operationsSubView: OperationsSubView;
   adminSubView: AdminSubView;
+  adminContentSubView: AdminContentSubView;
   pendingNavigation: PendingNavigation | null;
 
   setProject: (project: Project) => void;
@@ -52,6 +54,7 @@ interface ProjectStore {
   setContentStudioSubView: (subView: ContentStudioSubView) => void;
   setOperationsSubView: (subView: OperationsSubView) => void;
   setAdminSubView: (subView: AdminSubView) => void;
+  setAdminContentSubView: (subView: AdminContentSubView) => void;
   navigateTo: (nav: PendingNavigation) => void;
   consumeNavigation: () => PendingNavigation | null;
 }
@@ -68,6 +71,7 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
   contentStudioSubView: "achievements",
   operationsSubView: "services",
   adminSubView: "overview",
+  adminContentSubView: "abilities",
   pendingNavigation: null,
 
   setProject: (project) =>
@@ -83,6 +87,7 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
       contentStudioSubView: "achievements",
       operationsSubView: "services",
       adminSubView: "overview",
+      adminContentSubView: "abilities",
     }),
 
   closeProject: () =>
@@ -119,6 +124,7 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
   setContentStudioSubView: (contentStudioSubView) => set({ contentStudioSubView }),
   setOperationsSubView: (operationsSubView) => set({ operationsSubView }),
   setAdminSubView: (adminSubView) => set({ adminSubView }),
+  setAdminContentSubView: (adminContentSubView) => set({ adminContentSubView }),
 
   navigateTo: (nav) => {
     const tab: Tab = { id: `zone:${nav.zoneId}`, kind: "zone", label: nav.zoneId };

@@ -75,6 +75,23 @@ pub fn run() {
             admin::admin_zones,
             admin::admin_zone_detail,
             admin::admin_reload,
+            admin::admin_health,
+            admin::admin_player_search,
+            admin::admin_player_toggle_staff,
+            admin::admin_room_detail,
+            admin::admin_mobs,
+            admin::admin_mob_detail,
+            admin::admin_abilities,
+            admin::admin_ability_detail,
+            admin::admin_effects,
+            admin::admin_effect_detail,
+            admin::admin_quests,
+            admin::admin_quest_detail,
+            admin::admin_achievements,
+            admin::admin_achievement_detail,
+            admin::admin_shops,
+            admin::admin_items,
+            admin::admin_broadcast,
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application")

@@ -71,8 +71,17 @@ export type OperationsSubView =
 export type AdminSubView =
   | "overview"
   | "players"
-  | "zones"
+  | "world"
+  | "content"
   | "actions";
+
+export type AdminContentSubView =
+  | "abilities"
+  | "effects"
+  | "quests"
+  | "achievements"
+  | "shops"
+  | "items";
 
 export interface Tab {
   id: string;

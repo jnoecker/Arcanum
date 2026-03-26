@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useAdminStore } from "@/stores/adminStore";
 import type { PlayerSummary } from "@/types/admin";
 import { AdminPlayerDetail } from "./AdminPlayerDetail";
@@ -66,27 +67,70 @@ export function AdminPlayerList() {
   const selectedPlayer = useAdminStore((s) => s.selectedPlayer);
   const fetchPlayerDetail = useAdminStore((s) => s.fetchPlayerDetail);
   const clearSelectedPlayer = useAdminStore((s) => s.clearSelectedPlayer);
+  const searchPlayer = useAdminStore((s) => s.searchPlayer);
+  const playerSearchResults = useAdminStore((s) => s.playerSearchResults);
+  const clearPlayerSearch = useAdminStore((s) => s.clearPlayerSearch);
+  const lastError = useAdminStore((s) => s.lastError);
+  const [searchQuery, setSearchQuery] = useState("");
 
   if (selectedPlayer) {
     return <AdminPlayerDetail player={selectedPlayer} onBack={clearSelectedPlayer} />;
   }
 
+  // If viewing a search result, show that player's detail
+  if (playerSearchResults) {
+    return (
+      <AdminPlayerDetail
+        player={playerSearchResults}
+        onBack={clearPlayerSearch}
+      />
+    );
+  }
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      searchPlayer(searchQuery.trim());
+    }
+  };
+
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex items-center justify-between">
+      <div className="flex items-start justify-between gap-4">
         <div>
           <h3 className="font-display text-lg text-text-primary">Inhabitants</h3>
           <p className="mt-0.5 text-xs text-text-muted">Players currently in the world. Click a name to inspect.</p>
         </div>
-        <span className="text-[11px] uppercase tracking-ui text-text-muted">
+        <span className="shrink-0 text-[11px] uppercase tracking-ui text-text-muted">
           {players.length} present
         </span>
       </div>
 
+      {/* Player search */}
+      <form onSubmit={handleSearch} className="flex gap-2">
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="Search by name (online or offline)..."
+          className="h-9 min-w-0 flex-1 rounded-xl border border-white/10 bg-black/15 px-3 text-sm text-text-primary placeholder:text-text-muted focus:border-border-active focus:outline-none focus-visible:ring-2 focus-visible:ring-border-active"
+        />
+        <button
+          type="submit"
+          disabled={!searchQuery.trim()}
+          className="h-9 rounded-xl border border-white/10 bg-black/10 px-4 text-xs font-medium text-text-primary transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40 focus-visible:ring-2 focus-visible:ring-border-active focus-visible:outline-none"
+        >
+          Search
+        </button>
+      </form>
+      {lastError && searchQuery && (
+        <p className="text-xs text-status-error">{lastError}</p>
+      )}
+
       {players.length === 0 ? (
         <div className="rounded-[22px] border border-dashed border-white/12 bg-white/4 px-6 py-12 text-center">
           <p className="font-display text-base text-text-secondary">The world is still</p>
-          <p className="mt-1 text-sm text-text-muted">No souls walk the land at this moment.</p>
+          <p className="mt-1 text-sm text-text-muted">No souls walk the land at this moment. Use search to find offline players.</p>
         </div>
       ) : (
         <div className="flex flex-col gap-1.5">

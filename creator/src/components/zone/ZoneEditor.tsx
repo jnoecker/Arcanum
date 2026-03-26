@@ -393,14 +393,14 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
                 variant={BackgroundVariant.Dots}
                 gap={20}
                 size={1}
-                color={GRAPH.grid}
+                color={GRAPH().grid}
               />
               <Controls
                 showInteractive={false}
               />
               <MiniMap
                 nodeColor={(node) =>
-                  node.type === "crossZone" ? GRAPH.cross : GRAPH.node
+                  node.type === "crossZone" ? GRAPH().cross : GRAPH().node
                 }
                 maskColor="var(--graph-minimap-mask)"
               />
@@ -416,7 +416,7 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
             {/* First-zone onboarding hint */}
             {roomCount <= 1 && !hintDismissed && viewMode === "map" && (
               <div className="pointer-events-auto absolute inset-x-0 bottom-4 z-[2] flex justify-center">
-                <div className="flex items-center gap-4 rounded-2xl border border-white/10 bg-gradient-panel px-5 py-3 shadow-[0_12px_36px_rgba(8,10,18,0.4)] backdrop-blur-xl">
+                <div className="flex items-center gap-4 rounded-2xl border border-white/10 bg-gradient-panel px-5 py-3 shadow-bar backdrop-blur-xl">
                   <div>
                     <p className="text-sm text-text-primary">
                       Click the <span className="font-mono text-accent">+</span> handles on a room's edges to create exits to new rooms.

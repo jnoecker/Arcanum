@@ -15,7 +15,7 @@ function StudioSection({
   children: ReactNode;
 }) {
   return (
-    <section className="rounded-[28px] border border-white/10 bg-gradient-panel-light p-5 shadow-[0_16px_42px_rgba(9,12,24,0.22)]">
+    <section className="rounded-[28px] border border-white/10 bg-gradient-panel-light p-5 shadow-section-sm">
       <div className="mb-3">
         <p className="text-[11px] uppercase tracking-wide-ui text-text-muted">{kicker}</p>
         <h3 className="mt-2 font-display text-xl text-text-primary">{title}</h3>

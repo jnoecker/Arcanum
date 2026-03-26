@@ -408,7 +408,7 @@ function ChoiceRow({ choice, nextOptions, onUpdate, onDelete }: ChoiceRowProps) 
             <NumberInput
               value={choice.minLevel}
               onCommit={(v) => onUpdate({ minLevel: v })}
-              placeholder="any"
+              placeholder="Any"
               min={1}
             />
           </FieldRow>
@@ -416,14 +416,14 @@ function ChoiceRow({ choice, nextOptions, onUpdate, onDelete }: ChoiceRowProps) 
             <TextInput
               value={choice.requiredClass ?? ""}
               onCommit={(v) => onUpdate({ requiredClass: v || undefined })}
-              placeholder="any"
+              placeholder="Any"
             />
           </FieldRow>
           <FieldRow label="Action">
             <TextInput
               value={choice.action ?? ""}
               onCommit={(v) => onUpdate({ action: v || undefined })}
-              placeholder="none"
+              placeholder="None"
             />
           </FieldRow>
         </div>

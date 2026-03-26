@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
 import { useAssetStore } from "@/stores/assetStore";
@@ -14,6 +14,7 @@ import {
 } from "@/lib/entityPrompts";
 import { getEnhanceSystemPrompt, UNIVERSAL_NEGATIVE } from "@/lib/arcanumPrompts";
 import { IMAGE_MODELS, type AssetContext, type AssetEntry, type GeneratedImage } from "@/types/assets";
+import { InlineError, Spinner } from "@/components/ui/FormWidgets";
 import type { WorldFile } from "@/types/world";
 
 type EntityKind = "room" | "mob" | "item" | "shop";
@@ -137,19 +138,19 @@ function defaultSelectionKey(world: WorldFile, entities: BrowseEntity[]): Workbe
   return firstEntity ? `entity:${firstEntity.kind}:${firstEntity.id}` : "default:room";
 }
 
-function VariantCard({ entry, assetsDir, onClick }: { entry: AssetEntry; assetsDir: string; onClick: () => void }) {
+const VariantCard = memo(function VariantCard({ entry, assetsDir, onClick }: { entry: AssetEntry; assetsDir: string; onClick: () => void }) {
   const thumbSrc = useImageSrc(`${assetsDir}\\images\\${entry.file_name}`);
   return (
     <button
       onClick={onClick}
       className={`relative h-16 w-16 shrink-0 overflow-hidden rounded-[16px] border-2 transition ${
-        entry.is_active ? "border-accent shadow-[0_0_0_1px_rgba(168,151,210,0.45)]" : "border-white/12 hover:border-[rgba(184,216,232,0.25)]"
+        entry.is_active ? "border-accent shadow-[0_0_0_1px_var(--border-accent-ring)]" : "border-white/12 hover:border-[var(--border-glow)]"
       }`}
     >
-      {thumbSrc ? <img src={thumbSrc} alt="" className="h-full w-full object-cover" /> : <div className="h-full w-full bg-white/6" />}
+      {thumbSrc ? <img src={thumbSrc} alt="" loading="lazy" className="h-full w-full object-cover" /> : <div className="h-full w-full bg-white/6" />}
     </button>
   );
-}
+});
 
 export function ZoneAssetWorkbench({ zoneId, world, onWorldChange }: ZoneAssetWorkbenchProps) {
   const worldRef = useRef(world);
@@ -425,7 +426,7 @@ export function ZoneAssetWorkbench({ zoneId, world, onWorldChange }: ZoneAssetWo
   const completion = totalSlots > 0 ? Math.round(((completedEntityCount + completedDefaultCount) / totalSlots) * 100) : 0;
 
   return (
-    <section className="rounded-[28px] border border-white/10 bg-gradient-panel p-5 shadow-[0_18px_50px_rgba(9,12,24,0.24)]">
+    <section className="rounded-[28px] border border-white/10 bg-gradient-panel p-5 shadow-section">
       <div className="mb-5 flex items-center justify-between gap-4">
         <div>
           <h2 className="font-display text-xl text-text-primary">Zone assets</h2>
@@ -537,7 +538,7 @@ export function ZoneAssetWorkbench({ zoneId, world, onWorldChange }: ZoneAssetWo
 
               <div className="flex min-h-[20rem] items-center justify-center overflow-hidden rounded-[20px] border border-white/8 bg-[linear-gradient(180deg,rgba(34,41,60,0.8),rgba(28,34,52,0.88))] p-4">
                 {selectedSrc ? (
-                  <img src={selectedSrc} alt={targetTitle(selectedTarget)} className="max-h-[26rem] max-w-full rounded-[18px] object-contain shadow-[0_18px_44px_rgba(8,10,18,0.26)]" />
+                  <img src={selectedSrc} alt={targetTitle(selectedTarget)} className="max-h-[26rem] max-w-full rounded-[18px] object-contain shadow-image" />
                 ) : (
                   <div className="text-center text-sm text-text-muted">No active art yet.</div>
                 )}
@@ -595,41 +596,41 @@ export function ZoneAssetWorkbench({ zoneId, world, onWorldChange }: ZoneAssetWo
                   disabled={!hasLlmKey || generatingPrompt || generatingImage || batchGenerating}
                   className="rounded-full border border-white/10 bg-white/6 px-4 py-2 text-xs font-medium text-text-primary transition enabled:hover:bg-white/10 disabled:opacity-50"
                 >
-                  {generatingPrompt ? "Generating prompt..." : "Generate prompt"}
+                  {generatingPrompt ? <span className="flex items-center gap-1.5"><Spinner />Generating prompt</span> : "Generate prompt"}
                 </button>
                 <button
                   onClick={handleGenerateImage}
                   disabled={!hasImageKey || generatingPrompt || generatingImage || batchGenerating}
-                  className="rounded-full border border-[rgba(168,151,210,0.35)] bg-gradient-active-strong px-4 py-2 text-xs font-medium text-text-primary transition enabled:hover:-translate-y-0.5 disabled:opacity-50"
+                  className="rounded-full border border-[var(--border-accent-subtle)] bg-gradient-active-strong px-4 py-2 text-xs font-medium text-text-primary transition enabled:hover:-translate-y-0.5 disabled:opacity-50"
                 >
-                  {generatingImage ? "Generating image..." : "Generate image"}
+                  {generatingImage ? <span className="flex items-center gap-1.5"><Spinner />Generating image</span> : "Generate image"}
                 </button>
                 <button
                   onClick={handleGenerateFour}
                   disabled={!hasImageKey || generatingPrompt || generatingImage || batchGenerating}
                   className="rounded-full border border-white/10 bg-white/6 px-4 py-2 text-xs font-medium text-text-primary transition enabled:hover:bg-white/10 disabled:opacity-50"
                 >
-                  {batchGenerating ? "Generating 4..." : "Generate 4"}
+                  {batchGenerating ? <span className="flex items-center gap-1.5"><Spinner />Generating 4</span> : "Generate 4"}
                 </button>
                 <button
                   onClick={handleImport}
                   disabled={importing || generatingPrompt || generatingImage || batchGenerating}
                   className="rounded-full border border-white/10 bg-white/6 px-4 py-2 text-xs font-medium text-text-primary transition enabled:hover:bg-white/10 disabled:opacity-50"
                 >
-                  {importing ? "Importing..." : "Import image"}
+                  {importing ? <span className="flex items-center gap-1.5"><Spinner />Importing</span> : "Import image"}
                 </button>
                 <button
                   onClick={handleRemoveBg}
                   disabled={removingBg || !previewEntry || !selectedSrc || !selectedKind || !shouldRemoveBg(assetTypeForKind(selectedKind))}
                   className="rounded-full border border-white/10 bg-white/6 px-4 py-2 text-xs font-medium text-text-primary transition enabled:hover:bg-white/10 disabled:opacity-50"
                 >
-                  {removingBg ? "Removing BG..." : "Remove BG"}
+                  {removingBg ? <span className="flex items-center gap-1.5"><Spinner />Removing BG</span> : "Remove BG"}
                 </button>
               </div>
 
               {error && (
-                <div className="mt-4 rounded-[16px] border border-status-error/30 bg-status-error/10 px-4 py-3 text-xs text-status-error">
-                  {error}
+                <div className="mt-4">
+                  <InlineError error={error} onDismiss={() => setError(null)} onRetry={handleGenerateImage} />
                 </div>
               )}
             </div>

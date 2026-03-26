@@ -2,17 +2,29 @@ import { useState, type ReactNode } from "react";
 
 // ─── Shared form primitives used across all entity editors ──────────
 
+/** Inline spinner for loading states in buttons. */
+export function Spinner({ className }: { className?: string }) {
+  return (
+    <span
+      className={`inline-block h-3 w-3 shrink-0 rounded-full border-[1.5px] border-current border-t-transparent animate-spin ${className ?? ""}`}
+      aria-hidden="true"
+    />
+  );
+}
+
 /** Click-to-edit single-line text field. */
 export function EditableField({
   value,
   onCommit,
   placeholder,
   className,
+  label,
 }: {
   value: string;
   onCommit: (value: string) => void;
   placeholder?: string;
   className?: string;
+  label?: string;
 }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(value);
@@ -35,6 +47,7 @@ export function EditableField({
           }
         }}
         title="Click to edit"
+        aria-label={label ? `Edit ${label}` : "Click to edit"}
       >
         {value || (
           <span className="text-text-muted">{placeholder ?? "empty"}</span>
@@ -71,9 +84,11 @@ export function EditableField({
 export function EditableTextArea({
   value,
   onCommit,
+  label,
 }: {
   value: string;
   onCommit: (value: string) => void;
+  label?: string;
 }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(value);
@@ -96,6 +111,7 @@ export function EditableTextArea({
           }
         }}
         title="Click to edit"
+        aria-label={label ? `Edit ${label}` : "Click to edit"}
       >
         {value || <span className="text-text-muted">empty</span>}
       </div>
@@ -123,30 +139,50 @@ export function EditableTextArea({
   );
 }
 
-/** Collapsible section with a header label. */
+/** Collapsible section with a header label. Click header to toggle. */
 export function Section({
   title,
   description,
   children,
   actions,
+  defaultExpanded = true,
 }: {
   title: string;
   description?: string;
   children: ReactNode;
   actions?: ReactNode;
+  defaultExpanded?: boolean;
 }) {
+  const [expanded, setExpanded] = useState(defaultExpanded);
+
   return (
     <div className="border-b border-border-muted px-4 py-3">
-      <div className="mb-1.5 flex items-center gap-2">
-        <h4 className="font-display text-2xs uppercase tracking-widest text-text-muted">
-          {title}
-        </h4>
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          onClick={() => setExpanded((v) => !v)}
+          className="flex items-center gap-1.5 text-left"
+        >
+          <span
+            className={`inline-block text-[9px] text-text-muted transition-transform duration-200 ${expanded ? "rotate-90" : ""}`}
+            aria-hidden="true"
+          >
+            &#x25B6;
+          </span>
+          <h4 className="font-display text-2xs uppercase tracking-widest text-text-muted">
+            {title}
+          </h4>
+        </button>
         {actions && <div className="ml-auto flex items-center gap-1">{actions}</div>}
       </div>
-      {description && (
-        <p className="mb-2 text-[11px] leading-relaxed text-text-muted/70">{description}</p>
+      {expanded && (
+        <>
+          {description && (
+            <p className="mb-2 mt-1.5 text-[11px] leading-relaxed text-text-muted/70">{description}</p>
+          )}
+          <div className="mt-1.5">{children}</div>
+        </>
       )}
-      {children}
     </div>
   );
 }
@@ -394,7 +430,7 @@ export function IconButton({
     <button
       onClick={onClick}
       title={title}
-      className={`h-5 w-5 rounded text-xs transition-colors ${
+      className={`h-6 w-6 rounded text-xs transition-colors ${
         danger
           ? "text-text-muted hover:bg-status-danger/10 hover:text-status-danger"
           : "text-text-muted hover:bg-bg-elevated hover:text-text-primary"
@@ -402,5 +438,42 @@ export function IconButton({
     >
       {children}
     </button>
+  );
+}
+
+/** Inline error message with optional retry and dismiss actions. */
+export function InlineError({
+  error,
+  onDismiss,
+  onRetry,
+}: {
+  error: string;
+  onDismiss?: () => void;
+  onRetry?: () => void;
+}) {
+  return (
+    <div className="rounded-[16px] border border-status-error/30 bg-status-error/10 px-4 py-3 text-xs text-status-error" role="alert">
+      <p>{error}</p>
+      {(onRetry || onDismiss) && (
+        <div className="mt-2 flex gap-2">
+          {onRetry && (
+            <button
+              onClick={onRetry}
+              className="rounded border border-status-error/30 bg-status-error/10 px-2.5 py-1 text-2xs font-medium transition hover:bg-status-error/20"
+            >
+              Try again
+            </button>
+          )}
+          {onDismiss && (
+            <button
+              onClick={onDismiss}
+              className="rounded px-2.5 py-1 text-2xs text-text-muted transition hover:text-text-secondary"
+            >
+              Dismiss
+            </button>
+          )}
+        </div>
+      )}
+    </div>
   );
 }

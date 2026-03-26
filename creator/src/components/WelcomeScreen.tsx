@@ -73,7 +73,7 @@ export function WelcomeScreen({ onNewProject }: WelcomeScreenProps) {
         </div>
 
         <div className="flex min-h-0 flex-col gap-6">
-          <div className="rounded-[36px] border border-white/10 bg-[linear-gradient(155deg,rgba(54,63,90,0.9),rgba(37,45,68,0.92))] p-6 shadow-[0_24px_90px_rgba(8,10,18,0.32)] backdrop-blur-xl">
+          <div className="rounded-[36px] border border-white/10 bg-[linear-gradient(155deg,rgba(54,63,90,0.9),rgba(37,45,68,0.92))] p-6 shadow-hero backdrop-blur-xl">
             <h2 className="font-display text-2xl text-text-primary">Enter the studio</h2>
             <p className="mt-2 text-sm leading-7 text-text-secondary">
               Resume where you left off, start a new world, or open an existing one.
@@ -85,7 +85,7 @@ export function WelcomeScreen({ onNewProject }: WelcomeScreenProps) {
                 <button
                   onClick={() => void handleOpenRecent(recentProjects[0]!)}
                   disabled={loading === recentProjects[0]!.path}
-                  className="rounded-[22px] border border-[rgba(168,151,210,0.45)] bg-[linear-gradient(135deg,rgba(168,151,210,0.34),rgba(140,174,201,0.22))] px-5 py-4 text-left text-sm font-medium text-text-primary transition hover:-translate-y-0.5 hover:shadow-[0_14px_34px_rgba(137,155,214,0.28)] disabled:opacity-50"
+                  className="rounded-[22px] border border-[var(--border-accent-ring)] bg-[linear-gradient(135deg,rgba(168,151,210,0.34),rgba(140,174,201,0.22))] px-5 py-4 text-left text-sm font-medium text-text-primary transition hover:-translate-y-0.5 hover:shadow-[0_14px_34px_rgba(137,155,214,0.28)] disabled:opacity-50"
                 >
                   <div>{loading === recentProjects[0]!.path ? "Opening..." : `Resume: ${recentProjects[0]!.name}`}</div>
                   <div className="mt-1 truncate text-xs font-normal text-text-secondary">{recentProjects[0]!.path}</div>
@@ -115,7 +115,7 @@ export function WelcomeScreen({ onNewProject }: WelcomeScreenProps) {
             </div>
           </div>
 
-          <div className="min-h-0 rounded-[36px] border border-white/10 bg-[linear-gradient(155deg,rgba(54,63,90,0.9),rgba(37,45,68,0.92))] p-6 shadow-[0_24px_90px_rgba(8,10,18,0.32)] backdrop-blur-xl">
+          <div className="min-h-0 rounded-[36px] border border-white/10 bg-[linear-gradient(155deg,rgba(54,63,90,0.9),rgba(37,45,68,0.92))] p-6 shadow-hero backdrop-blur-xl">
             <div className="mb-4 flex items-center justify-between">
               <h3 className="font-display text-2xl text-text-primary">Recent worlds</h3>
               {recentProjects.length > 0 && (
@@ -148,7 +148,7 @@ export function WelcomeScreen({ onNewProject }: WelcomeScreenProps) {
                         e.stopPropagation();
                         handleRemoveRecent(project.path);
                       }}
-                      className="hidden shrink-0 rounded-full border border-white/8 px-2 py-1 text-xs text-text-muted transition hover:border-status-error/40 hover:text-status-error group-hover:block"
+                      className="shrink-0 rounded-full border border-white/8 px-2 py-1 text-xs text-text-muted opacity-0 transition hover:border-status-error/40 hover:text-status-error group-hover:opacity-100 focus:opacity-100"
                       title="Remove from recent"
                     >
                       Remove

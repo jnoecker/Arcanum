@@ -186,6 +186,7 @@ export function RoomPanel({
               value={room.title}
               onCommit={(v) => handleFieldChange("title", v)}
               className="text-sm font-semibold text-text-primary"
+              label="room title"
             />
             <p className="mt-0.5 text-xs text-text-muted">{roomId}</p>
             {isStartRoom && (
@@ -228,6 +229,7 @@ export function RoomPanel({
         <EditableTextArea
           value={room.description}
           onCommit={(v) => handleFieldChange("description", v)}
+          label="room description"
         />
       </Section>
 
@@ -270,18 +272,20 @@ export function RoomPanel({
       </Section>
 
       {/* Station */}
-      <Section title="Crafting Station">
+      <Section title="Crafting Station" defaultExpanded={false}>
         <EditableField
           value={room.station ?? ""}
           onCommit={(v) => handleFieldChange("station", v)}
-          placeholder="none"
+          placeholder="None"
           className="text-xs text-status-info"
+          label="crafting station"
         />
       </Section>
 
       {/* Mobs */}
       <Section
         title={`Mobs (${mobs.length})`}
+        defaultExpanded={false}
         actions={<IconButton onClick={handleAddMob} title="Add mob">+</IconButton>}
       >
         {mobs.length === 0 ? (
@@ -308,6 +312,7 @@ export function RoomPanel({
       {/* Items */}
       <Section
         title={`Items (${items.length})`}
+        defaultExpanded={false}
         actions={<IconButton onClick={handleAddItem} title="Add item">+</IconButton>}
       >
         {items.length === 0 ? (
@@ -336,6 +341,7 @@ export function RoomPanel({
       {/* Shops */}
       <Section
         title={`Shops (${shops.length})`}
+        defaultExpanded={false}
         actions={<IconButton onClick={handleAddShop} title="Add shop">+</IconButton>}
       >
         {shops.length === 0 ? (
@@ -362,6 +368,7 @@ export function RoomPanel({
       {/* Gathering Nodes */}
       <Section
         title={`Gathering (${gatheringNodes.length})`}
+        defaultExpanded={false}
         actions={
           <IconButton onClick={handleAddGatheringNode} title="Add gathering node">
             +
@@ -390,7 +397,7 @@ export function RoomPanel({
       </Section>
 
       {/* Quests */}
-      <Section title={`Quests (${quests.length})`}>
+      <Section title={`Quests (${quests.length})`} defaultExpanded={false}>
         {quests.length === 0 ? (
           <p className="text-xs text-text-muted">No quests from this room</p>
         ) : (
@@ -410,12 +417,12 @@ export function RoomPanel({
       </Section>
 
       {/* Zone Vibe */}
-      <Section title="Zone Vibe">
+      <Section title="Zone Vibe" defaultExpanded={false}>
         <ZoneVibePanel zoneId={zoneId} world={world} onWorldChange={onWorldChange} />
       </Section>
 
       {/* Media */}
-      <Section title="Media">
+      <Section title="Media" defaultExpanded={false}>
         <div className="flex flex-col gap-1.5">
           <div className="flex items-center gap-1 text-xs">
             <span className="w-12 shrink-0 text-text-muted">Image</span>
@@ -434,7 +441,7 @@ export function RoomPanel({
             <TextInput
               value={room.video ?? ""}
               onCommit={(v) => onWorldChange(updateRoom(world, roomId, { video: v || undefined }))}
-              placeholder="none"
+              placeholder="None"
             />
           </FieldRow>
           <MediaPicker
@@ -463,13 +470,13 @@ export function RoomPanel({
       </Section>
 
       {/* Audio */}
-      <Section title="Audio">
+      <Section title="Audio" defaultExpanded={false}>
         <div className="flex flex-col gap-1.5">
           <FieldRow label="Music">
             <TextInput
               value={room.music ?? ""}
               onCommit={(v) => onWorldChange(updateRoom(world, roomId, { music: v || undefined }))}
-              placeholder="none"
+              placeholder="None"
             />
           </FieldRow>
           <MediaPicker
@@ -499,7 +506,7 @@ export function RoomPanel({
             <TextInput
               value={room.ambient ?? ""}
               onCommit={(v) => onWorldChange(updateRoom(world, roomId, { ambient: v || undefined }))}
-              placeholder="none"
+              placeholder="None"
             />
           </FieldRow>
           <MediaPicker
@@ -529,7 +536,7 @@ export function RoomPanel({
             <TextInput
               value={room.audio ?? ""}
               onCommit={(v) => onWorldChange(updateRoom(world, roomId, { audio: v || undefined }))}
-              placeholder="none"
+              placeholder="None"
             />
           </FieldRow>
           <MediaPicker

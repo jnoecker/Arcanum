@@ -114,7 +114,7 @@ export function MediaSection({
           <TextInput
             value={image ?? ""}
             onCommit={(v) => onImageChange(v || undefined)}
-            placeholder="none"
+            placeholder="None"
           />
         </FieldRow>
         {getPrompt && (
@@ -134,7 +134,7 @@ export function MediaSection({
               <TextInput
                 value={video ?? ""}
                 onCommit={(v) => onVideoChange(v || undefined)}
-                placeholder="none"
+                placeholder="None"
               />
             </FieldRow>
             <MediaPicker
@@ -189,7 +189,7 @@ export function AudioSection({
               <TextInput
                 value={music ?? ""}
                 onCommit={(v) => onMusicChange(v || undefined)}
-                placeholder="none"
+                placeholder="None"
               />
             </FieldRow>
             <MediaPicker
@@ -213,7 +213,7 @@ export function AudioSection({
               <TextInput
                 value={ambient ?? ""}
                 onCommit={(v) => onAmbientChange(v || undefined)}
-                placeholder="none"
+                placeholder="None"
               />
             </FieldRow>
             <MediaPicker
@@ -230,7 +230,7 @@ export function AudioSection({
               <TextInput
                 value={audio ?? ""}
                 onCommit={(v) => onAudioChange(v || undefined)}
-                placeholder="none"
+                placeholder="None"
               />
             </FieldRow>
             <MediaPicker

@@ -20,7 +20,7 @@ export function AppShell() {
       <Toolbar />
       <div className="relative z-10 flex min-h-0 flex-1 gap-4 px-4 pb-4">
         <Sidebar />
-        <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-[32px] border border-white/10 bg-[linear-gradient(165deg,rgba(45,56,84,0.88),rgba(36,44,68,0.92))] shadow-[0_24px_80px_rgba(8,10,18,0.45)] backdrop-blur-xl">
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-[32px] border border-white/10 bg-[linear-gradient(165deg,rgba(45,56,84,0.88),rgba(36,44,68,0.92))] shadow-panel backdrop-blur-xl">
           <TabBar />
           <MainArea />
         </div>

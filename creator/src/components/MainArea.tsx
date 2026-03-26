@@ -1,9 +1,19 @@
+import { lazy, Suspense } from "react";
 import { useProjectStore } from "@/stores/projectStore";
-import { Console } from "./Console";
-import { ZoneEditor } from "./zone/ZoneEditor";
-import { ConfigEditor } from "./config/ConfigEditor";
-import { PlayerSpriteManager } from "./PlayerSpriteManager";
 import { StudioWorkspace } from "./StudioWorkspace";
+
+const ZoneEditor = lazy(() => import("./zone/ZoneEditor").then(m => ({ default: m.ZoneEditor })));
+const ConfigEditor = lazy(() => import("./config/ConfigEditor").then(m => ({ default: m.ConfigEditor })));
+const PlayerSpriteManager = lazy(() => import("./PlayerSpriteManager").then(m => ({ default: m.PlayerSpriteManager })));
+const Console = lazy(() => import("./Console").then(m => ({ default: m.Console })));
+
+function LazyFallback() {
+  return (
+    <div className="flex min-h-0 flex-1 items-center justify-center text-text-muted">
+      Loading...
+    </div>
+  );
+}
 
 export function MainArea() {
   const tabs = useProjectStore((s) => s.tabs);
@@ -43,7 +53,9 @@ export function MainArea() {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      {content}
+      <Suspense fallback={<LazyFallback />}>
+        {content}
+      </Suspense>
     </div>
   );
 }

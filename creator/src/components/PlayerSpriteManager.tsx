@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useEffect, useRef } from "react";
+import { memo, useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
 import { useConfigStore } from "@/stores/configStore";
@@ -52,7 +52,7 @@ function displayClassLabel(
     : (config?.classes[cls.toUpperCase()]?.displayName ?? cls);
 }
 
-function SpriteThumbnail({ fileName }: { fileName: string | undefined }) {
+const SpriteThumbnail = memo(function SpriteThumbnail({ fileName }: { fileName: string | undefined }) {
   const src = useImageSrc(fileName);
   if (!src) {
     return (
@@ -62,9 +62,9 @@ function SpriteThumbnail({ fileName }: { fileName: string | undefined }) {
     );
   }
   return (
-    <img src={src} alt="" className="h-full w-full object-cover" />
+    <img src={src} alt="" loading="lazy" className="h-full w-full object-cover" />
   );
-}
+});
 
 function SpriteLightbox({
   spriteKey: key,

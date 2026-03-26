@@ -4,6 +4,7 @@ import { useAssetStore } from "@/stores/assetStore";
 import { getVideoSystemPrompt, VIDEO_TYPE_LABELS, type VideoAssetType } from "@/lib/videoPrompts";
 import { useMediaSrc } from "@/lib/useMediaSrc";
 import type { AssetContext } from "@/types/assets";
+import { InlineError, Spinner } from "@/components/ui/FormWidgets";
 
 interface VideoGeneratorProps {
   imagePath?: string;
@@ -139,7 +140,7 @@ export function VideoGenerator({
             disabled={enhancing}
             className="rounded px-1.5 py-0.5 text-2xs text-accent transition-colors hover:bg-accent/10 disabled:opacity-50"
           >
-            {enhancing ? "..." : "Auto-Prompt"}
+            {enhancing ? <Spinner /> : "Auto-Prompt"}
           </button>
         )}
         <button
@@ -147,7 +148,7 @@ export function VideoGenerator({
           disabled={generating || !prompt.trim()}
           className="rounded bg-accent/15 px-2 py-0.5 text-2xs font-medium text-accent transition-colors hover:bg-accent/25 disabled:opacity-50"
         >
-          {generating ? "Generating..." : "Generate Video"}
+          {generating ? <span className="flex items-center gap-1.5"><Spinner />Generating</span> : "Generate Video"}
         </button>
       </div>
 
@@ -172,7 +173,7 @@ export function VideoGenerator({
       )}
 
       {error && (
-        <p className="text-2xs italic text-status-error">{error}</p>
+        <InlineError error={error} onDismiss={() => setError(null)} onRetry={handleGenerate} />
       )}
     </div>
   );

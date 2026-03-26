@@ -81,7 +81,7 @@ export function GatheringNodeEditor({
             <TextInput
               value={node.keyword ?? ""}
               onCommit={(v) => patch({ keyword: v || undefined })}
-              placeholder="auto"
+              placeholder="Auto"
             />
           </FieldRow>
           <FieldRow label="Skill">
@@ -127,6 +127,7 @@ export function GatheringNodeEditor({
 
       <Section
         title={`Yields (${yields.length})`}
+        defaultExpanded={false}
         actions={
           <IconButton onClick={handleAddYield} title="Add yield">+</IconButton>
         }

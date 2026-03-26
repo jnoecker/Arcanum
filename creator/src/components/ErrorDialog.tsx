@@ -4,9 +4,10 @@ interface ErrorDialogProps {
   title: string;
   messages: string[];
   onClose: () => void;
+  onRetry?: () => void;
 }
 
-export function ErrorDialog({ title, messages, onClose }: ErrorDialogProps) {
+export function ErrorDialog({ title, messages, onClose, onRetry }: ErrorDialogProps) {
   const trapRef = useFocusTrap<HTMLDivElement>(onClose);
 
   return (
@@ -24,7 +25,15 @@ export function ErrorDialog({ title, messages, onClose }: ErrorDialogProps) {
             ))}
           </ul>
         </div>
-        <div className="flex justify-end border-t border-border-default px-5 py-3">
+        <div className="flex justify-end gap-2 border-t border-border-default px-5 py-3">
+          {onRetry && (
+            <button
+              onClick={() => { onClose(); onRetry(); }}
+              className="rounded border border-border-active bg-gradient-active px-4 py-1.5 text-xs font-medium text-text-primary transition-colors hover:bg-gradient-active-strong"
+            >
+              Try Again
+            </button>
+          )}
           <button
             onClick={onClose}
             className="rounded bg-bg-elevated px-4 py-1.5 text-xs font-medium text-text-primary transition-colors hover:bg-bg-hover"

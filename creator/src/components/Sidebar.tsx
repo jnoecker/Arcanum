@@ -304,7 +304,7 @@ export function Sidebar() {
         <div className="grid grid-cols-2 gap-2">
           {[
             { id: "studio", label: "Studio", kind: "studio" as const },
-            { id: "config", label: "Character", kind: "config" as const },
+            { id: "config", label: "Characters", kind: "config" as const },
             { id: "sprites", label: "Sprites", kind: "sprites" as const },
             { id: "console", label: "Console", kind: "console" as const },
           ].map((entry) => (
@@ -334,6 +334,7 @@ export function Sidebar() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={handleSearchKeyDown}
+            aria-label="Search entities (Ctrl+K)"
             placeholder="Search... (Ctrl+K)"
             className="h-10 w-full rounded-full border border-white/10 bg-black/15 px-4 pr-10 text-sm text-text-primary outline-none placeholder:text-text-muted focus:border-border-active"
           />

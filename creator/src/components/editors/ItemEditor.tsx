@@ -96,7 +96,7 @@ export function ItemEditor({
             <TextInput
               value={item.keyword ?? ""}
               onCommit={(v) => patch({ keyword: v || undefined })}
-              placeholder="auto"
+              placeholder="Auto"
             />
           </FieldRow>
           <FieldRow label="Description">
@@ -105,7 +105,7 @@ export function ItemEditor({
                 <TextInput
                   value={item.description ?? ""}
                   onCommit={(v) => patch({ description: v || undefined })}
-                  placeholder="none"
+                  placeholder="None"
                 />
               </div>
               <EnhanceDescriptionButton
@@ -142,7 +142,7 @@ export function ItemEditor({
       </Section>
 
       {/* Equipment */}
-      <Section title="Equipment">
+      <Section title="Equipment" defaultExpanded={false}>
         <div className="flex flex-col gap-1.5">
           <FieldRow label="Slot">
             <SelectInput
@@ -173,7 +173,7 @@ export function ItemEditor({
       </Section>
 
       {/* Stat bonuses */}
-      <Section title="Stat Bonuses">
+      <Section title="Stat Bonuses" defaultExpanded={false}>
         <p className="mb-1 text-2xs text-text-muted">
           Only non-zero values are saved
         </p>
@@ -198,7 +198,7 @@ export function ItemEditor({
       </Section>
 
       {/* Consumable */}
-      <Section title="Consumable">
+      <Section title="Consumable" defaultExpanded={false}>
         <div className="flex flex-col gap-1.5">
           <CheckboxInput
             checked={item.consumable ?? false}
@@ -211,7 +211,7 @@ export function ItemEditor({
                 <NumberInput
                   value={item.charges}
                   onCommit={(v) => patch({ charges: v })}
-                  placeholder="unlimited"
+                  placeholder="Unlimited"
                   min={1}
                 />
               </FieldRow>

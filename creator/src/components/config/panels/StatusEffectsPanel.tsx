@@ -159,7 +159,7 @@ export function StatusEffectDetail({
         <TextInput
           value={effect.image ?? ""}
           onCommit={(v) => patch({ image: v || undefined })}
-          placeholder="none"
+          placeholder="None"
         />
       </FieldRow>
       <FieldRow label="Effect Type">

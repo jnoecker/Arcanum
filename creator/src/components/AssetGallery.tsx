@@ -4,6 +4,7 @@ import { open } from "@tauri-apps/plugin-dialog";
 import { useAssetStore } from "@/stores/assetStore";
 import { useFocusTrap } from "@/lib/useFocusTrap";
 import type { AssetEntry, AssetType, SyncProgress, SyncScope } from "@/types/assets";
+import { Spinner } from "@/components/ui/FormWidgets";
 
 type SortKey = "newest" | "oldest" | "type";
 type MediaKind = "all" | "image" | "audio" | "video";
@@ -237,6 +238,7 @@ export function AssetGallery({ onClose }: { onClose: () => void }) {
         <img
           src={previewCache[asset.id]}
           alt={asset.prompt.slice(0, 60)}
+          loading="lazy"
           className="h-full w-full object-cover"
         />
       ) : (
@@ -288,7 +290,7 @@ export function AssetGallery({ onClose }: { onClose: () => void }) {
               disabled={importing}
               className="rounded-full border border-white/10 bg-black/10 px-3 py-1.5 text-2xs font-medium text-accent transition-colors hover:bg-accent/15 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {importing ? "Importing..." : "Import"}
+              {importing ? <span className="flex items-center gap-1.5"><Spinner />Importing</span> : "Import"}
             </button>
             {hasR2 && (
               <>
@@ -308,7 +310,7 @@ export function AssetGallery({ onClose }: { onClose: () => void }) {
                   disabled={syncing || unsyncedCount === 0}
                   className="rounded-full border border-white/10 px-3 py-1.5 text-2xs font-medium transition-colors enabled:bg-accent/15 enabled:text-accent enabled:hover:bg-accent/25 disabled:cursor-not-allowed disabled:text-text-muted disabled:opacity-50"
                 >
-                  {syncing ? "Syncing..." : unsyncedCount > 0 ? `Sync ${unsyncedCount} to R2` : "All synced"}
+                  {syncing ? <span className="flex items-center gap-1.5"><Spinner />Syncing</span> : unsyncedCount > 0 ? `Sync ${unsyncedCount} to R2` : "All synced"}
                 </button>
                 {syncResult && !syncing && (
                   <span className="text-2xs text-text-muted">
@@ -623,7 +625,7 @@ export function AssetGallery({ onClose }: { onClose: () => void }) {
                   disabled={deleting}
                   className="w-full rounded border border-status-danger/40 px-2 py-1.5 text-xs text-status-danger transition-colors hover:bg-status-danger/10 disabled:opacity-50"
                 >
-                  {deleting ? "Deleting..." : "Delete Asset"}
+                  {deleting ? <span className="flex items-center gap-1.5"><Spinner />Deleting</span> : "Delete Asset"}
                 </button>
               </div>
             </div>

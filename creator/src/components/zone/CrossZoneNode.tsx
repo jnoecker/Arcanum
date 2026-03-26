@@ -30,10 +30,19 @@ export function CrossZoneNode({ data }: NodeProps<CrossZoneNodeType>) {
 
   return (
     <div
-      className="cursor-pointer rounded-full border border-accent/60 bg-accent/10 px-3 py-1.5 transition-colors hover:bg-accent/20"
+      className="cursor-pointer rounded-full border border-accent/60 bg-accent/10 px-3 py-1.5 transition-colors hover:bg-accent/20 focus:outline-none focus:ring-2 focus:ring-accent/60"
       style={{ minWidth: 120 }}
+      role="button"
+      tabIndex={0}
       onClick={handleClick}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          handleClick();
+        }
+      }}
       title={`Navigate to ${d.zone}`}
+      aria-label={`Navigate to zone ${d.zone}, room ${d.room}`}
     >
       {/* Generic handles on all sides */}
       {([Position.Top, Position.Bottom, Position.Left, Position.Right] as const).map(

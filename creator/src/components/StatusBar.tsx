@@ -24,16 +24,16 @@ export function StatusBar() {
 
   return (
     <div className="relative z-10 px-4 pb-4">
-      <div className="flex min-h-12 items-center gap-4 rounded-[28px] border border-white/10 bg-[linear-gradient(155deg,rgba(50,60,88,0.84),rgba(38,47,71,0.9))] px-5 py-3 text-xs shadow-[0_12px_36px_rgba(8,10,18,0.22)]">
+      <div className="flex min-h-12 items-center gap-4 rounded-[28px] border border-white/10 bg-[linear-gradient(155deg,rgba(50,60,88,0.84),rgba(38,47,71,0.9))] px-5 py-3 text-xs shadow-bar">
       <span className="text-text-muted">
         {totalZones} zone{totalZones !== 1 ? "s" : ""} loaded
       </span>
 
       {/* Dirty indicator */}
       {hasDirty && (
-        <span className="text-status-warning">
+        <span className="rounded-full bg-status-warning/12 px-2.5 py-0.5 text-status-warning">
           {dirtyZones > 0 && `${dirtyZones} zone${dirtyZones !== 1 ? "s" : ""} modified`}
-          {dirtyZones > 0 && configDirty && " | "}
+          {dirtyZones > 0 && configDirty && " · "}
           {configDirty && "Config modified"}
         </span>
       )}
@@ -42,24 +42,30 @@ export function StatusBar() {
       {validationResults && (
         <button
           onClick={openValidationPanel}
-          className="flex items-center gap-1 rounded px-1.5 py-0.5 text-xs transition-colors hover:bg-bg-elevated"
+          className={`flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs transition-colors hover:brightness-125 ${
+            errorCount > 0
+              ? "bg-status-error/15 text-status-error"
+              : warningCount > 0
+                ? "bg-status-warning/12 text-status-warning"
+                : "bg-status-success/12 text-status-success"
+          }`}
           title="Open validation results"
         >
           {errorCount > 0 && (
-            <span className="text-status-error">
+            <span className={errorCount > 0 ? "animate-crimson-pulse" : ""}>
               {errorCount} error{errorCount !== 1 ? "s" : ""}
             </span>
           )}
           {errorCount > 0 && warningCount > 0 && (
-            <span className="text-text-muted">/</span>
+            <span className="text-text-muted/60">·</span>
           )}
           {warningCount > 0 && (
-            <span className="text-status-warning">
+            <span>
               {warningCount} warning{warningCount !== 1 ? "s" : ""}
             </span>
           )}
           {errorCount === 0 && warningCount === 0 && (
-            <span className="text-status-success">&#x2713; valid</span>
+            <span>&#x2713; valid</span>
           )}
         </button>
       )}
@@ -71,7 +77,15 @@ export function StatusBar() {
         <span className="truncate text-status-error">{lastError}</span>
       )}
 
-      <span className="rounded-full bg-black/10 px-3 py-1 text-text-muted capitalize">{status}</span>
+      <span className={`rounded-full px-3 py-1 capitalize ${
+        status === "running"
+          ? "bg-server-running/15 text-server-running"
+          : status === "error"
+            ? "bg-server-error/15 text-server-error"
+            : status === "starting" || status === "stopping"
+              ? "bg-server-starting/15 text-server-starting"
+              : "bg-black/10 text-text-muted"
+      }`}>{status}</span>
       </div>
     </div>
   );

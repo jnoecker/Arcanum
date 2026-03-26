@@ -12,6 +12,7 @@ import { EntityArtGenerator } from "@/components/ui/EntityArtGenerator";
 import { getPreamble } from "@/lib/arcanumPrompts";
 import type { ArtStyle } from "@/lib/arcanumPrompts";
 import { BulkImportButton } from "./BulkImportButton";
+import { classColor } from "@/lib/cssTokens";
 
 const FALLBACK_TARGET_TYPES = [
   { value: "enemy", label: "Enemy" },
@@ -27,19 +28,7 @@ const EFFECT_TYPES = [
   { value: "TAUNT", label: "Taunt" },
 ];
 
-/** Class-to-color mapping for ability icon color badges */
-const CLASS_COLORS: Record<string, string> = {
-  BULWARK: "#bea873",
-  WARDEN: "#c4956a",
-  ARCANIST: "#a897d2",
-  FAEWEAVER: "#8da97b",
-  NECROMANCER: "#7a8a6e",
-  VEIL: "#6e5a8a",
-  BINDER: "#bea873",
-  STORMBLADE: "#8caec9",
-  HERALD: "#d4c8a0",
-  STARWEAVER: "#b88faa",
-};
+/** Class-to-color mapping for ability icon color badges — reads from CSS --color-class-* tokens */
 
 export function defaultAbilityDefinition(raw: string): AbilityDefinitionConfig {
   return {
@@ -87,7 +76,7 @@ function buildAbilityContext(ability: AbilityDefinitionConfig): string {
 }
 
 function ClassColorBadge({ classId }: { classId: string }) {
-  const color = CLASS_COLORS[classId.toUpperCase()] ?? "#888";
+  const color = classColor(classId);
   return (
     <div className="flex items-center gap-1.5">
       <div
@@ -221,7 +210,7 @@ export function AbilityDetail({
         <TextInput
           value={ability.description ?? ""}
           onCommit={(v) => patch({ description: v || undefined })}
-          placeholder="optional"
+          placeholder="Optional"
         />
       </FieldRow>
       <FieldRow label="Mana Cost">
@@ -383,7 +372,7 @@ export function AbilityDetail({
             <TextInput
               value={ability.image ?? ""}
               onCommit={(v) => patch({ image: v || undefined })}
-              placeholder="none"
+              placeholder="None"
             />
           </FieldRow>
           {ability.requiredClass && (

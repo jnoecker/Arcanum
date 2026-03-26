@@ -22,6 +22,7 @@ function AssetThumbnail({ filename }: { filename: string }) {
     <img
       src={src}
       alt=""
+      loading="lazy"
       className="h-10 w-10 shrink-0 rounded border border-border-default object-cover"
     />
   );

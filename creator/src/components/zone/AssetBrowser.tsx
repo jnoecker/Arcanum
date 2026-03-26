@@ -404,7 +404,7 @@ function VariantThumb({
       }`}
     >
       {src ? (
-        <img src={src} alt="" className="h-full w-full object-cover" />
+        <img src={src} alt="" loading="lazy" className="h-full w-full object-cover" />
       ) : (
         <div className="h-full w-full bg-bg-elevated" />
       )}

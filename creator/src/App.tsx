@@ -1,9 +1,10 @@
-import { useState, useEffect } from "react";
+import { lazy, Suspense, useState, useEffect } from "react";
 import { useProjectStore } from "@/stores/projectStore";
 import { useAssetStore } from "@/stores/assetStore";
 import { AppShell } from "@/components/AppShell";
 import { WelcomeScreen } from "@/components/WelcomeScreen";
-import { ProjectWizard } from "@/components/wizard/ProjectWizard";
+
+const ProjectWizard = lazy(() => import("@/components/wizard/ProjectWizard").then(m => ({ default: m.ProjectWizard })));
 
 export function App() {
   const project = useProjectStore((s) => s.project);
@@ -17,7 +18,7 @@ export function App() {
   return (
     <>
       {project ? <AppShell /> : <WelcomeScreen onNewProject={() => setShowWizard(true)} />}
-      {showWizard && <ProjectWizard onClose={() => setShowWizard(false)} />}
+      <Suspense>{showWizard && <ProjectWizard onClose={() => setShowWizard(false)} />}</Suspense>
     </>
   );
 }

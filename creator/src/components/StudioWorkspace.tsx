@@ -65,7 +65,7 @@ export function StudioWorkspace() {
   const dirtyZones = [...zones.values()].filter((zone) => zone.dirty).length;
 
   const renderAtlas = (compact = false) => (
-    <div className="rounded-[28px] border border-white/10 bg-gradient-panel p-5 shadow-[0_18px_50px_rgba(9,12,24,0.24)]">
+    <div className="rounded-[28px] border border-white/10 bg-gradient-panel p-5 shadow-section">
       <div className="mb-4 flex items-center justify-between">
         <h2 className="font-display text-xl text-text-primary">World atlas</h2>
         <span className="text-[11px] uppercase tracking-ui text-text-muted">{zones.size} zones</span>
@@ -119,7 +119,7 @@ export function StudioWorkspace() {
   );
 
   const renderRecentAssets = () => (
-    <div className="rounded-[28px] border border-white/10 bg-gradient-panel p-5 shadow-[0_18px_50px_rgba(9,12,24,0.24)]">
+    <div className="rounded-[28px] border border-white/10 bg-gradient-panel p-5 shadow-section">
       <div className="mb-4 flex items-center justify-between">
         <h2 className="font-display text-xl text-text-primary">Recent assets</h2>
         <button onClick={openGallery} className="text-xs text-text-secondary transition hover:text-text-primary">
@@ -146,7 +146,7 @@ export function StudioWorkspace() {
   );
 
   const renderSelectedZoneCard = () => (
-    <div className="rounded-[28px] border border-white/10 bg-gradient-panel p-5 shadow-[0_18px_50px_rgba(9,12,24,0.24)]">
+    <div className="rounded-[28px] border border-white/10 bg-gradient-panel p-5 shadow-section">
       <div className="flex items-center justify-between gap-4">
         <div>
           <h2 className="font-display text-xl text-text-primary">{selectedZone ? selectedZone.data.zone : "Select a zone"}</h2>
@@ -160,7 +160,7 @@ export function StudioWorkspace() {
           <div className="flex shrink-0 gap-2">
             <button
               onClick={() => setStudioSubView("art")}
-              className="rounded-full border border-[rgba(168,151,210,0.35)] bg-[rgba(168,151,210,0.14)] px-4 py-2 text-xs font-medium text-text-primary transition hover:bg-[rgba(168,151,210,0.2)]"
+              className="rounded-full border border-[var(--border-accent-subtle)] bg-[var(--bg-accent-subtle)] px-4 py-2 text-xs font-medium text-text-primary transition hover:bg-[var(--bg-accent-hover)]"
             >
               Open zone art
             </button>
@@ -196,7 +196,7 @@ export function StudioWorkspace() {
                 onClick={() => setStudioSubView(view.id)}
                 className={`rounded-full border px-4 py-2 text-xs font-medium transition ${
                   studioSubView === view.id
-                    ? "border-[rgba(184,216,232,0.48)] bg-[linear-gradient(135deg,rgba(168,151,210,0.3),rgba(140,174,201,0.2))] text-white shadow-[0_10px_24px_rgba(137,155,214,0.18)]"
+                    ? "border-[var(--border-glow-strong)] bg-[linear-gradient(135deg,rgba(168,151,210,0.3),rgba(140,174,201,0.2))] text-white shadow-glow-sm"
                     : "border-white/10 bg-black/10 text-text-secondary hover:bg-white/10 hover:text-text-primary"
                 }`}
               >
@@ -216,7 +216,7 @@ export function StudioWorkspace() {
             <div className="studio-parallax xl:col-span-3">{renderAtlas()}</div>
             <div className="studio-parallax-slow flex flex-col gap-6 xl:col-span-5">
               {renderSelectedZoneCard()}
-              <div className="rounded-[28px] border border-white/10 bg-gradient-panel p-5 shadow-[0_18px_50px_rgba(9,12,24,0.24)]">
+              <div className="rounded-[28px] border border-white/10 bg-gradient-panel p-5 shadow-section">
                 {selectedZone ? (
                   <ZoneVibePanel
                     zoneId={selectedZoneId!}
@@ -242,7 +242,7 @@ export function StudioWorkspace() {
               <section className="grid items-start gap-6 xl:grid-cols-[0.78fr_1.22fr]">
                 <div>{renderAtlas(true)}</div>
                 <div className="flex flex-col gap-6">
-                  <div className="rounded-[28px] border border-white/10 bg-gradient-panel p-5 shadow-[0_18px_50px_rgba(9,12,24,0.24)]">
+                  <div className="rounded-[28px] border border-white/10 bg-gradient-panel p-5 shadow-section">
                     <div className="mb-4 flex items-center justify-between">
                       <h2 className="font-display text-xl text-text-primary">Zone direction</h2>
                       <div className="flex gap-2">
@@ -254,7 +254,7 @@ export function StudioWorkspace() {
                         </button>
                         <button
                           onClick={() => setShowBatchArt(true)}
-                          className="rounded-full border border-[rgba(168,151,210,0.35)] bg-[rgba(168,151,210,0.14)] px-4 py-2 text-xs font-medium text-text-primary transition hover:bg-[rgba(168,151,210,0.2)]"
+                          className="rounded-full border border-[var(--border-accent-subtle)] bg-[var(--bg-accent-subtle)] px-4 py-2 text-xs font-medium text-text-primary transition hover:bg-[var(--bg-accent-hover)]"
                         >
                           Batch generate
                         </button>
@@ -280,7 +280,7 @@ export function StudioWorkspace() {
             </>
           ) : (
             <>
-              <section className="rounded-[28px] border border-white/10 bg-gradient-panel p-5 shadow-[0_18px_50px_rgba(9,12,24,0.24)]">
+              <section className="rounded-[28px] border border-white/10 bg-gradient-panel p-5 shadow-section">
                 <div className="rounded-[22px] border border-dashed border-white/12 bg-white/4 px-4 py-8 text-sm text-text-muted">
                   Open a world folder and select a zone to start generating zone art.
                 </div>

@@ -158,6 +158,7 @@ export function EquipmentSlotsPanel({ config, onChange }: ConfigPanelProps) {
           <input
             value={newSlotId}
             onChange={(e) => setNewSlotId(e.target.value)}
+            aria-label="New slot ID"
             placeholder="New slot id..."
             className="h-6 flex-1 rounded border border-border-default bg-bg-primary px-2 text-xs text-text-primary placeholder:text-text-muted outline-none focus:border-accent"
           />
@@ -175,12 +176,21 @@ export function EquipmentSlotsPanel({ config, onChange }: ConfigPanelProps) {
           {sortedSlots.map(([id, slot]) => (
             <div
               key={id}
+              role="button"
+              tabIndex={0}
               onClick={() => setSelectedId(id)}
-              className={`group flex cursor-pointer items-center gap-2 rounded px-2 py-1 text-xs transition-colors ${
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  setSelectedId(id);
+                }
+              }}
+              className={`group flex cursor-pointer items-center gap-2 rounded px-2 py-1 text-xs transition-colors focus:outline-none focus:ring-1 focus:ring-accent/60 ${
                 selectedId === id
                   ? "bg-accent/15 text-accent"
                   : "text-text-secondary hover:bg-bg-hover hover:text-text-primary"
               }`}
+              aria-label={`${slot.displayName} slot`}
             >
               <span className="w-4 shrink-0 text-center text-2xs text-text-muted">
                 {slot.order}
@@ -257,9 +267,32 @@ export function EquipmentSlotsPanel({ config, onChange }: ConfigPanelProps) {
             return (
               <div
                 key={id}
+                role="button"
+                tabIndex={0}
+                aria-label={`${slot.displayName} slot marker — drag or use arrow keys to reposition`}
                 onPointerDown={(e) => handlePointerDown(e, id)}
                 onClick={() => setSelectedId(id)}
-                className={`absolute flex items-center justify-center rounded-full border transition-all ${
+                onKeyDown={(e) => {
+                  const step = e.shiftKey ? 5 : 1;
+                  let dx = 0, dy = 0;
+                  if (e.key === "ArrowLeft") dx = -step;
+                  else if (e.key === "ArrowRight") dx = step;
+                  else if (e.key === "ArrowUp") dy = -step;
+                  else if (e.key === "ArrowDown") dy = step;
+                  else return;
+                  e.preventDefault();
+                  setSelectedId(id);
+                  const cur = positions[id] ?? DEFAULT_POSITIONS[0]!;
+                  const next = {
+                    ...positions,
+                    [id]: {
+                      x: Math.max(0, Math.min(100, cur.x + dx)),
+                      y: Math.max(0, Math.min(100, cur.y + dy)),
+                    },
+                  };
+                  savePositions(next);
+                }}
+                className={`absolute flex items-center justify-center rounded-full border transition-all focus:outline-none focus:ring-2 focus:ring-accent-emphasis ${
                   isDragging
                     ? "z-20 scale-125 cursor-grabbing"
                     : "cursor-grab"

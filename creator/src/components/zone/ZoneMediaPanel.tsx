@@ -59,7 +59,7 @@ export function ZoneMediaPanel({ zoneId, world, onWorldChange }: ZoneMediaPanelP
                 <TextInput
                   value={world.audio?.music ?? ""}
                   onCommit={(v) => patchAudio("music", v || undefined)}
-                  placeholder="none"
+                  placeholder="None"
                 />
               </FieldRow>
               <MediaPicker
@@ -93,7 +93,7 @@ export function ZoneMediaPanel({ zoneId, world, onWorldChange }: ZoneMediaPanelP
                 <TextInput
                   value={world.audio?.ambient ?? ""}
                   onCommit={(v) => patchAudio("ambient", v || undefined)}
-                  placeholder="none"
+                  placeholder="None"
                 />
               </FieldRow>
               <MediaPicker

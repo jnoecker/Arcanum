@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { memo, useState, useEffect } from "react";
 import { useAssetStore } from "@/stores/assetStore";
 import { useImageSrc } from "@/lib/useImageSrc";
 import type { AssetEntry } from "@/types/assets";
@@ -52,7 +52,7 @@ export function VariantStrip({ variantGroup, onSelect }: VariantStripProps) {
   );
 }
 
-function VariantThumb({
+const VariantThumb = memo(function VariantThumb({
   entry,
   assetsDir,
   onSelect,
@@ -75,10 +75,10 @@ function VariantThumb({
       }`}
     >
       {src ? (
-        <img src={src} alt="" className="h-full w-full object-cover" />
+        <img src={src} alt="" loading="lazy" className="h-full w-full object-cover" />
       ) : (
         <div className="h-full w-full bg-bg-elevated" />
       )}
     </button>
   );
-}
+});

@@ -165,6 +165,7 @@ export function RecipeEditor({
 
       <Section
         title={`Materials (${materials.length})`}
+        defaultExpanded={false}
         actions={
           <IconButton onClick={handleAddMaterial} title="Add material">
             +

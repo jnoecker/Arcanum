@@ -66,7 +66,7 @@ function MediaField({
         <TextInput
           value={value ?? ""}
           onCommit={(next) => onCommit(next || undefined)}
-          placeholder="none"
+          placeholder="None"
         />
       </div>
 
@@ -138,7 +138,7 @@ export function MediaStudio({ zoneId, world, onWorldChange }: MediaStudioProps) 
 
   if (!zoneId || !world) {
     return (
-      <section className="rounded-[28px] border border-white/10 bg-gradient-panel p-5 shadow-[0_18px_50px_rgba(9,12,24,0.24)]">
+      <section className="rounded-[28px] border border-white/10 bg-gradient-panel p-5 shadow-section">
         <div className="rounded-[22px] border border-dashed border-white/12 bg-white/4 px-4 py-8 text-sm text-text-muted">
           Select a zone to shape its music, ambience, and cinematics from the studio.
         </div>
@@ -167,7 +167,7 @@ export function MediaStudio({ zoneId, world, onWorldChange }: MediaStudioProps) 
   };
 
   return (
-    <section className="rounded-[28px] border border-white/10 bg-gradient-panel p-5 shadow-[0_18px_50px_rgba(9,12,24,0.24)]">
+    <section className="rounded-[28px] border border-white/10 bg-gradient-panel p-5 shadow-section">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <p className="text-[11px] uppercase tracking-wide-ui text-text-muted">Media studio</p>

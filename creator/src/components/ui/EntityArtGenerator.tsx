@@ -9,6 +9,7 @@ import { IMAGE_MODELS, ENTITY_DIMENSIONS, DIMENSION_PRESETS } from "@/types/asse
 import type { AssetContext, GeneratedImage } from "@/types/assets";
 import { VariantStrip } from "./VariantStrip";
 import { removeBgAndSave, shouldRemoveBg } from "@/lib/useBackgroundRemoval";
+import { InlineError } from "./FormWidgets";
 
 type Stage = "idle" | "generating" | "preview";
 
@@ -436,7 +437,7 @@ export function EntityArtGenerator({
       )}
 
       {error && (
-        <p className="text-2xs italic text-status-error">{error}</p>
+        <InlineError error={error} onDismiss={() => setError(null)} onRetry={handleGenerate} />
       )}
     </div>
   );

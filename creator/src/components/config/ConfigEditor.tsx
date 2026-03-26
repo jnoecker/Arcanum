@@ -4,6 +4,7 @@ import { useProjectStore } from "@/stores/projectStore";
 import { saveProjectConfig } from "@/lib/saveConfig";
 import type { AppConfig } from "@/types/config";
 import type { AbilityStudioSubView, CharacterStudioSubView, ConfigSubTab } from "@/types/project";
+import { Spinner } from "@/components/ui/FormWidgets";
 import configBg from "@/assets/config-bg.png";
 import subtoolbarBg from "@/assets/subtoolbar-bg.jpg";
 import { StatsPanel } from "./panels/StatsPanel";
@@ -106,7 +107,7 @@ function WorkspaceSection({
   children: ReactNode;
 }) {
   return (
-    <section className="rounded-[28px] border border-white/10 bg-gradient-panel-light p-5 shadow-[0_16px_42px_rgba(9,12,24,0.22)]">
+    <section className="rounded-[28px] border border-white/10 bg-gradient-panel-light p-5 shadow-section-sm">
       <div className="mb-3">
         <p className="text-[11px] uppercase tracking-wide-ui text-text-muted">{kicker}</p>
         <h3 className="mt-2 font-display text-xl text-text-primary">{title}</h3>
@@ -267,7 +268,7 @@ export function ConfigEditor() {
                     onClick={() => headerSubTabs.onChange(item.id)}
                     className={`rounded-full border px-4 py-2 text-xs font-medium transition ${
                       headerSubTabs.active === item.id
-                        ? "border-[rgba(184,216,232,0.48)] bg-[linear-gradient(135deg,rgba(168,151,210,0.3),rgba(140,174,201,0.2))] text-white shadow-[0_10px_24px_rgba(137,155,214,0.18)]"
+                        ? "border-[var(--border-glow-strong)] bg-[linear-gradient(135deg,rgba(168,151,210,0.3),rgba(140,174,201,0.2))] text-white shadow-glow-sm"
                         : "border-white/10 bg-black/10 text-text-secondary hover:bg-white/10 hover:text-text-primary"
                     }`}
                   >
@@ -284,7 +285,7 @@ export function ConfigEditor() {
               disabled={!dirty || saving}
               className="rounded-full border border-[rgba(184,216,232,0.28)] bg-gradient-active-strong px-4 py-2 text-xs font-medium text-text-primary transition enabled:hover:shadow-[0_10px_20px_rgba(137,155,214,0.2)] disabled:cursor-not-allowed disabled:opacity-40"
             >
-              {saving ? "Saving..." : "Save Config"}
+              {saving ? <span className="flex items-center gap-1.5"><Spinner />Saving</span> : "Save Config"}
             </button>
           </div>
         </div>

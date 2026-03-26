@@ -150,7 +150,7 @@ export function MobEditor({
             <NumberInput
               value={mob.respawnSeconds}
               onCommit={(v) => patch({ respawnSeconds: v })}
-              placeholder="default"
+              placeholder="Default"
               min={0}
             />
           </FieldRow>
@@ -158,7 +158,7 @@ export function MobEditor({
       </Section>
 
       {/* Stat overrides */}
-      <Section title="Stat Overrides">
+      <Section title="Stat Overrides" defaultExpanded={false}>
         <p className="mb-1 text-2xs text-text-muted">
           Leave blank to use tier defaults
         </p>
@@ -167,7 +167,7 @@ export function MobEditor({
             <NumberInput
               value={mob.hp}
               onCommit={(v) => patch({ hp: v })}
-              placeholder="auto"
+              placeholder="Auto"
               min={1}
             />
           </FieldRow>
@@ -175,7 +175,7 @@ export function MobEditor({
             <NumberInput
               value={mob.minDamage}
               onCommit={(v) => patch({ minDamage: v })}
-              placeholder="auto"
+              placeholder="Auto"
               min={0}
             />
           </FieldRow>
@@ -183,7 +183,7 @@ export function MobEditor({
             <NumberInput
               value={mob.maxDamage}
               onCommit={(v) => patch({ maxDamage: v })}
-              placeholder="auto"
+              placeholder="Auto"
               min={0}
             />
           </FieldRow>
@@ -191,7 +191,7 @@ export function MobEditor({
             <NumberInput
               value={mob.armor}
               onCommit={(v) => patch({ armor: v })}
-              placeholder="auto"
+              placeholder="Auto"
               min={0}
             />
           </FieldRow>
@@ -199,7 +199,7 @@ export function MobEditor({
             <NumberInput
               value={mob.xpReward}
               onCommit={(v) => patch({ xpReward: v })}
-              placeholder="auto"
+              placeholder="Auto"
               min={0}
             />
           </FieldRow>
@@ -207,7 +207,7 @@ export function MobEditor({
             <NumberInput
               value={mob.goldMin}
               onCommit={(v) => patch({ goldMin: v })}
-              placeholder="auto"
+              placeholder="Auto"
               min={0}
             />
           </FieldRow>
@@ -215,7 +215,7 @@ export function MobEditor({
             <NumberInput
               value={mob.goldMax}
               onCommit={(v) => patch({ goldMax: v })}
-              placeholder="auto"
+              placeholder="Auto"
               min={0}
             />
           </FieldRow>
@@ -225,6 +225,7 @@ export function MobEditor({
       {/* Drops */}
       <Section
         title={`Drops (${mob.drops?.length ?? 0})`}
+        defaultExpanded={false}
         actions={
           <IconButton onClick={handleAddDrop} title="Add drop">+</IconButton>
         }
@@ -267,7 +268,7 @@ export function MobEditor({
       </Section>
 
       {/* Behavior */}
-      <Section title="Behavior">
+      <Section title="Behavior" defaultExpanded={false}>
         <div className="flex flex-col gap-1.5">
           <FieldRow label="Template">
             <SelectInput
@@ -345,7 +346,7 @@ export function MobEditor({
                       },
                     })
                   }
-                  placeholder="optional"
+                  placeholder="Optional"
                 />
               </FieldRow>
               <FieldRow label="Flee Msg">
@@ -362,7 +363,7 @@ export function MobEditor({
                       },
                     })
                   }
-                  placeholder="optional"
+                  placeholder="Optional"
                 />
               </FieldRow>
             </>
@@ -372,7 +373,7 @@ export function MobEditor({
 
       {/* Quest assignment */}
       {zoneQuests.length > 0 && (
-        <Section title="Quests">
+        <Section title="Quests" defaultExpanded={false}>
           <div className="flex flex-col gap-0.5">
             {zoneQuests.map((q) => (
               <label

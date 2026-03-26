@@ -1,10 +1,11 @@
 import { MarkerType, type Node, type Edge } from "@xyflow/react";
 import type { WorldFile, ExitValue } from "@/types/world";
 import { OPPOSITE } from "@/lib/zoneEdits";
+import { graphTokens } from "@/lib/cssTokens";
 
-// ─── Graph color tokens (match --color-graph-* in index.css) ────────
+// ─── Graph color tokens (read from --color-graph-* CSS variables) ────
 
-const GRAPH = {
+const GRAPH_FALLBACK = {
   bg:     "#080c1c",
   edge:   "#6a7aac",
   edgeUp: "#7a5fc0",
@@ -14,7 +15,16 @@ const GRAPH = {
   node:   "#2a3460",
 } as const;
 
-export { GRAPH };
+let _graph: ReturnType<typeof graphTokens> | null = null;
+
+/** Lazy-init graph colors from CSS tokens (falls back to defaults in tests). */
+export function GRAPH() {
+  if (!_graph) {
+    const tokens = graphTokens();
+    _graph = tokens.bg ? tokens : GRAPH_FALLBACK;
+  }
+  return _graph;
+}
 
 // ─── Node data types ────────────────────────────────────────────────
 
@@ -217,19 +227,19 @@ export function zoneToGraph(
       animated: isCrossZone || isVertical,
       markerEnd: isBidirectional
         ? undefined
-        : { type: MarkerType.ArrowClosed, color: isVertical ? GRAPH.edgeUp : GRAPH.edge },
+        : { type: MarkerType.ArrowClosed, color: isVertical ? GRAPH().edgeUp : GRAPH().edge },
       style: {
-        stroke: isCrossZone ? GRAPH.cross : isVertical ? GRAPH.edgeUp : exit.hasDoor ? GRAPH.door : GRAPH.edge,
+        stroke: isCrossZone ? GRAPH().cross : isVertical ? GRAPH().edgeUp : exit.hasDoor ? GRAPH().door : GRAPH().edge,
         strokeDasharray: exit.hasDoor ? "6 3" : isVertical ? "4 4" : undefined,
         strokeWidth: isVertical ? 2 : 1.5,
       },
       labelStyle: {
-        fill: GRAPH.edge,
+        fill: GRAPH().edge,
         fontSize: 10,
         fontWeight: 500,
       },
       labelBgStyle: {
-        fill: GRAPH.bg,
+        fill: GRAPH().bg,
         fillOpacity: 0.9,
       },
     });

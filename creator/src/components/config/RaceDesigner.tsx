@@ -197,10 +197,10 @@ export function RaceDesigner({
                   }}
                   className="rounded-full border border-white/10 bg-white/8 px-4 py-2 text-xs text-text-primary outline-none"
                 />
-                <button onClick={commitRename} className="rounded-full border border-white/10 bg-white/8 px-4 py-2 text-xs text-text-primary hover:bg-white/12">
+                <button onClick={commitRename} title="Confirm rename" className="rounded-full border border-white/10 bg-white/8 px-4 py-2 text-xs text-text-primary hover:bg-white/12">
                   Rename
                 </button>
-                <button onClick={() => setRenaming(false)} className="rounded-full border border-white/10 bg-transparent px-4 py-2 text-xs text-text-secondary hover:bg-white/8">
+                <button onClick={() => setRenaming(false)} title="Cancel rename" className="rounded-full border border-white/10 bg-transparent px-4 py-2 text-xs text-text-secondary hover:bg-white/8">
                   Cancel
                 </button>
               </>

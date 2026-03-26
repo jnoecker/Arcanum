@@ -4,6 +4,7 @@ import { useAssetStore } from "@/stores/assetStore";
 import { getAudioSystemPrompt, getDefaultDuration, type AudioTrackType } from "@/lib/musicPrompts";
 import { useMediaSrc } from "@/lib/useMediaSrc";
 import type { AssetContext } from "@/types/assets";
+import { InlineError, Spinner } from "@/components/ui/FormWidgets";
 
 interface MusicGeneratorProps {
   roomTitle?: string;
@@ -143,7 +144,7 @@ export function MusicGenerator({
             disabled={enhancing}
             className="rounded px-1.5 py-0.5 text-2xs text-accent transition-colors hover:bg-accent/10 disabled:opacity-50"
           >
-            {enhancing ? "..." : "Auto-Prompt"}
+            {enhancing ? <Spinner /> : "Auto-Prompt"}
           </button>
         )}
         <button
@@ -151,7 +152,7 @@ export function MusicGenerator({
           disabled={generating || !prompt.trim()}
           className="rounded bg-accent/15 px-2 py-0.5 text-2xs font-medium text-accent transition-colors hover:bg-accent/25 disabled:opacity-50"
         >
-          {generating ? "Generating..." : trackType === "ambient" ? "Generate Ambient" : "Generate Music"}
+          {generating ? <span className="flex items-center gap-1.5"><Spinner />Generating</span> : trackType === "ambient" ? "Generate Ambient" : "Generate Music"}
         </button>
       </div>
 
@@ -178,7 +179,7 @@ export function MusicGenerator({
       )}
 
       {error && (
-        <p className="text-2xs italic text-status-error">{error}</p>
+        <InlineError error={error} onDismiss={() => setError(null)} onRetry={handleGenerate} />
       )}
     </div>
   );

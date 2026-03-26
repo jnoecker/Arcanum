@@ -86,6 +86,23 @@
   --color-graph-cross:   #c8972e;
   --color-graph-door:    #e2bc6a;
 
+  /* ─── Class Identity Colors ─── */
+  --color-class-bulwark:     #bea873;
+  --color-class-warden:      #c4956a;
+  --color-class-arcanist:    #a897d2;
+  --color-class-faeweaver:   #8da97b;
+  --color-class-necromancer: #7a8a6e;
+  --color-class-veil:        #6e5a8a;
+  --color-class-binder:      #bea873;
+  --color-class-stormblade:  #8caec9;
+  --color-class-herald:      #d4c8a0;
+  --color-class-starweaver:  #b88faa;
+  --color-class-fallback:    #7f89a8;
+
+  /* ─── Chart / Visualization ─── */
+  --color-chart-hp:   #c05060;
+  --color-chart-mana: #4e7fd4;
+
   /* ─── Miscellaneous ─── */
   --color-text-dirty: #d6b1c1;
 }
@@ -99,8 +116,15 @@
   --glow-blue:         0 0 24px rgba(140, 174, 201, 0.22);
 
   /* Shadows */
-  --shadow-deep:  0 8px 32px rgba(8, 10, 18, 0.34);
-  --shadow-panel: 0 16px 56px rgba(8, 10, 18, 0.42);
+  --shadow-deep:     0 8px 32px rgba(8, 10, 18, 0.34);
+  --shadow-panel:    0 16px 56px rgba(8, 10, 18, 0.42);
+  --shadow-section:  0 18px 50px rgba(9, 12, 24, 0.24);
+  --shadow-section-sm: 0 16px 42px rgba(9, 12, 24, 0.22);
+  --shadow-image:    0 18px 44px rgba(8, 10, 18, 0.26);
+  --shadow-bar:      0 12px 36px rgba(8, 10, 18, 0.28);
+  --shadow-hero:     0 24px 90px rgba(8, 10, 18, 0.32);
+  --shadow-glow:     0 10px 26px rgba(137, 155, 214, 0.24);
+  --shadow-glow-sm:  0 10px 24px rgba(137, 155, 214, 0.18);
 
   /* Easing */
   --ease-unfurl:   cubic-bezier(0.16, 1, 0.3, 1);
@@ -110,6 +134,16 @@
   /* Border accents (semi-transparent) */
   --border-aurum:  rgba(184, 143, 170, 0.34);
   --border-violet: rgba(168, 151, 210, 0.28);
+
+  /* Accent border variants */
+  --border-accent-ring:   rgba(168, 151, 210, 0.45);
+  --border-accent-subtle: rgba(168, 151, 210, 0.35);
+  --border-glow:          rgba(184, 216, 232, 0.25);
+  --border-glow-strong:   rgba(184, 216, 232, 0.48);
+
+  /* Accent background variants */
+  --bg-accent-subtle:  rgba(168, 151, 210, 0.14);
+  --bg-accent-hover:   rgba(168, 151, 210, 0.20);
 
   /* Gradient backgrounds */
   --bg-active:        linear-gradient(135deg, rgba(168,151,210,0.16), rgba(140,174,201,0.12));
@@ -195,6 +229,12 @@ select,
   to   { transform: rotate(360deg); }
 }
 
+@keyframes saved-flash {
+  0%   { opacity: 0; transform: scale(0.8); }
+  30%  { opacity: 1; transform: scale(1.05); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
 /* ─── Utility Classes ─── */
 .animate-aurum-pulse {
   animation: aurum-pulse 3s var(--ease-cosmic) infinite;
@@ -206,6 +246,10 @@ select,
 
 .animate-slow-rotate {
   animation: slow-rotate 60s linear infinite;
+}
+
+.animate-saved-flash {
+  animation: saved-flash 300ms var(--ease-unfurl) forwards;
 }
 
 /* ─── Scroll-Driven Parallax ─── */
@@ -256,6 +300,29 @@ select,
 }
 @utility bg-gradient-glow-top {
   background: var(--bg-glow-top);
+}
+
+/* ─── Shadow Utilities ─── */
+@utility shadow-section {
+  box-shadow: var(--shadow-section);
+}
+@utility shadow-section-sm {
+  box-shadow: var(--shadow-section-sm);
+}
+@utility shadow-image {
+  box-shadow: var(--shadow-image);
+}
+@utility shadow-bar {
+  box-shadow: var(--shadow-bar);
+}
+@utility shadow-hero {
+  box-shadow: var(--shadow-hero);
+}
+@utility shadow-glow {
+  box-shadow: var(--shadow-glow);
+}
+@utility shadow-glow-sm {
+  box-shadow: var(--shadow-glow-sm);
 }
 
 /* ─── Focus ring (Accent unfurl) ─── */

@@ -1,9 +1,7 @@
 import { useMemo, useCallback } from "react";
 import type { ConfigPanelProps } from "./types";
 import type { AppConfig, ClassDefinitionConfig } from "@/types/config";
-
-const CHART_HP = "#c05060";
-const CHART_MANA = "#4e7fd4";
+import { chartTokens } from "@/lib/cssTokens";
 import {
   FieldRow,
   NumberInput,
@@ -260,6 +258,7 @@ function HpManaCurve({
   baseHp: number;
   baseMana: number;
 }) {
+  const chart = chartTokens();
   const levels = Math.max(maxLevel, 2);
 
   const hpAt = (lvl: number) => baseHp + (lvl - 1) * hpPerLevel;
@@ -352,20 +351,20 @@ function HpManaCurve({
         <path
           d={buildPath(hpAt)}
           fill="none"
-          stroke={CHART_HP}
+          stroke={chart.hp}
           strokeWidth={1.5}
         />
         <path
           d={buildPath(manaAt)}
           fill="none"
-          stroke={CHART_MANA}
+          stroke={chart.mana}
           strokeWidth={1.5}
         />
-        <line x1={pad.left} y1={pad.top - 2} x2={pad.left + 14} y2={pad.top - 2} stroke={CHART_HP} strokeWidth={1.5} />
+        <line x1={pad.left} y1={pad.top - 2} x2={pad.left + 14} y2={pad.top - 2} stroke={chart.hp} strokeWidth={1.5} />
         <text x={pad.left + 17} y={pad.top + 1} className="fill-text-secondary" fontSize={8}>
           HP ({hpAt(levels)})
         </text>
-        <line x1={pad.left + 80} y1={pad.top - 2} x2={pad.left + 94} y2={pad.top - 2} stroke={CHART_MANA} strokeWidth={1.5} />
+        <line x1={pad.left + 80} y1={pad.top - 2} x2={pad.left + 94} y2={pad.top - 2} stroke={chart.mana} strokeWidth={1.5} />
         <text x={pad.left + 97} y={pad.top + 1} className="fill-text-secondary" fontSize={8}>
           Mana ({manaAt(levels)})
         </text>

@@ -110,7 +110,7 @@ export function QuestEditor({
             <TextInput
               value={quest.description ?? ""}
               onCommit={(v) => patch({ description: v || undefined })}
-              placeholder="none"
+              placeholder="None"
             />
           </FieldRow>
           <FieldRow label="Giver (mob)">
@@ -192,7 +192,7 @@ export function QuestEditor({
                       onCommit={(v) =>
                         handleUpdateObjective(i, "description", v)
                       }
-                      placeholder="optional"
+                      placeholder="Optional"
                     />
                   </FieldRow>
                 </div>
@@ -202,7 +202,7 @@ export function QuestEditor({
         )}
       </Section>
 
-      <Section title="Rewards">
+      <Section title="Rewards" defaultExpanded={false}>
         <div className="flex flex-col gap-1.5">
           <FieldRow label="XP">
             <NumberInput

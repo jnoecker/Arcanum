@@ -1,17 +1,15 @@
 import { lazy, Suspense, useState } from "react";
 import { useProjectStore } from "@/stores/projectStore";
-import { useServerStore } from "@/stores/serverStore";
 import { useZoneStore } from "@/stores/zoneStore";
 import { useValidationStore } from "@/stores/validationStore";
-import { useServerManager } from "@/lib/useServerManager";
 import { saveAllZones } from "@/lib/saveZone";
 import { saveProjectConfig } from "@/lib/saveConfig";
 import { validateAllZones } from "@/lib/validateZone";
 import { validateConfig } from "@/lib/validateConfig";
 import { useConfigStore } from "@/stores/configStore";
-import { ErrorDialog } from "./ErrorDialog";
 import { ValidationPanel } from "./ValidationPanel";
 import { useAssetStore } from "@/stores/assetStore";
+import { useAdminStore } from "@/stores/adminStore";
 import { Spinner } from "./ui/FormWidgets";
 import toolbarBg from "@/assets/toolbar-bg.jpg";
 
@@ -19,25 +17,24 @@ const DiffModal = lazy(() => import("./ui/DiffModal").then(m => ({ default: m.Di
 const BatchLegacyImport = lazy(() => import("./BatchLegacyImport").then(m => ({ default: m.BatchLegacyImport })));
 const SketchImportWizard = lazy(() => import("./SketchImportWizard").then(m => ({ default: m.SketchImportWizard })));
 
-const STATUS_COLORS: Record<string, string> = {
-  stopped: "bg-server-stopped",
-  starting: "bg-server-starting",
-  running: "bg-server-running",
-  stopping: "bg-server-starting",
+const ADMIN_STATUS_COLORS: Record<string, string> = {
+  disconnected: "bg-server-stopped",
+  connecting: "bg-server-starting",
+  connected: "bg-server-running animate-aurum-pulse",
   error: "bg-server-error",
 };
 
-const STATUS_LABELS: Record<string, string> = {
-  stopped: "Stopped",
-  starting: "Starting...",
-  running: "Running",
-  stopping: "Stopping...",
-  error: "Failed",
+const ADMIN_STATUS_LABELS: Record<string, string> = {
+  disconnected: "No link",
+  connecting: "Reaching...",
+  connected: "Linked",
+  error: "Link lost",
 };
 
 export function Toolbar() {
   const project = useProjectStore((s) => s.project);
-  const status = useServerStore((s) => s.status);
+  const openTab = useProjectStore((s) => s.openTab);
+  const adminConnectionStatus = useAdminStore((s) => s.connectionStatus);
   const dirtyCount = useZoneStore(
     (s) => Array.from(s.zones.values()).filter((z) => z.dirty).length,
   );
@@ -45,9 +42,7 @@ export function Toolbar() {
   const setValidationResults = useValidationStore((s) => s.setResults);
   const openValidationPanel = useValidationStore((s) => s.openPanel);
   const hasConfig = useConfigStore((s) => !!s.config);
-  const { startServer, stopServer } = useServerManager();
   const configDirty = useConfigStore((s) => s.dirty);
-  const [errors, setErrors] = useState<string[] | null>(null);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [showDiff, setShowDiff] = useState(false);
@@ -57,32 +52,8 @@ export function Toolbar() {
   const openGallery = useAssetStore((s) => s.openGallery);
   const isStandalone = project?.format === "standalone";
 
-  const handleStart = async () => {
-    const result = await startServer();
-    if (!result.success && result.preflightErrors) {
-      setErrors(result.preflightErrors);
-    }
-  };
-
-  const handleRestart = async () => {
-    await stopServer();
-    await new Promise<void>((resolve) => {
-      let resolved = false;
-      const unsub = useServerStore.subscribe((state) => {
-        if (!resolved && (state.status === "stopped" || state.status === "error")) {
-          resolved = true;
-          unsub();
-          resolve();
-        }
-      });
-      const current = useServerStore.getState().status;
-      if (!resolved && (current === "stopped" || current === "error")) {
-        resolved = true;
-        unsub();
-        resolve();
-      }
-    });
-    await handleStart();
+  const handleOpenAdmin = () => {
+    openTab({ id: "admin", kind: "admin", label: "Admin" });
   };
 
   const handleOpenHandoff = () => {
@@ -107,41 +78,29 @@ export function Toolbar() {
           </span>
           <div className="h-4 w-px bg-white/10" />
 
-          {/* ── Server cluster ── */}
-          {!isStandalone && (
-            <>
-              <div className="flex items-center gap-1.5" role="status" aria-live="polite">
-                <div className={`h-2 w-2 rounded-full ${STATUS_COLORS[status]} ${status === "running" ? "animate-aurum-pulse" : ""} ${status === "error" ? "animate-crimson-pulse" : ""}`} />
-                <span className="text-2xs uppercase tracking-label text-text-muted">
-                  {STATUS_LABELS[status]}
-                </span>
-              </div>
-              <button onClick={handleStart} disabled={status !== "stopped" && status !== "error"} title="Start server" className="rounded-full border border-white/10 bg-black/10 px-3 py-1 text-2xs font-medium text-text-primary transition enabled:hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40">
-                Start
-              </button>
-              <button onClick={stopServer} disabled={status !== "running"} title="Stop server" className="rounded-full border border-white/10 bg-black/10 px-3 py-1 text-2xs font-medium text-text-primary transition enabled:hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40">
-                Stop
-              </button>
-              <button onClick={handleRestart} disabled={status !== "running"} title="Restart server" className="rounded-full border border-white/10 bg-black/10 px-3 py-1 text-2xs font-medium text-text-primary transition enabled:hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40">
-                Restart
-              </button>
-              <div className="h-4 w-px bg-white/10" />
-            </>
-          )}
+          {/* ── Admin status + export ── */}
+          <button
+            onClick={handleOpenAdmin}
+            className="flex items-center gap-1.5 rounded-full border border-white/10 bg-black/10 px-3 py-1 text-2xs font-medium text-text-primary transition hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-border-active focus-visible:outline-none"
+            title="Open admin dashboard"
+          >
+            <div className={`h-2 w-2 rounded-full ${ADMIN_STATUS_COLORS[adminConnectionStatus]}`} />
+            <span className="uppercase tracking-label">
+              {ADMIN_STATUS_LABELS[adminConnectionStatus]}
+            </span>
+          </button>
 
           {isStandalone && (
-            <>
-              <button
-                onClick={handleOpenHandoff}
-                disabled={!hasConfig}
-                title="Export for MUD server"
-                className="rounded-full border border-white/10 bg-black/10 px-3 py-1 text-2xs font-medium text-text-primary transition enabled:hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40"
-              >
-                Export
-              </button>
-              <div className="h-4 w-px bg-white/10" />
-            </>
+            <button
+              onClick={handleOpenHandoff}
+              disabled={!hasConfig}
+              title="Export for MUD server"
+              className="rounded-full border border-white/10 bg-black/10 px-3 py-1 text-2xs font-medium text-text-primary transition enabled:hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              Export
+            </button>
           )}
+          <div className="h-4 w-px bg-white/10" />
 
           {/* ── Assets cluster ── */}
           <button onClick={() => setShowLegacyImport(true)} title="Import legacy images" className="rounded-full border border-white/10 bg-black/10 px-3 py-1 text-2xs font-medium text-text-primary transition hover:bg-white/10">
@@ -240,14 +199,6 @@ export function Toolbar() {
         )}
       </Suspense>
 
-      {errors && (
-        <ErrorDialog
-          title="Pre-flight Check Failed"
-          messages={errors}
-          onClose={() => setErrors(null)}
-          onRetry={handleStart}
-        />
-      )}
     </>
   );
 }

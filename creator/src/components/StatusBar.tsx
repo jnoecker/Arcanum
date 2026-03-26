@@ -1,11 +1,11 @@
-import { useServerStore } from "@/stores/serverStore";
+import { useAdminStore } from "@/stores/adminStore";
 import { useZoneStore } from "@/stores/zoneStore";
 import { useConfigStore } from "@/stores/configStore";
 import { useValidationStore } from "@/stores/validationStore";
 
 export function StatusBar() {
-  const status = useServerStore((s) => s.status);
-  const lastError = useServerStore((s) => s.lastError);
+  const adminStatus = useAdminStore((s) => s.connectionStatus);
+  const lastError = useAdminStore((s) => s.lastError);
   const zones = useZoneStore((s) => s.zones);
   const configDirty = useConfigStore((s) => s.dirty);
   const validationResults = useValidationStore((s) => s.results);
@@ -72,20 +72,25 @@ export function StatusBar() {
 
       <div className="flex-1" />
 
-      {/* Server error */}
-      {status === "error" && lastError && (
+      {/* Admin connection error */}
+      {adminStatus === "error" && lastError && (
         <span className="truncate text-status-error">{lastError}</span>
       )}
 
-      <span className={`rounded-full px-3 py-1 capitalize ${
-        status === "running"
+      <span className={`rounded-full px-3 py-1 ${
+        adminStatus === "connected"
           ? "bg-server-running/15 text-server-running"
-          : status === "error"
+          : adminStatus === "error"
             ? "bg-server-error/15 text-server-error"
-            : status === "starting" || status === "stopping"
+            : adminStatus === "connecting"
               ? "bg-server-starting/15 text-server-starting"
               : "bg-black/10 text-text-muted"
-      }`}>{status}</span>
+      }`}>{
+        adminStatus === "connected" ? "Linked"
+          : adminStatus === "connecting" ? "Reaching..."
+          : adminStatus === "error" ? "Link lost"
+          : "No link"
+      }</span>
       </div>
     </div>
   );

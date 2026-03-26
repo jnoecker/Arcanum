@@ -1,3 +1,4 @@
+mod admin;
 mod anthropic;
 mod arcanum_meta;
 mod assets;
@@ -7,7 +8,6 @@ mod openrouter;
 mod project;
 mod r2;
 mod runware;
-mod server;
 mod settings;
 mod sketch;
 mod vibes;
@@ -19,7 +19,6 @@ pub fn run() {
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_window_state::Builder::new().build())
-        .manage(server::ServerState::default())
         .invoke_handler(tauri::generate_handler![
             project::validate_mud_dir,
             project::validate_project,
@@ -63,20 +62,21 @@ pub fn run() {
             r2::deploy_global_assets_to_r2,
             r2::deploy_config_to_r2,
             r2::deploy_zones_to_r2,
-            server::set_server_pid,
-            server::clear_server_pid,
-            server::kill_server_tree,
             vibes::save_zone_vibe,
             vibes::load_zone_vibe,
             arcanum_meta::load_arcanum_meta,
             arcanum_meta::save_arcanum_meta,
             sketch::analyze_sketch,
+            admin::load_admin_config,
+            admin::save_admin_config,
+            admin::admin_overview,
+            admin::admin_players,
+            admin::admin_player_detail,
+            admin::admin_zones,
+            admin::admin_zone_detail,
+            admin::admin_reload,
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application")
-        .run(|app, event| {
-            if let tauri::RunEvent::Exit = event {
-                server::kill_on_exit(app);
-            }
-        });
+        .run(|_app, _event| {});
 }

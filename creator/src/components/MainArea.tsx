@@ -6,6 +6,7 @@ const ZoneEditor = lazy(() => import("./zone/ZoneEditor").then(m => ({ default: 
 const ConfigEditor = lazy(() => import("./config/ConfigEditor").then(m => ({ default: m.ConfigEditor })));
 const PlayerSpriteManager = lazy(() => import("./PlayerSpriteManager").then(m => ({ default: m.PlayerSpriteManager })));
 const Console = lazy(() => import("./Console").then(m => ({ default: m.Console })));
+const AdminDashboard = lazy(() => import("./admin/AdminDashboard").then(m => ({ default: m.AdminDashboard })));
 
 function LazyFallback() {
   return (
@@ -46,6 +47,9 @@ export function MainArea() {
       break;
     case "sprites":
       content = <PlayerSpriteManager />;
+      break;
+    case "admin":
+      content = <AdminDashboard />;
       break;
     default:
       content = null;

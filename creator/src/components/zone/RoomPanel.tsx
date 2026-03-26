@@ -176,7 +176,7 @@ export function RoomPanel({
   }, [world, roomId, onWorldChange, onSelectEntity]);
 
   return (
-    <div className="relative flex min-h-0 w-72 shrink-0 flex-col border-l border-border-default bg-bg-secondary">
+    <div className="relative flex min-h-0 min-w-0 w-72 flex-1 flex-col border-l border-border-default bg-bg-secondary">
       <img src={sidebarBg} alt="" className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-[0.12]" />
       {/* Header */}
       <div className="relative z-10 shrink-0 border-b border-border-default px-4 py-3">

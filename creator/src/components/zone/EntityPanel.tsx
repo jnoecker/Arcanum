@@ -47,7 +47,7 @@ export function EntityPanel({
   }, [world, selection]);
 
   return (
-    <div className="relative flex min-h-0 w-80 shrink-0 flex-col border-l border-border-default bg-bg-secondary">
+    <div className="relative flex min-h-0 min-w-0 w-80 flex-1 flex-col border-l border-border-default bg-bg-secondary">
       <img src={sidebarBg} alt="" className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-[0.12]" />
       {/* Header with back button */}
       <div className="relative z-10 shrink-0 flex items-center gap-2 border-b border-border-default px-4 py-2">

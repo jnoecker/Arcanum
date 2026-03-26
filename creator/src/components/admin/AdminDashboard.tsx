@@ -70,9 +70,9 @@ export function AdminDashboard() {
   const isConnected = connectionStatus === "connected";
 
   return (
-    <div className="relative flex min-h-0 flex-1 flex-col overflow-y-auto">
+    <div className="relative flex min-h-0 flex-1 flex-col">
       {/* Ambient background texture */}
-      <div className="pointer-events-none sticky top-0 z-0 -mb-[100vh] h-[100vh] w-full overflow-hidden">
+      <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
         <img
           src={configBg}
           alt=""
@@ -82,16 +82,19 @@ export function AdminDashboard() {
         <div className="absolute inset-0 bg-gradient-to-b from-bg-primary/60 via-transparent to-bg-primary/80" />
       </div>
 
-      <div className="relative z-10 mx-auto flex w-full max-w-5xl flex-col gap-6 px-6 py-6">
+      {/* Fixed header area — always visible */}
+      <div className="relative z-10 shrink-0 mx-auto flex w-full max-w-5xl flex-col gap-4 px-6 pt-6 pb-2">
         {/* Header */}
-        <div>
-          <p className="text-[11px] uppercase tracking-wide-ui text-text-muted">
-            Server Admin
-          </p>
-          <h2 className="mt-2 font-display text-2xl text-text-primary">
-            The Living World
-          </h2>
-          <p className="mt-1 text-sm text-text-secondary">
+        <div className="flex items-end justify-between">
+          <div>
+            <p className="text-[11px] uppercase tracking-wide-ui text-text-muted">
+              Server Admin
+            </p>
+            <h2 className="mt-1 font-display text-2xl text-text-primary">
+              The Living World
+            </h2>
+          </div>
+          <p className="text-sm text-text-secondary">
             Observe and shape the running server from above.
           </p>
         </div>
@@ -115,9 +118,11 @@ export function AdminDashboard() {
             </button>
           ))}
         </div>
+      </div>
 
-        {/* Content */}
-        <div className="pb-8">
+      {/* Scrollable content area */}
+      <div className="relative z-10 min-h-0 flex-1 overflow-y-auto">
+        <div className="mx-auto w-full max-w-5xl px-6 py-4 pb-8">
           {!isConnected ? (
             <div className="flex flex-col items-center gap-6 rounded-[28px] border border-white/8 bg-gradient-panel px-8 py-16 text-center shadow-section">
               <div className="flex h-14 w-14 items-center justify-center rounded-full border border-white/10 bg-black/20">
@@ -128,7 +133,7 @@ export function AdminDashboard() {
                   No server connected
                 </p>
                 <p className="mt-2 max-w-md text-sm leading-6 text-text-muted">
-                  Enter a server URL and admin token above to reach into the running world.
+                  Enter the server URL and admin token above to reach into the running world.
                 </p>
               </div>
 

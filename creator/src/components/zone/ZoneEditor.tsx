@@ -370,7 +370,7 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
         </div>
       ) : (
         <div className="flex min-h-0 flex-1">
-          <div className="relative flex-1">
+          <div className="relative min-h-0 flex-1">
             <Starfield />
             <ReactFlow
               nodes={nodes}

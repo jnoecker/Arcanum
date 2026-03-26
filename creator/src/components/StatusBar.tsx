@@ -23,7 +23,7 @@ export function StatusBar() {
   const warningCount = allIssues.filter((i) => i.severity === "warning").length;
 
   return (
-    <div className="relative z-10 px-4 pb-4">
+    <div className="relative z-10 shrink-0 px-4 pb-4">
       <div className="flex min-h-12 items-center gap-4 rounded-[28px] border border-white/10 bg-[linear-gradient(155deg,rgba(50,60,88,0.84),rgba(38,47,71,0.9))] px-5 py-3 text-xs shadow-bar">
       <span className="text-text-muted">
         {totalZones} zone{totalZones !== 1 ? "s" : ""} loaded

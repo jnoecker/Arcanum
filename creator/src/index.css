@@ -235,6 +235,16 @@ select,
   100% { opacity: 1; transform: scale(1); }
 }
 
+@keyframes reload-ripple {
+  0%   { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(2.5); }
+}
+
+@keyframes unfurl-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
 /* ─── Utility Classes ─── */
 .animate-aurum-pulse {
   animation: aurum-pulse 3s var(--ease-cosmic) infinite;
@@ -250,6 +260,14 @@ select,
 
 .animate-saved-flash {
   animation: saved-flash 300ms var(--ease-unfurl) forwards;
+}
+
+.animate-reload-ripple {
+  animation: reload-ripple 600ms var(--ease-dissolve) forwards;
+}
+
+.animate-unfurl-in {
+  animation: unfurl-in 400ms var(--ease-unfurl) forwards;
 }
 
 /* ─── Scroll-Driven Parallax ─── */

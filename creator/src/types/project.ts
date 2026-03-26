@@ -22,7 +22,7 @@ export interface ServerState {
   lastError?: string;
 }
 
-export type TabKind = "studio" | "zone" | "config" | "console" | "sprites";
+export type TabKind = "studio" | "zone" | "config" | "console" | "sprites" | "admin";
 
 export type ConfigSubTab =
   | "characterStudio"
@@ -67,6 +67,12 @@ export type ContentStudioSubView =
 export type OperationsSubView =
   | "services"
   | "delivery";
+
+export type AdminSubView =
+  | "overview"
+  | "players"
+  | "zones"
+  | "actions";
 
 export interface Tab {
   id: string;

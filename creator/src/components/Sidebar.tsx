@@ -307,6 +307,7 @@ export function Sidebar() {
             { id: "config", label: "Characters", kind: "config" as const },
             { id: "sprites", label: "Sprites", kind: "sprites" as const },
             { id: "console", label: "Console", kind: "console" as const },
+            { id: "admin", label: "Admin", kind: "admin" as const },
           ].map((entry) => (
             <button
               key={entry.id}

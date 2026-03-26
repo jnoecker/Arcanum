@@ -9,6 +9,7 @@ mod r2;
 mod runware;
 mod server;
 mod settings;
+mod sketch;
 mod vibes;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -69,6 +70,7 @@ pub fn run() {
             vibes::load_zone_vibe,
             arcanum_meta::load_arcanum_meta,
             arcanum_meta::save_arcanum_meta,
+            sketch::analyze_sketch,
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application")

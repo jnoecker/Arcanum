@@ -14,6 +14,7 @@ import { ValidationPanel } from "./ValidationPanel";
 import { DiffModal } from "./ui/DiffModal";
 import { useAssetStore } from "@/stores/assetStore";
 import { BatchLegacyImport } from "./BatchLegacyImport";
+import { SketchImportWizard } from "./SketchImportWizard";
 import toolbarBg from "@/assets/toolbar-bg.jpg";
 
 const STATUS_COLORS: Record<string, string> = {
@@ -49,6 +50,7 @@ export function Toolbar() {
   const [saved, setSaved] = useState(false);
   const [showDiff, setShowDiff] = useState(false);
   const [showLegacyImport, setShowLegacyImport] = useState(false);
+  const [showSketchImport, setShowSketchImport] = useState(false);
   const openGenerator = useAssetStore((s) => s.openGenerator);
   const openGallery = useAssetStore((s) => s.openGallery);
   const isStandalone = project?.format === "standalone";
@@ -143,6 +145,9 @@ export function Toolbar() {
           <button onClick={() => setShowLegacyImport(true)} title="Import legacy images" className="rounded-full border border-white/10 bg-black/10 px-3 py-1 text-2xs font-medium text-text-primary transition hover:bg-white/10">
             Import
           </button>
+          <button onClick={() => setShowSketchImport(true)} title="Import zone from sketch" className="rounded-full border border-white/10 bg-black/10 px-3 py-1 text-2xs font-medium text-text-primary transition hover:bg-white/10">
+            Sketch
+          </button>
           <button onClick={openGallery} title="Browse asset library" className="rounded-full border border-white/10 bg-black/10 px-3 py-1 text-2xs font-medium text-text-primary transition hover:bg-white/10">
             Gallery
           </button>
@@ -226,6 +231,10 @@ export function Toolbar() {
 
       {showLegacyImport && (
         <BatchLegacyImport onClose={() => setShowLegacyImport(false)} />
+      )}
+
+      {showSketchImport && (
+        <SketchImportWizard onClose={() => setShowSketchImport(false)} />
       )}
     </>
   );

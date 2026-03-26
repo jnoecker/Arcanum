@@ -1,3 +1,5 @@
+import { useState, useRef, useEffect } from "react";
+import { useAdminStore } from "@/stores/adminStore";
 import type { PlayerDetail } from "@/types/admin";
 
 function StatRow({ label, value, valueClass }: { label: string; value: string | number; valueClass?: string }) {
@@ -169,6 +171,83 @@ export function AdminPlayerDetail({
           </div>
         </Section>
       )}
+
+      <StaffToggleSection playerName={player.name} isStaff={player.isStaff} />
     </div>
+  );
+}
+
+// ─── Staff toggle ──────────────────────────────────────────────────
+
+function StaffToggleSection({ playerName, isStaff }: { playerName: string; isStaff: boolean }) {
+  const toggleStaff = useAdminStore((s) => s.toggleStaff);
+  const [confirming, setConfirming] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [resultMsg, setResultMsg] = useState<string | null>(null);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => { if (timer.current) clearTimeout(timer.current); };
+  }, []);
+
+  const handleClick = () => {
+    if (!confirming) {
+      setConfirming(true);
+      setResultMsg(null);
+      timer.current = setTimeout(() => setConfirming(false), 4000);
+      return;
+    }
+    setConfirming(false);
+    if (timer.current) clearTimeout(timer.current);
+    doToggle();
+  };
+
+  const doToggle = async () => {
+    setLoading(true);
+    const result = await toggleStaff(playerName);
+    setLoading(false);
+    if (result) {
+      setResultMsg(result.isStaff ? "Staff granted" : "Staff revoked");
+      setTimeout(() => setResultMsg(null), 3000);
+    }
+  };
+
+  return (
+    <Section title="Admin actions">
+      <div className="flex items-center justify-between gap-4">
+        <div className="min-w-0">
+          <p className="text-xs text-text-primary">Staff privileges</p>
+          <p className="mt-0.5 text-[11px] text-text-muted">
+            {isStaff ? "This player has staff access." : "This player has no staff access."}
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
+          {resultMsg && (
+            <span className="motion-safe:animate-unfurl-in text-2xs text-status-success">{resultMsg}</span>
+          )}
+          {confirming && (
+            <button
+              onClick={() => { setConfirming(false); if (timer.current) clearTimeout(timer.current); }}
+              className="rounded text-2xs text-text-muted hover:text-text-primary focus-visible:ring-2 focus-visible:ring-border-active focus-visible:outline-none"
+            >
+              Cancel
+            </button>
+          )}
+          <button
+            onClick={handleClick}
+            disabled={loading}
+            className={`shrink-0 rounded-xl border px-4 py-1.5 text-xs font-medium transition-all duration-200 focus-visible:ring-2 focus-visible:ring-border-active focus-visible:outline-none disabled:opacity-40 ${
+              confirming
+                ? "border-status-warning/50 bg-status-warning/15 text-status-warning"
+                : isStaff
+                  ? "border-status-error/30 bg-status-error/10 text-status-error hover:bg-status-error/20"
+                  : "border-white/10 bg-black/10 text-text-primary hover:bg-white/10"
+            }`}
+          >
+            {loading ? "..." : confirming ? "Confirm" : isStaff ? "Revoke staff" : "Grant staff"}
+          </button>
+        </div>
+      </div>
+    </Section>
   );
 }

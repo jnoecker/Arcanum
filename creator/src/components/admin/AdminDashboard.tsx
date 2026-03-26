@@ -1,18 +1,21 @@
-import { useEffect } from "react";
+import { useEffect, lazy, Suspense } from "react";
 import { useProjectStore } from "@/stores/projectStore";
 import { useAdminStore, startAdminPolling, stopAdminPolling } from "@/stores/adminStore";
 import type { AdminSubView } from "@/types/project";
 import { AdminConnectionBar } from "./AdminConnectionBar";
 import { AdminOverviewPanel } from "./AdminOverviewPanel";
 import { AdminPlayerList } from "./AdminPlayerList";
-import { AdminZoneList } from "./AdminZoneList";
-import { AdminReloadPanel } from "./AdminReloadPanel";
 import configBg from "@/assets/config-bg.png";
+
+const AdminWorldPanel = lazy(() => import("./AdminWorldPanel").then(m => ({ default: m.AdminWorldPanel })));
+const AdminContentPanel = lazy(() => import("./AdminContentPanel").then(m => ({ default: m.AdminContentPanel })));
+const AdminActionsPanel = lazy(() => import("./AdminActionsPanel").then(m => ({ default: m.AdminActionsPanel })));
 
 const ADMIN_VIEWS: Array<{ id: AdminSubView; label: string }> = [
   { id: "overview", label: "Overview" },
   { id: "players", label: "Players" },
-  { id: "zones", label: "Zones" },
+  { id: "world", label: "World" },
+  { id: "content", label: "Content" },
   { id: "actions", label: "Actions" },
 ];
 
@@ -25,6 +28,13 @@ export function AdminDashboard() {
   const loadConfig = useAdminStore((s) => s.loadConfig);
   const clearSelectedPlayer = useAdminStore((s) => s.clearSelectedPlayer);
   const clearSelectedZone = useAdminStore((s) => s.clearSelectedZone);
+  const clearSelectedRoom = useAdminStore((s) => s.clearSelectedRoom);
+  const clearSelectedMob = useAdminStore((s) => s.clearSelectedMob);
+  const clearSelectedAbility = useAdminStore((s) => s.clearSelectedAbility);
+  const clearSelectedEffect = useAdminStore((s) => s.clearSelectedEffect);
+  const clearSelectedQuest = useAdminStore((s) => s.clearSelectedQuest);
+  const clearSelectedAchievement = useAdminStore((s) => s.clearSelectedAchievement);
+  const clearPlayerSearch = useAdminStore((s) => s.clearPlayerSearch);
 
   // Load saved admin config when the dashboard mounts
   useEffect(() => {
@@ -37,7 +47,14 @@ export function AdminDashboard() {
   useEffect(() => {
     clearSelectedPlayer();
     clearSelectedZone();
-  }, [adminSubView, clearSelectedPlayer, clearSelectedZone]);
+    clearSelectedRoom();
+    clearSelectedMob();
+    clearSelectedAbility();
+    clearSelectedEffect();
+    clearSelectedQuest();
+    clearSelectedAchievement();
+    clearPlayerSearch();
+  }, [adminSubView, clearSelectedPlayer, clearSelectedZone, clearSelectedRoom, clearSelectedMob, clearSelectedAbility, clearSelectedEffect, clearSelectedQuest, clearSelectedAchievement, clearPlayerSearch]);
 
   // Manage polling — only poll when admin tab is active and connected
   const isAdminTabActive = activeTabId === "admin";
@@ -141,10 +158,13 @@ export function AdminDashboard() {
             </div>
           ) : (
             <div className="motion-safe:animate-unfurl-in">
-              {adminSubView === "overview" && <AdminOverviewPanel />}
-              {adminSubView === "players" && <AdminPlayerList />}
-              {adminSubView === "zones" && <AdminZoneList />}
-              {adminSubView === "actions" && <AdminReloadPanel />}
+              <Suspense fallback={<div className="py-12 text-center text-sm text-text-muted">Loading...</div>}>
+                {adminSubView === "overview" && <AdminOverviewPanel />}
+                {adminSubView === "players" && <AdminPlayerList />}
+                {adminSubView === "world" && <AdminWorldPanel />}
+                {adminSubView === "content" && <AdminContentPanel />}
+                {adminSubView === "actions" && <AdminActionsPanel />}
+              </Suspense>
             </div>
           )}
         </div>

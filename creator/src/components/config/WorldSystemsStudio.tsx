@@ -2,6 +2,9 @@ import type { ReactNode } from "react";
 import type { AppConfig } from "@/types/config";
 import type { WorldSystemsSubView } from "@/types/project";
 import { ServerPanel } from "./panels/ServerPanel";
+import { AdminConfigPanel } from "./panels/AdminConfigPanel";
+import { ObservabilityPanel } from "./panels/ObservabilityPanel";
+import { LoggingPanel } from "./panels/LoggingPanel";
 import { CombatPanel } from "./panels/CombatPanel";
 import { MobTiersPanel } from "./panels/MobTiersPanel";
 import { ProgressionPanel } from "./panels/ProgressionPanel";
@@ -63,6 +66,27 @@ export function WorldSystemsStudio({
             description="Ports and server process settings."
           >
             <ServerPanel config={config} onChange={onChange} />
+          </StudioSection>
+          <StudioSection
+            kicker="Admin server"
+            title="Remote administration API"
+            description="Enable the admin HTTP server for the Arcanum to connect to. Set a token for authentication."
+          >
+            <AdminConfigPanel config={config} onChange={onChange} />
+          </StudioSection>
+          <StudioSection
+            kicker="Observability"
+            title="Metrics and monitoring"
+            description="Prometheus metrics endpoint for server health and performance data."
+          >
+            <ObservabilityPanel config={config} onChange={onChange} />
+          </StudioSection>
+          <StudioSection
+            kicker="Logging"
+            title="Log levels"
+            description="Control the verbosity of server logs. Per-package overrides let you debug specific systems without flooding the console."
+          >
+            <LoggingPanel config={config} onChange={onChange} />
           </StudioSection>
         </>
       )}

@@ -372,22 +372,22 @@ export function buildMonolithicConfigObject(
       webClientUrl: null,
     },
     observability: {
-      metricsEnabled: true,
-      metricsEndpoint: "/metrics",
-      metricsHttpPort: 9090,
+      metricsEnabled: c.observability?.metricsEnabled ?? true,
+      metricsEndpoint: c.observability?.metricsEndpoint ?? "/metrics",
+      metricsHttpPort: c.observability?.metricsHttpPort ?? 9090,
       staticTags: {},
     },
     admin: {
-      enabled: false,
-      port: 9091,
-      token: "",
-      grafanaUrl: "",
+      enabled: c.admin?.enabled ?? false,
+      port: c.admin?.port ?? 9091,
+      token: c.admin?.token ?? "",
+      grafanaUrl: c.admin?.grafanaUrl || undefined,
     },
     logging: {
-      level: "INFO",
+      level: c.logging?.level ?? "INFO",
       packageLevels: {
-        "dev.ambon.transport": "INFO",
-        "dev.ambon.engine": "INFO",
+        ...{ "dev.ambon.transport": "INFO", "dev.ambon.engine": "INFO" },
+        ...(c.logging?.packageLevels ?? {}),
       },
     },
     redis: {

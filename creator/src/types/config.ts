@@ -365,10 +365,37 @@ export interface ServerConfig {
   webPort: number;
 }
 
+// ─── Admin ──────────────────────────────────────────────────────────
+
+export interface AdminServerConfig {
+  enabled: boolean;
+  port: number;
+  token: string;
+  grafanaUrl: string;
+}
+
+// ─── Observability ──────────────────────────────────────────────────
+
+export interface ObservabilityConfig {
+  metricsEnabled: boolean;
+  metricsEndpoint: string;
+  metricsHttpPort: number;
+}
+
+// ─── Logging ────────────────────────────────────────────────────────
+
+export interface LoggingConfig {
+  level: string;
+  packageLevels: Record<string, string>;
+}
+
 // ─── Top-level config state ─────────────────────────────────────────
 
 export interface AppConfig {
   server: ServerConfig;
+  admin: AdminServerConfig;
+  observability: ObservabilityConfig;
+  logging: LoggingConfig;
   world: WorldConfig;
   classStartRooms: Record<string, string>;
   stats: {

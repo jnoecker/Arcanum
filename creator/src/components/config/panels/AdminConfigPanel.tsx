@@ -30,6 +30,13 @@ export function AdminConfigPanel({ config, onChange }: ConfigPanelProps) {
               max={65535}
             />
           </FieldRow>
+          <FieldRow label="Base Path" hint="URL path prefix for the admin API. Default /admin/. Useful for reverse proxies or custom routing.">
+            <TextInput
+              value={a.basePath}
+              onCommit={(v) => patch({ basePath: v })}
+              placeholder="/admin/"
+            />
+          </FieldRow>
           <FieldRow label="Auth Token" hint="Required. Every API request must include this token via HTTP Basic Auth. Leave blank to block all access.">
             <div className="flex items-center gap-2">
               <TextInput

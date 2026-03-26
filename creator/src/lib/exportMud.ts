@@ -381,6 +381,7 @@ export function buildMonolithicConfigObject(
       enabled: c.admin?.enabled ?? false,
       port: c.admin?.port ?? 9091,
       token: c.admin?.token ?? "",
+      basePath: c.admin?.basePath || undefined,
       grafanaUrl: c.admin?.grafanaUrl || undefined,
     },
     logging: {

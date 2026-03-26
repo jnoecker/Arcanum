@@ -139,6 +139,7 @@ function parseAdminConfig(raw: unknown): AppConfig["admin"] {
     enabled: s.enabled === true,
     port: asNumber(s.port, 9091),
     token: asString(s.token, ""),
+    basePath: asString(s.basePath, "/admin/"),
     grafanaUrl: asString(s.grafanaUrl, ""),
   };
 }

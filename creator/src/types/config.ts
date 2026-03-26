@@ -371,6 +371,7 @@ export interface AdminServerConfig {
   enabled: boolean;
   port: number;
   token: string;
+  basePath: string;
   grafanaUrl: string;
 }
 

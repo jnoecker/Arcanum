@@ -1,10 +1,14 @@
 import { writeTextFile, mkdir } from "@tauri-apps/plugin-fs";
+import { invoke } from "@tauri-apps/api/core";
 import { stringify } from "yaml";
 import { normalizeAssetRef, normalizeConfigAssetRefs, normalizeGlobalAssetMap } from "@/lib/assetRefs";
 import { useConfigStore } from "@/stores/configStore";
+import { useProjectStore } from "@/stores/projectStore";
 import { useZoneStore, type ZoneState } from "@/stores/zoneStore";
 import { serializeZone } from "@/lib/saveZone";
 import type { AppConfig } from "@/types/config";
+
+export type SlotPositionMap = Record<string, { x: number; y: number }>;
 
 const YAML_OPTS = {
   lineWidth: 120,
@@ -184,6 +188,7 @@ function normalizedStatusEffectTypes(config: AppConfig): AppConfig["statusEffect
 export function buildMonolithicConfigObject(
   config?: AppConfig | null,
   zones?: Map<string, ZoneState>,
+  slotPositions?: SlotPositionMap,
 ): Record<string, unknown> {
   const rawConfig = config ?? useConfigStore.getState().config;
   const c = rawConfig ? normalizeConfigAssetRefs(rawConfig) : rawConfig;
@@ -262,10 +267,15 @@ export function buildMonolithicConfigObject(
     definitions: mapEntries(c.races, raceToPlain),
   };
   engine.equipment = {
-    slots: mapEntries(c.equipmentSlots, (s) => ({
-      displayName: s.displayName,
-      order: s.order,
-    })),
+    slots: mapEntries(c.equipmentSlots, (s, id) => {
+      const pos = slotPositions?.[id];
+      return {
+        displayName: s.displayName,
+        order: s.order,
+        x: pos?.x ?? 50,
+        y: pos?.y ?? 50,
+      };
+    }),
   };
   engine.characterCreation = c.characterCreation;
   engine.genders = c.genders;
@@ -425,8 +435,8 @@ export function buildMonolithicConfigObject(
  * Wraps everything under the `ambonmud` root key with the `engine` sub-tree,
  * matching the structure that AmbonMUD server expects.
  */
-export function buildMonolithicConfig(config?: AppConfig | null): string {
-  return stringify({ ambonmud: buildMonolithicConfigObject(config) }, YAML_OPTS);
+export function buildMonolithicConfig(config?: AppConfig | null, slotPositions?: SlotPositionMap): string {
+  return stringify({ ambonmud: buildMonolithicConfigObject(config, undefined, slotPositions) }, YAML_OPTS);
 }
 
 /**
@@ -436,8 +446,11 @@ export function buildMonolithicConfig(config?: AppConfig | null): string {
 export async function exportMudFormat(outputDir: string): Promise<ExportResult> {
   const config = useConfigStore.getState().config;
   const zones = useZoneStore.getState().zones;
+  const mudDir = useProjectStore.getState().project?.mudDir;
 
   if (!config) throw new Error("No config loaded");
+
+  const slotPositions = await loadSlotPositions(mudDir);
 
   const resourcesDir = `${outputDir}/src/main/resources`;
   const worldDir = `${resourcesDir}/world`;
@@ -446,7 +459,7 @@ export async function exportMudFormat(outputDir: string): Promise<ExportResult> 
   await mkdir(worldDir, { recursive: true });
 
   // Write monolithic config
-  const configYaml = buildMonolithicConfig(config);
+  const configYaml = buildMonolithicConfig(config, slotPositions);
   await writeTextFile(`${resourcesDir}/application.yaml`, configYaml);
 
   // Write zone files
@@ -478,15 +491,27 @@ export interface ExportResult {
   errors: string[];
 }
 
+// ─── Slot position loading ──────────────────────────────────────────
+
+export async function loadSlotPositions(mudDir?: string): Promise<SlotPositionMap> {
+  if (!mudDir) return {};
+  try {
+    const meta = await invoke<{ wearSlotPositions?: SlotPositionMap }>("load_arcanum_meta", { mudDir });
+    return meta.wearSlotPositions ?? {};
+  } catch {
+    return {};
+  }
+}
+
 // ─── Serialization helpers (shared with saveSplitConfig) ────────────
 
 export function mapEntries<T>(
   data: Record<string, T>,
-  toPlain: (item: T) => Record<string, unknown>,
+  toPlain: (item: T, id: string) => Record<string, unknown>,
 ): Record<string, unknown> {
   const result: Record<string, unknown> = {};
   for (const [id, item] of Object.entries(data)) {
-    result[id] = toPlain(item);
+    result[id] = toPlain(item, id);
   }
   return result;
 }

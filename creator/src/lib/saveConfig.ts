@@ -10,6 +10,7 @@ import {
   classToPlain,
   raceToPlain,
   buildMonolithicConfigObject,
+  loadSlotPositions,
 } from "@/lib/exportMud";
 
 const YAML_OPTS = {
@@ -42,11 +43,13 @@ export async function saveConfig(mudDir: string): Promise<void> {
   const basePath = `${resourcesDir}/application.yaml`;
   const localPath = `${resourcesDir}/application-local.yaml`;
 
+  const slotPositions = await loadSlotPositions(mudDir);
+
   const sourcePath = await exists(localPath) ? localPath : basePath;
   const content = await readTextFile(sourcePath);
   const doc = parseDocument(content);
 
-  doc.set("ambonmud", buildMonolithicConfigObject(config));
+  doc.set("ambonmud", buildMonolithicConfigObject(config, undefined, slotPositions));
 
   await writeTextFile(localPath, doc.toString());
   state.markClean();
@@ -68,6 +71,8 @@ async function saveSplitConfig(projectDir: string): Promise<void> {
   const state = useConfigStore.getState();
   const config = state.config ? normalizeConfigAssetRefs(state.config) : state.config;
   if (!config) throw new Error("No config loaded");
+
+  const slotPositions = await loadSlotPositions(projectDir);
 
   const dir = `${projectDir}/config`;
   const write = (name: string, data: unknown) =>
@@ -104,10 +109,15 @@ async function saveSplitConfig(projectDir: string): Promise<void> {
     }),
 
     write("equipment", {
-      slots: mapEntries(config.equipmentSlots, (s) => ({
-        displayName: s.displayName,
-        order: s.order,
-      })),
+      slots: mapEntries(config.equipmentSlots, (s, id) => {
+        const pos = slotPositions[id];
+        return {
+          displayName: s.displayName,
+          order: s.order,
+          x: pos?.x ?? 50,
+          y: pos?.y ?? 50,
+        };
+      }),
     }),
 
     write("combat", {

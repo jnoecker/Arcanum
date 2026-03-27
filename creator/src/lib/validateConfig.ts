@@ -280,6 +280,49 @@ export function validateConfig(config: AppConfig): ValidationIssue[] {
       message: "Starting gold must be >= 0",
     });
   }
+  const raceIds = new Set(Object.keys(config.races));
+  const genderIds = new Set(Object.keys(config.genders));
+  if (config.characterCreation.defaultRace && raceIds.size > 0 && !raceIds.has(config.characterCreation.defaultRace)) {
+    issues.push({
+      severity: "warning",
+      entity: "characterCreation",
+      message: `Default race "${config.characterCreation.defaultRace}" is not a defined race`,
+    });
+  }
+  if (config.characterCreation.defaultClass && classIds.size > 0 && !classIds.has(config.characterCreation.defaultClass)) {
+    issues.push({
+      severity: "warning",
+      entity: "characterCreation",
+      message: `Default class "${config.characterCreation.defaultClass}" is not a defined class`,
+    });
+  }
+  if (config.characterCreation.defaultGender && genderIds.size > 0 && !genderIds.has(config.characterCreation.defaultGender)) {
+    issues.push({
+      severity: "warning",
+      entity: "characterCreation",
+      message: `Default gender "${config.characterCreation.defaultGender}" is not a defined gender`,
+    });
+  }
+
+  // ─── Emote presets ────────────────────────────────────────────
+  const emotePresets = config.emotePresets?.presets ?? [];
+  for (let i = 0; i < emotePresets.length; i++) {
+    const preset = emotePresets[i]!;
+    if (!preset.label?.trim()) {
+      issues.push({
+        severity: "error",
+        entity: `emotePreset:${i}`,
+        message: `Emote preset #${i + 1} has an empty label`,
+      });
+    }
+    if (!preset.action?.trim()) {
+      issues.push({
+        severity: "error",
+        entity: `emotePreset:${i}`,
+        message: `Emote preset #${i + 1} has an empty action`,
+      });
+    }
+  }
 
   return issues;
 }

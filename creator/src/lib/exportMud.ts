@@ -281,6 +281,9 @@ export function buildMonolithicConfigObject(
   };
   engine.characterCreation = c.characterCreation;
   engine.genders = c.genders;
+  if (c.emotePresets?.presets?.length > 0) {
+    engine.emotePresets = c.emotePresets;
+  }
   engine.classStartRooms = classStartRooms;
   engine.achievementCategories = { categories: withFallbackMap(c.achievementCategories, DEFAULT_ACHIEVEMENT_CATEGORIES) };
   engine.achievementCriterionTypes = { types: withFallbackMap(c.achievementCriterionTypes, DEFAULT_ACHIEVEMENT_CRITERION_TYPES) };

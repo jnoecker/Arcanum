@@ -164,6 +164,7 @@ async function saveSplitConfig(projectDir: string): Promise<void> {
       friends: config.friends,
       genders: config.genders,
       characterCreation: config.characterCreation,
+      emotePresets: config.emotePresets.presets.length > 0 ? config.emotePresets : undefined,
       achievementCategories: { categories: config.achievementCategories },
       achievementCriterionTypes: { types: config.achievementCriterionTypes },
       questObjectiveTypes: { types: config.questObjectiveTypes },

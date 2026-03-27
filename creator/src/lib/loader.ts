@@ -91,6 +91,7 @@ export function parseAppConfigYaml(content: string): AppConfig {
     guild: parseGuildConfig(engine.guildRanks),
     guildRanks: parseMapSection(engine.guildRanks, "ranks"),
     friends: parseFriendsConfig(engine.friends),
+    emotePresets: parseEmotePresetsConfig(engine.emotePresets),
     images: parseImagesConfig(root.images),
     globalAssets: parseGlobalAssets((root.images as Record<string, unknown> | undefined)?.globalAssets ?? root.globalAssets),
     playerTiers: parsePlayerTiers(root.playerTiers),
@@ -328,6 +329,24 @@ function parseCharacterCreationConfig(raw: unknown): AppConfig["characterCreatio
   const s = (raw ?? {}) as Record<string, unknown>;
   return {
     startingGold: asNumber(s.startingGold, 0),
+    defaultRace: typeof s.defaultRace === "string" ? s.defaultRace : undefined,
+    defaultClass: typeof s.defaultClass === "string" ? s.defaultClass : undefined,
+    defaultGender: typeof s.defaultGender === "string" ? s.defaultGender : undefined,
+  };
+}
+
+function parseEmotePresetsConfig(raw: unknown): AppConfig["emotePresets"] {
+  if (!raw || typeof raw !== "object") return { presets: [] };
+  const s = raw as Record<string, unknown>;
+  const presets = Array.isArray(s.presets) ? s.presets : [];
+  return {
+    presets: presets
+      .filter((p): p is Record<string, unknown> => p != null && typeof p === "object")
+      .map((p) => ({
+        label: asString(p.label, ""),
+        emoji: asString(p.emoji, ""),
+        action: asString(p.action, ""),
+      })),
   };
 }
 
@@ -409,7 +428,7 @@ function collectRawSections(
     "questObjectiveTypes", "questCompletionTypes",
     "effectTypes", "targetTypes", "stackBehaviors",
     "craftingSkills", "craftingStationTypes",
-    "scheduler", "friends", "debug", "classStartRooms",
+    "scheduler", "friends", "debug", "classStartRooms", "emotePresets",
   ]);
 
   const raw: Record<string, unknown> = {};
@@ -610,6 +629,7 @@ async function loadSplitConfig(projectDir: string): Promise<AppConfig | null> {
       friends: parseFriendsConfig(worldRaw.friends),
       genders: asRecord(worldRaw.genders),
       characterCreation: parseCharacterCreationConfig(worldRaw.characterCreation),
+      emotePresets: parseEmotePresetsConfig(worldRaw.emotePresets),
       achievementCategories: asRecord((worldRaw.achievementCategories as Record<string, unknown> | undefined)?.categories ?? worldRaw.achievementCategories),
       achievementCriterionTypes: asRecord((worldRaw.achievementCriterionTypes as Record<string, unknown> | undefined)?.types ?? worldRaw.achievementCriterionTypes),
       questObjectiveTypes: asRecord((worldRaw.questObjectiveTypes as Record<string, unknown> | undefined)?.types ?? worldRaw.questObjectiveTypes),

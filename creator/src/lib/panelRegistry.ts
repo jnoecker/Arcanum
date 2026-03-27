@@ -63,6 +63,7 @@ const WORLD_PANELS: PanelDef[] = [
   { id: "crafting", label: "Crafting", group: "world", host: "config", kicker: "Crafting", title: "Crafting & gathering", description: "Skill leveling, station types, gathering, and recipes.", maxWidth: "max-w-5xl" },
   { id: "groups", label: "Groups", group: "world", host: "config", kicker: "Groups", title: "Party system", description: "Party size, XP sharing, and invite rules.", maxWidth: "max-w-5xl" },
   { id: "guilds", label: "Guilds", group: "world", host: "config", kicker: "Guilds", title: "Guild system", description: "Guild ranks, permissions, friends, and defaults.", maxWidth: "max-w-5xl" },
+  { id: "emotes", label: "Emotes", group: "world", host: "config", kicker: "Social", title: "Emote presets", description: "Quick-action emotes available to players in the chat panel.", maxWidth: "max-w-5xl" },
 ];
 
 // ─── Content panels ─────────────────────────────────────────────────

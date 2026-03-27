@@ -1,6 +1,7 @@
+import { useMemo } from "react";
 import type { ConfigPanelProps, AppConfig } from "./types";
 import type { GenderDefinition } from "@/types/config";
-import { Section, FieldRow, NumberInput, TextInput } from "@/components/ui/FormWidgets";
+import { Section, FieldRow, NumberInput, TextInput, SelectInput } from "@/components/ui/FormWidgets";
 import { RegistryPanel } from "./RegistryPanel";
 
 export function defaultGenderDefinition(raw: string): GenderDefinition {
@@ -42,6 +43,33 @@ export function CharacterCreationPanel({ config, onChange }: ConfigPanelProps) {
   const patch = (p: Partial<AppConfig["characterCreation"]>) =>
     onChange({ characterCreation: { ...cc, ...p } });
 
+  const raceOptions = useMemo(
+    () =>
+      Object.entries(config.races).map(([id, r]) => ({
+        value: id,
+        label: r.displayName || id,
+      })),
+    [config.races],
+  );
+
+  const classOptions = useMemo(
+    () =>
+      Object.entries(config.classes).map(([id, c]) => ({
+        value: id,
+        label: c.displayName || id,
+      })),
+    [config.classes],
+  );
+
+  const genderOptions = useMemo(
+    () =>
+      Object.entries(config.genders).map(([id, g]) => ({
+        value: id,
+        label: g.displayName || id,
+      })),
+    [config.genders],
+  );
+
   return (
     <>
       <Section
@@ -54,6 +82,33 @@ export function CharacterCreationPanel({ config, onChange }: ConfigPanelProps) {
               value={cc.startingGold}
               onCommit={(v) => patch({ startingGold: v ?? 0 })}
               min={0}
+            />
+          </FieldRow>
+          <FieldRow label="Default Race" hint="Pre-selected race for new characters.">
+            <SelectInput
+              value={cc.defaultRace ?? ""}
+              options={raceOptions}
+              onCommit={(v) => patch({ defaultRace: v || undefined })}
+              allowEmpty
+              placeholder="(none)"
+            />
+          </FieldRow>
+          <FieldRow label="Default Class" hint="Pre-selected class for new characters.">
+            <SelectInput
+              value={cc.defaultClass ?? ""}
+              options={classOptions}
+              onCommit={(v) => patch({ defaultClass: v || undefined })}
+              allowEmpty
+              placeholder="(none)"
+            />
+          </FieldRow>
+          <FieldRow label="Default Gender" hint="Pre-selected gender for new characters.">
+            <SelectInput
+              value={cc.defaultGender ?? ""}
+              options={genderOptions}
+              onCommit={(v) => patch({ defaultGender: v || undefined })}
+              allowEmpty
+              placeholder="(none)"
             />
           </FieldRow>
         </div>

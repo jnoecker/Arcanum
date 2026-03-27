@@ -322,6 +322,21 @@ export interface ClassDefinitionConfig {
 
 export interface CharacterCreationConfig {
   startingGold: number;
+  defaultRace?: string;
+  defaultClass?: string;
+  defaultGender?: string;
+}
+
+// ─── Emote Presets ─────────────────────────────────────────────────
+
+export interface EmotePreset {
+  label: string;
+  emoji: string;
+  action: string;
+}
+
+export interface EmotePresetsConfig {
+  presets: EmotePreset[];
 }
 
 export interface RaceDefinitionConfig {
@@ -433,6 +448,7 @@ export interface AppConfig {
   guildRanks: Record<string, GuildRankDefinition>;
   friends: FriendsConfig;
   images: ImagesConfig;
+  emotePresets: EmotePresetsConfig;
   globalAssets: Record<string, string>;
   playerTiers?: Record<string, TierDefinitionConfig>;
   /** Raw YAML content for unrecognized sections */

@@ -26,7 +26,6 @@ export interface PanelDef {
 // ─── Studio panels ──────────────────────────────────────────────────
 
 const STUDIO_PANELS: PanelDef[] = [
-  { id: "home", label: "Studio", group: "studio", host: "studio", kicker: "Studio", title: "Home", description: "Atlas, recent assets, and world direction at a glance.", maxWidth: "max-w-7xl" },
   { id: "art", label: "Art", group: "studio", host: "studio", kicker: "Studio", title: "Art", description: "Zone vibes, entity art, defaults, and free-form generation.", maxWidth: "max-w-7xl" },
   { id: "media", label: "Media", group: "studio", host: "studio", kicker: "Studio", title: "Media", description: "Music, ambience, and cinematic staging.", maxWidth: "max-w-7xl" },
   { id: "portraits", label: "Portraits", group: "studio", host: "studio", kicker: "Studio", title: "Portraits", description: "Race and class portrait creation.", maxWidth: "max-w-7xl" },
@@ -46,7 +45,7 @@ const CHARACTER_PANELS: PanelDef[] = [
 // ─── Ability panels ─────────────────────────────────────────────────
 
 const ABILITY_PANELS: PanelDef[] = [
-  { id: "stats", label: "Stats", group: "abilities", host: "config", kicker: "Stats", title: "Stat definitions and bindings", description: "Primary stats and their bindings.", maxWidth: "max-w-5xl" },
+  { id: "stats", label: "Stats", group: "abilities", host: "config", kicker: "Stats", title: "Stat definitions", description: "Primary stats, abbreviations, and base values.", maxWidth: "max-w-5xl" },
   { id: "abilityDesigner", label: "Abilities", group: "abilities", host: "config", kicker: "Abilities", title: "Ability designer", description: "Class restrictions, costs, cooldowns, targets, and effects.", maxWidth: "max-w-5xl" },
   { id: "conditions", label: "Conditions", group: "abilities", host: "config", kicker: "Status effects", title: "Condition designer", description: "Status effects, stack rules, and ticking behavior.", maxWidth: "max-w-5xl" },
 ];
@@ -56,10 +55,14 @@ const ABILITY_PANELS: PanelDef[] = [
 const WORLD_PANELS: PanelDef[] = [
   { id: "worldServer", label: "World & Server", group: "world", host: "config", kicker: "Infrastructure", title: "World & server", description: "Start room, server ports, admin API, observability, and logging.", maxWidth: "max-w-5xl" },
   { id: "combat", label: "Combat", group: "world", host: "config", kicker: "Combat loop", title: "Combat loop", description: "Tick rates, damage ranges, mob tiers, and regeneration.", maxWidth: "max-w-5xl" },
-  { id: "progression", label: "Progression", group: "world", host: "config", kicker: "Progression", title: "Progression & stats", description: "Leveling curve, XP formula, and per-level rewards.", maxWidth: "max-w-5xl" },
-  { id: "travel", label: "Travel", group: "world", host: "config", kicker: "Travel", title: "Travel & commands", description: "Recall, navigation, and custom commands.", maxWidth: "max-w-5xl" },
-  { id: "economy", label: "Economy", group: "world", host: "config", kicker: "Economy", title: "Economy & crafting", description: "Buy/sell multipliers, crafting, skills, and station types.", maxWidth: "max-w-5xl" },
-  { id: "social", label: "Social", group: "world", host: "config", kicker: "Social", title: "Social systems", description: "Groups, guilds, friends, and ranks.", maxWidth: "max-w-5xl" },
+  { id: "progression", label: "Progression", group: "world", host: "config", kicker: "Progression", title: "Progression", description: "Leveling curve, XP formula, and per-level rewards.", maxWidth: "max-w-5xl" },
+  { id: "statBindings", label: "Stat Bindings", group: "world", host: "config", kicker: "Stat bindings", title: "Stat bindings", description: "How stats map to combat, regen, dodge, and XP bonuses.", maxWidth: "max-w-5xl" },
+  { id: "travel", label: "Travel", group: "world", host: "config", kicker: "Travel", title: "Navigation & recall", description: "Recall cooldowns and movement rules.", maxWidth: "max-w-5xl" },
+  { id: "commands", label: "Commands", group: "world", host: "config", kicker: "Commands", title: "Command designer", description: "Custom commands, usage strings, and categories.", maxWidth: "max-w-5xl" },
+  { id: "economy", label: "Economy", group: "world", host: "config", kicker: "Economy", title: "Economy", description: "Buy/sell multipliers and gold economy.", maxWidth: "max-w-5xl" },
+  { id: "crafting", label: "Crafting", group: "world", host: "config", kicker: "Crafting", title: "Crafting & gathering", description: "Skill leveling, station types, gathering, and recipes.", maxWidth: "max-w-5xl" },
+  { id: "groups", label: "Groups", group: "world", host: "config", kicker: "Groups", title: "Party system", description: "Party size, XP sharing, and invite rules.", maxWidth: "max-w-5xl" },
+  { id: "guilds", label: "Guilds", group: "world", host: "config", kicker: "Guilds", title: "Guild system", description: "Guild ranks, permissions, friends, and defaults.", maxWidth: "max-w-5xl" },
 ];
 
 // ─── Content panels ─────────────────────────────────────────────────
@@ -74,8 +77,8 @@ const CONTENT_PANELS: PanelDef[] = [
 
 const OPERATIONS_PANELS: PanelDef[] = [
   { id: "services", label: "Services", group: "operations", host: "config", kicker: "Operations", title: "Services", description: "API keys, image providers, and LLM settings.", maxWidth: "max-w-5xl" },
-  { id: "deployment", label: "Deployment", group: "operations", host: "config", kicker: "Operations", title: "Deployment", description: "R2 sync, export, and runtime handoff.", maxWidth: "max-w-5xl" },
-  { id: "rawYaml", label: "Raw YAML", group: "operations", host: "config", kicker: "Advanced", title: "Raw configuration", description: "Use this when the structured editors are not enough or when you need to inspect exact serialized data.", maxWidth: "max-w-6xl" },
+  { id: "deployment", label: "Deployment", group: "operations", host: "config", kicker: "Operations", title: "Deployment", description: "Export, sync, and deploy your MUD.", maxWidth: "max-w-5xl" },
+  { id: "rawYaml", label: "Raw YAML", group: "operations", host: "config", kicker: "Advanced", title: "Raw configuration", description: "Inspect or edit the exact serialized YAML when the structured editors are not enough.", maxWidth: "max-w-6xl" },
 ];
 
 // ─── Aggregate ──────────────────────────────────────────────────────

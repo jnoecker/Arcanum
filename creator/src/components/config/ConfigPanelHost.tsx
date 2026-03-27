@@ -141,40 +141,21 @@ function renderPanel(panelId: string, props: ConfigPanelProps): ReactNode {
         </>
       );
     case "progression":
-      return (
-        <>
-          <Section kicker="Level curve" title="Progression rewards" description="Level curve, XP pacing, and baseline HP and mana scaling.">
-            <ProgressionPanel config={config} onChange={onChange} />
-          </Section>
-          <Section kicker="Stat language" title="Stats and bindings" description="Stat names, descriptions, and bindings.">
-            <StatsPanel config={config} onChange={onChange} />
-          </Section>
-        </>
-      );
+      return <ProgressionPanel config={config} onChange={onChange} />;
+    case "statBindings":
+      return <StatsPanel config={config} onChange={onChange} showDefinitions={false} />;
     case "travel":
-      return (
-        <>
-          <Section kicker="Travel rules" title="Navigation and recall" description="Movement and recall rules for the player journey.">
-            <NavigationPanel config={config} onChange={onChange} />
-          </Section>
-          <Section kicker="Command language" title="Commands and discoverability" description="Usage strings, categories, and staff visibility.">
-            <CommandDesigner config={config} onChange={onChange} />
-          </Section>
-        </>
-      );
+      return <NavigationPanel config={config} onChange={onChange} />;
+    case "commands":
+      return <CommandDesigner config={config} onChange={onChange} />;
     case "economy":
-      return (
-        <>
-          <Section kicker="Money loop" title="Economy tuning" description="Gold sinks, buy/sell ratios, and shop behavior.">
-            <EconomyPanel config={config} onChange={onChange} />
-          </Section>
-          <Section kicker="Production loop" title="Crafting and gathering" description="Gathering, skill leveling, station types, and crafting disciplines.">
-            <CraftingStudio config={config} onChange={onChange} />
-          </Section>
-        </>
-      );
-    case "social":
-      return <GuildDesigner config={config} onChange={onChange} />;
+      return <EconomyPanel config={config} onChange={onChange} />;
+    case "crafting":
+      return <CraftingStudio config={config} onChange={onChange} />;
+    case "groups":
+      return <GuildDesigner config={config} onChange={onChange} section="groups" />;
+    case "guilds":
+      return <GuildDesigner config={config} onChange={onChange} section="guilds" />;
 
     // Content
     case "achievements":
@@ -188,14 +169,7 @@ function renderPanel(panelId: string, props: ConfigPanelProps): ReactNode {
     case "services":
       return <ApiSettingsPanel initialSection="providers" />;
     case "deployment":
-      return (
-        <div className="grid gap-6">
-          <Section kicker="Delivery" title="Runtime credentials" description="CDN credentials and public delivery URLs.">
-            <ApiSettingsPanel initialSection="delivery" showDeploymentActions={false} />
-          </Section>
-          <RuntimeHandoffStudio />
-        </div>
-      );
+      return <RuntimeHandoffStudio />;
     case "rawYaml":
       return <RawYamlPanel config={config} onChange={onChange} />;
 

@@ -10,7 +10,7 @@ import {
   IconButton,
 } from "@/components/ui/FormWidgets";
 
-export function StatsPanel({ config, onChange }: ConfigPanelProps) {
+export function StatsPanel({ config, onChange, showDefinitions = true }: ConfigPanelProps & { showDefinitions?: boolean }) {
   const { definitions, bindings } = config.stats;
   const statIds = Object.keys(definitions);
 
@@ -66,7 +66,7 @@ export function StatsPanel({ config, onChange }: ConfigPanelProps) {
 
   return (
     <>
-      <Section
+      {showDefinitions && <Section
         title="Stat Definitions"
         description="Define the core attributes for player characters. Common setups include the classic six (STR, DEX, CON, INT, WIS, CHA) or simplified systems with 3-4 stats. Each stat can be linked to game mechanics via Stat Bindings below."
         actions={
@@ -141,7 +141,7 @@ export function StatsPanel({ config, onChange }: ConfigPanelProps) {
             })}
           </div>
         )}
-      </Section>
+      </Section>}
 
       <Section
         title="Stat Bindings"

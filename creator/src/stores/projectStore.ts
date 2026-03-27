@@ -48,11 +48,11 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
   pendingNavigation: null,
 
   setProject: (project) => {
-    const home = panelTab("home");
+    const art = panelTab("art");
     set({
       project,
-      tabs: [home],
-      activeTabId: home.id,
+      tabs: [art],
+      activeTabId: art.id,
       adminSubView: "overview",
       adminContentSubView: "abilities",
     });

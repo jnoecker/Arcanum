@@ -1,5 +1,6 @@
 import { lazy, Suspense, useState } from "react";
 import { useProjectStore } from "@/stores/projectStore";
+import { panelTab } from "@/lib/panelRegistry";
 import { useZoneStore } from "@/stores/zoneStore";
 import { useValidationStore } from "@/stores/validationStore";
 import { saveAllZones } from "@/lib/saveZone";
@@ -57,10 +58,7 @@ export function Toolbar() {
   };
 
   const handleOpenHandoff = () => {
-    const store = useProjectStore.getState();
-    store.openTab({ id: "config", kind: "config", label: "Config" });
-    store.setConfigSubTab("operations");
-    store.setOperationsSubView("delivery");
+    useProjectStore.getState().openTab(panelTab("deployment"));
   };
 
   return (

@@ -3,6 +3,7 @@ import { useAssetStore } from "@/stores/assetStore";
 import { useProjectStore } from "@/stores/projectStore";
 import { useZoneStore } from "@/stores/zoneStore";
 import { useVibeStore } from "@/stores/vibeStore";
+import { panelTab } from "@/lib/panelRegistry";
 import { BatchArtGenerator } from "@/components/zone/BatchArtGenerator";
 import { ZoneVibePanel } from "@/components/zone/ZoneVibePanel";
 import { ZoneAssetWorkbench } from "@/components/zone/ZoneAssetWorkbench";
@@ -11,15 +12,13 @@ import { PortraitStudio } from "@/components/PortraitStudio";
 import { AbilityStudio } from "@/components/AbilityStudio";
 import { MediaStudio } from "@/components/MediaStudio";
 
-export function StudioWorkspace() {
+export function StudioWorkspace({ panelId }: { panelId: string }) {
   const zones = useZoneStore((s) => s.zones);
   const updateZone = useZoneStore((s) => s.updateZone);
   const assets = useAssetStore((s) => s.assets);
   const loadAssets = useAssetStore((s) => s.loadAssets);
   const openGallery = useAssetStore((s) => s.openGallery);
   const openTab = useProjectStore((s) => s.openTab);
-  const studioSubView = useProjectStore((s) => s.studioSubView);
-  const setStudioSubView = useProjectStore((s) => s.setStudioSubView);
   const loadVibe = useVibeStore((s) => s.loadVibe);
   const vibeMap = useVibeStore((s) => s.vibes);
   const [selectedZoneId, setSelectedZoneId] = useState<string | null>(null);
@@ -148,7 +147,7 @@ export function StudioWorkspace() {
         {selectedZone && (
           <div className="flex shrink-0 gap-2">
             <button
-              onClick={() => setStudioSubView("art")}
+              onClick={() => openTab(panelTab("art"))}
               className="rounded-full border border-[var(--border-accent-subtle)] bg-[var(--bg-accent-subtle)] px-4 py-2 text-xs font-medium text-text-primary transition hover:bg-[var(--bg-accent-hover)]"
             >
               Open zone art
@@ -177,7 +176,7 @@ export function StudioWorkspace() {
   return (
     <div className="min-h-0 flex-1 overflow-y-auto px-6 py-6">
       <div className="mx-auto flex max-w-7xl flex-col gap-6">
-        {studioSubView === "home" && (
+        {panelId === "home" && (
           <section className="grid items-start gap-6 xl:grid-cols-12">
             <div className="studio-parallax xl:col-span-3">{renderAtlas()}</div>
             <div className="studio-parallax-slow flex flex-col gap-6 xl:col-span-5">
@@ -202,7 +201,7 @@ export function StudioWorkspace() {
           </section>
         )}
 
-        {studioSubView === "art" && (
+        {panelId === "art" && (
           selectedZone ? (
             <>
               <section className="grid items-start gap-6 xl:grid-cols-[0.78fr_1.22fr]">
@@ -256,7 +255,7 @@ export function StudioWorkspace() {
           )
         )}
 
-        {studioSubView === "media" && (
+        {panelId === "media" && (
           <MediaStudio
             zoneId={selectedZoneId}
             world={selectedZone?.data ?? null}
@@ -266,9 +265,9 @@ export function StudioWorkspace() {
           />
         )}
 
-        {studioSubView === "portraits" && <PortraitStudio selectedZoneId={selectedZoneId} />}
+        {panelId === "portraits" && <PortraitStudio selectedZoneId={selectedZoneId} />}
 
-        {studioSubView === "abilities" && <AbilityStudio />}
+        {panelId === "studioAbilities" && <AbilityStudio />}
       </div>
 
       {showBatchArt && selectedZone && (

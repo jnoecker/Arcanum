@@ -40,6 +40,11 @@ export function loadUIState(): PersistedUI | null {
         { path: parsed.lastProjectPath, name, lastOpened: Date.now() },
       ];
     }
+    // Migration: drop tabs with removed kinds (studio, config)
+    const VALID_KINDS = new Set(["panel", "zone", "console", "sprites", "admin"]);
+    if (Array.isArray(parsed.tabs)) {
+      parsed.tabs = parsed.tabs.filter((t: any) => VALID_KINDS.has(t.kind));
+    }
     return parsed as PersistedUI;
   } catch {
     return null;

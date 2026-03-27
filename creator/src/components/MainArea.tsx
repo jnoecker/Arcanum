@@ -1,9 +1,10 @@
 import { lazy, Suspense } from "react";
 import { useProjectStore } from "@/stores/projectStore";
+import { PANEL_MAP } from "@/lib/panelRegistry";
 import { StudioWorkspace } from "./StudioWorkspace";
 
 const ZoneEditor = lazy(() => import("./zone/ZoneEditor").then(m => ({ default: m.ZoneEditor })));
-const ConfigEditor = lazy(() => import("./config/ConfigEditor").then(m => ({ default: m.ConfigEditor })));
+const ConfigPanelHost = lazy(() => import("./config/ConfigPanelHost").then(m => ({ default: m.ConfigPanelHost })));
 const PlayerSpriteManager = lazy(() => import("./PlayerSpriteManager").then(m => ({ default: m.PlayerSpriteManager })));
 const Console = lazy(() => import("./Console").then(m => ({ default: m.Console })));
 const AdminDashboard = lazy(() => import("./admin/AdminDashboard").then(m => ({ default: m.AdminDashboard })));
@@ -24,26 +25,30 @@ export function MainArea() {
   if (!activeTab) {
     return (
       <div className="flex min-h-0 flex-1 items-center justify-center text-text-muted">
-        Open a zone or config tab from the sidebar
+        Open a zone or panel from the sidebar
       </div>
     );
   }
 
   let content: React.ReactNode;
   switch (activeTab.kind) {
-    case "studio":
-      content = <StudioWorkspace />;
+    case "panel": {
+      const panelId = activeTab.panelId ?? "home";
+      const def = PANEL_MAP[panelId];
+      if (def?.host === "studio") {
+        content = <StudioWorkspace panelId={panelId} />;
+      } else {
+        content = <ConfigPanelHost panelId={panelId} />;
+      }
       break;
-    case "console":
-      content = <Console />;
-      break;
+    }
     case "zone": {
       const zoneId = activeTab.id.replace(/^zone:/, "");
       content = <ZoneEditor key={zoneId} zoneId={zoneId} />;
       break;
     }
-    case "config":
-      content = <ConfigEditor />;
+    case "console":
+      content = <Console />;
       break;
     case "sprites":
       content = <PlayerSpriteManager />;

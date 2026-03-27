@@ -1,15 +1,9 @@
 import { create } from "zustand";
 import { saveUIState, loadUIState } from "@/lib/uiPersistence";
+import { panelTab } from "@/lib/panelRegistry";
 import type {
   Project,
   Tab,
-  ConfigSubTab,
-  CharacterStudioSubView,
-  AbilityStudioSubView,
-  StudioSubView,
-  WorldSystemsSubView,
-  ContentStudioSubView,
-  OperationsSubView,
   AdminSubView,
   AdminContentSubView,
 } from "@/types/project";
@@ -26,13 +20,6 @@ interface ProjectStore {
   project: Project | null;
   tabs: Tab[];
   activeTabId: string | null;
-  configSubTab: ConfigSubTab;
-  characterStudioSubView: CharacterStudioSubView;
-  abilityStudioSubView: AbilityStudioSubView;
-  studioSubView: StudioSubView;
-  worldSystemsSubView: WorldSystemsSubView;
-  contentStudioSubView: ContentStudioSubView;
-  operationsSubView: OperationsSubView;
   adminSubView: AdminSubView;
   adminContentSubView: AdminContentSubView;
   pendingNavigation: PendingNavigation | null;
@@ -46,13 +33,6 @@ interface ProjectStore {
 
   /** Restore previously open tabs after project load. */
   restoreTabs: (tabs: Tab[], activeTabId: string | null) => void;
-  setConfigSubTab: (subTab: ConfigSubTab) => void;
-  setCharacterStudioSubView: (subView: CharacterStudioSubView) => void;
-  setAbilityStudioSubView: (subView: AbilityStudioSubView) => void;
-  setStudioSubView: (subView: StudioSubView) => void;
-  setWorldSystemsSubView: (subView: WorldSystemsSubView) => void;
-  setContentStudioSubView: (subView: ContentStudioSubView) => void;
-  setOperationsSubView: (subView: OperationsSubView) => void;
   setAdminSubView: (subView: AdminSubView) => void;
   setAdminContentSubView: (subView: AdminContentSubView) => void;
   navigateTo: (nav: PendingNavigation) => void;
@@ -63,32 +43,20 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
   project: null,
   tabs: [],
   activeTabId: null,
-  configSubTab: "characterStudio" as ConfigSubTab,
-  characterStudioSubView: "classes",
-  abilityStudioSubView: "stats",
-  studioSubView: "home",
-  worldSystemsSubView: "world",
-  contentStudioSubView: "achievements",
-  operationsSubView: "services",
   adminSubView: "overview",
   adminContentSubView: "abilities",
   pendingNavigation: null,
 
-  setProject: (project) =>
+  setProject: (project) => {
+    const home = panelTab("home");
     set({
       project,
-      tabs: [{ id: "studio", kind: "studio", label: "Studio" }],
-      activeTabId: "studio",
-      configSubTab: "characterStudio",
-      characterStudioSubView: "classes",
-      abilityStudioSubView: "stats",
-      studioSubView: "home",
-      worldSystemsSubView: "world",
-      contentStudioSubView: "achievements",
-      operationsSubView: "services",
+      tabs: [home],
+      activeTabId: home.id,
       adminSubView: "overview",
       adminContentSubView: "abilities",
-    }),
+    });
+  },
 
   closeProject: () =>
     set({ project: null, tabs: [], activeTabId: null }),
@@ -116,13 +84,6 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
   setActiveTab: (tabId) => set({ activeTabId: tabId }),
 
   restoreTabs: (tabs, activeTabId) => set({ tabs, activeTabId }),
-  setConfigSubTab: (subTab) => set({ configSubTab: subTab }),
-  setCharacterStudioSubView: (characterStudioSubView) => set({ characterStudioSubView }),
-  setAbilityStudioSubView: (abilityStudioSubView) => set({ abilityStudioSubView }),
-  setStudioSubView: (studioSubView) => set({ studioSubView }),
-  setWorldSystemsSubView: (worldSystemsSubView) => set({ worldSystemsSubView }),
-  setContentStudioSubView: (contentStudioSubView) => set({ contentStudioSubView }),
-  setOperationsSubView: (operationsSubView) => set({ operationsSubView }),
   setAdminSubView: (adminSubView) => set({ adminSubView }),
   setAdminContentSubView: (adminContentSubView) => set({ adminContentSubView }),
 

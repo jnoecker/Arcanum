@@ -63,7 +63,7 @@ export function Console() {
         limit: sinceRef.current ? 500 : 1000,
       });
       if (entries.length > 0) {
-        sinceRef.current = entries[entries.length - 1]!.epochMs;
+        sinceRef.current = entries[entries.length - 1]!.epochMs + 1;
         setLogs((prev) => {
           const combined = [...prev, ...entries];
           // Keep last 5000 entries to avoid unbounded memory growth

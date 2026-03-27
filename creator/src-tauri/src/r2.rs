@@ -71,12 +71,13 @@ fn build_signed_put(
     let service = "s3";
 
     let payload_hash = sha256_hex(body);
+    let content_length = body.len().to_string();
 
     // Canonical request
     let canonical_headers = format!(
-        "content-type:{content_type}\nhost:{host}\nx-amz-content-sha256:{payload_hash}\nx-amz-date:{amz_date}\n"
+        "content-length:{content_length}\ncontent-type:{content_type}\nhost:{host}\nx-amz-content-sha256:{payload_hash}\nx-amz-date:{amz_date}\n"
     );
-    let signed_headers = "content-type;host;x-amz-content-sha256;x-amz-date";
+    let signed_headers = "content-length;content-type;host;x-amz-content-sha256;x-amz-date";
     let canonical_request = format!(
         "PUT\n/{object_key}\n\n{canonical_headers}\n{signed_headers}\n{payload_hash}"
     );
@@ -95,6 +96,7 @@ fn build_signed_put(
     );
 
     let headers = vec![
+        ("Content-Length".to_string(), content_length),
         ("Content-Type".to_string(), content_type.to_string()),
         ("Host".to_string(), host),
         ("x-amz-date".to_string(), amz_date),

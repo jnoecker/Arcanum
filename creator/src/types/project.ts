@@ -22,51 +22,7 @@ export interface ServerState {
   lastError?: string;
 }
 
-export type TabKind = "studio" | "zone" | "config" | "console" | "sprites" | "admin";
-
-export type ConfigSubTab =
-  | "characterStudio"
-  | "abilityStudio"
-  | "worldSystems"
-  | "contentStudio"
-  | "operations"
-  | "rawYaml";
-
-export type CharacterStudioSubView =
-  | "classes"
-  | "races"
-  | "creation"
-  | "equipment"
-  | "sprites";
-
-export type AbilityStudioSubView =
-  | "stats"
-  | "abilities"
-  | "conditions";
-
-export type StudioSubView =
-  | "home"
-  | "art"
-  | "media"
-  | "portraits"
-  | "abilities";
-
-export type WorldSystemsSubView =
-  | "world"
-  | "combat"
-  | "progression"
-  | "travel"
-  | "economy"
-  | "social";
-
-export type ContentStudioSubView =
-  | "achievements"
-  | "quests"
-  | "assets";
-
-export type OperationsSubView =
-  | "services"
-  | "delivery";
+export type TabKind = "panel" | "zone" | "console" | "sprites" | "admin";
 
 export type AdminSubView =
   | "overview"
@@ -87,4 +43,6 @@ export interface Tab {
   id: string;
   kind: TabKind;
   label: string;
+  /** Panel identifier — set when kind is "panel". */
+  panelId?: string;
 }

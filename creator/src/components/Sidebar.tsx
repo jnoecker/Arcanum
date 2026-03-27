@@ -5,6 +5,7 @@ import { useProjectStore } from "@/stores/projectStore";
 import type { Tab } from "@/types/project";
 import type { WorldFile } from "@/types/world";
 import { useGlobalSearch, ENTITY_TYPE_LABELS } from "@/lib/useGlobalSearch";
+import { SIDEBAR_GROUPS, panelTab } from "@/lib/panelRegistry";
 import { NewZoneDialog } from "./NewZoneDialog";
 import { ConfirmDialog } from "./ConfirmDialog";
 import sidebarBg from "@/assets/sidebar-bg.png";
@@ -301,30 +302,57 @@ export function Sidebar() {
           </p>
         </div>
 
-        <div className="grid grid-cols-2 gap-2">
-          {[
-            { id: "studio", label: "Studio", kind: "studio" as const },
-            { id: "config", label: "Characters", kind: "config" as const },
-            { id: "sprites", label: "Sprites", kind: "sprites" as const },
-            { id: "console", label: "Console", kind: "console" as const },
-            { id: "admin", label: "Admin", kind: "admin" as const },
-          ].map((entry) => (
-            <button
-              key={entry.id}
-              onClick={() => {
-                if (entry.id === "config") useProjectStore.getState().setConfigSubTab("characterStudio");
-                if (entry.id === "studio") useProjectStore.getState().setStudioSubView("home");
-                openTab({ id: entry.id, kind: entry.kind, label: entry.label });
-              }}
-              className={`rounded-2xl border px-3 py-3 text-left text-sm transition ${
-                activeTabId === entry.id
-                  ? "border-border-active bg-gradient-active text-text-primary"
-                  : "border-white/8 bg-black/10 text-text-secondary hover:bg-white/8 hover:text-text-primary"
-              }`}
-            >
-              {entry.label}
-            </button>
+        <div className="flex flex-col gap-1">
+          {SIDEBAR_GROUPS.map((group) => (
+            <div key={group.id}>
+              <p className="mb-1 mt-2 text-[10px] uppercase tracking-wide-ui text-text-muted first:mt-0">
+                {group.label}
+              </p>
+              <div className="flex flex-wrap gap-1">
+                {group.panels.map((panel) => {
+                  const tab = panelTab(panel.id);
+                  const isActive = activeTabId === tab.id;
+                  return (
+                    <button
+                      key={panel.id}
+                      onClick={() => openTab(tab)}
+                      className={`rounded-full border px-2.5 py-1 text-xs transition ${
+                        isActive
+                          ? "border-border-active bg-gradient-active text-text-primary"
+                          : "border-white/8 bg-black/10 text-text-secondary hover:bg-white/8 hover:text-text-primary"
+                      }`}
+                    >
+                      {panel.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
           ))}
+          <div>
+            <p className="mb-1 mt-2 text-[10px] uppercase tracking-wide-ui text-text-muted">
+              Tools
+            </p>
+            <div className="flex flex-wrap gap-1">
+              {([
+                { id: "sprites", label: "Player Sprites", kind: "sprites" as const },
+                { id: "console", label: "Console", kind: "console" as const },
+                { id: "admin", label: "Admin", kind: "admin" as const },
+              ]).map((entry) => (
+                <button
+                  key={entry.id}
+                  onClick={() => openTab({ id: entry.id, kind: entry.kind, label: entry.label })}
+                  className={`rounded-full border px-2.5 py-1 text-xs transition ${
+                    activeTabId === entry.id
+                      ? "border-border-active bg-gradient-active text-text-primary"
+                      : "border-white/8 bg-black/10 text-text-secondary hover:bg-white/8 hover:text-text-primary"
+                  }`}
+                >
+                  {entry.label}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
 

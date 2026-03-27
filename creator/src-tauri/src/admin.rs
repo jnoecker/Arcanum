@@ -701,3 +701,62 @@ pub async fn admin_broadcast(
     }
     admin_post_with_body(&url, &token, "/api/broadcast", &BroadcastRequest { message }).await
 }
+
+// ─── Logs ─────────────────────────────────────────────────────────
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct LogEntry {
+    pub timestamp: String,
+    pub epoch_ms: i64,
+    pub level: String,
+    pub logger: String,
+    pub message: String,
+    pub thread: String,
+}
+
+#[tauri::command]
+pub async fn admin_logs(
+    url: String,
+    token: String,
+    since: Option<i64>,
+    level: Option<String>,
+    logger: Option<String>,
+    limit: Option<i32>,
+) -> Result<Vec<LogEntry>, String> {
+    let mut query: Vec<(&str, String)> = Vec::new();
+    if let Some(s) = since {
+        query.push(("since", s.to_string()));
+    }
+    if let Some(ref l) = level {
+        query.push(("level", l.clone()));
+    }
+    if let Some(ref l) = logger {
+        query.push(("logger", l.clone()));
+    }
+    if let Some(n) = limit {
+        query.push(("limit", n.to_string()));
+    }
+
+    let client = get_client();
+    let auth = build_auth_header(&token)?;
+    let full_url = format!("{}/api/logs", url.trim_end_matches('/'));
+
+    let resp = client
+        .get(&full_url)
+        .header(AUTHORIZATION, auth)
+        .query(&query)
+        .send()
+        .await
+        .map_err(|e| format!("Request failed: {e}"))?;
+
+    if !resp.status().is_success() {
+        let status = resp.status();
+        let body = resp.text().await.unwrap_or_default();
+        return Err(format!("HTTP {status}: {body}"));
+    }
+
+    resp.json::<Vec<LogEntry>>()
+        .await
+        .map_err(|e| format!("Failed to parse response: {e}"))
+}

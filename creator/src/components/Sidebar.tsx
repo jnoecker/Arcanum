@@ -302,13 +302,14 @@ export function Sidebar() {
           </p>
         </div>
 
-        <div className="flex flex-col gap-1">
-          {SIDEBAR_GROUPS.map((group) => (
+        <nav className="flex flex-col gap-3">
+          {SIDEBAR_GROUPS.map((group, gi) => (
             <div key={group.id}>
-              <p className="mb-1 mt-2 text-[10px] uppercase tracking-wide-ui text-text-muted first:mt-0">
+              {gi > 0 && <div className="mb-2 border-t border-white/6" />}
+              <p className="mb-1.5 text-[10px] font-medium uppercase tracking-wide-ui text-text-muted">
                 {group.label}
               </p>
-              <div className="flex flex-wrap gap-1">
+              <div className="flex flex-wrap gap-1.5">
                 {group.panels.map((panel) => {
                   const tab = panelTab(panel.id);
                   const isActive = activeTabId === tab.id;
@@ -316,10 +317,10 @@ export function Sidebar() {
                     <button
                       key={panel.id}
                       onClick={() => openTab(tab)}
-                      className={`rounded-full border px-2.5 py-1 text-xs transition ${
+                      className={`rounded-lg border px-2.5 py-1.5 text-[11px] font-medium leading-none transition ${
                         isActive
-                          ? "border-border-active bg-gradient-active text-text-primary"
-                          : "border-white/8 bg-black/10 text-text-secondary hover:bg-white/8 hover:text-text-primary"
+                          ? "border-[var(--border-glow-strong)] bg-[linear-gradient(135deg,rgba(168,151,210,0.25),rgba(140,174,201,0.15))] text-text-primary shadow-glow-sm"
+                          : "border-white/8 bg-white/[0.04] text-text-secondary hover:border-white/14 hover:bg-white/8 hover:text-text-primary"
                       }`}
                     >
                       {panel.label}
@@ -330,10 +331,11 @@ export function Sidebar() {
             </div>
           ))}
           <div>
-            <p className="mb-1 mt-2 text-[10px] uppercase tracking-wide-ui text-text-muted">
+            <div className="mb-2 border-t border-white/6" />
+            <p className="mb-1.5 text-[10px] font-medium uppercase tracking-wide-ui text-text-muted">
               Tools
             </p>
-            <div className="flex flex-wrap gap-1">
+            <div className="flex flex-wrap gap-1.5">
               {([
                 { id: "sprites", label: "Player Sprites", kind: "sprites" as const },
                 { id: "console", label: "Console", kind: "console" as const },
@@ -342,10 +344,10 @@ export function Sidebar() {
                 <button
                   key={entry.id}
                   onClick={() => openTab({ id: entry.id, kind: entry.kind, label: entry.label })}
-                  className={`rounded-full border px-2.5 py-1 text-xs transition ${
+                  className={`rounded-lg border px-2.5 py-1.5 text-[11px] font-medium leading-none transition ${
                     activeTabId === entry.id
-                      ? "border-border-active bg-gradient-active text-text-primary"
-                      : "border-white/8 bg-black/10 text-text-secondary hover:bg-white/8 hover:text-text-primary"
+                      ? "border-[var(--border-glow-strong)] bg-[linear-gradient(135deg,rgba(168,151,210,0.25),rgba(140,174,201,0.15))] text-text-primary shadow-glow-sm"
+                      : "border-white/8 bg-white/[0.04] text-text-secondary hover:border-white/14 hover:bg-white/8 hover:text-text-primary"
                   }`}
                 >
                   {entry.label}
@@ -353,7 +355,7 @@ export function Sidebar() {
               ))}
             </div>
           </div>
-        </div>
+        </nav>
       </div>
 
       <div className="relative z-10 shrink-0 px-4 py-3">

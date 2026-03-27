@@ -33,7 +33,7 @@ export function MainArea() {
   let content: React.ReactNode;
   switch (activeTab.kind) {
     case "panel": {
-      const panelId = activeTab.panelId ?? "home";
+      const panelId = activeTab.panelId ?? "art";
       const def = PANEL_MAP[panelId];
       if (def?.host === "studio") {
         content = <StudioWorkspace panelId={panelId} />;

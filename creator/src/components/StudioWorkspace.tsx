@@ -3,7 +3,6 @@ import { useAssetStore } from "@/stores/assetStore";
 import { useProjectStore } from "@/stores/projectStore";
 import { useZoneStore } from "@/stores/zoneStore";
 import { useVibeStore } from "@/stores/vibeStore";
-import { panelTab } from "@/lib/panelRegistry";
 import { BatchArtGenerator } from "@/components/zone/BatchArtGenerator";
 import { ZoneVibePanel } from "@/components/zone/ZoneVibePanel";
 import { ZoneAssetWorkbench } from "@/components/zone/ZoneAssetWorkbench";
@@ -17,7 +16,6 @@ export function StudioWorkspace({ panelId }: { panelId: string }) {
   const updateZone = useZoneStore((s) => s.updateZone);
   const assets = useAssetStore((s) => s.assets);
   const loadAssets = useAssetStore((s) => s.loadAssets);
-  const openGallery = useAssetStore((s) => s.openGallery);
   const openTab = useProjectStore((s) => s.openTab);
   const loadVibe = useVibeStore((s) => s.loadVibe);
   const vibeMap = useVibeStore((s) => s.vibes);
@@ -44,14 +42,6 @@ export function StudioWorkspace({ panelId }: { panelId: string }) {
   }, [selectedZoneId, loadVibe]);
 
   const selectedZone = selectedZoneId ? zones.get(selectedZoneId) ?? null : null;
-  const selectedZoneAssets = useMemo(
-    () => assets.filter((asset) => asset.context?.zone === selectedZoneId),
-    [assets, selectedZoneId],
-  );
-  const recentAssets = useMemo(
-    () => [...assets].sort((a, b) => b.created_at.localeCompare(a.created_at)).slice(0, 8),
-    [assets],
-  );
   const renderAtlas = (compact = false) => (
     <div className="rounded-[28px] border border-white/10 bg-gradient-panel p-5 shadow-section">
       <div className="mb-4 flex items-center justify-between">
@@ -106,101 +96,10 @@ export function StudioWorkspace({ panelId }: { panelId: string }) {
     </div>
   );
 
-  const renderRecentAssets = () => (
-    <div className="rounded-[28px] border border-white/10 bg-gradient-panel p-5 shadow-section">
-      <div className="mb-4 flex items-center justify-between">
-        <h2 className="font-display text-xl text-text-primary">Recent assets</h2>
-        <button onClick={openGallery} className="text-xs text-text-secondary transition hover:text-text-primary">
-          Open gallery
-        </button>
-      </div>
-
-      <div className="grid grid-cols-2 gap-3">
-        {recentAssets.length === 0 ? (
-          <div className="col-span-2 rounded-[20px] border border-dashed border-white/12 bg-white/4 px-4 py-8 text-sm text-text-muted">
-            Assets accepted into the library will appear here for quick review.
-          </div>
-        ) : (
-          recentAssets.map((asset) => (
-            <div key={asset.id} className="rounded-[20px] border border-white/8 bg-black/12 px-3 py-3">
-              <div className="text-[11px] uppercase tracking-ui text-text-muted">{asset.asset_type.replace(/_/g, " ")}</div>
-              <div className="mt-2 truncate text-sm text-text-primary">{asset.context?.entity_id || asset.file_name}</div>
-              <div className="mt-1 truncate text-[11px] text-text-secondary">{asset.context?.zone || "Global"}</div>
-            </div>
-          ))
-        )}
-      </div>
-    </div>
-  );
-
-  const renderSelectedZoneCard = () => (
-    <div className="rounded-[28px] border border-white/10 bg-gradient-panel p-5 shadow-section">
-      <div className="flex items-center justify-between gap-4">
-        <div>
-          <h2 className="font-display text-xl text-text-primary">{selectedZone ? selectedZone.data.zone : "Select a zone"}</h2>
-          <p className="mt-1 text-sm text-text-secondary">
-            {selectedZone
-              ? "Open the selected zone or jump into art."
-              : "Open a world folder and pick a zone."}
-          </p>
-        </div>
-        {selectedZone && (
-          <div className="flex shrink-0 gap-2">
-            <button
-              onClick={() => openTab(panelTab("art"))}
-              className="rounded-full border border-[var(--border-accent-subtle)] bg-[var(--bg-accent-subtle)] px-4 py-2 text-xs font-medium text-text-primary transition hover:bg-[var(--bg-accent-hover)]"
-            >
-              Open zone art
-            </button>
-            <button
-              onClick={() => openTab({ id: `zone:${selectedZoneId}`, kind: "zone", label: selectedZoneId! })}
-              className="rounded-full border border-white/12 bg-white/6 px-4 py-2 text-xs font-medium text-text-primary transition hover:bg-white/10"
-            >
-              Open editor
-            </button>
-          </div>
-        )}
-      </div>
-
-      {selectedZone && (
-        <div className="mt-4 flex flex-wrap gap-x-5 gap-y-1 text-xs text-text-muted">
-          <span>{Object.keys(selectedZone.data.rooms).length} rooms</span>
-          <span>{Object.keys(selectedZone.data.mobs ?? {}).length} creatures</span>
-          <span>{Object.keys(selectedZone.data.items ?? {}).length} items</span>
-          <span>{selectedZoneAssets.filter((asset) => asset.is_active).length} approved assets</span>
-        </div>
-      )}
-    </div>
-  );
 
   return (
     <div className="min-h-0 flex-1 overflow-y-auto px-6 py-6">
       <div className="mx-auto flex max-w-7xl flex-col gap-6">
-        {panelId === "home" && (
-          <section className="grid items-start gap-6 xl:grid-cols-12">
-            <div className="studio-parallax xl:col-span-3">{renderAtlas()}</div>
-            <div className="studio-parallax-slow flex flex-col gap-6 xl:col-span-5">
-              {renderSelectedZoneCard()}
-              <div className="rounded-[28px] border border-white/10 bg-gradient-panel p-5 shadow-section">
-                {selectedZone ? (
-                  <ZoneVibePanel
-                    zoneId={selectedZoneId!}
-                    world={selectedZone.data}
-                    onWorldChange={(world) => updateZone(selectedZoneId!, world)}
-                  />
-                ) : (
-                  <div className="rounded-[20px] border border-dashed border-white/12 bg-white/4 px-4 py-8 text-sm text-text-muted">
-                    Select a zone to edit its vibe.
-                  </div>
-                )}
-              </div>
-            </div>
-            <div className="studio-parallax xl:col-span-4">
-              {renderRecentAssets()}
-            </div>
-          </section>
-        )}
-
         {panelId === "art" && (
           selectedZone ? (
             <>

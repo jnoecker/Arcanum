@@ -11,9 +11,11 @@ import {
 export function GuildDesigner({
   config,
   onChange,
+  section,
 }: {
   config: AppConfig;
   onChange: (patch: Partial<AppConfig>) => void;
+  section?: "groups" | "guilds";
 }) {
   const togglePermission = useCallback(
     (rank: GuildRankDefinition, perm: string, patchRank: (p: Partial<GuildRankDefinition>) => void) => {
@@ -32,9 +34,12 @@ export function GuildDesigner({
     label: config.guildRanks[id]!.displayName,
   }));
 
+  const showGroups = !section || section === "groups";
+  const showGuilds = !section || section === "guilds";
+
   return (
     <div className="flex flex-col gap-6">
-      <div className="grid gap-5 xl:grid-cols-3">
+      {showGroups && <div className="grid gap-5 xl:grid-cols-3">
         <div className="rounded-[24px] border border-white/8 bg-black/12 p-5">
           <p className="text-[11px] uppercase tracking-ui text-text-muted">Group rules</p>
           <h4 className="mt-2 font-display text-2xl text-text-primary">Party pacing</h4>
@@ -98,9 +103,9 @@ export function GuildDesigner({
             </FieldRow>
           </div>
         </div>
-      </div>
+      </div>}
 
-      <DefinitionWorkbench
+      {showGuilds && <DefinitionWorkbench
         title="Guild rank designer"
         countLabel="Guild ranks"
         description="Define hierarchy, authority, and permission bundles for player organizations."
@@ -116,7 +121,7 @@ export function GuildDesigner({
           <GuildRankDetail rank={rank} patchRank={patch} togglePermission={togglePermission} />
         )}
         onItemsChange={(guildRanks) => onChange({ guildRanks })}
-      />
+      />}
     </div>
   );
 }

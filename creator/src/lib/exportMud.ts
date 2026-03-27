@@ -6,7 +6,9 @@ import { useConfigStore } from "@/stores/configStore";
 import { useProjectStore } from "@/stores/projectStore";
 import { useZoneStore, type ZoneState } from "@/stores/zoneStore";
 import { serializeZone } from "@/lib/saveZone";
+import { useSpriteDefinitionStore } from "@/stores/spriteDefinitionStore";
 import type { AppConfig } from "@/types/config";
+import type { SpriteDefinition } from "@/types/sprites";
 
 export type SlotPositionMap = Record<string, { x: number; y: number }>;
 
@@ -462,6 +464,12 @@ export async function exportMudFormat(outputDir: string): Promise<ExportResult> 
   const configYaml = buildMonolithicConfig(config, slotPositions);
   await writeTextFile(`${resourcesDir}/application.yaml`, configYaml);
 
+  // Write sprites manifest
+  const spritesYaml = generateSpritesYaml(config);
+  if (spritesYaml) {
+    await writeTextFile(`${resourcesDir}/sprites.yaml`, spritesYaml);
+  }
+
   // Write zone files
   let zonesExported = 0;
   const errors: string[] = [];
@@ -489,6 +497,71 @@ export interface ExportResult {
   zonesExported: number;
   outputDir: string;
   errors: string[];
+}
+
+// ─── Sprites YAML generation ────────────────────────────────────────
+
+export function generateSpritesYaml(config?: AppConfig | null): string {
+  const c = config ?? useConfigStore.getState().config;
+  if (!c) return "";
+
+  const races = Object.keys(c.races);
+  const classes = Object.keys(c.classes);
+  const tiers = Array.from(new Set([1, ...(c.images.spriteLevelTiers ?? [])])).sort((a, b) => a - b);
+  const achievementDefs = useSpriteDefinitionStore.getState().definitions;
+
+  const entries: Record<string, SpriteDefinition> = {};
+  let sortOrder = 0;
+
+  // Tier sprites: one per race × class × tier
+  for (const race of races) {
+    for (const cls of classes) {
+      for (const tier of tiers) {
+        const key = `${race}_${cls}_t${tier}`;
+        const raceName = c.races[race]?.displayName ?? race;
+        const className = c.classes[cls]?.displayName ?? cls;
+        entries[key] = {
+          displayName: `${raceName} ${className} (Level ${tier}+)`,
+          category: "level",
+          sortOrder: sortOrder++,
+          unlock: { type: "level", minLevel: tier },
+          variants: [{
+            imageId: key,
+            imagePath: `player_sprites/${key}.png`,
+          }],
+        };
+      }
+    }
+  }
+
+  // Staff sprites: one per race
+  for (const race of races) {
+    const key = `${race}_base_tstaff`;
+    const raceName = c.races[race]?.displayName ?? race;
+    entries[key] = {
+      displayName: `${raceName} Staff`,
+      category: "staff",
+      sortOrder: sortOrder++,
+      unlock: { type: "staff" },
+      variants: [{
+        imageId: key,
+        imagePath: `player_sprites/${key}.png`,
+      }],
+    };
+  }
+
+  // Achievement sprites from user definitions
+  for (const [id, def] of Object.entries(achievementDefs)) {
+    entries[id] = {
+      displayName: def.displayName,
+      category: "achievement",
+      sortOrder: def.sortOrder,
+      unlock: { type: "achievement", achievementId: def.achievementId },
+      variants: def.variants,
+    };
+  }
+
+  return stringify(entries, YAML_OPTS);
 }
 
 // ─── Slot position loading ──────────────────────────────────────────

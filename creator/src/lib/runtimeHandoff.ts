@@ -1,7 +1,8 @@
 import { invoke } from "@tauri-apps/api/core";
-import { exportMudFormat, buildMonolithicConfig, loadSlotPositions } from "@/lib/exportMud";
+import { exportMudFormat, buildMonolithicConfig, loadSlotPositions, generateSpritesYaml } from "@/lib/exportMud";
 import { saveProjectConfig } from "@/lib/saveConfig";
 import { saveAllZones } from "@/lib/saveZone";
+import { useSpriteDefinitionStore } from "@/stores/spriteDefinitionStore";
 import { validateConfig } from "@/lib/validateConfig";
 import { validateAllZones, type ValidationIssue } from "@/lib/validateZone";
 import { useAssetStore } from "@/stores/assetStore";
@@ -68,6 +69,11 @@ export async function saveWorkspace(project: Project): Promise<SaveWorkspaceResu
     await saveProjectConfig(project);
   }
 
+  const spriteStore = useSpriteDefinitionStore.getState();
+  if (spriteStore.dirty) {
+    await spriteStore.saveDefinitions(project);
+  }
+
   return {
     savedZones,
     configSaved: configDirty,
@@ -129,7 +135,8 @@ export async function publishGlobalAssets(): Promise<SyncProgress> {
 }
 
 export async function publishPlayerSprites(): Promise<SyncProgress> {
-  return invoke<SyncProgress>("deploy_sprites_to_r2");
+  const spritesYaml = generateSpritesYaml();
+  return invoke<SyncProgress>("deploy_sprites_to_r2", { spritesYaml });
 }
 
 export async function deployRuntimeConfig(project: Project): Promise<string> {

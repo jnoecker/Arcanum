@@ -30,6 +30,9 @@ import { IMAGE_MODELS, ENTITY_DIMENSIONS } from "@/types/assets";
 import type { AssetEntry, GeneratedImage, SyncProgress } from "@/types/assets";
 import type { AppConfig } from "@/types/config";
 import { removeBgAndSave } from "@/lib/useBackgroundRemoval";
+import { AchievementSpriteEditor } from "@/components/AchievementSpriteEditor";
+
+type SpriteTab = "tiers" | "achievements";
 
 interface SpriteImportResult {
   imported: number;
@@ -145,6 +148,7 @@ function SpriteLightbox({
 }
 
 export function PlayerSpriteManager() {
+  const [spriteTab, setSpriteTab] = useState<SpriteTab>("tiers");
   const config = useConfigStore((s) => s.config);
   const assets = useAssetStore((s) => s.assets);
   const loadAssets = useAssetStore((s) => s.loadAssets);
@@ -472,6 +476,27 @@ export function PlayerSpriteManager() {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
+      {/* Tab bar */}
+      <div className="flex shrink-0 items-center gap-1 border-b border-border-default bg-bg-secondary px-4 py-1.5">
+        {(["tiers", "achievements"] as const).map((tab) => (
+          <button
+            key={tab}
+            onClick={() => setSpriteTab(tab)}
+            className={`rounded-full border px-3 py-1 text-xs font-medium transition ${
+              spriteTab === tab
+                ? "border-[var(--border-glow-strong)] bg-[linear-gradient(135deg,rgba(168,151,210,0.25),rgba(140,174,201,0.15))] text-text-primary shadow-glow-sm"
+                : "border-transparent text-text-secondary hover:text-text-primary"
+            }`}
+          >
+            {tab === "tiers" ? "Tier & Staff" : "Achievement Sprites"}
+          </button>
+        ))}
+      </div>
+
+      {spriteTab === "achievements" ? (
+        <AchievementSpriteEditor />
+      ) : (
+      <>
       {/* Header bar */}
       <div className="flex shrink-0 flex-wrap items-center gap-3 border-b border-border-default bg-bg-secondary px-4 py-2">
         <h2 className="font-display text-xs uppercase tracking-widest text-text-muted">
@@ -821,6 +846,8 @@ export function PlayerSpriteManager() {
           }}
           onClose={() => setViewSprite(null)}
         />
+      )}
+      </>
       )}
     </div>
   );

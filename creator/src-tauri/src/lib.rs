@@ -92,6 +92,7 @@ pub fn run() {
             admin::admin_shops,
             admin::admin_items,
             admin::admin_broadcast,
+            admin::admin_logs,
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application")

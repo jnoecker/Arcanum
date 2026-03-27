@@ -313,6 +313,7 @@ export function Sidebar() {
               key={entry.id}
               onClick={() => {
                 if (entry.id === "config") useProjectStore.getState().setConfigSubTab("characterStudio");
+                if (entry.id === "studio") useProjectStore.getState().setStudioSubView("home");
                 openTab({ id: entry.id, kind: entry.kind, label: entry.label });
               }}
               className={`rounded-2xl border px-3 py-3 text-left text-sm transition ${

@@ -10,15 +10,6 @@ import { CustomAssetStudio } from "@/components/CustomAssetStudio";
 import { PortraitStudio } from "@/components/PortraitStudio";
 import { AbilityStudio } from "@/components/AbilityStudio";
 import { MediaStudio } from "@/components/MediaStudio";
-import type { StudioSubView } from "@/types/project";
-
-const STUDIO_VIEWS: Array<{ id: StudioSubView; label: string; description: string }> = [
-  { id: "home", label: "Home", description: "Atlas, recent assets, and world direction at a glance." },
-  { id: "art", label: "Art", description: "Zone vibes, entity art, defaults, and free-form generation." },
-  { id: "media", label: "Media", description: "Music, ambience, and cinematic staging." },
-  { id: "portraits", label: "Portraits", description: "Race and class portrait creation." },
-  { id: "abilities", label: "Abilities", description: "Ability and status-effect icon generation." },
-];
 
 export function StudioWorkspace() {
   const zones = useZoneStore((s) => s.zones);
@@ -62,8 +53,6 @@ export function StudioWorkspace() {
     () => [...assets].sort((a, b) => b.created_at.localeCompare(a.created_at)).slice(0, 8),
     [assets],
   );
-  const dirtyZones = [...zones.values()].filter((zone) => zone.dirty).length;
-
   const renderAtlas = (compact = false) => (
     <div className="rounded-[28px] border border-white/10 bg-gradient-panel p-5 shadow-section">
       <div className="mb-4 flex items-center justify-between">
@@ -188,29 +177,6 @@ export function StudioWorkspace() {
   return (
     <div className="min-h-0 flex-1 overflow-y-auto px-6 py-6">
       <div className="mx-auto flex max-w-7xl flex-col gap-6">
-        <section className="rounded-[24px] border border-white/10 bg-[linear-gradient(160deg,rgba(49,58,84,0.9),rgba(39,48,73,0.9))] p-3 shadow-[0_18px_40px_rgba(9,12,24,0.2)]">
-          <div className="flex flex-wrap items-center gap-2">
-            {STUDIO_VIEWS.map((view) => (
-              <button
-                key={view.id}
-                onClick={() => setStudioSubView(view.id)}
-                className={`rounded-full border px-4 py-2 text-xs font-medium transition ${
-                  studioSubView === view.id
-                    ? "border-[var(--border-glow-strong)] bg-[linear-gradient(135deg,rgba(168,151,210,0.3),rgba(140,174,201,0.2))] text-white shadow-glow-sm"
-                    : "border-white/10 bg-black/10 text-text-secondary hover:bg-white/10 hover:text-text-primary"
-                }`}
-              >
-                {view.label}
-              </button>
-            ))}
-            <div className="ml-auto flex items-center gap-3 text-xs text-text-muted">
-              <span>{zones.size} zone{zones.size !== 1 ? "s" : ""}{dirtyZones > 0 ? ` · ${dirtyZones} modified` : ""}</span>
-              <span>{assets.length} asset{assets.length !== 1 ? "s" : ""}</span>
-              {selectedZoneId && <span className="text-text-secondary">Zone: {selectedZoneId}</span>}
-            </div>
-          </div>
-        </section>
-
         {studioSubView === "home" && (
           <section className="grid items-start gap-6 xl:grid-cols-12">
             <div className="studio-parallax xl:col-span-3">{renderAtlas()}</div>

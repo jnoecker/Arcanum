@@ -559,7 +559,7 @@ pub async fn delete_from_r2(app: AppHandle, file_name: String) -> Result<(), Str
 /// Each sprite asset with variant_group "player_sprite:{key}" gets uploaded
 /// as "player_sprites/{key}.png" so the game server can find them.
 #[tauri::command]
-pub async fn deploy_sprites_to_r2(app: AppHandle) -> Result<SyncProgress, String> {
+pub async fn deploy_sprites_to_r2(app: AppHandle, sprites_yaml: Option<String>) -> Result<SyncProgress, String> {
     let s = settings::get_settings(app.clone()).await?;
     if s.r2_account_id.is_empty()
         || s.r2_access_key_id.is_empty()
@@ -633,6 +633,29 @@ pub async fn deploy_sprites_to_r2(app: AppHandle) -> Result<SyncProgress, String
             Err(e) => {
                 progress.failed += 1;
                 progress.errors.push(format!("{object_key}: {e}"));
+            }
+        }
+    }
+
+    // Upload sprites.yaml manifest if provided
+    if let Some(yaml) = sprites_yaml {
+        progress.total += 1;
+        match upload_object(
+            &client,
+            &s.r2_account_id,
+            &s.r2_bucket,
+            &s.r2_access_key_id,
+            &s.r2_secret_access_key,
+            "sprites.yaml",
+            yaml.into_bytes(),
+            "application/x-yaml",
+        )
+        .await
+        {
+            Ok(()) => progress.uploaded += 1,
+            Err(e) => {
+                progress.failed += 1;
+                progress.errors.push(format!("sprites.yaml: {e}"));
             }
         }
     }

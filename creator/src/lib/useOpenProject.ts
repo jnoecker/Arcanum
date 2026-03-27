@@ -5,6 +5,7 @@ import { useProjectStore } from "@/stores/projectStore";
 import { useZoneStore } from "@/stores/zoneStore";
 import { useConfigStore } from "@/stores/configStore";
 import { loadProjectZones, loadProjectConfig } from "@/lib/loader";
+import { useSpriteDefinitionStore } from "@/stores/spriteDefinitionStore";
 import { loadUIState, addRecentProject } from "@/lib/uiPersistence";
 import type { Project, ProjectFormat, Tab } from "@/types/project";
 
@@ -68,6 +69,10 @@ export function useOpenProject() {
 
     setProject(project);
     addRecentProject(mudDir, project.name);
+
+    // Load achievement sprite definitions
+    useSpriteDefinitionStore.getState().loadDefinitions(project).catch(() => {});
+
 
     // Restore previously saved tabs (filter out stale zone refs)
     const saved = loadUIState();

@@ -59,8 +59,8 @@ const SpriteThumbnail = memo(function SpriteThumbnail({ fileName }: { fileName: 
   const src = useImageSrc(fileName);
   if (!src) {
     return (
-      <div className="flex h-full w-full items-center justify-center bg-bg-tertiary text-2xs text-text-muted">
-        --
+      <div className="flex h-full w-full items-center justify-center bg-bg-tertiary text-sm text-text-muted/30">
+        +
       </div>
     );
   }
@@ -801,7 +801,7 @@ export function PlayerSpriteManager() {
                             title={`player_sprites/${key}.png`}
                           >
                             <div
-                              className="group relative mx-auto h-12 w-12 overflow-hidden rounded"
+                              className={`group relative mx-auto h-12 w-12 overflow-hidden rounded ${isEmpty && !isGenerating ? "border border-dashed border-white/15" : ""}`}
                             >
                               {isGenerating ? (
                                 <div className="flex h-full w-full items-center justify-center bg-bg-tertiary">

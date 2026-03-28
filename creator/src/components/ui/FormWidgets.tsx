@@ -32,7 +32,7 @@ export function EditableField({
   if (!editing) {
     return (
       <div
-        className={`cursor-text rounded px-1 -mx-1 hover:bg-bg-tertiary ${className ?? ""}`}
+        className={`cursor-text rounded border-b border-dashed border-white/10 px-1 -mx-1 hover:border-white/20 hover:bg-bg-tertiary ${className ?? ""}`}
         role="button"
         tabIndex={0}
         onClick={() => {
@@ -96,7 +96,7 @@ export function EditableTextArea({
   if (!editing) {
     return (
       <div
-        className="cursor-text rounded px-1 -mx-1 text-xs leading-relaxed text-text-secondary hover:bg-bg-tertiary"
+        className="cursor-text rounded border-b border-dashed border-white/10 px-1 -mx-1 text-xs leading-relaxed text-text-secondary hover:border-white/20 hover:bg-bg-tertiary"
         role="button"
         tabIndex={0}
         onClick={() => {

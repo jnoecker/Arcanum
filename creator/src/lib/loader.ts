@@ -79,10 +79,10 @@ export function parseAppConfigYaml(content: string): AppConfig {
     equipmentSlots: parseMapSection(engine.equipment, "slots"),
     characterCreation: parseCharacterCreationConfig(engine.characterCreation),
     genders: parseMapSection(engine, "genders"),
-    achievementCategories: parseNestedMapSection(engine, "achievementCategories", "categories"),
-    achievementCriterionTypes: parseNestedMapSection(engine, "achievementCriterionTypes", "types"),
-    questObjectiveTypes: parseNestedMapSection(engine, "questObjectiveTypes", "types"),
-    questCompletionTypes: parseNestedMapSection(engine, "questCompletionTypes", "types"),
+    achievementCategories: withDefaults(parseNestedMapSection(engine, "achievementCategories", "categories"), DEFAULT_ACHIEVEMENT_CATEGORIES),
+    achievementCriterionTypes: withDefaults(parseNestedMapSection(engine, "achievementCriterionTypes", "types"), DEFAULT_CRITERION_TYPES),
+    questObjectiveTypes: withDefaults(parseNestedMapSection(engine, "questObjectiveTypes", "types"), DEFAULT_QUEST_OBJECTIVE_TYPES),
+    questCompletionTypes: withDefaults(parseNestedMapSection(engine, "questCompletionTypes", "types"), DEFAULT_QUEST_COMPLETION_TYPES),
     statusEffectTypes: parseMapSection(engine.effectTypes, "types"),
     stackBehaviors: parseMapSection(engine.stackBehaviors, "behaviors"),
     abilityTargetTypes: parseMapSection(engine.targetTypes, "types"),
@@ -637,10 +637,10 @@ async function loadSplitConfig(projectDir: string): Promise<AppConfig | null> {
       genders: asRecord(worldRaw.genders),
       characterCreation: parseCharacterCreationConfig(worldRaw.characterCreation),
       emotePresets: parseEmotePresetsConfig(worldRaw.emotePresets),
-      achievementCategories: asRecord((worldRaw.achievementCategories as Record<string, unknown> | undefined)?.categories ?? worldRaw.achievementCategories),
-      achievementCriterionTypes: asRecord((worldRaw.achievementCriterionTypes as Record<string, unknown> | undefined)?.types ?? worldRaw.achievementCriterionTypes),
-      questObjectiveTypes: asRecord((worldRaw.questObjectiveTypes as Record<string, unknown> | undefined)?.types ?? worldRaw.questObjectiveTypes),
-      questCompletionTypes: asRecord((worldRaw.questCompletionTypes as Record<string, unknown> | undefined)?.types ?? worldRaw.questCompletionTypes),
+      achievementCategories: withDefaults(asRecord((worldRaw.achievementCategories as Record<string, unknown> | undefined)?.categories ?? worldRaw.achievementCategories), DEFAULT_ACHIEVEMENT_CATEGORIES),
+      achievementCriterionTypes: withDefaults(asRecord((worldRaw.achievementCriterionTypes as Record<string, unknown> | undefined)?.types ?? worldRaw.achievementCriterionTypes), DEFAULT_CRITERION_TYPES),
+      questObjectiveTypes: withDefaults(asRecord((worldRaw.questObjectiveTypes as Record<string, unknown> | undefined)?.types ?? worldRaw.questObjectiveTypes), DEFAULT_QUEST_OBJECTIVE_TYPES),
+      questCompletionTypes: withDefaults(asRecord((worldRaw.questCompletionTypes as Record<string, unknown> | undefined)?.types ?? worldRaw.questCompletionTypes), DEFAULT_QUEST_COMPLETION_TYPES),
 
       // stats.yaml
       stats: parseStatsConfig(statsRaw),
@@ -697,3 +697,37 @@ function asRecord<T>(val: unknown): Record<string, T> {
   if (!val || typeof val !== "object") return {};
   return val as Record<string, T>;
 }
+
+// ─── Hoplite-compatible defaults ────────────────────────────────────
+// The Kotlin server uses Hoplite for config loading, which merges YAML
+// values with data class defaults. When YAML maps are empty ({}),
+// Hoplite fills in the companion-object defaults. We replicate that
+// behaviour here so Creator matches the running server.
+
+function withDefaults<T>(parsed: Record<string, T>, defaults: Record<string, T>): Record<string, T> {
+  return Object.keys(parsed).length > 0 ? parsed : defaults;
+}
+
+const DEFAULT_ACHIEVEMENT_CATEGORIES = {
+  combat: { displayName: "Combat" },
+  exploration: { displayName: "Exploration" },
+  social: { displayName: "Social" },
+  crafting: { displayName: "Crafting" },
+  class: { displayName: "Class" },
+};
+
+const DEFAULT_CRITERION_TYPES = {
+  kill: { displayName: "Kill", progressFormat: "{current}/{required}" },
+  reach_level: { displayName: "Reach Level", progressFormat: "level {current}/{required}" },
+  quest_complete: { displayName: "Quest Complete", progressFormat: "{current}/{required}" },
+};
+
+const DEFAULT_QUEST_OBJECTIVE_TYPES = {
+  kill: { displayName: "Kill" },
+  collect: { displayName: "Collect" },
+};
+
+const DEFAULT_QUEST_COMPLETION_TYPES = {
+  auto: { displayName: "Automatic" },
+  npc_turn_in: { displayName: "NPC Turn-In" },
+};

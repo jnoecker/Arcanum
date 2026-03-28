@@ -352,9 +352,11 @@ function parseEmotePresetsConfig(raw: unknown): AppConfig["emotePresets"] {
 
 function parseImagesConfig(raw: unknown): AppConfig["images"] {
   const s = (raw ?? {}) as Record<string, unknown>;
+  const tiers = parseNumberArray(s.spriteLevelTiers, [50, 40, 30, 20, 10, 1]);
   return {
     baseUrl: asString(s.baseUrl, "/images/"),
-    spriteLevelTiers: parseNumberArray(s.spriteLevelTiers, [50, 40, 30, 20, 10, 1]),
+    // Migrate legacy t0 base tier → t1 (MUD can't deserialize tier 0)
+    spriteLevelTiers: tiers.map((t) => (t === 0 ? 1 : t)),
   };
 }
 
@@ -379,6 +381,11 @@ function parsePlayerTiers(raw: unknown): Record<string, import("@/types/config")
         visualDescription: asString(tier.visualDescription, ""),
       };
     }
+  }
+  // Migrate legacy t0 → t1 (MUD can't deserialize tier 0)
+  if (result.t0 && !result.t1) {
+    result.t1 = result.t0;
+    delete result.t0;
   }
   return Object.keys(result).length > 0 ? result : undefined;
 }

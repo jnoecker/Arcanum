@@ -466,6 +466,75 @@ pub async fn save_bytes_as_asset(
     Ok(entry)
 }
 
+/// Migrate sprite variant groups from one tier suffix to another.
+/// Optionally deletes existing assets that already have the target suffix.
+#[derive(Debug, Serialize)]
+pub struct MigrationResult {
+    pub deleted: u32,
+    pub migrated: u32,
+}
+
+#[tauri::command]
+pub async fn migrate_sprite_tier(
+    app: AppHandle,
+    from_suffix: String,
+    to_suffix: String,
+    delete_existing_target: bool,
+) -> Result<MigrationResult, String> {
+    let _lock = MANIFEST_LOCK.lock().await;
+    let mut manifest = load_manifest(&app).await?;
+    let mut deleted = 0u32;
+    let mut migrated = 0u32;
+
+    // Optionally delete assets whose variant_group already ends with the target suffix
+    if delete_existing_target {
+        let base = assets_dir(&app)?;
+        let to_delete: Vec<String> = manifest
+            .assets
+            .iter()
+            .filter(|a| {
+                a.asset_type == "player_sprite" && a.variant_group.ends_with(&to_suffix)
+            })
+            .map(|a| a.file_name.clone())
+            .collect();
+
+        for file_name in &to_delete {
+            for subdir in &["images", "video", "audio"] {
+                let file_path = base.join(subdir).join(file_name);
+                if file_path.exists() {
+                    let _ = tokio::fs::remove_file(&file_path).await;
+                    break;
+                }
+            }
+        }
+
+        let before = manifest.assets.len();
+        manifest.assets.retain(|a| {
+            !(a.asset_type == "player_sprite" && a.variant_group.ends_with(&to_suffix))
+        });
+        deleted = (before - manifest.assets.len()) as u32;
+    }
+
+    // Rename remaining assets from_suffix → to_suffix
+    for asset in manifest.assets.iter_mut() {
+        if asset.asset_type == "player_sprite" && asset.variant_group.ends_with(&from_suffix) {
+            let base_vg = &asset.variant_group[..asset.variant_group.len() - from_suffix.len()];
+            asset.variant_group = format!("{base_vg}{to_suffix}");
+
+            if asset.context.entity_id.ends_with(&from_suffix) {
+                let base_eid =
+                    &asset.context.entity_id[..asset.context.entity_id.len() - from_suffix.len()];
+                asset.context.entity_id = format!("{base_eid}{to_suffix}");
+            }
+
+            migrated += 1;
+        }
+    }
+
+    save_manifest(&app, &manifest).await?;
+    Ok(MigrationResult { deleted, migrated })
+}
+
 /// Import result for bulk sprite import.
 #[derive(Debug, Default, Serialize)]
 pub struct SpriteImportResult {

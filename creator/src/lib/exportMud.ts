@@ -473,6 +473,14 @@ export async function exportMudFormat(outputDir: string): Promise<ExportResult> 
     await writeTextFile(`${resourcesDir}/sprites.yaml`, spritesYaml);
   }
 
+  // Write achievements
+  if (config.achievementDefs && Object.keys(config.achievementDefs).length > 0) {
+    await writeTextFile(
+      `${worldDir}/achievements.yaml`,
+      stringify({ achievements: config.achievementDefs }, YAML_OPTS),
+    );
+  }
+
   // Write zone files
   let zonesExported = 0;
   const errors: string[] = [];

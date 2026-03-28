@@ -70,6 +70,7 @@ const WORLD_PANELS: PanelDef[] = [
 
 const CONTENT_PANELS: PanelDef[] = [
   { id: "achievements", label: "Achievements", group: "content", host: "config", kicker: "Content", title: "Achievements", description: "Achievement categories and criteria types.", maxWidth: "max-w-5xl" },
+  { id: "achievementDefs", label: "Achievement Builder", group: "content", host: "config", kicker: "Content", title: "Achievement builder", description: "Define achievements, criteria, and rewards.", maxWidth: "max-w-5xl" },
   { id: "quests", label: "Quests", group: "content", host: "config", kicker: "Content", title: "Quest taxonomy", description: "Quest objective and completion type definitions.", maxWidth: "max-w-5xl" },
   { id: "sharedAssets", label: "Shared Assets", group: "content", host: "config", kicker: "Content", title: "Shared assets", description: "Global asset keys and image configuration.", maxWidth: "max-w-5xl" },
 ];

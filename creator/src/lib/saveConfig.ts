@@ -52,6 +52,14 @@ export async function saveConfig(mudDir: string): Promise<void> {
   doc.set("ambonmud", buildMonolithicConfigObject(config, undefined, slotPositions));
 
   await writeTextFile(localPath, doc.toString());
+
+  // Achievements live in a separate world file in legacy format
+  const achievementsPath = `${resourcesDir}/world/achievements.yaml`;
+  await writeTextFile(
+    achievementsPath,
+    stringify({ achievements: config.achievementDefs }, YAML_OPTS),
+  );
+
   state.markClean();
 }
 
@@ -178,6 +186,12 @@ async function saveSplitConfig(projectDir: string): Promise<void> {
       }),
       playerTiers: config.playerTiers && Object.keys(config.playerTiers).length > 0 ? config.playerTiers : undefined,
     })),
+
+    // achievements.yaml lives at project root (not in config/)
+    writeTextFile(
+      `${projectDir}/achievements.yaml`,
+      stringify({ achievements: config.achievementDefs }, YAML_OPTS),
+    ),
   ]);
 
   state.markClean();

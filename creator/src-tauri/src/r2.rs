@@ -811,6 +811,40 @@ pub async fn deploy_config_to_r2(
     Ok(format!("{domain}/{object_key}"))
 }
 
+/// Deploy achievements.yaml to R2 as world/achievements.yaml.
+#[tauri::command]
+pub async fn deploy_achievements_to_r2(
+    app: AppHandle,
+    achievements_content: String,
+) -> Result<String, String> {
+    let s = settings::get_settings(app).await?;
+    if s.r2_account_id.is_empty()
+        || s.r2_access_key_id.is_empty()
+        || s.r2_secret_access_key.is_empty()
+        || s.r2_bucket.is_empty()
+    {
+        return Err("R2 credentials not configured. Set them in Settings.".to_string());
+    }
+
+    let client = reqwest::Client::new();
+    let object_key = "world/achievements.yaml";
+
+    upload_object(
+        &client,
+        &s.r2_account_id,
+        &s.r2_bucket,
+        &s.r2_access_key_id,
+        &s.r2_secret_access_key,
+        object_key,
+        achievements_content.into_bytes(),
+        "application/x-yaml",
+    )
+    .await?;
+
+    let domain = s.r2_custom_domain.trim_end_matches('/');
+    Ok(format!("{domain}/{object_key}"))
+}
+
 /// Collect zone YAML files from a project directory.
 /// For legacy: reads from src/main/resources/world/*.yaml
 /// For standalone: reads from zones/*/zone.yaml, naming each as {zone_id}.yaml

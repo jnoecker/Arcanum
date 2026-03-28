@@ -239,6 +239,30 @@ export interface AchievementCriterionTypeDefinition {
   progressFormat?: string;
 }
 
+// ─── Achievement definitions ────────────────────────────────────────
+
+export interface AchievementCriterionFile {
+  type: string;
+  targetId?: string;
+  count?: number;
+  description?: string;
+}
+
+export interface AchievementRewardsFile {
+  xp?: number;
+  gold?: number;
+  title?: string;
+}
+
+export interface AchievementDefFile {
+  displayName: string;
+  description?: string;
+  category: string;
+  hidden?: boolean;
+  criteria: AchievementCriterionFile[];
+  rewards?: AchievementRewardsFile;
+}
+
 // ─── Quests ─────────────────────────────────────────────────────────
 
 export interface QuestObjectiveTypeDefinition {
@@ -437,6 +461,7 @@ export interface AppConfig {
   genders: Record<string, GenderDefinition>;
   achievementCategories: Record<string, AchievementCategoryDefinition>;
   achievementCriterionTypes: Record<string, AchievementCriterionTypeDefinition>;
+  achievementDefs: Record<string, AchievementDefFile>;
   questObjectiveTypes: Record<string, QuestObjectiveTypeDefinition>;
   questCompletionTypes: Record<string, QuestCompletionTypeDefinition>;
   statusEffectTypes: Record<string, StatusEffectTypeDefinition>;

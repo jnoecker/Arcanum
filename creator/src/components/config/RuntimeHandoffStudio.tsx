@@ -5,6 +5,7 @@ import { useConfigStore } from "@/stores/configStore";
 import { useProjectStore } from "@/stores/projectStore";
 import { useZoneStore } from "@/stores/zoneStore";
 import {
+  deployRuntimeAchievements,
   deployRuntimeConfig,
   deployRuntimeZones,
   exportRuntimeBundle,
@@ -26,6 +27,7 @@ type StepKey =
   | "globals"
   | "sprites"
   | "config"
+  | "achievements"
   | "zones";
 
 interface StepState {
@@ -132,6 +134,7 @@ export function RuntimeHandoffStudio() {
     globals: { status: "idle", detail: "Upload global asset files to R2.", errors: [] },
     sprites: { status: "idle", detail: "Upload player sprite files to R2.", errors: [] },
     config: { status: "idle", detail: "Upload runtime config to R2.", errors: [] },
+    achievements: { status: "idle", detail: "Upload achievements.yaml to R2.", errors: [] },
     zones: { status: "idle", detail: "Upload zone YAML files to R2.", errors: [] },
   });
 
@@ -357,6 +360,29 @@ export function RuntimeHandoffStudio() {
     }
   };
 
+  const runAchievementsStep = async () => {
+    setStepState("achievements", {
+      status: "running",
+      detail: "Uploading achievements.yaml to R2...",
+      errors: [],
+    });
+    try {
+      const url = await deployRuntimeAchievements();
+      setStepState("achievements", {
+        status: "success",
+        detail: `Achievements deployed to ${url}`,
+        errors: [],
+      });
+    } catch (error) {
+      setStepState("achievements", {
+        status: "error",
+        detail: "Achievements deploy failed.",
+        errors: [String(error)],
+      });
+      throw error;
+    }
+  };
+
   const runZonesStep = async () => {
     if (!project) return;
     setStepState("zones", {
@@ -406,6 +432,7 @@ export function RuntimeHandoffStudio() {
         await runGlobalsStep();
         await runSpritesStep();
         await runConfigStep();
+        await runAchievementsStep();
         await runZonesStep();
       } else {
         setWorkflowMessage("R2 credentials are incomplete, so the workflow stopped after local save and validation.");
@@ -577,7 +604,16 @@ export function RuntimeHandoffStudio() {
         />
 
         <StepCard
-          title="8. Deploy zone YAML"
+          title="8. Deploy achievements"
+          description="Upload achievements.yaml to R2."
+          state={steps.achievements}
+          actionLabel="Deploy achievements"
+          disabled={!hasR2}
+          onAction={runAchievementsStep}
+        />
+
+        <StepCard
+          title="9. Deploy zone YAML"
           description="Upload zone files to R2."
           state={steps.zones}
           actionLabel="Deploy zones"

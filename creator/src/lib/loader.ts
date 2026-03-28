@@ -81,6 +81,7 @@ export function parseAppConfigYaml(content: string): AppConfig {
     genders: parseMapSection(engine, "genders"),
     achievementCategories: withDefaults(parseNestedMapSection(engine, "achievementCategories", "categories"), DEFAULT_ACHIEVEMENT_CATEGORIES),
     achievementCriterionTypes: withDefaults(parseNestedMapSection(engine, "achievementCriterionTypes", "types"), DEFAULT_CRITERION_TYPES),
+    achievementDefs: parseAchievementDefs(engine.achievements ?? root.achievements),
     questObjectiveTypes: withDefaults(parseNestedMapSection(engine, "questObjectiveTypes", "types"), DEFAULT_QUEST_OBJECTIVE_TYPES),
     questCompletionTypes: withDefaults(parseNestedMapSection(engine, "questCompletionTypes", "types"), DEFAULT_QUEST_COMPLETION_TYPES),
     statusEffectTypes: parseMapSection(engine.effectTypes, "types"),
@@ -117,7 +118,22 @@ export async function loadAppConfig(
     // Local file takes precedence; fall back to base defaults
     const configPath = await exists(localPath) ? localPath : basePath;
     const content = await readTextFile(configPath);
-    return parseAppConfigYaml(content);
+    const config = parseAppConfigYaml(content);
+
+    // Achievements live in a separate world file in legacy format
+    const achievementsPath = `${resourcesDir}/world/achievements.yaml`;
+    try {
+      if (await exists(achievementsPath)) {
+        const achContent = await readTextFile(achievementsPath);
+        const achDoc = parseDocument(achContent);
+        const achRaw = (achDoc.toJS() ?? {}) as Record<string, unknown>;
+        config.achievementDefs = parseAchievementDefs(achRaw);
+      }
+    } catch {
+      // achievements.yaml missing or unparseable — keep empty defaults
+    }
+
+    return config;
   } catch (err) {
     console.error("Failed to load application.yaml:", err);
     return null;
@@ -410,6 +426,14 @@ function parseNestedMapSection<T>(
   return section as Record<string, T>;
 }
 
+function parseAchievementDefs(raw: unknown): Record<string, import("@/types/config").AchievementDefFile> {
+  if (!raw || typeof raw !== "object") return {};
+  const obj = raw as Record<string, unknown>;
+  const section = obj.achievements ?? raw;
+  if (!section || typeof section !== "object") return {};
+  return section as Record<string, import("@/types/config").AchievementDefFile>;
+}
+
 function parseSimpleSection<T>(raw: unknown, defaults: T): T {
   if (!raw || typeof raw !== "object") return defaults;
   return { ...defaults, ...(raw as Partial<T>) };
@@ -620,6 +644,15 @@ async function loadSplitConfig(projectDir: string): Promise<AppConfig | null> {
       readYaml(`${dir}/assets.yaml`),
     ]);
 
+    // achievements.yaml lives at project root (not in config/)
+    let achievementsRaw: Record<string, unknown> = {};
+    try {
+      const achPath = `${projectDir}/achievements.yaml`;
+      if (await exists(achPath)) {
+        achievementsRaw = await readYaml(achPath);
+      }
+    } catch { /* no achievements file yet */ }
+
     const config: AppConfig = {
       // world.yaml
       server: parseServerConfig(worldRaw.server),
@@ -639,6 +672,7 @@ async function loadSplitConfig(projectDir: string): Promise<AppConfig | null> {
       emotePresets: parseEmotePresetsConfig(worldRaw.emotePresets),
       achievementCategories: withDefaults(asRecord((worldRaw.achievementCategories as Record<string, unknown> | undefined)?.categories ?? worldRaw.achievementCategories), DEFAULT_ACHIEVEMENT_CATEGORIES),
       achievementCriterionTypes: withDefaults(asRecord((worldRaw.achievementCriterionTypes as Record<string, unknown> | undefined)?.types ?? worldRaw.achievementCriterionTypes), DEFAULT_CRITERION_TYPES),
+      achievementDefs: parseAchievementDefs(achievementsRaw),
       questObjectiveTypes: withDefaults(asRecord((worldRaw.questObjectiveTypes as Record<string, unknown> | undefined)?.types ?? worldRaw.questObjectiveTypes), DEFAULT_QUEST_OBJECTIVE_TYPES),
       questCompletionTypes: withDefaults(asRecord((worldRaw.questCompletionTypes as Record<string, unknown> | undefined)?.types ?? worldRaw.questCompletionTypes), DEFAULT_QUEST_COMPLETION_TYPES),
 

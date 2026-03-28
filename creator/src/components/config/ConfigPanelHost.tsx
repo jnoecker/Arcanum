@@ -40,6 +40,7 @@ import { EmotePresetsPanel } from "./panels/EmotePresetsPanel";
 
 // ─── Content panels ─────────────────────────────────────────────────
 import { AchievementDesigner } from "./AchievementDesigner";
+import { AchievementDefEditor } from "./AchievementDefEditor";
 import { QuestTaxonomyDesigner } from "./QuestTaxonomyDesigner";
 import { GlobalAssetsPanel } from "./panels/GlobalAssetsPanel";
 
@@ -163,6 +164,8 @@ function renderPanel(panelId: string, props: ConfigPanelProps): ReactNode {
     // Content
     case "achievements":
       return <AchievementDesigner config={config} onChange={onChange} />;
+    case "achievementDefs":
+      return <AchievementDefEditor config={config} onChange={onChange} />;
     case "quests":
       return <QuestTaxonomyDesigner config={config} onChange={onChange} />;
     case "sharedAssets":

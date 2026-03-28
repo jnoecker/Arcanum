@@ -139,6 +139,16 @@ export async function publishPlayerSprites(): Promise<SyncProgress> {
   return invoke<SyncProgress>("deploy_sprites_to_r2", { spritesYaml });
 }
 
+export async function deployRuntimeAchievements(): Promise<string> {
+  const config = useConfigStore.getState().config;
+  const { stringify } = await import("yaml");
+  const content = stringify(
+    { achievements: config?.achievementDefs ?? {} },
+    { lineWidth: 120, defaultKeyType: "PLAIN" as const, defaultStringType: "PLAIN" as const },
+  );
+  return invoke<string>("deploy_achievements_to_r2", { achievementsContent: content });
+}
+
 export async function deployRuntimeConfig(project: Project): Promise<string> {
   const slotPositions = await loadSlotPositions(project.mudDir);
   const configContent = project.format === "standalone"

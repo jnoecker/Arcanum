@@ -3,7 +3,7 @@ import type { AppConfig } from "@/types/config";
 export type SpriteTier = number | "staff";
 
 export function isRaceOnlyTier(tier: SpriteTier): boolean {
-  return tier === 1 || tier === "staff";
+  return tier === "staff";
 }
 
 export function spriteClassForTier(cls: string, tier: SpriteTier): string {
@@ -19,7 +19,7 @@ export function getAllTiers(config: AppConfig): SpriteTier[] {
 /** Human-readable tier label. */
 export function tierLabel(tier: SpriteTier): string {
   if (tier === "staff") return "tstaff (Staff)";
-  return tier === 1 ? "t1 (Base)" : `t${tier}`;
+  return `t${tier}`;
 }
 
 /** Level range for a tier. */

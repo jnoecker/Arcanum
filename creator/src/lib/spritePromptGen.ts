@@ -101,11 +101,11 @@ Your task: produce a JSON object with these fields:
 
 1. "template" — a single image generation prompt template using these exact placeholders: {race_description}, {class_outfit}, {tier_visual}. The template should produce a fantasy character portrait. All figures must be ANDROGYNOUS — no gender signifiers (no breasts, no beards, no gendered body shapes). The body is defined entirely by the race, the outfit by the class, and the power level by the tier.
 
-For the "base" class (tier t1), {class_outfit} will be "simple wrapped linen clothing, no armor, no weapons" — the template must work with this too.
+For the "base" class (staff tier), {class_outfit} will be "simple wrapped linen clothing, no armor, no weapons" — the template must work with this too.
 
 2. "raceDescriptions" — an object mapping each race key to an optimized prompt-fragment describing that race's body. Lean into the alien/fantastical aspects. All descriptions must be androgynous. For humanoid races (archae, kitsarae, lustriae), explicitly describe narrow shoulders, no chest definition, smooth featureless torso, ageless angular face.
 
-3. "classOutfits" — an object mapping each class key to a prompt-fragment describing that class's signature outfit, weapons, and accessories. Include "base" as a key with simple wrapped linen clothing.
+3. "classOutfits" — an object mapping each class key to a prompt-fragment describing that class's signature outfit, weapons, and accessories. Include "base" as a key with simple wrapped linen clothing (used for staff sprites).
 
 4. "tierDescriptions" — an object mapping each tier key (t1, t10, t25, t50, tstaff) to a prompt-fragment describing the power level, material quality, and magical effects appropriate for that tier.
 

@@ -535,6 +535,62 @@ pub async fn migrate_sprite_tier(
     Ok(MigrationResult { deleted, migrated })
 }
 
+/// Expand {race}_base_{suffix} sprites into per-class entries.
+/// For each matching base sprite, creates a clone for each class in the list,
+/// reusing the same image file. The original base entry is removed.
+#[derive(Debug, Serialize)]
+pub struct ExpandResult {
+    pub expanded: u32,
+    pub removed: u32,
+}
+
+#[tauri::command]
+pub async fn expand_base_sprites(
+    app: AppHandle,
+    tier_suffix: String,
+    classes: Vec<String>,
+) -> Result<ExpandResult, String> {
+    let _lock = MANIFEST_LOCK.lock().await;
+    let mut manifest = load_manifest(&app).await?;
+    let mut new_entries: Vec<AssetEntry> = Vec::new();
+    let mut to_remove: Vec<String> = Vec::new();
+
+    let base_pattern = format!("_base_{tier_suffix}");
+
+    for asset in &manifest.assets {
+        if asset.asset_type != "player_sprite" {
+            continue;
+        }
+        // Match variant_group like "player_sprite:{race}_base_t1"
+        let key = asset.variant_group.strip_prefix("player_sprite:").unwrap_or("");
+        if !key.ends_with(&base_pattern) {
+            continue;
+        }
+        let race = &key[..key.len() - base_pattern.len()];
+
+        to_remove.push(asset.id.clone());
+
+        for cls in &classes {
+            let new_key = format!("{race}_{cls}_{tier_suffix}");
+            let mut entry = asset.clone();
+            entry.id = uuid::Uuid::new_v4().to_string();
+            entry.variant_group = format!("player_sprite:{new_key}");
+            entry.context.entity_id = new_key.clone();
+            entry.is_active = true;
+            new_entries.push(entry);
+        }
+    }
+
+    let removed = to_remove.len() as u32;
+    let expanded = new_entries.len() as u32;
+
+    manifest.assets.retain(|a| !to_remove.contains(&a.id));
+    manifest.assets.extend(new_entries);
+    save_manifest(&app, &manifest).await?;
+
+    Ok(ExpandResult { expanded, removed })
+}
+
 /// Import result for bulk sprite import.
 #[derive(Debug, Default, Serialize)]
 pub struct SpriteImportResult {

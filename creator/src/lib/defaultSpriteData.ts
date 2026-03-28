@@ -154,7 +154,7 @@ export const RACE_ORDER: string[] = [
   "pyrae", "animae", "medusae", "kitsarae", "sylflorae", "orphirae",
 ];
 
-/** Ordered class keys for display (plus "base" pseudo-class for t1). */
+/** Ordered class keys for display (plus "base" pseudo-class for staff tier). */
 export const CLASS_ORDER: string[] = [
   "base", "bulwark", "warden", "arcanist", "faeweaver", "necromancer",
   "veil", "binder", "stormblade", "herald", "starweaver",

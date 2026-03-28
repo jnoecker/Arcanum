@@ -182,6 +182,7 @@ export interface DialogueChoiceFile {
 export interface GatheringNodeFile {
   displayName: string;
   keyword?: string;
+  image?: string;
   skill: string;
   skillRequired?: number;
   yields: GatheringYieldFile[];

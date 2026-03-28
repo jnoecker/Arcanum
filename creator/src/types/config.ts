@@ -304,6 +304,7 @@ export interface CraftingSkillDefinition {
 
 export interface CraftingStationTypeDefinition {
   displayName: string;
+  image?: string;
 }
 
 // ─── Friends ────────────────────────────────────────────────────────

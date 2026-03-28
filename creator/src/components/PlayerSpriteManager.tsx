@@ -72,21 +72,26 @@ const SpriteThumbnail = memo(function SpriteThumbnail({ fileName }: { fileName: 
 function SpriteLightbox({
   spriteKey: key,
   fileName,
+  variantGroup,
   canRegenerate,
   canDelete,
   onRegenerate,
   onDelete,
+  onRemoveBg,
   onClose,
 }: {
   spriteKey: string;
   fileName: string;
+  variantGroup: string;
   canRegenerate: boolean;
   canDelete: boolean;
   onRegenerate: () => void;
   onDelete: () => void;
+  onRemoveBg: () => void;
   onClose: () => void;
 }) {
   const src = useImageSrc(fileName);
+  const [removingBg, setRemovingBg] = useState(false);
 
   // Close on Escape
   useEffect(() => {
@@ -96,6 +101,18 @@ function SpriteLightbox({
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
   }, [onClose]);
+
+  const handleRemoveBg = async () => {
+    if (!src) return;
+    setRemovingBg(true);
+    try {
+      const context = { zone: "sprites", entity_type: "player_sprite", entity_id: key };
+      const entry = await removeBgAndSave(src, "player_sprite", context, variantGroup);
+      if (entry) onRemoveBg();
+    } finally {
+      setRemovingBg(false);
+    }
+  };
 
   return (
     <div
@@ -126,6 +143,13 @@ function SpriteLightbox({
             className="rounded-full border border-accent/40 px-4 py-2 text-xs text-accent transition-colors hover:bg-accent/10 disabled:opacity-40"
           >
             Regenerate
+          </button>
+          <button
+            onClick={handleRemoveBg}
+            disabled={removingBg || !src}
+            className="rounded-full border border-white/20 px-4 py-2 text-xs text-text-primary transition-colors hover:bg-white/10 disabled:opacity-40"
+          >
+            {removingBg ? "Removing BG..." : "Remove BG"}
           </button>
           <button
             onClick={onDelete}
@@ -796,12 +820,12 @@ export function PlayerSpriteManager() {
                                     <SpriteThumbnail fileName={asset?.file_name} />
                                   </button>
                                   {/* Hover overlay with actions */}
-                                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-0.5 bg-black/50 opacity-0 transition-opacity group-hover:opacity-100">
+                                  <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-0.5 bg-black/50 opacity-0 transition-opacity group-hover:opacity-100">
                                     {isEmpty ? (
                                       canGenerate && (
                                         <button
                                           onClick={() => handleGenerateOne(race, slotClass, tier)}
-                                          className="rounded px-1.5 py-0.5 text-3xs font-medium text-accent hover:bg-accent/20"
+                                          className="pointer-events-auto rounded px-1.5 py-0.5 text-3xs font-medium text-accent hover:bg-accent/20"
                                           title="Generate"
                                         >
                                           Generate
@@ -833,6 +857,7 @@ export function PlayerSpriteManager() {
         <SpriteLightbox
           spriteKey={viewSprite.key}
           fileName={viewSprite.fileName}
+          variantGroup={`player_sprite:${viewSprite.key}`}
           canRegenerate={!batchRunning && !generating}
           canDelete={!batchRunning && !generating}
           onRegenerate={() => {
@@ -843,6 +868,10 @@ export function PlayerSpriteManager() {
             const assetId = viewSprite.assetId;
             setViewSprite(null);
             void deleteAsset(assetId);
+          }}
+          onRemoveBg={() => {
+            setViewSprite(null);
+            void loadAssets();
           }}
           onClose={() => setViewSprite(null)}
         />

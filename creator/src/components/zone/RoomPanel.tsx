@@ -258,8 +258,9 @@ export function RoomPanel({
                   <td className="w-6 py-1 text-right">
                     <button
                       onClick={() => handleDeleteExit(exit.direction)}
-                      className="invisible text-text-muted transition-colors hover:text-status-danger group-hover:visible"
+                      className="invisible text-text-muted transition-colors hover:text-status-danger group-hover:visible focus-visible:visible"
                       title="Delete exit"
+                      aria-label="Delete exit"
                     >
                       &times;
                     </button>

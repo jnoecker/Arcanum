@@ -1,24 +1,25 @@
+import { memo } from "react";
 import { useAdminStore } from "@/stores/adminStore";
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+const Section = memo(function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="rounded-[22px] border border-white/10 bg-gradient-panel-light p-4 shadow-section-sm">
       <h4 className="mb-2 text-[11px] uppercase tracking-wide-ui text-text-muted">{title}</h4>
       {children}
     </div>
   );
-}
+});
 
-function StatRow({ label, value, valueClass }: { label: string; value: string | number; valueClass?: string }) {
+const StatRow = memo(function StatRow({ label, value, valueClass }: { label: string; value: string | number; valueClass?: string }) {
   return (
     <div className="flex items-center justify-between border-b border-white/6 py-2 last:border-b-0">
       <span className="text-xs capitalize text-text-muted">{label}</span>
       <span className={`text-xs ${valueClass ?? "text-text-primary"}`}>{value}</span>
     </div>
   );
-}
+});
 
-function HpBar({ label, current, max }: { label: string; current: number; max: number }) {
+const HpBar = memo(function HpBar({ label, current, max }: { label: string; current: number; max: number }) {
   if (max <= 0) return null;
   const pct = Math.round((current / max) * 100);
   const color = pct > 60 ? "bg-status-success" : pct > 25 ? "bg-status-warning" : "bg-status-error";
@@ -42,7 +43,7 @@ function HpBar({ label, current, max }: { label: string; current: number; max: n
       </div>
     </div>
   );
-}
+});
 
 export function AdminRoomDetail() {
   const room = useAdminStore((s) => s.selectedRoom);

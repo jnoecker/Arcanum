@@ -7,9 +7,9 @@
   --font-mono: 'JetBrains Mono', Consolas, monospace;
 
   /* ─── Type Scale (supplements Tailwind's built-in sizes) ─── */
-  --font-size-2xs: 10px;
+  --font-size-2xs: 12px;
   --font-size-2xs--line-height: 1.5;
-  --font-size-3xs: 9px;
+  --font-size-3xs: 10px;
   --font-size-3xs--line-height: 1.45;
 
   /* ─── Tracking (letter-spacing scale) ─── */
@@ -33,7 +33,7 @@
   /* ─── Text ─── */
   --color-text-primary:   #dbe3f8;
   --color-text-secondary: #aebada;
-  --color-text-muted:     #7f89a8;
+  --color-text-muted:     #95a0bf;
   --color-text-link:      #b88faa;
 
   /* ─── Accent — Aurum (the creative force) ─── */
@@ -44,14 +44,14 @@
   /* ─── Cool Accents ─── */
   --color-violet:       #a897d2;
   --color-stellar-blue: #8caec9;
-  --color-arcane-teal:  #8da97b;
+  --color-arcane-teal:  #a3c48e;
 
   /* ─── Status Colors ─── */
-  --color-status-success: #8da97b;
+  --color-status-success: #a3c48e;
   --color-status-warning: #bea873;
-  --color-status-error:   #c5a8a8;
+  --color-status-error:   #dbb8b8;
   --color-status-info:    #8caec9;
-  --color-status-danger:  #c5a8a8;
+  --color-status-danger:  #dbb8b8;
 
   /* ─── Badge Colors (vivid variants for small text on dark backgrounds) ─── */
   --color-badge-success:    #aecc98;
@@ -61,8 +61,8 @@
   /* ─── Server Status ─── */
   --color-server-stopped:  #6f7da1;
   --color-server-starting: #bea873;
-  --color-server-running:  #8da97b;
-  --color-server-error:    #c5a8a8;
+  --color-server-running:  #a3c48e;
+  --color-server-error:    #dbb8b8;
 
   /* ─── Active/Selected State ─── */
   --color-border-active: rgba(184, 216, 232, 0.35);
@@ -97,7 +97,7 @@
   --color-class-stormblade:  #8caec9;
   --color-class-herald:      #d4c8a0;
   --color-class-starweaver:  #b88faa;
-  --color-class-fallback:    #7f89a8;
+  --color-class-fallback:    #95a0bf;
 
   /* ─── Chart / Visualization ─── */
   --color-chart-hp:   #c05060;
@@ -346,7 +346,7 @@ select,
 /* ─── Focus ring (Accent unfurl) ─── */
 *:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 2px rgba(168, 151, 210, 0.3);
+  box-shadow: 0 0 0 2px rgba(168, 151, 210, 0.5);
   transition: box-shadow 200ms var(--ease-unfurl);
 }
 

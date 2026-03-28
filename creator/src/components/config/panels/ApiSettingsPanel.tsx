@@ -77,10 +77,11 @@ export function ApiSettingsPanel({
         </h3>
         <div className="flex flex-col gap-3">
           <div>
-            <label className="mb-1 block text-2xs uppercase tracking-wider text-text-muted">
+            <label htmlFor="deepinfra-api-key" className="mb-1 block text-2xs uppercase tracking-wider text-text-muted">
               DeepInfra API Key
             </label>
             <input
+              id="deepinfra-api-key"
               type="password"
               value={draft.deepinfra_api_key}
               onChange={(e) =>
@@ -95,10 +96,11 @@ export function ApiSettingsPanel({
           </div>
 
           <div>
-            <label className="mb-1 block text-2xs uppercase tracking-wider text-text-muted">
+            <label htmlFor="anthropic-api-key" className="mb-1 block text-2xs uppercase tracking-wider text-text-muted">
               Anthropic API Key
             </label>
             <input
+              id="anthropic-api-key"
               type="password"
               value={draft.anthropic_api_key}
               onChange={(e) =>
@@ -110,10 +112,11 @@ export function ApiSettingsPanel({
           </div>
 
           <div>
-            <label className="mb-1 block text-2xs uppercase tracking-wider text-text-muted">
+            <label htmlFor="openrouter-api-key" className="mb-1 block text-2xs uppercase tracking-wider text-text-muted">
               OpenRouter API Key
             </label>
             <input
+              id="openrouter-api-key"
               type="password"
               value={draft.openrouter_api_key}
               onChange={(e) =>
@@ -125,10 +128,11 @@ export function ApiSettingsPanel({
           </div>
 
           <div>
-            <label className="mb-1 block text-2xs uppercase tracking-wider text-text-muted">
+            <label htmlFor="runware-api-key" className="mb-1 block text-2xs uppercase tracking-wider text-text-muted">
               Runware API Key
             </label>
             <input
+              id="runware-api-key"
               type="password"
               value={draft.runware_api_key}
               onChange={(e) =>
@@ -248,10 +252,11 @@ export function ApiSettingsPanel({
 
       {/* ─── Enhance Model ────────────────────────────────────── */}
       {showProviderSections && <div>
-        <label className="mb-1 block font-display text-2xs uppercase tracking-widest text-text-muted">
+        <label htmlFor="enhance-model" className="mb-1 block font-display text-2xs uppercase tracking-widest text-text-muted">
           Prompt Enhancement Model
         </label>
         <input
+          id="enhance-model"
           type="text"
           value={draft.enhance_model}
           onChange={(e) =>
@@ -271,10 +276,11 @@ export function ApiSettingsPanel({
         </h3>
         <div className="flex flex-col gap-3">
           <div>
-            <label className="mb-1 block text-2xs uppercase tracking-wider text-text-muted">
+            <label htmlFor="batch-concurrency" className="mb-1 block text-2xs uppercase tracking-wider text-text-muted">
               Batch Concurrency
             </label>
             <input
+              id="batch-concurrency"
               type="number"
               min={1}
               max={20}
@@ -313,10 +319,11 @@ export function ApiSettingsPanel({
         </h3>
         <div className="flex flex-col gap-3">
           <div>
-            <label className="mb-1 block text-2xs uppercase tracking-wider text-text-muted">
+            <label htmlFor="r2-account-id" className="mb-1 block text-2xs uppercase tracking-wider text-text-muted">
               Account ID
             </label>
             <input
+              id="r2-account-id"
               type="text"
               value={draft.r2_account_id}
               onChange={(e) =>
@@ -328,10 +335,11 @@ export function ApiSettingsPanel({
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="mb-1 block text-2xs uppercase tracking-wider text-text-muted">
+              <label htmlFor="r2-access-key-id" className="mb-1 block text-2xs uppercase tracking-wider text-text-muted">
                 Access Key ID
               </label>
               <input
+                id="r2-access-key-id"
                 type="text"
                 value={draft.r2_access_key_id}
                 onChange={(e) =>
@@ -342,10 +350,11 @@ export function ApiSettingsPanel({
               />
             </div>
             <div>
-              <label className="mb-1 block text-2xs uppercase tracking-wider text-text-muted">
+              <label htmlFor="r2-secret-access-key" className="mb-1 block text-2xs uppercase tracking-wider text-text-muted">
                 Secret Access Key
               </label>
               <input
+                id="r2-secret-access-key"
                 type="password"
                 value={draft.r2_secret_access_key}
                 onChange={(e) =>
@@ -357,10 +366,11 @@ export function ApiSettingsPanel({
             </div>
           </div>
           <div>
-            <label className="mb-1 block text-2xs uppercase tracking-wider text-text-muted">
+            <label htmlFor="r2-bucket" className="mb-1 block text-2xs uppercase tracking-wider text-text-muted">
               Bucket Name
             </label>
             <input
+              id="r2-bucket"
               type="text"
               value={draft.r2_bucket}
               onChange={(e) =>
@@ -371,10 +381,11 @@ export function ApiSettingsPanel({
             />
           </div>
           <div>
-            <label className="mb-1 block text-2xs uppercase tracking-wider text-text-muted">
+            <label htmlFor="r2-custom-domain" className="mb-1 block text-2xs uppercase tracking-wider text-text-muted">
               Custom Domain
             </label>
             <input
+              id="r2-custom-domain"
               type="text"
               value={draft.r2_custom_domain}
               onChange={(e) =>

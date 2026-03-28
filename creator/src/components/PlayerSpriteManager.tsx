@@ -540,7 +540,7 @@ export function PlayerSpriteManager() {
             onClick={handleGenerateTemplate}
             disabled={generatingTemplate || !hasApiKey}
             title={spriteTemplate ? `Template generated ${spriteTemplate.generatedAt}` : "Generate a reusable prompt template (one LLM call)"}
-            className={`rounded border px-3 py-1 text-xs transition-colors disabled:opacity-50 ${
+            className={`rounded border px-3 py-1.5 text-xs transition-colors disabled:opacity-50 ${
               spriteTemplate
                 ? "border-status-success/40 text-status-success hover:bg-status-success/10"
                 : "border-border-default text-text-secondary hover:bg-bg-elevated hover:text-text-primary"
@@ -553,7 +553,7 @@ export function PlayerSpriteManager() {
           {batchRunning ? (
             <button
               onClick={handleAbortBatch}
-              className="rounded border border-status-error/40 px-3 py-1 text-xs text-status-error transition-colors hover:bg-status-error/10"
+              className="rounded border border-status-error/40 px-3 py-1.5 text-xs text-status-error transition-colors hover:bg-status-error/10"
             >
               Abort
             </button>
@@ -562,7 +562,7 @@ export function PlayerSpriteManager() {
               onClick={handleBatchGenerate}
               disabled={!hasApiKey || missingInView === 0 || !!generating}
               title={!hasApiKey ? "Configure an API key in Settings first" : `Generate ${missingInView} missing sprite${missingInView !== 1 ? "s" : ""}`}
-              className="rounded border border-accent/40 px-3 py-1 text-xs text-accent transition-colors hover:bg-accent/10 disabled:opacity-50"
+              className="rounded border border-accent/40 px-3 py-1.5 text-xs text-accent transition-colors hover:bg-accent/10 disabled:opacity-50"
             >
               Generate Missing ({missingInView})
             </button>
@@ -571,14 +571,14 @@ export function PlayerSpriteManager() {
           <button
             onClick={handleImport}
             disabled={importing}
-            className="rounded border border-border-default px-3 py-1 text-xs text-text-secondary transition-colors hover:bg-bg-elevated hover:text-text-primary disabled:opacity-50"
+            className="rounded border border-border-default px-3 py-1.5 text-xs text-text-secondary transition-colors hover:bg-bg-elevated hover:text-text-primary disabled:opacity-50"
           >
             {importing ? "Importing..." : "Import from Folder..."}
           </button>
           <button
             onClick={handleDeploy}
             disabled={deploying || coveredCount === 0}
-            className="rounded border border-accent/40 px-3 py-1 text-xs text-accent transition-colors hover:bg-accent/10 disabled:opacity-50"
+            className="rounded border border-accent/40 px-3 py-1.5 text-xs text-accent transition-colors hover:bg-accent/10 disabled:opacity-50"
           >
             {deploying ? "Deploying..." : "Deploy to R2"}
           </button>
@@ -752,12 +752,13 @@ export function PlayerSpriteManager() {
               <table className="w-full border-collapse">
                 <thead>
                   <tr>
-                    <th className="border border-border-default bg-bg-tertiary px-2 py-1 text-left text-2xs font-normal text-text-muted">
+                    <th scope="col" className="border border-border-default bg-bg-tertiary px-2 py-1 text-left text-2xs font-normal text-text-muted">
                       Class
                     </th>
                     {tiers.map((tier) => (
                       <th
                         key={tier}
+                        scope="col"
                         className="border border-border-default bg-bg-tertiary px-1 py-1 text-center text-2xs font-normal text-text-muted"
                       >
                         <div>{tierLabel(tier)}</div>

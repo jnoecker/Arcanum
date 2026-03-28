@@ -97,7 +97,7 @@ function InfoBadge({ d }: { d: RoomNodeData }) {
       {/* Title */}
       <div className="flex items-center gap-1">
         {d.isStartRoom && (
-          <span className="text-accent text-2xs" title="Start room">★</span>
+          <span className="text-accent text-2xs" title="Start room" aria-label="Start room">★</span>
         )}
         <span className="truncate text-[11px] font-semibold text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
           {d.title}
@@ -109,11 +109,11 @@ function InfoBadge({ d }: { d: RoomNodeData }) {
         <span className="truncate text-3xs text-white/60">{d.roomId}</span>
         {hasEntities && (
           <div className="flex items-center gap-1.5 text-3xs text-white/70">
-            {d.mobCount > 0 && <span title="Mobs">⚔{d.mobCount}</span>}
-            {d.itemCount > 0 && <span title="Items">◆{d.itemCount}</span>}
-            {d.shopCount > 0 && <span title="Shops">⛋{d.shopCount}</span>}
+            {d.mobCount > 0 && <span title="Mobs" aria-label={`${d.mobCount} mobs`}>⚔{d.mobCount}</span>}
+            {d.itemCount > 0 && <span title="Items" aria-label={`${d.itemCount} items`}>◆{d.itemCount}</span>}
+            {d.shopCount > 0 && <span title="Shops" aria-label={`${d.shopCount} shops`}>⛋{d.shopCount}</span>}
             {d.station && (
-              <span className="text-status-info" title={`Station: ${d.station}`}>⚒</span>
+              <span className="text-status-info" title={`Station: ${d.station}`} aria-label={`Crafting station: ${d.station}`}>⚒</span>
             )}
           </div>
         )}

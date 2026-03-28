@@ -60,6 +60,9 @@ export function DirectionPicker({
     <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/40">
       <div
         ref={panelRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Choose exit direction"
         className="rounded-lg border border-border-default bg-bg-secondary p-4 shadow-xl"
       >
         <p className="mb-1 font-display text-xs tracking-wide text-text-primary">

@@ -1,8 +1,8 @@
-import { useEffect, useState } from "react";
+import { memo, useEffect, useState } from "react";
 import { useAdminStore } from "@/stores/adminStore";
 import type { ShopEntry } from "@/types/admin";
 
-function ShopRow({ shop }: { shop: ShopEntry }) {
+const ShopRow = memo(function ShopRow({ shop }: { shop: ShopEntry }) {
   const [expanded, setExpanded] = useState(false);
 
   return (
@@ -57,7 +57,7 @@ function ShopRow({ shop }: { shop: ShopEntry }) {
       )}
     </div>
   );
-}
+});
 
 export function AdminShopList() {
   const shops = useAdminStore((s) => s.shops);

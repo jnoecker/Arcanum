@@ -269,6 +269,7 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
             disabled={!canUndo}
             className="h-6 w-6 rounded text-xs text-accent transition-colors enabled:hover:bg-accent/10 disabled:opacity-30"
             title="Undo (Ctrl+Z)"
+            aria-label="Undo"
           >
             &#x21B6;
           </button>
@@ -277,6 +278,7 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
             disabled={!canRedo}
             className="h-6 w-6 rounded text-xs text-accent transition-colors enabled:hover:bg-accent/10 disabled:opacity-30"
             title="Redo (Ctrl+Shift+Z)"
+            aria-label="Redo"
           >
             &#x21B7;
           </button>
@@ -294,10 +296,12 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
 
         <div className="ml-auto flex items-center gap-2">
           {/* View toggle */}
-          <div className="flex rounded border border-border-default bg-bg-primary">
+          <div className="flex rounded border border-border-default bg-bg-primary" role="tablist">
             {(["map", "assets", "media"] as const).map((mode, i, arr) => (
               <button
                 key={mode}
+                role="tab"
+                aria-selected={viewMode === mode}
                 onClick={() => setViewMode(mode)}
                 className={`h-6 px-2 text-2xs font-medium tracking-wide transition-colors ${
                   i === 0 ? "rounded-l" : i === arr.length - 1 ? "rounded-r" : ""

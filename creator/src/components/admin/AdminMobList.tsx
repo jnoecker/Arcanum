@@ -1,8 +1,8 @@
-import { useEffect, useState } from "react";
+import { memo, useEffect, useState } from "react";
 import { useAdminStore } from "@/stores/adminStore";
 import type { MobSummary } from "@/types/admin";
 
-function HpBar({ hp, maxHp }: { hp: number; maxHp: number }) {
+const HpBar = memo(function HpBar({ hp, maxHp }: { hp: number; maxHp: number }) {
   if (maxHp <= 0) return null;
   const pct = Math.round((hp / maxHp) * 100);
   const color =
@@ -24,9 +24,9 @@ function HpBar({ hp, maxHp }: { hp: number; maxHp: number }) {
       </span>
     </div>
   );
-}
+});
 
-function MobRow({
+const MobRow = memo(function MobRow({
   mob,
   onSelect,
 }: {
@@ -59,7 +59,7 @@ function MobRow({
       </div>
     </button>
   );
-}
+});
 
 export function AdminMobList() {
   const mobs = useAdminStore((s) => s.mobs);

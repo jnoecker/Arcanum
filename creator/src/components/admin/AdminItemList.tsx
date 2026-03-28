@@ -1,8 +1,8 @@
-import { useEffect } from "react";
+import { memo, useEffect } from "react";
 import { useAdminStore } from "@/stores/adminStore";
 import type { ItemEntry } from "@/types/admin";
 
-function ItemRow({ item }: { item: ItemEntry }) {
+const ItemRow = memo(function ItemRow({ item }: { item: ItemEntry }) {
   return (
     <div className="flex w-full items-center gap-3 rounded-2xl border border-white/8 bg-white/4 px-4 py-3 transition-all duration-200">
       <div className="min-w-0 flex-1">
@@ -39,7 +39,7 @@ function ItemRow({ item }: { item: ItemEntry }) {
       </div>
     </div>
   );
-}
+});
 
 export function AdminItemList() {
   const items = useAdminStore((s) => s.items);

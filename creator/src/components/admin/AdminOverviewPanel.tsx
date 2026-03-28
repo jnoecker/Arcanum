@@ -54,7 +54,7 @@ export function AdminOverviewPanel() {
             <p className="text-[11px] uppercase tracking-wide-ui text-text-muted">
               Souls in the world
             </p>
-            <p className={`mt-1 font-display text-5xl tracking-wide ${
+            <p className={`mt-1 font-display text-3xl tracking-wide ${
               hasPlayers ? "text-accent" : "text-text-muted"
             }`}>
               {overview.playersOnline}

@@ -9,10 +9,9 @@ import { useEffect, useRef, type ReactNode } from "react";
  * Respects prefers-reduced-motion (no animation, instant display).
  */
 
-// Spring approximation via CSS linear() easing — matches a spring with
-// damping ~0.7, stiffness ~180. Pre-computed 20 keyframes.
-const SPRING_EASING =
-  "linear(0, 0.009, 0.035, 0.078, 0.136, 0.207, 0.290, 0.381, 0.476, 0.571, 0.662, 0.745, 0.818, 0.878, 0.924, 0.957, 0.979, 0.991, 0.998, 1)";
+// Design system easings (Web Animations API doesn't support var())
+const EASE_UNFURL = "cubic-bezier(0.16, 1, 0.3, 1)"; // --ease-unfurl: entry
+const EASE_COSMIC = "cubic-bezier(0.4, 0, 0.2, 1)";  // --ease-cosmic: bidirectional
 
 interface SpringPanelProps {
   /** Key that changes when the panel content switches (e.g. roomId) */
@@ -44,7 +43,7 @@ export function SpringPanel({ contentKey, children }: SpringPanelProps) {
         ],
         {
           duration: 400,
-          easing: SPRING_EASING,
+          easing: EASE_UNFURL,
           fill: "backwards",
         },
       );
@@ -57,7 +56,7 @@ export function SpringPanel({ contentKey, children }: SpringPanelProps) {
         ],
         {
           duration: 250,
-          easing: SPRING_EASING,
+          easing: EASE_COSMIC,
           fill: "backwards",
         },
       );

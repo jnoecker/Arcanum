@@ -3,7 +3,7 @@ import type { AppConfig } from "@/types/config";
 export type SpriteTier = number | "staff";
 
 export function isRaceOnlyTier(tier: SpriteTier): boolean {
-  return tier === 0 || tier === "staff";
+  return tier === 1 || tier === "staff";
 }
 
 export function spriteClassForTier(cls: string, tier: SpriteTier): string {
@@ -12,24 +12,20 @@ export function spriteClassForTier(cls: string, tier: SpriteTier): string {
 
 /** All tier values: base, configured level tiers, plus the special staff tier. */
 export function getAllTiers(config: AppConfig): SpriteTier[] {
-  const numeric = Array.from(new Set([0, ...config.images.spriteLevelTiers])).sort((a, b) => a - b);
+  const numeric = Array.from(new Set([1, ...config.images.spriteLevelTiers])).sort((a, b) => a - b);
   return [...numeric, "staff"];
 }
 
 /** Human-readable tier label. */
 export function tierLabel(tier: SpriteTier): string {
   if (tier === "staff") return "tstaff (Staff)";
-  return tier === 0 ? "t0 (Base)" : `t${tier}`;
+  return tier === 1 ? "t1 (Base)" : `t${tier}`;
 }
 
 /** Level range for a tier. */
 export function tierRange(tier: SpriteTier, allTiers: SpriteTier[]): string {
   if (tier === "staff") return "Staff";
   const numeric = allTiers.filter((t): t is number => t !== "staff").sort((a, b) => a - b);
-  if (tier === 0) {
-    const nextTier = numeric[1];
-    return nextTier !== undefined ? `1-${nextTier - 1}` : "1+";
-  }
   const idx = numeric.indexOf(tier);
   if (idx === -1) return `${tier}+`;
   const nextTier = numeric[idx + 1];

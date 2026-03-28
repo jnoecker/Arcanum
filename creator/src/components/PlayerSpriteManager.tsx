@@ -41,7 +41,7 @@ interface SpriteImportResult {
   errors: string[];
 }
 
-/** Convert spriteMatrix tier format to spritePromptGen format ("t0", "tstaff"). */
+/** Convert spriteMatrix tier format to spritePromptGen format ("t1", "tstaff"). */
 function tierToPromptKey(tier: SpriteTier): string {
   return `t${tier}`;
 }

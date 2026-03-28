@@ -64,7 +64,7 @@ export const DEFAULT_CLASS_OUTFIT_DESCRIPTIONS: Record<string, string> = {
  * Ported from AmbonMUD-Visualize.
  */
 export const DEFAULT_TIER_DEFINITIONS: Record<string, TierDefinitionConfig> = {
-  t0: {
+  t1: {
     displayName: "Base",
     levels: "1–9",
     visualDescription:
@@ -146,7 +146,7 @@ export const DEFAULT_CLASS_SHOWCASE_RACES: Record<string, string> = {
 };
 
 /** Ordered tier keys for display. */
-export const TIER_ORDER: string[] = ["t0", "t10", "t25", "t50", "tstaff"];
+export const TIER_ORDER: string[] = ["t1", "t10", "t25", "t50", "tstaff"];
 
 /** Ordered race keys for display. */
 export const RACE_ORDER: string[] = [
@@ -154,7 +154,7 @@ export const RACE_ORDER: string[] = [
   "pyrae", "animae", "medusae", "kitsarae", "sylflorae", "orphirae",
 ];
 
-/** Ordered class keys for display (plus "base" pseudo-class for t0). */
+/** Ordered class keys for display (plus "base" pseudo-class for t1). */
 export const CLASS_ORDER: string[] = [
   "base", "bulwark", "warden", "arcanist", "faeweaver", "necromancer",
   "veil", "binder", "stormblade", "herald", "starweaver",

@@ -6,6 +6,8 @@ import { useStatMods } from "@/lib/useStatMods";
 import { FieldRow, TextInput, IconButton, CommitTextarea } from "@/components/ui/FormWidgets";
 import { RegistryPanel } from "./RegistryPanel";
 import { EntityArtGenerator } from "@/components/ui/EntityArtGenerator";
+import { EnhanceDescriptionButton } from "@/components/editors/EditorShared";
+import { BACKSTORY_ENHANCE_PROMPT } from "@/lib/lorePrompts";
 import { composePrompt, type ArtStyle } from "@/lib/arcanumPrompts";
 import { useAssetStore } from "@/stores/assetStore";
 
@@ -124,6 +126,13 @@ export function RaceDetail({
         value={race.backstory ?? ""}
         onCommit={(v) => patch({ backstory: v || undefined })}
         placeholder="Lore, history, and cultural background..."
+      />
+      <EnhanceDescriptionButton
+        entitySummary={buildContext()}
+        currentDescription={race.backstory}
+        onAccept={(text) => patch({ backstory: text })}
+        systemPrompt={BACKSTORY_ENHANCE_PROMPT}
+        label="Enhance backstory"
       />
 
       {/* Traits */}

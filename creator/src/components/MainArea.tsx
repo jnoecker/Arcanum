@@ -5,6 +5,7 @@ import { StudioWorkspace } from "./StudioWorkspace";
 
 const ZoneEditor = lazy(() => import("./zone/ZoneEditor").then(m => ({ default: m.ZoneEditor })));
 const ConfigPanelHost = lazy(() => import("./config/ConfigPanelHost").then(m => ({ default: m.ConfigPanelHost })));
+const LorePanelHost = lazy(() => import("./lore/LorePanelHost").then(m => ({ default: m.LorePanelHost })));
 const PlayerSpriteManager = lazy(() => import("./PlayerSpriteManager").then(m => ({ default: m.PlayerSpriteManager })));
 const Console = lazy(() => import("./Console").then(m => ({ default: m.Console })));
 const AdminDashboard = lazy(() => import("./admin/AdminDashboard").then(m => ({ default: m.AdminDashboard })));
@@ -37,6 +38,8 @@ export function MainArea() {
       const def = PANEL_MAP[panelId];
       if (def?.host === "studio") {
         content = <StudioWorkspace panelId={panelId} />;
+      } else if (def?.host === "lore") {
+        content = <LorePanelHost panelId={panelId} />;
       } else {
         content = <ConfigPanelHost panelId={panelId} />;
       }

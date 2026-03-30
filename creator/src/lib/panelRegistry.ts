@@ -7,6 +7,7 @@ export type SidebarGroup =
   | "characters"
   | "abilities"
   | "world"
+  | "lore"
   | "content"
   | "operations";
 
@@ -16,7 +17,7 @@ export interface PanelDef {
   group: SidebarGroup;
   /** "config" panels share the config auto-save chrome, "studio" panels
    *  share the zone-selection state in StudioWorkspace. */
-  host: "config" | "studio";
+  host: "config" | "studio" | "lore";
   kicker: string;
   title: string;
   description: string;
@@ -66,6 +67,14 @@ const WORLD_PANELS: PanelDef[] = [
   { id: "emotes", label: "Emotes", group: "world", host: "config", kicker: "Social", title: "Emote presets", description: "Quick-action emotes available to players in the chat panel.", maxWidth: "max-w-5xl" },
 ];
 
+// ─── Lore panels ───────────────────────────────────────────────────
+
+const LORE_PANELS: PanelDef[] = [
+  { id: "worldSetting", label: "World Setting", group: "lore", host: "lore", kicker: "Lore", title: "World setting", description: "Name, overview, history, themes, geography, and magic system.", maxWidth: "max-w-5xl" },
+  { id: "factions", label: "Factions", group: "lore", host: "lore", kicker: "Lore", title: "Factions & organizations", description: "Political groups, guilds, and power structures.", maxWidth: "max-w-5xl" },
+  { id: "codex", label: "Codex", group: "lore", host: "lore", kicker: "Lore", title: "Lore codex", description: "Wiki-style articles for places, legends, creatures, deities, and more.", maxWidth: "max-w-5xl" },
+];
+
 // ─── Content panels ─────────────────────────────────────────────────
 
 const CONTENT_PANELS: PanelDef[] = [
@@ -90,6 +99,7 @@ export const ALL_PANELS: PanelDef[] = [
   ...CHARACTER_PANELS,
   ...ABILITY_PANELS,
   ...WORLD_PANELS,
+  ...LORE_PANELS,
   ...CONTENT_PANELS,
   ...OPERATIONS_PANELS,
 ];
@@ -103,6 +113,7 @@ export const SIDEBAR_GROUPS: { id: SidebarGroup; label: string; panels: PanelDef
   { id: "characters", label: "Characters", panels: CHARACTER_PANELS },
   { id: "abilities", label: "Abilities", panels: ABILITY_PANELS },
   { id: "world", label: "World", panels: WORLD_PANELS },
+  { id: "lore", label: "Lore", panels: LORE_PANELS },
   { id: "content", label: "Content", panels: CONTENT_PANELS },
   { id: "operations", label: "Operations", panels: OPERATIONS_PANELS },
 ];

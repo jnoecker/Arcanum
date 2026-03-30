@@ -4,7 +4,9 @@ import { invoke } from "@tauri-apps/api/core";
 import { useProjectStore } from "@/stores/projectStore";
 import { useZoneStore } from "@/stores/zoneStore";
 import { useConfigStore } from "@/stores/configStore";
+import { useLoreStore } from "@/stores/loreStore";
 import { loadProjectZones, loadProjectConfig } from "@/lib/loader";
+import { loadLore } from "@/lib/lorePersistence";
 import { useSpriteDefinitionStore } from "@/stores/spriteDefinitionStore";
 import { loadUIState, addRecentProject } from "@/lib/uiPersistence";
 import type { Project, ProjectFormat, Tab } from "@/types/project";
@@ -43,6 +45,7 @@ export function useOpenProject() {
     // Clear previous state
     clearZones();
     clearConfig();
+    useLoreStore.getState().clearLore();
 
     // Create project
     const project: Project = {
@@ -66,6 +69,11 @@ export function useOpenProject() {
     if (config) {
       setConfig(config);
     }
+
+    // Load lore (creator-only, not deployed)
+    loadLore(project)
+      .then((lore) => useLoreStore.getState().setLore(lore))
+      .catch(() => {});
 
     setProject(project);
     addRecentProject(mudDir, project.name);

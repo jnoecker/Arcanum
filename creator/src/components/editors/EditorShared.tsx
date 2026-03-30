@@ -44,11 +44,17 @@ export function EnhanceDescriptionButton({
   currentDescription,
   onAccept,
   vibe,
+  systemPrompt,
+  label,
 }: {
   entitySummary: string;
   currentDescription?: string;
   onAccept: (description: string) => void;
   vibe?: string;
+  /** Override the default system prompt (e.g. for lore/backstory enhancement). */
+  systemPrompt?: string;
+  /** Override button label. Defaults to "Enhance". */
+  label?: string;
 }) {
   const [loading, setLoading] = useState(false);
 
@@ -63,7 +69,7 @@ export function EnhanceDescriptionButton({
         parts.push(`\nZone atmosphere: ${vibe}`);
       }
       const result = await invoke<string>("llm_complete", {
-        systemPrompt: DESCRIBE_SYSTEM_PROMPT,
+        systemPrompt: systemPrompt ?? DESCRIBE_SYSTEM_PROMPT,
         userPrompt: parts.join("\n"),
       });
       onAccept(result.trim());
@@ -81,7 +87,7 @@ export function EnhanceDescriptionButton({
       className="shrink-0 rounded px-1.5 py-0.5 text-2xs text-accent transition-colors hover:bg-accent/10 disabled:opacity-50"
       title="Use AI to write a description"
     >
-      {loading ? "..." : "Enhance"}
+      {loading ? "..." : (label ?? "Enhance")}
     </button>
   );
 }

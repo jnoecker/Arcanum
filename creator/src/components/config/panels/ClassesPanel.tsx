@@ -1,6 +1,8 @@
 import { useMemo, useCallback } from "react";
 import type { ConfigPanelProps } from "./types";
 import type { AppConfig, ClassDefinitionConfig } from "@/types/config";
+import { EnhanceDescriptionButton } from "@/components/editors/EditorShared";
+import { BACKSTORY_ENHANCE_PROMPT } from "@/lib/lorePrompts";
 import { chartTokens } from "@/lib/cssTokens";
 import {
   FieldRow,
@@ -142,6 +144,13 @@ export function ClassDetail({
         value={cls.backstory ?? ""}
         onCommit={(v) => patch({ backstory: v || undefined })}
         placeholder="Lore, training traditions, role in the world..."
+      />
+      <EnhanceDescriptionButton
+        entitySummary={buildContext()}
+        currentDescription={cls.backstory}
+        onAccept={(text) => patch({ backstory: text })}
+        systemPrompt={BACKSTORY_ENHANCE_PROMPT}
+        label="Enhance backstory"
       />
 
       <FieldRow label="HP / Level" hint="Class-specific HP gained per level, stacked with the global HP/level in Progression.">

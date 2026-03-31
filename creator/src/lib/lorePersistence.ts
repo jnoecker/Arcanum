@@ -31,6 +31,9 @@ export async function loadLore(project: Project): Promise<WorldLore> {
       return {
         version: 2,
         articles: (raw.articles as Record<string, Article>) ?? {},
+        maps: Array.isArray(raw.maps) ? (raw.maps as WorldLore["maps"]) : undefined,
+        calendarSystems: Array.isArray(raw.calendarSystems) ? (raw.calendarSystems as WorldLore["calendarSystems"]) : undefined,
+        timelineEvents: Array.isArray(raw.timelineEvents) ? (raw.timelineEvents as WorldLore["timelineEvents"]) : undefined,
       };
     }
 

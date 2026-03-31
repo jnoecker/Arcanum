@@ -9,6 +9,7 @@ import {
   statusEffectToPlain,
   classToPlain,
   raceToPlain,
+  housingToPlain,
   buildMonolithicConfigObject,
   loadSlotPositions,
 } from "@/lib/exportMud";
@@ -177,6 +178,8 @@ async function saveSplitConfig(projectDir: string): Promise<void> {
       achievementCriterionTypes: { types: config.achievementCriterionTypes },
       questObjectiveTypes: { types: config.questObjectiveTypes },
       questCompletionTypes: { types: config.questCompletionTypes },
+      housing: (config.housing.enabled || Object.keys(config.housing.templates).length > 0)
+        ? housingToPlain(config.housing) : undefined,
     })),
 
     write("assets", cleanObj({

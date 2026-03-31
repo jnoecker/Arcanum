@@ -231,6 +231,49 @@ export function validateConfig(config: AppConfig): ValidationIssue[] {
     }
   }
 
+  // ─── Housing ──────────────────────────────────────────────────
+  const housingTemplates = config.housing.templates;
+  if (Object.keys(housingTemplates).length > 0) {
+    const entryTemplates = Object.entries(housingTemplates).filter(([, t]) => t.isEntry);
+    if (entryTemplates.length === 0) {
+      issues.push({
+        severity: "error",
+        entity: "housing",
+        message: "No entry template defined — exactly one template must have isEntry: true",
+      });
+    } else if (entryTemplates.length > 1) {
+      issues.push({
+        severity: "error",
+        entity: "housing",
+        message: `Multiple entry templates: ${entryTemplates.map(([id]) => id).join(", ")} — only one is allowed`,
+      });
+    }
+    const stationTypeIds = new Set(Object.keys(config.craftingStationTypes));
+    for (const [id, t] of Object.entries(housingTemplates)) {
+      if (!t.title?.trim()) {
+        issues.push({
+          severity: "error",
+          entity: `housingTemplate:${id}`,
+          message: "Title is required",
+        });
+      }
+      if (t.cost < 0) {
+        issues.push({
+          severity: "error",
+          entity: `housingTemplate:${id}`,
+          message: "Cost must be >= 0",
+        });
+      }
+      if (t.station && stationTypeIds.size > 0 && !stationTypeIds.has(t.station)) {
+        issues.push({
+          severity: "warning",
+          entity: `housingTemplate:${id}`,
+          message: `Station "${t.station}" is not a defined crafting station type`,
+        });
+      }
+    }
+  }
+
   // ─── Combat ───────────────────────────────────────────────────
   if (config.combat.minDamage > config.combat.maxDamage) {
     issues.push({

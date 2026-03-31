@@ -9,6 +9,7 @@ import {
   TextInput,
   NumberInput,
   SelectInput,
+  CheckboxInput,
   IconButton,
 } from "@/components/ui/FormWidgets";
 import { DialogueEditor } from "./DialogueEditor";
@@ -152,6 +153,13 @@ export function MobEditor({
               onCommit={(v) => patch({ respawnSeconds: v })}
               placeholder="Default"
               min={0}
+            />
+          </FieldRow>
+          <FieldRow label="Housing Broker">
+            <CheckboxInput
+              checked={mob.housingBroker ?? false}
+              onCommit={(v) => patch({ housingBroker: v || undefined })}
+              label="Can broker housing"
             />
           </FieldRow>
         </div>

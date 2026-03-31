@@ -284,6 +284,11 @@ export function buildMonolithicConfigObject(
   if (c.emotePresets?.presets?.length > 0) {
     engine.emotePresets = c.emotePresets;
   }
+
+  // Housing
+  if (c.housing.enabled || Object.keys(c.housing.templates).length > 0) {
+    engine.housing = housingToPlain(c.housing);
+  }
   engine.classStartRooms = classStartRooms;
   engine.achievementCategories = { categories: withFallbackMap(c.achievementCategories, DEFAULT_ACHIEVEMENT_CATEGORIES) };
   engine.achievementCriterionTypes = { types: withFallbackMap(c.achievementCriterionTypes, DEFAULT_ACHIEVEMENT_CRITERION_TYPES) };
@@ -665,6 +670,28 @@ export function classToPlain(cls: AppConfig["classes"][string]): Record<string, 
   if (cls.outfitDescription) obj.outfitDescription = cls.outfitDescription;
   if (cls.showcaseRace) obj.showcaseRace = cls.showcaseRace;
   return obj;
+}
+
+export function housingToPlain(h: AppConfig["housing"]): Record<string, unknown> {
+  const templates: Record<string, unknown> = {};
+  for (const [id, t] of Object.entries(h.templates)) {
+    const obj: Record<string, unknown> = {
+      title: t.title,
+      description: t.description,
+      cost: t.cost,
+    };
+    if (t.isEntry) obj.isEntry = true;
+    if (t.image) obj.image = normalizeAssetRef(t.image);
+    if (t.maxDroppedItems != null && t.maxDroppedItems > 0) obj.maxDroppedItems = t.maxDroppedItems;
+    if (t.safe) obj.safe = true;
+    if (t.station) obj.station = t.station;
+    templates[id] = obj;
+  }
+  return {
+    enabled: h.enabled,
+    entryExitDirection: h.entryExitDirection,
+    templates,
+  };
 }
 
 export function raceToPlain(race: AppConfig["races"][string]): Record<string, unknown> {

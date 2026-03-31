@@ -307,6 +307,25 @@ export interface CraftingStationTypeDefinition {
   image?: string;
 }
 
+// ─── Housing ───────────────────────────────────────────────────────
+
+export interface HousingTemplateDefinition {
+  title: string;
+  description: string;
+  cost: number;
+  isEntry?: boolean;
+  image?: string;
+  maxDroppedItems?: number;
+  safe?: boolean;
+  station?: string;
+}
+
+export interface HousingConfig {
+  enabled: boolean;
+  entryExitDirection: string;
+  templates: Record<string, HousingTemplateDefinition>;
+}
+
 // ─── Friends ────────────────────────────────────────────────────────
 
 export interface FriendsConfig {
@@ -470,6 +489,7 @@ export interface AppConfig {
   abilityTargetTypes: Record<string, AbilityTargetTypeDefinition>;
   craftingSkills: Record<string, CraftingSkillDefinition>;
   craftingStationTypes: Record<string, CraftingStationTypeDefinition>;
+  housing: HousingConfig;
   guild: GuildConfig;
   guildRanks: Record<string, GuildRankDefinition>;
   friends: FriendsConfig;

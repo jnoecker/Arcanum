@@ -181,7 +181,7 @@ export async function generateWorldSeed(concept: string): Promise<WorldSeedResul
   const result = await invoke<string>("llm_complete", {
     systemPrompt: WORLD_SEED_SYSTEM,
     userPrompt: `World concept:\n${concept}`,
-    maxTokens: 8192,
+    maxTokens: 16384,
   });
 
   console.log("[WorldSeed] Raw LLM response length:", result.length);
@@ -307,8 +307,57 @@ function parseJsonResponse(raw: string): Record<string, unknown> {
     if (match) {
       try { return JSON.parse(match[0]); } catch { /* fall through */ }
     }
+    // Try to repair truncated JSON by closing open brackets/braces
+    const repaired = repairTruncatedJson(cleaned);
+    if (repaired) {
+      try {
+        console.log("[JSON Repair] Successfully repaired truncated JSON");
+        return JSON.parse(repaired);
+      } catch { /* fall through */ }
+    }
     return {};
   }
+}
+
+/**
+ * Attempt to repair JSON that was truncated mid-stream.
+ * Finds the last valid position and closes all open brackets/braces.
+ */
+function repairTruncatedJson(raw: string): string | null {
+  // Find the start of JSON
+  const start = raw.indexOf("{");
+  if (start === -1) return null;
+
+  let json = raw.slice(start);
+
+  // Remove any trailing incomplete string (find last complete value)
+  // Trim back to the last comma, closing bracket, or complete value
+  json = json.replace(/,\s*"[^"]*"?\s*:?\s*"?[^"]*$/, "");
+  json = json.replace(/,\s*\{[^}]*$/, "");
+  json = json.replace(/,\s*"[^"]*$/, "");
+
+  // Count open vs close brackets
+  const stack: string[] = [];
+  let inString = false;
+  let escape = false;
+
+  for (const ch of json) {
+    if (escape) { escape = false; continue; }
+    if (ch === "\\") { escape = true; continue; }
+    if (ch === '"') { inString = !inString; continue; }
+    if (inString) continue;
+    if (ch === "{") stack.push("}");
+    else if (ch === "[") stack.push("]");
+    else if (ch === "}" || ch === "]") stack.pop();
+  }
+
+  // Close all remaining open brackets
+  if (stack.length > 0) {
+    json += stack.reverse().join("");
+    return json;
+  }
+
+  return json;
 }
 
 function makeId(title: string): string {

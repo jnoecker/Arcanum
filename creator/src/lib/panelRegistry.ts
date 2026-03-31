@@ -75,6 +75,7 @@ const LORE_PANELS: PanelDef[] = [
   { id: "worldSetting", label: "World Setting", group: "lore", host: "lore", kicker: "Lore", title: "World setting", description: "Name, overview, history, themes, geography, and magic system.", maxWidth: "max-w-5xl" },
   { id: "factions", label: "Factions", group: "lore", host: "lore", kicker: "Lore", title: "Factions & organizations", description: "Political groups, guilds, and power structures.", maxWidth: "max-w-5xl" },
   { id: "codex", label: "Codex", group: "lore", host: "lore", kicker: "Lore", title: "Lore codex", description: "Wiki-style articles for places, legends, creatures, deities, and more.", maxWidth: "max-w-5xl" },
+  { id: "loreMaps", label: "Maps", group: "lore", host: "lore", kicker: "Lore", title: "World maps", description: "Upload maps, place pins, and link locations to lore articles.", maxWidth: "max-w-7xl" },
 ];
 
 // ─── Content panels ─────────────────────────────────────────────────

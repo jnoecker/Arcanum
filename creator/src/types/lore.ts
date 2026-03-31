@@ -35,9 +35,31 @@ export interface Article {
   updatedAt: string;
 }
 
+// ─── Maps ──────────────────────────────────────────────────────────
+
+export interface MapPin {
+  id: string;
+  articleId?: string;
+  position: [number, number];
+  label?: string;
+  color?: string;
+}
+
+export interface LoreMap {
+  id: string;
+  title: string;
+  imageAsset: string;
+  width: number;
+  height: number;
+  pins: MapPin[];
+}
+
+// ─── Top-level lore container ──────────────────────────────────────
+
 export interface WorldLore {
   version: 2;
   articles: Record<string, Article>;
+  maps?: LoreMap[];
 }
 
 export const DEFAULT_WORLD_LORE: WorldLore = {

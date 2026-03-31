@@ -1,10 +1,11 @@
 import { create } from "zustand";
-import type { WorldLore, Article, ArticleTemplate } from "@/types/lore";
+import type { WorldLore, Article, ArticleTemplate, LoreMap, MapPin } from "@/types/lore";
 
 interface LoreStore {
   lore: WorldLore | null;
   dirty: boolean;
   selectedArticleId: string | null;
+  selectedMapId: string | null;
 
   setLore: (lore: WorldLore) => void;
   createArticle: (article: Article) => void;
@@ -19,6 +20,15 @@ interface LoreStore {
     articles: Record<string, Article>,
   ) => void;
 
+  // Map operations
+  createMap: (map: LoreMap) => void;
+  updateMap: (id: string, patch: Partial<LoreMap>) => void;
+  deleteMap: (id: string) => void;
+  selectMap: (id: string | null) => void;
+  addPin: (mapId: string, pin: MapPin) => void;
+  updatePin: (mapId: string, pinId: string, patch: Partial<MapPin>) => void;
+  removePin: (mapId: string, pinId: string) => void;
+
   markClean: () => void;
   clearLore: () => void;
 }
@@ -27,6 +37,7 @@ export const useLoreStore = create<LoreStore>((set) => ({
   lore: null,
   dirty: false,
   selectedArticleId: null,
+  selectedMapId: null,
 
   setLore: (lore) => set({ lore, dirty: false }),
 
@@ -103,6 +114,85 @@ export const useLoreStore = create<LoreStore>((set) => ({
       };
     }),
 
+  // ─── Map operations ────────────────────────────────────────────
+  createMap: (map) =>
+    set((s) => {
+      if (!s.lore) return s;
+      return {
+        lore: { ...s.lore, maps: [...(s.lore.maps ?? []), map] },
+        dirty: true,
+        selectedMapId: map.id,
+      };
+    }),
+
+  updateMap: (id, patch) =>
+    set((s) => {
+      if (!s.lore?.maps) return s;
+      return {
+        lore: {
+          ...s.lore,
+          maps: s.lore.maps.map((m) => (m.id === id ? { ...m, ...patch } : m)),
+        },
+        dirty: true,
+      };
+    }),
+
+  deleteMap: (id) =>
+    set((s) => {
+      if (!s.lore?.maps) return s;
+      return {
+        lore: { ...s.lore, maps: s.lore.maps.filter((m) => m.id !== id) },
+        dirty: true,
+        selectedMapId: s.selectedMapId === id ? null : s.selectedMapId,
+      };
+    }),
+
+  selectMap: (id) => set({ selectedMapId: id }),
+
+  addPin: (mapId, pin) =>
+    set((s) => {
+      if (!s.lore?.maps) return s;
+      return {
+        lore: {
+          ...s.lore,
+          maps: s.lore.maps.map((m) =>
+            m.id === mapId ? { ...m, pins: [...m.pins, pin] } : m,
+          ),
+        },
+        dirty: true,
+      };
+    }),
+
+  updatePin: (mapId, pinId, patch) =>
+    set((s) => {
+      if (!s.lore?.maps) return s;
+      return {
+        lore: {
+          ...s.lore,
+          maps: s.lore.maps.map((m) =>
+            m.id === mapId
+              ? { ...m, pins: m.pins.map((p) => (p.id === pinId ? { ...p, ...patch } : p)) }
+              : m,
+          ),
+        },
+        dirty: true,
+      };
+    }),
+
+  removePin: (mapId, pinId) =>
+    set((s) => {
+      if (!s.lore?.maps) return s;
+      return {
+        lore: {
+          ...s.lore,
+          maps: s.lore.maps.map((m) =>
+            m.id === mapId ? { ...m, pins: m.pins.filter((p) => p.id !== pinId) } : m,
+          ),
+        },
+        dirty: true,
+      };
+    }),
+
   markClean: () => set({ dirty: false }),
-  clearLore: () => set({ lore: null, dirty: false, selectedArticleId: null }),
+  clearLore: () => set({ lore: null, dirty: false, selectedArticleId: null, selectedMapId: null }),
 }));

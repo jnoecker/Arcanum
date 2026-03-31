@@ -11,6 +11,7 @@ import { WorldSettingPanel } from "./WorldSettingPanel";
 import { FactionsPanel } from "./FactionsPanel";
 import { LoreCodexPanel } from "./LoreCodexPanel";
 import { ArticleBrowser } from "./ArticleBrowser";
+import { MapPanel } from "./MapPanel";
 
 // ─── Panel renderer ─────────────────────────────────────────────────
 
@@ -24,6 +25,8 @@ function renderPanel(panelId: string): ReactNode {
       return <FactionsPanel />;
     case "codex":
       return <LoreCodexPanel />;
+    case "loreMaps":
+      return <MapPanel />;
     default:
       return <div className="text-text-muted">Unknown lore panel: {panelId}</div>;
   }

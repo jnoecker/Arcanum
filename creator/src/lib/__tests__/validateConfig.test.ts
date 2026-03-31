@@ -79,6 +79,7 @@ const BASE_CONFIG: AppConfig = {
   abilityTargetTypes: {},
   craftingSkills: {},
   craftingStationTypes: {},
+  housing: { enabled: false, entryExitDirection: "SOUTH", templates: {} },
   guildRanks: {},
   mobActionDelay: { minActionDelayMillis: 8000, maxActionDelayMillis: 20000 },
   characterCreation: { startingGold: 0 },

@@ -89,6 +89,7 @@ export function parseAppConfigYaml(content: string): AppConfig {
     abilityTargetTypes: parseMapSection(engine.targetTypes, "types"),
     craftingSkills: parseMapSection(engine.craftingSkills, "skills"),
     craftingStationTypes: parseMapSection(engine.craftingStationTypes, "stationTypes"),
+    housing: parseHousingConfig(engine.housing),
     guild: parseGuildConfig(engine.guildRanks),
     guildRanks: parseMapSection(engine.guildRanks, "ranks"),
     friends: parseFriendsConfig(engine.friends),
@@ -459,7 +460,7 @@ function collectRawSections(
     "questObjectiveTypes", "questCompletionTypes",
     "effectTypes", "targetTypes", "stackBehaviors",
     "craftingSkills", "craftingStationTypes",
-    "scheduler", "friends", "debug", "classStartRooms", "emotePresets",
+    "scheduler", "friends", "debug", "classStartRooms", "emotePresets", "housing",
   ]);
 
   const raw: Record<string, unknown> = {};
@@ -503,6 +504,29 @@ function parseGuildConfig(raw: unknown): AppConfig["guild"] {
   return {
     founderRank: asString(s.founderRank, "leader"),
     defaultRank: asString(s.defaultRank, "member"),
+  };
+}
+
+function parseHousingConfig(raw: unknown): AppConfig["housing"] {
+  const s = (raw ?? {}) as Record<string, unknown>;
+  const templates: AppConfig["housing"]["templates"] = {};
+  const rawTemplates = (s.templates ?? {}) as Record<string, Record<string, unknown>>;
+  for (const [id, t] of Object.entries(rawTemplates)) {
+    templates[id] = {
+      title: asString(t.title, id),
+      description: asString(t.description, ""),
+      cost: asNumber(t.cost, 0),
+      isEntry: t.isEntry === true ? true : undefined,
+      image: typeof t.image === "string" ? t.image : undefined,
+      maxDroppedItems: typeof t.maxDroppedItems === "number" ? t.maxDroppedItems : undefined,
+      safe: t.safe === true ? true : undefined,
+      station: typeof t.station === "string" ? t.station : undefined,
+    };
+  }
+  return {
+    enabled: asBool(s.enabled, false),
+    entryExitDirection: asString(s.entryExitDirection, "SOUTH"),
+    templates,
   };
 }
 
@@ -664,6 +688,7 @@ async function loadSplitConfig(projectDir: string): Promise<AppConfig | null> {
       navigation: parseNavigationConfig(worldRaw.navigation),
       commands: asRecord(worldRaw.commands),
       group: parseSimpleSection(worldRaw.group, { maxSize: 5, inviteTimeoutMs: 60000, xpBonusPerMember: 0.1 }),
+      housing: parseHousingConfig(worldRaw.housing),
       guild: parseGuildConfig(worldRaw.guildRanks),
       guildRanks: parseMapSection(worldRaw.guildRanks, "ranks"),
       friends: parseFriendsConfig(worldRaw.friends),

@@ -96,6 +96,7 @@ const BASE_CONFIG: AppConfig = {
   abilityTargetTypes: {},
   craftingSkills: {},
   craftingStationTypes: {},
+  housing: { enabled: false, entryExitDirection: "SOUTH", templates: {} },
   guild: { founderRank: "leader", defaultRank: "member" },
   guildRanks: {},
   friends: { maxFriends: 50 },

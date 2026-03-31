@@ -70,6 +70,7 @@ export interface MobFile {
   behavior?: BehaviorFile;
   dialogue?: Record<string, DialogueNodeFile>;
   quests?: string[];
+  housingBroker?: boolean;
   image?: string;
   video?: string;
 }

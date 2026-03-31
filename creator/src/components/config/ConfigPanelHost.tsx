@@ -37,6 +37,7 @@ import { EconomyPanel } from "./panels/EconomyPanel";
 import { CraftingStudio } from "./CraftingStudio";
 import { GuildDesigner } from "./GuildDesigner";
 import { EmotePresetsPanel } from "./panels/EmotePresetsPanel";
+import { HousingPanel } from "./panels/HousingPanel";
 
 // ─── Content panels ─────────────────────────────────────────────────
 import { AchievementDesigner } from "./AchievementDesigner";
@@ -160,6 +161,8 @@ function renderPanel(panelId: string, props: ConfigPanelProps): ReactNode {
       return <GuildDesigner config={config} onChange={onChange} section="guilds" />;
     case "emotes":
       return <EmotePresetsPanel config={config} onChange={onChange} />;
+    case "housing":
+      return <HousingPanel config={config} onChange={onChange} />;
 
     // Content
     case "achievements":

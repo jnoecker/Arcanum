@@ -71,6 +71,7 @@ function CalendarEditor({
         <div key={cal.id} className="mb-4 rounded-lg border border-border-muted bg-bg-primary p-3">
           <div className="flex items-center justify-between gap-2">
             <input
+              aria-label="Calendar name"
               className="min-w-0 flex-1 bg-transparent font-display text-sm text-text-primary outline-none"
               value={cal.name}
               onChange={(e) => patchCalendar(cal.id, { name: e.target.value })}
@@ -87,13 +88,15 @@ function CalendarEditor({
                 <div key={era.id} className="flex items-center gap-2">
                   <input
                     type="color"
+                    aria-label={`Color for ${era.name}`}
                     value={era.color || "#a897d2"}
                     onChange={(e) => patchEra(cal.id, era.id, { color: e.target.value })}
-                    className="h-5 w-5 cursor-pointer rounded border-none bg-transparent"
+                    className="h-6 w-6 cursor-pointer rounded border-none bg-transparent"
                     title="Era color"
                   />
                   <input
-                    className="min-w-0 flex-1 rounded border border-border-default bg-bg-primary px-2 py-0.5 text-xs text-text-primary outline-none focus:border-accent/50"
+                    aria-label="Era name"
+                    className="min-w-0 flex-1 rounded border border-border-default bg-bg-primary px-2 py-1 text-xs text-text-primary outline-none focus:border-accent/50"
                     value={era.name}
                     onChange={(e) => patchEra(cal.id, era.id, { name: e.target.value })}
                     placeholder="Era name"
@@ -101,7 +104,8 @@ function CalendarEditor({
                   <span className="text-2xs text-text-muted">starts:</span>
                   <input
                     type="number"
-                    className="w-16 rounded border border-border-default bg-bg-primary px-1.5 py-0.5 text-xs text-text-primary outline-none focus:border-accent/50"
+                    aria-label={`Start year for ${era.name}`}
+                    className="w-16 rounded border border-border-default bg-bg-primary px-1.5 py-1 text-xs text-text-primary outline-none focus:border-accent/50"
                     value={era.startYear}
                     onChange={(e) => patchEra(cal.id, era.id, { startYear: Number(e.target.value) || 0 })}
                   />
@@ -230,8 +234,8 @@ export function TimelinePanel() {
   const selectedEvent = events.find((e) => e.id === selectedEventId) ?? null;
 
   const handleAddEvent = useCallback(() => {
-    if (calendars.length === 0) return;
-    const cal = calendars[0]!;
+    const cal = calendars[0];
+    if (!cal) return;
     const era = cal.eras[0];
     const event: TimelineEvent = {
       id: `evt_${Date.now()}`,

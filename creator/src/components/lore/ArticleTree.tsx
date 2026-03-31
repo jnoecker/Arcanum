@@ -22,9 +22,9 @@ const TEMPLATE_COLORS: Record<ArticleTemplate, string> = {
   world_setting: "text-accent",
   character: "text-violet",
   location: "text-stellar-blue",
-  organization: "text-[#bea873]",
+  organization: "text-class-bulwark",
   item: "text-arcane-teal",
-  species: "text-[#c4956a]",
+  species: "text-class-warden",
   event: "text-status-warning",
   language: "text-text-muted",
   freeform: "text-text-muted",
@@ -75,26 +75,36 @@ function Node({ node, style, dragHandle }: NodeRendererProps<TreeNode>) {
     <div
       ref={dragHandle}
       style={style}
-      className={`flex cursor-pointer items-center gap-1.5 rounded px-2 py-1 text-xs transition-colors ${
+      role="treeitem"
+      aria-selected={isSelected}
+      aria-expanded={node.children && node.children.length > 0 ? node.isOpen : undefined}
+      tabIndex={0}
+      className={`flex cursor-pointer items-center gap-1.5 rounded px-2 py-1.5 text-xs transition-colors focus-visible:ring-1 focus-visible:ring-accent/50 ${
         isSelected
           ? "bg-accent/15 text-text-primary"
           : "text-text-secondary hover:bg-bg-tertiary"
       }`}
       onClick={() => selectArticle(node.data.id)}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          selectArticle(node.data.id);
+        }
+      }}
     >
-      {node.children && node.children.length > 0 && (
+      {node.children && node.children.length > 0 ? (
         <button
           onClick={(e) => {
             e.stopPropagation();
             node.toggle();
           }}
-          className="w-3 text-center text-text-muted"
+          aria-label={node.isOpen ? "Collapse" : "Expand"}
+          className="flex h-5 w-5 items-center justify-center rounded text-text-muted hover:bg-bg-tertiary"
         >
-          {node.isOpen ? "v" : ">"}
+          <span className="text-2xs">{node.isOpen ? "\u25BE" : "\u25B8"}</span>
         </button>
-      )}
-      {(!node.children || node.children.length === 0) && (
-        <span className="w-3" />
+      ) : (
+        <span className="w-5" />
       )}
       <span className={`w-5 text-center text-2xs font-bold ${colorClass}`}>
         {icon}
@@ -181,7 +191,8 @@ export function ArticleTree() {
     <div className="flex h-full flex-col">
       {/* Search */}
       <input
-        className="mb-2 w-full rounded border border-border-default bg-bg-primary px-2 py-1 text-xs text-text-primary outline-none focus:border-accent/50"
+        aria-label="Search articles"
+        className="mb-2 w-full rounded border border-border-default bg-bg-primary px-2 py-1.5 text-xs text-text-primary outline-none focus:border-accent/50"
         value={search}
         onChange={(e) => setSearch(e.target.value)}
         placeholder="Search articles..."
@@ -196,7 +207,7 @@ export function ArticleTree() {
           openByDefault={true}
           width="100%"
           indent={16}
-          rowHeight={28}
+          rowHeight={32}
           overscanCount={10}
           disableDrag={!!search.trim()}
           disableDrop={!!search.trim()}
@@ -214,7 +225,8 @@ export function ArticleTree() {
       <div className="mt-2 flex flex-col gap-1.5 border-t border-border-muted pt-2">
         <div className="flex gap-1.5">
           <input
-            className="min-w-0 flex-1 rounded border border-border-default bg-bg-primary px-2 py-1 text-xs text-text-primary outline-none focus:border-accent/50"
+            aria-label="New article title"
+            className="min-w-0 flex-1 rounded border border-border-default bg-bg-primary px-2 py-1.5 text-xs text-text-primary outline-none focus:border-accent/50"
             value={newTitle}
             onChange={(e) => setNewTitle(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleAdd()}
@@ -223,13 +235,15 @@ export function ArticleTree() {
           <button
             onClick={handleAdd}
             disabled={!newTitle.trim()}
-            className="rounded border border-border-default px-2 py-1 text-xs text-text-secondary hover:bg-bg-tertiary disabled:opacity-40"
+            aria-label="Add article"
+            className="rounded border border-border-default px-3 py-1.5 text-xs text-text-secondary hover:bg-bg-tertiary disabled:opacity-40"
           >
             +
           </button>
         </div>
         <select
-          className="rounded border border-border-default bg-bg-primary px-2 py-1 text-xs text-text-secondary outline-none focus:border-accent/50"
+          aria-label="Article template type"
+          className="rounded border border-border-default bg-bg-primary px-2 py-1.5 text-xs text-text-secondary outline-none focus:border-accent/50"
           value={newTemplate}
           onChange={(e) => setNewTemplate(e.target.value as ArticleTemplate)}
         >

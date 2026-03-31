@@ -85,7 +85,8 @@ function RelationGraphInner() {
             <button
               key={o.value}
               onClick={() => toggleTemplate(o.value)}
-              className={`rounded-full px-2 py-0.5 text-2xs transition ${
+              aria-pressed={templateFilters.size === 0 || templateFilters.has(o.value)}
+              className={`rounded-full px-2.5 py-1 text-2xs transition ${
                 templateFilters.size === 0 || templateFilters.has(o.value)
                   ? "bg-accent/15 text-accent"
                   : "text-text-muted hover:bg-bg-tertiary"
@@ -101,7 +102,8 @@ function RelationGraphInner() {
             <button
               key={o.value}
               onClick={() => toggleRelation(o.value)}
-              className={`rounded-full px-2 py-0.5 text-2xs transition ${
+              aria-pressed={relationFilters.size === 0 || relationFilters.has(o.value)}
+              className={`rounded-full px-2.5 py-1 text-2xs transition ${
                 relationFilters.size === 0 || relationFilters.has(o.value)
                   ? "bg-accent/15 text-accent"
                   : "text-text-muted hover:bg-bg-tertiary"
@@ -114,7 +116,7 @@ function RelationGraphInner() {
       </div>
 
       {/* Graph */}
-      <div className="h-[min(70vh,600px)] rounded-lg border border-border-muted" style={{ background: "#080c1c" }}>
+      <div className="h-[min(70vh,600px)] rounded-lg border border-border-muted bg-graph-bg">
         {nodes.length > 0 ? (
           <ReactFlow
             nodes={nodes}

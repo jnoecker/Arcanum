@@ -53,11 +53,13 @@ export const MentionList = forwardRef<MentionListRef, MentionListProps>(
     }
 
     return (
-      <div className="max-h-48 overflow-y-auto rounded-lg border border-border-default bg-bg-secondary shadow-panel">
+      <div role="listbox" aria-label="Article mentions" className="max-h-48 overflow-y-auto rounded-lg border border-border-default bg-bg-secondary shadow-panel">
         {items.map((item, index) => (
           <button
             key={item.id}
             type="button"
+            role="option"
+            aria-selected={index === selectedIndex}
             className={`flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs transition-colors ${
               index === selectedIndex
                 ? "bg-accent/15 text-accent"

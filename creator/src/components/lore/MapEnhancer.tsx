@@ -170,12 +170,18 @@ export function MapEnhancer({
   }, [crop, prompt, strength, extractCropBase64]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/70" onClick={onClose} />
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="map-enhance-title"
+      onKeyDown={(e) => { if (e.key === "Escape" && !generating) onClose(); }}
+    >
+      <div className="absolute inset-0 bg-black/70" aria-hidden="true" onClick={onClose} />
       <div className="relative flex max-h-[90vh] w-full max-w-4xl flex-col gap-4 overflow-y-auto rounded-[24px] border border-white/10 bg-bg-secondary p-6 shadow-panel">
         <div className="flex items-center justify-between">
-          <h3 className="font-display text-xl text-text-primary">Enhance Map Region</h3>
-          <button onClick={onClose} className="text-xs text-text-muted hover:text-text-primary">
+          <h3 id="map-enhance-title" className="font-display text-xl text-text-primary">Enhance Map Region</h3>
+          <button onClick={onClose} className="rounded px-2 py-1 text-xs text-text-muted hover:bg-bg-tertiary hover:text-text-primary">
             Close
           </button>
         </div>
@@ -185,14 +191,29 @@ export function MapEnhancer({
         </p>
 
         {/* Canvas */}
-        <div className="overflow-auto rounded-lg border border-border-muted bg-[#080c1c]">
+        <div className="overflow-auto rounded-lg border border-border-muted bg-bg-abyss">
           <canvas
             ref={canvasRef}
+            role="img"
+            aria-label="Map region selector — draw a rectangle to select an area"
             className="cursor-crosshair"
             onMouseDown={handleMouseDown}
             onMouseMove={handleMouseMove}
             onMouseUp={handleMouseUp}
             onMouseLeave={handleMouseUp}
+            onTouchStart={(e) => {
+              const touch = e.touches[0];
+              if (!touch) return;
+              const rect = canvasRef.current?.getBoundingClientRect();
+              if (!rect) return;
+              handleMouseDown({ clientX: touch.clientX, clientY: touch.clientY } as unknown as React.MouseEvent<HTMLCanvasElement>);
+            }}
+            onTouchMove={(e) => {
+              const touch = e.touches[0];
+              if (!touch) return;
+              handleMouseMove({ clientX: touch.clientX, clientY: touch.clientY } as unknown as React.MouseEvent<HTMLCanvasElement>);
+            }}
+            onTouchEnd={() => handleMouseUp()}
           />
         </div>
 
@@ -211,8 +232,9 @@ export function MapEnhancer({
 
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
-              <label className="text-xs text-text-muted">Strength:</label>
+              <label htmlFor="enhance-strength" className="text-xs text-text-muted">Strength:</label>
               <input
+                id="enhance-strength"
                 type="range"
                 min={0.1}
                 max={1.0}

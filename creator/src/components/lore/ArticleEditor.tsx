@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, useRef } from "react";
 import { useLoreStore } from "@/stores/loreStore";
 import type { Article, ArticleRelation } from "@/types/lore";
 import { TEMPLATE_SCHEMAS } from "@/lib/loreTemplates";
@@ -62,6 +62,8 @@ function RelationsEditor({
   const articles = useLoreStore((s) => s.lore?.articles ?? {});
   const linkedIds = new Set(relations.map((r) => r.targetId));
   const available = Object.values(articles).filter((a) => !linkedIds.has(a.id));
+  const targetRef = useRef<HTMLSelectElement>(null);
+  const typeRef = useRef<HTMLInputElement>(null);
 
   return (
     <div>
@@ -72,12 +74,13 @@ function RelationsEditor({
               <span className="rounded bg-accent/10 px-1.5 py-0.5 text-2xs text-accent">
                 {r.type}
               </span>
-              <span className="text-text-secondary">
+              <span className="min-w-0 flex-1 truncate text-text-secondary">
                 {articles[r.targetId]?.title ?? r.targetId}
               </span>
               <button
                 onClick={() => onChange(relations.filter((_, j) => j !== i))}
-                className="text-text-muted hover:text-status-danger"
+                aria-label={`Remove relation to ${articles[r.targetId]?.title ?? r.targetId}`}
+                className="rounded px-1 py-0.5 text-text-muted hover:bg-bg-tertiary hover:text-status-danger"
               >
                 &times;
               </button>
@@ -88,7 +91,8 @@ function RelationsEditor({
       {available.length > 0 && (
         <div className="flex gap-1.5">
           <select
-            id="rel-target"
+            ref={targetRef}
+            aria-label="Target article"
             className="flex-1 rounded border border-border-default bg-bg-primary px-2 py-1 text-xs text-text-secondary outline-none focus:border-accent/50"
             defaultValue=""
           >
@@ -98,16 +102,18 @@ function RelationsEditor({
             ))}
           </select>
           <input
-            id="rel-type"
+            ref={typeRef}
+            aria-label="Relation type"
             className="w-24 rounded border border-border-default bg-bg-primary px-2 py-1 text-xs text-text-primary outline-none focus:border-accent/50"
             placeholder="type"
             defaultValue="related"
           />
           <button
-            className="rounded border border-border-default px-2 py-1 text-xs text-text-secondary hover:bg-bg-tertiary"
+            aria-label="Add relation"
+            className="rounded border border-border-default px-3 py-1 text-xs text-text-secondary hover:bg-bg-tertiary"
             onClick={() => {
-              const target = (document.getElementById("rel-target") as HTMLSelectElement)?.value;
-              const type = (document.getElementById("rel-type") as HTMLInputElement)?.value.trim() || "related";
+              const target = targetRef.current?.value;
+              const type = typeRef.current?.value.trim() || "related";
               if (target) {
                 onChange([...relations, { targetId: target, type }]);
               }
@@ -174,6 +180,7 @@ export function ArticleEditor({ articleId }: { articleId: string }) {
             <span className="text-2xs text-text-muted">{article.id}</span>
           </div>
           <input
+            aria-label="Article title"
             className="mt-2 w-full bg-transparent font-display text-2xl text-text-primary outline-none placeholder:text-text-muted/50"
             value={article.title}
             onChange={(e) => patch({ title: e.target.value })}
@@ -181,7 +188,11 @@ export function ArticleEditor({ articleId }: { articleId: string }) {
           />
         </div>
         <button
-          onClick={() => deleteArticle(articleId)}
+          onClick={() => {
+            if (window.confirm(`Delete "${article.title}"? This cannot be undone.`)) {
+              deleteArticle(articleId);
+            }
+          }}
           className="shrink-0 rounded-full border border-status-danger/40 bg-status-danger/10 px-3 py-1.5 text-2xs text-status-danger hover:bg-status-danger/15"
         >
           Delete

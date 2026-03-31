@@ -84,7 +84,7 @@ export function MapViewer({
       crs={L.CRS.Simple}
       bounds={bounds}
       maxBounds={bounds}
-      style={{ width: "100%", height: "100%", background: "#080c1c", borderRadius: "12px" }}
+      style={{ width: "100%", height: "100%", background: "var(--color-graph-bg)", borderRadius: "12px" }}
       zoomSnap={0.25}
       minZoom={-2}
       maxZoom={3}

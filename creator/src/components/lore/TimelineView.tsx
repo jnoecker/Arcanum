@@ -74,7 +74,9 @@ export function TimelineView({
           <button
             key={z}
             onClick={() => setZoom(z)}
-            className={`rounded px-2 py-0.5 text-2xs transition ${
+            aria-label={`Zoom ${z}x`}
+            aria-pressed={zoom === z}
+            className={`rounded px-2.5 py-1 text-2xs transition ${
               zoom === z
                 ? "bg-accent/20 text-accent"
                 : "text-text-muted hover:bg-bg-tertiary hover:text-text-primary"
@@ -88,12 +90,14 @@ export function TimelineView({
       {/* Scrollable SVG */}
       <div
         ref={containerRef}
-        className="overflow-x-auto rounded-lg border border-border-muted bg-[#080c1c]"
+        className="overflow-x-auto rounded-lg border border-border-muted bg-graph-bg"
       >
         <svg
           width={svgWidth}
           height={TRACK_HEIGHT}
           className="select-none"
+          role="img"
+          aria-label={`Timeline with ${events.length} events across ${calendars.length} calendar systems`}
         >
           {/* Era bands */}
           {eraBands.map((band, i) => {

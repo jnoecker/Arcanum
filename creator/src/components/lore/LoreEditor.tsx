@@ -42,7 +42,9 @@ function ToolbarButton({
       type="button"
       onClick={onClick}
       title={title}
-      className={`rounded px-1.5 py-0.5 text-xs transition-colors ${
+      aria-pressed={active}
+      aria-label={title}
+      className={`rounded px-2 py-1 text-xs transition-colors ${
         active
           ? "bg-accent/20 text-accent"
           : "text-text-muted hover:bg-bg-tertiary hover:text-text-primary"
@@ -57,7 +59,7 @@ function ToolbarButton({
 
 function EditorToolbar({ editor }: { editor: Editor }) {
   return (
-    <div className="flex flex-wrap items-center gap-0.5 border-b border-border-muted px-2 py-1">
+    <div role="toolbar" aria-label="Text formatting" className="flex flex-wrap items-center gap-0.5 border-b border-border-muted px-2 py-1">
       <ToolbarButton
         active={editor.isActive("heading", { level: 2 })}
         onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}

@@ -61,10 +61,16 @@ export function WorldSeedWizard({
   }, [concept, createArticle, setCalendarSystems, setTimelineEvents, selectArticle]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/60" onClick={result ? onClose : undefined} />
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="seed-wizard-title"
+      onKeyDown={(e) => { if (e.key === "Escape" && !generating) onClose(); }}
+    >
+      <div className="absolute inset-0 bg-black/60" aria-hidden="true" onClick={result ? onClose : undefined} />
       <div className="relative w-full max-w-xl rounded-[24px] border border-white/10 bg-bg-secondary p-6 shadow-panel">
-        <h3 className="font-display text-xl text-text-primary">Seed a World</h3>
+        <h3 id="seed-wizard-title" className="font-display text-xl text-text-primary">Seed a World</h3>
         <p className="mt-1 text-xs text-text-muted">
           Describe your world concept in a paragraph and the AI will generate a complete
           starter world — setting, factions, locations, characters, a calendar system,
@@ -115,7 +121,7 @@ export function WorldSeedWizard({
           </>
         ) : (
           <>
-            <div className="mt-4 rounded-lg border border-accent/20 bg-accent/5 p-4">
+            <div className="mt-4 rounded-lg border border-accent/20 bg-accent/5 p-4" role="status" aria-live="polite">
               <h4 className="font-display text-sm text-accent">World generated!</h4>
               <div className="mt-2 flex flex-col gap-1 text-xs text-text-secondary">
                 <span>{result.articleCount} articles created</span>

@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "leaflet/dist/leaflet.css";
 
 @theme {
   /* ─── Typography ─── */
@@ -483,9 +484,7 @@ select,
   height: 0;
 }
 
-/* ─── Leaflet Base + Overrides ─── */
-@import "leaflet/dist/leaflet.css";
-
+/* ─── Leaflet Overrides ─── */
 .leaflet-container {
   font-family: 'Crimson Pro', Georgia, serif;
   /* Prevent Leaflet from expanding beyond its parent */

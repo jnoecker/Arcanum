@@ -376,7 +376,9 @@ export function MapPanel() {
   const [addPinMode, setAddPinMode] = useState(false);
   const [selectedPinId, setSelectedPinId] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [replacing, setReplacing] = useState(false);
   const [showEnhancer, setShowEnhancer] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   const selectedMap = useMemo(
     () => maps.find((m) => m.id === selectedMapId) ?? null,
@@ -427,6 +429,39 @@ export function MapPanel() {
     }
   }, [createMap]);
 
+  const handleReplaceImage = useCallback(async () => {
+    if (!selectedMap) return;
+    try {
+      const filePath = await open({
+        multiple: false,
+        filters: [{ name: "Images", extensions: ["png", "jpg", "jpeg", "webp"] }],
+      });
+      if (!filePath) return;
+
+      setReplacing(true);
+      const result = await invoke<{
+        hash: string;
+        file_name: string;
+        width: number;
+        height: number;
+      }>("import_asset", {
+        sourcePath: filePath,
+        assetType: "lore_map",
+      });
+
+      // Update image and dimensions, pins are preserved by updateMap's spread
+      updateMap(selectedMap.id, {
+        imageAsset: result.file_name,
+        width: result.width,
+        height: result.height,
+      });
+    } catch (err) {
+      console.error("Failed to replace map image:", err);
+    } finally {
+      setReplacing(false);
+    }
+  }, [selectedMap, updateMap]);
+
   return (
     <div className="flex flex-col gap-5">
       {/* Map selector + upload */}
@@ -454,15 +489,59 @@ export function MapPanel() {
         </button>
 
         {selectedMap && (
-          <button
-            onClick={() => {
-              deleteMap(selectedMap.id);
-              setSelectedPinId(null);
-            }}
-            className="rounded border border-status-danger/40 bg-status-danger/10 px-3 py-1.5 text-2xs text-status-danger hover:bg-status-danger/15"
-          >
-            Delete
-          </button>
+          <>
+            <button
+              onClick={() => {
+                const clone: LoreMap = {
+                  ...selectedMap,
+                  id: `map_${Date.now()}`,
+                  title: `${selectedMap.title} (copy)`,
+                  pins: selectedMap.pins.map((p) => ({ ...p, id: `pin_${Date.now()}_${Math.random().toString(36).slice(2, 6)}` })),
+                };
+                createMap(clone);
+              }}
+              title="Duplicate map with all pins"
+              className="rounded border border-border-default bg-bg-secondary px-3 py-1.5 text-2xs text-text-secondary hover:bg-bg-tertiary"
+            >
+              Duplicate
+            </button>
+            <button
+              onClick={handleReplaceImage}
+              disabled={replacing}
+              title="Replace image (keeps all pins)"
+              className="rounded border border-border-default bg-bg-secondary px-3 py-1.5 text-2xs text-text-secondary hover:bg-bg-tertiary disabled:opacity-50"
+            >
+              {replacing ? "Replacing..." : "Replace Image"}
+            </button>
+            {confirmDelete ? (
+              <span className="flex items-center gap-1.5">
+                <span className="text-2xs text-status-danger">Delete this map?</span>
+                <button
+                  onClick={() => {
+                    deleteMap(selectedMap.id);
+                    setSelectedPinId(null);
+                    setConfirmDelete(false);
+                  }}
+                  className="rounded bg-status-danger/20 px-2 py-1 text-2xs text-status-danger hover:bg-status-danger/30"
+                >
+                  Yes
+                </button>
+                <button
+                  onClick={() => setConfirmDelete(false)}
+                  className="rounded px-2 py-1 text-2xs text-text-muted hover:text-text-secondary"
+                >
+                  No
+                </button>
+              </span>
+            ) : (
+              <button
+                onClick={() => setConfirmDelete(true)}
+                className="rounded border border-status-danger/40 bg-status-danger/10 px-3 py-1.5 text-2xs text-status-danger hover:bg-status-danger/15"
+              >
+                Delete
+              </button>
+            )}
+          </>
         )}
       </div>
 

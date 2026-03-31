@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useShowcase } from "@/lib/DataContext";
 import type { ShowcaseMap, ShowcasePin } from "@/types/showcase";
@@ -10,40 +10,54 @@ interface MapViewerProps {
 export function MapViewer({ map }: MapViewerProps) {
   const { articleById } = useShowcase();
   const [hoveredPin, setHoveredPin] = useState<ShowcasePin | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [containerWidth, setContainerWidth] = useState(0);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const observer = new ResizeObserver(([entry]) => {
+      setContainerWidth(entry.contentRect.width);
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  // Scale factor: fit map width to container, preserve aspect ratio
+  const scale = containerWidth > 0 ? containerWidth / map.width : 1;
+  const displayHeight = map.height * scale;
 
   return (
     <div
-      className="w-full overflow-auto rounded-lg border border-border-muted bg-bg-abyss
-                 max-h-[70vh] touch-pan-x touch-pan-y"
+      ref={containerRef}
+      className="w-full rounded-lg border border-border-muted bg-bg-abyss overflow-hidden"
       tabIndex={0}
       role="img"
       aria-label={`Map: ${map.title}`}
     >
       <div
-        className="relative"
-        style={{
-          width: map.width,
-          height: map.height,
-          minWidth: "100%",
-        }}
+        className="relative w-full"
+        style={{ height: displayHeight }}
       >
         {/* Map image */}
         <img
           src={map.imageUrl}
           alt={map.title}
-          className="w-full h-full object-contain"
+          className="absolute inset-0 w-full h-full object-fill"
           draggable={false}
         />
 
-        {/* Pins */}
+        {/* Pins — positions scaled proportionally */}
         {map.pins.map((pin) => {
           const article = pin.articleId ? articleById.get(pin.articleId) : undefined;
+          const x = pin.position[0] * scale;
+          const y = pin.position[1] * scale;
 
           const inner = (
             <div
               key={pin.id}
               className="absolute -translate-x-1/2 -translate-y-1/2 group"
-              style={{ left: pin.position[0], top: pin.position[1] }}
+              style={{ left: x, top: y }}
               onMouseEnter={() => setHoveredPin(pin)}
               onMouseLeave={() => setHoveredPin(null)}
               onFocus={() => setHoveredPin(pin)}

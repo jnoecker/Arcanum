@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { MapContainer, ImageOverlay, Marker, Popup, useMapEvents } from "react-leaflet";
 import L from "leaflet";
-import "./leaflet-setup.css";
+import leafletCssText from "leaflet/dist/leaflet.css?inline";
 import type { LoreMap, MapPin } from "@/types/lore";
 import { useLoreStore } from "@/stores/loreStore";
 
@@ -22,6 +22,15 @@ function makePinIcon(color?: string): L.DivIcon {
 }
 
 const DEFAULT_ICON = makePinIcon();
+
+// Inject Leaflet CSS once via inline string (avoids PostCSS @import issues)
+let leafletCssInjected = false;
+if (!leafletCssInjected && typeof document !== "undefined") {
+  leafletCssInjected = true;
+  const style = document.createElement("style");
+  style.textContent = leafletCssText;
+  document.head.appendChild(style);
+}
 
 // ─── Click handler for adding pins ──────────────────────────────────
 

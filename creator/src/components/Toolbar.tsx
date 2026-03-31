@@ -11,8 +11,12 @@ import { useConfigStore } from "@/stores/configStore";
 import { ValidationPanel } from "./ValidationPanel";
 import { useAssetStore } from "@/stores/assetStore";
 import { useAdminStore } from "@/stores/adminStore";
+import { useLoreStore } from "@/stores/loreStore";
 import { Spinner } from "./ui/FormWidgets";
 import toolbarBg from "@/assets/toolbar-bg.jpg";
+import { exportShowcaseData } from "@/lib/exportShowcase";
+import { open } from "@tauri-apps/plugin-dialog";
+import { writeTextFile } from "@tauri-apps/plugin-fs";
 
 const DiffModal = lazy(() => import("./ui/DiffModal").then(m => ({ default: m.DiffModal })));
 const BatchLegacyImport = lazy(() => import("./BatchLegacyImport").then(m => ({ default: m.BatchLegacyImport })));
@@ -52,6 +56,8 @@ export function Toolbar() {
   const openGenerator = useAssetStore((s) => s.openGenerator);
   const openGallery = useAssetStore((s) => s.openGallery);
   const isStandalone = project?.format === "standalone";
+  const hasLore = useLoreStore((s) => !!s.lore && Object.keys(s.lore.articles).length > 0);
+  const [exporting, setExporting] = useState(false);
 
   const handleOpenAdmin = () => {
     openTab({ id: "admin", kind: "admin", label: "Admin" });
@@ -59,6 +65,27 @@ export function Toolbar() {
 
   const handleOpenHandoff = () => {
     useProjectStore.getState().openTab(panelTab("deployment"));
+  };
+
+  const handleExportShowcase = async () => {
+    const lore = useLoreStore.getState().lore;
+    if (!lore) return;
+
+    const settings = useAssetStore.getState().settings;
+    const imageBaseUrl = settings?.r2_custom_domain?.replace(/\/+$/, "") ?? "";
+
+    const dir = await open({ directory: true, title: "Choose showcase export folder" });
+    if (!dir) return;
+
+    setExporting(true);
+    try {
+      const data = exportShowcaseData(lore, imageBaseUrl);
+      await writeTextFile(`${dir}/showcase.json`, JSON.stringify(data, null, 2));
+    } catch (err) {
+      console.error("Showcase export failed:", err);
+    } finally {
+      setExporting(false);
+    }
   };
 
   return (
@@ -98,6 +125,14 @@ export function Toolbar() {
               Export
             </button>
           )}
+          <button
+            onClick={handleExportShowcase}
+            disabled={!hasLore || exporting}
+            title="Export lore as showcase site data"
+            className="rounded-full border border-white/10 bg-black/10 px-3 py-1 text-2xs font-medium text-text-primary transition enabled:hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            {exporting ? <span className="flex items-center gap-1.5"><Spinner />Exporting</span> : "Showcase"}
+          </button>
           <div className="h-4 w-px bg-white/10" />
 
           {/* ── Assets cluster ── */}

@@ -136,7 +136,7 @@ Content: ${opts.sourceArticle.content.slice(0, 500)}
 
 Generate ${opts.count} related articles (relation: "${opts.relationType}").
 Return a JSON array of articles, each with: { "title", "template", "fields", "content", "tags" }
-Valid templates: character, location, organization, item, species, event, language, freeform.
+Valid templates: character, location, organization, item, species, event, language, profession, ability, freeform.
 
 World context:
 ${worldContextSummary()}`;

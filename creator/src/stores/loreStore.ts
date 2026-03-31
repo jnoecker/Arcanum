@@ -1,11 +1,12 @@
 import { create } from "zustand";
-import type { WorldLore, Article, ArticleTemplate, LoreMap, MapPin, CalendarSystem, TimelineEvent } from "@/types/lore";
+import type { WorldLore, Article, ArticleTemplate, ColorLabel, LoreMap, MapPin, CalendarSystem, TimelineEvent } from "@/types/lore";
 
 // Stable empty references for selectors (prevents infinite re-render loops)
 const EMPTY_ARTICLES: Record<string, Article> = {};
 const EMPTY_MAPS: LoreMap[] = [];
 const EMPTY_CALENDARS: CalendarSystem[] = [];
 const EMPTY_EVENTS: TimelineEvent[] = [];
+const EMPTY_COLOR_LABELS: ColorLabel[] = [];
 
 /** Safe selector: returns lore.articles or a stable empty object. */
 export const selectArticles = (s: { lore: WorldLore | null }) => s.lore?.articles ?? EMPTY_ARTICLES;
@@ -15,6 +16,8 @@ export const selectMaps = (s: { lore: WorldLore | null }) => s.lore?.maps ?? EMP
 export const selectCalendars = (s: { lore: WorldLore | null }) => s.lore?.calendarSystems ?? EMPTY_CALENDARS;
 /** Safe selector: returns lore.timelineEvents or a stable empty array. */
 export const selectEvents = (s: { lore: WorldLore | null }) => s.lore?.timelineEvents ?? EMPTY_EVENTS;
+/** Safe selector: returns lore.colorLabels or a stable empty array. */
+export const selectColorLabels = (s: { lore: WorldLore | null }) => s.lore?.colorLabels ?? EMPTY_COLOR_LABELS;
 
 interface LoreStore {
   lore: WorldLore | null;
@@ -34,6 +37,11 @@ interface LoreStore {
     template: ArticleTemplate,
     articles: Record<string, Article>,
   ) => void;
+
+  // Color label operations
+  addColorLabel: (label: ColorLabel) => void;
+  updateColorLabel: (id: string, patch: Partial<ColorLabel>) => void;
+  removeColorLabel: (id: string) => void;
 
   // Map operations
   createMap: (map: LoreMap) => void;
@@ -132,6 +140,37 @@ export const useLoreStore = create<LoreStore>((set) => ({
       }
       return {
         lore: { ...s.lore, articles: { ...kept, ...articles } },
+        dirty: true,
+      };
+    }),
+
+  // ─── Color label operations ────────────────────────────────────
+  addColorLabel: (label) =>
+    set((s) => {
+      if (!s.lore) return s;
+      return {
+        lore: { ...s.lore, colorLabels: [...(s.lore.colorLabels ?? []), label] },
+        dirty: true,
+      };
+    }),
+
+  updateColorLabel: (id, patch) =>
+    set((s) => {
+      if (!s.lore?.colorLabels) return s;
+      return {
+        lore: {
+          ...s.lore,
+          colorLabels: s.lore.colorLabels.map((l) => (l.id === id ? { ...l, ...patch } : l)),
+        },
+        dirty: true,
+      };
+    }),
+
+  removeColorLabel: (id) =>
+    set((s) => {
+      if (!s.lore?.colorLabels) return s;
+      return {
+        lore: { ...s.lore, colorLabels: s.lore.colorLabels.filter((l) => l.id !== id) },
         dirty: true,
       };
     }),

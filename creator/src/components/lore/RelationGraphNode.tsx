@@ -10,6 +10,8 @@ const TEMPLATE_COLORS: Record<ArticleTemplate, string> = {
   species: "#c4956a",
   event: "#bea873",
   language: "#95a0bf",
+  profession: "#d4c8a0",
+  ability: "#b88faa",
   freeform: "#95a0bf",
 };
 
@@ -22,6 +24,8 @@ const TEMPLATE_LABELS: Record<ArticleTemplate, string> = {
   species: "S",
   event: "E",
   language: "La",
+  profession: "P",
+  ability: "Ab",
   freeform: "F",
 };
 

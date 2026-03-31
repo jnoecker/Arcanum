@@ -12,6 +12,8 @@ export type ArticleTemplate =
   | "species"
   | "event"
   | "language"
+  | "profession"
+  | "ability"
   | "freeform";
 
 export interface ArticleRelation {
@@ -33,6 +35,14 @@ export interface Article {
   image?: string;
   createdAt: string;
   updatedAt: string;
+}
+
+// ─── Color labels (reusable named colors for pins, races, etc.) ───
+
+export interface ColorLabel {
+  id: string;
+  name: string;
+  color: string;
 }
 
 // ─── Maps ──────────────────────────────────────────────────────────
@@ -85,6 +95,7 @@ export interface TimelineEvent {
 export interface WorldLore {
   version: 2;
   articles: Record<string, Article>;
+  colorLabels?: ColorLabel[];
   maps?: LoreMap[];
   calendarSystems?: CalendarSystem[];
   timelineEvents?: TimelineEvent[];

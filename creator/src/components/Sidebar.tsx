@@ -289,7 +289,7 @@ export function Sidebar() {
       />
       <div className="pointer-events-none absolute inset-x-0 top-0 h-48 bg-gradient-glow-top" />
 
-      <div className="relative z-10 border-b border-white/10 px-4 py-4">
+      <div className="relative z-10 min-h-0 max-h-[50%] shrink overflow-y-auto border-b border-white/10 px-4 py-4">
         <div className="mb-4">
           <p className="text-[11px] uppercase tracking-wide-ui text-text-muted">
             Workspace

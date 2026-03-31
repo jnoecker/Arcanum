@@ -14,6 +14,8 @@ export const TEMPLATE_ASSET_TYPE: Record<ArticleTemplate, string> = {
   species: "lore_species",
   event: "lore_event",
   language: "lore_location",
+  profession: "lore_character",
+  ability: "lore_item",
   freeform: "lore_location",
 };
 
@@ -28,6 +30,8 @@ const FORMAT: Record<ArticleTemplate, string> = {
   event: "16:9 dramatic scene illustration, cinematic composition",
   world_setting: "16:9 panoramic landscape, epic scope",
   language: "16:9 illustration of a scroll or inscription",
+  profession: "2:3 portrait of a class archetype in action, dynamic pose, iconic gear and stance",
+  ability: "1:1 square spell or skill icon, magical energy effect, centered glow",
   freeform: "16:9 atmospheric illustration",
 };
 

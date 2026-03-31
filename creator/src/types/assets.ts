@@ -85,6 +85,7 @@ export interface Settings {
   r2_secret_access_key: string;
   r2_bucket: string;
   r2_custom_domain: string;
+  github_pat: string;
 }
 
 /** Mirrors the Rust SyncProgress struct */

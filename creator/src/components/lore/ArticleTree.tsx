@@ -15,6 +15,8 @@ const TEMPLATE_ICONS: Record<ArticleTemplate, string> = {
   species: "S",
   event: "E",
   language: "La",
+  profession: "P",
+  ability: "Ab",
   freeform: "F",
 };
 
@@ -27,6 +29,8 @@ const TEMPLATE_COLORS: Record<ArticleTemplate, string> = {
   species: "text-class-warden",
   event: "text-status-warning",
   language: "text-text-muted",
+  profession: "text-class-herald",
+  ability: "text-class-starweaver",
   freeform: "text-text-muted",
 };
 

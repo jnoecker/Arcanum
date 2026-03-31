@@ -38,6 +38,8 @@ pub struct Settings {
     pub r2_bucket: String,
     #[serde(default)]
     pub r2_custom_domain: String,
+    #[serde(default)]
+    pub github_pat: String,
 }
 
 fn default_image_model() -> String {
@@ -83,6 +85,7 @@ impl Default for Settings {
             r2_secret_access_key: String::new(),
             r2_bucket: String::new(),
             r2_custom_domain: String::new(),
+            github_pat: String::new(),
         }
     }
 }

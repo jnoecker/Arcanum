@@ -1,9 +1,10 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
-import { useLoreStore, selectArticles, selectMaps } from "@/stores/loreStore";
+import { useLoreStore, selectArticles, selectMaps, selectColorLabels } from "@/stores/loreStore";
 import { useImageSrc } from "@/lib/useImageSrc";
-import type { LoreMap } from "@/types/lore";
+import type { LoreMap, Article } from "@/types/lore";
+import { TEMPLATE_SCHEMAS } from "@/lib/loreTemplates";
 import { FieldRow, TextInput } from "@/components/ui/FormWidgets";
 import { MapViewer } from "./MapViewer";
 import { MapEnhancer } from "./MapEnhancer";
@@ -12,6 +13,285 @@ import { MapEnhancer } from "./MapEnhancer";
 
 function useMapImage(imageAsset: string | undefined): string | null {
   return useImageSrc(imageAsset);
+}
+
+// ─── Color palette picker ──────────────────────────────────────────
+
+function ColorPalettePicker({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (color: string) => void;
+}) {
+  const colorLabels = useLoreStore(selectColorLabels);
+  const addColorLabel = useLoreStore((s) => s.addColorLabel);
+  const removeColorLabel = useLoreStore((s) => s.removeColorLabel);
+  const updateColorLabel = useLoreStore((s) => s.updateColorLabel);
+  const [adding, setAdding] = useState(false);
+  const [newName, setNewName] = useState("");
+  const [newColor, setNewColor] = useState("#a897d2");
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editName, setEditName] = useState("");
+  const nameRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (adding && nameRef.current) nameRef.current.focus();
+  }, [adding]);
+
+  const commitAdd = () => {
+    const name = newName.trim();
+    if (!name) { setAdding(false); return; }
+    addColorLabel({ id: `cl_${Date.now()}`, name, color: newColor });
+    onChange(newColor);
+    setNewName("");
+    setNewColor("#a897d2");
+    setAdding(false);
+  };
+
+  return (
+    <div className="flex flex-col gap-2">
+      {/* Saved palette swatches */}
+      {colorLabels.length > 0 && (
+        <div className="flex flex-col gap-1">
+          {colorLabels.map((cl) => (
+            <div key={cl.id} className="group flex items-center gap-1.5">
+              <button
+                onClick={() => onChange(cl.color)}
+                className={`flex items-center gap-1.5 rounded px-1.5 py-0.5 text-2xs transition ${
+                  value === cl.color
+                    ? "bg-white/10 text-text-primary"
+                    : "text-text-secondary hover:bg-white/5 hover:text-text-primary"
+                }`}
+                title={cl.name}
+              >
+                <span
+                  className="inline-block h-3 w-3 shrink-0 rounded-sm border border-white/20"
+                  style={{ backgroundColor: cl.color }}
+                />
+                {editingId === cl.id ? (
+                  <input
+                    autoFocus
+                    className="w-20 rounded border border-accent/50 bg-bg-primary px-1 text-2xs text-text-primary outline-none"
+                    value={editName}
+                    onClick={(e) => e.stopPropagation()}
+                    onChange={(e) => setEditName(e.target.value)}
+                    onBlur={() => {
+                      if (editName.trim()) updateColorLabel(cl.id, { name: editName.trim() });
+                      setEditingId(null);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        if (editName.trim()) updateColorLabel(cl.id, { name: editName.trim() });
+                        setEditingId(null);
+                      }
+                      if (e.key === "Escape") setEditingId(null);
+                    }}
+                  />
+                ) : (
+                  <span
+                    onDoubleClick={(e) => {
+                      e.stopPropagation();
+                      setEditingId(cl.id);
+                      setEditName(cl.name);
+                    }}
+                  >
+                    {cl.name}
+                  </span>
+                )}
+              </button>
+              <input
+                type="color"
+                value={cl.color}
+                onChange={(e) => {
+                  updateColorLabel(cl.id, { color: e.target.value });
+                  if (value === cl.color) onChange(e.target.value);
+                }}
+                className="h-4 w-4 shrink-0 cursor-pointer rounded-sm border-none bg-transparent opacity-0 transition group-hover:opacity-100"
+                title="Change color"
+              />
+              <button
+                onClick={() => removeColorLabel(cl.id)}
+                className="shrink-0 text-2xs text-text-muted opacity-0 transition hover:text-status-danger group-hover:opacity-100"
+                title="Remove label"
+              >
+                &times;
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Add new labeled color */}
+      {adding ? (
+        <div className="flex items-center gap-1.5">
+          <input
+            type="color"
+            value={newColor}
+            onChange={(e) => setNewColor(e.target.value)}
+            className="h-5 w-5 shrink-0 cursor-pointer rounded-sm border border-white/20 bg-transparent"
+          />
+          <input
+            ref={nameRef}
+            className="min-w-0 flex-1 rounded border border-border-default bg-bg-primary px-1.5 py-0.5 text-2xs text-text-primary outline-none focus:border-accent/50"
+            placeholder="Label name"
+            value={newName}
+            onChange={(e) => setNewName(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") commitAdd();
+              if (e.key === "Escape") setAdding(false);
+            }}
+          />
+          <button
+            onClick={commitAdd}
+            className="shrink-0 text-2xs text-accent hover:text-text-primary"
+          >
+            Save
+          </button>
+        </div>
+      ) : (
+        <button
+          onClick={() => setAdding(true)}
+          className="self-start text-2xs text-text-muted hover:text-accent"
+        >
+          + Add label
+        </button>
+      )}
+
+      {/* Fallback: raw color picker */}
+      <div className="flex items-center gap-1.5">
+        <input
+          type="color"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className="h-6 w-8 cursor-pointer rounded border border-border-default bg-bg-primary"
+        />
+        <span className="text-2xs text-text-muted">Custom</span>
+      </div>
+    </div>
+  );
+}
+
+// ─── Filterable article combobox ───────────────────────────────────
+
+function ArticleCombobox({
+  value,
+  onChange,
+  articles,
+}: {
+  value: string;
+  onChange: (articleId: string | undefined) => void;
+  articles: Record<string, Article>;
+}) {
+  const [open, setOpen] = useState(false);
+  const [filter, setFilter] = useState("");
+  const containerRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // Close on outside click
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setOpen(false);
+        setFilter("");
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [open]);
+
+  // Group articles by template, sorted by template label then title
+  const grouped = useMemo(() => {
+    const all = Object.values(articles);
+    const lc = filter.toLowerCase();
+    const filtered = lc ? all.filter((a) => a.title.toLowerCase().includes(lc)) : all;
+
+    const groups: { template: string; label: string; items: Article[] }[] = [];
+    const byTemplate = new Map<string, Article[]>();
+    for (const a of filtered) {
+      const list = byTemplate.get(a.template) ?? [];
+      list.push(a);
+      byTemplate.set(a.template, list);
+    }
+    // Sort templates by schema label
+    const templateOrder = Object.keys(TEMPLATE_SCHEMAS);
+    for (const t of templateOrder) {
+      const items = byTemplate.get(t);
+      if (!items || items.length === 0) continue;
+      items.sort((a, b) => a.title.localeCompare(b.title));
+      const schema = TEMPLATE_SCHEMAS[t as keyof typeof TEMPLATE_SCHEMAS];
+      groups.push({ template: t, label: schema?.pluralLabel ?? t, items });
+    }
+    return groups;
+  }, [articles, filter]);
+
+  const selectedTitle = value ? articles[value]?.title : null;
+
+  return (
+    <div ref={containerRef} className="relative">
+      <button
+        onClick={() => {
+          setOpen((v) => !v);
+          if (!open) setTimeout(() => inputRef.current?.focus(), 0);
+        }}
+        className="flex w-full items-center justify-between rounded border border-border-default bg-bg-primary px-2 py-1 text-left text-xs outline-none focus:border-accent/50"
+      >
+        <span className={selectedTitle ? "text-text-secondary" : "text-text-muted"}>
+          {selectedTitle ?? "— none —"}
+        </span>
+        <span className="text-[9px] text-text-muted">{open ? "\u25B2" : "\u25BC"}</span>
+      </button>
+
+      {open && (
+        <div className="absolute left-0 right-0 top-full z-50 mt-1 flex max-h-60 flex-col overflow-hidden rounded-lg border border-border-default bg-bg-secondary shadow-lg">
+          <div className="shrink-0 border-b border-white/6 p-1.5">
+            <input
+              ref={inputRef}
+              type="text"
+              className="w-full rounded border border-border-default bg-bg-primary px-2 py-1 text-xs text-text-primary outline-none placeholder:text-text-muted focus:border-accent/50"
+              placeholder="Filter articles..."
+              value={filter}
+              onChange={(e) => setFilter(e.target.value)}
+            />
+          </div>
+          <div className="min-h-0 flex-1 overflow-y-auto p-1">
+            <button
+              onClick={() => { onChange(undefined); setOpen(false); setFilter(""); }}
+              className={`w-full rounded px-2 py-1 text-left text-xs transition ${
+                !value ? "bg-white/10 text-text-primary" : "text-text-muted hover:bg-white/5 hover:text-text-secondary"
+              }`}
+            >
+              — none —
+            </button>
+            {grouped.map((group) => (
+              <div key={group.template}>
+                <p className="mt-1.5 px-2 pb-0.5 text-[10px] font-medium uppercase tracking-wide-ui text-text-muted">
+                  {group.label}
+                </p>
+                {group.items.map((a) => (
+                  <button
+                    key={a.id}
+                    onClick={() => { onChange(a.id); setOpen(false); setFilter(""); }}
+                    className={`w-full rounded px-2 py-1 text-left text-xs transition ${
+                      value === a.id
+                        ? "bg-white/10 text-text-primary"
+                        : "text-text-secondary hover:bg-white/5 hover:text-text-primary"
+                    }`}
+                  >
+                    {a.title}
+                  </button>
+                ))}
+              </div>
+            ))}
+            {grouped.length === 0 && filter && (
+              <p className="px-2 py-2 text-xs text-text-muted">No matches</p>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }
 
 // ─── Pin editor sidebar ────────────────────────────────────────────
@@ -31,11 +311,6 @@ function PinEditor({
 
   const pin = map.pins.find((p) => p.id === pinId);
   if (!pin) return null;
-
-  const articleOptions = Object.values(articles).map((a) => ({
-    value: a.id,
-    label: a.title,
-  }));
 
   return (
     <div className="flex flex-col gap-3">
@@ -58,26 +333,22 @@ function PinEditor({
       </FieldRow>
 
       <FieldRow label="Article">
-        <select
-          className="rounded border border-border-default bg-bg-primary px-2 py-1 text-xs text-text-secondary outline-none focus:border-accent/50"
+        <ArticleCombobox
           value={pin.articleId ?? ""}
-          onChange={(e) => updatePin(map.id, pinId, { articleId: e.target.value || undefined })}
-        >
-          <option value="">— none —</option>
-          {articleOptions.map((o) => (
-            <option key={o.value} value={o.value}>{o.label}</option>
-          ))}
-        </select>
-      </FieldRow>
-
-      <FieldRow label="Color">
-        <input
-          type="color"
-          value={pin.color || "#a897d2"}
-          onChange={(e) => updatePin(map.id, pinId, { color: e.target.value })}
-          className="h-7 w-12 cursor-pointer rounded border border-border-default bg-bg-primary"
+          onChange={(id) => updatePin(map.id, pinId, { articleId: id })}
+          articles={articles}
         />
       </FieldRow>
+
+      <div className="py-0.5">
+        <label className="text-xs text-text-muted">Color</label>
+        <div className="mt-1">
+          <ColorPalettePicker
+            value={pin.color || "#a897d2"}
+            onChange={(c) => updatePin(map.id, pinId, { color: c })}
+          />
+        </div>
+      </div>
 
       <button
         onClick={() => {

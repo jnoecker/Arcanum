@@ -407,6 +407,33 @@ export function ApiSettingsPanel({
         </div>
       </div>}
 
+      {/* GitHub (Version Control) */}
+      {showDeliverySection && <div className="mt-6">
+        <h3 className="mb-3 font-display text-sm uppercase tracking-widest text-text-muted">
+          GitHub
+        </h3>
+        <div className="flex flex-col gap-3">
+          <div>
+            <label htmlFor="github-pat" className="mb-1 block text-2xs uppercase tracking-wider text-text-muted">
+              Personal Access Token
+            </label>
+            <input
+              id="github-pat"
+              type="password"
+              value={draft.github_pat}
+              onChange={(e) =>
+                setDraft({ ...draft, github_pat: e.target.value })
+              }
+              placeholder="ghp_..."
+              className="w-full rounded border border-border-default bg-bg-primary px-3 py-1.5 text-xs text-text-primary placeholder:text-text-muted outline-none focus:border-accent/50"
+            />
+            <p className="mt-1 text-2xs text-text-muted">
+              Needs <code className="font-mono text-accent/70">repo</code> scope. Used for push, pull, and PR creation.
+            </p>
+          </div>
+        </div>
+      </div>}
+
       {/* Save — sticky at bottom */}
       <div className="sticky bottom-0 -mx-6 border-t border-border-default bg-bg-secondary px-6 py-3">
         <div className="flex items-center gap-2">

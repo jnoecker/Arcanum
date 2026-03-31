@@ -49,6 +49,7 @@ import { GlobalAssetsPanel } from "./panels/GlobalAssetsPanel";
 import { ApiSettingsPanel } from "./panels/ApiSettingsPanel";
 import { RuntimeHandoffStudio } from "./RuntimeHandoffStudio";
 import { RawYamlPanel } from "./panels/RawYamlPanel";
+import { VersionControlPanel } from "./panels/VersionControlPanel";
 
 // ─── Shared section wrapper ─────────────────────────────────────────
 
@@ -181,6 +182,8 @@ function renderPanel(panelId: string, props: ConfigPanelProps): ReactNode {
       return <RuntimeHandoffStudio />;
     case "rawYaml":
       return <RawYamlPanel config={config} onChange={onChange} />;
+    case "versionControl":
+      return <VersionControlPanel />;
 
     default:
       return <div className="text-text-muted">Unknown panel: {panelId}</div>;

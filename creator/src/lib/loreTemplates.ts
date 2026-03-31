@@ -161,6 +161,47 @@ export const TEMPLATE_SCHEMAS: Record<ArticleTemplate, TemplateSchema> = {
     ],
   },
 
+  profession: {
+    template: "profession",
+    label: "Profession",
+    pluralLabel: "Professions",
+    fields: [
+      { key: "role", label: "Role", type: "select", options: [
+        { value: "tank", label: "Tank" },
+        { value: "healer", label: "Healer" },
+        { value: "damage", label: "Damage" },
+        { value: "support", label: "Support" },
+        { value: "hybrid", label: "Hybrid" },
+      ]},
+      { key: "primaryStat", label: "Primary stat", type: "text", placeholder: "Strength, Intelligence, etc." },
+      { key: "resource", label: "Resource", type: "text", placeholder: "Mana, Rage, Energy..." },
+      { key: "playstyle", label: "Playstyle", type: "textarea", placeholder: "How this profession plays in combat and exploration..." },
+      { key: "strengths", label: "Strengths", type: "tags", placeholder: "Add a strength..." },
+      { key: "weaknesses", label: "Weaknesses", type: "tags", placeholder: "Add a weakness..." },
+      { key: "keyAbilities", label: "Key abilities", type: "article_refs" },
+    ],
+  },
+
+  ability: {
+    template: "ability",
+    label: "Ability",
+    pluralLabel: "Abilities",
+    fields: [
+      { key: "abilityType", label: "Type", type: "select", options: [
+        { value: "spell", label: "Spell" },
+        { value: "skill", label: "Skill" },
+        { value: "passive", label: "Passive" },
+        { value: "ultimate", label: "Ultimate" },
+      ]},
+      { key: "profession", label: "Profession", type: "article_ref", placeholder: "Which class uses this" },
+      { key: "resource_cost", label: "Cost", type: "text", placeholder: "50 mana, 2 charges..." },
+      { key: "cooldown", label: "Cooldown", type: "text", placeholder: "Instant, 10s, 5 min..." },
+      { key: "range", label: "Range", type: "text", placeholder: "Self, melee, 30m..." },
+      { key: "effect", label: "Effect", type: "textarea", placeholder: "What the ability does mechanically and narratively..." },
+      { key: "ranks", label: "Ranks / upgrades", type: "textarea", placeholder: "How it improves at higher levels..." },
+    ],
+  },
+
   freeform: {
     template: "freeform",
     label: "Freeform",

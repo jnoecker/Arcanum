@@ -3,6 +3,7 @@ mod anthropic;
 mod arcanum_meta;
 mod assets;
 mod deepinfra;
+mod git;
 mod llm;
 mod openrouter;
 mod project;
@@ -97,6 +98,15 @@ pub fn run() {
             admin::admin_items,
             admin::admin_broadcast,
             admin::admin_logs,
+            git::git_repo_status,
+            git::git_init,
+            git::git_set_remote,
+            git::git_commit,
+            git::git_push,
+            git::git_pull,
+            git::git_abort_merge,
+            git::git_log,
+            git::git_create_pr,
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application")

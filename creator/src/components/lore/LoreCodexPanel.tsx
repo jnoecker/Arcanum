@@ -18,7 +18,7 @@ const CODEX_CATEGORIES = [
 
 // Templates that are managed by the codex (not by dedicated panels)
 const CODEX_TEMPLATES = new Set([
-  "character", "location", "species", "item", "event", "language", "freeform",
+  "character", "location", "species", "item", "event", "language", "profession", "ability", "freeform",
 ]);
 
 // ─── Tag list ──────────────────────────────────────────────────────

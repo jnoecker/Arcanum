@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { open } from "@tauri-apps/plugin-dialog";
+import { invoke } from "@tauri-apps/api/core";
 import { useAssetStore } from "@/stores/assetStore";
 import { useConfigStore } from "@/stores/configStore";
 import { useProjectStore } from "@/stores/projectStore";
@@ -21,6 +22,7 @@ import type { SyncProgress, SyncScope } from "@/types/assets";
 type StepStatus = "idle" | "running" | "success" | "warning" | "error";
 type StepKey =
   | "save"
+  | "gitCommit"
   | "validate"
   | "export"
   | "assets"
@@ -126,8 +128,12 @@ export function RuntimeHandoffStudio() {
   });
   const [runningAll, setRunningAll] = useState(false);
   const [workflowMessage, setWorkflowMessage] = useState<string | null>(null);
+  const [deployCommitMsg, setDeployCommitMsg] = useState(() =>
+    `Deploy: ${new Date().toISOString().slice(0, 16).replace("T", " ")}`,
+  );
   const [steps, setSteps] = useState<Record<StepKey, StepState>>({
     save: { status: "idle", detail: "Save config and unsaved zones to the project folder.", errors: [] },
+    gitCommit: { status: "idle", detail: "Commit and push project changes to git.", errors: [] },
     validate: { status: "idle", detail: "Run config and zone validation before publishing.", errors: [] },
     export: { status: "idle", detail: "Export a server bundle to a local MUD directory.", errors: [] },
     assets: { status: "idle", detail: "Upload approved gallery assets to R2.", errors: [] },
@@ -167,6 +173,8 @@ export function RuntimeHandoffStudio() {
   );
   const globalAssetCount = Object.keys(config?.globalAssets ?? {}).length;
   const hasR2 = !!(settings?.r2_account_id && settings?.r2_bucket && settings?.r2_access_key_id);
+  const isStandalone = project?.format === "standalone";
+  const hasPat = !!settings?.github_pat;
 
   const setStepState = (key: StepKey, next: Partial<StepState>) => {
     setSteps((current) => ({
@@ -199,6 +207,31 @@ export function RuntimeHandoffStudio() {
         errors: [String(error)],
       });
       throw error;
+    }
+  };
+
+  const runGitCommitStep = async () => {
+    if (!project || !isStandalone) return;
+    setStepState("gitCommit", { status: "running", detail: "Committing changes...", errors: [] });
+    try {
+      // Check if it's a repo
+      const status = await invoke<{ is_repo: boolean; has_remote: boolean }>("git_repo_status", { path: project.mudDir });
+      if (!status.is_repo) {
+        setStepState("gitCommit", { status: "warning", detail: "Not a git repository. Skipped.", errors: [] });
+        return;
+      }
+      const msg = deployCommitMsg.trim() || `Deploy: ${new Date().toISOString().slice(0, 16)}`;
+      const result = await invoke<string>("git_commit", { path: project.mudDir, message: msg });
+      // Push if remote + PAT configured
+      if (status.has_remote && hasPat) {
+        const pushResult = await invoke<string>("git_push", { path: project.mudDir });
+        setStepState("gitCommit", { status: "success", detail: `${result} | ${pushResult}`, errors: [] });
+      } else {
+        const note = status.has_remote ? " (push skipped — no PAT)" : " (no remote configured)";
+        setStepState("gitCommit", { status: "success", detail: result + note, errors: [] });
+      }
+    } catch (error) {
+      setStepState("gitCommit", { status: "warning", detail: String(error), errors: [] });
     }
   };
 
@@ -421,6 +454,9 @@ export function RuntimeHandoffStudio() {
     setWorkflowMessage(null);
     try {
       await runSaveStep();
+      if (isStandalone) {
+        await runGitCommitStep();
+      }
       const summary = await runValidateStep(true);
       if (summary.errorCount > 0) {
         setWorkflowMessage("Stopped after validation errors. Fix them, then try again.");
@@ -522,6 +558,24 @@ export function RuntimeHandoffStudio() {
           actionLabel="Save world"
           onAction={runSaveStep}
         />
+
+        {isStandalone && (
+          <StepCard
+            title="1b. Commit &amp; push"
+            description="Commit project changes to git and push to remote."
+            state={steps.gitCommit}
+            actionLabel="Commit &amp; push"
+            onAction={runGitCommitStep}
+          >
+            <input
+              type="text"
+              value={deployCommitMsg}
+              onChange={(e) => setDeployCommitMsg(e.target.value)}
+              placeholder="Commit message"
+              className="w-full rounded-full border border-white/10 bg-black/10 px-4 py-2 text-xs text-text-primary placeholder:text-text-muted outline-none focus:border-border-active"
+            />
+          </StepCard>
+        )}
 
         <StepCard
           title="2. Validate runtime data"

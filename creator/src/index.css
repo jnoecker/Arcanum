@@ -483,9 +483,14 @@ select,
   height: 0;
 }
 
-/* ─── Leaflet Overrides ─── */
+/* ─── Leaflet Base + Overrides ─── */
+@import "leaflet/dist/leaflet.css";
+
 .leaflet-container {
   font-family: 'Crimson Pro', Georgia, serif;
+  /* Prevent Leaflet from expanding beyond its parent */
+  position: absolute !important;
+  inset: 0;
 }
 
 .leaflet-control-zoom a {

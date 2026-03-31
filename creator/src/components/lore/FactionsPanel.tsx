@@ -3,7 +3,7 @@ import { useLoreStore } from "@/stores/loreStore";
 import type { Article, ArticleRelation } from "@/types/lore";
 import { DefinitionWorkbench } from "@/components/config/DefinitionWorkbench";
 import { Section, FieldRow, TextInput } from "@/components/ui/FormWidgets";
-import { LoreTextArea } from "./LoreTextArea";
+import { LoreEditor } from "./LoreEditor";
 import { FACTION_GENERATE_PROMPT } from "@/lib/lorePrompts";
 
 // ─── String list editor ─────────────────────────────────────────────
@@ -223,12 +223,10 @@ function FactionDetail({
       </Section>
 
       <Section title="Description">
-        <LoreTextArea
-          label="Faction description"
+        <LoreEditor
           value={faction.description}
           onCommit={(v) => patch({ description: v || "" })}
           placeholder="History, purpose, culture, and role in the world..."
-          rows={8}
           generateSystemPrompt={FACTION_GENERATE_PROMPT}
           generateUserPrompt={`Write a description for the faction "${faction.displayName}".${faction.motto ? ` Their motto is: "${faction.motto}"` : ""}${faction.territory ? ` They control: ${faction.territory}` : ""}`}
           context={worldContext}

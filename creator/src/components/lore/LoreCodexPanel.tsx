@@ -3,7 +3,7 @@ import { useLoreStore } from "@/stores/loreStore";
 import type { Article, ArticleRelation } from "@/types/lore";
 import { DefinitionWorkbench } from "@/components/config/DefinitionWorkbench";
 import { Section, FieldRow, TextInput, SelectInput } from "@/components/ui/FormWidgets";
-import { LoreTextArea } from "./LoreTextArea";
+import { LoreEditor } from "./LoreEditor";
 import { CODEX_GENERATE_PROMPT } from "@/lib/lorePrompts";
 
 const CODEX_CATEGORIES = [
@@ -195,12 +195,10 @@ function CodexDetail({
       </Section>
 
       <Section title="Content">
-        <LoreTextArea
-          label="Article content"
+        <LoreEditor
           value={entry.content}
           onCommit={(v) => patch({ content: v })}
           placeholder="Write your lore entry here..."
-          rows={12}
           generateSystemPrompt={CODEX_GENERATE_PROMPT}
           generateUserPrompt={`Write a lore encyclopedia entry titled "${entry.title}"${entry.category ? ` in the category "${entry.category}"` : ""}.`}
           context={worldContext}

@@ -3,6 +3,7 @@ import { useLoreStore } from "@/stores/loreStore";
 import type { Article } from "@/types/lore";
 import { Section, FieldRow, TextInput } from "@/components/ui/FormWidgets";
 import { LoreTextArea } from "./LoreTextArea";
+import { LoreEditor } from "./LoreEditor";
 import { WORLD_SETTING_GENERATE_PROMPT } from "@/lib/lorePrompts";
 
 // ─── String list editor (themes) ───────────────────────────────────
@@ -176,12 +177,10 @@ export function WorldSettingPanel() {
       </Section>
 
       <Section title="Overview">
-        <LoreTextArea
-          label="World overview"
+        <LoreEditor
           value={content}
           onCommit={(v) => patchContent(v || "")}
           placeholder="Describe your world at a high level — its defining features, cultures, and conflicts..."
-          rows={8}
           generateSystemPrompt={WORLD_SETTING_GENERATE_PROMPT}
           generateUserPrompt="Write a vivid world overview for this fantasy MUD setting."
           context={worldContext}

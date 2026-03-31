@@ -386,3 +386,99 @@ select,
   background-color: var(--color-bg-secondary) !important;
   border-color: var(--color-border-default) !important;
 }
+
+/* ─── Tiptap / LoreEditor ─── */
+.lore-editor-content {
+  font-family: 'Crimson Pro', Georgia, serif;
+  font-size: 15px;
+  line-height: 1.7;
+  color: var(--color-text-secondary);
+  user-select: text;
+}
+
+.lore-editor-content h2 {
+  font-family: 'Cinzel', Palatino, serif;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin-top: 1.25rem;
+  margin-bottom: 0.5rem;
+}
+
+.lore-editor-content h3 {
+  font-family: 'Cinzel', Palatino, serif;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin-top: 1rem;
+  margin-bottom: 0.375rem;
+}
+
+.lore-editor-content h4 {
+  font-family: 'Cinzel', Palatino, serif;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin-top: 0.75rem;
+  margin-bottom: 0.25rem;
+}
+
+.lore-editor-content p {
+  margin-bottom: 0.5rem;
+}
+
+.lore-editor-content ul,
+.lore-editor-content ol {
+  padding-left: 1.25rem;
+  margin-bottom: 0.5rem;
+}
+
+.lore-editor-content ul { list-style-type: disc; }
+.lore-editor-content ol { list-style-type: decimal; }
+
+.lore-editor-content li { margin-bottom: 0.125rem; }
+
+.lore-editor-content blockquote {
+  border-left: 3px solid var(--color-accent);
+  padding-left: 0.75rem;
+  margin: 0.5rem 0;
+  color: var(--color-text-muted);
+  font-style: italic;
+}
+
+.lore-editor-content hr {
+  border: none;
+  border-top: 1px solid var(--color-border-muted);
+  margin: 1rem 0;
+}
+
+.lore-editor-content a {
+  color: var(--color-accent);
+  text-decoration: underline;
+}
+
+.lore-editor-content .mention {
+  color: var(--color-accent);
+  background: rgba(168, 151, 210, 0.12);
+  border-radius: 4px;
+  padding: 0 3px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.lore-editor-content.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  color: var(--color-text-muted);
+  pointer-events: none;
+  height: 0;
+}
+
+/* Tiptap placeholder extension */
+.tiptap p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  color: var(--color-text-muted);
+  pointer-events: none;
+  height: 0;
+}

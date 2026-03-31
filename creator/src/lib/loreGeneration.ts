@@ -97,7 +97,13 @@ ${worldContextSummary()}`;
     maxTokens: 2048,
   });
 
+  console.log("[ArticleGen] Raw LLM response:", result.slice(0, 1000));
+
   const parsed = parseJsonResponse(result);
+  if (Object.keys(parsed).length === 0) {
+    console.warn("[ArticleGen] JSON parsing failed. Full response:", result);
+    throw new Error("The AI response could not be parsed as JSON. Try a simpler concept.");
+  }
   const now = new Date().toISOString();
   const id = (parsed.title as string ?? opts.concept)
     .toLowerCase().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "").slice(0, 40);
@@ -178,7 +184,18 @@ export async function generateWorldSeed(concept: string): Promise<WorldSeedResul
     maxTokens: 8192,
   });
 
+  console.log("[WorldSeed] Raw LLM response length:", result.length);
+  console.log("[WorldSeed] Raw LLM response (first 2000 chars):", result.slice(0, 2000));
+
   const parsed = parseJsonResponse(result);
+  const parsedKeys = Object.keys(parsed);
+  console.log("[WorldSeed] Parsed keys:", parsedKeys);
+  if (parsedKeys.length === 0) {
+    console.warn("[WorldSeed] JSON parsing produced empty object. Full response:", result);
+    throw new Error(
+      "The AI response could not be parsed as JSON. This usually means the response was too long and got truncated, or the AI returned prose instead of JSON. Try a shorter concept.",
+    );
+  }
   const now = new Date().toISOString();
   const articles: Article[] = [];
 
@@ -270,6 +287,7 @@ export async function generateWorldSeed(concept: string): Promise<WorldSeedResul
     });
   }
 
+  console.log(`[WorldSeed] Generated ${articles.length} articles, calendar: ${!!calendar}, events: ${events?.length ?? 0}`);
   return { articles, calendar, events };
 }
 

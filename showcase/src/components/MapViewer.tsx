@@ -11,33 +11,48 @@ export function MapViewer({ map }: MapViewerProps) {
   const { articleById } = useShowcase();
   const [hoveredPin, setHoveredPin] = useState<ShowcasePin | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const [containerWidth, setContainerWidth] = useState(0);
+  const [dims, setDims] = useState({ w: 0, h: 0 });
 
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
     const observer = new ResizeObserver(([entry]) => {
-      setContainerWidth(entry.contentRect.width);
+      setDims({ w: entry.contentRect.width, h: entry.contentRect.height });
     });
     observer.observe(el);
     return () => observer.disconnect();
   }, []);
 
-  // Scale factor: fit map width to container, preserve aspect ratio
-  const scale = containerWidth > 0 ? containerWidth / map.width : 1;
-  const displayHeight = map.height * scale;
+  // Fit map within container preserving aspect ratio
+  const mapAspect = map.width / map.height;
+  const containerAspect = dims.w && dims.h ? dims.w / dims.h : mapAspect;
+
+  let displayW: number;
+  let displayH: number;
+  if (containerAspect > mapAspect) {
+    // Container is wider than map — fit to height
+    displayH = dims.h || 600;
+    displayW = displayH * mapAspect;
+  } else {
+    // Container is taller than map — fit to width
+    displayW = dims.w || 800;
+    displayH = displayW / mapAspect;
+  }
+
+  const scale = displayW / map.width;
 
   return (
     <div
       ref={containerRef}
       className="w-full rounded-lg border border-border-muted bg-bg-abyss overflow-hidden"
+      style={{ height: "min(80vh, 800px)" }}
       tabIndex={0}
       role="img"
       aria-label={`Map: ${map.title}`}
     >
       <div
-        className="relative w-full"
-        style={{ height: displayHeight }}
+        className="relative mx-auto"
+        style={{ width: displayW, height: displayH }}
       >
         {/* Map image */}
         <img
@@ -47,17 +62,19 @@ export function MapViewer({ map }: MapViewerProps) {
           draggable={false}
         />
 
-        {/* Pins — positions scaled proportionally */}
+        {/* Pins — position is [lat, lng] from Leaflet CRS.Simple:
+            lat = Y from bottom, lng = X from left.
+            Convert to pixel: px_x = lng * scale, px_y = (height - lat) * scale */}
         {map.pins.map((pin) => {
           const article = pin.articleId ? articleById.get(pin.articleId) : undefined;
-          const x = pin.position[0] * scale;
-          const y = pin.position[1] * scale;
+          const pxX = pin.position[1] * scale;
+          const pxY = (map.height - pin.position[0]) * scale;
 
           const inner = (
             <div
               key={pin.id}
               className="absolute -translate-x-1/2 -translate-y-1/2 group"
-              style={{ left: x, top: y }}
+              style={{ left: pxX, top: pxY }}
               onMouseEnter={() => setHoveredPin(pin)}
               onMouseLeave={() => setHoveredPin(null)}
               onFocus={() => setHoveredPin(pin)}

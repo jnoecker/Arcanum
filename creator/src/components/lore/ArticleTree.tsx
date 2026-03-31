@@ -1,6 +1,6 @@
 import { useMemo, useState, useCallback, useRef } from "react";
 import { Tree, type NodeRendererProps, type TreeApi } from "react-arborist";
-import { useLoreStore } from "@/stores/loreStore";
+import { useLoreStore, selectArticles } from "@/stores/loreStore";
 import type { Article, ArticleTemplate } from "@/types/lore";
 import { TEMPLATE_SCHEMAS } from "@/lib/loreTemplates";
 
@@ -117,7 +117,7 @@ function Node({ node, style, dragHandle }: NodeRendererProps<TreeNode>) {
 // ─── Main component ────────────────────────────────────────────────
 
 export function ArticleTree() {
-  const articles = useLoreStore((s) => s.lore?.articles ?? {});
+  const articles = useLoreStore(selectArticles);
   const createArticle = useLoreStore((s) => s.createArticle);
   const moveArticle = useLoreStore((s) => s.moveArticle);
   const selectArticle = useLoreStore((s) => s.selectArticle);

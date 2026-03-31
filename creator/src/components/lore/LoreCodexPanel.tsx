@@ -1,5 +1,5 @@
 import { useMemo, useState, useCallback } from "react";
-import { useLoreStore } from "@/stores/loreStore";
+import { useLoreStore, selectArticles } from "@/stores/loreStore";
 import type { Article, ArticleRelation } from "@/types/lore";
 import { DefinitionWorkbench } from "@/components/config/DefinitionWorkbench";
 import { Section, FieldRow, TextInput, SelectInput } from "@/components/ui/FormWidgets";
@@ -229,7 +229,7 @@ function CodexDetail({
 // ─── Main panel ────────────────────────────────────────────────────
 
 export function LoreCodexPanel() {
-  const articles = useLoreStore((s) => s.lore?.articles ?? {});
+  const articles = useLoreStore(selectArticles);
   const [categoryFilter, setCategoryFilter] = useState<string>("");
 
   // Codex articles: everything that isn't world_setting or organization

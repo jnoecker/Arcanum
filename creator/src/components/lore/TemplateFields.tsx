@@ -4,7 +4,7 @@ import type { TemplateFieldDef } from "@/lib/loreTemplates";
 import { TEMPLATE_SCHEMAS } from "@/lib/loreTemplates";
 import { Section, FieldRow, TextInput, NumberInput, SelectInput } from "@/components/ui/FormWidgets";
 import { LoreTextArea } from "./LoreTextArea";
-import { useLoreStore } from "@/stores/loreStore";
+import { useLoreStore, selectArticles } from "@/stores/loreStore";
 
 // ─── Tag list (inline) ─────────────────────────────────────────────
 
@@ -75,7 +75,7 @@ function ArticleRefSelect({
   value: string;
   onChange: (id: string) => void;
 }) {
-  const articles = useLoreStore((s) => s.lore?.articles ?? {});
+  const articles = useLoreStore(selectArticles);
   const options = Object.values(articles)
     .map((a) => ({ value: a.id, label: a.title }))
     .filter((o) => o.value !== value);
@@ -103,7 +103,7 @@ function ArticleRefsSelect({
   selected: string[];
   onChange: (ids: string[]) => void;
 }) {
-  const articles = useLoreStore((s) => s.lore?.articles ?? {});
+  const articles = useLoreStore(selectArticles);
   const available = Object.values(articles)
     .filter((a) => !selected.includes(a.id))
     .map((a) => ({ value: a.id, label: a.title }));

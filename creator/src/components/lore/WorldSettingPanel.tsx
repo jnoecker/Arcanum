@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo } from "react";
-import { useLoreStore } from "@/stores/loreStore";
+import { useLoreStore, selectArticles } from "@/stores/loreStore";
 import type { Article } from "@/types/lore";
 import { Section, FieldRow, TextInput } from "@/components/ui/FormWidgets";
 import { LoreTextArea } from "./LoreTextArea";
@@ -78,7 +78,7 @@ function getFieldTags(article: Article, key: string): string[] {
 // ─── Main panel ────────────────────────────────────────────────────
 
 export function WorldSettingPanel() {
-  const articles = useLoreStore((s) => s.lore?.articles ?? {});
+  const articles = useLoreStore(selectArticles);
   const updateArticle = useLoreStore((s) => s.updateArticle);
   const createArticle = useLoreStore((s) => s.createArticle);
 

@@ -1,6 +1,6 @@
 import { useMemo, useEffect, useState } from "react";
 import type { LoreMap, MapPin } from "@/types/lore";
-import { useLoreStore } from "@/stores/loreStore";
+import { useLoreStore, selectArticles } from "@/stores/loreStore";
 
 // ─── Custom pin icon ────────────────────────────────────────────────
 
@@ -33,7 +33,7 @@ export function MapViewer({
   addMode: boolean;
   onAddComplete: () => void;
 }) {
-  const articles = useLoreStore((s) => s.lore?.articles ?? {});
+  const articles = useLoreStore(selectArticles);
   const addPin = useLoreStore((s) => s.addPin);
 
   // Dynamically load Leaflet + react-leaflet + CSS to fully isolate from PostCSS

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useLoreStore } from "@/stores/loreStore";
+import { useLoreStore, selectArticles } from "@/stores/loreStore";
 import { ArticleTree } from "./ArticleTree";
 import { ArticleEditor } from "./ArticleEditor";
 import { ArticleGenerator } from "./ArticleGenerator";
@@ -7,7 +7,8 @@ import { WorldSeedWizard } from "./WorldSeedWizard";
 
 export function ArticleBrowser() {
   const selectedArticleId = useLoreStore((s) => s.selectedArticleId);
-  const articleCount = useLoreStore((s) => Object.keys(s.lore?.articles ?? {}).length);
+  const articles = useLoreStore(selectArticles);
+  const articleCount = Object.keys(articles).length;
   const [showGenerator, setShowGenerator] = useState(false);
   const [showSeedWizard, setShowSeedWizard] = useState(false);
 

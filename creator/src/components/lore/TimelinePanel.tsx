@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { useLoreStore } from "@/stores/loreStore";
+import { useLoreStore, selectArticles, selectCalendars, selectEvents } from "@/stores/loreStore";
 import type { CalendarSystem, CalendarEra, TimelineEvent } from "@/types/lore";
 import { formatEventDate } from "@/lib/loreCalendar";
 import {
@@ -150,7 +150,7 @@ function EventEditor({
   onUpdate: (patch: Partial<TimelineEvent>) => void;
   onDelete: () => void;
 }) {
-  const articles = useLoreStore((s) => s.lore?.articles ?? {});
+  const articles = useLoreStore(selectArticles);
   const cal = calendars.find((c) => c.id === event.calendarId);
 
   const calOptions = calendars.map((c) => ({ value: c.id, label: c.name }));
@@ -223,8 +223,8 @@ function EventEditor({
 // ─── Main panel ────────────────────────────────────────────────────
 
 export function TimelinePanel() {
-  const calendars = useLoreStore((s) => s.lore?.calendarSystems ?? []);
-  const events = useLoreStore((s) => s.lore?.timelineEvents ?? []);
+  const calendars = useLoreStore(selectCalendars);
+  const events = useLoreStore(selectEvents);
   const setCalendars = useLoreStore((s) => s.setCalendarSystems);
   const addEvent = useLoreStore((s) => s.addTimelineEvent);
   const updateEvent = useLoreStore((s) => s.updateTimelineEvent);

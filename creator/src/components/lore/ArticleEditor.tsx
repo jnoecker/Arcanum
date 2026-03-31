@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useRef } from "react";
-import { useLoreStore } from "@/stores/loreStore";
+import { useLoreStore, selectArticles } from "@/stores/loreStore";
 import type { Article, ArticleRelation } from "@/types/lore";
 import { TEMPLATE_SCHEMAS } from "@/lib/loreTemplates";
 import { Section } from "@/components/ui/FormWidgets";
@@ -59,7 +59,7 @@ function RelationsEditor({
   relations: ArticleRelation[];
   onChange: (r: ArticleRelation[]) => void;
 }) {
-  const articles = useLoreStore((s) => s.lore?.articles ?? {});
+  const articles = useLoreStore(selectArticles);
   const linkedIds = new Set(relations.map((r) => r.targetId));
   const available = Object.values(articles).filter((a) => !linkedIds.has(a.id));
   const targetRef = useRef<HTMLSelectElement>(null);

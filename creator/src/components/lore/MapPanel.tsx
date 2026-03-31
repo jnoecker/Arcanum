@@ -1,7 +1,7 @@
 import { useState, useMemo, useCallback } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
-import { useLoreStore } from "@/stores/loreStore";
+import { useLoreStore, selectArticles, selectMaps } from "@/stores/loreStore";
 import { useImageSrc } from "@/lib/useImageSrc";
 import type { LoreMap } from "@/types/lore";
 import { FieldRow, TextInput } from "@/components/ui/FormWidgets";
@@ -27,7 +27,7 @@ function PinEditor({
 }) {
   const updatePin = useLoreStore((s) => s.updatePin);
   const removePin = useLoreStore((s) => s.removePin);
-  const articles = useLoreStore((s) => s.lore?.articles ?? {});
+  const articles = useLoreStore(selectArticles);
 
   const pin = map.pins.find((p) => p.id === pinId);
   if (!pin) return null;
@@ -95,7 +95,7 @@ function PinEditor({
 // ─── Main panel ────────────────────────────────────────────────────
 
 export function MapPanel() {
-  const maps = useLoreStore((s) => s.lore?.maps ?? []);
+  const maps = useLoreStore(selectMaps);
   const selectedMapId = useLoreStore((s) => s.selectedMapId);
   const selectMap = useLoreStore((s) => s.selectMap);
   const createMap = useLoreStore((s) => s.createMap);

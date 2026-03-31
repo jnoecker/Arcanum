@@ -1,6 +1,21 @@
 import { create } from "zustand";
 import type { WorldLore, Article, ArticleTemplate, LoreMap, MapPin, CalendarSystem, TimelineEvent } from "@/types/lore";
 
+// Stable empty references for selectors (prevents infinite re-render loops)
+const EMPTY_ARTICLES: Record<string, Article> = {};
+const EMPTY_MAPS: LoreMap[] = [];
+const EMPTY_CALENDARS: CalendarSystem[] = [];
+const EMPTY_EVENTS: TimelineEvent[] = [];
+
+/** Safe selector: returns lore.articles or a stable empty object. */
+export const selectArticles = (s: { lore: WorldLore | null }) => s.lore?.articles ?? EMPTY_ARTICLES;
+/** Safe selector: returns lore.maps or a stable empty array. */
+export const selectMaps = (s: { lore: WorldLore | null }) => s.lore?.maps ?? EMPTY_MAPS;
+/** Safe selector: returns lore.calendarSystems or a stable empty array. */
+export const selectCalendars = (s: { lore: WorldLore | null }) => s.lore?.calendarSystems ?? EMPTY_CALENDARS;
+/** Safe selector: returns lore.timelineEvents or a stable empty array. */
+export const selectEvents = (s: { lore: WorldLore | null }) => s.lore?.timelineEvents ?? EMPTY_EVENTS;
+
 interface LoreStore {
   lore: WorldLore | null;
   dirty: boolean;

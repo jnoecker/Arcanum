@@ -9,7 +9,7 @@ import {
   type NodeTypes,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
-import { useLoreStore } from "@/stores/loreStore";
+import { useLoreStore, selectArticles } from "@/stores/loreStore";
 import type { ArticleTemplate } from "@/types/lore";
 import { buildRelationGraph, type RelationGraphFilters } from "@/lib/loreRelations";
 import { TEMPLATE_SCHEMAS } from "@/lib/loreTemplates";
@@ -34,7 +34,7 @@ const RELATION_TYPE_OPTIONS = [
 ];
 
 function RelationGraphInner() {
-  const articles = useLoreStore((s) => s.lore?.articles ?? {});
+  const articles = useLoreStore(selectArticles);
   const selectArticle = useLoreStore((s) => s.selectArticle);
 
   const [templateFilters, setTemplateFilters] = useState<Set<ArticleTemplate>>(new Set());

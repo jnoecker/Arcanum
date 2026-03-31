@@ -1,5 +1,5 @@
 import { useMemo, useState, useCallback } from "react";
-import { useLoreStore } from "@/stores/loreStore";
+import { useLoreStore, selectArticles } from "@/stores/loreStore";
 import type { Article, ArticleRelation } from "@/types/lore";
 import { DefinitionWorkbench } from "@/components/config/DefinitionWorkbench";
 import { Section, FieldRow, TextInput } from "@/components/ui/FormWidgets";
@@ -264,7 +264,7 @@ function FactionDetail({
 // ─── Main panel ────────────────────────────────────────────────────
 
 export function FactionsPanel() {
-  const articles = useLoreStore((s) => s.lore?.articles ?? {});
+  const articles = useLoreStore(selectArticles);
   const replaceArticlesByTemplate = useLoreStore((s) => s.replaceArticlesByTemplate);
 
   // Filter organization articles and project them as FactionView records

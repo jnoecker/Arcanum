@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { WorldLore, Article, ArticleTemplate, LoreMap, MapPin } from "@/types/lore";
+import type { WorldLore, Article, ArticleTemplate, LoreMap, MapPin, CalendarSystem, TimelineEvent } from "@/types/lore";
 
 interface LoreStore {
   lore: WorldLore | null;
@@ -28,6 +28,13 @@ interface LoreStore {
   addPin: (mapId: string, pin: MapPin) => void;
   updatePin: (mapId: string, pinId: string, patch: Partial<MapPin>) => void;
   removePin: (mapId: string, pinId: string) => void;
+
+  // Calendar & timeline operations
+  setCalendarSystems: (systems: CalendarSystem[]) => void;
+  setTimelineEvents: (events: TimelineEvent[]) => void;
+  addTimelineEvent: (event: TimelineEvent) => void;
+  updateTimelineEvent: (id: string, patch: Partial<TimelineEvent>) => void;
+  deleteTimelineEvent: (id: string) => void;
 
   markClean: () => void;
   clearLore: () => void;
@@ -189,6 +196,51 @@ export const useLoreStore = create<LoreStore>((set) => ({
             m.id === mapId ? { ...m, pins: m.pins.filter((p) => p.id !== pinId) } : m,
           ),
         },
+        dirty: true,
+      };
+    }),
+
+  // ─── Calendar & timeline operations ────────────────────────────
+  setCalendarSystems: (systems) =>
+    set((s) => {
+      if (!s.lore) return s;
+      return { lore: { ...s.lore, calendarSystems: systems }, dirty: true };
+    }),
+
+  setTimelineEvents: (events) =>
+    set((s) => {
+      if (!s.lore) return s;
+      return { lore: { ...s.lore, timelineEvents: events }, dirty: true };
+    }),
+
+  addTimelineEvent: (event) =>
+    set((s) => {
+      if (!s.lore) return s;
+      return {
+        lore: { ...s.lore, timelineEvents: [...(s.lore.timelineEvents ?? []), event] },
+        dirty: true,
+      };
+    }),
+
+  updateTimelineEvent: (id, patch) =>
+    set((s) => {
+      if (!s.lore?.timelineEvents) return s;
+      return {
+        lore: {
+          ...s.lore,
+          timelineEvents: s.lore.timelineEvents.map((e) =>
+            e.id === id ? { ...e, ...patch } : e,
+          ),
+        },
+        dirty: true,
+      };
+    }),
+
+  deleteTimelineEvent: (id) =>
+    set((s) => {
+      if (!s.lore?.timelineEvents) return s;
+      return {
+        lore: { ...s.lore, timelineEvents: s.lore.timelineEvents.filter((e) => e.id !== id) },
         dirty: true,
       };
     }),

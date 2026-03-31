@@ -12,6 +12,7 @@ import { FactionsPanel } from "./FactionsPanel";
 import { LoreCodexPanel } from "./LoreCodexPanel";
 import { ArticleBrowser } from "./ArticleBrowser";
 import { MapPanel } from "./MapPanel";
+import { TimelinePanel } from "./TimelinePanel";
 
 // ─── Panel renderer ─────────────────────────────────────────────────
 
@@ -27,6 +28,8 @@ function renderPanel(panelId: string): ReactNode {
       return <LoreCodexPanel />;
     case "loreMaps":
       return <MapPanel />;
+    case "loreTimeline":
+      return <TimelinePanel />;
     default:
       return <div className="text-text-muted">Unknown lore panel: {panelId}</div>;
   }

@@ -54,12 +54,40 @@ export interface LoreMap {
   pins: MapPin[];
 }
 
+// ─── Calendars & Timelines ─────────────────────────────────────────
+
+export interface CalendarEra {
+  id: string;
+  name: string;
+  startYear: number;
+  color?: string;
+}
+
+export interface CalendarSystem {
+  id: string;
+  name: string;
+  eras: CalendarEra[];
+}
+
+export interface TimelineEvent {
+  id: string;
+  articleId?: string;
+  calendarId: string;
+  eraId: string;
+  year: number;
+  title: string;
+  description?: string;
+  importance: "minor" | "major" | "legendary";
+}
+
 // ─── Top-level lore container ──────────────────────────────────────
 
 export interface WorldLore {
   version: 2;
   articles: Record<string, Article>;
   maps?: LoreMap[];
+  calendarSystems?: CalendarSystem[];
+  timelineEvents?: TimelineEvent[];
 }
 
 export const DEFAULT_WORLD_LORE: WorldLore = {

@@ -77,6 +77,7 @@ const LORE_PANELS: PanelDef[] = [
   { id: "codex", label: "Codex", group: "lore", host: "lore", kicker: "Lore", title: "Lore codex", description: "Wiki-style articles for places, legends, creatures, deities, and more.", maxWidth: "max-w-5xl" },
   { id: "loreMaps", label: "Maps", group: "lore", host: "lore", kicker: "Lore", title: "World maps", description: "Upload maps, place pins, and link locations to lore articles.", maxWidth: "max-w-7xl" },
   { id: "loreTimeline", label: "Timeline", group: "lore", host: "lore", kicker: "Lore", title: "Timeline", description: "Custom calendar systems, eras, and historical events.", maxWidth: "max-w-5xl" },
+  { id: "loreRelations", label: "Relations", group: "lore", host: "lore", kicker: "Lore", title: "Relationship graph", description: "Visual graph of connections between articles, factions, and characters.", maxWidth: "max-w-7xl" },
 ];
 
 // ─── Content panels ─────────────────────────────────────────────────

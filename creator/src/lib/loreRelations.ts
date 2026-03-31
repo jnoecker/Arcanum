@@ -1,4 +1,6 @@
-import type { ArticleRelation } from "@/types/lore";
+import type { Article, ArticleRelation, ArticleTemplate } from "@/types/lore";
+import type { Node, Edge } from "@xyflow/react";
+import dagre from "@dagrejs/dagre";
 
 /**
  * Extract @mention relations from Tiptap JSON content.
@@ -116,3 +118,138 @@ export function plainTextToTiptap(text: string): string {
 
   return JSON.stringify({ type: "doc", content });
 }
+
+// ─── Relationship graph builder ─────────────────────────────────────
+
+export interface RelationGraphFilters {
+  templates?: ArticleTemplate[];
+  relationTypes?: string[];
+}
+
+const NODE_WIDTH = 180;
+const NODE_HEIGHT = 50;
+
+/**
+ * Build React Flow nodes and edges from article relations + mentions.
+ */
+export function buildRelationGraph(
+  articles: Record<string, Article>,
+  filters?: RelationGraphFilters,
+): { nodes: Node[]; edges: Edge[] } {
+  const templateFilter = filters?.templates ? new Set(filters.templates) : null;
+  const typeFilter = filters?.relationTypes ? new Set(filters.relationTypes) : null;
+
+  // Collect all articles that pass the template filter
+  const included = new Set<string>();
+  for (const [id, a] of Object.entries(articles)) {
+    if (!templateFilter || templateFilter.has(a.template)) {
+      included.add(id);
+    }
+  }
+
+  // Build edges from explicit relations + mention extraction
+  const edges: Edge[] = [];
+  const edgeSeen = new Set<string>();
+
+  for (const [id, a] of Object.entries(articles)) {
+    if (!included.has(id)) continue;
+
+    // Explicit relations
+    for (const rel of a.relations ?? []) {
+      if (!included.has(rel.targetId)) continue;
+      if (typeFilter && !typeFilter.has(rel.type)) continue;
+      const edgeKey = `${id}->${rel.targetId}:${rel.type}`;
+      if (edgeSeen.has(edgeKey)) continue;
+      edgeSeen.add(edgeKey);
+      edges.push({
+        id: edgeKey,
+        source: id,
+        target: rel.targetId,
+        label: rel.type,
+        type: "smoothstep",
+        style: { stroke: RELATION_COLORS[rel.type] ?? "#56617d" },
+        labelStyle: { fill: "#95a0bf", fontSize: 9 },
+      });
+    }
+
+    // Mention-based relations
+    const mentions = extractMentions(a.content);
+    for (const m of mentions) {
+      if (!included.has(m.targetId)) continue;
+      if (typeFilter && !typeFilter.has("mentioned")) continue;
+      const edgeKey = `${id}->${m.targetId}:mentioned`;
+      if (edgeSeen.has(edgeKey)) continue;
+      edgeSeen.add(edgeKey);
+      edges.push({
+        id: edgeKey,
+        source: id,
+        target: m.targetId,
+        label: "mentions",
+        type: "smoothstep",
+        style: { stroke: "#56617d", strokeDasharray: "4 2" },
+        labelStyle: { fill: "#56617d", fontSize: 9 },
+      });
+    }
+  }
+
+  // Only include nodes that have at least one connection
+  const connected = new Set<string>();
+  for (const e of edges) {
+    connected.add(e.source);
+    connected.add(e.target);
+  }
+
+  // Build nodes
+  const rawNodes: Node[] = [];
+  for (const id of connected) {
+    const a = articles[id];
+    if (!a) continue;
+    rawNodes.push({
+      id,
+      type: "relationNode",
+      data: { label: a.title, template: a.template },
+      position: { x: 0, y: 0 },
+    });
+  }
+
+  // Apply dagre layout
+  const layoutNodes = applyDagreLayout(rawNodes, edges);
+  return { nodes: layoutNodes, edges };
+}
+
+function applyDagreLayout(nodes: Node[], edges: Edge[]): Node[] {
+  if (nodes.length === 0) return nodes;
+
+  const g = new dagre.graphlib.Graph();
+  g.setDefaultEdgeLabel(() => ({}));
+  g.setGraph({ rankdir: "LR", nodesep: 40, ranksep: 80 });
+
+  for (const node of nodes) {
+    g.setNode(node.id, { width: NODE_WIDTH, height: NODE_HEIGHT });
+  }
+  for (const edge of edges) {
+    g.setEdge(edge.source, edge.target);
+  }
+
+  dagre.layout(g);
+
+  return nodes.map((node) => {
+    const pos = g.node(node.id);
+    return {
+      ...node,
+      position: {
+        x: (pos.x ?? 0) - NODE_WIDTH / 2,
+        y: (pos.y ?? 0) - NODE_HEIGHT / 2,
+      },
+    };
+  });
+}
+
+const RELATION_COLORS: Record<string, string> = {
+  ally: "#a3c48e",
+  rival: "#dbb8b8",
+  member_of: "#8caec9",
+  located_in: "#8caec9",
+  related: "#a897d2",
+  mentioned: "#56617d",
+};

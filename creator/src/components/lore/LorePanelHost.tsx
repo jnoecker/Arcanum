@@ -13,6 +13,7 @@ import { LoreCodexPanel } from "./LoreCodexPanel";
 import { ArticleBrowser } from "./ArticleBrowser";
 import { MapPanel } from "./MapPanel";
 import { TimelinePanel } from "./TimelinePanel";
+import { RelationGraphPanel } from "./RelationGraphPanel";
 
 // ─── Panel renderer ─────────────────────────────────────────────────
 
@@ -30,6 +31,8 @@ function renderPanel(panelId: string): ReactNode {
       return <MapPanel />;
     case "loreTimeline":
       return <TimelinePanel />;
+    case "loreRelations":
+      return <RelationGraphPanel />;
     default:
       return <div className="text-text-muted">Unknown lore panel: {panelId}</div>;
   }

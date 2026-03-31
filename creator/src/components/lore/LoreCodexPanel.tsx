@@ -1,5 +1,6 @@
-import { useMemo, useState } from "react";
-import type { WorldLore, CodexEntry } from "@/types/lore";
+import { useMemo, useState, useCallback } from "react";
+import { useLoreStore } from "@/stores/loreStore";
+import type { Article, ArticleRelation } from "@/types/lore";
 import { DefinitionWorkbench } from "@/components/config/DefinitionWorkbench";
 import { Section, FieldRow, TextInput, SelectInput } from "@/components/ui/FormWidgets";
 import { LoreTextArea } from "./LoreTextArea";
@@ -14,6 +15,11 @@ const CODEX_CATEGORIES = [
   { value: "events", label: "Events" },
   { value: "customs", label: "Customs" },
 ];
+
+// Templates that are managed by the codex (not by dedicated panels)
+const CODEX_TEMPLATES = new Set([
+  "character", "location", "species", "item", "event", "language", "freeform",
+]);
 
 // ─── Tag list ──────────────────────────────────────────────────────
 
@@ -127,6 +133,27 @@ function RelatedEntriesSelect({
   );
 }
 
+// ─── View type for DefinitionWorkbench ─────────────────────────────
+
+interface CodexView {
+  title: string;
+  category?: string;
+  content: string;
+  tags: string[];
+  relatedEntries: string[];
+}
+
+function articleToCodex(a: Article): CodexView {
+  const related = (a.relations ?? []).filter((r) => r.type === "related").map((r) => r.targetId);
+  return {
+    title: a.title,
+    category: typeof a.fields.category === "string" ? a.fields.category : undefined,
+    content: a.content,
+    tags: a.tags ?? [],
+    relatedEntries: related,
+  };
+}
+
 // ─── Codex entry detail ────────────────────────────────────────────
 
 function CodexDetail({
@@ -137,9 +164,9 @@ function CodexDetail({
   getTitle,
   worldContext,
 }: {
-  entry: CodexEntry;
+  entry: CodexView;
   entryId: string;
-  patch: (p: Partial<CodexEntry>) => void;
+  patch: (p: Partial<CodexView>) => void;
   allEntryIds: string[];
   getTitle: (id: string) => string;
   worldContext: string;
@@ -182,7 +209,7 @@ function CodexDetail({
 
       <Section title="Tags">
         <TagList
-          items={entry.tags ?? []}
+          items={entry.tags}
           onChange={(tags) => patch({ tags })}
         />
       </Section>
@@ -190,7 +217,7 @@ function CodexDetail({
       {otherEntries.length > 0 && (
         <Section title="Related">
           <RelatedEntriesSelect
-            selected={entry.relatedEntries ?? []}
+            selected={entry.relatedEntries}
             options={otherEntries}
             getTitle={getTitle}
             onChange={(relatedEntries) => patch({ relatedEntries })}
@@ -203,34 +230,122 @@ function CodexDetail({
 
 // ─── Main panel ────────────────────────────────────────────────────
 
-export function LoreCodexPanel({
-  lore,
-  onChange,
-}: {
-  lore: WorldLore;
-  onChange: (patch: Partial<WorldLore>) => void;
-}) {
+export function LoreCodexPanel() {
+  const articles = useLoreStore((s) => s.lore?.articles ?? {});
   const [categoryFilter, setCategoryFilter] = useState<string>("");
 
-  const allEntryIds = useMemo(() => Object.keys(lore.codex), [lore.codex]);
+  // Codex articles: everything that isn't world_setting or organization
+  const codexArticles = useMemo(
+    () => Object.fromEntries(
+      Object.entries(articles).filter(([, a]) => CODEX_TEMPLATES.has(a.template)),
+    ),
+    [articles],
+  );
 
-  const getTitle = (id: string) => lore.codex[id]?.title ?? id;
+  const codexViews = useMemo(
+    () => Object.fromEntries(
+      Object.entries(codexArticles).map(([id, a]) => [id, articleToCodex(a)]),
+    ),
+    [codexArticles],
+  );
 
-  const filteredItems = useMemo(() => {
-    if (!categoryFilter) return lore.codex;
+  const allEntryIds = useMemo(() => Object.keys(codexViews), [codexViews]);
+  const getTitle = (id: string) => codexViews[id]?.title ?? id;
+
+  const filteredViews = useMemo(() => {
+    if (!categoryFilter) return codexViews;
     return Object.fromEntries(
-      Object.entries(lore.codex).filter(([, e]) => e.category === categoryFilter),
+      Object.entries(codexViews).filter(([, e]) => e.category === categoryFilter),
     );
-  }, [lore.codex, categoryFilter]);
+  }, [codexViews, categoryFilter]);
 
   const worldContext = useMemo(() => {
-    const s = lore.setting;
+    const ws = Object.values(articles).find((a) => a.template === "world_setting");
+    if (!ws) return "A fantasy MUD world";
     const parts: string[] = [];
-    if (s.name) parts.push(`World: ${s.name}`);
-    if (s.tagline) parts.push(s.tagline);
-    if (s.themes?.length) parts.push(`Themes: ${s.themes.join(", ")}`);
+    const name = typeof ws.fields.name === "string" ? ws.fields.name : "";
+    if (name) parts.push(`World: ${name}`);
+    const tagline = typeof ws.fields.tagline === "string" ? ws.fields.tagline : "";
+    if (tagline) parts.push(tagline);
+    const themes = Array.isArray(ws.fields.themes) ? ws.fields.themes : [];
+    if (themes.length) parts.push(`Themes: ${themes.join(", ")}`);
     return parts.join("\n") || "A fantasy MUD world";
-  }, [lore.setting]);
+  }, [articles]);
+
+  const handleItemsChange = useCallback(
+    (newViews: Record<string, CodexView>) => {
+      // When filtering, we need to merge changes back into the full set
+      const baseViews = categoryFilter ? { ...codexViews } : {};
+
+      if (categoryFilter) {
+        // Remove old filtered entries
+        for (const id of Object.keys(baseViews)) {
+          if (baseViews[id]?.category === categoryFilter && !(id in newViews)) {
+            delete baseViews[id];
+          }
+        }
+        // Add/update filtered entries
+        for (const [id, cv] of Object.entries(newViews)) {
+          baseViews[id] = cv;
+        }
+      } else {
+        Object.assign(baseViews, newViews);
+      }
+
+      // Convert views back to articles, preserving template info
+      // We need to replace articles across ALL codex templates
+      const now = new Date().toISOString();
+      const newArticles: Record<string, Article> = {};
+      for (const [id, cv] of Object.entries(categoryFilter ? baseViews : newViews)) {
+        const existing = codexArticles[id];
+        const related: ArticleRelation[] = cv.relatedEntries.map((targetId) => ({
+          targetId,
+          type: "related",
+        }));
+        // Preserve non-related relations from existing article
+        const otherRelations = (existing?.relations ?? []).filter((r) => r.type !== "related");
+        const allRelations = [...otherRelations, ...related];
+
+        if (existing) {
+          newArticles[id] = {
+            ...existing,
+            title: cv.title,
+            content: cv.content,
+            fields: { ...existing.fields, category: cv.category },
+            tags: cv.tags.length > 0 ? cv.tags : undefined,
+            relations: allRelations.length > 0 ? allRelations : undefined,
+            updatedAt: now,
+          };
+        } else {
+          newArticles[id] = {
+            id,
+            template: "freeform",
+            title: cv.title,
+            content: cv.content,
+            fields: { category: cv.category },
+            tags: cv.tags.length > 0 ? cv.tags : undefined,
+            relations: allRelations.length > 0 ? allRelations : undefined,
+            createdAt: now,
+            updatedAt: now,
+          };
+        }
+      }
+
+      // Replace all codex-template articles at once
+      // First remove all current codex articles, then add the new ones
+      const store = useLoreStore.getState();
+      if (!store.lore) return;
+      const kept: Record<string, Article> = {};
+      for (const [id, a] of Object.entries(store.lore.articles)) {
+        if (!CODEX_TEMPLATES.has(a.template)) kept[id] = a;
+      }
+      store.setLore({ ...store.lore, articles: { ...kept, ...newArticles } });
+      // setLore doesn't mark dirty, so we need to do it via a dummy update
+      // Actually, let's just use the store's internal mechanism
+      useLoreStore.setState({ dirty: true });
+    },
+    [codexArticles, codexViews, categoryFilter],
+  );
 
   return (
     <div className="flex flex-col gap-4">
@@ -249,20 +364,22 @@ export function LoreCodexPanel({
         </select>
       </div>
 
-      <DefinitionWorkbench<CodexEntry>
+      <DefinitionWorkbench<CodexView>
         title="Lore codex"
         countLabel="Entries"
         description="Encyclopedia-style articles for your world's places, legends, creatures, and more."
         addPlaceholder="New entry id"
         searchPlaceholder="Search entries"
         emptyMessage="No entries match the current filter."
-        items={filteredItems}
+        items={filteredViews}
         defaultItem={(raw) => ({
           title: raw
             .replace(/_/g, " ")
             .replace(/\b\w/g, (c) => c.toUpperCase()),
           category: categoryFilter || undefined,
           content: "",
+          tags: [],
+          relatedEntries: [],
         })}
         getDisplayName={(e) => e.title}
         renderSummary={(e) => {
@@ -271,7 +388,7 @@ export function LoreCodexPanel({
         }}
         renderBadges={(e) => (e.category ? [e.category] : [])}
         renderDetail={(entry, patch) => {
-          const entryId = Object.entries(lore.codex).find(([, e]) => e === entry)?.[0] ?? "";
+          const entryId = Object.entries(filteredViews).find(([, e]) => e === entry)?.[0] ?? "";
           return (
             <CodexDetail
               entry={entry}
@@ -283,25 +400,7 @@ export function LoreCodexPanel({
             />
           );
         }}
-        onItemsChange={(updated) => {
-          // Merge filtered updates back into the full codex
-          if (categoryFilter) {
-            const full = { ...lore.codex };
-            // Remove old filtered entries
-            for (const id of Object.keys(full)) {
-              if (full[id]?.category === categoryFilter && !(id in updated)) {
-                delete full[id];
-              }
-            }
-            // Add/update filtered entries
-            for (const [id, entry] of Object.entries(updated)) {
-              full[id] = entry;
-            }
-            onChange({ codex: full });
-          } else {
-            onChange({ codex: updated });
-          }
-        }}
+        onItemsChange={handleItemsChange}
       />
     </div>
   );

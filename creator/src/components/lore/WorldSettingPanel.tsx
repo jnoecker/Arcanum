@@ -1,5 +1,6 @@
 import { useState, useCallback, useMemo } from "react";
-import type { WorldLore, WorldSetting } from "@/types/lore";
+import { useLoreStore } from "@/stores/loreStore";
+import type { Article } from "@/types/lore";
 import { Section, FieldRow, TextInput } from "@/components/ui/FormWidgets";
 import { LoreTextArea } from "./LoreTextArea";
 import { WORLD_SETTING_GENERATE_PROMPT } from "@/lib/lorePrompts";
@@ -61,34 +62,80 @@ function ThemesList({
   );
 }
 
+// ─── Helpers ────────────────────────────────────────────────────────
+
+function getField(article: Article, key: string): string {
+  const v = article.fields[key];
+  return typeof v === "string" ? v : "";
+}
+
+function getFieldTags(article: Article, key: string): string[] {
+  const v = article.fields[key];
+  return Array.isArray(v) ? v : [];
+}
+
 // ─── Main panel ────────────────────────────────────────────────────
 
-export function WorldSettingPanel({
-  lore,
-  onChange,
-}: {
-  lore: WorldLore;
-  onChange: (patch: Partial<WorldLore>) => void;
-}) {
-  const setting = lore.setting;
+export function WorldSettingPanel() {
+  const articles = useLoreStore((s) => s.lore?.articles ?? {});
+  const updateArticle = useLoreStore((s) => s.updateArticle);
+  const createArticle = useLoreStore((s) => s.createArticle);
 
-  const patchSetting = useCallback(
-    (patch: Partial<WorldSetting>) => {
-      onChange({ setting: { ...setting, ...patch } });
-    },
-    [setting, onChange],
+  // Find or create the world_setting article
+  const article = useMemo(
+    () => Object.values(articles).find((a) => a.template === "world_setting"),
+    [articles],
   );
+
+  const ensureArticle = useCallback((): Article => {
+    if (article) return article;
+    const now = new Date().toISOString();
+    const newArticle: Article = {
+      id: "world_setting",
+      template: "world_setting",
+      title: "World Setting",
+      fields: {},
+      content: "",
+      createdAt: now,
+      updatedAt: now,
+    };
+    createArticle(newArticle);
+    return newArticle;
+  }, [article, createArticle]);
+
+  const patchField = useCallback(
+    (key: string, value: unknown) => {
+      const a = ensureArticle();
+      updateArticle(a.id, { fields: { ...a.fields, [key]: value } });
+    },
+    [ensureArticle, updateArticle],
+  );
+
+  const patchContent = useCallback(
+    (content: string) => {
+      const a = ensureArticle();
+      updateArticle(a.id, { content });
+    },
+    [ensureArticle, updateArticle],
+  );
+
+  const fields = article?.fields ?? {};
+  const content = article?.content ?? "";
 
   // Build world context string for LLM generation
   const worldContext = useMemo(() => {
     const parts: string[] = [];
-    if (setting.name) parts.push(`World name: ${setting.name}`);
-    if (setting.tagline) parts.push(`Tagline: ${setting.tagline}`);
-    if (setting.era) parts.push(`Current era: ${setting.era}`);
-    if (setting.themes?.length) parts.push(`Themes: ${setting.themes.join(", ")}`);
-    if (setting.overview) parts.push(`Overview: ${setting.overview}`);
+    const name = typeof fields.name === "string" ? fields.name : "";
+    const tagline = typeof fields.tagline === "string" ? fields.tagline : "";
+    const era = typeof fields.era === "string" ? fields.era : "";
+    const themes = Array.isArray(fields.themes) ? fields.themes : [];
+    if (name) parts.push(`World name: ${name}`);
+    if (tagline) parts.push(`Tagline: ${tagline}`);
+    if (era) parts.push(`Current era: ${era}`);
+    if (themes.length) parts.push(`Themes: ${themes.join(", ")}`);
+    if (content) parts.push(`Overview: ${content}`);
     return parts.join("\n") || "A fantasy MUD game world";
-  }, [setting]);
+  }, [fields, content]);
 
   return (
     <div className="flex flex-col gap-6">
@@ -96,22 +143,22 @@ export function WorldSettingPanel({
         <div className="flex flex-col gap-2">
           <FieldRow label="World name">
             <TextInput
-              value={setting.name ?? ""}
-              onCommit={(v) => patchSetting({ name: v || undefined })}
+              value={getField(article ?? { fields: {} } as Article, "name")}
+              onCommit={(v) => patchField("name", v || undefined)}
               placeholder="The name of your world"
             />
           </FieldRow>
           <FieldRow label="Tagline">
             <TextInput
-              value={setting.tagline ?? ""}
-              onCommit={(v) => patchSetting({ tagline: v || undefined })}
+              value={getField(article ?? { fields: {} } as Article, "tagline")}
+              onCommit={(v) => patchField("tagline", v || undefined)}
               placeholder="A one-line hook for your setting"
             />
           </FieldRow>
           <FieldRow label="Current era">
             <TextInput
-              value={setting.era ?? ""}
-              onCommit={(v) => patchSetting({ era: v || undefined })}
+              value={getField(article ?? { fields: {} } as Article, "era")}
+              onCommit={(v) => patchField("era", v || undefined)}
               placeholder="e.g. The Age of Fractures"
             />
           </FieldRow>
@@ -123,16 +170,16 @@ export function WorldSettingPanel({
           Narrative tone and recurring motifs that shape your world's stories.
         </p>
         <ThemesList
-          items={setting.themes ?? []}
-          onChange={(themes) => patchSetting({ themes })}
+          items={getFieldTags(article ?? { fields: {} } as Article, "themes")}
+          onChange={(themes) => patchField("themes", themes)}
         />
       </Section>
 
       <Section title="Overview">
         <LoreTextArea
           label="World overview"
-          value={setting.overview ?? ""}
-          onCommit={(v) => patchSetting({ overview: v || undefined })}
+          value={content}
+          onCommit={(v) => patchContent(v || "")}
           placeholder="Describe your world at a high level — its defining features, cultures, and conflicts..."
           rows={8}
           generateSystemPrompt={WORLD_SETTING_GENERATE_PROMPT}
@@ -144,8 +191,8 @@ export function WorldSettingPanel({
       <Section title="History">
         <LoreTextArea
           label="Creation and history"
-          value={setting.history ?? ""}
-          onCommit={(v) => patchSetting({ history: v || undefined })}
+          value={getField(article ?? { fields: {} } as Article, "history")}
+          onCommit={(v) => patchField("history", v || undefined)}
           placeholder="The creation myth, major ages, wars, and turning points..."
           rows={8}
           generateSystemPrompt={WORLD_SETTING_GENERATE_PROMPT}
@@ -157,8 +204,8 @@ export function WorldSettingPanel({
       <Section title="Geography">
         <LoreTextArea
           label="Geography and regions"
-          value={setting.geography ?? ""}
-          onCommit={(v) => patchSetting({ geography: v || undefined })}
+          value={getField(article ?? { fields: {} } as Article, "geography")}
+          onCommit={(v) => patchField("geography", v || undefined)}
           placeholder="Continents, biomes, major landmarks, and how geography shapes civilisation..."
           rows={6}
           generateSystemPrompt={WORLD_SETTING_GENERATE_PROMPT}
@@ -170,8 +217,8 @@ export function WorldSettingPanel({
       <Section title="Magic system">
         <LoreTextArea
           label="Magic and the supernatural"
-          value={setting.magic ?? ""}
-          onCommit={(v) => patchSetting({ magic: v || undefined })}
+          value={getField(article ?? { fields: {} } as Article, "magic")}
+          onCommit={(v) => patchField("magic", v || undefined)}
           placeholder="How magic works, its sources, limits, and cultural significance..."
           rows={6}
           generateSystemPrompt={WORLD_SETTING_GENERATE_PROMPT}
@@ -183,8 +230,8 @@ export function WorldSettingPanel({
       <Section title="Technology and civilisation">
         <LoreTextArea
           label="Technology level"
-          value={setting.technology ?? ""}
-          onCommit={(v) => patchSetting({ technology: v || undefined })}
+          value={getField(article ?? { fields: {} } as Article, "technology")}
+          onCommit={(v) => patchField("technology", v || undefined)}
           placeholder="What level of technology exists? How does it interact with magic?..."
           rows={6}
           generateSystemPrompt={WORLD_SETTING_GENERATE_PROMPT}

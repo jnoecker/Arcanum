@@ -1,13 +1,53 @@
 // ─── Lore & World Building ──────────────────────────────────────────
 // Creator-only data model. Not deployed to the MUD server.
 
-export interface WorldLore {
-  setting: WorldSetting;
-  factions: Record<string, Faction>;
-  codex: Record<string, CodexEntry>;
+// ─── Article system (v2) ────────────────────────────────────────────
+
+export type ArticleTemplate =
+  | "world_setting"
+  | "character"
+  | "location"
+  | "organization"
+  | "item"
+  | "species"
+  | "event"
+  | "language"
+  | "freeform";
+
+export interface ArticleRelation {
+  targetId: string;
+  type: string;
+  label?: string;
 }
 
-export interface WorldSetting {
+export interface Article {
+  id: string;
+  template: ArticleTemplate;
+  title: string;
+  parentId?: string;
+  sortOrder?: number;
+  fields: Record<string, unknown>;
+  content: string;
+  tags?: string[];
+  relations?: ArticleRelation[];
+  image?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface WorldLore {
+  version: 2;
+  articles: Record<string, Article>;
+}
+
+export const DEFAULT_WORLD_LORE: WorldLore = {
+  version: 2,
+  articles: {},
+};
+
+// ─── V1 interfaces (for migration only) ────────────────────────────
+
+export interface WorldSettingV1 {
   name?: string;
   tagline?: string;
   overview?: string;
@@ -19,7 +59,7 @@ export interface WorldSetting {
   technology?: string;
 }
 
-export interface Faction {
+export interface FactionV1 {
   displayName: string;
   description?: string;
   motto?: string;
@@ -31,7 +71,7 @@ export interface Faction {
   image?: string;
 }
 
-export interface CodexEntry {
+export interface CodexEntryV1 {
   title: string;
   category?: string;
   content: string;
@@ -39,8 +79,8 @@ export interface CodexEntry {
   relatedEntries?: string[];
 }
 
-export const DEFAULT_WORLD_LORE: WorldLore = {
-  setting: {},
-  factions: {},
-  codex: {},
-};
+export interface WorldLoreV1 {
+  setting: WorldSettingV1;
+  factions: Record<string, FactionV1>;
+  codex: Record<string, CodexEntryV1>;
+}

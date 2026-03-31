@@ -3,7 +3,6 @@ import { useLoreStore } from "@/stores/loreStore";
 import { useProjectStore } from "@/stores/projectStore";
 import { saveLore } from "@/lib/lorePersistence";
 import { PANEL_MAP } from "@/lib/panelRegistry";
-import type { WorldLore } from "@/types/lore";
 import { Spinner } from "@/components/ui/FormWidgets";
 import configBg from "@/assets/config-bg.png";
 import subtoolbarBg from "@/assets/subtoolbar-bg.jpg";
@@ -14,18 +13,14 @@ import { LoreCodexPanel } from "./LoreCodexPanel";
 
 // ─── Panel renderer ─────────────────────────────────────────────────
 
-type LorePanelProps = { lore: WorldLore; onChange: (patch: Partial<WorldLore>) => void };
-
-function renderPanel(panelId: string, props: LorePanelProps): ReactNode {
-  const { lore, onChange } = props;
-
+function renderPanel(panelId: string): ReactNode {
   switch (panelId) {
     case "worldSetting":
-      return <WorldSettingPanel lore={lore} onChange={onChange} />;
+      return <WorldSettingPanel />;
     case "factions":
-      return <FactionsPanel lore={lore} onChange={onChange} />;
+      return <FactionsPanel />;
     case "codex":
-      return <LoreCodexPanel lore={lore} onChange={onChange} />;
+      return <LoreCodexPanel />;
     default:
       return <div className="text-text-muted">Unknown lore panel: {panelId}</div>;
   }
@@ -36,7 +31,6 @@ function renderPanel(panelId: string, props: LorePanelProps): ReactNode {
 export function LorePanelHost({ panelId }: { panelId: string }) {
   const lore = useLoreStore((s) => s.lore);
   const dirty = useLoreStore((s) => s.dirty);
-  const updateLore = useLoreStore((s) => s.updateLore);
   const project = useProjectStore((s) => s.project);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -52,15 +46,6 @@ export function LorePanelHost({ panelId }: { panelId: string }) {
     }, 3000);
     return () => clearTimeout(autoSaveTimer.current);
   }, [dirty, project, lore]);
-
-  const handleChange = useCallback(
-    (patch: Partial<WorldLore>) => {
-      const current = useLoreStore.getState().lore;
-      if (!current) return;
-      updateLore({ ...current, ...patch });
-    },
-    [updateLore],
-  );
 
   const handleSave = useCallback(async () => {
     if (!project || saving) return;
@@ -128,7 +113,7 @@ export function LorePanelHost({ panelId }: { panelId: string }) {
         </div>
 
         <div className={`relative z-10 mx-auto flex flex-col gap-6 px-6 py-5 ${def?.maxWidth ?? "max-w-5xl"}`}>
-          {renderPanel(panelId, { lore, onChange: handleChange })}
+          {renderPanel(panelId)}
         </div>
       </div>
     </div>

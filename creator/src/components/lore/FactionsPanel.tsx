@@ -1,5 +1,6 @@
-import { useMemo, useState } from "react";
-import type { WorldLore, Faction } from "@/types/lore";
+import { useMemo, useState, useCallback } from "react";
+import { useLoreStore } from "@/stores/loreStore";
+import type { Article, ArticleRelation } from "@/types/lore";
 import { DefinitionWorkbench } from "@/components/config/DefinitionWorkbench";
 import { Section, FieldRow, TextInput } from "@/components/ui/FormWidgets";
 import { LoreTextArea } from "./LoreTextArea";
@@ -119,6 +120,57 @@ function FactionSelect({
   );
 }
 
+// ─── Helpers: read faction-shaped data from Article ─────────────────
+
+interface FactionView {
+  displayName: string;
+  description: string;
+  motto?: string;
+  territory?: string;
+  leader?: string;
+  values: string[];
+  allies: string[];
+  rivals: string[];
+  image?: string;
+}
+
+function articleToFaction(a: Article): FactionView {
+  const f = a.fields;
+  const allies = (a.relations ?? []).filter((r) => r.type === "ally").map((r) => r.targetId);
+  const rivals = (a.relations ?? []).filter((r) => r.type === "rival").map((r) => r.targetId);
+  return {
+    displayName: a.title,
+    description: a.content,
+    motto: typeof f.motto === "string" ? f.motto : undefined,
+    territory: typeof f.territory === "string" ? f.territory : undefined,
+    leader: typeof f.leader === "string" ? f.leader : undefined,
+    values: Array.isArray(f.values) ? f.values : [],
+    allies,
+    rivals,
+    image: a.image,
+  };
+}
+
+function factionToArticlePatch(fv: FactionView, existingRelations: ArticleRelation[]): Partial<Article> {
+  // Preserve non-ally/rival relations
+  const otherRelations = existingRelations.filter((r) => r.type !== "ally" && r.type !== "rival");
+  const allyRelations: ArticleRelation[] = fv.allies.map((id) => ({ targetId: id, type: "ally" }));
+  const rivalRelations: ArticleRelation[] = fv.rivals.map((id) => ({ targetId: id, type: "rival" }));
+  const relations = [...otherRelations, ...allyRelations, ...rivalRelations];
+  return {
+    title: fv.displayName,
+    content: fv.description,
+    fields: {
+      motto: fv.motto,
+      territory: fv.territory,
+      leader: fv.leader,
+      values: fv.values,
+    },
+    image: fv.image,
+    relations: relations.length > 0 ? relations : undefined,
+  };
+}
+
 // ─── Faction detail ────────────────────────────────────────────────
 
 function FactionDetail({
@@ -128,8 +180,8 @@ function FactionDetail({
   factionId,
   worldContext,
 }: {
-  faction: Faction;
-  patch: (p: Partial<Faction>) => void;
+  faction: FactionView;
+  patch: (p: Partial<FactionView>) => void;
   allFactionIds: string[];
   factionId: string;
   worldContext: string;
@@ -173,8 +225,8 @@ function FactionDetail({
       <Section title="Description">
         <LoreTextArea
           label="Faction description"
-          value={faction.description ?? ""}
-          onCommit={(v) => patch({ description: v || undefined })}
+          value={faction.description}
+          onCommit={(v) => patch({ description: v || "" })}
           placeholder="History, purpose, culture, and role in the world..."
           rows={8}
           generateSystemPrompt={FACTION_GENERATE_PROMPT}
@@ -185,7 +237,7 @@ function FactionDetail({
 
       <Section title="Values">
         <TagList
-          items={faction.values ?? []}
+          items={faction.values}
           onChange={(values) => patch({ values })}
           placeholder="Add a core value..."
         />
@@ -195,13 +247,13 @@ function FactionDetail({
         <Section title="Relationships">
           <FactionSelect
             label="Allies"
-            selected={faction.allies ?? []}
+            selected={faction.allies}
             options={otherFactions}
             onChange={(allies) => patch({ allies })}
           />
           <FactionSelect
             label="Rivals"
-            selected={faction.rivals ?? []}
+            selected={faction.rivals}
             options={otherFactions}
             onChange={(rivals) => patch({ rivals })}
           />
@@ -213,51 +265,103 @@ function FactionDetail({
 
 // ─── Main panel ────────────────────────────────────────────────────
 
-export function FactionsPanel({
-  lore,
-  onChange,
-}: {
-  lore: WorldLore;
-  onChange: (patch: Partial<WorldLore>) => void;
-}) {
-  const allFactionIds = useMemo(() => Object.keys(lore.factions), [lore.factions]);
+export function FactionsPanel() {
+  const articles = useLoreStore((s) => s.lore?.articles ?? {});
+  const replaceArticlesByTemplate = useLoreStore((s) => s.replaceArticlesByTemplate);
+
+  // Filter organization articles and project them as FactionView records
+  const orgArticles = useMemo(
+    () => Object.fromEntries(
+      Object.entries(articles).filter(([, a]) => a.template === "organization"),
+    ),
+    [articles],
+  );
+
+  const factionViews = useMemo(
+    () => Object.fromEntries(
+      Object.entries(orgArticles).map(([id, a]) => [id, articleToFaction(a)]),
+    ),
+    [orgArticles],
+  );
+
+  const allFactionIds = useMemo(() => Object.keys(factionViews), [factionViews]);
 
   const worldContext = useMemo(() => {
-    const s = lore.setting;
+    const ws = Object.values(articles).find((a) => a.template === "world_setting");
+    if (!ws) return "A fantasy MUD world";
     const parts: string[] = [];
-    if (s.name) parts.push(`World: ${s.name}`);
-    if (s.tagline) parts.push(s.tagline);
-    if (s.themes?.length) parts.push(`Themes: ${s.themes.join(", ")}`);
+    const name = typeof ws.fields.name === "string" ? ws.fields.name : "";
+    if (name) parts.push(`World: ${name}`);
+    const tagline = typeof ws.fields.tagline === "string" ? ws.fields.tagline : "";
+    if (tagline) parts.push(tagline);
+    const themes = Array.isArray(ws.fields.themes) ? ws.fields.themes : [];
+    if (themes.length) parts.push(`Themes: ${themes.join(", ")}`);
     return parts.join("\n") || "A fantasy MUD world";
-  }, [lore.setting]);
+  }, [articles]);
+
+  const handleItemsChange = useCallback(
+    (newViews: Record<string, FactionView>) => {
+      // Convert FactionViews back to Articles
+      const newArticles: Record<string, Article> = {};
+      const now = new Date().toISOString();
+      for (const [id, fv] of Object.entries(newViews)) {
+        const existing = orgArticles[id];
+        if (existing) {
+          // Update existing article
+          const patch = factionToArticlePatch(fv, existing.relations ?? []);
+          newArticles[id] = { ...existing, ...patch, updatedAt: now };
+        } else {
+          // New article
+          newArticles[id] = {
+            id,
+            template: "organization",
+            title: fv.displayName,
+            content: fv.description,
+            fields: {
+              motto: fv.motto,
+              territory: fv.territory,
+              leader: fv.leader,
+              values: fv.values,
+            },
+            image: fv.image,
+            createdAt: now,
+            updatedAt: now,
+          };
+        }
+      }
+      replaceArticlesByTemplate("organization", newArticles);
+    },
+    [orgArticles, replaceArticlesByTemplate],
+  );
 
   return (
-    <DefinitionWorkbench<Faction>
+    <DefinitionWorkbench<FactionView>
       title="Faction designer"
       countLabel="Factions"
       description="Define the political, cultural, and organisational forces of your world."
       addPlaceholder="New faction id"
       searchPlaceholder="Search factions"
       emptyMessage="Create a faction to populate your world."
-      items={lore.factions}
+      items={factionViews}
       defaultItem={(raw) => ({
         displayName: raw
           .replace(/_/g, " ")
           .replace(/\b\w/g, (c) => c.toUpperCase()),
         description: "",
-        criteria: [],
+        values: [],
+        allies: [],
+        rivals: [],
       })}
       getDisplayName={(f) => f.displayName}
       renderSummary={(f) => f.motto ?? f.territory ?? ""}
       renderBadges={(f) => {
         const badges: string[] = [];
-        if (f.allies?.length) badges.push(`${f.allies.length} allies`);
-        if (f.rivals?.length) badges.push(`${f.rivals.length} rivals`);
+        if (f.allies.length) badges.push(`${f.allies.length} allies`);
+        if (f.rivals.length) badges.push(`${f.rivals.length} rivals`);
         return badges;
       }}
       renderDetail={(faction, patch) => {
-        // Find the ID of this faction by matching the object reference
-        const factionId = Object.entries(lore.factions).find(([, f]) => f === faction)?.[0] ?? "";
+        const factionId = Object.entries(factionViews).find(([, f]) => f === faction)?.[0] ?? "";
         return (
           <FactionDetail
             faction={faction}
@@ -268,7 +372,7 @@ export function FactionsPanel({
           />
         );
       }}
-      onItemsChange={(factions) => onChange({ factions })}
+      onItemsChange={handleItemsChange}
     />
   );
 }

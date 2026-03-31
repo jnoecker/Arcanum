@@ -1,0 +1,186 @@
+import type { ArticleTemplate } from "@/types/lore";
+
+// ─── Template field definitions ─────────────────────────────────────
+
+export interface TemplateFieldDef {
+  key: string;
+  label: string;
+  type: "text" | "textarea" | "select" | "tags" | "article_ref" | "article_refs" | "number";
+  options?: { value: string; label: string }[];
+  placeholder?: string;
+}
+
+export interface TemplateSchema {
+  template: ArticleTemplate;
+  label: string;
+  pluralLabel: string;
+  fields: TemplateFieldDef[];
+}
+
+// ─── Schema registry ────────────────────────────────────────────────
+
+export const TEMPLATE_SCHEMAS: Record<ArticleTemplate, TemplateSchema> = {
+  world_setting: {
+    template: "world_setting",
+    label: "World Setting",
+    pluralLabel: "World Settings",
+    fields: [
+      { key: "name", label: "World name", type: "text", placeholder: "The name of your world" },
+      { key: "tagline", label: "Tagline", type: "text", placeholder: "A one-line hook for your setting" },
+      { key: "era", label: "Current era", type: "text", placeholder: "e.g. The Age of Fractures" },
+      { key: "themes", label: "Themes", type: "tags", placeholder: "Add a theme..." },
+      { key: "geography", label: "Geography", type: "textarea", placeholder: "Continents, biomes, major landmarks..." },
+      { key: "magic", label: "Magic system", type: "textarea", placeholder: "How magic works, its sources and limits..." },
+      { key: "technology", label: "Technology", type: "textarea", placeholder: "What level of technology exists?" },
+      { key: "history", label: "History", type: "textarea", placeholder: "Creation myth, major ages, wars..." },
+    ],
+  },
+
+  organization: {
+    template: "organization",
+    label: "Organization",
+    pluralLabel: "Organizations",
+    fields: [
+      { key: "motto", label: "Motto", type: "text", placeholder: "A rallying cry or creed" },
+      { key: "leader", label: "Leader", type: "text", placeholder: "Current leader or ruling body" },
+      { key: "territory", label: "Territory", type: "text", placeholder: "Regions or strongholds" },
+      { key: "values", label: "Values", type: "tags", placeholder: "Add a core value..." },
+    ],
+  },
+
+  character: {
+    template: "character",
+    label: "Character",
+    pluralLabel: "Characters",
+    fields: [
+      { key: "fullName", label: "Full name", type: "text", placeholder: "Full name or title" },
+      { key: "title", label: "Title", type: "text", placeholder: "King, Captain, High Priestess..." },
+      { key: "race", label: "Race", type: "text", placeholder: "Species or ancestry" },
+      { key: "class", label: "Class", type: "text", placeholder: "Warrior, mage, rogue..." },
+      { key: "age", label: "Age", type: "text", placeholder: "Age or apparent age" },
+      { key: "affiliation", label: "Affiliation", type: "article_ref", placeholder: "Linked organization" },
+      { key: "personality", label: "Personality", type: "textarea", placeholder: "Temperament, quirks, motivations..." },
+      { key: "appearance", label: "Appearance", type: "textarea", placeholder: "Physical description..." },
+    ],
+  },
+
+  location: {
+    template: "location",
+    label: "Location",
+    pluralLabel: "Locations",
+    fields: [
+      {
+        key: "locationType", label: "Type", type: "select", options: [
+          { value: "city", label: "City" },
+          { value: "region", label: "Region" },
+          { value: "landmark", label: "Landmark" },
+          { value: "dungeon", label: "Dungeon" },
+          { value: "wilderness", label: "Wilderness" },
+          { value: "building", label: "Building" },
+          { value: "plane", label: "Plane / Realm" },
+        ],
+      },
+      { key: "climate", label: "Climate", type: "text", placeholder: "Weather and environment" },
+      { key: "population", label: "Population", type: "text", placeholder: "Who lives here?" },
+      { key: "government", label: "Government", type: "text", placeholder: "Ruling system or authority" },
+      { key: "resources", label: "Resources", type: "tags", placeholder: "Add a resource..." },
+    ],
+  },
+
+  species: {
+    template: "species",
+    label: "Species",
+    pluralLabel: "Species",
+    fields: [
+      { key: "habitat", label: "Habitat", type: "text", placeholder: "Where this species lives" },
+      { key: "size", label: "Size", type: "text", placeholder: "Small, medium, large..." },
+      { key: "temperament", label: "Temperament", type: "text", placeholder: "Docile, aggressive, cunning..." },
+      { key: "abilities", label: "Abilities", type: "tags", placeholder: "Add an ability..." },
+      {
+        key: "rarity", label: "Rarity", type: "select", options: [
+          { value: "common", label: "Common" },
+          { value: "uncommon", label: "Uncommon" },
+          { value: "rare", label: "Rare" },
+          { value: "legendary", label: "Legendary" },
+          { value: "extinct", label: "Extinct" },
+        ],
+      },
+    ],
+  },
+
+  item: {
+    template: "item",
+    label: "Item",
+    pluralLabel: "Items",
+    fields: [
+      {
+        key: "itemType", label: "Type", type: "select", options: [
+          { value: "weapon", label: "Weapon" },
+          { value: "armor", label: "Armor" },
+          { value: "artifact", label: "Artifact" },
+          { value: "consumable", label: "Consumable" },
+          { value: "material", label: "Material" },
+          { value: "tool", label: "Tool" },
+          { value: "treasure", label: "Treasure" },
+        ],
+      },
+      {
+        key: "rarity", label: "Rarity", type: "select", options: [
+          { value: "common", label: "Common" },
+          { value: "uncommon", label: "Uncommon" },
+          { value: "rare", label: "Rare" },
+          { value: "legendary", label: "Legendary" },
+          { value: "unique", label: "Unique" },
+        ],
+      },
+      { key: "properties", label: "Properties", type: "textarea", placeholder: "Magical properties, effects..." },
+      { key: "origin", label: "Origin", type: "text", placeholder: "Where it was made or found" },
+    ],
+  },
+
+  event: {
+    template: "event",
+    label: "Event",
+    pluralLabel: "Events",
+    fields: [
+      { key: "dateLabel", label: "Date", type: "text", placeholder: "Year 5 of the Reign of..." },
+      { key: "duration", label: "Duration", type: "text", placeholder: "A single day, decades, an age..." },
+      { key: "participants", label: "Participants", type: "article_refs" },
+      { key: "outcome", label: "Outcome", type: "textarea", placeholder: "What changed as a result?" },
+    ],
+  },
+
+  language: {
+    template: "language",
+    label: "Language",
+    pluralLabel: "Languages",
+    fields: [
+      { key: "speakers", label: "Speakers", type: "article_refs" },
+      { key: "writingSystem", label: "Writing system", type: "text", placeholder: "Runes, glyphs, alphabet..." },
+      { key: "samplePhrases", label: "Sample phrases", type: "textarea", placeholder: "Greetings, oaths, proverbs..." },
+    ],
+  },
+
+  freeform: {
+    template: "freeform",
+    label: "Freeform",
+    pluralLabel: "Freeform",
+    fields: [],
+  },
+};
+
+export const TEMPLATE_OPTIONS = Object.values(TEMPLATE_SCHEMAS).map((s) => ({
+  value: s.template,
+  label: s.label,
+}));
+
+/** Category-to-template mapping for v1 codex migration. */
+export const CODEX_CATEGORY_TO_TEMPLATE: Record<string, ArticleTemplate> = {
+  places: "location",
+  creatures: "species",
+  events: "event",
+  materials: "item",
+  deities: "character",
+  legends: "freeform",
+  customs: "freeform",
+};

@@ -281,6 +281,55 @@ export const ASSET_TEMPLATES: Record<AssetType, { label: string; templates: Reco
       gentle_magic: `Slow dreamlike camera drift through an enchanted scene — floating motes, gently swaying foliage, soft ambient glow`,
     },
   },
+  lore_character: {
+    label: "Lore Character Portrait",
+    templates: {
+      arcanum: `2:3 portrait of a fantasy character — dramatic lighting from above in deep indigo and aurum-gold, baroque ornamental frame elements at edges, rich oil-painting texture, the figure emerges from cosmic darkness with luminous detail`,
+      gentle_magic: `2:3 portrait of a fantasy character — soft diffused lighting in pale lavender and warm gold, dreamlike atmosphere, gentle painterly brushstrokes, luminous skin and fabric, motes of light drifting around the figure`,
+    },
+  },
+  lore_location: {
+    label: "Lore Location Vista",
+    templates: {
+      arcanum: `16:9 landscape establishing shot of a fantasy location — deep indigo sky with golden celestial phenomena, baroque architectural silhouettes, atmospheric perspective with layers of cosmic mist, oil-painting technique, extremely detailed`,
+      gentle_magic: `16:9 landscape of a fantasy location — soft pastel skies in lavender and pale blue, gentle ambient lighting, dreamy atmospheric haze, luminous foliage and water, painterly and serene`,
+    },
+  },
+  lore_organization: {
+    label: "Lore Organization Banner",
+    templates: {
+      arcanum: `1:1 heraldic banner or crest design — deep indigo background, golden baroque scrollwork frame, symbolic motif at center rendered in luminous aurum and cool violet, ornamental filigree, regal and imposing`,
+      gentle_magic: `1:1 heraldic emblem or banner — soft lavender background, gentle floral frame, symbolic motif in warm gold and pale rose, luminous and elegant, dreamlike quality`,
+    },
+  },
+  lore_species: {
+    label: "Lore Species Portrait",
+    templates: {
+      arcanum: `1:1 creature portrait — deep cosmic background, the creature rendered in dramatic chiaroscuro with golden rim lighting, baroque detail in scales or fur or plumage, luminous eyes, oil-painting technique`,
+      gentle_magic: `1:1 creature portrait — soft ambient background of pale greens and lavender, the creature rendered gently with luminous detail, warm expression, painterly and approachable`,
+    },
+  },
+  lore_item: {
+    label: "Lore Item Icon",
+    templates: {
+      arcanum: `1:1 item icon floating on deep indigo void — the object rendered with golden baroque filigree detail, luminous energy emanating from within, dramatic lighting, jewel-like precision`,
+      gentle_magic: `1:1 item icon floating on soft lavender background — the object rendered with gentle luminosity, warm gold accents, painterly texture, dreamy ambient glow`,
+    },
+  },
+  lore_event: {
+    label: "Lore Historical Scene",
+    templates: {
+      arcanum: `16:9 dramatic historical scene — deep cosmic backdrop, figures silhouetted against golden cataclysmic light, baroque composition with sweeping diagonals, oil-painting grandeur, epic scale`,
+      gentle_magic: `16:9 historical scene — soft atmospheric lighting, figures in a landscape of gentle wonder, luminous details, dreamy and painterly, emotionally resonant rather than dramatic`,
+    },
+  },
+  lore_map: {
+    label: "Lore Map",
+    templates: {
+      arcanum: `Top-down fantasy map illustration — parchment-toned with deep indigo ocean, golden coastline details, baroque cartouche borders, mountain ranges and forests rendered in rich oil-painting technique`,
+      gentle_magic: `Top-down fantasy map illustration — soft watercolor style on cream parchment, gentle pastel terrain coloring, dreamy cloud-like borders, luminous compass rose`,
+    },
+  },
 };
 
 // ─── Enhance System Prompts ───────────────────────────────────────

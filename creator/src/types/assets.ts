@@ -53,6 +53,13 @@ export type AssetType =
   | "player_sprite"
   | "race_portrait"
   | "class_portrait"
+  | "lore_character"
+  | "lore_location"
+  | "lore_organization"
+  | "lore_species"
+  | "lore_item"
+  | "lore_event"
+  | "lore_map"
   | "music"
   | "ambient"
   | "audio"
@@ -139,6 +146,12 @@ export const ENTITY_DIMENSIONS: Record<string, { width: number; height: number; 
   shop: { width: 1920, height: 1080, label: "1920×1080 (Landscape)" },
   player_sprite: { width: 512, height: 512, label: "512×512 (Portrait)" },
   race_portrait: { width: 512, height: 768, label: "512×768 (Portrait)" },
+  lore_character: { width: 512, height: 768, label: "512×768 (Portrait)" },
+  lore_location: { width: 1920, height: 1080, label: "1920×1080 (Landscape)" },
+  lore_organization: { width: 512, height: 512, label: "512×512 (Banner)" },
+  lore_species: { width: 512, height: 512, label: "512×512 (Portrait)" },
+  lore_item: { width: 256, height: 256, label: "256×256 (Icon)" },
+  lore_event: { width: 1920, height: 1080, label: "1920×1080 (Scene)" },
 };
 
 /** Common dimension presets for override dropdown */

@@ -6,6 +6,7 @@ import { Section } from "@/components/ui/FormWidgets";
 import { LoreEditor } from "./LoreEditor";
 import { TemplateFields } from "./TemplateFields";
 import { CODEX_GENERATE_PROMPT } from "@/lib/lorePrompts";
+import { ArticleArtSection } from "./ArticleArtSection";
 
 // ─── Tag list (compact) ────────────────────────────────────────────
 
@@ -212,6 +213,12 @@ export function ArticleEditor({ articleId }: { articleId: string }) {
           onChange={(tags) => patch({ tags: tags.length > 0 ? tags : undefined })}
         />
       </Section>
+
+      {/* Art */}
+      <ArticleArtSection
+        article={article}
+        onImageChange={(image) => patch({ image })}
+      />
 
       {/* Relations */}
       <Section title="Relations" defaultExpanded={false}>

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { lazy, Suspense, useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { useLoreStore } from "@/stores/loreStore";
 import { useProjectStore } from "@/stores/projectStore";
 import { saveLore } from "@/lib/lorePersistence";
@@ -11,9 +11,11 @@ import { WorldSettingPanel } from "./WorldSettingPanel";
 import { FactionsPanel } from "./FactionsPanel";
 import { LoreCodexPanel } from "./LoreCodexPanel";
 import { ArticleBrowser } from "./ArticleBrowser";
-import { MapPanel } from "./MapPanel";
 import { TimelinePanel } from "./TimelinePanel";
 import { RelationGraphPanel } from "./RelationGraphPanel";
+
+// Lazy-load MapPanel to isolate Leaflet CSS from the main bundle
+const MapPanel = lazy(() => import("./MapPanel").then(m => ({ default: m.MapPanel })));
 
 // ─── Panel renderer ─────────────────────────────────────────────────
 
@@ -28,7 +30,7 @@ function renderPanel(panelId: string): ReactNode {
     case "codex":
       return <LoreCodexPanel />;
     case "loreMaps":
-      return <MapPanel />;
+      return <Suspense fallback={<div className="flex h-64 items-center justify-center text-text-muted"><Spinner /> Loading maps...</div>}><MapPanel /></Suspense>;
     case "loreTimeline":
       return <TimelinePanel />;
     case "loreRelations":

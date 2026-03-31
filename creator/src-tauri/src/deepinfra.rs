@@ -174,6 +174,120 @@ pub async fn generate_image(
     })
 }
 
+// ─── Image-to-Image Generation ──────────────────────────────────────
+
+#[derive(Debug, Serialize)]
+struct Img2ImgRequest {
+    prompt: String,
+    image: String, // base64 data URL
+    width: u32,
+    height: u32,
+    num_inference_steps: u32,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    guidance_scale: Option<f32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    strength: Option<f32>,
+}
+
+#[tauri::command]
+pub async fn img2img_generate(
+    app: AppHandle,
+    prompt: String,
+    image_base64: String,
+    model: Option<String>,
+    width: Option<u32>,
+    height: Option<u32>,
+    strength: Option<f32>,
+) -> Result<GeneratedImage, String> {
+    let settings = settings::get_settings(app.clone()).await?;
+    if settings.deepinfra_api_key.is_empty() {
+        return Err("DeepInfra API key not configured. Set it in Settings.".to_string());
+    }
+
+    let model = model.unwrap_or(settings.image_model);
+    let w = width.unwrap_or(1024);
+    let h = height.unwrap_or(1024);
+
+    let is_schnell = model.contains("schnell");
+    let default_steps = if is_schnell { 4 } else { 28 };
+    let default_guidance = if is_schnell { None } else { Some(3.5) };
+
+    // Ensure the image has a data URL prefix
+    let image_data = if image_base64.starts_with("data:") {
+        image_base64
+    } else {
+        format!("data:image/png;base64,{image_base64}")
+    };
+
+    let body = Img2ImgRequest {
+        prompt: prompt.clone(),
+        image: image_data,
+        width: w,
+        height: h,
+        num_inference_steps: default_steps,
+        guidance_scale: default_guidance,
+        strength: Some(strength.unwrap_or(0.7)),
+    };
+
+    let url = format!("{INFERENCE_URL}/{model}");
+    let client = reqwest::Client::new();
+    let response = client
+        .post(&url)
+        .header("Authorization", format!("Bearer {}", settings.deepinfra_api_key))
+        .json(&body)
+        .send()
+        .await
+        .map_err(|e| format!("img2img API request failed: {e}"))?;
+
+    if !response.status().is_success() {
+        let status = response.status();
+        let text = response.text().await.unwrap_or_default();
+        return Err(format!("img2img API error ({status}): {text}"));
+    }
+
+    let resp: ImageResponse = response
+        .json()
+        .await
+        .map_err(|e| format!("Failed to parse img2img response: {e}"))?;
+
+    let entry = resp.images.first().ok_or("No images in img2img response")?;
+    let b64 = entry.to_base64()?;
+    let bytes = base64::engine::general_purpose::STANDARD
+        .decode(&b64)
+        .map_err(|e| format!("Failed to decode base64 image: {e}"))?;
+
+    let mut hasher = Sha256::new();
+    hasher.update(&bytes);
+    let hash = format!("{:x}", hasher.finalize());
+
+    let dir = assets_dir(&app)?;
+    tokio::fs::create_dir_all(&dir)
+        .await
+        .map_err(|e| format!("Failed to create assets dir: {e}"))?;
+
+    let ext = detect_extension(&bytes);
+    let mime = detect_mime(ext);
+    let filename = format!("{hash}.{ext}");
+    let file_path = dir.join(&filename);
+    tokio::fs::write(&file_path, &bytes)
+        .await
+        .map_err(|e| format!("Failed to save image: {e}"))?;
+
+    let id = uuid::Uuid::new_v4().to_string();
+    let data_url = format!("data:{mime};base64,{b64}");
+
+    Ok(GeneratedImage {
+        id,
+        hash,
+        file_path: file_path.to_string_lossy().to_string(),
+        data_url,
+        width: w,
+        height: h,
+        prompt,
+        model,
+    })
+}
+
 fn detect_extension(bytes: &[u8]) -> &'static str {
     if bytes.starts_with(&[0x89, 0x50, 0x4E, 0x47]) {
         "png"

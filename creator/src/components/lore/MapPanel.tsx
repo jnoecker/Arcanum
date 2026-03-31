@@ -6,6 +6,7 @@ import { useImageSrc } from "@/lib/useImageSrc";
 import type { LoreMap } from "@/types/lore";
 import { FieldRow, TextInput } from "@/components/ui/FormWidgets";
 import { MapViewer } from "./MapViewer";
+import { MapEnhancer } from "./MapEnhancer";
 
 // ─── Map image hook ─────────────────────────────────────────────────
 
@@ -104,6 +105,7 @@ export function MapPanel() {
   const [addPinMode, setAddPinMode] = useState(false);
   const [selectedPinId, setSelectedPinId] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [showEnhancer, setShowEnhancer] = useState(false);
 
   const selectedMap = useMemo(
     () => maps.find((m) => m.id === selectedMapId) ?? null,
@@ -228,6 +230,12 @@ export function MapPanel() {
               >
                 {addPinMode ? "Click map to place pin..." : "Add Pin"}
               </button>
+              <button
+                onClick={() => setShowEnhancer(true)}
+                className="rounded-full border border-border-default bg-bg-secondary px-3 py-1.5 text-2xs font-medium text-text-secondary shadow-panel transition hover:bg-bg-tertiary"
+              >
+                Enhance Region
+              </button>
             </div>
           </div>
 
@@ -279,6 +287,14 @@ export function MapPanel() {
         <div className="flex h-64 items-center justify-center rounded-lg border border-dashed border-border-muted text-sm text-text-muted">
           Select a map or upload a new one to get started.
         </div>
+      )}
+
+      {/* Map enhancer dialog */}
+      {showEnhancer && selectedMap && mapImage && (
+        <MapEnhancer
+          imageUrl={mapImage}
+          onClose={() => setShowEnhancer(false)}
+        />
       )}
     </div>
   );

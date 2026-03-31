@@ -35,6 +35,7 @@ pub fn run() {
             settings::get_settings,
             settings::save_settings,
             deepinfra::generate_image,
+            deepinfra::img2img_generate,
             deepinfra::enhance_prompt,
             deepinfra::read_image_data_url,
             llm::llm_complete,

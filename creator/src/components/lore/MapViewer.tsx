@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { MapContainer, ImageOverlay, Marker, Popup, useMapEvents } from "react-leaflet";
 import L from "leaflet";
+import "./leaflet-setup.css";
 import type { LoreMap, MapPin } from "@/types/lore";
 import { useLoreStore } from "@/stores/loreStore";
 

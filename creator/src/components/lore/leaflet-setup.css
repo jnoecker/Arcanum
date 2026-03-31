@@ -1,0 +1,7 @@
+@import "leaflet/dist/leaflet.css";
+
+/* Contain Leaflet within its parent */
+.leaflet-container {
+  position: absolute !important;
+  inset: 0;
+}

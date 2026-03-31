@@ -10,11 +10,14 @@ import subtoolbarBg from "@/assets/subtoolbar-bg.jpg";
 import { WorldSettingPanel } from "./WorldSettingPanel";
 import { FactionsPanel } from "./FactionsPanel";
 import { LoreCodexPanel } from "./LoreCodexPanel";
+import { ArticleBrowser } from "./ArticleBrowser";
 
 // ─── Panel renderer ─────────────────────────────────────────────────
 
 function renderPanel(panelId: string): ReactNode {
   switch (panelId) {
+    case "lore":
+      return <ArticleBrowser />;
     case "worldSetting":
       return <WorldSettingPanel />;
     case "factions":

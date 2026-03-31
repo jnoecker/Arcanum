@@ -30,6 +30,7 @@
     "@tiptap/starter-kit": "^3.21.0",
     "@xyflow/react": "^12.10.1",
     "react": "^19.0.0",
+    "react-arborist": "^3.4.3",
     "react-dom": "^19.0.0",
     "tippy.js": "^6.3.7",
     "yaml": "^2.7.0",

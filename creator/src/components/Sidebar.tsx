@@ -405,8 +405,8 @@ export function Sidebar() {
         )}
       </div>
 
-      {/* ── Search ── */}
-      <div className="relative z-10 shrink-0 px-4 py-3">
+      {/* ── Search (worldmaker only — lore has its own article search) ── */}
+      {workspace === "worldmaker" && <div className="relative z-10 shrink-0 px-4 py-3">
         <div className="relative">
           <input
             ref={searchRef}
@@ -428,7 +428,7 @@ export function Sidebar() {
             </button>
           )}
         </div>
-      </div>
+      </div>}
 
       {/* ── Bottom: zones or articles list ── */}
       <div className="relative z-10 flex-1 overflow-y-auto px-4 pb-4">

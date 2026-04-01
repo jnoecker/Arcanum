@@ -40,6 +40,7 @@ interface TreeNode {
   id: string;
   name: string;
   template: ArticleTemplate;
+  draft?: boolean;
   children?: TreeNode[];
 }
 
@@ -59,6 +60,7 @@ function buildTree(articles: Record<string, Article>): TreeNode[] {
       id: a.id,
       name: a.title || "(untitled)",
       template: a.template,
+      draft: a.draft,
       children: buildChildren(a.id),
     }));
   }
@@ -113,7 +115,8 @@ function Node({ node, style, dragHandle }: NodeRendererProps<TreeNode>) {
       <span className={`w-5 text-center text-2xs font-bold ${colorClass}`}>
         {icon}
       </span>
-      <span className="min-w-0 truncate">{node.data.name}</span>
+      <span className={`min-w-0 truncate ${node.data.draft ? "italic opacity-60" : ""}`}>{node.data.name}</span>
+      {node.data.draft && <span className="shrink-0 text-[9px] text-text-muted uppercase">draft</span>}
     </div>
   );
 }

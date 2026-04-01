@@ -170,11 +170,16 @@ export function exportShowcaseData(lore: WorldLore, imageBaseUrl: string): Showc
   const worldName = (ws?.fields?.name as string) ?? ws?.title ?? "Untitled World";
   const tagline = (ws?.fields?.tagline as string) ?? undefined;
 
-  // Convert articles
-  const articles: ShowcaseArticle[] = Object.values(lore.articles).map((a) => {
-    // Merge explicit relations + extracted mentions
-    const explicit = a.relations ?? [];
-    const mentions = extractMentions(a.content);
+  // Convert articles (exclude drafts)
+  const draftIds = new Set(
+    Object.values(lore.articles).filter((a) => a.draft).map((a) => a.id),
+  );
+  const articles: ShowcaseArticle[] = Object.values(lore.articles)
+    .filter((a) => !a.draft)
+    .map((a) => {
+    // Merge explicit relations + extracted mentions (strip refs to draft articles)
+    const explicit = (a.relations ?? []).filter((r) => !draftIds.has(r.targetId));
+    const mentions = extractMentions(a.content).filter((r) => !draftIds.has(r.targetId));
     const seenTargets = new Set(explicit.map((r) => `${r.targetId}:${r.type}`));
     const merged = [...explicit];
     for (const m of mentions) {

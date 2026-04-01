@@ -30,9 +30,11 @@ export interface Article {
   sortOrder?: number;
   fields: Record<string, unknown>;
   content: string;
+  privateNotes?: string;
   tags?: string[];
   relations?: ArticleRelation[];
   image?: string;
+  draft?: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -90,6 +92,25 @@ export interface TimelineEvent {
   importance: "minor" | "major" | "legendary";
 }
 
+// ─── Documents (internal notes, lore bibles) ─────────────────────
+
+export interface LoreDocument {
+  id: string;
+  title: string;
+  content: string;
+  filename?: string;
+  tags?: string[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+// ─── Template metadata overrides ──────────────────────────────────
+
+export interface TemplateOverrides {
+  description?: string;
+  aiDescription?: string;
+}
+
 // ─── Top-level lore container ──────────────────────────────────────
 
 export interface WorldLore {
@@ -99,6 +120,8 @@ export interface WorldLore {
   maps?: LoreMap[];
   calendarSystems?: CalendarSystem[];
   timelineEvents?: TimelineEvent[];
+  documents?: LoreDocument[];
+  templateOverrides?: Partial<Record<ArticleTemplate, TemplateOverrides>>;
 }
 
 export const DEFAULT_WORLD_LORE: WorldLore = {

@@ -13,6 +13,7 @@ import { LoreCodexPanel } from "./LoreCodexPanel";
 import { ArticleBrowser } from "./ArticleBrowser";
 import { TimelinePanel } from "./TimelinePanel";
 import { RelationGraphPanel } from "./RelationGraphPanel";
+import { DocumentLibraryPanel } from "./DocumentLibraryPanel";
 
 // Lazy-load MapPanel to isolate Leaflet CSS from the main bundle
 const MapPanel = lazy(() => import("./MapPanel").then(m => ({ default: m.MapPanel })));
@@ -35,6 +36,8 @@ function renderPanel(panelId: string): ReactNode {
       return <TimelinePanel />;
     case "loreRelations":
       return <RelationGraphPanel />;
+    case "loreDocuments":
+      return <DocumentLibraryPanel />;
     default:
       return <div className="text-text-muted">Unknown lore panel: {panelId}</div>;
   }

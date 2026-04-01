@@ -14,6 +14,8 @@ export interface TemplateSchema {
   template: ArticleTemplate;
   label: string;
   pluralLabel: string;
+  description?: string;
+  aiDescription?: string;
   fields: TemplateFieldDef[];
 }
 
@@ -24,6 +26,8 @@ export const TEMPLATE_SCHEMAS: Record<ArticleTemplate, TemplateSchema> = {
     template: "world_setting",
     label: "World Setting",
     pluralLabel: "World Settings",
+    description: "The top-level overview of your world — its name, themes, history, and setting.",
+    aiDescription: "One per world. Serves as the root context for all other articles.",
     fields: [
       { key: "name", label: "World name", type: "text", placeholder: "The name of your world" },
       { key: "tagline", label: "Tagline", type: "text", placeholder: "A one-line hook for your setting" },

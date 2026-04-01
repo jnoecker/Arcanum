@@ -1,8 +1,8 @@
 import { useCallback, useMemo, useRef } from "react";
 import { useLoreStore, selectArticles } from "@/stores/loreStore";
-import type { Article, ArticleRelation } from "@/types/lore";
+import type { Article, ArticleRelation, ArticleTemplate } from "@/types/lore";
 import { TEMPLATE_SCHEMAS } from "@/lib/loreTemplates";
-import { Section } from "@/components/ui/FormWidgets";
+import { Section, CommitTextarea } from "@/components/ui/FormWidgets";
 import { LoreEditor } from "./LoreEditor";
 import { TemplateFields } from "./TemplateFields";
 import { CODEX_GENERATE_PROMPT } from "@/lib/lorePrompts";
@@ -47,6 +47,40 @@ function TagEditor({
         }}
       />
     </div>
+  );
+}
+
+// ─── Template guide (editable description + AI description) ───────
+
+function TemplateGuide({ template }: { template: ArticleTemplate }) {
+  const schema = TEMPLATE_SCHEMAS[template];
+  const overrides = useLoreStore((s) => s.lore?.templateOverrides?.[template]);
+  const updateOverrides = useLoreStore((s) => s.updateTemplateOverrides);
+
+  const description = overrides?.description ?? schema?.description ?? "";
+  const aiDescription = overrides?.aiDescription ?? schema?.aiDescription ?? "";
+
+  if (!description && !aiDescription) return null;
+
+  return (
+    <Section title="Template Guide" defaultExpanded={false} description="Internal reference for this template type.">
+      <div className="space-y-3">
+        <CommitTextarea
+          label="Description"
+          value={description}
+          onCommit={(v) => updateOverrides(template, { description: v || undefined })}
+          placeholder="What this template is for..."
+          rows={2}
+        />
+        <CommitTextarea
+          label="AI Description"
+          value={aiDescription}
+          onCommit={(v) => updateOverrides(template, { aiDescription: v || undefined })}
+          placeholder="Guidance for AI generation..."
+          rows={2}
+        />
+      </div>
+    </Section>
   );
 }
 
@@ -187,17 +221,31 @@ export function ArticleEditor({ articleId }: { articleId: string }) {
             placeholder="Article title"
           />
         </div>
-        <button
-          onClick={() => {
-            if (window.confirm(`Delete "${article.title}"? This cannot be undone.`)) {
-              deleteArticle(articleId);
-            }
-          }}
-          className="shrink-0 rounded-full border border-status-danger/40 bg-status-danger/10 px-3 py-1.5 text-2xs text-status-danger hover:bg-status-danger/15"
-        >
-          Delete
-        </button>
+        <div className="flex shrink-0 items-center gap-3">
+          <label className="flex items-center gap-1.5 text-2xs text-text-secondary cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={article.draft ?? false}
+              onChange={() => patch({ draft: !article.draft })}
+              className="accent-accent"
+            />
+            Draft
+          </label>
+          <button
+            onClick={() => {
+              if (window.confirm(`Delete "${article.title}"? This cannot be undone.`)) {
+                deleteArticle(articleId);
+              }
+            }}
+            className="rounded-full border border-status-danger/40 bg-status-danger/10 px-3 py-1.5 text-2xs text-status-danger hover:bg-status-danger/15"
+          >
+            Delete
+          </button>
+        </div>
       </div>
+
+      {/* Template guide (descriptions + AI descriptions) */}
+      <TemplateGuide template={article.template} />
 
       {/* Template fields */}
       <TemplateFields
@@ -214,6 +262,15 @@ export function ArticleEditor({ articleId }: { articleId: string }) {
           generateSystemPrompt={CODEX_GENERATE_PROMPT}
           generateUserPrompt={`Write a lore article titled "${article.title}" (type: ${schema?.label ?? article.template}).`}
           context={worldContext}
+        />
+      </Section>
+
+      {/* Private Notes (never exported) */}
+      <Section title="Private Notes" defaultExpanded={false} description="Internal only — not included in the published showcase.">
+        <LoreEditor
+          value={article.privateNotes ?? ""}
+          onCommit={(v) => patch({ privateNotes: v || undefined })}
+          placeholder={`Internal notes about ${article.title}...`}
         />
       </Section>
 

@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { WorldLore, Article, ArticleTemplate, ColorLabel, LoreMap, MapPin, CalendarSystem, TimelineEvent } from "@/types/lore";
+import type { WorldLore, Article, ArticleTemplate, ColorLabel, LoreMap, MapPin, CalendarSystem, TimelineEvent, LoreDocument, TemplateOverrides } from "@/types/lore";
 
 // Stable empty references for selectors (prevents infinite re-render loops)
 const EMPTY_ARTICLES: Record<string, Article> = {};
@@ -7,6 +7,7 @@ const EMPTY_MAPS: LoreMap[] = [];
 const EMPTY_CALENDARS: CalendarSystem[] = [];
 const EMPTY_EVENTS: TimelineEvent[] = [];
 const EMPTY_COLOR_LABELS: ColorLabel[] = [];
+const EMPTY_DOCUMENTS: LoreDocument[] = [];
 
 /** Safe selector: returns lore.articles or a stable empty object. */
 export const selectArticles = (s: { lore: WorldLore | null }) => s.lore?.articles ?? EMPTY_ARTICLES;
@@ -18,6 +19,7 @@ export const selectCalendars = (s: { lore: WorldLore | null }) => s.lore?.calend
 export const selectEvents = (s: { lore: WorldLore | null }) => s.lore?.timelineEvents ?? EMPTY_EVENTS;
 /** Safe selector: returns lore.colorLabels or a stable empty array. */
 export const selectColorLabels = (s: { lore: WorldLore | null }) => s.lore?.colorLabels ?? EMPTY_COLOR_LABELS;
+export const selectDocuments = (s: { lore: WorldLore | null }) => s.lore?.documents ?? EMPTY_DOCUMENTS;
 
 interface LoreStore {
   lore: WorldLore | null;
@@ -58,6 +60,14 @@ interface LoreStore {
   addTimelineEvent: (event: TimelineEvent) => void;
   updateTimelineEvent: (id: string, patch: Partial<TimelineEvent>) => void;
   deleteTimelineEvent: (id: string) => void;
+
+  // Document operations
+  createDocument: (doc: LoreDocument) => void;
+  updateDocument: (id: string, patch: Partial<LoreDocument>) => void;
+  deleteDocument: (id: string) => void;
+
+  // Template overrides
+  updateTemplateOverrides: (template: ArticleTemplate, patch: Partial<TemplateOverrides>) => void;
 
   markClean: () => void;
   clearLore: () => void;
@@ -295,6 +305,56 @@ export const useLoreStore = create<LoreStore>((set) => ({
       if (!s.lore?.timelineEvents) return s;
       return {
         lore: { ...s.lore, timelineEvents: s.lore.timelineEvents.filter((e) => e.id !== id) },
+        dirty: true,
+      };
+    }),
+
+  // ─── Document operations ──────────────────────────────────────────
+
+  createDocument: (doc) =>
+    set((s) => {
+      if (!s.lore) return s;
+      return {
+        lore: { ...s.lore, documents: [...(s.lore.documents ?? []), doc] },
+        dirty: true,
+      };
+    }),
+
+  updateDocument: (id, patch) =>
+    set((s) => {
+      if (!s.lore?.documents) return s;
+      return {
+        lore: {
+          ...s.lore,
+          documents: s.lore.documents.map((d) => (d.id === id ? { ...d, ...patch } : d)),
+        },
+        dirty: true,
+      };
+    }),
+
+  deleteDocument: (id) =>
+    set((s) => {
+      if (!s.lore?.documents) return s;
+      return {
+        lore: { ...s.lore, documents: s.lore.documents.filter((d) => d.id !== id) },
+        dirty: true,
+      };
+    }),
+
+  // ─── Template overrides ─────────────────────────────────────────
+
+  updateTemplateOverrides: (template, patch) =>
+    set((s) => {
+      if (!s.lore) return s;
+      const existing = s.lore.templateOverrides ?? {};
+      return {
+        lore: {
+          ...s.lore,
+          templateOverrides: {
+            ...existing,
+            [template]: { ...(existing[template] ?? {}), ...patch },
+          },
+        },
         dirty: true,
       };
     }),

@@ -75,6 +75,9 @@ export function Toolbar() {
 
     setExporting(true);
     try {
+      // Sync all images to R2 first so article/map images are available
+      await useAssetStore.getState().syncToR2("all");
+
       const data = exportShowcaseData(lore, imageBaseUrl);
       const json = JSON.stringify(data);
       const url = await invoke<string>("deploy_showcase_to_r2", { jsonContent: json });

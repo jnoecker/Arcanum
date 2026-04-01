@@ -1,4 +1,4 @@
-import { useMemo, useEffect, useState } from "react";
+import { useMemo, useEffect, useState, useCallback } from "react";
 import type { LoreMap, MapPin } from "@/types/lore";
 import { useLoreStore, selectArticles } from "@/stores/loreStore";
 
@@ -35,18 +35,18 @@ export function MapViewer({
 }) {
   const articles = useLoreStore(selectArticles);
   const addPin = useLoreStore((s) => s.addPin);
+  const updatePin = useLoreStore((s) => s.updatePin);
 
-  // Dynamically load Leaflet + react-leaflet + CSS to fully isolate from PostCSS
   const [leafletReady, setLeafletReady] = useState(false);
   const [modules, setModules] = useState<{
     L: typeof import("leaflet");
     RL: typeof import("react-leaflet");
   } | null>(null);
+  const [ctrlHeld, setCtrlHeld] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
     async function load() {
-      // Inject CSS via style tag
       if (!document.getElementById("leaflet-css")) {
         const cssModule = await import("leaflet/dist/leaflet.css?inline");
         const style = document.createElement("style");
@@ -67,6 +67,18 @@ export function MapViewer({
     return () => { cancelled = true; };
   }, []);
 
+  // Track Ctrl key for drag-to-move mode
+  useEffect(() => {
+    const down = (e: KeyboardEvent) => { if (e.key === "Control") setCtrlHeld(true); };
+    const up = (e: KeyboardEvent) => { if (e.key === "Control") setCtrlHeld(false); };
+    window.addEventListener("keydown", down);
+    window.addEventListener("keyup", up);
+    return () => {
+      window.removeEventListener("keydown", down);
+      window.removeEventListener("keyup", up);
+    };
+  }, []);
+
   const bounds = modules
     ? ([[0, 0], [map.height, map.width]] as import("leaflet").LatLngBoundsExpression)
     : null;
@@ -82,6 +94,14 @@ export function MapViewer({
     return cache;
   }, [map.pins, modules]);
 
+  const handlePinDragEnd = useCallback(
+    (pinId: string, e: import("leaflet").DragEndEvent) => {
+      const latlng = e.target.getLatLng();
+      updatePin(map.id, pinId, { position: [latlng.lat, latlng.lng] });
+    },
+    [map.id, updatePin],
+  );
+
   if (!leafletReady || !modules || !bounds) {
     return (
       <div className="flex h-full items-center justify-center text-xs text-text-muted">
@@ -93,45 +113,70 @@ export function MapViewer({
   const { L, RL } = modules;
 
   return (
-    <RL.MapContainer
-      crs={L.CRS.Simple}
-      bounds={bounds}
-      maxBounds={bounds}
-      style={{ width: "100%", height: "100%", background: "var(--color-graph-bg)", borderRadius: "12px" }}
-      zoomSnap={0.25}
-      minZoom={-2}
-      maxZoom={3}
-      attributionControl={false}
-    >
-      <RL.ImageOverlay url={imageUrl} bounds={bounds} />
-      <MapClickHandler mapId={map.id} addMode={addMode} onAddComplete={onAddComplete} addPin={addPin} RL={RL} />
+    <>
+      {ctrlHeld && (
+        <div className="absolute top-12 left-1/2 -translate-x-1/2 z-[1000] rounded-full bg-accent/90 px-3 py-1 text-2xs text-bg-primary font-medium shadow-panel pointer-events-none">
+          Drag pins to move them
+        </div>
+      )}
+      <RL.MapContainer
+        crs={L.CRS.Simple}
+        bounds={bounds}
+        maxBounds={L.latLngBounds(
+          L.latLng(-map.height * 0.1, -map.width * 0.1),
+          L.latLng(map.height * 1.1, map.width * 1.1),
+        )}
+        style={{ width: "100%", height: "100%", background: "var(--color-graph-bg)", borderRadius: "12px" }}
+        zoomSnap={0.25}
+        minZoom={-2}
+        maxZoom={3}
+        attributionControl={false}
+      >
+        <RL.ImageOverlay url={imageUrl} bounds={bounds} />
+        <MapClickHandler mapId={map.id} addMode={addMode} onAddComplete={onAddComplete} addPin={addPin} RL={RL} />
+        <MapInvalidator RL={RL} />
 
-      {map.pins.map((pin) => {
-        const icon = pinIcons[pin.color || "default"] ?? pinIcons.default!;
-        const articleTitle = pin.articleId ? articles[pin.articleId]?.title : null;
+        {map.pins.map((pin) => {
+          const icon = pinIcons[pin.color || "default"] ?? pinIcons.default!;
+          const articleTitle = pin.articleId ? articles[pin.articleId]?.title : null;
 
-        return (
-          <RL.Marker
-            key={pin.id}
-            position={pin.position}
-            icon={icon}
-            eventHandlers={{
-              click: () => onSelectPin(pin.id),
-            }}
-          >
-            <RL.Popup>
-              <div className="text-xs">
-                <div className="font-semibold text-bg-primary">{pin.label || "(unnamed)"}</div>
-                {articleTitle && (
-                  <div className="mt-0.5 text-bg-secondary">{articleTitle}</div>
-                )}
-              </div>
-            </RL.Popup>
-          </RL.Marker>
-        );
-      })}
-    </RL.MapContainer>
+          return (
+            <RL.Marker
+              key={pin.id}
+              position={pin.position}
+              icon={icon}
+              draggable={ctrlHeld}
+              eventHandlers={{
+                click: () => onSelectPin(pin.id),
+                dragend: (e) => handlePinDragEnd(pin.id, e),
+              }}
+            >
+              <RL.Popup>
+                <div className="text-xs">
+                  <div className="font-semibold text-bg-primary">{pin.label || "(unnamed)"}</div>
+                  {articleTitle && (
+                    <div className="mt-0.5 text-bg-secondary">{articleTitle}</div>
+                  )}
+                </div>
+              </RL.Popup>
+            </RL.Marker>
+          );
+        })}
+      </RL.MapContainer>
+    </>
   );
+}
+
+// ─── Invalidate map size after mount to fix coordinate mapping ────
+
+function MapInvalidator({ RL }: { RL: typeof import("react-leaflet") }) {
+  const map = RL.useMap();
+  useEffect(() => {
+    // Delay to ensure container is fully laid out
+    const timer = setTimeout(() => map.invalidateSize(), 100);
+    return () => clearTimeout(timer);
+  }, [map]);
+  return null;
 }
 
 // ─── Click handler (needs to be inside MapContainer context) ────────
@@ -149,12 +194,16 @@ function MapClickHandler({
   addPin: (mapId: string, pin: MapPin) => void;
   RL: typeof import("react-leaflet");
 }) {
+  const map = RL.useMap();
+
   RL.useMapEvents({
     click: (e) => {
       if (!addMode) return;
+      // Use containerPoint → latLng conversion for accurate placement at any zoom
+      const latlng = map.containerPointToLatLng(e.containerPoint);
       const pin: MapPin = {
         id: `pin_${Date.now()}`,
-        position: [e.latlng.lat, e.latlng.lng],
+        position: [latlng.lat, latlng.lng],
         label: "New pin",
       };
       addPin(mapId, pin);

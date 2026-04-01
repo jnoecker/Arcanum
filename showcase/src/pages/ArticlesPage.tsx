@@ -168,7 +168,7 @@ export function ArticlesPage() {
                         style={{ borderLeftColor: `${color}60`, borderLeftWidth: 3 }}
                       >
                         {a.imageUrl && (
-                          <div className="aspect-[16/10] overflow-hidden bg-bg-tertiary/40">
+                          <div className="aspect-[3/4] overflow-hidden bg-bg-tertiary/40">
                             <img
                               src={a.imageUrl}
                               alt={a.title}

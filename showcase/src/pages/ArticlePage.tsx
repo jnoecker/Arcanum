@@ -73,67 +73,41 @@ export function ArticlePage() {
         </ol>
       </nav>
 
-      {/* Hero image -- full bleed with gradient, natural aspect ratio */}
+      {/* Article image */}
       {article.imageUrl && (
-        <div className="relative -mx-4 sm:-mx-6 mb-8 overflow-hidden rounded-xl">
+        <div className="mb-6 rounded-lg overflow-hidden shadow-[var(--shadow-image)] max-w-md mx-auto">
           <img
             src={article.imageUrl}
             alt={article.title}
-            className="w-full max-h-[70vh] object-contain"
+            className="w-full h-auto"
           />
-          <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-bg-abyss via-bg-abyss/60 to-transparent" />
-          <div className="absolute bottom-0 inset-x-0 p-5 sm:p-8">
-            <div
-              className="text-xs tracking-[0.14em] uppercase font-display mb-1.5"
-              style={{ color }}
-            >
-              {TEMPLATE_LABELS[article.template]}
-            </div>
-            <h1 className="font-display text-3xl sm:text-4xl text-accent-emphasis tracking-[0.06em] drop-shadow-lg">
-              {article.title}
-            </h1>
-            {article.tags.length > 0 && (
-              <div className="flex flex-wrap gap-1.5 mt-3">
-                {article.tags.map((tag) => (
-                  <span
-                    key={tag}
-                    className="bg-black/30 backdrop-blur-sm text-text-secondary text-xs px-2 py-0.5 rounded"
-                  >
-                    {tag}
-                  </span>
-                ))}
-              </div>
-            )}
-          </div>
         </div>
       )}
 
-      {/* Header without image */}
-      {!article.imageUrl && (
-        <div className="mb-8" style={{ borderLeft: `3px solid ${color}60`, paddingLeft: 16 }}>
-          <div
-            className="text-xs tracking-[0.14em] uppercase font-display mb-1"
-            style={{ color }}
-          >
-            {TEMPLATE_LABELS[article.template]}
-          </div>
-          <h1 className="font-display text-3xl text-accent-emphasis tracking-[0.06em]">
-            {article.title}
-          </h1>
-          {article.tags.length > 0 && (
-            <div className="flex flex-wrap gap-1.5 mt-3">
-              {article.tags.map((tag) => (
-                <span
-                  key={tag}
-                  className="bg-accent/10 text-accent-muted text-xs px-2 py-0.5 rounded"
-                >
-                  {tag}
-                </span>
-              ))}
-            </div>
-          )}
+      {/* Header */}
+      <div className="mb-8" style={{ borderLeft: `3px solid ${color}60`, paddingLeft: 16 }}>
+        <div
+          className="text-xs tracking-[0.14em] uppercase font-display mb-1"
+          style={{ color }}
+        >
+          {TEMPLATE_LABELS[article.template]}
         </div>
-      )}
+        <h1 className="font-display text-3xl text-accent-emphasis tracking-[0.06em]">
+          {article.title}
+        </h1>
+        {article.tags.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 mt-3">
+            {article.tags.map((tag) => (
+              <span
+                key={tag}
+                className="bg-accent/10 text-accent-muted text-xs px-2 py-0.5 rounded"
+              >
+                {tag}
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
 
       <div className="flex flex-col lg:flex-row gap-8">
         {/* Main content */}

@@ -132,7 +132,7 @@ export function LoreEditor({
   generateUserPrompt,
   context,
 }: LoreEditorProps) {
-  const [loading, setLoading] = useState<"generate" | "enhance" | null>(null);
+  const [loading, setLoading] = useState<"generate" | "enhance" | "continue" | null>(null);
   const commitRef = useRef(onCommit);
   commitRef.current = onCommit;
 
@@ -311,28 +311,70 @@ export function LoreEditor({
     }
   }, [editor, plainText, context]);
 
+  const handleContinue = useCallback(async () => {
+    if (!plainText) return;
+    setLoading("continue");
+    try {
+      const parts = [
+        "Continue writing from where the author left off. Maintain the same voice, tone, and style. Do not repeat what was already written. Output only the new continuation text.\n",
+        `Existing text:\n${plainText}`,
+      ];
+      if (context) parts.push(`\nWorld context: ${context}`);
+      const result = await invoke<string>("llm_complete", {
+        systemPrompt: "You are a world-building writer for a fantasy MUD game. Continue the author's text seamlessly. Match their voice and style. Output only the new paragraphs — do not repeat existing content.",
+        userPrompt: parts.join("\n"),
+      });
+      // Append the continuation to existing content
+      const continuation = result.trim();
+      if (continuation && editor) {
+        editor.commands.focus("end");
+        editor.commands.insertContent(`<p></p><p>${continuation.replace(/\n\n+/g, "</p><p>").replace(/\n/g, "<br>")}</p>`);
+        const json = JSON.stringify(editor.getJSON());
+        lastExternalValue.current = json;
+        commitRef.current(json);
+      }
+    } catch {
+      // Silent fail
+    } finally {
+      setLoading(null);
+    }
+  }, [editor, plainText, context]);
+
   const showGenerate = generateSystemPrompt && generateUserPrompt && isEmpty;
   const showEnhance = !isEmpty;
+  const showContinue = !isEmpty;
 
   return (
     <div className="rounded-lg border border-border-default bg-bg-primary">
       {editor && <EditorToolbar editor={editor} />}
       <EditorContent editor={editor} />
-      {(showGenerate || showEnhance) && (
+      {(showGenerate || showEnhance || showContinue) && (
         <div className="flex gap-2 border-t border-border-muted px-2 py-1">
           {showGenerate && (
             <button
               onClick={handleGenerate}
               disabled={loading !== null}
+              title="Generate content from scratch using AI"
               className="rounded px-2 py-0.5 text-2xs text-accent transition-colors hover:bg-accent/10 disabled:opacity-50"
             >
               {loading === "generate" ? "Generating..." : "Generate"}
+            </button>
+          )}
+          {showContinue && (
+            <button
+              onClick={handleContinue}
+              disabled={loading !== null}
+              title="Continue writing from where you left off"
+              className="rounded px-2 py-0.5 text-2xs text-accent transition-colors hover:bg-accent/10 disabled:opacity-50"
+            >
+              {loading === "continue" ? "Writing..." : "Continue"}
             </button>
           )}
           {showEnhance && (
             <button
               onClick={handleEnhance}
               disabled={loading !== null}
+              title="Expand and enrich the existing text"
               className="rounded px-2 py-0.5 text-2xs text-accent transition-colors hover:bg-accent/10 disabled:opacity-50"
             >
               {loading === "enhance" ? "Enhancing..." : "Enhance"}

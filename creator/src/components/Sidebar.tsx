@@ -2,10 +2,12 @@ import { useRef, useState, useEffect, useCallback, useMemo } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { useZoneStore, type ZoneState } from "@/stores/zoneStore";
 import { useProjectStore } from "@/stores/projectStore";
+import { useLoreStore, selectArticles } from "@/stores/loreStore";
 import type { Tab } from "@/types/project";
 import type { WorldFile } from "@/types/world";
 import { useGlobalSearch, ENTITY_TYPE_LABELS } from "@/lib/useGlobalSearch";
-import { SIDEBAR_GROUPS, panelTab } from "@/lib/panelRegistry";
+import { WORLDMAKER_GROUPS, LORE_GROUPS, panelTab, type Workspace } from "@/lib/panelRegistry";
+import { ArticleTree } from "./lore/ArticleTree";
 import { NewZoneDialog } from "./NewZoneDialog";
 import { ConfirmDialog } from "./ConfirmDialog";
 import sidebarBg from "@/assets/sidebar-bg.png";
@@ -114,7 +116,6 @@ function ZoneTree({
     try {
       const next = cat.addFn(world, zoneId);
       updateZone(zoneId, next);
-      // Navigate to the newly created entity
       const collection = next[cat.collection] as Record<string, unknown> | undefined;
       const oldCollection = world[cat.collection] as Record<string, unknown> | undefined;
       if (collection && oldCollection) {
@@ -215,6 +216,50 @@ function ZoneTree({
   );
 }
 
+// ─── Panel button grid (shared between workspaces) ──────────────────
+
+function PanelButtonGrid({
+  groups,
+  activeTabId,
+  openTab,
+}: {
+  groups: { id: string; label: string; panels: { id: string; label: string }[] }[];
+  activeTabId: string | null;
+  openTab: (tab: Tab) => void;
+}) {
+  return (
+    <nav className="flex flex-col gap-3">
+      {groups.map((group, gi) => (
+        <div key={group.id}>
+          {gi > 0 && <div className="mb-2 border-t border-white/6" />}
+          <p className="mb-1.5 text-[10px] font-medium uppercase tracking-wide-ui text-text-muted">
+            {group.label}
+          </p>
+          <div className="flex flex-wrap gap-1.5">
+            {group.panels.map((panel) => {
+              const tab = panelTab(panel.id);
+              const isActive = activeTabId === tab.id;
+              return (
+                <button
+                  key={panel.id}
+                  onClick={() => openTab(tab)}
+                  className={`rounded-lg border px-2.5 py-1.5 text-[11px] font-medium leading-none transition ${
+                    isActive
+                      ? "border-[var(--border-glow-strong)] bg-[linear-gradient(135deg,rgba(168,151,210,0.25),rgba(140,174,201,0.15))] text-text-primary shadow-glow-sm"
+                      : "border-white/8 bg-white/[0.04] text-text-secondary hover:border-white/14 hover:bg-white/8 hover:text-text-primary"
+                  }`}
+                >
+                  {panel.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      ))}
+    </nav>
+  );
+}
+
 // ─── Main Sidebar ───────────────────────────────────────────────────
 
 export function Sidebar() {
@@ -224,11 +269,14 @@ export function Sidebar() {
   const navigateTo = useProjectStore((s) => s.navigateTo);
   const closeTab = useProjectStore((s) => s.closeTab);
   const removeZone = useZoneStore((s) => s.removeZone);
+  const articles = useLoreStore(selectArticles);
+  const articleCount = Object.keys(articles).length;
   const { query, setQuery, clearQuery, grouped, isSearching } =
     useGlobalSearch();
   const searchRef = useRef<HTMLInputElement>(null);
   const [showNewZone, setShowNewZone] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
+  const [workspace, setWorkspace] = useState<Workspace>("worldmaker");
   const hasProject = !!useProjectStore((s) => s.project);
 
   // Ctrl+K to focus search
@@ -289,75 +337,75 @@ export function Sidebar() {
       />
       <div className="pointer-events-none absolute inset-x-0 top-0 h-48 bg-gradient-glow-top" />
 
-      <div className="relative z-10 min-h-0 max-h-[50%] shrink overflow-y-auto border-b border-white/10 px-4 py-4">
-        <div className="mb-4">
-          <p className="text-[11px] uppercase tracking-wide-ui text-text-muted">
-            Workspace
-          </p>
-          <h2 className="mt-2 font-display text-2xl text-text-primary">
-            Worldmaker
-          </h2>
-          <p className="mt-1 text-xs leading-5 text-text-secondary">
-            Build zones, tune systems, and review assets.
-          </p>
-        </div>
-
-        <nav className="flex flex-col gap-3">
-          {SIDEBAR_GROUPS.map((group, gi) => (
-            <div key={group.id}>
-              {gi > 0 && <div className="mb-2 border-t border-white/6" />}
-              <p className="mb-1.5 text-[10px] font-medium uppercase tracking-wide-ui text-text-muted">
-                {group.label}
-              </p>
-              <div className="flex flex-wrap gap-1.5">
-                {group.panels.map((panel) => {
-                  const tab = panelTab(panel.id);
-                  const isActive = activeTabId === tab.id;
-                  return (
-                    <button
-                      key={panel.id}
-                      onClick={() => openTab(tab)}
-                      className={`rounded-lg border px-2.5 py-1.5 text-[11px] font-medium leading-none transition ${
-                        isActive
-                          ? "border-[var(--border-glow-strong)] bg-[linear-gradient(135deg,rgba(168,151,210,0.25),rgba(140,174,201,0.15))] text-text-primary shadow-glow-sm"
-                          : "border-white/8 bg-white/[0.04] text-text-secondary hover:border-white/14 hover:bg-white/8 hover:text-text-primary"
-                      }`}
-                    >
-                      {panel.label}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
+      {/* ── Workspace toggle ── */}
+      <div className="relative z-10 shrink-0 px-4 pt-4 pb-2">
+        <div className="flex rounded-full border border-white/10 bg-black/15 p-0.5">
+          {([
+            { id: "worldmaker" as const, label: "Worldmaker" },
+            { id: "lore" as const, label: "Lore" },
+          ]).map((ws) => (
+            <button
+              key={ws.id}
+              onClick={() => setWorkspace(ws.id)}
+              className={`flex-1 rounded-full px-3 py-1.5 text-xs font-display tracking-[0.1em] transition ${
+                workspace === ws.id
+                  ? "bg-accent/20 text-accent shadow-glow-sm"
+                  : "text-text-muted hover:text-text-secondary"
+              }`}
+            >
+              {ws.label}
+            </button>
           ))}
-          <div>
-            <div className="mb-2 border-t border-white/6" />
-            <p className="mb-1.5 text-[10px] font-medium uppercase tracking-wide-ui text-text-muted">
-              Tools
-            </p>
-            <div className="flex flex-wrap gap-1.5">
-              {([
-                { id: "sprites", label: "Player Sprites", kind: "sprites" as const },
-                { id: "console", label: "Console", kind: "console" as const },
-                { id: "admin", label: "Admin", kind: "admin" as const },
-              ]).map((entry) => (
-                <button
-                  key={entry.id}
-                  onClick={() => openTab({ id: entry.id, kind: entry.kind, label: entry.label })}
-                  className={`rounded-lg border px-2.5 py-1.5 text-[11px] font-medium leading-none transition ${
-                    activeTabId === entry.id
-                      ? "border-[var(--border-glow-strong)] bg-[linear-gradient(135deg,rgba(168,151,210,0.25),rgba(140,174,201,0.15))] text-text-primary shadow-glow-sm"
-                      : "border-white/8 bg-white/[0.04] text-text-secondary hover:border-white/14 hover:bg-white/8 hover:text-text-primary"
-                  }`}
-                >
-                  {entry.label}
-                </button>
-              ))}
-            </div>
-          </div>
-        </nav>
+        </div>
       </div>
 
+      {/* ── Top: workspace header + panel buttons ── */}
+      <div className="relative z-10 min-h-0 max-h-[50%] shrink overflow-y-auto border-b border-white/10 px-4 py-3">
+        {workspace === "worldmaker" ? (
+          <>
+            <div className="mb-4">
+              <p className="text-[11px] uppercase tracking-wide-ui text-text-muted">Workspace</p>
+              <h2 className="mt-1 font-display text-xl text-text-primary">Worldmaker</h2>
+              <p className="mt-1 text-xs leading-5 text-text-secondary">Build zones, tune systems, and review assets.</p>
+            </div>
+            <PanelButtonGrid groups={WORLDMAKER_GROUPS} activeTabId={activeTabId} openTab={openTab} />
+            <div className="mt-3">
+              <div className="mb-2 border-t border-white/6" />
+              <p className="mb-1.5 text-[10px] font-medium uppercase tracking-wide-ui text-text-muted">Tools</p>
+              <div className="flex flex-wrap gap-1.5">
+                {([
+                  { id: "sprites", label: "Player Sprites", kind: "sprites" as const },
+                  { id: "console", label: "Console", kind: "console" as const },
+                  { id: "admin", label: "Admin", kind: "admin" as const },
+                ]).map((entry) => (
+                  <button
+                    key={entry.id}
+                    onClick={() => openTab({ id: entry.id, kind: entry.kind, label: entry.label })}
+                    className={`rounded-lg border px-2.5 py-1.5 text-[11px] font-medium leading-none transition ${
+                      activeTabId === entry.id
+                        ? "border-[var(--border-glow-strong)] bg-[linear-gradient(135deg,rgba(168,151,210,0.25),rgba(140,174,201,0.15))] text-text-primary shadow-glow-sm"
+                        : "border-white/8 bg-white/[0.04] text-text-secondary hover:border-white/14 hover:bg-white/8 hover:text-text-primary"
+                    }`}
+                  >
+                    {entry.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="mb-4">
+              <p className="text-[11px] uppercase tracking-wide-ui text-text-muted">Workspace</p>
+              <h2 className="mt-1 font-display text-xl text-text-primary">Lore</h2>
+              <p className="mt-1 text-xs leading-5 text-text-secondary">World-building articles, maps, and timeline.</p>
+            </div>
+            <PanelButtonGrid groups={LORE_GROUPS} activeTabId={activeTabId} openTab={openTab} />
+          </>
+        )}
+      </div>
+
+      {/* ── Search ── */}
       <div className="relative z-10 shrink-0 px-4 py-3">
         <div className="relative">
           <input
@@ -382,6 +430,7 @@ export function Sidebar() {
         </div>
       </div>
 
+      {/* ── Bottom: zones or articles list ── */}
       <div className="relative z-10 flex-1 overflow-y-auto px-4 pb-4">
         {isSearching ? (
           <div className="py-2">
@@ -392,19 +441,13 @@ export function Sidebar() {
             ) : (
               [...grouped.entries()].map(([zoneId, entries]) => (
                 <div key={zoneId} className="mb-4">
-                  <h3 className="mb-2 font-display text-sm text-text-primary">
-                    {zoneId}
-                  </h3>
+                  <h3 className="mb-2 font-display text-sm text-text-primary">{zoneId}</h3>
                   <ul className="flex flex-col gap-0.5">
                     {entries.map((entry) => (
                       <li key={`${entry.entityType}:${entry.entityId}`}>
                         <button
                           onClick={() => {
-                            const tab: Tab = {
-                              id: `zone:${entry.zoneId}`,
-                              kind: "zone",
-                              label: entry.zoneId,
-                            };
+                            const tab: Tab = { id: `zone:${entry.zoneId}`, kind: "zone", label: entry.zoneId };
                             openTab(tab);
                             if (entry.entityType === "room") {
                               navigateTo({ zoneId: entry.zoneId, roomId: entry.entityId });
@@ -420,9 +463,7 @@ export function Sidebar() {
                           </span>
                           <span className="truncate">{entry.displayName}</span>
                           {entry.entityId !== entry.displayName && (
-                            <span className="ml-auto shrink-0 text-2xs text-text-muted">
-                              {entry.entityId}
-                            </span>
+                            <span className="ml-auto shrink-0 text-2xs text-text-muted">{entry.entityId}</span>
                           )}
                         </button>
                       </li>
@@ -432,42 +473,49 @@ export function Sidebar() {
               ))
             )}
           </div>
-        ) : (
-        <>
-        <div className="py-2">
-          <div className="mb-3 flex items-center justify-between">
-            <h2 className="font-display text-sm text-text-primary">
-              Zones
-            </h2>
-            {hasProject && (
-              <button
-                onClick={() => setShowNewZone(true)}
-                className="rounded-full border border-white/10 bg-black/10 px-3 py-1 text-xs text-text-secondary transition hover:bg-white/8 hover:text-text-primary"
-                title="New Zone"
-              >
-                New zone
-              </button>
+        ) : workspace === "worldmaker" ? (
+          <div className="py-2">
+            <div className="mb-3 flex items-center justify-between">
+              <h2 className="font-display text-sm text-text-primary">Zones</h2>
+              {hasProject && (
+                <button
+                  onClick={() => setShowNewZone(true)}
+                  className="rounded-full border border-white/10 bg-black/10 px-3 py-1 text-xs text-text-secondary transition hover:bg-white/8 hover:text-text-primary"
+                  title="New Zone"
+                >
+                  New zone
+                </button>
+              )}
+            </div>
+            {sortedZones.length === 0 ? (
+              <p className="rounded-2xl border border-dashed border-white/10 bg-black/10 px-4 py-6 text-sm text-text-muted">
+                Open a world to begin shaping it.
+              </p>
+            ) : (
+              <ul className="flex flex-col gap-0.5">
+                {sortedZones.map(([zoneId, zoneState]) => (
+                  <ZoneTree
+                    key={zoneId}
+                    zoneId={zoneId}
+                    zoneState={zoneState}
+                    isActive={activeTabId === `zone:${zoneId}`}
+                    onDelete={(id) => setDeleteTarget(id)}
+                  />
+                ))}
+              </ul>
             )}
           </div>
-          {sortedZones.length === 0 ? (
-            <p className="rounded-2xl border border-dashed border-white/10 bg-black/10 px-4 py-6 text-sm text-text-muted">
-              Open a world to begin shaping it.
-            </p>
-          ) : (
-            <ul className="flex flex-col gap-0.5">
-              {sortedZones.map(([zoneId, zoneState]) => (
-                <ZoneTree
-                  key={zoneId}
-                  zoneId={zoneId}
-                  zoneState={zoneState}
-                  isActive={activeTabId === `zone:${zoneId}`}
-                  onDelete={(id) => setDeleteTarget(id)}
-                />
-              ))}
-            </ul>
-          )}
-        </div>
-        </>
+        ) : (
+          /* Lore workspace: article tree */
+          <div className="py-2">
+            <div className="mb-3 flex items-center justify-between">
+              <h2 className="font-display text-sm text-text-primary">
+                Articles
+                <span className="ml-2 text-xs font-normal text-text-muted">{articleCount}</span>
+              </h2>
+            </div>
+            <ArticleTree />
+          </div>
         )}
       </div>
 

@@ -115,14 +115,25 @@ export const PANEL_MAP: Record<string, PanelDef> = Object.fromEntries(
   ALL_PANELS.map((p) => [p.id, p]),
 );
 
-export const SIDEBAR_GROUPS: { id: SidebarGroup; label: string; panels: PanelDef[] }[] = [
+export type Workspace = "worldmaker" | "lore";
+
+export const WORLDMAKER_GROUPS: { id: SidebarGroup; label: string; panels: PanelDef[] }[] = [
   { id: "studio", label: "Studio", panels: STUDIO_PANELS },
   { id: "characters", label: "Characters", panels: CHARACTER_PANELS },
   { id: "abilities", label: "Abilities", panels: ABILITY_PANELS },
   { id: "world", label: "World", panels: WORLD_PANELS },
-  { id: "lore", label: "Lore", panels: LORE_PANELS },
   { id: "content", label: "Content", panels: CONTENT_PANELS },
   { id: "operations", label: "Operations", panels: OPERATIONS_PANELS },
+];
+
+export const LORE_GROUPS: { id: SidebarGroup; label: string; panels: PanelDef[] }[] = [
+  { id: "lore", label: "Lore", panels: LORE_PANELS },
+];
+
+/** @deprecated Use WORLDMAKER_GROUPS / LORE_GROUPS */
+export const SIDEBAR_GROUPS: { id: SidebarGroup; label: string; panels: PanelDef[] }[] = [
+  ...WORLDMAKER_GROUPS,
+  ...LORE_GROUPS,
 ];
 
 /** Build a Tab object for a panel ID. */

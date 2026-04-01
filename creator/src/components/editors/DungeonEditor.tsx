@@ -75,6 +75,7 @@ function RoomTemplatesEditor({
               <div className="flex-1 space-y-1">
                 <TextInput value={tpl.title} onCommit={(v) => updateTemplate(category, i, { title: v })} placeholder="Room title" />
                 <CommitTextarea label="" value={tpl.description} onCommit={(v) => updateTemplate(category, i, { description: v })} placeholder="Room description" rows={2} />
+                <TextInput value={tpl.image ?? ""} onCommit={(v) => updateTemplate(category, i, { image: v || undefined })} placeholder="Image asset (optional)" />
               </div>
               <IconButton title="Remove" onClick={() => removeTemplate(category, i)}>&times;</IconButton>
             </div>
@@ -194,22 +195,22 @@ function LootTablesEditor({
     onChange(next);
   };
 
-  const updateList = (tier: string, field: "mobDrops" | "completion", list: string[]) => {
+  const updateList = (tier: string, field: keyof DungeonLootTable, list: string[]) => {
     onChange({ ...tables, [tier]: { ...tables[tier], [field]: list } });
   };
 
-  const addToList = (tier: string, field: "mobDrops" | "completion") => {
+  const addToList = (tier: string, field: keyof DungeonLootTable) => {
     const current = tables[tier]?.[field] ?? [];
     updateList(tier, field, [...current, ""]);
   };
 
-  const updateInList = (tier: string, field: "mobDrops" | "completion", idx: number, value: string) => {
+  const updateInList = (tier: string, field: keyof DungeonLootTable, idx: number, value: string) => {
     const current = [...(tables[tier]?.[field] ?? [])];
     current[idx] = value;
     updateList(tier, field, current);
   };
 
-  const removeFromList = (tier: string, field: "mobDrops" | "completion", idx: number) => {
+  const removeFromList = (tier: string, field: keyof DungeonLootTable, idx: number) => {
     updateList(tier, field, (tables[tier]?.[field] ?? []).filter((_, i) => i !== idx));
   };
 
@@ -221,10 +222,10 @@ function LootTablesEditor({
             <span className="text-xs font-medium text-accent uppercase tracking-[0.1em]">{tier}</span>
             <IconButton title="Remove tier" onClick={() => removeTier(tier)}>&times;</IconButton>
           </div>
-          {(["mobDrops", "completion"] as const).map((field) => (
+          {(["mobDrops", "completionRewards"] as (keyof DungeonLootTable)[]).map((field) => (
             <div key={field} className="mb-2">
               <div className="flex items-center justify-between mb-1">
-                <span className="text-2xs text-text-muted capitalize">{field === "mobDrops" ? "Mob Drops" : "Completion Rewards"}</span>
+                <span className="text-2xs text-text-muted">{field === "mobDrops" ? "Mob Drops" : "Completion Rewards"}</span>
                 <IconButton title={`Add ${field} item`} onClick={() => addToList(tier, field)}>+</IconButton>
               </div>
               {(table[field] ?? []).map((item, i) => (
@@ -253,7 +254,7 @@ function LootTablesEditor({
 
 // ─── Main editor ──────────────────────────────────────────────────
 
-const DEFAULT_ROOM_CATEGORIES = ["corridor", "chamber", "treasure", "boss"];
+const DEFAULT_ROOM_CATEGORIES = ["entrance", "corridor", "chamber", "treasure", "boss"];
 const DEFAULT_MOB_POOLS = ["common", "elite", "boss"];
 const DEFAULT_LOOT_TIERS = ["lore", "normal", "hard", "heroic"];
 
@@ -279,22 +280,28 @@ export function DungeonEditor({ world, onWorldChange, onDelete }: DungeonEditorP
           placeholder="Dungeon description..."
           rows={3}
         />
+        <FieldRow label="Image">
+          <TextInput value={dungeon.image ?? ""} onCommit={(v) => patch({ image: v || undefined })} placeholder="Asset filename (optional)" />
+        </FieldRow>
+        <FieldRow label="Portal Room">
+          <TextInput value={dungeon.portalRoom ?? ""} onCommit={(v) => patch({ portalRoom: v || undefined })} placeholder="Room ID players return to" />
+        </FieldRow>
         <FieldRow label="Min Level">
           <NumberInput value={dungeon.minLevel ?? 1} onCommit={(v) => patch({ minLevel: v ?? 1 })} min={1} />
         </FieldRow>
         <div className="flex gap-4">
           <FieldRow label="Room Count Min">
             <NumberInput
-              value={dungeon.roomCount?.min ?? 8}
-              onCommit={(v) => patch({ roomCount: { min: v ?? 8, max: dungeon.roomCount?.max ?? 14 } })}
-              min={1}
+              value={dungeon.roomCountMin ?? 20}
+              onCommit={(v) => patch({ roomCountMin: v ?? 20 })}
+              min={3}
             />
           </FieldRow>
           <FieldRow label="Room Count Max">
             <NumberInput
-              value={dungeon.roomCount?.max ?? 14}
-              onCommit={(v) => patch({ roomCount: { min: dungeon.roomCount?.min ?? 8, max: v ?? 14 } })}
-              min={1}
+              value={dungeon.roomCountMax ?? 25}
+              onCommit={(v) => patch({ roomCountMax: v ?? 25 })}
+              min={3}
             />
           </FieldRow>
         </div>

@@ -381,13 +381,11 @@ export function validateZone(
     if (!d.name?.trim()) {
       issues.push({ severity: "warning", entity: "dungeon", message: "Dungeon has no name" });
     }
-    if (d.roomCount) {
-      if (d.roomCount.min < 1) {
-        issues.push({ severity: "error", entity: "dungeon", message: "Room count min must be >= 1" });
-      }
-      if (d.roomCount.max < d.roomCount.min) {
-        issues.push({ severity: "error", entity: "dungeon", message: "Room count max must be >= min" });
-      }
+    if (d.roomCountMin != null && d.roomCountMin < 3) {
+      issues.push({ severity: "error", entity: "dungeon", message: "Room count min must be >= 3" });
+    }
+    if (d.roomCountMax != null && d.roomCountMin != null && d.roomCountMax < d.roomCountMin) {
+      issues.push({ severity: "error", entity: "dungeon", message: "Room count max must be >= min" });
     }
     const categories = Object.entries(d.roomTemplates ?? {});
     if (categories.length === 0) {
@@ -403,6 +401,9 @@ export function validateZone(
         }
       }
     }
+    if (d.portalRoom && !world.rooms[d.portalRoom]) {
+      issues.push({ severity: "warning", entity: "dungeon", message: `Portal room "${d.portalRoom}" not found in this zone` });
+    }
     const pools = Object.entries(d.mobPools ?? {});
     if (pools.length === 0) {
       issues.push({ severity: "warning", entity: "dungeon", message: "Dungeon has no mob pools" });
@@ -411,6 +412,10 @@ export function validateZone(
       if (mobIds.length === 0) {
         issues.push({ severity: "warning", entity: "dungeon", message: `Mob pool "${pool}" is empty` });
       }
+    }
+    const bossMobs = d.mobPools?.boss ?? [];
+    if (bossMobs.length === 0) {
+      issues.push({ severity: "error", entity: "dungeon", message: "Dungeon must have at least one boss in mobPools.boss" });
     }
   }
 

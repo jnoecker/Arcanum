@@ -220,26 +220,25 @@ export interface RecipeMaterialFile {
 
 // ─── Dungeon template types ────────────────────────────────────────
 
-export interface RangeMinMax {
-  min: number;
-  max: number;
-}
-
 export interface DungeonRoomTemplate {
   title: string;
   description: string;
+  image?: string;
 }
 
 export interface DungeonLootTable {
   mobDrops?: string[];
-  completion?: string[];
+  completionRewards?: string[];
 }
 
 export interface DungeonFile {
   name: string;
   description?: string;
+  image?: string;
   minLevel?: number;
-  roomCount?: RangeMinMax;
+  roomCountMin?: number;
+  roomCountMax?: number;
+  portalRoom?: string;
   roomTemplates?: Record<string, DungeonRoomTemplate[]>;
   mobPools?: Record<string, string[]>;
   lootTables?: Record<string, DungeonLootTable>;

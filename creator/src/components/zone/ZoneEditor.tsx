@@ -385,7 +385,8 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
                 onAdd={() => {
                   applyWorldChange(setDungeon(zoneState.data, {
                     name: zoneState.data.zone + " Dungeon",
-                    roomCount: { min: 8, max: 14 },
+                    roomCountMin: 20,
+                    roomCountMax: 25,
                   }));
                 }}
               />

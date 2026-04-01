@@ -52,8 +52,8 @@ pub async fn openai_generate_image(
     let w = width.unwrap_or(1024);
     let h = height.unwrap_or(1024);
 
-    // OpenAI uses size strings like "1024x1024", "1536x1024", "1024x1536"
-    let size = format!("{w}x{h}");
+    // OpenAI only supports specific sizes — snap to the closest valid option
+    let size = snap_to_openai_size(w, h);
 
     let body = OpenAIImageRequest {
         model: model_id.clone(),
@@ -138,4 +138,17 @@ pub async fn openai_generate_image(
         prompt,
         model: model_id,
     })
+}
+
+/// Snap arbitrary dimensions to the nearest supported OpenAI image size.
+/// Supported: 1024x1024, 1024x1536, 1536x1024, and auto.
+fn snap_to_openai_size(w: u32, h: u32) -> String {
+    let aspect = w as f64 / h as f64;
+    if aspect > 1.2 {
+        "1536x1024".to_string()   // landscape
+    } else if aspect < 0.8 {
+        "1024x1536".to_string()   // portrait
+    } else {
+        "1024x1024".to_string()   // square
+    }
 }

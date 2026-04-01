@@ -73,15 +73,15 @@ export function ArticlePage() {
         </ol>
       </nav>
 
-      {/* Hero image -- full bleed with gradient */}
+      {/* Hero image -- full bleed with gradient, natural aspect ratio */}
       {article.imageUrl && (
         <div className="relative -mx-4 sm:-mx-6 mb-8 overflow-hidden rounded-xl">
           <img
             src={article.imageUrl}
             alt={article.title}
-            className="w-full h-[280px] sm:h-[360px] object-cover"
+            className="w-full max-h-[70vh] object-contain"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-bg-abyss via-bg-abyss/50 to-transparent" />
+          <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-bg-abyss via-bg-abyss/60 to-transparent" />
           <div className="absolute bottom-0 inset-x-0 p-5 sm:p-8">
             <div
               className="text-xs tracking-[0.14em] uppercase font-display mb-1.5"

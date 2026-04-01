@@ -67,6 +67,7 @@ pub fn run() {
             r2::deploy_config_to_r2,
             r2::deploy_achievements_to_r2,
             r2::deploy_zones_to_r2,
+            r2::deploy_showcase_to_r2,
             vibes::save_zone_vibe,
             vibes::load_zone_vibe,
             arcanum_meta::load_arcanum_meta,

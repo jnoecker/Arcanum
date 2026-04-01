@@ -22,7 +22,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const [articleById, setArticleById] = useState<Map<string, ShowcaseArticle>>(new Map());
 
   useEffect(() => {
-    fetch("/data/showcase.json")
+    // Try local data first (for development), fall back to R2
+    const dataUrl = import.meta.env.VITE_SHOWCASE_URL || "/data/showcase.json";
+    fetch(dataUrl)
       .then((r) => {
         if (!r.ok) throw new Error(`Failed to load showcase data (${r.status})`);
         return r.json();

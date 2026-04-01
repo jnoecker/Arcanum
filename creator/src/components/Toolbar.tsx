@@ -14,9 +14,8 @@ import { useAdminStore } from "@/stores/adminStore";
 import { useLoreStore } from "@/stores/loreStore";
 import { Spinner } from "./ui/FormWidgets";
 import toolbarBg from "@/assets/toolbar-bg.jpg";
+import { invoke } from "@tauri-apps/api/core";
 import { exportShowcaseData } from "@/lib/exportShowcase";
-import { open } from "@tauri-apps/plugin-dialog";
-import { writeTextFile } from "@tauri-apps/plugin-fs";
 
 const DiffModal = lazy(() => import("./ui/DiffModal").then(m => ({ default: m.DiffModal })));
 const BatchLegacyImport = lazy(() => import("./BatchLegacyImport").then(m => ({ default: m.BatchLegacyImport })));
@@ -74,15 +73,14 @@ export function Toolbar() {
     const settings = useAssetStore.getState().settings;
     const imageBaseUrl = settings?.r2_custom_domain?.replace(/\/+$/, "") ?? "";
 
-    const dir = await open({ directory: true, title: "Choose showcase export folder" });
-    if (!dir) return;
-
     setExporting(true);
     try {
       const data = exportShowcaseData(lore, imageBaseUrl);
-      await writeTextFile(`${dir}/showcase.json`, JSON.stringify(data, null, 2));
+      const json = JSON.stringify(data);
+      const url = await invoke<string>("deploy_showcase_to_r2", { jsonContent: json });
+      console.log("Showcase deployed:", url);
     } catch (err) {
-      console.error("Showcase export failed:", err);
+      console.error("Showcase deploy failed:", err);
     } finally {
       setExporting(false);
     }
@@ -128,10 +126,10 @@ export function Toolbar() {
           <button
             onClick={handleExportShowcase}
             disabled={!hasLore || exporting}
-            title="Export lore as showcase site data"
+            title="Publish lore to showcase site"
             className="rounded-full border border-white/10 bg-black/10 px-3 py-1 text-2xs font-medium text-text-primary transition enabled:hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40"
           >
-            {exporting ? <span className="flex items-center gap-1.5"><Spinner />Exporting</span> : "Showcase"}
+            {exporting ? <span className="flex items-center gap-1.5"><Spinner />Publishing</span> : "Publish Lore"}
           </button>
           <div className="h-4 w-px bg-white/10" />
 

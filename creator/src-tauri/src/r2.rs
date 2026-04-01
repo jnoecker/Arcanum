@@ -1062,3 +1062,37 @@ pub async fn resolve_asset_url(app: AppHandle, file_name: String) -> Result<Stri
     let domain = s.r2_custom_domain.trim_end_matches('/');
     Ok(format!("{domain}/{file_name}"))
 }
+
+/// Deploy showcase JSON to R2 so the lore site can fetch it.
+#[tauri::command]
+pub async fn deploy_showcase_to_r2(
+    app: AppHandle,
+    json_content: String,
+) -> Result<String, String> {
+    let s = settings::get_settings(app).await?;
+    if s.r2_account_id.is_empty()
+        || s.r2_access_key_id.is_empty()
+        || s.r2_secret_access_key.is_empty()
+        || s.r2_bucket.is_empty()
+    {
+        return Err("R2 credentials not configured. Set them in Settings.".to_string());
+    }
+
+    let client = reqwest::Client::new();
+    let object_key = "showcase/showcase.json";
+
+    upload_object(
+        &client,
+        &s.r2_account_id,
+        &s.r2_bucket,
+        &s.r2_access_key_id,
+        &s.r2_secret_access_key,
+        object_key,
+        json_content.into_bytes(),
+        "application/json",
+    )
+    .await?;
+
+    let domain = s.r2_custom_domain.trim_end_matches('/');
+    Ok(format!("{domain}/{object_key}"))
+}

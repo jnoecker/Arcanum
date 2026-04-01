@@ -8,6 +8,7 @@ import type {
   QuestFile,
   GatheringNodeFile,
   RecipeFile,
+  DungeonFile,
 } from "@/types/world";
 
 // ─── Pure helpers for WorldFile mutation (immutable) ─────────────────
@@ -378,4 +379,24 @@ export function generateEntityId(
     n++;
   }
   return `${base}_${suffix}${n}`;
+}
+
+// ─── Dungeon operations ────────────────────────────────────────────
+
+export function setDungeon(world: WorldFile, dungeon: DungeonFile): WorldFile {
+  const next = clone(world);
+  next.dungeon = dungeon;
+  return next;
+}
+
+export function updateDungeon(world: WorldFile, patch: Partial<DungeonFile>): WorldFile {
+  const next = clone(world);
+  next.dungeon = { ...next.dungeon!, ...patch };
+  return next;
+}
+
+export function removeDungeon(world: WorldFile): WorldFile {
+  const next = clone(world);
+  delete next.dungeon;
+  return next;
 }

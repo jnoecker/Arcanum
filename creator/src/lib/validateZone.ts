@@ -375,6 +375,45 @@ export function validateZone(
     }
   }
 
+  // ─── Dungeon template checks ────────────────────────────────────
+  if (world.dungeon) {
+    const d = world.dungeon;
+    if (!d.name?.trim()) {
+      issues.push({ severity: "warning", entity: "dungeon", message: "Dungeon has no name" });
+    }
+    if (d.roomCount) {
+      if (d.roomCount.min < 1) {
+        issues.push({ severity: "error", entity: "dungeon", message: "Room count min must be >= 1" });
+      }
+      if (d.roomCount.max < d.roomCount.min) {
+        issues.push({ severity: "error", entity: "dungeon", message: "Room count max must be >= min" });
+      }
+    }
+    const categories = Object.entries(d.roomTemplates ?? {});
+    if (categories.length === 0) {
+      issues.push({ severity: "warning", entity: "dungeon", message: "Dungeon has no room template categories" });
+    }
+    for (const [cat, templates] of categories) {
+      if (templates.length === 0) {
+        issues.push({ severity: "warning", entity: "dungeon", message: `Room category "${cat}" is empty` });
+      }
+      for (const tpl of templates) {
+        if (!tpl.title?.trim()) {
+          issues.push({ severity: "warning", entity: "dungeon", message: `Room template in "${cat}" has no title` });
+        }
+      }
+    }
+    const pools = Object.entries(d.mobPools ?? {});
+    if (pools.length === 0) {
+      issues.push({ severity: "warning", entity: "dungeon", message: "Dungeon has no mob pools" });
+    }
+    for (const [pool, mobIds] of pools) {
+      if (mobIds.length === 0) {
+        issues.push({ severity: "warning", entity: "dungeon", message: `Mob pool "${pool}" is empty` });
+      }
+    }
+  }
+
   return issues;
 }
 

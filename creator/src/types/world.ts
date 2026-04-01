@@ -16,6 +16,7 @@ export interface WorldFile {
   quests?: Record<string, QuestFile>;
   gatheringNodes?: Record<string, GatheringNodeFile>;
   recipes?: Record<string, RecipeFile>;
+  dungeon?: DungeonFile;
 }
 
 export interface ZoneImageDefaults {
@@ -215,4 +216,31 @@ export interface RecipeFile {
 export interface RecipeMaterialFile {
   itemId: string;
   quantity: number;
+}
+
+// ─── Dungeon template types ────────────────────────────────────────
+
+export interface RangeMinMax {
+  min: number;
+  max: number;
+}
+
+export interface DungeonRoomTemplate {
+  title: string;
+  description: string;
+}
+
+export interface DungeonLootTable {
+  mobDrops?: string[];
+  completion?: string[];
+}
+
+export interface DungeonFile {
+  name: string;
+  description?: string;
+  minLevel?: number;
+  roomCount?: RangeMinMax;
+  roomTemplates?: Record<string, DungeonRoomTemplate[]>;
+  mobPools?: Record<string, string[]>;
+  lootTables?: Record<string, DungeonLootTable>;
 }

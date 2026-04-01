@@ -31,10 +31,12 @@ import { ZoneAssetWorkbench } from "./ZoneAssetWorkbench";
 import { Starfield } from "./Starfield";
 import { SpringPanel } from "./SpringPanel";
 import { ZoneMediaPanel } from "./ZoneMediaPanel";
+import { DungeonEditor, DungeonEmptyState } from "@/components/editors/DungeonEditor";
+import { setDungeon, removeDungeon } from "@/lib/zoneEdits";
 import builderBg from "@/assets/builder-bg.jpg";
 import subtoolbarBg from "@/assets/subtoolbar-bg.jpg";
 
-type ViewMode = "map" | "assets" | "media";
+type ViewMode = "map" | "assets" | "media" | "dungeon";
 
 const nodeTypes = {
   room: RoomNode,
@@ -297,7 +299,7 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
         <div className="ml-auto flex items-center gap-2">
           {/* View toggle */}
           <div className="flex rounded border border-border-default bg-bg-primary" role="tablist">
-            {(["map", "assets", "media"] as const).map((mode, i, arr) => (
+            {(["map", "assets", "media", "dungeon"] as const).map((mode, i, arr) => (
               <button
                 key={mode}
                 role="tab"
@@ -365,8 +367,32 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
         </div>
       </div>
 
-      {/* Map + Panel, Asset Browser, or Media Panel */}
-      {viewMode === "media" ? (
+      {/* Map + Panel, Asset Browser, Media Panel, or Dungeon Editor */}
+      {viewMode === "dungeon" ? (
+        <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
+          <div className="mx-auto max-w-2xl">
+            {zoneState.data.dungeon ? (
+              <DungeonEditor
+                world={zoneState.data}
+                onWorldChange={applyWorldChange}
+                onDelete={() => {
+                  applyWorldChange(removeDungeon(zoneState.data));
+                  setViewMode("map");
+                }}
+              />
+            ) : (
+              <DungeonEmptyState
+                onAdd={() => {
+                  applyWorldChange(setDungeon(zoneState.data, {
+                    name: zoneState.data.zone + " Dungeon",
+                    roomCount: { min: 8, max: 14 },
+                  }));
+                }}
+              />
+            )}
+          </div>
+        </div>
+      ) : viewMode === "media" ? (
         <ZoneMediaPanel zoneId={zoneId} world={zoneState.data} onWorldChange={applyWorldChange} />
       ) : viewMode === "assets" ? (
         <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4">

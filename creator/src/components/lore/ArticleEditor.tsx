@@ -6,6 +6,7 @@ import { Section, CommitTextarea } from "@/components/ui/FormWidgets";
 import { LoreEditor } from "./LoreEditor";
 import { TemplateFields } from "./TemplateFields";
 import { CODEX_GENERATE_PROMPT } from "@/lib/lorePrompts";
+import { buildWorldContext } from "@/lib/loreGeneration";
 import { ArticleArtSection } from "./ArticleArtSection";
 
 // ─── Tag list (compact) ────────────────────────────────────────────
@@ -181,16 +182,7 @@ export function ArticleEditor({ articleId }: { articleId: string }) {
     [article, patch],
   );
 
-  const worldContext = useMemo(() => {
-    const articles = useLoreStore.getState().lore?.articles ?? {};
-    const ws = Object.values(articles).find((a) => a.template === "world_setting");
-    if (!ws) return "A fantasy world";
-    const parts: string[] = [];
-    const name = typeof ws.fields.name === "string" ? ws.fields.name : "";
-    if (name) parts.push(`World: ${name}`);
-    if (ws.content) parts.push(ws.content.slice(0, 200));
-    return parts.join("\n") || "A fantasy world";
-  }, [articleId]);
+  const worldContext = useMemo(() => buildWorldContext(), [articleId]);
 
   if (!article) {
     return (

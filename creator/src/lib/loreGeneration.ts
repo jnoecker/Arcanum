@@ -2,28 +2,97 @@ import { invoke } from "@tauri-apps/api/core";
 import { useLoreStore } from "@/stores/loreStore";
 import type { Article, ArticleTemplate, CalendarSystem, CalendarEra, TimelineEvent } from "@/types/lore";
 import { TEMPLATE_SCHEMAS } from "@/lib/loreTemplates";
+import { tiptapToPlainText } from "@/lib/loreRelations";
 
-// ─── Prompts ────────────────────────────────────────────────────────
+// ─── World context builder ──────────────────────────────────────────
 
-function worldContextSummary(): string {
-  const articles = useLoreStore.getState().lore?.articles ?? {};
-  const ws = Object.values(articles).find((a) => a.template === "world_setting");
+/**
+ * Build a rich world context summary for AI generation.
+ * Includes world setting, key articles grouped by template with
+ * brief summaries, template AI descriptions, and timeline highlights.
+ * Shared by article generation, inline writing, and related-article generation.
+ */
+export function buildWorldContext(): string {
+  const lore = useLoreStore.getState().lore;
+  if (!lore) return "A fantasy MUD game world";
+
+  const articles = lore.articles;
+  const overrides = lore.templateOverrides ?? {};
   const parts: string[] = [];
+
+  // ── World setting ──
+  const ws = Object.values(articles).find((a) => a.template === "world_setting");
   if (ws) {
     const name = typeof ws.fields.name === "string" ? ws.fields.name : "";
-    if (name) parts.push(`World: ${name}`);
     const tagline = typeof ws.fields.tagline === "string" ? ws.fields.tagline : "";
+    const era = typeof ws.fields.era === "string" ? ws.fields.era : "";
+    const themes = Array.isArray(ws.fields.themes) ? ws.fields.themes.join(", ") : "";
+    const magic = typeof ws.fields.magic === "string" ? ws.fields.magic : "";
+
+    if (name) parts.push(`World: ${name}`);
     if (tagline) parts.push(tagline);
-    if (ws.content) parts.push(ws.content.slice(0, 500));
+    if (era) parts.push(`Current era: ${era}`);
+    if (themes) parts.push(`Themes: ${themes}`);
+    if (magic) parts.push(`Magic: ${magic.slice(0, 300)}`);
+
+    const prose = tiptapToPlainText(ws.content);
+    if (prose) parts.push(`\nWorld overview:\n${prose.slice(0, 800)}`);
   }
-  // Summarize existing articles
-  const existing = Object.values(articles)
-    .filter((a) => a.template !== "world_setting")
-    .slice(0, 20)
-    .map((a) => `- ${TEMPLATE_SCHEMAS[a.template]?.label ?? a.template}: ${a.title}`)
-    .join("\n");
-  if (existing) parts.push(`\nExisting articles:\n${existing}`);
+
+  // ── Articles grouped by template with summaries ──
+  const byTemplate = new Map<ArticleTemplate, Article[]>();
+  for (const a of Object.values(articles)) {
+    if (a.template === "world_setting") continue;
+    const list = byTemplate.get(a.template) ?? [];
+    list.push(a);
+    byTemplate.set(a.template, list);
+  }
+
+  for (const [template, list] of byTemplate) {
+    const schema = TEMPLATE_SCHEMAS[template];
+    const label = schema?.pluralLabel ?? template;
+    const aiDesc = overrides[template]?.aiDescription ?? schema?.aiDescription;
+
+    const lines: string[] = [];
+    lines.push(`\n## ${label} (${list.length})`);
+    if (aiDesc) lines.push(`[Guide: ${aiDesc}]`);
+
+    // Include brief summaries for up to 10 articles per template
+    for (const a of list.slice(0, 10)) {
+      const prose = tiptapToPlainText(a.content);
+      const snippet = prose ? prose.slice(0, 150).replace(/\n/g, " ") : "";
+      const fieldBits: string[] = [];
+      // Pull a few key fields for context
+      for (const [k, v] of Object.entries(a.fields)) {
+        if (typeof v === "string" && v.length > 0 && v.length < 80) {
+          fieldBits.push(`${k}: ${v}`);
+        }
+        if (fieldBits.length >= 3) break;
+      }
+      const meta = fieldBits.length > 0 ? ` (${fieldBits.join(", ")})` : "";
+      lines.push(`- ${a.title}${meta}${snippet ? ` — ${snippet}` : ""}`);
+    }
+    if (list.length > 10) lines.push(`  ...and ${list.length - 10} more`);
+
+    parts.push(lines.join("\n"));
+  }
+
+  // ── Timeline highlights ──
+  const events = lore.timelineEvents ?? [];
+  const legendaryEvents = events.filter((e) => e.importance === "legendary");
+  if (legendaryEvents.length > 0) {
+    parts.push("\n## Key historical events");
+    for (const e of legendaryEvents.slice(0, 5)) {
+      parts.push(`- ${e.title}${e.description ? `: ${e.description.slice(0, 100)}` : ""}`);
+    }
+  }
+
   return parts.join("\n") || "A fantasy MUD game world";
+}
+
+/** @deprecated Use buildWorldContext() instead */
+function worldContextSummary(): string {
+  return buildWorldContext();
 }
 
 const ARTICLE_GEN_SYSTEM = `You are a world-building assistant for a fantasy MUD game.

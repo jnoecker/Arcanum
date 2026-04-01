@@ -44,7 +44,11 @@ pub async fn openai_generate_image(
         return Err("OpenAI API key not configured. Set it in Settings.".to_string());
     }
 
-    let model_id = model.unwrap_or_else(|| "gpt-image-1".to_string());
+    // Map internal model IDs to OpenAI model names
+    let model_id = match model.as_deref() {
+        Some("openai:4@1") | None => "gpt-image-1".to_string(),
+        Some(other) => other.to_string(),
+    };
     let w = width.unwrap_or(1024);
     let h = height.unwrap_or(1024);
 

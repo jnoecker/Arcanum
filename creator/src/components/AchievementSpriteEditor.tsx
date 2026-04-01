@@ -7,7 +7,7 @@ import { useAssetStore } from "@/stores/assetStore";
 import { useImageSrc } from "@/lib/useImageSrc";
 import { composePrompt, UNIVERSAL_NEGATIVE } from "@/lib/arcanumPrompts";
 import { removeBgAndSave } from "@/lib/useBackgroundRemoval";
-import { IMAGE_MODELS, ENTITY_DIMENSIONS } from "@/types/assets";
+import { IMAGE_MODELS, ENTITY_DIMENSIONS, imageGenerateCommand } from "@/types/assets";
 import type { AchievementSpriteDef, SpriteVariant } from "@/types/sprites";
 import type { GeneratedImage, AssetContext } from "@/types/assets";
 
@@ -53,7 +53,8 @@ export function AchievementSpriteEditor() {
   const imageProvider = settings?.image_provider ?? "deepinfra";
   const hasApiKey = settings && (
     (imageProvider === "deepinfra" && settings.deepinfra_api_key.length > 0) ||
-    (imageProvider === "runware" && settings.runware_api_key.length > 0)
+    (imageProvider === "runware" && settings.runware_api_key.length > 0) ||
+    (imageProvider === "openai" && settings.openai_api_key.length > 0)
   );
 
   // Map imageId → asset file name for thumbnails
@@ -142,7 +143,7 @@ export function AchievementSpriteEditor() {
         if (!model) throw new Error("No image model available");
 
         const dims = ENTITY_DIMENSIONS.player_sprite ?? { width: 512, height: 512 };
-        const cmd = imageProvider === "runware" ? "runware_generate_image" : "generate_image";
+        const cmd = imageGenerateCommand(imageProvider);
 
         const image = await invoke<GeneratedImage>(cmd, {
           prompt: finalPrompt,

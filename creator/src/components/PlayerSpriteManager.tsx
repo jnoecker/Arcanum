@@ -26,7 +26,7 @@ import {
   type SpritePromptTemplate,
 } from "@/lib/spritePromptGen";
 import { TIER_ORDER } from "@/lib/defaultSpriteData";
-import { IMAGE_MODELS, ENTITY_DIMENSIONS } from "@/types/assets";
+import { IMAGE_MODELS, ENTITY_DIMENSIONS, imageGenerateCommand } from "@/types/assets";
 import type { AssetEntry, GeneratedImage, SyncProgress } from "@/types/assets";
 import type { AppConfig } from "@/types/config";
 import { removeBgAndSave } from "@/lib/useBackgroundRemoval";
@@ -213,7 +213,8 @@ export function PlayerSpriteManager() {
   const imageProvider = settings?.image_provider ?? "deepinfra";
   const hasApiKey = settings && (
     (imageProvider === "deepinfra" && settings.deepinfra_api_key.length > 0) ||
-    (imageProvider === "runware" && settings.runware_api_key.length > 0)
+    (imageProvider === "runware" && settings.runware_api_key.length > 0) ||
+    (imageProvider === "openai" && settings.openai_api_key.length > 0)
   );
   const availableModels = IMAGE_MODELS.filter((m) => m.provider === imageProvider);
   const defaultModel = availableModels[0];
@@ -345,7 +346,7 @@ export function PlayerSpriteManager() {
     }
 
     const dims = ENTITY_DIMENSIONS.player_sprite ?? { width: 512, height: 512 };
-    const command = imageProvider === "runware" ? "runware_generate_image" : "generate_image";
+    const command = imageGenerateCommand(imageProvider);
     const modelId = defaultModel?.id;
     if (!modelId) throw new Error(`No models available for provider: ${imageProvider}`);
 

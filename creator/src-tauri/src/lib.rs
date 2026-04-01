@@ -5,6 +5,7 @@ mod assets;
 mod deepinfra;
 mod git;
 mod llm;
+mod openai_images;
 mod openrouter;
 mod project;
 mod r2;
@@ -41,6 +42,7 @@ pub fn run() {
             deepinfra::read_image_data_url,
             llm::llm_complete,
             runware::runware_generate_image,
+            openai_images::openai_generate_image,
             runware::runware_generate_audio,
             runware::runware_generate_video,
             assets::accept_asset,

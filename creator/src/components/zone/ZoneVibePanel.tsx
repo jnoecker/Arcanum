@@ -6,7 +6,7 @@ import { buildVibeInput } from "@/lib/vibePrompts";
 import { defaultImageContext, defaultImagePrompt, type DefaultImageKind } from "@/lib/entityPrompts";
 import { getEnhanceSystemPrompt, UNIVERSAL_NEGATIVE } from "@/lib/arcanumPrompts";
 import { useImageSrc } from "@/lib/useImageSrc";
-import { IMAGE_MODELS, type GeneratedImage } from "@/types/assets";
+import { IMAGE_MODELS, imageGenerateCommand, type GeneratedImage } from "@/types/assets";
 import type { WorldFile } from "@/types/world";
 
 interface ZoneVibePanelProps {
@@ -145,7 +145,8 @@ export function ZoneVibePanel({ zoneId, world, onWorldChange }: ZoneVibePanelPro
   const defaultModel = availableModels[0];
   const hasImageKey = !!(
     (imageProvider === "deepinfra" && settings?.deepinfra_api_key) ||
-    (imageProvider === "runware" && settings?.runware_api_key)
+    (imageProvider === "runware" && settings?.runware_api_key) ||
+    (imageProvider === "openai" && settings?.openai_api_key)
   );
   const hasLlmKey = !!(
     settings?.deepinfra_api_key ||
@@ -171,7 +172,7 @@ export function ZoneVibePanel({ zoneId, world, onWorldChange }: ZoneVibePanelPro
         prompt = await invoke<string>("llm_complete", { systemPrompt, userPrompt });
       }
 
-      const image = await invoke<GeneratedImage>(imageProvider === "runware" ? "runware_generate_image" : "generate_image", {
+      const image = await invoke<GeneratedImage>(imageGenerateCommand(imageProvider), {
         prompt,
         negativePrompt: UNIVERSAL_NEGATIVE,
         model: defaultModel.id,

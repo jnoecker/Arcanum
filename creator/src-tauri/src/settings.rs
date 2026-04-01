@@ -14,6 +14,8 @@ pub struct Settings {
     pub anthropic_api_key: String,
     #[serde(default)]
     pub openrouter_api_key: String,
+    #[serde(default)]
+    pub openai_api_key: String,
     #[serde(default = "default_image_model")]
     pub image_model: String,
     #[serde(default = "default_enhance_model")]
@@ -73,6 +75,7 @@ impl Default for Settings {
             runware_api_key: String::new(),
             anthropic_api_key: String::new(),
             openrouter_api_key: String::new(),
+            openai_api_key: String::new(),
             image_model: default_image_model(),
             enhance_model: default_enhance_model(),
             prompt_llm_provider: default_prompt_llm_provider(),

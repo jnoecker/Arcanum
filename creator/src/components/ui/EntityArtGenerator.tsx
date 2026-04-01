@@ -5,7 +5,7 @@ import { useAssetStore } from "@/stores/assetStore";
 import { useProjectStore } from "@/stores/projectStore";
 import { useImageSrc, isLegacyImagePath } from "@/lib/useImageSrc";
 import { getEnhanceSystemPrompt, ART_STYLE_LABELS, UNIVERSAL_NEGATIVE, type ArtStyle } from "@/lib/arcanumPrompts";
-import { IMAGE_MODELS, ENTITY_DIMENSIONS, DIMENSION_PRESETS } from "@/types/assets";
+import { IMAGE_MODELS, ENTITY_DIMENSIONS, DIMENSION_PRESETS, imageGenerateCommand } from "@/types/assets";
 import type { AssetContext, GeneratedImage } from "@/types/assets";
 import { VariantStrip } from "./VariantStrip";
 import { removeBgAndSave, shouldRemoveBg } from "@/lib/useBackgroundRemoval";
@@ -66,7 +66,8 @@ export function EntityArtGenerator({
   const imageProvider = settings?.image_provider ?? "deepinfra";
   const hasApiKey = settings && (
     (imageProvider === "deepinfra" && settings.deepinfra_api_key.length > 0) ||
-    (imageProvider === "runware" && settings.runware_api_key.length > 0)
+    (imageProvider === "runware" && settings.runware_api_key.length > 0) ||
+    (imageProvider === "openai" && settings.openai_api_key.length > 0)
   );
   const hasLlmKey = settings && (
     settings.deepinfra_api_key.length > 0 ||
@@ -170,9 +171,7 @@ export function EntityArtGenerator({
         }
       }
 
-      const command = imageProvider === "runware"
-        ? "runware_generate_image"
-        : "generate_image";
+      const command = imageGenerateCommand(imageProvider);
 
       const image = await invoke<GeneratedImage>(command, {
         prompt: finalPrompt,

@@ -12,6 +12,7 @@ const LLM_PROVIDERS = [
 const IMAGE_PROVIDERS = [
   { id: "deepinfra", label: "DeepInfra" },
   { id: "runware", label: "Runware" },
+  { id: "openai", label: "OpenAI" },
 ];
 
 export function ApiSettingsPanel({
@@ -139,6 +140,22 @@ export function ApiSettingsPanel({
                 setDraft({ ...draft, runware_api_key: e.target.value })
               }
               placeholder="Enter your Runware API key"
+              className="w-full rounded border border-border-default bg-bg-primary px-3 py-1.5 text-xs text-text-primary placeholder:text-text-muted outline-none focus:border-accent/50"
+            />
+          </div>
+
+          <div>
+            <label htmlFor="openai-api-key" className="mb-1 block text-2xs uppercase tracking-wider text-text-muted">
+              OpenAI API Key
+            </label>
+            <input
+              id="openai-api-key"
+              type="password"
+              value={draft.openai_api_key}
+              onChange={(e) =>
+                setDraft({ ...draft, openai_api_key: e.target.value })
+              }
+              placeholder="Enter your OpenAI API key"
               className="w-full rounded border border-border-default bg-bg-primary px-3 py-1.5 text-xs text-text-primary placeholder:text-text-muted outline-none focus:border-accent/50"
             />
           </div>

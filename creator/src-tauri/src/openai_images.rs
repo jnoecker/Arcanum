@@ -1,0 +1,137 @@
+use base64::Engine;
+use serde::{Deserialize, Serialize};
+use sha2::{Digest, Sha256};
+use tauri::{AppHandle, Manager};
+
+use crate::deepinfra::GeneratedImage;
+use crate::settings;
+
+const API_URL: &str = "https://api.openai.com/v1/images/generations";
+
+#[derive(Debug, Serialize)]
+struct OpenAIImageRequest {
+    model: String,
+    prompt: String,
+    n: u32,
+    size: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    quality: Option<String>,
+    output_format: String,
+}
+
+#[derive(Debug, Deserialize)]
+struct OpenAIImageResponse {
+    data: Vec<OpenAIImageData>,
+}
+
+#[derive(Debug, Deserialize)]
+struct OpenAIImageData {
+    b64_json: Option<String>,
+    url: Option<String>,
+}
+
+#[tauri::command]
+pub async fn openai_generate_image(
+    app: AppHandle,
+    prompt: String,
+    model: Option<String>,
+    width: Option<u32>,
+    height: Option<u32>,
+    quality: Option<String>,
+) -> Result<GeneratedImage, String> {
+    let settings = settings::get_settings(app.clone()).await?;
+    if settings.openai_api_key.is_empty() {
+        return Err("OpenAI API key not configured. Set it in Settings.".to_string());
+    }
+
+    let model_id = model.unwrap_or_else(|| "gpt-image-1".to_string());
+    let w = width.unwrap_or(1024);
+    let h = height.unwrap_or(1024);
+
+    // OpenAI uses size strings like "1024x1024", "1536x1024", "1024x1536"
+    let size = format!("{w}x{h}");
+
+    let body = OpenAIImageRequest {
+        model: model_id.clone(),
+        prompt: prompt.clone(),
+        n: 1,
+        size,
+        quality: quality.or_else(|| Some("medium".to_string())),
+        output_format: "png".to_string(),
+    };
+
+    let client = reqwest::Client::new();
+    let response = client
+        .post(API_URL)
+        .header("Authorization", format!("Bearer {}", settings.openai_api_key))
+        .json(&body)
+        .send()
+        .await
+        .map_err(|e| format!("OpenAI API request failed: {e}"))?;
+
+    if !response.status().is_success() {
+        let status = response.status();
+        let text = response.text().await.unwrap_or_default();
+        return Err(format!("OpenAI API error ({status}): {text}"));
+    }
+
+    let resp: OpenAIImageResponse = response
+        .json()
+        .await
+        .map_err(|e| format!("Failed to parse OpenAI response: {e}"))?;
+
+    let entry = resp.data.first().ok_or("No images in OpenAI response")?;
+
+    let bytes = if let Some(b64) = &entry.b64_json {
+        base64::engine::general_purpose::STANDARD
+            .decode(b64)
+            .map_err(|e| format!("Failed to decode base64: {e}"))?
+    } else if let Some(url) = &entry.url {
+        client
+            .get(url)
+            .send()
+            .await
+            .map_err(|e| format!("Failed to download image: {e}"))?
+            .bytes()
+            .await
+            .map_err(|e| format!("Failed to read image bytes: {e}"))?
+            .to_vec()
+    } else {
+        return Err("OpenAI response contained no image data".to_string());
+    };
+
+    // Content-addressed filename
+    let mut hasher = Sha256::new();
+    hasher.update(&bytes);
+    let hash = format!("{:x}", hasher.finalize());
+
+    // Save to assets dir
+    let dir = app
+        .path()
+        .app_data_dir()
+        .map_err(|e| format!("Failed to get app data dir: {e}"))?
+        .join("assets")
+        .join("images");
+    tokio::fs::create_dir_all(&dir)
+        .await
+        .map_err(|e| format!("Failed to create assets dir: {e}"))?;
+
+    let filename = format!("{hash}.png");
+    let file_path = dir.join(&filename);
+    tokio::fs::write(&file_path, &bytes)
+        .await
+        .map_err(|e| format!("Failed to write image: {e}"))?;
+
+    let b64_out = base64::engine::general_purpose::STANDARD.encode(&bytes);
+
+    Ok(GeneratedImage {
+        id: uuid::Uuid::new_v4().to_string(),
+        hash,
+        file_path: file_path.to_string_lossy().to_string(),
+        data_url: format!("data:image/png;base64,{b64_out}"),
+        width: w,
+        height: h,
+        prompt,
+        model: model_id,
+    })
+}

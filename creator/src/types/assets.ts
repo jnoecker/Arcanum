@@ -73,6 +73,7 @@ export interface Settings {
   runware_api_key: string;
   anthropic_api_key: string;
   openrouter_api_key: string;
+  openai_api_key: string;
   image_model: string;
   enhance_model: string;
   prompt_llm_provider: string;
@@ -136,7 +137,23 @@ export const IMAGE_MODELS = [
     defaultSteps: 28,
     defaultGuidance: 3.5,
   },
+  {
+    id: "openai:4@1",
+    label: "GPT Image 1.5",
+    description: "OpenAI gpt-image-1, high quality",
+    provider: "openai" as const,
+    defaultSteps: 1,
+  },
 ] as const;
+
+/** Resolve the Tauri command name for a given image provider. */
+export function imageGenerateCommand(provider: string): string {
+  switch (provider) {
+    case "runware": return "runware_generate_image";
+    case "openai": return "openai_generate_image";
+    default: return "generate_image";
+  }
+}
 
 /** Default image dimensions per entity type */
 export const ENTITY_DIMENSIONS: Record<string, { width: number; height: number; label: string }> = {

@@ -11,7 +11,7 @@ import {
   type ArtStyle,
 } from "@/lib/arcanumPrompts";
 import type { GeneratedImage } from "@/types/assets";
-import { ENTITY_DIMENSIONS } from "@/types/assets";
+import { ENTITY_DIMENSIONS, imageGenerateCommand } from "@/types/assets";
 import { removeBgAndSave, shouldRemoveBg } from "@/lib/useBackgroundRemoval";
 
 export function assetTypeForKind(kind: string): string {
@@ -196,10 +196,7 @@ export async function runBatchArtGeneration(
           width: 1024,
           height: 1024,
         };
-        const command =
-          imageProvider === "runware"
-            ? "runware_generate_image"
-            : "generate_image";
+        const command = imageGenerateCommand(imageProvider);
 
         const image = await invoke<GeneratedImage>(command, {
           prompt: finalPrompt,

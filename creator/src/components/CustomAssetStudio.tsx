@@ -13,7 +13,7 @@ import {
   getFormatForAssetType,
   UNIVERSAL_NEGATIVE,
 } from "@/lib/arcanumPrompts";
-import { IMAGE_MODELS, type AssetEntry, type AssetType, type GeneratedImage } from "@/types/assets";
+import { IMAGE_MODELS, imageGenerateCommand, type AssetEntry, type AssetType, type GeneratedImage } from "@/types/assets";
 import { InlineError, Spinner } from "@/components/ui/FormWidgets";
 
 const CUSTOM_ASSET_TYPES: AssetType[] = [
@@ -147,7 +147,8 @@ export function CustomAssetStudio({ selectedZoneId }: { selectedZoneId: string |
   const defaultModel = availableModels[0];
   const hasImageKey = !!(
     (imageProvider === "deepinfra" && settings?.deepinfra_api_key) ||
-    (imageProvider === "runware" && settings?.runware_api_key)
+    (imageProvider === "runware" && settings?.runware_api_key) ||
+    (imageProvider === "openai" && settings?.openai_api_key)
   );
   const hasLlmKey = !!(
     settings?.deepinfra_api_key ||
@@ -224,7 +225,7 @@ export function CustomAssetStudio({ selectedZoneId }: { selectedZoneId: string |
   const runGeneration = useCallback(async (prompt: string, activate: boolean) => {
     if (!defaultModel) throw new Error(`No image model configured for provider ${imageProvider}.`);
 
-    const image = await invoke<GeneratedImage>(imageProvider === "runware" ? "runware_generate_image" : "generate_image", {
+    const image = await invoke<GeneratedImage>(imageGenerateCommand(imageProvider), {
       prompt,
       negativePrompt: UNIVERSAL_NEGATIVE,
       model: defaultModel.id,

@@ -22,7 +22,7 @@ import {
   UNIVERSAL_NEGATIVE,
   type ArtStyle,
 } from "@/lib/arcanumPrompts";
-import { IMAGE_MODELS } from "@/types/assets";
+import { IMAGE_MODELS, imageGenerateCommand } from "@/types/assets";
 import type { AssetType, GeneratedImage } from "@/types/assets";
 import loadingVignette from "@/assets/loading-vignette.jpg";
 
@@ -66,7 +66,8 @@ export function AssetGenerator() {
   const imageProvider = settings?.image_provider ?? "deepinfra";
   const hasApiKey = settings && (
     (imageProvider === "deepinfra" && settings.deepinfra_api_key.length > 0) ||
-    (imageProvider === "runware" && settings.runware_api_key.length > 0)
+    (imageProvider === "runware" && settings.runware_api_key.length > 0) ||
+    (imageProvider === "openai" && settings.openai_api_key.length > 0)
   );
 
   const handleTypeChange = (type: AssetType) => {
@@ -114,7 +115,7 @@ export function AssetGenerator() {
         ? (model as { defaultGuidance: number }).defaultGuidance
         : null;
 
-      const command = imageProvider === "runware" ? "runware_generate_image" : "generate_image";
+      const command = imageGenerateCommand(imageProvider);
       const image = await invoke<GeneratedImage>(command, {
         prompt: finalPrompt,
         negativePrompt: UNIVERSAL_NEGATIVE,

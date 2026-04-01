@@ -36,6 +36,14 @@ Point it at an AmbonMUD project directory — legacy (monolithic `application.ya
 - **Pre-flight checks** -- Java version, Gradle wrapper, port availability
 - **Server status indicator** in toolbar (hidden for standalone projects)
 
+### Lore & World Building
+- **Article system** -- 11 article templates (character, location, organization, species, event, language, profession, ability, item, world_setting, freeform) with rich text editor (TipTap), @mentions, and template-specific fields
+- **Interactive maps** -- Upload map images, place colored pins linked to articles, duplicate maps to create themed variants, replace images while preserving pins
+- **Timeline** -- Calendar systems with eras, timeline events with importance levels (minor/major/legendary), linked to articles
+- **Relationship graph** -- React Flow visualization of article connections (explicit relations + @mention extraction), dagre auto-layout
+- **Color labels** -- Reusable named color palette for map pins and categorization
+- **Lore showcase** -- One-click publish to a public-facing website (see [Showcase](#showcase) below)
+
 ### Developer Experience
 - **Undo/redo** via zundo (per-zone, max 100 history entries)
 - **Diff view before save** -- See exactly what YAML changes will be written
@@ -45,6 +53,34 @@ Point it at an AmbonMUD project directory — legacy (monolithic `application.ya
 - **Keyboard shortcuts** -- Ctrl+S save, Ctrl+Z undo, Ctrl+Tab cycle, ? help
 - **Validation engine** -- Zone-level, cross-zone, and config validation with inline errors
 - **Zone vibe system** -- LLM-generated context metadata for art-consistent generation
+
+## Showcase
+
+The `showcase/` directory contains a standalone public-facing website for sharing world lore. It's a Vite + React 19 + Tailwind 4 SPA that reads exported lore data from Cloudflare R2.
+
+**Pages:** Home (world overview + search), Codex (template-grouped article browser with grid/list views), Article detail (rich text + fields + relations), Maps (scaled image viewer with interactive pins), Timeline (era-grouped vertical timeline), Connections (React Flow relationship graph)
+
+**Publishing workflow:**
+1. Click **Publish Lore** in the Arcanum toolbar -- exports lore data and uploads `showcase.json` to R2
+2. The showcase site fetches the JSON from R2 at runtime -- no rebuild needed after the initial deploy
+
+**Initial deployment:**
+```bash
+cd showcase
+npm install
+npm run build
+npx wrangler pages deploy dist --project-name=ambon-showcase
+```
+
+After the initial deploy, add a custom domain in Cloudflare Pages settings if desired. Subsequent lore updates only require clicking "Publish Lore" in the creator.
+
+**Development:**
+```bash
+cd showcase
+npm run dev          # Vite dev server (uses /data/showcase.json locally)
+npm run typecheck    # TypeScript check
+npm run build        # Production build (fetches from R2 via VITE_SHOWCASE_URL)
+```
 
 ## Tech Stack
 
@@ -100,11 +136,12 @@ AmbonArcanum/
       components/
         config/panels/        #   Config editor panels (stats, abilities, classes, etc.)
         editors/              #   Entity editors (mob, item, shop, quest, etc.)
+        lore/                 #   Lore system (article editor, maps, timeline, relations)
         zone/                 #   Zone map editor (React Flow graph, room panel, starfield)
         ui/                   #   Shared UI components (form widgets, diff modal, focus trap)
         wizard/               #   Project creation wizard (multi-step)
       stores/                 #   Zustand state stores
-      types/                  #   TypeScript type definitions (world, config, project, assets)
+      types/                  #   TypeScript type definitions (world, config, project, assets, lore)
       lib/                    #   Utilities, hooks, validation, YAML I/O, prompt templates
       assets/                 #   Background images for UI surfaces
     src-tauri/
@@ -115,13 +152,22 @@ AmbonArcanum/
         deepinfra.rs          #   DeepInfra API client (image generation)
         runware.rs            #   Runware API client (alternative image provider)
         assets.rs             #   Asset manifest management (SHA-256 content-addressed)
-        r2.rs                 #   Cloudflare R2 sync (AWS SigV4 signing)
+        r2.rs                 #   Cloudflare R2 sync (AWS SigV4 signing) + showcase deploy
         llm.rs                #   LLM integration for prompt enhancement
         anthropic.rs          #   Anthropic Claude API client
         openrouter.rs         #   OpenRouter API client
         vibes.rs              #   Zone vibe/context metadata for art generation
         server.rs             #   MUD server process management
         arcanum_meta.rs       #   Build metadata and version info
+  showcase/                   # Public lore showcase website (Vite + React SPA)
+    src/
+      components/             #   Layout, MapViewer, ShowcaseNode
+      pages/                  #   Home, Codex, Article, Maps, Timeline, Graph, 404
+      lib/                    #   DataContext, templates, graph builder
+      types/                  #   ShowcaseData types (mirrors exportShowcase.ts)
+    public/data/              #   Local showcase.json for development
+    .env.production           #   R2 URL for production builds
+    wrangler.toml             #   Cloudflare Pages deployment config
   reference/                  # Kotlin source from AmbonMUD server (read-only type reference)
     world-yaml-dtos/          #   YAML schema DTOs (source of truth for TS types)
     domain-model/             #   Runtime domain types
@@ -144,6 +190,7 @@ AmbonArcanum/
 | `serverStore` | Server process state, logs, output streaming |
 | `validationStore` | Computed validation errors for zones and config, panel visibility |
 | `assetStore` | Asset manifest, image directory, generation UI state, R2 sync, settings |
+| `loreStore` | World lore: articles, maps, calendars, timeline events, color labels |
 | `vibeStore` | Zone vibe/context metadata for LLM-informed art generation |
 
 ## Design System

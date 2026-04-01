@@ -11,6 +11,7 @@ Ambon Arcanum is a Tauri 2 desktop app for building MUD game worlds. React 19 + 
 - `creator/` -- The Tauri application (frontend + backend)
 - `creator/src/` -- React frontend (components, stores, types, lib)
 - `creator/src-tauri/src/` -- Rust backend (Tauri commands)
+- `showcase/` -- Public lore showcase website (Vite + React SPA, deployed to Cloudflare Pages)
 - `reference/` -- Kotlin source files from AmbonMUD server (read-only reference)
 - `ARCANUM_STYLE_GUIDE.md` -- Design system (colors, typography, components, both art styles)
 
@@ -35,6 +36,24 @@ bun run test
 bun run tauri build
 ```
 
+### Showcase
+
+```bash
+cd showcase
+
+# Dev mode
+npm run dev
+
+# TypeScript check
+npm run typecheck
+
+# Production build
+npm run build
+
+# Deploy to Cloudflare Pages
+npx wrangler pages deploy dist --project-name=ambon-showcase
+```
+
 ## Architecture
 
 ### Frontend (React + TypeScript)
@@ -46,6 +65,7 @@ bun run tauri build
   - `serverStore` -- server process state, logs
   - `validationStore` -- computed validation errors
   - `assetStore` -- image generation, asset manifest, R2 sync, settings
+  - `loreStore` -- world lore: articles, maps, calendars, timeline events, color labels
 - **Types**: `src/types/` mirrors Kotlin DTOs from `reference/world-yaml-dtos/`
 - **YAML I/O**: Uses `yaml` package CST mode for format-preserving round-trip. See `src/lib/loader.ts`, `src/lib/saveZone.ts`, `src/lib/saveConfig.ts`.
 - **Validation**: Client-side validation in `src/lib/validateZone.ts` and `src/lib/validateConfig.ts`. Must mirror rules from `reference/world-loader/WorldLoader.kt`.
@@ -53,6 +73,8 @@ bun run tauri build
 - **Art Generation**: Two art styles -- "arcanum" (baroque cosmic gold-indigo) and "gentle_magic" (soft dreamlike lavender). Templates in `src/lib/arcanumPrompts.ts`. Supports room, mob, item, and UI asset types.
 - **Global Assets**: Key-value pairs in `application.yaml` under `ambonmud.globalAssets` for app-wide generated art (e.g. `compass_rose: abc123.png`).
 - **Decorative Backgrounds**: UI panels use themed background images from `src/assets/` at low opacity (10-18%) with `mix-blend-screen` or gradient overlays.
+- **Lore System**: Article-based world-building with 11 templates, TipTap rich text editor, @mentions, interactive maps (Leaflet CRS.Simple), timeline, and relationship graph. Types in `src/types/lore.ts`, store in `src/stores/loreStore.ts`, persistence in `src/lib/lorePersistence.ts`.
+- **Showcase Export**: `src/lib/exportShowcase.ts` converts `WorldLore` → `ShowcaseData` (TipTap JSON → HTML, relation merging, image URL resolution). Toolbar "Publish Lore" button deploys JSON to R2 via `deploy_showcase_to_r2`.
 
 ### Backend (Rust)
 
@@ -62,9 +84,18 @@ bun run tauri build
 - `deepinfra.rs` -- DeepInfra API client for AI image generation
 - `runware.rs` -- Runware API client (alternative image provider)
 - `assets.rs` -- Asset manifest (JSON) management, content-addressed storage (SHA256 hash filenames)
-- `r2.rs` -- Cloudflare R2 sync with AWS Signature V4 signing (no SDK dependency)
+- `r2.rs` -- Cloudflare R2 sync with AWS Signature V4 signing (no SDK dependency), showcase deploy
 - `vibes.rs` -- Zone vibe/context metadata for LLM-informed art generation
 - `llm.rs` -- LLM integration for prompt enhancement (Anthropic, OpenRouter)
+
+### Showcase (showcase/)
+
+- Standalone Vite + React 19 + Tailwind 4 SPA deployed to Cloudflare Pages
+- Reads `showcase.json` from R2 at runtime (`VITE_SHOWCASE_URL` env var in production, `/data/showcase.json` locally)
+- Types in `src/types/showcase.ts` mirror `ShowcaseData` from `creator/src/lib/exportShowcase.ts`
+- Pages: Home, Codex (ArticlesPage), Article detail (ArticlePage), Maps, Timeline, Connections (GraphPage), 404
+- Map pins use Leaflet CRS.Simple coordinates: `position[0]` = lat (Y from bottom), `position[1]` = lng (X). Showcase converts to pixels: `px_x = lng * scale`, `px_y = (height - lat) * scale`
+- `wrangler.toml` for Cloudflare Pages deployment; `_redirects` for SPA routing
 
 ### IPC Pattern
 
@@ -122,3 +153,6 @@ Images are served to the frontend as base64 data URLs via the `read_image_data_u
 - **Config data-driven fields**: Many game systems (equipment slots, crafting skills, station types, etc.) are data-driven from `application.yaml`. Editors like `ItemEditor`, `RecipeEditor`, `GatheringNodeEditor` derive dropdown options from `configStore` with fallback to hardcoded defaults.
 - **Art style templates**: Asset prompt templates in `arcanumPrompts.ts` are keyed by both `AssetType` and `ArtStyle`. When adding a new asset type, add templates for both "arcanum" and "gentle_magic" styles.
 - **Global assets**: Stored as simple `Record<string, string>` (key → filename). Use `setIn` not `saveMapSection` when saving -- values are strings, not objects.
+- **Map pin coordinates**: Creator stores pins as `[lat, lng]` in Leaflet CRS.Simple where `lat` = Y from bottom edge, `lng` = X from left. When rendering outside Leaflet (e.g. showcase), convert: `pixel_x = lng`, `pixel_y = map_height - lat`.
+- **Showcase data flow**: "Publish Lore" in Toolbar → `exportShowcaseData()` → `deploy_showcase_to_r2` Rust command → R2 at `showcase/showcase.json`. The showcase SPA fetches this at runtime. No rebuild needed for content updates.
+- **Showcase images**: Article/map images reference R2 URLs via `imageBaseUrl` from creator settings (`r2_custom_domain`). Images must be synced to R2 before they appear on the showcase site.

@@ -1,8 +1,11 @@
+import type { ShowcaseSettings } from "@/types/lore";
 import { useLoreStore } from "@/stores/loreStore";
 import { Section, FieldRow, TextInput } from "@/components/ui/FormWidgets";
 
+const EMPTY_SETTINGS: ShowcaseSettings = {};
+
 export function ShowcaseSettingsPanel() {
-  const settings = useLoreStore((s) => s.lore?.showcaseSettings ?? {});
+  const settings = useLoreStore((s) => s.lore?.showcaseSettings ?? EMPTY_SETTINGS);
   const update = useLoreStore((s) => s.updateShowcaseSettings);
 
   return (

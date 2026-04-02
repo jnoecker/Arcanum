@@ -85,6 +85,7 @@ export function AssetGallery({ onClose }: { onClose: () => void }) {
   const trapRef = useFocusTrap<HTMLDivElement>(onClose);
 
   const [selected, setSelected] = useState<AssetEntry | null>(null);
+  const [workspaceFilter, setWorkspaceFilter] = useState<"all" | "worldbuilding" | "lore">("all");
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [zoneFilter, setZoneFilter] = useState<string>("all");
   const [mediaFilter, setMediaFilter] = useState<MediaKind>("all");
@@ -109,9 +110,12 @@ export function AssetGallery({ onClose }: { onClose: () => void }) {
     }
   }, [assets, selected]);
 
+  const isLoreType = (t: string) => t.startsWith("lore_");
+
   const types = useMemo(
-    () => Array.from(new Set(assets.map((a) => a.asset_type))),
-    [assets],
+    () => Array.from(new Set(assets.map((a) => a.asset_type)))
+      .filter((t) => workspaceFilter === "all" ? true : workspaceFilter === "lore" ? isLoreType(t) : !isLoreType(t)),
+    [assets, workspaceFilter],
   );
   const zones = useMemo(
     () => Array.from(new Set(assets.map((a) => a.context?.zone).filter(Boolean))) as string[],
@@ -125,6 +129,8 @@ export function AssetGallery({ onClose }: { onClose: () => void }) {
   const filtered = useMemo(
     () =>
       assets.filter((asset) => {
+        if (workspaceFilter === "lore" && !isLoreType(asset.asset_type)) return false;
+        if (workspaceFilter === "worldbuilding" && isLoreType(asset.asset_type)) return false;
         if (typeFilter !== "all" && asset.asset_type !== typeFilter) return false;
         if (zoneFilter !== "all") {
           if (zoneFilter === "__global__" ? !!asset.context?.zone : asset.context?.zone !== zoneFilter) {
@@ -135,7 +141,7 @@ export function AssetGallery({ onClose }: { onClose: () => void }) {
         if (viewMode === "curated" && !shouldShowInCuratedView(asset)) return false;
         return true;
       }),
-    [assets, mediaFilter, typeFilter, viewMode, zoneFilter],
+    [assets, mediaFilter, typeFilter, viewMode, workspaceFilter, zoneFilter],
   );
 
   const sorted = useMemo(() => {
@@ -389,6 +395,22 @@ export function AssetGallery({ onClose }: { onClose: () => void }) {
           </div>
 
           <div className="flex flex-wrap items-start gap-4">
+            {/* Workspace filter */}
+            <div className="flex items-center gap-1">
+              {(["all", "worldbuilding", "lore"] as const).map((ws) => (
+                <button
+                  key={ws}
+                  onClick={() => { setWorkspaceFilter(ws); setTypeFilter("all"); }}
+                  className={`rounded-full border px-3 py-1 text-2xs capitalize transition-colors ${
+                    workspaceFilter === ws
+                      ? "border-border-active bg-gradient-active-strong text-text-primary"
+                      : "border-white/10 bg-black/10 text-text-muted hover:text-text-secondary"
+                  }`}
+                >
+                  {ws === "all" ? "All assets" : ws}
+                </button>
+              ))}
+            </div>
             <div className="flex min-w-[16rem] flex-1 flex-wrap items-center gap-2">
               <span className="text-2xs uppercase tracking-ui text-text-muted">Types</span>
               <div className="flex flex-wrap gap-1">

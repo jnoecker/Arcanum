@@ -16,26 +16,35 @@ export function DocumentLibraryPanel() {
   const selected = selectedId ? documents.find((d) => d.id === selectedId) ?? null : null;
 
   const handleImport = useCallback(async () => {
-    const filePath = await open({
-      multiple: false,
-      filters: [{ name: "Markdown", extensions: ["md", "txt"] }],
-    });
-    if (!filePath || typeof filePath !== "string") return;
+    try {
+      const result = await open({
+        multiple: false,
+        filters: [{ name: "Markdown", extensions: ["md", "txt"] }],
+      });
+      if (!result) return;
 
-    const content = await invoke<string>("read_text_file", { filePath });
-    const filename = filePath.split(/[/\\]/).pop() ?? "document.md";
-    const title = filename.replace(/\.\w+$/, "").replace(/[-_]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
-    const now = new Date().toISOString();
-    const doc: LoreDocument = {
-      id: `doc_${Date.now()}`,
-      title,
-      content,
-      filename,
-      createdAt: now,
-      updatedAt: now,
-    };
-    createDocument(doc);
-    setSelectedId(doc.id);
+      // Tauri v2 dialog may return a string or an object with a path property
+      const filePath = typeof result === "string" ? result : (result as unknown as { path: string }).path;
+      if (!filePath) { console.error("Document import: no file path from dialog", result); return; }
+
+      console.log("Document import: reading", filePath);
+      const content = await invoke<string>("read_text_file", { filePath });
+      const filename = filePath.split(/[/\\]/).pop() ?? "document.md";
+      const title = filename.replace(/\.\w+$/, "").replace(/[-_]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+      const now = new Date().toISOString();
+      const doc: LoreDocument = {
+        id: `doc_${Date.now()}`,
+        title,
+        content,
+        filename,
+        createdAt: now,
+        updatedAt: now,
+      };
+      createDocument(doc);
+      setSelectedId(doc.id);
+    } catch (err) {
+      console.error("Document import failed:", err);
+    }
   }, [createDocument]);
 
   const handleCreate = useCallback(() => {

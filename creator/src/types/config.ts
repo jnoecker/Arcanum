@@ -192,6 +192,12 @@ export interface CraftingConfig {
   specializationXpBonus?: number;
 }
 
+// ─── Bank ──────────────────────────────────────────────────────────
+
+export interface BankConfig {
+  maxItems: number;
+}
+
 // ─── Enchanting ────────────────────────────────────────────────────
 
 export interface EnchantmentMaterialConfig {
@@ -552,6 +558,7 @@ export interface AppConfig {
   emotePresets: EmotePresetsConfig;
   factions?: FactionConfig;
   enchanting: EnchantingConfig;
+  bank: BankConfig;
   pets: Record<string, PetDefinitionConfig>;
   globalAssets: Record<string, string>;
   playerTiers?: Record<string, TierDefinitionConfig>;

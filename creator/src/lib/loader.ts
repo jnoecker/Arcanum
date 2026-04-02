@@ -91,6 +91,7 @@ export function parseAppConfigYaml(content: string): AppConfig {
     craftingStationTypes: parseMapSection(engine.craftingStationTypes, "stationTypes"),
     housing: parseHousingConfig(engine.housing),
     enchanting: parseEnchantingConfig(engine.enchanting),
+    bank: parseBankConfig(engine.bank),
     pets: parsePetDefinitions(engine.pets),
     guild: parseGuildConfig(engine.guildRanks),
     guildRanks: parseMapSection(engine.guildRanks, "ranks"),
@@ -463,7 +464,7 @@ function collectRawSections(
     "questObjectiveTypes", "questCompletionTypes",
     "effectTypes", "targetTypes", "stackBehaviors",
     "craftingSkills", "craftingStationTypes",
-    "scheduler", "friends", "debug", "classStartRooms", "emotePresets", "housing", "pets", "enchanting",
+    "scheduler", "friends", "debug", "classStartRooms", "emotePresets", "housing", "pets", "enchanting", "bank",
   ]);
 
   const raw: Record<string, unknown> = {};
@@ -531,6 +532,12 @@ function parseHousingConfig(raw: unknown): AppConfig["housing"] {
     entryExitDirection: asString(s.entryExitDirection, "SOUTH"),
     templates,
   };
+}
+
+function parseBankConfig(raw: unknown): import("@/types/config").BankConfig {
+  if (!raw || typeof raw !== "object") return { maxItems: 50 };
+  const s = raw as Record<string, unknown>;
+  return { maxItems: asNumber(s.maxItems, 50) };
 }
 
 function parseEnchantingConfig(raw: unknown): import("@/types/config").EnchantingConfig {
@@ -754,6 +761,7 @@ async function loadSplitConfig(projectDir: string): Promise<AppConfig | null> {
       commands: asRecord(worldRaw.commands),
       group: parseSimpleSection(worldRaw.group, { maxSize: 5, inviteTimeoutMs: 60000, xpBonusPerMember: 0.1 }),
       housing: parseHousingConfig(worldRaw.housing),
+      bank: parseBankConfig(worldRaw.bank),
       pets: parsePetDefinitions(petsRaw),
       guild: parseGuildConfig(worldRaw.guildRanks),
       guildRanks: parseMapSection(worldRaw.guildRanks, "ranks"),

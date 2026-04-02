@@ -81,6 +81,7 @@ const BASE_CONFIG: AppConfig = {
   craftingStationTypes: {},
   housing: { enabled: false, entryExitDirection: "SOUTH", templates: {} },
   enchanting: { maxEnchantmentsPerItem: 1, definitions: {} },
+  bank: { maxItems: 50 },
   pets: {},
   guildRanks: {},
   mobActionDelay: { minActionDelayMillis: 8000, maxActionDelayMillis: 20000 },

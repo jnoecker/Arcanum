@@ -188,6 +188,7 @@ async function saveSplitConfig(projectDir: string): Promise<void> {
       questCompletionTypes: { types: config.questCompletionTypes },
       housing: (config.housing.enabled || Object.keys(config.housing.templates).length > 0)
         ? housingToPlain(config.housing) : undefined,
+      bank: config.bank.maxItems !== 50 ? config.bank : undefined,
     })),
 
     write("assets", cleanObj({

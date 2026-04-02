@@ -98,6 +98,7 @@ const BASE_CONFIG: AppConfig = {
   craftingStationTypes: {},
   housing: { enabled: false, entryExitDirection: "SOUTH", templates: {} },
   enchanting: { maxEnchantmentsPerItem: 1, definitions: {} },
+  bank: { maxItems: 50 },
   pets: {},
   guild: { founderRank: "leader", defaultRank: "member" },
   guildRanks: {},

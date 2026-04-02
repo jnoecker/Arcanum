@@ -285,6 +285,11 @@ export function buildMonolithicConfigObject(
     engine.emotePresets = c.emotePresets;
   }
 
+  // Bank
+  if (c.bank.maxItems !== 50) {
+    engine.bank = { maxItems: c.bank.maxItems };
+  }
+
   // Enchanting
   if (Object.keys(c.enchanting.definitions).length > 0 || c.enchanting.maxEnchantmentsPerItem !== 1) {
     engine.enchanting = {

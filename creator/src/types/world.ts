@@ -35,6 +35,7 @@ export interface RoomFile {
   description: string;
   exits?: Record<string, string | ExitValue>;
   station?: string;
+  bank?: boolean;
   image?: string;
   video?: string;
   music?: string;

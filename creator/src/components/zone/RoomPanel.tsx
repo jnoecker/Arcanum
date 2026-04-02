@@ -283,6 +283,19 @@ export function RoomPanel({
         />
       </Section>
 
+      {/* Bank */}
+      <Section title="Bank" defaultExpanded={false}>
+        <label className="flex items-center gap-2 text-xs text-text-secondary">
+          <input
+            type="checkbox"
+            checked={room.bank ?? false}
+            onChange={(e) => onWorldChange(updateRoom(world, roomId, { bank: e.target.checked || undefined }))}
+            className="accent-accent"
+          />
+          This room has a bank NPC (enables deposit/withdraw commands)
+        </label>
+      </Section>
+
       {/* Mobs */}
       <Section
         title={`Mobs (${mobs.length})`}

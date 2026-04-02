@@ -16,12 +16,14 @@ export function DocumentLibraryPanel() {
   const selected = selectedId ? documents.find((d) => d.id === selectedId) ?? null : null;
 
   const handleImport = useCallback(async () => {
-    console.log("[DocImport] button clicked");
     try {
       const filePath = await open({
         multiple: false,
+        filters: [
+          { name: "Documents", extensions: ["md", "txt", "markdown"] },
+          { name: "All files", extensions: ["*"] },
+        ],
       });
-      console.log("[DocImport] filePath:", filePath);
       if (!filePath) return;
 
       const content = await invoke<string>("read_text_file", { filePath: String(filePath) });

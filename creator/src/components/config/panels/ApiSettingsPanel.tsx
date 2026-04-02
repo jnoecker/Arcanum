@@ -425,7 +425,7 @@ export function ApiSettingsPanel({
       </div>}
 
       {/* GitHub (Version Control) */}
-      {showDeliverySection && <div className="mt-6">
+      <div className="mt-6">
         <h3 className="mb-3 font-display text-sm uppercase tracking-widest text-text-muted">
           GitHub
         </h3>
@@ -449,7 +449,7 @@ export function ApiSettingsPanel({
             </p>
           </div>
         </div>
-      </div>}
+      </div>
 
       {/* Save — sticky at bottom */}
       <div className="sticky bottom-0 -mx-6 border-t border-border-default bg-bg-secondary px-6 py-3">

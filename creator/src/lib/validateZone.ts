@@ -326,6 +326,30 @@ export function validateZone(
         }
       }
     }
+    if (node.rareYields) {
+      for (const ry of node.rareYields) {
+        if (!ry.itemId) {
+          issues.push({
+            severity: "warning",
+            entity: `gatheringNode:${nodeId}`,
+            message: "Rare yield has empty item ID",
+          });
+        } else if (!itemIds.has(ry.itemId)) {
+          issues.push({
+            severity: "warning",
+            entity: `gatheringNode:${nodeId}`,
+            message: `Rare yield item "${ry.itemId}" is not a known item in this zone`,
+          });
+        }
+        if (ry.dropChance < 0 || ry.dropChance > 1) {
+          issues.push({
+            severity: "error",
+            entity: `gatheringNode:${nodeId}`,
+            message: `Rare yield "${ry.itemId}" dropChance ${ry.dropChance} out of range (0.0-1.0)`,
+          });
+        }
+      }
+    }
   }
 
   // ─── Recipe checks ─────────────────────────────────────────────

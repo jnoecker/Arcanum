@@ -285,6 +285,14 @@ export function buildMonolithicConfigObject(
     engine.emotePresets = c.emotePresets;
   }
 
+  // Enchanting
+  if (Object.keys(c.enchanting.definitions).length > 0 || c.enchanting.maxEnchantmentsPerItem !== 1) {
+    engine.enchanting = {
+      maxEnchantmentsPerItem: c.enchanting.maxEnchantmentsPerItem,
+      definitions: mapEntries(c.enchanting.definitions, enchantmentToPlain),
+    };
+  }
+
   // Pets
   if (Object.keys(c.pets ?? {}).length > 0) {
     engine.pets = {
@@ -726,5 +734,20 @@ export function petToPlain(pet: AppConfig["pets"][string]): Record<string, unkno
   };
   if (pet.description) obj.description = pet.description;
   if (pet.image) obj.image = normalizeAssetRef(pet.image);
+  return obj;
+}
+
+export function enchantmentToPlain(e: AppConfig["enchanting"]["definitions"][string]): Record<string, unknown> {
+  const obj: Record<string, unknown> = {
+    displayName: e.displayName,
+    skill: e.skill,
+    skillRequired: e.skillRequired,
+    materials: e.materials.map((m) => ({ itemId: m.itemId, quantity: m.quantity })),
+    xpReward: e.xpReward,
+  };
+  if (e.statBonuses && Object.keys(e.statBonuses).length > 0) obj.statBonuses = e.statBonuses;
+  if (e.damageBonus) obj.damageBonus = e.damageBonus;
+  if (e.armorBonus) obj.armorBonus = e.armorBonus;
+  if (e.targetSlots) obj.targetSlots = e.targetSlots;
   return obj;
 }

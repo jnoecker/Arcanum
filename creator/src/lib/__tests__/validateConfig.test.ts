@@ -80,6 +80,8 @@ const BASE_CONFIG: AppConfig = {
   craftingSkills: {},
   craftingStationTypes: {},
   housing: { enabled: false, entryExitDirection: "SOUTH", templates: {} },
+  enchanting: { maxEnchantmentsPerItem: 1, definitions: {} },
+  pets: {},
   guildRanks: {},
   mobActionDelay: { minActionDelayMillis: 8000, maxActionDelayMillis: 20000 },
   characterCreation: { startingGold: 0 },

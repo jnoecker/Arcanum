@@ -11,6 +11,7 @@ import {
   raceToPlain,
   housingToPlain,
   petToPlain,
+  enchantmentToPlain,
   buildMonolithicConfigObject,
   loadSlotPositions,
 } from "@/lib/exportMud";
@@ -139,11 +140,17 @@ async function saveSplitConfig(projectDir: string): Promise<void> {
       },
     }),
 
-    write("crafting", {
+    write("crafting", cleanObj({
       ...config.crafting,
       skills: config.craftingSkills,
       stationTypes: config.craftingStationTypes,
-    }),
+      enchanting: Object.keys(config.enchanting.definitions).length > 0 || config.enchanting.maxEnchantmentsPerItem !== 1
+        ? {
+            maxEnchantmentsPerItem: config.enchanting.maxEnchantmentsPerItem,
+            definitions: mapEntries(config.enchanting.definitions, enchantmentToPlain),
+          }
+        : undefined,
+    })),
 
     write("progression", {
       progression: config.progression,

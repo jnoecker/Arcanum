@@ -90,6 +90,7 @@ export function parseAppConfigYaml(content: string): AppConfig {
     craftingSkills: parseMapSection(engine.craftingSkills, "skills"),
     craftingStationTypes: parseMapSection(engine.craftingStationTypes, "stationTypes"),
     housing: parseHousingConfig(engine.housing),
+    enchanting: parseEnchantingConfig(engine.enchanting),
     pets: parsePetDefinitions(engine.pets),
     guild: parseGuildConfig(engine.guildRanks),
     guildRanks: parseMapSection(engine.guildRanks, "ranks"),
@@ -340,6 +341,7 @@ function parseCraftingConfig(raw: unknown): AppConfig["crafting"] {
     xpExponent: asNumber(s.xpExponent, 1.5),
     gatherCooldownMs: asNumber(s.gatherCooldownMs, 30000),
     stationBonusQuantity: asNumber(s.stationBonusQuantity, 1),
+    specializationXpBonus: typeof s.specializationXpBonus === "number" ? s.specializationXpBonus : undefined,
   };
 }
 
@@ -461,7 +463,7 @@ function collectRawSections(
     "questObjectiveTypes", "questCompletionTypes",
     "effectTypes", "targetTypes", "stackBehaviors",
     "craftingSkills", "craftingStationTypes",
-    "scheduler", "friends", "debug", "classStartRooms", "emotePresets", "housing", "pets",
+    "scheduler", "friends", "debug", "classStartRooms", "emotePresets", "housing", "pets", "enchanting",
   ]);
 
   const raw: Record<string, unknown> = {};
@@ -528,6 +530,44 @@ function parseHousingConfig(raw: unknown): AppConfig["housing"] {
     enabled: asBool(s.enabled, false),
     entryExitDirection: asString(s.entryExitDirection, "SOUTH"),
     templates,
+  };
+}
+
+function parseEnchantingConfig(raw: unknown): import("@/types/config").EnchantingConfig {
+  if (!raw || typeof raw !== "object") return { maxEnchantmentsPerItem: 1, definitions: {} };
+  const s = raw as Record<string, unknown>;
+  const defs = (s.definitions ?? {}) as Record<string, unknown>;
+  const parsed: Record<string, import("@/types/config").EnchantmentDefinitionConfig> = {};
+  for (const [id, v] of Object.entries(defs)) {
+    if (!v || typeof v !== "object") continue;
+    const e = v as Record<string, unknown>;
+    const materials = Array.isArray(e.materials)
+      ? (e.materials as Record<string, unknown>[]).map((m) => ({
+          itemId: asString(m.itemId, ""),
+          quantity: asNumber(m.quantity, 1),
+        }))
+      : [];
+    const statBonuses: Record<string, number> = {};
+    if (e.statBonuses && typeof e.statBonuses === "object") {
+      for (const [stat, val] of Object.entries(e.statBonuses as Record<string, unknown>)) {
+        if (typeof val === "number") statBonuses[stat] = val;
+      }
+    }
+    parsed[id] = {
+      displayName: asString(e.displayName, ""),
+      skill: asString(e.skill, "enchanting"),
+      skillRequired: asNumber(e.skillRequired, 1),
+      materials,
+      statBonuses: Object.keys(statBonuses).length > 0 ? statBonuses : undefined,
+      damageBonus: typeof e.damageBonus === "number" ? e.damageBonus : undefined,
+      armorBonus: typeof e.armorBonus === "number" ? e.armorBonus : undefined,
+      targetSlots: Array.isArray(e.targetSlots) ? (e.targetSlots as string[]) : undefined,
+      xpReward: asNumber(e.xpReward, 30),
+    };
+  }
+  return {
+    maxEnchantmentsPerItem: asNumber(s.maxEnchantmentsPerItem, 1),
+    definitions: parsed,
   };
 }
 
@@ -757,6 +797,7 @@ async function loadSplitConfig(projectDir: string): Promise<AppConfig | null> {
       crafting: parseCraftingConfig(craftingRaw.crafting ?? craftingRaw),
       craftingSkills: asRecord(craftingRaw.skills),
       craftingStationTypes: asRecord(craftingRaw.stationTypes),
+      enchanting: parseEnchantingConfig(craftingRaw.enchanting),
 
       // progression.yaml
       progression: parseProgressionConfig(progressionRaw.progression ?? progressionRaw),

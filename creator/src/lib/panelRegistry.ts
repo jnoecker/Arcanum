@@ -62,6 +62,7 @@ const WORLD_PANELS: PanelDef[] = [
   { id: "commands", label: "Commands", group: "world", host: "config", kicker: "Commands", title: "Command designer", description: "Custom commands, usage strings, and categories.", maxWidth: "max-w-5xl" },
   { id: "economy", label: "Economy", group: "world", host: "config", kicker: "Economy", title: "Economy", description: "Buy/sell multipliers and gold economy.", maxWidth: "max-w-5xl" },
   { id: "crafting", label: "Crafting", group: "world", host: "config", kicker: "Crafting", title: "Crafting & gathering", description: "Skill leveling, station types, gathering, and recipes.", maxWidth: "max-w-5xl" },
+  { id: "enchanting", label: "Enchanting", group: "world", host: "config", kicker: "Enchanting", title: "Enchanting system", description: "Enchantment definitions, materials, stat bonuses, and target slots.", maxWidth: "max-w-5xl" },
   { id: "factions", label: "Factions", group: "world", host: "config", kicker: "Factions", title: "Faction system", description: "Reputation factions, enemy relationships, and quest rewards.", maxWidth: "max-w-5xl" },
   { id: "groups", label: "Groups", group: "world", host: "config", kicker: "Groups", title: "Party system", description: "Party size, XP sharing, and invite rules.", maxWidth: "max-w-5xl" },
   { id: "guilds", label: "Guilds", group: "world", host: "config", kicker: "Guilds", title: "Guild system", description: "Guild ranks, permissions, friends, and defaults.", maxWidth: "max-w-5xl" },

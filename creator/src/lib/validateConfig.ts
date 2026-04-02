@@ -312,6 +312,78 @@ export function validateConfig(config: AppConfig): ValidationIssue[] {
     }
   }
 
+  // ─── Enchanting ──────────────────────────────────────────────
+  const craftingSkillIds = new Set(Object.keys(config.craftingSkills));
+  const equipSlotIds = new Set(Object.keys(config.equipmentSlots));
+  for (const [id, ench] of Object.entries(config.enchanting.definitions)) {
+    if (!ench.displayName?.trim()) {
+      issues.push({
+        severity: "error",
+        entity: `enchantment:${id}`,
+        message: "Display name is required",
+      });
+    }
+    if (ench.skillRequired < 1) {
+      issues.push({
+        severity: "error",
+        entity: `enchantment:${id}`,
+        message: "Skill required must be at least 1",
+      });
+    }
+    if (ench.materials.length === 0) {
+      issues.push({
+        severity: "warning",
+        entity: `enchantment:${id}`,
+        message: "Enchantment has no materials",
+      });
+    }
+    for (const mat of ench.materials) {
+      if (!mat.itemId?.trim()) {
+        issues.push({
+          severity: "error",
+          entity: `enchantment:${id}`,
+          message: "Material has empty item ID",
+        });
+      }
+    }
+    if (ench.skill && craftingSkillIds.size > 0 && !craftingSkillIds.has(ench.skill)) {
+      issues.push({
+        severity: "warning",
+        entity: `enchantment:${id}`,
+        message: `Skill "${ench.skill}" is not a defined crafting skill`,
+      });
+    }
+    if (ench.targetSlots && ench.targetSlots.length > 0 && equipSlotIds.size > 0) {
+      for (const slot of ench.targetSlots) {
+        if (!equipSlotIds.has(slot)) {
+          issues.push({
+            severity: "warning",
+            entity: `enchantment:${id}`,
+            message: `Target slot "${slot}" is not a defined equipment slot`,
+          });
+        }
+      }
+    }
+    if (ench.statBonuses && statIds.size > 0) {
+      for (const statId of Object.keys(ench.statBonuses)) {
+        if (!statIds.has(statId)) {
+          issues.push({
+            severity: "warning",
+            entity: `enchantment:${id}`,
+            message: `Stat bonus references unknown stat "${statId}"`,
+          });
+        }
+      }
+    }
+  }
+  if (config.enchanting.maxEnchantmentsPerItem < 1) {
+    issues.push({
+      severity: "error",
+      entity: "enchanting",
+      message: "Max enchantments per item must be at least 1",
+    });
+  }
+
   // ─── Combat ───────────────────────────────────────────────────
   if (config.combat.minDamage > config.combat.maxDamage) {
     issues.push({

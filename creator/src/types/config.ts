@@ -192,6 +192,30 @@ export interface CraftingConfig {
   specializationXpBonus?: number;
 }
 
+// ─── Enchanting ────────────────────────────────────────────────────
+
+export interface EnchantmentMaterialConfig {
+  itemId: string;
+  quantity: number;
+}
+
+export interface EnchantmentDefinitionConfig {
+  displayName: string;
+  skill: string;
+  skillRequired: number;
+  materials: EnchantmentMaterialConfig[];
+  statBonuses?: Record<string, number>;
+  damageBonus?: number;
+  armorBonus?: number;
+  targetSlots?: string[];
+  xpReward: number;
+}
+
+export interface EnchantingConfig {
+  maxEnchantmentsPerItem: number;
+  definitions: Record<string, EnchantmentDefinitionConfig>;
+}
+
 // ─── Factions ──────────────────────────────────────────────────────
 
 export interface FactionDefinition {
@@ -527,6 +551,7 @@ export interface AppConfig {
   images: ImagesConfig;
   emotePresets: EmotePresetsConfig;
   factions?: FactionConfig;
+  enchanting: EnchantingConfig;
   pets: Record<string, PetDefinitionConfig>;
   globalAssets: Record<string, string>;
   playerTiers?: Record<string, TierDefinitionConfig>;

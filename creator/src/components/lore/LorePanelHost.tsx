@@ -67,6 +67,19 @@ export function LorePanelHost({ panelId }: { panelId: string }) {
     return () => clearTimeout(autoSaveTimer.current);
   }, [dirty, project, lore]);
 
+  // Flush unsaved lore when leaving the lore workspace
+  useEffect(() => {
+    return () => {
+      const { dirty: d } = useLoreStore.getState();
+      const p = useProjectStore.getState().project;
+      if (d && p) {
+        saveLore(p).catch((err) => {
+          console.error("Lore flush-on-unmount failed:", err);
+        });
+      }
+    };
+  }, []);
+
   const handleSave = useCallback(async () => {
     if (!project || saving) return;
     setSaving(true);

@@ -218,6 +218,19 @@ export function ConfigPanelHost({ panelId }: { panelId: string }) {
     return () => clearTimeout(autoSaveTimer.current);
   }, [dirty, project, config]);
 
+  // Flush unsaved config when leaving the worldmaker workspace
+  useEffect(() => {
+    return () => {
+      const { dirty: d } = useConfigStore.getState();
+      const p = useProjectStore.getState().project;
+      if (d && p) {
+        saveProjectConfig(p).catch((err) => {
+          console.error("Config flush-on-unmount failed:", err);
+        });
+      }
+    };
+  }, []);
+
   const handleChange = useCallback(
     (patch: Partial<AppConfig>) => {
       const current = useConfigStore.getState().config;

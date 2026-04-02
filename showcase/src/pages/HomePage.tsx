@@ -23,6 +23,7 @@ export function HomePage() {
   const bannerTitle = meta.showcase?.bannerTitle ?? meta.worldName;
   const bannerSubtitle = meta.showcase?.bannerSubtitle ?? meta.tagline;
   const worldSetting = articles.find((a) => a.template === "world_setting");
+  const heroImage = meta.showcase?.bannerImage ?? worldSetting?.imageUrl;
 
   const featured = [...articles]
     .filter((a) => a.imageUrl && a.template !== "world_setting")
@@ -101,10 +102,10 @@ export function HomePage() {
     <div>
       {/* ── Hero ── */}
       <section className="relative mb-16">
-        {worldSetting?.imageUrl && (
+        {heroImage && (
           <div className="relative -mx-5 sm:-mx-8 -mt-10 sm:-mt-14 mb-10 overflow-hidden">
             <img
-              src={worldSetting.imageUrl}
+              src={heroImage}
               alt={bannerTitle}
               className="w-full h-[360px] sm:h-[440px] object-cover"
             />
@@ -122,7 +123,7 @@ export function HomePage() {
           </div>
         )}
 
-        {!worldSetting?.imageUrl && (
+        {!heroImage && (
           <div className="py-16 sm:py-20 mb-8">
             <h1 className="font-display text-4xl sm:text-5xl lg:text-6xl tracking-[0.12em] text-accent-emphasis mb-4 animate-fade-in-up">
               {bannerTitle}

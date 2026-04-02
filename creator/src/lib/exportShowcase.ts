@@ -13,6 +13,7 @@ export interface ShowcaseData {
       navLogoText?: string;
       bannerTitle?: string;
       bannerSubtitle?: string;
+      bannerImage?: string;
       faviconUrl?: string;
       accentColor?: string;
       bgColor?: string;
@@ -235,7 +236,12 @@ export function exportShowcaseData(lore: WorldLore, imageBaseUrl: string): Showc
       tagline,
       exportedAt: new Date().toISOString(),
       imageBaseUrl: baseUrl,
-      showcase: lore.showcaseSettings ?? undefined,
+      showcase: lore.showcaseSettings ? {
+        ...lore.showcaseSettings,
+        // Resolve asset filenames to full R2 URLs
+        faviconUrl: resolveImage(lore.showcaseSettings.faviconUrl),
+        bannerImage: resolveImage(lore.showcaseSettings.bannerImage),
+      } : undefined,
     },
     articles,
     maps,

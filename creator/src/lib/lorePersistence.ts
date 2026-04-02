@@ -2,7 +2,7 @@ import { exists, readTextFile, writeTextFile } from "@tauri-apps/plugin-fs";
 import { parseDocument, stringify } from "yaml";
 import { useLoreStore } from "@/stores/loreStore";
 import { DEFAULT_WORLD_LORE } from "@/types/lore";
-import type { WorldLore, WorldLoreV1, Article, ArticleRelation, ArticleTemplate } from "@/types/lore";
+import type { WorldLore, WorldLoreV1, Article, ArticleRelation, ArticleTemplate, LoreDocument, TemplateOverrides, ShowcaseSettings } from "@/types/lore";
 import type { Project } from "@/types/project";
 import { CODEX_CATEGORY_TO_TEMPLATE } from "@/lib/loreTemplates";
 
@@ -35,6 +35,13 @@ export async function loadLore(project: Project): Promise<WorldLore> {
         maps: Array.isArray(raw.maps) ? (raw.maps as WorldLore["maps"]) : undefined,
         calendarSystems: Array.isArray(raw.calendarSystems) ? (raw.calendarSystems as WorldLore["calendarSystems"]) : undefined,
         timelineEvents: Array.isArray(raw.timelineEvents) ? (raw.timelineEvents as WorldLore["timelineEvents"]) : undefined,
+        documents: Array.isArray(raw.documents) ? (raw.documents as LoreDocument[]) : undefined,
+        templateOverrides: raw.templateOverrides && typeof raw.templateOverrides === "object"
+          ? (raw.templateOverrides as Partial<Record<ArticleTemplate, TemplateOverrides>>)
+          : undefined,
+        showcaseSettings: raw.showcaseSettings && typeof raw.showcaseSettings === "object"
+          ? (raw.showcaseSettings as ShowcaseSettings)
+          : undefined,
       };
     }
 

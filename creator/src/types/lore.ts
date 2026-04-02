@@ -117,6 +117,7 @@ export interface ShowcaseSettings {
   navLogoText?: string;
   bannerTitle?: string;
   bannerSubtitle?: string;
+  bannerImage?: string;
   faviconUrl?: string;
   accentColor?: string;
   bgColor?: string;

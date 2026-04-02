@@ -85,6 +85,7 @@ export interface ShowcaseBranding {
   navLogoText?: string;
   bannerTitle?: string;
   bannerSubtitle?: string;
+  bannerImage?: string;
   faviconUrl?: string;
   accentColor?: string;
   bgColor?: string;

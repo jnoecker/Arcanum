@@ -16,11 +16,13 @@ export function DocumentLibraryPanel() {
   const selected = selectedId ? documents.find((d) => d.id === selectedId) ?? null : null;
 
   const handleImport = useCallback(async () => {
+    console.log("[DocImport] button clicked, opening dialog...");
     try {
       const result = await open({
         multiple: false,
         filters: [{ name: "Markdown", extensions: ["md", "txt"] }],
       });
+      console.log("[DocImport] dialog result:", result, typeof result);
       if (!result) return;
 
       // Tauri v2 dialog may return a string or an object with a path property

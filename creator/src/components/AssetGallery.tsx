@@ -334,7 +334,7 @@ export function AssetGallery({ onClose }: { onClose: () => void }) {
           </button>
         </div>
 
-        <div className="flex max-h-[40vh] shrink flex-col gap-3 overflow-y-auto border-b border-border-default px-5 py-3">
+        <div className="flex min-h-[120px] max-h-[40vh] shrink flex-col gap-3 overflow-y-auto border-b border-border-default px-5 py-3">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex flex-wrap items-center gap-2">
               <span className="text-2xs uppercase tracking-ui text-text-muted">View</span>

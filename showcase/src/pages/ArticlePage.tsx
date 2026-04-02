@@ -73,9 +73,9 @@ export function ArticlePage() {
         </ol>
       </nav>
 
-      {/* Article image — floated right on desktop, above header on mobile */}
+      {/* Article image */}
       {article.imageUrl && (
-        <div className="mb-6 lg:float-right lg:ml-8 lg:mb-4 lg:max-w-sm rounded-lg overflow-hidden shadow-[var(--shadow-image)] max-w-md mx-auto lg:mx-0">
+        <div className="mb-6 rounded-lg overflow-hidden shadow-[var(--shadow-image)] max-w-md mx-auto">
           <img
             src={article.imageUrl}
             alt={article.title}

@@ -41,6 +41,8 @@ import { HousingPanel } from "./panels/HousingPanel";
 import { FactionPanel } from "./panels/FactionPanel";
 import { PetsPanel } from "./panels/PetsPanel";
 import { EnchantingPanel } from "./panels/EnchantingPanel";
+import { WorldCyclePanel } from "./panels/WorldCyclePanel";
+import { WorldEventsPanel } from "./panels/WorldEventsPanel";
 
 // ─── Content panels ─────────────────────────────────────────────────
 import { AchievementDesigner } from "./AchievementDesigner";
@@ -173,6 +175,10 @@ function renderPanel(panelId: string, props: ConfigPanelProps): ReactNode {
       return <HousingPanel config={config} onChange={onChange} />;
     case "pets":
       return <PetsPanel config={config} onChange={onChange} />;
+    case "worldCycle":
+      return <WorldCyclePanel config={config} onChange={onChange} />;
+    case "worldEvents":
+      return <WorldEventsPanel config={config} onChange={onChange} />;
 
     // Content
     case "achievements":

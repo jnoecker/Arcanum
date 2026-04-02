@@ -92,6 +92,9 @@ export function parseAppConfigYaml(content: string): AppConfig {
     housing: parseHousingConfig(engine.housing),
     enchanting: parseEnchantingConfig(engine.enchanting),
     bank: parseBankConfig(engine.bank),
+    worldTime: parseWorldTimeConfig(engine.worldTime),
+    weather: parseWeatherConfig(engine.weather),
+    worldEvents: parseWorldEventsConfig(engine.worldEvents),
     pets: parsePetDefinitions(engine.pets),
     guild: parseGuildConfig(engine.guildRanks),
     guildRanks: parseMapSection(engine.guildRanks, "ranks"),
@@ -465,6 +468,7 @@ function collectRawSections(
     "effectTypes", "targetTypes", "stackBehaviors",
     "craftingSkills", "craftingStationTypes",
     "scheduler", "friends", "debug", "classStartRooms", "emotePresets", "housing", "pets", "enchanting", "bank",
+    "worldTime", "weather", "worldEvents",
   ]);
 
   const raw: Record<string, unknown> = {};
@@ -532,6 +536,48 @@ function parseHousingConfig(raw: unknown): AppConfig["housing"] {
     entryExitDirection: asString(s.entryExitDirection, "SOUTH"),
     templates,
   };
+}
+
+function parseWorldTimeConfig(raw: unknown): import("@/types/config").WorldTimeConfig {
+  if (!raw || typeof raw !== "object") return { cycleLengthMs: 3600000, dawnHour: 5, dayHour: 8, duskHour: 18, nightHour: 21 };
+  const s = raw as Record<string, unknown>;
+  return {
+    cycleLengthMs: asNumber(s.cycleLengthMs, 3600000),
+    dawnHour: asNumber(s.dawnHour, 5),
+    dayHour: asNumber(s.dayHour, 8),
+    duskHour: asNumber(s.duskHour, 18),
+    nightHour: asNumber(s.nightHour, 21),
+  };
+}
+
+function parseWeatherConfig(raw: unknown): import("@/types/config").WeatherConfig {
+  if (!raw || typeof raw !== "object") return { minTransitionMs: 300000, maxTransitionMs: 900000 };
+  const s = raw as Record<string, unknown>;
+  return {
+    minTransitionMs: asNumber(s.minTransitionMs, 300000),
+    maxTransitionMs: asNumber(s.maxTransitionMs, 900000),
+  };
+}
+
+function parseWorldEventsConfig(raw: unknown): import("@/types/config").WorldEventsConfig {
+  if (!raw || typeof raw !== "object") return { definitions: {} };
+  const s = raw as Record<string, unknown>;
+  const defs = (s.definitions ?? {}) as Record<string, unknown>;
+  const parsed: Record<string, import("@/types/config").WorldEventDefinitionConfig> = {};
+  for (const [id, v] of Object.entries(defs)) {
+    if (!v || typeof v !== "object") continue;
+    const e = v as Record<string, unknown>;
+    parsed[id] = {
+      displayName: asString(e.displayName, ""),
+      description: typeof e.description === "string" ? e.description : undefined,
+      startDate: typeof e.startDate === "string" ? e.startDate : undefined,
+      endDate: typeof e.endDate === "string" ? e.endDate : undefined,
+      flags: Array.isArray(e.flags) ? (e.flags as string[]) : undefined,
+      startMessage: typeof e.startMessage === "string" ? e.startMessage : undefined,
+      endMessage: typeof e.endMessage === "string" ? e.endMessage : undefined,
+    };
+  }
+  return { definitions: parsed };
 }
 
 function parseBankConfig(raw: unknown): import("@/types/config").BankConfig {
@@ -762,6 +808,9 @@ async function loadSplitConfig(projectDir: string): Promise<AppConfig | null> {
       group: parseSimpleSection(worldRaw.group, { maxSize: 5, inviteTimeoutMs: 60000, xpBonusPerMember: 0.1 }),
       housing: parseHousingConfig(worldRaw.housing),
       bank: parseBankConfig(worldRaw.bank),
+      worldTime: parseWorldTimeConfig(worldRaw.worldTime),
+      weather: parseWeatherConfig(worldRaw.weather),
+      worldEvents: parseWorldEventsConfig(worldRaw.worldEvents),
       pets: parsePetDefinitions(petsRaw),
       guild: parseGuildConfig(worldRaw.guildRanks),
       guildRanks: parseMapSection(worldRaw.guildRanks, "ranks"),

@@ -192,6 +192,39 @@ export interface CraftingConfig {
   specializationXpBonus?: number;
 }
 
+// ─── Day/Night Cycle ───────────────────────────────────────────────
+
+export interface WorldTimeConfig {
+  cycleLengthMs: number;
+  dawnHour: number;
+  dayHour: number;
+  duskHour: number;
+  nightHour: number;
+}
+
+// ─── Weather ───────────────────────────────────────────────────────
+
+export interface WeatherConfig {
+  minTransitionMs: number;
+  maxTransitionMs: number;
+}
+
+// ─── Seasonal Events ───────────────────────────────────────────────
+
+export interface WorldEventDefinitionConfig {
+  displayName: string;
+  description?: string;
+  startDate?: string;
+  endDate?: string;
+  flags?: string[];
+  startMessage?: string;
+  endMessage?: string;
+}
+
+export interface WorldEventsConfig {
+  definitions: Record<string, WorldEventDefinitionConfig>;
+}
+
 // ─── Bank ──────────────────────────────────────────────────────────
 
 export interface BankConfig {
@@ -559,6 +592,9 @@ export interface AppConfig {
   factions?: FactionConfig;
   enchanting: EnchantingConfig;
   bank: BankConfig;
+  worldTime: WorldTimeConfig;
+  weather: WeatherConfig;
+  worldEvents: WorldEventsConfig;
   pets: Record<string, PetDefinitionConfig>;
   globalAssets: Record<string, string>;
   playerTiers?: Record<string, TierDefinitionConfig>;

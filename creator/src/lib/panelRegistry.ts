@@ -69,6 +69,8 @@ const WORLD_PANELS: PanelDef[] = [
   { id: "emotes", label: "Emotes", group: "world", host: "config", kicker: "Social", title: "Emote presets", description: "Quick-action emotes available to players in the chat panel.", maxWidth: "max-w-5xl" },
   { id: "housing", label: "Housing", group: "world", host: "config", kicker: "Housing", title: "Player housing", description: "Room templates, costs, and housing system settings.", maxWidth: "max-w-5xl" },
   { id: "pets", label: "Pets", group: "world", host: "config", kicker: "Companions", title: "Pet system", description: "Define pet templates that can be summoned by abilities.", maxWidth: "max-w-5xl" },
+  { id: "worldCycle", label: "Day & Weather", group: "world", host: "config", kicker: "Environment", title: "Day/night & weather", description: "Day/night cycle timing, time periods, and weather transition pacing.", maxWidth: "max-w-5xl" },
+  { id: "worldEvents", label: "Events", group: "world", host: "config", kicker: "Seasonal", title: "World events", description: "Seasonal events with date schedules, flags, and broadcast messages.", maxWidth: "max-w-5xl" },
 ];
 
 // ─── Lore panels ───────────────────────────────────────────────────

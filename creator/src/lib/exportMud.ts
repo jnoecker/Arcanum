@@ -290,6 +290,17 @@ export function buildMonolithicConfigObject(
     engine.bank = { maxItems: c.bank.maxItems };
   }
 
+  // World Time
+  engine.worldTime = c.worldTime;
+
+  // Weather
+  engine.weather = c.weather;
+
+  // World Events
+  if (Object.keys(c.worldEvents.definitions).length > 0) {
+    engine.worldEvents = { definitions: c.worldEvents.definitions };
+  }
+
   // Enchanting
   if (Object.keys(c.enchanting.definitions).length > 0 || c.enchanting.maxEnchantmentsPerItem !== 1) {
     engine.enchanting = {

@@ -384,6 +384,34 @@ export function validateConfig(config: AppConfig): ValidationIssue[] {
     });
   }
 
+  // ─── World Time ──────────────────────────────────────────────
+  const wt = config.worldTime;
+  if (wt.cycleLengthMs < 1000) {
+    issues.push({ severity: "error", entity: "worldTime", message: "Cycle length must be at least 1000ms" });
+  }
+  if (wt.dawnHour < 0 || wt.dawnHour > 23 || wt.dayHour < 0 || wt.dayHour > 23 ||
+      wt.duskHour < 0 || wt.duskHour > 23 || wt.nightHour < 0 || wt.nightHour > 23) {
+    issues.push({ severity: "error", entity: "worldTime", message: "Time period hours must be 0-23" });
+  }
+  if (wt.dawnHour >= wt.dayHour || wt.dayHour >= wt.duskHour || wt.duskHour >= wt.nightHour) {
+    issues.push({ severity: "warning", entity: "worldTime", message: "Time period hours should be in order: dawn < day < dusk < night" });
+  }
+
+  // ─── Weather ────────────────────────────────────────────────
+  if (config.weather.minTransitionMs > config.weather.maxTransitionMs) {
+    issues.push({ severity: "warning", entity: "weather", message: "Min transition time exceeds max transition time" });
+  }
+
+  // ─── World Events ───────────────────────────────────────────
+  for (const [id, evt] of Object.entries(config.worldEvents.definitions)) {
+    if (!evt.displayName?.trim()) {
+      issues.push({ severity: "error", entity: `worldEvent:${id}`, message: "Display name is required" });
+    }
+    if (evt.startDate && evt.endDate && evt.startDate > evt.endDate) {
+      issues.push({ severity: "warning", entity: `worldEvent:${id}`, message: "Start date is after end date" });
+    }
+  }
+
   // ─── Combat ───────────────────────────────────────────────────
   if (config.combat.minDamage > config.combat.maxDamage) {
     issues.push({

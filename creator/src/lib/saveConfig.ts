@@ -189,6 +189,10 @@ async function saveSplitConfig(projectDir: string): Promise<void> {
       housing: (config.housing.enabled || Object.keys(config.housing.templates).length > 0)
         ? housingToPlain(config.housing) : undefined,
       bank: config.bank.maxItems !== 50 ? config.bank : undefined,
+      worldTime: config.worldTime,
+      weather: config.weather,
+      worldEvents: Object.keys(config.worldEvents.definitions).length > 0
+        ? config.worldEvents : undefined,
     })),
 
     write("assets", cleanObj({

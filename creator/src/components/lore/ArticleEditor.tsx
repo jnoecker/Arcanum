@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { useLoreStore, selectArticles } from "@/stores/loreStore";
 import type { Article, ArticleRelation, ArticleTemplate } from "@/types/lore";
 import { TEMPLATE_SCHEMAS } from "@/lib/loreTemplates";
@@ -167,7 +167,10 @@ function RelationsEditor({
 export function ArticleEditor({ articleId }: { articleId: string }) {
   const article = useLoreStore((s) => s.lore?.articles[articleId] ?? null);
   const updateArticle = useLoreStore((s) => s.updateArticle);
+  const renameArticle = useLoreStore((s) => s.renameArticle);
   const deleteArticle = useLoreStore((s) => s.deleteArticle);
+  const [renaming, setRenaming] = useState(false);
+  const [newId, setNewId] = useState("");
 
   const patch = useCallback(
     (p: Partial<Article>) => updateArticle(articleId, p),
@@ -203,7 +206,36 @@ export function ArticleEditor({ articleId }: { articleId: string }) {
             <span className="rounded bg-accent/15 px-2 py-0.5 text-2xs font-medium uppercase tracking-ui text-accent">
               {schema?.label ?? article.template}
             </span>
-            <span className="text-2xs text-text-muted">{article.id}</span>
+            {renaming ? (
+              <form
+                className="flex items-center gap-1"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  const id = newId.trim().toLowerCase().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "");
+                  if (id && id !== articleId) renameArticle(articleId, id);
+                  setRenaming(false);
+                }}
+              >
+                <input
+                  autoFocus
+                  value={newId}
+                  onChange={(e) => setNewId(e.target.value)}
+                  onKeyDown={(e) => e.key === "Escape" && setRenaming(false)}
+                  className="w-40 rounded border border-accent/50 bg-bg-primary px-1.5 py-0.5 text-2xs text-text-primary outline-none"
+                  placeholder="new_article_id"
+                />
+                <button type="submit" className="text-2xs text-accent hover:text-text-primary">Rename</button>
+                <button type="button" onClick={() => setRenaming(false)} className="text-2xs text-text-muted">Cancel</button>
+              </form>
+            ) : (
+              <button
+                onClick={() => { setNewId(article.id); setRenaming(true); }}
+                className="text-2xs text-text-muted hover:text-accent transition-colors"
+                title="Click to rename article ID"
+              >
+                {article.id}
+              </button>
+            )}
           </div>
           <input
             aria-label="Article title"

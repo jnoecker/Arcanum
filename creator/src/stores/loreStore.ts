@@ -30,6 +30,7 @@ interface LoreStore {
   setLore: (lore: WorldLore) => void;
   createArticle: (article: Article) => void;
   updateArticle: (id: string, patch: Partial<Article>) => void;
+  renameArticle: (oldId: string, newId: string) => void;
   deleteArticle: (id: string) => void;
   moveArticle: (id: string, newParentId: string | undefined, sortOrder: number) => void;
   selectArticle: (id: string | null) => void;
@@ -110,6 +111,51 @@ export const useLoreStore = create<LoreStore>((set) => ({
           },
         },
         dirty: true,
+      };
+    }),
+
+  renameArticle: (oldId, newId) =>
+    set((s) => {
+      if (!s.lore || !s.lore.articles[oldId] || s.lore.articles[newId]) return s;
+      const article = { ...s.lore.articles[oldId], id: newId };
+      const { [oldId]: _, ...rest } = s.lore.articles;
+
+      // Update references across all articles (parentId, relations, @mentions in content)
+      const articles: Record<string, Article> = { ...rest, [newId]: article };
+      for (const [aid, a] of Object.entries(articles)) {
+        let changed = false;
+        let patched = { ...a };
+        if (a.parentId === oldId) {
+          patched = { ...patched, parentId: newId };
+          changed = true;
+        }
+        if (a.relations?.some((r) => r.targetId === oldId)) {
+          patched = { ...patched, relations: a.relations!.map((r) => r.targetId === oldId ? { ...r, targetId: newId } : r) };
+          changed = true;
+        }
+        // Update @mentions in TipTap JSON content
+        if (a.content.includes(oldId)) {
+          patched = { ...patched, content: a.content.replaceAll(`"id":"${oldId}"`, `"id":"${newId}"`) };
+          changed = true;
+        }
+        if (changed) articles[aid] = patched;
+      }
+
+      // Update map pin articleId references
+      const maps = s.lore.maps?.map((m) => ({
+        ...m,
+        pins: m.pins.map((p) => p.articleId === oldId ? { ...p, articleId: newId } : p),
+      }));
+
+      // Update timeline event articleId references
+      const timelineEvents = s.lore.timelineEvents?.map((e) =>
+        e.articleId === oldId ? { ...e, articleId: newId } : e,
+      );
+
+      return {
+        lore: { ...s.lore, articles, maps, timelineEvents },
+        dirty: true,
+        selectedArticleId: s.selectedArticleId === oldId ? newId : s.selectedArticleId,
       };
     }),
 

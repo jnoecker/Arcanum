@@ -121,6 +121,15 @@ export function CraftingPanel({ config, onChange }: ConfigPanelProps) {
               min={0}
             />
           </FieldRow>
+          <FieldRow label="Specialization XP Bonus" hint="Fractional XP bonus for a player's specialized crafting skill. 0.25 = +25% XP.">
+            <NumberInput
+              value={c.specializationXpBonus}
+              onCommit={(v) => patch({ specializationXpBonus: v })}
+              placeholder="0.25"
+              min={0}
+              step={0.05}
+            />
+          </FieldRow>
         </div>
       </Section>
 

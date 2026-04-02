@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import type { WorldFile, GatheringNodeFile, GatheringYieldFile } from "@/types/world";
+import type { WorldFile, GatheringNodeFile, GatheringYieldFile, RareYieldFile } from "@/types/world";
 import { updateGatheringNode, deleteGatheringNode } from "@/lib/zoneEdits";
 import { useEntityEditor } from "@/lib/useEntityEditor";
 import { useArrayField } from "@/lib/useArrayField";
@@ -65,6 +65,17 @@ export function GatheringNodeEditor({
     node.yields,
     (yields) => patch({ yields }),
     { itemId: "", minQuantity: 1, maxQuantity: 1 },
+  );
+
+  const {
+    items: rareYields,
+    add: handleAddRare,
+    update: handleUpdateRare,
+    remove: handleDeleteRare,
+  } = useArrayField<RareYieldFile>(
+    node.rareYields ?? [],
+    (ry) => patch({ rareYields: ry && ry.length > 0 ? ry : undefined }),
+    { itemId: "", quantity: 1, dropChance: 0.1 },
   );
 
   return (
@@ -178,6 +189,40 @@ export function GatheringNodeEditor({
                       }
                       min={1}
                     />
+                  </FieldRow>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </Section>
+
+      <Section
+        title={`Rare Yields (${rareYields.length})`}
+        defaultExpanded={false}
+        actions={
+          <IconButton onClick={handleAddRare} title="Add rare yield">+</IconButton>
+        }
+      >
+        {rareYields.length === 0 ? (
+          <p className="text-xs text-text-muted">No rare yields. These have a chance to drop alongside normal yields.</p>
+        ) : (
+          <div className="flex flex-col gap-2">
+            {rareYields.map((y, i) => (
+              <div key={i} className="rounded border border-border-muted p-1.5">
+                <div className="mb-1 flex items-center justify-between">
+                  <span className="text-2xs font-medium text-text-muted">#{i + 1}</span>
+                  <IconButton onClick={() => handleDeleteRare(i)} title="Remove" danger>&times;</IconButton>
+                </div>
+                <div className="flex flex-col gap-1">
+                  <FieldRow label="Item ID">
+                    <TextInput value={y.itemId} onCommit={(v) => handleUpdateRare(i, "itemId", v)} placeholder="item_id" />
+                  </FieldRow>
+                  <FieldRow label="Quantity">
+                    <NumberInput value={y.quantity} onCommit={(v) => handleUpdateRare(i, "quantity", v ?? 1)} min={1} />
+                  </FieldRow>
+                  <FieldRow label="Drop Chance">
+                    <NumberInput value={y.dropChance} onCommit={(v) => handleUpdateRare(i, "dropChance", v ?? 0.1)} min={0} max={1} step={0.01} />
                   </FieldRow>
                 </div>
               </div>

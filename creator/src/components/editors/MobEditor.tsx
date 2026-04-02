@@ -155,6 +155,13 @@ export function MobEditor({
               min={0}
             />
           </FieldRow>
+          <FieldRow label="Faction">
+            <TextInput
+              value={mob.faction ?? ""}
+              onCommit={(v) => patch({ faction: v || undefined })}
+              placeholder="Faction ID (e.g. crimson_guild)"
+            />
+          </FieldRow>
           <FieldRow label="Housing Broker">
             <CheckboxInput
               checked={mob.housingBroker ?? false}

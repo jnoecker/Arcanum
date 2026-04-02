@@ -72,6 +72,7 @@ export interface MobFile {
   dialogue?: Record<string, DialogueNodeFile>;
   quests?: string[];
   housingBroker?: boolean;
+  faction?: string;
   image?: string;
   video?: string;
 }
@@ -188,6 +189,7 @@ export interface GatheringNodeFile {
   skill: string;
   skillRequired?: number;
   yields: GatheringYieldFile[];
+  rareYields?: RareYieldFile[];
   respawnSeconds?: number;
   xpReward?: number;
   room: string;
@@ -197,6 +199,12 @@ export interface GatheringYieldFile {
   itemId: string;
   minQuantity?: number;
   maxQuantity?: number;
+}
+
+export interface RareYieldFile {
+  itemId: string;
+  quantity?: number;
+  dropChance: number;
 }
 
 export interface RecipeFile {

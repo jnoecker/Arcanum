@@ -175,6 +175,23 @@ export interface CraftingConfig {
   xpExponent: number;
   gatherCooldownMs: number;
   stationBonusQuantity: number;
+  specializationXpBonus?: number;
+}
+
+// ─── Factions ──────────────────────────────────────────────────────
+
+export interface FactionDefinition {
+  name: string;
+  description?: string;
+  enemies?: string[];
+}
+
+export interface FactionConfig {
+  defaultReputation: number;
+  killPenalty: number;
+  killBonus: number;
+  definitions: Record<string, FactionDefinition>;
+  questRewards?: Record<string, Record<string, number>>;
 }
 
 // ─── Navigation ────────────────────────────────────────────────────
@@ -495,6 +512,7 @@ export interface AppConfig {
   friends: FriendsConfig;
   images: ImagesConfig;
   emotePresets: EmotePresetsConfig;
+  factions?: FactionConfig;
   globalAssets: Record<string, string>;
   playerTiers?: Record<string, TierDefinitionConfig>;
   /** Raw YAML content for unrecognized sections */

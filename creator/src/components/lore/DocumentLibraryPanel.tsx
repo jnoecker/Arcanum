@@ -16,22 +16,15 @@ export function DocumentLibraryPanel() {
   const selected = selectedId ? documents.find((d) => d.id === selectedId) ?? null : null;
 
   const handleImport = useCallback(async () => {
-    console.log("[DocImport] button clicked, opening dialog...");
+    console.log("[DocImport] button clicked");
     try {
-      const result = await open({
+      const filePath = await open({
         multiple: false,
-        title: "Import Document",
-        filters: [{ name: "Documents", extensions: ["md", "txt", "markdown"] }],
       });
-      console.log("[DocImport] dialog result:", result, typeof result);
-      if (!result) return;
+      console.log("[DocImport] filePath:", filePath);
+      if (!filePath) return;
 
-      // Tauri v2 dialog may return a string or an object with a path property
-      const filePath = typeof result === "string" ? result : (result as unknown as { path: string }).path;
-      if (!filePath) { console.error("Document import: no file path from dialog", result); return; }
-
-      console.log("Document import: reading", filePath);
-      const content = await invoke<string>("read_text_file", { filePath });
+      const content = await invoke<string>("read_text_file", { filePath: String(filePath) });
       const filename = filePath.split(/[/\\]/).pop() ?? "document.md";
       const title = filename.replace(/\.\w+$/, "").replace(/[-_]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
       const now = new Date().toISOString();

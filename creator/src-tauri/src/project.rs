@@ -544,3 +544,11 @@ pub async fn delete_zone_file(file_path: String) -> Result<(), String> {
     }
     std::fs::remove_file(&path).map_err(|e| format!("Failed to delete {file_path}: {e}"))
 }
+
+/// Read an arbitrary text file from disk (used for document import).
+#[tauri::command]
+pub async fn read_text_file(file_path: String) -> Result<String, String> {
+    tokio::fs::read_to_string(&file_path)
+        .await
+        .map_err(|e| format!("Failed to read {file_path}: {e}"))
+}

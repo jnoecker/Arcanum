@@ -34,6 +34,7 @@ pub fn run() {
             project::clone_mud_project,
             project::clear_world_zones,
             project::delete_zone_file,
+            project::read_text_file,
             settings::get_settings,
             settings::save_settings,
             deepinfra::generate_image,

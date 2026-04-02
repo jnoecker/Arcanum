@@ -1,6 +1,6 @@
 import { useState, useCallback } from "react";
+import { invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
-import { readTextFile } from "@tauri-apps/plugin-fs";
 import { useLoreStore, selectDocuments } from "@/stores/loreStore";
 import type { LoreDocument } from "@/types/lore";
 import { Section, CommitTextarea } from "@/components/ui/FormWidgets";
@@ -22,7 +22,7 @@ export function DocumentLibraryPanel() {
     });
     if (!filePath || typeof filePath !== "string") return;
 
-    const content = await readTextFile(filePath);
+    const content = await invoke<string>("read_text_file", { filePath });
     const filename = filePath.split(/[/\\]/).pop() ?? "document.md";
     const title = filename.replace(/\.\w+$/, "").replace(/[-_]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
     const now = new Date().toISOString();

@@ -1,5 +1,7 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react";
 import type { ShowcaseData, ShowcaseArticle } from "@/types/showcase";
+import { applyBranding } from "@/lib/applyBranding";
+import { injectManifest } from "@/lib/pwaManifest";
 
 interface DataContextValue {
   data: ShowcaseData | null;
@@ -38,6 +40,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
         const map = new Map<string, ShowcaseArticle>();
         for (const a of d.articles) map.set(a.id, a);
         setArticleById(map);
+        applyBranding(d.meta);
+        injectManifest(d.meta);
       })
       .catch((e) => setError(String(e)))
       .finally(() => setLoading(false));

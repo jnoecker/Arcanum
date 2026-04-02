@@ -32,7 +32,8 @@ function NavItem({ to, label, onClick }: { to: string; label: string; onClick?: 
 
 export function Layout({ children }: { children: ReactNode }) {
   const { data } = useShowcase();
-  const worldName = data?.meta.worldName ?? "World Lore";
+  const worldName = data?.meta.showcase?.navLogoText ?? data?.meta.worldName ?? "World Lore";
+  const footerText = data?.meta.showcase?.footerText ?? "Built with Ambon Arcanum";
   const [menuOpen, setMenuOpen] = useState(false);
 
   return (
@@ -99,7 +100,7 @@ export function Layout({ children }: { children: ReactNode }) {
       </main>
 
       <footer className="border-t border-border-muted py-4 text-center text-text-muted text-xs">
-        Built with Ambon Arcanum
+        {footerText}
       </footer>
     </div>
   );

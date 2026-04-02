@@ -111,6 +111,18 @@ export interface TemplateOverrides {
   aiDescription?: string;
 }
 
+// ─── Showcase branding settings ────────────────────────────────────
+
+export interface ShowcaseSettings {
+  navLogoText?: string;
+  bannerTitle?: string;
+  bannerSubtitle?: string;
+  faviconUrl?: string;
+  accentColor?: string;
+  bgColor?: string;
+  footerText?: string;
+}
+
 // ─── Top-level lore container ──────────────────────────────────────
 
 export interface WorldLore {
@@ -122,6 +134,7 @@ export interface WorldLore {
   timelineEvents?: TimelineEvent[];
   documents?: LoreDocument[];
   templateOverrides?: Partial<Record<ArticleTemplate, TemplateOverrides>>;
+  showcaseSettings?: ShowcaseSettings;
 }
 
 export const DEFAULT_WORLD_LORE: WorldLore = {

@@ -9,6 +9,15 @@ export interface ShowcaseData {
     tagline?: string;
     exportedAt: string;
     imageBaseUrl: string;
+    showcase?: {
+      navLogoText?: string;
+      bannerTitle?: string;
+      bannerSubtitle?: string;
+      faviconUrl?: string;
+      accentColor?: string;
+      bgColor?: string;
+      footerText?: string;
+    };
   };
   articles: ShowcaseArticle[];
   maps: ShowcaseMap[];
@@ -226,6 +235,7 @@ export function exportShowcaseData(lore: WorldLore, imageBaseUrl: string): Showc
       tagline,
       exportedAt: new Date().toISOString(),
       imageBaseUrl: baseUrl,
+      showcase: lore.showcaseSettings ?? undefined,
     },
     articles,
     maps,

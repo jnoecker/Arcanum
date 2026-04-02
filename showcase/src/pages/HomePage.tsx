@@ -14,12 +14,14 @@ export function HomePage() {
   const listRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    document.title = data?.meta.worldName ?? "World Lore";
-  }, [data?.meta.worldName]);
+    document.title = data?.meta.showcase?.bannerTitle ?? data?.meta.worldName ?? "World Lore";
+  }, [data]);
 
   if (!data) return null;
 
   const { meta, articles, maps } = data;
+  const bannerTitle = meta.showcase?.bannerTitle ?? meta.worldName;
+  const bannerSubtitle = meta.showcase?.bannerSubtitle ?? meta.tagline;
 
   // Find the world setting article for the hero
   const worldSetting = articles.find((a) => a.template === "world_setting");
@@ -108,16 +110,16 @@ export function HomePage() {
           <div className="relative -mx-4 sm:-mx-6 -mt-8 mb-8 overflow-hidden rounded-b-2xl">
             <img
               src={worldSetting.imageUrl}
-              alt={meta.worldName}
+              alt={bannerTitle}
               className="w-full h-[320px] sm:h-[400px] object-cover"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-bg-abyss via-bg-abyss/60 to-transparent" />
             <div className="absolute bottom-0 inset-x-0 p-6 sm:p-10">
               <h1 className="font-display text-4xl sm:text-5xl tracking-[0.14em] text-accent-emphasis mb-2 drop-shadow-lg">
-                {meta.worldName}
+                {bannerTitle}
               </h1>
-              {meta.tagline && (
-                <p className="text-text-secondary text-lg max-w-2xl drop-shadow-md">{meta.tagline}</p>
+              {bannerSubtitle && (
+                <p className="text-text-secondary text-lg max-w-2xl drop-shadow-md">{bannerSubtitle}</p>
               )}
             </div>
           </div>
@@ -127,10 +129,10 @@ export function HomePage() {
         {!worldSetting?.imageUrl && (
           <div className="text-center py-12">
             <h1 className="font-display text-4xl sm:text-5xl tracking-[0.14em] text-accent-emphasis mb-3">
-              {meta.worldName}
+              {bannerTitle}
             </h1>
-            {meta.tagline && (
-              <p className="text-text-secondary text-lg max-w-xl mx-auto">{meta.tagline}</p>
+            {bannerSubtitle && (
+              <p className="text-text-secondary text-lg max-w-xl mx-auto">{bannerSubtitle}</p>
             )}
           </div>
         )}

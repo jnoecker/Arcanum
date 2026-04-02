@@ -81,12 +81,23 @@ export interface ColorLabel {
   color: string;
 }
 
+export interface ShowcaseBranding {
+  navLogoText?: string;
+  bannerTitle?: string;
+  bannerSubtitle?: string;
+  faviconUrl?: string;
+  accentColor?: string;
+  bgColor?: string;
+  footerText?: string;
+}
+
 export interface ShowcaseData {
   meta: {
     worldName: string;
     tagline?: string;
     exportedAt: string;
     imageBaseUrl: string;
+    showcase?: ShowcaseBranding;
   };
   articles: ShowcaseArticle[];
   maps: ShowcaseMap[];

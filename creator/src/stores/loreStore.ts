@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { WorldLore, Article, ArticleTemplate, ColorLabel, LoreMap, MapPin, CalendarSystem, TimelineEvent, LoreDocument, TemplateOverrides } from "@/types/lore";
+import type { WorldLore, Article, ArticleTemplate, ColorLabel, LoreMap, MapPin, CalendarSystem, TimelineEvent, LoreDocument, TemplateOverrides, ShowcaseSettings } from "@/types/lore";
 
 // Stable empty references for selectors (prevents infinite re-render loops)
 const EMPTY_ARTICLES: Record<string, Article> = {};
@@ -68,6 +68,9 @@ interface LoreStore {
 
   // Template overrides
   updateTemplateOverrides: (template: ArticleTemplate, patch: Partial<TemplateOverrides>) => void;
+
+  // Showcase settings
+  updateShowcaseSettings: (patch: Partial<ShowcaseSettings>) => void;
 
   markClean: () => void;
   clearLore: () => void;
@@ -354,6 +357,20 @@ export const useLoreStore = create<LoreStore>((set) => ({
             ...existing,
             [template]: { ...(existing[template] ?? {}), ...patch },
           },
+        },
+        dirty: true,
+      };
+    }),
+
+  // ─── Showcase settings ────────────────────────────────────────────
+
+  updateShowcaseSettings: (patch) =>
+    set((s) => {
+      if (!s.lore) return s;
+      return {
+        lore: {
+          ...s.lore,
+          showcaseSettings: { ...(s.lore.showcaseSettings ?? {}), ...patch },
         },
         dirty: true,
       };

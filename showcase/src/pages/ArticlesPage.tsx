@@ -20,7 +20,6 @@ export function ArticlesPage() {
 
   const activeTemplate = searchParams.get("template") as ArticleTemplate | null;
 
-  // Group articles by template
   const grouped = useMemo(() => {
     const q = search.trim().toLowerCase();
     let list = data.articles.filter((a) => a.template !== "world_setting");
@@ -32,16 +31,13 @@ export function ArticlesPage() {
           a.tags.some((t) => t.toLowerCase().includes(q)),
       );
     }
-
     const map = new Map<ArticleTemplate, ShowcaseArticle[]>();
     for (const a of list) {
       const arr = map.get(a.template) ?? [];
       arr.push(a);
       map.set(a.template, arr);
     }
-    // Sort articles within each group
     for (const arr of map.values()) arr.sort((a, b) => a.title.localeCompare(b.title));
-    // Sort groups by label
     return [...map.entries()].sort((a, b) => TEMPLATE_LABELS[a[0]].localeCompare(TEMPLATE_LABELS[b[0]]));
   }, [data.articles, activeTemplate, search]);
 
@@ -56,33 +52,33 @@ export function ArticlesPage() {
   }, [data.articles]);
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-baseline justify-between gap-4 flex-wrap">
+    <div>
+      <div className="flex items-baseline justify-between gap-4 flex-wrap mb-8">
         <h1 className="font-display text-accent text-2xl tracking-[0.18em]">Codex</h1>
-        <span className="text-text-muted text-xs">
+        <span className="text-text-muted text-xs tracking-wide">
           {totalCount} entr{totalCount !== 1 ? "ies" : "y"}
         </span>
       </div>
 
-      {/* Toolbar: search + filters + view toggle */}
-      <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+      {/* Toolbar */}
+      <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-10">
         <input
           type="text"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search articles..."
-          className="bg-bg-tertiary/60 border border-border-muted rounded-md px-3 py-1.5 text-sm
-                     text-text-primary placeholder:text-text-muted
-                     focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/60 focus-visible:border-accent/60
-                     w-full sm:w-64"
+          className="bg-bg-secondary/60 border border-border-muted/60 rounded-lg px-3 py-2 text-sm
+                     text-text-primary placeholder:text-text-muted/70
+                     focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:border-accent/40
+                     transition-all duration-300 w-full sm:w-64"
         />
         <button
           onClick={() => setSearchParams({})}
           aria-pressed={!activeTemplate}
-          className={`px-2.5 py-1 text-xs tracking-[0.12em] uppercase rounded-md border transition-colors ${
+          className={`px-3 py-1.5 text-[11px] tracking-[0.14em] uppercase rounded-md border transition-all duration-300 ${
             !activeTemplate
-              ? "border-accent/50 text-accent bg-accent/10"
-              : "border-border-muted text-text-muted hover:text-text-secondary"
+              ? "border-accent/40 text-accent bg-accent/8"
+              : "border-border-muted/50 text-text-muted hover:text-text-secondary hover:border-border-muted"
           }`}
         >
           All
@@ -92,24 +88,23 @@ export function ArticlesPage() {
             key={t}
             onClick={() => setSearchParams({ template: t })}
             aria-pressed={activeTemplate === t}
-            className={`px-2.5 py-1 text-xs tracking-[0.12em] uppercase rounded-md border transition-colors ${
+            className={`px-3 py-1.5 text-[11px] tracking-[0.14em] uppercase rounded-md border transition-all duration-300 ${
               activeTemplate === t
-                ? "border-accent/50 text-accent bg-accent/10"
-                : "border-border-muted text-text-muted hover:text-text-secondary"
+                ? "border-accent/40 text-accent bg-accent/8"
+                : "border-border-muted/50 text-text-muted hover:text-text-secondary hover:border-border-muted"
             }`}
           >
             {TEMPLATE_LABELS[t]}
           </button>
         ))}
 
-        {/* View toggle */}
-        <div className="ml-auto flex gap-1 border border-border-muted rounded-md overflow-hidden">
+        <div className="ml-auto flex gap-0.5 border border-border-muted/50 rounded-md overflow-hidden">
           <button
             onClick={() => setView("grid")}
             aria-pressed={view === "grid"}
             aria-label="Grid view"
-            className={`px-2 py-1 text-xs transition-colors ${
-              view === "grid" ? "bg-accent/15 text-accent" : "text-text-muted hover:text-text-secondary"
+            className={`px-2.5 py-1.5 text-xs transition-colors duration-200 ${
+              view === "grid" ? "bg-accent/12 text-accent" : "text-text-muted hover:text-text-secondary"
             }`}
           >
             <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
@@ -123,8 +118,8 @@ export function ArticlesPage() {
             onClick={() => setView("list")}
             aria-pressed={view === "list"}
             aria-label="List view"
-            className={`px-2 py-1 text-xs transition-colors ${
-              view === "list" ? "bg-accent/15 text-accent" : "text-text-muted hover:text-text-secondary"
+            className={`px-2.5 py-1.5 text-xs transition-colors duration-200 ${
+              view === "list" ? "bg-accent/12 text-accent" : "text-text-muted hover:text-text-secondary"
             }`}
           >
             <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
@@ -136,55 +131,57 @@ export function ArticlesPage() {
         </div>
       </div>
 
-      {/* Content: grouped by template */}
+      {/* Content */}
       {grouped.length === 0 ? (
-        <p className="text-text-muted text-center py-12">No articles match your filters.</p>
+        <p className="text-text-muted text-center py-16">No articles match your filters.</p>
       ) : (
-        <div className="space-y-10">
+        <div className="space-y-14">
           {grouped.map(([template, articles]) => {
             const color = TEMPLATE_COLORS[template];
             return (
               <section key={template}>
-                {/* Section header -- only show when not filtered to single template */}
                 {!activeTemplate && (
-                  <div className="flex items-center gap-3 mb-4">
+                  <div className="flex items-center gap-4 mb-5">
                     <div className="w-1 h-5 rounded-full" style={{ backgroundColor: color }} />
-                    <h2 className="font-display text-sm tracking-[0.16em] uppercase" style={{ color }}>
+                    <h2 className="font-display text-[13px] tracking-[0.2em] uppercase" style={{ color }}>
                       {TEMPLATE_LABELS[template]}
                     </h2>
                     <span className="text-text-muted text-xs">{articles.length}</span>
-                    <div className="flex-1 h-px bg-border-muted" />
+                    <div className="flex-1 h-px bg-border-muted/30" />
                   </div>
                 )}
 
                 {view === "grid" ? (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 stagger-children">
                     {articles.map((a) => (
                       <Link
                         key={a.id}
                         to={`/articles/${encodeURIComponent(a.id)}`}
-                        className="group bg-bg-secondary/80 border border-border-muted rounded-lg overflow-hidden
-                                   hover:border-accent/40 transition-all hover:shadow-[var(--glow-aurum)]"
-                        style={{ borderLeftColor: `${color}60`, borderLeftWidth: 3 }}
+                        className="group overflow-hidden rounded-lg transition-all duration-500
+                                   hover:shadow-[0_12px_40px_rgba(168,151,210,0.12)]
+                                   hover:-translate-y-0.5"
+                        style={{ borderLeft: `3px solid ${color}40` }}
                       >
                         {a.imageUrl && (
-                          <div className="aspect-[3/4] overflow-hidden bg-bg-tertiary/40">
+                          <div className="aspect-[3/4] overflow-hidden bg-bg-tertiary/30">
                             <img
                               src={a.imageUrl}
                               alt={a.title}
                               loading="lazy"
-                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                              className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-700 ease-out"
                             />
                           </div>
                         )}
-                        <div className="p-3">
-                          <h3 className="font-display text-accent-emphasis text-sm">{a.title}</h3>
+                        <div className="px-4 py-3 bg-bg-secondary/40">
+                          <h3 className="font-display text-accent-emphasis text-[15px] group-hover:text-accent transition-colors duration-300">
+                            {a.title}
+                          </h3>
                           {a.tags.length > 0 && (
-                            <div className="flex flex-wrap gap-1 mt-2">
+                            <div className="flex flex-wrap gap-1.5 mt-2">
                               {a.tags.slice(0, 4).map((tag) => (
                                 <span
                                   key={tag}
-                                  className="bg-accent/10 text-accent text-[10px] px-1.5 py-0.5 rounded"
+                                  className="bg-accent/6 text-accent text-[10px] px-2 py-0.5 rounded-md"
                                 >
                                   {tag}
                                 </span>
@@ -196,25 +193,19 @@ export function ArticlesPage() {
                     ))}
                   </div>
                 ) : (
-                  /* List view */
-                  <div className="space-y-1">
+                  <div className="space-y-0.5">
                     {articles.map((a) => (
                       <Link
                         key={a.id}
                         to={`/articles/${encodeURIComponent(a.id)}`}
-                        className="group flex items-center gap-3 px-3 py-2 rounded-md
-                                   hover:bg-bg-hover/50 transition-colors"
+                        className="group flex items-center gap-3 px-4 py-2.5 rounded-lg
+                                   hover:bg-bg-hover/40 transition-all duration-200"
                       >
-                        <div className="w-1 h-4 rounded-full shrink-0" style={{ backgroundColor: `${color}80` }} />
+                        <div className="w-1 h-4 rounded-full shrink-0 opacity-60" style={{ backgroundColor: color }} />
                         {a.imageUrl && (
-                          <img
-                            src={a.imageUrl}
-                            alt=""
-                            loading="lazy"
-                            className="w-8 h-8 rounded object-cover shrink-0"
-                          />
+                          <img src={a.imageUrl} alt="" loading="lazy" className="w-9 h-9 rounded-md object-cover shrink-0" />
                         )}
-                        <span className="text-text-primary text-sm group-hover:text-accent transition-colors truncate">
+                        <span className="text-text-primary text-sm group-hover:text-accent transition-colors duration-200 truncate">
                           {a.title}
                         </span>
                         {a.tags.length > 0 && (

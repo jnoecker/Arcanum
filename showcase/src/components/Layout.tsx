@@ -1,5 +1,5 @@
-import { NavLink } from "react-router-dom";
-import { useState } from "react";
+import { NavLink, useLocation } from "react-router-dom";
+import { useState, useEffect } from "react";
 import { useShowcase } from "@/lib/DataContext";
 import type { ReactNode } from "react";
 
@@ -18,10 +18,10 @@ function NavItem({ to, label, onClick }: { to: string; label: string; onClick?: 
       end={to === "/"}
       onClick={onClick}
       className={({ isActive }) =>
-        `block px-3 py-2 sm:py-1.5 text-sm font-display tracking-[0.18em] uppercase transition-colors ${
+        `block px-3 py-2 sm:py-1.5 text-[13px] font-display tracking-[0.2em] uppercase transition-all duration-300 ${
           isActive
-            ? "text-accent border-b-2 border-accent"
-            : "text-text-secondary hover:text-text-primary"
+            ? "text-accent"
+            : "text-text-muted hover:text-text-primary"
         }`
       }
     >
@@ -32,9 +32,18 @@ function NavItem({ to, label, onClick }: { to: string; label: string; onClick?: 
 
 export function Layout({ children }: { children: ReactNode }) {
   const { data } = useShowcase();
+  const location = useLocation();
   const worldName = data?.meta.showcase?.navLogoText ?? data?.meta.worldName ?? "World Lore";
   const footerText = data?.meta.showcase?.footerText ?? "Built with Ambon Arcanum";
   const [menuOpen, setMenuOpen] = useState(false);
+  const [pageKey, setPageKey] = useState(location.pathname);
+
+  // Scroll to top and trigger page transition on route change
+  useEffect(() => {
+    window.scrollTo({ top: 0 });
+    setPageKey(location.pathname);
+    setMenuOpen(false);
+  }, [location.pathname]);
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -48,14 +57,14 @@ export function Layout({ children }: { children: ReactNode }) {
         Skip to content
       </a>
 
-      <header className="border-b border-border-muted bg-bg-primary/80 backdrop-blur-sm sticky top-0 z-50">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
-          <NavLink to="/" className="font-display text-accent text-lg tracking-[0.22em]">
+      <header className="border-b border-border-muted/50 bg-bg-abyss/70 backdrop-blur-md sticky top-0 z-50">
+        <div className="max-w-5xl mx-auto px-5 sm:px-8 py-4 flex items-center justify-between">
+          <NavLink to="/" className="font-display text-accent text-lg tracking-[0.28em] uppercase hover:text-accent-emphasis transition-colors duration-300">
             {worldName}
           </NavLink>
 
           {/* Desktop nav */}
-          <nav className="hidden sm:flex items-center gap-1" aria-label="Main navigation">
+          <nav className="hidden sm:flex items-center gap-0.5" aria-label="Main navigation">
             {NAV_ITEMS.map((item) => (
               <NavItem key={item.to} {...item} />
             ))}
@@ -87,7 +96,10 @@ export function Layout({ children }: { children: ReactNode }) {
 
         {/* Mobile nav dropdown */}
         {menuOpen && (
-          <nav className="sm:hidden border-t border-border-muted bg-bg-primary/95 backdrop-blur-sm px-4 py-2" aria-label="Main navigation">
+          <nav
+            className="sm:hidden border-t border-border-muted/50 bg-bg-abyss/95 backdrop-blur-md px-5 py-3 animate-[fadeIn_150ms_ease-out]"
+            aria-label="Main navigation"
+          >
             {NAV_ITEMS.map((item) => (
               <NavItem key={item.to} {...item} onClick={() => setMenuOpen(false)} />
             ))}
@@ -95,12 +107,16 @@ export function Layout({ children }: { children: ReactNode }) {
         )}
       </header>
 
-      <main id="main-content" className="flex-1 max-w-6xl mx-auto px-4 sm:px-6 py-8 w-full">
+      <main
+        id="main-content"
+        key={pageKey}
+        className="flex-1 max-w-5xl mx-auto px-5 sm:px-8 py-10 sm:py-14 w-full animate-[fadeInScale_350ms_cubic-bezier(0.16,1,0.3,1)_both]"
+      >
         {children}
       </main>
 
-      <footer className="border-t border-border-muted py-4 text-center text-text-muted text-xs">
-        {footerText}
+      <footer className="border-t border-border-muted/30 py-8 text-center">
+        <p className="text-text-muted text-xs tracking-[0.1em]">{footerText}</p>
       </footer>
     </div>
   );

@@ -4,9 +4,9 @@ import { useShowcase } from "@/lib/DataContext";
 import type { TimelineEvent, CalendarSystem } from "@/types/showcase";
 
 const IMPORTANCE_STYLES: Record<TimelineEvent["importance"], string> = {
-  legendary: "border-accent bg-accent/15 shadow-[var(--glow-aurum)]",
-  major: "border-accent-muted/50 bg-accent/8",
-  minor: "border-border-muted bg-bg-tertiary/40",
+  legendary: "border-accent/60 bg-accent/10 shadow-[0_0_24px_rgba(168,151,210,0.18)]",
+  major: "border-accent-muted/30 bg-accent/5",
+  minor: "border-border-muted/40 bg-bg-tertiary/30",
 };
 
 const IMPORTANCE_DOT: Record<TimelineEvent["importance"], string> = {
@@ -25,7 +25,6 @@ export function TimelinePage() {
   const calendars = data?.calendarSystems ?? [];
   const events = data?.timelineEvents ?? [];
 
-  // Group events by calendar, then sort by era start year + event year
   const grouped = useMemo(() => {
     const calMap = new Map<string, CalendarSystem>();
     for (const c of calendars) calMap.set(c.id, c);
@@ -56,10 +55,10 @@ export function TimelinePage() {
 
   if (events.length === 0) {
     return (
-      <div className="text-center py-20">
-        <h1 className="font-display text-accent text-xl mb-2">Unwritten Chronicles</h1>
-        <p className="text-text-muted text-sm mb-6">The chronicles of this world remain unwritten.</p>
-        <Link to="/articles" className="text-text-link text-sm hover:text-accent transition-colors">
+      <div className="text-center py-24">
+        <h1 className="font-display text-accent text-2xl mb-3">Unwritten Chronicles</h1>
+        <p className="text-text-muted mb-6">The chronicles of this world remain unwritten.</p>
+        <Link to="/articles" className="text-text-link text-sm hover:text-accent transition-colors duration-300">
           Explore the Codex instead
         </Link>
       </div>
@@ -67,67 +66,67 @@ export function TimelinePage() {
   }
 
   return (
-    <div className="space-y-10">
-      <h1 className="font-display text-accent text-2xl tracking-[0.18em]">Timeline</h1>
+    <div>
+      <h1 className="font-display text-accent text-2xl tracking-[0.18em] mb-12">Timeline</h1>
 
-      {grouped.map(({ calendar, eraMap, events: sortedEvents }) => (
-        <section key={calendar?.id ?? "unknown"}>
-          {calendar && (
-            <h2 className="font-display text-accent-emphasis text-lg tracking-[0.12em] mb-6">
-              {calendar.name}
-            </h2>
-          )}
+      <div className="space-y-14">
+        {grouped.map(({ calendar, eraMap, events: sortedEvents }) => (
+          <section key={calendar?.id ?? "unknown"}>
+            {calendar && (
+              <h2 className="font-display text-accent-emphasis text-lg tracking-[0.1em] mb-8">
+                {calendar.name}
+              </h2>
+            )}
 
-          <div className="relative pl-10">
-            {/* Vertical line */}
-            <div className="absolute left-[18px] top-0 bottom-0 w-px bg-border-muted" />
+            <div className="relative pl-10">
+              <div className="absolute left-[18px] top-0 bottom-0 w-px bg-gradient-to-b from-accent/30 via-border-muted/40 to-transparent" />
 
-            <div className="space-y-4">
-              {sortedEvents.map((evt) => {
-                const era = eraMap.get(evt.eraId);
-                const linked = evt.articleId ? articleById.get(evt.articleId) : undefined;
+              <div className="space-y-5 stagger-children">
+                {sortedEvents.map((evt) => {
+                  const era = eraMap.get(evt.eraId);
+                  const linked = evt.articleId ? articleById.get(evt.articleId) : undefined;
 
-                return (
-                  <div key={evt.id} className="relative flex items-start gap-4">
-                    {/* Dot — centered on the vertical line */}
-                    <div
-                      className={`absolute left-[-22px] top-3 -translate-x-1/2 rounded-full ${IMPORTANCE_DOT[evt.importance]}`}
-                    />
+                  return (
+                    <div key={evt.id} className="relative flex items-start gap-4">
+                      <div
+                        className={`absolute left-[-22px] top-3 -translate-x-1/2 rounded-full transition-all duration-300 ${IMPORTANCE_DOT[evt.importance]}`}
+                      />
 
-                    <div
-                      className={`flex-1 border rounded-lg px-4 py-3 transition-colors ${IMPORTANCE_STYLES[evt.importance]}`}
-                    >
-                      <div className="flex items-baseline gap-2 mb-1">
-                        <span className="text-text-muted text-xs font-mono">
-                          {era ? `${era.name} ` : ""}Y{evt.year}
-                        </span>
-                        <span className="text-xs text-text-muted capitalize">
-                          {evt.importance}
-                        </span>
-                      </div>
-                      <h3 className="font-display text-accent-emphasis text-sm">
-                        {linked ? (
-                          <Link
-                            to={`/articles/${encodeURIComponent(evt.articleId!)}`}
-                            className="hover:text-accent transition-colors"
-                          >
-                            {evt.title}
-                          </Link>
-                        ) : (
-                          evt.title
+                      <div
+                        className={`flex-1 border rounded-xl px-5 py-4 transition-all duration-300 ${IMPORTANCE_STYLES[evt.importance]}`}
+                      >
+                        <div className="flex items-baseline gap-2 mb-1.5">
+                          <span className="text-text-muted text-xs font-mono tracking-wide">
+                            {era ? `${era.name} ` : ""}Y{evt.year}
+                          </span>
+                          <span className="text-[10px] text-text-muted capitalize tracking-wide">
+                            {evt.importance}
+                          </span>
+                        </div>
+                        <h3 className="font-display text-accent-emphasis text-[15px]">
+                          {linked ? (
+                            <Link
+                              to={`/articles/${encodeURIComponent(evt.articleId!)}`}
+                              className="hover:text-accent transition-colors duration-300"
+                            >
+                              {evt.title}
+                            </Link>
+                          ) : (
+                            evt.title
+                          )}
+                        </h3>
+                        {evt.description && (
+                          <p className="text-text-secondary text-sm mt-1.5 leading-relaxed">{evt.description}</p>
                         )}
-                      </h3>
-                      {evt.description && (
-                        <p className="text-text-secondary text-sm mt-1">{evt.description}</p>
-                      )}
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
-          </div>
-        </section>
-      ))}
+          </section>
+        ))}
+      </div>
     </div>
   );
 }

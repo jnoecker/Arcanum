@@ -22,17 +22,13 @@ export function HomePage() {
   const { meta, articles, maps } = data;
   const bannerTitle = meta.showcase?.bannerTitle ?? meta.worldName;
   const bannerSubtitle = meta.showcase?.bannerSubtitle ?? meta.tagline;
-
-  // Find the world setting article for the hero
   const worldSetting = articles.find((a) => a.template === "world_setting");
 
-  // Featured articles: most recently updated, with images, excluding world_setting
   const featured = [...articles]
     .filter((a) => a.imageUrl && a.template !== "world_setting")
     .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
     .slice(0, 6);
 
-  // Search results
   const searchResults = useMemo(() => {
     if (!search.trim()) return [];
     const q = search.toLowerCase();
@@ -102,51 +98,53 @@ export function HomePage() {
   const listboxId = "search-results";
 
   return (
-    <div className="space-y-16">
-      {/* ── Hero: World Setting ── */}
-      <section className="relative">
-        {/* World setting hero image */}
+    <div>
+      {/* ── Hero ── */}
+      <section className="relative mb-16">
         {worldSetting?.imageUrl && (
-          <div className="relative -mx-4 sm:-mx-6 -mt-8 mb-8 overflow-hidden rounded-b-2xl">
+          <div className="relative -mx-5 sm:-mx-8 -mt-10 sm:-mt-14 mb-10 overflow-hidden">
             <img
               src={worldSetting.imageUrl}
               alt={bannerTitle}
-              className="w-full h-[320px] sm:h-[400px] object-cover"
+              className="w-full h-[360px] sm:h-[440px] object-cover"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-bg-abyss via-bg-abyss/60 to-transparent" />
-            <div className="absolute bottom-0 inset-x-0 p-6 sm:p-10">
-              <h1 className="font-display text-4xl sm:text-5xl tracking-[0.14em] text-accent-emphasis mb-2 drop-shadow-lg">
+            <div className="absolute inset-0 bg-gradient-to-t from-bg-abyss via-bg-abyss/50 to-bg-abyss/10" />
+            <div className="absolute bottom-0 inset-x-0 px-5 sm:px-8 pb-8 sm:pb-12">
+              <h1 className="font-display text-4xl sm:text-5xl lg:text-6xl tracking-[0.12em] text-accent-emphasis mb-3 drop-shadow-lg animate-fade-in-up">
                 {bannerTitle}
               </h1>
               {bannerSubtitle && (
-                <p className="text-text-secondary text-lg max-w-2xl drop-shadow-md">{bannerSubtitle}</p>
+                <p className="text-text-secondary text-lg sm:text-xl max-w-2xl drop-shadow-md animate-fade-in-up" style={{ animationDelay: "100ms" }}>
+                  {bannerSubtitle}
+                </p>
               )}
             </div>
           </div>
         )}
 
-        {/* Fallback hero without image */}
         {!worldSetting?.imageUrl && (
-          <div className="text-center py-12">
-            <h1 className="font-display text-4xl sm:text-5xl tracking-[0.14em] text-accent-emphasis mb-3">
+          <div className="py-16 sm:py-20 mb-8">
+            <h1 className="font-display text-4xl sm:text-5xl lg:text-6xl tracking-[0.12em] text-accent-emphasis mb-4 animate-fade-in-up">
               {bannerTitle}
             </h1>
             {bannerSubtitle && (
-              <p className="text-text-secondary text-lg max-w-xl mx-auto">{bannerSubtitle}</p>
+              <p className="text-text-secondary text-lg sm:text-xl max-w-2xl animate-fade-in-up" style={{ animationDelay: "100ms" }}>
+                {bannerSubtitle}
+              </p>
             )}
           </div>
         )}
 
-        {/* World overview prose */}
-        {worldSetting && worldSetting.contentHtml && (
+        {/* World overview */}
+        {worldSetting?.contentHtml && (
           <div
-            className="prose max-w-3xl mx-auto mb-8"
+            className="prose max-w-3xl mb-12"
             dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(worldSetting.contentHtml) }}
           />
         )}
 
         {/* Search */}
-        <div className="relative max-w-md mx-auto">
+        <div className="relative max-w-lg">
           <input
             type="text"
             value={search}
@@ -160,18 +158,18 @@ export function HomePage() {
             aria-controls={listboxId}
             aria-activedescendant={activeIndex >= 0 ? `search-result-${activeIndex}` : undefined}
             aria-autocomplete="list"
-            className="w-full bg-bg-tertiary/60 border border-border-muted rounded-lg px-4 py-2.5 text-sm
-                       text-text-primary placeholder:text-text-muted
-                       focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/60 focus-visible:border-accent/60
-                       text-center"
+            className="w-full bg-bg-secondary/60 border border-border-muted/60 rounded-lg px-4 py-3 text-sm
+                       text-text-primary placeholder:text-text-muted/70
+                       focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:border-accent/40
+                       transition-all duration-300"
           />
           {isOpen && searchResults.length > 0 && (
             <div
               ref={listRef}
               id={listboxId}
               role="listbox"
-              className="absolute z-20 top-full mt-1 w-full bg-bg-primary/95 border border-border-muted
-                         rounded-lg shadow-[var(--shadow-panel)] max-h-80 overflow-y-auto text-left
+              className="absolute z-20 top-full mt-2 w-full bg-bg-primary/98 border border-border-muted/60
+                         rounded-lg shadow-[var(--shadow-panel)] max-h-80 overflow-y-auto
                          animate-[fadeIn_120ms_ease-out]"
             >
               {searchResults.map((a, i) => (
@@ -182,12 +180,12 @@ export function HomePage() {
                   aria-selected={i === activeIndex}
                   to={`/articles/${encodeURIComponent(a.id)}`}
                   onClick={() => { setSearch(""); setIsOpen(false); }}
-                  className={`flex items-center gap-3 px-4 py-2.5 transition-colors ${
+                  className={`flex items-center gap-3 px-4 py-3 transition-colors duration-150 ${
                     i === activeIndex ? "bg-bg-hover" : "hover:bg-bg-hover"
                   }`}
                 >
                   {a.imageUrl && (
-                    <img src={a.imageUrl} alt="" className="w-8 h-8 rounded object-cover shrink-0" />
+                    <img src={a.imageUrl} alt="" className="w-9 h-9 rounded-md object-cover shrink-0" />
                   )}
                   <div className="min-w-0">
                     <div className="text-text-primary text-sm truncate">{a.title}</div>
@@ -198,83 +196,89 @@ export function HomePage() {
             </div>
           )}
           {isOpen && search.trim() && searchResults.length === 0 && (
-            <div className="absolute z-20 top-full mt-1 w-full bg-bg-primary/95 border border-border-muted
-                            rounded-lg shadow-[var(--shadow-panel)] px-4 py-3 text-text-muted text-sm text-center
+            <div className="absolute z-20 top-full mt-2 w-full bg-bg-primary/98 border border-border-muted/60
+                            rounded-lg shadow-[var(--shadow-panel)] px-4 py-4 text-text-muted text-sm
                             animate-[fadeIn_120ms_ease-out]">
-              No results found
+              No entries found for "{search}"
             </div>
           )}
         </div>
       </section>
 
-      {/* ── Quick links to sections ── */}
-      <section className="flex flex-wrap justify-center gap-3">
+      {/* ── Navigation links ── */}
+      <section className="flex flex-wrap gap-3 mb-20 stagger-children">
         <Link
           to="/articles"
-          className="px-4 py-2 rounded-lg border border-border-muted text-text-secondary text-sm font-display
-                     tracking-[0.12em] hover:border-accent/40 hover:text-accent transition-colors"
+          className="group px-5 py-2.5 rounded-lg border border-border-muted/50 text-text-secondary text-sm font-display
+                     tracking-[0.14em] hover:border-accent/30 hover:text-accent transition-all duration-300"
         >
-          Codex ({articles.filter((a) => a.template !== "world_setting").length})
+          Codex <span className="text-text-muted group-hover:text-accent/60 transition-colors">({articles.filter((a) => a.template !== "world_setting").length})</span>
         </Link>
         {(maps?.length ?? 0) > 0 && (
           <Link
             to="/maps"
-            className="px-4 py-2 rounded-lg border border-border-muted text-text-secondary text-sm font-display
-                       tracking-[0.12em] hover:border-accent/40 hover:text-accent transition-colors"
+            className="group px-5 py-2.5 rounded-lg border border-border-muted/50 text-text-secondary text-sm font-display
+                       tracking-[0.14em] hover:border-accent/30 hover:text-accent transition-all duration-300"
           >
-            Maps ({maps.length})
+            Maps <span className="text-text-muted group-hover:text-accent/60 transition-colors">({maps.length})</span>
           </Link>
         )}
         {(data.timelineEvents?.length ?? 0) > 0 && (
           <Link
             to="/timeline"
-            className="px-4 py-2 rounded-lg border border-border-muted text-text-secondary text-sm font-display
-                       tracking-[0.12em] hover:border-accent/40 hover:text-accent transition-colors"
+            className="group px-5 py-2.5 rounded-lg border border-border-muted/50 text-text-secondary text-sm font-display
+                       tracking-[0.14em] hover:border-accent/30 hover:text-accent transition-all duration-300"
           >
-            Timeline ({data.timelineEvents!.length})
+            Timeline <span className="text-text-muted group-hover:text-accent/60 transition-colors">({data.timelineEvents!.length})</span>
           </Link>
         )}
         <Link
           to="/graph"
-          className="px-4 py-2 rounded-lg border border-border-muted text-text-secondary text-sm font-display
-                     tracking-[0.12em] hover:border-accent/40 hover:text-accent transition-colors"
+          className="px-5 py-2.5 rounded-lg border border-border-muted/50 text-text-secondary text-sm font-display
+                     tracking-[0.14em] hover:border-accent/30 hover:text-accent transition-all duration-300"
         >
           Connections
         </Link>
       </section>
 
-      {/* ── Featured: Explore Further ── */}
+      {/* ── Featured ── */}
       {featured.length > 0 && (
         <section>
-          <h2 className="font-display text-accent text-lg tracking-[0.18em] uppercase mb-6">
-            Explore Further
-          </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          <div className="flex items-center gap-4 mb-8">
+            <h2 className="font-display text-accent text-sm tracking-[0.22em] uppercase">
+              Explore Further
+            </h2>
+            <div className="flex-1 h-px bg-border-muted/40" />
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 stagger-children">
             {featured.map((a) => {
               const color = TEMPLATE_COLORS[a.template];
               return (
                 <Link
                   key={a.id}
                   to={`/articles/${encodeURIComponent(a.id)}`}
-                  className="group bg-bg-secondary/80 border border-border-muted rounded-lg overflow-hidden
-                             hover:border-accent/40 transition-all hover:shadow-[var(--glow-aurum)]"
-                  style={{ borderLeftColor: `${color}60`, borderLeftWidth: 3 }}
+                  className="group overflow-hidden rounded-lg transition-all duration-500
+                             hover:shadow-[0_12px_40px_rgba(168,151,210,0.15)]
+                             hover:-translate-y-0.5"
+                  style={{ borderLeft: `3px solid ${color}50` }}
                 >
                   {a.imageUrl && (
-                    <div className="aspect-[3/4] overflow-hidden bg-bg-tertiary/40">
+                    <div className="aspect-[3/4] overflow-hidden bg-bg-tertiary/30">
                       <img
                         src={a.imageUrl}
                         alt={a.title}
                         loading="lazy"
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-700 ease-out"
                       />
                     </div>
                   )}
-                  <div className="p-3">
-                    <div className="text-xs tracking-[0.12em] uppercase mb-1" style={{ color }}>
+                  <div className="px-4 py-3 bg-bg-secondary/50">
+                    <div className="text-[10px] tracking-[0.16em] uppercase mb-1 transition-colors duration-300" style={{ color }}>
                       {TEMPLATE_LABELS[a.template]}
                     </div>
-                    <h3 className="font-display text-accent-emphasis text-sm">{a.title}</h3>
+                    <h3 className="font-display text-accent-emphasis text-[15px] group-hover:text-accent transition-colors duration-300">
+                      {a.title}
+                    </h3>
                   </div>
                 </Link>
               );

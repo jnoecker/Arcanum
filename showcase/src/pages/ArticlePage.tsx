@@ -14,7 +14,6 @@ export function ArticlePage() {
     document.title = article ? `${article.title} — ${data?.meta.worldName ?? "World Lore"}` : "Not Found";
   }, [article, data?.meta.worldName]);
 
-  // Prev/next within same template
   const siblings = useMemo(() => {
     if (!article || !data) return { prev: undefined, next: undefined };
     const sameType = data.articles
@@ -29,10 +28,10 @@ export function ArticlePage() {
 
   if (!article) {
     return (
-      <div className="text-center py-20">
-        <h1 className="font-display text-accent text-xl mb-2">Article Not Found</h1>
-        <p className="text-text-muted text-sm mb-4">This entry has been lost to the ages.</p>
-        <Link to="/articles" className="text-text-link text-sm hover:text-accent transition-colors">
+      <div className="text-center py-24">
+        <h1 className="font-display text-accent text-2xl mb-3">Article Not Found</h1>
+        <p className="text-text-muted mb-6">This entry has been lost to the ages.</p>
+        <Link to="/articles" className="text-text-link text-sm hover:text-accent transition-colors duration-300">
           Return to the Codex
         </Link>
       </div>
@@ -40,13 +39,9 @@ export function ArticlePage() {
   }
 
   const color = TEMPLATE_COLORS[article.template];
-
-  // Gather template-specific fields
   const fieldEntries = Object.entries(article.fields).filter(
     ([, v]) => v !== undefined && v !== null && v !== "",
   );
-
-  // Resolve relations
   const relations = article.relations.map((r) => ({
     ...r,
     target: articleById.get(r.targetId),
@@ -55,27 +50,27 @@ export function ArticlePage() {
   return (
     <div className="max-w-4xl mx-auto">
       {/* Breadcrumb */}
-      <nav aria-label="Breadcrumb" className="mb-6">
+      <nav aria-label="Breadcrumb" className="mb-8">
         <ol className="flex items-center gap-2 text-xs text-text-muted">
-          <li><Link to="/articles" className="hover:text-text-link transition-colors">Codex</Link></li>
-          <li aria-hidden="true">/</li>
+          <li><Link to="/articles" className="hover:text-text-link transition-colors duration-200">Codex</Link></li>
+          <li aria-hidden="true" className="opacity-40">/</li>
           <li>
             <Link
               to={`/articles?template=${article.template}`}
-              className="hover:text-text-link transition-colors"
+              className="hover:text-text-link transition-colors duration-200"
               style={{ color }}
             >
               {TEMPLATE_LABELS[article.template]}
             </Link>
           </li>
-          <li aria-hidden="true">/</li>
+          <li aria-hidden="true" className="opacity-40">/</li>
           <li aria-current="page" className="text-text-secondary truncate max-w-[200px]">{article.title}</li>
         </ol>
       </nav>
 
       {/* Article image */}
       {article.imageUrl && (
-        <div className="mb-6 rounded-lg overflow-hidden shadow-[var(--shadow-image)] max-w-md mx-auto">
+        <div className="mb-8 rounded-xl overflow-hidden shadow-[var(--shadow-image)] max-w-md mx-auto animate-fade-in-up">
           <img
             src={article.imageUrl}
             alt={article.title}
@@ -85,22 +80,22 @@ export function ArticlePage() {
       )}
 
       {/* Header */}
-      <div className="mb-8" style={{ borderLeft: `3px solid ${color}60`, paddingLeft: 16 }}>
+      <div className="mb-10" style={{ borderLeft: `3px solid ${color}50`, paddingLeft: 20 }}>
         <div
-          className="text-xs tracking-[0.14em] uppercase font-display mb-1"
+          className="text-[11px] tracking-[0.18em] uppercase font-display mb-2"
           style={{ color }}
         >
           {TEMPLATE_LABELS[article.template]}
         </div>
-        <h1 className="font-display text-3xl text-accent-emphasis tracking-[0.06em]">
+        <h1 className="font-display text-3xl sm:text-4xl text-accent-emphasis tracking-[0.04em] leading-tight">
           {article.title}
         </h1>
         {article.tags.length > 0 && (
-          <div className="flex flex-wrap gap-1.5 mt-3">
+          <div className="flex flex-wrap gap-2 mt-4">
             {article.tags.map((tag) => (
               <span
                 key={tag}
-                className="bg-accent/10 text-accent-muted text-xs px-2 py-0.5 rounded"
+                className="bg-accent/8 text-accent-muted text-xs px-2.5 py-1 rounded-md"
               >
                 {tag}
               </span>
@@ -109,7 +104,7 @@ export function ArticlePage() {
         )}
       </div>
 
-      <div className="flex flex-col lg:flex-row gap-8">
+      <div className="flex flex-col lg:flex-row gap-10">
         {/* Main content */}
         <article className="flex-1 min-w-0">
           <div
@@ -117,16 +112,16 @@ export function ArticlePage() {
             dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(article.contentHtml) }}
           />
 
-          {/* Prev / Next navigation */}
+          {/* Prev / Next */}
           {(siblings.prev || siblings.next) && (
-            <nav className="flex items-stretch gap-4 mt-12 pt-8 border-t border-border-muted" aria-label="Adjacent articles">
+            <nav className="flex items-stretch gap-4 mt-14 pt-10 border-t border-border-muted/40" aria-label="Adjacent articles">
               {siblings.prev ? (
                 <Link
                   to={`/articles/${encodeURIComponent(siblings.prev.id)}`}
-                  className="flex-1 group rounded-lg border border-border-muted p-3 hover:border-accent/40 transition-colors text-left"
+                  className="flex-1 group rounded-lg border border-border-muted/40 p-4 hover:border-accent/30 transition-all duration-300 text-left"
                 >
-                  <div className="text-text-muted text-xs mb-1">&larr; Previous</div>
-                  <div className="font-display text-sm text-text-primary group-hover:text-accent transition-colors truncate">
+                  <div className="text-text-muted text-[11px] tracking-[0.1em] uppercase mb-1.5">&larr; Previous</div>
+                  <div className="font-display text-sm text-text-primary group-hover:text-accent transition-colors duration-300 truncate">
                     {siblings.prev.title}
                   </div>
                 </Link>
@@ -134,10 +129,10 @@ export function ArticlePage() {
               {siblings.next ? (
                 <Link
                   to={`/articles/${encodeURIComponent(siblings.next.id)}`}
-                  className="flex-1 group rounded-lg border border-border-muted p-3 hover:border-accent/40 transition-colors text-right"
+                  className="flex-1 group rounded-lg border border-border-muted/40 p-4 hover:border-accent/30 transition-all duration-300 text-right"
                 >
-                  <div className="text-text-muted text-xs mb-1">Next &rarr;</div>
-                  <div className="font-display text-sm text-text-primary group-hover:text-accent transition-colors truncate">
+                  <div className="text-text-muted text-[11px] tracking-[0.1em] uppercase mb-1.5">Next &rarr;</div>
+                  <div className="font-display text-sm text-text-primary group-hover:text-accent transition-colors duration-300 truncate">
                     {siblings.next.title}
                   </div>
                 </Link>
@@ -148,24 +143,20 @@ export function ArticlePage() {
 
         {/* Sidebar */}
         <aside className="lg:w-72 shrink-0 space-y-6">
-          {/* Fields */}
           {fieldEntries.length > 0 && (
-            <div
-              className="border border-border-muted rounded-lg overflow-hidden"
-              style={{ borderTopColor: `${color}50`, borderTopWidth: 2 }}
-            >
-              <div className="px-4 py-2.5 bg-bg-tertiary/60">
-                <h3 className="font-display text-xs tracking-[0.18em] uppercase" style={{ color }}>
+            <div className="rounded-xl overflow-hidden" style={{ borderTop: `2px solid ${color}40` }}>
+              <div className="px-5 py-3 bg-bg-tertiary/40">
+                <h3 className="font-display text-[11px] tracking-[0.2em] uppercase" style={{ color }}>
                   Details
                 </h3>
               </div>
-              <dl className="px-4 py-3 space-y-2.5">
+              <dl className="px-5 py-4 space-y-3 bg-bg-secondary/30">
                 {fieldEntries.map(([key, value]) => (
                   <div key={key}>
-                    <dt className="text-text-muted text-xs capitalize">
+                    <dt className="text-text-muted text-[11px] capitalize tracking-wide">
                       {key.replace(/([A-Z])/g, " $1").trim()}
                     </dt>
-                    <dd className="text-text-primary text-sm">
+                    <dd className="text-text-primary text-sm mt-0.5">
                       {Array.isArray(value) ? value.join(", ") : String(value)}
                     </dd>
                   </div>
@@ -174,18 +165,14 @@ export function ArticlePage() {
             </div>
           )}
 
-          {/* Relations as colored chips */}
           {relations.length > 0 && (
-            <div
-              className="border border-border-muted rounded-lg overflow-hidden"
-              style={{ borderTopColor: `${color}50`, borderTopWidth: 2 }}
-            >
-              <div className="px-4 py-2.5 bg-bg-tertiary/60">
-                <h3 className="font-display text-xs tracking-[0.18em] uppercase" style={{ color }}>
+            <div className="rounded-xl overflow-hidden" style={{ borderTop: `2px solid ${color}40` }}>
+              <div className="px-5 py-3 bg-bg-tertiary/40">
+                <h3 className="font-display text-[11px] tracking-[0.2em] uppercase" style={{ color }}>
                   Connections
                 </h3>
               </div>
-              <div className="px-4 py-3 space-y-2">
+              <div className="px-5 py-4 space-y-2.5 bg-bg-secondary/30">
                 {relations.map((r) => (
                   <div key={`${r.targetId}:${r.type}`} className="flex items-baseline gap-2">
                     <span className="text-text-muted text-[10px] tracking-[0.1em] uppercase shrink-0">
@@ -194,8 +181,8 @@ export function ArticlePage() {
                     {r.target ? (
                       <Link
                         to={`/articles/${encodeURIComponent(r.targetId)}`}
-                        className="text-sm px-2 py-0.5 rounded bg-accent/8 text-text-link hover:bg-accent/15
-                                   hover:text-accent transition-colors truncate"
+                        className="text-sm px-2 py-0.5 rounded-md bg-accent/6 text-text-link hover:bg-accent/14
+                                   hover:text-accent transition-all duration-200 truncate"
                       >
                         {r.target.title}
                       </Link>

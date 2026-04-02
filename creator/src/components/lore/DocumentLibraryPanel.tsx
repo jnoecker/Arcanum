@@ -20,7 +20,8 @@ export function DocumentLibraryPanel() {
     try {
       const result = await open({
         multiple: false,
-        filters: [{ name: "Markdown", extensions: ["md", "txt"] }],
+        title: "Import Document",
+        filters: [{ name: "Documents", extensions: ["md", "txt", "markdown"] }],
       });
       console.log("[DocImport] dialog result:", result, typeof result);
       if (!result) return;

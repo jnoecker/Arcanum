@@ -1,73 +1,83 @@
-import { memo, useState, useMemo, useCallback, useEffect, useRef } from "react";
+import { memo, useState, useMemo, useCallback, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
-import { open } from "@tauri-apps/plugin-dialog";
+import { useSpriteDefinitionStore } from "@/stores/spriteDefinitionStore";
 import { useConfigStore } from "@/stores/configStore";
+import { useProjectStore } from "@/stores/projectStore";
 import { useAssetStore } from "@/stores/assetStore";
 import { useImageSrc } from "@/lib/useImageSrc";
-import {
-  getSpriteAxes,
-  spriteKey,
-  tierLabel,
-  tierRange,
-  getAllTiers,
-  totalSprites,
-  isRaceOnlyTier,
-  type SpriteTier,
-} from "@/lib/spriteMatrix";
-import {
-  composePrompt,
-  getEnhanceSystemPrompt,
-  UNIVERSAL_NEGATIVE,
-  ART_STYLE_LABELS,
-} from "@/lib/arcanumPrompts";
-import {
-  generateSpriteTemplate,
-  fillSpriteTemplate,
-  type SpritePromptTemplate,
-} from "@/lib/spritePromptGen";
-import { TIER_ORDER } from "@/lib/defaultSpriteData";
-import { IMAGE_MODELS, ENTITY_DIMENSIONS, imageGenerateCommand } from "@/types/assets";
-import type { AssetEntry, GeneratedImage, SyncProgress } from "@/types/assets";
-import type { AppConfig } from "@/types/config";
+import { composePrompt, UNIVERSAL_NEGATIVE } from "@/lib/arcanumPrompts";
 import { removeBgAndSave } from "@/lib/useBackgroundRemoval";
-import { AchievementSpriteEditor } from "@/components/AchievementSpriteEditor";
+import { IMAGE_MODELS, ENTITY_DIMENSIONS, imageGenerateCommand } from "@/types/assets";
+import type {
+  SpriteDefinition,
+  SpriteVariant,
+  SpriteRequirement,
+  RequirementType,
+} from "@/types/sprites";
+import type { GeneratedImage, AssetContext, SyncProgress } from "@/types/assets";
 
-type SpriteTab = "tiers" | "achievements";
+// ─── Helpers ────────────────────────────────────────────────────────
 
-interface SpriteImportResult {
-  imported: number;
-  retagged: number;
-  skipped: number;
-  errors: string[];
+function emptyRequirement(type: RequirementType): SpriteRequirement {
+  switch (type) {
+    case "minLevel": return { type: "minLevel", level: 1 };
+    case "race": return { type: "race", race: "" };
+    case "class": return { type: "class", playerClass: "" };
+    case "achievement": return { type: "achievement", achievementId: "" };
+    case "staff": return { type: "staff" };
+  }
 }
 
-/** Convert spriteMatrix tier format to spritePromptGen format ("t1", "tstaff"). */
-function tierToPromptKey(tier: SpriteTier): string {
-  return `t${tier}`;
+function requirementLabel(req: SpriteRequirement): string {
+  switch (req.type) {
+    case "minLevel": return `Level ${req.level}+`;
+    case "race": return `Race: ${req.race || "?"}`;
+    case "class": return `Class: ${req.playerClass || "?"}`;
+    case "achievement": return `Achievement: ${req.achievementId || "?"}`;
+    case "staff": return "Staff";
+  }
 }
 
-function displayClassLabel(
-  cls: string,
-  config: AppConfig | null,
-) {
-  return cls === "base"
-    ? "Shared race form"
-    : (config?.classes[cls.toUpperCase()]?.displayName ?? cls);
+/** Get the effective imageId for a sprite (from variants or image shorthand). */
+function primaryImageId(id: string, def: SpriteDefinition): string {
+  if (def.variants && def.variants.length > 0) return def.variants[0]!.imageId;
+  return id;
 }
 
-const SpriteThumbnail = memo(function SpriteThumbnail({ fileName }: { fileName: string | undefined }) {
+/** Get the effective image path for asset lookup. */
+function primaryAssetKey(id: string, def: SpriteDefinition): string {
+  return primaryImageId(id, def);
+}
+
+const REQUIREMENT_TYPES: { value: RequirementType; label: string }[] = [
+  { value: "minLevel", label: "Min Level" },
+  { value: "race", label: "Race" },
+  { value: "class", label: "Class" },
+  { value: "achievement", label: "Achievement" },
+  { value: "staff", label: "Staff" },
+];
+
+// ─── Thumbnail ──────────────────────────────────────────────────────
+
+const SpriteThumbnail = memo(function SpriteThumbnail({
+  fileName,
+  size = "h-12 w-12",
+}: {
+  fileName: string | undefined;
+  size?: string;
+}) {
   const src = useImageSrc(fileName);
   if (!src) {
     return (
-      <div className="flex h-full w-full items-center justify-center bg-bg-tertiary text-sm text-text-muted/30">
-        +
+      <div className={`flex ${size} items-center justify-center rounded-lg border border-dashed border-white/12 bg-white/4 text-2xs text-text-muted`}>
+        --
       </div>
     );
   }
-  return (
-    <img src={src} alt="" loading="lazy" className="h-full w-full object-cover" />
-  );
+  return <img src={src} alt="" className={`${size} rounded-lg object-cover`} />;
 });
+
+// ─── Lightbox ───────────────────────────────────────────────────────
 
 function SpriteLightbox({
   spriteKey: key,
@@ -93,7 +103,6 @@ function SpriteLightbox({
   const src = useImageSrc(fileName);
   const [removingBg, setRemovingBg] = useState(false);
 
-  // Close on Escape
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
@@ -171,293 +180,590 @@ function SpriteLightbox({
   );
 }
 
+// ─── Requirement editor row ─────────────────────────────────────────
+
+function RequirementRow({
+  req,
+  index,
+  races,
+  classes,
+  onChange,
+  onRemove,
+}: {
+  req: SpriteRequirement;
+  index: number;
+  races: string[];
+  classes: string[];
+  onChange: (index: number, req: SpriteRequirement) => void;
+  onRemove: (index: number) => void;
+}) {
+  return (
+    <div className="flex items-center gap-2 rounded-lg border border-white/8 bg-black/12 px-3 py-2">
+      <select
+        value={req.type}
+        onChange={(e) => onChange(index, emptyRequirement(e.target.value as RequirementType))}
+        className="rounded border border-border-default bg-bg-primary px-1.5 py-1 text-xs text-text-primary outline-none"
+      >
+        {REQUIREMENT_TYPES.map((rt) => (
+          <option key={rt.value} value={rt.value}>{rt.label}</option>
+        ))}
+      </select>
+
+      {req.type === "minLevel" && (
+        <input
+          type="number"
+          min={1}
+          value={req.level}
+          onChange={(e) => onChange(index, { type: "minLevel", level: parseInt(e.target.value) || 1 })}
+          className="w-20 rounded border border-border-default bg-bg-primary px-1.5 py-1 text-xs text-text-primary outline-none"
+          placeholder="Level"
+        />
+      )}
+
+      {req.type === "race" && (
+        <select
+          value={req.race}
+          onChange={(e) => onChange(index, { type: "race", race: e.target.value })}
+          className="rounded border border-border-default bg-bg-primary px-1.5 py-1 text-xs text-text-primary outline-none"
+        >
+          <option value="">Select race...</option>
+          {races.map((r) => (
+            <option key={r} value={r}>{r}</option>
+          ))}
+        </select>
+      )}
+
+      {req.type === "class" && (
+        <select
+          value={req.playerClass}
+          onChange={(e) => onChange(index, { type: "class", playerClass: e.target.value })}
+          className="rounded border border-border-default bg-bg-primary px-1.5 py-1 text-xs text-text-primary outline-none"
+        >
+          <option value="">Select class...</option>
+          {classes.map((c) => (
+            <option key={c} value={c}>{c}</option>
+          ))}
+        </select>
+      )}
+
+      {req.type === "achievement" && (
+        <input
+          value={req.achievementId}
+          onChange={(e) => onChange(index, { type: "achievement", achievementId: e.target.value })}
+          className="flex-1 rounded border border-border-default bg-bg-primary px-1.5 py-1 text-xs text-text-primary outline-none"
+          placeholder="e.g. combat/secret_slayer"
+        />
+      )}
+
+      {req.type === "staff" && (
+        <span className="text-2xs text-text-muted">Player must be staff</span>
+      )}
+
+      <button
+        onClick={() => onRemove(index)}
+        className="ml-auto shrink-0 rounded border border-status-error/30 px-1.5 py-0.5 text-2xs text-status-error hover:bg-status-error/10"
+      >
+        Remove
+      </button>
+    </div>
+  );
+}
+
+// ─── Variant editor ─────────────────────────────────────────────────
+
+function VariantRow({
+  variant,
+  index,
+  races,
+  classes,
+  assetFileName,
+  generating,
+  hasApiKey,
+  onPatch,
+  onRemove,
+  onGenerate,
+}: {
+  variant: SpriteVariant;
+  index: number;
+  races: string[];
+  classes: string[];
+  assetFileName: string | undefined;
+  generating: boolean;
+  hasApiKey: boolean;
+  onPatch: (index: number, patch: Partial<SpriteVariant>) => void;
+  onRemove: (index: number) => void;
+  onGenerate: (variant: SpriteVariant) => void;
+}) {
+  return (
+    <div className="flex items-start gap-3 rounded-xl border border-white/8 bg-black/12 p-3">
+      <SpriteThumbnail fileName={assetFileName} />
+
+      <div className="flex min-w-0 flex-1 flex-col gap-2">
+        <div className="grid grid-cols-2 gap-2">
+          <label className="flex flex-col gap-0.5 text-2xs text-text-muted">
+            Image ID
+            <input
+              className="rounded border border-border-default bg-bg-primary px-1.5 py-1 text-xs text-text-primary outline-none"
+              value={variant.imageId}
+              onChange={(e) => {
+                const imageId = e.target.value;
+                onPatch(index, { imageId, imagePath: `player_sprites/${imageId}.png` });
+              }}
+            />
+          </label>
+          <label className="flex flex-col gap-0.5 text-2xs text-text-muted">
+            Display Name
+            <input
+              className="rounded border border-border-default bg-bg-primary px-1.5 py-1 text-xs text-text-primary outline-none"
+              placeholder="(inherits parent)"
+              value={variant.displayName ?? ""}
+              onChange={(e) => onPatch(index, { displayName: e.target.value || undefined })}
+            />
+          </label>
+        </div>
+
+        <div className="grid grid-cols-3 gap-2">
+          <label className="flex flex-col gap-0.5 text-2xs text-text-muted">
+            Race Filter
+            <select
+              className="rounded border border-border-default bg-bg-primary px-1.5 py-1 text-xs text-text-primary outline-none"
+              value={variant.race ?? ""}
+              onChange={(e) => onPatch(index, { race: e.target.value || undefined })}
+            >
+              <option value="">Any</option>
+              {races.map((r) => (
+                <option key={r} value={r}>{r}</option>
+              ))}
+            </select>
+          </label>
+          <label className="flex flex-col gap-0.5 text-2xs text-text-muted">
+            Class Filter
+            <select
+              className="rounded border border-border-default bg-bg-primary px-1.5 py-1 text-xs text-text-primary outline-none"
+              value={variant.playerClass ?? ""}
+              onChange={(e) => onPatch(index, { playerClass: e.target.value || undefined })}
+            >
+              <option value="">Any</option>
+              {classes.map((c) => (
+                <option key={c} value={c}>{c}</option>
+              ))}
+            </select>
+          </label>
+          <label className="flex flex-col gap-0.5 text-2xs text-text-muted">
+            Gender
+            <select
+              className="rounded border border-border-default bg-bg-primary px-1.5 py-1 text-xs text-text-primary outline-none"
+              value={variant.gender ?? ""}
+              onChange={(e) => onPatch(index, { gender: e.target.value || undefined })}
+            >
+              <option value="">Any</option>
+              <option value="male">Male</option>
+              <option value="female">Female</option>
+              <option value="nonbinary">Nonbinary</option>
+            </select>
+          </label>
+        </div>
+      </div>
+
+      <div className="flex shrink-0 flex-col gap-1">
+        <button
+          onClick={() => onGenerate(variant)}
+          disabled={!hasApiKey || generating}
+          className="rounded border border-accent/40 px-2 py-1 text-2xs text-accent hover:bg-accent/10 disabled:opacity-40"
+        >
+          {generating ? "..." : "Gen"}
+        </button>
+        <button
+          onClick={() => onRemove(index)}
+          className="rounded border border-status-error/30 px-2 py-1 text-2xs text-status-error hover:bg-status-error/10"
+        >
+          Del
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ─── Sprite detail editor ───────────────────────────────────────────
+
+function SpriteDetailEditor({
+  id,
+  def,
+  races,
+  classes,
+  spriteAssetMap,
+  hasApiKey,
+  generating,
+  onPatch,
+  onDelete,
+  onGenerateImage,
+}: {
+  id: string;
+  def: SpriteDefinition;
+  races: string[];
+  classes: string[];
+  spriteAssetMap: Map<string, string>;
+  hasApiKey: boolean;
+  generating: string | null;
+  onPatch: (patch: Partial<SpriteDefinition>) => void;
+  onDelete: () => void;
+  onGenerateImage: (imageId: string, brief: string) => void;
+}) {
+  const useVariants = (def.variants && def.variants.length > 0) || false;
+
+  const handleAddRequirement = useCallback(() => {
+    onPatch({ requirements: [...def.requirements, emptyRequirement("minLevel")] });
+  }, [def.requirements, onPatch]);
+
+  const handleChangeRequirement = useCallback((index: number, req: SpriteRequirement) => {
+    const reqs = [...def.requirements];
+    reqs[index] = req;
+    onPatch({ requirements: reqs });
+  }, [def.requirements, onPatch]);
+
+  const handleRemoveRequirement = useCallback((index: number) => {
+    onPatch({ requirements: def.requirements.filter((_, i) => i !== index) });
+  }, [def.requirements, onPatch]);
+
+  const handleSwitchToVariants = useCallback(() => {
+    const variants: SpriteVariant[] = [{
+      imageId: id,
+      imagePath: def.image || `player_sprites/${id}.png`,
+    }];
+    onPatch({ variants, image: undefined });
+  }, [id, def.image, onPatch]);
+
+  const handleSwitchToSingleImage = useCallback(() => {
+    const image = def.variants?.[0]?.imagePath || `player_sprites/${id}.png`;
+    onPatch({ image, variants: undefined });
+  }, [id, def.variants, onPatch]);
+
+  const handlePatchVariant = useCallback((index: number, patch: Partial<SpriteVariant>) => {
+    if (!def.variants) return;
+    const variants = def.variants.map((v, i) => (i === index ? { ...v, ...patch } : v));
+    onPatch({ variants });
+  }, [def.variants, onPatch]);
+
+  const handleRemoveVariant = useCallback((index: number) => {
+    if (!def.variants) return;
+    onPatch({ variants: def.variants.filter((_, i) => i !== index) });
+  }, [def.variants, onPatch]);
+
+  const handleAddVariant = useCallback(() => {
+    const suffix = def.variants ? def.variants.length : 0;
+    const newVariant: SpriteVariant = {
+      imageId: `${id}_v${suffix}`,
+      imagePath: `player_sprites/${id}_v${suffix}.png`,
+    };
+    onPatch({ variants: [...(def.variants ?? []), newVariant] });
+  }, [id, def.variants, onPatch]);
+
+  const handleGenerateForVariant = useCallback((variant: SpriteVariant) => {
+    onGenerateImage(variant.imageId, def.description ?? def.displayName);
+  }, [def.description, def.displayName, onGenerateImage]);
+
+  return (
+    <div className="mx-auto flex max-w-3xl flex-col gap-5">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <h3 className="font-display text-lg text-text-primary">{def.displayName}</h3>
+        <button
+          onClick={onDelete}
+          className="rounded border border-status-error/30 px-3 py-1 text-xs text-status-error hover:bg-status-error/10"
+        >
+          Delete Sprite
+        </button>
+      </div>
+
+      {/* Basic fields */}
+      <div className="flex flex-col gap-3">
+        <div className="grid grid-cols-3 gap-3">
+          <label className="flex flex-col gap-1 text-xs text-text-secondary">
+            Display Name
+            <input
+              className="rounded border border-border-default bg-bg-primary px-2 py-1.5 text-sm text-text-primary outline-none focus:border-accent/50"
+              value={def.displayName}
+              onChange={(e) => onPatch({ displayName: e.target.value })}
+            />
+          </label>
+          <label className="flex flex-col gap-1 text-xs text-text-secondary">
+            Category
+            <select
+              className="rounded border border-border-default bg-bg-primary px-2 py-1.5 text-sm text-text-primary outline-none focus:border-accent/50"
+              value={def.category}
+              onChange={(e) => onPatch({ category: e.target.value as "general" | "staff" })}
+            >
+              <option value="general">General</option>
+              <option value="staff">Staff</option>
+            </select>
+          </label>
+          <label className="flex flex-col gap-1 text-xs text-text-secondary">
+            Sort Order
+            <input
+              type="number"
+              className="rounded border border-border-default bg-bg-primary px-2 py-1.5 text-sm text-text-primary outline-none focus:border-accent/50"
+              value={def.sortOrder}
+              onChange={(e) => onPatch({ sortOrder: parseInt(e.target.value) || 0 })}
+            />
+          </label>
+        </div>
+
+        <label className="flex flex-col gap-1 text-xs text-text-secondary">
+          Description
+          <textarea
+            className="h-16 resize-y rounded border border-border-default bg-bg-primary px-2 py-1.5 text-sm text-text-primary outline-none focus:border-accent/50"
+            placeholder="Flavor text for this sprite..."
+            value={def.description ?? ""}
+            onChange={(e) => onPatch({ description: e.target.value || undefined })}
+          />
+        </label>
+      </div>
+
+      {/* Requirements */}
+      <div>
+        <div className="mb-2 flex items-center justify-between">
+          <h4 className="font-display text-sm text-text-primary">
+            Requirements ({def.requirements.length})
+          </h4>
+          <button
+            onClick={handleAddRequirement}
+            className="rounded border border-border-default px-2 py-1 text-xs text-text-secondary hover:bg-bg-elevated"
+          >
+            Add Requirement
+          </button>
+        </div>
+        {def.requirements.length === 0 && (
+          <p className="text-2xs text-text-muted">
+            No requirements &mdash; this sprite will be available to all players.
+          </p>
+        )}
+        <div className="flex flex-col gap-2">
+          {def.requirements.map((req, idx) => (
+            <RequirementRow
+              key={idx}
+              req={req}
+              index={idx}
+              races={races}
+              classes={classes}
+              onChange={handleChangeRequirement}
+              onRemove={handleRemoveRequirement}
+            />
+          ))}
+        </div>
+      </div>
+
+      {/* Image / Variants */}
+      <div>
+        <div className="mb-2 flex items-center justify-between">
+          <h4 className="font-display text-sm text-text-primary">
+            {useVariants ? `Variants (${def.variants?.length ?? 0})` : "Image"}
+          </h4>
+          <div className="flex gap-2">
+            {useVariants ? (
+              <>
+                <button
+                  onClick={handleAddVariant}
+                  className="rounded border border-border-default px-2 py-1 text-xs text-text-secondary hover:bg-bg-elevated"
+                >
+                  Add Variant
+                </button>
+                {(def.variants?.length ?? 0) <= 1 && (
+                  <button
+                    onClick={handleSwitchToSingleImage}
+                    className="rounded border border-border-default px-2 py-1 text-xs text-text-muted hover:bg-bg-elevated"
+                  >
+                    Use Single Image
+                  </button>
+                )}
+              </>
+            ) : (
+              <button
+                onClick={handleSwitchToVariants}
+                className="rounded border border-border-default px-2 py-1 text-xs text-text-muted hover:bg-bg-elevated"
+              >
+                Use Variants
+              </button>
+            )}
+          </div>
+        </div>
+
+        {useVariants ? (
+          <div className="flex flex-col gap-3">
+            {def.variants?.map((variant, idx) => (
+              <VariantRow
+                key={variant.imageId}
+                variant={variant}
+                index={idx}
+                races={races}
+                classes={classes}
+                assetFileName={spriteAssetMap.get(variant.imageId)}
+                generating={generating === variant.imageId}
+                hasApiKey={hasApiKey}
+                onPatch={handlePatchVariant}
+                onRemove={handleRemoveVariant}
+                onGenerate={handleGenerateForVariant}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="flex items-center gap-3 rounded-xl border border-white/8 bg-black/12 p-3">
+            <SpriteThumbnail fileName={spriteAssetMap.get(id)} size="h-16 w-16" />
+            <div className="flex min-w-0 flex-1 flex-col gap-1">
+              <label className="flex flex-col gap-0.5 text-2xs text-text-muted">
+                Image Path
+                <input
+                  className="rounded border border-border-default bg-bg-primary px-1.5 py-1 text-xs text-text-primary outline-none"
+                  value={def.image ?? `player_sprites/${id}.png`}
+                  onChange={(e) => onPatch({ image: e.target.value })}
+                />
+              </label>
+            </div>
+            <button
+              onClick={() => onGenerateImage(id, def.description ?? def.displayName)}
+              disabled={!hasApiKey || generating === id}
+              className="shrink-0 rounded border border-accent/40 px-3 py-1.5 text-xs text-accent hover:bg-accent/10 disabled:opacity-40"
+            >
+              {generating === id ? "Generating..." : "Generate"}
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── Main component ─────────────────────────────────────────────────
+
 export function PlayerSpriteManager() {
-  const [spriteTab, setSpriteTab] = useState<SpriteTab>("tiers");
+  const definitions = useSpriteDefinitionStore((s) => s.definitions);
+  const setDefinition = useSpriteDefinitionStore((s) => s.setDefinition);
+  const deleteDefinition = useSpriteDefinitionStore((s) => s.deleteDefinition);
+  const dirty = useSpriteDefinitionStore((s) => s.dirty);
+  const saveDefinitions = useSpriteDefinitionStore((s) => s.saveDefinitions);
+
+  const project = useProjectStore((s) => s.project);
   const config = useConfigStore((s) => s.config);
   const assets = useAssetStore((s) => s.assets);
-  const loadAssets = useAssetStore((s) => s.loadAssets);
   const settings = useAssetStore((s) => s.settings);
+  const loadAssets = useAssetStore((s) => s.loadAssets);
   const acceptAsset = useAssetStore((s) => s.acceptAsset);
   const deleteAsset = useAssetStore((s) => s.deleteAsset);
-  const artStyle = useAssetStore((s) => s.artStyle);
 
-  useEffect(() => {
-    loadAssets();
-  }, [loadAssets]);
+  useEffect(() => { loadAssets(); }, [loadAssets]);
 
-  const [importing, setImporting] = useState(false);
-  const [importResult, setImportResult] = useState<SpriteImportResult | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [newId, setNewId] = useState("");
+  const [generating, setGenerating] = useState<string | null>(null);
   const [deploying, setDeploying] = useState(false);
   const [deployResult, setDeployResult] = useState<SyncProgress | null>(null);
-  const [filterRace, setFilterRace] = useState<string>("all");
-  const [filterClass, setFilterClass] = useState<string>("all");
-  const [viewSprite, setViewSprite] = useState<{ key: string; fileName: string; assetId: string; race: string; cls: string; tier: SpriteTier } | null>(null);
+  const [viewSprite, setViewSprite] = useState<{ key: string; fileName: string; assetId: string } | null>(null);
 
-  // Generation state
-  const [generating, setGenerating] = useState<string | null>(null); // spriteKey being generated
-  const [batchRunning, setBatchRunning] = useState(false);
-  const [batchProgress, setBatchProgress] = useState<{ done: number; total: number; failed: number } | null>(null);
-  const abortRef = useRef(false);
-
-  // Template-based generation — one LLM call, then pure string substitution
-  const [spriteTemplate, setSpriteTemplate] = useState<SpritePromptTemplate | null>(null);
-  const [generatingTemplate, setGeneratingTemplate] = useState(false);
-
-  const { races, classes, tiers } = useMemo(
-    () => config ? getSpriteAxes(config) : { races: [] as string[], classes: [] as string[], tiers: [] as SpriteTier[] },
-    [config],
-  );
-  const allTiers = useMemo(() => config ? getAllTiers(config) : [] as SpriteTier[], [config]);
-  const total = useMemo(() => config ? totalSprites(config) : 0, [config]);
+  const races = useMemo(() => config ? Object.keys(config.races).map((r) => r.toUpperCase()) : [], [config]);
+  const classes = useMemo(() => config ? Object.keys(config.classes).map((c) => c.toUpperCase()) : [], [config]);
 
   const imageProvider = settings?.image_provider ?? "deepinfra";
-  const hasApiKey = settings && (
+  const hasApiKey = !!(settings && (
     (imageProvider === "deepinfra" && settings.deepinfra_api_key.length > 0) ||
     (imageProvider === "runware" && settings.runware_api_key.length > 0) ||
     (imageProvider === "openai" && settings.openai_api_key.length > 0)
-  );
-  const availableModels = IMAGE_MODELS.filter((m) => m.provider === imageProvider);
-  const defaultModel = availableModels[0];
+  ));
 
-  // Build lookup of existing sprite assets by variant_group
-  const spriteMap = useMemo(() => {
-    const map = new Map<string, AssetEntry>();
+  // Map imageId → asset file name for thumbnails
+  const spriteAssetMap = useMemo(() => {
+    const map = new Map<string, string>();
     for (const a of assets) {
-      if (a.asset_type === "player_sprite" && a.variant_group) {
+      if (a.asset_type === "player_sprite" && a.variant_group?.startsWith("player_sprite:")) {
         const key = a.variant_group.replace("player_sprite:", "");
-        // Prefer active variant
         if (!map.has(key) || a.is_active) {
-          map.set(key, a);
+          map.set(key, a.file_name);
         }
       }
     }
     return map;
   }, [assets]);
 
-  // Apply filters
-  const filteredRaces = filterRace === "all" ? races : [filterRace];
-  const filteredClasses = filterClass === "all" ? classes : [filterClass];
-  const sharedTiers = useMemo(() => tiers.filter(isRaceOnlyTier), [tiers]);
-  const classTiers = useMemo(() => tiers.filter((tier) => !isRaceOnlyTier(tier)), [tiers]);
-
-  const spriteSlots = useMemo(() => {
-    const slots: Array<{ race: string; cls: string; tier: SpriteTier }> = [];
-    for (const race of races) {
-      for (const tier of sharedTiers) {
-        slots.push({ race, cls: "base", tier });
-      }
-      for (const cls of classes) {
-        for (const tier of classTiers) {
-          slots.push({ race, cls, tier });
-        }
-      }
-    }
-    return slots;
-  }, [classTiers, classes, races, sharedTiers]);
-
-  const visibleSpriteSlots = useMemo(() => {
-    const slots: Array<{ race: string; cls: string; tier: SpriteTier }> = [];
-    for (const race of filteredRaces) {
-      for (const tier of sharedTiers) {
-        slots.push({ race, cls: "base", tier });
-      }
-      for (const cls of filteredClasses) {
-        for (const tier of classTiers) {
-          slots.push({ race, cls, tier });
-        }
-      }
-    }
-    return slots;
-  }, [classTiers, filteredClasses, filteredRaces, sharedTiers]);
-
-  const coveredCount = useMemo(
-    () => spriteSlots.filter((slot) => spriteMap.has(spriteKey(slot.race, slot.cls, slot.tier))).length,
-    [spriteMap, spriteSlots],
+  const sortedDefs = useMemo(
+    () => Object.entries(definitions).sort(([, a], [, b]) => a.sortOrder - b.sortOrder),
+    [definitions],
   );
 
-  /** Generate a sprite template (one LLM call, reusable for all sprites). */
-  const handleGenerateTemplate = useCallback(async () => {
-    if (!config) return;
-    setGeneratingTemplate(true);
-    try {
-      const raceKeys = Object.keys(config.races).map((r) => r.toUpperCase());
-      const classKeys = ["base", ...Object.keys(config.classes).map((c) => c.toUpperCase())];
-      const tierKeys = TIER_ORDER;
-      const vibe = "Fantasy RPG character sprites for a MUD game world";
-      const template = await generateSpriteTemplate(raceKeys, classKeys, tierKeys, vibe);
-      setSpriteTemplate(template);
-    } catch (e) {
-      console.error("Failed to generate sprite template:", e);
-    } finally {
-      setGeneratingTemplate(false);
-    }
-  }, [config]);
+  const selectedDef = selectedId ? definitions[selectedId] : null;
 
-  /** Generate a single sprite, accept it, and remove background. */
-  const generateSprite = useCallback(async (
-    race: string,
-    cls: string,
-    tier: SpriteTier,
-  ): Promise<boolean> => {
-    const key = spriteKey(race, cls, tier);
-    const tierKey = tierToPromptKey(tier);
-    const promptClass = isRaceOnlyTier(tier) ? "base" : cls;
-
-    let finalPrompt: string;
-
-    // If we have a template, use pure string substitution (no LLM call per sprite)
-    if (spriteTemplate) {
-      finalPrompt = fillSpriteTemplate(spriteTemplate, {
-        race: race.toUpperCase(),
-        playerClass: promptClass.toUpperCase(),
-        tier: tierKey,
-      });
-    } else {
-      // Fallback: LLM enhance or static compose
-      const basePrompt = composePrompt("player_sprite", artStyle);
-      const hasLlmKey = settings && (
-        settings.deepinfra_api_key.length > 0 ||
-        settings.anthropic_api_key.length > 0 ||
-        settings.openrouter_api_key.length > 0
-      );
-      if (hasLlmKey) {
-        try {
-          const systemPrompt = getEnhanceSystemPrompt(artStyle);
-          const raceDef = config?.races[race.toUpperCase()];
-          const classDef = promptClass === "base" ? undefined : config?.classes[promptClass.toUpperCase()];
-          const context = [
-            `Race: ${raceDef?.displayName ?? race}`,
-            raceDef?.description ? `Race description: ${raceDef.description}` : null,
-            `Class: ${promptClass === "base" ? "Base" : (classDef?.displayName ?? promptClass)}`,
-            classDef?.description ? `Class description: ${classDef.description}` : null,
-            `Tier: ${tierKey}`,
-          ].filter(Boolean).join("\n");
-          const userPrompt = [
-            `Generate an image prompt for this player character sprite:\n${context}`,
-            `\nReference style template (adapt but prioritize the character description above):\n${basePrompt}`,
-          ].join("\n");
-          finalPrompt = await invoke<string>("llm_complete", { systemPrompt, userPrompt });
-        } catch {
-          finalPrompt = composePrompt("player_sprite", artStyle);
-        }
-      } else {
-        finalPrompt = composePrompt("player_sprite", artStyle);
-      }
-    }
-
-    const dims = ENTITY_DIMENSIONS.player_sprite ?? { width: 512, height: 512 };
-    const command = imageGenerateCommand(imageProvider);
-    const modelId = defaultModel?.id;
-    if (!modelId) throw new Error(`No models available for provider: ${imageProvider}`);
-
-    const image = await invoke<GeneratedImage>(command, {
-      prompt: finalPrompt,
-      negativePrompt: UNIVERSAL_NEGATIVE,
-      model: modelId,
-      width: dims.width,
-      height: dims.height,
-      steps: defaultModel?.defaultSteps ?? 4,
-      guidance: defaultModel && "defaultGuidance" in defaultModel ? defaultModel.defaultGuidance : null,
+  const handleAdd = useCallback(() => {
+    const id = newId.trim().toLowerCase().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "");
+    if (!id || definitions[id]) return;
+    setDefinition(id, {
+      displayName: newId.trim() || id,
+      category: "general",
+      sortOrder: Object.keys(definitions).length * 10,
+      requirements: [],
+      image: `player_sprites/${id}.png`,
     });
+    setNewId("");
+    setSelectedId(id);
+  }, [newId, definitions, setDefinition]);
 
-    const assetContext = { zone: "sprites", entity_type: "player_sprite", entity_id: key };
-    const variantGroup = `player_sprite:${key}`;
+  const handleSave = useCallback(async () => {
+    if (!project) return;
+    await saveDefinitions(project);
+  }, [project, saveDefinitions]);
 
-    await acceptAsset(image, "player_sprite", finalPrompt, assetContext, variantGroup, true);
+  const handlePatchSelected = useCallback(
+    (patch: Partial<SpriteDefinition>) => {
+      if (!selectedId || !selectedDef) return;
+      setDefinition(selectedId, { ...selectedDef, ...patch });
+    },
+    [selectedId, selectedDef, setDefinition],
+  );
 
-    // Always remove background for player sprites — they need transparency
-    if (image.data_url) {
-      removeBgAndSave(image.data_url, "player_sprite", assetContext, variantGroup).catch(() => {});
-    }
+  const handleDeleteSelected = useCallback(() => {
+    if (!selectedId) return;
+    deleteDefinition(selectedId);
+    setSelectedId(null);
+  }, [selectedId, deleteDefinition]);
 
-    return true;
-  }, [config, artStyle, settings, imageProvider, defaultModel, spriteTemplate, acceptAsset]);
+  const handleGenerateImage = useCallback(
+    async (imageId: string, brief: string) => {
+      if (!hasApiKey || !settings) return;
+      setGenerating(imageId);
 
-  /** Generate a single sprite cell on click. */
-  const handleGenerateOne = useCallback(async (
-    race: string,
-    cls: string,
-    tier: SpriteTier,
-  ) => {
-    const key = spriteKey(race, cls, tier);
-    setGenerating(key);
-    try {
-      await generateSprite(race, cls, tier);
-      await loadAssets();
-    } catch (e) {
-      console.error(`Failed to generate sprite ${key}:`, e);
-    } finally {
-      setGenerating(null);
-    }
-  }, [generateSprite, loadAssets]);
+      try {
+        const artStyle = useAssetStore.getState().artStyle;
+        const finalPrompt = composePrompt("player_sprite", artStyle, brief);
+        const models = IMAGE_MODELS.filter((m) => m.provider === imageProvider);
+        const model = models[0];
+        if (!model) throw new Error("No image model available");
 
-  /** Batch generate all missing sprites (respects current filters). */
-  const handleBatchGenerate = useCallback(async () => {
-    const missing = visibleSpriteSlots.filter((slot) => !spriteMap.has(spriteKey(slot.race, slot.cls, slot.tier)));
+        const dims = ENTITY_DIMENSIONS.player_sprite ?? { width: 512, height: 512 };
+        const cmd = imageGenerateCommand(imageProvider);
 
-    if (missing.length === 0) return;
+        const image = await invoke<GeneratedImage>(cmd, {
+          prompt: finalPrompt,
+          negativePrompt: UNIVERSAL_NEGATIVE,
+          model: model.id,
+          width: dims.width,
+          height: dims.height,
+          steps: model.defaultSteps,
+        });
 
-    abortRef.current = false;
-    setBatchRunning(true);
-    setBatchProgress({ done: 0, total: missing.length, failed: 0 });
+        const assetContext: AssetContext = { zone: "sprites", entity_type: "player_sprite", entity_id: imageId };
+        const variantGroup = `player_sprite:${imageId}`;
 
-    const concurrency = settings?.batch_concurrency ?? 2;
-    const queue = [...missing];
-    let done = 0;
-    let failed = 0;
+        await acceptAsset(image, "player_sprite", finalPrompt, assetContext, variantGroup, true);
 
-    const worker = async () => {
-      while (queue.length > 0 && !abortRef.current) {
-        const slot = queue.shift();
-        if (!slot) break;
-
-        const key = spriteKey(slot.race, slot.cls, slot.tier);
-        setGenerating(key);
-
-        try {
-          await generateSprite(slot.race, slot.cls, slot.tier);
-          done++;
-        } catch (e) {
-          console.error(`Batch: failed ${key}:`, e);
-          failed++;
+        if (image.data_url) {
+          removeBgAndSave(image.data_url, "player_sprite", assetContext, variantGroup).catch(() => {});
         }
-        setBatchProgress({ done: done + failed, total: missing.length, failed });
+
+        await loadAssets();
+      } catch (err) {
+        console.error("Failed to generate sprite:", err);
+      } finally {
+        setGenerating(null);
       }
-    };
-
-    const workers = Array.from(
-      { length: Math.min(concurrency, queue.length) },
-      () => worker(),
-    );
-    await Promise.all(workers);
-
-    setGenerating(null);
-    setBatchRunning(false);
-    await loadAssets();
-  }, [visibleSpriteSlots, spriteMap, settings, generateSprite, loadAssets]);
-
-  const handleAbortBatch = useCallback(() => {
-    abortRef.current = true;
-  }, []);
-
-  const handleImport = useCallback(async () => {
-    const selected = await open({ directory: true, multiple: false });
-    if (!selected) return;
-
-    setImporting(true);
-    setImportResult(null);
-    try {
-      const result = await invoke<SpriteImportResult>("import_player_sprites", {
-        sourceDir: selected as string,
-      });
-      setImportResult(result);
-      await loadAssets();
-    } catch (e) {
-      setImportResult({ imported: 0, retagged: 0, skipped: 0, errors: [String(e)] });
-    } finally {
-      setImporting(false);
-    }
-  }, [loadAssets]);
+    },
+    [hasApiKey, settings, imageProvider, acceptAsset, loadAssets],
+  );
 
   const handleDeploy = useCallback(async () => {
     setDeploying(true);
@@ -472,191 +778,33 @@ export function PlayerSpriteManager() {
     }
   }, []);
 
-  const missingInView = useMemo(
-    () => visibleSpriteSlots.filter((slot) => !spriteMap.has(spriteKey(slot.race, slot.cls, slot.tier))).length,
-    [spriteMap, visibleSpriteSlots],
-  );
-  const tableRows = useMemo(
-    () => [
-      { cls: "base", label: "Shared race form", shared: true },
-      ...filteredClasses.map((cls) => ({
-        cls,
-        label: displayClassLabel(cls, config),
-        shared: false,
-      })),
-    ],
-    [config, filteredClasses],
-  );
-
-  if (!config || races.length === 0 || classes.length === 0) {
-    return (
-      <div className="p-6 text-sm text-text-muted">
-        <p>
-          Player sprites require races and classes to be configured.
-          Set these up in the Config tab first.
-        </p>
-      </div>
-    );
-  }
-
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      {/* Tab bar */}
-      <div className="flex shrink-0 items-center gap-1 border-b border-border-default bg-bg-secondary px-4 py-1.5">
-        {(["tiers", "achievements"] as const).map((tab) => (
-          <button
-            key={tab}
-            onClick={() => setSpriteTab(tab)}
-            className={`rounded-full border px-3 py-1 text-xs font-medium transition ${
-              spriteTab === tab
-                ? "border-[var(--border-glow-strong)] bg-[linear-gradient(135deg,rgba(168,151,210,0.25),rgba(140,174,201,0.15))] text-text-primary shadow-glow-sm"
-                : "border-transparent text-text-secondary hover:text-text-primary"
-            }`}
-          >
-            {tab === "tiers" ? "Tier & Staff" : "Achievement Sprites"}
-          </button>
-        ))}
-      </div>
-
-      {spriteTab === "achievements" ? (
-        <AchievementSpriteEditor />
-      ) : (
-      <>
-      {/* Header bar */}
-      <div className="flex shrink-0 flex-wrap items-center gap-3 border-b border-border-default bg-bg-secondary px-4 py-2">
+      {/* Header */}
+      <div className="flex shrink-0 items-center gap-3 border-b border-border-default bg-bg-secondary px-4 py-2">
         <h2 className="font-display text-xs uppercase tracking-widest text-text-muted">
           Player Sprites
         </h2>
         <span className="text-2xs text-text-muted">
-          {coveredCount} / {total} sprites
+          {sortedDefs.length} definition{sortedDefs.length !== 1 ? "s" : ""}
         </span>
-
-        <div className="ml-auto flex items-center gap-2">
-          <div className="rounded border border-border-default bg-bg-primary px-2 py-1 text-2xs text-text-secondary">
-            {ART_STYLE_LABELS[artStyle]}
-          </div>
-
-          {/* Generate template */}
-          <button
-            onClick={handleGenerateTemplate}
-            disabled={generatingTemplate || !hasApiKey}
-            title={spriteTemplate ? `Template generated ${spriteTemplate.generatedAt}` : "Generate a reusable prompt template (one LLM call)"}
-            className={`rounded border px-3 py-1.5 text-xs transition-colors disabled:opacity-50 ${
-              spriteTemplate
-                ? "border-status-success/40 text-status-success hover:bg-status-success/10"
-                : "border-border-default text-text-secondary hover:bg-bg-elevated hover:text-text-primary"
-            }`}
-          >
-            {generatingTemplate ? "Generating Template..." : spriteTemplate ? "Template Ready" : "Gen Template"}
-          </button>
-
-          {/* Generate missing */}
-          {batchRunning ? (
-            <button
-              onClick={handleAbortBatch}
-              className="rounded border border-status-error/40 px-3 py-1.5 text-xs text-status-error transition-colors hover:bg-status-error/10"
-            >
-              Abort
-            </button>
-          ) : (
-            <button
-              onClick={handleBatchGenerate}
-              disabled={!hasApiKey || missingInView === 0 || !!generating}
-              title={!hasApiKey ? "Configure an API key in Settings first" : `Generate ${missingInView} missing sprite${missingInView !== 1 ? "s" : ""}`}
-              className="rounded border border-accent/40 px-3 py-1.5 text-xs text-accent transition-colors hover:bg-accent/10 disabled:opacity-50"
-            >
-              Generate Missing ({missingInView})
-            </button>
-          )}
-
-          <button
-            onClick={handleImport}
-            disabled={importing}
-            className="rounded border border-border-default px-3 py-1.5 text-xs text-text-secondary transition-colors hover:bg-bg-elevated hover:text-text-primary disabled:opacity-50"
-          >
-            {importing ? "Importing..." : "Import from Folder..."}
-          </button>
-          <button
-            onClick={handleDeploy}
-            disabled={deploying || coveredCount === 0}
-            className="rounded border border-accent/40 px-3 py-1.5 text-xs text-accent transition-colors hover:bg-accent/10 disabled:opacity-50"
-          >
-            {deploying ? "Deploying..." : "Deploy to R2"}
-          </button>
-        </div>
+        <div className="flex-1" />
+        {dirty && <span className="text-xs text-accent">modified</span>}
+        <button
+          onClick={handleSave}
+          disabled={!dirty}
+          className="rounded border border-accent/40 px-3 py-1 text-xs text-accent transition-colors hover:bg-accent/10 disabled:opacity-40"
+        >
+          Save
+        </button>
+        <button
+          onClick={handleDeploy}
+          disabled={deploying || sortedDefs.length === 0}
+          className="rounded border border-accent/40 px-3 py-1 text-xs text-accent transition-colors hover:bg-accent/10 disabled:opacity-40"
+        >
+          {deploying ? "Deploying..." : "Deploy to R2"}
+        </button>
       </div>
-
-      {/* Batch progress banner */}
-      {batchProgress && (
-        <div className="shrink-0 border-b border-border-default bg-bg-elevated px-4 py-2">
-          <div className="flex items-center gap-3 text-xs">
-            <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-bg-tertiary">
-              <div
-                className="h-full rounded-full bg-accent transition-all"
-                style={{ width: `${(batchProgress.done / Math.max(batchProgress.total, 1)) * 100}%` }}
-              />
-            </div>
-            <span className="text-text-secondary">
-              {batchProgress.done} / {batchProgress.total}
-            </span>
-            {batchProgress.failed > 0 && (
-              <span className="text-status-error">{batchProgress.failed} failed</span>
-            )}
-            {!batchRunning && (
-              <button
-                onClick={() => setBatchProgress(null)}
-                className="text-text-muted hover:text-text-primary"
-              >
-                &times;
-              </button>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Import result banner */}
-      {importResult && (
-        <div className="shrink-0 border-b border-border-default bg-bg-elevated px-4 py-2">
-          <div className="flex items-center gap-3 text-xs">
-            {importResult.imported > 0 && (
-              <span className="text-status-success">
-                {importResult.imported} imported
-              </span>
-            )}
-            {importResult.retagged > 0 && (
-              <span className="text-status-success">
-                {importResult.retagged} retagged
-              </span>
-            )}
-            {importResult.skipped > 0 && (
-              <span className="text-text-muted">
-                {importResult.skipped} already tagged
-              </span>
-            )}
-            {importResult.errors.length > 0 && (
-              <span className="text-status-error">
-                {importResult.errors.length} errors
-              </span>
-            )}
-            <button
-              onClick={() => setImportResult(null)}
-              className="ml-auto text-text-muted hover:text-text-primary"
-            >
-              &times;
-            </button>
-          </div>
-          {importResult.errors.length > 0 && (
-            <div className="mt-1 max-h-20 overflow-y-auto text-2xs text-status-error">
-              {importResult.errors.slice(0, 10).map((e, i) => (
-                <div key={i}>{e}</div>
-              ))}
-              {importResult.errors.length > 10 && (
-                <div>...and {importResult.errors.length - 10} more</div>
-              )}
-            </div>
-          )}
-        </div>
-      )}
 
       {/* Deploy result banner */}
       {deployResult && (
@@ -689,169 +837,95 @@ export function PlayerSpriteManager() {
               {deployResult.errors.slice(0, 10).map((e, i) => (
                 <div key={i}>{e}</div>
               ))}
-              {deployResult.errors.length > 10 && (
-                <div>...and {deployResult.errors.length - 10} more</div>
-              )}
             </div>
           )}
         </div>
       )}
 
-      {/* Filters */}
-      <div className="flex shrink-0 items-center gap-3 border-b border-border-default px-4 py-2">
-        <label className="flex items-center gap-1.5 text-xs text-text-muted">
-          Race:
-          <select
-            value={filterRace}
-            onChange={(e) => setFilterRace(e.target.value)}
-            className="rounded border border-border-default bg-bg-primary px-1.5 py-0.5 text-xs text-text-primary outline-none"
-          >
-            <option value="all">All</option>
-            {races.map((r) => (
-              <option key={r} value={r}>
-                {config.races[r.toUpperCase()]?.displayName ?? r}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="flex items-center gap-1.5 text-xs text-text-muted">
-          Class:
-          <select
-            value={filterClass}
-            onChange={(e) => setFilterClass(e.target.value)}
-            className="rounded border border-border-default bg-bg-primary px-1.5 py-0.5 text-xs text-text-primary outline-none"
-          >
-            <option value="all">All</option>
-            {classes.map((c) => (
-              <option key={c} value={c}>
-                {config.classes[c.toUpperCase()]?.displayName ?? c}
-              </option>
-            ))}
-          </select>
-        </label>
-      </div>
-
-      {/* Sprite grid */}
-      <div className="flex-1 overflow-y-auto p-4">
-        <p className="mb-3 text-2xs text-text-muted">
-          Filename format:{" "}
-          <code className="font-mono">
-            player_sprites/&#123;race&#125;_&#123;class-or-base&#125;_t&#123;tier&#125;.png
-          </code>
-          {" | "}Base and staff sprites use <code className="font-mono">base</code> instead of a class key.
-          {" | "}Tiers: {allTiers.map((t) => `t${t}`).join(", ")}
-          {" | "}Click a sprite to open the larger view.
-        </p>
-
-        {filteredRaces.map((race) => (
-          <div key={race} className="mb-6">
-            <h3 className="mb-2 font-display text-xs uppercase tracking-widest text-accent">
-              {config.races[race.toUpperCase()]?.displayName ?? race}
-            </h3>
-
-            <div className="overflow-x-auto">
-              <table className="w-full border-collapse">
-                <thead>
-                  <tr>
-                    <th scope="col" className="border border-border-default bg-bg-tertiary px-2 py-1 text-left text-2xs font-normal text-text-muted">
-                      Class
-                    </th>
-                    {tiers.map((tier) => (
-                      <th
-                        key={tier}
-                        scope="col"
-                        className="border border-border-default bg-bg-tertiary px-1 py-1 text-center text-2xs font-normal text-text-muted"
-                      >
-                        <div>{tierLabel(tier)}</div>
-                        <div className="text-3xs opacity-60">
-                          {tierRange(tier, allTiers)}
-                        </div>
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {tableRows.map((row) => (
-                    <tr key={row.cls}>
-                      <td className="border border-border-default bg-bg-secondary px-2 py-1 text-xs text-text-secondary">
-                        {row.label}
-                      </td>
-                      {tiers.map((tier) => {
-                        const slotClass = isRaceOnlyTier(tier) ? "base" : row.cls;
-                        const isUnavailable = row.shared ? !isRaceOnlyTier(tier) : isRaceOnlyTier(tier);
-                        if (isUnavailable) {
-                          return (
-                            <td key={tier} className="border border-border-default bg-bg-primary/40 p-0.5">
-                              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded text-3xs text-text-muted/60">
-                                --
-                              </div>
-                            </td>
-                          );
-                        }
-
-                        const key = spriteKey(race, slotClass, tier);
-                        const asset = spriteMap.get(key);
-                        const isGenerating = generating === key;
-                        const isEmpty = !asset;
-                        const canGenerate = hasApiKey && !batchRunning && !generating;
-
-                        return (
-                          <td
-                            key={tier}
-                            className="border border-border-default p-0.5"
-                            title={`player_sprites/${key}.png`}
-                          >
-                            <div
-                              className={`group relative mx-auto h-12 w-12 overflow-hidden rounded ${isEmpty && !isGenerating ? "border border-dashed border-white/15" : ""}`}
-                            >
-                              {isGenerating ? (
-                                <div className="flex h-full w-full items-center justify-center bg-bg-tertiary">
-                                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-accent border-t-transparent" />
-                                </div>
-                              ) : (
-                                <>
-                                  <button
-                                    disabled={isEmpty}
-                                    onClick={() => {
-                                      if (asset) {
-                                        setViewSprite({ key, fileName: asset.file_name, assetId: asset.id, race, cls: slotClass, tier });
-                                      }
-                                    }}
-                                    className="h-full w-full disabled:cursor-default"
-                                  >
-                                    <SpriteThumbnail fileName={asset?.file_name} />
-                                  </button>
-                                  {/* Hover overlay with actions */}
-                                  <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-0.5 bg-black/50 opacity-0 transition-opacity group-hover:opacity-100">
-                                    {isEmpty ? (
-                                      canGenerate && (
-                                        <button
-                                          onClick={() => handleGenerateOne(race, slotClass, tier)}
-                                          className="pointer-events-auto rounded px-1.5 py-0.5 text-3xs font-medium text-accent hover:bg-accent/20"
-                                          title="Generate"
-                                        >
-                                          Generate
-                                        </button>
-                                      )
-                                    ) : (
-                                      <div className="rounded px-1.5 py-0.5 text-3xs font-medium text-text-primary">
-                                        View
-                                      </div>
-                                    )}
-                                  </div>
-                                </>
-                              )}
-                            </div>
-                          </td>
-                        );
-                      })}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+      <div className="flex min-h-0 flex-1">
+        {/* Left: definition list */}
+        <div className="flex w-72 shrink-0 flex-col border-r border-border-default bg-bg-secondary">
+          <div className="flex items-center gap-1 border-b border-border-default px-3 py-2">
+            <input
+              className="flex-1 rounded border border-border-default bg-bg-primary px-2 py-1 text-xs text-text-primary outline-none placeholder:text-text-muted focus:border-accent/50"
+              placeholder="New sprite ID"
+              value={newId}
+              onChange={(e) => setNewId(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleAdd()}
+            />
+            <button
+              onClick={handleAdd}
+              disabled={!newId.trim()}
+              className="rounded border border-border-default px-2 py-1 text-xs text-text-secondary hover:bg-bg-elevated disabled:opacity-40"
+            >
+              Add
+            </button>
           </div>
-        ))}
+          <div className="flex-1 overflow-y-auto">
+            {sortedDefs.map(([id, def]) => {
+              const assetKey = primaryAssetKey(id, def);
+              return (
+                <button
+                  key={id}
+                  onClick={() => setSelectedId(id)}
+                  className={`flex w-full items-center gap-2 border-b border-white/5 px-3 py-2.5 text-left text-xs transition ${
+                    selectedId === id
+                      ? "bg-gradient-active text-text-primary"
+                      : "text-text-secondary hover:bg-white/5"
+                  }`}
+                >
+                  <SpriteThumbnail fileName={spriteAssetMap.get(assetKey)} />
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate font-medium">{def.displayName}</div>
+                    <div className="truncate text-2xs text-text-muted">{id}</div>
+                    {def.requirements.length > 0 && (
+                      <div className="mt-0.5 flex flex-wrap gap-1">
+                        {def.requirements.map((req, i) => (
+                          <span
+                            key={i}
+                            className="rounded-full bg-white/8 px-1.5 py-0.5 text-3xs text-text-muted"
+                          >
+                            {requirementLabel(req)}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <span className="shrink-0 text-2xs text-text-muted">
+                    {def.category === "staff" ? "S" : def.sortOrder}
+                  </span>
+                </button>
+              );
+            })}
+            {sortedDefs.length === 0 && (
+              <div className="px-3 py-6 text-xs text-text-muted">
+                No sprite definitions yet. Add one above.
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Right: detail editor */}
+        <div className="flex-1 overflow-y-auto p-5">
+          {selectedDef && selectedId ? (
+            <SpriteDetailEditor
+              id={selectedId}
+              def={selectedDef}
+              races={races}
+              classes={classes}
+              spriteAssetMap={spriteAssetMap}
+              hasApiKey={hasApiKey}
+              generating={generating}
+              onPatch={handlePatchSelected}
+              onDelete={handleDeleteSelected}
+              onGenerateImage={handleGenerateImage}
+            />
+          ) : (
+            <div className="flex h-full items-center justify-center text-sm text-text-muted">
+              Select a sprite definition or add a new one.
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Sprite lightbox */}
@@ -860,11 +934,12 @@ export function PlayerSpriteManager() {
           spriteKey={viewSprite.key}
           fileName={viewSprite.fileName}
           variantGroup={`player_sprite:${viewSprite.key}`}
-          canRegenerate={!batchRunning && !generating}
-          canDelete={!batchRunning && !generating}
+          canRegenerate={!generating}
+          canDelete={!generating}
           onRegenerate={() => {
+            const key = viewSprite.key;
             setViewSprite(null);
-            void handleGenerateOne(viewSprite.race, viewSprite.cls, viewSprite.tier);
+            void handleGenerateImage(key, selectedDef?.description ?? selectedDef?.displayName ?? key);
           }}
           onDelete={() => {
             const assetId = viewSprite.assetId;
@@ -877,8 +952,6 @@ export function PlayerSpriteManager() {
           }}
           onClose={() => setViewSprite(null)}
         />
-      )}
-      </>
       )}
     </div>
   );

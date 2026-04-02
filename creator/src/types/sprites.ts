@@ -1,5 +1,8 @@
 // ─── Sprite definition types ────────────────────────────────────────
 // These types model the sprites.yaml format used by the MUD server.
+// Sprites use a requirements-based unlock system with AND logic.
+
+// ─── Sprite variants ────────────────────────────────────────────────
 
 export interface SpriteVariant {
   imageId: string;
@@ -10,26 +13,51 @@ export interface SpriteVariant {
   imagePath: string;
 }
 
-export interface SpriteUnlock {
-  type: "level" | "achievement" | "staff";
-  minLevel?: number;
-  achievementId?: string;
+// ─── Requirements (AND logic) ───────────────────────────────────────
+
+export interface MinLevelRequirement {
+  type: "minLevel";
+  level: number;
 }
+
+export interface RaceRequirement {
+  type: "race";
+  race: string;
+}
+
+export interface ClassRequirement {
+  type: "class";
+  playerClass: string;
+}
+
+export interface AchievementRequirement {
+  type: "achievement";
+  achievementId: string;
+}
+
+export interface StaffRequirement {
+  type: "staff";
+}
+
+export type SpriteRequirement =
+  | MinLevelRequirement
+  | RaceRequirement
+  | ClassRequirement
+  | AchievementRequirement
+  | StaffRequirement;
+
+export type RequirementType = SpriteRequirement["type"];
+
+// ─── Sprite definition ──────────────────────────────────────────────
 
 export interface SpriteDefinition {
   displayName: string;
-  category: "level" | "achievement" | "staff";
+  description?: string;
+  category: "general" | "staff";
   sortOrder: number;
-  unlock: SpriteUnlock;
-  variants: SpriteVariant[];
-}
-
-/** User-authored achievement sprite definition (stored in project). */
-export interface AchievementSpriteDef {
-  displayName: string;
-  sortOrder: number;
-  achievementId: string;
-  /** Creative brief for image generation. */
-  brief?: string;
-  variants: SpriteVariant[];
+  requirements: SpriteRequirement[];
+  /** Single-image shorthand — creates one variant with the sprite's ID as imageId. */
+  image?: string;
+  /** Multi-variant list. Takes precedence over `image` when both are present. */
+  variants?: SpriteVariant[];
 }

@@ -8,7 +8,6 @@ import { useZoneStore, type ZoneState } from "@/stores/zoneStore";
 import { serializeZone } from "@/lib/saveZone";
 import { useSpriteDefinitionStore } from "@/stores/spriteDefinitionStore";
 import type { AppConfig } from "@/types/config";
-import type { SpriteDefinition } from "@/types/sprites";
 
 export type SlotPositionMap = Record<string, { x: number; y: number }>;
 
@@ -504,7 +503,7 @@ export async function exportMudFormat(outputDir: string): Promise<ExportResult> 
   await writeTextFile(`${resourcesDir}/application.yaml`, configYaml);
 
   // Write sprites manifest
-  const spritesYaml = generateSpritesYaml(config);
+  const spritesYaml = generateSpritesYaml();
   if (spritesYaml) {
     await writeTextFile(`${resourcesDir}/sprites.yaml`, spritesYaml);
   }
@@ -548,64 +547,35 @@ export interface ExportResult {
 
 // ─── Sprites YAML generation ────────────────────────────────────────
 
-export function generateSpritesYaml(config?: AppConfig | null): string {
-  const c = config ?? useConfigStore.getState().config;
-  if (!c) return "";
+export function generateSpritesYaml(): string {
+  const definitions = useSpriteDefinitionStore.getState().definitions;
+  if (Object.keys(definitions).length === 0) return "";
 
-  const races = Object.keys(c.races);
-  const classes = Object.keys(c.classes);
-  const tiers = Array.from(new Set([1, ...(c.images.spriteLevelTiers ?? [])])).sort((a, b) => a - b);
-  const achievementDefs = useSpriteDefinitionStore.getState().definitions;
-
-  const entries: Record<string, SpriteDefinition> = {};
-  let sortOrder = 0;
-
-  // Tier sprites: one per race × class × tier
-  for (const race of races) {
-    for (const cls of classes) {
-      for (const tier of tiers) {
-        const key = `${race}_${cls}_t${tier}`;
-        const raceName = c.races[race]?.displayName ?? race;
-        const className = c.classes[cls]?.displayName ?? cls;
-        entries[key] = {
-          displayName: `${raceName} ${className} (Level ${tier}+)`,
-          category: "level",
-          sortOrder: sortOrder++,
-          unlock: { type: "level", minLevel: tier },
-          variants: [{
-            imageId: key,
-            imagePath: `player_sprites/${key}.png`,
-          }],
-        };
-      }
-    }
-  }
-
-  // Staff sprites: one per race
-  for (const race of races) {
-    const key = `${race}_base_tstaff`;
-    const raceName = c.races[race]?.displayName ?? race;
-    entries[key] = {
-      displayName: `${raceName} Staff`,
-      category: "staff",
-      sortOrder: sortOrder++,
-      unlock: { type: "staff" },
-      variants: [{
-        imageId: key,
-        imagePath: `player_sprites/${key}.png`,
-      }],
-    };
-  }
-
-  // Achievement sprites from user definitions
-  for (const [id, def] of Object.entries(achievementDefs)) {
-    entries[id] = {
+  const entries: Record<string, Record<string, unknown>> = {};
+  for (const [id, def] of Object.entries(definitions)) {
+    const entry: Record<string, unknown> = {
       displayName: def.displayName,
-      category: "achievement",
-      sortOrder: def.sortOrder,
-      unlock: { type: "achievement", achievementId: def.achievementId },
-      variants: def.variants,
     };
+    if (def.description) entry.description = def.description;
+    entry.category = def.category;
+    entry.sortOrder = def.sortOrder;
+    if (def.requirements.length > 0) {
+      entry.requirements = def.requirements.map((req) => {
+        switch (req.type) {
+          case "minLevel": return { type: "minLevel", level: req.level };
+          case "race": return { type: "race", race: req.race };
+          case "class": return { type: "class", playerClass: req.playerClass };
+          case "achievement": return { type: "achievement", achievementId: req.achievementId };
+          case "staff": return { type: "staff" };
+        }
+      });
+    }
+    if (def.variants && def.variants.length > 0) {
+      entry.variants = def.variants;
+    } else if (def.image) {
+      entry.image = def.image;
+    }
+    entries[id] = entry;
   }
 
   return stringify(entries, YAML_OPTS);

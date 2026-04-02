@@ -2,7 +2,7 @@ import { create } from "zustand";
 import { exists, readTextFile, writeTextFile } from "@tauri-apps/plugin-fs";
 import { parse, stringify } from "yaml";
 import type { Project } from "@/types/project";
-import type { AchievementSpriteDef } from "@/types/sprites";
+import type { SpriteDefinition, SpriteRequirement, SpriteVariant } from "@/types/sprites";
 
 function spritesPath(project: Project): string {
   return project.format === "standalone"
@@ -10,13 +10,93 @@ function spritesPath(project: Project): string {
     : `${project.mudDir}/src/main/resources/sprites.yaml`;
 }
 
+/** Parse a raw YAML requirement entry into a typed SpriteRequirement. */
+function parseRequirement(raw: Record<string, unknown>): SpriteRequirement | null {
+  switch (raw.type) {
+    case "minLevel":
+      return { type: "minLevel", level: Number(raw.level) || 0 };
+    case "race":
+      return { type: "race", race: String(raw.race ?? "") };
+    case "class":
+      return { type: "class", playerClass: String(raw.playerClass ?? "") };
+    case "achievement":
+      return { type: "achievement", achievementId: String(raw.achievementId ?? "") };
+    case "staff":
+      return { type: "staff" };
+    default:
+      return null;
+  }
+}
+
+/** Parse a raw YAML entry into a SpriteDefinition. */
+function parseDefinition(id: string, entry: Record<string, unknown>): SpriteDefinition {
+  const requirements: SpriteRequirement[] = [];
+  if (Array.isArray(entry.requirements)) {
+    for (const r of entry.requirements) {
+      if (r && typeof r === "object") {
+        const req = parseRequirement(r as Record<string, unknown>);
+        if (req) requirements.push(req);
+      }
+    }
+  }
+
+  const variants: SpriteVariant[] | undefined = Array.isArray(entry.variants)
+    ? (entry.variants as SpriteVariant[])
+    : undefined;
+
+  return {
+    displayName: String(entry.displayName ?? id),
+    description: entry.description ? String(entry.description) : undefined,
+    category: entry.category === "staff" ? "staff" : "general",
+    sortOrder: Number(entry.sortOrder) || 0,
+    requirements,
+    image: entry.image ? String(entry.image) : undefined,
+    variants,
+  };
+}
+
+/** Serialize a SpriteRequirement for YAML output. */
+function requirementToPlain(req: SpriteRequirement): Record<string, unknown> {
+  switch (req.type) {
+    case "minLevel":
+      return { type: "minLevel", level: req.level };
+    case "race":
+      return { type: "race", race: req.race };
+    case "class":
+      return { type: "class", playerClass: req.playerClass };
+    case "achievement":
+      return { type: "achievement", achievementId: req.achievementId };
+    case "staff":
+      return { type: "staff" };
+  }
+}
+
+/** Serialize a SpriteDefinition for YAML output. */
+function definitionToPlain(def: SpriteDefinition): Record<string, unknown> {
+  const out: Record<string, unknown> = {
+    displayName: def.displayName,
+  };
+  if (def.description) out.description = def.description;
+  out.category = def.category;
+  out.sortOrder = def.sortOrder;
+  if (def.requirements.length > 0) {
+    out.requirements = def.requirements.map(requirementToPlain);
+  }
+  if (def.variants && def.variants.length > 0) {
+    out.variants = def.variants;
+  } else if (def.image) {
+    out.image = def.image;
+  }
+  return out;
+}
+
 interface SpriteDefinitionStore {
-  definitions: Record<string, AchievementSpriteDef>;
+  definitions: Record<string, SpriteDefinition>;
   dirty: boolean;
 
   loadDefinitions: (project: Project) => Promise<void>;
   saveDefinitions: (project: Project) => Promise<void>;
-  setDefinition: (id: string, def: AchievementSpriteDef) => void;
+  setDefinition: (id: string, def: SpriteDefinition) => void;
   deleteDefinition: (id: string) => void;
   markClean: () => void;
 }
@@ -38,17 +118,10 @@ export const useSpriteDefinitionStore = create<SpriteDefinitionStore>((set, get)
         set({ definitions: {}, dirty: false });
         return;
       }
-      // Extract only achievement entries
-      const defs: Record<string, AchievementSpriteDef> = {};
+      const defs: Record<string, SpriteDefinition> = {};
       for (const [id, entry] of Object.entries(parsed)) {
-        if (entry?.category === "achievement" && entry?.unlock?.type === "achievement") {
-          defs[id] = {
-            displayName: entry.displayName ?? id,
-            sortOrder: entry.sortOrder ?? 0,
-            achievementId: entry.unlock.achievementId ?? "",
-            brief: entry.brief,
-            variants: Array.isArray(entry.variants) ? entry.variants : [],
-          };
+        if (entry && typeof entry === "object") {
+          defs[id] = parseDefinition(id, entry as Record<string, unknown>);
         }
       }
       set({ definitions: defs, dirty: false });
@@ -61,40 +134,12 @@ export const useSpriteDefinitionStore = create<SpriteDefinitionStore>((set, get)
     const { definitions } = get();
     const path = spritesPath(project);
 
-    // Read existing file to preserve non-achievement entries
-    let existing: Record<string, any> = {};
-    try {
-      if (await exists(path)) {
-        const raw = await readTextFile(path);
-        existing = (parse(raw) as Record<string, any>) ?? {};
-      }
-    } catch {
-      // start fresh
-    }
-
-    // Remove old achievement entries
-    for (const [id, entry] of Object.entries(existing)) {
-      if (entry?.category === "achievement") {
-        delete existing[id];
-      }
-    }
-
-    // Add current achievement definitions in sprites.yaml format
+    const output: Record<string, unknown> = {};
     for (const [id, def] of Object.entries(definitions)) {
-      existing[id] = {
-        displayName: def.displayName,
-        category: "achievement",
-        sortOrder: def.sortOrder,
-        ...(def.brief ? { brief: def.brief } : {}),
-        unlock: {
-          type: "achievement",
-          achievementId: def.achievementId,
-        },
-        variants: def.variants,
-      };
+      output[id] = definitionToPlain(def);
     }
 
-    const yaml = stringify(existing, { lineWidth: 120 });
+    const yaml = stringify(output, { lineWidth: 120 });
     await writeTextFile(path, yaml);
     set({ dirty: false });
   },

@@ -90,6 +90,7 @@ export function parseAppConfigYaml(content: string): AppConfig {
     craftingSkills: parseMapSection(engine.craftingSkills, "skills"),
     craftingStationTypes: parseMapSection(engine.craftingStationTypes, "stationTypes"),
     housing: parseHousingConfig(engine.housing),
+    pets: parsePetDefinitions(engine.pets),
     guild: parseGuildConfig(engine.guildRanks),
     guildRanks: parseMapSection(engine.guildRanks, "ranks"),
     friends: parseFriendsConfig(engine.friends),
@@ -460,7 +461,7 @@ function collectRawSections(
     "questObjectiveTypes", "questCompletionTypes",
     "effectTypes", "targetTypes", "stackBehaviors",
     "craftingSkills", "craftingStationTypes",
-    "scheduler", "friends", "debug", "classStartRooms", "emotePresets", "housing",
+    "scheduler", "friends", "debug", "classStartRooms", "emotePresets", "housing", "pets",
   ]);
 
   const raw: Record<string, unknown> = {};
@@ -528,6 +529,28 @@ function parseHousingConfig(raw: unknown): AppConfig["housing"] {
     entryExitDirection: asString(s.entryExitDirection, "SOUTH"),
     templates,
   };
+}
+
+function parsePetDefinitions(raw: unknown): Record<string, import("@/types/config").PetDefinitionConfig> {
+  if (!raw || typeof raw !== "object") return {};
+  const s = raw as Record<string, unknown>;
+  const defs = (s.definitions ?? s) as Record<string, unknown>;
+  if (!defs || typeof defs !== "object") return {};
+  const result: Record<string, import("@/types/config").PetDefinitionConfig> = {};
+  for (const [id, v] of Object.entries(defs)) {
+    if (!v || typeof v !== "object") continue;
+    const pet = v as Record<string, unknown>;
+    result[id] = {
+      name: asString(pet.name, "a pet"),
+      description: typeof pet.description === "string" ? pet.description : undefined,
+      hp: asNumber(pet.hp, 20),
+      minDamage: asNumber(pet.minDamage, 1),
+      maxDamage: asNumber(pet.maxDamage, 4),
+      armor: asNumber(pet.armor, 0),
+      image: typeof pet.image === "string" ? pet.image : undefined,
+    };
+  }
+  return result;
 }
 
 function parseFriendsConfig(raw: unknown): AppConfig["friends"] {
@@ -654,6 +677,7 @@ async function loadSplitConfig(projectDir: string): Promise<AppConfig | null> {
       progressionRaw,
       worldRaw,
       assetsRaw,
+      petsRaw,
     ] = await Promise.all([
       readYaml(`${dir}/classes.yaml`),
       readYaml(`${dir}/races.yaml`),
@@ -666,6 +690,7 @@ async function loadSplitConfig(projectDir: string): Promise<AppConfig | null> {
       readYaml(`${dir}/progression.yaml`),
       readYaml(`${dir}/world.yaml`),
       readYaml(`${dir}/assets.yaml`),
+      readYaml(`${dir}/pets.yaml`),
     ]);
 
     // achievements.yaml lives at project root (not in config/)
@@ -689,6 +714,7 @@ async function loadSplitConfig(projectDir: string): Promise<AppConfig | null> {
       commands: asRecord(worldRaw.commands),
       group: parseSimpleSection(worldRaw.group, { maxSize: 5, inviteTimeoutMs: 60000, xpBonusPerMember: 0.1 }),
       housing: parseHousingConfig(worldRaw.housing),
+      pets: parsePetDefinitions(petsRaw),
       guild: parseGuildConfig(worldRaw.guildRanks),
       guildRanks: parseMapSection(worldRaw.guildRanks, "ranks"),
       friends: parseFriendsConfig(worldRaw.friends),

@@ -26,6 +26,7 @@ const EFFECT_TYPES = [
   { value: "APPLY_STATUS", label: "Apply Status" },
   { value: "AREA_DAMAGE", label: "Area Damage" },
   { value: "TAUNT", label: "Taunt" },
+  { value: "SUMMON_PET", label: "Summon Pet" },
 ];
 
 /** Class-to-color mapping for ability icon color badges — reads from CSS --color-class-* tokens */
@@ -114,6 +115,15 @@ export function AbilitiesPanel({ config, onChange }: ConfigPanelProps) {
     label: config.classes[id]!.displayName,
   }));
 
+  const petOptions = useMemo(
+    () =>
+      Object.keys(config.pets ?? {}).map((id) => ({
+        value: id,
+        label: (config.pets ?? {})[id]!.name,
+      })),
+    [config.pets],
+  );
+
   const patchEffect = (
     ability: AbilityDefinitionConfig,
     patch: (p: Partial<AbilityDefinitionConfig>) => void,
@@ -169,6 +179,7 @@ export function AbilitiesPanel({ config, onChange }: ConfigPanelProps) {
           classOptions={classOptions}
           statusEffectOptions={statusEffectOptions}
           targetTypeOptions={targetTypeOptions}
+          petOptions={petOptions}
           patchEffect={patchEffect}
         />
       )}
@@ -184,6 +195,7 @@ export function AbilityDetail({
   classOptions,
   statusEffectOptions,
   targetTypeOptions,
+  petOptions,
   patchEffect,
 }: {
   id: string;
@@ -192,6 +204,7 @@ export function AbilityDetail({
   classOptions: { value: string; label: string }[];
   statusEffectOptions: { value: string; label: string }[];
   targetTypeOptions: { value: string; label: string }[];
+  petOptions?: { value: string; label: string }[];
   patchEffect: (
     ability: AbilityDefinitionConfig,
     patch: (p: Partial<AbilityDefinitionConfig>) => void,
@@ -354,6 +367,30 @@ export function AbilityDetail({
                   value={ability.effect.margin ?? 0}
                   onCommit={(v) =>
                     patchEffect(ability, patch, { margin: v ?? 0 })
+                  }
+                  min={0}
+                />
+              </FieldRow>
+            </>
+          )}
+          {ability.effect.type === "SUMMON_PET" && (
+            <>
+              <FieldRow label="Pet Template" hint="References a pet definition from the Pets panel.">
+                <SelectInput
+                  value={ability.effect.petTemplateKey ?? ""}
+                  onCommit={(v) =>
+                    patchEffect(ability, patch, { petTemplateKey: v || undefined })
+                  }
+                  options={petOptions ?? []}
+                  allowEmpty
+                  placeholder="-- select pet --"
+                />
+              </FieldRow>
+              <FieldRow label="Duration (ms)" hint="How long the pet lasts. 0 = permanent until dismissed.">
+                <NumberInput
+                  value={ability.effect.durationMs ?? 0}
+                  onCommit={(v) =>
+                    patchEffect(ability, patch, { durationMs: v ?? 0 })
                   }
                   min={0}
                 />

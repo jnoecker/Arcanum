@@ -58,6 +58,32 @@ export function validateConfig(config: AppConfig): ValidationIssue[] {
     }
   }
 
+  // ─── Pets ─────────────────────────────────────────────────────
+  const petIds = new Set(Object.keys(config.pets ?? {}));
+  for (const [id, pet] of Object.entries(config.pets ?? {})) {
+    if (!pet.name?.trim()) {
+      issues.push({
+        severity: "error",
+        entity: `pet:${id}`,
+        message: "Name is required",
+      });
+    }
+    if (pet.hp < 1) {
+      issues.push({
+        severity: "error",
+        entity: `pet:${id}`,
+        message: "HP must be at least 1",
+      });
+    }
+    if (pet.minDamage > pet.maxDamage) {
+      issues.push({
+        severity: "warning",
+        entity: `pet:${id}`,
+        message: "Min damage exceeds max damage",
+      });
+    }
+  }
+
   // ─── Abilities ────────────────────────────────────────────────
   for (const [id, a] of Object.entries(config.abilities)) {
     if (
@@ -69,6 +95,18 @@ export function validateConfig(config: AppConfig): ValidationIssue[] {
         severity: "error",
         entity: `ability:${id}`,
         message: `Effect references unknown status effect "${a.effect.statusEffectId}"`,
+      });
+    }
+    if (
+      a.effect.type === "SUMMON_PET" &&
+      a.effect.petTemplateKey &&
+      petIds.size > 0 &&
+      !petIds.has(a.effect.petTemplateKey)
+    ) {
+      issues.push({
+        severity: "warning",
+        entity: `ability:${id}`,
+        message: `Summon effect references unknown pet "${a.effect.petTemplateKey}"`,
       });
     }
     if (a.classRestriction && classIds.size > 0 && !classIds.has(a.classRestriction)) {

@@ -285,6 +285,13 @@ export function buildMonolithicConfigObject(
     engine.emotePresets = c.emotePresets;
   }
 
+  // Pets
+  if (Object.keys(c.pets ?? {}).length > 0) {
+    engine.pets = {
+      definitions: mapEntries(c.pets, petToPlain),
+    };
+  }
+
   // Housing
   if (c.housing.enabled || Object.keys(c.housing.templates).length > 0) {
     engine.housing = housingToPlain(c.housing);
@@ -615,6 +622,8 @@ export function abilityToPlain(a: AppConfig["abilities"][string]): Record<string
   if (a.effect.maxHeal != null) effect.maxHeal = a.effect.maxHeal;
   if (a.effect.flatThreat != null) effect.flatThreat = a.effect.flatThreat;
   if (a.effect.margin != null) effect.margin = a.effect.margin;
+  if (a.effect.petTemplateKey) effect.petTemplateKey = a.effect.petTemplateKey;
+  if (a.effect.durationMs != null) effect.durationMs = a.effect.durationMs;
   const obj: Record<string, unknown> = {
     displayName: a.displayName,
     manaCost: a.manaCost,
@@ -704,5 +713,18 @@ export function raceToPlain(race: AppConfig["races"][string]): Record<string, un
   if (race.statMods && Object.keys(race.statMods).length > 0) obj.statMods = race.statMods;
   if (race.bodyDescription) obj.bodyDescription = race.bodyDescription;
   if (race.staffPrompt) obj.staffPrompt = race.staffPrompt;
+  return obj;
+}
+
+export function petToPlain(pet: AppConfig["pets"][string]): Record<string, unknown> {
+  const obj: Record<string, unknown> = {
+    name: pet.name,
+    hp: pet.hp,
+    minDamage: pet.minDamage,
+    maxDamage: pet.maxDamage,
+    armor: pet.armor,
+  };
+  if (pet.description) obj.description = pet.description;
+  if (pet.image) obj.image = normalizeAssetRef(pet.image);
   return obj;
 }

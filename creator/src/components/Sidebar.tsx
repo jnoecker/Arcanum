@@ -10,6 +10,7 @@ import { WORLDMAKER_GROUPS, LORE_GROUPS, panelTab, type Workspace } from "@/lib/
 import { ArticleTree } from "./lore/ArticleTree";
 import { NewZoneDialog } from "./NewZoneDialog";
 import { ConfirmDialog } from "./ConfirmDialog";
+import { saveWorkspace, loadWorkspace } from "@/lib/uiPersistence";
 import sidebarBg from "@/assets/sidebar-bg.png";
 import {
   addRoom,
@@ -276,7 +277,11 @@ export function Sidebar() {
   const searchRef = useRef<HTMLInputElement>(null);
   const [showNewZone, setShowNewZone] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
-  const [workspace, setWorkspace] = useState<Workspace>("worldmaker");
+  const [workspace, setWorkspaceRaw] = useState<Workspace>(loadWorkspace);
+  const setWorkspace = useCallback((ws: Workspace) => {
+    setWorkspaceRaw(ws);
+    saveWorkspace(ws);
+  }, []);
   const hasProject = !!useProjectStore((s) => s.project);
 
   // Ctrl+K to focus search

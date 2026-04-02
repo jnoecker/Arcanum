@@ -10,6 +10,7 @@ import {
   classToPlain,
   raceToPlain,
   housingToPlain,
+  petToPlain,
   buildMonolithicConfigObject,
   loadSlotPositions,
 } from "@/lib/exportMud";
@@ -189,6 +190,10 @@ async function saveSplitConfig(projectDir: string): Promise<void> {
       }),
       playerTiers: config.playerTiers && Object.keys(config.playerTiers).length > 0 ? config.playerTiers : undefined,
     })),
+
+    write("pets", Object.keys(config.pets ?? {}).length > 0
+      ? { definitions: mapEntries(config.pets, petToPlain) }
+      : {}),
 
     // achievements.yaml lives at project root (not in config/)
     writeTextFile(

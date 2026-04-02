@@ -56,6 +56,15 @@ export function AbilityDesigner({
     [config.classes],
   );
 
+  const petOptions = useMemo(
+    () =>
+      Object.keys(config.pets ?? {}).map((id) => ({
+        value: id,
+        label: (config.pets ?? {})[id]!.name,
+      })),
+    [config.pets],
+  );
+
   const abilityIds = useMemo(
     () =>
       Object.keys(config.abilities).filter((id) => {
@@ -276,6 +285,7 @@ export function AbilityDesigner({
               classOptions={classOptions}
               statusEffectOptions={statusEffectOptions}
               targetTypeOptions={targetTypeOptions}
+              petOptions={petOptions}
               patchEffect={patchEffect}
             />
           </div>

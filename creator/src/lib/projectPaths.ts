@@ -41,6 +41,7 @@ export const CONFIG_FILES = [
   "progression",
   "world",
   "assets",
+  "pets",
 ] as const;
 
 export type ConfigFileName = (typeof CONFIG_FILES)[number];

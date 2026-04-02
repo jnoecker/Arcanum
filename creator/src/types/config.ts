@@ -30,6 +30,18 @@ export interface StatBindings {
   xpBonusPerPoint: number;
 }
 
+// ─── Pets / Companions ─────────────────────────────────────────────
+
+export interface PetDefinitionConfig {
+  name: string;
+  description?: string;
+  hp: number;
+  minDamage: number;
+  maxDamage: number;
+  armor: number;
+  image?: string;
+}
+
 // ─── Abilities ──────────────────────────────────────────────────────
 
 export interface AbilityEffectConfig {
@@ -42,6 +54,8 @@ export interface AbilityEffectConfig {
   maxHeal?: number;
   flatThreat?: number;
   margin?: number;
+  petTemplateKey?: string;
+  durationMs?: number;
 }
 
 export interface AbilityDefinitionConfig {
@@ -513,6 +527,7 @@ export interface AppConfig {
   images: ImagesConfig;
   emotePresets: EmotePresetsConfig;
   factions?: FactionConfig;
+  pets: Record<string, PetDefinitionConfig>;
   globalAssets: Record<string, string>;
   playerTiers?: Record<string, TierDefinitionConfig>;
   /** Raw YAML content for unrecognized sections */

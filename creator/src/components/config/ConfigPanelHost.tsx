@@ -39,6 +39,7 @@ import { GuildDesigner } from "./GuildDesigner";
 import { EmotePresetsPanel } from "./panels/EmotePresetsPanel";
 import { HousingPanel } from "./panels/HousingPanel";
 import { FactionPanel } from "./panels/FactionPanel";
+import { PetsPanel } from "./panels/PetsPanel";
 
 // ─── Content panels ─────────────────────────────────────────────────
 import { AchievementDesigner } from "./AchievementDesigner";
@@ -167,6 +168,8 @@ function renderPanel(panelId: string, props: ConfigPanelProps): ReactNode {
       return <EmotePresetsPanel config={config} onChange={onChange} />;
     case "housing":
       return <HousingPanel config={config} onChange={onChange} />;
+    case "pets":
+      return <PetsPanel config={config} onChange={onChange} />;
 
     // Content
     case "achievements":

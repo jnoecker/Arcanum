@@ -14,6 +14,7 @@ export interface PersistedUI {
   tabs: Tab[];
   activeTabId: string | null;
   recentProjects: RecentProject[];
+  workspace?: "worldmaker" | "lore";
 }
 
 export function saveUIState(state: PersistedUI): void {
@@ -79,4 +80,23 @@ export function removeRecentProject(path: string): void {
   if (!state) return;
   const filtered = (state.recentProjects ?? []).filter((p) => p.path !== path);
   saveUIState({ ...state, recentProjects: filtered });
+}
+
+export function saveWorkspace(workspace: "worldmaker" | "lore"): void {
+  const state = loadUIState();
+  if (state) {
+    saveUIState({ ...state, workspace });
+  } else {
+    saveUIState({
+      lastProjectPath: "",
+      tabs: [],
+      activeTabId: null,
+      recentProjects: [],
+      workspace,
+    });
+  }
+}
+
+export function loadWorkspace(): "worldmaker" | "lore" {
+  return loadUIState()?.workspace ?? "worldmaker";
 }

@@ -1,9 +1,76 @@
 import { useState, useCallback } from "react";
 import { invoke } from "@tauri-apps/api/core";
-import { open } from "@tauri-apps/plugin-dialog";
+import { open, save } from "@tauri-apps/plugin-dialog";
+import { writeTextFile } from "@tauri-apps/plugin-fs";
 import { useLoreStore, selectDocuments } from "@/stores/loreStore";
 import type { LoreDocument } from "@/types/lore";
 import { Section, CommitTextarea } from "@/components/ui/FormWidgets";
+import { exportLoreBible } from "@/lib/exportLoreBible";
+
+function LoreBibleExport() {
+  const lore = useLoreStore((s) => s.lore);
+  const [includeDrafts, setIncludeDrafts] = useState(false);
+  const [includeNotes, setIncludeNotes] = useState(false);
+  const [exporting, setExporting] = useState(false);
+
+  const handleExport = async () => {
+    if (!lore) return;
+    setExporting(true);
+    try {
+      const markdown = exportLoreBible(lore, {
+        includeDrafts,
+        includePrivateNotes: includeNotes,
+      });
+      const path = await save({
+        filters: [{ name: "Markdown", extensions: ["md"] }],
+        defaultPath: "lore-bible.md",
+      });
+      if (path) {
+        await writeTextFile(path, markdown);
+      }
+    } catch (err) {
+      console.error("Export failed:", err);
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  return (
+    <div className="rounded-xl border border-white/8 bg-black/10 p-4">
+      <h3 className="mb-2 font-display text-sm text-text-primary">Lore Bible</h3>
+      <p className="mb-3 text-2xs text-text-secondary">
+        Export the entire lore corpus as a readable Markdown document.
+      </p>
+      <div className="mb-3 flex flex-col gap-1.5">
+        <label className="flex items-center gap-2 text-xs text-text-secondary">
+          <input
+            type="checkbox"
+            checked={includeDrafts}
+            onChange={(e) => setIncludeDrafts(e.target.checked)}
+            className="accent-accent"
+          />
+          Include draft articles
+        </label>
+        <label className="flex items-center gap-2 text-xs text-text-secondary">
+          <input
+            type="checkbox"
+            checked={includeNotes}
+            onChange={(e) => setIncludeNotes(e.target.checked)}
+            className="accent-accent"
+          />
+          Include private notes
+        </label>
+      </div>
+      <button
+        onClick={handleExport}
+        disabled={!lore || exporting}
+        className="focus-ring rounded-full border border-accent/30 bg-accent/10 px-4 py-2 text-xs font-medium text-accent transition hover:bg-accent/20 disabled:opacity-40"
+      >
+        {exporting ? "Exporting..." : "Export Lore Bible"}
+      </button>
+    </div>
+  );
+}
 
 export function DocumentLibraryPanel() {
   const documents = useLoreStore(selectDocuments);
@@ -61,6 +128,8 @@ export function DocumentLibraryPanel() {
   }, [newTitle, createDocument]);
 
   return (
+    <div className="space-y-6">
+      <LoreBibleExport />
     <div className="flex gap-6">
       {/* Sidebar list */}
       <div className="w-64 shrink-0 space-y-3">
@@ -148,6 +217,7 @@ export function DocumentLibraryPanel() {
           </div>
         )}
       </div>
+    </div>
     </div>
   );
 }

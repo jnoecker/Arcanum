@@ -138,6 +138,7 @@ export function ArticleEditor({ articleId }: { articleId: string }) {
   const updateArticle = useLoreStore((s) => s.updateArticle);
   const renameArticle = useLoreStore((s) => s.renameArticle);
   const deleteArticle = useLoreStore((s) => s.deleteArticle);
+  const duplicateArticle = useLoreStore((s) => s.duplicateArticle);
   const [renaming, setRenaming] = useState(false);
   const [newId, setNewId] = useState("");
 
@@ -225,6 +226,15 @@ export function ArticleEditor({ articleId }: { articleId: string }) {
             />
             Draft
           </label>
+          <button
+            onClick={() => {
+              duplicateArticle(articleId);
+            }}
+            className="focus-ring rounded-full border border-white/10 px-3 py-1 text-2xs font-medium text-text-secondary transition hover:bg-white/8 hover:text-text-primary"
+            title="Duplicate this article"
+          >
+            Duplicate
+          </button>
           <button
             onClick={() => {
               if (window.confirm(`Delete "${article.title}"? This cannot be undone.`)) {

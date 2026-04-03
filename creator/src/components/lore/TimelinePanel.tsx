@@ -12,6 +12,7 @@ import {
   IconButton,
 } from "@/components/ui/FormWidgets";
 import { TimelineView } from "./TimelineView";
+import { TimelineInferencePanel } from "./TimelineInferencePanel";
 
 // Calendar system editor
 
@@ -254,6 +255,11 @@ export function TimelinePanel() {
 
   return (
     <div className="flex flex-col gap-6">
+      {/* AI timeline inference */}
+      <Section title="AI Timeline Inference" defaultExpanded={false}>
+        <TimelineInferencePanel />
+      </Section>
+
       {/* Calendar system editor */}
       <CalendarEditor calendars={calendars} onChange={setCalendars} />
 

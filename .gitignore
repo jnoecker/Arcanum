@@ -1,0 +1,22 @@
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Secrets — never commit these
+.env.local
+.env.*.local
+*.pem
+*.p12
+
+# Project settings contain R2 credentials
+.arcanum/settings.json
+
+# Worktree artifacts
+.claude/worktrees/

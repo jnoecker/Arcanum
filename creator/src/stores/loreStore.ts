@@ -32,6 +32,7 @@ interface LoreStore {
   updateArticle: (id: string, patch: Partial<Article>) => void;
   renameArticle: (oldId: string, newId: string) => void;
   deleteArticle: (id: string) => void;
+  duplicateArticle: (id: string) => void;
   moveArticle: (id: string, newParentId: string | undefined, sortOrder: number) => void;
   selectArticle: (id: string | null) => void;
 
@@ -167,6 +168,49 @@ export const useLoreStore = create<LoreStore>((set) => ({
         lore: { ...s.lore, articles: rest },
         dirty: true,
         selectedArticleId: s.selectedArticleId === id ? null : s.selectedArticleId,
+      };
+    }),
+
+  duplicateArticle: (id) =>
+    set((s) => {
+      if (!s.lore) return s;
+      const source = s.lore.articles[id];
+      if (!source) return s;
+
+      // Generate a unique ID: id_copy, id_copy2, id_copy3, ...
+      let newId = `${id}_copy`;
+      let counter = 2;
+      while (s.lore.articles[newId]) {
+        newId = `${id}_copy${counter}`;
+        counter++;
+      }
+
+      const now = new Date().toISOString();
+      const clone: Article = {
+        id: newId,
+        template: source.template,
+        title: `${source.title} (Copy)`,
+        fields: JSON.parse(JSON.stringify(source.fields)),
+        content: source.content,
+        privateNotes: source.privateNotes,
+        tags: source.tags ? [...source.tags] : undefined,
+        relations: source.relations ? [...source.relations] : undefined,
+        image: source.image,
+        gallery: source.gallery ? [...source.gallery] : undefined,
+        parentId: source.parentId,
+        sortOrder: (source.sortOrder ?? 0) + 1,
+        draft: true,
+        createdAt: now,
+        updatedAt: now,
+      };
+
+      return {
+        lore: {
+          ...s.lore,
+          articles: { ...s.lore.articles, [newId]: clone },
+        },
+        selectedArticleId: newId,
+        dirty: true,
       };
     }),
 

@@ -1,6 +1,6 @@
 [package]
 name = "ambon-arcanum"
-version = "0.1.0"
+version = "1.0.0"
 description = "Ambon Arcanum - World building and server management tool"
 authors = []
 edition = "2021"

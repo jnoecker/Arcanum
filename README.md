@@ -1,43 +1,10 @@
 # Ambon Arcanum
 
-World-building and server management tool for [AmbonMUD](https://github.com/jnoecker/AmbonMUD). A Tauri 2 desktop application with a React frontend and Rust backend.
+A desktop tool for building fictional worlds — lore, maps, timelines, relationship graphs, AI-generated art, and a one-click public showcase site. Built with Tauri 2 (React + Rust).
 
-Point it at an AmbonMUD project directory — legacy (monolithic `application.yaml` + zone files) or standalone (split config + `zones/` directory) — and it becomes the single tool for building zones, configuring game systems, generating art, managing assets, and running the server.
+Ambon Arcanum started as the creator tool for [AmbonMUD](https://github.com/jnoecker/AmbonMUD), but its lore and world-building features work for any setting: tabletop RPGs, novels, game design bibles, or worldbuilding for its own sake.
 
 ## Features
-
-### World Building
-- **Zone map editor** -- React Flow graph with custom room nodes, exit edges, dagre auto-layout, and ambient starfield background
-- **Entity editors** -- Mobs, items, shops, quests, gathering nodes, recipes, dialogue trees
-- **Room property panels** -- Title, description, exits, station type, media references with spring-physics transitions
-- **Cross-zone navigation** -- Click cross-zone exits to open target zones in new tabs
-- **YAML round-trip** -- Format-preserving read/write using the `yaml` package CST mode
-
-### Configuration
-- **Structured editors** for all `application.yaml` sections: stats, abilities, status effects, combat, mob tiers, classes, races, progression, economy, crafting, regen, server, and login
-- **Stat Designer** -- Data-driven stat definitions with formula binding editor
-- **Class/Race Designer** -- HP/mana curves, stat mods with net-zero indicator
-- **Raw YAML fallback** -- Unknown config fields shown in a generic property editor so nothing is hidden
-- **Standalone project support** -- Split config into 11 focused YAML files with MUD export
-
-### Art Generation & Asset Management
-- **AI image generation** via DeepInfra (FLUX models) or Runware (alternative provider)
-- **Two art styles** -- "Arcanum" (baroque cosmic gold-indigo) and "Gentle Magic" (soft dreamlike lavender)
-- **Prompt enhancement** with LLM-powered style injection (Anthropic Claude, OpenRouter)
-- **Asset gallery** with lazy-loaded thumbnails, filtering by type/zone, curated vs all views
-- **Cloudflare R2 sync** -- Content-addressed uploads with SHA-256 dedup, custom domain CDN
-- **Batch art generation** for zones with entity-specific prompt templates
-- **Style enforcement** -- Hardcoded style suffixes appended after LLM enhancement for guaranteed consistency
-- **Smart dimensions** -- Generation capped at 1024px for optimal FLUX quality, resized to final target
-- **Class color palettes** -- Per-class visual guidance for ability/status icon generation
-- **Portrait and ability icon studios** -- Race/class portraits and ability/status-effect icons
-- **Music and video generation** -- Audio and cinematic asset creation
-
-### Server Management
-- **Process lifecycle** -- Start/stop/restart via Gradle wrapper
-- **Console** with log streaming, level filtering, and text search
-- **Pre-flight checks** -- Java version, Gradle wrapper, port availability
-- **Server status indicator** in toolbar (hidden for standalone projects)
 
 ### Lore & World Building
 - **Article system** -- 11 built-in templates + custom user-defined templates (character, location, organization, species, event, language, profession, ability, item, world_setting, freeform, plus any custom types) with rich text editor (TipTap), @mentions, template-specific fields, and article gallery (multiple images per article)
@@ -51,6 +18,36 @@ Point it at an AmbonMUD project directory — legacy (monolithic `application.ya
 - **Bulk operations** -- Multi-select articles via Ctrl+Click, batch retag, reparent, template change, draft/publish toggle, bulk delete with undo support
 - **Import/Export** -- Obsidian/Markdown vault import wizard (front-matter mapping, wiki-link→@mention conversion), Lore Bible export to Markdown and PDF (structured document with TOC, timeline, relations, styled typography)
 - **Lore showcase** -- One-click publish to a public-facing website with image gallery and bidirectional relationship sidebar (see [Showcase](#showcase) below)
+
+### Art Generation & Asset Management
+- **AI image generation** via DeepInfra (FLUX models), Runware, or OpenAI
+- **Two art styles** -- "Arcanum" (baroque cosmic gold-indigo) and "Gentle Magic" (soft dreamlike lavender)
+- **Prompt enhancement** with LLM-powered style injection (Anthropic Claude, OpenRouter)
+- **Asset gallery** with lazy-loaded thumbnails, filtering by type/zone, curated vs all views
+- **Cloudflare R2 sync** -- Content-addressed uploads with SHA-256 dedup, custom domain CDN
+- **Batch art generation** for zones with entity-specific prompt templates
+- **Portrait and ability icon studios** -- Race/class portraits and ability/status-effect icons
+- **Music and video generation** -- Audio and cinematic asset creation
+
+### MUD Zone Building
+- **Zone map editor** -- React Flow graph with custom room nodes, exit edges, dagre auto-layout, and ambient starfield background
+- **Entity editors** -- Mobs, items, shops, quests, gathering nodes, recipes, dialogue trees, room features
+- **Room property panels** -- Title, description, exits, station type, media references with spring-physics transitions
+- **Cross-zone navigation** -- Click cross-zone exits to open target zones in new tabs
+- **YAML round-trip** -- Format-preserving read/write using the `yaml` package CST mode
+
+### Game System Configuration
+- **Structured editors** for all `application.yaml` sections: stats, abilities, status effects, combat, mob tiers, classes, races, progression, economy, crafting, housing, factions, weather, and more
+- **Stat Designer** -- Data-driven stat definitions with formula binding editor
+- **Class/Race Designer** -- HP/mana curves, stat mods with net-zero indicator
+- **Raw YAML fallback** -- Unknown config fields shown in a generic property editor so nothing is hidden
+- **Per-project settings** -- Art pipeline, R2 credentials, and generation config stored per-project (API keys stay user-level)
+
+### Server Management
+- **Process lifecycle** -- Start/stop/restart via Gradle wrapper
+- **Console** with log streaming, level filtering, and text search
+- **Pre-flight checks** -- Java version, Gradle wrapper, port availability
+- **Server status indicator** in toolbar (hidden for standalone projects)
 
 ### Developer Experience
 - **Undo/redo** -- Zone undo via zundo (max 100 entries), lore undo via history stacks (max 50 entries). Context-aware Ctrl+Z/Ctrl+Shift+Z

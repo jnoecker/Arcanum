@@ -1,0 +1,67 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check-creator:
+    name: Creator (TypeScript + Rust + Tests)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: Install system dependencies (Linux)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf libgtk-3-dev
+
+      - name: Install frontend dependencies
+        working-directory: creator
+        run: bun install --frozen-lockfile
+
+      - name: TypeScript check
+        working-directory: creator
+        run: bunx tsc --noEmit
+
+      - name: Run tests
+        working-directory: creator
+        run: bun run test
+
+      - name: Rust check
+        working-directory: creator/src-tauri
+        run: cargo check
+
+  check-showcase:
+    name: Showcase (TypeScript + Build)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        working-directory: showcase
+        run: npm ci
+
+      - name: TypeScript check
+        working-directory: showcase
+        run: npm run typecheck
+
+      - name: Build
+        working-directory: showcase
+        run: npm run build

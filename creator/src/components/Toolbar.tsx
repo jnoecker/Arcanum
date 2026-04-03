@@ -14,7 +14,6 @@ import { useAssetStore } from "@/stores/assetStore";
 import { useAdminStore } from "@/stores/adminStore";
 import { useLoreStore } from "@/stores/loreStore";
 import { ActionButton, Spinner } from "./ui/FormWidgets";
-import toolbarBg from "@/assets/toolbar-bg.jpg";
 import { exportShowcaseData } from "@/lib/exportShowcase";
 
 const DiffModal = lazy(() => import("./ui/DiffModal").then((m) => ({ default: m.DiffModal })));
@@ -158,12 +157,6 @@ export function Toolbar({ workspace, setWorkspace }: ToolbarProps) {
   return (
     <>
       <div className="relative z-20 flex shrink-0 items-center px-4 pt-3">
-        <img
-          src={toolbarBg}
-          alt=""
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-x-4 inset-y-0 rounded-[30px] object-cover opacity-[0.08]"
-        />
         <div className="instrument-panel relative min-w-0 flex-1 rounded-[30px] px-5 py-3">
           <div className="pointer-events-none absolute right-[-8rem] top-[-6rem] h-[20rem] w-[20rem] rounded-full bg-[radial-gradient(circle,rgba(168,151,210,0.16),transparent_72%)] blur-3xl" />
           <div className="relative flex flex-wrap items-center gap-4">

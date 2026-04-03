@@ -22,11 +22,11 @@ export function StatusBar() {
   return (
     <div className="relative z-10 shrink-0 px-4 pb-2">
       <div className="instrument-panel relative flex flex-wrap items-center gap-2.5 overflow-hidden rounded-[20px] px-4 py-1.5 text-xs">
-        <span className="font-display font-semibold text-[10px] uppercase tracking-wide-ui text-text-muted">
+        <span className="font-display font-semibold text-[10px] uppercase tracking-wide-ui text-text-muted/70">
           World pulse
         </span>
 
-        <span className="rounded-full border border-white/10 bg-black/10 px-3 py-1 text-text-secondary">
+        <span className="rounded-full border border-white/10 bg-black/10 px-3 py-1 text-text-muted">
           {totalZones} zone{totalZones !== 1 ? "s" : ""} loaded
         </span>
 

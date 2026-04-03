@@ -159,6 +159,7 @@ export function ArticlesPage() {
                         to={`/articles/${encodeURIComponent(a.id)}`}
                         className="group overflow-hidden rounded-lg transition-colors duration-300
                                    hover:bg-bg-hover/30 focus-visible:ring-2 focus-visible:ring-accent/40"
+                        style={{ borderTop: `2px solid ${color}30` }}
                       >
                         {a.imageUrl && (
                           <div className="aspect-square overflow-hidden bg-bg-tertiary/30">
@@ -204,6 +205,7 @@ export function ArticlesPage() {
                         to={`/articles/${encodeURIComponent(a.id)}`}
                         className="group flex items-center gap-3 px-4 py-2.5 rounded-lg
                                    hover:bg-bg-hover/40 transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-accent/40"
+                        style={{ borderTop: `2px solid ${color}30` }}
                       >
                         <div className="w-1 h-4 rounded-full shrink-0 opacity-60" style={{ backgroundColor: color }} />
                         {a.imageUrl && (

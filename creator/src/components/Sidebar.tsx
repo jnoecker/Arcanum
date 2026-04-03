@@ -264,7 +264,7 @@ function PanelButtonGrid({
                     className={`focus-ring rounded-full border px-2.5 py-2 text-[11px] font-medium leading-tight transition ${
                       isActive
                         ? "border-[var(--border-glow-strong)] bg-[linear-gradient(135deg,rgba(168,151,210,0.25),rgba(140,174,201,0.15))] text-text-primary shadow-glow-sm"
-                        : "border-white/8 bg-white/[0.04] text-text-secondary hover:border-white/14 hover:bg-white/8 hover:text-text-primary"
+                        : "border-white/8 bg-white/[0.04] text-text-muted hover:border-white/14 hover:bg-white/8 hover:text-text-primary"
                     }`}
                   >
                     {panel.label}
@@ -361,7 +361,7 @@ export function Sidebar({ workspace }: { workspace: Workspace }) {
       <div className="pointer-events-none absolute inset-x-0 top-0 h-48 bg-gradient-glow-top" />
 
       <div className="relative z-10 shrink-0 px-4 pt-4">
-        <div className="flex items-center gap-3 px-1 text-[11px] text-text-muted">
+        <div className="flex items-center gap-3 px-1 text-[10px] text-text-muted">
           <span>{zones.size} zones</span>
           <span className="text-border-default">·</span>
           <span>{articleCount} lore</span>
@@ -416,7 +416,7 @@ export function Sidebar({ workspace }: { workspace: Workspace }) {
                     className={`focus-ring rounded-full border px-2.5 py-2 text-[11px] font-medium leading-tight transition ${
                       activeTabId === entry.id
                         ? "border-[var(--border-glow-strong)] bg-[linear-gradient(135deg,rgba(168,151,210,0.25),rgba(140,174,201,0.15))] text-text-primary shadow-glow-sm"
-                        : "border-white/8 bg-white/[0.04] text-text-secondary hover:border-white/14 hover:bg-white/8 hover:text-text-primary"
+                        : "border-white/8 bg-white/[0.04] text-text-muted hover:border-white/14 hover:bg-white/8 hover:text-text-primary"
                     }`}
                   >
                     {entry.label}

@@ -37,12 +37,12 @@ export function MainArea({ workspace }: { workspace: Workspace }) {
             {workspace === "worldmaker" ? "Awaiting a surface" : "Awaiting a canon task"}
           </p>
           <h2 className="mt-3 font-display text-3xl text-text-primary">
-            {workspace === "worldmaker" ? "Open the next worldmaking lens." : "Open the next lore surface."}
+            {workspace === "worldmaker" ? "Open a surface" : "Open a surface"}
           </h2>
           <p className="mx-auto mt-3 max-w-xl text-sm leading-7 text-text-secondary">
             {workspace === "worldmaker"
-              ? "Start in the art studio, open a zone, or move directly into the systems that give the world its laws."
-              : "Begin with world setting, maps, or codex articles and let the canon spread outward from there."}
+              ? "Choose a zone, open the art studio, or tune the systems that shape this world."
+              : "Start with the world setting, build the codex, or chart the maps."}
           </p>
           <div className="mt-6 flex flex-wrap justify-center gap-2">
             {(workspace === "worldmaker"

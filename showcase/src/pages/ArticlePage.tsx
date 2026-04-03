@@ -63,7 +63,7 @@ function ConnectionsSection({
   if (relations.length === 0) return null;
 
   return (
-    <div className="rounded-xl overflow-hidden border-t-2 border-accent/25">
+    <div className="rounded-xl overflow-hidden border-t-2" style={{ borderTopColor: `${color}30` }}>
       <div className="px-5 py-3 bg-bg-tertiary/40">
         <h3 className="font-display text-[11px] tracking-[0.2em] uppercase" style={{ color }}>
           Connections
@@ -316,7 +316,7 @@ export function ArticlePage() {
       })()}
 
       {/* Header */}
-      <div className="mb-10 pl-5">
+      <div className="mb-10 pl-5 pt-5 rounded-t-lg" style={{ borderTop: `2px solid ${color}30` }}>
         <div
           className="text-[11px] tracking-[0.18em] uppercase font-display mb-2"
           style={{ color }}
@@ -380,7 +380,7 @@ export function ArticlePage() {
         {/* Sidebar */}
         <aside className="lg:w-72 shrink-0 space-y-6">
           {fieldEntries.length > 0 && (
-            <div className="rounded-xl overflow-hidden border-t-2 border-accent/25">
+            <div className="rounded-xl overflow-hidden border-t-2" style={{ borderTopColor: `${color}30` }}>
               <div className="px-5 py-3 bg-bg-tertiary/40">
                 <h3 className="font-display text-[11px] tracking-[0.2em] uppercase" style={{ color }}>
                   Details

@@ -262,11 +262,11 @@ select,
 
 /* ─── Utility Classes ─── */
 .animate-aurum-pulse {
-  animation: aurum-pulse 3s var(--ease-cosmic) infinite;
+  animation: aurum-pulse 2s var(--ease-cosmic) 2;
 }
 
 .animate-crimson-pulse {
-  animation: crimson-pulse 4s var(--ease-cosmic) infinite;
+  animation: crimson-pulse 2s var(--ease-cosmic) 3;
 }
 
 .animate-slow-rotate {

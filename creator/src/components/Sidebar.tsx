@@ -10,7 +10,6 @@ import { PANEL_MAP, WORLDMAKER_GROUPS, LORE_GROUPS, panelTab, type Workspace } f
 import { ArticleTree } from "./lore/ArticleTree";
 import { NewZoneDialog } from "./NewZoneDialog";
 import { ConfirmDialog } from "./ConfirmDialog";
-import sidebarBg from "@/assets/sidebar-bg.png";
 import {
   addRoom,
   addMob,
@@ -21,38 +20,6 @@ import {
 } from "@/lib/zoneEdits";
 import type { MobFile, ItemFile, ShopFile } from "@/types/world";
 
-const GROUP_COPY: Record<string, { kicker: string; description: string }> = {
-  studio: {
-    kicker: "Make",
-    description: "Images, ambience, portraits, and visual language for the world.",
-  },
-  characters: {
-    kicker: "People",
-    description: "Playable bodies, races, classes, and their visible identity.",
-  },
-  abilities: {
-    kicker: "Powers",
-    description: "Stats, abilities, and the logic that gives combat texture.",
-  },
-  world: {
-    kicker: "Laws",
-    description: "Progression, travel, economy, time, and the governing rules of the realm.",
-  },
-  content: {
-    kicker: "Content",
-    description: "Shared assets, achievements, quests, and authored progression beats.",
-  },
-  operations: {
-    kicker: "Deploy",
-    description: "Services, runtime handoff, raw configuration, and source control.",
-  },
-  lore: {
-    kicker: "Canon",
-    description: "Articles, maps, timelines, and the civilizational memory of the setting.",
-  },
-};
-
-// ─── Entity category definitions ────────────────────────────────────
 
 interface CategoryDef {
   key: string;
@@ -110,7 +77,6 @@ const CATEGORIES: CategoryDef[] = [
   { key: "recipe", label: "Recipes", collection: "recipes", nameField: "displayName" },
 ];
 
-// ─── Zone tree item ─────────────────────────────────────────────────
 
 function ZoneTree({
   zoneId,
@@ -169,6 +135,8 @@ function ZoneTree({
       <div className="flex items-center gap-1">
         <button
           onClick={() => setExpanded((v) => !v)}
+          aria-expanded={expanded}
+          aria-label={expanded ? "Collapse zone" : "Expand zone"}
           className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-2xs text-text-muted transition hover:bg-white/8 hover:text-text-primary"
         >
           {expanded ? "\u25BE" : "\u25B8"}
@@ -187,24 +155,25 @@ function ZoneTree({
         </button>
         <button
           onClick={() => onDelete(zoneId)}
-          className="hidden rounded-full border border-white/8 px-2 py-1 text-2xs text-text-muted transition hover:border-status-danger/40 hover:text-status-danger group-hover/zone:block"
+          className="rounded-full border border-white/8 px-2 py-1 text-2xs text-text-muted opacity-0 transition hover:border-status-danger/40 hover:text-status-danger focus:opacity-100 group-hover/zone:opacity-100 group-focus-within/zone:opacity-100"
           title="Delete zone"
+          aria-label="Delete zone"
         >
           Remove
         </button>
       </div>
 
       {expanded && (
-        <div className="ml-10 mt-2 flex flex-col gap-2 border-l border-white/8 pl-4">
+        <div className="ml-10 mt-2 flex flex-col gap-2.5 border-l border-accent/15 pl-4">
           {CATEGORIES.map((cat) => {
             const collection = world[cat.collection] as Record<string, Record<string, unknown>> | undefined;
             const entries = collection ? Object.entries(collection) : [];
             if (entries.length === 0 && !cat.addFn) return null;
 
             return (
-              <div key={cat.key}>
+              <div key={cat.key} className="border-t border-white/5 pt-2 first:border-t-0 first:pt-0">
                 <div className="flex items-center gap-2">
-                  <span className="text-[11px] uppercase tracking-ui text-text-muted">
+                  <span className="font-display font-semibold text-2xs uppercase tracking-label text-text-secondary">
                     {cat.label}
                   </span>
                   <span className="text-[11px] text-text-muted">
@@ -215,6 +184,7 @@ function ZoneTree({
                       onClick={() => handleAdd(cat)}
                       className="ml-auto rounded-full border border-white/8 px-2 py-1 text-2xs text-text-muted transition hover:bg-white/8 hover:text-text-primary"
                       title={`Add ${cat.label.replace(/s$/, "").toLowerCase()}`}
+                      aria-label={`Add ${cat.label.replace(/s$/, "").toLowerCase()}`}
                     >
                       Add
                     </button>
@@ -228,7 +198,7 @@ function ZoneTree({
                         <li key={id}>
                           <button
                             onClick={() => handleEntityClick(cat, id)}
-                            className="w-full truncate rounded-xl px-2 py-1 text-left text-[12px] text-text-muted transition hover:bg-white/8 hover:text-text-secondary"
+                            className="w-full truncate rounded-xl px-2 py-1.5 text-left text-[12px] text-text-muted transition hover:bg-accent/8 hover:text-text-primary"
                             title={id}
                           >
                             {name || id}
@@ -247,7 +217,9 @@ function ZoneTree({
   );
 }
 
-// ─── Panel button grid (shared between workspaces) ──────────────────
+
+const PILL_COLLAPSE_THRESHOLD = 8;
+const PILL_COLLAPSE_MIN_HIDDEN = 3;
 
 function PanelButtonGrid({
   groups,
@@ -258,70 +230,69 @@ function PanelButtonGrid({
   activeTabId: string | null;
   openTab: (tab: Tab) => void;
 }) {
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
+
   return (
-    <nav className="flex flex-col gap-5">
+    <nav className="flex flex-col gap-3">
       {groups.map((group) => {
-        const [featured, ...rest] = group.panels;
-        const copy = GROUP_COPY[group.id] ?? { kicker: group.label, description: "" };
-        const featuredTab = featured ? panelTab(featured.id) : null;
-        const featuredActive = featuredTab ? activeTabId === featuredTab.id : false;
-        const featuredPanel = featured ? PANEL_MAP[featured.id] : null;
+        const expanded = expandedGroups.has(group.id);
+        const hiddenCount = group.panels.length - PILL_COLLAPSE_THRESHOLD;
+        const needsCollapse = hiddenCount >= PILL_COLLAPSE_MIN_HIDDEN;
+        const visiblePanels = needsCollapse && !expanded
+          ? group.panels.slice(0, PILL_COLLAPSE_THRESHOLD)
+          : group.panels;
 
         return (
-          <section key={group.id} className="border-t border-white/8 pt-4 first:border-t-0 first:pt-0">
-            <div className="mb-3">
-              <p className="text-[10px] uppercase tracking-wide-ui text-text-muted">{copy.kicker}</p>
-              <div className="mt-1 flex items-end justify-between gap-3">
-                <h3 className="font-display text-base text-text-primary">{group.label}</h3>
-                <span className="text-2xs uppercase tracking-label text-text-muted">
-                  {group.panels.length} surface{group.panels.length === 1 ? "" : "s"}
-                </span>
-              </div>
-              {copy.description ? (
-                <p className="mt-1 text-2xs leading-5 text-text-secondary">{copy.description}</p>
-              ) : null}
+          <section key={group.id} className="border-t border-white/8 pt-2.5 first:border-t-0 first:pt-0">
+            <div className="mb-1.5 flex items-baseline justify-between gap-2">
+              <h3 className="text-2xs font-medium uppercase tracking-label text-text-secondary">{group.label}</h3>
+              <span className="text-[10px] text-text-muted">{group.panels.length}</span>
             </div>
 
-            {featured && featuredTab ? (
-              <button
-                onClick={() => openTab(featuredTab)}
-                className={`atlas-link focus-ring w-full rounded-[24px] px-4 py-3 text-left ${
-                  featuredActive ? "border-[var(--border-glow-strong)] shadow-glow-sm" : ""
-                }`}
-              >
-                <span className="block text-[10px] uppercase tracking-ui text-text-muted">
-                  {copy.kicker}
-                </span>
-                <span className="mt-1 block font-display text-lg text-text-primary">
-                  {featured.label}
-                </span>
-                <span className="mt-1 block text-xs leading-5 text-text-secondary">
-                  {featuredPanel?.description ?? `Open the primary ${group.label.toLowerCase()} workbench.`}
-                </span>
-              </button>
-            ) : null}
-
-            {rest.length > 0 ? (
-              <div className="mt-2 flex flex-wrap gap-1.5">
-                {rest.map((panel) => {
-                  const tab = panelTab(panel.id);
-                  const isActive = activeTabId === tab.id;
-                  return (
-                    <button
-                      key={panel.id}
-                      onClick={() => openTab(tab)}
-                      className={`focus-ring rounded-full border px-2.5 py-1.5 text-[11px] font-medium leading-none transition ${
-                        isActive
-                          ? "border-[var(--border-glow-strong)] bg-[linear-gradient(135deg,rgba(168,151,210,0.25),rgba(140,174,201,0.15))] text-text-primary shadow-glow-sm"
-                          : "border-white/8 bg-white/[0.04] text-text-secondary hover:border-white/14 hover:bg-white/8 hover:text-text-primary"
-                      }`}
-                    >
-                      {panel.label}
-                    </button>
-                  );
-                })}
-              </div>
-            ) : null}
+            <div className="flex flex-wrap gap-1.5">
+              {visiblePanels.map((panel) => {
+                const tab = panelTab(panel.id);
+                const isActive = activeTabId === tab.id;
+                const panelDef = PANEL_MAP[panel.id];
+                return (
+                  <button
+                    key={panel.id}
+                    onClick={() => openTab(tab)}
+                    aria-current={isActive ? "page" : undefined}
+                    title={panelDef?.description}
+                    className={`focus-ring rounded-full border px-2.5 py-1.5 text-[11px] font-medium leading-none transition ${
+                      isActive
+                        ? "border-[var(--border-glow-strong)] bg-[linear-gradient(135deg,rgba(168,151,210,0.25),rgba(140,174,201,0.15))] text-text-primary shadow-glow-sm"
+                        : "border-white/8 bg-white/[0.04] text-text-secondary hover:border-white/14 hover:bg-white/8 hover:text-text-primary"
+                    }`}
+                  >
+                    {panel.label}
+                  </button>
+                );
+              })}
+              {needsCollapse && !expanded && (
+                <button
+                  onClick={() => setExpandedGroups((s) => new Set(s).add(group.id))}
+                  className="rounded-full border border-dashed border-white/10 px-2.5 py-1.5 text-[11px] text-text-muted transition hover:border-white/20 hover:text-text-secondary"
+                >
+                  +{hiddenCount} more
+                </button>
+              )}
+              {needsCollapse && expanded && (
+                <button
+                  onClick={() => {
+                    setExpandedGroups((s) => {
+                      const next = new Set(s);
+                      next.delete(group.id);
+                      return next;
+                    });
+                  }}
+                  className="rounded-full border border-dashed border-white/10 px-2.5 py-1.5 text-[11px] text-text-muted transition hover:border-white/20 hover:text-text-secondary"
+                >
+                  Less
+                </button>
+              )}
+            </div>
           </section>
         );
       })}
@@ -329,7 +300,6 @@ function PanelButtonGrid({
   );
 }
 
-// ─── Main Sidebar ───────────────────────────────────────────────────
 
 export function Sidebar({ workspace }: { workspace: Workspace }) {
   const zones = useZoneStore((s) => s.zones);
@@ -399,51 +369,23 @@ export function Sidebar({ workspace }: { workspace: Workspace }) {
 
   return (
     <aside className="relative flex w-full shrink-0 flex-col overflow-hidden rounded-[32px] border border-white/10 bg-gradient-panel shadow-[0_18px_56px_rgba(8,10,18,0.32)] xl:h-full xl:w-[23rem]">
-      <img
-        src={sidebarBg}
-        alt=""
-        className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-[0.14]"
-      />
       <div className="pointer-events-none absolute inset-x-0 top-0 h-48 bg-gradient-glow-top" />
 
       <div className="relative z-10 shrink-0 px-4 pt-4">
-        <div className="panel-surface-light rounded-[28px] px-4 py-4">
-          <p className="text-[10px] uppercase tracking-wide-ui text-text-muted">
-            {workspace === "worldmaker" ? "Atlas" : "Codex"}
-          </p>
-          <h2 className="mt-1 font-display text-[1.35rem] text-text-primary">
-            {workspace === "worldmaker" ? "Worldmaker" : "Lore observatory"}
-          </h2>
-          <p className="mt-2 text-xs leading-5 text-text-secondary">
-            {workspace === "worldmaker"
-              ? "Move from map to law to content without leaving the same instrument."
-              : "Shape the setting’s memory, geography, factions, and publication layer from one canon rail."}
-          </p>
-          <div className="mt-4 grid grid-cols-3 gap-2">
-            <div className="rounded-[20px] border border-white/8 bg-black/10 px-3 py-2">
-              <p className="text-[10px] uppercase tracking-label text-text-muted">Zones</p>
-              <p className="mt-1 font-display text-lg text-text-primary">{zones.size}</p>
-            </div>
-            <div className="rounded-[20px] border border-white/8 bg-black/10 px-3 py-2">
-              <p className="text-[10px] uppercase tracking-label text-text-muted">Lore</p>
-              <p className="mt-1 font-display text-lg text-text-primary">{articleCount}</p>
-            </div>
-            <div className="rounded-[20px] border border-white/8 bg-black/10 px-3 py-2">
-              <p className="text-[10px] uppercase tracking-label text-text-muted">Open</p>
-              <p className="mt-1 font-display text-lg text-text-primary">{openTabs.length}</p>
-            </div>
-          </div>
+        <div className="flex items-center gap-3 px-1 text-[11px] text-text-muted">
+          <span>{zones.size} zones</span>
+          <span className="text-border-default">·</span>
+          <span>{articleCount} lore</span>
+          <span className="text-border-default">·</span>
+          <span>{openTabs.length} open</span>
         </div>
       </div>
 
       <div className="relative z-10 min-h-0 max-h-[22rem] shrink overflow-y-auto border-b border-white/10 px-4 py-4 xl:max-h-[45%]">
         {workspace === "worldmaker" ? (
           <>
-            <div className="mb-4 flex items-end justify-between gap-3">
-              <div>
-                <p className="text-[10px] uppercase tracking-wide-ui text-text-muted">Lenses</p>
-                <h2 className="mt-1 font-display text-lg text-text-primary">What kind of worldmaking?</h2>
-              </div>
+            <div className="mb-2 flex items-center justify-between gap-3">
+              <h2 className="text-2xs font-medium uppercase tracking-label text-text-secondary">Surfaces</h2>
               <button
                 onClick={() => setShowNewZone(true)}
                 className="focus-ring shell-pill rounded-full px-3 py-1 text-2xs font-medium"
@@ -453,10 +395,11 @@ export function Sidebar({ workspace }: { workspace: Workspace }) {
               </button>
             </div>
             <PanelButtonGrid groups={WORLDMAKER_GROUPS} activeTabId={activeTabId} openTab={openTab} />
-            <div className="mt-3">
-              <div className="mb-2 border-t border-white/6" />
-              <p className="mb-1.5 text-[10px] font-medium uppercase tracking-wide-ui text-text-muted">Command surfaces</p>
-              <div className="grid gap-2">
+            <div className="mt-1 border-t border-white/8 pt-2.5">
+              <div className="mb-1.5">
+                <h3 className="text-2xs font-medium uppercase tracking-label text-text-secondary">Command</h3>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
                 {([
                   {
                     id: "sprites",
@@ -480,14 +423,14 @@ export function Sidebar({ workspace }: { workspace: Workspace }) {
                   <button
                     key={entry.id}
                     onClick={() => openTab({ id: entry.id, kind: entry.kind, label: entry.label })}
-                    className={`atlas-link focus-ring rounded-[20px] px-4 py-3 text-left ${
+                    title={entry.description}
+                    className={`focus-ring rounded-full border px-2.5 py-1.5 text-[11px] font-medium leading-none transition ${
                       activeTabId === entry.id
-                        ? "border-[var(--border-glow-strong)] text-text-primary shadow-glow-sm"
-                        : "text-text-secondary"
+                        ? "border-[var(--border-glow-strong)] bg-[linear-gradient(135deg,rgba(168,151,210,0.25),rgba(140,174,201,0.15))] text-text-primary shadow-glow-sm"
+                        : "border-white/8 bg-white/[0.04] text-text-secondary hover:border-white/14 hover:bg-white/8 hover:text-text-primary"
                     }`}
                   >
-                    <span className="block font-display text-sm text-text-primary">{entry.label}</span>
-                    <span className="mt-1 block text-2xs leading-5 text-text-secondary">{entry.description}</span>
+                    {entry.label}
                   </button>
                 ))}
               </div>
@@ -495,10 +438,8 @@ export function Sidebar({ workspace }: { workspace: Workspace }) {
           </>
         ) : (
           <>
-            <div className="mb-4">
-              <p className="text-[10px] uppercase tracking-wide-ui text-text-muted">Lenses</p>
-              <h2 className="mt-1 font-display text-lg text-text-primary">How will the world be remembered?</h2>
-              <p className="mt-1 text-xs leading-5 text-text-secondary">Move between codex, maps, relations, and publication without losing the thread.</p>
+            <div className="mb-2">
+              <h2 className="text-2xs font-medium uppercase tracking-label text-text-secondary">Surfaces</h2>
             </div>
             <PanelButtonGrid groups={LORE_GROUPS} activeTabId={activeTabId} openTab={openTab} />
           </>
@@ -524,7 +465,7 @@ export function Sidebar({ workspace }: { workspace: Workspace }) {
               onClick={clearQuery}
               className="focus-ring absolute right-3 top-1/2 -translate-y-1/2 rounded text-sm text-text-muted hover:text-text-primary"
             >
-              &times;
+              ✕
             </button>
           )}
         </div>
@@ -541,7 +482,7 @@ export function Sidebar({ workspace }: { workspace: Workspace }) {
             ) : (
               [...grouped.entries()].map(([zoneId, entries]) => (
                 <div key={zoneId} className="mb-4">
-                  <h3 className="mb-2 font-display text-sm text-text-primary">{zoneId}</h3>
+                  <h3 className="mb-2 text-2xs font-medium uppercase tracking-label text-text-secondary">{zoneId}</h3>
                   <ul className="flex flex-col gap-0.5">
                     {entries.map((entry) => (
                       <li key={`${entry.entityType}:${entry.entityId}`}>
@@ -576,7 +517,7 @@ export function Sidebar({ workspace }: { workspace: Workspace }) {
         ) : workspace === "worldmaker" ? (
           <div className="py-2">
             <div className="mb-3 flex items-center justify-between">
-              <h2 className="font-display text-sm text-text-primary">Cartography</h2>
+              <h2 className="text-2xs font-medium uppercase tracking-label text-text-secondary">Cartography</h2>
               {hasProject ? (
                 <span className="text-2xs uppercase tracking-label text-text-muted">
                   {sortedZones.length} zone{sortedZones.length === 1 ? "" : "s"}
@@ -605,9 +546,9 @@ export function Sidebar({ workspace }: { workspace: Workspace }) {
           /* Lore workspace: article tree */
           <div className="py-2">
             <div className="mb-3 flex items-center justify-between">
-              <h2 className="font-display text-sm text-text-primary">
+              <h2 className="text-2xs font-medium uppercase tracking-label text-text-secondary">
                 Canon roots
-                <span className="ml-2 text-xs font-normal text-text-muted">{articleCount}</span>
+                <span className="ml-2 text-[10px] font-normal text-text-muted">{articleCount}</span>
               </h2>
             </div>
             <ArticleTree />

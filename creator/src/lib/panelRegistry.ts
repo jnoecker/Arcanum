@@ -76,15 +76,15 @@ const WORLD_PANELS: PanelDef[] = [
 // ─── Lore panels ───────────────────────────────────────────────────
 
 const LORE_PANELS: PanelDef[] = [
-  { id: "lore", label: "Articles", group: "lore", host: "lore", kicker: "Lore", title: "World lore", description: "All world-building articles — characters, locations, factions, and more.", maxWidth: "max-w-7xl" },
-  { id: "worldSetting", label: "World Setting", group: "lore", host: "lore", kicker: "Lore", title: "World setting", description: "Name, overview, history, themes, geography, and magic system.", maxWidth: "max-w-5xl" },
-  { id: "factions", label: "Factions", group: "lore", host: "lore", kicker: "Lore", title: "Factions & organizations", description: "Political groups, guilds, and power structures.", maxWidth: "max-w-5xl" },
-  { id: "codex", label: "Codex", group: "lore", host: "lore", kicker: "Lore", title: "Lore codex", description: "Wiki-style articles for places, legends, creatures, deities, and more.", maxWidth: "max-w-5xl" },
-  { id: "loreMaps", label: "Maps", group: "lore", host: "lore", kicker: "Lore", title: "World maps", description: "Upload maps, place pins, and link locations to lore articles.", maxWidth: "max-w-7xl" },
-  { id: "loreTimeline", label: "Timeline", group: "lore", host: "lore", kicker: "Lore", title: "Timeline", description: "Custom calendar systems, eras, and historical events.", maxWidth: "max-w-5xl" },
-  { id: "loreRelations", label: "Relations", group: "lore", host: "lore", kicker: "Lore", title: "Relationship graph", description: "Visual graph of connections between articles, factions, and characters.", maxWidth: "max-w-7xl" },
-  { id: "loreDocuments", label: "Documents", group: "lore", host: "lore", kicker: "Lore", title: "Document library", description: "Internal notes, lore bibles, and reference documents.", maxWidth: "max-w-5xl" },
-  { id: "showcaseSettings", label: "Showcase", group: "lore", host: "lore", kicker: "Lore", title: "Showcase settings", description: "Branding and appearance for the published showcase site.", maxWidth: "max-w-5xl" },
+  { id: "lore", label: "Articles", group: "lore", host: "lore", kicker: "Codex", title: "World lore", description: "All world-building articles — characters, locations, factions, and more.", maxWidth: "max-w-7xl" },
+  { id: "worldSetting", label: "World Setting", group: "lore", host: "lore", kicker: "Foundation", title: "World setting", description: "Name, overview, history, themes, geography, and magic system.", maxWidth: "max-w-5xl" },
+  { id: "factions", label: "Factions", group: "lore", host: "lore", kicker: "Politics", title: "Factions & organizations", description: "Political groups, guilds, and power structures.", maxWidth: "max-w-5xl" },
+  { id: "codex", label: "Codex", group: "lore", host: "lore", kicker: "Reference", title: "Lore codex", description: "Wiki-style articles for places, legends, creatures, deities, and more.", maxWidth: "max-w-5xl" },
+  { id: "loreMaps", label: "Maps", group: "lore", host: "lore", kicker: "Cartography", title: "World maps", description: "Upload maps, place pins, and link locations to lore articles.", maxWidth: "max-w-7xl" },
+  { id: "loreTimeline", label: "Timeline", group: "lore", host: "lore", kicker: "Chronicle", title: "Timeline", description: "Custom calendar systems, eras, and historical events.", maxWidth: "max-w-5xl" },
+  { id: "loreRelations", label: "Relations", group: "lore", host: "lore", kicker: "Connections", title: "Relationship graph", description: "Visual graph of connections between articles, factions, and characters.", maxWidth: "max-w-7xl" },
+  { id: "loreDocuments", label: "Documents", group: "lore", host: "lore", kicker: "Archive", title: "Document library", description: "Internal notes, lore bibles, and reference documents.", maxWidth: "max-w-5xl" },
+  { id: "showcaseSettings", label: "Showcase", group: "lore", host: "lore", kicker: "Publication", title: "Showcase settings", description: "Branding and appearance for the published showcase site.", maxWidth: "max-w-5xl" },
 ];
 
 // ─── Content panels ─────────────────────────────────────────────────

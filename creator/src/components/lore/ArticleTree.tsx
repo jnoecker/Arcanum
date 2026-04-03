@@ -1,40 +1,26 @@
 import { useMemo, useState, useCallback, useRef } from "react";
 import { Tree, type NodeRendererProps, type TreeApi } from "react-arborist";
 import { useLoreStore, selectArticles } from "@/stores/loreStore";
+import { useProjectStore } from "@/stores/projectStore";
+import { panelTab } from "@/lib/panelRegistry";
 import type { Article, ArticleTemplate } from "@/types/lore";
 import { TEMPLATE_SCHEMAS } from "@/lib/loreTemplates";
 
-// ─── Template icon labels ───────────────────────────────────────────
-
-const TEMPLATE_ICONS: Record<ArticleTemplate, string> = {
-  world_setting: "W",
-  character: "C",
-  location: "L",
-  organization: "O",
-  item: "I",
-  species: "S",
-  event: "E",
-  language: "La",
-  profession: "P",
-  ability: "Ab",
-  freeform: "F",
+const TEMPLATE_DOT_COLORS: Record<ArticleTemplate, string> = {
+  world_setting: "var(--color-template-world)",
+  character: "var(--color-template-character)",
+  location: "var(--color-template-location)",
+  organization: "var(--color-template-organization)",
+  item: "var(--color-template-item)",
+  species: "var(--color-template-species)",
+  event: "var(--color-template-event)",
+  language: "var(--color-template-language)",
+  profession: "var(--color-template-profession)",
+  ability: "var(--color-template-ability)",
+  freeform: "var(--color-template-freeform)",
 };
 
-const TEMPLATE_COLORS: Record<ArticleTemplate, string> = {
-  world_setting: "text-accent",
-  character: "text-violet",
-  location: "text-stellar-blue",
-  organization: "text-class-bulwark",
-  item: "text-arcane-teal",
-  species: "text-class-warden",
-  event: "text-status-warning",
-  language: "text-text-muted",
-  profession: "text-class-herald",
-  ability: "text-class-starweaver",
-  freeform: "text-text-muted",
-};
-
-// ─── Tree data shape ────────────────────────────────────────────────
+// Tree data shape
 
 interface TreeNode {
   id: string;
@@ -68,14 +54,19 @@ function buildTree(articles: Record<string, Article>): TreeNode[] {
   return buildChildren(undefined);
 }
 
-// ─── Node renderer ──────────────────────────────────────────────────
+// Node renderer
 
 function Node({ node, style, dragHandle }: NodeRendererProps<TreeNode>) {
   const selectedArticleId = useLoreStore((s) => s.selectedArticleId);
   const selectArticle = useLoreStore((s) => s.selectArticle);
+  const openTab = useProjectStore((s) => s.openTab);
   const isSelected = selectedArticleId === node.data.id;
-  const icon = TEMPLATE_ICONS[node.data.template];
-  const colorClass = TEMPLATE_COLORS[node.data.template];
+  const dotColor = TEMPLATE_DOT_COLORS[node.data.template];
+
+  const handleSelect = () => {
+    selectArticle(node.data.id);
+    openTab(panelTab("lore"));
+  };
 
   return (
     <div
@@ -90,11 +81,11 @@ function Node({ node, style, dragHandle }: NodeRendererProps<TreeNode>) {
           ? "bg-accent/15 text-text-primary"
           : "text-text-secondary hover:bg-bg-tertiary"
       }`}
-      onClick={() => selectArticle(node.data.id)}
+      onClick={handleSelect}
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") {
           e.preventDefault();
-          selectArticle(node.data.id);
+          handleSelect();
         }
       }}
     >
@@ -105,6 +96,7 @@ function Node({ node, style, dragHandle }: NodeRendererProps<TreeNode>) {
             node.toggle();
           }}
           aria-label={node.isOpen ? "Collapse" : "Expand"}
+          aria-expanded={node.isOpen}
           className="flex h-5 w-5 items-center justify-center rounded text-text-muted hover:bg-bg-tertiary"
         >
           <span className="text-2xs">{node.isOpen ? "\u25BE" : "\u25B8"}</span>
@@ -112,16 +104,18 @@ function Node({ node, style, dragHandle }: NodeRendererProps<TreeNode>) {
       ) : (
         <span className="w-5" />
       )}
-      <span className={`w-5 text-center text-2xs font-bold ${colorClass}`}>
-        {icon}
-      </span>
+      <span
+        aria-hidden="true"
+        className="inline-block h-2 w-2 shrink-0 rounded-full"
+        style={{ background: dotColor }}
+      />
       <span className={`min-w-0 truncate ${node.data.draft ? "italic opacity-60" : ""}`}>{node.data.name}</span>
       {node.data.draft && <span className="shrink-0 text-[9px] text-text-muted uppercase">draft</span>}
     </div>
   );
 }
 
-// ─── Main component ────────────────────────────────────────────────
+// Main component
 
 export function ArticleTree() {
   const articles = useLoreStore(selectArticles);
@@ -202,7 +196,7 @@ export function ArticleTree() {
         className="ornate-input mb-2 w-full rounded px-2 py-1.5 text-xs text-text-primary"
         value={search}
         onChange={(e) => setSearch(e.target.value)}
-        placeholder="Search articles..."
+        placeholder="Search legends..."
       />
 
       {/* Tree */}
@@ -223,7 +217,7 @@ export function ArticleTree() {
         </Tree>
         {filteredData.length === 0 && (
           <div className="px-2 py-4 text-xs text-text-muted">
-            {search ? "No matching articles" : "No articles yet. Create one below."}
+            {search ? "No matching articles found." : "The first legend remains unwritten."}
           </div>
         )}
       </div>

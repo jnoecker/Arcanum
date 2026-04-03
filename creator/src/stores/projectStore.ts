@@ -29,6 +29,7 @@ interface ProjectStore {
 
   openTab: (tab: Tab) => void;
   closeTab: (tabId: string) => void;
+  closeAllTabs: () => void;
   setActiveTab: (tabId: string) => void;
 
   /** Restore previously open tabs after project load. */
@@ -80,6 +81,8 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
         : activeTabId;
     set({ tabs: filtered, activeTabId: newActive });
   },
+
+  closeAllTabs: () => set({ tabs: [], activeTabId: null }),
 
   setActiveTab: (tabId) => set({ activeTabId: tabId }),
 

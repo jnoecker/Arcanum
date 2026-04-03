@@ -35,16 +35,6 @@ const ADMIN_STATUS_LABELS: Record<string, string> = {
   error: "Link lost",
 };
 
-const WORKSPACE_COPY: Record<Workspace, { label: string; description: string }> = {
-  worldmaker: {
-    label: "Worldmaker",
-    description: "Shape zones, systems, creatures, and supporting content from one ceremonial frame.",
-  },
-  lore: {
-    label: "Lore",
-    description: "Tend the canon itself: setting, history, factions, maps, and the published face of the world.",
-  },
-};
 
 interface ToolbarProps {
   workspace: Workspace;
@@ -155,49 +145,33 @@ export function Toolbar({ workspace, setWorkspace }: ToolbarProps) {
 
   return (
     <>
-      <div className="relative z-10 flex shrink-0 items-center px-4 pt-4">
+      <div className="relative z-20 flex shrink-0 items-center px-4 pt-3">
         <img
           src={toolbarBg}
           alt=""
+          aria-hidden="true"
           className="pointer-events-none absolute inset-x-4 inset-y-0 rounded-[30px] object-cover opacity-[0.08]"
         />
-        <div className="instrument-panel relative min-w-0 flex-1 overflow-hidden rounded-[30px] px-5 py-4">
+        <div className="instrument-panel relative min-w-0 flex-1 rounded-[30px] px-5 py-3">
           <div className="pointer-events-none absolute right-[-8rem] top-[-6rem] h-[20rem] w-[20rem] rounded-full bg-[radial-gradient(circle,rgba(168,151,210,0.16),transparent_72%)] blur-3xl" />
-          <div className="relative grid gap-4 xl:grid-cols-[minmax(0,1.3fr)_auto_minmax(20rem,1fr)] xl:items-center">
-            <div className="min-w-0">
-              <p className="text-[10px] uppercase tracking-wide-ui text-text-muted">Creator&apos;s instrument</p>
-              <div className="mt-2 flex flex-wrap items-end gap-x-3 gap-y-2">
-                <h1 className="min-w-0 truncate font-display text-[clamp(1.35rem,2vw,2.25rem)] leading-none text-text-primary">
+          <div className="relative flex flex-wrap items-center gap-4">
+            <div className="mr-auto flex min-w-0 items-center gap-3">
+              <div className="min-w-0">
+                <p className="text-[9px] uppercase tracking-wide-ui text-text-muted">Creator&apos;s instrument</p>
+                <h1 className="min-w-0 truncate font-display text-[clamp(1.25rem,2vw,1.75rem)] leading-tight text-text-primary">
                   {project?.name ?? "No world open"}
                 </h1>
-                <span className="rounded-full border border-white/10 bg-black/10 px-3 py-1 text-[10px] uppercase tracking-ui text-text-secondary">
-                  {activeSurface.kicker}
-                </span>
               </div>
-              <p className="mt-2 max-w-3xl text-sm leading-6 text-text-secondary">
-                {WORKSPACE_COPY[workspace].description}
-              </p>
-              <div className="mt-3 flex flex-wrap gap-2 text-2xs">
-                <span className="rounded-full border border-white/10 bg-black/10 px-3 py-1 text-text-secondary">
-                  {zones.size} zones in memory
-                </span>
-                <span className="rounded-full border border-white/10 bg-black/10 px-3 py-1 text-text-secondary">
-                  {articleCount} lore articles
-                </span>
-                <span className="rounded-full border border-white/10 bg-black/10 px-3 py-1 text-text-secondary">
-                  {tabs.length} open surfaces
-                </span>
-                <span className="rounded-full border border-[var(--border-accent-subtle)] bg-[rgba(168,151,210,0.12)] px-3 py-1 text-text-primary">
-                  Active: {activeSurface.title}
-                </span>
-              </div>
+              <span className="shrink-0 rounded-full border border-white/10 bg-black/10 px-2.5 py-0.5 text-[9px] uppercase tracking-ui text-text-secondary">
+                {activeSurface.kicker}
+              </span>
             </div>
 
             <div className="xl:justify-self-center">
-              <div className="segmented-control min-w-[18rem]" role="tablist" aria-label="Creator mode">
+              <div className="segmented-control min-w-0" role="tablist" aria-label="Creator mode">
                 {([
-                  { id: "worldmaker" as const, label: "Worldmaker" },
-                  { id: "lore" as const, label: "Lore" },
+                  { id: "worldmaker" as const, label: "Worldmaker", tip: "Zones, systems, and runtime craft" },
+                  { id: "lore" as const, label: "Lore", tip: "Canon, maps, and narrative structure" },
                 ]).map((entry, index) => (
                   <button
                     key={entry.id}
@@ -207,6 +181,7 @@ export function Toolbar({ workspace, setWorkspace }: ToolbarProps) {
                     role="tab"
                     aria-selected={workspace === entry.id}
                     tabIndex={workspace === entry.id ? 0 : -1}
+                    title={entry.tip}
                     onClick={() => setWorkspace(entry.id)}
                     onKeyDown={(event) => {
                       if (event.key === "ArrowRight" || event.key === "ArrowDown") {
@@ -223,13 +198,13 @@ export function Toolbar({ workspace, setWorkspace }: ToolbarProps) {
                         workspaceRefs.current[nextIndex]?.focus();
                       }
                     }}
-                    className="world-lens focus-ring flex-1 px-4 py-3 text-left"
-                    data-active={workspace === entry.id}
+                    className={`focus-ring rounded-full px-4 py-1.5 font-display text-sm transition ${
+                      workspace === entry.id
+                        ? "bg-white/10 text-accent shadow-glow-sm"
+                        : "text-text-secondary hover:bg-white/5 hover:text-text-primary"
+                    }`}
                   >
-                    <span className="block font-display text-sm text-text-primary">{entry.label}</span>
-                    <span className="mt-1 block text-2xs leading-4 text-text-muted">
-                      {entry.id === "worldmaker" ? "Zones, systems, and runtime craft" : "Canon, maps, and narrative structure"}
-                    </span>
+                    {entry.label}
                   </button>
                 ))}
               </div>
@@ -240,18 +215,27 @@ export function Toolbar({ workspace, setWorkspace }: ToolbarProps) {
                 <ActionButton
                   onClick={() => setShowUtilityMenu((value) => !value)}
                   variant="secondary"
+                  className="text-stellar-blue"
                   title="Open import, validation, runtime, and gallery tools"
+                  aria-label="Open import, validation, runtime, and gallery tools"
+                  aria-expanded={showUtilityMenu}
+                  aria-haspopup="true"
                 >
-                  <div className={`h-2.5 w-2.5 rounded-full ${ADMIN_STATUS_COLORS[adminConnectionStatus]}`} />
-                  <span>World Tools</span>
+                  <div
+                    className={`h-2.5 w-2.5 shrink-0 rounded-full ${ADMIN_STATUS_COLORS[adminConnectionStatus]}`}
+                    role="status"
+                    aria-label={ADMIN_STATUS_LABELS[adminConnectionStatus]}
+                  />
+                  <span className="min-w-0 truncate">World Tools</span>
                 </ActionButton>
                 {showUtilityMenu && (
-                  <div className="instrument-panel absolute right-0 top-full z-20 mt-3 w-[22rem] rounded-[26px] p-3">
+                  <div className="instrument-panel absolute right-0 top-full z-20 mt-3 w-[min(22rem,90vw)] rounded-[26px] p-3" role="menu">
                     <div className="space-y-3">
                       <div>
                         <p className="px-2 text-2xs uppercase tracking-wide-ui text-text-muted">Runtime</p>
                         <div className="mt-2 grid gap-2">
                           <button
+                            role="menuitem"
                             onClick={() => {
                               setShowUtilityMenu(false);
                               handleOpenAdmin();
@@ -265,6 +249,7 @@ export function Toolbar({ workspace, setWorkspace }: ToolbarProps) {
                           </button>
                           {isStandalone && (
                             <button
+                              role="menuitem"
                               onClick={() => {
                                 setShowUtilityMenu(false);
                                 handleOpenHandoff();
@@ -276,6 +261,7 @@ export function Toolbar({ workspace, setWorkspace }: ToolbarProps) {
                             </button>
                           )}
                           <button
+                            role="menuitem"
                             onClick={() => {
                               const config = useConfigStore.getState().config;
                               const results = validateAllZones(zones, config?.equipmentSlots);
@@ -301,6 +287,7 @@ export function Toolbar({ workspace, setWorkspace }: ToolbarProps) {
                         <p className="px-2 text-2xs uppercase tracking-wide-ui text-text-muted">Publication and Imports</p>
                         <div className="mt-2 grid gap-2">
                           <button
+                            role="menuitem"
                             onClick={() => {
                               setShowUtilityMenu(false);
                               void handleExportShowcase();
@@ -311,6 +298,7 @@ export function Toolbar({ workspace, setWorkspace }: ToolbarProps) {
                             {exporting ? "Publishing Lore..." : "Publish Lore Atlas"}
                           </button>
                           <button
+                            role="menuitem"
                             onClick={() => {
                               setShowUtilityMenu(false);
                               setShowLegacyImport(true);
@@ -320,6 +308,7 @@ export function Toolbar({ workspace, setWorkspace }: ToolbarProps) {
                             Restore Legacy Media
                           </button>
                           <button
+                            role="menuitem"
                             onClick={() => {
                               setShowUtilityMenu(false);
                               setShowSketchImport(true);
@@ -329,6 +318,7 @@ export function Toolbar({ workspace, setWorkspace }: ToolbarProps) {
                             Import From Sketch
                           </button>
                           <button
+                            role="menuitem"
                             onClick={() => {
                               setShowUtilityMenu(false);
                               openGallery();
@@ -344,29 +334,41 @@ export function Toolbar({ workspace, setWorkspace }: ToolbarProps) {
                 )}
               </div>
 
-              <span className="rounded-full border border-white/10 bg-black/10 px-3 py-2 text-2xs text-text-secondary">
+              <span className="rounded-full border border-white/10 bg-black/10 px-2.5 py-1.5 text-2xs text-text-secondary">
                 Runtime: {ADMIN_STATUS_LABELS[adminConnectionStatus]}
               </span>
 
-              <ActionButton onClick={openGenerator} title="Generate new art" variant="primary">
+              <ActionButton onClick={openGenerator} title="Generate new art" aria-label="Generate new art" variant="primary" className="text-stellar-blue">
                 Render Art
               </ActionButton>
+
+              {workspace === "lore" && (
+                <ActionButton
+                  onClick={() => void handleExportShowcase()}
+                  disabled={!hasLore || exporting}
+                  title="Sync assets and publish lore to the showcase"
+                  variant="primary"
+                >
+                  {exporting ? <span className="flex items-center gap-1.5"><Spinner />Publishing</span> : "Publish Lore"}
+                </ActionButton>
+              )}
 
               <ActionButton
                 onClick={() => setShowDiff(true)}
                 disabled={(dirtyCount === 0 && !configDirty) || saving}
                 title="Review and save changes"
-                aria-live="polite"
                 variant={saved || dirtyCount > 0 || configDirty ? "primary" : "secondary"}
                 className={saved ? "border-status-success/40 bg-status-success/15 text-status-success" : ""}
               >
-                {saving ? (
-                  <span className="flex items-center gap-1.5"><Spinner />Saving</span>
-                ) : saved ? (
-                  <span className="animate-saved-flash">Committed</span>
-                ) : dirtyCount > 0 || configDirty ? (
-                  `Commit ${dirtyCount + (configDirty ? 1 : 0)} change${dirtyCount + (configDirty ? 1 : 0) === 1 ? "" : "s"}`
-                ) : "No Changes"}
+                <span role="status" aria-live="polite">
+                  {saving ? (
+                    <span className="flex items-center gap-1.5"><Spinner />Saving</span>
+                  ) : saved ? (
+                    <span className="animate-saved-flash">Committed</span>
+                  ) : dirtyCount > 0 || configDirty ? (
+                    `Commit ${dirtyCount + (configDirty ? 1 : 0)} change${dirtyCount + (configDirty ? 1 : 0) === 1 ? "" : "s"}`
+                  ) : "No Changes"}
+                </span>
               </ActionButton>
             </div>
           </div>

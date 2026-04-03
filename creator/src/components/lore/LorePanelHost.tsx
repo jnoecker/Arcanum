@@ -5,7 +5,6 @@ import { saveLore } from "@/lib/lorePersistence";
 import { PANEL_MAP } from "@/lib/panelRegistry";
 import { Spinner } from "@/components/ui/FormWidgets";
 import configBg from "@/assets/config-bg.png";
-import subtoolbarBg from "@/assets/subtoolbar-bg.jpg";
 
 import { WorldSettingPanel } from "./WorldSettingPanel";
 import { FactionsPanel } from "./FactionsPanel";
@@ -18,8 +17,6 @@ import { ShowcaseSettingsPanel } from "./ShowcaseSettingsPanel";
 
 // Lazy-load MapPanel to isolate Leaflet CSS from the main bundle
 const MapPanel = lazy(() => import("./MapPanel").then(m => ({ default: m.MapPanel })));
-
-// ─── Panel renderer ─────────────────────────────────────────────────
 
 function renderPanel(panelId: string): ReactNode {
   switch (panelId) {
@@ -42,11 +39,9 @@ function renderPanel(panelId: string): ReactNode {
     case "showcaseSettings":
       return <ShowcaseSettingsPanel />;
     default:
-      return <div className="text-text-muted">Unknown lore panel: {panelId}</div>;
+      return <div className="px-6 py-8 text-sm text-text-muted/60">Panel not found: {panelId}</div>;
   }
 }
-
-// ─── Host component ─────────────────────────────────────────────────
 
 export function LorePanelHost({ panelId }: { panelId: string }) {
   const lore = useLoreStore((s) => s.lore);
@@ -98,54 +93,39 @@ export function LorePanelHost({ panelId }: { panelId: string }) {
 
   if (!lore) {
     return (
-      <div className="flex flex-1 items-center justify-center text-text-muted">
-        No lore loaded
+      <div className="flex flex-1 flex-col items-center justify-center gap-3 text-center">
+        <p className="font-display text-base text-text-muted">The Archive Awaits</p>
+        <p className="max-w-xs text-xs leading-6 text-text-muted/60">Open a world project to begin recording its lore.</p>
       </div>
     );
   }
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <div className="relative shrink-0 overflow-hidden border-b border-border-default bg-bg-secondary">
-        <img src={subtoolbarBg} alt="" className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-[0.1]" />
-        <div className="relative z-10 flex items-center justify-between gap-4 px-5 py-3">
-          <div className="min-w-0 flex-1">
-            <div className="mt-2 flex flex-wrap items-center gap-3">
-              <h2 className="font-display text-2xl text-text-primary">{def?.title ?? panelId}</h2>
-              <span className="text-xs text-text-secondary">{def?.description ?? ""}</span>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            {dirty && <span className="text-xs text-accent">modified</span>}
-            <button
-              onClick={handleSave}
-              disabled={!dirty || saving}
-              className="focus-ring shell-pill-primary rounded-full px-4 py-2 text-xs font-medium disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              {saving ? <span className="flex items-center gap-1.5"><Spinner />Saving</span> : "Save Lore"}
-            </button>
-          </div>
-        </div>
-
-        {saveError && (
-          <div className="relative z-10 px-5 pb-3 text-xs text-status-error">
-            Could not save lore: {saveError}
-          </div>
-        )}
-      </div>
-
       <div className="relative min-h-0 flex-1 overflow-y-auto">
-        <div className="pointer-events-none sticky top-0 z-0 -mb-[100vh] h-[100vh] w-full overflow-hidden">
+        <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
           <img
             src={configBg}
             alt=""
-            className="h-full w-full object-cover opacity-[0.14]"
+            className="h-full w-full object-cover opacity-[0.10] mix-blend-soft-light"
             style={{ objectPosition: "center 40%" }}
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-bg-primary via-bg-primary/60 to-transparent" />
         </div>
 
         <div className={`relative z-10 mx-auto flex flex-col gap-6 px-6 py-5 ${def?.maxWidth ?? "max-w-5xl"}`}>
+          {(dirty || saving || saveError) && (
+            <div className="pointer-events-auto sticky top-3 z-20 flex items-center justify-end gap-2">
+              {saveError && <span role="alert" className="text-2xs text-status-error">Save failed</span>}
+              <button
+                onClick={handleSave}
+                disabled={!dirty || saving}
+                aria-label={saving ? "Saving lore" : "Save lore"}
+                className="focus-ring rounded-full border border-white/10 bg-bg-primary/80 px-3 py-1 text-2xs font-medium text-accent shadow-md backdrop-blur-sm transition hover:bg-bg-primary disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                {saving ? <span className="flex items-center gap-1.5"><Spinner />Saving</span> : "Save Lore"}
+              </button>
+            </div>
+          )}
           {renderPanel(panelId)}
         </div>
       </div>

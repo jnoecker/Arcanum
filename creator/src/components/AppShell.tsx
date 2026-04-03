@@ -26,15 +26,15 @@ export function AppShell() {
 
   return (
     <div className="relative flex h-screen flex-col overflow-hidden bg-bg-abyss">
-      <div className="pointer-events-none absolute inset-0">
+      <div aria-hidden="true" className="pointer-events-none absolute inset-0">
         <div className="absolute left-[-10rem] top-[-8rem] h-[34rem] w-[34rem] rounded-full bg-[radial-gradient(circle,rgba(168,151,210,0.14),transparent_68%)] blur-3xl" />
         <div className="absolute bottom-[-14rem] right-[-12rem] h-[40rem] w-[40rem] rounded-full bg-[radial-gradient(circle,rgba(140,174,201,0.12),transparent_72%)] blur-3xl" />
       </div>
       <header><Toolbar workspace={workspace} setWorkspace={setWorkspace} /></header>
-      <div className="relative z-10 flex min-h-0 flex-1 flex-col gap-4 px-4 pb-4 xl:flex-row">
+      <div className="relative z-10 flex min-h-0 flex-1 flex-col gap-3 px-4 pb-3 xl:flex-row">
         <aside className="min-w-0 xl:min-h-0"><Sidebar workspace={workspace} /></aside>
-        <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-[32px] border border-white/10 bg-gradient-panel shadow-panel backdrop-blur-xl">
-          <TabBar />
+        <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-[32px] border border-white/10 bg-bg-primary shadow-panel">
+          <TabBar workspace={workspace} />
           <MainArea workspace={workspace} />
         </main>
       </div>

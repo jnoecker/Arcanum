@@ -1,13 +1,21 @@
-import { memo, useState, useMemo, useCallback, useEffect } from "react";
+import { memo, useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { useSpriteDefinitionStore } from "@/stores/spriteDefinitionStore";
 import { useConfigStore } from "@/stores/configStore";
 import { useProjectStore } from "@/stores/projectStore";
 import { useAssetStore } from "@/stores/assetStore";
 import { useImageSrc } from "@/lib/useImageSrc";
-import { composePrompt, UNIVERSAL_NEGATIVE } from "@/lib/arcanumPrompts";
+import { useFocusTrap } from "@/lib/useFocusTrap";
+import { UNIVERSAL_NEGATIVE } from "@/lib/arcanumPrompts";
 import { removeBgAndSave } from "@/lib/useBackgroundRemoval";
-import { IMAGE_MODELS, ENTITY_DIMENSIONS, imageGenerateCommand } from "@/types/assets";
+import { IMAGE_MODELS, ENTITY_DIMENSIONS, imageGenerateCommand, requestsTransparentBackground } from "@/types/assets";
+import {
+  buildSpritePrompt,
+  generateSpriteTemplate,
+  getTierDefinitions,
+  type SpriteDimensions,
+  type SpritePromptTemplate,
+} from "@/lib/spritePromptGen";
 import type {
   SpriteDefinition,
   SpriteVariant,
@@ -15,6 +23,7 @@ import type {
   RequirementType,
 } from "@/types/sprites";
 import type { GeneratedImage, AssetContext, SyncProgress } from "@/types/assets";
+import type { AppConfig, TierDefinitionConfig } from "@/types/config";
 import { ActionButton } from "./ui/FormWidgets";
 
 // ─── Helpers ────────────────────────────────────────────────────────
@@ -58,16 +67,104 @@ const REQUIREMENT_TYPES: { value: RequirementType; label: string }[] = [
   { value: "staff", label: "Staff" },
 ];
 
+const SPRITE_TEMPLATE_VIBE =
+  "Dreamy character creation sprites for a magical fantasy world, cohesive with a softly enchanted storybook aesthetic.";
+
+function findRequirement<T extends RequirementType>(
+  requirements: SpriteRequirement[],
+  type: T,
+): Extract<SpriteRequirement, { type: T }> | undefined {
+  return requirements.find(
+    (requirement): requirement is Extract<SpriteRequirement, { type: T }> => requirement.type === type,
+  );
+}
+
+function tierStartLevel(definition: TierDefinitionConfig): number | null {
+  const levels = definition.levels.match(/\d+/g);
+  if (!levels?.length) return null;
+  return Number(levels[0]);
+}
+
+function inferTierFromLevel(level: number, tierDefinitions: Record<string, TierDefinitionConfig>): string {
+  const candidates = Object.entries(tierDefinitions)
+    .filter(([key]) => key !== "tstaff")
+    .map(([key, value]) => ({ key, start: tierStartLevel(value) ?? Number.POSITIVE_INFINITY }))
+    .sort((a, b) => a.start - b.start);
+
+  let selected = candidates[0]?.key ?? "t1";
+  for (const candidate of candidates) {
+    if (level >= candidate.start) selected = candidate.key;
+  }
+  return selected;
+}
+
+function resolveSpriteDimensions(
+  definition: SpriteDefinition,
+  variant: SpriteVariant | undefined,
+  config: AppConfig | null,
+): SpriteDimensions {
+  const tierDefinitions = config?.playerTiers ?? getTierDefinitions();
+  const race = variant?.race
+    || findRequirement(definition.requirements, "race")?.race
+    || config?.characterCreation.defaultRace
+    || Object.keys(config?.races ?? {})[0]
+    || "archae";
+  const playerClass = variant?.playerClass
+    || findRequirement(definition.requirements, "class")?.playerClass
+    || "base";
+  const isStaff = definition.category === "staff" || Boolean(findRequirement(definition.requirements, "staff"));
+  const minLevel = findRequirement(definition.requirements, "minLevel")?.level;
+  const tier = isStaff
+    ? "tstaff"
+    : minLevel != null
+      ? inferTierFromLevel(minLevel, tierDefinitions)
+      : playerClass === "base"
+        ? "t1"
+        : inferTierFromLevel(10, tierDefinitions);
+
+  return { race, playerClass, tier };
+}
+
+function findSpriteEntry(
+  definitions: Record<string, SpriteDefinition>,
+  imageId: string,
+): { definitionId: string; definition: SpriteDefinition; variant?: SpriteVariant } | null {
+  for (const [definitionId, definition] of Object.entries(definitions)) {
+    const variant = definition.variants?.find((entry) => entry.imageId === imageId);
+    if (variant) return { definitionId, definition, variant };
+    if ((!definition.variants || definition.variants.length === 0) && definitionId === imageId) {
+      return { definitionId, definition };
+    }
+  }
+  return null;
+}
+
+function spritePromptNotes(definition: SpriteDefinition, variant?: SpriteVariant): string | undefined {
+  const notes = [
+    variant?.displayName && variant.displayName !== definition.displayName
+      ? `Variant label: ${variant.displayName}`
+      : null,
+    definition.description?.trim() || null,
+  ].filter(Boolean);
+
+  return notes.length > 0 ? notes.join(". ") : undefined;
+}
+
 // ─── Thumbnail ──────────────────────────────────────────────────────
 
 const SpriteThumbnail = memo(function SpriteThumbnail({
   fileName,
+  label,
   size = "h-12 w-12",
+  onClick,
 }: {
   fileName: string | undefined;
+  label: string;
   size?: string;
+  onClick?: () => void;
 }) {
   const src = useImageSrc(fileName);
+  const clickable = onClick && src;
   if (!src) {
     return (
       <div className={`flex ${size} items-center justify-center rounded-lg border border-dashed border-white/12 bg-white/4 text-2xs text-text-muted`}>
@@ -75,7 +172,14 @@ const SpriteThumbnail = memo(function SpriteThumbnail({
       </div>
     );
   }
-  return <img src={src} alt="" className={`${size} rounded-lg object-cover`} />;
+  return (
+    <img
+      src={src}
+      alt={label}
+      className={`${size} rounded-lg object-cover${clickable ? " cursor-pointer ring-accent/50 hover:ring-2" : ""}`}
+      onClick={onClick}
+    />
+  );
 });
 
 // ─── Lightbox ───────────────────────────────────────────────────────
@@ -103,14 +207,7 @@ function SpriteLightbox({
 }) {
   const src = useImageSrc(fileName);
   const [removingBg, setRemovingBg] = useState(false);
-
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
-  }, [onClose]);
+  const lightboxTrapRef = useFocusTrap<HTMLDivElement>(onClose);
 
   const handleRemoveBg = async () => {
     if (!src) return;
@@ -126,6 +223,7 @@ function SpriteLightbox({
 
   return (
     <div
+      ref={lightboxTrapRef}
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/80"
       onClick={onClose}
     >
@@ -136,7 +234,7 @@ function SpriteLightbox({
         {src ? (
           <img
             src={src}
-            alt={key}
+            alt={`Sprite: ${key}`}
             className="max-h-[80vh] max-w-[80vw] rounded border border-border-default object-contain"
             style={{ imageRendering: "auto" }}
           />
@@ -287,6 +385,7 @@ function VariantRow({
   onPatch,
   onRemove,
   onGenerate,
+  onClickThumbnail,
 }: {
   variant: SpriteVariant;
   index: number;
@@ -298,10 +397,11 @@ function VariantRow({
   onPatch: (index: number, patch: Partial<SpriteVariant>) => void;
   onRemove: (index: number) => void;
   onGenerate: (variant: SpriteVariant) => void;
+  onClickThumbnail?: () => void;
 }) {
   return (
     <div className="flex items-start gap-3 rounded-xl border border-white/8 bg-black/12 p-3">
-      <SpriteThumbnail fileName={assetFileName} />
+      <SpriteThumbnail fileName={assetFileName} label={variant.imageId} onClick={onClickThumbnail} />
 
       <div className="flex min-w-0 flex-1 flex-col gap-2">
         <div className="grid grid-cols-2 gap-2">
@@ -404,17 +504,19 @@ function SpriteDetailEditor({
   onPatch,
   onDelete,
   onGenerateImage,
+  onViewSprite,
 }: {
   id: string;
   def: SpriteDefinition;
   races: string[];
   classes: string[];
-  spriteAssetMap: Map<string, string>;
+  spriteAssetMap: Map<string, { fileName: string; assetId: string }>;
   hasApiKey: boolean;
   generating: string | null;
   onPatch: (patch: Partial<SpriteDefinition>) => void;
   onDelete: () => void;
-  onGenerateImage: (imageId: string, brief: string) => void;
+  onGenerateImage: (imageId: string) => void;
+  onViewSprite: (imageId: string) => void;
 }) {
   const useVariants = (def.variants && def.variants.length > 0) || false;
 
@@ -466,8 +568,8 @@ function SpriteDetailEditor({
   }, [id, def.variants, onPatch]);
 
   const handleGenerateForVariant = useCallback((variant: SpriteVariant) => {
-    onGenerateImage(variant.imageId, def.description ?? def.displayName);
-  }, [def.description, def.displayName, onGenerateImage]);
+    onGenerateImage(variant.imageId);
+  }, [onGenerateImage]);
 
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-5">
@@ -607,18 +709,24 @@ function SpriteDetailEditor({
                 index={idx}
                 races={races}
                 classes={classes}
-                assetFileName={spriteAssetMap.get(variant.imageId)}
+                assetFileName={spriteAssetMap.get(variant.imageId)?.fileName}
                 generating={generating === variant.imageId}
                 hasApiKey={hasApiKey}
                 onPatch={handlePatchVariant}
                 onRemove={handleRemoveVariant}
                 onGenerate={handleGenerateForVariant}
+                onClickThumbnail={() => onViewSprite(variant.imageId)}
               />
             ))}
           </div>
         ) : (
           <div className="flex items-center gap-3 rounded-xl border border-white/8 bg-black/12 p-3">
-            <SpriteThumbnail fileName={spriteAssetMap.get(id)} size="h-16 w-16" />
+            <SpriteThumbnail
+              fileName={spriteAssetMap.get(id)?.fileName}
+              label={id}
+              size="h-16 w-16"
+              onClick={() => onViewSprite(id)}
+            />
             <div className="flex min-w-0 flex-1 flex-col gap-1">
               <label className="flex flex-col gap-0.5 text-2xs text-text-muted">
                 Image Path
@@ -630,7 +738,7 @@ function SpriteDetailEditor({
               </label>
             </div>
             <ActionButton
-              onClick={() => onGenerateImage(id, def.description ?? def.displayName)}
+              onClick={() => onGenerateImage(id)}
               disabled={!hasApiKey || generating === id}
               className="shrink-0"
               variant="primary"
@@ -660,6 +768,7 @@ export function PlayerSpriteManager() {
   const loadAssets = useAssetStore((s) => s.loadAssets);
   const acceptAsset = useAssetStore((s) => s.acceptAsset);
   const deleteAsset = useAssetStore((s) => s.deleteAsset);
+  const assetsDir = useAssetStore((s) => s.assetsDir);
 
   useEffect(() => { loadAssets(); }, [loadAssets]);
 
@@ -669,6 +778,9 @@ export function PlayerSpriteManager() {
   const [deploying, setDeploying] = useState(false);
   const [deployResult, setDeployResult] = useState<SyncProgress | null>(null);
   const [viewSprite, setViewSprite] = useState<{ key: string; fileName: string; assetId: string } | null>(null);
+  const [generationError, setGenerationError] = useState<string | null>(null);
+  const spriteTemplateRef = useRef<SpritePromptTemplate | null>(null);
+  const spriteTemplatePromiseRef = useRef<Promise<SpritePromptTemplate | null> | null>(null);
 
   const races = useMemo(() => config ? Object.keys(config.races).map((r) => r.toUpperCase()) : [], [config]);
   const classes = useMemo(() => config ? Object.keys(config.classes).map((c) => c.toUpperCase()) : [], [config]);
@@ -679,15 +791,25 @@ export function PlayerSpriteManager() {
     (imageProvider === "runware" && settings.runware_api_key.length > 0) ||
     (imageProvider === "openai" && settings.openai_api_key.length > 0)
   ));
+  const hasLlmKey = !!(
+    settings?.deepinfra_api_key ||
+    settings?.anthropic_api_key ||
+    settings?.openrouter_api_key
+  );
 
-  // Map imageId → asset file name for thumbnails
+  useEffect(() => {
+    spriteTemplateRef.current = null;
+    spriteTemplatePromiseRef.current = null;
+  }, [config]);
+
+  // Map imageId → asset file name + asset id for thumbnails & lightbox
   const spriteAssetMap = useMemo(() => {
-    const map = new Map<string, string>();
+    const map = new Map<string, { fileName: string; assetId: string }>();
     for (const a of assets) {
       if (a.asset_type === "player_sprite" && a.variant_group?.startsWith("player_sprite:")) {
         const key = a.variant_group.replace("player_sprite:", "");
         if (!map.has(key) || a.is_active) {
-          map.set(key, a.file_name);
+          map.set(key, { fileName: a.file_name, assetId: a.id });
         }
       }
     }
@@ -700,6 +822,63 @@ export function PlayerSpriteManager() {
   );
 
   const selectedDef = selectedId ? definitions[selectedId] : null;
+
+  const ensureSpriteTemplate = useCallback(async (): Promise<SpritePromptTemplate | null> => {
+    if (spriteTemplateRef.current) return spriteTemplateRef.current;
+    if (spriteTemplatePromiseRef.current) return spriteTemplatePromiseRef.current;
+    if (!config || !hasLlmKey) return null;
+
+    const promise = generateSpriteTemplate(
+      Object.keys(config.races),
+      Object.keys(config.classes),
+      Object.keys(config.playerTiers ?? getTierDefinitions()),
+      SPRITE_TEMPLATE_VIBE,
+    )
+      .then((template) => {
+        spriteTemplateRef.current = template;
+        return template;
+      })
+      .catch((error) => {
+        console.warn("Failed to generate sprite prompt template, using fallback prompt composition.", error);
+        return null;
+      })
+      .finally(() => {
+        spriteTemplatePromiseRef.current = null;
+      });
+
+    spriteTemplatePromiseRef.current = promise;
+    return promise;
+  }, [config, hasLlmKey]);
+
+  const readSeedImageDataUrl = useCallback(async (race: string): Promise<string | null> => {
+    if ((imageProvider !== "deepinfra" && imageProvider !== "runware") || !assetsDir) return null;
+
+    for (const [definitionId, definition] of Object.entries(definitions)) {
+      const entries = definition.variants && definition.variants.length > 0
+        ? definition.variants.map((variant) => ({ imageId: variant.imageId, variant }))
+        : [{ imageId: definitionId, variant: undefined }];
+
+      for (const entry of entries) {
+        const dimensions = resolveSpriteDimensions(definition, entry.variant, config);
+        if (dimensions.race !== race || dimensions.playerClass !== "base" || dimensions.tier === "tstaff") {
+          continue;
+        }
+
+        const spriteAsset = spriteAssetMap.get(entry.imageId);
+        if (!spriteAsset) continue;
+
+        try {
+          return await invoke<string>("read_image_data_url", {
+            path: `${assetsDir}\\images\\${spriteAsset.fileName}`,
+          });
+        } catch {
+          return null;
+        }
+      }
+    }
+
+    return null;
+  }, [assetsDir, config, definitions, imageProvider, spriteAssetMap]);
 
   const handleAdd = useCallback(() => {
     const id = newId.trim().toLowerCase().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "");
@@ -734,47 +913,86 @@ export function PlayerSpriteManager() {
     setSelectedId(null);
   }, [selectedId, deleteDefinition]);
 
+  const handleViewSprite = useCallback(
+    (imageId: string) => {
+      const entry = spriteAssetMap.get(imageId);
+      if (!entry) return;
+      setViewSprite({ key: imageId, fileName: entry.fileName, assetId: entry.assetId });
+    },
+    [spriteAssetMap],
+  );
+
   const handleGenerateImage = useCallback(
-    async (imageId: string, brief: string) => {
+    async (imageId: string) => {
       if (!hasApiKey || !settings) return;
       setGenerating(imageId);
+      setGenerationError(null);
 
       try {
-        const artStyle = useAssetStore.getState().artStyle;
-        const finalPrompt = composePrompt("player_sprite", artStyle, brief);
+        const resolved = findSpriteEntry(definitions, imageId);
+        if (!resolved) throw new Error(`Unable to resolve sprite definition for "${imageId}".`);
+
+        const template = await ensureSpriteTemplate();
+        const dimensions = resolveSpriteDimensions(resolved.definition, resolved.variant, config);
+        const finalPrompt = buildSpritePrompt(
+          dimensions,
+          template,
+          spritePromptNotes(resolved.definition, resolved.variant),
+        );
         const models = IMAGE_MODELS.filter((m) => m.provider === imageProvider);
         const model = models[0];
         if (!model) throw new Error("No image model available");
 
         const dims = ENTITY_DIMENSIONS.player_sprite ?? { width: 512, height: 512 };
-        const cmd = imageGenerateCommand(imageProvider);
+        const seedImage = dimensions.playerClass !== "base" && dimensions.tier !== "tstaff"
+          ? await readSeedImageDataUrl(dimensions.race)
+          : null;
 
-        const image = await invoke<GeneratedImage>(cmd, {
-          prompt: finalPrompt,
-          negativePrompt: UNIVERSAL_NEGATIVE,
-          model: model.id,
-          width: dims.width,
-          height: dims.height,
-          steps: model.defaultSteps,
-        });
+        const image = seedImage && imageProvider === "deepinfra"
+          ? await invoke<GeneratedImage>("img2img_generate", {
+              prompt: finalPrompt,
+              imageBase64: seedImage,
+              model: model.id,
+              width: dims.width,
+              height: dims.height,
+              strength: 0.65,
+              assetType: "player_sprite",
+              autoEnhance: false,
+            })
+          : await invoke<GeneratedImage>(imageGenerateCommand(imageProvider), {
+            prompt: finalPrompt,
+            negativePrompt: UNIVERSAL_NEGATIVE,
+            seedImage: seedImage && imageProvider === "runware" ? seedImage : null,
+            seedStrength: seedImage && imageProvider === "runware" ? 0.65 : null,
+            model: model.id,
+            width: dims.width,
+            height: dims.height,
+            steps: model.defaultSteps,
+            guidance: "defaultGuidance" in model ? model.defaultGuidance : null,
+            assetType: "player_sprite",
+            autoEnhance: false,
+            transparentBackground: imageProvider === "openai" && requestsTransparentBackground("player_sprite"),
+          });
 
         const assetContext: AssetContext = { zone: "sprites", entity_type: "player_sprite", entity_id: imageId };
         const variantGroup = `player_sprite:${imageId}`;
 
         await acceptAsset(image, "player_sprite", finalPrompt, assetContext, variantGroup, true);
 
-        if (image.data_url) {
+        if (settings.auto_remove_bg && image.data_url) {
           removeBgAndSave(image.data_url, "player_sprite", assetContext, variantGroup).catch(() => {});
         }
 
         await loadAssets();
       } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        setGenerationError(message);
         console.error("Failed to generate sprite:", err);
       } finally {
         setGenerating(null);
       }
     },
-    [hasApiKey, settings, imageProvider, acceptAsset, loadAssets],
+    [acceptAsset, config, definitions, ensureSpriteTemplate, hasApiKey, imageProvider, loadAssets, readSeedImageDataUrl, settings],
   );
 
   const handleDeploy = useCallback(async () => {
@@ -791,7 +1009,7 @@ export function PlayerSpriteManager() {
   }, []);
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col">
+    <div className="flex min-h-0 flex-1 flex-col bg-bg-primary">
       {/* Header */}
       <div className="flex shrink-0 items-center gap-3 border-b border-border-default bg-bg-secondary px-4 py-2">
         <h2 className="font-display text-xs uppercase tracking-widest text-text-muted">
@@ -858,9 +1076,15 @@ export function PlayerSpriteManager() {
         </div>
       )}
 
+      {generationError && (
+        <div className="shrink-0 border-b border-border-default bg-status-error/10 px-4 py-2 text-xs text-status-error">
+          {generationError}
+        </div>
+      )}
+
       <div className="flex min-h-0 flex-1">
         {/* Left: definition list */}
-        <div className="flex w-72 shrink-0 flex-col border-r border-border-default bg-bg-secondary">
+        <div className="flex w-72 min-w-0 shrink-0 flex-col border-r border-border-default bg-bg-secondary max-[900px]:w-56">
           <div className="flex items-center gap-1 border-b border-border-default px-3 py-2">
             <input
               className="ornate-input min-h-11 flex-1 rounded-2xl px-4 py-3 text-sm text-text-primary"
@@ -890,7 +1114,7 @@ export function PlayerSpriteManager() {
                       : "text-text-secondary hover:bg-white/5"
                   }`}
                 >
-                  <SpriteThumbnail fileName={spriteAssetMap.get(assetKey)} />
+                  <SpriteThumbnail fileName={spriteAssetMap.get(assetKey)?.fileName} label={def.displayName} />
                   <div className="min-w-0 flex-1">
                     <div className="truncate font-medium">{def.displayName}</div>
                     <div className="truncate text-2xs text-text-muted">{id}</div>
@@ -935,6 +1159,7 @@ export function PlayerSpriteManager() {
               onPatch={handlePatchSelected}
               onDelete={handleDeleteSelected}
               onGenerateImage={handleGenerateImage}
+              onViewSprite={handleViewSprite}
             />
           ) : (
             <div className="flex h-full items-center justify-center text-sm text-text-muted">
@@ -955,7 +1180,7 @@ export function PlayerSpriteManager() {
           onRegenerate={() => {
             const key = viewSprite.key;
             setViewSprite(null);
-            void handleGenerateImage(key, selectedDef?.description ?? selectedDef?.displayName ?? key);
+            void handleGenerateImage(key);
           }}
           onDelete={() => {
             const assetId = viewSprite.assetId;

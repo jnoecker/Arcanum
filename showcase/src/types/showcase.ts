@@ -28,6 +28,7 @@ export interface ShowcaseArticle {
   tags: string[];
   relations: ArticleRelation[];
   imageUrl?: string;
+  galleryUrls?: string[];
   createdAt: string;
   updatedAt: string;
   /** Pre-computed plain text for search (stripped HTML, lowercased). Added at load time. */

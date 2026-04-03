@@ -1,8 +1,57 @@
 import { useParams, Link } from "react-router-dom";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import DOMPurify from "dompurify";
 import { useShowcase } from "@/lib/DataContext";
 import { TEMPLATE_LABELS, TEMPLATE_COLORS } from "@/lib/templates";
+
+function ArticleGallery({ images, title }: { images: string[]; title: string }) {
+  const [activeIndex, setActiveIndex] = useState(0);
+  const activeImage = images[activeIndex] ?? images[0];
+
+  return (
+    <div className="mb-8 animate-fade-in-up">
+      {/* Main image */}
+      <div className="relative max-w-md mx-auto rounded-xl overflow-hidden shadow-[var(--shadow-image)]">
+        {images.map((src, i) => (
+          <img
+            key={`${src}-${i}`}
+            src={src}
+            alt={i === 0 ? title : `${title} — gallery ${i}`}
+            className={`w-full h-auto transition-opacity duration-300 ${
+              i === activeIndex ? "opacity-100" : "opacity-0 absolute inset-0"
+            }`}
+          />
+        ))}
+      </div>
+
+      {/* Thumbnail strip */}
+      {images.length > 1 && (
+        <div className="mt-4 flex justify-center gap-2">
+          {images.map((src, i) => (
+            <button
+              key={`${src}-${i}`}
+              onClick={() => setActiveIndex(i)}
+              aria-label={i === 0 ? "Primary image" : `Gallery image ${i}`}
+              aria-current={i === activeIndex ? "true" : undefined}
+              className={`h-12 w-12 shrink-0 overflow-hidden rounded-lg border-2 transition-all duration-200 ${
+                i === activeIndex
+                  ? "border-accent/70 scale-105 shadow-[0_0_12px_rgba(168,151,210,0.25)]"
+                  : "border-white/10 opacity-60 hover:opacity-90 hover:border-white/25"
+              }`}
+            >
+              <img
+                src={src}
+                alt=""
+                className="h-full w-full object-cover"
+                loading="lazy"
+              />
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export function ArticlePage() {
   const { id } = useParams<{ id: string }>();
@@ -68,16 +117,15 @@ export function ArticlePage() {
         </ol>
       </nav>
 
-      {/* Article image */}
-      {article.imageUrl && (
-        <div className="mb-8 rounded-xl overflow-hidden shadow-[var(--shadow-image)] max-w-md mx-auto animate-fade-in-up">
-          <img
-            src={article.imageUrl}
-            alt={article.title}
-            className="w-full h-auto"
-          />
-        </div>
-      )}
+      {/* Article image / gallery */}
+      {(() => {
+        const allImages = [
+          article.imageUrl,
+          ...(article.galleryUrls ?? []),
+        ].filter((u): u is string => !!u);
+        if (allImages.length === 0) return null;
+        return <ArticleGallery images={allImages} title={article.title} />;
+      })()}
 
       {/* Header */}
       <div className="mb-10" style={{ borderLeft: `3px solid ${color}50`, paddingLeft: 20 }}>

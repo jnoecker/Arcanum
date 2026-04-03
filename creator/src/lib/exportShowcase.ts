@@ -36,6 +36,7 @@ export interface ShowcaseArticle {
   tags: string[];
   relations: ArticleRelation[];
   imageUrl?: string;
+  galleryUrls?: string[];
   createdAt: string;
   updatedAt: string;
 }
@@ -209,6 +210,7 @@ export function exportShowcaseData(lore: WorldLore, imageBaseUrl: string): Showc
       tags: a.tags ?? [],
       relations: merged,
       imageUrl: resolveImage(a.image),
+      galleryUrls: a.gallery?.length ? a.gallery.map(resolveImage).filter((u): u is string => !!u) : undefined,
       createdAt: a.createdAt,
       updatedAt: a.updatedAt,
     };

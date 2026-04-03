@@ -27,6 +27,7 @@ function TagEditor({
         >
           {t}
           <button
+            aria-label="Remove tag"
             onClick={() => onChange(tags.filter((_, j) => j !== i))}
             className="ml-0.5 text-text-muted hover:text-status-danger"
           >
@@ -36,7 +37,7 @@ function TagEditor({
       ))}
       <input
         className="focus-ring min-w-[6rem] flex-1 rounded bg-transparent px-1 py-0.5 text-xs text-text-primary"
-        placeholder="Add tag..."
+        placeholder="Add a keyword..."
         onKeyDown={(e) => {
           if (e.key === "Enter") {
             const v = e.currentTarget.value.trim();
@@ -99,7 +100,7 @@ function RelationsEditor({
             className="ornate-input flex-1 rounded px-2 py-1 text-xs text-text-secondary"
             defaultValue=""
           >
-            <option value="">Link to article...</option>
+            <option value="">Connect to a legend...</option>
             {available.map((a) => (
               <option key={a.id} value={a.id}>{a.title}</option>
             ))}
@@ -108,7 +109,7 @@ function RelationsEditor({
             ref={typeRef}
             aria-label="Relation type"
             className="ornate-input w-24 rounded px-2 py-1 text-xs text-text-primary"
-            placeholder="type"
+            placeholder="e.g. allied with, born in"
             defaultValue="related"
           />
           <button
@@ -186,6 +187,7 @@ export function ArticleEditor({ articleId }: { articleId: string }) {
               >
                 <input
                   autoFocus
+                  aria-label="New article name"
                   value={newId}
                   onChange={(e) => setNewId(e.target.value)}
                   onKeyDown={(e) => e.key === "Escape" && setRenaming(false)}
@@ -243,7 +245,7 @@ export function ArticleEditor({ articleId }: { articleId: string }) {
       />
 
       {/* Rich text content */}
-      <Section title="Content" defaultExpanded>
+      <Section title="Chronicle" defaultExpanded>
         <LoreEditor
           value={article.content}
           onCommit={(v) => patch({ content: v })}
@@ -255,7 +257,7 @@ export function ArticleEditor({ articleId }: { articleId: string }) {
       </Section>
 
       {/* Private Notes (never exported) */}
-      <Section title="Private Notes" defaultExpanded={false} description="Internal only — not included in the published showcase.">
+      <Section title="Creator's Notes" defaultExpanded={false} description="For your eyes only — never exported to the showcase.">
         <LoreEditor
           value={article.privateNotes ?? ""}
           onCommit={(v) => patch({ privateNotes: v || undefined })}
@@ -264,7 +266,7 @@ export function ArticleEditor({ articleId }: { articleId: string }) {
       </Section>
 
       {/* Tags */}
-      <Section title="Tags" defaultExpanded={false}>
+      <Section title="Keywords" defaultExpanded={false}>
         <TagEditor
           tags={article.tags ?? []}
           onChange={(tags) => patch({ tags: tags.length > 0 ? tags : undefined })}
@@ -275,10 +277,11 @@ export function ArticleEditor({ articleId }: { articleId: string }) {
       <ArticleArtSection
         article={article}
         onImageChange={(image) => patch({ image })}
+        onGalleryChange={(gallery) => patch({ gallery })}
       />
 
       {/* Relations */}
-      <Section title="Relations" defaultExpanded={false}>
+      <Section title="Connections" defaultExpanded={false}>
         <RelationsEditor
           relations={article.relations ?? []}
           onChange={(relations) => patch({ relations: relations.length > 0 ? relations : undefined })}

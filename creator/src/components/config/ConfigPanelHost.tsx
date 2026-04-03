@@ -6,9 +6,7 @@ import { PANEL_MAP } from "@/lib/panelRegistry";
 import type { AppConfig } from "@/types/config";
 import { Spinner } from "@/components/ui/FormWidgets";
 import configBg from "@/assets/config-bg.png";
-import subtoolbarBg from "@/assets/subtoolbar-bg.jpg";
 
-// ─── Character panels ───────────────────────────────────────────────
 import { ClassDesigner } from "./ClassDesigner";
 import { RaceDesigner } from "./RaceDesigner";
 import { CharacterCreationStudio } from "./CharacterCreationStudio";
@@ -16,12 +14,10 @@ import { EquipmentSlotsPanel } from "./panels/EquipmentSlotsPanel";
 import { ImagesPanel } from "./panels/ImagesPanel";
 import { PlayerTiersPanel } from "./panels/PlayerTiersPanel";
 
-// ─── Ability panels ─────────────────────────────────────────────────
 import { StatsPanel } from "./panels/StatsPanel";
 import { AbilityDesigner } from "./AbilityDesigner";
 import { StatusEffectDesigner } from "./StatusEffectDesigner";
 
-// ─── World panels ───────────────────────────────────────────────────
 import { WorldPanel } from "./panels/WorldPanel";
 import { ServerPanel } from "./panels/ServerPanel";
 import { AdminConfigPanel } from "./panels/AdminConfigPanel";
@@ -44,19 +40,15 @@ import { EnchantingPanel } from "./panels/EnchantingPanel";
 import { WorldCyclePanel } from "./panels/WorldCyclePanel";
 import { WorldEventsPanel } from "./panels/WorldEventsPanel";
 
-// ─── Content panels ─────────────────────────────────────────────────
 import { AchievementDesigner } from "./AchievementDesigner";
 import { AchievementDefEditor } from "./AchievementDefEditor";
 import { QuestTaxonomyDesigner } from "./QuestTaxonomyDesigner";
 import { GlobalAssetsPanel } from "./panels/GlobalAssetsPanel";
 
-// ─── Operations panels ──────────────────────────────────────────────
 import { ApiSettingsPanel } from "./panels/ApiSettingsPanel";
 import { RuntimeHandoffStudio } from "./RuntimeHandoffStudio";
 import { RawYamlPanel } from "./panels/RawYamlPanel";
 import { VersionControlPanel } from "./panels/VersionControlPanel";
-
-// ─── Shared section wrapper ─────────────────────────────────────────
 
 function Section({
   kicker,
@@ -72,16 +64,14 @@ function Section({
   return (
     <section className="panel-surface rounded-[28px] p-5 shadow-section-sm">
       <div className="mb-3">
-        <p className="text-[11px] uppercase tracking-wide-ui text-text-muted">{kicker}</p>
-        <h3 className="mt-2 font-display text-xl text-text-primary">{title}</h3>
+        <p className="border-l-2 border-[rgba(140,174,201,0.3)] pl-2 text-[11px] uppercase tracking-wide-ui text-text-muted">{kicker}</p>
+        <h3 className="mt-2 font-display font-semibold text-xl text-text-primary">{title}</h3>
         <p className="mt-2 max-w-3xl text-sm leading-6 text-text-secondary">{description}</p>
       </div>
       <div>{children}</div>
     </section>
   );
 }
-
-// ─── Panel renderer ─────────────────────────────────────────────────
 
 type ConfigPanelProps = { config: AppConfig; onChange: (patch: Partial<AppConfig>) => void };
 
@@ -201,11 +191,9 @@ function renderPanel(panelId: string, props: ConfigPanelProps): ReactNode {
       return <VersionControlPanel />;
 
     default:
-      return <div className="text-text-muted">Unknown panel: {panelId}</div>;
+      return <div className="px-6 py-8 text-sm text-text-muted/60">Panel not found: {panelId}</div>;
   }
 }
-
-// ─── Host component ─────────────────────────────────────────────────
 
 export function ConfigPanelHost({ panelId }: { panelId: string }) {
   const config = useConfigStore((s) => s.config);
@@ -267,54 +255,39 @@ export function ConfigPanelHost({ panelId }: { panelId: string }) {
 
   if (!config) {
     return (
-      <div className="flex flex-1 items-center justify-center text-text-muted">
-        No config loaded
+      <div className="flex flex-1 flex-col items-center justify-center gap-3 text-center">
+        <p className="font-display text-base text-text-muted">The Workbench Awaits</p>
+        <p className="max-w-xs text-xs leading-6 text-text-muted/60">Open a world project to begin shaping its rules and systems.</p>
       </div>
     );
   }
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <div className="relative shrink-0 overflow-hidden border-b border-border-default bg-bg-secondary">
-        <img src={subtoolbarBg} alt="" className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-[0.1]" />
-        <div className="relative z-10 flex items-center justify-between gap-4 px-5 py-3">
-          <div className="min-w-0 flex-1">
-            <div className="mt-2 flex flex-wrap items-center gap-3">
-              <h2 className="font-display text-2xl text-text-primary">{def?.title ?? panelId}</h2>
-              <span className="text-xs text-text-secondary">{def?.description ?? ""}</span>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            {dirty && <span className="text-xs text-accent">modified</span>}
-            <button
-              onClick={handleSave}
-              disabled={!dirty || saving}
-              className="focus-ring shell-pill-primary rounded-full px-4 py-2 text-xs font-medium disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              {saving ? <span className="flex items-center gap-1.5"><Spinner />Saving</span> : "Save Config"}
-            </button>
-          </div>
-        </div>
-
-        {saveError && (
-          <div className="relative z-10 px-5 pb-3 text-xs text-status-error">
-            Could not save config: {saveError}
-          </div>
-        )}
-      </div>
-
       <div className="relative min-h-0 flex-1 overflow-y-auto">
-        <div className="pointer-events-none sticky top-0 z-0 -mb-[100vh] h-[100vh] w-full overflow-hidden">
+        <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
           <img
             src={configBg}
             alt=""
-            className="h-full w-full object-cover opacity-[0.14]"
+            className="h-full w-full object-cover opacity-[0.10] mix-blend-soft-light"
             style={{ objectPosition: "center 40%" }}
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-bg-primary via-bg-primary/60 to-transparent" />
         </div>
 
         <div className={`relative z-10 mx-auto flex flex-col gap-6 px-6 py-5 ${def?.maxWidth ?? "max-w-5xl"}`}>
+          {(dirty || saving || saveError) && (
+            <div className="pointer-events-auto sticky top-3 z-20 flex items-center justify-end gap-2">
+              {saveError && <span role="alert" className="text-2xs text-status-error">Save failed</span>}
+              <button
+                onClick={handleSave}
+                disabled={!dirty || saving}
+                aria-label={saving ? "Saving configuration" : "Save configuration"}
+                className="focus-ring rounded-full border border-white/10 bg-bg-primary/80 px-3 py-1 text-2xs font-medium text-accent shadow-md backdrop-blur-sm transition hover:bg-bg-primary disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                {saving ? <span className="flex items-center gap-1.5"><Spinner />Saving</span> : "Save Config"}
+              </button>
+            </div>
+          )}
           {renderPanel(panelId, { config, onChange: handleChange })}
         </div>
       </div>

@@ -34,6 +34,7 @@ export interface Article {
   tags?: string[];
   relations?: ArticleRelation[];
   image?: string;
+  gallery?: string[];
   draft?: boolean;
   createdAt: string;
   updatedAt: string;

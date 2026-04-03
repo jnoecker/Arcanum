@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
 import { useProjectStore } from "@/stores/projectStore";
 import { useZoneStore } from "@/stores/zoneStore";
+import { useLoreStore } from "@/stores/loreStore";
 import { saveAllZones } from "@/lib/saveZone";
 import { saveProjectConfig } from "@/lib/saveConfig";
 import { useConfigStore } from "@/stores/configStore";
+import { PANEL_MAP } from "@/lib/panelRegistry";
 
 export function useKeyboardShortcuts() {
   const [showHelp, setShowHelp] = useState(false);
@@ -47,22 +49,26 @@ export function useKeyboardShortcuts() {
       // Skip remaining shortcuts when typing in inputs
       if (inInput) return;
 
-      // ─── Ctrl+Z → undo active zone ──────────────────────────
+      // ─── Ctrl+Z → undo (zone or lore, depending on context) ─
       if (e.key === "z" && !e.shiftKey) {
         e.preventDefault();
         const activeZoneId = getActiveZoneId();
         if (activeZoneId) {
           useZoneStore.getState().undo(activeZoneId);
+        } else if (isActiveLorePanel()) {
+          useLoreStore.getState().undoLore();
         }
         return;
       }
 
-      // ─── Ctrl+Shift+Z / Ctrl+Y → redo active zone ───────────
+      // ─── Ctrl+Shift+Z / Ctrl+Y → redo (zone or lore) ───────
       if ((e.key === "z" && e.shiftKey) || e.key === "y") {
         e.preventDefault();
         const activeZoneId = getActiveZoneId();
         if (activeZoneId) {
           useZoneStore.getState().redo(activeZoneId);
+        } else if (isActiveLorePanel()) {
+          useLoreStore.getState().redoLore();
         }
         return;
       }
@@ -111,4 +117,11 @@ function getActiveZoneId(): string | null {
   const { activeTabId } = useProjectStore.getState();
   if (!activeTabId?.startsWith("zone:")) return null;
   return activeTabId.replace(/^zone:/, "");
+}
+
+function isActiveLorePanel(): boolean {
+  const { activeTabId } = useProjectStore.getState();
+  if (!activeTabId?.startsWith("panel:")) return false;
+  const panelId = activeTabId.replace(/^panel:/, "");
+  return PANEL_MAP[panelId]?.host === "lore";
 }

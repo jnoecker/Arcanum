@@ -4,7 +4,7 @@ import { open } from "@tauri-apps/plugin-dialog";
 import { useAssetStore } from "@/stores/assetStore";
 import { useProjectStore } from "@/stores/projectStore";
 import { useImageSrc, isLegacyImagePath } from "@/lib/useImageSrc";
-import { getEnhanceSystemPrompt, ART_STYLE_LABELS, UNIVERSAL_NEGATIVE, type ArtStyle } from "@/lib/arcanumPrompts";
+import { getEnhanceSystemPrompt, ART_STYLE_LABELS, UNIVERSAL_NEGATIVE, GENTLE_MAGIC_SUFFIX, ARCANUM_SUFFIX, type ArtStyle } from "@/lib/arcanumPrompts";
 import { IMAGE_MODELS, ENTITY_DIMENSIONS, DIMENSION_PRESETS, imageGenerateCommand, requestsTransparentBackground } from "@/types/assets";
 import type { AssetContext, GeneratedImage } from "@/types/assets";
 import { VariantStrip } from "./VariantStrip";
@@ -121,7 +121,7 @@ export function EntityArtGenerator({
 
   /** Enhance a prompt via LLM, injecting entity context, style guide, and zone vibe. */
   const enhancePrompt = async (prompt: string): Promise<string> => {
-    const systemPrompt = getEnhanceSystemPrompt(artStyle);
+    const systemPrompt = getEnhanceSystemPrompt(artStyle, assetType);
     const parts: string[] = [];
 
     // When we have rich entity context, lead with that so the LLM
@@ -171,9 +171,15 @@ export function EntityArtGenerator({
         }
       }
 
+      // Append style suffix to ensure consistent aesthetic
+      const styleSuffix = artStyle === "gentle_magic" ? GENTLE_MAGIC_SUFFIX : ARCANUM_SUFFIX;
+      if (!finalPrompt.includes("surreal_softmagic_v1") && !finalPrompt.includes("arcanum_v1")) {
+        finalPrompt = `${finalPrompt}\n\n${styleSuffix}`;
+      }
+
       const command = imageGenerateCommand(imageProvider);
 
-      const image = await invoke<GeneratedImage>(command, {
+      const params = {
         prompt: finalPrompt,
         negativePrompt: UNIVERSAL_NEGATIVE,
         model: modelId,
@@ -184,7 +190,16 @@ export function EntityArtGenerator({
         assetType,
         autoEnhance: false,
         transparentBackground: imageProvider === "openai" && requestsTransparentBackground(assetType),
-      });
+      };
+
+      let image: GeneratedImage;
+      try {
+        image = await invoke<GeneratedImage>(command, params);
+      } catch (firstErr) {
+        // Retry once after a brief pause
+        await new Promise((r) => setTimeout(r, 1000));
+        image = await invoke<GeneratedImage>(command, params);
+      }
       setResult(image);
       setStage("preview");
     } catch (e) {

@@ -91,6 +91,7 @@ pub async fn generate_image(
     let model = model.unwrap_or(settings.image_model);
     let w = width.unwrap_or(1024);
     let h = height.unwrap_or(1024);
+    let (gen_width, gen_height) = generation::cap_generation_dims(w, h);
     let final_prompt = generation::maybe_enhance_prompt(
         &app,
         &prompt,
@@ -105,8 +106,8 @@ pub async fn generate_image(
 
     let body = ImageRequest {
         prompt: final_prompt.clone(),
-        width: w,
-        height: h,
+        width: gen_width,
+        height: gen_height,
         num_inference_steps: steps.unwrap_or(default_steps),
         guidance_scale: guidance.or(default_guidance),
     };
@@ -187,6 +188,7 @@ pub async fn img2img_generate(
     let model = model.unwrap_or(settings.image_model);
     let w = width.unwrap_or(1024);
     let h = height.unwrap_or(1024);
+    let (gen_width, gen_height) = generation::cap_generation_dims(w, h);
     let final_prompt = generation::maybe_enhance_prompt(
         &app,
         &prompt,
@@ -209,8 +211,8 @@ pub async fn img2img_generate(
     let body = Img2ImgRequest {
         prompt: final_prompt.clone(),
         image: image_data,
-        width: w,
-        height: h,
+        width: gen_width,
+        height: gen_height,
         num_inference_steps: default_steps,
         guidance_scale: default_guidance,
         strength: Some(strength.unwrap_or(0.7)),

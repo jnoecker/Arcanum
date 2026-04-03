@@ -81,9 +81,13 @@ pub async fn runware_generate_image(
         return Err("Runware API key not configured. Set it in Settings.".to_string());
     }
 
-    // Runware requires dimensions as multiples of 16, clamped 128–2048
-    let w = round_to_16(width.unwrap_or(1024));
-    let h = round_to_16(height.unwrap_or(1024));
+    // Keep original target dims for final resize, cap for generation
+    let target_w = width.unwrap_or(1024);
+    let target_h = height.unwrap_or(1024);
+    // Cap to 1024px long edge first, then round to Runware's multiple-of-16 requirement
+    let (capped_w, capped_h) = generation::cap_generation_dims(target_w, target_h);
+    let w = round_to_16(capped_w);
+    let h = round_to_16(capped_h);
     let mdl = model.unwrap_or_else(|| "runware:400@2".to_string());
     let final_prompt = generation::maybe_enhance_prompt(
         &app,
@@ -157,7 +161,7 @@ pub async fn runware_generate_image(
         .await
         .map_err(|e| format!("Failed to read image bytes: {e}"))?
         .to_vec();
-    let behavior = generation::infer_behavior(asset_type.as_deref(), w, h, None);
+    let behavior = generation::infer_behavior(asset_type.as_deref(), target_w, target_h, None);
     let processed = generation::process_image_bytes(&bytes, &behavior)?;
 
     generation::persist_generated_image(

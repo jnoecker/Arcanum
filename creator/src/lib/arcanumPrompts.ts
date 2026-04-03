@@ -120,6 +120,43 @@ export function getFormatForAssetType(assetType: AssetType): string {
 /** Universal negative prompt — appended to all generations */
 export const UNIVERSAL_NEGATIVE = `text, words, letters, runes, glyphs, watermarks, logos, signatures, modern technology, computers, user interfaces, neon colors, hot pink, electric blue, lime green, saturated primaries, pure black, harsh shadows, hard edges, sharp rim lights, spotlight effects, high-contrast chiaroscuro, brutalist shapes, mechanical rigidity, flat design, cartoon, anime, photorealism, studio lighting, stock photo aesthetic, horror elements, gore, nudity, nude, naked, bare chest, exposed breasts, cleavage, nsfw, topless, revealing, skimpy, sexualized`;
 
+/** Appended verbatim to every gentle_magic prompt after LLM enhancement. */
+export const GENTLE_MAGIC_SUFFIX = `Rendered in the Surreal Gentle Magic style (surreal_softmagic_v1). Digital fantasy painting in the style of a dreamy storybook illustration — NOT a photograph, NOT a 3D render, NOT concept art. Visible painterly brushwork with soft textured rendering throughout.
+
+Color and light:
+- Soft lavender and pale blue undertones suffusing every surface — cool undertones dominate, warm accents (dusty rose, soft gold) used sparingly for balance
+- Ambient diffused lighting with NO clear source point — light feels source-ambiguous and magical, never like realistic sunlight or artificial lamps
+- Gentle atmospheric haze with floating motes of light and faint magical particles drifting in the air
+- Soft bloom around windows and light sources, ground-level magical glow (glowing moss, luminous plants)
+
+Shape and form:
+- Gentle curves over hard angles — nothing perfectly straight, micro-warping on all edges
+- Slightly elongated organic forms (trees, towers, figures, architecture, furniture)
+- Organic lived-in quality — nothing feels industrial, nothing feels mechanical
+
+NO readable text, words, letters, or legible writing — replace all signs, plaques, and inscriptions with glowing runes or arcane glyphs.
+
+FORBIDDEN: photorealism, neon colors, high contrast, harsh edges, sharp geometric lines, perfect 90-degree angles, mechanical rigidity, brutalist silhouettes, harsh shadows, spotlight effects, rim lighting, chiaroscuro`;
+
+/** Appended verbatim to every arcanum prompt after LLM enhancement. */
+export const ARCANUM_SUFFIX = `Rendered in the Ambon Arcanum style (arcanum_v1). Digital fantasy painting with deep cosmic indigo and abyssal navy backgrounds, baroque rococo light scrollwork rendered as glowing energy threads. Visible painterly oil-painting texture throughout.
+
+Color and light:
+- Deep cosmic indigo (#080c1c to #1a2040) and abyssal navy as primary backgrounds
+- Warm aurum-gold (#c8972e, #e2bc6a) as the primary accent — concentrated light with 20-40px feathered bloom
+- Cool blue-violet atmospheric fill in shadows and ambient spaces — nebula-violet ambient wash
+- No harsh shadows, no spotlights — light dissolves gradually into darkness
+
+Shape and form:
+- Baroque C-curves and S-curves — borders and ornaments terminate in curls, never hard stops
+- Acanthus-leaf spirals, flowing filigree of light, fractaline structures
+- Objects float in cosmic void or sit within baroque frames that dissolve at edges
+- Cosmological scale — slow, vast, contemplative
+
+NO readable text, words, letters, runes, or glyphs — no watermarks, no logos, no signatures.
+
+FORBIDDEN: photorealism, neon colors, modern technology, flat design, cartoon, anime, studio lighting, stock photo aesthetic, harsh edges, brutalist shapes`;
+
 /** Get the preamble for a given art style */
 export function getPreamble(style: ArtStyle): string {
   return style === "arcanum" ? ARCANUM_PREAMBLE : GENTLE_MAGIC_PREAMBLE;
@@ -422,11 +459,37 @@ Output ONLY the finished prompt text — no explanation, no labels, no markdown.
 /** System prompt for the prompt enhancement LLM — kept for backward compat */
 export const ENHANCE_SYSTEM_PROMPT = ENHANCE_SYSTEM_PROMPT_ARCANUM;
 
+/** Class color palette reference for ability and status effect icon generation. */
+export const CLASS_COLOR_PALETTES = `
+CLASS COLOR PALETTES (use when generating ability or status effect icons):
+- Bulwark (defensive tank): warm golds, burnished steel, shield shapes, fortress silhouettes, heavy metallic tones
+- Warden (aggressive fighter): warm amber, rust reds, earthy brown, sharp weapon motifs, fur and leather textures
+- Arcanist (scholarly mage): deep purples, electric blues, crystalline whites, arcane sigils, glowing tomes
+- Faeweaver (nature mage): living greens, floral pinks, vine tendrils, petal formations, budding flowers
+- Necromancer (death + clockwork): sickly greens, clockwork brass, bone whites, ghostly teal, gear motifs
+- Veil (shadow assassin): deep indigos, midnight purples, smoky grays, dagger silhouettes, living shadow wisps
+- Binder (anti-magic enforcer): blazing amber, golden chains, rune circles, suppression barriers, dissolving spell fragments
+- Stormblade (lightning warrior): electric blues, white lightning, storm grays, zig-zag energy streaks, crackling arcs
+- Herald (divine cleric): warm whites, soft golds, holy radiance, sacred symbols, gentle divine glow
+- Starweaver (cosmic mage): cosmic purples, nebula pinks, stellar whites, constellation patterns, swirling galaxies
+
+EFFECT COLOR MODIFIERS:
+- Healing/regeneration: warm golden-white light, green life energy
+- Shields/protection: translucent barriers, dome shapes, soft glowing edges
+- Damage-over-time: smoldering embers, dripping venom, crackling energy
+- Stun/crowd-control: stars, shattered glass, frozen shards
+- Buffs: ascending arrows, radiant auras, empowering glows
+- Debuffs: descending spirals, dark mists, weakening auras`;
+
 /** Get the style-aware system prompt for prompt enhancement */
-export function getEnhanceSystemPrompt(style: ArtStyle): string {
-  return style === "arcanum"
+export function getEnhanceSystemPrompt(style: ArtStyle, assetType?: string): string {
+  const base = style === "arcanum"
     ? ENHANCE_SYSTEM_PROMPT_ARCANUM
     : ENHANCE_SYSTEM_PROMPT_GENTLE_MAGIC;
+  if (assetType === "ability_icon" || assetType === "status_effect_icon" || assetType === "ability_sprite") {
+    return `${base}\n\n${CLASS_COLOR_PALETTES}`;
+  }
+  return base;
 }
 
 const CUSTOM_ASSET_SYSTEM_PROMPT_ARCANUM = `You are an expert image prompt engineer for AI image generators. You work exclusively within the Ambon Arcanum art style (arcanum_v1).

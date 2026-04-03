@@ -67,7 +67,7 @@ export function ApiSettingsPanel({
     (m) => m.provider === draft.image_provider,
   );
   const showProviderSections = initialSection !== "delivery";
-  const showDeliverySection = initialSection !== "providers";
+  const showDeliverySection = true;
 
   return (
     <div className="flex flex-col gap-6">

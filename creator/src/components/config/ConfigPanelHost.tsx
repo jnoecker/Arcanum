@@ -192,7 +192,7 @@ function renderPanel(panelId: string, props: ConfigPanelProps): ReactNode {
 
     // Operations
     case "services":
-      return <ApiSettingsPanel initialSection="providers" />;
+      return <ApiSettingsPanel />;
     case "deployment":
       return <RuntimeHandoffStudio />;
     case "rawYaml":

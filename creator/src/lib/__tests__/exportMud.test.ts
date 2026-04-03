@@ -109,6 +109,31 @@ const BASE_CONFIG: AppConfig = {
   mobActionDelay: { minActionDelayMillis: 8000, maxActionDelayMillis: 20000 },
   images: { baseUrl: "https://assets.ambon.dev", spriteLevelTiers: [50, 40, 30, 20, 10, 1] },
   globalAssets: {},
+  skillPoints: {
+    interval: 5,
+  },
+  multiclass: {
+    minLevel: 10,
+    goldCost: 500,
+  },
+  admin: {
+    enabled: false,
+    port: 8081,
+    token: "",
+    basePath: "/admin",
+    grafanaUrl: "",
+  },
+  observability: {
+    metricsEnabled: false,
+    metricsEndpoint: "/metrics",
+    metricsHttpPort: 9090,
+  },
+  logging: {
+    level: "INFO",
+    packageLevels: {},
+  },
+  achievementDefs: {},
+  emotePresets: { presets: [] },
   rawSections: {},
 };
 

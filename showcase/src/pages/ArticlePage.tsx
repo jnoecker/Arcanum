@@ -92,7 +92,7 @@ function ConnectionsSection({
               {isMentioned && hiddenCount > 0 && !mentionedExpanded && (
                 <button
                   onClick={() => setMentionedExpanded(true)}
-                  className="mt-1.5 text-[11px] text-text-link hover:text-accent transition-colors duration-200"
+                  className="mt-1.5 text-[11px] text-text-link hover:text-accent transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:rounded"
                 >
                   and {hiddenCount} more...
                 </button>
@@ -100,7 +100,7 @@ function ConnectionsSection({
               {isMentioned && mentionedExpanded && items.length > MENTIONED_LIMIT && (
                 <button
                   onClick={() => setMentionedExpanded(false)}
-                  className="mt-1.5 text-[11px] text-text-link hover:text-accent transition-colors duration-200"
+                  className="mt-1.5 text-[11px] text-text-link hover:text-accent transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:rounded"
                 >
                   show less
                 </button>
@@ -180,7 +180,7 @@ function ArticleGallery({ images, title }: { images: string[]; title: string }) 
               onClick={() => setActiveIndex(i)}
               aria-label={i === 0 ? "Primary image" : `Gallery image ${i}`}
               aria-current={i === activeIndex ? "true" : undefined}
-              className={`h-12 w-12 shrink-0 overflow-hidden rounded-lg border-2 transition-[border-color,opacity,transform,box-shadow] duration-200 ${
+              className={`h-12 w-12 shrink-0 overflow-hidden rounded-lg border-2 transition-[border-color,opacity,transform,box-shadow] duration-200 focus-visible:ring-2 focus-visible:ring-accent/40 ${
                 i === activeIndex
                   ? "border-accent/70 scale-105 shadow-[0_0_12px_rgba(168,151,210,0.25)]"
                   : "border-white/10 opacity-60 hover:opacity-90 hover:border-white/25"

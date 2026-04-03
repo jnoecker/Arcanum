@@ -28,9 +28,9 @@ export function ShowcaseNode({ data }: NodeProps) {
         position={Position.Left}
         style={{ background: color, border: "none", width: 6, height: 6 }}
       />
-      <div
+      <button
         onClick={handleClick}
-        className="flex items-center gap-2 rounded-xl border px-3 py-2 cursor-pointer hover:brightness-125 transition"
+        className="flex items-center gap-2 rounded-xl border px-3 py-2 cursor-pointer hover:brightness-125 transition focus-visible:ring-2 focus-visible:ring-accent/40"
         style={{
           borderColor: `${color}40`,
           background: `${color}12`,
@@ -47,7 +47,7 @@ export function ShowcaseNode({ data }: NodeProps) {
         <span className="min-w-0 truncate text-xs" style={{ color: "var(--color-text-primary)" }}>
           {d.label}
         </span>
-      </div>
+      </button>
       <Handle
         type="source"
         position={Position.Right}

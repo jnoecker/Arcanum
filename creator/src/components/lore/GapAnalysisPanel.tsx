@@ -16,7 +16,10 @@ export function GapAnalysisPanel() {
     setAnalyzed(true);
   }, [lore]);
 
-  const visible = gaps.filter((_, i) => !dismissed.has(i));
+  const visibleWithIndex = gaps
+    .map((issue, i) => ({ issue, idx: i }))
+    .filter(({ idx }) => !dismissed.has(idx));
+  const visible = visibleWithIndex.map(({ issue }) => issue);
 
   return (
     <div>
@@ -53,11 +56,10 @@ export function GapAnalysisPanel() {
 
       {visible.length > 0 && (
         <div className="flex flex-col gap-2">
-          {visible.map((gap) => {
-            const realIdx = gaps.indexOf(gap);
+          {visibleWithIndex.map(({ issue: gap, idx }) => {
             return (
               <div
-                key={realIdx}
+                key={idx}
                 className="rounded-xl border border-white/8 bg-black/10 px-4 py-3"
               >
                 <div className="mb-1 flex items-center gap-2">
@@ -88,7 +90,7 @@ export function GapAnalysisPanel() {
                   ))}
                   <button
                     onClick={() =>
-                      setDismissed((s) => new Set(s).add(realIdx))
+                      setDismissed((s) => new Set(s).add(idx))
                     }
                     className="ml-auto rounded-full border border-white/8 px-2 py-0.5 text-[10px] text-text-muted transition hover:bg-white/8"
                   >

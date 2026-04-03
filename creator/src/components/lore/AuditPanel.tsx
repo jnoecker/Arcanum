@@ -22,7 +22,10 @@ export function AuditPanel() {
     setAudited(true);
   }, [lore]);
 
-  const visible = issues.filter((_, i) => !dismissed.has(i));
+  const visibleWithIndex = issues
+    .map((issue, i) => ({ issue, idx: i }))
+    .filter(({ idx }) => !dismissed.has(idx));
+  const visible = visibleWithIndex.map(({ issue }) => issue);
   const errorCount = visible.filter((i) => i.severity === "error").length;
   const warnCount = visible.filter((i) => i.severity === "warning").length;
   const infoCount = visible.filter((i) => i.severity === "info").length;
@@ -54,11 +57,10 @@ export function AuditPanel() {
 
       {visible.length > 0 && (
         <div className="flex flex-col gap-2">
-          {visible.map((issue) => {
+          {visibleWithIndex.map(({ issue, idx }) => {
             const style = SEVERITY_STYLES[issue.severity]!;
-            const realIdx = issues.indexOf(issue);
             return (
-              <div key={realIdx} className="rounded-xl border border-white/8 bg-black/10 px-4 py-3">
+              <div key={idx} className="rounded-xl border border-white/8 bg-black/10 px-4 py-3">
                 <div className="mb-1 flex items-center gap-2">
                   <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${style.bg} ${style.text}`}>
                     {style.label}
@@ -77,7 +79,7 @@ export function AuditPanel() {
                     </button>
                   ))}
                   <button
-                    onClick={() => setDismissed((s) => new Set(s).add(realIdx))}
+                    onClick={() => setDismissed((s) => new Set(s).add(idx))}
                     className="ml-auto rounded-full border border-white/8 px-2 py-0.5 text-[10px] text-text-muted transition hover:bg-white/8"
                   >
                     Dismiss

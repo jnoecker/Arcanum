@@ -1,4 +1,5 @@
 import type { Article } from "@/types/lore";
+import { tiptapToPlainText } from "@/lib/loreRelations";
 
 export interface MentionSuggestion {
   /** Article containing the plain-text reference */
@@ -29,7 +30,7 @@ export function scanForMissingSuggestions(
 
   for (const source of articleList) {
     // Extract plain text from TipTap content
-    const plainText = tiptapToSearchText(source.content);
+    const plainText = tiptapToPlainText(source.content);
     if (!plainText) continue;
 
     // Get existing @mention target IDs to exclude
@@ -82,27 +83,6 @@ export function scanForMissingSuggestions(
 
 function escapeRegex(str: string): string {
   return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
-
-/** Extract plain text from TipTap JSON content for searching */
-function tiptapToSearchText(content: string): string {
-  if (!content) return "";
-  if (!content.startsWith("{")) return content;
-  try {
-    const doc = JSON.parse(content);
-    return extractText(doc);
-  } catch {
-    return content;
-  }
-}
-
-function extractText(node: Record<string, unknown>): string {
-  if (node.type === "text") return String(node.text ?? "");
-  // Skip mention nodes (they're already linked)
-  if (node.type === "mention") return "";
-  const children = node.content as Record<string, unknown>[] | undefined;
-  if (!children) return "";
-  return children.map(extractText).join(" ");
 }
 
 /** Extract IDs of existing @mention nodes in TipTap content */

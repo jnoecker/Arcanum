@@ -138,6 +138,9 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
     >
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="Command palette"
         className="relative w-full max-w-lg rounded-2xl border border-white/10 bg-bg-primary shadow-[0_24px_80px_rgba(8,10,18,0.6)]"
         onClick={(e) => e.stopPropagation()}
       >

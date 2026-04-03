@@ -1,5 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import type { WorldLore, Article } from "@/types/lore";
+import { tiptapToPlainText } from "@/lib/loreRelations";
 
 export interface TimelineSuggestion {
   title: string;
@@ -82,7 +83,7 @@ export async function inferTimelineEvents(
     const batch = articles.slice(i, i + batchSize);
     const articleContext = batch
       .map((a) => {
-        const plainContent = tiptapToPlain(a.content);
+        const plainContent = tiptapToPlainText(a.content);
         const fields = Object.entries(a.fields)
           .filter(([, v]) => v != null && v !== "")
           .map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join(", ") : v}`)
@@ -136,21 +137,4 @@ export async function inferTimelineEvents(
   return allSuggestions.filter(
     (s) => !existingKeys.has(`${s.year}:${s.title.toLowerCase()}`),
   );
-}
-
-function tiptapToPlain(content: string): string {
-  if (!content || !content.startsWith("{")) return content ?? "";
-  try {
-    return extractText(JSON.parse(content));
-  } catch {
-    return content;
-  }
-}
-
-function extractText(node: Record<string, unknown>): string {
-  if (node.type === "text") return String(node.text ?? "");
-  if (node.type === "mention")
-    return String((node.attrs as Record<string, unknown>)?.label ?? "");
-  const children = node.content as Record<string, unknown>[] | undefined;
-  return children ? children.map(extractText).join(" ") : "";
 }

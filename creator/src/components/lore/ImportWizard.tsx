@@ -148,6 +148,9 @@ export function ImportWizard({ onClose }: { onClose: () => void }) {
       />
       <div
         ref={trapRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Import Markdown files"
         className="relative flex w-full max-w-2xl max-h-[80vh] flex-col overflow-hidden rounded-2xl border border-white/10 bg-bg-primary shadow-[0_24px_80px_rgba(8,10,18,0.6)]"
       >
         {/* Header */}

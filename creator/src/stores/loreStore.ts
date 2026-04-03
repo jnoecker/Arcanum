@@ -245,6 +245,7 @@ export const useLoreStore = create<LoreStore>((set, get) => ({
       };
 
       return {
+        ...snapshotLore(s),
         lore: {
           ...s.lore,
           articles: { ...s.lore.articles, [newId]: clone },

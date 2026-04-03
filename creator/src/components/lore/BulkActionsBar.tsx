@@ -16,37 +16,42 @@ export function BulkActionsBar() {
   if (ids.length < 2) return null;
 
   return (
-    <div className="relative mb-2 flex flex-wrap items-center gap-1.5 rounded-lg border border-accent/20 bg-accent/5 px-3 py-2">
+    <div role="toolbar" className="relative mb-2 flex flex-wrap items-center gap-1.5 rounded-lg border border-accent/20 bg-accent/5 px-3 py-2">
       <span className="text-2xs font-medium text-accent">
         {ids.length} selected
       </span>
 
       <button
         onClick={() => bulkSetDraft(ids, true)}
+        aria-label="Mark selected as draft"
         className="rounded-full border border-white/8 px-2 py-0.5 text-[10px] text-text-secondary hover:bg-white/8"
       >
         Draft
       </button>
       <button
         onClick={() => bulkSetDraft(ids, false)}
+        aria-label="Publish selected"
         className="rounded-full border border-white/8 px-2 py-0.5 text-[10px] text-text-secondary hover:bg-white/8"
       >
         Publish
       </button>
       <button
         onClick={() => setShowTag(true)}
+        aria-label="Tag selected articles"
         className="rounded-full border border-white/8 px-2 py-0.5 text-[10px] text-text-secondary hover:bg-white/8"
       >
         Tag
       </button>
       <button
         onClick={() => setShowDelete(true)}
+        aria-label="Delete selected articles"
         className="rounded-full border border-white/8 px-2 py-0.5 text-[10px] text-status-danger hover:bg-status-danger/10"
       >
         Delete
       </button>
       <button
         onClick={clearSelection}
+        aria-label="Clear selection"
         className="ml-auto text-[10px] text-text-muted hover:text-text-primary"
       >
         Clear

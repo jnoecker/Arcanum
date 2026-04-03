@@ -1,4 +1,5 @@
 import type { Article } from "@/types/lore";
+import { tiptapToPlainText } from "@/lib/loreRelations";
 
 export interface SearchResult {
   articleId: string;
@@ -35,28 +36,6 @@ export function buildSearchText(article: Article): string {
   }
 
   return parts.join("\n").toLowerCase();
-}
-
-function tiptapToPlainText(content: string): string {
-  if (!content) return "";
-  if (!content.startsWith("{")) return content;
-  try {
-    const doc = JSON.parse(content);
-    return extractText(doc);
-  } catch {
-    return content;
-  }
-}
-
-function extractText(node: Record<string, unknown>): string {
-  if (node.type === "text") return String(node.text ?? "");
-  if (node.type === "mention") {
-    const attrs = node.attrs as Record<string, unknown> | undefined;
-    return String(attrs?.label ?? attrs?.id ?? "");
-  }
-  const children = node.content as Record<string, unknown>[] | undefined;
-  if (!children) return "";
-  return children.map(extractText).join(" ");
 }
 
 /** Search articles by query string, returning results with snippets */

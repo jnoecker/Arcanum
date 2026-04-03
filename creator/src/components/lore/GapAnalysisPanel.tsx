@@ -8,12 +8,17 @@ export function GapAnalysisPanel() {
   const [gaps, setGaps] = useState<LoreGap[]>([]);
   const [dismissed, setDismissed] = useState<Set<number>>(new Set());
   const [analyzed, setAnalyzed] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const handleAnalyze = useCallback(() => {
     if (!lore) return;
-    setGaps(analyzeLoreGaps(lore));
-    setDismissed(new Set());
-    setAnalyzed(true);
+    setLoading(true);
+    setTimeout(() => {
+      setGaps(analyzeLoreGaps(lore));
+      setDismissed(new Set());
+      setAnalyzed(true);
+      setLoading(false);
+    }, 0);
   }, [lore]);
 
   const visibleWithIndex = gaps
@@ -29,10 +34,10 @@ export function GapAnalysisPanel() {
         </h2>
         <button
           onClick={handleAnalyze}
-          disabled={!lore}
+          disabled={!lore || loading}
           className="focus-ring rounded-full border border-accent/30 bg-accent/10 px-4 py-2 text-xs font-medium text-accent transition hover:bg-accent/20 disabled:opacity-40"
         >
-          {analyzed ? "Re-analyze" : "Analyze Gaps"}
+          {loading ? "Analyzing..." : analyzed ? "Re-analyze" : "Analyze Gaps"}
         </button>
       </div>
       <p className="mb-4 text-2xs text-text-secondary">

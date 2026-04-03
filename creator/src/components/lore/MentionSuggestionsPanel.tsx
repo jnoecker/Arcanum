@@ -11,12 +11,17 @@ export function MentionSuggestionsPanel() {
   const [suggestions, setSuggestions] = useState<MentionSuggestion[]>([]);
   const [dismissed, setDismissed] = useState<Set<string>>(new Set());
   const [scanned, setScanned] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const handleScan = useCallback(() => {
-    const results = scanForMissingSuggestions(articles);
-    setSuggestions(results);
-    setDismissed(new Set());
-    setScanned(true);
+    setLoading(true);
+    setTimeout(() => {
+      const results = scanForMissingSuggestions(articles);
+      setSuggestions(results);
+      setDismissed(new Set());
+      setScanned(true);
+      setLoading(false);
+    }, 0);
   }, [articles]);
 
   const handleDismiss = useCallback(
@@ -41,9 +46,10 @@ export function MentionSuggestionsPanel() {
       <div className="mb-4 flex items-center gap-3">
         <button
           onClick={handleScan}
-          className="focus-ring rounded-full border border-accent/30 bg-accent/10 px-4 py-2 text-xs font-medium text-accent transition hover:bg-accent/20"
+          disabled={loading}
+          className="focus-ring rounded-full border border-accent/30 bg-accent/10 px-4 py-2 text-xs font-medium text-accent transition hover:bg-accent/20 disabled:opacity-40"
         >
-          {scanned ? "Rescan" : "Find Missing Mentions"}
+          {loading ? "Scanning..." : scanned ? "Rescan" : "Find Missing Mentions"}
         </button>
         {scanned && (
           <span className="text-2xs text-text-muted">

@@ -154,7 +154,6 @@ function RelationLink({ relation }: { relation: ResolvedRelation }) {
 
 function ArticleGallery({ images, title }: { images: string[]; title: string }) {
   const [activeIndex, setActiveIndex] = useState(0);
-  const activeImage = images[activeIndex] ?? images[0];
 
   return (
     <div className="mb-8 animate-fade-in-up">

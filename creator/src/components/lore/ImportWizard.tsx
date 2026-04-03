@@ -13,6 +13,7 @@ type WizardStep = "select" | "review" | "done";
 async function collectMarkdownFiles(
   dir: string,
   rootDir: string,
+  errors: string[] = [],
 ): Promise<{ relativePath: string; fullPath: string }[]> {
   const results: { relativePath: string; fullPath: string }[] = [];
   try {
@@ -23,7 +24,7 @@ async function collectMarkdownFiles(
       if (entry.isDirectory) {
         // Recurse into subdirectories (skip hidden folders like .obsidian)
         if (!entry.name.startsWith(".")) {
-          const nested = await collectMarkdownFiles(fullPath, rootDir);
+          const nested = await collectMarkdownFiles(fullPath, rootDir, errors);
           results.push(...nested);
         }
       } else if (entry.name.endsWith(".md")) {
@@ -33,7 +34,9 @@ async function collectMarkdownFiles(
       }
     }
   } catch (err) {
+    const relative = dir.slice(rootDir.length + 1).replace(/\\/g, "/") || dir;
     console.warn(`Failed to read directory ${dir}:`, err);
+    errors.push(relative);
   }
   return results;
 }
@@ -43,6 +46,7 @@ export function ImportWizard({ onClose }: { onClose: () => void }) {
   const [candidates, setCandidates] = useState<ImportCandidate[]>([]);
   const [importedCount, setImportedCount] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [scanErrors, setScanErrors] = useState<string[]>([]);
   const createArticle = useLoreStore((s) => s.createArticle);
   const articles = useLoreStore((s) => s.lore?.articles ?? {});
   const trapRef = useFocusTrap<HTMLDivElement>(onClose);
@@ -55,17 +59,22 @@ export function ImportWizard({ onClose }: { onClose: () => void }) {
     if (!folder || typeof folder !== "string") return;
 
     setLoading(true);
+    setScanErrors([]);
     try {
-      const files = await collectMarkdownFiles(folder, folder);
+      const dirErrors: string[] = [];
+      const files = await collectMarkdownFiles(folder, folder, dirErrors);
       const parsed: ImportCandidate[] = [];
+      const errors: string[] = [...dirErrors];
       for (const file of files) {
         try {
           const content = await readTextFile(file.fullPath);
           parsed.push(parseMarkdownFile(file.relativePath, content));
         } catch (err) {
           console.warn(`Failed to read ${file.relativePath}:`, err);
+          errors.push(file.relativePath);
         }
       }
+      setScanErrors(errors);
       setCandidates(parsed);
       setStep("review");
     } catch (err) {
@@ -187,6 +196,11 @@ export function ImportWizard({ onClose }: { onClose: () => void }) {
 
           {step === "review" && (
             <div className="flex flex-col gap-2">
+              {scanErrors.length > 0 && (
+                <div className="mb-3 rounded-lg border border-status-warning/30 bg-status-warning/5 px-4 py-2 text-2xs text-status-warning">
+                  {scanErrors.length} file{scanErrors.length !== 1 ? "s" : ""} couldn't be read and were skipped.
+                </div>
+              )}
               {candidates.length > 1 && (
                 <button
                   onClick={toggleAll}

@@ -13,12 +13,17 @@ export function RelationInferencePanel() {
   const [dismissed, setDismissed] = useState<Set<string>>(new Set());
   const [accepted, setAccepted] = useState<Set<string>>(new Set());
   const [scanned, setScanned] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const handleScan = useCallback(() => {
-    setSuggestions(inferRelations(articles));
-    setDismissed(new Set());
-    setAccepted(new Set());
-    setScanned(true);
+    setLoading(true);
+    setTimeout(() => {
+      setSuggestions(inferRelations(articles));
+      setDismissed(new Set());
+      setAccepted(new Set());
+      setScanned(true);
+      setLoading(false);
+    }, 0);
   }, [articles]);
 
   const visible = useMemo(
@@ -62,9 +67,10 @@ export function RelationInferencePanel() {
       <div className="mb-4 flex items-center gap-3">
         <button
           onClick={handleScan}
-          className="focus-ring rounded-full border border-accent/30 bg-accent/10 px-4 py-2 text-xs font-medium text-accent transition hover:bg-accent/20"
+          disabled={loading}
+          className="focus-ring rounded-full border border-accent/30 bg-accent/10 px-4 py-2 text-xs font-medium text-accent transition hover:bg-accent/20 disabled:opacity-40"
         >
-          {scanned ? "Rescan" : "Suggest Relations"}
+          {loading ? "Analyzing..." : scanned ? "Rescan" : "Suggest Relations"}
         </button>
         {scanned && visible.length > 0 && highCount > 0 && (
           <button

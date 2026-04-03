@@ -14,12 +14,17 @@ export function AuditPanel() {
   const [issues, setIssues] = useState<AuditIssue[]>([]);
   const [dismissed, setDismissed] = useState<Set<number>>(new Set());
   const [audited, setAudited] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const handleAudit = useCallback(() => {
     if (!lore) return;
-    setIssues(auditLore(lore));
-    setDismissed(new Set());
-    setAudited(true);
+    setLoading(true);
+    setTimeout(() => {
+      setIssues(auditLore(lore));
+      setDismissed(new Set());
+      setAudited(true);
+      setLoading(false);
+    }, 0);
   }, [lore]);
 
   const visibleWithIndex = issues
@@ -36,10 +41,10 @@ export function AuditPanel() {
         <h2 className="font-display text-lg text-text-primary">Lore Audit</h2>
         <button
           onClick={handleAudit}
-          disabled={!lore}
+          disabled={!lore || loading}
           className="focus-ring rounded-full border border-accent/30 bg-accent/10 px-4 py-2 text-xs font-medium text-accent transition hover:bg-accent/20 disabled:opacity-40"
         >
-          {audited ? "Re-audit" : "Run Audit"}
+          {loading ? "Auditing..." : audited ? "Re-audit" : "Run Audit"}
         </button>
       </div>
       <p className="mb-4 text-2xs text-text-secondary">

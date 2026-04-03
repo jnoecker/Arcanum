@@ -14,6 +14,7 @@ import type { ArticleTemplate } from "@/types/lore";
 import { buildRelationGraph, type RelationGraphFilters } from "@/lib/loreRelations";
 import { TEMPLATE_SCHEMAS } from "@/lib/loreTemplates";
 import { RelationGraphNode } from "./RelationGraphNode";
+import { RelationInferencePanel } from "./RelationInferencePanel";
 
 const nodeTypes: NodeTypes = {
   relationNode: RelationGraphNode,
@@ -37,6 +38,7 @@ function RelationGraphInner() {
   const articles = useLoreStore(selectArticles);
   const selectArticle = useLoreStore((s) => s.selectArticle);
 
+  const [inferenceOpen, setInferenceOpen] = useState(false);
   const [templateFilters, setTemplateFilters] = useState<Set<ArticleTemplate>>(new Set());
   const [relationFilters, setRelationFilters] = useState<Set<string>>(new Set());
 
@@ -77,6 +79,27 @@ function RelationGraphInner() {
 
   return (
     <div className="flex flex-col gap-4">
+      {/* Relation inference */}
+      <div className="rounded-xl border border-border-muted bg-bg-secondary/50 px-4 py-3">
+        <button
+          onClick={() => setInferenceOpen((o) => !o)}
+          className="flex w-full items-center gap-2 text-left text-xs font-medium text-text-secondary transition hover:text-text-primary"
+        >
+          <span
+            className="inline-block transition-transform"
+            style={{ transform: inferenceOpen ? "rotate(90deg)" : "rotate(0deg)" }}
+          >
+            &#9654;
+          </span>
+          Relation Suggestions
+        </button>
+        {inferenceOpen && (
+          <div className="mt-3">
+            <RelationInferencePanel />
+          </div>
+        )}
+      </div>
+
       {/* Filter toolbar */}
       <div className="flex flex-wrap items-center gap-4">
         <div className="flex items-center gap-1.5">

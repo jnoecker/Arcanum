@@ -5,6 +5,7 @@ import { DefinitionWorkbench } from "@/components/config/DefinitionWorkbench";
 import { Section, FieldRow, TextInput, SelectInput } from "@/components/ui/FormWidgets";
 import { LoreEditor } from "./LoreEditor";
 import { MentionSuggestionsPanel } from "./MentionSuggestionsPanel";
+import { AuditPanel } from "./AuditPanel";
 import { CODEX_GENERATE_PROMPT } from "@/lib/lorePrompts";
 import { tiptapToPlainText } from "@/lib/loreRelations";
 
@@ -410,6 +411,14 @@ export function LoreCodexPanel() {
         description="Scan articles for plain-text references that should be @mentions."
       >
         <MentionSuggestionsPanel />
+      </Section>
+
+      <Section
+        title="Lore Audit"
+        defaultExpanded={false}
+        description="Check for orphaned references, duplicate titles, timeline mismatches, and structural issues."
+      >
+        <AuditPanel />
       </Section>
     </div>
   );

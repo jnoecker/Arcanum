@@ -6,26 +6,26 @@ const NODE_WIDTH = 180;
 const NODE_HEIGHT = 50;
 
 const RELATION_COLORS: Record<string, string> = {
-  ally: "#a3c48e",
-  rival: "#dbb8b8",
-  member_of: "#8caec9",
-  located_in: "#8caec9",
-  related: "#a897d2",
-  mentioned: "#56617d",
+  ally: "var(--color-status-success)",
+  rival: "var(--color-status-error)",
+  member_of: "var(--color-stellar-blue)",
+  located_in: "var(--color-stellar-blue)",
+  related: "var(--color-accent)",
+  mentioned: "var(--color-border-default)",
 };
 
 export const TEMPLATE_NODE_COLORS: Record<ArticleTemplate, string> = {
-  world_setting: "#a897d2",
-  character: "#a897d2",
-  location: "#8caec9",
-  organization: "#bea873",
-  item: "#a3c48e",
-  species: "#c4956a",
-  event: "#bea873",
-  language: "#95a0bf",
-  profession: "#d4c8a0",
-  ability: "#b88faa",
-  freeform: "#95a0bf",
+  world_setting: "var(--color-template-world)",
+  character: "var(--color-template-character)",
+  location: "var(--color-template-location)",
+  organization: "var(--color-template-organization)",
+  item: "var(--color-template-item)",
+  species: "var(--color-template-species)",
+  event: "var(--color-template-event)",
+  language: "var(--color-template-language)",
+  profession: "var(--color-template-profession)",
+  ability: "var(--color-template-ability)",
+  freeform: "var(--color-template-freeform)",
 };
 
 export const TEMPLATE_SHORT: Record<ArticleTemplate, string> = {
@@ -85,11 +85,11 @@ export function buildShowcaseGraph(
         label: rel.label ?? rel.type,
         type: "smoothstep",
         style: {
-          stroke: RELATION_COLORS[rel.type] ?? "#56617d",
+          stroke: RELATION_COLORS[rel.type] ?? "var(--color-border-default)",
           ...(isMention ? { strokeDasharray: "4 2" } : {}),
         },
         labelStyle: {
-          fill: isMention ? "#56617d" : "#95a0bf",
+          fill: isMention ? "var(--color-border-default)" : "var(--color-text-muted)",
           fontSize: 9,
         },
       });

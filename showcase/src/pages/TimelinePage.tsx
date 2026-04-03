@@ -108,7 +108,7 @@ export function TimelinePage() {
                           {linked ? (
                             <Link
                               to={`/articles/${encodeURIComponent(evt.articleId!)}`}
-                              className="hover:text-accent transition-colors duration-300"
+                              className="hover:text-accent transition-colors duration-300 focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:rounded"
                             >
                               {evt.title}
                             </Link>

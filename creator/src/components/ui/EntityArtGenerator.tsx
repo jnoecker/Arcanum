@@ -326,7 +326,7 @@ export function EntityArtGenerator({
                     setDimOverride({ width: parts[0]!, height: parts[1]! });
                   }
                 }}
-                className="rounded border border-border-default bg-bg-primary px-1 py-0.5 text-2xs text-text-secondary outline-none"
+                className="rounded border border-border-default bg-bg-primary px-1 py-0.5 text-2xs text-text-secondary outline-none focus-visible:ring-2 focus-visible:ring-border-active"
               >
                 <option value="">Default</option>
                 {DIMENSION_PRESETS.map((p) => (
@@ -343,7 +343,7 @@ export function EntityArtGenerator({
                 <select
                   value={modelOverride ?? ""}
                   onChange={(e) => setModelOverride(e.target.value || null)}
-                  className="rounded border border-border-default bg-bg-primary px-1 py-0.5 text-2xs text-text-secondary outline-none"
+                  className="rounded border border-border-default bg-bg-primary px-1 py-0.5 text-2xs text-text-secondary outline-none focus-visible:ring-2 focus-visible:ring-border-active"
                 >
                   <option value="">{availableModels[0]?.label ?? "Default"}</option>
                   {availableModels.slice(1).map((m) => (
@@ -358,7 +358,7 @@ export function EntityArtGenerator({
                   value={customModel}
                   onChange={(e) => setCustomModel(e.target.value)}
                   placeholder="e.g. runware:400@2"
-                  className="rounded border border-border-default bg-bg-primary px-1.5 py-0.5 font-mono text-2xs text-text-secondary outline-none focus:border-accent/50"
+                  className="rounded border border-border-default bg-bg-primary px-1.5 py-0.5 font-mono text-2xs text-text-secondary outline-none focus:border-accent/50 focus-visible:ring-2 focus-visible:ring-border-active"
                 />
               )}
             </div>
@@ -396,7 +396,7 @@ export function EntityArtGenerator({
                 value={activePrompt}
                 onChange={(e) => setEditedPrompt(e.target.value)}
                 rows={4}
-                className="w-full resize-y rounded border border-border-default bg-bg-primary px-2 py-1 font-mono text-2xs leading-relaxed text-text-secondary outline-none focus:border-accent/50"
+                className="w-full resize-y rounded border border-border-default bg-bg-primary px-2 py-1 font-mono text-2xs leading-relaxed text-text-secondary outline-none focus:border-accent/50 focus-visible:ring-2 focus-visible:ring-border-active"
               />
               <div className="flex gap-1">
                 <button

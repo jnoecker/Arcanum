@@ -29,7 +29,7 @@ export function LocationStep({ data, onChange, nameError }: LocationStepProps) {
           value={data.projectName}
           onChange={(e) => onChange({ projectName: e.target.value })}
           placeholder="my_mud_world"
-          className="w-full rounded border border-border-default bg-bg-primary px-2 py-1.5 text-xs text-text-primary outline-none placeholder:text-text-muted focus:border-accent/50"
+          className="w-full rounded border border-border-default bg-bg-primary px-2 py-1.5 text-xs text-text-primary outline-none placeholder:text-text-muted focus:border-accent/50 focus-visible:ring-2 focus-visible:ring-border-active"
         />
       </div>
       <div>
@@ -42,7 +42,7 @@ export function LocationStep({ data, onChange, nameError }: LocationStepProps) {
             value={data.parentDir}
             readOnly
             placeholder="Select a directory..."
-            className="min-w-0 flex-1 rounded border border-border-default bg-bg-primary px-2 py-1.5 text-xs text-text-primary outline-none placeholder:text-text-muted"
+            className="min-w-0 flex-1 rounded border border-border-default bg-bg-primary px-2 py-1.5 text-xs text-text-primary outline-none placeholder:text-text-muted focus-visible:ring-2 focus-visible:ring-border-active"
           />
           <button
             onClick={handlePickDir}

@@ -3,6 +3,7 @@ import { useProjectStore } from "@/stores/projectStore";
 import { useLoreStore, selectArticles } from "@/stores/loreStore";
 import { useZoneStore } from "@/stores/zoneStore";
 import { ALL_PANELS, panelTab } from "@/lib/panelRegistry";
+import { useFocusTrap } from "@/lib/useFocusTrap";
 
 interface PaletteItem {
   id: string;
@@ -17,6 +18,7 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
+  const trapRef = useFocusTrap<HTMLDivElement>(onClose);
   const openTab = useProjectStore((s) => s.openTab);
   const selectArticle = useLoreStore((s) => s.selectArticle);
   const articles = useLoreStore(selectArticles);
@@ -138,6 +140,7 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
     >
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
       <div
+        ref={trapRef}
         role="dialog"
         aria-modal="true"
         aria-label="Command palette"
@@ -150,7 +153,7 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder="Jump to article, panel, or zone..."
-          className="w-full rounded-t-2xl border-b border-white/8 bg-transparent px-5 py-4 text-sm text-text-primary placeholder:text-text-muted outline-none"
+          className="w-full rounded-t-2xl border-b border-white/8 bg-transparent px-5 py-4 text-sm text-text-primary placeholder:text-text-muted outline-none focus-visible:ring-2 focus-visible:ring-border-active"
         />
         <div ref={listRef} className="max-h-[360px] overflow-y-auto py-2">
           {filtered.length === 0 ? (

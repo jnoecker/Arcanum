@@ -16,15 +16,15 @@ export const TEMPLATE_LABELS: Record<ArticleTemplate, string> = {
 
 /** Accent color per template for card borders, badges, and visual coding. */
 export const TEMPLATE_COLORS: Record<ArticleTemplate, string> = {
-  world_setting: "#a897d2",
-  character: "#a897d2",
-  location: "#8caec9",
-  organization: "#bea873",
-  item: "#a3c48e",
-  species: "#c4956a",
-  event: "#bea873",
-  language: "#95a0bf",
-  profession: "#d4c8a0",
-  ability: "#b88faa",
-  freeform: "#95a0bf",
+  world_setting: "var(--color-template-world)",
+  character: "var(--color-template-character)",
+  location: "var(--color-template-location)",
+  organization: "var(--color-template-organization)",
+  item: "var(--color-template-item)",
+  species: "var(--color-template-species)",
+  event: "var(--color-template-event)",
+  language: "var(--color-template-language)",
+  profession: "var(--color-template-profession)",
+  ability: "var(--color-template-ability)",
+  freeform: "var(--color-template-freeform)",
 };

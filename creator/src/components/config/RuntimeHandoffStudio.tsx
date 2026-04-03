@@ -572,7 +572,7 @@ export function RuntimeHandoffStudio() {
               value={deployCommitMsg}
               onChange={(e) => setDeployCommitMsg(e.target.value)}
               placeholder="Commit message"
-              className="w-full rounded-full border border-white/10 bg-black/10 px-4 py-2 text-xs text-text-primary placeholder:text-text-muted outline-none focus:border-border-active"
+              className="w-full rounded-full border border-white/10 bg-black/10 px-4 py-2 text-xs text-text-primary placeholder:text-text-muted outline-none focus:border-border-active focus-visible:ring-2 focus-visible:ring-border-active"
             />
           </StepCard>
         )}
@@ -598,7 +598,7 @@ export function RuntimeHandoffStudio() {
               value={exportDir}
               onChange={(event) => setExportDir(event.target.value)}
               placeholder="Choose a MUD checkout directory"
-              className="min-w-[18rem] flex-1 rounded-full border border-white/10 bg-black/10 px-4 py-2 text-xs text-text-primary placeholder:text-text-muted outline-none focus:border-border-active"
+              className="min-w-[18rem] flex-1 rounded-full border border-white/10 bg-black/10 px-4 py-2 text-xs text-text-primary placeholder:text-text-muted outline-none focus:border-border-active focus-visible:ring-2 focus-visible:ring-border-active"
             />
             <button
               onClick={() => void handleChooseExportDir()}
@@ -622,7 +622,7 @@ export function RuntimeHandoffStudio() {
             <select
               value={syncScope}
               onChange={(event) => setSyncScope(event.target.value as SyncScope)}
-              className="rounded-full border border-white/10 bg-black/10 px-3 py-1.5 text-xs text-text-primary outline-none"
+              className="rounded-full border border-white/10 bg-black/10 px-3 py-1.5 text-xs text-text-primary outline-none focus-visible:ring-2 focus-visible:ring-border-active"
             >
               <option value="approved">Approved only</option>
               <option value="all">Everything</option>

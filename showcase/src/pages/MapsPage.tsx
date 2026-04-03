@@ -40,7 +40,7 @@ export function MapsPage() {
             <button
               key={m.id}
               onClick={() => navigate(`/maps/${m.id}`)}
-              className={`px-3 py-1.5 text-xs tracking-[0.12em] uppercase rounded-md border transition-colors ${
+              className={`px-3 py-1.5 text-xs tracking-[0.12em] uppercase rounded-md border transition-colors focus-visible:ring-2 focus-visible:ring-accent/40 ${
                 activeMap?.id === m.id
                   ? "border-accent/50 text-accent bg-accent/10"
                   : "border-border-muted text-text-muted hover:text-text-secondary"

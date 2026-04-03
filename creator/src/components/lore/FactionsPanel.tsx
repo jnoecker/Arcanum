@@ -48,7 +48,7 @@ function TagList({
       )}
       <div className="flex gap-1.5">
         <input
-          className="flex-1 rounded border border-border-default bg-bg-primary px-2 py-0.5 text-xs text-text-primary outline-none focus:border-accent/50"
+          className="flex-1 rounded border border-border-default bg-bg-primary px-2 py-0.5 text-xs text-text-primary outline-none focus:border-accent/50 focus-visible:ring-2 focus-visible:ring-border-active"
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && add()}
@@ -104,7 +104,7 @@ function FactionSelect({
       )}
       {available.length > 0 && (
         <select
-          className="mt-1 rounded border border-border-default bg-bg-primary px-2 py-1 text-xs text-text-secondary outline-none focus:border-accent/50"
+          className="mt-1 rounded border border-border-default bg-bg-primary px-2 py-1 text-xs text-text-secondary outline-none focus:border-accent/50 focus-visible:ring-2 focus-visible:ring-border-active"
           value=""
           onChange={(e) => {
             if (e.target.value) onChange([...selected, e.target.value]);

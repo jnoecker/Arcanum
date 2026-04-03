@@ -329,7 +329,7 @@ function NodeTextArea({
 
   return (
     <textarea
-      className="w-full resize-y rounded border border-border-default bg-bg-secondary px-1.5 py-1 text-xs leading-relaxed text-text-primary outline-none focus:border-accent/50"
+      className="w-full resize-y rounded border border-border-default bg-bg-secondary px-1.5 py-1 text-xs leading-relaxed text-text-primary outline-none focus:border-accent/50 focus-visible:ring-2 focus-visible:ring-border-active"
       rows={2}
       value={draft}
       onChange={(e) => setDraft(e.target.value)}
@@ -458,7 +458,7 @@ function NodeIdLabel({
     return (
       <input
         autoFocus
-        className="h-4 w-24 rounded border border-accent/50 bg-bg-primary px-1 text-xs text-text-primary outline-none"
+        className="h-4 w-24 rounded border border-accent/50 bg-bg-primary px-1 text-xs text-text-primary outline-none focus-visible:ring-2 focus-visible:ring-border-active"
         value={draft}
         onChange={(e) => setDraft(e.target.value)}
         onBlur={commit}
@@ -522,7 +522,7 @@ function AddNodeButton({
           value={value}
           onChange={(e) => setValue(e.target.value)}
           placeholder="node_id"
-          className="h-5 w-20 rounded border border-border-default bg-bg-primary px-1 text-2xs text-text-primary outline-none focus:border-accent"
+          className="h-5 w-20 rounded border border-border-default bg-bg-primary px-1 text-2xs text-text-primary outline-none focus:border-accent focus-visible:ring-2 focus-visible:ring-border-active"
           onBlur={handleSubmit}
         />
         <button

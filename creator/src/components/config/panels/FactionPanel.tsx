@@ -93,7 +93,7 @@ export function FactionPanel() {
               onChange={(e) => setNewFactionId(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && addFaction()}
               placeholder="new_faction_id"
-              className="w-36 rounded border border-border-default bg-bg-primary px-2 py-1 text-xs text-text-primary outline-none placeholder:text-text-muted focus:border-accent/50"
+              className="w-36 rounded border border-border-default bg-bg-primary px-2 py-1 text-xs text-text-primary outline-none placeholder:text-text-muted focus:border-accent/50 focus-visible:ring-2 focus-visible:ring-border-active"
             />
             <IconButton onClick={addFaction} title="Add faction">+</IconButton>
           </div>

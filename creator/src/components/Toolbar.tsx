@@ -82,6 +82,18 @@ export function Toolbar({ workspace, setWorkspace }: ToolbarProps) {
     return () => window.removeEventListener("mousedown", handlePointerDown);
   }, [showUtilityMenu]);
 
+  useEffect(() => {
+    if (!showUtilityMenu) return;
+    function handleKey(e: KeyboardEvent) {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        setShowUtilityMenu(false);
+      }
+    }
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, [showUtilityMenu]);
+
   const activeSurface = useMemo(() => {
     if (!activeTab) {
       return {

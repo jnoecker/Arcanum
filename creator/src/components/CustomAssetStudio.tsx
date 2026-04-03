@@ -360,7 +360,7 @@ export function CustomAssetStudio({ selectedZoneId }: { selectedZoneId: string |
                 value={title}
                 onChange={(event) => setTitle(event.target.value)}
                 placeholder="Moonwell loading vignette"
-                className="w-full rounded-[16px] border border-white/10 bg-surface-scrim px-4 py-3 text-sm text-text-primary outline-none transition focus:border-border-active"
+                className="w-full rounded-[16px] border border-white/10 bg-surface-scrim px-4 py-3 text-sm text-text-primary outline-none transition focus:border-border-active focus-visible:ring-2 focus-visible:ring-border-active"
               />
             </div>
             <div>
@@ -369,7 +369,7 @@ export function CustomAssetStudio({ selectedZoneId }: { selectedZoneId: string |
                 value={globalAssetKey}
                 onChange={(event) => setGlobalAssetKey(event.target.value)}
                 placeholder="loading_moonwell"
-                className="w-full rounded-[16px] border border-white/10 bg-surface-scrim px-4 py-3 text-sm text-text-primary outline-none transition focus:border-border-active"
+                className="w-full rounded-[16px] border border-white/10 bg-surface-scrim px-4 py-3 text-sm text-text-primary outline-none transition focus:border-border-active focus-visible:ring-2 focus-visible:ring-border-active"
               />
             </div>
           </div>
@@ -380,7 +380,7 @@ export function CustomAssetStudio({ selectedZoneId }: { selectedZoneId: string |
               <select
                 value={assetType}
                 onChange={(event) => setAssetType(event.target.value as AssetType)}
-                className="w-full rounded-[16px] border border-white/10 bg-surface-scrim px-4 py-3 text-sm text-text-primary outline-none transition focus:border-border-active"
+                className="w-full rounded-[16px] border border-white/10 bg-surface-scrim px-4 py-3 text-sm text-text-primary outline-none transition focus:border-border-active focus-visible:ring-2 focus-visible:ring-border-active"
               >
                 {CUSTOM_ASSET_TYPES.map((type) => (
                   <option key={type} value={type}>
@@ -394,7 +394,7 @@ export function CustomAssetStudio({ selectedZoneId }: { selectedZoneId: string |
               <select
                 value={zoneId}
                 onChange={(event) => setZoneId(event.target.value)}
-                className="w-full rounded-[16px] border border-white/10 bg-surface-scrim px-4 py-3 text-sm text-text-primary outline-none transition focus:border-border-active"
+                className="w-full rounded-[16px] border border-white/10 bg-surface-scrim px-4 py-3 text-sm text-text-primary outline-none transition focus:border-border-active focus-visible:ring-2 focus-visible:ring-border-active"
               >
                 <option value="">No zone context</option>
                 {zoneOptions.map((zone) => (
@@ -416,7 +416,7 @@ export function CustomAssetStudio({ selectedZoneId }: { selectedZoneId: string |
               }}
               rows={5}
               placeholder="Describe the asset you want. The generator will translate it into Surreal Gentle Magic art direction."
-              className="w-full resize-y rounded-[20px] border border-white/10 bg-surface-scrim px-4 py-3 text-sm leading-6 text-text-secondary outline-none transition focus:border-border-active"
+              className="w-full resize-y rounded-[20px] border border-white/10 bg-surface-scrim px-4 py-3 text-sm leading-6 text-text-secondary outline-none transition focus:border-border-active focus-visible:ring-2 focus-visible:ring-border-active"
             />
           </div>
 
@@ -436,7 +436,7 @@ export function CustomAssetStudio({ selectedZoneId }: { selectedZoneId: string |
                 setPromptGeneratedByLlm(false);
               }}
               rows={10}
-              className="w-full resize-y rounded-[20px] border border-white/10 bg-surface-scrim px-4 py-3 font-mono text-[12px] leading-6 text-text-secondary outline-none transition focus:border-border-active"
+              className="w-full resize-y rounded-[20px] border border-white/10 bg-surface-scrim px-4 py-3 font-mono text-[12px] leading-6 text-text-secondary outline-none transition focus:border-border-active focus-visible:ring-2 focus-visible:ring-border-active"
               placeholder="Generate a prompt from your brief..."
             />
           </div>

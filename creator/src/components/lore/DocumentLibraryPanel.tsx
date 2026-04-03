@@ -187,7 +187,7 @@ export function DocumentLibraryPanel() {
           <div className="space-y-4">
             <div className="flex items-start justify-between gap-4">
               <input
-                className="w-full bg-transparent font-display text-xl text-text-primary outline-none placeholder:text-text-muted/50"
+                className="w-full bg-transparent font-display text-xl text-text-primary outline-none placeholder:text-text-muted/50 focus-visible:ring-2 focus-visible:ring-border-active"
                 value={selected.title}
                 onChange={(e) => updateDocument(selected.id, { title: e.target.value, updatedAt: new Date().toISOString() })}
                 placeholder="Document title"

@@ -13,7 +13,7 @@ interface ShowcaseNodeData {
 
 export function ShowcaseNode({ data }: NodeProps) {
   const d = data as ShowcaseNodeData;
-  const color = TEMPLATE_NODE_COLORS[d.template] ?? "#95a0bf";
+  const color = TEMPLATE_NODE_COLORS[d.template] ?? "var(--color-text-muted)";
   const icon = TEMPLATE_SHORT[d.template] ?? "?";
   const navigate = useNavigate();
 
@@ -44,7 +44,7 @@ export function ShowcaseNode({ data }: NodeProps) {
         >
           {icon}
         </span>
-        <span className="min-w-0 truncate text-xs" style={{ color: "#dbe3f8" }}>
+        <span className="min-w-0 truncate text-xs" style={{ color: "var(--color-text-primary)" }}>
           {d.label}
         </span>
       </div>

@@ -248,7 +248,7 @@ function StringListEditor({
           {items.map((item, i) => (
             <div key={i} className="flex items-center gap-1">
               <input
-                className="min-w-0 flex-1 rounded border border-border-default bg-bg-primary px-1.5 py-0.5 text-xs text-text-primary outline-none focus:border-accent/50"
+                className="min-w-0 flex-1 rounded border border-border-default bg-bg-primary px-1.5 py-0.5 text-xs text-text-primary outline-none focus:border-accent/50 focus-visible:ring-2 focus-visible:ring-border-active"
                 value={item}
                 onChange={(e) => updateItem(i, e.target.value)}
               />
@@ -261,7 +261,7 @@ function StringListEditor({
       )}
       <div className="flex items-center gap-1">
         <input
-          className="min-w-0 flex-1 rounded border border-border-default bg-bg-primary px-1.5 py-0.5 text-xs text-text-primary outline-none focus:border-accent/50"
+          className="min-w-0 flex-1 rounded border border-border-default bg-bg-primary px-1.5 py-0.5 text-xs text-text-primary outline-none focus:border-accent/50 focus-visible:ring-2 focus-visible:ring-border-active"
           placeholder={placeholder}
           value={newValue}
           onChange={(e) => setNewValue(e.target.value)}

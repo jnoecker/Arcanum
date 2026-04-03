@@ -39,7 +39,7 @@ export function applyBranding(meta: ShowcaseData["meta"]): void {
   }
 
   // Update theme-color meta tag
-  const themeColor = s?.accentColor ?? "#a897d2";
+  const themeColor = s?.accentColor ?? "#a897d2"; // fallback mirrors --color-accent default
   let themeMeta = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
   if (!themeMeta) {
     themeMeta = document.createElement("meta");

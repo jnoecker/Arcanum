@@ -84,7 +84,7 @@ export function VersionControlPanel() {
               value={remoteUrl}
               onChange={(e) => setRemoteUrl(e.target.value)}
               placeholder="https://github.com/you/your-world.git"
-              className="w-full rounded border border-border-default bg-bg-primary px-3 py-1.5 text-xs text-text-primary placeholder:text-text-muted outline-none focus:border-accent/50"
+              className="w-full rounded border border-border-default bg-bg-primary px-3 py-1.5 text-xs text-text-primary placeholder:text-text-muted outline-none focus:border-accent/50 focus-visible:ring-2 focus-visible:ring-border-active"
             />
           </div>
           <div className="mt-3 flex items-center gap-2">
@@ -159,7 +159,7 @@ export function VersionControlPanel() {
               value={remoteUrl}
               onChange={(e) => setRemoteUrl(e.target.value)}
               placeholder="https://github.com/you/your-world.git"
-              className="min-w-0 flex-1 rounded border border-border-default bg-bg-primary px-3 py-1.5 text-xs text-text-primary placeholder:text-text-muted outline-none focus:border-accent/50"
+              className="min-w-0 flex-1 rounded border border-border-default bg-bg-primary px-3 py-1.5 text-xs text-text-primary placeholder:text-text-muted outline-none focus:border-accent/50 focus-visible:ring-2 focus-visible:ring-border-active"
             />
             <button
               onClick={() => {
@@ -189,7 +189,7 @@ export function VersionControlPanel() {
               onChange={(e) => setCommitMsg(e.target.value)}
               placeholder="Describe your changes..."
               rows={2}
-              className="mt-2 w-full resize-y rounded border border-border-default bg-bg-primary px-3 py-1.5 text-xs leading-relaxed text-text-primary placeholder:text-text-muted outline-none focus:border-accent/50"
+              className="mt-2 w-full resize-y rounded border border-border-default bg-bg-primary px-3 py-1.5 text-xs leading-relaxed text-text-primary placeholder:text-text-muted outline-none focus:border-accent/50 focus-visible:ring-2 focus-visible:ring-border-active"
             />
             <div className="mt-2 flex items-center gap-2">
               <button
@@ -258,21 +258,21 @@ export function VersionControlPanel() {
               value={prBranch}
               onChange={(e) => setPrBranch(e.target.value)}
               placeholder={`conflict-resolution-${Date.now().toString(36)}`}
-              className="w-full rounded border border-border-default bg-bg-primary px-3 py-1.5 text-xs text-text-primary placeholder:text-text-muted outline-none focus:border-accent/50"
+              className="w-full rounded border border-border-default bg-bg-primary px-3 py-1.5 text-xs text-text-primary placeholder:text-text-muted outline-none focus:border-accent/50 focus-visible:ring-2 focus-visible:ring-border-active"
             />
             <input
               type="text"
               value={prTitle}
               onChange={(e) => setPrTitle(e.target.value)}
               placeholder="Resolve merge conflicts"
-              className="w-full rounded border border-border-default bg-bg-primary px-3 py-1.5 text-xs text-text-primary placeholder:text-text-muted outline-none focus:border-accent/50"
+              className="w-full rounded border border-border-default bg-bg-primary px-3 py-1.5 text-xs text-text-primary placeholder:text-text-muted outline-none focus:border-accent/50 focus-visible:ring-2 focus-visible:ring-border-active"
             />
             <textarea
               value={prBody}
               onChange={(e) => setPrBody(e.target.value)}
               placeholder="Description of your changes..."
               rows={2}
-              className="w-full resize-y rounded border border-border-default bg-bg-primary px-3 py-1.5 text-xs leading-relaxed text-text-primary placeholder:text-text-muted outline-none focus:border-accent/50"
+              className="w-full resize-y rounded border border-border-default bg-bg-primary px-3 py-1.5 text-xs leading-relaxed text-text-primary placeholder:text-text-muted outline-none focus:border-accent/50 focus-visible:ring-2 focus-visible:ring-border-active"
             />
             <button
               onClick={async () => {

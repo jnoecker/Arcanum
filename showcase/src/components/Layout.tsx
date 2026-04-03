@@ -72,7 +72,7 @@ export function Layout({ children }: { children: ReactNode }) {
           : "bg-transparent border-b border-transparent"
       }`}>
         <div className="max-w-5xl mx-auto px-5 sm:px-8 py-4 flex items-center justify-between">
-          <NavLink to="/" className="font-display text-accent text-lg tracking-[0.28em] uppercase hover:text-accent-emphasis transition-colors duration-300">
+          <NavLink to="/" className="font-display text-accent text-lg tracking-[0.28em] uppercase hover:text-accent-emphasis transition-colors duration-300 focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:rounded-md">
             {worldName}
           </NavLink>
 
@@ -86,7 +86,7 @@ export function Layout({ children }: { children: ReactNode }) {
           {/* Mobile menu button */}
           <button
             onClick={() => setMenuOpen((v) => !v)}
-            className="sm:hidden p-2 text-text-secondary hover:text-text-primary transition-colors"
+            className="sm:hidden p-2 text-text-secondary hover:text-text-primary transition-colors focus-visible:ring-2 focus-visible:ring-accent/40"
             aria-expanded={menuOpen}
             aria-label="Toggle navigation menu"
           >

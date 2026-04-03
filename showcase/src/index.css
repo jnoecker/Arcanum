@@ -41,7 +41,21 @@
   --color-status-info:    #8caec9;
 
   /* Graph */
-  --color-graph-bg: #080c1c;
+  --color-graph-bg:   #080c1c;
+  --color-graph-grid: #1e2748;
+
+  /* Template Colors */
+  --color-template-world:        #a897d2;
+  --color-template-character:    #a897d2;
+  --color-template-location:     #8caec9;
+  --color-template-organization: #bea873;
+  --color-template-item:         #a3c48e;
+  --color-template-species:      #c4956a;
+  --color-template-event:        #bea873;
+  --color-template-language:     #95a0bf;
+  --color-template-profession:   #d4c8a0;
+  --color-template-ability:      #b88faa;
+  --color-template-freeform:     #95a0bf;
 }
 
 :root {
@@ -62,6 +76,8 @@
   --border-violet: rgba(168, 151, 210, 0.28);
   --border-accent-ring:   rgba(168, 151, 210, 0.45);
   --border-accent-subtle: rgba(168, 151, 210, 0.35);
+
+  --graph-minimap-mask: rgba(8, 12, 28, 0.8);
 }
 
 body {

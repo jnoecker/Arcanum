@@ -267,7 +267,7 @@ export function CharacterSystemStep({
                       type="text"
                       value={cls.displayName}
                       onChange={(e) => updateClass(id, "displayName", e.target.value)}
-                      className="w-full bg-transparent text-text-primary outline-none"
+                      className="w-full bg-transparent text-text-primary outline-none focus-visible:ring-2 focus-visible:ring-border-active"
                     />
                   </td>
                   <td className="px-2 py-1">
@@ -275,7 +275,7 @@ export function CharacterSystemStep({
                       type="number"
                       value={cls.hpPerLevel}
                       onChange={(e) => updateClass(id, "hpPerLevel", Number(e.target.value))}
-                      className="w-full bg-transparent text-text-secondary outline-none"
+                      className="w-full bg-transparent text-text-secondary outline-none focus-visible:ring-2 focus-visible:ring-border-active"
                     />
                   </td>
                   <td className="px-2 py-1">
@@ -283,14 +283,14 @@ export function CharacterSystemStep({
                       type="number"
                       value={cls.manaPerLevel}
                       onChange={(e) => updateClass(id, "manaPerLevel", Number(e.target.value))}
-                      className="w-full bg-transparent text-text-secondary outline-none"
+                      className="w-full bg-transparent text-text-secondary outline-none focus-visible:ring-2 focus-visible:ring-border-active"
                     />
                   </td>
                   <td className="px-2 py-1">
                     <select
                       value={cls.primaryStat ?? ""}
                       onChange={(e) => updateClass(id, "primaryStat", e.target.value)}
-                      className="w-full bg-transparent text-text-secondary outline-none"
+                      className="w-full bg-transparent text-text-secondary outline-none focus-visible:ring-2 focus-visible:ring-border-active"
                     >
                       <option value="">None</option>
                       {statIds.map((s) => (
@@ -354,7 +354,7 @@ export function CharacterSystemStep({
                       type="text"
                       value={race.displayName}
                       onChange={(e) => updateRace(id, "displayName", e.target.value)}
-                      className="w-full bg-transparent text-text-primary outline-none"
+                      className="w-full bg-transparent text-text-primary outline-none focus-visible:ring-2 focus-visible:ring-border-active"
                     />
                   </td>
                   <td className="px-2 py-1">
@@ -375,7 +375,7 @@ export function CharacterSystemStep({
                               onChange={(e) =>
                                 updateRaceStatMod(id, statId, Number(e.target.value))
                               }
-                              className="w-8 bg-transparent text-center text-text-secondary outline-none"
+                              className="w-8 bg-transparent text-center text-text-secondary outline-none focus-visible:ring-2 focus-visible:ring-border-active"
                             />
                           </span>
                         );
@@ -452,7 +452,7 @@ export function CharacterSystemStep({
                   <select
                     value={(data.statBindings[key] as string) ?? ""}
                     onChange={(e) => updateBinding(key, e.target.value)}
-                    className="rounded border border-border-default bg-bg-elevated px-1.5 py-0.5 text-2xs text-text-secondary outline-none"
+                    className="rounded border border-border-default bg-bg-elevated px-1.5 py-0.5 text-2xs text-text-secondary outline-none focus-visible:ring-2 focus-visible:ring-border-active"
                   >
                     <option value="">Default</option>
                     {statIds.map((s) => (

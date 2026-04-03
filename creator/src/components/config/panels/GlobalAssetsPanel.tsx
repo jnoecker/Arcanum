@@ -122,7 +122,7 @@ export function GlobalAssetsPanel({ config, onChange }: ConfigPanelProps) {
             onChange={(e) => setNewKey(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="new_asset_key"
-            className="flex-1 rounded border border-border-default bg-bg-primary px-3 py-1.5 font-mono text-xs text-text-primary placeholder:text-text-muted outline-none focus:border-accent/50"
+            className="flex-1 rounded border border-border-default bg-bg-primary px-3 py-1.5 font-mono text-xs text-text-primary placeholder:text-text-muted outline-none focus:border-accent/50 focus-visible:ring-2 focus-visible:ring-border-active"
           />
           <button
             onClick={handleAdd}

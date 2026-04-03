@@ -74,7 +74,7 @@ export function DemoZoneStep({ data, onChange, hasLlmKey }: DemoZoneStepProps) {
             type="text"
             value={data.zoneName}
             onChange={(e) => onChange({ zoneName: e.target.value })}
-            className="w-full rounded border border-border-default bg-bg-primary px-2 py-1.5 text-xs text-text-primary outline-none focus:border-accent/50"
+            className="w-full rounded border border-border-default bg-bg-primary px-2 py-1.5 text-xs text-text-primary outline-none focus:border-accent/50 focus-visible:ring-2 focus-visible:ring-border-active"
           />
         </div>
 
@@ -87,7 +87,7 @@ export function DemoZoneStep({ data, onChange, hasLlmKey }: DemoZoneStepProps) {
             onChange={(e) => onChange({ zoneTheme: e.target.value })}
             placeholder="A peaceful town square where adventurers gather..."
             rows={3}
-            className="w-full rounded border border-border-default bg-bg-primary px-2 py-1.5 text-xs text-text-primary outline-none placeholder:text-text-muted focus:border-accent/50"
+            className="w-full rounded border border-border-default bg-bg-primary px-2 py-1.5 text-xs text-text-primary outline-none placeholder:text-text-muted focus:border-accent/50 focus-visible:ring-2 focus-visible:ring-border-active"
           />
         </div>
 
@@ -192,7 +192,7 @@ export function DemoZoneStep({ data, onChange, hasLlmKey }: DemoZoneStepProps) {
                       type="text"
                       value={room.title}
                       onChange={(e) => updateRoom(id, "title", e.target.value)}
-                      className="mb-0.5 w-full bg-transparent text-xs font-medium text-text-primary outline-none"
+                      className="mb-0.5 w-full bg-transparent text-xs font-medium text-text-primary outline-none focus-visible:ring-2 focus-visible:ring-border-active"
                     />
                     <textarea
                       value={room.description}
@@ -200,7 +200,7 @@ export function DemoZoneStep({ data, onChange, hasLlmKey }: DemoZoneStepProps) {
                         updateRoom(id, "description", e.target.value)
                       }
                       rows={2}
-                      className="w-full bg-transparent text-2xs text-text-secondary outline-none"
+                      className="w-full bg-transparent text-2xs text-text-secondary outline-none focus-visible:ring-2 focus-visible:ring-border-active"
                     />
                     {room.exits && (
                       <div className="mt-0.5 flex gap-1">
@@ -240,7 +240,7 @@ export function DemoZoneStep({ data, onChange, hasLlmKey }: DemoZoneStepProps) {
                             onChange={(e) =>
                               updateMob(id, "name", e.target.value)
                             }
-                            className="min-w-0 flex-1 bg-transparent text-xs font-medium text-text-primary outline-none"
+                            className="min-w-0 flex-1 bg-transparent text-xs font-medium text-text-primary outline-none focus-visible:ring-2 focus-visible:ring-border-active"
                           />
                           <span className="rounded bg-bg-elevated px-1 py-0.5 text-[8px] text-text-muted">
                             {mob.tier ?? "standard"}
@@ -252,7 +252,7 @@ export function DemoZoneStep({ data, onChange, hasLlmKey }: DemoZoneStepProps) {
                             updateMob(id, "description", e.target.value)
                           }
                           rows={1}
-                          className="mt-0.5 w-full bg-transparent text-2xs text-text-secondary outline-none"
+                          className="mt-0.5 w-full bg-transparent text-2xs text-text-secondary outline-none focus-visible:ring-2 focus-visible:ring-border-active"
                         />
                       </div>
                     ))}
@@ -279,7 +279,7 @@ export function DemoZoneStep({ data, onChange, hasLlmKey }: DemoZoneStepProps) {
                           onChange={(e) =>
                             updateItem(id, "displayName", e.target.value)
                           }
-                          className="w-full bg-transparent text-xs font-medium text-text-primary outline-none"
+                          className="w-full bg-transparent text-xs font-medium text-text-primary outline-none focus-visible:ring-2 focus-visible:ring-border-active"
                         />
                         <textarea
                           value={item.description ?? ""}
@@ -287,7 +287,7 @@ export function DemoZoneStep({ data, onChange, hasLlmKey }: DemoZoneStepProps) {
                             updateItem(id, "description", e.target.value)
                           }
                           rows={1}
-                          className="mt-0.5 w-full bg-transparent text-2xs text-text-secondary outline-none"
+                          className="mt-0.5 w-full bg-transparent text-2xs text-text-secondary outline-none focus-visible:ring-2 focus-visible:ring-border-active"
                         />
                         <div className="mt-0.5 flex gap-1">
                           {item.slot && (

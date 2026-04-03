@@ -75,7 +75,7 @@ export function ArticlesPage() {
         <button
           onClick={() => setSearchParams({})}
           aria-pressed={!activeTemplate}
-          className={`px-3 py-1.5 text-[11px] tracking-[0.14em] uppercase rounded-md border transition-colors duration-300 ${
+          className={`px-3 py-1.5 text-[11px] tracking-[0.14em] uppercase rounded-md border transition-colors duration-300 focus-visible:ring-2 focus-visible:ring-accent/40 ${
             !activeTemplate
               ? "border-accent/40 text-accent bg-accent/8"
               : "border-border-muted/50 text-text-muted hover:text-text-secondary hover:border-border-muted"
@@ -88,7 +88,7 @@ export function ArticlesPage() {
             key={t}
             onClick={() => setSearchParams({ template: t })}
             aria-pressed={activeTemplate === t}
-            className={`px-3 py-1.5 text-[11px] tracking-[0.14em] uppercase rounded-md border transition-colors duration-300 ${
+            className={`px-3 py-1.5 text-[11px] tracking-[0.14em] uppercase rounded-md border transition-colors duration-300 focus-visible:ring-2 focus-visible:ring-accent/40 ${
               activeTemplate === t
                 ? "border-accent/40 text-accent bg-accent/8"
                 : "border-border-muted/50 text-text-muted hover:text-text-secondary hover:border-border-muted"
@@ -103,7 +103,7 @@ export function ArticlesPage() {
             onClick={() => setView("grid")}
             aria-pressed={view === "grid"}
             aria-label="Grid view"
-            className={`px-2.5 py-1.5 text-xs transition-colors duration-200 ${
+            className={`px-2.5 py-1.5 text-xs transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-accent/40 ${
               view === "grid" ? "bg-accent/12 text-accent" : "text-text-muted hover:text-text-secondary"
             }`}
           >
@@ -118,7 +118,7 @@ export function ArticlesPage() {
             onClick={() => setView("list")}
             aria-pressed={view === "list"}
             aria-label="List view"
-            className={`px-2.5 py-1.5 text-xs transition-colors duration-200 ${
+            className={`px-2.5 py-1.5 text-xs transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-accent/40 ${
               view === "list" ? "bg-accent/12 text-accent" : "text-text-muted hover:text-text-secondary"
             }`}
           >
@@ -158,7 +158,7 @@ export function ArticlesPage() {
                         key={a.id}
                         to={`/articles/${encodeURIComponent(a.id)}`}
                         className="group overflow-hidden rounded-lg transition-colors duration-300
-                                   hover:bg-bg-hover/30"
+                                   hover:bg-bg-hover/30 focus-visible:ring-2 focus-visible:ring-accent/40"
                       >
                         {a.imageUrl && (
                           <div className="aspect-square overflow-hidden bg-bg-tertiary/30">
@@ -203,7 +203,7 @@ export function ArticlesPage() {
                         key={a.id}
                         to={`/articles/${encodeURIComponent(a.id)}`}
                         className="group flex items-center gap-3 px-4 py-2.5 rounded-lg
-                                   hover:bg-bg-hover/40 transition-colors duration-200"
+                                   hover:bg-bg-hover/40 transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-accent/40"
                       >
                         <div className="w-1 h-4 rounded-full shrink-0 opacity-60" style={{ backgroundColor: color }} />
                         {a.imageUrl && (

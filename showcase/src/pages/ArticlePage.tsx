@@ -289,12 +289,12 @@ export function ArticlePage() {
       {/* Breadcrumb */}
       <nav aria-label="Breadcrumb" className="mb-8">
         <ol className="flex items-center gap-2 text-xs text-text-muted">
-          <li><Link to="/articles" className="hover:text-text-link transition-colors duration-200">Codex</Link></li>
+          <li><Link to="/articles" className="hover:text-text-link transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:rounded">Codex</Link></li>
           <li aria-hidden="true" className="opacity-40">/</li>
           <li>
             <Link
               to={`/articles?template=${article.template}`}
-              className="hover:text-text-link transition-colors duration-200"
+              className="hover:text-text-link transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:rounded"
               style={{ color }}
             >
               {TEMPLATE_LABELS[article.template]}
@@ -354,7 +354,7 @@ export function ArticlePage() {
               {siblings.prev ? (
                 <Link
                   to={`/articles/${encodeURIComponent(siblings.prev.id)}`}
-                  className="flex-1 group rounded-lg border border-border-muted/40 p-4 hover:border-accent/30 transition-colors duration-300 text-left"
+                  className="flex-1 group rounded-lg border border-border-muted/40 p-4 hover:border-accent/30 transition-colors duration-300 text-left focus-visible:ring-2 focus-visible:ring-accent/40"
                 >
                   <div className="text-text-muted text-[11px] tracking-[0.1em] uppercase mb-1.5">&larr; Previous</div>
                   <div className="font-display text-sm text-text-primary group-hover:text-accent transition-colors duration-300 truncate">
@@ -365,7 +365,7 @@ export function ArticlePage() {
               {siblings.next ? (
                 <Link
                   to={`/articles/${encodeURIComponent(siblings.next.id)}`}
-                  className="flex-1 group rounded-lg border border-border-muted/40 p-4 hover:border-accent/30 transition-colors duration-300 text-right"
+                  className="flex-1 group rounded-lg border border-border-muted/40 p-4 hover:border-accent/30 transition-colors duration-300 text-right focus-visible:ring-2 focus-visible:ring-accent/40"
                 >
                   <div className="text-text-muted text-[11px] tracking-[0.1em] uppercase mb-1.5">Next &rarr;</div>
                   <div className="font-display text-sm text-text-primary group-hover:text-accent transition-colors duration-300 truncate">

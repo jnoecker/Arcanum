@@ -89,7 +89,7 @@ export function ApiSettingsPanel({
                 setDraft({ ...draft, deepinfra_api_key: e.target.value })
               }
               placeholder="Enter your DeepInfra API key"
-              className="w-full rounded border border-border-default bg-bg-primary px-3 py-1.5 text-xs text-text-primary placeholder:text-text-muted outline-none focus:border-accent/50"
+              className="w-full rounded border border-border-default bg-bg-primary px-3 py-1.5 text-xs text-text-primary placeholder:text-text-muted outline-none focus:border-accent/50 focus-visible:ring-2 focus-visible:ring-border-active"
             />
             <p className="mt-1 text-2xs text-text-muted">
               Get your key at deepinfra.com/dash/api_keys
@@ -108,7 +108,7 @@ export function ApiSettingsPanel({
                 setDraft({ ...draft, anthropic_api_key: e.target.value })
               }
               placeholder="Enter your Anthropic API key"
-              className="w-full rounded border border-border-default bg-bg-primary px-3 py-1.5 text-xs text-text-primary placeholder:text-text-muted outline-none focus:border-accent/50"
+              className="w-full rounded border border-border-default bg-bg-primary px-3 py-1.5 text-xs text-text-primary placeholder:text-text-muted outline-none focus:border-accent/50 focus-visible:ring-2 focus-visible:ring-border-active"
             />
           </div>
 
@@ -124,7 +124,7 @@ export function ApiSettingsPanel({
                 setDraft({ ...draft, openrouter_api_key: e.target.value })
               }
               placeholder="Enter your OpenRouter API key"
-              className="w-full rounded border border-border-default bg-bg-primary px-3 py-1.5 text-xs text-text-primary placeholder:text-text-muted outline-none focus:border-accent/50"
+              className="w-full rounded border border-border-default bg-bg-primary px-3 py-1.5 text-xs text-text-primary placeholder:text-text-muted outline-none focus:border-accent/50 focus-visible:ring-2 focus-visible:ring-border-active"
             />
           </div>
 
@@ -140,7 +140,7 @@ export function ApiSettingsPanel({
                 setDraft({ ...draft, runware_api_key: e.target.value })
               }
               placeholder="Enter your Runware API key"
-              className="w-full rounded border border-border-default bg-bg-primary px-3 py-1.5 text-xs text-text-primary placeholder:text-text-muted outline-none focus:border-accent/50"
+              className="w-full rounded border border-border-default bg-bg-primary px-3 py-1.5 text-xs text-text-primary placeholder:text-text-muted outline-none focus:border-accent/50 focus-visible:ring-2 focus-visible:ring-border-active"
             />
           </div>
 
@@ -156,7 +156,7 @@ export function ApiSettingsPanel({
                 setDraft({ ...draft, openai_api_key: e.target.value })
               }
               placeholder="Enter your OpenAI API key"
-              className="w-full rounded border border-border-default bg-bg-primary px-3 py-1.5 text-xs text-text-primary placeholder:text-text-muted outline-none focus:border-accent/50"
+              className="w-full rounded border border-border-default bg-bg-primary px-3 py-1.5 text-xs text-text-primary placeholder:text-text-muted outline-none focus:border-accent/50 focus-visible:ring-2 focus-visible:ring-border-active"
             />
           </div>
         </div>
@@ -279,7 +279,7 @@ export function ApiSettingsPanel({
           onChange={(e) =>
             setDraft({ ...draft, enhance_model: e.target.value })
           }
-          className="w-full rounded border border-border-default bg-bg-primary px-3 py-1.5 text-xs text-text-primary outline-none focus:border-accent/50"
+          className="w-full rounded border border-border-default bg-bg-primary px-3 py-1.5 text-xs text-text-primary outline-none focus:border-accent/50 focus-visible:ring-2 focus-visible:ring-border-active"
         />
         <p className="mt-1 text-2xs text-text-muted">
           Used by DeepInfra and OpenRouter providers
@@ -305,7 +305,7 @@ export function ApiSettingsPanel({
               onChange={(e) =>
                 setDraft({ ...draft, batch_concurrency: parseInt(e.target.value) || 5 })
               }
-              className="w-20 rounded border border-border-default bg-bg-primary px-3 py-1.5 text-xs text-text-primary outline-none focus:border-accent/50"
+              className="w-20 rounded border border-border-default bg-bg-primary px-3 py-1.5 text-xs text-text-primary outline-none focus:border-accent/50 focus-visible:ring-2 focus-visible:ring-border-active"
             />
             <p className="mt-1 text-2xs text-text-muted">
               Max parallel image generations during batch operations
@@ -362,7 +362,7 @@ export function ApiSettingsPanel({
                 setDraft({ ...draft, r2_account_id: e.target.value })
               }
               placeholder="Cloudflare account ID"
-              className="w-full rounded border border-border-default bg-bg-primary px-3 py-1.5 text-xs text-text-primary placeholder:text-text-muted outline-none focus:border-accent/50"
+              className="w-full rounded border border-border-default bg-bg-primary px-3 py-1.5 text-xs text-text-primary placeholder:text-text-muted outline-none focus:border-accent/50 focus-visible:ring-2 focus-visible:ring-border-active"
             />
           </div>
           <div className="grid grid-cols-2 gap-3">
@@ -378,7 +378,7 @@ export function ApiSettingsPanel({
                   setDraft({ ...draft, r2_access_key_id: e.target.value })
                 }
                 placeholder="R2 access key"
-                className="w-full rounded border border-border-default bg-bg-primary px-3 py-1.5 text-xs text-text-primary placeholder:text-text-muted outline-none focus:border-accent/50"
+                className="w-full rounded border border-border-default bg-bg-primary px-3 py-1.5 text-xs text-text-primary placeholder:text-text-muted outline-none focus:border-accent/50 focus-visible:ring-2 focus-visible:ring-border-active"
               />
             </div>
             <div>
@@ -393,7 +393,7 @@ export function ApiSettingsPanel({
                   setDraft({ ...draft, r2_secret_access_key: e.target.value })
                 }
                 placeholder="R2 secret key"
-                className="w-full rounded border border-border-default bg-bg-primary px-3 py-1.5 text-xs text-text-primary placeholder:text-text-muted outline-none focus:border-accent/50"
+                className="w-full rounded border border-border-default bg-bg-primary px-3 py-1.5 text-xs text-text-primary placeholder:text-text-muted outline-none focus:border-accent/50 focus-visible:ring-2 focus-visible:ring-border-active"
               />
             </div>
           </div>
@@ -409,7 +409,7 @@ export function ApiSettingsPanel({
                 setDraft({ ...draft, r2_bucket: e.target.value })
               }
               placeholder="my-assets-bucket"
-              className="w-full rounded border border-border-default bg-bg-primary px-3 py-1.5 text-xs text-text-primary placeholder:text-text-muted outline-none focus:border-accent/50"
+              className="w-full rounded border border-border-default bg-bg-primary px-3 py-1.5 text-xs text-text-primary placeholder:text-text-muted outline-none focus:border-accent/50 focus-visible:ring-2 focus-visible:ring-border-active"
             />
           </div>
           <div>
@@ -424,7 +424,7 @@ export function ApiSettingsPanel({
                 setDraft({ ...draft, r2_custom_domain: e.target.value })
               }
               placeholder="https://assets.example.com"
-              className="w-full rounded border border-border-default bg-bg-primary px-3 py-1.5 text-xs text-text-primary placeholder:text-text-muted outline-none focus:border-accent/50"
+              className="w-full rounded border border-border-default bg-bg-primary px-3 py-1.5 text-xs text-text-primary placeholder:text-text-muted outline-none focus:border-accent/50 focus-visible:ring-2 focus-visible:ring-border-active"
             />
             <p className="mt-1 text-2xs text-text-muted">
               Public URL for the game client to load images from
@@ -457,7 +457,7 @@ export function ApiSettingsPanel({
                 setDraft({ ...draft, github_pat: e.target.value })
               }
               placeholder="ghp_..."
-              className="w-full rounded border border-border-default bg-bg-primary px-3 py-1.5 text-xs text-text-primary placeholder:text-text-muted outline-none focus:border-accent/50"
+              className="w-full rounded border border-border-default bg-bg-primary px-3 py-1.5 text-xs text-text-primary placeholder:text-text-muted outline-none focus:border-accent/50 focus-visible:ring-2 focus-visible:ring-border-active"
             />
             <p className="mt-1 text-2xs text-text-muted">
               Needs <code className="font-mono text-accent/70">repo</code> scope. Used for push, pull, and PR creation.

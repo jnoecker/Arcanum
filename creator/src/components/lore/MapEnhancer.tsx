@@ -223,7 +223,7 @@ export function MapEnhancer({
           <div>
             <label className="mb-1 block text-xs text-text-muted">Enhancement prompt</label>
             <textarea
-              className="w-full rounded-lg border border-border-default bg-bg-primary px-3 py-2 text-sm text-text-primary outline-none focus:border-accent/50"
+              className="w-full rounded-lg border border-border-default bg-bg-primary px-3 py-2 text-sm text-text-primary outline-none focus:border-accent/50 focus-visible:ring-2 focus-visible:ring-border-active"
               rows={2}
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}

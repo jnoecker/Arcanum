@@ -44,7 +44,7 @@ export function ProgressionBalanceStep({
               onChange={(e) => onChange({ maxLevel: Number(e.target.value) })}
               min={1}
               max={999}
-              className="w-full rounded border border-border-default bg-bg-primary px-2 py-1.5 text-xs text-text-primary outline-none focus:border-accent/50"
+              className="w-full rounded border border-border-default bg-bg-primary px-2 py-1.5 text-xs text-text-primary outline-none focus:border-accent/50 focus-visible:ring-2 focus-visible:ring-border-active"
             />
           </div>
           <div>
@@ -59,7 +59,7 @@ export function ProgressionBalanceStep({
                   xpCurve: { ...data.xpCurve, baseXp: Number(e.target.value) },
                 })
               }
-              className="w-full rounded border border-border-default bg-bg-primary px-2 py-1.5 text-xs text-text-primary outline-none focus:border-accent/50"
+              className="w-full rounded border border-border-default bg-bg-primary px-2 py-1.5 text-xs text-text-primary outline-none focus:border-accent/50 focus-visible:ring-2 focus-visible:ring-border-active"
             />
           </div>
           <div>
@@ -78,7 +78,7 @@ export function ProgressionBalanceStep({
                 })
               }
               step={0.1}
-              className="w-full rounded border border-border-default bg-bg-primary px-2 py-1.5 text-xs text-text-primary outline-none focus:border-accent/50"
+              className="w-full rounded border border-border-default bg-bg-primary px-2 py-1.5 text-xs text-text-primary outline-none focus:border-accent/50 focus-visible:ring-2 focus-visible:ring-border-active"
             />
           </div>
           <div>
@@ -96,7 +96,7 @@ export function ProgressionBalanceStep({
                   },
                 })
               }
-              className="w-full rounded border border-border-default bg-bg-primary px-2 py-1.5 text-xs text-text-primary outline-none focus:border-accent/50"
+              className="w-full rounded border border-border-default bg-bg-primary px-2 py-1.5 text-xs text-text-primary outline-none focus:border-accent/50 focus-visible:ring-2 focus-visible:ring-border-active"
             />
           </div>
         </div>
@@ -151,7 +151,7 @@ export function ProgressionBalanceStep({
                   },
                 })
               }
-              className="w-full rounded border border-border-default bg-bg-primary px-2 py-1.5 text-xs text-text-primary outline-none focus:border-accent/50"
+              className="w-full rounded border border-border-default bg-bg-primary px-2 py-1.5 text-xs text-text-primary outline-none focus:border-accent/50 focus-visible:ring-2 focus-visible:ring-border-active"
             />
           </div>
           <div>
@@ -169,7 +169,7 @@ export function ProgressionBalanceStep({
                   },
                 })
               }
-              className="w-full rounded border border-border-default bg-bg-primary px-2 py-1.5 text-xs text-text-primary outline-none focus:border-accent/50"
+              className="w-full rounded border border-border-default bg-bg-primary px-2 py-1.5 text-xs text-text-primary outline-none focus:border-accent/50 focus-visible:ring-2 focus-visible:ring-border-active"
             />
           </div>
           <div>
@@ -187,7 +187,7 @@ export function ProgressionBalanceStep({
                   },
                 })
               }
-              className="w-full rounded border border-border-default bg-bg-primary px-2 py-1.5 text-xs text-text-primary outline-none focus:border-accent/50"
+              className="w-full rounded border border-border-default bg-bg-primary px-2 py-1.5 text-xs text-text-primary outline-none focus:border-accent/50 focus-visible:ring-2 focus-visible:ring-border-active"
             />
           </div>
           <div>
@@ -205,7 +205,7 @@ export function ProgressionBalanceStep({
                   },
                 })
               }
-              className="w-full rounded border border-border-default bg-bg-primary px-2 py-1.5 text-xs text-text-primary outline-none focus:border-accent/50"
+              className="w-full rounded border border-border-default bg-bg-primary px-2 py-1.5 text-xs text-text-primary outline-none focus:border-accent/50 focus-visible:ring-2 focus-visible:ring-border-active"
             />
           </div>
         </div>
@@ -227,7 +227,7 @@ export function ProgressionBalanceStep({
               onChange={(e) =>
                 onChange({ startingGold: Number(e.target.value) })
               }
-              className="w-full rounded border border-border-default bg-bg-primary px-2 py-1.5 text-xs text-text-primary outline-none focus:border-accent/50"
+              className="w-full rounded border border-border-default bg-bg-primary px-2 py-1.5 text-xs text-text-primary outline-none focus:border-accent/50 focus-visible:ring-2 focus-visible:ring-border-active"
             />
           </div>
           <div>
@@ -241,7 +241,7 @@ export function ProgressionBalanceStep({
                 onChange({ buyMultiplier: Number(e.target.value) })
               }
               step={0.1}
-              className="w-full rounded border border-border-default bg-bg-primary px-2 py-1.5 text-xs text-text-primary outline-none focus:border-accent/50"
+              className="w-full rounded border border-border-default bg-bg-primary px-2 py-1.5 text-xs text-text-primary outline-none focus:border-accent/50 focus-visible:ring-2 focus-visible:ring-border-active"
             />
           </div>
           <div>
@@ -255,7 +255,7 @@ export function ProgressionBalanceStep({
                 onChange({ sellMultiplier: Number(e.target.value) })
               }
               step={0.1}
-              className="w-full rounded border border-border-default bg-bg-primary px-2 py-1.5 text-xs text-text-primary outline-none focus:border-accent/50"
+              className="w-full rounded border border-border-default bg-bg-primary px-2 py-1.5 text-xs text-text-primary outline-none focus:border-accent/50 focus-visible:ring-2 focus-visible:ring-border-active"
             />
           </div>
         </div>

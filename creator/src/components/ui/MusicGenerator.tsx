@@ -121,7 +121,7 @@ export function MusicGenerator({
         onChange={(e) => setPrompt(e.target.value)}
         rows={2}
         placeholder={trackType === "ambient" ? "Describe the ambient soundscape..." : "Describe the music..."}
-        className="w-full resize-y rounded border border-border-default bg-bg-secondary px-2 py-1 font-mono text-2xs leading-relaxed text-text-secondary placeholder:text-text-muted outline-none focus:border-accent/50"
+        className="w-full resize-y rounded border border-border-default bg-bg-secondary px-2 py-1 font-mono text-2xs leading-relaxed text-text-secondary placeholder:text-text-muted outline-none focus:border-accent/50 focus-visible:ring-2 focus-visible:ring-border-active"
       />
 
       <div className="flex items-center gap-2">
@@ -132,7 +132,7 @@ export function MusicGenerator({
           max={300}
           value={duration}
           onChange={(e) => setDuration(Number(e.target.value))}
-          className="w-16 rounded border border-border-default bg-bg-secondary px-1.5 py-0.5 text-2xs text-text-secondary outline-none"
+          className="w-16 rounded border border-border-default bg-bg-secondary px-1.5 py-0.5 text-2xs text-text-secondary outline-none focus-visible:ring-2 focus-visible:ring-border-active"
         />
         <span className="text-2xs text-text-muted">sec</span>
       </div>

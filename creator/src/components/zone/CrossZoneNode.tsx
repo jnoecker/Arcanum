@@ -30,7 +30,7 @@ export function CrossZoneNode({ data }: NodeProps<CrossZoneNodeType>) {
 
   return (
     <div
-      className="cursor-pointer rounded-full border border-accent/60 bg-accent/10 px-3 py-1.5 transition-colors hover:bg-accent/20 focus:outline-none focus:ring-2 focus:ring-accent/60"
+      className="cursor-pointer rounded-full border border-accent/60 bg-accent/10 px-3 py-1.5 transition-colors hover:bg-accent/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60"
       style={{ minWidth: 120 }}
       role="button"
       tabIndex={0}

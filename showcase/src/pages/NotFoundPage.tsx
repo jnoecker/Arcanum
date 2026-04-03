@@ -19,8 +19,8 @@ export function NotFoundPage() {
         <Link
           to="/"
           className="inline-block px-6 py-2.5 rounded-lg border border-accent/30 text-accent
-                     hover:bg-accent/8 hover:border-accent/50 transition-all duration-300
-                     font-display tracking-[0.14em] text-sm"
+                     hover:bg-accent/8 hover:border-accent/50 transition-colors duration-300
+                     font-display tracking-[0.14em] text-sm focus-visible:ring-2 focus-visible:ring-accent/40"
         >
           Return to the Known World
         </Link>

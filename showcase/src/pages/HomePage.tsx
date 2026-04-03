@@ -222,7 +222,8 @@ export function HomePage() {
         <Link
           to="/articles"
           className="group flex items-center gap-3 px-5 py-3 text-text-secondary text-sm font-display
-                     tracking-[0.14em] hover:text-accent transition-colors duration-300 first:pl-0"
+                     tracking-[0.14em] hover:text-accent transition-colors duration-300 first:pl-0
+                     focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:rounded"
         >
           Codex <span className="text-text-muted group-hover:text-accent/60 transition-colors">({articles.filter((a) => a.template !== "world_setting").length})</span>
         </Link>
@@ -230,7 +231,8 @@ export function HomePage() {
           <Link
             to="/maps"
             className="group flex items-center gap-3 px-5 py-3 text-text-secondary text-sm font-display
-                       tracking-[0.14em] hover:text-accent transition-colors duration-300 pl-5"
+                       tracking-[0.14em] hover:text-accent transition-colors duration-300 pl-5
+                       focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:rounded"
           >
             Maps <span className="text-text-muted group-hover:text-accent/60 transition-colors">({maps.length})</span>
           </Link>
@@ -239,7 +241,8 @@ export function HomePage() {
           <Link
             to="/timeline"
             className="group flex items-center gap-3 px-5 py-3 text-text-secondary text-sm font-display
-                       tracking-[0.14em] hover:text-accent transition-colors duration-300 pl-5"
+                       tracking-[0.14em] hover:text-accent transition-colors duration-300 pl-5
+                       focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:rounded"
           >
             Timeline <span className="text-text-muted group-hover:text-accent/60 transition-colors">({data.timelineEvents!.length})</span>
           </Link>
@@ -247,7 +250,8 @@ export function HomePage() {
         <Link
           to="/graph"
           className="group flex items-center gap-3 px-5 py-3 text-text-secondary text-sm font-display
-                     tracking-[0.14em] hover:text-accent transition-colors duration-300 pl-5"
+                     tracking-[0.14em] hover:text-accent transition-colors duration-300 pl-5
+                     focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:rounded"
         >
           Connections
         </Link>
@@ -272,7 +276,8 @@ export function HomePage() {
                   key={a.id}
                   to={`/articles/${encodeURIComponent(a.id)}`}
                   className="group relative block overflow-hidden rounded-xl transition-shadow duration-500
-                             hover:shadow-[0_16px_48px_rgba(168,151,210,0.18)]"
+                             hover:shadow-[0_16px_48px_rgba(168,151,210,0.18)]
+                             focus-visible:ring-2 focus-visible:ring-accent/40"
                 >
                   {a.imageUrl && (
                     <div className="aspect-[21/9] overflow-hidden bg-bg-tertiary/30">
@@ -307,7 +312,8 @@ export function HomePage() {
                       key={a.id}
                       to={`/articles/${encodeURIComponent(a.id)}`}
                       className="group overflow-hidden rounded-lg transition-shadow duration-500
-                                 hover:shadow-[0_8px_28px_rgba(168,151,210,0.12)]"
+                                 hover:shadow-[0_8px_28px_rgba(168,151,210,0.12)]
+                                 focus-visible:ring-2 focus-visible:ring-accent/40"
                     >
                       {a.imageUrl && (
                         <div className="aspect-[3/4] overflow-hidden bg-bg-tertiary/30">

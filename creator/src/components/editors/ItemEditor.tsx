@@ -276,7 +276,7 @@ function AddStatRow({
           onChange={(e) => setValue(e.target.value)}
           placeholder="e.g. STR, DEX"
           autoFocus
-          className="h-5 flex-1 rounded border border-border-default bg-bg-primary px-1.5 text-2xs text-text-primary outline-none focus:border-accent"
+          className="h-5 flex-1 rounded border border-border-default bg-bg-primary px-1.5 text-2xs text-text-primary outline-none focus:border-accent focus-visible:ring-2 focus-visible:ring-border-active"
           onBlur={handleSubmit}
         />
         <button

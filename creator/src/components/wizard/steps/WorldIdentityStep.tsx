@@ -17,7 +17,7 @@ export function WorldIdentityStep({ data, onChange }: WorldIdentityStepProps) {
           onChange={(e) => onChange({ worldTheme: e.target.value })}
           placeholder="A crumbling desert empire where magic flows from ancient crystals..."
           rows={4}
-          className="w-full rounded border border-border-default bg-bg-primary px-2 py-1.5 text-xs text-text-primary outline-none placeholder:text-text-muted focus:border-accent/50"
+          className="w-full rounded border border-border-default bg-bg-primary px-2 py-1.5 text-xs text-text-primary outline-none placeholder:text-text-muted focus:border-accent/50 focus-visible:ring-2 focus-visible:ring-border-active"
         />
         <p className="mt-1 text-2xs text-text-muted">
           Describe the feel, setting, and atmosphere of your world. This guides
@@ -36,7 +36,7 @@ export function WorldIdentityStep({ data, onChange }: WorldIdentityStepProps) {
             onChange={(e) => onChange({ telnetPort: Number(e.target.value) })}
             min={1}
             max={65535}
-            className="w-full rounded border border-border-default bg-bg-primary px-2 py-1.5 text-xs text-text-primary outline-none focus:border-accent/50"
+            className="w-full rounded border border-border-default bg-bg-primary px-2 py-1.5 text-xs text-text-primary outline-none focus:border-accent/50 focus-visible:ring-2 focus-visible:ring-border-active"
           />
         </div>
         <div className="flex-1">
@@ -49,7 +49,7 @@ export function WorldIdentityStep({ data, onChange }: WorldIdentityStepProps) {
             onChange={(e) => onChange({ webPort: Number(e.target.value) })}
             min={1}
             max={65535}
-            className="w-full rounded border border-border-default bg-bg-primary px-2 py-1.5 text-xs text-text-primary outline-none focus:border-accent/50"
+            className="w-full rounded border border-border-default bg-bg-primary px-2 py-1.5 text-xs text-text-primary outline-none focus:border-accent/50 focus-visible:ring-2 focus-visible:ring-border-active"
           />
         </div>
       </div>

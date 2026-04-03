@@ -166,7 +166,7 @@ export function Console() {
               setLogs([]);
             }
           }}
-          className="rounded border border-border-default bg-bg-primary px-2 py-1 text-xs text-text-primary outline-none"
+          className="rounded border border-border-default bg-bg-primary px-2 py-1 text-xs text-text-primary outline-none focus-visible:ring-2 focus-visible:ring-border-active"
         >
           {LEVELS.map((l) => (
             <option key={l} value={l}>
@@ -185,7 +185,7 @@ export function Console() {
               setLogs([]);
             }
           }}
-          className="rounded border border-border-default bg-bg-primary px-2 py-1 text-xs text-text-primary outline-none"
+          className="rounded border border-border-default bg-bg-primary px-2 py-1 text-xs text-text-primary outline-none focus-visible:ring-2 focus-visible:ring-border-active"
         >
           {LOGGER_PRESETS.map((p) => (
             <option key={p.value} value={p.value}>
@@ -202,7 +202,7 @@ export function Console() {
           placeholder="Search logs..."
           value={searchText}
           onChange={(e) => setSearchText(e.target.value)}
-          className="w-40 rounded border border-border-default bg-bg-primary px-2 py-1 text-xs text-text-primary placeholder:text-text-muted outline-none focus:border-border-focus"
+          className="w-40 rounded border border-border-default bg-bg-primary px-2 py-1 text-xs text-text-primary placeholder:text-text-muted outline-none focus:border-border-focus focus-visible:ring-2 focus-visible:ring-border-active"
         />
 
         <div className="flex-1" />

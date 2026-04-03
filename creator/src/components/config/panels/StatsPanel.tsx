@@ -72,7 +72,7 @@ export function StatsPanel({ config, onChange, showDefinitions = true }: ConfigP
         actions={
           <div className="flex items-center gap-1">
             <input
-              className="w-20 rounded border border-border-default bg-bg-primary px-1.5 py-0.5 text-xs text-text-primary outline-none focus:border-accent/50"
+              className="w-20 rounded border border-border-default bg-bg-primary px-1.5 py-0.5 text-xs text-text-primary outline-none focus:border-accent/50 focus-visible:ring-2 focus-visible:ring-border-active"
               placeholder="NEW_ID"
               value={newId}
               onChange={(e) => setNewId(e.target.value)}

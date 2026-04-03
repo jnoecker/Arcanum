@@ -89,7 +89,7 @@ export function RegistryPanel<T>({
       actions={
         <div className="flex items-center gap-1">
           <input
-            className="w-28 rounded border border-border-default bg-bg-primary px-1.5 py-0.5 text-xs text-text-primary outline-none focus:border-accent/50"
+            className="w-28 rounded border border-border-default bg-bg-primary px-1.5 py-0.5 text-xs text-text-primary outline-none focus:border-accent/50 focus-visible:ring-2 focus-visible:ring-border-active"
             placeholder={placeholder}
             value={newId}
             onChange={(e) => setNewId(e.target.value)}
@@ -105,7 +105,7 @@ export function RegistryPanel<T>({
     >
       {allIds.length > searchThreshold && getDisplayName && (
         <input
-          className="mb-2 w-full rounded border border-border-default bg-bg-primary px-1.5 py-0.5 text-xs text-text-primary outline-none focus:border-accent/50"
+          className="mb-2 w-full rounded border border-border-default bg-bg-primary px-1.5 py-0.5 text-xs text-text-primary outline-none focus:border-accent/50 focus-visible:ring-2 focus-visible:ring-border-active"
           placeholder={`Search ${title.toLowerCase()}...`}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
@@ -169,7 +169,7 @@ export function RegistryPanel<T>({
                         {renaming === id ? (
                           <div className="flex items-center gap-1">
                             <input
-                              className="w-32 rounded border border-border-default bg-bg-primary px-1.5 py-0.5 text-xs text-text-primary outline-none focus:border-accent/50"
+                              className="w-32 rounded border border-border-default bg-bg-primary px-1.5 py-0.5 text-xs text-text-primary outline-none focus:border-accent/50 focus-visible:ring-2 focus-visible:ring-border-active"
                               value={renameValue}
                               onChange={(e) => setRenameValue(e.target.value)}
                               onKeyDown={(e) => {

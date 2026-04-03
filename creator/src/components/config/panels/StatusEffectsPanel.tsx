@@ -314,7 +314,7 @@ function StatModsEditor({
         </h5>
         {available.length > 0 && (
           <select
-            className="rounded border border-border-default bg-bg-primary px-1 py-0.5 text-2xs text-text-primary outline-none"
+            className="rounded border border-border-default bg-bg-primary px-1 py-0.5 text-2xs text-text-primary outline-none focus-visible:ring-2 focus-visible:ring-border-active"
             value=""
             onChange={(e) => {
               if (e.target.value) addMod(e.target.value);

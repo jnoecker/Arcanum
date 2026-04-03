@@ -155,7 +155,7 @@ export function AbilityDesigner({
               if (event.key === "Enter") addAbility();
             }}
             placeholder="New ability id"
-            className="min-w-0 flex-1 rounded-full border border-white/10 bg-white/8 px-4 py-2 text-xs text-text-primary outline-none"
+            className="min-w-0 flex-1 rounded-full border border-white/10 bg-white/8 px-4 py-2 text-xs text-text-primary outline-none focus-visible:ring-2 focus-visible:ring-border-active"
           />
           <button
             onClick={addAbility}
@@ -169,7 +169,7 @@ export function AbilityDesigner({
           value={search}
           onChange={(event) => setSearch(event.target.value)}
           placeholder="Search abilities"
-          className="mt-3 w-full rounded-full border border-white/10 bg-white/8 px-4 py-2 text-xs text-text-primary outline-none"
+          className="mt-3 w-full rounded-full border border-white/10 bg-white/8 px-4 py-2 text-xs text-text-primary outline-none focus-visible:ring-2 focus-visible:ring-border-active"
         />
 
         <div className="mt-4 flex max-h-[38rem] flex-col gap-2 overflow-y-auto pr-1">
@@ -247,7 +247,7 @@ export function AbilityDesigner({
                     if (event.key === "Enter") commitRename();
                     if (event.key === "Escape") setRenaming(false);
                   }}
-                  className="rounded-full border border-white/10 bg-white/8 px-4 py-2 text-xs text-text-primary outline-none"
+                  className="rounded-full border border-white/10 bg-white/8 px-4 py-2 text-xs text-text-primary outline-none focus-visible:ring-2 focus-visible:ring-border-active"
                 />
                 <button onClick={commitRename} title="Confirm rename" className="rounded-full border border-white/10 bg-white/8 px-4 py-2 text-xs text-text-primary hover:bg-white/12">
                   Rename

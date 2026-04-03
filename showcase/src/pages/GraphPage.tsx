@@ -90,8 +90,8 @@ function GraphInner() {
             <button
               key={t}
               onClick={() => toggleTemplate(t)}
-              aria-pressed={templateFilters.size > 0 && templateFilters.has(t)}
-              className={`rounded-full px-2.5 py-1 text-xs transition ${
+              aria-pressed={templateFilters.size === 0 || templateFilters.has(t)}
+              className={`rounded-full px-2.5 py-1 text-xs transition focus-visible:ring-2 focus-visible:ring-accent/40 ${
                 templateFilters.size === 0 || templateFilters.has(t)
                   ? "bg-accent/15 text-accent"
                   : "text-text-muted hover:bg-bg-tertiary"
@@ -107,8 +107,8 @@ function GraphInner() {
             <button
               key={o.value}
               onClick={() => toggleRelation(o.value)}
-              aria-pressed={relationFilters.size > 0 && relationFilters.has(o.value)}
-              className={`rounded-full px-2.5 py-1 text-xs transition ${
+              aria-pressed={relationFilters.size === 0 || relationFilters.has(o.value)}
+              className={`rounded-full px-2.5 py-1 text-xs transition focus-visible:ring-2 focus-visible:ring-accent/40 ${
                 relationFilters.size === 0 || relationFilters.has(o.value)
                   ? "bg-accent/15 text-accent"
                   : "text-text-muted hover:bg-bg-tertiary"
@@ -133,12 +133,12 @@ function GraphInner() {
             maxZoom={2}
             proOptions={{ hideAttribution: true }}
           >
-            <Background variant={BackgroundVariant.Dots} gap={20} size={1} color="#1e2748" />
+            <Background variant={BackgroundVariant.Dots} gap={20} size={1} color="var(--color-graph-grid)" />
             <Controls showInteractive={false} position="bottom-left" />
             <MiniMap
-              style={{ background: "#262f47" }}
-              maskColor="rgba(8, 12, 28, 0.8)"
-              nodeColor="#a897d2"
+              style={{ background: "var(--color-bg-secondary)" }}
+              maskColor="var(--graph-minimap-mask)"
+              nodeColor="var(--color-accent)"
             />
           </ReactFlow>
         ) : (

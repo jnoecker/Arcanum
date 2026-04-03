@@ -89,7 +89,7 @@ function RoomTemplatesEditor({
           onChange={(e) => setNewCategory(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && addCategory()}
           placeholder="New category name"
-          className="min-w-0 flex-1 rounded border border-border-default bg-bg-primary px-2 py-1 text-xs text-text-primary outline-none placeholder:text-text-muted focus:border-accent/50"
+          className="min-w-0 flex-1 rounded border border-border-default bg-bg-primary px-2 py-1 text-xs text-text-primary outline-none placeholder:text-text-muted focus:border-accent/50 focus-visible:ring-2 focus-visible:ring-border-active"
         />
         <button onClick={addCategory} className="text-2xs text-accent hover:text-text-primary">Add Category</button>
       </div>
@@ -163,7 +163,7 @@ function StringPoolsEditor({
           onChange={(e) => setNewPool(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && addPool()}
           placeholder="New pool name"
-          className="min-w-0 flex-1 rounded border border-border-default bg-bg-primary px-2 py-1 text-xs text-text-primary outline-none placeholder:text-text-muted focus:border-accent/50"
+          className="min-w-0 flex-1 rounded border border-border-default bg-bg-primary px-2 py-1 text-xs text-text-primary outline-none placeholder:text-text-muted focus:border-accent/50 focus-visible:ring-2 focus-visible:ring-border-active"
         />
         <button onClick={addPool} className="text-2xs text-accent hover:text-text-primary">Add Pool</button>
       </div>
@@ -244,7 +244,7 @@ function LootTablesEditor({
           onChange={(e) => setNewTier(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && addTier()}
           placeholder="New difficulty tier"
-          className="min-w-0 flex-1 rounded border border-border-default bg-bg-primary px-2 py-1 text-xs text-text-primary outline-none placeholder:text-text-muted focus:border-accent/50"
+          className="min-w-0 flex-1 rounded border border-border-default bg-bg-primary px-2 py-1 text-xs text-text-primary outline-none placeholder:text-text-muted focus:border-accent/50 focus-visible:ring-2 focus-visible:ring-border-active"
         />
         <button onClick={addTier} className="text-2xs text-accent hover:text-text-primary">Add Tier</button>
       </div>

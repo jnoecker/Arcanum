@@ -28,7 +28,7 @@ export function HomePage() {
   const featured = [...articles]
     .filter((a) => a.imageUrl && a.template !== "world_setting")
     .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
-    .slice(0, 6);
+    .slice(0, 9);
 
   const searchResults = useMemo(() => {
     if (!search.trim()) return [];

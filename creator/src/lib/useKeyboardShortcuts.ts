@@ -5,7 +5,7 @@ import { useLoreStore } from "@/stores/loreStore";
 import { saveAllZones } from "@/lib/saveZone";
 import { saveProjectConfig } from "@/lib/saveConfig";
 import { useConfigStore } from "@/stores/configStore";
-import { PANEL_MAP } from "@/lib/panelRegistry";
+import { PANEL_MAP, panelTab } from "@/lib/panelRegistry";
 
 export function useKeyboardShortcuts() {
   const [showHelp, setShowHelp] = useState(false);
@@ -92,6 +92,13 @@ export function useKeyboardShortcuts() {
           ? (idx - 1 + tabs.length) % tabs.length
           : (idx + 1) % tabs.length;
         setActiveTab(tabs[next]!.id);
+        return;
+      }
+
+      // ─── Ctrl+, → open settings ("tune the instrument") ─────
+      if (e.key === ",") {
+        e.preventDefault();
+        useProjectStore.getState().openTab(panelTab("services"));
         return;
       }
 

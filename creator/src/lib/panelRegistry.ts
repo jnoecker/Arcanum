@@ -85,6 +85,7 @@ const LORE_PANELS: PanelDef[] = [
   { id: "loreRelations", label: "Relations", group: "lore", host: "lore", kicker: "Connections", title: "Relationship graph", description: "Visual graph of connections between articles, factions, and characters.", maxWidth: "max-w-7xl" },
   { id: "loreDocuments", label: "Documents", group: "lore", host: "lore", kicker: "Archive", title: "Document library", description: "Internal notes, lore bibles, and reference documents.", maxWidth: "max-w-5xl" },
   { id: "showcaseSettings", label: "Showcase", group: "lore", host: "lore", kicker: "Publication", title: "Showcase settings", description: "Branding and appearance for the published showcase site.", maxWidth: "max-w-5xl" },
+  { id: "templates", label: "Templates", group: "lore", host: "lore", kicker: "Lore structure", title: "Templates", description: "Create and customize article template types and their fields.", maxWidth: "max-w-5xl" },
 ];
 
 // ─── Content panels ─────────────────────────────────────────────────

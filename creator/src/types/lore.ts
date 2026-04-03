@@ -16,6 +16,12 @@ export type ArticleTemplate =
   | "ability"
   | "freeform";
 
+/** Custom template ID — any string not in the built-in set */
+export type CustomTemplateId = string;
+
+/** Union of built-in and custom template identifiers */
+export type TemplateId = ArticleTemplate | CustomTemplateId;
+
 export interface ArticleRelation {
   targetId: string;
   type: string;
@@ -112,6 +118,28 @@ export interface TemplateOverrides {
   aiDescription?: string;
 }
 
+// ─── Custom template definitions ─────────────────────────────────
+
+export interface CustomFieldDef {
+  key: string;
+  label: string;
+  type: "text" | "textarea" | "select" | "tags" | "number";
+  options?: string[];
+  placeholder?: string;
+  required?: boolean;
+}
+
+export interface CustomTemplateDefinition {
+  id: string;
+  displayName: string;
+  pluralName: string;
+  color: string;
+  icon?: string;
+  description?: string;
+  aiDescription?: string;
+  fields: CustomFieldDef[];
+}
+
 // ─── Showcase branding settings ────────────────────────────────────
 
 export interface ShowcaseSettings {
@@ -137,6 +165,7 @@ export interface WorldLore {
   documents?: LoreDocument[];
   templateOverrides?: Partial<Record<ArticleTemplate, TemplateOverrides>>;
   showcaseSettings?: ShowcaseSettings;
+  customTemplates?: CustomTemplateDefinition[];
 }
 
 export const DEFAULT_WORLD_LORE: WorldLore = {

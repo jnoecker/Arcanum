@@ -6,6 +6,7 @@ import { useLoreStore, selectDocuments } from "@/stores/loreStore";
 import type { LoreDocument } from "@/types/lore";
 import { Section, CommitTextarea } from "@/components/ui/FormWidgets";
 import { exportLoreBible } from "@/lib/exportLoreBible";
+import { loreBibleToHtml } from "@/lib/loreBibleHtml";
 import { ImportWizard } from "./ImportWizard";
 
 function LoreBibleExport() {
@@ -13,6 +14,7 @@ function LoreBibleExport() {
   const [includeDrafts, setIncludeDrafts] = useState(false);
   const [includeNotes, setIncludeNotes] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [exportingPdf, setExportingPdf] = useState(false);
 
   const handleExport = async () => {
     if (!lore) return;
@@ -33,6 +35,31 @@ function LoreBibleExport() {
       console.error("Export failed:", err);
     } finally {
       setExporting(false);
+    }
+  };
+
+  const handleExportPdf = async () => {
+    if (!lore) return;
+    setExportingPdf(true);
+    try {
+      const html = loreBibleToHtml(lore, {
+        includeDrafts,
+        includePrivateNotes: includeNotes,
+      });
+      // Open in a new window for printing
+      const printWindow = window.open("", "_blank");
+      if (printWindow) {
+        printWindow.document.write(html);
+        printWindow.document.close();
+        // Wait for fonts to load, then trigger print
+        setTimeout(() => {
+          printWindow.print();
+        }, 1000);
+      }
+    } catch (err) {
+      console.error("PDF export failed:", err);
+    } finally {
+      setExportingPdf(false);
     }
   };
 
@@ -62,13 +89,22 @@ function LoreBibleExport() {
           Include private notes
         </label>
       </div>
-      <button
-        onClick={handleExport}
-        disabled={!lore || exporting}
-        className="focus-ring rounded-full border border-accent/30 bg-accent/10 px-4 py-2 text-xs font-medium text-accent transition hover:bg-accent/20 disabled:opacity-40"
-      >
-        {exporting ? "Exporting..." : "Export Lore Bible"}
-      </button>
+      <div className="flex gap-2">
+        <button
+          onClick={handleExport}
+          disabled={!lore || exporting}
+          className="focus-ring rounded-full border border-accent/30 bg-accent/10 px-4 py-2 text-xs font-medium text-accent transition hover:bg-accent/20 disabled:opacity-40"
+        >
+          {exporting ? "Exporting..." : "Export Lore Bible"}
+        </button>
+        <button
+          onClick={handleExportPdf}
+          disabled={!lore || exportingPdf}
+          className="focus-ring rounded-full border border-accent/30 bg-accent/10 px-4 py-2 text-xs font-medium text-accent transition hover:bg-accent/20 disabled:opacity-40"
+        >
+          {exportingPdf ? "Preparing..." : "Export as PDF"}
+        </button>
+      </div>
     </div>
   );
 }

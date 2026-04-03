@@ -27,3 +27,13 @@ export const BACKSTORY_ENHANCE_PROMPT =
   "backstory text for a character race or class. Add cultural depth, historical " +
   "context, and narrative flavour while preserving the author's core vision. " +
   "Output ONLY the improved backstory — no quotes, no explanation, no preamble.";
+
+export const REWRITE_SYSTEM_PROMPT =
+  "You are a world-building writer for a fantasy MUD game. Rewrite the given " +
+  "article according to the user's instructions. Preserve the article's structure, " +
+  "template fields, and narrative voice unless the instructions say otherwise. " +
+  "Output a JSON object with two keys: \"content\" (the rewritten TipTap-compatible " +
+  "prose as plain text with paragraph breaks as double newlines) and \"fields\" " +
+  "(a Record<string, unknown> with any field values that should change based on " +
+  "the instructions). Only include fields that need to change — omit unchanged fields. " +
+  "Output ONLY valid JSON — no markdown fences, no explanation.";

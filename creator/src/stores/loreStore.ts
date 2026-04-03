@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { WorldLore, Article, ArticleTemplate, ColorLabel, LoreMap, MapPin, CalendarSystem, TimelineEvent, LoreDocument, TemplateOverrides, ShowcaseSettings } from "@/types/lore";
+import type { WorldLore, Article, ArticleTemplate, ColorLabel, LoreMap, MapPin, CalendarSystem, TimelineEvent, LoreDocument, TemplateOverrides, ShowcaseSettings, CustomTemplateDefinition } from "@/types/lore";
 
 const MAX_LORE_HISTORY = 50;
 
@@ -62,6 +62,7 @@ interface LoreStore extends LoreState {
   bulkAddTags: (ids: string[], tags: string[]) => void;
   bulkRemoveTags: (ids: string[], tags: string[]) => void;
   bulkReparent: (ids: string[], parentId: string | undefined) => void;
+  bulkChangeTemplate: (ids: string[], newTemplate: string) => void;
 
   /** Bulk-replace all articles of a given template (used by legacy panel adapters). */
   replaceArticlesByTemplate: (
@@ -100,6 +101,11 @@ interface LoreStore extends LoreState {
 
   // Showcase settings
   updateShowcaseSettings: (patch: Partial<ShowcaseSettings>) => void;
+
+  // Custom template operations
+  addCustomTemplate: (template: CustomTemplateDefinition) => void;
+  updateCustomTemplate: (id: string, template: CustomTemplateDefinition) => void;
+  deleteCustomTemplate: (id: string) => void;
 
   // Undo/redo
   undoLore: () => void;
@@ -392,6 +398,27 @@ export const useLoreStore = create<LoreStore>((set, get) => ({
       };
     }),
 
+  bulkChangeTemplate: (ids, newTemplate) =>
+    set((s) => {
+      if (!s.lore) return s;
+      const articles = { ...s.lore.articles };
+      for (const id of ids) {
+        const article = articles[id];
+        if (article) {
+          articles[id] = {
+            ...article,
+            template: newTemplate as any,
+            updatedAt: new Date().toISOString(),
+          };
+        }
+      }
+      return {
+        ...snapshotLore(s),
+        lore: { ...s.lore, articles },
+        dirty: true,
+      };
+    }),
+
   replaceArticlesByTemplate: (template, articles) =>
     set((s) => {
       if (!s.lore) return s;
@@ -639,6 +666,50 @@ export const useLoreStore = create<LoreStore>((set, get) => ({
           ...s.lore,
           showcaseSettings: { ...(s.lore.showcaseSettings ?? {}), ...patch },
         },
+        dirty: true,
+      };
+    }),
+
+  // ─── Custom template operations ──────────────────────────────────
+
+  addCustomTemplate: (template) =>
+    set((s) => {
+      if (!s.lore) return s;
+      const templates = [...(s.lore.customTemplates ?? []), template];
+      return {
+        ...snapshotLore(s),
+        lore: { ...s.lore, customTemplates: templates },
+        dirty: true,
+      };
+    }),
+
+  updateCustomTemplate: (id, template) =>
+    set((s) => {
+      if (!s.lore) return s;
+      const templates = (s.lore.customTemplates ?? []).map((t) =>
+        t.id === id ? template : t,
+      );
+      return {
+        ...snapshotLore(s),
+        lore: { ...s.lore, customTemplates: templates },
+        dirty: true,
+      };
+    }),
+
+  deleteCustomTemplate: (id) =>
+    set((s) => {
+      if (!s.lore) return s;
+      const templates = (s.lore.customTemplates ?? []).filter((t) => t.id !== id);
+      // Convert articles using this template to freeform
+      const articles = { ...s.lore.articles };
+      for (const [aid, article] of Object.entries(articles)) {
+        if (article.template === id) {
+          articles[aid] = { ...article, template: "freeform" as any };
+        }
+      }
+      return {
+        ...snapshotLore(s),
+        lore: { ...s.lore, customTemplates: templates, articles },
         dirty: true,
       };
     }),

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import type { Article } from "@/types/lore";
 import type { TemplateFieldDef } from "@/lib/loreTemplates";
-import { TEMPLATE_SCHEMAS } from "@/lib/loreTemplates";
+import { getTemplateSchema } from "@/lib/loreTemplates";
 import { Section, FieldRow, TextInput, NumberInput, SelectInput } from "@/components/ui/FormWidgets";
 import { LoreTextArea } from "./LoreTextArea";
 import { useLoreStore, selectArticles } from "@/stores/loreStore";
@@ -229,7 +229,8 @@ export function TemplateFields({
   article: Article;
   onFieldChange: (key: string, value: unknown) => void;
 }) {
-  const schema = TEMPLATE_SCHEMAS[article.template];
+  const customTemplates = useLoreStore((s) => s.lore?.customTemplates);
+  const schema = getTemplateSchema(article.template, customTemplates);
   if (!schema || schema.fields.length === 0) return null;
 
   return (

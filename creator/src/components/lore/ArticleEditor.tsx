@@ -8,6 +8,8 @@ import { TemplateFields } from "./TemplateFields";
 import { CODEX_GENERATE_PROMPT } from "@/lib/lorePrompts";
 import { buildWorldContext } from "@/lib/loreGeneration";
 import { ArticleArtSection } from "./ArticleArtSection";
+import { RewriteDialog } from "./RewriteDialog";
+import type { RewriteResult } from "@/lib/loreRewrite";
 
 // ─── Tag list (compact) ────────────────────────────────────────────
 
@@ -141,6 +143,7 @@ export function ArticleEditor({ articleId }: { articleId: string }) {
   const duplicateArticle = useLoreStore((s) => s.duplicateArticle);
   const [renaming, setRenaming] = useState(false);
   const [newId, setNewId] = useState("");
+  const [showRewrite, setShowRewrite] = useState(false);
 
   const patch = useCallback(
     (p: Partial<Article>) => updateArticle(articleId, p),
@@ -154,6 +157,18 @@ export function ArticleEditor({ articleId }: { articleId: string }) {
     },
     [article, patch],
   );
+
+  const handleRewriteAccept = useCallback((result: RewriteResult) => {
+    if (!article) return;
+    const updated = { ...article };
+    if (result.content) {
+      updated.content = result.content;
+    }
+    if (Object.keys(result.fields).length > 0) {
+      updated.fields = { ...article.fields, ...result.fields };
+    }
+    updateArticle(article.id, updated);
+  }, [article, updateArticle]);
 
   const worldContext = useMemo(() => buildWorldContext(), [articleId]);
 
@@ -227,6 +242,13 @@ export function ArticleEditor({ articleId }: { articleId: string }) {
             Draft
           </label>
           <button
+            onClick={() => setShowRewrite(true)}
+            title="Rewrite article with specific instructions"
+            className="rounded-full border border-white/8 px-2.5 py-1 text-2xs text-text-secondary hover:bg-white/8 hover:text-text-primary"
+          >
+            Rewrite
+          </button>
+          <button
             onClick={() => {
               duplicateArticle(articleId);
             }}
@@ -297,6 +319,14 @@ export function ArticleEditor({ articleId }: { articleId: string }) {
           onChange={(relations) => patch({ relations: relations.length > 0 ? relations : undefined })}
         />
       </Section>
+
+      {showRewrite && (
+        <RewriteDialog
+          article={article}
+          onAccept={handleRewriteAccept}
+          onClose={() => setShowRewrite(false)}
+        />
+      )}
     </div>
   );
 }

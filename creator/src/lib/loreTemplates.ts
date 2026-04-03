@@ -1,4 +1,4 @@
-import type { ArticleTemplate } from "@/types/lore";
+import type { ArticleTemplate, CustomTemplateDefinition } from "@/types/lore";
 
 // ─── Template field definitions ─────────────────────────────────────
 
@@ -229,3 +229,42 @@ export const CODEX_CATEGORY_TO_TEMPLATE: Record<string, ArticleTemplate> = {
   legends: "freeform",
   customs: "freeform",
 };
+
+/** Convert a CustomTemplateDefinition to the same TemplateSchema shape used by built-ins */
+export function customToSchema(def: CustomTemplateDefinition): TemplateSchema {
+  return {
+    template: def.id as ArticleTemplate,
+    label: def.displayName,
+    pluralLabel: def.pluralName,
+    description: def.description,
+    aiDescription: def.aiDescription,
+    fields: def.fields.map((f): TemplateFieldDef => ({
+      key: f.key,
+      label: f.label,
+      type: f.type === "select" ? "select" : f.type,
+      options: f.options?.map((o) => ({ value: o, label: o })),
+      placeholder: f.placeholder,
+    })),
+  };
+}
+
+/** Get the schema for any template — built-in or custom */
+export function getTemplateSchema(
+  templateId: string,
+  customTemplates?: CustomTemplateDefinition[],
+): TemplateSchema | undefined {
+  if (templateId in TEMPLATE_SCHEMAS) {
+    return TEMPLATE_SCHEMAS[templateId as ArticleTemplate];
+  }
+  const custom = customTemplates?.find((t) => t.id === templateId);
+  return custom ? customToSchema(custom) : undefined;
+}
+
+/** Get all template schemas (built-in + custom) as an ordered list */
+export function getAllTemplateSchemas(
+  customTemplates?: CustomTemplateDefinition[],
+): TemplateSchema[] {
+  const builtIn = Object.values(TEMPLATE_SCHEMAS);
+  const custom = (customTemplates ?? []).map(customToSchema);
+  return [...builtIn, ...custom];
+}

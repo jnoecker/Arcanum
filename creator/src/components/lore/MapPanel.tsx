@@ -8,6 +8,7 @@ import { TEMPLATE_SCHEMAS } from "@/lib/loreTemplates";
 import { ActionButton, FieldRow, TextInput } from "@/components/ui/FormWidgets";
 import { MapViewer } from "./MapViewer";
 import { MapEnhancer } from "./MapEnhancer";
+import { MapAnalysisPanel } from "./MapAnalysisPanel";
 
 // ─── Map image hook ─────────────────────────────────────────────────
 
@@ -642,6 +643,11 @@ export function MapPanel() {
         <div className="flex h-64 items-center justify-center rounded-lg border border-dashed border-border-muted text-sm text-text-muted">
           Select a map or upload a new one to get started.
         </div>
+      )}
+
+      {/* Vision-powered map analysis */}
+      {selectedMap && mapImage && (
+        <MapAnalysisPanel map={selectedMap} imageDataUrl={mapImage} />
       )}
 
       {/* Map enhancer dialog */}

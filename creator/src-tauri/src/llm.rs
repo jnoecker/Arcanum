@@ -112,3 +112,39 @@ pub async fn llm_complete(
     let s = settings::get_settings(app.clone()).await?;
     complete_from_settings(&s, &system_prompt, &user_prompt, max_tokens).await
 }
+
+/// Vision-enabled LLM completion using the Anthropic API.
+/// Accepts a data URL (e.g. "data:image/png;base64,...") and parses it into
+/// the base64 payload and media type required by the Anthropic vision API.
+#[tauri::command]
+pub async fn llm_complete_with_vision(
+    app: AppHandle,
+    system_prompt: String,
+    user_prompt: String,
+    image_data_url: String,
+) -> Result<String, String> {
+    let s = settings::get_settings(app).await?;
+
+    if s.anthropic_api_key.is_empty() {
+        return Err("Anthropic API key required for vision analysis. Set it in Settings.".to_string());
+    }
+
+    // Parse "data:<media_type>;base64,<data>" format
+    let rest = image_data_url
+        .strip_prefix("data:")
+        .ok_or("Invalid image data URL: missing 'data:' prefix")?;
+    let (media_type, base64_data) = rest
+        .split_once(";base64,")
+        .ok_or("Invalid image data URL: missing ';base64,' delimiter")?;
+
+    anthropic::complete_with_vision(
+        &s.anthropic_api_key,
+        "claude-sonnet-4-20250514",
+        &system_prompt,
+        &user_prompt,
+        base64_data,
+        media_type,
+        4096,
+    )
+    .await
+}

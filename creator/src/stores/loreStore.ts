@@ -38,6 +38,7 @@ interface LoreState {
   loreFuture: WorldLore[];
   selectedArticleId: string | null;
   selectedMapId: string | null;
+  selectedArticleIds: Set<string>;
 }
 
 interface LoreStore extends LoreState {
@@ -49,6 +50,18 @@ interface LoreStore extends LoreState {
   duplicateArticle: (id: string) => void;
   moveArticle: (id: string, newParentId: string | undefined, sortOrder: number) => void;
   selectArticle: (id: string | null) => void;
+
+  // Multi-select operations
+  toggleArticleSelection: (id: string) => void;
+  selectAllArticles: () => void;
+  clearArticleSelection: () => void;
+
+  // Bulk mutation operations
+  bulkDelete: (ids: string[]) => void;
+  bulkSetDraft: (ids: string[], draft: boolean) => void;
+  bulkAddTags: (ids: string[], tags: string[]) => void;
+  bulkRemoveTags: (ids: string[], tags: string[]) => void;
+  bulkReparent: (ids: string[], parentId: string | undefined) => void;
 
   /** Bulk-replace all articles of a given template (used by legacy panel adapters). */
   replaceArticlesByTemplate: (
@@ -105,8 +118,9 @@ export const useLoreStore = create<LoreStore>((set, get) => ({
   loreFuture: [],
   selectedArticleId: null,
   selectedMapId: null,
+  selectedArticleIds: new Set(),
 
-  setLore: (lore) => set({ lore, dirty: false, lorePast: [], loreFuture: [] }),
+  setLore: (lore) => set({ lore, dirty: false, lorePast: [], loreFuture: [], selectedArticleIds: new Set() }),
 
   createArticle: (article) =>
     set((s) => {
@@ -259,6 +273,123 @@ export const useLoreStore = create<LoreStore>((set, get) => ({
     }),
 
   selectArticle: (id) => set({ selectedArticleId: id }),
+
+  // ─── Multi-select operations ──────────────────────────────────
+  toggleArticleSelection: (id) =>
+    set((s) => {
+      const next = new Set(s.selectedArticleIds);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return { selectedArticleIds: next };
+    }),
+
+  selectAllArticles: () =>
+    set((s) => ({
+      selectedArticleIds: new Set(Object.keys(s.lore?.articles ?? {})),
+    })),
+
+  clearArticleSelection: () => set({ selectedArticleIds: new Set() }),
+
+  // ─── Bulk mutation operations ─────────────────────────────────
+  bulkDelete: (ids) =>
+    set((s) => {
+      if (!s.lore) return s;
+      const articles = { ...s.lore.articles };
+      for (const id of ids) delete articles[id];
+      return {
+        ...snapshotLore(s),
+        lore: { ...s.lore, articles },
+        dirty: true,
+        selectedArticleIds: new Set(),
+        selectedArticleId:
+          ids.includes(s.selectedArticleId ?? "") ? null : s.selectedArticleId,
+      };
+    }),
+
+  bulkSetDraft: (ids, draft) =>
+    set((s) => {
+      if (!s.lore) return s;
+      const articles = { ...s.lore.articles };
+      const now = new Date().toISOString();
+      for (const id of ids) {
+        const a = articles[id];
+        if (a) articles[id] = { ...a, draft, updatedAt: now };
+      }
+      return {
+        ...snapshotLore(s),
+        lore: { ...s.lore, articles },
+        dirty: true,
+      };
+    }),
+
+  bulkAddTags: (ids, tags) =>
+    set((s) => {
+      if (!s.lore) return s;
+      const articles = { ...s.lore.articles };
+      const now = new Date().toISOString();
+      for (const id of ids) {
+        const a = articles[id];
+        if (a) {
+          const existing = new Set(a.tags ?? []);
+          for (const t of tags) existing.add(t);
+          articles[id] = { ...a, tags: [...existing], updatedAt: now };
+        }
+      }
+      return {
+        ...snapshotLore(s),
+        lore: { ...s.lore, articles },
+        dirty: true,
+      };
+    }),
+
+  bulkRemoveTags: (ids, tags) =>
+    set((s) => {
+      if (!s.lore) return s;
+      const articles = { ...s.lore.articles };
+      const now = new Date().toISOString();
+      const tagSet = new Set(tags);
+      for (const id of ids) {
+        const a = articles[id];
+        if (a && a.tags) {
+          articles[id] = {
+            ...a,
+            tags: a.tags.filter((t) => !tagSet.has(t)),
+            updatedAt: now,
+          };
+        }
+      }
+      return {
+        ...snapshotLore(s),
+        lore: { ...s.lore, articles },
+        dirty: true,
+      };
+    }),
+
+  bulkReparent: (ids, parentId) =>
+    set((s) => {
+      if (!s.lore) return s;
+      const articles = { ...s.lore.articles };
+      const now = new Date().toISOString();
+      // Find the max sortOrder among existing children of the target parent
+      let maxSort = 0;
+      for (const a of Object.values(articles)) {
+        if (a.parentId === parentId && (a.sortOrder ?? 0) > maxSort) {
+          maxSort = a.sortOrder ?? 0;
+        }
+      }
+      for (const id of ids) {
+        const a = articles[id];
+        if (a) {
+          maxSort++;
+          articles[id] = { ...a, parentId, sortOrder: maxSort, updatedAt: now };
+        }
+      }
+      return {
+        ...snapshotLore(s),
+        lore: { ...s.lore, articles },
+        dirty: true,
+      };
+    }),
 
   replaceArticlesByTemplate: (template, articles) =>
     set((s) => {
@@ -543,5 +674,5 @@ export const useLoreStore = create<LoreStore>((set, get) => ({
   canRedoLore: () => get().loreFuture.length > 0,
 
   markClean: () => set({ dirty: false }),
-  clearLore: () => set({ lore: null, dirty: false, lorePast: [], loreFuture: [], selectedArticleId: null, selectedMapId: null }),
+  clearLore: () => set({ lore: null, dirty: false, lorePast: [], loreFuture: [], selectedArticleId: null, selectedMapId: null, selectedArticleIds: new Set() }),
 }));

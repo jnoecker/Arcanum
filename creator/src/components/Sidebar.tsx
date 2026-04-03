@@ -8,6 +8,7 @@ import type { WorldFile } from "@/types/world";
 import { useGlobalSearch, ENTITY_TYPE_LABELS } from "@/lib/useGlobalSearch";
 import { PANEL_MAP, WORLDMAKER_GROUPS, LORE_GROUPS, panelTab, type Workspace } from "@/lib/panelRegistry";
 import { ArticleTree } from "./lore/ArticleTree";
+import { BulkActionsBar } from "./lore/BulkActionsBar";
 import { NewZoneDialog } from "./NewZoneDialog";
 import { ConfirmDialog } from "./ConfirmDialog";
 import {
@@ -539,6 +540,7 @@ export function Sidebar({ workspace }: { workspace: Workspace }) {
                 <span className="ml-2 text-[10px] font-normal text-text-muted">{articleCount}</span>
               </h2>
             </div>
+            <BulkActionsBar />
             <ArticleTree />
           </div>
         )}

@@ -60,13 +60,26 @@ function buildTree(articles: Record<string, Article>): TreeNode[] {
 function Node({ node, style, dragHandle }: NodeRendererProps<TreeNode>) {
   const selectedArticleId = useLoreStore((s) => s.selectedArticleId);
   const selectArticle = useLoreStore((s) => s.selectArticle);
+  const selectedArticleIds = useLoreStore((s) => s.selectedArticleIds);
+  const toggleArticleSelection = useLoreStore((s) => s.toggleArticleSelection);
   const openTab = useProjectStore((s) => s.openTab);
   const isSelected = selectedArticleId === node.data.id;
+  const isMultiSelected = selectedArticleIds.has(node.data.id);
+  const multiSelectActive = selectedArticleIds.size > 0;
   const dotColor = TEMPLATE_DOT_COLORS[node.data.template];
 
-  const handleSelect = () => {
+  const handleSelect = (e: React.MouseEvent) => {
+    if (e.ctrlKey || e.metaKey) {
+      toggleArticleSelection(node.data.id);
+      return;
+    }
     selectArticle(node.data.id);
     openTab(panelTab("lore"));
+  };
+
+  const handleCheckbox = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    toggleArticleSelection(node.data.id);
   };
 
   return (
@@ -74,22 +87,42 @@ function Node({ node, style, dragHandle }: NodeRendererProps<TreeNode>) {
       ref={dragHandle}
       style={style}
       role="treeitem"
-      aria-selected={isSelected}
+      aria-selected={isSelected || isMultiSelected}
       aria-expanded={node.children && node.children.length > 0 ? node.isOpen : undefined}
       tabIndex={0}
       className={`flex cursor-pointer items-center gap-1.5 rounded px-2 py-1.5 text-xs transition-colors focus-visible:ring-1 focus-visible:ring-accent/50 ${
-        isSelected
-          ? "bg-accent/15 text-text-primary"
-          : "text-text-secondary hover:bg-bg-tertiary"
+        isMultiSelected
+          ? "bg-accent/10 text-text-primary ring-1 ring-accent/25"
+          : isSelected
+            ? "bg-accent/15 text-text-primary"
+            : "text-text-secondary hover:bg-bg-tertiary"
       }`}
       onClick={handleSelect}
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") {
           e.preventDefault();
-          handleSelect();
+          if (e.ctrlKey || e.metaKey) {
+            toggleArticleSelection(node.data.id);
+          } else {
+            selectArticle(node.data.id);
+            openTab(panelTab("lore"));
+          }
         }
       }}
     >
+      {multiSelectActive && (
+        <span
+          onClick={handleCheckbox}
+          className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border text-[10px] transition ${
+            isMultiSelected
+              ? "border-accent/50 bg-accent/20 text-accent"
+              : "border-white/20 bg-white/5 text-transparent hover:border-white/30"
+          }`}
+          aria-label={isMultiSelected ? "Deselect" : "Select"}
+        >
+          {isMultiSelected ? "\u2713" : ""}
+        </span>
+      )}
       {node.children && node.children.length > 0 ? (
         <button
           onClick={(e) => {

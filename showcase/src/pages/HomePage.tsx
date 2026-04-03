@@ -266,8 +266,8 @@ export function HomePage() {
             </h2>
             <div className="flex-1 h-px bg-border-muted/40" />
           </div>
-          <div className="space-y-6">
-            {/* Hero featured article — first one gets prominence */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+            {/* Hero featured article — double-width portrait */}
             {featured[0] && (() => {
               const a = featured[0];
               const color = TEMPLATE_COLORS[a.template];
@@ -275,12 +275,12 @@ export function HomePage() {
                 <Link
                   key={a.id}
                   to={`/articles/${encodeURIComponent(a.id)}`}
-                  className="group relative block overflow-hidden rounded-xl transition-shadow duration-500
+                  className="group relative col-span-2 row-span-2 overflow-hidden rounded-xl transition-shadow duration-500
                              hover:shadow-[0_16px_48px_rgba(168,151,210,0.18)]
                              focus-visible:ring-2 focus-visible:ring-accent/40"
                 >
                   {a.imageUrl && (
-                    <div className="aspect-[21/9] overflow-hidden bg-bg-tertiary/30">
+                    <div className="h-full overflow-hidden bg-bg-tertiary/30">
                       <img
                         src={a.imageUrl}
                         alt={a.title}
@@ -289,8 +289,8 @@ export function HomePage() {
                       />
                     </div>
                   )}
-                  <div className="absolute inset-0 bg-gradient-to-t from-bg-abyss/90 via-bg-abyss/30 to-transparent" />
-                  <div className="absolute bottom-0 inset-x-0 p-6 sm:p-8">
+                  <div className="absolute inset-0 bg-gradient-to-t from-bg-abyss/90 via-bg-abyss/20 to-transparent" />
+                  <div className="absolute bottom-0 inset-x-0 p-5 sm:p-6">
                     <div className="text-[10px] tracking-[0.16em] uppercase mb-2 transition-colors duration-300" style={{ color }}>
                       {TEMPLATE_LABELS[a.template]}
                     </div>
@@ -302,42 +302,38 @@ export function HomePage() {
               );
             })()}
 
-            {/* Remaining featured — compact grid */}
-            {featured.length > 1 && (
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
-                {featured.slice(1).map((a) => {
-                  const color = TEMPLATE_COLORS[a.template];
-                  return (
-                    <Link
-                      key={a.id}
-                      to={`/articles/${encodeURIComponent(a.id)}`}
-                      className="group overflow-hidden rounded-lg transition-shadow duration-500
-                                 hover:shadow-[0_8px_28px_rgba(168,151,210,0.12)]
-                                 focus-visible:ring-2 focus-visible:ring-accent/40"
-                    >
-                      {a.imageUrl && (
-                        <div className="aspect-[3/4] overflow-hidden bg-bg-tertiary/30">
-                          <img
-                            src={a.imageUrl}
-                            alt={a.title}
-                            loading="lazy"
-                            className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-700 ease-out"
-                          />
-                        </div>
-                      )}
-                      <div className="px-3 py-2.5 bg-bg-secondary/40">
-                        <div className="text-[9px] tracking-[0.14em] uppercase mb-0.5 transition-colors duration-300" style={{ color }}>
-                          {TEMPLATE_LABELS[a.template]}
-                        </div>
-                        <h3 className="font-display text-accent-emphasis text-[13px] leading-tight group-hover:text-accent transition-colors duration-300 line-clamp-2">
-                          {a.title}
-                        </h3>
-                      </div>
-                    </Link>
-                  );
-                })}
-              </div>
-            )}
+            {/* Remaining featured — portrait cards filling the grid */}
+            {featured.slice(1).map((a) => {
+              const color = TEMPLATE_COLORS[a.template];
+              return (
+                <Link
+                  key={a.id}
+                  to={`/articles/${encodeURIComponent(a.id)}`}
+                  className="group overflow-hidden rounded-lg transition-shadow duration-500
+                             hover:shadow-[0_8px_28px_rgba(168,151,210,0.12)]
+                             focus-visible:ring-2 focus-visible:ring-accent/40"
+                >
+                  {a.imageUrl && (
+                    <div className="aspect-[3/4] overflow-hidden bg-bg-tertiary/30">
+                      <img
+                        src={a.imageUrl}
+                        alt={a.title}
+                        loading="lazy"
+                        className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-700 ease-out"
+                      />
+                    </div>
+                  )}
+                  <div className="px-3 py-2.5 bg-bg-secondary/40">
+                    <div className="text-[9px] tracking-[0.14em] uppercase mb-0.5 transition-colors duration-300" style={{ color }}>
+                      {TEMPLATE_LABELS[a.template]}
+                    </div>
+                    <h3 className="font-display text-accent-emphasis text-[13px] leading-tight group-hover:text-accent transition-colors duration-300 line-clamp-2">
+                      {a.title}
+                    </h3>
+                  </div>
+                </Link>
+              );
+            })}
           </div>
         </section>
       )}

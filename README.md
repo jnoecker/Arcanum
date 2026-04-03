@@ -40,14 +40,16 @@ Point it at an AmbonMUD project directory — legacy (monolithic `application.ya
 - **Server status indicator** in toolbar (hidden for standalone projects)
 
 ### Lore & World Building
-- **Article system** -- 11 article templates (character, location, organization, species, event, language, profession, ability, item, world_setting, freeform) with rich text editor (TipTap), @mentions, template-specific fields, and article gallery (multiple images per article)
+- **Article system** -- 11 built-in templates + custom user-defined templates (character, location, organization, species, event, language, profession, ability, item, world_setting, freeform, plus any custom types) with rich text editor (TipTap), @mentions, template-specific fields, and article gallery (multiple images per article)
+- **Template editor** -- Create custom template types with named fields (text, textarea, number, select, tags), color coding, and descriptions. Custom templates appear everywhere built-in templates do
 - **Interactive maps** -- Upload map images, place colored pins linked to articles, duplicate maps to create themed variants, AI-powered map analysis via Claude Vision (identifies features and suggests pins)
 - **Timeline** -- Calendar systems with eras, timeline events with importance levels (minor/major/legendary), linked to articles. AI timeline inference extracts temporal references from article content
 - **Relationship graph** -- React Flow visualization of article connections (explicit relations + @mention extraction), dagre auto-layout. Deterministic relationship inference from structured fields (affiliation, allies, rivals, leader, parent hierarchy)
 - **Color labels** -- Reusable named color palette for map pins and categorization
+- **AI rewrite** -- "Rewrite with Instructions" rewrites article content and fields based on user directions (e.g., "change species from Alorae to Archae"), with preview before accepting
 - **Quality tools** -- Consistency auditor (orphaned refs, duplicate titles, timeline mismatches), gap analysis (missing templates, leaderless factions, isolated locations), smart @mention suggestions (finds plain-text references that should be linked)
-- **Bulk operations** -- Multi-select articles via Ctrl+Click, batch retag, reparent, draft/publish toggle, bulk delete with undo support
-- **Import/Export** -- Obsidian/Markdown vault import wizard (front-matter mapping, wiki-link→@mention conversion), Lore Bible Markdown export (structured document with TOC, timeline, relations)
+- **Bulk operations** -- Multi-select articles via Ctrl+Click, batch retag, reparent, template change, draft/publish toggle, bulk delete with undo support
+- **Import/Export** -- Obsidian/Markdown vault import wizard (front-matter mapping, wiki-link→@mention conversion), Lore Bible export to Markdown and PDF (structured document with TOC, timeline, relations, styled typography)
 - **Lore showcase** -- One-click publish to a public-facing website with image gallery and bidirectional relationship sidebar (see [Showcase](#showcase) below)
 
 ### Developer Experience
@@ -158,7 +160,8 @@ AmbonArcanum/
       src/                    # Rust backend
         lib.rs                #   Tauri command registration
         project.rs            #   Project file I/O (legacy + standalone formats)
-        settings.rs           #   Settings persistence (API keys, R2 credentials)
+        settings.rs           #   User-level settings + merged settings command
+        project_settings.rs   #   Project-level settings (<project>/.arcanum/settings.json)
         deepinfra.rs          #   DeepInfra API client (image generation)
         runware.rs            #   Runware API client (alternative image provider)
         assets.rs             #   Asset manifest management (SHA-256 content-addressed)
@@ -204,7 +207,7 @@ AmbonArcanum/
 | `configStore` | Parsed `application.yaml`, dirty flag, write/save operations |
 | `serverStore` | Server process state, logs, output streaming |
 | `validationStore` | Computed validation errors for zones and config, panel visibility |
-| `assetStore` | Asset manifest, image directory, generation UI state, R2 sync, settings |
+| `assetStore` | Asset manifest, image directory, generation UI state, R2 sync, user + project settings |
 | `loreStore` | World lore: articles, maps, calendars, timeline events, color labels, undo/redo (50-entry history) |
 | `vibeStore` | Zone vibe/context metadata for LLM-informed art generation |
 | `adminStore` | Admin panel state, live server connection, player/zone/mob/quest/achievement data |

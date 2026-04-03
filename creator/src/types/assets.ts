@@ -90,6 +90,23 @@ export interface Settings {
   github_pat: string;
 }
 
+/** Project-level settings stored in <project_dir>/.arcanum/settings.json */
+export interface ProjectSettings {
+  image_model: string;
+  enhance_model: string;
+  prompt_llm_provider: string;
+  image_provider: string;
+  video_model: string;
+  batch_concurrency: number;
+  auto_enhance_prompts: boolean;
+  auto_remove_bg: boolean;
+  r2_account_id: string;
+  r2_access_key_id: string;
+  r2_secret_access_key: string;
+  r2_bucket: string;
+  r2_custom_domain: string;
+}
+
 /** Mirrors the Rust SyncProgress struct */
 export interface SyncProgress {
   total: number;

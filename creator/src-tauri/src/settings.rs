@@ -134,3 +134,44 @@ pub async fn save_settings(app: AppHandle, settings: Settings) -> Result<(), Str
         .await
         .map_err(|e| format!("Failed to write settings: {e}"))
 }
+
+/// Returns settings merged from user-level and project-level sources.
+/// Project settings override the art/R2 fields; API keys always come from user settings.
+#[tauri::command]
+pub async fn get_merged_settings(
+    app: AppHandle,
+    project_dir: Option<String>,
+) -> Result<Settings, String> {
+    let user = get_settings(app).await?;
+    let project = if let Some(dir) = project_dir {
+        crate::project_settings::get_project_settings(dir).await?
+    } else {
+        None
+    };
+    match project {
+        Some(ps) => Ok(Settings {
+            // API keys always from user
+            deepinfra_api_key: user.deepinfra_api_key,
+            runware_api_key: user.runware_api_key,
+            anthropic_api_key: user.anthropic_api_key,
+            openrouter_api_key: user.openrouter_api_key,
+            openai_api_key: user.openai_api_key,
+            github_pat: user.github_pat,
+            // Everything else from project
+            image_model: ps.image_model,
+            enhance_model: ps.enhance_model,
+            prompt_llm_provider: ps.prompt_llm_provider,
+            image_provider: ps.image_provider,
+            video_model: ps.video_model,
+            batch_concurrency: ps.batch_concurrency,
+            auto_enhance_prompts: ps.auto_enhance_prompts,
+            auto_remove_bg: ps.auto_remove_bg,
+            r2_account_id: ps.r2_account_id,
+            r2_access_key_id: ps.r2_access_key_id,
+            r2_secret_access_key: ps.r2_secret_access_key,
+            r2_bucket: ps.r2_bucket,
+            r2_custom_domain: ps.r2_custom_domain,
+        }),
+        None => Ok(user),
+    }
+}

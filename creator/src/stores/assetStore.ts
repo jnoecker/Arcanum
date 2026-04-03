@@ -1,7 +1,8 @@
 import { create } from "zustand";
 import { invoke } from "@tauri-apps/api/core";
-import type { AssetContext, AssetEntry, GeneratedImage, Settings, SyncProgress, SyncScope } from "@/types/assets";
+import type { AssetContext, AssetEntry, GeneratedImage, ProjectSettings, Settings, SyncProgress, SyncScope } from "@/types/assets";
 import type { ArtStyle } from "@/lib/arcanumPrompts";
+import { useProjectStore } from "@/stores/projectStore";
 
 interface BatchProgress {
   total: number;
@@ -14,6 +15,7 @@ interface AssetState {
   assets: AssetEntry[];
   assetsDir: string;
   settings: Settings | null;
+  projectSettings: ProjectSettings | null;
   generatorOpen: boolean;
   galleryOpen: boolean;
   artStyle: ArtStyle;
@@ -23,6 +25,8 @@ interface AssetState {
 
   loadSettings: () => Promise<void>;
   saveSettings: (settings: Settings) => Promise<void>;
+  loadProjectSettings: (projectDir: string) => Promise<void>;
+  saveProjectSettings: (projectDir: string, settings: ProjectSettings) => Promise<void>;
 
   loadAssets: () => Promise<void>;
   acceptAsset: (image: GeneratedImage, assetType: string, enhancedPrompt?: string, context?: AssetContext, variantGroup?: string, isActive?: boolean) => Promise<void>;
@@ -57,6 +61,7 @@ export const useAssetStore = create<AssetState>((set, get) => ({
   assets: [],
   assetsDir: "",
   settings: null,
+  projectSettings: null,
   generatorOpen: false,
   galleryOpen: false,
   artStyle: "gentle_magic" as ArtStyle,
@@ -65,14 +70,38 @@ export const useAssetStore = create<AssetState>((set, get) => ({
   batchProgress: null,
 
   loadSettings: async () => {
-    const settings = await invoke<Settings>("get_settings");
+    const projectDir = useProjectStore.getState().project?.mudDir;
+    const settings = projectDir
+      ? await invoke<Settings>("get_merged_settings", { projectDir })
+      : await invoke<Settings>("get_settings");
     const assetsDir = await invoke<string>("get_assets_dir");
-    set({ settings, assetsDir });
+    // Also load project settings separately for the settings UI
+    let projectSettings: ProjectSettings | null = null;
+    if (projectDir) {
+      projectSettings = await invoke<ProjectSettings | null>("get_project_settings", { projectDir });
+      if (!projectSettings) {
+        const userSettings = await invoke<Settings>("get_settings");
+        projectSettings = await invoke<ProjectSettings>("seed_project_settings", { projectDir, userSettings });
+      }
+    }
+    set({ settings, assetsDir, projectSettings });
   },
 
   saveSettings: async (settings: Settings) => {
     await invoke("save_settings", { settings });
     set({ settings });
+  },
+
+  loadProjectSettings: async (projectDir: string) => {
+    const ps = await invoke<ProjectSettings | null>("get_project_settings", { projectDir });
+    set({ projectSettings: ps });
+  },
+
+  saveProjectSettings: async (projectDir: string, settings: ProjectSettings) => {
+    await invoke("save_project_settings", { projectDir, settings });
+    set({ projectSettings: settings });
+    // Reload merged settings so the effective settings update
+    await get().loadSettings();
   },
 
   loadAssets: async () => {

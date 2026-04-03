@@ -11,6 +11,7 @@ mod openrouter;
 mod project;
 mod r2;
 mod runware;
+mod project_settings;
 mod settings;
 mod sketch;
 mod vibes;
@@ -38,6 +39,10 @@ pub fn run() {
             project::read_text_file,
             settings::get_settings,
             settings::save_settings,
+            settings::get_merged_settings,
+            project_settings::get_project_settings,
+            project_settings::save_project_settings,
+            project_settings::seed_project_settings,
             deepinfra::generate_image,
             deepinfra::img2img_generate,
             deepinfra::enhance_prompt,

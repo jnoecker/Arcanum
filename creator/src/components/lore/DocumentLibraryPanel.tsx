@@ -6,6 +6,7 @@ import { useLoreStore, selectDocuments } from "@/stores/loreStore";
 import type { LoreDocument } from "@/types/lore";
 import { Section, CommitTextarea } from "@/components/ui/FormWidgets";
 import { exportLoreBible } from "@/lib/exportLoreBible";
+import { ImportWizard } from "./ImportWizard";
 
 function LoreBibleExport() {
   const lore = useLoreStore((s) => s.lore);
@@ -79,6 +80,7 @@ export function DocumentLibraryPanel() {
   const deleteDocument = useLoreStore((s) => s.deleteDocument);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [newTitle, setNewTitle] = useState("");
+  const [showImportWizard, setShowImportWizard] = useState(false);
 
   const selected = selectedId ? documents.find((d) => d.id === selectedId) ?? null : null;
 
@@ -95,7 +97,7 @@ export function DocumentLibraryPanel() {
 
       const content = await invoke<string>("read_text_file", { filePath: String(filePath) });
       const filename = filePath.split(/[/\\]/).pop() ?? "document.md";
-      const title = filename.replace(/\.\w+$/, "").replace(/[-_]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+      const title = filename.replace(/\.\w+$/, "").replace(/[-_]/g, " ").replace(/\b\w/g, (c: string) => c.toUpperCase());
       const now = new Date().toISOString();
       const doc: LoreDocument = {
         id: `doc_${Date.now()}`,
@@ -133,12 +135,18 @@ export function DocumentLibraryPanel() {
     <div className="flex gap-6">
       {/* Sidebar list */}
       <div className="w-64 shrink-0 space-y-3">
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <button
             onClick={handleImport}
             className="rounded-full border border-[rgba(184,216,232,0.28)] bg-gradient-active-strong px-3 py-1.5 text-xs text-text-primary transition hover:shadow-glow-sm"
           >
             Import .md
+          </button>
+          <button
+            onClick={() => setShowImportWizard(true)}
+            className="focus-ring rounded-full border border-white/10 px-3 py-1.5 text-xs font-medium text-text-secondary transition hover:bg-white/8 hover:text-text-primary"
+          >
+            Import Markdown
           </button>
           <button
             onClick={handleCreate}
@@ -218,6 +226,9 @@ export function DocumentLibraryPanel() {
         )}
       </div>
     </div>
+      {showImportWizard && (
+        <ImportWizard onClose={() => setShowImportWizard(false)} />
+      )}
     </div>
   );
 }

@@ -469,12 +469,12 @@ export function validateZone(
     if (d.portalRoom && !world.rooms[d.portalRoom]) {
       issues.push({ severity: "warning", entity: "dungeon", message: `Portal room "${d.portalRoom}" not found in this zone` });
     }
-    const pools = Object.entries(d.mobPools ?? {});
+    const pools = Object.entries(d.mobPools ?? {}) as [string, string[] | undefined][];
     if (pools.length === 0) {
       issues.push({ severity: "warning", entity: "dungeon", message: "Dungeon has no mob pools" });
     }
     for (const [pool, mobIds] of pools) {
-      if (mobIds.length === 0) {
+      if (!mobIds || mobIds.length === 0) {
         issues.push({ severity: "warning", entity: "dungeon", message: `Mob pool "${pool}" is empty` });
       }
     }

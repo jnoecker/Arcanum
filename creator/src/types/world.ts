@@ -36,6 +36,7 @@ export interface RoomFile {
   title: string;
   description: string;
   exits?: Record<string, string | ExitValue>;
+  features?: Record<string, FeatureFile>;
   station?: string;
   bank?: boolean;
   image?: string;
@@ -54,6 +55,22 @@ export interface DoorFile {
   closed?: boolean;
   locked?: boolean;
   key?: string;
+}
+
+/** Room feature: container, lever, or sign. */
+export interface FeatureFile {
+  type: string; // "CONTAINER" | "LEVER" | "SIGN"
+  displayName: string;
+  keyword: string;
+  /** "open" | "closed" | "locked" for CONTAINER; "up" | "down" for LEVER. */
+  initialState?: string;
+  keyItemId?: string;
+  keyConsumed?: boolean;
+  resetWithZone?: boolean;
+  /** Initial item IDs inside a CONTAINER. */
+  items?: string[];
+  /** Text content for SIGN type. */
+  text?: string;
 }
 
 export interface MobFile {
@@ -133,6 +150,7 @@ export interface ItemFile {
   charges?: number;
   onUse?: ItemOnUse;
   room?: string;
+  mob?: string;
   matchByKey?: boolean;
   basePrice?: number;
   image?: string;
@@ -238,6 +256,12 @@ export interface RecipeMaterialFile {
 
 // ─── Dungeon template types ────────────────────────────────────────
 
+export interface DungeonMobPool {
+  common?: string[];
+  elite?: string[];
+  boss?: string[];
+}
+
 export interface DungeonRoomTemplate {
   title: string;
   description: string;
@@ -258,6 +282,6 @@ export interface DungeonFile {
   roomCountMax?: number;
   portalRoom?: string;
   roomTemplates?: Record<string, DungeonRoomTemplate[]>;
-  mobPools?: Record<string, string[]>;
+  mobPools?: DungeonMobPool;
   lootTables?: Record<string, DungeonLootTable>;
 }

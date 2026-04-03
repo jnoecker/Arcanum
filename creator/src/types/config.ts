@@ -446,6 +446,8 @@ export interface FriendsConfig {
 export interface GuildConfig {
   founderRank: string;
   defaultRank: string;
+  maxSize?: number;
+  inviteTimeoutMs?: number;
 }
 
 export interface GuildRankDefinition {
@@ -531,6 +533,7 @@ export interface WorldConfig {
 export interface ServerConfig {
   telnetPort: number;
   webPort: number;
+  productionMode?: boolean;
 }
 
 // ─── Admin ──────────────────────────────────────────────────────────
@@ -541,6 +544,7 @@ export interface AdminServerConfig {
   token: string;
   basePath: string;
   grafanaUrl: string;
+  corsOrigins?: string[];
 }
 
 // ─── Observability ──────────────────────────────────────────────────
@@ -549,6 +553,8 @@ export interface ObservabilityConfig {
   metricsEnabled: boolean;
   metricsEndpoint: string;
   metricsHttpPort: number;
+  metricsHttpHost?: string;
+  staticTags?: Record<string, string>;
 }
 
 // ─── Logging ────────────────────────────────────────────────────────

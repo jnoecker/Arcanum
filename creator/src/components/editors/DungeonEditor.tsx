@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import type { WorldFile, DungeonFile, DungeonRoomTemplate, DungeonLootTable } from "@/types/world";
+import type { WorldFile, DungeonFile, DungeonRoomTemplate, DungeonLootTable, DungeonMobPool } from "@/types/world";
 import { updateDungeon } from "@/lib/zoneEdits";
 import {
   Section,
@@ -316,8 +316,8 @@ export function DungeonEditor({ world, onWorldChange, onDelete }: DungeonEditorP
 
       <Section title="Mob Pools">
         <StringPoolsEditor
-          pools={dungeon.mobPools ?? Object.fromEntries(DEFAULT_MOB_POOLS.map((p) => [p, []]))}
-          onChange={(mobPools) => patch({ mobPools })}
+          pools={(dungeon.mobPools ?? Object.fromEntries(DEFAULT_MOB_POOLS.map((p) => [p, []]))) as Record<string, string[]>}
+          onChange={(mobPools) => patch({ mobPools: mobPools as unknown as DungeonMobPool })}
           itemLabel="mob"
         />
       </Section>

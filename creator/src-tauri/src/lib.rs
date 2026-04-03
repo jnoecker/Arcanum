@@ -43,6 +43,7 @@ pub fn run() {
             deepinfra::enhance_prompt,
             deepinfra::read_image_data_url,
             llm::llm_complete,
+            llm::llm_complete_with_vision,
             runware::runware_generate_image,
             openai_images::openai_generate_image,
             runware::runware_generate_audio,

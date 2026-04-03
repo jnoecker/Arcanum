@@ -71,6 +71,12 @@ export interface AbilityDefinitionConfig {
   requiredClass?: string;
   classRestriction?: string;
   image?: string;
+  /** Skill tree this ability belongs to (e.g., "warrior_arms", "mage_fire") */
+  tree?: string;
+  /** Depth in the skill tree (0 = root, higher = deeper) */
+  tier?: number;
+  /** Ability IDs that must be learned before this one */
+  prerequisites?: string[];
 }
 
 // ─── Status Effects ─────────────────────────────────────────────────
@@ -564,6 +570,24 @@ export interface LoggingConfig {
   packageLevels: Record<string, string>;
 }
 
+// ─── Prestige ──────────────────────────────────────────────────────
+
+export interface PrestigePerkConfig {
+  type: string; // "STAT_BONUS" | "SKILL_POINT" | "TITLE" | "MAX_HP" | "MAX_MANA"
+  stat?: string;
+  amount?: number;
+  title?: string;
+  description?: string;
+}
+
+export interface PrestigeConfig {
+  enabled: boolean;
+  xpCostBase: number;
+  xpCostMultiplier: number;
+  maxRank: number;
+  perks: Record<string, PrestigePerkConfig>;
+}
+
 // ─── Top-level config state ─────────────────────────────────────────
 
 export interface AppConfig {
@@ -619,6 +643,7 @@ export interface AppConfig {
   weather: WeatherConfig;
   worldEvents: WorldEventsConfig;
   pets: Record<string, PetDefinitionConfig>;
+  prestige?: PrestigeConfig;
   globalAssets: Record<string, string>;
   playerTiers?: Record<string, TierDefinitionConfig>;
   /** Raw YAML content for unrecognized sections */

@@ -8,6 +8,7 @@ export interface WorldFile {
   lifespan?: number;
   startRoom: string;
   graphical?: boolean;
+  pvpEnabled?: boolean;
   image?: ZoneImageDefaults;
   audio?: ZoneAudioDefaults;
   rooms: Record<string, RoomFile>;

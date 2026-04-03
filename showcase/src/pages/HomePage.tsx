@@ -96,6 +96,18 @@ export function HomePage() {
   useEffect(() => { setActiveIndex(-1); }, [searchResults]);
   useEffect(() => { setIsOpen(search.trim().length > 0); }, [search]);
 
+  const searchContainerRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!isOpen) return;
+    function handleClickOutside(e: MouseEvent) {
+      if (searchContainerRef.current && !searchContainerRef.current.contains(e.target as Node)) {
+        setIsOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [isOpen]);
+
   const listboxId = "search-results";
 
   return (
@@ -145,14 +157,13 @@ export function HomePage() {
         )}
 
         {/* Search */}
-        <div className="relative max-w-lg">
+        <div className="opacity-80 focus-within:opacity-100 transition-opacity duration-300">
+        <div ref={searchContainerRef} className="relative max-w-md">
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             onKeyDown={handleKeyDown}
-            onFocus={() => search.trim() && setIsOpen(true)}
-            onBlur={() => setTimeout(() => setIsOpen(false), 150)}
             placeholder="Search the codex..."
             role="combobox"
             aria-expanded={isOpen && searchResults.length > 0}
@@ -162,7 +173,7 @@ export function HomePage() {
             className="w-full bg-bg-secondary/60 border border-border-muted/60 rounded-lg px-4 py-3 text-sm
                        text-text-primary placeholder:text-text-muted/70
                        focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:border-accent/40
-                       transition-all duration-300"
+                       transition-colors duration-300"
           />
           {isOpen && searchResults.length > 0 && (
             <div
@@ -174,14 +185,13 @@ export function HomePage() {
                          animate-[fadeIn_120ms_ease-out]"
             >
               {searchResults.map((a, i) => (
-                <Link
+                <div
                   key={a.id}
                   id={`search-result-${i}`}
                   role="option"
                   aria-selected={i === activeIndex}
-                  to={`/articles/${encodeURIComponent(a.id)}`}
-                  onClick={() => { setSearch(""); setIsOpen(false); }}
-                  className={`flex items-center gap-3 px-4 py-3 transition-colors duration-150 ${
+                  onClick={() => navigateToResult(a.id)}
+                  className={`cursor-pointer flex items-center gap-3 px-4 py-3 transition-colors duration-150 ${
                     i === activeIndex ? "bg-bg-hover" : "hover:bg-bg-hover"
                   }`}
                 >
@@ -192,7 +202,7 @@ export function HomePage() {
                     <div className="text-text-primary text-sm truncate">{a.title}</div>
                     <div className="text-text-muted text-xs">{TEMPLATE_LABELS[a.template]}</div>
                   </div>
-                </Link>
+                </div>
               ))}
             </div>
           )}
@@ -204,22 +214,23 @@ export function HomePage() {
             </div>
           )}
         </div>
+        </div>
       </section>
 
       {/* ── Navigation links ── */}
-      <section className="flex flex-wrap gap-3 mb-20 stagger-children">
+      <section className="flex flex-wrap items-center divide-x divide-border-muted/30 mb-20">
         <Link
           to="/articles"
-          className="group px-5 py-2.5 rounded-lg border border-border-muted/50 text-text-secondary text-sm font-display
-                     tracking-[0.14em] hover:border-accent/30 hover:text-accent transition-all duration-300"
+          className="group flex items-center gap-3 px-5 py-3 text-text-secondary text-sm font-display
+                     tracking-[0.14em] hover:text-accent transition-colors duration-300 first:pl-0"
         >
           Codex <span className="text-text-muted group-hover:text-accent/60 transition-colors">({articles.filter((a) => a.template !== "world_setting").length})</span>
         </Link>
         {(maps?.length ?? 0) > 0 && (
           <Link
             to="/maps"
-            className="group px-5 py-2.5 rounded-lg border border-border-muted/50 text-text-secondary text-sm font-display
-                       tracking-[0.14em] hover:border-accent/30 hover:text-accent transition-all duration-300"
+            className="group flex items-center gap-3 px-5 py-3 text-text-secondary text-sm font-display
+                       tracking-[0.14em] hover:text-accent transition-colors duration-300 pl-5"
           >
             Maps <span className="text-text-muted group-hover:text-accent/60 transition-colors">({maps.length})</span>
           </Link>
@@ -227,16 +238,16 @@ export function HomePage() {
         {(data.timelineEvents?.length ?? 0) > 0 && (
           <Link
             to="/timeline"
-            className="group px-5 py-2.5 rounded-lg border border-border-muted/50 text-text-secondary text-sm font-display
-                       tracking-[0.14em] hover:border-accent/30 hover:text-accent transition-all duration-300"
+            className="group flex items-center gap-3 px-5 py-3 text-text-secondary text-sm font-display
+                       tracking-[0.14em] hover:text-accent transition-colors duration-300 pl-5"
           >
             Timeline <span className="text-text-muted group-hover:text-accent/60 transition-colors">({data.timelineEvents!.length})</span>
           </Link>
         )}
         <Link
           to="/graph"
-          className="px-5 py-2.5 rounded-lg border border-border-muted/50 text-text-secondary text-sm font-display
-                     tracking-[0.14em] hover:border-accent/30 hover:text-accent transition-all duration-300"
+          className="group flex items-center gap-3 px-5 py-3 text-text-secondary text-sm font-display
+                     tracking-[0.14em] hover:text-accent transition-colors duration-300 pl-5"
         >
           Connections
         </Link>
@@ -251,39 +262,76 @@ export function HomePage() {
             </h2>
             <div className="flex-1 h-px bg-border-muted/40" />
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 stagger-children">
-            {featured.map((a) => {
+          <div className="space-y-6">
+            {/* Hero featured article — first one gets prominence */}
+            {featured[0] && (() => {
+              const a = featured[0];
               const color = TEMPLATE_COLORS[a.template];
               return (
                 <Link
                   key={a.id}
                   to={`/articles/${encodeURIComponent(a.id)}`}
-                  className="group overflow-hidden rounded-lg transition-all duration-500
-                             hover:shadow-[0_12px_40px_rgba(168,151,210,0.15)]
-                             hover:-translate-y-0.5"
-                  style={{ borderLeft: `3px solid ${color}50` }}
+                  className="group relative block overflow-hidden rounded-xl transition-shadow duration-500
+                             hover:shadow-[0_16px_48px_rgba(168,151,210,0.18)]"
                 >
                   {a.imageUrl && (
-                    <div className="aspect-[3/4] overflow-hidden bg-bg-tertiary/30">
+                    <div className="aspect-[21/9] overflow-hidden bg-bg-tertiary/30">
                       <img
                         src={a.imageUrl}
                         alt={a.title}
                         loading="lazy"
-                        className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-700 ease-out"
+                        className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-700 ease-out"
                       />
                     </div>
                   )}
-                  <div className="px-4 py-3 bg-bg-secondary/50">
-                    <div className="text-[10px] tracking-[0.16em] uppercase mb-1 transition-colors duration-300" style={{ color }}>
+                  <div className="absolute inset-0 bg-gradient-to-t from-bg-abyss/90 via-bg-abyss/30 to-transparent" />
+                  <div className="absolute bottom-0 inset-x-0 p-6 sm:p-8">
+                    <div className="text-[10px] tracking-[0.16em] uppercase mb-2 transition-colors duration-300" style={{ color }}>
                       {TEMPLATE_LABELS[a.template]}
                     </div>
-                    <h3 className="font-display text-accent-emphasis text-[15px] group-hover:text-accent transition-colors duration-300">
+                    <h3 className="font-display text-accent-emphasis text-xl sm:text-2xl group-hover:text-accent transition-colors duration-300">
                       {a.title}
                     </h3>
                   </div>
                 </Link>
               );
-            })}
+            })()}
+
+            {/* Remaining featured — compact grid */}
+            {featured.length > 1 && (
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+                {featured.slice(1).map((a) => {
+                  const color = TEMPLATE_COLORS[a.template];
+                  return (
+                    <Link
+                      key={a.id}
+                      to={`/articles/${encodeURIComponent(a.id)}`}
+                      className="group overflow-hidden rounded-lg transition-shadow duration-500
+                                 hover:shadow-[0_8px_28px_rgba(168,151,210,0.12)]"
+                    >
+                      {a.imageUrl && (
+                        <div className="aspect-[3/4] overflow-hidden bg-bg-tertiary/30">
+                          <img
+                            src={a.imageUrl}
+                            alt={a.title}
+                            loading="lazy"
+                            className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-700 ease-out"
+                          />
+                        </div>
+                      )}
+                      <div className="px-3 py-2.5 bg-bg-secondary/40">
+                        <div className="text-[9px] tracking-[0.14em] uppercase mb-0.5 transition-colors duration-300" style={{ color }}>
+                          {TEMPLATE_LABELS[a.template]}
+                        </div>
+                        <h3 className="font-display text-accent-emphasis text-[13px] leading-tight group-hover:text-accent transition-colors duration-300 line-clamp-2">
+                          {a.title}
+                        </h3>
+                      </div>
+                    </Link>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </section>
       )}

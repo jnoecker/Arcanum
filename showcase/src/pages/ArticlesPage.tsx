@@ -70,12 +70,12 @@ export function ArticlesPage() {
           className="bg-bg-secondary/60 border border-border-muted/60 rounded-lg px-3 py-2 text-sm
                      text-text-primary placeholder:text-text-muted/70
                      focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:border-accent/40
-                     transition-all duration-300 w-full sm:w-64"
+                     transition-colors duration-300 w-full sm:w-64"
         />
         <button
           onClick={() => setSearchParams({})}
           aria-pressed={!activeTemplate}
-          className={`px-3 py-1.5 text-[11px] tracking-[0.14em] uppercase rounded-md border transition-all duration-300 ${
+          className={`px-3 py-1.5 text-[11px] tracking-[0.14em] uppercase rounded-md border transition-colors duration-300 ${
             !activeTemplate
               ? "border-accent/40 text-accent bg-accent/8"
               : "border-border-muted/50 text-text-muted hover:text-text-secondary hover:border-border-muted"
@@ -88,7 +88,7 @@ export function ArticlesPage() {
             key={t}
             onClick={() => setSearchParams({ template: t })}
             aria-pressed={activeTemplate === t}
-            className={`px-3 py-1.5 text-[11px] tracking-[0.14em] uppercase rounded-md border transition-all duration-300 ${
+            className={`px-3 py-1.5 text-[11px] tracking-[0.14em] uppercase rounded-md border transition-colors duration-300 ${
               activeTemplate === t
                 ? "border-accent/40 text-accent bg-accent/8"
                 : "border-border-muted/50 text-text-muted hover:text-text-secondary hover:border-border-muted"
@@ -142,7 +142,7 @@ export function ArticlesPage() {
               <section key={template}>
                 {!activeTemplate && (
                   <div className="flex items-center gap-4 mb-5">
-                    <div className="w-1 h-5 rounded-full" style={{ backgroundColor: color }} />
+                    <div className="w-0.5 h-5 rounded-full" style={{ backgroundColor: color }} />
                     <h2 className="font-display text-[13px] tracking-[0.2em] uppercase" style={{ color }}>
                       {TEMPLATE_LABELS[template]}
                     </h2>
@@ -152,18 +152,16 @@ export function ArticlesPage() {
                 )}
 
                 {view === "grid" ? (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 stagger-children">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 stagger-children">
                     {articles.map((a) => (
                       <Link
                         key={a.id}
                         to={`/articles/${encodeURIComponent(a.id)}`}
-                        className="group overflow-hidden rounded-lg transition-all duration-500
-                                   hover:shadow-[0_12px_40px_rgba(168,151,210,0.12)]
-                                   hover:-translate-y-0.5"
-                        style={{ borderLeft: `3px solid ${color}40` }}
+                        className="group overflow-hidden rounded-lg transition-colors duration-300
+                                   hover:bg-bg-hover/30"
                       >
                         {a.imageUrl && (
-                          <div className="aspect-[3/4] overflow-hidden bg-bg-tertiary/30">
+                          <div className="aspect-square overflow-hidden bg-bg-tertiary/30">
                             <img
                               src={a.imageUrl}
                               alt={a.title}
@@ -173,7 +171,13 @@ export function ArticlesPage() {
                           </div>
                         )}
                         <div className="px-4 py-3 bg-bg-secondary/40">
-                          <h3 className="font-display text-accent-emphasis text-[15px] group-hover:text-accent transition-colors duration-300">
+                          <span
+                            className="text-[9px] tracking-[0.14em] uppercase font-display"
+                            style={{ color }}
+                          >
+                            {TEMPLATE_LABELS[a.template]}
+                          </span>
+                          <h3 className="font-display text-accent-emphasis text-[15px] group-hover:text-accent transition-colors duration-300 mt-0.5">
                             {a.title}
                           </h3>
                           {a.tags.length > 0 && (
@@ -199,7 +203,7 @@ export function ArticlesPage() {
                         key={a.id}
                         to={`/articles/${encodeURIComponent(a.id)}`}
                         className="group flex items-center gap-3 px-4 py-2.5 rounded-lg
-                                   hover:bg-bg-hover/40 transition-all duration-200"
+                                   hover:bg-bg-hover/40 transition-colors duration-200"
                       >
                         <div className="w-1 h-4 rounded-full shrink-0 opacity-60" style={{ backgroundColor: color }} />
                         {a.imageUrl && (

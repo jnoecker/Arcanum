@@ -67,7 +67,8 @@ export function TimelinePage() {
 
   return (
     <div>
-      <h1 className="font-display text-accent text-2xl tracking-[0.18em] mb-12">Timeline</h1>
+      <h1 className="font-display text-accent text-2xl tracking-[0.18em] mb-3">Timeline</h1>
+      <p className="text-text-muted text-sm mb-12">The recorded history of this world, ordered by era and year.</p>
 
       <div className="space-y-14">
         {grouped.map(({ calendar, eraMap, events: sortedEvents }) => (
@@ -89,11 +90,11 @@ export function TimelinePage() {
                   return (
                     <div key={evt.id} className="relative flex items-start gap-4">
                       <div
-                        className={`absolute left-[-22px] top-3 -translate-x-1/2 rounded-full transition-all duration-300 ${IMPORTANCE_DOT[evt.importance]}`}
+                        className={`absolute left-[-22px] top-3 -translate-x-1/2 rounded-full transition-shadow duration-300 ${IMPORTANCE_DOT[evt.importance]}`}
                       />
 
                       <div
-                        className={`flex-1 border rounded-xl px-5 py-4 transition-all duration-300 ${IMPORTANCE_STYLES[evt.importance]}`}
+                        className={`flex-1 border rounded-xl px-5 py-4 transition-colors duration-300 ${IMPORTANCE_STYLES[evt.importance]}`}
                       >
                         <div className="flex items-baseline gap-2 mb-1.5">
                           <span className="text-text-muted text-xs font-mono tracking-wide">

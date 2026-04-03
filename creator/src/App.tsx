@@ -17,7 +17,7 @@ export function App() {
 
   return (
     <>
-      <Suspense fallback={<div className="flex h-screen items-center justify-center bg-bg-abyss text-text-muted">Opening the instrument...</div>}>
+      <Suspense fallback={<div className="flex h-screen flex-col items-center justify-center gap-4 bg-bg-abyss"><div className="h-10 w-10 rounded-full border-2 border-accent/30 border-t-accent animate-spin" /><p className="text-sm text-text-muted">Opening the instrument...</p></div>}>
         {project ? <AppShell /> : <WelcomeScreen onNewProject={() => setShowWizard(true)} />}
       </Suspense>
       <Suspense>{showWizard && <ProjectWizard onClose={() => setShowWizard(false)} />}</Suspense>

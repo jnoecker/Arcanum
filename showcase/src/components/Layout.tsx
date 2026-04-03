@@ -18,7 +18,7 @@ function NavItem({ to, label, onClick }: { to: string; label: string; onClick?: 
       end={to === "/"}
       onClick={onClick}
       className={({ isActive }) =>
-        `block px-3 py-2 sm:py-1.5 text-[13px] font-display tracking-[0.2em] uppercase transition-all duration-300 ${
+        `block px-3 py-2 sm:py-1.5 text-[13px] font-display tracking-[0.2em] uppercase transition-colors duration-300 ${
           isActive
             ? "text-accent"
             : "text-text-muted hover:text-text-primary"
@@ -37,6 +37,15 @@ export function Layout({ children }: { children: ReactNode }) {
   const footerText = data?.meta.showcase?.footerText ?? "Built with Ambon Arcanum";
   const [menuOpen, setMenuOpen] = useState(false);
   const [pageKey, setPageKey] = useState(location.pathname);
+  const [scrolled, setScrolled] = useState(false);
+
+  // Track scroll position for header background
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 40);
+    onScroll(); // check initial position
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   // Scroll to top and trigger page transition on route change
   useEffect(() => {
@@ -57,7 +66,11 @@ export function Layout({ children }: { children: ReactNode }) {
         Skip to content
       </a>
 
-      <header className="border-b border-border-muted/50 bg-bg-abyss/70 backdrop-blur-md sticky top-0 z-50">
+      <header className={`sticky top-0 z-50 transition-[background-color,border-color,box-shadow] duration-300 ${
+        scrolled
+          ? "bg-bg-abyss/85 backdrop-blur-md border-b border-border-muted/50 shadow-[0_4px_24px_rgba(8,10,18,0.3)]"
+          : "bg-transparent border-b border-transparent"
+      }`}>
         <div className="max-w-5xl mx-auto px-5 sm:px-8 py-4 flex items-center justify-between">
           <NavLink to="/" className="font-display text-accent text-lg tracking-[0.28em] uppercase hover:text-accent-emphasis transition-colors duration-300">
             {worldName}
@@ -107,10 +120,16 @@ export function Layout({ children }: { children: ReactNode }) {
         )}
       </header>
 
+      {/* Atmospheric glow */}
+      <div aria-hidden="true" className="pointer-events-none fixed inset-0 z-0">
+        <div className="absolute top-[-12rem] left-[-8rem] w-[36rem] h-[36rem] rounded-full bg-[radial-gradient(circle,rgba(168,151,210,0.10),transparent_65%)] blur-3xl" />
+        <div className="absolute bottom-[-16rem] right-[-10rem] w-[40rem] h-[40rem] rounded-full bg-[radial-gradient(circle,rgba(140,174,201,0.08),transparent_70%)] blur-3xl" />
+      </div>
+
       <main
         id="main-content"
         key={pageKey}
-        className="flex-1 max-w-5xl mx-auto px-5 sm:px-8 py-10 sm:py-14 w-full animate-[fadeInScale_350ms_cubic-bezier(0.16,1,0.3,1)_both]"
+        className="relative z-10 flex-1 max-w-5xl mx-auto px-5 sm:px-8 py-10 sm:py-14 w-full animate-[fadeIn_200ms_ease-out_both]"
       >
         {children}
       </main>

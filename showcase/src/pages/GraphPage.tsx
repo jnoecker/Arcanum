@@ -80,6 +80,7 @@ function GraphInner() {
   return (
     <div className="space-y-4">
       <h1 className="font-display text-accent text-2xl tracking-[0.18em]">Connections</h1>
+      <p className="text-text-muted text-sm -mt-2">How the people, places, and histories of this world connect.</p>
 
       {/* Filter toolbar */}
       <div className="flex flex-wrap items-center gap-4">

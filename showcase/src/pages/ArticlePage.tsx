@@ -63,7 +63,7 @@ function ConnectionsSection({
   if (relations.length === 0) return null;
 
   return (
-    <div className="rounded-xl overflow-hidden" style={{ borderTop: `2px solid ${color}40` }}>
+    <div className="rounded-xl overflow-hidden border-t-2 border-accent/25">
       <div className="px-5 py-3 bg-bg-tertiary/40">
         <h3 className="font-display text-[11px] tracking-[0.2em] uppercase" style={{ color }}>
           Connections
@@ -138,7 +138,7 @@ function RelationLink({ relation }: { relation: ResolvedRelation }) {
         <Link
           to={`/articles/${encodeURIComponent(relation.targetId)}`}
           className="text-sm px-2 py-0.5 rounded-md bg-accent/6 text-text-link hover:bg-accent/14
-                     hover:text-accent transition-all duration-200 truncate min-w-0"
+                     hover:text-accent transition-colors duration-200 truncate min-w-0"
         >
           {title}
         </Link>
@@ -180,7 +180,7 @@ function ArticleGallery({ images, title }: { images: string[]; title: string }) 
               onClick={() => setActiveIndex(i)}
               aria-label={i === 0 ? "Primary image" : `Gallery image ${i}`}
               aria-current={i === activeIndex ? "true" : undefined}
-              className={`h-12 w-12 shrink-0 overflow-hidden rounded-lg border-2 transition-all duration-200 ${
+              className={`h-12 w-12 shrink-0 overflow-hidden rounded-lg border-2 transition-[border-color,opacity,transform,box-shadow] duration-200 ${
                 i === activeIndex
                   ? "border-accent/70 scale-105 shadow-[0_0_12px_rgba(168,151,210,0.25)]"
                   : "border-white/10 opacity-60 hover:opacity-90 hover:border-white/25"
@@ -316,7 +316,7 @@ export function ArticlePage() {
       })()}
 
       {/* Header */}
-      <div className="mb-10" style={{ borderLeft: `3px solid ${color}50`, paddingLeft: 20 }}>
+      <div className="mb-10 pl-5">
         <div
           className="text-[11px] tracking-[0.18em] uppercase font-display mb-2"
           style={{ color }}
@@ -354,7 +354,7 @@ export function ArticlePage() {
               {siblings.prev ? (
                 <Link
                   to={`/articles/${encodeURIComponent(siblings.prev.id)}`}
-                  className="flex-1 group rounded-lg border border-border-muted/40 p-4 hover:border-accent/30 transition-all duration-300 text-left"
+                  className="flex-1 group rounded-lg border border-border-muted/40 p-4 hover:border-accent/30 transition-colors duration-300 text-left"
                 >
                   <div className="text-text-muted text-[11px] tracking-[0.1em] uppercase mb-1.5">&larr; Previous</div>
                   <div className="font-display text-sm text-text-primary group-hover:text-accent transition-colors duration-300 truncate">
@@ -365,7 +365,7 @@ export function ArticlePage() {
               {siblings.next ? (
                 <Link
                   to={`/articles/${encodeURIComponent(siblings.next.id)}`}
-                  className="flex-1 group rounded-lg border border-border-muted/40 p-4 hover:border-accent/30 transition-all duration-300 text-right"
+                  className="flex-1 group rounded-lg border border-border-muted/40 p-4 hover:border-accent/30 transition-colors duration-300 text-right"
                 >
                   <div className="text-text-muted text-[11px] tracking-[0.1em] uppercase mb-1.5">Next &rarr;</div>
                   <div className="font-display text-sm text-text-primary group-hover:text-accent transition-colors duration-300 truncate">
@@ -380,7 +380,7 @@ export function ArticlePage() {
         {/* Sidebar */}
         <aside className="lg:w-72 shrink-0 space-y-6">
           {fieldEntries.length > 0 && (
-            <div className="rounded-xl overflow-hidden" style={{ borderTop: `2px solid ${color}40` }}>
+            <div className="rounded-xl overflow-hidden border-t-2 border-accent/25">
               <div className="px-5 py-3 bg-bg-tertiary/40">
                 <h3 className="font-display text-[11px] tracking-[0.2em] uppercase" style={{ color }}>
                   Details

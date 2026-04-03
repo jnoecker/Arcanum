@@ -65,15 +65,19 @@ npx wrangler pages deploy dist --project-name=ambon-showcase
   - `serverStore` -- server process state, logs
   - `validationStore` -- computed validation errors
   - `assetStore` -- image generation, asset manifest, R2 sync, settings
-  - `loreStore` -- world lore: articles, maps, calendars, timeline events, color labels
+  - `loreStore` -- world lore: articles, maps, calendars, timeline events, color labels, undo/redo
+  - `vibeStore` -- zone vibe/context metadata for art generation
+  - `adminStore` -- admin panel state, live server connection, player/zone/mob/quest data
+  - `gitStore` -- git repository status, commit history, branch management
+  - `spriteDefinitionStore` -- player sprite definitions: tiers, achievements, staff categories, variants
 - **Types**: `src/types/` mirrors Kotlin DTOs from `reference/world-yaml-dtos/`
 - **YAML I/O**: Uses `yaml` package CST mode for format-preserving round-trip. See `src/lib/loader.ts`, `src/lib/saveZone.ts`, `src/lib/saveConfig.ts`.
 - **Validation**: Client-side validation in `src/lib/validateZone.ts` and `src/lib/validateConfig.ts`. Must mirror rules from `reference/world-loader/WorldLoader.kt`.
 - **Graph**: Zone maps use XY Flow (React Flow) with dagre layout. Custom `RoomNode` with background images, entity sprites, and visible exit handles. See `src/components/zone/`.
-- **Art Generation**: Two art styles -- "arcanum" (baroque cosmic gold-indigo) and "gentle_magic" (soft dreamlike lavender). Templates in `src/lib/arcanumPrompts.ts`. Supports room, mob, item, and UI asset types.
+- **Art Generation**: Two art styles -- "arcanum" (baroque cosmic gold-indigo) and "gentle_magic" (soft dreamlike lavender). Templates in `src/lib/arcanumPrompts.ts`. Hardcoded style suffixes appended to every prompt after LLM enhancement for consistency. Generation dimensions capped at 1024px (resized to final target). Supports room, mob, item, portrait, ability icon, and 15+ UI asset types. Class color palettes injected for ability/status icon generation.
 - **Global Assets**: Key-value pairs in `application.yaml` under `ambonmud.globalAssets` for app-wide generated art (e.g. `compass_rose: abc123.png`).
-- **Decorative Backgrounds**: UI panels use themed background images from `src/assets/` at low opacity (10-18%) with `mix-blend-screen` or gradient overlays.
-- **Lore System**: Article-based world-building with 11 templates, TipTap rich text editor, @mentions, interactive maps (Leaflet CRS.Simple), timeline, and relationship graph. Types in `src/types/lore.ts`, store in `src/stores/loreStore.ts`, persistence in `src/lib/lorePersistence.ts`.
+- **Decorative Backgrounds**: Config and lore panel hosts use `config-bg.png` at 10% opacity with `mix-blend-soft-light`. Sidebar uses gradient glow only (no background image).
+- **Lore System**: Article-based world-building with 11 templates, TipTap rich text editor, @mentions, interactive maps (Leaflet CRS.Simple), timeline with eras, relationship graph, and article gallery (multiple images per article). Full undo/redo (50-entry history). AI-powered tools: timeline inference from article content, relationship inference (deterministic + field-based), gap analysis, consistency auditing, @mention suggestions. Bulk operations: multi-select, retag, reparent, delete, draft toggle. Full-text search across article content. Obsidian/Markdown import wizard. Lore Bible export to Markdown. Command palette (Ctrl+K). Types in `src/types/lore.ts`, store in `src/stores/loreStore.ts`, persistence in `src/lib/lorePersistence.ts`.
 - **Showcase Export**: `src/lib/exportShowcase.ts` converts `WorldLore` → `ShowcaseData` (TipTap JSON → HTML, relation merging, image URL resolution). Toolbar "Publish Lore" button deploys JSON to R2 via `deploy_showcase_to_r2`.
 
 ### Backend (Rust)
@@ -83,10 +87,17 @@ npx wrangler pages deploy dist --project-name=ambon-showcase
 - `settings.rs` -- Settings persistence (API keys, R2 credentials)
 - `deepinfra.rs` -- DeepInfra API client for AI image generation
 - `runware.rs` -- Runware API client (alternative image provider)
+- `openai_images.rs` -- OpenAI image generation provider (GPT Image)
+- `generation.rs` -- Image generation utilities (dimension capping to 1024px, format inference, resize pipeline)
 - `assets.rs` -- Asset manifest (JSON) management, content-addressed storage (SHA256 hash filenames)
 - `r2.rs` -- Cloudflare R2 sync with AWS Signature V4 signing (no SDK dependency), showcase deploy
 - `vibes.rs` -- Zone vibe/context metadata for LLM-informed art generation
-- `llm.rs` -- LLM integration for prompt enhancement (Anthropic, OpenRouter)
+- `llm.rs` -- LLM integration for prompt enhancement and vision analysis dispatch (Anthropic, OpenRouter, DeepInfra)
+- `anthropic.rs` -- Anthropic Claude API client (text completion + vision)
+- `openrouter.rs` -- OpenRouter API client for LLM completion
+- `admin.rs` -- HTTP client for remote AmbonMUD admin API (players, zones, mobs, quests, achievements)
+- `git.rs` -- Git repository operations (init, status, commit, push, pull, branch management, PR creation)
+- `sketch.rs` -- Sketch-to-image analysis via LLM for art enhancement
 
 ### Showcase (showcase/)
 
@@ -94,6 +105,7 @@ npx wrangler pages deploy dist --project-name=ambon-showcase
 - Reads `showcase.json` from R2 at runtime (`VITE_SHOWCASE_URL` env var in production, `/data/showcase.json` locally)
 - Types in `src/types/showcase.ts` mirror `ShowcaseData` from `creator/src/lib/exportShowcase.ts`
 - Pages: Home, Codex (ArticlesPage), Article detail (ArticlePage), Maps, Timeline, Connections (GraphPage), 404
+- Article detail includes image gallery (crossfade + thumbnail selector) and grouped bidirectional relationship sidebar
 - Map pins use Leaflet CRS.Simple coordinates: `position[0]` = lat (Y from bottom), `position[1]` = lng (X). Showcase converts to pixels: `px_x = lng * scale`, `px_y = (height - lat) * scale`
 - `wrangler.toml` for Cloudflare Pages deployment; `_redirects` for SPA routing
 
@@ -156,3 +168,9 @@ Images are served to the frontend as base64 data URLs via the `read_image_data_u
 - **Map pin coordinates**: Creator stores pins as `[lat, lng]` in Leaflet CRS.Simple where `lat` = Y from bottom edge, `lng` = X from left. When rendering outside Leaflet (e.g. showcase), convert: `pixel_x = lng`, `pixel_y = map_height - lat`.
 - **Showcase data flow**: "Publish Lore" in Toolbar → `exportShowcaseData()` → `deploy_showcase_to_r2` Rust command → R2 at `showcase/showcase.json`. The showcase SPA fetches this at runtime. No rebuild needed for content updates.
 - **Showcase images**: Article/map images reference R2 URLs via `imageBaseUrl` from creator settings (`r2_custom_domain`). Images must be synced to R2 before they appear on the showcase site.
+- **Lore undo/redo**: All lore mutations must call `snapshotLore(s)` in their `set()` call. Missing it means the operation can't be undone. The zone store uses zundo (different pattern).
+- **Style suffixes**: After LLM prompt enhancement, the style suffix (`GENTLE_MAGIC_SUFFIX` or `ARCANUM_SUFFIX`) is appended verbatim to ensure consistent aesthetics. Don't include the suffix in the LLM system prompt — it's added after.
+- **Generation dimensions**: Image generation APIs receive dimensions capped at 1024px (via `generation::cap_generation_dims`). The backend resizes to the final target dimensions after generation. Don't request >1024px from FLUX models.
+- **Command palette**: Ctrl+K opens the global command palette (not sidebar search). The old sidebar search focus handler was removed.
+- **Article gallery**: Articles have both `image?: string` (primary) and `gallery?: string[]` (additional). Export resolves both to `imageUrl` and `galleryUrls` in ShowcaseData.
+- **Vision API**: `llm_complete_with_vision` requires an Anthropic API key. Used for map analysis. The data URL must be a valid `data:image/...;base64,...` format.

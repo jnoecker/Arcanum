@@ -27,6 +27,9 @@ Point it at an AmbonMUD project directory — legacy (monolithic `application.ya
 - **Asset gallery** with lazy-loaded thumbnails, filtering by type/zone, curated vs all views
 - **Cloudflare R2 sync** -- Content-addressed uploads with SHA-256 dedup, custom domain CDN
 - **Batch art generation** for zones with entity-specific prompt templates
+- **Style enforcement** -- Hardcoded style suffixes appended after LLM enhancement for guaranteed consistency
+- **Smart dimensions** -- Generation capped at 1024px for optimal FLUX quality, resized to final target
+- **Class color palettes** -- Per-class visual guidance for ability/status icon generation
 - **Portrait and ability icon studios** -- Race/class portraits and ability/status-effect icons
 - **Music and video generation** -- Audio and cinematic asset creation
 
@@ -37,20 +40,25 @@ Point it at an AmbonMUD project directory — legacy (monolithic `application.ya
 - **Server status indicator** in toolbar (hidden for standalone projects)
 
 ### Lore & World Building
-- **Article system** -- 11 article templates (character, location, organization, species, event, language, profession, ability, item, world_setting, freeform) with rich text editor (TipTap), @mentions, and template-specific fields
-- **Interactive maps** -- Upload map images, place colored pins linked to articles, duplicate maps to create themed variants, replace images while preserving pins
-- **Timeline** -- Calendar systems with eras, timeline events with importance levels (minor/major/legendary), linked to articles
-- **Relationship graph** -- React Flow visualization of article connections (explicit relations + @mention extraction), dagre auto-layout
+- **Article system** -- 11 article templates (character, location, organization, species, event, language, profession, ability, item, world_setting, freeform) with rich text editor (TipTap), @mentions, template-specific fields, and article gallery (multiple images per article)
+- **Interactive maps** -- Upload map images, place colored pins linked to articles, duplicate maps to create themed variants, AI-powered map analysis via Claude Vision (identifies features and suggests pins)
+- **Timeline** -- Calendar systems with eras, timeline events with importance levels (minor/major/legendary), linked to articles. AI timeline inference extracts temporal references from article content
+- **Relationship graph** -- React Flow visualization of article connections (explicit relations + @mention extraction), dagre auto-layout. Deterministic relationship inference from structured fields (affiliation, allies, rivals, leader, parent hierarchy)
 - **Color labels** -- Reusable named color palette for map pins and categorization
-- **Lore showcase** -- One-click publish to a public-facing website (see [Showcase](#showcase) below)
+- **Quality tools** -- Consistency auditor (orphaned refs, duplicate titles, timeline mismatches), gap analysis (missing templates, leaderless factions, isolated locations), smart @mention suggestions (finds plain-text references that should be linked)
+- **Bulk operations** -- Multi-select articles via Ctrl+Click, batch retag, reparent, draft/publish toggle, bulk delete with undo support
+- **Import/Export** -- Obsidian/Markdown vault import wizard (front-matter mapping, wiki-link→@mention conversion), Lore Bible Markdown export (structured document with TOC, timeline, relations)
+- **Lore showcase** -- One-click publish to a public-facing website with image gallery and bidirectional relationship sidebar (see [Showcase](#showcase) below)
 
 ### Developer Experience
-- **Undo/redo** via zundo (per-zone, max 100 history entries)
+- **Undo/redo** -- Zone undo via zundo (max 100 entries), lore undo via history stacks (max 50 entries). Context-aware Ctrl+Z/Ctrl+Shift+Z
+- **Command palette** (Ctrl+K) -- Quick jump to any article, panel, or zone with fuzzy search
+- **Full-text search** -- Search across article content, fields, tags, and private notes with contextual snippets
 - **Diff view before save** -- See exactly what YAML changes will be written
 - **YAML preview** toggle alongside form editors
-- **Global search** across all loaded zones (Ctrl+K)
+- **Article duplication** -- Clone articles with all fields, content, relations, and tags
 - **Bulk rename/refactor** -- Rename entity IDs with cascading updates across references
-- **Keyboard shortcuts** -- Ctrl+S save, Ctrl+Z undo, Ctrl+Tab cycle, ? help
+- **Keyboard shortcuts** -- Ctrl+S save, Ctrl+Z undo, Ctrl+K command palette, ? help
 - **Validation engine** -- Zone-level, cross-zone, and config validation with inline errors
 - **Zone vibe system** -- LLM-generated context metadata for art-consistent generation
 
@@ -97,7 +105,7 @@ npm run build        # Production build (fetches from R2 via VITE_SHOWCASE_URL)
 | YAML | `yaml` package (CST mode) |
 | Backend | Rust (Tauri commands) |
 | Asset CDN | Cloudflare R2 (S3-compatible, AWS SigV4 signing) |
-| Image generation | DeepInfra API, Runware API |
+| Image generation | DeepInfra API, Runware API, OpenAI API |
 | LLM integration | Anthropic Claude, OpenRouter |
 | Testing | Vitest |
 | Fonts | Cinzel, Crimson Pro, JetBrains Mono (via Fontsource) |
@@ -159,6 +167,11 @@ AmbonArcanum/
         anthropic.rs          #   Anthropic Claude API client
         openrouter.rs         #   OpenRouter API client
         vibes.rs              #   Zone vibe/context metadata for art generation
+        generation.rs         #   Image generation utilities (dimension cap, format inference)
+        admin.rs              #   Remote admin API client (player/zone/mob management)
+        git.rs                #   Git operations (init, commit, push, pull, branch, PR)
+        openai_images.rs      #   OpenAI image generation provider
+        sketch.rs             #   Sketch analysis for image enhancement
         server.rs             #   MUD server process management
         arcanum_meta.rs       #   Build metadata and version info
   showcase/                   # Public lore showcase website (Vite + React SPA)
@@ -192,8 +205,11 @@ AmbonArcanum/
 | `serverStore` | Server process state, logs, output streaming |
 | `validationStore` | Computed validation errors for zones and config, panel visibility |
 | `assetStore` | Asset manifest, image directory, generation UI state, R2 sync, settings |
-| `loreStore` | World lore: articles, maps, calendars, timeline events, color labels |
+| `loreStore` | World lore: articles, maps, calendars, timeline events, color labels, undo/redo (50-entry history) |
 | `vibeStore` | Zone vibe/context metadata for LLM-informed art generation |
+| `adminStore` | Admin panel state, live server connection, player/zone/mob/quest/achievement data |
+| `gitStore` | Git repository status, commit history, branch management |
+| `spriteDefinitionStore` | Player sprite definitions: tiers, achievements, staff categories, variants |
 
 ## Design System
 

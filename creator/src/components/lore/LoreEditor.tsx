@@ -364,10 +364,10 @@ export function LoreEditor({
             <button
               onClick={handleContinue}
               disabled={loading !== null}
-              title="Continue writing from where you left off"
+              title="Expand — AI writes more from where you left off"
               className="rounded px-2 py-0.5 text-2xs text-accent transition-colors hover:bg-accent/10 disabled:opacity-50"
             >
-              {loading === "continue" ? "Writing..." : "Continue"}
+              {loading === "continue" ? "Expanding..." : "Expand"}
             </button>
           )}
           {showEnhance && (

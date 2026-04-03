@@ -1,4 +1,5 @@
 import { useFocusTrap } from "@/lib/useFocusTrap";
+import { ActionButton, DialogShell } from "@/components/ui/FormWidgets";
 
 interface ErrorDialogProps {
   title: string;
@@ -11,37 +12,33 @@ export function ErrorDialog({ title, messages, onClose, onRetry }: ErrorDialogPr
   const trapRef = useFocusTrap<HTMLDivElement>(onClose);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-      <div ref={trapRef} role="alertdialog" aria-modal="true" aria-labelledby="error-dialog-title" className="mx-4 max-w-lg rounded-lg border border-border-default bg-bg-secondary shadow-xl">
-        <div className="border-b border-border-default px-5 py-3">
-          <h2 id="error-dialog-title" className="font-display text-sm tracking-wide text-status-error">{title}</h2>
-        </div>
-        <div className="px-5 py-4">
-          <ul className="flex flex-col gap-2">
-            {messages.map((msg, i) => (
-              <li key={i} className="text-sm text-text-secondary">
-                {msg}
-              </li>
-            ))}
-          </ul>
-        </div>
-        <div className="flex justify-end gap-2 border-t border-border-default px-5 py-3">
+    <DialogShell
+      dialogRef={trapRef}
+      titleId="error-dialog-title"
+      title={title}
+      role="alertdialog"
+      widthClassName="max-w-lg"
+      onClose={onClose}
+      footer={
+        <div className="flex justify-end gap-2">
           {onRetry && (
-            <button
-              onClick={() => { onClose(); onRetry(); }}
-              className="rounded border border-border-active bg-gradient-active px-4 py-1.5 text-xs font-medium text-text-primary transition-colors hover:bg-gradient-active-strong"
-            >
+            <ActionButton variant="primary" size="sm" onClick={() => { onClose(); onRetry(); }}>
               Try Again
-            </button>
+            </ActionButton>
           )}
-          <button
-            onClick={onClose}
-            className="rounded bg-bg-elevated px-4 py-1.5 text-xs font-medium text-text-primary transition-colors hover:bg-bg-hover"
-          >
+          <ActionButton variant="ghost" size="sm" onClick={onClose}>
             Dismiss
-          </button>
+          </ActionButton>
         </div>
-      </div>
-    </div>
+      }
+    >
+      <ul className="flex flex-col gap-2">
+        {messages.map((msg, i) => (
+          <li key={i} className="text-sm text-text-secondary">
+            {msg}
+          </li>
+        ))}
+      </ul>
+    </DialogShell>
   );
 }

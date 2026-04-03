@@ -100,7 +100,7 @@ export function DialogShell({
                   size="icon"
                   onClick={onClose}
                   aria-label="Close dialog"
-                  className="font-sans text-base"
+                  className="text-base"
                 >
                   ✕
                 </ActionButton>

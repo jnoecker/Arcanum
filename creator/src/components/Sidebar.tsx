@@ -138,7 +138,7 @@ function ZoneTree({
           onClick={() => setExpanded((v) => !v)}
           aria-expanded={expanded}
           aria-label={expanded ? "Collapse zone" : "Expand zone"}
-          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-2xs text-text-muted transition hover:bg-white/8 hover:text-text-primary"
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-2xs text-text-muted transition hover:bg-white/8 hover:text-text-primary"
         >
           {expanded ? "\u25BE" : "\u25B8"}
         </button>
@@ -156,7 +156,7 @@ function ZoneTree({
         </button>
         <button
           onClick={() => onDelete(zoneId)}
-          className="rounded-full border border-white/8 px-2 py-1 text-2xs text-text-muted opacity-0 transition hover:border-status-danger/40 hover:text-status-danger focus:opacity-100 group-hover/zone:opacity-100 group-focus-within/zone:opacity-100"
+          className="rounded-full border border-white/8 px-2.5 py-1.5 text-2xs text-text-muted opacity-0 transition hover:border-status-danger/40 hover:text-status-danger focus:opacity-100 group-hover/zone:opacity-100 group-focus-within/zone:opacity-100"
           title="Delete zone"
           aria-label="Delete zone"
         >
@@ -261,7 +261,7 @@ function PanelButtonGrid({
                     onClick={() => openTab(tab)}
                     aria-current={isActive ? "page" : undefined}
                     title={panelDef?.description}
-                    className={`focus-ring rounded-full border px-2.5 py-1.5 text-[11px] font-medium leading-none transition ${
+                    className={`focus-ring rounded-full border px-2.5 py-2 text-[11px] font-medium leading-tight transition ${
                       isActive
                         ? "border-[var(--border-glow-strong)] bg-[linear-gradient(135deg,rgba(168,151,210,0.25),rgba(140,174,201,0.15))] text-text-primary shadow-glow-sm"
                         : "border-white/8 bg-white/[0.04] text-text-secondary hover:border-white/14 hover:bg-white/8 hover:text-text-primary"
@@ -413,7 +413,7 @@ export function Sidebar({ workspace }: { workspace: Workspace }) {
                     key={entry.id}
                     onClick={() => openTab({ id: entry.id, kind: entry.kind, label: entry.label })}
                     title={entry.description}
-                    className={`focus-ring rounded-full border px-2.5 py-1.5 text-[11px] font-medium leading-none transition ${
+                    className={`focus-ring rounded-full border px-2.5 py-2 text-[11px] font-medium leading-tight transition ${
                       activeTabId === entry.id
                         ? "border-[var(--border-glow-strong)] bg-[linear-gradient(135deg,rgba(168,151,210,0.25),rgba(140,174,201,0.15))] text-text-primary shadow-glow-sm"
                         : "border-white/8 bg-white/[0.04] text-text-secondary hover:border-white/14 hover:bg-white/8 hover:text-text-primary"
@@ -452,7 +452,7 @@ export function Sidebar({ workspace }: { workspace: Workspace }) {
             <button
               aria-label="Clear search"
               onClick={clearQuery}
-              className="focus-ring absolute right-3 top-1/2 -translate-y-1/2 rounded text-sm text-text-muted hover:text-text-primary"
+              className="focus-ring absolute right-3 top-1/2 -translate-y-1/2 rounded p-1 text-sm text-text-muted hover:text-text-primary"
             >
               ✕
             </button>

@@ -1,4 +1,5 @@
 import { useFocusTrap } from "@/lib/useFocusTrap";
+import { ActionButton, DialogShell } from "@/components/ui/FormWidgets";
 
 interface ConfirmDialogProps {
   title: string;
@@ -22,35 +23,28 @@ export function ConfirmDialog({
   const trapRef = useFocusTrap<HTMLDivElement>(onCancel);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-      <div ref={trapRef} role="dialog" aria-modal="true" aria-labelledby="confirm-dialog-title" className="mx-4 max-w-md rounded-lg border border-border-default bg-bg-secondary shadow-xl">
-        <div className="border-b border-border-default px-5 py-3">
-          <h2 id="confirm-dialog-title" className="font-display text-sm tracking-wide text-text-primary">
-            {title}
-          </h2>
-        </div>
-        <div className="px-5 py-4">
-          <p className="text-sm text-text-secondary">{message}</p>
-        </div>
-        <div className="flex justify-end gap-2 border-t border-border-default px-5 py-3">
-          <button
-            onClick={onCancel}
-            className="rounded bg-bg-elevated px-4 py-1.5 text-xs font-medium text-text-primary transition-colors hover:bg-bg-hover"
-          >
+    <DialogShell
+      dialogRef={trapRef}
+      titleId="confirm-dialog-title"
+      title={title}
+      widthClassName="max-w-md"
+      onClose={onCancel}
+      footer={
+        <div className="flex justify-end gap-2">
+          <ActionButton variant="ghost" size="sm" onClick={onCancel}>
             {cancelLabel}
-          </button>
-          <button
+          </ActionButton>
+          <ActionButton
+            variant={destructive ? "danger" : "primary"}
+            size="sm"
             onClick={onConfirm}
-            className={`rounded px-4 py-1.5 text-xs font-medium transition-colors ${
-              destructive
-                ? "bg-status-danger/20 text-status-danger hover:bg-status-danger/30"
-                : "bg-accent/20 text-accent hover:bg-accent/30"
-            }`}
           >
             {confirmLabel}
-          </button>
+          </ActionButton>
         </div>
-      </div>
-    </div>
+      }
+    >
+      <p className="text-sm text-text-secondary">{message}</p>
+    </DialogShell>
   );
 }

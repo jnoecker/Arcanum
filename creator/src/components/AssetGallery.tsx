@@ -303,7 +303,7 @@ export function AssetGallery({ onClose }: { onClose: () => void }) {
                 <select
                   value={syncScope}
                   onChange={(event) => setSyncScope(event.target.value as SyncScope)}
-                  className="rounded-full border border-border-default bg-bg-primary px-3 py-1.5 text-2xs text-text-secondary outline-none"
+                  className="rounded-full border border-border-default bg-bg-primary px-3 py-1.5 text-2xs text-text-secondary outline-none focus-visible:ring-2 focus-visible:ring-border-active"
                 >
                   <option value="approved">Sync curated</option>
                   <option value="all">Sync everything</option>

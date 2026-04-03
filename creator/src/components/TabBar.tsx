@@ -23,6 +23,12 @@ export function TabBar({ workspace }: { workspace: Workspace }) {
 
   useEffect(() => {
     checkOverflow();
+    const el = scrollRef.current;
+    if (el && typeof ResizeObserver !== "undefined") {
+      const ro = new ResizeObserver(checkOverflow);
+      ro.observe(el);
+      return () => ro.disconnect();
+    }
     window.addEventListener("resize", checkOverflow);
     return () => window.removeEventListener("resize", checkOverflow);
   }, [checkOverflow, tabs.length]);

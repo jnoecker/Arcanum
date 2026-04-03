@@ -63,7 +63,7 @@ export function MapEnhancer({
           rect.x, rect.y, rect.w, rect.h,
         );
         // Draw crop border
-        ctx.strokeStyle = "#a897d2";
+        ctx.strokeStyle = "#a897d2"; // mirrors --color-accent
         ctx.lineWidth = 2;
         ctx.setLineDash([6, 3]);
         ctx.strokeRect(rect.x, rect.y, rect.w, rect.h);

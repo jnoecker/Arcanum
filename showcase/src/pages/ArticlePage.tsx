@@ -110,7 +110,7 @@ function ConnectionsSection({
         })}
 
         <Link
-          to="/connections"
+          to="/graph"
           className="mt-3 block text-center text-[11px] text-text-link hover:text-accent transition-colors duration-200"
         >
           See all connections &rarr;

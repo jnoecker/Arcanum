@@ -289,7 +289,7 @@ export function MediaStudio({ zoneId, world, onWorldChange }: MediaStudioProps) 
               <select
                 value={selectedRoomId ?? ""}
                 onChange={(event) => setSelectedRoomId(event.target.value || null)}
-                className="min-w-[14rem] rounded-full border border-white/12 bg-white/8 px-4 py-2 text-xs text-text-primary outline-none"
+                className="min-w-[14rem] rounded-full border border-white/12 bg-white/8 px-4 py-2 text-xs text-text-primary outline-none focus-visible:ring-2 focus-visible:ring-border-active"
               >
                 {roomEntries.map(([roomId, room]) => (
                   <option key={roomId} value={roomId}>

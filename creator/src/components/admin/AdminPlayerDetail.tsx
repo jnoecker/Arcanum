@@ -236,7 +236,7 @@ function StaffToggleSection({ playerName, isStaff }: { playerName: string; isSta
           <button
             onClick={handleClick}
             disabled={loading}
-            className={`shrink-0 rounded-xl border px-4 py-1.5 text-xs font-medium transition-all duration-200 focus-visible:ring-2 focus-visible:ring-border-active focus-visible:outline-none disabled:opacity-40 ${
+            className={`shrink-0 rounded-xl border px-4 py-1.5 text-xs font-medium transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-border-active focus-visible:outline-none disabled:opacity-40 ${
               confirming
                 ? "border-status-warning/50 bg-status-warning/15 text-status-warning"
                 : isStaff

@@ -1,13 +1,15 @@
+import { lazy, Suspense } from "react";
 import { Routes, Route } from "react-router-dom";
 import { useShowcase } from "@/lib/DataContext";
 import { Layout } from "@/components/Layout";
-import { HomePage } from "@/pages/HomePage";
-import { ArticlesPage } from "@/pages/ArticlesPage";
-import { ArticlePage } from "@/pages/ArticlePage";
-import { MapsPage } from "@/pages/MapsPage";
-import { TimelinePage } from "@/pages/TimelinePage";
-import { GraphPage } from "@/pages/GraphPage";
-import { NotFoundPage } from "@/pages/NotFoundPage";
+
+const HomePage = lazy(() => import("@/pages/HomePage").then(m => ({ default: m.HomePage })));
+const ArticlesPage = lazy(() => import("@/pages/ArticlesPage").then(m => ({ default: m.ArticlesPage })));
+const ArticlePage = lazy(() => import("@/pages/ArticlePage").then(m => ({ default: m.ArticlePage })));
+const MapsPage = lazy(() => import("@/pages/MapsPage").then(m => ({ default: m.MapsPage })));
+const TimelinePage = lazy(() => import("@/pages/TimelinePage").then(m => ({ default: m.TimelinePage })));
+const GraphPage = lazy(() => import("@/pages/GraphPage").then(m => ({ default: m.GraphPage })));
+const NotFoundPage = lazy(() => import("@/pages/NotFoundPage").then(m => ({ default: m.NotFoundPage })));
 
 export function App() {
   const { loading, error } = useShowcase();
@@ -38,16 +40,18 @@ export function App() {
 
   return (
     <Layout>
-      <Routes>
-        <Route path="/" element={<HomePage />} />
-        <Route path="/articles" element={<ArticlesPage />} />
-        <Route path="/articles/:id" element={<ArticlePage />} />
-        <Route path="/maps" element={<MapsPage />} />
-        <Route path="/maps/:id" element={<MapsPage />} />
-        <Route path="/timeline" element={<TimelinePage />} />
-        <Route path="/graph" element={<GraphPage />} />
-        <Route path="*" element={<NotFoundPage />} />
-      </Routes>
+      <Suspense fallback={null}>
+        <Routes>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/articles" element={<ArticlesPage />} />
+          <Route path="/articles/:id" element={<ArticlePage />} />
+          <Route path="/maps" element={<MapsPage />} />
+          <Route path="/maps/:id" element={<MapsPage />} />
+          <Route path="/timeline" element={<TimelinePage />} />
+          <Route path="/graph" element={<GraphPage />} />
+          <Route path="*" element={<NotFoundPage />} />
+        </Routes>
+      </Suspense>
     </Layout>
   );
 }

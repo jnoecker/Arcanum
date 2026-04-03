@@ -6,10 +6,10 @@ const ShopRow = memo(function ShopRow({ shop }: { shop: ShopEntry }) {
   const [expanded, setExpanded] = useState(false);
 
   return (
-    <div className="rounded-2xl border border-white/8 bg-white/4 transition-all duration-200">
+    <div className="rounded-2xl border border-white/8 bg-white/4 transition-colors duration-200">
       <button
         onClick={() => setExpanded(!expanded)}
-        className="flex w-full items-center gap-3 px-4 py-3 text-left transition-all duration-200 hover:bg-accent/[0.04] focus-visible:ring-2 focus-visible:ring-border-active focus-visible:outline-none rounded-2xl"
+        className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors duration-200 hover:bg-accent/[0.04] focus-visible:ring-2 focus-visible:ring-border-active focus-visible:outline-none rounded-2xl"
       >
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">

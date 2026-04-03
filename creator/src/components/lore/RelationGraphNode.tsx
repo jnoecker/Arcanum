@@ -1,19 +1,19 @@
 import { Handle, Position, type NodeProps } from "@xyflow/react";
 import type { ArticleTemplate } from "@/types/lore";
 
-// Colors mirror CSS custom properties in index.css (--color-template-*)
+// Use CSS custom properties defined in index.css (--color-template-*)
 const TEMPLATE_COLORS: Record<ArticleTemplate, string> = {
-  world_setting: "#a897d2",
-  character: "#a897d2",
-  location: "#8caec9",
-  organization: "#bea873",
-  item: "#a3c48e",
-  species: "#c4956a",
-  event: "#bea873",
-  language: "#95a0bf",
-  profession: "#d4c8a0",
-  ability: "#b88faa",
-  freeform: "#95a0bf",
+  world_setting: "var(--color-template-world)",
+  character: "var(--color-template-character)",
+  location: "var(--color-template-location)",
+  organization: "var(--color-template-organization)",
+  item: "var(--color-template-item)",
+  species: "var(--color-template-species)",
+  event: "var(--color-template-event)",
+  language: "var(--color-template-language)",
+  profession: "var(--color-template-profession)",
+  ability: "var(--color-template-ability)",
+  freeform: "var(--color-template-freeform)",
 };
 
 const TEMPLATE_LABELS: Record<ArticleTemplate, string> = {
@@ -38,7 +38,7 @@ interface RelationNodeData {
 
 export function RelationGraphNode({ data }: NodeProps) {
   const d = data as RelationNodeData;
-  const color = TEMPLATE_COLORS[d.template] ?? "#95a0bf";
+  const color = TEMPLATE_COLORS[d.template] ?? "var(--color-template-freeform)";
   const icon = TEMPLATE_LABELS[d.template] ?? "?";
 
   return (
@@ -47,8 +47,8 @@ export function RelationGraphNode({ data }: NodeProps) {
       <div
         className="flex items-center gap-2.5 rounded-xl border px-3.5 py-2.5 shadow-md"
         style={{
-          borderColor: `${color}50`,
-          background: `linear-gradient(135deg, ${color}20, ${color}10)`,
+          borderColor: `color-mix(in srgb, ${color} 31%, transparent)`,
+          background: `linear-gradient(135deg, color-mix(in srgb, ${color} 13%, transparent), color-mix(in srgb, ${color} 6%, transparent))`,
           minWidth: 140,
           maxWidth: 220,
           backdropFilter: "blur(8px)",
@@ -56,7 +56,7 @@ export function RelationGraphNode({ data }: NodeProps) {
       >
         <span
           className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold"
-          style={{ backgroundColor: `${color}40`, color }}
+          style={{ backgroundColor: `color-mix(in srgb, ${color} 25%, transparent)`, color }}
         >
           {icon}
         </span>

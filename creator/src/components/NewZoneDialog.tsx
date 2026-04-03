@@ -96,7 +96,7 @@ export function NewZoneDialog({ onClose }: NewZoneDialogProps) {
               onChange={(e) => setZoneId(e.target.value)}
               placeholder="e.g. dark_forest"
               autoFocus
-              className="h-8 w-full rounded border border-border-default bg-bg-primary px-2 text-xs text-text-primary outline-none placeholder:text-text-muted focus:border-accent"
+              className="h-8 w-full rounded border border-border-default bg-bg-primary px-2 text-xs text-text-primary outline-none placeholder:text-text-muted focus:border-accent focus-visible:ring-2 focus-visible:ring-border-active"
             />
             {zoneId && !idValid && (
               <p className="mt-1 text-2xs text-status-error">
@@ -120,7 +120,7 @@ export function NewZoneDialog({ onClose }: NewZoneDialogProps) {
               value={startRoom}
               onChange={(e) => setStartRoom(e.target.value)}
               placeholder="entrance"
-              className="h-8 w-full rounded border border-border-default bg-bg-primary px-2 text-xs text-text-primary outline-none placeholder:text-text-muted focus:border-accent"
+              className="h-8 w-full rounded border border-border-default bg-bg-primary px-2 text-xs text-text-primary outline-none placeholder:text-text-muted focus:border-accent focus-visible:ring-2 focus-visible:ring-border-active"
             />
           </div>
 
@@ -134,7 +134,7 @@ export function NewZoneDialog({ onClose }: NewZoneDialogProps) {
               value={roomTitle}
               onChange={(e) => setRoomTitle(e.target.value)}
               placeholder="Entrance"
-              className="h-8 w-full rounded border border-border-default bg-bg-primary px-2 text-xs text-text-primary outline-none placeholder:text-text-muted focus:border-accent"
+              className="h-8 w-full rounded border border-border-default bg-bg-primary px-2 text-xs text-text-primary outline-none placeholder:text-text-muted focus:border-accent focus-visible:ring-2 focus-visible:ring-border-active"
             />
           </div>
 

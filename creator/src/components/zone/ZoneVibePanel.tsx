@@ -275,7 +275,7 @@ export function ZoneVibePanel({ zoneId, world, onWorldChange }: ZoneVibePanelPro
         onChange={(e) => setDraft(e.target.value)}
         rows={4}
         placeholder="Atmospheric description for this zone — injected into all entity and fallback prompts for visual coherence..."
-        className="w-full resize-y rounded border border-border-default bg-bg-primary px-2 py-1 font-mono text-2xs leading-relaxed text-text-secondary placeholder:text-text-muted outline-none focus:border-accent/50"
+        className="w-full resize-y rounded border border-border-default bg-bg-primary px-2 py-1 font-mono text-2xs leading-relaxed text-text-secondary placeholder:text-text-muted outline-none focus:border-accent/50 focus-visible:ring-2 focus-visible:ring-border-active"
       />
 
       <div className="flex flex-wrap gap-1">

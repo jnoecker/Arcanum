@@ -523,7 +523,7 @@ export function AbilityStudio() {
                   setPromptGeneratedByLlm(false);
                 }}
                 rows={14}
-                className="w-full resize-y rounded-[20px] border border-white/10 bg-surface-scrim px-4 py-3 font-mono text-[12px] leading-6 text-text-secondary outline-none transition focus:border-border-active"
+                className="w-full resize-y rounded-[20px] border border-white/10 bg-surface-scrim px-4 py-3 font-mono text-[12px] leading-6 text-text-secondary outline-none transition focus:border-border-active focus-visible:ring-2 focus-visible:ring-border-active"
                 placeholder="Generate an icon prompt..."
               />
 

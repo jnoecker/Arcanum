@@ -79,7 +79,7 @@ export function AdminBroadcastPanel() {
         <button
           onClick={handleSendClick}
           disabled={loading || !trimmed}
-          className={`rounded-xl border px-5 py-2 text-sm font-medium transition-all duration-200 focus-visible:ring-2 focus-visible:ring-border-active focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-40 ${
+          className={`rounded-xl border px-5 py-2 text-sm font-medium transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-border-active focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-40 ${
             confirming
               ? "border-status-warning/50 bg-status-warning/15 text-status-warning"
               : "border-border-active bg-gradient-active-strong text-text-primary hover:-translate-y-0.5 hover:shadow-glow"

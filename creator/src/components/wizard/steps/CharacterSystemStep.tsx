@@ -191,7 +191,7 @@ export function CharacterSystemStep({
                       type="text"
                       value={stat.displayName}
                       onChange={(e) => updateStat(id, "displayName", e.target.value)}
-                      className="w-full bg-transparent text-text-primary outline-none"
+                      className="w-full bg-transparent text-text-primary outline-none focus-visible:ring-2 focus-visible:ring-border-active"
                     />
                   </td>
                   <td className="px-2 py-1">
@@ -199,7 +199,7 @@ export function CharacterSystemStep({
                       type="text"
                       value={stat.abbreviation}
                       onChange={(e) => updateStat(id, "abbreviation", e.target.value)}
-                      className="w-full bg-transparent text-text-secondary outline-none"
+                      className="w-full bg-transparent text-text-secondary outline-none focus-visible:ring-2 focus-visible:ring-border-active"
                       maxLength={4}
                     />
                   </td>
@@ -208,7 +208,7 @@ export function CharacterSystemStep({
                       type="number"
                       value={stat.baseStat}
                       onChange={(e) => updateStat(id, "baseStat", Number(e.target.value))}
-                      className="w-full bg-transparent text-text-secondary outline-none"
+                      className="w-full bg-transparent text-text-secondary outline-none focus-visible:ring-2 focus-visible:ring-border-active"
                     />
                   </td>
                   <td className="px-1 py-1 text-center">

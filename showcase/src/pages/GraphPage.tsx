@@ -89,7 +89,7 @@ function GraphInner() {
             <button
               key={t}
               onClick={() => toggleTemplate(t)}
-              aria-pressed={templateFilters.size === 0 || templateFilters.has(t)}
+              aria-pressed={templateFilters.size > 0 && templateFilters.has(t)}
               className={`rounded-full px-2.5 py-1 text-xs transition ${
                 templateFilters.size === 0 || templateFilters.has(t)
                   ? "bg-accent/15 text-accent"
@@ -106,7 +106,7 @@ function GraphInner() {
             <button
               key={o.value}
               onClick={() => toggleRelation(o.value)}
-              aria-pressed={relationFilters.size === 0 || relationFilters.has(o.value)}
+              aria-pressed={relationFilters.size > 0 && relationFilters.has(o.value)}
               className={`rounded-full px-2.5 py-1 text-xs transition ${
                 relationFilters.size === 0 || relationFilters.has(o.value)
                   ? "bg-accent/15 text-accent"

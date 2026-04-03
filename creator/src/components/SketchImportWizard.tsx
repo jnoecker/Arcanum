@@ -442,7 +442,7 @@ export function SketchImportWizard({ onClose }: SketchImportWizardProps) {
                               }))
                             }
                             placeholder="Unnamed room"
-                            className="min-w-0 flex-1 rounded border border-border-default bg-bg-primary px-2 py-1 text-xs text-text-primary outline-none placeholder:text-text-muted focus:border-accent/50"
+                            className="min-w-0 flex-1 rounded border border-border-default bg-bg-primary px-2 py-1 text-xs text-text-primary outline-none placeholder:text-text-muted focus:border-accent/50 focus-visible:ring-2 focus-visible:ring-border-active"
                           />
                         </div>
                       );
@@ -505,7 +505,7 @@ export function SketchImportWizard({ onClose }: SketchImportWizardProps) {
                         value={zoneId}
                         onChange={(e) => setZoneId(e.target.value)}
                         placeholder="e.g. dark_forest"
-                        className="w-full rounded border border-border-default bg-bg-primary px-2 py-1.5 text-xs text-text-primary outline-none placeholder:text-text-muted focus:border-accent/50"
+                        className="w-full rounded border border-border-default bg-bg-primary px-2 py-1.5 text-xs text-text-primary outline-none placeholder:text-text-muted focus:border-accent/50 focus-visible:ring-2 focus-visible:ring-border-active"
                       />
                       {zoneId && !zoneIdValid && (
                         <p className="mt-1 text-2xs text-status-error">
@@ -546,7 +546,7 @@ export function SketchImportWizard({ onClose }: SketchImportWizardProps) {
                         <select
                           value={existingZoneId}
                           onChange={(e) => setExistingZoneId(e.target.value)}
-                          className="w-full rounded border border-border-default bg-bg-primary px-2 py-1.5 text-xs text-text-primary outline-none focus:border-accent/50"
+                          className="w-full rounded border border-border-default bg-bg-primary px-2 py-1.5 text-xs text-text-primary outline-none focus:border-accent/50 focus-visible:ring-2 focus-visible:ring-border-active"
                         >
                           {zoneList.map((id) => (
                             <option key={id} value={id}>
@@ -569,7 +569,7 @@ export function SketchImportWizard({ onClose }: SketchImportWizardProps) {
                   <select
                     value={startRoomId}
                     onChange={(e) => setStartRoomId(e.target.value)}
-                    className="w-full rounded border border-border-default bg-bg-primary px-2 py-1.5 text-xs text-text-primary outline-none focus:border-accent/50"
+                    className="w-full rounded border border-border-default bg-bg-primary px-2 py-1.5 text-xs text-text-primary outline-none focus:border-accent/50 focus-visible:ring-2 focus-visible:ring-border-active"
                   >
                     {parseResult.rooms.map((r) => (
                       <option key={r.id} value={r.id}>

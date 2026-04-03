@@ -745,7 +745,16 @@ select,
 }
 
 /* ─── Focus ring (Accent unfurl) ─── */
-*:focus-visible {
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[tabindex]:focus-visible,
+[role="button"]:focus-visible,
+[role="tab"]:focus-visible,
+[role="option"]:focus-visible,
+[role="combobox"]:focus-visible {
   outline: none;
   box-shadow: 0 0 0 2px rgba(168, 151, 210, 0.5);
   transition: box-shadow 200ms var(--ease-unfurl);

@@ -18,7 +18,8 @@ function useMapImage(imageAsset: string | undefined): string | null {
 
 // ─── Color palette picker ──────────────────────────────────────────
 
-const DEFAULT_MAP_COLOR = "#a897d2";
+const DEFAULT_MAP_COLOR = "var(--color-template-world)";
+const DEFAULT_MAP_COLOR_HEX = "#a897d2"; // hex fallback for <input type="color">
 
 function ColorPalettePicker({
   value,
@@ -33,7 +34,7 @@ function ColorPalettePicker({
   const updateColorLabel = useLoreStore((s) => s.updateColorLabel);
   const [adding, setAdding] = useState(false);
   const [newName, setNewName] = useState("");
-  const [newColor, setNewColor] = useState(DEFAULT_MAP_COLOR);
+  const [newColor, setNewColor] = useState(DEFAULT_MAP_COLOR_HEX);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
   const nameRef = useRef<HTMLInputElement>(null);
@@ -48,7 +49,7 @@ function ColorPalettePicker({
     addColorLabel({ id: `cl_${Date.now()}`, name, color: newColor });
     onChange(newColor);
     setNewName("");
-    setNewColor(DEFAULT_MAP_COLOR);
+    setNewColor(DEFAULT_MAP_COLOR_HEX);
     setAdding(false);
   };
 

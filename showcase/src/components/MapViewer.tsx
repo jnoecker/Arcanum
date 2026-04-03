@@ -47,7 +47,7 @@ export function MapViewer({ map }: MapViewerProps) {
       className="w-full rounded-lg border border-border-muted bg-bg-abyss overflow-hidden"
       style={{ height: "min(80vh, 800px)" }}
       tabIndex={0}
-      role="img"
+      role="group"
       aria-label={`Map: ${map.title}`}
     >
       <div
@@ -86,7 +86,7 @@ export function MapViewer({ map }: MapViewerProps) {
               <div
                 className="w-6 h-6 rounded-full border-2 border-bg-primary shadow-lg transition-transform
                            group-hover:scale-125 group-focus-within:scale-125"
-                style={{ backgroundColor: pin.color ?? "#a897d2" }}
+                style={{ backgroundColor: pin.color ?? "var(--color-accent)" }}
               />
 
               {/* Tooltip */}

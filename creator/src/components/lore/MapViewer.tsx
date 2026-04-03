@@ -5,7 +5,7 @@ import { useLoreStore, selectArticles } from "@/stores/loreStore";
 // ─── Custom pin icon ────────────────────────────────────────────────
 
 function makePinIcon(L: typeof import("leaflet"), color?: string) {
-  const fill = color || "#a897d2";
+  const fill = color || "var(--color-template-world)";
   return L.divIcon({
     className: "",
     iconSize: [24, 32],
@@ -13,7 +13,7 @@ function makePinIcon(L: typeof import("leaflet"), color?: string) {
     popupAnchor: [0, -34],
     html: `<svg width="24" height="32" viewBox="0 0 24 32" fill="none" xmlns="http://www.w3.org/2000/svg">
       <path d="M12 0C5.4 0 0 5.4 0 12c0 9 12 20 12 20s12-11 12-20C24 5.4 18.6 0 12 0z" fill="${fill}" fill-opacity="0.9"/>
-      <circle cx="12" cy="11" r="4" fill="#2a3149" fill-opacity="0.7"/>
+      <circle cx="12" cy="11" r="4" fill="var(--color-bg-primary)" fill-opacity="0.7"/>
     </svg>`,
   });
 }

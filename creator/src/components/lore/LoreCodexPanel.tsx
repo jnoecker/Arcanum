@@ -4,6 +4,7 @@ import type { Article, ArticleRelation } from "@/types/lore";
 import { DefinitionWorkbench } from "@/components/config/DefinitionWorkbench";
 import { Section, FieldRow, TextInput, SelectInput } from "@/components/ui/FormWidgets";
 import { LoreEditor } from "./LoreEditor";
+import { MentionSuggestionsPanel } from "./MentionSuggestionsPanel";
 import { CODEX_GENERATE_PROMPT } from "@/lib/lorePrompts";
 import { tiptapToPlainText } from "@/lib/loreRelations";
 
@@ -402,6 +403,14 @@ export function LoreCodexPanel() {
         }}
         onItemsChange={handleItemsChange}
       />
+
+      <Section
+        title="Missing Mentions"
+        defaultExpanded={false}
+        description="Scan articles for plain-text references that should be @mentions."
+      >
+        <MentionSuggestionsPanel />
+      </Section>
     </div>
   );
 }

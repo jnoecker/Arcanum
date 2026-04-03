@@ -50,8 +50,10 @@ export interface AbilityEffectConfig {
   statusEffectId?: string;
   minDamage?: number;
   maxDamage?: number;
+  damagePerLevel?: number;
   minHeal?: number;
   maxHeal?: number;
+  healPerLevel?: number;
   flatThreat?: number;
   margin?: number;
   petTemplateKey?: string;
@@ -223,6 +225,19 @@ export interface WorldEventDefinitionConfig {
 
 export interface WorldEventsConfig {
   definitions: Record<string, WorldEventDefinitionConfig>;
+}
+
+// ─── Skill Points ─────────────────────────────────────────────────
+
+export interface SkillPointsConfig {
+  interval: number;
+}
+
+// ─── Multiclass ───────────────────────────────────────────────────
+
+export interface MulticlassConfig {
+  minLevel: number;
+  goldCost: number;
 }
 
 // ─── Bank ──────────────────────────────────────────────────────────
@@ -591,6 +606,8 @@ export interface AppConfig {
   emotePresets: EmotePresetsConfig;
   factions?: FactionConfig;
   enchanting: EnchantingConfig;
+  skillPoints: SkillPointsConfig;
+  multiclass: MulticlassConfig;
   bank: BankConfig;
   worldTime: WorldTimeConfig;
   weather: WeatherConfig;

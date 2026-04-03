@@ -7,6 +7,7 @@ import {
   addMob,
   addItem,
   addShop,
+  addTrainer,
   addGatheringNode,
   generateEntityId,
 } from "@/lib/zoneEdits";
@@ -23,7 +24,7 @@ import { useAssetStore } from "@/stores/assetStore";
 import { ZoneVibePanel } from "./ZoneVibePanel";
 import sidebarBg from "@/assets/sidebar-bg.png";
 
-export type EntityKind = "mob" | "item" | "shop" | "quest" | "gatheringNode" | "recipe";
+export type EntityKind = "mob" | "item" | "shop" | "trainer" | "quest" | "gatheringNode" | "recipe";
 
 export interface EntitySelection {
   kind: EntityKind;
@@ -94,6 +95,10 @@ export function RoomPanel({
     () => Object.entries(world.shops ?? {}).filter(([, s]) => s.room === roomId),
     [world.shops, roomId],
   );
+  const trainers = useMemo(
+    () => Object.entries(world.trainers ?? {}).filter(([, t]) => t.room === roomId),
+    [world.trainers, roomId],
+  );
   const gatheringNodes = useMemo(
     () =>
       Object.entries(world.gatheringNodes ?? {}).filter(
@@ -160,6 +165,13 @@ export function RoomPanel({
     const next = addShop(world, id, { name: "New Shop", room: roomId });
     onWorldChange(next);
     onSelectEntity({ kind: "shop", id });
+  }, [world, roomId, onWorldChange, onSelectEntity]);
+
+  const handleAddTrainer = useCallback(() => {
+    const id = generateEntityId(world, "trainers");
+    const next = addTrainer(world, id, { name: "New Trainer", class: "WARRIOR", room: roomId });
+    onWorldChange(next);
+    onSelectEntity({ kind: "trainer", id });
   }, [world, roomId, onWorldChange, onSelectEntity]);
 
   const handleAddGatheringNode = useCallback(() => {
@@ -372,6 +384,31 @@ export function RoomPanel({
                   <span className="ml-1 text-text-muted">
                     ({shop.items?.length ?? 0} items)
                   </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Section>
+
+      {/* Trainers */}
+      <Section
+        title={`Trainers (${trainers.length})`}
+        defaultExpanded={false}
+        actions={<IconButton onClick={handleAddTrainer} title="Add trainer">+</IconButton>}
+      >
+        {trainers.length === 0 ? (
+          <p className="rounded-lg border border-dashed border-white/8 bg-black/6 px-3 py-2 text-center text-xs italic text-text-muted">No trainers in this room</p>
+        ) : (
+          <ul className="flex flex-col gap-0.5">
+            {trainers.map(([id, trainer]) => (
+              <li key={id}>
+                <button
+                  onClick={() => onSelectEntity({ kind: "trainer", id })}
+                  className="w-full rounded px-1 py-0.5 text-left text-xs transition-colors hover:bg-bg-tertiary"
+                >
+                  <span className="font-medium text-text-primary">{trainer.name}</span>
+                  <span className="ml-1 text-text-muted">[{trainer.class}]</span>
                 </button>
               </li>
             ))}

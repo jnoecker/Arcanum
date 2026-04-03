@@ -5,6 +5,7 @@ import type {
   MobFile,
   ItemFile,
   ShopFile,
+  TrainerFile,
   QuestFile,
   GatheringNodeFile,
   RecipeFile,
@@ -33,12 +34,13 @@ export const OPPOSITE: Record<string, string> = {
 
 // ─── Generic entity CRUD ────────────────────────────────────────────
 
-type EntityCollection = "mobs" | "items" | "shops" | "quests" | "gatheringNodes" | "recipes";
+type EntityCollection = "mobs" | "items" | "shops" | "trainers" | "quests" | "gatheringNodes" | "recipes";
 
 const ENTITY_LABELS: Record<EntityCollection, string> = {
   mobs: "Mob",
   items: "Item",
   shops: "Shop",
+  trainers: "Trainer",
   quests: "Quest",
   gatheringNodes: "Gathering node",
   recipes: "Recipe",
@@ -96,7 +98,7 @@ function removeEntity(
 
 /** Remove all entities in a given room across room-bound collections. */
 function removeEntitiesInRoom(world: WorldFile, roomId: string): void {
-  const collections: EntityCollection[] = ["mobs", "items", "shops", "gatheringNodes"];
+  const collections: EntityCollection[] = ["mobs", "items", "shops", "trainers", "gatheringNodes"];
   for (const col of collections) {
     const map = world[col] as Record<string, { room?: string }> | undefined;
     if (!map) continue;
@@ -313,6 +315,20 @@ export function deleteShop(world: WorldFile, shopId: string): WorldFile {
   return removeEntity(world, "shops", shopId);
 }
 
+// ─── Trainer operations ─────────────────────────────────────────────
+
+export function addTrainer(world: WorldFile, trainerId: string, trainer: TrainerFile): WorldFile {
+  return addEntity(world, "trainers", trainerId, trainer, trainer.room);
+}
+
+export function updateTrainer(world: WorldFile, trainerId: string, patch: Partial<TrainerFile>): WorldFile {
+  return updateEntity(world, "trainers", trainerId, patch);
+}
+
+export function deleteTrainer(world: WorldFile, trainerId: string): WorldFile {
+  return removeEntity(world, "trainers", trainerId);
+}
+
 // ─── Quest operations ───────────────────────────────────────────────
 
 export function addQuest(world: WorldFile, questId: string, quest: QuestFile): WorldFile {
@@ -372,7 +388,7 @@ export function generateEntityId(
   prefix?: string,
 ): string {
   const base = prefix ?? world.zone.replace(/[^a-zA-Z0-9]/g, "_");
-  const suffix = collection === "gatheringNodes" ? "node" : collection.replace(/s$/, "");
+  const suffix = collection === "gatheringNodes" ? "node" : collection === "trainers" ? "trainer" : collection.replace(/s$/, "");
   const existing = world[collection] ?? {};
   let n = Object.keys(existing).length + 1;
   while (existing[`${base}_${suffix}${n}`]) {

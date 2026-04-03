@@ -315,6 +315,15 @@ export function buildMonolithicConfigObject(
     };
   }
 
+  // Skill Points
+  engine.skillPoints = { interval: c.skillPoints.interval };
+
+  // Multiclass
+  engine.multiclass = {
+    minLevel: c.multiclass.minLevel,
+    goldCost: c.multiclass.goldCost,
+  };
+
   // Housing
   if (c.housing.enabled || Object.keys(c.housing.templates).length > 0) {
     engine.housing = housingToPlain(c.housing);
@@ -612,8 +621,10 @@ export function abilityToPlain(a: AppConfig["abilities"][string]): Record<string
   if (a.effect.statusEffectId) effect.statusEffectId = a.effect.statusEffectId;
   if (a.effect.minDamage != null) effect.minDamage = a.effect.minDamage;
   if (a.effect.maxDamage != null) effect.maxDamage = a.effect.maxDamage;
+  if (a.effect.damagePerLevel != null) effect.damagePerLevel = a.effect.damagePerLevel;
   if (a.effect.minHeal != null) effect.minHeal = a.effect.minHeal;
   if (a.effect.maxHeal != null) effect.maxHeal = a.effect.maxHeal;
+  if (a.effect.healPerLevel != null) effect.healPerLevel = a.effect.healPerLevel;
   if (a.effect.flatThreat != null) effect.flatThreat = a.effect.flatThreat;
   if (a.effect.margin != null) effect.margin = a.effect.margin;
   if (a.effect.petTemplateKey) effect.petTemplateKey = a.effect.petTemplateKey;

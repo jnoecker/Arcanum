@@ -138,6 +138,11 @@ async function saveSplitConfig(projectDir: string): Promise<void> {
         maxActionDelayMillis: config.mobActionDelay.maxActionDelayMillis,
         tiers: config.mobTiers,
       },
+      skillPoints: { interval: config.skillPoints.interval },
+      multiclass: {
+        minLevel: config.multiclass.minLevel,
+        goldCost: config.multiclass.goldCost,
+      },
     }),
 
     write("crafting", cleanObj({

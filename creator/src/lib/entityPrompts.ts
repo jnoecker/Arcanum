@@ -1,4 +1,4 @@
-import type { RoomFile, MobFile, ItemFile, ShopFile, WorldFile } from "@/types/world";
+import type { RoomFile, MobFile, ItemFile, ShopFile, TrainerFile, WorldFile } from "@/types/world";
 import { type ArtStyle, getPreamble, STYLE_SUFFIX, FORMAT_BY_TYPE } from "./arcanumPrompts";
 
 export type DefaultImageKind = "room" | "mob" | "item";
@@ -211,6 +211,24 @@ ${STYLE_SUFFIX}`;
 An arcane marketplace called "${shop.name}" — baroque display cases of glowing energy holding luminous artifacts, aurum-gold light pooling on shelves traced with rococo scrollwork, deep indigo shadows between alcoves, blue-violet atmospheric mist, a sense of abundance and ancient commerce, painterly, luminous, wide composition`;
 }
 
+/** Build a full prompt for a trainer image. */
+export function trainerPrompt(_trainerId: string, trainer: TrainerFile, style: ArtStyle = "gentle_magic"): string {
+  const preamble = getPreamble(style);
+  const cls = trainer.class?.toLowerCase() ?? "warrior";
+
+  if (style === "gentle_magic") {
+    return `${FORMAT_BY_TYPE.mob}. ${preamble}
+
+A gentle magical portrait of a ${cls} class trainer called "${trainer.name}" — a wise mentor figure in soft flowing robes or battle-worn attire appropriate for a ${cls}, warm ambient light, floating motes of gold, lavender and pale blue tones, a sense of knowledge and patient guidance, painterly, luminous
+
+${STYLE_SUFFIX}`;
+  }
+
+  return `${preamble}
+
+An arcane portrait of a ${cls} class trainer called "${trainer.name}" — a powerful mentor in baroque armor or robes befitting a ${cls}, aurum-gold light illuminating their form, deep indigo background with traced energy patterns, blue-violet atmospheric mist, a sense of mastery and ancient knowledge, painterly, luminous`;
+}
+
 /** Dispatch to the right prompt builder by entity kind. */
 export function entityPrompt(
   kind: string,
@@ -227,6 +245,8 @@ export function entityPrompt(
       return itemPrompt(id, entity as ItemFile, style);
     case "shop":
       return shopPrompt(id, entity as ShopFile, style);
+    case "trainer":
+      return trainerPrompt(id, entity as TrainerFile, style);
     default: {
       const preamble = getPreamble(style);
       return style === "gentle_magic"

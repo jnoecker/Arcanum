@@ -239,6 +239,47 @@ export function validateZone(
     }
   }
 
+  // ─── Trainer checks ────────────────────────────────────────
+  const VALID_CLASSES = new Set(["WARRIOR", "MAGE", "CLERIC", "ROGUE"]);
+  const trainerRooms = new Set<string>();
+  for (const [trainerId, trainer] of Object.entries(world.trainers ?? {})) {
+    if (!trainer.name?.trim()) {
+      issues.push({
+        severity: "warning",
+        entity: `trainer:${trainerId}`,
+        message: "Trainer has no name",
+      });
+    }
+    if (!roomIds.has(trainer.room)) {
+      issues.push({
+        severity: "error",
+        entity: `trainer:${trainerId}`,
+        message: `Room "${trainer.room}" does not exist`,
+      });
+    }
+    if (!trainer.class?.trim()) {
+      issues.push({
+        severity: "error",
+        entity: `trainer:${trainerId}`,
+        message: "Trainer has no class",
+      });
+    } else if (!VALID_CLASSES.has(trainer.class.toUpperCase())) {
+      issues.push({
+        severity: "warning",
+        entity: `trainer:${trainerId}`,
+        message: `Class "${trainer.class}" is not a standard class`,
+      });
+    }
+    if (trainerRooms.has(trainer.room)) {
+      issues.push({
+        severity: "warning",
+        entity: `trainer:${trainerId}`,
+        message: `Room "${trainer.room}" already has a trainer`,
+      });
+    }
+    trainerRooms.add(trainer.room);
+  }
+
   // ─── Quest checks ──────────────────────────────────────────────
   for (const [questId, quest] of Object.entries(world.quests ?? {})) {
     if (!quest.name?.trim()) {

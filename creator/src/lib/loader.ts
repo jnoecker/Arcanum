@@ -91,6 +91,8 @@ export function parseAppConfigYaml(content: string): AppConfig {
     craftingStationTypes: parseMapSection(engine.craftingStationTypes, "stationTypes"),
     housing: parseHousingConfig(engine.housing),
     enchanting: parseEnchantingConfig(engine.enchanting),
+    skillPoints: parseSkillPointsConfig(engine.skillPoints),
+    multiclass: parseMulticlassConfig(engine.multiclass),
     bank: parseBankConfig(engine.bank),
     worldTime: parseWorldTimeConfig(engine.worldTime),
     weather: parseWeatherConfig(engine.weather),
@@ -468,7 +470,7 @@ function collectRawSections(
     "effectTypes", "targetTypes", "stackBehaviors",
     "craftingSkills", "craftingStationTypes",
     "scheduler", "friends", "debug", "classStartRooms", "emotePresets", "housing", "pets", "enchanting", "bank",
-    "worldTime", "weather", "worldEvents",
+    "worldTime", "weather", "worldEvents", "skillPoints", "multiclass",
   ]);
 
   const raw: Record<string, unknown> = {};
@@ -578,6 +580,21 @@ function parseWorldEventsConfig(raw: unknown): import("@/types/config").WorldEve
     };
   }
   return { definitions: parsed };
+}
+
+function parseSkillPointsConfig(raw: unknown): import("@/types/config").SkillPointsConfig {
+  if (!raw || typeof raw !== "object") return { interval: 2 };
+  const s = raw as Record<string, unknown>;
+  return { interval: asNumber(s.interval, 2) };
+}
+
+function parseMulticlassConfig(raw: unknown): import("@/types/config").MulticlassConfig {
+  if (!raw || typeof raw !== "object") return { minLevel: 10, goldCost: 500 };
+  const s = raw as Record<string, unknown>;
+  return {
+    minLevel: asNumber(s.minLevel, 10),
+    goldCost: asNumber(s.goldCost, 500),
+  };
 }
 
 function parseBankConfig(raw: unknown): import("@/types/config").BankConfig {
@@ -855,6 +872,8 @@ async function loadSplitConfig(projectDir: string): Promise<AppConfig | null> {
       craftingSkills: asRecord(craftingRaw.skills),
       craftingStationTypes: asRecord(craftingRaw.stationTypes),
       enchanting: parseEnchantingConfig(craftingRaw.enchanting),
+      skillPoints: parseSkillPointsConfig(combatRaw.skillPoints ?? worldRaw.skillPoints),
+      multiclass: parseMulticlassConfig(combatRaw.multiclass ?? worldRaw.multiclass),
 
       // progression.yaml
       progression: parseProgressionConfig(progressionRaw.progression ?? progressionRaw),

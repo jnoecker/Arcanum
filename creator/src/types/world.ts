@@ -13,6 +13,7 @@ export interface WorldFile {
   mobs?: Record<string, MobFile>;
   items?: Record<string, ItemFile>;
   shops?: Record<string, ShopFile>;
+  trainers?: Record<string, TrainerFile>;
   quests?: Record<string, QuestFile>;
   gatheringNodes?: Record<string, GatheringNodeFile>;
   recipes?: Record<string, RecipeFile>;
@@ -146,6 +147,13 @@ export interface ShopFile {
   name: string;
   room: string;
   items?: string[];
+  image?: string;
+}
+
+export interface TrainerFile {
+  name: string;
+  class: string;
+  room: string;
   image?: string;
 }
 

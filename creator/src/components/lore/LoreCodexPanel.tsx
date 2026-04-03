@@ -6,6 +6,7 @@ import { Section, FieldRow, TextInput, SelectInput } from "@/components/ui/FormW
 import { LoreEditor } from "./LoreEditor";
 import { MentionSuggestionsPanel } from "./MentionSuggestionsPanel";
 import { AuditPanel } from "./AuditPanel";
+import { GapAnalysisPanel } from "./GapAnalysisPanel";
 import { CODEX_GENERATE_PROMPT } from "@/lib/lorePrompts";
 import { tiptapToPlainText } from "@/lib/loreRelations";
 
@@ -419,6 +420,14 @@ export function LoreCodexPanel() {
         description="Check for orphaned references, duplicate titles, timeline mismatches, and structural issues."
       >
         <AuditPanel />
+      </Section>
+
+      <Section
+        title="Gap Analysis"
+        defaultExpanded={false}
+        description="Detect missing template coverage, isolated articles, and structural gaps in your world-building."
+      >
+        <GapAnalysisPanel />
       </Section>
     </div>
   );

@@ -3,6 +3,7 @@ package dev.ambon.domain.mob
 import dev.ambon.domain.DamageRange
 import dev.ambon.domain.ids.MobId
 import dev.ambon.domain.ids.RoomId
+import dev.ambon.domain.ids.SessionId
 import dev.ambon.domain.world.MobDrop
 import dev.ambon.engine.behavior.BtNode
 import dev.ambon.engine.dialogue.DialogueTree
@@ -11,6 +12,7 @@ data class MobState(
     override val id: MobId,
     override var name: String,
     override var roomId: RoomId,
+    override val description: String = "",
     var hp: Int = 10,
     override var maxHp: Int = 10,
     override val damage: DamageRange = DamageRange(1, 4),
@@ -28,4 +30,8 @@ data class MobState(
     override val image: String? = null,
     override val video: String? = null,
     val aggressive: Boolean = false,
-) : MobTemplate
+    /** Non-null if this mob is a summoned pet. */
+    val ownerSessionId: SessionId? = null,
+) : MobTemplate {
+    val isPet: Boolean get() = ownerSessionId != null
+}

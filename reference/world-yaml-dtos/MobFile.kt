@@ -2,6 +2,7 @@ package dev.ambon.domain.world.data
 
 data class MobFile(
     val name: String,
+    val description: String = "",
     val room: String,
     val tier: String? = null,
     val level: Int? = null,
@@ -17,6 +18,7 @@ data class MobFile(
     val dialogue: Map<String, DialogueNodeFile> = emptyMap(),
     val behavior: BehaviorFile? = null,
     val quests: List<String> = emptyList(),
+    val faction: String? = null,
     val image: String? = null,
     val video: String? = null,
 )

@@ -16,9 +16,12 @@ object PlayerClassRegistryLoader {
                     hpPerLevel = defConfig.hpPerLevel,
                     manaPerLevel = defConfig.manaPerLevel,
                     description = defConfig.description,
+                    backstory = defConfig.backstory,
+                    image = defConfig.image,
                     selectable = defConfig.selectable,
                     primaryStat = defConfig.primaryStat.ifBlank { null },
                     startRoom = defConfig.startRoom.ifBlank { null },
+                    threatMultiplier = defConfig.threatMultiplier,
                 ),
             )
         }

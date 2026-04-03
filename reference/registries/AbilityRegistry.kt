@@ -1,6 +1,5 @@
 package dev.ambon.engine.abilities
 
-import dev.ambon.domain.PlayerClass
 import dev.ambon.engine.DefinitionRegistry
 
 class AbilityRegistry : DefinitionRegistry<AbilityId, AbilityDefinition>({ it.id }) {
@@ -27,9 +26,18 @@ class AbilityRegistry : DefinitionRegistry<AbilityId, AbilityDefinition>({ it.id
 
     fun abilitiesForLevelAndClass(
         level: Int,
-        playerClass: PlayerClass?,
+        playerClass: String?,
     ): List<AbilityDefinition> =
         all()
-            .filter { it.levelRequired <= level && (it.requiredClass == null || it.requiredClass == playerClass) }
+            .filter {
+                it.levelRequired <= level &&
+                    (it.requiredClass == null || it.requiredClass.equals(playerClass, ignoreCase = true))
+            }
+            .sortedBy { it.levelRequired }
+
+    /** Returns all abilities belonging to [className]'s trainer, sorted by level required. */
+    fun abilitiesForClass(className: String): List<AbilityDefinition> =
+        all()
+            .filter { it.requiredClass.equals(className, ignoreCase = true) }
             .sortedBy { it.levelRequired }
 }

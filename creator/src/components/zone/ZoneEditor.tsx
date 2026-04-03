@@ -310,6 +310,20 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
           {saving ? "Saving..." : justSaved ? "\u2713 Saved" : "Save"}
         </button>
 
+        {/* Graphical zone toggle */}
+        <label className="flex items-center gap-2 text-xs text-text-secondary">
+          <input
+            type="checkbox"
+            checked={!!zoneState.data.graphical}
+            onChange={(e) => {
+              const updated = { ...zoneState.data, graphical: e.target.checked || undefined };
+              updateZone(zoneId, updated);
+            }}
+            className="accent-accent"
+          />
+          Graphical zone
+        </label>
+
         <div className="ml-auto flex items-center gap-2">
           {/* View toggle */}
           <div className="segmented-control" role="tablist" aria-label="Zone views">

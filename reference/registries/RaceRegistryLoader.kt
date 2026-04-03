@@ -2,7 +2,7 @@ package dev.ambon.engine
 
 import dev.ambon.config.RaceEngineConfig
 import dev.ambon.domain.RaceDef
-import dev.ambon.domain.StatBlock
+import dev.ambon.domain.StatMap
 
 object RaceRegistryLoader {
     fun load(
@@ -15,14 +15,11 @@ object RaceRegistryLoader {
                     id = key.uppercase(),
                     displayName = defConfig.displayName.ifEmpty { key },
                     description = defConfig.description,
-                    statMods = StatBlock(
-                        str = defConfig.statMods.str,
-                        dex = defConfig.statMods.dex,
-                        con = defConfig.statMods.con,
-                        int = defConfig.statMods.int,
-                        wis = defConfig.statMods.wis,
-                        cha = defConfig.statMods.cha,
-                    ),
+                    backstory = defConfig.backstory,
+                    traits = defConfig.traits,
+                    abilities = defConfig.abilities,
+                    image = defConfig.image,
+                    statMods = StatMap(defConfig.statMods.mapKeys { (k, _) -> k.uppercase() }),
                 ),
             )
         }

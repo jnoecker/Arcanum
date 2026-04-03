@@ -7,6 +7,7 @@ export interface WorldFile {
   zone: string;
   lifespan?: number;
   startRoom: string;
+  graphical?: boolean;
   image?: ZoneImageDefaults;
   audio?: ZoneAudioDefaults;
   rooms: Record<string, RoomFile>;

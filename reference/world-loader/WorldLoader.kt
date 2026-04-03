@@ -7,13 +7,18 @@ import com.fasterxml.jackson.module.kotlin.KotlinModule
 import com.fasterxml.jackson.module.kotlin.readValue
 import dev.ambon.config.MobTiersConfig
 import dev.ambon.domain.DamageRange
-import dev.ambon.domain.StatBlock
-import dev.ambon.domain.crafting.CraftingSkill
-import dev.ambon.domain.crafting.CraftingStationType
+import dev.ambon.domain.StatMap
 import dev.ambon.domain.crafting.GatheringNodeDef
 import dev.ambon.domain.crafting.GatheringYield
 import dev.ambon.domain.crafting.MaterialRequirement
+import dev.ambon.domain.crafting.RareGatheringYield
 import dev.ambon.domain.crafting.RecipeDef
+import dev.ambon.domain.dungeon.DungeonDifficulty
+import dev.ambon.domain.dungeon.DungeonLootTableDef
+import dev.ambon.domain.dungeon.DungeonMobPoolDef
+import dev.ambon.domain.dungeon.DungeonRoomTemplateDef
+import dev.ambon.domain.dungeon.DungeonRoomType
+import dev.ambon.domain.dungeon.DungeonTemplateDef
 import dev.ambon.domain.ids.ItemId
 import dev.ambon.domain.ids.MobId
 import dev.ambon.domain.ids.RoomId
@@ -21,8 +26,6 @@ import dev.ambon.domain.ids.qualifyId
 import dev.ambon.domain.items.Item
 import dev.ambon.domain.items.ItemInstance
 import dev.ambon.domain.items.ItemSlot
-import dev.ambon.domain.quest.CompletionType
-import dev.ambon.domain.quest.ObjectiveType
 import dev.ambon.domain.quest.QuestDef
 import dev.ambon.domain.quest.QuestObjectiveDef
 import dev.ambon.domain.quest.QuestRewards
@@ -35,22 +38,27 @@ import dev.ambon.domain.world.MobSpawn
 import dev.ambon.domain.world.Room
 import dev.ambon.domain.world.RoomFeature
 import dev.ambon.domain.world.ShopDefinition
+import dev.ambon.domain.world.TrainerDefinition
 import dev.ambon.domain.world.World
 import dev.ambon.domain.world.data.ExitValue
 import dev.ambon.domain.world.data.ExitValueDeserializer
 import dev.ambon.domain.world.data.FeatureFile
 import dev.ambon.domain.world.data.WorldFile
 import dev.ambon.engine.behavior.BehaviorTemplates
+import dev.ambon.engine.behavior.BehaviorTreeLoader
 import dev.ambon.engine.behavior.BtNode
 import dev.ambon.engine.dialogue.DialogueChoice
 import dev.ambon.engine.dialogue.DialogueNode
 import dev.ambon.engine.dialogue.DialogueTree
+import org.slf4j.LoggerFactory
 
 class WorldLoadException(
     message: String,
 ) : RuntimeException(message)
 
 object WorldLoader {
+    private val logger = LoggerFactory.getLogger(WorldLoader::class.java)
+
     private val mapper =
         ObjectMapper(YAMLFactory())
             .registerModule(KotlinModule.Builder().build())
@@ -61,14 +69,30 @@ object WorldLoader {
     fun loadFromResource(
         path: String,
         tiers: MobTiersConfig = MobTiersConfig(),
-    ): World = loadFromResources(listOf(path), tiers)
+        imagesBaseUrl: String = "/images/",
+        videosBaseUrl: String = "/videos/",
+        audioBaseUrl: String = "/audio/",
+    ): World =
+        loadFromResources(
+            listOf(path),
+            tiers,
+            imagesBaseUrl = imagesBaseUrl,
+            videosBaseUrl = videosBaseUrl,
+            audioBaseUrl = audioBaseUrl,
+        )
 
     fun loadFromResources(
         paths: List<String>,
         tiers: MobTiersConfig = MobTiersConfig(),
         zoneFilter: Set<String> = emptySet(),
         startRoomOverride: RoomId? = null,
+        imagesBaseUrl: String = "/images/",
+        videosBaseUrl: String = "/videos/",
+        audioBaseUrl: String = "/audio/",
     ): World {
+        val imagesBase = normalizeBaseUrl(imagesBaseUrl)
+        val videosBase = normalizeBaseUrl(videosBaseUrl)
+        val audioBase = normalizeBaseUrl(audioBaseUrl)
         if (paths.isEmpty()) throw WorldLoadException("No zone files provided")
 
         val allFiles = paths.map { path -> readWorldFile(path) }
@@ -92,16 +116,22 @@ object WorldLoader {
         val mergedMobs = LinkedHashMap<MobId, MobSpawn>()
         val mergedItems = LinkedHashMap<ItemId, ItemSpawn>()
         val mergedShops = mutableListOf<ShopDefinition>()
+        val mergedTrainers = mutableListOf<TrainerDefinition>()
         val mergedQuests = mutableListOf<QuestDef>()
         val mergedGatheringNodes = mutableListOf<GatheringNodeDef>()
         val mergedRecipes = mutableListOf<RecipeDef>()
+        val mergedDungeonTemplates = mutableListOf<DungeonTemplateDef>()
         val zoneLifespansMinutes = LinkedHashMap<String, Long?>()
+        val zoneStartRooms = LinkedHashMap<String, RoomId>()
 
         // startRoomOverride wins; otherwise fall back to first file’s declared startRoom.
         val worldStart = startRoomOverride ?: normalizeId(files.first().zone, files.first().startRoom)
 
         for (file in files) {
             val zone = requireNonBlank(file.zone) { "World zone cannot be blank" }
+            if (!zoneStartRooms.containsKey(zone)) {
+                zoneStartRooms[zone] = normalizeId(zone, file.startRoom)
+            }
             val declaredLifespanMinutes = file.lifespan
             if (!zoneLifespansMinutes.containsKey(zone)) {
                 zoneLifespansMinutes[zone] = declaredLifespanMinutes
@@ -121,6 +151,7 @@ object WorldLoader {
 
             val imageDefaults = file.image
             val audioDefaults = file.audio
+            val zoneGraphical = file.graphical
 
             // First pass per file: create room shells, detect collisions
             for ((rawId, rf) in file.rooms) {
@@ -138,10 +169,12 @@ object WorldLoader {
                         description = rf.description,
                         exits = emptyMap(),
                         station = station,
-                        image = (rf.image ?: imageDefaults?.room)?.let { "/images/$it" },
-                        video = rf.video?.let { "/videos/$it" },
-                        music = (rf.music ?: audioDefaults?.music)?.let { "/audio/$it" },
-                        ambient = (rf.ambient ?: audioDefaults?.ambient)?.let { "/audio/$it" },
+                        bank = rf.bank,
+                        image = (rf.image ?: imageDefaults?.room)?.let { "$imagesBase$it" },
+                        video = rf.video?.let { "$videosBase$it" },
+                        music = (rf.music ?: audioDefaults?.music)?.let { "$audioBase$it" },
+                        ambient = (rf.ambient ?: audioDefaults?.ambient)?.let { "$audioBase$it" },
+                        graphical = zoneGraphical,
                     )
             }
 
@@ -218,9 +251,7 @@ object WorldLoader {
                     }
 
                 val level = mf.level ?: 1
-                if (level < 1) {
-                    throw WorldLoadException("Mob '${mobId.value}' level must be >= 1 (got $level)")
-                }
+                requireAtLeast(level, 1, "Mob '${mobId.value}'", "level")
                 val steps = level - 1
 
                 val resolvedHp = mf.hp ?: (tier.baseHp + steps * tier.hpPerLevel)
@@ -249,23 +280,18 @@ object WorldLoader {
                         )
                     }
 
-                if (resolvedHp < 1) throw WorldLoadException("Mob '${mobId.value}' resolved hp must be >= 1")
-                if (resolvedMinDamage < 1) {
-                    throw WorldLoadException("Mob '${mobId.value}' resolved minDamage must be >= 1")
-                }
+                val mobCtx = "Mob '${mobId.value}'"
+                requireAtLeast(resolvedHp, 1, mobCtx, "resolved hp")
+                requireAtLeast(resolvedMinDamage, 1, mobCtx, "resolved minDamage")
                 if (resolvedMaxDamage < resolvedMinDamage) {
                     throw WorldLoadException(
                         "Mob '${mobId.value}' resolved maxDamage ($resolvedMaxDamage) must be >= " +
                             "minDamage ($resolvedMinDamage)",
                     )
                 }
-                if (resolvedArmor < 0) throw WorldLoadException("Mob '${mobId.value}' resolved armor must be >= 0")
-                if (resolvedXpReward < 0L) {
-                    throw WorldLoadException("Mob '${mobId.value}' resolved xpReward must be >= 0")
-                }
-                if (resolvedGoldMin < 0L) {
-                    throw WorldLoadException("Mob '${mobId.value}' resolved goldMin must be >= 0")
-                }
+                requireAtLeast(resolvedArmor, 0, mobCtx, "resolved armor")
+                requireAtLeast(resolvedXpReward, 0L, mobCtx, "resolved xpReward")
+                requireAtLeast(resolvedGoldMin, 0L, mobCtx, "resolved goldMin")
                 if (resolvedGoldMax < resolvedGoldMin) {
                     throw WorldLoadException(
                         "Mob '${mobId.value}' resolved goldMax ($resolvedGoldMax) must be >= " +
@@ -290,6 +316,7 @@ object WorldLoader {
                     MobSpawn(
                         id = mobId,
                         name = mf.name,
+                        description = mf.description,
                         roomId = roomId,
                         maxHp = resolvedHp,
                         damage = DamageRange(resolvedMinDamage, resolvedMaxDamage),
@@ -302,8 +329,9 @@ object WorldLoader {
                         dialogue = dialogue,
                         behaviorTree = behaviorTree,
                         questIds = questIds,
-                        image = (mf.image ?: imageDefaults?.mob)?.let { "/images/$it" },
-                        video = mf.video?.let { "/videos/$it" },
+                        faction = mf.faction,
+                        image = (mf.image ?: imageDefaults?.mob)?.let { "$imagesBase$it" },
+                        video = mf.video?.let { "$videosBase$it" },
                         aggressive = mf.behavior?.template?.contains("aggro") == true,
                     )
             }
@@ -327,19 +355,17 @@ object WorldLoader {
                 }
                 val slot = slotRaw?.let { parseItemSlot(itemId, it) }
 
+                val itemCtx = "Item '${itemId.value}'"
                 val damage = itemFile.damage
-                if (damage < 0) {
-                    throw WorldLoadException("Item '${itemId.value}' damage cannot be negative")
-                }
+                requireAtLeast(damage, 0, itemCtx, "damage")
 
                 val armor = itemFile.armor
-                if (armor < 0) {
-                    throw WorldLoadException("Item '${itemId.value}' armor cannot be negative")
-                }
+                requireAtLeast(armor, 0, itemCtx, "armor")
 
-                val constitution = itemFile.constitution
-                if (constitution < 0) {
-                    throw WorldLoadException("Item '${itemId.value}' constitution cannot be negative")
+                for ((statKey, statVal) in itemFile.stats) {
+                    if (statVal < 0) {
+                        throw WorldLoadException("Item '${itemId.value}' stat '$statKey' cannot be negative")
+                    }
                 }
 
                 val charges = itemFile.charges
@@ -349,12 +375,8 @@ object WorldLoader {
 
                 val onUse =
                     itemFile.onUse?.also { effect ->
-                        if (effect.healHp < 0) {
-                            throw WorldLoadException("Item '${itemId.value}' onUse.healHp cannot be negative")
-                        }
-                        if (effect.grantXp < 0L) {
-                            throw WorldLoadException("Item '${itemId.value}' onUse.grantXp cannot be negative")
-                        }
+                        requireAtLeast(effect.healHp, 0, itemCtx, "onUse.healHp")
+                        requireAtLeast(effect.grantXp, 0L, itemCtx, "onUse.grantXp")
                         if (!effect.hasEffect()) {
                             throw WorldLoadException(
                                 "Item '${itemId.value}' onUse must define at least one positive effect",
@@ -363,9 +385,7 @@ object WorldLoader {
                     }
 
                 val basePrice = itemFile.basePrice
-                if (basePrice < 0) {
-                    throw WorldLoadException("Item '${itemId.value}' basePrice cannot be negative")
-                }
+                requireAtLeast(basePrice, 0, itemCtx, "basePrice")
 
                 val roomRaw = itemFile.room?.trim()?.takeUnless { it.isEmpty() }
                 val mobRaw = itemFile.mob?.trim()?.takeUnless { it.isEmpty() }
@@ -397,22 +417,14 @@ object WorldLoader {
                                         slot = slot,
                                         damage = damage,
                                         armor = armor,
-                                        stats =
-                                            StatBlock(
-                                                str = itemFile.strength,
-                                                dex = itemFile.dexterity,
-                                                con = constitution,
-                                                int = itemFile.intelligence,
-                                                wis = itemFile.wisdom,
-                                                cha = itemFile.charisma,
-                                            ),
+                                        stats = StatMap(itemFile.stats.mapKeys { (k, _) -> k.uppercase() }),
                                         consumable = itemFile.consumable,
                                         charges = charges,
                                         onUse = onUse,
                                         matchByKey = itemFile.matchByKey,
                                         basePrice = basePrice,
-                                        image = (itemFile.image ?: imageDefaults?.item)?.let { "/images/$it" },
-                                        video = itemFile.video?.let { "/videos/$it" },
+                                        image = (itemFile.image ?: imageDefaults?.item)?.let { "$imagesBase$it" },
+                                        video = itemFile.video?.let { "$videosBase$it" },
                                     ),
                             ),
                         roomId = roomId,
@@ -442,6 +454,26 @@ object WorldLoader {
                 )
             }
 
+            // Stage trainers (normalized)
+            for ((rawId, trainerFile) in file.trainers) {
+                val trainerName = requireNonBlank(trainerFile.name) {
+                    "Trainer '$rawId' in zone '$zone' name cannot be blank"
+                }
+                val trainerClass = requireNonBlank(trainerFile.className) {
+                    "Trainer '$rawId' in zone '$zone' class cannot be blank"
+                }
+                val trainerRoomId = normalizeTarget(zone, trainerFile.room)
+                mergedTrainers.add(
+                    TrainerDefinition(
+                        id = qualifyId(zone, rawId),
+                        name = trainerName,
+                        className = trainerClass.uppercase(),
+                        roomId = trainerRoomId,
+                        image = trainerFile.image,
+                    ),
+                )
+            }
+
             // Stage quests (normalized)
             for ((rawId, questFile) in file.quests) {
                 val questId = qualifyId(zone, rawId)
@@ -451,41 +483,26 @@ object WorldLoader {
                 val giver = requireNonBlank(questFile.giver) {
                     "Quest '$questId' giver cannot be blank"
                 }
-                val completionType =
-                    when (questFile.completionType.uppercase()) {
-                        "AUTO" -> CompletionType.AUTO
-                        "NPC_TURN_IN" -> CompletionType.NPC_TURN_IN
-                        else -> throw WorldLoadException(
-                            "Quest '$questId' has unknown completionType '${questFile.completionType}'",
-                        )
-                    }
-                if (questFile.objectives.isEmpty()) {
-                    throw WorldLoadException("Quest '$questId' must have at least one objective")
-                }
+                val completionType = questFile.completionType.trim().lowercase().ifEmpty { "auto" }
+                requireNotEmpty(questFile.objectives, "Quest '$questId'", "objective")
                 val objectives =
                     questFile.objectives.mapIndexed { index, obj ->
-                        val objectiveType =
-                            when (obj.type.uppercase()) {
-                                "KILL" -> ObjectiveType.KILL
-                                "COLLECT" -> ObjectiveType.COLLECT
-                                else -> throw WorldLoadException(
-                                    "Quest '$questId' objective #${index + 1} has unknown type '${obj.type}'",
-                                )
-                            }
+                        val objectiveType = obj.type.trim().lowercase()
+                        if (objectiveType.isEmpty()) {
+                            throw WorldLoadException(
+                                "Quest '$questId' objective #${index + 1} type cannot be blank",
+                            )
+                        }
                         val targetKeyRaw = requireNonBlank(obj.targetKey) {
                             "Quest '$questId' objective #${index + 1} targetKey cannot be blank"
                         }
                         val targetId = qualifyId(zone, targetKeyRaw)
-                        if (obj.count < 1) {
-                            throw WorldLoadException(
-                                "Quest '$questId' objective #${index + 1} count must be >= 1",
-                            )
-                        }
+                        requireAtLeast(obj.count, 1, "Quest '$questId' objective #${index + 1}", "count")
                         QuestObjectiveDef(
                             type = objectiveType,
                             targetId = targetId,
                             count = obj.count,
-                            description = obj.description.ifBlank { "${objectiveType.name.lowercase()} $targetKeyRaw x${obj.count}" },
+                            description = obj.description.ifBlank { "$objectiveType $targetKeyRaw x${obj.count}" },
                         )
                     }
                 mergedQuests.add(
@@ -508,24 +525,12 @@ object WorldLoader {
                     "Gathering node '$nodeId' displayName cannot be blank"
                 }
                 val skill = parseCraftingSkill(nodeFile.skill, "Gathering node '$nodeId'")
-                if (!skill.isGathering) {
-                    throw WorldLoadException(
-                        "Gathering node '$nodeId' must use a gathering skill (MINING or HERBALISM), got '$skill'",
-                    )
-                }
-                if (nodeFile.skillRequired < 1) {
-                    throw WorldLoadException("Gathering node '$nodeId' skillRequired must be >= 1")
-                }
-                if (nodeFile.yields.isEmpty()) {
-                    throw WorldLoadException("Gathering node '$nodeId' must have at least one yield")
-                }
+                val nodeCtx = "Gathering node '$nodeId'"
+                requireAtLeast(nodeFile.skillRequired, 1, nodeCtx, "skillRequired")
+                requireNotEmpty(nodeFile.yields, nodeCtx, "yield")
                 val yields = nodeFile.yields.mapIndexed { index, yieldFile ->
                     val itemId = normalizeItemId(zone, yieldFile.itemId)
-                    if (yieldFile.minQuantity < 1) {
-                        throw WorldLoadException(
-                            "Gathering node '$nodeId' yield #${index + 1} minQuantity must be >= 1",
-                        )
-                    }
+                    requireAtLeast(yieldFile.minQuantity, 1, "$nodeCtx yield #${index + 1}", "minQuantity")
                     if (yieldFile.maxQuantity < yieldFile.minQuantity) {
                         throw WorldLoadException(
                             "Gathering node '$nodeId' yield #${index + 1} maxQuantity must be >= minQuantity",
@@ -537,6 +542,20 @@ object WorldLoader {
                         maxQuantity = yieldFile.maxQuantity,
                     )
                 }
+                val rareYields = nodeFile.rareYields.mapIndexed { index, rareFile ->
+                    val itemId = normalizeItemId(zone, rareFile.itemId)
+                    requireAtLeast(rareFile.quantity, 1, "$nodeCtx rareYield #${index + 1}", "quantity")
+                    if (rareFile.dropChance <= 0.0 || rareFile.dropChance > 1.0) {
+                        throw WorldLoadException(
+                            "Gathering node '$nodeId' rareYield #${index + 1} dropChance must be in (0.0, 1.0]",
+                        )
+                    }
+                    RareGatheringYield(
+                        itemId = itemId,
+                        quantity = rareFile.quantity,
+                        dropChance = rareFile.dropChance,
+                    )
+                }
                 val nodeRoomId = normalizeTarget(zone, nodeFile.room)
                 val keyword = normalizeKeyword(rawId, nodeFile.keyword)
                 mergedGatheringNodes.add(
@@ -544,9 +563,11 @@ object WorldLoader {
                         id = nodeId,
                         displayName = displayName,
                         keyword = keyword,
+                        image = nodeFile.image,
                         skill = skill,
                         skillRequired = nodeFile.skillRequired,
                         yields = yields,
+                        rareYields = rareYields,
                         respawnSeconds = nodeFile.respawnSeconds,
                         xpReward = nodeFile.xpReward,
                         roomId = nodeRoomId,
@@ -561,30 +582,16 @@ object WorldLoader {
                     "Recipe '$recipeId' displayName cannot be blank"
                 }
                 val skill = parseCraftingSkill(recipeFile.skill, "Recipe '$recipeId'")
-                if (!skill.isCrafting) {
-                    throw WorldLoadException(
-                        "Recipe '$recipeId' must use a crafting skill (SMITHING or ALCHEMY), got '$skill'",
-                    )
-                }
-                if (recipeFile.skillRequired < 1) {
-                    throw WorldLoadException("Recipe '$recipeId' skillRequired must be >= 1")
-                }
-                if (recipeFile.materials.isEmpty()) {
-                    throw WorldLoadException("Recipe '$recipeId' must have at least one material")
-                }
+                val recipeCtx = "Recipe '$recipeId'"
+                requireAtLeast(recipeFile.skillRequired, 1, recipeCtx, "skillRequired")
+                requireNotEmpty(recipeFile.materials, recipeCtx, "material")
                 val materials = recipeFile.materials.mapIndexed { index, matFile ->
                     val itemId = normalizeItemId(zone, matFile.itemId)
-                    if (matFile.quantity < 1) {
-                        throw WorldLoadException(
-                            "Recipe '$recipeId' material #${index + 1} quantity must be >= 1",
-                        )
-                    }
+                    requireAtLeast(matFile.quantity, 1, "$recipeCtx material #${index + 1}", "quantity")
                     MaterialRequirement(itemId = itemId, quantity = matFile.quantity)
                 }
                 val outputItemId = normalizeItemId(zone, recipeFile.outputItemId)
-                if (recipeFile.outputQuantity < 1) {
-                    throw WorldLoadException("Recipe '$recipeId' outputQuantity must be >= 1")
-                }
+                requireAtLeast(recipeFile.outputQuantity, 1, recipeCtx, "outputQuantity")
                 val stationType = recipeFile.station?.let { raw ->
                     parseCraftingStationType(raw, "Recipe '$recipeId'")
                 }
@@ -604,33 +611,93 @@ object WorldLoader {
                     ),
                 )
             }
+
+            // Stage dungeon template (if present)
+            val df = file.dungeon
+            if (df != null) {
+                val dungeonId = qualifyId(zone, "dungeon")
+                val roomTemplates = df.roomTemplates.map { (typeKey, templates) ->
+                    val type = DungeonRoomType.entries.firstOrNull { it.name.equals(typeKey, ignoreCase = true) }
+                        ?: throw WorldLoadException("Dungeon '$dungeonId' unknown room type '$typeKey'")
+                    type to templates.map { rt ->
+                        DungeonRoomTemplateDef(
+                            title = requireNonBlank(rt.title) { "Dungeon '$dungeonId' room template title cannot be blank" },
+                            description = rt.description,
+                            image = rt.image,
+                        )
+                    }
+                }.toMap()
+                val dungeonCtx = "Dungeon '$dungeonId'"
+                requireNotEmpty(roomTemplates.entries, dungeonCtx, "roomTemplates entry")
+                if (df.roomCountMin > df.roomCountMax) {
+                    throw WorldLoadException(
+                        "Dungeon '$dungeonId' roomCountMin (${df.roomCountMin}) must be <= roomCountMax (${df.roomCountMax})",
+                    )
+                }
+                requireAtLeast(df.roomCountMin, 3, dungeonCtx, "roomCountMin")
+                val mobPools = DungeonMobPoolDef(
+                    common = df.mobPools.common,
+                    elite = df.mobPools.elite,
+                    boss = df.mobPools.boss,
+                )
+                requireNotEmpty(mobPools.boss, dungeonCtx, "boss mob in mobPools")
+                val lootTables = df.lootTables.map { (diffKey, lt) ->
+                    val diff = DungeonDifficulty.fromName(diffKey)
+                        ?: throw WorldLoadException("Dungeon '$dungeonId' unknown difficulty '$diffKey'")
+                    diff to DungeonLootTableDef(
+                        mobDrops = lt.mobDrops.map { normalizeItemId(zone, it) },
+                        completionRewards = lt.completionRewards.map { normalizeItemId(zone, it) },
+                    )
+                }.toMap()
+                mergedDungeonTemplates.add(
+                    DungeonTemplateDef(
+                        id = dungeonId,
+                        name = df.name,
+                        description = df.description,
+                        image = df.image,
+                        minLevel = df.minLevel,
+                        roomCountMin = df.roomCountMin,
+                        roomCountMax = df.roomCountMax,
+                        roomTemplates = roomTemplates,
+                        mobPools = mobPools,
+                        lootTables = lootTables,
+                        portalRoom = df.portalRoom,
+                    ),
+                )
+            }
         }
 
-        // Now validate that all exit targets exist in the merged room set.
-        // When a zone filter is active, exits pointing to rooms in non-loaded zones
-        // are kept but not validated (they are cross-zone stubs).
+        // Validate exit targets. Missing targets are logged as warnings and treated
+        // as remote/unreachable exits (players see "the way shimmers" instead of crashing).
         val loadedZones = mergedRooms.keys.mapTo(mutableSetOf()) { it.zone }
         val filteredLoad = zoneFilter.isNotEmpty()
+        val brokenExits = mutableSetOf<Pair<RoomId, Direction>>()
         for ((fromId, exits) in allExits) {
             for ((dir, targetId) in exits) {
                 if (filteredLoad && targetId.zone !in loadedZones) continue
                 if (!mergedRooms.containsKey(targetId)) {
-                    throw WorldLoadException(
-                        "Room '${fromId.value}' exit '$dir' points to missing room '${targetId.value}'",
+                    logger.warn(
+                        "Room '${fromId.value}' exit '$dir' points to missing room '${targetId.value}' — " +
+                            "exit will shimmer as unreachable",
                     )
+                    brokenExits.add(fromId to dir)
                 }
             }
         }
 
-        // Apply exits + features by copying rooms (immutable style)
+        // Apply exits + features by copying rooms (immutable style).
+        // Exits that point to unloaded zones or broken targets are marked as remote
+        // so navigation shows the shimmer message instead of crashing.
         for ((fromId, exits) in allExits) {
             val room = mergedRooms.getValue(fromId)
-            val remoteExits =
+            val remoteExits = buildSet {
                 if (filteredLoad) {
-                    exits.filterValues { it.zone !in loadedZones }.keys.toSet()
-                } else {
-                    emptySet()
+                    addAll(exits.filterValues { it.zone !in loadedZones }.keys)
                 }
+                for ((dir, _) in exits) {
+                    if ((fromId to dir) in brokenExits) add(dir)
+                }
+            }
             mergedRooms[fromId] = room.copy(
                 exits = exits,
                 remoteExits = remoteExits,
@@ -687,6 +754,15 @@ object WorldLoader {
                         "Shop '${shop.id}' item #${index + 1} references missing item '${itemId.value}'",
                     )
                 }
+            }
+        }
+
+        // Validate trainer room references after merge
+        for (trainer in mergedTrainers) {
+            if (!mergedRooms.containsKey(trainer.roomId)) {
+                throw WorldLoadException(
+                    "Trainer '${trainer.id}' references missing room '${trainer.roomId.value}'",
+                )
             }
         }
 
@@ -756,8 +832,11 @@ object WorldLoader {
             }
         }
 
+        // Assign minimap coordinates via per-zone BFS
+        val coordRooms = assignMapCoordinates(mergedRooms, zoneStartRooms)
+
         return World(
-            rooms = mergedRooms.toMutableMap(),
+            rooms = coordRooms.toMutableMap(),
             startRoom = worldStart,
             mobSpawns = mergedMobs.values.sortedBy { it.id.value },
             itemSpawns = mergedItems.values.sortedBy { it.instance.id.value },
@@ -766,9 +845,11 @@ object WorldLoader {
                     .mapNotNull { (zone, lifespanMinutes) -> lifespanMinutes?.let { zone to it } }
                     .toMap(),
             shopDefinitions = mergedShops.toList(),
+            trainerDefinitions = mergedTrainers.toList(),
             questDefinitions = mergedQuests.toList(),
             gatheringNodes = mergedGatheringNodes.toList(),
             recipes = mergedRecipes.toList(),
+            dungeonTemplates = mergedDungeonTemplates.toList(),
         )
     }
 
@@ -787,8 +868,8 @@ object WorldLoader {
 
     private fun validateFileBasics(file: WorldFile) {
         val zone = requireNonBlank(file.zone) { "World zone cannot be blank" }
-        if (file.lifespan != null && file.lifespan < 0L) {
-            throw WorldLoadException("Zone '$zone' lifespan must be >= 0")
+        if (file.lifespan != null) {
+            requireAtLeast(file.lifespan, 0L, "Zone '$zone'", "lifespan")
         }
 
         if (file.rooms.isEmpty()) throw WorldLoadException("Zone '$zone' has no rooms")
@@ -804,6 +885,8 @@ object WorldLoader {
             throw WorldLoadException("Zone '$zone' startRoom '${file.startRoom}' does not exist (normalized as '${start.value}')")
         }
     }
+
+    private fun normalizeBaseUrl(url: String): String = if (url.endsWith("/")) url else "$url/"
 
     /**
      * Normalize a room id that is expected to be "local to zone" unless qualified.
@@ -865,7 +948,7 @@ object WorldLoader {
     ): ItemSlot =
         ItemSlot.parse(raw)
             ?: throw WorldLoadException(
-                "Item '${itemId.value}' has invalid slot '$raw' (expected: head, body, hand)",
+                "Item '${itemId.value}' has invalid slot '$raw' (slot must be non-empty)",
             )
 
     private fun parseDirectionOrNull(s: String): Direction? =
@@ -886,13 +969,29 @@ object WorldLoader {
     ): BtNode? {
         if (behaviorFile == null) return null
 
+        // Inline tree definition takes precedence over template
+        if (behaviorFile.tree != null) {
+            return try {
+                BehaviorTreeLoader.load(behaviorFile.tree, zone)
+            } catch (e: IllegalArgumentException) {
+                throw WorldLoadException(
+                    "Mob '${mobId.value}' has invalid inline behavior tree: ${e.message}",
+                )
+            }
+        }
+
+        val templateName = behaviorFile.template
+            ?: throw WorldLoadException(
+                "Mob '${mobId.value}' behavior must specify either 'template' or 'tree'.",
+            )
+
         val tree =
             BehaviorTemplates.resolve(
-                behaviorFile.template,
+                templateName,
                 behaviorFile.params,
                 zone,
             ) ?: throw WorldLoadException(
-                "Mob '${mobId.value}' references unknown behavior template '${behaviorFile.template}'. " +
+                "Mob '${mobId.value}' references unknown behavior template '$templateName'. " +
                     "Known templates: ${BehaviorTemplates.templateNames.sorted().joinToString(", ")}",
             )
 
@@ -1037,30 +1136,182 @@ object WorldLoader {
     private fun parseCraftingSkill(
         raw: String,
         context: String,
-    ): CraftingSkill =
-        try {
-            CraftingSkill.valueOf(raw.trim().uppercase())
-        } catch (_: IllegalArgumentException) {
-            throw WorldLoadException(
-                "$context has unknown crafting skill '$raw' (expected: ${CraftingSkill.entries.joinToString()})",
-            )
-        }
+    ): String {
+        val id = raw.trim().lowercase()
+        if (id.isEmpty()) throw WorldLoadException("$context crafting skill cannot be blank")
+        return id
+    }
 
     private fun parseCraftingStationType(
         raw: String,
         context: String,
-    ): CraftingStationType =
-        try {
-            CraftingStationType.valueOf(raw.trim().uppercase())
-        } catch (_: IllegalArgumentException) {
-            throw WorldLoadException(
-                "$context has unknown station type '$raw' (expected: ${CraftingStationType.entries.joinToString()})",
-            )
-        }
+    ): String {
+        val id = raw.trim().lowercase()
+        if (id.isEmpty()) throw WorldLoadException("$context station type cannot be blank")
+        return id
+    }
 
     private inline fun requireNonBlank(value: String, lazyMessage: () -> String): String {
         val trimmed = value.trim()
         if (trimmed.isEmpty()) throw WorldLoadException(lazyMessage())
         return trimmed
+    }
+
+    private fun requireAtLeast(value: Int, min: Int, context: String, field: String): Int {
+        if (value < min) throw WorldLoadException("$context $field must be >= $min (got $value)")
+        return value
+    }
+
+    private fun requireAtLeast(value: Long, min: Long, context: String, field: String): Long {
+        if (value < min) throw WorldLoadException("$context $field must be >= $min (got $value)")
+        return value
+    }
+
+    private fun requireNotEmpty(collection: Collection<*>, context: String, what: String) {
+        if (collection.isEmpty()) throw WorldLoadException("$context must have at least one $what")
+    }
+
+    /**
+     * Direction → grid offset for minimap coordinate assignment.
+     * Must match the client-side MAP_OFFSETS in constants.ts.
+     */
+    private val DIRECTION_OFFSETS: Map<Direction, Pair<Int, Int>> = mapOf(
+        Direction.NORTH to (0 to -1),
+        Direction.SOUTH to (0 to 1),
+        Direction.EAST to (1 to 0),
+        Direction.WEST to (-1 to 0),
+        Direction.UP to (1 to -1),
+        Direction.DOWN to (-1 to 1),
+    )
+
+    /**
+     * Assigns 2D minimap coordinates to every room via per-zone BFS.
+     *
+     * Each zone is laid out independently, starting from the zone's declared start room at (0,0).
+     * Only horizontal exits (N/S/E/W) are traversed during BFS — up/down exits are treated as
+     * portals rather than spatial moves, so they don't scatter rooms diagonally or cause grid
+     * collisions with unrelated branches. Rooms reachable only via up/down are placed in a
+     * second pass relative to their horizontal neighbors.
+     *
+     * When two rooms would occupy the same grid cell (non-euclidean exit topology), the later
+     * arrival is placed at the nearest unoccupied cell via a spiral search.
+     */
+    private fun assignMapCoordinates(
+        rooms: Map<RoomId, Room>,
+        zoneStartRooms: Map<String, RoomId>,
+    ): Map<RoomId, Room> {
+        // Group rooms by zone
+        val roomsByZone = rooms.keys.groupBy { it.zone }
+        val coords = HashMap<RoomId, Pair<Int, Int>>(rooms.size)
+
+        data class Pending(
+            val roomId: RoomId,
+            val x: Int,
+            val y: Int,
+        )
+
+        val horizontalDirs = setOf(Direction.NORTH, Direction.SOUTH, Direction.EAST, Direction.WEST)
+
+        for ((zone, roomIds) in roomsByZone) {
+            val zoneRoomSet = roomIds.toHashSet()
+            val occupied = HashMap<Pair<Int, Int>, RoomId>()
+            val startId = zoneStartRooms[zone] ?: roomIds.first()
+
+            // Phase 1: BFS using only horizontal exits (N/S/E/W).
+            val queue = ArrayDeque<Pending>()
+            queue.addLast(Pending(startId, 0, 0))
+
+            while (queue.isNotEmpty()) {
+                val (roomId, desiredX, desiredY) = queue.removeFirst()
+                if (coords.containsKey(roomId)) continue
+
+                val pos = findFreePosition(desiredX, desiredY, occupied)
+                coords[roomId] = pos
+                occupied[pos] = roomId
+
+                val room = rooms[roomId] ?: continue
+                for ((dir, targetId) in room.exits) {
+                    if (dir !in horizontalDirs) continue
+                    if (coords.containsKey(targetId)) continue
+                    if (targetId !in zoneRoomSet) continue
+                    val (dx, dy) = DIRECTION_OFFSETS[dir] ?: continue
+                    queue.addLast(Pending(targetId, pos.first + dx, pos.second + dy))
+                }
+            }
+
+            // Phase 2: Place rooms not reached by horizontal BFS (reachable only via up/down,
+            // or completely unreachable dead-ends). Try to position relative to an already-placed
+            // horizontal neighbor; fall back to placing near any connected neighbor.
+            for (unreachedId in roomIds) {
+                if (coords.containsKey(unreachedId)) continue
+                val room = rooms[unreachedId] ?: continue
+                var placed = false
+                // Prefer horizontal neighbors for placement (they have reliable offsets)
+                for ((dir, neighborId) in room.exits) {
+                    val neighborPos = coords[neighborId] ?: continue
+                    if (dir in horizontalDirs) {
+                        val (dx, dy) = DIRECTION_OFFSETS[dir] ?: continue
+                        val desiredPos = findFreePosition(neighborPos.first - dx, neighborPos.second - dy, occupied)
+                        coords[unreachedId] = desiredPos
+                        occupied[desiredPos] = unreachedId
+                        placed = true
+                        break
+                    }
+                }
+                // Fall back to placing near any connected neighbor
+                if (!placed) {
+                    for ((_, neighborId) in room.exits) {
+                        val neighborPos = coords[neighborId] ?: continue
+                        val desiredPos = findFreePosition(neighborPos.first, neighborPos.second, occupied)
+                        coords[unreachedId] = desiredPos
+                        occupied[desiredPos] = unreachedId
+                        placed = true
+                        break
+                    }
+                }
+                if (!placed) {
+                    val pos = findFreePosition(0, 0, occupied)
+                    coords[unreachedId] = pos
+                    occupied[pos] = unreachedId
+                }
+            }
+        }
+
+        return rooms.mapValues { (id, room) ->
+            val (x, y) = coords[id] ?: (0 to 0)
+            room.copy(mapX = x, mapY = y)
+        }
+    }
+
+    /**
+     * If the desired (x, y) is free, returns it.
+     * Otherwise spirals outward to find the nearest unoccupied cell.
+     */
+    private fun findFreePosition(
+        x: Int,
+        y: Int,
+        occupied: Map<Pair<Int, Int>, RoomId>,
+    ): Pair<Int, Int> {
+        val pos = x to y
+        if (!occupied.containsKey(pos)) return pos
+
+        // Walk the perimeter of expanding squares
+        for (radius in 1..500) {
+            // Top and bottom edges
+            for (dx in -radius..radius) {
+                val top = (x + dx) to (y - radius)
+                if (!occupied.containsKey(top)) return top
+                val bottom = (x + dx) to (y + radius)
+                if (!occupied.containsKey(bottom)) return bottom
+            }
+            // Left and right edges (excluding corners already checked)
+            for (dy in -radius + 1..<radius) {
+                val left = (x - radius) to (y + dy)
+                if (!occupied.containsKey(left)) return left
+                val right = (x + radius) to (y + dy)
+                if (!occupied.containsKey(right)) return right
+            }
+        }
+        return pos
     }
 }

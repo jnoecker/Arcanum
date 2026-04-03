@@ -2,32 +2,29 @@ package dev.ambon.engine.abilities
 
 import dev.ambon.config.AbilityEngineConfig
 import dev.ambon.domain.DamageRange
-import dev.ambon.domain.PlayerClass
 import dev.ambon.engine.status.StatusEffectId
 
 object AbilityRegistryLoader {
     fun load(
         config: AbilityEngineConfig,
         registry: AbilityRegistry,
+        imagesBaseUrl: String = "/images/",
     ) {
+        val imagesBase = if (imagesBaseUrl.endsWith("/")) imagesBaseUrl else "$imagesBaseUrl/"
         for ((key, defConfig) in config.definitions) {
-            val targetType =
-                when (defConfig.targetType.uppercase()) {
-                    "ENEMY" -> TargetType.ENEMY
-                    "SELF" -> TargetType.SELF
-                    "ALLY" -> TargetType.ALLY
-                    else -> continue
-                }
+            val targetType = defConfig.targetType.trim().lowercase()
             val effect =
                 when (defConfig.effect.type.uppercase()) {
                     "DIRECT_DAMAGE" ->
                         AbilityEffect.DirectDamage(
                             damage = DamageRange(defConfig.effect.minDamage, defConfig.effect.maxDamage),
+                            damagePerLevel = defConfig.effect.damagePerLevel,
                         )
                     "DIRECT_HEAL" ->
                         AbilityEffect.DirectHeal(
                             minHeal = defConfig.effect.minHeal,
                             maxHeal = defConfig.effect.maxHeal,
+                            healPerLevel = defConfig.effect.healPerLevel,
                         )
                     "APPLY_STATUS" ->
                         AbilityEffect.ApplyStatus(
@@ -36,20 +33,21 @@ object AbilityRegistryLoader {
                     "AREA_DAMAGE" ->
                         AbilityEffect.AreaDamage(
                             damage = DamageRange(defConfig.effect.minDamage, defConfig.effect.maxDamage),
+                            damagePerLevel = defConfig.effect.damagePerLevel,
                         )
                     "TAUNT" ->
                         AbilityEffect.Taunt(
                             flatThreat = defConfig.effect.flatThreat,
                             margin = defConfig.effect.margin,
                         )
+                    "SUMMON_PET" ->
+                        AbilityEffect.SummonPet(
+                            petTemplateKey = defConfig.effect.petTemplateKey,
+                            durationMs = defConfig.effect.durationMs,
+                        )
                     else -> continue
                 }
-            val requiredClass =
-                if (defConfig.requiredClass.isNotBlank()) {
-                    PlayerClass.fromString(defConfig.requiredClass)
-                } else {
-                    null
-                }
+            val requiredClass = defConfig.requiredClass.ifBlank { null }
             registry.register(
                 AbilityDefinition(
                     id = AbilityId(key),
@@ -61,7 +59,7 @@ object AbilityRegistryLoader {
                     targetType = targetType,
                     effect = effect,
                     requiredClass = requiredClass,
-                    image = defConfig.image.ifBlank { null },
+                    image = defConfig.image.ifBlank { null }?.let { "$imagesBase$it" },
                 ),
             )
         }

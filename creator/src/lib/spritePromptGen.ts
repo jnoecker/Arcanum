@@ -12,6 +12,10 @@ import type { TierDefinitionConfig } from "@/types/config";
 const FORMAT_SPEC =
   "1:1 square character portrait, full body front-facing neutral standing pose, centered on 512x512 canvas, head to feet visible with padding, solid pale lavender (#d8d0e8) background, character sheet even lighting from front";
 
+const FALLBACK_TEMPLATE =
+  `${FORMAT_SPEC}. {race_description}, wearing {class_outfit}, presenting {tier_visual}, ` +
+  "androgynous fantasy adventurer, full body visible, front-facing neutral standing pose, centered composition, readable silhouette, clean separation from the pale lavender background";
+
 // ─── Types ───────────────────────────────────────────────────────────
 
 export interface SpriteDimensions {
@@ -26,6 +30,21 @@ export interface SpritePromptTemplate {
   raceDescriptions: Record<string, string>;
   classOutfits: Record<string, string>;
   generatedAt: string;
+}
+
+function fallbackSpriteTemplate(): SpritePromptTemplate {
+  const tierDefinitions = getTierDefinitions();
+  const tierDescriptions = Object.fromEntries(
+    Object.entries(tierDefinitions).map(([key, value]) => [key, value.visualDescription]),
+  );
+
+  return {
+    template: FALLBACK_TEMPLATE,
+    tierDescriptions,
+    raceDescriptions: { ...DEFAULT_RACE_BODY_DESCRIPTIONS },
+    classOutfits: { ...DEFAULT_CLASS_OUTFIT_DESCRIPTIONS },
+    generatedAt: "fallback",
+  };
 }
 
 // ─── Data resolution ─────────────────────────────────────────────────
@@ -160,11 +179,18 @@ export function fillSpriteTemplate(
   template: SpritePromptTemplate,
   dimensions: SpriteDimensions,
 ): string {
+  return `${resolveSpritePromptBody(template, dimensions)}\n\n${STYLE_SUFFIX}`;
+}
+
+function resolveSpritePromptBody(
+  template: SpritePromptTemplate,
+  dimensions: SpriteDimensions,
+): string {
   // Staff tier uses unique per-race god-tier prompts, bypassing the template entirely.
   if (dimensions.tier === "tstaff") {
     const staffPrompt = getStaffPrompt(dimensions.race);
     if (staffPrompt) {
-      return `${FORMAT_SPEC}. ${staffPrompt}\n\n${STYLE_SUFFIX}`;
+      return `${FORMAT_SPEC}. ${staffPrompt}`;
     }
   }
 
@@ -193,5 +219,19 @@ export function fillSpriteTemplate(
     .replace(/\{tier\}/g, dimensions.tier)
     .replace(/\{tier_visual\}/g, tierVisual);
 
-  return `${prompt}\n\n${STYLE_SUFFIX}`;
+  return prompt;
+}
+
+export function buildSpritePrompt(
+  dimensions: SpriteDimensions,
+  template?: SpritePromptTemplate | null,
+  extraContext?: string,
+): string {
+  const resolvedTemplate = template ?? fallbackSpriteTemplate();
+  const promptBody = resolveSpritePromptBody(resolvedTemplate, dimensions);
+  const context = extraContext?.trim();
+
+  return context
+    ? `${promptBody}. ${context}\n\n${STYLE_SUFFIX}`
+    : `${promptBody}\n\n${STYLE_SUFFIX}`;
 }

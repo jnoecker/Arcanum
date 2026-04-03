@@ -74,7 +74,7 @@ export function WelcomeScreen({ onNewProject }: WelcomeScreenProps) {
         </div>
 
         <div className="grid min-h-0 gap-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(20rem,0.9fr)]">
-          <div className="rounded-[36px] border border-white/10 bg-[linear-gradient(155deg,rgba(54,63,90,0.9),rgba(37,45,68,0.92))] p-6 shadow-hero backdrop-blur-xl">
+          <div className="rounded-[36px] border border-white/10 bg-[linear-gradient(155deg,rgba(54,63,90,0.9),rgba(37,45,68,0.92))] p-6 shadow-hero">
             <h2 className="font-display text-2xl text-text-primary">Enter the studio</h2>
             <p className="mt-2 text-sm leading-7 text-text-secondary">
               Return to your last working world, begin a fresh canon, or open a realm already on disk.
@@ -121,7 +121,7 @@ export function WelcomeScreen({ onNewProject }: WelcomeScreenProps) {
             </div>
           </div>
 
-          <div className="min-h-0 rounded-[36px] border border-white/10 bg-[linear-gradient(155deg,rgba(54,63,90,0.9),rgba(37,45,68,0.92))] p-6 shadow-hero backdrop-blur-xl">
+          <div className="min-h-0 rounded-[36px] border border-white/10 bg-[linear-gradient(155deg,rgba(54,63,90,0.9),rgba(37,45,68,0.92))] p-6 shadow-hero">
             <div className="mb-4 flex items-center justify-between">
               <h3 className="font-display text-2xl text-text-primary">Recent worlds</h3>
               {recentProjects.length > 0 && (

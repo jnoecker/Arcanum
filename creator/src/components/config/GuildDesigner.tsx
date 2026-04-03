@@ -112,6 +112,8 @@ export function GuildDesigner({
         addPlaceholder="New guild rank id"
         searchPlaceholder="Search guild ranks"
         emptyMessage="No guild ranks match the current search."
+        emptyTitle="No guilds chartered yet"
+        emptyDescription="Establish the organizations and fellowships that bind players together."
         items={config.guildRanks}
         defaultItem={defaultGuildRankDefinition}
         getDisplayName={(rank) => rank.displayName}

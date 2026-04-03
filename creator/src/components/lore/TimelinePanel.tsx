@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/FormWidgets";
 import { TimelineView } from "./TimelineView";
 
-// ─── Calendar system editor ────────────────────────────────────────
+// Calendar system editor
 
 function CalendarEditor({
   calendars,
@@ -131,14 +131,14 @@ function CalendarEditor({
           disabled={!newName.trim()}
           variant="secondary"
         >
-          Add
+          Add Calendar
         </ActionButton>
       </div>
     </Section>
   );
 }
 
-// ─── Event editor ──────────────────────────────────────────────────
+// Event editor
 
 function EventEditor({
   event,
@@ -223,7 +223,7 @@ function EventEditor({
   );
 }
 
-// ─── Main panel ────────────────────────────────────────────────────
+// Main panel
 
 export function TimelinePanel() {
   const calendars = useLoreStore(selectCalendars);
@@ -278,8 +278,9 @@ export function TimelinePanel() {
               onSelectEvent={setSelectedEventId}
             />
           ) : (
-            <div className="flex h-32 items-center justify-center rounded-lg border border-dashed border-border-muted text-xs text-text-muted">
-              Add a calendar system and events to populate the timeline.
+            <div className="flex h-32 flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-border-muted text-xs text-text-muted">
+              <span>No events recorded yet.</span>
+              <span className="text-text-muted/60">Use <span className="font-medium text-text-secondary">Add Event</span> above to place the first moment on this calendar.</span>
             </div>
           )}
         </Section>

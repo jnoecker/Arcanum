@@ -248,7 +248,13 @@ export function BatchLegacyImport({ onClose }: { onClose: () => void }) {
                       {doneCount} new, {skippedCount} existing{errorCount > 0 ? `, ${errorCount} failed` : ""}
                     </span>
                   </div>
-                  <div className="h-3 overflow-hidden rounded-full border border-white/8 bg-black/18">
+                  <div
+                    className="h-3 overflow-hidden rounded-full border border-white/8 bg-black/18"
+                    role="progressbar"
+                    aria-valuenow={doneCount + skippedCount + errorCount}
+                    aria-valuemax={targets!.length}
+                    aria-label="Import progress"
+                  >
                     <div
                       className="h-full rounded-full bg-[linear-gradient(90deg,rgba(168,151,210,0.92),rgba(140,174,201,0.9))] transition-[width] duration-300"
                       style={{ width: `${((doneCount + skippedCount + errorCount) / targets!.length) * 100}%` }}

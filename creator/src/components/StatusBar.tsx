@@ -20,9 +20,9 @@ export function StatusBar() {
   const warningCount = allIssues.filter((issue) => issue.severity === "warning").length;
 
   return (
-    <div className="relative z-10 shrink-0 px-4 pb-4">
-      <div className="instrument-panel flex min-h-12 flex-wrap items-center gap-3 rounded-[28px] px-5 py-3 text-xs">
-        <span className="text-[10px] uppercase tracking-wide-ui text-text-muted">
+    <div className="relative z-10 shrink-0 px-4 pb-2">
+      <div className="instrument-panel relative flex flex-wrap items-center gap-2.5 overflow-hidden rounded-[20px] px-4 py-1.5 text-xs">
+        <span className="font-display font-semibold text-[10px] uppercase tracking-wide-ui text-text-muted">
           World pulse
         </span>
 

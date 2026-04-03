@@ -68,6 +68,7 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
   const [pendingConnection, setPendingConnection] =
     useState<PendingConnection | null>(null);
   const [saving, setSaving] = useState(false);
+  const [justSaved, setJustSaved] = useState(false);
   const [showBatchArt, setShowBatchArt] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>("map");
   const [hintDismissed, setHintDismissed] = useState(
@@ -229,6 +230,8 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
     setSaving(true);
     try {
       await saveZone(zoneId);
+      setJustSaved(true);
+      setTimeout(() => setJustSaved(false), 2000);
     } catch (err) {
       console.error("Save failed:", err);
     } finally {
@@ -263,12 +266,12 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
             {roomCount} room{roomCount !== 1 ? "s" : ""}
           </span>
           {zoneState.dirty && (
-            <span className="text-xs text-accent">modified</span>
+            <span className="rounded-full bg-[rgba(200,164,106,0.15)] px-2 py-0.5 text-[10px] text-warm-pale">modified</span>
           )}
         </div>
 
         {/* Undo / Redo */}
-        <div className="flex items-center gap-0.5">
+        <div className="flex items-center gap-0.5 border-r border-white/8 pr-3">
           <button
             onClick={() => undo(zoneId)}
             disabled={!canUndo}
@@ -293,10 +296,18 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
         <button
           onClick={handleSave}
           disabled={!zoneState.dirty || saving}
-          className="h-6 rounded px-2 text-xs transition-colors enabled:bg-accent/20 enabled:text-accent enabled:hover:bg-accent/30 disabled:text-text-muted disabled:opacity-30"
+          className={`focus-ring h-7 rounded-full px-3 text-xs font-medium transition-all duration-500 ${
+            saving
+              ? "border border-[rgba(200,164,106,0.4)] bg-[linear-gradient(145deg,rgba(200,164,106,0.22),rgba(43,52,76,0.9))] text-warm-pale shadow-[0_4px_16px_rgba(200,164,106,0.18)]"
+              : justSaved
+                ? "border border-status-success/30 text-status-success"
+                : zoneState.dirty
+                  ? "border border-[rgba(200,164,106,0.4)] bg-[linear-gradient(145deg,rgba(200,164,106,0.22),rgba(43,52,76,0.9))] text-warm-pale shadow-[0_4px_16px_rgba(200,164,106,0.18)]"
+                  : "text-text-muted opacity-40"
+          }`}
           title="Save (Ctrl+S)"
         >
-          {saving ? "Saving..." : "Save"}
+          {saving ? "Saving..." : justSaved ? "\u2713 Saved" : "Save"}
         </button>
 
         <div className="ml-auto flex items-center gap-2">
@@ -345,52 +356,56 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
             ))}
           </div>
 
-          <button
-            onClick={() => setShowBatchArt(true)}
-            className="h-6 rounded px-2 text-xs text-accent transition-colors hover:bg-accent/10"
-            title="Generate art for all entities"
-          >
-            Batch Art
-          </button>
-          {showAddRoom ? (
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                handleConfirmAddRoom();
-              }}
-              className="flex items-center gap-1"
-            >
-              <input
-                ref={addRoomInputRef}
-                value={newRoomId}
-                onChange={(e) => setNewRoomId(e.target.value)}
-                className="ornate-input h-6 w-40 rounded px-1.5 text-xs text-text-primary"
-                placeholder="room_id"
-                autoFocus
-              />
-              <button
-                type="submit"
-                className="h-6 rounded bg-accent/20 px-2 text-xs text-accent hover:bg-accent/30"
-              >
-                Add
-              </button>
-              <button
-                type="button"
-                onClick={() => setShowAddRoom(false)}
-                className="h-6 rounded px-1.5 text-xs text-text-muted hover:text-text-primary"
-              >
-                Cancel
-              </button>
-            </form>
-          ) : (
+          <div className="flex items-center gap-2 border-l border-white/8 pl-3">
             <button
-              onClick={handleStartAddRoom}
-              className="h-6 rounded bg-accent/20 px-2 text-xs text-accent hover:bg-accent/30"
-              title="Add Room"
+              onClick={() => setShowBatchArt(true)}
+              className="h-6 rounded px-2 text-xs text-stellar-blue transition-colors hover:bg-stellar-blue/10"
+              title="Generate art for all entities"
+              aria-label="Generate art for all entities"
             >
-              + Room
+              Batch Art
             </button>
-          )}
+            {showAddRoom ? (
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  handleConfirmAddRoom();
+                }}
+                className="flex items-center gap-1"
+              >
+                <input
+                  ref={addRoomInputRef}
+                  value={newRoomId}
+                  onChange={(e) => setNewRoomId(e.target.value)}
+                  className="ornate-input h-6 w-40 rounded px-1.5 text-xs text-text-primary"
+                  placeholder="room_id"
+                  aria-label="New room ID"
+                  autoFocus
+                />
+                <button
+                  type="submit"
+                  className="h-6 rounded bg-accent/20 px-2 text-xs text-accent hover:bg-accent/30"
+                >
+                  Add
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowAddRoom(false)}
+                  className="h-6 rounded px-1.5 text-xs text-text-muted hover:text-text-primary"
+                >
+                  Cancel
+                </button>
+              </form>
+            ) : (
+              <button
+                onClick={handleStartAddRoom}
+                className="h-6 rounded-full border border-[rgba(200,164,106,0.35)] bg-[rgba(200,164,106,0.15)] px-3 text-xs text-warm-pale hover:bg-[rgba(200,164,106,0.25)]"
+                title="Add Room"
+              >
+                + Room
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -476,7 +491,7 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
             {/* First-zone onboarding hint */}
             {roomCount <= 1 && !hintDismissed && viewMode === "map" && (
               <div className="pointer-events-auto absolute inset-x-0 bottom-4 z-[2] flex justify-center">
-                <div className="flex items-center gap-4 rounded-2xl border border-white/10 bg-gradient-panel px-5 py-3 shadow-bar backdrop-blur-xl">
+                <div className="flex items-center gap-4 rounded-2xl border border-white/10 bg-gradient-panel bg-[radial-gradient(circle_at_center,rgba(200,164,106,0.08),transparent_60%)] px-5 py-3 shadow-bar backdrop-blur-xl">
                   <div>
                     <p className="text-sm text-text-primary">
                       Click the <span className="font-mono text-accent">+</span> handles on a room's edges to create exits to new rooms.

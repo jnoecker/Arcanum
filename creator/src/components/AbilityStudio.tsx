@@ -7,7 +7,7 @@ import { useConfigStore } from "@/stores/configStore";
 import { useImageSrc } from "@/lib/useImageSrc";
 import { composePrompt, UNIVERSAL_NEGATIVE, type ArtStyle } from "@/lib/arcanumPrompts";
 import { generateAbilityPrompt, generateStatusEffectPrompt } from "@/lib/abilityPromptGen";
-import { IMAGE_MODELS, imageGenerateCommand, type AssetEntry, type GeneratedImage } from "@/types/assets";
+import { IMAGE_MODELS, imageGenerateCommand, requestsTransparentBackground, type AssetEntry, type GeneratedImage } from "@/types/assets";
 import type { AbilityDefinitionConfig, StatusEffectDefinitionConfig } from "@/types/config";
 
 type AbilityStudioTab = string;
@@ -119,6 +119,7 @@ export function AbilityStudio() {
   const [promptDraft, setPromptDraft] = useState("");
   const [variants, setVariants] = useState<AssetEntry[]>([]);
   const [previewEntry, setPreviewEntry] = useState<AssetEntry | null>(null);
+  const [promptGeneratedByLlm, setPromptGeneratedByLlm] = useState(false);
   const [generatingPrompt, setGeneratingPrompt] = useState(false);
   const [generatingImage, setGeneratingImage] = useState(false);
   const [batchGenerating, setBatchGenerating] = useState(false);
@@ -227,9 +228,11 @@ export function AbilityStudio() {
     const activeVariant = variants.find((entry) => entry.is_active);
     if (activeVariant?.enhanced_prompt || activeVariant?.prompt) {
       setPromptDraft(activeVariant.enhanced_prompt || activeVariant.prompt);
+      setPromptGeneratedByLlm(Boolean(activeVariant.enhanced_prompt));
       return;
     }
     setPromptDraft(fallbackPromptForTarget(selectedTarget, artStyle as ArtStyle));
+    setPromptGeneratedByLlm(false);
   }, [artStyle, selectedTarget, variants]);
 
   const imageProvider = settings?.image_provider ?? "deepinfra";
@@ -282,8 +285,9 @@ export function AbilityStudio() {
     return fallbackPromptForTarget(target, artStyle as ArtStyle);
   }, [artStyle]);
 
-  const runGeneration = useCallback(async (target: StudioTarget, prompt: string, activate: boolean) => {
+  const runGeneration = useCallback(async (target: StudioTarget, prompt: string, activate: boolean, skipEnhancement?: boolean) => {
     if (!defaultModel) throw new Error(`No image model configured for provider ${imageProvider}.`);
+    const assetType = assetTypeForTarget(target);
 
     const image = await invoke<GeneratedImage>(imageGenerateCommand(imageProvider), {
       prompt,
@@ -293,11 +297,14 @@ export function AbilityStudio() {
       height: dimensionsForTarget().height,
       steps: defaultModel.defaultSteps ?? 4,
       guidance: "defaultGuidance" in defaultModel ? defaultModel.defaultGuidance : null,
+      assetType,
+      autoEnhance: skipEnhancement ? false : !promptGeneratedByLlm,
+      transparentBackground: imageProvider === "openai" && requestsTransparentBackground(assetType),
     });
 
     await acceptAsset(
       image,
-      assetTypeForTarget(target),
+      assetType,
       prompt,
       { zone: "", entity_type: target.kind, entity_id: target.id },
       abilityVariantGroup(target),
@@ -306,7 +313,7 @@ export function AbilityStudio() {
 
     const fileName = image.file_path.split(/[\\/]/).pop() ?? image.hash;
     if (activate) persistImage(target, fileName);
-  }, [acceptAsset, defaultModel, imageProvider, persistImage]);
+  }, [acceptAsset, defaultModel, imageProvider, persistImage, promptGeneratedByLlm]);
 
   const handleGeneratePrompt = async () => {
     if (!selectedTarget || !hasLlmKey) return;
@@ -314,6 +321,7 @@ export function AbilityStudio() {
     setError(null);
     try {
       setPromptDraft(await generatePromptForTarget(selectedTarget));
+      setPromptGeneratedByLlm(true);
     } catch (e) {
       setError(String(e));
     } finally {
@@ -343,10 +351,11 @@ export function AbilityStudio() {
     try {
       const pending = visibleTargets.filter((target) => !target.image);
       for (const target of pending) {
-        const prompt = hasLlmKey
+        const usedLlm = hasLlmKey;
+        const prompt = usedLlm
           ? await generatePromptForTarget(target)
           : fallbackPromptForTarget(target, artStyle as ArtStyle);
-        await runGeneration(target, prompt, true);
+        await runGeneration(target, prompt, true, usedLlm);
       }
       await loadAssets();
       await refreshVariants();
@@ -509,7 +518,10 @@ export function AbilityStudio() {
               <div className="mb-3 text-[11px] uppercase tracking-ui text-text-muted">Prompt engineering</div>
               <textarea
                 value={promptDraft}
-                onChange={(event) => setPromptDraft(event.target.value)}
+                onChange={(event) => {
+                  setPromptDraft(event.target.value);
+                  setPromptGeneratedByLlm(false);
+                }}
                 rows={14}
                 className="w-full resize-y rounded-[20px] border border-white/10 bg-surface-scrim px-4 py-3 font-mono text-[12px] leading-6 text-text-secondary outline-none transition focus:border-border-active"
                 placeholder="Generate an icon prompt..."

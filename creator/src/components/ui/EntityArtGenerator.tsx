@@ -5,7 +5,7 @@ import { useAssetStore } from "@/stores/assetStore";
 import { useProjectStore } from "@/stores/projectStore";
 import { useImageSrc, isLegacyImagePath } from "@/lib/useImageSrc";
 import { getEnhanceSystemPrompt, ART_STYLE_LABELS, UNIVERSAL_NEGATIVE, type ArtStyle } from "@/lib/arcanumPrompts";
-import { IMAGE_MODELS, ENTITY_DIMENSIONS, DIMENSION_PRESETS, imageGenerateCommand } from "@/types/assets";
+import { IMAGE_MODELS, ENTITY_DIMENSIONS, DIMENSION_PRESETS, imageGenerateCommand, requestsTransparentBackground } from "@/types/assets";
 import type { AssetContext, GeneratedImage } from "@/types/assets";
 import { VariantStrip } from "./VariantStrip";
 import { removeBgAndSave, shouldRemoveBg } from "@/lib/useBackgroundRemoval";
@@ -181,6 +181,9 @@ export function EntityArtGenerator({
         height: activeDims.height,
         steps: model?.defaultSteps ?? 28,
         guidance: model && "defaultGuidance" in model ? model.defaultGuidance : null,
+        assetType,
+        autoEnhance: false,
+        transparentBackground: imageProvider === "openai" && requestsTransparentBackground(assetType),
       });
       setResult(image);
       setStage("preview");

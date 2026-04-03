@@ -111,7 +111,6 @@ export function EquipmentSlotsPanel({ config, onChange }: ConfigPanelProps) {
     [slots, onChange],
   );
 
-  // ─── Drag handling ───────────────────────────────────────────
   const handlePointerDown = useCallback(
     (e: React.PointerEvent, slotId: string) => {
       e.preventDefault();
@@ -269,7 +268,7 @@ export function EquipmentSlotsPanel({ config, onChange }: ConfigPanelProps) {
                 key={id}
                 role="button"
                 tabIndex={0}
-                aria-label={`${slot.displayName} slot marker - drag or use arrow keys to reposition`}
+                aria-label={`${slot.displayName} slot position`}
                 onPointerDown={(e) => handlePointerDown(e, id)}
                 onClick={() => setSelectedId(id)}
                 onKeyDown={(e) => {

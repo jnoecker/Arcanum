@@ -54,7 +54,7 @@ export function CreationStep({
   }, [stage, loadSettings]);
 
   const hasImageKey = !!(
-    settings?.deepinfra_api_key || settings?.runware_api_key
+    settings?.deepinfra_api_key || settings?.runware_api_key || settings?.openai_api_key
   );
 
   const initTargets = useCallback(() => {

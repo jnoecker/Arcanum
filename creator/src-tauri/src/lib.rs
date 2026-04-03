@@ -4,6 +4,7 @@ mod arcanum_meta;
 mod assets;
 mod deepinfra;
 mod git;
+mod generation;
 mod llm;
 mod openai_images;
 mod openrouter;

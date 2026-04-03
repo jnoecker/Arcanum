@@ -6,7 +6,7 @@ import { buildVibeInput } from "@/lib/vibePrompts";
 import { defaultImageContext, defaultImagePrompt, type DefaultImageKind } from "@/lib/entityPrompts";
 import { getEnhanceSystemPrompt, UNIVERSAL_NEGATIVE } from "@/lib/arcanumPrompts";
 import { useImageSrc } from "@/lib/useImageSrc";
-import { IMAGE_MODELS, imageGenerateCommand, type GeneratedImage } from "@/types/assets";
+import { IMAGE_MODELS, imageGenerateCommand, requestsTransparentBackground, type GeneratedImage } from "@/types/assets";
 import type { WorldFile } from "@/types/world";
 
 interface ZoneVibePanelProps {
@@ -156,6 +156,7 @@ export function ZoneVibePanel({ zoneId, world, onWorldChange }: ZoneVibePanelPro
 
   const generateDefault = useCallback(async (kind: DefaultImageKind, vibeText: string) => {
     if (!defaultModel) throw new Error(`No image model configured for provider ${imageProvider}.`);
+    const assetType = assetTypeForKind(kind);
 
     const forZone = zoneId;
     const currentWorld = worldRef.current;
@@ -180,12 +181,15 @@ export function ZoneVibePanel({ zoneId, world, onWorldChange }: ZoneVibePanelPro
         height: dimensionsForKind(kind).height,
         steps: defaultModel.defaultSteps ?? 4,
         guidance: "defaultGuidance" in defaultModel ? defaultModel.defaultGuidance : null,
+        assetType,
+        autoEnhance: false,
+        transparentBackground: imageProvider === "openai" && requestsTransparentBackground(assetType),
       });
 
       const fileName = image.file_path.split(/[\\/]/).pop() ?? image.hash;
       await acceptAsset(
         image,
-        assetTypeForKind(kind),
+        assetType,
         prompt,
         { zone: zoneId, entity_type: "default", entity_id: kind },
         `default:${zoneId}:${kind}`,

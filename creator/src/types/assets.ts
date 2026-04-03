@@ -80,6 +80,7 @@ export interface Settings {
   image_provider: string;
   video_model: string;
   batch_concurrency: number;
+  auto_enhance_prompts: boolean;
   auto_remove_bg: boolean;
   r2_account_id: string;
   r2_access_key_id: string;
@@ -152,6 +153,19 @@ export function imageGenerateCommand(provider: string): string {
     case "runware": return "runware_generate_image";
     case "openai": return "openai_generate_image";
     default: return "generate_image";
+  }
+}
+
+/** Asset types that benefit from provider-native transparent backgrounds. */
+export function requestsTransparentBackground(assetType?: AssetType | string | null): boolean {
+  switch (assetType) {
+    case "player_sprite":
+    case "ability_icon":
+    case "status_effect_icon":
+    case "ability_sprite":
+      return true;
+    default:
+      return false;
   }
 }
 

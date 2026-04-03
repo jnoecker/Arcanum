@@ -116,7 +116,7 @@ function RelationGraphInner() {
       </div>
 
       {/* Graph */}
-      <div className="h-[min(70vh,600px)] rounded-lg border border-border-muted bg-graph-bg">
+      <div className="h-[min(75vh,720px)] rounded-lg border border-border-muted bg-graph-bg">
         {nodes.length > 0 ? (
           <ReactFlow
             nodes={nodes}
@@ -129,15 +129,15 @@ function RelationGraphInner() {
             maxZoom={2}
             proOptions={{ hideAttribution: true }}
           >
-            <Background variant={BackgroundVariant.Dots} gap={20} size={1} color="#1e2748" />
+            <Background variant={BackgroundVariant.Dots} gap={20} size={1} color="var(--color-bg-elevated)" />
             <Controls
               showInteractive={false}
               position="bottom-left"
             />
             <MiniMap
-              style={{ background: "#262f47" }}
+              style={{ background: "var(--color-bg-secondary)" }}
               maskColor="rgba(8, 12, 28, 0.8)"
-              nodeColor="#a897d2"
+              nodeColor="var(--color-accent)"
             />
           </ReactFlow>
         ) : (

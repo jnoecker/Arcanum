@@ -145,10 +145,11 @@ export function NewProjectWizard({ onClose }: NewProjectWizardProps) {
             <p className="text-2xs uppercase tracking-wide-ui text-text-muted">World identity</p>
             <div className="mt-4 space-y-4">
               <div>
-                <label className="mb-1.5 block text-2xs uppercase tracking-wide-ui text-text-muted">
+                <label htmlFor="wizard-project-name" className="mb-1.5 block text-2xs uppercase tracking-wide-ui text-text-muted">
                   Project Name
                 </label>
                 <input
+                  id="wizard-project-name"
                   type="text"
                   value={projectName}
                   onChange={(e) => {
@@ -160,11 +161,12 @@ export function NewProjectWizard({ onClose }: NewProjectWizardProps) {
                 />
               </div>
               <div>
-                <label className="mb-1.5 block text-2xs uppercase tracking-wide-ui text-text-muted">
+                <label htmlFor="wizard-parent-dir" className="mb-1.5 block text-2xs uppercase tracking-wide-ui text-text-muted">
                   Parent Directory
                 </label>
                 <div className="flex flex-col gap-3 sm:flex-row">
                   <input
+                    id="wizard-parent-dir"
                     type="text"
                     value={parentDir}
                     readOnly
@@ -177,7 +179,7 @@ export function NewProjectWizard({ onClose }: NewProjectWizardProps) {
                 </div>
               </div>
               {nameError && (
-                <div className="rounded-[18px] border border-status-error/30 bg-status-error/10 px-4 py-3 text-sm text-status-error">
+                <div role="alert" className="rounded-[18px] border border-status-error/30 bg-status-error/10 px-4 py-3 text-sm text-status-error">
                   {nameError}
                 </div>
               )}
@@ -203,10 +205,12 @@ export function NewProjectWizard({ onClose }: NewProjectWizardProps) {
         <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_18rem]">
           <section className="panel-surface-light rounded-[24px] p-5">
             <p className="text-2xs uppercase tracking-wide-ui text-text-muted">Foundational template</p>
-            <div className="mt-4 grid gap-3">
+            <div role="radiogroup" aria-label="Project template" className="mt-4 grid gap-3">
               {TEMPLATES.map((template) => (
                 <button
                   key={template.id}
+                  role="radio"
+                  aria-checked={selectedTemplate.id === template.id}
                   onClick={() => setSelectedTemplate(template)}
                   className={`focus-ring rounded-[22px] border p-4 text-left transition ${
                     selectedTemplate.id === template.id
@@ -225,10 +229,11 @@ export function NewProjectWizard({ onClose }: NewProjectWizardProps) {
             <p className="text-2xs uppercase tracking-wide-ui text-text-muted">Ports of entry</p>
             <div className="mt-4 space-y-4">
               <div>
-                <label className="mb-1.5 block text-2xs uppercase tracking-wide-ui text-text-muted">
+                <label htmlFor="wizard-telnet-port" className="mb-1.5 block text-2xs uppercase tracking-wide-ui text-text-muted">
                   Telnet Port
                 </label>
                 <input
+                  id="wizard-telnet-port"
                   type="number"
                   value={telnetPort}
                   onChange={(e) => setTelnetPort(Number(e.target.value))}
@@ -238,10 +243,11 @@ export function NewProjectWizard({ onClose }: NewProjectWizardProps) {
                 />
               </div>
               <div>
-                <label className="mb-1.5 block text-2xs uppercase tracking-wide-ui text-text-muted">
+                <label htmlFor="wizard-web-port" className="mb-1.5 block text-2xs uppercase tracking-wide-ui text-text-muted">
                   Web Port
                 </label>
                 <input
+                  id="wizard-web-port"
                   type="number"
                   value={webPort}
                   onChange={(e) => setWebPort(Number(e.target.value))}
@@ -256,16 +262,16 @@ export function NewProjectWizard({ onClose }: NewProjectWizardProps) {
       )}
 
       {step === 3 && (
-        <div className="flex min-h-[18rem] flex-col items-center justify-center gap-4 rounded-[28px] border border-white/8 bg-[radial-gradient(circle_at_top,rgba(184,216,232,0.12),rgba(8,12,28,0.18)_40%),rgba(8,12,28,0.2)] px-6 text-center">
+        <div aria-live="polite" className="flex min-h-[18rem] flex-col items-center justify-center gap-4 rounded-[28px] border border-white/8 bg-[radial-gradient(circle_at_top,rgba(184,216,232,0.12),rgba(8,12,28,0.18)_40%),rgba(8,12,28,0.2)] px-6 text-center">
           {stage !== "error" && stage !== "done" && <Spinner className="h-6 w-6 border-2" />}
           {stage === "done" && (
             <div className="flex h-14 w-14 items-center justify-center rounded-full border border-status-success/40 bg-status-success/10 text-xl text-status-success">
-              +
+              ✓
             </div>
           )}
           {stage === "error" && (
             <div className="flex h-14 w-14 items-center justify-center rounded-full border border-status-error/40 bg-status-error/10 text-xl text-status-error">
-              x
+              ✕
             </div>
           )}
           <p className="font-display text-lg text-text-primary">{STAGE_LABELS[stage]}</p>

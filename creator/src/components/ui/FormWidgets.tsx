@@ -102,7 +102,7 @@ export function DialogShell({
                   aria-label="Close dialog"
                   className="font-sans text-base"
                 >
-                  x
+                  ✕
                 </ActionButton>
               )}
             </div>
@@ -138,6 +138,7 @@ export function EditableField({
         className={`focus-ring cursor-text rounded border-b border-dashed border-white/10 px-1 -mx-1 hover:border-white/20 hover:bg-bg-tertiary ${className ?? ""}`}
         role="button"
         tabIndex={0}
+        aria-expanded={editing}
         onClick={() => {
           setDraft(value);
           setEditing(true);
@@ -202,6 +203,7 @@ export function EditableTextArea({
         className="focus-ring cursor-text rounded border-b border-dashed border-white/10 px-1 -mx-1 text-xs leading-relaxed text-text-secondary hover:border-white/20 hover:bg-bg-tertiary"
         role="button"
         tabIndex={0}
+        aria-expanded={editing}
         onClick={() => {
           setDraft(value);
           setEditing(true);
@@ -258,12 +260,16 @@ export function Section({
 }) {
   const [expanded, setExpanded] = useState(defaultExpanded);
 
+  const contentId = "section-content-" + title.replace(/\s+/g, "-").toLowerCase();
+
   return (
     <div className="border-b border-border-muted px-4 py-3">
       <div className="flex items-center gap-2">
         <button
           type="button"
           onClick={() => setExpanded((v) => !v)}
+          aria-expanded={expanded}
+          aria-controls={contentId}
           className="focus-ring flex items-center gap-1.5 rounded text-left"
         >
           <span
@@ -272,7 +278,7 @@ export function Section({
           >
             &#x25B6;
           </span>
-          <h4 className="font-display text-2xs uppercase tracking-widest text-text-muted">
+          <h4 className="font-display font-semibold text-2xs uppercase tracking-widest text-text-muted">
             {title}
           </h4>
         </button>
@@ -283,7 +289,7 @@ export function Section({
           {description && (
             <p className="mb-2 mt-1.5 text-[11px] leading-relaxed text-text-muted/70">{description}</p>
           )}
-          <div className="mt-1.5">{children}</div>
+          <div id={contentId} className="mt-1.5">{children}</div>
         </>
       )}
     </div>
@@ -540,17 +546,20 @@ export function IconButton({
   danger,
   children,
   size = "md",
+  "aria-label": ariaLabel,
 }: {
   onClick: () => void;
   title: string;
   danger?: boolean;
   children: ReactNode;
   size?: "sm" | "md";
+  "aria-label"?: string;
 }) {
   return (
     <button
       onClick={onClick}
       title={title}
+      aria-label={ariaLabel || title}
       className={cx(
         "focus-ring rounded text-xs transition-colors",
         size === "sm" ? "h-9 w-9" : "h-11 w-11",

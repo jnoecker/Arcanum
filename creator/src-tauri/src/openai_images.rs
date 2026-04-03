@@ -1,10 +1,8 @@
 use base64::Engine;
 use serde::{Deserialize, Serialize};
-use sha2::{Digest, Sha256};
-use tauri::{AppHandle, Manager};
+use tauri::AppHandle;
 
-use crate::deepinfra::GeneratedImage;
-use crate::settings;
+use crate::{deepinfra::GeneratedImage, generation, settings};
 
 const API_URL: &str = "https://api.openai.com/v1/images/generations";
 
@@ -16,6 +14,8 @@ struct OpenAIImageRequest {
     size: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     quality: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    background: Option<String>,
     output_format: String,
 }
 
@@ -38,6 +38,9 @@ pub async fn openai_generate_image(
     width: Option<u32>,
     height: Option<u32>,
     quality: Option<String>,
+    asset_type: Option<String>,
+    auto_enhance: Option<bool>,
+    transparent_background: Option<bool>,
 ) -> Result<GeneratedImage, String> {
     let settings = settings::get_settings(app.clone()).await?;
     if settings.openai_api_key.is_empty() {
@@ -51,16 +54,34 @@ pub async fn openai_generate_image(
     };
     let w = width.unwrap_or(1024);
     let h = height.unwrap_or(1024);
+    let final_prompt = generation::maybe_enhance_prompt(
+        &app,
+        &prompt,
+        asset_type.as_deref(),
+        auto_enhance,
+    )
+    .await?;
+    let behavior = generation::infer_behavior(
+        asset_type.as_deref(),
+        w,
+        h,
+        transparent_background,
+    );
 
     // OpenAI only supports specific sizes — snap to the closest valid option
     let size = snap_to_openai_size(w, h);
 
     let body = OpenAIImageRequest {
         model: model_id.clone(),
-        prompt: prompt.clone(),
+        prompt: final_prompt.clone(),
         n: 1,
         size,
-        quality: quality.or_else(|| Some("medium".to_string())),
+        quality: quality.or_else(|| Some("high".to_string())),
+        background: if behavior.transparent_background {
+            Some("transparent".to_string())
+        } else {
+            None
+        },
         output_format: "png".to_string(),
     };
 
@@ -86,7 +107,7 @@ pub async fn openai_generate_image(
 
     let entry = resp.data.first().ok_or("No images in OpenAI response")?;
 
-    let bytes = if let Some(b64) = &entry.b64_json {
+    let raw_bytes = if let Some(b64) = &entry.b64_json {
         base64::engine::general_purpose::STANDARD
             .decode(b64)
             .map_err(|e| format!("Failed to decode base64: {e}"))?
@@ -103,41 +124,18 @@ pub async fn openai_generate_image(
     } else {
         return Err("OpenAI response contained no image data".to_string());
     };
+    let processed = generation::process_image_bytes(&raw_bytes, &behavior)?;
 
-    // Content-addressed filename
-    let mut hasher = Sha256::new();
-    hasher.update(&bytes);
-    let hash = format!("{:x}", hasher.finalize());
-
-    // Save to assets dir
-    let dir = app
-        .path()
-        .app_data_dir()
-        .map_err(|e| format!("Failed to get app data dir: {e}"))?
-        .join("assets")
-        .join("images");
-    tokio::fs::create_dir_all(&dir)
-        .await
-        .map_err(|e| format!("Failed to create assets dir: {e}"))?;
-
-    let filename = format!("{hash}.png");
-    let file_path = dir.join(&filename);
-    tokio::fs::write(&file_path, &bytes)
-        .await
-        .map_err(|e| format!("Failed to write image: {e}"))?;
-
-    let b64_out = base64::engine::general_purpose::STANDARD.encode(&bytes);
-
-    Ok(GeneratedImage {
-        id: uuid::Uuid::new_v4().to_string(),
-        hash,
-        file_path: file_path.to_string_lossy().to_string(),
-        data_url: format!("data:image/png;base64,{b64_out}"),
-        width: w,
-        height: h,
-        prompt,
-        model: model_id,
-    })
+    generation::persist_generated_image(
+        &app,
+        &processed,
+        final_prompt,
+        model_id,
+        behavior.target_width,
+        behavior.target_height,
+        behavior.output_format,
+    )
+    .await
 }
 
 /// Snap arbitrary dimensions to the nearest supported OpenAI image size.

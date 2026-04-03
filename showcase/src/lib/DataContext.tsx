@@ -10,6 +10,10 @@ interface DataContextValue {
   articleById: Map<string, ShowcaseArticle>;
 }
 
+interface RuntimeConfig {
+  showcaseUrl?: string | null;
+}
+
 const DataContext = createContext<DataContextValue>({
   data: null,
   loading: true,
@@ -24,27 +28,47 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const [articleById, setArticleById] = useState<Map<string, ShowcaseArticle>>(new Map());
 
   useEffect(() => {
-    // Try local data first (for development), fall back to R2
-    const dataUrl = import.meta.env.VITE_SHOWCASE_URL || "/data/showcase.json";
-    fetch(dataUrl)
-      .then((r) => {
+    let cancelled = false;
+
+    const load = async () => {
+      try {
+        const configResp = await fetch("/config.json", { cache: "no-store" });
+        let runtimeUrl: string | undefined;
+        if (configResp.ok) {
+          const config = await configResp.json() as RuntimeConfig;
+          runtimeUrl = config.showcaseUrl?.trim() || undefined;
+        }
+
+        const dataUrl = runtimeUrl || import.meta.env.VITE_SHOWCASE_URL || "/data/showcase.json";
+        const r = await fetch(dataUrl);
         if (!r.ok) throw new Error(`Failed to load showcase data (${r.status})`);
-        return r.json();
-      })
-      .then((d: ShowcaseData) => {
+        const d: ShowcaseData = await r.json();
+
         // Pre-compute search text once at load time
         for (const a of d.articles) {
           a.searchText = a.contentHtml.replace(/<[^>]+>/g, "").toLowerCase();
         }
+
+        if (cancelled) return;
+
         setData(d);
         const map = new Map<string, ShowcaseArticle>();
         for (const a of d.articles) map.set(a.id, a);
         setArticleById(map);
         applyBranding(d.meta);
         injectManifest(d.meta);
-      })
-      .catch((e) => setError(String(e)))
-      .finally(() => setLoading(false));
+      } catch (e) {
+        if (!cancelled) setError(String(e));
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    load();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   return (

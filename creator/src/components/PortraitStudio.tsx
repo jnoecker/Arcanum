@@ -243,6 +243,7 @@ export function PortraitStudio({ selectedZoneId }: { selectedZoneId: string | nu
 
   const runGeneration = useCallback(async (target: PortraitTarget, prompt: string, activate: boolean) => {
     if (!defaultModel) throw new Error(`No image model configured for provider ${imageProvider}.`);
+    const assetType = portraitAssetType(target);
 
     const image = await invoke<GeneratedImage>(imageGenerateCommand(imageProvider), {
       prompt,
@@ -252,11 +253,12 @@ export function PortraitStudio({ selectedZoneId }: { selectedZoneId: string | nu
       height: dimensionsForPortrait(target.kind).height,
       steps: defaultModel.defaultSteps ?? 4,
       guidance: "defaultGuidance" in defaultModel ? defaultModel.defaultGuidance : null,
+      assetType,
     });
 
     await acceptAsset(
       image,
-      portraitAssetType(target),
+      assetType,
       prompt,
       { zone: "", entity_type: target.kind, entity_id: target.id },
       portraitVariantGroup(target),

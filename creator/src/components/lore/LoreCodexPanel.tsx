@@ -5,6 +5,7 @@ import { DefinitionWorkbench } from "@/components/config/DefinitionWorkbench";
 import { Section, FieldRow, TextInput, SelectInput } from "@/components/ui/FormWidgets";
 import { LoreEditor } from "./LoreEditor";
 import { CODEX_GENERATE_PROMPT } from "@/lib/lorePrompts";
+import { tiptapToPlainText } from "@/lib/loreRelations";
 
 const CODEX_CATEGORIES = [
   { value: "places", label: "Places" },
@@ -381,8 +382,9 @@ export function LoreCodexPanel() {
         })}
         getDisplayName={(e) => e.title}
         renderSummary={(e) => {
-          const preview = e.content.slice(0, 80);
-          return preview.length < e.content.length ? `${preview}...` : preview;
+          const plain = tiptapToPlainText(e.content);
+          const preview = plain.slice(0, 100);
+          return preview.length < plain.length ? `${preview}...` : preview;
         }}
         renderBadges={(e) => (e.category ? [e.category] : [])}
         renderDetail={(entry, patch) => {

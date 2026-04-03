@@ -13,7 +13,7 @@ import {
   type DefaultImageKind,
 } from "@/lib/entityPrompts";
 import { getEnhanceSystemPrompt, UNIVERSAL_NEGATIVE } from "@/lib/arcanumPrompts";
-import { IMAGE_MODELS, imageGenerateCommand, type AssetContext, type AssetEntry, type GeneratedImage } from "@/types/assets";
+import { IMAGE_MODELS, imageGenerateCommand, requestsTransparentBackground, type AssetContext, type AssetEntry, type GeneratedImage } from "@/types/assets";
 import { InlineError, Spinner } from "@/components/ui/FormWidgets";
 import type { WorldFile } from "@/types/world";
 
@@ -168,6 +168,7 @@ export function ZoneAssetWorkbench({ zoneId, world, onWorldChange }: ZoneAssetWo
 
   const [selectedKey, setSelectedKey] = useState<WorkbenchKey | null>(null);
   const [promptDraft, setPromptDraft] = useState("");
+  const [promptGeneratedByLlm, setPromptGeneratedByLlm] = useState(false);
   const [variants, setVariants] = useState<AssetEntry[]>([]);
   const [previewEntry, setPreviewEntry] = useState<AssetEntry | null>(null);
   const [generatingPrompt, setGeneratingPrompt] = useState(false);
@@ -238,11 +239,13 @@ export function ZoneAssetWorkbench({ zoneId, world, onWorldChange }: ZoneAssetWo
     const activeVariant = variants.find((entry) => entry.is_active);
     if (activeVariant?.enhanced_prompt || activeVariant?.prompt) {
       setPromptDraft(activeVariant.enhanced_prompt || activeVariant.prompt);
+      setPromptGeneratedByLlm(Boolean(activeVariant.enhanced_prompt));
       setError(null);
       return;
     }
     if (selectedTarget.mode === "default") {
       setPromptDraft(defaultImagePrompt(selectedTarget.kind, world, zoneVibe, artStyle));
+      setPromptGeneratedByLlm(false);
       setError(null);
       return;
     }
@@ -251,6 +254,7 @@ export function ZoneAssetWorkbench({ zoneId, world, onWorldChange }: ZoneAssetWo
       : (selectedTarget.entity.kind === "mob" ? world.mobs : selectedTarget.entity.kind === "item" ? world.items : world.shops) ?? {};
     const entity = collection[selectedTarget.entity.id as keyof typeof collection];
     setPromptDraft(entityPrompt(selectedTarget.entity.kind, selectedTarget.entity.id, entity, artStyle));
+    setPromptGeneratedByLlm(false);
     setError(null);
   }, [selectedTarget, world, zoneVibe, artStyle, variants]);
 
@@ -297,6 +301,7 @@ export function ZoneAssetWorkbench({ zoneId, world, onWorldChange }: ZoneAssetWo
     if (!selectedTarget || !selectedKind || !defaultModel) return null;
     const command = imageGenerateCommand(imageProvider);
     const dimensions = dimensionsForKind(selectedKind);
+    const assetType = assetTypeForKind(selectedKind);
     const image = await invoke<GeneratedImage>(command, {
       prompt,
       negativePrompt: UNIVERSAL_NEGATIVE,
@@ -305,10 +310,13 @@ export function ZoneAssetWorkbench({ zoneId, world, onWorldChange }: ZoneAssetWo
       height: dimensions.height,
       steps: defaultModel.defaultSteps ?? 4,
       guidance: "defaultGuidance" in defaultModel ? defaultModel.defaultGuidance : null,
+      assetType,
+      autoEnhance: !promptGeneratedByLlm,
+      transparentBackground: imageProvider === "openai" && requestsTransparentBackground(assetType),
     });
-    await acceptAsset(image, assetTypeForKind(selectedKind), prompt, selectedContext, selectedVariantGroup, activate);
+    await acceptAsset(image, assetType, prompt, selectedContext, selectedVariantGroup, activate);
     return image;
-  }, [acceptAsset, defaultModel, imageProvider, selectedContext, selectedKind, selectedTarget, selectedVariantGroup]);
+  }, [acceptAsset, defaultModel, imageProvider, promptGeneratedByLlm, selectedContext, selectedKind, selectedTarget, selectedVariantGroup]);
 
   const handleGeneratePrompt = async () => {
     if (!selectedTarget || !hasLlmKey) return;
@@ -316,6 +324,7 @@ export function ZoneAssetWorkbench({ zoneId, world, onWorldChange }: ZoneAssetWo
     setError(null);
     try {
       setPromptDraft(await generateEnhancedPrompt());
+      setPromptGeneratedByLlm(true);
     } catch (err) {
       setError(String(err));
     } finally {
@@ -577,7 +586,10 @@ export function ZoneAssetWorkbench({ zoneId, world, onWorldChange }: ZoneAssetWo
               )}
               <textarea
                 value={promptDraft}
-                onChange={(event) => setPromptDraft(event.target.value)}
+                onChange={(event) => {
+                  setPromptDraft(event.target.value);
+                  setPromptGeneratedByLlm(false);
+                }}
                 rows={10}
                 className="w-full resize-y rounded-[20px] border border-white/10 bg-surface-scrim px-4 py-3 font-mono text-[12px] leading-6 text-text-secondary outline-none transition focus:border-border-active"
                 placeholder={selectedTarget.mode === "default" ? "Generate a fallback prompt for this zone asset..." : "Generate a prompt for this entity..."}

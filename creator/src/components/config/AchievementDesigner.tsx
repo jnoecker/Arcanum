@@ -25,6 +25,8 @@ export function AchievementDesigner({
         addPlaceholder="New category id"
         searchPlaceholder="Search categories"
         emptyMessage="No categories match the current search."
+        emptyTitle="No achievements designed yet"
+        emptyDescription="Create milestones and trophies that celebrate player accomplishments."
         items={config.achievementCategories}
         defaultItem={defaultAchievementCategoryDefinition}
         getDisplayName={(category) => category.displayName}
@@ -42,6 +44,8 @@ export function AchievementDesigner({
         addPlaceholder="New criterion type id"
         searchPlaceholder="Search criterion types"
         emptyMessage="No criterion types match the current search."
+        emptyTitle="No achievements designed yet"
+        emptyDescription="Create milestones and trophies that celebrate player accomplishments."
         items={config.achievementCriterionTypes}
         defaultItem={defaultAchievementCriterionTypeDefinition}
         getDisplayName={(criterion) => criterion.displayName}

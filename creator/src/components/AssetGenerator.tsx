@@ -12,7 +12,7 @@ import {
   UNIVERSAL_NEGATIVE,
   type ArtStyle,
 } from "@/lib/arcanumPrompts";
-import { IMAGE_MODELS, imageGenerateCommand } from "@/types/assets";
+import { IMAGE_MODELS, imageGenerateCommand, requestsTransparentBackground } from "@/types/assets";
 import type { AssetType, GeneratedImage } from "@/types/assets";
 import loadingVignette from "@/assets/loading-vignette.jpg";
 import { ActionButton, DialogShell, Spinner } from "./ui/FormWidgets";
@@ -121,6 +121,9 @@ export function AssetGenerator() {
         height: 1024,
         steps: model?.defaultSteps ?? null,
         guidance,
+        assetType,
+        autoEnhance: !(useEnhanced && enhancedPrompt),
+        transparentBackground: imageProvider === "openai" && requestsTransparentBackground(assetType),
       });
       setResult(image);
       setStage("preview");
@@ -234,10 +237,12 @@ export function AssetGenerator() {
 
               <div>
                 <label className="mb-2 block text-2xs uppercase tracking-wide-ui text-text-muted">Asset Type</label>
-                <div className="flex flex-wrap gap-2">
+                <div role="radiogroup" aria-label="Asset type" className="flex flex-wrap gap-2">
                   {(Object.entries(ASSET_TEMPLATES) as [AssetType, { label: string }][]).map(([key, { label }]) => (
                     <ActionButton
                       key={key}
+                      role="radio"
+                      aria-checked={assetType === key}
                       onClick={() => handleTypeChange(key)}
                       variant={assetType === key ? "primary" : "secondary"}
                       className="justify-start"
@@ -250,10 +255,12 @@ export function AssetGenerator() {
 
               <div>
                 <label className="mb-2 block text-2xs uppercase tracking-wide-ui text-text-muted">Model</label>
-                <div className="grid gap-3">
+                <div role="radiogroup" aria-label="Model" className="grid gap-3">
                   {IMAGE_MODELS.filter((model) => model.provider === imageProvider).map((model) => (
                     <button
                       key={model.id}
+                      role="radio"
+                      aria-checked={modelId === model.id}
                       onClick={() => setModelId(model.id)}
                       className={`focus-ring rounded-[22px] border p-4 text-left transition ${
                         modelId === model.id
@@ -269,10 +276,11 @@ export function AssetGenerator() {
               </div>
 
               <div>
-                <label className="mb-2 block text-2xs uppercase tracking-wide-ui text-text-muted">
+                <label htmlFor="asset-gen-customization" className="mb-2 block text-2xs uppercase tracking-wide-ui text-text-muted">
                   Customization
                 </label>
                 <input
+                  id="asset-gen-customization"
                   type="text"
                   value={customization}
                   onChange={(e) => handleCustomizationChange(e.target.value)}
@@ -283,7 +291,7 @@ export function AssetGenerator() {
 
               <div>
                 <div className="mb-2 flex flex-wrap items-center gap-2">
-                  <label className="text-2xs uppercase tracking-wide-ui text-text-muted">Prompt</label>
+                  <label htmlFor="asset-gen-prompt" className="text-2xs uppercase tracking-wide-ui text-text-muted">Prompt</label>
                   <div className="ml-auto flex flex-wrap gap-2">
                     {enhancedPrompt && (
                       <>
@@ -310,6 +318,7 @@ export function AssetGenerator() {
                   </div>
                 </div>
                 <textarea
+                  id="asset-gen-prompt"
                   value={useEnhanced && enhancedPrompt ? enhancedPrompt : prompt}
                   onChange={(e) => {
                     if (useEnhanced) {
@@ -324,7 +333,7 @@ export function AssetGenerator() {
               </div>
 
               {error && (
-                <div className="rounded-[22px] border border-status-error/30 bg-status-error/10 px-4 py-3 text-sm text-status-error">
+                <div role="alert" className="rounded-[22px] border border-status-error/30 bg-status-error/10 px-4 py-3 text-sm text-status-error">
                   {error}
                 </div>
               )}
@@ -379,7 +388,7 @@ export function AssetGenerator() {
               </span>
             </div>
             {error && (
-              <div className="mt-4 rounded-[22px] border border-status-error/30 bg-status-error/10 px-4 py-3 text-sm text-status-error">
+              <div role="alert" className="mt-4 rounded-[22px] border border-status-error/30 bg-status-error/10 px-4 py-3 text-sm text-status-error">
                 {error}
               </div>
             )}
@@ -388,10 +397,11 @@ export function AssetGenerator() {
           <aside className="instrument-panel rounded-[28px] p-5">
             <p className="text-2xs uppercase tracking-wide-ui text-text-muted">Archive</p>
             <div className="mt-4">
-              <label className="mb-1.5 block text-2xs uppercase tracking-wide-ui text-text-muted">
+              <label htmlFor="asset-gen-global-key" className="mb-1.5 block text-2xs uppercase tracking-wide-ui text-text-muted">
                 Save As Global Asset
               </label>
               <input
+                id="asset-gen-global-key"
                 type="text"
                 value={globalAssetKey}
                 onChange={(e) => setGlobalAssetKey(e.target.value)}

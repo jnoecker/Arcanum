@@ -159,6 +159,7 @@ export function MapEnhancer({
         width: Math.min(w, 1920),
         height: Math.min(h, 1920),
         strength,
+        assetType: "zone_map",
       });
 
       setPreviewUrl(result.data_url);

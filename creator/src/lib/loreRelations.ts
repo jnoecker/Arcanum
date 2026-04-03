@@ -167,8 +167,8 @@ export function buildRelationGraph(
         target: rel.targetId,
         label: rel.type,
         type: "smoothstep",
-        style: { stroke: RELATION_COLORS[rel.type] ?? "#56617d" },
-        labelStyle: { fill: "#95a0bf", fontSize: 9 },
+        style: { stroke: RELATION_COLORS[rel.type] ?? "#56617d", strokeWidth: 1.5 },
+        labelStyle: { fill: "#95a0bf", fontSize: 10 },
       });
     }
 
@@ -186,8 +186,8 @@ export function buildRelationGraph(
         target: m.targetId,
         label: "mentions",
         type: "smoothstep",
-        style: { stroke: "#56617d", strokeDasharray: "4 2" },
-        labelStyle: { fill: "#56617d", fontSize: 9 },
+        style: { stroke: "#56617d", strokeDasharray: "4 2", strokeWidth: 1.5 },
+        labelStyle: { fill: "#7a849e", fontSize: 10 },
       });
     }
   }

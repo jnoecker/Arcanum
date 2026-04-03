@@ -7,17 +7,18 @@ import {
   roomContext,
 } from "@/lib/entityPrompts";
 import {
+  UNIVERSAL_NEGATIVE,
   getEnhanceSystemPrompt,
   type ArtStyle,
 } from "@/lib/arcanumPrompts";
 import type { GeneratedImage } from "@/types/assets";
-import { ENTITY_DIMENSIONS, imageGenerateCommand } from "@/types/assets";
+import { ENTITY_DIMENSIONS, IMAGE_MODELS, imageGenerateCommand, requestsTransparentBackground } from "@/types/assets";
 import { removeBgAndSave, shouldRemoveBg } from "@/lib/useBackgroundRemoval";
 
 export function assetTypeForKind(kind: string): string {
   if (kind === "room") return "background";
-  if (kind === "mob") return "entity_portrait";
-  if (kind === "item") return "entity_portrait";
+  if (kind === "mob") return "mob";
+  if (kind === "item") return "item";
   if (kind === "shop") return "background";
   return "background";
 }
@@ -197,19 +198,25 @@ export async function runBatchArtGeneration(
           height: 1024,
         };
         const command = imageGenerateCommand(imageProvider);
+        const model = IMAGE_MODELS.find((entry) => entry.provider === imageProvider);
+        const batchAssetType = assetTypeForKind(target.kind);
 
         const image = await invoke<GeneratedImage>(command, {
           prompt: finalPrompt,
+          negativePrompt: UNIVERSAL_NEGATIVE,
+          model: model?.id,
           width: dims.width,
           height: dims.height,
-          steps: 4,
-          guidance: null,
+          steps: model?.defaultSteps ?? 4,
+          guidance: model && "defaultGuidance" in model ? model.defaultGuidance : null,
+          assetType: batchAssetType,
+          autoEnhance: false,
+          transparentBackground: imageProvider === "openai" && requestsTransparentBackground(batchAssetType),
         });
 
         callbacks.onTargetUpdate(idx, { status: "done", result: image });
 
         const variantGroup = `${target.kind}:${zoneId}:${target.id}`;
-        const batchAssetType = assetTypeForKind(target.kind);
         const batchContext = {
           zone: zoneId,
           entity_type: target.kind,

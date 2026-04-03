@@ -13,7 +13,7 @@ import {
   getFormatForAssetType,
   UNIVERSAL_NEGATIVE,
 } from "@/lib/arcanumPrompts";
-import { IMAGE_MODELS, imageGenerateCommand, type AssetEntry, type AssetType, type GeneratedImage } from "@/types/assets";
+import { IMAGE_MODELS, imageGenerateCommand, requestsTransparentBackground, type AssetEntry, type AssetType, type GeneratedImage } from "@/types/assets";
 import { InlineError, Spinner } from "@/components/ui/FormWidgets";
 
 const CUSTOM_ASSET_TYPES: AssetType[] = [
@@ -114,6 +114,7 @@ export function CustomAssetStudio({ selectedZoneId }: { selectedZoneId: string |
   const [promptDraft, setPromptDraft] = useState("");
   const [variants, setVariants] = useState<AssetEntry[]>([]);
   const [previewEntry, setPreviewEntry] = useState<AssetEntry | null>(null);
+  const [promptGeneratedByLlm, setPromptGeneratedByLlm] = useState(false);
   const [generatingPrompt, setGeneratingPrompt] = useState(false);
   const [generatingImage, setGeneratingImage] = useState(false);
   const [batchGenerating, setBatchGenerating] = useState(false);
@@ -184,9 +185,11 @@ export function CustomAssetStudio({ selectedZoneId }: { selectedZoneId: string |
     const activeVariant = variants.find((entry) => entry.is_active);
     if (activeVariant?.enhanced_prompt || activeVariant?.prompt) {
       setPromptDraft(activeVariant.enhanced_prompt || activeVariant.prompt);
+      setPromptGeneratedByLlm(Boolean(activeVariant.enhanced_prompt));
       return;
     }
     setPromptDraft(buildCustomAssetPrompt(assetType, description, zoneVibe, artStyle));
+    setPromptGeneratedByLlm(false);
   }, [artStyle, assetType, description, variants, zoneVibe]);
 
   useEffect(() => {
@@ -233,6 +236,9 @@ export function CustomAssetStudio({ selectedZoneId }: { selectedZoneId: string |
       height: dimensionsForAssetType(assetType).height,
       steps: defaultModel.defaultSteps ?? 4,
       guidance: "defaultGuidance" in defaultModel ? defaultModel.defaultGuidance : null,
+      assetType,
+      autoEnhance: !promptGeneratedByLlm,
+      transparentBackground: imageProvider === "openai" && requestsTransparentBackground(assetType),
     });
 
     await acceptAsset(
@@ -246,7 +252,7 @@ export function CustomAssetStudio({ selectedZoneId }: { selectedZoneId: string |
     const fileName = image.file_path.split(/[\\/]/).pop() ?? image.hash;
     if (activate) persistGlobalAsset(fileName);
     return fileName;
-  }, [acceptAsset, assetType, context, defaultModel, imageProvider, persistGlobalAsset, variantGroup]);
+  }, [acceptAsset, assetType, context, defaultModel, imageProvider, persistGlobalAsset, promptGeneratedByLlm, variantGroup]);
 
   const handleGeneratePrompt = async () => {
     if (!hasLlmKey || !description.trim()) return;
@@ -254,6 +260,7 @@ export function CustomAssetStudio({ selectedZoneId }: { selectedZoneId: string |
     setError(null);
     try {
       setPromptDraft(await generatePrompt());
+      setPromptGeneratedByLlm(true);
     } catch (e) {
       setError(String(e));
     } finally {
@@ -403,7 +410,10 @@ export function CustomAssetStudio({ selectedZoneId }: { selectedZoneId: string |
             <div className="mb-1 text-[11px] uppercase tracking-ui text-text-muted">Creative brief</div>
             <textarea
               value={description}
-              onChange={(event) => setDescription(event.target.value)}
+              onChange={(event) => {
+                setDescription(event.target.value);
+                setPromptGeneratedByLlm(false);
+              }}
               rows={5}
               placeholder="Describe the asset you want. The generator will translate it into Surreal Gentle Magic art direction."
               className="w-full resize-y rounded-[20px] border border-white/10 bg-surface-scrim px-4 py-3 text-sm leading-6 text-text-secondary outline-none transition focus:border-border-active"
@@ -421,7 +431,10 @@ export function CustomAssetStudio({ selectedZoneId }: { selectedZoneId: string |
             <div className="mb-1 text-[11px] uppercase tracking-ui text-text-muted">Prompt draft</div>
             <textarea
               value={promptDraft}
-              onChange={(event) => setPromptDraft(event.target.value)}
+              onChange={(event) => {
+                setPromptDraft(event.target.value);
+                setPromptGeneratedByLlm(false);
+              }}
               rows={10}
               className="w-full resize-y rounded-[20px] border border-white/10 bg-surface-scrim px-4 py-3 font-mono text-[12px] leading-6 text-text-secondary outline-none transition focus:border-border-active"
               placeholder="Generate a prompt from your brief..."

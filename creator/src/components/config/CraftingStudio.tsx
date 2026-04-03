@@ -87,6 +87,8 @@ export function CraftingStudio({
         addPlaceholder="New skill id"
         searchPlaceholder="Search skills"
         emptyMessage="No crafting skills match the current search."
+        emptyTitle="No recipes written yet"
+        emptyDescription="Design the formulas and blueprints for crafting and creation."
         items={config.craftingSkills}
         defaultItem={defaultCraftingSkillDefinition}
         getDisplayName={(skill) => skill.displayName}
@@ -105,6 +107,8 @@ export function CraftingStudio({
         addPlaceholder="New station type id"
         searchPlaceholder="Search station types"
         emptyMessage="No station types match the current search."
+        emptyTitle="No recipes written yet"
+        emptyDescription="Design the formulas and blueprints for crafting and creation."
         items={config.craftingStationTypes}
         defaultItem={defaultCraftingStationTypeDefinition}
         getDisplayName={(stationType) => stationType.displayName}

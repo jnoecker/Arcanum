@@ -1,6 +1,6 @@
 use tauri::AppHandle;
 
-use crate::{anthropic, openrouter, settings};
+use crate::{anthropic, openrouter, settings, settings::Settings};
 
 /// Strip `<think>...</think>` reasoning blocks that some models emit.
 fn strip_think_tags(text: &str) -> String {
@@ -18,17 +18,12 @@ fn strip_think_tags(text: &str) -> String {
     result.to_string()
 }
 
-/// Unified LLM completion command that dispatches to the configured provider.
-#[tauri::command]
-pub async fn llm_complete(
-    app: AppHandle,
-    system_prompt: String,
-    user_prompt: String,
-    max_tokens: Option<u32>,
+pub async fn complete_from_settings(
+    s: &Settings,
+    system_prompt: &str,
+    user_prompt: &str,
+    max_tokens: u32,
 ) -> Result<String, String> {
-    let max_tokens = max_tokens.unwrap_or(1024);
-    let s = settings::get_settings(app.clone()).await?;
-
     let raw = match s.prompt_llm_provider.as_str() {
         "anthropic" => {
             if s.anthropic_api_key.is_empty() {
@@ -37,8 +32,8 @@ pub async fn llm_complete(
             anthropic::complete(
                 &s.anthropic_api_key,
                 "claude-sonnet-4-20250514",
-                &system_prompt,
-                &user_prompt,
+                system_prompt,
+                user_prompt,
                 max_tokens,
             )
             .await?
@@ -50,8 +45,8 @@ pub async fn llm_complete(
             openrouter::complete(
                 &s.openrouter_api_key,
                 &s.enhance_model,
-                &system_prompt,
-                &user_prompt,
+                system_prompt,
+                user_prompt,
                 max_tokens,
             )
             .await?
@@ -103,4 +98,17 @@ pub async fn llm_complete(
     };
 
     Ok(strip_think_tags(raw.trim()))
+}
+
+/// Unified LLM completion command that dispatches to the configured provider.
+#[tauri::command]
+pub async fn llm_complete(
+    app: AppHandle,
+    system_prompt: String,
+    user_prompt: String,
+    max_tokens: Option<u32>,
+) -> Result<String, String> {
+    let max_tokens = max_tokens.unwrap_or(1024);
+    let s = settings::get_settings(app.clone()).await?;
+    complete_from_settings(&s, &system_prompt, &user_prompt, max_tokens).await
 }

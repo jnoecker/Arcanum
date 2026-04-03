@@ -315,6 +315,21 @@ export function ApiSettingsPanel({
           <label className="flex cursor-pointer items-center gap-2 text-xs text-text-secondary">
             <input
               type="checkbox"
+              checked={draft.auto_enhance_prompts}
+              onChange={(e) =>
+                setDraft({ ...draft, auto_enhance_prompts: e.target.checked })
+              }
+              className="accent-accent"
+            />
+            Auto-enhance prompts before image generation
+          </label>
+          <p className="ml-6 -mt-1 text-2xs text-text-muted/60">
+            Runs the configured prompt LLM inside the shared generation pipeline before image models are called.
+          </p>
+
+          <label className="flex cursor-pointer items-center gap-2 text-xs text-text-secondary">
+            <input
+              type="checkbox"
               checked={draft.auto_remove_bg}
               onChange={(e) =>
                 setDraft({ ...draft, auto_remove_bg: e.target.checked })

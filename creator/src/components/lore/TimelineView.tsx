@@ -9,7 +9,7 @@ const MARKER_Y = 140;
 const IMPORTANCE_RADIUS = { minor: 4, major: 7, legendary: 11 };
 const IMPORTANCE_STROKE = { minor: 1, major: 1.5, legendary: 2 };
 
-// Default era band colors
+// Era band background tints — derived from design token palette
 const ERA_COLORS = [
   "rgba(168, 151, 210, 0.12)",
   "rgba(140, 174, 201, 0.12)",
@@ -117,9 +117,9 @@ export function TimelineView({
                   <text
                     x={x + 8}
                     y={24}
-                    fill="#95a0bf"
+                    fill="var(--color-text-muted)"
                     fontSize={11}
-                    fontFamily="Cinzel, serif"
+                    style={{ fontFamily: "var(--font-display), Palatino, serif" }}
                     fontWeight={600}
                   >
                     {band.era.name}
@@ -135,7 +135,7 @@ export function TimelineView({
             y1={MARKER_Y}
             x2={svgWidth}
             y2={MARKER_Y}
-            stroke="#39455f"
+            stroke="var(--color-border-muted)"
             strokeWidth={1}
           />
 
@@ -149,16 +149,16 @@ export function TimelineView({
                   y1={MARKER_Y - 4}
                   x2={x}
                   y2={MARKER_Y + 4}
-                  stroke="#56617d"
+                  stroke="var(--color-border-default)"
                   strokeWidth={1}
                 />
                 <text
                   x={x}
                   y={MARKER_Y + 16}
                   textAnchor="middle"
-                  fill="#56617d"
+                  fill="var(--color-border-default)"
                   fontSize={9}
-                  fontFamily="JetBrains Mono, monospace"
+                  style={{ fontFamily: "var(--font-mono), Consolas, monospace" }}
                 >
                   {year}
                 </text>
@@ -172,8 +172,8 @@ export function TimelineView({
             const r = IMPORTANCE_RADIUS[event.importance];
             const sw = IMPORTANCE_STROKE[event.importance];
             const isSelected = event.id === selectedEventId;
-            const fill = isSelected ? "#a897d2" : event.importance === "legendary" ? "#bea873" : "#8caec9";
-            const strokeColor = isSelected ? "#dbe3f8" : "transparent";
+            const fill = isSelected ? "var(--color-accent)" : event.importance === "legendary" ? "var(--color-status-warning)" : "var(--color-stellar-blue)";
+            const strokeColor = isSelected ? "var(--color-text-primary)" : "transparent";
 
             return (
               <g
@@ -206,9 +206,9 @@ export function TimelineView({
                   x={x}
                   y={EVENT_AREA_TOP + 8}
                   textAnchor="middle"
-                  fill={isSelected ? "#dbe3f8" : "#aebada"}
+                  fill={isSelected ? "var(--color-text-primary)" : "var(--color-text-secondary)"}
                   fontSize={10}
-                  fontFamily="Crimson Pro, serif"
+                  style={{ fontFamily: "var(--font-sans), Georgia, serif" }}
                   fontWeight={isSelected ? 600 : 400}
                 >
                   {event.title.length > 20

@@ -72,10 +72,11 @@ export function ImportFromR2Dialog({ onClose }: ImportFromR2DialogProps) {
           <p className="text-2xs uppercase tracking-wide-ui text-text-muted">Import destination</p>
           <div className="mt-4 space-y-4">
             <div>
-              <label className="mb-1.5 block text-2xs uppercase tracking-wide-ui text-text-muted">
+              <label htmlFor="r2-project-name" className="mb-1.5 block text-2xs uppercase tracking-wide-ui text-text-muted">
                 Project Name
               </label>
               <input
+                id="r2-project-name"
                 type="text"
                 value={projectName}
                 onChange={(e) => setProjectName(e.target.value)}
@@ -84,11 +85,12 @@ export function ImportFromR2Dialog({ onClose }: ImportFromR2DialogProps) {
               />
             </div>
             <div>
-              <label className="mb-1.5 block text-2xs uppercase tracking-wide-ui text-text-muted">
+              <label htmlFor="r2-create-in" className="mb-1.5 block text-2xs uppercase tracking-wide-ui text-text-muted">
                 Create In
               </label>
               <div className="flex flex-col gap-3 sm:flex-row">
                 <input
+                  id="r2-create-in"
                   type="text"
                   value={targetDir}
                   readOnly
@@ -120,7 +122,7 @@ export function ImportFromR2Dialog({ onClose }: ImportFromR2DialogProps) {
               </p>
             )}
             {error && (
-              <p className="mt-2 text-xs text-status-error">{error}</p>
+              <p role="alert" className="mt-2 text-xs text-status-error">{error}</p>
             )}
           </div>
         )}

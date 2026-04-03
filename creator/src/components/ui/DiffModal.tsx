@@ -54,7 +54,7 @@ export function DiffModal({ onConfirm, onCancel }: DiffModalProps) {
     >
       <div className="flex flex-col gap-4">
         {error && (
-          <div className="rounded-[22px] border border-status-error/30 bg-status-error/10 px-4 py-3 text-sm text-status-error">
+          <div role="alert" className="rounded-[22px] border border-status-error/30 bg-status-error/10 px-4 py-3 text-sm text-status-error">
             {error}
           </div>
         )}

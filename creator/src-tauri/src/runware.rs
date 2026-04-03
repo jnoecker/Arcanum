@@ -4,8 +4,7 @@ use sha2::{Digest, Sha256};
 use std::path::PathBuf;
 use tauri::{AppHandle, Manager};
 
-use crate::deepinfra::GeneratedImage;
-use crate::settings;
+use crate::{deepinfra::GeneratedImage, generation, settings};
 
 const API_URL: &str = "https://api.runware.ai/v1";
 
@@ -27,6 +26,10 @@ struct RunwareImageTask {
     steps: Option<u32>,
     #[serde(skip_serializing_if = "Option::is_none")]
     cfg_scale: Option<f32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    seed_image: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    strength: Option<f32>,
     output_format: String,
     number_results: u32,
 }
@@ -63,11 +66,15 @@ pub async fn runware_generate_image(
     app: AppHandle,
     prompt: String,
     negative_prompt: Option<String>,
+    seed_image: Option<String>,
+    seed_strength: Option<f32>,
     model: Option<String>,
     width: Option<u32>,
     height: Option<u32>,
     steps: Option<u32>,
     guidance: Option<f32>,
+    asset_type: Option<String>,
+    auto_enhance: Option<bool>,
 ) -> Result<GeneratedImage, String> {
     let s = settings::get_settings(app.clone()).await?;
     if s.runware_api_key.is_empty() {
@@ -78,17 +85,33 @@ pub async fn runware_generate_image(
     let w = round_to_16(width.unwrap_or(1024));
     let h = round_to_16(height.unwrap_or(1024));
     let mdl = model.unwrap_or_else(|| "runware:400@2".to_string());
+    let final_prompt = generation::maybe_enhance_prompt(
+        &app,
+        &prompt,
+        asset_type.as_deref(),
+        auto_enhance,
+    )
+    .await?;
+    let normalized_seed_image = seed_image.map(|value| {
+        if value.starts_with("data:") {
+            value
+        } else {
+            format!("data:image/png;base64,{value}")
+        }
+    });
 
     let task = RunwareImageTask {
         task_type: "imageInference".to_string(),
         task_uuid: uuid::Uuid::new_v4().to_string(),
-        positive_prompt: prompt.clone(),
+        positive_prompt: final_prompt.clone(),
         negative_prompt,
         width: w,
         height: h,
         model: mdl.clone(),
         steps,
         cfg_scale: guidance,
+        seed_image: normalized_seed_image,
+        strength: seed_strength,
         output_format: "PNG".to_string(),
         number_results: 1,
     };
@@ -132,36 +155,21 @@ pub async fn runware_generate_image(
     let bytes = img_response
         .bytes()
         .await
-        .map_err(|e| format!("Failed to read image bytes: {e}"))?;
+        .map_err(|e| format!("Failed to read image bytes: {e}"))?
+        .to_vec();
+    let behavior = generation::infer_behavior(asset_type.as_deref(), w, h, None);
+    let processed = generation::process_image_bytes(&bytes, &behavior)?;
 
-    let mut hasher = Sha256::new();
-    hasher.update(&bytes);
-    let hash = format!("{:x}", hasher.finalize());
-
-    let dir = assets_dir(&app)?;
-    tokio::fs::create_dir_all(&dir)
-        .await
-        .map_err(|e| format!("Failed to create assets dir: {e}"))?;
-
-    let filename = format!("{hash}.png");
-    let file_path = dir.join(&filename);
-    tokio::fs::write(&file_path, &bytes)
-        .await
-        .map_err(|e| format!("Failed to save image: {e}"))?;
-
-    let b64 = base64::engine::general_purpose::STANDARD.encode(&bytes);
-    let data_url = format!("data:image/png;base64,{b64}");
-
-    Ok(GeneratedImage {
-        id: uuid::Uuid::new_v4().to_string(),
-        hash,
-        file_path: file_path.to_string_lossy().to_string(),
-        data_url,
-        width: w,
-        height: h,
-        prompt,
-        model: mdl,
-    })
+    generation::persist_generated_image(
+        &app,
+        &processed,
+        final_prompt,
+        mdl,
+        behavior.target_width,
+        behavior.target_height,
+        behavior.output_format,
+    )
+    .await
 }
 
 // ─── Audio Generation ────────────────────────────────────────────────

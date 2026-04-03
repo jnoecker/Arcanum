@@ -9,7 +9,7 @@ export function RawYamlPanel({ config }: ConfigPanelProps) {
     <Section title="Unrecognized Sections">
       {entries.length === 0 ? (
         <p className="text-xs text-text-muted">
-          No uncatalogued config sections were found. Everything in
+          No unrecognized config sections were found. Everything in
           application.yaml is already represented in the structured editor.
         </p>
       ) : (

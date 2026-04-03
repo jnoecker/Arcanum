@@ -1,13 +1,10 @@
 use base64::Engine;
 use serde::{Deserialize, Serialize};
-use sha2::{Digest, Sha256};
-use std::path::PathBuf;
-use tauri::{AppHandle, Manager};
+use tauri::AppHandle;
 
-use crate::settings;
+use crate::{generation, llm, settings};
 
 const INFERENCE_URL: &str = "https://api.deepinfra.com/v1/inference";
-const CHAT_URL: &str = "https://api.deepinfra.com/v1/openai/chat/completions";
 
 // ─── Image Generation ────────────────────────────────────────────────
 
@@ -74,14 +71,6 @@ pub struct GeneratedImage {
     pub model: String,
 }
 
-fn assets_dir(app: &AppHandle) -> Result<PathBuf, String> {
-    let dir = app
-        .path()
-        .app_data_dir()
-        .map_err(|e| format!("Failed to get app data dir: {e}"))?;
-    Ok(dir.join("assets").join("images"))
-}
-
 #[tauri::command]
 pub async fn generate_image(
     app: AppHandle,
@@ -91,6 +80,8 @@ pub async fn generate_image(
     height: Option<u32>,
     steps: Option<u32>,
     guidance: Option<f32>,
+    asset_type: Option<String>,
+    auto_enhance: Option<bool>,
 ) -> Result<GeneratedImage, String> {
     let settings = settings::get_settings(app.clone()).await?;
     if settings.deepinfra_api_key.is_empty() {
@@ -100,13 +91,20 @@ pub async fn generate_image(
     let model = model.unwrap_or(settings.image_model);
     let w = width.unwrap_or(1024);
     let h = height.unwrap_or(1024);
+    let final_prompt = generation::maybe_enhance_prompt(
+        &app,
+        &prompt,
+        asset_type.as_deref(),
+        auto_enhance,
+    )
+    .await?;
 
     let is_schnell = model.contains("schnell");
     let default_steps = if is_schnell { 4 } else { 28 };
     let default_guidance = if is_schnell { None } else { Some(3.5) };
 
     let body = ImageRequest {
-        prompt: prompt.clone(),
+        prompt: final_prompt.clone(),
         width: w,
         height: h,
         num_inference_steps: steps.unwrap_or(default_steps),
@@ -136,42 +134,22 @@ pub async fn generate_image(
 
     let entry = resp.images.first().ok_or("No images in response")?;
     let b64 = entry.to_base64()?;
-    let bytes = base64::engine::general_purpose::STANDARD
+    let raw_bytes = base64::engine::general_purpose::STANDARD
         .decode(&b64)
         .map_err(|e| format!("Failed to decode base64 image: {e}"))?;
+    let behavior = generation::infer_behavior(asset_type.as_deref(), w, h, None);
+    let processed = generation::process_image_bytes(&raw_bytes, &behavior)?;
 
-    // Content-addressed filename
-    let mut hasher = Sha256::new();
-    hasher.update(&bytes);
-    let hash = format!("{:x}", hasher.finalize());
-
-    // Save to assets dir
-    let dir = assets_dir(&app)?;
-    tokio::fs::create_dir_all(&dir)
-        .await
-        .map_err(|e| format!("Failed to create assets dir: {e}"))?;
-
-    let ext = detect_extension(&bytes);
-    let mime = detect_mime(ext);
-    let filename = format!("{hash}.{ext}");
-    let file_path = dir.join(&filename);
-    tokio::fs::write(&file_path, &bytes)
-        .await
-        .map_err(|e| format!("Failed to save image: {e}"))?;
-
-    let id = uuid::Uuid::new_v4().to_string();
-    let data_url = format!("data:{mime};base64,{b64}");
-
-    Ok(GeneratedImage {
-        id,
-        hash,
-        file_path: file_path.to_string_lossy().to_string(),
-        data_url,
-        width: w,
-        height: h,
-        prompt,
+    generation::persist_generated_image(
+        &app,
+        &processed,
+        final_prompt,
         model,
-    })
+        behavior.target_width,
+        behavior.target_height,
+        behavior.output_format,
+    )
+    .await
 }
 
 // ─── Image-to-Image Generation ──────────────────────────────────────
@@ -198,6 +176,8 @@ pub async fn img2img_generate(
     width: Option<u32>,
     height: Option<u32>,
     strength: Option<f32>,
+    asset_type: Option<String>,
+    auto_enhance: Option<bool>,
 ) -> Result<GeneratedImage, String> {
     let settings = settings::get_settings(app.clone()).await?;
     if settings.deepinfra_api_key.is_empty() {
@@ -207,6 +187,13 @@ pub async fn img2img_generate(
     let model = model.unwrap_or(settings.image_model);
     let w = width.unwrap_or(1024);
     let h = height.unwrap_or(1024);
+    let final_prompt = generation::maybe_enhance_prompt(
+        &app,
+        &prompt,
+        asset_type.as_deref(),
+        auto_enhance,
+    )
+    .await?;
 
     let is_schnell = model.contains("schnell");
     let default_steps = if is_schnell { 4 } else { 28 };
@@ -220,7 +207,7 @@ pub async fn img2img_generate(
     };
 
     let body = Img2ImgRequest {
-        prompt: prompt.clone(),
+        prompt: final_prompt.clone(),
         image: image_data,
         width: w,
         height: h,
@@ -252,40 +239,22 @@ pub async fn img2img_generate(
 
     let entry = resp.images.first().ok_or("No images in img2img response")?;
     let b64 = entry.to_base64()?;
-    let bytes = base64::engine::general_purpose::STANDARD
+    let raw_bytes = base64::engine::general_purpose::STANDARD
         .decode(&b64)
         .map_err(|e| format!("Failed to decode base64 image: {e}"))?;
+    let behavior = generation::infer_behavior(asset_type.as_deref(), w, h, None);
+    let processed = generation::process_image_bytes(&raw_bytes, &behavior)?;
 
-    let mut hasher = Sha256::new();
-    hasher.update(&bytes);
-    let hash = format!("{:x}", hasher.finalize());
-
-    let dir = assets_dir(&app)?;
-    tokio::fs::create_dir_all(&dir)
-        .await
-        .map_err(|e| format!("Failed to create assets dir: {e}"))?;
-
-    let ext = detect_extension(&bytes);
-    let mime = detect_mime(ext);
-    let filename = format!("{hash}.{ext}");
-    let file_path = dir.join(&filename);
-    tokio::fs::write(&file_path, &bytes)
-        .await
-        .map_err(|e| format!("Failed to save image: {e}"))?;
-
-    let id = uuid::Uuid::new_v4().to_string();
-    let data_url = format!("data:{mime};base64,{b64}");
-
-    Ok(GeneratedImage {
-        id,
-        hash,
-        file_path: file_path.to_string_lossy().to_string(),
-        data_url,
-        width: w,
-        height: h,
-        prompt,
+    generation::persist_generated_image(
+        &app,
+        &processed,
+        final_prompt,
         model,
-    })
+        behavior.target_width,
+        behavior.target_height,
+        behavior.output_format,
+    )
+    .await
 }
 
 fn detect_extension(bytes: &[u8]) -> &'static str {
@@ -359,50 +328,7 @@ pub async fn enhance_prompt(
     system_prompt: String,
 ) -> Result<String, String> {
     let settings = settings::get_settings(app).await?;
-    if settings.deepinfra_api_key.is_empty() {
-        return Err("DeepInfra API key not configured. Set it in Settings.".to_string());
-    }
-
-    let body = ChatRequest {
-        model: settings.enhance_model,
-        messages: vec![
-            ChatMessage {
-                role: "system".to_string(),
-                content: system_prompt,
-            },
-            ChatMessage {
-                role: "user".to_string(),
-                content: prompt,
-            },
-        ],
-        max_tokens: 512,
-        temperature: 0.7,
-    };
-
-    let client = reqwest::Client::new();
-    let response = client
-        .post(CHAT_URL)
-        .header("Authorization", format!("Bearer {}", settings.deepinfra_api_key))
-        .json(&body)
-        .send()
-        .await
-        .map_err(|e| format!("API request failed: {e}"))?;
-
-    if !response.status().is_success() {
-        let status = response.status();
-        let text = response.text().await.unwrap_or_default();
-        return Err(format!("API error ({status}): {text}"));
-    }
-
-    let resp: ChatResponse = response
-        .json()
-        .await
-        .map_err(|e| format!("Failed to parse API response: {e}"))?;
-
-    resp.choices
-        .first()
-        .map(|c| strip_think_tags(c.message.content.trim()))
-        .ok_or_else(|| "No response from model".to_string())
+    llm::complete_from_settings(&settings, &system_prompt, &prompt, 512).await
 }
 
 /// Strip `<think>...</think>` reasoning blocks that some models emit.

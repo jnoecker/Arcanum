@@ -28,6 +28,8 @@ pub struct Settings {
     pub video_model: String,
     #[serde(default = "default_batch_concurrency")]
     pub batch_concurrency: u32,
+    #[serde(default = "default_auto_enhance_prompts")]
+    pub auto_enhance_prompts: bool,
     #[serde(default)]
     pub auto_remove_bg: bool,
     #[serde(default)]
@@ -45,7 +47,7 @@ pub struct Settings {
 }
 
 fn default_image_model() -> String {
-    "black-forest-labs/FLUX-1-schnell".to_string()
+    "black-forest-labs/FLUX-1-dev".to_string()
 }
 
 fn default_enhance_model() -> String {
@@ -65,7 +67,11 @@ fn default_video_model() -> String {
 }
 
 fn default_batch_concurrency() -> u32 {
-    5
+    12
+}
+
+fn default_auto_enhance_prompts() -> bool {
+    true
 }
 
 impl Default for Settings {
@@ -82,6 +88,7 @@ impl Default for Settings {
             image_provider: default_image_provider(),
             video_model: default_video_model(),
             batch_concurrency: default_batch_concurrency(),
+            auto_enhance_prompts: default_auto_enhance_prompts(),
             auto_remove_bg: false,
             r2_account_id: String::new(),
             r2_access_key_id: String::new(),

@@ -33,6 +33,8 @@ export function CommandDesigner({
       addPlaceholder="New command id"
       searchPlaceholder="Search commands"
       emptyMessage="No commands match the current search."
+      emptyTitle="No commands defined yet"
+      emptyDescription="Build the verbs and actions players will use to interact with the world."
       items={config.commands}
       defaultItem={defaultCommandDefinition}
       getDisplayName={(command) => command.usage.split(/\s/)[0] ?? ""}

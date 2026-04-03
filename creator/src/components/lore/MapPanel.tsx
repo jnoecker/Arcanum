@@ -243,7 +243,7 @@ function ArticleCombobox({
         className="ornate-input flex min-h-11 w-full items-center justify-between rounded-2xl px-4 py-3 text-left text-sm"
       >
         <span className={selectedTitle ? "text-text-secondary" : "text-text-muted"}>
-          {selectedTitle ?? "— none —"}
+          {selectedTitle ?? "Unmarked"}
         </span>
         <span className="text-[9px] text-text-muted">{open ? "\u25B2" : "\u25BC"}</span>
       </button>
@@ -255,7 +255,7 @@ function ArticleCombobox({
               ref={inputRef}
               type="text"
             className="ornate-input min-h-11 w-full rounded-2xl px-4 py-3 text-sm text-text-primary placeholder:text-text-muted"
-              placeholder="Filter articles..."
+              placeholder="Search legends..."
               value={filter}
               onChange={(e) => setFilter(e.target.value)}
             />
@@ -267,7 +267,7 @@ function ArticleCombobox({
                 !value ? "bg-white/10 text-text-primary" : "text-text-muted hover:bg-white/5 hover:text-text-secondary"
               }`}
             >
-              — none —
+              Unmarked
             </button>
             {grouped.map((group) => (
               <div key={group.template}>
@@ -333,7 +333,7 @@ function PinEditor({
         <TextInput
           value={pin.label ?? ""}
           onCommit={(v) => updatePin(map.id, pinId, { label: v || undefined })}
-          placeholder="Pin label"
+          placeholder="Name this place"
         />
       </FieldRow>
 
@@ -481,7 +481,7 @@ export function MapPanel() {
             setSelectedPinId(null);
           }}
         >
-          <option value="">— select a map —</option>
+          <option value="">Choose a map...</option>
           {maps.map((m) => (
             <option key={m.id} value={m.id}>{m.title}</option>
           ))}

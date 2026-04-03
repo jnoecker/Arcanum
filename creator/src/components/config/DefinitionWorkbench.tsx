@@ -7,6 +7,8 @@ export function DefinitionWorkbench<T>({
   addPlaceholder,
   searchPlaceholder,
   emptyMessage,
+  emptyTitle,
+  emptyDescription,
   items,
   defaultItem,
   getDisplayName,
@@ -22,6 +24,8 @@ export function DefinitionWorkbench<T>({
   addPlaceholder: string;
   searchPlaceholder: string;
   emptyMessage: string;
+  emptyTitle?: string;
+  emptyDescription?: string;
   items: Record<string, T>;
   defaultItem: (raw: string) => T;
   getDisplayName: (item: T) => string;
@@ -87,6 +91,7 @@ export function DefinitionWorkbench<T>({
 
         <div className="flex gap-2">
           <input
+            aria-label="New entry name"
             value={newId}
             onChange={(event) => setNewId(event.target.value)}
             onKeyDown={(event) => {
@@ -97,6 +102,7 @@ export function DefinitionWorkbench<T>({
           />
           <button
             onClick={addItem}
+            aria-label="Add new entry"
             className="focus-ring shell-pill rounded-full px-4 py-2 text-xs text-text-primary"
           >
             Add
@@ -104,6 +110,7 @@ export function DefinitionWorkbench<T>({
         </div>
 
         <input
+          aria-label="Search entries"
           value={search}
           onChange={(event) => setSearch(event.target.value)}
           placeholder={searchPlaceholder}
@@ -172,8 +179,9 @@ export function DefinitionWorkbench<T>({
           </div>
         </div>
       ) : (
-        <div className="panel-surface-light rounded-[24px] border-dashed px-6 py-10 text-sm text-text-muted">
-          Select or create an entry to start editing.
+        <div className="panel-surface-light rounded-[24px] border-dashed px-6 py-10 text-center">
+          <p className="font-display text-base text-text-primary">{emptyTitle ?? "Select an entry"}</p>
+          <p className="mx-auto mt-2 max-w-xs text-xs leading-6 text-text-muted">{emptyDescription ?? "Choose from the list or create a new one to begin."}</p>
         </div>
       )}
     </div>

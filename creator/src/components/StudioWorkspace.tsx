@@ -81,12 +81,11 @@ export function StudioWorkspace({ panelId }: { panelId: string }) {
                     </span>
                   )}
                 </div>
-                <div className="mt-4 flex flex-wrap gap-2 text-[11px] text-text-muted">
-                  <span className="rounded-full bg-black/15 px-2 py-1">{Object.keys(zoneState.data.rooms).length} rooms</span>
-                  <span className="rounded-full bg-black/15 px-2 py-1">{linkedAssets} assets</span>
-                  <span className={`rounded-full px-2 py-1 ${hasVibe ? "bg-badge-success-bg text-badge-success" : "bg-black/15"}`}>
-                    {hasVibe ? "Vibe ready" : "Vibe pending"}
-                  </span>
+                <div className="mt-3 flex items-center justify-between text-[11px] text-text-muted">
+                  <span>{Object.keys(zoneState.data.rooms).length} rooms{linkedAssets > 0 ? ` · ${linkedAssets} assets` : ""}</span>
+                  {hasVibe && (
+                    <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-status-success" title="Vibe set" />
+                  )}
                 </div>
               </button>
             );
@@ -139,7 +138,6 @@ export function StudioWorkspace({ panelId }: { panelId: string }) {
                 onWorldChange={(world) => updateZone(selectedZoneId!, world)}
               />
 
-              {/* Free-form asset generation below zone art */}
               <CustomAssetStudio selectedZoneId={selectedZoneId} />
             </>
           ) : (

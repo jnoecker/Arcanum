@@ -29,6 +29,8 @@ export function QuestTaxonomyDesigner({
         addPlaceholder="New objective type id"
         searchPlaceholder="Search objective types"
         emptyMessage="No objective types match the current search."
+        emptyTitle="No quest types catalogued yet"
+        emptyDescription="Define the categories and structures for quests in the world."
         items={config.questObjectiveTypes}
         defaultItem={defaultQuestObjectiveTypeDefinition}
         getDisplayName={(objectiveType) => objectiveType.displayName}
@@ -46,6 +48,8 @@ export function QuestTaxonomyDesigner({
         addPlaceholder="New completion type id"
         searchPlaceholder="Search completion types"
         emptyMessage="No completion types match the current search."
+        emptyTitle="No quest types catalogued yet"
+        emptyDescription="Define the categories and structures for quests in the world."
         items={config.questCompletionTypes}
         defaultItem={defaultQuestCompletionTypeDefinition}
         getDisplayName={(completionType) => completionType.displayName}

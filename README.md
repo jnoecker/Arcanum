@@ -63,6 +63,8 @@ The `showcase/` directory contains a standalone public-facing website for sharin
 **Publishing workflow:**
 1. Click **Publish Lore** in the Arcanum toolbar -- exports lore data and uploads `showcase.json` to R2
 2. The showcase site fetches the JSON from R2 at runtime -- no rebuild needed after the initial deploy
+   The JSON URL comes from Cloudflare Pages `VITE_SHOWCASE_URL` at runtime when Pages Functions are deployed, or `showcase/.env.production` as a fallback for local/static builds.
+   The image URLs inside `showcase.json` come from the creator's `r2_custom_domain` setting when you click `Publish Lore`.
 
 **Initial deployment:**
 ```bash

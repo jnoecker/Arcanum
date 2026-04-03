@@ -65,6 +65,7 @@ pub fn run() {
             assets::save_bytes_as_asset,
             assets::import_player_sprites,
             assets::bulk_import_images,
+            assets::export_assets_to_dir,
             assets::migrate_sprite_tier,
             assets::expand_base_sprites,
             r2::import_from_r2,

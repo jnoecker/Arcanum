@@ -17,7 +17,7 @@ import {
   runWorkspaceValidation,
   saveWorkspace,
 } from "@/lib/runtimeHandoff";
-import type { SyncProgress, SyncScope } from "@/types/assets";
+import type { ExportResult, SyncProgress, SyncScope } from "@/types/assets";
 
 type StepStatus = "idle" | "running" | "success" | "warning" | "error";
 type StepKey =
@@ -131,6 +131,8 @@ export function RuntimeHandoffStudio() {
   const [deployCommitMsg, setDeployCommitMsg] = useState(() =>
     `Deploy: ${new Date().toISOString().slice(0, 16).replace("T", " ")}`,
   );
+  const [exportingLocal, setExportingLocal] = useState(false);
+  const [localExportResult, setLocalExportResult] = useState<ExportResult | null>(null);
   const [steps, setSteps] = useState<Record<StepKey, StepState>>({
     save: { status: "idle", detail: "Save config and unsaved zones to the project folder.", errors: [] },
     gitCommit: { status: "idle", detail: "Commit and push project changes to git.", errors: [] },
@@ -447,6 +449,21 @@ export function RuntimeHandoffStudio() {
     }
   };
 
+  const handleExportLocal = async () => {
+    const dir = await open({ directory: true, title: "Choose images export directory" });
+    if (!dir) return;
+    setExportingLocal(true);
+    setLocalExportResult(null);
+    try {
+      const result = await invoke<ExportResult>("export_assets_to_dir", { targetDir: dir });
+      setLocalExportResult(result);
+    } catch (e) {
+      setLocalExportResult({ total: 0, copied: 0, skipped: 0, errors: [String(e)] });
+    } finally {
+      setExportingLocal(false);
+    }
+  };
+
   const handleRunAll = async () => {
     if (!project) return;
 
@@ -617,17 +634,36 @@ export function RuntimeHandoffStudio() {
           disabled={!hasR2}
           onAction={runAssetsStep}
         >
-          <div className="flex items-center gap-2 text-xs text-text-secondary">
-            <span>Scope</span>
-            <select
-              value={syncScope}
-              onChange={(event) => setSyncScope(event.target.value as SyncScope)}
-              className="rounded-full border border-white/10 bg-black/10 px-3 py-1.5 text-xs text-text-primary outline-none focus-visible:ring-2 focus-visible:ring-border-active"
+          <div className="flex flex-wrap items-center gap-3 text-xs text-text-secondary">
+            <div className="flex items-center gap-2">
+              <span>Scope</span>
+              <select
+                value={syncScope}
+                onChange={(event) => setSyncScope(event.target.value as SyncScope)}
+                className="rounded-full border border-white/10 bg-black/10 px-3 py-1.5 text-xs text-text-primary outline-none focus-visible:ring-2 focus-visible:ring-border-active"
+              >
+                <option value="approved">Approved only</option>
+                <option value="all">Everything</option>
+              </select>
+            </div>
+            <button
+              onClick={() => void handleExportLocal()}
+              disabled={exportingLocal}
+              className="rounded-full border border-white/10 bg-black/10 px-4 py-2 text-xs font-medium text-text-primary transition hover:bg-white/10 disabled:opacity-40"
             >
-              <option value="approved">Approved only</option>
-              <option value="all">Everything</option>
-            </select>
+              {exportingLocal ? "Exporting..." : "Export images locally"}
+            </button>
           </div>
+          {localExportResult && (
+            <div className="mt-2 rounded-[18px] border border-white/10 bg-black/10 px-4 py-3 text-xs text-text-secondary">
+              Exported {localExportResult.copied} images ({localExportResult.skipped} already present, {localExportResult.errors.length} errors)
+              {localExportResult.errors.length > 0 && (
+                <ul className="mt-1 text-status-error">
+                  {localExportResult.errors.slice(0, 5).map((e, i) => <li key={i}>{e}</li>)}
+                </ul>
+              )}
+            </div>
+          )}
         </StepCard>
 
         <StepCard

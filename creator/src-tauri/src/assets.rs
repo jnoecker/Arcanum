@@ -182,6 +182,72 @@ pub async fn get_assets_dir(app: AppHandle) -> Result<String, String> {
     Ok(dir.to_string_lossy().to_string())
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ExportResult {
+    pub total: u32,
+    pub copied: u32,
+    pub skipped: u32,
+    pub errors: Vec<String>,
+}
+
+/// Export all curated (is_active) image assets to a target directory.
+/// Files are copied using their hash-based filenames (e.g., abc123.png).
+/// Returns the count of files exported.
+#[tauri::command]
+pub async fn export_assets_to_dir(app: AppHandle, target_dir: String) -> Result<ExportResult, String> {
+    let manifest = load_manifest(&app).await?;
+    let src_base = assets_dir(&app)?;
+    let target = std::path::PathBuf::from(&target_dir);
+
+    tokio::fs::create_dir_all(&target)
+        .await
+        .map_err(|e| format!("Failed to create target dir: {e}"))?;
+
+    let active: Vec<&AssetEntry> = manifest.assets.iter().filter(|a| a.is_active).collect();
+    let mut copied = 0u32;
+    let mut skipped = 0u32;
+    let mut errors = Vec::new();
+
+    for entry in &active {
+        let dest = target.join(&entry.file_name);
+        // Skip if file already exists at destination with same size
+        if dest.exists() {
+            skipped += 1;
+            continue;
+        }
+
+        // Find source file in images/, video/, or audio/ subdirs
+        let mut src_path = None;
+        for subdir in &["images", "video", "audio"] {
+            let candidate = src_base.join(subdir).join(&entry.file_name);
+            if candidate.exists() {
+                src_path = Some(candidate);
+                break;
+            }
+        }
+
+        match src_path {
+            Some(src) => {
+                if let Err(e) = tokio::fs::copy(&src, &dest).await {
+                    errors.push(format!("{}: {e}", entry.file_name));
+                } else {
+                    copied += 1;
+                }
+            }
+            None => {
+                errors.push(format!("{}: source file not found", entry.file_name));
+            }
+        }
+    }
+
+    Ok(ExportResult {
+        total: active.len() as u32,
+        copied,
+        skipped,
+        errors,
+    })
+}
+
 /// Resolve a media asset filename to its absolute local path.
 /// Searches images/, video/, and audio/ subdirectories.
 #[tauri::command]

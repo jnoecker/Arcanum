@@ -116,6 +116,13 @@ export interface SyncProgress {
   errors: string[];
 }
 
+export interface ExportResult {
+  total: number;
+  copied: number;
+  skipped: number;
+  errors: string[];
+}
+
 export const IMAGE_MODELS = [
   {
     id: "black-forest-labs/FLUX-1-schnell",

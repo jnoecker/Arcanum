@@ -14,53 +14,59 @@ export function ArticleBrowser() {
 
   return (
     <>
-      <div className="flex min-h-[32rem] flex-col gap-5">
-        {/* Top: article editor */}
-        <div className="rounded-[24px] border border-white/8 bg-black/12 p-5">
-          {selectedArticleId ? (
-            <ArticleEditor articleId={selectedArticleId} />
-          ) : (
-            <div className="flex flex-col items-center justify-center gap-4 py-12 text-sm text-text-muted">
-              <p>Select or create an article to start editing.</p>
-              {articleCount === 0 && (
-                <button
-                  onClick={() => setShowSeedWizard(true)}
-                  className="rounded-full border border-[rgba(184,216,232,0.28)] bg-gradient-active-strong px-5 py-2 text-xs font-medium text-text-primary transition hover:shadow-glow-sm"
-                >
-                  Seed a World with AI
-                </button>
-              )}
+      <div className="grid min-h-[32rem] gap-5 xl:grid-cols-[minmax(18rem,22rem)_minmax(0,1fr)]">
+        <aside className="panel-surface rounded-[24px] p-4 xl:sticky xl:top-5 xl:flex xl:max-h-[calc(100vh-17rem)] xl:flex-col xl:overflow-hidden">
+          <div className="mb-3 flex items-start justify-between gap-3">
+            <div>
+              <p className="text-[11px] uppercase tracking-ui text-text-muted">Library</p>
+              <h3 className="mt-2 font-display text-xl text-text-primary">World articles</h3>
             </div>
-          )}
-        </div>
-
-        {/* Bottom: compact article list */}
-        <div className="rounded-[24px] border border-white/8 bg-black/12 p-4 max-h-[18rem] min-h-0 flex flex-col">
-          <div className="mb-2 flex items-center justify-between shrink-0">
-            <p className="text-[11px] uppercase tracking-ui text-text-muted">Articles</p>
             <div className="flex gap-1">
               <button
                 onClick={() => setShowGenerator(true)}
                 title="Generate article with AI"
-                className="rounded px-1.5 py-0.5 text-2xs text-accent transition hover:bg-accent/10"
+                className="focus-ring shell-pill rounded-full px-2.5 py-1 text-2xs"
               >
-                AI
+                Generate
               </button>
               {articleCount === 0 && (
                 <button
                   onClick={() => setShowSeedWizard(true)}
-                  title="Generate a starter world with AI"
-                  className="rounded px-1.5 py-0.5 text-2xs text-accent transition hover:bg-accent/10"
+                  title="Create a starter world"
+                  className="focus-ring shell-pill-primary rounded-full px-2.5 py-1 text-2xs"
                 >
                   Seed
                 </button>
               )}
             </div>
           </div>
-          <div className="min-h-0 flex-1 overflow-y-auto">
+          <p className="mb-3 text-xs leading-6 text-text-secondary">
+            Keep the world canon close while you write. Select an article on the left and shape it in the main editor.
+          </p>
+          <div className="min-h-[18rem] xl:min-h-0 xl:flex-1 xl:overflow-y-auto">
             <ArticleTree />
           </div>
-        </div>
+        </aside>
+
+        <section className="panel-surface rounded-[24px] p-5">
+          {selectedArticleId ? (
+            <ArticleEditor articleId={selectedArticleId} />
+          ) : (
+            <div className="flex min-h-[28rem] flex-col items-center justify-center gap-4 px-6 py-12 text-center text-sm text-text-muted">
+              <p className="max-w-md leading-7">
+                Select an article from the library or begin the setting with a seeded canon scaffold.
+              </p>
+              {articleCount === 0 && (
+                <button
+                  onClick={() => setShowSeedWizard(true)}
+                  className="focus-ring shell-pill-primary rounded-full px-5 py-2 text-xs font-medium"
+                >
+                  Seed the setting
+                </button>
+              )}
+            </div>
+          )}
+        </section>
       </div>
 
       {/* Dialogs */}

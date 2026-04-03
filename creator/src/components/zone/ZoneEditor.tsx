@@ -119,19 +119,20 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
   // Keep nodes/edges in sync with layout when WorldFile changes,
   // but preserve positions of existing nodes.
   const prevWorldRef = useRef<WorldFile | null>(null);
-  if (zoneState && zoneState.data !== prevWorldRef.current) {
+  useEffect(() => {
+    if (!zoneState || zoneState.data === prevWorldRef.current) return;
     prevWorldRef.current = zoneState.data;
-    // Merge: keep existing node positions, add new nodes from layout
-    const existingPositions = new Map(
-      nodes.map((n) => [n.id, n.position]),
-    );
-    const merged = layoutNodes.map((n) => ({
-      ...n,
-      position: existingPositions.get(n.id) ?? n.position,
-    }));
-    setNodes(merged);
+    setNodes((currentNodes) => {
+      const existingPositions = new Map(
+        currentNodes.map((node) => [node.id, node.position]),
+      );
+      return layoutNodes.map((node) => ({
+        ...node,
+        position: existingPositions.get(node.id) ?? node.position,
+      }));
+    });
     setEdges(layoutEdges);
-  }
+  }, [layoutEdges, layoutNodes, setEdges, setNodes, zoneState]);
 
   const applyWorldChange = useCallback(
     (next: WorldFile) => {
@@ -234,6 +235,7 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
       setSaving(false);
     }
   }, [zoneId, zoneState?.dirty, saving]);
+  const viewTabRefs = useRef<Array<HTMLButtonElement | null>>([]);
 
   if (!zoneState) {
     return (
@@ -244,6 +246,7 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
   }
 
   const roomCount = Object.keys(zoneState.data.rooms).length;
+  const viewModes: ViewMode[] = ["map", "assets", "media", "dungeon"];
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -298,20 +301,44 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
 
         <div className="ml-auto flex items-center gap-2">
           {/* View toggle */}
-          <div className="flex rounded border border-border-default bg-bg-primary" role="tablist">
-            {(["map", "assets", "media", "dungeon"] as const).map((mode, i, arr) => (
+          <div className="segmented-control" role="tablist" aria-label="Zone views">
+            {viewModes.map((mode, i, arr) => (
               <button
                 key={mode}
+                ref={(node) => {
+                  viewTabRefs.current[i] = node;
+                }}
+                id={`zone-view-tab-${mode}`}
                 role="tab"
                 aria-selected={viewMode === mode}
+                aria-controls="zone-view-panel"
+                tabIndex={viewMode === mode ? 0 : -1}
                 onClick={() => setViewMode(mode)}
-                className={`h-6 px-2 text-2xs font-medium tracking-wide transition-colors ${
-                  i === 0 ? "rounded-l" : i === arr.length - 1 ? "rounded-r" : ""
-                } ${
-                  viewMode === mode
-                    ? "bg-accent/20 text-accent"
-                    : "text-text-muted hover:text-text-secondary"
+                onKeyDown={(event) => {
+                  if (event.key === "ArrowRight") {
+                    event.preventDefault();
+                    const nextIndex = (i + 1) % viewModes.length;
+                    setViewMode(viewModes[nextIndex]!);
+                    viewTabRefs.current[nextIndex]?.focus();
+                  } else if (event.key === "ArrowLeft") {
+                    event.preventDefault();
+                    const nextIndex = (i - 1 + viewModes.length) % viewModes.length;
+                    setViewMode(viewModes[nextIndex]!);
+                    viewTabRefs.current[nextIndex]?.focus();
+                  } else if (event.key === "Home") {
+                    event.preventDefault();
+                    setViewMode(viewModes[0]!);
+                    viewTabRefs.current[0]?.focus();
+                  } else if (event.key === "End") {
+                    event.preventDefault();
+                    setViewMode(viewModes[viewModes.length - 1]!);
+                    viewTabRefs.current[viewModes.length - 1]?.focus();
+                  }
+                }}
+                className={`segmented-button focus-ring h-6 px-2 text-2xs font-medium tracking-wide ${
+                  i === 0 ? "rounded-l-full" : i === arr.length - 1 ? "rounded-r-full" : ""
                 }`}
+                data-active={viewMode === mode}
               >
                 {mode.charAt(0).toUpperCase() + mode.slice(1)}
               </button>
@@ -337,7 +364,7 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
                 ref={addRoomInputRef}
                 value={newRoomId}
                 onChange={(e) => setNewRoomId(e.target.value)}
-                className="h-6 w-40 rounded border border-border-default bg-bg-primary px-1.5 text-xs text-text-primary outline-none focus:border-accent"
+                className="ornate-input h-6 w-40 rounded px-1.5 text-xs text-text-primary"
                 placeholder="room_id"
                 autoFocus
               />
@@ -369,7 +396,7 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
 
       {/* Map + Panel, Asset Browser, Media Panel, or Dungeon Editor */}
       {viewMode === "dungeon" ? (
-        <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
+        <div id="zone-view-panel" role="tabpanel" aria-labelledby={`zone-view-tab-${viewMode}`} className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
           <div className="mx-auto max-w-2xl">
             {zoneState.data.dungeon ? (
               <DungeonEditor
@@ -394,13 +421,15 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
           </div>
         </div>
       ) : viewMode === "media" ? (
-        <ZoneMediaPanel zoneId={zoneId} world={zoneState.data} onWorldChange={applyWorldChange} />
+        <div id="zone-view-panel" role="tabpanel" aria-labelledby={`zone-view-tab-${viewMode}`} className="min-h-0 flex-1">
+          <ZoneMediaPanel zoneId={zoneId} world={zoneState.data} onWorldChange={applyWorldChange} />
+        </div>
       ) : viewMode === "assets" ? (
-        <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
+        <div id="zone-view-panel" role="tabpanel" aria-labelledby={`zone-view-tab-${viewMode}`} className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
           <ZoneAssetWorkbench zoneId={zoneId} world={zoneState.data} onWorldChange={applyWorldChange} />
         </div>
       ) : (
-        <div className="flex min-h-0 flex-1">
+        <div id="zone-view-panel" role="tabpanel" aria-labelledby={`zone-view-tab-${viewMode}`} className="flex min-h-0 flex-1">
           <div className="relative min-h-0 flex-1">
             <Starfield />
             <ReactFlow

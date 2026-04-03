@@ -3,6 +3,7 @@ import { useLoreStore, selectArticles, selectCalendars, selectEvents } from "@/s
 import type { CalendarSystem, CalendarEra, TimelineEvent } from "@/types/lore";
 import { formatEventDate } from "@/lib/loreCalendar";
 import {
+  ActionButton,
   Section,
   FieldRow,
   TextInput,
@@ -72,7 +73,7 @@ function CalendarEditor({
           <div className="flex items-center justify-between gap-2">
             <input
               aria-label="Calendar name"
-              className="min-w-0 flex-1 bg-transparent font-display text-sm text-text-primary outline-none"
+              className="ornate-input min-h-11 min-w-0 flex-1 rounded-2xl bg-black/10 px-4 py-3 font-display text-sm text-text-primary"
               value={cal.name}
               onChange={(e) => patchCalendar(cal.id, { name: e.target.value })}
             />
@@ -91,12 +92,12 @@ function CalendarEditor({
                     aria-label={`Color for ${era.name}`}
                     value={era.color || "#a897d2"}
                     onChange={(e) => patchEra(cal.id, era.id, { color: e.target.value })}
-                    className="h-6 w-6 cursor-pointer rounded border-none bg-transparent"
+                    className="h-11 w-11 cursor-pointer rounded-full border border-white/10 bg-transparent p-1"
                     title="Era color"
                   />
                   <input
                     aria-label="Era name"
-                    className="min-w-0 flex-1 rounded border border-border-default bg-bg-primary px-2 py-1 text-xs text-text-primary outline-none focus:border-accent/50"
+                    className="ornate-input min-h-11 min-w-0 flex-1 rounded-2xl px-4 py-3 text-sm text-text-primary"
                     value={era.name}
                     onChange={(e) => patchEra(cal.id, era.id, { name: e.target.value })}
                     placeholder="Era name"
@@ -105,7 +106,7 @@ function CalendarEditor({
                   <input
                     type="number"
                     aria-label={`Start year for ${era.name}`}
-                    className="w-16 rounded border border-border-default bg-bg-primary px-1.5 py-1 text-xs text-text-primary outline-none focus:border-accent/50"
+                    className="ornate-input min-h-11 w-24 rounded-2xl px-3 py-3 text-sm text-text-primary"
                     value={era.startYear}
                     onChange={(e) => patchEra(cal.id, era.id, { startYear: Number(e.target.value) || 0 })}
                   />
@@ -119,19 +120,19 @@ function CalendarEditor({
 
       <div className="flex gap-1.5">
         <input
-          className="min-w-0 flex-1 rounded border border-border-default bg-bg-primary px-2 py-1 text-xs text-text-primary outline-none focus:border-accent/50"
+          className="ornate-input min-h-11 min-w-0 flex-1 rounded-2xl px-4 py-3 text-sm text-text-primary"
           value={newName}
           onChange={(e) => setNewName(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && addCalendar()}
           placeholder="New calendar system name"
         />
-        <button
+        <ActionButton
           onClick={addCalendar}
           disabled={!newName.trim()}
-          className="rounded border border-border-default px-3 py-1 text-xs text-text-secondary hover:bg-bg-tertiary disabled:opacity-40"
+          variant="secondary"
         >
           Add
-        </button>
+        </ActionButton>
       </div>
     </Section>
   );
@@ -206,15 +207,17 @@ function EventEditor({
           value={event.description ?? ""}
           onCommit={(v) => onUpdate({ description: v || undefined })}
           placeholder="Brief description"
+          dense
         />
       </FieldRow>
       <div className="mt-1">
-        <button
+        <ActionButton
           onClick={onDelete}
-          className="rounded border border-status-danger/40 bg-status-danger/10 px-3 py-1 text-2xs text-status-danger hover:bg-status-danger/15"
+          variant="danger"
+          size="sm"
         >
           Delete Event
-        </button>
+        </ActionButton>
       </div>
     </div>
   );
@@ -259,12 +262,12 @@ export function TimelinePanel() {
         <Section title="Timeline" defaultExpanded>
           <div className="mb-3 flex items-center justify-between">
             <span className="text-xs text-text-muted">{events.length} events</span>
-            <button
+            <ActionButton
               onClick={handleAddEvent}
-              className="rounded-full border border-[rgba(184,216,232,0.28)] bg-gradient-active-strong px-3 py-1 text-2xs text-text-primary transition hover:shadow-glow-sm"
+              variant="primary"
             >
               Add Event
-            </button>
+            </ActionButton>
           </div>
 
           {events.length > 0 ? (
@@ -308,10 +311,10 @@ export function TimelinePanel() {
               <button
                 key={evt.id}
                 onClick={() => setSelectedEventId(evt.id)}
-                className={`flex items-center justify-between rounded px-2 py-1 text-left text-xs transition ${
+                className={`focus-ring flex min-h-11 items-center justify-between rounded-[18px] px-3 py-2 text-left text-sm transition ${
                   evt.id === selectedEventId
-                    ? "bg-accent/15 text-text-primary"
-                    : "text-text-secondary hover:bg-bg-tertiary"
+                    ? "border border-[var(--border-glow-strong)] bg-[linear-gradient(145deg,rgba(168,151,210,0.18),rgba(42,50,71,0.9))] text-text-primary shadow-glow-sm"
+                    : "border border-transparent text-text-secondary hover:bg-bg-tertiary"
                 }`}
               >
                 <span className="min-w-0 truncate">{evt.title}</span>

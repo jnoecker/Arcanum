@@ -78,8 +78,8 @@ export function DefinitionWorkbench<T>({
   };
 
   return (
-    <div className="grid gap-5 xl:grid-cols-[19rem_minmax(0,1fr)]">
-      <div className="rounded-[24px] border border-white/8 bg-black/12 p-4">
+    <div className="grid gap-5 xl:grid-cols-[18rem_minmax(0,1fr)]">
+      <div className="panel-surface-light rounded-[24px] p-4">
         <div className="mb-4">
           <p className="text-[11px] uppercase tracking-ui text-text-muted">{countLabel}</p>
           <h4 className="mt-2 font-display text-xl text-text-primary">{Object.keys(items).length} entries</h4>
@@ -93,11 +93,11 @@ export function DefinitionWorkbench<T>({
               if (event.key === "Enter") addItem();
             }}
             placeholder={addPlaceholder}
-            className="min-w-0 flex-1 rounded-full border border-white/10 bg-white/8 px-4 py-2 text-xs text-text-primary outline-none"
+            className="ornate-input min-w-0 flex-1 rounded-full px-4 py-2 text-xs text-text-primary"
           />
           <button
             onClick={addItem}
-            className="rounded-full border border-white/10 bg-white/8 px-4 py-2 text-xs text-text-primary transition hover:bg-white/12"
+            className="focus-ring shell-pill rounded-full px-4 py-2 text-xs text-text-primary"
           >
             Add
           </button>
@@ -107,7 +107,7 @@ export function DefinitionWorkbench<T>({
           value={search}
           onChange={(event) => setSearch(event.target.value)}
           placeholder={searchPlaceholder}
-          className="mt-3 w-full rounded-full border border-white/10 bg-white/8 px-4 py-2 text-xs text-text-primary outline-none"
+          className="ornate-input mt-3 w-full rounded-full px-4 py-2 text-xs text-text-primary"
         />
 
         <div className="mt-4 flex max-h-[34rem] flex-col gap-2 overflow-y-auto pr-1">
@@ -152,7 +152,7 @@ export function DefinitionWorkbench<T>({
       </div>
 
       {selectedId && selected ? (
-        <div className="rounded-[24px] border border-white/8 bg-black/12 p-5">
+        <div className="panel-surface rounded-[24px] p-5">
           <div className="flex flex-wrap items-start justify-between gap-4 border-b border-white/8 pb-4">
             <div>
               <p className="text-[11px] uppercase tracking-ui text-text-muted">{title}</p>
@@ -161,7 +161,7 @@ export function DefinitionWorkbench<T>({
             </div>
             <button
               onClick={() => deleteItem(selectedId)}
-              className="rounded-full border border-status-danger/40 bg-status-danger/10 px-4 py-2 text-xs text-status-danger hover:bg-status-danger/15"
+              className="focus-ring rounded-full border border-status-danger/40 bg-status-danger/10 px-4 py-2 text-xs text-status-danger hover:bg-status-danger/15"
             >
               Delete
             </button>
@@ -172,7 +172,7 @@ export function DefinitionWorkbench<T>({
           </div>
         </div>
       ) : (
-        <div className="rounded-[24px] border border-dashed border-white/12 bg-white/4 px-6 py-10 text-sm text-text-muted">
+        <div className="panel-surface-light rounded-[24px] border-dashed px-6 py-10 text-sm text-text-muted">
           Select or create an entry to start editing.
         </div>
       )}

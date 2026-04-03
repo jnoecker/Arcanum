@@ -4,6 +4,7 @@ import { useProjectStore } from "@/stores/projectStore";
 import { useAssetStore } from "@/stores/assetStore";
 import { useFocusTrap } from "@/lib/useFocusTrap";
 import type { AssetEntry } from "@/types/assets";
+import { ActionButton, DialogShell, Spinner } from "./ui/FormWidgets";
 
 interface LegacyMedia {
   absolute_path: string;
@@ -42,21 +43,21 @@ export function BatchLegacyImport({ onClose }: { onClose: () => void }) {
   const [migrating, setMigrating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const doneCount = targets?.filter((t) => t.status === "done").length ?? 0;
-  const skippedCount = targets?.filter((t) => t.status === "skipped").length ?? 0;
-  const errorCount = targets?.filter((t) => t.status === "error").length ?? 0;
+  const doneCount = targets?.filter((target) => target.status === "done").length ?? 0;
+  const skippedCount = targets?.filter((target) => target.status === "skipped").length ?? 0;
+  const errorCount = targets?.filter((target) => target.status === "error").length ?? 0;
   const importFinished = targets !== null && !running && (doneCount + skippedCount + errorCount) === targets.length;
+  const hasLocalImages = targets !== null && targets.length > 0;
+  const needsImport = hasLocalImages && !importFinished;
+  const needsSync = importFinished && phase === "import";
 
   const handleScan = useCallback(async () => {
     if (!mudDir) return;
     setScanning(true);
     try {
       const media = await invoke<LegacyMedia[]>("list_legacy_media", { mudDir });
-      setTargets(
-        media.map((image) => ({ image, status: "pending" as const })),
-      );
+      setTargets(media.map((image) => ({ image, status: "pending" as const })));
       if (media.length === 0) {
-        // No local media — skip straight to migrate
         setPhase("migrate");
       }
     } catch {
@@ -71,21 +72,23 @@ export function BatchLegacyImport({ onClose }: { onClose: () => void }) {
     setPhase("import");
     setRunning(true);
 
-    const knownHashes = new Set(assets.map((a) => a.hash));
+    const knownHashes = new Set(assets.map((asset) => asset.hash));
 
-    for (let i = 0; i < targets.length; i++) {
-      setCurrentIndex(i);
-      const target = targets[i]!;
+    for (let index = 0; index < targets.length; index++) {
+      setCurrentIndex(index);
+      const target = targets[index]!;
 
-      setTargets((prev) =>
-        prev!.map((t, j) => (j === i ? { ...t, status: "importing" } : t)),
+      setTargets((previous) =>
+        previous!.map((entry, entryIndex) => (entryIndex === index ? { ...entry, status: "importing" } : entry)),
       );
 
       try {
         const ext = target.image.relative_path.split(".").pop()?.toLowerCase() ?? "";
-        const assetType = ["mp4", "webm"].includes(ext) ? "video"
-          : ["mp3", "ogg", "flac", "wav"].includes(ext) ? "audio"
-          : "background";
+        const assetType = ["mp4", "webm"].includes(ext)
+          ? "video"
+          : ["mp3", "ogg", "flac", "wav"].includes(ext)
+            ? "audio"
+            : "background";
 
         const entry = await invoke<AssetEntry>("import_asset", {
           sourcePath: target.image.absolute_path,
@@ -96,15 +99,15 @@ export function BatchLegacyImport({ onClose }: { onClose: () => void }) {
         const wasKnown = knownHashes.has(entry.hash);
         knownHashes.add(entry.hash);
 
-        setTargets((prev) =>
-          prev!.map((t, j) =>
-            j === i ? { ...t, status: wasKnown ? "skipped" : "done" } : t,
+        setTargets((previous) =>
+          previous!.map((current, currentIndexValue) =>
+            currentIndexValue === index ? { ...current, status: wasKnown ? "skipped" : "done" } : current,
           ),
         );
-      } catch (e) {
-        setTargets((prev) =>
-          prev!.map((t, j) =>
-            j === i ? { ...t, status: "error", error: String(e) } : t,
+      } catch (invokeError) {
+        setTargets((previous) =>
+          previous!.map((current, currentIndexValue) =>
+            currentIndexValue === index ? { ...current, status: "error", error: String(invokeError) } : current,
           ),
         );
       }
@@ -116,18 +119,18 @@ export function BatchLegacyImport({ onClose }: { onClose: () => void }) {
 
   const handleSync = useCallback(async () => {
     setPhase("sync");
-    setSyncStatus("Syncing to R2...");
+    setSyncStatus("Syncing imported media to R2...");
     try {
       const result = await syncToR2();
       setSyncStatus(
-        `Synced: ${result.uploaded} uploaded, ${result.skipped} already in R2` +
-          (result.failed > 0 ? `, ${result.failed} failed` : ""),
+        `Synced ${result.uploaded} assets, skipped ${result.skipped}` +
+          (result.failed > 0 ? `, failed ${result.failed}` : ""),
       );
       if (result.failed === 0) {
         setPhase("migrate");
       }
-    } catch (e) {
-      setSyncStatus(`Sync failed: ${e}`);
+    } catch (invokeError) {
+      setSyncStatus(`Sync failed: ${invokeError}`);
     }
   }, [syncToR2]);
 
@@ -139,107 +142,128 @@ export function BatchLegacyImport({ onClose }: { onClose: () => void }) {
       const report = await invoke<MigrationReport>("migrate_images_to_r2", { mudDir });
       setMigrationReport(report);
       setPhase("done");
-    } catch (e) {
-      setError(String(e));
+    } catch (invokeError) {
+      setError(String(invokeError));
     } finally {
       setMigrating(false);
     }
   }, [mudDir]);
 
-  const hasLocalImages = targets !== null && targets.length > 0;
-  const needsImport = hasLocalImages && !importFinished;
-  const needsSync = importFinished && phase === "import";
-
   const trapRef = useFocusTrap<HTMLDivElement>(onClose);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-      <div ref={trapRef} role="dialog" aria-modal="true" aria-labelledby="batch-import-title" className="mx-4 flex max-h-[80vh] w-full max-w-lg flex-col rounded-lg border border-border-default bg-bg-secondary shadow-xl">
-        {/* Header */}
-        <div className="flex items-center justify-between border-b border-border-default px-5 py-3">
-          <h2 id="batch-import-title" className="font-display text-sm tracking-wide text-text-primary">
-            Migrate Images to R2
-          </h2>
-          <button
-            aria-label="Close"
-            onClick={onClose}
-            disabled={running || migrating}
-            className="text-xs text-text-muted hover:text-text-primary disabled:opacity-50"
-          >
-            &times;
-          </button>
-        </div>
-
-        {/* Body */}
-        <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
-          {/* Step indicators */}
-          <div className="mb-4 flex items-center gap-1 text-2xs">
-            <StepBadge label="1. Scan" active={phase === "scan"} done={targets !== null} />
-            <span className="text-text-muted">&rarr;</span>
-            <StepBadge label="2. Import" active={phase === "import"} done={importFinished && hasLocalImages} />
-            <span className="text-text-muted">&rarr;</span>
-            <StepBadge label="3. Sync" active={phase === "sync"} done={phase === "migrate" || phase === "done"} />
-            <span className="text-text-muted">&rarr;</span>
-            <StepBadge label="4. Migrate" active={phase === "migrate"} done={phase === "done"} />
+    <DialogShell
+      dialogRef={trapRef}
+      titleId="batch-import-title"
+      title="Restore Legacy Media"
+      subtitle="Scan the project for local media, absorb it into the asset library, sync it to R2, then rewrite the old YAML references in place."
+      widthClassName="max-w-4xl"
+      onClose={running || migrating ? undefined : onClose}
+      status={<StepPill phase={phase} />}
+      footer={
+        <>
+          <ActionButton onClick={onClose} disabled={running || migrating} variant="ghost">
+            {phase === "done" ? "Done" : "Close"}
+          </ActionButton>
+          {needsImport && !running && (
+            <ActionButton onClick={handleImport} variant="primary">
+              Import {targets!.length} Assets
+            </ActionButton>
+          )}
+          {needsSync && (
+            <ActionButton onClick={handleSync} variant="primary">
+              Sync To R2
+            </ActionButton>
+          )}
+          {phase === "migrate" && !migrating && (
+            <ActionButton onClick={handleMigrate} variant="primary">
+              Rewrite YAML References
+            </ActionButton>
+          )}
+        </>
+      }
+    >
+      <div className="grid gap-5 xl:grid-cols-[18rem_minmax(0,1fr)]">
+        <aside className="instrument-panel rounded-[28px] p-5">
+          <p className="text-2xs uppercase tracking-wide-ui text-text-muted">Sequence</p>
+          <div className="mt-4 space-y-3">
+            <StageCard title="1. Scan" active={phase === "scan"} done={targets !== null}>
+              Inspect the legacy resources directory and gather media candidates.
+            </StageCard>
+            <StageCard title="2. Import" active={phase === "import"} done={importFinished && hasLocalImages}>
+              Fold each discovered asset into Creator's asset library.
+            </StageCard>
+            <StageCard title="3. Sync" active={phase === "sync"} done={phase === "migrate" || phase === "done"}>
+              Publish imported assets to R2 so future references stay stable.
+            </StageCard>
+            <StageCard title="4. Rewrite" active={phase === "migrate"} done={phase === "done"}>
+              Replace old file references in YAML and retire local image paths.
+            </StageCard>
           </div>
+        </aside>
 
-          {/* Scan phase */}
+        <section className="flex min-h-[28rem] flex-col gap-4">
           {phase === "scan" && !targets && !scanning && (
-            <div className="flex flex-col items-center gap-3 py-6">
-              <p className="text-sm text-text-secondary">
-                Scan for local media (images, audio, video), import them, sync to R2, then rewrite all YAML references to use R2 filenames.
+            <div className="panel-surface-light rounded-[26px] p-5">
+              <p className="text-2xs uppercase tracking-wide-ui text-text-muted">Scan source</p>
+              <p className="mt-3 text-sm leading-7 text-text-secondary">
+                The importer will inspect the local resources tree, collect images, video, and audio, then prepare them for migration.
               </p>
-              <p className="rounded bg-bg-primary px-3 py-1.5 font-mono text-2xs text-text-muted">
-                {mudDir}/src/main/resources/
+              <p className="mt-4 rounded-[18px] border border-white/8 bg-black/12 px-4 py-3 font-mono text-xs text-text-muted">
+                {mudDir ? `${mudDir}/src/main/resources/` : "No project directory is available."}
               </p>
-              <button
-                onClick={handleScan}
-                className="rounded bg-accent/15 px-4 py-1.5 text-xs font-medium text-accent transition-colors hover:bg-accent/25"
-              >
-                Scan for Media
-              </button>
+              <div className="mt-5">
+                <ActionButton onClick={handleScan} variant="primary" disabled={!mudDir}>
+                  Scan For Legacy Media
+                </ActionButton>
+              </div>
             </div>
           )}
 
           {scanning && (
-            <div className="flex items-center gap-2 py-6">
-              <div className="h-4 w-4 rounded-full border-2 border-accent border-t-transparent animate-spin" />
-              <span className="text-xs text-text-secondary">Scanning...</span>
+            <div className="panel-surface-light flex min-h-[16rem] items-center justify-center rounded-[26px] px-6 py-8 text-center">
+              <div className="flex flex-col items-center gap-3">
+                <Spinner className="h-5 w-5 border-2" />
+                <p className="text-sm text-text-secondary">Scanning the resources tree for import candidates...</p>
+              </div>
             </div>
           )}
 
-          {/* Import phase */}
           {hasLocalImages && (
-            <>
+            <div className="panel-surface-light rounded-[26px] p-5">
+              <div className="flex flex-wrap items-center gap-2">
+                <p className="text-2xs uppercase tracking-wide-ui text-text-muted">Asset queue</p>
+                <span className="rounded-full border border-white/10 bg-black/10 px-3 py-1 text-2xs text-text-secondary">
+                  {targets!.length} candidate{targets!.length !== 1 ? "s" : ""}
+                </span>
+              </div>
+
               {(running || importFinished) && (
-                <div className="mb-3">
-                  <div className="mb-1 flex items-center justify-between text-xs">
+                <div className="mt-4">
+                  <div className="mb-2 flex flex-wrap items-center justify-between gap-2 text-xs">
                     <span className="text-text-secondary">
-                      {running
-                        ? `Importing ${currentIndex + 1} of ${targets.length}...`
-                        : "Import complete"}
+                      {running ? `Importing ${currentIndex + 1} of ${targets!.length}` : "Import pass complete"}
                     </span>
                     <span className="text-text-muted">
-                      {doneCount} new, {skippedCount} existing
-                      {errorCount > 0 && `, ${errorCount} errors`}
+                      {doneCount} new, {skippedCount} existing{errorCount > 0 ? `, ${errorCount} failed` : ""}
                     </span>
                   </div>
-                  <div className="h-1.5 overflow-hidden rounded-full bg-bg-primary">
+                  <div className="h-3 overflow-hidden rounded-full border border-white/8 bg-black/18">
                     <div
-                      className="h-full rounded-full bg-accent transition-all"
-                      style={{
-                        width: `${((doneCount + skippedCount + errorCount) / targets.length) * 100}%`,
-                      }}
+                      className="h-full rounded-full bg-[linear-gradient(90deg,rgba(168,151,210,0.92),rgba(140,174,201,0.9))] transition-[width] duration-300"
+                      style={{ width: `${((doneCount + skippedCount + errorCount) / targets!.length) * 100}%` }}
                     />
                   </div>
                 </div>
               )}
 
               {!running && !importFinished && (
-                <div className="flex flex-col gap-0.5 max-h-40 overflow-y-auto">
-                  {targets.map((target, i) => (
-                    <div key={i} className="flex items-center gap-2 rounded px-2 py-0.5 text-xs">
-                      <span className="text-text-muted">&middot;</span>
+                <div className="mt-4 max-h-72 space-y-2 overflow-y-auto pr-1">
+                  {targets!.map((target, index) => (
+                    <div key={index} className="flex items-center gap-3 rounded-[18px] border border-white/8 bg-black/12 px-4 py-3 text-sm">
+                      <span className="flex h-10 w-10 items-center justify-center rounded-full border border-white/8 bg-white/4 text-2xs text-text-muted">
+                        {index + 1}
+                      </span>
                       <span className="min-w-0 flex-1 truncate font-mono text-text-secondary">
                         {target.image.relative_path}
                       </span>
@@ -247,132 +271,135 @@ export function BatchLegacyImport({ onClose }: { onClose: () => void }) {
                   ))}
                 </div>
               )}
-            </>
+            </div>
           )}
 
-          {/* No local images — skip to migrate */}
           {targets !== null && targets.length === 0 && phase !== "migrate" && phase !== "done" && (
-            <p className="py-2 text-center text-sm text-text-muted">
-              No local images found. Proceeding to migrate YAML references.
-            </p>
+            <div className="panel-surface-light rounded-[26px] p-5 text-sm text-text-secondary">
+              No local media were found. Creator can skip directly to rewriting any stale YAML references.
+            </div>
           )}
 
-          {/* Sync phase */}
           {syncStatus && (
-            <div className="mt-3 rounded bg-bg-primary px-3 py-2 text-xs text-text-secondary">
+            <div className="rounded-[22px] border border-white/8 bg-black/12 px-4 py-3 text-sm text-text-secondary">
               {syncStatus}
             </div>
           )}
 
-          {/* Migrate phase */}
           {phase === "migrate" && !migrating && !migrationReport && (
-            <div className="mt-3 flex flex-col items-center gap-3 py-4">
-              <p className="text-sm text-text-secondary">
-                Ready to rewrite all YAML image references to R2 hash filenames and delete local image files.
+            <div className="panel-surface-light rounded-[26px] p-5">
+              <p className="text-2xs uppercase tracking-wide-ui text-text-muted">Rewrite preview</p>
+              <p className="mt-3 text-sm leading-7 text-text-secondary">
+                Creator is ready to replace local image references with their R2 filenames and remove obsolete local image files.
               </p>
-              <p className="rounded bg-bg-primary px-3 py-2 text-2xs text-text-muted">
-                This will modify zone YAMLs and application.yaml in place.
+              <p className="mt-4 rounded-[18px] border border-status-warning/25 bg-status-warning/8 px-4 py-3 text-xs text-text-secondary">
+                This operation edits zone YAML files and <span className="font-mono">application.yaml</span> in place.
               </p>
             </div>
           )}
 
           {migrating && (
-            <div className="mt-3 flex items-center gap-2 py-4">
-              <div className="h-4 w-4 rounded-full border-2 border-accent border-t-transparent animate-spin" />
-              <span className="text-xs text-text-secondary">Migrating YAML references...</span>
+            <div className="panel-surface-light flex min-h-[16rem] items-center justify-center rounded-[26px] px-6 py-8 text-center">
+              <div className="flex flex-col items-center gap-3">
+                <Spinner className="h-5 w-5 border-2" />
+                <p className="text-sm text-text-secondary">Rewriting YAML references and retiring local files...</p>
+              </div>
             </div>
           )}
 
           {error && (
-            <div className="mt-3 rounded bg-status-error/10 px-3 py-2 text-xs text-status-error">
+            <div className="rounded-[22px] border border-status-error/30 bg-status-error/10 px-4 py-3 text-sm text-status-error">
               {error}
             </div>
           )}
 
-          {/* Done phase */}
           {migrationReport && (
-            <div className="mt-3 flex flex-col gap-2">
-              <div className="rounded bg-bg-primary px-3 py-2 text-xs">
-                <div className="mb-1 font-medium text-text-primary">Migration Complete</div>
-                <div className="flex flex-col gap-0.5 text-text-secondary">
-                  <span>{migrationReport.zone_files_updated} zone files updated ({migrationReport.zone_refs_rewritten} image references)</span>
-                  <span>{migrationReport.config_refs_rewritten} config image references rewritten</span>
-                  <span>{migrationReport.images_deleted} local image files deleted</span>
-                </div>
-              </div>
+            <div className="grid gap-4 lg:grid-cols-3">
+              <MetricCard label="Zone files updated" value={migrationReport.zone_files_updated} detail={`${migrationReport.zone_refs_rewritten} references rewritten`} />
+              <MetricCard label="Config references" value={migrationReport.config_refs_rewritten} detail="application.yaml entries adjusted" />
+              <MetricCard label="Local files removed" value={migrationReport.images_deleted} detail="Retired after successful migration" />
               {migrationReport.errors.length > 0 && (
-                <div className="rounded bg-status-error/10 px-3 py-2 text-xs">
-                  <div className="mb-1 font-medium text-status-error">
-                    {migrationReport.errors.length} warnings
-                  </div>
-                  <div className="flex max-h-32 flex-col gap-0.5 overflow-y-auto text-text-muted">
-                    {migrationReport.errors.map((err, i) => (
-                      <span key={i}>{err}</span>
+                <div className="rounded-[24px] border border-status-error/25 bg-status-error/8 p-4 lg:col-span-3">
+                  <p className="font-display text-sm text-status-error">
+                    {migrationReport.errors.length} warning{migrationReport.errors.length !== 1 ? "s" : ""}
+                  </p>
+                  <div className="mt-3 max-h-44 space-y-2 overflow-y-auto pr-1 text-xs text-text-secondary">
+                    {migrationReport.errors.map((entry, index) => (
+                      <div key={index} className="rounded-[16px] border border-status-error/18 bg-black/10 px-3 py-2">
+                        {entry}
+                      </div>
                     ))}
                   </div>
                 </div>
               )}
             </div>
           )}
-        </div>
-
-        {/* Footer */}
-        <div className="flex justify-end gap-2 border-t border-border-default px-5 py-3">
-          <button
-            onClick={onClose}
-            disabled={running || migrating}
-            className="rounded bg-bg-elevated px-4 py-1.5 text-xs font-medium text-text-primary transition-colors hover:bg-bg-hover disabled:opacity-50"
-          >
-            {phase === "done" ? "Done" : "Cancel"}
-          </button>
-
-          {/* Import button */}
-          {needsImport && !running && (
-            <button
-              onClick={handleImport}
-              className="rounded bg-gradient-to-r from-accent-muted to-accent px-4 py-1.5 text-xs font-medium text-accent-emphasis transition-all hover:shadow-[var(--glow-aurum)] hover:brightness-110"
-            >
-              Import {targets!.length} Images
-            </button>
-          )}
-
-          {/* Sync button */}
-          {needsSync && (
-            <button
-              onClick={handleSync}
-              className="rounded bg-gradient-to-r from-accent-muted to-accent px-4 py-1.5 text-xs font-medium text-accent-emphasis transition-all hover:shadow-[var(--glow-aurum)] hover:brightness-110"
-            >
-              Sync to R2
-            </button>
-          )}
-
-          {/* Migrate button */}
-          {phase === "migrate" && !migrating && (
-            <button
-              onClick={handleMigrate}
-              className="rounded bg-gradient-to-r from-accent-muted to-accent px-4 py-1.5 text-xs font-medium text-accent-emphasis transition-all hover:shadow-[var(--glow-aurum)] hover:brightness-110"
-            >
-              Migrate YAMLs
-            </button>
-          )}
-        </div>
+        </section>
       </div>
+    </DialogShell>
+  );
+}
+
+function StepPill({ phase }: { phase: Phase }) {
+  const label =
+    phase === "scan"
+      ? "Scanning"
+      : phase === "import"
+        ? "Importing"
+        : phase === "sync"
+          ? "Syncing"
+          : phase === "migrate"
+            ? "Rewriting"
+            : "Complete";
+
+  return (
+    <span className="rounded-full border border-white/10 bg-black/10 px-3 py-1 text-2xs text-text-secondary">
+      {label}
+    </span>
+  );
+}
+
+function StageCard({
+  title,
+  active,
+  done,
+  children,
+}: {
+  title: string;
+  active: boolean;
+  done: boolean;
+  children: string;
+}) {
+  return (
+    <div
+      className={`rounded-[22px] border px-4 py-3 ${
+        done
+          ? "border-[var(--border-accent-subtle)] bg-[rgba(168,151,210,0.12)]"
+          : active
+            ? "border-[var(--border-glow-strong)] bg-[rgba(140,174,201,0.12)]"
+            : "border-white/8 bg-black/12"
+      }`}
+    >
+      <p className="font-display text-sm text-text-primary">{title}</p>
+      <p className="mt-1 text-xs leading-6 text-text-secondary">{children}</p>
     </div>
   );
 }
 
-function StepBadge({ label, active, done }: { label: string; active: boolean; done: boolean }) {
+function MetricCard({
+  label,
+  value,
+  detail,
+}: {
+  label: string;
+  value: number;
+  detail: string;
+}) {
   return (
-    <span
-      className={`rounded px-1.5 py-0.5 ${
-        done
-          ? "bg-status-success/15 text-status-success"
-          : active
-            ? "bg-accent/15 text-accent"
-            : "bg-bg-primary text-text-muted"
-      }`}
-    >
-      {label}
-    </span>
+    <div className="panel-surface-light rounded-[24px] p-4">
+      <p className="text-2xs uppercase tracking-wide-ui text-text-muted">{label}</p>
+      <p className="mt-3 font-display text-[2rem] leading-none text-text-primary">{value}</p>
+      <p className="mt-2 text-xs leading-6 text-text-secondary">{detail}</p>
+    </div>
   );
 }

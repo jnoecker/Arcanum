@@ -43,7 +43,7 @@ export function StudioWorkspace({ panelId }: { panelId: string }) {
 
   const selectedZone = selectedZoneId ? zones.get(selectedZoneId) ?? null : null;
   const renderAtlas = (compact = false) => (
-    <div className="rounded-[28px] border border-white/10 bg-gradient-panel p-5 shadow-section">
+    <div className="panel-surface rounded-[28px] p-5">
       <div className="mb-4 flex items-center justify-between">
         <h2 className="font-display text-xl text-text-primary">World atlas</h2>
         <span className="text-[11px] uppercase tracking-ui text-text-muted">{zones.size} zones</span>
@@ -51,7 +51,7 @@ export function StudioWorkspace({ panelId }: { panelId: string }) {
 
       <div className={`flex flex-col gap-2 overflow-y-auto pr-1 ${compact ? "max-h-[18rem]" : "max-h-[38rem]"}`}>
         {sortedZones.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-white/12 bg-white/4 px-4 py-6 text-sm text-text-muted">
+          <div className="panel-surface-light rounded-2xl border-dashed px-4 py-6 text-sm text-text-muted">
             Open a world folder to load zones and assets.
           </div>
         ) : (
@@ -64,7 +64,7 @@ export function StudioWorkspace({ panelId }: { panelId: string }) {
               <button
                 key={zoneId}
                 onClick={() => setSelectedZoneId(zoneId)}
-                className={`rounded-[22px] border px-4 py-4 text-left transition ${
+                className={`focus-ring rounded-[22px] border px-4 py-4 text-left transition ${
                   selected
                     ? "border-border-active bg-gradient-active-strong"
                     : "border-white/8 bg-white/4 hover:bg-white/7"
@@ -106,19 +106,19 @@ export function StudioWorkspace({ panelId }: { panelId: string }) {
               <section className="grid items-start gap-6 xl:grid-cols-[0.78fr_1.22fr]">
                 <div>{renderAtlas(true)}</div>
                 <div className="flex flex-col gap-6">
-                  <div className="rounded-[28px] border border-white/10 bg-gradient-panel p-5 shadow-section">
+                  <div className="panel-surface rounded-[28px] p-5">
                     <div className="mb-4 flex items-center justify-between">
                       <h2 className="font-display text-xl text-text-primary">Zone direction</h2>
                       <div className="flex gap-2">
                         <button
                           onClick={() => openTab({ id: `zone:${selectedZoneId}`, kind: "zone", label: selectedZoneId! })}
-                          className="rounded-full border border-white/12 bg-white/6 px-4 py-2 text-xs font-medium text-text-primary transition hover:bg-white/10"
+                          className="focus-ring shell-pill rounded-full px-4 py-2 text-xs font-medium"
                         >
                           Open editor
                         </button>
                         <button
                           onClick={() => setShowBatchArt(true)}
-                          className="rounded-full border border-[var(--border-accent-subtle)] bg-[var(--bg-accent-subtle)] px-4 py-2 text-xs font-medium text-text-primary transition hover:bg-[var(--bg-accent-hover)]"
+                          className="focus-ring shell-pill-primary rounded-full px-4 py-2 text-xs font-medium"
                         >
                           Batch generate
                         </button>
@@ -144,8 +144,8 @@ export function StudioWorkspace({ panelId }: { panelId: string }) {
             </>
           ) : (
             <>
-              <section className="rounded-[28px] border border-white/10 bg-gradient-panel p-5 shadow-section">
-                <div className="rounded-[22px] border border-dashed border-white/12 bg-white/4 px-4 py-8 text-sm text-text-muted">
+              <section className="panel-surface rounded-[28px] p-5">
+                <div className="panel-surface-light rounded-[22px] border-dashed px-4 py-8 text-sm text-text-muted">
                   Open a world folder and select a zone to start generating zone art.
                 </div>
               </section>

@@ -6,6 +6,7 @@ import { useProjectStore } from "@/stores/projectStore";
 import { serializeZone } from "@/lib/saveZone";
 import { useFocusTrap } from "@/lib/useFocusTrap";
 import { diffLines, type DiffLine } from "@/lib/diff";
+import { ActionButton, DialogShell } from "./FormWidgets";
 
 interface FileDiff {
   label: string;
@@ -28,74 +29,72 @@ export function DiffModal({ onConfirm, onCancel }: DiffModalProps) {
   }, []);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-      <div ref={trapRef} role="dialog" aria-modal="true" aria-labelledby="diff-dialog-title" className="mx-4 flex max-h-[80vh] w-full max-w-3xl flex-col rounded-lg border border-border-default bg-bg-secondary shadow-xl">
-        <div className="flex items-center justify-between border-b border-border-default px-5 py-3">
-          <h2 id="diff-dialog-title" className="font-display text-sm tracking-wide text-text-primary">
-            Review Changes
-          </h2>
-          <span className="text-xs text-text-muted">
-            {diffs ? `${diffs.length} file${diffs.length !== 1 ? "s" : ""}` : "Loading..."}
-          </span>
-        </div>
-
-        <div className="flex-1 overflow-y-auto px-5 py-3">
-          {error && (
-            <p className="text-xs text-status-error">{error}</p>
-          )}
-          {!diffs && !error && (
-            <p className="text-xs text-text-muted">Computing diffs...</p>
-          )}
-          {diffs?.map((diff) => (
-            <div key={diff.label} className="mb-4">
-              <div className="mb-1 flex items-center gap-2">
-                <span className="text-xs font-semibold text-text-primary">
-                  {diff.label}
-                </span>
-                <span className="text-2xs text-text-muted">
-                  {diff.changeCount} change{diff.changeCount !== 1 ? "s" : ""}
-                </span>
-              </div>
-              <div className="max-h-64 overflow-auto rounded border border-border-default bg-bg-primary font-mono text-[11px] leading-5">
-                {diff.lines.map((line, i) => (
-                  <div
-                    key={i}
-                    className={
-                      line.kind === "add"
-                        ? "bg-diff-add-bg text-diff-add-text"
-                        : line.kind === "del"
-                          ? "bg-diff-del-bg text-diff-del-text"
-                          : "text-text-muted"
-                    }
-                  >
-                    <span className="inline-block w-5 select-none text-right opacity-50">
-                      {line.kind === "add" ? "+" : line.kind === "del" ? "-" : " "}
-                    </span>
-                    {" "}{line.text}
-                  </div>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-
-        <div className="flex justify-end gap-2 border-t border-border-default px-5 py-3">
-          <button
-            onClick={onCancel}
-            className="rounded bg-bg-elevated px-4 py-1.5 text-xs font-medium text-text-primary transition-colors hover:bg-bg-hover"
-          >
+    <DialogShell
+      dialogRef={trapRef}
+      titleId="diff-dialog-title"
+      title="Review Pending Changes"
+      subtitle="Trace every altered surface before the world is committed to disk."
+      widthClassName="max-w-4xl"
+      onClose={onCancel}
+      status={
+        <span className="rounded-full border border-white/10 bg-black/10 px-3 py-1 text-2xs text-text-secondary">
+          {diffs ? `${diffs.length} file${diffs.length !== 1 ? "s" : ""}` : "Reading changes"}
+        </span>
+      }
+      footer={
+        <>
+          <ActionButton onClick={onCancel} variant="ghost">
             Cancel
-          </button>
-          <button
-            onClick={onConfirm}
-            disabled={!diffs}
-            className="rounded bg-gradient-to-r from-accent-muted to-accent px-4 py-1.5 text-xs font-medium text-accent-emphasis transition-all hover:shadow-[var(--glow-aurum)] hover:brightness-110 disabled:opacity-50"
-          >
+          </ActionButton>
+          <ActionButton onClick={onConfirm} disabled={!diffs} variant="primary">
             Save All
-          </button>
-        </div>
+          </ActionButton>
+        </>
+      }
+    >
+      <div className="flex flex-col gap-4">
+        {error && (
+          <div className="rounded-[22px] border border-status-error/30 bg-status-error/10 px-4 py-3 text-sm text-status-error">
+            {error}
+          </div>
+        )}
+        {!diffs && !error && (
+          <div className="panel-surface-light rounded-[22px] px-4 py-6 text-sm text-text-muted">
+            Reading the current zone and config deltas...
+          </div>
+        )}
+        {diffs?.map((diff) => (
+          <section key={diff.label} className="panel-surface-light rounded-[24px] p-4">
+            <div className="mb-3 flex flex-wrap items-center gap-2">
+              <h3 className="font-display text-sm text-text-primary">{diff.label}</h3>
+              <span className="rounded-full border border-white/10 bg-black/10 px-3 py-1 text-2xs text-text-secondary">
+                {diff.changeCount} change{diff.changeCount !== 1 ? "s" : ""}
+              </span>
+            </div>
+            <div className="max-h-72 overflow-auto rounded-[18px] border border-white/8 bg-[rgba(8,12,28,0.42)] font-mono text-[11px] leading-5">
+              {diff.lines.map((line, index) => (
+                <div
+                  key={index}
+                  className={
+                    line.kind === "add"
+                      ? "bg-diff-add-bg/90 text-diff-add-text"
+                      : line.kind === "del"
+                        ? "bg-diff-del-bg/90 text-diff-del-text"
+                        : "text-text-muted"
+                  }
+                >
+                  <span className="inline-block w-6 select-none pl-2 text-right opacity-50">
+                    {line.kind === "add" ? "+" : line.kind === "del" ? "-" : " "}
+                  </span>
+                  {" "}
+                  {line.text}
+                </div>
+              ))}
+            </div>
+          </section>
+        ))}
       </div>
-    </div>
+    </DialogShell>
   );
 }
 
@@ -103,30 +102,28 @@ async function computeDiffs(): Promise<FileDiff[]> {
   const result: FileDiff[] = [];
   const zones = useZoneStore.getState().zones;
 
-  // Dirty zones
   for (const [zoneId, zone] of zones) {
     if (!zone.dirty) continue;
     let oldText = "";
     try {
       oldText = await readTextFile(zone.filePath);
     } catch {
-      // New file, no old content
+      // New file, no old content.
     }
     const newText = serializeZone(zoneId);
     if (oldText === newText) continue;
     const lines = diffLines(oldText, newText);
-    const changeCount = lines.filter((l) => l.kind !== "same").length;
+    const changeCount = lines.filter((line) => line.kind !== "same").length;
     result.push({ label: `zone: ${zoneId}`, lines, changeCount });
   }
 
-  // Dirty config
   const configStore = useConfigStore.getState();
   if (configStore.dirty && configStore.config) {
     const mudDir = useProjectStore.getState().project?.mudDir;
     if (mudDir) {
       result.push({
         label: "config: application.yaml",
-        lines: [{ kind: "same", text: "(Config uses CST-preserving save — full diff not available)" }],
+        lines: [{ kind: "same", text: "(Config uses CST-preserving save; a full line diff is not available.)" }],
         changeCount: 1,
       });
     }

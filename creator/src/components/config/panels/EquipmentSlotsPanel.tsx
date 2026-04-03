@@ -3,7 +3,7 @@ import { invoke } from "@tauri-apps/api/core";
 import type { ConfigPanelProps } from "./types";
 import type { EquipmentSlotDefinition } from "@/types/config";
 import { useProjectStore } from "@/stores/projectStore";
-import { FieldRow, TextInput, NumberInput } from "@/components/ui/FormWidgets";
+import { ActionButton, FieldRow, TextInput, NumberInput } from "@/components/ui/FormWidgets";
 import mannequinImg from "@/assets/mannequin-slots.jpg";
 
 interface SlotPosition {
@@ -144,35 +144,35 @@ export function EquipmentSlotsPanel({ config, onChange }: ConfigPanelProps) {
   const selected = selectedId ? slots[selectedId] : null;
 
   return (
-    <div className="flex gap-4" style={{ minHeight: "min(480px, 60vh)" }}>
+    <div className="flex flex-col gap-5 xl:flex-row" style={{ minHeight: "min(520px, 64vh)" }}>
       {/* Left side: slot list + detail form */}
-      <div className="flex w-72 shrink-0 flex-col gap-3">
+      <div className="flex w-full shrink-0 flex-col gap-4 xl:w-80">
         {/* Add new slot */}
         <form
           onSubmit={(e) => {
             e.preventDefault();
             handleAddSlot();
           }}
-          className="flex items-center gap-1"
+          className="panel-surface-light flex items-center gap-2 rounded-[22px] p-3"
         >
           <input
             value={newSlotId}
             onChange={(e) => setNewSlotId(e.target.value)}
             aria-label="New slot ID"
             placeholder="New slot id..."
-            className="h-6 flex-1 rounded border border-border-default bg-bg-primary px-2 text-xs text-text-primary placeholder:text-text-muted outline-none focus:border-accent"
+            className="ornate-input min-h-11 flex-1 rounded-2xl px-4 py-3 text-sm"
           />
-          <button
+          <ActionButton
             type="submit"
             disabled={!newSlotId.trim()}
-            className="h-6 rounded bg-accent/20 px-2 text-xs text-accent transition-colors hover:bg-accent/30 disabled:opacity-30"
+            variant="primary"
           >
-            + Add
-          </button>
+            Add Slot
+          </ActionButton>
         </form>
 
         {/* Slot list */}
-        <div className="flex flex-col gap-0.5">
+        <div className="panel-surface-light flex flex-col gap-1 rounded-[24px] p-3">
           {sortedSlots.map(([id, slot]) => (
             <div
               key={id}
@@ -185,14 +185,14 @@ export function EquipmentSlotsPanel({ config, onChange }: ConfigPanelProps) {
                   setSelectedId(id);
                 }
               }}
-              className={`group flex cursor-pointer items-center gap-2 rounded px-2 py-1 text-xs transition-colors focus:outline-none focus:ring-1 focus:ring-accent/60 ${
+              className={`group focus-ring flex min-h-11 cursor-pointer items-center gap-3 rounded-[18px] px-3 py-2 text-sm transition ${
                 selectedId === id
-                  ? "bg-accent/15 text-accent"
-                  : "text-text-secondary hover:bg-bg-hover hover:text-text-primary"
+                  ? "border border-[var(--border-glow-strong)] bg-[linear-gradient(145deg,rgba(168,151,210,0.18),rgba(42,50,71,0.9))] text-text-primary shadow-glow-sm"
+                  : "border border-transparent text-text-secondary hover:bg-white/6 hover:text-text-primary"
               }`}
               aria-label={`${slot.displayName} slot`}
             >
-              <span className="w-4 shrink-0 text-center text-2xs text-text-muted">
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/8 bg-black/12 text-2xs text-text-muted">
                 {slot.order}
               </span>
               <span className="font-mono text-2xs text-text-muted">{id}</span>
@@ -202,24 +202,24 @@ export function EquipmentSlotsPanel({ config, onChange }: ConfigPanelProps) {
                   e.stopPropagation();
                   handleDeleteSlot(id);
                 }}
-                className="text-text-muted opacity-0 transition-opacity hover:text-status-danger group-hover:opacity-100"
+                className="focus-ring flex h-9 w-9 items-center justify-center rounded-full text-text-muted opacity-0 transition hover:bg-status-danger/10 hover:text-status-danger group-hover:opacity-100"
                 title="Delete slot"
               >
-                &times;
+                x
               </button>
             </div>
           ))}
           {sortedSlots.length === 0 && (
-            <p className="px-2 text-xs text-text-muted">
-              No equipment slots defined
+            <p className="px-2 py-4 text-sm text-text-muted">
+              No equipment slots defined yet.
             </p>
           )}
         </div>
 
         {/* Detail form for selected slot */}
         {selectedId && selected && (
-          <div className="border-t border-border-muted pt-3">
-            <h4 className="mb-2 font-display text-xs uppercase tracking-widest text-text-muted">
+          <div className="panel-surface-light rounded-[24px] p-4">
+            <h4 className="mb-3 font-display text-xs uppercase tracking-widest text-text-muted">
               Edit: {selectedId}
             </h4>
             <div className="flex flex-col gap-1.5">
@@ -247,7 +247,7 @@ export function EquipmentSlotsPanel({ config, onChange }: ConfigPanelProps) {
       <div className="flex min-w-0 flex-1 items-start justify-center">
         <div
           ref={containerRef}
-          className="relative aspect-square w-full max-w-[420px] select-none overflow-hidden rounded-lg"
+          className="panel-surface-light relative aspect-square w-full max-w-[480px] select-none overflow-hidden rounded-[28px] p-3"
           onPointerMove={handlePointerMove}
           onPointerUp={handlePointerUp}
         >
@@ -255,7 +255,7 @@ export function EquipmentSlotsPanel({ config, onChange }: ConfigPanelProps) {
           <img
             src={mannequinImg}
             alt="Equipment mannequin"
-            className="pointer-events-none h-full w-full object-cover"
+            className="pointer-events-none h-full w-full rounded-[22px] object-cover"
             draggable={false}
           />
 
@@ -269,7 +269,7 @@ export function EquipmentSlotsPanel({ config, onChange }: ConfigPanelProps) {
                 key={id}
                 role="button"
                 tabIndex={0}
-                aria-label={`${slot.displayName} slot marker — drag or use arrow keys to reposition`}
+                aria-label={`${slot.displayName} slot marker - drag or use arrow keys to reposition`}
                 onPointerDown={(e) => handlePointerDown(e, id)}
                 onClick={() => setSelectedId(id)}
                 onKeyDown={(e) => {
@@ -292,27 +292,27 @@ export function EquipmentSlotsPanel({ config, onChange }: ConfigPanelProps) {
                   };
                   savePositions(next);
                 }}
-                className={`absolute flex items-center justify-center rounded-full border transition-all focus:outline-none focus:ring-2 focus:ring-accent-emphasis ${
-                  isDragging
-                    ? "z-20 scale-125 cursor-grabbing"
-                    : "cursor-grab"
-                } ${
-                  isSelected
-                    ? "z-10 scale-110 border-accent bg-accent/60 ring-2 ring-accent-emphasis"
-                    : "border-accent/60 bg-accent/30 hover:bg-accent/50"
-                } ${!isDragging && !isSelected ? "animate-aurum-pulse" : ""}`}
+                className={`focus-ring absolute flex items-center justify-center rounded-full transition-[transform,border-color,background-color,box-shadow] duration-150 ${
+                  isDragging ? "z-20 cursor-grabbing scale-105" : "cursor-grab"
+                }`}
                 style={{
-                  width: 20,
-                  height: 20,
+                  width: 44,
+                  height: 44,
                   left: `${pos.x}%`,
                   top: `${pos.y}%`,
-                  transform: `translate(-50%, -50%)${isSelected ? " scale(1.1)" : ""}`,
+                  transform: "translate(-50%, -50%)",
                 }}
                 title={`${slot.displayName} (${id})`}
               >
-                <span className="text-[7px] font-bold text-text-primary select-none">
+                <div
+                  className={`flex h-7 w-7 items-center justify-center rounded-full border text-[9px] font-bold text-text-primary shadow-glow-sm select-none ${
+                    isSelected
+                      ? "border-accent bg-accent/70 ring-2 ring-accent-emphasis"
+                      : "border-accent/60 bg-accent/40"
+                  } ${!isDragging && !isSelected ? "animate-aurum-pulse" : ""}`}
+                >
                   {slot.displayName.charAt(0).toUpperCase()}
-                </span>
+                </div>
               </div>
             );
           })}
@@ -321,4 +321,3 @@ export function EquipmentSlotsPanel({ config, onChange }: ConfigPanelProps) {
     </div>
   );
 }
-

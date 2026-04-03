@@ -9,14 +9,14 @@ export function RawYamlPanel({ config }: ConfigPanelProps) {
     <Section title="Unrecognized Sections">
       {entries.length === 0 ? (
         <p className="text-xs text-text-muted">
-          No unrecognized config sections found. All sections in
-          application.yaml are covered by the editor tabs.
+          No uncatalogued config sections were found. Everything in
+          application.yaml is already represented in the structured editor.
         </p>
       ) : (
         <>
           <p className="mb-2 text-xs text-text-muted">
-            These sections were found in application.yaml but are not editable
-            in the UI. They are preserved when saving.
+            These sections were found in application.yaml but do not yet have a
+            dedicated editor surface. They will be preserved when you save.
           </p>
           <div className="flex flex-col gap-2">
             {entries.map(([key, value]) => (

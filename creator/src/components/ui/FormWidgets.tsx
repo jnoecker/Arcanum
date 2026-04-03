@@ -1,4 +1,8 @@
-import { useState, type ReactNode } from "react";
+import { useState, type ButtonHTMLAttributes, type ReactNode, type Ref } from "react";
+
+function cx(...classes: Array<string | false | null | undefined>) {
+  return classes.filter(Boolean).join(" ");
+}
 
 // ─── Shared form primitives used across all entity editors ──────────
 
@@ -9,6 +13,105 @@ export function Spinner({ className }: { className?: string }) {
       className={`inline-block h-3 w-3 shrink-0 rounded-full border-[1.5px] border-current border-t-transparent animate-spin ${className ?? ""}`}
       aria-hidden="true"
     />
+  );
+}
+
+export function ActionButton({
+  variant = "secondary",
+  size = "md",
+  className,
+  type = "button",
+  children,
+  ...props
+}: ButtonHTMLAttributes<HTMLButtonElement> & {
+  variant?: "primary" | "secondary" | "ghost" | "danger";
+  size?: "sm" | "md" | "icon";
+}) {
+  return (
+    <button
+      type={type}
+      className={cx(
+        "focus-ring action-button",
+        variant === "primary" && "action-button-primary",
+        variant === "secondary" && "action-button-secondary",
+        variant === "ghost" && "action-button-ghost",
+        variant === "danger" && "action-button-danger",
+        size === "sm" && "action-button-sm",
+        size === "md" && "action-button-md",
+        size === "icon" && "action-button-icon",
+        className,
+      )}
+      {...props}
+    >
+      {children}
+    </button>
+  );
+}
+
+export function DialogShell({
+  dialogRef,
+  titleId,
+  title,
+  subtitle,
+  status,
+  role = "dialog",
+  widthClassName = "max-w-2xl",
+  className,
+  bodyClassName,
+  footer,
+  onClose,
+  children,
+}: {
+  dialogRef?: Ref<HTMLDivElement>;
+  titleId: string;
+  title: string;
+  subtitle?: string;
+  status?: ReactNode;
+  role?: "dialog" | "alertdialog";
+  widthClassName?: string;
+  className?: string;
+  bodyClassName?: string;
+  footer?: ReactNode;
+  onClose?: () => void;
+  children: ReactNode;
+}) {
+  return (
+    <div className="dialog-overlay">
+      <div
+        ref={dialogRef}
+        role={role}
+        aria-modal="true"
+        aria-labelledby={titleId}
+        className={cx("dialog-shell flex max-h-[88vh] w-full flex-col", widthClassName, className)}
+      >
+        <div className="dialog-header">
+          <div className="min-w-0 flex-1">
+            <h2 id={titleId} className="dialog-title">
+              {title}
+            </h2>
+            {subtitle && <p className="dialog-subtitle">{subtitle}</p>}
+          </div>
+          {(status || onClose) && (
+            <div className="ml-4 flex shrink-0 items-start gap-2">
+              {status}
+              {onClose && (
+                <ActionButton
+                  variant="ghost"
+                  size="icon"
+                  onClick={onClose}
+                  aria-label="Close dialog"
+                  className="font-sans text-base"
+                >
+                  x
+                </ActionButton>
+              )}
+            </div>
+          )}
+        </div>
+        <div className={cx("dialog-body", bodyClassName)}>{children}</div>
+        {footer && <div className="dialog-footer">{footer}</div>}
+      </div>
+    </div>
   );
 }
 
@@ -32,7 +135,7 @@ export function EditableField({
   if (!editing) {
     return (
       <div
-        className={`cursor-text rounded border-b border-dashed border-white/10 px-1 -mx-1 hover:border-white/20 hover:bg-bg-tertiary ${className ?? ""}`}
+        className={`focus-ring cursor-text rounded border-b border-dashed border-white/10 px-1 -mx-1 hover:border-white/20 hover:bg-bg-tertiary ${className ?? ""}`}
         role="button"
         tabIndex={0}
         onClick={() => {
@@ -59,7 +162,7 @@ export function EditableField({
   return (
     <input
       autoFocus
-      className={`w-full rounded border border-accent/50 bg-bg-primary px-1 -mx-1 outline-none ${className ?? ""}`}
+      className={`ornate-input w-full rounded px-1 -mx-1 ${className ?? ""}`}
       value={draft}
       onChange={(e) => setDraft(e.target.value)}
       onBlur={() => {
@@ -96,7 +199,7 @@ export function EditableTextArea({
   if (!editing) {
     return (
       <div
-        className="cursor-text rounded border-b border-dashed border-white/10 px-1 -mx-1 text-xs leading-relaxed text-text-secondary hover:border-white/20 hover:bg-bg-tertiary"
+        className="focus-ring cursor-text rounded border-b border-dashed border-white/10 px-1 -mx-1 text-xs leading-relaxed text-text-secondary hover:border-white/20 hover:bg-bg-tertiary"
         role="button"
         tabIndex={0}
         onClick={() => {
@@ -122,7 +225,7 @@ export function EditableTextArea({
     <textarea
       autoFocus
       rows={4}
-      className="w-full resize-y rounded border border-accent/50 bg-bg-primary px-1 -mx-1 text-xs leading-relaxed text-text-secondary outline-none"
+      className="ornate-input w-full resize-y rounded px-1 -mx-1 text-xs leading-relaxed text-text-secondary"
       value={draft}
       onChange={(e) => setDraft(e.target.value)}
       onBlur={() => {
@@ -161,7 +264,7 @@ export function Section({
         <button
           type="button"
           onClick={() => setExpanded((v) => !v)}
-          className="flex items-center gap-1.5 text-left"
+          className="focus-ring flex items-center gap-1.5 rounded text-left"
         >
           <span
             className={`inline-block text-[9px] text-text-muted transition-transform duration-200 ${expanded ? "rotate-90" : ""}`}
@@ -217,12 +320,14 @@ export function TextInput({
   placeholder,
   className,
   type = "text",
+  dense = false,
 }: {
   value: string;
   onCommit: (value: string) => void;
   placeholder?: string;
   className?: string;
   type?: "text" | "number";
+  dense?: boolean;
 }) {
   const [draft, setDraft] = useState(value);
   const [focused, setFocused] = useState(false);
@@ -239,7 +344,11 @@ export function TextInput({
   return (
     <input
       type={type}
-      className={`w-full rounded border border-border-default bg-bg-primary px-1.5 py-0.5 text-xs text-text-primary outline-none focus:border-accent/50 ${className ?? ""}`}
+      className={cx(
+        "ornate-input w-full rounded text-xs text-text-primary",
+        dense ? "min-h-9 px-2 py-1" : "min-h-11 px-3 py-2",
+        className,
+      )}
       value={draft}
       placeholder={placeholder}
       onChange={(e) => setDraft(e.target.value)}
@@ -267,6 +376,7 @@ export function NumberInput({
   min,
   max,
   step,
+  dense = false,
 }: {
   value: number | undefined;
   onCommit: (value: number | undefined) => void;
@@ -274,6 +384,7 @@ export function NumberInput({
   min?: number;
   max?: number;
   step?: number;
+  dense?: boolean;
 }) {
   const strVal = value != null ? String(value) : "";
   const [draft, setDraft] = useState(strVal);
@@ -296,7 +407,10 @@ export function NumberInput({
   return (
     <input
       type="number"
-      className="w-full rounded border border-border-default bg-bg-primary px-1.5 py-0.5 text-xs text-text-primary outline-none focus:border-accent/50"
+      className={cx(
+        "ornate-input w-full rounded text-xs text-text-primary",
+        dense ? "min-h-9 px-2 py-1" : "min-h-11 px-3 py-2",
+      )}
       value={draft}
       placeholder={placeholder}
       min={min}
@@ -326,16 +440,21 @@ export function SelectInput({
   options,
   placeholder,
   allowEmpty,
+  dense = false,
 }: {
   value: string;
   onCommit: (value: string) => void;
   options: { value: string; label: string }[];
   placeholder?: string;
   allowEmpty?: boolean;
+  dense?: boolean;
 }) {
   return (
     <select
-      className="w-full rounded border border-border-default bg-bg-primary px-1 py-0.5 text-xs text-text-primary outline-none focus:border-accent/50"
+      className={cx(
+        "ornate-input w-full rounded text-xs text-text-primary",
+        dense ? "min-h-9 px-2 py-1" : "min-h-11 px-3 py-2",
+      )}
       value={value}
       onChange={(e) => onCommit(e.target.value)}
     >
@@ -400,7 +519,7 @@ export function CommitTextarea({
       <label className="text-xs text-text-muted">{label}</label>
       <textarea
         rows={rows}
-        className="mt-0.5 w-full resize-y rounded border border-border-default bg-bg-primary px-1.5 py-1 text-xs leading-relaxed text-text-primary outline-none focus:border-accent/50"
+        className="ornate-input mt-0.5 w-full resize-y rounded px-1.5 py-1 text-xs leading-relaxed text-text-primary"
         placeholder={placeholder}
         value={draft}
         onChange={(e) => setDraft(e.target.value)}
@@ -420,21 +539,25 @@ export function IconButton({
   title,
   danger,
   children,
+  size = "md",
 }: {
   onClick: () => void;
   title: string;
   danger?: boolean;
   children: ReactNode;
+  size?: "sm" | "md";
 }) {
   return (
     <button
       onClick={onClick}
       title={title}
-      className={`h-6 w-6 rounded text-xs transition-colors ${
+      className={cx(
+        "focus-ring rounded text-xs transition-colors",
+        size === "sm" ? "h-9 w-9" : "h-11 w-11",
         danger
           ? "text-text-muted hover:bg-status-danger/10 hover:text-status-danger"
-          : "text-text-muted hover:bg-bg-elevated hover:text-text-primary"
-      }`}
+          : "text-text-muted hover:bg-bg-elevated hover:text-text-primary",
+      )}
     >
       {children}
     </button>

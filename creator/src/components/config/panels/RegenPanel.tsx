@@ -10,7 +10,7 @@ export function RegenPanel({ config, onChange }: ConfigPanelProps) {
     <>
       <Section
         title="HP Regen"
-        description="Controls how quickly players recover HP outside of combat. The regen interval is reduced by the HP Regen Stat binding (configured in the Stats tab), down to the minimum interval. Faster regen reduces downtime between fights."
+        description="Controls how quickly players recover HP outside of combat. The HP regen stat binding can shorten this interval down to the minimum value, so faster regeneration means less downtime between fights."
       >
         <div className="flex flex-col gap-1.5">
           <FieldRow label="Max / Tick" hint="Maximum players processed per regen tick. Higher values ensure all players regen simultaneously, but cost more CPU. 50 is fine for most servers.">

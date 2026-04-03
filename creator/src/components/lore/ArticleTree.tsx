@@ -199,7 +199,7 @@ export function ArticleTree() {
       {/* Search */}
       <input
         aria-label="Search articles"
-        className="mb-2 w-full rounded border border-border-default bg-bg-primary px-2 py-1.5 text-xs text-text-primary outline-none focus:border-accent/50"
+        className="ornate-input mb-2 w-full rounded px-2 py-1.5 text-xs text-text-primary"
         value={search}
         onChange={(e) => setSearch(e.target.value)}
         placeholder="Search articles..."
@@ -233,7 +233,7 @@ export function ArticleTree() {
         <div className="flex gap-1.5">
           <input
             aria-label="New article title"
-            className="min-w-0 flex-1 rounded border border-border-default bg-bg-primary px-2 py-1.5 text-xs text-text-primary outline-none focus:border-accent/50"
+            className="ornate-input min-w-0 flex-1 rounded px-2 py-1.5 text-xs text-text-primary"
             value={newTitle}
             onChange={(e) => setNewTitle(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleAdd()}
@@ -243,14 +243,14 @@ export function ArticleTree() {
             onClick={handleAdd}
             disabled={!newTitle.trim()}
             aria-label="Add article"
-            className="rounded border border-border-default px-3 py-1.5 text-xs text-text-secondary hover:bg-bg-tertiary disabled:opacity-40"
+            className="focus-ring shell-pill rounded-full px-3 py-1.5 text-xs text-text-secondary disabled:opacity-40"
           >
             +
           </button>
         </div>
         <select
           aria-label="Article template type"
-          className="rounded border border-border-default bg-bg-primary px-2 py-1.5 text-xs text-text-secondary outline-none focus:border-accent/50"
+          className="ornate-input rounded px-2 py-1.5 text-xs text-text-secondary"
           value={newTemplate}
           onChange={(e) => setNewTemplate(e.target.value as ArticleTemplate)}
         >

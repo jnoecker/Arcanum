@@ -1,4 +1,4 @@
-import { Suspense, lazy } from "react";
+import { Suspense, lazy, useRef } from "react";
 import { useProjectStore } from "@/stores/projectStore";
 import type { AdminContentSubView } from "@/types/project";
 
@@ -33,20 +33,47 @@ const CONTENT_VIEWS: Array<{ id: AdminContentSubView; label: string }> = [
 export function AdminContentPanel() {
   const activeView = useProjectStore((s) => s.adminContentSubView);
   const setActiveView = useProjectStore((s) => s.setAdminContentSubView);
+  const tabRefs = useRef<Array<HTMLButtonElement | null>>([]);
 
   return (
     <div className="flex flex-col gap-4">
       {/* Sub-navigation pills */}
-      <div className="flex gap-0.5 rounded-full border border-white/8 bg-black/15 p-0.5">
-        {CONTENT_VIEWS.map((view) => (
+      <div className="segmented-control" role="tablist" aria-label="Admin content views">
+        {CONTENT_VIEWS.map((view, index) => (
           <button
             key={view.id}
+            ref={(node) => {
+              tabRefs.current[index] = node;
+            }}
+            id={`admin-content-tab-${view.id}`}
+            role="tab"
+            aria-selected={activeView === view.id}
+            aria-controls="admin-content-panel"
+            tabIndex={activeView === view.id ? 0 : -1}
             onClick={() => setActiveView(view.id)}
-            className={`rounded-full px-3 py-1.5 text-2xs font-medium transition-all duration-200 focus-visible:ring-2 focus-visible:ring-border-active focus-visible:outline-none ${
-              activeView === view.id
-                ? "bg-gradient-active-strong text-text-primary shadow-sm shadow-accent/10"
-                : "border border-transparent text-text-muted hover:border-white/8 hover:text-text-secondary"
-            }`}
+            onKeyDown={(event) => {
+              if (event.key === "ArrowRight") {
+                event.preventDefault();
+                const nextIndex = (index + 1) % CONTENT_VIEWS.length;
+                setActiveView(CONTENT_VIEWS[nextIndex]!.id);
+                tabRefs.current[nextIndex]?.focus();
+              } else if (event.key === "ArrowLeft") {
+                event.preventDefault();
+                const nextIndex = (index - 1 + CONTENT_VIEWS.length) % CONTENT_VIEWS.length;
+                setActiveView(CONTENT_VIEWS[nextIndex]!.id);
+                tabRefs.current[nextIndex]?.focus();
+              } else if (event.key === "Home") {
+                event.preventDefault();
+                setActiveView(CONTENT_VIEWS[0]!.id);
+                tabRefs.current[0]?.focus();
+              } else if (event.key === "End") {
+                event.preventDefault();
+                setActiveView(CONTENT_VIEWS[CONTENT_VIEWS.length - 1]!.id);
+                tabRefs.current[CONTENT_VIEWS.length - 1]?.focus();
+              }
+            }}
+            className="segmented-button focus-ring px-3 py-1.5 text-2xs font-medium"
+            data-active={activeView === view.id}
           >
             {view.label}
           </button>
@@ -54,18 +81,20 @@ export function AdminContentPanel() {
       </div>
 
       {/* Active panel */}
-      <Suspense
-        fallback={
-          <div className="py-12 text-center text-sm text-text-muted">Loading...</div>
-        }
-      >
-        {activeView === "abilities" && <AdminAbilityList />}
-        {activeView === "effects" && <AdminEffectList />}
-        {activeView === "quests" && <AdminQuestList />}
-        {activeView === "achievements" && <AdminAchievementList />}
-        {activeView === "shops" && <AdminShopList />}
-        {activeView === "items" && <AdminItemList />}
-      </Suspense>
+      <div id="admin-content-panel" role="tabpanel" aria-labelledby={`admin-content-tab-${activeView}`}>
+        <Suspense
+          fallback={
+            <div className="py-12 text-center text-sm text-text-muted">Summoning the selected content ledger...</div>
+          }
+        >
+          {activeView === "abilities" && <AdminAbilityList />}
+          {activeView === "effects" && <AdminEffectList />}
+          {activeView === "quests" && <AdminQuestList />}
+          {activeView === "achievements" && <AdminAchievementList />}
+          {activeView === "shops" && <AdminShopList />}
+          {activeView === "items" && <AdminItemList />}
+        </Suspense>
+      </div>
     </div>
   );
 }

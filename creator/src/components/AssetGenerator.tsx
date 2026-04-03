@@ -3,16 +3,6 @@ import { invoke } from "@tauri-apps/api/core";
 import { useAssetStore } from "@/stores/assetStore";
 import { useConfigStore } from "@/stores/configStore";
 import { useFocusTrap } from "@/lib/useFocusTrap";
-
-const GENERATION_MESSAGES = [
-  "The Arcanum renders your vision...",
-  "Weaving light from the void...",
-  "Shaping form from the aether...",
-  "Distilling essence into image...",
-  "The cosmos aligns to your intent...",
-  "Drawing pigment from starlight...",
-  "Illuminating the unseen...",
-];
 import {
   ASSET_TEMPLATES,
   getPreamble,
@@ -25,6 +15,17 @@ import {
 import { IMAGE_MODELS, imageGenerateCommand } from "@/types/assets";
 import type { AssetType, GeneratedImage } from "@/types/assets";
 import loadingVignette from "@/assets/loading-vignette.jpg";
+import { ActionButton, DialogShell, Spinner } from "./ui/FormWidgets";
+
+const GENERATION_MESSAGES = [
+  "The Arcanum renders your vision...",
+  "Weaving light from the void...",
+  "Shaping form from the aether...",
+  "Distilling essence into image...",
+  "The cosmos aligns to your intent...",
+  "Drawing pigment from starlight...",
+  "Illuminating the unseen...",
+];
 
 type Stage = "compose" | "generating" | "preview";
 
@@ -32,7 +33,6 @@ export function AssetGenerator() {
   const settings = useAssetStore((s) => s.settings);
   const closeGenerator = useAssetStore((s) => s.closeGenerator);
   const acceptAsset = useAssetStore((s) => s.acceptAsset);
-
   const updateConfig = useConfigStore((s) => s.updateConfig);
 
   const [stage, setStage] = useState<Stage>("compose");
@@ -40,7 +40,7 @@ export function AssetGenerator() {
   const [assetType, setAssetType] = useState<AssetType>("background");
   const [modelId, setModelId] = useState<string>(() => {
     const provider = settings?.image_provider ?? "deepinfra";
-    return IMAGE_MODELS.find((m) => m.provider === provider)?.id ?? IMAGE_MODELS[0].id;
+    return IMAGE_MODELS.find((model) => model.provider === provider)?.id ?? IMAGE_MODELS[0].id;
   });
   const [customization, setCustomization] = useState("");
   const [prompt, setPrompt] = useState(() => composePrompt("background", "gentle_magic"));
@@ -49,25 +49,26 @@ export function AssetGenerator() {
   const [enhancing, setEnhancing] = useState(false);
   const [result, setResult] = useState<GeneratedImage | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [msgIndex, setMsgIndex] = useState(0);
+  const [accepting, setAccepting] = useState(false);
+  const [globalAssetKey, setGlobalAssetKey] = useState("");
   const trapRef = useFocusTrap<HTMLDivElement>(closeGenerator);
 
-  // Rotate through atmospheric messages during generation
-  const [msgIndex, setMsgIndex] = useState(0);
   useEffect(() => {
-    if (stage !== "generating") { setMsgIndex(0); return; }
-    const id = setInterval(() => setMsgIndex((i) => (i + 1) % GENERATION_MESSAGES.length), 3500);
+    if (stage !== "generating") {
+      setMsgIndex(0);
+      return;
+    }
+    const id = setInterval(() => setMsgIndex((index) => (index + 1) % GENERATION_MESSAGES.length), 3500);
     return () => clearInterval(id);
   }, [stage]);
-  const [accepting, setAccepting] = useState(false);
-
-  // Global asset key (if user wants to save as a config global asset)
-  const [globalAssetKey, setGlobalAssetKey] = useState("");
 
   const imageProvider = settings?.image_provider ?? "deepinfra";
-  const hasApiKey = settings && (
-    (imageProvider === "deepinfra" && settings.deepinfra_api_key.length > 0) ||
-    (imageProvider === "runware" && settings.runware_api_key.length > 0) ||
-    (imageProvider === "openai" && settings.openai_api_key.length > 0)
+  const hasApiKey = !!(
+    settings &&
+    ((imageProvider === "deepinfra" && settings.deepinfra_api_key.length > 0) ||
+      (imageProvider === "runware" && settings.runware_api_key.length > 0) ||
+      (imageProvider === "openai" && settings.openai_api_key.length > 0))
   );
 
   const handleTypeChange = (type: AssetType) => {
@@ -88,14 +89,14 @@ export function AssetGenerator() {
     try {
       const preamble = getPreamble(artStyle);
       const systemPrompt = getEnhanceSystemPrompt(artStyle);
-      const result = await invoke<string>("enhance_prompt", {
+      const response = await invoke<string>("enhance_prompt", {
         prompt: `${preamble}\n\n${prompt}`,
         systemPrompt,
       });
-      setEnhancedPrompt(result);
+      setEnhancedPrompt(response);
       setUseEnhanced(true);
-    } catch (e) {
-      setError(String(e));
+    } catch (invokeError) {
+      setError(String(invokeError));
     } finally {
       setEnhancing(false);
     }
@@ -106,14 +107,10 @@ export function AssetGenerator() {
     setError(null);
     try {
       const preamble = getPreamble(artStyle);
-      const finalPrompt = useEnhanced && enhancedPrompt
-        ? enhancedPrompt
-        : `${preamble}\n\n${prompt}`;
-
-      const model = IMAGE_MODELS.find((m) => m.id === modelId);
-      const guidance = model && "defaultGuidance" in model
-        ? (model as { defaultGuidance: number }).defaultGuidance
-        : null;
+      const finalPrompt = useEnhanced && enhancedPrompt ? enhancedPrompt : `${preamble}\n\n${prompt}`;
+      const model = IMAGE_MODELS.find((entry) => entry.id === modelId);
+      const guidance =
+        model && "defaultGuidance" in model ? (model as { defaultGuidance: number }).defaultGuidance : null;
 
       const command = imageGenerateCommand(imageProvider);
       const image = await invoke<GeneratedImage>(command, {
@@ -127,8 +124,8 @@ export function AssetGenerator() {
       });
       setResult(image);
       setStage("preview");
-    } catch (e) {
-      setError(String(e));
+    } catch (invokeError) {
+      setError(String(invokeError));
       setStage("compose");
     }
   };
@@ -137,13 +134,8 @@ export function AssetGenerator() {
     if (!result) return;
     setAccepting(true);
     try {
-      await acceptAsset(
-        result,
-        assetType,
-        useEnhanced ? enhancedPrompt : undefined,
-      );
+      await acceptAsset(result, assetType, useEnhanced ? enhancedPrompt : undefined);
 
-      // Save as global asset in config if key is provided
       if (globalAssetKey.trim()) {
         const latestConfig = useConfigStore.getState().config;
         if (latestConfig) {
@@ -157,8 +149,8 @@ export function AssetGenerator() {
       }
 
       closeGenerator();
-    } catch (e) {
-      setError(String(e));
+    } catch (invokeError) {
+      setError(String(invokeError));
     } finally {
       setAccepting(false);
     }
@@ -171,135 +163,151 @@ export function AssetGenerator() {
 
   if (!hasApiKey) {
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-        <div ref={trapRef} role="alertdialog" aria-modal="true" className="mx-4 w-96 rounded-lg border border-border-default bg-bg-secondary shadow-xl">
-          <div className="border-b border-border-default px-5 py-3">
-            <h2 className="font-display text-sm tracking-wide text-text-primary">
-              API Key Required
-            </h2>
-          </div>
-          <div className="px-5 py-4">
-            <p className="text-sm text-text-secondary">
-              Set an image provider API key in Config &rarr; API Settings before generating assets.
-            </p>
-          </div>
-          <div className="flex justify-end border-t border-border-default px-5 py-3">
-            <button
-              onClick={closeGenerator}
-              className="rounded bg-bg-elevated px-4 py-1.5 text-xs font-medium text-text-primary transition-colors hover:bg-bg-hover"
-            >
-              Close
-            </button>
-          </div>
+      <DialogShell
+        dialogRef={trapRef}
+        titleId="asset-gen-api-key-title"
+        title="Image Provider Required"
+        subtitle="Set an image provider key in Config -> API Settings before invoking the generator."
+        widthClassName="max-w-lg"
+        onClose={closeGenerator}
+        role="alertdialog"
+        footer={
+          <ActionButton onClick={closeGenerator} variant="primary">
+            Close
+          </ActionButton>
+        }
+      >
+        <div className="panel-surface-light rounded-[24px] p-5 text-sm leading-7 text-text-secondary">
+          The art studio is ready, but there is no active provider credential yet.
         </div>
-      </div>
+      </DialogShell>
     );
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-      <div ref={trapRef} role="dialog" aria-modal="true" aria-labelledby="asset-gen-title" className="mx-4 flex max-h-[90vh] w-full max-w-2xl flex-col rounded-lg border border-border-default bg-bg-secondary shadow-xl">
-        {/* Header */}
-        <div className="flex items-center justify-between border-b border-border-default px-5 py-3">
-          <h2 id="asset-gen-title" className="font-display text-sm tracking-wide text-text-primary">
-            Generate Art
-          </h2>
-          <button
-            aria-label="Close"
-            onClick={closeGenerator}
-            className="text-xs text-text-muted hover:text-text-primary"
-          >
-            &times;
-          </button>
-        </div>
-
-        {/* Body */}
-        <div className="flex-1 overflow-y-auto px-5 py-4">
+    <DialogShell
+      dialogRef={trapRef}
+      titleId="asset-gen-title"
+      title="Conjure New Art"
+      subtitle="Compose the intent, refine the prompt, and let the worldmaking instrument render a new image into the asset vault."
+      widthClassName="max-w-5xl"
+      onClose={closeGenerator}
+      status={
+        <span className="rounded-full border border-white/10 bg-black/10 px-3 py-1 text-2xs text-text-secondary">
+          {stage === "compose" ? "Prompt forge" : stage === "generating" ? "Rendering" : "Preview"}
+        </span>
+      }
+      footer={
+        <>
           {stage === "compose" && (
-            <div className="flex flex-col gap-4">
-              <div className="rounded-lg border border-border-default/60 bg-bg-primary/60 px-3 py-2">
-                <div className="font-display text-2xs uppercase tracking-widest text-text-muted">
-                  Style System
-                </div>
-                <div className="mt-1 text-xs text-text-secondary">
-                  {ART_STYLE_LABELS[artStyle]}
+            <>
+              <ActionButton onClick={closeGenerator} variant="ghost">
+                Close
+              </ActionButton>
+              <ActionButton onClick={handleGenerate} variant="primary">
+                Render Artwork
+              </ActionButton>
+            </>
+          )}
+          {stage === "preview" && (
+            <>
+              <ActionButton onClick={handleReject} variant="ghost">
+                Reject And Retry
+              </ActionButton>
+              <ActionButton onClick={handleAccept} disabled={accepting} variant="primary">
+                {accepting && <Spinner />}
+                {accepting ? "Saving To Vault" : "Accept Artwork"}
+              </ActionButton>
+            </>
+          )}
+        </>
+      }
+    >
+      {stage === "compose" && (
+        <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_20rem]">
+          <section className="panel-surface-light rounded-[26px] p-5">
+            <div className="grid gap-5">
+              <div className="rounded-[22px] border border-white/8 bg-black/12 p-4">
+                <p className="text-2xs uppercase tracking-wide-ui text-text-muted">Style system</p>
+                <p className="mt-2 font-display text-base text-text-primary">{ART_STYLE_LABELS[artStyle]}</p>
+              </div>
+
+              <div>
+                <label className="mb-2 block text-2xs uppercase tracking-wide-ui text-text-muted">Asset Type</label>
+                <div className="flex flex-wrap gap-2">
+                  {(Object.entries(ASSET_TEMPLATES) as [AssetType, { label: string }][]).map(([key, { label }]) => (
+                    <ActionButton
+                      key={key}
+                      onClick={() => handleTypeChange(key)}
+                      variant={assetType === key ? "primary" : "secondary"}
+                      className="justify-start"
+                    >
+                      {label}
+                    </ActionButton>
+                  ))}
                 </div>
               </div>
 
-              {/* Asset type */}
               <div>
-                <label className="mb-1 block font-display text-2xs uppercase tracking-widest text-text-muted">
-                  Asset Type
-                </label>
-                <div className="flex flex-wrap gap-1.5">
-                  {(Object.entries(ASSET_TEMPLATES) as [AssetType, { label: string }][]).map(
-                    ([key, { label }]) => (
-                      <button
-                        key={key}
-                        onClick={() => handleTypeChange(key)}
-                        className={`rounded px-2.5 py-1 text-xs transition-colors ${
-                          assetType === key
-                            ? "bg-accent/20 text-accent"
-                            : "bg-bg-elevated text-text-secondary hover:text-text-primary"
-                        }`}
-                      >
-                        {label}
-                      </button>
-                    ),
-                  )}
-                </div>
-              </div>
-
-              {/* Model */}
-              <div>
-                <label className="mb-1 block font-display text-2xs uppercase tracking-widest text-text-muted">
-                  Model
-                </label>
-                <div className="flex gap-2">
-                  {IMAGE_MODELS.filter((m) => m.provider === imageProvider).map((model) => (
+                <label className="mb-2 block text-2xs uppercase tracking-wide-ui text-text-muted">Model</label>
+                <div className="grid gap-3">
+                  {IMAGE_MODELS.filter((model) => model.provider === imageProvider).map((model) => (
                     <button
                       key={model.id}
                       onClick={() => setModelId(model.id)}
-                      className={`flex-1 rounded px-3 py-1.5 text-left text-xs transition-colors ${
+                      className={`focus-ring rounded-[22px] border p-4 text-left transition ${
                         modelId === model.id
-                          ? "bg-accent/20 text-accent"
-                          : "bg-bg-elevated text-text-secondary hover:text-text-primary"
+                          ? "border-[var(--border-glow-strong)] bg-[linear-gradient(145deg,rgba(168,151,210,0.18),rgba(42,50,71,0.9))] shadow-glow-sm"
+                          : "border-white/8 bg-black/12 hover:border-white/14 hover:bg-white/6"
                       }`}
                     >
-                      <div className="font-medium">{model.label}</div>
-                      <div className="text-2xs opacity-70">{model.description}</div>
+                      <div className="font-display text-sm text-text-primary">{model.label}</div>
+                      <div className="mt-1 text-xs leading-6 text-text-secondary">{model.description}</div>
                     </button>
                   ))}
                 </div>
               </div>
 
-              {/* Customization */}
               <div>
-                <label className="mb-1 block font-display text-2xs uppercase tracking-widest text-text-muted">
-                  Customization (optional)
+                <label className="mb-2 block text-2xs uppercase tracking-wide-ui text-text-muted">
+                  Customization
                 </label>
                 <input
                   type="text"
                   value={customization}
                   onChange={(e) => handleCustomizationChange(e.target.value)}
-                  placeholder="Add specific details, e.g. 'forest clearing with ancient ruins'"
-                  className="w-full rounded border border-border-default bg-bg-primary px-3 py-1.5 text-xs text-text-primary placeholder:text-text-muted outline-none focus:border-accent/50"
+                  placeholder="Forest clearing with ancient ruins, storm-lit harbor, ruined observatory..."
+                  className="ornate-input min-h-11 w-full rounded-2xl px-4 py-3 text-sm"
                 />
               </div>
 
-              {/* Prompt preview */}
               <div>
-                <div className="mb-1 flex items-center gap-2">
-                  <label className="font-display text-2xs uppercase tracking-widest text-text-muted">
-                    Prompt
-                  </label>
-                  <button
-                    onClick={handleEnhance}
-                    disabled={enhancing}
-                    className="ml-auto rounded px-2 py-0.5 text-2xs text-accent transition-colors hover:bg-accent/10 disabled:opacity-50"
-                  >
-                    {enhancing ? "Enhancing..." : "Enhance with AI"}
-                  </button>
+                <div className="mb-2 flex flex-wrap items-center gap-2">
+                  <label className="text-2xs uppercase tracking-wide-ui text-text-muted">Prompt</label>
+                  <div className="ml-auto flex flex-wrap gap-2">
+                    {enhancedPrompt && (
+                      <>
+                        <ActionButton
+                          onClick={() => setUseEnhanced(true)}
+                          variant={useEnhanced ? "primary" : "ghost"}
+                          size="sm"
+                        >
+                          Enhanced
+                        </ActionButton>
+                        <ActionButton
+                          onClick={() => setUseEnhanced(false)}
+                          variant={!useEnhanced ? "primary" : "ghost"}
+                          size="sm"
+                        >
+                          Original
+                        </ActionButton>
+                      </>
+                    )}
+                    <ActionButton onClick={handleEnhance} disabled={enhancing} variant="secondary">
+                      {enhancing && <Spinner />}
+                      {enhancing ? "Enhancing" : "Refine Prompt"}
+                    </ActionButton>
+                  </div>
                 </div>
                 <textarea
                   value={useEnhanced && enhancedPrompt ? enhancedPrompt : prompt}
@@ -310,126 +318,93 @@ export function AssetGenerator() {
                       setPrompt(e.target.value);
                     }
                   }}
-                  rows={5}
-                  className="w-full resize-y rounded border border-border-default bg-bg-primary px-3 py-2 font-mono text-xs leading-relaxed text-text-secondary outline-none focus:border-accent/50"
+                  rows={8}
+                  className="ornate-input min-h-[15rem] w-full resize-y rounded-[22px] px-4 py-4 font-mono text-xs leading-7 text-text-secondary"
                 />
-                {enhancedPrompt && (
-                  <div className="mt-1 flex gap-2">
-                    <button
-                      onClick={() => setUseEnhanced(true)}
-                      className={`text-2xs ${useEnhanced ? "text-accent" : "text-text-muted hover:text-text-secondary"}`}
-                    >
-                      Enhanced
-                    </button>
-                    <button
-                      onClick={() => setUseEnhanced(false)}
-                      className={`text-2xs ${!useEnhanced ? "text-accent" : "text-text-muted hover:text-text-secondary"}`}
-                    >
-                      Original
-                    </button>
-                  </div>
-                )}
               </div>
 
               {error && (
-                <p className="text-xs italic text-status-error">Generation failed: {error}</p>
+                <div className="rounded-[22px] border border-status-error/30 bg-status-error/10 px-4 py-3 text-sm text-status-error">
+                  {error}
+                </div>
               )}
             </div>
-          )}
+          </section>
 
-          {stage === "generating" && (
-            <div className="relative flex flex-col items-center justify-center gap-4 py-12 overflow-hidden rounded-lg">
-              <img
-                src={loadingVignette}
-                alt=""
-                className="absolute inset-0 h-full w-full object-cover opacity-20"
+          <aside className="instrument-panel rounded-[28px] p-5">
+            <p className="text-2xs uppercase tracking-wide-ui text-text-muted">Render intent</p>
+            <div className="mt-4 space-y-4 text-sm leading-7 text-text-secondary">
+              <p>
+                Use asset type to control composition, then add only the details that make this image belong to the world you are building.
+              </p>
+              <div className="rounded-[22px] border border-white/8 bg-black/12 p-4">
+                <p className="font-display text-sm text-text-primary">Best results</p>
+                <ul className="mt-2 list-disc space-y-1 pl-5 text-xs text-text-secondary">
+                  <li>Name atmosphere before decoration.</li>
+                  <li>Use one memorable landmark or gesture.</li>
+                  <li>Keep background and subject intent consistent.</li>
+                </ul>
+              </div>
+            </div>
+          </aside>
+        </div>
+      )}
+
+      {stage === "generating" && (
+        <div className="relative overflow-hidden rounded-[30px] border border-white/8">
+          <img src={loadingVignette} alt="" className="absolute inset-0 h-full w-full object-cover opacity-20" />
+          <div className="absolute inset-0 bg-gradient-to-t from-bg-secondary via-bg-secondary/78 to-bg-secondary/55" />
+          <div className="relative flex min-h-[24rem] flex-col items-center justify-center gap-5 px-6 py-12 text-center">
+            <Spinner className="h-8 w-8 border-2" />
+            <p className="font-display text-lg text-text-primary">{GENERATION_MESSAGES[msgIndex]}</p>
+            <p className="max-w-xl text-sm leading-7 text-text-secondary">
+              Creator is preparing a {ASSET_TEMPLATES[assetType].label.toLowerCase()} using {IMAGE_MODELS.find((model) => model.id === modelId)?.label ?? "the selected model"}.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {stage === "preview" && result && (
+        <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_20rem]">
+          <section className="panel-surface-light rounded-[26px] p-5">
+            <div className="overflow-hidden rounded-[22px] border border-white/8 bg-black/14">
+              <img src={result.data_url} alt="Generated art" className="w-full" />
+            </div>
+            <div className="mt-4 flex flex-wrap items-center gap-2 text-xs text-text-muted">
+              <span className="rounded-full border border-white/10 bg-black/10 px-3 py-1">
+                {result.width}x{result.height}
+              </span>
+              <span className="rounded-full border border-white/10 bg-black/10 px-3 py-1">
+                {result.model.split("/").pop()}
+              </span>
+            </div>
+            {error && (
+              <div className="mt-4 rounded-[22px] border border-status-error/30 bg-status-error/10 px-4 py-3 text-sm text-status-error">
+                {error}
+              </div>
+            )}
+          </section>
+
+          <aside className="instrument-panel rounded-[28px] p-5">
+            <p className="text-2xs uppercase tracking-wide-ui text-text-muted">Archive</p>
+            <div className="mt-4">
+              <label className="mb-1.5 block text-2xs uppercase tracking-wide-ui text-text-muted">
+                Save As Global Asset
+              </label>
+              <input
+                type="text"
+                value={globalAssetKey}
+                onChange={(e) => setGlobalAssetKey(e.target.value)}
+                placeholder="compass_rose, world_map, login_splash"
+                className="ornate-input min-h-11 w-full rounded-2xl px-4 py-3 text-sm"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-bg-secondary via-bg-secondary/70 to-bg-secondary/50" />
-              <div className="relative z-10 flex flex-col items-center gap-4">
-                <div className="h-8 w-8 animate-slow-rotate rounded-full border-2 border-accent/60 border-t-accent" />
-                <p className="font-display text-sm tracking-wide text-text-secondary transition-opacity duration-700">
-                  {GENERATION_MESSAGES[msgIndex]}
-                </p>
-              </div>
+              <p className="mt-2 text-xs leading-6 text-text-secondary">
+                Optional. Provide a key and Creator will register the accepted image under <span className="font-mono">images.globalAssets</span>.
+              </p>
             </div>
-          )}
-
-          {stage === "preview" && result && (
-            <div className="flex flex-col gap-4">
-              <div className="overflow-hidden rounded-lg border border-border-default">
-                <img
-                  src={result.data_url}
-                  alt="Generated art"
-                  className="w-full"
-                />
-              </div>
-              <div className="flex items-center gap-2 text-xs text-text-muted">
-                <span>{result.width}x{result.height}</span>
-                <span>&middot;</span>
-                <span>{result.model.split("/").pop()}</span>
-              </div>
-
-              {/* Save as global asset option */}
-              <div>
-                <label className="mb-1 block font-display text-2xs uppercase tracking-widest text-text-muted">
-                  Save as Global Asset (optional)
-                </label>
-                <input
-                  type="text"
-                  value={globalAssetKey}
-                  onChange={(e) => setGlobalAssetKey(e.target.value)}
-                  placeholder="e.g. compass_rose, login_splash, world_map"
-                  className="w-full rounded border border-border-default bg-bg-primary px-3 py-1.5 text-xs text-text-primary placeholder:text-text-muted outline-none focus:border-accent/50"
-                />
-                <p className="mt-0.5 text-2xs text-text-muted">
-                  Enter a key name to register this asset in application.yaml under images.globalAssets
-                </p>
-              </div>
-
-              {error && (
-                <p className="text-xs italic text-status-error">Generation failed: {error}</p>
-              )}
-            </div>
-          )}
+          </aside>
         </div>
-
-        {/* Footer */}
-        <div className="flex justify-end gap-2 border-t border-border-default px-5 py-3">
-          {stage === "compose" && (
-            <>
-              <button
-                onClick={closeGenerator}
-                className="rounded bg-bg-elevated px-4 py-1.5 text-xs font-medium text-text-primary transition-colors hover:bg-bg-hover"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleGenerate}
-                className="rounded bg-gradient-to-r from-accent-muted to-accent px-4 py-1.5 text-xs font-medium text-accent-emphasis transition-all hover:shadow-[var(--glow-aurum)] hover:brightness-110"
-              >
-                Generate
-              </button>
-            </>
-          )}
-          {stage === "preview" && (
-            <>
-              <button
-                onClick={handleReject}
-                className="rounded bg-bg-elevated px-4 py-1.5 text-xs font-medium text-text-primary transition-colors hover:bg-bg-hover"
-              >
-                Reject &amp; Retry
-              </button>
-              <button
-                onClick={handleAccept}
-                disabled={accepting}
-                className="rounded bg-gradient-to-r from-accent-muted to-accent px-4 py-1.5 text-xs font-medium text-accent-emphasis transition-all hover:shadow-[var(--glow-aurum)] hover:brightness-110 disabled:opacity-50"
-              >
-                {accepting ? "Saving..." : "Accept"}
-              </button>
-            </>
-          )}
-        </div>
-      </div>
-    </div>
+      )}
+    </DialogShell>
   );
 }

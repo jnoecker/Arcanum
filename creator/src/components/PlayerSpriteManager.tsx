@@ -15,6 +15,7 @@ import type {
   RequirementType,
 } from "@/types/sprites";
 import type { GeneratedImage, AssetContext, SyncProgress } from "@/types/assets";
+import { ActionButton } from "./ui/FormWidgets";
 
 // ─── Helpers ────────────────────────────────────────────────────────
 
@@ -141,40 +142,42 @@ function SpriteLightbox({
           />
         ) : (
           <div className="flex h-64 w-64 items-center justify-center rounded border border-border-default bg-bg-tertiary text-text-muted">
-            Loading...
+            Rendering preview...
           </div>
         )}
         <span className="font-mono text-xs text-text-secondary">{key}</span>
         <div className="flex gap-2">
-          <button
+          <ActionButton
             onClick={onRegenerate}
             disabled={!canRegenerate}
-            className="rounded-full border border-accent/40 px-4 py-2 text-xs text-accent transition-colors hover:bg-accent/10 disabled:opacity-40"
+            variant="primary"
           >
             Regenerate
-          </button>
-          <button
+          </ActionButton>
+          <ActionButton
             onClick={handleRemoveBg}
             disabled={removingBg || !src}
-            className="rounded-full border border-white/20 px-4 py-2 text-xs text-text-primary transition-colors hover:bg-white/10 disabled:opacity-40"
+            variant="secondary"
           >
             {removingBg ? "Removing BG..." : "Remove BG"}
-          </button>
-          <button
+          </ActionButton>
+          <ActionButton
             onClick={onDelete}
             disabled={!canDelete}
-            className="rounded-full border border-status-error/40 px-4 py-2 text-xs text-status-error transition-colors hover:bg-status-error/10 disabled:opacity-40"
+            variant="danger"
           >
             Delete
-          </button>
+          </ActionButton>
         </div>
-        <button
+        <ActionButton
           aria-label="Close"
           onClick={onClose}
-          className="absolute -right-3 -top-3 flex h-7 w-7 items-center justify-center rounded-full bg-bg-elevated text-text-primary shadow hover:bg-bg-hover"
+          variant="ghost"
+          size="icon"
+          className="absolute -right-4 -top-4"
         >
-          &times;
-        </button>
+          x
+        </ActionButton>
       </div>
     </div>
   );
@@ -202,7 +205,7 @@ function RequirementRow({
       <select
         value={req.type}
         onChange={(e) => onChange(index, emptyRequirement(e.target.value as RequirementType))}
-        className="rounded border border-border-default bg-bg-primary px-1.5 py-1 text-xs text-text-primary outline-none"
+        className="ornate-input min-h-11 rounded-2xl px-3 py-3 text-sm text-text-primary"
       >
         {REQUIREMENT_TYPES.map((rt) => (
           <option key={rt.value} value={rt.value}>{rt.label}</option>
@@ -215,7 +218,7 @@ function RequirementRow({
           min={1}
           value={req.level}
           onChange={(e) => onChange(index, { type: "minLevel", level: parseInt(e.target.value) || 1 })}
-          className="w-20 rounded border border-border-default bg-bg-primary px-1.5 py-1 text-xs text-text-primary outline-none"
+          className="ornate-input min-h-11 w-24 rounded-2xl px-3 py-3 text-sm text-text-primary"
           placeholder="Level"
         />
       )}
@@ -224,7 +227,7 @@ function RequirementRow({
         <select
           value={req.race}
           onChange={(e) => onChange(index, { type: "race", race: e.target.value })}
-          className="rounded border border-border-default bg-bg-primary px-1.5 py-1 text-xs text-text-primary outline-none"
+          className="ornate-input min-h-11 rounded-2xl px-3 py-3 text-sm text-text-primary"
         >
           <option value="">Select race...</option>
           {races.map((r) => (
@@ -237,7 +240,7 @@ function RequirementRow({
         <select
           value={req.playerClass}
           onChange={(e) => onChange(index, { type: "class", playerClass: e.target.value })}
-          className="rounded border border-border-default bg-bg-primary px-1.5 py-1 text-xs text-text-primary outline-none"
+          className="ornate-input min-h-11 rounded-2xl px-3 py-3 text-sm text-text-primary"
         >
           <option value="">Select class...</option>
           {classes.map((c) => (
@@ -250,7 +253,7 @@ function RequirementRow({
         <input
           value={req.achievementId}
           onChange={(e) => onChange(index, { type: "achievement", achievementId: e.target.value })}
-          className="flex-1 rounded border border-border-default bg-bg-primary px-1.5 py-1 text-xs text-text-primary outline-none"
+          className="ornate-input min-h-11 flex-1 rounded-2xl px-3 py-3 text-sm text-text-primary"
           placeholder="e.g. combat/secret_slayer"
         />
       )}
@@ -259,12 +262,14 @@ function RequirementRow({
         <span className="text-2xs text-text-muted">Player must be staff</span>
       )}
 
-      <button
+      <ActionButton
         onClick={() => onRemove(index)}
-        className="ml-auto shrink-0 rounded border border-status-error/30 px-1.5 py-0.5 text-2xs text-status-error hover:bg-status-error/10"
+        className="ml-auto shrink-0"
+        variant="danger"
+        size="sm"
       >
         Remove
-      </button>
+      </ActionButton>
     </div>
   );
 }
@@ -303,7 +308,7 @@ function VariantRow({
           <label className="flex flex-col gap-0.5 text-2xs text-text-muted">
             Image ID
             <input
-              className="rounded border border-border-default bg-bg-primary px-1.5 py-1 text-xs text-text-primary outline-none"
+              className="ornate-input min-h-11 rounded-2xl px-3 py-3 text-sm text-text-primary"
               value={variant.imageId}
               onChange={(e) => {
                 const imageId = e.target.value;
@@ -314,7 +319,7 @@ function VariantRow({
           <label className="flex flex-col gap-0.5 text-2xs text-text-muted">
             Display Name
             <input
-              className="rounded border border-border-default bg-bg-primary px-1.5 py-1 text-xs text-text-primary outline-none"
+              className="ornate-input min-h-11 rounded-2xl px-3 py-3 text-sm text-text-primary"
               placeholder="(inherits parent)"
               value={variant.displayName ?? ""}
               onChange={(e) => onPatch(index, { displayName: e.target.value || undefined })}
@@ -326,7 +331,7 @@ function VariantRow({
           <label className="flex flex-col gap-0.5 text-2xs text-text-muted">
             Race Filter
             <select
-              className="rounded border border-border-default bg-bg-primary px-1.5 py-1 text-xs text-text-primary outline-none"
+              className="ornate-input min-h-11 rounded-2xl px-3 py-3 text-sm text-text-primary"
               value={variant.race ?? ""}
               onChange={(e) => onPatch(index, { race: e.target.value || undefined })}
             >
@@ -339,7 +344,7 @@ function VariantRow({
           <label className="flex flex-col gap-0.5 text-2xs text-text-muted">
             Class Filter
             <select
-              className="rounded border border-border-default bg-bg-primary px-1.5 py-1 text-xs text-text-primary outline-none"
+              className="ornate-input min-h-11 rounded-2xl px-3 py-3 text-sm text-text-primary"
               value={variant.playerClass ?? ""}
               onChange={(e) => onPatch(index, { playerClass: e.target.value || undefined })}
             >
@@ -352,7 +357,7 @@ function VariantRow({
           <label className="flex flex-col gap-0.5 text-2xs text-text-muted">
             Gender
             <select
-              className="rounded border border-border-default bg-bg-primary px-1.5 py-1 text-xs text-text-primary outline-none"
+              className="ornate-input min-h-11 rounded-2xl px-3 py-3 text-sm text-text-primary"
               value={variant.gender ?? ""}
               onChange={(e) => onPatch(index, { gender: e.target.value || undefined })}
             >
@@ -366,19 +371,21 @@ function VariantRow({
       </div>
 
       <div className="flex shrink-0 flex-col gap-1">
-        <button
+        <ActionButton
           onClick={() => onGenerate(variant)}
           disabled={!hasApiKey || generating}
-          className="rounded border border-accent/40 px-2 py-1 text-2xs text-accent hover:bg-accent/10 disabled:opacity-40"
+          variant="secondary"
+          size="sm"
         >
-          {generating ? "..." : "Gen"}
-        </button>
-        <button
+          {generating ? "..." : "Render"}
+        </ActionButton>
+        <ActionButton
           onClick={() => onRemove(index)}
-          className="rounded border border-status-error/30 px-2 py-1 text-2xs text-status-error hover:bg-status-error/10"
+          variant="danger"
+          size="sm"
         >
-          Del
-        </button>
+          Remove
+        </ActionButton>
       </div>
     </div>
   );
@@ -467,12 +474,12 @@ function SpriteDetailEditor({
       {/* Header */}
       <div className="flex items-center justify-between">
         <h3 className="font-display text-lg text-text-primary">{def.displayName}</h3>
-        <button
+        <ActionButton
           onClick={onDelete}
-          className="rounded border border-status-error/30 px-3 py-1 text-xs text-status-error hover:bg-status-error/10"
+          variant="danger"
         >
           Delete Sprite
-        </button>
+        </ActionButton>
       </div>
 
       {/* Basic fields */}
@@ -481,7 +488,7 @@ function SpriteDetailEditor({
           <label className="flex flex-col gap-1 text-xs text-text-secondary">
             Display Name
             <input
-              className="rounded border border-border-default bg-bg-primary px-2 py-1.5 text-sm text-text-primary outline-none focus:border-accent/50"
+              className="ornate-input min-h-11 rounded-2xl px-4 py-3 text-sm text-text-primary"
               value={def.displayName}
               onChange={(e) => onPatch({ displayName: e.target.value })}
             />
@@ -489,7 +496,7 @@ function SpriteDetailEditor({
           <label className="flex flex-col gap-1 text-xs text-text-secondary">
             Category
             <select
-              className="rounded border border-border-default bg-bg-primary px-2 py-1.5 text-sm text-text-primary outline-none focus:border-accent/50"
+              className="ornate-input min-h-11 rounded-2xl px-4 py-3 text-sm text-text-primary"
               value={def.category}
               onChange={(e) => onPatch({ category: e.target.value as "general" | "staff" })}
             >
@@ -501,7 +508,7 @@ function SpriteDetailEditor({
             Sort Order
             <input
               type="number"
-              className="rounded border border-border-default bg-bg-primary px-2 py-1.5 text-sm text-text-primary outline-none focus:border-accent/50"
+              className="ornate-input min-h-11 rounded-2xl px-4 py-3 text-sm text-text-primary"
               value={def.sortOrder}
               onChange={(e) => onPatch({ sortOrder: parseInt(e.target.value) || 0 })}
             />
@@ -511,7 +518,7 @@ function SpriteDetailEditor({
         <label className="flex flex-col gap-1 text-xs text-text-secondary">
           Description
           <textarea
-            className="h-16 resize-y rounded border border-border-default bg-bg-primary px-2 py-1.5 text-sm text-text-primary outline-none focus:border-accent/50"
+            className="ornate-input min-h-[7rem] resize-y rounded-[22px] px-4 py-3 text-sm text-text-primary"
             placeholder="Flavor text for this sprite..."
             value={def.description ?? ""}
             onChange={(e) => onPatch({ description: e.target.value || undefined })}
@@ -525,12 +532,13 @@ function SpriteDetailEditor({
           <h4 className="font-display text-sm text-text-primary">
             Requirements ({def.requirements.length})
           </h4>
-          <button
+          <ActionButton
             onClick={handleAddRequirement}
-            className="rounded border border-border-default px-2 py-1 text-xs text-text-secondary hover:bg-bg-elevated"
+            variant="secondary"
+            size="sm"
           >
             Add Requirement
-          </button>
+          </ActionButton>
         </div>
         {def.requirements.length === 0 && (
           <p className="text-2xs text-text-muted">
@@ -561,28 +569,31 @@ function SpriteDetailEditor({
           <div className="flex gap-2">
             {useVariants ? (
               <>
-                <button
+                <ActionButton
                   onClick={handleAddVariant}
-                  className="rounded border border-border-default px-2 py-1 text-xs text-text-secondary hover:bg-bg-elevated"
+                  variant="secondary"
+                  size="sm"
                 >
                   Add Variant
-                </button>
+                </ActionButton>
                 {(def.variants?.length ?? 0) <= 1 && (
-                  <button
+                  <ActionButton
                     onClick={handleSwitchToSingleImage}
-                    className="rounded border border-border-default px-2 py-1 text-xs text-text-muted hover:bg-bg-elevated"
+                    variant="ghost"
+                    size="sm"
                   >
                     Use Single Image
-                  </button>
+                  </ActionButton>
                 )}
               </>
             ) : (
-              <button
+              <ActionButton
                 onClick={handleSwitchToVariants}
-                className="rounded border border-border-default px-2 py-1 text-xs text-text-muted hover:bg-bg-elevated"
+                variant="ghost"
+                size="sm"
               >
                 Use Variants
-              </button>
+              </ActionButton>
             )}
           </div>
         </div>
@@ -612,19 +623,20 @@ function SpriteDetailEditor({
               <label className="flex flex-col gap-0.5 text-2xs text-text-muted">
                 Image Path
                 <input
-                  className="rounded border border-border-default bg-bg-primary px-1.5 py-1 text-xs text-text-primary outline-none"
+                  className="ornate-input min-h-11 rounded-2xl px-3 py-3 text-sm text-text-primary"
                   value={def.image ?? `player_sprites/${id}.png`}
                   onChange={(e) => onPatch({ image: e.target.value })}
                 />
               </label>
             </div>
-            <button
+            <ActionButton
               onClick={() => onGenerateImage(id, def.description ?? def.displayName)}
               disabled={!hasApiKey || generating === id}
-              className="shrink-0 rounded border border-accent/40 px-3 py-1.5 text-xs text-accent hover:bg-accent/10 disabled:opacity-40"
+              className="shrink-0"
+              variant="primary"
             >
               {generating === id ? "Generating..." : "Generate"}
-            </button>
+            </ActionButton>
           </div>
         )}
       </div>
@@ -790,20 +802,22 @@ export function PlayerSpriteManager() {
         </span>
         <div className="flex-1" />
         {dirty && <span className="text-xs text-accent">modified</span>}
-        <button
+        <ActionButton
           onClick={handleSave}
           disabled={!dirty}
-          className="rounded border border-accent/40 px-3 py-1 text-xs text-accent transition-colors hover:bg-accent/10 disabled:opacity-40"
+          variant="primary"
+          size="sm"
         >
           Save
-        </button>
-        <button
+        </ActionButton>
+        <ActionButton
           onClick={handleDeploy}
           disabled={deploying || sortedDefs.length === 0}
-          className="rounded border border-accent/40 px-3 py-1 text-xs text-accent transition-colors hover:bg-accent/10 disabled:opacity-40"
+          variant="secondary"
+          size="sm"
         >
           {deploying ? "Deploying..." : "Deploy to R2"}
-        </button>
+        </ActionButton>
       </div>
 
       {/* Deploy result banner */}
@@ -825,12 +839,14 @@ export function PlayerSpriteManager() {
                 {deployResult.failed} failed
               </span>
             )}
-            <button
+            <ActionButton
               onClick={() => setDeployResult(null)}
-              className="ml-auto text-text-muted hover:text-text-primary"
+              variant="ghost"
+              size="icon"
+              className="ml-auto"
             >
-              &times;
-            </button>
+              x
+            </ActionButton>
           </div>
           {deployResult.errors.length > 0 && (
             <div className="mt-1 max-h-20 overflow-y-auto text-2xs text-status-error">
@@ -847,19 +863,19 @@ export function PlayerSpriteManager() {
         <div className="flex w-72 shrink-0 flex-col border-r border-border-default bg-bg-secondary">
           <div className="flex items-center gap-1 border-b border-border-default px-3 py-2">
             <input
-              className="flex-1 rounded border border-border-default bg-bg-primary px-2 py-1 text-xs text-text-primary outline-none placeholder:text-text-muted focus:border-accent/50"
+              className="ornate-input min-h-11 flex-1 rounded-2xl px-4 py-3 text-sm text-text-primary"
               placeholder="New sprite ID"
               value={newId}
               onChange={(e) => setNewId(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleAdd()}
             />
-            <button
+            <ActionButton
               onClick={handleAdd}
               disabled={!newId.trim()}
-              className="rounded border border-border-default px-2 py-1 text-xs text-text-secondary hover:bg-bg-elevated disabled:opacity-40"
+              variant="secondary"
             >
               Add
-            </button>
+            </ActionButton>
           </div>
           <div className="flex-1 overflow-y-auto">
             {sortedDefs.map(([id, def]) => {

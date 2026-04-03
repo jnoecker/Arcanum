@@ -5,7 +5,7 @@ import { useLoreStore, selectArticles, selectMaps, selectColorLabels } from "@/s
 import { useImageSrc } from "@/lib/useImageSrc";
 import type { LoreMap, Article } from "@/types/lore";
 import { TEMPLATE_SCHEMAS } from "@/lib/loreTemplates";
-import { FieldRow, TextInput } from "@/components/ui/FormWidgets";
+import { ActionButton, FieldRow, TextInput } from "@/components/ui/FormWidgets";
 import { MapViewer } from "./MapViewer";
 import { MapEnhancer } from "./MapEnhancer";
 
@@ -16,6 +16,8 @@ function useMapImage(imageAsset: string | undefined): string | null {
 }
 
 // ─── Color palette picker ──────────────────────────────────────────
+
+const DEFAULT_MAP_COLOR = "#a897d2";
 
 function ColorPalettePicker({
   value,
@@ -30,7 +32,7 @@ function ColorPalettePicker({
   const updateColorLabel = useLoreStore((s) => s.updateColorLabel);
   const [adding, setAdding] = useState(false);
   const [newName, setNewName] = useState("");
-  const [newColor, setNewColor] = useState("#a897d2");
+  const [newColor, setNewColor] = useState(DEFAULT_MAP_COLOR);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
   const nameRef = useRef<HTMLInputElement>(null);
@@ -45,7 +47,7 @@ function ColorPalettePicker({
     addColorLabel({ id: `cl_${Date.now()}`, name, color: newColor });
     onChange(newColor);
     setNewName("");
-    setNewColor("#a897d2");
+    setNewColor(DEFAULT_MAP_COLOR);
     setAdding(false);
   };
 
@@ -72,7 +74,7 @@ function ColorPalettePicker({
                 {editingId === cl.id ? (
                   <input
                     autoFocus
-                    className="w-20 rounded border border-accent/50 bg-bg-primary px-1 text-2xs text-text-primary outline-none"
+                    className="ornate-input min-h-9 w-24 rounded-xl px-2 py-1 text-2xs text-text-primary"
                     value={editName}
                     onClick={(e) => e.stopPropagation()}
                     onChange={(e) => setEditName(e.target.value)}
@@ -107,7 +109,7 @@ function ColorPalettePicker({
                   updateColorLabel(cl.id, { color: e.target.value });
                   if (value === cl.color) onChange(e.target.value);
                 }}
-                className="h-4 w-4 shrink-0 cursor-pointer rounded-sm border-none bg-transparent opacity-0 transition group-hover:opacity-100"
+                className="h-10 w-10 shrink-0 cursor-pointer rounded-full border border-white/10 bg-transparent p-1 opacity-0 transition group-hover:opacity-100"
                 title="Change color"
               />
               <button
@@ -129,11 +131,11 @@ function ColorPalettePicker({
             type="color"
             value={newColor}
             onChange={(e) => setNewColor(e.target.value)}
-            className="h-5 w-5 shrink-0 cursor-pointer rounded-sm border border-white/20 bg-transparent"
+            className="h-11 w-11 shrink-0 cursor-pointer rounded-full border border-white/10 bg-transparent p-1"
           />
           <input
             ref={nameRef}
-            className="min-w-0 flex-1 rounded border border-border-default bg-bg-primary px-1.5 py-0.5 text-2xs text-text-primary outline-none focus:border-accent/50"
+            className="ornate-input min-h-10 min-w-0 flex-1 rounded-2xl px-3 py-2 text-xs text-text-primary"
             placeholder="Label name"
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
@@ -142,20 +144,23 @@ function ColorPalettePicker({
               if (e.key === "Escape") setAdding(false);
             }}
           />
-          <button
+          <ActionButton
             onClick={commitAdd}
-            className="shrink-0 text-2xs text-accent hover:text-text-primary"
+            variant="secondary"
+            size="sm"
           >
             Save
-          </button>
+          </ActionButton>
         </div>
       ) : (
-        <button
+        <ActionButton
           onClick={() => setAdding(true)}
-          className="self-start text-2xs text-text-muted hover:text-accent"
+          variant="ghost"
+          size="sm"
+          className="self-start"
         >
-          + Add label
-        </button>
+          Add Label
+        </ActionButton>
       )}
 
       {/* Fallback: raw color picker */}
@@ -164,7 +169,7 @@ function ColorPalettePicker({
           type="color"
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className="h-6 w-8 cursor-pointer rounded border border-border-default bg-bg-primary"
+          className="h-11 w-11 cursor-pointer rounded-full border border-white/10 bg-bg-primary p-1"
         />
         <span className="text-2xs text-text-muted">Custom</span>
       </div>
@@ -235,7 +240,7 @@ function ArticleCombobox({
           setOpen((v) => !v);
           if (!open) setTimeout(() => inputRef.current?.focus(), 0);
         }}
-        className="flex w-full items-center justify-between rounded border border-border-default bg-bg-primary px-2 py-1 text-left text-xs outline-none focus:border-accent/50"
+        className="ornate-input flex min-h-11 w-full items-center justify-between rounded-2xl px-4 py-3 text-left text-sm"
       >
         <span className={selectedTitle ? "text-text-secondary" : "text-text-muted"}>
           {selectedTitle ?? "— none —"}
@@ -249,7 +254,7 @@ function ArticleCombobox({
             <input
               ref={inputRef}
               type="text"
-              className="w-full rounded border border-border-default bg-bg-primary px-2 py-1 text-xs text-text-primary outline-none placeholder:text-text-muted focus:border-accent/50"
+            className="ornate-input min-h-11 w-full rounded-2xl px-4 py-3 text-sm text-text-primary placeholder:text-text-muted"
               placeholder="Filter articles..."
               value={filter}
               onChange={(e) => setFilter(e.target.value)}
@@ -318,7 +323,7 @@ function PinEditor({
         <h4 className="font-display text-sm text-text-primary">Edit Pin</h4>
         <button
           onClick={onClose}
-          className="text-xs text-text-muted hover:text-text-primary"
+          className="focus-ring flex h-11 w-11 items-center justify-center rounded-full text-xs text-text-muted hover:bg-white/6 hover:text-text-primary"
         >
           Done
         </button>
@@ -344,21 +349,23 @@ function PinEditor({
         <label className="text-xs text-text-muted">Color</label>
         <div className="mt-1">
           <ColorPalettePicker
-            value={pin.color || "#a897d2"}
+            value={pin.color || DEFAULT_MAP_COLOR}
             onChange={(c) => updatePin(map.id, pinId, { color: c })}
           />
         </div>
       </div>
 
-      <button
+      <ActionButton
         onClick={() => {
           removePin(map.id, pinId);
           onClose();
         }}
-        className="mt-2 rounded border border-status-danger/40 bg-status-danger/10 px-3 py-1.5 text-2xs text-status-danger hover:bg-status-danger/15"
+        variant="danger"
+        size="sm"
+        className="mt-2"
       >
         Delete Pin
-      </button>
+      </ActionButton>
     </div>
   );
 }
@@ -467,7 +474,7 @@ export function MapPanel() {
       {/* Map selector + upload */}
       <div className="flex items-center gap-3">
         <select
-          className="min-w-[12rem] rounded border border-border-default bg-bg-primary px-2 py-1.5 text-xs text-text-secondary outline-none focus:border-accent/50"
+          className="ornate-input min-h-11 min-w-[14rem] rounded-2xl px-4 py-3 text-sm text-text-secondary"
           value={selectedMapId ?? ""}
           onChange={(e) => {
             selectMap(e.target.value || null);
@@ -480,17 +487,17 @@ export function MapPanel() {
           ))}
         </select>
 
-        <button
+        <ActionButton
           onClick={handleUploadMap}
           disabled={uploading}
-          className="rounded-full border border-[rgba(184,216,232,0.28)] bg-gradient-active-strong px-4 py-1.5 text-xs text-text-primary transition hover:shadow-glow-sm disabled:opacity-50"
+          variant="primary"
         >
           {uploading ? "Importing..." : "Upload Map"}
-        </button>
+        </ActionButton>
 
         {selectedMap && (
           <>
-            <button
+            <ActionButton
               onClick={() => {
                 const clone: LoreMap = {
                   ...selectedMap,
@@ -501,45 +508,47 @@ export function MapPanel() {
                 createMap(clone);
               }}
               title="Duplicate map with all pins"
-              className="rounded border border-border-default bg-bg-secondary px-3 py-1.5 text-2xs text-text-secondary hover:bg-bg-tertiary"
+              variant="secondary"
             >
               Duplicate
-            </button>
-            <button
+            </ActionButton>
+            <ActionButton
               onClick={handleReplaceImage}
               disabled={replacing}
               title="Replace image (keeps all pins)"
-              className="rounded border border-border-default bg-bg-secondary px-3 py-1.5 text-2xs text-text-secondary hover:bg-bg-tertiary disabled:opacity-50"
+              variant="secondary"
             >
               {replacing ? "Replacing..." : "Replace Image"}
-            </button>
+            </ActionButton>
             {confirmDelete ? (
               <span className="flex items-center gap-1.5">
                 <span className="text-2xs text-status-danger">Delete this map?</span>
-                <button
+                <ActionButton
                   onClick={() => {
                     deleteMap(selectedMap.id);
                     setSelectedPinId(null);
                     setConfirmDelete(false);
                   }}
-                  className="rounded bg-status-danger/20 px-2 py-1 text-2xs text-status-danger hover:bg-status-danger/30"
+                  variant="danger"
+                  size="sm"
                 >
                   Yes
-                </button>
-                <button
+                </ActionButton>
+                <ActionButton
                   onClick={() => setConfirmDelete(false)}
-                  className="rounded px-2 py-1 text-2xs text-text-muted hover:text-text-secondary"
+                  variant="ghost"
+                  size="sm"
                 >
                   No
-                </button>
+                </ActionButton>
               </span>
             ) : (
-              <button
+              <ActionButton
                 onClick={() => setConfirmDelete(true)}
-                className="rounded border border-status-danger/40 bg-status-danger/10 px-3 py-1.5 text-2xs text-status-danger hover:bg-status-danger/15"
+                variant="danger"
               >
                 Delete
-              </button>
+              </ActionButton>
             )}
           </>
         )}
@@ -570,22 +579,18 @@ export function MapPanel() {
 
             {/* Pin mode toolbar */}
             <div className="absolute left-3 top-3 z-[1000] flex gap-2">
-              <button
+              <ActionButton
                 onClick={() => setAddPinMode(!addPinMode)}
-                className={`rounded-full px-3 py-1.5 text-2xs font-medium shadow-panel transition ${
-                  addPinMode
-                    ? "bg-accent text-bg-primary"
-                    : "border border-border-default bg-bg-secondary text-text-secondary hover:bg-bg-tertiary"
-                }`}
+                variant={addPinMode ? "primary" : "secondary"}
               >
                 {addPinMode ? "Click map to place pin..." : "Add Pin"}
-              </button>
-              <button
+              </ActionButton>
+              <ActionButton
                 onClick={() => setShowEnhancer(true)}
-                className="rounded-full border border-border-default bg-bg-secondary px-3 py-1.5 text-2xs font-medium text-text-secondary shadow-panel transition hover:bg-bg-tertiary"
+                variant="secondary"
               >
                 Enhance Region
-              </button>
+              </ActionButton>
             </div>
           </div>
 
@@ -616,7 +621,7 @@ export function MapPanel() {
                       >
                         <span
                           className="inline-block h-2.5 w-2.5 rounded-full"
-                          style={{ backgroundColor: pin.color || "#a897d2" }}
+                          style={{ backgroundColor: pin.color || DEFAULT_MAP_COLOR }}
                         />
                         <span className="min-w-0 truncate">
                           {pin.label || "(unnamed)"}

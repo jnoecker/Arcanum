@@ -84,7 +84,7 @@ export function ProgressionPanel({ config, onChange }: ConfigPanelProps) {
 
       <Section
         title="Level-Up Rewards"
-        description="What players gain each time they level up. HP and Mana per level stack with class-specific bonuses defined in the Classes tab. Base values are the starting pool at level 1."
+        description="What players gain each time they level up. HP and Mana per level stack with the values defined in the class designer, while the base values set the starting pool at level 1."
       >
         <div className="flex flex-col gap-1.5">
           <FieldRow label="HP / Level" hint="Global HP gained per level, added on top of class-specific HP/level. Set to 0 if classes should fully control HP growth.">

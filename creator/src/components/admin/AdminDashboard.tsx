@@ -1,4 +1,4 @@
-import { useEffect, lazy, Suspense } from "react";
+import { useEffect, lazy, Suspense, useRef } from "react";
 import { useProjectStore } from "@/stores/projectStore";
 import { useAdminStore, startAdminPolling, stopAdminPolling } from "@/stores/adminStore";
 import type { AdminSubView } from "@/types/project";
@@ -35,6 +35,7 @@ export function AdminDashboard() {
   const clearSelectedQuest = useAdminStore((s) => s.clearSelectedQuest);
   const clearSelectedAchievement = useAdminStore((s) => s.clearSelectedAchievement);
   const clearPlayerSearch = useAdminStore((s) => s.clearPlayerSearch);
+  const tabRefs = useRef<Array<HTMLButtonElement | null>>([]);
 
   // Load saved admin config when the dashboard mounts
   useEffect(() => {
@@ -103,16 +104,42 @@ export function AdminDashboard() {
         <AdminConnectionBar />
 
         {/* Sub-view selector */}
-        <div className="flex gap-1 rounded-full border border-white/10 bg-black/20 p-1 backdrop-blur-sm">
-          {ADMIN_VIEWS.map((view) => (
+        <div className="segmented-control" role="tablist" aria-label="Admin views">
+          {ADMIN_VIEWS.map((view, index) => (
             <button
               key={view.id}
+              id={`admin-tab-${view.id}`}
+              ref={(node) => {
+                tabRefs.current[index] = node;
+              }}
+              role="tab"
+              aria-selected={adminSubView === view.id}
+              aria-controls="admin-panel"
+              tabIndex={adminSubView === view.id ? 0 : -1}
               onClick={() => setAdminSubView(view.id)}
-              className={`rounded-full px-4 py-2 text-xs font-medium transition-all duration-200 focus-visible:ring-2 focus-visible:ring-border-active focus-visible:outline-none ${
-                adminSubView === view.id
-                  ? "bg-gradient-active-strong text-text-primary shadow-sm shadow-accent/10"
-                  : "border border-transparent text-text-muted hover:border-white/8 hover:text-text-secondary"
-              }`}
+              onKeyDown={(event) => {
+                if (event.key === "ArrowRight") {
+                  event.preventDefault();
+                  const nextIndex = (index + 1) % ADMIN_VIEWS.length;
+                  setAdminSubView(ADMIN_VIEWS[nextIndex]!.id);
+                  tabRefs.current[nextIndex]?.focus();
+                } else if (event.key === "ArrowLeft") {
+                  event.preventDefault();
+                  const nextIndex = (index - 1 + ADMIN_VIEWS.length) % ADMIN_VIEWS.length;
+                  setAdminSubView(ADMIN_VIEWS[nextIndex]!.id);
+                  tabRefs.current[nextIndex]?.focus();
+                } else if (event.key === "Home") {
+                  event.preventDefault();
+                  setAdminSubView(ADMIN_VIEWS[0]!.id);
+                  tabRefs.current[0]?.focus();
+                } else if (event.key === "End") {
+                  event.preventDefault();
+                  setAdminSubView(ADMIN_VIEWS[ADMIN_VIEWS.length - 1]!.id);
+                  tabRefs.current[ADMIN_VIEWS.length - 1]?.focus();
+                }
+              }}
+              className="segmented-button focus-ring px-4 py-2 text-xs font-medium"
+              data-active={adminSubView === view.id}
             >
               {view.label}
             </button>
@@ -122,7 +149,7 @@ export function AdminDashboard() {
 
       {/* Scrollable content area */}
       <div className="relative z-10 min-h-0 flex-1 overflow-y-auto">
-        <div className="mx-auto w-full max-w-5xl px-6 py-4 pb-8">
+        <div id="admin-panel" role="tabpanel" aria-labelledby={`admin-tab-${adminSubView}`} className="mx-auto w-full max-w-5xl px-6 py-4 pb-8">
           {!isConnected ? (
             <div className="flex flex-col items-center gap-6 rounded-[28px] border border-white/8 bg-gradient-panel px-8 py-16 text-center shadow-section">
               <div className="flex h-14 w-14 items-center justify-center rounded-full border border-white/10 bg-black/20">
@@ -163,7 +190,7 @@ export function AdminDashboard() {
             </div>
           ) : (
             <div className="motion-safe:animate-unfurl-in">
-              <Suspense fallback={<div className="py-12 text-center text-sm text-text-muted">Loading...</div>}>
+              <Suspense fallback={<div className="py-12 text-center text-sm text-text-muted">Opening the selected runtime lens...</div>}>
                 {adminSubView === "overview" && <AdminOverviewPanel />}
                 {adminSubView === "players" && <AdminPlayerList />}
                 {adminSubView === "world" && <AdminWorldPanel />}

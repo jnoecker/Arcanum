@@ -1,8 +1,8 @@
 import { useCallback, useMemo, useRef, useState } from "react";
 import { useLoreStore, selectArticles } from "@/stores/loreStore";
-import type { Article, ArticleRelation, ArticleTemplate } from "@/types/lore";
+import type { Article, ArticleRelation } from "@/types/lore";
 import { TEMPLATE_SCHEMAS } from "@/lib/loreTemplates";
-import { Section, CommitTextarea } from "@/components/ui/FormWidgets";
+import { Section } from "@/components/ui/FormWidgets";
 import { LoreEditor } from "./LoreEditor";
 import { TemplateFields } from "./TemplateFields";
 import { CODEX_GENERATE_PROMPT } from "@/lib/lorePrompts";
@@ -35,7 +35,7 @@ function TagEditor({
         </span>
       ))}
       <input
-        className="min-w-[6rem] flex-1 bg-transparent px-1 py-0.5 text-xs text-text-primary outline-none"
+        className="focus-ring min-w-[6rem] flex-1 rounded bg-transparent px-1 py-0.5 text-xs text-text-primary"
         placeholder="Add tag..."
         onKeyDown={(e) => {
           if (e.key === "Enter") {
@@ -52,38 +52,6 @@ function TagEditor({
 }
 
 // ─── Template guide (editable description + AI description) ───────
-
-function TemplateGuide({ template }: { template: ArticleTemplate }) {
-  const schema = TEMPLATE_SCHEMAS[template];
-  const overrides = useLoreStore((s) => s.lore?.templateOverrides?.[template]);
-  const updateOverrides = useLoreStore((s) => s.updateTemplateOverrides);
-
-  const description = overrides?.description ?? schema?.description ?? "";
-  const aiDescription = overrides?.aiDescription ?? schema?.aiDescription ?? "";
-
-  if (!description && !aiDescription) return null;
-
-  return (
-    <Section title="Template Guide" defaultExpanded={false} description="Internal reference for this template type.">
-      <div className="space-y-3">
-        <CommitTextarea
-          label="Description"
-          value={description}
-          onCommit={(v) => updateOverrides(template, { description: v || undefined })}
-          placeholder="What this template is for..."
-          rows={2}
-        />
-        <CommitTextarea
-          label="AI Description"
-          value={aiDescription}
-          onCommit={(v) => updateOverrides(template, { aiDescription: v || undefined })}
-          placeholder="Guidance for AI generation..."
-          rows={2}
-        />
-      </div>
-    </Section>
-  );
-}
 
 // ─── Relations editor ──────────────────────────────────────────────
 
@@ -128,7 +96,7 @@ function RelationsEditor({
           <select
             ref={targetRef}
             aria-label="Target article"
-            className="flex-1 rounded border border-border-default bg-bg-primary px-2 py-1 text-xs text-text-secondary outline-none focus:border-accent/50"
+            className="ornate-input flex-1 rounded px-2 py-1 text-xs text-text-secondary"
             defaultValue=""
           >
             <option value="">Link to article...</option>
@@ -139,7 +107,7 @@ function RelationsEditor({
           <input
             ref={typeRef}
             aria-label="Relation type"
-            className="w-24 rounded border border-border-default bg-bg-primary px-2 py-1 text-xs text-text-primary outline-none focus:border-accent/50"
+            className="ornate-input w-24 rounded px-2 py-1 text-xs text-text-primary"
             placeholder="type"
             defaultValue="related"
           />
@@ -221,7 +189,7 @@ export function ArticleEditor({ articleId }: { articleId: string }) {
                   value={newId}
                   onChange={(e) => setNewId(e.target.value)}
                   onKeyDown={(e) => e.key === "Escape" && setRenaming(false)}
-                  className="w-40 rounded border border-accent/50 bg-bg-primary px-1.5 py-0.5 text-2xs text-text-primary outline-none"
+                  className="ornate-input w-40 rounded px-1.5 py-0.5 text-2xs text-text-primary"
                   placeholder="new_article_id"
                 />
                 <button type="submit" className="text-2xs text-accent hover:text-text-primary">Rename</button>
@@ -239,7 +207,7 @@ export function ArticleEditor({ articleId }: { articleId: string }) {
           </div>
           <input
             aria-label="Article title"
-            className="mt-2 w-full bg-transparent font-display text-2xl text-text-primary outline-none placeholder:text-text-muted/50"
+            className="focus-ring mt-2 w-full rounded bg-transparent font-display text-2xl text-text-primary placeholder:text-text-muted/50"
             value={article.title}
             onChange={(e) => patch({ title: e.target.value })}
             placeholder="Article title"
@@ -267,9 +235,6 @@ export function ArticleEditor({ articleId }: { articleId: string }) {
           </button>
         </div>
       </div>
-
-      {/* Template guide (descriptions + AI descriptions) */}
-      <TemplateGuide template={article.template} />
 
       {/* Template fields */}
       <TemplateFields

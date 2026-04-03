@@ -120,7 +120,7 @@ export function LorePanelHost({ panelId }: { panelId: string }) {
             <button
               onClick={handleSave}
               disabled={!dirty || saving}
-              className="rounded-full border border-[rgba(184,216,232,0.28)] bg-gradient-active-strong px-4 py-2 text-xs font-medium text-text-primary transition enabled:hover:shadow-[0_10px_20px_rgba(137,155,214,0.2)] disabled:cursor-not-allowed disabled:opacity-40"
+              className="focus-ring shell-pill-primary rounded-full px-4 py-2 text-xs font-medium disabled:cursor-not-allowed disabled:opacity-40"
             >
               {saving ? <span className="flex items-center gap-1.5"><Spinner />Saving</span> : "Save Lore"}
             </button>

@@ -1,6 +1,6 @@
 import { lazy, Suspense } from "react";
 import { useProjectStore } from "@/stores/projectStore";
-import { PANEL_MAP } from "@/lib/panelRegistry";
+import { PANEL_MAP, panelTab, type Workspace } from "@/lib/panelRegistry";
 import { StudioWorkspace } from "./StudioWorkspace";
 
 const ZoneEditor = lazy(() => import("./zone/ZoneEditor").then(m => ({ default: m.ZoneEditor })));
@@ -12,21 +12,49 @@ const AdminDashboard = lazy(() => import("./admin/AdminDashboard").then(m => ({ 
 
 function LazyFallback() {
   return (
-    <div className="flex min-h-0 flex-1 items-center justify-center text-text-muted">
-      Loading...
+    <div className="flex min-h-0 flex-1 items-center justify-center text-sm text-text-muted">
+      Opening the active worldmaking surface...
     </div>
   );
 }
 
-export function MainArea() {
+export function MainArea({ workspace }: { workspace: Workspace }) {
   const tabs = useProjectStore((s) => s.tabs);
   const activeTabId = useProjectStore((s) => s.activeTabId);
+  const openTab = useProjectStore((s) => s.openTab);
   const activeTab = tabs.find((t) => t.id === activeTabId);
+  const activeTabIndex = tabs.findIndex((t) => t.id === activeTabId);
 
   if (!activeTab) {
     return (
-      <div className="flex min-h-0 flex-1 items-center justify-center text-text-muted">
-        Open a zone or panel from the sidebar
+      <div className="flex min-h-0 flex-1 items-center justify-center px-6 py-8">
+        <div className="panel-surface max-w-2xl rounded-[32px] px-8 py-10 text-center">
+          <p className="text-[10px] uppercase tracking-wide-ui text-text-muted">
+            {workspace === "worldmaker" ? "Awaiting a surface" : "Awaiting a canon task"}
+          </p>
+          <h2 className="mt-3 font-display text-3xl text-text-primary">
+            {workspace === "worldmaker" ? "Open the next worldmaking lens." : "Open the next lore surface."}
+          </h2>
+          <p className="mx-auto mt-3 max-w-xl text-sm leading-7 text-text-secondary">
+            {workspace === "worldmaker"
+              ? "Start in the art studio, open a zone, or move directly into the systems that give the world its laws."
+              : "Begin with world setting, maps, or codex articles and let the canon spread outward from there."}
+          </p>
+          <div className="mt-6 flex flex-wrap justify-center gap-2">
+            {(workspace === "worldmaker"
+              ? [panelTab("art"), panelTab("worldServer"), panelTab("classes")]
+              : [panelTab("lore"), panelTab("worldSetting"), panelTab("loreMaps")]
+            ).map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => openTab(tab)}
+                className="focus-ring shell-pill-primary rounded-full px-4 py-2 text-xs font-medium"
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
     );
   }
@@ -64,7 +92,13 @@ export function MainArea() {
   }
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col">
+    <div
+      id="workspace-panel"
+      role="tabpanel"
+      aria-label={activeTab.label}
+      aria-labelledby={activeTabIndex >= 0 ? `workspace-tab-${activeTabIndex}` : undefined}
+      className="flex min-h-0 flex-1 flex-col"
+    >
       <Suspense fallback={<LazyFallback />}>
         {content}
       </Suspense>

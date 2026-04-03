@@ -3,6 +3,7 @@ import { open } from "@tauri-apps/plugin-dialog";
 import { TEMPLATES, type ProjectTemplate } from "@/lib/templates";
 import { useNewProject, type WizardStage } from "@/lib/useNewProject";
 import { useFocusTrap } from "@/lib/useFocusTrap";
+import { ActionButton, DialogShell, Spinner } from "./ui/FormWidgets";
 
 interface NewProjectWizardProps {
   onClose: () => void;
@@ -12,37 +13,30 @@ const PROJECT_NAME_RE = /^[a-zA-Z][a-zA-Z0-9_-]*$/;
 
 const STAGE_LABELS: Record<WizardStage, string> = {
   idle: "",
-  creating_structure: "Creating project...",
-  setting_up: "Setting up project...",
-  done: "Done!",
-  error: "Project creation failed",
+  creating_structure: "Carving the project structure...",
+  setting_up: "Binding the template, ports, and starter files...",
+  done: "The new world is ready.",
+  error: "Project creation failed.",
 };
 
 export function NewProjectWizard({ onClose }: NewProjectWizardProps) {
-  // Step 1 state
   const [projectName, setProjectName] = useState("");
   const [parentDir, setParentDir] = useState("");
   const [nameError, setNameError] = useState<string | null>(null);
-
-  // Step 2 state
-  const [selectedTemplate, setSelectedTemplate] = useState<ProjectTemplate>(
-    TEMPLATES[0]!,
-  );
+  const [selectedTemplate, setSelectedTemplate] = useState<ProjectTemplate>(TEMPLATES[0]!);
   const [telnetPort, setTelnetPort] = useState(4000);
   const [webPort, setWebPort] = useState(8080);
-
-  // Wizard navigation
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const { stage, error, create, reset } = useNewProject();
   const trapRef = useFocusTrap<HTMLDivElement>(onClose);
 
-  const fullPath =
-    parentDir && projectName ? `${parentDir}/${projectName}` : "";
+  const fullPath = parentDir && projectName ? `${parentDir}/${projectName}` : "";
 
   const validateName = (name: string) => {
-    if (!name) return "Project name is required";
-    if (!PROJECT_NAME_RE.test(name))
-      return "Must start with a letter, use only letters, digits, hyphens, underscores";
+    if (!name) return "Project name is required.";
+    if (!PROJECT_NAME_RE.test(name)) {
+      return "Use a leading letter, then letters, digits, hyphens, or underscores.";
+    }
     return null;
   };
 
@@ -52,13 +46,13 @@ export function NewProjectWizard({ onClose }: NewProjectWizardProps) {
   };
 
   const handleNext1 = () => {
-    const err = validateName(projectName);
-    if (err) {
-      setNameError(err);
+    const nextError = validateName(projectName);
+    if (nextError) {
+      setNameError(nextError);
       return;
     }
     if (!parentDir) {
-      setNameError("Select a parent directory");
+      setNameError("Choose a parent directory for the new world.");
       return;
     }
     setNameError(null);
@@ -79,26 +73,79 @@ export function NewProjectWizard({ onClose }: NewProjectWizardProps) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-      <div ref={trapRef} role="dialog" aria-modal="true" aria-labelledby="new-project-title" className="mx-4 w-full max-w-lg rounded-lg border border-border-default bg-bg-secondary shadow-xl">
-        {/* Header */}
-        <div className="border-b border-border-default px-5 py-3">
-          <h2 id="new-project-title" className="font-display text-sm tracking-wide text-accent-emphasis">
-            Create New Project
-          </h2>
-          <p className="mt-0.5 text-2xs text-text-muted">
-            {step === 1 && "Step 1 of 2: Location"}
-            {step === 2 && "Step 2 of 2: Template & Ports"}
-            {step === 3 && "Creating project..."}
-          </p>
-        </div>
-
-        {/* Step 1: Location */}
-        {step === 1 && (
-          <div className="px-5 py-4">
-            <div className="flex flex-col gap-3">
+    <DialogShell
+      dialogRef={trapRef}
+      titleId="new-project-title"
+      title="Found A New World"
+      subtitle="Choose where the project will live, which structure it should inherit, and which ports should answer when the world awakens."
+      widthClassName="max-w-3xl"
+      onClose={step === 3 && stage !== "done" ? undefined : onClose}
+      status={
+        <span className="rounded-full border border-white/10 bg-black/10 px-3 py-1 text-2xs text-text-secondary">
+          {step === 1 && "Step 1 of 2"}
+          {step === 2 && "Step 2 of 2"}
+          {step === 3 && "World forging"}
+        </span>
+      }
+      footer={
+        <>
+          {step === 1 && (
+            <>
+              <ActionButton onClick={onClose} variant="ghost">
+                Cancel
+              </ActionButton>
+              <ActionButton onClick={handleNext1} variant="primary">
+                Continue
+              </ActionButton>
+            </>
+          )}
+          {step === 2 && (
+            <>
+              <ActionButton onClick={() => setStep(1)} variant="ghost">
+                Back
+              </ActionButton>
+              <ActionButton onClick={handleCreate} variant="primary">
+                Create World
+              </ActionButton>
+            </>
+          )}
+          {step === 3 && stage === "done" && (
+            <ActionButton onClick={handleDone} variant="primary">
+              Enter Creator
+            </ActionButton>
+          )}
+          {step === 3 && stage === "error" && (
+            <>
+              <ActionButton
+                onClick={() => {
+                  reset();
+                  onClose();
+                }}
+                variant="ghost"
+              >
+                Close
+              </ActionButton>
+              <ActionButton
+                onClick={() => {
+                  reset();
+                  setStep(1);
+                }}
+                variant="secondary"
+              >
+                Revise Setup
+              </ActionButton>
+            </>
+          )}
+        </>
+      }
+    >
+      {step === 1 && (
+        <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_20rem]">
+          <section className="panel-surface-light rounded-[24px] p-5">
+            <p className="text-2xs uppercase tracking-wide-ui text-text-muted">World identity</p>
+            <div className="mt-4 space-y-4">
               <div>
-                <label className="mb-1 block text-xs text-text-muted">
+                <label className="mb-1.5 block text-2xs uppercase tracking-wide-ui text-text-muted">
                   Project Name
                 </label>
                 <input
@@ -109,196 +156,130 @@ export function NewProjectWizard({ onClose }: NewProjectWizardProps) {
                     setNameError(null);
                   }}
                   placeholder="my_mud_world"
-                  className="w-full rounded border border-border-default bg-bg-primary px-2 py-1.5 text-xs text-text-primary outline-none placeholder:text-text-muted focus:border-accent/50"
+                  className="ornate-input min-h-11 w-full rounded-2xl px-4 py-3 text-sm"
                 />
               </div>
               <div>
-                <label className="mb-1 block text-xs text-text-muted">
+                <label className="mb-1.5 block text-2xs uppercase tracking-wide-ui text-text-muted">
                   Parent Directory
                 </label>
-                <div className="flex gap-2">
+                <div className="flex flex-col gap-3 sm:flex-row">
                   <input
                     type="text"
                     value={parentDir}
                     readOnly
-                    placeholder="Select a directory..."
-                    className="min-w-0 flex-1 rounded border border-border-default bg-bg-primary px-2 py-1.5 text-xs text-text-primary outline-none placeholder:text-text-muted"
+                    placeholder="Choose where the project directory should be created"
+                    className="ornate-input min-h-11 min-w-0 flex-1 rounded-2xl px-4 py-3 text-sm"
                   />
-                  <button
-                    onClick={handlePickDir}
-                    className="shrink-0 rounded border border-border-default bg-bg-elevated px-3 py-1.5 text-xs text-text-secondary transition-colors hover:bg-bg-hover hover:text-text-primary"
-                  >
-                    Browse...
-                  </button>
+                  <ActionButton onClick={handlePickDir} variant="secondary" className="sm:self-start">
+                    Choose Folder
+                  </ActionButton>
                 </div>
               </div>
-              {fullPath && (
-                <p className="text-2xs text-text-muted">
-                  Project will be created at:{" "}
-                  <code className="font-mono text-text-secondary">
-                    {fullPath}
-                  </code>
-                </p>
-              )}
               {nameError && (
-                <p className="text-2xs text-status-error">{nameError}</p>
+                <div className="rounded-[18px] border border-status-error/30 bg-status-error/10 px-4 py-3 text-sm text-status-error">
+                  {nameError}
+                </div>
               )}
             </div>
-          </div>
-        )}
+          </section>
 
-        {/* Step 2: Template & Ports */}
-        {step === 2 && (
-          <div className="px-5 py-4">
-            <div className="flex flex-col gap-4">
-              <div>
-                <label className="mb-1.5 block text-xs text-text-muted">
-                  Template
-                </label>
-                <div className="flex flex-col gap-2">
-                  {TEMPLATES.map((t) => (
-                    <button
-                      key={t.id}
-                      onClick={() => setSelectedTemplate(t)}
-                      className={`rounded border px-3 py-2 text-left transition-colors ${
-                        selectedTemplate.id === t.id
-                          ? "border-accent bg-accent/10"
-                          : "border-border-default bg-bg-primary hover:border-border-hover"
-                      }`}
-                    >
-                      <div className="text-xs font-medium text-text-primary">
-                        {t.name}
-                      </div>
-                      <div className="mt-0.5 text-2xs text-text-muted">
-                        {t.description}
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <div className="flex gap-4">
-                <div className="flex-1">
-                  <label className="mb-1 block text-xs text-text-muted">
-                    Telnet Port
-                  </label>
-                  <input
-                    type="number"
-                    value={telnetPort}
-                    onChange={(e) => setTelnetPort(Number(e.target.value))}
-                    min={1}
-                    max={65535}
-                    className="w-full rounded border border-border-default bg-bg-primary px-2 py-1.5 text-xs text-text-primary outline-none focus:border-accent/50"
-                  />
-                </div>
-                <div className="flex-1">
-                  <label className="mb-1 block text-xs text-text-muted">
-                    Web Port
-                  </label>
-                  <input
-                    type="number"
-                    value={webPort}
-                    onChange={(e) => setWebPort(Number(e.target.value))}
-                    min={1}
-                    max={65535}
-                    className="w-full rounded border border-border-default bg-bg-primary px-2 py-1.5 text-xs text-text-primary outline-none focus:border-accent/50"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Step 3: Progress */}
-        {step === 3 && (
-          <div className="px-5 py-6">
-            <div className="flex flex-col items-center gap-3">
-              {stage !== "error" && stage !== "done" && (
-                <div className="h-5 w-5 animate-spin rounded-full border-2 border-accent border-t-transparent" />
-              )}
-              {stage === "done" && (
-                <div className="text-lg text-status-success">&#10003;</div>
-              )}
-              {stage === "error" && (
-                <div className="text-lg text-status-error">&#10007;</div>
-              )}
-              <p className="text-sm text-text-secondary">
-                {STAGE_LABELS[stage]}
+          <aside className="instrument-panel rounded-[28px] p-5">
+            <p className="text-2xs uppercase tracking-wide-ui text-text-muted">Projected path</p>
+            <p className="mt-3 break-all font-mono text-xs leading-6 text-text-secondary">
+              {fullPath || "Choose a directory and name to reveal the final path."}
+            </p>
+            <div className="mt-5 rounded-[20px] border border-white/8 bg-black/12 p-4">
+              <p className="font-display text-sm text-text-primary">Naming guidance</p>
+              <p className="mt-2 text-xs leading-6 text-text-secondary">
+                World folders should begin with a letter. Use letters, digits, hyphens, and underscores so the generated project can travel cleanly between tools.
               </p>
-              {error && (
-                <p className="max-w-sm text-center text-xs text-status-error">
-                  {error}
-                </p>
-              )}
             </div>
-          </div>
-        )}
+          </aside>
+        </div>
+      )}
 
-        {/* Footer */}
-        <div className="flex justify-end gap-2 border-t border-border-default px-5 py-3">
-          {step === 1 && (
-            <>
-              <button
-                onClick={onClose}
-                className="rounded bg-bg-elevated px-4 py-1.5 text-xs font-medium text-text-primary transition-colors hover:bg-bg-hover"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleNext1}
-                className="rounded bg-gradient-to-r from-accent-muted to-accent px-4 py-1.5 text-xs font-medium text-accent-emphasis transition-all hover:brightness-110"
-              >
-                Next
-              </button>
-            </>
+      {step === 2 && (
+        <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_18rem]">
+          <section className="panel-surface-light rounded-[24px] p-5">
+            <p className="text-2xs uppercase tracking-wide-ui text-text-muted">Foundational template</p>
+            <div className="mt-4 grid gap-3">
+              {TEMPLATES.map((template) => (
+                <button
+                  key={template.id}
+                  onClick={() => setSelectedTemplate(template)}
+                  className={`focus-ring rounded-[22px] border p-4 text-left transition ${
+                    selectedTemplate.id === template.id
+                      ? "border-[var(--border-glow-strong)] bg-[linear-gradient(145deg,rgba(168,151,210,0.18),rgba(42,50,71,0.9))] shadow-glow-sm"
+                      : "border-white/8 bg-black/12 hover:border-white/14 hover:bg-white/6"
+                  }`}
+                >
+                  <div className="font-display text-sm text-text-primary">{template.name}</div>
+                  <div className="mt-1 text-xs leading-6 text-text-secondary">{template.description}</div>
+                </button>
+              ))}
+            </div>
+          </section>
+
+          <aside className="instrument-panel rounded-[28px] p-5">
+            <p className="text-2xs uppercase tracking-wide-ui text-text-muted">Ports of entry</p>
+            <div className="mt-4 space-y-4">
+              <div>
+                <label className="mb-1.5 block text-2xs uppercase tracking-wide-ui text-text-muted">
+                  Telnet Port
+                </label>
+                <input
+                  type="number"
+                  value={telnetPort}
+                  onChange={(e) => setTelnetPort(Number(e.target.value))}
+                  min={1}
+                  max={65535}
+                  className="ornate-input min-h-11 w-full rounded-2xl px-4 py-3 text-sm"
+                />
+              </div>
+              <div>
+                <label className="mb-1.5 block text-2xs uppercase tracking-wide-ui text-text-muted">
+                  Web Port
+                </label>
+                <input
+                  type="number"
+                  value={webPort}
+                  onChange={(e) => setWebPort(Number(e.target.value))}
+                  min={1}
+                  max={65535}
+                  className="ornate-input min-h-11 w-full rounded-2xl px-4 py-3 text-sm"
+                />
+              </div>
+            </div>
+          </aside>
+        </div>
+      )}
+
+      {step === 3 && (
+        <div className="flex min-h-[18rem] flex-col items-center justify-center gap-4 rounded-[28px] border border-white/8 bg-[radial-gradient(circle_at_top,rgba(184,216,232,0.12),rgba(8,12,28,0.18)_40%),rgba(8,12,28,0.2)] px-6 text-center">
+          {stage !== "error" && stage !== "done" && <Spinner className="h-6 w-6 border-2" />}
+          {stage === "done" && (
+            <div className="flex h-14 w-14 items-center justify-center rounded-full border border-status-success/40 bg-status-success/10 text-xl text-status-success">
+              +
+            </div>
           )}
-          {step === 2 && (
-            <>
-              <button
-                onClick={() => setStep(1)}
-                className="rounded bg-bg-elevated px-4 py-1.5 text-xs font-medium text-text-primary transition-colors hover:bg-bg-hover"
-              >
-                Back
-              </button>
-              <button
-                onClick={handleCreate}
-                className="rounded bg-gradient-to-r from-accent-muted to-accent px-4 py-1.5 text-xs font-medium text-accent-emphasis transition-all hover:brightness-110"
-              >
-                Create Project
-              </button>
-            </>
+          {stage === "error" && (
+            <div className="flex h-14 w-14 items-center justify-center rounded-full border border-status-error/40 bg-status-error/10 text-xl text-status-error">
+              x
+            </div>
           )}
-          {step === 3 && stage === "done" && (
-            <button
-              onClick={handleDone}
-              className="rounded bg-gradient-to-r from-accent-muted to-accent px-4 py-1.5 text-xs font-medium text-accent-emphasis transition-all hover:brightness-110"
-            >
-              Close
-            </button>
-          )}
-          {step === 3 && stage === "error" && (
-            <>
-              <button
-                onClick={() => {
-                  reset();
-                  onClose();
-                }}
-                className="rounded bg-bg-elevated px-4 py-1.5 text-xs font-medium text-text-primary transition-colors hover:bg-bg-hover"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => {
-                  reset();
-                  setStep(1);
-                }}
-                className="rounded bg-bg-elevated px-4 py-1.5 text-xs font-medium text-text-primary transition-colors hover:bg-bg-hover"
-              >
-                Retry
-              </button>
-            </>
+          <p className="font-display text-lg text-text-primary">{STAGE_LABELS[stage]}</p>
+          {error ? (
+            <p className="max-w-xl text-sm leading-6 text-status-error">{error}</p>
+          ) : (
+            <p className="max-w-xl text-sm leading-6 text-text-secondary">
+              {stage === "done"
+                ? "The project structure, template, and runtime defaults have been prepared. Open it and continue shaping the world."
+                : "Creator is assembling the project skeleton, applying the template, and writing the first runtime settings."}
+            </p>
           )}
         </div>
-      </div>
-    </div>
+      )}
+    </DialogShell>
   );
 }

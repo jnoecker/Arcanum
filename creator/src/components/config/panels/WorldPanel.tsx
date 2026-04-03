@@ -55,7 +55,7 @@ export function WorldPanel({ config, onChange }: ConfigPanelProps) {
           })}
           {classIds.length === 0 && (
             <p className="text-xs text-text-muted">
-              No classes defined. Add classes in the Classes tab first.
+              No classes are defined yet. Add them in the class designer before assigning class-specific arrival rooms.
             </p>
           )}
         </div>

@@ -1,10 +1,11 @@
-import { useMemo, useState, useCallback, useRef } from "react";
+import { useMemo, useState, useCallback, useRef, useEffect } from "react";
 import { Tree, type NodeRendererProps, type TreeApi } from "react-arborist";
 import { useLoreStore, selectArticles } from "@/stores/loreStore";
 import { useProjectStore } from "@/stores/projectStore";
 import { panelTab } from "@/lib/panelRegistry";
 import type { Article, ArticleTemplate } from "@/types/lore";
 import { TEMPLATE_SCHEMAS } from "@/lib/loreTemplates";
+import { searchArticles } from "@/lib/loreSearch";
 
 const TEMPLATE_DOT_COLORS: Record<ArticleTemplate, string> = {
   world_setting: "var(--color-template-world)",
@@ -124,9 +125,27 @@ export function ArticleTree() {
   const selectArticle = useLoreStore((s) => s.selectArticle);
 
   const [search, setSearch] = useState("");
+  const [searchContent, setSearchContent] = useState(false);
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [newTitle, setNewTitle] = useState("");
   const [newTemplate, setNewTemplate] = useState<ArticleTemplate>("freeform");
   const treeRef = useRef<TreeApi<TreeNode>>(null);
+  const openTab = useProjectStore((s) => s.openTab);
+
+  // Debounce content search queries
+  useEffect(() => {
+    if (!searchContent) return;
+    const timer = setTimeout(() => setDebouncedSearch(search), 300);
+    return () => clearTimeout(timer);
+  }, [search, searchContent]);
+
+  const contentResults = useMemo(
+    () =>
+      searchContent && debouncedSearch.trim().length >= 3
+        ? searchArticles(articles, debouncedSearch)
+        : [],
+    [articles, debouncedSearch, searchContent],
+  );
 
   const treeData = useMemo(() => buildTree(articles), [articles]);
 
@@ -191,34 +210,96 @@ export function ArticleTree() {
   return (
     <div className="flex h-full flex-col">
       {/* Search */}
-      <input
-        aria-label="Search articles"
-        className="ornate-input mb-2 w-full rounded px-2 py-1.5 text-xs text-text-primary"
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        placeholder="Search legends..."
-      />
-
-      {/* Tree */}
-      <div className="min-h-0 flex-1 overflow-y-auto">
-        <Tree<TreeNode>
-          ref={treeRef}
-          data={filteredData}
-          onMove={handleMove}
-          openByDefault={true}
-          width="100%"
-          indent={16}
-          rowHeight={32}
-          overscanCount={10}
-          disableDrag={!!search.trim()}
-          disableDrop={!!search.trim()}
+      <div className="mb-2 flex items-center gap-1.5">
+        <input
+          aria-label="Search articles"
+          className="ornate-input min-w-0 flex-1 rounded px-2 py-1.5 text-xs text-text-primary"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder={searchContent ? "Search all content..." : "Search legends..."}
+        />
+        <button
+          onClick={() => setSearchContent((v) => !v)}
+          title={searchContent ? "Searching content" : "Searching titles only"}
+          className={`shrink-0 rounded px-1.5 py-1 text-[10px] transition ${
+            searchContent
+              ? "bg-accent/15 text-accent"
+              : "text-text-muted hover:text-text-secondary"
+          }`}
         >
-          {Node}
-        </Tree>
-        {filteredData.length === 0 && (
-          <div className="px-2 py-4 text-xs text-text-muted">
-            {search ? "No matching articles found." : "The first legend remains unwritten."}
+          {searchContent ? "Content" : "Titles"}
+        </button>
+      </div>
+
+      {/* Tree / Content search results */}
+      <div className="min-h-0 flex-1 overflow-y-auto">
+        {searchContent && search.trim().length >= 3 ? (
+          <div className="flex flex-col gap-1">
+            {contentResults.map((r) => (
+              <button
+                key={r.articleId}
+                onClick={() => {
+                  selectArticle(r.articleId);
+                  openTab(panelTab("lore"));
+                }}
+                className="rounded-lg border border-white/6 bg-black/10 px-3 py-2 text-left transition hover:bg-white/6"
+              >
+                <div className="flex items-center gap-1.5">
+                  <span
+                    className="inline-block h-2 w-2 shrink-0 rounded-full"
+                    style={{
+                      background:
+                        TEMPLATE_DOT_COLORS[
+                          articles[r.articleId]?.template ?? "freeform"
+                        ],
+                    }}
+                  />
+                  <span className="truncate text-xs text-text-primary">
+                    {r.title}
+                  </span>
+                  <span className="ml-auto shrink-0 rounded bg-white/8 px-1.5 py-0.5 text-[9px] text-text-muted">
+                    {r.matchIn}
+                  </span>
+                </div>
+                <p className="mt-1 truncate text-[11px] leading-4 text-text-muted">
+                  {r.snippet}
+                </p>
+              </button>
+            ))}
+            {contentResults.length === 0 && (
+              <p className="px-2 py-3 text-xs text-text-muted">
+                No content matches found.
+              </p>
+            )}
           </div>
+        ) : searchContent && search.trim().length > 0 && search.trim().length < 3 ? (
+          <p className="px-2 py-3 text-xs text-text-muted">
+            Type at least 3 characters to search content.
+          </p>
+        ) : (
+          <>
+            <Tree<TreeNode>
+              ref={treeRef}
+              data={filteredData}
+              onMove={handleMove}
+              openByDefault={true}
+              width="100%"
+              indent={16}
+              rowHeight={32}
+              overscanCount={10}
+              disableDrag={!!search.trim()}
+              disableDrop={!!search.trim()}
+            >
+              {Node}
+            </Tree>
+            {filteredData.length === 0 && (
+              <div className="px-2 py-4 text-xs text-text-muted">
+                {search
+                  ? "No matching articles found."
+                  : "The first legend remains unwritten."}
+              </div>
+            )}
+          </>
         )}
       </div>
 

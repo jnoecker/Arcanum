@@ -1,4 +1,4 @@
-import { lazy, Suspense, useCallback, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useState } from "react";
 import { Toolbar } from "./Toolbar";
 import { Sidebar } from "./Sidebar";
 import { TabBar } from "./TabBar";
@@ -8,6 +8,7 @@ import { useKeyboardShortcuts } from "@/lib/useKeyboardShortcuts";
 import { useAssetStore } from "@/stores/assetStore";
 import type { Workspace } from "@/lib/panelRegistry";
 import { loadWorkspace, saveWorkspace } from "@/lib/uiPersistence";
+import { CommandPalette } from "./ui/CommandPalette";
 
 const ShortcutsHelp = lazy(() => import("./ui/ShortcutsHelp").then((m) => ({ default: m.ShortcutsHelp })));
 const AssetGenerator = lazy(() => import("./AssetGenerator").then((m) => ({ default: m.AssetGenerator })));
@@ -22,6 +23,18 @@ export function AppShell() {
   const setWorkspace = useCallback((next: Workspace) => {
     setWorkspaceState(next);
     saveWorkspace(next);
+  }, []);
+  const [showPalette, setShowPalette] = useState(false);
+
+  useEffect(() => {
+    function handler(e: KeyboardEvent) {
+      if ((e.ctrlKey || e.metaKey) && e.key === "k") {
+        e.preventDefault();
+        setShowPalette((v) => !v);
+      }
+    }
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
   }, []);
 
   return (
@@ -39,6 +52,7 @@ export function AppShell() {
         </main>
       </div>
       <footer><StatusBar /></footer>
+      {showPalette && <CommandPalette onClose={() => setShowPalette(false)} />}
       <Suspense>
         {showHelp && <ShortcutsHelp onClose={() => setShowHelp(false)} />}
         {generatorOpen && <AssetGenerator />}

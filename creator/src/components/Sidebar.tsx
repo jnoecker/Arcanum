@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect, useCallback, useMemo } from "react";
+import { useRef, useState, useCallback, useMemo } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { useZoneStore, type ZoneState } from "@/stores/zoneStore";
 import { useProjectStore } from "@/stores/projectStore";
@@ -318,18 +318,6 @@ export function Sidebar({ workspace }: { workspace: Workspace }) {
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const hasProject = !!useProjectStore((s) => s.project);
 
-  // Ctrl+K to focus search
-  useEffect(() => {
-    function handler(e: KeyboardEvent) {
-      if ((e.ctrlKey || e.metaKey) && e.key === "k") {
-        e.preventDefault();
-        searchRef.current?.focus();
-      }
-    }
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
-  }, []);
-
   const handleSearchKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
       if (e.key === "Escape") {
@@ -455,8 +443,8 @@ export function Sidebar({ workspace }: { workspace: Workspace }) {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={handleSearchKeyDown}
-            aria-label="Search entities (Ctrl+K)"
-            placeholder="Seek rooms, mobs, quests... (Ctrl+K)"
+            aria-label="Search entities"
+            placeholder="Seek rooms, mobs, quests..."
             className="ornate-input h-10 w-full rounded-full px-4 pr-10 text-sm text-text-primary"
           />
           {query && (
@@ -557,7 +545,7 @@ export function Sidebar({ workspace }: { workspace: Workspace }) {
       </div>
 
       <div className="relative z-10 border-t border-white/10 px-4 py-3 text-[11px] text-text-muted">
-        `Ctrl+K` seek | `Ctrl+S` commit | `Ctrl+,` tune the instrument
+        `Ctrl+K` command palette | `Ctrl+S` commit | `Ctrl+,` tune the instrument
       </div>
 
       {showNewZone && <NewZoneDialog onClose={() => setShowNewZone(false)} />}

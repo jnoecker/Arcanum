@@ -1,6 +1,8 @@
 import { create } from "zustand";
 import type { WorldLore, Article, ArticleTemplate, ColorLabel, LoreMap, MapPin, CalendarSystem, TimelineEvent, LoreDocument, TemplateOverrides, ShowcaseSettings } from "@/types/lore";
 
+const MAX_LORE_HISTORY = 50;
+
 // Stable empty references for selectors (prevents infinite re-render loops)
 const EMPTY_ARTICLES: Record<string, Article> = {};
 const EMPTY_MAPS: LoreMap[] = [];
@@ -21,12 +23,24 @@ export const selectEvents = (s: { lore: WorldLore | null }) => s.lore?.timelineE
 export const selectColorLabels = (s: { lore: WorldLore | null }) => s.lore?.colorLabels ?? EMPTY_COLOR_LABELS;
 export const selectDocuments = (s: { lore: WorldLore | null }) => s.lore?.documents ?? EMPTY_DOCUMENTS;
 
-interface LoreStore {
+/** Snapshot the current lore onto the undo stack, clearing the redo stack. */
+function snapshotLore(state: LoreState): Pick<LoreState, "lorePast" | "loreFuture"> {
+  if (!state.lore) return { lorePast: state.lorePast, loreFuture: state.loreFuture };
+  const past = [...state.lorePast, structuredClone(state.lore)];
+  if (past.length > MAX_LORE_HISTORY) past.shift();
+  return { lorePast: past, loreFuture: [] };
+}
+
+interface LoreState {
   lore: WorldLore | null;
   dirty: boolean;
+  lorePast: WorldLore[];
+  loreFuture: WorldLore[];
   selectedArticleId: string | null;
   selectedMapId: string | null;
+}
 
+interface LoreStore extends LoreState {
   setLore: (lore: WorldLore) => void;
   createArticle: (article: Article) => void;
   updateArticle: (id: string, patch: Partial<Article>) => void;
@@ -73,22 +87,31 @@ interface LoreStore {
   // Showcase settings
   updateShowcaseSettings: (patch: Partial<ShowcaseSettings>) => void;
 
+  // Undo/redo
+  undoLore: () => void;
+  redoLore: () => void;
+  canUndoLore: () => boolean;
+  canRedoLore: () => boolean;
+
   markClean: () => void;
   clearLore: () => void;
 }
 
-export const useLoreStore = create<LoreStore>((set) => ({
+export const useLoreStore = create<LoreStore>((set, get) => ({
   lore: null,
   dirty: false,
+  lorePast: [],
+  loreFuture: [],
   selectedArticleId: null,
   selectedMapId: null,
 
-  setLore: (lore) => set({ lore, dirty: false }),
+  setLore: (lore) => set({ lore, dirty: false, lorePast: [], loreFuture: [] }),
 
   createArticle: (article) =>
     set((s) => {
       if (!s.lore) return s;
       return {
+        ...snapshotLore(s),
         lore: {
           ...s.lore,
           articles: { ...s.lore.articles, [article.id]: article },
@@ -103,6 +126,7 @@ export const useLoreStore = create<LoreStore>((set) => ({
       const existing = s.lore.articles[id];
       if (!existing) return s;
       return {
+        ...snapshotLore(s),
         lore: {
           ...s.lore,
           articles: {
@@ -153,6 +177,7 @@ export const useLoreStore = create<LoreStore>((set) => ({
       );
 
       return {
+        ...snapshotLore(s),
         lore: { ...s.lore, articles, maps, timelineEvents },
         dirty: true,
         selectedArticleId: s.selectedArticleId === oldId ? newId : s.selectedArticleId,
@@ -164,6 +189,7 @@ export const useLoreStore = create<LoreStore>((set) => ({
       if (!s.lore || !s.lore.articles[id]) return s;
       const { [id]: _, ...rest } = s.lore.articles;
       return {
+        ...snapshotLore(s),
         lore: { ...s.lore, articles: rest },
         dirty: true,
         selectedArticleId: s.selectedArticleId === id ? null : s.selectedArticleId,
@@ -176,6 +202,7 @@ export const useLoreStore = create<LoreStore>((set) => ({
       const existing = s.lore.articles[id];
       if (!existing) return s;
       return {
+        ...snapshotLore(s),
         lore: {
           ...s.lore,
           articles: {
@@ -198,6 +225,7 @@ export const useLoreStore = create<LoreStore>((set) => ({
         if (a.template !== template) kept[id] = a;
       }
       return {
+        ...snapshotLore(s),
         lore: { ...s.lore, articles: { ...kept, ...articles } },
         dirty: true,
       };
@@ -208,6 +236,7 @@ export const useLoreStore = create<LoreStore>((set) => ({
     set((s) => {
       if (!s.lore) return s;
       return {
+        ...snapshotLore(s),
         lore: { ...s.lore, colorLabels: [...(s.lore.colorLabels ?? []), label] },
         dirty: true,
       };
@@ -217,6 +246,7 @@ export const useLoreStore = create<LoreStore>((set) => ({
     set((s) => {
       if (!s.lore?.colorLabels) return s;
       return {
+        ...snapshotLore(s),
         lore: {
           ...s.lore,
           colorLabels: s.lore.colorLabels.map((l) => (l.id === id ? { ...l, ...patch } : l)),
@@ -229,6 +259,7 @@ export const useLoreStore = create<LoreStore>((set) => ({
     set((s) => {
       if (!s.lore?.colorLabels) return s;
       return {
+        ...snapshotLore(s),
         lore: { ...s.lore, colorLabels: s.lore.colorLabels.filter((l) => l.id !== id) },
         dirty: true,
       };
@@ -239,6 +270,7 @@ export const useLoreStore = create<LoreStore>((set) => ({
     set((s) => {
       if (!s.lore) return s;
       return {
+        ...snapshotLore(s),
         lore: { ...s.lore, maps: [...(s.lore.maps ?? []), map] },
         dirty: true,
         selectedMapId: map.id,
@@ -249,6 +281,7 @@ export const useLoreStore = create<LoreStore>((set) => ({
     set((s) => {
       if (!s.lore?.maps) return s;
       return {
+        ...snapshotLore(s),
         lore: {
           ...s.lore,
           maps: s.lore.maps.map((m) => (m.id === id ? { ...m, ...patch } : m)),
@@ -261,6 +294,7 @@ export const useLoreStore = create<LoreStore>((set) => ({
     set((s) => {
       if (!s.lore?.maps) return s;
       return {
+        ...snapshotLore(s),
         lore: { ...s.lore, maps: s.lore.maps.filter((m) => m.id !== id) },
         dirty: true,
         selectedMapId: s.selectedMapId === id ? null : s.selectedMapId,
@@ -273,6 +307,7 @@ export const useLoreStore = create<LoreStore>((set) => ({
     set((s) => {
       if (!s.lore?.maps) return s;
       return {
+        ...snapshotLore(s),
         lore: {
           ...s.lore,
           maps: s.lore.maps.map((m) =>
@@ -287,6 +322,7 @@ export const useLoreStore = create<LoreStore>((set) => ({
     set((s) => {
       if (!s.lore?.maps) return s;
       return {
+        ...snapshotLore(s),
         lore: {
           ...s.lore,
           maps: s.lore.maps.map((m) =>
@@ -303,6 +339,7 @@ export const useLoreStore = create<LoreStore>((set) => ({
     set((s) => {
       if (!s.lore?.maps) return s;
       return {
+        ...snapshotLore(s),
         lore: {
           ...s.lore,
           maps: s.lore.maps.map((m) =>
@@ -317,19 +354,20 @@ export const useLoreStore = create<LoreStore>((set) => ({
   setCalendarSystems: (systems) =>
     set((s) => {
       if (!s.lore) return s;
-      return { lore: { ...s.lore, calendarSystems: systems }, dirty: true };
+      return { ...snapshotLore(s), lore: { ...s.lore, calendarSystems: systems }, dirty: true };
     }),
 
   setTimelineEvents: (events) =>
     set((s) => {
       if (!s.lore) return s;
-      return { lore: { ...s.lore, timelineEvents: events }, dirty: true };
+      return { ...snapshotLore(s), lore: { ...s.lore, timelineEvents: events }, dirty: true };
     }),
 
   addTimelineEvent: (event) =>
     set((s) => {
       if (!s.lore) return s;
       return {
+        ...snapshotLore(s),
         lore: { ...s.lore, timelineEvents: [...(s.lore.timelineEvents ?? []), event] },
         dirty: true,
       };
@@ -339,6 +377,7 @@ export const useLoreStore = create<LoreStore>((set) => ({
     set((s) => {
       if (!s.lore?.timelineEvents) return s;
       return {
+        ...snapshotLore(s),
         lore: {
           ...s.lore,
           timelineEvents: s.lore.timelineEvents.map((e) =>
@@ -353,6 +392,7 @@ export const useLoreStore = create<LoreStore>((set) => ({
     set((s) => {
       if (!s.lore?.timelineEvents) return s;
       return {
+        ...snapshotLore(s),
         lore: { ...s.lore, timelineEvents: s.lore.timelineEvents.filter((e) => e.id !== id) },
         dirty: true,
       };
@@ -364,6 +404,7 @@ export const useLoreStore = create<LoreStore>((set) => ({
     set((s) => {
       if (!s.lore) return s;
       return {
+        ...snapshotLore(s),
         lore: { ...s.lore, documents: [...(s.lore.documents ?? []), doc] },
         dirty: true,
       };
@@ -373,6 +414,7 @@ export const useLoreStore = create<LoreStore>((set) => ({
     set((s) => {
       if (!s.lore?.documents) return s;
       return {
+        ...snapshotLore(s),
         lore: {
           ...s.lore,
           documents: s.lore.documents.map((d) => (d.id === id ? { ...d, ...patch } : d)),
@@ -385,6 +427,7 @@ export const useLoreStore = create<LoreStore>((set) => ({
     set((s) => {
       if (!s.lore?.documents) return s;
       return {
+        ...snapshotLore(s),
         lore: { ...s.lore, documents: s.lore.documents.filter((d) => d.id !== id) },
         dirty: true,
       };
@@ -397,6 +440,7 @@ export const useLoreStore = create<LoreStore>((set) => ({
       if (!s.lore) return s;
       const existing = s.lore.templateOverrides ?? {};
       return {
+        ...snapshotLore(s),
         lore: {
           ...s.lore,
           templateOverrides: {
@@ -414,6 +458,7 @@ export const useLoreStore = create<LoreStore>((set) => ({
     set((s) => {
       if (!s.lore) return s;
       return {
+        ...snapshotLore(s),
         lore: {
           ...s.lore,
           showcaseSettings: { ...(s.lore.showcaseSettings ?? {}), ...patch },
@@ -422,6 +467,37 @@ export const useLoreStore = create<LoreStore>((set) => ({
       };
     }),
 
+  // ─── Undo / Redo ─────────────────────────────────────────────────
+
+  undoLore: () =>
+    set((s) => {
+      if (!s.lore || s.lorePast.length === 0) return s;
+      const past = [...s.lorePast];
+      const prev = past.pop()!;
+      return {
+        lore: prev,
+        dirty: true,
+        lorePast: past,
+        loreFuture: [s.lore, ...s.loreFuture],
+      };
+    }),
+
+  redoLore: () =>
+    set((s) => {
+      if (!s.lore || s.loreFuture.length === 0) return s;
+      const future = [...s.loreFuture];
+      const next = future.shift()!;
+      return {
+        lore: next,
+        dirty: true,
+        lorePast: [...s.lorePast, s.lore],
+        loreFuture: future,
+      };
+    }),
+
+  canUndoLore: () => get().lorePast.length > 0,
+  canRedoLore: () => get().loreFuture.length > 0,
+
   markClean: () => set({ dirty: false }),
-  clearLore: () => set({ lore: null, dirty: false, selectedArticleId: null, selectedMapId: null }),
+  clearLore: () => set({ lore: null, dirty: false, lorePast: [], loreFuture: [], selectedArticleId: null, selectedMapId: null }),
 }));

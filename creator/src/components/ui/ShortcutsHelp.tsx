@@ -6,8 +6,8 @@ interface ShortcutsHelpProps {
 
 const shortcuts = [
   { keys: "Ctrl+S", desc: "Save all zones and config" },
-  { keys: "Ctrl+Z", desc: "Undo (active zone)" },
-  { keys: "Ctrl+Shift+Z / Ctrl+Y", desc: "Redo (active zone)" },
+  { keys: "Ctrl+Z", desc: "Undo (active zone or lore)" },
+  { keys: "Ctrl+Shift+Z / Ctrl+Y", desc: "Redo (active zone or lore)" },
   { keys: "Ctrl+W", desc: "Close active tab" },
   { keys: "Ctrl+Tab", desc: "Next tab" },
   { keys: "Ctrl+Shift+Tab", desc: "Previous tab" },

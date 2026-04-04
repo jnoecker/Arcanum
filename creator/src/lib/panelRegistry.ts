@@ -5,23 +5,26 @@
 export type SidebarGroup =
   | "studio"
   | "characters"
-  | "abilities"
   | "world"
   | "lore"
   | "content"
-  | "operations";
+  | "operations"
+  | "command";
 
 export interface PanelDef {
   id: string;
   label: string;
   group: SidebarGroup;
   /** "config" panels share the config auto-save chrome, "studio" panels
-   *  share the zone-selection state in StudioWorkspace. */
-  host: "config" | "studio" | "lore";
+   *  share the zone-selection state in StudioWorkspace, "command" panels
+   *  route to dedicated components. */
+  host: "config" | "studio" | "lore" | "command";
   kicker: string;
   title: string;
   description: string;
   maxWidth: string;
+  /** Optional sub-category within a sidebar group for visual chunking. */
+  subGroup?: string;
 }
 
 // ─── Studio panels ──────────────────────────────────────────────────
@@ -33,53 +36,48 @@ const STUDIO_PANELS: PanelDef[] = [
   { id: "studioAbilities", label: "Abilities", group: "studio", host: "studio", kicker: "Studio", title: "Abilities", description: "Ability and status-effect icon generation.", maxWidth: "max-w-7xl" },
 ];
 
-// ─── Character panels ───────────────────────────────────────────────
+// ─── Character panels (includes former Ability panels) ─────────────
 
 const CHARACTER_PANELS: PanelDef[] = [
-  { id: "classes", label: "Classes", group: "characters", host: "config", kicker: "Classes", title: "Class designer", description: "Class identity, scaling, visual direction, and start-room overrides.", maxWidth: "max-w-5xl" },
-  { id: "races", label: "Races", group: "characters", host: "config", kicker: "Races", title: "Race designer", description: "Race lore, traits, stat modifiers, portraits, and staff-tier overrides.", maxWidth: "max-w-5xl" },
-  { id: "creation", label: "Creation", group: "characters", host: "config", kicker: "Character foundations", title: "Character creation", description: "Starting state and gender definitions.", maxWidth: "max-w-5xl" },
-  { id: "equipment", label: "Equipment", group: "characters", host: "config", kicker: "Equipment", title: "Equipment slots", description: "Wear slots and layout.", maxWidth: "max-w-5xl" },
-  { id: "characterSprites", label: "Sprite Config", group: "characters", host: "config", kicker: "Sprite config", title: "Sprite rules", description: "Image serving, sprite tiers, and player tier visuals.", maxWidth: "max-w-5xl" },
-];
-
-// ─── Ability panels ─────────────────────────────────────────────────
-
-const ABILITY_PANELS: PanelDef[] = [
-  { id: "stats", label: "Stats", group: "abilities", host: "config", kicker: "Stats", title: "Stat definitions", description: "Primary stats, abbreviations, and base values.", maxWidth: "max-w-5xl" },
-  { id: "abilityDesigner", label: "Abilities", group: "abilities", host: "config", kicker: "Abilities", title: "Ability designer", description: "Class restrictions, costs, cooldowns, targets, and effects.", maxWidth: "max-w-5xl" },
-  { id: "conditions", label: "Conditions", group: "abilities", host: "config", kicker: "Status effects", title: "Condition designer", description: "Status effects, stack rules, and ticking behavior.", maxWidth: "max-w-5xl" },
+  { id: "classes", label: "Classes", group: "characters", host: "config", kicker: "Classes", title: "Class designer", description: "Class identity, scaling, visual direction, and start-room overrides.", maxWidth: "max-w-5xl", subGroup: "Identity" },
+  { id: "races", label: "Races", group: "characters", host: "config", kicker: "Races", title: "Race designer", description: "Race lore, traits, stat modifiers, portraits, and staff-tier overrides.", maxWidth: "max-w-5xl", subGroup: "Identity" },
+  { id: "creation", label: "Creation", group: "characters", host: "config", kicker: "Character foundations", title: "Character creation", description: "Starting state and gender definitions.", maxWidth: "max-w-5xl", subGroup: "Identity" },
+  { id: "equipment", label: "Equipment", group: "characters", host: "config", kicker: "Equipment", title: "Equipment slots", description: "Wear slots and layout.", maxWidth: "max-w-5xl", subGroup: "Identity" },
+  { id: "characterSprites", label: "Sprite Config", group: "characters", host: "config", kicker: "Sprite config", title: "Sprite rules", description: "Image serving, sprite tiers, and player tier visuals.", maxWidth: "max-w-5xl", subGroup: "Identity" },
+  { id: "stats", label: "Stats", group: "characters", host: "config", kicker: "Stats", title: "Stat definitions", description: "Primary stats, abbreviations, and base values.", maxWidth: "max-w-5xl", subGroup: "Powers" },
+  { id: "abilityDesigner", label: "Abilities", group: "characters", host: "config", kicker: "Abilities", title: "Ability designer", description: "Class restrictions, costs, cooldowns, targets, and effects.", maxWidth: "max-w-5xl", subGroup: "Powers" },
+  { id: "conditions", label: "Conditions", group: "characters", host: "config", kicker: "Status effects", title: "Condition designer", description: "Status effects, stack rules, and ticking behavior.", maxWidth: "max-w-5xl", subGroup: "Powers" },
 ];
 
 // ─── World panels ───────────────────────────────────────────────────
 
 const WORLD_PANELS: PanelDef[] = [
-  { id: "worldServer", label: "World & Server", group: "world", host: "config", kicker: "Infrastructure", title: "World & server", description: "Start room, server ports, admin API, observability, and logging.", maxWidth: "max-w-5xl" },
-  { id: "combat", label: "Combat", group: "world", host: "config", kicker: "Combat loop", title: "Combat loop", description: "Tick rates, damage ranges, mob tiers, and regeneration.", maxWidth: "max-w-5xl" },
-  { id: "progression", label: "Progression", group: "world", host: "config", kicker: "Progression", title: "Progression", description: "Leveling curve, XP formula, and per-level rewards.", maxWidth: "max-w-5xl" },
-  { id: "statBindings", label: "Stat Bindings", group: "world", host: "config", kicker: "Stat bindings", title: "Stat bindings", description: "How stats map to combat, regen, dodge, and XP bonuses.", maxWidth: "max-w-5xl" },
-  { id: "travel", label: "Travel", group: "world", host: "config", kicker: "Travel", title: "Navigation & recall", description: "Recall cooldowns and movement rules.", maxWidth: "max-w-5xl" },
-  { id: "commands", label: "Commands", group: "world", host: "config", kicker: "Commands", title: "Command designer", description: "Custom commands, usage strings, and categories.", maxWidth: "max-w-5xl" },
-  { id: "economy", label: "Economy", group: "world", host: "config", kicker: "Economy", title: "Economy", description: "Buy/sell multipliers and gold economy.", maxWidth: "max-w-5xl" },
-  { id: "crafting", label: "Crafting", group: "world", host: "config", kicker: "Crafting", title: "Crafting & gathering", description: "Skill leveling, station types, gathering, and recipes.", maxWidth: "max-w-5xl" },
-  { id: "enchanting", label: "Enchanting", group: "world", host: "config", kicker: "Enchanting", title: "Enchanting system", description: "Enchantment definitions, materials, stat bonuses, and target slots.", maxWidth: "max-w-5xl" },
-  { id: "factions", label: "Factions", group: "world", host: "config", kicker: "Factions", title: "Faction system", description: "Reputation factions, enemy relationships, and quest rewards.", maxWidth: "max-w-5xl" },
-  { id: "groups", label: "Groups", group: "world", host: "config", kicker: "Groups", title: "Party system", description: "Party size, XP sharing, and invite rules.", maxWidth: "max-w-5xl" },
-  { id: "guilds", label: "Guilds", group: "world", host: "config", kicker: "Guilds", title: "Guild system", description: "Guild ranks, permissions, friends, and defaults.", maxWidth: "max-w-5xl" },
-  { id: "emotes", label: "Emotes", group: "world", host: "config", kicker: "Social", title: "Emote presets", description: "Quick-action emotes available to players in the chat panel.", maxWidth: "max-w-5xl" },
-  { id: "housing", label: "Housing", group: "world", host: "config", kicker: "Housing", title: "Player housing", description: "Room templates, costs, and housing system settings.", maxWidth: "max-w-5xl" },
-  { id: "guildHalls", label: "Guild Halls", group: "world", host: "config", kicker: "Social", title: "Guild halls", description: "Guild housing costs, room templates, and hall configuration.", maxWidth: "max-w-5xl" },
-  { id: "pets", label: "Pets", group: "world", host: "config", kicker: "Companions", title: "Pet system", description: "Define pet templates that can be summoned by abilities.", maxWidth: "max-w-5xl" },
-  { id: "worldCycle", label: "Day & Weather", group: "world", host: "config", kicker: "Environment", title: "Day/night & weather", description: "Day/night cycle timing, time periods, and weather transition pacing.", maxWidth: "max-w-5xl" },
-  { id: "worldEvents", label: "Events", group: "world", host: "config", kicker: "Seasonal", title: "World events", description: "Seasonal events with date schedules, flags, and broadcast messages.", maxWidth: "max-w-5xl" },
-  { id: "prestige", label: "Prestige", group: "world", host: "config", kicker: "Progression", title: "Prestige system", description: "Prestige ranks, XP costs, and perk rewards for endgame progression.", maxWidth: "max-w-5xl" },
-  { id: "respec", label: "Respec", group: "world", host: "config", kicker: "Progression", title: "Stat respec", description: "Gold cost and cooldown for reassigning stat points.", maxWidth: "max-w-5xl" },
-  { id: "currencies", label: "Currencies", group: "world", host: "config", kicker: "Economy", title: "Secondary currencies", description: "Quest points, honor, crafting tokens, and other non-gold currencies.", maxWidth: "max-w-5xl" },
-  { id: "lottery", label: "Lottery", group: "world", host: "config", kicker: "Economy", title: "Lottery system", description: "Ticket cost, drawing interval, and jackpot settings.", maxWidth: "max-w-5xl" },
-  { id: "gambling", label: "Gambling", group: "world", host: "config", kicker: "Economy", title: "Dice gambling", description: "Min/max bet, win chance, and payout multiplier for tavern gambling.", maxWidth: "max-w-5xl" },
-  { id: "autoQuests", label: "Bounties", group: "world", host: "config", kicker: "Quests", title: "Auto-generated bounties", description: "Time-limited bounty quests with scaling rewards.", maxWidth: "max-w-5xl" },
-  { id: "dailyQuests", label: "Dailies", group: "world", host: "config", kicker: "Quests", title: "Daily & weekly quests", description: "Rotating quest pools with streak bonuses.", maxWidth: "max-w-5xl" },
-  { id: "globalQuests", label: "Global Events", group: "world", host: "config", kicker: "Quests", title: "Global competitions", description: "Server-wide timed objectives with shared rewards.", maxWidth: "max-w-5xl" },
+  { id: "worldServer", label: "World & Server", group: "world", host: "config", kicker: "Infrastructure", title: "World & server", description: "Start room, server ports, admin API, observability, and logging.", maxWidth: "max-w-5xl", subGroup: "Core" },
+  { id: "combat", label: "Combat", group: "world", host: "config", kicker: "Combat loop", title: "Combat loop", description: "Tick rates, damage ranges, mob tiers, and regeneration.", maxWidth: "max-w-5xl", subGroup: "Core" },
+  { id: "progression", label: "Progression", group: "world", host: "config", kicker: "Progression", title: "Progression", description: "Leveling curve, XP formula, and per-level rewards.", maxWidth: "max-w-5xl", subGroup: "Core" },
+  { id: "statBindings", label: "Stat Bindings", group: "world", host: "config", kicker: "Stat bindings", title: "Stat bindings", description: "How stats map to combat, regen, dodge, and XP bonuses.", maxWidth: "max-w-5xl", subGroup: "Core" },
+  { id: "travel", label: "Travel", group: "world", host: "config", kicker: "Travel", title: "Navigation & recall", description: "Recall cooldowns and movement rules.", maxWidth: "max-w-5xl", subGroup: "Core" },
+  { id: "commands", label: "Commands", group: "world", host: "config", kicker: "Commands", title: "Command designer", description: "Custom commands, usage strings, and categories.", maxWidth: "max-w-5xl", subGroup: "Core" },
+  { id: "economy", label: "Economy", group: "world", host: "config", kicker: "Economy", title: "Economy", description: "Buy/sell multipliers and gold economy.", maxWidth: "max-w-5xl", subGroup: "Economy" },
+  { id: "currencies", label: "Currencies", group: "world", host: "config", kicker: "Economy", title: "Secondary currencies", description: "Quest points, honor, crafting tokens, and other non-gold currencies.", maxWidth: "max-w-5xl", subGroup: "Economy" },
+  { id: "crafting", label: "Crafting", group: "world", host: "config", kicker: "Crafting", title: "Crafting & gathering", description: "Skill leveling, station types, gathering, and recipes.", maxWidth: "max-w-5xl", subGroup: "Economy" },
+  { id: "enchanting", label: "Enchanting", group: "world", host: "config", kicker: "Enchanting", title: "Enchanting system", description: "Enchantment definitions, materials, stat bonuses, and target slots.", maxWidth: "max-w-5xl", subGroup: "Economy" },
+  { id: "lottery", label: "Lottery", group: "world", host: "config", kicker: "Economy", title: "Lottery system", description: "Ticket cost, drawing interval, and jackpot settings.", maxWidth: "max-w-5xl", subGroup: "Economy" },
+  { id: "gambling", label: "Gambling", group: "world", host: "config", kicker: "Economy", title: "Dice gambling", description: "Min/max bet, win chance, and payout multiplier for tavern gambling.", maxWidth: "max-w-5xl", subGroup: "Economy" },
+  { id: "factions", label: "Factions", group: "world", host: "config", kicker: "Factions", title: "Faction system", description: "Reputation factions, enemy relationships, and quest rewards.", maxWidth: "max-w-5xl", subGroup: "Social" },
+  { id: "groups", label: "Groups", group: "world", host: "config", kicker: "Groups", title: "Party system", description: "Party size, XP sharing, and invite rules.", maxWidth: "max-w-5xl", subGroup: "Social" },
+  { id: "guilds", label: "Guilds", group: "world", host: "config", kicker: "Guilds", title: "Guild system", description: "Guild ranks, permissions, friends, and defaults.", maxWidth: "max-w-5xl", subGroup: "Social" },
+  { id: "guildHalls", label: "Guild Halls", group: "world", host: "config", kicker: "Social", title: "Guild halls", description: "Guild housing costs, room templates, and hall configuration.", maxWidth: "max-w-5xl", subGroup: "Social" },
+  { id: "emotes", label: "Emotes", group: "world", host: "config", kicker: "Social", title: "Emote presets", description: "Quick-action emotes available to players in the chat panel.", maxWidth: "max-w-5xl", subGroup: "Social" },
+  { id: "housing", label: "Housing", group: "world", host: "config", kicker: "Housing", title: "Player housing", description: "Room templates, costs, and housing system settings.", maxWidth: "max-w-5xl", subGroup: "Social" },
+  { id: "pets", label: "Pets", group: "world", host: "config", kicker: "Companions", title: "Pet system", description: "Define pet templates that can be summoned by abilities.", maxWidth: "max-w-5xl", subGroup: "Social" },
+  { id: "worldCycle", label: "Day & Weather", group: "world", host: "config", kicker: "Environment", title: "Day/night & weather", description: "Day/night cycle timing, time periods, and weather transition pacing.", maxWidth: "max-w-5xl", subGroup: "Events" },
+  { id: "worldEvents", label: "Events", group: "world", host: "config", kicker: "Seasonal", title: "World events", description: "Seasonal events with date schedules, flags, and broadcast messages.", maxWidth: "max-w-5xl", subGroup: "Events" },
+  { id: "globalQuests", label: "Global Events", group: "world", host: "config", kicker: "Quests", title: "Global competitions", description: "Server-wide timed objectives with shared rewards.", maxWidth: "max-w-5xl", subGroup: "Events" },
+  { id: "prestige", label: "Prestige", group: "world", host: "config", kicker: "Progression", title: "Prestige system", description: "Prestige ranks, XP costs, and perk rewards for endgame progression.", maxWidth: "max-w-5xl", subGroup: "Events" },
+  { id: "respec", label: "Respec", group: "world", host: "config", kicker: "Progression", title: "Stat respec", description: "Gold cost and cooldown for reassigning stat points.", maxWidth: "max-w-5xl", subGroup: "Events" },
+  { id: "autoQuests", label: "Bounties", group: "world", host: "config", kicker: "Quests", title: "Auto-generated bounties", description: "Time-limited bounty quests with scaling rewards.", maxWidth: "max-w-5xl", subGroup: "Quests" },
+  { id: "dailyQuests", label: "Dailies", group: "world", host: "config", kicker: "Quests", title: "Daily & weekly quests", description: "Rotating quest pools with streak bonuses.", maxWidth: "max-w-5xl", subGroup: "Quests" },
 ];
 
 // ─── Lore panels ───────────────────────────────────────────────────
@@ -115,16 +113,24 @@ const OPERATIONS_PANELS: PanelDef[] = [
   { id: "versionControl", label: "Version Control", group: "operations", host: "config", kicker: "Operations", title: "Version control", description: "Git status, commits, push/pull, and conflict resolution for standalone projects.", maxWidth: "max-w-5xl" },
 ];
 
+// ─── Command panels ─────────────────────────────────────────────────
+
+const COMMAND_PANELS: PanelDef[] = [
+  { id: "sprites", label: "Player Sprites", group: "command", host: "command", kicker: "Command", title: "Player sprites", description: "Visible identity, unlockable variants, and portrait logic.", maxWidth: "max-w-7xl" },
+  { id: "console", label: "Console", group: "command", host: "command", kicker: "Command", title: "Console", description: "Live logs, command output, and runtime traces.", maxWidth: "max-w-7xl" },
+  { id: "admin", label: "Admin", group: "command", host: "command", kicker: "Command", title: "Admin", description: "Direct command over the living world.", maxWidth: "max-w-7xl" },
+];
+
 // ─── Aggregate ──────────────────────────────────────────────────────
 
 export const ALL_PANELS: PanelDef[] = [
   ...STUDIO_PANELS,
   ...CHARACTER_PANELS,
-  ...ABILITY_PANELS,
   ...WORLD_PANELS,
   ...LORE_PANELS,
   ...CONTENT_PANELS,
   ...OPERATIONS_PANELS,
+  ...COMMAND_PANELS,
 ];
 
 export const PANEL_MAP: Record<string, PanelDef> = Object.fromEntries(
@@ -136,10 +142,10 @@ export type Workspace = "worldmaker" | "lore";
 export const WORLDMAKER_GROUPS: { id: SidebarGroup; label: string; panels: PanelDef[] }[] = [
   { id: "studio", label: "Studio", panels: STUDIO_PANELS },
   { id: "characters", label: "Characters", panels: CHARACTER_PANELS },
-  { id: "abilities", label: "Abilities", panels: ABILITY_PANELS },
   { id: "world", label: "World", panels: WORLD_PANELS },
   { id: "content", label: "Content", panels: CONTENT_PANELS },
   { id: "operations", label: "Operations", panels: OPERATIONS_PANELS },
+  { id: "command", label: "Command", panels: COMMAND_PANELS },
 ];
 
 export const LORE_GROUPS: { id: SidebarGroup; label: string; panels: PanelDef[] }[] = [

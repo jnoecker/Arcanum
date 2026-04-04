@@ -15,6 +15,8 @@ export interface PersistedUI {
   activeTabId: string | null;
   recentProjects: RecentProject[];
   workspace?: "worldmaker" | "lore";
+  collapsedSidebarSections?: string[];
+  artSubTab?: "direction" | "assets" | "custom";
 }
 
 export function saveUIState(state: PersistedUI): void {
@@ -45,6 +47,19 @@ export function loadUIState(): PersistedUI | null {
     const VALID_KINDS = new Set(["panel", "zone", "console", "sprites", "admin"]);
     if (Array.isArray(parsed.tabs)) {
       parsed.tabs = parsed.tabs.filter((t: any) => VALID_KINDS.has(t.kind));
+      // Migration: convert old command-kind tabs to panel-kind tabs
+      const COMMAND_TAB_MAP: Record<string, string> = { console: "console", sprites: "sprites", admin: "admin" };
+      parsed.tabs = parsed.tabs.map((t: any) => {
+        const panelId = COMMAND_TAB_MAP[t.kind];
+        if (panelId) {
+          return { id: `panel:${panelId}`, kind: "panel", label: t.label, panelId };
+        }
+        return t;
+      });
+      // Fix activeTabId if it was a command tab
+      if (parsed.activeTabId && COMMAND_TAB_MAP[parsed.activeTabId]) {
+        parsed.activeTabId = `panel:${parsed.activeTabId}`;
+      }
     }
     return parsed as PersistedUI;
   } catch {
@@ -99,4 +114,26 @@ export function saveWorkspace(workspace: "worldmaker" | "lore"): void {
 
 export function loadWorkspace(): "worldmaker" | "lore" {
   return loadUIState()?.workspace ?? "worldmaker";
+}
+
+export function saveCollapsedSections(sections: string[]): void {
+  const state = loadUIState();
+  if (state) {
+    saveUIState({ ...state, collapsedSidebarSections: sections });
+  }
+}
+
+export function loadCollapsedSections(): string[] {
+  return loadUIState()?.collapsedSidebarSections ?? [];
+}
+
+export function saveArtSubTab(tab: "direction" | "assets" | "custom"): void {
+  const state = loadUIState();
+  if (state) {
+    saveUIState({ ...state, artSubTab: tab });
+  }
+}
+
+export function loadArtSubTab(): "direction" | "assets" | "custom" {
+  return loadUIState()?.artSubTab ?? "direction";
 }

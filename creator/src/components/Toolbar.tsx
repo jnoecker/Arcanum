@@ -128,7 +128,7 @@ export function Toolbar({ workspace, setWorkspace }: ToolbarProps) {
   }, [activeTab]);
 
   const handleOpenAdmin = () => {
-    openTab({ id: "admin", kind: "admin", label: "Admin" });
+    openTab(panelTab("admin"));
   };
 
   const handleOpenHandoff = () => {

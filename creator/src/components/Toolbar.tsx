@@ -19,6 +19,7 @@ import { exportShowcaseData } from "@/lib/exportShowcase";
 const DiffModal = lazy(() => import("./ui/DiffModal").then((m) => ({ default: m.DiffModal })));
 const BatchLegacyImport = lazy(() => import("./BatchLegacyImport").then((m) => ({ default: m.BatchLegacyImport })));
 const SketchImportWizard = lazy(() => import("./SketchImportWizard").then((m) => ({ default: m.SketchImportWizard })));
+const MudImportWizard = lazy(() => import("./MudImportWizard").then((m) => ({ default: m.MudImportWizard })));
 
 const ADMIN_STATUS_COLORS: Record<string, string> = {
   disconnected: "bg-server-stopped",
@@ -60,6 +61,7 @@ export function Toolbar({ workspace, setWorkspace }: ToolbarProps) {
   const [showDiff, setShowDiff] = useState(false);
   const [showLegacyImport, setShowLegacyImport] = useState(false);
   const [showSketchImport, setShowSketchImport] = useState(false);
+  const [showMudImport, setShowMudImport] = useState(false);
   const [showUtilityMenu, setShowUtilityMenu] = useState(false);
   const openGenerator = useAssetStore((s) => s.openGenerator);
   const openGallery = useAssetStore((s) => s.openGallery);
@@ -326,6 +328,16 @@ export function Toolbar({ workspace, setWorkspace }: ToolbarProps) {
                             role="menuitem"
                             onClick={() => {
                               setShowUtilityMenu(false);
+                              setShowMudImport(true);
+                            }}
+                            className="focus-ring flex min-h-11 items-center rounded-[18px] border border-white/8 bg-black/12 px-4 py-3 text-left text-sm text-text-secondary transition hover:border-white/14 hover:bg-white/6 hover:text-text-primary"
+                          >
+                            Import MUD Zone
+                          </button>
+                          <button
+                            role="menuitem"
+                            onClick={() => {
+                              setShowUtilityMenu(false);
                               openGallery();
                             }}
                             className="focus-ring flex min-h-11 items-center rounded-[18px] border border-white/8 bg-black/12 px-4 py-3 text-left text-sm text-text-secondary transition hover:border-white/14 hover:bg-white/6 hover:text-text-primary"
@@ -412,6 +424,10 @@ export function Toolbar({ workspace, setWorkspace }: ToolbarProps) {
 
         {showSketchImport && (
           <SketchImportWizard onClose={() => setShowSketchImport(false)} />
+        )}
+
+        {showMudImport && (
+          <MudImportWizard onClose={() => setShowMudImport(false)} />
         )}
       </Suspense>
     </>

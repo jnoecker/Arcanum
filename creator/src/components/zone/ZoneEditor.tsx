@@ -16,6 +16,7 @@ import "@xyflow/react/dist/style.css";
 
 import { useZoneStore } from "@/stores/zoneStore";
 import { useProjectStore } from "@/stores/projectStore";
+import { useAssetStore } from "@/stores/assetStore";
 import { zoneToGraph, GRAPH } from "@/lib/zoneToGraph";
 import { compassLayout } from "@/lib/dagreLayout";
 import { addRoom, addExit, generateRoomId } from "@/lib/zoneEdits";
@@ -27,6 +28,7 @@ import { RoomPanel, type EntitySelection } from "./RoomPanel";
 import { EntityPanel } from "./EntityPanel";
 import { DirectionPicker } from "./DirectionPicker";
 import { BatchArtGenerator } from "./BatchArtGenerator";
+import { BulkBgRemoval, type BulkBgTarget } from "@/components/ui/BulkBgRemoval";
 import { ZoneAssetWorkbench } from "./ZoneAssetWorkbench";
 import { Starfield } from "./Starfield";
 import { SpringPanel } from "./SpringPanel";
@@ -53,6 +55,38 @@ interface ZoneEditorProps {
   zoneId: string;
 }
 
+function collectBgRemovalTargets(world: WorldFile, zoneId: string, assetsDir: string): BulkBgTarget[] {
+  const targets: BulkBgTarget[] = [];
+
+  for (const [id, mob] of Object.entries(world.mobs ?? {})) {
+    if (!mob.image) continue;
+    targets.push({
+      id: `mob:${id}`,
+      label: `${mob.name} (mob)`,
+      imagePath: mob.image,
+      resolvedPath: `${assetsDir}\\images\\${mob.image}`,
+      assetType: "mob",
+      variantGroup: `mob:${zoneId}:${id}`,
+      context: { zone: zoneId, entity_type: "mob", entity_id: id },
+    });
+  }
+
+  for (const [id, item] of Object.entries(world.items ?? {})) {
+    if (!item.image) continue;
+    targets.push({
+      id: `item:${id}`,
+      label: `${item.displayName} (item)`,
+      imagePath: item.image,
+      resolvedPath: `${assetsDir}\\images\\${item.image}`,
+      assetType: "item",
+      variantGroup: `item:${zoneId}:${id}`,
+      context: { zone: zoneId, entity_type: "item", entity_id: id },
+    });
+  }
+
+  return targets;
+}
+
 function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
   const zoneState = useZoneStore((s) => s.zones.get(zoneId));
   const updateZone = useZoneStore((s) => s.updateZone);
@@ -70,6 +104,8 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
   const [saving, setSaving] = useState(false);
   const [justSaved, setJustSaved] = useState(false);
   const [showBatchArt, setShowBatchArt] = useState(false);
+  const [showBulkBgRemoval, setShowBulkBgRemoval] = useState(false);
+  const assetsDir = useAssetStore((s) => s.assetsDir);
   const [viewMode, setViewMode] = useState<ViewMode>("map");
   const [hintDismissed, setHintDismissed] = useState(
     () => localStorage.getItem("arcanum:zone-hint-dismissed") === "1",
@@ -393,6 +429,14 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
             >
               Batch Art
             </button>
+            <button
+              onClick={() => setShowBulkBgRemoval(true)}
+              className="h-6 rounded px-2 text-xs text-text-secondary transition-colors hover:bg-white/6 hover:text-text-primary"
+              title="Remove backgrounds from mob and item images"
+              aria-label="Bulk remove backgrounds"
+            >
+              Remove BGs
+            </button>
             {showAddRoom ? (
               <form
                 onSubmit={(e) => {
@@ -548,6 +592,14 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
                 world={zoneState.data}
                 onWorldChange={applyWorldChange}
                 onClose={() => setShowBatchArt(false)}
+              />
+            )}
+
+            {/* Bulk background removal */}
+            {showBulkBgRemoval && zoneState && assetsDir && (
+              <BulkBgRemoval
+                targets={collectBgRemovalTargets(zoneState.data, zoneId, assetsDir)}
+                onClose={() => setShowBulkBgRemoval(false)}
               />
             )}
 

@@ -8,6 +8,7 @@ import { useImageSrc } from "@/lib/useImageSrc";
 import { useFocusTrap } from "@/lib/useFocusTrap";
 import { UNIVERSAL_NEGATIVE } from "@/lib/arcanumPrompts";
 import { removeBgAndSave } from "@/lib/useBackgroundRemoval";
+import { BulkBgRemoval, type BulkBgTarget } from "@/components/ui/BulkBgRemoval";
 import { ENTITY_DIMENSIONS, imageGenerateCommand, resolveImageModel, requestsTransparentBackground } from "@/types/assets";
 import {
   buildSpritePrompt,
@@ -756,6 +757,41 @@ function SpriteDetailEditor({
 
 // ─── Main component ─────────────────────────────────────────────────
 
+function collectSpriteBgTargets(
+  spriteAssetMap: Map<string, { fileName: string; assetId: string }>,
+  definitions: Record<string, SpriteDefinition>,
+  assetsDir: string,
+): BulkBgTarget[] {
+  const targets: BulkBgTarget[] = [];
+
+  for (const [id, def] of Object.entries(definitions)) {
+    // Collect all image IDs: either from variants or the single image shorthand
+    const imageIds: string[] = [];
+    if (def.variants && def.variants.length > 0) {
+      for (const v of def.variants) imageIds.push(v.imageId);
+    } else {
+      imageIds.push(id);
+    }
+
+    for (const imageId of imageIds) {
+      const asset = spriteAssetMap.get(imageId);
+      if (!asset) continue;
+
+      targets.push({
+        id: imageId,
+        label: `${def.displayName} — ${imageId}`,
+        imagePath: asset.fileName,
+        resolvedPath: `${assetsDir}\\images\\${asset.fileName}`,
+        assetType: "player_sprite",
+        variantGroup: `player_sprite:${imageId}`,
+        context: { zone: "sprites", entity_type: "player_sprite", entity_id: imageId },
+      });
+    }
+  }
+
+  return targets;
+}
+
 export function PlayerSpriteManager() {
   const definitions = useSpriteDefinitionStore((s) => s.definitions);
   const setDefinition = useSpriteDefinitionStore((s) => s.setDefinition);
@@ -766,6 +802,7 @@ export function PlayerSpriteManager() {
   const project = useProjectStore((s) => s.project);
   const config = useConfigStore((s) => s.config);
   const assets = useAssetStore((s) => s.assets);
+  const assetsDir = useAssetStore((s) => s.assetsDir);
   const settings = useAssetStore((s) => s.settings);
   const loadAssets = useAssetStore((s) => s.loadAssets);
   const acceptAsset = useAssetStore((s) => s.acceptAsset);
@@ -781,6 +818,7 @@ export function PlayerSpriteManager() {
   const [viewSprite, setViewSprite] = useState<{ key: string; fileName: string; assetId: string } | null>(null);
   const [generationError, setGenerationError] = useState<string | null>(null);
   const [showScaffold, setShowScaffold] = useState(false);
+  const [showBulkBgRemoval, setShowBulkBgRemoval] = useState(false);
   const spriteTemplateRef = useRef<SpritePromptTemplate | null>(null);
   const spriteTemplatePromiseRef = useRef<Promise<SpritePromptTemplate | null> | null>(null);
 
@@ -994,6 +1032,13 @@ export function PlayerSpriteManager() {
           Fill Gaps
         </ActionButton>
         <ActionButton
+          onClick={() => setShowBulkBgRemoval(true)}
+          variant="secondary"
+          size="sm"
+        >
+          Remove BGs
+        </ActionButton>
+        <ActionButton
           onClick={handleDeploy}
           disabled={deploying || sortedDefs.length === 0}
           variant="secondary"
@@ -1139,6 +1184,14 @@ export function PlayerSpriteManager() {
         <TierSpriteScaffold
           onClose={() => setShowScaffold(false)}
           onComplete={() => void loadAssets()}
+        />
+      )}
+
+      {/* Bulk BG removal dialog */}
+      {showBulkBgRemoval && assetsDir && (
+        <BulkBgRemoval
+          targets={collectSpriteBgTargets(spriteAssetMap, definitions, assetsDir)}
+          onClose={() => setShowBulkBgRemoval(false)}
         />
       )}
 

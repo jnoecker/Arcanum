@@ -1,8 +1,11 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
+import { invoke } from "@tauri-apps/api/core";
 import type { ConfigPanelProps } from "./types";
 import type { TierDefinitionConfig } from "@/types/config";
-import { Section, FieldRow, TextInput, CommitTextarea } from "@/components/ui/FormWidgets";
+import { Section, FieldRow, TextInput, CommitTextarea, ActionButton } from "@/components/ui/FormWidgets";
 import { DEFAULT_TIER_DEFINITIONS } from "@/lib/defaultSpriteData";
+import { useAssetStore } from "@/stores/assetStore";
+import { parseLlmJson } from "@/lib/arcanumPrompts";
 
 /** Derive tier keys from the numeric spriteLevelTiers breakpoints + always tstaff. */
 function deriveTierKeys(spriteLevelTiers: number[]): string[] {
@@ -14,10 +17,8 @@ function deriveTierKeys(spriteLevelTiers: number[]): string[] {
 
 /** Get a sensible default for a tier that has no definition yet. */
 function defaultTierDef(tierId: string, breakpoints: number[]): TierDefinitionConfig {
-  // If there's a hardcoded default, use it
   if (DEFAULT_TIER_DEFINITIONS[tierId]) return DEFAULT_TIER_DEFINITIONS[tierId]!;
 
-  // Auto-scaffold from the numeric level
   const level = parseInt(tierId.replace("t", ""), 10);
   const sorted = [...breakpoints].sort((a, b) => a - b);
   const idx = sorted.indexOf(level);
@@ -34,8 +35,16 @@ function defaultTierDef(tierId: string, breakpoints: number[]): TierDefinitionCo
 export function PlayerTiersPanel({ config, onChange }: ConfigPanelProps) {
   const tiers = config.playerTiers ?? DEFAULT_TIER_DEFINITIONS;
   const breakpoints = config.images.spriteLevelTiers;
+  const settings = useAssetStore((s) => s.settings);
 
-  // Derive tier order strictly from breakpoints — stale entries are ignored
+  const [generating, setGenerating] = useState(false);
+
+  const hasLlmKey = !!(
+    settings?.deepinfra_api_key ||
+    settings?.anthropic_api_key ||
+    settings?.openrouter_api_key
+  );
+
   const orderedIds = useMemo(() => deriveTierKeys(breakpoints), [breakpoints]);
 
   const patchTier = (tierId: string, p: Partial<TierDefinitionConfig>) => {
@@ -45,7 +54,6 @@ export function PlayerTiersPanel({ config, onChange }: ConfigPanelProps) {
       levels: p.levels ?? existing.levels,
       visualDescription: p.visualDescription ?? existing.visualDescription,
     };
-    // Build full tier map from derived keys so we persist all of them
     const fullTiers: Record<string, TierDefinitionConfig> = {};
     for (const key of orderedIds) {
       fullTiers[key] = key === tierId ? updated : (tiers[key] ?? defaultTierDef(key, breakpoints));
@@ -53,13 +61,81 @@ export function PlayerTiersPanel({ config, onChange }: ConfigPanelProps) {
     onChange({ playerTiers: fullTiers });
   };
 
+  const handleGenerateAll = async () => {
+    setGenerating(true);
+    try {
+      const maxLevel = config.progression.maxLevel;
+      const sorted = [...breakpoints].sort((a, b) => a - b);
+
+      const tierList = orderedIds
+        .map((id) => {
+          const def = tiers[id] ?? defaultTierDef(id, breakpoints);
+          return `- ${id} (${def.displayName}): levels ${def.levels}`;
+        })
+        .join("\n");
+
+      const systemPrompt = `You are a game designer writing visual descriptions for player character sprite tiers in a fantasy MUD RPG.
+
+Each tier represents a power level that determines how the character's gear, magical effects, and overall presence appear in generated sprite art. The descriptions are used as prompt fragments for AI image generation.
+
+Write concise, vivid descriptions (1-2 sentences each) that create a clear visual progression from weakest to strongest. Focus on:
+- Equipment quality and materials
+- Magical effects and auras
+- Overall visual impressiveness
+
+The staff tier should be distinctly different — cosmic/divine authority, not just "more powerful."
+
+Output ONLY valid JSON — an object mapping tier ID to an object with "displayName" and "visualDescription" fields. No markdown fences, no commentary.`;
+
+      const userPrompt = `Max level: ${maxLevel}
+Number of tiers: ${sorted.length} (plus staff)
+
+Tiers:
+${tierList}
+
+Generate a displayName and visualDescription for each tier that creates a satisfying visual progression from level 1 to ${maxLevel}. The lowest tier should feel like a humble beginner; the highest regular tier should feel like a legendary champion at the peak of mortal power.`;
+
+      const response = await invoke<string>("llm_complete", { systemPrompt, userPrompt });
+      const parsed = parseLlmJson<Record<string, { displayName?: string; visualDescription?: string }>>(
+        response,
+        "tier-descriptions",
+      );
+
+      const fullTiers: Record<string, TierDefinitionConfig> = {};
+      for (const key of orderedIds) {
+        const existing = tiers[key] ?? defaultTierDef(key, breakpoints);
+        const generated = parsed[key];
+        fullTiers[key] = {
+          displayName: generated?.displayName ?? existing.displayName,
+          levels: existing.levels,
+          visualDescription: generated?.visualDescription ?? existing.visualDescription,
+        };
+      }
+      onChange({ playerTiers: fullTiers });
+    } catch (err) {
+      console.error("Failed to generate tier descriptions:", err);
+    } finally {
+      setGenerating(false);
+    }
+  };
+
   return (
     <>
-      <p className="mb-3 text-xs leading-relaxed text-text-muted">
-        Player tiers control the visual progression of character sprites. Each tier defines how
-        equipment, magical effects, and overall power level appear in generated sprite art.
-        Tiers are derived from the level breakpoints configured above.
-      </p>
+      <div className="mb-3 flex items-center gap-3">
+        <p className="flex-1 text-xs leading-relaxed text-text-muted">
+          Player tiers control the visual progression of character sprites. Each tier defines how
+          equipment, magical effects, and overall power level appear in generated sprite art.
+        </p>
+        <ActionButton
+          onClick={handleGenerateAll}
+          disabled={!hasLlmKey || generating}
+          variant="secondary"
+          size="sm"
+          title={!hasLlmKey ? "No LLM API key configured" : "Generate display names and visual descriptions for all tiers"}
+        >
+          {generating ? "Generating..." : "AI Fill All"}
+        </ActionButton>
+      </div>
       {orderedIds.map((tierId) => {
         const tier = tiers[tierId] ?? defaultTierDef(tierId, breakpoints);
         return (

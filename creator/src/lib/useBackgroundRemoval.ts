@@ -1,6 +1,7 @@
 import { useState, useCallback } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import type { AssetContext, AssetEntry } from "@/types/assets";
+import { useAssetStore } from "@/stores/assetStore";
 
 let bgRemovalModule: typeof import("@imgly/background-removal") | null = null;
 
@@ -60,6 +61,8 @@ export async function removeBgAndSave(
       await invoke("set_active_variant", { variantGroup, assetId: entry.id });
       console.log(`[bg-removal] Set as active variant for ${variantGroup}`);
     }
+    // Refresh the in-memory asset list so the UI reflects the change
+    await useAssetStore.getState().loadAssets();
     return entry;
   } catch (e) {
     // BG removal is best-effort — don't block the main flow

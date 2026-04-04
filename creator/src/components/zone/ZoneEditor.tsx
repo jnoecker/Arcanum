@@ -324,6 +324,20 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
           Graphical zone
         </label>
 
+        {/* PvP zone toggle */}
+        <label className="flex items-center gap-2 text-xs text-text-secondary">
+          <input
+            type="checkbox"
+            checked={!!zoneState.data.pvpEnabled}
+            onChange={(e) => {
+              const updated = { ...zoneState.data, pvpEnabled: e.target.checked || undefined };
+              updateZone(zoneId, updated);
+            }}
+            className="accent-accent"
+          />
+          PvP zone
+        </label>
+
         <div className="ml-auto flex items-center gap-2">
           {/* View toggle */}
           <div className="segmented-control" role="tablist" aria-label="Zone views">

@@ -68,9 +68,18 @@ const WORLD_PANELS: PanelDef[] = [
   { id: "guilds", label: "Guilds", group: "world", host: "config", kicker: "Guilds", title: "Guild system", description: "Guild ranks, permissions, friends, and defaults.", maxWidth: "max-w-5xl" },
   { id: "emotes", label: "Emotes", group: "world", host: "config", kicker: "Social", title: "Emote presets", description: "Quick-action emotes available to players in the chat panel.", maxWidth: "max-w-5xl" },
   { id: "housing", label: "Housing", group: "world", host: "config", kicker: "Housing", title: "Player housing", description: "Room templates, costs, and housing system settings.", maxWidth: "max-w-5xl" },
+  { id: "guildHalls", label: "Guild Halls", group: "world", host: "config", kicker: "Social", title: "Guild halls", description: "Guild housing costs, room templates, and hall configuration.", maxWidth: "max-w-5xl" },
   { id: "pets", label: "Pets", group: "world", host: "config", kicker: "Companions", title: "Pet system", description: "Define pet templates that can be summoned by abilities.", maxWidth: "max-w-5xl" },
   { id: "worldCycle", label: "Day & Weather", group: "world", host: "config", kicker: "Environment", title: "Day/night & weather", description: "Day/night cycle timing, time periods, and weather transition pacing.", maxWidth: "max-w-5xl" },
   { id: "worldEvents", label: "Events", group: "world", host: "config", kicker: "Seasonal", title: "World events", description: "Seasonal events with date schedules, flags, and broadcast messages.", maxWidth: "max-w-5xl" },
+  { id: "prestige", label: "Prestige", group: "world", host: "config", kicker: "Progression", title: "Prestige system", description: "Prestige ranks, XP costs, and perk rewards for endgame progression.", maxWidth: "max-w-5xl" },
+  { id: "respec", label: "Respec", group: "world", host: "config", kicker: "Progression", title: "Stat respec", description: "Gold cost and cooldown for reassigning stat points.", maxWidth: "max-w-5xl" },
+  { id: "currencies", label: "Currencies", group: "world", host: "config", kicker: "Economy", title: "Secondary currencies", description: "Quest points, honor, crafting tokens, and other non-gold currencies.", maxWidth: "max-w-5xl" },
+  { id: "lottery", label: "Lottery", group: "world", host: "config", kicker: "Economy", title: "Lottery system", description: "Ticket cost, drawing interval, and jackpot settings.", maxWidth: "max-w-5xl" },
+  { id: "gambling", label: "Gambling", group: "world", host: "config", kicker: "Economy", title: "Dice gambling", description: "Min/max bet, win chance, and payout multiplier for tavern gambling.", maxWidth: "max-w-5xl" },
+  { id: "autoQuests", label: "Bounties", group: "world", host: "config", kicker: "Quests", title: "Auto-generated bounties", description: "Time-limited bounty quests with scaling rewards.", maxWidth: "max-w-5xl" },
+  { id: "dailyQuests", label: "Dailies", group: "world", host: "config", kicker: "Quests", title: "Daily & weekly quests", description: "Rotating quest pools with streak bonuses.", maxWidth: "max-w-5xl" },
+  { id: "globalQuests", label: "Global Events", group: "world", host: "config", kicker: "Quests", title: "Global competitions", description: "Server-wide timed objectives with shared rewards.", maxWidth: "max-w-5xl" },
 ];
 
 // ─── Lore panels ───────────────────────────────────────────────────

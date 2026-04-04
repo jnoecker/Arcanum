@@ -308,6 +308,19 @@ export function RoomPanel({
         </label>
       </Section>
 
+      {/* Tavern */}
+      <Section title="Tavern" defaultExpanded={false}>
+        <label className="flex items-center gap-2 text-xs text-text-secondary">
+          <input
+            type="checkbox"
+            checked={room.tavern ?? false}
+            onChange={(e) => onWorldChange(updateRoom(world, roomId, { tavern: e.target.checked || undefined }))}
+            className="accent-accent"
+          />
+          Tavern (enables gambling)
+        </label>
+      </Section>
+
       {/* Mobs */}
       <Section
         title={`Mobs (${mobs.length})`}

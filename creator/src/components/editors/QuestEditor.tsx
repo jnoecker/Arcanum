@@ -93,7 +93,7 @@ export function QuestEditor({
   const handleRewardChange = useCallback(
     (field: keyof QuestRewardsFile, value: number | undefined) => {
       const next: QuestRewardsFile = { ...rewards, [field]: value };
-      const hasReward = (next.xp ?? 0) > 0 || (next.gold ?? 0) > 0;
+      const hasReward = (next.xp ?? 0) > 0 || (next.gold ?? 0) > 0 || (next.currencies && Object.keys(next.currencies).length > 0);
       patch({ rewards: hasReward ? next : undefined });
     },
     [rewards, patch],
@@ -219,6 +219,51 @@ export function QuestEditor({
               placeholder="0"
               min={0}
             />
+          </FieldRow>
+          <FieldRow label="Currencies" hint="Secondary currency rewards (e.g. quest_points, honor)">
+            <div className="flex flex-col gap-1">
+              {Object.entries(rewards.currencies ?? {}).map(([key, amount]) => (
+                <div key={key} className="flex items-center gap-2">
+                  <TextInput
+                    value={key}
+                    onCommit={(newKey) => {
+                      const next = { ...rewards.currencies };
+                      const val = next[key];
+                      delete next[key];
+                      if (newKey) next[newKey] = val ?? 0;
+                      patch({ rewards: { ...rewards, currencies: Object.keys(next).length > 0 ? next : undefined } });
+                    }}
+                    placeholder="currency key"
+                  />
+                  <NumberInput
+                    value={amount as number}
+                    onCommit={(v) => {
+                      const next = { ...(rewards.currencies ?? {}), [key]: v ?? 0 };
+                      patch({ rewards: { ...rewards, currencies: next } });
+                    }}
+                  />
+                  <IconButton
+                    onClick={() => {
+                      const next = { ...rewards.currencies };
+                      delete next[key];
+                      patch({ rewards: { ...rewards, currencies: Object.keys(next).length > 0 ? next : undefined } });
+                    }}
+                    title="Remove"
+                  >
+                    &times;
+                  </IconButton>
+                </div>
+              ))}
+              <button
+                onClick={() => {
+                  const next = { ...(rewards.currencies ?? {}), "": 0 };
+                  patch({ rewards: { ...rewards, currencies: next } });
+                }}
+                className="self-start rounded border border-border-default px-2 py-0.5 text-2xs text-text-secondary hover:bg-bg-tertiary"
+              >
+                + Add currency
+              </button>
+            </div>
           </FieldRow>
         </div>
       </Section>

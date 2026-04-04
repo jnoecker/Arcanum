@@ -34,11 +34,20 @@ import { CraftingStudio } from "./CraftingStudio";
 import { GuildDesigner } from "./GuildDesigner";
 import { EmotePresetsPanel } from "./panels/EmotePresetsPanel";
 import { HousingPanel } from "./panels/HousingPanel";
+import { GuildHallsPanel } from "./panels/GuildHallsPanel";
 import { FactionPanel } from "./panels/FactionPanel";
 import { PetsPanel } from "./panels/PetsPanel";
 import { EnchantingPanel } from "./panels/EnchantingPanel";
 import { WorldCyclePanel } from "./panels/WorldCyclePanel";
 import { WorldEventsPanel } from "./panels/WorldEventsPanel";
+import { PrestigePanel } from "./panels/PrestigePanel";
+import { RespecPanel } from "./panels/RespecPanel";
+import { CurrenciesPanel } from "./panels/CurrenciesPanel";
+import { LotteryPanel } from "./panels/LotteryPanel";
+import { GamblingPanel } from "./panels/GamblingPanel";
+import { AutoQuestsPanel } from "./panels/AutoQuestsPanel";
+import { DailyQuestsPanel } from "./panels/DailyQuestsPanel";
+import { GlobalQuestsPanel } from "./panels/GlobalQuestsPanel";
 
 import { AchievementDesigner } from "./AchievementDesigner";
 import { AchievementDefEditor } from "./AchievementDefEditor";
@@ -163,12 +172,30 @@ function renderPanel(panelId: string, props: ConfigPanelProps): ReactNode {
       return <EmotePresetsPanel config={config} onChange={onChange} />;
     case "housing":
       return <HousingPanel config={config} onChange={onChange} />;
+    case "guildHalls":
+      return <GuildHallsPanel config={config} onChange={onChange} />;
     case "pets":
       return <PetsPanel config={config} onChange={onChange} />;
     case "worldCycle":
       return <WorldCyclePanel config={config} onChange={onChange} />;
     case "worldEvents":
       return <WorldEventsPanel config={config} onChange={onChange} />;
+    case "prestige":
+      return <PrestigePanel config={config} onChange={onChange} />;
+    case "respec":
+      return <RespecPanel config={config} onChange={onChange} />;
+    case "currencies":
+      return <CurrenciesPanel config={config} onChange={onChange} />;
+    case "lottery":
+      return <LotteryPanel config={config} onChange={onChange} />;
+    case "gambling":
+      return <GamblingPanel config={config} onChange={onChange} />;
+    case "autoQuests":
+      return <AutoQuestsPanel config={config} onChange={onChange} />;
+    case "dailyQuests":
+      return <DailyQuestsPanel config={config} onChange={onChange} />;
+    case "globalQuests":
+      return <GlobalQuestsPanel config={config} onChange={onChange} />;
 
     // Content
     case "achievements":

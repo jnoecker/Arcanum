@@ -3,8 +3,8 @@ import { useAdminStore } from "@/stores/adminStore";
 
 const Section = memo(function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-[22px] border border-white/10 bg-gradient-panel-light p-4 shadow-section-sm">
-      <h4 className="mb-2 text-[11px] uppercase tracking-wide-ui text-text-muted">{title}</h4>
+    <div className="rounded-3xl border border-white/10 bg-gradient-panel-light p-4 shadow-section">
+      <h4 className="mb-2 text-2xs uppercase tracking-wide-ui text-text-muted">{title}</h4>
       {children}
     </div>
   );
@@ -66,7 +66,7 @@ export function AdminRoomDetail() {
         </button>
         <div className="min-w-0 flex-1">
           <h3 className="truncate font-display text-xl text-text-primary">{room.title}</h3>
-          <p className="mt-0.5 font-mono text-[11px] text-text-muted">{room.id}</p>
+          <p className="mt-0.5 font-mono text-2xs text-text-muted">{room.id}</p>
         </div>
         {hasCoords && (
           <span className="shrink-0 rounded-full bg-black/15 px-2.5 py-0.5 font-mono text-2xs text-text-muted">
@@ -77,7 +77,7 @@ export function AdminRoomDetail() {
 
       {/* Description */}
       {room.description && (
-        <div className="rounded-[22px] border border-white/10 bg-gradient-panel-light p-4 shadow-section-sm">
+        <div className="rounded-3xl border border-white/10 bg-gradient-panel-light p-4 shadow-section">
           <p className="text-sm leading-6 text-text-secondary">{room.description}</p>
         </div>
       )}
@@ -128,7 +128,7 @@ export function AdminRoomDetail() {
                 <div key={mob.id}>
                   <div className="flex items-center justify-between py-1">
                     <span className="text-xs text-text-primary">{mob.name}</span>
-                    <span className="font-mono text-[11px] text-text-muted">{mob.templateKey}</span>
+                    <span className="font-mono text-2xs text-text-muted">{mob.templateKey}</span>
                   </div>
                   <HpBar label="HP" current={mob.hp} max={mob.maxHp} />
                 </div>

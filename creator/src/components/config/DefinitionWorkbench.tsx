@@ -83,9 +83,9 @@ export function DefinitionWorkbench<T>({
 
   return (
     <div className="grid gap-5 xl:grid-cols-[18rem_minmax(0,1fr)]">
-      <div className="panel-surface-light rounded-[24px] p-4">
+      <div className="panel-surface-light rounded-3xl p-4">
         <div className="mb-4">
-          <p className="text-[11px] uppercase tracking-ui text-text-muted">{countLabel}</p>
+          <p className="text-2xs uppercase tracking-ui text-text-muted">{countLabel}</p>
           <h4 className="mt-2 font-display text-xl text-text-primary">{Object.keys(items).length} entries</h4>
         </div>
 
@@ -126,7 +126,7 @@ export function DefinitionWorkbench<T>({
               <button
                 key={id}
                 onClick={() => setSelectedId(id)}
-                className={`rounded-[20px] border px-4 py-3 text-left transition ${
+                className={`rounded-2xl border px-4 py-3 text-left transition ${
                   selectedCard
                     ? "border-border-active bg-gradient-active"
                     : "border-white/8 bg-white/4 hover:bg-white/8"
@@ -134,7 +134,7 @@ export function DefinitionWorkbench<T>({
               >
                 <div className="min-w-0">
                   <div className="truncate font-display text-lg text-text-primary">{getDisplayName(item)}</div>
-                  <div className="mt-1 truncate text-[11px] text-text-muted">{id}</div>
+                  <div className="mt-1 truncate text-2xs text-text-muted">{id}</div>
                 </div>
                 {badges.length > 0 && (
                   <div className="mt-3 flex flex-wrap gap-2 text-2xs uppercase tracking-label text-text-muted">
@@ -151,7 +151,7 @@ export function DefinitionWorkbench<T>({
             );
           })}
           {itemIds.length === 0 && (
-            <div className="rounded-[20px] border border-dashed border-white/12 bg-white/4 px-4 py-6 text-sm text-text-muted">
+            <div className="rounded-2xl border border-dashed border-white/12 bg-white/4 px-4 py-6 text-sm text-text-muted">
               {emptyMessage}
             </div>
           )}
@@ -159,10 +159,10 @@ export function DefinitionWorkbench<T>({
       </div>
 
       {selectedId && selected ? (
-        <div className="panel-surface rounded-[24px] p-5">
+        <div className="panel-surface rounded-3xl p-5">
           <div className="flex flex-wrap items-start justify-between gap-4 border-b border-white/8 pb-4">
             <div>
-              <p className="text-[11px] uppercase tracking-ui text-text-muted">{title}</p>
+              <p className="text-2xs uppercase tracking-ui text-text-muted">{title}</p>
               <h4 className="mt-2 font-display text-3xl text-text-primary">{getDisplayName(selected)}</h4>
               <p className="mt-2 max-w-2xl text-sm leading-7 text-text-secondary">{description}</p>
             </div>
@@ -179,7 +179,7 @@ export function DefinitionWorkbench<T>({
           </div>
         </div>
       ) : (
-        <div className="panel-surface-light rounded-[24px] border-dashed px-6 py-10 text-center">
+        <div className="panel-surface-light rounded-3xl border-dashed px-6 py-10 text-center">
           <p className="font-display text-base text-text-primary">{emptyTitle ?? "Select an entry"}</p>
           <p className="mx-auto mt-2 max-w-xs text-xs leading-6 text-text-muted">{emptyDescription ?? "Choose from the list or create a new one to begin."}</p>
         </div>

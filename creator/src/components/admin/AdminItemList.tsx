@@ -21,7 +21,7 @@ const ItemRow = memo(function ItemRow({ item }: { item: ItemEntry }) {
             </span>
           )}
         </div>
-        <div className="mt-1 flex flex-wrap gap-2 text-[11px]">
+        <div className="mt-1 flex flex-wrap gap-2 text-2xs">
           <span className="text-status-warning">
             {item.basePrice.toLocaleString()}g
           </span>
@@ -58,13 +58,13 @@ export function AdminItemList() {
             All registered items in the world.
           </p>
         </div>
-        <span className="text-[11px] uppercase tracking-wide-ui text-text-muted">
+        <span className="text-2xs uppercase tracking-wide-ui text-text-muted">
           {items.length} registered
         </span>
       </div>
 
       {items.length === 0 ? (
-        <div className="rounded-[22px] border border-dashed border-white/12 bg-white/4 px-6 py-12 text-center">
+        <div className="rounded-3xl border border-dashed border-white/12 bg-white/4 px-6 py-12 text-center">
           <p className="font-display text-base text-text-secondary">No items found</p>
           <p className="mt-1 text-sm text-text-muted">
             The server has no items registered.

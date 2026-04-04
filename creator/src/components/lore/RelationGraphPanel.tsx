@@ -83,6 +83,7 @@ function RelationGraphInner() {
       <div className="rounded-xl border border-border-muted bg-bg-secondary/50 px-4 py-3">
         <button
           onClick={() => setInferenceOpen((o) => !o)}
+          aria-expanded={inferenceOpen}
           className="flex w-full items-center gap-2 text-left text-xs font-medium text-text-secondary transition hover:text-text-primary"
         >
           <span

@@ -230,11 +230,11 @@ export function ImportWizard({ onClose }: { onClose: () => void }) {
                     <span className="block truncate text-sm text-text-primary">
                       {c.title}
                     </span>
-                    <span className="block truncate text-[10px] text-text-muted">
+                    <span className="block truncate text-3xs text-text-muted">
                       {c.filePath}
                     </span>
                     {c.tags.length > 0 && (
-                      <span className="block truncate text-[10px] text-text-muted/60">
+                      <span className="block truncate text-3xs text-text-muted/60">
                         {c.tags.join(", ")}
                       </span>
                     )}

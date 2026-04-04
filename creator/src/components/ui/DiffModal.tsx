@@ -54,24 +54,34 @@ export function DiffModal({ onConfirm, onCancel }: DiffModalProps) {
     >
       <div className="flex flex-col gap-4">
         {error && (
-          <div role="alert" className="rounded-[22px] border border-status-error/30 bg-status-error/10 px-4 py-3 text-sm text-status-error">
-            {error}
+          <div role="alert" className="flex items-center justify-between rounded-3xl border border-status-error/30 bg-status-error/10 px-4 py-3 text-sm text-status-error">
+            <span>{error}</span>
+            <button
+              onClick={() => {
+                setError(null);
+                setDiffs(null);
+                computeDiffs().then(setDiffs).catch((e) => setError(String(e)));
+              }}
+              className="ml-3 shrink-0 rounded-full border border-status-error/30 px-3 py-1 text-xs text-status-error transition-colors hover:bg-status-error/20"
+            >
+              Retry
+            </button>
           </div>
         )}
         {!diffs && !error && (
-          <div className="panel-surface-light rounded-[22px] px-4 py-6 text-sm text-text-muted">
+          <div className="panel-surface-light rounded-3xl px-4 py-6 text-sm text-text-muted">
             Reading the current zone and config deltas...
           </div>
         )}
         {diffs?.map((diff) => (
-          <section key={diff.label} className="panel-surface-light rounded-[24px] p-4">
+          <section key={diff.label} className="panel-surface-light rounded-3xl p-4">
             <div className="mb-3 flex flex-wrap items-center gap-2">
               <h3 className="font-display text-sm text-text-primary">{diff.label}</h3>
               <span className="rounded-full border border-white/10 bg-black/10 px-3 py-1 text-2xs text-text-secondary">
                 {diff.changeCount} change{diff.changeCount !== 1 ? "s" : ""}
               </span>
             </div>
-            <div className="max-h-72 overflow-auto rounded-[18px] border border-white/8 bg-[rgba(8,12,28,0.42)] font-mono text-[11px] leading-5">
+            <div className="max-h-72 overflow-auto rounded-2xl border border-white/8 bg-[rgba(8,12,28,0.42)] font-mono text-2xs leading-5">
               {diff.lines.map((line, index) => (
                 <div
                   key={index}

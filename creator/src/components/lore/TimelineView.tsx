@@ -208,7 +208,7 @@ export function TimelineView({
                   textAnchor="middle"
                   fill={isSelected ? "var(--color-text-primary)" : "var(--color-text-secondary)"}
                   fontSize={10}
-                  style={{ fontFamily: "var(--font-sans), Georgia, serif" }}
+                  style={{ fontFamily: "var(--font-sans)" }}
                   fontWeight={isSelected ? 600 : 400}
                 >
                   {event.title.length > 20

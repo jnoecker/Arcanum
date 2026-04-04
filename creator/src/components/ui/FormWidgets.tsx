@@ -287,7 +287,7 @@ export function Section({
       {expanded && (
         <>
           {description && (
-            <p className="mb-2 mt-1.5 text-[11px] leading-relaxed text-text-muted/70">{description}</p>
+            <p className="mb-2 mt-1.5 text-2xs leading-relaxed text-text-muted/70">{description}</p>
           )}
           <div id={contentId} className="mt-1.5">{children}</div>
         </>
@@ -584,7 +584,7 @@ export function InlineError({
   onRetry?: () => void;
 }) {
   return (
-    <div className="rounded-[16px] border border-status-error/30 bg-status-error/10 px-4 py-3 text-xs text-status-error" role="alert">
+    <div className="rounded-2xl border border-status-error/30 bg-status-error/10 px-4 py-3 text-xs text-status-error" role="alert">
       <p>{error}</p>
       {(onRetry || onDismiss) && (
         <div className="mt-2 flex gap-2">

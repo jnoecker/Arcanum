@@ -136,15 +136,9 @@
   --glow-blue:         0 0 24px rgba(140, 174, 201, 0.22);
 
   /* Shadows */
-  --shadow-deep:     0 8px 32px rgba(8, 10, 18, 0.34);
-  --shadow-panel:    0 16px 56px rgba(8, 10, 18, 0.42);
-  --shadow-section:  0 18px 50px rgba(9, 12, 24, 0.24);
-  --shadow-section-sm: 0 16px 42px rgba(9, 12, 24, 0.22);
-  --shadow-image:    0 18px 44px rgba(8, 10, 18, 0.26);
-  --shadow-bar:      0 12px 36px rgba(8, 10, 18, 0.28);
-  --shadow-hero:     0 24px 90px rgba(8, 10, 18, 0.32);
-  --shadow-glow:     0 10px 26px rgba(137, 155, 214, 0.24);
-  --shadow-glow-sm:  0 10px 24px rgba(137, 155, 214, 0.18);
+  --shadow-section:  0 16px 44px rgba(9, 12, 24, 0.24);
+  --shadow-panel:    0 18px 60px rgba(8, 10, 18, 0.38);
+  --shadow-glow:     0 10px 26px rgba(137, 155, 214, 0.22);
 
   /* Easing */
   --ease-unfurl:   cubic-bezier(0.16, 1, 0.3, 1);
@@ -348,7 +342,7 @@ select,
   border: 1px solid var(--border-accent-subtle);
   background: var(--bg-active-strong);
   color: var(--color-text-primary);
-  box-shadow: var(--shadow-glow-sm);
+  box-shadow: var(--shadow-glow);
 }
 
 .shell-pill-primary:hover:not(:disabled) {
@@ -495,7 +489,7 @@ select,
   border-color: var(--border-accent-subtle);
   background: var(--bg-active-strong);
   color: var(--color-text-primary);
-  box-shadow: var(--shadow-glow-sm);
+  box-shadow: var(--shadow-glow);
 }
 
 .panel-surface {
@@ -507,7 +501,7 @@ select,
 .panel-surface-light {
   border: 1px solid rgba(255, 255, 255, 0.08);
   background: rgba(8, 12, 28, 0.14);
-  box-shadow: var(--shadow-section-sm);
+  box-shadow: var(--shadow-section);
 }
 
 .dialog-overlay {
@@ -621,7 +615,7 @@ select,
   background:
     radial-gradient(circle at top right, rgba(184, 216, 232, 0.16), transparent 48%),
     linear-gradient(145deg, rgba(168, 151, 210, 0.2), rgba(42, 50, 71, 0.9));
-  box-shadow: var(--shadow-glow-sm);
+  box-shadow: var(--shadow-glow);
 }
 
 .orbital-tab {
@@ -646,7 +640,7 @@ select,
   background:
     radial-gradient(circle at top right, rgba(184, 216, 232, 0.14), transparent 44%),
     linear-gradient(145deg, rgba(168, 151, 210, 0.18), rgba(32, 40, 61, 0.92));
-  box-shadow: var(--shadow-glow-sm);
+  box-shadow: var(--shadow-glow);
   transform: translateY(-1px);
 }
 
@@ -725,23 +719,42 @@ select,
 @utility shadow-section {
   box-shadow: var(--shadow-section);
 }
-@utility shadow-section-sm {
-  box-shadow: var(--shadow-section-sm);
-}
-@utility shadow-image {
-  box-shadow: var(--shadow-image);
-}
-@utility shadow-bar {
-  box-shadow: var(--shadow-bar);
-}
-@utility shadow-hero {
-  box-shadow: var(--shadow-hero);
+@utility shadow-panel {
+  box-shadow: var(--shadow-panel);
 }
 @utility shadow-glow {
   box-shadow: var(--shadow-glow);
 }
-@utility shadow-glow-sm {
-  box-shadow: var(--shadow-glow-sm);
+
+/* ─── Ornate Divider (baroque glyph at midpoint) ─── */
+.ornate-divider {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 1.5rem;
+  pointer-events: none;
+}
+
+.ornate-divider::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 10rem;
+  height: 1px;
+  background: linear-gradient(to right, transparent, rgba(168, 151, 210, 0.3) 20%, rgba(168, 151, 210, 0.3) 80%, transparent);
+}
+
+.ornate-divider::after {
+  content: '';
+  position: relative;
+  display: block;
+  width: 3rem;
+  height: 1.25rem;
+  background: url('./assets/divider-glyph.png') center/contain no-repeat;
+  mix-blend-mode: screen;
 }
 
 /* ─── Focus ring (Accent unfurl) ─── */

@@ -107,6 +107,7 @@ export function RegistryPanel<T>({
         <input
           className="mb-2 w-full rounded border border-border-default bg-bg-primary px-1.5 py-0.5 text-xs text-text-primary outline-none focus:border-accent/50 focus-visible:ring-2 focus-visible:ring-border-active"
           placeholder={`Search ${title.toLowerCase()}...`}
+          aria-label={`Search ${title.toLowerCase()}`}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />

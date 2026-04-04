@@ -141,7 +141,7 @@ export function NewProjectWizard({ onClose }: NewProjectWizardProps) {
     >
       {step === 1 && (
         <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_20rem]">
-          <section className="panel-surface-light rounded-[24px] p-5">
+          <section className="panel-surface-light rounded-3xl p-5">
             <p className="text-2xs uppercase tracking-wide-ui text-text-muted">World identity</p>
             <div className="mt-4 space-y-4">
               <div>
@@ -179,19 +179,19 @@ export function NewProjectWizard({ onClose }: NewProjectWizardProps) {
                 </div>
               </div>
               {nameError && (
-                <div role="alert" className="rounded-[18px] border border-status-error/30 bg-status-error/10 px-4 py-3 text-sm text-status-error">
+                <div role="alert" className="rounded-2xl border border-status-error/30 bg-status-error/10 px-4 py-3 text-sm text-status-error">
                   {nameError}
                 </div>
               )}
             </div>
           </section>
 
-          <aside className="instrument-panel rounded-[28px] p-5">
+          <aside className="instrument-panel rounded-3xl p-5">
             <p className="text-2xs uppercase tracking-wide-ui text-text-muted">Projected path</p>
             <p className="mt-3 break-all font-mono text-xs leading-6 text-text-secondary">
               {fullPath || "Choose a directory and name to reveal the final path."}
             </p>
-            <div className="mt-5 rounded-[20px] border border-white/8 bg-black/12 p-4">
+            <div className="mt-5 rounded-2xl border border-white/8 bg-black/12 p-4">
               <p className="font-display text-sm text-text-primary">Naming guidance</p>
               <p className="mt-2 text-xs leading-6 text-text-secondary">
                 World folders should begin with a letter. Use letters, digits, hyphens, and underscores so the generated project can travel cleanly between tools.
@@ -203,7 +203,7 @@ export function NewProjectWizard({ onClose }: NewProjectWizardProps) {
 
       {step === 2 && (
         <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_18rem]">
-          <section className="panel-surface-light rounded-[24px] p-5">
+          <section className="panel-surface-light rounded-3xl p-5">
             <p className="text-2xs uppercase tracking-wide-ui text-text-muted">Foundational template</p>
             <div role="radiogroup" aria-label="Project template" className="mt-4 grid gap-3">
               {TEMPLATES.map((template) => (
@@ -212,9 +212,9 @@ export function NewProjectWizard({ onClose }: NewProjectWizardProps) {
                   role="radio"
                   aria-checked={selectedTemplate.id === template.id}
                   onClick={() => setSelectedTemplate(template)}
-                  className={`focus-ring rounded-[22px] border p-4 text-left transition ${
+                  className={`focus-ring rounded-3xl border p-4 text-left transition ${
                     selectedTemplate.id === template.id
-                      ? "border-[var(--border-glow-strong)] bg-[linear-gradient(145deg,rgba(168,151,210,0.18),rgba(42,50,71,0.9))] shadow-glow-sm"
+                      ? "border-[var(--border-glow-strong)] bg-[linear-gradient(145deg,rgba(168,151,210,0.18),rgba(42,50,71,0.9))] shadow-glow"
                       : "border-white/8 bg-black/12 hover:border-white/14 hover:bg-white/6"
                   }`}
                 >
@@ -225,7 +225,7 @@ export function NewProjectWizard({ onClose }: NewProjectWizardProps) {
             </div>
           </section>
 
-          <aside className="instrument-panel rounded-[28px] p-5">
+          <aside className="instrument-panel rounded-3xl p-5">
             <p className="text-2xs uppercase tracking-wide-ui text-text-muted">Ports of entry</p>
             <div className="mt-4 space-y-4">
               <div>
@@ -262,7 +262,7 @@ export function NewProjectWizard({ onClose }: NewProjectWizardProps) {
       )}
 
       {step === 3 && (
-        <div aria-live="polite" className="flex min-h-[18rem] flex-col items-center justify-center gap-4 rounded-[28px] border border-white/8 bg-[radial-gradient(circle_at_top,rgba(184,216,232,0.12),rgba(8,12,28,0.18)_40%),rgba(8,12,28,0.2)] px-6 text-center">
+        <div aria-live="polite" className="flex min-h-[18rem] flex-col items-center justify-center gap-4 rounded-3xl border border-white/8 bg-[radial-gradient(circle_at_top,rgba(184,216,232,0.12),rgba(8,12,28,0.18)_40%),rgba(8,12,28,0.2)] px-6 text-center">
           {stage !== "error" && stage !== "done" && <Spinner className="h-6 w-6 border-2" />}
           {stage === "done" && (
             <div className="flex h-14 w-14 items-center justify-center rounded-full border border-status-success/40 bg-status-success/10 text-xl text-status-success">

@@ -128,42 +128,42 @@ export function BulkActionsBar() {
       <button
         onClick={() => bulkSetDraft(ids, true)}
         aria-label="Mark selected as draft"
-        className="rounded-full border border-white/8 px-2 py-0.5 text-[10px] text-text-secondary hover:bg-white/8"
+        className="rounded-full border border-white/8 px-2 py-0.5 text-3xs text-text-secondary hover:bg-white/8"
       >
         Draft
       </button>
       <button
         onClick={() => bulkSetDraft(ids, false)}
         aria-label="Publish selected"
-        className="rounded-full border border-white/8 px-2 py-0.5 text-[10px] text-text-secondary hover:bg-white/8"
+        className="rounded-full border border-white/8 px-2 py-0.5 text-3xs text-text-secondary hover:bg-white/8"
       >
         Publish
       </button>
       <button
         onClick={() => setShowTag(true)}
         aria-label="Tag selected articles"
-        className="rounded-full border border-white/8 px-2 py-0.5 text-[10px] text-text-secondary hover:bg-white/8"
+        className="rounded-full border border-white/8 px-2 py-0.5 text-3xs text-text-secondary hover:bg-white/8"
       >
         Tag
       </button>
       <button
         onClick={() => setShowTemplate(true)}
         aria-label="Change template of selected articles"
-        className="rounded-full border border-white/8 px-2 py-0.5 text-[10px] text-text-secondary hover:bg-white/8"
+        className="rounded-full border border-white/8 px-2 py-0.5 text-3xs text-text-secondary hover:bg-white/8"
       >
         Template
       </button>
       <button
         onClick={() => setShowDelete(true)}
         aria-label="Delete selected articles"
-        className="rounded-full border border-white/8 px-2 py-0.5 text-[10px] text-status-danger hover:bg-status-danger/10"
+        className="rounded-full border border-white/8 px-2 py-0.5 text-3xs text-status-danger hover:bg-status-danger/10"
       >
         Delete
       </button>
       <button
         onClick={clearSelection}
         aria-label="Clear selection"
-        className="ml-auto text-[10px] text-text-muted hover:text-text-primary"
+        className="ml-auto text-3xs text-text-muted hover:text-text-primary"
       >
         Clear
       </button>
@@ -195,7 +195,7 @@ export function BulkActionsBar() {
                 }
                 setShowTag(false);
               }}
-              className="rounded-full border border-accent/30 bg-accent/10 px-2 py-1 text-[10px] text-accent"
+              className="rounded-full border border-accent/30 bg-accent/10 px-2 py-1 text-3xs text-accent"
             >
               Add
             </button>

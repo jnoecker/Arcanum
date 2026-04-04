@@ -27,7 +27,7 @@ export function AdminZoneDetail({
           &#x2190; Back
         </button>
         <h3 className="font-display text-xl text-text-primary">{zone.name}</h3>
-        <span className="text-[11px] uppercase tracking-ui text-text-muted">
+        <span className="text-2xs uppercase tracking-ui text-text-muted">
           {zone.rooms.length} room{zone.rooms.length !== 1 ? "s" : ""}
         </span>
       </div>
@@ -50,9 +50,9 @@ export function AdminZoneDetail({
                 <div className="truncate font-display text-sm text-text-primary">
                   {room.title}
                 </div>
-                <div className="mt-0.5 text-[11px] text-text-muted">{room.id}</div>
+                <div className="mt-0.5 text-2xs text-text-muted">{room.id}</div>
               </div>
-              <div className="flex shrink-0 flex-wrap gap-1 text-[11px] text-text-muted">
+              <div className="flex shrink-0 flex-wrap gap-1 text-2xs text-text-muted">
                 {room.exits.map((exit) => (
                   <span key={exit} className="rounded-full bg-black/15 px-2 py-0.5">
                     {exit}

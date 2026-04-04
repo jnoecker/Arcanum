@@ -318,9 +318,9 @@ export function TimelinePanel() {
               <button
                 key={evt.id}
                 onClick={() => setSelectedEventId(evt.id)}
-                className={`focus-ring flex min-h-11 items-center justify-between rounded-[18px] px-3 py-2 text-left text-sm transition ${
+                className={`focus-ring flex min-h-11 items-center justify-between rounded-2xl px-3 py-2 text-left text-sm transition ${
                   evt.id === selectedEventId
-                    ? "border border-[var(--border-glow-strong)] bg-[linear-gradient(145deg,rgba(168,151,210,0.18),rgba(42,50,71,0.9))] text-text-primary shadow-glow-sm"
+                    ? "border border-[var(--border-glow-strong)] bg-[linear-gradient(145deg,rgba(168,151,210,0.18),rgba(42,50,71,0.9))] text-text-primary shadow-glow"
                     : "border border-transparent text-text-secondary hover:bg-bg-tertiary"
                 }`}
               >

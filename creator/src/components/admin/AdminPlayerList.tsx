@@ -48,7 +48,7 @@ function PlayerRow({
             </span>
           )}
         </div>
-        <div className="mt-1 flex flex-wrap gap-2 text-[11px]">
+        <div className="mt-1 flex flex-wrap gap-2 text-2xs">
           <span className="text-text-muted">Lv {player.level}</span>
           <span className="text-stellar-blue">{player.playerClass}</span>
           <span className="text-text-muted">{player.race}</span>
@@ -101,7 +101,7 @@ export function AdminPlayerList() {
           <h3 className="font-display text-lg text-text-primary">Inhabitants</h3>
           <p className="mt-0.5 text-xs text-text-muted">Players currently in the world. Click a name to inspect.</p>
         </div>
-        <span className="shrink-0 text-[11px] uppercase tracking-ui text-text-muted">
+        <span className="shrink-0 text-2xs uppercase tracking-ui text-text-muted">
           {players.length} present
         </span>
       </div>
@@ -128,7 +128,7 @@ export function AdminPlayerList() {
       )}
 
       {players.length === 0 ? (
-        <div className="rounded-[22px] border border-dashed border-white/12 bg-white/4 px-6 py-12 text-center">
+        <div className="rounded-3xl border border-dashed border-white/12 bg-white/4 px-6 py-12 text-center">
           <p className="font-display text-base text-text-secondary">The world is still</p>
           <p className="mt-1 text-sm text-text-muted">No souls walk the land at this moment. Use search to find offline players.</p>
         </div>

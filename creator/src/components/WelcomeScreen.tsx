@@ -60,11 +60,10 @@ export function WelcomeScreen({ onNewProject }: WelcomeScreenProps) {
       />
       <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(34,41,60,0.18),rgba(34,41,60,0.84))]" />
       <div className="absolute left-[-8rem] top-[-6rem] h-[28rem] w-[28rem] rounded-full bg-[radial-gradient(circle,rgba(168,151,210,0.22),transparent_66%)] blur-3xl" />
-      <div className="absolute bottom-[-10rem] right-[-10rem] h-[30rem] w-[30rem] rounded-full bg-[radial-gradient(circle,rgba(140,174,201,0.18),transparent_70%)] blur-3xl" />
 
       <div className="relative z-10 mx-auto flex w-full max-w-4xl flex-1 flex-col justify-center gap-6 px-6 py-8 lg:px-10">
         <div className="text-center">
-          <p className="text-[11px] uppercase tracking-wide-ui text-text-muted">Arcanum</p>
+          <p className="text-2xs uppercase tracking-wide-ui text-text-muted">Arcanum</p>
           <h1 className="mt-4 font-display text-4xl leading-[1.04] text-text-primary lg:text-5xl">
             Shape worlds, rules, and wonders from a single instrument.
           </h1>
@@ -74,7 +73,7 @@ export function WelcomeScreen({ onNewProject }: WelcomeScreenProps) {
         </div>
 
         <div className="grid min-h-0 gap-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(20rem,0.9fr)]">
-          <div className="rounded-[36px] border border-white/10 bg-[linear-gradient(155deg,rgba(54,63,90,0.9),rgba(37,45,68,0.92))] p-6 shadow-hero">
+          <div className="rounded-3xl border border-white/10 bg-[linear-gradient(155deg,rgba(54,63,90,0.9),rgba(37,45,68,0.92))] p-6 shadow-panel">
             <h2 className="font-display text-2xl text-text-primary">Enter the studio</h2>
             <p className="mt-2 text-sm leading-7 text-text-secondary">
               Return to your last working world, begin a fresh canon, or open a realm already on disk.
@@ -86,7 +85,7 @@ export function WelcomeScreen({ onNewProject }: WelcomeScreenProps) {
                 <button
                   onClick={() => void handleOpenRecent(recentProjects[0]!)}
                   disabled={loading === recentProjects[0]!.path}
-                  className="rounded-[22px] border border-[var(--border-accent-ring)] bg-[linear-gradient(135deg,rgba(168,151,210,0.34),rgba(140,174,201,0.22))] px-5 py-4 text-left text-sm font-medium text-text-primary transition hover:-translate-y-0.5 hover:shadow-[0_14px_34px_rgba(137,155,214,0.28)] disabled:opacity-50"
+                  className="rounded-3xl border border-[var(--border-accent-ring)] bg-[linear-gradient(135deg,rgba(168,151,210,0.34),rgba(140,174,201,0.22))] px-5 py-4 text-left text-sm font-medium text-text-primary transition hover:shadow-[0_14px_34px_rgba(137,155,214,0.28)] disabled:opacity-50"
                 >
                   <div>{loading === recentProjects[0]!.path ? "Opening..." : `Resume: ${recentProjects[0]!.name}`}</div>
                   <div className="mt-1 truncate text-xs font-normal text-text-secondary">{recentProjects[0]!.path}</div>
@@ -95,25 +94,25 @@ export function WelcomeScreen({ onNewProject }: WelcomeScreenProps) {
               <div className="grid gap-3 md:grid-cols-2">
                 <button
                   onClick={onNewProject}
-                  className="rounded-[22px] border border-white/10 bg-black/12 px-5 py-4 text-left text-sm font-medium text-text-primary transition hover:bg-white/10"
+                  className="rounded-3xl border border-white/10 bg-black/12 px-5 py-4 text-left text-sm font-medium text-text-primary transition hover:bg-white/10"
                 >
-                  <div className="text-[10px] uppercase tracking-ui text-text-muted">Founding</div>
+                  <div className="text-3xs uppercase tracking-ui text-text-muted">Founding</div>
                   <div className="mt-2">Create new project</div>
                   <div className="mt-1 text-xs font-normal text-text-secondary">Lay down a new world scaffold and start tuning it immediately.</div>
                 </button>
                 <button
                   onClick={handleOpen}
-                  className="rounded-[22px] border border-white/10 bg-black/12 px-5 py-4 text-left text-sm font-medium text-text-primary transition hover:bg-white/10"
+                  className="rounded-3xl border border-white/10 bg-black/12 px-5 py-4 text-left text-sm font-medium text-text-primary transition hover:bg-white/10"
                 >
-                  <div className="text-[10px] uppercase tracking-ui text-text-muted">Re-entry</div>
+                  <div className="text-3xs uppercase tracking-ui text-text-muted">Re-entry</div>
                   <div className="mt-2">Open existing project</div>
                   <div className="mt-1 text-xs font-normal text-text-secondary">Reconnect to a local project folder and restore its working state.</div>
                 </button>
                 <button
                   onClick={() => setShowR2Import(true)}
-                  className="rounded-[22px] border border-white/10 bg-black/12 px-5 py-4 text-left text-sm font-medium text-text-primary transition hover:bg-white/10 md:col-span-2"
+                  className="rounded-3xl border border-white/10 bg-black/12 px-5 py-4 text-left text-sm font-medium text-text-primary transition hover:bg-white/10 md:col-span-2"
                 >
-                  <div className="text-[10px] uppercase tracking-ui text-text-muted">Recovery</div>
+                  <div className="text-3xs uppercase tracking-ui text-text-muted">Recovery</div>
                   <div className="mt-2">Import from R2</div>
                   <div className="mt-1 text-xs font-normal text-text-secondary">Pull a published world down from R2 and continue shaping it locally.</div>
                 </button>
@@ -121,7 +120,7 @@ export function WelcomeScreen({ onNewProject }: WelcomeScreenProps) {
             </div>
           </div>
 
-          <div className="min-h-0 rounded-[36px] border border-white/10 bg-[linear-gradient(155deg,rgba(54,63,90,0.9),rgba(37,45,68,0.92))] p-6 shadow-hero">
+          <div className="min-h-0 rounded-3xl border border-white/10 bg-[linear-gradient(155deg,rgba(54,63,90,0.9),rgba(37,45,68,0.92))] p-6 shadow-panel">
             <div className="mb-4 flex items-center justify-between">
               <h3 className="font-display text-2xl text-text-primary">Recent worlds</h3>
               {recentProjects.length > 0 && (
@@ -135,7 +134,7 @@ export function WelcomeScreen({ onNewProject }: WelcomeScreenProps) {
                 {recentProjects.map((project) => (
                   <li
                     key={project.path}
-                    className="group flex items-center gap-2 rounded-[22px] border border-white/8 bg-black/12 px-4 py-3 transition hover:bg-white/8"
+                    className="group flex items-center gap-2 rounded-3xl border border-white/8 bg-black/12 px-4 py-3 transition hover:bg-white/8"
                   >
                     <button
                       onClick={() => handleOpenRecent(project)}
@@ -145,7 +144,7 @@ export function WelcomeScreen({ onNewProject }: WelcomeScreenProps) {
                       <div className="truncate text-sm font-medium text-text-primary">
                         {loading === project.path ? "Opening..." : project.name}
                       </div>
-                      <div className="mt-1 truncate text-[11px] text-text-muted">
+                      <div className="mt-1 truncate text-2xs text-text-muted">
                         {project.path}
                       </div>
                     </button>
@@ -163,7 +162,7 @@ export function WelcomeScreen({ onNewProject }: WelcomeScreenProps) {
                 ))}
               </ul>
             ) : (
-              <div className="rounded-[22px] border border-dashed border-white/10 bg-black/12 px-4 py-8 text-sm leading-7 text-text-muted">
+              <div className="rounded-3xl border border-dashed border-white/10 bg-black/12 px-4 py-8 text-sm leading-7 text-text-muted">
                 Your worlds will appear here once created. Start a new one above.
               </div>
             )}

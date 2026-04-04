@@ -153,6 +153,7 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder="Jump to article, panel, or zone..."
+          aria-label="Command palette search"
           className="w-full rounded-t-2xl border-b border-white/8 bg-transparent px-5 py-4 text-sm text-text-primary placeholder:text-text-muted outline-none focus-visible:ring-2 focus-visible:ring-border-active"
         />
         <div ref={listRef} className="max-h-[360px] overflow-y-auto py-2">
@@ -171,7 +172,7 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
                 }`}
               >
                 <span
-                  className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium uppercase ${typeBadge(item.type)}`}
+                  className={`shrink-0 rounded-full px-2 py-0.5 text-3xs font-medium uppercase ${typeBadge(item.type)}`}
                 >
                   {item.type}
                 </span>
@@ -187,7 +188,7 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
             ))
           )}
         </div>
-        <div className="border-t border-white/6 px-5 py-2 text-[10px] text-text-muted">
+        <div className="border-t border-white/6 px-5 py-2 text-3xs text-text-muted">
           <kbd className="rounded bg-white/8 px-1.5 py-0.5">&uarr;&darr;</kbd>{" "}
           navigate
           <span className="mx-2">&middot;</span>

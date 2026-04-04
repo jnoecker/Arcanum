@@ -5,6 +5,7 @@ import { EntityArtGenerator } from "@/components/ui/EntityArtGenerator";
 import { MediaPicker } from "@/components/ui/MediaPicker";
 import { MusicGenerator } from "@/components/ui/MusicGenerator";
 import { VideoGenerator } from "@/components/ui/VideoGenerator";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 import type { ArtStyle } from "@/lib/arcanumPrompts";
 import type { AssetContext } from "@/types/assets";
 
@@ -15,14 +16,29 @@ export function DeleteEntityButton({
   onClick: () => void;
   label: string;
 }) {
+  const [confirming, setConfirming] = useState(false);
+
   return (
     <div className="mt-4 border-t border-border-muted pt-3">
       <button
-        onClick={onClick}
+        onClick={() => setConfirming(true)}
         className="w-full rounded border border-status-danger/40 px-2 py-1.5 text-xs text-status-danger transition-colors hover:bg-status-danger/10"
       >
         {label}
       </button>
+      {confirming && (
+        <ConfirmDialog
+          title="Confirm Removal"
+          message={`${label}? This action cannot be undone.`}
+          confirmLabel="Remove"
+          destructive
+          onConfirm={() => {
+            setConfirming(false);
+            onClick();
+          }}
+          onCancel={() => setConfirming(false)}
+        />
+      )}
     </div>
   );
 }

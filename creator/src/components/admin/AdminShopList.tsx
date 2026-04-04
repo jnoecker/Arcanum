@@ -16,11 +16,11 @@ const ShopRow = memo(function ShopRow({ shop }: { shop: ShopEntry }) {
             <span className="truncate font-display text-sm text-text-primary">
               {shop.name}
             </span>
-            <span className="text-[11px] text-text-muted">
+            <span className="text-2xs text-text-muted">
               {shop.items.length} item{shop.items.length !== 1 ? "s" : ""}
             </span>
           </div>
-          <div className="mt-1 text-[11px] text-text-muted">
+          <div className="mt-1 text-2xs text-text-muted">
             Room: <span className="font-mono text-text-secondary">{shop.roomId}</span>
           </div>
         </div>
@@ -76,13 +76,13 @@ export function AdminShopList() {
             All registered shops and their inventories.
           </p>
         </div>
-        <span className="text-[11px] uppercase tracking-wide-ui text-text-muted">
+        <span className="text-2xs uppercase tracking-wide-ui text-text-muted">
           {shops.length} registered
         </span>
       </div>
 
       {shops.length === 0 ? (
-        <div className="rounded-[22px] border border-dashed border-white/12 bg-white/4 px-6 py-12 text-center">
+        <div className="rounded-3xl border border-dashed border-white/12 bg-white/4 px-6 py-12 text-center">
           <p className="font-display text-base text-text-secondary">No shops found</p>
           <p className="mt-1 text-sm text-text-muted">
             The server has no shops registered.

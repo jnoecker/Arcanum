@@ -21,7 +21,7 @@ function ZoneRow({
       <div className="min-w-0 flex-1">
         <span className="truncate font-display text-sm text-text-primary">{zone.name}</span>
       </div>
-      <div className="flex shrink-0 gap-3 text-[11px] text-text-muted">
+      <div className="flex shrink-0 gap-3 text-2xs text-text-muted">
         <span className="rounded-full bg-black/15 px-2 py-1">
           {zone.roomCount} room{zone.roomCount !== 1 ? "s" : ""}
         </span>
@@ -55,13 +55,13 @@ export function AdminZoneList() {
           <h3 className="font-display text-lg text-text-primary">Regions</h3>
           <p className="mt-0.5 text-xs text-text-muted">Zones loaded on the server. Click to see rooms and occupants.</p>
         </div>
-        <span className="text-[11px] uppercase tracking-ui text-text-muted">
+        <span className="text-2xs uppercase tracking-ui text-text-muted">
           {zones.length} active
         </span>
       </div>
 
       {zones.length === 0 ? (
-        <div className="rounded-[22px] border border-dashed border-white/12 bg-white/4 px-6 py-12 text-center">
+        <div className="rounded-3xl border border-dashed border-white/12 bg-white/4 px-6 py-12 text-center">
           <p className="font-display text-base text-text-secondary">No regions manifest</p>
           <p className="mt-1 text-sm text-text-muted">The server has no zones loaded.</p>
         </div>

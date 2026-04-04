@@ -91,9 +91,9 @@ export function RaceDesigner({
 
   return (
     <div className="grid gap-5 xl:grid-cols-[20rem_minmax(0,1fr)]">
-      <div className="rounded-[24px] border border-white/8 bg-black/12 p-4">
+      <div className="rounded-3xl border border-white/8 bg-black/12 p-4">
         <div className="mb-4">
-          <p className="text-[11px] uppercase tracking-ui text-text-muted">Race roster</p>
+          <p className="text-2xs uppercase tracking-ui text-text-muted">Race roster</p>
           <h4 className="mt-2 font-display text-xl text-text-primary">{Object.keys(config.races).length} races</h4>
         </div>
 
@@ -133,7 +133,7 @@ export function RaceDesigner({
                   setSelectedId(id);
                   setRenaming(false);
                 }}
-                className={`rounded-[20px] border px-4 py-3 text-left transition ${
+                className={`rounded-2xl border px-4 py-3 text-left transition ${
                   selectedCard
                     ? "border-border-active bg-gradient-active"
                     : "border-white/8 bg-white/4 hover:bg-white/8"
@@ -142,7 +142,7 @@ export function RaceDesigner({
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <div className="truncate font-display text-lg text-text-primary">{race.displayName}</div>
-                    <div className="mt-1 truncate text-[11px] text-text-muted">{id}</div>
+                    <div className="mt-1 truncate text-2xs text-text-muted">{id}</div>
                   </div>
                   {race.image && (
                     <span className="rounded-full bg-badge-success-bg px-2 py-1 text-2xs uppercase tracking-label text-badge-success">
@@ -155,7 +155,7 @@ export function RaceDesigner({
             );
           })}
           {raceIds.length === 0 && (
-            <div className="rounded-[20px] border border-dashed border-white/12 bg-white/4 px-4 py-6 text-sm text-text-muted">
+            <div className="rounded-2xl border border-dashed border-white/12 bg-white/4 px-4 py-6 text-sm text-text-muted">
               No races match the current search.
             </div>
           )}
@@ -163,10 +163,10 @@ export function RaceDesigner({
       </div>
 
       {selectedId && selected ? (
-        <div className="rounded-[24px] border border-white/8 bg-black/12 p-5">
+        <div className="rounded-3xl border border-white/8 bg-black/12 p-5">
           <div className="flex flex-wrap items-start justify-between gap-4 border-b border-white/8 pb-4">
             <div>
-              <p className="text-[11px] uppercase tracking-ui text-text-muted">Race designer</p>
+              <p className="text-2xs uppercase tracking-ui text-text-muted">Race designer</p>
               <h4 className="mt-2 font-display text-3xl text-text-primary">{selected.displayName}</h4>
               <p className="mt-2 max-w-2xl text-sm leading-7 text-text-secondary">
                 Lore, traits, body language, and stat identity.
@@ -236,7 +236,7 @@ export function RaceDesigner({
           </div>
         </div>
       ) : (
-        <div className="rounded-[24px] border border-dashed border-white/12 bg-white/4 px-6 py-10 text-sm text-text-muted">
+        <div className="rounded-3xl border border-dashed border-white/12 bg-white/4 px-6 py-10 text-sm text-text-muted">
           Create a race to start designing it.
         </div>
       )}

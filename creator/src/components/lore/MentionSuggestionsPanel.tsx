@@ -88,7 +88,7 @@ export function MentionSuggestionsPanel() {
                   {s.targetTitle}
                 </button>
                 <span
-                  className={`ml-auto rounded-full px-2 py-0.5 text-[10px] ${
+                  className={`ml-auto rounded-full px-2 py-0.5 text-3xs ${
                     s.quality === "exact"
                       ? "bg-accent/15 text-accent"
                       : "bg-white/8 text-text-muted"
@@ -103,7 +103,7 @@ export function MentionSuggestionsPanel() {
               <div className="flex gap-2">
                 <button
                   onClick={() => handleDismiss(s.sourceId, s.targetId)}
-                  className="rounded-full border border-white/8 px-2.5 py-1 text-[11px] text-text-muted transition hover:bg-white/8 hover:text-text-primary"
+                  className="rounded-full border border-white/8 px-2.5 py-1 text-2xs text-text-muted transition hover:bg-white/8 hover:text-text-primary"
                 >
                   Dismiss
                 </button>

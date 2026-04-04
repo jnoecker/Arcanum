@@ -62,10 +62,10 @@ export function WorldCyclePanel({ config, onChange }: ConfigPanelProps) {
           <p className="text-2xs font-display uppercase tracking-widest text-text-muted mb-2">Time Periods</p>
           <div className="grid grid-cols-4 gap-2 text-2xs">
             {[
-              { label: "Dawn", from: wt.dawnHour, to: wt.dayHour - 1, color: "text-amber-400" },
-              { label: "Day", from: wt.dayHour, to: wt.duskHour - 1, color: "text-yellow-300" },
-              { label: "Dusk", from: wt.duskHour, to: wt.nightHour - 1, color: "text-orange-400" },
-              { label: "Night", from: wt.nightHour, to: wt.dawnHour - 1, color: "text-indigo-400" },
+              { label: "Dawn", from: wt.dawnHour, to: wt.dayHour - 1, color: "text-status-warning" },
+              { label: "Day", from: wt.dayHour, to: wt.duskHour - 1, color: "text-warm-pale" },
+              { label: "Dusk", from: wt.duskHour, to: wt.nightHour - 1, color: "text-warm" },
+              { label: "Night", from: wt.nightHour, to: wt.dawnHour - 1, color: "text-accent-muted" },
             ].map((p) => (
               <div key={p.label} className="text-center">
                 <span className={`font-display ${p.color}`}>{p.label}</span>

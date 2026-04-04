@@ -3,8 +3,8 @@ import { useAdminStore } from "@/stores/adminStore";
 
 const Section = memo(function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-[22px] border border-white/10 bg-gradient-panel-light p-4 shadow-section-sm">
-      <h4 className="mb-2 text-[11px] uppercase tracking-wide-ui text-text-muted">{title}</h4>
+    <div className="rounded-3xl border border-white/10 bg-gradient-panel-light p-4 shadow-section">
+      <h4 className="mb-2 text-2xs uppercase tracking-wide-ui text-text-muted">{title}</h4>
       {children}
     </div>
   );

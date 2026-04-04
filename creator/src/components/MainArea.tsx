@@ -31,9 +31,9 @@ export function MainArea({ workspace }: { workspace: Workspace }) {
   if (!activeTab) {
     return (
       <div className="flex min-h-0 flex-1 items-center justify-center px-6 py-8">
-        <div className="panel-surface max-w-2xl rounded-[32px] px-8 py-10 text-center">
-          <div className="mx-auto mb-5 h-px w-16 bg-gradient-to-r from-transparent via-accent/40 to-transparent" />
-          <p className="text-[10px] uppercase tracking-wide-ui text-text-muted">
+        <div className="panel-surface max-w-2xl rounded-3xl px-8 py-10 text-center">
+          <div className="ornate-divider mb-3" />
+          <p className="text-3xs uppercase tracking-wide-ui text-text-muted">
             {workspace === "worldmaker" ? "Awaiting a surface" : "Awaiting a canon task"}
           </p>
           <h2 className="mt-3 font-display text-3xl text-text-primary">

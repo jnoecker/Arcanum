@@ -69,7 +69,7 @@ export function WorldSeedWizard({
       onKeyDown={(e) => { if (e.key === "Escape" && !generating) onClose(); }}
     >
       <div className="absolute inset-0 bg-black/60" aria-hidden="true" onClick={result ? onClose : undefined} />
-      <div className="relative w-full max-w-xl rounded-[24px] border border-white/10 bg-bg-secondary p-6 shadow-panel">
+      <div className="relative w-full max-w-xl rounded-3xl border border-white/10 bg-bg-secondary p-6 shadow-panel">
         <h3 id="seed-wizard-title" className="font-display text-xl text-text-primary">Seed a World</h3>
         <p className="mt-1 text-xs text-text-muted">
           Describe your world concept in a paragraph and the AI will generate a complete
@@ -113,7 +113,7 @@ export function WorldSeedWizard({
               <button
                 onClick={handleGenerate}
                 disabled={generating || !concept.trim()}
-                className="rounded-full border border-[rgba(184,216,232,0.28)] bg-gradient-active-strong px-5 py-2 text-xs font-medium text-text-primary transition enabled:hover:shadow-glow-sm disabled:opacity-40"
+                className="rounded-full border border-[rgba(184,216,232,0.28)] bg-gradient-active-strong px-5 py-2 text-xs font-medium text-text-primary transition enabled:hover:shadow-glow disabled:opacity-40"
               >
                 {generating ? "Generating..." : "Generate World"}
               </button>
@@ -137,7 +137,7 @@ export function WorldSeedWizard({
             <div className="mt-5 flex justify-end">
               <button
                 onClick={onClose}
-                className="rounded-full border border-[rgba(184,216,232,0.28)] bg-gradient-active-strong px-5 py-2 text-xs font-medium text-text-primary transition hover:shadow-glow-sm"
+                className="rounded-full border border-[rgba(184,216,232,0.28)] bg-gradient-active-strong px-5 py-2 text-xs font-medium text-text-primary transition hover:shadow-glow"
               >
                 Start Exploring
               </button>

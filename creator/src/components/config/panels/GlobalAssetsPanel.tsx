@@ -127,7 +127,7 @@ export function GlobalAssetsPanel({ config, onChange }: ConfigPanelProps) {
           <button
             onClick={handleAdd}
             disabled={!newKey.trim()}
-            className="rounded bg-gradient-to-r from-accent-muted to-accent px-3 py-1.5 text-xs font-medium text-accent-emphasis transition-all hover:shadow-[var(--glow-aurum)] hover:brightness-110 disabled:opacity-40"
+            className="rounded bg-accent px-3 py-1.5 text-xs font-medium text-accent-emphasis transition-all hover:bg-accent/90 disabled:opacity-40"
           >
             + Add
           </button>
@@ -197,7 +197,7 @@ export function GlobalAssetsPanel({ config, onChange }: ConfigPanelProps) {
                     {key}
                   </span>
                   <div className="flex items-center gap-1.5">
-                    <span className="min-w-0 flex-1 truncate font-mono text-[11px] text-text-muted">
+                    <span className="min-w-0 flex-1 truncate font-mono text-2xs text-text-muted">
                       {value || "No image selected"}
                     </span>
                     <button

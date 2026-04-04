@@ -68,10 +68,10 @@ export function GapAnalysisPanel() {
                 className="rounded-xl border border-white/8 bg-black/10 px-4 py-3"
               >
                 <div className="mb-1 flex items-center gap-2">
-                  <span className="rounded-full bg-status-warning/15 px-2 py-0.5 text-[10px] font-medium text-status-warning">
+                  <span className="rounded-full bg-status-warning/15 px-2 py-0.5 text-3xs font-medium text-status-warning">
                     Gap
                   </span>
-                  <span className="text-[10px] text-text-muted">
+                  <span className="text-3xs text-text-muted">
                     {gap.category}
                   </span>
                 </div>
@@ -88,7 +88,7 @@ export function GapAnalysisPanel() {
                     <button
                       key={id}
                       onClick={() => selectArticle(id)}
-                      className="text-[11px] text-accent transition-colors hover:text-text-primary"
+                      className="text-2xs text-accent transition-colors hover:text-text-primary"
                     >
                       {lore?.articles[id]?.title ?? id}
                     </button>
@@ -97,7 +97,7 @@ export function GapAnalysisPanel() {
                     onClick={() =>
                       setDismissed((s) => new Set(s).add(idx))
                     }
-                    className="ml-auto rounded-full border border-white/8 px-2 py-0.5 text-[10px] text-text-muted transition hover:bg-white/8"
+                    className="ml-auto rounded-full border border-white/8 px-2 py-0.5 text-3xs text-text-muted transition hover:bg-white/8"
                   >
                     Dismiss
                   </button>

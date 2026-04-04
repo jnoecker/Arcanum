@@ -22,6 +22,8 @@ export const selectEvents = (s: { lore: WorldLore | null }) => s.lore?.timelineE
 /** Safe selector: returns lore.colorLabels or a stable empty array. */
 export const selectColorLabels = (s: { lore: WorldLore | null }) => s.lore?.colorLabels ?? EMPTY_COLOR_LABELS;
 export const selectDocuments = (s: { lore: WorldLore | null }) => s.lore?.documents ?? EMPTY_DOCUMENTS;
+/** Selector: count of lore articles (returns a primitive). */
+export const selectArticleCount = (s: { lore: WorldLore | null }) => Object.keys(s.lore?.articles ?? EMPTY_ARTICLES).length;
 
 /** Snapshot the current lore onto the undo stack, clearing the redo stack. */
 function snapshotLore(state: LoreState): Pick<LoreState, "lorePast" | "loreFuture"> {

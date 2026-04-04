@@ -27,7 +27,7 @@ function GalleryThumbnail({
       <div className="absolute inset-0 flex items-center justify-center gap-1 bg-black/60 opacity-0 transition group-hover:opacity-100">
         <button
           onClick={onPromote}
-          className="rounded-full bg-white/15 p-1 text-[10px] text-text-primary hover:bg-white/25"
+          className="rounded-full bg-white/15 p-1 text-3xs text-text-primary hover:bg-white/25"
           title="Set as primary image"
           aria-label="Set as primary image"
         >
@@ -35,7 +35,7 @@ function GalleryThumbnail({
         </button>
         <button
           onClick={onRemove}
-          className="rounded-full bg-white/15 p-1 text-[10px] text-status-danger hover:bg-status-danger/30"
+          className="rounded-full bg-white/15 p-1 text-3xs text-status-danger hover:bg-status-danger/30"
           title="Remove from gallery"
           aria-label="Remove from gallery"
         >

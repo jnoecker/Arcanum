@@ -76,7 +76,7 @@ function VariantCard({
   return (
     <button
       onClick={onClick}
-      className={`relative h-16 w-16 shrink-0 overflow-hidden rounded-[16px] border-2 transition ${
+      className={`relative h-16 w-16 shrink-0 overflow-hidden rounded-2xl border-2 transition ${
         entry.is_active
           ? "border-accent shadow-[0_0_0_1px_var(--border-accent-ring)]"
           : "border-white/12 hover:border-[var(--border-glow)]"
@@ -342,7 +342,7 @@ export function CustomAssetStudio({ selectedZoneId }: { selectedZoneId: string |
   };
 
   return (
-    <section className="rounded-[28px] border border-white/10 bg-gradient-panel p-5 shadow-section">
+    <section className="rounded-3xl border border-white/10 bg-gradient-panel p-5 shadow-section">
       <div className="mb-4">
         <h2 className="font-display text-xl text-text-primary">Custom asset studio</h2>
         <p className="mt-1 text-sm text-text-secondary">
@@ -354,32 +354,32 @@ export function CustomAssetStudio({ selectedZoneId }: { selectedZoneId: string |
         <div className="flex flex-col gap-4">
           <div className="grid gap-3 sm:grid-cols-2">
             <div>
-              <div className="mb-1 text-[11px] uppercase tracking-ui text-text-muted">Asset title</div>
+              <div className="mb-1 text-2xs uppercase tracking-ui text-text-muted">Asset title</div>
               <input
                 value={title}
                 onChange={(event) => setTitle(event.target.value)}
                 placeholder="Moonwell loading vignette"
-                className="w-full rounded-[16px] border border-white/10 bg-surface-scrim px-4 py-3 text-sm text-text-primary outline-none transition focus:border-border-active focus-visible:ring-2 focus-visible:ring-border-active"
+                className="w-full rounded-2xl border border-white/10 bg-surface-scrim px-4 py-3 text-sm text-text-primary outline-none transition focus:border-border-active focus-visible:ring-2 focus-visible:ring-border-active"
               />
             </div>
             <div>
-              <div className="mb-1 text-[11px] uppercase tracking-ui text-text-muted">Global asset key</div>
+              <div className="mb-1 text-2xs uppercase tracking-ui text-text-muted">Global asset key</div>
               <input
                 value={globalAssetKey}
                 onChange={(event) => setGlobalAssetKey(event.target.value)}
                 placeholder="loading_moonwell"
-                className="w-full rounded-[16px] border border-white/10 bg-surface-scrim px-4 py-3 text-sm text-text-primary outline-none transition focus:border-border-active focus-visible:ring-2 focus-visible:ring-border-active"
+                className="w-full rounded-2xl border border-white/10 bg-surface-scrim px-4 py-3 text-sm text-text-primary outline-none transition focus:border-border-active focus-visible:ring-2 focus-visible:ring-border-active"
               />
             </div>
           </div>
 
           <div className="grid gap-3 sm:grid-cols-2">
             <div>
-              <div className="mb-1 text-[11px] uppercase tracking-ui text-text-muted">Asset type</div>
+              <div className="mb-1 text-2xs uppercase tracking-ui text-text-muted">Asset type</div>
               <select
                 value={assetType}
                 onChange={(event) => setAssetType(event.target.value as AssetType)}
-                className="w-full rounded-[16px] border border-white/10 bg-surface-scrim px-4 py-3 text-sm text-text-primary outline-none transition focus:border-border-active focus-visible:ring-2 focus-visible:ring-border-active"
+                className="w-full rounded-2xl border border-white/10 bg-surface-scrim px-4 py-3 text-sm text-text-primary outline-none transition focus:border-border-active focus-visible:ring-2 focus-visible:ring-border-active"
               >
                 {CUSTOM_ASSET_TYPES.map((type) => (
                   <option key={type} value={type}>
@@ -389,11 +389,11 @@ export function CustomAssetStudio({ selectedZoneId }: { selectedZoneId: string |
               </select>
             </div>
             <div>
-              <div className="mb-1 text-[11px] uppercase tracking-ui text-text-muted">Zone vibe context</div>
+              <div className="mb-1 text-2xs uppercase tracking-ui text-text-muted">Zone vibe context</div>
               <select
                 value={zoneId}
                 onChange={(event) => setZoneId(event.target.value)}
-                className="w-full rounded-[16px] border border-white/10 bg-surface-scrim px-4 py-3 text-sm text-text-primary outline-none transition focus:border-border-active focus-visible:ring-2 focus-visible:ring-border-active"
+                className="w-full rounded-2xl border border-white/10 bg-surface-scrim px-4 py-3 text-sm text-text-primary outline-none transition focus:border-border-active focus-visible:ring-2 focus-visible:ring-border-active"
               >
                 <option value="">No zone context</option>
                 {zoneOptions.map((zone) => (
@@ -406,7 +406,7 @@ export function CustomAssetStudio({ selectedZoneId }: { selectedZoneId: string |
           </div>
 
           <div>
-            <div className="mb-1 text-[11px] uppercase tracking-ui text-text-muted">Creative brief</div>
+            <div className="mb-1 text-2xs uppercase tracking-ui text-text-muted">Creative brief</div>
             <textarea
               value={description}
               onChange={(event) => {
@@ -415,19 +415,19 @@ export function CustomAssetStudio({ selectedZoneId }: { selectedZoneId: string |
               }}
               rows={5}
               placeholder="Describe the asset you want. The generator will translate it into Surreal Gentle Magic art direction."
-              className="w-full resize-y rounded-[20px] border border-white/10 bg-surface-scrim px-4 py-3 text-sm leading-6 text-text-secondary outline-none transition focus:border-border-active focus-visible:ring-2 focus-visible:ring-border-active"
+              className="w-full resize-y rounded-2xl border border-white/10 bg-surface-scrim px-4 py-3 text-sm leading-6 text-text-secondary outline-none transition focus:border-border-active focus-visible:ring-2 focus-visible:ring-border-active"
             />
           </div>
 
           {zoneVibe && (
-            <div className="rounded-[18px] border border-white/8 bg-surface-scrim-light px-4 py-3">
-              <div className="text-[11px] uppercase tracking-ui text-text-muted">Selected zone vibe</div>
+            <div className="rounded-2xl border border-white/8 bg-surface-scrim-light px-4 py-3">
+              <div className="text-2xs uppercase tracking-ui text-text-muted">Selected zone vibe</div>
               <div className="mt-2 whitespace-pre-wrap text-xs leading-6 text-text-secondary">{zoneVibe}</div>
             </div>
           )}
 
           <div>
-            <div className="mb-1 text-[11px] uppercase tracking-ui text-text-muted">Prompt draft</div>
+            <div className="mb-1 text-2xs uppercase tracking-ui text-text-muted">Prompt draft</div>
             <textarea
               value={promptDraft}
               onChange={(event) => {
@@ -435,7 +435,7 @@ export function CustomAssetStudio({ selectedZoneId }: { selectedZoneId: string |
                 setPromptGeneratedByLlm(false);
               }}
               rows={10}
-              className="w-full resize-y rounded-[20px] border border-white/10 bg-surface-scrim px-4 py-3 font-mono text-[12px] leading-6 text-text-secondary outline-none transition focus:border-border-active focus-visible:ring-2 focus-visible:ring-border-active"
+              className="w-full resize-y rounded-2xl border border-white/10 bg-surface-scrim px-4 py-3 font-mono text-xs leading-6 text-text-secondary outline-none transition focus:border-border-active focus-visible:ring-2 focus-visible:ring-border-active"
               placeholder="Generate a prompt from your brief..."
             />
           </div>
@@ -451,7 +451,7 @@ export function CustomAssetStudio({ selectedZoneId }: { selectedZoneId: string |
             <button
               onClick={handleGenerateImage}
               disabled={!hasImageKey || !promptDraft.trim() || generatingPrompt || generatingImage || batchGenerating}
-              className="rounded-full border border-[var(--border-accent-subtle)] bg-gradient-active-strong px-4 py-2 text-xs font-medium text-text-primary transition enabled:hover:-translate-y-0.5 disabled:opacity-50"
+              className="rounded-full border border-[var(--border-accent-subtle)] bg-gradient-active-strong px-4 py-2 text-xs font-medium text-text-primary transition hover:brightness-110 disabled:opacity-50"
             >
               {generatingImage ? <span className="flex items-center gap-1.5"><Spinner />Generating image</span> : "Generate image"}
             </button>
@@ -476,30 +476,30 @@ export function CustomAssetStudio({ selectedZoneId }: { selectedZoneId: string |
           )}
         </div>
 
-        <div className="rounded-[24px] border border-white/8 bg-black/12 p-4">
+        <div className="rounded-3xl border border-white/8 bg-black/12 p-4">
           <div className="mb-3 flex items-start justify-between gap-3">
             <div>
-              <div className="text-[11px] uppercase tracking-ui text-text-muted">Preview</div>
+              <div className="text-2xs uppercase tracking-ui text-text-muted">Preview</div>
               <h3 className="mt-1 font-display text-2xl text-text-primary">{title.trim() || "Custom asset"}</h3>
               <div className="mt-1 text-xs text-text-secondary">
                 {globalAssetKey.trim() ? `images.globalAssets.${slugify(globalAssetKey)}` : "Library-only asset"}
               </div>
             </div>
-            <span className="rounded-full bg-white/8 px-3 py-1 text-[11px] uppercase tracking-label text-text-muted">
+            <span className="rounded-full bg-white/8 px-3 py-1 text-2xs uppercase tracking-label text-text-muted">
               {variants.length} variants
             </span>
           </div>
 
-          <div className="flex min-h-[22rem] items-center justify-center overflow-hidden rounded-[20px] border border-white/8 bg-[linear-gradient(180deg,rgba(34,41,60,0.8),rgba(28,34,52,0.88))] p-4">
+          <div className="flex min-h-[22rem] items-center justify-center overflow-hidden rounded-2xl border border-white/8 bg-[linear-gradient(180deg,rgba(34,41,60,0.8),rgba(28,34,52,0.88))] p-4">
             {previewSrc ? (
-              <img src={previewSrc} alt={title || "Custom asset"} className="max-h-[30rem] max-w-full rounded-[18px] object-contain shadow-image" />
+              <img src={previewSrc} alt={title || "Custom asset"} className="max-h-[30rem] max-w-full rounded-2xl object-contain shadow-section" />
             ) : (
               <div className="text-center text-sm text-text-muted">Generate or import an asset to review it here.</div>
             )}
           </div>
 
-          <div className="mt-3 rounded-[18px] border border-white/8 bg-surface-scrim-light px-4 py-3">
-            <div className="text-[11px] uppercase tracking-ui text-text-muted">Registration</div>
+          <div className="mt-3 rounded-2xl border border-white/8 bg-surface-scrim-light px-4 py-3">
+            <div className="text-2xs uppercase tracking-ui text-text-muted">Registration</div>
             <div className="mt-2 text-xs leading-6 text-text-secondary">
               {globalAssetKey.trim()
                 ? `Active variant is written into application config under images.globalAssets.${slugify(globalAssetKey)}.`
@@ -509,7 +509,7 @@ export function CustomAssetStudio({ selectedZoneId }: { selectedZoneId: string |
 
           {variants.length > 0 && (
             <div className="mt-4">
-              <div className="mb-2 text-[11px] uppercase tracking-ui text-text-muted">Variant strip</div>
+              <div className="mb-2 text-2xs uppercase tracking-ui text-text-muted">Variant strip</div>
               <div className="flex gap-2 overflow-x-auto pb-1">
                 {variants.map((entry) => (
                   <VariantCard key={entry.id} entry={entry} assetsDir={assetsDir} onClick={() => handleVariantSelect(entry)} />

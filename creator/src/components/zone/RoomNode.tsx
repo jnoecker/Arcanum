@@ -45,15 +45,15 @@ const hiddenHandleStyle: React.CSSProperties = {
 const plusHandleStyle: React.CSSProperties = {
   width: 14,
   height: 14,
-  background: "rgba(78, 94, 150, 0.4)",
-  border: "1px solid rgba(78, 94, 150, 0.6)",
+  background: "color-mix(in srgb, var(--color-border-default) 40%, transparent)",
+  border: "1px solid color-mix(in srgb, var(--color-border-default) 60%, transparent)",
   borderRadius: 3,
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
   cursor: "crosshair",
   fontSize: 10,
-  color: "rgba(194, 206, 240, 0.6)",
+  color: "color-mix(in srgb, var(--color-text-muted) 60%, transparent)",
   transition: "all 0.15s",
 };
 
@@ -99,7 +99,7 @@ function InfoBadge({ d }: { d: RoomNodeData }) {
         {d.isStartRoom && (
           <span className="text-accent text-2xs" title="Start room" aria-label="Start room">★</span>
         )}
-        <span className="truncate text-[11px] font-semibold text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
+        <span className="truncate text-2xs font-semibold text-text-primary drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
           {d.title}
         </span>
       </div>

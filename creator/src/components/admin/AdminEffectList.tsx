@@ -13,8 +13,8 @@ const StatRow = memo(function StatRow({ label, value }: { label: string; value: 
 
 const Section = memo(function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-[22px] border border-white/10 bg-gradient-panel-light p-4 shadow-section-sm">
-      <h4 className="mb-2 text-[11px] uppercase tracking-wide-ui text-text-muted">{title}</h4>
+    <div className="rounded-3xl border border-white/10 bg-gradient-panel-light p-4 shadow-section">
+      <h4 className="mb-2 text-2xs uppercase tracking-wide-ui text-text-muted">{title}</h4>
       {children}
     </div>
   );
@@ -41,7 +41,7 @@ const EffectRow = memo(function EffectRow({
             {effect.effectType}
           </span>
         </div>
-        <div className="mt-1 flex flex-wrap gap-2 text-[11px]">
+        <div className="mt-1 flex flex-wrap gap-2 text-2xs">
           <span className="text-text-muted">
             {(effect.durationMs / 1000).toFixed(1)}s
           </span>
@@ -127,13 +127,13 @@ export function AdminEffectList() {
             All registered status effects. Click to inspect.
           </p>
         </div>
-        <span className="text-[11px] uppercase tracking-wide-ui text-text-muted">
+        <span className="text-2xs uppercase tracking-wide-ui text-text-muted">
           {effects.length} registered
         </span>
       </div>
 
       {effects.length === 0 ? (
-        <div className="rounded-[22px] border border-dashed border-white/12 bg-white/4 px-6 py-12 text-center">
+        <div className="rounded-3xl border border-dashed border-white/12 bg-white/4 px-6 py-12 text-center">
           <p className="font-display text-base text-text-secondary">No effects found</p>
           <p className="mt-1 text-sm text-text-muted">
             The server has no status effects registered.

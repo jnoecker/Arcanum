@@ -39,14 +39,14 @@ export function AdminConnectionBar() {
   };
 
   return (
-    <div className={`rounded-[22px] border p-4 shadow-section-sm transition-colors duration-500 ${
+    <div className={`rounded-3xl border p-4 shadow-section transition-colors duration-500 ${
       isConnected
         ? "border-accent/20 bg-gradient-to-r from-accent/[0.05] via-bg-elevated/80 to-bg-elevated/80"
         : "border-white/10 bg-gradient-panel-light"
     }`}>
       <div className="flex items-center gap-3">
         <div className={`h-2.5 w-2.5 shrink-0 rounded-full ${STATUS_STYLES[connectionStatus]}`} />
-        <span className={`text-[11px] uppercase tracking-wide-ui transition-colors duration-500 ${
+        <span className={`text-2xs uppercase tracking-wide-ui transition-colors duration-500 ${
           isConnected ? "text-accent" : "text-text-muted"
         }`}>
           {connectionStatus === "connected" ? "Link established" : connectionStatus === "connecting" ? "Reaching out..." : connectionStatus === "error" ? "Link failed" : "Awaiting connection"}
@@ -58,14 +58,14 @@ export function AdminConnectionBar() {
 
       {/* Contextual help for error state */}
       {connectionStatus === "error" && (
-        <p className="mt-2 text-[11px] leading-4 text-text-muted">
+        <p className="mt-2 text-2xs leading-4 text-text-muted">
           Check that the server is running, the URL is correct, and <span className="font-mono text-stellar-blue">ambonmud.admin.enabled</span> is set to <span className="font-mono text-stellar-blue">true</span>.
         </p>
       )}
 
       <div className="mt-3 flex flex-wrap items-end gap-3">
         <div className="min-w-0 flex-1">
-          <label htmlFor="admin-url" className="mb-1 block text-[11px] uppercase tracking-ui text-text-muted">
+          <label htmlFor="admin-url" className="mb-1 block text-2xs uppercase tracking-ui text-text-muted">
             Admin URL
           </label>
           <input
@@ -80,7 +80,7 @@ export function AdminConnectionBar() {
         </div>
 
         <div className="min-w-48 flex-[0.4]">
-          <label htmlFor="admin-token" className="mb-1 block text-[11px] uppercase tracking-ui text-text-muted">
+          <label htmlFor="admin-token" className="mb-1 block text-2xs uppercase tracking-ui text-text-muted">
             Token
           </label>
           <div className="relative">
@@ -116,7 +116,7 @@ export function AdminConnectionBar() {
           <button
             onClick={handleConnect}
             disabled={isConnecting || !url || !token}
-            className="h-9 rounded-xl border border-border-active bg-gradient-active-strong px-4 text-xs font-medium text-text-primary transition hover:-translate-y-0.5 hover:shadow-glow disabled:cursor-not-allowed disabled:opacity-40 focus-visible:ring-2 focus-visible:ring-border-active focus-visible:outline-none"
+            className="h-9 rounded-xl border border-border-active bg-gradient-active-strong px-4 text-xs font-medium text-text-primary transition hover:shadow-glow disabled:cursor-not-allowed disabled:opacity-40 focus-visible:ring-2 focus-visible:ring-border-active focus-visible:outline-none"
           >
             {isConnecting ? <Spinner /> : "Connect"}
           </button>

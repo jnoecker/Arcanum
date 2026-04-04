@@ -392,7 +392,7 @@ export function MudImportWizard({ onClose }: { onClose: () => void }) {
           </div>
 
           {scanError && (
-            <p className="rounded-lg border border-red-500/20 bg-red-500/5 p-3 text-sm text-red-400">{scanError}</p>
+            <p className="rounded-lg border border-status-error/20 bg-status-error/5 p-3 text-sm text-status-error">{scanError}</p>
           )}
 
           {files.length > 0 && (
@@ -418,7 +418,7 @@ export function MudImportWizard({ onClose }: { onClose: () => void }) {
           )}
 
           {files.length > 0 && !hasWld && (
-            <p className="text-xs text-amber-400">A .wld (rooms) file is required for import.</p>
+            <p className="text-xs text-status-warning">A .wld (rooms) file is required for import.</p>
           )}
         </div>
       )}
@@ -496,9 +496,9 @@ export function MudImportWizard({ onClose }: { onClose: () => void }) {
             {chunkResults.map((r, idx) => (
               <div key={idx} className="flex items-center gap-2 text-xs">
                 <span className={`h-2 w-2 rounded-full shrink-0 ${
-                  r.status === "done" ? "bg-emerald-400" :
-                  r.status === "error" ? "bg-red-400" :
-                  r.status === "converting" ? "bg-amber-400 animate-pulse" :
+                  r.status === "done" ? "bg-status-success" :
+                  r.status === "error" ? "bg-status-error" :
+                  r.status === "converting" ? "bg-status-warning animate-pulse" :
                   "bg-white/20"
                 }`} />
                 <span className="text-text-muted">
@@ -534,12 +534,12 @@ export function MudImportWizard({ onClose }: { onClose: () => void }) {
       {step === "review" && importResult && (
         <div className="space-y-4">
           {imported ? (
-            <div className="flex items-center gap-2 rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-3 text-sm text-emerald-400">
+            <div className="flex items-center gap-2 rounded-lg border border-status-success/20 bg-status-success/5 p-3 text-sm text-status-success">
               <span>✓</span>
               <span>Zone "{zoneId}" imported successfully. You can now edit it in the Zone Builder.</span>
             </div>
           ) : importError ? (
-            <div className="rounded-lg border border-red-500/20 bg-red-500/5 p-3 text-sm text-red-400">
+            <div className="rounded-lg border border-status-error/20 bg-status-error/5 p-3 text-sm text-status-error">
               Import failed: {importError}
             </div>
           ) : null}
@@ -557,7 +557,7 @@ export function MudImportWizard({ onClose }: { onClose: () => void }) {
           {/* Warnings */}
           {importResult.warnings.length > 0 && (
             <details className="group">
-              <summary className="cursor-pointer text-xs text-amber-400 hover:text-amber-300">
+              <summary className="cursor-pointer text-xs text-status-warning hover:text-status-warning">
                 {importResult.warnings.length} warning{importResult.warnings.length !== 1 ? "s" : ""} — click to expand
               </summary>
               <div className="mt-2 max-h-36 overflow-y-auto rounded-lg border border-white/6 bg-black/20 p-3 text-2xs text-text-muted space-y-0.5">

@@ -96,7 +96,7 @@ export function VersionControlPanel() {
                 }
               }}
               disabled={initializing}
-              className="rounded bg-gradient-to-r from-accent-muted to-accent px-4 py-1.5 text-xs font-medium text-accent-emphasis transition hover:brightness-110 disabled:opacity-50"
+              className="rounded bg-accent hover:bg-accent/90 px-4 py-1.5 text-xs font-medium text-accent-emphasis transition disabled:opacity-50"
             >
               {initializing ? <><Spinner className="mr-1.5" /> Initializing...</> : "Initialize"}
             </button>
@@ -198,7 +198,7 @@ export function VersionControlPanel() {
                   setCommitMsg("");
                 }}
                 disabled={committing || !commitMsg.trim()}
-                className="rounded bg-gradient-to-r from-accent-muted to-accent px-4 py-1.5 text-xs font-medium text-accent-emphasis transition hover:brightness-110 disabled:opacity-50"
+                className="rounded bg-accent hover:bg-accent/90 px-4 py-1.5 text-xs font-medium text-accent-emphasis transition disabled:opacity-50"
               >
                 {committing ? <><Spinner className="mr-1.5" /> Committing...</> : "Commit"}
               </button>
@@ -286,7 +286,7 @@ export function VersionControlPanel() {
                 setPrBody("");
               }}
               disabled={creatingPr}
-              className="self-start rounded bg-gradient-to-r from-accent-muted to-accent px-4 py-1.5 text-xs font-medium text-accent-emphasis transition hover:brightness-110 disabled:opacity-50"
+              className="self-start rounded bg-accent hover:bg-accent/90 px-4 py-1.5 text-xs font-medium text-accent-emphasis transition disabled:opacity-50"
             >
               {creatingPr ? <><Spinner className="mr-1.5" /> Creating PR...</> : "Create PR on GitHub"}
             </button>

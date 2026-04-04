@@ -77,7 +77,7 @@ export function DirectionPicker({
                 <button
                   key={dir}
                   onClick={() => setSelected(dir)}
-                  className={`h-11 w-11 rounded text-[11px] font-medium transition-colors focus-visible:ring-2 focus-visible:ring-accent/60 ${
+                  className={`h-11 w-11 rounded text-2xs font-medium transition-colors focus-visible:ring-2 focus-visible:ring-accent/60 ${
                     selected === dir
                       ? "bg-accent text-white"
                       : "bg-bg-tertiary text-text-secondary hover:bg-bg-elevated"
@@ -95,7 +95,7 @@ export function DirectionPicker({
         <div className="mb-3 flex gap-1">
           <button
             onClick={() => setSelected("u")}
-            className={`h-11 flex-1 rounded text-[11px] font-medium transition-colors focus-visible:ring-2 focus-visible:ring-accent/60 ${
+            className={`h-11 flex-1 rounded text-2xs font-medium transition-colors focus-visible:ring-2 focus-visible:ring-accent/60 ${
               selected === "u"
                 ? "bg-accent text-white"
                 : "bg-bg-tertiary text-text-secondary hover:bg-bg-elevated"
@@ -105,7 +105,7 @@ export function DirectionPicker({
           </button>
           <button
             onClick={() => setSelected("d")}
-            className={`h-11 flex-1 rounded text-[11px] font-medium transition-colors focus-visible:ring-2 focus-visible:ring-accent/60 ${
+            className={`h-11 flex-1 rounded text-2xs font-medium transition-colors focus-visible:ring-2 focus-visible:ring-accent/60 ${
               selected === "d"
                 ? "bg-accent text-white"
                 : "bg-bg-tertiary text-text-secondary hover:bg-bg-elevated"

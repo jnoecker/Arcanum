@@ -200,6 +200,7 @@ export function Console() {
         <input
           type="text"
           placeholder="Search logs..."
+          aria-label="Search logs"
           value={searchText}
           onChange={(e) => setSearchText(e.target.value)}
           className="w-40 rounded border border-border-default bg-bg-primary px-2 py-1 text-xs text-text-primary placeholder:text-text-muted outline-none focus:border-border-focus focus-visible:ring-2 focus-visible:ring-border-active"
@@ -244,10 +245,17 @@ export function Console() {
         className="flex-1 overflow-y-auto p-2 font-mono text-xs leading-5"
       >
         {filteredLogs.length === 0 ? (
-          <div className="flex h-full items-center justify-center text-text-muted">
-            {!polling
-              ? "Click Stream to begin tailing server logs."
-              : "Waiting for log entries..."}
+          <div className="flex h-full flex-col items-center justify-center gap-2 text-text-muted">
+            <div className="ornate-divider" />
+            <p className="font-display text-sm tracking-wide">
+              {!polling ? "The aether is silent" : "Listening..."}
+            </p>
+            <p className="text-2xs">
+              {!polling
+                ? "Press Stream to begin tailing server logs."
+                : "Waiting for log entries from the server."}
+            </p>
+            <div className="ornate-divider" />
           </div>
         ) : (
           filteredLogs.map((log, i) => (

@@ -623,7 +623,7 @@ function SpriteDetailEditor({
         <label className="flex flex-col gap-1 text-xs text-text-secondary">
           Description
           <textarea
-            className="ornate-input min-h-[7rem] resize-y rounded-[22px] px-4 py-3 text-sm text-text-primary"
+            className="ornate-input min-h-[7rem] resize-y rounded-3xl px-4 py-3 text-sm text-text-primary"
             placeholder="Flavor text for this sprite..."
             value={def.description ?? ""}
             onChange={(e) => onPatch({ description: e.target.value || undefined })}

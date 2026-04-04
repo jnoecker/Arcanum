@@ -65,10 +65,10 @@ function ZoneSelector({
             : "border-white/10 bg-white/[0.04] hover:bg-white/7"
         }`}
       >
-        <span className="text-[11px] uppercase tracking-ui text-text-muted">Zone</span>
+        <span className="text-2xs uppercase tracking-ui text-text-muted">Zone</span>
         <span className="truncate text-xs font-medium text-text-primary" style={{ maxWidth: "14rem" }}>{selectedLabel}</span>
         {selectedZone && (
-          <span className="text-[11px] text-text-muted">
+          <span className="text-2xs text-text-muted">
             {Object.keys(selectedZone[1].data.rooms).length} rooms
           </span>
         )}
@@ -78,7 +78,7 @@ function ZoneSelector({
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full z-20 mt-1 w-80 rounded-[18px] border border-white/12 bg-bg-secondary shadow-xl">
+        <div className="absolute right-0 top-full z-20 mt-1 w-80 rounded-2xl border border-white/12 bg-bg-secondary shadow-xl">
           {zones.length > 6 && (
             <div className="border-b border-white/8 px-3 py-2">
               <input
@@ -103,7 +103,7 @@ function ZoneSelector({
                   <button
                     key={zoneId}
                     onClick={() => { onSelect(zoneId); setOpen(false); }}
-                    className={`flex w-full items-center gap-3 rounded-[14px] px-3 py-2.5 text-left transition ${
+                    className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition ${
                       selected
                         ? "bg-gradient-active text-text-primary"
                         : "text-text-secondary hover:bg-white/6"
@@ -111,7 +111,7 @@ function ZoneSelector({
                   >
                     <div className="min-w-0 flex-1">
                       <div className="truncate text-sm font-medium">{zoneState.data.zone || zoneId}</div>
-                      <div className="mt-0.5 flex items-center gap-2 text-[11px] text-text-muted">
+                      <div className="mt-0.5 flex items-center gap-2 text-2xs text-text-muted">
                         <span>{zoneId}</span>
                         <span>· {Object.keys(zoneState.data.rooms).length} rooms</span>
                         {linkedAssets > 0 && <span>· {linkedAssets} assets</span>}
@@ -192,7 +192,7 @@ export function StudioWorkspace({ panelId }: { panelId: string }) {
                   onClick={() => { setArtSubTab(tab.id); saveArtSubTab(tab.id); }}
                   className={`focus-ring rounded-full border px-4 py-2 text-xs font-medium transition ${
                     artSubTab === tab.id
-                      ? "border-[var(--border-glow-strong)] bg-[linear-gradient(135deg,rgba(168,151,210,0.25),rgba(140,174,201,0.15))] text-text-primary shadow-glow-sm"
+                      ? "border-[var(--border-glow-strong)] bg-[linear-gradient(135deg,rgba(168,151,210,0.25),rgba(140,174,201,0.15))] text-text-primary shadow-glow"
                       : "border-white/8 bg-white/[0.04] text-text-muted hover:border-white/14 hover:bg-white/8 hover:text-text-primary"
                   }`}
                 >
@@ -205,7 +205,7 @@ export function StudioWorkspace({ panelId }: { panelId: string }) {
             {selectedZone ? (
               <>
                 {artSubTab === "direction" && (
-                  <div className="panel-surface rounded-[28px] p-5">
+                  <div className="panel-surface rounded-3xl p-5">
                     <div className="mb-4 flex items-center justify-between">
                       <h2 className="font-display text-xl text-text-primary">Zone direction</h2>
                       <div className="flex gap-2">
@@ -246,8 +246,8 @@ export function StudioWorkspace({ panelId }: { panelId: string }) {
             ) : (
               <>
                 {artSubTab !== "custom" && (
-                  <section className="panel-surface rounded-[28px] p-5">
-                    <div className="panel-surface-light rounded-[22px] border-dashed px-4 py-8 text-sm text-text-muted">
+                  <section className="panel-surface rounded-3xl p-5">
+                    <div className="panel-surface-light rounded-3xl border-dashed px-4 py-8 text-sm text-text-muted">
                       Open a world folder and select a zone to start generating zone art.
                     </div>
                   </section>

@@ -283,7 +283,7 @@ export function AssetGallery({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-      <div ref={trapRef} role="dialog" aria-modal="true" aria-labelledby="gallery-title" className="mx-4 flex max-h-[90vh] w-full max-w-6xl flex-col rounded-[24px] border border-border-default bg-bg-secondary shadow-xl">
+      <div ref={trapRef} role="dialog" aria-modal="true" aria-labelledby="gallery-title" className="mx-4 flex max-h-[90vh] w-full max-w-6xl flex-col rounded-3xl border border-border-default bg-bg-secondary shadow-xl">
         <div className="flex shrink-0 items-center justify-between border-b border-border-default px-5 py-3">
           <div className="flex flex-wrap items-center gap-3">
             <h2 id="gallery-title" className="font-display text-lg tracking-wide text-text-primary">Asset Gallery</h2>

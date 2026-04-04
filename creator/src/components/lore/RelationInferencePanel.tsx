@@ -75,7 +75,7 @@ export function RelationInferencePanel() {
         {scanned && visible.length > 0 && highCount > 0 && (
           <button
             onClick={handleAcceptAllHigh}
-            className="focus-ring rounded-full border border-white/10 px-3 py-1.5 text-[11px] text-text-secondary transition hover:bg-white/8"
+            className="focus-ring rounded-full border border-white/10 px-3 py-1.5 text-2xs text-text-secondary transition hover:bg-white/8"
           >
             Accept All High ({highCount})
           </button>
@@ -106,7 +106,7 @@ export function RelationInferencePanel() {
                 <span className="text-xs text-text-primary">
                   {articles[s.sourceId]?.title ?? s.sourceId}
                 </span>
-                <span className="rounded bg-white/10 px-1.5 py-0.5 text-[10px] text-text-muted">
+                <span className="rounded bg-white/10 px-1.5 py-0.5 text-3xs text-text-muted">
                   {s.label ?? s.type}
                 </span>
                 <span className="text-2xs text-text-muted">&rarr;</span>
@@ -114,7 +114,7 @@ export function RelationInferencePanel() {
                   {articles[s.targetId]?.title ?? s.targetId}
                 </span>
                 <span
-                  className={`ml-auto rounded-full px-2 py-0.5 text-[10px] ${
+                  className={`ml-auto rounded-full px-2 py-0.5 text-3xs ${
                     s.confidence === "high"
                       ? "bg-accent/15 text-accent"
                       : "bg-white/8 text-text-muted"
@@ -127,13 +127,13 @@ export function RelationInferencePanel() {
               <div className="flex gap-2">
                 <button
                   onClick={() => handleAccept(s)}
-                  className="rounded-full border border-accent/30 bg-accent/10 px-2.5 py-1 text-[11px] text-accent transition hover:bg-accent/20"
+                  className="rounded-full border border-accent/30 bg-accent/10 px-2.5 py-1 text-2xs text-accent transition hover:bg-accent/20"
                 >
                   Accept
                 </button>
                 <button
                   onClick={() => handleDismiss(s)}
-                  className="rounded-full border border-white/8 px-2.5 py-1 text-[11px] text-text-muted transition hover:bg-white/8"
+                  className="rounded-full border border-white/8 px-2.5 py-1 text-2xs text-text-muted transition hover:bg-white/8"
                 >
                   Dismiss
                 </button>

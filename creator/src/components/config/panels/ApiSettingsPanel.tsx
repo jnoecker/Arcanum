@@ -257,10 +257,10 @@ export function ApiSettingsPanel({
               Providers
             </h3>
             <div className="flex flex-col gap-3">
-              <div>
-                <label className="mb-1 block text-2xs uppercase tracking-wider text-text-muted">
+              <fieldset className="contents">
+                <legend className="mb-1 block text-2xs uppercase tracking-wider text-text-muted">
                   Prompt Enhancement LLM
-                </label>
+                </legend>
                 <div className="flex flex-col gap-1">
                   {LLM_PROVIDERS.map((p) => (
                     <label
@@ -288,12 +288,12 @@ export function ApiSettingsPanel({
                     </label>
                   ))}
                 </div>
-              </div>
+              </fieldset>
 
-              <div>
-                <label className="mb-1 block text-2xs uppercase tracking-wider text-text-muted">
+              <fieldset className="contents">
+                <legend className="mb-1 block text-2xs uppercase tracking-wider text-text-muted">
                   Image Generation Provider
-                </label>
+                </legend>
                 <div className="flex flex-col gap-1">
                   {IMAGE_PROVIDERS.map((p) => (
                     <label
@@ -318,15 +318,15 @@ export function ApiSettingsPanel({
                     </label>
                   ))}
                 </div>
-              </div>
+              </fieldset>
             </div>
           </div>}
 
           {/* ─── Image Model ──────────────────────────────────────── */}
-          {showProviderSections && <div className="border-t border-border-default pt-4">
-            <label className="mb-1 block font-display text-2xs uppercase tracking-widest text-text-muted">
+          {showProviderSections && <fieldset className="border-t border-border-default pt-4">
+            <legend className="mb-1 block font-display text-2xs uppercase tracking-widest text-text-muted">
               Default Image Model
-            </label>
+            </legend>
             <div className="flex flex-col gap-1.5">
               {filteredModels.map((model) => (
                 <label
@@ -354,7 +354,7 @@ export function ApiSettingsPanel({
                 </label>
               ))}
             </div>
-          </div>}
+          </fieldset>}
 
           {/* ─── Enhance Model ────────────────────────────────────── */}
           {showProviderSections && <div>
@@ -521,7 +521,7 @@ export function ApiSettingsPanel({
               </div>
 
               {showDeploymentActions && (
-                <div className="mt-1 rounded-[20px] border border-white/10 bg-black/10 px-4 py-3 text-[11px] leading-6 text-text-secondary">
+                <div className="mt-1 rounded-2xl border border-white/10 bg-black/10 px-4 py-3 text-2xs leading-6 text-text-secondary">
                   Runtime publishing now lives in Operations / Handoff.
                 </div>
               )}

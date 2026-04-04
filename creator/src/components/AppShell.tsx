@@ -1,7 +1,7 @@
 import { lazy, Suspense, useCallback, useEffect, useState } from "react";
 import { Toolbar } from "./Toolbar";
 import { Sidebar } from "./Sidebar";
-import { TabBar } from "./TabBar";
+
 import { MainArea } from "./MainArea";
 import { StatusBar } from "./StatusBar";
 import { useKeyboardShortcuts } from "@/lib/useKeyboardShortcuts";
@@ -47,7 +47,6 @@ export function AppShell() {
       <div className="relative z-10 flex min-h-0 flex-1 flex-col gap-3 px-4 pb-3 xl:flex-row">
         <aside className="min-w-0 xl:min-h-0"><Sidebar workspace={workspace} /></aside>
         <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-[32px] border border-white/10 bg-bg-primary shadow-panel">
-          <TabBar workspace={workspace} />
           <MainArea workspace={workspace} />
         </main>
       </div>

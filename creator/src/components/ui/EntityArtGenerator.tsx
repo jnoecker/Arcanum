@@ -345,8 +345,8 @@ export function EntityArtGenerator({
                   onChange={(e) => setModelOverride(e.target.value || null)}
                   className="rounded border border-border-default bg-bg-primary px-1 py-0.5 text-2xs text-text-secondary outline-none focus-visible:ring-2 focus-visible:ring-border-active"
                 >
-                  <option value="">{availableModels[0]?.label ?? "Default"}</option>
-                  {availableModels.slice(1).map((m) => (
+                  <option value="">Default ({resolveImageModel(imageProvider, settings?.image_model)?.label ?? "first available"})</option>
+                  {availableModels.map((m) => (
                     <option key={m.id} value={m.id}>{m.label}</option>
                   ))}
                   <option value="__custom__">Custom...</option>

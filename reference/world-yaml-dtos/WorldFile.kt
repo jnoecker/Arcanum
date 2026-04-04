@@ -6,6 +6,8 @@ data class WorldFile(
     val startRoom: String,
     /** Whether this zone has custom graphical assets (rooms, mobs, items with real images). */
     val graphical: Boolean = false,
+    /** Whether PvP combat is enabled in this zone. */
+    val pvpEnabled: Boolean = false,
     val image: ZoneImageDefaults? = null,
     val audio: ZoneAudioDefaults? = null,
     val rooms: Map<String, RoomFile>,
@@ -17,6 +19,7 @@ data class WorldFile(
     val gatheringNodes: Map<String, GatheringNodeFile> = emptyMap(),
     val recipes: Map<String, RecipeFile> = emptyMap(),
     val dungeon: DungeonFile? = null,
+    val puzzles: Map<String, PuzzleFile> = emptyMap(),
 )
 
 data class TrainerFile(

@@ -26,6 +26,10 @@ import dev.ambon.domain.ids.qualifyId
 import dev.ambon.domain.items.Item
 import dev.ambon.domain.items.ItemInstance
 import dev.ambon.domain.items.ItemSlot
+import dev.ambon.domain.puzzle.PuzzleDef
+import dev.ambon.domain.puzzle.PuzzleReward
+import dev.ambon.domain.puzzle.PuzzleStep
+import dev.ambon.domain.puzzle.PuzzleType
 import dev.ambon.domain.quest.QuestDef
 import dev.ambon.domain.quest.QuestObjectiveDef
 import dev.ambon.domain.quest.QuestRewards
@@ -121,7 +125,9 @@ object WorldLoader {
         val mergedGatheringNodes = mutableListOf<GatheringNodeDef>()
         val mergedRecipes = mutableListOf<RecipeDef>()
         val mergedDungeonTemplates = mutableListOf<DungeonTemplateDef>()
+        val mergedPuzzles = mutableListOf<PuzzleDef>()
         val zoneLifespansMinutes = LinkedHashMap<String, Long?>()
+        val pvpZones = mutableSetOf<String>()
         val zoneStartRooms = LinkedHashMap<String, RoomId>()
 
         // startRoomOverride wins; otherwise fall back to first file’s declared startRoom.
@@ -152,6 +158,7 @@ object WorldLoader {
             val imageDefaults = file.image
             val audioDefaults = file.audio
             val zoneGraphical = file.graphical
+            if (file.pvpEnabled) pvpZones.add(zone)
 
             // First pass per file: create room shells, detect collisions
             for ((rawId, rf) in file.rooms) {
@@ -170,6 +177,7 @@ object WorldLoader {
                         exits = emptyMap(),
                         station = station,
                         bank = rf.bank,
+                        tavern = rf.tavern,
                         image = (rf.image ?: imageDefaults?.room)?.let { "$imagesBase$it" },
                         video = rf.video?.let { "$videosBase$it" },
                         music = (rf.music ?: audioDefaults?.music)?.let { "$audioBase$it" },
@@ -512,7 +520,11 @@ object WorldLoader {
                         description = questFile.description,
                         giverMobId = qualifyId(zone, giver),
                         objectives = objectives,
-                        rewards = QuestRewards(xp = questFile.rewards.xp, gold = questFile.rewards.gold),
+                        rewards = QuestRewards(
+                            xp = questFile.rewards.xp,
+                            gold = questFile.rewards.gold,
+                            currencies = questFile.rewards.currencies,
+                        ),
                         completionType = completionType,
                     ),
                 )
@@ -662,6 +674,82 @@ object WorldLoader {
                         mobPools = mobPools,
                         lootTables = lootTables,
                         portalRoom = df.portalRoom,
+                    ),
+                )
+            }
+
+            // Stage puzzles (normalized)
+            for ((rawId, puzzleFile) in file.puzzles) {
+                val puzzleId = qualifyId(zone, rawId)
+                val puzzleType = when (puzzleFile.type.trim().lowercase()) {
+                    "riddle" -> PuzzleType.RIDDLE
+                    "sequence" -> PuzzleType.SEQUENCE
+                    else -> throw WorldLoadException(
+                        "Puzzle '$puzzleId' has unknown type '${puzzleFile.type}' (expected 'riddle' or 'sequence')",
+                    )
+                }
+                val puzzleRoomId = normalizeTarget(zone, puzzleFile.roomId)
+
+                val qualifiedMobId = puzzleFile.mobId?.let { qualifyId(zone, it) }
+
+                // Build accepted answers for riddle type
+                val acceptableAnswers = if (puzzleType == PuzzleType.RIDDLE) {
+                    val answers = mutableListOf<String>()
+                    puzzleFile.answer?.lowercase()?.trim()?.let { answers.add(it) }
+                    puzzleFile.acceptableAnswers.forEach { a ->
+                        val normalized = a.lowercase().trim()
+                        if (normalized.isNotEmpty() && normalized !in answers) answers.add(normalized)
+                    }
+                    if (answers.isEmpty()) {
+                        throw WorldLoadException("Riddle puzzle '$puzzleId' must have at least one answer")
+                    }
+                    answers
+                } else {
+                    emptyList()
+                }
+
+                // Build steps for sequence type
+                val steps = if (puzzleType == PuzzleType.SEQUENCE) {
+                    if (puzzleFile.steps.isEmpty()) {
+                        throw WorldLoadException("Sequence puzzle '$puzzleId' must have at least one step")
+                    }
+                    puzzleFile.steps.mapIndexed { index, stepFile ->
+                        if (stepFile.feature.isBlank()) {
+                            throw WorldLoadException(
+                                "Puzzle '$puzzleId' step #${index + 1} feature cannot be blank",
+                            )
+                        }
+                        if (stepFile.action.isBlank()) {
+                            throw WorldLoadException(
+                                "Puzzle '$puzzleId' step #${index + 1} action cannot be blank",
+                            )
+                        }
+                        PuzzleStep(
+                            featureKeyword = stepFile.feature.trim().lowercase(),
+                            action = stepFile.action.trim().lowercase(),
+                        )
+                    }
+                } else {
+                    emptyList()
+                }
+
+                // Parse reward
+                val reward = parsePuzzleReward(puzzleId, zone, puzzleFile.reward)
+
+                mergedPuzzles.add(
+                    PuzzleDef(
+                        id = puzzleId,
+                        type = puzzleType,
+                        mobId = qualifiedMobId,
+                        roomId = puzzleRoomId,
+                        question = puzzleFile.question,
+                        acceptableAnswers = acceptableAnswers,
+                        steps = steps,
+                        reward = reward,
+                        failMessage = puzzleFile.failMessage,
+                        successMessage = puzzleFile.successMessage,
+                        cooldownMs = puzzleFile.cooldownMs,
+                        resetOnFail = puzzleFile.resetOnFail,
                     ),
                 )
             }
@@ -844,12 +932,15 @@ object WorldLoader {
                 zoneLifespansMinutes.entries
                     .mapNotNull { (zone, lifespanMinutes) -> lifespanMinutes?.let { zone to it } }
                     .toMap(),
+            pvpZones = pvpZones.toSet(),
+            zoneStartRooms = zoneStartRooms.toMap(),
             shopDefinitions = mergedShops.toList(),
             trainerDefinitions = mergedTrainers.toList(),
             questDefinitions = mergedQuests.toList(),
             gatheringNodes = mergedGatheringNodes.toList(),
             recipes = mergedRecipes.toList(),
             dungeonTemplates = mergedDungeonTemplates.toList(),
+            puzzleDefinitions = mergedPuzzles.toList(),
         )
     }
 
@@ -1165,6 +1256,39 @@ object WorldLoader {
     private fun requireAtLeast(value: Long, min: Long, context: String, field: String): Long {
         if (value < min) throw WorldLoadException("$context $field must be >= $min (got $value)")
         return value
+    }
+
+    private fun parsePuzzleReward(
+        puzzleId: String,
+        zone: String,
+        reward: dev.ambon.domain.world.data.PuzzleRewardFile,
+    ): PuzzleReward = when (reward.type.trim().lowercase()) {
+        "unlock_exit" -> {
+            val dirStr = reward.exitDirection
+                ?: throw WorldLoadException("Puzzle '$puzzleId' unlock_exit reward requires exitDirection")
+            val dir = parseDirectionOrNull(dirStr)
+                ?: throw WorldLoadException("Puzzle '$puzzleId' unknown exit direction '${reward.exitDirection}'")
+            val targetStr = reward.targetRoom
+                ?: throw WorldLoadException("Puzzle '$puzzleId' unlock_exit reward requires targetRoom")
+            PuzzleReward.UnlockExit(direction = dir, targetRoom = normalizeTarget(zone, targetStr))
+        }
+        "give_item" -> {
+            val itemId = reward.itemId
+                ?: throw WorldLoadException("Puzzle '$puzzleId' give_item reward requires itemId")
+            PuzzleReward.GiveItem(itemId = qualifyId(zone, itemId))
+        }
+        "give_gold" -> {
+            if (reward.gold <= 0) throw WorldLoadException("Puzzle '$puzzleId' give_gold reward requires gold > 0")
+            PuzzleReward.GiveGold(amount = reward.gold)
+        }
+        "give_xp" -> {
+            if (reward.xp <= 0) throw WorldLoadException("Puzzle '$puzzleId' give_xp reward requires xp > 0")
+            PuzzleReward.GiveXp(amount = reward.xp)
+        }
+        else -> throw WorldLoadException(
+            "Puzzle '$puzzleId' has unknown reward type '${reward.type}' " +
+                "(expected unlock_exit, give_item, give_gold, or give_xp)",
+        )
     }
 
     private fun requireNotEmpty(collection: Collection<*>, context: String, what: String) {

@@ -21,10 +21,11 @@ function summarize(_id: string, t: GuildHallRoomTemplate): string {
 }
 
 export function GuildHallsPanel({ config, onChange }: ConfigPanelProps) {
-  const guildHalls = config.guildHalls ?? {
+  const guildHalls = {
     enabled: false,
     baseCost: 0,
-    roomTemplates: {},
+    roomTemplates: {} as Record<string, GuildHallRoomTemplate>,
+    ...config.guildHalls,
   };
 
   const patchGuildHalls = (p: Partial<AppConfig["guildHalls"]>) =>

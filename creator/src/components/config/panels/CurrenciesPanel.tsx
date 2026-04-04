@@ -2,8 +2,8 @@ import type { ConfigPanelProps, AppConfig } from "./types";
 import { Section, FieldRow, TextInput, NumberInput, IconButton } from "@/components/ui/FormWidgets";
 
 export function CurrenciesPanel({ config, onChange }: ConfigPanelProps) {
-  const currencies = config.currencies ?? { definitions: {} };
-  const defs = currencies.definitions;
+  const currencies = { definitions: {}, ...config.currencies };
+  const defs = currencies.definitions ?? {};
 
   const patchDef = (key: string, updates: Record<string, unknown>) => {
     onChange({ currencies: { ...currencies, definitions: { ...defs, [key]: { ...defs[key], ...updates } } } } as Partial<AppConfig>);

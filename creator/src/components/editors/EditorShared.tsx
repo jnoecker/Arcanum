@@ -57,9 +57,11 @@ export function EnhanceDescriptionButton({
   label?: string;
 }) {
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleEnhance = async () => {
     setLoading(true);
+    setError(null);
     try {
       const parts = [entitySummary];
       if (currentDescription) {
@@ -73,22 +75,31 @@ export function EnhanceDescriptionButton({
         userPrompt: parts.join("\n"),
       });
       onAccept(result.trim());
-    } catch {
-      // Silently fail — user can retry
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      setError(msg);
+      console.error("[EnhanceDescriptionButton]", msg);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <button
-      onClick={handleEnhance}
-      disabled={loading}
-      className="shrink-0 rounded px-1.5 py-0.5 text-2xs text-accent transition-colors hover:bg-accent/10 disabled:opacity-50"
-      title="Use AI to write a description"
-    >
-      {loading ? "..." : (label ?? "Enhance")}
-    </button>
+    <div className="flex items-center gap-2">
+      <button
+        onClick={handleEnhance}
+        disabled={loading}
+        className="shrink-0 rounded px-1.5 py-0.5 text-2xs text-accent transition-colors hover:bg-accent/10 disabled:opacity-50"
+        title="Use AI to write a description"
+      >
+        {loading ? "..." : (label ?? "Enhance")}
+      </button>
+      {error && (
+        <span className="truncate text-2xs text-status-error" title={error}>
+          {error.length > 60 ? `${error.slice(0, 60)}…` : error}
+        </span>
+      )}
+    </div>
   );
 }
 

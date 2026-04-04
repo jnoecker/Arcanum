@@ -1,4 +1,4 @@
-import { memo, useCallback, useEffect, useMemo, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
 import { useAssetStore } from "@/stores/assetStore";
@@ -6,7 +6,15 @@ import { Spinner, InlineError } from "@/components/ui/FormWidgets";
 import { useConfigStore } from "@/stores/configStore";
 import { useImageSrc } from "@/lib/useImageSrc";
 import { composePrompt, UNIVERSAL_NEGATIVE, type ArtStyle } from "@/lib/arcanumPrompts";
-import { generateAbilityPrompt, generateStatusEffectPrompt } from "@/lib/abilityPromptGen";
+import {
+  generateAbilityPrompt,
+  generateStatusEffectPrompt,
+  generateAbilityTemplate,
+  fillAbilityTemplate,
+  fillStatusEffectTemplate,
+  enhanceAbilityPrompt,
+  type AbilityPromptTemplate,
+} from "@/lib/abilityPromptGen";
 import { imageGenerateCommand, resolveImageModel, requestsTransparentBackground, type AssetEntry, type GeneratedImage } from "@/types/assets";
 import type { AbilityDefinitionConfig, StatusEffectDefinitionConfig } from "@/types/config";
 
@@ -126,6 +134,16 @@ export function AbilityStudio() {
   const [importing, setImporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Template state
+  const [template, setTemplate] = useState<AbilityPromptTemplate | null>(null);
+  const [generatingTemplate, setGeneratingTemplate] = useState(false);
+
+  // Batch progress state
+  const [batchProgress, setBatchProgress] = useState({ done: 0, failed: 0, total: 0 });
+  const [batchCurrentLabel, setBatchCurrentLabel] = useState("");
+  const [skipExisting, setSkipExisting] = useState(true);
+  const abortRef = useRef(false);
+
   const tabs = useMemo(() => {
     if (!config) return [];
     const requiredClasses = new Set(
@@ -183,6 +201,13 @@ export function AbilityStudio() {
       });
   }, [activeTab, config]);
 
+  // Summary counts for current tab
+  const tabCounts = useMemo(() => {
+    const total = visibleTargets.length;
+    const withImage = visibleTargets.filter((t) => t.image).length;
+    return { total, withImage, missing: total - withImage };
+  }, [visibleTargets]);
+
   useEffect(() => {
     if (selectedKey && visibleTargets.some((target) => `${target.kind}:${target.id}` === selectedKey)) return;
     const first = visibleTargets.find((target) => target.image) ?? visibleTargets[0];
@@ -231,9 +256,19 @@ export function AbilityStudio() {
       setPromptGeneratedByLlm(Boolean(activeVariant.enhanced_prompt));
       return;
     }
+    // Use template if available
+    if (template) {
+      if (selectedTarget.kind === "ability" && selectedTarget.ability) {
+        setPromptDraft(fillAbilityTemplate(template, selectedTarget.ability));
+      } else if (selectedTarget.kind === "status_effect" && selectedTarget.statusEffect) {
+        setPromptDraft(fillStatusEffectTemplate(template, selectedTarget.statusEffect));
+      }
+      setPromptGeneratedByLlm(false);
+      return;
+    }
     setPromptDraft(fallbackPromptForTarget(selectedTarget, artStyle as ArtStyle));
     setPromptGeneratedByLlm(false);
-  }, [artStyle, selectedTarget, variants]);
+  }, [artStyle, selectedTarget, template, variants]);
 
   const imageProvider = settings?.image_provider ?? "deepinfra";
   const defaultModel = resolveImageModel(imageProvider, settings?.image_model);
@@ -284,6 +319,17 @@ export function AbilityStudio() {
     return fallbackPromptForTarget(target, artStyle as ArtStyle);
   }, [artStyle]);
 
+  const getTemplatePromptForTarget = useCallback((target: StudioTarget): string | null => {
+    if (!template) return null;
+    if (target.kind === "ability" && target.ability) {
+      return fillAbilityTemplate(template, target.ability);
+    }
+    if (target.kind === "status_effect" && target.statusEffect) {
+      return fillStatusEffectTemplate(template, target.statusEffect);
+    }
+    return null;
+  }, [template]);
+
   const runGeneration = useCallback(async (target: StudioTarget, prompt: string, activate: boolean, skipEnhancement?: boolean) => {
     if (!defaultModel) throw new Error(`No image model configured for provider ${imageProvider}.`);
     const assetType = assetTypeForTarget(target);
@@ -314,6 +360,44 @@ export function AbilityStudio() {
     if (activate) persistImage(target, fileName);
   }, [acceptAsset, defaultModel, imageProvider, persistImage, promptGeneratedByLlm]);
 
+  // ─── Template generation ──────────────────────────────────────────
+
+  const handleGenerateTemplate = async () => {
+    if (!config || !hasLlmKey) return;
+    setGeneratingTemplate(true);
+    setError(null);
+    try {
+      const effectTypes = new Set<string>();
+      for (const ability of Object.values(config.abilities)) {
+        effectTypes.add(ability.effect.type);
+      }
+      for (const effect of Object.values(config.statusEffects)) {
+        effectTypes.add(effect.effectType);
+      }
+
+      const next = await generateAbilityTemplate(
+        Object.keys(config.classes),
+        [...effectTypes],
+      );
+      setTemplate(next);
+
+      // Update the prompt draft for the currently selected target
+      if (selectedTarget) {
+        if (selectedTarget.kind === "ability" && selectedTarget.ability) {
+          setPromptDraft(fillAbilityTemplate(next, selectedTarget.ability));
+        } else if (selectedTarget.kind === "status_effect" && selectedTarget.statusEffect) {
+          setPromptDraft(fillStatusEffectTemplate(next, selectedTarget.statusEffect));
+        }
+      }
+    } catch (e) {
+      setError(String(e));
+    } finally {
+      setGeneratingTemplate(false);
+    }
+  };
+
+  // ─── Single-target actions ────────────────────────────────────────
+
   const handleGeneratePrompt = async () => {
     if (!selectedTarget || !hasLlmKey) return;
     setGeneratingPrompt(true);
@@ -325,6 +409,29 @@ export function AbilityStudio() {
       setError(String(e));
     } finally {
       setGeneratingPrompt(false);
+    }
+  };
+
+  const handleEnhancePrompt = async () => {
+    if (!promptDraft.trim() || !hasLlmKey) return;
+    setGeneratingPrompt(true);
+    setError(null);
+    try {
+      setPromptDraft(await enhanceAbilityPrompt(promptDraft));
+      setPromptGeneratedByLlm(true);
+    } catch (e) {
+      setError(String(e));
+    } finally {
+      setGeneratingPrompt(false);
+    }
+  };
+
+  const handleFillFromTemplate = () => {
+    if (!selectedTarget || !template) return;
+    const filled = getTemplatePromptForTarget(selectedTarget);
+    if (filled) {
+      setPromptDraft(filled);
+      setPromptGeneratedByLlm(false);
     }
   };
 
@@ -343,27 +450,81 @@ export function AbilityStudio() {
     }
   };
 
+  // ─── Batch generation with concurrency ────────────────────────────
+
   const handleGenerateAll = async () => {
     if (!hasImageKey || !visibleTargets.length) return;
     setBatchGenerating(true);
+    abortRef.current = false;
     setError(null);
-    try {
-      const pending = [...visibleTargets];
-      for (const target of pending) {
-        const usedLlm = hasLlmKey;
-        const prompt = usedLlm
-          ? await generatePromptForTarget(target)
-          : fallbackPromptForTarget(target, artStyle as ArtStyle);
-        await runGeneration(target, prompt, true, usedLlm);
-      }
-      await loadAssets();
-      await refreshVariants();
-    } catch (e) {
-      setError(String(e));
-    } finally {
+
+    const pending = skipExisting
+      ? visibleTargets.filter((t) => !t.image)
+      : [...visibleTargets];
+
+    if (pending.length === 0) {
       setBatchGenerating(false);
+      return;
     }
+
+    setBatchProgress({ done: 0, failed: 0, total: pending.length });
+    setBatchCurrentLabel("");
+
+    const concurrency = settings?.batch_concurrency ?? 3;
+    const queue = [...pending.keys()];
+    let done = 0;
+    let failed = 0;
+
+    const worker = async () => {
+      while (queue.length > 0 && !abortRef.current) {
+        const idx = queue.shift();
+        if (idx === undefined) break;
+        const target = pending[idx]!;
+
+        setBatchCurrentLabel(target.label);
+
+        try {
+          // Build prompt: template fill → LLM enhance, or direct LLM generate, or fallback
+          let prompt: string;
+          const templatePrompt = getTemplatePromptForTarget(target);
+          if (templatePrompt && hasLlmKey) {
+            prompt = await enhanceAbilityPrompt(templatePrompt);
+          } else if (templatePrompt) {
+            prompt = templatePrompt;
+          } else if (hasLlmKey) {
+            prompt = await generatePromptForTarget(target);
+          } else {
+            prompt = fallbackPromptForTarget(target, artStyle as ArtStyle);
+          }
+
+          await runGeneration(target, prompt, true, true);
+          done++;
+        } catch (err) {
+          console.error(`[ability-studio] Failed ${target.id}:`, err);
+          failed++;
+        }
+
+        setBatchProgress({ done, failed, total: pending.length });
+      }
+    };
+
+    const workers = Array.from(
+      { length: Math.min(concurrency, pending.length) },
+      () => worker(),
+    );
+    await Promise.all(workers);
+
+    await loadAssets();
+    await refreshVariants();
+    setBatchCurrentLabel("");
+    setBatchGenerating(false);
   };
+
+  const handleAbortBatch = () => {
+    abortRef.current = true;
+  };
+
+  // ─── Import ────────────────────────────────────────────────────────
 
   const handleImport = async () => {
     if (!selectedTarget) return;
@@ -410,23 +571,83 @@ export function AbilityStudio() {
     return null;
   }
 
+  const anyBusy = generatingPrompt || generatingImage || batchGenerating || importing || generatingTemplate;
+  const batchCompleted = batchProgress.done + batchProgress.failed;
+
   return (
     <section className="rounded-[28px] border border-white/10 bg-gradient-panel p-5 shadow-section">
       <div className="mb-5 flex items-center justify-between gap-4">
         <div>
           <h2 className="font-display text-xl text-text-primary">Ability studio</h2>
-          <p className="mt-1 text-sm text-text-secondary">Ability and status-effect icons by class.</p>
+          <p className="mt-1 text-sm text-text-secondary">
+            Ability and status-effect icons by class.
+            {tabCounts.total > 0 && (
+              <span className="ml-2 text-text-muted">
+                {tabCounts.withImage}/{tabCounts.total} icons
+                {tabCounts.missing > 0 && <> — <span className="text-accent">{tabCounts.missing} missing</span></>}
+              </span>
+            )}
+          </p>
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <button
-            onClick={handleGenerateAll}
-            disabled={!hasImageKey || batchGenerating}
+            onClick={handleGenerateTemplate}
+            disabled={!hasLlmKey || anyBusy}
             className="rounded-full border border-white/10 bg-white/6 px-4 py-2 text-xs font-medium text-text-primary transition enabled:hover:bg-white/10 disabled:opacity-50"
           >
-            {batchGenerating ? <span className="flex items-center gap-1.5"><Spinner />Generating all</span> : "Generate all icons"}
+            {generatingTemplate ? (
+              <span className="flex items-center gap-1.5"><Spinner />Generating template</span>
+            ) : template ? "Regenerate template" : "Generate template"}
+          </button>
+          <label className="flex cursor-pointer items-center gap-1.5 text-xs text-text-muted">
+            <input
+              type="checkbox"
+              checked={skipExisting}
+              onChange={(e) => setSkipExisting(e.target.checked)}
+              className="accent-accent"
+            />
+            Skip existing
+          </label>
+          <button
+            onClick={handleGenerateAll}
+            disabled={!hasImageKey || anyBusy}
+            className="rounded-full border border-white/10 bg-white/6 px-4 py-2 text-xs font-medium text-text-primary transition enabled:hover:bg-white/10 disabled:opacity-50"
+          >
+            {batchGenerating ? (
+              <span className="flex items-center gap-1.5"><Spinner />Generating tab</span>
+            ) : "Generate tab icons"}
           </button>
         </div>
       </div>
+
+      {/* Batch progress bar */}
+      {batchGenerating && batchProgress.total > 0 && (
+        <div className="mb-5 rounded-[18px] border border-white/8 bg-black/12 px-4 py-3">
+          <div className="mb-2 flex items-center justify-between text-xs">
+            <span className="text-text-secondary">
+              {batchCompleted} of {batchProgress.total}
+              {batchProgress.failed > 0 && (
+                <span className="ml-2 text-status-error">{batchProgress.failed} failed</span>
+              )}
+            </span>
+            <span className="flex items-center gap-3">
+              <span className="max-w-[16rem] truncate text-text-muted">{batchCurrentLabel}</span>
+              <button
+                onClick={handleAbortBatch}
+                className="rounded-full border border-status-error/40 bg-status-error/10 px-3 py-1 text-[11px] text-status-error transition hover:bg-status-error/20"
+              >
+                Abort
+              </button>
+            </span>
+          </div>
+          <div className="h-2 overflow-hidden rounded-full bg-bg-primary">
+            <div
+              className="h-full rounded-full bg-accent transition-all"
+              style={{ width: `${(batchCompleted / batchProgress.total) * 100}%` }}
+            />
+          </div>
+        </div>
+      )}
 
       {!selectedTarget ? (
         <div className="rounded-[20px] border border-dashed border-white/12 bg-black/12 px-4 py-8 text-sm text-text-muted">
@@ -436,19 +657,37 @@ export function AbilityStudio() {
         <div className="grid gap-5 xl:grid-cols-[0.62fr_1.38fr]">
           <div className="rounded-[24px] border border-white/8 bg-black/12 p-4">
             <div className="mb-3 flex flex-wrap gap-2">
-              {tabs.map((tab) => (
-                <button
-                  key={tab}
-                  onClick={() => setActiveTab(tab)}
-                  className={`rounded-full border px-3 py-1.5 text-[11px] uppercase tracking-label transition ${
-                    activeTab === tab
-                      ? "border-border-active bg-[var(--bg-accent-subtle)] text-text-primary"
-                      : "border-white/8 bg-black/10 text-text-muted hover:bg-white/8"
-                  }`}
-                >
-                  {tab === STATUS_TAB ? "Status Effects" : tab === GENERAL_TAB ? "General" : config.classes[tab]?.displayName || tab}
-                </button>
-              ))}
+              {tabs.map((tab) => {
+                // Compute per-tab counts for badge
+                let tabMissing = 0;
+                if (config) {
+                  if (tab === STATUS_TAB) {
+                    tabMissing = Object.values(config.statusEffects).filter((e) => !e.image).length;
+                  } else {
+                    tabMissing = Object.values(config.abilities).filter((a) => {
+                      const classId = a.requiredClass || a.classRestriction;
+                      const matches = tab === GENERAL_TAB ? !classId : classId === tab;
+                      return matches && !a.image;
+                    }).length;
+                  }
+                }
+                return (
+                  <button
+                    key={tab}
+                    onClick={() => setActiveTab(tab)}
+                    className={`rounded-full border px-3 py-1.5 text-[11px] uppercase tracking-label transition ${
+                      activeTab === tab
+                        ? "border-border-active bg-[var(--bg-accent-subtle)] text-text-primary"
+                        : tabMissing > 0
+                          ? "border-accent/30 bg-accent/5 text-text-muted hover:bg-white/8"
+                          : "border-white/8 bg-black/10 text-text-muted hover:bg-white/8"
+                    }`}
+                  >
+                    {tab === STATUS_TAB ? "Status Effects" : tab === GENERAL_TAB ? "General" : config.classes[tab]?.displayName || tab}
+                    {tabMissing > 0 && <span className="ml-1.5 text-accent">{tabMissing}</span>}
+                  </button>
+                );
+              })}
             </div>
 
             <div className="max-h-[42rem] overflow-y-auto pr-1">
@@ -514,7 +753,14 @@ export function AbilityStudio() {
             </div>
 
             <div className="rounded-[24px] border border-white/8 bg-black/12 p-4">
-              <div className="mb-3 text-[11px] uppercase tracking-ui text-text-muted">Prompt engineering</div>
+              <div className="mb-3 flex items-center justify-between">
+                <div className="text-[11px] uppercase tracking-ui text-text-muted">Prompt engineering</div>
+                {template && (
+                  <span className="rounded-full bg-status-success/10 px-2.5 py-0.5 text-[10px] text-status-success">
+                    Template active
+                  </span>
+                )}
+              </div>
               <textarea
                 value={promptDraft}
                 onChange={(event) => {
@@ -540,21 +786,37 @@ export function AbilityStudio() {
               <div className="mt-4 flex flex-wrap gap-2">
                 <button
                   onClick={handleGeneratePrompt}
-                  disabled={!hasLlmKey || generatingPrompt || generatingImage || batchGenerating}
+                  disabled={!hasLlmKey || anyBusy}
                   className="rounded-full border border-white/10 bg-white/6 px-4 py-2 text-xs font-medium text-text-primary transition enabled:hover:bg-white/10 disabled:opacity-50"
                 >
-                  {generatingPrompt ? <span className="flex items-center gap-1.5"><Spinner />Generating prompt</span> : "Generate prompt"}
+                  {generatingPrompt ? <span className="flex items-center gap-1.5"><Spinner />Generating</span> : "Generate prompt"}
                 </button>
                 <button
+                  onClick={handleEnhancePrompt}
+                  disabled={!hasLlmKey || !promptDraft.trim() || anyBusy}
+                  className="rounded-full border border-white/10 bg-white/6 px-4 py-2 text-xs font-medium text-text-primary transition enabled:hover:bg-white/10 disabled:opacity-50"
+                >
+                  Enhance prompt
+                </button>
+                {template && (
+                  <button
+                    onClick={handleFillFromTemplate}
+                    disabled={anyBusy}
+                    className="rounded-full border border-white/10 bg-white/6 px-4 py-2 text-xs font-medium text-text-primary transition enabled:hover:bg-white/10 disabled:opacity-50"
+                  >
+                    Fill from template
+                  </button>
+                )}
+                <button
                   onClick={handleGenerateImage}
-                  disabled={!hasImageKey || !promptDraft.trim() || generatingPrompt || generatingImage || batchGenerating}
+                  disabled={!hasImageKey || !promptDraft.trim() || anyBusy}
                   className="rounded-full border border-[var(--border-accent-subtle)] bg-gradient-active-strong px-4 py-2 text-xs font-medium text-text-primary transition enabled:hover:-translate-y-0.5 disabled:opacity-50"
                 >
                   {generatingImage ? <span className="flex items-center gap-1.5"><Spinner />Generating image</span> : "Generate image"}
                 </button>
                 <button
                   onClick={handleImport}
-                  disabled={importing || generatingPrompt || generatingImage || batchGenerating}
+                  disabled={anyBusy}
                   className="rounded-full border border-white/10 bg-white/6 px-4 py-2 text-xs font-medium text-text-primary transition enabled:hover:bg-white/10 disabled:opacity-50"
                 >
                   {importing ? <span className="flex items-center gap-1.5"><Spinner />Importing</span> : "Import image"}

@@ -38,6 +38,7 @@ export async function removeBgAndSave(
   context?: AssetContext,
   variantGroup?: string,
 ): Promise<AssetEntry | null> {
+  console.log(`[bg-removal] Starting for ${assetType}${variantGroup ? ` (variant: ${variantGroup})` : ""}`);
   try {
     const blob = await removeBackground(imageDataUrl);
     const buffer = await blob.arrayBuffer();
@@ -55,8 +56,9 @@ export async function removeBgAndSave(
       variantGroup: variantGroup ?? null,
     });
     return entry;
-  } catch {
+  } catch (e) {
     // BG removal is best-effort — don't block the main flow
+    console.error("[bg-removal] Failed:", e);
     return null;
   }
 }

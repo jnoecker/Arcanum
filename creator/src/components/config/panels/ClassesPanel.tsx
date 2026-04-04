@@ -13,6 +13,18 @@ import {
   CommitTextarea,
 } from "@/components/ui/FormWidgets";
 import { RegistryPanel } from "./RegistryPanel";
+
+const OUTFIT_DESC_SYSTEM_PROMPT = `You are an expert AI image prompt engineer writing outfit descriptions for fantasy RPG character class sprites.
+
+Given a class's name, lore, and role, write a concise but vivid prompt fragment describing the class's OUTFIT, WEAPONS, AND ACCESSORIES ONLY — not the body (that comes from the race).
+
+Rules:
+- 1-2 sentences of dense visual detail optimized for AI image generation
+- Focus on: armor type, materials, weapons held, magical accessories, signature visual elements
+- Describe the class fantasy silhouette — what makes this class instantly recognizable
+- Include specific details: weapon types, armor weight, magical effects on gear
+- Do NOT describe the body, face, skin, or hair — the race system handles those
+- Output ONLY the description text — no quotes, no explanation`;
 import { renameClassInConfig } from "@/lib/refactorId";
 import { EntityArtGenerator } from "@/components/ui/EntityArtGenerator";
 import { composePrompt, type ArtStyle } from "@/lib/arcanumPrompts";
@@ -215,6 +227,13 @@ export function ClassDetail({
           value={cls.outfitDescription ?? ""}
           onCommit={(v) => patch({ outfitDescription: v || undefined })}
           placeholder="Class outfit, weapons, and accessories for sprite/portrait prompts (e.g. 'heavy plate armor with tower shield...')"
+        />
+        <EnhanceDescriptionButton
+          entitySummary={`Class: ${cls.displayName}\n${cls.description ? `Description: ${cls.description}` : ""}${cls.backstory ? `\nBackstory: ${cls.backstory}` : ""}${cls.primaryStat ? `\nPrimary stat: ${cls.primaryStat}` : ""}`}
+          currentDescription={cls.outfitDescription}
+          onAccept={(v) => patch({ outfitDescription: v })}
+          systemPrompt={OUTFIT_DESC_SYSTEM_PROMPT}
+          label="AI Generate Outfit Description"
         />
         <FieldRow label="Showcase Race" hint="Race paired with this class for class portrait generation. Leave blank to use the default.">
           <SelectInput

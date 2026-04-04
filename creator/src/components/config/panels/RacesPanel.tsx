@@ -11,6 +11,31 @@ import { BACKSTORY_ENHANCE_PROMPT } from "@/lib/lorePrompts";
 import { composePrompt, type ArtStyle } from "@/lib/arcanumPrompts";
 import { useAssetStore } from "@/stores/assetStore";
 
+const BODY_DESC_SYSTEM_PROMPT = `You are an expert AI image prompt engineer writing body descriptions for fantasy RPG character sprites.
+
+Given a race's name, lore, and traits, write a concise but vivid prompt fragment describing the race's PHYSICAL BODY ONLY — not clothing or gear (those come from the class).
+
+Rules:
+- 1-3 sentences of dense visual detail optimized for AI image generation
+- Focus on: body shape, skin/surface material, colors, face, hair/head features, any magical visual effects
+- All figures must be ANDROGYNOUS — no gender signifiers. Explicitly state "completely flat chest with no gendered features" for humanoid races
+- Lean into alien/fantastical aspects — these are not humans
+- Do NOT include clothing, armor, or weapons — the class system handles those
+- Output ONLY the description text — no quotes, no explanation`;
+
+const STAFF_PROMPT_SYSTEM_PROMPT = `You are an expert AI image prompt engineer writing god-tier staff sprite prompts for a fantasy MUD RPG.
+
+Given a race's name and body description, write a COMPLETE image generation prompt for an ascended/divine administrator version of this race. This should be dramatically more powerful and visually impressive than any player tier.
+
+Rules:
+- 3-6 sentences of vivid, dense prompt detail
+- The figure should radiate cosmic/divine authority — golden light, celestial effects, impossible scale
+- Incorporate the race's core visual identity but elevated to godlike levels
+- Include dramatic magical effects: halos, orbiting elements, reality distortion, blazing energy
+- Must be unmistakably different from player sprites — a being of supreme authority
+- All figures must be ANDROGYNOUS
+- Output ONLY the prompt text — no quotes, no explanation`;
+
 export function defaultRaceDefinition(raw: string): RaceDefinitionConfig {
   return { displayName: raw };
 }
@@ -170,12 +195,26 @@ export function RaceDetail({
           onCommit={(v) => patch({ bodyDescription: v || undefined })}
           placeholder="Physical appearance for sprite/portrait prompts (e.g. 'tall luminous humanoid with translucent crystalline skin...')"
         />
+        <EnhanceDescriptionButton
+          entitySummary={`Race: ${race.displayName}\n${race.description ? `Description: ${race.description}` : ""}${race.backstory ? `\nBackstory: ${race.backstory}` : ""}${race.traits?.length ? `\nTraits: ${race.traits.join(", ")}` : ""}`}
+          currentDescription={race.bodyDescription}
+          onAccept={(v) => patch({ bodyDescription: v })}
+          systemPrompt={BODY_DESC_SYSTEM_PROMPT}
+          label="AI Generate Body Description"
+        />
         <CommitTextarea
           label="Staff Tier Prompt"
           value={race.staffPrompt ?? ""}
           onCommit={(v) => patch({ staffPrompt: v || undefined })}
           placeholder="Complete prompt override for the god-tier (tstaff) sprite. Leave blank to use the default template."
           rows={4}
+        />
+        <EnhanceDescriptionButton
+          entitySummary={`Race: ${race.displayName}\n${race.description ? `Description: ${race.description}` : ""}${race.bodyDescription ? `\nBody: ${race.bodyDescription}` : ""}`}
+          currentDescription={race.staffPrompt}
+          onAccept={(v) => patch({ staffPrompt: v })}
+          systemPrompt={STAFF_PROMPT_SYSTEM_PROMPT}
+          label="AI Generate Staff Prompt"
         />
       </div>
 

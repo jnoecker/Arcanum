@@ -8,9 +8,10 @@ import { useImageSrc } from "@/lib/useImageSrc";
 import { useFocusTrap } from "@/lib/useFocusTrap";
 import { UNIVERSAL_NEGATIVE } from "@/lib/arcanumPrompts";
 import { removeBgAndSave } from "@/lib/useBackgroundRemoval";
-import { ENTITY_DIMENSIONS, FLUX_DEV_MODEL, imageGenerateCommand, isFlux2Model, resolveImageModel, requestsTransparentBackground } from "@/types/assets";
+import { ENTITY_DIMENSIONS, imageGenerateCommand, resolveImageModel, requestsTransparentBackground } from "@/types/assets";
 import {
   buildSpritePrompt,
+  enhanceSpritePrompt,
   generateSpriteTemplate,
   getTierDefinitions,
   type SpriteDimensions,
@@ -769,7 +770,6 @@ export function PlayerSpriteManager() {
   const loadAssets = useAssetStore((s) => s.loadAssets);
   const acceptAsset = useAssetStore((s) => s.acceptAsset);
   const deleteAsset = useAssetStore((s) => s.deleteAsset);
-  const assetsDir = useAssetStore((s) => s.assetsDir);
 
   useEffect(() => { loadAssets(); }, [loadAssets]);
 
@@ -852,36 +852,6 @@ export function PlayerSpriteManager() {
     return promise;
   }, [config, hasLlmKey]);
 
-  const readSeedImageDataUrl = useCallback(async (race: string): Promise<string | null> => {
-    if ((imageProvider !== "deepinfra" && imageProvider !== "runware") || !assetsDir) return null;
-
-    for (const [definitionId, definition] of Object.entries(definitions)) {
-      const entries = definition.variants && definition.variants.length > 0
-        ? definition.variants.map((variant) => ({ imageId: variant.imageId, variant }))
-        : [{ imageId: definitionId, variant: undefined }];
-
-      for (const entry of entries) {
-        const dimensions = resolveSpriteDimensions(definition, entry.variant, config);
-        if (dimensions.race !== race || dimensions.playerClass !== "base" || dimensions.tier === "tstaff") {
-          continue;
-        }
-
-        const spriteAsset = spriteAssetMap.get(entry.imageId);
-        if (!spriteAsset) continue;
-
-        try {
-          return await invoke<string>("read_image_data_url", {
-            path: `${assetsDir}\\images\\${spriteAsset.fileName}`,
-          });
-        } catch {
-          return null;
-        }
-      }
-    }
-
-    return null;
-  }, [assetsDir, config, definitions, imageProvider, spriteAssetMap]);
-
   const handleAdd = useCallback(() => {
     const id = newId.trim().toLowerCase().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "");
     if (!id || definitions[id]) return;
@@ -936,46 +906,31 @@ export function PlayerSpriteManager() {
 
         const template = await ensureSpriteTemplate();
         const dimensions = resolveSpriteDimensions(resolved.definition, resolved.variant, config);
-        const finalPrompt = buildSpritePrompt(
+        const rawPrompt = buildSpritePrompt(
           dimensions,
           template,
           spritePromptNotes(resolved.definition, resolved.variant),
         );
+        const finalPrompt = hasLlmKey
+          ? await enhanceSpritePrompt(rawPrompt)
+          : rawPrompt;
         const model = resolveImageModel(imageProvider, settings?.image_model);
         if (!model) throw new Error("No image model available");
 
         const dims = ENTITY_DIMENSIONS.player_sprite ?? { width: 512, height: 512 };
-        const seedImage = dimensions.playerClass !== "base" && dimensions.tier !== "tstaff"
-          ? await readSeedImageDataUrl(dimensions.race)
-          : null;
 
-        const useRedux = seedImage && imageProvider === "runware" && isFlux2Model(model.id);
-        const image = seedImage && imageProvider === "deepinfra"
-          ? await invoke<GeneratedImage>("img2img_generate", {
-              prompt: finalPrompt,
-              imageBase64: seedImage,
-              model: model.id,
-              width: dims.width,
-              height: dims.height,
-              strength: 0.65,
-              assetType: "player_sprite",
-              autoEnhance: false,
-            })
-          : await invoke<GeneratedImage>(imageGenerateCommand(imageProvider), {
-            prompt: finalPrompt,
-            negativePrompt: UNIVERSAL_NEGATIVE,
-            seedImage: seedImage && imageProvider === "runware" && !useRedux ? seedImage : null,
-            seedStrength: seedImage && imageProvider === "runware" && !useRedux ? 0.65 : null,
-            guideImage: useRedux ? seedImage : null,
-            model: useRedux ? FLUX_DEV_MODEL : model.id,
-            width: dims.width,
-            height: dims.height,
-            steps: model.defaultSteps,
-            guidance: "defaultGuidance" in model ? model.defaultGuidance : null,
-            assetType: "player_sprite",
-            autoEnhance: false,
-            transparentBackground: imageProvider === "openai" && requestsTransparentBackground("player_sprite"),
-          });
+        const image = await invoke<GeneratedImage>(imageGenerateCommand(imageProvider), {
+          prompt: finalPrompt,
+          negativePrompt: UNIVERSAL_NEGATIVE,
+          model: model.id,
+          width: dims.width,
+          height: dims.height,
+          steps: model.defaultSteps,
+          guidance: "defaultGuidance" in model ? model.defaultGuidance : null,
+          assetType: "player_sprite",
+          autoEnhance: false,
+          transparentBackground: imageProvider === "openai" && requestsTransparentBackground("player_sprite"),
+        });
 
         const assetContext: AssetContext = { zone: "sprites", entity_type: "player_sprite", entity_id: imageId };
         const variantGroup = `player_sprite:${imageId}`;
@@ -995,7 +950,7 @@ export function PlayerSpriteManager() {
         setGenerating(null);
       }
     },
-    [acceptAsset, config, definitions, ensureSpriteTemplate, hasApiKey, imageProvider, loadAssets, readSeedImageDataUrl, settings],
+    [acceptAsset, config, definitions, ensureSpriteTemplate, hasApiKey, imageProvider, loadAssets, settings],
   );
 
   const handleDeploy = useCallback(async () => {

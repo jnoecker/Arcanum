@@ -249,3 +249,33 @@ export function buildSpritePrompt(
     ? `${promptBody}. ${context}\n\n${STYLE_SUFFIX}`
     : `${promptBody}\n\n${STYLE_SUFFIX}`;
 }
+
+// ─── Per-sprite LLM enhancement ─────────────────────────────────────
+
+const SPRITE_ENHANCE_SYSTEM = `You are an expert AI image prompt engineer. You receive a draft image generation prompt for a fantasy RPG character sprite and refine it into a stronger, more cohesive prompt.
+
+Rules:
+- Preserve ALL visual details from the original (race body, class outfit, tier power level, format spec)
+- Tighten wording: remove redundancy, merge overlapping phrases, sharpen visual language
+- Ensure the character is ANDROGYNOUS — no gendered features
+- Ensure the pose is front-facing, centered, full body, head to feet
+- Keep the solid pale lavender (#d8d0e8) background specification
+- Do NOT add the style suffix — it will be appended automatically
+- Output ONLY the refined prompt text — no quotes, no explanation, no preamble`;
+
+/**
+ * Refine an assembled sprite prompt via LLM for stronger image generation results.
+ * Falls back to the original prompt if the LLM call fails.
+ */
+export async function enhanceSpritePrompt(rawPrompt: string): Promise<string> {
+  try {
+    const enhanced = await invoke<string>("llm_complete", {
+      systemPrompt: SPRITE_ENHANCE_SYSTEM,
+      userPrompt: `Refine this sprite generation prompt:\n\n${rawPrompt}`,
+    });
+    // Re-append style suffix since the LLM was told not to include it
+    return `${enhanced.trim()}\n\n${STYLE_SUFFIX}`;
+  } catch {
+    return rawPrompt;
+  }
+}

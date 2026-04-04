@@ -7,9 +7,10 @@ import { useProjectStore } from "@/stores/projectStore";
 import { useFocusTrap } from "@/lib/useFocusTrap";
 import { UNIVERSAL_NEGATIVE } from "@/lib/arcanumPrompts";
 import { removeBgAndSave, shouldRemoveBg } from "@/lib/useBackgroundRemoval";
-import { ENTITY_DIMENSIONS, FLUX_DEV_MODEL, imageGenerateCommand, isFlux2Model, resolveImageModel, requestsTransparentBackground } from "@/types/assets";
+import { ENTITY_DIMENSIONS, imageGenerateCommand, resolveImageModel, requestsTransparentBackground } from "@/types/assets";
 import {
   buildSpritePrompt,
+  enhanceSpritePrompt,
   generateSpriteTemplate,
   getTierDefinitions,
   type SpritePromptTemplate,
@@ -41,7 +42,6 @@ export function TierSpriteScaffold({ onClose, onComplete }: TierSpriteScaffoldPr
   const settings = useAssetStore((s) => s.settings);
   const acceptAsset = useAssetStore((s) => s.acceptAsset);
   const loadAssets = useAssetStore((s) => s.loadAssets);
-  const assetsDir = useAssetStore((s) => s.assetsDir);
 
   const [phase, setPhase] = useState<Phase>("select");
   const [tierFilter, setTierFilter] = useState<Set<string>>(new Set());
@@ -71,13 +71,6 @@ export function TierSpriteScaffold({ onClose, onComplete }: TierSpriteScaffoldPr
   }, [config, definitions]);
 
   // Available filter values
-  const tiers = useMemo(() => {
-    if (!gaps) return [];
-    const seen = new Set<string>();
-    for (const s of gaps.missing) seen.add(s.tier);
-    return [...seen];
-  }, [gaps]);
-
   const races = useMemo(() => {
     if (!config) return [];
     return Object.keys(config.races);
@@ -155,34 +148,6 @@ export function TierSpriteScaffold({ onClose, onComplete }: TierSpriteScaffoldPr
       }
     }
 
-    // Read existing base sprites for img2img seeding
-    const baseSpriteCache = new Map<string, string>();
-    const readSeedImage = async (race: string): Promise<string | null> => {
-      if (imageProvider !== "deepinfra" && imageProvider !== "runware") return null;
-      if (baseSpriteCache.has(race)) return baseSpriteCache.get(race) ?? null;
-
-      // Look for the race's base tier sprite asset
-      const assets = useAssetStore.getState().assets;
-      for (const a of assets) {
-        if (a.asset_type === "player_sprite" && a.variant_group?.startsWith("player_sprite:")) {
-          const key = a.variant_group.replace("player_sprite:", "");
-          if (key === `${race}_base_${tiers.find((t) => t !== "tstaff") ?? "t1"}` && a.is_active) {
-            try {
-              const dataUrl = await invoke<string>("read_image_data_url", {
-                path: `${assetsDir}\\images\\${a.file_name}`,
-              });
-              baseSpriteCache.set(race, dataUrl);
-              return dataUrl;
-            } catch {
-              break;
-            }
-          }
-        }
-      }
-      baseSpriteCache.set(race, "");
-      return null;
-    };
-
     // Batch generate with concurrency
     const concurrency = settings.batch_concurrency ?? 3;
     const queue = [...slots.keys()];
@@ -202,60 +167,27 @@ export function TierSpriteScaffold({ onClose, onComplete }: TierSpriteScaffoldPr
 
         try {
           const dimensions = { race: slot.race, playerClass: slot.playerClass, tier: slot.tier };
-          const prompt = buildSpritePrompt(dimensions, template);
+          const prompt = hasLlmKey
+            ? await enhanceSpritePrompt(buildSpritePrompt(dimensions, template))
+            : buildSpritePrompt(dimensions, template);
 
           const model = resolveImageModel(imageProvider, settings?.image_model);
           if (!model) throw new Error("No image model available");
 
           const dims = ENTITY_DIMENSIONS.player_sprite ?? { width: 512, height: 512 };
 
-          // Use img2img seeding for class sprites (not base/staff)
-          const seedImage = slot.playerClass !== "base" && !slot.isStaff
-            ? await readSeedImage(slot.race)
-            : null;
-
-          const generate = (seed: string | null) => {
-            if (seed && imageProvider === "deepinfra") {
-              return invoke<GeneratedImage>("img2img_generate", {
-                prompt,
-                imageBase64: seed,
-                model: model.id,
-                width: dims.width,
-                height: dims.height,
-                strength: 0.65,
-                assetType: "player_sprite",
-                autoEnhance: false,
-              });
-            }
-            const useRedux = seed && imageProvider === "runware" && isFlux2Model(model.id);
-            return invoke<GeneratedImage>(imageGenerateCommand(imageProvider), {
-              prompt,
-              negativePrompt: UNIVERSAL_NEGATIVE,
-              seedImage: seed && imageProvider === "runware" && !isFlux2Model(model.id) ? seed : null,
-              seedStrength: seed && imageProvider === "runware" && !isFlux2Model(model.id) ? 0.65 : null,
-              guideImage: useRedux ? seed : null,
-              model: useRedux ? FLUX_DEV_MODEL : model.id,
-              width: dims.width,
-              height: dims.height,
-              steps: model.defaultSteps,
-              guidance: "defaultGuidance" in model ? model.defaultGuidance : null,
-              assetType: "player_sprite",
-              autoEnhance: false,
-              transparentBackground: imageProvider === "openai" && requestsTransparentBackground("player_sprite"),
-            });
-          };
-
-          // Try with seed image first; retry without if the provider rejects it
-          let image: GeneratedImage;
-          try {
-            image = await generate(seedImage);
-          } catch (e) {
-            if (seedImage) {
-              image = await generate(null);
-            } else {
-              throw e;
-            }
-          }
+          const image = await invoke<GeneratedImage>(imageGenerateCommand(imageProvider), {
+            prompt,
+            negativePrompt: UNIVERSAL_NEGATIVE,
+            model: model.id,
+            width: dims.width,
+            height: dims.height,
+            steps: model.defaultSteps,
+            guidance: "defaultGuidance" in model ? model.defaultGuidance : null,
+            assetType: "player_sprite",
+            autoEnhance: false,
+            transparentBackground: imageProvider === "openai" && requestsTransparentBackground("player_sprite"),
+          });
 
           const imageId = slot.id;
           const assetContext: AssetContext = { zone: "sprites", entity_type: "player_sprite", entity_id: imageId };
@@ -295,7 +227,7 @@ export function TierSpriteScaffold({ onClose, onComplete }: TierSpriteScaffoldPr
     setPhase("done");
   }, [
     config, project, settings, filteredMissing, definitions, hasLlmKey,
-    imageProvider, tiers, assetsDir, setDefinition, saveDefinitions,
+    imageProvider, setDefinition, saveDefinitions,
     acceptAsset, loadAssets,
   ]);
 

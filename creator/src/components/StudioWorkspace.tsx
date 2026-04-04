@@ -40,7 +40,6 @@ function ZoneSelector({
     return () => document.removeEventListener("mousedown", handler);
   }, [open]);
 
-  // Reset search when closed
   useEffect(() => {
     if (!open) setSearch("");
   }, [open]);
@@ -60,35 +59,26 @@ function ZoneSelector({
     <div ref={ref} className="relative">
       <button
         onClick={() => setOpen(!open)}
-        className={`focus-ring flex w-full items-center justify-between gap-3 rounded-[18px] border px-4 py-3 text-left transition ${
+        className={`focus-ring flex items-center gap-2 rounded-full border px-4 py-2 text-left transition ${
           open
             ? "border-border-active bg-gradient-active"
             : "border-white/10 bg-white/[0.04] hover:bg-white/7"
         }`}
       >
-        <div className="min-w-0 flex-1">
-          <div className="text-[11px] uppercase tracking-ui text-text-muted">Zone</div>
-          <div className="mt-0.5 truncate font-display text-base text-text-primary">{selectedLabel}</div>
-          {selectedZone && (
-            <div className="mt-0.5 flex items-center gap-2 text-[11px] text-text-muted">
-              <span>{Object.keys(selectedZone[1].data.rooms).length} rooms</span>
-              {(() => {
-                const linked = assets.filter((a) => a.context?.zone === selectedZoneId).length;
-                return linked > 0 ? <span>· {linked} assets</span> : null;
-              })()}
-              {selectedZone[1].dirty && (
-                <span className="rounded-full bg-badge-dirty-bg px-1.5 py-0.5 text-2xs text-text-dirty">Unsaved</span>
-              )}
-            </div>
-          )}
-        </div>
-        <svg className={`h-4 w-4 shrink-0 text-text-muted transition ${open ? "rotate-180" : ""}`} viewBox="0 0 20 20" fill="currentColor">
+        <span className="text-[11px] uppercase tracking-ui text-text-muted">Zone</span>
+        <span className="truncate text-xs font-medium text-text-primary" style={{ maxWidth: "14rem" }}>{selectedLabel}</span>
+        {selectedZone && (
+          <span className="text-[11px] text-text-muted">
+            {Object.keys(selectedZone[1].data.rooms).length} rooms
+          </span>
+        )}
+        <svg className={`h-3.5 w-3.5 shrink-0 text-text-muted transition ${open ? "rotate-180" : ""}`} viewBox="0 0 20 20" fill="currentColor">
           <path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clipRule="evenodd" />
         </svg>
       </button>
 
       {open && (
-        <div className="absolute left-0 right-0 top-full z-20 mt-1 rounded-[18px] border border-white/12 bg-bg-secondary shadow-xl">
+        <div className="absolute right-0 top-full z-20 mt-1 w-80 rounded-[18px] border border-white/12 bg-bg-secondary shadow-xl">
           {zones.length > 6 && (
             <div className="border-b border-white/8 px-3 py-2">
               <input
@@ -190,7 +180,7 @@ export function StudioWorkspace({ panelId }: { panelId: string }) {
       <div className="mx-auto flex max-w-7xl flex-col gap-6">
         {panelId === "art" && (
           <>
-            {/* Sub-tab strip */}
+            {/* Sub-tab strip + zone selector */}
             <div className="flex items-center gap-2">
               {([
                 { id: "direction" as const, label: "Direction" },
@@ -209,51 +199,44 @@ export function StudioWorkspace({ panelId }: { panelId: string }) {
                   {tab.label}
                 </button>
               ))}
+              <div className="ml-auto">{zoneSelector}</div>
             </div>
 
             {selectedZone ? (
               <>
                 {artSubTab === "direction" && (
-                  <section className="flex flex-col gap-6">
-                    <div className="grid items-start gap-6 xl:grid-cols-[0.38fr_1.62fr]">
-                      <div>{zoneSelector}</div>
-                      <div className="panel-surface rounded-[28px] p-5">
-                        <div className="mb-4 flex items-center justify-between">
-                          <h2 className="font-display text-xl text-text-primary">Zone direction</h2>
-                          <div className="flex gap-2">
-                            <button
-                              onClick={() => openTab({ id: `zone:${selectedZoneId}`, kind: "zone", label: selectedZoneId! })}
-                              className="focus-ring shell-pill rounded-full px-4 py-2 text-xs font-medium"
-                            >
-                              Open editor
-                            </button>
-                            <button
-                              onClick={() => setShowBatchArt(true)}
-                              className="focus-ring shell-pill-primary rounded-full px-4 py-2 text-xs font-medium"
-                            >
-                              Batch generate
-                            </button>
-                          </div>
-                        </div>
-                        <ZoneVibePanel
-                          zoneId={selectedZoneId!}
-                          world={selectedZone.data}
-                          onWorldChange={(world) => updateZone(selectedZoneId!, world)}
-                        />
+                  <div className="panel-surface rounded-[28px] p-5">
+                    <div className="mb-4 flex items-center justify-between">
+                      <h2 className="font-display text-xl text-text-primary">Zone direction</h2>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => openTab({ id: `zone:${selectedZoneId}`, kind: "zone", label: selectedZoneId! })}
+                          className="focus-ring shell-pill rounded-full px-4 py-2 text-xs font-medium"
+                        >
+                          Open editor
+                        </button>
+                        <button
+                          onClick={() => setShowBatchArt(true)}
+                          className="focus-ring shell-pill-primary rounded-full px-4 py-2 text-xs font-medium"
+                        >
+                          Batch generate
+                        </button>
                       </div>
                     </div>
-                  </section>
-                )}
-
-                {artSubTab === "assets" && (
-                  <section className="flex flex-col gap-6">
-                    <div>{zoneSelector}</div>
-                    <ZoneAssetWorkbench
+                    <ZoneVibePanel
                       zoneId={selectedZoneId!}
                       world={selectedZone.data}
                       onWorldChange={(world) => updateZone(selectedZoneId!, world)}
                     />
-                  </section>
+                  </div>
+                )}
+
+                {artSubTab === "assets" && (
+                  <ZoneAssetWorkbench
+                      zoneId={selectedZoneId!}
+                      world={selectedZone.data}
+                      onWorldChange={(world) => updateZone(selectedZoneId!, world)}
+                    />
                 )}
 
                 {artSubTab === "custom" && (
@@ -279,7 +262,7 @@ export function StudioWorkspace({ panelId }: { panelId: string }) {
 
         {panelId === "media" && (
           <>
-            <div>{zoneSelector}</div>
+            <div className="flex justify-end">{zoneSelector}</div>
             <MediaStudio
               zoneId={selectedZoneId}
               world={selectedZone?.data ?? null}

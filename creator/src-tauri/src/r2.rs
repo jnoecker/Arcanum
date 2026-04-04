@@ -401,10 +401,22 @@ fn find_asset_file(base: &Path, file_name: &str) -> Option<PathBuf> {
     None
 }
 
-fn should_sync_asset(asset: &AssetEntry, scope: &str) -> bool {
+fn should_sync_asset(asset: &AssetEntry, scope: &str, active_set: &std::collections::HashSet<String>) -> bool {
     match scope {
         "all" => true,
-        _ => asset.is_active || asset.variant_group.is_empty(),
+        _ => {
+            // No variant group → always sync
+            if asset.variant_group.is_empty() {
+                return true;
+            }
+            // Explicit is_active flag
+            if asset.is_active {
+                return true;
+            }
+            // If this variant group has no active entry at all, treat the
+            // newest (this) entry as eligible so orphaned groups still sync.
+            !active_set.contains(&asset.variant_group)
+        }
     }
 }
 
@@ -417,9 +429,17 @@ pub async fn sync_assets(app: AppHandle, scope: Option<String>) -> Result<SyncPr
 
     let sync_scope = scope.unwrap_or_else(|| "approved".to_string());
     let assets = assets::list_assets(app.clone()).await?;
+
+    // Build set of variant groups that have at least one active entry
+    let active_set: std::collections::HashSet<String> = assets
+        .iter()
+        .filter(|a| a.is_active && !a.variant_group.is_empty())
+        .map(|a| a.variant_group.clone())
+        .collect();
+
     let unsynced: Vec<&AssetEntry> = assets
         .iter()
-        .filter(|a| a.sync_status != "synced" && should_sync_asset(a, &sync_scope))
+        .filter(|a| a.sync_status != "synced" && should_sync_asset(a, &sync_scope, &active_set))
         .collect();
     let base_dir = assets_base_dir(&app)?;
     let client = reqwest::Client::new();

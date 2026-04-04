@@ -7,7 +7,7 @@ import { useProjectStore } from "@/stores/projectStore";
 import { useFocusTrap } from "@/lib/useFocusTrap";
 import { UNIVERSAL_NEGATIVE } from "@/lib/arcanumPrompts";
 import { removeBgAndSave, shouldRemoveBg } from "@/lib/useBackgroundRemoval";
-import { ENTITY_DIMENSIONS, imageGenerateCommand, isFlux2Model, resolveImageModel, requestsTransparentBackground } from "@/types/assets";
+import { ENTITY_DIMENSIONS, FLUX_DEV_MODEL, imageGenerateCommand, isFlux2Model, resolveImageModel, requestsTransparentBackground } from "@/types/assets";
 import {
   buildSpritePrompt,
   generateSpriteTemplate,
@@ -227,13 +227,14 @@ export function TierSpriteScaffold({ onClose, onComplete }: TierSpriteScaffoldPr
                 autoEnhance: false,
               });
             }
+            const useRedux = seed && imageProvider === "runware" && isFlux2Model(model.id);
             return invoke<GeneratedImage>(imageGenerateCommand(imageProvider), {
               prompt,
               negativePrompt: UNIVERSAL_NEGATIVE,
               seedImage: seed && imageProvider === "runware" && !isFlux2Model(model.id) ? seed : null,
               seedStrength: seed && imageProvider === "runware" && !isFlux2Model(model.id) ? 0.65 : null,
-              guideImage: seed && imageProvider === "runware" && isFlux2Model(model.id) ? seed : null,
-              model: model.id,
+              guideImage: useRedux ? seed : null,
+              model: useRedux ? FLUX_DEV_MODEL : model.id,
               width: dims.width,
               height: dims.height,
               steps: model.defaultSteps,

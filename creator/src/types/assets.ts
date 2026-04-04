@@ -187,6 +187,9 @@ export function isFlux2Model(modelId: string): boolean {
   return modelId.startsWith("runware:4");
 }
 
+/** FLUX Dev model ID — required as base model for Redux IP-Adapter (FLUX2 doesn't support ipAdapters). */
+export const FLUX_DEV_MODEL = "runware:101@1";
+
 export function imageGenerateCommand(provider: string): string {
   switch (provider) {
     case "runware": return "runware_generate_image";

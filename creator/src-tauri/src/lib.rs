@@ -40,6 +40,7 @@ pub fn run() {
             settings::get_settings,
             settings::save_settings,
             settings::get_merged_settings,
+            settings::set_active_project_dir,
             project_settings::get_project_settings,
             project_settings::save_project_settings,
             project_settings::seed_project_settings,

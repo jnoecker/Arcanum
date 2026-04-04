@@ -1,8 +1,22 @@
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
+use std::sync::LazyLock;
 use tauri::{AppHandle, Manager};
+use tokio::sync::RwLock;
 
 const SETTINGS_FILE: &str = "settings.json";
+
+/// The currently active project directory. When set, `get_settings` automatically
+/// merges user-level settings with project-level settings.
+static ACTIVE_PROJECT_DIR: LazyLock<RwLock<Option<String>>> = LazyLock::new(|| RwLock::new(None));
+
+/// Called by the frontend when a project is opened/closed.
+#[tauri::command]
+pub async fn set_active_project_dir(project_dir: Option<String>) -> Result<(), String> {
+    let mut dir = ACTIVE_PROJECT_DIR.write().await;
+    *dir = project_dir;
+    Ok(())
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Settings {
@@ -108,9 +122,9 @@ fn settings_path(app: &AppHandle) -> Result<PathBuf, String> {
     Ok(dir.join(SETTINGS_FILE))
 }
 
-#[tauri::command]
-pub async fn get_settings(app: AppHandle) -> Result<Settings, String> {
-    let path = settings_path(&app)?;
+/// Load user-level settings only (no project merge).
+pub async fn get_user_settings(app: &AppHandle) -> Result<Settings, String> {
+    let path = settings_path(app)?;
     if !path.exists() {
         return Ok(Settings::default());
     }
@@ -118,6 +132,40 @@ pub async fn get_settings(app: AppHandle) -> Result<Settings, String> {
         .await
         .map_err(|e| format!("Failed to read settings: {e}"))?;
     serde_json::from_str(&data).map_err(|e| format!("Failed to parse settings: {e}"))
+}
+
+/// Returns settings, automatically merged with project settings when a project is active.
+/// All 24+ backend commands call this — they get the right credentials without changes.
+#[tauri::command]
+pub async fn get_settings(app: AppHandle) -> Result<Settings, String> {
+    let user = get_user_settings(&app).await?;
+    let dir = ACTIVE_PROJECT_DIR.read().await;
+    if let Some(project_dir) = dir.as_ref() {
+        if let Ok(Some(ps)) = crate::project_settings::get_project_settings(project_dir.clone()).await {
+            return Ok(Settings {
+                deepinfra_api_key: user.deepinfra_api_key,
+                runware_api_key: user.runware_api_key,
+                anthropic_api_key: user.anthropic_api_key,
+                openrouter_api_key: user.openrouter_api_key,
+                openai_api_key: user.openai_api_key,
+                github_pat: user.github_pat,
+                image_model: ps.image_model,
+                enhance_model: ps.enhance_model,
+                prompt_llm_provider: ps.prompt_llm_provider,
+                image_provider: ps.image_provider,
+                video_model: ps.video_model,
+                batch_concurrency: ps.batch_concurrency,
+                auto_enhance_prompts: ps.auto_enhance_prompts,
+                auto_remove_bg: ps.auto_remove_bg,
+                r2_account_id: ps.r2_account_id,
+                r2_access_key_id: ps.r2_access_key_id,
+                r2_secret_access_key: ps.r2_secret_access_key,
+                r2_bucket: ps.r2_bucket,
+                r2_custom_domain: ps.r2_custom_domain,
+            });
+        }
+    }
+    Ok(user)
 }
 
 #[tauri::command]

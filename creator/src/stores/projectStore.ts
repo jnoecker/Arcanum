@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { invoke } from "@tauri-apps/api/core";
 import { saveUIState, loadUIState } from "@/lib/uiPersistence";
 import { panelTab } from "@/lib/panelRegistry";
 import type {
@@ -57,10 +58,15 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
       adminSubView: "overview",
       adminContentSubView: "abilities",
     });
+    // Tell the Rust backend which project is active so get_settings
+    // automatically merges project-level settings (R2 credentials, etc.)
+    invoke("set_active_project_dir", { projectDir: project.mudDir }).catch(() => {});
   },
 
-  closeProject: () =>
-    set({ project: null, tabs: [], activeTabId: null }),
+  closeProject: () => {
+    invoke("set_active_project_dir", { projectDir: null }).catch(() => {});
+    set({ project: null, tabs: [], activeTabId: null });
+  },
 
   openTab: (tab) => {
     const { tabs } = get();

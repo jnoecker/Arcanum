@@ -172,6 +172,16 @@ export const IMAGE_MODELS = [
 ] as const;
 
 /** Resolve the Tauri command name for a given image provider. */
+/** Resolve the image model: prefer settings.image_model, fall back to first model for the provider. */
+export function resolveImageModel(provider: string, configuredModel?: string) {
+  const forProvider = IMAGE_MODELS.filter((m) => m.provider === provider);
+  if (configuredModel) {
+    const match = forProvider.find((m) => m.id === configuredModel);
+    if (match) return match;
+  }
+  return forProvider[0];
+}
+
 export function imageGenerateCommand(provider: string): string {
   switch (provider) {
     case "runware": return "runware_generate_image";

@@ -6,7 +6,7 @@ import { useVibeStore } from "@/stores/vibeStore";
 import { useImageSrc } from "@/lib/useImageSrc";
 import { composePrompt, UNIVERSAL_NEGATIVE, type ArtStyle } from "@/lib/arcanumPrompts";
 import { fillPortraitTemplate, generatePortraitTemplate, type PortraitPromptTemplate } from "@/lib/portraitPromptGen";
-import { IMAGE_MODELS, imageGenerateCommand, type AssetEntry, type GeneratedImage } from "@/types/assets";
+import { imageGenerateCommand, resolveImageModel, type AssetEntry, type GeneratedImage } from "@/types/assets";
 import { InlineError, Spinner } from "@/components/ui/FormWidgets";
 
 type PortraitKind = "race" | "class";
@@ -171,8 +171,7 @@ export function PortraitStudio({ selectedZoneId }: { selectedZoneId: string | nu
   }, [artStyle, selectedTarget, template, variants]);
 
   const imageProvider = settings?.image_provider ?? "deepinfra";
-  const availableModels = IMAGE_MODELS.filter((model) => model.provider === imageProvider);
-  const defaultModel = availableModels[0];
+  const defaultModel = resolveImageModel(imageProvider, settings?.image_model);
   const hasImageKey = !!(
     (imageProvider === "deepinfra" && settings?.deepinfra_api_key) ||
     (imageProvider === "runware" && settings?.runware_api_key) ||

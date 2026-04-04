@@ -79,6 +79,7 @@ export function CreationStep({
       artStyle,
       "",
       imageProvider,
+      settings?.image_model,
       settings?.batch_concurrency ?? 5,
       abortRef,
       {

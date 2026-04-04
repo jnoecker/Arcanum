@@ -7,7 +7,7 @@ import { useProjectStore } from "@/stores/projectStore";
 import { useFocusTrap } from "@/lib/useFocusTrap";
 import { UNIVERSAL_NEGATIVE } from "@/lib/arcanumPrompts";
 import { removeBgAndSave, shouldRemoveBg } from "@/lib/useBackgroundRemoval";
-import { IMAGE_MODELS, ENTITY_DIMENSIONS, imageGenerateCommand, requestsTransparentBackground } from "@/types/assets";
+import { ENTITY_DIMENSIONS, imageGenerateCommand, resolveImageModel, requestsTransparentBackground } from "@/types/assets";
 import {
   buildSpritePrompt,
   generateSpriteTemplate,
@@ -204,8 +204,7 @@ export function TierSpriteScaffold({ onClose, onComplete }: TierSpriteScaffoldPr
           const dimensions = { race: slot.race, playerClass: slot.playerClass, tier: slot.tier };
           const prompt = buildSpritePrompt(dimensions, template);
 
-          const models = IMAGE_MODELS.filter((m) => m.provider === imageProvider);
-          const model = models[0];
+          const model = resolveImageModel(imageProvider, settings?.image_model);
           if (!model) throw new Error("No image model available");
 
           const dims = ENTITY_DIMENSIONS.player_sprite ?? { width: 512, height: 512 };

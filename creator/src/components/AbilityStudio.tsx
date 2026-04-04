@@ -7,7 +7,7 @@ import { useConfigStore } from "@/stores/configStore";
 import { useImageSrc } from "@/lib/useImageSrc";
 import { composePrompt, UNIVERSAL_NEGATIVE, type ArtStyle } from "@/lib/arcanumPrompts";
 import { generateAbilityPrompt, generateStatusEffectPrompt } from "@/lib/abilityPromptGen";
-import { IMAGE_MODELS, imageGenerateCommand, requestsTransparentBackground, type AssetEntry, type GeneratedImage } from "@/types/assets";
+import { imageGenerateCommand, resolveImageModel, requestsTransparentBackground, type AssetEntry, type GeneratedImage } from "@/types/assets";
 import type { AbilityDefinitionConfig, StatusEffectDefinitionConfig } from "@/types/config";
 
 type AbilityStudioTab = string;
@@ -236,8 +236,7 @@ export function AbilityStudio() {
   }, [artStyle, selectedTarget, variants]);
 
   const imageProvider = settings?.image_provider ?? "deepinfra";
-  const availableModels = IMAGE_MODELS.filter((model) => model.provider === imageProvider);
-  const defaultModel = availableModels[0];
+  const defaultModel = resolveImageModel(imageProvider, settings?.image_model);
   const hasImageKey = !!(
     (imageProvider === "deepinfra" && settings?.deepinfra_api_key) ||
     (imageProvider === "runware" && settings?.runware_api_key) ||

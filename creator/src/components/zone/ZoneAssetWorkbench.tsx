@@ -13,7 +13,7 @@ import {
   type DefaultImageKind,
 } from "@/lib/entityPrompts";
 import { getEnhanceSystemPrompt, UNIVERSAL_NEGATIVE } from "@/lib/arcanumPrompts";
-import { IMAGE_MODELS, imageGenerateCommand, requestsTransparentBackground, type AssetContext, type AssetEntry, type GeneratedImage } from "@/types/assets";
+import { imageGenerateCommand, resolveImageModel, requestsTransparentBackground, type AssetContext, type AssetEntry, type GeneratedImage } from "@/types/assets";
 import { InlineError, Spinner } from "@/components/ui/FormWidgets";
 import type { WorldFile } from "@/types/world";
 
@@ -259,8 +259,7 @@ export function ZoneAssetWorkbench({ zoneId, world, onWorldChange }: ZoneAssetWo
   }, [selectedTarget, world, zoneVibe, artStyle, variants]);
 
   const imageProvider = settings?.image_provider ?? "deepinfra";
-  const availableModels = IMAGE_MODELS.filter((model) => model.provider === imageProvider);
-  const defaultModel = availableModels[0];
+  const defaultModel = resolveImageModel(imageProvider, settings?.image_model);
   const hasImageKey = !!((imageProvider === "deepinfra" && settings?.deepinfra_api_key) || (imageProvider === "runware" && settings?.runware_api_key) || (imageProvider === "openai" && settings?.openai_api_key));
   const hasLlmKey = !!(settings?.deepinfra_api_key || settings?.anthropic_api_key || settings?.openrouter_api_key);
 

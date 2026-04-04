@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { useVibeStore } from "@/stores/vibeStore";
 import { useAssetStore } from "@/stores/assetStore";
@@ -6,7 +6,7 @@ import { buildVibeInput } from "@/lib/vibePrompts";
 import { defaultImageContext, defaultImagePrompt, type DefaultImageKind } from "@/lib/entityPrompts";
 import { getEnhanceSystemPrompt, UNIVERSAL_NEGATIVE } from "@/lib/arcanumPrompts";
 import { useImageSrc } from "@/lib/useImageSrc";
-import { IMAGE_MODELS, imageGenerateCommand, requestsTransparentBackground, type GeneratedImage } from "@/types/assets";
+import { imageGenerateCommand, resolveImageModel, requestsTransparentBackground, type GeneratedImage } from "@/types/assets";
 import type { WorldFile } from "@/types/world";
 
 interface ZoneVibePanelProps {
@@ -138,11 +138,7 @@ export function ZoneVibePanel({ zoneId, world, onWorldChange }: ZoneVibePanelPro
 
   const isDirty = draft !== storedVibe;
   const imageProvider = settings?.image_provider ?? "deepinfra";
-  const availableModels = useMemo(
-    () => IMAGE_MODELS.filter((model) => model.provider === imageProvider),
-    [imageProvider],
-  );
-  const defaultModel = availableModels[0];
+  const defaultModel = resolveImageModel(imageProvider, settings?.image_model);
   const hasImageKey = !!(
     (imageProvider === "deepinfra" && settings?.deepinfra_api_key) ||
     (imageProvider === "runware" && settings?.runware_api_key) ||

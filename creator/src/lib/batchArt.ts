@@ -12,7 +12,7 @@ import {
   type ArtStyle,
 } from "@/lib/arcanumPrompts";
 import type { GeneratedImage } from "@/types/assets";
-import { ENTITY_DIMENSIONS, IMAGE_MODELS, imageGenerateCommand, requestsTransparentBackground } from "@/types/assets";
+import { ENTITY_DIMENSIONS, imageGenerateCommand, resolveImageModel, requestsTransparentBackground } from "@/types/assets";
 import { removeBgAndSave, shouldRemoveBg } from "@/lib/useBackgroundRemoval";
 
 export function assetTypeForKind(kind: string): string {
@@ -140,6 +140,7 @@ export async function runBatchArtGeneration(
   artStyle: ArtStyle,
   vibe: string,
   imageProvider: string,
+  configuredModel: string | undefined,
   concurrency: number,
   abortRef: { current: boolean },
   callbacks: ArtGenerationCallbacks,
@@ -201,7 +202,7 @@ export async function runBatchArtGeneration(
           height: 1024,
         };
         const command = imageGenerateCommand(imageProvider);
-        const model = IMAGE_MODELS.find((entry) => entry.provider === imageProvider);
+        const model = resolveImageModel(imageProvider, configuredModel);
         const batchAssetType = assetTypeForKind(target.kind);
 
         const image = await invoke<GeneratedImage>(command, {

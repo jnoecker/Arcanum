@@ -62,6 +62,7 @@ export function BatchArtGenerator({
       artStyle,
       vibe,
       imageProvider,
+      settings?.image_model,
       concurrency,
       abortRef,
       {

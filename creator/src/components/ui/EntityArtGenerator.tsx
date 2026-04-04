@@ -5,7 +5,7 @@ import { useAssetStore } from "@/stores/assetStore";
 import { useProjectStore } from "@/stores/projectStore";
 import { useImageSrc, isLegacyImagePath } from "@/lib/useImageSrc";
 import { getEnhanceSystemPrompt, ART_STYLE_LABELS, UNIVERSAL_NEGATIVE, GENTLE_MAGIC_SUFFIX, ARCANUM_SUFFIX, type ArtStyle } from "@/lib/arcanumPrompts";
-import { IMAGE_MODELS, ENTITY_DIMENSIONS, DIMENSION_PRESETS, imageGenerateCommand, requestsTransparentBackground } from "@/types/assets";
+import { IMAGE_MODELS, ENTITY_DIMENSIONS, DIMENSION_PRESETS, imageGenerateCommand, resolveImageModel, requestsTransparentBackground } from "@/types/assets";
 import type { AssetContext, GeneratedImage } from "@/types/assets";
 import { VariantStrip } from "./VariantStrip";
 import { removeBgAndSave, shouldRemoveBg } from "@/lib/useBackgroundRemoval";
@@ -152,7 +152,7 @@ export function EntityArtGenerator({
         : modelOverride;
       const model = selectedModel
         ? availableModels.find((m) => m.id === selectedModel)
-        : availableModels[0];
+        : resolveImageModel(imageProvider, settings?.image_model);
       const modelId = selectedModel || model?.id;
       if (!modelId) {
         throw new Error(`No models available for provider: ${imageProvider}`);

@@ -12,7 +12,7 @@ import {
   UNIVERSAL_NEGATIVE,
   type ArtStyle,
 } from "@/lib/arcanumPrompts";
-import { IMAGE_MODELS, imageGenerateCommand, requestsTransparentBackground } from "@/types/assets";
+import { IMAGE_MODELS, imageGenerateCommand, resolveImageModel, requestsTransparentBackground } from "@/types/assets";
 import type { AssetType, GeneratedImage } from "@/types/assets";
 import loadingVignette from "@/assets/loading-vignette.jpg";
 import { ActionButton, DialogShell, Spinner } from "./ui/FormWidgets";
@@ -40,7 +40,7 @@ export function AssetGenerator() {
   const [assetType, setAssetType] = useState<AssetType>("background");
   const [modelId, setModelId] = useState<string>(() => {
     const provider = settings?.image_provider ?? "deepinfra";
-    return IMAGE_MODELS.find((model) => model.provider === provider)?.id ?? IMAGE_MODELS[0].id;
+    return resolveImageModel(provider, settings?.image_model)?.id ?? IMAGE_MODELS[0]!.id;
   });
   const [customization, setCustomization] = useState("");
   const [prompt, setPrompt] = useState(() => composePrompt("background", "gentle_magic"));

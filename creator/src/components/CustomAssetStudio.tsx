@@ -13,7 +13,7 @@ import {
   getFormatForAssetType,
   UNIVERSAL_NEGATIVE,
 } from "@/lib/arcanumPrompts";
-import { IMAGE_MODELS, imageGenerateCommand, requestsTransparentBackground, type AssetEntry, type AssetType, type GeneratedImage } from "@/types/assets";
+import { imageGenerateCommand, resolveImageModel, requestsTransparentBackground, type AssetEntry, type AssetType, type GeneratedImage } from "@/types/assets";
 import { InlineError, Spinner } from "@/components/ui/FormWidgets";
 
 const CUSTOM_ASSET_TYPES: AssetType[] = [
@@ -144,8 +144,7 @@ export function CustomAssetStudio({ selectedZoneId }: { selectedZoneId: string |
   const previewSrc = useImageSrc(previewEntry?.file_name || activeGlobalFile);
 
   const imageProvider = settings?.image_provider ?? "deepinfra";
-  const availableModels = IMAGE_MODELS.filter((model) => model.provider === imageProvider);
-  const defaultModel = availableModels[0];
+  const defaultModel = resolveImageModel(imageProvider, settings?.image_model);
   const hasImageKey = !!(
     (imageProvider === "deepinfra" && settings?.deepinfra_api_key) ||
     (imageProvider === "runware" && settings?.runware_api_key) ||

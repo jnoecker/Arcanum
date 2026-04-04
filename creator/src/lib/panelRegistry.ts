@@ -40,7 +40,7 @@ const CHARACTER_PANELS: PanelDef[] = [
   { id: "races", label: "Races", group: "characters", host: "config", kicker: "Races", title: "Race designer", description: "Race lore, traits, stat modifiers, portraits, and staff-tier overrides.", maxWidth: "max-w-5xl" },
   { id: "creation", label: "Creation", group: "characters", host: "config", kicker: "Character foundations", title: "Character creation", description: "Starting state and gender definitions.", maxWidth: "max-w-5xl" },
   { id: "equipment", label: "Equipment", group: "characters", host: "config", kicker: "Equipment", title: "Equipment slots", description: "Wear slots and layout.", maxWidth: "max-w-5xl" },
-  { id: "characterSprites", label: "Sprites", group: "characters", host: "config", kicker: "Sprites", title: "Sprite rules", description: "Image serving, sprite tiers, and player tier visuals.", maxWidth: "max-w-5xl" },
+  { id: "characterSprites", label: "Sprite Config", group: "characters", host: "config", kicker: "Sprite config", title: "Sprite rules", description: "Image serving, sprite tiers, and player tier visuals.", maxWidth: "max-w-5xl" },
 ];
 
 // ─── Ability panels ─────────────────────────────────────────────────

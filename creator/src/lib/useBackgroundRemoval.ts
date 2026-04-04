@@ -2,24 +2,56 @@ import { useState, useCallback } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import type { AssetContext, AssetEntry } from "@/types/assets";
 
-let bgRemovalModule: typeof import("@imgly/background-removal") | null = null;
+// ─── Worker-based background removal ─────────────────────────────────
+// WASM/ONNX inference runs in a dedicated Web Worker so the UI stays responsive.
 
-async function loadBgRemoval() {
-  if (!bgRemovalModule) {
-    bgRemovalModule = await import("@imgly/background-removal");
+let worker: Worker | null = null;
+let nextId = 0;
+const pending = new Map<
+  number,
+  { resolve: (buf: ArrayBuffer) => void; reject: (err: Error) => void }
+>();
+
+function getWorker(): Worker {
+  if (!worker) {
+    worker = new Worker(
+      new URL("./bgRemovalWorker.ts", import.meta.url),
+      { type: "module" },
+    );
+    worker.onmessage = (e: MessageEvent) => {
+      const { id, buffer, error } = e.data;
+      const entry = pending.get(id);
+      if (!entry) return;
+      pending.delete(id);
+      if (error) {
+        entry.reject(new Error(error));
+      } else {
+        entry.resolve(buffer);
+      }
+    };
+    worker.onerror = (e) => {
+      console.error("[bg-removal worker]", e.message);
+    };
   }
-  return bgRemovalModule;
+  return worker;
 }
 
-/** Yield to the browser event loop so UI stays responsive. */
-function yieldToUI(): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, 0));
+/** Remove background from an image data URL. Runs in a Web Worker. */
+export async function removeBackground(imageDataUrl: string): Promise<Blob> {
+  const id = nextId++;
+  const w = getWorker();
+  return new Promise<Blob>((resolve, reject) => {
+    pending.set(id, {
+      resolve: (buf) => resolve(new Blob([buf], { type: "image/png" })),
+      reject,
+    });
+    w.postMessage({ id, imageDataUrl });
+  });
 }
 
 // ─── Sequential queue ─────────────────────────────────────────────
-// BG removal is CPU-intensive WASM that blocks the main thread.
-// Queue tasks and process one at a time with yielding between them
-// so the UI (scroll, clicks, animations) stays responsive.
+// Serialize requests so we don't send multiple large data URLs
+// to the worker at once (memory pressure).
 
 type QueueEntry = { run: () => Promise<void>; resolve: () => void };
 const bgQueue: QueueEntry[] = [];
@@ -30,10 +62,8 @@ async function processBgQueue() {
   bgQueueRunning = true;
   while (bgQueue.length > 0) {
     const entry = bgQueue.shift()!;
-    await yieldToUI(); // let the UI breathe before each task
     await entry.run();
     entry.resolve();
-    await yieldToUI(); // let the UI breathe after each task
   }
   bgQueueRunning = false;
 }
@@ -43,12 +73,6 @@ function enqueueBgTask(run: () => Promise<void>): Promise<void> {
     bgQueue.push({ run, resolve });
     processBgQueue();
   });
-}
-
-/** Standalone bg removal — works outside React components. */
-export async function removeBackground(imageDataUrl: string): Promise<Blob> {
-  const mod = await loadBgRemoval();
-  return mod.removeBackground(imageDataUrl);
 }
 
 /** Asset types that benefit from background removal (sprites, not scene backgrounds). */

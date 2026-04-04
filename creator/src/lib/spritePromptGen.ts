@@ -74,10 +74,24 @@ export function getTierVisualDescription(tier: string): string {
     ?? tier;
 }
 
-/** Get the tier definitions — config > fallback */
+/** Get the tier definitions — derived from spriteLevelTiers breakpoints, enriched by playerTiers/defaults. */
 export function getTierDefinitions(): Record<string, TierDefinitionConfig> {
   const config = useConfigStore.getState().config;
-  return config?.playerTiers ?? DEFAULT_TIER_DEFINITIONS;
+  if (!config) return DEFAULT_TIER_DEFINITIONS;
+
+  const breakpoints = [...config.images.spriteLevelTiers].sort((a, b) => a - b);
+  const result: Record<string, TierDefinitionConfig> = {};
+  for (const level of breakpoints) {
+    const key = `t${level}`;
+    const nextLevel = breakpoints[breakpoints.indexOf(level) + 1];
+    result[key] = config.playerTiers?.[key]
+      ?? DEFAULT_TIER_DEFINITIONS[key]
+      ?? { displayName: `Tier ${level}`, levels: nextLevel ? `${level}–${nextLevel - 1}` : `${level}`, visualDescription: "" };
+  }
+  result.tstaff = config.playerTiers?.tstaff
+    ?? DEFAULT_TIER_DEFINITIONS.tstaff
+    ?? { displayName: "Staff", levels: "—", visualDescription: "Game administrator." };
+  return result;
 }
 
 /** Get the staff prompt override for a race — config > fallback constant > null */

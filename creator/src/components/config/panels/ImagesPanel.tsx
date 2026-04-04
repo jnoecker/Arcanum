@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import type { ConfigPanelProps, AppConfig } from "./types";
 import { Section, FieldRow, TextInput } from "@/components/ui/FormWidgets";
 
@@ -7,27 +7,22 @@ export function ImagesPanel({ config, onChange }: ConfigPanelProps) {
   const patch = (p: Partial<AppConfig["images"]>) =>
     onChange({ images: { ...img, ...p } });
 
-  const [tierDraft, setTierDraft] = useState(img.spriteLevelTiers.join(", "));
-  const prevTiersRef = useRef(img.spriteLevelTiers.join(", "));
+  const sorted = [...img.spriteLevelTiers].sort((a, b) => a - b);
 
-  useEffect(() => {
-    const serialized = img.spriteLevelTiers.join(", ");
-    if (serialized !== prevTiersRef.current) {
-      prevTiersRef.current = serialized;
-      setTierDraft(serialized);
-    }
-  }, [img.spriteLevelTiers]);
+  const [adding, setAdding] = useState(false);
+  const [draft, setDraft] = useState("");
 
-  const commitTiers = (value: string) => {
-    const nums = value
-      .split(/[,\s]+/)
-      .map(Number)
-      .filter((n) => !isNaN(n) && n > 0)
-      .sort((a, b) => b - a);
-    if (nums.length > 0) {
-      patch({ spriteLevelTiers: nums });
-      setTierDraft(nums.join(", "));
-    }
+  const addTier = () => {
+    const n = parseInt(draft, 10);
+    if (isNaN(n) || n < 1 || sorted.includes(n)) return;
+    patch({ spriteLevelTiers: [...sorted, n].sort((a, b) => b - a) });
+    setDraft("");
+    setAdding(false);
+  };
+
+  const removeTier = (level: number) => {
+    const next = sorted.filter((t) => t !== level);
+    if (next.length > 0) patch({ spriteLevelTiers: next.sort((a, b) => b - a) });
   };
 
   return (
@@ -49,27 +44,66 @@ export function ImagesPanel({ config, onChange }: ConfigPanelProps) {
 
       <Section
         title="Player Sprite Tiers"
-        description="Player characters use different sprite art at different level ranges, giving visual progression as they advance. The server picks the highest tier threshold at or below the player's level. A special 'tstaff' tier is always included for staff/admin sprites."
+        description="Level breakpoints for sprite art progression. The server picks the highest tier at or below the player's level. A staff tier is always included."
       >
-        <p className="mb-2 text-2xs text-text-muted">
-          Level breakpoints for player sprite art. Tier sprites use{" "}
-          <code className="font-mono">
-            player_sprites/race_class_t&#123;tier&#125;.png
-          </code>
-          . Staff sprites use{" "}
-          <code className="font-mono">
-            player_sprites/race_base_tstaff.png
-          </code>
-          .
-        </p>
-        <div className="flex flex-col gap-1.5">
-          <FieldRow label="Level Tiers" hint="Comma-separated descending thresholds. Level 25 matches t20 (highest threshold at or below level). More tiers = more visual variety.">
-            <TextInput
-              value={tierDraft}
-              onCommit={commitTiers}
-              placeholder="50, 40, 30, 20, 10, 1"
-            />
-          </FieldRow>
+        <div className="flex flex-wrap items-center gap-2">
+          {sorted.map((level) => (
+            <span
+              key={level}
+              className="flex items-center gap-1.5 rounded-full border border-accent/30 bg-accent/8 px-3 py-1 text-xs text-text-secondary"
+            >
+              <span className="font-mono text-accent">t{level}</span>
+              <span className="text-text-muted">Lv {level}+</span>
+              <button
+                onClick={() => removeTier(level)}
+                className="ml-0.5 text-text-muted transition-colors hover:text-status-error"
+                title={`Remove tier t${level}`}
+              >
+                &times;
+              </button>
+            </span>
+          ))}
+          <span className="flex items-center rounded-full border border-white/10 bg-white/4 px-3 py-1 text-xs text-text-muted">
+            <span className="font-mono">tstaff</span>
+          </span>
+
+          {adding ? (
+            <span className="flex items-center gap-1">
+              <input
+                type="number"
+                min={1}
+                autoFocus
+                className="ornate-input w-16 rounded-full px-3 py-1 text-center text-xs text-text-primary"
+                placeholder="Lv"
+                value={draft}
+                onChange={(e) => setDraft(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") addTier();
+                  if (e.key === "Escape") { setAdding(false); setDraft(""); }
+                }}
+              />
+              <button
+                onClick={addTier}
+                disabled={!draft || isNaN(parseInt(draft, 10)) || sorted.includes(parseInt(draft, 10))}
+                className="rounded-full bg-accent/20 px-2 py-1 text-xs text-accent transition-colors hover:bg-accent/30 disabled:opacity-40"
+              >
+                Add
+              </button>
+              <button
+                onClick={() => { setAdding(false); setDraft(""); }}
+                className="px-1 text-xs text-text-muted hover:text-text-secondary"
+              >
+                &times;
+              </button>
+            </span>
+          ) : (
+            <button
+              onClick={() => setAdding(true)}
+              className="rounded-full border border-dashed border-accent/30 px-3 py-1 text-xs text-accent/70 transition-colors hover:border-accent hover:text-accent"
+            >
+              + Add tier
+            </button>
+          )}
         </div>
       </Section>
     </>

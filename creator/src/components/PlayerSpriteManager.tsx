@@ -25,6 +25,7 @@ import type {
 import type { GeneratedImage, AssetContext, SyncProgress } from "@/types/assets";
 import type { AppConfig, TierDefinitionConfig } from "@/types/config";
 import { ActionButton } from "./ui/FormWidgets";
+import { TierSpriteScaffold } from "./TierSpriteScaffold";
 
 // ─── Helpers ────────────────────────────────────────────────────────
 
@@ -779,6 +780,7 @@ export function PlayerSpriteManager() {
   const [deployResult, setDeployResult] = useState<SyncProgress | null>(null);
   const [viewSprite, setViewSprite] = useState<{ key: string; fileName: string; assetId: string } | null>(null);
   const [generationError, setGenerationError] = useState<string | null>(null);
+  const [showScaffold, setShowScaffold] = useState(false);
   const spriteTemplateRef = useRef<SpritePromptTemplate | null>(null);
   const spriteTemplatePromiseRef = useRef<Promise<SpritePromptTemplate | null> | null>(null);
 
@@ -1029,6 +1031,13 @@ export function PlayerSpriteManager() {
           Save
         </ActionButton>
         <ActionButton
+          onClick={() => setShowScaffold(true)}
+          variant="secondary"
+          size="sm"
+        >
+          Fill Gaps
+        </ActionButton>
+        <ActionButton
           onClick={handleDeploy}
           disabled={deploying || sortedDefs.length === 0}
           variant="secondary"
@@ -1168,6 +1177,14 @@ export function PlayerSpriteManager() {
           )}
         </div>
       </div>
+
+      {/* Fill Gaps scaffold dialog */}
+      {showScaffold && (
+        <TierSpriteScaffold
+          onClose={() => setShowScaffold(false)}
+          onComplete={() => void loadAssets()}
+        />
+      )}
 
       {/* Sprite lightbox */}
       {viewSprite && (

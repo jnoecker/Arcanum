@@ -148,6 +148,9 @@ export async function runBatchArtGeneration(
   // Use a ref-like container so all workers always read/write the latest world
   const worldRef = { current: { ...world } };
 
+  // Collect background removal promises so we can await them before saving
+  const pendingBgRemovals: { promise: ReturnType<typeof removeBgAndSave>; kind: string; id: string }[] = [];
+
   const checkedTargets = targets.filter((t) => t.checked);
   const queue = checkedTargets.map((t) =>
     targets.findIndex((tt) => tt.kind === t.kind && tt.id === t.id),
@@ -233,9 +236,13 @@ export async function runBatchArtGeneration(
           )
           .catch(() => {});
 
-        // Auto-remove background for sprite asset types
+        // Queue background removal — we'll await all of them before saving
         if (autoRemoveBg && shouldRemoveBg(batchAssetType) && image.data_url) {
-          removeBgAndSave(image.data_url, batchAssetType, batchContext, variantGroup).catch(() => {});
+          pendingBgRemovals.push({
+            promise: removeBgAndSave(image.data_url, batchAssetType, batchContext, variantGroup),
+            kind: target.kind,
+            id: target.id,
+          });
         }
 
         // Update worldRef atomically — always read current value to avoid lost updates
@@ -285,6 +292,33 @@ export async function runBatchArtGeneration(
     () => worker(),
   );
   await Promise.all(workers);
+
+  // Await all background removals and update worldRef with bg-free filenames
+  for (const { promise, kind, id } of pendingBgRemovals) {
+    try {
+      const entry = await promise;
+      if (entry) {
+        const cur = worldRef.current;
+        const collection =
+          kind === "mob" ? "mobs" : kind === "item" ? "items" : kind === "shop" ? "shops" : null;
+        if (collection) {
+          const entities = (cur as Record<string, unknown>)[collection] as
+            Record<string, Record<string, unknown>> | undefined;
+          if (entities?.[id]) {
+            worldRef.current = {
+              ...cur,
+              [collection]: {
+                ...entities,
+                [id]: { ...entities[id], image: entry.file_name },
+              },
+            };
+          }
+        }
+      }
+    } catch {
+      // bg removal failed; keep original image
+    }
+  }
 
   callbacks.onWorldUpdate(worldRef.current);
   return worldRef.current;

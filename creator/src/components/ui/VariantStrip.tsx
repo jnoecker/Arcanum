@@ -67,17 +67,22 @@ const VariantThumb = memo(function VariantThumb({
   return (
     <button
       onClick={onSelect}
-      title={`${entry.created_at}\n${entry.prompt}`}
-      className={`relative h-10 w-10 shrink-0 overflow-hidden rounded border transition-colors ${
+      title={`${entry.is_active ? "(active) " : ""}${entry.created_at}\n${entry.prompt}`}
+      className={`relative h-10 w-10 shrink-0 overflow-hidden rounded border-2 transition-all ${
         entry.is_active
-          ? "border-accent ring-1 ring-accent/50"
-          : "border-border-default hover:border-accent/50"
+          ? "border-accent ring-2 ring-accent/40"
+          : "border-border-default opacity-50 hover:opacity-80 hover:border-accent/50"
       }`}
     >
       {src ? (
         <img src={src} alt="" loading="lazy" className="h-full w-full object-cover" />
       ) : (
         <div className="h-full w-full bg-bg-elevated" />
+      )}
+      {entry.is_active && (
+        <div className="absolute bottom-0 left-0 right-0 bg-accent/80 py-px text-center text-[7px] font-bold leading-none text-bg-primary">
+          ✓
+        </div>
       )}
     </button>
   );

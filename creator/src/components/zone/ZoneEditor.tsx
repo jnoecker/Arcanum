@@ -257,19 +257,6 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
       <div className="relative flex shrink-0 items-center gap-3 overflow-hidden border-b border-border-default bg-bg-secondary px-3 py-1.5">
         <img src={subtoolbarBg} alt="" className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-[0.10]" />
 
-        {/* Centered zone name */}
-        <div className="pointer-events-none absolute inset-0 flex items-center justify-center gap-2">
-          <span className="font-display text-sm font-semibold tracking-widest text-text-primary uppercase">
-            {zoneState.data.zone}
-          </span>
-          <span className="text-xs text-text-muted">
-            {roomCount} room{roomCount !== 1 ? "s" : ""}
-          </span>
-          {zoneState.dirty && (
-            <span className="rounded-full bg-[rgba(200,164,106,0.15)] px-2 py-0.5 text-[10px] text-warm-pale">modified</span>
-          )}
-        </div>
-
         {/* Undo / Redo */}
         <div className="flex items-center gap-0.5 border-r border-white/8 pr-3">
           <button
@@ -338,7 +325,20 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
           PvP zone
         </label>
 
-        <div className="ml-auto flex items-center gap-2">
+        {/* Zone name */}
+        <div className="ml-auto flex min-w-0 items-center gap-2 border-l border-white/8 pl-3">
+          <span className="truncate font-display text-sm font-semibold uppercase tracking-widest text-text-primary">
+            {zoneState.data.zone}
+          </span>
+          <span className="shrink-0 text-xs text-text-muted">
+            {roomCount} room{roomCount !== 1 ? "s" : ""}
+          </span>
+          {zoneState.dirty && (
+            <span className="shrink-0 rounded-full bg-[rgba(200,164,106,0.15)] px-2 py-0.5 text-[10px] text-warm-pale">modified</span>
+          )}
+        </div>
+
+        <div className="flex shrink-0 items-center gap-2">
           {/* View toggle */}
           <div className="segmented-control" role="tablist" aria-label="Zone views">
             {viewModes.map((mode, i, arr) => (

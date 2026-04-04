@@ -215,6 +215,7 @@ export function requestsTransparentBackground(assetType?: AssetType | string | n
 export const ENTITY_DIMENSIONS: Record<string, { width: number; height: number; label: string }> = {
   room: { width: 1920, height: 1080, label: "1920×1080 (Landscape)" },
   mob: { width: 512, height: 512, label: "512×512 (Portrait)" },
+  pet: { width: 512, height: 512, label: "512×512 (Portrait)" },
   item: { width: 256, height: 256, label: "256×256 (Icon)" },
   ability: { width: 256, height: 256, label: "256×256 (Icon)" },
   shop: { width: 1920, height: 1080, label: "1920×1080 (Landscape)" },

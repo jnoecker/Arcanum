@@ -77,7 +77,7 @@ function enqueueBgTask(run: () => Promise<void>): Promise<void> {
 
 /** Asset types that benefit from background removal (sprites, not scene backgrounds). */
 const BG_REMOVAL_TYPES = new Set([
-  "mob", "item", "entity_portrait", "ability_sprite",
+  "mob", "item", "pet", "entity_portrait", "ability_sprite",
   "player_sprite", "race_portrait", "class_portrait",
 ]);
 

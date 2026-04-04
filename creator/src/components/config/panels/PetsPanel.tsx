@@ -155,7 +155,7 @@ function PetDetail({
             entityContext={buildPetContext(pet)}
             currentImage={pet.image}
             onAccept={(filePath) => patch({ image: filePath })}
-            assetType="mob"
+            assetType="pet"
             context={{ zone: "", entity_type: "pet", entity_id: id }}
           />
         </div>

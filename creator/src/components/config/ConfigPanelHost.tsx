@@ -205,7 +205,12 @@ function renderPanel(panelId: string, props: ConfigPanelProps): ReactNode {
     case "quests":
       return <QuestTaxonomyDesigner config={config} onChange={onChange} />;
     case "sharedAssets":
-      return <GlobalAssetsPanel config={config} onChange={onChange} />;
+      return (
+        <div className="flex flex-col gap-6">
+          <ImagesPanel config={config} onChange={onChange} />
+          <GlobalAssetsPanel config={config} onChange={onChange} />
+        </div>
+      );
 
     // Operations
     case "services":

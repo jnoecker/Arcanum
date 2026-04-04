@@ -343,12 +343,12 @@ export function AbilityStudio() {
     }
   };
 
-  const handleGenerateMissing = async () => {
+  const handleGenerateAll = async () => {
     if (!hasImageKey || !visibleTargets.length) return;
     setBatchGenerating(true);
     setError(null);
     try {
-      const pending = visibleTargets.filter((target) => !target.image);
+      const pending = [...visibleTargets];
       for (const target of pending) {
         const usedLlm = hasLlmKey;
         const prompt = usedLlm
@@ -419,11 +419,11 @@ export function AbilityStudio() {
         </div>
         <div className="flex flex-wrap gap-2">
           <button
-            onClick={handleGenerateMissing}
+            onClick={handleGenerateAll}
             disabled={!hasImageKey || batchGenerating}
             className="rounded-full border border-white/10 bg-white/6 px-4 py-2 text-xs font-medium text-text-primary transition enabled:hover:bg-white/10 disabled:opacity-50"
           >
-            {batchGenerating ? <span className="flex items-center gap-1.5"><Spinner />Generating missing</span> : "Generate missing icons"}
+            {batchGenerating ? <span className="flex items-center gap-1.5"><Spinner />Generating all</span> : "Generate all icons"}
           </button>
         </div>
       </div>

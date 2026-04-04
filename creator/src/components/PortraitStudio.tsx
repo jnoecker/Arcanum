@@ -288,7 +288,7 @@ export function PortraitStudio({ selectedZoneId }: { selectedZoneId: string | nu
     setBatchGenerating(kind);
     setError(null);
     try {
-      const pending = groupedTargets[kind].filter((target) => !target.image);
+      const pending = groupedTargets[kind];
       for (const target of pending) {
         const prompt = template
           ? fillPortraitTemplate(template, { portraitType: target.kind, key: target.id })
@@ -340,14 +340,14 @@ export function PortraitStudio({ selectedZoneId }: { selectedZoneId: string | nu
             disabled={!hasImageKey || batchGenerating !== null}
             className="rounded-full border border-white/10 bg-white/6 px-4 py-2 text-xs font-medium text-text-primary transition enabled:hover:bg-white/10 disabled:opacity-50"
           >
-            {batchGenerating === "race" ? <span className="flex items-center gap-1.5"><Spinner />Generating races</span> : "Generate missing races"}
+            {batchGenerating === "race" ? <span className="flex items-center gap-1.5"><Spinner />Generating races</span> : "Generate all races"}
           </button>
           <button
             onClick={() => handleBatchGenerate("class")}
             disabled={!hasImageKey || batchGenerating !== null}
             className="rounded-full border border-white/10 bg-white/6 px-4 py-2 text-xs font-medium text-text-primary transition enabled:hover:bg-white/10 disabled:opacity-50"
           >
-            {batchGenerating === "class" ? <span className="flex items-center gap-1.5"><Spinner />Generating classes</span> : "Generate missing classes"}
+            {batchGenerating === "class" ? <span className="flex items-center gap-1.5"><Spinner />Generating classes</span> : "Generate all classes"}
           </button>
         </div>
       </div>

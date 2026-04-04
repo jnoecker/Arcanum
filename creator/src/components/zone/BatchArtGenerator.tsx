@@ -33,6 +33,7 @@ export function BatchArtGenerator({
   const trapRef = useFocusTrap<HTMLDivElement>(running ? undefined : onClose);
 
   const checkedTargets = targets.filter((t) => t.checked);
+  const missingTargets = targets.filter((t) => !t.hasExisting);
   const doneCount = targets.filter((t) => t.status === "done").length;
   const errorCount = targets.filter((t) => t.status === "error").length;
   const imageProvider = settings?.image_provider ?? "deepinfra";
@@ -51,6 +52,10 @@ export function BatchArtGenerator({
   const toggleTarget = (idx: number) => {
     setTargets((prev) => prev.map((t, i) => (i === idx ? { ...t, checked: !t.checked } : t)));
   };
+
+  const selectAll = () => setTargets((prev) => prev.map((t) => ({ ...t, checked: true })));
+  const selectNone = () => setTargets((prev) => prev.map((t) => ({ ...t, checked: false })));
+  const selectMissing = () => setTargets((prev) => prev.map((t) => ({ ...t, checked: !t.hasExisting })));
 
   const handleRun = useCallback(async () => {
     setRunning(true);
@@ -95,7 +100,7 @@ export function BatchArtGenerator({
           </div>
           <div className="px-5 py-4">
             <p className="text-sm text-text-secondary">
-              All entities in this zone already have images.
+              This zone has no entities to generate art for.
             </p>
           </div>
           <div className="flex justify-end border-t border-border-default px-5 py-3">
@@ -118,8 +123,21 @@ export function BatchArtGenerator({
           <h2 id="batch-art-title" className="font-display text-sm tracking-wide text-text-primary">
             Batch Art — {zoneId}
           </h2>
-          <span className="text-xs text-text-muted">
+          <span className="flex items-center gap-3 text-xs text-text-muted">
             {checkedTargets.length} of {targets.length} selected
+            {!running && doneCount === 0 && (
+              <span className="flex gap-1.5">
+                <button onClick={selectAll} className="text-text-secondary hover:text-text-primary">All</button>
+                <span className="text-text-muted/50">|</span>
+                <button onClick={selectNone} className="text-text-secondary hover:text-text-primary">None</button>
+                {missingTargets.length < targets.length && (
+                  <>
+                    <span className="text-text-muted/50">|</span>
+                    <button onClick={selectMissing} className="text-text-secondary hover:text-text-primary">Missing only</button>
+                  </>
+                )}
+              </span>
+            )}
           </span>
         </div>
 
@@ -208,6 +226,9 @@ export function BatchArtGenerator({
                 <span className="min-w-0 flex-1 truncate text-text-secondary">
                   {target.label}
                 </span>
+                {target.hasExisting && target.status === "pending" && (
+                  <span className="text-2xs text-status-success">has art</span>
+                )}
                 {target.error && (
                   <span className="truncate text-2xs text-status-error" title={target.error}>
                     {target.error.slice(0, 40)}

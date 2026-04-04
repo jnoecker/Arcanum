@@ -28,6 +28,7 @@ export interface BatchTarget {
   id: string;
   label: string;
   checked: boolean;
+  hasExisting: boolean;
   status: "pending" | "generating" | "done" | "error";
   result?: GeneratedImage;
   error?: string;
@@ -37,51 +38,51 @@ export function collectTargets(world: WorldFile): BatchTarget[] {
   const targets: BatchTarget[] = [];
 
   for (const [id, room] of Object.entries(world.rooms)) {
-    if (!room.image) {
-      targets.push({
-        kind: "room",
-        id,
-        label: `Room: ${room.title}`,
-        checked: true,
-        status: "pending",
-      });
-    }
+    const hasImage = !!room.image;
+    targets.push({
+      kind: "room",
+      id,
+      label: `Room: ${room.title}`,
+      checked: !hasImage,
+      hasExisting: hasImage,
+      status: "pending",
+    });
   }
 
   for (const [id, mob] of Object.entries(world.mobs ?? {})) {
-    if (!mob.image) {
-      targets.push({
-        kind: "mob",
-        id,
-        label: `Mob: ${mob.name}`,
-        checked: true,
-        status: "pending",
-      });
-    }
+    const hasImage = !!mob.image;
+    targets.push({
+      kind: "mob",
+      id,
+      label: `Mob: ${mob.name}`,
+      checked: !hasImage,
+      hasExisting: hasImage,
+      status: "pending",
+    });
   }
 
   for (const [id, item] of Object.entries(world.items ?? {})) {
-    if (!item.image) {
-      targets.push({
-        kind: "item",
-        id,
-        label: `Item: ${item.displayName}`,
-        checked: true,
-        status: "pending",
-      });
-    }
+    const hasImage = !!item.image;
+    targets.push({
+      kind: "item",
+      id,
+      label: `Item: ${item.displayName}`,
+      checked: !hasImage,
+      hasExisting: hasImage,
+      status: "pending",
+    });
   }
 
   for (const [id, shop] of Object.entries(world.shops ?? {})) {
-    if (!shop.image) {
-      targets.push({
-        kind: "shop",
-        id,
-        label: `Shop: ${shop.name}`,
-        checked: true,
-        status: "pending",
-      });
-    }
+    const hasImage = !!shop.image;
+    targets.push({
+      kind: "shop",
+      id,
+      label: `Shop: ${shop.name}`,
+      checked: !hasImage,
+      hasExisting: hasImage,
+      status: "pending",
+    });
   }
 
   return targets;

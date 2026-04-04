@@ -717,41 +717,47 @@ export function AbilityStudio() {
             </div>
           </div>
 
-          <div className="grid gap-5 lg:grid-cols-[0.92fr_1.08fr]">
+          <div className="flex flex-col gap-5">
+            {/* Preview row — wide horizontal card */}
             <div className="rounded-[24px] border border-white/8 bg-black/12 p-4">
-              <div className="mb-3 flex items-start justify-between gap-3">
-                <div>
-                  <div className="text-[11px] uppercase tracking-ui text-text-muted">
-                    {selectedTarget.kind === "ability" ? "Ability icon" : "Status effect icon"}
-                  </div>
-                  <h3 className="mt-1 font-display text-2xl text-text-primary">{selectedTarget.label}</h3>
-                  <div className="mt-1 text-xs text-text-secondary">{selectedTarget.subtitle}</div>
+              <div className="flex gap-5">
+                <div className="flex shrink-0 items-center justify-center overflow-hidden rounded-[20px] border border-white/8 bg-[linear-gradient(180deg,rgba(34,41,60,0.8),rgba(28,34,52,0.88))] p-3" style={{ width: "10rem", height: "10rem" }}>
+                  {selectedSrc ? (
+                    <img src={selectedSrc} alt={selectedTarget.label} className="max-h-full max-w-full rounded-[14px] object-contain shadow-image" />
+                  ) : (
+                    <div className="text-center text-xs text-text-muted">No icon yet</div>
+                  )}
                 </div>
-                <span className="rounded-full bg-white/8 px-3 py-1 text-[11px] uppercase tracking-label text-text-muted">
-                  {variants.length} variants
-                </span>
-              </div>
 
-              <div className="flex min-h-[20rem] items-center justify-center overflow-hidden rounded-[20px] border border-white/8 bg-[linear-gradient(180deg,rgba(34,41,60,0.8),rgba(28,34,52,0.88))] p-4">
-                {selectedSrc ? (
-                  <img src={selectedSrc} alt={selectedTarget.label} className="max-h-[22rem] max-w-full rounded-[18px] object-contain shadow-image" />
-                ) : (
-                  <div className="text-center text-sm text-text-muted">No active icon yet.</div>
-                )}
-              </div>
-
-              {variants.length > 0 && (
-                <div className="mt-4">
-                  <div className="mb-2 text-[11px] uppercase tracking-ui text-text-muted">Variant strip</div>
-                  <div className="flex gap-2 overflow-x-auto pb-1">
-                    {variants.map((entry) => (
-                      <VariantCard key={entry.id} entry={entry} assetsDir={assetsDir} onClick={() => handleVariantSelect(entry)} />
-                    ))}
+                <div className="min-w-0 flex-1">
+                  <div className="mb-1 flex items-start justify-between gap-3">
+                    <div>
+                      <div className="text-[11px] uppercase tracking-ui text-text-muted">
+                        {selectedTarget.kind === "ability" ? "Ability icon" : "Status effect icon"}
+                      </div>
+                      <h3 className="mt-0.5 font-display text-xl text-text-primary">{selectedTarget.label}</h3>
+                      <div className="mt-0.5 text-xs text-text-secondary">{selectedTarget.subtitle}</div>
+                    </div>
+                    <span className="rounded-full bg-white/8 px-3 py-1 text-[11px] uppercase tracking-label text-text-muted">
+                      {variants.length} variants
+                    </span>
                   </div>
+
+                  {variants.length > 0 && (
+                    <div className="mt-3">
+                      <div className="mb-1.5 text-[11px] uppercase tracking-ui text-text-muted">Variants</div>
+                      <div className="flex gap-2 overflow-x-auto pb-1">
+                        {variants.map((entry) => (
+                          <VariantCard key={entry.id} entry={entry} assetsDir={assetsDir} onClick={() => handleVariantSelect(entry)} />
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
-              )}
+              </div>
             </div>
 
+            {/* Prompt engineering — full width */}
             <div className="rounded-[24px] border border-white/8 bg-black/12 p-4">
               <div className="mb-3 flex items-center justify-between">
                 <div className="text-[11px] uppercase tracking-ui text-text-muted">Prompt engineering</div>
@@ -761,25 +767,28 @@ export function AbilityStudio() {
                   </span>
                 )}
               </div>
-              <textarea
-                value={promptDraft}
-                onChange={(event) => {
-                  setPromptDraft(event.target.value);
-                  setPromptGeneratedByLlm(false);
-                }}
-                rows={14}
-                className="w-full resize-y rounded-[20px] border border-white/10 bg-surface-scrim px-4 py-3 font-mono text-[12px] leading-6 text-text-secondary outline-none transition focus:border-border-active focus-visible:ring-2 focus-visible:ring-border-active"
-                placeholder="Generate an icon prompt..."
-              />
 
-              <div className="mt-3 rounded-[18px] border border-white/8 bg-surface-scrim-light px-4 py-3">
-                <div className="text-[11px] uppercase tracking-ui text-text-muted">Definition context</div>
-                <div className="mt-2 whitespace-pre-wrap text-xs leading-6 text-text-secondary">
-                  {selectedTarget.kind === "ability" && selectedTarget.ability
-                    ? buildAbilityContext(selectedTarget.id, selectedTarget.ability)
-                    : selectedTarget.statusEffect
-                      ? buildStatusEffectContext(selectedTarget.id, selectedTarget.statusEffect)
-                      : ""}
+              <div className="grid gap-4 lg:grid-cols-[1fr_1fr]">
+                <textarea
+                  value={promptDraft}
+                  onChange={(event) => {
+                    setPromptDraft(event.target.value);
+                    setPromptGeneratedByLlm(false);
+                  }}
+                  rows={8}
+                  className="w-full resize-y rounded-[20px] border border-white/10 bg-surface-scrim px-4 py-3 font-mono text-[12px] leading-6 text-text-secondary outline-none transition focus:border-border-active focus-visible:ring-2 focus-visible:ring-border-active"
+                  placeholder="Generate an icon prompt..."
+                />
+
+                <div className="rounded-[18px] border border-white/8 bg-surface-scrim-light px-4 py-3">
+                  <div className="text-[11px] uppercase tracking-ui text-text-muted">Definition context</div>
+                  <div className="mt-1.5 max-h-36 overflow-y-auto whitespace-pre-wrap text-xs leading-5 text-text-secondary">
+                    {selectedTarget.kind === "ability" && selectedTarget.ability
+                      ? buildAbilityContext(selectedTarget.id, selectedTarget.ability)
+                      : selectedTarget.statusEffect
+                        ? buildStatusEffectContext(selectedTarget.id, selectedTarget.statusEffect)
+                        : ""}
+                  </div>
                 </div>
               </div>
 

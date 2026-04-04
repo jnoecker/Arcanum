@@ -1,4 +1,4 @@
-import { exists, readTextFile, writeTextFile } from "@tauri-apps/plugin-fs";
+import { readTextFile, writeTextFile } from "@tauri-apps/plugin-fs";
 import { parseDocument, stringify } from "yaml";
 import { normalizeConfigAssetRefs, normalizeGlobalAssetMap } from "@/lib/assetRefs";
 import { useConfigStore } from "@/stores/configStore";
@@ -44,17 +44,17 @@ export async function saveConfig(mudDir: string): Promise<void> {
 
   const resourcesDir = `${mudDir}/src/main/resources`;
   const basePath = `${resourcesDir}/application.yaml`;
-  const localPath = `${resourcesDir}/application-local.yaml`;
 
   const slotPositions = await loadSlotPositions(mudDir);
 
-  const sourcePath = await exists(localPath) ? localPath : basePath;
-  const content = await readTextFile(sourcePath);
+  // Always write to application.yaml — Arcanum is the primary config editor.
+  // The -local overlay pattern is for manual dev overrides, not Arcanum output.
+  const content = await readTextFile(basePath);
   const doc = parseDocument(content);
 
   doc.set("ambonmud", buildMonolithicConfigObject(config, undefined, slotPositions));
 
-  await writeTextFile(localPath, doc.toString());
+  await writeTextFile(basePath, doc.toString());
 
   // Achievements live in a separate world file in legacy format
   const achievementsPath = `${resourcesDir}/world/achievements.yaml`;

@@ -1,9 +1,9 @@
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useAssetStore } from "@/stores/assetStore";
 import { useProjectStore } from "@/stores/projectStore";
 import { useVibeStore } from "@/stores/vibeStore";
 import type { AssetContext } from "@/types/assets";
-import type { RoomFile, WorldFile, ZoneAudioDefaults } from "@/types/world";
+import type { RoomFile, WorldFile } from "@/types/world";
 import { MusicGenerator } from "@/components/ui/MusicGenerator";
 import { VideoGenerator } from "@/components/ui/VideoGenerator";
 import { MediaPicker } from "@/components/ui/MediaPicker";
@@ -16,8 +16,33 @@ interface MediaStudioProps {
   onWorldChange: (world: WorldFile) => void;
 }
 
-type ZoneAudioField = keyof ZoneAudioDefaults;
-type RoomMediaField = "music" | "ambient" | "audio" | "video";
+type MediaSlotId =
+  | "zone:music"
+  | "zone:ambient"
+  | "zone:flyover"
+  | "room:music"
+  | "room:ambient"
+  | "room:audio"
+  | "room:video";
+
+interface MediaSlot {
+  id: MediaSlotId;
+  label: string;
+  description: string;
+  scope: "zone" | "room";
+  mediaType: "audio" | "video";
+  generatorType: "music" | "ambient" | "video" | "none";
+}
+
+const MEDIA_SLOTS: MediaSlot[] = [
+  { id: "zone:music", label: "Zone score", description: "Default exploration music. Rooms without a dedicated track fall back to this.", scope: "zone", mediaType: "audio", generatorType: "music" },
+  { id: "zone:ambient", label: "Zone ambience", description: "Underlying environmental soundscape for the whole zone.", scope: "zone", mediaType: "audio", generatorType: "ambient" },
+  { id: "zone:flyover", label: "Zone flyover", description: "Cinematic intro generated from zone imagery.", scope: "zone", mediaType: "video", generatorType: "video" },
+  { id: "room:music", label: "Room music", description: "A specific musical cue for this room, overriding the zone score.", scope: "room", mediaType: "audio", generatorType: "music" },
+  { id: "room:ambient", label: "Room ambience", description: "Environmental sound design layered under or instead of music.", scope: "room", mediaType: "audio", generatorType: "ambient" },
+  { id: "room:audio", label: "Room foley", description: "Direct imported audio for special room cues, loops, or handcrafted effects.", scope: "room", mediaType: "audio", generatorType: "none" },
+  { id: "room:video", label: "Room cinematic", description: "A short establishing shot sourced from the room art.", scope: "room", mediaType: "video", generatorType: "video" },
+];
 
 function zoneMediaGroup(zoneId: string, key: string): string {
   return `zone-media:${zoneId}:${key}`;
@@ -35,45 +60,16 @@ function resolveImagePath(image: string | undefined, assetsDir: string, mudDir?:
   return `${mudDir}/src/main/resources/world/images/${image}`;
 }
 
-function MediaField({
-  label,
-  description,
-  value,
-  onCommit,
-  picker,
-  generator,
-}: {
-  label: string;
-  description: string;
-  value?: string;
-  onCommit: (value: string | undefined) => void;
-  picker: ReactNode;
-  generator?: ReactNode;
-}) {
-  return (
-    <div className="rounded-[22px] border border-white/8 bg-black/12 p-4">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h4 className="font-display text-lg text-text-primary">{label}</h4>
-          <p className="mt-1 text-xs leading-6 text-text-secondary">{description}</p>
-        </div>
-        <span className="rounded-full bg-white/8 px-2 py-1 text-2xs uppercase tracking-ui text-text-muted">
-          {value ? "Assigned" : "Empty"}
-        </span>
-      </div>
-
-      <div className="mt-4">
-        <TextInput
-          value={value ?? ""}
-          onCommit={(next) => onCommit(next || undefined)}
-          placeholder="None"
-        />
-      </div>
-
-      <div className="mt-3">{picker}</div>
-      {generator && <div className="mt-3">{generator}</div>}
-    </div>
-  );
+function getSlotValue(slot: MediaSlot, world: WorldFile, selectedRoom: RoomFile | null, zoneIntroFileName: string | undefined): string | undefined {
+  if (slot.id === "zone:music") return world.audio?.music;
+  if (slot.id === "zone:ambient") return world.audio?.ambient;
+  if (slot.id === "zone:flyover") return zoneIntroFileName;
+  if (!selectedRoom) return undefined;
+  if (slot.id === "room:music") return selectedRoom.music;
+  if (slot.id === "room:ambient") return selectedRoom.ambient;
+  if (slot.id === "room:audio") return selectedRoom.audio;
+  if (slot.id === "room:video") return selectedRoom.video;
+  return undefined;
 }
 
 export function MediaStudio({ zoneId, world, onWorldChange }: MediaStudioProps) {
@@ -82,12 +78,10 @@ export function MediaStudio({ zoneId, world, onWorldChange }: MediaStudioProps) 
   const mudDir = useProjectStore((s) => s.project?.mudDir);
   const vibe = useVibeStore((s) => (zoneId ? s.getVibe(zoneId) : undefined));
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
+  const [selectedSlotId, setSelectedSlotId] = useState<MediaSlotId>("zone:music");
 
   const roomEntries = useMemo(
-    () =>
-      Object.entries(world?.rooms ?? {}).sort(([, a], [, b]) =>
-        (a.title || "").localeCompare(b.title || ""),
-      ),
+    () => Object.entries(world?.rooms ?? {}).sort(([, a], [, b]) => (a.title || "").localeCompare(b.title || "")),
     [world],
   );
 
@@ -97,6 +91,7 @@ export function MediaStudio({ zoneId, world, onWorldChange }: MediaStudioProps) 
   }, [roomEntries, selectedRoomId, world]);
 
   const selectedRoom = selectedRoomId ? world?.rooms[selectedRoomId] ?? null : null;
+  const selectedSlot = MEDIA_SLOTS.find((s) => s.id === selectedSlotId)!;
 
   const zoneContext = useMemo<AssetContext | undefined>(
     () => (zoneId ? { zone: zoneId, entity_type: "zone", entity_id: "defaults" } : undefined),
@@ -129,10 +124,7 @@ export function MediaStudio({ zoneId, world, onWorldChange }: MediaStudioProps) 
   }, [world]);
 
   const roomNames = useMemo(
-    () =>
-      Object.entries(world?.rooms ?? {})
-        .map(([id, room]) => `- ${room.title} (${id})`)
-        .join("\n"),
+    () => Object.entries(world?.rooms ?? {}).map(([id, room]) => `- ${room.title} (${id})`).join("\n"),
     [world],
   );
 
@@ -146,285 +138,212 @@ export function MediaStudio({ zoneId, world, onWorldChange }: MediaStudioProps) 
     );
   }
 
-  const patchZoneAudio = (field: ZoneAudioField, value: string | undefined) => {
+  const patchZoneAudio = (field: string, value: string | undefined) => {
     const next = { ...(world.audio ?? {}), [field]: value };
     const hasValues = Object.values(next).some(Boolean);
     onWorldChange({ ...world, audio: hasValues ? next : undefined });
   };
 
-  const patchRoom = (field: RoomMediaField, value: string | undefined) => {
+  const patchRoom = (field: string, value: string | undefined) => {
     if (!selectedRoomId || !selectedRoom) return;
     onWorldChange({
       ...world,
-      rooms: {
-        ...world.rooms,
-        [selectedRoomId]: {
-          ...selectedRoom,
-          [field]: value,
-        } as RoomFile,
-      },
+      rooms: { ...world.rooms, [selectedRoomId]: { ...selectedRoom, [field]: value } as RoomFile },
     });
   };
 
+  const currentValue = getSlotValue(selectedSlot, world, selectedRoom, zoneIntroAsset?.file_name);
+
+  const commitValue = (value: string | undefined) => {
+    if (selectedSlot.id === "zone:music") patchZoneAudio("music", value);
+    else if (selectedSlot.id === "zone:ambient") patchZoneAudio("ambient", value);
+    else if (selectedSlot.id === "zone:flyover") { /* managed via asset library */ }
+    else if (selectedSlot.id === "room:music") patchRoom("music", value);
+    else if (selectedSlot.id === "room:ambient") patchRoom("ambient", value);
+    else if (selectedSlot.id === "room:audio") patchRoom("audio", value);
+    else if (selectedSlot.id === "room:video") patchRoom("video", value);
+  };
+
+  // Resolve context/variant group for current slot
+  const slotContext = selectedSlot.scope === "zone" ? zoneContext : roomContext;
+  const slotVariantGroup = (() => {
+    if (selectedSlot.id === "zone:music") return zoneMediaGroup(zoneId, "music");
+    if (selectedSlot.id === "zone:ambient") return zoneMediaGroup(zoneId, "ambient");
+    if (selectedSlot.id === "zone:flyover") return zoneMediaGroup(zoneId, "zone_intro");
+    if (!selectedRoomId) return "";
+    const field = selectedSlot.id.split(":")[1]!;
+    return roomMediaGroup(zoneId, selectedRoomId, field);
+  })();
+
+  // Generator props
+  const genTitle = selectedSlot.scope === "zone" ? world.zone : (selectedRoom?.title ?? "");
+  const genDesc = selectedSlot.scope === "zone" ? zoneDesc : (selectedRoom?.description ?? "");
+  const genImagePath = selectedSlot.scope === "zone" ? zoneImagePath : roomImagePath;
+
+  const zoneSlots = MEDIA_SLOTS.filter((s) => s.scope === "zone");
+  const roomSlots = MEDIA_SLOTS.filter((s) => s.scope === "room");
+
   return (
     <section className="rounded-[28px] border border-white/10 bg-gradient-panel p-5 shadow-section">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+      <div className="mb-5 flex items-center justify-between gap-4">
         <div>
           <p className="text-[11px] uppercase tracking-wide-ui text-text-muted">Media studio</p>
-          <h2 className="mt-2 font-display text-2xl text-text-primary">Score the world and stage its motion.</h2>
-          <p className="mt-2 max-w-3xl text-sm leading-7 text-text-secondary">Zone audio, room audio, and cinematics.</p>
+          <h2 className="mt-1 font-display text-xl text-text-primary">Score the world and stage its motion.</h2>
         </div>
-        <div className="rounded-full border border-white/10 bg-white/6 px-4 py-2 text-xs text-text-secondary">
-          {roomEntries.length} rooms in {world.zone}
+        <div className="flex items-center gap-3">
+          <span className="text-xs text-text-muted">{roomEntries.length} rooms</span>
+          <select
+            value={selectedRoomId ?? ""}
+            onChange={(event) => setSelectedRoomId(event.target.value || null)}
+            className="rounded-full border border-white/12 bg-white/8 px-4 py-2 text-xs text-text-primary outline-none focus-visible:ring-2 focus-visible:ring-border-active"
+          >
+            {roomEntries.map(([roomId, room]) => (
+              <option key={roomId} value={roomId}>{room.title}</option>
+            ))}
+          </select>
         </div>
       </div>
 
-      <div className="mt-5 grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
-        <div className="flex flex-col gap-4">
-          <MediaField
-            label="Zone score"
-            description="Default exploration music for the zone. Rooms without a dedicated track fall back to this."
-            value={world.audio?.music}
-            onCommit={(value) => patchZoneAudio("music", value)}
-            picker={
-              <MediaPicker
-                value={world.audio?.music}
-                onChange={(value) => patchZoneAudio("music", value)}
-                mediaType="audio"
-                assetType="music"
-                context={zoneContext}
-                variantGroup={zoneMediaGroup(zoneId, "music")}
-                isActive
-              />
-            }
-            generator={
-              <MusicGenerator
-                roomTitle={world.zone}
-                roomDescription={zoneDesc}
-                vibe={vibe}
-                currentAudio={world.audio?.music}
-                trackType="music"
-                assetType="music"
-                context={zoneContext}
-                variantGroup={zoneMediaGroup(zoneId, "music")}
-                markActive
-                onAccept={(fileName) => patchZoneAudio("music", fileName)}
-              />
-            }
-          />
+      <div className="grid gap-5 xl:grid-cols-[0.62fr_1.38fr]">
+        {/* Slot list */}
+        <div className="rounded-[24px] border border-white/8 bg-black/12 p-4">
+          <div className="flex flex-col gap-2">
+            <div className="mb-1 text-[11px] uppercase tracking-ui text-text-muted">Zone</div>
+            {zoneSlots.map((slot) => {
+              const value = getSlotValue(slot, world, selectedRoom, zoneIntroAsset?.file_name);
+              const selected = selectedSlotId === slot.id;
+              return (
+                <button
+                  key={slot.id}
+                  onClick={() => setSelectedSlotId(slot.id)}
+                  className={`flex items-center gap-3 rounded-[18px] border px-3 py-3 text-left transition ${
+                    selected ? "border-border-active bg-gradient-active" : "border-white/8 bg-black/10 hover:bg-white/8"
+                  }`}
+                >
+                  <span className={`h-2.5 w-2.5 rounded-full ${value ? "bg-status-success" : "bg-text-muted/50"}`} />
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-sm text-text-primary">{slot.label}</div>
+                    <div className="truncate text-[11px] text-text-muted">
+                      {value ? value.split(/[\\/]/).pop() : "Empty"}
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
 
-          <MediaField
-            label="Zone ambience"
-            description="Underlying environmental soundscape for the whole zone."
-            value={world.audio?.ambient}
-            onCommit={(value) => patchZoneAudio("ambient", value)}
-            picker={
-              <MediaPicker
-                value={world.audio?.ambient}
-                onChange={(value) => patchZoneAudio("ambient", value)}
-                mediaType="audio"
-                assetType="ambient"
-                context={zoneContext}
-                variantGroup={zoneMediaGroup(zoneId, "ambient")}
-                isActive
-              />
-            }
-            generator={
-              <MusicGenerator
-                roomTitle={world.zone}
-                roomDescription={zoneDesc}
-                vibe={vibe}
-                currentAudio={world.audio?.ambient}
-                trackType="ambient"
-                assetType="ambient"
-                context={zoneContext}
-                variantGroup={zoneMediaGroup(zoneId, "ambient")}
-                markActive
-                onAccept={(fileName) => patchZoneAudio("ambient", fileName)}
-              />
-            }
-          />
-
-          <MediaField
-            label="Zone flyover"
-            description="A cinematic intro managed as a curated variant group instead of an orphaned file."
-            value={zoneIntroAsset?.file_name}
-            onCommit={() => {}}
-            picker={
-              <div className="text-xs text-text-muted">
-                The active zone intro is tracked from the asset library. Generate a new one from the current zone imagery.
-              </div>
-            }
-            generator={
-              <>
-                <VideoGenerator
-                  imagePath={zoneImagePath}
-                  entityName={world.zone}
-                  entityDescription={`Zone: ${world.zone}. ${Object.keys(world.rooms).length} rooms.`}
-                  videoType="zone_intro"
-                  extraContext={`Zone rooms:\n${roomNames}`}
-                  assetType="video"
-                  context={zoneContext}
-                  variantGroup={zoneMediaGroup(zoneId, "zone_intro")}
-                  markActive
-                  onAccept={() => {}}
-                />
-                {!zoneImagePath && (
-                  <p className="mt-2 text-2xs italic text-text-muted">
-                    Generate at least one room image before creating a zone flyover.
-                  </p>
-                )}
-              </>
-            }
-          />
+            <div className="mb-1 mt-3 text-[11px] uppercase tracking-ui text-text-muted">
+              Room: {selectedRoom?.title ?? "None"}
+            </div>
+            {roomSlots.map((slot) => {
+              const value = getSlotValue(slot, world, selectedRoom, zoneIntroAsset?.file_name);
+              const selected = selectedSlotId === slot.id;
+              return (
+                <button
+                  key={slot.id}
+                  onClick={() => setSelectedSlotId(slot.id)}
+                  className={`flex items-center gap-3 rounded-[18px] border px-3 py-3 text-left transition ${
+                    selected ? "border-border-active bg-gradient-active" : "border-white/8 bg-black/10 hover:bg-white/8"
+                  }`}
+                >
+                  <span className={`h-2.5 w-2.5 rounded-full ${value ? "bg-status-success" : "bg-text-muted/50"}`} />
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-sm text-text-primary">{slot.label}</div>
+                    <div className="truncate text-[11px] text-text-muted">
+                      {value ? value.split(/[\\/]/).pop() : "Empty"}
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
         </div>
 
-        <div className="flex flex-col gap-4">
-          <div className="rounded-[22px] border border-white/8 bg-black/12 p-4">
-            <div className="flex items-center justify-between gap-4">
+        {/* Detail panel */}
+        <div className="flex flex-col gap-5">
+          {/* Assignment card */}
+          <div className="rounded-[24px] border border-white/8 bg-black/12 p-4">
+            <div className="flex items-start justify-between gap-4">
               <div>
-                <h3 className="font-display text-lg text-text-primary">Room staging</h3>
-                <p className="mt-1 text-xs leading-6 text-text-secondary">Choose a room.</p>
+                <div className="text-[11px] uppercase tracking-ui text-text-muted">{selectedSlot.scope}</div>
+                <h3 className="mt-0.5 font-display text-xl text-text-primary">{selectedSlot.label}</h3>
+                <p className="mt-1 text-xs leading-5 text-text-secondary">{selectedSlot.description}</p>
               </div>
-              <select
-                value={selectedRoomId ?? ""}
-                onChange={(event) => setSelectedRoomId(event.target.value || null)}
-                className="min-w-[14rem] rounded-full border border-white/12 bg-white/8 px-4 py-2 text-xs text-text-primary outline-none focus-visible:ring-2 focus-visible:ring-border-active"
-              >
-                {roomEntries.map(([roomId, room]) => (
-                  <option key={roomId} value={roomId}>
-                    {room.title}
-                  </option>
-                ))}
-              </select>
+              <span className="rounded-full bg-white/8 px-3 py-1 text-[11px] uppercase tracking-label text-text-muted">
+                {currentValue ? "Assigned" : "Empty"}
+              </span>
             </div>
+
+            {selectedSlot.id !== "zone:flyover" ? (
+              <div className="mt-4 grid gap-3 lg:grid-cols-[1fr_auto]">
+                <TextInput
+                  value={currentValue ?? ""}
+                  onCommit={(next) => commitValue(next || undefined)}
+                  placeholder="None"
+                />
+                <div className="flex items-center">
+                  <MediaPicker
+                    value={currentValue}
+                    onChange={(value) => commitValue(value)}
+                    mediaType={selectedSlot.mediaType}
+                    assetType={selectedSlot.id === "room:audio" ? "audio" : selectedSlot.id.includes("video") ? "video" : selectedSlot.generatorType === "music" ? "music" : "ambient"}
+                    context={slotContext}
+                    variantGroup={slotVariantGroup}
+                    isActive
+                  />
+                </div>
+              </div>
+            ) : (
+              <div className="mt-4 text-xs text-text-muted">
+                The active zone intro is tracked from the asset library. Generate a new one from the current zone imagery.
+              </div>
+            )}
           </div>
 
-          {selectedRoom ? (
-            <>
-              <MediaField
-                label="Room music"
-                description="A specific musical cue for this room."
-                value={selectedRoom.music}
-                onCommit={(value) => patchRoom("music", value)}
-                picker={
-                  <MediaPicker
-                    value={selectedRoom.music}
-                    onChange={(value) => patchRoom("music", value)}
-                    mediaType="audio"
-                    assetType="music"
-                    context={roomContext}
-                    variantGroup={roomMediaGroup(zoneId, selectedRoomId!, "music")}
-                    isActive
-                  />
-                }
-                generator={
-                  <MusicGenerator
-                    roomTitle={selectedRoom.title}
-                    roomDescription={selectedRoom.description}
-                    vibe={vibe}
-                    currentAudio={selectedRoom.music}
-                    trackType="music"
-                    assetType="music"
-                    context={roomContext}
-                    variantGroup={roomMediaGroup(zoneId, selectedRoomId!, "music")}
-                    markActive
-                    onAccept={(fileName) => patchRoom("music", fileName)}
-                  />
-                }
-              />
+          {/* Generator card */}
+          {selectedSlot.generatorType !== "none" && (
+            <div className="rounded-[24px] border border-white/8 bg-black/12 p-4">
+              <div className="mb-3 text-[11px] uppercase tracking-ui text-text-muted">
+                {selectedSlot.generatorType === "video" ? "Video generator" : "Audio generator"}
+              </div>
 
-              <MediaField
-                label="Room ambience"
-                description="Environmental sound design layered under or instead of music."
-                value={selectedRoom.ambient}
-                onCommit={(value) => patchRoom("ambient", value)}
-                picker={
-                  <MediaPicker
-                    value={selectedRoom.ambient}
-                    onChange={(value) => patchRoom("ambient", value)}
-                    mediaType="audio"
-                    assetType="ambient"
-                    context={roomContext}
-                    variantGroup={roomMediaGroup(zoneId, selectedRoomId!, "ambient")}
-                    isActive
-                  />
-                }
-                generator={
-                  <MusicGenerator
-                    roomTitle={selectedRoom.title}
-                    roomDescription={selectedRoom.description}
-                    vibe={vibe}
-                    currentAudio={selectedRoom.ambient}
-                    trackType="ambient"
-                    assetType="ambient"
-                    context={roomContext}
-                    variantGroup={roomMediaGroup(zoneId, selectedRoomId!, "ambient")}
-                    markActive
-                    onAccept={(fileName) => patchRoom("ambient", fileName)}
-                  />
-                }
-              />
-
-              <MediaField
-                label="Room foley"
-                description="Direct imported audio for special room cues, loops, or handcrafted effects."
-                value={selectedRoom.audio}
-                onCommit={(value) => patchRoom("audio", value)}
-                picker={
-                  <MediaPicker
-                    value={selectedRoom.audio}
-                    onChange={(value) => patchRoom("audio", value)}
-                    mediaType="audio"
-                    assetType="audio"
-                    context={roomContext}
-                    variantGroup={roomMediaGroup(zoneId, selectedRoomId!, "audio")}
-                    isActive
-                  />
-                }
-              />
-
-              <MediaField
-                label="Room cinematic"
-                description="A short establishing shot sourced from the room art."
-                value={selectedRoom.video}
-                onCommit={(value) => patchRoom("video", value)}
-                picker={
-                  <MediaPicker
-                    value={selectedRoom.video}
-                    onChange={(value) => patchRoom("video", value)}
-                    mediaType="video"
+              {selectedSlot.generatorType === "video" ? (
+                <>
+                  <VideoGenerator
+                    imagePath={genImagePath}
+                    entityName={genTitle}
+                    entityDescription={genDesc}
+                    videoType={selectedSlot.id === "zone:flyover" ? "zone_intro" : "room_cinematic"}
+                    extraContext={selectedSlot.scope === "zone" ? `Zone rooms:\n${roomNames}` : undefined}
                     assetType="video"
-                    context={roomContext}
-                    variantGroup={roomMediaGroup(zoneId, selectedRoomId!, "video")}
-                    isActive
+                    context={slotContext}
+                    variantGroup={slotVariantGroup}
+                    markActive
+                    onAccept={(fileName) => {
+                      if (selectedSlot.id !== "zone:flyover") commitValue(fileName);
+                    }}
                   />
-                }
-                generator={
-                  <>
-                    <VideoGenerator
-                      imagePath={roomImagePath}
-                      entityName={selectedRoom.title}
-                      entityDescription={selectedRoom.description}
-                      videoType="room_cinematic"
-                      assetType="video"
-                      context={roomContext}
-                      variantGroup={roomMediaGroup(zoneId, selectedRoomId!, "video")}
-                      markActive
-                      onAccept={(fileName) => patchRoom("video", fileName)}
-                    />
-                    {!roomImagePath && (
-                      <p className="mt-2 text-2xs italic text-text-muted">
-                        This room needs an image before you can generate a cinematic.
-                      </p>
-                    )}
-                  </>
-                }
-              />
-            </>
-          ) : (
-            <div className="rounded-[22px] border border-dashed border-white/12 bg-white/4 px-4 py-8 text-sm text-text-muted">
-              This zone has no rooms yet.
+                  {!genImagePath && (
+                    <p className="mt-2 text-2xs italic text-text-muted">
+                      {selectedSlot.scope === "zone"
+                        ? "Generate at least one room image before creating a zone flyover."
+                        : "This room needs an image before you can generate a cinematic."}
+                    </p>
+                  )}
+                </>
+              ) : (
+                <MusicGenerator
+                  roomTitle={genTitle}
+                  roomDescription={genDesc}
+                  vibe={vibe}
+                  currentAudio={currentValue}
+                  trackType={selectedSlot.generatorType as "music" | "ambient"}
+                  assetType={selectedSlot.generatorType as "music" | "ambient"}
+                  context={slotContext}
+                  variantGroup={slotVariantGroup}
+                  markActive
+                  onAccept={(fileName) => commitValue(fileName)}
+                />
+              )}
             </div>
           )}
         </div>

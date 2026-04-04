@@ -601,7 +601,7 @@ export function generateSpritesYaml(): string {
     entries[id] = entry;
   }
 
-  return stringify(entries, YAML_OPTS);
+  return stringify({ sprites: entries }, YAML_OPTS);
 }
 
 // ─── Slot position loading ──────────────────────────────────────────

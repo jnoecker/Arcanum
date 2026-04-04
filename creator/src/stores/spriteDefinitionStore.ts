@@ -118,8 +118,12 @@ export const useSpriteDefinitionStore = create<SpriteDefinitionStore>((set, get)
         set({ definitions: {}, dirty: false });
         return;
       }
+      // Support both wrapped (`sprites:` root key) and flat (legacy) format
+      const spriteMap = (parsed.sprites && typeof parsed.sprites === "object")
+        ? parsed.sprites as Record<string, any>
+        : parsed;
       const defs: Record<string, SpriteDefinition> = {};
-      for (const [id, entry] of Object.entries(parsed)) {
+      for (const [id, entry] of Object.entries(spriteMap)) {
         if (entry && typeof entry === "object") {
           defs[id] = parseDefinition(id, entry as Record<string, unknown>);
         }
@@ -139,7 +143,7 @@ export const useSpriteDefinitionStore = create<SpriteDefinitionStore>((set, get)
       output[id] = definitionToPlain(def);
     }
 
-    const yaml = stringify(output, { lineWidth: 120 });
+    const yaml = stringify({ sprites: output }, { lineWidth: 120 });
     await writeTextFile(path, yaml);
     set({ dirty: false });
   },

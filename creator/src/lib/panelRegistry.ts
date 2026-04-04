@@ -33,7 +33,7 @@ const STUDIO_PANELS: PanelDef[] = [
   { id: "art", label: "Art", group: "studio", host: "studio", kicker: "Studio", title: "Art", description: "Zone vibes, entity art, defaults, and free-form generation.", maxWidth: "max-w-7xl" },
   { id: "media", label: "Media", group: "studio", host: "studio", kicker: "Studio", title: "Media", description: "Music, ambience, and cinematic staging.", maxWidth: "max-w-7xl" },
   { id: "portraits", label: "Portraits", group: "studio", host: "studio", kicker: "Studio", title: "Portraits", description: "Race and class portrait creation.", maxWidth: "max-w-7xl" },
-  { id: "studioAbilities", label: "Abilities", group: "studio", host: "studio", kicker: "Studio", title: "Abilities", description: "Ability and status-effect icon generation.", maxWidth: "max-w-7xl" },
+  { id: "studioAbilities", label: "Icons", group: "studio", host: "studio", kicker: "Studio", title: "Icons", description: "Ability and status-effect icon generation.", maxWidth: "max-w-7xl" },
 ];
 
 // ─── Character panels (includes former Ability panels) ─────────────

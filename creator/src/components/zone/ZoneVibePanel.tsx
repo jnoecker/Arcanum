@@ -195,12 +195,15 @@ export function ZoneVibePanel({ zoneId, world, onWorldChange }: ZoneVibePanelPro
         `default:${zoneId}:${kind}`,
         true,
       );
-      // Read the latest world from the ref so sequential calls accumulate
-      const latestWorld = worldRef.current;
-      const updated = applyDefaultImage(latestWorld, kind, fileName);
-      worldRef.current = updated;
-      onWorldChange(updated);
-      await loadAssets();
+      // Only apply the result if we're still on the same zone — prevents
+      // generation results from leaking into a different zone's state
+      if (generatingZoneRef.current === forZone) {
+        const latestWorld = worldRef.current;
+        const updated = applyDefaultImage(latestWorld, kind, fileName);
+        worldRef.current = updated;
+        onWorldChange(updated);
+        await loadAssets();
+      }
     } finally {
       if (generatingZoneRef.current === forZone) {
         setGeneratingDefaults((prev) => ({ ...prev, [kind]: false }));
@@ -240,20 +243,23 @@ export function ZoneVibePanel({ zoneId, world, onWorldChange }: ZoneVibePanelPro
   };
 
   const handleGenerate = async () => {
+    const forZone = zoneId;
     setGenerating(true);
     setError(null);
     setDefaultError(null);
     try {
       const worldContext = buildVibeInput(world);
-      const vibe = await generateVibe(zoneId, worldContext);
+      const vibe = await generateVibe(forZone, worldContext);
+      // Only apply results if still on the same zone
+      if (generatingZoneRef.current !== forZone) return;
       setDraft(vibe);
       if (hasImageKey) {
         await generateAllDefaults(vibe);
       }
     } catch (e) {
-      setError(String(e));
+      if (generatingZoneRef.current === forZone) setError(String(e));
     } finally {
-      setGenerating(false);
+      if (generatingZoneRef.current === forZone) setGenerating(false);
     }
   };
 

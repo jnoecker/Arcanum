@@ -8,7 +8,7 @@ import { useImageSrc } from "@/lib/useImageSrc";
 import { useFocusTrap } from "@/lib/useFocusTrap";
 import { UNIVERSAL_NEGATIVE } from "@/lib/arcanumPrompts";
 import { removeBgAndSave } from "@/lib/useBackgroundRemoval";
-import { ENTITY_DIMENSIONS, imageGenerateCommand, resolveImageModel, requestsTransparentBackground } from "@/types/assets";
+import { ENTITY_DIMENSIONS, imageGenerateCommand, isFlux2Model, resolveImageModel, requestsTransparentBackground } from "@/types/assets";
 import {
   buildSpritePrompt,
   generateSpriteTemplate,
@@ -963,8 +963,9 @@ export function PlayerSpriteManager() {
           : await invoke<GeneratedImage>(imageGenerateCommand(imageProvider), {
             prompt: finalPrompt,
             negativePrompt: UNIVERSAL_NEGATIVE,
-            seedImage: seedImage && imageProvider === "runware" ? seedImage : null,
-            seedStrength: seedImage && imageProvider === "runware" ? 0.65 : null,
+            seedImage: seedImage && imageProvider === "runware" && !isFlux2Model(model.id) ? seedImage : null,
+            seedStrength: seedImage && imageProvider === "runware" && !isFlux2Model(model.id) ? 0.65 : null,
+            guideImage: seedImage && imageProvider === "runware" && isFlux2Model(model.id) ? seedImage : null,
             model: model.id,
             width: dims.width,
             height: dims.height,

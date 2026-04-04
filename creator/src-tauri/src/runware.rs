@@ -12,6 +12,13 @@ const API_URL: &str = "https://api.runware.ai/v1";
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
+struct RunwareIpAdapter {
+    model: String,
+    guide_image: String,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
 struct RunwareImageTask {
     task_type: String,
     #[serde(rename = "taskUUID")]
@@ -30,6 +37,8 @@ struct RunwareImageTask {
     seed_image: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     strength: Option<f32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    ip_adapters: Option<Vec<RunwareIpAdapter>>,
     output_format: String,
     number_results: u32,
 }
@@ -68,6 +77,7 @@ pub async fn runware_generate_image(
     negative_prompt: Option<String>,
     seed_image: Option<String>,
     seed_strength: Option<f32>,
+    guide_image: Option<String>,
     model: Option<String>,
     width: Option<u32>,
     height: Option<u32>,
@@ -104,6 +114,19 @@ pub async fn runware_generate_image(
         }
     });
 
+    // Build FLUX Redux IP-Adapter for guide image (used for FLUX2 img2img)
+    let ip_adapters = guide_image.map(|img| {
+        let normalized = if img.starts_with("data:") {
+            img
+        } else {
+            format!("data:image/png;base64,{img}")
+        };
+        vec![RunwareIpAdapter {
+            model: "runware:105@1".to_string(),
+            guide_image: normalized,
+        }]
+    });
+
     let task = RunwareImageTask {
         task_type: "imageInference".to_string(),
         task_uuid: uuid::Uuid::new_v4().to_string(),
@@ -116,6 +139,7 @@ pub async fn runware_generate_image(
         cfg_scale: guidance,
         seed_image: normalized_seed_image,
         strength: seed_strength,
+        ip_adapters,
         output_format: "PNG".to_string(),
         number_results: 1,
     };

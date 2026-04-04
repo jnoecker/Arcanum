@@ -182,6 +182,11 @@ export function resolveImageModel(provider: string, configuredModel?: string) {
   return forProvider[0];
 }
 
+/** Returns true if the model ID is a FLUX2 model (uses Redux for img2img instead of seedImage). */
+export function isFlux2Model(modelId: string): boolean {
+  return modelId.startsWith("runware:4");
+}
+
 export function imageGenerateCommand(provider: string): string {
   switch (provider) {
     case "runware": return "runware_generate_image";

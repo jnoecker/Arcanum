@@ -55,6 +55,11 @@ export async function removeBgAndSave(
       context: context ?? null,
       variantGroup: variantGroup ?? null,
     });
+    // Set the bg-removed variant as active so it's the one displayed/exported
+    if (variantGroup) {
+      await invoke("set_active_variant", { variantGroup, assetId: entry.id });
+      console.log(`[bg-removal] Set as active variant for ${variantGroup}`);
+    }
     return entry;
   } catch (e) {
     // BG removal is best-effort — don't block the main flow

@@ -1,7 +1,6 @@
 import { useState, useCallback } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import type { AssetContext, AssetEntry } from "@/types/assets";
-import { useAssetStore } from "@/stores/assetStore";
 
 let bgRemovalModule: typeof import("@imgly/background-removal") | null = null;
 
@@ -44,11 +43,13 @@ export async function removeBgAndSave(
     const blob = await removeBackground(imageDataUrl);
     const buffer = await blob.arrayBuffer();
     const bytes = new Uint8Array(buffer);
-    let binary = "";
-    for (let i = 0; i < bytes.length; i++) {
-      binary += String.fromCharCode(bytes[i]!);
+    // Encode in 8KB chunks to avoid stack overflow and O(N²) string concat
+    const chunks: string[] = [];
+    const CHUNK = 8192;
+    for (let i = 0; i < bytes.length; i += CHUNK) {
+      chunks.push(String.fromCharCode(...bytes.subarray(i, i + CHUNK)));
     }
-    const b64 = btoa(binary);
+    const b64 = btoa(chunks.join(""));
 
     const entry = await invoke<AssetEntry>("save_bytes_as_asset", {
       bytesB64: b64,
@@ -61,8 +62,6 @@ export async function removeBgAndSave(
       await invoke("set_active_variant", { variantGroup, assetId: entry.id });
       console.log(`[bg-removal] Set as active variant for ${variantGroup}`);
     }
-    // Refresh the in-memory asset list so the UI reflects the change
-    await useAssetStore.getState().loadAssets();
     return entry;
   } catch (e) {
     // BG removal is best-effort — don't block the main flow

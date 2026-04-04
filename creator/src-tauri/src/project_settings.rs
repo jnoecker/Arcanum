@@ -1,7 +1,13 @@
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
+use std::sync::LazyLock;
+use tokio::sync::RwLock;
 
 const PROJECT_SETTINGS_FILE: &str = ".arcanum/settings.json";
+
+/// Cached project settings — keyed by project_dir to avoid re-reading from disk.
+static PROJECT_SETTINGS_CACHE: LazyLock<RwLock<Option<(String, ProjectSettings)>>> =
+    LazyLock::new(|| RwLock::new(None));
 
 /// Project-level settings stored in `<project_dir>/.arcanum/settings.json`.
 /// These override the corresponding fields from user-level settings.
@@ -41,6 +47,16 @@ pub fn project_settings_path(project_dir: &str) -> PathBuf {
 
 #[tauri::command]
 pub async fn get_project_settings(project_dir: String) -> Result<Option<ProjectSettings>, String> {
+    // Check cache first (must match project_dir)
+    {
+        let cache = PROJECT_SETTINGS_CACHE.read().await;
+        if let Some((ref cached_dir, ref cached_ps)) = *cache {
+            if cached_dir == &project_dir {
+                return Ok(Some(cached_ps.clone()));
+            }
+        }
+    }
+    // Cache miss — read from disk
     let path = project_settings_path(&project_dir);
     if !path.exists() {
         return Ok(None);
@@ -50,6 +66,11 @@ pub async fn get_project_settings(project_dir: String) -> Result<Option<ProjectS
         .map_err(|e| format!("Failed to read project settings: {e}"))?;
     let ps: ProjectSettings =
         serde_json::from_str(&data).map_err(|e| format!("Failed to parse project settings: {e}"))?;
+    // Update cache
+    {
+        let mut cache = PROJECT_SETTINGS_CACHE.write().await;
+        *cache = Some((project_dir, ps.clone()));
+    }
     Ok(Some(ps))
 }
 
@@ -68,7 +89,13 @@ pub async fn save_project_settings(
         .map_err(|e| format!("Failed to serialize project settings: {e}"))?;
     tokio::fs::write(&path, json)
         .await
-        .map_err(|e| format!("Failed to write project settings: {e}"))
+        .map_err(|e| format!("Failed to write project settings: {e}"))?;
+    // Update cache with freshly saved settings
+    {
+        let mut cache = PROJECT_SETTINGS_CACHE.write().await;
+        *cache = Some((project_dir, settings.clone()));
+    }
+    Ok(())
 }
 
 /// Seed project settings from the current user settings.

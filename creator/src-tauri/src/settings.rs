@@ -10,6 +10,9 @@ const SETTINGS_FILE: &str = "settings.json";
 /// merges user-level settings with project-level settings.
 static ACTIVE_PROJECT_DIR: LazyLock<RwLock<Option<String>>> = LazyLock::new(|| RwLock::new(None));
 
+/// Cached user settings — avoids reading settings.json from disk on every call.
+static USER_SETTINGS_CACHE: LazyLock<RwLock<Option<Settings>>> = LazyLock::new(|| RwLock::new(None));
+
 /// Called by the frontend when a project is opened/closed.
 #[tauri::command]
 pub async fn set_active_project_dir(project_dir: Option<String>) -> Result<(), String> {
@@ -124,14 +127,29 @@ fn settings_path(app: &AppHandle) -> Result<PathBuf, String> {
 
 /// Load user-level settings only (no project merge).
 pub async fn get_user_settings(app: &AppHandle) -> Result<Settings, String> {
-    let path = settings_path(app)?;
-    if !path.exists() {
-        return Ok(Settings::default());
+    // Check cache first
+    {
+        let cache = USER_SETTINGS_CACHE.read().await;
+        if let Some(ref cached) = *cache {
+            return Ok(cached.clone());
+        }
     }
-    let data = tokio::fs::read_to_string(&path)
-        .await
-        .map_err(|e| format!("Failed to read settings: {e}"))?;
-    serde_json::from_str(&data).map_err(|e| format!("Failed to parse settings: {e}"))
+    // Cache miss — read from disk
+    let path = settings_path(app)?;
+    let settings = if !path.exists() {
+        Settings::default()
+    } else {
+        let data = tokio::fs::read_to_string(&path)
+            .await
+            .map_err(|e| format!("Failed to read settings: {e}"))?;
+        serde_json::from_str(&data).map_err(|e| format!("Failed to parse settings: {e}"))?
+    };
+    // Update cache
+    {
+        let mut cache = USER_SETTINGS_CACHE.write().await;
+        *cache = Some(settings.clone());
+    }
+    Ok(settings)
 }
 
 /// Returns settings, automatically merged with project settings when a project is active.
@@ -180,7 +198,13 @@ pub async fn save_settings(app: AppHandle, settings: Settings) -> Result<(), Str
         .map_err(|e| format!("Failed to serialize settings: {e}"))?;
     tokio::fs::write(&path, json)
         .await
-        .map_err(|e| format!("Failed to write settings: {e}"))
+        .map_err(|e| format!("Failed to write settings: {e}"))?;
+    // Update cache with freshly saved settings
+    {
+        let mut cache = USER_SETTINGS_CACHE.write().await;
+        *cache = Some(settings.clone());
+    }
+    Ok(())
 }
 
 /// Returns settings merged from user-level and project-level sources.

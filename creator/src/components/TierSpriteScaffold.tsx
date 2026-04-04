@@ -214,31 +214,46 @@ export function TierSpriteScaffold({ onClose, onComplete }: TierSpriteScaffoldPr
             ? await readSeedImage(slot.race)
             : null;
 
-          const image = seedImage && imageProvider === "deepinfra"
-            ? await invoke<GeneratedImage>("img2img_generate", {
+          const generate = (seed: string | null) => {
+            if (seed && imageProvider === "deepinfra") {
+              return invoke<GeneratedImage>("img2img_generate", {
                 prompt,
-                imageBase64: seedImage,
+                imageBase64: seed,
                 model: model.id,
                 width: dims.width,
                 height: dims.height,
                 strength: 0.65,
                 assetType: "player_sprite",
                 autoEnhance: false,
-              })
-            : await invoke<GeneratedImage>(imageGenerateCommand(imageProvider), {
-                prompt,
-                negativePrompt: UNIVERSAL_NEGATIVE,
-                seedImage: seedImage && imageProvider === "runware" ? seedImage : null,
-                seedStrength: seedImage && imageProvider === "runware" ? 0.65 : null,
-                model: model.id,
-                width: dims.width,
-                height: dims.height,
-                steps: model.defaultSteps,
-                guidance: "defaultGuidance" in model ? model.defaultGuidance : null,
-                assetType: "player_sprite",
-                autoEnhance: false,
-                transparentBackground: imageProvider === "openai" && requestsTransparentBackground("player_sprite"),
               });
+            }
+            return invoke<GeneratedImage>(imageGenerateCommand(imageProvider), {
+              prompt,
+              negativePrompt: UNIVERSAL_NEGATIVE,
+              seedImage: seed && imageProvider === "runware" ? seed : null,
+              seedStrength: seed && imageProvider === "runware" ? 0.65 : null,
+              model: model.id,
+              width: dims.width,
+              height: dims.height,
+              steps: model.defaultSteps,
+              guidance: "defaultGuidance" in model ? model.defaultGuidance : null,
+              assetType: "player_sprite",
+              autoEnhance: false,
+              transparentBackground: imageProvider === "openai" && requestsTransparentBackground("player_sprite"),
+            });
+          };
+
+          // Try with seed image first; retry without if the provider rejects it
+          let image: GeneratedImage;
+          try {
+            image = await generate(seedImage);
+          } catch (e) {
+            if (seedImage) {
+              image = await generate(null);
+            } else {
+              throw e;
+            }
+          }
 
           const imageId = slot.id;
           const assetContext: AssetContext = { zone: "sprites", entity_type: "player_sprite", entity_id: imageId };

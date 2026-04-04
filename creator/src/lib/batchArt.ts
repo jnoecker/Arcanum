@@ -123,6 +123,7 @@ export function getTargetContext(
 export interface ArtGenerationCallbacks {
   onTargetUpdate: (idx: number, update: Partial<BatchTarget>) => void;
   onWorldUpdate: (world: WorldFile) => void;
+  onBgRemovalProgress?: (done: number, total: number) => void;
   acceptAsset: (
     image: GeneratedImage,
     assetType: string,
@@ -295,6 +296,11 @@ export async function runBatchArtGeneration(
   await Promise.all(workers);
 
   // Await all background removals and update worldRef with bg-free filenames
+  const totalRemovals = pendingBgRemovals.length;
+  if (totalRemovals > 0) {
+    callbacks.onBgRemovalProgress?.(0, totalRemovals);
+  }
+  let removalsComplete = 0;
   for (const { promise, kind, id } of pendingBgRemovals) {
     try {
       const entry = await promise;
@@ -319,6 +325,8 @@ export async function runBatchArtGeneration(
     } catch {
       // bg removal failed; keep original image
     }
+    removalsComplete++;
+    callbacks.onBgRemovalProgress?.(removalsComplete, totalRemovals);
   }
 
   callbacks.onWorldUpdate(worldRef.current);

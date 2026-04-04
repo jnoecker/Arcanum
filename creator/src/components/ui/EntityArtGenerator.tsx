@@ -306,9 +306,8 @@ export function EntityArtGenerator({
 
       // Auto-remove background for sprite asset types
       if (settings?.auto_remove_bg && shouldRemoveBg(assetType) && result.data_url) {
-        removeBgAndSave(result.data_url, assetType, context, variantGroup).then(async (entry) => {
-          if (entry) await useAssetStore.getState().loadAssets();
-        });
+        const entry = await removeBgAndSave(result.data_url, assetType, context, variantGroup).catch(() => null);
+        if (entry) await useAssetStore.getState().loadAssets();
       }
     }
     setStage("idle");

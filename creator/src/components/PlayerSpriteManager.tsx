@@ -938,7 +938,7 @@ export function PlayerSpriteManager() {
         await acceptAsset(image, "player_sprite", finalPrompt, assetContext, variantGroup, true);
 
         if (settings.auto_remove_bg && image.data_url) {
-          removeBgAndSave(image.data_url, "player_sprite", assetContext, variantGroup).catch(() => {});
+          await removeBgAndSave(image.data_url, "player_sprite", assetContext, variantGroup).catch(() => {});
         }
 
         await loadAssets();

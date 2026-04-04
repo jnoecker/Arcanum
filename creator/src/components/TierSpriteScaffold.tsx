@@ -217,9 +217,12 @@ export function TierSpriteScaffold({ onClose, onComplete }: TierSpriteScaffoldPr
     );
     await Promise.all(workers);
 
-    // Let background removals finish async — sprite definitions don't need
-    // the bg-free filename (variants handle it via the asset manifest).
-    void Promise.all(pendingBgRemovals).then(() => loadAssets());
+    // Await background removals before finishing — ensures the bg-free variants
+    // are registered in the asset manifest before we report completion.
+    if (pendingBgRemovals.length > 0) {
+      setCurrentLabel(`Removing backgrounds (${pendingBgRemovals.length})...`);
+      await Promise.all(pendingBgRemovals);
+    }
 
     await loadAssets();
     setProgress({ done, failed, total: slots.length });

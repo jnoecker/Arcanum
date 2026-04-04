@@ -27,6 +27,7 @@ export function BatchArtGenerator({
   const vibe = useVibeStore((s) => s.vibes.get(zoneId) ?? "");
   const [targets, setTargets] = useState(() => collectTargets(world));
   const [running, setRunning] = useState(false);
+  const [bgRemoval, setBgRemoval] = useState<{ done: number; total: number } | null>(null);
   const [concurrency, setConcurrency] = useState(settings?.batch_concurrency ?? 5);
   const abortRef = useRef(false);
   const trapRef = useFocusTrap<HTMLDivElement>(running ? undefined : onClose);
@@ -55,6 +56,7 @@ export function BatchArtGenerator({
     setRunning(true);
     abortRef.current = false;
 
+    setBgRemoval(null);
     await runBatchArtGeneration(
       targets,
       world,
@@ -72,11 +74,13 @@ export function BatchArtGenerator({
           );
         },
         onWorldUpdate: onWorldChange,
+        onBgRemovalProgress: (done, total) => setBgRemoval({ done, total }),
         acceptAsset,
       },
       settings?.auto_remove_bg,
     );
 
+    setBgRemoval(null);
     setRunning(false);
   }, [targets, world, onWorldChange, artStyle, vibe, imageProvider, concurrency, zoneId, acceptAsset, settings]);
 
@@ -150,16 +154,22 @@ export function BatchArtGenerator({
           <div className="border-b border-border-default px-5 py-2">
             <div className="mb-1 flex items-center justify-between text-xs">
               <span className="text-text-secondary">
-                {doneCount + errorCount} of {checkedTargets.length}
+                {bgRemoval
+                  ? `Removing backgrounds: ${bgRemoval.done} of ${bgRemoval.total}`
+                  : `${doneCount + errorCount} of ${checkedTargets.length}`}
               </span>
               <span className="text-text-muted">
-                {doneCount} done{errorCount > 0 ? `, ${errorCount} errors` : ""}
+                {bgRemoval
+                  ? `${doneCount} images generated`
+                  : `${doneCount} done${errorCount > 0 ? `, ${errorCount} errors` : ""}`}
               </span>
             </div>
             <div className="h-1.5 overflow-hidden rounded-full bg-bg-primary">
               <div
                 className="h-full rounded-full bg-accent transition-all"
-                style={{ width: `${((doneCount + errorCount) / checkedTargets.length) * 100}%` }}
+                style={{ width: `${bgRemoval
+                  ? (bgRemoval.total > 0 ? (bgRemoval.done / bgRemoval.total) * 100 : 0)
+                  : ((doneCount + errorCount) / checkedTargets.length) * 100}%` }}
               />
             </div>
           </div>

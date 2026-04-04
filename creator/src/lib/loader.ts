@@ -105,6 +105,17 @@ export function parseAppConfigYaml(content: string): AppConfig {
     images: parseImagesConfig(root.images),
     globalAssets: parseGlobalAssets((root.images as Record<string, unknown> | undefined)?.globalAssets ?? root.globalAssets),
     playerTiers: parsePlayerTiers(root.playerTiers),
+    lottery: engine.lottery as AppConfig["lottery"],
+    gambling: engine.gambling as AppConfig["gambling"],
+    respec: engine.respec as AppConfig["respec"],
+    prestige: engine.prestige as AppConfig["prestige"],
+    dailyQuests: engine.dailyQuests as AppConfig["dailyQuests"],
+    autoQuests: engine.autoQuests as AppConfig["autoQuests"],
+    globalQuests: engine.globalQuests as AppConfig["globalQuests"],
+    guildHalls: engine.guildHalls as AppConfig["guildHalls"],
+    factions: engine.factions as AppConfig["factions"],
+    leaderboard: engine.leaderboard as AppConfig["leaderboard"],
+    currencies: engine.currencies as AppConfig["currencies"],
     rawSections: collectRawSections(root, engine),
   };
 }
@@ -471,6 +482,8 @@ function collectRawSections(
     "craftingSkills", "craftingStationTypes",
     "scheduler", "friends", "debug", "classStartRooms", "emotePresets", "housing", "pets", "enchanting", "bank",
     "worldTime", "weather", "worldEvents", "skillPoints", "multiclass",
+    "lottery", "gambling", "respec", "prestige", "dailyQuests", "autoQuests", "globalQuests",
+    "guildHalls", "factions", "leaderboard", "currencies",
   ]);
 
   const raw: Record<string, unknown> = {};

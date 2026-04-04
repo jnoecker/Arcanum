@@ -198,6 +198,17 @@ async function saveSplitConfig(projectDir: string): Promise<void> {
       weather: config.weather,
       worldEvents: Object.keys(config.worldEvents.definitions).length > 0
         ? config.worldEvents : undefined,
+      lottery: config.lottery,
+      gambling: config.gambling,
+      respec: config.respec,
+      prestige: config.prestige,
+      dailyQuests: config.dailyQuests,
+      autoQuests: config.autoQuests,
+      globalQuests: config.globalQuests,
+      guildHalls: config.guildHalls,
+      factions: config.factions,
+      leaderboard: config.leaderboard,
+      currencies: config.currencies,
     })),
 
     write("assets", cleanObj({

@@ -329,6 +329,20 @@ export function buildMonolithicConfigObject(
     engine.housing = housingToPlain(c.housing);
   }
   engine.classStartRooms = classStartRooms;
+
+  // Optional engine subsystems — pass through as-is
+  if (c.lottery) engine.lottery = c.lottery;
+  if (c.gambling) engine.gambling = c.gambling;
+  if (c.respec) engine.respec = c.respec;
+  if (c.prestige) engine.prestige = c.prestige;
+  if (c.dailyQuests) engine.dailyQuests = c.dailyQuests;
+  if (c.autoQuests) engine.autoQuests = c.autoQuests;
+  if (c.globalQuests) engine.globalQuests = c.globalQuests;
+  if (c.guildHalls) engine.guildHalls = c.guildHalls;
+  if (c.factions) engine.factions = c.factions;
+  if (c.leaderboard) engine.leaderboard = c.leaderboard;
+  if (c.currencies) engine.currencies = c.currencies;
+
   engine.achievementCategories = { categories: withFallbackMap(c.achievementCategories, DEFAULT_ACHIEVEMENT_CATEGORIES) };
   engine.achievementCriterionTypes = { types: withFallbackMap(c.achievementCriterionTypes, DEFAULT_ACHIEVEMENT_CRITERION_TYPES) };
   engine.questObjectiveTypes = { types: withFallbackMap(c.questObjectiveTypes, DEFAULT_QUEST_OBJECTIVE_TYPES) };

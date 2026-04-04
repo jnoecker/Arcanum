@@ -668,6 +668,11 @@ export interface GuildHallsConfig {
   roomTemplates: Record<string, GuildHallRoomTemplate>;
 }
 
+export interface LeaderboardConfig {
+  refreshIntervalMs: number;
+  topN: number;
+}
+
 // ─── Top-level config state ─────────────────────────────────────────
 
 export interface AppConfig {
@@ -732,6 +737,7 @@ export interface AppConfig {
   dailyQuests?: DailyQuestsConfig;
   globalQuests?: GlobalQuestsConfig;
   guildHalls?: GuildHallsConfig;
+  leaderboard?: LeaderboardConfig;
   globalAssets: Record<string, string>;
   playerTiers?: Record<string, TierDefinitionConfig>;
   /** Raw YAML content for unrecognized sections */

@@ -11,6 +11,40 @@ async function loadBgRemoval() {
   return bgRemovalModule;
 }
 
+/** Yield to the browser event loop so UI stays responsive. */
+function yieldToUI(): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, 0));
+}
+
+// ─── Sequential queue ─────────────────────────────────────────────
+// BG removal is CPU-intensive WASM that blocks the main thread.
+// Queue tasks and process one at a time with yielding between them
+// so the UI (scroll, clicks, animations) stays responsive.
+
+type QueueEntry = { run: () => Promise<void>; resolve: () => void };
+const bgQueue: QueueEntry[] = [];
+let bgQueueRunning = false;
+
+async function processBgQueue() {
+  if (bgQueueRunning) return;
+  bgQueueRunning = true;
+  while (bgQueue.length > 0) {
+    const entry = bgQueue.shift()!;
+    await yieldToUI(); // let the UI breathe before each task
+    await entry.run();
+    entry.resolve();
+    await yieldToUI(); // let the UI breathe after each task
+  }
+  bgQueueRunning = false;
+}
+
+function enqueueBgTask(run: () => Promise<void>): Promise<void> {
+  return new Promise<void>((resolve) => {
+    bgQueue.push({ run, resolve });
+    processBgQueue();
+  });
+}
+
 /** Standalone bg removal — works outside React components. */
 export async function removeBackground(imageDataUrl: string): Promise<Blob> {
   const mod = await loadBgRemoval();
@@ -38,36 +72,36 @@ export async function removeBgAndSave(
   context?: AssetContext,
   variantGroup?: string,
 ): Promise<AssetEntry | null> {
-  console.log(`[bg-removal] Starting for ${assetType}${variantGroup ? ` (variant: ${variantGroup})` : ""}`);
-  try {
-    const blob = await removeBackground(imageDataUrl);
-    const buffer = await blob.arrayBuffer();
-    const bytes = new Uint8Array(buffer);
-    // Encode in 8KB chunks to avoid stack overflow and O(N²) string concat
-    const chunks: string[] = [];
-    const CHUNK = 8192;
-    for (let i = 0; i < bytes.length; i += CHUNK) {
-      chunks.push(String.fromCharCode(...bytes.subarray(i, i + CHUNK)));
-    }
-    const b64 = btoa(chunks.join(""));
+  let result: AssetEntry | null = null;
+  await enqueueBgTask(async () => {
+    console.log(`[bg-removal] Starting for ${assetType}${variantGroup ? ` (variant: ${variantGroup})` : ""}`);
+    try {
+      const blob = await removeBackground(imageDataUrl);
+      const buffer = await blob.arrayBuffer();
+      const bytes = new Uint8Array(buffer);
+      const chunks: string[] = [];
+      const CHUNK = 8192;
+      for (let i = 0; i < bytes.length; i += CHUNK) {
+        chunks.push(String.fromCharCode(...bytes.subarray(i, i + CHUNK)));
+      }
+      const b64 = btoa(chunks.join(""));
 
-    const entry = await invoke<AssetEntry>("save_bytes_as_asset", {
-      bytesB64: b64,
-      assetType,
-      context: context ?? null,
-      variantGroup: variantGroup ?? null,
-    });
-    // Set the bg-removed variant as active so it's the one displayed/exported
-    if (variantGroup) {
-      await invoke("set_active_variant", { variantGroup, assetId: entry.id });
-      console.log(`[bg-removal] Set as active variant for ${variantGroup}`);
+      const entry = await invoke<AssetEntry>("save_bytes_as_asset", {
+        bytesB64: b64,
+        assetType,
+        context: context ?? null,
+        variantGroup: variantGroup ?? null,
+      });
+      if (variantGroup) {
+        await invoke("set_active_variant", { variantGroup, assetId: entry.id });
+        console.log(`[bg-removal] Set as active variant for ${variantGroup}`);
+      }
+      result = entry;
+    } catch (e) {
+      console.error("[bg-removal] Failed:", e);
     }
-    return entry;
-  } catch (e) {
-    // BG removal is best-effort — don't block the main flow
-    console.error("[bg-removal] Failed:", e);
-    return null;
-  }
+  });
+  return result;
 }
 
 /** React hook for background removal with loading/error state. */

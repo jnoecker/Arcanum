@@ -72,6 +72,14 @@ export function MainArea({ workspace }: { workspace: Workspace }) {
         content = <StudioWorkspace panelId={panelId} />;
       } else if (def?.host === "lore") {
         content = <LorePanelHost panelId={panelId} />;
+      } else if (def?.host === "command") {
+        // Route command panels to their dedicated components
+        switch (panelId) {
+          case "sprites": content = <PlayerSpriteManager />; break;
+          case "console": content = <Console />; break;
+          case "admin": content = <AdminDashboard />; break;
+          default: content = null;
+        }
       } else {
         content = <ConfigPanelHost panelId={panelId} />;
       }
@@ -82,6 +90,7 @@ export function MainArea({ workspace }: { workspace: Workspace }) {
       content = <ZoneEditor key={zoneId} zoneId={zoneId} />;
       break;
     }
+    // Legacy tab kinds — kept for backward compatibility with persisted tabs
     case "console":
       content = <Console />;
       break;

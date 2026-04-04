@@ -10,6 +10,9 @@ import { CustomAssetStudio } from "@/components/CustomAssetStudio";
 import { PortraitStudio } from "@/components/PortraitStudio";
 import { AbilityStudio } from "@/components/AbilityStudio";
 import { MediaStudio } from "@/components/MediaStudio";
+import { loadArtSubTab, saveArtSubTab } from "@/lib/uiPersistence";
+
+type ArtSubTab = "direction" | "assets" | "custom";
 
 export function StudioWorkspace({ panelId }: { panelId: string }) {
   const zones = useZoneStore((s) => s.zones);
@@ -21,6 +24,7 @@ export function StudioWorkspace({ panelId }: { panelId: string }) {
   const vibeMap = useVibeStore((s) => s.vibes);
   const [selectedZoneId, setSelectedZoneId] = useState<string | null>(null);
   const [showBatchArt, setShowBatchArt] = useState(false);
+  const [artSubTab, setArtSubTab] = useState<ArtSubTab>(() => loadArtSubTab());
 
   useEffect(() => {
     loadAssets();
@@ -100,56 +104,94 @@ export function StudioWorkspace({ panelId }: { panelId: string }) {
     <div className="min-h-0 flex-1 overflow-y-auto px-6 py-6">
       <div className="mx-auto flex max-w-7xl flex-col gap-6">
         {panelId === "art" && (
-          selectedZone ? (
-            <>
-              <section className="grid items-start gap-6 xl:grid-cols-[0.78fr_1.22fr]">
-                <div>{renderAtlas(true)}</div>
-                <div className="flex flex-col gap-6">
-                  <div className="panel-surface rounded-[28px] p-5">
-                    <div className="mb-4 flex items-center justify-between">
-                      <h2 className="font-display text-xl text-text-primary">Zone direction</h2>
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => openTab({ id: `zone:${selectedZoneId}`, kind: "zone", label: selectedZoneId! })}
-                          className="focus-ring shell-pill rounded-full px-4 py-2 text-xs font-medium"
-                        >
-                          Open editor
-                        </button>
-                        <button
-                          onClick={() => setShowBatchArt(true)}
-                          className="focus-ring shell-pill-primary rounded-full px-4 py-2 text-xs font-medium"
-                        >
-                          Batch generate
-                        </button>
+          <>
+            {/* Sub-tab strip */}
+            <div className="flex items-center gap-2">
+              {([
+                { id: "direction" as const, label: "Direction" },
+                { id: "assets" as const, label: "Zone Assets" },
+                { id: "custom" as const, label: "Custom Studio" },
+              ] as const).map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => { setArtSubTab(tab.id); saveArtSubTab(tab.id); }}
+                  className={`focus-ring rounded-full border px-4 py-2 text-xs font-medium transition ${
+                    artSubTab === tab.id
+                      ? "border-[var(--border-glow-strong)] bg-[linear-gradient(135deg,rgba(168,151,210,0.25),rgba(140,174,201,0.15))] text-text-primary shadow-glow-sm"
+                      : "border-white/8 bg-white/[0.04] text-text-muted hover:border-white/14 hover:bg-white/8 hover:text-text-primary"
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+
+            {selectedZone ? (
+              <>
+                {artSubTab === "direction" && (
+                  <section className="grid items-start gap-6 xl:grid-cols-[0.78fr_1.22fr]">
+                    <div>{renderAtlas(true)}</div>
+                    <div className="flex flex-col gap-6">
+                      <div className="panel-surface rounded-[28px] p-5">
+                        <div className="mb-4 flex items-center justify-between">
+                          <h2 className="font-display text-xl text-text-primary">Zone direction</h2>
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => openTab({ id: `zone:${selectedZoneId}`, kind: "zone", label: selectedZoneId! })}
+                              className="focus-ring shell-pill rounded-full px-4 py-2 text-xs font-medium"
+                            >
+                              Open editor
+                            </button>
+                            <button
+                              onClick={() => setShowBatchArt(true)}
+                              className="focus-ring shell-pill-primary rounded-full px-4 py-2 text-xs font-medium"
+                            >
+                              Batch generate
+                            </button>
+                          </div>
+                        </div>
+                        <ZoneVibePanel
+                          zoneId={selectedZoneId!}
+                          world={selectedZone.data}
+                          onWorldChange={(world) => updateZone(selectedZoneId!, world)}
+                        />
                       </div>
                     </div>
-                    <ZoneVibePanel
-                      zoneId={selectedZoneId!}
-                      world={selectedZone.data}
-                      onWorldChange={(world) => updateZone(selectedZoneId!, world)}
-                    />
-                  </div>
-                </div>
-              </section>
+                  </section>
+                )}
 
-              <ZoneAssetWorkbench
-                zoneId={selectedZoneId!}
-                world={selectedZone.data}
-                onWorldChange={(world) => updateZone(selectedZoneId!, world)}
-              />
+                {artSubTab === "assets" && (
+                  <section className="grid items-start gap-6 xl:grid-cols-[0.78fr_1.22fr]">
+                    <div>{renderAtlas(true)}</div>
+                    <div>
+                      <ZoneAssetWorkbench
+                        zoneId={selectedZoneId!}
+                        world={selectedZone.data}
+                        onWorldChange={(world) => updateZone(selectedZoneId!, world)}
+                      />
+                    </div>
+                  </section>
+                )}
 
-              <CustomAssetStudio selectedZoneId={selectedZoneId} />
-            </>
-          ) : (
-            <>
-              <section className="panel-surface rounded-[28px] p-5">
-                <div className="panel-surface-light rounded-[22px] border-dashed px-4 py-8 text-sm text-text-muted">
-                  Open a world folder and select a zone to start generating zone art.
-                </div>
-              </section>
-              <CustomAssetStudio selectedZoneId={selectedZoneId} />
-            </>
-          )
+                {artSubTab === "custom" && (
+                  <CustomAssetStudio selectedZoneId={selectedZoneId} />
+                )}
+              </>
+            ) : (
+              <>
+                {artSubTab !== "custom" && (
+                  <section className="panel-surface rounded-[28px] p-5">
+                    <div className="panel-surface-light rounded-[22px] border-dashed px-4 py-8 text-sm text-text-muted">
+                      Open a world folder and select a zone to start generating zone art.
+                    </div>
+                  </section>
+                )}
+                {artSubTab === "custom" && (
+                  <CustomAssetStudio selectedZoneId={selectedZoneId} />
+                )}
+              </>
+            )}
+          </>
         )}
 
         {panelId === "media" && (

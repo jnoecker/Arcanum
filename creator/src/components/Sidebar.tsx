@@ -1,4 +1,4 @@
-import { useRef, useState, useCallback, useMemo } from "react";
+import { useRef, useState, useCallback, useEffect, useMemo } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { useZoneStore, type ZoneState } from "@/stores/zoneStore";
 import { useProjectStore } from "@/stores/projectStore";
@@ -6,7 +6,8 @@ import { useLoreStore, selectArticles } from "@/stores/loreStore";
 import type { Tab } from "@/types/project";
 import type { WorldFile } from "@/types/world";
 import { useGlobalSearch, ENTITY_TYPE_LABELS } from "@/lib/useGlobalSearch";
-import { PANEL_MAP, WORLDMAKER_GROUPS, LORE_GROUPS, panelTab, type Workspace } from "@/lib/panelRegistry";
+import { WORLDMAKER_GROUPS, LORE_GROUPS, panelTab, type Workspace, type PanelDef } from "@/lib/panelRegistry";
+import { loadCollapsedSections, saveCollapsedSections } from "@/lib/uiPersistence";
 import { ArticleTree } from "./lore/ArticleTree";
 import { BulkActionsBar } from "./lore/BulkActionsBar";
 import { NewZoneDialog } from "./NewZoneDialog";
@@ -222,78 +223,174 @@ function ZoneTree({
 const PILL_COLLAPSE_THRESHOLD = 8;
 const PILL_COLLAPSE_MIN_HIDDEN = 3;
 
+/** Group panels by their subGroup field, preserving order of first appearance. */
+function groupBySubGroup(panels: PanelDef[]): { subGroup: string | null; panels: PanelDef[] }[] {
+  const result: { subGroup: string | null; panels: PanelDef[] }[] = [];
+  const map = new Map<string | null, PanelDef[]>();
+  for (const p of panels) {
+    const key = p.subGroup ?? null;
+    if (!map.has(key)) {
+      const arr: PanelDef[] = [];
+      map.set(key, arr);
+      result.push({ subGroup: key, panels: arr });
+    }
+    map.get(key)!.push(p);
+  }
+  return result;
+}
+
+function PanelPill({ panel, activeTabId, openTab, compact }: {
+  panel: PanelDef;
+  activeTabId: string | null;
+  openTab: (tab: Tab) => void;
+  compact?: boolean;
+}) {
+  const tab = panelTab(panel.id);
+  const isActive = activeTabId === tab.id;
+  return (
+    <button
+      onClick={() => openTab(tab)}
+      aria-current={isActive ? "page" : undefined}
+      title={panel.description}
+      className={`focus-ring rounded-full border font-medium leading-tight transition ${
+        compact ? "px-2 py-1.5 text-[10px]" : "px-2.5 py-2 text-[11px]"
+      } ${
+        isActive
+          ? "border-[var(--border-glow-strong)] bg-[linear-gradient(135deg,rgba(168,151,210,0.25),rgba(140,174,201,0.15))] text-text-primary shadow-glow-sm"
+          : "border-white/8 bg-white/[0.04] text-text-muted hover:border-white/14 hover:bg-white/8 hover:text-text-primary"
+      }`}
+    >
+      {panel.label}
+    </button>
+  );
+}
+
 function PanelButtonGrid({
   groups,
   activeTabId,
   openTab,
 }: {
-  groups: { id: string; label: string; panels: { id: string; label: string }[] }[];
+  groups: { id: string; label: string; panels: PanelDef[] }[];
   activeTabId: string | null;
   openTab: (tab: Tab) => void;
 }) {
+  const [collapsedSections, setCollapsedSections] = useState<Set<string>>(
+    () => new Set(loadCollapsedSections()),
+  );
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
 
+  // Persist collapsed sections
+  useEffect(() => {
+    saveCollapsedSections([...collapsedSections]);
+  }, [collapsedSections]);
+
+  const toggleSection = useCallback((id: string) => {
+    setCollapsedSections((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+
+  // Determine which section the active tab belongs to
+  const activeSectionId = useMemo(() => {
+    if (!activeTabId) return null;
+    const panelId = activeTabId.replace(/^panel:/, "");
+    for (const group of groups) {
+      if (group.panels.some((p) => p.id === panelId)) return group.id;
+    }
+    return null;
+  }, [activeTabId, groups]);
+
   return (
-    <nav className="flex flex-col gap-3">
+    <nav className="flex flex-col gap-1">
       {groups.map((group) => {
+        const isCollapsed = collapsedSections.has(group.id);
+        const hasSubGroups = group.panels.some((p) => p.subGroup);
+        const isActiveSection = activeSectionId === group.id;
+
+        // For flat sections (no sub-groups), use pill collapse
         const expanded = expandedGroups.has(group.id);
         const hiddenCount = group.panels.length - PILL_COLLAPSE_THRESHOLD;
-        const needsCollapse = hiddenCount >= PILL_COLLAPSE_MIN_HIDDEN;
+        const needsCollapse = !hasSubGroups && hiddenCount >= PILL_COLLAPSE_MIN_HIDDEN;
         const visiblePanels = needsCollapse && !expanded
           ? group.panels.slice(0, PILL_COLLAPSE_THRESHOLD)
           : group.panels;
 
         return (
-          <section key={group.id} className="border-t border-white/8 pt-2.5 first:border-t-0 first:pt-0">
-            <div className="mb-1.5 flex items-baseline justify-between gap-2">
+          <section
+            key={group.id}
+            className={`border-t border-white/8 pt-1.5 first:border-t-0 first:pt-0 ${
+              isActiveSection ? "border-l-2 border-l-accent/30 pl-1" : ""
+            }`}
+          >
+            {/* Accordion header */}
+            <button
+              onClick={() => toggleSection(group.id)}
+              className="mb-1 flex w-full items-center gap-1.5 rounded-md px-1 py-1 transition hover:bg-white/4"
+            >
+              <svg
+                className={`h-3 w-3 shrink-0 text-text-muted transition-transform duration-150 ${isCollapsed ? "" : "rotate-90"}`}
+                viewBox="0 0 12 12"
+                fill="currentColor"
+              >
+                <path d="M4.5 2L9 6L4.5 10z" />
+              </svg>
               <h3 className="text-2xs font-medium uppercase tracking-label text-text-secondary">{group.label}</h3>
-              <span className="text-[10px] text-text-muted">{group.panels.length}</span>
-            </div>
+              <span className="ml-auto text-[10px] text-text-muted">{group.panels.length}</span>
+            </button>
 
-            <div className="flex flex-wrap gap-1.5">
-              {visiblePanels.map((panel) => {
-                const tab = panelTab(panel.id);
-                const isActive = activeTabId === tab.id;
-                const panelDef = PANEL_MAP[panel.id];
-                return (
-                  <button
-                    key={panel.id}
-                    onClick={() => openTab(tab)}
-                    aria-current={isActive ? "page" : undefined}
-                    title={panelDef?.description}
-                    className={`focus-ring rounded-full border px-2.5 py-2 text-[11px] font-medium leading-tight transition ${
-                      isActive
-                        ? "border-[var(--border-glow-strong)] bg-[linear-gradient(135deg,rgba(168,151,210,0.25),rgba(140,174,201,0.15))] text-text-primary shadow-glow-sm"
-                        : "border-white/8 bg-white/[0.04] text-text-muted hover:border-white/14 hover:bg-white/8 hover:text-text-primary"
-                    }`}
-                  >
-                    {panel.label}
-                  </button>
-                );
-              })}
-              {needsCollapse && !expanded && (
-                <button
-                  onClick={() => setExpandedGroups((s) => new Set(s).add(group.id))}
-                  className="rounded-full border border-dashed border-white/10 px-2.5 py-1.5 text-[11px] text-text-muted transition hover:border-white/20 hover:text-text-secondary"
-                >
-                  +{hiddenCount} more
-                </button>
-              )}
-              {needsCollapse && expanded && (
-                <button
-                  onClick={() => {
-                    setExpandedGroups((s) => {
-                      const next = new Set(s);
-                      next.delete(group.id);
-                      return next;
-                    });
-                  }}
-                  className="rounded-full border border-dashed border-white/10 px-2.5 py-1.5 text-[11px] text-text-muted transition hover:border-white/20 hover:text-text-secondary"
-                >
-                  Less
-                </button>
-              )}
-            </div>
+            {/* Collapsed: show nothing. Expanded: pills with optional sub-groups */}
+            {!isCollapsed && (
+              hasSubGroups ? (
+                // Sub-grouped layout (Characters, World)
+                <div className="flex flex-col gap-2 pb-1">
+                  {groupBySubGroup(group.panels as PanelDef[]).map(({ subGroup, panels }) => (
+                    <div key={subGroup ?? "_"}>
+                      {subGroup && (
+                        <div className="mb-1 mt-0.5 flex items-center gap-2">
+                          <div className="h-px flex-1 bg-white/6" />
+                          <span className="text-3xs uppercase tracking-label text-text-muted/50">{subGroup}</span>
+                          <div className="h-px flex-1 bg-white/6" />
+                        </div>
+                      )}
+                      <div className="flex flex-wrap gap-1">
+                        {panels.map((panel) => (
+                          <PanelPill key={panel.id} panel={panel} activeTabId={activeTabId} openTab={openTab} compact />
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                // Flat layout with optional "+N more" collapse
+                <div className="flex flex-wrap gap-1.5 pb-1">
+                  {(visiblePanels as PanelDef[]).map((panel) => (
+                    <PanelPill key={panel.id} panel={panel} activeTabId={activeTabId} openTab={openTab} />
+                  ))}
+                  {needsCollapse && !expanded && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setExpandedGroups((s) => new Set(s).add(group.id)); }}
+                      className="rounded-full border border-dashed border-white/10 px-2.5 py-1.5 text-[11px] text-text-muted transition hover:border-white/20 hover:text-text-secondary"
+                    >
+                      +{hiddenCount} more
+                    </button>
+                  )}
+                  {needsCollapse && expanded && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setExpandedGroups((s) => { const next = new Set(s); next.delete(group.id); return next; });
+                      }}
+                      className="rounded-full border border-dashed border-white/10 px-2.5 py-1.5 text-[11px] text-text-muted transition hover:border-white/20 hover:text-text-secondary"
+                    >
+                      Less
+                    </button>
+                  )}
+                </div>
+              )
+            )}
           </section>
         );
       })}
@@ -370,7 +467,10 @@ export function Sidebar({ workspace }: { workspace: Workspace }) {
         </div>
       </div>
 
-      <div className="relative z-10 min-h-0 max-h-[22rem] shrink overflow-y-auto border-b border-white/10 px-4 py-4 xl:max-h-[45%]">
+      <div
+        className="relative z-10 min-h-0 max-h-[22rem] shrink overflow-y-auto border-b border-white/10 px-4 py-4 xl:max-h-[45%]"
+        style={{ maskImage: "linear-gradient(to bottom, transparent 0, black 8px, black calc(100% - 16px), transparent 100%)", WebkitMaskImage: "linear-gradient(to bottom, transparent 0, black 8px, black calc(100% - 16px), transparent 100%)" }}
+      >
         {workspace === "worldmaker" ? (
           <>
             <div className="mb-2 flex items-center justify-between gap-3">
@@ -384,46 +484,6 @@ export function Sidebar({ workspace }: { workspace: Workspace }) {
               </button>
             </div>
             <PanelButtonGrid groups={WORLDMAKER_GROUPS} activeTabId={activeTabId} openTab={openTab} />
-            <div className="mt-1 border-t border-white/8 pt-2.5">
-              <div className="mb-1.5">
-                <h3 className="text-2xs font-medium uppercase tracking-label text-text-secondary">Command</h3>
-              </div>
-              <div className="flex flex-wrap gap-1.5">
-                {([
-                  {
-                    id: "sprites",
-                    label: "Player Sprites",
-                    kind: "sprites" as const,
-                    description: "Visible identity, unlockable variants, and portrait logic.",
-                  },
-                  {
-                    id: "console",
-                    label: "Console",
-                    kind: "console" as const,
-                    description: "Live logs, command output, and runtime traces.",
-                  },
-                  {
-                    id: "admin",
-                    label: "Admin",
-                    kind: "admin" as const,
-                    description: "Direct command over the living world.",
-                  },
-                ]).map((entry) => (
-                  <button
-                    key={entry.id}
-                    onClick={() => openTab({ id: entry.id, kind: entry.kind, label: entry.label })}
-                    title={entry.description}
-                    className={`focus-ring rounded-full border px-2.5 py-2 text-[11px] font-medium leading-tight transition ${
-                      activeTabId === entry.id
-                        ? "border-[var(--border-glow-strong)] bg-[linear-gradient(135deg,rgba(168,151,210,0.25),rgba(140,174,201,0.15))] text-text-primary shadow-glow-sm"
-                        : "border-white/8 bg-white/[0.04] text-text-muted hover:border-white/14 hover:bg-white/8 hover:text-text-primary"
-                    }`}
-                  >
-                    {entry.label}
-                  </button>
-                ))}
-              </div>
-            </div>
           </>
         ) : (
           <>

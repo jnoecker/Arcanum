@@ -351,9 +351,12 @@ export function Toolbar({ workspace, setWorkspace }: ToolbarProps) {
                 )}
               </div>
 
-              <span className="rounded-full border border-white/10 bg-black/10 px-2.5 py-1.5 text-2xs text-text-secondary">
-                Runtime: {ADMIN_STATUS_LABELS[adminConnectionStatus]}
-              </span>
+              <button
+                onClick={openGallery}
+                className="rounded-full border border-white/10 bg-black/10 px-2.5 py-1.5 text-2xs text-text-secondary transition hover:bg-white/8 hover:text-text-primary"
+              >
+                View Gallery
+              </button>
 
               <ActionButton onClick={openGenerator} title="Generate new art" aria-label="Generate new art" variant="primary" className="text-stellar-blue">
                 Render Art

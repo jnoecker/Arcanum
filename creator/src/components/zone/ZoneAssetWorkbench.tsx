@@ -529,76 +529,86 @@ export function ZoneAssetWorkbench({ zoneId, world, onWorldChange }: ZoneAssetWo
             </div>
           </div>
 
-          <div className="grid gap-5 lg:grid-cols-[0.92fr_1.08fr]">
+          <div className="flex flex-col gap-5">
+            {/* Preview row — wide horizontal card */}
             <div className="rounded-[24px] border border-white/8 bg-black/12 p-4">
-              <div className="mb-3 flex items-start justify-between gap-3">
-                <div>
-                  <div className="text-[11px] uppercase tracking-ui text-text-muted">
-                    {selectedTarget.mode === "default" ? "Zone default" : selectedTarget.entity.kind}
+              <div className="flex gap-5">
+                {/* Image preview */}
+                <div className="flex shrink-0 items-center justify-center overflow-hidden rounded-[20px] border border-white/8 bg-[linear-gradient(180deg,rgba(34,41,60,0.8),rgba(28,34,52,0.88))] p-3" style={{ width: "16rem", height: "10rem" }}>
+                  {selectedSrc ? (
+                    <img src={selectedSrc} alt={targetTitle(selectedTarget)} className="max-h-full max-w-full rounded-[14px] object-contain shadow-image" />
+                  ) : (
+                    <div className="text-center text-xs text-text-muted">No art yet</div>
+                  )}
+                </div>
+
+                {/* Info + variants */}
+                <div className="min-w-0 flex-1">
+                  <div className="mb-1 flex items-start justify-between gap-3">
+                    <div>
+                      <div className="text-[11px] uppercase tracking-ui text-text-muted">
+                        {selectedTarget.mode === "default" ? "Zone default" : selectedTarget.entity.kind}
+                      </div>
+                      <h3 className="mt-0.5 font-display text-xl text-text-primary">{targetTitle(selectedTarget)}</h3>
+                      <div className="mt-0.5 text-xs text-text-secondary">{targetSubtitle(selectedTarget, world)}</div>
+                    </div>
+                    <span className="rounded-full bg-white/8 px-3 py-1 text-[11px] uppercase tracking-label text-text-muted">
+                      {variants.length} variants
+                    </span>
                   </div>
-                  <h3 className="mt-1 font-display text-2xl text-text-primary">{targetTitle(selectedTarget)}</h3>
-                  <div className="mt-1 text-xs text-text-secondary">{targetSubtitle(selectedTarget, world)}</div>
-                </div>
-                <span className="rounded-full bg-white/8 px-3 py-1 text-[11px] uppercase tracking-label text-text-muted">
-                  {variants.length} variants
-                </span>
-              </div>
 
-              <div className="flex min-h-[20rem] items-center justify-center overflow-hidden rounded-[20px] border border-white/8 bg-[linear-gradient(180deg,rgba(34,41,60,0.8),rgba(28,34,52,0.88))] p-4">
-                {selectedSrc ? (
-                  <img src={selectedSrc} alt={targetTitle(selectedTarget)} className="max-h-[26rem] max-w-full rounded-[18px] object-contain shadow-image" />
-                ) : (
-                  <div className="text-center text-sm text-text-muted">No active art yet.</div>
-                )}
-              </div>
-
-              <div className="mt-3 rounded-[18px] border border-white/8 bg-surface-scrim-light px-4 py-3">
-                <div className="text-[11px] uppercase tracking-ui text-text-muted">
-                  {selectedTarget.mode === "default" ? "Fallback behavior" : "Assignment"}
-                </div>
-                <div className="mt-2 text-xs leading-6 text-text-secondary">
-                  {selectedTarget.mode === "default"
-                    ? `This image is written to world.image.${selectedTarget.kind} and becomes the zone fallback for ${selectedTarget.kind}s without their own art.`
-                    : "This image is assigned directly to the selected entity in the zone data."}
-                </div>
-              </div>
-
-              {variants.length > 0 && (
-                <div className="mt-4">
-                  <div className="mb-2 text-[11px] uppercase tracking-ui text-text-muted">Variant strip</div>
-                  <div className="flex gap-2 overflow-x-auto pb-1">
-                    {variants.map((entry) => (
-                      <VariantCard key={entry.id} entry={entry} assetsDir={assetsDir} onClick={() => handleVariantSelect(entry)} />
-                    ))}
+                  <div className="mt-2 text-xs leading-5 text-text-muted">
+                    {selectedTarget.mode === "default"
+                      ? `Fallback for ${selectedTarget.kind}s without their own art.`
+                      : "Assigned directly to the selected entity."}
                   </div>
+
+                  {variants.length > 0 && (
+                    <div className="mt-3">
+                      <div className="mb-1.5 text-[11px] uppercase tracking-ui text-text-muted">Variants</div>
+                      <div className="flex gap-2 overflow-x-auto pb-1">
+                        {variants.map((entry) => (
+                          <VariantCard key={entry.id} entry={entry} assetsDir={assetsDir} onClick={() => handleVariantSelect(entry)} />
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
-              )}
+              </div>
             </div>
 
+            {/* Prompt engineering — full width */}
             <div className="rounded-[24px] border border-white/8 bg-black/12 p-4">
               <div className="mb-3 text-[11px] uppercase tracking-ui text-text-muted">Prompt engineering</div>
-              {zoneVibe && (
-                <div className="mb-3 rounded-[18px] border border-white/8 bg-surface-scrim-light px-4 py-3">
-                  <div className="text-[11px] uppercase tracking-ui text-text-muted">Zone vibe</div>
-                  <div className="mt-2 max-h-40 overflow-y-auto whitespace-pre-wrap text-xs leading-6 text-text-secondary">{zoneVibe}</div>
-                </div>
-              )}
-              <textarea
-                value={promptDraft}
-                onChange={(event) => {
-                  setPromptDraft(event.target.value);
-                  setPromptGeneratedByLlm(false);
-                }}
-                rows={10}
-                className="w-full resize-y rounded-[20px] border border-white/10 bg-surface-scrim px-4 py-3 font-mono text-[12px] leading-6 text-text-secondary outline-none transition focus:border-border-active focus-visible:ring-2 focus-visible:ring-border-active"
-                placeholder={selectedTarget.mode === "default" ? "Generate a fallback prompt for this zone asset..." : "Generate a prompt for this entity..."}
-              />
 
-              <div className="mt-3 rounded-[18px] border border-white/8 bg-surface-scrim-light px-4 py-3">
-                <div className="text-[11px] uppercase tracking-ui text-text-muted">
-                  {selectedTarget.mode === "default" ? "Zone default context" : "Entity context"}
+              <div className="grid gap-4 lg:grid-cols-[1fr_1fr]">
+                <div className="flex flex-col gap-3">
+                  <textarea
+                    value={promptDraft}
+                    onChange={(event) => {
+                      setPromptDraft(event.target.value);
+                      setPromptGeneratedByLlm(false);
+                    }}
+                    rows={8}
+                    className="w-full flex-1 resize-y rounded-[20px] border border-white/10 bg-surface-scrim px-4 py-3 font-mono text-[12px] leading-6 text-text-secondary outline-none transition focus:border-border-active focus-visible:ring-2 focus-visible:ring-border-active"
+                    placeholder={selectedTarget.mode === "default" ? "Generate a fallback prompt for this zone asset..." : "Generate a prompt for this entity..."}
+                  />
                 </div>
-                <div className="mt-2 max-h-44 overflow-y-auto whitespace-pre-wrap text-xs leading-6 text-text-secondary">{buildContext()}</div>
+
+                <div className="flex flex-col gap-3">
+                  {zoneVibe && (
+                    <div className="rounded-[18px] border border-white/8 bg-surface-scrim-light px-4 py-3">
+                      <div className="text-[11px] uppercase tracking-ui text-text-muted">Zone vibe</div>
+                      <div className="mt-1.5 max-h-24 overflow-y-auto whitespace-pre-wrap text-xs leading-5 text-text-secondary">{zoneVibe}</div>
+                    </div>
+                  )}
+                  <div className="rounded-[18px] border border-white/8 bg-surface-scrim-light px-4 py-3">
+                    <div className="text-[11px] uppercase tracking-ui text-text-muted">
+                      {selectedTarget.mode === "default" ? "Zone default context" : "Entity context"}
+                    </div>
+                    <div className="mt-1.5 max-h-24 overflow-y-auto whitespace-pre-wrap text-xs leading-5 text-text-secondary">{buildContext()}</div>
+                  </div>
+                </div>
               </div>
 
               <div className="mt-4 flex flex-wrap gap-2">

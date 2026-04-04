@@ -153,13 +153,16 @@ export function StudioWorkspace({ panelId }: { panelId: string }) {
         )}
 
         {panelId === "media" && (
-          <MediaStudio
-            zoneId={selectedZoneId}
-            world={selectedZone?.data ?? null}
-            onWorldChange={(world) => {
-              if (selectedZoneId) updateZone(selectedZoneId, world);
-            }}
-          />
+          <section className="grid items-start gap-6 xl:grid-cols-[0.78fr_1.22fr]">
+            <div>{renderAtlas(true)}</div>
+            <MediaStudio
+              zoneId={selectedZoneId}
+              world={selectedZone?.data ?? null}
+              onWorldChange={(world) => {
+                if (selectedZoneId) updateZone(selectedZoneId, world);
+              }}
+            />
+          </section>
         )}
 
         {panelId === "portraits" && <PortraitStudio selectedZoneId={selectedZoneId} />}

@@ -588,6 +588,86 @@ export interface PrestigeConfig {
   perks: Record<string, PrestigePerkConfig>;
 }
 
+// ─── Respec ────────────────────────────────────────────────────────
+
+export interface RespecConfig {
+  goldCost: number;
+  cooldownMs: number;
+}
+
+// ─── Currencies ────────────────────────────────────────────────────
+
+export interface CurrencyDefinition {
+  displayName: string;
+  description?: string;
+  maxAmount?: number;
+}
+
+export interface CurrenciesConfig {
+  definitions: Record<string, CurrencyDefinition>;
+}
+
+// ─── Lottery ───────────────────────────────────────────────────────
+
+export interface LotteryConfig {
+  enabled: boolean;
+  ticketCost: number;
+  drawingIntervalMs: number;
+  jackpotBase: number;
+}
+
+// ─── Gambling ──────────────────────────────────────────────────────
+
+export interface GamblingConfig {
+  enabled: boolean;
+  minBet: number;
+  maxBet: number;
+  winChance: number;
+  winMultiplier: number;
+}
+
+// ─── Auto Quests (Bounties) ────────────────────────────────────────
+
+export interface AutoQuestsConfig {
+  enabled: boolean;
+  timeLimitMs: number;
+  cooldownMs: number;
+  rewardScaling: number;
+}
+
+// ─── Daily/Weekly Quests ───────────────────────────────────────────
+
+export interface DailyQuestsConfig {
+  enabled: boolean;
+  resetTimeUtc: string;
+  streakBonusPercent: number;
+  pools: Record<string, string[]>;
+}
+
+// ─── Global Quests ─────────────────────────────────────────────────
+
+export interface GlobalQuestsConfig {
+  enabled: boolean;
+  intervalMs: number;
+  durationMs: number;
+  objectives: Record<string, unknown>;
+  rewards: Record<string, unknown>;
+}
+
+// ─── Guild Halls ───────────────────────────────────────────────────
+
+export interface GuildHallRoomTemplate {
+  displayName: string;
+  description: string;
+  cost: number;
+}
+
+export interface GuildHallsConfig {
+  enabled: boolean;
+  baseCost: number;
+  roomTemplates: Record<string, GuildHallRoomTemplate>;
+}
+
 // ─── Top-level config state ─────────────────────────────────────────
 
 export interface AppConfig {
@@ -644,6 +724,14 @@ export interface AppConfig {
   worldEvents: WorldEventsConfig;
   pets: Record<string, PetDefinitionConfig>;
   prestige?: PrestigeConfig;
+  respec?: RespecConfig;
+  currencies?: CurrenciesConfig;
+  lottery?: LotteryConfig;
+  gambling?: GamblingConfig;
+  autoQuests?: AutoQuestsConfig;
+  dailyQuests?: DailyQuestsConfig;
+  globalQuests?: GlobalQuestsConfig;
+  guildHalls?: GuildHallsConfig;
   globalAssets: Record<string, string>;
   playerTiers?: Record<string, TierDefinitionConfig>;
   /** Raw YAML content for unrecognized sections */

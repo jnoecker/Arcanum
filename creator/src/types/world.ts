@@ -9,6 +9,7 @@ export interface WorldFile {
   startRoom: string;
   graphical?: boolean;
   pvpEnabled?: boolean;
+  puzzles?: Record<string, PuzzleFile>;
   image?: ZoneImageDefaults;
   audio?: ZoneAudioDefaults;
   rooms: Record<string, RoomFile>;
@@ -40,6 +41,7 @@ export interface RoomFile {
   features?: Record<string, FeatureFile>;
   station?: string;
   bank?: boolean;
+  tavern?: boolean;
   image?: string;
   video?: string;
   music?: string;
@@ -196,6 +198,7 @@ export interface QuestObjectiveFile {
 export interface QuestRewardsFile {
   xp?: number;
   gold?: number;
+  currencies?: Record<string, number>;
 }
 
 export interface DialogueNodeFile {
@@ -285,4 +288,34 @@ export interface DungeonFile {
   roomTemplates?: Record<string, DungeonRoomTemplate[]>;
   mobPools?: DungeonMobPool;
   lootTables?: Record<string, DungeonLootTable>;
+}
+
+// ─── Puzzles ──────────────────────────────────────────────────────
+
+export interface PuzzleReward {
+  type: string; // "unlock_exit" | "give_item" | "give_gold" | "give_xp"
+  exitDirection?: string;
+  targetRoom?: string;
+  itemId?: string;
+  amount?: number;
+}
+
+export interface PuzzleStep {
+  feature: string;
+  action: string;
+}
+
+export interface PuzzleFile {
+  type: string; // "riddle" | "sequence"
+  mobId?: string;
+  roomId: string;
+  question?: string;
+  answer?: string;
+  acceptableAnswers?: string[];
+  steps?: PuzzleStep[];
+  reward: PuzzleReward;
+  failMessage?: string;
+  successMessage?: string;
+  cooldownMs?: number;
+  resetOnFail?: boolean;
 }

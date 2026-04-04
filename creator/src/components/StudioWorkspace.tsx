@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useAssetStore } from "@/stores/assetStore";
 import { useProjectStore } from "@/stores/projectStore";
 import { useZoneStore } from "@/stores/zoneStore";
@@ -13,6 +13,133 @@ import { MediaStudio } from "@/components/MediaStudio";
 import { loadArtSubTab, saveArtSubTab } from "@/lib/uiPersistence";
 
 type ArtSubTab = "direction" | "assets" | "custom";
+
+function ZoneSelector({
+  zones,
+  selectedZoneId,
+  onSelect,
+  assets,
+  vibeMap,
+}: {
+  zones: [string, { data: { zone?: string; rooms: Record<string, unknown> }; dirty: boolean }][];
+  selectedZoneId: string | null;
+  onSelect: (id: string) => void;
+  assets: { context?: { zone?: string } }[];
+  vibeMap: Map<string, string>;
+}) {
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [open]);
+
+  // Reset search when closed
+  useEffect(() => {
+    if (!open) setSearch("");
+  }, [open]);
+
+  const selectedZone = zones.find(([id]) => id === selectedZoneId);
+  const selectedLabel = selectedZone
+    ? (selectedZone[1].data.zone || selectedZoneId)
+    : "Select a zone";
+
+  const filtered = search.trim()
+    ? zones.filter(([id, z]) =>
+        id.toLowerCase().includes(search.toLowerCase()) ||
+        (z.data.zone || "").toLowerCase().includes(search.toLowerCase()))
+    : zones;
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        onClick={() => setOpen(!open)}
+        className={`focus-ring flex w-full items-center justify-between gap-3 rounded-[18px] border px-4 py-3 text-left transition ${
+          open
+            ? "border-border-active bg-gradient-active"
+            : "border-white/10 bg-white/[0.04] hover:bg-white/7"
+        }`}
+      >
+        <div className="min-w-0 flex-1">
+          <div className="text-[11px] uppercase tracking-ui text-text-muted">Zone</div>
+          <div className="mt-0.5 truncate font-display text-base text-text-primary">{selectedLabel}</div>
+          {selectedZone && (
+            <div className="mt-0.5 flex items-center gap-2 text-[11px] text-text-muted">
+              <span>{Object.keys(selectedZone[1].data.rooms).length} rooms</span>
+              {(() => {
+                const linked = assets.filter((a) => a.context?.zone === selectedZoneId).length;
+                return linked > 0 ? <span>· {linked} assets</span> : null;
+              })()}
+              {selectedZone[1].dirty && (
+                <span className="rounded-full bg-badge-dirty-bg px-1.5 py-0.5 text-2xs text-text-dirty">Unsaved</span>
+              )}
+            </div>
+          )}
+        </div>
+        <svg className={`h-4 w-4 shrink-0 text-text-muted transition ${open ? "rotate-180" : ""}`} viewBox="0 0 20 20" fill="currentColor">
+          <path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clipRule="evenodd" />
+        </svg>
+      </button>
+
+      {open && (
+        <div className="absolute left-0 right-0 top-full z-20 mt-1 rounded-[18px] border border-white/12 bg-bg-secondary shadow-xl">
+          {zones.length > 6 && (
+            <div className="border-b border-white/8 px-3 py-2">
+              <input
+                autoFocus
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search zones..."
+                className="w-full bg-transparent text-sm text-text-primary outline-none placeholder:text-text-muted"
+              />
+            </div>
+          )}
+          <div className="max-h-[20rem] overflow-y-auto p-1.5">
+            {filtered.length === 0 ? (
+              <div className="px-3 py-3 text-xs text-text-muted">No matching zones.</div>
+            ) : (
+              filtered.map(([zoneId, zoneState]) => {
+                const selected = selectedZoneId === zoneId;
+                const linkedAssets = assets.filter((a) => a.context?.zone === zoneId).length;
+                const hasVibe = !!(vibeMap.get(zoneId) ?? "").trim();
+
+                return (
+                  <button
+                    key={zoneId}
+                    onClick={() => { onSelect(zoneId); setOpen(false); }}
+                    className={`flex w-full items-center gap-3 rounded-[14px] px-3 py-2.5 text-left transition ${
+                      selected
+                        ? "bg-gradient-active text-text-primary"
+                        : "text-text-secondary hover:bg-white/6"
+                    }`}
+                  >
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-sm font-medium">{zoneState.data.zone || zoneId}</div>
+                      <div className="mt-0.5 flex items-center gap-2 text-[11px] text-text-muted">
+                        <span>{zoneId}</span>
+                        <span>· {Object.keys(zoneState.data.rooms).length} rooms</span>
+                        {linkedAssets > 0 && <span>· {linkedAssets} assets</span>}
+                      </div>
+                    </div>
+                    {hasVibe && (
+                      <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-status-success" title="Vibe set" />
+                    )}
+                  </button>
+                );
+              })
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 export function StudioWorkspace({ panelId }: { panelId: string }) {
   const zones = useZoneStore((s) => s.zones);
@@ -46,57 +173,15 @@ export function StudioWorkspace({ panelId }: { panelId: string }) {
   }, [selectedZoneId, loadVibe]);
 
   const selectedZone = selectedZoneId ? zones.get(selectedZoneId) ?? null : null;
-  const renderAtlas = (compact = false) => (
-    <div className="panel-surface rounded-[28px] p-5">
-      <div className="mb-4 flex items-center justify-between">
-        <h2 className="font-display text-xl text-text-primary">World atlas</h2>
-        <span className="text-[11px] uppercase tracking-ui text-text-muted">{zones.size} zones</span>
-      </div>
 
-      <div className={`flex flex-col gap-2 overflow-y-auto pr-1 ${compact ? "max-h-[18rem]" : "max-h-[38rem]"}`}>
-        {sortedZones.length === 0 ? (
-          <div className="panel-surface-light rounded-2xl border-dashed px-4 py-6 text-sm text-text-muted">
-            Open a world folder to load zones and assets.
-          </div>
-        ) : (
-          sortedZones.map(([zoneId, zoneState]) => {
-            const linkedAssets = assets.filter((asset) => asset.context?.zone === zoneId).length;
-            const hasVibe = !!(vibeMap.get(zoneId) ?? "").trim();
-            const selected = selectedZoneId === zoneId;
-
-            return (
-              <button
-                key={zoneId}
-                onClick={() => setSelectedZoneId(zoneId)}
-                className={`focus-ring rounded-[22px] border px-4 py-4 text-left transition ${
-                  selected
-                    ? "border-border-active bg-gradient-active-strong"
-                    : "border-white/8 bg-white/4 hover:bg-white/7"
-                }`}
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <div className="truncate font-display text-lg text-text-primary">{zoneState.data.zone || zoneId}</div>
-                    <div className="mt-1 truncate text-xs text-text-secondary">{zoneId}</div>
-                  </div>
-                  {zoneState.dirty && (
-                    <span className="rounded-full bg-badge-dirty-bg px-2 py-1 text-2xs uppercase tracking-label text-text-dirty">
-                      Unsaved
-                    </span>
-                  )}
-                </div>
-                <div className="mt-3 flex items-center justify-between text-[11px] text-text-muted">
-                  <span>{Object.keys(zoneState.data.rooms).length} rooms{linkedAssets > 0 ? ` · ${linkedAssets} assets` : ""}</span>
-                  {hasVibe && (
-                    <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-status-success" title="Vibe set" />
-                  )}
-                </div>
-              </button>
-            );
-          })
-        )}
-      </div>
-    </div>
+  const zoneSelector = (
+    <ZoneSelector
+      zones={sortedZones as [string, { data: { zone?: string; rooms: Record<string, unknown> }; dirty: boolean }][]}
+      selectedZoneId={selectedZoneId}
+      onSelect={setSelectedZoneId}
+      assets={assets}
+      vibeMap={vibeMap}
+    />
   );
 
 
@@ -129,9 +214,9 @@ export function StudioWorkspace({ panelId }: { panelId: string }) {
             {selectedZone ? (
               <>
                 {artSubTab === "direction" && (
-                  <section className="grid items-start gap-6 xl:grid-cols-[0.78fr_1.22fr]">
-                    <div>{renderAtlas(true)}</div>
-                    <div className="flex flex-col gap-6">
+                  <section className="flex flex-col gap-6">
+                    <div className="grid items-start gap-6 xl:grid-cols-[0.38fr_1.62fr]">
+                      <div>{zoneSelector}</div>
                       <div className="panel-surface rounded-[28px] p-5">
                         <div className="mb-4 flex items-center justify-between">
                           <h2 className="font-display text-xl text-text-primary">Zone direction</h2>
@@ -161,15 +246,13 @@ export function StudioWorkspace({ panelId }: { panelId: string }) {
                 )}
 
                 {artSubTab === "assets" && (
-                  <section className="grid items-start gap-6 xl:grid-cols-[0.78fr_1.22fr]">
-                    <div>{renderAtlas(true)}</div>
-                    <div>
-                      <ZoneAssetWorkbench
-                        zoneId={selectedZoneId!}
-                        world={selectedZone.data}
-                        onWorldChange={(world) => updateZone(selectedZoneId!, world)}
-                      />
-                    </div>
+                  <section className="flex flex-col gap-6">
+                    <div>{zoneSelector}</div>
+                    <ZoneAssetWorkbench
+                      zoneId={selectedZoneId!}
+                      world={selectedZone.data}
+                      onWorldChange={(world) => updateZone(selectedZoneId!, world)}
+                    />
                   </section>
                 )}
 
@@ -195,8 +278,8 @@ export function StudioWorkspace({ panelId }: { panelId: string }) {
         )}
 
         {panelId === "media" && (
-          <section className="grid items-start gap-6 xl:grid-cols-[0.78fr_1.22fr]">
-            <div>{renderAtlas(true)}</div>
+          <>
+            <div>{zoneSelector}</div>
             <MediaStudio
               zoneId={selectedZoneId}
               world={selectedZone?.data ?? null}
@@ -204,7 +287,7 @@ export function StudioWorkspace({ panelId }: { panelId: string }) {
                 if (selectedZoneId) updateZone(selectedZoneId, world);
               }}
             />
-          </section>
+          </>
         )}
 
         {panelId === "portraits" && <PortraitStudio selectedZoneId={selectedZoneId} />}

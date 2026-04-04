@@ -230,11 +230,12 @@ export function validateConfig(config: AppConfig): ValidationIssue[] {
   }
 
   // ─── Status effect definitions → effect type cross-ref ────────
-  const effectTypeIds = new Set(Object.keys(config.statusEffectTypes));
-  const stackBehaviorIds = new Set(Object.keys(config.stackBehaviors));
+  // Registry keys are lowercase; status effects use UPPERCASE — compare case-insensitively
+  const effectTypeIds = new Set(Object.keys(config.statusEffectTypes).map((k) => k.toLowerCase()));
+  const stackBehaviorIds = new Set(Object.keys(config.stackBehaviors).map((k) => k.toLowerCase()));
   if (effectTypeIds.size > 0) {
     for (const [id, e] of Object.entries(config.statusEffects)) {
-      if (!effectTypeIds.has(e.effectType)) {
+      if (!effectTypeIds.has(e.effectType.toLowerCase())) {
         issues.push({
           severity: "warning",
           entity: `statusEffect:${id}`,
@@ -245,7 +246,7 @@ export function validateConfig(config: AppConfig): ValidationIssue[] {
   }
   if (stackBehaviorIds.size > 0) {
     for (const [id, e] of Object.entries(config.statusEffects)) {
-      if (e.stackBehavior && !stackBehaviorIds.has(e.stackBehavior)) {
+      if (e.stackBehavior && !stackBehaviorIds.has(e.stackBehavior.toLowerCase())) {
         issues.push({
           severity: "warning",
           entity: `statusEffect:${id}`,
@@ -256,10 +257,10 @@ export function validateConfig(config: AppConfig): ValidationIssue[] {
   }
 
   // ─── Ability definitions → target type cross-ref ──────────────
-  const targetTypeIds = new Set(Object.keys(config.abilityTargetTypes));
+  const targetTypeIds = new Set(Object.keys(config.abilityTargetTypes).map((k) => k.toLowerCase()));
   if (targetTypeIds.size > 0) {
     for (const [id, a] of Object.entries(config.abilities)) {
-      if (!targetTypeIds.has(a.targetType)) {
+      if (!targetTypeIds.has(a.targetType.toLowerCase())) {
         issues.push({
           severity: "warning",
           entity: `ability:${id}`,
@@ -346,7 +347,7 @@ export function validateConfig(config: AppConfig): ValidationIssue[] {
         });
       }
     }
-    if (ench.skill && craftingSkillIds.size > 0 && !craftingSkillIds.has(ench.skill)) {
+    if (ench.skill && craftingSkillIds.size > 0 && !craftingSkillIds.has(ench.skill) && !craftingSkillIds.has(ench.skill.toLowerCase())) {
       issues.push({
         severity: "warning",
         entity: `enchantment:${id}`,
@@ -355,7 +356,7 @@ export function validateConfig(config: AppConfig): ValidationIssue[] {
     }
     if (ench.targetSlots && ench.targetSlots.length > 0 && equipSlotIds.size > 0) {
       for (const slot of ench.targetSlots) {
-        if (!equipSlotIds.has(slot)) {
+        if (!equipSlotIds.has(slot) && !equipSlotIds.has(slot.toLowerCase())) {
           issues.push({
             severity: "warning",
             entity: `enchantment:${id}`,

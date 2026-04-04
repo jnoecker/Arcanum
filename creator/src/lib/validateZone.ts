@@ -202,7 +202,7 @@ export function validateZone(
       });
     }
     if (item.slot && equipmentSlots && Object.keys(equipmentSlots).length > 0) {
-      if (!equipmentSlots[item.slot]) {
+      if (!equipmentSlots[item.slot] && !equipmentSlots[item.slot.toLowerCase()]) {
         issues.push({
           severity: "warning",
           entity: `item:${itemId}`,

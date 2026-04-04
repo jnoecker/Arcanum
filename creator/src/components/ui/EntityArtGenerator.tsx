@@ -37,6 +37,24 @@ function computeVariantGroup(context?: AssetContext): string {
   return `${entity_type}:${zone}:${entity_id}`;
 }
 
+/** Auto-persist a generated image when the component unmounts before the user can accept. */
+function autoAcceptImage(
+  img: GeneratedImage,
+  prompt: string | null,
+  onAccept: (filePath: string) => void,
+  assetType: string | undefined,
+  context: AssetContext | undefined,
+) {
+  const fileName = img.file_path.split(/[\\/]/).pop() ?? img.hash;
+  onAccept(fileName);
+  if (assetType) {
+    const vg = computeVariantGroup(context);
+    useAssetStore.getState().acceptAsset(
+      img, assetType, prompt ?? undefined, context, vg, true,
+    ).catch(() => {});
+  }
+}
+
 export function EntityArtGenerator({
   getPrompt,
   entityContext,
@@ -62,6 +80,27 @@ export function EntityArtGenerator({
   const [customModel, setCustomModel] = useState("");
   // Track the final prompt that was actually sent to the image model
   const [lastEnhancedPrompt, setLastEnhancedPrompt] = useState<string | null>(null);
+
+  // Refs to track pending results across unmount — auto-accept if user navigates away
+  const pendingResultRef = useRef<GeneratedImage | null>(null);
+  const pendingPromptRef = useRef<string | null>(null);
+  const onAcceptRef = useRef(onAccept);
+  onAcceptRef.current = onAccept;
+  const assetTypeRef = useRef(assetType);
+  assetTypeRef.current = assetType;
+  const contextRef = useRef(context);
+  contextRef.current = context;
+
+  const mountedRef = useRef(true);
+  useEffect(() => {
+    return () => {
+      mountedRef.current = false;
+      const img = pendingResultRef.current;
+      if (!img) return;
+      // Component is unmounting with an unaccepted generated image — auto-accept it
+      autoAcceptImage(img, pendingPromptRef.current, onAcceptRef.current, assetTypeRef.current, contextRef.current);
+    };
+  }, []);
 
   const imageProvider = settings?.image_provider ?? "deepinfra";
   const hasApiKey = settings && (
@@ -200,9 +239,17 @@ export function EntityArtGenerator({
         await new Promise((r) => setTimeout(r, 1000));
         image = await invoke<GeneratedImage>(command, params);
       }
+      if (!mountedRef.current) {
+        // Component unmounted during generation — auto-accept the result
+        autoAcceptImage(image, finalPrompt, onAcceptRef.current, assetTypeRef.current, contextRef.current);
+        return;
+      }
+      pendingResultRef.current = image;
+      pendingPromptRef.current = finalPrompt;
       setResult(image);
       setStage("preview");
     } catch (e) {
+      if (!mountedRef.current) return;
       setError(String(e));
       setStage("idle");
     }
@@ -250,6 +297,8 @@ export function EntityArtGenerator({
 
   const handleAccept = async () => {
     if (!result) return;
+    pendingResultRef.current = null;
+    pendingPromptRef.current = null;
     const fileName = result.file_path.split(/[\\/]/).pop() ?? result.hash;
     onAccept(fileName);
     if (assetType) {
@@ -268,6 +317,8 @@ export function EntityArtGenerator({
   };
 
   const handleReject = () => {
+    pendingResultRef.current = null;
+    pendingPromptRef.current = null;
     setResult(null);
     setStage("idle");
     setLastEnhancedPrompt(null);

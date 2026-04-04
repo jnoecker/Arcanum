@@ -4,7 +4,7 @@ Project-level instructions for Claude Code when working on this repository.
 
 ## Project Overview
 
-Ambon Arcanum is a Tauri 2 desktop app for building MUD game worlds. React 19 + TypeScript frontend, Rust backend. It reads/writes YAML zone files and application.yaml for the AmbonMUD server.
+Arcanum is a Tauri 2 desktop app for building MUD game worlds. React 19 + TypeScript frontend, Rust backend. It reads/writes YAML zone files and application.yaml for the AmbonMUD server.
 
 ## Repository Layout
 

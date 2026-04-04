@@ -1,9 +1,9 @@
-# AmbonMUD Design System: Ambon Arcanum Style
+# Arcanum Design System
 
 **Version:** arcanum_v1
 **Last Updated:** March 7, 2026
-**Scope:** Unified aesthetic for the Ambon Arcanum creator tool — server management, world building, zone editing, and configuration. Covers both the Arcanum (creator UI) and Gentle Magic (world content) art styles.
-**Product:** Ambon Arcanum (standalone creator tool, separate from the AmbonMUD game client)
+**Scope:** Unified aesthetic for the Arcanum creator tool — server management, world building, zone editing, and configuration. Covers both the Arcanum (creator UI) and Gentle Magic (world content) art styles.
+**Product:** Arcanum (standalone creator tool, separate from the AmbonMUD game client)
 
 ---
 
@@ -553,7 +553,7 @@ These prompts target **Flux Dev** and **Flux Schnell** for still images. Video p
 Add this to any Arcanum art prompt as a style anchor:
 
 ```
-Ambon Arcanum style (arcanum_v1): deep cosmic indigo and abyssal navy backgrounds,
+Arcanum style (arcanum_v1): deep cosmic indigo and abyssal navy backgrounds,
 baroque rococo light scrollwork rendered as glowing energy threads, warm aurum-gold
 as the primary accent color against cool blue-violet atmospheric fill, sweeping
 spiral arms of light, fractaline structures, slow cosmological scale, no runes or

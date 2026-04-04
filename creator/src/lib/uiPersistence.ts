@@ -1,6 +1,6 @@
 import type { Tab } from "@/types/project";
 
-const STORAGE_KEY = "ambon-arcanum-ui";
+const STORAGE_KEY = "arcanum-ui";
 const MAX_RECENT = 10;
 
 export interface RecentProject {

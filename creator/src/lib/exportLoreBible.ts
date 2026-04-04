@@ -168,7 +168,7 @@ export function exportLoreBible(
 
   // Footer
   lines.push(
-    `\n*Exported from Ambon Arcanum on ${new Date().toLocaleDateString()}*`,
+    `\n*Exported from Arcanum on ${new Date().toLocaleDateString()}*`,
   );
 
   return lines.join("\n");

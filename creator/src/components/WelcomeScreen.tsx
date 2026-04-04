@@ -64,7 +64,7 @@ export function WelcomeScreen({ onNewProject }: WelcomeScreenProps) {
 
       <div className="relative z-10 mx-auto flex w-full max-w-4xl flex-1 flex-col justify-center gap-6 px-6 py-8 lg:px-10">
         <div className="text-center">
-          <p className="text-[11px] uppercase tracking-wide-ui text-text-muted">Ambon Arcanum</p>
+          <p className="text-[11px] uppercase tracking-wide-ui text-text-muted">Arcanum</p>
           <h1 className="mt-4 font-display text-4xl leading-[1.04] text-text-primary lg:text-5xl">
             Shape worlds, rules, and wonders from a single instrument.
           </h1>

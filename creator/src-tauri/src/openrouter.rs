@@ -58,7 +58,7 @@ pub async fn complete(
     let response = client
         .post(API_URL)
         .header("Authorization", format!("Bearer {api_key}"))
-        .header("HTTP-Referer", "https://ambon-arcanum.app")
+        .header("HTTP-Referer", "https://arcanum.dev")
         .json(&body)
         .send()
         .await

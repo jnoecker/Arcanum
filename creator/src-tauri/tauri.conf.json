@@ -1,8 +1,8 @@
 {
   "$schema": "https://raw.githubusercontent.com/nicoverbruggen/tauri-v2-schema/main/schema.json",
-  "productName": "Ambon Arcanum",
+  "productName": "Arcanum",
   "version": "1.0.0",
-  "identifier": "dev.ambon.creator",
+  "identifier": "dev.arcanum.app",
   "build": {
     "beforeDevCommand": "bun run dev",
     "devUrl": "http://localhost:1420",
@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "Ambon Arcanum",
+        "title": "Arcanum",
         "width": 1400,
         "height": 900,
         "minWidth": 1024,

@@ -1,8 +1,8 @@
-# Ambon Arcanum
+# Arcanum
 
 A desktop tool for building fictional worlds — lore, maps, timelines, relationship graphs, AI-generated art, and a one-click public showcase site. Built with Tauri 2 (React + Rust).
 
-Ambon Arcanum started as the creator tool for [AmbonMUD](https://github.com/jnoecker/AmbonMUD), but its lore and world-building features work for any setting: tabletop RPGs, novels, game design bibles, or worldbuilding for its own sake.
+Arcanum started as the creator tool for [AmbonMUD](https://github.com/jnoecker/AmbonMUD), but its lore and world-building features work for any setting: tabletop RPGs, novels, game design bibles, or worldbuilding for its own sake.
 
 ## Features
 
@@ -113,7 +113,7 @@ npm run build        # Production build (fetches from R2 via VITE_SHOWCASE_URL)
 
 - [Bun](https://bun.sh/) (package manager and script runner)
 - [Rust](https://rustup.rs/) (for the Tauri backend)
-- An AmbonMUD project directory to point Ambon Arcanum at
+- An AmbonMUD project directory to point Arcanum at
 
 ## Getting Started
 
@@ -140,7 +140,7 @@ bun run tauri build
 
 ```
 AmbonArcanum/
-  creator/                    # Ambon Arcanum (Tauri application)
+  creator/                    # Arcanum (Tauri application)
     src/                      # React frontend
       components/
         config/panels/        #   Config editor panels (stats, abilities, classes, etc.)

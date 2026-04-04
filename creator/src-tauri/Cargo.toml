@@ -1,12 +1,12 @@
 [package]
-name = "ambon-arcanum"
+name = "arcanum"
 version = "1.0.0"
-description = "Ambon Arcanum - World building and server management tool"
+description = "Arcanum — world building, lore, and art generation tool"
 authors = []
 edition = "2021"
 
 [lib]
-name = "ambon_arcanum_lib"
+name = "arcanum_lib"
 crate-type = ["lib", "cdylib", "staticlib"]
 
 [build-dependencies]

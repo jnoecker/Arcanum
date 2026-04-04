@@ -17,7 +17,7 @@ export const ART_STYLE_DESCRIPTIONS: Record<ArtStyle, string> = {
 // ─── Arcanum v1 ───────────────────────────────────────────────────
 
 /** Arcanum v1 style preamble — prepended to all art prompts */
-export const ARCANUM_PREAMBLE = `Ambon Arcanum style (arcanum_v1): deep cosmic indigo and abyssal navy backgrounds, baroque rococo light scrollwork rendered as glowing energy threads, warm aurum-gold as the primary accent color against cool blue-violet atmospheric fill, sweeping spiral arms of light, fractaline structures, slow cosmological scale, no runes or text, no humanoid figures, no neon colors, no harsh edges`;
+export const ARCANUM_PREAMBLE = `Arcanum style (arcanum_v1): deep cosmic indigo and abyssal navy backgrounds, baroque rococo light scrollwork rendered as glowing energy threads, warm aurum-gold as the primary accent color against cool blue-violet atmospheric fill, sweeping spiral arms of light, fractaline structures, slow cosmological scale, no runes or text, no humanoid figures, no neon colors, no harsh edges`;
 
 // ─── Surreal Gentle Magic v1 ──────────────────────────────────────
 
@@ -139,7 +139,7 @@ NO readable text, words, letters, or legible writing — replace all signs, plaq
 FORBIDDEN: photorealism, neon colors, high contrast, harsh edges, sharp geometric lines, perfect 90-degree angles, mechanical rigidity, brutalist silhouettes, harsh shadows, spotlight effects, rim lighting, chiaroscuro`;
 
 /** Appended verbatim to every arcanum prompt after LLM enhancement. */
-export const ARCANUM_SUFFIX = `Rendered in the Ambon Arcanum style (arcanum_v1). Digital fantasy painting with deep cosmic indigo and abyssal navy backgrounds, baroque rococo light scrollwork rendered as glowing energy threads. Visible painterly oil-painting texture throughout.
+export const ARCANUM_SUFFIX = `Rendered in the Arcanum style (arcanum_v1). Digital fantasy painting with deep cosmic indigo and abyssal navy backgrounds, baroque rococo light scrollwork rendered as glowing energy threads. Visible painterly oil-painting texture throughout.
 
 Color and light:
 - Deep cosmic indigo (#080c1c to #1a2040) and abyssal navy as primary backgrounds
@@ -371,7 +371,7 @@ export const ASSET_TEMPLATES: Record<AssetType, { label: string; templates: Reco
 
 // ─── Enhance System Prompts ───────────────────────────────────────
 
-const ENHANCE_SYSTEM_PROMPT_ARCANUM = `You are a prompt engineer specializing in FLUX image generation models. Your task is to enhance user prompts for the Ambon Arcanum art style (arcanum_v1).
+const ENHANCE_SYSTEM_PROMPT_ARCANUM = `You are a prompt engineer specializing in FLUX image generation models. Your task is to enhance user prompts for the Arcanum art style (arcanum_v1).
 
 ## The Arcanum Visual Language
 
@@ -492,7 +492,7 @@ export function getEnhanceSystemPrompt(style: ArtStyle, assetType?: string): str
   return base;
 }
 
-const CUSTOM_ASSET_SYSTEM_PROMPT_ARCANUM = `You are an expert image prompt engineer for AI image generators. You work exclusively within the Ambon Arcanum art style (arcanum_v1).
+const CUSTOM_ASSET_SYSTEM_PROMPT_ARCANUM = `You are an expert image prompt engineer for AI image generators. You work exclusively within the Arcanum art style (arcanum_v1).
 
 Core palette: deep cosmic indigo and abyssal navy backgrounds, warm aurum-gold as the primary accent, cool blue-violet atmospheric fill, baroque rococo scrollwork rendered as glowing energy threads, fractaline structures, sweeping spiral arms of light.
 Shape language: C-curves and S-curves, acanthus-leaf spirals, gradual dissolution at extremities, cosmological scale, no hard stops.

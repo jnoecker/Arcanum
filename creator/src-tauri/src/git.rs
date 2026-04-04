@@ -454,7 +454,7 @@ async fn create_github_pr(
         .post(&url)
         .header("Authorization", format!("Bearer {pat}"))
         .header("Accept", "application/vnd.github+json")
-        .header("User-Agent", "AmbonArcanum")
+        .header("User-Agent", "Arcanum")
         .json(&payload)
         .send()
         .await

@@ -105,7 +105,7 @@ export function ShowcaseSettingsPanel() {
           <TextInput
             value={settings.footerText ?? ""}
             onCommit={(v) => update({ footerText: v || undefined })}
-            placeholder="Built with Ambon Arcanum"
+            placeholder="Built with Arcanum"
           />
         </FieldRow>
       </Section>

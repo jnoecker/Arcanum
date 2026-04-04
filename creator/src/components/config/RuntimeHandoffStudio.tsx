@@ -38,7 +38,7 @@ interface StepState {
   errors: string[];
 }
 
-const EXPORT_DIR_KEY = "ambon-arcanum-runtime-export-dir";
+const EXPORT_DIR_KEY = "arcanum-runtime-export-dir";
 
 const STATUS_STYLES: Record<StepStatus, string> = {
   idle: "border-white/10 bg-black/10 text-text-secondary",

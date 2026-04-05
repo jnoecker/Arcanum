@@ -39,9 +39,9 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Wizard UI
 
-- [ ] **UI-01**: Tuning Wizard registered as new top-level tab in panel registry and sidebar
-- [ ] **UI-02**: Wizard workspace follows Arcanum design system (dark indigo, aurum-gold, Cinzel/Crimson Pro)
-- [ ] **UI-03**: Preset selector with themed cards showing preset name, description, and key characteristics
+- [x] **UI-01**: Tuning Wizard registered as new top-level tab in panel registry and sidebar
+- [x] **UI-02**: Wizard workspace follows Arcanum design system (dark indigo, aurum-gold, Cinzel/Crimson Pro)
+- [x] **UI-03**: Preset selector with themed cards showing preset name, description, and key characteristics
 - [ ] **UI-04**: Contextual tooltips on every tunable field explaining what it does and what it interacts with
 - [ ] **UI-05**: Search/filter across parameter names and descriptions
 - [ ] **UI-06**: Post-apply health check surfaces any problematic combinations from cherry-picked sections
@@ -113,9 +113,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | APPLY-03 | Phase 5 | Pending |
 | APPLY-04 | Phase 5 | Pending |
 | APPLY-05 | Phase 5 | Pending |
-| UI-01 | Phase 3 | Pending |
-| UI-02 | Phase 3 | Pending |
-| UI-03 | Phase 3 | Pending |
+| UI-01 | Phase 3 | Complete |
+| UI-02 | Phase 3 | Complete |
+| UI-03 | Phase 3 | Complete |
 | UI-04 | Phase 4 | Pending |
 | UI-05 | Phase 3 | Pending |
 | UI-06 | Phase 5 | Pending |

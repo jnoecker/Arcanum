@@ -65,7 +65,7 @@ Plans:
 **UI hint**: yes
 
 Plans:
-- [ ] 03-01-PLAN.md -- Store, panel registration, workspace shell, and preset cards (UI-01, UI-02, UI-03)
+- [x] 03-01-PLAN.md -- Store, panel registration, workspace shell, and preset cards (UI-01, UI-02, UI-03)
 - [ ] 03-02-PLAN.md -- Parameter browser with search/filter and diff highlighting (UI-05)
 
 ### Phase 4: Comparison View
@@ -129,7 +129,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
 |-------|----------------|--------|-----------|
 | 1. Foundation | 2/2 | Complete   | 2026-04-05 |
 | 2. Presets | 2/2 | Complete   | 2026-04-05 |
-| 3. Wizard Workspace | 0/2 | Not started | - |
+| 3. Wizard Workspace | 1/2 | In Progress|  |
 | 4. Comparison View | 0/3 | Not started | - |
 | 5. Apply Flow | 0/3 | Not started | - |
 | 6. Visualizations | 0/2 | Not started | - |

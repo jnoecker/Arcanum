@@ -18,6 +18,8 @@ import { PresetCard } from "./PresetCard";
 import { SearchFilterBar } from "./SearchFilterBar";
 import { ParameterSection } from "./ParameterSection";
 import { MetricSectionCards } from "./MetricSectionCards";
+import { ApplyFooterBar } from "./ApplyFooterBar";
+import { HealthCheckBanner } from "./HealthCheckBanner";
 
 const ALL_SECTIONS_ORDERED = [
   TuningSection.CombatStats,
@@ -41,6 +43,8 @@ export function TuningWizard() {
   const collapsedSections = useTuningWizardStore((s) => s.collapsedSections);
   const toggleCollapsed = useTuningWizardStore((s) => s.toggleCollapsed);
   const collapseAll = useTuningWizardStore((s) => s.collapseAll);
+  const acceptedSections = useTuningWizardStore((s) => s.acceptedSections);
+  const toggleAccepted = useTuningWizardStore((s) => s.toggleAccepted);
 
   const browserRef = useRef<HTMLDivElement>(null);
 
@@ -202,11 +206,14 @@ export function TuningWizard() {
         />
       )}
 
+      {/* Health check banner (D-08) -- after metric cards, before search */}
+      <HealthCheckBanner />
+
       {/* Sticky search/filter bar */}
       <SearchFilterBar />
 
       {/* Parameter browser */}
-      <div ref={browserRef} className="px-6 pb-8">
+      <div ref={browserRef} className={`px-6 ${selectedPresetId ? "pb-20" : "pb-8"}`}>
         {totalFilteredCount === 0 ? (
           <div className="flex flex-col items-center justify-center py-16">
             <p className="font-sans text-lg font-semibold text-text-secondary">
@@ -220,22 +227,34 @@ export function TuningWizard() {
           ALL_SECTIONS_ORDERED.map((section) => {
             const fields = groupedFields.get(section) ?? [];
             if (fields.length === 0) return null;
+            const isAccepted = acceptedSections.has(section);
             return (
-              <ParameterSection
+              <div
                 key={section}
-                section={section}
-                fields={fields}
-                currentConfig={config as unknown as Record<string, unknown>}
-                diffMap={diffMap}
-                hasPreset={selectedPresetId !== null}
-                isCollapsed={collapsedSections.has(section)}
-                onToggleCollapsed={() => toggleCollapsed(section)}
-                presetAccentBorder={presetAccentBorder}
-              />
+                className={`transition-opacity duration-300 ${
+                  selectedPresetId && !isAccepted ? "opacity-[0.45]" : ""
+                }`}
+              >
+                <ParameterSection
+                  section={section}
+                  fields={fields}
+                  currentConfig={config as unknown as Record<string, unknown>}
+                  diffMap={diffMap}
+                  hasPreset={selectedPresetId !== null}
+                  isAccepted={isAccepted}
+                  onToggleAccepted={() => toggleAccepted(section)}
+                  isCollapsed={collapsedSections.has(section)}
+                  onToggleCollapsed={() => toggleCollapsed(section)}
+                  presetAccentBorder={presetAccentBorder}
+                />
+              </div>
             );
           })
         )}
       </div>
+
+      {/* Apply footer bar (D-04) */}
+      {selectedPresetId && <ApplyFooterBar />}
     </div>
   );
 }

@@ -1,8 +1,11 @@
 // ─── Parameter Row ──────────────────────────────────────────────────
-// Single parameter row showing label, current value, optional preset
-// value with diff highlighting, and description.
+// Single parameter row showing label with tooltip, current value, optional
+// preset value with diff highlighting and percentage delta.
 
+import { useRef, useEffect } from "react";
+import tippy from "tippy.js";
 import type { FieldMeta } from "@/lib/tuning/types";
+import { pctDelta, deltaDirection, deltaColor, buildTooltipContent } from "@/lib/tuning/deltaUtils";
 
 interface ParameterRowProps {
   path: string;
@@ -23,15 +26,6 @@ function formatValue(v: unknown): string {
   return String(v);
 }
 
-/** Determine the text color for a preset value based on diff direction. */
-function diffColor(oldVal: unknown, newVal: unknown, isChanged: boolean): string {
-  if (!isChanged) return "text-text-muted";
-  if (typeof oldVal === "number" && typeof newVal === "number") {
-    return newVal > oldVal ? "text-status-warning" : "text-status-info";
-  }
-  return "text-status-warning";
-}
-
 export function ParameterRow({
   meta,
   currentValue,
@@ -41,8 +35,25 @@ export function ParameterRow({
   presetAccentBorder,
   even,
 }: ParameterRowProps) {
+  const labelRef = useRef<HTMLSpanElement>(null);
+
+  // Tooltip on field label (D-10, D-11, UI-04)
+  useEffect(() => {
+    if (!labelRef.current) return;
+    const content = buildTooltipContent(meta);
+    const instance = tippy(labelRef.current, {
+      content,
+      allowHTML: true,
+      theme: "arcanum",
+      placement: "top-start",
+      delay: [250, 100],
+      maxWidth: 280,
+    });
+    return () => instance.destroy();
+  }, [meta.description, meta.interactionNote, meta.impact]);
+
   const gridCols = hasPreset
-    ? "grid-cols-[1.2fr_100px_100px_1.5fr]"
+    ? "grid-cols-[1.2fr_80px_140px_1.5fr]"
     : "grid-cols-[1.2fr_100px_1.5fr]";
 
   const rowHighlight =
@@ -50,12 +61,35 @@ export function ParameterRow({
 
   const stripe = even ? "bg-bg-secondary/50" : "";
 
+  // Determine preset cell content and color (D-08, D-09)
+  let presetDisplay = "";
+  let presetColorClass = "text-text-muted";
+  if (hasPreset) {
+    const formatted = formatValue(presetValue);
+    if (!isChanged) {
+      presetDisplay = formatted;
+      presetColorClass = "text-text-muted";
+    } else if (typeof currentValue === "number" && typeof presetValue === "number") {
+      const dir = deltaDirection(currentValue, presetValue);
+      presetColorClass = deltaColor(dir);
+      const delta = pctDelta(currentValue, presetValue);
+      presetDisplay = dir === "same" ? `${formatted} \u2014` : `${formatted} ${delta}`;
+    } else {
+      // Non-numeric but changed
+      presetDisplay = formatted;
+      presetColorClass = "text-status-success";
+    }
+  }
+
   return (
     <div
       className={`grid min-h-[40px] items-center gap-x-4 py-2 px-2 transition-colors duration-200 hover:bg-bg-hover ${gridCols} ${rowHighlight} ${stripe}`}
     >
-      {/* Label */}
-      <span className="font-sans text-[15px] font-semibold text-text-primary">
+      {/* Label with tooltip */}
+      <span
+        ref={labelRef}
+        className="cursor-default font-sans text-[15px] font-semibold text-text-primary"
+      >
         {meta.label}
       </span>
 
@@ -64,12 +98,10 @@ export function ParameterRow({
         {formatValue(currentValue)}
       </span>
 
-      {/* Preset value (only when a preset is selected) */}
+      {/* Preset value + delta (only when a preset is selected) */}
       {hasPreset && (
-        <span
-          className={`text-right font-mono text-sm ${diffColor(currentValue, presetValue, isChanged)}`}
-        >
-          {formatValue(presetValue)}
+        <span className={`text-right font-mono text-sm ${presetColorClass}`}>
+          {presetDisplay}
         </span>
       )}
 

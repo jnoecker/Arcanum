@@ -9,13 +9,14 @@ import { TUNING_PRESETS } from "@/lib/tuning/presets";
 import type { TuningPreset } from "@/lib/tuning/presets";
 import { computeMetrics } from "@/lib/tuning/formulas";
 import { FIELD_METADATA } from "@/lib/tuning/fieldMetadata";
-import { computeDiff } from "@/lib/tuning/diffEngine";
+import { computeDiff, groupDiffBySection } from "@/lib/tuning/diffEngine";
 import { TuningSection } from "@/lib/tuning/types";
 import type { AppConfig } from "@/types/config";
 import type { DeepPartial, FieldMeta, DiffEntry } from "@/lib/tuning/types";
 import { PresetCard } from "./PresetCard";
 import { SearchFilterBar } from "./SearchFilterBar";
 import { ParameterSection } from "./ParameterSection";
+import { MetricSectionCards } from "./MetricSectionCards";
 
 const ALL_SECTIONS_ORDERED = [
   TuningSection.CombatStats,
@@ -63,6 +64,7 @@ export function TuningWizard() {
   const activeSections = useTuningWizardStore((s) => s.activeSections);
   const collapsedSections = useTuningWizardStore((s) => s.collapsedSections);
   const toggleCollapsed = useTuningWizardStore((s) => s.toggleCollapsed);
+  const collapseAll = useTuningWizardStore((s) => s.collapseAll);
 
   const browserRef = useRef<HTMLDivElement>(null);
 
@@ -76,6 +78,47 @@ export function TuningWizard() {
     }
     return map;
   }, [config]);
+
+  /** Compute metrics for the current config. */
+  const currentMetrics = useMemo(() => {
+    if (!config) return null;
+    return computeMetrics(config);
+  }, [config]);
+
+  /** Find the currently selected preset object. */
+  const selectedPreset = TUNING_PRESETS.find((p) => p.id === selectedPresetId) ?? null;
+
+  /** Merged config for the selected preset. */
+  const presetConfig = useMemo(() => {
+    if (!selectedPreset || !config) return null;
+    return deepMerge(
+      config as unknown as Record<string, unknown>,
+      selectedPreset.config as unknown as DeepPartial<Record<string, unknown>>,
+    ) as unknown as AppConfig;
+  }, [config, selectedPreset]);
+
+  /** Metrics for the active (selected) preset. */
+  const activePresetMetrics = useMemo(() => {
+    if (!presetConfig) return null;
+    return computeMetrics(presetConfig);
+  }, [presetConfig]);
+
+  /** Diff counts per section for the World & Social footnote. */
+  const sectionDiffCounts = useMemo(() => {
+    if (!selectedPresetId || !config) return undefined;
+    const preset = TUNING_PRESETS.find((p) => p.id === selectedPresetId);
+    if (!preset) return undefined;
+    const diffs = computeDiff(
+      config as unknown as Record<string, unknown>,
+      preset.config as unknown as Record<string, unknown>,
+    );
+    const grouped = groupDiffBySection(diffs);
+    const counts = new Map<string, number>();
+    for (const [section, entries] of Object.entries(grouped)) {
+      counts.set(section, entries.length);
+    }
+    return counts;
+  }, [selectedPresetId, config]);
 
   /** Filter fields by active sections and search query. */
   const filteredFields = useMemo(() => {
@@ -130,8 +173,10 @@ export function TuningWizard() {
   function handleSelect(preset: TuningPreset) {
     if (selectedPresetId === preset.id) {
       selectPreset(null);
+      // do NOT collapseAll on deselect -- preserve builder's expanded state
     } else {
       selectPreset(preset.id);
+      collapseAll();
     }
   }
 
@@ -171,6 +216,15 @@ export function TuningWizard() {
           />
         ))}
       </div>
+
+      {/* Metric summary cards (D-05, D-06) */}
+      {selectedPresetId && currentMetrics && activePresetMetrics && (
+        <MetricSectionCards
+          currentMetrics={currentMetrics}
+          presetMetrics={activePresetMetrics}
+          diffCounts={sectionDiffCounts}
+        />
+      )}
 
       {/* Sticky search/filter bar */}
       <SearchFilterBar />

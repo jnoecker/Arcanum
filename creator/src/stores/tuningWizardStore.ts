@@ -21,6 +21,7 @@ interface TuningWizardStore {
   setSearchQuery: (q: string) => void;
   toggleSection: (s: TuningSection) => void;
   toggleCollapsed: (s: TuningSection) => void;
+  collapseAll: () => void;
 }
 
 export const useTuningWizardStore = create<TuningWizardStore>((set) => ({
@@ -43,5 +44,14 @@ export const useTuningWizardStore = create<TuningWizardStore>((set) => ({
       if (next.has(s)) next.delete(s);
       else next.add(s);
       return { collapsedSections: next };
+    }),
+  collapseAll: () =>
+    set({
+      collapsedSections: new Set([
+        TuningSection.CombatStats,
+        TuningSection.EconomyCrafting,
+        TuningSection.ProgressionQuests,
+        TuningSection.WorldSocial,
+      ]),
     }),
 }));

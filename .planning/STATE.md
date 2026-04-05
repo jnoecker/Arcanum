@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Phase 2 context gathered
-last_updated: "2026-04-05T02:43:18.719Z"
+stopped_at: Completed 02-01-PLAN.md
+last_updated: "2026-04-05T03:18:04.504Z"
 last_activity: 2026-04-05
 progress:
   total_phases: 6
   completed_phases: 1
-  total_plans: 2
-  completed_plans: 2
+  total_plans: 4
+  completed_plans: 3
   percent: 0
 ---
 
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-04-04)
 ## Current Position
 
 Phase: 2 of 6 (presets)
-Plan: Not started
+Plan: 2 of 2
 Status: Ready to execute
 Last activity: 2026-04-05
 
@@ -54,6 +54,7 @@ Progress: [░░░░░░░░░░] 0%
 *Updated after each plan completion*
 | Phase 01-foundation P01 | 4m | 2 tasks | 3 files |
 | Phase 01-foundation P02 | 9m | 2 tasks | 4 files |
+| Phase 02-presets P01 | 8m | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -68,6 +69,8 @@ Recent decisions affecting current work:
 - [Phase 01-foundation]: DeepPartial defined locally in tuning types.ts rather than re-exported from templates.ts
 - [Phase 01-foundation]: computeMetrics uses base stat 10 and classHpPerLevel 3 as reasonable comparison defaults
 - [Phase 01-foundation]: 137 tunable scalar fields cataloged; diff engine uses FIELD_METADATA for tunable-path filtering
+- [Phase 02-presets]: Fixed DeepPartial type to handle optional object properties using NonNullable
+- [Phase 02-presets]: Casual XP exponent 1.6, Balanced 1.8, Hardcore 2.2 for distinct leveling curves
 
 ### Pending Todos
 
@@ -80,6 +83,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-05T02:43:18.716Z
-Stopped at: Phase 2 context gathered
-Resume file: .planning/phases/02-presets/02-CONTEXT.md
+Last session: 2026-04-05T03:18:04.500Z
+Stopped at: Completed 02-01-PLAN.md
+Resume file: None

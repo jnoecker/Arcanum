@@ -101,8 +101,8 @@ Plans:
 **UI hint**: yes
 
 Plans:
-- [ ] 05-01-PLAN.md -- Merge utilities, health check logic with TDD, and wizard store extensions (APPLY-01, APPLY-02, APPLY-03, APPLY-04, APPLY-05, UI-06)
-- [ ] 05-02-PLAN.md -- Section checkboxes, ApplyFooterBar, HealthCheckBanner, and TuningWizard integration (APPLY-01, APPLY-02, APPLY-03, APPLY-04, APPLY-05, UI-06)
+- [x] 05-01-PLAN.md -- Merge utilities, health check logic with TDD, and wizard store extensions (APPLY-01, APPLY-02, APPLY-03, APPLY-04, APPLY-05, UI-06)
+- [x] 05-02-PLAN.md -- Section checkboxes, ApplyFooterBar, HealthCheckBanner, and TuningWizard integration (APPLY-01, APPLY-02, APPLY-03, APPLY-04, APPLY-05, UI-06)
 
 ### Phase 6: Visualizations
 **Goal**: Builders can see chart-based visualizations that make formula interactions intuitive -- XP curves, mob power scaling, and stat effectiveness become visual instead of numeric

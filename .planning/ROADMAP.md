@@ -46,11 +46,11 @@ Plans:
   2. Each preset is stored as a DeepPartial<AppConfig> overlay that merges cleanly over any existing config
   3. Applying any single preset to the default config produces derived metrics that match the preset's stated philosophy (e.g., Casual has lower TTK, faster XP, higher gold)
   4. All preset values pass existing config validation rules without errors
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 02-01: TBD
-- [ ] 02-02: TBD
+- [ ] 02-01-PLAN.md -- TuningPreset interface + 3 preset constants with TDD coverage tests (PRES-01, PRES-02, PRES-03)
+- [ ] 02-02-PLAN.md -- Validation and metric differentiation tests (PRES-04)
 
 ### Phase 3: Wizard Workspace
 **Goal**: Builders can open a Tuning Wizard tab, see preset options presented as themed cards, and search/filter across all tunable parameters

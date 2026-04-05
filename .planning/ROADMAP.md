@@ -44,8 +44,8 @@
   5. Story appears as a lore article type with proper panel registry routing
 **Plans:** 2 plans
 Plans:
-- [ ] 07-01-PLAN.md -- Story types, lore type extensions, storyStore with undo/redo, storyPersistence, and unit tests
-- [ ] 07-02-PLAN.md -- Panel registry, ArticleTree/Browser integration, NewStoryDialog, StoryEditorPanel, project-open loading
+- [x] 07-01-PLAN.md -- Story types, lore type extensions, storyStore with undo/redo, storyPersistence, and unit tests
+- [x] 07-02-PLAN.md -- Panel registry, ArticleTree/Browser integration, NewStoryDialog, StoryEditorPanel, project-open loading
 **UI hint**: yes
 
 ### Phase 8: Story Editor

@@ -39,8 +39,7 @@ export const CASUAL_PRESET: TuningPreset = {
   config: {
     // ─── Combat ──────────────────────────────────────────────────────
     combat: {
-      maxCombatsPerTick: 5,
-      tickMillis: 2500,
+      tickMillis: 3000,
       minDamage: 1,
       maxDamage: 100,
     },
@@ -334,8 +333,7 @@ export const BALANCED_PRESET: TuningPreset = {
   config: {
     // ─── Combat ──────────────────────────────────────────────────────
     combat: {
-      maxCombatsPerTick: 3,
-      tickMillis: 3000,
+      tickMillis: 2000,
       minDamage: 1,
       maxDamage: 150,
     },
@@ -629,8 +627,7 @@ export const HARDCORE_PRESET: TuningPreset = {
   config: {
     // ─── Combat ──────────────────────────────────────────────────────
     combat: {
-      maxCombatsPerTick: 2,
-      tickMillis: 3500,
+      tickMillis: 1500,
       minDamage: 1,
       maxDamage: 200,
     },

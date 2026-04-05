@@ -40,7 +40,7 @@ const FULL_MOCK_CONFIG: AppConfig = {
   },
   abilities: {},
   statusEffects: {},
-  combat: { maxCombatsPerTick: 3, tickMillis: 3000, minDamage: 1, maxDamage: 150, feedback: { enabled: true, roomBroadcastEnabled: true } },
+  combat: { tickMillis: 2000, minDamage: 1, maxDamage: 150, feedback: { enabled: true, roomBroadcastEnabled: true } },
   mobTiers: {
     weak: { baseHp: 5, hpPerLevel: 2, baseMinDamage: 1, baseMaxDamage: 2, damagePerLevel: 0, baseArmor: 0, baseXpReward: 15, xpRewardPerLevel: 5, baseGoldMin: 1, baseGoldMax: 3, goldPerLevel: 1 },
     standard: { baseHp: 10, hpPerLevel: 4, baseMinDamage: 2, baseMaxDamage: 4, damagePerLevel: 1, baseArmor: 1, baseXpReward: 30, xpRewardPerLevel: 10, baseGoldMin: 3, baseGoldMax: 8, goldPerLevel: 2 },
@@ -204,8 +204,8 @@ describe("validation", () => {
 describe("field coverage", () => {
   const allPaths = Object.keys(FIELD_METADATA);
 
-  it("FIELD_METADATA has 137 entries (sanity check)", () => {
-    expect(allPaths).toHaveLength(137);
+  it("FIELD_METADATA has 136 entries (sanity check)", () => {
+    expect(allPaths).toHaveLength(136);
   });
 
   for (const preset of TUNING_PRESETS) {

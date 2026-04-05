@@ -18,13 +18,6 @@ import { TuningSection } from "./types";
 export const FIELD_METADATA: Record<string, FieldMeta> = {
   // ─── Combat ────────────────────────────────────────────────────────
 
-  "combat.maxCombatsPerTick": {
-    label: "Max Combats Per Tick",
-    description: "Maximum number of combat encounters processed per server tick",
-    section: TuningSection.CombatStats,
-    min: 1,
-    impact: "medium",
-  },
   "combat.tickMillis": {
     label: "Combat Tick Duration",
     description: "Milliseconds between combat rounds",

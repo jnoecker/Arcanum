@@ -1,16 +1,34 @@
 // ─── Tuning Wizard Workspace ────────────────────────────────────────
-// Root component for the Tuning Wizard. Shows preset cards and (in Plan 02)
-// a search/filter bar + parameter browser below.
+// Root component for the Tuning Wizard. Shows preset cards, a sticky
+// search/filter bar, and a parameter browser with diff highlighting.
 
-import { useMemo } from "react";
+import { useMemo, useEffect, useRef } from "react";
 import { useConfigStore } from "@/stores/configStore";
 import { useTuningWizardStore } from "@/stores/tuningWizardStore";
 import { TUNING_PRESETS } from "@/lib/tuning/presets";
 import type { TuningPreset } from "@/lib/tuning/presets";
 import { computeMetrics } from "@/lib/tuning/formulas";
+import { FIELD_METADATA } from "@/lib/tuning/fieldMetadata";
+import { computeDiff } from "@/lib/tuning/diffEngine";
+import { TuningSection } from "@/lib/tuning/types";
 import type { AppConfig } from "@/types/config";
-import type { DeepPartial } from "@/lib/tuning/types";
+import type { DeepPartial, FieldMeta, DiffEntry } from "@/lib/tuning/types";
 import { PresetCard } from "./PresetCard";
+import { SearchFilterBar } from "./SearchFilterBar";
+import { ParameterSection } from "./ParameterSection";
+
+const ALL_SECTIONS_ORDERED = [
+  TuningSection.CombatStats,
+  TuningSection.EconomyCrafting,
+  TuningSection.ProgressionQuests,
+  TuningSection.WorldSocial,
+];
+
+const PRESET_BORDER: Record<string, string> = {
+  casual: "border-warm",
+  balanced: "border-stellar-blue",
+  hardcore: "border-status-error",
+};
 
 /** Recursively merge a DeepPartial overlay onto a base config. */
 function deepMerge<T extends Record<string, unknown>>(base: T, overlay: DeepPartial<T>): T {
@@ -41,6 +59,12 @@ export function TuningWizard() {
   const config = useConfigStore((s) => s.config);
   const selectedPresetId = useTuningWizardStore((s) => s.selectedPresetId);
   const selectPreset = useTuningWizardStore((s) => s.selectPreset);
+  const searchQuery = useTuningWizardStore((s) => s.searchQuery);
+  const activeSections = useTuningWizardStore((s) => s.activeSections);
+  const collapsedSections = useTuningWizardStore((s) => s.collapsedSections);
+  const toggleCollapsed = useTuningWizardStore((s) => s.toggleCollapsed);
+
+  const browserRef = useRef<HTMLDivElement>(null);
 
   /** Compute metrics for each preset by merging onto current config. */
   const presetMetrics = useMemo(() => {
@@ -52,6 +76,56 @@ export function TuningWizard() {
     }
     return map;
   }, [config]);
+
+  /** Filter fields by active sections and search query. */
+  const filteredFields = useMemo(() => {
+    const lowerQuery = searchQuery.toLowerCase();
+    return (Object.entries(FIELD_METADATA) as [string, FieldMeta][]).filter(([path, meta]) => {
+      if (!activeSections.has(meta.section)) return false;
+      if (!searchQuery) return true;
+      return (
+        meta.label.toLowerCase().includes(lowerQuery) ||
+        meta.description.toLowerCase().includes(lowerQuery) ||
+        path.toLowerCase().includes(lowerQuery)
+      );
+    });
+  }, [searchQuery, activeSections]);
+
+  /** Group filtered fields by section in display order. */
+  const groupedFields = useMemo(() => {
+    const groups = new Map<string, [string, FieldMeta][]>([
+      [TuningSection.CombatStats, []],
+      [TuningSection.EconomyCrafting, []],
+      [TuningSection.ProgressionQuests, []],
+      [TuningSection.WorldSocial, []],
+    ]);
+    for (const [path, meta] of filteredFields) {
+      groups.get(meta.section)!.push([path, meta]);
+    }
+    return groups;
+  }, [filteredFields]);
+
+  /** Compute diffs between current config and selected preset. */
+  const diffMap = useMemo(() => {
+    if (!selectedPresetId || !config) return new Map<string, DiffEntry>();
+    const preset = TUNING_PRESETS.find((p) => p.id === selectedPresetId);
+    if (!preset) return new Map<string, DiffEntry>();
+    const diffs = computeDiff(
+      config as unknown as Record<string, unknown>,
+      preset.config as unknown as Record<string, unknown>,
+    );
+    return new Map(diffs.map((d) => [d.path, d]));
+  }, [selectedPresetId, config]);
+
+  const totalFilteredCount = filteredFields.length;
+  const presetAccentBorder = selectedPresetId ? PRESET_BORDER[selectedPresetId] : undefined;
+
+  /** Scroll parameter browser into view when a preset is selected. */
+  useEffect(() => {
+    if (selectedPresetId && browserRef.current) {
+      browserRef.current.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
+  }, [selectedPresetId]);
 
   function handleSelect(preset: TuningPreset) {
     if (selectedPresetId === preset.id) {
@@ -98,7 +172,40 @@ export function TuningWizard() {
         ))}
       </div>
 
-      {/* Placeholder for SearchFilterBar + ParameterBrowser (Plan 02) */}
+      {/* Sticky search/filter bar */}
+      <SearchFilterBar />
+
+      {/* Parameter browser */}
+      <div ref={browserRef} className="px-6 pb-8">
+        {totalFilteredCount === 0 ? (
+          <div className="flex flex-col items-center justify-center py-16">
+            <p className="font-sans text-lg font-semibold text-text-secondary">
+              No parameters found
+            </p>
+            <p className="mt-2 font-sans text-[15px] text-text-muted">
+              Try broadening your search or enabling more section filters.
+            </p>
+          </div>
+        ) : (
+          ALL_SECTIONS_ORDERED.map((section) => {
+            const fields = groupedFields.get(section) ?? [];
+            if (fields.length === 0) return null;
+            return (
+              <ParameterSection
+                key={section}
+                section={section}
+                fields={fields}
+                currentConfig={config as unknown as Record<string, unknown>}
+                diffMap={diffMap}
+                hasPreset={selectedPresetId !== null}
+                isCollapsed={collapsedSections.has(section)}
+                onToggleCollapsed={() => toggleCollapsed(section)}
+                presetAccentBorder={presetAccentBorder}
+              />
+            );
+          })
+        )}
+      </div>
     </div>
   );
 }

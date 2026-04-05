@@ -12,7 +12,7 @@ The tuning wizard delivers a preset-driven balance configuration tool in six pha
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: Foundation** - Types, formulas, diff engine, and field metadata for all tunable config values
+- [x] **Phase 1: Foundation** - Types, formulas, diff engine, and field metadata for all tunable config values (completed 2026-04-05)
 - [ ] **Phase 2: Presets** - Three themed presets (Casual, Balanced, Hardcore) covering all gameplay systems
 - [ ] **Phase 3: Wizard Workspace** - Top-level tab with preset selector, search/filter, and Arcanum design system styling
 - [ ] **Phase 4: Comparison View** - Before/after comparison organized by system with derived metrics and color-coded diffs
@@ -35,7 +35,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 Plans:
 - [x] 01-01-PLAN.md -- Types, formula evaluators, and TDD tests (FOUND-01, FOUND-02)
-- [ ] 01-02-PLAN.md -- Field metadata catalog and diff engine with TDD tests (FOUND-03, FOUND-04)
+- [x] 01-02-PLAN.md -- Field metadata catalog and diff engine with TDD tests (FOUND-03, FOUND-04)
 
 ### Phase 2: Presets
 **Goal**: Three complete, validated presets exist that a builder could meaningfully choose between -- each covering all gameplay systems with internally consistent values
@@ -128,7 +128,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation | 0/2 | Planning complete | - |
+| 1. Foundation | 2/2 | Complete   | 2026-04-05 |
 | 2. Presets | 0/2 | Not started | - |
 | 3. Wizard Workspace | 0/3 | Not started | - |
 | 4. Comparison View | 0/3 | Not started | - |

@@ -11,8 +11,8 @@ Requirements for initial release. Each maps to roadmap phases.
 
 - [x] **FOUND-01**: Tuning wizard types defined as DeepPartial<AppConfig> organized into tuning sections
 - [x] **FOUND-02**: Formula evaluator implements key server formulas in TypeScript (damage, XP curve, mob stats, regen, dodge)
-- [ ] **FOUND-03**: Diff engine computes structured field-level changes between current config and preset
-- [ ] **FOUND-04**: Field metadata catalog provides human-readable labels, descriptions, and grouping for all tunable fields
+- [x] **FOUND-03**: Diff engine computes structured field-level changes between current config and preset
+- [x] **FOUND-04**: Field metadata catalog provides human-readable labels, descriptions, and grouping for all tunable fields
 
 ### Presets
 
@@ -97,8 +97,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 |-------------|-------|--------|
 | FOUND-01 | Phase 1 | Complete |
 | FOUND-02 | Phase 1 | Complete |
-| FOUND-03 | Phase 1 | Pending |
-| FOUND-04 | Phase 1 | Pending |
+| FOUND-03 | Phase 1 | Complete |
+| FOUND-04 | Phase 1 | Complete |
 | PRES-01 | Phase 2 | Pending |
 | PRES-02 | Phase 2 | Pending |
 | PRES-03 | Phase 2 | Pending |

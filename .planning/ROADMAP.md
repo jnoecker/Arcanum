@@ -61,13 +61,12 @@ Plans:
   2. The workspace follows Arcanum design system: dark indigo background, aurum-gold accents, Cinzel headings, Crimson Pro body text
   3. Preset selector displays themed cards with each preset's name, description, and key characteristics
   4. Search/filter box narrows visible parameters by name or description across all sections
-**Plans**: TBD
+**Plans**: 2 plans
 **UI hint**: yes
 
 Plans:
-- [ ] 03-01: TBD
-- [ ] 03-02: TBD
-- [ ] 03-03: TBD
+- [ ] 03-01-PLAN.md -- Store, panel registration, workspace shell, and preset cards (UI-01, UI-02, UI-03)
+- [ ] 03-02-PLAN.md -- Parameter browser with search/filter and diff highlighting (UI-05)
 
 ### Phase 4: Comparison View
 **Goal**: After selecting a preset, builders see a clear before/after comparison that leads with meaningful derived metrics and lets them drill into raw field changes
@@ -130,7 +129,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
 |-------|----------------|--------|-----------|
 | 1. Foundation | 2/2 | Complete   | 2026-04-05 |
 | 2. Presets | 2/2 | Complete   | 2026-04-05 |
-| 3. Wizard Workspace | 0/3 | Not started | - |
+| 3. Wizard Workspace | 0/2 | Not started | - |
 | 4. Comparison View | 0/3 | Not started | - |
 | 5. Apply Flow | 0/3 | Not started | - |
 | 6. Visualizations | 0/2 | Not started | - |

@@ -20,7 +20,7 @@ Builders can confidently configure game balance without needing to understand ev
 
 ### Active
 
-- [ ] Tuning Wizard as new top-level tab in the app
+- ✓ Tuning Wizard as new top-level tab in the app — Validated in Phase 3: wizard-workspace
 - [ ] 5-6 themed presets (Casual, Balanced, Hardcore, Grindy MMO, Fast PvP, Story-focused)
 - [ ] Before/after comparison view showing key metrics at various levels
 - [ ] Per-section accept/reject when applying preset changes
@@ -62,7 +62,7 @@ Key config domains for tuning:
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| New top-level tab, not a config panel | Wizard is a distinct workflow, not just another settings page | -- Pending |
+| New top-level tab, not a config panel | Wizard is a distinct workflow, not just another settings page | Phase 3: registered as `command` host in panel registry, World group |
 | Presets + comparison first, intelligence later | Ship useful tool quickly; LLM analysis is a v2 layer | -- Pending |
 | Per-section accept/reject | Gives builders granular control over what changes; reduces fear of presets overwriting customization | -- Pending |
 | 5-6 themed presets | Covers spectrum from casual to hardcore plus genre-specific flavors | -- Pending |
@@ -87,7 +87,7 @@ This document evolves at phase transitions and milestone boundaries.
 
 ## Current State
 
-Phase 2 (Presets) complete — three themed presets (Casual, Balanced, Hardcore) authored covering all 137 tunable fields as DeepPartial<AppConfig> overlays. Validation and metric differentiation tests prove presets produce valid configs with meaningful gameplay differences. All 685 tests green. Ready for Phase 3 (Wizard Workspace).
+Phase 3 (Wizard Workspace) complete — Tuning Wizard registered in sidebar, session-only Zustand store, three themed preset cards with selection/dimming/glow interaction and metric indicators, parameter browser with debounced search across label/description/path, section filter chips, collapsible sections with field counts, and diff-highlighted parameter rows (3-col without preset, 4-col with color-coded diffs). All 685 tests green. Ready for Phase 4 (Comparison View).
 
 ---
-*Last updated: 2026-04-05 after Phase 2 completion*
+*Last updated: 2026-04-05 after Phase 3 completion*

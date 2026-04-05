@@ -12,6 +12,8 @@ interface ParameterSectionProps {
   currentConfig: Record<string, unknown>;
   diffMap: Map<string, DiffEntry>;
   hasPreset: boolean;
+  isAccepted: boolean;
+  onToggleAccepted: () => void;
   isCollapsed: boolean;
   onToggleCollapsed: () => void;
   presetAccentBorder?: string;
@@ -31,6 +33,8 @@ export function ParameterSection({
   currentConfig,
   diffMap,
   hasPreset,
+  isAccepted,
+  onToggleAccepted,
   isCollapsed,
   onToggleCollapsed,
   presetAccentBorder,
@@ -48,6 +52,17 @@ export function ParameterSection({
         onClick={onToggleCollapsed}
         className="flex w-full cursor-pointer items-center gap-3 border-t border-border-muted py-3"
       >
+        {/* Section acceptance checkbox (D-01) */}
+        {hasPreset && (
+          <input
+            type="checkbox"
+            checked={isAccepted}
+            onClick={(e) => e.stopPropagation()}
+            onChange={onToggleAccepted}
+            className="h-4 w-4 cursor-pointer accent-accent"
+          />
+        )}
+
         {/* Chevron */}
         <span
           className={`inline-block text-text-muted transition-transform duration-200 ${

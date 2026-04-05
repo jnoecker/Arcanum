@@ -1,6 +1,7 @@
 import { writeTextFile } from "@tauri-apps/plugin-fs";
 import { stringify } from "yaml";
 import { normalizeWorldAssetRefs } from "@/lib/assetRefs";
+import { sanitizeZone } from "@/lib/sanitizeZone";
 import { useZoneStore } from "@/stores/zoneStore";
 
 const YAML_OPTS = {
@@ -11,11 +12,12 @@ const YAML_OPTS = {
 
 /**
  * Serialize a zone's data to YAML without writing to disk.
+ * Sanitizes the data first so Arcanum never writes invalid YAML.
  */
 export function serializeZone(zoneId: string): string {
   const zone = useZoneStore.getState().zones.get(zoneId);
   if (!zone) throw new Error(`Zone "${zoneId}" not found`);
-  return stringify(normalizeWorldAssetRefs(zone.data), YAML_OPTS);
+  return stringify(normalizeWorldAssetRefs(sanitizeZone(zone.data)), YAML_OPTS);
 }
 
 /**

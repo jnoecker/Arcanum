@@ -222,3 +222,74 @@ describe("field coverage", () => {
     });
   }
 });
+
+// ─── Metric Differentiation ─────────────────────────────────────────
+
+describe("metric differentiation", () => {
+  const casualMerged = applyTemplate(FULL_MOCK_CONFIG, CASUAL_PRESET.config);
+  const balancedMerged = applyTemplate(FULL_MOCK_CONFIG, BALANCED_PRESET.config);
+  const hardcoreMerged = applyTemplate(FULL_MOCK_CONFIG, HARDCORE_PRESET.config);
+  const casualMetrics = computeMetrics(casualMerged);
+  const balancedMetrics = computeMetrics(balancedMerged);
+  const hardcoreMetrics = computeMetrics(hardcoreMerged);
+
+  // ─── XP ordering ────────────────────────────────────────────────
+  describe("XP requirements (Casual < Balanced < Hardcore)", () => {
+    for (const level of [20, 50] as const) {
+      it(`level ${level}: Casual < Balanced < Hardcore`, () => {
+        expect(casualMetrics.xpPerLevel[level]).toBeLessThan(balancedMetrics.xpPerLevel[level]!);
+        expect(balancedMetrics.xpPerLevel[level]).toBeLessThan(hardcoreMetrics.xpPerLevel[level]!);
+      });
+    }
+  });
+
+  // ─── Mob HP ordering ────────────────────────────────────────────
+  describe("Mob HP (Casual < Balanced < Hardcore, standard tier)", () => {
+    for (const level of [20, 50] as const) {
+      it(`level ${level}: Casual < Balanced < Hardcore`, () => {
+        expect(casualMetrics.mobHp["standard"]![level]).toBeLessThan(balancedMetrics.mobHp["standard"]![level]!);
+        expect(balancedMetrics.mobHp["standard"]![level]).toBeLessThan(hardcoreMetrics.mobHp["standard"]![level]!);
+      });
+    }
+  });
+
+  // ─── Mob damage ordering ────────────────────────────────────────
+  describe("Mob damage (Casual < Balanced < Hardcore, standard tier)", () => {
+    for (const level of [20, 50] as const) {
+      it(`level ${level}: Casual < Balanced < Hardcore`, () => {
+        expect(casualMetrics.mobDamageAvg["standard"]![level]).toBeLessThan(balancedMetrics.mobDamageAvg["standard"]![level]!);
+        expect(balancedMetrics.mobDamageAvg["standard"]![level]).toBeLessThan(hardcoreMetrics.mobDamageAvg["standard"]![level]!);
+      });
+    }
+  });
+
+  // ─── Mob gold ordering (reversed -- Casual > Balanced > Hardcore)
+  describe("Mob gold (Casual > Balanced > Hardcore, standard tier)", () => {
+    for (const level of [20, 50] as const) {
+      it(`level ${level}: Casual > Balanced > Hardcore`, () => {
+        expect(casualMetrics.mobGoldAvg["standard"]![level]).toBeGreaterThan(balancedMetrics.mobGoldAvg["standard"]![level]!);
+        expect(balancedMetrics.mobGoldAvg["standard"]![level]).toBeGreaterThan(hardcoreMetrics.mobGoldAvg["standard"]![level]!);
+      });
+    }
+  });
+
+  // ─── Regen ordering ─────────────────────────────────────────────
+  it("Casual regen faster than Hardcore (lower ms = faster)", () => {
+    expect(casualMetrics.regenInterval[10]).toBeLessThan(hardcoreMetrics.regenInterval[10]!);
+  });
+
+  // ─── Meaningful spread tests ────────────────────────────────────
+  describe("meaningful spread", () => {
+    it("XP at level 30: Hardcore >= 2x Casual", () => {
+      expect(hardcoreMetrics.xpPerLevel[30]).toBeGreaterThanOrEqual(
+        2 * casualMetrics.xpPerLevel[30]!,
+      );
+    });
+
+    it("Mob HP at level 20 (standard): Hardcore >= 1.4x Casual", () => {
+      expect(hardcoreMetrics.mobHp["standard"]![20]).toBeGreaterThanOrEqual(
+        casualMetrics.mobHp["standard"]![20]! * 1.4,
+      );
+    });
+  });
+});

@@ -57,7 +57,10 @@ Plans:
   2. Builder can write and edit narration text for each scene using a rich text editor
   3. Builder can add private DM speaker notes per scene that are visually distinct from narration
   4. Builder can apply a scene template (Establishing Shot, Encounter, Discovery) that pre-populates scene settings
-**Plans**: TBD
+**Plans:** 2 plans
+Plans:
+- [ ] 08-01-PLAN.md -- storyStore scene operations (add/remove/reorder/update/duplicate), scene template presets, dnd-kit install, unit tests
+- [ ] 08-02-PLAN.md -- SceneTimeline, SceneCard, SceneContextMenu, SceneDetailEditor, DmNotesSection, TemplatePicker, StoryEditorPanel rewrite
 **UI hint**: yes
 
 ### Phase 9: Scene Composition
@@ -123,7 +126,7 @@ Note: Phases 11 and 12 both depend on Phase 10 and could execute in parallel.
 | 5. Apply Flow | v1.0 | 2/2 | Complete | 2026-04-05 |
 | 6. Visualizations | v1.0 | 2/2 | Complete | 2026-04-05 |
 | 7. Story Foundation | v1.1 | 0/2 | Planning | - |
-| 8. Story Editor | v1.1 | 0/0 | Not started | - |
+| 8. Story Editor | v1.1 | 0/2 | Planning | - |
 | 9. Scene Composition | v1.1 | 0/0 | Not started | - |
 | 10. Cinematic Renderer | v1.1 | 0/0 | Not started | - |
 | 11. Presentation Mode | v1.1 | 0/0 | Not started | - |

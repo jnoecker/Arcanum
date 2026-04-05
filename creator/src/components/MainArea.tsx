@@ -9,7 +9,6 @@ const LorePanelHost = lazy(() => import("./lore/LorePanelHost").then(m => ({ def
 const PlayerSpriteManager = lazy(() => import("./PlayerSpriteManager").then(m => ({ default: m.PlayerSpriteManager })));
 const Console = lazy(() => import("./Console").then(m => ({ default: m.Console })));
 const AdminDashboard = lazy(() => import("./admin/AdminDashboard").then(m => ({ default: m.AdminDashboard })));
-const TuningWizard = lazy(() => import("./tuning/TuningWizard").then(m => ({ default: m.TuningWizard })));
 
 function LazyFallback() {
   return (
@@ -79,7 +78,6 @@ export function MainArea({ workspace }: { workspace: Workspace }) {
           case "sprites": content = <PlayerSpriteManager />; break;
           case "console": content = <Console />; break;
           case "admin": content = <AdminDashboard />; break;
-          case "tuningWizard": content = <TuningWizard />; break;
           default: content = null;
         }
       } else {

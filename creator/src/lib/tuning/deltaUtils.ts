@@ -1,0 +1,36 @@
+// ─── Delta Utilities ───────────────────────────────────────────────
+// Pure functions for computing and displaying value deltas.
+// Used by MetricCard and ParameterRow components.
+
+import type { FieldMeta } from "./types";
+
+export type DeltaDirection = "up" | "down" | "same";
+
+/** Determine the direction of change between two numeric values. */
+export function deltaDirection(oldVal: number, newVal: number): DeltaDirection {
+  if (oldVal === newVal) return "same";
+  return newVal > oldVal ? "up" : "down";
+}
+
+/** Tailwind color class for a given delta direction (D-08). */
+export function deltaColor(direction: DeltaDirection): string {
+  switch (direction) {
+    case "up": return "text-status-success";
+    case "down": return "text-status-error";
+    case "same": return "text-text-muted";
+  }
+}
+
+/**
+ * Format a percentage delta string with directional arrow.
+ * Guards against zero-denominator edge case.
+ *
+ * Returns: "\u25B2 X.X%", "\u25BC X.X%", "\u2014", "+new", or "-new"
+ */
+export function pctDelta(oldVal: number, newVal: number): string {
+  if (oldVal === newVal) return "\u2014"; // em-dash
+  if (oldVal === 0) return newVal > 0 ? "+new" : "-new";
+  const pct = ((newVal - oldVal) / Math.abs(oldVal)) * 100;
+  const arrow = pct >= 0 ? "\u25B2" : "\u25BC"; // up or down arrow
+  return `${arrow} ${Math.abs(pct).toFixed(1)}%`;
+}

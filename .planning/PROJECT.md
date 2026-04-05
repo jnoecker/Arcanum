@@ -1,12 +1,26 @@
-# Arcanum Tuning Wizard
+# Arcanum
 
 ## What This Is
 
-A tuning wizard for Arcanum that helps MUD builders understand and configure the 300+ gameplay-related numeric values in `application.yaml`. Instead of editing raw numbers across 45+ config panels, builders pick a themed preset, see a before/after comparison of how it changes key metrics, and accept or reject changes per category.
+A Tauri 2 desktop app for building MUD game worlds. Arcanum provides zone editing, config tuning, world lore authoring, and cinematic story creation — helping builders craft rich, interconnected game worlds and present them to players and the public.
 
 ## Core Value
 
-Builders can confidently configure game balance without needing to understand every formula interaction — presets give them a solid starting point, comparisons show them what changed and why.
+Builders can turn their zone worldbuilding into living narratives — stories that work as DM presentation aids at the table and as cinematic experiences on the public showcase.
+
+## Current Milestone: v1.1 Zone Stories
+
+**Goal:** Turn zone worldbuilding into cinematic lore narratives with a timeline editor, fullscreen DM presentation mode, and an embedded story player for the showcase.
+
+**Target features:**
+- Timeline editor with draggable scene cards for authoring stories from zone data
+- Scene composition: room backgrounds, entity spotlights (mobs/items/NPCs), narration text
+- Cinematic effects: parallax layers, particle effects (sparks, mist), sprite movement paths
+- Fullscreen DM slide presentation mode (keystroke advance)
+- Embedded story player on showcase (click-through and auto-play)
+- Stories as a new lore article type (inherits undo/redo, persistence, showcase export)
+- Entity picker from zone data browser and/or zone map
+- Single-zone scope, designed for multi-zone expansion
 
 ## Requirements
 
@@ -28,7 +42,14 @@ Builders can confidently configure game balance without needing to understand ev
 
 ### Active
 
-(None yet — awaiting next milestone)
+- [ ] Timeline editor with draggable scene cards for story authoring
+- [ ] Scene composition with room backgrounds, entity spotlights, and narration text
+- [ ] Entity picker from zone data browser and/or zone map
+- [ ] Cinematic effects: parallax layers, particle effects, sprite movement paths
+- [ ] Fullscreen DM slide presentation mode with keystroke advance
+- [ ] Stories as a new lore article type with full lore system integration
+- [ ] Showcase export: embedded story player with click-through and auto-play
+- [ ] Single-zone story scope, architecture supports multi-zone later
 
 ### Out of Scope
 
@@ -95,5 +116,7 @@ This document evolves at phase transitions and milestone boundaries.
 
 v1.0 Tuning Wizard shipped (2026-04-05). All 6 phases complete: foundation data layer (types, formulas, diff engine, 137 field metadata), 3 themed presets (Casual/Balanced/Hardcore), wizard workspace with preset cards and searchable parameter browser, before/after comparison view with derived metric KPI cards, per-section apply flow with undo/reset and health check warnings, and Recharts visualizations (XP curve, mob tier power, stat radar). 107 commits, 222 files, +22K lines.
 
+v1.1 Zone Stories in progress — building cinematic story authoring on top of existing zone data, lore system, and showcase infrastructure.
+
 ---
-*Last updated: 2026-04-05 after v1.0 milestone*
+*Last updated: 2026-04-05 after v1.1 milestone start*

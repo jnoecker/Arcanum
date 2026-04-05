@@ -1,17 +1,17 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.0
-milestone_name: Tuning Wizard
-status: milestone_complete
-stopped_at: Milestone v1.0 complete
-last_updated: "2026-04-05T20:35:00.000Z"
+milestone: v1.1
+milestone_name: Zone Stories
+status: defining_requirements
+stopped_at: Defining requirements for v1.1
+last_updated: "2026-04-05T21:00:00.000Z"
 last_activity: 2026-04-05
 progress:
-  total_phases: 6
-  completed_phases: 6
-  total_plans: 13
-  completed_plans: 13
-  percent: 100
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
@@ -20,17 +20,17 @@ progress:
 
 See: .planning/PROJECT.md (updated 2026-04-05)
 
-**Core value:** Builders can confidently configure game balance without needing to understand every formula interaction
-**Current focus:** Planning next milestone
+**Core value:** Builders can turn their zone worldbuilding into living narratives
+**Current focus:** Defining requirements for v1.1 Zone Stories
 
 ## Current Position
 
-Phase: Complete
-Plan: N/A
-Status: Milestone v1.0 shipped
-Last activity: 2026-04-05
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-04-05 — Milestone v1.1 started
 
-Progress: ██████████ 100%
+Progress: ░░░░░░░░░░ 0%
 
 ## Milestone History
 
@@ -51,10 +51,10 @@ None.
 
 ### Blockers/Concerns
 
-None — milestone complete.
+None.
 
 ## Session Continuity
 
 Last session: 2026-04-05
-Stopped at: Milestone v1.0 complete
-Resume: `/gsd-new-milestone` or `/gsd-new-project` for next work
+Stopped at: Defining requirements for v1.1 Zone Stories
+Resume: Continue with requirements definition and roadmap creation

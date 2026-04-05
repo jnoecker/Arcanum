@@ -27,6 +27,7 @@ export default defineConfig(async () => ({
           if (id.includes("@imgly/background-removal")) return "vendor-image";
           if (id.includes("@tauri-apps")) return "vendor-tauri";
           if (id.includes("/yaml/")) return "vendor-yaml";
+          if (id.includes("recharts")) return "vendor-charts";
           return undefined;
         },
       },

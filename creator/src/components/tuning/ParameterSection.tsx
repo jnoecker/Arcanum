@@ -1,6 +1,7 @@
 // ─── Parameter Section ──────────────────────────────────────────────
 // Collapsible section with header, field count badge, and parameter rows.
 
+import { useMemo } from "react";
 import type { FieldMeta, DiffEntry } from "@/lib/tuning/types";
 import type { TuningSection } from "@/lib/tuning/types";
 import { ParameterRow } from "./ParameterRow";
@@ -34,6 +35,11 @@ export function ParameterSection({
   onToggleCollapsed,
   presetAccentBorder,
 }: ParameterSectionProps) {
+  const changedCount = useMemo(
+    () => fields.filter(([path]) => diffMap.has(path)).length,
+    [fields, diffMap],
+  );
+
   return (
     <div className="mb-8">
       {/* Section header */}
@@ -60,6 +66,13 @@ export function ParameterSection({
         <span className="rounded-full bg-accent/[0.14] px-2 py-0.5 font-sans text-sm text-accent">
           {fields.length}
         </span>
+
+        {/* Changes count badge -- shown when collapsed with preset active */}
+        {hasPreset && changedCount > 0 && (
+          <span className="rounded-full bg-status-success/[0.14] px-2 py-0.5 font-sans text-[13px] text-status-success">
+            {changedCount} changed
+          </span>
+        )}
       </button>
 
       {/* Parameter rows */}

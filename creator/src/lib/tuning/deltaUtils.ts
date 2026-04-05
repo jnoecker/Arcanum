@@ -34,3 +34,37 @@ export function pctDelta(oldVal: number, newVal: number): string {
   const arrow = pct >= 0 ? "\u25B2" : "\u25BC"; // up or down arrow
   return `${arrow} ${Math.abs(pct).toFixed(1)}%`;
 }
+
+// ─── Tooltip Content Builder ───────────────────────────────────────
+
+/** Impact badge colors matching Arcanum design system (D-11, UI-SPEC). */
+const IMPACT_COLORS: Record<string, string> = {
+  high: "#dbb8b8",   // status-error
+  medium: "#bea873", // status-warning
+  low: "#95a0bf",    // text-muted
+};
+
+const IMPACT_LABELS: Record<string, string> = {
+  high: "HIGH IMPACT",
+  medium: "MEDIUM IMPACT",
+  low: "LOW IMPACT",
+};
+
+/**
+ * Build an HTML string for a Tippy tooltip from a FieldMeta entry.
+ * Includes description, optional interactionNote, and colored impact badge.
+ * Used with Tippy's allowHTML: true option.
+ */
+export function buildTooltipContent(meta: FieldMeta): string {
+  const parts: string[] = [];
+  parts.push(`<div style="font-size:13px;line-height:1.5;max-width:260px">`);
+  parts.push(`<div style="margin-bottom:6px">${meta.description}</div>`);
+  if (meta.interactionNote) {
+    parts.push(`<div style="margin-bottom:6px;opacity:0.8">Interacts with: ${meta.interactionNote}</div>`);
+  }
+  const color = IMPACT_COLORS[meta.impact] ?? "#95a0bf";
+  const label = IMPACT_LABELS[meta.impact] ?? "LOW IMPACT";
+  parts.push(`<span style="color:${color};font-size:11px;font-weight:600;letter-spacing:0.5px">${label}</span>`);
+  parts.push(`</div>`);
+  return parts.join("");
+}

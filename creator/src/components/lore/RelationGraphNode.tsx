@@ -14,6 +14,7 @@ const TEMPLATE_COLORS: Record<ArticleTemplate, string> = {
   profession: "var(--color-template-profession)",
   ability: "var(--color-template-ability)",
   freeform: "var(--color-template-freeform)",
+  story: "var(--color-template-story)",
 };
 
 const TEMPLATE_LABELS: Record<ArticleTemplate, string> = {
@@ -28,6 +29,7 @@ const TEMPLATE_LABELS: Record<ArticleTemplate, string> = {
   profession: "P",
   ability: "Ab",
   freeform: "F",
+  story: "St",
 };
 
 interface RelationNodeData {

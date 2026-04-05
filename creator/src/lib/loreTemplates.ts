@@ -214,6 +214,17 @@ export const TEMPLATE_SCHEMAS: Record<ArticleTemplate, TemplateSchema> = {
     pluralLabel: "Freeform",
     fields: [],
   },
+
+  story: {
+    template: "story",
+    label: "Story",
+    pluralLabel: "Stories",
+    description: "A cinematic zone story with scenes and narration.",
+    fields: [
+      { key: "zoneId", label: "Linked zone", type: "text" },
+      { key: "storyId", label: "Story ID", type: "text" },
+    ],
+  },
 };
 
 export const TEMPLATE_OPTIONS = Object.values(TEMPLATE_SCHEMAS).map((s) => ({

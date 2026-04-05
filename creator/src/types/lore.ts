@@ -14,7 +14,8 @@ export type ArticleTemplate =
   | "language"
   | "profession"
   | "ability"
-  | "freeform";
+  | "freeform"
+  | "story";
 
 /** Custom template ID — any string not in the built-in set */
 export type CustomTemplateId = string;

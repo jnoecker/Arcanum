@@ -19,6 +19,7 @@ const TEMPLATE_DOT_COLORS: Record<ArticleTemplate, string> = {
   profession: "var(--color-template-profession)",
   ability: "var(--color-template-ability)",
   freeform: "var(--color-template-freeform)",
+  story: "var(--color-template-story)",
 };
 
 // Tree data shape

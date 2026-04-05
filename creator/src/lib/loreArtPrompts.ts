@@ -17,6 +17,7 @@ export const TEMPLATE_ASSET_TYPE: Record<ArticleTemplate, string> = {
   profession: "lore_character",
   ability: "lore_item",
   freeform: "lore_location",
+  story: "lore_event",
 };
 
 // ─── Format descriptions per template ───────────────────────────────
@@ -33,6 +34,7 @@ const FORMAT: Record<ArticleTemplate, string> = {
   profession: "2:3 portrait of a class archetype in action, dynamic pose, iconic gear and stance",
   ability: "1:1 square spell or skill icon, magical energy effect, centered glow",
   freeform: "16:9 atmospheric illustration",
+  story: "16:9 cinematic scene illustration, dramatic composition",
 };
 
 // ─── Prompt builders ────────────────────────────────────────────────

@@ -87,7 +87,7 @@ This document evolves at phase transitions and milestone boundaries.
 
 ## Current State
 
-Phase 1 (Foundation) complete — pure data layer established with types, formula evaluators, field metadata catalog (137 entries), and diff engine. All 242 tests green. Ready for Phase 2 (Presets).
+Phase 2 (Presets) complete — three themed presets (Casual, Balanced, Hardcore) authored covering all 137 tunable fields as DeepPartial<AppConfig> overlays. Validation and metric differentiation tests prove presets produce valid configs with meaningful gameplay differences. All 685 tests green. Ready for Phase 3 (Wizard Workspace).
 
 ---
-*Last updated: 2026-04-05 after Phase 1 completion*
+*Last updated: 2026-04-05 after Phase 2 completion*

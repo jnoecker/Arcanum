@@ -34,7 +34,7 @@ Declared values (must be multiples of 4):
 | Token | Value | Usage |
 |-------|-------|-------|
 | xs | 4px | Icon gaps, inline padding within chips |
-| sm | 8px | Compact element spacing, chip internal padding |
+| sm | 8px | Compact element spacing, chip internal padding, filter chip horizontal padding |
 | md | 16px | Default element spacing, card internal padding |
 | lg | 24px | Section padding, card body padding, search bar margins |
 | xl | 32px | Gap between preset cards, parameter section spacing |
@@ -49,17 +49,24 @@ Source: Aligns with existing Tailwind spacing used across Arcanum panels.
 
 ## Typography
 
+4 sizes, 2 weights.
+
 | Role | Font | Size | Weight | Line Height | Letter Spacing |
 |------|------|------|--------|-------------|----------------|
 | Workspace title | Cinzel | 22px | 400 | 1.2 | 1px |
 | Preset card name | Cinzel | 18px | 600 | 1.2 | 0.5px |
 | Section header | Cinzel | 14px | 400 | 1.3 | 0.5px, uppercase |
 | Body / description | Crimson Pro | 15px | 400 | 1.6 | normal |
-| Parameter label | Crimson Pro | 15px | 500 | 1.5 | normal |
+| Parameter label | Crimson Pro | 15px | 600 | 1.5 | normal |
 | Parameter value | JetBrains Mono | 14px | 400 | 1.4 | normal |
-| Caption / metadata | Crimson Pro | 13px | 400 | 1.4 | normal |
+| Caption / metadata | Crimson Pro | 14px | 400 | 1.4 | normal |
 | Search input | Crimson Pro | 15px | 400 | 1.5 | normal |
-| Filter chip | Crimson Pro | 13px | 500 | 1.0 | 0.18em, uppercase |
+| Filter chip | Crimson Pro | 14px | 600 | 1.0 | 0.18em, uppercase |
+
+**Size scale (4 values):** 14px, 15px, 18px, 22px
+**Weight scale (2 values):** 400 (regular), 600 (emphasis)
+
+Rationale: 14px serves as the compact size for mono values, captions, section headers, and filter chips. 15px is the standard body size for descriptions, labels, and search input. 18px is the card-level heading. 22px is the single workspace title. Weight 400 is default; 600 is reserved for elements requiring visual emphasis (preset card names, parameter labels, filter chips).
 
 Source: ARCANUM_STYLE_GUIDE.md Typography Hierarchy section; existing index.css body defaults.
 
@@ -96,6 +103,12 @@ Source: CONTEXT.md D-03, D-04; index.css color tokens; ARCANUM_STYLE_GUIDE.md.
 
 ---
 
+## Focal Point
+
+**Primary visual anchor:** The preset card row. The three horizontally-arranged PresetCards are the first element builders interact with and the compositional center of the workspace. All other elements (search bar, parameter browser) are secondary and appear below the cards. The selected card's accent glow draws the eye and establishes the workspace's active context.
+
+---
+
 ## Component Inventory
 
 ### 1. TuningWizard (workspace root)
@@ -113,7 +126,7 @@ Source: CONTEXT.md D-03, D-04; index.css color tokens; ARCANUM_STYLE_GUIDE.md.
 - **Content stack** (top to bottom, 16px gap):
   1. Preset name: Cinzel 18px weight 600, color `text-text-primary`
   2. Description: Crimson Pro 15px weight 400, color `text-text-secondary`, 2 lines max with line-clamp
-  3. Key metric indicators: 3-4 rows of label-value pairs. Label in Crimson Pro 13px `text-text-muted`, value as a pill/badge with preset accent color background at 14% opacity and accent text color
+  3. Key metric indicators: 3-4 rows of label-value pairs. Label in Crimson Pro 14px `text-text-muted`, value as a pill/badge with preset accent color background at 14% opacity and accent text color
 - **Interaction**:
   - Hover: `bg-bg-hover` background transition 200ms
   - Click: selects preset, applies selected state
@@ -128,7 +141,7 @@ Source: CONTEXT.md D-03, D-04; index.css color tokens; ARCANUM_STYLE_GUIDE.md.
 - **Margin**: 48px (2xl) top margin from preset cards, 24px (lg) bottom margin to parameter list
 - **Search input**: `.ornate-input` class, Crimson Pro 15px, placeholder "Search parameters...", border `border-border-default`, focus ring `border-border-focus`
 - **Debounce**: 150ms debounce on search input before filtering
-- **Filter chips**: One per TuningSection (4 total). Crimson Pro 13px weight 500 uppercase with 0.18em letter-spacing. Padding: 4px vertical, 12px horizontal. Rounded-full.
+- **Filter chips**: One per TuningSection (4 total). Crimson Pro 14px weight 600 uppercase with 0.18em letter-spacing. Padding: 4px vertical, 8px horizontal. Rounded-full.
   - Active: `bg-accent` at 14% opacity, `text-accent`, border 1px `border-accent-subtle` (rgba(168,151,210,0.35))
   - Inactive: `bg-bg-secondary`, `text-text-muted`, border 1px `border-border-muted`
   - Click: toggles section on/off
@@ -136,7 +149,7 @@ Source: CONTEXT.md D-03, D-04; index.css color tokens; ARCANUM_STYLE_GUIDE.md.
 
 ### 4. ParameterSection (collapsible)
 
-- **Header**: Flex row. Left: Cinzel 14px uppercase weight 400 `text-text-secondary` with 0.5px letter-spacing. Right: field count badge in Crimson Pro 13px `text-accent` with `bg-accent` at 14% opacity, rounded-full, 4px/8px padding.
+- **Header**: Flex row. Left: Cinzel 14px uppercase weight 400 `text-text-secondary` with 0.5px letter-spacing. Right: field count badge in Crimson Pro 14px `text-accent` with `bg-accent` at 14% opacity, rounded-full, 4px/8px padding.
 - **Collapse**: Chevron icon (simple CSS triangle or inline SVG) rotates 90 degrees on expand/collapse. Transition 200ms.
 - **Default state**: All sections expanded (D-11 discretion: all expanded aids first-time exploration)
 - **Section gap**: 32px (xl) between sections
@@ -147,20 +160,20 @@ Source: CONTEXT.md D-03, D-04; index.css color tokens; ARCANUM_STYLE_GUIDE.md.
 - **Layout**: CSS grid with 3 columns (no preset selected) or 4 columns (preset selected). Grid template: `[label 1fr] [current 120px] [preset 120px] [description 1.5fr]` when preset active; drop preset column otherwise.
 - **Row height**: Auto, min 40px. Vertical padding: 8px (sm).
 - **Alternating rows**: Even rows `bg-bg-secondary` at 50% opacity for readability.
-- **Label**: Crimson Pro 15px weight 500 `text-text-primary`
+- **Label**: Crimson Pro 15px weight 600 `text-text-primary`
 - **Current value**: JetBrains Mono 14px weight 400 `text-text-secondary`, right-aligned
 - **Preset value** (when preset selected): JetBrains Mono 14px weight 400, right-aligned. Color varies by diff status:
   - Unchanged: `text-text-muted`
   - Changed (increase): `text-status-warning` (#bea873)
   - Changed (decrease): `text-status-info` (#8caec9)
-- **Description**: Crimson Pro 13px weight 400 `text-text-muted`, single line with text-overflow ellipsis
+- **Description**: Crimson Pro 14px weight 400 `text-text-muted`, single line with text-overflow ellipsis
 - **Hover**: Full row background transitions to `bg-bg-hover` at 200ms
 - **Changed row highlight**: When preset is selected and value differs, left border 2px solid preset accent color
 
 ### 6. EmptyState (search yields no results)
 
 - **Centered** in parameter browser area
-- **Heading**: Crimson Pro 18px weight 500 `text-text-secondary`
+- **Heading**: Crimson Pro 18px weight 600 `text-text-secondary`
 - **Body**: Crimson Pro 15px weight 400 `text-text-muted`
 
 ---

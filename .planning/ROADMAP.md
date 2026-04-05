@@ -78,13 +78,13 @@ Plans:
   3. Raw field-level changes are available in expandable sections below the derived metrics
   4. Changes are color-coded: increases, decreases, and unchanged values are visually distinct with context-aware coloring
   5. Every field in the comparison has a contextual tooltip explaining what it does and what it interacts with
-**Plans**: TBD
+**Plans**: 3 plans
 **UI hint**: yes
 
 Plans:
-- [ ] 04-01: TBD
-- [ ] 04-02: TBD
-- [ ] 04-03: TBD
+- [ ] 04-01-PLAN.md -- Delta utilities and tooltip content builder with TDD tests (COMP-05, UI-04)
+- [ ] 04-02-PLAN.md -- MetricSectionCards and MetricCard components with store integration (COMP-01, COMP-02, COMP-03, COMP-04)
+- [ ] 04-03-PLAN.md -- ParameterRow tooltips, delta display, color corrections, and changes-count badge (COMP-05, UI-04)
 
 ### Phase 5: Apply Flow
 **Goal**: Builders can selectively accept or reject changes per section, apply them to their config with confidence that they can undo, and see warnings if their choices create problems

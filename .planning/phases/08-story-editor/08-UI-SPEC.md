@@ -5,6 +5,7 @@ status: draft
 shadcn_initialized: false
 preset: none
 created: 2026-04-05
+revised: 2026-04-05
 ---
 
 # Phase 8 -- UI Design Contract
@@ -27,21 +28,31 @@ Source: `ARCANUM_STYLE_GUIDE.md`, `creator/src/index.css`, Phase 7 UI-SPEC
 
 ---
 
+## Focal Point
+
+The horizontal SceneTimeline strip is the primary focal point of the Story Editor. It anchors the builder's spatial model of the story as a sequence of scenes, and every interaction (add, select, reorder, right-click) begins there.
+
+---
+
 ## Spacing Scale
 
-Declared values (must be multiples of 4):
+**Standard set:** 4, 8, 16, 24, 32, 48, 64 (multiples of 4).
+
+**Project-level exception:** 20px (`p-5`) is included as an approved value. It is an established codebase convention already used across `ArticleBrowser`, `StoryEditorPanel`, and other panel surfaces. It appears in the standard set as the `lg` token below.
+
+Declared values:
 
 | Token | Value | Usage in Phase 8 |
 |-------|-------|-------------------|
 | xs | 4px | Inline icon gaps, badge padding-inline, gap between undo/redo buttons |
 | sm | 8px | Scene card internal padding, gap between timeline cards, gap between context menu items |
 | md | 16px | Default element spacing, gap between scene detail sections, timeline strip padding |
-| lg | 20px | Panel padding (`p-5`), matches existing `panel-surface` usage |
+| lg | 20px | Panel padding (`p-5`), matches existing `panel-surface` usage (project exception) |
 | xl | 24px | Gap between major layout sections (timeline strip vs detail editor) |
 | 2xl | 32px | Top/bottom padding in zero-scenes empty state |
 | 3xl | 48px | Not used in Phase 8 |
 
-Exceptions: Panel padding uses 20px (`p-5`) to match the existing `StoryEditorPanel` and `ArticleBrowser` pattern from Phase 7. Timeline strip height is fixed at 120px (not a spacing token -- a layout constant).
+Exceptions: Timeline strip height is fixed at 120px (not a spacing token -- a layout constant).
 
 Source: Phase 7 UI-SPEC spacing scale (inherited), existing `StoryEditorPanel.tsx` line 170
 
@@ -49,19 +60,31 @@ Source: Phase 7 UI-SPEC spacing scale (inherited), existing `StoryEditorPanel.ts
 
 ## Typography
 
+Phase 8 uses 4 font sizes and 1 weight:
+
 | Role | Font | Size | Weight | Line Height | Tailwind Class |
 |------|------|------|--------|-------------|----------------|
-| Body / Narration label | Crimson Pro | 15px | 400 | 1.6 | `text-[15px] leading-[1.6]` (default body) |
-| Scene card title | Crimson Pro | 14px | 400 | 1.4 | `text-sm text-text-primary` |
-| Scene card index number | Crimson Pro | 12px | 400 | 1.5 | `text-2xs text-text-muted` |
-| Template badge label | Crimson Pro | 10px | 400 | 1.45 | `text-3xs uppercase tracking-[0.18em]` |
-| Section heading (Narration, DM Notes) | Cinzel | 14px | 400 | 1.2 | `font-display text-sm tracking-[0.5px] uppercase text-text-secondary` |
-| Empty state heading | Cinzel | 18px | 400 | 1.2 | `font-display text-lg text-text-primary` |
-| Context menu item | Crimson Pro | 13px | 400 | 1.4 | `text-2xs text-text-primary` |
-| DM Notes "DM Only" badge | Cinzel | 10px | 400 | 1.45 | `font-display text-3xs uppercase tracking-[0.18em]` |
-| DM Notes textarea | Crimson Pro | 14px | 400 | 1.6 | `text-sm` |
-| Template picker button text | Crimson Pro | 13px | 400 | 1.4 | `text-2xs` |
-| Metadata footer | Crimson Pro | 12px | 400 | 1.5 | `text-2xs text-text-muted` |
+| Badge / label | Crimson Pro | 10px | 400 | 1.45 | `text-3xs` |
+| Small text (cards, menus, metadata, DM notes) | Crimson Pro | 13px | 400 | 1.4 | `text-2xs` |
+| Body (narration, detail editor) | Crimson Pro | 16px | 400 | 1.6 | `text-base` |
+| Section heading / empty state heading | Cinzel | 18px | 400 | 1.2 | `font-display text-lg` |
+
+**Size mapping for all UI elements:**
+
+| Element | Size Token | Tailwind |
+|---------|-----------|----------|
+| Template badge label | 10px | `text-3xs uppercase tracking-[0.18em]` |
+| DM Notes "DM Only" badge | 10px | `font-display text-3xs uppercase tracking-[0.18em]` |
+| Scene card title | 13px | `text-2xs text-text-primary` |
+| Scene card index number | 13px | `text-2xs text-text-muted` |
+| Context menu item | 13px | `text-2xs text-text-primary` |
+| Template picker button text | 13px | `text-2xs` |
+| Metadata footer | 13px | `text-2xs text-text-muted` |
+| Story settings toggle label | 13px | `text-2xs text-text-muted` |
+| DM Notes textarea | 16px | `text-base` |
+| Narration editor body | 16px | `text-base` (LoreEditor default) |
+| Section heading (Narration, DM Notes) | 18px | `font-display text-lg tracking-[0.5px] uppercase text-text-secondary` |
+| Empty state heading | 18px | `font-display text-lg text-text-primary` |
 
 Source: `ARCANUM_STYLE_GUIDE.md` Typography section, Phase 7 UI-SPEC (inherited)
 
@@ -104,7 +127,7 @@ Source: Phase 7 UI-SPEC color section (inherited), RESEARCH.md template badge co
 | `SceneDetailEditor` | `creator/src/components/lore/SceneDetailEditor.tsx` | Selected scene editor: narration (LoreEditor), DM notes (collapsible textarea), template picker |
 | `SceneContextMenu` | `creator/src/components/lore/SceneContextMenu.tsx` | Right-click context menu via React portal. Actions: Delete, Duplicate, Apply Template submenu |
 | `DmNotesSection` | `creator/src/components/lore/DmNotesSection.tsx` | Collapsible warm-tinted section with "DM Only" badge and plain textarea |
-| `TemplatePicker` | `creator/src/components/lore/TemplatePicker.tsx` | Button group showing three template options + "Clear" button |
+| `TemplatePicker` | `creator/src/components/lore/TemplatePicker.tsx` | Button group showing three template options + "Clear Template" button |
 | `TemplateBadge` | `creator/src/components/lore/TemplateBadge.tsx` | Small inline colored badge showing template type name |
 
 ### Modified Components (Phase 8)
@@ -201,7 +224,7 @@ Source: Phase 7 UI-SPEC color section (inherited), RESEARCH.md template badge co
 
 **Layout (vertical stack, 8px gap):**
 1. Top row: scene index number (`text-2xs text-text-muted`) right-aligned
-2. Middle: scene title (single line, `truncate`, `text-sm text-text-primary`)
+2. Middle: scene title (single line, `truncate`, `text-2xs text-text-primary`)
 3. Bottom: template badge (if set) or empty space
 
 **States:**
@@ -264,7 +287,7 @@ Source: CONTEXT.md D-07, D-12, RESEARCH.md Pattern 4
 
 ## TemplateBadge -- Visual Contract
 
-**Dimensions:** Inline pill, auto-width. Padding: `px-2 py-0.5` (8px x 2px).
+**Dimensions:** Inline pill, auto-width. Padding: `px-2 py-1` (8px x 4px).
 
 **Typography:** `text-3xs uppercase tracking-[0.18em]` (10px, Crimson Pro).
 
@@ -284,7 +307,7 @@ Source: RESEARCH.md template presets, color system in `index.css`
 
 ## TemplatePicker -- Visual Contract
 
-**Layout:** Horizontal button group. Three template buttons + one "Clear" button. `flex gap-2` row.
+**Layout:** Horizontal button group. Three template buttons + one "Clear Template" button. `flex gap-2` row.
 
 **Template button:**
 - Uses `segmented-control` pattern from existing CSS
@@ -294,10 +317,10 @@ Source: RESEARCH.md template presets, color system in `index.css`
 - Inactive state: `text-text-muted`, transparent background
 - Hover: `text-text-secondary`
 
-**Clear button:**
+**Clear Template button:**
 - Only visible when a template is applied
 - Ghost style: `text-2xs text-text-muted hover:text-text-primary`
-- Label: "Clear"
+- Label: "Clear Template"
 
 Source: CONTEXT.md D-12, existing `segmented-control` CSS class in `index.css`
 
@@ -319,7 +342,7 @@ Source: CONTEXT.md D-12, existing `segmented-control` CSS class in `index.css`
 **Expanded content:**
 - Separated from header by `border-t border-amber-900/30`
 - Contains: plain `<textarea>` with `rows={3}`
-- Textarea styling: `bg-transparent px-3 py-2 text-sm text-text-secondary placeholder:text-text-muted/40 focus:outline-none`
+- Textarea styling: `bg-transparent px-3 py-2 text-base text-text-secondary placeholder:text-text-muted/40 focus:outline-none`
 - Placeholder: "Private notes for the DM..."
 - Auto-expand: textarea grows with content via `rows` attribute or CSS `field-sizing: content` (if supported)
 
@@ -381,6 +404,7 @@ Source: CONTEXT.md D-02, Claude's discretion
 | Context menu: delete | "Delete Scene" |
 | Context menu: template submenu | "Apply Template" |
 | Context menu: clear template | "Clear Template" |
+| Template picker: clear button | "Clear Template" |
 | Template: Establishing Shot | "Establishing Shot" |
 | Template: Encounter | "Encounter" |
 | Template: Discovery | "Discovery" |
@@ -433,7 +457,7 @@ Source: CONTEXT.md D-11, D-13, RESEARCH.md template presets
 | Narration editing | LoreEditor manages TipTap state internally. `onCommit` updates store |
 | DM notes editing | Plain textarea. `onChange` updates store via `updateScene` |
 | Template picker: click template | If scene has content: show ConfirmDialog. If empty: apply silently |
-| Template picker: click "Clear" | Clears `scene.template` field only. Does not clear title/narration |
+| Template picker: click "Clear Template" | Clears `scene.template` field only. Does not clear title/narration |
 | Switching selected scene | Detail editor re-renders with new scene data. LoreEditor receives new `value` |
 
 ### Context Menu

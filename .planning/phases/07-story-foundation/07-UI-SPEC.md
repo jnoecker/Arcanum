@@ -134,7 +134,7 @@ Source: `creator/src/index.css` lines 108-119 (existing template colors), RESEAR
 3. **Cover Image** -- Optional. Thumbnail preview (64x64px rounded-lg) + "Choose Image" action button (secondary variant). If no image selected, show a placeholder rectangle with dashed border and text "No cover image". Uses existing `AssetPickerModal` for selection.
 
 **Footer (right-aligned, 8px gap between buttons):**
-- Cancel: `ActionButton` variant="ghost"
+- Never Mind: `ActionButton` variant="ghost"
 - Create Story: `ActionButton` variant="primary", disabled until title and zone are filled
 
 **Scrim:** `DialogShell` default scrim (dark overlay with backdrop-blur)
@@ -203,7 +203,7 @@ story: "var(--color-template-story)",
 | Zone field placeholder | "Select a zone" |
 | Zone field empty state | "Load a zone to create a story" |
 | Cover image placeholder | "Add a cover image" |
-| Cancel button | "Cancel" |
+| Dismiss button (NewStoryDialog) | "Never Mind" |
 | Empty state heading (StoryEditorPanel) | "No scenes yet" |
 | Empty state body (StoryEditorPanel) | "Scenes will be added in a future update. For now, your story is saved and ready." |
 | Empty state heading (ArticleBrowser, no stories) | Unchanged -- "Begin the canon" / "Choose an article" (stories mix with articles) |

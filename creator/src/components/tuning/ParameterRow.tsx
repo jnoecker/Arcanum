@@ -42,8 +42,8 @@ export function ParameterRow({
   even,
 }: ParameterRowProps) {
   const gridCols = hasPreset
-    ? "grid-cols-[1fr_120px_120px_1.5fr]"
-    : "grid-cols-[1fr_120px_1.5fr]";
+    ? "grid-cols-[1.2fr_100px_100px_1.5fr]"
+    : "grid-cols-[1.2fr_100px_1.5fr]";
 
   const rowHighlight =
     isChanged && presetAccentBorder ? `border-l-2 ${presetAccentBorder}` : "";
@@ -52,7 +52,7 @@ export function ParameterRow({
 
   return (
     <div
-      className={`grid min-h-[40px] items-center py-2 px-2 transition-colors duration-200 hover:bg-bg-hover ${gridCols} ${rowHighlight} ${stripe}`}
+      className={`grid min-h-[40px] items-center gap-x-4 py-2 px-2 transition-colors duration-200 hover:bg-bg-hover ${gridCols} ${rowHighlight} ${stripe}`}
     >
       {/* Label */}
       <span className="font-sans text-[15px] font-semibold text-text-primary">

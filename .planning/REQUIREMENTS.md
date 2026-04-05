@@ -19,7 +19,7 @@ Requirements for initial release. Each maps to roadmap phases.
 - [x] **PRES-01**: 3 themed presets defined: Casual, Balanced, Hardcore
 - [x] **PRES-02**: Each preset covers all gameplay systems: combat, mob tiers, progression, stats, economy, crafting, quests, social, world timing
 - [x] **PRES-03**: Presets stored as partial overlays (DeepPartial<AppConfig>) to survive schema evolution
-- [ ] **PRES-04**: Preset values validated against existing config validation rules
+- [x] **PRES-04**: Preset values validated against existing config validation rules
 
 ### Comparison View
 
@@ -102,7 +102,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | PRES-01 | Phase 2 | Complete |
 | PRES-02 | Phase 2 | Complete |
 | PRES-03 | Phase 2 | Complete |
-| PRES-04 | Phase 2 | Pending |
+| PRES-04 | Phase 2 | Complete |
 | COMP-01 | Phase 4 | Pending |
 | COMP-02 | Phase 4 | Pending |
 | COMP-03 | Phase 4 | Pending |

@@ -13,7 +13,7 @@ The tuning wizard delivers a preset-driven balance configuration tool in six pha
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Foundation** - Types, formulas, diff engine, and field metadata for all tunable config values (completed 2026-04-05)
-- [ ] **Phase 2: Presets** - Three themed presets (Casual, Balanced, Hardcore) covering all gameplay systems
+- [x] **Phase 2: Presets** - Three themed presets (Casual, Balanced, Hardcore) covering all gameplay systems (completed 2026-04-05)
 - [ ] **Phase 3: Wizard Workspace** - Top-level tab with preset selector, search/filter, and Arcanum design system styling
 - [ ] **Phase 4: Comparison View** - Before/after comparison organized by system with derived metrics and color-coded diffs
 - [ ] **Phase 5: Apply Flow** - Per-section accept/reject with snapshot undo and post-apply health check
@@ -50,7 +50,7 @@ Plans:
 
 Plans:
 - [x] 02-01-PLAN.md -- TuningPreset interface + 3 preset constants with TDD coverage tests (PRES-01, PRES-02, PRES-03)
-- [ ] 02-02-PLAN.md -- Validation and metric differentiation tests (PRES-04)
+- [x] 02-02-PLAN.md -- Validation and metric differentiation tests (PRES-04)
 
 ### Phase 3: Wizard Workspace
 **Goal**: Builders can open a Tuning Wizard tab, see preset options presented as themed cards, and search/filter across all tunable parameters
@@ -129,7 +129,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation | 2/2 | Complete   | 2026-04-05 |
-| 2. Presets | 1/2 | In Progress|  |
+| 2. Presets | 2/2 | Complete   | 2026-04-05 |
 | 3. Wizard Workspace | 0/3 | Not started | - |
 | 4. Comparison View | 0/3 | Not started | - |
 | 5. Apply Flow | 0/3 | Not started | - |

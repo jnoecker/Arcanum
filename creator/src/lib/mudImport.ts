@@ -1,6 +1,8 @@
 /**
- * MUD Zone Import — AI-assisted conversion of DikuMUD/CircleMUD/ROM zone files
- * to Ambon YAML format. Processes files in small batches to stay within LLM context limits.
+ * MUD Zone Import — AI-assisted conversion of DikuMUD/CircleMUD/ROM/SMAUG area files
+ * to Ambon YAML format. Supports both split files (.wld/.mob/.obj/.zon/.shp) and
+ * combined .are files (ROM/SMAUG/Merc format with #ROOMS/#MOBILES/#OBJECTS sections).
+ * Processes files in small batches to stay within LLM context limits.
  */
 import { readDir } from "@tauri-apps/plugin-fs";
 import { invoke } from "@tauri-apps/api/core";
@@ -108,6 +110,71 @@ const MUD_EXTENSIONS: Record<string, MudFileType> = {
   shp: "shp",
 };
 
+/** Section markers in ROM/SMAUG/Merc .are files → MudFileType mapping */
+const ARE_SECTION_MAP: Record<string, MudFileType> = {
+  "#ROOMS": "wld",
+  "#MOBILES": "mob",
+  "#OBJECTS": "obj",
+  "#RESETS": "zon",
+  "#SHOPS": "shp",
+};
+
+/**
+ * Split a ROM/SMAUG/Merc .are file into virtual MudFileInfo entries
+ * by extracting each section into its own "file".
+ */
+function splitAreFile(content: string, filename: string, filePath: string): MudFileInfo[] {
+  const files: MudFileInfo[] = [];
+
+  // Extract #AREA header as zone metadata
+  const areaMatch = content.match(/#AREA[^\n]*\n([\s\S]*?)(?=#[A-Z])/);
+  if (areaMatch) {
+    // Build a synthetic .zon-style header from the #AREA line
+    // ROM format: #AREA\n{filename}~ {name}~ {levels} {vnum_lo} {vnum_hi}
+    files.push({
+      type: "zon",
+      path: filePath,
+      filename: filename.replace(/\.are$/i, ".zon"),
+      content: areaMatch[0],
+      size: areaMatch[0].length,
+    });
+  }
+
+  // Extract each data section
+  for (const [marker, fileType] of Object.entries(ARE_SECTION_MAP)) {
+    const markerIdx = content.indexOf(marker);
+    if (markerIdx === -1) continue;
+
+    // Find the section body: from after the marker line to the next #SECTION or #$
+    const bodyStart = content.indexOf("\n", markerIdx);
+    if (bodyStart === -1) continue;
+
+    // Find the next section marker or end-of-file marker
+    const rest = content.slice(bodyStart + 1);
+    const nextSection = rest.search(/^#[A-Z$]/m);
+    const sectionBody = nextSection === -1 ? rest : rest.slice(0, nextSection);
+
+    if (sectionBody.trim()) {
+      // For resets, we already have the zone header above — append resets to it
+      if (fileType === "zon" && files.length > 0 && files[0]!.type === "zon") {
+        files[0]!.content += "\n" + sectionBody;
+        files[0]!.size = files[0]!.content.length;
+      } else {
+        const ext = ({ wld: "wld", mob: "mob", obj: "obj", shp: "shp" } as Record<string, string>)[fileType] ?? fileType;
+        files.push({
+          type: fileType,
+          path: filePath,
+          filename: filename.replace(/\.are$/i, `.${ext}`),
+          content: sectionBody,
+          size: sectionBody.length,
+        });
+      }
+    }
+  }
+
+  return files;
+}
+
 export async function detectMudFiles(dirPath: string): Promise<MudFileInfo[]> {
   const entries = await readDir(dirPath);
   const files: MudFileInfo[] = [];
@@ -115,6 +182,15 @@ export async function detectMudFiles(dirPath: string): Promise<MudFileInfo[]> {
   for (const entry of entries) {
     if (entry.isDirectory || !entry.name) continue;
     const ext = entry.name.split(".").pop()?.toLowerCase() ?? "";
+
+    // Handle .are files by splitting into virtual section files
+    if (ext === "are") {
+      const filePath = `${dirPath}/${entry.name}`;
+      const content = await invoke<string>("read_text_file", { filePath });
+      files.push(...splitAreFile(content, entry.name, filePath));
+      continue;
+    }
+
     const fileType = MUD_EXTENSIONS[ext];
     if (!fileType) continue;
 
@@ -521,6 +597,25 @@ export function parseZoneHeader(content: string): { zoneId: string; zoneName: st
   let zoneName = "Imported Zone";
   let lifespan = 0;
 
+  // Detect ROM/SMAUG #AREA header: {filename}~ {area name}~ { levels } {vnum_lo} {vnum_hi}
+  if (content.includes("#AREA")) {
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (trimmed === "#AREA" || trimmed.startsWith("#AREA")) continue;
+      // ROM format: filename~ Area Name~ {lo hi} vnum_lo vnum_hi
+      const tildes = trimmed.split("~").map((s) => s.trim()).filter(Boolean);
+      if (tildes.length >= 2) {
+        const fileToken = tildes[0]!;
+        zoneName = tildes[1]!;
+        // Derive zone ID from filename token (e.g. "midgaard.are" → "midgaard")
+        zoneId = fileToken.replace(/\.are$/i, "").replace(/[^a-zA-Z0-9_]/g, "_").toLowerCase();
+        break;
+      }
+    }
+    return { zoneId, zoneName, lifespan };
+  }
+
+  // CircleMUD .zon format
   for (const line of lines) {
     const trimmed = line.trim();
     if (trimmed.startsWith("#") && /^#\d+/.test(trimmed)) {

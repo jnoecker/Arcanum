@@ -70,7 +70,7 @@ export function AdminBroadcastPanel() {
           rows={3}
           className="w-full resize-none rounded-xl border border-white/10 bg-black/15 px-4 py-3 text-sm text-text-primary placeholder:text-text-muted focus:border-border-active focus:outline-none focus-visible:ring-2 focus-visible:ring-border-active"
         />
-        <div className="mt-1 text-right text-[11px] text-text-muted">
+        <div className="mt-1 text-right text-2xs text-text-muted">
           {message.length}/{MAX_LENGTH}
         </div>
       </div>
@@ -82,7 +82,7 @@ export function AdminBroadcastPanel() {
           className={`rounded-xl border px-5 py-2 text-sm font-medium transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-border-active focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-40 ${
             confirming
               ? "border-status-warning/50 bg-status-warning/15 text-status-warning"
-              : "border-border-active bg-gradient-active-strong text-text-primary hover:-translate-y-0.5 hover:shadow-glow"
+              : "border-border-active bg-gradient-active-strong text-text-primary hover:shadow-glow"
           }`}
         >
           {loading ? (

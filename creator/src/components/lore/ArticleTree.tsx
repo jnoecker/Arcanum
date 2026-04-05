@@ -113,7 +113,7 @@ function Node({ node, style, dragHandle }: NodeRendererProps<TreeNode>) {
       {multiSelectActive && (
         <span
           onClick={handleCheckbox}
-          className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border text-[10px] transition ${
+          className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border text-3xs transition ${
             isMultiSelected
               ? "border-accent/50 bg-accent/20 text-accent"
               : "border-white/20 bg-white/5 text-transparent hover:border-white/30"
@@ -254,7 +254,7 @@ export function ArticleTree() {
         <button
           onClick={() => setSearchContent((v) => !v)}
           title={searchContent ? "Searching content" : "Searching titles only"}
-          className={`shrink-0 rounded px-1.5 py-1 text-[10px] transition ${
+          className={`shrink-0 rounded px-1.5 py-1 text-3xs transition ${
             searchContent
               ? "bg-accent/15 text-accent"
               : "text-text-muted hover:text-text-secondary"
@@ -294,7 +294,7 @@ export function ArticleTree() {
                     {r.matchIn}
                   </span>
                 </div>
-                <p className="mt-1 truncate text-[11px] leading-4 text-text-muted">
+                <p className="mt-1 truncate text-2xs leading-4 text-text-muted">
                   {r.snippet}
                 </p>
               </button>

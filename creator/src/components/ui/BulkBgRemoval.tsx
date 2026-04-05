@@ -222,7 +222,7 @@ export function BulkBgRemoval({
                 <span className="text-2xs text-text-muted">already done</span>
               )}
               {item.status === "error" && (
-                <span className="text-2xs text-red-400 truncate max-w-[120px]" title={item.error}>
+                <span className="text-2xs text-status-error truncate max-w-[120px]" title={item.error}>
                   {item.error}
                 </span>
               )}
@@ -236,9 +236,9 @@ export function BulkBgRemoval({
 
 function StatusDot({ status }: { status: TargetState["status"] }) {
   const cls =
-    status === "done" ? "bg-emerald-400" :
-    status === "error" ? "bg-red-400" :
-    status === "processing" ? "bg-amber-400 animate-pulse" :
+    status === "done" ? "bg-status-success" :
+    status === "error" ? "bg-status-error" :
+    status === "processing" ? "bg-status-warning animate-pulse" :
     status === "skipped" ? "bg-white/20" :
     "bg-white/10";
   return <span className={`h-2 w-2 shrink-0 rounded-full ${cls}`} />;

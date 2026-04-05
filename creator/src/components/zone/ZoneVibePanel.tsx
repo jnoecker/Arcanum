@@ -45,13 +45,13 @@ function DefaultThumb({ fileName, label, generating }: { fileName?: string; labe
 
   return (
     <>
-      <div className="rounded-[16px] border border-white/8 bg-surface-scrim-light p-2">
+      <div className="rounded-2xl border border-white/8 bg-surface-scrim-light p-2">
         <div className="mb-2 text-2xs uppercase tracking-ui text-text-muted">{label}</div>
         <button
           type="button"
           onClick={() => { if (src && !generating) setExpanded(true); }}
           disabled={!src || generating}
-          className="flex aspect-square w-full items-center justify-center overflow-hidden rounded-[14px] border border-white/8 bg-black/20 transition-opacity enabled:cursor-pointer enabled:hover:opacity-80"
+          className="flex aspect-square w-full items-center justify-center overflow-hidden rounded-xl border border-white/8 bg-black/20 transition-opacity enabled:cursor-pointer enabled:hover:opacity-80"
         >
           {generating ? (
             <div className="h-5 w-5 rounded-full border-2 border-accent border-t-transparent animate-spin" />
@@ -75,7 +75,7 @@ function DefaultThumb({ fileName, label, generating }: { fileName?: string; labe
               className="max-h-[85vh] max-w-[85vw] cursor-pointer rounded-lg object-contain shadow-2xl"
             />
             <div className="absolute left-0 right-0 top-full mt-3 text-center">
-              <span className="rounded-full bg-black/60 px-3 py-1 text-[11px] uppercase tracking-ui text-text-muted backdrop-blur-sm">
+              <span className="rounded-full bg-black/60 px-3 py-1 text-2xs uppercase tracking-ui text-text-muted backdrop-blur-sm">
                 {label}
               </span>
             </div>

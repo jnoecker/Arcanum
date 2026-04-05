@@ -2,7 +2,7 @@ import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { useProjectStore } from "@/stores/projectStore";
 import { PANEL_MAP, panelTab, type Workspace } from "@/lib/panelRegistry";
-import { useZoneStore } from "@/stores/zoneStore";
+import { useZoneStore, selectDirtyCount } from "@/stores/zoneStore";
 import { useValidationStore } from "@/stores/validationStore";
 import { saveAllZones } from "@/lib/saveZone";
 import { saveProjectConfig } from "@/lib/saveConfig";
@@ -12,7 +12,7 @@ import { useConfigStore } from "@/stores/configStore";
 import { ValidationPanel } from "./ValidationPanel";
 import { useAssetStore } from "@/stores/assetStore";
 import { useAdminStore } from "@/stores/adminStore";
-import { useLoreStore } from "@/stores/loreStore";
+import { useLoreStore, selectArticleCount } from "@/stores/loreStore";
 import { ActionButton, Spinner } from "./ui/FormWidgets";
 import { exportShowcaseData } from "@/lib/exportShowcase";
 
@@ -47,9 +47,7 @@ export function Toolbar({ workspace, setWorkspace }: ToolbarProps) {
   const activeTabId = useProjectStore((s) => s.activeTabId);
   const openTab = useProjectStore((s) => s.openTab);
   const adminConnectionStatus = useAdminStore((s) => s.connectionStatus);
-  const dirtyCount = useZoneStore(
-    (s) => Array.from(s.zones.values()).filter((z) => z.dirty).length,
-  );
+  const dirtyCount = useZoneStore(selectDirtyCount);
   const zones = useZoneStore((s) => s.zones);
   const workspaceRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const setValidationResults = useValidationStore((s) => s.setResults);
@@ -66,7 +64,7 @@ export function Toolbar({ workspace, setWorkspace }: ToolbarProps) {
   const openGenerator = useAssetStore((s) => s.openGenerator);
   const openGallery = useAssetStore((s) => s.openGallery);
   const isStandalone = project?.format === "standalone";
-  const articleCount = useLoreStore((s) => Object.keys(s.lore?.articles ?? {}).length);
+  const articleCount = useLoreStore(selectArticleCount);
   const hasLore = articleCount > 0;
   const [exporting, setExporting] = useState(false);
   const activeTab = tabs.find((tab) => tab.id === activeTabId) ?? null;
@@ -159,7 +157,7 @@ export function Toolbar({ workspace, setWorkspace }: ToolbarProps) {
   return (
     <>
       <div className="relative z-20 flex shrink-0 items-center px-4 pt-3">
-        <div className="instrument-panel relative min-w-0 flex-1 rounded-[30px] px-5 py-3">
+        <div className="instrument-panel relative min-w-0 flex-1 rounded-3xl px-5 py-3">
           <div className="pointer-events-none absolute right-[-8rem] top-[-6rem] h-[20rem] w-[20rem] rounded-full bg-[radial-gradient(circle,rgba(168,151,210,0.16),transparent_72%)] blur-3xl" />
           <div className="relative flex flex-wrap items-center gap-4">
             <div className="mr-auto flex min-w-0 items-center gap-3">
@@ -207,7 +205,7 @@ export function Toolbar({ workspace, setWorkspace }: ToolbarProps) {
                     }}
                     className={`focus-ring rounded-full px-4 py-1.5 font-display text-sm transition ${
                       workspace === entry.id
-                        ? "bg-white/10 text-accent shadow-glow-sm"
+                        ? "bg-white/10 text-accent shadow-glow"
                         : "text-text-secondary hover:bg-white/5 hover:text-text-primary"
                     }`}
                   >
@@ -236,7 +234,7 @@ export function Toolbar({ workspace, setWorkspace }: ToolbarProps) {
                   <span className="min-w-0 truncate">World Tools</span>
                 </ActionButton>
                 {showUtilityMenu && (
-                  <div className="instrument-panel absolute right-0 top-full z-20 mt-3 w-[min(22rem,90vw)] rounded-[26px] p-3" role="menu">
+                  <div className="instrument-panel absolute right-0 top-full z-20 mt-3 w-[min(22rem,90vw)] rounded-3xl p-3" role="menu">
                     <div className="space-y-3">
                       <div>
                         <p className="px-2 text-2xs uppercase tracking-wide-ui text-text-muted">Runtime</p>
@@ -247,7 +245,7 @@ export function Toolbar({ workspace, setWorkspace }: ToolbarProps) {
                               setShowUtilityMenu(false);
                               handleOpenAdmin();
                             }}
-                            className="focus-ring flex min-h-11 items-center justify-between rounded-[18px] border border-white/8 bg-black/12 px-4 py-3 text-left text-sm text-text-secondary transition hover:border-white/14 hover:bg-white/6 hover:text-text-primary"
+                            className="focus-ring flex min-h-11 items-center justify-between rounded-2xl border border-white/8 bg-black/12 px-4 py-3 text-left text-sm text-text-secondary transition hover:border-white/14 hover:bg-white/6 hover:text-text-primary"
                           >
                             <span>Runtime Admin</span>
                             <span className="text-2xs uppercase tracking-label text-text-muted">
@@ -262,7 +260,7 @@ export function Toolbar({ workspace, setWorkspace }: ToolbarProps) {
                                 handleOpenHandoff();
                               }}
                               disabled={!hasConfig}
-                              className="focus-ring flex min-h-11 items-center rounded-[18px] border border-white/8 bg-black/12 px-4 py-3 text-left text-sm text-text-secondary transition hover:border-white/14 hover:bg-white/6 hover:text-text-primary disabled:cursor-not-allowed disabled:opacity-40"
+                              className="focus-ring flex min-h-11 items-center rounded-2xl border border-white/8 bg-black/12 px-4 py-3 text-left text-sm text-text-secondary transition hover:border-white/14 hover:bg-white/6 hover:text-text-primary disabled:cursor-not-allowed disabled:opacity-40"
                             >
                               Export Runtime
                             </button>
@@ -283,7 +281,7 @@ export function Toolbar({ workspace, setWorkspace }: ToolbarProps) {
                               setShowUtilityMenu(false);
                             }}
                             disabled={zones.size === 0 && !hasConfig}
-                            className="focus-ring flex min-h-11 items-center rounded-[18px] border border-white/8 bg-black/12 px-4 py-3 text-left text-sm text-text-secondary transition hover:border-white/14 hover:bg-white/6 hover:text-text-primary disabled:cursor-not-allowed disabled:opacity-40"
+                            className="focus-ring flex min-h-11 items-center rounded-2xl border border-white/8 bg-black/12 px-4 py-3 text-left text-sm text-text-secondary transition hover:border-white/14 hover:bg-white/6 hover:text-text-primary disabled:cursor-not-allowed disabled:opacity-40"
                           >
                             Run Validation
                           </button>
@@ -300,7 +298,7 @@ export function Toolbar({ workspace, setWorkspace }: ToolbarProps) {
                               void handleExportShowcase();
                             }}
                             disabled={!hasLore || exporting}
-                            className="focus-ring flex min-h-11 items-center rounded-[18px] border border-white/8 bg-black/12 px-4 py-3 text-left text-sm text-text-secondary transition hover:border-white/14 hover:bg-white/6 hover:text-text-primary disabled:cursor-not-allowed disabled:opacity-40"
+                            className="focus-ring flex min-h-11 items-center rounded-2xl border border-white/8 bg-black/12 px-4 py-3 text-left text-sm text-text-secondary transition hover:border-white/14 hover:bg-white/6 hover:text-text-primary disabled:cursor-not-allowed disabled:opacity-40"
                           >
                             {exporting ? "Publishing Lore..." : "Publish Lore Atlas"}
                           </button>
@@ -310,7 +308,7 @@ export function Toolbar({ workspace, setWorkspace }: ToolbarProps) {
                               setShowUtilityMenu(false);
                               setShowLegacyImport(true);
                             }}
-                            className="focus-ring flex min-h-11 items-center rounded-[18px] border border-white/8 bg-black/12 px-4 py-3 text-left text-sm text-text-secondary transition hover:border-white/14 hover:bg-white/6 hover:text-text-primary"
+                            className="focus-ring flex min-h-11 items-center rounded-2xl border border-white/8 bg-black/12 px-4 py-3 text-left text-sm text-text-secondary transition hover:border-white/14 hover:bg-white/6 hover:text-text-primary"
                           >
                             Restore Legacy Media
                           </button>
@@ -320,7 +318,7 @@ export function Toolbar({ workspace, setWorkspace }: ToolbarProps) {
                               setShowUtilityMenu(false);
                               setShowSketchImport(true);
                             }}
-                            className="focus-ring flex min-h-11 items-center rounded-[18px] border border-white/8 bg-black/12 px-4 py-3 text-left text-sm text-text-secondary transition hover:border-white/14 hover:bg-white/6 hover:text-text-primary"
+                            className="focus-ring flex min-h-11 items-center rounded-2xl border border-white/8 bg-black/12 px-4 py-3 text-left text-sm text-text-secondary transition hover:border-white/14 hover:bg-white/6 hover:text-text-primary"
                           >
                             Import From Sketch
                           </button>
@@ -330,7 +328,7 @@ export function Toolbar({ workspace, setWorkspace }: ToolbarProps) {
                               setShowUtilityMenu(false);
                               setShowMudImport(true);
                             }}
-                            className="focus-ring flex min-h-11 items-center rounded-[18px] border border-white/8 bg-black/12 px-4 py-3 text-left text-sm text-text-secondary transition hover:border-white/14 hover:bg-white/6 hover:text-text-primary"
+                            className="focus-ring flex min-h-11 items-center rounded-2xl border border-white/8 bg-black/12 px-4 py-3 text-left text-sm text-text-secondary transition hover:border-white/14 hover:bg-white/6 hover:text-text-primary"
                           >
                             Import MUD Zone
                           </button>
@@ -340,7 +338,7 @@ export function Toolbar({ workspace, setWorkspace }: ToolbarProps) {
                               setShowUtilityMenu(false);
                               openGallery();
                             }}
-                            className="focus-ring flex min-h-11 items-center rounded-[18px] border border-white/8 bg-black/12 px-4 py-3 text-left text-sm text-text-secondary transition hover:border-white/14 hover:bg-white/6 hover:text-text-primary"
+                            className="focus-ring flex min-h-11 items-center rounded-2xl border border-white/8 bg-black/12 px-4 py-3 text-left text-sm text-text-secondary transition hover:border-white/14 hover:bg-white/6 hover:text-text-primary"
                           >
                             Browse Asset Gallery
                           </button>

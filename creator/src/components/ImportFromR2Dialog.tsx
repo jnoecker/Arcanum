@@ -68,7 +68,7 @@ export function ImportFromR2Dialog({ onClose }: ImportFromR2DialogProps) {
       }
     >
       <div className="flex flex-col gap-5">
-        <div className="panel-surface-light rounded-[22px] p-4">
+        <div className="panel-surface-light rounded-3xl p-4">
           <p className="text-2xs uppercase tracking-wide-ui text-text-muted">Import destination</p>
           <div className="mt-4 space-y-4">
             <div>
@@ -111,7 +111,7 @@ export function ImportFromR2Dialog({ onClose }: ImportFromR2DialogProps) {
         </div>
 
         {stage !== "idle" && (
-          <div className="panel-surface-light rounded-[22px] p-4">
+          <div className="panel-surface-light rounded-3xl p-4">
             <p className="text-2xs uppercase tracking-wide-ui text-text-muted">Transit status</p>
             <p className={`mt-3 text-sm ${stage === "error" ? "text-status-error" : stage === "done" ? "text-status-success" : "text-text-secondary"}`}>
               {STAGE_LABELS[stage]}

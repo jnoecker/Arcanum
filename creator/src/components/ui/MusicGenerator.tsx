@@ -128,7 +128,7 @@ export function MusicGenerator({
         <label className="text-2xs text-text-muted">Duration:</label>
         <input
           type="number"
-          min={5}
+          min={10}
           max={300}
           value={duration}
           onChange={(e) => setDuration(Number(e.target.value))}

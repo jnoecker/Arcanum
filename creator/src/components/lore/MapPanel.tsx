@@ -273,7 +273,7 @@ function ArticleCombobox({
             </button>
             {grouped.map((group) => (
               <div key={group.template}>
-                <p className="mt-1.5 px-2 pb-0.5 text-[10px] font-medium uppercase tracking-wide-ui text-text-muted">
+                <p className="mt-1.5 px-2 pb-0.5 text-3xs font-medium uppercase tracking-wide-ui text-text-muted">
                   {group.label}
                 </p>
                 {group.items.map((a) => (
@@ -597,7 +597,7 @@ export function MapPanel() {
           </div>
 
           {/* Pin sidebar */}
-          <div className="rounded-[20px] border border-white/8 bg-black/12 p-4">
+          <div className="rounded-2xl border border-white/8 bg-black/12 p-4">
             {selectedPinId && selectedMap ? (
               <PinEditor
                 map={selectedMap}

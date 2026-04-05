@@ -151,13 +151,13 @@ function ZoneTree({
               : "border-white/8 bg-black/10 text-text-secondary hover:bg-white/8 hover:text-text-primary"
           }`}
         >
-          <span className="truncate font-medium">{zoneState.data.zone || zoneId}</span>
-          <span className="ml-2 truncate text-[11px] text-text-muted">{zoneId}</span>
-          {zoneState.dirty && <span className="ml-2 text-[11px] text-text-dirty">Unsaved</span>}
+          <span className="truncate font-medium" title={zoneState.data.zone || zoneId}>{zoneState.data.zone || zoneId}</span>
+          <span className="ml-2 truncate text-2xs text-text-muted" title={zoneId}>{zoneId}</span>
+          {zoneState.dirty && <span className="ml-2 shrink-0 text-2xs text-text-dirty">Unsaved</span>}
         </button>
         <button
           onClick={() => onDelete(zoneId)}
-          className="rounded-full border border-white/8 px-2.5 py-1.5 text-2xs text-text-muted opacity-0 transition hover:border-status-danger/40 hover:text-status-danger focus:opacity-100 group-hover/zone:opacity-100 group-focus-within/zone:opacity-100"
+          className="shrink-0 rounded-full border border-white/8 px-2.5 py-1.5 text-2xs text-text-muted opacity-0 transition hover:border-status-danger/40 hover:text-status-danger focus:opacity-100 group-hover/zone:opacity-100 group-focus-within/zone:opacity-100"
           title="Delete zone"
           aria-label="Delete zone"
         >
@@ -178,7 +178,7 @@ function ZoneTree({
                   <span className="font-display font-semibold text-2xs uppercase tracking-label text-text-secondary">
                     {cat.label}
                   </span>
-                  <span className="text-[11px] text-text-muted">
+                  <span className="text-2xs text-text-muted">
                     {entries.length}
                   </span>
                   {cat.addFn && (
@@ -200,8 +200,8 @@ function ZoneTree({
                         <li key={id}>
                           <button
                             onClick={() => handleEntityClick(cat, id)}
-                            className="w-full truncate rounded-xl px-2 py-1.5 text-left text-[12px] text-text-muted transition hover:bg-accent/8 hover:text-text-primary"
-                            title={id}
+                            className="w-full truncate rounded-xl px-2 py-1.5 text-left text-xs text-text-muted transition hover:bg-accent/8 hover:text-text-primary"
+                            title={name || id}
                           >
                             {name || id}
                           </button>
@@ -253,10 +253,10 @@ function PanelPill({ panel, activeTabId, openTab, compact }: {
       aria-current={isActive ? "page" : undefined}
       title={panel.description}
       className={`focus-ring rounded-full border font-medium leading-tight transition ${
-        compact ? "px-2 py-1.5 text-[10px]" : "px-2.5 py-2 text-[11px]"
+        compact ? "px-2 py-1.5 text-3xs" : "px-2.5 py-2 text-2xs"
       } ${
         isActive
-          ? "border-[var(--border-glow-strong)] bg-[linear-gradient(135deg,rgba(168,151,210,0.25),rgba(140,174,201,0.15))] text-text-primary shadow-glow-sm"
+          ? "border-[var(--border-glow-strong)] bg-[linear-gradient(135deg,rgba(168,151,210,0.25),rgba(140,174,201,0.15))] text-text-primary shadow-glow"
           : "border-white/8 bg-white/[0.04] text-text-muted hover:border-white/14 hover:bg-white/8 hover:text-text-primary"
       }`}
     >
@@ -328,6 +328,7 @@ function PanelButtonGrid({
             {/* Accordion header */}
             <button
               onClick={() => toggleSection(group.id)}
+              aria-expanded={!isCollapsed}
               className="mb-1 flex w-full items-center gap-1.5 rounded-md px-1 py-1 transition hover:bg-white/4"
             >
               <svg
@@ -338,7 +339,7 @@ function PanelButtonGrid({
                 <path d="M4.5 2L9 6L4.5 10z" />
               </svg>
               <h3 className="text-2xs font-medium uppercase tracking-label text-text-secondary">{group.label}</h3>
-              <span className="ml-auto text-[10px] text-text-muted">{group.panels.length}</span>
+              <span className="ml-auto shrink-0 text-3xs text-text-muted">{group.panels.length}</span>
             </button>
 
             {/* Collapsed: show nothing. Expanded: pills with optional sub-groups */}
@@ -372,7 +373,7 @@ function PanelButtonGrid({
                   {needsCollapse && !expanded && (
                     <button
                       onClick={(e) => { e.stopPropagation(); setExpandedGroups((s) => new Set(s).add(group.id)); }}
-                      className="rounded-full border border-dashed border-white/10 px-2.5 py-1.5 text-[11px] text-text-muted transition hover:border-white/20 hover:text-text-secondary"
+                      className="rounded-full border border-dashed border-white/10 px-2.5 py-1.5 text-2xs text-text-muted transition hover:border-white/20 hover:text-text-secondary"
                     >
                       +{hiddenCount} more
                     </button>
@@ -383,7 +384,7 @@ function PanelButtonGrid({
                         e.stopPropagation();
                         setExpandedGroups((s) => { const next = new Set(s); next.delete(group.id); return next; });
                       }}
-                      className="rounded-full border border-dashed border-white/10 px-2.5 py-1.5 text-[11px] text-text-muted transition hover:border-white/20 hover:text-text-secondary"
+                      className="rounded-full border border-dashed border-white/10 px-2.5 py-1.5 text-2xs text-text-muted transition hover:border-white/20 hover:text-text-secondary"
                     >
                       Less
                     </button>
@@ -454,11 +455,11 @@ export function Sidebar({ workspace }: { workspace: Workspace }) {
   );
 
   return (
-    <aside className="relative flex w-full shrink-0 flex-col overflow-hidden rounded-[32px] border border-white/10 bg-gradient-panel shadow-[0_18px_56px_rgba(8,10,18,0.32)] xl:h-full xl:w-[23rem]">
+    <aside className="relative flex w-full shrink-0 flex-col overflow-hidden rounded-3xl border border-white/10 bg-gradient-panel shadow-[0_18px_56px_rgba(8,10,18,0.32)] xl:h-full xl:w-[23rem]">
       <div className="pointer-events-none absolute inset-x-0 top-0 h-48 bg-gradient-glow-top" />
 
       <div className="relative z-10 shrink-0 px-4 pt-4">
-        <div className="flex items-center gap-3 px-1 text-[10px] text-text-muted">
+        <div className="flex items-center gap-3 px-1 text-3xs text-text-muted">
           <span>{zones.size} zones</span>
           <span className="text-border-default">·</span>
           <span>{articleCount} lore</span>
@@ -521,7 +522,7 @@ export function Sidebar({ workspace }: { workspace: Workspace }) {
       </div>}
 
       {/* ── Bottom: zones or articles list ── */}
-      <div className="relative z-10 flex-1 overflow-y-auto px-4 pb-4">
+      <div className="relative z-10 min-h-0 flex-1 overflow-y-auto px-4 pb-4">
         {isSearching ? (
           <div className="py-2">
             {grouped.size === 0 ? (
@@ -551,7 +552,7 @@ export function Sidebar({ workspace }: { workspace: Workspace }) {
                           <span className="shrink-0 rounded-full bg-white/8 px-2 py-1 font-mono text-2xs text-text-muted">
                             {ENTITY_TYPE_LABELS[entry.entityType]}
                           </span>
-                          <span className="truncate">{entry.displayName}</span>
+                          <span className="truncate" title={entry.displayName}>{entry.displayName}</span>
                           {entry.entityId !== entry.displayName && (
                             <span className="ml-auto shrink-0 text-2xs text-text-muted">{entry.entityId}</span>
                           )}
@@ -597,7 +598,7 @@ export function Sidebar({ workspace }: { workspace: Workspace }) {
             <div className="mb-3 flex items-center justify-between">
               <h2 className="text-2xs font-medium uppercase tracking-label text-text-secondary">
                 Canon roots
-                <span className="ml-2 text-[10px] font-normal text-text-muted">{articleCount}</span>
+                <span className="ml-2 text-3xs font-normal text-text-muted">{articleCount}</span>
               </h2>
             </div>
             <BulkActionsBar />
@@ -606,7 +607,7 @@ export function Sidebar({ workspace }: { workspace: Workspace }) {
         )}
       </div>
 
-      <div className="relative z-10 border-t border-white/10 px-4 py-3 text-[11px] text-text-muted">
+      <div className="relative z-10 border-t border-white/10 px-4 py-3 text-2xs text-text-muted">
         `Ctrl+K` command palette | `Ctrl+S` commit | `Ctrl+,` tune the instrument
       </div>
 

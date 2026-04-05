@@ -67,7 +67,7 @@ function ImagePicker({
             </button>
           )}
         </div>
-        {value && <span className="text-[10px] text-text-muted truncate block">{value}</span>}
+        {value && <span className="text-3xs text-text-muted truncate block">{value}</span>}
       </div>
     </div>
   );

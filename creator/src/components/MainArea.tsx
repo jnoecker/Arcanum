@@ -1,7 +1,29 @@
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, Component, type ReactNode, type ErrorInfo } from "react";
 import { useProjectStore } from "@/stores/projectStore";
 import { PANEL_MAP, panelTab, type Workspace } from "@/lib/panelRegistry";
 import { StudioWorkspace } from "./StudioWorkspace";
+
+class PanelErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
+  state: { error: Error | null } = { error: null };
+  static getDerivedStateFromError(error: Error) { return { error }; }
+  componentDidCatch(error: Error, info: ErrorInfo) { console.error("Panel crash:", error, info.componentStack); }
+  render() {
+    if (this.state.error) {
+      return (
+        <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-4 p-8">
+          <h2 className="font-display text-lg text-status-error">Panel Crashed</h2>
+          <pre className="max-w-2xl overflow-auto rounded-lg border border-status-error/30 bg-black/30 p-4 text-xs text-text-secondary">
+            {this.state.error.message}{"\n"}{this.state.error.stack}
+          </pre>
+          <button onClick={() => this.setState({ error: null })} className="rounded-full border border-white/10 px-4 py-2 text-xs text-accent hover:bg-accent/10">
+            Try Again
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 const ZoneEditor = lazy(() => import("./zone/ZoneEditor").then(m => ({ default: m.ZoneEditor })));
 const ConfigPanelHost = lazy(() => import("./config/ConfigPanelHost").then(m => ({ default: m.ConfigPanelHost })));
@@ -32,9 +54,9 @@ export function MainArea({ workspace }: { workspace: Workspace }) {
   if (!activeTab) {
     return (
       <div className="flex min-h-0 flex-1 items-center justify-center px-6 py-8">
-        <div className="panel-surface max-w-2xl rounded-[32px] px-8 py-10 text-center">
-          <div className="mx-auto mb-5 h-px w-16 bg-gradient-to-r from-transparent via-accent/40 to-transparent" />
-          <p className="text-[10px] uppercase tracking-wide-ui text-text-muted">
+        <div className="panel-surface max-w-2xl rounded-3xl px-8 py-10 text-center">
+          <div className="ornate-divider mb-3" />
+          <p className="text-3xs uppercase tracking-wide-ui text-text-muted">
             {workspace === "worldmaker" ? "Awaiting a surface" : "Awaiting a canon task"}
           </p>
           <h2 className="mt-3 font-display text-3xl text-text-primary">
@@ -114,9 +136,11 @@ export function MainArea({ workspace }: { workspace: Workspace }) {
       aria-labelledby={activeTabIndex >= 0 ? `workspace-tab-${activeTabIndex}` : undefined}
       className="flex min-h-0 flex-1 flex-col"
     >
-      <Suspense fallback={<LazyFallback />}>
-        {content}
-      </Suspense>
+      <PanelErrorBoundary>
+        <Suspense fallback={<LazyFallback />}>
+          {content}
+        </Suspense>
+      </PanelErrorBoundary>
     </div>
   );
 }

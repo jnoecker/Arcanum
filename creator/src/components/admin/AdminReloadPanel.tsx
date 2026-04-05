@@ -83,14 +83,14 @@ export function AdminReloadPanel() {
           <button
             key={t.id}
             onClick={() => setSelectedTarget(t.id)}
-            className={`rounded-[18px] border px-4 py-3 text-left transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-border-active focus-visible:outline-none ${
+            className={`rounded-2xl border px-4 py-3 text-left transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-border-active focus-visible:outline-none ${
               selectedTarget === t.id
                 ? "border-border-active bg-gradient-active-strong shadow-sm shadow-accent/10"
                 : "border-white/8 bg-white/4 hover:border-white/15 hover:bg-white/7"
             }`}
           >
             <div className="font-display text-sm text-text-primary">{t.label}</div>
-            <div className="mt-1 text-[11px] text-text-muted">{t.description}</div>
+            <div className="mt-1 text-2xs text-text-muted">{t.description}</div>
           </button>
         ))}
       </div>
@@ -102,7 +102,7 @@ export function AdminReloadPanel() {
           className={`relative overflow-hidden rounded-xl border px-5 py-2 text-sm font-medium transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-border-active focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-40 ${
             confirming
               ? "border-status-warning/50 bg-status-warning/15 text-status-warning"
-              : "border-border-active bg-gradient-active-strong text-text-primary hover:-translate-y-0.5 hover:shadow-glow"
+              : "border-border-active bg-gradient-active-strong text-text-primary hover:shadow-glow"
           }`}
         >
           {loading ? (

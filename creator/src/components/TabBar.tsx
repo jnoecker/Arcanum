@@ -130,7 +130,7 @@ export function TabBar({ workspace }: { workspace: Workspace }) {
                 <span className={`text-[9px] uppercase tracking-ui ${isActive ? "text-text-secondary" : "text-text-muted"}`}>
                   {kicker}
                 </span>
-                <span className={`ml-1.5 truncate font-display text-sm ${isActive ? "text-accent" : "text-text-secondary"}`}>
+                <span className={`ml-1.5 truncate font-display text-sm ${isActive ? "text-accent" : "text-text-secondary"}`} title={tab.label}>
                   {tab.label}
                 </span>
               </button>

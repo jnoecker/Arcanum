@@ -27,81 +27,90 @@ export function AdminOverviewPanel() {
 
   if (!overview) {
     return (
-      <div className="flex flex-col items-center gap-3 rounded-[22px] border border-dashed border-white/12 bg-white/4 px-6 py-12 text-center">
+      <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-border-default/40 bg-bg-secondary/60 px-6 py-12 text-center">
         <div className="h-2 w-2 rounded-full bg-server-starting motion-safe:animate-aurum-pulse" />
-        <p className="text-sm text-text-muted">Reaching into the world...</p>
+        <p className="font-body text-sm text-text-muted">Reaching into the world...</p>
       </div>
     );
   }
 
   const hasPlayers = overview.playersOnline > 0;
+  const plural = (n: number, word: string) => `${word}${n !== 1 ? "s" : ""}`;
 
   return (
-    <div className="flex flex-col gap-5">
-      {/* Hero stat — players online */}
-      <div className={`relative overflow-hidden rounded-[28px] border p-6 shadow-section transition-colors duration-700 ${
-        hasPlayers
-          ? "border-accent/25 bg-gradient-to-br from-accent/8 via-bg-elevated/80 to-bg-secondary"
-          : "border-white/10 bg-gradient-panel"
-      }`}>
-        {/* Aurum glow — breathes when souls are present */}
-        {hasPlayers && (
-          <div className="pointer-events-none absolute -right-20 -top-20 h-56 w-56 rounded-full bg-accent/8 blur-[80px] motion-safe:animate-aurum-pulse" />
-        )}
+    <div className="rounded-xl border border-border-default/60 bg-bg-secondary/80 px-6 py-5 shadow-section">
+      {/* Header */}
+      <h3 className="font-display text-sm uppercase tracking-widest text-text-muted">
+        Scrying Report
+      </h3>
 
-        <div className="relative flex items-end justify-between">
-          <div>
-            <p className="text-[11px] uppercase tracking-wide-ui text-text-muted">
-              Souls in the world
-            </p>
-            <p className={`mt-1 font-display text-3xl tracking-wide ${
-              hasPlayers ? "text-accent" : "text-text-muted"
-            }`}>
-              {overview.playersOnline}
-            </p>
-          </div>
-          <div className="pb-1 text-right">
-            <p className="text-sm text-text-secondary">
-              {hasPlayers
-                ? `${overview.playersOnline} player${overview.playersOnline !== 1 ? "s" : ""} across ${overview.zonesLoaded} zone${overview.zonesLoaded !== 1 ? "s" : ""}`
-                : "The world awaits its visitors"}
-            </p>
-            {lastRefreshed && (
-              <p className="mt-1 text-[11px] text-text-muted">Updated {relativeTime}</p>
-            )}
-          </div>
-        </div>
+      <div className="my-3 h-px bg-border-default/40" />
+
+      {/* Narrative readout */}
+      <div className="space-y-2 font-body text-base leading-relaxed text-text-secondary">
+        <p>
+          {hasPlayers ? (
+            <>
+              <span className="font-display text-xl text-accent">{overview.playersOnline}</span>
+              {" "}{plural(overview.playersOnline, "soul")} {overview.playersOnline === 1 ? "wanders" : "wander"} the realm across{" "}
+              <span className="font-display text-xl text-accent">{overview.zonesLoaded}</span>
+              {" "}{plural(overview.zonesLoaded, "zone")} with{" "}
+              <span className="font-display text-xl text-accent">{overview.roomsTotal}</span>
+              {" "}{plural(overview.roomsTotal, "chamber")} mapped.
+            </>
+          ) : (
+            <>
+              The world lies still. No souls walk its{" "}
+              <span className="font-display text-xl text-accent">{overview.zonesLoaded}</span>
+              {" "}{plural(overview.zonesLoaded, "zone")} or{" "}
+              <span className="font-display text-xl text-accent">{overview.roomsTotal}</span>
+              {" "}{plural(overview.roomsTotal, "chamber")}.
+            </>
+          )}
+        </p>
+        <p>
+          <span className="font-display text-xl text-accent">{overview.mobsAlive}</span>
+          {" "}{plural(overview.mobsAlive, "creature")} {overview.mobsAlive === 1 ? "stirs" : "stir"} in the shadows.
+        </p>
       </div>
 
-      {/* Supporting stats */}
-      <div className="grid grid-cols-3 gap-3">
-        <div className="rounded-[22px] border border-white/10 bg-gradient-panel-light p-4 shadow-section-sm">
-          <p className="text-[11px] uppercase tracking-wide-ui text-text-muted">Zones loaded</p>
-          <p className="mt-1 font-display text-2xl text-text-primary">{overview.zonesLoaded}</p>
-          <p className="mt-0.5 text-[11px] text-text-muted">{overview.roomsTotal} rooms</p>
-        </div>
-        <div className="rounded-[22px] border border-white/10 bg-gradient-panel-light p-4 shadow-section-sm">
-          <p className="text-[11px] uppercase tracking-wide-ui text-text-muted">Mobs alive</p>
-          <p className="mt-1 font-display text-2xl text-text-primary">{overview.mobsAlive}</p>
-          <p className="mt-0.5 text-[11px] text-text-muted">active creatures</p>
-        </div>
-        <div className="rounded-[22px] border border-white/10 bg-gradient-panel-light p-4 shadow-section-sm">
-          <p className="text-[11px] uppercase tracking-wide-ui text-text-muted">Rooms total</p>
-          <p className="mt-1 font-display text-2xl text-text-primary">{overview.roomsTotal}</p>
-          {overview.grafanaUrl && (
+      {/* Conditions footer */}
+      <div className="my-3 flex items-center gap-3 text-text-muted/60">
+        <div className="h-px flex-1 bg-border-default/40" />
+        <span className="font-display text-3xs uppercase tracking-widest">Current Conditions</span>
+        <div className="h-px flex-1 bg-border-default/40" />
+      </div>
+
+      <div className="space-y-1 font-body text-xs text-text-muted">
+        {lastRefreshed && (
+          <p>Last scrying: <span className="text-text-secondary">{relativeTime}</span></p>
+        )}
+        {overview.grafanaUrl && (
+          <p>
+            Deeper insight:{" "}
             <a
               href={overview.grafanaUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="mt-0.5 inline-block text-[11px] text-text-link hover:underline"
+              className="text-text-link hover:text-accent hover:underline"
             >
               Open Grafana
             </a>
-          )}
-          {!overview.grafanaUrl && (
-            <p className="mt-0.5 text-[11px] text-text-muted">across all zones</p>
-          )}
-        </div>
+          </p>
+        )}
+        {overview.metricsUrl && (
+          <p>
+            Raw metrics:{" "}
+            <a
+              href={overview.metricsUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-text-link hover:text-accent hover:underline"
+            >
+              View Metrics
+            </a>
+          </p>
+        )}
       </div>
     </div>
   );

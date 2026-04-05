@@ -21,8 +21,8 @@ export function StatusBar() {
 
   return (
     <div className="relative z-10 shrink-0 px-4 pb-2">
-      <div className="instrument-panel relative flex flex-wrap items-center gap-2.5 overflow-hidden rounded-[20px] px-4 py-1.5 text-xs">
-        <span className="font-display font-semibold text-[10px] uppercase tracking-wide-ui text-text-muted/70">
+      <div className="instrument-panel relative flex flex-wrap items-center gap-2.5 overflow-hidden rounded-2xl px-4 py-1.5 text-xs">
+        <span className="font-display font-semibold text-3xs uppercase tracking-wide-ui text-text-muted/70">
           World pulse
         </span>
 

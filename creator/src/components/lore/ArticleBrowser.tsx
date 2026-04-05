@@ -1,24 +1,23 @@
 import { useState } from "react";
-import { useLoreStore, selectArticles } from "@/stores/loreStore";
+import { useLoreStore, selectArticleCount } from "@/stores/loreStore";
 import { ArticleEditor } from "./ArticleEditor";
 import { ArticleGenerator } from "./ArticleGenerator";
 import { WorldSeedWizard } from "./WorldSeedWizard";
 
 export function ArticleBrowser() {
   const selectedArticleId = useLoreStore((s) => s.selectedArticleId);
-  const articles = useLoreStore(selectArticles);
-  const articleCount = Object.keys(articles).length;
+  const articleCount = useLoreStore(selectArticleCount);
   const [showGenerator, setShowGenerator] = useState(false);
   const [showSeedWizard, setShowSeedWizard] = useState(false);
 
   return (
     <>
-      <section className="panel-surface min-h-[32rem] rounded-[24px] p-5">
+      <section className="panel-surface min-h-[32rem] rounded-3xl p-5">
         {selectedArticleId ? (
           <ArticleEditor articleId={selectedArticleId} />
         ) : (
           <div className="flex min-h-[28rem] flex-col items-center justify-center gap-6 px-6 py-12 text-center">
-            <div className="mx-auto h-px w-16 bg-gradient-to-r from-transparent via-accent/40 to-transparent" />
+            <div className="ornate-divider" />
             <div>
               <p className="font-display text-lg text-text-primary">
                 {articleCount === 0 ? "Begin the canon" : "Choose an article"}

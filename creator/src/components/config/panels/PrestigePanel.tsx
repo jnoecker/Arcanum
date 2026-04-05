@@ -2,7 +2,7 @@ import type { ConfigPanelProps, AppConfig } from "./types";
 import { Section, FieldRow, NumberInput, TextInput, CheckboxInput, IconButton } from "@/components/ui/FormWidgets";
 
 export function PrestigePanel({ config, onChange }: ConfigPanelProps) {
-  const prestige = config.prestige ?? { enabled: false, xpCostBase: 500000, xpCostMultiplier: 1.5, maxRank: 20, perks: {} };
+  const prestige = { enabled: false, xpCostBase: 500000, xpCostMultiplier: 1.5, maxRank: 20, perks: {}, ...config.prestige };
   const patch = (p: Partial<typeof prestige>) =>
     onChange({ prestige: { ...prestige, ...p } } as Partial<AppConfig>);
 

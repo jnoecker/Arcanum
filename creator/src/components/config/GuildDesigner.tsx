@@ -40,8 +40,8 @@ export function GuildDesigner({
   return (
     <div className="flex flex-col gap-6">
       {showGroups && <div className="grid gap-5 xl:grid-cols-3">
-        <div className="rounded-[24px] border border-white/8 bg-black/12 p-5">
-          <p className="text-[11px] uppercase tracking-ui text-text-muted">Group rules</p>
+        <div className="rounded-3xl border border-white/8 bg-black/12 p-5">
+          <p className="text-2xs uppercase tracking-ui text-text-muted">Group rules</p>
           <h4 className="mt-2 font-display text-2xl text-text-primary">Party pacing</h4>
           <div className="mt-4 flex flex-col gap-1.5">
             <FieldRow label="Max Size">
@@ -69,8 +69,8 @@ export function GuildDesigner({
           </div>
         </div>
 
-        <div className="rounded-[24px] border border-white/8 bg-black/12 p-5">
-          <p className="text-[11px] uppercase tracking-ui text-text-muted">Friends</p>
+        <div className="rounded-3xl border border-white/8 bg-black/12 p-5">
+          <p className="text-2xs uppercase tracking-ui text-text-muted">Friends</p>
           <h4 className="mt-2 font-display text-2xl text-text-primary">Social reach</h4>
           <div className="mt-4 flex flex-col gap-1.5">
             <FieldRow label="Max Friends">
@@ -83,8 +83,8 @@ export function GuildDesigner({
           </div>
         </div>
 
-        <div className="rounded-[24px] border border-white/8 bg-black/12 p-5">
-          <p className="text-[11px] uppercase tracking-ui text-text-muted">Guild defaults</p>
+        <div className="rounded-3xl border border-white/8 bg-black/12 p-5">
+          <p className="text-2xs uppercase tracking-ui text-text-muted">Guild defaults</p>
           <h4 className="mt-2 font-display text-2xl text-text-primary">Rank assignment</h4>
           <div className="mt-4 flex flex-col gap-1.5">
             <FieldRow label="Founder Rank">

@@ -89,7 +89,7 @@ export function MapAnalysisPanel({
             </span>
             <button
               onClick={handleAcceptAll}
-              className="rounded-full border border-accent/20 px-3 py-1 text-[10px] text-accent hover:bg-accent/10"
+              className="rounded-full border border-accent/20 px-3 py-1 text-3xs text-accent hover:bg-accent/10"
             >
               Pin All
             </button>
@@ -118,12 +118,12 @@ export function MapAnalysisPanel({
                 <div className="min-w-0 flex-1">
                   <span className="text-xs text-text-primary">{s.label}</span>
                   {s.matchedArticleTitle && (
-                    <span className="ml-2 text-[10px] text-accent">
+                    <span className="ml-2 text-3xs text-accent">
                       &rarr; {s.matchedArticleTitle}
                     </span>
                   )}
                   {s.suggestNewArticle && (
-                    <span className="ml-2 text-[10px] italic text-text-muted">
+                    <span className="ml-2 text-3xs italic text-text-muted">
                       new
                     </span>
                   )}
@@ -141,7 +141,7 @@ export function MapAnalysisPanel({
                 </span>
                 <button
                   onClick={() => handleAccept(i)}
-                  className="rounded-full border border-accent/30 px-2 py-0.5 text-[10px] text-accent hover:bg-accent/10"
+                  className="rounded-full border border-accent/30 px-2 py-0.5 text-3xs text-accent hover:bg-accent/10"
                 >
                   Pin
                 </button>
@@ -149,7 +149,7 @@ export function MapAnalysisPanel({
                   onClick={() =>
                     setDismissed((prev) => new Set(prev).add(i))
                   }
-                  className="rounded-full border border-white/8 px-2 py-0.5 text-[10px] text-text-muted hover:bg-white/8"
+                  className="rounded-full border border-white/8 px-2 py-0.5 text-3xs text-text-muted hover:bg-white/8"
                 >
                   Skip
                 </button>

@@ -180,7 +180,7 @@ export function AssetGenerator() {
           </ActionButton>
         }
       >
-        <div className="panel-surface-light rounded-[24px] p-5 text-sm leading-7 text-text-secondary">
+        <div className="panel-surface-light rounded-3xl p-5 text-sm leading-7 text-text-secondary">
           The art studio is ready, but there is no active provider credential yet.
         </div>
       </DialogShell>
@@ -228,9 +228,9 @@ export function AssetGenerator() {
     >
       {stage === "compose" && (
         <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_20rem]">
-          <section className="panel-surface-light rounded-[26px] p-5">
+          <section className="panel-surface-light rounded-3xl p-5">
             <div className="grid gap-5">
-              <div className="rounded-[22px] border border-white/8 bg-black/12 p-4">
+              <div className="rounded-3xl border border-white/8 bg-black/12 p-4">
                 <p className="text-2xs uppercase tracking-wide-ui text-text-muted">Style system</p>
                 <p className="mt-2 font-display text-base text-text-primary">{ART_STYLE_LABELS[artStyle]}</p>
               </div>
@@ -262,9 +262,9 @@ export function AssetGenerator() {
                       role="radio"
                       aria-checked={modelId === model.id}
                       onClick={() => setModelId(model.id)}
-                      className={`focus-ring rounded-[22px] border p-4 text-left transition ${
+                      className={`focus-ring rounded-3xl border p-4 text-left transition ${
                         modelId === model.id
-                          ? "border-[var(--border-glow-strong)] bg-[linear-gradient(145deg,rgba(168,151,210,0.18),rgba(42,50,71,0.9))] shadow-glow-sm"
+                          ? "border-[var(--border-glow-strong)] bg-[linear-gradient(145deg,rgba(168,151,210,0.18),rgba(42,50,71,0.9))] shadow-glow"
                           : "border-white/8 bg-black/12 hover:border-white/14 hover:bg-white/6"
                       }`}
                     >
@@ -328,25 +328,25 @@ export function AssetGenerator() {
                     }
                   }}
                   rows={8}
-                  className="ornate-input min-h-[15rem] w-full resize-y rounded-[22px] px-4 py-4 font-mono text-xs leading-7 text-text-secondary"
+                  className="ornate-input min-h-[15rem] w-full resize-y rounded-3xl px-4 py-4 font-mono text-xs leading-7 text-text-secondary"
                 />
               </div>
 
               {error && (
-                <div role="alert" className="rounded-[22px] border border-status-error/30 bg-status-error/10 px-4 py-3 text-sm text-status-error">
+                <div role="alert" className="rounded-3xl border border-status-error/30 bg-status-error/10 px-4 py-3 text-sm text-status-error">
                   {error}
                 </div>
               )}
             </div>
           </section>
 
-          <aside className="instrument-panel rounded-[28px] p-5">
+          <aside className="instrument-panel rounded-3xl p-5">
             <p className="text-2xs uppercase tracking-wide-ui text-text-muted">Render intent</p>
             <div className="mt-4 space-y-4 text-sm leading-7 text-text-secondary">
               <p>
                 Use asset type to control composition, then add only the details that make this image belong to the world you are building.
               </p>
-              <div className="rounded-[22px] border border-white/8 bg-black/12 p-4">
+              <div className="rounded-3xl border border-white/8 bg-black/12 p-4">
                 <p className="font-display text-sm text-text-primary">Best results</p>
                 <ul className="mt-2 list-disc space-y-1 pl-5 text-xs text-text-secondary">
                   <li>Name atmosphere before decoration.</li>
@@ -360,7 +360,7 @@ export function AssetGenerator() {
       )}
 
       {stage === "generating" && (
-        <div className="relative overflow-hidden rounded-[30px] border border-white/8">
+        <div className="relative overflow-hidden rounded-3xl border border-white/8">
           <img src={loadingVignette} alt="" className="absolute inset-0 h-full w-full object-cover opacity-20" />
           <div className="absolute inset-0 bg-gradient-to-t from-bg-secondary via-bg-secondary/78 to-bg-secondary/55" />
           <div className="relative flex min-h-[24rem] flex-col items-center justify-center gap-5 px-6 py-12 text-center">
@@ -375,8 +375,8 @@ export function AssetGenerator() {
 
       {stage === "preview" && result && (
         <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_20rem]">
-          <section className="panel-surface-light rounded-[26px] p-5">
-            <div className="overflow-hidden rounded-[22px] border border-white/8 bg-black/14">
+          <section className="panel-surface-light rounded-3xl p-5">
+            <div className="overflow-hidden rounded-3xl border border-white/8 bg-black/14">
               <img src={result.data_url} alt="Generated art" className="w-full" />
             </div>
             <div className="mt-4 flex flex-wrap items-center gap-2 text-xs text-text-muted">
@@ -388,13 +388,13 @@ export function AssetGenerator() {
               </span>
             </div>
             {error && (
-              <div role="alert" className="mt-4 rounded-[22px] border border-status-error/30 bg-status-error/10 px-4 py-3 text-sm text-status-error">
+              <div role="alert" className="mt-4 rounded-3xl border border-status-error/30 bg-status-error/10 px-4 py-3 text-sm text-status-error">
                 {error}
               </div>
             )}
           </section>
 
-          <aside className="instrument-panel rounded-[28px] p-5">
+          <aside className="instrument-panel rounded-3xl p-5">
             <p className="text-2xs uppercase tracking-wide-ui text-text-muted">Archive</p>
             <div className="mt-4">
               <label htmlFor="asset-gen-global-key" className="mb-1.5 block text-2xs uppercase tracking-wide-ui text-text-muted">

@@ -25,6 +25,15 @@ interface ZoneStore {
   canRedo: (zoneId: string) => boolean;
 }
 
+/** Selector: count of zones with unsaved changes (returns a primitive). */
+export const selectDirtyCount = (s: ZoneStore) => {
+  let count = 0;
+  for (const z of s.zones.values()) {
+    if (z.dirty) count++;
+  }
+  return count;
+};
+
 export const useZoneStore = create<ZoneStore>((set, get) => ({
   zones: new Map(),
 

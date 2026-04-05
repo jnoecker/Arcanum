@@ -106,14 +106,14 @@ export function TimelineInferencePanel() {
                   <span className="text-xs font-medium text-text-primary">
                     {s.title}
                   </span>
-                  <span className="rounded bg-white/10 px-1.5 py-0.5 text-[10px] text-text-muted">
+                  <span className="rounded bg-white/10 px-1.5 py-0.5 text-3xs text-text-muted">
                     Year {s.year}
                   </span>
-                  <span className="rounded bg-white/10 px-1.5 py-0.5 text-[10px] text-text-muted">
+                  <span className="rounded bg-white/10 px-1.5 py-0.5 text-3xs text-text-muted">
                     {s.eraName}
                   </span>
                   <span
-                    className={`rounded-full px-2 py-0.5 text-[10px] ${
+                    className={`rounded-full px-2 py-0.5 text-3xs ${
                       s.importance === "legendary"
                         ? "bg-accent/20 text-accent"
                         : s.importance === "major"
@@ -130,14 +130,14 @@ export function TimelineInferencePanel() {
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => selectArticle(s.articleId)}
-                    className="text-[11px] text-accent transition-colors hover:text-text-primary"
+                    className="text-2xs text-accent transition-colors hover:text-text-primary"
                   >
                     {s.articleTitle}
                   </button>
                   <div className="ml-auto flex gap-2">
                     <button
                       onClick={() => handleAccept(i)}
-                      className="rounded-full border border-accent/30 bg-accent/10 px-2.5 py-1 text-[11px] text-accent hover:bg-accent/20"
+                      className="rounded-full border border-accent/30 bg-accent/10 px-2.5 py-1 text-2xs text-accent hover:bg-accent/20"
                     >
                       Accept
                     </button>
@@ -145,7 +145,7 @@ export function TimelineInferencePanel() {
                       onClick={() =>
                         setDismissed((prev) => new Set(prev).add(i))
                       }
-                      className="rounded-full border border-white/8 px-2.5 py-1 text-[11px] text-text-muted hover:bg-white/8"
+                      className="rounded-full border border-white/8 px-2.5 py-1 text-2xs text-text-muted hover:bg-white/8"
                     >
                       Dismiss
                     </button>

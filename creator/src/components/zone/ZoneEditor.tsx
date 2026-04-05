@@ -17,6 +17,7 @@ import "@xyflow/react/dist/style.css";
 import { useZoneStore } from "@/stores/zoneStore";
 import { useProjectStore } from "@/stores/projectStore";
 import { useAssetStore } from "@/stores/assetStore";
+import { useToastStore } from "@/stores/toastStore";
 import { zoneToGraph, GRAPH } from "@/lib/zoneToGraph";
 import { compassLayout } from "@/lib/dagreLayout";
 import { addRoom, addExit, generateRoomId } from "@/lib/zoneEdits";
@@ -296,7 +297,7 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
         {/* Undo / Redo */}
         <div className="flex items-center gap-0.5 border-r border-white/8 pr-3">
           <button
-            onClick={() => undo(zoneId)}
+            onClick={() => { undo(zoneId); useToastStore.getState().show("Change undone"); }}
             disabled={!canUndo}
             className="h-6 w-6 rounded text-xs text-accent transition-colors enabled:hover:bg-accent/10 disabled:opacity-30"
             title="Undo (Ctrl+Z)"
@@ -305,7 +306,7 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
             &#x21B6;
           </button>
           <button
-            onClick={() => redo(zoneId)}
+            onClick={() => { redo(zoneId); useToastStore.getState().show("Change restored"); }}
             disabled={!canRedo}
             className="h-6 w-6 rounded text-xs text-accent transition-colors enabled:hover:bg-accent/10 disabled:opacity-30"
             title="Redo (Ctrl+Shift+Z)"
@@ -370,7 +371,7 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
             {roomCount} room{roomCount !== 1 ? "s" : ""}
           </span>
           {zoneState.dirty && (
-            <span className="shrink-0 rounded-full bg-[rgba(200,164,106,0.15)] px-2 py-0.5 text-[10px] text-warm-pale">modified</span>
+            <span className="shrink-0 rounded-full bg-[rgba(200,164,106,0.15)] px-2 py-0.5 text-3xs text-warm-pale">modified</span>
           )}
         </div>
 
@@ -534,7 +535,7 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
               minZoom={0.1}
               maxZoom={2}
               proOptions={{ hideAttribution: true }}
-              style={{ background: "rgba(8,12,28,0.85)" }}
+              style={{ background: "var(--color-surface-scrim)" }}
             >
               <Background
                 variant={BackgroundVariant.Dots}
@@ -563,7 +564,7 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
             {/* First-zone onboarding hint */}
             {roomCount <= 1 && !hintDismissed && viewMode === "map" && (
               <div className="pointer-events-auto absolute inset-x-0 bottom-4 z-[2] flex justify-center">
-                <div className="flex items-center gap-4 rounded-2xl border border-white/10 bg-gradient-panel bg-[radial-gradient(circle_at_center,rgba(200,164,106,0.08),transparent_60%)] px-5 py-3 shadow-bar backdrop-blur-xl">
+                <div className="flex items-center gap-4 rounded-2xl border border-white/10 bg-gradient-panel bg-[radial-gradient(circle_at_center,rgba(200,164,106,0.08),transparent_60%)] px-5 py-3 shadow-section backdrop-blur-xl">
                   <div>
                     <p className="text-sm text-text-primary">
                       Click the <span className="font-mono text-accent">+</span> handles on a room's edges to create exits to new rooms.

@@ -130,8 +130,8 @@ export function MediaStudio({ zoneId, world, onWorldChange }: MediaStudioProps) 
 
   if (!zoneId || !world) {
     return (
-      <section className="rounded-[28px] border border-white/10 bg-gradient-panel p-5 shadow-section">
-        <div className="rounded-[22px] border border-dashed border-white/12 bg-white/4 px-4 py-8 text-sm text-text-muted">
+      <section className="rounded-3xl border border-white/10 bg-gradient-panel p-5 shadow-section">
+        <div className="rounded-3xl border border-dashed border-white/12 bg-white/4 px-4 py-8 text-sm text-text-muted">
           Select a zone to shape its music, ambience, and cinematics from the studio.
         </div>
       </section>
@@ -184,10 +184,10 @@ export function MediaStudio({ zoneId, world, onWorldChange }: MediaStudioProps) 
   const roomSlots = MEDIA_SLOTS.filter((s) => s.scope === "room");
 
   return (
-    <section className="rounded-[28px] border border-white/10 bg-gradient-panel p-5 shadow-section">
+    <section className="rounded-3xl border border-white/10 bg-gradient-panel p-5 shadow-section">
       <div className="mb-5 flex items-center justify-between gap-4">
         <div>
-          <p className="text-[11px] uppercase tracking-wide-ui text-text-muted">Media studio</p>
+          <p className="text-2xs uppercase tracking-wide-ui text-text-muted">Media studio</p>
           <h2 className="mt-1 font-display text-xl text-text-primary">Score the world and stage its motion.</h2>
         </div>
         <div className="flex items-center gap-3">
@@ -206,9 +206,9 @@ export function MediaStudio({ zoneId, world, onWorldChange }: MediaStudioProps) 
 
       <div className="grid gap-5 xl:grid-cols-[0.62fr_1.38fr]">
         {/* Slot list */}
-        <div className="rounded-[24px] border border-white/8 bg-black/12 p-4">
+        <div className="rounded-3xl border border-white/8 bg-black/12 p-4">
           <div className="flex flex-col gap-2">
-            <div className="mb-1 text-[11px] uppercase tracking-ui text-text-muted">Zone</div>
+            <div className="mb-1 text-2xs uppercase tracking-ui text-text-muted">Zone</div>
             {zoneSlots.map((slot) => {
               const value = getSlotValue(slot, world, selectedRoom, zoneIntroAsset?.file_name);
               const selected = selectedSlotId === slot.id;
@@ -216,14 +216,14 @@ export function MediaStudio({ zoneId, world, onWorldChange }: MediaStudioProps) 
                 <button
                   key={slot.id}
                   onClick={() => setSelectedSlotId(slot.id)}
-                  className={`flex items-center gap-3 rounded-[18px] border px-3 py-3 text-left transition ${
+                  className={`flex items-center gap-3 rounded-2xl border px-3 py-3 text-left transition ${
                     selected ? "border-border-active bg-gradient-active" : "border-white/8 bg-black/10 hover:bg-white/8"
                   }`}
                 >
                   <span className={`h-2.5 w-2.5 rounded-full ${value ? "bg-status-success" : "bg-text-muted/50"}`} />
                   <div className="min-w-0 flex-1">
                     <div className="truncate text-sm text-text-primary">{slot.label}</div>
-                    <div className="truncate text-[11px] text-text-muted">
+                    <div className="truncate text-2xs text-text-muted">
                       {value ? value.split(/[\\/]/).pop() : "Empty"}
                     </div>
                   </div>
@@ -231,7 +231,7 @@ export function MediaStudio({ zoneId, world, onWorldChange }: MediaStudioProps) 
               );
             })}
 
-            <div className="mb-1 mt-3 text-[11px] uppercase tracking-ui text-text-muted">
+            <div className="mb-1 mt-3 text-2xs uppercase tracking-ui text-text-muted">
               Room: {selectedRoom?.title ?? "None"}
             </div>
             {roomSlots.map((slot) => {
@@ -241,14 +241,14 @@ export function MediaStudio({ zoneId, world, onWorldChange }: MediaStudioProps) 
                 <button
                   key={slot.id}
                   onClick={() => setSelectedSlotId(slot.id)}
-                  className={`flex items-center gap-3 rounded-[18px] border px-3 py-3 text-left transition ${
+                  className={`flex items-center gap-3 rounded-2xl border px-3 py-3 text-left transition ${
                     selected ? "border-border-active bg-gradient-active" : "border-white/8 bg-black/10 hover:bg-white/8"
                   }`}
                 >
                   <span className={`h-2.5 w-2.5 rounded-full ${value ? "bg-status-success" : "bg-text-muted/50"}`} />
                   <div className="min-w-0 flex-1">
                     <div className="truncate text-sm text-text-primary">{slot.label}</div>
-                    <div className="truncate text-[11px] text-text-muted">
+                    <div className="truncate text-2xs text-text-muted">
                       {value ? value.split(/[\\/]/).pop() : "Empty"}
                     </div>
                   </div>
@@ -261,14 +261,14 @@ export function MediaStudio({ zoneId, world, onWorldChange }: MediaStudioProps) 
         {/* Detail panel */}
         <div className="flex flex-col gap-5">
           {/* Assignment card */}
-          <div className="rounded-[24px] border border-white/8 bg-black/12 p-4">
+          <div className="rounded-3xl border border-white/8 bg-black/12 p-4">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <div className="text-[11px] uppercase tracking-ui text-text-muted">{selectedSlot.scope}</div>
+                <div className="text-2xs uppercase tracking-ui text-text-muted">{selectedSlot.scope}</div>
                 <h3 className="mt-0.5 font-display text-xl text-text-primary">{selectedSlot.label}</h3>
                 <p className="mt-1 text-xs leading-5 text-text-secondary">{selectedSlot.description}</p>
               </div>
-              <span className="rounded-full bg-white/8 px-3 py-1 text-[11px] uppercase tracking-label text-text-muted">
+              <span className="rounded-full bg-white/8 px-3 py-1 text-2xs uppercase tracking-label text-text-muted">
                 {currentValue ? "Assigned" : "Empty"}
               </span>
             </div>
@@ -301,8 +301,8 @@ export function MediaStudio({ zoneId, world, onWorldChange }: MediaStudioProps) 
 
           {/* Generator card */}
           {selectedSlot.generatorType !== "none" && (
-            <div className="rounded-[24px] border border-white/8 bg-black/12 p-4">
-              <div className="mb-3 text-[11px] uppercase tracking-ui text-text-muted">
+            <div className="rounded-3xl border border-white/8 bg-black/12 p-4">
+              <div className="mb-3 text-2xs uppercase tracking-ui text-text-muted">
                 {selectedSlot.generatorType === "video" ? "Video generator" : "Audio generator"}
               </div>
 

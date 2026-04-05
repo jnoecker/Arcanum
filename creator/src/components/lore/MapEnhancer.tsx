@@ -179,7 +179,7 @@ export function MapEnhancer({
       onKeyDown={(e) => { if (e.key === "Escape" && !generating) onClose(); }}
     >
       <div className="absolute inset-0 bg-black/70" aria-hidden="true" onClick={onClose} />
-      <div className="relative flex max-h-[90vh] w-full max-w-4xl flex-col gap-4 overflow-y-auto rounded-[24px] border border-white/10 bg-bg-secondary p-6 shadow-panel">
+      <div className="relative flex max-h-[90vh] w-full max-w-4xl flex-col gap-4 overflow-y-auto rounded-3xl border border-white/10 bg-bg-secondary p-6 shadow-panel">
         <div className="flex items-center justify-between">
           <h3 id="map-enhance-title" className="font-display text-xl text-text-primary">Enhance Map Region</h3>
           <button onClick={onClose} className="rounded px-2 py-1 text-xs text-text-muted hover:bg-bg-tertiary hover:text-text-primary">
@@ -272,7 +272,7 @@ export function MapEnhancer({
           <button
             onClick={handleGenerate}
             disabled={generating || !crop || !prompt.trim()}
-            className="rounded-full border border-[rgba(184,216,232,0.28)] bg-gradient-active-strong px-5 py-2 text-xs font-medium text-text-primary transition enabled:hover:shadow-glow-sm disabled:opacity-40"
+            className="rounded-full border border-[rgba(184,216,232,0.28)] bg-gradient-active-strong px-5 py-2 text-xs font-medium text-text-primary transition enabled:hover:shadow-glow disabled:opacity-40"
           >
             {generating ? "Enhancing..." : "Enhance Region"}
           </button>

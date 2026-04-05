@@ -13,7 +13,7 @@ export function App() {
 
   useEffect(() => {
     loadSettings();
-  }, [loadSettings]);
+  }, [project, loadSettings]);
 
   return (
     <>

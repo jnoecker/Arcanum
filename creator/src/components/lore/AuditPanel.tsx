@@ -67,10 +67,10 @@ export function AuditPanel() {
             return (
               <div key={idx} className="rounded-xl border border-white/8 bg-black/10 px-4 py-3">
                 <div className="mb-1 flex items-center gap-2">
-                  <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${style.bg} ${style.text}`}>
+                  <span className={`rounded-full px-2 py-0.5 text-3xs font-medium ${style.bg} ${style.text}`}>
                     {style.label}
                   </span>
-                  <span className="text-[10px] text-text-muted">{issue.category}</span>
+                  <span className="text-3xs text-text-muted">{issue.category}</span>
                 </div>
                 <p className="mb-2 text-xs text-text-secondary">{issue.message}</p>
                 <div className="flex items-center gap-2">
@@ -78,14 +78,14 @@ export function AuditPanel() {
                     <button
                       key={id}
                       onClick={() => selectArticle(id)}
-                      className="text-[11px] text-accent hover:text-text-primary transition-colors"
+                      className="text-2xs text-accent hover:text-text-primary transition-colors"
                     >
                       {lore?.articles[id]?.title ?? id}
                     </button>
                   ))}
                   <button
                     onClick={() => setDismissed((s) => new Set(s).add(idx))}
-                    className="ml-auto rounded-full border border-white/8 px-2 py-0.5 text-[10px] text-text-muted transition hover:bg-white/8"
+                    className="ml-auto rounded-full border border-white/8 px-2 py-0.5 text-3xs text-text-muted transition hover:bg-white/8"
                   >
                     Dismiss
                   </button>

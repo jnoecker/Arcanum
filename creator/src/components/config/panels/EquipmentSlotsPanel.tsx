@@ -152,7 +152,7 @@ export function EquipmentSlotsPanel({ config, onChange }: ConfigPanelProps) {
             e.preventDefault();
             handleAddSlot();
           }}
-          className="panel-surface-light flex items-center gap-2 rounded-[22px] p-3"
+          className="panel-surface-light flex items-center gap-2 rounded-3xl p-3"
         >
           <input
             value={newSlotId}
@@ -171,7 +171,7 @@ export function EquipmentSlotsPanel({ config, onChange }: ConfigPanelProps) {
         </form>
 
         {/* Slot list */}
-        <div className="panel-surface-light flex flex-col gap-1 rounded-[24px] p-3">
+        <div className="panel-surface-light flex flex-col gap-1 rounded-3xl p-3">
           {sortedSlots.map(([id, slot]) => (
             <div
               key={id}
@@ -184,9 +184,9 @@ export function EquipmentSlotsPanel({ config, onChange }: ConfigPanelProps) {
                   setSelectedId(id);
                 }
               }}
-              className={`group focus-ring flex min-h-11 cursor-pointer items-center gap-3 rounded-[18px] px-3 py-2 text-sm transition ${
+              className={`group focus-ring flex min-h-11 cursor-pointer items-center gap-3 rounded-2xl px-3 py-2 text-sm transition ${
                 selectedId === id
-                  ? "border border-[var(--border-glow-strong)] bg-[linear-gradient(145deg,rgba(168,151,210,0.18),rgba(42,50,71,0.9))] text-text-primary shadow-glow-sm"
+                  ? "border border-[var(--border-glow-strong)] bg-[linear-gradient(145deg,rgba(168,151,210,0.18),rgba(42,50,71,0.9))] text-text-primary shadow-glow"
                   : "border border-transparent text-text-secondary hover:bg-white/6 hover:text-text-primary"
               }`}
               aria-label={`${slot.displayName} slot`}
@@ -217,7 +217,7 @@ export function EquipmentSlotsPanel({ config, onChange }: ConfigPanelProps) {
 
         {/* Detail form for selected slot */}
         {selectedId && selected && (
-          <div className="panel-surface-light rounded-[24px] p-4">
+          <div className="panel-surface-light rounded-3xl p-4">
             <h4 className="mb-3 font-display text-xs uppercase tracking-widest text-text-muted">
               Edit: {selectedId}
             </h4>
@@ -246,7 +246,7 @@ export function EquipmentSlotsPanel({ config, onChange }: ConfigPanelProps) {
       <div className="flex min-w-0 flex-1 items-start justify-center">
         <div
           ref={containerRef}
-          className="panel-surface-light relative aspect-square w-full max-w-[480px] select-none overflow-hidden rounded-[28px] p-3"
+          className="panel-surface-light relative aspect-square w-full max-w-[480px] select-none overflow-hidden rounded-3xl p-3"
           onPointerMove={handlePointerMove}
           onPointerUp={handlePointerUp}
         >
@@ -254,7 +254,7 @@ export function EquipmentSlotsPanel({ config, onChange }: ConfigPanelProps) {
           <img
             src={mannequinImg}
             alt="Equipment mannequin"
-            className="pointer-events-none h-full w-full rounded-[22px] object-cover"
+            className="pointer-events-none h-full w-full rounded-3xl object-cover"
             draggable={false}
           />
 
@@ -304,7 +304,7 @@ export function EquipmentSlotsPanel({ config, onChange }: ConfigPanelProps) {
                 title={`${slot.displayName} (${id})`}
               >
                 <div
-                  className={`flex h-7 w-7 items-center justify-center rounded-full border text-[9px] font-bold text-text-primary shadow-glow-sm select-none ${
+                  className={`flex h-7 w-7 items-center justify-center rounded-full border text-[9px] font-bold text-text-primary shadow-glow select-none ${
                     isSelected
                       ? "border-accent bg-accent/70 ring-2 ring-accent-emphasis"
                       : "border-accent/60 bg-accent/40"

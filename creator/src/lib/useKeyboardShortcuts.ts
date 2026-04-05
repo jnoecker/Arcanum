@@ -6,6 +6,7 @@ import { saveAllZones } from "@/lib/saveZone";
 import { saveProjectConfig } from "@/lib/saveConfig";
 import { useConfigStore } from "@/stores/configStore";
 import { PANEL_MAP, panelTab } from "@/lib/panelRegistry";
+import { useToastStore } from "@/stores/toastStore";
 
 export function useKeyboardShortcuts() {
   const [showHelp, setShowHelp] = useState(false);
@@ -55,8 +56,10 @@ export function useKeyboardShortcuts() {
         const activeZoneId = getActiveZoneId();
         if (activeZoneId) {
           useZoneStore.getState().undo(activeZoneId);
+          useToastStore.getState().show("Change undone");
         } else if (isActiveLorePanel()) {
           useLoreStore.getState().undoLore();
+          useToastStore.getState().show("Change undone");
         }
         return;
       }
@@ -67,8 +70,10 @@ export function useKeyboardShortcuts() {
         const activeZoneId = getActiveZoneId();
         if (activeZoneId) {
           useZoneStore.getState().redo(activeZoneId);
+          useToastStore.getState().show("Change restored");
         } else if (isActiveLorePanel()) {
           useLoreStore.getState().redoLore();
+          useToastStore.getState().show("Change restored");
         }
         return;
       }

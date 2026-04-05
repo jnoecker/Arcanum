@@ -49,8 +49,8 @@ const VitalBar = memo(function VitalBar({
 
 const Section = memo(function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-[22px] border border-white/10 bg-gradient-panel-light p-4 shadow-section-sm">
-      <h4 className="mb-2 text-[11px] uppercase tracking-wide-ui text-text-muted">{title}</h4>
+    <div className="rounded-3xl border border-white/10 bg-gradient-panel-light p-4 shadow-section">
+      <h4 className="mb-2 text-2xs uppercase tracking-wide-ui text-text-muted">{title}</h4>
       {children}
     </div>
   );
@@ -217,7 +217,7 @@ function StaffToggleSection({ playerName, isStaff }: { playerName: string; isSta
       <div className="flex items-center justify-between gap-4">
         <div className="min-w-0">
           <p className="text-xs text-text-primary">Staff privileges</p>
-          <p className="mt-0.5 text-[11px] text-text-muted">
+          <p className="mt-0.5 text-2xs text-text-muted">
             {isStaff ? "This player has staff access." : "This player has no staff access."}
           </p>
         </div>

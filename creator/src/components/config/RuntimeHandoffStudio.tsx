@@ -73,13 +73,13 @@ function StepCard({
   children?: ReactNode;
 }) {
   return (
-    <section className="rounded-[24px] border border-white/10 bg-gradient-panel-light p-4 shadow-section-sm">
+    <section className="rounded-3xl border border-white/10 bg-gradient-panel-light p-4 shadow-section">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <h3 className="font-display text-xl text-text-primary">{title}</h3>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-text-secondary">{description}</p>
         </div>
-        <span className={`rounded-full border px-3 py-1 text-[11px] uppercase tracking-ui ${STATUS_STYLES[state.status]}`}>
+        <span className={`rounded-full border px-3 py-1 text-2xs uppercase tracking-ui ${STATUS_STYLES[state.status]}`}>
           {state.status}
         </span>
       </div>
@@ -98,7 +98,7 @@ function StepCard({
       </div>
 
       {state.errors.length > 0 && (
-        <div className="mt-3 rounded-[18px] border border-status-error/20 bg-black/10 p-3 text-[11px] text-status-error">
+        <div className="mt-3 rounded-2xl border border-status-error/20 bg-black/10 p-3 text-2xs text-status-error">
           {state.errors.slice(0, 5).map((error, index) => (
             <div key={index}>{error}</div>
           ))}
@@ -499,7 +499,7 @@ export function RuntimeHandoffStudio() {
 
   if (!project || !config) {
     return (
-      <div className="rounded-[24px] border border-white/10 bg-black/10 p-5 text-sm text-text-secondary">
+      <div className="rounded-3xl border border-white/10 bg-black/10 p-5 text-sm text-text-secondary">
         Open a world project before using the deployment pipeline.
       </div>
     );
@@ -507,10 +507,10 @@ export function RuntimeHandoffStudio() {
 
   return (
     <div className="flex flex-col gap-4">
-      <section className="rounded-[24px] border border-white/10 bg-[linear-gradient(145deg,rgba(73,84,118,0.94),rgba(49,60,90,0.92))] p-4 shadow-[0_18px_60px_rgba(9,12,24,0.32)]">
+      <section className="rounded-3xl border border-white/10 bg-[linear-gradient(145deg,rgba(73,84,118,0.94),rgba(49,60,90,0.92))] p-4 shadow-[0_18px_60px_rgba(9,12,24,0.32)]">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <p className="text-[11px] uppercase tracking-wide-ui text-text-muted">Handoff</p>
+            <p className="text-2xs uppercase tracking-wide-ui text-text-muted">Handoff</p>
             <h3 className="mt-2 font-display text-2xl text-text-primary">Publish to live server</h3>
             <p className="mt-2 max-w-3xl text-sm leading-6 text-text-secondary">
               Save, validate, export, publish, and deploy.
@@ -520,7 +520,7 @@ export function RuntimeHandoffStudio() {
             <button
               onClick={() => void handleRunAll()}
               disabled={runningAll}
-              className="rounded-full border border-[var(--border-accent-subtle)] bg-[linear-gradient(135deg,rgba(168,151,210,0.26),rgba(140,174,201,0.18))] px-4 py-2 text-xs font-medium text-text-primary transition hover:-translate-y-0.5 hover:shadow-glow disabled:cursor-not-allowed disabled:opacity-40"
+              className="rounded-full border border-[var(--border-accent-subtle)] bg-[linear-gradient(135deg,rgba(168,151,210,0.26),rgba(140,174,201,0.18))] px-4 py-2 text-xs font-medium text-text-primary transition hover:shadow-glow disabled:cursor-not-allowed disabled:opacity-40"
             >
               {runningAll ? "Publishing..." : "Publish all"}
             </button>
@@ -534,26 +534,26 @@ export function RuntimeHandoffStudio() {
         </div>
 
         <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-          <div className="rounded-[18px] border border-white/10 bg-black/10 p-3">
+          <div className="rounded-2xl border border-white/10 bg-black/10 p-3">
             <p className="text-2xs uppercase tracking-ui text-text-muted">Project</p>
             <p className="mt-2 text-sm text-text-primary">{project.mudDir}</p>
             <p className="mt-2 text-xs text-text-secondary">
               {zones.size} loaded zone{zones.size !== 1 ? "s" : ""} | {dirtyZones} dirty
             </p>
           </div>
-          <div className="rounded-[18px] border border-white/10 bg-black/10 p-3">
+          <div className="rounded-2xl border border-white/10 bg-black/10 p-3">
             <p className="text-2xs uppercase tracking-ui text-text-muted">R2 delivery</p>
             <p className="mt-2 text-sm text-text-primary">{settings?.r2_bucket || "No bucket configured"}</p>
             <p className="mt-2 text-xs text-text-secondary">
               {settings?.r2_custom_domain || "No custom domain"} | {hasR2 ? "ready" : "credentials incomplete"}
             </p>
           </div>
-          <div className="rounded-[18px] border border-white/10 bg-black/10 p-3">
+          <div className="rounded-2xl border border-white/10 bg-black/10 p-3">
             <p className="text-2xs uppercase tracking-ui text-text-muted">Curated assets</p>
             <p className="mt-2 text-sm text-text-primary">{curatedAssetCount} active assets</p>
             <p className="mt-2 text-xs text-text-secondary">{unsyncedCuratedAssetCount} not yet synced to R2</p>
           </div>
-          <div className="rounded-[18px] border border-white/10 bg-black/10 p-3">
+          <div className="rounded-2xl border border-white/10 bg-black/10 p-3">
             <p className="text-2xs uppercase tracking-ui text-text-muted">Config state</p>
             <p className="mt-2 text-sm text-text-primary">{configDirty ? "Config has unsaved edits" : "Config is clean"}</p>
             <p className="mt-2 text-xs text-text-secondary">{globalAssetCount} registered global asset keys</p>
@@ -561,7 +561,7 @@ export function RuntimeHandoffStudio() {
         </div>
 
         {workflowMessage && (
-          <div className="mt-3 rounded-[18px] border border-white/10 bg-black/10 px-4 py-3 text-sm text-text-secondary">
+          <div className="mt-3 rounded-2xl border border-white/10 bg-black/10 px-4 py-3 text-sm text-text-secondary">
             {workflowMessage}
           </div>
         )}
@@ -655,7 +655,7 @@ export function RuntimeHandoffStudio() {
             </button>
           </div>
           {localExportResult && (
-            <div className="mt-2 rounded-[18px] border border-white/10 bg-black/10 px-4 py-3 text-xs text-text-secondary">
+            <div className="mt-2 rounded-2xl border border-white/10 bg-black/10 px-4 py-3 text-xs text-text-secondary">
               Exported {localExportResult.copied} images ({localExportResult.skipped} already present, {localExportResult.errors.length} errors)
               {localExportResult.errors.length > 0 && (
                 <ul className="mt-1 text-status-error">

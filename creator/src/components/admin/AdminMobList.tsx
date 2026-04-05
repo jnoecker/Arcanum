@@ -47,7 +47,7 @@ const MobRow = memo(function MobRow({
             </span>
           )}
         </div>
-        <div className="mt-1 flex flex-wrap gap-2 text-[11px]">
+        <div className="mt-1 flex flex-wrap gap-2 text-2xs">
           <span className="font-mono text-text-muted" title={mob.roomId}>
             {mob.roomId.length > 30 ? mob.roomId.slice(0, 27) + "..." : mob.roomId}
           </span>
@@ -99,14 +99,14 @@ export function AdminMobList() {
               ))}
             </select>
           )}
-          <span className="text-[11px] uppercase tracking-ui text-text-muted">
+          <span className="text-2xs uppercase tracking-ui text-text-muted">
             {filteredMobs.length} active
           </span>
         </div>
       </div>
 
       {filteredMobs.length === 0 ? (
-        <div className="rounded-[22px] border border-dashed border-white/12 bg-white/4 px-6 py-12 text-center">
+        <div className="rounded-3xl border border-dashed border-white/12 bg-white/4 px-6 py-12 text-center">
           <p className="font-display text-base text-text-secondary">No creatures stir</p>
           <p className="mt-1 text-sm text-text-muted">
             {zoneFilter

@@ -96,15 +96,20 @@ export function NewZoneDialog({ onClose }: NewZoneDialogProps) {
               onChange={(e) => setZoneId(e.target.value)}
               placeholder="e.g. dark_forest"
               autoFocus
+              aria-describedby={
+                (zoneId && !idValid) ? "zone-id-format-error" :
+                idTaken ? "zone-id-taken-error" :
+                undefined
+              }
               className="h-8 w-full rounded border border-border-default bg-bg-primary px-2 text-xs text-text-primary outline-none placeholder:text-text-muted focus:border-accent focus-visible:ring-2 focus-visible:ring-border-active"
             />
             {zoneId && !idValid && (
-              <p className="mt-1 text-2xs text-status-error">
+              <p id="zone-id-format-error" className="mt-1 text-2xs text-status-error">
                 Must start with a letter, only lowercase letters, numbers, and underscores.
               </p>
             )}
             {idTaken && (
-              <p className="mt-1 text-2xs text-status-error">
+              <p id="zone-id-taken-error" className="mt-1 text-2xs text-status-error">
                 Zone "{trimmedId}" already exists.
               </p>
             )}
@@ -153,7 +158,7 @@ export function NewZoneDialog({ onClose }: NewZoneDialogProps) {
           <button
             onClick={handleCreate}
             disabled={!idValid || idTaken || creating || !project}
-            className="rounded bg-gradient-to-r from-accent-muted to-accent px-4 py-1.5 text-xs font-medium text-accent-emphasis transition-all hover:shadow-[var(--glow-aurum)] hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40"
+            className="rounded bg-accent px-4 py-1.5 text-xs font-medium text-accent-emphasis transition-all hover:shadow-[var(--glow-aurum)] hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40"
           >
             {creating ? "Creating..." : "Create Zone"}
           </button>

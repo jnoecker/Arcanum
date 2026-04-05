@@ -184,7 +184,7 @@ export function BatchLegacyImport({ onClose }: { onClose: () => void }) {
       }
     >
       <div className="grid gap-5 xl:grid-cols-[18rem_minmax(0,1fr)]">
-        <aside className="instrument-panel rounded-[28px] p-5">
+        <aside className="instrument-panel rounded-3xl p-5">
           <p className="text-2xs uppercase tracking-wide-ui text-text-muted">Sequence</p>
           <div className="mt-4 space-y-3">
             <StageCard title="1. Scan" active={phase === "scan"} done={targets !== null}>
@@ -204,12 +204,12 @@ export function BatchLegacyImport({ onClose }: { onClose: () => void }) {
 
         <section className="flex min-h-[28rem] flex-col gap-4">
           {phase === "scan" && !targets && !scanning && (
-            <div className="panel-surface-light rounded-[26px] p-5">
+            <div className="panel-surface-light rounded-3xl p-5">
               <p className="text-2xs uppercase tracking-wide-ui text-text-muted">Scan source</p>
               <p className="mt-3 text-sm leading-7 text-text-secondary">
                 The importer will inspect the local resources tree, collect images, video, and audio, then prepare them for migration.
               </p>
-              <p className="mt-4 rounded-[18px] border border-white/8 bg-black/12 px-4 py-3 font-mono text-xs text-text-muted">
+              <p className="mt-4 rounded-2xl border border-white/8 bg-black/12 px-4 py-3 font-mono text-xs text-text-muted">
                 {mudDir ? `${mudDir}/src/main/resources/` : "No project directory is available."}
               </p>
               <div className="mt-5">
@@ -221,7 +221,7 @@ export function BatchLegacyImport({ onClose }: { onClose: () => void }) {
           )}
 
           {scanning && (
-            <div className="panel-surface-light flex min-h-[16rem] items-center justify-center rounded-[26px] px-6 py-8 text-center">
+            <div className="panel-surface-light flex min-h-[16rem] items-center justify-center rounded-3xl px-6 py-8 text-center">
               <div className="flex flex-col items-center gap-3">
                 <Spinner className="h-5 w-5 border-2" />
                 <p className="text-sm text-text-secondary">Scanning the resources tree for import candidates...</p>
@@ -230,7 +230,7 @@ export function BatchLegacyImport({ onClose }: { onClose: () => void }) {
           )}
 
           {hasLocalImages && (
-            <div className="panel-surface-light rounded-[26px] p-5">
+            <div className="panel-surface-light rounded-3xl p-5">
               <div className="flex flex-wrap items-center gap-2">
                 <p className="text-2xs uppercase tracking-wide-ui text-text-muted">Asset queue</p>
                 <span className="rounded-full border border-white/10 bg-black/10 px-3 py-1 text-2xs text-text-secondary">
@@ -266,7 +266,7 @@ export function BatchLegacyImport({ onClose }: { onClose: () => void }) {
               {!running && !importFinished && (
                 <div className="mt-4 max-h-72 space-y-2 overflow-y-auto pr-1">
                   {targets!.map((target, index) => (
-                    <div key={index} className="flex items-center gap-3 rounded-[18px] border border-white/8 bg-black/12 px-4 py-3 text-sm">
+                    <div key={index} className="flex items-center gap-3 rounded-2xl border border-white/8 bg-black/12 px-4 py-3 text-sm">
                       <span className="flex h-10 w-10 items-center justify-center rounded-full border border-white/8 bg-white/4 text-2xs text-text-muted">
                         {index + 1}
                       </span>
@@ -281,31 +281,31 @@ export function BatchLegacyImport({ onClose }: { onClose: () => void }) {
           )}
 
           {targets !== null && targets.length === 0 && phase !== "migrate" && phase !== "done" && (
-            <div className="panel-surface-light rounded-[26px] p-5 text-sm text-text-secondary">
+            <div className="panel-surface-light rounded-3xl p-5 text-sm text-text-secondary">
               No local media were found. Creator can skip directly to rewriting any stale YAML references.
             </div>
           )}
 
           {syncStatus && (
-            <div className="rounded-[22px] border border-white/8 bg-black/12 px-4 py-3 text-sm text-text-secondary">
+            <div className="rounded-3xl border border-white/8 bg-black/12 px-4 py-3 text-sm text-text-secondary">
               {syncStatus}
             </div>
           )}
 
           {phase === "migrate" && !migrating && !migrationReport && (
-            <div className="panel-surface-light rounded-[26px] p-5">
+            <div className="panel-surface-light rounded-3xl p-5">
               <p className="text-2xs uppercase tracking-wide-ui text-text-muted">Rewrite preview</p>
               <p className="mt-3 text-sm leading-7 text-text-secondary">
                 Creator is ready to replace local image references with their R2 filenames and remove obsolete local image files.
               </p>
-              <p className="mt-4 rounded-[18px] border border-status-warning/25 bg-status-warning/8 px-4 py-3 text-xs text-text-secondary">
+              <p className="mt-4 rounded-2xl border border-status-warning/25 bg-status-warning/8 px-4 py-3 text-xs text-text-secondary">
                 This operation edits zone YAML files and <span className="font-mono">application.yaml</span> in place.
               </p>
             </div>
           )}
 
           {migrating && (
-            <div className="panel-surface-light flex min-h-[16rem] items-center justify-center rounded-[26px] px-6 py-8 text-center">
+            <div className="panel-surface-light flex min-h-[16rem] items-center justify-center rounded-3xl px-6 py-8 text-center">
               <div className="flex flex-col items-center gap-3">
                 <Spinner className="h-5 w-5 border-2" />
                 <p className="text-sm text-text-secondary">Rewriting YAML references and retiring local files...</p>
@@ -314,7 +314,7 @@ export function BatchLegacyImport({ onClose }: { onClose: () => void }) {
           )}
 
           {error && (
-            <div className="rounded-[22px] border border-status-error/30 bg-status-error/10 px-4 py-3 text-sm text-status-error">
+            <div className="rounded-3xl border border-status-error/30 bg-status-error/10 px-4 py-3 text-sm text-status-error">
               {error}
             </div>
           )}
@@ -325,13 +325,13 @@ export function BatchLegacyImport({ onClose }: { onClose: () => void }) {
               <MetricCard label="Config references" value={migrationReport.config_refs_rewritten} detail="application.yaml entries adjusted" />
               <MetricCard label="Local files removed" value={migrationReport.images_deleted} detail="Retired after successful migration" />
               {migrationReport.errors.length > 0 && (
-                <div className="rounded-[24px] border border-status-error/25 bg-status-error/8 p-4 lg:col-span-3">
+                <div className="rounded-3xl border border-status-error/25 bg-status-error/8 p-4 lg:col-span-3">
                   <p className="font-display text-sm text-status-error">
                     {migrationReport.errors.length} warning{migrationReport.errors.length !== 1 ? "s" : ""}
                   </p>
                   <div className="mt-3 max-h-44 space-y-2 overflow-y-auto pr-1 text-xs text-text-secondary">
                     {migrationReport.errors.map((entry, index) => (
-                      <div key={index} className="rounded-[16px] border border-status-error/18 bg-black/10 px-3 py-2">
+                      <div key={index} className="rounded-2xl border border-status-error/18 bg-black/10 px-3 py-2">
                         {entry}
                       </div>
                     ))}
@@ -378,7 +378,7 @@ function StageCard({
 }) {
   return (
     <div
-      className={`rounded-[22px] border px-4 py-3 ${
+      className={`rounded-3xl border px-4 py-3 ${
         done
           ? "border-[var(--border-accent-subtle)] bg-[rgba(168,151,210,0.12)]"
           : active
@@ -402,7 +402,7 @@ function MetricCard({
   detail: string;
 }) {
   return (
-    <div className="panel-surface-light rounded-[24px] p-4">
+    <div className="panel-surface-light rounded-3xl p-4">
       <p className="text-2xs uppercase tracking-wide-ui text-text-muted">{label}</p>
       <p className="mt-3 font-display text-[2rem] leading-none text-text-primary">{value}</p>
       <p className="mt-2 text-xs leading-6 text-text-secondary">{detail}</p>

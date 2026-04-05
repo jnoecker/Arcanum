@@ -27,7 +27,7 @@ export function RawYamlPanel({ config }: ConfigPanelProps) {
                 <h5 className="mb-1 text-xs font-semibold text-text-primary">
                   {key}
                 </h5>
-                <pre className="overflow-x-auto whitespace-pre-wrap text-[11px] leading-relaxed text-text-secondary">
+                <pre className="overflow-x-auto whitespace-pre-wrap text-2xs leading-relaxed text-text-secondary">
                   {stringify(value).trimEnd()}
                 </pre>
               </div>

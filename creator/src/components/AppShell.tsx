@@ -9,6 +9,7 @@ import { useAssetStore } from "@/stores/assetStore";
 import type { Workspace } from "@/lib/panelRegistry";
 import { loadWorkspace, saveWorkspace } from "@/lib/uiPersistence";
 import { CommandPalette } from "./ui/CommandPalette";
+import { Toast } from "./ui/Toast";
 
 const ShortcutsHelp = lazy(() => import("./ui/ShortcutsHelp").then((m) => ({ default: m.ShortcutsHelp })));
 const AssetGenerator = lazy(() => import("./AssetGenerator").then((m) => ({ default: m.AssetGenerator })));
@@ -46,7 +47,7 @@ export function AppShell() {
       <header><Toolbar workspace={workspace} setWorkspace={setWorkspace} /></header>
       <div className="relative z-10 flex min-h-0 flex-1 flex-col gap-3 px-4 pb-3 xl:flex-row">
         <aside className="min-w-0 xl:min-h-0"><Sidebar workspace={workspace} /></aside>
-        <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-[32px] border border-white/10 bg-bg-primary shadow-panel">
+        <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-3xl border border-white/10 bg-bg-primary shadow-panel">
           <MainArea workspace={workspace} />
         </main>
       </div>
@@ -57,6 +58,7 @@ export function AppShell() {
         {generatorOpen && <AssetGenerator />}
         {galleryOpen && <AssetGallery onClose={closeGallery} />}
       </Suspense>
+      <Toast />
     </div>
   );
 }

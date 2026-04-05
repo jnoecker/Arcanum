@@ -14,7 +14,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Foundation** - Types, formulas, diff engine, and field metadata for all tunable config values (completed 2026-04-05)
 - [x] **Phase 2: Presets** - Three themed presets (Casual, Balanced, Hardcore) covering all gameplay systems (completed 2026-04-05)
-- [ ] **Phase 3: Wizard Workspace** - Top-level tab with preset selector, search/filter, and Arcanum design system styling
+- [x] **Phase 3: Wizard Workspace** - Top-level tab with preset selector, search/filter, and Arcanum design system styling (completed 2026-04-05)
 - [ ] **Phase 4: Comparison View** - Before/after comparison organized by system with derived metrics and color-coded diffs
 - [ ] **Phase 5: Apply Flow** - Per-section accept/reject with snapshot undo and post-apply health check
 - [ ] **Phase 6: Visualizations** - XP curve, mob tier, and stat profile charts via Recharts
@@ -66,7 +66,7 @@ Plans:
 
 Plans:
 - [x] 03-01-PLAN.md -- Store, panel registration, workspace shell, and preset cards (UI-01, UI-02, UI-03)
-- [ ] 03-02-PLAN.md -- Parameter browser with search/filter and diff highlighting (UI-05)
+- [x] 03-02-PLAN.md -- Parameter browser with search/filter and diff highlighting (UI-05)
 
 ### Phase 4: Comparison View
 **Goal**: After selecting a preset, builders see a clear before/after comparison that leads with meaningful derived metrics and lets them drill into raw field changes
@@ -129,7 +129,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
 |-------|----------------|--------|-----------|
 | 1. Foundation | 2/2 | Complete   | 2026-04-05 |
 | 2. Presets | 2/2 | Complete   | 2026-04-05 |
-| 3. Wizard Workspace | 1/2 | In Progress|  |
+| 3. Wizard Workspace | 2/2 | Complete   | 2026-04-05 |
 | 4. Comparison View | 0/3 | Not started | - |
 | 5. Apply Flow | 0/3 | Not started | - |
 | 6. Visualizations | 0/2 | Not started | - |

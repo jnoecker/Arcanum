@@ -42,7 +42,10 @@
   3. Story data persists across app restarts (separate JSON files, not inline in lore.yaml)
   4. Builder can undo and redo story mutations without affecting lore undo history
   5. Story appears as a lore article type with proper panel registry routing
-**Plans**: TBD
+**Plans:** 2 plans
+Plans:
+- [ ] 07-01-PLAN.md -- Story types, lore type extensions, storyStore with undo/redo, storyPersistence, and unit tests
+- [ ] 07-02-PLAN.md -- Panel registry, ArticleTree/Browser integration, NewStoryDialog, StoryEditorPanel, project-open loading
 **UI hint**: yes
 
 ### Phase 8: Story Editor
@@ -119,7 +122,7 @@ Note: Phases 11 and 12 both depend on Phase 10 and could execute in parallel.
 | 4. Comparison View | v1.0 | 3/3 | Complete | 2026-04-05 |
 | 5. Apply Flow | v1.0 | 2/2 | Complete | 2026-04-05 |
 | 6. Visualizations | v1.0 | 2/2 | Complete | 2026-04-05 |
-| 7. Story Foundation | v1.1 | 0/0 | Not started | - |
+| 7. Story Foundation | v1.1 | 0/2 | Planning | - |
 | 8. Story Editor | v1.1 | 0/0 | Not started | - |
 | 9. Scene Composition | v1.1 | 0/0 | Not started | - |
 | 10. Cinematic Renderer | v1.1 | 0/0 | Not started | - |

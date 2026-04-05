@@ -86,7 +86,7 @@ export function MudImportWizard({ onClose }: { onClose: () => void }) {
     try {
       const detected = await detectMudFiles(dir);
       if (detected.length === 0) {
-        setScanError("No MUD zone files (.wld, .mob, .obj, .zon, .shp) found in this folder.");
+        setScanError("No MUD zone files (.are, .wld, .mob, .obj, .zon, .shp) found in this folder.");
       } else {
         setFiles(detected.map((f) => ({ ...f, checked: true })));
 
@@ -309,7 +309,7 @@ export function MudImportWizard({ onClose }: { onClose: () => void }) {
       dialogRef={dialogRef}
       titleId="mud-import-title"
       title="Import MUD Zone"
-      subtitle="Convert DikuMUD / CircleMUD / ROM zone files to Ambon format using AI"
+      subtitle="Convert DikuMUD / CircleMUD / ROM / SMAUG area files to Ambon format using AI"
       status={<span className="rounded-full border border-white/10 bg-black/10 px-2.5 py-1 text-2xs text-text-secondary">Step {stepLabel}</span>}
       widthClassName="max-w-3xl"
       onClose={converting ? undefined : onClose}
@@ -418,7 +418,7 @@ export function MudImportWizard({ onClose }: { onClose: () => void }) {
           )}
 
           {files.length > 0 && !hasWld && (
-            <p className="text-xs text-status-warning">A .wld (rooms) file is required for import.</p>
+            <p className="text-xs text-status-warning">A rooms file (.wld or .are with #ROOMS section) is required for import.</p>
           )}
         </div>
       )}

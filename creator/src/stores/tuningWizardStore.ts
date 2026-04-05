@@ -4,6 +4,15 @@
 
 import { create } from "zustand";
 import { TuningSection } from "@/lib/tuning/types";
+import { useConfigStore } from "@/stores/configStore";
+import { useProjectStore } from "@/stores/projectStore";
+import { TUNING_PRESETS } from "@/lib/tuning/presets";
+import { computeDiff } from "@/lib/tuning/diffEngine";
+import { computeMetrics } from "@/lib/tuning/formulas";
+import { deepMerge, buildPartialFromDiffs } from "@/lib/tuning/merge";
+import { checkTuningHealth } from "@/lib/tuning/healthCheck";
+import type { HealthWarning } from "@/lib/tuning/healthCheck";
+import type { AppConfig } from "@/types/config";
 
 const ALL_SECTIONS = new Set([
   TuningSection.CombatStats,
@@ -17,20 +26,45 @@ interface TuningWizardStore {
   searchQuery: string;
   activeSections: Set<TuningSection>;
   collapsedSections: Set<TuningSection>;
+  acceptedSections: Set<TuningSection>;
+  configSnapshot: AppConfig | null;
+  undoAvailable: boolean;
+  healthWarnings: HealthWarning[];
+  applySuccess: boolean;
   selectPreset: (id: string | null) => void;
   setSearchQuery: (q: string) => void;
   toggleSection: (s: TuningSection) => void;
   toggleCollapsed: (s: TuningSection) => void;
   collapseAll: () => void;
+  toggleAccepted: (s: TuningSection) => void;
+  applyPreset: () => Promise<void>;
+  undoApply: () => Promise<void>;
+  resetWizard: () => void;
+  setHealthWarnings: (w: HealthWarning[]) => void;
+  clearApplySuccess: () => void;
 }
 
-export const useTuningWizardStore = create<TuningWizardStore>((set) => ({
+export const useTuningWizardStore = create<TuningWizardStore>((set, get) => ({
   selectedPresetId: null,
   searchQuery: "",
   activeSections: new Set(ALL_SECTIONS),
   collapsedSections: new Set(),
-  selectPreset: (id) => set({ selectedPresetId: id }),
+  acceptedSections: new Set(ALL_SECTIONS),
+  configSnapshot: null,
+  undoAvailable: false,
+  healthWarnings: [],
+  applySuccess: false,
+
+  selectPreset: (id) =>
+    set({
+      selectedPresetId: id,
+      acceptedSections: new Set(ALL_SECTIONS),
+      healthWarnings: [],
+      applySuccess: false,
+    }),
+
   setSearchQuery: (q) => set({ searchQuery: q }),
+
   toggleSection: (s) =>
     set((state) => {
       const next = new Set(state.activeSections);
@@ -38,6 +72,7 @@ export const useTuningWizardStore = create<TuningWizardStore>((set) => ({
       else next.add(s);
       return { activeSections: next };
     }),
+
   toggleCollapsed: (s) =>
     set((state) => {
       const next = new Set(state.collapsedSections);
@@ -45,6 +80,7 @@ export const useTuningWizardStore = create<TuningWizardStore>((set) => ({
       else next.add(s);
       return { collapsedSections: next };
     }),
+
   collapseAll: () =>
     set({
       collapsedSections: new Set([
@@ -54,4 +90,94 @@ export const useTuningWizardStore = create<TuningWizardStore>((set) => ({
         TuningSection.WorldSocial,
       ]),
     }),
+
+  toggleAccepted: (s) =>
+    set((state) => {
+      const next = new Set(state.acceptedSections);
+      if (next.has(s)) next.delete(s);
+      else next.add(s);
+      return { acceptedSections: next };
+    }),
+
+  applyPreset: async () => {
+    const { selectedPresetId, acceptedSections } = get();
+    if (!selectedPresetId || acceptedSections.size === 0) return;
+
+    const config = useConfigStore.getState().config;
+    const project = useProjectStore.getState().project;
+    if (!config || !project) return;
+
+    // D-05: Snapshot before apply
+    const snapshot = structuredClone(config);
+
+    // Compute pre-apply metrics for health check
+    const preMetrics = computeMetrics(config);
+
+    const preset = TUNING_PRESETS.find((p) => p.id === selectedPresetId);
+    if (!preset) return;
+
+    // Build partial from accepted sections only
+    const diffs = computeDiff(
+      config as unknown as Record<string, unknown>,
+      preset.config as unknown as Record<string, unknown>,
+    );
+    const partial = buildPartialFromDiffs(diffs, acceptedSections);
+    const merged = deepMerge(
+      config as unknown as Record<string, unknown>,
+      partial,
+    ) as unknown as AppConfig;
+
+    // Apply to configStore and persist (D-11)
+    useConfigStore.getState().updateConfig(merged);
+    const { saveProjectConfig } = await import("@/lib/saveConfig");
+    await saveProjectConfig(project);
+    useConfigStore.getState().markClean();
+
+    // Health check (D-09): only when mixed sections
+    const postMetrics = computeMetrics(merged);
+    const warnings = checkTuningHealth(preMetrics, postMetrics, acceptedSections);
+
+    set({
+      configSnapshot: snapshot,
+      undoAvailable: true,
+      applySuccess: true,
+      healthWarnings: warnings,
+    });
+  },
+
+  undoApply: async () => {
+    const { configSnapshot } = get();
+    if (!configSnapshot) return;
+
+    const project = useProjectStore.getState().project;
+    if (!project) return;
+
+    useConfigStore.getState().updateConfig(configSnapshot);
+    const { saveProjectConfig } = await import("@/lib/saveConfig");
+    await saveProjectConfig(project);
+    useConfigStore.getState().markClean();
+
+    set({
+      configSnapshot: null,
+      undoAvailable: false,
+      healthWarnings: [],
+      applySuccess: false,
+    });
+  },
+
+  resetWizard: () =>
+    set({
+      selectedPresetId: null,
+      searchQuery: "",
+      activeSections: new Set(ALL_SECTIONS),
+      collapsedSections: new Set(),
+      acceptedSections: new Set(ALL_SECTIONS),
+      configSnapshot: null,
+      undoAvailable: false,
+      healthWarnings: [],
+      applySuccess: false,
+    }),
+
+  setHealthWarnings: (w) => set({ healthWarnings: w }),
+  clearApplySuccess: () => set({ applySuccess: false }),
 }));

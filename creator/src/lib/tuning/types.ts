@@ -1,7 +1,5 @@
 // ─── Tuning Wizard Types ───────────────────────────────────────────
 
-import type { AppConfig } from "@/types/config";
-
 /** Recursive partial -- allows presets to specify any subset of AppConfig. */
 export type DeepPartial<T> = {
   [P in keyof T]?: T[P] extends (object | undefined)

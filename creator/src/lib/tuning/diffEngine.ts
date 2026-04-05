@@ -40,10 +40,6 @@ export function computeDiff(
 
     // If the value is a non-null, non-array object, recurse
     if (presetVal !== null && typeof presetVal === "object" && !Array.isArray(presetVal)) {
-      const currentChild = getNestedValue(current, path);
-      const currentObj = (currentChild !== null && typeof currentChild === "object" && !Array.isArray(currentChild))
-        ? currentChild as Record<string, unknown>
-        : {};
       results.push(...computeDiff(
         current,
         presetVal as Record<string, unknown>,

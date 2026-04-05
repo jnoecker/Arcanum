@@ -6,6 +6,8 @@ import { panelTab } from "@/lib/panelRegistry";
 import type { Article, ArticleTemplate } from "@/types/lore";
 import { TEMPLATE_SCHEMAS } from "@/lib/loreTemplates";
 import { searchArticles } from "@/lib/loreSearch";
+import { ActionButton } from "@/components/ui/FormWidgets";
+import { NewStoryDialog } from "./NewStoryDialog";
 
 const TEMPLATE_DOT_COLORS: Record<ArticleTemplate, string> = {
   world_setting: "var(--color-template-world)",
@@ -139,11 +141,22 @@ function Node({ node, style, dragHandle }: NodeRendererProps<TreeNode>) {
       ) : (
         <span className="w-5" />
       )}
-      <span
-        aria-hidden="true"
-        className="inline-block h-2 w-2 shrink-0 rounded-full"
-        style={{ background: dotColor }}
-      />
+      {node.data.template === "story" ? (
+        <span className="shrink-0" style={{ color: dotColor }} aria-hidden="true">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-label="Story" className="shrink-0">
+            <rect x="1" y="3" width="12" height="9" rx="1.5" stroke="currentColor" strokeWidth="1.2" fill="none" />
+            <rect x="1" y="1" width="12" height="3" rx="1" stroke="currentColor" strokeWidth="1.2" fill="none" />
+            <line x1="4" y1="1" x2="5.5" y2="4" stroke="currentColor" strokeWidth="1" />
+            <line x1="8" y1="1" x2="9.5" y2="4" stroke="currentColor" strokeWidth="1" />
+          </svg>
+        </span>
+      ) : (
+        <span
+          aria-hidden="true"
+          className="inline-block h-2 w-2 shrink-0 rounded-full"
+          style={{ background: dotColor }}
+        />
+      )}
       <span className={`min-w-0 truncate ${node.data.draft ? "italic opacity-60" : ""}`}>{node.data.name}</span>
       {node.data.draft && <span className="shrink-0 text-[9px] text-text-muted uppercase">draft</span>}
     </div>
@@ -163,6 +176,7 @@ export function ArticleTree() {
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [newTitle, setNewTitle] = useState("");
   const [newTemplate, setNewTemplate] = useState<ArticleTemplate>("freeform");
+  const [showNewStoryDialog, setShowNewStoryDialog] = useState(false);
   const treeRef = useRef<TreeApi<TreeNode>>(null);
   const openTab = useProjectStore((s) => s.openTab);
 
@@ -337,6 +351,19 @@ export function ArticleTree() {
         )}
       </div>
 
+      {/* New Story button */}
+      <div className="mt-2 border-t border-border-muted pt-2">
+        <ActionButton variant="ghost" size="sm" onClick={() => setShowNewStoryDialog(true)} className="w-full justify-center gap-1.5 text-2xs">
+          <svg width="12" height="12" viewBox="0 0 14 14" fill="none" className="shrink-0">
+            <rect x="1" y="3" width="12" height="9" rx="1.5" stroke="currentColor" strokeWidth="1.2" fill="none" />
+            <rect x="1" y="1" width="12" height="3" rx="1" stroke="currentColor" strokeWidth="1.2" fill="none" />
+            <line x1="4" y1="1" x2="5.5" y2="4" stroke="currentColor" strokeWidth="1" />
+            <line x1="8" y1="1" x2="9.5" y2="4" stroke="currentColor" strokeWidth="1" />
+          </svg>
+          New Story
+        </ActionButton>
+      </div>
+
       {/* Add new article */}
       <div className="mt-2 flex flex-col gap-1.5 border-t border-border-muted pt-2">
         <div className="flex gap-1.5">
@@ -368,6 +395,9 @@ export function ArticleTree() {
           ))}
         </select>
       </div>
+
+      {/* New Story Dialog */}
+      {showNewStoryDialog && <NewStoryDialog onClose={() => setShowNewStoryDialog(false)} />}
     </div>
   );
 }

@@ -8,6 +8,8 @@ import { useLoreStore } from "@/stores/loreStore";
 import { loadProjectZones, loadProjectConfig } from "@/lib/loader";
 import { loadLore } from "@/lib/lorePersistence";
 import { useSpriteDefinitionStore } from "@/stores/spriteDefinitionStore";
+import { useStoryStore } from "@/stores/storyStore";
+import { loadAllStoryIds } from "@/lib/storyPersistence";
 import { loadUIState, addRecentProject } from "@/lib/uiPersistence";
 import type { Project, ProjectFormat, Tab } from "@/types/project";
 
@@ -46,6 +48,7 @@ export function useOpenProject() {
     clearZones();
     clearConfig();
     useLoreStore.getState().clearLore();
+    useStoryStore.getState().clearStories();
 
     // Create project
     const project: Project = {
@@ -73,6 +76,13 @@ export function useOpenProject() {
     // Load lore (creator-only, not deployed)
     loadLore(project)
       .then((lore) => useLoreStore.getState().setLore(lore))
+      .catch(() => {});
+
+    // Scan story IDs (lazy -- full stories loaded on selection)
+    loadAllStoryIds(project)
+      .then(() => {
+        // Stories loaded lazily when selected in StoryEditorPanel
+      })
       .catch(() => {});
 
     setProject(project);

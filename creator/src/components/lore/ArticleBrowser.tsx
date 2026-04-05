@@ -1,19 +1,24 @@
 import { useState } from "react";
-import { useLoreStore, selectArticleCount } from "@/stores/loreStore";
+import { useLoreStore, selectArticleCount, selectArticles } from "@/stores/loreStore";
 import { ArticleEditor } from "./ArticleEditor";
 import { ArticleGenerator } from "./ArticleGenerator";
 import { WorldSeedWizard } from "./WorldSeedWizard";
+import { StoryEditorPanel } from "./StoryEditorPanel";
 
 export function ArticleBrowser() {
   const selectedArticleId = useLoreStore((s) => s.selectedArticleId);
+  const articles = useLoreStore(selectArticles);
   const articleCount = useLoreStore(selectArticleCount);
+  const selectedArticle = selectedArticleId ? articles[selectedArticleId] : null;
   const [showGenerator, setShowGenerator] = useState(false);
   const [showSeedWizard, setShowSeedWizard] = useState(false);
 
   return (
     <>
       <section className="panel-surface min-h-[32rem] rounded-3xl p-5">
-        {selectedArticleId ? (
+        {selectedArticle?.template === "story" ? (
+          <StoryEditorPanel storyId={selectedArticle.fields.storyId as string} />
+        ) : selectedArticleId ? (
           <ArticleEditor articleId={selectedArticleId} />
         ) : (
           <div className="flex min-h-[28rem] flex-col items-center justify-center gap-6 px-6 py-12 text-center">

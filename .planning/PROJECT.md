@@ -47,9 +47,9 @@ Builders can turn their zone worldbuilding into living narratives — stories th
 - [ ] Entity picker from zone data browser and/or zone map
 - [ ] Cinematic effects: parallax layers, particle effects, sprite movement paths
 - [ ] Fullscreen DM slide presentation mode with keystroke advance
-- [ ] Stories as a new lore article type with full lore system integration
+- [x] Stories as a new lore article type with full lore system integration — Phase 7
 - [ ] Showcase export: embedded story player with click-through and auto-play
-- [ ] Single-zone story scope, architecture supports multi-zone later
+- [x] Single-zone story scope, architecture supports multi-zone later — Phase 7
 
 ### Out of Scope
 
@@ -116,7 +116,7 @@ This document evolves at phase transitions and milestone boundaries.
 
 v1.0 Tuning Wizard shipped (2026-04-05). All 6 phases complete: foundation data layer (types, formulas, diff engine, 137 field metadata), 3 themed presets (Casual/Balanced/Hardcore), wizard workspace with preset cards and searchable parameter browser, before/after comparison view with derived metric KPI cards, per-section apply flow with undo/reset and health check warnings, and Recharts visualizations (XP curve, mob tier power, stat radar). 107 commits, 222 files, +22K lines.
 
-v1.1 Zone Stories in progress — building cinematic story authoring on top of existing zone data, lore system, and showcase infrastructure.
+v1.1 Zone Stories in progress — Phase 7 (Story Foundation) complete: Story/Scene type hierarchy, storyStore with manual undo/redo (50-entry structuredClone snapshots), JSON persistence (one file per story in stories/ directory), "story" as new lore article type with thin article stub pattern, NewStoryDialog with zone-first creation flow, StoryEditorPanel with auto-save and cover image support. 21 new tests, 761 total passing.
 
 ---
-*Last updated: 2026-04-05 after v1.1 milestone start*
+*Last updated: 2026-04-05 after Phase 7 completion*

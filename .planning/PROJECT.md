@@ -17,16 +17,18 @@ Builders can confidently configure game balance without needing to understand ev
 - ✓ TypeScript type coverage for all config interfaces — existing
 - ✓ Panel registry routing system — existing
 - ✓ Config panel host with decorative backgrounds and section headers — existing
+- ✓ Tuning Wizard as new top-level tab in the app — v1.0
+- ✓ 3 themed presets (Casual, Balanced, Hardcore) with 137 tunable fields — v1.0
+- ✓ Before/after comparison view with derived metrics and color-coded diffs — v1.0
+- ✓ Per-section accept/reject when applying preset changes — v1.0
+- ✓ Coverage of all gameplay systems (combat, economy, progression, stats, crafting, quests, social, world timing) — v1.0
+- ✓ XP curve, mob tier power, and stat radar chart visualizations — v1.0
+- ✓ Health check warnings for problematic section combinations — v1.0
+- ✓ Searchable parameter browser with section filtering — v1.0
 
 ### Active
 
-- ✓ Tuning Wizard as new top-level tab in the app — Validated in Phase 3: wizard-workspace
-- [ ] 5-6 themed presets (Casual, Balanced, Hardcore, Grindy MMO, Fast PvP, Story-focused)
-- [ ] Before/after comparison view showing key metrics at various levels
-- [ ] Per-section accept/reject when applying preset changes
-- [ ] Coverage of all gameplay systems: combat, economy, progression, stats, crafting, quests, social, world timing
-- [ ] Deterministic balance rules that flag known problematic combinations (v2 stretch)
-- [ ] LLM-powered holistic analysis of config balance (v2 stretch)
+(None yet — awaiting next milestone)
 
 ### Out of Scope
 
@@ -34,6 +36,8 @@ Builders can confidently configure game balance without needing to understand ev
 - Modifying the existing config panel UI — wizard is additive, not a replacement
 - Multiplayer playtesting or live server integration — wizard works offline on YAML
 - Ability/status effect/class/race definition editing — those are content, not tuning
+- Deterministic balance rules — deferred to v2 (health check covers immediate need)
+- LLM-powered holistic analysis — deferred to v2 (presets + comparison sufficient for v1)
 
 ## Context
 
@@ -62,11 +66,13 @@ Key config domains for tuning:
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| New top-level tab, not a config panel | Wizard is a distinct workflow, not just another settings page | Phase 3: registered as `command` host in panel registry, World group |
-| Presets + comparison first, intelligence later | Ship useful tool quickly; LLM analysis is a v2 layer | -- Pending |
-| Per-section accept/reject | Gives builders granular control over what changes; reduces fear of presets overwriting customization | -- Pending |
-| 5-6 themed presets | Covers spectrum from casual to hardcore plus genre-specific flavors | -- Pending |
-| Comparison view (not simulation) | Lower complexity than interactive sim; still shows impact clearly | -- Pending |
+| New top-level tab, not a config panel | Wizard is a distinct workflow, not just another settings page | ✓ Good — registered as `command` host in panel registry, World group |
+| Presets + comparison first, intelligence later | Ship useful tool quickly; LLM analysis is a v2 layer | ✓ Good — shipped complete wizard without LLM dependency |
+| Per-section accept/reject | Gives builders granular control over what changes; reduces fear of presets overwriting customization | ✓ Good — section checkboxes with sticky apply bar |
+| 3 themed presets (not 5-6) | 3 presets (Casual/Balanced/Hardcore) covers the core spectrum; additional presets deferred to v2 | ✓ Good — sufficient differentiation validated by TDD metrics |
+| Comparison view (not simulation) | Lower complexity than interactive sim; still shows impact clearly | ✓ Good — derived metrics + charts give strong visual feedback |
+| Recharts for visualizations | Lightweight charting library, good React integration, supports radar/line/bar | ✓ Good — clean integration with Vite chunking |
+| Session-only Zustand store | Wizard state doesn't persist across sessions — fresh start each time | ✓ Good — avoids stale preset state |
 
 ## Evolution
 
@@ -87,7 +93,7 @@ This document evolves at phase transitions and milestone boundaries.
 
 ## Current State
 
-Phase 3 (Wizard Workspace) complete — Tuning Wizard registered in sidebar, session-only Zustand store, three themed preset cards with selection/dimming/glow interaction and metric indicators, parameter browser with debounced search across label/description/path, section filter chips, collapsible sections with field counts, and diff-highlighted parameter rows (3-col without preset, 4-col with color-coded diffs). All 685 tests green. Ready for Phase 4 (Comparison View).
+v1.0 Tuning Wizard shipped (2026-04-05). All 6 phases complete: foundation data layer (types, formulas, diff engine, 137 field metadata), 3 themed presets (Casual/Balanced/Hardcore), wizard workspace with preset cards and searchable parameter browser, before/after comparison view with derived metric KPI cards, per-section apply flow with undo/reset and health check warnings, and Recharts visualizations (XP curve, mob tier power, stat radar). 107 commits, 222 files, +22K lines.
 
 ---
-*Last updated: 2026-04-05 after Phase 3 completion*
+*Last updated: 2026-04-05 after v1.0 milestone*

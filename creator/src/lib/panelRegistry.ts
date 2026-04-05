@@ -78,6 +78,7 @@ const WORLD_PANELS: PanelDef[] = [
   { id: "respec", label: "Respec", group: "world", host: "config", kicker: "Progression", title: "Stat respec", description: "Gold cost and cooldown for reassigning stat points.", maxWidth: "max-w-5xl", subGroup: "Events" },
   { id: "autoQuests", label: "Bounties", group: "world", host: "config", kicker: "Quests", title: "Auto-generated bounties", description: "Time-limited bounty quests with scaling rewards.", maxWidth: "max-w-5xl", subGroup: "Quests" },
   { id: "dailyQuests", label: "Dailies", group: "world", host: "config", kicker: "Quests", title: "Daily & weekly quests", description: "Rotating quest pools with streak bonuses.", maxWidth: "max-w-5xl", subGroup: "Quests" },
+  { id: "tuningWizard", label: "Tuning Wizard", group: "world", host: "command", kicker: "World", title: "Tuning Wizard", description: "Configure game balance with themed presets and parameter comparison.", maxWidth: "max-w-7xl", subGroup: "Core" },
 ];
 
 // ─── Lore panels ───────────────────────────────────────────────────

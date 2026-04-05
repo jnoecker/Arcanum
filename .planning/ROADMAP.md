@@ -97,13 +97,12 @@ Plans:
   4. A "Reset" action discards all wizard state (selected preset, section toggles) and returns to the initial view
   5. Applied values are written through configStore and saved to application.yaml
   6. After applying with mixed section selections, a health check surfaces any problematic metric combinations
-**Plans**: TBD
+**Plans**: 2 plans
 **UI hint**: yes
 
 Plans:
-- [ ] 05-01: TBD
-- [ ] 05-02: TBD
-- [ ] 05-03: TBD
+- [ ] 05-01-PLAN.md -- Merge utilities, health check logic with TDD, and wizard store extensions (APPLY-01, APPLY-02, APPLY-03, APPLY-04, APPLY-05, UI-06)
+- [ ] 05-02-PLAN.md -- Section checkboxes, ApplyFooterBar, HealthCheckBanner, and TuningWizard integration (APPLY-01, APPLY-02, APPLY-03, APPLY-04, APPLY-05, UI-06)
 
 ### Phase 6: Visualizations
 **Goal**: Builders can see chart-based visualizations that make formula interactions intuitive -- XP curves, mob power scaling, and stat effectiveness become visual instead of numeric
@@ -131,5 +130,5 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
 | 2. Presets | 2/2 | Complete   | 2026-04-05 |
 | 3. Wizard Workspace | 2/2 | Complete   | 2026-04-05 |
 | 4. Comparison View | 0/3 | Not started | - |
-| 5. Apply Flow | 0/3 | Not started | - |
+| 5. Apply Flow | 0/2 | Not started | - |
 | 6. Visualizations | 0/2 | Not started | - |

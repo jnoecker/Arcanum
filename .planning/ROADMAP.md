@@ -116,8 +116,8 @@ Plans:
 **UI hint**: yes
 
 Plans:
-- [ ] 06-01-PLAN.md -- Chart data functions (TDD), chart color constants, Recharts install + Vite chunk (VIZ-01, VIZ-02, VIZ-03)
-- [ ] 06-02-PLAN.md -- XpCurveChart, MobTierChart, StatRadarChart components, ChartRow container, TuningWizard wiring (VIZ-01, VIZ-02, VIZ-03)
+- [x] 06-01-PLAN.md -- Chart data functions (TDD), chart color constants, Recharts install + Vite chunk (VIZ-01, VIZ-02, VIZ-03)
+- [x] 06-02-PLAN.md -- XpCurveChart, MobTierChart, StatRadarChart components, ChartRow container, TuningWizard wiring (VIZ-01, VIZ-02, VIZ-03)
 
 ## Progress
 

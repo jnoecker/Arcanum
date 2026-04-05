@@ -4,7 +4,9 @@ import type { AppConfig } from "@/types/config";
 
 /** Recursive partial -- allows presets to specify any subset of AppConfig. */
 export type DeepPartial<T> = {
-  [P in keyof T]?: T[P] extends object ? DeepPartial<T[P]> : T[P];
+  [P in keyof T]?: T[P] extends (object | undefined)
+    ? DeepPartial<NonNullable<T[P]>> | undefined
+    : T[P];
 };
 
 /** The 4 coarse sections for grouping tunable fields (D-01). */

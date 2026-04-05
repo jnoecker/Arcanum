@@ -49,7 +49,7 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 02-01-PLAN.md -- TuningPreset interface + 3 preset constants with TDD coverage tests (PRES-01, PRES-02, PRES-03)
+- [x] 02-01-PLAN.md -- TuningPreset interface + 3 preset constants with TDD coverage tests (PRES-01, PRES-02, PRES-03)
 - [ ] 02-02-PLAN.md -- Validation and metric differentiation tests (PRES-04)
 
 ### Phase 3: Wizard Workspace
@@ -129,7 +129,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation | 2/2 | Complete   | 2026-04-05 |
-| 2. Presets | 0/2 | Not started | - |
+| 2. Presets | 1/2 | In Progress|  |
 | 3. Wizard Workspace | 0/3 | Not started | - |
 | 4. Comparison View | 0/3 | Not started | - |
 | 5. Apply Flow | 0/3 | Not started | - |

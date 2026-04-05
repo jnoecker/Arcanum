@@ -31,12 +31,11 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. Diff engine produces a structured list of field-level changes between any two config snapshots, grouped by section
   4. Every tunable field has a human-readable label, description, and section assignment accessible by config path
   5. All pure functions have Vitest coverage confirming correctness
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 01-01: TBD
-- [ ] 01-02: TBD
-- [ ] 01-03: TBD
+- [ ] 01-01-PLAN.md -- Types, formula evaluators, and TDD tests (FOUND-01, FOUND-02)
+- [ ] 01-02-PLAN.md -- Field metadata catalog and diff engine with TDD tests (FOUND-03, FOUND-04)
 
 ### Phase 2: Presets
 **Goal**: Three complete, validated presets exist that a builder could meaningfully choose between -- each covering all gameplay systems with internally consistent values
@@ -129,7 +128,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation | 0/3 | Not started | - |
+| 1. Foundation | 0/2 | Planning complete | - |
 | 2. Presets | 0/2 | Not started | - |
 | 3. Wizard Workspace | 0/3 | Not started | - |
 | 4. Comparison View | 0/3 | Not started | - |

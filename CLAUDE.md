@@ -183,11 +183,11 @@ Images are served to the frontend as base64 data URLs via the `read_image_data_u
 <!-- GSD:project-start source:PROJECT.md -->
 ## Project
 
-**Arcanum Tuning Wizard**
+**Arcanum**
 
-A tuning wizard for Arcanum that helps MUD builders understand and configure the 300+ gameplay-related numeric values in `application.yaml`. Instead of editing raw numbers across 45+ config panels, builders pick a themed preset, see a before/after comparison of how it changes key metrics, and accept or reject changes per category.
+A Tauri 2 desktop app for building MUD game worlds. Arcanum provides zone editing, config tuning, world lore authoring, and cinematic story creation — helping builders craft rich, interconnected game worlds and present them to players and the public.
 
-**Core Value:** Builders can confidently configure game balance without needing to understand every formula interaction — presets give them a solid starting point, comparisons show them what changed and why.
+**Core Value:** Builders can turn their zone worldbuilding into living narratives — stories that work as DM presentation aids at the table and as cinematic experiences on the public showcase.
 
 ### Constraints
 
@@ -198,348 +198,163 @@ A tuning wizard for Arcanum that helps MUD builders understand and configure the
 - **Panel registry**: New wizard tab must integrate with the existing panel registry and sidebar navigation.
 <!-- GSD:project-end -->
 
-<!-- GSD:stack-start source:codebase/STACK.md -->
+<!-- GSD:stack-start source:research/STACK.md -->
 ## Technology Stack
 
-## Languages
-- TypeScript ^5.8.0 - Frontend (React components, stores, types, lib)
-- Rust (edition 2021) - Backend (Tauri commands, API clients, file I/O)
-- YAML - Data format for zone files and `application.yaml`
-- JSON - Settings persistence, asset manifests
-- HTML/CSS - Tailwind-based UI styling
-## Runtime
-- Tauri 2 - Desktop application shell (Rust backend + webview frontend)
-- WebView2 (Windows) - Renders the React frontend
-- Node.js/Bun - Development tooling only (not shipped)
-- Bun - Frontend (creator). Lockfile: `creator/bun.lock` (present)
-- npm - Showcase. Lockfile: `showcase/package-lock.json` (present)
-- Cargo - Rust backend. Lockfile managed by Cargo automatically
-## Frameworks
-- React 19 (`^19.0.0`) - UI framework
-- Tauri 2 - Desktop app framework (IPC, native APIs)
-- Zustand 5 (`^5.0.0`) - State management (multiple independent stores)
-- Zundo 2 (`^2.3.0`) - Undo/redo middleware for Zustand
-- Tailwind CSS 4 (`^4.0.0`) - Utility-first CSS (via PostCSS plugin `@tailwindcss/postcss ^4.2.1`)
-- XY Flow / React Flow (`@xyflow/react ^12.10.1`) - Zone map graph visualization
-- TipTap 3 (`@tiptap/react ^3.21.0`) - Rich text editor (lore articles)
-- Leaflet 1.9.4 + react-leaflet 5 - Interactive maps (CRS.Simple)
-- React Arborist 3 (`^3.4.3`) - Tree view component
-- Tippy.js 6 (`^6.3.7`) - Tooltips
-- dagre (`@dagrejs/dagre ^2.0.4`) - Directed graph layout
-- `@fontsource/cinzel ^5.2.8` - Display headings
-- `@fontsource/crimson-pro ^5.2.8` - Body text
-- `@fontsource/jetbrains-mono ^5.2.8` - Code/monospace
-- Vitest 3 (`^3.0.0`) - Test runner (data-layer tests only)
-- Vite 6 (`^6.0.0`) - Frontend bundler and dev server
-- `@vitejs/plugin-react ^4.3.0` - React JSX transform
-- PostCSS 8 (`^8.4.0`) - CSS processing
-- Autoprefixer 10 (`^10.4.0`) - CSS vendor prefixes
-- `@tauri-apps/cli ^2` - Tauri build tooling
-## Rust Dependencies (Backend)
-- `tauri 2` - Application framework
-- `serde 1` + `serde_json 1` + `serde_yaml 0.9` - Serialization
-- `tokio 1` (features: fs, process) - Async runtime
-- `reqwest 0.12` (features: json, rustls-tls) - HTTP client for all external APIs
-- `sha2 0.10` - SHA-256 hashing (content-addressed assets, AWS Sig V4)
-- `hmac 0.12` - HMAC for AWS Signature V4 signing
-- `hex 0.4` - Hex encoding
-- `base64 0.22` - Base64 encode/decode for image data
-- `image 0.25` (features: jpeg, png, webp) - Image resize, format conversion
-- `imagesize 0.13` - Fast image dimension detection
-- `uuid 1` (features: v4) - UUID generation
-- `chrono 0.4` (features: serde) - Date/time handling
-- `regex 1` - Text pattern matching
-- `tauri-plugin-dialog 2` - Native file dialogs
-- `tauri-plugin-fs 2` - Filesystem access
-- `tauri-plugin-shell 2` - Shell command execution
-- `tauri-plugin-window-state 2.4.1` - Window position/size persistence
-- `windows-sys 0.59` (Windows only) - Win32 API for job objects and process management
-## Showcase Dependencies
-- React 19 (`^19.0.0`) + React DOM
-- React Router DOM 7 (`^7.1.1`) - Client-side routing (SPA)
-- XY Flow (`@xyflow/react ^12.4.4`) - Relationship graph
-- dagre (`@dagrejs/dagre ^1.1.4`) - Graph layout
-- DOMPurify 3 (`^3.3.3`) - HTML sanitization (renders article HTML safely)
-- Same fonts as creator (Cinzel, Crimson Pro, JetBrains Mono)
-- Vite 6, Tailwind CSS 4, TypeScript ^5.7.0
-## Key Dependencies
-- `@tauri-apps/api ^2` - IPC bridge between frontend and Rust backend
-- `yaml ^2.7.0` - YAML CST-mode parsing for format-preserving round-trip editing
-- `@xyflow/react ^12.10.1` - Zone map graph editor
-- `@tiptap/react ^3.21.0` - Lore article rich text editing
-- `reqwest 0.12` - All external API communication from Rust
-- `@imgly/background-removal ^1.7.0` - Client-side background removal for generated images
-- `leaflet ^1.9.4` - Map rendering with custom coordinate systems
-## Configuration
-- Target: ES2021, strict mode enabled
-- Path alias: `@/` maps to `./src/` (in `creator/tsconfig.json` and `creator/vite.config.ts`)
-- JSX: react-jsx
-- Strict checks: `noUnusedLocals`, `noUnusedParameters`, `noFallthroughCasesInSwitch`, `noUncheckedIndexedAccess`
-- Config: `creator/vite.config.ts`
-- Dev server: port 1420, strict port
-- Manual chunks: fonts, editor (TipTap), graph (XY Flow), map (Leaflet), tree, image, tauri, yaml
-- Config: `showcase/vite.config.ts`
-- Custom entry points: main + service worker (`src/sw.ts`)
-- Config: `creator/src-tauri/tauri.conf.json`
-- Identifier: `dev.arcanum.app`
-- Window: 1400x900 default, 1024x700 minimum
-- Dev command: `bun run dev`
-- Build command: `bun run build`
-- CSP: disabled (null)
-- `showcase/.env.production` - Exists (showcase env config)
-- User settings: `~/.tauri/settings.json` (API keys)
-- Project settings: `<project>/.arcanum/settings.json` (art pipeline, R2 config)
-## Platform Requirements
-- Bun (creator package manager)
-- npm (showcase package manager)
-- Rust toolchain (edition 2021)
-- Tauri CLI v2
-- Git (for git integration features)
-- Windows (primary target, uses `windows-sys` for process management)
-- WebView2 runtime
-- Showcase: Cloudflare Pages (static SPA)
+## Context
+## Recommended Additions
+### Animation Engine
+| Technology | Version | Purpose | Why |
+|------------|---------|---------|-----|
+| motion | ^12.37 | Scene transitions, sprite movement, text reveals, parallax interpolation, presentation slide transitions | Declarative React-native API (`<motion.div>`). Supports keyframe sequences, spring physics, CSS `offset-path` animation (sprite movement along paths), `useAnimate` for imperative sequencing, `useAnimationFrame` for per-frame control. LazyMotion + `m` component reduces initial cost to 4.6kb (load `domAnimation` features on demand at +15kb). Timeline sequencing via `useAnimate` avoids needing a separate sequencing library. 30M+ monthly npm downloads, actively maintained, React 18.2+ compatible. |
+- **react-spring**: Better for physics-heavy gesture interactions (drag inertia, spring-only systems). Weaker at timeline sequencing, exit animations, and layout animations. Motion's `useAnimate` provides imperative sequence control that maps directly to scene-by-scene cinematic playback. react-spring's `Parallax` component is scroll-based -- our parallax is time/scene-based, not scroll-based.
+- **CSS animations only**: Insufficient for imperative sequencing (play scene 1, then 2, then 3 with variable timing). No spring physics for natural-feeling entity movements. CSS `offset-path` alone can't be dynamically orchestrated scene-by-scene.
+- **GSAP**: Powerful but license concerns for commercial use (GreenSock license), large bundle, imperative-only API feels foreign in React component tree.
+- **anime.js**: Less React integration, no declarative component API, smaller ecosystem.
+- **Rive/Lottie**: Designed for pre-built vector animations, not dynamic scene composition from runtime data (room images, entity sprites).
+- `animate` prop: Declarative scene transitions (fade, slide, scale for background/entity/text layers)
+- `useAnimate`: Imperative sequence control for presentation mode (advance through scenes programmatically)
+- `useAnimationFrame(callback)`: Per-frame particle updates and continuous effects
+- `offsetPath` + `offsetDistance` animation: Sprite movement along defined SVG paths
+- `AnimatePresence`: Exit animations when switching between scenes
+- `variants` + `staggerChildren`: Coordinated text reveal (narration appearing word-by-word or line-by-line)
+- `LazyMotion` + `domAnimation`: Bundle-optimized feature loading
+### Drag-and-Drop (Timeline Scene Reordering)
+| Technology | Version | Purpose | Why |
+|------------|---------|---------|-----|
+| @dnd-kit/core | ^6.3 | Drag-and-drop primitives for scene card reordering in timeline editor | Lightweight (10kb), zero-dependency drag engine with sensors (pointer, keyboard), collision detection, and accessibility built-in. Modular architecture -- only import what you need. |
+| @dnd-kit/sortable | ^10.0 | Sortable preset for reorderable scene card list | Thin layer on @dnd-kit/core optimized for sortable lists. `useSortable` hook + `SortableContext` provides drag handles, reorder animations, and `arrayMove` utility. Supports horizontal layout constraint via `restrictToHorizontalAxis` modifier. |
+| @dnd-kit/utilities | ^3.2 | CSS transform utilities for drag visuals | `CSS.Transform.toString()` for smooth drag overlay rendering. |
+- **react-beautiful-dnd / @hello-pangea/dnd**: Higher-level but more opinionated. Heavier bundle. The original (Atlassian) is deprecated; hello-pangea fork is maintained but adds unnecessary abstraction for our simple flat list of scene cards.
+- **pragmatic-drag-and-drop**: Atlassian's newer library is framework-agnostic (not React-specific), which means more boilerplate for React integration. Better for complex cross-framework scenarios we don't have.
+- **HTML5 drag-and-drop**: No animation support, poor accessibility, inconsistent cross-browser behavior, no keyboard navigation.
+- **@dnd-kit/react (v0.3.x)**: The experimental rewrite is promising but at v0.3 -- too early for production use. Stick with the stable v6.x core.
+### Particle Effects
+| Technology | Version | Purpose | Why |
+|------------|---------|---------|-----|
+| Custom Canvas + `useAnimationFrame` | N/A | Sparks, mist, ambient particles per scene | The particle needs are narrow and specific: 3-5 effect presets (sparks, mist/fog, embers, rain, dust motes) rendered over scene backgrounds. A custom `<ParticleCanvas>` component using HTML5 Canvas 2D + Motion's `useAnimationFrame` for the render loop is simpler, lighter, and more controllable than tsParticles. |
+- **@tsparticles/slim**: ~45-60kb gzipped for the slim bundle. Brings a full particle physics engine, interactivity system, and dozens of shape/movement plugins we don't need. The `@tsparticles/react` wrapper hasn't been updated in 2 years (v3.0.0). Configuration is JSON-heavy and harder to integrate with a scene-data-driven model.
+- **Custom approach**: 200-400 lines of TypeScript for a particle system with 5 presets. Each preset is a config object (particle count, velocity range, color, opacity curve, size range, spawn region). The render loop uses `useAnimationFrame` from Motion. Canvas is composited over the scene background with `pointer-events: none`. Full control over performance (particle budget per scene).
+- **Proton.js**: Another full physics engine -- same problem as tsParticles. Overkill for ambient effects.
+### Parallax Layers
+| Technology | Version | Purpose | Why |
+|------------|---------|---------|-----|
+| CSS transforms + Motion `animate` | N/A | Multi-layer parallax depth effect in scene backgrounds | Scene parallax is NOT scroll-driven -- it's time/animation-driven (layers shift during scene transitions or in response to presentation advance). CSS `transform: translateZ()` with `perspective` parent, animated by Motion's `animate` prop, gives precise per-layer control without any parallax library. |
+- **@react-spring/parallax**: Scroll-based parallax container. Our parallax is scene-transition-based (layers move when a scene changes or during cinematic playback), not on user scroll.
+- **react-scroll-parallax**: Same problem -- designed for scroll-driven websites, not discrete scene transitions.
+- **Custom CSS + Motion**: Parallax layers are just divs with different `translateX`/`translateY` offsets that interpolate when the scene changes. Motion's `animate` prop handles this declaratively. No library needed.
+### Sprite Movement Paths
+| Technology | Version | Purpose | Why |
+|------------|---------|---------|-----|
+| CSS `offset-path` + Motion | N/A | Animate entity sprites along defined movement paths within a scene | CSS `offset-path: path("M 0 0 C ...")` defines an SVG path; Motion animates `offsetDistance` from "0%" to "100%". Builders define paths in the scene editor (click waypoints); paths are stored as SVG `d` attributes. Motion provides timing, easing, and sequencing. |
+- Scene editor: Builders click 3-5 waypoints on the scene preview. Waypoints are converted to a cubic bezier SVG path string (`M x0 y0 C x1 y1 x2 y2 x3 y3 ...`).
+- Playback: `<motion.div animate={{ offsetDistance: "100%" }} transition={{ duration: 3 }} style={{ offsetPath: 'path("...")' }} />`
+- Stored in scene data as `movementPath: string` (SVG d attribute).
+### Fullscreen Presentation & Embedded Player
+| Technology | Version | Purpose | Why |
+|------------|---------|---------|-----|
+| Fullscreen API (browser native) | N/A | Enter/exit fullscreen for DM presentation mode | `document.documentElement.requestFullscreen()` is universally supported. No library needed. Tauri 2 supports the Fullscreen API in its webview. |
+| Custom `usePresentation` hook | N/A | Keystroke navigation, auto-play timer, scene sequencing | A Zustand slice or custom hook managing: current scene index, playing/paused state, advance/retreat via ArrowRight/ArrowLeft/Space, auto-play with configurable interval. This is 50-100 lines of custom code -- no presentation framework (Spectacle, Reveal.js) is appropriate because our "slides" are rich cinematic scenes, not markdown/HTML slides. |
+- **Spectacle**: Designed for developer conference talks with markdown/JSX slides. Our "slides" are rich layered scenes with parallax, particles, entities, and narration. Spectacle's slide model doesn't fit.
+- **Reveal.js**: Same mismatch -- HTML-based slide decks, not cinematic scene composition.
+- **Swiper/Embla**: Carousel libraries designed for image galleries. Missing: per-scene animation orchestration, particle effects, entity movement sequencing.
+## Explicitly NOT Adding
+| Category | Rejected | Why Not |
+|----------|----------|---------|
+| Canvas framework | PixiJS / @pixi/react | Massive overkill (200kb+) for layered divs with CSS transforms. PixiJS is for game rendering with thousands of sprites at 60fps. We have 1-5 entity sprites per scene rendered as DOM elements. CSS + Motion handles this elegantly without a WebGL context. |
+| Particle library | @tsparticles/slim | 45-60kb for a full particle physics engine when we need 5 fixed presets with 50-200 particles each. Custom Canvas 2D with `useAnimationFrame` is lighter, simpler, and gives full control. |
+| Scroll parallax | @react-spring/parallax, react-scroll-parallax | Wrong paradigm. Our parallax is scene-transition-driven, not scroll-driven. Motion's `animate` prop on positioned divs does exactly what we need. |
+| Video rendering | ffmpeg.wasm, MediaRecorder | Exporting stories as video is out of scope for v1.1. The showcase player renders stories live in the browser. |
+| 3D engine | Three.js, React Three Fiber | No 3D content in the story system. Parallax depth is simulated with CSS transforms on 2D layers. |
+| Timeline library | dnd-timeline, Gantt chart libs | These are scheduling/calendar timeline UIs. Our timeline is a horizontal strip of scene cards -- a sortable list, not a time-range scheduler. @dnd-kit/sortable is the right abstraction. |
+| Presentation framework | Spectacle, Reveal.js | Designed for text-based slide decks. Our presentation is a cinematic engine with layered backgrounds, particles, entity animations, and narration overlays. |
+| Animation (alt) | react-spring | Weaker at imperative sequencing (scene-by-scene playback), no built-in `AnimatePresence` for exit animations, scroll-based parallax doesn't fit our model. Motion is better for timeline-driven cinematic sequences. |
+| Animation (alt) | GSAP | License concerns for desktop app distribution. Imperative-only API is a poor fit for React component tree. Heavy bundle. |
+| State library | XState, Redux | Presentation state is a simple index + playing boolean. Zustand slice or custom hook is sufficient. No finite state machine library needed. |
+## Alternatives Considered (Full Matrix)
+| Category | Recommended | Alternative | Why Not Alternative |
+|----------|-------------|-------------|---------------------|
+| Animation | motion ^12.37 | react-spring ^9.7 | Weaker imperative sequencing, scroll-based parallax wrong paradigm, no AnimatePresence |
+| Animation | motion ^12.37 | GSAP ^3.12 | License concerns, imperative-only, not React-native |
+| Animation | motion ^12.37 | CSS only | No imperative orchestration for scene sequences, no spring physics |
+| Drag-and-drop | @dnd-kit/core ^6.3 | @hello-pangea/dnd | Heavier, more opinionated, unnecessary abstraction for flat list |
+| Drag-and-drop | @dnd-kit/core ^6.3 | pragmatic-drag-and-drop | Framework-agnostic = more React boilerplate |
+| Drag-and-drop | @dnd-kit/core ^6.3 | @dnd-kit/react ^0.3 | Experimental, pre-1.0 -- not production ready |
+| Particles | Custom Canvas 2D | @tsparticles/slim | 45-60kb for 5 fixed presets we can write in 300 lines |
+| Particles | Custom Canvas 2D | Proton.js | Full physics engine overkill for ambient effects |
+| Parallax | CSS + Motion | @react-spring/parallax | Scroll-based, not scene-transition-based |
+| Path animation | CSS offset-path + Motion | SVG SMIL | Deprecated by Chrome, poor React integration |
+| Path animation | CSS offset-path + Motion | Canvas path rendering | Harder to compose with DOM entity elements |
+| Presentation | Custom hook + Fullscreen API | Spectacle | Wrong abstraction (text slides vs cinematic scenes) |
+| Presentation | Custom hook + Fullscreen API | Swiper/Embla | Missing animation orchestration, particle effects |
+## Installation
+# New dependencies for cinematic story authoring
+- motion (with LazyMotion/domAnimation): ~4.6kb initial + 15kb on first animation use (tree-shakeable)
+- @dnd-kit/core: ~10kb
+- @dnd-kit/sortable: ~3kb
+- @dnd-kit/utilities: ~1kb
+- **Total new code: ~34kb** (loaded on demand via Vite code splitting)
+# Only motion for the embedded story player (no dnd-kit needed -- playback only)
+## Integration with Existing Stack
+| Existing Tech | How Zone Stories Uses It |
+|---------------|------------------------|
+| zoneStore (Zustand) | Reads zone data (rooms, mobs, items) for entity picker and scene composition |
+| loreStore (Zustand) | Stories are a new lore article type -- inherits undo/redo, persistence, showcase export |
+| assetStore (Zustand) | Room background images and entity sprites loaded via existing asset pipeline |
+| TipTap 3 | Narration text editing within scenes (reuse existing rich text editor) |
+| XY Flow | Zone map for entity picking (click a room/mob on the map to add to scene) |
+| Tailwind CSS 4 | All wizard UI styled with existing design tokens (`bg-bg-primary`, `text-accent`, etc.) |
+| Panel registry | Story editor registered as new panel in Lore group |
+| Showcase export | `exportShowcaseData()` extended to include story scenes with animation metadata |
+| R2 sync | Story entity images already in R2 via existing asset sync |
+| Recharts | Potential reuse for any story analytics (scene count, duration estimates) |
+## Motion Configuration for Arcanum
+## Data Model Implications (Stack-Relevant)
+- **No new database or storage format** -- scenes serialize to the existing `lore.yaml` structure
+- **Image references** are asset IDs resolved via the existing asset manifest
+- **Movement paths** are SVG `d` attribute strings (compact, portable)
+- **Particle presets** are enum strings (`"sparks" | "mist" | "embers" | "rain" | "dust"`)
+- **Parallax config** is layer count + depth multiplier per layer (2-3 numbers per scene)
+## Showcase Player Architecture
+| Feature | Creator (Editor) | Showcase (Player) |
+|---------|------------------|-------------------|
+| Scene editing | Yes (dnd-kit, TipTap) | No (read-only) |
+| Parallax layers | Yes | Yes (same Motion code) |
+| Particle effects | Yes | Yes (same Canvas code) |
+| Sprite paths | Yes (editable waypoints) | Yes (playback only) |
+| Narration text | Yes (editable) | Yes (display only) |
+| Presentation mode | Yes (fullscreen) | Yes (inline + fullscreen) |
+| Auto-play | Yes | Yes |
+| Keyboard nav | Yes | Yes |
+## Sources
+- [Motion official site](https://motion.dev) -- v12.37+, March 2026
+- [Motion React installation docs](https://motion.dev/docs/react-installation) -- React 18.2+ compatible
+- [Motion LazyMotion docs](https://motion.dev/docs/react-lazy-motion) -- 4.6kb initial, domAnimation +15kb
+- [Motion reduce bundle size](https://motion.dev/docs/react-reduce-bundle-size) -- domAnimation vs domMax features
+- [Motion animation docs](https://motion.dev/docs/react-animation) -- keyframes, springs, variants
+- [Motion path tutorial](https://motion.dev/tutorials/react-motion-path) -- offset-path + offsetDistance
+- [Motion useAnimationFrame](https://motion.dev/docs/react-use-animation-frame) -- per-frame callbacks
+- [Motion GitHub](https://github.com/motiondivision/motion) -- 30M+ monthly downloads
+- [@dnd-kit/core npm](https://www.npmjs.com/package/@dnd-kit/core) -- v6.3.1, 2400+ dependents
+- [@dnd-kit sortable docs](https://docs.dndkit.com/presets/sortable) -- SortableContext, useSortable, arrayMove
+- [MDN offset-path](https://developer.mozilla.org/en-US/docs/Web/CSS/offset-path) -- browser support table
+- [CSS motion path MDN](https://developer.mozilla.org/en-US/docs/Web/CSS/Guides/Motion_path)
+- [Fullscreen API MDN](https://developer.mozilla.org/en-US/docs/Web/API/Fullscreen_API)
+- [Motion vs React Spring comparison (2025)](https://hookedonui.com/animating-react-uis-in-2025-framer-motion-12-vs-react-spring-10/)
+- [React animation libraries comparison (2026)](https://blog.logrocket.com/best-react-animation-libraries/)
+- [tsParticles GitHub](https://github.com/tsparticles/tsparticles) -- considered and rejected for bundle size
 <!-- GSD:stack-end -->
 
 <!-- GSD:conventions-start source:CONVENTIONS.md -->
 ## Conventions
 
-## Naming Patterns
-- Components: PascalCase `.tsx` -- `MobEditor.tsx`, `AssetGallery.tsx`, `RoomNode.tsx`
-- Hooks: camelCase with `use` prefix -- `useEntityEditor.ts`, `useImageSrc.ts`, `useArrayField.ts`
-- Libraries/utilities: camelCase `.ts` -- `zoneEdits.ts`, `normalize.ts`, `loader.ts`
-- Stores: camelCase with `Store` suffix -- `zoneStore.ts`, `projectStore.ts`, `assetStore.ts`
-- Types: camelCase `.ts` in `creator/src/types/` -- `world.ts`, `config.ts`, `lore.ts`, `project.ts`
-- Rust modules: snake_case `.rs` -- `project.rs`, `deepinfra.rs`, `openai_images.rs`
-- camelCase for all TypeScript functions: `loadAllZones`, `parseAppConfigYaml`, `normalizeId`
-- snake_case for all Rust functions: `validate_mud_dir`, `generate_image`, `read_image_data_url`
-- React components are PascalCase functions: `export function MobEditor()`
-- Exported hook functions start with `use`: `export function useEntityEditor<T>()`
-- camelCase for local and state variables: `filePath`, `zoneId`, `entityId`
-- UPPER_SNAKE_CASE for constants: `MAX_HISTORY`, `MEDIA_EXTENSIONS`, `MANIFEST_FILE`
-- Constant arrays of option objects use UPPER_SNAKE_CASE: `TIER_OPTIONS`, `BEHAVIOR_TEMPLATES`
-- Use `interface` for object shapes (not `type`): `interface ZoneStore { ... }`
-- Use `type` only for aliases and unions: `type StatMap = Record<string, number>`
-- Interfaces use PascalCase: `WorldFile`, `MobFile`, `ValidationIssue`
-- Suffix with `File` for YAML-serialized types mirroring Kotlin DTOs: `RoomFile`, `MobFile`, `ItemFile`
-- Suffix with `Store` for Zustand store interfaces: `ZoneStore`, `ProjectStore`
-- Suffix with `Props` for component props: `MobEditorProps`
-## Code Style
-- No Prettier or ESLint config files detected -- formatting is manual/convention-based
-- 2-space indentation in TypeScript/TSX
-- Double quotes for string literals in TypeScript
-- Semicolons at end of statements
-- Trailing commas in multi-line lists and parameters
-- TypeScript strict mode enabled via `tsconfig.json`
-- Key strict rules: `noUnusedLocals`, `noUnusedParameters`, `noFallthroughCasesInSwitch`, `noUncheckedIndexedAccess`
-- No ESLint or Biome configuration detected
-- Target: ES2021
-- Module: ESNext with bundler resolution
-- JSX: react-jsx (automatic runtime)
-- Strict: true (all strict checks enabled)
-- Config at `creator/tsconfig.json`
-## Import Organization
-- `@/` maps to `creator/src/` -- configured in both `creator/tsconfig.json` and `creator/vite.config.ts`
-- Always use `@/` for cross-directory imports: `import type { WorldFile } from "@/types/world"`
-- Use relative imports only for sibling files within the same directory
-## Component Design
-- Functional components only (no classes)
-- Export named functions, not default exports: `export function MobEditor() {}`
-- Exception: lazy-loaded components use default exports resolved at import: `lazy(() => import("./AppShell").then(m => ({ default: m.AppShell })))`
-- Props defined as interface above component: `interface MobEditorProps { ... }`
-- Use `memo()` for performance-sensitive components: `const RoomNode = memo(function RoomNode() { ... })`
-- `ActionButton` -- variant-based button (primary/secondary/ghost/danger)
-- `DialogShell` -- modal dialog wrapper with title, footer, overlay
-- `Section`, `FieldRow`, `TextInput`, `NumberInput`, `SelectInput`, `CheckboxInput`
-- `Spinner` -- inline loading indicator
-- Local `cx()` utility for conditional class concatenation (not clsx/classnames)
-## Zustand Store Patterns
-- Use `create<StoreInterface>((set, get) => ({ ... }))` from zustand
-- Each store is in its own file under `creator/src/stores/`
-- Interface defined above the store: `interface ZoneStore { ... }` then `export const useZoneStore = create<ZoneStore>(...)`
-- Always select individual fields: `useProjectStore((s) => s.project)`
-- Never select the whole store: ~~`useProjectStore()`~~
-- This prevents unnecessary re-renders
-- Use `set()` callback with spread: `set((state) => ({ zones: new Map(state.zones) }))`
-- Zone data mutations create new objects (immutable updates): `{ ...existing, data, dirty: true }`
-- Zone edit functions (`creator/src/lib/zoneEdits.ts`) are pure functions returning new `WorldFile` objects
-- Zone store: manual history arrays (`past`/`future` per zone) with `MAX_HISTORY = 100`
-- Lore store: snapshot-based via `snapshotLore(s)` call in every `set()` mutation (50-entry history)
-- All lore mutations MUST call `snapshotLore(s)` or the operation cannot be undone
-## Error Handling
-- Try/catch with `console.error` for non-critical failures (file loading, parsing)
-- Validation functions return typed issue arrays: `ValidationIssue[]` with `severity: "error" | "warning"`
-- No global error boundary detected
-- All Tauri commands return `Result<T, String>` -- Tauri serializes the error string to the frontend
-- Use `.map_err(|e| e.to_string())?` for error propagation
-- Pattern: `fn_name(...) -> Result<ReturnType, String>`
-## Logging
-- `console.error(message, error)` for caught exceptions
-- No structured logging framework
-- Rust side uses standard error returns (no tracing/log crate observed)
-## Comments
-- Use boxed ASCII dividers for major sections within files:
-- This pattern is used consistently in test files, lib files, and CSS
-- Used sparingly on exported utility functions and hooks
-- Brief single-line `/** ... */` format preferred
-- Example: `/** Shared setup for zone entity editors. Returns the resolved entity, a patch callback... */`
-- Section headers for logical groupings within a file
-- Brief doc comments on exported public APIs
-- Inline comments for non-obvious logic
-## Function Design
-- Zone edit functions in `creator/src/lib/zoneEdits.ts` are pure: take `WorldFile` + params, return new `WorldFile`
-- Validation functions are pure: take data, return `ValidationIssue[]`
-- Throw errors for invalid operations: `throw new Error("Room already exists")`
-- Custom hooks in `creator/src/lib/use*.ts`
-- Return tuple or object with `as const`: `return { entity, patch, handleDelete, rooms } as const`
-- Wrap callbacks with `useCallback`, derive data with `useMemo`
-## Styling
-- Tailwind imported via `@import "tailwindcss"` in `creator/src/index.css`
-- Custom theme tokens defined in `@theme { }` block in `creator/src/index.css`
-- Additional CSS custom properties in `:root { }` block
-- Backgrounds: `bg-bg-abyss`, `bg-bg-primary`, `bg-bg-secondary`, `bg-bg-tertiary`, `bg-bg-elevated`, `bg-bg-hover`
-- Text: `text-text-primary`, `text-text-secondary`, `text-text-muted`, `text-text-link`
-- Borders: `border-border-default`, `border-border-muted`, `border-border-focus`
-- Accent: `text-accent`, `bg-accent`, `text-accent-muted`
-- Warm: `text-warm`, `bg-warm`, `text-warm-pale`, `text-warm-deep`
-- Status: `text-status-success`, `text-status-warning`, `text-status-error`, `text-status-info`
-- Display: `font-display` (Cinzel)
-- Body: `font-sans` (Crimson Pro -- despite the name, it's a serif)
-- Code: `font-mono` (JetBrains Mono)
-- `.ornate-input` -- styled text input with hover/focus transitions
-- `.focus-ring` -- focus-visible outline ring
-- `.shell-pill` -- pill-shaped button with hover effects
-- `.action-button`, `.action-button-primary`, etc. -- button variants
-- `.dialog-overlay` -- modal backdrop
-- Animation utilities: `.animate-aurum-pulse`, `.animate-unfurl-in`, `.animate-warm-breathe`
-- Deep indigo backgrounds, never light mode
-- Body background is a multi-stop radial + linear gradient
-- All color tokens designed for dark backgrounds
-- Use low opacity (10-18%) with `pointer-events-none`
-- `mix-blend-soft-light` for config/lore panel backgrounds
-- `mix-blend-screen` for ReactFlow overlays (with `z-[1]`)
-## YAML Handling
-- Use `parseDocument()` for format-preserving parsing (preserves comments and formatting)
-- Use `doc.toJS()` to extract plain JavaScript objects
-- When saving, use CST mode to preserve original formatting
-- Key functions: `creator/src/lib/loader.ts`, `creator/src/lib/saveZone.ts`, `creator/src/lib/saveConfig.ts`
-- `zone, lifespan, startRoom, image, audio, rooms, mobs, items, shops, quests, gatheringNodes, recipes`
-- Only serialize non-zero values in StatMap fields
-- Normalize asset refs (strip local filesystem paths) before saving
-## Module Design
-- Named exports for everything: `export function`, `export interface`, `export const`
-- No default exports except where required by lazy loading
-- No barrel files (index.ts re-exports) -- import directly from source files
-- One primary export per file for components
-- Utility files may export multiple related functions (e.g., `zoneEdits.ts` exports all CRUD functions)
-- Types grouped by domain in `creator/src/types/`: `world.ts`, `config.ts`, `lore.ts`, `project.ts`
+Conventions not yet established. Will populate as patterns emerge during development.
 <!-- GSD:conventions-end -->
 
 <!-- GSD:architecture-start source:ARCHITECTURE.md -->
 ## Architecture
 
-## Pattern Overview
-- Frontend-heavy: most business logic lives in TypeScript (stores, lib utilities, validation)
-- Rust backend is a thin service layer: file I/O, HTTP clients for external APIs, asset management, git operations
-- Communication via Tauri `invoke()` calls returning `Result<T, String>`
-- State managed by 11 independent Zustand stores with no cross-store subscriptions (stores read each other via `getState()` when needed)
-- Two project formats: "legacy" (Gradle-based AmbonMUD checkout) and "standalone" (flat directory with split YAML files)
-## Layers
-- Purpose: Application chrome, workspace switching, navigation, tab management
-- Location: `creator/src/components/AppShell.tsx`, `creator/src/components/Toolbar.tsx`, `creator/src/components/Sidebar.tsx`, `creator/src/components/MainArea.tsx`, `creator/src/components/StatusBar.tsx`
-- Contains: Layout, workspace toggle, tab bar, command palette, global modals (asset generator, gallery, shortcuts help)
-- Depends on: `projectStore`, `assetStore`, panel registry
-- Used by: `App.tsx` (root)
-- Purpose: Central routing table for all navigable panels. Maps panel IDs to metadata (label, group, host type, descriptions).
-- Location: `creator/src/lib/panelRegistry.ts`
-- Contains: ~60 panel definitions organized into 7 groups (studio, characters, world, lore, content, operations, command)
-- Depends on: Nothing
-- Used by: `Sidebar.tsx`, `MainArea.tsx`, `Toolbar.tsx`, `CommandPalette.tsx`
-- Purpose: Container components that wrap domain-specific editors with shared chrome (auto-save, decorative backgrounds, section headers)
-- Location:
-- Contains: Panel routing switch, save orchestration, background decoration
-- Depends on: `configStore`, `loreStore`, `zoneStore`, `assetStore`, panel registry
-- Used by: `MainArea.tsx`
-- Purpose: Visual zone map editing with ReactFlow, entity editing panels
-- Location: `creator/src/components/zone/`
-- Key files:
-- Depends on: `zoneStore`, `projectStore`, `assetStore`, `vibeStore`, zone editing utilities in `lib/`
-- Used by: `MainArea.tsx` (for `kind: "zone"` tabs)
-- Purpose: Form-based editors for individual zone entities (mobs, items, shops, quests, etc.)
-- Location: `creator/src/components/editors/`
-- Key files: `MobEditor.tsx`, `ItemEditor.tsx`, `ShopEditor.tsx`, `QuestEditor.tsx`, `RecipeEditor.tsx`, `GatheringNodeEditor.tsx`, `TrainerEditor.tsx`, `DialogueEditor.tsx`, `DungeonEditor.tsx`
-- Depends on: `zoneStore`, `configStore` (for data-driven dropdown options), entity editing lib functions
-- Used by: `EntityPanel.tsx`
-- Purpose: Editors for `application.yaml` game system configuration (40+ panels)
-- Location: `creator/src/components/config/panels/`
-- Key files: `ClassesPanel.tsx`, `CombatPanel.tsx`, `ProgressionPanel.tsx`, `EconomyPanel.tsx`, `StatsPanel.tsx`, etc.
-- Contains: Form-based editors that mutate `configStore.config` via `updateConfig()`
-- Depends on: `configStore`
-- Used by: `ConfigPanelHost.tsx`
-- Purpose: Complex config editors with list management (add/remove/reorder items)
-- Location: `creator/src/components/config/`
-- Key files: `ClassDesigner.tsx`, `RaceDesigner.tsx`, `AbilityDesigner.tsx`, `StatusEffectDesigner.tsx`, `CommandDesigner.tsx`, `CraftingStudio.tsx`, `GuildDesigner.tsx`, `AchievementDesigner.tsx`, `AchievementDefEditor.tsx`, `QuestTaxonomyDesigner.tsx`
-- Depends on: `configStore`, `DefinitionWorkbench.tsx` (shared list+detail pattern)
-- Used by: `ConfigPanelHost.tsx`
-- Purpose: World-building article management, maps, timelines, relationships, AI tools
-- Location: `creator/src/components/lore/`
-- Key files:
-- Depends on: `loreStore`, `assetStore`, lore lib utilities
-- Used by: `LorePanelHost.tsx`
-- Purpose: Application state containers. Each store is independent to avoid re-render cascading.
-- Location: `creator/src/stores/`
-- Key stores:
-- Pattern: `create<Interface>((set, get) => ({ ... }))` with `invoke()` calls to Rust backend
-- Cross-store reads: via `useOtherStore.getState()` (not subscriptions)
-- Purpose: Pure logic, data transformations, YAML I/O, validation, AI prompt generation
-- Location: `creator/src/lib/`
-- Key modules:
-- Purpose: System-level operations that cannot run in the browser sandbox
-- Location: `creator/src-tauri/src/`
-- Modules:
-- Entry point: `lib.rs` (registers all commands), `main.rs` (Tauri bootstrap)
-- Purpose: TypeScript type definitions mirroring Kotlin DTOs from the AmbonMUD server
-- Location: `creator/src/types/`
-- Key files: `world.ts` (zone/room/mob/item types), `config.ts` (AppConfig), `project.ts` (Project, Tab), `lore.ts` (WorldLore, Article), `assets.ts` (Settings, AssetEntry), `admin.ts`, `sprites.ts`, `sketch.ts`
-## Data Flow
-- Each Zustand store is independent — no middleware chaining
-- Zone store: manual undo/redo with `past`/`future` arrays per zone (100-entry max)
-- Lore store: manual undo/redo with `lorePast`/`loreFuture` arrays (50-entry max, uses `structuredClone`)
-- Config store: no undo support (dirty flag only)
-- Cross-store communication: stores call `useOtherStore.getState()` for reads (e.g., `assetStore` reads `projectStore` for `mudDir`)
-- UI state persistence: `uiPersistence.ts` saves/loads workspace, tabs, collapsed sections to `localStorage`
-## Key Abstractions
-- Purpose: Unified navigation for 60+ editor panels across two workspaces
-- Examples: `creator/src/lib/panelRegistry.ts`
-- Pattern: Each panel has an `id`, `host` type (config/studio/lore/command), and `group`. The `host` determines which container component wraps it. `MainArea.tsx` switches on `host` to route to `ConfigPanelHost`, `LorePanelHost`, `StudioWorkspace`, or dedicated command components.
-- Purpose: Multi-document editing with tab persistence
-- Examples: `creator/src/stores/projectStore.ts`, `creator/src/types/project.ts`
-- Pattern: Tabs are `{ id, kind, label, panelId? }`. Kind is "panel" or "zone". Zone tabs have `id: "zone:{zoneId}"`. Panel tabs have `id: "panel:{panelId}"`. Tabs are restored from `localStorage` on project open.
-- Purpose: Immutable asset storage with deduplication
-- Examples: `creator/src-tauri/src/assets.rs`
-- Pattern: Files stored with SHA256 hash filenames. Asset manifest (`assets.json`) maps IDs to entries with metadata (type, context, prompt, dimensions). Variants share a `variantGroup` key with one marked `isActive`.
-- Purpose: Reusable list+detail pattern for config editors that manage collections (classes, abilities, races, etc.)
-- Examples: `creator/src/components/config/DefinitionWorkbench.tsx`
-- Pattern: Left panel shows searchable/filterable list, right panel shows detail editor for selected item. Used by `ClassDesigner`, `AbilityDesigner`, `StatusEffectDesigner`, `CommandDesigner`, etc.
-- Purpose: In-memory representation of a zone YAML file
-- Examples: `creator/src/types/world.ts`
-- Pattern: Top-level keys: `zone`, `lifespan`, `startRoom`, `image`, `audio`, `rooms`, `mobs`, `items`, `shops`, `quests`, `gatheringNodes`, `recipes`. Rooms/mobs/items/etc. are `Record<string, EntityFile>` maps.
-## Entry Points
-- Location: `creator/src/main.tsx` → `creator/src/App.tsx`
-- Triggers: Tauri window launch
-- Responsibilities: Renders `WelcomeScreen` (no project) or `AppShell` (project loaded). Loads settings on mount.
-- Location: `creator/src-tauri/src/main.rs` → `creator/src-tauri/src/lib.rs`
-- Triggers: App startup
-- Responsibilities: Registers all Tauri commands (123 commands across 17 modules), initializes plugins (dialog, fs, shell, window-state)
-- Location: `showcase/src/main.tsx` → `showcase/src/App.tsx`
-- Triggers: Browser navigation to Cloudflare Pages URL
-- Responsibilities: Fetches `showcase.json` from R2, renders read-only world lore (articles, maps, timeline, graph)
-## Error Handling
-- Rust: All `#[tauri::command]` functions return `Result<T, String>` — errors are string messages, not typed
-- Frontend: `invoke().catch(() => {})` for fire-and-forget calls (e.g., `set_active_project_dir`)
-- Frontend: `try/catch` with error state for user-facing operations
-- YAML parsing: wrapped in try/catch, falls back to defaults on parse failure
-- Lore loading: returns `DEFAULT_WORLD_LORE` on any error
-## Cross-Cutting Concerns
+Architecture not yet mapped. Follow existing patterns found in the codebase.
 <!-- GSD:architecture-end -->
 
 <!-- GSD:workflow-start source:GSD defaults -->
@@ -548,9 +363,9 @@ A tuning wizard for Arcanum that helps MUD builders understand and configure the
 Before using Edit, Write, or other file-changing tools, start work through a GSD command so planning artifacts and execution context stay in sync.
 
 Use these entry points:
-- `/gsd:quick` for small fixes, doc updates, and ad-hoc tasks
-- `/gsd:debug` for investigation and bug fixing
-- `/gsd:execute-phase` for planned phase work
+- `/gsd-quick` for small fixes, doc updates, and ad-hoc tasks
+- `/gsd-debug` for investigation and bug fixing
+- `/gsd-execute-phase` for planned phase work
 
 Do not make direct repo edits outside a GSD workflow unless the user explicitly asks to bypass it.
 <!-- GSD:workflow-end -->
@@ -561,3 +376,9 @@ Do not make direct repo edits outside a GSD workflow unless the user explicitly 
 > Profile not yet configured. Run `/gsd:profile-user` to generate your developer profile.
 > This section is managed by `generate-claude-profile` -- do not edit manually.
 <!-- GSD:profile-end -->
+
+<!-- GSD:skills-start source:skills/ -->
+## Project Skills
+
+No project skills found. Add skills to any of: `.claude/skills/`, `.agents/skills/`, `.cursor/skills/`, or `.github/skills/` with a `SKILL.md` index file.
+<!-- GSD:skills-end -->

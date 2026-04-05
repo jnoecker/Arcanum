@@ -2,12 +2,12 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Zone Stories
-status: defining_requirements
-stopped_at: Defining requirements for v1.1
-last_updated: "2026-04-05T21:00:00.000Z"
+status: ready_to_plan
+stopped_at: Roadmap created for v1.1 Zone Stories
+last_updated: "2026-04-05T22:00:00.000Z"
 last_activity: 2026-04-05
 progress:
-  total_phases: 0
+  total_phases: 6
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -20,17 +20,17 @@ progress:
 
 See: .planning/PROJECT.md (updated 2026-04-05)
 
-**Core value:** Builders can turn their zone worldbuilding into living narratives
-**Current focus:** Defining requirements for v1.1 Zone Stories
+**Core value:** Builders can turn their zone worldbuilding into living narratives -- stories that work as DM presentation aids at the table and as cinematic experiences on the public showcase.
+**Current focus:** Phase 7: Story Foundation
 
 ## Current Position
 
-Phase: Not started (defining requirements)
-Plan: —
-Status: Defining requirements
-Last activity: 2026-04-05 — Milestone v1.1 started
+Phase: 7 of 12 (Story Foundation) -- first phase of v1.1
+Plan: 0 of 0 in current phase (plans TBD)
+Status: Ready to plan
+Last activity: 2026-04-05 -- Roadmap created for v1.1 Zone Stories
 
-Progress: ░░░░░░░░░░ 0%
+Progress: [░░░░░░░░░░] 0% (v1.1)
 
 ## Milestone History
 
@@ -43,7 +43,13 @@ Progress: ░░░░░░░░░░ 0%
 ### Decisions
 
 Decisions are logged in PROJECT.md Key Decisions table.
-See `.planning/milestones/v1.0-ROADMAP.md` for v1.0 phase details.
+Recent decisions affecting current work:
+
+- [v1.1 start]: Separate storyStore from loreStore (undo/redo bloat risk with dense scene data)
+- [v1.1 start]: Stories persist in separate JSON files (not inline in lore.yaml)
+- [v1.1 start]: CinematicRenderer as portable component (no Tauri deps) shared across editor, presentation, showcase
+- [v1.1 start]: Two new deps only: Motion v12.37 (animation) + dnd-kit v6.3 (drag-and-drop)
+- [v1.1 start]: Fullscreen via Tauri Rust window API, not web Fullscreen API (WebView2 Escape interception)
 
 ### Pending Todos
 
@@ -51,10 +57,12 @@ None.
 
 ### Blockers/Concerns
 
-None.
+- [Phase 10]: CinematicRenderer DOM + Canvas hybrid is most technically novel component -- needs prototyping
+- [Phase 11]: Tauri fullscreen API on Windows 11 + WebView2 needs hands-on testing
+- [Phase 12]: Decide whether Motion or CSS-only transitions for showcase player (bundle size trade-off)
 
 ## Session Continuity
 
 Last session: 2026-04-05
-Stopped at: Defining requirements for v1.1 Zone Stories
-Resume: Continue with requirements definition and roadmap creation
+Stopped at: Roadmap created for v1.1 Zone Stories milestone
+Resume: Run `/gsd-plan-phase 7` to begin Phase 7: Story Foundation

@@ -77,33 +77,33 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| STORY-01 | — | Pending |
-| STORY-02 | — | Pending |
-| STORY-03 | — | Pending |
-| STORY-04 | — | Pending |
-| STORY-05 | — | Pending |
-| STORY-06 | — | Pending |
-| STORY-07 | — | Pending |
-| SCENE-01 | — | Pending |
-| SCENE-02 | — | Pending |
-| SCENE-03 | — | Pending |
-| SCENE-04 | — | Pending |
-| SCENE-05 | — | Pending |
-| SCENE-06 | — | Pending |
-| SCENE-07 | — | Pending |
-| PRES-01 | — | Pending |
-| PRES-02 | — | Pending |
-| PRES-03 | — | Pending |
-| SHOW-01 | — | Pending |
-| SHOW-02 | — | Pending |
-| SHOW-03 | — | Pending |
-| SHOW-04 | — | Pending |
+| STORY-01 | Phase 7: Story Foundation | Pending |
+| STORY-02 | Phase 8: Story Editor | Pending |
+| STORY-03 | Phase 8: Story Editor | Pending |
+| STORY-04 | Phase 8: Story Editor | Pending |
+| STORY-05 | Phase 7: Story Foundation | Pending |
+| STORY-06 | Phase 7: Story Foundation | Pending |
+| STORY-07 | Phase 8: Story Editor | Pending |
+| SCENE-01 | Phase 9: Scene Composition | Pending |
+| SCENE-02 | Phase 9: Scene Composition | Pending |
+| SCENE-03 | Phase 9: Scene Composition | Pending |
+| SCENE-04 | Phase 9: Scene Composition | Pending |
+| SCENE-05 | Phase 9: Scene Composition | Pending |
+| SCENE-06 | Phase 10: Cinematic Renderer | Pending |
+| SCENE-07 | Phase 10: Cinematic Renderer | Pending |
+| PRES-01 | Phase 11: Presentation Mode | Pending |
+| PRES-02 | Phase 11: Presentation Mode | Pending |
+| PRES-03 | Phase 10: Cinematic Renderer | Pending |
+| SHOW-01 | Phase 12: Showcase Player | Pending |
+| SHOW-02 | Phase 12: Showcase Player | Pending |
+| SHOW-03 | Phase 12: Showcase Player | Pending |
+| SHOW-04 | Phase 12: Showcase Player | Pending |
 
 **Coverage:**
-- v1.1 requirements: 18 total
-- Mapped to phases: 0
-- Unmapped: 18 ⚠️
+- v1.1 requirements: 21 total
+- Mapped to phases: 21
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-04-05*
-*Last updated: 2026-04-05 after initial definition*
+*Last updated: 2026-04-05 after roadmap creation*

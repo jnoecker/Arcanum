@@ -34,7 +34,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Plans**: 2 plans
 
 Plans:
-- [ ] 01-01-PLAN.md -- Types, formula evaluators, and TDD tests (FOUND-01, FOUND-02)
+- [x] 01-01-PLAN.md -- Types, formula evaluators, and TDD tests (FOUND-01, FOUND-02)
 - [ ] 01-02-PLAN.md -- Field metadata catalog and diff engine with TDD tests (FOUND-03, FOUND-04)
 
 ### Phase 2: Presets

@@ -112,12 +112,12 @@ Plans:
   1. An XP curve line chart shows XP-per-level for both current config and selected preset, with clear visual differentiation
   2. A mob tier power chart shows HP, damage, armor, and XP across all tiers at a user-selectable level
   3. A stat profile radar chart compares current vs preset stat scaling effectiveness across all stat bindings
-**Plans**: TBD
+**Plans**: 2 plans
 **UI hint**: yes
 
 Plans:
-- [ ] 06-01: TBD
-- [ ] 06-02: TBD
+- [ ] 06-01-PLAN.md -- Chart data functions (TDD), chart color constants, Recharts install + Vite chunk (VIZ-01, VIZ-02, VIZ-03)
+- [ ] 06-02-PLAN.md -- XpCurveChart, MobTierChart, StatRadarChart components, ChartRow container, TuningWizard wiring (VIZ-01, VIZ-02, VIZ-03)
 
 ## Progress
 

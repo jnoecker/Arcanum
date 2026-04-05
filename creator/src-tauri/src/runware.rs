@@ -204,14 +204,34 @@ pub async fn runware_generate_image(
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
+struct ElevenLabsMusicSettings {
+    force_instrumental: bool,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct ElevenLabsProvider {
+    music: ElevenLabsMusicSettings,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct AudioProviderSettings {
+    elevenlabs: ElevenLabsProvider,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
 struct RunwareAudioTask {
     task_type: String,
     #[serde(rename = "taskUUID")]
     task_uuid: String,
+    model: String,
     positive_prompt: String,
     #[serde(skip_serializing_if = "Option::is_none")]
-    seconds_total: Option<u32>,
+    duration: Option<u32>,
     output_format: String,
+    provider_settings: AudioProviderSettings,
 }
 
 #[derive(Debug, Deserialize)]
@@ -241,9 +261,17 @@ pub async fn runware_generate_audio(
     let task = RunwareAudioTask {
         task_type: "audioInference".to_string(),
         task_uuid: uuid::Uuid::new_v4().to_string(),
+        model: "elevenlabs:1@1".to_string(),
         positive_prompt: prompt,
-        seconds_total: duration_seconds,
+        duration: duration_seconds,
         output_format: "MP3".to_string(),
+        provider_settings: AudioProviderSettings {
+            elevenlabs: ElevenLabsProvider {
+                music: ElevenLabsMusicSettings {
+                    force_instrumental: true,
+                },
+            },
+        },
     };
 
     let client = reqwest::Client::new();

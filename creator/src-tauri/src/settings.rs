@@ -10,6 +10,11 @@ const SETTINGS_FILE: &str = "settings.json";
 /// merges user-level settings with project-level settings.
 static ACTIVE_PROJECT_DIR: LazyLock<RwLock<Option<String>>> = LazyLock::new(|| RwLock::new(None));
 
+/// Read the currently active project directory (used by other modules like assets).
+pub async fn active_project_dir() -> Option<String> {
+    ACTIVE_PROJECT_DIR.read().await.clone()
+}
+
 /// Cached user settings — avoids reading settings.json from disk on every call.
 static USER_SETTINGS_CACHE: LazyLock<RwLock<Option<Settings>>> = LazyLock::new(|| RwLock::new(None));
 

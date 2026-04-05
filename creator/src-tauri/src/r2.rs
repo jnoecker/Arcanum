@@ -244,7 +244,7 @@ fn runtime_image_profile(asset_type: &str) -> Option<RuntimeImageProfile> {
         "player_sprite" | "ability_icon" | "status_effect_icon" | "ability_sprite" | "item" | "lore_item" | "status_art" => {
             RuntimeImageProfile { max_width: 256, max_height: 256, jpeg_quality: 82 }
         }
-        "mob" | "entity_portrait" | "race_portrait" | "class_portrait" | "lore_character" | "lore_species" => {
+        "mob" | "pet" | "entity_portrait" | "race_portrait" | "class_portrait" | "lore_character" | "lore_species" => {
             RuntimeImageProfile { max_width: 512, max_height: 768, jpeg_quality: 84 }
         }
         "room" | "background" | "zone_map" | "splash_hero" | "panel_header" | "loading_vignette" | "empty_state" | "ornament" | "lore_location" => {

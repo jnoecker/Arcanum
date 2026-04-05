@@ -107,6 +107,7 @@ export const FORMAT_BY_ASSET_TYPE: Partial<Record<AssetType, string>> = {
   panel_header: "4:1 ultra-wide horizontal header illustration, decorative and panoramic, readable text forbidden",
   room: FORMAT_BY_TYPE.room,
   mob: FORMAT_BY_TYPE.mob,
+  pet: FORMAT_BY_TYPE.mob,
   item: FORMAT_BY_TYPE.item,
   player_sprite: FORMAT_BY_TYPE.mob,
   race_portrait: FORMAT_BY_TYPE.race_portrait,
@@ -246,6 +247,13 @@ export const ASSET_TEMPLATES: Record<AssetType, { label: string; templates: Reco
     templates: {
       arcanum: `A fantastical creature or character standing in a dramatic pose against deep cosmic indigo void, baroque aurum-gold energy scrollwork framing the figure like an ornate portrait border, the subject rendered with faithful anatomy and physical detail — armor, fur, scales, or clothing depicted realistically with Arcanum palette lighting, warm aurum-gold light illuminating the figure from a central point creating soft bloom and highlighting key features, cool blue-violet atmospheric fill providing depth behind the subject, fractaline energy details accenting weapons or magical elements, the figure occupies the center of a square portrait composition, painterly, luminous, extremely detailed, heroic and imposing`,
       gentle_magic: `A fantastical creature or character in a relaxed natural pose within a gentle environment, the subject rendered with faithful anatomy and physical detail — armor, fur, scales, or clothing depicted with soft ambient lighting in the Gentle Magic palette, lavender and pale blue atmospheric haze surrounds the figure creating depth, soft gold light highlights key features without harsh shadows, small magical details accent the character — glowing eyes, luminous trinkets, faintly shimmering fabric, floating motes of light nearby, moss or small flowers growing at their feet, the figure occupies the center of a square portrait composition, the overall feeling is approachable and characterful rather than threatening, painterly, luminous, dreamlike`,
+    },
+  },
+  pet: {
+    label: "Pet Companion",
+    templates: {
+      arcanum: `A fantastical pet companion creature in a dynamic pose against deep cosmic indigo void, baroque aurum-gold energy scrollwork framing the creature like an ornate portrait border, the pet rendered with faithful anatomy and expressive features — fur, scales, feathers, or magical body depicted realistically with Arcanum palette lighting, warm aurum-gold light illuminating the creature from a central point creating soft bloom, cool blue-violet atmospheric glow providing depth, fractaline energy details accenting magical traits — glowing eyes, luminous markings, ethereal wisps, the creature occupies the center of a square portrait composition, painterly, luminous, extremely detailed, endearing yet magical`,
+      gentle_magic: `A fantastical pet companion creature in a playful relaxed pose within a gentle enchanted environment, the pet rendered with faithful anatomy and expressive charming features — fur, scales, feathers, or magical body depicted with soft ambient lighting in the Gentle Magic palette, lavender and pale blue atmospheric haze surrounds the creature creating depth, soft gold light highlights key features, small magical details accent the pet — glowing eyes, luminous markings, faintly shimmering coat, floating motes of light nearby, moss or small flowers at their feet, the creature occupies the center of a square portrait composition, the overall feeling is endearing and magical, painterly, luminous, dreamlike`,
     },
   },
   player_sprite: {

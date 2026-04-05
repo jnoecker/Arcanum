@@ -49,6 +49,7 @@ export type AssetType =
   | "panel_header"
   | "room"
   | "mob"
+  | "pet"
   | "item"
   | "player_sprite"
   | "race_portrait"

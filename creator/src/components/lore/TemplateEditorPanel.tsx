@@ -16,6 +16,8 @@ function generateId(name: string): string {
     .replace(/^_|_$/g, "");
 }
 
+const EMPTY_TEMPLATES: CustomTemplateDefinition[] = [];
+
 const FIELD_TYPES: { value: CustomFieldDef["type"]; label: string }[] = [
   { value: "text", label: "Text" },
   { value: "textarea", label: "Text Area" },
@@ -205,7 +207,7 @@ function TemplateForm({
 }
 
 export function TemplateEditorPanel() {
-  const customTemplates = useLoreStore((s) => s.lore?.customTemplates ?? []);
+  const customTemplates = useLoreStore((s) => s.lore?.customTemplates ?? EMPTY_TEMPLATES);
   const addCustomTemplate = useLoreStore((s) => s.addCustomTemplate);
   const updateCustomTemplate = useLoreStore((s) => s.updateCustomTemplate);
   const deleteCustomTemplate = useLoreStore((s) => s.deleteCustomTemplate);

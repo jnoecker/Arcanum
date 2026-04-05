@@ -62,12 +62,24 @@ fn assets_dir(app: &AppHandle) -> Result<PathBuf, String> {
     Ok(dir.join("assets"))
 }
 
-fn manifest_path(app: &AppHandle) -> Result<PathBuf, String> {
+/// Global manifest path (fallback when no project is active).
+fn global_manifest_path(app: &AppHandle) -> Result<PathBuf, String> {
     Ok(assets_dir(app)?.join(MANIFEST_FILE))
 }
 
+/// Returns the project-scoped manifest path when a project is active,
+/// otherwise falls back to the global manifest.
+async fn manifest_path(app: &AppHandle) -> Result<PathBuf, String> {
+    if let Some(project_dir) = crate::settings::active_project_dir().await {
+        return Ok(PathBuf::from(&project_dir)
+            .join(".arcanum")
+            .join(MANIFEST_FILE));
+    }
+    global_manifest_path(app)
+}
+
 async fn load_manifest(app: &AppHandle) -> Result<Manifest, String> {
-    let path = manifest_path(app)?;
+    let path = manifest_path(app).await?;
     if !path.exists() {
         return Ok(Manifest::default());
     }
@@ -78,7 +90,7 @@ async fn load_manifest(app: &AppHandle) -> Result<Manifest, String> {
 }
 
 async fn save_manifest(app: &AppHandle, manifest: &Manifest) -> Result<(), String> {
-    let path = manifest_path(app)?;
+    let path = manifest_path(app).await?;
     if let Some(parent) = path.parent() {
         tokio::fs::create_dir_all(parent)
             .await

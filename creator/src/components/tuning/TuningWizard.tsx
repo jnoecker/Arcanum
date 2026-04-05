@@ -20,6 +20,7 @@ import { ParameterSection } from "./ParameterSection";
 import { MetricSectionCards } from "./MetricSectionCards";
 import { ApplyFooterBar } from "./ApplyFooterBar";
 import { HealthCheckBanner } from "./HealthCheckBanner";
+import { ChartRow } from "./charts/ChartRow";
 
 const ALL_SECTIONS_ORDERED = [
   TuningSection.CombatStats,
@@ -203,6 +204,16 @@ export function TuningWizard() {
           currentMetrics={currentMetrics}
           presetMetrics={activePresetMetrics}
           diffCounts={sectionDiffCounts}
+        />
+      )}
+
+      {/* Chart visualizations (VIZ-01, VIZ-02, VIZ-03) */}
+      {selectedPresetId && currentMetrics && activePresetMetrics && presetConfig && (
+        <ChartRow
+          currentConfig={config}
+          presetConfig={presetConfig}
+          currentMetrics={currentMetrics}
+          presetMetrics={activePresetMetrics}
         />
       )}
 

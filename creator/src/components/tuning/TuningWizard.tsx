@@ -11,6 +11,7 @@ import { computeMetrics } from "@/lib/tuning/formulas";
 import { FIELD_METADATA } from "@/lib/tuning/fieldMetadata";
 import { computeDiff, groupDiffBySection } from "@/lib/tuning/diffEngine";
 import { TuningSection } from "@/lib/tuning/types";
+import { deepMerge } from "@/lib/tuning/merge";
 import type { AppConfig } from "@/types/config";
 import type { DeepPartial, FieldMeta, DiffEntry } from "@/lib/tuning/types";
 import { PresetCard } from "./PresetCard";
@@ -30,31 +31,6 @@ const PRESET_BORDER: Record<string, string> = {
   balanced: "border-stellar-blue",
   hardcore: "border-status-error",
 };
-
-/** Recursively merge a DeepPartial overlay onto a base config. */
-function deepMerge<T extends Record<string, unknown>>(base: T, overlay: DeepPartial<T>): T {
-  const result = { ...base } as Record<string, unknown>;
-  for (const key of Object.keys(overlay)) {
-    const ov = (overlay as Record<string, unknown>)[key];
-    const bv = (base as Record<string, unknown>)[key];
-    if (
-      ov != null &&
-      typeof ov === "object" &&
-      !Array.isArray(ov) &&
-      bv != null &&
-      typeof bv === "object" &&
-      !Array.isArray(bv)
-    ) {
-      result[key] = deepMerge(
-        bv as Record<string, unknown>,
-        ov as DeepPartial<Record<string, unknown>>,
-      );
-    } else if (ov !== undefined) {
-      result[key] = ov;
-    }
-  }
-  return result as T;
-}
 
 export function TuningWizard() {
   const config = useConfigStore((s) => s.config);

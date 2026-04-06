@@ -107,7 +107,7 @@ export function EntityOverlay({
 
   const scale = getEntityScale(entity);
   const backRow = isBackRow(entity.slot);
-  const baseWidth = 72;
+  const baseWidth = 148;
   const width = Math.round(baseWidth * scale);
 
   // Use local position during drag, otherwise resolve from entity

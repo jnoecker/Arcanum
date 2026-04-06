@@ -80,7 +80,7 @@ export function AnimatedEntity({
   const pos = resolveEntityPosition(entity);
   const scale = getEntityScale(entity);
   const backRow = isBackRow(entity.slot);
-  const baseWidth = 72;
+  const baseWidth = 148;
   const width = Math.round(baseWidth * scale);
 
   const entrancePreset = getEntrancePreset(entity.entrancePath);

@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { WorldLore, Article, ArticleTemplate, ColorLabel, LoreMap, MapPin, CalendarSystem, TimelineEvent, LoreDocument, TemplateOverrides, ShowcaseSettings, CustomTemplateDefinition, ArtStyle } from "@/types/lore";
+import type { WorldLore, Article, ArticleTemplate, ColorLabel, LoreMap, MapPin, CalendarSystem, TimelineEvent, LoreDocument, TemplateOverrides, ShowcaseSettings, CustomTemplateDefinition, CustomSceneTemplate, ArtStyle } from "@/types/lore";
 
 const MAX_LORE_HISTORY = 50;
 
@@ -108,6 +108,11 @@ interface LoreStore extends LoreState {
   addCustomTemplate: (template: CustomTemplateDefinition) => void;
   updateCustomTemplate: (id: string, template: CustomTemplateDefinition) => void;
   deleteCustomTemplate: (id: string) => void;
+
+  // Custom scene template operations
+  addCustomSceneTemplate: (template: CustomSceneTemplate) => void;
+  updateCustomSceneTemplate: (id: string, patch: Partial<CustomSceneTemplate>) => void;
+  deleteCustomSceneTemplate: (id: string) => void;
 
   // Art style operations
   createArtStyle: (style: ArtStyle) => void;
@@ -718,6 +723,43 @@ export const useLoreStore = create<LoreStore>((set, get) => ({
       return {
         ...snapshotLore(s),
         lore: { ...s.lore, customTemplates: templates, articles },
+        dirty: true,
+      };
+    }),
+
+  // ─── Custom scene template operations ───────────────────────────
+
+  addCustomSceneTemplate: (template) =>
+    set((s) => {
+      if (!s.lore) return s;
+      const templates = [...(s.lore.customSceneTemplates ?? []), template];
+      return {
+        ...snapshotLore(s),
+        lore: { ...s.lore, customSceneTemplates: templates },
+        dirty: true,
+      };
+    }),
+
+  updateCustomSceneTemplate: (id, patch) =>
+    set((s) => {
+      if (!s.lore) return s;
+      const templates = (s.lore.customSceneTemplates ?? []).map((t) =>
+        t.id === id ? { ...t, ...patch } : t,
+      );
+      return {
+        ...snapshotLore(s),
+        lore: { ...s.lore, customSceneTemplates: templates },
+        dirty: true,
+      };
+    }),
+
+  deleteCustomSceneTemplate: (id) =>
+    set((s) => {
+      if (!s.lore) return s;
+      const templates = (s.lore.customSceneTemplates ?? []).filter((t) => t.id !== id);
+      return {
+        ...snapshotLore(s),
+        lore: { ...s.lore, customSceneTemplates: templates },
         dirty: true,
       };
     }),

@@ -15,6 +15,7 @@ import { RelationGraphPanel } from "./RelationGraphPanel";
 import { DocumentLibraryPanel } from "./DocumentLibraryPanel";
 import { ShowcaseSettingsPanel } from "./ShowcaseSettingsPanel";
 import { TemplateEditorPanel } from "./TemplateEditorPanel";
+import { SceneTemplateEditorPanel } from "./SceneTemplateEditorPanel";
 import { StoryBrowser } from "./StoryBrowser";
 import { ArtStylePanel } from "./ArtStylePanel";
 
@@ -45,6 +46,8 @@ function renderPanel(panelId: string): ReactNode {
       return <ShowcaseSettingsPanel />;
     case "templates":
       return <TemplateEditorPanel />;
+    case "sceneTemplates":
+      return <SceneTemplateEditorPanel />;
     case "storyEditor":
       return <StoryBrowser />;
     default:

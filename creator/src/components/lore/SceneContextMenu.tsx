@@ -1,16 +1,17 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { SCENE_TEMPLATE_PRESETS } from "@/lib/sceneTemplates";
-import type { SceneTemplate } from "@/types/story";
+import { useLoreStore } from "@/stores/loreStore";
+import { getAllSceneTemplates } from "@/lib/sceneTemplates";
+import type { SceneTemplateId } from "@/types/story";
 
 interface SceneContextMenuProps {
   x: number;
   y: number;
   sceneId: string;
-  currentTemplate?: SceneTemplate;
+  currentTemplate?: SceneTemplateId;
   onDuplicate: (sceneId: string) => void;
   onDelete: (sceneId: string) => void;
-  onApplyTemplate: (sceneId: string, template: SceneTemplate) => void;
+  onApplyTemplate: (sceneId: string, template: SceneTemplateId) => void;
   onClearTemplate: (sceneId: string) => void;
   onClose: () => void;
 }
@@ -68,6 +69,8 @@ export function SceneContextMenu({
 }: SceneContextMenuProps) {
   const menuRef = useRef<HTMLDivElement>(null);
   const [showTemplateSubmenu, setShowTemplateSubmenu] = useState(false);
+  const customTemplates = useLoreStore((s) => s.lore?.customSceneTemplates);
+  const templates = getAllSceneTemplates(customTemplates);
 
   // Dismiss on outside click or Escape
   useEffect(() => {
@@ -134,21 +137,26 @@ export function SceneContextMenu({
             className="absolute left-full top-0 bg-bg-elevated border border-border-default rounded-lg backdrop-blur-sm min-w-[180px] py-1 shadow-[var(--shadow-panel)]"
             style={{ zIndex: 61 }}
           >
-            {Object.values(SCENE_TEMPLATE_PRESETS).map((preset) => (
+            {templates.map((tpl) => (
               <button
-                key={preset.id}
+                key={tpl.id}
                 type="button"
                 className={menuItemClass}
                 onClick={() => {
-                  onApplyTemplate(sceneId, preset.id);
+                  onApplyTemplate(sceneId, tpl.id);
                   onClose();
                 }}
               >
                 <span
                   className="inline-block w-1.5 h-1.5 rounded-full"
-                  style={{ backgroundColor: preset.badgeColor }}
+                  style={{ backgroundColor: tpl.badgeColor }}
                 />
-                {preset.label}
+                {tpl.label}
+                {tpl.isCustom && (
+                  <span className="ml-auto text-[8px] uppercase tracking-wider text-text-muted">
+                    custom
+                  </span>
+                )}
               </button>
             ))}
 

@@ -1,4 +1,5 @@
-import type { Scene, SceneTemplate } from "@/types/story";
+import type { Scene, SceneTemplate, SceneTemplateId } from "@/types/story";
+import type { CustomSceneTemplate } from "@/types/lore";
 
 // ─── Scene template preset definitions ──────────────────────────────
 
@@ -81,12 +82,71 @@ const DEFAULT_TITLES = new Set(
   Object.values(SCENE_TEMPLATE_PRESETS).map((p) => p.defaultTitle),
 );
 
-/** Returns a Partial<Scene> patch with the template's default title, narration, and template type. */
-export function applyTemplate(template: SceneTemplate): Partial<Scene> {
-  const preset = SCENE_TEMPLATE_PRESETS[template];
+/** Resolved scene template (built-in or custom), unified shape. */
+export interface ResolvedSceneTemplate {
+  id: string;
+  label: string;
+  badgeColor: string;
+  defaultTitle: string;
+  defaultNarration: string;
+  isCustom: boolean;
+}
+
+/** Convert built-in preset to resolved shape. */
+function presetToResolved(preset: SceneTemplatePreset): ResolvedSceneTemplate {
   return {
-    title: preset.defaultTitle,
-    narration: preset.defaultNarration,
+    id: preset.id,
+    label: preset.label,
+    badgeColor: preset.badgeColor,
+    defaultTitle: preset.defaultTitle,
+    defaultNarration: preset.defaultNarration,
+    isCustom: false,
+  };
+}
+
+/** Convert custom template to resolved shape. */
+function customToResolved(c: CustomSceneTemplate): ResolvedSceneTemplate {
+  return {
+    id: c.id,
+    label: c.label,
+    badgeColor: c.badgeColor,
+    defaultTitle: c.defaultTitle,
+    defaultNarration: c.defaultNarration,
+    isCustom: true,
+  };
+}
+
+/** Look up a scene template by ID, checking built-ins first then custom. */
+export function resolveSceneTemplate(
+  id: SceneTemplateId | undefined,
+  custom?: CustomSceneTemplate[],
+): ResolvedSceneTemplate | undefined {
+  if (!id) return undefined;
+  const builtIn = (SCENE_TEMPLATE_PRESETS as Record<string, SceneTemplatePreset | undefined>)[id];
+  if (builtIn) return presetToResolved(builtIn);
+  const found = custom?.find((c) => c.id === id);
+  return found ? customToResolved(found) : undefined;
+}
+
+/** Return a flat list of all scene templates (built-in + custom). */
+export function getAllSceneTemplates(
+  custom?: CustomSceneTemplate[],
+): ResolvedSceneTemplate[] {
+  const builtIn = Object.values(SCENE_TEMPLATE_PRESETS).map(presetToResolved);
+  const customResolved = (custom ?? []).map(customToResolved);
+  return [...builtIn, ...customResolved];
+}
+
+/** Returns a Partial<Scene> patch with the template's default title, narration, and template type. */
+export function applyTemplate(
+  template: SceneTemplateId,
+  custom?: CustomSceneTemplate[],
+): Partial<Scene> {
+  const resolved = resolveSceneTemplate(template, custom);
+  if (!resolved) return { template };
+  return {
+    title: resolved.defaultTitle,
+    narration: resolved.defaultNarration,
     template,
   };
 }

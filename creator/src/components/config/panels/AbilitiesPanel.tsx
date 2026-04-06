@@ -58,7 +58,7 @@ export function renameAbilityDefinition(config: AppConfig, oldId: string, newId:
 }
 
 function abilityPrompt(ability: AbilityDefinitionConfig, style: ArtStyle): string {
-  const preamble = getPreamble(style);
+  const preamble = getPreamble(style, "worldbuilding");
   const effectDesc = ability.effect.type.toLowerCase().replace(/_/g, " ");
   return `${preamble}, a game ability icon for "${ability.displayName}" — ${effectDesc} spell, ${ability.description || "magical ability"}, centered square composition like an RPG ability sprite, iconic symbol rendered as flowing energy, no text, no figures`;
 }
@@ -422,6 +422,7 @@ export function AbilityDetail({
             onAccept={(filePath) => patch({ image: filePath })}
             assetType="ability_icon"
             context={{ zone: "", entity_type: "ability", entity_id: id }}
+            surface="worldbuilding"
           />
         </div>
       </div>

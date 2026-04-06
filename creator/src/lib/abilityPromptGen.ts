@@ -85,7 +85,7 @@ Effect type: ${ability.effect.type}
 Level: ${ability.levelRequired}
 
 Required style suffix (include verbatim at the end):
-${getStyleSuffix()}`;
+${getStyleSuffix("worldbuilding")}`;
 
   return invoke<string>("llm_complete", {
     systemPrompt: getAbilitySystemPrompt(),
@@ -114,7 +114,7 @@ Status Effect: ${effect.displayName}
 ${details}
 
 Required style suffix (include verbatim at the end):
-${getStyleSuffix()}`;
+${getStyleSuffix("worldbuilding")}`;
 
   return invoke<string>("llm_complete", {
     systemPrompt: getAbilitySystemPrompt(),
@@ -213,7 +213,7 @@ export function fillAbilityTemplate(
     .replace(/\{class_style\}/g, classStyle)
     .replace(/\{effect_visual\}/g, effectVisual);
 
-  return `${prompt}\n\n${getStyleSuffix()}`;
+  return `${prompt}\n\n${getStyleSuffix("worldbuilding")}`;
 }
 
 /**
@@ -234,7 +234,7 @@ export function fillStatusEffectTemplate(
     .replace(/\{class_style\}/g, classStyle)
     .replace(/\{effect_visual\}/g, effectVisual);
 
-  return `${prompt}\n\n${getStyleSuffix()}`;
+  return `${prompt}\n\n${getStyleSuffix("worldbuilding")}`;
 }
 
 // ─── Per-ability LLM enhancement ─────────────────────────────────────
@@ -263,7 +263,7 @@ Rules:
       systemPrompt,
       userPrompt: `Refine this ability icon generation prompt:\n\n${rawPrompt}`,
     });
-    return `${enhanced.trim()}\n\n${getStyleSuffix()}`;
+    return `${enhanced.trim()}\n\n${getStyleSuffix("worldbuilding")}`;
   } catch {
     return rawPrompt;
   }

@@ -87,8 +87,8 @@ export function AssetGenerator() {
     setEnhancing(true);
     setError(null);
     try {
-      const preamble = getPreamble(artStyle);
-      const systemPrompt = getEnhanceSystemPrompt(artStyle);
+      const preamble = getPreamble(artStyle, "worldbuilding");
+      const systemPrompt = getEnhanceSystemPrompt(artStyle, undefined, "worldbuilding");
       const response = await invoke<string>("enhance_prompt", {
         prompt: `${preamble}\n\n${prompt}`,
         systemPrompt,
@@ -106,7 +106,7 @@ export function AssetGenerator() {
     setStage("generating");
     setError(null);
     try {
-      const preamble = getPreamble(artStyle);
+      const preamble = getPreamble(artStyle, "worldbuilding");
       const finalPrompt = useEnhanced && enhancedPrompt ? enhancedPrompt : `${preamble}\n\n${prompt}`;
       const model = IMAGE_MODELS.find((entry) => entry.id === modelId);
       const guidance =

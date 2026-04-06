@@ -199,7 +199,7 @@ export function fillSpriteTemplate(
   template: SpritePromptTemplate,
   dimensions: SpriteDimensions,
 ): string {
-  return `${resolveSpritePromptBody(template, dimensions)}\n\n${getStyleSuffix()}`;
+  return `${resolveSpritePromptBody(template, dimensions)}\n\n${getStyleSuffix("worldbuilding")}`;
 }
 
 function resolveSpritePromptBody(
@@ -256,7 +256,7 @@ export function buildSpritePrompt(
 ): string {
   const resolvedTemplate = template ?? fallbackSpriteTemplate();
   const promptBody = resolveSpritePromptBody(resolvedTemplate, dimensions, extraContext);
-  return `${promptBody}\n\n${getStyleSuffix()}`;
+  return `${promptBody}\n\n${getStyleSuffix("worldbuilding")}`;
 }
 
 // ─── Per-sprite LLM enhancement ─────────────────────────────────────
@@ -288,7 +288,7 @@ Rules:
       userPrompt: `Refine this sprite generation prompt:\n\n${rawPrompt}`,
     });
     // Re-append style suffix since the LLM was told not to include it
-    return `${enhanced.trim()}\n\n${getStyleSuffix()}`;
+    return `${enhanced.trim()}\n\n${getStyleSuffix("worldbuilding")}`;
   } catch {
     return rawPrompt;
   }

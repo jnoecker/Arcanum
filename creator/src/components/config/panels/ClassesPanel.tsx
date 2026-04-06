@@ -263,6 +263,7 @@ export function ClassDetail({
           }}
           assetType="class_portrait"
           context={{ zone: "", entity_type: "class", entity_id: id }}
+          surface="worldbuilding"
         />
       </div>
     </>

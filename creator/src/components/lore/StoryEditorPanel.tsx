@@ -7,6 +7,8 @@ import { loadStory, saveStory } from "@/lib/storyPersistence";
 import { useImageSrc } from "@/lib/useImageSrc";
 import { ActionButton, Spinner, EditableField } from "@/components/ui/FormWidgets";
 import { AssetPickerModal } from "@/components/ui/AssetPickerModal";
+import { SceneTimeline } from "./SceneTimeline";
+import { SceneDetailEditor } from "./SceneDetailEditor";
 
 interface StoryEditorPanelProps {
   storyId: string;
@@ -50,10 +52,13 @@ export function StoryEditorPanel({ storyId }: StoryEditorPanelProps) {
   const undoStory = useStoryStore((s) => s.undoStory);
   const redoStory = useStoryStore((s) => s.redoStory);
   const markClean = useStoryStore((s) => s.markClean);
+  const activeSceneId = useStoryStore((s) => s.activeSceneId);
+  const setActiveScene = useStoryStore((s) => s.setActiveScene);
 
   const [loading, setLoading] = useState(false);
   const [loadError, setLoadError] = useState(false);
   const [showAssetPicker, setShowAssetPicker] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
 
   // Derive zone name from zoneStore
   const zones = useZoneStore((s) => s.zones);
@@ -111,6 +116,16 @@ export function StoryEditorPanel({ storyId }: StoryEditorPanelProps) {
     };
   }, [storyId]);
 
+  // Auto-select first scene when story loads and no scene is active (D-03)
+  useEffect(() => {
+    if (story && story.scenes.length > 0 && !activeSceneId) {
+      const first = [...story.scenes].sort((a, b) => a.sortOrder - b.sortOrder)[0];
+      if (first) {
+        setActiveScene(first.id);
+      }
+    }
+  }, [story, activeSceneId, setActiveScene]);
+
   // Title commit handler -- updates both story and lore article stub
   const handleTitleCommit = useCallback(
     (newTitle: string) => {
@@ -166,9 +181,15 @@ export function StoryEditorPanel({ storyId }: StoryEditorPanelProps) {
     );
   }
 
+  // Sorted scenes for rendering
+  const sortedScenes = [...(story.scenes || [])].sort(
+    (a, b) => a.sortOrder - b.sortOrder,
+  );
+  const activeScene = sortedScenes.find((s) => s.id === activeSceneId);
+
   return (
     <div className="flex flex-col gap-6">
-      {/* Section 1: Header Bar */}
+      {/* Section 0: Header Bar */}
       <div className="flex items-start justify-between gap-4">
         <div className="flex min-w-0 flex-1 items-center gap-3">
           <EditableField
@@ -214,32 +235,61 @@ export function StoryEditorPanel({ storyId }: StoryEditorPanelProps) {
         </div>
       </div>
 
-      {/* Section 2: Cover Image */}
+      {/* Section 1: Collapsible Story Settings (D-04) */}
       <div>
-        {story.coverImage ? (
-          <CoverImage
-            fileName={story.coverImage}
-            onChangeClick={() => setShowAssetPicker(true)}
-          />
-        ) : (
-          <button
-            onClick={() => setShowAssetPicker(true)}
-            className="flex h-[160px] w-[240px] cursor-pointer items-center justify-center rounded-xl border-2 border-dashed border-border-default transition-colors hover:border-accent/40 hover:bg-bg-tertiary"
+        <button
+          type="button"
+          onClick={() => setShowSettings(!showSettings)}
+          aria-expanded={showSettings}
+          className="flex items-center gap-2 text-2xs text-text-muted hover:text-text-primary transition-colors"
+        >
+          <svg
+            width="12"
+            height="12"
+            viewBox="0 0 12 12"
+            fill="none"
+            className={`transform transition-transform duration-200 ${showSettings ? "rotate-180" : ""}`}
           >
-            <span className="text-sm text-text-muted">Add a cover image</span>
-          </button>
-        )}
+            <path d="M3 5l3 3 3-3" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+          Story Settings
+        </button>
+
+        <div
+          className={`overflow-hidden transition-[max-height] duration-300 ${
+            showSettings ? "max-h-[400px]" : "max-h-0"
+          }`}
+          style={{ transitionTimingFunction: "var(--ease-unfurl)" }}
+        >
+          <div className="pt-3">
+            {story.coverImage ? (
+              <CoverImage
+                fileName={story.coverImage}
+                onChangeClick={() => setShowAssetPicker(true)}
+              />
+            ) : (
+              <button
+                onClick={() => setShowAssetPicker(true)}
+                className="flex h-[160px] w-[240px] cursor-pointer items-center justify-center rounded-xl border-2 border-dashed border-border-default transition-colors hover:border-accent/40 hover:bg-bg-tertiary"
+              >
+                <span className="text-sm text-text-muted">Add a cover image</span>
+              </button>
+            )}
+          </div>
+        </div>
       </div>
 
-      {/* Section 3: Scene List Placeholder */}
-      <div className="flex flex-col items-center justify-center gap-4 py-8 text-center">
-        <div className="ornate-divider" />
-        <h3 className="font-display text-lg text-text-primary">No scenes yet</h3>
-        <p className="max-w-sm text-sm leading-7 text-text-muted">
-          Scenes will be added in a future update. For now, your story is saved
-          and ready.
-        </p>
-      </div>
+      {/* Section 2: SceneTimeline (D-01) */}
+      <SceneTimeline
+        storyId={storyId}
+        scenes={sortedScenes}
+        activeSceneId={activeSceneId}
+      />
+
+      {/* Section 3: SceneDetailEditor (D-01, D-03) */}
+      {activeScene && (
+        <SceneDetailEditor storyId={storyId} scene={activeScene} />
+      )}
 
       {/* Section 4: Metadata Footer */}
       <div className="flex items-center gap-4 border-t border-border-muted pt-3">

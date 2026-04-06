@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { WorldLore, Article, ArticleTemplate, ColorLabel, LoreMap, MapPin, CalendarSystem, TimelineEvent, LoreDocument, TemplateOverrides, ShowcaseSettings, CustomTemplateDefinition, CustomSceneTemplate, ArtStyle } from "@/types/lore";
+import type { WorldLore, Article, ArticleTemplate, ColorLabel, LoreMap, MapPin, CalendarSystem, TimelineEvent, LoreDocument, TemplateOverrides, ShowcaseSettings, CustomTemplateDefinition, CustomSceneTemplate, ArtStyle, ZonePlan } from "@/types/lore";
 
 const MAX_LORE_HISTORY = 50;
 
@@ -10,6 +10,7 @@ const EMPTY_CALENDARS: CalendarSystem[] = [];
 const EMPTY_EVENTS: TimelineEvent[] = [];
 const EMPTY_COLOR_LABELS: ColorLabel[] = [];
 const EMPTY_DOCUMENTS: LoreDocument[] = [];
+const EMPTY_ZONE_PLANS: ZonePlan[] = [];
 
 /** Safe selector: returns lore.articles or a stable empty object. */
 export const selectArticles = (s: { lore: WorldLore | null }) => s.lore?.articles ?? EMPTY_ARTICLES;
@@ -22,6 +23,8 @@ export const selectEvents = (s: { lore: WorldLore | null }) => s.lore?.timelineE
 /** Safe selector: returns lore.colorLabels or a stable empty array. */
 export const selectColorLabels = (s: { lore: WorldLore | null }) => s.lore?.colorLabels ?? EMPTY_COLOR_LABELS;
 export const selectDocuments = (s: { lore: WorldLore | null }) => s.lore?.documents ?? EMPTY_DOCUMENTS;
+/** Safe selector: returns lore.zonePlans or a stable empty array. */
+export const selectZonePlans = (s: { lore: WorldLore | null }) => s.lore?.zonePlans ?? EMPTY_ZONE_PLANS;
 /** Selector: count of lore articles (returns a primitive). */
 export const selectArticleCount = (s: { lore: WorldLore | null }) => Object.keys(s.lore?.articles ?? EMPTY_ARTICLES).length;
 
@@ -113,6 +116,15 @@ interface LoreStore extends LoreState {
   addCustomSceneTemplate: (template: CustomSceneTemplate) => void;
   updateCustomSceneTemplate: (id: string, patch: Partial<CustomSceneTemplate>) => void;
   deleteCustomSceneTemplate: (id: string) => void;
+
+  // Zone plan operations
+  createZonePlan: (plan: ZonePlan) => void;
+  updateZonePlan: (id: string, patch: Partial<ZonePlan>) => void;
+  deleteZonePlan: (id: string) => void;
+  /** Replace all zone plans (used by AI generation accept-all). */
+  replaceZonePlans: (plans: ZonePlan[]) => void;
+  /** Append a batch (used by AI generation accept-individual). */
+  addZonePlans: (plans: ZonePlan[]) => void;
 
   // Art style operations
   createArtStyle: (style: ArtStyle) => void;
@@ -760,6 +772,72 @@ export const useLoreStore = create<LoreStore>((set, get) => ({
       return {
         ...snapshotLore(s),
         lore: { ...s.lore, customSceneTemplates: templates },
+        dirty: true,
+      };
+    }),
+
+  // ─── Zone plan operations ────────────────────────────────────────
+
+  createZonePlan: (plan) =>
+    set((s) => {
+      if (!s.lore) return s;
+      const existing = s.lore.zonePlans ?? [];
+      return {
+        ...snapshotLore(s),
+        lore: { ...s.lore, zonePlans: [...existing, plan] },
+        dirty: true,
+      };
+    }),
+
+  updateZonePlan: (id, patch) =>
+    set((s) => {
+      if (!s.lore) return s;
+      const plans = (s.lore.zonePlans ?? []).map((p) =>
+        p.id === id
+          ? { ...p, ...patch, updatedAt: new Date().toISOString() }
+          : p,
+      );
+      return {
+        ...snapshotLore(s),
+        lore: { ...s.lore, zonePlans: plans },
+        dirty: true,
+      };
+    }),
+
+  deleteZonePlan: (id) =>
+    set((s) => {
+      if (!s.lore) return s;
+      const plans = (s.lore.zonePlans ?? []).filter((p) => p.id !== id);
+      // Also strip this id from any other plan's borders list.
+      const cleaned = plans.map((p) =>
+        p.borders?.includes(id)
+          ? { ...p, borders: p.borders.filter((b) => b !== id) }
+          : p,
+      );
+      return {
+        ...snapshotLore(s),
+        lore: { ...s.lore, zonePlans: cleaned },
+        dirty: true,
+      };
+    }),
+
+  replaceZonePlans: (plans) =>
+    set((s) => {
+      if (!s.lore) return s;
+      return {
+        ...snapshotLore(s),
+        lore: { ...s.lore, zonePlans: plans },
+        dirty: true,
+      };
+    }),
+
+  addZonePlans: (plans) =>
+    set((s) => {
+      if (!s.lore) return s;
+      const existing = s.lore.zonePlans ?? [];
+      return {
+        ...snapshotLore(s),
+        lore: { ...s.lore, zonePlans: [...existing, ...plans] },
         dirty: true,
       };
     }),

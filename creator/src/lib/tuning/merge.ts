@@ -32,8 +32,8 @@ export function deepMerge<T extends Record<string, unknown>>(base: T, overlay: D
   return result as T;
 }
 
-/** Set a value at a dot-separated path in a nested object. */
-function setNestedValue(obj: Record<string, unknown>, path: string, value: unknown): void {
+/** Set a value at a dot-separated path in a nested object (mutates). */
+export function setNestedValue(obj: Record<string, unknown>, path: string, value: unknown): void {
   const keys = path.split(".");
   let current = obj;
   for (let i = 0; i < keys.length - 1; i++) {

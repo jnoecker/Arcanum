@@ -17,6 +17,7 @@ interface ParameterSectionProps {
   isCollapsed: boolean;
   onToggleCollapsed: () => void;
   presetAccentBorder?: string;
+  onValueChange?: (path: string, value: unknown) => void;
 }
 
 /** Walk a dot-path to read a nested value from an object. */
@@ -38,6 +39,7 @@ export function ParameterSection({
   isCollapsed,
   onToggleCollapsed,
   presetAccentBorder,
+  onValueChange,
 }: ParameterSectionProps) {
   const changedCount = useMemo(
     () => fields.filter(([path]) => diffMap.has(path)).length,
@@ -107,6 +109,7 @@ export function ParameterSection({
                 hasPreset={hasPreset}
                 presetAccentBorder={presetAccentBorder}
                 even={idx % 2 === 0}
+                onValueChange={onValueChange}
               />
             );
           })}

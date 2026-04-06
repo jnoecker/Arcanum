@@ -48,7 +48,7 @@ Builders can turn their zone worldbuilding into living narratives — stories th
 - [x] Cinematic effects: crossfade transitions, entity movement paths, typewriter narration — Phase 10
 - [ ] Fullscreen DM slide presentation mode with keystroke advance
 - [x] Stories as a new lore article type with full lore system integration — Phase 7
-- [ ] Showcase export: embedded story player with click-through and auto-play
+- [x] Showcase export: embedded story player with click-through and auto-play — Phase 12
 - [x] Single-zone story scope, architecture supports multi-zone later — Phase 7
 
 ### Out of Scope
@@ -116,7 +116,7 @@ This document evolves at phase transitions and milestone boundaries.
 
 v1.0 Tuning Wizard shipped (2026-04-05). All 6 phases complete: foundation data layer (types, formulas, diff engine, 137 field metadata), 3 themed presets (Casual/Balanced/Hardcore), wizard workspace with preset cards and searchable parameter browser, before/after comparison view with derived metric KPI cards, per-section apply flow with undo/reset and health check warnings, and Recharts visualizations (XP curve, mob tier power, stat radar). 107 commits, 222 files, +22K lines.
 
-v1.1 Zone Stories in progress — Phase 7 (Story Foundation) complete: Story/Scene type hierarchy, storyStore with manual undo/redo (50-entry structuredClone snapshots), JSON persistence (one file per story in stories/ directory), "story" as new lore article type with thin article stub pattern, NewStoryDialog with zone-first creation flow, StoryEditorPanel with auto-save and cover image support. 21 new tests, 761 total passing.
+v1.1 Zone Stories in progress — Phase 12 (Showcase Player) complete: Motion library installed in showcase, CinematicRenderer engine ported (4 components: CinematicRenderer, CinematicScene, AnimatedEntity, TypewriterNarration), ShowcaseStory/ShowcaseScene types defined, creator export pipeline extended with exportStories(). Stories page at /stories with responsive card grid, StoryPlayerPage at /stories/:id with full player controls. Three navigation modes: click-through (click/keyboard), auto-play (5s/10s/15s timer with progress bar), scroll-driven (CSS scroll-snap + IntersectionObserver). Play Story button on story-template Codex articles. 861 creator tests passing, showcase TypeScript clean.
 
 ---
-*Last updated: 2026-04-05 after Phase 7 completion*
+*Last updated: 2026-04-06 after Phase 12 completion*

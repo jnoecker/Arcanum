@@ -34,14 +34,14 @@ Declared values (must be multiples of 4):
 | Token | Value | Usage |
 |-------|-------|-------|
 | xs | 4px | Icon gaps, inline padding, thumbnail strip gaps |
-| sm | 8px | Compact element spacing, control bar button gaps |
+| sm | 8px | Compact element spacing, control bar button gaps, icon-button padding |
 | md | 16px | Default element spacing, card grid gaps, control bar padding |
 | lg | 24px | Section padding, story card content padding |
 | xl | 32px | Player area vertical margins, page section gaps |
 | 2xl | 48px | Stories page top/bottom padding |
 | 3xl | 64px | Not used in this phase |
 
-Exceptions: Control bar buttons use 40px touch targets (10px padding around 20px icons) for comfortable click/tap interaction. This is not a multiple of 4 but aligns with WCAG touch target minimums.
+Exceptions: Control bar icon-only buttons use 40px touch targets via `p-2` (8px) padding around 24px icons (8 + 24 + 8 = 40px). All values are multiples of 4. This meets WCAG touch target minimums.
 
 ---
 
@@ -49,11 +49,12 @@ Exceptions: Control bar buttons use 40px touch targets (10px padding around 20px
 
 | Role | Size | Weight | Line Height | Font | Usage |
 |------|------|--------|-------------|------|-------|
-| Body | 17px | 400 | 1.75 | Crimson Pro | Showcase body text (inherited from `body` in index.css) |
-| Label | 11px | 400 | 1.4 | Cinzel | Control bar labels, scene counter, mode labels, card metadata. Uppercase, tracking 0.14-0.2em |
-| Heading | 20px | 600 | 1.2 | Cinzel | Story title above player, StoriesPage section heading |
+| Small | 12px | 400 | 1.4 | Cinzel | Control bar labels, scene counter, mode labels, card metadata ("STORY" label, scene count, zone name), auto-play timing label. Uppercase, tracking 0.14-0.18em |
+| Body | 17px | 400 | 1.75 | Crimson Pro | Showcase body text (inherited from `body` in index.css), story card titles |
+| Heading | 20px | 700 | 1.2 | Cinzel | Story title above player, StoriesPage section heading, "Play Story" banner heading |
 | Display | 28px | 700 | 1.15 | Cinzel | StoriesPage page title |
-| Caption | 13px | 400 | 1.4 | Crimson Pro | Story card scene count, zone name, auto-play timing label |
+
+**Weights:** 400 (regular) and 700 (bold). Two weights only.
 
 **Narration text inside CinematicRenderer:** Inherits from the ported TypewriterNarration component. Body font (Crimson Pro) at 17px, weight 400, line-height 1.6, color `#dbe3f8` (text-primary). Rendered over a `from-black/60 to-transparent` gradient background within the 16:9 viewport.
 
@@ -162,9 +163,9 @@ All colors reference the showcase's `@theme` tokens defined in `showcase/src/ind
 - Outer: `rounded-lg overflow-hidden` with top border accent (`border-t-2 border-accent/30`)
 - Cover image: `aspect-video` (16:9), `object-cover`, with `group-hover:scale-[1.03]` zoom (700ms ease-out)
 - Bottom section: `px-4 py-3 bg-bg-secondary/40`
-- "STORY" label: 9px Cinzel, `text-accent`, tracking 0.14em, uppercase
-- Title: 15px Cinzel, `text-accent-emphasis`, hover transitions to `text-accent`
-- Metadata line: 13px Crimson Pro, `text-text-muted`. Format: "N scenes" + separator dot + zone name
+- "STORY" label: 12px Cinzel, `text-accent`, tracking 0.14em, uppercase
+- Title: 17px Crimson Pro, weight 400, `text-accent-emphasis`, hover transitions to `text-accent`
+- Metadata line: 12px Cinzel, `text-text-muted`, tracking 0.14em, uppercase. Format: "N scenes" + separator dot + zone name
 
 ### StoryPlayerPage Layout
 
@@ -190,7 +191,7 @@ All colors reference the showcase's `@theme` tokens defined in `showcase/src/ind
 ```
 
 - Breadcrumb: Same pattern as ArticlePage (`text-xs text-text-muted`)
-- Story title: Cinzel 28px, weight 600, `text-accent-emphasis`, tracking 0.04em
+- Story title: Cinzel 28px, weight 700, `text-accent-emphasis`, tracking 0.04em
 - Player container: `max-w-4xl mx-auto`
 - CinematicRenderer: `aspect-video w-full rounded-lg overflow-hidden bg-black`
 - Control bar: `mt-4` below the renderer, full width of the player container
@@ -209,6 +210,7 @@ All colors reference the showcase's `@theme` tokens defined in `showcase/src/ind
 - Left group: prev button, scene counter text, next button
 - Center: play/pause toggle
 - Right group: mode switcher, timing dropdown (visible only in auto-play mode)
+- Icon-only buttons (prev, next, play/pause): 24px SVG icon with `p-2` (8px padding) for 40px touch target
 
 ### Scroll Mode Layout
 
@@ -270,7 +272,7 @@ When scroll mode is active, the player area transforms:
 
 - Pattern: segmented toggle group (three options in a row)
 - Container: `flex rounded-lg border border-border-muted/40 overflow-hidden`
-- Each option: `px-3 py-1.5 text-[11px] font-display tracking-[0.12em] uppercase`
+- Each option: `px-3 py-1.5 text-[12px] font-display tracking-[0.12em] uppercase`
 - Active state: `bg-accent/12 text-accent`
 - Inactive state: `text-text-muted hover:text-text-secondary`
 - Transition: `transition-colors duration-200`
@@ -282,7 +284,7 @@ When scroll mode is active, the player area transforms:
 - Pattern: native `<select>` styled with Arcanum tokens (matching the showcase's input styling)
 - Options: "5s", "10s", "15s"
 - Background: `bg-bg-secondary/60 border border-border-muted/60 rounded-lg`
-- Text: 11px Cinzel, `text-text-primary`
+- Text: 12px Cinzel, `text-text-primary`
 
 ### "Play Story" Button on Article Pages
 
@@ -290,7 +292,7 @@ When scroll mode is active, the player area transforms:
 - Position: below the article header, above the content. Full-width banner style
 - Layout: `flex items-center justify-center gap-3 py-4 rounded-lg border border-accent/30 bg-accent/6 hover:bg-accent/12 transition-colors duration-300`
 - Icon: inline SVG play triangle (16px), `text-accent`
-- Text: "Play Story" in Cinzel 13px, `text-accent`, tracking 0.16em, uppercase
+- Text: "Play Story" in Cinzel 12px, `text-accent`, tracking 0.16em, uppercase
 - Links to `/stories/{storyId}` using React Router `<Link>`
 
 ---
@@ -359,7 +361,8 @@ ShowcaseData.stories[] -> useShowcase() -> StoryPlayerPage
 | Focus management | Control bar buttons have `focus-visible:ring-2 focus-visible:ring-accent/40` |
 | Scene counter | Live region: `aria-live="polite"` on scene counter text for screen reader updates |
 | Mode switcher | `role="radiogroup"` with `role="radio"` and `aria-checked` on each option |
-| Touch targets | All control bar buttons minimum 40px touch target |
+| Touch targets | All control bar buttons minimum 40px touch target (24px icon + 8px padding each side) |
+| Icon-only button labels | Previous button: `aria-label="Previous scene"`. Next button: `aria-label="Next scene"`. Play/pause toggle: `aria-label="Play"` when paused, `aria-label="Pause"` when playing (dynamic) |
 | Skip link | Existing showcase skip-to-content link covers the player page |
 | Alt text | Cover images on story cards: `alt="{story title}"`. Scene room images: `alt=""` (decorative, narration provides context) |
 

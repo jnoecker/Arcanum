@@ -2,6 +2,8 @@
 // Stories are cinematic narratives composed from zone data.
 // Each story contains an ordered list of scenes.
 
+import type { NarrationSpeed } from "@/lib/narrationSpeed";
+
 export type SceneTemplate = "establishing_shot" | "encounter" | "discovery";
 
 /** Preset slot positions for entity placement in a scene. */
@@ -16,13 +18,15 @@ export interface SceneEntity {
   entityId: string;
   slot?: EntitySlot;
   position?: { x: number; y: number };
-  movementPath?: string; // SVG d attribute
+  entrancePath?: string; // Preset ID from ENTRANCE_PRESETS (e.g., "enter-from-left")
+  exitPath?: string;     // Preset ID from EXIT_PRESETS (e.g., "exit-stage-left")
 }
 
-/** Placeholder -- filled out in Phase 10 */
+/** Transition type between scenes. */
+export type TransitionType = "crossfade" | "fade_black";
+
 export interface TransitionConfig {
-  type: "crossfade" | "fade_black" | "slide";
-  duration?: number;
+  type: TransitionType;
 }
 
 /** Placeholder -- filled out in Phase 10 */
@@ -43,6 +47,7 @@ export interface Scene {
   entities?: SceneEntity[];
   transition?: TransitionConfig;
   effects?: EffectConfig;
+  narrationSpeed?: NarrationSpeed;
 }
 
 export interface Story {
@@ -53,4 +58,5 @@ export interface Story {
   scenes: Scene[];
   createdAt: string; // ISO 8601
   updatedAt: string; // ISO 8601
+  narrationSpeed?: NarrationSpeed; // Story-level default, defaults to "normal"
 }

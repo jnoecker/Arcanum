@@ -74,6 +74,46 @@ export interface LoreMap {
   pins: MapPin[];
 }
 
+// ─── Zone plans (high-level world breakdown) ──────────────────────
+
+/**
+ * Approximate region of a zone within its source map. Coordinates are in
+ * Leaflet CRS.Simple space (lat = Y from bottom, lng = X from left), matching
+ * the convention used by `LoreMap` pins. `w` and `h` are width/height in the
+ * same pixel units.
+ */
+export interface ZonePlanRegion {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
+/**
+ * High-level zone planning artifact. Sits between a world map and the
+ * concrete YAML zone files (`WorldFile`). Each plan represents one
+ * intended zone of the world: name, theme, hooks, and how it connects
+ * to neighbors.
+ */
+export interface ZonePlan {
+  id: string;
+  name: string;
+  /** 1-2 sentence theme/blurb describing the zone. */
+  blurb: string;
+  /** Optional bullets seeding mob types, factions, or story hooks. */
+  hooks?: string[];
+  /** Source map this plan was generated against (LoreMap.id). */
+  mapId?: string;
+  /** Approximate region within the source map (CRS.Simple coords). */
+  region?: ZonePlanRegion;
+  /** Other ZonePlan IDs this zone borders / connects to. */
+  borders?: string[];
+  /** Optional pointer to a real zone YAML file once the plan is built. */
+  zoneId?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 // ─── Calendars & Timelines ─────────────────────────────────────────
 
 export interface CalendarEra {
@@ -213,6 +253,7 @@ export interface WorldLore {
   customSceneTemplates?: CustomSceneTemplate[];
   artStyles?: ArtStyle[];
   activeArtStyleId?: string;
+  zonePlans?: ZonePlan[];
 }
 
 export const DEFAULT_WORLD_LORE: WorldLore = {

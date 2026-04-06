@@ -1,14 +1,18 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useStoryStore } from "@/stores/storyStore";
 import { LoreEditor } from "./LoreEditor";
 import { DmNotesSection } from "./DmNotesSection";
 import { TemplatePicker } from "./TemplatePicker";
 import { ScenePreview } from "./ScenePreview";
 import { EntityPicker } from "./EntityPicker";
+import { TransitionDropdown } from "./TransitionDropdown";
+import { PathPresetPicker } from "./PathPresetPicker";
+import { NarrationSpeedSelector } from "./NarrationSpeedSelector";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { EditableField } from "@/components/ui/FormWidgets";
 import { applyTemplate, isSceneEmpty } from "@/lib/sceneTemplates";
-import type { Scene, SceneTemplate } from "@/types/story";
+import type { Scene, SceneTemplate, TransitionType, SceneEntity } from "@/types/story";
+import type { NarrationSpeed } from "@/lib/narrationSpeed";
 
 interface SceneDetailEditorProps {
   storyId: string;
@@ -20,6 +24,40 @@ export function SceneDetailEditor({ storyId, scene, zoneId }: SceneDetailEditorP
   const updateScene = useStoryStore((s) => s.updateScene);
   const [pendingTemplate, setPendingTemplate] = useState<SceneTemplate | null>(
     null,
+  );
+  const [selectedEntityId, setSelectedEntityId] = useState<string | null>(null);
+
+  // Reset entity selection when scene changes
+  useEffect(() => {
+    setSelectedEntityId(null);
+  }, [scene.id]);
+
+  // ─── Transition handler ─────────────────────────────────────────
+  const handleTransitionChange = useCallback(
+    (type: TransitionType) => {
+      updateScene(storyId, scene.id, { transition: { type } });
+    },
+    [storyId, scene.id, updateScene],
+  );
+
+  // ─── Entity update handler (for PathPresetPicker) ───────────────
+  const handleUpdateEntity = useCallback(
+    (entityId: string, patch: Partial<SceneEntity>) => {
+      const entities = scene.entities ?? [];
+      const updated = entities.map((ent) =>
+        ent.id === entityId ? { ...ent, ...patch } : ent,
+      );
+      updateScene(storyId, scene.id, { entities: updated });
+    },
+    [scene.entities, scene.id, storyId, updateScene],
+  );
+
+  // ─── Narration speed handler ────────────────────────────────────
+  const handleNarrationSpeedChange = useCallback(
+    (speed: NarrationSpeed | undefined) => {
+      updateScene(storyId, scene.id, { narrationSpeed: speed });
+    },
+    [storyId, scene.id, updateScene],
   );
 
   const handleApplyTemplate = useCallback(
@@ -53,12 +91,18 @@ export function SceneDetailEditor({ storyId, scene, zoneId }: SceneDetailEditorP
           label="Scene title"
         />
 
-        {/* Section 2: Template picker */}
-        <TemplatePicker
-          activeTemplate={scene.template}
-          onApply={handleApplyTemplate}
-          onClear={() => updateScene(storyId, scene.id, { template: undefined })}
-        />
+        {/* Section 2: Template picker + Transition dropdown */}
+        <div className="flex items-center justify-between">
+          <TemplatePicker
+            activeTemplate={scene.template}
+            onApply={handleApplyTemplate}
+            onClear={() => updateScene(storyId, scene.id, { template: undefined })}
+          />
+          <TransitionDropdown
+            value={scene.transition?.type ?? "crossfade"}
+            onChange={handleTransitionChange}
+          />
+        </div>
 
         {/* Section 3: Scene Preview (between template and narration) */}
         <ScenePreview scene={scene} storyId={storyId} zoneId={zoneId} />
@@ -77,11 +121,26 @@ export function SceneDetailEditor({ storyId, scene, zoneId }: SceneDetailEditorP
           />
         </div>
 
+        {/* Section 4b: Narration speed */}
+        <NarrationSpeedSelector
+          value={scene.narrationSpeed}
+          onChange={handleNarrationSpeedChange}
+        />
+
         {/* Section 5: DM Notes */}
         <DmNotesSection
           value={scene.dmNotes ?? ""}
           onChange={(dmNotes) => updateScene(storyId, scene.id, { dmNotes })}
         />
+
+        {/* Section 6: Movement Paths (only when entities exist) */}
+        {(scene.entities ?? []).length > 0 && (
+          <PathPresetPicker
+            entities={scene.entities ?? []}
+            selectedEntityId={selectedEntityId}
+            onUpdateEntity={handleUpdateEntity}
+          />
+        )}
 
         {/* Confirm dialog for template replacement (D-13) */}
         {pendingTemplate && (

@@ -35,18 +35,38 @@ export function buildToneDirective(): string {
   return parts.join(" ");
 }
 
+/** Which surface an image is being generated for. Controls which per-surface override is appended. */
+export type ArtStyleSurface = "worldbuilding" | "lore";
+
 /**
  * Build a visual style directive for AI image generation prompts.
- * Returns the world's visual style description, or a minimal generic fallback.
- * Injected into image generation prompts as the style suffix.
+ *
+ * Resolution order:
+ *   1. The active ArtStyle's basePrompt (+ optional surface override)
+ *   2. The legacy `world_setting.visualStyle` field (fallback for pre-art-style worlds)
+ *   3. Empty string (callers fall back to a generic style)
+ *
+ * Pass `surface` when the call site knows which kind of art is being generated —
+ * "worldbuilding" for sprites/rooms/entities/abilities/icons, "lore" for portraits
+ * and lore article illustrations. Omit for surface-neutral callers.
  */
-export function buildVisualStyleDirective(): string {
+export function buildVisualStyleDirective(surface?: ArtStyleSurface): string {
   const lore = useLoreStore.getState().lore;
   if (!lore) return "";
 
+  // Prefer the active ArtStyle
+  const active = (lore.artStyles ?? []).find((s) => s.id === lore.activeArtStyleId);
+  if (active) {
+    const base = active.basePrompt.trim();
+    const override = surface ? active.surfaces?.[surface]?.trim() : "";
+    if (base && override) return `${base}\n\n${override}`;
+    if (base) return base;
+    if (override) return override;
+  }
+
+  // Legacy fallback: world_setting.visualStyle
   const ws = Object.values(lore.articles).find((a) => a.template === "world_setting");
   if (!ws) return "";
-
   const visualStyle = typeof ws.fields.visualStyle === "string" ? ws.fields.visualStyle.trim() : "";
   return visualStyle;
 }

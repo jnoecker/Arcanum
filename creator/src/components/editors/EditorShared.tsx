@@ -159,6 +159,7 @@ export function MediaSection({
             assetType={assetType}
             context={context}
             vibe={vibe}
+            surface="worldbuilding"
           />
         )}
         {onVideoChange && (

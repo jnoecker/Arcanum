@@ -187,7 +187,7 @@ export function CustomAssetStudio({ selectedZoneId }: { selectedZoneId: string |
       setPromptGeneratedByLlm(Boolean(activeVariant.enhanced_prompt));
       return;
     }
-    setPromptDraft(buildCustomAssetPrompt(assetType, description, zoneVibe, artStyle));
+    setPromptDraft(buildCustomAssetPrompt(assetType, description, zoneVibe, artStyle, "worldbuilding"));
     setPromptGeneratedByLlm(false);
   }, [artStyle, assetType, description, variants, zoneVibe]);
 
@@ -212,13 +212,13 @@ export function CustomAssetStudio({ selectedZoneId }: { selectedZoneId: string |
 
   const generatePrompt = useCallback(async () => {
     if (!description.trim()) return "";
-    const systemPrompt = getCustomAssetSystemPrompt(artStyle);
+    const systemPrompt = getCustomAssetSystemPrompt(artStyle, "worldbuilding");
     const userPrompt = [
       `Format: ${getFormatForAssetType(assetType)}`,
       title.trim() ? `Asset title: ${title.trim()}` : "",
       `User description: ${description.trim()}`,
       zoneVibe ? `Zone atmosphere: ${zoneVibe}` : "",
-      `Required style suffix (adapt and preserve the aesthetic):\n${buildCustomAssetPrompt(assetType, description, zoneVibe, artStyle)}`,
+      `Required style suffix (adapt and preserve the aesthetic):\n${buildCustomAssetPrompt(assetType, description, zoneVibe, artStyle, "worldbuilding")}`,
     ].filter(Boolean).join("\n\n");
 
     return invoke<string>("llm_complete", { systemPrompt, userPrompt });

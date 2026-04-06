@@ -208,7 +208,7 @@ export function RecipeEditor({
       </Section>
 
       <MediaSection image={recipe.image} onImageChange={(v) => patch({ image: v })} getPrompt={(style: ArtStyle) => {
-        const preamble = getPreamble(style);
+        const preamble = getPreamble(style, "worldbuilding");
         return style === "gentle_magic"
           ? `${preamble}\n\nStill life of a crafted creation called "${recipe.displayName}" — a warmly glowing artifact resting on a soft surface, gentle ambient light diffusing around it, floating motes of gold, lavender and pale blue tones, dreamlike quality, painterly, centered composition`
           : `${preamble}\n\nStill life of a crafted creation called "${recipe.displayName}" — a luminous artifact emerging from baroque scrollwork, aurum-gold energy threads weaving through its form, deep indigo background, painterly, centered composition`;

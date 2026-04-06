@@ -160,7 +160,7 @@ export function ZoneVibePanel({ zoneId, world, onWorldChange }: ZoneVibePanelPro
     try {
       let prompt = defaultImagePrompt(kind, currentWorld, vibeText, artStyle);
       if (hasLlmKey) {
-        const systemPrompt = getEnhanceSystemPrompt(artStyle);
+        const systemPrompt = getEnhanceSystemPrompt(artStyle, undefined, "worldbuilding");
         const userPrompt = [
           `Generate a fallback/default image prompt for this zone asset:\n${defaultImageContext(kind, currentWorld)}`,
           vibeText ? `\nZone atmosphere/vibe:\n${vibeText}` : "",

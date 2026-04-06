@@ -500,6 +500,7 @@ export function RoomPanel({
             assetType="background"
             context={{ zone: zoneId, entity_type: "room", entity_id: roomId }}
             vibe={vibe}
+            surface="worldbuilding"
           />
           <FieldRow label="Video">
             <TextInput

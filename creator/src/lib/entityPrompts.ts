@@ -98,7 +98,7 @@ export function defaultImageContext(kind: DefaultImageKind, world: WorldFile): s
 
 /** Build a full prompt for a room image. */
 export function roomPrompt(_roomId: string, room: RoomFile, style: ArtStyle = "gentle_magic"): string {
-  const preamble = getPreamble(style);
+  const preamble = getPreamble(style, "worldbuilding");
   const setting = room.description
     ? `A place called "${room.title}": ${room.description}.`
     : `A chamber known as "${room.title}".`;
@@ -112,7 +112,7 @@ export function roomPrompt(_roomId: string, room: RoomFile, style: ArtStyle = "g
 
 ${setting}${station} Rendered as a dreamlike interior space — soft lavender and pale blue ambient light diffusing through gentle atmospheric haze, floating motes of warm light drifting lazily, organic curves and lived-in details, moss green and dusty rose accents on natural surfaces, soft gold highlights on magical elements, painterly, luminous, breathable
 
-${getStyleSuffix()}`;
+${getStyleSuffix("worldbuilding")}`;
   }
 
   return `${preamble}
@@ -122,7 +122,7 @@ ${setting}${station} Rendered as a baroque cosmic interior — deep indigo shado
 
 /** Build a full prompt for a mob portrait. */
 export function mobPrompt(_mobId: string, mob: MobFile, style: ArtStyle = "gentle_magic"): string {
-  const preamble = getPreamble(style);
+  const preamble = getPreamble(style, "worldbuilding");
   const tier = mob.tier ?? "standard";
   const level = mob.level ?? 1;
   const mobDesc = mob.description ? ` ${mob.description}.` : "";
@@ -140,7 +140,7 @@ export function mobPrompt(_mobId: string, mob: MobFile, style: ArtStyle = "gentl
 
 Portrait of ${desc} known as "${mob.name}", level ${level}.${mobDesc} Depicted with soft organic forms and gentle curves, ambient lavender and pale blue light diffusing around the figure, floating motes of warm gold light, subtle magical glow emanating naturally from within, dreamlike atmospheric haze, dusty rose and moss green accents, painterly, luminous
 
-${getStyleSuffix()}`;
+${getStyleSuffix("worldbuilding")}`;
   }
 
   const tierDesc: Record<string, string> = {
@@ -158,7 +158,7 @@ Portrait of ${desc} known as "${mob.name}", level ${level}.${mobDesc} Rendered w
 
 /** Build a full prompt for an item image. */
 export function itemPrompt(_itemId: string, item: ItemFile, style: ArtStyle = "gentle_magic"): string {
-  const preamble = getPreamble(style);
+  const preamble = getPreamble(style, "worldbuilding");
   const slotDesc = item.slot
     ? ` worn in the ${item.slot.toLowerCase()} slot`
     : "";
@@ -180,7 +180,7 @@ export function itemPrompt(_itemId: string, item: ItemFile, style: ArtStyle = "g
 
 Still life of ${typeHint} called "${item.displayName}"${slotDesc}.${desc} Rendered as a gently luminous object resting on a soft surface, ambient lavender and pale blue light diffusing around it, subtle floating motes of warm gold, soft atmospheric haze, organic gentle forms, dreamlike quality, painterly
 
-${getStyleSuffix()}`;
+${getStyleSuffix("worldbuilding")}`;
   }
 
   const typeHint = isWeapon
@@ -196,14 +196,14 @@ Still life of ${typeHint} called "${item.displayName}"${slotDesc}.${desc} Render
 
 /** Build a full prompt for a shop image. */
 export function shopPrompt(_shopId: string, shop: ShopFile, style: ArtStyle = "gentle_magic"): string {
-  const preamble = getPreamble(style);
+  const preamble = getPreamble(style, "worldbuilding");
 
   if (style === "gentle_magic") {
     return `${FORMAT_BY_TYPE.room}. ${preamble}
 
 A gentle magical marketplace called "${shop.name}" — cozy shelves and display cases holding softly glowing artifacts, warm ambient light filtering through atmospheric haze, floating motes of gold drifting between items, lavender and pale blue tones in the shadows, dusty rose accents on wooden surfaces, a sense of wonder and quiet abundance, organic curves and lived-in warmth, painterly, luminous
 
-${getStyleSuffix()}`;
+${getStyleSuffix("worldbuilding")}`;
   }
 
   return `${preamble}
@@ -213,7 +213,7 @@ An arcane marketplace called "${shop.name}" — baroque display cases of glowing
 
 /** Build a full prompt for a trainer image. */
 export function trainerPrompt(_trainerId: string, trainer: TrainerFile, style: ArtStyle = "gentle_magic"): string {
-  const preamble = getPreamble(style);
+  const preamble = getPreamble(style, "worldbuilding");
   const cls = trainer.class?.toLowerCase() ?? "warrior";
 
   if (style === "gentle_magic") {
@@ -221,7 +221,7 @@ export function trainerPrompt(_trainerId: string, trainer: TrainerFile, style: A
 
 A gentle magical portrait of a ${cls} class trainer called "${trainer.name}" — a wise mentor figure in soft flowing robes or battle-worn attire appropriate for a ${cls}, warm ambient light, floating motes of gold, lavender and pale blue tones, a sense of knowledge and patient guidance, painterly, luminous
 
-${getStyleSuffix()}`;
+${getStyleSuffix("worldbuilding")}`;
   }
 
   return `${preamble}
@@ -248,9 +248,9 @@ export function entityPrompt(
     case "trainer":
       return trainerPrompt(id, entity as TrainerFile, style);
     default: {
-      const preamble = getPreamble(style);
+      const preamble = getPreamble(style, "worldbuilding");
       return style === "gentle_magic"
-        ? `${preamble}\n\nDreamlike portrait of a ${kind} entity called "${id}", rendered in soft magical style, lavender and pale blue tones, gentle ambient glow, floating motes of warm light, painterly, luminous\n\n${getStyleSuffix()}`
+        ? `${preamble}\n\nDreamlike portrait of a ${kind} entity called "${id}", rendered in soft magical style, lavender and pale blue tones, gentle ambient glow, floating motes of warm light, painterly, luminous\n\n${getStyleSuffix("worldbuilding")}`
         : `${preamble}\n\nArcane portrait of a ${kind} entity called "${id}", rendered in baroque cosmic style, aurum-gold highlights, deep indigo background, painterly, luminous`;
     }
   }
@@ -262,7 +262,7 @@ export function defaultImagePrompt(
   zoneVibe: string,
   style: ArtStyle = "gentle_magic",
 ): string {
-  const preamble = getPreamble(style);
+  const preamble = getPreamble(style, "worldbuilding");
   const zoneSummary = buildZoneSummary(world);
   const vibeSection = zoneVibe
     ? `Zone atmosphere: ${zoneVibe}`
@@ -278,7 +278,7 @@ ${zoneSummary}
 
 No named characters, no specific plot moment, and no readable text. Focus on an atmospheric establishing scene that can gracefully stand in for any unillustrated room in the zone. Painterly, luminous, softly enchanted, emotionally safe.
 
-${getStyleSuffix()}`;
+${getStyleSuffix("worldbuilding")}`;
       case "mob":
         return `${FORMAT_BY_TYPE.mob}. ${preamble}
 
@@ -287,7 +287,7 @@ ${zoneSummary}
 
 Depict a generic inhabitant or creature archetype that feels native to the zone without representing any named NPC. The figure should feel characterful and approachable, with subtle magical details and a soft ambient glow.
 
-${getStyleSuffix()}`;
+${getStyleSuffix("worldbuilding")}`;
       case "item":
         return `${FORMAT_BY_TYPE.item}. ${preamble}
 
@@ -296,7 +296,7 @@ ${zoneSummary}
 
 Depict a generic magical object or artifact that could plausibly belong anywhere in this zone. Keep the silhouette clear, the materials handcrafted, and the enchantment subtle but visible.
 
-${getStyleSuffix()}`;
+${getStyleSuffix("worldbuilding")}`;
     }
   }
 

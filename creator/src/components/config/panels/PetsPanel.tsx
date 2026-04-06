@@ -29,7 +29,7 @@ function summarizePet(pet: PetDefinitionConfig): string {
 }
 
 function petPrompt(pet: PetDefinitionConfig, style: ArtStyle): string {
-  const preamble = getPreamble(style);
+  const preamble = getPreamble(style, "worldbuilding");
   return `${preamble}, a summoned companion creature — "${pet.name}", ${pet.description || "a loyal magical pet"}, full body portrait, RPG companion creature, no text`;
 }
 
@@ -157,6 +157,7 @@ function PetDetail({
             onAccept={(filePath) => patch({ image: filePath })}
             assetType="pet"
             context={{ zone: "", entity_type: "pet", entity_id: id }}
+            surface="worldbuilding"
           />
         </div>
       </div>

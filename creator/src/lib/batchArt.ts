@@ -174,7 +174,7 @@ export async function runBatchArtGeneration(
 
         let finalPrompt = basePrompt;
         try {
-          const systemPrompt = getEnhanceSystemPrompt(artStyle);
+          const systemPrompt = getEnhanceSystemPrompt(artStyle, undefined, "worldbuilding");
           let userPrompt: string;
           if (context) {
             const parts = [

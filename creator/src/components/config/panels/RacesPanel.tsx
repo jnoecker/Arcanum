@@ -233,6 +233,7 @@ export function RaceDetail({
           }}
           assetType="race_portrait"
           context={{ zone: "", entity_type: "race", entity_id: id }}
+          surface="worldbuilding"
         />
       </div>
     </>

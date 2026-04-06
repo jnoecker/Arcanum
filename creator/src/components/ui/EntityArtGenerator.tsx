@@ -5,6 +5,7 @@ import { useAssetStore } from "@/stores/assetStore";
 import { useProjectStore } from "@/stores/projectStore";
 import { useImageSrc, isLegacyImagePath } from "@/lib/useImageSrc";
 import { getEnhanceSystemPrompt, ART_STYLE_LABELS, UNIVERSAL_NEGATIVE, getStyleSuffix, type ArtStyle } from "@/lib/arcanumPrompts";
+import type { ArtStyleSurface } from "@/lib/loreGeneration";
 import { IMAGE_MODELS, ENTITY_DIMENSIONS, DIMENSION_PRESETS, imageGenerateCommand, resolveImageModel, requestsTransparentBackground } from "@/types/assets";
 import type { AssetContext, GeneratedImage } from "@/types/assets";
 import { VariantStrip } from "./VariantStrip";
@@ -28,6 +29,8 @@ interface EntityArtGeneratorProps {
   context?: AssetContext;
   /** Zone vibe text to inject into LLM prompt generation */
   vibe?: string;
+  /** Which art-style surface to apply — "worldbuilding" for zone/entity/game art, "lore" for lore article illustrations */
+  surface?: ArtStyleSurface;
 }
 
 function computeVariantGroup(context?: AssetContext): string {
@@ -63,6 +66,7 @@ export function EntityArtGenerator({
   assetType,
   context,
   vibe,
+  surface,
 }: EntityArtGeneratorProps) {
   const settings = useAssetStore((s) => s.settings);
   const artStyle = useAssetStore((s) => s.artStyle);
@@ -163,7 +167,7 @@ export function EntityArtGenerator({
 
   /** Enhance a prompt via LLM, injecting entity context, style guide, and zone vibe. */
   const enhancePrompt = async (prompt: string): Promise<string> => {
-    const systemPrompt = getEnhanceSystemPrompt(artStyle, assetType);
+    const systemPrompt = getEnhanceSystemPrompt(artStyle, assetType, surface);
     const parts: string[] = [];
 
     // When we have rich entity context, lead with that so the LLM
@@ -216,7 +220,7 @@ export function EntityArtGenerator({
       }
 
       // Append style suffix to ensure consistent aesthetic
-      const styleSuffix = getStyleSuffix();
+      const styleSuffix = getStyleSuffix(surface);
       if (!finalPrompt.includes(styleSuffix.slice(0, 40))) {
         finalPrompt = `${finalPrompt}\n\n${styleSuffix}`;
       }

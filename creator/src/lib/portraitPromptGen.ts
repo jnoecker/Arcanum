@@ -31,7 +31,7 @@ const CLASS_FORMAT_SPEC =
   "2:3 portrait orientation action portrait of a fantasy race character (race varies per class). Mid-shot framing, dynamic or atmospheric pose, richly detailed painterly environment background";
 
 function getPortraitPromptPrefix(): string {
-  const vs = buildVisualStyleDirective();
+  const vs = buildVisualStyleDirective("worldbuilding");
   if (vs) {
     return `${vs}. NOT a photograph, NOT a 3D render, NOT concept art. 2:3 portrait orientation.`;
   }
@@ -67,7 +67,7 @@ export async function generatePortraitTemplate(
     .join("\n");
 
   const toneDirective = buildToneDirective();
-  const visualStyle = buildVisualStyleDirective();
+  const visualStyle = buildVisualStyleDirective("worldbuilding");
   const toneBlock = toneDirective ? `\nWorld context: ${toneDirective}` : "";
   const styleBlock = visualStyle
     ? `\nWorld visual style: ${visualStyle}\nAll generated imagery must conform to this visual style.`
@@ -141,7 +141,7 @@ export function fillPortraitTemplate(
       .replace(/\{race\}/g, dimensions.key)
       .replace(/\{race_description\}/g, raceDesc);
 
-    return `${getPortraitPromptPrefix()}\n\n${filled}\n\n${getStyleSuffix()}`;
+    return `${getPortraitPromptPrefix()}\n\n${filled}\n\n${getStyleSuffix("worldbuilding")}`;
   }
 
   // Class portrait — uses a curated race for each class to showcase diversity
@@ -157,5 +157,5 @@ export function fillPortraitTemplate(
     .replace(/\{class\}/g, dimensions.key)
     .replace(/\{class_outfit\}/g, classOutfit);
 
-  return `${getPortraitPromptPrefix()}\n\n${filled}\n\n${getStyleSuffix()}`;
+  return `${getPortraitPromptPrefix()}\n\n${filled}\n\n${getStyleSuffix("worldbuilding")}`;
 }

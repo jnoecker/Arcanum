@@ -275,7 +275,7 @@ export function ZoneAssetWorkbench({ zoneId, world, onWorldChange }: ZoneAssetWo
 
   const generateEnhancedPrompt = useCallback(async () => {
     if (!selectedTarget) return "";
-    const systemPrompt = getEnhanceSystemPrompt(artStyle);
+    const systemPrompt = getEnhanceSystemPrompt(artStyle, undefined, "worldbuilding");
     const userPrompt = [
       selectedTarget.mode === "default"
         ? `Generate a fallback/default image prompt for this zone asset:\n${buildContext()}`

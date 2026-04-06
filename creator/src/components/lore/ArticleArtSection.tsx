@@ -109,6 +109,7 @@ export function ArticleArtSection({
           onAccept={(filePath) => onImageChange(filePath)}
           assetType={assetType}
           context={context}
+          surface="lore"
         />
 
         {/* Gallery */}
@@ -146,6 +147,7 @@ export function ArticleArtSection({
               onAccept={handleAddToGallery}
               assetType={assetType}
               context={galleryContext}
+              surface="lore"
             />
           )}
 

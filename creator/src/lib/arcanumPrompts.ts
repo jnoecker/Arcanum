@@ -1,5 +1,5 @@
 import type { AssetType } from "@/types/assets";
-import { buildToneDirective, buildVisualStyleDirective } from "./loreGeneration";
+import { buildToneDirective, buildVisualStyleDirective, type ArtStyleSurface } from "./loreGeneration";
 
 // ─── Art Style System ─────────────────────────────────────────────
 
@@ -63,12 +63,15 @@ export const GENTLE_MAGIC_PREAMBLE = `Surreal Gentle Magic style (surreal_softma
 const GENERIC_STYLE_FALLBACK = `Rendered as a digital fantasy illustration — painterly, detailed, atmospheric. NOT a photograph, NOT a 3D render. Visible brushwork with textured rendering throughout. NO readable text, words, letters, or legible writing in the image.`;
 
 /**
- * Dynamic style suffix — uses the world's visual style if defined,
- * otherwise falls back to a minimal generic fantasy illustration style.
- * Appended to all image generation prompts.
+ * Dynamic style suffix — uses the active art style (optionally with a per-surface
+ * override) if defined, otherwise falls back to a minimal generic fantasy
+ * illustration style. Appended to all image generation prompts.
+ *
+ * Pass `surface` to layer worldbuilding-specific or lore-specific directives on
+ * top of the base style.
  */
-export function getStyleSuffix(): string {
-  const visualStyle = buildVisualStyleDirective();
+export function getStyleSuffix(surface?: ArtStyleSurface): string {
+  const visualStyle = buildVisualStyleDirective(surface);
   if (visualStyle) {
     return `Rendered in the following visual style: ${visualStyle}\n\nNO readable text, words, letters, or legible writing in the image.`;
   }
@@ -156,8 +159,8 @@ NO readable text, words, letters, runes, or glyphs — no watermarks, no logos, 
 FORBIDDEN: photorealism, neon colors, modern technology, flat design, cartoon, anime, studio lighting, stock photo aesthetic, harsh edges, brutalist shapes`;
 
 /** Get the preamble for image prompts — uses world visual style if defined, falls back to art style constant */
-export function getPreamble(style: ArtStyle): string {
-  const visualStyle = buildVisualStyleDirective();
+export function getPreamble(style: ArtStyle, surface?: ArtStyleSurface): string {
+  const visualStyle = buildVisualStyleDirective(surface);
   if (visualStyle) return visualStyle;
   return style === "arcanum" ? ARCANUM_PREAMBLE : GENTLE_MAGIC_PREAMBLE;
 }
@@ -489,8 +492,8 @@ EFFECT COLOR MODIFIERS:
 - Debuffs: descending spirals, dark mists, weakening auras`;
 
 /** Get the system prompt for prompt enhancement — defers to world visual style when defined */
-export function getEnhanceSystemPrompt(style: ArtStyle, assetType?: string): string {
-  const visualStyle = buildVisualStyleDirective();
+export function getEnhanceSystemPrompt(style: ArtStyle, assetType?: string, surface?: ArtStyleSurface): string {
+  const visualStyle = buildVisualStyleDirective(surface);
   const tone = buildToneDirective();
 
   // If the world defines a visual style, use a generic enhancer that defers to it
@@ -544,8 +547,8 @@ Rules:
 
 Output ONLY the finished prompt text — no explanation, no labels, no markdown.`;
 
-export function getCustomAssetSystemPrompt(style: ArtStyle): string {
-  const visualStyle = buildVisualStyleDirective();
+export function getCustomAssetSystemPrompt(style: ArtStyle, surface?: ArtStyleSurface): string {
+  const visualStyle = buildVisualStyleDirective(surface);
   const tone = buildToneDirective();
 
   if (visualStyle || tone) {
@@ -579,16 +582,17 @@ export function buildCustomAssetPrompt(
   description: string,
   zoneVibe?: string | null,
   style: ArtStyle = "gentle_magic",
+  surface?: ArtStyleSurface,
 ): string {
   const formatSpec = getFormatForAssetType(assetType);
   const vibeSection = zoneVibe ? `\nZone atmosphere: ${zoneVibe}` : "";
-  const preamble = getPreamble(style);
+  const preamble = getPreamble(style, surface);
 
   return `${formatSpec}. ${preamble}
 
 User brief: ${description}${vibeSection}
 
-${getStyleSuffix()}`;
+${getStyleSuffix(surface)}`;
 }
 
 /** Compose a full prompt from template + context */

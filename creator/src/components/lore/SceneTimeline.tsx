@@ -16,7 +16,8 @@ import {
   arrayMove,
 } from "@dnd-kit/sortable";
 import { useStoryStore, generateSceneId } from "@/stores/storyStore";
-import type { Scene, SceneTemplate } from "@/types/story";
+import { useLoreStore } from "@/stores/loreStore";
+import type { Scene, SceneTemplateId } from "@/types/story";
 import { SceneCard } from "./SceneCard";
 import { SceneContextMenu } from "./SceneContextMenu";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
@@ -51,8 +52,10 @@ export function SceneTimeline({
   const [confirmAction, setConfirmAction] = useState<{
     type: "delete" | "template";
     sceneId: string;
-    template?: SceneTemplate;
+    template?: SceneTemplateId;
   } | null>(null);
+
+  const customTemplates = useLoreStore((s) => s.lore?.customSceneTemplates);
 
   // Scroll fade state
   const [canScrollLeft, setCanScrollLeft] = useState(false);
@@ -137,16 +140,16 @@ export function SceneTimeline({
   }, []);
 
   const handleContextApplyTemplate = useCallback(
-    (sceneId: string, template: SceneTemplate) => {
+    (sceneId: string, template: SceneTemplateId) => {
       const scene = scenes.find((s) => s.id === sceneId);
       if (!scene) return;
       if (isSceneEmpty(scene)) {
-        updateScene(storyId, sceneId, applyTemplate(template));
+        updateScene(storyId, sceneId, applyTemplate(template, customTemplates));
       } else {
         setConfirmAction({ type: "template", sceneId, template });
       }
     },
-    [scenes, storyId, updateScene],
+    [scenes, storyId, updateScene, customTemplates],
   );
 
   const handleContextClearTemplate = useCallback(
@@ -164,11 +167,11 @@ export function SceneTimeline({
       updateScene(
         storyId,
         confirmAction.sceneId,
-        applyTemplate(confirmAction.template),
+        applyTemplate(confirmAction.template, customTemplates),
       );
     }
     setConfirmAction(null);
-  }, [confirmAction, storyId, removeScene, updateScene]);
+  }, [confirmAction, storyId, removeScene, updateScene, customTemplates]);
 
   const activeDragScene = activeDragId
     ? scenes.find((s) => s.id === activeDragId)

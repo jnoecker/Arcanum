@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { useStoryStore } from "@/stores/storyStore";
+import { useLoreStore } from "@/stores/loreStore";
 import { LoreEditor } from "./LoreEditor";
 import { DmNotesSection } from "./DmNotesSection";
 import { TemplatePicker } from "./TemplatePicker";
@@ -14,7 +15,7 @@ import { EffectsEditor } from "./EffectsEditor";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { EditableField } from "@/components/ui/FormWidgets";
 import { applyTemplate, isSceneEmpty } from "@/lib/sceneTemplates";
-import type { Scene, SceneTemplate, TransitionType, SceneEntity } from "@/types/story";
+import type { Scene, SceneTemplateId, TransitionType, SceneEntity } from "@/types/story";
 import type { NarrationSpeed } from "@/lib/narrationSpeed";
 
 interface SceneDetailEditorProps {
@@ -25,7 +26,8 @@ interface SceneDetailEditorProps {
 
 export function SceneDetailEditor({ storyId, scene, zoneId }: SceneDetailEditorProps) {
   const updateScene = useStoryStore((s) => s.updateScene);
-  const [pendingTemplate, setPendingTemplate] = useState<SceneTemplate | null>(
+  const customTemplates = useLoreStore((s) => s.lore?.customSceneTemplates);
+  const [pendingTemplate, setPendingTemplate] = useState<SceneTemplateId | null>(
     null,
   );
   const [selectedEntityId, setSelectedEntityId] = useState<string | null>(null);
@@ -64,22 +66,22 @@ export function SceneDetailEditor({ storyId, scene, zoneId }: SceneDetailEditorP
   );
 
   const handleApplyTemplate = useCallback(
-    (template: SceneTemplate) => {
+    (template: SceneTemplateId) => {
       if (isSceneEmpty(scene)) {
-        updateScene(storyId, scene.id, applyTemplate(template));
+        updateScene(storyId, scene.id, applyTemplate(template, customTemplates));
       } else {
         setPendingTemplate(template);
       }
     },
-    [scene, storyId, updateScene],
+    [scene, storyId, updateScene, customTemplates],
   );
 
   const handleConfirmTemplate = useCallback(() => {
     if (pendingTemplate) {
-      updateScene(storyId, scene.id, applyTemplate(pendingTemplate));
+      updateScene(storyId, scene.id, applyTemplate(pendingTemplate, customTemplates));
     }
     setPendingTemplate(null);
-  }, [pendingTemplate, storyId, scene.id, updateScene]);
+  }, [pendingTemplate, storyId, scene.id, updateScene, customTemplates]);
 
   return (
     <div key={scene.id} className="flex gap-4 flex-1 min-h-0">

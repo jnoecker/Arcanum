@@ -4,7 +4,14 @@
 
 import type { NarrationSpeed } from "@/lib/narrationSpeed";
 
+/**
+ * Built-in scene template IDs. User-defined custom templates store their own
+ * IDs as plain strings, so `Scene.template` is widened to `SceneTemplateId`.
+ */
 export type SceneTemplate = "establishing_shot" | "encounter" | "discovery";
+
+/** ID for either a built-in or custom scene template (lives in WorldLore.customSceneTemplates). */
+export type SceneTemplateId = SceneTemplate | string;
 
 /** Preset slot positions for entity placement in a scene. */
 export type EntitySlot =
@@ -57,7 +64,7 @@ export interface Scene {
   backgroundOverride?: string;
   narration?: string; // TipTap JSON string
   dmNotes?: string;
-  template?: SceneTemplate;
+  template?: SceneTemplateId;
   entities?: SceneEntity[];
   transition?: TransitionConfig;
   effects?: EffectConfig;

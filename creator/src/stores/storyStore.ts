@@ -160,7 +160,7 @@ export const useStoryStore = create<StoryStore>()((set) => ({
           newActiveSceneId = null;
         } else {
           const clampedIndex = Math.min(oldIndex, filtered.length - 1);
-          newActiveSceneId = filtered[clampedIndex].id;
+          newActiveSceneId = filtered[clampedIndex]?.id ?? null;
         }
       }
       return {
@@ -230,9 +230,9 @@ export const useStoryStore = create<StoryStore>()((set) => ({
       if (!existing) return s;
       const originalIndex = existing.scenes.findIndex((sc) => sc.id === sceneId);
       if (originalIndex === -1) return s;
-      const original = existing.scenes[originalIndex];
+      const original = existing.scenes[originalIndex]!;
       const newId = generateSceneId();
-      const clone = { ...original, id: newId };
+      const clone: Scene = { ...original, id: newId };
       const newScenes = [...existing.scenes];
       newScenes.splice(originalIndex + 1, 0, clone);
       const renumbered = newScenes.map((sc, i) => ({ ...sc, sortOrder: i }));

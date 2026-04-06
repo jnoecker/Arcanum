@@ -28,7 +28,7 @@
 - [ ] **Phase 9: Scene Composition** - Entity picker, room backgrounds, entity positioning, and live scene preview
 - [x] **Phase 10: Cinematic Renderer** - Portable rendering engine with crossfade transitions, movement paths, and typewriter narration (completed 2026-04-06)
 - [x] **Phase 11: Presentation Mode** - Fullscreen DM presentation with keyboard navigation (completed 2026-04-06)
-- [ ] **Phase 12: Showcase Player** - Embedded story player with click-through, auto-play, and scroll-driven modes
+- [x] **Phase 12: Showcase Player** - Embedded story player with click-through, auto-play, and scroll-driven modes (completed 2026-04-06)
 
 ## Phase Details
 
@@ -119,11 +119,11 @@ Plans:
   2. Showcase visitors can navigate through story scenes with click and keyboard controls
   3. Showcase player supports auto-play mode that advances scenes on a configurable timer
   4. Showcase player supports scroll-driven scene advancement with snap-to-scene behavior
-**Plans:** 3 plans
+**Plans:** 3/3 plans complete
 Plans:
-- [ ] 12-01-PLAN.md -- Motion install, CinematicRenderer port, showcase story types, creator export pipeline
-- [ ] 12-02-PLAN.md -- Stories navigation/routes, StoriesPage listing, StoryPlayerPage shell, ArticlePage "Play Story" button
-- [ ] 12-03-PLAN.md -- StoryPlayer orchestrator, PlayerControlBar, ModeSwitcher, TimingDropdown, ScrollModeContainer, human verification
+- [x] 12-01-PLAN.md -- Motion install, CinematicRenderer port, showcase story types, creator export pipeline
+- [x] 12-02-PLAN.md -- Stories navigation/routes, StoriesPage listing, StoryPlayerPage shell, ArticlePage "Play Story" button
+- [x] 12-03-PLAN.md -- StoryPlayer orchestrator, PlayerControlBar, ModeSwitcher, TimingDropdown, ScrollModeContainer, human verification
 **UI hint**: yes
 
 ## Progress
@@ -145,4 +145,4 @@ Note: Phases 11 and 12 both depend on Phase 10 and could execute in parallel.
 | 9. Scene Composition | v1.1 | 0/3 | Planning | - |
 | 10. Cinematic Renderer | v1.1 | 3/3 | Complete    | 2026-04-06 |
 | 11. Presentation Mode | v1.1 | 2/2 | Complete   | 2026-04-06 |
-| 12. Showcase Player | v1.1 | 0/3 | Planning | - |
+| 12. Showcase Player | v1.1 | 3/3 | Complete    | 2026-04-06 |

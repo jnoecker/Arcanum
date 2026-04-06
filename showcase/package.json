@@ -16,6 +16,7 @@
     "@fontsource/jetbrains-mono": "^5.2.8",
     "@xyflow/react": "^12.4.4",
     "dompurify": "^3.3.3",
+    "motion": "^12.38.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-router-dom": "^7.1.1"

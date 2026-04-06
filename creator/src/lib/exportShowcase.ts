@@ -1,4 +1,5 @@
 import type { WorldLore, Article, ArticleRelation } from "@/types/lore";
+import type { Story } from "@/types/story";
 import { extractMentions } from "@/lib/loreRelations";
 
 // ─── Showcase data types ───────────────────────────────────────────
@@ -25,6 +26,7 @@ export interface ShowcaseData {
   calendarSystems: WorldLore["calendarSystems"];
   timelineEvents: WorldLore["timelineEvents"];
   colorLabels: WorldLore["colorLabels"];
+  stories?: ShowcaseStory[];
 }
 
 export interface ShowcaseArticle {
@@ -165,9 +167,116 @@ export function tiptapToHtml(content: string): string {
   }
 }
 
+// ─── Showcase story types ─────────────────────────────────────────
+
+export interface ShowcaseSceneEntity {
+  id: string;
+  entityType: "mob" | "item" | "npc";
+  entityId: string;
+  name: string;
+  imageUrl?: string;
+  slot?: string;
+  position?: { x: number; y: number };
+  entrancePath?: string;
+  exitPath?: string;
+}
+
+export interface ShowcaseScene {
+  id: string;
+  title: string;
+  sortOrder: number;
+  roomImageUrl?: string;
+  narration?: string;
+  narrationHtml?: string;
+  transition?: { type: "crossfade" | "fade_black" };
+  narrationSpeed?: "slow" | "normal" | "fast";
+  entities: ShowcaseSceneEntity[];
+}
+
+export interface ShowcaseStory {
+  id: string;
+  title: string;
+  zoneId: string;
+  zoneName?: string;
+  coverImageUrl?: string;
+  sceneCount: number;
+  scenes: ShowcaseScene[];
+  narrationSpeed?: "slow" | "normal" | "fast";
+  createdAt: string;
+  updatedAt: string;
+}
+
+// ─── Story export context ─────────────────────────────────────────
+
+export interface StoryExportContext {
+  story: Story;
+  zoneName: string;
+  resolveRoomImage: (roomId: string) => string | undefined;
+  resolveEntityName: (entityType: string, entityId: string) => string;
+  resolveEntityImage: (entityType: string, entityId: string) => string | undefined;
+}
+
+/** Export stories to showcase format with resolved URLs and entity data. */
+export function exportStories(
+  contexts: StoryExportContext[],
+  imageBaseUrl: string,
+): ShowcaseStory[] {
+  const baseUrl = imageBaseUrl.replace(/\/+$/, "");
+
+  function resolveImageUrl(filename: string | undefined): string | undefined {
+    if (!filename) return undefined;
+    if (filename.startsWith("http")) return filename;
+    return `${baseUrl}/${filename}`;
+  }
+
+  return contexts.map(({ story, zoneName, resolveRoomImage, resolveEntityName, resolveEntityImage }) => {
+    const scenes: ShowcaseScene[] = story.scenes
+      .slice()
+      .sort((a, b) => a.sortOrder - b.sortOrder)
+      .map((scene) => ({
+        id: scene.id,
+        title: scene.title,
+        sortOrder: scene.sortOrder,
+        roomImageUrl: scene.roomId ? resolveImageUrl(resolveRoomImage(scene.roomId)) : undefined,
+        narration: scene.narration,
+        narrationHtml: scene.narration ? tiptapToHtml(scene.narration) : undefined,
+        transition: scene.transition ? { type: scene.transition.type } : undefined,
+        narrationSpeed: scene.narrationSpeed,
+        entities: (scene.entities ?? []).map((e) => ({
+          id: e.id,
+          entityType: e.entityType,
+          entityId: e.entityId,
+          name: resolveEntityName(e.entityType, e.entityId),
+          imageUrl: resolveImageUrl(resolveEntityImage(e.entityType, e.entityId)),
+          slot: e.slot,
+          position: e.position,
+          entrancePath: e.entrancePath,
+          exitPath: e.exitPath,
+        })),
+      }));
+
+    return {
+      id: story.id,
+      title: story.title,
+      zoneId: story.zoneId,
+      zoneName,
+      coverImageUrl: resolveImageUrl(story.coverImage),
+      sceneCount: scenes.length,
+      scenes,
+      narrationSpeed: story.narrationSpeed,
+      createdAt: story.createdAt,
+      updatedAt: story.updatedAt,
+    };
+  });
+}
+
 // ─── Export pipeline ───────────────────────────────────────────────
 
-export function exportShowcaseData(lore: WorldLore, imageBaseUrl: string): ShowcaseData {
+export function exportShowcaseData(
+  lore: WorldLore,
+  imageBaseUrl: string,
+  stories?: ShowcaseStory[],
+): ShowcaseData {
   const baseUrl = imageBaseUrl.replace(/\/+$/, "");
 
   function resolveImage(filename: string | undefined): string | undefined {
@@ -250,5 +359,6 @@ export function exportShowcaseData(lore: WorldLore, imageBaseUrl: string): Showc
     calendarSystems: lore.calendarSystems,
     timelineEvents: lore.timelineEvents,
     colorLabels: lore.colorLabels,
+    stories,
   };
 }

@@ -11,7 +11,8 @@ export type ArticleTemplate =
   | "language"
   | "profession"
   | "ability"
-  | "freeform";
+  | "freeform"
+  | "story";
 
 export interface ArticleRelation {
   targetId: string;
@@ -93,6 +94,41 @@ export interface ShowcaseBranding {
   footerText?: string;
 }
 
+export interface ShowcaseScene {
+  id: string;
+  title: string;
+  sortOrder: number;
+  roomImageUrl?: string;
+  narration?: string;
+  narrationHtml?: string;
+  transition?: { type: "crossfade" | "fade_black" };
+  narrationSpeed?: "slow" | "normal" | "fast";
+  entities: Array<{
+    id: string;
+    entityType: "mob" | "item" | "npc";
+    entityId: string;
+    name: string;
+    imageUrl?: string;
+    slot?: string;
+    position?: { x: number; y: number };
+    entrancePath?: string;
+    exitPath?: string;
+  }>;
+}
+
+export interface ShowcaseStory {
+  id: string;
+  title: string;
+  zoneId: string;
+  zoneName?: string;
+  coverImageUrl?: string;
+  sceneCount: number;
+  scenes: ShowcaseScene[];
+  narrationSpeed?: "slow" | "normal" | "fast";
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface ShowcaseData {
   meta: {
     worldName: string;
@@ -106,4 +142,5 @@ export interface ShowcaseData {
   calendarSystems?: CalendarSystem[];
   timelineEvents?: TimelineEvent[];
   colorLabels?: ColorLabel[];
+  stories?: ShowcaseStory[];
 }

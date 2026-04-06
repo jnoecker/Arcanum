@@ -12,6 +12,7 @@ export const TEMPLATE_LABELS: Record<ArticleTemplate, string> = {
   profession: "Profession",
   ability: "Ability",
   freeform: "Freeform",
+  story: "Story",
 };
 
 /** Accent color per template for card borders, badges, and visual coding. */
@@ -27,4 +28,5 @@ export const TEMPLATE_COLORS: Record<ArticleTemplate, string> = {
   profession: "var(--color-template-profession)",
   ability: "var(--color-template-ability)",
   freeform: "var(--color-template-freeform)",
+  story: "var(--color-accent)",
 };

@@ -26,6 +26,7 @@ export const TEMPLATE_NODE_COLORS: Record<ArticleTemplate, string> = {
   profession: "var(--color-template-profession)",
   ability: "var(--color-template-ability)",
   freeform: "var(--color-template-freeform)",
+  story: "var(--color-accent)",
 };
 
 export const TEMPLATE_SHORT: Record<ArticleTemplate, string> = {
@@ -40,6 +41,7 @@ export const TEMPLATE_SHORT: Record<ArticleTemplate, string> = {
   profession: "P",
   ability: "Ab",
   freeform: "F",
+  story: "St",
 };
 
 export interface GraphFilters {

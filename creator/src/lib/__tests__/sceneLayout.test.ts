@@ -8,6 +8,7 @@ import {
   getEntityScale,
   clampPosition,
   extractPlainText,
+  extractWords,
 } from "../sceneLayout";
 import type { SceneEntity } from "@/types/story";
 
@@ -172,5 +173,43 @@ describe("extractPlainText", () => {
       ],
     });
     expect(extractPlainText(json)).toBe("Bold text");
+  });
+});
+
+describe("extractWords", () => {
+  it("returns empty array for empty input", () => {
+    expect(extractWords("")).toEqual([]);
+  });
+
+  it("returns array of individual words from valid TipTap JSON", () => {
+    const json = JSON.stringify({
+      type: "doc",
+      content: [
+        {
+          type: "paragraph",
+          content: [{ type: "text", text: "Hello brave world" }],
+        },
+      ],
+    });
+    expect(extractWords(json)).toEqual(["Hello", "brave", "world"]);
+  });
+
+  it("filters out empty strings from whitespace-only content", () => {
+    const json = JSON.stringify({
+      type: "doc",
+      content: [
+        {
+          type: "paragraph",
+          content: [{ type: "text", text: "  word  " }],
+        },
+      ],
+    });
+    const words = extractWords(json);
+    expect(words).toEqual(["word"]);
+    expect(words.every((w) => w.length > 0)).toBe(true);
+  });
+
+  it("returns empty array for invalid JSON", () => {
+    expect(extractWords("not valid json")).toEqual([]);
   });
 });

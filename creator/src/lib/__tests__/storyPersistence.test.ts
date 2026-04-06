@@ -34,10 +34,11 @@ function makeFullStory(): Story {
             entityType: "mob",
             entityId: "mob_king",
             position: { x: 100, y: 200 },
-            movementPath: "M 0 0 C 50 50 100 100 150 150",
+            entrancePath: "enter-from-left",
+            exitPath: "exit-stage-left",
           },
         ],
-        transition: { type: "crossfade", duration: 1000 },
+        transition: { type: "crossfade" },
         effects: { particles: "sparks", parallaxLayers: 3, parallaxDepth: 0.5 },
       },
       {
@@ -115,8 +116,9 @@ describe("storyPersistence", () => {
       expect(scene.entities).toHaveLength(1);
       expect(scene.entities![0].entityType).toBe("mob");
       expect(scene.entities![0].position).toEqual({ x: 100, y: 200 });
-      expect(scene.entities![0].movementPath).toBe("M 0 0 C 50 50 100 100 150 150");
-      expect(scene.transition).toEqual({ type: "crossfade", duration: 1000 });
+      expect(scene.entities![0].entrancePath).toBe("enter-from-left");
+      expect(scene.entities![0].exitPath).toBe("exit-stage-left");
+      expect(scene.transition).toEqual({ type: "crossfade" });
       expect(scene.effects).toEqual({ particles: "sparks", parallaxLayers: 3, parallaxDepth: 0.5 });
 
       // Scene 2 has only required fields

@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { useStoryStore } from "@/stores/storyStore";
 import { useLoreStore } from "@/stores/loreStore";
 import { useProjectStore } from "@/stores/projectStore";
@@ -9,6 +10,7 @@ import { ActionButton, Spinner, EditableField } from "@/components/ui/FormWidget
 import { AssetPickerModal } from "@/components/ui/AssetPickerModal";
 import { SceneTimeline } from "./SceneTimeline";
 import { SceneDetailEditor } from "./SceneDetailEditor";
+import { PresentationMode } from "./PresentationMode";
 
 interface StoryEditorPanelProps {
   storyId: string;
@@ -59,6 +61,7 @@ export function StoryEditorPanel({ storyId }: StoryEditorPanelProps) {
   const [loadError, setLoadError] = useState(false);
   const [showAssetPicker, setShowAssetPicker] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [isPresenting, setIsPresenting] = useState(false);
 
   // Derive zone name from zoneStore
   const zones = useZoneStore((s) => s.zones);
@@ -126,6 +129,23 @@ export function StoryEditorPanel({ storyId }: StoryEditorPanelProps) {
     }
   }, [story, activeSceneId, setActiveScene]);
 
+  // F5 keyboard shortcut to enter presentation mode
+  useEffect(() => {
+    if (!story) return;
+    const sortedForF5 = [...(story.scenes || [])].sort(
+      (a, b) => a.sortOrder - b.sortOrder,
+    );
+    const canPresentF5 = sortedForF5.length > 0;
+    function handleF5(e: KeyboardEvent) {
+      if (e.key === "F5" && canPresentF5 && !isPresenting) {
+        e.preventDefault();
+        setIsPresenting(true);
+      }
+    }
+    window.addEventListener("keydown", handleF5);
+    return () => window.removeEventListener("keydown", handleF5);
+  }, [story, isPresenting]);
+
   // Title commit handler -- updates both story and lore article stub
   const handleTitleCommit = useCallback(
     (newTitle: string) => {
@@ -150,6 +170,15 @@ export function StoryEditorPanel({ storyId }: StoryEditorPanelProps) {
       setShowAssetPicker(false);
     },
     [storyId, updateStory],
+  );
+
+  // Exit presentation mode and sync active scene back to editor
+  const handlePresentationExit = useCallback(
+    (exitSceneId: string) => {
+      setIsPresenting(false);
+      setActiveScene(exitSceneId);
+    },
+    [setActiveScene],
   );
 
   // Loading state
@@ -185,6 +214,11 @@ export function StoryEditorPanel({ storyId }: StoryEditorPanelProps) {
   const sortedScenes = [...(story.scenes || [])].sort(
     (a, b) => a.sortOrder - b.sortOrder,
   );
+  const canPresent = sortedScenes.length > 0;
+  const initialSceneIndex = Math.max(
+    0,
+    sortedScenes.findIndex((s) => s.id === activeSceneId),
+  );
   const activeScene = sortedScenes.find((s) => s.id === activeSceneId);
 
   return (
@@ -204,8 +238,27 @@ export function StoryEditorPanel({ storyId }: StoryEditorPanelProps) {
           </span>
         </div>
 
-        {/* Undo / Redo */}
-        <div className="flex shrink-0 items-center gap-1">
+        {/* Present + Undo / Redo */}
+        <div className="flex shrink-0 items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setIsPresenting(true)}
+            disabled={!canPresent}
+            title={canPresent ? "Present story (F5)" : "Add scenes to present"}
+            className={[
+              "action-button-primary flex items-center gap-1.5 rounded-full px-3 py-1.5",
+              "text-xs font-sans font-medium uppercase tracking-[0.12em]",
+              !canPresent ? "opacity-45 cursor-not-allowed" : "",
+            ].join(" ")}
+          >
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor" aria-hidden="true">
+              <path d="M2.5 1v10l8-5z" />
+            </svg>
+            Present
+          </button>
+
+          <div className="mx-0.5 h-5 w-px bg-border-muted" />
+
           <ActionButton
             variant="ghost"
             size="icon"
@@ -308,6 +361,18 @@ export function StoryEditorPanel({ storyId }: StoryEditorPanelProps) {
           onSelect={handleCoverImageSelect}
           onClose={() => setShowAssetPicker(false)}
         />
+      )}
+
+      {/* Presentation Mode (portal to body for fullscreen overlay) */}
+      {isPresenting && story && createPortal(
+        <PresentationMode
+          scenes={sortedScenes}
+          initialSceneIndex={initialSceneIndex}
+          zoneId={story.zoneId}
+          narrationSpeed={story.narrationSpeed}
+          onExit={handlePresentationExit}
+        />,
+        document.body,
       )}
     </div>
   );

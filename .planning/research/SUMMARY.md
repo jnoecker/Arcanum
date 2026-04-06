@@ -1,197 +1,158 @@
 # Project Research Summary
 
-**Project:** Arcanum v1.1 Zone Stories
-**Domain:** Cinematic zone story authoring for MUD world builder (new milestone in existing Tauri 2 desktop app + web showcase)
-**Researched:** 2026-04-05
-**Confidence:** MEDIUM-HIGH
+**Project:** Arcanum Tuning Wizard
+**Domain:** Game balance tuning wizard for MUD world builder (new milestone in existing Tauri desktop app)
+**Researched:** 2026-04-04
+**Confidence:** HIGH
 
 ## Executive Summary
 
-Zone Stories adds a cinematic story authoring system to the existing Arcanum world builder. Builders compose linear scene sequences from their zone data (rooms, mobs, items), layering backgrounds, entity sprites, narration text, and atmospheric effects (parallax, particles) into presentations they can deliver to players as a DM or publish to the showcase website. The domain draws from visual novel engines (Ren'Py scene composition model), presentation frameworks (Reveal.js keyboard navigation), and narrative authoring tools (Plottr scene card timelines). Each pillar is well-understood individually; the combination is novel but the technical risk is manageable.
+The Arcanum Tuning Wizard is a preset-driven balance configuration tool layered onto an existing desktop app with 300+ gameplay parameters across 45+ config panels. The research consensus is clear: this is a read-compare-apply workflow, not another editing surface. Experts build game balance tools around derived metrics (time-to-kill, XP-to-level, gold/hour) rather than raw numeric diffs, because raw numbers are meaningless without formula context. The wizard's value comes from making those formulas visible.
 
-The recommended approach adds only two external dependencies: Motion v12.37 for declarative animation orchestration (scene transitions, sprite paths, text reveals) and dnd-kit v6.3 for drag-and-drop scene reordering. Everything else -- particles, parallax, fullscreen presentation, the story player -- is built with custom code on top of CSS transforms and Canvas 2D. The architecture integrates stories as a new lore data type, persisted in separate JSON files per story (not inline in lore.yaml), with a dedicated store for undo/redo that snapshots only the active story. The CinematicRenderer component is designed to work identically in the desktop editor preview, fullscreen presentation mode, and the showcase web player.
+The recommended approach adds only two new dependencies (Recharts for visualization, deep-object-diff for structured diffing) and implements 5-10 pure TypeScript formula functions mirroring the Kotlin server's calculations. The architecture is deliberately lightweight: four pure-function modules (presets, diff engine, formula evaluator, field labels) plus a UI workspace using local React state. No new Zustand store is needed. The wizard integrates via the existing `host: "command"` panel pattern and writes to configStore through the established save pipeline.
 
-The most critical risks are all in the data model layer (Phase 1). First, storing dense animation data inside the WorldLore object would bloat undo snapshots and lore.yaml persistence -- stories must use separate files and a separate store. Second, the story data schema must be locked as a contract between the desktop renderer and the showcase player before either is built, or the two will drift and stories will render differently on each surface. Third, fullscreen presentation mode on Windows must use Tauri's Rust-side window API rather than the web Fullscreen API, because WebView2 intercepts Escape at the engine level before JavaScript keydown handlers fire. These are all preventable with the right architectural decisions made upfront.
+The primary risk is presets producing broken or incoherent game configurations. This happens when preset values are authored per-section without cross-section validation, or when users cherry-pick sections that were designed to work together. Mitigation is straightforward but non-negotiable: build the derived metrics engine before authoring presets, validate every preset against those metrics, and show a post-apply health check when users mix sections. Secondary risks include comparison view noise (showing 300 raw fields instead of leading with metrics) and the absence of undo in configStore (snapshot-before-apply solves this without adding full undo/redo).
 
 ## Key Findings
 
 ### Recommended Stack
 
-The existing stack (React 19, Zustand 5, Tailwind 4, TipTap 3, Tauri 2) handles the vast majority of this milestone's needs. Only two new runtime dependencies are required, plus a custom particle system.
+The existing stack (React 19, Zustand 5, Tailwind 4, Tauri 2) handles 95% of the wizard's needs. Only two small additions are required, plus a set of hand-written formula functions.
 
 **New dependencies:**
-- **Motion ^12.37**: Declarative animation engine for React. Scene transitions via `animate` prop, imperative scene sequencing via `useAnimate`, sprite path animation via CSS `offset-path` + `offsetDistance`, text reveal via `variants` + `staggerChildren`, per-frame particle updates via `useAnimationFrame`. LazyMotion reduces initial cost to 4.6KB with +15KB on first use. 30M+ monthly npm downloads. React 19 compatible.
-- **@dnd-kit/core ^6.3 + @dnd-kit/sortable ^10.0**: Lightweight drag-and-drop (10KB core + 3KB sortable) for scene card reordering in the timeline editor. Keyboard accessible, horizontal sorting strategy, battle-tested stable release.
-- **Custom Canvas 2D particle system**: ~200-300 lines of TypeScript for 5-6 ambient effect presets (sparks, mist, embers, rain, dust, snow). Renders on a single Canvas overlay with `requestAnimationFrame`. Dramatically lighter than tsParticles (45-60KB) for the narrow scope needed.
+- **Recharts ^3.8**: SVG-based charting with React-native API. Needed for RadarChart (stat profiles), BarChart (mob tier comparison), LineChart (XP/scaling curves), ComposedChart (before/after overlays). React 19 compatible in 3.x. ~180KB tree-shakeable, code-split into a wizard chunk.
+- **deep-object-diff ^1.1**: Structured nested object diffing via `detailedDiff()`. Returns `{ added, deleted, updated }` for deeply nested config objects. ~2KB, zero dependencies.
+- **Plain TypeScript formula functions**: 5-10 pure functions implementing XP curve, HP scaling, damage calculation, mob stats, and gold economy formulas from the Kotlin reference code. No math library needed -- the formulas are fixed and deterministic.
 
-**Total new bundle impact:** ~34KB loaded on demand via Vite code splitting. Showcase adds only Motion (~20KB on story player load).
-
-**Explicitly rejected:** PixiJS (overkill for 1-5 sprites), tsParticles (overkill for 5 presets), GSAP (license concerns), react-spring (weaker sequencing), @react-spring/parallax (scroll-based, wrong paradigm), Spectacle/Reveal.js (text slides, not cinematic scenes), Three.js (no 3D content).
+**Total bundle impact:** ~182KB, isolated in a lazy-loaded wizard chunk.
 
 ### Expected Features
 
 **Must have (table stakes):**
-- Scene card timeline with drag-and-drop reordering
-- Scene composition: room background + entity sprites + narration text
-- Entity picker browsing zone rooms, mobs, items with thumbnails
-- Narration text editor per scene (reuse TipTap)
-- Fullscreen DM presentation mode with keyboard navigation (arrows, space, escape)
-- Scene transition effects (crossfade at minimum)
-- Story persistence with undo/redo
-- Stories as a lore article type (inherits tags, relations, showcase export)
-- Showcase story player (click-through navigation)
-- Single-zone scope per story
+- Themed presets (start with 3: Casual, Balanced, Hardcore) with clear design philosophy statements
+- Before/after comparison view leading with derived metrics, not raw field diffs
+- Per-section accept/reject with related sections grouped together
+- Contextual tooltips explaining what each value does and what it interacts with
+- Reset to pre-wizard state (snapshot before apply, one-click revert)
+- System grouping matching existing config panel categories
+- Value validation reusing existing `validateConfig.ts`
+- Search/filter across 300+ parameter names
 
 **Should have (differentiators):**
-- Room background auto-population from zone data
-- Entity spotlight positioning (left/center/right/drag)
-- Parallax background layers (2-3 depth layers per scene)
-- Particle effects overlay (sparks, mist, embers, rain, dust, snow)
-- Sprite movement paths (entrance/exit choreography)
-- Scene preview in editor (live miniature of composed scene)
-- Auto-play mode for showcase with configurable pace
-- DM speaker notes (hidden from audience)
-- Narration text reveal animation (typewriter/fade-in)
-- Scene templates/presets (Establishing Shot, Encounter, Discovery)
+- XP curve visualization (interactive line chart with live parameter response)
+- Mob tier power chart (bar chart across tiers at sample levels)
+- Computed metrics panel (concrete scenarios: "level 20 warrior deals X DPS")
+- Custom preset save/load (JSON export/import to `.arcanum/`)
+- "What changed" summary (natural-language changelog after applying)
 
 **Defer to v2+:**
-- Multi-zone stories (architecture supports it via `zoneId` on SceneEntity)
-- Scene templates (need real usage patterns first)
-- Video rendering/export
-- Branching narratives (fundamentally different product)
-- Voice-over / TTS
-- Scene scripting language
+- LLM holistic analysis (explicitly v2 per PROJECT.md, needs metrics infrastructure first)
+- Balance warnings (rule-based, needs real usage data to prioritize rules)
+- Economy flow summary (high aggregation effort, medium payoff)
+- Preset blending (per-section accept/reject covers the mix-and-match use case)
+- Level-by-level data table (charts cover the key levels sufficiently)
+- Dependency highlighting (polish feature for after core is solid)
 
 ### Architecture Approach
 
-Stories integrate as a new vertical slice through the existing architecture: types in `types/story.ts`, data in a dedicated `storyStore` with independent undo/redo, components in `components/story/`, export extension in `exportShowcase.ts`, and a player component in the showcase app. The CinematicRenderer uses a DOM + Canvas hybrid approach -- CSS transforms for parallax layers and entity positioning (GPU-accelerated), a single Canvas overlay for particle effects, and HTML for narration text. Stories persist in separate `stories/{storyId}.json` files, with lightweight metadata references in `WorldLore.stories` for lore system integration. The showcase player duplicates the ~200 LOC particle system rather than sharing via a monorepo package, since the duplication cost is far lower than the tooling overhead.
+The wizard is a self-contained workspace with four pure-function modules and a thin UI layer. It reads from configStore, computes diffs and metrics locally, and writes back only on explicit user confirmation. All wizard working state (selected preset, section toggles, preview config) lives in local React state, not a Zustand store, because it is transient and single-consumer.
 
 **Major components:**
-1. **StoryEditor** -- Top-level authoring surface with timeline, scene detail editor, and preview pane (video-editor-inspired layout: preview top-left, properties top-right, timeline strip bottom)
-2. **CinematicRenderer** -- Core rendering engine compositing parallax layers, room backgrounds, entity sprites, particle canvas, and narration text. Works in editor preview (600x400), fullscreen presentation, and showcase player contexts.
-3. **StoryTimeline** -- Horizontal draggable scene card strip with @dnd-kit/sortable for reordering
-4. **EntityPicker** -- Modal/panel for browsing zone entities (rooms, mobs, items) grouped by type with thumbnails
-5. **PresentationMode** -- Portal-based fullscreen overlay with keyboard navigation, scene counter, and speaker notes panel
-6. **StoryPlayer (showcase)** -- Embedded click-through + auto-play player for the public showcase website
-7. **ParticleCanvas** -- Self-contained Canvas 2D particle system with preset configs and RAF cleanup
+1. **Preset Definitions** (`src/lib/tuning/presets.ts`) -- Static `DeepPartial<AppConfig>` objects organized into tuning sections. TypeScript-typed to match config interfaces. Start with 3 presets, expand to 5-6 later.
+2. **Diff Engine** (`src/lib/tuning/diffEngine.ts`) -- Pure function computing per-section field-level diffs between current config and a preset. Only emits changes for fields that actually differ.
+3. **Formula Evaluator** (`src/lib/tuning/formulaEvaluator.ts`) -- Pure function computing derived game metrics (HP, DPS, XP-to-level, gold/hour, TTK) at sample levels from any AppConfig snapshot.
+4. **Field Labels** (`src/lib/tuning/fieldLabels.ts`) -- Human-readable labels, descriptions, and field-tier classifications (Critical/Important/Minor) for config paths.
+5. **Wizard Workspace** (`src/components/tuning/TuningWizard.tsx`) -- Top-level command panel with preset selector, section cards, comparison tables, and sticky apply/cancel footer.
+6. **Section Card** (`src/components/tuning/SectionCard.tsx`) -- Per-section UI showing field changes, before/after metrics, and accept/reject toggle.
 
 ### Critical Pitfalls
 
-1. **Undo/redo breaks with nested animation data** -- The lore store clones the entire WorldLore object on every mutation. Dense scene/keyframe data makes clones multi-megabyte and causes visible jank during timeline editing. **Prevention:** Dedicated story store with independent undo that snapshots only the active story (~50-200KB), not the entire lore corpus. Batch drag mutations: commit to store only on dragEnd.
-
-2. **Story YAML bloats lore.yaml beyond usability** -- A single 20-scene story generates 500-2000 lines of YAML. Five stories push lore.yaml past 10K lines, slowing auto-save and making git diffs unreadable. **Prevention:** Store story scene data in separate `stories/{storyId}.json` files. Use JSON, not YAML, for dense numerical animation data (3-5x more compact). Lore.yaml keeps only lightweight story metadata references.
-
-3. **Schema diverges between desktop and showcase renderers** -- Stories are executable (they need a runtime interpreter), not just displayable. Two rendering engines consuming the same data will drift unless the schema is the contract. **Prevention:** Single TypeScript interface defining story data format, consumed identically by both renderers. Version field on story schema. No transformation layer between editor state and player input.
-
-4. **Fullscreen presentation fights Tauri window management** -- WebView2 intercepts Escape at the engine level for fullscreen exit before JavaScript keydown handlers fire. Escape becomes ambiguous. **Prevention:** Use Tauri's Rust-side `window.set_fullscreen(true)` instead of the web Fullscreen API. Do NOT use Escape to exit presentation -- use F5 toggle or a visible button.
-
-5. **Animation rendering differs between desktop and showcase** -- Natural approach builds desktop preview first, then reimplements for showcase. Even small timing differences produce visible drift over a 30-second story. **Prevention:** Build the story player as a single React component with no Tauri API dependencies. Use CSS animations as the primary engine (deterministic timing). Same particle code in both surfaces.
+1. **Preset values produce broken formulas** -- Config fields form an interconnected formula graph. Presets must be authored as complete, internally-consistent snapshots validated against derived metrics. Build the metrics engine before authoring presets.
+2. **Partial apply creates Frankenstein configs** -- Cherry-picking sections breaks cross-section consistency. Group related sections (Combat + Stats as one unit), show post-apply health check with derived metrics, and flag outlier combinations.
+3. **Comparison view shows noise instead of signal** -- 300 raw field diffs are useless. Lead with derived metrics ("TTK: 45s -> 120s"), tier fields by importance, collapse Minor fields by default.
+4. **No undo after preset apply** -- configStore has no undo/redo. Snapshot current config before any apply, offer one-click "revert to pre-wizard state". Do not add full undo to configStore (overkill).
+5. **Presets go stale as config schema evolves** -- Use `DeepPartial<AppConfig>` overlays, not full snapshots. Apply logic merges preset values over current config, leaving unset fields untouched. Flag uncovered sections in the UI.
 
 ## Implications for Roadmap
 
-Based on research, the feature set decomposes into 6 phases with clear dependency ordering. The data model and persistence architecture MUST come first because three of the five critical pitfalls (undo bloat, YAML bloat, schema divergence) are all data layer decisions that become extremely expensive to change after rendering code is built on top of them.
+Based on research, the wizard decomposes into 4 phases with clear dependency ordering.
 
-### Phase 1: Data Model + Story Foundation
-**Rationale:** Three critical pitfalls (1, 2, 5) are exclusively data model decisions. The storage architecture (separate files vs inline, JSON vs YAML, separate store vs lore store) constrains every downstream component. This phase must be settled and tested before any rendering code is written.
-**Delivers:** `types/story.ts` with Story, StoryScene, SceneEntity, SceneEffect interfaces. Dedicated `storyStore` with CRUD mutations and independent undo/redo (snapshot active story only). Persistence layer writing `stories/{storyId}.json` files. Lightweight `WorldLore.stories` metadata array. Panel registry entry for "stories" in the Lore group. StoryBrowser component (list, create, delete -- analogous to ArticleBrowser).
-**Addresses:** Story as lore article type, story persistence, single-zone scope, story cover/thumbnail
-**Avoids:** Pitfall 1 (undo bloat), Pitfall 2 (schema divergence -- lock schema here), Pitfall 5 (YAML bloat)
+### Phase 1: Foundation (Types, Formulas, Presets)
+**Rationale:** Everything downstream depends on the data model, formula accuracy, and preset content. The diff engine, comparison view, and charts all consume these outputs. Building them first also validates the core assumption: can we compute meaningful derived metrics from AppConfig?
+**Delivers:** TypeScript interfaces for presets/diffs/metrics, formula evaluator with 5-10 server-mirroring functions, field labels registry, 3 validated presets (Casual, Balanced, Hardcore), diff engine, and comprehensive Vitest coverage for all pure functions.
+**Addresses:** Themed presets, system grouping, value validation, contextual tooltips (data layer)
+**Avoids:** Pitfall 1 (broken formula interactions) by building metrics before presets. Pitfall 5 (stale presets) by using DeepPartial overlay model. Pitfall 8 (too many presets) by shipping 3 first.
 
-### Phase 2: Story Editor + Scene Composition
-**Rationale:** With the data foundation proven, build the core authoring experience. The editor layout (preview + detail + timeline) is the primary user interaction surface. Entity integration depends on having the editor shell in place.
-**Delivers:** StoryEditor layout shell, SceneCard, SceneDetailEditor, NarrationEditor (TipTap reuse), StoryTimeline with @dnd-kit/sortable drag reordering, EntityPicker for browsing zone rooms/mobs/items, room background auto-population, entity spotlight positioning (left/center/right/custom), scene preview pane.
-**Addresses:** Scene card timeline, drag-and-drop reordering, narration text editor, entity picker, scene composition (background + entities + text), room background auto-population, entity spotlight positioning, scene preview in editor
-**Avoids:** Pitfall 6 (drag render thrashing -- local state during drag, commit on drop), Pitfall 8 (entity staleness -- snapshot entities at authoring time), Pitfall 9 (layer z-ordering -- define fixed layer stack with constant values), Pitfall 10 (keyboard conflicts -- scoped shortcut system)
+### Phase 2: Core Wizard UI (Comparison + Apply)
+**Rationale:** With the data layer proven, build the primary user workflow: select preset, see comparison, accept/reject sections, apply. This is the wizard's entire value proposition.
+**Delivers:** TuningWizard workspace, PresetSelector, SectionCard, ComparisonTable, FieldChangeRow, ApplyFooter, snapshot-before-apply undo mechanism, panel registry integration, MainArea routing.
+**Addresses:** Before/after comparison, per-section accept/reject, reset/undo, search/filter
+**Avoids:** Pitfall 3 (noise) by leading with derived metrics. Pitfall 4 (no undo) by implementing snapshot before apply. Pitfall 7 (scope creep) by keeping wizard read-compare-apply only. Pitfall 9 (YAML corruption) by using existing save pipeline.
 
-### Phase 3: Cinematic Renderer + Effects
-**Rationale:** This is the most technically complex phase. The CinematicRenderer must be designed as a portable component (no Tauri deps) so it can serve all three contexts (editor, presentation, showcase). Building it after the editor gives concrete scene data to render against.
-**Delivers:** CinematicRenderer (DOM + Canvas hybrid), ParticleCanvas with 5-6 preset effects, parallax background layers via CSS transforms, scene transition effects (crossfade, slide), narration text reveal animation (typewriter/fade-in), sprite movement paths via CSS offset-path + Motion.
-**Addresses:** Parallax background layers, particle effects overlay, sprite movement paths, narration text reveal, scene transition effects
-**Avoids:** Pitfall 4 (different code paths -- one renderer component, no Tauri imports), Pitfall 7 (particle memory leaks -- cancel RAF in cleanup, clear canvas on unmount), Pitfall 14 (CSS/Canvas transition mismatch -- unified transition control)
+### Phase 3: Visualizations (Charts + Computed Metrics)
+**Rationale:** Charts transform the wizard from "useful" to "insightful." They depend on the formula evaluator (Phase 1) and the wizard workspace (Phase 2) being functional. Recharts is code-split into this phase's chunk.
+**Delivers:** XP curve line chart, mob tier bar chart, stat profile radar chart, computed metrics panel with concrete scenarios, before/after chart overlays.
+**Addresses:** XP curve visualization, mob tier power chart, computed metrics panel
+**Avoids:** Pitfall 6 (wrong metrics) by labeling formula fidelity and referencing Kotlin server code.
 
-### Phase 4: DM Presentation Mode
-**Rationale:** Depends on the CinematicRenderer (Phase 3). The presentation mode wraps it in a fullscreen container with keyboard navigation. Must use Tauri's window API, not the web Fullscreen API.
-**Delivers:** PresentationMode portal component, Tauri Rust-side fullscreen toggle, keystroke navigation (arrows, space, F5), scene counter/progress indicator, DM speaker notes panel, auto-advance timer.
-**Addresses:** Fullscreen presentation mode, keystroke navigation, DM speaker notes, scene-level audio cues (optional)
-**Avoids:** Pitfall 3 (Tauri fullscreen Escape -- use Rust window API, F5 toggle instead of Escape), Pitfall 10 (keyboard conflicts -- presentation-scoped handlers, disable global shortcuts)
-
-### Phase 5: Showcase Story Player
-**Rationale:** The showcase player is a separate deployment target (Cloudflare Pages SPA). It consumes pre-resolved story data (URLs, HTML narration) exported from the creator. Building it after the CinematicRenderer means the rendering approach is proven and can be replicated.
-**Delivers:** ShowcaseStory/ShowcaseScene types in both creator and showcase, export logic in `exportShowcaseData()` resolving entity refs to R2 URLs, StoryPlayer component (click-through + auto-play), StoriesPage + StoryPage in showcase, routing updates, duplicated particle system (~200 LOC).
-**Addresses:** Showcase story player (click-through), auto-play mode, story cover/thumbnail in showcase listing
-**Avoids:** Pitfall 11 (bundle size -- lazy-load player, no animation library in showcase), Pitfall 12 (missing asset URLs -- reuse existing image resolution, validate before publish), Pitfall 13 (auto-play timing -- wall-clock time, handle tab visibility)
-
-### Phase 6: Polish + Templates
-**Rationale:** After the full pipeline works (author -> preview -> present -> publish), add convenience features that accelerate the workflow. Scene templates need real usage patterns to design well.
-**Delivers:** 3-5 scene templates/presets (Establishing Shot, Encounter, Discovery), story cover auto-suggestion from first scene, UX refinements based on testing, scene-level audio cue integration (if warranted).
-**Addresses:** Scene templates/presets, story cover/thumbnail auto-suggest
-**Avoids:** Over-engineering templates before real usage patterns emerge
+### Phase 4: Polish + Expansion (Remaining Presets, UX, Custom Presets)
+**Rationale:** With the core tool working and validated, add the remaining 2-3 genre presets, custom preset save/load, "what changed" summary, and UX refinements like better onboarding and navigation guidance.
+**Delivers:** 2-3 additional presets (Grindy MMO, Fast PvP, Story-focused), custom preset save/load to `.arcanum/`, natural-language change summary, sidebar callout for new users, level-by-level data table (if warranted).
+**Addresses:** Full preset suite, custom preset save/load, "what changed" summary
+**Avoids:** Pitfall 2 (Frankenstein configs) by adding post-apply health check warnings. Pitfall 11 (navigation confusion) by adding onboarding guidance.
 
 ### Phase Ordering Rationale
 
-- **Phase 1 before everything:** Three critical pitfalls are data model decisions. The storage format (separate JSON files), undo strategy (dedicated store), and schema versioning cannot be retrofitted without significant rework.
-- **Phase 2 before Phase 3:** The editor provides concrete scene data for the renderer to consume. Building the renderer without real authored scenes leads to over-abstraction.
-- **Phase 3 before Phases 4-5:** Both presentation mode and the showcase player wrap the CinematicRenderer. Building it once as a portable component (no Tauri deps) serves all three consumers.
-- **Phase 4 before Phase 5:** Desktop presentation is the higher-priority use case (DMs presenting to players). The showcase player is a "nice to have" that extends reach but is not required for the core authoring workflow.
-- **Phase 6 last:** Templates and polish benefit from real usage of the authoring pipeline. Premature template design produces templates nobody uses.
+- **Phase 1 before Phase 2:** The diff engine and formula evaluator are consumed by every UI component. Building UI first would require mocking all data, and the data model decisions (partial overlay vs full snapshot, section grouping, metric selection) constrain every UI decision.
+- **Phase 2 before Phase 3:** Charts are enhancement, not core workflow. The wizard is useful with tables alone; charts make it better. Separating them also isolates the Recharts dependency.
+- **Phase 3 before Phase 4:** Visualizations validate whether the formula evaluator is accurate enough before expanding to more presets. If metrics are wrong, fixing them with 3 presets is easier than with 6.
+- **Phase 4 last:** Additional presets and custom save/load are content and convenience features that benefit from the core tool being battle-tested first.
 
 ### Research Flags
 
 Phases likely needing deeper research during planning:
-- **Phase 1 (Data Model):** The separation between story store and lore store needs careful design to maintain lore system integration (tags, relations, showcase export) while isolating heavy scene data. The persistence split (metadata in lore.yaml, content in stories/*.json) needs implementation validation.
-- **Phase 3 (Cinematic Renderer):** The DOM + Canvas hybrid rendering approach, particle system implementation, and CSS offset-path animation are the most technically novel parts. Motion's `useAnimate` for imperative scene sequencing needs prototyping.
-- **Phase 4 (Presentation Mode):** Tauri Rust-side fullscreen API behavior on Windows needs testing. WebView2 keyboard interception specifics may require workarounds.
+- **Phase 1 (Preset Authoring):** The actual numeric values for presets require careful game design work. Research the Kotlin reference code in `reference/` to extract exact formula implementations. The formula evaluator must match the server's calculations closely enough for derived metrics to be directionally correct.
+- **Phase 3 (Visualizations):** Recharts 3.x API and theming with CSS custom properties needs validation during implementation. The specific chart configurations (radar axis mapping, composed chart overlays) benefit from prototyping.
 
 Phases with standard patterns (skip research-phase):
-- **Phase 2 (Story Editor):** Follows established patterns from the codebase: DefinitionWorkbench layout, TipTap editor reuse, dnd-kit is well-documented, entity picker is a filtered view of zoneStore data.
-- **Phase 5 (Showcase Player):** The showcase export pipeline is well-established (articles, maps already export). The player is a simplified read-only version of the CinematicRenderer. Routing additions follow existing showcase patterns.
-- **Phase 6 (Polish):** Template/preset patterns are trivial once the authoring pipeline works.
+- **Phase 2 (Core Wizard UI):** Follows established command panel pattern from the codebase (PlayerSpriteManager, AdminDashboard). Comparison table and section card are straightforward presentational components. Well-documented in ARCHITECTURE.md.
+- **Phase 4 (Polish + Expansion):** JSON file I/O for custom presets is trivial. Additional presets follow the same authoring pattern as Phase 1.
 
 ## Confidence Assessment
 
 | Area | Confidence | Notes |
 |------|------------|-------|
-| Stack | HIGH | Only 2 new dependencies, both well-maintained with confirmed React 19 compatibility. Custom particle system is bounded scope. Motion v12.37 docs verified. dnd-kit v6.3 stable and battle-tested. |
-| Features | MEDIUM-HIGH | Table stakes drawn from visual novels, presentation frameworks, and narrative tools -- each pillar well-understood. The specific combination (zone-data-aware cinematic authoring) is novel but low risk since it composes known patterns. |
-| Architecture | HIGH | Integrates through established codebase patterns (lore system, panel registry, showcase export). Data flow is clear. The CinematicRenderer portability constraint (no Tauri deps) is a clean architectural boundary. Direct codebase analysis underpins all integration points. |
-| Pitfalls | HIGH | Pitfalls are specific, actionable, and grounded in direct codebase analysis (snapshotLore cloning behavior, lore.yaml serialization, WebView2 Escape interception). Phase-specific warnings are mapped. External sources confirm WebView2 fullscreen issues. |
+| Stack | HIGH | Only 2 small, well-maintained dependencies. Recharts 3.x React 19 compatibility confirmed. Existing stack handles everything else. |
+| Features | MEDIUM-HIGH | Table stakes are clear and well-researched. Differentiator prioritization is sound. MUD-specific tuning tooling is niche, but game balance tool patterns are well-established. |
+| Architecture | HIGH | Component boundaries are clean, follow existing codebase patterns exactly, and the data flow is straightforward. The pure-function approach is proven in this codebase. |
+| Pitfalls | HIGH | Pitfalls are specific, actionable, and tied to concrete codebase characteristics (configStore lacking undo, YAML round-trip requirements, AppConfig nesting depth). |
 
-**Overall confidence:** MEDIUM-HIGH
-
-The slight reduction from HIGH is due to the CinematicRenderer being the most technically novel component. The DOM + Canvas hybrid approach, particle system, and cross-surface rendering (same component in Tauri webview and standalone SPA) have not been validated with a prototype. The individual techniques are well-documented, but their composition in this specific context is untested.
+**Overall confidence:** HIGH
 
 ### Gaps to Address
 
-- **Story store vs lore store integration boundary:** The pitfalls research argues strongly for a separate story store, while the architecture research initially proposed stories inside loreStore. The synthesis recommendation is a dedicated store, but the exact integration pattern (how story metadata in WorldLore stays in sync with story content in storyStore) needs design validation during Phase 1.
-- **Entity snapshot vs reference trade-off:** Pitfalls research recommends snapshots (copy entity name + image at authoring time). Architecture research recommends references (resolve at render time for freshness). The recommended approach is references for the desktop editor (always fresh) and resolved snapshots at export time (showcase gets a frozen version). This needs explicit implementation during Phase 2.
-- **Motion in showcase:** Stack research recommends Motion for the showcase player. Pitfalls research warns against animation library dependencies in the showcase bundle. The resolution is to use Motion with LazyMotion for the showcase (4.6KB initial, loaded on demand), but evaluate whether CSS-only transitions suffice for the player's simpler needs. Decide during Phase 5.
-- **Tauri fullscreen API specifics:** The Rust-side `window.set_fullscreen(true)` behavior on Windows 11 with WebView2 needs hands-on testing. Does it handle multi-monitor correctly? Does it cover the taskbar? Testing required at the start of Phase 4.
-- **Particle system performance:** Custom Canvas 2D particles at 60fps with 50-200 particles per preset should be fine, but performance on lower-end Windows machines running WebView2 is unverified. Profile during Phase 3 implementation.
+- **Exact formula implementations:** The formula evaluator approximates server calculations. During Phase 1 implementation, cross-reference every formula against the Kotlin source in `reference/` to ensure directional accuracy. Label any simplifications explicitly in the UI.
+- **Preset numeric values:** Research identifies the preset structure and philosophy, but the actual numeric values (what HP multiplier makes "Hardcore" feel hardcore?) require game design judgment and iteration. Plan for at least one round of playtesting or review after initial preset authoring.
+- **Recharts theming specifics:** The Arcanum design system uses CSS custom properties. Recharts 3.x supports custom colors via props but the exact integration pattern (reading CSS vars at render time vs static constants) needs validation during Phase 3.
+- **Post-apply health check thresholds:** Pitfall 2 mitigation calls for flagging outlier metric combinations, but the specific thresholds ("TTK below 1 second is broken") require game design knowledge. Start with conservative thresholds and adjust based on feedback.
 
 ## Sources
 
 ### Primary (HIGH confidence)
-- [Motion official site](https://motion.dev) -- v12.37+, React 19 compatible, LazyMotion bundle optimization
-- [Motion path tutorial](https://motion.dev/tutorials/react-motion-path) -- offset-path + offsetDistance animation
-- [@dnd-kit npm](https://www.npmjs.com/package/@dnd-kit/core) -- v6.3.1, stable, 2400+ dependents
-- [@dnd-kit sortable docs](https://docs.dndkit.com/presets/sortable) -- SortableContext, useSortable, arrayMove
-- [MDN offset-path](https://developer.mozilla.org/en-US/docs/Web/CSS/offset-path) -- browser support table
-- [Fullscreen API MDN](https://developer.mozilla.org/en-US/docs/Web/API/Fullscreen_API) -- universal browser support
-- Codebase analysis: `loreStore.ts`, `exportShowcase.ts`, `LorePanelHost.tsx`, `panelRegistry.ts`, `types/lore.ts`, `zoneStore.ts`, `assetStore.ts`, `lorePersistence.ts`, `useKeyboardShortcuts.ts`
+- Codebase analysis: `creator/src/types/config.ts`, `creator/src/stores/configStore.ts`, `creator/src/lib/panelRegistry.ts`, `creator/src/components/MainArea.tsx`
+- [Recharts npm](https://www.npmjs.com/package/recharts) -- v3.8.1, March 2026, React 19 confirmed
+- [deep-object-diff npm](https://www.npmjs.com/package/deep-object-diff) -- v1.1, 2M+ weekly downloads
+- `.planning/codebase/ARCHITECTURE.md` and `.planning/codebase/CONCERNS.md` -- existing app patterns and tech debt
 
 ### Secondary (MEDIUM confidence)
-- [Ren'Py - Visual Novel Engine](https://www.renpy.org/) -- scene composition model (background + sprites + dialogue)
-- [Reveal.js](https://revealjs.com/) -- presentation mode patterns (keyboard navigation, speaker notes, fullscreen)
-- [Plottr](https://plottr.com/features/) -- scene card timeline and drag-and-drop patterns
-- [WebView2 Escape key fullscreen issue](https://github.com/MicrosoftEdge/WebView2Feedback/discussions/3985) -- Escape exits fullscreen at engine level
-- [Web Animation Performance Tier List](https://motion.dev/magazine/web-animation-performance-tier-list) -- CSS transform/opacity are GPU-composited
-- [Undo/Redo in Complex Web Apps](https://engineering.contentsquare.com/2023/history-undo-redo/) -- snapshot vs command undo patterns
-- [Motion vs React Spring comparison (2025)](https://hookedonui.com/animating-react-uis-in-2025-framer-motion-12-vs-react-spring-10/)
+- [Machinations.io](https://machinations.io/) -- game balance simulation patterns, informed anti-feature decisions
+- [RPG Level-Based Progression - Davide Aversa](https://www.davideaversa.it/blog/gamedesign-math-rpg-level-based-progression/) -- XP curve formulas
+- [Economy Balancing Using Spreadsheets - Game Developer](https://www.gamedeveloper.com/design/my-approach-to-economy-balancing-using-spreadsheets) -- income vs sink analysis
+- [Wizard UI Design Best Practices - Lollypop Design](https://lollypop.design/blog/2026/january/wizard-ui-design/) -- wizard UX patterns
 
 ### Tertiary (LOW confidence)
-- MUD-specific cinematic storytelling tooling is nonexistent. Patterns are inferred from visual novel engines, DM presentation tools (Owlbear Rodeo, MasterScreen), and web cinematic experiences. The specific combination is novel.
-- Custom Canvas 2D particle system performance characteristics are estimated, not benchmarked. Needs validation during implementation.
+- MUD-specific tuning tooling documentation is sparse. The patterns are inferred from general game balance tool design and adapted to the MUD domain. Preset philosophies and balance thresholds will need validation through use.
 
 ---
-*Research completed: 2026-04-05*
+*Research completed: 2026-04-04*
 *Ready for roadmap: yes*

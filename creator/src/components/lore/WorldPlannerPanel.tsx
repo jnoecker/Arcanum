@@ -1,11 +1,14 @@
 import { useCallback, useMemo, useState } from "react";
 import { useLoreStore, selectMaps, selectZonePlans } from "@/stores/loreStore";
+import { useProjectStore } from "@/stores/projectStore";
+import { useZoneStore } from "@/stores/zoneStore";
 import { useImageSrc } from "@/lib/useImageSrc";
 import {
   generateZonePlans,
   suggestionsToZonePlans,
   type ZonePlanSuggestion,
 } from "@/lib/loreZonePlanning";
+import { createZoneFromPlan } from "@/lib/createZoneFromPlan";
 import type { ZonePlan } from "@/types/lore";
 import {
   ActionButton,
@@ -203,10 +206,38 @@ function ZonePlanEditor({
 }) {
   const updateZonePlan = useLoreStore((s) => s.updateZonePlan);
   const deleteZonePlan = useLoreStore((s) => s.deleteZonePlan);
+  const project = useProjectStore((s) => s.project);
+  const openTab = useProjectStore((s) => s.openTab);
+  const zones = useZoneStore((s) => s.zones);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [scaffolding, setScaffolding] = useState(false);
+  const [scaffoldError, setScaffoldError] = useState<string | null>(null);
+
+  // If the linked zoneId no longer exists in the loaded zone set, treat
+  // the plan as unlinked so the user can re-scaffold.
+  const linkedZoneExists = plan.zoneId ? zones.has(plan.zoneId) : false;
 
   const otherPlans = allPlans.filter((p) => p.id !== plan.id);
   const borders = new Set(plan.borders ?? []);
+
+  const handleCreateZone = async () => {
+    if (!project) return;
+    setScaffolding(true);
+    setScaffoldError(null);
+    try {
+      const result = await createZoneFromPlan(plan, project);
+      updateZonePlan(plan.id, { zoneId: result.zoneId });
+    } catch (err) {
+      setScaffoldError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setScaffolding(false);
+    }
+  };
+
+  const handleOpenLinkedZone = () => {
+    if (!plan.zoneId) return;
+    openTab({ id: `zone:${plan.zoneId}`, kind: "zone", label: plan.zoneId });
+  };
 
   const toggleBorder = (id: string) => {
     const next = new Set(borders);
@@ -307,6 +338,61 @@ function ZonePlanEditor({
           {Math.round(plan.region.w)}×{Math.round(plan.region.h)}px
         </div>
       )}
+
+      {/* Zone scaffold link */}
+      <div className="rounded-lg border border-white/6 bg-black/15 p-2.5">
+        <div className="mb-1.5 text-2xs uppercase tracking-wider text-text-muted">
+          Linked Zone
+        </div>
+        {plan.zoneId && linkedZoneExists ? (
+          <div className="flex flex-col gap-1.5">
+            <div className="text-xs text-text-secondary">{plan.zoneId}</div>
+            <div className="flex gap-1.5">
+              <ActionButton
+                onClick={handleOpenLinkedZone}
+                variant="secondary"
+                size="sm"
+              >
+                Open Zone
+              </ActionButton>
+              <ActionButton
+                onClick={() => updateZonePlan(plan.id, { zoneId: undefined })}
+                variant="ghost"
+                size="sm"
+                title="Remove the link without deleting the zone"
+              >
+                Unlink
+              </ActionButton>
+            </div>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-1.5">
+            {plan.zoneId && !linkedZoneExists && (
+              <div className="text-2xs text-text-muted">
+                Linked zone "{plan.zoneId}" not loaded.
+              </div>
+            )}
+            <ActionButton
+              onClick={handleCreateZone}
+              disabled={scaffolding || !project}
+              variant="primary"
+              size="sm"
+              className="self-start"
+            >
+              {scaffolding ? (
+                <span className="flex items-center gap-1.5">
+                  <Spinner /> Creating...
+                </span>
+              ) : (
+                "Create Zone from Plan"
+              )}
+            </ActionButton>
+            {scaffoldError && (
+              <p className="text-2xs text-status-danger">{scaffoldError}</p>
+            )}
+          </div>
+        )}
+      </div>
 
       {confirmDelete ? (
         <div className="flex items-center gap-1.5">

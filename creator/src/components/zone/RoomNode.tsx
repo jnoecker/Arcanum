@@ -36,25 +36,27 @@ const HANDLES: HandleDef[] = [
 ];
 
 const hiddenHandleStyle: React.CSSProperties = {
-  width: 6,
-  height: 6,
+  width: 10,
+  height: 10,
   background: "transparent",
   border: "none",
+  zIndex: 10,
 };
 
 const plusHandleStyle: React.CSSProperties = {
-  width: 14,
-  height: 14,
+  width: 20,
+  height: 20,
   background: "color-mix(in srgb, var(--color-border-default) 40%, transparent)",
   border: "1px solid color-mix(in srgb, var(--color-border-default) 60%, transparent)",
-  borderRadius: 3,
+  borderRadius: 4,
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
   cursor: "crosshair",
-  fontSize: 10,
+  fontSize: 12,
   color: "color-mix(in srgb, var(--color-text-muted) 60%, transparent)",
   transition: "all 0.15s",
+  zIndex: 10,
 };
 
 // ─── Sub-components ──────────────────────────────────────────────────

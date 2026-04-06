@@ -1,7 +1,14 @@
 import { useState, useEffect } from "react";
 import { useFocusTrap } from "@/lib/useFocusTrap";
+import { OPPOSITE } from "@/lib/zoneEdits";
 
 const DIR_LABELS: Record<string, string> = {
+  n: "North", s: "South", e: "East", w: "West",
+  ne: "NE", nw: "NW", se: "SE", sw: "SW",
+  u: "Up", d: "Down",
+};
+
+const DIR_LABELS_SHORT: Record<string, string> = {
   n: "N", s: "S", e: "E", w: "W",
   ne: "NE", nw: "NW", se: "SE", sw: "SW",
   u: "Up", d: "Down",
@@ -10,6 +17,8 @@ const DIR_LABELS: Record<string, string> = {
 interface DirectionPickerProps {
   source: string;
   target: string;
+  sourceTitle?: string;
+  targetTitle?: string;
   initialDirection: string;
   onConfirm: (direction: string) => void;
   onCancel: () => void;
@@ -18,6 +27,8 @@ interface DirectionPickerProps {
 export function DirectionPicker({
   source,
   target,
+  sourceTitle,
+  targetTitle,
   initialDirection,
   onConfirm,
   onCancel,
@@ -62,12 +73,28 @@ export function DirectionPicker({
         aria-label="Choose exit direction"
         className="rounded-lg border border-border-default bg-bg-secondary p-4 shadow-xl"
       >
-        <p className="mb-1 font-display text-xs tracking-wide text-text-primary">
+        <p className="mb-2 font-display text-xs tracking-wide text-text-primary">
           New exit direction
         </p>
-        <p className="mb-3 text-2xs text-text-muted">
-          {source} &rarr; {target}
-        </p>
+
+        {/* Direction summary */}
+        <div className="mb-3 rounded bg-bg-tertiary px-3 py-2">
+          <div className="flex items-center justify-center gap-2 text-xs">
+            <span className="max-w-[5rem] truncate font-medium text-text-primary" title={source}>
+              {sourceTitle ?? source}
+            </span>
+            <span className="font-semibold text-accent">
+              {DIR_LABELS[selected] ?? selected.toUpperCase()}
+            </span>
+            <span className="text-text-muted">/</span>
+            <span className="font-semibold text-accent">
+              {OPPOSITE[selected] ? (DIR_LABELS[OPPOSITE[selected]] ?? OPPOSITE[selected].toUpperCase()) : "—"}
+            </span>
+            <span className="max-w-[5rem] truncate font-medium text-text-primary" title={target}>
+              {targetTitle ?? target}
+            </span>
+          </div>
+        </div>
 
         {/* Compass grid */}
         <div className="mb-2 grid grid-cols-3 gap-1" style={{ width: 140 }}>
@@ -83,7 +110,7 @@ export function DirectionPicker({
                       : "bg-bg-tertiary text-text-secondary hover:bg-bg-elevated"
                   }`}
                 >
-                  {DIR_LABELS[dir]}
+                  {DIR_LABELS_SHORT[dir]}
                 </button>
               ) : (
                 <div key={`empty-${i}`} className="h-11 w-11" />

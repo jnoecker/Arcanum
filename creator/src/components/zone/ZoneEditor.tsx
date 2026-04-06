@@ -20,11 +20,12 @@ import { useAssetStore } from "@/stores/assetStore";
 import { useToastStore } from "@/stores/toastStore";
 import { zoneToGraph, GRAPH } from "@/lib/zoneToGraph";
 import { compassLayout } from "@/lib/dagreLayout";
-import { addRoom, addExit, generateRoomId } from "@/lib/zoneEdits";
+import { addRoom, addExit, deleteExit, generateRoomId } from "@/lib/zoneEdits";
 import { saveZone } from "@/lib/saveZone";
 import type { WorldFile } from "@/types/world";
 import { RoomNode } from "./RoomNode";
 import { CrossZoneNode } from "./CrossZoneNode";
+import { ExitEdge, ExitDeleteContext } from "./ExitEdge";
 import { RoomPanel, type EntitySelection } from "./RoomPanel";
 import { EntityPanel } from "./EntityPanel";
 import { DirectionPicker } from "./DirectionPicker";
@@ -44,6 +45,10 @@ type ViewMode = "map" | "assets" | "media" | "dungeon";
 const nodeTypes = {
   room: RoomNode,
   crossZone: CrossZoneNode,
+};
+
+const edgeTypes = {
+  exitEdge: ExitEdge,
 };
 
 interface PendingConnection {
@@ -215,6 +220,19 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
       setPendingConnection(null);
     },
     [zoneState, pendingConnection, applyWorldChange],
+  );
+
+  const handleDeleteExitFromGraph = useCallback(
+    (sourceRoom: string, direction: string) => {
+      if (!zoneState) return;
+      try {
+        const next = deleteExit(zoneState.data, sourceRoom, direction, true);
+        applyWorldChange(next);
+      } catch {
+        // Exit doesn't exist — ignore
+      }
+    },
+    [zoneState, applyWorldChange],
   );
 
   const onSelectionChange = useCallback(
@@ -520,6 +538,7 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
         <div id="zone-view-panel" role="tabpanel" aria-labelledby={`zone-view-tab-${viewMode}`} className="flex min-h-0 flex-1">
           <div className="relative min-h-0 flex-1">
             <Starfield />
+            <ExitDeleteContext.Provider value={handleDeleteExitFromGraph}>
             <ReactFlow
               nodes={nodes}
               edges={edges}
@@ -527,6 +546,7 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
               onEdgesChange={onEdgesChange}
               onConnect={onConnect}
               nodeTypes={nodeTypes}
+              edgeTypes={edgeTypes}
               onSelectionChange={onSelectionChange}
               onNodeClick={onNodeClick}
               onPaneClick={onPaneClick}
@@ -553,6 +573,7 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
                 maskColor="var(--graph-minimap-mask)"
               />
             </ReactFlow>
+            </ExitDeleteContext.Provider>
 
             {/* Atmospheric background overlay */}
             <img
@@ -609,6 +630,8 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
               <DirectionPicker
                 source={pendingConnection.source}
                 target={pendingConnection.target}
+                sourceTitle={zoneState.data.rooms[pendingConnection.source]?.title}
+                targetTitle={zoneState.data.rooms[pendingConnection.target]?.title}
                 initialDirection={pendingConnection.inferredDir}
                 onConfirm={handleConfirmConnection}
                 onCancel={() => setPendingConnection(null)}

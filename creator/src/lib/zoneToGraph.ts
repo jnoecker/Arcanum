@@ -222,7 +222,7 @@ export function zoneToGraph(
       targetHandle: reverse
         ? `target-${reverse.direction}`
         : `target-${oppositeDir(exit.direction)}`,
-      type: "smoothstep",
+      type: "exitEdge",
       label,
       animated: isCrossZone || isVertical,
       markerEnd: isBidirectional
@@ -233,14 +233,9 @@ export function zoneToGraph(
         strokeDasharray: exit.hasDoor ? "6 3" : isVertical ? "4 4" : undefined,
         strokeWidth: isVertical ? 2 : 1.5,
       },
-      labelStyle: {
-        fill: GRAPH().edge,
-        fontSize: 10,
-        fontWeight: 500,
-      },
-      labelBgStyle: {
-        fill: GRAPH().bg,
-        fillOpacity: 0.9,
+      data: {
+        sourceRoom: exit.source,
+        direction: exit.direction,
       },
     });
   }

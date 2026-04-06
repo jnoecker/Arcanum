@@ -173,7 +173,7 @@ export function ZoneAssetWorkbench({ zoneId, world, onWorldChange }: ZoneAssetWo
   const [previewEntry, setPreviewEntry] = useState<AssetEntry | null>(null);
   const [generatingPrompt, setGeneratingPrompt] = useState(false);
   const [generatingImage, setGeneratingImage] = useState(false);
-  const [batchGenerating, setBatchGenerating] = useState(false);
+  const [batchCount, setBatchCount] = useState(1);
   const [importing, setImporting] = useState(false);
   const [removingBg, setRemovingBg] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -331,41 +331,50 @@ export function ZoneAssetWorkbench({ zoneId, world, onWorldChange }: ZoneAssetWo
     }
   };
 
-  const handleGenerateImage = async () => {
-    if (!selectedTarget || !hasImageKey) return;
+  const handleGenerate = async () => {
+    if (!selectedTarget || !hasImageKey || !selectedKind) return;
+    const count = Math.max(1, Math.min(8, batchCount));
     setGeneratingImage(true);
     setError(null);
     try {
-      const image = await runGeneration(promptDraft, true);
-      if (image) {
-        persistImageSelection(image.file_path.split(/[\\/]/).pop() ?? image.hash);
-        await loadAssets();
-        await refreshVariants();
+      let firstImage: GeneratedImage | null = null;
+      for (let i = 0; i < count; i += 1) {
+        const image = await runGeneration(promptDraft, i === 0);
+        if (i === 0) firstImage = image;
+      }
+      if (firstImage) {
+        persistImageSelection(firstImage.file_path.split(/[\\/]/).pop() ?? firstImage.hash);
+      }
+      await loadAssets();
+      await refreshVariants();
+
+      // Auto-run background removal for sprite asset types after generation.
+      // The spinner stays visible the whole time so the user knows work is
+      // still happening even after the new variant appears.
+      const assetType = assetTypeForKind(selectedKind);
+      if (firstImage?.data_url && shouldRemoveBg(assetType) && settings?.auto_remove_bg) {
+        setRemovingBg(true);
+        try {
+          const entry = await removeBgAndSave(
+            firstImage.data_url,
+            assetType,
+            selectedContext,
+            selectedVariantGroup,
+          ).catch(() => null);
+          if (entry && selectedVariantGroup) {
+            await setActiveVariant(selectedVariantGroup, entry.id);
+            persistImageSelection(entry.file_name);
+            await loadAssets();
+            await refreshVariants();
+          }
+        } finally {
+          setRemovingBg(false);
+        }
       }
     } catch (err) {
       setError(String(err));
     } finally {
       setGeneratingImage(false);
-    }
-  };
-
-  const handleGenerateFour = async () => {
-    if (!selectedTarget || !hasImageKey) return;
-    setBatchGenerating(true);
-    setError(null);
-    try {
-      for (let i = 0; i < 4; i += 1) {
-        const image = await runGeneration(promptDraft, i === 0);
-        if (i === 0 && image) {
-          persistImageSelection(image.file_path.split(/[\\/]/).pop() ?? image.hash);
-        }
-      }
-      await loadAssets();
-      await refreshVariants();
-    } catch (err) {
-      setError(String(err));
-    } finally {
-      setBatchGenerating(false);
     }
   };
 
@@ -582,7 +591,30 @@ export function ZoneAssetWorkbench({ zoneId, world, onWorldChange }: ZoneAssetWo
               <div className="mb-3 text-2xs uppercase tracking-ui text-text-muted">Prompt engineering</div>
 
               <div className="grid gap-4 lg:grid-cols-[1fr_1fr]">
-                <div className="flex flex-col gap-3">
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-2xs uppercase tracking-ui text-text-muted">Step 1 · Prompt</span>
+                      {promptGeneratedByLlm && (
+                        <span className="rounded-full bg-accent/15 px-2 py-0.5 text-2xs font-medium text-accent">
+                          Enhanced
+                        </span>
+                      )}
+                    </div>
+                    <button
+                      onClick={handleGeneratePrompt}
+                      disabled={!hasLlmKey || generatingPrompt || generatingImage || removingBg}
+                      className="rounded-full border border-white/10 bg-white/6 px-3 py-1 text-2xs font-medium text-text-primary transition enabled:hover:bg-white/10 disabled:opacity-50"
+                    >
+                      {generatingPrompt ? (
+                        <span className="flex items-center gap-1.5"><Spinner />Enhancing</span>
+                      ) : promptGeneratedByLlm ? (
+                        "Re-enhance"
+                      ) : (
+                        "Enhance prompt"
+                      )}
+                    </button>
+                  </div>
                   <textarea
                     value={promptDraft}
                     onChange={(event) => {
@@ -591,7 +623,7 @@ export function ZoneAssetWorkbench({ zoneId, world, onWorldChange }: ZoneAssetWo
                     }}
                     rows={8}
                     className="w-full flex-1 resize-y rounded-2xl border border-white/10 bg-surface-scrim px-4 py-3 font-mono text-xs leading-6 text-text-secondary outline-none transition focus:border-border-active focus-visible:ring-2 focus-visible:ring-border-active"
-                    placeholder={selectedTarget.mode === "default" ? "Generate a fallback prompt for this zone asset..." : "Generate a prompt for this entity..."}
+                    placeholder={selectedTarget.mode === "default" ? "Describe the fallback for this zone asset, then click Enhance prompt..." : "Describe this entity, then click Enhance prompt..."}
                   />
                 </div>
 
@@ -611,38 +643,49 @@ export function ZoneAssetWorkbench({ zoneId, world, onWorldChange }: ZoneAssetWo
                 </div>
               </div>
 
-              <div className="mt-4 flex flex-wrap gap-2">
-                <button
-                  onClick={handleGeneratePrompt}
-                  disabled={!hasLlmKey || generatingPrompt || generatingImage || batchGenerating}
-                  className="rounded-full border border-white/10 bg-white/6 px-4 py-2 text-xs font-medium text-text-primary transition enabled:hover:bg-white/10 disabled:opacity-50"
+              <div className="mt-4 flex flex-wrap items-center gap-2">
+                <span className="text-2xs uppercase tracking-ui text-text-muted">Step 2 · Generate</span>
+                <select
+                  value={batchCount}
+                  onChange={(event) => setBatchCount(Number(event.target.value))}
+                  disabled={!hasImageKey || generatingPrompt || generatingImage || removingBg}
+                  aria-label="Number of variants to generate"
+                  className="rounded-full border border-white/10 bg-white/6 px-3 py-2 text-xs font-medium text-text-primary outline-none transition focus-visible:ring-2 focus-visible:ring-border-active disabled:opacity-50"
                 >
-                  {generatingPrompt ? <span className="flex items-center gap-1.5"><Spinner />Generating prompt</span> : "Generate prompt"}
-                </button>
+                  <option value={1} className="bg-bg-primary">×1</option>
+                  <option value={2} className="bg-bg-primary">×2</option>
+                  <option value={4} className="bg-bg-primary">×4</option>
+                  <option value={8} className="bg-bg-primary">×8</option>
+                </select>
                 <button
-                  onClick={handleGenerateImage}
-                  disabled={!hasImageKey || generatingPrompt || generatingImage || batchGenerating}
+                  onClick={handleGenerate}
+                  disabled={!hasImageKey || generatingPrompt || generatingImage || removingBg}
                   className="rounded-full border border-[var(--border-accent-subtle)] bg-gradient-active-strong px-4 py-2 text-xs font-medium text-text-primary transition hover:brightness-110 disabled:opacity-50"
                 >
-                  {generatingImage ? <span className="flex items-center gap-1.5"><Spinner />Generating image</span> : "Generate image"}
+                  {generatingImage ? (
+                    <span className="flex items-center gap-1.5">
+                      <Spinner />
+                      {batchCount > 1 ? `Generating ×${batchCount}` : "Generating image"}
+                    </span>
+                  ) : removingBg ? (
+                    <span className="flex items-center gap-1.5"><Spinner />Removing background</span>
+                  ) : batchCount > 1 ? (
+                    `Generate ×${batchCount}`
+                  ) : (
+                    "Generate image"
+                  )}
                 </button>
-                <button
-                  onClick={handleGenerateFour}
-                  disabled={!hasImageKey || generatingPrompt || generatingImage || batchGenerating}
-                  className="rounded-full border border-white/10 bg-white/6 px-4 py-2 text-xs font-medium text-text-primary transition enabled:hover:bg-white/10 disabled:opacity-50"
-                >
-                  {batchGenerating ? <span className="flex items-center gap-1.5"><Spinner />Generating 4</span> : "Generate 4"}
-                </button>
+                <span className="mx-1 h-6 w-px bg-white/10" aria-hidden="true" />
                 <button
                   onClick={handleImport}
-                  disabled={importing || generatingPrompt || generatingImage || batchGenerating}
+                  disabled={importing || generatingPrompt || generatingImage || removingBg}
                   className="rounded-full border border-white/10 bg-white/6 px-4 py-2 text-xs font-medium text-text-primary transition enabled:hover:bg-white/10 disabled:opacity-50"
                 >
                   {importing ? <span className="flex items-center gap-1.5"><Spinner />Importing</span> : "Import image"}
                 </button>
                 <button
                   onClick={handleRemoveBg}
-                  disabled={removingBg || !previewEntry || !selectedSrc || !selectedKind || !shouldRemoveBg(assetTypeForKind(selectedKind))}
+                  disabled={removingBg || generatingImage || !previewEntry || !selectedSrc || !selectedKind || !shouldRemoveBg(assetTypeForKind(selectedKind))}
                   className="rounded-full border border-white/10 bg-white/6 px-4 py-2 text-xs font-medium text-text-primary transition enabled:hover:bg-white/10 disabled:opacity-50"
                 >
                   {removingBg ? <span className="flex items-center gap-1.5"><Spinner />Removing BG</span> : "Remove BG"}
@@ -651,7 +694,7 @@ export function ZoneAssetWorkbench({ zoneId, world, onWorldChange }: ZoneAssetWo
 
               {error && (
                 <div className="mt-4">
-                  <InlineError error={error} onDismiss={() => setError(null)} onRetry={handleGenerateImage} />
+                  <InlineError error={error} onDismiss={() => setError(null)} onRetry={handleGenerate} />
                 </div>
               )}
             </div>

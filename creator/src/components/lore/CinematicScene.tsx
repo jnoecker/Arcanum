@@ -3,6 +3,7 @@ import { m } from "motion/react";
 import { isBackRow } from "@/lib/sceneLayout";
 import { AnimatedEntity } from "./AnimatedEntity";
 import { TypewriterNarration } from "./TypewriterNarration";
+import { SceneInfoBadges } from "./SceneInfoBadges";
 import type { Scene, SceneEntity, TransitionConfig } from "@/types/story";
 import type { NarrationSpeed } from "@/lib/narrationSpeed";
 
@@ -20,6 +21,8 @@ interface CinematicSceneProps {
   }>;
   roomImageSrc?: string;
   onAnimationsComplete?: () => void;
+  /** When true, render the ambient lore badges (year, mini-map, article chips, title card). */
+  showBadges?: boolean;
 }
 
 // ─── Easing ────────────────────────────────────────────────────────
@@ -36,6 +39,7 @@ export function CinematicScene({
   resolvedEntities,
   roomImageSrc,
   onAnimationsComplete: _onAnimationsComplete,
+  showBadges = false,
 }: CinematicSceneProps) {
   // ─── Transition duration ───────────────────────────────────────
 
@@ -132,6 +136,9 @@ export function CinematicScene({
           </div>
         </div>
       )}
+
+      {/* Layer 4: Ambient lore badges (z-35, toggleable) */}
+      {showBadges && <SceneInfoBadges scene={scene} mode="playback" />}
     </m.div>
   );
 }

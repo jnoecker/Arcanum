@@ -14,6 +14,8 @@ interface CinematicRendererProps {
   onComplete?: () => void;
   onSceneChange?: (index: number) => void;
   narrationSpeed?: NarrationSpeed;
+  /** Render ambient lore badges (year, mini-map, article chips, title card) over the scene. */
+  showBadges?: boolean;
   resolvedSceneData: Array<{
     sceneId: string;
     roomImageSrc?: string;
@@ -33,6 +35,7 @@ export function CinematicRenderer({
   playing,
   onComplete,
   narrationSpeed,
+  showBadges,
   resolvedSceneData,
 }: CinematicRendererProps) {
   // ─── Current scene ─────────────────────────────────────────────
@@ -83,6 +86,7 @@ export function CinematicRenderer({
             resolvedEntities={resolved?.entities ?? []}
             roomImageSrc={resolved?.roomImageSrc}
             onAnimationsComplete={onComplete}
+            showBadges={showBadges}
           />
         </AnimatePresence>
       </LazyMotion>

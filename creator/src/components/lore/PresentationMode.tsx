@@ -46,6 +46,7 @@ export function PresentationMode({
   const [dmNotesVisible, setDmNotesVisible] = useState(false);
   const [hudVisible, setHudVisible] = useState(true);
   const [cursorVisible, setCursorVisible] = useState(true);
+  const [badgesVisible, setBadgesVisible] = useState(false);
 
   // ─── Timer refs ───────────────────────────────────────────────
 
@@ -208,6 +209,13 @@ export function PresentationMode({
           break;
         }
 
+        case "i":
+        case "I": {
+          e.preventDefault();
+          setBadgesVisible((prev) => !prev);
+          break;
+        }
+
         default:
           break;
       }
@@ -261,6 +269,7 @@ export function PresentationMode({
           narrationSpeed={narrationSpeed}
           resolvedSceneData={resolvedSceneData}
           onComplete={handleAnimationComplete}
+          showBadges={badgesVisible}
         />
 
         {/* HUD overlay -- inside renderer container for positioning */}

@@ -26,7 +26,7 @@
 - [ ] **Phase 7: Story Foundation** - Data model, story store with undo/redo, persistence, and lore system integration
 - [ ] **Phase 8: Story Editor** - Timeline with draggable scene cards, narration editor, DM notes, and scene templates
 - [ ] **Phase 9: Scene Composition** - Entity picker, room backgrounds, entity positioning, and live scene preview
-- [ ] **Phase 10: Cinematic Renderer** - Portable rendering engine with crossfade transitions, movement paths, and typewriter narration
+- [x] **Phase 10: Cinematic Renderer** - Portable rendering engine with crossfade transitions, movement paths, and typewriter narration (completed 2026-04-06)
 - [ ] **Phase 11: Presentation Mode** - Fullscreen DM presentation with keyboard navigation
 - [ ] **Phase 12: Showcase Player** - Embedded story player with click-through, auto-play, and scroll-driven modes
 
@@ -89,11 +89,11 @@ Plans:
   2. Narration text reveals with a typewriter animation during playback
   3. Scenes transition with a crossfade effect when advancing through the story
   4. The renderer works identically in the editor preview, presentation mode, and showcase player (single portable component, no Tauri dependencies)
-**Plans:** 3 plans
+**Plans:** 3/3 plans complete
 Plans:
-- [ ] 10-01-PLAN.md -- Motion install, story type updates (entrancePath/exitPath, TransitionConfig, NarrationSpeed), movement preset library, narration speed config, extractWords utility, Vite chunk config, unit tests
-- [ ] 10-02-PLAN.md -- TransitionDropdown, PathPresetPicker, NarrationSpeedSelector components, SceneDetailEditor integration
-- [ ] 10-03-PLAN.md -- CinematicRenderer, CinematicScene, AnimatedEntity, TypewriterNarration, PreviewPlayback button, ScenePreview animation integration
+- [x] 10-01-PLAN.md -- Motion install, story type updates (entrancePath/exitPath, TransitionConfig, NarrationSpeed), movement preset library, narration speed config, extractWords utility, Vite chunk config, unit tests
+- [x] 10-02-PLAN.md -- TransitionDropdown, PathPresetPicker, NarrationSpeedSelector components, SceneDetailEditor integration
+- [x] 10-03-PLAN.md -- CinematicRenderer, CinematicScene, AnimatedEntity, TypewriterNarration, PreviewPlayback button, ScenePreview animation integration
 **UI hint**: yes
 
 ### Phase 11: Presentation Mode
@@ -136,6 +136,6 @@ Note: Phases 11 and 12 both depend on Phase 10 and could execute in parallel.
 | 7. Story Foundation | v1.1 | 0/2 | Planning | - |
 | 8. Story Editor | v1.1 | 0/2 | Planning | - |
 | 9. Scene Composition | v1.1 | 0/3 | Planning | - |
-| 10. Cinematic Renderer | v1.1 | 0/3 | Planning | - |
+| 10. Cinematic Renderer | v1.1 | 3/3 | Complete    | 2026-04-06 |
 | 11. Presentation Mode | v1.1 | 0/0 | Not started | - |
 | 12. Showcase Player | v1.1 | 0/0 | Not started | - |

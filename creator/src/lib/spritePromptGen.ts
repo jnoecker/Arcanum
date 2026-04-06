@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import { STYLE_SUFFIX, parseLlmJson } from "./arcanumPrompts";
+import { getStyleSuffix, parseLlmJson } from "./arcanumPrompts";
 import { useConfigStore } from "@/stores/configStore";
 import { buildToneDirective } from "./loreGeneration";
 import {
@@ -199,7 +199,7 @@ export function fillSpriteTemplate(
   template: SpritePromptTemplate,
   dimensions: SpriteDimensions,
 ): string {
-  return `${resolveSpritePromptBody(template, dimensions)}\n\n${STYLE_SUFFIX}`;
+  return `${resolveSpritePromptBody(template, dimensions)}\n\n${getStyleSuffix()}`;
 }
 
 function resolveSpritePromptBody(
@@ -256,7 +256,7 @@ export function buildSpritePrompt(
 ): string {
   const resolvedTemplate = template ?? fallbackSpriteTemplate();
   const promptBody = resolveSpritePromptBody(resolvedTemplate, dimensions, extraContext);
-  return `${promptBody}\n\n${STYLE_SUFFIX}`;
+  return `${promptBody}\n\n${getStyleSuffix()}`;
 }
 
 // ─── Per-sprite LLM enhancement ─────────────────────────────────────
@@ -288,7 +288,7 @@ Rules:
       userPrompt: `Refine this sprite generation prompt:\n\n${rawPrompt}`,
     });
     // Re-append style suffix since the LLM was told not to include it
-    return `${enhanced.trim()}\n\n${STYLE_SUFFIX}`;
+    return `${enhanced.trim()}\n\n${getStyleSuffix()}`;
   } catch {
     return rawPrompt;
   }

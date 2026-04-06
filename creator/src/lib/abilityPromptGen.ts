@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import { STYLE_SUFFIX, parseLlmJson } from "./arcanumPrompts";
+import { getStyleSuffix, parseLlmJson } from "./arcanumPrompts";
 import { buildToneDirective } from "./loreGeneration";
 import type { AbilityDefinitionConfig, StatusEffectDefinitionConfig } from "@/types/config";
 
@@ -85,7 +85,7 @@ Effect type: ${ability.effect.type}
 Level: ${ability.levelRequired}
 
 Required style suffix (include verbatim at the end):
-${STYLE_SUFFIX}`;
+${getStyleSuffix()}`;
 
   return invoke<string>("llm_complete", {
     systemPrompt: getAbilitySystemPrompt(),
@@ -114,7 +114,7 @@ Status Effect: ${effect.displayName}
 ${details}
 
 Required style suffix (include verbatim at the end):
-${STYLE_SUFFIX}`;
+${getStyleSuffix()}`;
 
   return invoke<string>("llm_complete", {
     systemPrompt: getAbilitySystemPrompt(),
@@ -213,7 +213,7 @@ export function fillAbilityTemplate(
     .replace(/\{class_style\}/g, classStyle)
     .replace(/\{effect_visual\}/g, effectVisual);
 
-  return `${prompt}\n\n${STYLE_SUFFIX}`;
+  return `${prompt}\n\n${getStyleSuffix()}`;
 }
 
 /**
@@ -234,7 +234,7 @@ export function fillStatusEffectTemplate(
     .replace(/\{class_style\}/g, classStyle)
     .replace(/\{effect_visual\}/g, effectVisual);
 
-  return `${prompt}\n\n${STYLE_SUFFIX}`;
+  return `${prompt}\n\n${getStyleSuffix()}`;
 }
 
 // ─── Per-ability LLM enhancement ─────────────────────────────────────
@@ -263,7 +263,7 @@ Rules:
       systemPrompt,
       userPrompt: `Refine this ability icon generation prompt:\n\n${rawPrompt}`,
     });
-    return `${enhanced.trim()}\n\n${STYLE_SUFFIX}`;
+    return `${enhanced.trim()}\n\n${getStyleSuffix()}`;
   } catch {
     return rawPrompt;
   }

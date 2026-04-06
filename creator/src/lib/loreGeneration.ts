@@ -36,6 +36,22 @@ export function buildToneDirective(): string {
 }
 
 /**
+ * Build a visual style directive for AI image generation prompts.
+ * Returns the world's visual style description, or a minimal generic fallback.
+ * Injected into image generation prompts as the style suffix.
+ */
+export function buildVisualStyleDirective(): string {
+  const lore = useLoreStore.getState().lore;
+  if (!lore) return "";
+
+  const ws = Object.values(lore.articles).find((a) => a.template === "world_setting");
+  if (!ws) return "";
+
+  const visualStyle = typeof ws.fields.visualStyle === "string" ? ws.fields.visualStyle.trim() : "";
+  return visualStyle;
+}
+
+/**
  * Build a rich world context summary for AI generation.
  * Includes world setting, key articles grouped by template with
  * brief summaries, template AI descriptions, and timeline highlights.
@@ -152,7 +168,7 @@ Given a concept paragraph, generate a complete starter world as JSON with this e
 {
   "worldSetting": {
     "title": "string",
-    "fields": { "name": "string", "tagline": "string", "tone": "string (e.g. whimsical, grimdark, heroic, cozy, surreal)", "era": "string", "themes": ["string"], "geography": "string", "magic": "string", "technology": "string", "history": "string" },
+    "fields": { "name": "string", "tagline": "string", "tone": "string (e.g. whimsical, grimdark, heroic, cozy, surreal)", "visualStyle": "string (art direction for generated images, e.g. 'dreamy watercolor storybook' or 'gritty dark fantasy oil painting')", "era": "string", "themes": ["string"], "geography": "string", "magic": "string", "technology": "string", "history": "string" },
     "content": "string (world overview prose)"
   },
   "organizations": [

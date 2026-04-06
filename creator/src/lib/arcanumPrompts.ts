@@ -1,5 +1,5 @@
 import type { AssetType } from "@/types/assets";
-import { buildToneDirective } from "./loreGeneration";
+import { buildToneDirective, buildVisualStyleDirective } from "./loreGeneration";
 
 // ─── Art Style System ─────────────────────────────────────────────
 
@@ -60,27 +60,23 @@ If it feels intense, loud, sharp, or industrial — it's wrong. Revise.`;
 /** Gentle Magic style preamble — for MUD world assets */
 export const GENTLE_MAGIC_PREAMBLE = `Surreal Gentle Magic style (surreal_softmagic_v1): soft lavender and pale blue undertones, ambient diffused lighting with no harsh shadows or spotlighting, gentle atmospheric haze with floating motes of light, subtle magical glow integrated naturally into the environment, slightly elongated organic forms, dreamy breathable emotionally safe aesthetic, no neon colors, no high contrast, no harsh edges, painterly and luminous`;
 
+const GENERIC_STYLE_FALLBACK = `Rendered as a digital fantasy illustration — painterly, detailed, atmospheric. NOT a photograph, NOT a 3D render. Visible brushwork with textured rendering throughout. NO readable text, words, letters, or legible writing in the image.`;
+
 /**
- * Style rendering suffix — appended to all gentle_magic image prompts.
- * This is the key quality differentiator from Visualize.
+ * Dynamic style suffix — uses the world's visual style if defined,
+ * otherwise falls back to a minimal generic fantasy illustration style.
+ * Appended to all image generation prompts.
  */
-export const STYLE_SUFFIX = `Rendered in the Surreal Gentle Magic style (surreal_softmagic_v1). Digital fantasy painting in the style of a dreamy storybook illustration — NOT a photograph, NOT a 3D render, NOT concept art. Visible painterly brushwork with soft textured rendering throughout.
+export function getStyleSuffix(): string {
+  const visualStyle = buildVisualStyleDirective();
+  if (visualStyle) {
+    return `Rendered in the following visual style: ${visualStyle}\n\nNO readable text, words, letters, or legible writing in the image.`;
+  }
+  return GENERIC_STYLE_FALLBACK;
+}
 
-Color and light:
-- Soft lavender and pale blue undertones suffusing every surface — cool undertones dominate, warm accents (dusty rose, soft gold) used sparingly for balance
-- Ambient diffused lighting with NO clear source point — light feels source-ambiguous and magical, never like realistic sunlight or artificial lamps
-- Gentle atmospheric haze with floating motes of light and faint magical particles drifting in the air
-- Soft bloom around windows and light sources, ground-level magical glow (glowing moss, luminous plants)
-- Even mundane spaces feel quietly enchanted — a kitchen has faintly glowing herbs, a patio has drifting light motes
-
-Shape and form:
-- Gentle curves over hard angles — nothing perfectly straight, micro-warping on all edges
-- Slightly elongated organic forms (trees, towers, figures, architecture, furniture)
-- Organic lived-in quality — nothing feels industrial, nothing feels mechanical
-
-NO readable text, words, letters, or legible writing — replace all signs, plaques, and inscriptions with glowing runes or arcane glyphs.
-
-FORBIDDEN: photorealism, neon colors, high contrast, harsh edges, sharp geometric lines, perfect 90-degree angles, mechanical rigidity, brutalist silhouettes, harsh shadows, spotlight effects, rim lighting, chiaroscuro`;
+/** @deprecated Use getStyleSuffix() — kept for backward compatibility during migration */
+export const STYLE_SUFFIX = GENERIC_STYLE_FALLBACK;
 
 /** Format specification per entity type for image generation */
 export const FORMAT_BY_TYPE: Record<string, string> = {
@@ -159,8 +155,10 @@ NO readable text, words, letters, runes, or glyphs — no watermarks, no logos, 
 
 FORBIDDEN: photorealism, neon colors, modern technology, flat design, cartoon, anime, studio lighting, stock photo aesthetic, harsh edges, brutalist shapes`;
 
-/** Get the preamble for a given art style */
+/** Get the preamble for image prompts — uses world visual style if defined, falls back to art style constant */
 export function getPreamble(style: ArtStyle): string {
+  const visualStyle = buildVisualStyleDirective();
+  if (visualStyle) return visualStyle;
   return style === "arcanum" ? ARCANUM_PREAMBLE : GENTLE_MAGIC_PREAMBLE;
 }
 
@@ -490,19 +488,40 @@ EFFECT COLOR MODIFIERS:
 - Buffs: ascending arrows, radiant auras, empowering glows
 - Debuffs: descending spirals, dark mists, weakening auras`;
 
-/** Get the style-aware system prompt for prompt enhancement */
+/** Get the system prompt for prompt enhancement — defers to world visual style when defined */
 export function getEnhanceSystemPrompt(style: ArtStyle, assetType?: string): string {
+  const visualStyle = buildVisualStyleDirective();
+  const tone = buildToneDirective();
+
+  // If the world defines a visual style, use a generic enhancer that defers to it
+  if (visualStyle || tone) {
+    const toneBlock = tone ? `\n\nWorld context: ${tone}` : "";
+    const styleBlock = visualStyle
+      ? `\n\nWorld visual style: ${visualStyle}\nAll enhanced prompts must conform to this visual style. Do not impose colors, lighting, or aesthetic choices that conflict with it.`
+      : "";
+    const palettes = (assetType === "ability_icon" || assetType === "status_effect_icon" || assetType === "ability_sprite")
+      ? `\n\n${CLASS_COLOR_PALETTES}`
+      : "";
+
+    return `You are an expert image prompt engineer for AI image generators.${toneBlock}${styleBlock}
+
+When enhancing a prompt:
+1. Preserve the core subject/concept from the original prompt — especially any entity's identity and physical description
+2. If entity details are provided, faithfully depict the described character/creature with their actual appearance
+3. Add composition and quality terms appropriate to the world's visual style
+4. Replace any readable text, signs, or inscriptions with abstract symbols or glowing runes — AI cannot render legible text
+5. Ensure the prompt avoids: photorealism, modern technology, flat design, cartoon, anime
+6. Output ONLY the enhanced prompt text — no explanation, no preamble, no formatting${palettes}`;
+  }
+
+  // No world style defined — fall back to the legacy style-specific prompts
   const base = style === "arcanum"
     ? ENHANCE_SYSTEM_PROMPT_ARCANUM
     : ENHANCE_SYSTEM_PROMPT_GENTLE_MAGIC;
-  const tone = buildToneDirective();
-  const toneBlock = tone
-    ? `\n\n## World Context\n${tone}\nEnsure the visual tone matches this world. Do not add dark, horror, or grimdark elements unless the world's tone calls for it.`
-    : "";
   const palettes = (assetType === "ability_icon" || assetType === "status_effect_icon" || assetType === "ability_sprite")
     ? `\n\n${CLASS_COLOR_PALETTES}`
     : "";
-  return `${base}${toneBlock}${palettes}`;
+  return `${base}${palettes}`;
 }
 
 const CUSTOM_ASSET_SYSTEM_PROMPT_ARCANUM = `You are an expert image prompt engineer for AI image generators. You work exclusively within the Arcanum art style (arcanum_v1).
@@ -526,14 +545,33 @@ Rules:
 Output ONLY the finished prompt text — no explanation, no labels, no markdown.`;
 
 export function getCustomAssetSystemPrompt(style: ArtStyle): string {
+  const visualStyle = buildVisualStyleDirective();
+  const tone = buildToneDirective();
+
+  if (visualStyle || tone) {
+    const toneBlock = tone ? `\n\nWorld context: ${tone}` : "";
+    const styleBlock = visualStyle
+      ? `\n\nWorld visual style: ${visualStyle}\nAll generated prompts must conform to this visual style.`
+      : "";
+
+    return `You are an expert image prompt engineer for AI image generators.${toneBlock}${styleBlock}
+
+The user will provide a free-form description of an asset they want generated for a fantasy worldbuilding tool. Transform it into an optimized image generation prompt that matches the world's visual style.
+
+Rules:
+- Preserve the user's core subject, purpose, and mood
+- Enhance the description with compositional and quality details appropriate to the visual style
+- Replace any readable text, signage, labels, or inscriptions with abstract symbols or glowing runes
+- Respect the requested format/composition exactly
+
+Output ONLY the finished prompt text — no explanation, no labels, no markdown.`;
+  }
+
+  // No world style defined — fall back to legacy style-specific prompts
   const base = style === "arcanum"
     ? CUSTOM_ASSET_SYSTEM_PROMPT_ARCANUM
     : CUSTOM_ASSET_SYSTEM_PROMPT_GENTLE_MAGIC;
-  const tone = buildToneDirective();
-  const toneBlock = tone
-    ? `\n\n## World Context\n${tone}\nEnsure the visual tone matches this world.`
-    : "";
-  return `${base}${toneBlock}`;
+  return base;
 }
 
 export function buildCustomAssetPrompt(
@@ -543,27 +581,14 @@ export function buildCustomAssetPrompt(
   style: ArtStyle = "gentle_magic",
 ): string {
   const formatSpec = getFormatForAssetType(assetType);
-  const vibeSection = zoneVibe
-    ? `Zone atmosphere: ${zoneVibe}`
-    : style === "arcanum"
-      ? "Zone atmosphere: cosmic and baroque, cohesive with the Arcanum palette and mood."
-      : "Zone atmosphere: softly magical, cohesive with the Surreal Gentle Magic palette and mood.";
+  const vibeSection = zoneVibe ? `\nZone atmosphere: ${zoneVibe}` : "";
+  const preamble = getPreamble(style);
 
-  if (style === "gentle_magic") {
-    return `${formatSpec}. ${GENTLE_MAGIC_PREAMBLE}
+  return `${formatSpec}. ${preamble}
 
-User brief: ${description}
-${vibeSection}
+User brief: ${description}${vibeSection}
 
-Transform the brief into a polished worldbuilding asset with clear composition, organic forms, ambient diffused light, and gentle magical detail.
-
-${STYLE_SUFFIX}`;
-  }
-
-  return `${formatSpec}. ${getPreamble(style)}
-
-User brief: ${description}
-${vibeSection}`;
+${getStyleSuffix()}`;
 }
 
 /** Compose a full prompt from template + context */

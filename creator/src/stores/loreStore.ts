@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { WorldLore, Article, ArticleTemplate, ColorLabel, LoreMap, MapPin, CalendarSystem, TimelineEvent, LoreDocument, TemplateOverrides, ShowcaseSettings, CustomTemplateDefinition } from "@/types/lore";
+import type { WorldLore, Article, ArticleTemplate, ColorLabel, LoreMap, MapPin, CalendarSystem, TimelineEvent, LoreDocument, TemplateOverrides, ShowcaseSettings, CustomTemplateDefinition, ArtStyle } from "@/types/lore";
 
 const MAX_LORE_HISTORY = 50;
 
@@ -108,6 +108,12 @@ interface LoreStore extends LoreState {
   addCustomTemplate: (template: CustomTemplateDefinition) => void;
   updateCustomTemplate: (id: string, template: CustomTemplateDefinition) => void;
   deleteCustomTemplate: (id: string) => void;
+
+  // Art style operations
+  createArtStyle: (style: ArtStyle) => void;
+  updateArtStyle: (id: string, patch: Partial<ArtStyle>) => void;
+  deleteArtStyle: (id: string) => void;
+  setActiveArtStyle: (id: string | null) => void;
 
   // Undo/redo
   undoLore: () => void;
@@ -712,6 +718,62 @@ export const useLoreStore = create<LoreStore>((set, get) => ({
       return {
         ...snapshotLore(s),
         lore: { ...s.lore, customTemplates: templates, articles },
+        dirty: true,
+      };
+    }),
+
+  // ─── Art style operations ────────────────────────────────────────
+
+  createArtStyle: (style) =>
+    set((s) => {
+      if (!s.lore) return s;
+      const existing = s.lore.artStyles ?? [];
+      const styles = [...existing, style];
+      // Auto-activate the first style created
+      const activeArtStyleId = s.lore.activeArtStyleId ?? style.id;
+      return {
+        ...snapshotLore(s),
+        lore: { ...s.lore, artStyles: styles, activeArtStyleId },
+        dirty: true,
+      };
+    }),
+
+  updateArtStyle: (id, patch) =>
+    set((s) => {
+      if (!s.lore) return s;
+      const styles = (s.lore.artStyles ?? []).map((style) =>
+        style.id === id
+          ? { ...style, ...patch, updatedAt: new Date().toISOString() }
+          : style,
+      );
+      return {
+        ...snapshotLore(s),
+        lore: { ...s.lore, artStyles: styles },
+        dirty: true,
+      };
+    }),
+
+  deleteArtStyle: (id) =>
+    set((s) => {
+      if (!s.lore) return s;
+      const styles = (s.lore.artStyles ?? []).filter((style) => style.id !== id);
+      const activeArtStyleId = s.lore.activeArtStyleId === id
+        ? styles[0]?.id
+        : s.lore.activeArtStyleId;
+      return {
+        ...snapshotLore(s),
+        lore: { ...s.lore, artStyles: styles, activeArtStyleId },
+        dirty: true,
+      };
+    }),
+
+  setActiveArtStyle: (id) =>
+    set((s) => {
+      if (!s.lore) return s;
+      if (id !== null && !(s.lore.artStyles ?? []).some((style) => style.id === id)) return s;
+      return {
+        ...snapshotLore(s),
+        lore: { ...s.lore, activeArtStyleId: id ?? undefined },
         dirty: true,
       };
     }),

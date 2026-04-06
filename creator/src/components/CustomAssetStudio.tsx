@@ -414,7 +414,7 @@ export function CustomAssetStudio({ selectedZoneId }: { selectedZoneId: string |
                 setPromptGeneratedByLlm(false);
               }}
               rows={5}
-              placeholder="Describe the asset you want. The generator will translate it into Surreal Gentle Magic art direction."
+              placeholder="Describe the asset you want. The generator will translate it into your world's visual style."
               className="w-full resize-y rounded-2xl border border-white/10 bg-surface-scrim px-4 py-3 text-sm leading-6 text-text-secondary outline-none transition focus:border-border-active focus-visible:ring-2 focus-visible:ring-border-active"
             />
           </div>

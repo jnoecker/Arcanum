@@ -91,8 +91,8 @@ export function RaceDesigner({
 
   return (
     <div className="grid gap-5 xl:grid-cols-[20rem_minmax(0,1fr)]">
-      <div className="rounded-3xl border border-white/8 bg-black/12 p-4">
-        <div className="mb-4">
+      <div className="flex max-h-[calc(100vh-10rem)] flex-col rounded-3xl border border-white/8 bg-black/12 p-4">
+        <div className="mb-4 shrink-0">
           <p className="text-2xs uppercase tracking-ui text-text-muted">Race roster</p>
           <h4 className="mt-2 font-display text-xl text-text-primary">{Object.keys(config.races).length} races</h4>
         </div>
@@ -122,7 +122,7 @@ export function RaceDesigner({
           className="mt-3 w-full rounded-full border border-white/10 bg-white/8 px-4 py-2 text-xs text-text-primary outline-none focus-visible:ring-2 focus-visible:ring-border-active"
         />
 
-        <div className="mt-4 flex max-h-[38rem] flex-col gap-2 overflow-y-auto pr-1">
+        <div className="mt-4 flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto pr-1">
           {raceIds.map((id) => {
             const race = config.races[id]!;
             const selectedCard = id === selectedId;

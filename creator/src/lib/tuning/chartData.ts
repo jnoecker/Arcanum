@@ -20,6 +20,11 @@ export interface MobTierPoint {
   damage: number;
   armor: number;
   xp: number;
+  /** Raw (non-normalized) values for tooltip display */
+  rawHp: number;
+  rawDamage: number;
+  rawArmor: number;
+  rawXp: number;
 }
 
 export interface StatRadarPoint {
@@ -65,7 +70,7 @@ export function buildXpCurveData(
  * Returns exactly 4 entries (Weak, Standard, Elite, Boss).
  */
 export function buildMobTierData(config: AppConfig, level: number): MobTierPoint[] {
-  return TIER_KEYS.map((key) => {
+  const raw = TIER_KEYS.map((key) => {
     const tier = config.mobTiers[key];
     return {
       tier: TIER_LABELS[key] ?? key,
@@ -75,6 +80,24 @@ export function buildMobTierData(config: AppConfig, level: number): MobTierPoint
       xp: tier.baseXpReward + tier.xpRewardPerLevel * level,
     };
   });
+
+  // Normalize each metric to 0-100% of max so bars are visually comparable
+  const maxHp = Math.max(...raw.map((r) => r.hp), 1);
+  const maxDamage = Math.max(...raw.map((r) => r.damage), 1);
+  const maxArmor = Math.max(...raw.map((r) => r.armor), 1);
+  const maxXp = Math.max(...raw.map((r) => r.xp), 1);
+
+  return raw.map((r) => ({
+    tier: r.tier,
+    hp: Math.round((r.hp / maxHp) * 100),
+    damage: Math.round((r.damage / maxDamage) * 100),
+    armor: Math.round((r.armor / maxArmor) * 100),
+    xp: Math.round((r.xp / maxXp) * 100),
+    rawHp: r.hp,
+    rawDamage: r.damage,
+    rawArmor: r.armor,
+    rawXp: r.xp,
+  }));
 }
 
 /**

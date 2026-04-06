@@ -122,42 +122,54 @@ describe("buildMobTierData", () => {
     expect(data.map((d) => d.tier)).toEqual(["Weak", "Standard", "Elite", "Boss"]);
   });
 
-  it("HP at level 30 matches mobHpAtLevel for each tier", () => {
+  it("raw HP at level 30 matches mobHpAtLevel for each tier", () => {
     const data = buildMobTierData(MOCK_CONFIG, 30);
-    expect(data[0]!.hp).toBe(mobHpAtLevel(WEAK_TIER, 30));
-    expect(data[1]!.hp).toBe(mobHpAtLevel(STANDARD_TIER, 30));
-    expect(data[2]!.hp).toBe(mobHpAtLevel(ELITE_TIER, 30));
-    expect(data[3]!.hp).toBe(mobHpAtLevel(BOSS_TIER, 30));
+    expect(data[0]!.rawHp).toBe(mobHpAtLevel(WEAK_TIER, 30));
+    expect(data[1]!.rawHp).toBe(mobHpAtLevel(STANDARD_TIER, 30));
+    expect(data[2]!.rawHp).toBe(mobHpAtLevel(ELITE_TIER, 30));
+    expect(data[3]!.rawHp).toBe(mobHpAtLevel(BOSS_TIER, 30));
   });
 
-  it("damage at level 30 matches mobAvgDamageAtLevel for each tier", () => {
+  it("raw damage at level 30 matches mobAvgDamageAtLevel for each tier", () => {
     const data = buildMobTierData(MOCK_CONFIG, 30);
-    expect(data[0]!.damage).toBe(mobAvgDamageAtLevel(WEAK_TIER, 30));
-    expect(data[1]!.damage).toBe(mobAvgDamageAtLevel(STANDARD_TIER, 30));
-    expect(data[2]!.damage).toBe(mobAvgDamageAtLevel(ELITE_TIER, 30));
-    expect(data[3]!.damage).toBe(mobAvgDamageAtLevel(BOSS_TIER, 30));
+    expect(data[0]!.rawDamage).toBe(mobAvgDamageAtLevel(WEAK_TIER, 30));
+    expect(data[1]!.rawDamage).toBe(mobAvgDamageAtLevel(STANDARD_TIER, 30));
+    expect(data[2]!.rawDamage).toBe(mobAvgDamageAtLevel(ELITE_TIER, 30));
+    expect(data[3]!.rawDamage).toBe(mobAvgDamageAtLevel(BOSS_TIER, 30));
   });
 
-  it("armor equals tier.baseArmor (not level-dependent)", () => {
+  it("raw armor equals tier.baseArmor (not level-dependent)", () => {
     const data = buildMobTierData(MOCK_CONFIG, 30);
-    expect(data[0]!.armor).toBe(WEAK_TIER.baseArmor);
-    expect(data[1]!.armor).toBe(STANDARD_TIER.baseArmor);
-    expect(data[2]!.armor).toBe(ELITE_TIER.baseArmor);
-    expect(data[3]!.armor).toBe(BOSS_TIER.baseArmor);
+    expect(data[0]!.rawArmor).toBe(WEAK_TIER.baseArmor);
+    expect(data[1]!.rawArmor).toBe(STANDARD_TIER.baseArmor);
+    expect(data[2]!.rawArmor).toBe(ELITE_TIER.baseArmor);
+    expect(data[3]!.rawArmor).toBe(BOSS_TIER.baseArmor);
   });
 
-  it("xp equals baseXpReward + xpRewardPerLevel * level", () => {
+  it("raw xp equals baseXpReward + xpRewardPerLevel * level", () => {
     const level = 30;
     const data = buildMobTierData(MOCK_CONFIG, level);
-    expect(data[0]!.xp).toBe(WEAK_TIER.baseXpReward + WEAK_TIER.xpRewardPerLevel * level);
-    expect(data[3]!.xp).toBe(BOSS_TIER.baseXpReward + BOSS_TIER.xpRewardPerLevel * level);
+    expect(data[0]!.rawXp).toBe(WEAK_TIER.baseXpReward + WEAK_TIER.xpRewardPerLevel * level);
+    expect(data[3]!.rawXp).toBe(BOSS_TIER.baseXpReward + BOSS_TIER.xpRewardPerLevel * level);
   });
 
-  it("different level produces different HP values", () => {
+  it("normalized values are percentages (0-100) with boss tier at 100", () => {
+    const data = buildMobTierData(MOCK_CONFIG, 30);
+    expect(data[3]!.hp).toBe(100);
+    expect(data[3]!.damage).toBe(100);
+    expect(data[3]!.armor).toBe(100);
+    expect(data[3]!.xp).toBe(100);
+    for (const point of data) {
+      expect(point.hp).toBeGreaterThanOrEqual(0);
+      expect(point.hp).toBeLessThanOrEqual(100);
+    }
+  });
+
+  it("different level produces different raw HP values", () => {
     const data10 = buildMobTierData(MOCK_CONFIG, 10);
     const data50 = buildMobTierData(MOCK_CONFIG, 50);
-    expect(data10[0]!.hp).not.toBe(data50[0]!.hp);
-    expect(data10[3]!.hp).not.toBe(data50[3]!.hp);
+    expect(data10[0]!.rawHp).not.toBe(data50[0]!.rawHp);
+    expect(data10[3]!.rawHp).not.toBe(data50[3]!.rawHp);
   });
 });
 

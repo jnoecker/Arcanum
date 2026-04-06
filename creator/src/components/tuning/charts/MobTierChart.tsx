@@ -14,7 +14,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import type { AppConfig } from "@/types/config";
-import { buildMobTierData } from "@/lib/tuning/chartData";
+import { buildMobTierData, type MobTierPoint } from "@/lib/tuning/chartData";
 import { CHART_COLORS } from "@/lib/tuning/chartColors";
 
 interface MobTierChartProps {
@@ -31,6 +31,35 @@ const TICK_STYLE = {
 
 function formatLargeNumber(v: number): string {
   return v >= 1000 ? `${(v / 1000).toFixed(0)}k` : String(v);
+}
+
+const RAW_KEY_MAP: Record<string, keyof MobTierPoint> = {
+  HP: "rawHp",
+  Damage: "rawDamage",
+  Armor: "rawArmor",
+  XP: "rawXp",
+};
+
+function MobTierTooltip({ active, payload, label }: {
+  active?: boolean;
+  payload?: Array<{ name: string; value: number; color: string; payload: MobTierPoint }>;
+  label?: string;
+}) {
+  if (!active || !payload?.length) return null;
+  return (
+    <div className="rounded-lg border border-border-default bg-bg-secondary px-3 py-2 shadow-lg">
+      <p className="mb-1 text-xs font-medium text-text-primary">{label}</p>
+      {payload.map((entry) => {
+        const rawKey = RAW_KEY_MAP[entry.name];
+        const rawVal = rawKey ? entry.payload[rawKey] : entry.value;
+        return (
+          <p key={entry.name} className="text-2xs" style={{ color: entry.color }}>
+            {entry.name}: {formatLargeNumber(rawVal as number)} ({entry.value}%)
+          </p>
+        );
+      })}
+    </div>
+  );
 }
 
 export function MobTierChart({ currentConfig }: MobTierChartProps) {
@@ -74,9 +103,10 @@ export function MobTierChart({ currentConfig }: MobTierChartProps) {
           <YAxis
             tick={TICK_STYLE}
             stroke={CHART_COLORS.axisLine}
-            tickFormatter={formatLargeNumber}
+            domain={[0, 100]}
+            tickFormatter={(v: number) => `${v}%`}
           />
-          <Tooltip />
+          <Tooltip content={<MobTierTooltip />} />
           <Legend />
           <Bar
             dataKey="hp"

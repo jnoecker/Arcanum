@@ -23,13 +23,7 @@ import { ServerPanel } from "./panels/ServerPanel";
 import { AdminConfigPanel } from "./panels/AdminConfigPanel";
 import { ObservabilityPanel } from "./panels/ObservabilityPanel";
 import { LoggingPanel } from "./panels/LoggingPanel";
-import { CombatPanel } from "./panels/CombatPanel";
-import { MobTiersPanel } from "./panels/MobTiersPanel";
-import { RegenPanel } from "./panels/RegenPanel";
-import { ProgressionPanel } from "./panels/ProgressionPanel";
-import { NavigationPanel } from "./panels/NavigationPanel";
 import { CommandDesigner } from "./CommandDesigner";
-import { EconomyPanel } from "./panels/EconomyPanel";
 import { CraftingStudio } from "./CraftingStudio";
 import { GuildDesigner } from "./GuildDesigner";
 import { EmotePresetsPanel } from "./panels/EmotePresetsPanel";
@@ -38,16 +32,8 @@ import { GuildHallsPanel } from "./panels/GuildHallsPanel";
 import { FactionPanel } from "./panels/FactionPanel";
 import { PetsPanel } from "./panels/PetsPanel";
 import { EnchantingPanel } from "./panels/EnchantingPanel";
-import { WorldCyclePanel } from "./panels/WorldCyclePanel";
 import { WorldEventsPanel } from "./panels/WorldEventsPanel";
-import { PrestigePanel } from "./panels/PrestigePanel";
-import { RespecPanel } from "./panels/RespecPanel";
 import { CurrenciesPanel } from "./panels/CurrenciesPanel";
-import { LotteryPanel } from "./panels/LotteryPanel";
-import { GamblingPanel } from "./panels/GamblingPanel";
-import { AutoQuestsPanel } from "./panels/AutoQuestsPanel";
-import { DailyQuestsPanel } from "./panels/DailyQuestsPanel";
-import { GlobalQuestsPanel } from "./panels/GlobalQuestsPanel";
 
 import { AchievementDesigner } from "./AchievementDesigner";
 import { AchievementDefEditor } from "./AchievementDefEditor";
@@ -134,40 +120,16 @@ function renderPanel(panelId: string, props: ConfigPanelProps): ReactNode {
           </Section>
         </>
       );
-    case "combat":
-      return (
-        <>
-          <Section kicker="Combat pacing" title="Combat loop" description="Damage floors, tick cadence, feedback, and throughput.">
-            <CombatPanel config={config} onChange={onChange} />
-          </Section>
-          <Section kicker="Creature scaling" title="Mob tiers" description="Baseline stats for each mob difficulty tier.">
-            <MobTiersPanel config={config} onChange={onChange} />
-          </Section>
-          <Section kicker="Recovery" title="Regen cadence" description="HP and mana recovery rates.">
-            <RegenPanel config={config} onChange={onChange} />
-          </Section>
-        </>
-      );
-    case "progression":
-      return <ProgressionPanel config={config} onChange={onChange} />;
-    case "statBindings":
-      return <StatsPanel config={config} onChange={onChange} showDefinitions={false} />;
-    case "travel":
-      return <NavigationPanel config={config} onChange={onChange} />;
     case "commands":
       return <CommandDesigner config={config} onChange={onChange} />;
-    case "economy":
-      return <EconomyPanel config={config} onChange={onChange} />;
     case "crafting":
       return <CraftingStudio config={config} onChange={onChange} />;
     case "enchanting":
       return <EnchantingPanel config={config} onChange={onChange} />;
     case "factions":
       return <FactionPanel />;
-    case "groups":
-      return <GuildDesigner config={config} onChange={onChange} section="groups" />;
     case "guilds":
-      return <GuildDesigner config={config} onChange={onChange} section="guilds" />;
+      return <GuildDesigner config={config} onChange={onChange} />;
     case "emotes":
       return <EmotePresetsPanel config={config} onChange={onChange} />;
     case "housing":
@@ -176,26 +138,10 @@ function renderPanel(panelId: string, props: ConfigPanelProps): ReactNode {
       return <GuildHallsPanel config={config} onChange={onChange} />;
     case "pets":
       return <PetsPanel config={config} onChange={onChange} />;
-    case "worldCycle":
-      return <WorldCyclePanel config={config} onChange={onChange} />;
     case "worldEvents":
       return <WorldEventsPanel config={config} onChange={onChange} />;
-    case "prestige":
-      return <PrestigePanel config={config} onChange={onChange} />;
-    case "respec":
-      return <RespecPanel config={config} onChange={onChange} />;
     case "currencies":
       return <CurrenciesPanel config={config} onChange={onChange} />;
-    case "lottery":
-      return <LotteryPanel config={config} onChange={onChange} />;
-    case "gambling":
-      return <GamblingPanel config={config} onChange={onChange} />;
-    case "autoQuests":
-      return <AutoQuestsPanel config={config} onChange={onChange} />;
-    case "dailyQuests":
-      return <DailyQuestsPanel config={config} onChange={onChange} />;
-    case "globalQuests":
-      return <GlobalQuestsPanel config={config} onChange={onChange} />;
 
     // Content
     case "achievements":

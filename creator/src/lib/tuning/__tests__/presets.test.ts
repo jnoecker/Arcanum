@@ -136,8 +136,8 @@ const ALL_SECTIONS = [
 // ─── Preset Structure ────────────────────────────────────────────────
 
 describe("preset structure", () => {
-  it("TUNING_PRESETS has exactly 3 entries", () => {
-    expect(TUNING_PRESETS).toHaveLength(3);
+  it("TUNING_PRESETS has exactly 6 entries", () => {
+    expect(TUNING_PRESETS).toHaveLength(6);
   });
 
   it("each preset has a valid id", () => {
@@ -145,6 +145,9 @@ describe("preset structure", () => {
     expect(ids).toContain("casual");
     expect(ids).toContain("balanced");
     expect(ids).toContain("hardcore");
+    expect(ids).toContain("soloStory");
+    expect(ids).toContain("pvpArena");
+    expect(ids).toContain("loreExplorer");
   });
 
   it("each preset has a non-empty name", () => {

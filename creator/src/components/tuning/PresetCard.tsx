@@ -31,6 +31,24 @@ const PRESET_ACCENTS: Record<string, { border: string; glow: string; text: strin
     text: "text-status-error",
     bg: "bg-status-error/[0.14]",
   },
+  soloStory: {
+    border: "border-status-success",
+    glow: "shadow-[0_0_20px_rgba(152,195,121,0.35)]",
+    text: "text-status-success",
+    bg: "bg-status-success/[0.14]",
+  },
+  pvpArena: {
+    border: "border-status-warning",
+    glow: "shadow-[0_0_20px_rgba(229,192,123,0.35)]",
+    text: "text-status-warning",
+    bg: "bg-status-warning/[0.14]",
+  },
+  loreExplorer: {
+    border: "border-accent",
+    glow: "shadow-[0_0_20px_rgba(168,151,210,0.35)]",
+    text: "text-accent",
+    bg: "bg-accent/[0.14]",
+  },
 };
 
 const DEFAULT_ACCENT = {

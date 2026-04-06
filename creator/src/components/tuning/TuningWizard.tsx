@@ -2,8 +2,9 @@
 // Root component for the Tuning Wizard. Shows preset cards, a sticky
 // search/filter bar, and a parameter browser with diff highlighting.
 
-import { useMemo, useEffect, useRef } from "react";
+import { useMemo, useEffect, useRef, useState, useCallback } from "react";
 import { useConfigStore } from "@/stores/configStore";
+import { useProjectStore } from "@/stores/projectStore";
 import { useTuningWizardStore } from "@/stores/tuningWizardStore";
 import { TUNING_PRESETS } from "@/lib/tuning/presets";
 import type { TuningPreset } from "@/lib/tuning/presets";
@@ -11,7 +12,7 @@ import { computeMetrics } from "@/lib/tuning/formulas";
 import { FIELD_METADATA } from "@/lib/tuning/fieldMetadata";
 import { computeDiff, groupDiffBySection } from "@/lib/tuning/diffEngine";
 import { TuningSection } from "@/lib/tuning/types";
-import { deepMerge } from "@/lib/tuning/merge";
+import { deepMerge, setNestedValue } from "@/lib/tuning/merge";
 import type { AppConfig } from "@/types/config";
 import type { DeepPartial, FieldMeta, DiffEntry } from "@/lib/tuning/types";
 import { PresetCard } from "./PresetCard";
@@ -21,6 +22,7 @@ import { MetricSectionCards } from "./MetricSectionCards";
 import { ApplyFooterBar } from "./ApplyFooterBar";
 import { HealthCheckBanner } from "./HealthCheckBanner";
 import { ChartRow } from "./charts/ChartRow";
+import { Spinner } from "@/components/ui/FormWidgets";
 
 const ALL_SECTIONS_ORDERED = [
   TuningSection.CombatStats,
@@ -33,10 +35,16 @@ const PRESET_BORDER: Record<string, string> = {
   casual: "border-warm",
   balanced: "border-stellar-blue",
   hardcore: "border-status-error",
+  soloStory: "border-status-success",
+  pvpArena: "border-status-warning",
+  loreExplorer: "border-accent",
 };
 
 export function TuningWizard() {
   const config = useConfigStore((s) => s.config);
+  const dirty = useConfigStore((s) => s.dirty);
+  const updateConfig = useConfigStore((s) => s.updateConfig);
+  const project = useProjectStore((s) => s.project);
   const selectedPresetId = useTuningWizardStore((s) => s.selectedPresetId);
   const selectPreset = useTuningWizardStore((s) => s.selectPreset);
   const searchQuery = useTuningWizardStore((s) => s.searchQuery);
@@ -48,6 +56,33 @@ export function TuningWizard() {
   const toggleAccepted = useTuningWizardStore((s) => s.toggleAccepted);
 
   const browserRef = useRef<HTMLDivElement>(null);
+  const [saving, setSaving] = useState(false);
+
+  /** Inline edit: update a single field by dot-path in the config. */
+  const handleValueChange = useCallback(
+    (path: string, value: unknown) => {
+      if (!config) return;
+      const clone = structuredClone(config) as unknown as Record<string, unknown>;
+      setNestedValue(clone, path, value);
+      updateConfig(clone as unknown as AppConfig);
+    },
+    [config, updateConfig],
+  );
+
+  /** Explicit save to disk. */
+  const handleSave = useCallback(async () => {
+    if (!project || saving) return;
+    setSaving(true);
+    try {
+      const { saveProjectConfig } = await import("@/lib/saveConfig");
+      await saveProjectConfig(project);
+      useConfigStore.getState().markClean();
+    } catch (err) {
+      console.error("Tuning save failed:", err);
+    } finally {
+      setSaving(false);
+    }
+  }, [project, saving]);
 
   /** Compute metrics for each preset by merging onto current config. */
   const presetMetrics = useMemo(() => {
@@ -177,15 +212,24 @@ export function TuningWizard() {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
-      {/* Title section */}
-      <div className="px-6 pt-16">
+      {/* Title section + save button */}
+      <div className="flex items-center justify-between px-6 pt-16">
         <h1 className="font-display text-[22px] leading-[1.2] tracking-[1px] text-text-primary">
           Tuning Wizard
         </h1>
+        {(dirty || saving) && (
+          <button
+            onClick={handleSave}
+            disabled={!dirty || saving}
+            className="focus-ring rounded-full border border-white/10 bg-bg-primary/80 px-4 py-1.5 text-sm font-medium text-accent shadow-md backdrop-blur-sm transition hover:bg-bg-primary disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            {saving ? <span className="flex items-center gap-1.5"><Spinner />Saving</span> : "Save Changes"}
+          </button>
+        )}
       </div>
 
-      {/* Preset card row */}
-      <div className="flex justify-center gap-8 px-6 mt-8">
+      {/* Preset card grid */}
+      <div className="grid grid-cols-3 justify-items-center gap-4 px-6 mt-8 max-w-[1020px] mx-auto">
         {TUNING_PRESETS.map((preset) => (
           <PresetCard
             key={preset.id}
@@ -257,6 +301,7 @@ export function TuningWizard() {
                   isCollapsed={collapsedSections.has(section)}
                   onToggleCollapsed={() => toggleCollapsed(section)}
                   presetAccentBorder={presetAccentBorder}
+                  onValueChange={handleValueChange}
                 />
               </div>
             );

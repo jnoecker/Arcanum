@@ -901,9 +901,192 @@ export const HARDCORE_PRESET: TuningPreset = {
   },
 };
 
+// ─── Solo Story Preset ─────────��────────────────────────────────────
+
+export const SOLO_STORY_PRESET: TuningPreset = {
+  id: "soloStory",
+  name: "Solo Story",
+  description:
+    "A narrative-first experience designed for solo exploration. Generous progression, forgiving combat, and ample resources so the story is never interrupted.",
+  sectionDescriptions: {
+    [TuningSection.CombatStats]:
+      "Very forgiving combat tuned for solo play. Mobs are manageable alone, stat scaling is generous, and regen is fast enough to keep moving.",
+    [TuningSection.EconomyCrafting]:
+      "Abundant gold and cheap prices so gear and crafting never block progress. Crafting levels quickly for casual experimentation.",
+    [TuningSection.ProgressionQuests]:
+      "Rapid leveling with low XP requirements. Quests give generous rewards and prestige is easy to reach for completionists.",
+    [TuningSection.WorldSocial]:
+      "Fast regen and short cooldowns minimize downtime. Social systems are available but not required — designed for solo-friendly play.",
+  },
+  config: {
+    combat: { tickMillis: 3500, minDamage: 2, maxDamage: 80 },
+    mobTiers: {
+      weak: { baseHp: 2, hpPerLevel: 1, baseMinDamage: 1, baseMaxDamage: 1, damagePerLevel: 0, baseArmor: 0, baseXpReward: 25, xpRewardPerLevel: 10, baseGoldMin: 3, baseGoldMax: 8, goldPerLevel: 3 },
+      standard: { baseHp: 6, hpPerLevel: 2, baseMinDamage: 1, baseMaxDamage: 2, damagePerLevel: 0, baseArmor: 0, baseXpReward: 50, xpRewardPerLevel: 20, baseGoldMin: 8, baseGoldMax: 18, goldPerLevel: 5 },
+      elite: { baseHp: 14, hpPerLevel: 4, baseMinDamage: 2, baseMaxDamage: 4, damagePerLevel: 1, baseArmor: 1, baseXpReward: 120, xpRewardPerLevel: 40, baseGoldMin: 20, baseGoldMax: 45, goldPerLevel: 10 },
+      boss: { baseHp: 28, hpPerLevel: 6, baseMinDamage: 2, baseMaxDamage: 5, damagePerLevel: 1, baseArmor: 1, baseXpReward: 300, xpRewardPerLevel: 80, baseGoldMin: 80, baseGoldMax: 160, goldPerLevel: 25 },
+    },
+    mobActionDelay: { minActionDelayMillis: 3500, maxActionDelayMillis: 7000 },
+    stats: { bindings: { meleeDamageDivisor: 2, dodgePerPoint: 3, maxDodgePercent: 40, spellDamageDivisor: 2, hpScalingDivisor: 3, manaScalingDivisor: 3, hpRegenMsPerPoint: 300, manaRegenMsPerPoint: 300, xpBonusPerPoint: 3 } },
+    economy: { buyMultiplier: 0.6, sellMultiplier: 0.7 },
+    crafting: { maxSkillLevel: 40, baseXpPerLevel: 60, xpExponent: 1.2, gatherCooldownMs: 1500, stationBonusQuantity: 3 },
+    gambling: { enabled: true, minBet: 5, maxBet: 300, winChance: 0.55, winMultiplier: 2.0 },
+    lottery: { enabled: true, ticketCost: 5, drawingIntervalMs: 1200000, jackpotBase: 1500 },
+    bank: { maxItems: 150 },
+    enchanting: { maxEnchantmentsPerItem: 5 },
+    progression: {
+      maxLevel: 40,
+      xp: { baseXp: 60, exponent: 1.4, linearXp: 5, multiplier: 1.2, defaultKillXp: 20 },
+      rewards: { hpPerLevel: 4, manaPerLevel: 3, fullHealOnLevelUp: true, fullManaOnLevelUp: true, baseHp: 20, baseMana: 20 },
+    },
+    skillPoints: { interval: 2 },
+    multiclass: { minLevel: 8, goldCost: 100 },
+    characterCreation: { startingGold: 500 },
+    prestige: { enabled: true, xpCostBase: 3000, xpCostMultiplier: 1.2, maxRank: 10 },
+    respec: { goldCost: 25, cooldownMs: 30000 },
+    autoQuests: { enabled: true, timeLimitMs: 900000, cooldownMs: 60000, rewardScaling: 2.0 },
+    dailyQuests: { enabled: true, streakBonusPercent: 20 },
+    globalQuests: { enabled: true, intervalMs: 3600000, durationMs: 1800000 },
+    regen: { maxPlayersPerTick: 20, baseIntervalMillis: 2500, minIntervalMillis: 500, regenAmount: 3, mana: { baseIntervalMillis: 2500, minIntervalMillis: 500, regenAmount: 3 } },
+    worldTime: { cycleLengthMs: 1200000, dawnHour: 5, dayHour: 7, duskHour: 18, nightHour: 20 },
+    weather: { minTransitionMs: 120000, maxTransitionMs: 300000 },
+    group: { maxSize: 6, inviteTimeoutMs: 60000, xpBonusPerMember: 20 },
+    navigation: { recall: { cooldownMs: 15000 } },
+    friends: { maxFriends: 100 },
+    guild: { maxSize: 50, inviteTimeoutMs: 60000 },
+    guildHalls: { enabled: true, baseCost: 3000 },
+    housing: { enabled: true },
+    factions: { defaultReputation: 0, killPenalty: 3, killBonus: 5 },
+    leaderboard: { refreshIntervalMs: 60000, topN: 20 },
+  },
+};
+
+// ─── PvP Arena Preset ───────────────────────────────────────────��───
+
+export const PVP_ARENA_PRESET: TuningPreset = {
+  id: "pvpArena",
+  name: "PvP Arena",
+  description:
+    "Tight competitive balance with fast combat, meaningful stat choices, and scarce resources. Designed for player-versus-player worlds.",
+  sectionDescriptions: {
+    [TuningSection.CombatStats]:
+      "Fast, lethal combat where positioning and build choices dominate. Stat scaling is deliberate — every point matters in a mirror match.",
+    [TuningSection.EconomyCrafting]:
+      "Scarce economy where gold is a strategic resource. Crafting is slow but powerful, and gambling is high-stakes.",
+    [TuningSection.ProgressionQuests]:
+      "Moderate leveling — fast enough to reach competitive play, steep enough that level advantages are earned. Quest rewards are balanced for fairness.",
+    [TuningSection.WorldSocial]:
+      "Moderate regen that rewards preparation. Group play is strongly incentivized with generous XP bonuses. Factions have meaningful reputation swings.",
+  },
+  config: {
+    combat: { tickMillis: 1500, minDamage: 1, maxDamage: 180 },
+    mobTiers: {
+      weak: { baseHp: 6, hpPerLevel: 2, baseMinDamage: 1, baseMaxDamage: 2, damagePerLevel: 1, baseArmor: 0, baseXpReward: 12, xpRewardPerLevel: 4, baseGoldMin: 1, baseGoldMax: 2, goldPerLevel: 1 },
+      standard: { baseHp: 14, hpPerLevel: 5, baseMinDamage: 2, baseMaxDamage: 5, damagePerLevel: 1, baseArmor: 1, baseXpReward: 25, xpRewardPerLevel: 8, baseGoldMin: 2, baseGoldMax: 6, goldPerLevel: 2 },
+      elite: { baseHp: 35, hpPerLevel: 9, baseMinDamage: 4, baseMaxDamage: 8, damagePerLevel: 2, baseArmor: 3, baseXpReward: 65, xpRewardPerLevel: 22, baseGoldMin: 8, baseGoldMax: 20, goldPerLevel: 4 },
+      boss: { baseHp: 70, hpPerLevel: 15, baseMinDamage: 5, baseMaxDamage: 12, damagePerLevel: 3, baseArmor: 4, baseXpReward: 180, xpRewardPerLevel: 45, baseGoldMin: 40, baseGoldMax: 80, goldPerLevel: 12 },
+    },
+    mobActionDelay: { minActionDelayMillis: 1500, maxActionDelayMillis: 3500 },
+    stats: { bindings: { meleeDamageDivisor: 3, dodgePerPoint: 2, maxDodgePercent: 25, spellDamageDivisor: 3, hpScalingDivisor: 4, manaScalingDivisor: 4, hpRegenMsPerPoint: 180, manaRegenMsPerPoint: 180, xpBonusPerPoint: 1 } },
+    economy: { buyMultiplier: 1.2, sellMultiplier: 0.4 },
+    crafting: { maxSkillLevel: 80, baseXpPerLevel: 120, xpExponent: 1.6, gatherCooldownMs: 4000, stationBonusQuantity: 1 },
+    gambling: { enabled: true, minBet: 20, maxBet: 1500, winChance: 0.4, winMultiplier: 2.5 },
+    lottery: { enabled: false, ticketCost: 50, drawingIntervalMs: 7200000, jackpotBase: 300 },
+    bank: { maxItems: 40 },
+    enchanting: { maxEnchantmentsPerItem: 2 },
+    progression: {
+      maxLevel: 50,
+      xp: { baseXp: 90, exponent: 1.7, linearXp: 5, multiplier: 1.0, defaultKillXp: 8 },
+      rewards: { hpPerLevel: 2, manaPerLevel: 1, fullHealOnLevelUp: true, fullManaOnLevelUp: true, baseHp: 12, baseMana: 10 },
+    },
+    skillPoints: { interval: 3 },
+    multiclass: { minLevel: 20, goldCost: 1000 },
+    characterCreation: { startingGold: 75 },
+    prestige: { enabled: true, xpCostBase: 15000, xpCostMultiplier: 1.8, maxRank: 5 },
+    respec: { goldCost: 250, cooldownMs: 600000 },
+    autoQuests: { enabled: true, timeLimitMs: 240000, cooldownMs: 300000, rewardScaling: 0.9 },
+    dailyQuests: { enabled: true, streakBonusPercent: 8 },
+    globalQuests: { enabled: true, intervalMs: 5400000, durationMs: 2700000 },
+    regen: { maxPlayersPerTick: 10, baseIntervalMillis: 5000, minIntervalMillis: 1200, regenAmount: 1, mana: { baseIntervalMillis: 5000, minIntervalMillis: 1200, regenAmount: 1 } },
+    worldTime: { cycleLengthMs: 1800000, dawnHour: 5, dayHour: 7, duskHour: 18, nightHour: 20 },
+    weather: { minTransitionMs: 180000, maxTransitionMs: 600000 },
+    group: { maxSize: 4, inviteTimeoutMs: 30000, xpBonusPerMember: 15 },
+    navigation: { recall: { cooldownMs: 120000 } },
+    friends: { maxFriends: 50 },
+    guild: { maxSize: 25, inviteTimeoutMs: 30000 },
+    guildHalls: { enabled: true, baseCost: 15000 },
+    housing: { enabled: true },
+    factions: { defaultReputation: 0, killPenalty: 15, killBonus: 10 },
+    leaderboard: { refreshIntervalMs: 60000, topN: 10 },
+  },
+};
+
+// ─── Lore Explorer Preset ───────────────────────────────────────────
+
+export const LORE_EXPLORER_PRESET: TuningPreset = {
+  id: "loreExplorer",
+  name: "Lore Explorer",
+  description:
+    "Overpowered from the start. Players are strong immediately and can roam freely, exploring every corner of the world without friction. Built for world-first enjoyment.",
+  sectionDescriptions: {
+    [TuningSection.CombatStats]:
+      "Players dominate combat from level 1. Mobs are fragile and barely threaten — the world is yours to explore, not survive.",
+    [TuningSection.EconomyCrafting]:
+      "Gold flows freely and everything is cheap. Crafting is instant gratification — max out skills quickly and experiment with recipes.",
+    [TuningSection.ProgressionQuests]:
+      "Near-instant leveling. Players hit max level within a few sessions so they can access all content. Quest rewards are massive.",
+    [TuningSection.WorldSocial]:
+      "Instant regen, no cooldowns. The world is a playground — no resource management, no waiting, just exploration.",
+  },
+  config: {
+    combat: { tickMillis: 4000, minDamage: 5, maxDamage: 50 },
+    mobTiers: {
+      weak: { baseHp: 1, hpPerLevel: 1, baseMinDamage: 0, baseMaxDamage: 1, damagePerLevel: 0, baseArmor: 0, baseXpReward: 50, xpRewardPerLevel: 20, baseGoldMin: 10, baseGoldMax: 25, goldPerLevel: 5 },
+      standard: { baseHp: 4, hpPerLevel: 1, baseMinDamage: 1, baseMaxDamage: 2, damagePerLevel: 0, baseArmor: 0, baseXpReward: 100, xpRewardPerLevel: 40, baseGoldMin: 20, baseGoldMax: 50, goldPerLevel: 10 },
+      elite: { baseHp: 10, hpPerLevel: 3, baseMinDamage: 1, baseMaxDamage: 3, damagePerLevel: 0, baseArmor: 0, baseXpReward: 250, xpRewardPerLevel: 80, baseGoldMin: 50, baseGoldMax: 100, goldPerLevel: 20 },
+      boss: { baseHp: 20, hpPerLevel: 5, baseMinDamage: 2, baseMaxDamage: 4, damagePerLevel: 1, baseArmor: 1, baseXpReward: 500, xpRewardPerLevel: 150, baseGoldMin: 150, baseGoldMax: 300, goldPerLevel: 50 },
+    },
+    mobActionDelay: { minActionDelayMillis: 4000, maxActionDelayMillis: 8000 },
+    stats: { bindings: { meleeDamageDivisor: 1, dodgePerPoint: 5, maxDodgePercent: 50, spellDamageDivisor: 1, hpScalingDivisor: 2, manaScalingDivisor: 2, hpRegenMsPerPoint: 400, manaRegenMsPerPoint: 400, xpBonusPerPoint: 5 } },
+    economy: { buyMultiplier: 0.3, sellMultiplier: 0.9 },
+    crafting: { maxSkillLevel: 30, baseXpPerLevel: 30, xpExponent: 1.1, gatherCooldownMs: 1000, stationBonusQuantity: 5 },
+    gambling: { enabled: true, minBet: 1, maxBet: 100, winChance: 0.6, winMultiplier: 3.0 },
+    lottery: { enabled: true, ticketCost: 1, drawingIntervalMs: 600000, jackpotBase: 5000 },
+    bank: { maxItems: 200 },
+    enchanting: { maxEnchantmentsPerItem: 6 },
+    progression: {
+      maxLevel: 30,
+      xp: { baseXp: 30, exponent: 1.2, linearXp: 5, multiplier: 2.0, defaultKillXp: 50 },
+      rewards: { hpPerLevel: 8, manaPerLevel: 6, fullHealOnLevelUp: true, fullManaOnLevelUp: true, baseHp: 50, baseMana: 50 },
+    },
+    skillPoints: { interval: 1 },
+    multiclass: { minLevel: 5, goldCost: 50 },
+    characterCreation: { startingGold: 2000 },
+    prestige: { enabled: true, xpCostBase: 1000, xpCostMultiplier: 1.1, maxRank: 20 },
+    respec: { goldCost: 0, cooldownMs: 0 },
+    autoQuests: { enabled: true, timeLimitMs: 1800000, cooldownMs: 30000, rewardScaling: 3.0 },
+    dailyQuests: { enabled: true, streakBonusPercent: 30 },
+    globalQuests: { enabled: true, intervalMs: 1800000, durationMs: 900000 },
+    regen: { maxPlayersPerTick: 25, baseIntervalMillis: 1500, minIntervalMillis: 300, regenAmount: 5, mana: { baseIntervalMillis: 1500, minIntervalMillis: 300, regenAmount: 5 } },
+    worldTime: { cycleLengthMs: 900000, dawnHour: 5, dayHour: 7, duskHour: 18, nightHour: 20 },
+    weather: { minTransitionMs: 60000, maxTransitionMs: 180000 },
+    group: { maxSize: 8, inviteTimeoutMs: 120000, xpBonusPerMember: 25 },
+    navigation: { recall: { cooldownMs: 5000 } },
+    friends: { maxFriends: 200 },
+    guild: { maxSize: 100, inviteTimeoutMs: 120000 },
+    guildHalls: { enabled: true, baseCost: 1000 },
+    housing: { enabled: true },
+    factions: { defaultReputation: 50, killPenalty: 1, killBonus: 10 },
+    leaderboard: { refreshIntervalMs: 30000, topN: 50 },
+  },
+};
+
 /** All available tuning presets for iteration. */
 export const TUNING_PRESETS: TuningPreset[] = [
   CASUAL_PRESET,
   BALANCED_PRESET,
   HARDCORE_PRESET,
+  SOLO_STORY_PRESET,
+  PVP_ARENA_PRESET,
+  LORE_EXPLORER_PRESET,
 ];

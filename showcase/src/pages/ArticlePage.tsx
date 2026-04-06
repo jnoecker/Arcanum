@@ -340,6 +340,18 @@ export function ArticlePage() {
         )}
       </div>
 
+      {article.template === "story" && (
+        <Link
+          to={`/stories/${encodeURIComponent(article.id)}`}
+          className="flex items-center justify-center gap-3 py-4 rounded-lg border border-accent/30 bg-accent/6 hover:bg-accent/12 transition-colors duration-300 mb-10"
+        >
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" className="text-accent">
+            <path d="M4 2.5v11l9.5-5.5z" />
+          </svg>
+          <span className="text-[12px] font-display text-accent tracking-[0.16em] uppercase">Play Story</span>
+        </Link>
+      )}
+
       <div className="flex flex-col lg:flex-row gap-10">
         {/* Main content */}
         <article className="flex-1 min-w-0">

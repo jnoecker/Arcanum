@@ -9,6 +9,7 @@ import { EntityOverlay } from "./EntityOverlay";
 import { AnimatedEntity } from "./AnimatedEntity";
 import { TypewriterNarration } from "./TypewriterNarration";
 import { PreviewPlayback } from "./PreviewPlayback";
+import { SceneInfoBadges } from "./SceneInfoBadges";
 import type { Scene, SceneEntity } from "@/types/story";
 import type { ZoneState } from "@/stores/zoneStore";
 
@@ -222,6 +223,9 @@ export function ScenePreview({ scene, storyId, zoneId }: ScenePreviewProps) {
 
       {/* Preview playback button (z-40) */}
       <PreviewPlayback playing={previewPlaying} onToggle={handlePreviewToggle} />
+
+      {/* Ambient lore badges (z-35, always-on at low opacity) */}
+      <SceneInfoBadges scene={scene} mode="ambient" />
 
       {previewPlaying ? (
         /* ─── Animated preview mode ────────────────────────────── */

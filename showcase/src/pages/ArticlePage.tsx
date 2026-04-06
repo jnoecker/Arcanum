@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import DOMPurify from "dompurify";
 import { useShowcase } from "@/lib/DataContext";
 import { TEMPLATE_LABELS, TEMPLATE_COLORS } from "@/lib/templates";
-import type { ShowcaseArticle } from "@/types/showcase";
+import type { ShowcaseArticle, ShowcaseStory } from "@/types/showcase";
 
 const RELATION_TYPE_LABELS: Record<string, string> = {
   ally: "Allies",
@@ -200,6 +200,55 @@ function ArticleGallery({ images, title }: { images: string[]; title: string }) 
   );
 }
 
+// ─── Featured-in-stories sidebar section ────────────────────────────
+
+function FeaturedInStories({ stories, color }: { stories: ShowcaseStory[]; color: string }) {
+  if (stories.length === 0) return null;
+  return (
+    <div className="rounded-xl overflow-hidden border-t-2" style={{ borderTopColor: `${color}30` }}>
+      <div className="px-5 py-3 bg-bg-tertiary/40">
+        <h3 className="font-display text-[11px] tracking-[0.2em] uppercase" style={{ color }}>
+          Featured In Stories
+        </h3>
+      </div>
+      <ul className="px-3 py-2 bg-bg-secondary/30 space-y-1">
+        {stories.map((s) => (
+          <li key={s.id}>
+            <Link
+              to={`/stories/${encodeURIComponent(s.id)}`}
+              className="flex items-center gap-2 rounded px-2 py-1.5 text-xs text-text-secondary hover:bg-bg-hover hover:text-text-primary transition-colors"
+            >
+              {s.coverImageUrl ? (
+                <img src={s.coverImageUrl} alt="" className="h-8 w-12 rounded object-cover" />
+              ) : (
+                <span className="h-8 w-12 rounded bg-bg-tertiary" />
+              )}
+              <span className="flex-1 truncate">{s.title}</span>
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+/** Find every story that references the given article ID at story or scene level. */
+function findStoriesFeaturingArticle(
+  stories: ShowcaseStory[] | undefined,
+  articleId: string,
+): ShowcaseStory[] {
+  if (!stories) return [];
+  return stories.filter((s) => {
+    if (s.linkedArticleIds?.includes(articleId)) return true;
+    if (s.featuredCharacterIds?.includes(articleId)) return true;
+    return s.scenes.some(
+      (sc) =>
+        sc.linkedArticleIds?.includes(articleId) ||
+        sc.linkedLocationArticleId === articleId,
+    );
+  });
+}
+
 export function ArticlePage() {
   const { id } = useParams<{ id: string }>();
   const { data, articleById } = useShowcase();
@@ -262,6 +311,12 @@ export function ArticlePage() {
           }))
       );
   }, [data, article.id, articleById]);
+
+  // Stories that feature this article (story-level or scene-level linked)
+  const featuredInStories = useMemo(
+    () => findStoriesFeaturingArticle(data?.stories, article.id),
+    [data?.stories, article.id],
+  );
 
   // Merge forward and reverse, deduplicating by targetId+type
   const allRelations = useMemo(() => {
@@ -414,6 +469,8 @@ export function ArticlePage() {
           )}
 
           <ConnectionsSection relations={allRelations} color={color} />
+
+          <FeaturedInStories stories={featuredInStories} color={color} />
         </aside>
       </div>
     </div>

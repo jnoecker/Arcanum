@@ -73,7 +73,11 @@ Plans:
   3. When a room is selected, its background image auto-populates from existing zone art
   4. Builder can preview the fully composed scene (background + entities + narration) live in the editor
   5. Builder can position entities at predefined spots (left, center, right) or drag to custom coordinates
-**Plans**: TBD
+**Plans:** 3 plans
+Plans:
+- [ ] 09-01-PLAN.md -- SceneEntity type extension (slot field), sceneLayout utility (preset slots, auto-distribution, position resolution, TipTap text extraction), unit tests
+- [ ] 09-02-PLAN.md -- ScenePreview (16:9 renderer with room bg, entity layers, narration overlay, empty state) and EntityOverlay (draggable sprite with selection and removal)
+- [ ] 09-03-PLAN.md -- EntityPicker sidebar (tabbed zone browser with search), EntityPickerTab, SceneDetailEditor restructure (horizontal split with preview and picker integration)
 **UI hint**: yes
 
 ### Phase 10: Cinematic Renderer
@@ -127,7 +131,7 @@ Note: Phases 11 and 12 both depend on Phase 10 and could execute in parallel.
 | 6. Visualizations | v1.0 | 2/2 | Complete | 2026-04-05 |
 | 7. Story Foundation | v1.1 | 0/2 | Planning | - |
 | 8. Story Editor | v1.1 | 0/2 | Planning | - |
-| 9. Scene Composition | v1.1 | 0/0 | Not started | - |
+| 9. Scene Composition | v1.1 | 0/3 | Planning | - |
 | 10. Cinematic Renderer | v1.1 | 0/0 | Not started | - |
 | 11. Presentation Mode | v1.1 | 0/0 | Not started | - |
 | 12. Showcase Player | v1.1 | 0/0 | Not started | - |

@@ -15,6 +15,7 @@ import { RelationGraphPanel } from "./RelationGraphPanel";
 import { DocumentLibraryPanel } from "./DocumentLibraryPanel";
 import { ShowcaseSettingsPanel } from "./ShowcaseSettingsPanel";
 import { TemplateEditorPanel } from "./TemplateEditorPanel";
+import { StoryBrowser } from "./StoryBrowser";
 
 // Lazy-load MapPanel to isolate Leaflet CSS from the main bundle
 const MapPanel = lazy(() => import("./MapPanel").then(m => ({ default: m.MapPanel })));
@@ -42,7 +43,7 @@ function renderPanel(panelId: string): ReactNode {
     case "templates":
       return <TemplateEditorPanel />;
     case "storyEditor":
-      return <ArticleBrowser />;
+      return <StoryBrowser />;
     default:
       return <div className="px-6 py-8 text-sm text-text-muted/60">Panel not found: {panelId}</div>;
   }

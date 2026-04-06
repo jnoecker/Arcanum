@@ -77,7 +77,7 @@ Plans:
 Plans:
 - [x] 09-01-PLAN.md -- SceneEntity type extension (slot field), sceneLayout utility (preset slots, auto-distribution, position resolution, TipTap text extraction), unit tests
 - [x] 09-02-PLAN.md -- ScenePreview (16:9 renderer with room bg, entity layers, narration overlay, empty state) and EntityOverlay (draggable sprite with selection and removal)
-- [ ] 09-03-PLAN.md -- EntityPicker sidebar (tabbed zone browser with search), EntityPickerTab, SceneDetailEditor restructure (horizontal split with preview and picker integration)
+- [x] 09-03-PLAN.md -- EntityPicker sidebar (tabbed zone browser with search), EntityPickerTab, SceneDetailEditor restructure (horizontal split with preview and picker integration)
 **UI hint**: yes
 
 ### Phase 10: Cinematic Renderer

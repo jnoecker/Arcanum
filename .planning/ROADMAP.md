@@ -119,7 +119,11 @@ Plans:
   2. Showcase visitors can navigate through story scenes with click and keyboard controls
   3. Showcase player supports auto-play mode that advances scenes on a configurable timer
   4. Showcase player supports scroll-driven scene advancement with snap-to-scene behavior
-**Plans**: TBD
+**Plans:** 3 plans
+Plans:
+- [ ] 12-01-PLAN.md -- Motion install, CinematicRenderer port, showcase story types, creator export pipeline
+- [ ] 12-02-PLAN.md -- Stories navigation/routes, StoriesPage listing, StoryPlayerPage shell, ArticlePage "Play Story" button
+- [ ] 12-03-PLAN.md -- StoryPlayer orchestrator, PlayerControlBar, ModeSwitcher, TimingDropdown, ScrollModeContainer, human verification
 **UI hint**: yes
 
 ## Progress
@@ -141,4 +145,4 @@ Note: Phases 11 and 12 both depend on Phase 10 and could execute in parallel.
 | 9. Scene Composition | v1.1 | 0/3 | Planning | - |
 | 10. Cinematic Renderer | v1.1 | 3/3 | Complete    | 2026-04-06 |
 | 11. Presentation Mode | v1.1 | 2/2 | Complete   | 2026-04-06 |
-| 12. Showcase Player | v1.1 | 0/0 | Not started | - |
+| 12. Showcase Player | v1.1 | 0/3 | Planning | - |

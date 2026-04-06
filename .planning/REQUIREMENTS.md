@@ -29,8 +29,8 @@ Requirements for Zone Stories milestone. Each maps to roadmap phases.
 
 ### Presentation Mode
 
-- [ ] **PRES-01**: Builder can enter fullscreen DM presentation mode
-- [ ] **PRES-02**: Presentation advances with keyboard (arrows, space, escape to exit)
+- [x] **PRES-01**: Builder can enter fullscreen DM presentation mode
+- [x] **PRES-02**: Presentation advances with keyboard (arrows, space, escape to exit)
 - [ ] **PRES-03**: Scenes transition with crossfade effects
 
 ### Showcase Player
@@ -91,8 +91,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SCENE-05 | Phase 9: Scene Composition | Pending |
 | SCENE-06 | Phase 10: Cinematic Renderer | Pending |
 | SCENE-07 | Phase 10: Cinematic Renderer | Pending |
-| PRES-01 | Phase 11: Presentation Mode | Pending |
-| PRES-02 | Phase 11: Presentation Mode | Pending |
+| PRES-01 | Phase 11: Presentation Mode | Complete |
+| PRES-02 | Phase 11: Presentation Mode | Complete |
 | PRES-03 | Phase 10: Cinematic Renderer | Pending |
 | SHOW-01 | Phase 12: Showcase Player | Pending |
 | SHOW-02 | Phase 12: Showcase Player | Pending |

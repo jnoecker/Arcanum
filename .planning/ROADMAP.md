@@ -104,9 +104,9 @@ Plans:
   1. Builder can enter fullscreen presentation mode from the story editor
   2. Builder can advance, go back, and exit the presentation using keyboard controls (arrows, space, escape/F5)
   3. Presentation fills the entire screen with the cinematic renderer output (no editor chrome visible)
-**Plans:** 2 plans
+**Plans:** 1/2 plans executed
 Plans:
-- [ ] 11-01-PLAN.md -- PresentationMode, PresentationHUD, DmNotesOverlay components, useResolvedSceneData hook, Tauri fullscreen capability
+- [x] 11-01-PLAN.md -- PresentationMode, PresentationHUD, DmNotesOverlay components, useResolvedSceneData hook, Tauri fullscreen capability
 - [ ] 11-02-PLAN.md -- Present button in StoryEditorPanel, F5 shortcut, portal mount, end-to-end verification
 **UI hint**: yes
 
@@ -140,5 +140,5 @@ Note: Phases 11 and 12 both depend on Phase 10 and could execute in parallel.
 | 8. Story Editor | v1.1 | 0/2 | Planning | - |
 | 9. Scene Composition | v1.1 | 0/3 | Planning | - |
 | 10. Cinematic Renderer | v1.1 | 3/3 | Complete    | 2026-04-06 |
-| 11. Presentation Mode | v1.1 | 0/2 | Planning    | - |
+| 11. Presentation Mode | v1.1 | 1/2 | In Progress|  |
 | 12. Showcase Player | v1.1 | 0/0 | Not started | - |

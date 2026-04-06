@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Zone Stories
 status: executing
-stopped_at: Phase 11 UI-SPEC approved
-last_updated: "2026-04-06T04:06:04.801Z"
-last_activity: 2026-04-06
+stopped_at: Completed 11-01-PLAN.md
+last_updated: "2026-04-06T04:30:02.060Z"
+last_activity: 2026-04-06 -- Phase 11 planning complete
 progress:
   total_phases: 6
   completed_phases: 4
-  total_plans: 10
-  completed_plans: 10
-  percent: 100
+  total_plans: 12
+  completed_plans: 11
+  percent: 92
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-05)
 
 **Core value:** Builders can turn their zone worldbuilding into living narratives -- stories that work as DM presentation aids at the table and as cinematic experiences on the public showcase.
-**Current focus:** Phase 10 — Cinematic Renderer
+**Current focus:** Phase 11 — Presentation Mode
 
 ## Current Position
 
 Phase: 11
-Plan: Not started
-Status: Executing Phase 10
-Last activity: 2026-04-06
+Plan: 01 complete, 02 remaining
+Status: Executing
+Last activity: 2026-04-06 -- Completed 11-01 (presentation mode core components)
 
-Progress: [░░░░░░░░░░] 0% (v1.1)
+Progress: [█████████░] 92% (v1.1)
 
 ## Milestone History
 
@@ -50,6 +50,8 @@ Recent decisions affecting current work:
 - [v1.1 start]: CinematicRenderer as portable component (no Tauri deps) shared across editor, presentation, showcase
 - [v1.1 start]: Two new deps only: Motion v12.37 (animation) + dnd-kit v6.3 (drag-and-drop)
 - [v1.1 start]: Fullscreen via Tauri Rust window API, not web Fullscreen API (WebView2 Escape interception)
+- [Phase 11]: Batch IPC image resolution via useResolvedSceneData instead of per-image hooks
+- [Phase 11]: CSS transitions for HUD/DM notes (GPU compositing, no JS overhead)
 
 ### Pending Todos
 
@@ -63,6 +65,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-04-06T04:06:04.798Z
-Stopped at: Phase 11 UI-SPEC approved
+Last session: 2026-04-06T04:30:02.056Z
+Stopped at: Completed 11-01-PLAN.md
 Resume: Run `/gsd-plan-phase 7` to begin Phase 7: Story Foundation

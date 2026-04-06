@@ -16,6 +16,7 @@ import { DocumentLibraryPanel } from "./DocumentLibraryPanel";
 import { ShowcaseSettingsPanel } from "./ShowcaseSettingsPanel";
 import { TemplateEditorPanel } from "./TemplateEditorPanel";
 import { StoryBrowser } from "./StoryBrowser";
+import { ArtStylePanel } from "./ArtStylePanel";
 
 // Lazy-load MapPanel to isolate Leaflet CSS from the main bundle
 const MapPanel = lazy(() => import("./MapPanel").then(m => ({ default: m.MapPanel })));
@@ -26,6 +27,8 @@ function renderPanel(panelId: string): ReactNode {
       return <ArticleBrowser />;
     case "worldSetting":
       return <WorldSettingPanel />;
+    case "artStyle":
+      return <ArtStylePanel />;
     case "factions":
       return <FactionsPanel />;
     case "codex":

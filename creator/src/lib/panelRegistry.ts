@@ -29,12 +29,26 @@ export interface PanelDef {
 
 // ─── Studio panels ──────────────────────────────────────────────────
 
+// Art Style panel is shared between Studio (worldmaker) and Lore sidebars.
+// MainArea routes on `host: "lore"` regardless of which sidebar group listed it.
+const ART_STYLE_PANEL: PanelDef = {
+  id: "artStyle",
+  label: "Art Style",
+  group: "studio",
+  host: "lore",
+  kicker: "Studio",
+  title: "Art style",
+  description: "Named art styles with base + per-surface overrides. AI-assisted generation and refinement.",
+  maxWidth: "max-w-5xl",
+};
+
 const STUDIO_PANELS: PanelDef[] = [
   { id: "art", label: "Art", group: "studio", host: "studio", kicker: "Studio", title: "Art", description: "Zone vibes, entity art, defaults, and free-form generation.", maxWidth: "max-w-7xl" },
   { id: "media", label: "Media", group: "studio", host: "studio", kicker: "Studio", title: "Media", description: "Music, ambience, and cinematic staging.", maxWidth: "max-w-7xl" },
   { id: "portraits", label: "Portraits", group: "studio", host: "studio", kicker: "Studio", title: "Portraits", description: "Race and class portrait creation.", maxWidth: "max-w-7xl" },
   { id: "studioAbilities", label: "Icons", group: "studio", host: "studio", kicker: "Studio", title: "Icons", description: "Ability and status-effect icon generation.", maxWidth: "max-w-7xl" },
   { id: "sprites", label: "Player Sprites", group: "studio", host: "command", kicker: "Studio", title: "Player sprites", description: "Visible identity, unlockable variants, and portrait logic.", maxWidth: "max-w-7xl" },
+  ART_STYLE_PANEL,
 ];
 
 // ─── Character panels (includes former Ability panels) ─────────────
@@ -81,6 +95,7 @@ const SYSTEMS_PANELS: PanelDef[] = [
 const LORE_PANELS: PanelDef[] = [
   { id: "lore", label: "Articles", group: "lore", host: "lore", kicker: "Codex", title: "World lore", description: "All world-building articles — characters, locations, factions, and more.", maxWidth: "max-w-7xl" },
   { id: "worldSetting", label: "World Setting", group: "lore", host: "lore", kicker: "Foundation", title: "World setting", description: "Name, overview, history, themes, geography, and magic system.", maxWidth: "max-w-5xl" },
+  { ...ART_STYLE_PANEL, group: "lore", kicker: "Foundation" },
   { id: "factions", label: "Factions", group: "lore", host: "lore", kicker: "Politics", title: "Factions & organizations", description: "Political groups, guilds, and power structures.", maxWidth: "max-w-5xl" },
   { id: "codex", label: "Codex", group: "lore", host: "lore", kicker: "Reference", title: "Lore codex", description: "Wiki-style articles for places, legends, creatures, deities, and more.", maxWidth: "max-w-5xl" },
   { id: "loreMaps", label: "Maps", group: "lore", host: "lore", kicker: "Cartography", title: "World maps", description: "Upload maps, place pins, and link locations to lore articles.", maxWidth: "max-w-7xl" },
@@ -111,15 +126,26 @@ const COMMAND_PANELS: PanelDef[] = [
 
 // ─── Aggregate ──────────────────────────────────────────────────────
 
-export const ALL_PANELS: PanelDef[] = [
-  ...STUDIO_PANELS,
-  ...CHARACTER_PANELS,
-  ...WORLD_PANELS,
-  ...SYSTEMS_PANELS,
-  ...LORE_PANELS,
-  ...OPERATIONS_PANELS,
-  ...COMMAND_PANELS,
-];
+// Deduped by id — a panel listed in multiple sidebar groups (e.g. artStyle
+// appears in both Studio and Lore) only produces one entry here.
+export const ALL_PANELS: PanelDef[] = (() => {
+  const seen = new Set<string>();
+  const out: PanelDef[] = [];
+  for (const p of [
+    ...STUDIO_PANELS,
+    ...CHARACTER_PANELS,
+    ...WORLD_PANELS,
+    ...SYSTEMS_PANELS,
+    ...LORE_PANELS,
+    ...OPERATIONS_PANELS,
+    ...COMMAND_PANELS,
+  ]) {
+    if (seen.has(p.id)) continue;
+    seen.add(p.id);
+    out.push(p);
+  }
+  return out;
+})();
 
 export const PANEL_MAP: Record<string, PanelDef> = Object.fromEntries(
   ALL_PANELS.map((p) => [p.id, p]),

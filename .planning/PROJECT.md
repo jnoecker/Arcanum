@@ -42,7 +42,7 @@ Builders can turn their zone worldbuilding into living narratives — stories th
 
 ### Active
 
-- [ ] Timeline editor with draggable scene cards for story authoring
+- [x] Timeline editor with draggable scene cards for story authoring — Phase 8
 - [ ] Scene composition with room backgrounds, entity spotlights, and narration text
 - [ ] Entity picker from zone data browser and/or zone map
 - [ ] Cinematic effects: parallax layers, particle effects, sprite movement paths

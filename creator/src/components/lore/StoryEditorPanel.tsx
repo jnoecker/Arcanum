@@ -10,6 +10,7 @@ import { SceneTimeline } from "./SceneTimeline";
 import { SceneDetailEditor } from "./SceneDetailEditor";
 import { PresentationMode } from "./PresentationMode";
 import { StorySettingsSection } from "./StorySettingsSection";
+import { StoryAIToolbar } from "./StoryAIToolbar";
 
 interface StoryEditorPanelProps {
   storyId: string;
@@ -243,6 +244,9 @@ export function StoryEditorPanel({ storyId }: StoryEditorPanelProps) {
           </ActionButton>
         </div>
       </div>
+
+      {/* Section 0.5: AI tools (between header and settings) */}
+      <StoryAIToolbar story={story} />
 
       {/* Section 1: Story Settings (cover, synopsis, tags, lore links) */}
       <StorySettingsSection story={story} />

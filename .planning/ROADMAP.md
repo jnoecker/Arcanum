@@ -27,7 +27,7 @@
 - [ ] **Phase 8: Story Editor** - Timeline with draggable scene cards, narration editor, DM notes, and scene templates
 - [ ] **Phase 9: Scene Composition** - Entity picker, room backgrounds, entity positioning, and live scene preview
 - [x] **Phase 10: Cinematic Renderer** - Portable rendering engine with crossfade transitions, movement paths, and typewriter narration (completed 2026-04-06)
-- [ ] **Phase 11: Presentation Mode** - Fullscreen DM presentation with keyboard navigation
+- [x] **Phase 11: Presentation Mode** - Fullscreen DM presentation with keyboard navigation (completed 2026-04-06)
 - [ ] **Phase 12: Showcase Player** - Embedded story player with click-through, auto-play, and scroll-driven modes
 
 ## Phase Details
@@ -104,10 +104,10 @@ Plans:
   1. Builder can enter fullscreen presentation mode from the story editor
   2. Builder can advance, go back, and exit the presentation using keyboard controls (arrows, space, escape/F5)
   3. Presentation fills the entire screen with the cinematic renderer output (no editor chrome visible)
-**Plans:** 1/2 plans executed
+**Plans:** 2/2 plans complete
 Plans:
 - [x] 11-01-PLAN.md -- PresentationMode, PresentationHUD, DmNotesOverlay components, useResolvedSceneData hook, Tauri fullscreen capability
-- [ ] 11-02-PLAN.md -- Present button in StoryEditorPanel, F5 shortcut, portal mount, end-to-end verification
+- [x] 11-02-PLAN.md -- Present button in StoryEditorPanel, F5 shortcut, portal mount, end-to-end verification
 **UI hint**: yes
 
 ### Phase 12: Showcase Player
@@ -140,5 +140,5 @@ Note: Phases 11 and 12 both depend on Phase 10 and could execute in parallel.
 | 8. Story Editor | v1.1 | 0/2 | Planning | - |
 | 9. Scene Composition | v1.1 | 0/3 | Planning | - |
 | 10. Cinematic Renderer | v1.1 | 3/3 | Complete    | 2026-04-06 |
-| 11. Presentation Mode | v1.1 | 1/2 | In Progress|  |
+| 11. Presentation Mode | v1.1 | 2/2 | Complete   | 2026-04-06 |
 | 12. Showcase Player | v1.1 | 0/0 | Not started | - |

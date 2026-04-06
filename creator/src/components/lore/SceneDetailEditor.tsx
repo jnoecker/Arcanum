@@ -8,6 +8,9 @@ import { EntityPicker } from "./EntityPicker";
 import { TransitionDropdown } from "./TransitionDropdown";
 import { PathPresetPicker } from "./PathPresetPicker";
 import { NarrationSpeedSelector } from "./NarrationSpeedSelector";
+import { SceneLinksSection } from "./SceneLinksSection";
+import { TitleCardEditor } from "./TitleCardEditor";
+import { EffectsEditor } from "./EffectsEditor";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { EditableField } from "@/components/ui/FormWidgets";
 import { applyTemplate, isSceneEmpty } from "@/lib/sceneTemplates";
@@ -141,6 +144,15 @@ export function SceneDetailEditor({ storyId, scene, zoneId }: SceneDetailEditorP
             onUpdateEntity={handleUpdateEntity}
           />
         )}
+
+        {/* Section 7: Linked Lore (articles, location, map, timeline) */}
+        <SceneLinksSection storyId={storyId} scene={scene} />
+
+        {/* Section 8: Title Card overlay */}
+        <TitleCardEditor storyId={storyId} scene={scene} />
+
+        {/* Section 9: Effects (particles, parallax) */}
+        <EffectsEditor storyId={storyId} scene={scene} />
 
         {/* Confirm dialog for template replacement (D-13) */}
         {pendingTemplate && (

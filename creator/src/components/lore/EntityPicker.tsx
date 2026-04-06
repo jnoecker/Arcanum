@@ -3,6 +3,7 @@ import { useZoneStore } from "@/stores/zoneStore";
 import { useStoryStore } from "@/stores/storyStore";
 import { getNextSlot } from "@/lib/sceneLayout";
 import { EntityPickerTab } from "./EntityPickerTab";
+import { AssetPickerModal } from "@/components/ui/AssetPickerModal";
 import type { Scene, SceneEntity, EntitySlot } from "@/types/story";
 
 // ─── Types ────────────────────────────────────────────────────────
@@ -28,6 +29,7 @@ const TAB_LABELS: { key: PickerTab; label: string }[] = [
 export function EntityPicker({ zoneId, scene, storyId }: EntityPickerProps) {
   const [activeTab, setActiveTab] = useState<PickerTab>("rooms");
   const [collapsed, setCollapsed] = useState(false);
+  const [showAssetPicker, setShowAssetPicker] = useState<PickerTab | null>(null);
 
   const zoneState = useZoneStore((s) => s.zones.get(zoneId));
   const updateScene = useStoryStore((s) => s.updateScene);
@@ -94,6 +96,36 @@ export function EntityPicker({ zoneId, scene, storyId }: EntityPickerProps) {
       updateScene(storyId, scene.id, {
         entities: [...(scene.entities ?? []), newEntity],
       });
+    },
+    [storyId, scene.id, scene.entities, updateScene],
+  );
+
+  // ─── Custom image handler ───────────────────────────────────
+
+  const handleCustomImageSelect = useCallback(
+    (fileName: string, tab: PickerTab) => {
+      if (tab === "rooms") {
+        updateScene(storyId, scene.id, { backgroundOverride: fileName });
+      } else {
+        const entityType = tab === "mobs" ? "mob" as const : "item" as const;
+        const occupiedSlots = (scene.entities ?? [])
+          .filter((e) => e.slot)
+          .map((e) => e.slot as EntitySlot);
+        const slot = getNextSlot(occupiedSlots);
+        const baseName = fileName.replace(/\.[^.]+$/, "").replace(/^[a-f0-9]{64}_?/, "");
+        const newEntity: SceneEntity = {
+          id: `entity_${Math.random().toString(36).substring(2, 8)}`,
+          entityType,
+          entityId: `custom_${Date.now()}`,
+          slot,
+          imageOverride: fileName,
+          nameOverride: baseName || "Custom",
+        };
+        updateScene(storyId, scene.id, {
+          entities: [...(scene.entities ?? []), newEntity],
+        });
+      }
+      setShowAssetPicker(null);
     },
     [storyId, scene.id, scene.entities, updateScene],
   );
@@ -215,7 +247,36 @@ export function EntityPicker({ zoneId, scene, storyId }: EntityPickerProps) {
                   )
           }
         />
+
+        {/* + Custom button */}
+        <button
+          type="button"
+          onClick={() => setShowAssetPicker(activeTab)}
+          className="mt-1 flex w-full items-center justify-center gap-1.5 rounded-md border border-dashed border-border-muted py-2 text-xs text-text-muted transition-colors hover:border-accent/40 hover:text-accent"
+        >
+          <span className="text-sm leading-none">+</span>
+          Custom
+        </button>
+
+        {/* Clear custom background (rooms tab only) */}
+        {activeTab === "rooms" && scene.backgroundOverride && (
+          <button
+            type="button"
+            onClick={() => updateScene(storyId, scene.id, { backgroundOverride: undefined })}
+            className="mt-1 text-center text-2xs text-text-muted hover:text-status-error"
+          >
+            Clear custom background
+          </button>
+        )}
       </div>
+
+      {/* Asset picker modal */}
+      {showAssetPicker && (
+        <AssetPickerModal
+          onSelect={(fileName) => handleCustomImageSelect(fileName, showAssetPicker)}
+          onClose={() => setShowAssetPicker(null)}
+        />
+      )}
     </div>
   );
 }

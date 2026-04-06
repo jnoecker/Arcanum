@@ -26,21 +26,27 @@ function resolveEntityInfo(
   entity: SceneEntity,
   zoneState: ZoneState | undefined,
 ): { name: string; image?: string } {
-  if (!zoneState) return { name: entity.entityId };
+  // Custom overrides take priority
+  const overrideName = entity.nameOverride;
+  const overrideImage = entity.imageOverride;
+
+  if (!zoneState) {
+    return { name: overrideName ?? entity.entityId, image: overrideImage };
+  }
 
   if (entity.entityType === "mob" || entity.entityType === "npc") {
     const mob = zoneState.data.mobs?.[entity.entityId];
-    if (mob) return { name: mob.name, image: mob.image };
-    return { name: entity.entityId };
+    if (mob) return { name: overrideName ?? mob.name, image: overrideImage ?? mob.image };
+    return { name: overrideName ?? entity.entityId, image: overrideImage };
   }
 
   if (entity.entityType === "item") {
     const item = zoneState.data.items?.[entity.entityId];
-    if (item) return { name: item.displayName, image: item.image };
-    return { name: entity.entityId };
+    if (item) return { name: overrideName ?? item.displayName, image: overrideImage ?? item.image };
+    return { name: overrideName ?? entity.entityId, image: overrideImage };
   }
 
-  return { name: entity.entityId };
+  return { name: overrideName ?? entity.entityId, image: overrideImage };
 }
 
 // ─── Animated entity wrapper (resolves image via hook) ─────────────
@@ -79,7 +85,8 @@ export function ScenePreview({ scene, storyId, zoneId }: ScenePreviewProps) {
 
   const zoneState = zones.get(zoneId);
   const room = scene.roomId ? zoneState?.data.rooms[scene.roomId] : undefined;
-  const roomSrc = useImageSrc(room?.image);
+  const roomImageFile = scene.backgroundOverride ?? room?.image;
+  const roomSrc = useImageSrc(roomImageFile);
 
   // ─── Selection state ─────────────────────────────────────────
 
@@ -171,20 +178,20 @@ export function ScenePreview({ scene, storyId, zoneId }: ScenePreviewProps) {
       onClick={handleContainerClick}
     >
       {/* Layer 0: Room background */}
-      {scene.roomId && room?.image && roomSrc ? (
+      {roomImageFile && roomSrc ? (
         <img
           src={roomSrc}
           alt=""
           className="absolute inset-0 h-full w-full object-cover"
           draggable={false}
         />
-      ) : scene.roomId && room?.image && !roomSrc ? (
+      ) : roomImageFile && !roomSrc ? (
         /* Loading skeleton */
         <div className="absolute inset-0 animate-pulse bg-bg-tertiary/30" />
       ) : null}
 
-      {/* Empty state -- no room selected */}
-      {!scene.roomId && (
+      {/* Empty state -- no room or custom background selected */}
+      {!scene.roomId && !scene.backgroundOverride && (
         <div
           className="absolute inset-0 flex flex-col items-center justify-center border-2 border-dashed border-border-default"
           role="status"

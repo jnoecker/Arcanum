@@ -20,6 +20,10 @@ export interface SceneEntity {
   position?: { x: number; y: number };
   entrancePath?: string; // Preset ID from ENTRANCE_PRESETS (e.g., "enter-from-left")
   exitPath?: string;     // Preset ID from EXIT_PRESETS (e.g., "exit-stage-left")
+  /** Custom image override (asset filename). When set, used instead of the zone entity's image. */
+  imageOverride?: string;
+  /** Display name override for custom entities not tied to a zone entity. */
+  nameOverride?: string;
 }
 
 /** Transition type between scenes. */
@@ -41,6 +45,8 @@ export interface Scene {
   title: string;
   sortOrder: number;
   roomId?: string;
+  /** Custom background image override (asset filename). When set, used instead of the room's image. */
+  backgroundOverride?: string;
   narration?: string; // TipTap JSON string
   dmNotes?: string;
   template?: SceneTemplate;

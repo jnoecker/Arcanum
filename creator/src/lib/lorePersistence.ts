@@ -2,7 +2,7 @@ import { exists, readTextFile, writeTextFile } from "@tauri-apps/plugin-fs";
 import { parseDocument, stringify } from "yaml";
 import { useLoreStore } from "@/stores/loreStore";
 import { DEFAULT_WORLD_LORE } from "@/types/lore";
-import type { WorldLore, WorldLoreV1, Article, ArticleRelation, ArticleTemplate, LoreDocument, TemplateOverrides, ShowcaseSettings } from "@/types/lore";
+import type { WorldLore, WorldLoreV1, Article, ArticleRelation, ArticleTemplate, LoreDocument, TemplateOverrides, ShowcaseSettings, CustomTemplateDefinition, ArtStyle } from "@/types/lore";
 import type { Project } from "@/types/project";
 import { CODEX_CATEGORY_TO_TEMPLATE } from "@/lib/loreTemplates";
 
@@ -42,6 +42,9 @@ export async function loadLore(project: Project): Promise<WorldLore> {
         showcaseSettings: raw.showcaseSettings && typeof raw.showcaseSettings === "object"
           ? (raw.showcaseSettings as ShowcaseSettings)
           : undefined,
+        customTemplates: Array.isArray(raw.customTemplates) ? (raw.customTemplates as CustomTemplateDefinition[]) : undefined,
+        artStyles: Array.isArray(raw.artStyles) ? (raw.artStyles as ArtStyle[]) : undefined,
+        activeArtStyleId: typeof raw.activeArtStyleId === "string" ? raw.activeArtStyleId : undefined,
       };
     }
 

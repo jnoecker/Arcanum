@@ -154,6 +154,34 @@ export interface ShowcaseSettings {
   footerText?: string;
 }
 
+// ─── Art styles ────────────────────────────────────────────────────
+
+/** Per-surface prompt overrides appended after the base prompt. */
+export interface ArtStyleSurfaces {
+  /** Appended when generating worldbuilding art (sprites, rooms, entities, abilities, icons). */
+  worldbuilding?: string;
+  /** Appended when generating lore art (portraits, lore article illustrations). */
+  lore?: string;
+}
+
+/**
+ * A named, reusable art style definition. The active style's base prompt is
+ * appended to every image generation prompt via `buildVisualStyleDirective()`,
+ * with the matching surface override appended when a surface is provided.
+ */
+export interface ArtStyle {
+  id: string;
+  name: string;
+  /** Short one-line summary, shown in the list. */
+  description?: string;
+  /** The core style prose. Appended to every image generation prompt. */
+  basePrompt: string;
+  /** Optional per-surface directives layered on top of basePrompt. */
+  surfaces?: ArtStyleSurfaces;
+  createdAt: string;
+  updatedAt: string;
+}
+
 // ─── Top-level lore container ──────────────────────────────────────
 
 export interface WorldLore {
@@ -167,6 +195,8 @@ export interface WorldLore {
   templateOverrides?: Partial<Record<ArticleTemplate, TemplateOverrides>>;
   showcaseSettings?: ShowcaseSettings;
   customTemplates?: CustomTemplateDefinition[];
+  artStyles?: ArtStyle[];
+  activeArtStyleId?: string;
 }
 
 export const DEFAULT_WORLD_LORE: WorldLore = {

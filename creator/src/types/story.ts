@@ -4,11 +4,17 @@
 
 export type SceneTemplate = "establishing_shot" | "encounter" | "discovery";
 
-/** Placeholder -- filled out in Phase 9 */
+/** Preset slot positions for entity placement in a scene. */
+export type EntitySlot =
+  | "front-left" | "front-center" | "front-right"
+  | "back-left" | "back-center" | "back-right";
+
+/** Entity in a scene -- positioned via preset slot or custom coordinates. */
 export interface SceneEntity {
   id: string;
   entityType: "mob" | "item" | "npc";
   entityId: string;
+  slot?: EntitySlot;
   position?: { x: number; y: number };
   movementPath?: string; // SVG d attribute
 }

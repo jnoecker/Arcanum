@@ -40,6 +40,14 @@ export interface EffectConfig {
   parallaxDepth?: number;
 }
 
+/** Title card overlay shown above the scene (distinct from bottom narration). */
+export type TitleCardStyle = "location" | "year" | "subtitle" | "character";
+
+export interface TitleCard {
+  text: string;
+  style?: TitleCardStyle;
+}
+
 export interface Scene {
   id: string;
   title: string;
@@ -54,6 +62,22 @@ export interface Scene {
   transition?: TransitionConfig;
   effects?: EffectConfig;
   narrationSpeed?: NarrationSpeed;
+
+  // ─── Lore links ──────────────────────────────────────────────────
+  /** Featured lore article IDs for this scene (characters, items, etc). */
+  linkedArticleIds?: string[];
+  /** Article ID for the location this scene depicts. */
+  linkedLocationArticleId?: string;
+  /** Map ID this scene is positioned on. */
+  linkedMapId?: string;
+  /** Pin ID on the linked map. */
+  linkedPinId?: string;
+  /** Timeline event ID this scene depicts. */
+  linkedTimelineEventId?: string;
+
+  // ─── Visual overlays ──────────────────────────────────────────────
+  /** Title card text overlay (top-center, distinct from narration). */
+  titleCard?: TitleCard;
 }
 
 export interface Story {
@@ -65,4 +89,22 @@ export interface Story {
   createdAt: string; // ISO 8601
   updatedAt: string; // ISO 8601
   narrationSpeed?: NarrationSpeed; // Story-level default, defaults to "normal"
+
+  // ─── Story metadata ──────────────────────────────────────────────
+  /** Short logline / pitch for this story. */
+  synopsis?: string;
+  /** Free-form tags for organization. */
+  tags?: string[];
+  /** Draft stories are excluded from the showcase export. */
+  draft?: boolean;
+
+  // ─── Story-level lore links ──────────────────────────────────────
+  /** Featured lore article IDs for the story as a whole. */
+  linkedArticleIds?: string[];
+  /** Article IDs of characters featured in this story. */
+  featuredCharacterIds?: string[];
+  /** Primary map for the story (e.g. world map for context). */
+  primaryMapId?: string;
+  /** Primary calendar system to drive timeline display. */
+  primaryCalendarId?: string;
 }

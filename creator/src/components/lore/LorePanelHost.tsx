@@ -41,6 +41,8 @@ function renderPanel(panelId: string): ReactNode {
       return <ShowcaseSettingsPanel />;
     case "templates":
       return <TemplateEditorPanel />;
+    case "storyEditor":
+      return <ArticleBrowser />;
     default:
       return <div className="px-6 py-8 text-sm text-text-muted/60">Panel not found: {panelId}</div>;
   }

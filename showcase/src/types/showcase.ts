@@ -94,6 +94,8 @@ export interface ShowcaseBranding {
   footerText?: string;
 }
 
+export type TitleCardStyle = "location" | "year" | "subtitle" | "character";
+
 export interface ShowcaseScene {
   id: string;
   title: string;
@@ -114,6 +116,15 @@ export interface ShowcaseScene {
     entrancePath?: string;
     exitPath?: string;
   }>;
+  // ─── Lore links ──────────────────────────────────────────────────
+  linkedArticleIds?: string[];
+  linkedLocationArticleId?: string;
+  linkedMapId?: string;
+  linkedPinId?: string;
+  linkedTimelineEventId?: string;
+  // ─── Visual overlays ─────────────────────────────────────────────
+  titleCard?: { text: string; style?: TitleCardStyle };
+  effects?: { particles?: string; parallaxLayers?: number; parallaxDepth?: number };
 }
 
 export interface ShowcaseStory {
@@ -127,6 +138,14 @@ export interface ShowcaseStory {
   narrationSpeed?: "slow" | "normal" | "fast";
   createdAt: string;
   updatedAt: string;
+  // ─── Story metadata ──────────────────────────────────────────────
+  synopsis?: string;
+  tags?: string[];
+  // ─── Story-level lore links ──────────────────────────────────────
+  linkedArticleIds?: string[];
+  featuredCharacterIds?: string[];
+  primaryMapId?: string;
+  primaryCalendarId?: string;
 }
 
 export interface ShowcaseData {

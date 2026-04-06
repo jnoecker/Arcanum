@@ -6,6 +6,7 @@ import { useRef, useState, useEffect, useCallback } from "react";
 import { LazyMotion } from "motion/react";
 import { loadMotionFeatures } from "@/lib/motionFeatures";
 import { CinematicScene } from "./CinematicScene";
+import { SceneInfoBadges } from "./SceneInfoBadges";
 import type { ShowcaseStory } from "@/types/showcase";
 import type { SceneEntity, TransitionConfig } from "@/types/story";
 import type { NarrationSpeed } from "@/lib/narrationSpeed";
@@ -147,6 +148,7 @@ export function ScrollModeContainer({ story }: ScrollModeContainerProps) {
                 roomImageSrc={scene.roomImageUrl}
               />
             </LazyMotion>
+            <SceneInfoBadges scene={scene} />
           </div>
         );
       })}

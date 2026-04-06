@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { AnimatePresence, LazyMotion } from "motion/react";
 import { loadMotionFeatures } from "@/lib/motionFeatures";
 import { CinematicScene } from "./CinematicScene";
+import { SceneInfoBadges } from "./SceneInfoBadges";
 import type { ShowcaseScene } from "@/types/showcase";
 import type { NarrationSpeed } from "@/lib/narrationSpeed";
 import type { SceneEntity } from "@/types/story";
@@ -104,6 +105,9 @@ export function CinematicRenderer({
           />
         </AnimatePresence>
       </LazyMotion>
+
+      {/* Lore badges sit above the cinematic layers (z-35 inside) */}
+      <SceneInfoBadges scene={scene} />
     </div>
   );
 }

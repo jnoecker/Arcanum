@@ -191,6 +191,18 @@ export interface ShowcaseScene {
   transition?: { type: "crossfade" | "fade_black" };
   narrationSpeed?: "slow" | "normal" | "fast";
   entities: ShowcaseSceneEntity[];
+
+  // ─── Lore links (showcase resolves these against its own article list) ──
+  /** Featured article IDs — showcase looks them up in `articles[]`. */
+  linkedArticleIds?: string[];
+  linkedLocationArticleId?: string;
+  linkedMapId?: string;
+  linkedPinId?: string;
+  linkedTimelineEventId?: string;
+
+  // ─── Visual overlays ──────────────────────────────────────────────────
+  titleCard?: { text: string; style?: "location" | "year" | "subtitle" | "character" };
+  effects?: { particles?: string; parallaxLayers?: number; parallaxDepth?: number };
 }
 
 export interface ShowcaseStory {
@@ -204,6 +216,17 @@ export interface ShowcaseStory {
   narrationSpeed?: "slow" | "normal" | "fast";
   createdAt: string;
   updatedAt: string;
+
+  // ─── Story metadata ──────────────────────────────────────────────────
+  synopsis?: string;
+  tags?: string[];
+  // draft is excluded from showcase by definition
+
+  // ─── Story-level lore links ──────────────────────────────────────────
+  linkedArticleIds?: string[];
+  featuredCharacterIds?: string[];
+  primaryMapId?: string;
+  primaryCalendarId?: string;
 }
 
 // ─── Story export context ─────────────────────────────────────────
@@ -229,45 +252,61 @@ export function exportStories(
     return `${baseUrl}/${filename}`;
   }
 
-  return contexts.map(({ story, zoneName, resolveRoomImage, resolveEntityName, resolveEntityImage }) => {
-    const scenes: ShowcaseScene[] = story.scenes
-      .slice()
-      .sort((a, b) => a.sortOrder - b.sortOrder)
-      .map((scene) => ({
-        id: scene.id,
-        title: scene.title,
-        sortOrder: scene.sortOrder,
-        roomImageUrl: scene.roomId ? resolveImageUrl(resolveRoomImage(scene.roomId)) : undefined,
-        narration: scene.narration,
-        narrationHtml: scene.narration ? tiptapToHtml(scene.narration) : undefined,
-        transition: scene.transition ? { type: scene.transition.type } : undefined,
-        narrationSpeed: scene.narrationSpeed,
-        entities: (scene.entities ?? []).map((e) => ({
-          id: e.id,
-          entityType: e.entityType,
-          entityId: e.entityId,
-          name: resolveEntityName(e.entityType, e.entityId),
-          imageUrl: resolveImageUrl(resolveEntityImage(e.entityType, e.entityId)),
-          slot: e.slot,
-          position: e.position,
-          entrancePath: e.entrancePath,
-          exitPath: e.exitPath,
-        })),
-      }));
+  return contexts
+    .filter(({ story }) => !story.draft) // Exclude drafts from showcase
+    .map(({ story, zoneName, resolveRoomImage, resolveEntityName, resolveEntityImage }) => {
+      const scenes: ShowcaseScene[] = story.scenes
+        .slice()
+        .sort((a, b) => a.sortOrder - b.sortOrder)
+        .map((scene) => ({
+          id: scene.id,
+          title: scene.title,
+          sortOrder: scene.sortOrder,
+          roomImageUrl: scene.roomId ? resolveImageUrl(resolveRoomImage(scene.roomId)) : undefined,
+          narration: scene.narration,
+          narrationHtml: scene.narration ? tiptapToHtml(scene.narration) : undefined,
+          transition: scene.transition ? { type: scene.transition.type } : undefined,
+          narrationSpeed: scene.narrationSpeed,
+          entities: (scene.entities ?? []).map((e) => ({
+            id: e.id,
+            entityType: e.entityType,
+            entityId: e.entityId,
+            name: resolveEntityName(e.entityType, e.entityId),
+            imageUrl: resolveImageUrl(resolveEntityImage(e.entityType, e.entityId)),
+            slot: e.slot,
+            position: e.position,
+            entrancePath: e.entrancePath,
+            exitPath: e.exitPath,
+          })),
+          // Lore links — showcase resolves IDs against articles[]/maps[]/timelineEvents[]
+          linkedArticleIds: scene.linkedArticleIds,
+          linkedLocationArticleId: scene.linkedLocationArticleId,
+          linkedMapId: scene.linkedMapId,
+          linkedPinId: scene.linkedPinId,
+          linkedTimelineEventId: scene.linkedTimelineEventId,
+          titleCard: scene.titleCard,
+          effects: scene.effects,
+        }));
 
-    return {
-      id: story.id,
-      title: story.title,
-      zoneId: story.zoneId,
-      zoneName,
-      coverImageUrl: resolveImageUrl(story.coverImage),
-      sceneCount: scenes.length,
-      scenes,
-      narrationSpeed: story.narrationSpeed,
-      createdAt: story.createdAt,
-      updatedAt: story.updatedAt,
-    };
-  });
+      return {
+        id: story.id,
+        title: story.title,
+        zoneId: story.zoneId,
+        zoneName,
+        coverImageUrl: resolveImageUrl(story.coverImage),
+        sceneCount: scenes.length,
+        scenes,
+        narrationSpeed: story.narrationSpeed,
+        createdAt: story.createdAt,
+        updatedAt: story.updatedAt,
+        synopsis: story.synopsis,
+        tags: story.tags,
+        linkedArticleIds: story.linkedArticleIds,
+        featuredCharacterIds: story.featuredCharacterIds,
+        primaryMapId: story.primaryMapId,
+        primaryCalendarId: story.primaryCalendarId,
+      };
+    });
 }
 
 // ─── Export pipeline ───────────────────────────────────────────────

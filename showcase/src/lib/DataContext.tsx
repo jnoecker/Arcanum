@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react";
-import type { ShowcaseData, ShowcaseArticle } from "@/types/showcase";
+import type { ShowcaseData, ShowcaseArticle, ShowcaseStory } from "@/types/showcase";
 import { applyBranding } from "@/lib/applyBranding";
 import { injectManifest } from "@/lib/pwaManifest";
 
@@ -8,6 +8,7 @@ interface DataContextValue {
   loading: boolean;
   error: string | null;
   articleById: Map<string, ShowcaseArticle>;
+  storyById: Map<string, ShowcaseStory>;
 }
 
 interface RuntimeConfig {
@@ -19,6 +20,7 @@ const DataContext = createContext<DataContextValue>({
   loading: true,
   error: null,
   articleById: new Map(),
+  storyById: new Map(),
 });
 
 export function DataProvider({ children }: { children: ReactNode }) {
@@ -26,6 +28,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [articleById, setArticleById] = useState<Map<string, ShowcaseArticle>>(new Map());
+  const [storyById, setStoryById] = useState<Map<string, ShowcaseStory>>(new Map());
 
   useEffect(() => {
     let cancelled = false;
@@ -55,6 +58,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
         const map = new Map<string, ShowcaseArticle>();
         for (const a of d.articles) map.set(a.id, a);
         setArticleById(map);
+        const storyMap = new Map<string, ShowcaseStory>();
+        for (const s of d.stories ?? []) storyMap.set(s.id, s);
+        setStoryById(storyMap);
         applyBranding(d.meta);
         injectManifest(d.meta);
       } catch (e) {
@@ -72,7 +78,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <DataContext.Provider value={{ data, loading, error, articleById }}>
+    <DataContext.Provider value={{ data, loading, error, articleById, storyById }}>
       {children}
     </DataContext.Provider>
   );

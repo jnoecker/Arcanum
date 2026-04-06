@@ -9,6 +9,8 @@ const ArticlePage = lazy(() => import("@/pages/ArticlePage").then(m => ({ defaul
 const MapsPage = lazy(() => import("@/pages/MapsPage").then(m => ({ default: m.MapsPage })));
 const TimelinePage = lazy(() => import("@/pages/TimelinePage").then(m => ({ default: m.TimelinePage })));
 const GraphPage = lazy(() => import("@/pages/GraphPage").then(m => ({ default: m.GraphPage })));
+const StoriesPage = lazy(() => import("@/pages/StoriesPage").then(m => ({ default: m.StoriesPage })));
+const StoryPlayerPage = lazy(() => import("@/pages/StoryPlayerPage").then(m => ({ default: m.StoryPlayerPage })));
 const NotFoundPage = lazy(() => import("@/pages/NotFoundPage").then(m => ({ default: m.NotFoundPage })));
 
 export function App() {
@@ -47,6 +49,8 @@ export function App() {
           <Route path="/articles/:id" element={<ArticlePage />} />
           <Route path="/maps" element={<MapsPage />} />
           <Route path="/maps/:id" element={<MapsPage />} />
+          <Route path="/stories" element={<StoriesPage />} />
+          <Route path="/stories/:id" element={<StoryPlayerPage />} />
           <Route path="/timeline" element={<TimelinePage />} />
           <Route path="/graph" element={<GraphPage />} />
           <Route path="*" element={<NotFoundPage />} />

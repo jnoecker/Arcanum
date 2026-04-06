@@ -6,6 +6,7 @@ import type { ReactNode } from "react";
 const NAV_ITEMS = [
   { to: "/", label: "Home" },
   { to: "/articles", label: "Codex" },
+  { to: "/stories", label: "Stories" },
   { to: "/maps", label: "Maps" },
   { to: "/timeline", label: "Timeline" },
   { to: "/graph", label: "Connections" },

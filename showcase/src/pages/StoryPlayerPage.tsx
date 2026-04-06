@@ -1,7 +1,7 @@
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect } from "react";
 import { useShowcase } from "@/lib/DataContext";
-import { CinematicRenderer } from "@/components/player/CinematicRenderer";
+import { StoryPlayer } from "@/components/player/StoryPlayer";
 
 // ─── StoryPlayerPage ────────────────────────────────────────────────
 
@@ -12,9 +12,6 @@ export function StoryPlayerPage() {
 
   const story = id ? storyById.get(decodeURIComponent(id)) : undefined;
 
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [playing, setPlaying] = useState(false);
-
   useEffect(() => {
     if (story) {
       document.title = `${story.title} — ${data?.meta.worldName ?? "World Lore"}`;
@@ -23,39 +20,18 @@ export function StoryPlayerPage() {
     }
   }, [story, data?.meta.worldName]);
 
-  // ─── Keyboard navigation ─────────────────────────────────────────
-
-  const handleKeyDown = useCallback(
-    (e: KeyboardEvent) => {
-      if (!story) return;
-      switch (e.key) {
-        case "ArrowRight":
-        case " ":
-        case "Enter":
-          e.preventDefault();
-          setCurrentIndex((i) => {
-            const next = Math.min(story.scenes.length - 1, i + 1);
-            if (next !== i) setPlaying(true);
-            return next;
-          });
-          break;
-        case "ArrowLeft":
-          e.preventDefault();
-          setCurrentIndex((i) => Math.max(0, i - 1));
-          break;
-        case "Escape":
-          e.preventDefault();
-          navigate("/stories");
-          break;
-      }
-    },
-    [story, navigate],
-  );
+  // ─── Escape key returns to stories listing ──────────────────────
 
   useEffect(() => {
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [handleKeyDown]);
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        navigate("/stories");
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [navigate]);
 
   // ─── Not-found state ──────────────────────────────────────────────
 
@@ -101,41 +77,8 @@ export function StoryPlayerPage() {
         {story.title}
       </h1>
 
-      {/* Player container */}
-      <div className="aspect-video w-full rounded-lg overflow-hidden bg-black">
-        <CinematicRenderer
-          scenes={story.scenes}
-          currentIndex={currentIndex}
-          playing={playing}
-          narrationSpeed={story.narrationSpeed}
-        />
-      </div>
-
-      {/* Control bar -- full version added in Plan 03 */}
-      <div className="mt-4 flex items-center justify-center gap-4">
-        <button
-          onClick={() => setCurrentIndex((i) => Math.max(0, i - 1))}
-          disabled={currentIndex === 0}
-          className="text-text-muted disabled:opacity-30 hover:text-text-primary transition-colors"
-          aria-label="Previous scene"
-        >
-          &larr; Prev
-        </button>
-        <span className="text-[12px] font-display text-text-secondary tracking-[0.12em]">
-          Scene {currentIndex + 1} / {story.scenes.length}
-        </span>
-        <button
-          onClick={() => {
-            setCurrentIndex((i) => Math.min(story.scenes.length - 1, i + 1));
-            setPlaying(true);
-          }}
-          disabled={currentIndex === story.scenes.length - 1}
-          className="text-text-muted disabled:opacity-30 hover:text-text-primary transition-colors"
-          aria-label="Next scene"
-        >
-          Next &rarr;
-        </button>
-      </div>
+      {/* Player */}
+      <StoryPlayer story={story} />
     </div>
   );
 }

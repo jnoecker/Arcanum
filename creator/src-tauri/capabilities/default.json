@@ -45,6 +45,8 @@
     },
     "shell:allow-stdin-write",
     "shell:allow-kill",
+    "window:default",
+    "window:allow-set-fullscreen",
     {
       "identifier": "shell:allow-execute",
       "allow": [

@@ -180,7 +180,6 @@ Images are served to the frontend as base64 data URLs via the `read_image_data_u
 - **PDF export**: Uses `window.print()` on a styled HTML document generated from the Markdown Lore Bible. Fonts are loaded from Google Fonts in the print document (requires internet). The print window opens in a new tab.
 - **Toolbar background image**: The toolbar filigree (`toolbar-bg.jpg`) was intentionally removed — the `instrument-panel` gradient is sufficient.
 
-<!-- GSD:project-start source:PROJECT.md -->
 ## Project
 
 **Arcanum Tuning Wizard**
@@ -196,9 +195,7 @@ A tuning wizard for Arcanum that helps MUD builders understand and configure the
 - **Config compatibility**: Preset values must produce valid `application.yaml` that the Kotlin server accepts.
 - **Non-destructive**: Wizard never overwrites values without explicit per-section user approval.
 - **Panel registry**: New wizard tab must integrate with the existing panel registry and sidebar navigation.
-<!-- GSD:project-end -->
 
-<!-- GSD:stack-start source:codebase/STACK.md -->
 ## Technology Stack
 
 ## Languages
@@ -298,9 +295,7 @@ A tuning wizard for Arcanum that helps MUD builders understand and configure the
 - Windows (primary target, uses `windows-sys` for process management)
 - WebView2 runtime
 - Showcase: Cloudflare Pages (static SPA)
-<!-- GSD:stack-end -->
 
-<!-- GSD:conventions-start source:CONVENTIONS.md -->
 ## Conventions
 
 ## Naming Patterns
@@ -432,9 +427,7 @@ A tuning wizard for Arcanum that helps MUD builders understand and configure the
 - One primary export per file for components
 - Utility files may export multiple related functions (e.g., `zoneEdits.ts` exports all CRUD functions)
 - Types grouped by domain in `creator/src/types/`: `world.ts`, `config.ts`, `lore.ts`, `project.ts`
-<!-- GSD:conventions-end -->
 
-<!-- GSD:architecture-start source:ARCHITECTURE.md -->
 ## Architecture
 
 ## Pattern Overview
@@ -540,24 +533,4 @@ A tuning wizard for Arcanum that helps MUD builders understand and configure the
 - YAML parsing: wrapped in try/catch, falls back to defaults on parse failure
 - Lore loading: returns `DEFAULT_WORLD_LORE` on any error
 ## Cross-Cutting Concerns
-<!-- GSD:architecture-end -->
 
-<!-- GSD:workflow-start source:GSD defaults -->
-## GSD Workflow Enforcement
-
-Before using Edit, Write, or other file-changing tools, start work through a GSD command so planning artifacts and execution context stay in sync.
-
-Use these entry points:
-- `/gsd:quick` for small fixes, doc updates, and ad-hoc tasks
-- `/gsd:debug` for investigation and bug fixing
-- `/gsd:execute-phase` for planned phase work
-
-Do not make direct repo edits outside a GSD workflow unless the user explicitly asks to bypass it.
-<!-- GSD:workflow-end -->
-
-<!-- GSD:profile-start -->
-## Developer Profile
-
-> Profile not yet configured. Run `/gsd:profile-user` to generate your developer profile.
-> This section is managed by `generate-claude-profile` -- do not edit manually.
-<!-- GSD:profile-end -->

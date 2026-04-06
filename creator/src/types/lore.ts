@@ -154,6 +154,21 @@ export interface ShowcaseSettings {
   footerText?: string;
 }
 
+// ─── Custom scene templates ────────────────────────────────────────
+
+/**
+ * User-defined scene template. Mirrors the built-in scene template presets
+ * (creator/src/lib/sceneTemplates.ts) but is editable from the lore tools.
+ * The narration field stores TipTap JSON as a string.
+ */
+export interface CustomSceneTemplate {
+  id: string;
+  label: string;
+  badgeColor: string;
+  defaultTitle: string;
+  defaultNarration: string;
+}
+
 // ─── Art styles ────────────────────────────────────────────────────
 
 /** Per-surface prompt overrides appended after the base prompt. */
@@ -195,6 +210,7 @@ export interface WorldLore {
   templateOverrides?: Partial<Record<ArticleTemplate, TemplateOverrides>>;
   showcaseSettings?: ShowcaseSettings;
   customTemplates?: CustomTemplateDefinition[];
+  customSceneTemplates?: CustomSceneTemplate[];
   artStyles?: ArtStyle[];
   activeArtStyleId?: string;
 }

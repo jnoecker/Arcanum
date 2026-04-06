@@ -47,6 +47,7 @@ function parseDefinition(id: string, entry: Record<string, unknown>): SpriteDefi
   return {
     displayName: String(entry.displayName ?? id),
     description: entry.description ? String(entry.description) : undefined,
+    artDirection: entry.artDirection ? String(entry.artDirection) : undefined,
     category: entry.category === "staff" ? "staff" : "general",
     sortOrder: Number(entry.sortOrder) || 0,
     requirements,
@@ -77,6 +78,7 @@ function definitionToPlain(def: SpriteDefinition): Record<string, unknown> {
     displayName: def.displayName,
   };
   if (def.description) out.description = def.description;
+  if (def.artDirection) out.artDirection = def.artDirection;
   out.category = def.category;
   out.sortOrder = def.sortOrder;
   if (def.requirements.length > 0) {

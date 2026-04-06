@@ -53,6 +53,8 @@ export type RequirementType = SpriteRequirement["type"];
 export interface SpriteDefinition {
   displayName: string;
   description?: string;
+  /** Visual prompt guidance for AI image generation — separate from player-facing description. */
+  artDirection?: string;
   category: "general" | "staff";
   sortOrder: number;
   requirements: SpriteRequirement[];

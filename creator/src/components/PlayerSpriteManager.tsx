@@ -27,7 +27,9 @@ import type {
 import type { GeneratedImage, AssetContext, SyncProgress } from "@/types/assets";
 import type { AppConfig, TierDefinitionConfig } from "@/types/config";
 import { ActionButton } from "./ui/FormWidgets";
+import { ConfirmDialog } from "./ConfirmDialog";
 import { TierSpriteScaffold } from "./TierSpriteScaffold";
+import { buildToneDirective } from "@/lib/loreGeneration";
 
 // ─── Helpers ────────────────────────────────────────────────────────
 
@@ -147,7 +149,7 @@ function spritePromptNotes(definition: SpriteDefinition, variant?: SpriteVariant
     variant?.displayName && variant.displayName !== definition.displayName
       ? `Variant label: ${variant.displayName}`
       : null,
-    definition.description?.trim() || null,
+    definition.artDirection?.trim() || definition.description?.trim() || null,
   ].filter(Boolean);
 
   return notes.length > 0 ? notes.join(". ") : undefined;
@@ -284,6 +286,168 @@ function SpriteLightbox({
   );
 }
 
+// ─── Art direction field with AI assist ─────────────────────────────
+
+function ArtDirectionField({
+  def,
+  onPatch,
+  hasLlmKey,
+}: {
+  def: SpriteDefinition;
+  onPatch: (patch: Partial<SpriteDefinition>) => void;
+  hasLlmKey: boolean;
+}) {
+  const [generating, setGenerating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleAiSuggest = async () => {
+    setGenerating(true);
+    setError(null);
+    try {
+      const toneDirective = buildToneDirective();
+      const toneBlock = toneDirective
+        ? `\nWorld tone: ${toneDirective}\nAll descriptions must match this tone.`
+        : "";
+
+      const context = [
+        `Sprite: ${def.displayName}`,
+        def.category === "staff" ? "Category: Staff (game administrator)" : "Category: General",
+        def.requirements.length > 0
+          ? `Requirements: ${def.requirements.map(requirementLabel).join(", ")}`
+          : "Requirements: None (available to all players)",
+        def.description ? `Flavor text: ${def.description}` : null,
+        def.artDirection ? `Current art direction (improve this): ${def.artDirection}` : null,
+      ].filter(Boolean).join("\n");
+
+      const systemPrompt = `You are an expert visual art director for fantasy RPG character sprites. Given context about a sprite, write a concise visual description that an AI image generator can use to produce a compelling character portrait.${toneBlock}
+
+Rules:
+- Focus on visual appearance: body type, clothing, armor, weapons, magical effects, color palette, mood
+- Be specific and vivid but concise (2-4 sentences)
+- Match the sprite's tier/requirements — higher level = more impressive gear and effects
+- For achievement sprites, make the visual reflect the accomplishment
+- For staff sprites, emphasize authority and cosmic power
+- Output ONLY the visual description — no quotes, no explanation`;
+
+      const result = await invoke<string>("llm_complete", {
+        systemPrompt,
+        userPrompt: context,
+      });
+      onPatch({ artDirection: result.trim() });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      setError(msg);
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  return (
+    <div className="flex flex-col gap-1">
+      <div className="flex items-center justify-between">
+        <span className="text-xs text-text-secondary">Art Direction</span>
+        <button
+          onClick={handleAiSuggest}
+          disabled={generating || !hasLlmKey}
+          className="shrink-0 rounded px-1.5 py-0.5 text-2xs text-accent transition-colors hover:bg-accent/10 disabled:opacity-50"
+          title={hasLlmKey ? "Use AI to suggest visual art direction" : "No LLM API key configured"}
+        >
+          {generating ? "Generating..." : "AI Suggest"}
+        </button>
+      </div>
+      <textarea
+        className="ornate-input min-h-[5rem] resize-y rounded-3xl px-4 py-3 text-sm text-text-primary"
+        placeholder="Describe the visual appearance for AI image generation — e.g. 'A battle-scarred warrior in gleaming silver plate armor with a flaming greatsword, crimson cape billowing...'"
+        value={def.artDirection ?? ""}
+        onChange={(e) => onPatch({ artDirection: e.target.value || undefined })}
+      />
+      {!def.artDirection && (
+        <p className="text-2xs text-text-muted">
+          Add art direction to guide sprite generation. Use AI Suggest for a starting point.
+        </p>
+      )}
+      {error && (
+        <span className="truncate text-2xs text-status-error" title={error}>
+          {error.length > 60 ? `${error.slice(0, 60)}…` : error}
+        </span>
+      )}
+    </div>
+  );
+}
+
+// ─── Prompt preview modal ──────────────────────────────────────────
+
+function PromptPreviewModal({
+  prompt,
+  imageId,
+  onGenerate,
+  onClose,
+}: {
+  prompt: string;
+  imageId: string;
+  onGenerate: (editedPrompt: string) => void;
+  onClose: () => void;
+}) {
+  const [editedPrompt, setEditedPrompt] = useState(prompt);
+  const trapRef = useFocusTrap<HTMLDivElement>(onClose);
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70"
+      onClick={onClose}
+    >
+      <div
+        ref={trapRef}
+        role="dialog"
+        aria-modal="true"
+        className="mx-4 flex max-h-[85vh] w-full max-w-2xl flex-col rounded-lg border border-border-default bg-bg-secondary shadow-xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between border-b border-border-default px-5 py-3">
+          <div>
+            <h2 className="font-display text-sm tracking-wide text-text-primary">
+              Preview & Generate
+            </h2>
+            <p className="mt-0.5 text-2xs text-text-muted">
+              Review and tweak the prompt before generating &mdash; {imageId}
+            </p>
+          </div>
+          <ActionButton onClick={onClose} variant="ghost" size="icon">x</ActionButton>
+        </div>
+
+        <div className="flex-1 overflow-y-auto px-5 py-4">
+          <textarea
+            className="ornate-input min-h-[20rem] w-full resize-y rounded-3xl px-4 py-3 text-sm leading-relaxed text-text-primary"
+            value={editedPrompt}
+            onChange={(e) => setEditedPrompt(e.target.value)}
+          />
+        </div>
+
+        <div className="flex items-center justify-between border-t border-border-default px-5 py-3">
+          <button
+            onClick={() => setEditedPrompt(prompt)}
+            className="text-2xs text-text-muted hover:text-text-secondary"
+          >
+            Reset to original
+          </button>
+          <div className="flex gap-2">
+            <ActionButton onClick={onClose} variant="secondary" size="sm">
+              Cancel
+            </ActionButton>
+            <ActionButton
+              onClick={() => onGenerate(editedPrompt)}
+              variant="primary"
+              size="sm"
+            >
+              Generate
+            </ActionButton>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Requirement editor row ─────────────────────────────────────────
 
 function RequirementRow({
@@ -388,6 +552,7 @@ function VariantRow({
   onPatch,
   onRemove,
   onGenerate,
+  onPreview,
   onClickThumbnail,
 }: {
   variant: SpriteVariant;
@@ -400,6 +565,7 @@ function VariantRow({
   onPatch: (index: number, patch: Partial<SpriteVariant>) => void;
   onRemove: (index: number) => void;
   onGenerate: (variant: SpriteVariant) => void;
+  onPreview: (variant: SpriteVariant) => void;
   onClickThumbnail?: () => void;
 }) {
   return (
@@ -483,6 +649,14 @@ function VariantRow({
           {generating ? "..." : "Render"}
         </ActionButton>
         <ActionButton
+          onClick={() => onPreview(variant)}
+          disabled={!hasApiKey || generating}
+          variant="ghost"
+          size="sm"
+        >
+          Preview
+        </ActionButton>
+        <ActionButton
           onClick={() => onRemove(index)}
           variant="danger"
           size="sm"
@@ -503,10 +677,12 @@ function SpriteDetailEditor({
   classes,
   spriteAssetMap,
   hasApiKey,
+  hasLlmKey,
   generating,
   onPatch,
   onDelete,
   onGenerateImage,
+  onPreviewGenerate,
   onViewSprite,
 }: {
   id: string;
@@ -515,10 +691,12 @@ function SpriteDetailEditor({
   classes: string[];
   spriteAssetMap: Map<string, { fileName: string; assetId: string }>;
   hasApiKey: boolean;
+  hasLlmKey: boolean;
   generating: string | null;
   onPatch: (patch: Partial<SpriteDefinition>) => void;
   onDelete: () => void;
   onGenerateImage: (imageId: string) => void;
+  onPreviewGenerate: (imageId: string) => void;
   onViewSprite: (imageId: string) => void;
 }) {
   const useVariants = (def.variants && def.variants.length > 0) || false;
@@ -574,6 +752,10 @@ function SpriteDetailEditor({
     onGenerateImage(variant.imageId);
   }, [onGenerateImage]);
 
+  const handlePreviewForVariant = useCallback((variant: SpriteVariant) => {
+    onPreviewGenerate(variant.imageId);
+  }, [onPreviewGenerate]);
+
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-5">
       {/* Header */}
@@ -624,11 +806,13 @@ function SpriteDetailEditor({
           Description
           <textarea
             className="ornate-input min-h-[7rem] resize-y rounded-3xl px-4 py-3 text-sm text-text-primary"
-            placeholder="Flavor text for this sprite..."
+            placeholder="Flavor text shown to players..."
             value={def.description ?? ""}
             onChange={(e) => onPatch({ description: e.target.value || undefined })}
           />
         </label>
+
+        <ArtDirectionField def={def} onPatch={onPatch} hasLlmKey={hasLlmKey} />
       </div>
 
       {/* Requirements */}
@@ -718,6 +902,7 @@ function SpriteDetailEditor({
                 onPatch={handlePatchVariant}
                 onRemove={handleRemoveVariant}
                 onGenerate={handleGenerateForVariant}
+                onPreview={handlePreviewForVariant}
                 onClickThumbnail={() => onViewSprite(variant.imageId)}
               />
             ))}
@@ -740,14 +925,24 @@ function SpriteDetailEditor({
                 />
               </label>
             </div>
-            <ActionButton
-              onClick={() => onGenerateImage(id)}
-              disabled={!hasApiKey || generating === id}
-              className="shrink-0"
-              variant="primary"
-            >
-              {generating === id ? "Generating..." : "Generate"}
-            </ActionButton>
+            <div className="flex shrink-0 flex-col gap-1">
+              <ActionButton
+                onClick={() => onGenerateImage(id)}
+                disabled={!hasApiKey || generating === id}
+                variant="primary"
+                size="sm"
+              >
+                {generating === id ? "Generating..." : "Generate"}
+              </ActionButton>
+              <ActionButton
+                onClick={() => onPreviewGenerate(id)}
+                disabled={!hasApiKey || generating === id}
+                variant="secondary"
+                size="sm"
+              >
+                Preview
+              </ActionButton>
+            </div>
           </div>
         )}
       </div>
@@ -819,6 +1014,9 @@ export function PlayerSpriteManager() {
   const [generationError, setGenerationError] = useState<string | null>(null);
   const [showScaffold, setShowScaffold] = useState(false);
   const [showBulkBgRemoval, setShowBulkBgRemoval] = useState(false);
+  const [checkedIds, setCheckedIds] = useState<Set<string>>(new Set());
+  const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
+  const [promptPreview, setPromptPreview] = useState<{ imageId: string; prompt: string } | null>(null);
   const spriteTemplateRef = useRef<SpritePromptTemplate | null>(null);
   const spriteTemplatePromiseRef = useRef<Promise<SpritePromptTemplate | null> | null>(null);
 
@@ -1004,6 +1202,122 @@ export function PlayerSpriteManager() {
     }
   }, []);
 
+  // ─── Bulk selection ────────────────────────────────────────────────
+
+  const toggleChecked = useCallback((id: string) => {
+    setCheckedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+
+  const toggleAllChecked = useCallback(() => {
+    setCheckedIds((prev) => {
+      if (prev.size === sortedDefs.length) return new Set();
+      return new Set(sortedDefs.map(([id]) => id));
+    });
+  }, [sortedDefs]);
+
+  const handleBulkDelete = useCallback(async () => {
+    for (const id of checkedIds) {
+      // Delete associated generated images
+      const def = definitions[id];
+      if (def) {
+        const imageIds: string[] = [];
+        if (def.variants && def.variants.length > 0) {
+          for (const v of def.variants) imageIds.push(v.imageId);
+        } else {
+          imageIds.push(id);
+        }
+        for (const imageId of imageIds) {
+          const asset = spriteAssetMap.get(imageId);
+          if (asset) {
+            await deleteAsset(asset.assetId).catch(() => {});
+          }
+        }
+      }
+      deleteDefinition(id);
+    }
+    if (selectedId && checkedIds.has(selectedId)) {
+      setSelectedId(null);
+    }
+    setCheckedIds(new Set());
+    setShowBulkDeleteConfirm(false);
+    await loadAssets();
+  }, [checkedIds, definitions, spriteAssetMap, selectedId, deleteDefinition, deleteAsset, loadAssets]);
+
+  // ─── Prompt preview ────────────────────────────────────────────────
+
+  const handlePreviewGenerate = useCallback(
+    async (imageId: string) => {
+      const resolved = findSpriteEntry(definitions, imageId);
+      if (!resolved) return;
+
+      const template = await ensureSpriteTemplate();
+      const dimensions = resolveSpriteDimensions(resolved.definition, resolved.variant, config);
+      const rawPrompt = buildSpritePrompt(
+        dimensions,
+        template,
+        spritePromptNotes(resolved.definition, resolved.variant),
+      );
+      setPromptPreview({ imageId, prompt: rawPrompt });
+    },
+    [config, definitions, ensureSpriteTemplate],
+  );
+
+  const handleGenerateWithPrompt = useCallback(
+    async (editedPrompt: string) => {
+      if (!promptPreview || !hasApiKey || !settings) return;
+      const { imageId } = promptPreview;
+      setPromptPreview(null);
+      setGenerating(imageId);
+      setGenerationError(null);
+
+      try {
+        const finalPrompt = hasLlmKey
+          ? await enhanceSpritePrompt(editedPrompt)
+          : editedPrompt;
+        const model = resolveImageModel(imageProvider, settings?.image_model);
+        if (!model) throw new Error("No image model available");
+
+        const dims = ENTITY_DIMENSIONS.player_sprite ?? { width: 512, height: 512 };
+
+        const image = await invoke<GeneratedImage>(imageGenerateCommand(imageProvider), {
+          prompt: finalPrompt,
+          negativePrompt: UNIVERSAL_NEGATIVE,
+          model: model.id,
+          width: dims.width,
+          height: dims.height,
+          steps: model.defaultSteps,
+          guidance: "defaultGuidance" in model ? model.defaultGuidance : null,
+          assetType: "player_sprite",
+          autoEnhance: false,
+          transparentBackground: imageProvider === "openai" && requestsTransparentBackground("player_sprite"),
+        });
+
+        const assetContext: AssetContext = { zone: "sprites", entity_type: "player_sprite", entity_id: imageId };
+        const variantGroup = `player_sprite:${imageId}`;
+
+        await acceptAsset(image, "player_sprite", finalPrompt, assetContext, variantGroup, true);
+
+        if (settings.auto_remove_bg && image.data_url) {
+          await removeBgAndSave(image.data_url, "player_sprite", assetContext, variantGroup).catch(() => {});
+        }
+
+        await loadAssets();
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        setGenerationError(message);
+        console.error("Failed to generate sprite:", err);
+      } finally {
+        setGenerating(null);
+      }
+    },
+    [promptPreview, acceptAsset, hasApiKey, hasLlmKey, imageProvider, loadAssets, settings],
+  );
+
   return (
     <div className="flex min-h-0 flex-1 flex-col bg-bg-primary">
       {/* Header */}
@@ -1111,45 +1425,79 @@ export function PlayerSpriteManager() {
               Add
             </ActionButton>
           </div>
+          {/* Bulk action bar */}
+          {checkedIds.size > 0 && (
+            <div className="flex items-center gap-2 border-b border-border-default bg-bg-elevated px-3 py-1.5">
+              <button
+                onClick={toggleAllChecked}
+                className="text-2xs text-accent hover:text-accent/80"
+              >
+                {checkedIds.size === sortedDefs.length ? "Deselect All" : "Select All"}
+              </button>
+              <span className="text-2xs text-text-muted">
+                {checkedIds.size} selected
+              </span>
+              <div className="flex-1" />
+              <ActionButton
+                onClick={() => setShowBulkDeleteConfirm(true)}
+                variant="danger"
+                size="sm"
+              >
+                Delete ({checkedIds.size})
+              </ActionButton>
+            </div>
+          )}
           <div className="flex-1 overflow-y-auto">
             {sortedDefs.map(([id, def]) => {
               const assetKey = primaryAssetKey(id, def);
               return (
-                <button
+                <div
                   key={id}
-                  onClick={() => setSelectedId(id)}
                   className={`flex w-full items-center gap-2 border-b border-white/5 px-3 py-2.5 text-left text-xs transition ${
                     selectedId === id
                       ? "bg-gradient-active text-text-primary"
                       : "text-text-secondary hover:bg-white/5"
                   }`}
                 >
-                  <SpriteThumbnail fileName={spriteAssetMap.get(assetKey)?.fileName} label={def.displayName} />
-                  <div className="min-w-0 flex-1">
-                    <div className="truncate font-medium">{def.displayName}</div>
-                    <div className="truncate text-2xs text-text-muted">{id}</div>
-                    {def.requirements.length > 0 && (
-                      <div className="mt-0.5 flex flex-wrap gap-1">
-                        {def.requirements.map((req, i) => (
-                          <span
-                            key={i}
-                            className="rounded-full bg-white/8 px-1.5 py-0.5 text-3xs text-text-muted"
-                          >
-                            {requirementLabel(req)}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                  <span className="shrink-0 text-2xs text-text-muted">
-                    {def.category === "staff" ? "S" : def.sortOrder}
-                  </span>
-                </button>
+                  <input
+                    type="checkbox"
+                    checked={checkedIds.has(id)}
+                    onChange={() => toggleChecked(id)}
+                    className="shrink-0 accent-accent"
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                  <button
+                    onClick={() => setSelectedId(id)}
+                    className="flex min-w-0 flex-1 items-center gap-2 text-left"
+                  >
+                    <SpriteThumbnail fileName={spriteAssetMap.get(assetKey)?.fileName} label={def.displayName} />
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate font-medium">{def.displayName}</div>
+                      <div className="truncate text-2xs text-text-muted">{id}</div>
+                      {def.requirements.length > 0 && (
+                        <div className="mt-0.5 flex flex-wrap gap-1">
+                          {def.requirements.map((req, i) => (
+                            <span
+                              key={i}
+                              className="rounded-full bg-white/8 px-1.5 py-0.5 text-3xs text-text-muted"
+                            >
+                              {requirementLabel(req)}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    <span className="shrink-0 text-2xs text-text-muted">
+                      {def.category === "staff" ? "S" : def.sortOrder}
+                    </span>
+                  </button>
+                </div>
               );
             })}
             {sortedDefs.length === 0 && (
-              <div className="px-3 py-6 text-xs text-text-muted">
-                No sprite definitions yet. Add one above.
+              <div className="flex flex-col gap-2 px-3 py-6 text-xs text-text-muted">
+                <p>No sprite definitions yet.</p>
+                <p>Add one above, or use <strong className="text-text-secondary">Fill Gaps</strong> to auto-create sprites for all race/class/tier combinations.</p>
               </div>
             )}
           </div>
@@ -1165,15 +1513,23 @@ export function PlayerSpriteManager() {
               classes={classes}
               spriteAssetMap={spriteAssetMap}
               hasApiKey={hasApiKey}
+              hasLlmKey={hasLlmKey}
               generating={generating}
               onPatch={handlePatchSelected}
               onDelete={handleDeleteSelected}
               onGenerateImage={handleGenerateImage}
+              onPreviewGenerate={handlePreviewGenerate}
               onViewSprite={handleViewSprite}
             />
           ) : (
-            <div className="flex h-full items-center justify-center text-sm text-text-muted">
-              Select a sprite definition or add a new one.
+            <div className="flex h-full flex-col items-center justify-center gap-3 text-center text-sm text-text-muted">
+              <p>Select a sprite definition to edit it.</p>
+              {sortedDefs.length === 0 && (
+                <p className="max-w-sm text-xs">
+                  Create your first sprite above, or use <strong className="text-text-secondary">Fill Gaps</strong> to auto-scaffold
+                  sprites for every race/class/tier combination in your config.
+                </p>
+              )}
             </div>
           )}
         </div>
@@ -1218,6 +1574,28 @@ export function PlayerSpriteManager() {
             void loadAssets();
           }}
           onClose={() => setViewSprite(null)}
+        />
+      )}
+
+      {/* Prompt preview modal */}
+      {promptPreview && (
+        <PromptPreviewModal
+          prompt={promptPreview.prompt}
+          imageId={promptPreview.imageId}
+          onGenerate={handleGenerateWithPrompt}
+          onClose={() => setPromptPreview(null)}
+        />
+      )}
+
+      {/* Bulk delete confirmation */}
+      {showBulkDeleteConfirm && (
+        <ConfirmDialog
+          title="Delete Sprites"
+          message={`Delete ${checkedIds.size} sprite definition${checkedIds.size !== 1 ? "s" : ""} and their generated images? This cannot be undone.`}
+          confirmLabel="Delete"
+          destructive
+          onConfirm={() => void handleBulkDelete()}
+          onCancel={() => setShowBulkDeleteConfirm(false)}
         />
       )}
     </div>

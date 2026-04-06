@@ -28,6 +28,7 @@ export default defineConfig(async () => ({
           if (id.includes("@tauri-apps")) return "vendor-tauri";
           if (id.includes("/yaml/")) return "vendor-yaml";
           if (id.includes("recharts")) return "vendor-charts";
+          if (id.includes("motion")) return "vendor-motion";
           return undefined;
         },
       },

@@ -60,7 +60,7 @@ Plans:
 **Plans:** 2 plans
 Plans:
 - [x] 08-01-PLAN.md -- storyStore scene operations (add/remove/reorder/update/duplicate), scene template presets, dnd-kit install, unit tests
-- [ ] 08-02-PLAN.md -- SceneTimeline, SceneCard, SceneContextMenu, SceneDetailEditor, DmNotesSection, TemplatePicker, StoryEditorPanel rewrite
+- [x] 08-02-PLAN.md -- SceneTimeline, SceneCard, SceneContextMenu, SceneDetailEditor, DmNotesSection, TemplatePicker, StoryEditorPanel rewrite
 **UI hint**: yes
 
 ### Phase 9: Scene Composition

@@ -1,5 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import type { WorldFile, RoomFile, MobFile, ItemFile } from "@/types/world";
+import { buildToneDirective } from "./loreGeneration";
 
 interface ZoneGenerationParams {
   zoneName: string;
@@ -338,8 +339,13 @@ export async function generateZoneContent(
   const entityCount = params.roomCount + params.mobCount + params.itemCount;
   const maxTokens = Math.max(2048, entityCount * 300);
 
+  const tone = buildToneDirective();
+  const systemPrompt = tone
+    ? `${SYSTEM_PROMPT}\n\nWorld context: ${tone}`
+    : SYSTEM_PROMPT;
+
   const response = await invoke<string>("llm_complete", {
-    systemPrompt: SYSTEM_PROMPT,
+    systemPrompt,
     userPrompt,
     maxTokens,
   });

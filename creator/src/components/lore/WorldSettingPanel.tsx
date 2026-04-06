@@ -4,7 +4,7 @@ import type { Article } from "@/types/lore";
 import { Section, FieldRow, TextInput } from "@/components/ui/FormWidgets";
 import { LoreTextArea } from "./LoreTextArea";
 import { LoreEditor } from "./LoreEditor";
-import { WORLD_SETTING_GENERATE_PROMPT } from "@/lib/lorePrompts";
+import { getWorldSettingGeneratePrompt } from "@/lib/lorePrompts";
 
 // ─── String list editor (themes) ───────────────────────────────────
 
@@ -181,7 +181,7 @@ export function WorldSettingPanel() {
           value={content}
           onCommit={(v) => patchContent(v || "")}
           placeholder="Describe your world at a high level — its defining features, cultures, and conflicts..."
-          generateSystemPrompt={WORLD_SETTING_GENERATE_PROMPT}
+          generateSystemPrompt={getWorldSettingGeneratePrompt()}
           generateUserPrompt="Write a vivid world overview for this fantasy MUD setting."
           context={worldContext}
         />
@@ -194,7 +194,7 @@ export function WorldSettingPanel() {
           onCommit={(v) => patchField("history", v || undefined)}
           placeholder="The creation myth, major ages, wars, and turning points..."
           rows={8}
-          generateSystemPrompt={WORLD_SETTING_GENERATE_PROMPT}
+          generateSystemPrompt={getWorldSettingGeneratePrompt()}
           generateUserPrompt="Write a rich creation myth and historical timeline for this world."
           context={worldContext}
         />
@@ -207,7 +207,7 @@ export function WorldSettingPanel() {
           onCommit={(v) => patchField("geography", v || undefined)}
           placeholder="Continents, biomes, major landmarks, and how geography shapes civilisation..."
           rows={6}
-          generateSystemPrompt={WORLD_SETTING_GENERATE_PROMPT}
+          generateSystemPrompt={getWorldSettingGeneratePrompt()}
           generateUserPrompt="Describe the broad geography and major regions of this world."
           context={worldContext}
         />
@@ -220,7 +220,7 @@ export function WorldSettingPanel() {
           onCommit={(v) => patchField("magic", v || undefined)}
           placeholder="How magic works, its sources, limits, and cultural significance..."
           rows={6}
-          generateSystemPrompt={WORLD_SETTING_GENERATE_PROMPT}
+          generateSystemPrompt={getWorldSettingGeneratePrompt()}
           generateUserPrompt="Design a magic system for this world — its sources, rules, and cultural role."
           context={worldContext}
         />
@@ -233,7 +233,7 @@ export function WorldSettingPanel() {
           onCommit={(v) => patchField("technology", v || undefined)}
           placeholder="What level of technology exists? How does it interact with magic?..."
           rows={6}
-          generateSystemPrompt={WORLD_SETTING_GENERATE_PROMPT}
+          generateSystemPrompt={getWorldSettingGeneratePrompt()}
           generateUserPrompt="Describe the technology level and civilisational development of this world."
           context={worldContext}
         />

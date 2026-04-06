@@ -1,4 +1,5 @@
 import type { AssetType } from "@/types/assets";
+import { buildToneDirective } from "./loreGeneration";
 
 // ─── Art Style System ─────────────────────────────────────────────
 
@@ -259,8 +260,8 @@ export const ASSET_TEMPLATES: Record<AssetType, { label: string; templates: Reco
   player_sprite: {
     label: "Player Sprite",
     templates: {
-      arcanum: `A heroic fantasy character portrait against deep cosmic indigo void — the character stands in a confident adventuring pose, rendered with faithful anatomy and detailed equipment appropriate to their class and level, baroque aurum-gold energy scrollwork frames the figure as an ornate portrait border, warm golden light illuminates the character from a central point creating soft bloom, cool blue-violet atmospheric fill provides depth, the character's race is clearly depicted with distinct physical features, the character should appear gender-neutral or androgynous, equipment quality and ornamentation reflects their power tier, centered square portrait composition, painterly, luminous, extremely detailed, heroic`,
-      gentle_magic: `A fantasy character portrait in a gentle enchanted setting — the character stands in a natural adventuring pose, rendered with faithful anatomy and detailed equipment appropriate to their class and level, soft ambient light in lavender and pale blue creates a dreamlike atmosphere, the character's race is clearly depicted with warm approachable features, the character should appear gender-neutral or androgynous, equipment has a handcrafted quality with subtle magical glow, floating motes of light and gentle atmospheric haze surround the figure, small organic details like moss or tiny flowers at their feet, centered square portrait composition, painterly, luminous, dreamlike, characterful`,
+      arcanum: `A heroic fantasy character portrait against deep cosmic indigo void — the character stands in a confident adventuring pose, rendered with faithful anatomy and detailed equipment appropriate to their class and level, baroque aurum-gold energy scrollwork frames the figure as an ornate portrait border, warm golden light illuminates the character from a central point creating soft bloom, cool blue-violet atmospheric fill provides depth, the character's race is clearly depicted with distinct physical features, equipment quality and ornamentation reflects their power tier, centered square portrait composition, painterly, luminous, extremely detailed, heroic`,
+      gentle_magic: `A fantasy character portrait in a gentle enchanted setting — the character stands in a natural adventuring pose, rendered with faithful anatomy and detailed equipment appropriate to their class and level, soft ambient light in lavender and pale blue creates a dreamlike atmosphere, the character's race is clearly depicted with warm approachable features, equipment has a handcrafted quality with subtle magical glow, floating motes of light and gentle atmospheric haze surround the figure, small organic details like moss or tiny flowers at their feet, centered square portrait composition, painterly, luminous, dreamlike, characterful`,
     },
   },
   class_portrait: {
@@ -494,10 +495,14 @@ export function getEnhanceSystemPrompt(style: ArtStyle, assetType?: string): str
   const base = style === "arcanum"
     ? ENHANCE_SYSTEM_PROMPT_ARCANUM
     : ENHANCE_SYSTEM_PROMPT_GENTLE_MAGIC;
-  if (assetType === "ability_icon" || assetType === "status_effect_icon" || assetType === "ability_sprite") {
-    return `${base}\n\n${CLASS_COLOR_PALETTES}`;
-  }
-  return base;
+  const tone = buildToneDirective();
+  const toneBlock = tone
+    ? `\n\n## World Context\n${tone}\nEnsure the visual tone matches this world. Do not add dark, horror, or grimdark elements unless the world's tone calls for it.`
+    : "";
+  const palettes = (assetType === "ability_icon" || assetType === "status_effect_icon" || assetType === "ability_sprite")
+    ? `\n\n${CLASS_COLOR_PALETTES}`
+    : "";
+  return `${base}${toneBlock}${palettes}`;
 }
 
 const CUSTOM_ASSET_SYSTEM_PROMPT_ARCANUM = `You are an expert image prompt engineer for AI image generators. You work exclusively within the Arcanum art style (arcanum_v1).
@@ -521,9 +526,14 @@ Rules:
 Output ONLY the finished prompt text — no explanation, no labels, no markdown.`;
 
 export function getCustomAssetSystemPrompt(style: ArtStyle): string {
-  return style === "arcanum"
+  const base = style === "arcanum"
     ? CUSTOM_ASSET_SYSTEM_PROMPT_ARCANUM
     : CUSTOM_ASSET_SYSTEM_PROMPT_GENTLE_MAGIC;
+  const tone = buildToneDirective();
+  const toneBlock = tone
+    ? `\n\n## World Context\n${tone}\nEnsure the visual tone matches this world.`
+    : "";
+  return `${base}${toneBlock}`;
 }
 
 export function buildCustomAssetPrompt(

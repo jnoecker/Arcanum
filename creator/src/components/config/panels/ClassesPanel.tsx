@@ -2,7 +2,7 @@ import { useMemo, useCallback } from "react";
 import type { ConfigPanelProps } from "./types";
 import type { AppConfig, ClassDefinitionConfig } from "@/types/config";
 import { EnhanceDescriptionButton } from "@/components/editors/EditorShared";
-import { BACKSTORY_ENHANCE_PROMPT } from "@/lib/lorePrompts";
+import { getBackstoryEnhancePrompt } from "@/lib/lorePrompts";
 import { chartTokens } from "@/lib/cssTokens";
 import {
   FieldRow,
@@ -161,7 +161,7 @@ export function ClassDetail({
         entitySummary={buildContext()}
         currentDescription={cls.backstory}
         onAccept={(text) => patch({ backstory: text })}
-        systemPrompt={BACKSTORY_ENHANCE_PROMPT}
+        systemPrompt={getBackstoryEnhancePrompt()}
         label="Enhance backstory"
       />
 

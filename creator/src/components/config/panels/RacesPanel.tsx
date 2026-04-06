@@ -7,7 +7,7 @@ import { FieldRow, TextInput, IconButton, CommitTextarea } from "@/components/ui
 import { RegistryPanel } from "./RegistryPanel";
 import { EntityArtGenerator } from "@/components/ui/EntityArtGenerator";
 import { EnhanceDescriptionButton } from "@/components/editors/EditorShared";
-import { BACKSTORY_ENHANCE_PROMPT } from "@/lib/lorePrompts";
+import { getBackstoryEnhancePrompt } from "@/lib/lorePrompts";
 import { composePrompt, type ArtStyle } from "@/lib/arcanumPrompts";
 import { useAssetStore } from "@/stores/assetStore";
 
@@ -18,8 +18,7 @@ Given a race's name, lore, and traits, write a concise but vivid prompt fragment
 Rules:
 - 1-3 sentences of dense visual detail optimized for AI image generation
 - Focus on: body shape, skin/surface material, colors, face, hair/head features, any magical visual effects
-- All figures must be ANDROGYNOUS — no gender signifiers. Explicitly state "completely flat chest with no gendered features" for humanoid races
-- Lean into alien/fantastical aspects — these are not humans
+- Match the visual tone to the world's setting and themes
 - Do NOT include clothing, armor, or weapons — the class system handles those
 - Output ONLY the description text — no quotes, no explanation`;
 
@@ -33,7 +32,6 @@ Rules:
 - Incorporate the race's core visual identity but elevated to godlike levels
 - Include dramatic magical effects: halos, orbiting elements, reality distortion, blazing energy
 - Must be unmistakably different from player sprites — a being of supreme authority
-- All figures must be ANDROGYNOUS
 - Output ONLY the prompt text — no quotes, no explanation`;
 
 export function defaultRaceDefinition(raw: string): RaceDefinitionConfig {
@@ -156,7 +154,7 @@ export function RaceDetail({
         entitySummary={buildContext()}
         currentDescription={race.backstory}
         onAccept={(text) => patch({ backstory: text })}
-        systemPrompt={BACKSTORY_ENHANCE_PROMPT}
+        systemPrompt={getBackstoryEnhancePrompt()}
         label="Enhance backstory"
       />
 

@@ -1,5 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import { STYLE_SUFFIX, parseLlmJson } from "./arcanumPrompts";
+import { buildToneDirective } from "./loreGeneration";
 import type { AbilityDefinitionConfig, StatusEffectDefinitionConfig } from "@/types/config";
 
 const FORMAT_SPEC =
@@ -28,7 +29,10 @@ function getClassPalette(classId: string | undefined): string {
 
 // ─── Prompt generation system prompt ─────────────────────────────────
 
-const SYSTEM_PROMPT = `You are an expert image prompt engineer for AI image generators. You create prompts for fantasy RPG ability/spell/status-effect icons in the Surreal Gentle Magic design system.
+function getAbilitySystemPrompt(): string {
+  const tone = buildToneDirective();
+  const toneBlock = tone ? `\n\nWorld context: ${tone}` : "";
+  return `You are an expert image prompt engineer for AI image generators. You create prompts for fantasy RPG ability/spell/status-effect icons in the Surreal Gentle Magic design system.${toneBlock}
 
 Your task: given a game ability or status effect definition, create an image generation prompt for a symbolic icon. The icon should:
 - Be a single centered symbolic/iconic illustration (NOT a scene, NOT a character portrait)
@@ -60,6 +64,7 @@ Your task: given a game ability or status effect definition, create an image gen
 - The icon should read clearly at small sizes (256x256)
 
 Output ONLY the prompt text — no labels, no markdown, no commentary.`;
+}
 
 // ─── Single-ability prompt generation ────────────────────────────────
 
@@ -83,7 +88,7 @@ Required style suffix (include verbatim at the end):
 ${STYLE_SUFFIX}`;
 
   return invoke<string>("llm_complete", {
-    systemPrompt: SYSTEM_PROMPT,
+    systemPrompt: getAbilitySystemPrompt(),
     userPrompt: userContent,
   });
 }
@@ -112,7 +117,7 @@ Required style suffix (include verbatim at the end):
 ${STYLE_SUFFIX}`;
 
   return invoke<string>("llm_complete", {
-    systemPrompt: SYSTEM_PROMPT,
+    systemPrompt: getAbilitySystemPrompt(),
     userPrompt: userContent,
   });
 }
@@ -234,25 +239,28 @@ export function fillStatusEffectTemplate(
 
 // ─── Per-ability LLM enhancement ─────────────────────────────────────
 
-const ABILITY_ENHANCE_SYSTEM = `You are an expert AI image prompt engineer. You receive a draft image generation prompt for a fantasy RPG ability icon and refine it into a stronger, more cohesive prompt.
+/**
+ * Refine an assembled ability icon prompt via LLM for better image generation results.
+ * Falls back to the original prompt if the LLM call fails.
+ */
+export async function enhanceAbilityPrompt(rawPrompt: string): Promise<string> {
+  const tone = buildToneDirective();
+  const toneRule = tone ? `\n- Match the world's tone: ${tone}` : "";
+
+  const systemPrompt = `You are an expert AI image prompt engineer. You receive a draft image generation prompt for a fantasy RPG ability icon and refine it into a stronger, more cohesive prompt.
 
 Rules:
 - Preserve ALL visual details from the original (color palette, effect type visuals, symbolic imagery)
 - Tighten wording: remove redundancy, merge overlapping phrases, sharpen visual language
 - Ensure the icon is SYMBOLIC — no characters, no hands, no faces
 - Keep the icon readable at small sizes (256x256)
-- Keep the solid pale lavender (#d8d0e8) background specification
+- Keep the solid pale lavender (#d8d0e8) background specification${toneRule}
 - Do NOT add the style suffix — it will be appended automatically
 - Output ONLY the refined prompt text — no quotes, no explanation, no preamble`;
 
-/**
- * Refine an assembled ability icon prompt via LLM for better image generation results.
- * Falls back to the original prompt if the LLM call fails.
- */
-export async function enhanceAbilityPrompt(rawPrompt: string): Promise<string> {
   try {
     const enhanced = await invoke<string>("llm_complete", {
-      systemPrompt: ABILITY_ENHANCE_SYSTEM,
+      systemPrompt,
       userPrompt: `Refine this ability icon generation prompt:\n\n${rawPrompt}`,
     });
     return `${enhanced.trim()}\n\n${STYLE_SUFFIX}`;

@@ -4,7 +4,7 @@ import type { Article, ArticleRelation } from "@/types/lore";
 import { DefinitionWorkbench } from "@/components/config/DefinitionWorkbench";
 import { Section, FieldRow, TextInput } from "@/components/ui/FormWidgets";
 import { LoreEditor } from "./LoreEditor";
-import { FACTION_GENERATE_PROMPT } from "@/lib/lorePrompts";
+import { getFactionGeneratePrompt } from "@/lib/lorePrompts";
 
 // ─── String list editor ─────────────────────────────────────────────
 
@@ -227,7 +227,7 @@ function FactionDetail({
           value={faction.description}
           onCommit={(v) => patch({ description: v || "" })}
           placeholder="History, purpose, culture, and role in the world..."
-          generateSystemPrompt={FACTION_GENERATE_PROMPT}
+          generateSystemPrompt={getFactionGeneratePrompt()}
           generateUserPrompt={`Write a description for the faction "${faction.displayName}".${faction.motto ? ` Their motto is: "${faction.motto}"` : ""}${faction.territory ? ` They control: ${faction.territory}` : ""}`}
           context={worldContext}
         />

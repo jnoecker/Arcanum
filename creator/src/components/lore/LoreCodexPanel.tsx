@@ -7,7 +7,7 @@ import { LoreEditor } from "./LoreEditor";
 import { MentionSuggestionsPanel } from "./MentionSuggestionsPanel";
 import { AuditPanel } from "./AuditPanel";
 import { GapAnalysisPanel } from "./GapAnalysisPanel";
-import { CODEX_GENERATE_PROMPT } from "@/lib/lorePrompts";
+import { getCodexGeneratePrompt } from "@/lib/lorePrompts";
 import { tiptapToPlainText } from "@/lib/loreRelations";
 
 const CODEX_CATEGORIES = [
@@ -203,7 +203,7 @@ function CodexDetail({
           value={entry.content}
           onCommit={(v) => patch({ content: v })}
           placeholder="Write your lore entry here..."
-          generateSystemPrompt={CODEX_GENERATE_PROMPT}
+          generateSystemPrompt={getCodexGeneratePrompt()}
           generateUserPrompt={`Write a lore encyclopedia entry titled "${entry.title}"${entry.category ? ` in the category "${entry.category}"` : ""}.`}
           context={worldContext}
         />

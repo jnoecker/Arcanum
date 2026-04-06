@@ -1,6 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import { STYLE_SUFFIX, parseLlmJson } from "./arcanumPrompts";
 import { useConfigStore } from "@/stores/configStore";
+import { buildToneDirective } from "./loreGeneration";
 import { DEFAULT_CLASS_SHOWCASE_RACES } from "./defaultSpriteData";
 import { getRaceBodyDescription, getClassOutfitDescription } from "./spritePromptGen";
 
@@ -35,7 +36,7 @@ const CLASS_FORMAT_SPEC =
  * the image generator receives strong style steering at the very start.
  */
 const PORTRAIT_PROMPT_PREFIX =
-  "Digital fantasy painting in the Surreal Gentle Magic style (surreal_softmagic_v1), dreamy storybook illustration with visible soft painterly brushwork and textured rendering throughout, soft lavender and pale blue undertones, ambient diffused magical lighting with no clear source, gentle atmospheric haze with floating motes of light. NOT a photograph, NOT a 3D render, NOT concept art. 2:3 portrait orientation. All figures are fully clothed and androgynous with completely flat chests — no breasts, no cleavage, no exposed skin on the torso. All figures have a humanoid body shape with two arms and two legs.";
+  "Digital fantasy painting in the Surreal Gentle Magic style (surreal_softmagic_v1), dreamy storybook illustration with visible soft painterly brushwork and textured rendering throughout, soft lavender and pale blue undertones, ambient diffused magical lighting with no clear source, gentle atmospheric haze with floating motes of light. NOT a photograph, NOT a 3D render, NOT concept art. 2:3 portrait orientation.";
 
 // ─── Data resolution ─────────────────────────────────────────────────
 
@@ -65,7 +66,12 @@ export async function generatePortraitTemplate(
     .map((c) => `- ${c}: ${getClassOutfitDescription(c)}`)
     .join("\n");
 
-  const systemPrompt = `You are an expert image prompt engineer for AI image generators. You work EXCLUSIVELY within the Surreal Gentle Magic (surreal_softmagic_v1) design system.
+  const toneDirective = buildToneDirective();
+  const toneBlock = toneDirective
+    ? `\n\n## World Context\n${toneDirective}\nAll generated descriptions must match this world's tone. Do not add dark, grimdark, horror, or violent imagery unless the world's tone explicitly calls for it.`
+    : "";
+
+  const systemPrompt = `You are an expert image prompt engineer for AI image generators. You work EXCLUSIVELY within the Surreal Gentle Magic (surreal_softmagic_v1) design system.${toneBlock}
 
 ## CRITICAL STYLE RULES — every portrait MUST follow these:
 - DIGITAL FANTASY PAINTING — visible painterly brushwork, soft textured rendering. Think dreamy storybook illustration.
@@ -87,7 +93,7 @@ Your task: produce a JSON object with these fields:
 
 2. "classTemplate" — a prompt template for CLASS portraits using placeholders {race_description} and {class_outfit}. The template MUST begin with "Digital fantasy painting in the Surreal Gentle Magic style, dreamy storybook illustration with visible painterly brushwork," followed by the portrait description. Class portraits depict a character (race varies — described by {race_description}) wearing the class outfit in an atmospheric scene. Mid-shot framing.
 
-3. "raceDescriptions" — an object mapping each race key to an optimized prompt-fragment for that race's appearance. Lean into alien/fantastical. All androgynous. For humanoid races, explicitly note angular androgynous features, no gendered body features.
+3. "raceDescriptions" — an object mapping each race key to an optimized prompt-fragment for that race's appearance. Base these closely on the provided race descriptions. If a race has only a name (no description), invent an appearance that fits the world's tone.
 
 4. "classOutfits" — an object mapping each class key to a vivid prompt-fragment for the class outfit, weapons, and magical effects at their most impressive (Legendary tier).
 
@@ -150,7 +156,7 @@ export function fillPortraitTemplate(
 
   // Class portrait — uses a curated race for each class to showcase diversity
   const showcaseRace = getShowcaseRace(dimensions.key);
-  const raceDesc = getRaceBodyDescription(showcaseRace) || "androgynous humanoid";
+  const raceDesc = getRaceBodyDescription(showcaseRace) || "humanoid adventurer";
   const classOutfit = getClassOutfitDescription(dimensions.key)
     || template.classOutfits[dimensions.key]
     || dimensions.key;

@@ -3,7 +3,7 @@ import type { Article } from "@/types/lore";
 import { TEMPLATE_SCHEMAS } from "@/lib/loreTemplates";
 import { buildWorldContext } from "@/lib/loreGeneration";
 import { tiptapToPlainText, plainTextToTiptap } from "@/lib/loreRelations";
-import { REWRITE_SYSTEM_PROMPT } from "@/lib/lorePrompts";
+import { getRewriteSystemPrompt } from "@/lib/lorePrompts";
 
 export interface RewriteResult {
   content: string; // TipTap JSON string
@@ -37,7 +37,7 @@ export async function rewriteArticle(
   ].join("");
 
   const raw = await invoke<string>("llm_complete", {
-    systemPrompt: REWRITE_SYSTEM_PROMPT,
+    systemPrompt: getRewriteSystemPrompt(),
     userPrompt,
   });
 

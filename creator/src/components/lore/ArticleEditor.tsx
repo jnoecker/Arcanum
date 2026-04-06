@@ -5,7 +5,7 @@ import { TEMPLATE_SCHEMAS } from "@/lib/loreTemplates";
 import { Section } from "@/components/ui/FormWidgets";
 import { LoreEditor } from "./LoreEditor";
 import { TemplateFields } from "./TemplateFields";
-import { CODEX_GENERATE_PROMPT } from "@/lib/lorePrompts";
+import { getCodexGeneratePrompt } from "@/lib/lorePrompts";
 import { buildWorldContext } from "@/lib/loreGeneration";
 import { ArticleArtSection } from "./ArticleArtSection";
 import { RewriteDialog } from "./RewriteDialog";
@@ -282,7 +282,7 @@ export function ArticleEditor({ articleId }: { articleId: string }) {
           value={article.content}
           onCommit={(v) => patch({ content: v })}
           placeholder={`Write about ${article.title}...`}
-          generateSystemPrompt={CODEX_GENERATE_PROMPT}
+          generateSystemPrompt={getCodexGeneratePrompt()}
           generateUserPrompt={`Write a lore article titled "${article.title}" (type: ${schema?.label ?? article.template}).`}
           context={worldContext}
         />

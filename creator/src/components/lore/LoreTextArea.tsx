@@ -1,7 +1,7 @@
 import { useState, useCallback } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { CommitTextarea } from "@/components/ui/FormWidgets";
-import { LORE_ENHANCE_PROMPT } from "@/lib/lorePrompts";
+import { getLoreEnhancePrompt } from "@/lib/lorePrompts";
 
 interface LoreTextAreaProps {
   label: string;
@@ -13,7 +13,7 @@ interface LoreTextAreaProps {
   generateSystemPrompt?: string;
   /** User prompt builder for generation — receives current world context. */
   generateUserPrompt?: string;
-  /** System prompt for enhancing existing text. Defaults to LORE_ENHANCE_PROMPT. */
+  /** System prompt for enhancing existing text. Defaults to getLoreEnhancePrompt(). */
   enhanceSystemPrompt?: string;
   /** Extra context appended to the user prompt. */
   context?: string;
@@ -31,7 +31,7 @@ export function LoreTextArea({
   rows = 6,
   generateSystemPrompt,
   generateUserPrompt,
-  enhanceSystemPrompt = LORE_ENHANCE_PROMPT,
+  enhanceSystemPrompt,
   context,
 }: LoreTextAreaProps) {
   const [loading, setLoading] = useState<"generate" | "enhance" | null>(null);
@@ -61,7 +61,7 @@ export function LoreTextArea({
       const parts = [value];
       if (context) parts.push(`\nWorld context: ${context}`);
       const result = await invoke<string>("llm_complete", {
-        systemPrompt: enhanceSystemPrompt,
+        systemPrompt: enhanceSystemPrompt ?? getLoreEnhancePrompt(),
         userPrompt: parts.join("\n"),
       });
       onCommit(result.trim());

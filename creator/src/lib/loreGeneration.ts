@@ -7,6 +7,35 @@ import { tiptapToPlainText } from "@/lib/loreRelations";
 // ─── World context builder ──────────────────────────────────────────
 
 /**
+ * Build a lightweight tone directive for AI system prompts.
+ * Returns world name + tone + themes in ~50 words.
+ * Injected into EVERY AI system prompt (text and image generation).
+ */
+export function buildToneDirective(): string {
+  const lore = useLoreStore.getState().lore;
+  if (!lore) return "";
+
+  const ws = Object.values(lore.articles).find((a) => a.template === "world_setting");
+  if (!ws) return "";
+
+  const name = typeof ws.fields.name === "string" ? ws.fields.name : "";
+  const tone = typeof ws.fields.tone === "string" ? ws.fields.tone : "";
+  const tagline = typeof ws.fields.tagline === "string" ? ws.fields.tagline : "";
+  const themes = Array.isArray(ws.fields.themes) ? ws.fields.themes.join(", ") : "";
+
+  if (!name && !tone && !tagline && !themes) return "";
+
+  const parts: string[] = [];
+  if (name) parts.push(`World: ${name}.`);
+  if (tagline) parts.push(tagline);
+  if (tone) parts.push(`Tone: ${tone}.`);
+  if (themes) parts.push(`Themes: ${themes}.`);
+  parts.push("All generated content must match this world's tone and themes.");
+
+  return parts.join(" ");
+}
+
+/**
  * Build a rich world context summary for AI generation.
  * Includes world setting, key articles grouped by template with
  * brief summaries, template AI descriptions, and timeline highlights.
@@ -20,19 +49,25 @@ export function buildWorldContext(): string {
   const overrides = lore.templateOverrides ?? {};
   const parts: string[] = [];
 
+  // ── Tone directive (always first) ──
+  const toneDirective = buildToneDirective();
+  if (toneDirective) parts.push(toneDirective);
+
   // ── World setting ──
   const ws = Object.values(articles).find((a) => a.template === "world_setting");
   if (ws) {
     const name = typeof ws.fields.name === "string" ? ws.fields.name : "";
     const tagline = typeof ws.fields.tagline === "string" ? ws.fields.tagline : "";
+    const tone = typeof ws.fields.tone === "string" ? ws.fields.tone : "";
     const era = typeof ws.fields.era === "string" ? ws.fields.era : "";
     const themes = Array.isArray(ws.fields.themes) ? ws.fields.themes.join(", ") : "";
     const magic = typeof ws.fields.magic === "string" ? ws.fields.magic : "";
 
-    if (name) parts.push(`World: ${name}`);
-    if (tagline) parts.push(tagline);
+    if (name && !toneDirective) parts.push(`World: ${name}`);
+    if (tagline && !toneDirective) parts.push(tagline);
+    if (tone && !toneDirective) parts.push(`Tone: ${tone}`);
     if (era) parts.push(`Current era: ${era}`);
-    if (themes) parts.push(`Themes: ${themes}`);
+    if (themes && !toneDirective) parts.push(`Themes: ${themes}`);
     if (magic) parts.push(`Magic: ${magic.slice(0, 300)}`);
 
     const prose = tiptapToPlainText(ws.content);
@@ -95,7 +130,10 @@ function worldContextSummary(): string {
   return buildWorldContext();
 }
 
-const ARTICLE_GEN_SYSTEM = `You are a world-building assistant for a fantasy MUD game.
+function getArticleGenSystem(): string {
+  const tone = buildToneDirective();
+  const toneBlock = tone ? `\n${tone}\n` : "";
+  return `You are a world-building assistant for a fantasy MUD game.${toneBlock}
 Generate a complete article as JSON. The JSON must match this exact shape:
 {
   "title": "string",
@@ -107,13 +145,14 @@ Generate a complete article as JSON. The JSON must match this exact shape:
 Output ONLY valid JSON — no markdown fences, no explanation, no preamble.
 The content field should be rich, evocative prose suitable for a game world bible.
 Template-specific fields should be filled with concrete, specific values (not generic placeholders).`;
+}
 
 const WORLD_SEED_SYSTEM = `You are a world-building assistant for a fantasy MUD game.
 Given a concept paragraph, generate a complete starter world as JSON with this exact shape:
 {
   "worldSetting": {
     "title": "string",
-    "fields": { "name": "string", "tagline": "string", "era": "string", "themes": ["string"], "geography": "string", "magic": "string", "technology": "string", "history": "string" },
+    "fields": { "name": "string", "tagline": "string", "tone": "string (e.g. whimsical, grimdark, heroic, cozy, surreal)", "era": "string", "themes": ["string"], "geography": "string", "magic": "string", "technology": "string", "history": "string" },
     "content": "string (world overview prose)"
   },
   "organizations": [
@@ -161,7 +200,7 @@ World context:
 ${worldContextSummary()}`;
 
   const result = await invoke<string>("llm_complete", {
-    systemPrompt: ARTICLE_GEN_SYSTEM,
+    systemPrompt: getArticleGenSystem(),
     userPrompt,
     maxTokens: 2048,
   });
@@ -211,7 +250,7 @@ World context:
 ${worldContextSummary()}`;
 
   const result = await invoke<string>("llm_complete", {
-    systemPrompt: ARTICLE_GEN_SYSTEM.replace("Generate a complete article as JSON", "Generate an array of articles as JSON"),
+    systemPrompt: getArticleGenSystem().replace("Generate a complete article as JSON", "Generate an array of articles as JSON"),
     userPrompt,
     maxTokens: 4096,
   });

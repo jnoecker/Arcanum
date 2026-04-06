@@ -31,6 +31,7 @@ export const TEMPLATE_SCHEMAS: Record<ArticleTemplate, TemplateSchema> = {
     fields: [
       { key: "name", label: "World name", type: "text", placeholder: "The name of your world" },
       { key: "tagline", label: "Tagline", type: "text", placeholder: "A one-line hook for your setting" },
+      { key: "tone", label: "Tone", type: "text", placeholder: "e.g. whimsical, grimdark, heroic, cozy, surreal" },
       { key: "era", label: "Current era", type: "text", placeholder: "e.g. The Age of Fractures" },
       { key: "themes", label: "Themes", type: "tags", placeholder: "Add a theme..." },
       { key: "geography", label: "Geography", type: "textarea", placeholder: "Continents, biomes, major landmarks..." },

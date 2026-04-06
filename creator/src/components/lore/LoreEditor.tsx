@@ -8,7 +8,7 @@ import { ReactRenderer } from "@tiptap/react";
 import tippy, { type Instance as TippyInstance } from "tippy.js";
 import { invoke } from "@tauri-apps/api/core";
 import { useLoreStore } from "@/stores/loreStore";
-import { LORE_ENHANCE_PROMPT } from "@/lib/lorePrompts";
+import { getLoreEnhancePrompt, getContinueWritingPrompt } from "@/lib/lorePrompts";
 import { tiptapToPlainText, plainTextToTiptap } from "@/lib/loreRelations";
 import { MentionList, type MentionListRef } from "./MentionList";
 
@@ -296,7 +296,7 @@ export function LoreEditor({
       const parts = [plainText];
       if (context) parts.push(`\nWorld context: ${context}`);
       const result = await invoke<string>("llm_complete", {
-        systemPrompt: LORE_ENHANCE_PROMPT,
+        systemPrompt: getLoreEnhancePrompt(),
         userPrompt: parts.join("\n"),
       });
       const trimmed = result.trim();
@@ -321,7 +321,7 @@ export function LoreEditor({
       ];
       if (context) parts.push(`\nWorld context: ${context}`);
       const result = await invoke<string>("llm_complete", {
-        systemPrompt: "You are a world-building writer for a fantasy MUD game. Continue the author's text seamlessly. Match their voice and style. Output only the new paragraphs — do not repeat existing content.",
+        systemPrompt: getContinueWritingPrompt(),
         userPrompt: parts.join("\n"),
       });
       // Append the continuation to existing content

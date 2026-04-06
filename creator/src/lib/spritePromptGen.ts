@@ -1,6 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import { STYLE_SUFFIX, parseLlmJson } from "./arcanumPrompts";
 import { useConfigStore } from "@/stores/configStore";
+import { buildToneDirective } from "./loreGeneration";
 import {
   DEFAULT_RACE_BODY_DESCRIPTIONS,
   DEFAULT_CLASS_OUTFIT_DESCRIPTIONS,
@@ -14,7 +15,7 @@ const FORMAT_SPEC =
 
 const FALLBACK_TEMPLATE =
   `${FORMAT_SPEC}. {race_description}, wearing {class_outfit}, presenting {tier_visual}, ` +
-  "androgynous fantasy adventurer, full body visible, front-facing neutral standing pose, centered composition, readable silhouette, clean separation from the pale lavender background";
+  "fantasy adventurer, full body visible, front-facing neutral standing pose, centered composition, readable silhouette, clean separation from the pale lavender background";
 
 // ─── Types ───────────────────────────────────────────────────────────
 
@@ -128,15 +129,20 @@ export async function generateSpriteTemplate(
     .map((t) => `- ${t}: ${getTierVisualDescription(t)}`)
     .join("\n");
 
-  const systemPrompt = `You are an expert image prompt engineer for AI image generators. You create prompts for fantasy RPG character sprites in the Surreal Gentle Magic aesthetic.
+  const toneDirective = buildToneDirective();
+  const toneBlock = toneDirective
+    ? `\n\n## World Context\n${toneDirective}\nAll generated descriptions must match this world's tone. Do not add dark, grimdark, horror, or violent imagery unless the world's tone explicitly calls for it.`
+    : "";
+
+  const systemPrompt = `You are an expert image prompt engineer for AI image generators. You create prompts for fantasy RPG character sprites.${toneBlock}
 
 Your task: produce a JSON object with these fields:
 
-1. "template" — a single image generation prompt template using these exact placeholders: {race_description}, {class_outfit}, {tier_visual}. The template should produce a fantasy character portrait. All figures must be ANDROGYNOUS — no gender signifiers (no breasts, no beards, no gendered body shapes). The body is defined entirely by the race, the outfit by the class, and the power level by the tier.
+1. "template" — a single image generation prompt template using these exact placeholders: {race_description}, {class_outfit}, {tier_visual}. The template should produce a fantasy character portrait. The body is defined entirely by the race, the outfit by the class, and the power level by the tier.
 
 For the "base" class (staff tier), {class_outfit} will be "simple wrapped linen clothing, no armor, no weapons" — the template must work with this too.
 
-2. "raceDescriptions" — an object mapping each race key to an optimized prompt-fragment describing that race's body. Lean into the alien/fantastical aspects. All descriptions must be androgynous. For humanoid races (archae, kitsarae, lustriae), explicitly describe narrow shoulders, no chest definition, smooth featureless torso, ageless angular face.
+2. "raceDescriptions" — an object mapping each race key to an optimized prompt-fragment describing that race's body. Base these closely on the provided race descriptions. If a race has only a name (no description), invent an appearance that fits the world's tone and the race name.
 
 3. "classOutfits" — an object mapping each class key to a prompt-fragment describing that class's signature outfit, weapons, and accessories. Include "base" as a key with simple wrapped linen clothing (used for staff sprites).
 
@@ -199,6 +205,7 @@ export function fillSpriteTemplate(
 function resolveSpritePromptBody(
   template: SpritePromptTemplate,
   dimensions: SpriteDimensions,
+  extraContext?: string,
 ): string {
   // Staff tier uses unique per-race god-tier prompts, bypassing the template entirely.
   if (dimensions.tier === "tstaff") {
@@ -208,13 +215,19 @@ function resolveSpritePromptBody(
     }
   }
 
-  // Canonical race descriptions always win — they're curated,
-  // while Claude's template versions may drift or soften the descriptions.
-  const raceDesc = getRaceBodyDescription(dimensions.race)
-    || template.raceDescriptions[dimensions.race]
-    || dimensions.race;
+  // User-provided descriptions (config bodyDescription) take highest priority,
+  // then template-generated descriptions, then just the race name.
+  const configRaceDesc = getRaceBodyDescription(dimensions.race);
+  const raceDesc = configRaceDesc !== dimensions.race
+    ? configRaceDesc  // Config had a real description
+    : template.raceDescriptions[dimensions.race] || dimensions.race;
 
-  // Canonical class outfits always win for the same reason.
+  // If the user provided extra context (e.g. "regular beautiful elf girl"),
+  // it REPLACES the race description rather than being appended weakly.
+  const finalRaceDesc = extraContext?.trim()
+    ? `${extraContext.trim()} (${dimensions.race})`
+    : raceDesc;
+
   const classOutfit = (dimensions.playerClass === "base"
     ? template.classOutfits["base"]
     : getClassOutfitDescription(dimensions.playerClass))
@@ -227,7 +240,7 @@ function resolveSpritePromptBody(
 
   const prompt = template.template
     .replace(/\{race\}/g, dimensions.race)
-    .replace(/\{race_description\}/g, raceDesc)
+    .replace(/\{race_description\}/g, finalRaceDesc)
     .replace(/\{class\}/g, dimensions.playerClass)
     .replace(/\{class_outfit\}/g, classOutfit)
     .replace(/\{tier\}/g, dimensions.tier)
@@ -242,35 +255,36 @@ export function buildSpritePrompt(
   extraContext?: string,
 ): string {
   const resolvedTemplate = template ?? fallbackSpriteTemplate();
-  const promptBody = resolveSpritePromptBody(resolvedTemplate, dimensions);
-  const context = extraContext?.trim();
-
-  return context
-    ? `${promptBody}. ${context}\n\n${STYLE_SUFFIX}`
-    : `${promptBody}\n\n${STYLE_SUFFIX}`;
+  const promptBody = resolveSpritePromptBody(resolvedTemplate, dimensions, extraContext);
+  return `${promptBody}\n\n${STYLE_SUFFIX}`;
 }
 
 // ─── Per-sprite LLM enhancement ─────────────────────────────────────
-
-const SPRITE_ENHANCE_SYSTEM = `You are an expert AI image prompt engineer. You receive a draft image generation prompt for a fantasy RPG character sprite and refine it into a stronger, more cohesive prompt.
-
-Rules:
-- Preserve ALL visual details from the original (race body, class outfit, tier power level, format spec)
-- Tighten wording: remove redundancy, merge overlapping phrases, sharpen visual language
-- Ensure the character is ANDROGYNOUS — no gendered features
-- Ensure the pose is front-facing, centered, full body, head to feet
-- Keep the solid pale lavender (#d8d0e8) background specification
-- Do NOT add the style suffix — it will be appended automatically
-- Output ONLY the refined prompt text — no quotes, no explanation, no preamble`;
 
 /**
  * Refine an assembled sprite prompt via LLM for stronger image generation results.
  * Falls back to the original prompt if the LLM call fails.
  */
 export async function enhanceSpritePrompt(rawPrompt: string): Promise<string> {
+  const toneDirective = buildToneDirective();
+  const toneBlock = toneDirective
+    ? `\n- Match the world's tone: ${toneDirective}`
+    : "";
+
+  const systemPrompt = `You are an expert AI image prompt engineer. You receive a draft image generation prompt for a fantasy RPG character sprite and refine it into a stronger, more cohesive prompt.
+
+Rules:
+- Preserve ALL visual details from the original (race body, class outfit, tier power level, format spec)
+- Preserve the character's described appearance faithfully — do not add dark, skeletal, undead, or horror elements unless they are explicitly in the original
+- Tighten wording: remove redundancy, merge overlapping phrases, sharpen visual language
+- Ensure the pose is front-facing, centered, full body, head to feet
+- Keep the solid pale lavender (#d8d0e8) background specification${toneBlock}
+- Do NOT add the style suffix — it will be appended automatically
+- Output ONLY the refined prompt text — no quotes, no explanation, no preamble`;
+
   try {
     const enhanced = await invoke<string>("llm_complete", {
-      systemPrompt: SPRITE_ENHANCE_SYSTEM,
+      systemPrompt,
       userPrompt: `Refine this sprite generation prompt:\n\n${rawPrompt}`,
     });
     // Re-append style suffix since the LLM was told not to include it

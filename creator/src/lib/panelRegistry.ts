@@ -6,8 +6,8 @@ export type SidebarGroup =
   | "studio"
   | "characters"
   | "world"
+  | "systems"
   | "lore"
-  | "content"
   | "operations"
   | "command";
 
@@ -34,6 +34,7 @@ const STUDIO_PANELS: PanelDef[] = [
   { id: "media", label: "Media", group: "studio", host: "studio", kicker: "Studio", title: "Media", description: "Music, ambience, and cinematic staging.", maxWidth: "max-w-7xl" },
   { id: "portraits", label: "Portraits", group: "studio", host: "studio", kicker: "Studio", title: "Portraits", description: "Race and class portrait creation.", maxWidth: "max-w-7xl" },
   { id: "studioAbilities", label: "Icons", group: "studio", host: "studio", kicker: "Studio", title: "Icons", description: "Ability and status-effect icon generation.", maxWidth: "max-w-7xl" },
+  { id: "sprites", label: "Player Sprites", group: "studio", host: "command", kicker: "Studio", title: "Player sprites", description: "Visible identity, unlockable variants, and portrait logic.", maxWidth: "max-w-7xl" },
 ];
 
 // ─── Character panels (includes former Ability panels) ─────────────
@@ -52,19 +53,27 @@ const CHARACTER_PANELS: PanelDef[] = [
 // ─── World panels ───────────────────────────────────────────────────
 
 const WORLD_PANELS: PanelDef[] = [
-  { id: "tuningWizard", label: "Tuning Wizard", group: "world", host: "command", kicker: "World", title: "Tuning Wizard", description: "Configure all game balance — presets, inline editing, and before/after comparison.", maxWidth: "max-w-7xl", subGroup: "Tuning" },
-  { id: "worldServer", label: "World & Server", group: "world", host: "config", kicker: "Infrastructure", title: "World & server", description: "Start room, server ports, admin API, observability, and logging.", maxWidth: "max-w-5xl", subGroup: "Infrastructure" },
-  { id: "commands", label: "Commands", group: "world", host: "config", kicker: "Commands", title: "Command designer", description: "Custom commands, usage strings, and categories.", maxWidth: "max-w-5xl", subGroup: "Infrastructure" },
-  { id: "currencies", label: "Currencies", group: "world", host: "config", kicker: "Economy", title: "Secondary currencies", description: "Quest points, honor, crafting tokens, and other non-gold currencies.", maxWidth: "max-w-5xl", subGroup: "Designers" },
-  { id: "crafting", label: "Crafting", group: "world", host: "config", kicker: "Crafting", title: "Crafting & gathering", description: "Skill leveling, station types, gathering, and recipes.", maxWidth: "max-w-5xl", subGroup: "Designers" },
-  { id: "enchanting", label: "Enchanting", group: "world", host: "config", kicker: "Enchanting", title: "Enchanting system", description: "Enchantment definitions, materials, stat bonuses, and target slots.", maxWidth: "max-w-5xl", subGroup: "Designers" },
-  { id: "factions", label: "Factions", group: "world", host: "config", kicker: "Factions", title: "Faction system", description: "Reputation factions, enemy relationships, and quest rewards.", maxWidth: "max-w-5xl", subGroup: "Designers" },
-  { id: "guilds", label: "Guilds", group: "world", host: "config", kicker: "Guilds", title: "Guild system", description: "Guild ranks, permissions, friends, and defaults.", maxWidth: "max-w-5xl", subGroup: "Designers" },
-  { id: "guildHalls", label: "Guild Halls", group: "world", host: "config", kicker: "Social", title: "Guild halls", description: "Guild housing costs, room templates, and hall configuration.", maxWidth: "max-w-5xl", subGroup: "Designers" },
-  { id: "emotes", label: "Emotes", group: "world", host: "config", kicker: "Social", title: "Emote presets", description: "Quick-action emotes available to players in the chat panel.", maxWidth: "max-w-5xl", subGroup: "Designers" },
-  { id: "housing", label: "Housing", group: "world", host: "config", kicker: "Housing", title: "Player housing", description: "Room templates, costs, and housing system settings.", maxWidth: "max-w-5xl", subGroup: "Designers" },
-  { id: "pets", label: "Pets", group: "world", host: "config", kicker: "Companions", title: "Pet system", description: "Define pet templates that can be summoned by abilities.", maxWidth: "max-w-5xl", subGroup: "Designers" },
-  { id: "worldEvents", label: "Events", group: "world", host: "config", kicker: "Seasonal", title: "World events", description: "Seasonal events with date schedules, flags, and broadcast messages.", maxWidth: "max-w-5xl", subGroup: "Designers" },
+  { id: "tuningWizard", label: "Tuning Wizard", group: "world", host: "command", kicker: "World", title: "Tuning Wizard", description: "Configure all game balance — presets, inline editing, and before/after comparison.", maxWidth: "max-w-7xl" },
+  { id: "worldServer", label: "World & Server", group: "world", host: "config", kicker: "Infrastructure", title: "World & server", description: "Start room, server ports, admin API, observability, and logging.", maxWidth: "max-w-5xl" },
+  { id: "commands", label: "Commands", group: "world", host: "config", kicker: "Commands", title: "Command designer", description: "Custom commands, usage strings, and categories.", maxWidth: "max-w-5xl" },
+];
+
+// ─── Systems panels ────────────────────────────────────────────────
+
+const SYSTEMS_PANELS: PanelDef[] = [
+  { id: "currencies", label: "Currencies", group: "systems", host: "config", kicker: "Economy", title: "Secondary currencies", description: "Quest points, honor, crafting tokens, and other non-gold currencies.", maxWidth: "max-w-5xl", subGroup: "Economy" },
+  { id: "crafting", label: "Crafting", group: "systems", host: "config", kicker: "Crafting", title: "Crafting & gathering", description: "Skill leveling, station types, gathering, and recipes.", maxWidth: "max-w-5xl", subGroup: "Economy" },
+  { id: "enchanting", label: "Enchanting", group: "systems", host: "config", kicker: "Enchanting", title: "Enchanting system", description: "Enchantment definitions, materials, stat bonuses, and target slots.", maxWidth: "max-w-5xl", subGroup: "Economy" },
+  { id: "guilds", label: "Guilds", group: "systems", host: "config", kicker: "Guilds", title: "Guild system", description: "Guild ranks, permissions, friends, and defaults.", maxWidth: "max-w-5xl", subGroup: "Social" },
+  { id: "guildHalls", label: "Guild Halls", group: "systems", host: "config", kicker: "Social", title: "Guild halls", description: "Guild housing costs, room templates, and hall configuration.", maxWidth: "max-w-5xl", subGroup: "Social" },
+  { id: "factions", label: "Factions", group: "systems", host: "config", kicker: "Factions", title: "Faction system", description: "Reputation factions, enemy relationships, and quest rewards.", maxWidth: "max-w-5xl", subGroup: "Social" },
+  { id: "emotes", label: "Emotes", group: "systems", host: "config", kicker: "Social", title: "Emote presets", description: "Quick-action emotes available to players in the chat panel.", maxWidth: "max-w-5xl", subGroup: "Social" },
+  { id: "housing", label: "Housing", group: "systems", host: "config", kicker: "Housing", title: "Player housing", description: "Room templates, costs, and housing system settings.", maxWidth: "max-w-5xl", subGroup: "Living World" },
+  { id: "pets", label: "Pets", group: "systems", host: "config", kicker: "Companions", title: "Pet system", description: "Define pet templates that can be summoned by abilities.", maxWidth: "max-w-5xl", subGroup: "Living World" },
+  { id: "worldEvents", label: "Events", group: "systems", host: "config", kicker: "Seasonal", title: "World events", description: "Seasonal events with date schedules, flags, and broadcast messages.", maxWidth: "max-w-5xl", subGroup: "Living World" },
+  { id: "achievements", label: "Achievements", group: "systems", host: "config", kicker: "Content", title: "Achievements", description: "Achievement categories and criteria types.", maxWidth: "max-w-5xl", subGroup: "Content" },
+  { id: "achievementDefs", label: "Achievement Builder", group: "systems", host: "config", kicker: "Content", title: "Achievement builder", description: "Define achievements, criteria, and rewards.", maxWidth: "max-w-5xl", subGroup: "Content" },
+  { id: "quests", label: "Quests", group: "systems", host: "config", kicker: "Content", title: "Quest taxonomy", description: "Quest objective and completion type definitions.", maxWidth: "max-w-5xl", subGroup: "Content" },
 ];
 
 // ─── Lore panels ───────────────────────────────────────────────────
@@ -83,20 +92,12 @@ const LORE_PANELS: PanelDef[] = [
   { id: "storyEditor", label: "Story Editor", group: "lore", host: "lore", kicker: "Narrative", title: "Story editor", description: "Compose cinematic zone stories with scenes and narration.", maxWidth: "max-w-7xl" },
 ];
 
-// ─── Content panels ─────────────────────────────────────────────────
-
-const CONTENT_PANELS: PanelDef[] = [
-  { id: "achievements", label: "Achievements", group: "content", host: "config", kicker: "Content", title: "Achievements", description: "Achievement categories and criteria types.", maxWidth: "max-w-5xl" },
-  { id: "achievementDefs", label: "Achievement Builder", group: "content", host: "config", kicker: "Content", title: "Achievement builder", description: "Define achievements, criteria, and rewards.", maxWidth: "max-w-5xl" },
-  { id: "quests", label: "Quests", group: "content", host: "config", kicker: "Content", title: "Quest taxonomy", description: "Quest objective and completion type definitions.", maxWidth: "max-w-5xl" },
-  { id: "sharedAssets", label: "Shared Assets", group: "content", host: "config", kicker: "Content", title: "Shared assets", description: "Global asset keys and image configuration.", maxWidth: "max-w-5xl" },
-];
-
 // ─── Operations panels ──────────────────────────────────────────────
 
 const OPERATIONS_PANELS: PanelDef[] = [
   { id: "services", label: "Services", group: "operations", host: "config", kicker: "Operations", title: "Services", description: "API keys, image providers, and LLM settings.", maxWidth: "max-w-5xl" },
   { id: "deployment", label: "Deployment", group: "operations", host: "config", kicker: "Operations", title: "Deployment", description: "Export, sync, and deploy your MUD.", maxWidth: "max-w-5xl" },
+  { id: "sharedAssets", label: "Shared Assets", group: "operations", host: "config", kicker: "Operations", title: "Shared assets", description: "Global asset keys and image configuration.", maxWidth: "max-w-5xl" },
   { id: "rawYaml", label: "Raw YAML", group: "operations", host: "config", kicker: "Advanced", title: "Raw configuration", description: "Inspect or edit the exact serialized YAML when the structured editors are not enough.", maxWidth: "max-w-6xl" },
   { id: "versionControl", label: "Version Control", group: "operations", host: "config", kicker: "Operations", title: "Version control", description: "Git status, commits, push/pull, and conflict resolution for standalone projects.", maxWidth: "max-w-5xl" },
 ];
@@ -104,7 +105,6 @@ const OPERATIONS_PANELS: PanelDef[] = [
 // ─── Command panels ─────────────────────────────────────────────────
 
 const COMMAND_PANELS: PanelDef[] = [
-  { id: "sprites", label: "Player Sprites", group: "command", host: "command", kicker: "Command", title: "Player sprites", description: "Visible identity, unlockable variants, and portrait logic.", maxWidth: "max-w-7xl" },
   { id: "console", label: "Console", group: "command", host: "command", kicker: "Command", title: "Console", description: "Live logs, command output, and runtime traces.", maxWidth: "max-w-7xl" },
   { id: "admin", label: "Admin", group: "command", host: "command", kicker: "Command", title: "Admin", description: "Direct command over the living world.", maxWidth: "max-w-7xl" },
 ];
@@ -115,8 +115,8 @@ export const ALL_PANELS: PanelDef[] = [
   ...STUDIO_PANELS,
   ...CHARACTER_PANELS,
   ...WORLD_PANELS,
+  ...SYSTEMS_PANELS,
   ...LORE_PANELS,
-  ...CONTENT_PANELS,
   ...OPERATIONS_PANELS,
   ...COMMAND_PANELS,
 ];
@@ -131,7 +131,7 @@ export const WORLDMAKER_GROUPS: { id: SidebarGroup; label: string; panels: Panel
   { id: "studio", label: "Studio", panels: STUDIO_PANELS },
   { id: "characters", label: "Characters", panels: CHARACTER_PANELS },
   { id: "world", label: "World", panels: WORLD_PANELS },
-  { id: "content", label: "Content", panels: CONTENT_PANELS },
+  { id: "systems", label: "Systems", panels: SYSTEMS_PANELS },
   { id: "operations", label: "Operations", panels: OPERATIONS_PANELS },
   { id: "command", label: "Command", panels: COMMAND_PANELS },
 ];

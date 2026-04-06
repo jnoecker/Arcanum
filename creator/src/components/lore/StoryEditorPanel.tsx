@@ -288,7 +288,7 @@ export function StoryEditorPanel({ storyId }: StoryEditorPanelProps) {
 
       {/* Section 3: SceneDetailEditor (D-01, D-03) */}
       {activeScene && (
-        <SceneDetailEditor storyId={storyId} scene={activeScene} />
+        <SceneDetailEditor storyId={storyId} scene={activeScene} zoneId={story.zoneId} />
       )}
 
       {/* Section 4: Metadata Footer */}

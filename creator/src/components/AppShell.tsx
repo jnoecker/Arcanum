@@ -45,8 +45,8 @@ export function AppShell() {
         <div className="absolute bottom-[-14rem] right-[-12rem] h-[40rem] w-[40rem] rounded-full bg-[radial-gradient(circle,rgba(140,174,201,0.12),transparent_72%)] blur-3xl" />
       </div>
       <header><Toolbar workspace={workspace} setWorkspace={setWorkspace} /></header>
-      <div className="relative z-10 flex min-h-0 flex-1 flex-col gap-3 px-4 pb-3 xl:flex-row">
-        <aside className="min-w-0 xl:min-h-0"><Sidebar workspace={workspace} /></aside>
+      <div className="relative z-10 flex min-h-0 flex-1 flex-col gap-3 px-4 pb-3 lg:flex-row">
+        <aside className="min-w-0 lg:min-h-0"><Sidebar workspace={workspace} /></aside>
         <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-3xl border border-white/10 bg-bg-primary shadow-panel">
           <MainArea workspace={workspace} />
         </main>

@@ -455,7 +455,7 @@ export function Sidebar({ workspace }: { workspace: Workspace }) {
   );
 
   return (
-    <aside className="relative flex w-full shrink-0 flex-col overflow-hidden rounded-3xl border border-white/10 bg-gradient-panel shadow-[0_18px_56px_rgba(8,10,18,0.32)] xl:h-full xl:w-[23rem]">
+    <aside className="relative flex w-full shrink-0 flex-col overflow-hidden rounded-3xl border border-white/10 bg-gradient-panel shadow-[0_18px_56px_rgba(8,10,18,0.32)] lg:h-full lg:w-[23rem]">
       <div className="pointer-events-none absolute inset-x-0 top-0 h-48 bg-gradient-glow-top" />
 
       <div className="relative z-10 shrink-0 px-4 pt-4">
@@ -469,7 +469,7 @@ export function Sidebar({ workspace }: { workspace: Workspace }) {
       </div>
 
       <div
-        className="relative z-10 min-h-0 max-h-[22rem] shrink overflow-y-auto border-b border-white/10 px-4 py-4 xl:max-h-[45%]"
+        className="relative z-10 min-h-0 max-h-[22rem] shrink overflow-y-auto border-b border-white/10 px-4 py-4 lg:max-h-[45%]"
         style={{ maskImage: "linear-gradient(to bottom, transparent 0, black 8px, black calc(100% - 16px), transparent 100%)", WebkitMaskImage: "linear-gradient(to bottom, transparent 0, black 8px, black calc(100% - 16px), transparent 100%)" }}
       >
         {workspace === "worldmaker" ? (

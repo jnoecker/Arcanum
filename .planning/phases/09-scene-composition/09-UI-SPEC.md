@@ -55,9 +55,11 @@ Source: Default 8-point scale, entity sizes from CONTEXT.md D-09 (64-80px range 
 | Role | Font | Size | Weight | Line Height | Usage in Phase 9 |
 |------|------|------|--------|-------------|-------------------|
 | Body | Crimson Pro | 15px | 400 | 1.6 | Entity names in picker rows, narration preview overlay text |
-| Label | Crimson Pro | 12px | 400 | 1.4 | Entity type badges, tab labels, entity name labels below sprites, "DM Only" style badges |
+| Label | Crimson Pro | 12px | 400 | 1.4 | Entity type badges, tab labels, entity name labels below sprites, "DM Only" style badges, search input placeholder |
 | Heading | Cinzel | 18px | 400 | 1.2 | Scene title (existing), section headings ("Narration", picker tab labels) |
-| Small | Crimson Pro | 10px | 400 | 1.45 | Entity count badge in tab, search placeholder hint |
+| Small | Crimson Pro | 10px | 400 | 1.45 | Entity count badge in tab, collapse toggle label |
+
+Font size scale: 10px, 12px, 15px, 18px (4 sizes).
 
 Additional typography rules for this phase:
 
@@ -69,7 +71,7 @@ Additional typography rules for this phase:
 | Narration overlay text | Crimson Pro | 15px | 400 | white (#ffffff) | `line-clamp-3`, `leading-relaxed` (1.625) |
 | Empty state prompt | Crimson Pro | 15px | 400 | `text-text-muted` (#95a0bf) | Centered in preview |
 | Tab label | Cinzel | 12px | 400 | `text-text-muted` inactive / `text-accent` active | Uppercase, tracking `0.18em` |
-| Search input placeholder | Crimson Pro | 13px | 400 | `text-text-muted` at 40% opacity | Standard input styling |
+| Search input text | Crimson Pro | 12px | 400 | `text-text-primary` / placeholder at `text-text-muted` 40% opacity | Standard input styling |
 | Collapse toggle label | Crimson Pro | 10px | 400 | `text-text-muted` | Matches DmNotesSection pattern |
 
 Source: ARCANUM_STYLE_GUIDE.md Typography Hierarchy, existing `SceneDetailEditor.tsx` and `DmNotesSection.tsx` class patterns
@@ -106,6 +108,7 @@ Additional color contracts for this phase:
 | Entity selected ring in preview | `ring-2 ring-accent/45` | Matches `--border-accent-ring` token |
 | Drag ghost opacity | 85% opacity during active drag | Slight transparency signals motion |
 | Back-row entity opacity | 90% opacity | Additional depth cue beyond size reduction |
+| Empty state chevron icon | `text-text-muted` (#95a0bf) at 50% opacity | Subtle directional affordance pointing toward picker sidebar |
 
 Source: `creator/src/index.css` theme tokens, ARCANUM_STYLE_GUIDE.md Color System, existing `EntityPanel.tsx` sidebar styling
 
@@ -126,12 +129,12 @@ New components for this phase and their visual contracts:
 | Tabs | 3 tabs: Rooms, Mobs, Items |
 | Tab style | Horizontal row, Cinzel 12px uppercase tracking-[0.18em], `text-text-muted` default, `text-accent` active with 2px bottom accent border |
 | Tab content height | Fill remaining space below tabs, `overflow-y-auto` |
-| Search input | Full width, `bg-bg-tertiary` rounded-md, 8px vertical padding, 12px horizontal padding, Crimson Pro 13px, `border-border-muted` |
+| Search input | Full width, `bg-bg-tertiary` rounded-md, 8px vertical padding, 12px horizontal padding, Crimson Pro 12px, `border-border-muted` |
 | Entity row height | 40px (8px vertical padding + 24px content area for 32px thumbnail alignment) |
 | Entity row layout | 32px thumbnail (rounded, `object-cover`) + 8px gap + entity name (truncate) |
 | Entity row hover | `bg-bg-hover` transition 180ms |
 | Room row active | `bg-accent/14` with left 2px accent bar |
-| Empty tab state | Centered text: "No {rooms/mobs/items} in this zone" in `text-text-muted` 13px |
+| Empty tab state | Centered text: "No {rooms/mobs/items} in this zone" in `text-text-muted` 12px |
 | Thumbnail placeholder | 32px rounded square, `bg-bg-elevated`, entity type icon (room=door, mob=skull, item=gem) in `text-text-muted` |
 
 ### ScenePreview (16:9 renderer)
@@ -148,6 +151,7 @@ New components for this phase and their visual contracts:
 | Layer order (z-index) | 0: room bg, 10: back-row entities, 20: front-row entities, 30: narration overlay, 40: selection UI |
 | Narration overlay | `absolute inset-x-0 bottom-0`, gradient `bg-gradient-to-t from-black/60 to-transparent`, `px-6 py-4`, `pointer-events-none` |
 | Entity interaction | Entities receive `pointer-events-auto`; preview container is `relative` |
+| Empty state visual | Centered text prompt + small chevron-right icon (16px, inline SVG) positioned to the right of the text, pointing toward the picker sidebar. Icon uses `text-text-muted` at 50% opacity. The chevron provides a directional affordance guiding the builder's eye toward the entity picker. See Copywriting Contract for exact text. |
 
 ### EntityOverlay (draggable sprite in preview)
 
@@ -228,7 +232,7 @@ Source: CONTEXT.md D-01 through D-13, RESEARCH.md Patterns 1-4, Pitfall 5 (drag 
 |---------|------|
 | Primary CTA | "Add to Scene" (implicit via click in picker -- no explicit button, but tooltip on entity rows) |
 | Empty state heading (no room) | "Select a room to set the background" |
-| Empty state body (no room) | "Browse rooms in the Entity Picker to choose a backdrop for this scene." |
+| Empty state body (no room) | "Browse rooms in the Entity Picker to choose a backdrop for this scene." followed by a small chevron-right icon (16px inline SVG, `text-text-muted` at 50% opacity) pointing toward the picker sidebar as a directional affordance. |
 | Empty state (picker, no entities) | "No {rooms/mobs/items} in this zone" |
 | Empty state (picker, zone not loaded) | "Load zone to browse entities" |
 | Empty state (picker, search no results) | "No matches for \"{query}\"" |
@@ -244,7 +248,7 @@ Destructive actions in this phase:
 - **Remove entity from scene**: No confirmation dialog. Action is undoable via Ctrl+Z (storyStore undo). Entity fades out with 120ms dissolve animation.
 - **Change room background**: No confirmation. Previous room bg is replaced immediately. Undoable.
 
-Source: CONTEXT.md D-04 (removal via preview), D-06 (empty state), RESEARCH.md Open Question 1 (zone not loaded)
+Source: CONTEXT.md D-04 (removal via preview), D-06 (empty state with directional arrow), RESEARCH.md Open Question 1 (zone not loaded)
 
 ---
 

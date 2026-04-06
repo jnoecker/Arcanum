@@ -5,43 +5,14 @@ import { useLoreStore } from "@/stores/loreStore";
 import { useProjectStore } from "@/stores/projectStore";
 import { useZoneStore } from "@/stores/zoneStore";
 import { loadStory, saveStory } from "@/lib/storyPersistence";
-import { useImageSrc } from "@/lib/useImageSrc";
 import { ActionButton, Spinner, EditableField } from "@/components/ui/FormWidgets";
-import { AssetPickerModal } from "@/components/ui/AssetPickerModal";
 import { SceneTimeline } from "./SceneTimeline";
 import { SceneDetailEditor } from "./SceneDetailEditor";
 import { PresentationMode } from "./PresentationMode";
+import { StorySettingsSection } from "./StorySettingsSection";
 
 interface StoryEditorPanelProps {
   storyId: string;
-}
-
-/** Renders a cover image thumbnail with loading state. */
-function CoverImage({
-  fileName,
-  onChangeClick,
-}: {
-  fileName: string;
-  onChangeClick: () => void;
-}) {
-  const src = useImageSrc(fileName);
-  return (
-    <button
-      onClick={onChangeClick}
-      className="group relative w-[240px] overflow-hidden rounded-xl border border-border-default"
-    >
-      {src ? (
-        <img src={src} alt="Story cover" className="w-full object-cover" />
-      ) : (
-        <div className="flex h-[160px] w-full items-center justify-center">
-          <Spinner />
-        </div>
-      )}
-      <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity group-hover:opacity-100">
-        <span className="text-sm font-medium text-white">Change</span>
-      </div>
-    </button>
-  );
 }
 
 export function StoryEditorPanel({ storyId }: StoryEditorPanelProps) {
@@ -59,8 +30,6 @@ export function StoryEditorPanel({ storyId }: StoryEditorPanelProps) {
 
   const [loading, setLoading] = useState(false);
   const [loadError, setLoadError] = useState(false);
-  const [showAssetPicker, setShowAssetPicker] = useState(false);
-  const [showSettings, setShowSettings] = useState(false);
   const [isPresenting, setIsPresenting] = useState(false);
 
   // Derive zone name from zoneStore
@@ -155,19 +124,6 @@ export function StoryEditorPanel({ storyId }: StoryEditorPanelProps) {
         title: newTitle.trim(),
         updatedAt: new Date().toISOString(),
       });
-    },
-    [storyId, updateStory],
-  );
-
-  // Cover image selection handler -- syncs story and lore article
-  const handleCoverImageSelect = useCallback(
-    (fileName: string) => {
-      updateStory(storyId, { coverImage: fileName });
-      useLoreStore.getState().updateArticle(storyId, {
-        image: fileName,
-        updatedAt: new Date().toISOString(),
-      });
-      setShowAssetPicker(false);
     },
     [storyId, updateStory],
   );
@@ -288,49 +244,8 @@ export function StoryEditorPanel({ storyId }: StoryEditorPanelProps) {
         </div>
       </div>
 
-      {/* Section 1: Collapsible Story Settings (D-04) */}
-      <div>
-        <button
-          type="button"
-          onClick={() => setShowSettings(!showSettings)}
-          aria-expanded={showSettings}
-          className="flex items-center gap-2 text-2xs text-text-muted hover:text-text-primary transition-colors"
-        >
-          <svg
-            width="12"
-            height="12"
-            viewBox="0 0 12 12"
-            fill="none"
-            className={`transform transition-transform duration-200 ${showSettings ? "rotate-180" : ""}`}
-          >
-            <path d="M3 5l3 3 3-3" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-          Story Settings
-        </button>
-
-        <div
-          className={`overflow-hidden transition-[max-height] duration-300 ${
-            showSettings ? "max-h-[400px]" : "max-h-0"
-          }`}
-          style={{ transitionTimingFunction: "var(--ease-unfurl)" }}
-        >
-          <div className="pt-3">
-            {story.coverImage ? (
-              <CoverImage
-                fileName={story.coverImage}
-                onChangeClick={() => setShowAssetPicker(true)}
-              />
-            ) : (
-              <button
-                onClick={() => setShowAssetPicker(true)}
-                className="flex h-[160px] w-[240px] cursor-pointer items-center justify-center rounded-xl border-2 border-dashed border-border-default transition-colors hover:border-accent/40 hover:bg-bg-tertiary"
-              >
-                <span className="text-sm text-text-muted">Add a cover image</span>
-              </button>
-            )}
-          </div>
-        </div>
-      </div>
+      {/* Section 1: Story Settings (cover, synopsis, tags, lore links) */}
+      <StorySettingsSection story={story} />
 
       {/* Section 2: SceneTimeline (D-01) */}
       <SceneTimeline
@@ -354,14 +269,6 @@ export function StoryEditorPanel({ storyId }: StoryEditorPanelProps) {
         </span>
         <span className="ml-auto font-mono text-2xs text-text-muted">{story.id}</span>
       </div>
-
-      {/* Asset Picker Modal */}
-      {showAssetPicker && (
-        <AssetPickerModal
-          onSelect={handleCoverImageSelect}
-          onClose={() => setShowAssetPicker(false)}
-        />
-      )}
 
       {/* Presentation Mode (portal to body for fullscreen overlay) */}
       {isPresenting && story && createPortal(

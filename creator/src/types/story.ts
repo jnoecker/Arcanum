@@ -29,7 +29,7 @@ export interface TransitionConfig {
   type: TransitionType;
 }
 
-/** Placeholder -- filled out in Phase 10 */
+/** Visual effects for a scene. */
 export interface EffectConfig {
   particles?: string; // preset name
   parallaxLayers?: number;

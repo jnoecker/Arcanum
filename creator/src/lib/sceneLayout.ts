@@ -104,3 +104,13 @@ export function extractPlainText(narrationJson: string): string {
     return "";
   }
 }
+
+/**
+ * Extracts individual words from TipTap JSON narration for typewriter animation.
+ * Returns an empty array for empty/invalid content.
+ */
+export function extractWords(narrationJson: string): string[] {
+  const text = extractPlainText(narrationJson);
+  if (!text) return [];
+  return text.split(/\s+/).filter(Boolean);
+}

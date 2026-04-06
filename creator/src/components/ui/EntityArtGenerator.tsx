@@ -80,6 +80,9 @@ export function EntityArtGenerator({
   const [customModel, setCustomModel] = useState("");
   // Track the final prompt that was actually sent to the image model
   const [lastEnhancedPrompt, setLastEnhancedPrompt] = useState<string | null>(null);
+  // Whether the current prompt has been LLM-enhanced (skip re-enhancement during generation)
+  const [enhanced, setEnhanced] = useState(false);
+  const [removingBg, setRemovingBg] = useState(false);
 
   // Refs to track pending results across unmount — auto-accept if user navigates away
   const pendingResultRef = useRef<GeneratedImage | null>(null);
@@ -197,11 +200,13 @@ export function EntityArtGenerator({
         throw new Error(`No models available for provider: ${imageProvider}`);
       }
 
-      // Auto-enhance via LLM if available — this is the key change.
-      // The LLM gets the entity description, style guide, and zone vibe
-      // and crafts a proper image prompt from all three.
+      // If the prompt was already enhanced via the Enhance button, send it as-is.
+      // Otherwise auto-enhance via LLM when available — the LLM gets the entity
+      // description, style guide, and zone vibe and crafts a proper image prompt.
       let finalPrompt = activePrompt;
-      if (hasLlmKey) {
+      if (enhanced) {
+        setLastEnhancedPrompt(activePrompt);
+      } else if (hasLlmKey) {
         try {
           finalPrompt = await enhancePrompt(activePrompt);
           setLastEnhancedPrompt(finalPrompt);
@@ -259,8 +264,9 @@ export function EntityArtGenerator({
     setEnhancing(true);
     setError(null);
     try {
-      const enhanced = await enhancePrompt(activePrompt);
-      setEditedPrompt(enhanced);
+      const enhancedText = await enhancePrompt(activePrompt);
+      setEditedPrompt(enhancedText);
+      setEnhanced(true);
     } catch (e) {
       setError(String(e));
     } finally {
@@ -300,19 +306,28 @@ export function EntityArtGenerator({
     pendingResultRef.current = null;
     pendingPromptRef.current = null;
     const fileName = result.file_path.split(/[\\/]/).pop() ?? result.hash;
+    const needsBgRemoval = !!(settings?.auto_remove_bg && assetType && shouldRemoveBg(assetType) && result.data_url);
+    const savedDataUrl = result.data_url;
     onAccept(fileName);
     if (assetType) {
       await acceptAsset(result, assetType, lastEnhancedPrompt ?? undefined, context, variantGroup, true).catch(() => {});
-
-      // Auto-remove background for sprite asset types
-      if (settings?.auto_remove_bg && shouldRemoveBg(assetType) && result.data_url) {
-        const entry = await removeBgAndSave(result.data_url, assetType, context, variantGroup).catch(() => null);
-        if (entry) await useAssetStore.getState().loadAssets();
-      }
     }
     setStage("idle");
     setResult(null);
     setLastEnhancedPrompt(null);
+    setEnhanced(false);
+
+    // Run BG removal after returning to idle so the user can keep working,
+    // but show an inline spinner so they know the operation isn't actually done.
+    if (needsBgRemoval && savedDataUrl && assetType) {
+      setRemovingBg(true);
+      try {
+        const entry = await removeBgAndSave(savedDataUrl, assetType, context, variantGroup).catch(() => null);
+        if (entry) await useAssetStore.getState().loadAssets();
+      } finally {
+        setRemovingBg(false);
+      }
+    }
   };
 
   const handleReject = () => {
@@ -418,14 +433,15 @@ export function EntityArtGenerator({
             {hasApiKey && (
               <button
                 onClick={handleGenerate}
-                className="flex-1 rounded bg-accent/15 px-2 py-1 text-2xs font-medium text-accent transition-colors hover:bg-accent/25"
+                disabled={removingBg}
+                className="flex-1 rounded bg-accent/15 px-2 py-1 text-2xs font-medium text-accent transition-colors hover:bg-accent/25 disabled:opacity-50"
               >
                 Generate Art
               </button>
             )}
             <button
               onClick={handlePickImage}
-              disabled={importing}
+              disabled={importing || removingBg}
               className="flex-1 rounded bg-bg-elevated px-2 py-1 text-2xs font-medium text-text-secondary transition-colors hover:bg-bg-hover hover:text-text-primary disabled:opacity-50"
             >
               {importing ? "Importing..." : "Pick Image"}
@@ -448,17 +464,25 @@ export function EntityArtGenerator({
                 rows={4}
                 className="w-full resize-y rounded border border-border-default bg-bg-primary px-2 py-1 font-mono text-2xs leading-relaxed text-text-secondary outline-none focus:border-accent/50 focus-visible:ring-2 focus-visible:ring-border-active"
               />
-              <div className="flex gap-1">
+              <div className="flex items-center gap-1">
                 <button
                   onClick={handleEnhance}
                   disabled={enhancing}
                   className="rounded px-1.5 py-0.5 text-2xs text-accent transition-colors hover:bg-accent/10 disabled:opacity-50"
                 >
-                  {enhancing ? "..." : "Enhance"}
+                  {enhancing ? "..." : enhanced ? "Re-enhance" : "Enhance"}
                 </button>
+                {enhanced && (
+                  <span className="rounded bg-accent/15 px-1.5 py-0.5 text-2xs font-medium text-accent">
+                    Enhanced
+                  </span>
+                )}
                 {editedPrompt && (
                   <button
-                    onClick={() => setEditedPrompt(null)}
+                    onClick={() => {
+                      setEditedPrompt(null);
+                      setEnhanced(false);
+                    }}
                     className="rounded px-1.5 py-0.5 text-2xs text-text-muted transition-colors hover:text-text-secondary"
                   >
                     Reset
@@ -467,9 +491,11 @@ export function EntityArtGenerator({
               </div>
               {(entityContext || vibe) && (
                 <p className="text-2xs italic text-text-muted">
-                  {hasLlmKey
-                    ? "Entity details + zone vibe auto-injected during generation"
-                    : "Configure an LLM provider to enable auto-enhanced prompts"}
+                  {!hasLlmKey
+                    ? "Configure an LLM provider to enable auto-enhanced prompts"
+                    : enhanced
+                      ? "Prompt already enhanced — will be sent as-is during generation"
+                      : "Entity details + zone vibe auto-injected during generation"}
                 </p>
               )}
             </div>
@@ -481,8 +507,15 @@ export function EntityArtGenerator({
         <div className="flex items-center gap-2 py-2">
           <div className="h-4 w-4 rounded-full border-2 border-accent border-t-transparent animate-spin" />
           <span className="text-2xs text-text-secondary">
-            {hasLlmKey ? "Crafting prompt & generating..." : "Generating..."}
+            {hasLlmKey && !enhanced ? "Crafting prompt & generating..." : "Generating..."}
           </span>
+        </div>
+      )}
+
+      {removingBg && stage === "idle" && (
+        <div className="flex items-center gap-2 py-1">
+          <div className="h-3 w-3 rounded-full border-2 border-accent border-t-transparent animate-spin" />
+          <span className="text-2xs text-text-secondary">Removing background...</span>
         </div>
       )}
 

@@ -130,14 +130,6 @@ export const TEMPLATES: ProjectTemplate[] = [
       },
     },
   },
-  {
-    id: "blank_slate",
-    name: "Blank Slate",
-    description:
-      "AmbonMUD defaults with demo zones cleared. No config changes — start completely from scratch.",
-    features: ["Server defaults only", "No pre-configured stats/classes", "Full creative freedom"],
-    configOverrides: {},
-  },
 ];
 
 /** Deep merge template overrides into the loaded config. */

@@ -1,38 +1,18 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useProjectWizard } from "@/lib/useProjectWizard";
-import { useAssetStore } from "@/stores/assetStore";
 import { useFocusTrap } from "@/lib/useFocusTrap";
-import { WizardStepLayout } from "./WizardStepLayout";
 import { LocationStep } from "./steps/LocationStep";
-import { TemplateStyleStep } from "./steps/TemplateStyleStep";
+import { TemplateStep } from "./steps/TemplateStep";
 import { WorldIdentityStep } from "./steps/WorldIdentityStep";
-import { CharacterSystemStep } from "./steps/CharacterSystemStep";
-import { ProgressionBalanceStep } from "./steps/ProgressionBalanceStep";
-import { DemoZoneStep } from "./steps/DemoZoneStep";
-import { CreationStep } from "./steps/CreationStep";
 
 const PROJECT_NAME_RE = /^[a-zA-Z][a-zA-Z0-9_-]*$/;
 
-const STEP_COUNT = 7;
+const STEP_COUNT = 3;
 
 const STEP_TITLES = [
   "Project Location",
-  "Template & Art Style",
+  "Choose a Template",
   "World Identity",
-  "Character System",
-  "Progression & Balance",
-  "Demo Zone",
-  "Create & Generate Art",
-];
-
-const STEP_WHY = [
-  undefined,
-  "The template pre-fills stats, classes, races, and equipment. The art style sets the visual language for all generated images.",
-  "Your world theme guides AI-generated room descriptions, creature designs, and art. It establishes the atmosphere across your entire project.",
-  "Stats, classes, and races are the core of character identity. These determine how players build and differentiate their characters.",
-  "These numbers control pacing \u2014 how fast players grow, how dangerous combat feels, and how the economy flows.",
-  "This creates your first playable area. AI generates thematic content you can tweak, or you can write everything yourself.",
-  undefined,
 ];
 
 interface ProjectWizardProps {
@@ -45,20 +25,6 @@ export function ProjectWizard({ onClose }: ProjectWizardProps) {
   const [nameError, setNameError] = useState<string | null>(null);
   const { data, update, selectTemplate, stage, error, create, reset } =
     useProjectWizard();
-
-  const settings = useAssetStore((s) => s.settings);
-
-  // Load settings if not already loaded
-  const loadSettings = useAssetStore((s) => s.loadSettings);
-  useEffect(() => {
-    if (!settings) {
-      loadSettings();
-    }
-  }, [settings, loadSettings]);
-
-  const hasLlmKey = !!(
-    settings?.anthropic_api_key || settings?.openrouter_api_key
-  );
 
   const validateStep1 = () => {
     if (!data.projectName) {
@@ -81,21 +47,15 @@ export function ProjectWizard({ onClose }: ProjectWizardProps) {
 
   const handleNext = () => {
     if (step === 1 && !validateStep1()) return;
-    if (step < STEP_COUNT) {
-      if (step === 6) {
-        // Trigger creation
-        setStep(7);
-        create();
-        return;
-      }
-      setStep(step + 1);
-    }
+    if (step < STEP_COUNT) setStep(step + 1);
   };
 
   const handleBack = () => {
-    if (step > 1 && step < 7) {
-      setStep(step - 1);
-    }
+    if (step > 1) setStep(step - 1);
+  };
+
+  const handleCreate = () => {
+    create();
   };
 
   const handleDone = () => {
@@ -103,21 +63,30 @@ export function ProjectWizard({ onClose }: ProjectWizardProps) {
     onClose();
   };
 
-  const canGoNext = () => {
-    if (step === 7) return false;
-    return true;
-  };
+  const isCreating = stage === "creating";
+  const isDone = stage === "done";
+  const isError = stage === "error";
+  const isBusy = isCreating || isDone;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-      <div ref={trapRef} role="dialog" aria-modal="true" aria-labelledby="wizard-title" className="mx-4 flex max-h-[85vh] w-full max-w-3xl flex-col rounded-lg border border-border-default bg-bg-secondary shadow-xl">
+      <div
+        ref={trapRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="wizard-title"
+        className="mx-4 flex max-h-[85vh] w-full max-w-2xl flex-col rounded-lg border border-border-default bg-bg-secondary shadow-xl"
+      >
         {/* Header */}
-        <div className="shrink-0 border-b border-border-default px-6 py-3">
-          <h2 id="wizard-title" className="font-display text-sm tracking-wide text-accent-emphasis">
+        <div className="shrink-0 border-b border-border-default px-6 py-4">
+          <h2
+            id="wizard-title"
+            className="font-display text-lg tracking-wide text-text-primary"
+          >
             Create New Project
           </h2>
           {/* Step indicator */}
-          <div className="mt-2 flex gap-1">
+          <div className="mt-3 flex gap-1.5">
             {Array.from({ length: STEP_COUNT }, (_, i) => (
               <div
                 key={i}
@@ -131,77 +100,59 @@ export function ProjectWizard({ onClose }: ProjectWizardProps) {
               />
             ))}
           </div>
-          <p className="mt-1 text-2xs text-text-muted">
-            Step {step} of {STEP_COUNT}: {STEP_TITLES[step - 1]}
+          <p className="mt-2 text-xs text-text-muted">
+            Step {step} of {STEP_COUNT}
+            {" \u2014 "}
+            {STEP_TITLES[step - 1]}
           </p>
         </div>
 
         {/* Content */}
-        <div className="min-h-0 flex-1 overflow-y-auto">
-          {step !== 7 ? (
-            <WizardStepLayout
-              title={STEP_TITLES[step - 1]!}
-              whyItMatters={STEP_WHY[step - 1]}
-            >
-              {step === 1 && (
-                <LocationStep
-                  data={data}
-                  onChange={update}
-                  nameError={nameError}
-                />
-              )}
-              {step === 2 && (
-                <TemplateStyleStep
-                  data={data}
-                  onSelectTemplate={selectTemplate}
-                />
-              )}
-              {step === 3 && (
-                <WorldIdentityStep data={data} onChange={update} />
-              )}
-              {step === 4 && (
-                <CharacterSystemStep data={data} onChange={update} />
-              )}
-              {step === 5 && (
-                <ProgressionBalanceStep data={data} onChange={update} />
-              )}
-              {step === 6 && (
-                <DemoZoneStep
-                  data={data}
-                  onChange={update}
-                  hasLlmKey={hasLlmKey}
-                />
-              )}
-            </WizardStepLayout>
-          ) : (
-            <div className="px-6 py-4">
-              <CreationStep
-                stage={stage}
-                error={error}
-                artStyle={data.artStyle}
-                demoZone={data.demoZone}
-                zoneId={data.zoneName}
-                onOpenProject={handleDone}
-                onRetry={() => {
-                  reset();
-                  setStep(1);
-                }}
-              />
-            </div>
+        <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">
+          {step === 1 && (
+            <LocationStep
+              data={data}
+              onChange={update}
+              nameError={nameError}
+            />
+          )}
+          {step === 2 && (
+            <TemplateStep
+              data={data}
+              onSelectTemplate={selectTemplate}
+            />
+          )}
+          {step === 3 && (
+            <WorldIdentityStep data={data} onChange={update} />
           )}
         </div>
 
         {/* Footer */}
-        {step < 7 && (
-          <div className="shrink-0 flex justify-end gap-2 border-t border-border-default px-6 py-3">
-            {step === 1 ? (
+        <div className="shrink-0 flex items-center justify-between border-t border-border-default px-6 py-3">
+          <div className="text-xs text-text-muted">
+            {isCreating && (
+              <span className="flex items-center gap-2">
+                <span className="inline-block h-3.5 w-3.5 animate-spin rounded-full border-2 border-accent border-t-transparent" />
+                Creating project...
+              </span>
+            )}
+            {isDone && (
+              <span className="text-status-success">Project created</span>
+            )}
+            {isError && (
+              <span className="text-status-error">{error}</span>
+            )}
+          </div>
+          <div className="flex gap-2">
+            {step === 1 && !isBusy && (
               <button
                 onClick={onClose}
                 className="rounded bg-bg-elevated px-4 py-1.5 text-xs font-medium text-text-primary transition-colors hover:bg-bg-hover"
               >
                 Cancel
               </button>
-            ) : (
+            )}
+            {step > 1 && !isBusy && (
               <button
                 onClick={handleBack}
                 className="rounded bg-bg-elevated px-4 py-1.5 text-xs font-medium text-text-primary transition-colors hover:bg-bg-hover"
@@ -209,31 +160,44 @@ export function ProjectWizard({ onClose }: ProjectWizardProps) {
                 Back
               </button>
             )}
-            {canGoNext() && (
+            {step < STEP_COUNT && !isBusy && (
               <button
                 onClick={handleNext}
                 className="rounded bg-gradient-to-r from-accent-muted to-accent px-4 py-1.5 text-xs font-medium text-accent-emphasis transition-all hover:brightness-110"
               >
-                {step === 6 ? "Create Project" : "Next"}
+                Next
+              </button>
+            )}
+            {step === STEP_COUNT && !isBusy && !isDone && (
+              <button
+                onClick={handleCreate}
+                disabled={isCreating}
+                className="rounded bg-gradient-to-r from-accent-muted to-accent px-5 py-1.5 text-xs font-medium text-accent-emphasis transition-all hover:brightness-110 disabled:opacity-50"
+              >
+                Create Project
+              </button>
+            )}
+            {isDone && (
+              <button
+                onClick={handleDone}
+                className="rounded bg-gradient-to-r from-accent-muted to-accent px-5 py-1.5 text-xs font-medium text-accent-emphasis transition-all hover:brightness-110"
+              >
+                Open Project
+              </button>
+            )}
+            {isError && (
+              <button
+                onClick={() => {
+                  reset();
+                  setStep(1);
+                }}
+                className="rounded bg-bg-elevated px-4 py-1.5 text-xs font-medium text-text-primary transition-colors hover:bg-bg-hover"
+              >
+                Retry
               </button>
             )}
           </div>
-        )}
-
-        {/* Footer for step 7 error */}
-        {step === 7 && stage === "error" && (
-          <div className="shrink-0 flex justify-end gap-2 border-t border-border-default px-6 py-3">
-            <button
-              onClick={() => {
-                reset();
-                onClose();
-              }}
-              className="rounded bg-bg-elevated px-4 py-1.5 text-xs font-medium text-text-primary transition-colors hover:bg-bg-hover"
-            >
-              Cancel
-            </button>
-          </div>
-        )}
+        </div>
       </div>
     </div>
   );

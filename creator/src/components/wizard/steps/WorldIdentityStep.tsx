@@ -10,18 +10,35 @@ export function WorldIdentityStep({ data, onChange }: WorldIdentityStepProps) {
     <div className="flex flex-col gap-4">
       <div>
         <label className="mb-1 block text-xs text-text-muted">
-          World Theme / Flavor
+          World Theme
         </label>
         <textarea
           value={data.worldTheme}
           onChange={(e) => onChange({ worldTheme: e.target.value })}
           placeholder="A crumbling desert empire where magic flows from ancient crystals..."
-          rows={4}
-          className="w-full rounded border border-border-default bg-bg-primary px-2 py-1.5 text-xs text-text-primary outline-none placeholder:text-text-muted focus:border-accent/50 focus-visible:ring-2 focus-visible:ring-border-active"
+          rows={3}
+          className="w-full rounded border border-border-default bg-bg-primary px-3 py-2 text-xs leading-relaxed text-text-primary outline-none placeholder:text-text-muted focus:border-accent/50 focus-visible:ring-2 focus-visible:ring-border-active"
         />
         <p className="mt-1 text-2xs text-text-muted">
-          Describe the feel, setting, and atmosphere of your world. This guides
-          AI-generated content and art.
+          Describes the feel and atmosphere of your world. Guides AI-generated
+          content and art.
+        </p>
+      </div>
+
+      <div>
+        <label className="mb-1 block text-xs text-text-muted">
+          Starter Zone Theme
+        </label>
+        <textarea
+          value={data.zoneTheme}
+          onChange={(e) => onChange({ zoneTheme: e.target.value })}
+          placeholder="A bustling medieval town square where adventurers gather..."
+          rows={2}
+          className="w-full rounded border border-border-default bg-bg-primary px-3 py-2 text-xs leading-relaxed text-text-primary outline-none placeholder:text-text-muted focus:border-accent/50 focus-visible:ring-2 focus-visible:ring-border-active"
+        />
+        <p className="mt-1 text-2xs text-text-muted">
+          Sets the vibe for your first zone. Used by the art generator and AI
+          room descriptions.
         </p>
       </div>
 
@@ -36,7 +53,7 @@ export function WorldIdentityStep({ data, onChange }: WorldIdentityStepProps) {
             onChange={(e) => onChange({ telnetPort: Number(e.target.value) })}
             min={1}
             max={65535}
-            className="w-full rounded border border-border-default bg-bg-primary px-2 py-1.5 text-xs text-text-primary outline-none focus:border-accent/50 focus-visible:ring-2 focus-visible:ring-border-active"
+            className="w-full rounded border border-border-default bg-bg-primary px-3 py-2 text-xs text-text-primary outline-none focus:border-accent/50 focus-visible:ring-2 focus-visible:ring-border-active"
           />
         </div>
         <div className="flex-1">
@@ -49,7 +66,7 @@ export function WorldIdentityStep({ data, onChange }: WorldIdentityStepProps) {
             onChange={(e) => onChange({ webPort: Number(e.target.value) })}
             min={1}
             max={65535}
-            className="w-full rounded border border-border-default bg-bg-primary px-2 py-1.5 text-xs text-text-primary outline-none focus:border-accent/50 focus-visible:ring-2 focus-visible:ring-border-active"
+            className="w-full rounded border border-border-default bg-bg-primary px-3 py-2 text-xs text-text-primary outline-none focus:border-accent/50 focus-visible:ring-2 focus-visible:ring-border-active"
           />
         </div>
       </div>

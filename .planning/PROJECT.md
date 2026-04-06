@@ -43,8 +43,8 @@ Builders can turn their zone worldbuilding into living narratives — stories th
 ### Active
 
 - [x] Timeline editor with draggable scene cards for story authoring — Phase 8
-- [ ] Scene composition with room backgrounds, entity spotlights, and narration text
-- [ ] Entity picker from zone data browser and/or zone map
+- [x] Scene composition with room backgrounds, entity spotlights, and narration text — Phase 9
+- [x] Entity picker from zone data browser and/or zone map — Phase 9
 - [ ] Cinematic effects: parallax layers, particle effects, sprite movement paths
 - [ ] Fullscreen DM slide presentation mode with keystroke advance
 - [x] Stories as a new lore article type with full lore system integration — Phase 7

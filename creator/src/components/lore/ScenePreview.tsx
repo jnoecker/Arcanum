@@ -1,9 +1,14 @@
 import { useState, useEffect, useCallback, useRef } from "react";
+import { LazyMotion } from "motion/react";
 import { useZoneStore } from "@/stores/zoneStore";
 import { useStoryStore } from "@/stores/storyStore";
 import { useImageSrc } from "@/lib/useImageSrc";
+import { loadMotionFeatures } from "@/lib/motionFeatures";
 import { isBackRow, extractPlainText } from "@/lib/sceneLayout";
 import { EntityOverlay } from "./EntityOverlay";
+import { AnimatedEntity } from "./AnimatedEntity";
+import { TypewriterNarration } from "./TypewriterNarration";
+import { PreviewPlayback } from "./PreviewPlayback";
 import type { Scene, SceneEntity } from "@/types/story";
 import type { ZoneState } from "@/stores/zoneStore";
 
@@ -38,6 +43,33 @@ function resolveEntityInfo(
   return { name: entity.entityId };
 }
 
+// ─── Animated entity wrapper (resolves image via hook) ─────────────
+
+function AnimatedEntityWithImage({
+  entity,
+  entityName,
+  entityImage,
+  playing,
+  exiting,
+}: {
+  entity: SceneEntity;
+  entityName: string;
+  entityImage?: string;
+  playing: boolean;
+  exiting: boolean;
+}) {
+  const src = useImageSrc(entityImage);
+  return (
+    <AnimatedEntity
+      entity={entity}
+      entityName={entityName}
+      imageSrc={src ?? undefined}
+      playing={playing}
+      exiting={exiting}
+    />
+  );
+}
+
 // ─── ScenePreview ──────────────────────────────────────────────────
 
 export function ScenePreview({ scene, storyId, zoneId }: ScenePreviewProps) {
@@ -53,9 +85,18 @@ export function ScenePreview({ scene, storyId, zoneId }: ScenePreviewProps) {
 
   const [selectedEntityId, setSelectedEntityId] = useState<string | null>(null);
 
-  // Reset selection when scene changes
+  // ─── Preview playback state ─────────────────────────────────
+
+  const [previewPlaying, setPreviewPlaying] = useState(false);
+
+  const handlePreviewToggle = useCallback(() => {
+    setPreviewPlaying((prev) => !prev);
+  }, []);
+
+  // Reset selection and preview when scene changes
   useEffect(() => {
     setSelectedEntityId(null);
+    setPreviewPlaying(false);
   }, [scene.id]);
 
   // Delete key handler for selected entity
@@ -172,61 +213,122 @@ export function ScenePreview({ scene, storyId, zoneId }: ScenePreviewProps) {
         </div>
       )}
 
-      {/* Layer 1: Back-row entities (z-10) */}
-      <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 10 }}>
-        {backRowEntities.map((entity) => {
-          const info = resolveEntityInfo(entity, zoneState);
-          return (
-            <EntityOverlay
-              key={entity.id}
-              entity={entity}
-              entityName={info.name}
-              entityImage={info.image}
-              containerRef={containerRef}
-              selected={selectedEntityId === entity.id}
-              onSelect={handleSelect}
-              onReposition={handleReposition}
-              onRemove={handleRemoveEntity}
-            />
-          );
-        })}
-      </div>
+      {/* Preview playback button (z-40) */}
+      <PreviewPlayback playing={previewPlaying} onToggle={handlePreviewToggle} />
 
-      {/* Layer 2: Front-row entities (z-20) */}
-      <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 20 }}>
-        {frontRowEntities.map((entity) => {
-          const info = resolveEntityInfo(entity, zoneState);
-          return (
-            <EntityOverlay
-              key={entity.id}
-              entity={entity}
-              entityName={info.name}
-              entityImage={info.image}
-              containerRef={containerRef}
-              selected={selectedEntityId === entity.id}
-              onSelect={handleSelect}
-              onReposition={handleReposition}
-              onRemove={handleRemoveEntity}
-            />
-          );
-        })}
-      </div>
-
-      {/* Layer 3: Narration overlay (z-30) */}
-      {narrationText && (
-        <div
-          className="absolute inset-x-0 bottom-0 pointer-events-none"
-          style={{ zIndex: 30 }}
-        >
-          <div className="bg-gradient-to-t from-black/60 to-transparent px-6 py-4">
-            <p
-              className="font-body text-sm text-white leading-relaxed line-clamp-3"
-              style={{ textShadow: "0 1px 3px rgba(0,0,0,0.5)" }}
-            >
-              {narrationText}
-            </p>
+      {previewPlaying ? (
+        /* ─── Animated preview mode ────────────────────────────── */
+        <LazyMotion features={loadMotionFeatures} strict>
+          {/* Layer 1: Back-row animated entities (z-10) */}
+          <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 10 }}>
+            {backRowEntities.map((entity) => {
+              const info = resolveEntityInfo(entity, zoneState);
+              return (
+                <AnimatedEntityWithImage
+                  key={entity.id}
+                  entity={entity}
+                  entityName={info.name}
+                  entityImage={info.image}
+                  playing={previewPlaying}
+                  exiting={false}
+                />
+              );
+            })}
           </div>
-        </div>
+
+          {/* Layer 2: Front-row animated entities (z-20) */}
+          <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 20 }}>
+            {frontRowEntities.map((entity) => {
+              const info = resolveEntityInfo(entity, zoneState);
+              return (
+                <AnimatedEntityWithImage
+                  key={entity.id}
+                  entity={entity}
+                  entityName={info.name}
+                  entityImage={info.image}
+                  playing={previewPlaying}
+                  exiting={false}
+                />
+              );
+            })}
+          </div>
+
+          {/* Layer 3: Animated narration overlay (z-30) */}
+          {scene.narration && (
+            <div
+              className="absolute inset-x-0 bottom-0 pointer-events-none"
+              style={{ zIndex: 30 }}
+            >
+              <div className="bg-gradient-to-t from-black/60 to-transparent">
+                <TypewriterNarration
+                  narrationJson={scene.narration}
+                  playing={previewPlaying}
+                  speed={scene.narrationSpeed ?? "normal"}
+                />
+              </div>
+            </div>
+          )}
+        </LazyMotion>
+      ) : (
+        /* ─── Static edit mode ─────────────────────────────────── */
+        <>
+          {/* Layer 1: Back-row entities (z-10) */}
+          <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 10 }}>
+            {backRowEntities.map((entity) => {
+              const info = resolveEntityInfo(entity, zoneState);
+              return (
+                <EntityOverlay
+                  key={entity.id}
+                  entity={entity}
+                  entityName={info.name}
+                  entityImage={info.image}
+                  containerRef={containerRef}
+                  selected={selectedEntityId === entity.id}
+                  onSelect={handleSelect}
+                  onReposition={handleReposition}
+                  onRemove={handleRemoveEntity}
+                />
+              );
+            })}
+          </div>
+
+          {/* Layer 2: Front-row entities (z-20) */}
+          <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 20 }}>
+            {frontRowEntities.map((entity) => {
+              const info = resolveEntityInfo(entity, zoneState);
+              return (
+                <EntityOverlay
+                  key={entity.id}
+                  entity={entity}
+                  entityName={info.name}
+                  entityImage={info.image}
+                  containerRef={containerRef}
+                  selected={selectedEntityId === entity.id}
+                  onSelect={handleSelect}
+                  onReposition={handleReposition}
+                  onRemove={handleRemoveEntity}
+                />
+              );
+            })}
+          </div>
+
+          {/* Layer 3: Narration overlay (z-30) */}
+          {narrationText && (
+            <div
+              className="absolute inset-x-0 bottom-0 pointer-events-none"
+              style={{ zIndex: 30 }}
+            >
+              <div className="bg-gradient-to-t from-black/60 to-transparent px-6 py-4">
+                <p
+                  className="font-body text-sm text-white leading-relaxed line-clamp-3"
+                  style={{ textShadow: "0 1px 3px rgba(0,0,0,0.5)" }}
+                >
+                  {narrationText}
+                </p>
+              </div>
+            </div>
+          )}
+        </>
       )}
     </div>
   );

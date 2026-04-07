@@ -225,6 +225,66 @@ async function probeNarrationDurationMs(filePath: string): Promise<number | null
  * equivalent of `useResolvedSceneData`'s `resolveEntityInfo` — we use it
  * so the orchestrator doesn't depend on the hook's async state machine.
  */
+/**
+ * Splits a paragraph of narration text into sentence-sized caption
+ * chunks with proportional timing. Called from the caption-building
+ * loop so the exported video shows short, readable subtitles (1-2
+ * lines each) instead of huge paragraph walls.
+ *
+ * Splits on sentence-terminal punctuation (`.`, `!`, `?`) followed
+ * by whitespace. The last sentence may lack terminal punctuation and
+ * is still included. Abbreviations like "Mr." or "e.g." are not
+ * specially handled — they'll cause a slightly premature split but
+ * the captions will still be readable.
+ *
+ * Timing is distributed proportionally to each sentence's word count
+ * within the parent paragraph, so the caption on-screen time roughly
+ * matches the TTS audio of that sentence.
+ */
+function splitIntoSentenceChunks(
+  text: string,
+  parentStartMs: number,
+  parentEndMs: number,
+): { text: string; startMs: number; endMs: number }[] {
+  const trimmed = text.trim();
+  if (!trimmed) return [];
+
+  // Match sentences: non-terminal chars followed by terminal punctuation
+  // (optionally followed by whitespace), or a trailing fragment with
+  // no terminator.
+  const matches = trimmed.match(/[^.!?]+[.!?]+[\s]*|[^.!?]+$/g) ?? [trimmed];
+  const sentences = matches.map((s) => s.trim()).filter((s) => s.length > 0);
+  if (sentences.length === 0) return [];
+  if (sentences.length === 1) {
+    return [{ text: sentences[0]!, startMs: parentStartMs, endMs: parentEndMs }];
+  }
+
+  const wordCounts = sentences.map((s) => s.split(/\s+/).filter(Boolean).length);
+  const totalWords = wordCounts.reduce((sum, n) => sum + n, 0);
+  if (totalWords === 0) return [];
+
+  const parentDurationMs = parentEndMs - parentStartMs;
+  const result: { text: string; startMs: number; endMs: number }[] = [];
+  let cursor = parentStartMs;
+
+  for (let i = 0; i < sentences.length; i++) {
+    const words = wordCounts[i] ?? 0;
+    // Last sentence absorbs any rounding remainder so the total
+    // duration matches parentEndMs exactly.
+    const durationMs =
+      i === sentences.length - 1
+        ? Math.max(0, parentEndMs - cursor)
+        : Math.round((words / totalWords) * parentDurationMs);
+    result.push({
+      text: sentences[i]!,
+      startMs: cursor,
+      endMs: cursor + durationMs,
+    });
+    cursor += durationMs;
+  }
+  return result;
+}
+
 function resolveEntityFromWorld(
   sceneEntity: SceneEntity,
   world: WorldFile,
@@ -744,19 +804,30 @@ export async function exportStoryVideo(
           offsetMs: cumulativeMs + timelineEntry.narrationStartMs,
         });
       }
-      // Caption chunks: paragraph-sized subtitle pieces with absolute
-      // video timestamps. The timeline entry already has them in
-      // scene-relative time (offset by narrationStartMs), so we shift
-      // by cumulativeMs to get absolute video time.
+      // Caption chunks: one per SENTENCE (not per paragraph) so the
+      // viewer sees short, readable subtitles instead of a wall of
+      // text. The timeline gives us paragraph-sized chunks with
+      // scene-relative start/end; we shift each to absolute video
+      // time and then subdivide into sentences with proportional
+      // timing via `splitIntoSentenceChunks`.
       if (preset.burnedCaptions && timelineEntry) {
         for (const chunk of timelineEntry.narrationChunks) {
-          const text = chunk.text.trim();
-          if (!text) continue;
-          captionChunks.push({
-            text,
-            startMs: cumulativeMs + chunk.startMs,
-            endMs: cumulativeMs + chunk.endMs,
-          });
+          const parentText = chunk.text.trim();
+          if (!parentText) continue;
+          const parentStart = cumulativeMs + chunk.startMs;
+          const parentEnd = cumulativeMs + chunk.endMs;
+          const sentences = splitIntoSentenceChunks(
+            parentText,
+            parentStart,
+            parentEnd,
+          );
+          for (const s of sentences) {
+            captionChunks.push({
+              text: s.text,
+              startMs: s.startMs,
+              endMs: s.endMs,
+            });
+          }
         }
       }
       cumulativeMs += savedFrames[i]!.durationMs;

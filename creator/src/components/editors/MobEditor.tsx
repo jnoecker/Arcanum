@@ -9,7 +9,6 @@ import {
   TextInput,
   NumberInput,
   SelectInput,
-  CheckboxInput,
   IconButton,
 } from "@/components/ui/FormWidgets";
 import { DialogueEditor } from "./DialogueEditor";
@@ -160,13 +159,6 @@ export function MobEditor({
               value={mob.faction ?? ""}
               onCommit={(v) => patch({ faction: v || undefined })}
               placeholder="Faction ID (e.g. crimson_guild)"
-            />
-          </FieldRow>
-          <FieldRow label="Housing Broker">
-            <CheckboxInput
-              checked={mob.housingBroker ?? false}
-              onCommit={(v) => patch({ housingBroker: v || undefined })}
-              label="Can broker housing"
             />
           </FieldRow>
         </div>

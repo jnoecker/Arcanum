@@ -1,6 +1,7 @@
 import type { WorldFile } from "@/types/world";
 import type { EquipmentSlotDefinition } from "@/types/config";
 import { exitTarget } from "./zoneEdits";
+import { getTrainerClasses } from "./trainers";
 
 export type Severity = "error" | "warning";
 
@@ -264,18 +265,23 @@ export function validateZone(
         message: `Room "${trainer.room}" does not exist`,
       });
     }
-    if (!trainer.class?.trim()) {
+    const trainerClassList = getTrainerClasses(trainer);
+    if (trainerClassList.length === 0) {
       issues.push({
         severity: "error",
         entity: `trainer:${trainerId}`,
         message: "Trainer has no class",
       });
-    } else if (!VALID_CLASSES.has(trainer.class.toUpperCase())) {
-      issues.push({
-        severity: "warning",
-        entity: `trainer:${trainerId}`,
-        message: `Class "${trainer.class}" is not a standard class`,
-      });
+    } else {
+      for (const cls of trainerClassList) {
+        if (!VALID_CLASSES.has(cls.toUpperCase())) {
+          issues.push({
+            severity: "warning",
+            entity: `trainer:${trainerId}`,
+            message: `Class "${cls}" is not a standard class`,
+          });
+        }
+      }
     }
     if (trainerRooms.has(trainer.room)) {
       issues.push({

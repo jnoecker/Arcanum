@@ -303,13 +303,20 @@ function stripInvalidEntities(world: WorldFile): WorldFile {
     };
   }
 
-  // Mobs: remove if room doesn't exist, default name
+  // Mobs: remove if room doesn't exist, default name. Also strip the
+  // legacy `housingBroker` flag — the MUD's MobFile has no such field and
+  // the HousingSystem never checks the player's location for `house buy`,
+  // so the flag was dead weight in the YAML. Drop it on next save so old
+  // projects get cleaned up automatically.
   let mobs: Record<string, MobFile> | undefined;
   if (world.mobs) {
     mobs = {};
     for (const [id, mob] of Object.entries(world.mobs)) {
       if (!roomIds.has(mob.room)) continue;
-      mobs[id] = { ...mob, name: mob.name?.trim() || id };
+      const { housingBroker: _legacyBroker, ...cleanMob } = mob as MobFile & {
+        housingBroker?: unknown;
+      };
+      mobs[id] = { ...cleanMob, name: mob.name?.trim() || id };
     }
   }
 

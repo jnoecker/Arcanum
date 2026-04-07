@@ -94,7 +94,6 @@ export interface MobFile {
   behavior?: BehaviorFile;
   dialogue?: Record<string, DialogueNodeFile>;
   quests?: string[];
-  housingBroker?: boolean;
   faction?: string;
   image?: string;
   video?: string;
@@ -174,7 +173,19 @@ export interface ShopFile {
 
 export interface TrainerFile {
   name: string;
-  class: string;
+  /**
+   * Legacy single-class field. Still supported for existing content and for
+   * trainers that only teach one class (which is the common case). The MUD's
+   * TrainerFile keeps this around for backwards compatibility.
+   */
+  class?: string;
+  /**
+   * Multi-class list. When set and non-empty, takes precedence over {@link class}
+   * — matches the loader rule in reference/.../WorldLoader.kt. Use this for
+   * trainers that teach two or more classes (e.g. a combat academy master
+   * teaching WARRIOR + ROGUE + RANGER).
+   */
+  classes?: string[];
   room: string;
   image?: string;
 }

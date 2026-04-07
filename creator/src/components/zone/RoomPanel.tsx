@@ -18,6 +18,7 @@ import { MediaPicker } from "@/components/ui/MediaPicker";
 import { MusicGenerator } from "@/components/ui/MusicGenerator";
 import { VideoGenerator } from "@/components/ui/VideoGenerator";
 import { roomPrompt, roomContext } from "@/lib/entityPrompts";
+import { getTrainerClasses } from "@/lib/trainers";
 import { EnhanceDescriptionButton } from "@/components/editors/EditorShared";
 import { useVibeStore } from "@/stores/vibeStore";
 import { useAssetStore } from "@/stores/assetStore";
@@ -421,7 +422,7 @@ export function RoomPanel({
                   className="w-full rounded px-1 py-0.5 text-left text-xs transition-colors hover:bg-bg-tertiary"
                 >
                   <span className="font-medium text-text-primary">{trainer.name}</span>
-                  <span className="ml-1 text-text-muted">[{trainer.class}]</span>
+                  <span className="ml-1 text-text-muted">[{getTrainerClasses(trainer).join(", ") || "?"}]</span>
                 </button>
               </li>
             ))}

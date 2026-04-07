@@ -1,4 +1,5 @@
 import type { RoomFile, MobFile, ItemFile, ShopFile, TrainerFile, WorldFile } from "@/types/world";
+import { getTrainerPrimaryClass } from "@/lib/trainers";
 import { type ArtStyle, getPreamble, getStyleSuffix, FORMAT_BY_TYPE } from "./arcanumPrompts";
 
 export type DefaultImageKind = "room" | "mob" | "item";
@@ -232,7 +233,7 @@ ${EMPTY_SCENE_DIRECTIVE}`;
 /** Build a full prompt for a trainer image. */
 export function trainerPrompt(_trainerId: string, trainer: TrainerFile, style: ArtStyle = "gentle_magic"): string {
   const preamble = getPreamble(style, "worldbuilding");
-  const cls = trainer.class?.toLowerCase() ?? "warrior";
+  const cls = getTrainerPrimaryClass(trainer)?.toLowerCase() ?? "warrior";
 
   if (style === "gentle_magic") {
     return `${FORMAT_BY_TYPE.mob}. ${preamble}

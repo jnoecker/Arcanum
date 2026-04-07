@@ -146,6 +146,14 @@ export interface ShowcaseStory {
   featuredCharacterIds?: string[];
   primaryMapId?: string;
   primaryCalendarId?: string;
+  // ─── Exported cinematic (MP4 on R2) ──────────────────────────────
+  /**
+   * Public URL of the showcase-preset cinematic MP4. When present,
+   * the showcase player page shows a "Watch cinematic" button that
+   * opens a full-screen native video player instead of the
+   * interactive scene renderer.
+   */
+  cinematicUrl?: string;
 }
 
 export interface ShowcaseData {

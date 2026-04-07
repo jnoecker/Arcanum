@@ -1086,6 +1086,70 @@ pub async fn resolve_asset_url(app: AppHandle, file_name: String) -> Result<Stri
     Ok(format!("{domain}/{file_name}"))
 }
 
+/// Deploys a story's exported MP4 cinematic to R2 under
+/// `showcase/videos/<story_id>.mp4`. Returns the public URL so the
+/// caller can stamp it onto the story's metadata for inclusion in
+/// the next showcase JSON deploy.
+#[tauri::command]
+pub async fn deploy_story_video_to_r2(
+    app: AppHandle,
+    story_id: String,
+    file_path: String,
+) -> Result<String, String> {
+    let s = settings::get_settings(app).await?;
+    if s.r2_account_id.is_empty()
+        || s.r2_access_key_id.is_empty()
+        || s.r2_secret_access_key.is_empty()
+        || s.r2_bucket.is_empty()
+    {
+        return Err("R2 credentials not configured. Set them in Settings.".to_string());
+    }
+    if s.r2_custom_domain.is_empty() {
+        return Err(
+            "R2 custom domain not configured — showcase URLs need it to be reachable."
+                .to_string(),
+        );
+    }
+
+    // Only allow alphanumeric + dash/underscore for the story ID so a
+    // malicious input can't escape the expected key prefix.
+    if story_id.is_empty()
+        || story_id
+            .chars()
+            .any(|c| !c.is_ascii_alphanumeric() && c != '-' && c != '_')
+    {
+        return Err(format!(
+            "Invalid story_id '{story_id}' — alphanumeric + dash/underscore only"
+        ));
+    }
+
+    let bytes = tokio::fs::read(&file_path)
+        .await
+        .map_err(|e| format!("Failed to read cinematic file '{file_path}': {e}"))?;
+
+    if bytes.is_empty() {
+        return Err("Cinematic file is empty".to_string());
+    }
+
+    let client = reqwest::Client::new();
+    let object_key = format!("showcase/videos/{story_id}.mp4");
+
+    upload_object(
+        &client,
+        &s.r2_account_id,
+        &s.r2_bucket,
+        &s.r2_access_key_id,
+        &s.r2_secret_access_key,
+        &object_key,
+        bytes,
+        "video/mp4",
+    )
+    .await?;
+
+    let domain = s.r2_custom_domain.trim_end_matches('/');
+    Ok(format!("{domain}/{object_key}"))
+}
+
 /// Deploy showcase JSON to R2 so the lore site can fetch it.
 #[tauri::command]
 pub async fn deploy_showcase_to_r2(

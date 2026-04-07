@@ -98,7 +98,7 @@ export async function generateZonePlans(
   imageDataUrl: string,
   lore: WorldLore,
   options: ZonePlanGenerationOptions = {},
-): Promise<ZonePlanSuggestion[]> {
+): Promise<RepairResult> {
   const {
     targetCount,
     toneHint,
@@ -131,7 +131,164 @@ export async function generateZonePlans(
     imageDataUrl,
   });
 
-  return parseZoneResponse(response, map);
+  const parsed = parseZoneResponse(response, map);
+  return repairZonePlanSuggestions(parsed, {
+    width: map.width,
+    height: map.height,
+  });
+}
+
+// ─── Repair pass ────────────────────────────────────────────────────
+//
+// LLM output for spatial layouts is unreliable: borders are often
+// non-reciprocal, names are sometimes duplicated, bboxes overlap or
+// miss huge chunks of the map. This pass takes raw parsed suggestions
+// and applies deterministic clean-up before they reach the user.
+
+export interface MapDims {
+  width: number;
+  height: number;
+}
+
+export interface RepairResult {
+  suggestions: ZonePlanSuggestion[];
+  warnings: string[];
+}
+
+/**
+ * Deterministic clean-up of LLM-generated zone suggestions.
+ *
+ * Pure function — no I/O, no LLM calls. Easy to unit-test.
+ */
+export function repairZonePlanSuggestions(
+  raw: ZonePlanSuggestion[],
+  map: MapDims,
+): RepairResult {
+  const warnings: string[] = [];
+
+  // 1. Drop empties.
+  let working = raw.filter((s) => s.name.trim().length > 0);
+
+  // 2. Dedupe by case-insensitive name (keep first occurrence, merge borders).
+  const byName = new Map<string, ZonePlanSuggestion>();
+  for (const s of working) {
+    const key = s.name.trim().toLowerCase();
+    const existing = byName.get(key);
+    if (!existing) {
+      byName.set(key, { ...s, name: s.name.trim() });
+      continue;
+    }
+    // Merge borders from the duplicate into the kept entry.
+    const merged = new Set([...existing.borderNames, ...s.borderNames]);
+    existing.borderNames = [...merged];
+    if (s.hooks.length > existing.hooks.length) existing.hooks = s.hooks;
+    if (s.blurb.length > existing.blurb.length) existing.blurb = s.blurb;
+    warnings.push(`Merged duplicate zone "${s.name}".`);
+  }
+  working = [...byName.values()];
+
+  // 3. Clip every region to map bounds and ensure positive size.
+  working = working.map((s) => ({
+    ...s,
+    region: clipRegion(s.region, map),
+  }));
+
+  // 4. Drop borders that point at zones we don't have. Track survivors
+  //    by lowercase name so cross-references stay consistent.
+  const liveNames = new Set(working.map((s) => s.name.toLowerCase()));
+  for (const s of working) {
+    const filtered = s.borderNames.filter((b) =>
+      liveNames.has(b.trim().toLowerCase()),
+    );
+    if (filtered.length !== s.borderNames.length) {
+      warnings.push(
+        `Dropped ${s.borderNames.length - filtered.length} unresolved border(s) on "${s.name}".`,
+      );
+    }
+    s.borderNames = filtered;
+  }
+
+  // 5. Make borders reciprocal: if A → B, ensure B → A.
+  const nameLookup = new Map<string, ZonePlanSuggestion>();
+  for (const s of working) nameLookup.set(s.name.toLowerCase(), s);
+  let addedReciprocal = 0;
+  for (const a of working) {
+    for (const bName of a.borderNames) {
+      const b = nameLookup.get(bName.toLowerCase());
+      if (!b) continue;
+      const hasReverse = b.borderNames.some(
+        (n) => n.toLowerCase() === a.name.toLowerCase(),
+      );
+      if (!hasReverse) {
+        b.borderNames = [...b.borderNames, a.name];
+        addedReciprocal++;
+      }
+    }
+  }
+  if (addedReciprocal > 0) {
+    warnings.push(`Made ${addedReciprocal} border(s) reciprocal.`);
+  }
+
+  // 6. Drop self-borders.
+  for (const s of working) {
+    s.borderNames = s.borderNames.filter(
+      (n) => n.toLowerCase() !== s.name.toLowerCase(),
+    );
+  }
+
+  // 7. Coverage check (warning only — never silently mutate the layout).
+  const mapArea = Math.max(1, map.width * map.height);
+  const totalArea = working.reduce(
+    (acc, s) => acc + s.region.w * s.region.h,
+    0,
+  );
+  const coverage = totalArea / mapArea;
+  if (coverage < 0.55) {
+    warnings.push(
+      `Zones cover only ${(coverage * 100).toFixed(0)}% of the map — large areas were skipped.`,
+    );
+  }
+
+  // 8. Overlap check (warning only — overlap is sometimes intentional
+  //    when zones are layered, so we don't auto-shrink).
+  let overlapPairs = 0;
+  for (let i = 0; i < working.length; i++) {
+    for (let j = i + 1; j < working.length; j++) {
+      const aRegion = working[i]!.region;
+      const bRegion = working[j]!.region;
+      const iou = intersectionOverUnion(aRegion, bRegion);
+      if (iou > 0.5) overlapPairs++;
+    }
+  }
+  if (overlapPairs > 0) {
+    warnings.push(`${overlapPairs} pair(s) of zones heavily overlap.`);
+  }
+
+  return { suggestions: working, warnings };
+}
+
+function clipRegion(r: ZonePlanRegion, map: MapDims): ZonePlanRegion {
+  const x = clamp(r.x, 0, map.width);
+  const y = clamp(r.y, 0, map.height);
+  const w = clamp(r.w, 1, map.width - x);
+  const h = clamp(r.h, 1, map.height - y);
+  return { x, y, w, h };
+}
+
+function intersectionOverUnion(
+  a: ZonePlanRegion,
+  b: ZonePlanRegion,
+): number {
+  const ix1 = Math.max(a.x, b.x);
+  const iy1 = Math.max(a.y, b.y);
+  const ix2 = Math.min(a.x + a.w, b.x + b.w);
+  const iy2 = Math.min(a.y + a.h, b.y + b.h);
+  const iw = Math.max(0, ix2 - ix1);
+  const ih = Math.max(0, iy2 - iy1);
+  const inter = iw * ih;
+  const union = a.w * a.h + b.w * b.h - inter;
+  if (union <= 0) return 0;
+  return inter / union;
 }
 
 // ─── Response parsing ───────────────────────────────────────────────

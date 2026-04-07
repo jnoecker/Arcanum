@@ -454,6 +454,7 @@ export function WorldPlannerPanel() {
   const [error, setError] = useState<string | null>(null);
 
   const [suggestions, setSuggestions] = useState<ZonePlanSuggestion[]>([]);
+  const [warnings, setWarnings] = useState<string[]>([]);
   const [dismissed, setDismissed] = useState<Set<string>>(new Set());
   const [accepted, setAccepted] = useState<Set<string>>(new Set());
 
@@ -478,15 +479,16 @@ export function WorldPlannerPanel() {
     setLoading(true);
     setError(null);
     try {
-      const results = await generateZonePlans(sourceMap, mapImage, lore, {
+      const result = await generateZonePlans(sourceMap, mapImage, lore, {
         targetCount,
         toneHint,
         useLoreContext,
       });
-      setSuggestions(results);
+      setSuggestions(result.suggestions);
+      setWarnings(result.warnings);
       setDismissed(new Set());
       setAccepted(new Set());
-      if (results.length === 0) {
+      if (result.suggestions.length === 0) {
         setError("The model returned no zones. Try regenerating or adjusting the hint.");
       }
     } catch (err) {
@@ -588,6 +590,19 @@ export function WorldPlannerPanel() {
         <p className="rounded-lg border border-status-danger/30 bg-status-danger/5 px-3 py-2 text-xs text-status-danger">
           {error}
         </p>
+      )}
+
+      {warnings.length > 0 && (
+        <div className="rounded-lg border border-status-warning/30 bg-status-warning/5 px-3 py-2">
+          <div className="mb-1 text-2xs font-medium uppercase tracking-wider text-status-warning">
+            Repair notes
+          </div>
+          <ul className="space-y-0.5 text-2xs text-text-secondary">
+            {warnings.map((w, i) => (
+              <li key={i}>• {w}</li>
+            ))}
+          </ul>
+        </div>
       )}
 
       {/* Staged suggestions */}

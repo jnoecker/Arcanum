@@ -172,17 +172,50 @@ pub struct VideoExportResult {
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
-struct ProgressEvent {
-    stage: &'static str,
-    message: String,
+pub struct ProgressEvent {
+    pub stage: &'static str,
+    pub message: String,
+    /// Fraction within the stage, 0..1. `None` on stage-transition
+    /// announcements (e.g. "audio_mix starting"); `Some` when
+    /// forwarded from the inline ffmpeg parser.
+    pub stage_fraction: Option<f32>,
+    /// Encoding speed multiplier, if available (e.g. 1.23 = 1.23×
+    /// realtime). Shown in the UI as "1.23x realtime".
+    pub speed: Option<f64>,
+    /// Current frame number (video encode only).
+    pub frame: Option<u64>,
 }
 
 fn emit_progress(app: &AppHandle, stage: &'static str, message: impl Into<String>) {
     let payload = ProgressEvent {
         stage,
         message: message.into(),
+        stage_fraction: None,
+        speed: None,
+        frame: None,
     };
     // Best-effort: emit failures are non-fatal for the pipeline.
+    let _ = app.emit("video_export:progress", payload);
+}
+
+/// Emits a progress event with an inline fraction from the ffmpeg
+/// parser. Called by audio_mix and video_encode during the spawn
+/// loop.
+pub fn emit_stage_progress(
+    app: &AppHandle,
+    stage: &'static str,
+    message: impl Into<String>,
+    fraction: Option<f32>,
+    speed: Option<f64>,
+    frame: Option<u64>,
+) {
+    let payload = ProgressEvent {
+        stage,
+        message: message.into(),
+        stage_fraction: fraction,
+        speed,
+        frame,
+    };
     let _ = app.emit("video_export:progress", payload);
 }
 

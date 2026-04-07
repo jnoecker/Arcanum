@@ -418,27 +418,49 @@ export async function exportStoryVideo(
   };
 
   // ─── Subscribe to Rust-side progress relayed from export_story_video ──
-  // Rust emits at audio_mix / video_encode / mux / cleanup / done stages.
-  // We map those to the orchestrator's progress callback.
+  // Rust emits stage-transition events (stage_fraction: null) and
+  // intra-stage progress events parsed from ffmpeg's -progress stream
+  // (stage_fraction: 0..1). We map each event onto the overall progress
+  // bar by assigning each stage a [start, end] band and interpolating
+  // within it using the stage_fraction when present.
+  //
+  // Stage bands total the 0.70..1.00 window — everything before 0.70 is
+  // client-side work (TTS, frame render, asset resolution) whose progress
+  // is already emitted directly from the main pipeline below.
+  const stageBands: Partial<Record<ExportStage, [number, number]>> = {
+    audio_mix: [0.70, 0.78],
+    video_encode: [0.78, 0.93],
+    mux: [0.93, 0.97],
+    cleanup: [0.97, 0.99],
+    done: [1.0, 1.0],
+  };
+
   let unlistenProgress: UnlistenFn | null = null;
   try {
-    unlistenProgress = await listen<{ stage: string; message: string }>(
+    unlistenProgress = await listen<{
+      stage: string;
+      message: string;
+      stageFraction?: number | null;
+      speed?: number | null;
+      frame?: number | null;
+    }>(
       "video_export:progress",
       (event) => {
         const stage = event.payload.stage as ExportStage;
-        // Rough fractions for the Rust-side sub-stages.
-        const fractionByStage: Partial<Record<ExportStage, number>> = {
-          audio_mix: 0.72,
-          video_encode: 0.82,
-          mux: 0.95,
-          cleanup: 0.98,
-          done: 1.0,
-        };
-        emit({
-          stage,
-          fraction: fractionByStage[stage] ?? 0.8,
-          message: event.payload.message,
-        });
+        const band = stageBands[stage];
+        if (!band) return;
+        const [start, end] = band;
+        const stageFraction =
+          event.payload.stageFraction ?? (stage === "done" ? 1 : 0);
+        const overall = start + (end - start) * Math.max(0, Math.min(1, stageFraction));
+        // Decorate the message with speed/frame info when the ffmpeg
+        // parser produced them. Keeps the UI informative during long
+        // encodes without needing a new payload field.
+        let message = event.payload.message;
+        if (event.payload.speed != null) {
+          message = `${message} (${event.payload.speed.toFixed(2)}x)`;
+        }
+        emit({ stage, fraction: overall, message });
       },
     );
   } catch (e) {

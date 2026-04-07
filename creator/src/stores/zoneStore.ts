@@ -17,6 +17,12 @@ interface ZoneStore {
   loadZone: (zoneId: string, filePath: string, data: WorldFile) => void;
   updateZone: (zoneId: string, data: WorldFile) => void;
   markClean: (zoneId: string) => void;
+  /**
+   * Re-key a loaded zone from `oldId` to `newId`, updating its file path and
+   * the `zone` field inside its data. Preserves undo/redo history. No-op if
+   * the old zone is missing or the new id already exists.
+   */
+  renameZone: (oldId: string, newId: string, newFilePath: string) => void;
   removeZone: (zoneId: string) => void;
   clearZones: () => void;
   undo: (zoneId: string) => void;
@@ -68,6 +74,31 @@ export const useZoneStore = create<ZoneStore>((set, get) => ({
       const existing = zones.get(zoneId);
       if (existing) {
         zones.set(zoneId, { ...existing, dirty: false });
+      }
+      return { zones };
+    }),
+
+  renameZone: (oldId, newId, newFilePath) =>
+    set((state) => {
+      if (oldId === newId) return state;
+      const existing = state.zones.get(oldId);
+      if (!existing) return state;
+      if (state.zones.has(newId)) return state;
+
+      // Rebuild the Map preserving insertion order so sidebar ordering is
+      // stable (alphabetical sort happens at render time anyway).
+      const zones = new Map<string, ZoneState>();
+      for (const [id, zone] of state.zones) {
+        if (id === oldId) {
+          zones.set(newId, {
+            ...existing,
+            filePath: newFilePath,
+            data: { ...existing.data, zone: newId },
+            dirty: true,
+          });
+        } else {
+          zones.set(id, zone);
+        }
       }
       return { zones };
     }),

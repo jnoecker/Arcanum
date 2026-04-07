@@ -284,10 +284,10 @@ export function SketchImportWizard({ onClose }: SketchImportWizardProps) {
         role="dialog"
         aria-modal="true"
         aria-labelledby="sketch-wizard-title"
-        className="mx-4 flex w-full max-w-2xl flex-col rounded-lg border border-border-default bg-bg-secondary shadow-xl"
+        className="mx-4 flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-lg border border-border-default bg-bg-secondary shadow-xl"
       >
         {/* Header */}
-        <div className="border-b border-border-default px-5 py-3">
+        <div className="shrink-0 border-b border-border-default px-5 py-3">
           <h2
             id="sketch-wizard-title"
             className="font-display text-sm tracking-wide text-accent-emphasis"
@@ -606,7 +606,7 @@ export function SketchImportWizard({ onClose }: SketchImportWizardProps) {
         )}
 
         {/* Footer */}
-        <div className="flex justify-end gap-2 border-t border-border-default px-5 py-3">
+        <div className="flex shrink-0 justify-end gap-2 border-t border-border-default px-5 py-3">
           {step === "input" && (
             <button
               onClick={onClose}

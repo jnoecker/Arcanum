@@ -535,6 +535,78 @@ pub async fn clear_world_zones(mud_dir: String) -> Result<u32, String> {
     Ok(count)
 }
 
+/// Rename a zone on disk.
+///
+/// For standalone projects, renames `zones/{old_id}/` to `zones/{new_id}/` and
+/// returns the path to the renamed `zone.yaml` inside it.
+///
+/// For legacy projects, renames `{old_id}.yaml` to `{new_id}.yaml` inside the
+/// world directory (derived from `old_file_path`'s parent) and returns the new
+/// file path.
+///
+/// Refuses to rename if a zone with `new_id` already exists at the destination.
+#[tauri::command]
+pub async fn rename_zone(
+    project_dir: String,
+    project_format: String,
+    old_id: String,
+    new_id: String,
+    old_file_path: String,
+) -> Result<String, String> {
+    if new_id.trim().is_empty() {
+        return Err("New zone id must not be empty".to_string());
+    }
+    if old_id == new_id {
+        return Err("New zone id must differ from the old id".to_string());
+    }
+
+    if project_format == "standalone" {
+        let zones_root = PathBuf::from(&project_dir).join("zones");
+        let old_dir = zones_root.join(&old_id);
+        let new_dir = zones_root.join(&new_id);
+
+        if !old_dir.exists() {
+            return Err(format!("Zone directory not found: {old_id}"));
+        }
+        if new_dir.exists() {
+            return Err(format!("Zone directory already exists: {new_id}"));
+        }
+
+        tokio::fs::rename(&old_dir, &new_dir)
+            .await
+            .map_err(|e| format!("Failed to rename zone directory: {e}"))?;
+
+        Ok(new_dir
+            .join("zone.yaml")
+            .to_string_lossy()
+            .to_string())
+    } else {
+        // Legacy format: rename `{old_id}.yaml` → `{new_id}.yaml` in the same
+        // directory as `old_file_path`.
+        let old_path = PathBuf::from(&old_file_path);
+        let parent = old_path
+            .parent()
+            .ok_or_else(|| "Old zone file has no parent directory".to_string())?;
+        let new_path = parent.join(format!("{new_id}.yaml"));
+
+        if !old_path.exists() {
+            return Err(format!("Zone file not found: {old_file_path}"));
+        }
+        if new_path.exists() {
+            return Err(format!(
+                "Zone file already exists: {}",
+                new_path.to_string_lossy()
+            ));
+        }
+
+        tokio::fs::rename(&old_path, &new_path)
+            .await
+            .map_err(|e| format!("Failed to rename zone file: {e}"))?;
+
+        Ok(new_path.to_string_lossy().to_string())
+    }
+}
+
 /// Delete a single zone file.
 #[tauri::command]
 pub async fn delete_zone_file(file_path: String) -> Result<(), String> {

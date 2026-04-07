@@ -3,6 +3,7 @@ mod anthropic;
 mod arcanum_meta;
 mod assets;
 mod deepinfra;
+mod ffmpeg;
 mod git;
 mod generation;
 mod llm;
@@ -53,6 +54,8 @@ pub fn run() {
             llm::llm_complete,
             llm::llm_complete_with_vision,
             runware::runware_generate_image,
+            ffmpeg::check_ffmpeg_status,
+            ffmpeg::ensure_ffmpeg_ready,
             openai_images::openai_generate_image,
             openai_tts::openai_tts_generate,
             runware::runware_generate_audio,

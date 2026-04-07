@@ -13,6 +13,7 @@ import {
   type RequiredGlobalAsset,
 } from "@/lib/requiredGlobalAssets";
 import type { SyncProgress } from "@/types/assets";
+import { GlobalAssetGeneratorModal } from "./GlobalAssetGeneratorModal";
 
 function AssetThumbnail({ filename }: { filename: string }) {
   const src = useImageSrc(filename);
@@ -40,6 +41,7 @@ export function GlobalAssetsPanel({ config, onChange }: ConfigPanelProps) {
   const [deploying, setDeploying] = useState(false);
   const [deployResult, setDeployResult] = useState<SyncProgress | null>(null);
   const [pickingFor, setPickingFor] = useState<string | null>(null);
+  const [generatingFor, setGeneratingFor] = useState<RequiredGlobalAsset | null>(null);
 
   const updateAssets = (next: Record<string, string>) => {
     onChange({ globalAssets: next });
@@ -126,6 +128,7 @@ export function GlobalAssetsPanel({ config, onChange }: ConfigPanelProps) {
       label?: string;
       description?: string;
       removable: boolean;
+      generateSpec?: RequiredGlobalAsset;
     },
   ) => {
     const unset = !value?.trim();
@@ -160,6 +163,15 @@ export function GlobalAssetsPanel({ config, onChange }: ConfigPanelProps) {
             <span className="min-w-0 flex-1 truncate font-mono text-2xs text-text-muted">
               {value || "No image selected"}
             </span>
+            {options.generateSpec && (
+              <button
+                onClick={() => setGeneratingFor(options.generateSpec!)}
+                className="shrink-0 rounded border border-accent/40 px-2 py-0.5 text-2xs text-accent transition-colors hover:bg-accent/10"
+                title="Generate with default prompt"
+              >
+                Generate
+              </button>
+            )}
             <button
               onClick={() => setPickingFor(key)}
               className="shrink-0 rounded border border-border-default px-2 py-0.5 text-2xs text-text-secondary transition-colors hover:border-accent/50 hover:text-accent"
@@ -269,6 +281,7 @@ export function GlobalAssetsPanel({ config, onChange }: ConfigPanelProps) {
                 label: spec.label,
                 description: spec.description,
                 removable: false,
+                generateSpec: spec,
               }),
             )}
           </div>
@@ -321,6 +334,20 @@ export function GlobalAssetsPanel({ config, onChange }: ConfigPanelProps) {
             handleValueChange(pickingFor, fileName);
           }}
           onClose={() => setPickingFor(null)}
+        />
+      )}
+
+      {generatingFor && (
+        <GlobalAssetGeneratorModal
+          asset={generatingFor}
+          onClose={() => setGeneratingFor(null)}
+          onComplete={(fileName) => {
+            const latest = useConfigStore.getState().config;
+            const currentAssets = latest?.globalAssets ?? {};
+            onChange({
+              globalAssets: { ...currentAssets, [generatingFor.key]: fileName },
+            });
+          }}
         />
       )}
     </>

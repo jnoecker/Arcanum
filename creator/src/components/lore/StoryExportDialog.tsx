@@ -10,7 +10,7 @@
 // just the UI glue: preset selection, file picker, progress display,
 // and wiring the progress callback into local state.
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useRef } from "react";
 import { save } from "@tauri-apps/plugin-dialog";
 import { invoke } from "@tauri-apps/api/core";
 
@@ -50,7 +50,7 @@ interface StoryExportDialogProps {
   onClose: () => void;
 }
 
-type DialogStage = "config" | "running" | "success" | "error";
+type DialogStage = "config" | "running" | "success" | "error" | "cancelled";
 
 // ─── Component ───────────────────────────────────────────────────
 
@@ -70,6 +70,11 @@ export function StoryExportDialog({
   const [progress, setProgress] = useState<ExportProgressEvent | null>(null);
   const [result, setResult] = useState<ExportStoryVideoResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  // AbortController for the in-flight export. Kept in a ref (not
+  // state) so the cancel handler can access the current controller
+  // without forcing a re-render of the dialog mid-export.
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   const selectedPreset = PRESETS[presetId];
 
@@ -114,6 +119,9 @@ export function StoryExportDialog({
     setError(null);
     setResult(null);
 
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
     try {
       const exportResult = await exportStoryVideo({
         story,
@@ -123,6 +131,7 @@ export function StoryExportDialog({
         presetId,
         outputPath,
         voiceOverride,
+        signal: controller.signal,
         onProgress: (event) => {
           setProgress(event);
         },
@@ -130,9 +139,17 @@ export function StoryExportDialog({
       setResult(exportResult);
       setDialogStage("success");
     } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
-      setError(msg);
-      setDialogStage("error");
+      // User-requested abort surfaces as ExportAbortedError with
+      // name === "AbortError" — treat as a normal UX path, not an error.
+      if (e instanceof Error && e.name === "AbortError") {
+        setDialogStage("cancelled");
+      } else {
+        const msg = e instanceof Error ? e.message : String(e);
+        setError(msg);
+        setDialogStage("error");
+      }
+    } finally {
+      abortControllerRef.current = null;
     }
   }, [
     canStart,
@@ -144,6 +161,10 @@ export function StoryExportDialog({
     outputPath,
     voiceOverride,
   ]);
+
+  const handleAbort = useCallback(() => {
+    abortControllerRef.current?.abort();
+  }, []);
 
   // ─── Render ───────────────────────────────────────────────
   return (
@@ -158,6 +179,7 @@ export function StoryExportDialog({
         handleStart,
         onClose,
         () => setDialogStage("config"),
+        handleAbort,
       )}
     >
       {dialogStage === "config" && (
@@ -183,6 +205,8 @@ export function StoryExportDialog({
       {dialogStage === "error" && error && (
         <ErrorView error={error} />
       )}
+
+      {dialogStage === "cancelled" && <CancelledView />}
     </DialogShell>
   );
 }
@@ -195,11 +219,17 @@ function renderFooter(
   onStart: () => void,
   onClose: () => void,
   onReset: () => void,
+  onAbort: () => void,
 ) {
   if (stage === "running") {
     return (
-      <div className="flex items-center justify-between text-xs text-text-muted">
-        <span>Export in progress — please keep the app open.</span>
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-xs text-text-muted">
+          Export in progress — please keep the app open.
+        </span>
+        <ActionButton variant="ghost" onClick={onAbort}>
+          Abort
+        </ActionButton>
       </div>
     );
   }
@@ -225,6 +255,19 @@ function renderFooter(
         </ActionButton>
         <ActionButton variant="primary" onClick={onReset}>
           Try Again
+        </ActionButton>
+      </div>
+    );
+  }
+
+  if (stage === "cancelled") {
+    return (
+      <div className="flex items-center justify-end gap-2">
+        <ActionButton variant="ghost" onClick={onClose}>
+          Close
+        </ActionButton>
+        <ActionButton variant="primary" onClick={onReset}>
+          Start Over
         </ActionButton>
       </div>
     );
@@ -534,6 +577,26 @@ function ErrorView({ error }: { error: string }) {
         <p className="mt-3 text-xs text-text-muted">
           Check that your OpenAI API key is set in Settings (for TTS) and that you have an
           internet connection (for the first-time ffmpeg download).
+        </p>
+      </div>
+    </div>
+  );
+}
+
+// ─── CancelledView: user-aborted export ─────────────────────────
+
+function CancelledView() {
+  return (
+    <div className="flex flex-col gap-3 py-4">
+      <div className="rounded-md border border-border-muted bg-bg-elevated p-4">
+        <h3 className="font-display text-base text-text-primary">Export cancelled</h3>
+        <p className="mt-2 text-sm text-text-secondary">
+          No output file was written. Any temporary frames and audio from this session
+          have been cleaned up automatically.
+        </p>
+        <p className="mt-3 text-xs text-text-muted">
+          Cached narration audio from OpenAI is preserved — if you retry the same story,
+          the TTS step will short-circuit and only the ffmpeg passes will re-run.
         </p>
       </div>
     </div>

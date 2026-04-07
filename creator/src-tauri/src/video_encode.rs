@@ -29,6 +29,7 @@
 
 use std::path::{Path, PathBuf};
 use std::process::Stdio;
+use std::sync::atomic::AtomicBool;
 
 use serde::{Deserialize, Serialize};
 use tokio::io::{AsyncBufReadExt, BufReader};
@@ -429,11 +430,16 @@ pub fn compute_total_duration_ms(input: &VideoEncodeInput) -> u64 {
 /// output duration (same value returned in `VideoEncodeOutput`).
 /// Stderr is buffered in the background and surfaced only if
 /// ffmpeg exits with a non-zero status.
+///
+/// When a `cancel_flag` is supplied and it flips to `true` mid-run,
+/// the spawned ffmpeg child is killed and the function returns
+/// `Err("Export cancelled by user")`.
 #[allow(dead_code)] // consumed by the export orchestrator (PR 8)
 pub async fn encode_video_segments(
     app: &AppHandle,
     input: VideoEncodeInput,
     output_path: PathBuf,
+    cancel_flag: Option<&AtomicBool>,
 ) -> Result<VideoEncodeOutput, String> {
     let ffmpeg_path = ffmpeg::ffmpeg_binary_path(app).await?;
     let total_duration_ms = compute_total_duration_ms(&input);
@@ -474,10 +480,19 @@ pub async fn encode_video_segments(
 
     // Parse progress blocks as ffmpeg emits them. For long encodes
     // (4K archive preset, 2+ minute stories) this is what turns the
-    // UI progress bar from "stuck at 72%" into a smooth scrub.
+    // UI progress bar from "stuck at 72%" into a smooth scrub. We
+    // also poll the cancellation flag on each line so cancel has
+    // ~500ms worst-case latency.
     let mut parser = FfmpegProgressParser::new();
     let mut stdout_reader = BufReader::new(stdout).lines();
+    let mut cancelled = false;
     while let Ok(Some(line)) = stdout_reader.next_line().await {
+        if let Some(flag) = cancel_flag {
+            if crate::cancellation::is_cancelled(flag) {
+                cancelled = true;
+                break;
+            }
+        }
         if let Some(event) = parser.feed_line(&line) {
             let fraction = event.fraction(total_duration_ms);
             let message = match (event.frame, event.fps) {
@@ -499,6 +514,13 @@ pub async fn encode_video_segments(
                 break;
             }
         }
+    }
+
+    if cancelled {
+        let _ = child.start_kill();
+        let _ = child.wait().await;
+        drop(stderr_handle);
+        return Err("Export cancelled by user".to_string());
     }
 
     let exit_status = child

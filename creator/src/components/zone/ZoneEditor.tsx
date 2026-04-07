@@ -7,6 +7,7 @@ import {
   MiniMap,
   useNodesState,
   useEdgesState,
+  useReactFlow,
   type OnSelectionChangeParams,
   type NodeMouseHandler,
   type Connection,
@@ -94,6 +95,7 @@ function collectBgRemovalTargets(world: WorldFile, zoneId: string, assetsDir: st
 }
 
 function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
+  const reactFlow = useReactFlow();
   const zoneState = useZoneStore((s) => s.zones.get(zoneId));
   const updateZone = useZoneStore((s) => s.updateZone);
   const undo = useZoneStore((s) => s.undo);
@@ -159,8 +161,16 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
   const [nodes, setNodes, onNodesChange] = useNodesState(layoutNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(layoutEdges);
 
+  // Ref to selected room so the sync effect can read it without re-running.
+  const selectedRoomIdRef = useRef(selectedRoomId);
+  useEffect(() => {
+    selectedRoomIdRef.current = selectedRoomId;
+  }, [selectedRoomId]);
+
   // Keep nodes/edges in sync with layout when WorldFile changes,
-  // but preserve positions of existing nodes.
+  // but preserve positions of existing nodes. For brand-new nodes, place
+  // them next to the currently selected room (or in the viewport center)
+  // so the user doesn't have to hunt for them.
   const prevWorldRef = useRef<WorldFile | null>(null);
   useEffect(() => {
     if (!zoneState || zoneState.data === prevWorldRef.current) return;
@@ -169,13 +179,58 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
       const existingPositions = new Map(
         currentNodes.map((node) => [node.id, node.position]),
       );
-      return layoutNodes.map((node) => ({
-        ...node,
-        position: existingPositions.get(node.id) ?? node.position,
-      }));
+
+      // Resolve a drop-in position for any newly added node.
+      let fallbackPos: { x: number; y: number } | null = null;
+      const hasNew = layoutNodes.some((n) => !existingPositions.has(n.id));
+      if (hasNew) {
+        const selId = selectedRoomIdRef.current;
+        const selPos = selId ? existingPositions.get(selId) : undefined;
+        if (selPos) {
+          // Place slightly offset from the selected room so it's visibly near it.
+          fallbackPos = { x: selPos.x + 340, y: selPos.y + 40 };
+        } else {
+          // No selection — drop it at the current viewport center.
+          try {
+            const paneEl = document.querySelector(
+              ".react-flow__pane",
+            ) as HTMLElement | null;
+            const rect = paneEl?.getBoundingClientRect();
+            if (rect) {
+              fallbackPos = reactFlow.screenToFlowPosition({
+                x: rect.left + rect.width / 2,
+                y: rect.top + rect.height / 2,
+              });
+            }
+          } catch {
+            // screenToFlowPosition may throw before ReactFlow is mounted — ignore.
+          }
+        }
+      }
+
+      return layoutNodes.map((node) => {
+        const existing = existingPositions.get(node.id);
+        if (existing) return { ...node, position: existing };
+        if (fallbackPos) return { ...node, position: fallbackPos };
+        return node;
+      });
     });
     setEdges(layoutEdges);
-  }, [layoutEdges, layoutNodes, setEdges, setNodes, zoneState]);
+  }, [layoutEdges, layoutNodes, setEdges, setNodes, zoneState, reactFlow]);
+
+  // ─── Re-layout ───────────────────────────────────────────────────
+  // Discard manual positions and re-run the BFS/compass layout, then
+  // fit the viewport to the result.
+  const handleRelayout = useCallback(() => {
+    if (!zoneState) return;
+    const { nodes: rawNodes } = zoneToGraph(zoneState.data);
+    const fresh = compassLayout(rawNodes, zoneState.data);
+    setNodes(fresh);
+    setTimeout(() => {
+      reactFlow.fitView({ padding: 0.2, duration: 400 });
+    }, 0);
+    useToastStore.getState().show("Zone re-laid out");
+  }, [zoneState, setNodes, reactFlow]);
 
   const applyWorldChange = useCallback(
     (next: WorldFile) => {
@@ -455,6 +510,15 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
               aria-label="Bulk remove backgrounds"
             >
               Remove BGs
+            </button>
+            <button
+              onClick={handleRelayout}
+              disabled={roomCount === 0}
+              className="h-6 rounded px-2 text-xs text-text-secondary transition-colors hover:bg-white/6 hover:text-text-primary disabled:opacity-30"
+              title="Re-run BFS layout and fit view"
+              aria-label="Re-layout rooms"
+            >
+              Re-layout
             </button>
             {showAddRoom ? (
               <form

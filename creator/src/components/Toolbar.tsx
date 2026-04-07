@@ -269,7 +269,14 @@ export function Toolbar({ workspace, setWorkspace }: ToolbarProps) {
                             role="menuitem"
                             onClick={() => {
                               const config = useConfigStore.getState().config;
-                              const results = validateAllZones(zones, config?.equipmentSlots);
+                              const validClasses = config?.classes
+                                ? new Set(Object.keys(config.classes).map((k) => k.toUpperCase()))
+                                : undefined;
+                              const results = validateAllZones(
+                                zones,
+                                config?.equipmentSlots,
+                                validClasses,
+                              );
                               if (config) {
                                 const configIssues = validateConfig(config);
                                 if (configIssues.length > 0) {

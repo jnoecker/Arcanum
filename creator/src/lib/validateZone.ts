@@ -11,13 +11,20 @@ export interface ValidationIssue {
   message: string;
 }
 
+/** Fallback class set for projects that don't define `classes` in config. */
+const DEFAULT_VALID_CLASSES = new Set(["WARRIOR", "MAGE", "CLERIC", "ROGUE"]);
+
 /**
  * Validate a single zone's WorldFile for referential integrity and
  * common mistakes. Returns an array of issues (empty = valid).
+ *
+ * Pass `validClasses` (uppercase class IDs) so trainer-class warnings
+ * respect the project's actual class roster instead of the legacy default.
  */
 export function validateZone(
   world: WorldFile,
   equipmentSlots?: Record<string, EquipmentSlotDefinition>,
+  validClasses?: ReadonlySet<string>,
 ): ValidationIssue[] {
   const issues: ValidationIssue[] = [];
   const roomIds = new Set(Object.keys(world.rooms));
@@ -240,7 +247,7 @@ export function validateZone(
   }
 
   // ─── Trainer checks ────────────────────────────────────────
-  const VALID_CLASSES = new Set(["WARRIOR", "MAGE", "CLERIC", "ROGUE"]);
+  const VALID_CLASSES = validClasses ?? DEFAULT_VALID_CLASSES;
   const trainerRooms = new Set<string>();
   for (const [trainerId, trainer] of Object.entries(world.trainers ?? {})) {
     if (!trainer.name?.trim()) {
@@ -491,10 +498,11 @@ export function validateZone(
 export function validateAllZones(
   zones: Map<string, { data: WorldFile }>,
   equipmentSlots?: Record<string, EquipmentSlotDefinition>,
+  validClasses?: ReadonlySet<string>,
 ): Map<string, ValidationIssue[]> {
   const results = new Map<string, ValidationIssue[]>();
   for (const [zoneId, zone] of zones) {
-    const issues = validateZone(zone.data, equipmentSlots);
+    const issues = validateZone(zone.data, equipmentSlots, validClasses);
     if (issues.length > 0) {
       results.set(zoneId, issues);
     }

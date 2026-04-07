@@ -84,7 +84,10 @@ export async function saveWorkspace(project: Project): Promise<SaveWorkspaceResu
 export function runWorkspaceValidation(): ValidationSummary {
   const zones = useZoneStore.getState().zones;
   const config = useConfigStore.getState().config;
-  const results = validateAllZones(zones, config?.equipmentSlots);
+  const validClasses = config?.classes
+    ? new Set(Object.keys(config.classes).map((k) => k.toUpperCase()))
+    : undefined;
+  const results = validateAllZones(zones, config?.equipmentSlots, validClasses);
 
   if (config) {
     const configIssues = validateConfig(config);

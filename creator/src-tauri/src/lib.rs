@@ -17,6 +17,7 @@ mod runware;
 mod project_settings;
 mod settings;
 mod sketch;
+mod video_encode;
 mod vibes;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]

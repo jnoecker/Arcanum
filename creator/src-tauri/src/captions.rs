@@ -275,9 +275,17 @@ fn build_single_drawtext(
     // reinterpreted as chain breaks. The single quotes on this
     // expression value DO work because expression values follow
     // different parser rules from option=value pair separators.
+    //
+    // `text_shaping=0`: with the default HarfBuzz shaper, variable
+    // fonts like CrimsonPro render the U+000A LINE FEED byte as a
+    // visible .notdef tofu box at each wrap point (and still break
+    // to the next line). Disabling text shaping switches to plain
+    // FreeType rendering, which treats LF as a pure line break with
+    // no visible glyph.
     format!(
         "drawtext=fontfile={font_path_escaped}\
 :textfile={text_file_escaped}\
+:text_shaping=0\
 :x=(w-text_w)/2\
 :y={y_expr}\
 :fontsize={font_size}\
@@ -688,6 +696,19 @@ mod tests {
         assert!(chain.contains("box=1"));
         assert!(chain.contains("borderw=3"));
         assert!(chain.contains("fontcolor=white"));
+    }
+
+    #[test]
+    fn drawtext_disables_text_shaping() {
+        // text_shaping=0 is required to stop variable fonts from
+        // rendering LF bytes as visible tofu boxes at wrap points.
+        let track = track_with(vec![chunk("hi", 0, 1000)]);
+        let files = fake_caption_files(&track);
+        let chain = build_drawtext_chain(&track, "/font.ttf", &files, 1080);
+        assert!(
+            chain.contains("text_shaping=0"),
+            "expected text_shaping=0 in: {chain}",
+        );
     }
 
     #[test]

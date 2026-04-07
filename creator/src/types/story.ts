@@ -114,4 +114,13 @@ export interface Story {
   primaryMapId?: string;
   /** Primary calendar system to drive timeline display. */
   primaryCalendarId?: string;
+
+  // ─── Exported cinematic ──────────────────────────────────────────
+  /**
+   * Public URL of the showcase-preset MP4 cinematic, set after
+   * deployStoryVideoToR2 uploads it to R2. When present, the
+   * showcase SPA shows a "Watch cinematic" button on the story
+   * player page.
+   */
+  cinematicUrl?: string;
 }

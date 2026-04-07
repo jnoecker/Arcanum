@@ -12,7 +12,9 @@
 
 import { useState, useMemo, useCallback } from "react";
 import { save } from "@tauri-apps/plugin-dialog";
+import { invoke } from "@tauri-apps/api/core";
 
+import { useStoryStore } from "@/stores/storyStore";
 import { DialogShell, ActionButton, Spinner } from "@/components/ui/FormWidgets";
 import {
   PRESETS,
@@ -182,7 +184,9 @@ export function StoryExportDialog({
 
       {dialogStage === "running" && <RunningView progress={progress} />}
 
-      {dialogStage === "success" && result && <SuccessView result={result} />}
+      {dialogStage === "success" && result && (
+        <SuccessView result={result} presetId={presetId} storyId={story.id} />
+      )}
 
       {dialogStage === "error" && error && (
         <ErrorView error={error} />
@@ -405,9 +409,50 @@ function RunningView({ progress }: { progress: ExportProgressEvent | null }) {
   );
 }
 
-// ─── SuccessView: result card ───────────────────────────────────
+// ─── SuccessView: result card + optional publish action ─────────
 
-function SuccessView({ result }: { result: ExportStoryVideoResult }) {
+type PublishState =
+  | { kind: "idle" }
+  | { kind: "publishing" }
+  | { kind: "published"; url: string }
+  | { kind: "failed"; error: string };
+
+function SuccessView({
+  result,
+  presetId,
+  storyId,
+}: {
+  result: ExportStoryVideoResult;
+  presetId: ExportPresetId;
+  storyId: string;
+}) {
+  const [publishState, setPublishState] = useState<PublishState>({ kind: "idle" });
+
+  // Publishing only makes sense for the showcase preset — other presets
+  // target social feeds, the MUD client, or personal archives and
+  // shouldn't overwrite the showcase URL.
+  const canPublish = presetId === "showcase";
+
+  const handlePublish = useCallback(async () => {
+    setPublishState({ kind: "publishing" });
+    try {
+      const url = await invoke<string>("deploy_story_video_to_r2", {
+        storyId,
+        filePath: result.outputPath,
+      });
+      // Stamp the URL onto the story so the next showcase JSON deploy
+      // picks it up. Use updateStory so the dirty flag triggers
+      // autosave.
+      useStoryStore.getState().updateStory(storyId, { cinematicUrl: url });
+      setPublishState({ kind: "published", url });
+    } catch (e) {
+      setPublishState({
+        kind: "failed",
+        error: e instanceof Error ? e.message : String(e),
+      });
+    }
+  }, [storyId, result.outputPath]);
+
   return (
     <div className="flex flex-col gap-3 py-4">
       <div className="rounded-md border border-status-success/40 bg-status-success/5 p-4">
@@ -431,6 +476,55 @@ function SuccessView({ result }: { result: ExportStoryVideoResult }) {
           </div>
         </div>
       </div>
+
+      {canPublish && (
+        <div className="rounded-md border border-border-muted bg-bg-elevated p-4">
+          <h3 className="font-display text-sm uppercase tracking-wider text-text-muted">
+            Publish to showcase
+          </h3>
+          <p className="mt-1 text-xs text-text-secondary">
+            Upload this MP4 to R2 and link it from the story's showcase page. Viewers
+            will see a "Watch as cinematic" button on the story player.
+          </p>
+
+          {publishState.kind === "idle" && (
+            <div className="mt-3">
+              <ActionButton variant="secondary" onClick={handlePublish}>
+                Publish to Showcase
+              </ActionButton>
+            </div>
+          )}
+
+          {publishState.kind === "publishing" && (
+            <div className="mt-3 flex items-center gap-2 text-xs text-text-secondary">
+              <Spinner />
+              <span>Uploading to R2…</span>
+            </div>
+          )}
+
+          {publishState.kind === "published" && (
+            <div className="mt-3 space-y-1">
+              <div className="text-xs text-status-success">
+                Published. The next "Publish Lore" deploy will pick up the URL.
+              </div>
+              <div className="break-all font-mono text-2xs text-text-muted">
+                {publishState.url}
+              </div>
+            </div>
+          )}
+
+          {publishState.kind === "failed" && (
+            <div className="mt-3 space-y-2">
+              <div className="text-xs text-status-error">
+                Publish failed: {publishState.error}
+              </div>
+              <ActionButton variant="ghost" onClick={handlePublish}>
+                Try Again
+              </ActionButton>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

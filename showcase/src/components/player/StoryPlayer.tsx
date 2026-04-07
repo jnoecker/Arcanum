@@ -3,6 +3,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { CinematicRenderer } from "./CinematicRenderer";
+import { CinematicOverlay } from "./CinematicOverlay";
 import { PlayerControlBar } from "./PlayerControlBar";
 import { ScrollModeContainer } from "./ScrollModeContainer";
 import { ModeSwitcher } from "./ModeSwitcher";
@@ -27,6 +28,7 @@ export function StoryPlayer({ story }: StoryPlayerProps) {
   const [mode, setMode] = useState<PlayerMode>("click");
   const [autoInterval, setAutoInterval] = useState(10000);
   const [autoTimerActive, setAutoTimerActive] = useState(false);
+  const [showCinematic, setShowCinematic] = useState(false);
 
   // ─── Navigation ─────────────────────────────────────────────────
 
@@ -118,6 +120,22 @@ export function StoryPlayer({ story }: StoryPlayerProps) {
 
   return (
     <div>
+      {/* Watch cinematic button — only when an exported MP4 exists */}
+      {story.cinematicUrl && (
+        <div className="mb-3 flex justify-end">
+          <button
+            type="button"
+            onClick={() => setShowCinematic(true)}
+            className="flex items-center gap-2 rounded-full border border-accent/40 bg-accent/10 px-4 py-1.5 font-display text-xs uppercase tracking-[0.12em] text-accent transition-colors hover:border-accent hover:bg-accent/20"
+          >
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor" aria-hidden="true">
+              <path d="M2.5 1v10l8-5z" />
+            </svg>
+            Watch as cinematic
+          </button>
+        </div>
+      )}
+
       {mode !== "scroll" ? (
         <div className="relative">
           {/* Clickable renderer area for click-through and auto modes */}
@@ -174,6 +192,15 @@ export function StoryPlayer({ story }: StoryPlayerProps) {
         <div className="mt-4 flex justify-end">
           <ModeSwitcher mode={mode} onChange={handleModeChange} />
         </div>
+      )}
+
+      {/* Cinematic video overlay */}
+      {showCinematic && story.cinematicUrl && (
+        <CinematicOverlay
+          src={story.cinematicUrl}
+          title={story.title}
+          onClose={() => setShowCinematic(false)}
+        />
       )}
     </div>
   );

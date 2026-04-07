@@ -227,6 +227,9 @@ export interface ShowcaseStory {
   featuredCharacterIds?: string[];
   primaryMapId?: string;
   primaryCalendarId?: string;
+
+  // ─── Exported cinematic (MP4 on R2) ──────────────────────────────────
+  cinematicUrl?: string;
 }
 
 // ─── Story export context ─────────────────────────────────────────
@@ -305,6 +308,7 @@ export function exportStories(
         featuredCharacterIds: story.featuredCharacterIds,
         primaryMapId: story.primaryMapId,
         primaryCalendarId: story.primaryCalendarId,
+        cinematicUrl: story.cinematicUrl,
       };
     });
 }

@@ -76,7 +76,7 @@ export function parseAppConfigYaml(content: string): AppConfig {
     group: parseSimpleSection(engine.group, { maxSize: 5, inviteTimeoutMs: 60000, xpBonusPerMember: 0.1 }),
     classes: parseMapSection(engine.classes, "definitions"),
     races: parseMapSection(engine.races, "definitions"),
-    equipmentSlots: parseMapSection(engine.equipment, "slots"),
+    equipmentSlots: normalizeEquipmentSlotKeys(parseMapSection(engine.equipment, "slots")),
     characterCreation: parseCharacterCreationConfig(engine.characterCreation),
     genders: parseMapSection(engine, "genders"),
     achievementCategories: withDefaults(parseNestedMapSection(engine, "achievementCategories", "categories"), DEFAULT_ACHIEVEMENT_CATEGORIES),
@@ -878,7 +878,7 @@ async function loadSplitConfig(projectDir: string): Promise<AppConfig | null> {
       races: asRecord(racesRaw.definitions ?? racesRaw),
 
       // equipment.yaml
-      equipmentSlots: asRecord(equipmentRaw.slots ?? equipmentRaw),
+      equipmentSlots: normalizeEquipmentSlotKeys(asRecord(equipmentRaw.slots ?? equipmentRaw)),
 
       // crafting.yaml
       crafting: parseCraftingConfig(craftingRaw.crafting ?? craftingRaw),
@@ -911,6 +911,21 @@ async function loadSplitConfig(projectDir: string): Promise<AppConfig | null> {
 function asRecord<T>(val: unknown): Record<string, T> {
   if (!val || typeof val !== "object") return {};
   return val as Record<string, T>;
+}
+
+/**
+ * Lowercase + trim equipment slot keys to match the MUD's validation rule
+ * (see validateEngineEquipment in reference/config/AppConfig.kt). Auto-heals
+ * legacy projects whose templates wrote uppercase keys like "HEAD". On
+ * collision (e.g. both "HEAD" and "head"), the last entry wins.
+ */
+export function normalizeEquipmentSlotKeys<T>(slots: Record<string, T>): Record<string, T> {
+  const out: Record<string, T> = {};
+  for (const [id, slot] of Object.entries(slots)) {
+    const key = id.trim().toLowerCase();
+    if (key) out[key] = slot;
+  }
+  return out;
 }
 
 // ─── Hoplite-compatible defaults ────────────────────────────────────

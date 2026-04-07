@@ -1041,7 +1041,7 @@ export const LORE_EXPLORER_PRESET: TuningPreset = {
   config: {
     combat: { tickMillis: 4000, minDamage: 5, maxDamage: 50 },
     mobTiers: {
-      weak: { baseHp: 1, hpPerLevel: 1, baseMinDamage: 0, baseMaxDamage: 1, damagePerLevel: 0, baseArmor: 0, baseXpReward: 50, xpRewardPerLevel: 20, baseGoldMin: 10, baseGoldMax: 25, goldPerLevel: 5 },
+      weak: { baseHp: 1, hpPerLevel: 1, baseMinDamage: 1, baseMaxDamage: 1, damagePerLevel: 0, baseArmor: 0, baseXpReward: 50, xpRewardPerLevel: 20, baseGoldMin: 10, baseGoldMax: 25, goldPerLevel: 5 },
       standard: { baseHp: 4, hpPerLevel: 1, baseMinDamage: 1, baseMaxDamage: 2, damagePerLevel: 0, baseArmor: 0, baseXpReward: 100, xpRewardPerLevel: 40, baseGoldMin: 20, baseGoldMax: 50, goldPerLevel: 10 },
       elite: { baseHp: 10, hpPerLevel: 3, baseMinDamage: 1, baseMaxDamage: 3, damagePerLevel: 0, baseArmor: 0, baseXpReward: 250, xpRewardPerLevel: 80, baseGoldMin: 50, baseGoldMax: 100, goldPerLevel: 20 },
       boss: { baseHp: 20, hpPerLevel: 5, baseMinDamage: 2, baseMaxDamage: 4, damagePerLevel: 1, baseArmor: 1, baseXpReward: 500, xpRewardPerLevel: 150, baseGoldMin: 150, baseGoldMax: 300, goldPerLevel: 50 },

@@ -81,9 +81,13 @@ function definitionToPlain(def: SpriteDefinition): Record<string, unknown> {
   if (def.artDirection) out.artDirection = def.artDirection;
   out.category = def.category;
   out.sortOrder = def.sortOrder;
-  if (def.requirements.length > 0) {
-    out.requirements = def.requirements.map(requirementToPlain);
-  }
+  // Always emit a non-empty requirements list. The MUD's SpriteLoader rejects
+  // sprites with no unlock specification (it reads an empty `type` field and
+  // throws "unknown unlock type ''"), so we use minLevel:0 — equivalent to
+  // "no requirement", since player levels start at 1.
+  out.requirements = def.requirements.length > 0
+    ? def.requirements.map(requirementToPlain)
+    : [{ type: "minLevel", level: 0 }];
   if (def.variants && def.variants.length > 0) {
     out.variants = def.variants;
   } else if (def.image) {

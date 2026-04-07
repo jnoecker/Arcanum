@@ -582,17 +582,21 @@ export function generateSpritesYaml(): string {
     if (def.description) entry.description = def.description;
     entry.category = def.category;
     entry.sortOrder = def.sortOrder;
-    if (def.requirements.length > 0) {
-      entry.requirements = def.requirements.map((req) => {
-        switch (req.type) {
-          case "minLevel": return { type: "minLevel", level: req.level };
-          case "race": return { type: "race", race: req.race };
-          case "class": return { type: "class", playerClass: req.playerClass };
-          case "achievement": return { type: "achievement", achievementId: req.achievementId };
-          case "staff": return { type: "staff" };
-        }
-      });
-    }
+    // Always emit a non-empty requirements list. The MUD's SpriteLoader rejects
+    // sprites with no unlock specification (it reads an empty `type` field and
+    // throws "unknown unlock type ''"), so we use minLevel:0 — equivalent to
+    // "no requirement", since player levels start at 1.
+    entry.requirements = def.requirements.length > 0
+      ? def.requirements.map((req) => {
+          switch (req.type) {
+            case "minLevel": return { type: "minLevel", level: req.level };
+            case "race": return { type: "race", race: req.race };
+            case "class": return { type: "class", playerClass: req.playerClass };
+            case "achievement": return { type: "achievement", achievementId: req.achievementId };
+            case "staff": return { type: "staff" };
+          }
+        })
+      : [{ type: "minLevel", level: 0 }];
     if (def.variants && def.variants.length > 0) {
       entry.variants = def.variants;
     } else if (def.image) {
@@ -610,7 +614,17 @@ export async function loadSlotPositions(mudDir?: string): Promise<SlotPositionMa
   if (!mudDir) return {};
   try {
     const meta = await invoke<{ wearSlotPositions?: SlotPositionMap }>("load_arcanum_meta", { mudDir });
-    return meta.wearSlotPositions ?? {};
+    // Lowercase keys to match the on-disk equipment slot keys (which the
+    // loader normalizes to lowercase). Otherwise positions saved against
+    // legacy uppercase IDs (e.g. "HEAD") would never match the lowercase
+    // slot key during export, leaving every slot at the fallback position.
+    const raw = meta.wearSlotPositions ?? {};
+    const out: SlotPositionMap = {};
+    for (const [id, pos] of Object.entries(raw)) {
+      const key = id.trim().toLowerCase();
+      if (key) out[key] = pos;
+    }
+    return out;
   } catch {
     return {};
   }

@@ -70,8 +70,8 @@ const FULL_MOCK_CONFIG: AppConfig = {
   },
   characterCreation: { startingGold: 100 },
   equipmentSlots: {
-    HEAD: { displayName: "Head", order: 1 },
-    CHEST: { displayName: "Chest", order: 2 },
+    head: { displayName: "Head", order: 1 },
+    chest: { displayName: "Chest", order: 2 },
   },
   genders: { MALE: { displayName: "Male" }, FEMALE: { displayName: "Female" } },
   achievementCategories: { COMBAT: { displayName: "Combat" } },

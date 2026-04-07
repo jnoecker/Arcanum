@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
 import type { ConfigPanelProps } from "./types";
@@ -7,6 +7,11 @@ import { useImageSrc } from "@/lib/useImageSrc";
 import { useAssetStore } from "@/stores/assetStore";
 import { useConfigStore } from "@/stores/configStore";
 import { AssetPickerModal } from "@/components/ui/AssetPickerModal";
+import {
+  REQUIRED_GLOBAL_ASSETS,
+  REQUIRED_GLOBAL_ASSET_KEYS,
+  type RequiredGlobalAsset,
+} from "@/lib/requiredGlobalAssets";
 import type { SyncProgress } from "@/types/assets";
 
 function AssetThumbnail({ filename }: { filename: string }) {
@@ -101,9 +106,88 @@ export function GlobalAssetsPanel({ config, onChange }: ConfigPanelProps) {
     }
   }, [importAsset, onChange]);
 
-  const sortedEntries = Object.entries(assets).sort(([a], [b]) =>
-    a.localeCompare(b),
+  const customEntries = useMemo(
+    () =>
+      Object.entries(assets)
+        .filter(([key]) => !REQUIRED_GLOBAL_ASSET_KEYS.has(key))
+        .sort(([a], [b]) => a.localeCompare(b)),
+    [assets],
   );
+
+  const requiredMissingCount = useMemo(
+    () => REQUIRED_GLOBAL_ASSETS.filter((a) => !assets[a.key]?.trim()).length,
+    [assets],
+  );
+
+  const renderRow = (
+    key: string,
+    value: string,
+    options: {
+      label?: string;
+      description?: string;
+      removable: boolean;
+    },
+  ) => {
+    const unset = !value?.trim();
+    return (
+      <div
+        key={key}
+        className="flex items-start gap-3 rounded border border-border-default bg-bg-primary/50 px-3 py-2"
+      >
+        <AssetThumbnail filename={value} />
+        <div className="flex min-w-0 flex-1 flex-col gap-1">
+          <div className="flex items-baseline gap-2">
+            <span className="font-mono text-xs font-medium text-accent">
+              {key}
+            </span>
+            {options.label && (
+              <span className="text-2xs text-text-secondary">
+                {options.label}
+              </span>
+            )}
+            {unset && !options.removable && (
+              <span className="rounded border border-status-warning/40 px-1 text-[9px] uppercase tracking-wide text-status-warning">
+                Missing
+              </span>
+            )}
+          </div>
+          {options.description && (
+            <span className="text-2xs text-text-muted">
+              {options.description}
+            </span>
+          )}
+          <div className="flex items-center gap-1.5">
+            <span className="min-w-0 flex-1 truncate font-mono text-2xs text-text-muted">
+              {value || "No image selected"}
+            </span>
+            <button
+              onClick={() => setPickingFor(key)}
+              className="shrink-0 rounded border border-border-default px-2 py-0.5 text-2xs text-text-secondary transition-colors hover:border-accent/50 hover:text-accent"
+              title="Pick from asset gallery"
+            >
+              Gallery
+            </button>
+            <button
+              onClick={() => handlePickFromFile(key)}
+              className="shrink-0 rounded border border-border-default px-2 py-0.5 text-2xs text-text-secondary transition-colors hover:border-accent/50 hover:text-accent"
+              title="Import from file system"
+            >
+              File...
+            </button>
+          </div>
+        </div>
+        {options.removable && (
+          <button
+            onClick={() => handleRemove(key)}
+            className="shrink-0 rounded px-2 py-1 text-xs text-text-muted transition-colors hover:bg-status-error/20 hover:text-status-error"
+            title="Remove asset"
+          >
+            &times;
+          </button>
+        )}
+      </div>
+    );
+  };
 
   return (
     <>
@@ -114,26 +198,14 @@ export function GlobalAssetsPanel({ config, onChange }: ConfigPanelProps) {
           Use the asset generator to create images, then register them here by key name.
         </p>
 
-        {/* Add new */}
+        {/* Deploy controls */}
         <div className="mb-4 flex items-center gap-2">
-          <input
-            type="text"
-            value={newKey}
-            onChange={(e) => setNewKey(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="new_asset_key"
-            className="flex-1 rounded border border-border-default bg-bg-primary px-3 py-1.5 font-mono text-xs text-text-primary placeholder:text-text-muted outline-none focus:border-accent/50 focus-visible:ring-2 focus-visible:ring-border-active"
-          />
-          <button
-            onClick={handleAdd}
-            disabled={!newKey.trim()}
-            className="rounded bg-accent px-3 py-1.5 text-xs font-medium text-accent-emphasis transition-all hover:bg-accent/90 disabled:opacity-40"
-          >
-            + Add
-          </button>
           <button
             onClick={handleDeploy}
-            disabled={deploying || sortedEntries.length === 0}
+            disabled={
+              deploying ||
+              (Object.keys(assets).length === 0 && customEntries.length === 0)
+            }
             className="rounded border border-accent/40 px-3 py-1.5 text-xs text-accent transition-colors hover:bg-accent/10 disabled:opacity-50"
           >
             {deploying ? "Deploying..." : "Deploy to R2"}
@@ -179,54 +251,68 @@ export function GlobalAssetsPanel({ config, onChange }: ConfigPanelProps) {
           </div>
         )}
 
-        {/* Asset list */}
-        {sortedEntries.length === 0 ? (
-          <p className="py-4 text-center text-xs italic text-text-muted">
-            No global assets registered. Generate art and save it as a global asset, or add a key above.
-          </p>
-        ) : (
-          <div className="flex flex-col gap-2">
-            {sortedEntries.map(([key, value]) => (
-              <div
-                key={key}
-                className="flex items-center gap-3 rounded border border-border-default bg-bg-primary/50 px-3 py-2"
-              >
-                <AssetThumbnail filename={value} />
-                <div className="flex min-w-0 flex-1 flex-col gap-1">
-                  <span className="font-mono text-xs font-medium text-accent">
-                    {key}
-                  </span>
-                  <div className="flex items-center gap-1.5">
-                    <span className="min-w-0 flex-1 truncate font-mono text-2xs text-text-muted">
-                      {value || "No image selected"}
-                    </span>
-                    <button
-                      onClick={() => setPickingFor(key)}
-                      className="shrink-0 rounded border border-border-default px-2 py-0.5 text-2xs text-text-secondary transition-colors hover:border-accent/50 hover:text-accent"
-                      title="Pick from asset gallery"
-                    >
-                      Gallery
-                    </button>
-                    <button
-                      onClick={() => handlePickFromFile(key)}
-                      className="shrink-0 rounded border border-border-default px-2 py-0.5 text-2xs text-text-secondary transition-colors hover:border-accent/50 hover:text-accent"
-                      title="Import from file system"
-                    >
-                      File...
-                    </button>
-                  </div>
-                </div>
-                <button
-                  onClick={() => handleRemove(key)}
-                  className="shrink-0 rounded px-2 py-1 text-xs text-text-muted transition-colors hover:bg-status-error/20 hover:text-status-error"
-                  title="Remove asset"
-                >
-                  &times;
-                </button>
-              </div>
-            ))}
+        {/* Required section */}
+        <div className="mb-4">
+          <div className="mb-2 flex items-baseline justify-between">
+            <h4 className="font-display text-xs uppercase tracking-wider text-accent">
+              Required by MUD
+            </h4>
+            <span className="text-2xs text-text-muted">
+              {requiredMissingCount > 0
+                ? `${requiredMissingCount} missing`
+                : "All assigned"}
+            </span>
           </div>
-        )}
+          <div className="flex flex-col gap-2">
+            {REQUIRED_GLOBAL_ASSETS.map((spec: RequiredGlobalAsset) =>
+              renderRow(spec.key, assets[spec.key] ?? "", {
+                label: spec.label,
+                description: spec.description,
+                removable: false,
+              }),
+            )}
+          </div>
+        </div>
+
+        {/* Custom section */}
+        <div>
+          <div className="mb-2 flex items-baseline justify-between">
+            <h4 className="font-display text-xs uppercase tracking-wider text-text-secondary">
+              Custom
+            </h4>
+            <span className="text-2xs text-text-muted">
+              {customEntries.length} {customEntries.length === 1 ? "key" : "keys"}
+            </span>
+          </div>
+          <div className="mb-2 flex items-center gap-2">
+            <input
+              type="text"
+              value={newKey}
+              onChange={(e) => setNewKey(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="new_asset_key"
+              className="flex-1 rounded border border-border-default bg-bg-primary px-3 py-1.5 font-mono text-xs text-text-primary placeholder:text-text-muted outline-none focus:border-accent/50 focus-visible:ring-2 focus-visible:ring-border-active"
+            />
+            <button
+              onClick={handleAdd}
+              disabled={!newKey.trim()}
+              className="rounded bg-accent px-3 py-1.5 text-xs font-medium text-accent-emphasis transition-all hover:bg-accent/90 disabled:opacity-40"
+            >
+              + Add
+            </button>
+          </div>
+          {customEntries.length === 0 ? (
+            <p className="py-3 text-center text-2xs italic text-text-muted">
+              No custom global assets. Add a key above for project-specific overlays.
+            </p>
+          ) : (
+            <div className="flex flex-col gap-2">
+              {customEntries.map(([key, value]) =>
+                renderRow(key, value, { removable: true }),
+              )}
+            </div>
+          )}
+        </div>
       </Section>
 
       {pickingFor && (

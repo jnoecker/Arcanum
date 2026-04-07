@@ -1,4 +1,5 @@
 import type { AppConfig } from "@/types/config";
+import { missingRequiredGlobalAssets } from "./requiredGlobalAssets";
 import type { ValidationIssue } from "./validateZone";
 
 /**
@@ -167,8 +168,23 @@ export function validateConfig(config: AppConfig): ValidationIssue[] {
   }
 
   // ─── Equipment Slots ────────────────────────────────────────────
+  // Mirrors validateEngineEquipment() in reference/config/AppConfig.kt
+  if (Object.keys(config.equipmentSlots).length === 0) {
+    issues.push({
+      severity: "error",
+      entity: "equipmentSlots",
+      message: "At least one equipment slot must be defined",
+    });
+  }
   const seenOrders = new Map<number, string>();
   for (const [id, slot] of Object.entries(config.equipmentSlots)) {
+    if (id !== id.trim().toLowerCase()) {
+      issues.push({
+        severity: "error",
+        entity: `equipmentSlot:${id}`,
+        message: `Slot key "${id}" must be lowercase with no surrounding whitespace`,
+      });
+    }
     if (!slot.displayName?.trim()) {
       issues.push({
         severity: "error",
@@ -431,6 +447,51 @@ export function validateConfig(config: AppConfig): ValidationIssue[] {
     });
   }
 
+  // ─── Mob tiers ───────────────────────────────────────────────
+  // Mirrors validateMobTier() in reference/config/AppConfig.kt
+  const mobTierEntries: [string, typeof config.mobTiers.weak][] = [
+    ["weak", config.mobTiers.weak],
+    ["standard", config.mobTiers.standard],
+    ["elite", config.mobTiers.elite],
+    ["boss", config.mobTiers.boss],
+  ];
+  for (const [name, tier] of mobTierEntries) {
+    const entity = `mobTier:${name}`;
+    if (tier.baseHp <= 0) {
+      issues.push({ severity: "error", entity, message: "baseHp must be > 0" });
+    }
+    if (tier.hpPerLevel < 0) {
+      issues.push({ severity: "error", entity, message: "hpPerLevel must be >= 0" });
+    }
+    if (tier.baseMinDamage <= 0) {
+      issues.push({ severity: "error", entity, message: "baseMinDamage must be > 0" });
+    }
+    if (tier.baseMaxDamage < tier.baseMinDamage) {
+      issues.push({ severity: "error", entity, message: "baseMaxDamage must be >= baseMinDamage" });
+    }
+    if (tier.damagePerLevel < 0) {
+      issues.push({ severity: "error", entity, message: "damagePerLevel must be >= 0" });
+    }
+    if (tier.baseArmor < 0) {
+      issues.push({ severity: "error", entity, message: "baseArmor must be >= 0" });
+    }
+    if (tier.baseXpReward < 0) {
+      issues.push({ severity: "error", entity, message: "baseXpReward must be >= 0" });
+    }
+    if (tier.xpRewardPerLevel < 0) {
+      issues.push({ severity: "error", entity, message: "xpRewardPerLevel must be >= 0" });
+    }
+    if (tier.baseGoldMin < 0) {
+      issues.push({ severity: "error", entity, message: "baseGoldMin must be >= 0" });
+    }
+    if (tier.baseGoldMax < tier.baseGoldMin) {
+      issues.push({ severity: "error", entity, message: "baseGoldMax must be >= baseGoldMin" });
+    }
+    if (tier.goldPerLevel < 0) {
+      issues.push({ severity: "error", entity, message: "goldPerLevel must be >= 0" });
+    }
+  }
+
   // ─── Progression ──────────────────────────────────────────────
   if (config.progression.maxLevel < 1) {
     issues.push({
@@ -483,6 +544,18 @@ export function validateConfig(config: AppConfig): ValidationIssue[] {
       severity: "warning",
       entity: "characterCreation",
       message: `Default gender "${config.characterCreation.defaultGender}" is not a defined gender`,
+    });
+  }
+
+  // ─── Required global assets ──────────────────────────────────
+  // The MUD looks up these keys under images.globalAssets and Spring Boot
+  // replaces the entire map (no per-entry merge), so every required key
+  // must be set on the project side.
+  for (const missing of missingRequiredGlobalAssets(config.globalAssets)) {
+    issues.push({
+      severity: "warning",
+      entity: `globalAsset:${missing.key}`,
+      message: `Required global asset "${missing.key}" (${missing.label}) is not assigned`,
     });
   }
 

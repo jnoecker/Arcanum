@@ -7,6 +7,7 @@ mod git;
 mod generation;
 mod llm;
 mod openai_images;
+mod openai_tts;
 mod openrouter;
 mod project;
 mod r2;
@@ -52,6 +53,7 @@ pub fn run() {
             llm::llm_complete_with_vision,
             runware::runware_generate_image,
             openai_images::openai_generate_image,
+            openai_tts::openai_tts_generate,
             runware::runware_generate_audio,
             runware::runware_generate_video,
             assets::accept_asset,

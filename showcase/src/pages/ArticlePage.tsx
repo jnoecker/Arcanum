@@ -299,33 +299,22 @@ export function ArticlePage() {
       );
   }, [article, articleById, data]);
 
-  if (!article) {
-    return (
-      <ShowcaseEmptyState
-        className="py-8"
-        title="Article not found"
-        description="This entry cannot be recovered from the public archive."
-        actions={
-          <Link to="/articles" className={showcaseButtonClassNames.secondary}>
-            Return to the codex
-          </Link>
-        }
-      />
-    );
-  }
+  const forwardRelations = useMemo<ResolvedRelation[]>(() => {
+    if (!article) {
+      return [];
+    }
 
-  const color = TEMPLATE_COLORS[article.template];
-  const fieldEntries = Object.entries(article.fields).filter(([, value]) => value !== undefined && value !== null && value !== "");
-  const heroSummary = summarizeArticle(article);
-  const imageUrls = [article.imageUrl, ...(article.galleryUrls ?? [])].filter((value): value is string => Boolean(value));
+    return article.relations.map((relation) => ({
+      ...relation,
+      target: articleById.get(relation.targetId),
+      reverse: false,
+    }));
+  }, [article, articleById]);
 
-  const forwardRelations: ResolvedRelation[] = article.relations.map((relation) => ({
-    ...relation,
-    target: articleById.get(relation.targetId),
-    reverse: false,
-  }));
-
-  const featuredInStories = findStoriesFeaturingArticle(data?.stories, article.id);
+  const featuredInStories = useMemo(
+    () => (article ? findStoriesFeaturingArticle(data?.stories, article.id) : []),
+    [article, data?.stories],
+  );
 
   const allRelations = useMemo(() => {
     const seen = new Set<string>();
@@ -349,6 +338,26 @@ export function ArticlePage() {
 
     return merged;
   }, [forwardRelations, reverseRelations]);
+
+  if (!article) {
+    return (
+      <ShowcaseEmptyState
+        className="py-8"
+        title="Article not found"
+        description="This entry cannot be recovered from the public archive."
+        actions={
+          <Link to="/articles" className={showcaseButtonClassNames.secondary}>
+            Return to the codex
+          </Link>
+        }
+      />
+    );
+  }
+
+  const color = TEMPLATE_COLORS[article.template];
+  const fieldEntries = Object.entries(article.fields).filter(([, value]) => value !== undefined && value !== null && value !== "");
+  const heroSummary = summarizeArticle(article);
+  const imageUrls = [article.imageUrl, ...(article.galleryUrls ?? [])].filter((value): value is string => Boolean(value));
 
   return (
     <div className="space-y-8">
@@ -406,56 +415,64 @@ export function ArticlePage() {
               </Link>
             ) : null}
           </div>
-
-          <div className="mt-8 grid gap-3 sm:grid-cols-3">
-            <div className="rounded-[1.3rem] border border-border-muted/30 bg-bg-secondary/45 px-4 py-4">
-              <p className="text-[0.65rem] uppercase tracking-[0.24em] text-text-muted">Record details</p>
-              <p className="mt-2 font-display text-2xl text-accent-emphasis">
-                {new Intl.NumberFormat().format(fieldEntries.length)}
-              </p>
-            </div>
-            <div className="rounded-[1.3rem] border border-border-muted/30 bg-bg-secondary/45 px-4 py-4">
-              <p className="text-[0.65rem] uppercase tracking-[0.24em] text-text-muted">Connections</p>
-              <p className="mt-2 font-display text-2xl text-accent-emphasis">
-                {new Intl.NumberFormat().format(allRelations.length)}
-              </p>
-            </div>
-            <div className="rounded-[1.3rem] border border-border-muted/30 bg-bg-secondary/45 px-4 py-4">
-              <p className="text-[0.65rem] uppercase tracking-[0.24em] text-text-muted">Story appearances</p>
-              <p className="mt-2 font-display text-2xl text-accent-emphasis">
-                {new Intl.NumberFormat().format(featuredInStories.length)}
-              </p>
-            </div>
-          </div>
         </div>
 
-        {imageUrls.length > 0 ? (
-          <div className="rounded-[1.75rem] border border-border-muted/35 bg-[linear-gradient(180deg,rgba(18,18,28,0.92),rgba(10,10,18,0.98))] px-5 py-5 shadow-[var(--shadow-deep)]">
-            <p className="text-[0.68rem] uppercase tracking-[0.3em] text-[var(--color-aurum)]/80">Illuminated plate</p>
-            <p className="mt-2 font-display text-xl text-accent-emphasis">Image record</p>
-            <div className="mt-5">
+        <div className="rounded-[1.75rem] border border-border-muted/35 bg-[linear-gradient(180deg,rgba(18,18,28,0.92),rgba(10,10,18,0.98))] px-5 py-5 shadow-[var(--shadow-deep)]">
+          <p className="text-[0.68rem] uppercase tracking-[0.3em] text-[var(--color-aurum)]/80">
+            {imageUrls.length > 0 ? "Illuminated plate" : "Catalog notes"}
+          </p>
+          <p className="mt-2 font-display text-xl text-accent-emphasis">
+            {imageUrls.length > 0 ? "Image record" : "Record summary"}
+          </p>
+
+          <div className="mt-5">
+            {imageUrls.length > 0 ? (
               <ArticleGallery images={imageUrls} title={article.title} />
-            </div>
-          </div>
-        ) : (
-          <div className="rounded-[1.75rem] border border-border-muted/35 bg-[linear-gradient(180deg,rgba(18,18,28,0.92),rgba(10,10,18,0.98))] px-5 py-5 shadow-[var(--shadow-deep)]">
-            <p className="text-[0.68rem] uppercase tracking-[0.3em] text-[var(--color-aurum)]/80">Catalog notes</p>
-            <p className="mt-2 font-display text-xl text-accent-emphasis">Record summary</p>
-            <div className="mt-5 space-y-3">
-              {fieldEntries.slice(0, 4).map(([key, value]) => (
-                <div key={key} className="rounded-[1.2rem] border border-border-muted/25 bg-bg-secondary/45 px-4 py-3">
-                  <p className="text-[0.68rem] uppercase tracking-[0.18em] text-text-muted">{formatFieldLabel(key)}</p>
-                  <p className="mt-1 break-words text-sm text-text-primary">
-                    {Array.isArray(value) ? value.join(", ") : String(value)}
+            ) : (
+              <div className="space-y-3">
+                {fieldEntries.slice(0, 4).map(([key, value]) => (
+                  <div
+                    key={key}
+                    className="rounded-[1.2rem] border border-border-muted/25 bg-bg-secondary/45 px-4 py-3"
+                  >
+                    <p className="text-[0.68rem] uppercase tracking-[0.18em] text-text-muted">
+                      {formatFieldLabel(key)}
+                    </p>
+                    <p className="mt-1 break-words text-sm text-text-primary">
+                      {Array.isArray(value) ? value.join(", ") : String(value)}
+                    </p>
+                  </div>
+                ))}
+                {fieldEntries.length === 0 ? (
+                  <p className="text-sm leading-7 text-text-muted">
+                    No structured field details were published with this entry.
                   </p>
-                </div>
-              ))}
-              {fieldEntries.length === 0 ? (
-                <p className="text-sm leading-7 text-text-muted">No structured field details were published with this entry.</p>
-              ) : null}
-            </div>
+                ) : null}
+              </div>
+            )}
           </div>
-        )}
+
+          <dl className="mt-6 grid gap-3 sm:grid-cols-3">
+            <div className="rounded-[1.2rem] border border-border-muted/25 bg-bg-secondary/45 px-4 py-4">
+              <dt className="text-[0.65rem] uppercase tracking-[0.22em] text-text-muted">Record details</dt>
+              <dd className="mt-2 font-display text-2xl text-accent-emphasis">
+                {new Intl.NumberFormat().format(fieldEntries.length)}
+              </dd>
+            </div>
+            <div className="rounded-[1.2rem] border border-border-muted/25 bg-bg-secondary/45 px-4 py-4">
+              <dt className="text-[0.65rem] uppercase tracking-[0.22em] text-text-muted">Connections</dt>
+              <dd className="mt-2 font-display text-2xl text-accent-emphasis">
+                {new Intl.NumberFormat().format(allRelations.length)}
+              </dd>
+            </div>
+            <div className="rounded-[1.2rem] border border-border-muted/25 bg-bg-secondary/45 px-4 py-4">
+              <dt className="text-[0.65rem] uppercase tracking-[0.22em] text-text-muted">Story appearances</dt>
+              <dd className="mt-2 font-display text-2xl text-accent-emphasis">
+                {new Intl.NumberFormat().format(featuredInStories.length)}
+              </dd>
+            </div>
+          </dl>
+        </div>
       </section>
 
       <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_19rem]">

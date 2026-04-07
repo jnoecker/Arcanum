@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useProjectWizard } from "@/lib/useProjectWizard";
 import { useFocusTrap } from "@/lib/useFocusTrap";
+import { ActionButton } from "@/components/ui/FormWidgets";
 import { LocationStep } from "./steps/LocationStep";
 import { TemplateStep } from "./steps/TemplateStep";
 import { WorldIdentityStep } from "./steps/WorldIdentityStep";
@@ -69,24 +70,29 @@ export function ProjectWizard({ onClose }: ProjectWizardProps) {
   const isBusy = isCreating || isDone;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+    <div className="dialog-overlay">
       <div
         ref={trapRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby="wizard-title"
-        className="mx-4 flex max-h-[85vh] w-full max-w-2xl flex-col rounded-lg border border-border-default bg-bg-secondary shadow-xl"
+        className="dialog-shell flex max-h-[88vh] w-full max-w-2xl flex-col"
       >
-        {/* Header */}
-        <div className="shrink-0 border-b border-border-default px-6 py-4">
-          <h2
-            id="wizard-title"
-            className="font-display text-lg tracking-wide text-text-primary"
-          >
-            Create New Project
-          </h2>
-          {/* Step indicator */}
-          <div className="mt-3 flex gap-1.5">
+        <div className="dialog-header block">
+          <div className="flex items-start justify-between gap-4">
+            <div className="min-w-0 flex-1">
+              <h2 id="wizard-title" className="dialog-title">
+                Create New Project
+              </h2>
+              <p className="dialog-subtitle">
+                Choose a location, seed the world from a template, and set the first thematic constraints before opening the workspace.
+              </p>
+            </div>
+            <span className="rounded-full border border-white/10 bg-black/10 px-3 py-1 text-2xs text-text-secondary">
+              Step {step} of {STEP_COUNT}
+            </span>
+          </div>
+          <div className="mt-4 flex gap-1.5" aria-hidden="true">
             {Array.from({ length: STEP_COUNT }, (_, i) => (
               <div
                 key={i}
@@ -100,15 +106,12 @@ export function ProjectWizard({ onClose }: ProjectWizardProps) {
               />
             ))}
           </div>
-          <p className="mt-2 text-xs text-text-muted">
-            Step {step} of {STEP_COUNT}
-            {" \u2014 "}
+          <p className="mt-3 text-xs text-text-muted">
             {STEP_TITLES[step - 1]}
           </p>
         </div>
 
-        {/* Content */}
-        <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">
+        <div className="dialog-body">
           {step === 1 && (
             <LocationStep
               data={data}
@@ -127,9 +130,8 @@ export function ProjectWizard({ onClose }: ProjectWizardProps) {
           )}
         </div>
 
-        {/* Footer */}
-        <div className="shrink-0 flex items-center justify-between border-t border-border-default px-6 py-3">
-          <div className="text-xs text-text-muted">
+        <div className="dialog-footer items-center justify-between">
+          <div className="text-xs text-text-muted" aria-live="polite">
             {isCreating && (
               <span className="flex items-center gap-2">
                 <span className="inline-block h-3.5 w-3.5 animate-spin rounded-full border-2 border-accent border-t-transparent" />
@@ -145,56 +147,46 @@ export function ProjectWizard({ onClose }: ProjectWizardProps) {
           </div>
           <div className="flex gap-2">
             {step === 1 && !isBusy && (
-              <button
-                onClick={onClose}
-                className="rounded bg-bg-elevated px-4 py-1.5 text-xs font-medium text-text-primary transition-colors hover:bg-bg-hover"
-              >
+              <ActionButton onClick={onClose} variant="ghost" size="sm">
                 Cancel
-              </button>
+              </ActionButton>
             )}
             {step > 1 && !isBusy && (
-              <button
-                onClick={handleBack}
-                className="rounded bg-bg-elevated px-4 py-1.5 text-xs font-medium text-text-primary transition-colors hover:bg-bg-hover"
-              >
+              <ActionButton onClick={handleBack} variant="ghost" size="sm">
                 Back
-              </button>
+              </ActionButton>
             )}
             {step < STEP_COUNT && !isBusy && (
-              <button
-                onClick={handleNext}
-                className="rounded bg-gradient-to-r from-accent-muted to-accent px-4 py-1.5 text-xs font-medium text-accent-emphasis transition-all hover:brightness-110"
-              >
+              <ActionButton onClick={handleNext} variant="primary" size="sm">
                 Next
-              </button>
+              </ActionButton>
             )}
             {step === STEP_COUNT && !isBusy && !isDone && (
-              <button
+              <ActionButton
                 onClick={handleCreate}
                 disabled={isCreating}
-                className="rounded bg-gradient-to-r from-accent-muted to-accent px-5 py-1.5 text-xs font-medium text-accent-emphasis transition-all hover:brightness-110 disabled:opacity-50"
+                variant="primary"
+                size="sm"
               >
                 Create Project
-              </button>
+              </ActionButton>
             )}
             {isDone && (
-              <button
-                onClick={handleDone}
-                className="rounded bg-gradient-to-r from-accent-muted to-accent px-5 py-1.5 text-xs font-medium text-accent-emphasis transition-all hover:brightness-110"
-              >
+              <ActionButton onClick={handleDone} variant="primary" size="sm">
                 Open Project
-              </button>
+              </ActionButton>
             )}
             {isError && (
-              <button
+              <ActionButton
                 onClick={() => {
                   reset();
                   setStep(1);
                 }}
-                className="rounded bg-bg-elevated px-4 py-1.5 text-xs font-medium text-text-primary transition-colors hover:bg-bg-hover"
+                variant="ghost"
+                size="sm"
               >
                 Retry
-              </button>
+              </ActionButton>
             )}
           </div>
         </div>

@@ -88,6 +88,7 @@ interface ArticleMultiPickerProps {
   /** Filter to a single template (e.g. only characters). Optional. */
   templateFilter?: ArticleTemplate;
   placeholder?: string;
+  ariaLabel?: string;
 }
 
 export function ArticleMultiPicker({
@@ -95,6 +96,7 @@ export function ArticleMultiPicker({
   onChange,
   templateFilter,
   placeholder,
+  ariaLabel,
 }: ArticleMultiPickerProps) {
   const articles = useLoreStore(selectArticles);
   const selectArticle = useLoreStore((s) => s.selectArticle);
@@ -143,6 +145,7 @@ export function ArticleMultiPicker({
         <button
           type="button"
           onClick={() => setOpen((v) => !v)}
+          aria-label={ariaLabel ?? placeholder ?? "Link article"}
           className="rounded-full border border-dashed border-border-default px-2 py-0.5 text-2xs text-text-muted hover:border-accent/40 hover:text-accent"
         >
           + {placeholder ?? "Link article"}
@@ -158,6 +161,7 @@ export function ArticleMultiPicker({
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder={templateFilter ? `Search ${templateFilter}...` : "Search articles..."}
+              aria-label={ariaLabel ? `${ariaLabel} search` : templateFilter ? `Search ${templateFilter}` : "Search articles"}
               className="w-full rounded border border-border-default bg-bg-primary px-2 py-1 text-xs text-text-primary outline-none focus:border-accent/50"
             />
           </div>
@@ -194,6 +198,7 @@ interface ArticleSinglePickerProps {
   onChange: (id: string | undefined) => void;
   templateFilter?: ArticleTemplate;
   placeholder?: string;
+  ariaLabel?: string;
 }
 
 export function ArticleSinglePicker({
@@ -201,6 +206,7 @@ export function ArticleSinglePicker({
   onChange,
   templateFilter,
   placeholder,
+  ariaLabel,
 }: ArticleSinglePickerProps) {
   const articles = useLoreStore(selectArticles);
   const selectArticle = useLoreStore((s) => s.selectArticle);
@@ -231,6 +237,7 @@ export function ArticleSinglePicker({
         <button
           type="button"
           onClick={() => setOpen((v) => !v)}
+          aria-label={ariaLabel ?? placeholder ?? "Link article"}
           className="rounded-full border border-dashed border-border-default px-2 py-0.5 text-2xs text-text-muted hover:border-accent/40 hover:text-accent"
         >
           + {placeholder ?? "Link article"}
@@ -246,6 +253,7 @@ export function ArticleSinglePicker({
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder={templateFilter ? `Search ${templateFilter}...` : "Search articles..."}
+              aria-label={ariaLabel ? `${ariaLabel} search` : templateFilter ? `Search ${templateFilter}` : "Search articles"}
               className="w-full rounded border border-border-default bg-bg-primary px-2 py-1 text-xs text-text-primary outline-none focus:border-accent/50"
             />
           </div>
@@ -283,9 +291,11 @@ interface MapPinPickerProps {
   mapId: string | undefined;
   pinId: string | undefined;
   onChange: (mapId: string | undefined, pinId: string | undefined) => void;
+  mapAriaLabel?: string;
+  pinAriaLabel?: string;
 }
 
-export function MapPinPicker({ mapId, pinId, onChange }: MapPinPickerProps) {
+export function MapPinPicker({ mapId, pinId, onChange, mapAriaLabel, pinAriaLabel }: MapPinPickerProps) {
   const maps = useLoreStore(selectMaps);
   const map = useMemo(() => maps.find((m) => m.id === mapId), [maps, mapId]);
   const pin = useMemo(() => map?.pins.find((p) => p.id === pinId), [map, pinId]);
@@ -293,6 +303,7 @@ export function MapPinPicker({ mapId, pinId, onChange }: MapPinPickerProps) {
   return (
     <div className="flex flex-wrap items-center gap-2">
       <select
+        aria-label={mapAriaLabel ?? "Map"}
         className="rounded border border-border-default bg-bg-primary px-2 py-1 text-xs text-text-secondary outline-none focus:border-accent/50"
         value={mapId ?? ""}
         onChange={(e) => onChange(e.target.value || undefined, undefined)}
@@ -307,6 +318,7 @@ export function MapPinPicker({ mapId, pinId, onChange }: MapPinPickerProps) {
 
       {map && map.pins.length > 0 && (
         <select
+          aria-label={pinAriaLabel ?? "Map pin"}
           className="rounded border border-border-default bg-bg-primary px-2 py-1 text-xs text-text-secondary outline-none focus:border-accent/50"
           value={pinId ?? ""}
           onChange={(e) => onChange(mapId, e.target.value || undefined)}
@@ -348,9 +360,10 @@ export function MapPinPicker({ mapId, pinId, onChange }: MapPinPickerProps) {
 interface TimelineEventPickerProps {
   value: string | undefined;
   onChange: (id: string | undefined) => void;
+  ariaLabel?: string;
 }
 
-export function TimelineEventPicker({ value, onChange }: TimelineEventPickerProps) {
+export function TimelineEventPicker({ value, onChange, ariaLabel }: TimelineEventPickerProps) {
   const events = useLoreStore(selectEvents);
   const calendars = useLoreStore(selectCalendars);
 
@@ -370,6 +383,7 @@ export function TimelineEventPicker({ value, onChange }: TimelineEventPickerProp
   return (
     <div className="flex items-center gap-2">
       <select
+        aria-label={ariaLabel ?? "Timeline event"}
         className="rounded border border-border-default bg-bg-primary px-2 py-1 text-xs text-text-secondary outline-none focus:border-accent/50"
         value={value ?? ""}
         onChange={(e) => onChange(e.target.value || undefined)}

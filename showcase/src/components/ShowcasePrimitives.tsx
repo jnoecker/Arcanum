@@ -26,6 +26,13 @@ export const showcaseButtonClassNames = {
   quiet: "showcase-button showcase-button--quiet",
 } as const;
 
+export const showcaseSurfaceClassNames = {
+  hero: "showcase-shell showcase-shell--hero",
+  section: "showcase-shell showcase-shell--section",
+  sectionSoft: "showcase-shell showcase-shell--section-soft",
+  note: "showcase-shell showcase-shell--note",
+} as const;
+
 export function ShowcasePanel({
   title,
   toneColor,
@@ -33,11 +40,11 @@ export function ShowcasePanel({
   className = "",
   bodyClassName = "",
 }: ShowcasePanelProps) {
-  const style = toneColor
-    ? ({
+  const style: ShowcasePanelStyle | undefined = toneColor
+    ? {
         "--showcase-tone": `${toneColor}30`,
         "--showcase-title-color": toneColor,
-      } satisfies ShowcasePanelStyle)
+      }
     : undefined;
 
   return (

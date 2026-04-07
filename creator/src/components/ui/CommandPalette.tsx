@@ -80,6 +80,12 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
       )
       .slice(0, 12);
   }, [items, query]);
+  const listboxId = "command-palette-results";
+  const statusId = "command-palette-status";
+  const activeOptionId =
+    selectedIndex >= 0 && selectedIndex < filtered.length
+      ? `command-palette-option-${selectedIndex}`
+      : undefined;
 
   // Reset selection when results change
   useEffect(() => setSelectedIndex(0), [filtered]);
@@ -149,14 +155,32 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
       >
         <input
           ref={inputRef}
+          type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder="Jump to article, panel, or zone..."
+          role="combobox"
           aria-label="Command palette search"
+          aria-autocomplete="list"
+          aria-controls={listboxId}
+          aria-describedby={statusId}
+          aria-expanded={filtered.length > 0}
+          aria-activedescendant={activeOptionId}
           className="w-full rounded-t-2xl border-b border-white/8 bg-transparent px-5 py-4 text-sm text-text-primary placeholder:text-text-muted outline-none focus-visible:ring-2 focus-visible:ring-border-active"
         />
-        <div ref={listRef} className="max-h-[360px] overflow-y-auto py-2">
+        <p id={statusId} role="status" aria-live="polite" className="sr-only">
+          {filtered.length === 0
+            ? "No results available."
+            : `${filtered.length} result${filtered.length === 1 ? "" : "s"} available.`}
+        </p>
+        <div
+          ref={listRef}
+          id={listboxId}
+          role="listbox"
+          aria-label="Command palette results"
+          className="max-h-[360px] overflow-y-auto py-2"
+        >
           {filtered.length === 0 ? (
             <p className="px-5 py-6 text-center text-sm text-text-muted">
               No matches found
@@ -165,8 +189,13 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
             filtered.map((item, i) => (
               <button
                 key={item.id}
+                id={`command-palette-option-${i}`}
+                type="button"
                 onClick={() => activate(item)}
                 onMouseEnter={() => setSelectedIndex(i)}
+                role="option"
+                aria-selected={i === selectedIndex}
+                tabIndex={-1}
                 className={`flex w-full items-center gap-3 px-5 py-2.5 text-left transition ${
                   i === selectedIndex ? "bg-white/8" : "hover:bg-white/4"
                 }`}

@@ -1,9 +1,10 @@
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useCallback, useRef } from "react";
 import type { WorldFile } from "@/types/world";
 import { ART_STYLE_LABELS } from "@/lib/arcanumPrompts";
 import { useAssetStore } from "@/stores/assetStore";
 import { useVibeStore } from "@/stores/vibeStore";
 import { useFocusTrap } from "@/lib/useFocusTrap";
+import { ActionButton } from "@/components/ui/FormWidgets";
 import {
   collectTargets,
   runBatchArtGeneration,
@@ -39,15 +40,6 @@ export function BatchArtGenerator({
   const imageProvider = settings?.image_provider ?? "deepinfra";
 
   const acceptAsset = useAssetStore((s) => s.acceptAsset);
-
-  // Close on Escape when not running
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && !running) onClose();
-    };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
-  }, [onClose, running]);
 
   const toggleTarget = (idx: number) => {
     setTargets((prev) => prev.map((t, i) => (i === idx ? { ...t, checked: !t.checked } : t)));
@@ -91,25 +83,20 @@ export function BatchArtGenerator({
 
   if (targets.length === 0) {
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-        <div className="mx-4 w-96 rounded-lg border border-border-default bg-bg-secondary shadow-xl">
-          <div className="border-b border-border-default px-5 py-3">
-            <h2 className="font-display text-sm tracking-wide text-text-primary">
-              Batch Art Generation
-            </h2>
+      <div className="dialog-overlay">
+        <div className="dialog-shell w-full max-w-md">
+          <div className="dialog-header">
+            <h2 className="dialog-title">Batch Art Generation</h2>
           </div>
-          <div className="px-5 py-4">
+          <div className="dialog-body">
             <p className="text-sm text-text-secondary">
               This zone has no entities to generate art for.
             </p>
           </div>
-          <div className="flex justify-end border-t border-border-default px-5 py-3">
-            <button
-              onClick={onClose}
-              className="rounded bg-bg-elevated px-4 py-1.5 text-xs font-medium text-text-primary transition-colors hover:bg-bg-hover"
-            >
+          <div className="dialog-footer">
+            <ActionButton onClick={onClose} variant="ghost" size="sm">
               Close
-            </button>
+            </ActionButton>
           </div>
         </div>
       </div>
@@ -117,37 +104,52 @@ export function BatchArtGenerator({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={running ? undefined : onClose}>
-      <div ref={trapRef} role="dialog" aria-modal="true" aria-labelledby="batch-art-title" className="mx-4 flex max-h-[80vh] w-full max-w-lg flex-col rounded-lg border border-border-default bg-bg-secondary shadow-xl" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-between border-b border-border-default px-5 py-3">
-          <h2 id="batch-art-title" className="font-display text-sm tracking-wide text-text-primary">
-            Batch Art — {zoneId}
-          </h2>
-          <span className="flex items-center gap-3 text-xs text-text-muted">
-            {checkedTargets.length} of {targets.length} selected
+    <div className="dialog-overlay" onClick={running ? undefined : onClose}>
+      <div
+        ref={trapRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="batch-art-title"
+        className="dialog-shell flex max-h-[88vh] w-full max-w-3xl flex-col"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="dialog-header">
+          <div className="min-w-0 flex-1">
+            <h2 id="batch-art-title" className="dialog-title">
+              Batch Art
+            </h2>
+            <p className="dialog-subtitle">
+              Generate missing room and entity art for <span className="font-mono">{zoneId}</span>, then fold the accepted assets back into the zone data.
+            </p>
+          </div>
+          <div className="flex shrink-0 flex-col items-end gap-2 text-right">
+            <span className="rounded-full border border-white/10 bg-black/10 px-3 py-1 text-2xs text-text-secondary">
+              {checkedTargets.length} of {targets.length} selected
+            </span>
             {!running && doneCount === 0 && (
-              <span className="flex gap-1.5">
-                <button onClick={selectAll} className="text-text-secondary hover:text-text-primary">All</button>
-                <span className="text-text-muted/50">|</span>
-                <button onClick={selectNone} className="text-text-secondary hover:text-text-primary">None</button>
+              <div className="flex flex-wrap justify-end gap-2">
+                <ActionButton onClick={selectAll} variant="ghost" size="sm" className="min-h-9 px-3">
+                  All
+                </ActionButton>
+                <ActionButton onClick={selectNone} variant="ghost" size="sm" className="min-h-9 px-3">
+                  None
+                </ActionButton>
                 {missingTargets.length < targets.length && (
-                  <>
-                    <span className="text-text-muted/50">|</span>
-                    <button onClick={selectMissing} className="text-text-secondary hover:text-text-primary">Missing only</button>
-                  </>
+                  <ActionButton onClick={selectMissing} variant="ghost" size="sm" className="min-h-9 px-3">
+                    Missing only
+                  </ActionButton>
                 )}
-              </span>
+              </div>
             )}
-          </span>
+          </div>
         </div>
 
-        {/* Style selector + concurrency */}
         {!running && doneCount === 0 && (
-          <div className="border-b border-border-default px-5 py-2">
-            <div className="rounded border border-border-default/60 bg-bg-primary/60 px-3 py-2 text-xs text-text-secondary">
+          <div className="border-b border-border-default px-5 py-3">
+            <div className="rounded-2xl border border-border-default/60 bg-bg-primary/60 px-3 py-2 text-xs text-text-secondary">
               Style system: {ART_STYLE_LABELS[artStyle]}
             </div>
-            <div className="mt-2 flex items-center gap-2">
+            <div className="mt-3 flex items-center gap-2">
               <label className="text-2xs text-text-muted">Concurrency:</label>
               <input
                 type="range"
@@ -158,8 +160,9 @@ export function BatchArtGenerator({
                 className="w-24 accent-accent"
               />
               <span className="text-2xs text-text-secondary">{concurrency}</span>
+              <span className="ml-auto text-2xs text-text-muted">{imageProvider}</span>
               {vibe && (
-                <span className="ml-auto text-2xs text-accent" title={vibe}>
+                <span className="text-2xs text-accent" title={vibe}>
                   vibe active
                 </span>
               )}
@@ -167,9 +170,8 @@ export function BatchArtGenerator({
           </div>
         )}
 
-        {/* Progress */}
         {running && (
-          <div className="border-b border-border-default px-5 py-2">
+          <div className="border-b border-border-default px-5 py-3">
             <div className="mb-1 flex items-center justify-between text-xs">
               <span className="text-text-secondary">
                 {bgRemoval
@@ -193,7 +195,6 @@ export function BatchArtGenerator({
           </div>
         )}
 
-        {/* Target list */}
         <div className="flex-1 overflow-y-auto px-5 py-3">
           <div className="flex flex-col gap-1">
             {targets.map((target, i) => (
@@ -239,31 +240,29 @@ export function BatchArtGenerator({
           </div>
         </div>
 
-        {/* Footer */}
         <div className="flex justify-end gap-2 border-t border-border-default px-5 py-3">
           {running ? (
-            <button
+            <ActionButton
               onClick={() => { abortRef.current = true; }}
-              className="rounded border border-status-danger/40 px-4 py-1.5 text-xs text-status-danger hover:bg-status-danger/10"
+              variant="danger"
+              size="sm"
             >
               Abort
-            </button>
+            </ActionButton>
           ) : (
             <>
-              <button
-                onClick={onClose}
-                className="rounded bg-bg-elevated px-4 py-1.5 text-xs font-medium text-text-primary transition-colors hover:bg-bg-hover"
-              >
+              <ActionButton onClick={onClose} variant="ghost" size="sm">
                 {doneCount > 0 ? "Done" : "Cancel"}
-              </button>
+              </ActionButton>
               {doneCount === 0 && (
-                <button
+                <ActionButton
                   onClick={handleRun}
                   disabled={checkedTargets.length === 0}
-                  className="rounded bg-gradient-to-r from-accent-muted to-accent px-4 py-1.5 text-xs font-medium text-accent-emphasis transition-all hover:shadow-[var(--glow-aurum)] hover:brightness-110 disabled:opacity-50"
+                  variant="primary"
+                  size="sm"
                 >
                   Generate {checkedTargets.length} Images
-                </button>
+                </ActionButton>
               )}
             </>
           )}

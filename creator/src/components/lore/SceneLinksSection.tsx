@@ -2,6 +2,7 @@
 // Per-scene lore links: location article, featured articles, map+pin,
 // and timeline event. Lives below DM Notes in SceneDetailEditor.
 
+import { useId, type ReactNode } from "react";
 import { useStoryStore } from "@/stores/storyStore";
 import { ArticleSinglePicker, ArticleMultiPicker, MapPinPicker, TimelineEventPicker } from "./LoreLinkPicker";
 import type { Scene } from "@/types/story";
@@ -11,13 +12,26 @@ interface SceneLinksSectionProps {
   scene: Scene;
 }
 
-function Field({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
+function Field({
+  label,
+  hint,
+  children,
+}: {
+  label: string;
+  hint?: string;
+  children: ReactNode;
+}) {
+  const labelId = useId();
+
   return (
-    <div className="flex flex-col gap-1">
-      <label className="font-display text-2xs uppercase tracking-[0.15em] text-text-muted">
+    <div className="flex flex-col gap-1" role="group" aria-labelledby={labelId}>
+      <div
+        id={labelId}
+        className="font-display text-2xs uppercase tracking-[0.15em] text-text-muted"
+      >
         {label}
         {hint && <span className="ml-2 normal-case tracking-normal text-text-muted/70">{hint}</span>}
-      </label>
+      </div>
       {children}
     </div>
   );
@@ -48,6 +62,7 @@ export function SceneLinksSection({ storyId, scene }: SceneLinksSectionProps) {
             onChange={(id) => updateScene(storyId, scene.id, { linkedLocationArticleId: id })}
             templateFilter="location"
             placeholder="Link location"
+            ariaLabel="Location article"
           />
         </Field>
 
@@ -55,6 +70,7 @@ export function SceneLinksSection({ storyId, scene }: SceneLinksSectionProps) {
           <TimelineEventPicker
             value={scene.linkedTimelineEventId}
             onChange={(id) => updateScene(storyId, scene.id, { linkedTimelineEventId: id })}
+            ariaLabel="Timeline event"
           />
         </Field>
 
@@ -65,6 +81,8 @@ export function SceneLinksSection({ storyId, scene }: SceneLinksSectionProps) {
             onChange={(mapId, pinId) =>
               updateScene(storyId, scene.id, { linkedMapId: mapId, linkedPinId: pinId })
             }
+            mapAriaLabel="Linked map"
+            pinAriaLabel="Linked map pin"
           />
         </Field>
 
@@ -77,6 +95,7 @@ export function SceneLinksSection({ storyId, scene }: SceneLinksSectionProps) {
               })
             }
             placeholder="Link article"
+            ariaLabel="Featured articles"
           />
         </Field>
       </div>

@@ -18,7 +18,9 @@ export function TemplateStep({ data, onSelectTemplate }: TemplateStepProps) {
         {TEMPLATES.map((t) => (
           <button
             key={t.id}
+            type="button"
             onClick={() => onSelectTemplate(t.id)}
+            aria-pressed={data.templateId === t.id}
             className={`rounded-lg border px-4 py-3 text-left transition-colors ${
               data.templateId === t.id
                 ? "border-accent bg-accent/10"

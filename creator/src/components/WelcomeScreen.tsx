@@ -52,7 +52,7 @@ export function WelcomeScreen({ onNewProject }: WelcomeScreenProps) {
   };
 
   return (
-    <div className="relative flex h-screen overflow-hidden bg-bg-abyss">
+    <div className="relative flex min-h-screen min-h-dvh overflow-x-hidden overflow-y-auto bg-bg-abyss">
       <img
         src={splashHero}
         alt=""
@@ -62,12 +62,11 @@ export function WelcomeScreen({ onNewProject }: WelcomeScreenProps) {
       <div className="absolute left-[-8rem] top-[-6rem] h-[28rem] w-[28rem] rounded-full bg-[radial-gradient(circle,rgba(168,151,210,0.22),transparent_66%)] blur-3xl" />
 
       <div className="relative z-10 mx-auto flex w-full max-w-6xl flex-1 items-center px-6 py-8 lg:px-10">
-        <div className="grid w-full gap-6 lg:grid-cols-[minmax(18rem,0.72fr)_minmax(0,1.18fr)]">
+        <div className="grid w-full gap-6 lg:grid-cols-[minmax(18rem,0.64fr)_minmax(0,1.24fr)]">
           <div className="flex flex-col justify-center gap-6">
             <div>
-              <p className="text-2xs uppercase tracking-wide-ui text-text-muted">Creator&apos;s Instrument</p>
               <h1 className="mt-4 max-w-xl font-display text-4xl leading-[1.02] text-text-primary lg:text-5xl">
-                Return to a world already in motion, or found a new canon.
+                Return to a world already in motion, or start a new canon.
               </h1>
               <p className="mt-4 max-w-lg text-sm leading-7 text-text-secondary lg:text-base">
                 Arcanum is built for long sessions of shaping zones, systems, lore, and art. Enter through the most direct path and keep working.
@@ -75,32 +74,36 @@ export function WelcomeScreen({ onNewProject }: WelcomeScreenProps) {
             </div>
 
             <div className="rounded-3xl border border-white/10 bg-[linear-gradient(155deg,rgba(54,63,90,0.9),rgba(37,45,68,0.92))] p-6 shadow-panel">
-              <p className="text-2xs uppercase tracking-wide-ui text-text-muted">Studio paths</p>
-              <div className="mt-4 flex flex-col gap-3">
+              <div className="mt-1 flex flex-col gap-4">
                 <button
                   onClick={onNewProject}
-                  className="rounded-3xl border border-[var(--border-accent-ring)] bg-[linear-gradient(135deg,rgba(168,151,210,0.26),rgba(200,151,46,0.16))] px-5 py-4 text-left text-sm font-medium text-text-primary transition hover:shadow-[0_14px_34px_rgba(168,151,210,0.2)]"
+                  className="rounded-3xl border border-[var(--border-accent-ring)] bg-[linear-gradient(135deg,rgba(168,151,210,0.26),rgba(200,151,46,0.16))] px-5 py-5 text-left text-sm font-medium text-text-primary transition hover:shadow-[0_14px_34px_rgba(168,151,210,0.2)]"
                 >
-                  <div className="text-3xs uppercase tracking-ui text-text-muted">Founding</div>
-                  <div className="mt-2 font-display text-lg">Create new project</div>
-                  <div className="mt-1 text-xs font-normal text-text-secondary">Lay down a fresh scaffold, then move directly into worldmaking.</div>
+                  <div className="font-display text-xl">Create new project</div>
+                  <div className="mt-2 text-xs font-normal leading-6 text-text-secondary">Lay down a fresh scaffold, then move directly into worldmaking.</div>
                 </button>
-                <button
-                  onClick={handleOpen}
-                  className="rounded-3xl border border-white/10 bg-black/12 px-5 py-4 text-left text-sm font-medium text-text-primary transition hover:bg-white/10"
-                >
-                  <div className="text-3xs uppercase tracking-ui text-text-muted">Re-entry</div>
-                  <div className="mt-2">Open existing project</div>
-                  <div className="mt-1 text-xs font-normal text-text-secondary">Reconnect to a local project folder and restore its working state.</div>
-                </button>
-                <button
-                  onClick={() => setShowR2Import(true)}
-                  className="rounded-3xl border border-white/10 bg-black/12 px-5 py-4 text-left text-sm font-medium text-text-primary transition hover:bg-white/10"
-                >
-                  <div className="text-3xs uppercase tracking-ui text-text-muted">Recovery</div>
-                  <div className="mt-2">Import from R2</div>
-                  <div className="mt-1 text-xs font-normal text-text-secondary">Pull a published world down from R2 and continue shaping it locally.</div>
-                </button>
+                <div className="space-y-2 border-t border-white/10 pt-4">
+                  <button
+                    onClick={handleOpen}
+                    className="flex w-full items-start justify-between gap-4 rounded-2xl px-3 py-3 text-left text-sm font-medium text-text-primary transition hover:bg-white/8"
+                  >
+                    <div>
+                      <div>Open existing project</div>
+                      <div className="mt-1 text-xs font-normal leading-6 text-text-secondary">Reconnect to a local project folder and restore its working state.</div>
+                    </div>
+                    <span className="pt-1 text-[var(--color-aurum-pale)]">↗</span>
+                  </button>
+                  <button
+                    onClick={() => setShowR2Import(true)}
+                    className="flex w-full items-start justify-between gap-4 rounded-2xl px-3 py-3 text-left text-sm font-medium text-text-primary transition hover:bg-white/8"
+                  >
+                    <div>
+                      <div>Import from R2</div>
+                      <div className="mt-1 text-xs font-normal leading-6 text-text-secondary">Pull a published world down from R2 and continue shaping it locally.</div>
+                    </div>
+                    <span className="pt-1 text-[var(--color-aurum-pale)]">↗</span>
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -108,11 +111,10 @@ export function WelcomeScreen({ onNewProject }: WelcomeScreenProps) {
           <div className="min-h-0 rounded-3xl border border-white/10 bg-[linear-gradient(155deg,rgba(54,63,90,0.9),rgba(37,45,68,0.92))] p-6 shadow-panel">
             <div className="mb-5 flex items-center justify-between gap-4">
               <div>
-                <p className="text-2xs uppercase tracking-wide-ui text-text-muted">Recent worlds</p>
-                <h2 className="mt-2 font-display text-3xl text-text-primary">Resume the latest work</h2>
+                <h2 className="font-display text-3xl text-text-primary">Continue where you left off</h2>
               </div>
               {recentProjects.length > 0 && (
-                <span className="shrink-0 text-xs uppercase tracking-ui text-text-muted">
+                <span className="shrink-0 text-xs text-text-muted">
                   {recentProjects.length} saved
                 </span>
               )}
@@ -125,7 +127,6 @@ export function WelcomeScreen({ onNewProject }: WelcomeScreenProps) {
                   disabled={loading === recentProjects[0]!.path}
                   className="rounded-3xl border border-[var(--border-accent-ring)] bg-[linear-gradient(135deg,rgba(168,151,210,0.34),rgba(200,151,46,0.18))] px-5 py-5 text-left shadow-[0_16px_40px_rgba(8,10,18,0.22)] transition hover:shadow-[0_18px_46px_rgba(168,151,210,0.24)] disabled:opacity-50"
                 >
-                  <div className="text-3xs uppercase tracking-ui text-text-muted">Last opened realm</div>
                   <div className="mt-3 font-display text-2xl text-text-primary">
                     {loading === recentProjects[0]!.path ? "Opening..." : recentProjects[0]!.name}
                   </div>
@@ -166,13 +167,13 @@ export function WelcomeScreen({ onNewProject }: WelcomeScreenProps) {
                   </ul>
                 ) : (
                   <div className="rounded-3xl border border-dashed border-white/10 bg-black/12 px-4 py-6 text-sm leading-7 text-text-muted">
-                    No older worlds are on hand yet. The latest realm is ready above.
+                    No older worlds are on hand yet. Your latest project is ready above.
                   </div>
                 )}
               </div>
             ) : (
               <div className="rounded-3xl border border-dashed border-white/10 bg-black/12 px-4 py-8 text-sm leading-7 text-text-muted">
-                Your worlds will gather here once created. Found a new one to establish the archive.
+                Your recent projects will appear here once you start building.
               </div>
             )}
           </div>

@@ -1,4 +1,3 @@
-import { useState } from "react";
 import type { ConfigPanelProps, AppConfig } from "./types";
 import { Section, FieldRow, NumberInput, TextInput, CheckboxInput } from "@/components/ui/FormWidgets";
 
@@ -6,13 +5,12 @@ export function AdminConfigPanel({ config, onChange }: ConfigPanelProps) {
   const a = config.admin;
   const patch = (p: Partial<AppConfig["admin"]>) =>
     onChange({ admin: { ...a, ...p } });
-  const [showToken, setShowToken] = useState(false);
 
   return (
     <>
       <Section
         title="Admin API"
-        description="The admin server lets the Arcanum monitor players, inspect zones, trigger hot reloads, and broadcast messages — all without restarting the server."
+        description="The admin server lets the Arcanum monitor players, inspect zones, trigger hot reloads, and broadcast messages without restarting the server."
       >
         <div className="flex flex-col gap-1.5">
           <FieldRow label="Enabled" hint="Start the admin HTTP server alongside the game engine. Required for the Arcanum's Admin tab to connect.">
@@ -37,21 +35,12 @@ export function AdminConfigPanel({ config, onChange }: ConfigPanelProps) {
               placeholder="/admin/"
             />
           </FieldRow>
-          <FieldRow label="Auth Token" hint="Required. Every API request must include this token via HTTP Basic Auth. Leave blank to block all access.">
-            <div className="flex items-center gap-2">
-              <TextInput
-                value={a.token}
-                onCommit={(v) => patch({ token: v })}
-                placeholder="Set a secure token"
-                type={showToken ? "text" : "text"}
-              />
-              <button
-                type="button"
-                onClick={() => setShowToken((v) => !v)}
-                className="shrink-0 text-2xs text-text-muted hover:text-text-primary"
-              >
-                {showToken ? "Hide" : "Show"}
-              </button>
+          <FieldRow
+            label="Auth Token"
+            hint="Managed by the mud deployment layer. Arcanum writes a blank token to project YAML and expects the runtime token to come from SSM or environment variables."
+          >
+            <div className="rounded-xl border border-white/10 bg-black/15 px-3 py-2 text-sm leading-6 text-text-secondary">
+              Runtime-managed via <span className="font-mono text-stellar-blue">AMBONMUD_ADMIN_TOKEN</span>.
             </div>
           </FieldRow>
           <FieldRow label="Grafana URL" hint="Optional. If set, the admin dashboard will show a link to your Grafana board.">

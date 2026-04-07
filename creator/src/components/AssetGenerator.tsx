@@ -236,43 +236,59 @@ export function AssetGenerator() {
               </div>
 
               <div>
-                <label className="mb-2 block text-2xs uppercase tracking-wide-ui text-text-muted">Asset Type</label>
-                <div role="radiogroup" aria-label="Asset type" className="flex flex-wrap gap-2">
-                  {(Object.entries(ASSET_TEMPLATES) as [AssetType, { label: string }][]).map(([key, { label }]) => (
-                    <ActionButton
-                      key={key}
-                      role="radio"
-                      aria-checked={assetType === key}
-                      onClick={() => handleTypeChange(key)}
-                      variant={assetType === key ? "primary" : "secondary"}
-                      className="justify-start"
-                    >
-                      {label}
-                    </ActionButton>
-                  ))}
-                </div>
+                <fieldset>
+                  <legend className="mb-2 block text-2xs uppercase tracking-wide-ui text-text-muted">Asset Type</legend>
+                  <div className="flex flex-wrap gap-2">
+                    {(Object.entries(ASSET_TEMPLATES) as [AssetType, { label: string }][]).map(([key, { label }]) => (
+                      <label
+                        key={key}
+                        className={[
+                          "focus-ring action-button justify-start",
+                          assetType === key ? "action-button-primary" : "action-button-secondary",
+                        ].join(" ")}
+                      >
+                        <input
+                          type="radio"
+                          name="asset-generator-type"
+                          value={key}
+                          checked={assetType === key}
+                          onChange={() => handleTypeChange(key)}
+                          className="sr-only"
+                        />
+                        {label}
+                      </label>
+                    ))}
+                  </div>
+                </fieldset>
               </div>
 
               <div>
-                <label className="mb-2 block text-2xs uppercase tracking-wide-ui text-text-muted">Model</label>
-                <div role="radiogroup" aria-label="Model" className="grid gap-3">
-                  {IMAGE_MODELS.filter((model) => model.provider === imageProvider).map((model) => (
-                    <button
-                      key={model.id}
-                      role="radio"
-                      aria-checked={modelId === model.id}
-                      onClick={() => setModelId(model.id)}
-                      className={`focus-ring rounded-3xl border p-4 text-left transition ${
-                        modelId === model.id
-                          ? "border-[var(--border-glow-strong)] bg-[linear-gradient(145deg,rgba(168,151,210,0.18),rgba(42,50,71,0.9))] shadow-glow"
-                          : "border-white/8 bg-black/12 hover:border-white/14 hover:bg-white/6"
-                      }`}
-                    >
-                      <div className="font-display text-sm text-text-primary">{model.label}</div>
-                      <div className="mt-1 text-xs leading-6 text-text-secondary">{model.description}</div>
-                    </button>
-                  ))}
-                </div>
+                <fieldset>
+                  <legend className="mb-2 block text-2xs uppercase tracking-wide-ui text-text-muted">Model</legend>
+                  <div className="grid gap-3">
+                    {IMAGE_MODELS.filter((model) => model.provider === imageProvider).map((model) => (
+                      <label
+                        key={model.id}
+                        className={`focus-ring rounded-3xl border p-4 text-left transition ${
+                          modelId === model.id
+                            ? "border-[var(--border-glow-strong)] bg-[linear-gradient(145deg,rgba(168,151,210,0.18),rgba(42,50,71,0.9))] shadow-glow"
+                            : "border-white/8 bg-black/12 hover:border-white/14 hover:bg-white/6"
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          name="asset-generator-model"
+                          value={model.id}
+                          checked={modelId === model.id}
+                          onChange={() => setModelId(model.id)}
+                          className="sr-only"
+                        />
+                        <div className="font-display text-sm text-text-primary">{model.label}</div>
+                        <div className="mt-1 text-xs leading-6 text-text-secondary">{model.description}</div>
+                      </label>
+                    ))}
+                  </div>
+                </fieldset>
               </div>
 
               <div>

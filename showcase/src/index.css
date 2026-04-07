@@ -615,6 +615,54 @@ body {
   text-transform: uppercase;
 }
 
+.showcase-shell {
+  border-radius: 1.75rem;
+  border: 1px solid color-mix(in srgb, var(--color-border-muted) 72%, transparent);
+  box-shadow: var(--shadow-deep);
+}
+
+.showcase-shell--hero {
+  border-color: color-mix(in srgb, var(--color-aurum) 22%, transparent);
+  background:
+    radial-gradient(circle at top left, color-mix(in srgb, var(--color-aurum) 14%, transparent), transparent 42%),
+    linear-gradient(155deg, color-mix(in srgb, var(--color-bg-secondary) 72%, black 28%), color-mix(in srgb, var(--color-bg-abyss) 82%, black 18%));
+}
+
+.showcase-shell--section {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--color-bg-secondary) 40%, transparent), color-mix(in srgb, var(--color-bg-abyss) 14%, black 6%));
+}
+
+.showcase-shell--section-soft {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--color-bg-tertiary) 24%, transparent), color-mix(in srgb, var(--color-bg-primary) 12%, transparent));
+}
+
+.showcase-shell--note {
+  border-color: color-mix(in srgb, var(--color-aurum) 30%, transparent);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--color-bg-abyss) 58%, transparent), color-mix(in srgb, var(--color-bg-secondary) 28%, transparent));
+  box-shadow: var(--glow-aurum);
+}
+
+.showcase-viewport {
+  height: clamp(24rem, 68vh, 47.5rem);
+}
+
+.showcase-viewport--map {
+  height: clamp(22rem, 72vh, 50rem);
+}
+
+@media (max-width: 64rem), (max-height: 52rem) {
+  .showcase-viewport {
+    height: clamp(20rem, 60vh, 38rem);
+  }
+
+  .showcase-viewport--map {
+    height: clamp(20rem, 62vh, 40rem);
+  }
+}
+
 /* ─── Scrollbar styling ─────────────────────────────────────────── */
 
 ::-webkit-scrollbar { width: 6px; }

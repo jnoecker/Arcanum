@@ -51,6 +51,19 @@ function siblingMediaBaseUrl(imagesBaseUrl: string, folder: "videos" | "audio"):
   return normalized.replace(/\/images\/?$/i, `/${folder}/`);
 }
 
+function sanitizeAdminConfigForRuntime(admin: AppConfig["admin"] | undefined): AppConfig["admin"] {
+  return {
+    enabled: admin?.enabled ?? false,
+    port: admin?.port ?? 9091,
+    // The runtime token is injected by the mud deployment layer via env/SSM.
+    // Arcanum should never persist it into project config.
+    token: "",
+    basePath: admin?.basePath ?? "/admin/",
+    grafanaUrl: admin?.grafanaUrl ?? "",
+    corsOrigins: admin?.corsOrigins,
+  };
+}
+
 function applyRawSections(target: Record<string, unknown>, rawSections: AppConfig["rawSections"]): void {
   for (const [key, value] of Object.entries(rawSections)) {
     if (key === "root.mode") {
@@ -162,6 +175,7 @@ export function buildMonolithicConfigObject(
   const imageBaseUrl = normalizeBaseUrl(c.images.baseUrl, "/images/");
   const fallbackZone = findFallbackZone(c, loadedZones);
   const classStartRooms = normalizeClassStartRooms(c, loadedZones);
+  const adminConfig = sanitizeAdminConfigForRuntime(c.admin);
 
   const engine: Record<string, unknown> = {
     scheduler: { maxActionsPerTick: 100 },
@@ -414,11 +428,12 @@ export function buildMonolithicConfigObject(
       staticTags: {},
     },
     admin: {
-      enabled: c.admin?.enabled ?? false,
-      port: c.admin?.port ?? 9091,
-      token: c.admin?.token ?? "",
-      basePath: c.admin?.basePath || undefined,
-      grafanaUrl: c.admin?.grafanaUrl || undefined,
+      enabled: adminConfig.enabled,
+      port: adminConfig.port,
+      token: adminConfig.token,
+      basePath: adminConfig.basePath || undefined,
+      grafanaUrl: adminConfig.grafanaUrl || undefined,
+      corsOrigins: adminConfig.corsOrigins,
     },
     logging: {
       level: c.logging?.level ?? "INFO",

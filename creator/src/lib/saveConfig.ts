@@ -15,12 +15,20 @@ import {
   buildMonolithicConfigObject,
   loadSlotPositions,
 } from "@/lib/exportMud";
+import type { AppConfig } from "@/types/config";
 
 const YAML_OPTS = {
   lineWidth: 120,
   defaultKeyType: "PLAIN" as const,
   defaultStringType: "PLAIN" as const,
 };
+
+function sanitizeAdminConfigForSave(admin: AppConfig["admin"]): AppConfig["admin"] {
+  return {
+    ...admin,
+    token: "",
+  };
+}
 
 /**
  * Save config using the appropriate strategy for the project format.
@@ -165,7 +173,7 @@ async function saveSplitConfig(projectDir: string): Promise<void> {
 
     write("world", cleanObj({
       server: config.server,
-      admin: config.admin,
+      admin: sanitizeAdminConfigForSave(config.admin),
       observability: config.observability,
       logging: cleanObj({
         level: config.logging.level,

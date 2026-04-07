@@ -15,6 +15,8 @@ export function useFocusTrap<T extends HTMLElement>(onEscape?: () => void) {
     first?.focus();
 
     function handleKeyDown(e: KeyboardEvent) {
+      if (!container) return;
+
       if (e.key === "Escape" && onEscape) {
         e.stopPropagation();
         onEscape();

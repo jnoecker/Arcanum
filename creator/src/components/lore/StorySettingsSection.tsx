@@ -2,7 +2,7 @@
 // Story-level metadata: cover, synopsis, tags, draft, lore links,
 // featured characters, primary map, primary calendar.
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useId, type ReactNode } from "react";
 import { useStoryStore } from "@/stores/storyStore";
 import { useLoreStore, selectMaps, selectCalendars } from "@/stores/loreStore";
 import { useImageSrc } from "@/lib/useImageSrc";
@@ -25,7 +25,7 @@ function CoverImage({
     <button
       type="button"
       onClick={onChangeClick}
-      className="group relative w-[200px] overflow-hidden rounded-xl border border-border-default"
+      className="group relative w-full max-w-[200px] overflow-hidden rounded-xl border border-border-default"
     >
       {src ? (
         <img src={src} alt="Story cover" className="w-full object-cover" />
@@ -88,12 +88,14 @@ function TagList({
           onChange={(e) => setDraft(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && add()}
           placeholder="Add tag and press Enter..."
+          aria-label="Add tag"
         />
         <button
           type="button"
           onClick={add}
           disabled={!draft.trim()}
           className="rounded border border-border-default px-2 py-0.5 text-xs text-text-secondary hover:bg-bg-tertiary disabled:opacity-40"
+          aria-label="Add tag"
         >
           +
         </button>
@@ -104,13 +106,37 @@ function TagList({
 
 // ─── Field row ─────────────────────────────────────────────────────
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function Field({
+  label,
+  labelFor,
+  groupLabel,
+  children,
+}: {
+  label: string;
+  labelFor?: string;
+  groupLabel?: boolean;
+  children: ReactNode;
+}) {
+  const labelId = useId();
+
   return (
     <div className="flex flex-col gap-1">
-      <label className="font-display text-2xs uppercase tracking-[0.15em] text-text-muted">
-        {label}
-      </label>
-      {children}
+      {labelFor ? (
+        <label
+          htmlFor={labelFor}
+          className="font-display text-2xs uppercase tracking-[0.15em] text-text-muted"
+        >
+          {label}
+        </label>
+      ) : (
+        <div
+          id={labelId}
+          className="font-display text-2xs uppercase tracking-[0.15em] text-text-muted"
+        >
+          {label}
+        </div>
+      )}
+      {groupLabel ? <div aria-labelledby={labelId}>{children}</div> : children}
     </div>
   );
 }
@@ -125,6 +151,9 @@ export function StorySettingsSection({ story }: StorySettingsSectionProps) {
   const updateStory = useStoryStore((s) => s.updateStory);
   const maps = useLoreStore(selectMaps);
   const calendars = useLoreStore(selectCalendars);
+  const synopsisId = useId();
+  const primaryMapId = useId();
+  const primaryCalendarId = useId();
 
   const [showSettings, setShowSettings] = useState(false);
   const [showAssetPicker, setShowAssetPicker] = useState(false);
@@ -192,7 +221,7 @@ export function StorySettingsSection({ story }: StorySettingsSectionProps) {
                 <button
                   type="button"
                   onClick={() => setShowAssetPicker(true)}
-                  className="flex h-[140px] w-[200px] cursor-pointer items-center justify-center rounded-xl border-2 border-dashed border-border-default transition-colors hover:border-accent/40 hover:bg-bg-tertiary"
+                  className="flex h-[140px] w-full max-w-[200px] cursor-pointer items-center justify-center rounded-xl border-2 border-dashed border-border-default transition-colors hover:border-accent/40 hover:bg-bg-tertiary"
                 >
                   <span className="text-sm text-text-muted">Add a cover image</span>
                 </button>
@@ -201,8 +230,9 @@ export function StorySettingsSection({ story }: StorySettingsSectionProps) {
 
             {/* Right column: synopsis + meta + lore links */}
             <div className="flex flex-col gap-3">
-              <Field label="Synopsis">
+              <Field label="Synopsis" labelFor={synopsisId}>
                 <textarea
+                  id={synopsisId}
                   value={story.synopsis ?? ""}
                   onChange={(e) => patch({ synopsis: e.target.value || undefined })}
                   placeholder="A short logline or pitch for this story..."
@@ -212,7 +242,7 @@ export function StorySettingsSection({ story }: StorySettingsSectionProps) {
               </Field>
 
               <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-                <Field label="Tags">
+                <Field label="Tags" groupLabel>
                   <TagList
                     items={story.tags ?? []}
                     onChange={(tags) => patch({ tags: tags.length > 0 ? tags : undefined })}
@@ -230,8 +260,9 @@ export function StorySettingsSection({ story }: StorySettingsSectionProps) {
                     Draft (excluded from showcase)
                   </label>
 
-                  <Field label="Primary map">
+                  <Field label="Primary map" labelFor={primaryMapId}>
                     <select
+                      id={primaryMapId}
                       className="rounded border border-border-default bg-bg-primary px-2 py-1 text-xs text-text-secondary outline-none focus:border-accent/50"
                       value={story.primaryMapId ?? ""}
                       onChange={(e) => patch({ primaryMapId: e.target.value || undefined })}
@@ -245,8 +276,9 @@ export function StorySettingsSection({ story }: StorySettingsSectionProps) {
                     </select>
                   </Field>
 
-                  <Field label="Primary calendar">
+                  <Field label="Primary calendar" labelFor={primaryCalendarId}>
                     <select
+                      id={primaryCalendarId}
                       className="rounded border border-border-default bg-bg-primary px-2 py-1 text-xs text-text-secondary outline-none focus:border-accent/50"
                       value={story.primaryCalendarId ?? ""}
                       onChange={(e) => patch({ primaryCalendarId: e.target.value || undefined })}
@@ -262,7 +294,7 @@ export function StorySettingsSection({ story }: StorySettingsSectionProps) {
                 </div>
               </div>
 
-              <Field label="Featured characters">
+              <Field label="Featured characters" groupLabel>
                 <ArticleMultiPicker
                   selected={story.featuredCharacterIds ?? []}
                   onChange={(ids) =>
@@ -270,16 +302,18 @@ export function StorySettingsSection({ story }: StorySettingsSectionProps) {
                   }
                   templateFilter="character"
                   placeholder="Add character"
+                  ariaLabel="Featured characters"
                 />
               </Field>
 
-              <Field label="Featured lore">
+              <Field label="Featured lore" groupLabel>
                 <ArticleMultiPicker
                   selected={story.linkedArticleIds ?? []}
                   onChange={(ids) =>
                     patch({ linkedArticleIds: ids.length > 0 ? ids : undefined })
                   }
                   placeholder="Link article"
+                  ariaLabel="Featured lore"
                 />
               </Field>
             </div>

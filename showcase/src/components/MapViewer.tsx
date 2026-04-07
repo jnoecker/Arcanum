@@ -44,8 +44,7 @@ export function MapViewer({ map }: MapViewerProps) {
   return (
     <div
       ref={containerRef}
-      className="w-full rounded-lg border border-border-muted bg-bg-abyss overflow-hidden"
-      style={{ height: "min(80vh, 800px)" }}
+      className="showcase-viewport showcase-viewport--map w-full overflow-hidden rounded-lg border border-border-muted bg-bg-abyss"
       tabIndex={0}
       role="group"
       aria-label={`Map: ${map.title}`}

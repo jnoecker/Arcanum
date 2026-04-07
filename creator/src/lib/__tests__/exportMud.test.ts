@@ -141,6 +141,11 @@ describe("buildMonolithicConfigObject", () => {
   it("emits explicit runtime defaults and normalizes split room ids", () => {
     const config: AppConfig = {
       ...BASE_CONFIG,
+      admin: {
+        ...BASE_CONFIG.admin,
+        enabled: true,
+        token: "should-not-be-exported",
+      },
       classStartRooms: { BULWARK: "training_grounds" },
       abilities: {
         shield_bash: {
@@ -183,6 +188,8 @@ describe("buildMonolithicConfigObject", () => {
     expect(runtime.redis.enabled).toBe(false);
     expect(runtime.audio.baseUrl).toBe("https://assets.ambon.dev/");
     expect(runtime.videos.baseUrl).toBe("https://assets.ambon.dev/");
+    expect(runtime.admin.enabled).toBe(true);
+    expect(runtime.admin.token).toBe("");
     expect(runtime.engine.classStartRooms.BULWARK).toBe("tutorial_glade:training_grounds");
     expect(runtime.engine.statusEffects.definitions.fortress_stance.effectType).toBe("stat_buff");
     expect(runtime.engine.abilities.definitions.shield_bash.image).toBe("shield_bash.png");

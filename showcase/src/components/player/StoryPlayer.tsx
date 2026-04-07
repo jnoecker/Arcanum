@@ -39,30 +39,6 @@ export function StoryPlayer({ story }: StoryPlayerProps) {
   }, []);
 
   useEffect(() => {
-    if (mode === "scroll") {
-      return undefined;
-    }
-
-    const handler = (event: KeyboardEvent) => {
-      switch (event.key) {
-        case "ArrowRight":
-        case " ":
-        case "Enter":
-          event.preventDefault();
-          goNext();
-          break;
-        case "ArrowLeft":
-          event.preventDefault();
-          goPrev();
-          break;
-      }
-    };
-
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
-  }, [goNext, goPrev, mode]);
-
-  useEffect(() => {
     if (mode === "auto" && playing && currentIndex < scenes.length - 1) {
       setAutoTimerActive(true);
       const timeout = setTimeout(goNext, autoInterval);
@@ -90,15 +66,35 @@ export function StoryPlayer({ story }: StoryPlayerProps) {
       return;
     }
 
-    element.style.width = "0%";
+    element.style.transform = "scaleX(0)";
     element.style.transition = "none";
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
-        element.style.transition = `width ${autoInterval}ms linear`;
-        element.style.width = "100%";
+        element.style.transition = `transform ${autoInterval}ms linear`;
+        element.style.transform = "scaleX(1)";
       });
     });
   }, [autoInterval, autoTimerActive, currentIndex, mode]);
+
+  const handleViewportKeyDown = useCallback(
+    (event: React.KeyboardEvent<HTMLDivElement>) => {
+      if (mode === "scroll") return;
+
+      switch (event.key) {
+        case "ArrowRight":
+        case " ":
+        case "Enter":
+          event.preventDefault();
+          goNext();
+          break;
+        case "ArrowLeft":
+          event.preventDefault();
+          goPrev();
+          break;
+      }
+    },
+    [goNext, goPrev, mode],
+  );
 
   const currentScene = scenes[currentIndex];
   const modeDescription =
@@ -145,7 +141,14 @@ export function StoryPlayer({ story }: StoryPlayerProps) {
       {mode !== "scroll" ? (
         <div className="rounded-[1.6rem] border border-border-muted/35 bg-[linear-gradient(180deg,rgba(18,18,28,0.92),rgba(10,10,18,0.98))] p-3 shadow-[var(--shadow-deep)] sm:p-4">
           <div className="relative overflow-hidden rounded-[1.2rem] border border-border-muted/20">
-            <div onClick={goNext} onKeyDown={undefined} role="presentation" className="cursor-pointer">
+            <div
+              onClick={goNext}
+              onKeyDown={handleViewportKeyDown}
+              role="group"
+              tabIndex={0}
+              aria-label="Story playback viewport"
+              className="cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-aurum)]/35"
+            >
               <CinematicRenderer
                 scenes={scenes}
                 currentIndex={currentIndex}
@@ -160,7 +163,7 @@ export function StoryPlayer({ story }: StoryPlayerProps) {
                 <div
                   key={currentIndex}
                   ref={progressBarRef}
-                  className="h-full rounded-full bg-[linear-gradient(90deg,var(--color-aurum),var(--color-aurum-pale))]"
+                  className="h-full origin-left scale-x-0 rounded-full bg-[linear-gradient(90deg,var(--color-aurum),var(--color-aurum-pale))]"
                 />
               </div>
             ) : null}

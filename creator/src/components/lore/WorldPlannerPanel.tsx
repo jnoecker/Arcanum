@@ -30,6 +30,10 @@ function GenerationControls({
   setUseLoreContext,
   useGridOverlay,
   setUseGridOverlay,
+  twoPass,
+  setTwoPass,
+  selfCheck,
+  setSelfCheck,
   onGenerate,
   loading,
   disabled,
@@ -42,6 +46,10 @@ function GenerationControls({
   setUseLoreContext: (b: boolean) => void;
   useGridOverlay: boolean;
   setUseGridOverlay: (b: boolean) => void;
+  twoPass: boolean;
+  setTwoPass: (b: boolean) => void;
+  selfCheck: boolean;
+  setSelfCheck: (b: boolean) => void;
   onGenerate: () => void;
   loading: boolean;
   disabled: boolean;
@@ -87,10 +95,35 @@ function GenerationControls({
             checked={useGridOverlay}
             onChange={(e) => setUseGridOverlay(e.target.checked)}
             className="h-3.5 w-3.5"
+            disabled={twoPass}
           />
           Overlay reference grid on map
           <span className="text-2xs text-text-muted">
             (much more accurate placement; recommended)
+          </span>
+        </label>
+        <label className="flex cursor-pointer items-center gap-2 text-xs text-text-secondary">
+          <input
+            type="checkbox"
+            checked={twoPass}
+            onChange={(e) => setTwoPass(e.target.checked)}
+            className="h-3.5 w-3.5"
+          />
+          Two-pass mode
+          <span className="text-2xs text-text-muted">
+            (structure first, placement second; 2× cost)
+          </span>
+        </label>
+        <label className="flex cursor-pointer items-center gap-2 text-xs text-text-secondary">
+          <input
+            type="checkbox"
+            checked={selfCheck}
+            onChange={(e) => setSelfCheck(e.target.checked)}
+            className="h-3.5 w-3.5"
+          />
+          Self-check pass
+          <span className="text-2xs text-text-muted">
+            (extra LLM call to verify and correct; +1 call)
           </span>
         </label>
       </div>
@@ -469,6 +502,8 @@ export function WorldPlannerPanel() {
   const [toneHint, setToneHint] = useState("");
   const [useLoreContext, setUseLoreContext] = useState(true);
   const [useGridOverlay, setUseGridOverlay] = useState(true);
+  const [twoPass, setTwoPass] = useState(false);
+  const [selfCheck, setSelfCheck] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -503,6 +538,8 @@ export function WorldPlannerPanel() {
         toneHint,
         useLoreContext,
         useGridOverlay,
+        twoPass,
+        selfCheck,
       });
       setSuggestions(result.suggestions);
       setWarnings(result.warnings);
@@ -603,6 +640,10 @@ export function WorldPlannerPanel() {
         setUseLoreContext={setUseLoreContext}
         useGridOverlay={useGridOverlay}
         setUseGridOverlay={setUseGridOverlay}
+        twoPass={twoPass}
+        setTwoPass={setTwoPass}
+        selfCheck={selfCheck}
+        setSelfCheck={setSelfCheck}
         onGenerate={handleGenerate}
         loading={loading}
         disabled={!sourceMap || !mapImage}

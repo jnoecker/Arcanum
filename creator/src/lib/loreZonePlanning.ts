@@ -22,6 +22,33 @@ export interface ZonePlanGenerationOptions {
    * of raw pixels. Dramatically improves spatial accuracy. Default: true.
    */
   useGridOverlay?: boolean;
+  /**
+   * After the main generation, run an additional LLM call asking the
+   * model to verify and correct its own proposal against the image.
+   * Costs one extra API call. Default: false.
+   */
+  selfCheck?: boolean;
+  /**
+   * Split generation into two LLM calls: first decide WHAT zones exist
+   * and how they connect (text-only structure with cardinal direction
+   * hints), then in a second call place those named zones onto the
+   * grid. More reliable for complex maps but doubles cost. Default: false.
+   */
+  twoPass?: boolean;
+}
+
+/** Cardinal hint produced by the structure pass. */
+type CardinalHint =
+  | "NW" | "N" | "NE"
+  | "W"  | "C" | "E"
+  | "SW" | "S" | "SE";
+
+interface StructureItem {
+  name: string;
+  blurb: string;
+  hooks: string[];
+  cardinal: CardinalHint;
+  borderNames: string[];
 }
 
 /**
@@ -227,6 +254,284 @@ function stripTipTap(content: string): string {
   }
 }
 
+// ─── Two-pass: structure pass ───────────────────────────────────────
+
+const STRUCTURE_SYSTEM_PROMPT = `You are a world-building cartographer AI. You will be shown a world map image. Your job is the FIRST of two passes: identify the high-level zones the map should be broken into, but do NOT yet place them in coordinates. A separate placement pass will handle that.
+
+For each zone, return:
+- "name": a short evocative name (2-5 words)
+- "blurb": a 1-2 sentence theme description
+- "hooks": 1-3 short bullet points seeding mob types, factions, or story hooks
+- "cardinal": which part of the map the zone occupies, one of: "NW", "N", "NE", "W", "C", "E", "SW", "S", "SE" (compass region)
+- "borders": an array of zone names this one borders, must match other zone names in the response. Borders must be reciprocal.
+
+Spatial reasoning rules:
+- Spread zones across the map. Most maps want at least one zone in each populated compass region.
+- Each zone should feel distinct from its neighbours.
+- Borders correspond to physical adjacency. A zone in NW should not border a zone in SE unless something on the map links them.
+- Use natural barriers and labelled regions when present.
+
+Output ONLY valid JSON: { "zones": [ { "name": "...", "blurb": "...", "hooks": ["..."], "cardinal": "NW", "borders": ["..."] }, ... ] }`;
+
+async function runStructurePass(
+  map: LoreMap,
+  imageDataUrl: string,
+  lore: WorldLore,
+  options: ZonePlanGenerationOptions,
+): Promise<StructureItem[]> {
+  const contextBlock = options.useLoreContext !== false
+    ? buildLoreContextBlock(lore)
+    : "";
+  const countLine = options.targetCount
+    ? `Target zone count: ${options.targetCount}.`
+    : `Choose 5-12 zones based on map complexity.`;
+  const toneLine = options.toneHint?.trim()
+    ? `Author guidance: ${options.toneHint.trim()}`
+    : "";
+
+  const userPrompt = [
+    `Map: "${map.title}"`,
+    "",
+    countLine,
+    toneLine,
+    "",
+    contextBlock,
+    "Identify the zones and their cardinal regions. JSON only.",
+  ].join("\n");
+
+  const response = await invoke<string>("llm_complete_with_vision", {
+    systemPrompt: STRUCTURE_SYSTEM_PROMPT,
+    userPrompt,
+    imageDataUrl,
+  });
+
+  return parseStructureResponse(response);
+}
+
+function parseStructureResponse(response: string): StructureItem[] {
+  const cleaned = response.replace(/```json\n?|\n?```/g, "").trim();
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(cleaned);
+  } catch {
+    const match = cleaned.match(/\{[\s\S]*\}/);
+    if (!match) return [];
+    try { parsed = JSON.parse(match[0]); } catch { return []; }
+  }
+
+  const root = parsed as { zones?: unknown };
+  const zonesRaw = Array.isArray(root) ? root : root?.zones;
+  if (!Array.isArray(zonesRaw)) return [];
+
+  const valid: CardinalHint[] = ["NW", "N", "NE", "W", "C", "E", "SW", "S", "SE"];
+  const out: StructureItem[] = [];
+  for (const item of zonesRaw) {
+    if (!item || typeof item !== "object") continue;
+    const z = item as Record<string, unknown>;
+    const name = String(z.name ?? "").trim();
+    if (!name) continue;
+    const cardinal = String(z.cardinal ?? "C").trim().toUpperCase() as CardinalHint;
+    out.push({
+      name,
+      blurb: String(z.blurb ?? "").trim(),
+      hooks: Array.isArray(z.hooks)
+        ? (z.hooks as unknown[]).map((h) => String(h ?? "").trim()).filter(Boolean)
+        : [],
+      cardinal: valid.includes(cardinal) ? cardinal : "C",
+      borderNames: Array.isArray(z.borders)
+        ? (z.borders as unknown[]).map((b) => String(b ?? "").trim()).filter(Boolean)
+        : [],
+    });
+  }
+  return out;
+}
+
+// ─── Two-pass: placement pass ───────────────────────────────────────
+
+async function runPlacementPass(
+  structure: StructureItem[],
+  gridDataUrl: string,
+  spec: GridSpec,
+): Promise<ZonePlanSuggestion[]> {
+  const lastCol = String.fromCharCode(64 + spec.cols);
+  const zoneList = structure
+    .map((s) => `- "${s.name}" (cardinal hint: ${s.cardinal}) — ${s.blurb}`)
+    .join("\n");
+
+  const systemPrompt = `You are placing already-named zones onto a labeled grid map. The image shows a ${spec.cols}×${spec.rows} grid (columns A-${lastCol}, rows 1-${spec.rows}). Each cell label is drawn in the cell's top-left corner.
+
+Place EVERY zone in the input list onto the grid by reporting its bounding cell range. Use the cardinal hint to guide your initial placement, then refine to fit terrain. Do not invent new zones. Do not skip any zones.
+
+For each zone, return:
+- "name": copy from the input exactly
+- "colStart", "colEnd": leftmost/rightmost column letters (inclusive)
+- "rowStart", "rowEnd": topmost/bottommost row numbers (inclusive)
+
+Spatial rules:
+- Together the zones should cover roughly 70-95% of the populated map cells.
+- Zones should not heavily overlap.
+- Respect natural barriers (mountains, rivers, coasts).
+- A NW-cardinal zone should occupy the top-left quadrant; SE the bottom-right; etc.
+
+Output ONLY valid JSON: { "zones": [ { "name": "...", "colStart": "A", "colEnd": "C", "rowStart": 1, "rowEnd": 3 }, ... ] }`;
+
+  const userPrompt = [
+    `Place these zones on the map:`,
+    zoneList,
+    "",
+    `Reminder: place every one of the ${structure.length} zones. JSON only.`,
+  ].join("\n");
+
+  const response = await invoke<string>("llm_complete_with_vision", {
+    systemPrompt,
+    userPrompt,
+    imageDataUrl: gridDataUrl,
+  });
+
+  // Parse cell ranges; merge with names + structure metadata.
+  const placed = parseGridZoneResponse(response, spec);
+  const placedByName = new Map<string, ZonePlanSuggestion>();
+  for (const p of placed) placedByName.set(p.name.toLowerCase(), p);
+
+  // Re-emit in structure order so missing placements stay missing
+  // (and missing ones get a centred fallback so the user can see them).
+  const out: ZonePlanSuggestion[] = [];
+  structure.forEach((s, idx) => {
+    const placement = placedByName.get(s.name.toLowerCase());
+    if (placement) {
+      // Take coords from placement, but blurb/hooks/borders from structure.
+      out.push({
+        ...placement,
+        tempId: `zp_temp_${idx}`,
+        name: s.name,
+        blurb: s.blurb,
+        hooks: s.hooks,
+        borderNames: s.borderNames,
+      });
+    } else {
+      // Fallback: place by cardinal hint as a coarse rectangle.
+      out.push({
+        tempId: `zp_temp_${idx}`,
+        name: s.name,
+        blurb: s.blurb,
+        hooks: s.hooks,
+        region: cardinalToRegion(s.cardinal, spec),
+        borderNames: s.borderNames,
+      });
+    }
+  });
+  return out;
+}
+
+/** Coarse fallback bbox derived from a cardinal hint. */
+function cardinalToRegion(cardinal: CardinalHint, spec: GridSpec): ZonePlanRegion {
+  const cellW = spec.imageWidth / spec.cols;
+  const cellH = spec.imageHeight / spec.rows;
+  const third = (n: number) => Math.max(1, Math.floor(n / 3));
+  const cThird = third(spec.cols);
+  const rThird = third(spec.rows);
+
+  let cMin = 0, cMax = cThird - 1, rMin = 0, rMax = rThird - 1;
+  switch (cardinal) {
+    case "N":  cMin = cThird; cMax = 2 * cThird - 1; rMin = 0; rMax = rThird - 1; break;
+    case "NE": cMin = 2 * cThird; cMax = spec.cols - 1; rMin = 0; rMax = rThird - 1; break;
+    case "W":  cMin = 0; cMax = cThird - 1; rMin = rThird; rMax = 2 * rThird - 1; break;
+    case "C":  cMin = cThird; cMax = 2 * cThird - 1; rMin = rThird; rMax = 2 * rThird - 1; break;
+    case "E":  cMin = 2 * cThird; cMax = spec.cols - 1; rMin = rThird; rMax = 2 * rThird - 1; break;
+    case "SW": cMin = 0; cMax = cThird - 1; rMin = 2 * rThird; rMax = spec.rows - 1; break;
+    case "S":  cMin = cThird; cMax = 2 * cThird - 1; rMin = 2 * rThird; rMax = spec.rows - 1; break;
+    case "SE": cMin = 2 * cThird; cMax = spec.cols - 1; rMin = 2 * rThird; rMax = spec.rows - 1; break;
+    case "NW":
+    default:   cMin = 0; cMax = cThird - 1; rMin = 0; rMax = rThird - 1; break;
+  }
+  const x = Math.round(cMin * cellW);
+  const yTop = Math.round(rMin * cellH);
+  const w = Math.round((cMax - cMin + 1) * cellW);
+  const h = Math.round((rMax - rMin + 1) * cellH);
+  return {
+    x,
+    y: spec.imageHeight - yTop - h, // CRS.Simple
+    w,
+    h,
+  };
+}
+
+// ─── Self-check refinement ──────────────────────────────────────────
+
+const SELF_CHECK_SYSTEM_PROMPT = `You are reviewing your own previous proposal of map zones. You will be shown the same map image and your previous JSON output. Verify it against the image and return a CORRECTED version in the same format.
+
+Things to check and fix:
+- Are all border references reciprocal?
+- Are any zones obviously misplaced (in the wrong quadrant of the image)?
+- Are there large areas of the populated map left uncovered?
+- Are any zones heavily overlapping when they shouldn't be?
+- Does any border cross an impassable barrier (mountain range, wide sea)?
+
+Return the same JSON format you used originally. Make minimal changes — only fix actual problems. Output JSON only.`;
+
+async function runSelfCheckPass(
+  suggestions: ZonePlanSuggestion[],
+  imageDataUrl: string,
+  mapOrSpec: { kind: "grid"; spec: GridSpec } | { kind: "raw"; map: LoreMap },
+): Promise<ZonePlanSuggestion[]> {
+  if (suggestions.length === 0) return suggestions;
+
+  let payload: string;
+  if (mapOrSpec.kind === "grid") {
+    const spec = mapOrSpec.spec;
+    const cellW = spec.imageWidth / spec.cols;
+    const cellH = spec.imageHeight / spec.rows;
+    const items = suggestions.map((s) => {
+      const xTop = s.region.x;
+      const yTop = spec.imageHeight - s.region.y - s.region.h;
+      const c0 = Math.max(0, Math.min(spec.cols - 1, Math.floor(xTop / cellW)));
+      const c1 = Math.max(0, Math.min(spec.cols - 1, Math.floor((xTop + s.region.w - 1) / cellW)));
+      const r0 = Math.max(0, Math.min(spec.rows - 1, Math.floor(yTop / cellH)));
+      const r1 = Math.max(0, Math.min(spec.rows - 1, Math.floor((yTop + s.region.h - 1) / cellH)));
+      return {
+        name: s.name,
+        colStart: String.fromCharCode(65 + c0),
+        colEnd: String.fromCharCode(65 + c1),
+        rowStart: r0 + 1,
+        rowEnd: r1 + 1,
+        borders: s.borderNames,
+      };
+    });
+    payload = JSON.stringify({ zones: items }, null, 2);
+  } else {
+    const map = mapOrSpec.map;
+    const items = suggestions.map((s) => ({
+      name: s.name,
+      x: Math.round(s.region.x),
+      y: Math.round(map.height - s.region.y - s.region.h),
+      w: Math.round(s.region.w),
+      h: Math.round(s.region.h),
+      borders: s.borderNames,
+    }));
+    payload = JSON.stringify({ zones: items }, null, 2);
+  }
+
+  const userPrompt = [
+    "Here is your previous proposal. Review it against the map and return a corrected version.",
+    "",
+    payload,
+    "",
+    "Output the corrected JSON only.",
+  ].join("\n");
+
+  const response = await invoke<string>("llm_complete_with_vision", {
+    systemPrompt: SELF_CHECK_SYSTEM_PROMPT,
+    userPrompt,
+    imageDataUrl,
+  });
+
+  if (mapOrSpec.kind === "grid") {
+    return parseGridZoneResponse(response, mapOrSpec.spec);
+  } else {
+    return parseZoneResponse(response, mapOrSpec.map);
+  }
+}
+
 // ─── Main entry ─────────────────────────────────────────────────────
 
 export async function generateZonePlans(
@@ -240,7 +545,34 @@ export async function generateZonePlans(
     toneHint,
     useLoreContext = true,
     useGridOverlay = true,
+    twoPass = false,
+    selfCheck = false,
   } = options;
+
+  // ─── Two-pass mode ──────────────────────────────────────────────
+  // Topology first (text-only), then placement against the gridded map.
+  // Always uses grid overlay for the placement pass since that's the
+  // entire point — better spatial accuracy for known names.
+  if (twoPass) {
+    const structure = await runStructurePass(map, imageDataUrl, lore, options);
+    if (structure.length === 0) {
+      return { suggestions: [], warnings: ["Structure pass returned no zones."] };
+    }
+    const spec = chooseGridSpec(map.width, map.height);
+    const overlay = await renderGridOverlay(imageDataUrl, spec);
+    let placed = await runPlacementPass(structure, overlay.dataUrl, spec);
+    if (selfCheck) {
+      try {
+        placed = await runSelfCheckPass(placed, overlay.dataUrl, { kind: "grid", spec });
+      } catch (err) {
+        console.warn("[zone-planner] self-check failed, keeping original:", err);
+      }
+    }
+    return repairZonePlanSuggestions(placed, {
+      width: map.width,
+      height: map.height,
+    });
+  }
 
   const contextBlock = useLoreContext ? buildLoreContextBlock(lore) : "";
   const countLine = targetCount
@@ -250,7 +582,7 @@ export async function generateZonePlans(
     ? `Author guidance: ${toneHint.trim()}`
     : "";
 
-  // ─── Grid mode ──────────────────────────────────────────────────
+  // ─── Grid mode (single pass) ────────────────────────────────────
   if (useGridOverlay) {
     const spec = chooseGridSpec(map.width, map.height);
     const overlay = await renderGridOverlay(imageDataUrl, spec);
@@ -274,7 +606,14 @@ export async function generateZonePlans(
       imageDataUrl: overlay.dataUrl,
     });
 
-    const parsed = parseGridZoneResponse(response, spec);
+    let parsed = parseGridZoneResponse(response, spec);
+    if (selfCheck && parsed.length > 0) {
+      try {
+        parsed = await runSelfCheckPass(parsed, overlay.dataUrl, { kind: "grid", spec });
+      } catch (err) {
+        console.warn("[zone-planner] self-check failed, keeping original:", err);
+      }
+    }
     return repairZonePlanSuggestions(parsed, {
       width: map.width,
       height: map.height,
@@ -301,7 +640,14 @@ export async function generateZonePlans(
     imageDataUrl,
   });
 
-  const parsed = parseZoneResponse(response, map);
+  let parsed = parseZoneResponse(response, map);
+  if (selfCheck && parsed.length > 0) {
+    try {
+      parsed = await runSelfCheckPass(parsed, imageDataUrl, { kind: "raw", map });
+    } catch (err) {
+      console.warn("[zone-planner] self-check failed, keeping original:", err);
+    }
+  }
   return repairZonePlanSuggestions(parsed, {
     width: map.width,
     height: map.height,

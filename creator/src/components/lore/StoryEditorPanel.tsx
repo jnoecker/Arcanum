@@ -6,7 +6,6 @@ import { useProjectStore } from "@/stores/projectStore";
 import { useZoneStore } from "@/stores/zoneStore";
 import { useAssetStore } from "@/stores/assetStore";
 import { loadStory, saveStory } from "@/lib/storyPersistence";
-import { useResolvedSceneData } from "@/lib/useResolvedSceneData";
 import { ActionButton, Spinner, EditableField } from "@/components/ui/FormWidgets";
 import { SceneTimeline } from "./SceneTimeline";
 import { SceneDetailEditor } from "./SceneDetailEditor";
@@ -150,39 +149,19 @@ export function StoryEditorPanel({ storyId }: StoryEditorPanelProps) {
   // All hooks below this line have to execute unconditionally — putting
   // them after the `if (!story) return` guard would change the hook
   // count between renders and crash React with "Rendered more hooks
-  // than during the previous render". Instead, we use optional chaining
-  // to feed safe fallbacks into the hooks while the story is loading,
-  // then reuse the same computed values after the guards below.
+  // than during the previous render". Use optional chaining for
+  // story-dependent values so the hooks stay safe while loading.
 
-  // Sorted scenes — computed above the early returns so the hooks can
-  // depend on it without special-casing. Empty when the story is still
-  // loading, which is fine for useResolvedSceneData.
+  // Sorted scenes — hoisted above the early returns so any hook
+  // elsewhere can depend on it via useMemo without special-casing.
   const sortedScenes = useMemo(
     () => [...(story?.scenes ?? [])].sort((a, b) => a.sortOrder - b.sortOrder),
     [story],
   );
 
-  // Resolved scene data for the export dialog. The hook runs always so
-  // images are warm by the time the user clicks Export, but the IPC
-  // calls are cheap + cached, and the dialog only opens on demand.
-  const resolvedSceneData = useResolvedSceneData(sortedScenes, story?.zoneId ?? "");
-  const resolvedScenesForExport = useMemo(
-    () =>
-      resolvedSceneData.map((rs) => ({
-        sceneId: rs.sceneId,
-        roomImageSrc: rs.roomImageSrc,
-        entities: rs.entities.map((e) => ({
-          entity: e.entity,
-          name: e.name,
-          imageSrc: e.imageSrc,
-        })),
-      })),
-    [resolvedSceneData],
-  );
-
-  // Zone world data (for audio refs). Returns undefined when the story
-  // hasn't loaded yet — the dialog won't render until we're past the
-  // guards below anyway.
+  // Zone world data for the export dialog (audio refs + entity lookups).
+  // Returns undefined when the story hasn't loaded yet — the dialog
+  // won't render until we're past the guards below anyway.
   const zoneWorld = useZoneStore((s) =>
     story ? s.zones.get(story.zoneId)?.data : undefined,
   );
@@ -359,7 +338,6 @@ export function StoryEditorPanel({ storyId }: StoryEditorPanelProps) {
         <StoryExportDialog
           story={story}
           world={zoneWorld}
-          resolvedScenes={resolvedScenesForExport}
           project={project}
           assetsDir={assetsDir}
           onClose={() => setIsExporting(false)}

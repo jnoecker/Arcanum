@@ -9,7 +9,7 @@ import type { ZoneState } from "@/stores/zoneStore";
 
 // ─── Entity info resolution ────────────────────────────────────────
 
-function resolveEntityInfo(
+export function resolveEntityInfo(
   entity: SceneEntity,
   zoneState: ZoneState | undefined,
 ): { name: string; image?: string } {
@@ -33,7 +33,7 @@ function resolveEntityInfo(
 // ─── Path resolution ───────────────────────────────────────────────
 
 /** Build candidate file paths for an image reference, mirroring useImageSrc logic. */
-function buildCandidatePaths(
+export function buildCandidatePaths(
   filePath: string,
   assetsDir: string,
   mudDir: string | undefined,

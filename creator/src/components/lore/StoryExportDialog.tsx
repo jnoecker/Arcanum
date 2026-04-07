@@ -34,7 +34,6 @@ import {
   formatBytes,
   type ExportProgressEvent,
   type ExportStoryVideoResult,
-  type ResolvedSceneForExport,
 } from "@/lib/storyVideoExport";
 import { computeStoryTimeline } from "@/lib/storyTiming";
 import type { Story } from "@/types/story";
@@ -46,7 +45,6 @@ import type { Project } from "@/types/project";
 interface StoryExportDialogProps {
   story: Story;
   world: WorldFile;
-  resolvedScenes: ResolvedSceneForExport[];
   project: Project;
   assetsDir: string;
   onClose: () => void;
@@ -59,7 +57,6 @@ type DialogStage = "config" | "running" | "success" | "error";
 export function StoryExportDialog({
   story,
   world,
-  resolvedScenes,
   project,
   assetsDir,
   onClose,
@@ -108,7 +105,7 @@ export function StoryExportDialog({
 
   // ─── Start export ─────────────────────────────────────────
   const canStart =
-    outputPath.length > 0 && dialogStage === "config" && resolvedScenes.length > 0;
+    outputPath.length > 0 && dialogStage === "config" && story.scenes.length > 0;
 
   const handleStart = useCallback(async () => {
     if (!canStart) return;
@@ -120,7 +117,6 @@ export function StoryExportDialog({
     try {
       const exportResult = await exportStoryVideo({
         story,
-        resolvedScenes,
         world,
         project,
         assetsDir,
@@ -137,14 +133,10 @@ export function StoryExportDialog({
       const msg = e instanceof Error ? e.message : String(e);
       setError(msg);
       setDialogStage("error");
-      // Best-effort cleanup of orphaned temp files. We don't have the
-      // session ID here because it lives inside exportStoryVideo, but
-      // it's fine — the temp dir is small and OS cleanup will get it.
     }
   }, [
     canStart,
     story,
-    resolvedScenes,
     world,
     project,
     assetsDir,
@@ -178,7 +170,7 @@ export function StoryExportDialog({
           onPickOutput={pickOutputPath}
           estimatedDurationMs={estimatedDurationMs}
           fitWarning={fitCheck.fits ? null : fitCheck.warning}
-          sceneCount={resolvedScenes.length}
+          sceneCount={story.scenes.length}
         />
       )}
 

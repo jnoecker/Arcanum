@@ -7,7 +7,9 @@ import {
   getPreamble,
   getNegativePrompt,
   getStyleSuffix,
+  UNIVERSAL_NEGATIVE,
 } from "@/lib/arcanumPrompts";
+import { buildVisualStyleDirective } from "@/lib/loreGeneration";
 import {
   IMAGE_MODELS,
   imageGenerateCommand,
@@ -19,6 +21,17 @@ import type { RequiredGlobalAsset } from "@/lib/requiredGlobalAssets";
 import { ActionButton, DialogShell, Spinner } from "@/components/ui/FormWidgets";
 
 type Stage = "compose" | "generating" | "preview" | "removing_bg";
+
+// Strong anti-scene negative for isolated UI icons. Without this, the world's
+// visual style language ("atmospheric haze, floating motes, soft bloom") makes
+// FLUX paint full pastel cloud scenes around the icon instead of leaving the
+// background flat.
+const ICON_NEGATIVE = `${UNIVERSAL_NEGATIVE}, scene, scenery, landscape, environment, background elements, multiple subjects, multiple objects, collage, sticker sheet, sticker border, white outline, drop shadow, clouds, sky, stars, sparkles, particles, floating motes, atmospheric haze, decorative frame, ornamental border, vignette, gradient background, painted backdrop, busy composition, cluttered`;
+
+// Minimal icon framing — used in place of the world style preamble/suffix
+// when generating icon-style overlays so the model doesn't try to paint a
+// scene around them.
+const ICON_FRAMING = `Single iconic symbol centered in frame, simple flat shape, fills roughly 60% of the canvas, isolated on a uniform flat solid color background suitable for background removal, no scene, no scenery, no environmental elements, no extra subjects, no decorative borders, no sticker outline, no drop shadow.`;
 
 interface Props {
   asset: RequiredGlobalAsset;
@@ -66,13 +79,40 @@ export function GlobalAssetGeneratorModal({ asset, onClose, onComplete }: Props)
   const model = resolveImageModel(imageProvider, settings?.image_model);
   const modelId = model?.id ?? IMAGE_MODELS[0]!.id;
 
+  // Icons that need to composite cleanly should NOT inherit the world's
+  // worldbuilding *surface* override — its scene-painting language
+  // ("atmospheric haze, floating motes, soft bloom") makes the model paint
+  // full pastel cloud scenes around the icon. We do still apply the
+  // ArtStyle's basePrompt (palette/material cues) reframed as palette
+  // guidance, so the icon visually belongs to the world without inheriting
+  // scene directives. Backdrops like map_background use the full world
+  // style because they're meant to feel like part of the world.
+  const isIcon = asset.transparent;
+
   const handleGenerate = async () => {
     setStage("generating");
     setError(null);
     try {
-      const preamble = getPreamble("gentle_magic", "worldbuilding");
-      const styleSuffix = getStyleSuffix("worldbuilding");
-      const finalPrompt = `${preamble}\n\n${prompt}\n\n${styleSuffix}`;
+      let finalPrompt: string;
+      let negativePrompt: string;
+      if (isIcon) {
+        // Pull the ArtStyle basePrompt only (no surface override) and
+        // reframe it so the model treats it as palette guidance, not a
+        // scene directive. The strong icon framing comes FIRST so it
+        // primes the model before the style cues arrive.
+        const worldBase = buildVisualStyleDirective().trim();
+        const styleHint = worldBase
+          ? `\n\nPalette and material cues (apply to the icon only, do NOT add scenery, atmosphere, or extra subjects): ${worldBase}`
+          : "";
+        finalPrompt = `${ICON_FRAMING}\n\n${prompt}${styleHint}`;
+        negativePrompt = ICON_NEGATIVE;
+      } else {
+        const preamble = getPreamble("gentle_magic", "worldbuilding");
+        const styleSuffix = getStyleSuffix("worldbuilding");
+        finalPrompt = `${preamble}\n\n${prompt}\n\n${styleSuffix}`;
+        negativePrompt = getNegativePrompt(asset.assetType);
+      }
+
       const guidance =
         model && "defaultGuidance" in model
           ? (model as { defaultGuidance: number }).defaultGuidance
@@ -81,7 +121,7 @@ export function GlobalAssetGeneratorModal({ asset, onClose, onComplete }: Props)
       const command = imageGenerateCommand(imageProvider);
       const image = await invoke<GeneratedImage>(command, {
         prompt: finalPrompt,
-        negativePrompt: getNegativePrompt(asset.assetType),
+        negativePrompt,
         model: modelId,
         width: 1024,
         height: 1024,

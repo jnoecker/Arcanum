@@ -36,8 +36,7 @@ export const REQUIRED_GLOBAL_ASSETS: readonly RequiredGlobalAsset[] = [
     label: "Video Available",
     description: "Marker shown on rooms or NPCs that have an associated cinematic.",
     assetType: "ability_icon",
-    defaultPrompt:
-      "A glowing film-reel or play-button icon hovering as a small magical sigil, centered, soft luminous bloom, no text, no figures, simple iconic shape, isolated on a flat solid background for compositing",
+    defaultPrompt: "A single glowing play-button triangle inside a soft circle, centered.",
     transparent: true,
   },
   {
@@ -46,8 +45,7 @@ export const REQUIRED_GLOBAL_ASSETS: readonly RequiredGlobalAsset[] = [
     label: "Shop Kiosk",
     description: "Overlay placed on shopkeeper rooms to advertise the shop.",
     assetType: "ability_icon",
-    defaultPrompt:
-      "A small ornate coin-purse or merchant-scale icon, glowing softly, suggesting commerce and trade, centered, simple iconic shape, no text, no figures, isolated on a flat solid background for compositing",
+    defaultPrompt: "A single ornate coin-purse icon, centered, gold accents.",
     transparent: true,
   },
   {
@@ -56,8 +54,7 @@ export const REQUIRED_GLOBAL_ASSETS: readonly RequiredGlobalAsset[] = [
     label: "Dialog Indicator",
     description: "Speech-bubble marker for NPCs with conversation trees.",
     assetType: "ability_icon",
-    defaultPrompt:
-      "A softly glowing speech-bubble or whisper-glyph icon suggesting conversation, centered, simple iconic shape, no text inside the bubble, no figures, isolated on a flat solid background for compositing",
+    defaultPrompt: "A single empty speech-bubble icon, centered, soft outline, no text inside.",
     transparent: true,
   },
   {
@@ -66,8 +63,7 @@ export const REQUIRED_GLOBAL_ASSETS: readonly RequiredGlobalAsset[] = [
     label: "Aggro Indicator",
     description: "Warning glyph shown above hostile mobs.",
     assetType: "ability_icon",
-    defaultPrompt:
-      "A warning glyph — a stylized exclamation mark or jagged warning sigil glowing in warm amber-red light, centered, simple iconic shape, no text, no figures, isolated on a flat solid background for compositing",
+    defaultPrompt: "A single bold red exclamation mark glyph, centered.",
     transparent: true,
   },
   {
@@ -76,8 +72,7 @@ export const REQUIRED_GLOBAL_ASSETS: readonly RequiredGlobalAsset[] = [
     label: "Quest Available",
     description: "Marker on NPCs offering an unaccepted quest.",
     assetType: "ability_icon",
-    defaultPrompt:
-      "A bright golden exclamation-mark sigil glowing softly, suggesting an offered quest, centered, simple iconic shape, no text, no figures, isolated on a flat solid background for compositing",
+    defaultPrompt: "A single golden exclamation mark glyph, centered.",
     transparent: true,
   },
   {
@@ -86,8 +81,7 @@ export const REQUIRED_GLOBAL_ASSETS: readonly RequiredGlobalAsset[] = [
     label: "Quest Complete",
     description: "Marker on NPCs ready to turn in a finished quest.",
     assetType: "ability_icon",
-    defaultPrompt:
-      "A golden question-mark sigil glowing softly, suggesting a quest ready to be turned in, centered, simple iconic shape, no text, no figures, isolated on a flat solid background for compositing",
+    defaultPrompt: "A single golden question mark glyph, centered.",
     transparent: true,
   },
   {
@@ -96,8 +90,7 @@ export const REQUIRED_GLOBAL_ASSETS: readonly RequiredGlobalAsset[] = [
     label: "Crafting Station",
     description: "Overlay placed on rooms with crafting stations.",
     assetType: "ability_icon",
-    defaultPrompt:
-      "A small icon depicting a hammer crossed with tongs or a glowing forge sigil, suggesting crafting and creation, centered, simple iconic shape, no text, no figures, isolated on a flat solid background for compositing",
+    defaultPrompt: "A single blacksmith hammer crossed with tongs, centered.",
     transparent: true,
   },
   {
@@ -106,8 +99,7 @@ export const REQUIRED_GLOBAL_ASSETS: readonly RequiredGlobalAsset[] = [
     label: "Trainer",
     description: "Marker for class trainers and ability instructors.",
     assetType: "ability_icon",
-    defaultPrompt:
-      "A small icon depicting an open book with a glowing ribbon or a mentor's staff, suggesting teaching and skill mastery, centered, simple iconic shape, no text, no figures, isolated on a flat solid background for compositing",
+    defaultPrompt: "A single open book with a ribbon bookmark, centered.",
     transparent: true,
   },
   {
@@ -116,8 +108,7 @@ export const REQUIRED_GLOBAL_ASSETS: readonly RequiredGlobalAsset[] = [
     label: "Bank Vault",
     description: "Overlay placed on rooms that host a bank.",
     assetType: "ability_icon",
-    defaultPrompt:
-      "A small icon depicting a heavy vault door with an ornate keyhole or stacked coins behind a magical seal, suggesting secure storage, centered, simple iconic shape, no text, no figures, isolated on a flat solid background for compositing",
+    defaultPrompt: "A single heavy vault door with a circular dial, centered.",
     transparent: true,
   },
   {
@@ -126,8 +117,7 @@ export const REQUIRED_GLOBAL_ASSETS: readonly RequiredGlobalAsset[] = [
     label: "Tavern",
     description: "Marker for taverns and rest points.",
     assetType: "ability_icon",
-    defaultPrompt:
-      "A small icon depicting a foaming tankard or a warm hearth flame, suggesting rest and refreshment, centered, simple iconic shape, no text, no figures, isolated on a flat solid background for compositing",
+    defaultPrompt: "A single foaming tankard, centered.",
     transparent: true,
   },
   {
@@ -137,7 +127,7 @@ export const REQUIRED_GLOBAL_ASSETS: readonly RequiredGlobalAsset[] = [
     description: "Fog-of-war tile shown on the minimap for unvisited rooms.",
     assetType: "ability_icon",
     defaultPrompt:
-      "A square fog-of-war tile — soft swirling mist in muted blue-grey tones, suggesting an unexplored region, no detail, no figures, no text, fills the entire square frame edge to edge",
+      "A flat square tile of uniform muted blue-grey fog, gentle subtle texture, no detail, no objects, no figures, fills the entire square frame edge to edge.",
     transparent: false,
   },
   {

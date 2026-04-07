@@ -37,14 +37,86 @@ For each zone you propose, return:
 - "name": a short evocative name (2-5 words)
 - "blurb": a 1-2 sentence theme description capturing what this zone feels like and what's unique about it
 - "hooks": 1-3 short bullet points seeding mob types, factions, or story hooks (each under 12 words)
-- "x", "y", "w", "h": approximate bounding box of the zone in PIXEL coordinates within the map image, where x and y are the TOP-LEFT corner measured from the top-left of the image (x from left, y from top). w and h are width and height in pixels.
-- "borders": an array of zone names (strings, must match other zones in this same response) that this zone borders or directly connects to. Use intuitive geography: zones that are adjacent on the map, or that are linked by passes / rivers / roads. Connections must be reciprocal in spirit (if A borders B, B should also list A).
+- "x", "y", "w", "h": approximate bounding box of the zone in PIXEL coordinates within the map image. (x, y) is the TOP-LEFT corner of the box measured from the top-left of the image — x grows rightward, y grows downward. w and h are width and height in pixels. All four values are non-negative integers.
+- "borders": an array of zone names (strings) that this zone borders or directly connects to. Each name MUST exactly match another zone in this same response. Borders must be reciprocal: if A lists B, B must list A.
 
-Important rules:
-- Pick zones that make geographic and narrative sense given the map.
-- Zones should not overlap heavily; cover the map roughly.
-- Prefer named regions on the map when text labels exist; otherwise infer from terrain.
-- Output ONLY valid JSON, no markdown fences, no explanation. The response must be a JSON object of the form: { "zones": [ { ... }, ... ] }`;
+Spatial rules — read carefully, this is the part models get wrong:
+1. The map has a finite width and height; you will be told them. Bboxes must stay inside (x + w ≤ width, y + h ≤ height).
+2. Do not place every zone at (0,0) or near the centre. Spread the zones to cover the map. Consider the four quadrants and the centre — most maps want at least one zone in each populated quadrant.
+3. Together, the zones should cover roughly 70-95% of the map area. It is fine to leave open ocean or impassable wastes uncovered, but do not leave large populated regions empty.
+4. Zones should not heavily overlap. Brief overlap at borders is okay; one zone fully contained inside another is not.
+5. Use natural barriers (mountain ranges, rivers, coasts, forests) as zone boundaries when present. A zone should rarely cross a major mountain range or wide river.
+6. Prefer existing labelled regions on the map. If a name appears on the map, use it.
+7. Borders correspond to physical adjacency or named connections (passes, bridges, roads). A zone in the far north should NOT border a zone in the far south unless something on the map explicitly links them.
+
+Author voice rules:
+- Each zone should feel distinct from its neighbours. Avoid two zones with nearly the same theme.
+- Hooks should be specific and evocative, not generic ("displaced merchants peddling cursed relics", not "some merchants").
+
+Output format:
+- Output ONLY valid JSON, no markdown fences, no explanation, no trailing commentary.
+- The response must be a single JSON object: { "zones": [ { ... }, ... ] }
+
+Example output for a small fictional map (1000×800 pixels):
+{
+  "zones": [
+    {
+      "name": "Frostspire Peaks",
+      "blurb": "A jagged mountain range walling off the northern wastes. Snow never melts above the treeline.",
+      "hooks": ["frost giants stir in deep crevasses", "abandoned dwarven holds", "ice druids guard the high passes"],
+      "x": 100, "y": 0, "w": 600, "h": 220,
+      "borders": ["Verdant Plains", "Stormwood"]
+    },
+    {
+      "name": "Verdant Plains",
+      "blurb": "Rolling grasslands south of the peaks, dotted with farming hamlets and standing stones.",
+      "hooks": ["wandering wagon caravans", "harvest festivals turning sinister", "stone circles humming at dusk"],
+      "x": 100, "y": 220, "w": 500, "h": 280,
+      "borders": ["Frostspire Peaks", "Stormwood", "Sunken Marsh"]
+    },
+    {
+      "name": "Stormwood",
+      "blurb": "A dense, perpetually overcast forest pressed against the eastern coast.",
+      "hooks": ["lightning-blessed druids", "shipwreck salvagers on the shore", "treants that walk only at night"],
+      "x": 600, "y": 100, "w": 400, "h": 400,
+      "borders": ["Frostspire Peaks", "Verdant Plains", "Sunken Marsh"]
+    },
+    {
+      "name": "Sunken Marsh",
+      "blurb": "Brackish wetlands at the southern delta where two rivers meet the sea.",
+      "hooks": ["lizardfolk tribes", "drowned temple ruins", "smuggler's poling boats"],
+      "x": 200, "y": 500, "w": 700, "h": 300,
+      "borders": ["Verdant Plains", "Stormwood"]
+    }
+  ]
+}`;
+
+/**
+ * Build an anchor block from the map's existing pins. Pins are stored
+ * in CRS.Simple coords (lat = height - y); convert back to top-left
+ * pixel space so the model sees the same coordinate frame as its output.
+ *
+ * Anchors give the model concrete reference points to triangulate
+ * against, which dramatically improves the rest of the placements.
+ */
+function buildAnchorBlock(map: LoreMap): string {
+  if (!map.pins || map.pins.length === 0) return "";
+  const lines: string[] = [];
+  for (const pin of map.pins) {
+    const label = (pin.label ?? "").trim();
+    if (!label) continue;
+    const [lat, lng] = pin.position;
+    const x = Math.round(lng);
+    const y = Math.round(map.height - lat);
+    lines.push(`- "${label}" is at approximately (x=${x}, y=${y})`);
+  }
+  if (lines.length === 0) return "";
+  return [
+    "Known reference points on this map (use these as anchors when placing zones):",
+    ...lines,
+    "",
+  ].join("\n");
+}
 
 function buildLoreContextBlock(lore: WorldLore): string {
   const articles = Object.values(lore.articles ?? {}).filter((a) => !a.draft);
@@ -106,6 +178,7 @@ export async function generateZonePlans(
   } = options;
 
   const contextBlock = useLoreContext ? buildLoreContextBlock(lore) : "";
+  const anchorBlock = buildAnchorBlock(map);
   const countLine = targetCount
     ? `Target zone count: ${targetCount} (you may produce 1-2 fewer or more if the geography demands it).`
     : `Choose a sensible number of zones (typically 5-12) based on map complexity.`;
@@ -114,15 +187,17 @@ export async function generateZonePlans(
     : "";
 
   const userPrompt = [
-    `Map: "${map.title}" (${map.width}×${map.height} pixels)`,
+    `Map: "${map.title}"`,
+    `Image dimensions: ${map.width} pixels wide × ${map.height} pixels tall.`,
     "",
     countLine,
     toneLine,
     "",
+    anchorBlock,
     contextBlock,
-    "Break this map into high-level zones now. Respond with JSON only.",
+    "Before answering, mentally divide the map into thirds vertically and horizontally so you can spread zones across all populated regions. Then respond with JSON only.",
   ]
-    .filter((line) => line !== null && line !== undefined)
+    .filter((line) => line !== "" || true)
     .join("\n");
 
   const response = await invoke<string>("llm_complete_with_vision", {

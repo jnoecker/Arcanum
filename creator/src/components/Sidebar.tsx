@@ -11,6 +11,7 @@ import { loadCollapsedSections, saveCollapsedSections } from "@/lib/uiPersistenc
 import { ArticleTree } from "./lore/ArticleTree";
 import { BulkActionsBar } from "./lore/BulkActionsBar";
 import { NewZoneDialog } from "./NewZoneDialog";
+import { RenameZoneDialog } from "./RenameZoneDialog";
 import { ConfirmDialog } from "./ConfirmDialog";
 import {
   addRoom,
@@ -85,11 +86,13 @@ function ZoneTree({
   zoneState,
   isActive,
   onDelete,
+  onRename,
 }: {
   zoneId: string;
   zoneState: ZoneState;
   isActive: boolean;
   onDelete: (zoneId: string) => void;
+  onRename: (zoneId: string) => void;
 }) {
   const openTab = useProjectStore((s) => s.openTab);
   const navigateTo = useProjectStore((s) => s.navigateTo);
@@ -154,6 +157,14 @@ function ZoneTree({
           <span className="truncate font-medium" title={zoneState.data.zone || zoneId}>{zoneState.data.zone || zoneId}</span>
           <span className="ml-2 truncate text-2xs text-text-muted" title={zoneId}>{zoneId}</span>
           {zoneState.dirty && <span className="ml-2 shrink-0 text-2xs text-text-dirty">Unsaved</span>}
+        </button>
+        <button
+          onClick={() => onRename(zoneId)}
+          className="shrink-0 rounded-full border border-white/8 px-2.5 py-1.5 text-2xs text-text-muted opacity-0 transition hover:border-accent/40 hover:text-accent focus:opacity-100 group-hover/zone:opacity-100 group-focus-within/zone:opacity-100"
+          title="Rename zone"
+          aria-label="Rename zone"
+        >
+          Rename
         </button>
         <button
           onClick={() => onDelete(zoneId)}
@@ -414,6 +425,7 @@ export function Sidebar({ workspace }: { workspace: Workspace }) {
     useGlobalSearch();
   const searchRef = useRef<HTMLInputElement>(null);
   const [showNewZone, setShowNewZone] = useState(false);
+  const [renameTarget, setRenameTarget] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const hasProject = !!useProjectStore((s) => s.project);
 
@@ -575,9 +587,24 @@ export function Sidebar({ workspace }: { workspace: Workspace }) {
               ) : null}
             </div>
             {sortedZones.length === 0 ? (
-              <p className="rounded-2xl border border-dashed border-white/10 bg-black/10 px-4 py-6 text-sm text-text-muted">
-                Open a world to begin shaping it.
-              </p>
+              <div className="rounded-2xl border border-dashed border-white/10 bg-black/10 px-4 py-5 text-sm text-text-muted">
+                {hasProject ? (
+                  <>
+                    <p className="mb-3 leading-relaxed">
+                      This world has no zones yet. Create your first zone to
+                      begin shaping it.
+                    </p>
+                    <button
+                      onClick={() => setShowNewZone(true)}
+                      className="focus-ring rounded-full bg-accent px-4 py-1.5 text-2xs font-medium text-accent-emphasis transition-all hover:shadow-[var(--glow-aurum)] hover:brightness-110"
+                    >
+                      Create your first zone
+                    </button>
+                  </>
+                ) : (
+                  <p className="leading-relaxed">Open a world to begin shaping it.</p>
+                )}
+              </div>
             ) : (
               <ul className="flex flex-col gap-0.5">
                 {sortedZones.map(([zoneId, zoneState]) => (
@@ -587,6 +614,7 @@ export function Sidebar({ workspace }: { workspace: Workspace }) {
                     zoneState={zoneState}
                     isActive={activeTabId === `zone:${zoneId}`}
                     onDelete={(id) => setDeleteTarget(id)}
+                    onRename={(id) => setRenameTarget(id)}
                   />
                 ))}
               </ul>
@@ -612,6 +640,12 @@ export function Sidebar({ workspace }: { workspace: Workspace }) {
       </div>
 
       {showNewZone && <NewZoneDialog onClose={() => setShowNewZone(false)} />}
+      {renameTarget && (
+        <RenameZoneDialog
+          zoneId={renameTarget}
+          onClose={() => setRenameTarget(null)}
+        />
+      )}
       {deleteTarget && (
         <ConfirmDialog
           title="Delete Zone"

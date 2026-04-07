@@ -4,6 +4,18 @@ import { parseDocument } from "yaml";
 import type { WorldFile } from "@/types/world";
 import type { AppConfig } from "@/types/config";
 import type { Project } from "@/types/project";
+import {
+  DEFAULT_ACHIEVEMENT_CATEGORIES,
+  DEFAULT_ACHIEVEMENT_CRITERION_TYPES,
+  DEFAULT_QUEST_OBJECTIVE_TYPES,
+  DEFAULT_QUEST_COMPLETION_TYPES,
+  DEFAULT_STATUS_EFFECT_TYPES,
+  DEFAULT_STACK_BEHAVIORS,
+  DEFAULT_ABILITY_TARGET_TYPES,
+  DEFAULT_STATUS_EFFECTS,
+  DEFAULT_COMMANDS,
+  DEFAULT_EMOTE_PRESETS,
+} from "@/lib/configDefaults";
 
 /**
  * Load all zone YAML files from the world directory.
@@ -63,7 +75,7 @@ export function parseAppConfigYaml(content: string): AppConfig {
     classStartRooms: parseClassStartRooms(engine.classStartRooms),
     stats: parseStatsConfig(engine.stats),
     abilities: parseMapSection(engine.abilities, "definitions"),
-    statusEffects: parseMapSection(engine.statusEffects, "definitions"),
+    statusEffects: withDefaults(parseMapSection(engine.statusEffects, "definitions"), DEFAULT_STATUS_EFFECTS),
     combat: parseCombatConfig(engine.combat),
     mobTiers: parseMobTiersConfig(engine.mob),
     mobActionDelay: parseMobActionDelayConfig(engine.mob),
@@ -72,7 +84,7 @@ export function parseAppConfigYaml(content: string): AppConfig {
     regen: parseRegenConfig(engine.regen),
     crafting: parseCraftingConfig(engine.crafting),
     navigation: parseNavigationConfig(engine.navigation),
-    commands: parseMapSection(engine.commands, "entries"),
+    commands: withDefaults(parseMapSection(engine.commands, "entries"), DEFAULT_COMMANDS),
     group: parseSimpleSection(engine.group, { maxSize: 5, inviteTimeoutMs: 60000, xpBonusPerMember: 0.1 }),
     classes: parseMapSection(engine.classes, "definitions"),
     races: parseMapSection(engine.races, "definitions"),
@@ -80,13 +92,13 @@ export function parseAppConfigYaml(content: string): AppConfig {
     characterCreation: parseCharacterCreationConfig(engine.characterCreation),
     genders: parseMapSection(engine, "genders"),
     achievementCategories: withDefaults(parseNestedMapSection(engine, "achievementCategories", "categories"), DEFAULT_ACHIEVEMENT_CATEGORIES),
-    achievementCriterionTypes: withDefaults(parseNestedMapSection(engine, "achievementCriterionTypes", "types"), DEFAULT_CRITERION_TYPES),
+    achievementCriterionTypes: withDefaults(parseNestedMapSection(engine, "achievementCriterionTypes", "types"), DEFAULT_ACHIEVEMENT_CRITERION_TYPES),
     achievementDefs: parseAchievementDefs(engine.achievements ?? root.achievements),
     questObjectiveTypes: withDefaults(parseNestedMapSection(engine, "questObjectiveTypes", "types"), DEFAULT_QUEST_OBJECTIVE_TYPES),
     questCompletionTypes: withDefaults(parseNestedMapSection(engine, "questCompletionTypes", "types"), DEFAULT_QUEST_COMPLETION_TYPES),
-    statusEffectTypes: parseMapSection(engine.effectTypes, "types"),
-    stackBehaviors: parseMapSection(engine.stackBehaviors, "behaviors"),
-    abilityTargetTypes: parseMapSection(engine.targetTypes, "types"),
+    statusEffectTypes: withDefaults(parseMapSection(engine.effectTypes, "types"), DEFAULT_STATUS_EFFECT_TYPES),
+    stackBehaviors: withDefaults(parseMapSection(engine.stackBehaviors, "behaviors"), DEFAULT_STACK_BEHAVIORS),
+    abilityTargetTypes: withDefaults(parseMapSection(engine.targetTypes, "types"), DEFAULT_ABILITY_TARGET_TYPES),
     craftingSkills: parseMapSection(engine.craftingSkills, "skills"),
     craftingStationTypes: parseMapSection(engine.craftingStationTypes, "stationTypes"),
     housing: parseHousingConfig(engine.housing),
@@ -101,7 +113,7 @@ export function parseAppConfigYaml(content: string): AppConfig {
     guild: parseGuildConfig(engine.guildRanks),
     guildRanks: parseMapSection(engine.guildRanks, "ranks"),
     friends: parseFriendsConfig(engine.friends),
-    emotePresets: parseEmotePresetsConfig(engine.emotePresets),
+    emotePresets: withEmotePresetDefaults(parseEmotePresetsConfig(engine.emotePresets)),
     images: parseImagesConfig(root.images),
     globalAssets: parseGlobalAssets((root.images as Record<string, unknown> | undefined)?.globalAssets ?? root.globalAssets),
     playerTiers: parsePlayerTiers(root.playerTiers),
@@ -834,7 +846,7 @@ async function loadSplitConfig(projectDir: string): Promise<AppConfig | null> {
       world: parseWorldConfig(worldRaw.world),
       classStartRooms: parseClassStartRooms(worldRaw.classStartRooms),
       navigation: parseNavigationConfig(worldRaw.navigation),
-      commands: asRecord(worldRaw.commands),
+      commands: withDefaults(asRecord(worldRaw.commands), DEFAULT_COMMANDS),
       group: parseSimpleSection(worldRaw.group, { maxSize: 5, inviteTimeoutMs: 60000, xpBonusPerMember: 0.1 }),
       housing: parseHousingConfig(worldRaw.housing),
       bank: parseBankConfig(worldRaw.bank),
@@ -847,9 +859,9 @@ async function loadSplitConfig(projectDir: string): Promise<AppConfig | null> {
       friends: parseFriendsConfig(worldRaw.friends),
       genders: asRecord(worldRaw.genders),
       characterCreation: parseCharacterCreationConfig(worldRaw.characterCreation),
-      emotePresets: parseEmotePresetsConfig(worldRaw.emotePresets),
+      emotePresets: withEmotePresetDefaults(parseEmotePresetsConfig(worldRaw.emotePresets)),
       achievementCategories: withDefaults(asRecord((worldRaw.achievementCategories as Record<string, unknown> | undefined)?.categories ?? worldRaw.achievementCategories), DEFAULT_ACHIEVEMENT_CATEGORIES),
-      achievementCriterionTypes: withDefaults(asRecord((worldRaw.achievementCriterionTypes as Record<string, unknown> | undefined)?.types ?? worldRaw.achievementCriterionTypes), DEFAULT_CRITERION_TYPES),
+      achievementCriterionTypes: withDefaults(asRecord((worldRaw.achievementCriterionTypes as Record<string, unknown> | undefined)?.types ?? worldRaw.achievementCriterionTypes), DEFAULT_ACHIEVEMENT_CRITERION_TYPES),
       achievementDefs: parseAchievementDefs(achievementsRaw),
       questObjectiveTypes: withDefaults(asRecord((worldRaw.questObjectiveTypes as Record<string, unknown> | undefined)?.types ?? worldRaw.questObjectiveTypes), DEFAULT_QUEST_OBJECTIVE_TYPES),
       questCompletionTypes: withDefaults(asRecord((worldRaw.questCompletionTypes as Record<string, unknown> | undefined)?.types ?? worldRaw.questCompletionTypes), DEFAULT_QUEST_COMPLETION_TYPES),
@@ -861,10 +873,13 @@ async function loadSplitConfig(projectDir: string): Promise<AppConfig | null> {
       abilities: asRecord(abilitiesRaw.definitions ?? abilitiesRaw),
 
       // status-effects.yaml
-      statusEffects: asRecord(statusEffectsRaw.definitions ?? statusEffectsRaw),
-      statusEffectTypes: asRecord(statusEffectsRaw.effectTypes),
-      stackBehaviors: asRecord(statusEffectsRaw.stackBehaviors),
-      abilityTargetTypes: asRecord(statusEffectsRaw.targetTypes),
+      statusEffects: withDefaults(
+        asRecord(statusEffectsRaw.definitions ?? statusEffectsRaw),
+        DEFAULT_STATUS_EFFECTS,
+      ),
+      statusEffectTypes: withDefaults(asRecord(statusEffectsRaw.effectTypes), DEFAULT_STATUS_EFFECT_TYPES),
+      stackBehaviors: withDefaults(asRecord(statusEffectsRaw.stackBehaviors), DEFAULT_STACK_BEHAVIORS),
+      abilityTargetTypes: withDefaults(asRecord(statusEffectsRaw.targetTypes), DEFAULT_ABILITY_TARGET_TYPES),
 
       // combat.yaml
       combat: parseCombatConfig(combatRaw.combat ?? combatRaw),
@@ -932,32 +947,14 @@ export function normalizeEquipmentSlotKeys<T>(slots: Record<string, T>): Record<
 // The Kotlin server uses Hoplite for config loading, which merges YAML
 // values with data class defaults. When YAML maps are empty ({}),
 // Hoplite fills in the companion-object defaults. We replicate that
-// behaviour here so Creator matches the running server.
+// behaviour here so Creator matches the running server. Default data
+// lives in configDefaults.ts so exportMud.ts can share it.
 
 function withDefaults<T>(parsed: Record<string, T>, defaults: Record<string, T>): Record<string, T> {
   return Object.keys(parsed).length > 0 ? parsed : defaults;
 }
 
-const DEFAULT_ACHIEVEMENT_CATEGORIES = {
-  combat: { displayName: "Combat" },
-  exploration: { displayName: "Exploration" },
-  social: { displayName: "Social" },
-  crafting: { displayName: "Crafting" },
-  class: { displayName: "Class" },
-};
-
-const DEFAULT_CRITERION_TYPES = {
-  kill: { displayName: "Kill", progressFormat: "{current}/{required}" },
-  reach_level: { displayName: "Reach Level", progressFormat: "level {current}/{required}" },
-  quest_complete: { displayName: "Quest Complete", progressFormat: "{current}/{required}" },
-};
-
-const DEFAULT_QUEST_OBJECTIVE_TYPES = {
-  kill: { displayName: "Kill" },
-  collect: { displayName: "Collect" },
-};
-
-const DEFAULT_QUEST_COMPLETION_TYPES = {
-  auto: { displayName: "Automatic" },
-  npc_turn_in: { displayName: "NPC Turn-In" },
-};
+/** Return the MUD canonical emote preset set if the parsed list is empty. */
+function withEmotePresetDefaults(parsed: AppConfig["emotePresets"]): AppConfig["emotePresets"] {
+  return parsed.presets.length > 0 ? parsed : DEFAULT_EMOTE_PRESETS;
+}

@@ -34,6 +34,10 @@ const FALLBACK_COMPLETION_OPTIONS = [
 const FALLBACK_OBJECTIVE_TYPES = [
   { value: "kill", label: "Kill" },
   { value: "collect", label: "Collect" },
+  { value: "gather", label: "Gather" },
+  { value: "craft", label: "Craft" },
+  { value: "dungeon", label: "Dungeon" },
+  { value: "pvpKill", label: "PvP Kill" },
 ];
 
 export function QuestEditor({

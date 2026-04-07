@@ -8,6 +8,15 @@ import { useZoneStore, type ZoneState } from "@/stores/zoneStore";
 import { serializeZone } from "@/lib/saveZone";
 import { useSpriteDefinitionStore } from "@/stores/spriteDefinitionStore";
 import type { AppConfig } from "@/types/config";
+import {
+  DEFAULT_ACHIEVEMENT_CATEGORIES,
+  DEFAULT_ACHIEVEMENT_CRITERION_TYPES,
+  DEFAULT_QUEST_OBJECTIVE_TYPES,
+  DEFAULT_QUEST_COMPLETION_TYPES,
+  DEFAULT_STATUS_EFFECT_TYPES,
+  DEFAULT_STACK_BEHAVIORS,
+  DEFAULT_ABILITY_TARGET_TYPES,
+} from "@/lib/configDefaults";
 
 export type SlotPositionMap = Record<string, { x: number; y: number }>;
 
@@ -15,52 +24,6 @@ const YAML_OPTS = {
   lineWidth: 120,
   defaultKeyType: "PLAIN" as const,
   defaultStringType: "PLAIN" as const,
-};
-
-const DEFAULT_ACHIEVEMENT_CATEGORIES: AppConfig["achievementCategories"] = {
-  combat: { displayName: "Combat" },
-  exploration: { displayName: "Exploration" },
-  social: { displayName: "Social" },
-  crafting: { displayName: "Crafting" },
-  class: { displayName: "Class" },
-};
-
-const DEFAULT_ACHIEVEMENT_CRITERION_TYPES: AppConfig["achievementCriterionTypes"] = {
-  kill: { displayName: "Kill", progressFormat: "{current}/{required}" },
-  reach_level: { displayName: "Reach Level", progressFormat: "level {current}/{required}" },
-  quest_complete: { displayName: "Quest Complete", progressFormat: "{current}/{required}" },
-};
-
-const DEFAULT_QUEST_OBJECTIVE_TYPES: AppConfig["questObjectiveTypes"] = {
-  kill: { displayName: "Kill" },
-  collect: { displayName: "Collect" },
-};
-
-const DEFAULT_QUEST_COMPLETION_TYPES: AppConfig["questCompletionTypes"] = {
-  auto: { displayName: "Automatic" },
-  npc_turn_in: { displayName: "NPC Turn-In" },
-};
-
-const DEFAULT_STATUS_EFFECT_TYPES: AppConfig["statusEffectTypes"] = {
-  dot: { displayName: "Damage Over Time", ticksDamage: true },
-  hot: { displayName: "Heal Over Time", ticksHealing: true },
-  stat_buff: { displayName: "Stat Buff", modifiesStats: true },
-  stat_debuff: { displayName: "Stat Debuff", modifiesStats: true },
-  stun: { displayName: "Stun" },
-  root: { displayName: "Root" },
-  shield: { displayName: "Shield", absorbsDamage: true },
-};
-
-const DEFAULT_STACK_BEHAVIORS: AppConfig["stackBehaviors"] = {
-  refresh: { displayName: "Refresh" },
-  stack: { displayName: "Stack" },
-  none: { displayName: "None" },
-};
-
-const DEFAULT_ABILITY_TARGET_TYPES: AppConfig["abilityTargetTypes"] = {
-  enemy: { displayName: "Enemy" },
-  self: { displayName: "Self" },
-  ally: { displayName: "Ally" },
 };
 
 function cloneRecord<T extends Record<string, unknown>>(value: T): T {

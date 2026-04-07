@@ -145,6 +145,48 @@ export function StoryEditorPanel({ storyId }: StoryEditorPanelProps) {
     [setActiveScene],
   );
 
+  // ─── Hooks that must run on every render (no early returns above here) ───
+  //
+  // All hooks below this line have to execute unconditionally — putting
+  // them after the `if (!story) return` guard would change the hook
+  // count between renders and crash React with "Rendered more hooks
+  // than during the previous render". Instead, we use optional chaining
+  // to feed safe fallbacks into the hooks while the story is loading,
+  // then reuse the same computed values after the guards below.
+
+  // Sorted scenes — computed above the early returns so the hooks can
+  // depend on it without special-casing. Empty when the story is still
+  // loading, which is fine for useResolvedSceneData.
+  const sortedScenes = useMemo(
+    () => [...(story?.scenes ?? [])].sort((a, b) => a.sortOrder - b.sortOrder),
+    [story],
+  );
+
+  // Resolved scene data for the export dialog. The hook runs always so
+  // images are warm by the time the user clicks Export, but the IPC
+  // calls are cheap + cached, and the dialog only opens on demand.
+  const resolvedSceneData = useResolvedSceneData(sortedScenes, story?.zoneId ?? "");
+  const resolvedScenesForExport = useMemo(
+    () =>
+      resolvedSceneData.map((rs) => ({
+        sceneId: rs.sceneId,
+        roomImageSrc: rs.roomImageSrc,
+        entities: rs.entities.map((e) => ({
+          entity: e.entity,
+          name: e.name,
+          imageSrc: e.imageSrc,
+        })),
+      })),
+    [resolvedSceneData],
+  );
+
+  // Zone world data (for audio refs). Returns undefined when the story
+  // hasn't loaded yet — the dialog won't render until we're past the
+  // guards below anyway.
+  const zoneWorld = useZoneStore((s) =>
+    story ? s.zones.get(story.zoneId)?.data : undefined,
+  );
+
   // Loading state
   if (loading) {
     return (
@@ -174,10 +216,9 @@ export function StoryEditorPanel({ storyId }: StoryEditorPanelProps) {
     );
   }
 
-  // Sorted scenes for rendering
-  const sortedScenes = [...(story.scenes || [])].sort(
-    (a, b) => a.sortOrder - b.sortOrder,
-  );
+  // Post-guard derived values. `sortedScenes` is already computed
+  // above (hoisted to satisfy Rules of Hooks); these just depend on
+  // it + the now-guaranteed `story`.
   const canPresent = sortedScenes.length > 0;
   const canExport = sortedScenes.length > 0;
   const initialSceneIndex = Math.max(
@@ -185,27 +226,6 @@ export function StoryEditorPanel({ storyId }: StoryEditorPanelProps) {
     sortedScenes.findIndex((s) => s.id === activeSceneId),
   );
   const activeScene = sortedScenes.find((s) => s.id === activeSceneId);
-
-  // Resolved scene data for the export dialog. The hook runs always so
-  // images are warm by the time the user clicks Export, but the IPC
-  // calls are cheap + cached, and the dialog only opens on demand.
-  const resolvedSceneData = useResolvedSceneData(sortedScenes, story.zoneId);
-  const resolvedScenesForExport = useMemo(
-    () =>
-      resolvedSceneData.map((rs) => ({
-        sceneId: rs.sceneId,
-        roomImageSrc: rs.roomImageSrc,
-        entities: rs.entities.map((e) => ({
-          entity: e.entity,
-          name: e.name,
-          imageSrc: e.imageSrc,
-        })),
-      })),
-    [resolvedSceneData],
-  );
-
-  // Zone world data (for audio refs).
-  const zoneWorld = useZoneStore((s) => s.zones.get(story.zoneId)?.data);
 
   return (
     <div className="flex flex-col gap-6">

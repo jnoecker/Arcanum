@@ -128,7 +128,6 @@ export const useStoryStore = create<StoryStore>()((set) => ({
       const existing = s.stories[storyId];
       if (!existing) return s;
       const newScene = { ...scene, sortOrder: existing.scenes.length };
-      const isFirst = existing.scenes.length === 0;
       return {
         ...snapshotStory(s),
         stories: {
@@ -140,7 +139,11 @@ export const useStoryStore = create<StoryStore>()((set) => ({
           },
         },
         dirty: { ...s.dirty, [storyId]: true },
-        ...(isFirst ? { activeSceneId: scene.id } : {}),
+        // Always focus the newly added scene so the user is editing
+        // the thing they just created. (Was previously gated to "first
+        // scene only", which led to silent edits on the old active
+        // scene when adding more.)
+        activeSceneId: scene.id,
       };
     }),
 

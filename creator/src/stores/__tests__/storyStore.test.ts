@@ -191,11 +191,13 @@ describe("storyStore", () => {
       expect(useStoryStore.getState().activeSceneId).toBe("first_scene");
     });
 
-    it("does not change activeSceneId when adding subsequent scenes", () => {
+    it("auto-selects each newly added scene so the user edits what they just created", () => {
       useStoryStore.getState().setStory(makeStory());
       useStoryStore.getState().addScene("story_test_abc1", makeScene({ id: "first_scene" }));
       useStoryStore.getState().addScene("story_test_abc1", makeScene({ id: "second_scene" }));
-      expect(useStoryStore.getState().activeSceneId).toBe("first_scene");
+      expect(useStoryStore.getState().activeSceneId).toBe("second_scene");
+      useStoryStore.getState().addScene("story_test_abc1", makeScene({ id: "third_scene" }));
+      expect(useStoryStore.getState().activeSceneId).toBe("third_scene");
     });
 
     it("is a no-op for missing story", () => {

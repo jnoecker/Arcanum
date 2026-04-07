@@ -142,6 +142,12 @@ pub struct VideoExportRequest {
     pub profile: String, // "baseline" | "main" | "high"
     pub crossfade_ms: Option<u64>,
 
+    /// Optional burned-in caption track. The orchestrator resolves
+    /// the bundled font path on the Rust side, so the frontend only
+    /// needs to send the chunks + style.
+    #[serde(default)]
+    pub captions: Option<crate::captions::CaptionTrack>,
+
     /// Final output path. The caller picks this (usually from a
     /// native file dialog) — we don't second-guess it.
     pub output_path: String,
@@ -247,6 +253,40 @@ pub async fn export_story_video(
         })
         .collect();
 
+    // Resolve the bundled caption font + write the per-chunk text
+    // files into the session dir. ffmpeg's drawtext filter reads each
+    // caption from a file (`textfile=`) rather than from a quoted
+    // filter argument, sidestepping the entire escape-special-chars
+    // nightmare. See captions.rs for the full rationale.
+    let captions_present = request
+        .captions
+        .as_ref()
+        .map(|t| !t.chunks.is_empty())
+        .unwrap_or(false);
+
+    let (caption_font_path, caption_text_files) = if captions_present {
+        let font = crate::captions::caption_font_path(&app)?
+            .to_string_lossy()
+            .to_string();
+        let track = request.captions.as_ref().unwrap();
+        let plan = crate::captions::caption_text_file_plan(
+            track,
+            &session,
+            request.width,
+            request.height,
+        );
+        let mut paths: Vec<String> = Vec::with_capacity(plan.len());
+        for (path, content) in plan {
+            tokio::fs::write(&path, &content)
+                .await
+                .map_err(|e| format!("Failed to write caption text file {path:?}: {e}"))?;
+            paths.push(path.to_string_lossy().to_string());
+        }
+        (Some(font), paths)
+    } else {
+        (None, Vec::new())
+    };
+
     let encode_input = VideoEncodeInput {
         scenes: scene_frames,
         width: request.width,
@@ -255,6 +295,9 @@ pub async fn export_story_video(
         video_bitrate_kbps: request.video_bitrate_kbps,
         profile,
         crossfade_ms: request.crossfade_ms,
+        captions: request.captions.clone(),
+        caption_font_path,
+        caption_text_files,
     };
 
     let encode_output =

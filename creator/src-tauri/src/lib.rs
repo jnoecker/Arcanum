@@ -2,6 +2,7 @@ mod admin;
 mod anthropic;
 mod arcanum_meta;
 mod assets;
+mod audio_mix;
 mod deepinfra;
 mod ffmpeg;
 mod git;

@@ -144,12 +144,16 @@ pub async fn resolve_ffmpeg(app: &AppHandle) -> FfmpegStatus {
 
 // ─── Download ────────────────────────────────────────────────────
 
-/// Downloads and unpacks ffmpeg into `app_data_dir/bin/`. Blocks the
+/// Downloads and unpacks ffmpeg into the given directory. Blocks the
 /// calling task (use `tokio::task::spawn_blocking` from async callers).
 ///
 /// This is intentionally synchronous because `ffmpeg-sidecar` does
 /// blocking I/O internally — wrapping it is the caller's responsibility.
-fn download_ffmpeg_blocking(dest_dir: &Path) -> Result<PathBuf, String> {
+///
+/// Visible to other modules in the crate so integration tests in
+/// sibling modules (e.g. `audio_mix`) can self-bootstrap ffmpeg
+/// without requiring it on PATH.
+pub(crate) fn download_ffmpeg_blocking(dest_dir: &Path) -> Result<PathBuf, String> {
     use ffmpeg_sidecar::download::{
         download_ffmpeg_package, ffmpeg_download_url, unpack_ffmpeg,
     };

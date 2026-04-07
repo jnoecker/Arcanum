@@ -26,7 +26,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 
 import type { Story, SceneEntity } from "@/types/story";
-import type { WorldFile } from "@/types/world";
+import type { WorldFile, MobFile, ItemFile } from "@/types/world";
 import type { Project } from "@/types/project";
 
 import {
@@ -45,26 +45,15 @@ import {
   type LayoutEntityInfo,
 } from "@/lib/storyFrameLayout";
 import {
-  loadSceneImages,
+  loadImageElement,
   renderSceneFrameToBlob,
   type LoadedSceneImages,
-  type SceneImageSources,
 } from "@/lib/storyFrameRenderer";
+import { buildCandidatePaths } from "@/lib/useResolvedSceneData";
 import { checkFfmpegStatus, ensureFfmpegReady } from "@/lib/ffmpegStatus";
 import { getPreset, type ExportPresetId } from "@/lib/videoExportPresets";
 
 // ─── Types ───────────────────────────────────────────────────────
-
-/** Scene data already resolved with image data URLs (from useResolvedSceneData). */
-export interface ResolvedSceneForExport {
-  sceneId: string;
-  roomImageSrc?: string;
-  entities: Array<{
-    entity: SceneEntity;
-    name: string;
-    imageSrc?: string;
-  }>;
-}
 
 export type ExportStage =
   | "ffmpeg"
@@ -91,9 +80,11 @@ export interface ExportProgressEvent {
 
 export interface ExportStoryVideoOptions {
   story: Story;
-  /** Scene data already resolved with image data URLs. */
-  resolvedScenes: ResolvedSceneForExport[];
-  /** The zone the story lives in. Used to resolve music/ambient paths. */
+  /**
+   * The zone the story lives in. The orchestrator reads `rooms`, `mobs`,
+   * and `items` directly from this WorldFile to resolve scene entity
+   * images without depending on the in-app React hook state.
+   */
   world: WorldFile;
   /** Current project — used for legacy mudDir path fallbacks. */
   project: Project;
@@ -214,6 +205,58 @@ async function probeNarrationDurationMs(filePath: string): Promise<number | null
 }
 
 /**
+ * Resolves an entity (scene entity ID) to its name + image filename by
+ * looking it up directly in the zone `WorldFile`. This is the hook-free
+ * equivalent of `useResolvedSceneData`'s `resolveEntityInfo` — we use it
+ * so the orchestrator doesn't depend on the hook's async state machine.
+ */
+function resolveEntityFromWorld(
+  sceneEntity: SceneEntity,
+  world: WorldFile,
+): { name: string; image?: string } {
+  if (sceneEntity.nameOverride || sceneEntity.imageOverride) {
+    return {
+      name: sceneEntity.nameOverride ?? sceneEntity.entityId,
+      image: sceneEntity.imageOverride,
+    };
+  }
+  if (sceneEntity.entityType === "mob" || sceneEntity.entityType === "npc") {
+    const mob: MobFile | undefined = world.mobs?.[sceneEntity.entityId];
+    if (mob) return { name: mob.name, image: mob.image };
+    return { name: sceneEntity.entityId };
+  }
+  if (sceneEntity.entityType === "item") {
+    const item: ItemFile | undefined = world.items?.[sceneEntity.entityId];
+    if (item) return { name: item.displayName, image: item.image };
+    return { name: sceneEntity.entityId };
+  }
+  return { name: sceneEntity.entityId };
+}
+
+/**
+ * Resolves an asset reference (filename or path) to a data URL by
+ * trying each candidate path in order. Returns `undefined` if none
+ * of the candidates exist on disk. Uses the same candidate builder
+ * as `useResolvedSceneData` so resolution is consistent with the
+ * in-app preview.
+ */
+async function loadAssetDataUrl(
+  fileRef: string,
+  assetsDir: string,
+  mudDir: string | undefined,
+): Promise<string | undefined> {
+  const candidates = buildCandidatePaths(fileRef, assetsDir, mudDir);
+  for (const path of candidates) {
+    try {
+      return await invoke<string>("read_image_data_url", { path });
+    } catch {
+      // Try the next candidate.
+    }
+  }
+  return undefined;
+}
+
+/**
  * Builds the same candidate path list that `useMediaSrc` computes so
  * zone audio refs resolve the same way the in-app preview does.
  */
@@ -283,7 +326,6 @@ export async function exportStoryVideo(
 ): Promise<ExportStoryVideoResult> {
   const {
     story,
-    resolvedScenes,
     world,
     presetId,
     outputPath,
@@ -349,10 +391,22 @@ export async function exportStoryVideo(
       throw new Error("Story has no scenes — cannot export.");
     }
 
-    // ─── Stage 3: TTS synthesis per scene ────────────────────
     const scenesBySortOrder = [...story.scenes].sort(
       (a, b) => a.sortOrder - b.sortOrder,
     );
+    console.log(
+      "[exportStoryVideo] starting",
+      {
+        storyId: story.id,
+        sceneCount: scenesBySortOrder.length,
+        sceneIds: scenesBySortOrder.map((s) => s.id),
+        presetId,
+        outputPath,
+        sessionId,
+      },
+    );
+
+    // ─── Stage 3: TTS synthesis per scene ────────────────────
     const narrationCache = new Map<string, NarrationAudio | null>();
 
     for (let i = 0; i < scenesBySortOrder.length; i++) {
@@ -374,6 +428,14 @@ export async function exportStoryVideo(
       });
       narrationCache.set(scene.id, audio);
     }
+    console.log(
+      "[exportStoryVideo] TTS done",
+      scenesBySortOrder.map((s) => ({
+        sceneId: s.id,
+        title: s.title,
+        audio: narrationCache.get(s.id)?.filePath ?? "(no narration)",
+      })),
+    );
 
     // ─── Stage 4: refresh timeline durations from real TTS audio ──
     emit({
@@ -391,31 +453,115 @@ export async function exportStoryVideo(
       }
     }
     timeline = computeStoryTimeline(story, { narrationDurationOverrides });
+    console.log(
+      "[exportStoryVideo] timeline after TTS sync",
+      {
+        totalDurationMs: timeline.totalDurationMs,
+        scenes: timeline.scenes.map((e) => ({
+          id: e.sceneId,
+          startMs: e.startMs,
+          durationMs: e.durationMs,
+          narrationMs: e.narrationEndMs - e.narrationStartMs,
+        })),
+      },
+    );
 
-    // ─── Stage 5: load scene images ──────────────────────────
+    // ─── Stage 5: resolve scene images directly via IPC ──────
+    //
+    // We deliberately DO NOT rely on the `resolvedScenes` prop here.
+    // That data comes from a React hook (useResolvedSceneData) whose
+    // async resolution state isn't guaranteed to be complete by the
+    // time Export is clicked. Instead, we re-resolve every image from
+    // scratch using the exact same candidate-path logic, but via
+    // direct await on read_image_data_url so we KNOW the data URLs
+    // are present before rendering starts.
     emit({
       stage: "images",
       fraction: 0.35,
       message: "Loading scene images…",
     });
+
     const loadedByScene = new Map<string, LoadedSceneImages>();
+    const missingAssetsByScene: string[] = [];
+
     for (let i = 0; i < scenesBySortOrder.length; i++) {
       const scene = scenesBySortOrder[i]!;
-      const resolved = resolvedScenes.find((r) => r.sceneId === scene.id);
-      if (!resolved) {
-        throw new Error(
-          `Missing resolved scene data for "${scene.title}" (${scene.id}). Did you pass the useResolvedSceneData output?`,
-        );
+
+      // Room background
+      let bgDataUrl: string | undefined;
+      if (scene.roomId) {
+        const room = world.rooms[scene.roomId];
+        if (room?.image) {
+          bgDataUrl = await loadAssetDataUrl(room.image, assetsDir, project.mudDir);
+          if (!bgDataUrl) {
+            missingAssetsByScene.push(
+              `scene "${scene.title}" (${scene.id}) → room "${scene.roomId}" image "${room.image}"`,
+            );
+          }
+        }
       }
-      const sources: SceneImageSources = {
-        background: resolved.roomImageSrc,
-        entities: resolved.entities.map((e) => ({
-          entityId: e.entity.id,
-          src: e.imageSrc,
-        })),
-      };
-      const loaded = await loadSceneImages(sources);
+
+      // Entities — resolve from the zone WorldFile directly
+      const entityDataUrls = new Map<string, string>();
+      const entitySources: Array<{ entity: SceneEntity; name: string }> = [];
+      for (const sceneEntity of scene.entities ?? []) {
+        const info = resolveEntityFromWorld(sceneEntity, world);
+        entitySources.push({ entity: sceneEntity, name: info.name });
+        if (info.image) {
+          const dataUrl = await loadAssetDataUrl(info.image, assetsDir, project.mudDir);
+          if (dataUrl) {
+            entityDataUrls.set(sceneEntity.id, dataUrl);
+          } else {
+            missingAssetsByScene.push(
+              `scene "${scene.title}" (${scene.id}) → entity "${info.name}" image "${info.image}"`,
+            );
+          }
+        }
+      }
+
+      // Load the data URLs into HTMLImageElements so we have natural
+      // dimensions available for the layout math.
+      const loaded: LoadedSceneImages = { entities: new Map() };
+      if (bgDataUrl) {
+        try {
+          loaded.background = await loadImageElement(bgDataUrl);
+        } catch (e) {
+          console.warn(`[exportStoryVideo] bg image decode failed for scene ${scene.id}:`, e);
+        }
+      }
+      for (const { entity } of entitySources) {
+        const dataUrl = entityDataUrls.get(entity.id);
+        if (!dataUrl) continue;
+        try {
+          const img = await loadImageElement(dataUrl);
+          loaded.entities.set(entity.id, img);
+        } catch (e) {
+          console.warn(
+            `[exportStoryVideo] entity image decode failed for scene ${scene.id} entity ${entity.id}:`,
+            e,
+          );
+        }
+      }
       loadedByScene.set(scene.id, loaded);
+    }
+
+    console.log(
+      "[exportStoryVideo] images resolved",
+      scenesBySortOrder.map((s) => {
+        const loaded = loadedByScene.get(s.id);
+        return {
+          sceneId: s.id,
+          hasBackground: !!loaded?.background,
+          entityCount: s.entities?.length ?? 0,
+          entitiesWithImages: loaded?.entities.size ?? 0,
+        };
+      }),
+    );
+    if (missingAssetsByScene.length > 0) {
+      console.warn(
+        "[exportStoryVideo] some assets could not be resolved — those entities will render as placeholders:",
+        missingAssetsByScene,
+      );
     }
 
     // ─── Stage 6: render frames + save to disk ───────────────
@@ -428,14 +574,18 @@ export async function exportStoryVideo(
         message: `Rendering frame ${i + 1} of ${scenesBySortOrder.length}…`,
       });
 
-      const resolved = resolvedScenes.find((r) => r.sceneId === scene.id)!;
       const loaded = loadedByScene.get(scene.id)!;
-      const entities: LayoutEntityInfo[] = resolved.entities.map((e) => {
-        const img = loaded.entities.get(e.entity.id);
+
+      // Build entity layout info from the loaded images + scene metadata.
+      const entities: LayoutEntityInfo[] = (scene.entities ?? []).map((sceneEntity) => {
+        const info = resolveEntityFromWorld(sceneEntity, world);
+        const img = loaded.entities.get(sceneEntity.id);
         return {
-          entity: e.entity,
-          name: e.name,
-          imageSize: img ? { width: img.naturalWidth, height: img.naturalHeight } : undefined,
+          entity: sceneEntity,
+          name: info.name,
+          imageSize: img
+            ? { width: img.naturalWidth, height: img.naturalHeight }
+            : undefined,
         };
       });
       const roomImageSize = loaded.background
@@ -453,12 +603,22 @@ export async function exportStoryVideo(
       const blob = await renderSceneFrameToBlob(layout, loaded, {
         drawCaptionBackdrop: preset.burnedCaptions,
       });
+      console.log(
+        `[exportStoryVideo] rendered frame ${i + 1}/${scenesBySortOrder.length}`,
+        {
+          sceneId: scene.id,
+          blobSize: blob.size,
+          hasBackground: !!loaded.background,
+          entitiesDrawn: loaded.entities.size,
+        },
+      );
       const base64 = await blobToBase64(blob);
       const framePath = await invoke<string>("save_video_frame", {
         sessionId,
         sceneIndex: i,
         pngBase64: base64,
       });
+      console.log(`[exportStoryVideo] saved frame ${i} → ${framePath}`);
 
       // Scene duration from the refreshed timeline.
       const timelineEntry = timeline.scenes.find((e) => e.sceneId === scene.id);
@@ -466,6 +626,17 @@ export async function exportStoryVideo(
         throw new Error(`Timeline entry missing for scene ${scene.id}`);
       }
       savedFrames.push({ pngPath: framePath, durationMs: timelineEntry.durationMs });
+    }
+
+    console.log("[exportStoryVideo] savedFrames", savedFrames);
+
+    // Defensive check: if we lost scenes between TTS and save, bail
+    // loudly rather than silently producing a single-scene video.
+    if (savedFrames.length !== scenesBySortOrder.length) {
+      throw new Error(
+        `Expected ${scenesBySortOrder.length} saved frames but got ${savedFrames.length}. ` +
+          `This is a bug in the export pipeline — please report it with the console logs above.`,
+      );
     }
 
     // ─── Stage 7: resolve zone audio paths ───────────────────
@@ -530,6 +701,24 @@ export async function exportStoryVideo(
     };
 
     // ─── Stage 9: call the Rust orchestrator ─────────────────
+    console.log("[exportStoryVideo] final export request", {
+      sceneCount: exportRequest.scenes.length,
+      scenes: exportRequest.scenes,
+      audio: {
+        narrationCount: exportRequest.audio.narrations.length,
+        narrations: exportRequest.audio.narrations,
+        hasMusic: !!exportRequest.audio.musicPath,
+        hasAmbient: !!exportRequest.audio.ambientPath,
+        totalDurationMs: exportRequest.audio.totalDurationMs,
+      },
+      video: {
+        width: exportRequest.width,
+        height: exportRequest.height,
+        fps: exportRequest.fps,
+        profile: exportRequest.profile,
+        crossfadeMs: exportRequest.crossfadeMs,
+      },
+    });
     emit({
       stage: "export",
       fraction: 0.7,

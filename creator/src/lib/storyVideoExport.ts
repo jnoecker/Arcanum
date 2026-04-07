@@ -483,22 +483,73 @@ export async function exportStoryVideo(
 
     const loadedByScene = new Map<string, LoadedSceneImages>();
     const missingAssetsByScene: string[] = [];
+    const bgResolutionTrace: Array<Record<string, unknown>> = [];
+
+    // Log the world's room inventory once so a mismatched scene.roomId
+    // is easy to diagnose (compare against scene roomIds below).
+    console.log(
+      "[exportStoryVideo] world room inventory",
+      {
+        zoneId: story.zoneId,
+        roomCount: Object.keys(world.rooms ?? {}).length,
+        roomIds: Object.keys(world.rooms ?? {}),
+      },
+    );
 
     for (let i = 0; i < scenesBySortOrder.length; i++) {
       const scene = scenesBySortOrder[i]!;
 
-      // Room background
+      // ─── Room background resolution with explicit failure tracing ───
       let bgDataUrl: string | undefined;
-      if (scene.roomId) {
-        const room = world.rooms[scene.roomId];
-        if (room?.image) {
-          bgDataUrl = await loadAssetDataUrl(room.image, assetsDir, project.mudDir);
+      let bgFailureReason: string | null = null;
+      let overridePath: string | undefined;
+
+      // Honor scene.backgroundOverride first, mirroring the in-app
+      // preview's lookup order.
+      if (scene.backgroundOverride) {
+        overridePath = scene.backgroundOverride;
+        bgDataUrl = await loadAssetDataUrl(
+          scene.backgroundOverride,
+          assetsDir,
+          project.mudDir,
+        );
+        if (!bgDataUrl) {
+          bgFailureReason = `backgroundOverride "${scene.backgroundOverride}" resolved to no candidate path`;
+        }
+      } else if (!scene.roomId) {
+        bgFailureReason = "scene has no roomId";
+      } else {
+        const room = world.rooms?.[scene.roomId];
+        if (!room) {
+          bgFailureReason = `roomId "${scene.roomId}" not found in world.rooms`;
+        } else if (!room.image) {
+          bgFailureReason = `room "${scene.roomId}" ("${room.title ?? ""}") has no image set`;
+        } else {
+          bgDataUrl = await loadAssetDataUrl(
+            room.image,
+            assetsDir,
+            project.mudDir,
+          );
           if (!bgDataUrl) {
-            missingAssetsByScene.push(
-              `scene "${scene.title}" (${scene.id}) → room "${scene.roomId}" image "${room.image}"`,
-            );
+            bgFailureReason = `room image "${room.image}" did not resolve via any candidate path`;
           }
         }
+      }
+
+      bgResolutionTrace.push({
+        sceneIndex: i,
+        sceneId: scene.id,
+        sceneTitle: scene.title,
+        roomId: scene.roomId ?? null,
+        backgroundOverride: overridePath ?? null,
+        bgResolved: !!bgDataUrl,
+        failureReason: bgFailureReason,
+      });
+
+      if (!bgDataUrl && bgFailureReason) {
+        missingAssetsByScene.push(
+          `scene ${i} "${scene.title}" (${scene.id}): ${bgFailureReason}`,
+        );
       }
 
       // Entities — resolve from the zone WorldFile directly
@@ -557,9 +608,13 @@ export async function exportStoryVideo(
         };
       }),
     );
+    console.log(
+      "[exportStoryVideo] bg resolution trace (per scene)",
+      bgResolutionTrace,
+    );
     if (missingAssetsByScene.length > 0) {
       console.warn(
-        "[exportStoryVideo] some assets could not be resolved — those entities will render as placeholders:",
+        "[exportStoryVideo] unresolved assets — those layers will render as placeholders:",
         missingAssetsByScene,
       );
     }

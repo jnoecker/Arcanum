@@ -253,36 +253,39 @@ pub async fn export_story_video(
         })
         .collect();
 
-    // Resolve the bundled caption font + write the per-chunk text
-    // files into the session dir. ffmpeg's drawtext filter reads each
-    // caption from a file (`textfile=`) rather than from a quoted
-    // filter argument, sidestepping the entire escape-special-chars
-    // nightmare. See captions.rs for the full rationale.
+    // Resolve the bundled caption font + plan per-line wrapping,
+    // writing one text file per wrapped line into the session dir.
+    // Each file contains a single line with no embedded newlines,
+    // which sidesteps ffmpeg's drawtext rendering the LF byte as a
+    // visible tofu glyph. See captions.rs for the full rationale.
     let captions_present = request
         .captions
         .as_ref()
         .map(|t| !t.chunks.is_empty())
         .unwrap_or(false);
 
-    let (caption_font_path, caption_text_files) = if captions_present {
+    let (caption_font_path, caption_lines) = if captions_present {
         let font = crate::captions::caption_font_path(&app)?
             .to_string_lossy()
             .to_string();
         let track = request.captions.as_ref().unwrap();
-        let plan = crate::captions::caption_text_file_plan(
+        let lines = crate::captions::plan_caption_lines(
             track,
             &session,
             request.width,
             request.height,
         );
-        let mut paths: Vec<String> = Vec::with_capacity(plan.len());
-        for (path, content) in plan {
-            tokio::fs::write(&path, &content)
+        for line in &lines {
+            tokio::fs::write(&line.file_path, &line.file_content)
                 .await
-                .map_err(|e| format!("Failed to write caption text file {path:?}: {e}"))?;
-            paths.push(path.to_string_lossy().to_string());
+                .map_err(|e| {
+                    format!(
+                        "Failed to write caption line file {}: {e}",
+                        line.file_path,
+                    )
+                })?;
         }
-        (Some(font), paths)
+        (Some(font), lines)
     } else {
         (None, Vec::new())
     };
@@ -297,7 +300,7 @@ pub async fn export_story_video(
         crossfade_ms: request.crossfade_ms,
         captions: request.captions.clone(),
         caption_font_path,
-        caption_text_files,
+        caption_lines,
     };
 
     let encode_output =

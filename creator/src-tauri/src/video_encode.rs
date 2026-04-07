@@ -82,20 +82,20 @@ pub struct VideoEncodeInput {
     /// Crossfade duration between consecutive scenes. `None` or `Some(0)`
     /// means hard cuts (using the concat filter instead of xfade).
     pub crossfade_ms: Option<u64>,
-    /// Optional caption track to burn in via ffmpeg's drawtext filter.
-    /// `None` produces a video without burned-in captions.
+    /// Optional caption track. Still carried on the input so the
+    /// filter builder can read the style (placement, font scale)
+    /// even after the wrap planner has produced `caption_lines`.
+    /// When `None` or empty, no captions are burned in.
     pub captions: Option<crate::captions::CaptionTrack>,
     /// Absolute filesystem path to the caption font (TTF/OTF). Required
-    /// when `captions` is `Some` — caller must resolve this via
-    /// `captions::caption_font_path` first. Ignored when there are no
-    /// captions.
+    /// when `captions` is present AND non-empty. Caller resolves this
+    /// via `captions::caption_font_path` first.
     pub caption_font_path: Option<String>,
-    /// Absolute paths to pre-written caption text files, parallel to
-    /// `captions.chunks`. The async runner (`encode_video_segments`)
-    /// writes these files before spawning ffmpeg; the pure command
-    /// builder consumes them. Required (and same length as chunks)
-    /// when `captions` is `Some`.
-    pub caption_text_files: Vec<String>,
+    /// Pre-planned wrapped caption lines (one entry per wrapped line).
+    /// The orchestrator runs `captions::plan_caption_lines` and writes
+    /// each line's text to `file_path` before handing this list off to
+    /// the encoder. Required when captions are present.
+    pub caption_lines: Vec<crate::captions::WrappedCaptionLine>,
 }
 
 /// Result of a successful video encode.
@@ -266,11 +266,10 @@ fn validate_encode_input(input: &VideoEncodeInput) -> Result<(), String> {
         }
     }
 
-    // Captions require a resolved font path AND pre-written text
-    // file paths. The async runner writes the files before invoking
-    // this command builder, so caption_text_files must already be
-    // populated and parallel to track.chunks. We validate both here
-    // so the pure builder stays a pure function.
+    // Captions require a resolved font path AND pre-planned wrapped
+    // caption lines. The orchestrator writes each line's text file
+    // to disk and populates `caption_lines` before handing off to
+    // the encoder. Empty chunks are treated as "no captions".
     if let Some(track) = input.captions.as_ref() {
         if !track.chunks.is_empty() {
             match input.caption_font_path.as_ref() {
@@ -286,12 +285,10 @@ fn validate_encode_input(input: &VideoEncodeInput) -> Result<(), String> {
                 }
                 _ => {}
             }
-            if input.caption_text_files.len() != track.chunks.len() {
-                return Err(format!(
-                    "Captions have {} chunks but caption_text_files has {} entries; the runner must pre-write one file per chunk.",
-                    track.chunks.len(),
-                    input.caption_text_files.len(),
-                ));
+            if input.caption_lines.is_empty() {
+                return Err(
+                    "Captions have chunks but caption_lines is empty; the orchestrator must run plan_caption_lines before calling the encoder.".to_string(),
+                );
             }
         }
     }
@@ -362,23 +359,19 @@ fn build_video_filter_complex(input: &VideoEncodeInput) -> Result<String, String
     }
 
     // Append the burned-in caption layer when present. The drawtext
-    // chain consumes [v] and emits [out]. Each caption references a
-    // pre-written text file so we sidestep ffmpeg's filter quoting
-    // entirely (see captions.rs for the rationale).
+    // chain consumes [v] and emits [out]. One drawtext per wrapped
+    // line with precomputed stacked y coordinates — see captions.rs
+    // for why we don't embed newlines in the text files.
     if let Some(track) = effective_captions {
         let font_path = input
             .caption_font_path
             .as_ref()
             .ok_or("Captions present but caption_font_path is missing")?;
-        let caption_paths: Vec<std::path::PathBuf> = input
-            .caption_text_files
-            .iter()
-            .map(std::path::PathBuf::from)
-            .collect();
-        let drawtext_chain = crate::captions::build_drawtext_chain(
-            track,
+        let drawtext_chain = crate::captions::build_drawtext_chain_from_lines(
+            &input.caption_lines,
             font_path,
-            &caption_paths,
+            track.style.placement,
+            track.style.font_scale,
             input.height,
         );
         parts.push(format!("[v]{drawtext_chain}[out]"));
@@ -516,18 +509,28 @@ mod tests {
             crossfade_ms: None,
             captions: None,
             caption_font_path: None,
-            caption_text_files: Vec::new(),
+            caption_lines: Vec::new(),
         }
     }
 
-    /// Helper that populates input with synthetic caption_text_files
-    /// paths (one per chunk). Tests don't actually write the files
-    /// since the pure builder doesn't read them — it only embeds the
-    /// path strings in the filter_complex.
-    fn populate_caption_files(input: &mut VideoEncodeInput) {
+    /// Helper that populates input with synthetic wrapped caption
+    /// lines (one entry per chunk, treating each chunk as a single
+    /// line). Tests don't write real files — the pure builder just
+    /// embeds path strings in the filter_complex.
+    fn populate_caption_lines(input: &mut VideoEncodeInput) {
         if let Some(track) = input.captions.as_ref() {
-            input.caption_text_files = (0..track.chunks.len())
-                .map(|i| format!("/tmp/caption_{i:04}.txt"))
+            input.caption_lines = track
+                .chunks
+                .iter()
+                .enumerate()
+                .map(|(i, c)| crate::captions::WrappedCaptionLine {
+                    file_path: format!("/tmp/caption_{i:04}_00.txt"),
+                    file_content: c.text.clone(),
+                    chunk_start_ms: c.start_ms,
+                    chunk_end_ms: c.end_ms,
+                    line_index: 0,
+                    total_lines: 1,
+                })
                 .collect();
         }
     }
@@ -822,7 +825,7 @@ mod tests {
         let mut input = input_with(vec![frame("/a.png", 5000), frame("/b.png", 5000)]);
         input.captions = Some(caption_track(vec![caption_chunk("Hello", 1000, 4000)]));
         input.caption_font_path = Some("/fonts/CrimsonPro-Variable.ttf".to_string());
-        populate_caption_files(&mut input);
+        populate_caption_lines(&mut input);
         let cmd = build_video_encode_command(&input, &out()).unwrap();
         let filter = extract_filter(&cmd);
         // Concat now goes to intermediate [v] label
@@ -831,10 +834,8 @@ mod tests {
         assert!(filter.contains("[v]drawtext="));
         assert!(filter.contains("[out]"));
         // Caption references its pre-written text file via textfile=
-        // (no surrounding single quotes — see captions.rs for why)
-        assert!(filter.contains("textfile=/tmp/caption_0000.txt"));
-        // Timing made it through; commas in `between` are escaped so
-        // ffmpeg's chain parser doesn't break.
+        // (chunk 0, line 0 — single-line chunk)
+        assert!(filter.contains("textfile=/tmp/caption_0000_00.txt"));
         assert!(filter.contains(r"between(t\,1.000\,4.000)"));
     }
 
@@ -848,13 +849,10 @@ mod tests {
         input.crossfade_ms = Some(500);
         input.captions = Some(caption_track(vec![caption_chunk("Hi", 0, 1000)]));
         input.caption_font_path = Some("/fonts/font.ttf".to_string());
-        populate_caption_files(&mut input);
+        populate_caption_lines(&mut input);
         let cmd = build_video_encode_command(&input, &out()).unwrap();
         let filter = extract_filter(&cmd);
-        // Chain: s0(5000) → s1(5000) at offset 4500 → v1(9500) → s2(5000) at offset 9000 → v(14000)
-        // The final xfade emits [v] (not [out]) because captions consume it.
         assert!(filter.contains("[v1][s2]xfade=transition=fade:duration=0.500:offset=9.000[v]"));
-        // Drawtext takes over from there
         assert!(filter.contains("[v]drawtext="));
         assert!(filter.ends_with("[out]"));
     }
@@ -864,12 +862,12 @@ mod tests {
         let mut input = input_with(vec![frame("/a.png", 5000)]);
         input.captions = Some(caption_track(vec![caption_chunk("Solo", 0, 5000)]));
         input.caption_font_path = Some("/fonts/font.ttf".to_string());
-        populate_caption_files(&mut input);
+        populate_caption_lines(&mut input);
         let cmd = build_video_encode_command(&input, &out()).unwrap();
         let filter = extract_filter(&cmd);
         assert!(filter.contains("[s0]copy[v]"));
         assert!(filter.contains("[v]drawtext="));
-        assert!(filter.contains("textfile=/tmp/caption_0000.txt"));
+        assert!(filter.contains("textfile=/tmp/caption_0000_00.txt"));
     }
 
     #[test]
@@ -879,7 +877,6 @@ mod tests {
         input.caption_font_path = Some("/fonts/font.ttf".to_string());
         let cmd = build_video_encode_command(&input, &out()).unwrap();
         let filter = extract_filter(&cmd);
-        // Falls back to the no-captions path: copy [s0] directly to [out]
         assert!(filter.contains("[s0]copy[out]"));
         assert!(!filter.contains("drawtext"));
     }
@@ -889,7 +886,7 @@ mod tests {
         let mut input = input_with(vec![frame("/a.png", 5000)]);
         input.captions = Some(caption_track(vec![caption_chunk("hi", 0, 1000)]));
         input.caption_font_path = None;
-        populate_caption_files(&mut input);
+        populate_caption_lines(&mut input);
         let err = build_video_encode_command(&input, &out()).unwrap_err();
         assert!(err.contains("caption_font_path is missing"));
     }
@@ -899,23 +896,19 @@ mod tests {
         let mut input = input_with(vec![frame("/a.png", 5000)]);
         input.captions = Some(caption_track(vec![caption_chunk("hi", 0, 1000)]));
         input.caption_font_path = Some("".to_string());
-        populate_caption_files(&mut input);
+        populate_caption_lines(&mut input);
         let err = build_video_encode_command(&input, &out()).unwrap_err();
         assert!(err.contains("empty"));
     }
 
     #[test]
-    fn errors_when_caption_text_files_count_does_not_match_chunks() {
+    fn errors_when_captions_have_chunks_but_caption_lines_is_empty() {
         let mut input = input_with(vec![frame("/a.png", 5000)]);
-        input.captions = Some(caption_track(vec![
-            caption_chunk("hi", 0, 1000),
-            caption_chunk("there", 1000, 2000),
-        ]));
+        input.captions = Some(caption_track(vec![caption_chunk("hi", 0, 1000)]));
         input.caption_font_path = Some("/fonts/font.ttf".to_string());
-        // Only one text file for two chunks → mismatch
-        input.caption_text_files = vec!["/tmp/c0.txt".to_string()];
+        // caption_lines left empty — orchestrator forgot to run plan
         let err = build_video_encode_command(&input, &out()).unwrap_err();
-        assert!(err.contains("caption_text_files"));
+        assert!(err.contains("caption_lines is empty"));
     }
 
     #[test]
@@ -1060,7 +1053,7 @@ mod tests {
             crossfade_ms: Some(500),
             captions: None,
             caption_font_path: None,
-            caption_text_files: Vec::new(),
+            caption_lines: Vec::new(),
         };
         let cmd = build_video_encode_command(&input, &video_path).unwrap();
         let result = StdCommand::new(&ffmpeg_bin)
@@ -1236,11 +1229,13 @@ mod tests {
                 font_scale: 1.0,
             },
         };
-        let plan = crate::captions::caption_text_file_plan(&captions, &tmp, 640, 360);
-        let mut caption_text_files: Vec<String> = Vec::new();
-        for (path, content) in &plan {
-            std::fs::write(path, content).expect("write caption text file");
-            caption_text_files.push(path.to_string_lossy().to_string());
+        // Run the line-level planner — one file per wrapped line.
+        let caption_lines = crate::captions::plan_caption_lines(
+            &captions, &tmp, 640, 360,
+        );
+        for line in &caption_lines {
+            std::fs::write(&line.file_path, &line.file_content)
+                .expect("write caption line text file");
         }
 
         let video_path = tmp.join("captioned.mp4");
@@ -1257,7 +1252,7 @@ mod tests {
             crossfade_ms: None,
             captions: Some(captions),
             caption_font_path: Some(font_path.to_string_lossy().to_string()),
-            caption_text_files,
+            caption_lines,
         };
         let cmd = build_video_encode_command(&input, &video_path).unwrap();
         let result = StdCommand::new(&ffmpeg_bin)

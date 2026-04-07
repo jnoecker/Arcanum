@@ -113,55 +113,99 @@ pub fn caption_font_path(app: &AppHandle) -> Result<PathBuf, String> {
 
 // ─── Drawtext text escaping ──────────────────────────────────────
 
-// ─── Caption text file plan ──────────────────────────────────────
+// ─── Caption rendering plan ──────────────────────────────────────
 //
-// Why textfile= instead of text=:
-// ffmpeg's filter parser is exceptionally fragile around quoted text.
-// The POSIX shell-style quote dance (`'\''`) used to embed apostrophes
-// in single-quoted args does NOT work with ffmpeg's chain parser —
-// the parser sees `'\'` as an early termination of the quoted section
-// followed by an unrecognised option name. Even with single-quoting
-// + escaping every special character, edge cases (mid-quote backslashes,
-// unicode quotes, embedded percent signs) keep producing parse errors.
+// Why one drawtext per line instead of embedded newlines:
+// The first attempt embedded newlines in a single text file per
+// caption chunk and let ffmpeg's drawtext interpret them as line
+// breaks. That produced visible tofu boxes at every wrap point
+// regardless of font, text_shaping flag, or encoding — ffmpeg's
+// drawtext renders the U+000A byte as a visible glyph AS WELL AS
+// breaking the line.
 //
-// The bulletproof workaround is to use `textfile='/path/caption.txt'`
-// instead of `text='...'`. ffmpeg reads the file bytes verbatim and
-// applies its own line-break handling for actual newlines. The only
-// thing the filter chain sees is the file path, which is well-behaved
-// inside single quotes.
+// Reliable workaround: emit one drawtext filter per wrapped line,
+// with stacked y coordinates precomputed from the font size and
+// line index. Each text file contains exactly one line of text,
+// no newlines, so there's nothing for drawtext to render as a
+// glyph. The x=(w-text_w)/2 centering makes each line center
+// independently, which also happens to give the right look for
+// centered captions.
 //
-// The caller writes one text file per caption chunk before spawning
-// ffmpeg. `caption_text_file_plan` produces the (path, content) pairs
-// the caller needs to write; `build_drawtext_chain` consumes the
-// resulting paths.
+// The caller (the video_export orchestrator) writes each line's
+// text file before invoking ffmpeg, then hands the prepared lines
+// to `build_drawtext_chain_from_lines`.
 
-/// Returns the planned text file path + content for each caption chunk
-/// in the track, ready to be written to disk by the caller.
+/// A single wrapped line of caption text, ready to become one
+/// drawtext filter. Multiple lines are produced per caption chunk
+/// (one per wrapped line); they share timing with their parent
+/// chunk and stack vertically via `line_index` / `total_lines`.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct WrappedCaptionLine {
+    /// Absolute path to the (pre-written) text file containing
+    /// this line's content.
+    pub file_path: String,
+    /// Content to write to `file_path`. The caller writes this
+    /// before invoking ffmpeg.
+    pub file_content: String,
+    /// Parent chunk's absolute start time in the final video (ms).
+    pub chunk_start_ms: u64,
+    /// Parent chunk's absolute end time (ms).
+    pub chunk_end_ms: u64,
+    /// 0-based index of this line within its parent chunk.
+    pub line_index: u32,
+    /// Total number of lines in the parent chunk.
+    pub total_lines: u32,
+}
+
+/// Plans the per-line caption layout for a track: wraps each chunk
+/// at the frame's character budget, then emits one `WrappedCaptionLine`
+/// per wrapped line. The caller writes each line's `file_content` to
+/// its `file_path` before running ffmpeg.
 ///
-/// Path scheme: `<dir>/caption_NNNN.txt` (zero-padded sequential index).
-/// Content: the wrapped caption text with literal `\n` newlines for
-/// each line break.
-pub fn caption_text_file_plan(
+/// Path scheme: `<dir>/caption_CCCC_LL.txt` where CCCC is the 0-padded
+/// parent chunk index and LL is the 0-padded line index within that
+/// chunk. Keeps lines easy to identify when debugging.
+pub fn plan_caption_lines(
     track: &CaptionTrack,
     dir: &Path,
     frame_width: u32,
     frame_height: u32,
-) -> Vec<(PathBuf, String)> {
+) -> Vec<WrappedCaptionLine> {
     if track.chunks.is_empty() {
         return Vec::new();
     }
     let font_size = compute_font_size(frame_height, track.style.font_scale);
     let budget = chars_per_line(frame_width, font_size, 0.08);
-    track
-        .chunks
-        .iter()
-        .enumerate()
-        .map(|(i, chunk)| {
-            let path = dir.join(format!("caption_{i:04}.txt"));
-            let content = wrap_caption_text(&chunk.text, budget);
-            (path, content)
-        })
-        .collect()
+
+    let mut result: Vec<WrappedCaptionLine> = Vec::new();
+    for (chunk_idx, chunk) in track.chunks.iter().enumerate() {
+        let wrapped = wrap_caption_text(&chunk.text, budget);
+        let lines: Vec<&str> = wrapped
+            .split('\n')
+            .map(|line| line.trim())
+            .filter(|line| !line.is_empty())
+            .collect();
+        let total_lines = lines.len() as u32;
+        if total_lines == 0 {
+            continue;
+        }
+        for (line_idx, line_text) in lines.iter().enumerate() {
+            let file_path = dir
+                .join(format!("caption_{chunk_idx:04}_{line_idx:02}.txt"))
+                .to_string_lossy()
+                .to_string();
+            result.push(WrappedCaptionLine {
+                file_path,
+                file_content: line_text.to_string(),
+                chunk_start_ms: chunk.start_ms,
+                chunk_end_ms: chunk.end_ms,
+                line_index: line_idx as u32,
+                total_lines,
+            });
+        }
+    }
+    result
 }
 
 // ─── Word wrapping ───────────────────────────────────────────────
@@ -223,71 +267,97 @@ pub fn compute_font_size(frame_height: u32, font_scale: f32) -> u32 {
     (base * font_scale).round().max(14.0) as u32
 }
 
-/// Returns the y-coordinate expression for drawtext's `y=` parameter
-/// based on placement. Uses ffmpeg's expression syntax (`th` = text
-/// height, `h` = frame height) so the position responds to multi-line
-/// captions automatically.
-fn placement_y_expr(placement: CaptionPlacement) -> &'static str {
+/// Computes the top-y pixel coordinate for a single caption line
+/// given its placement within the parent chunk's line block.
+///
+/// Instead of using ffmpeg expressions with `th` (text height),
+/// we precompute the pixel y for each line from the known font
+/// size, line count, and frame height. This is more reliable —
+/// `th` only measures the single line drawtext is currently
+/// rendering, so multi-drawtext blocks can't self-stack via `th`.
+pub fn compute_line_y(
+    placement: CaptionPlacement,
+    line_index: u32,
+    total_lines: u32,
+    line_height: u32,
+    frame_height: u32,
+) -> i32 {
+    let i = line_index as i32;
+    let n = total_lines as i32;
+    let lh = line_height as i32;
+    let h = frame_height as i32;
     match placement {
-        // Bottom of caption sits ~12% from the bottom edge.
-        CaptionPlacement::LowerThird => "h-th-(h*0.10)",
-        // Top of caption sits ~12% from the top edge.
-        CaptionPlacement::UpperThird => "(h*0.12)",
-        // Vertically centered.
-        CaptionPlacement::Center => "(h-th)/2",
+        // Block's bottom edge sits at 88% of frame height (12% gap
+        // from the bottom of the frame).
+        CaptionPlacement::LowerThird => {
+            let block_bottom = (h * 88) / 100;
+            block_bottom - (n - i) * lh
+        }
+        // Block's top edge sits at 12% of frame height (leaves space
+        // above for the phone status bar on social-vertical).
+        CaptionPlacement::UpperThird => {
+            let block_top = (h * 12) / 100;
+            block_top + i * lh
+        }
+        // Block is vertically centered.
+        CaptionPlacement::Center => {
+            let block_top = (h - n * lh) / 2;
+            block_top + i * lh
+        }
     }
 }
 
-/// Builds an ffmpeg drawtext filter fragment for a single caption,
-/// referencing its pre-written text file via `textfile=`. Used by
-/// `build_drawtext_chain`.
+/// Line-to-line spacing (in pixels) added to the font size to
+/// compute the line height. Matches the previous `line_spacing=6`
+/// drawtext parameter we used for multi-line captions.
+const CAPTION_LINE_SPACING: u32 = 6;
+
+pub fn compute_line_height(font_size: u32) -> u32 {
+    font_size + CAPTION_LINE_SPACING
+}
+
+/// Builds an ffmpeg drawtext filter fragment for a single wrapped
+/// caption line. Used by `build_drawtext_chain_from_lines`.
 ///
-/// Quoting strategy: NO single quotes around path-style values. The
-/// option-level parser splits on `:` and treats single quotes as
-/// literal characters, so we escape colons explicitly via
-/// `escape_font_path`. The chain-level parser sees the escapes
-/// (backslashes are preserved through it) and the option-level
-/// parser then strips them. The `enable=` expression is wrapped in
-/// single quotes because that's an EXPRESSION value (not a path),
-/// where single quotes do work as expected.
+/// Each wrapped line becomes its own drawtext filter with a fixed
+/// pixel y coordinate computed from `line_index` + `total_lines`.
+/// Since there are no newlines in the text file, drawtext has no
+/// opportunity to render LF bytes as visible glyphs.
 ///
-/// Result example:
-///   drawtext=fontfile=/path/to/font.ttf\
-///     :textfile=/tmp/session/caption_0000.txt\
-///     :x=(w-tw)/2:y=h-th-(h*0.10):fontsize=48:fontcolor=white\
-///     :borderw=3:bordercolor=black@0.85\
-///     :box=1:boxcolor=black@0.55:boxborderw=12\
-///     :enable='between(t\,1.500\,4.500)'
-fn build_single_drawtext(
-    chunk: &CaptionChunk,
+/// Quoting strategy: NO single quotes around path-style values.
+/// `escape_font_path` double-escapes colons (`\\:`) so they survive
+/// both the chain parser and the option parser. The `enable=`
+/// expression IS wrapped in single quotes because expression values
+/// follow different parser rules.
+fn build_line_drawtext(
+    line: &WrappedCaptionLine,
     font_path_escaped: &str,
-    text_file_escaped: &str,
     font_size: u32,
     placement: CaptionPlacement,
+    frame_height: u32,
 ) -> String {
-    let y_expr = placement_y_expr(placement);
-    let start_sec = (chunk.start_ms as f64) / 1000.0;
-    let end_sec = (chunk.end_ms as f64) / 1000.0;
+    let text_file_escaped = escape_font_path(&line.file_path);
+    let line_height = compute_line_height(font_size);
+    let y = compute_line_y(
+        placement,
+        line.line_index,
+        line.total_lines,
+        line_height,
+        frame_height,
+    );
+    let start_sec = (line.chunk_start_ms as f64) / 1000.0;
+    let end_sec = (line.chunk_end_ms as f64) / 1000.0;
 
     // Note on `enable=`: ffmpeg's filter chain parser interprets
-    // commas as chain delimiters, so the commas inside
-    // `between(t,start,end)` MUST be backslash-escaped or they get
-    // reinterpreted as chain breaks. The single quotes on this
-    // expression value DO work because expression values follow
-    // different parser rules from option=value pair separators.
-    //
-    // `text_shaping=0`: with the default HarfBuzz shaper, variable
-    // fonts like CrimsonPro render the U+000A LINE FEED byte as a
-    // visible .notdef tofu box at each wrap point (and still break
-    // to the next line). Disabling text shaping switches to plain
-    // FreeType rendering, which treats LF as a pure line break with
-    // no visible glyph.
+    // commas as chain delimiters even inside single-quoted args,
+    // so the commas inside `between(t,start,end)` MUST be backslash-
+    // escaped.
     format!(
         "drawtext=fontfile={font_path_escaped}\
 :textfile={text_file_escaped}\
 :text_shaping=0\
 :x=(w-text_w)/2\
-:y={y_expr}\
+:y={y}\
 :fontsize={font_size}\
 :fontcolor=white\
 :borderw=3\
@@ -295,7 +365,6 @@ fn build_single_drawtext(
 :box=1\
 :boxcolor=black@0.55\
 :boxborderw=12\
-:line_spacing=6\
 :enable='between(t\\,{start_sec:.3}\\,{end_sec:.3})'",
     )
 }
@@ -322,47 +391,35 @@ pub fn escape_font_path(path: &str) -> String {
     path.replace('\\', "/").replace(':', "\\\\:")
 }
 
-/// Builds the chained drawtext filter expression for an entire
-/// caption track. Returns an empty string if there are no chunks
-/// or if the caption_text_files list is empty.
+/// Builds the chained drawtext filter expression from a list of
+/// pre-planned wrapped caption lines. Each line becomes its own
+/// drawtext filter with a precomputed stacked y coordinate.
 ///
-/// `caption_text_files` must be parallel to `track.chunks` — one
-/// pre-written file per chunk. The caller is responsible for
-/// producing them via `caption_text_file_plan` and writing them
-/// to disk before invoking ffmpeg.
-///
-/// The chain is comma-separated (filter chain syntax). Each chunk
-/// becomes one drawtext, and ffmpeg composes them together. Only
-/// the chunks whose [start_ms, end_ms] overlaps the current
-/// playhead are visible at any moment, thanks to `enable=`.
-pub fn build_drawtext_chain(
-    track: &CaptionTrack,
+/// Returns an empty string when `lines` is empty. The chain is
+/// comma-separated (filter chain syntax). Only the lines whose
+/// parent chunk's [chunk_start_ms, chunk_end_ms] overlaps the
+/// current playhead are visible, via per-line `enable=`.
+pub fn build_drawtext_chain_from_lines(
+    lines: &[WrappedCaptionLine],
     font_path: &str,
-    caption_text_files: &[PathBuf],
+    placement: CaptionPlacement,
+    font_scale: f32,
     frame_height: u32,
 ) -> String {
-    if track.chunks.is_empty() || caption_text_files.is_empty() {
+    if lines.is_empty() {
         return String::new();
     }
-    if track.chunks.len() != caption_text_files.len() {
-        // Defensive: parallel arrays must match. The caller built
-        // these from the same source so this should never happen.
-        return String::new();
-    }
-    let font_size = compute_font_size(frame_height, track.style.font_scale);
-    let font_path_quoted = escape_font_path(font_path);
-    let parts: Vec<String> = track
-        .chunks
+    let font_size = compute_font_size(frame_height, font_scale);
+    let font_path_escaped = escape_font_path(font_path);
+    let parts: Vec<String> = lines
         .iter()
-        .zip(caption_text_files.iter())
-        .map(|(chunk, file_path)| {
-            let text_file_quoted = escape_font_path(&file_path.to_string_lossy());
-            build_single_drawtext(
-                chunk,
-                &font_path_quoted,
-                &text_file_quoted,
+        .map(|line| {
+            build_line_drawtext(
+                line,
+                &font_path_escaped,
                 font_size,
-                track.style.placement,
+                placement,
+                frame_height,
             )
         })
         .collect();
@@ -393,11 +450,11 @@ mod tests {
         }
     }
 
-    // ─── caption_text_file_plan ──────────────────────────────
+    // ─── plan_caption_lines ──────────────────────────────────
 
     #[test]
     fn empty_track_produces_empty_plan() {
-        let plan = caption_text_file_plan(
+        let plan = plan_caption_lines(
             &track_with(vec![]),
             Path::new("/tmp/sess"),
             1920,
@@ -407,32 +464,43 @@ mod tests {
     }
 
     #[test]
-    fn plan_emits_one_file_per_chunk_with_zero_padded_index() {
-        let plan = caption_text_file_plan(
-            &track_with(vec![chunk("a", 0, 1000), chunk("b", 1000, 2000)]),
-            Path::new("/tmp/sess"),
-            1920,
-            1080,
-        );
-        assert_eq!(plan.len(), 2);
-        assert!(plan[0].0.to_string_lossy().ends_with("caption_0000.txt"));
-        assert!(plan[1].0.to_string_lossy().ends_with("caption_0001.txt"));
-    }
-
-    #[test]
-    fn plan_content_is_the_word_wrapped_text() {
-        let plan = caption_text_file_plan(
+    fn single_line_chunk_produces_one_entry() {
+        let plan = plan_caption_lines(
             &track_with(vec![chunk("hello world", 0, 1000)]),
             Path::new("/tmp/sess"),
             1920,
             1080,
         );
-        assert_eq!(plan[0].1, "hello world");
+        assert_eq!(plan.len(), 1);
+        assert_eq!(plan[0].file_content, "hello world");
+        assert_eq!(plan[0].line_index, 0);
+        assert_eq!(plan[0].total_lines, 1);
+        assert!(plan[0].file_path.ends_with("caption_0000_00.txt"));
     }
 
     #[test]
-    fn plan_content_inserts_newlines_for_long_text() {
-        // Vertical preset so the budget is tight enough to wrap.
+    fn multiple_chunks_get_distinct_chunk_indexes() {
+        let plan = plan_caption_lines(
+            &track_with(vec![
+                chunk("first", 0, 1000),
+                chunk("second", 1000, 2000),
+            ]),
+            Path::new("/tmp/sess"),
+            1920,
+            1080,
+        );
+        assert_eq!(plan.len(), 2);
+        assert!(plan[0].file_path.ends_with("caption_0000_00.txt"));
+        assert!(plan[1].file_path.ends_with("caption_0001_00.txt"));
+        // Each chunk's single line has total_lines = 1
+        assert_eq!(plan[0].total_lines, 1);
+        assert_eq!(plan[1].total_lines, 1);
+    }
+
+    #[test]
+    fn long_chunk_wraps_to_multiple_entries() {
+        // Vertical preset: narrow frame + 1.4x font scale tightens
+        // the per-line budget enough to force wrapping.
         let long = "the quick brown fox jumps over the lazy dog and then runs back home through the forest while the moon rises and the stars begin to twinkle";
         let track = CaptionTrack {
             chunks: vec![chunk(long, 0, 5000)],
@@ -441,8 +509,76 @@ mod tests {
                 font_scale: 1.4,
             },
         };
-        let plan = caption_text_file_plan(&track, Path::new("/tmp/sess"), 1080, 1920);
-        assert!(plan[0].1.contains('\n'), "expected wrapped newlines");
+        let plan = plan_caption_lines(&track, Path::new("/tmp/sess"), 1080, 1920);
+        assert!(plan.len() > 1, "expected wrapping into multiple lines");
+        // Every entry in this chunk shares total_lines + chunk timing
+        let total = plan[0].total_lines;
+        for (i, entry) in plan.iter().enumerate() {
+            assert_eq!(entry.total_lines, total);
+            assert_eq!(entry.line_index, i as u32);
+            assert_eq!(entry.chunk_start_ms, 0);
+            assert_eq!(entry.chunk_end_ms, 5000);
+            // File path encodes both chunk index and line index
+            assert!(
+                entry.file_path.contains(&format!("caption_0000_{i:02}.txt")),
+                "unexpected filename: {}",
+                entry.file_path,
+            );
+            // Critically: NO line contains a newline — each entry is
+            // a single wrapped line, not a chunk with embedded breaks.
+            assert!(
+                !entry.file_content.contains('\n'),
+                "line {} contains an embedded newline: {:?}",
+                i,
+                entry.file_content,
+            );
+        }
+    }
+
+    // ─── compute_line_y ──────────────────────────────────────
+
+    #[test]
+    fn lower_third_single_line_sits_at_expected_position() {
+        // Single line, h=1080, line_height=50.
+        // block_bottom = 1080 * 0.88 = 950
+        // y = 950 - (1 - 0) * 50 = 900
+        let y = compute_line_y(CaptionPlacement::LowerThird, 0, 1, 50, 1080);
+        assert_eq!(y, 900);
+    }
+
+    #[test]
+    fn lower_third_multi_line_stacks_correctly() {
+        // 3 lines, h=1080, lh=50.
+        // Line 0 y = 950 - 150 = 800
+        // Line 1 y = 950 - 100 = 850
+        // Line 2 y = 950 - 50 = 900
+        assert_eq!(compute_line_y(CaptionPlacement::LowerThird, 0, 3, 50, 1080), 800);
+        assert_eq!(compute_line_y(CaptionPlacement::LowerThird, 1, 3, 50, 1080), 850);
+        assert_eq!(compute_line_y(CaptionPlacement::LowerThird, 2, 3, 50, 1080), 900);
+    }
+
+    #[test]
+    fn upper_third_stacks_downward_from_top_offset() {
+        // block_top = 1920 * 0.12 = 230
+        // Line 0 y = 230
+        // Line 1 y = 230 + 80 = 310
+        assert_eq!(compute_line_y(CaptionPlacement::UpperThird, 0, 2, 80, 1920), 230);
+        assert_eq!(compute_line_y(CaptionPlacement::UpperThird, 1, 2, 80, 1920), 310);
+    }
+
+    #[test]
+    fn center_block_is_vertically_centered() {
+        // 3 lines at lh=50 → block height = 150
+        // block_top = (1080 - 150) / 2 = 465
+        assert_eq!(compute_line_y(CaptionPlacement::Center, 0, 3, 50, 1080), 465);
+        assert_eq!(compute_line_y(CaptionPlacement::Center, 1, 3, 50, 1080), 515);
+        assert_eq!(compute_line_y(CaptionPlacement::Center, 2, 3, 50, 1080), 565);
+    }
+
+    #[test]
+    fn compute_line_height_adds_spacing_to_font_size() {
+        assert_eq!(compute_line_height(40), 46);
+        assert_eq!(compute_line_height(0), 6);
     }
 
     // ─── wrap_caption_text ───────────────────────────────────
@@ -565,60 +701,48 @@ mod tests {
         );
     }
 
-    // ─── placement_y_expr ────────────────────────────────────
+    // ─── build_drawtext_chain_from_lines ─────────────────────
 
-    #[test]
-    fn lower_third_y_uses_bottom_anchored_expression() {
-        assert_eq!(placement_y_expr(CaptionPlacement::LowerThird), "h-th-(h*0.10)");
+    /// Helper: plans caption lines from a track in /tmp/sess.
+    fn planned_lines(
+        track: &CaptionTrack,
+        frame_width: u32,
+        frame_height: u32,
+    ) -> Vec<WrappedCaptionLine> {
+        plan_caption_lines(track, Path::new("/tmp/sess"), frame_width, frame_height)
     }
 
     #[test]
-    fn upper_third_y_uses_top_offset_expression() {
-        assert_eq!(placement_y_expr(CaptionPlacement::UpperThird), "(h*0.12)");
+    fn empty_lines_produces_empty_chain() {
+        let lines: Vec<WrappedCaptionLine> = Vec::new();
+        assert_eq!(
+            build_drawtext_chain_from_lines(
+                &lines,
+                "/font.ttf",
+                CaptionPlacement::LowerThird,
+                1.0,
+                1080,
+            ),
+            "",
+        );
     }
 
     #[test]
-    fn center_y_centers_text_block() {
-        assert_eq!(placement_y_expr(CaptionPlacement::Center), "(h-th)/2");
-    }
-
-    // ─── build_drawtext_chain ────────────────────────────────
-
-    /// Helper: produces a parallel caption_text_files vec with
-    /// the same length as the track's chunks. Used by the unit
-    /// tests to satisfy the new API contract.
-    fn fake_caption_files(track: &CaptionTrack) -> Vec<PathBuf> {
-        (0..track.chunks.len())
-            .map(|i| PathBuf::from(format!("/tmp/caption_{i:04}.txt")))
-            .collect()
-    }
-
-    #[test]
-    fn empty_track_produces_empty_chain() {
-        let track = track_with(vec![]);
-        let files = fake_caption_files(&track);
-        assert_eq!(build_drawtext_chain(&track, "/font.ttf", &files, 1080), "");
-    }
-
-    #[test]
-    fn mismatched_files_array_produces_empty_chain() {
-        // Defensive: caller must provide one file per chunk.
-        let track = track_with(vec![chunk("a", 0, 1000), chunk("b", 1000, 2000)]);
-        let files = vec![PathBuf::from("/tmp/only_one.txt")];
-        assert_eq!(build_drawtext_chain(&track, "/font.ttf", &files, 1080), "");
-    }
-
-    #[test]
-    fn single_chunk_produces_single_drawtext() {
+    fn single_line_produces_single_drawtext() {
         let track = track_with(vec![chunk("Hello world", 1500, 4500)]);
-        let files = fake_caption_files(&track);
-        let chain = build_drawtext_chain(&track, "/font.ttf", &files, 1080);
+        let lines = planned_lines(&track, 1920, 1080);
+        let chain = build_drawtext_chain_from_lines(
+            &lines,
+            "/font.ttf",
+            track.style.placement,
+            track.style.font_scale,
+            1080,
+        );
         assert!(chain.starts_with("drawtext="));
-        // Path values are NOT single-quoted (the option parser doesn't
-        // respect quotes); colons are explicitly escaped instead.
-        assert!(chain.contains("textfile=/tmp/caption_0000.txt"));
-        // Expression values (enable=) ARE single-quoted because the
-        // expression parser handles quotes correctly.
+        // Paths are NOT single-quoted; colons are double-escaped
+        // for the two-level parser.
+        assert!(chain.contains("textfile=/tmp/sess/caption_0000_00.txt"));
+        // Expression values (enable=) ARE single-quoted.
         assert!(
             chain.contains(r"enable='between(t\,1.500\,4.500)'"),
             "expected escaped between expression in: {chain}",
@@ -633,66 +757,116 @@ mod tests {
             chunk("Second", 2000, 4000),
             chunk("Third", 4000, 6000),
         ]);
-        let files = fake_caption_files(&track);
-        let chain = build_drawtext_chain(&track, "/font.ttf", &files, 1080);
+        let lines = planned_lines(&track, 1920, 1080);
+        let chain = build_drawtext_chain_from_lines(
+            &lines,
+            "/font.ttf",
+            track.style.placement,
+            track.style.font_scale,
+            1080,
+        );
         assert_eq!(chain.matches("drawtext=").count(), 3);
         assert_eq!(chain.matches(",drawtext=").count(), 2);
-        // Each chunk references its own text file (no quotes)
-        assert!(chain.contains("textfile=/tmp/caption_0000.txt"));
-        assert!(chain.contains("textfile=/tmp/caption_0001.txt"));
-        assert!(chain.contains("textfile=/tmp/caption_0002.txt"));
+        assert!(chain.contains("caption_0000_00.txt"));
+        assert!(chain.contains("caption_0001_00.txt"));
+        assert!(chain.contains("caption_0002_00.txt"));
+    }
+
+    #[test]
+    fn long_chunk_produces_one_drawtext_per_wrapped_line() {
+        // Vertical preset tightens the budget enough to force
+        // multi-line wrapping.
+        let long = "the quick brown fox jumps over the lazy dog and then runs back home through the forest while the moon rises and the stars begin to twinkle";
+        let track = CaptionTrack {
+            chunks: vec![chunk(long, 0, 5000)],
+            style: CaptionStyle {
+                placement: CaptionPlacement::UpperThird,
+                font_scale: 1.4,
+            },
+        };
+        let lines = planned_lines(&track, 1080, 1920);
+        assert!(lines.len() > 1);
+        let chain = build_drawtext_chain_from_lines(
+            &lines,
+            "/font.ttf",
+            track.style.placement,
+            track.style.font_scale,
+            1920,
+        );
+        // Exactly one drawtext per wrapped line
+        assert_eq!(chain.matches("drawtext=").count(), lines.len());
+        // Every drawtext filter shares the parent chunk's timing
+        assert_eq!(
+            chain.matches(r"between(t\,0.000\,5.000)").count(),
+            lines.len(),
+        );
+        // All filenames belong to the same chunk
+        for i in 0..lines.len() {
+            assert!(chain.contains(&format!("caption_0000_{i:02}.txt")));
+        }
     }
 
     #[test]
     fn drawtext_includes_font_path() {
         let track = track_with(vec![chunk("hi", 0, 1000)]);
-        let files = fake_caption_files(&track);
-        let chain = build_drawtext_chain(&track, "/path/to/font.ttf", &files, 1080);
+        let lines = planned_lines(&track, 1920, 1080);
+        let chain = build_drawtext_chain_from_lines(
+            &lines,
+            "/path/to/font.ttf",
+            track.style.placement,
+            track.style.font_scale,
+            1080,
+        );
         assert!(chain.contains("fontfile=/path/to/font.ttf"));
     }
 
     #[test]
     fn windows_font_path_has_double_escaped_colon() {
         let track = track_with(vec![chunk("hi", 0, 1000)]);
-        let files = fake_caption_files(&track);
-        let chain = build_drawtext_chain(
-            &track,
+        let lines = planned_lines(&track, 1920, 1080);
+        let chain = build_drawtext_chain_from_lines(
+            &lines,
             r"C:\Windows\Fonts\arial.ttf",
-            &files,
+            track.style.placement,
+            track.style.font_scale,
             1080,
         );
-        // Drive colon double-escaped (chain parser → option parser),
-        // backslashes normalized to forward slashes.
         assert!(chain.contains(r"fontfile=C\\:/Windows/Fonts/arial.ttf"));
     }
 
     #[test]
-    fn drawtext_uses_lower_third_y_for_default_placement() {
+    fn drawtext_uses_precomputed_pixel_y_not_expressions() {
+        // The new API emits concrete pixel y values, not ffmpeg
+        // expressions like `h-th-(h*0.10)`. This is the key change
+        // that enables per-line stacking.
         let track = track_with(vec![chunk("hi", 0, 1000)]);
-        let files = fake_caption_files(&track);
-        let chain = build_drawtext_chain(&track, "/font.ttf", &files, 1080);
-        assert!(chain.contains("h-th-(h*0.10)"));
-    }
-
-    #[test]
-    fn drawtext_uses_upper_third_y_for_vertical_preset() {
-        let track = CaptionTrack {
-            chunks: vec![chunk("hi", 0, 1000)],
-            style: CaptionStyle {
-                placement: CaptionPlacement::UpperThird,
-                font_scale: 1.4,
-            },
-        };
-        let files = fake_caption_files(&track);
-        let chain = build_drawtext_chain(&track, "/font.ttf", &files, 1920);
-        assert!(chain.contains("(h*0.12)"));
+        let lines = planned_lines(&track, 1920, 1080);
+        let chain = build_drawtext_chain_from_lines(
+            &lines,
+            "/font.ttf",
+            track.style.placement,
+            track.style.font_scale,
+            1080,
+        );
+        assert!(!chain.contains("h-th-"));
+        // Should contain a concrete numeric y= value
+        assert!(
+            chain.contains(":y=") && !chain.contains(":y=h"),
+            "expected pixel y value in: {chain}",
+        );
     }
 
     #[test]
     fn drawtext_includes_box_and_border_styling() {
         let track = track_with(vec![chunk("hi", 0, 1000)]);
-        let files = fake_caption_files(&track);
-        let chain = build_drawtext_chain(&track, "/font.ttf", &files, 1080);
+        let lines = planned_lines(&track, 1920, 1080);
+        let chain = build_drawtext_chain_from_lines(
+            &lines,
+            "/font.ttf",
+            track.style.placement,
+            track.style.font_scale,
+            1080,
+        );
         assert!(chain.contains("box=1"));
         assert!(chain.contains("borderw=3"));
         assert!(chain.contains("fontcolor=white"));
@@ -700,22 +874,31 @@ mod tests {
 
     #[test]
     fn drawtext_disables_text_shaping() {
-        // text_shaping=0 is required to stop variable fonts from
-        // rendering LF bytes as visible tofu boxes at wrap points.
+        // text_shaping=0 is kept as a belt-and-braces measure even
+        // though the multi-drawtext approach makes it unnecessary.
         let track = track_with(vec![chunk("hi", 0, 1000)]);
-        let files = fake_caption_files(&track);
-        let chain = build_drawtext_chain(&track, "/font.ttf", &files, 1080);
-        assert!(
-            chain.contains("text_shaping=0"),
-            "expected text_shaping=0 in: {chain}",
+        let lines = planned_lines(&track, 1920, 1080);
+        let chain = build_drawtext_chain_from_lines(
+            &lines,
+            "/font.ttf",
+            track.style.placement,
+            track.style.font_scale,
+            1080,
         );
+        assert!(chain.contains("text_shaping=0"));
     }
 
     #[test]
     fn drawtext_font_size_uses_compute_font_size() {
         let track = track_with(vec![chunk("hi", 0, 1000)]);
-        let files = fake_caption_files(&track);
-        let chain = build_drawtext_chain(&track, "/font.ttf", &files, 1080);
+        let lines = planned_lines(&track, 1920, 1080);
+        let chain = build_drawtext_chain_from_lines(
+            &lines,
+            "/font.ttf",
+            track.style.placement,
+            track.style.font_scale,
+            1080,
+        );
         let expected_size = compute_font_size(1080, 1.0);
         assert!(chain.contains(&format!("fontsize={expected_size}")));
     }
@@ -729,8 +912,14 @@ mod tests {
                 font_scale: 1.4,
             },
         };
-        let files = fake_caption_files(&scaled);
-        let chain = build_drawtext_chain(&scaled, "/font.ttf", &files, 1080);
+        let lines = planned_lines(&scaled, 1920, 1080);
+        let chain = build_drawtext_chain_from_lines(
+            &lines,
+            "/font.ttf",
+            scaled.style.placement,
+            scaled.style.font_scale,
+            1080,
+        );
         let expected_size = compute_font_size(1080, 1.4);
         assert!(chain.contains(&format!("fontsize={expected_size}")));
     }

@@ -20,7 +20,7 @@ import { useProjectStore } from "@/stores/projectStore";
 import { useAssetStore } from "@/stores/assetStore";
 import { useToastStore } from "@/stores/toastStore";
 import { zoneToGraph, GRAPH } from "@/lib/zoneToGraph";
-import { compassLayout } from "@/lib/dagreLayout";
+import { compassLayout, type LayoutMeasurement } from "@/lib/dagreLayout";
 import { addRoom, addExit, deleteExit, generateRoomId } from "@/lib/zoneEdits";
 import { saveZone } from "@/lib/saveZone";
 import type { WorldFile } from "@/types/world";
@@ -219,12 +219,21 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
   }, [layoutEdges, layoutNodes, setEdges, setNodes, zoneState, reactFlow]);
 
   // ─── Re-layout ───────────────────────────────────────────────────
-  // Discard manual positions and re-run the BFS/compass layout, then
-  // fit the viewport to the result.
+  // Discard manual positions and re-run the BFS/compass layout using the
+  // currently measured room sizes (so variable-height rooms don't overlap),
+  // then fit the viewport to the result.
   const handleRelayout = useCallback(() => {
     if (!zoneState) return;
+    const measurements = new Map<string, LayoutMeasurement>();
+    for (const node of reactFlow.getNodes()) {
+      const width = node.measured?.width ?? node.width;
+      const height = node.measured?.height ?? node.height;
+      if (width && height) {
+        measurements.set(node.id, { width, height });
+      }
+    }
     const { nodes: rawNodes } = zoneToGraph(zoneState.data);
-    const fresh = compassLayout(rawNodes, zoneState.data);
+    const fresh = compassLayout(rawNodes, zoneState.data, measurements);
     setNodes(fresh);
     setTimeout(() => {
       reactFlow.fitView({ padding: 0.2, duration: 400 });

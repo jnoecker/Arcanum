@@ -121,6 +121,24 @@ export function getFormatForAssetType(assetType: AssetType): string {
 /** Universal negative prompt — appended to all generations */
 export const UNIVERSAL_NEGATIVE = `text, words, letters, runes, glyphs, watermarks, logos, signatures, modern technology, computers, user interfaces, neon colors, hot pink, electric blue, lime green, saturated primaries, pure black, harsh shadows, hard edges, sharp rim lights, spotlight effects, high-contrast chiaroscuro, brutalist shapes, mechanical rigidity, flat design, cartoon, anime, photorealism, studio lighting, stock photo aesthetic, horror elements, gore, nudity, nude, naked, bare chest, exposed breasts, cleavage, nsfw, topless, revealing, skimpy, sexualized`;
 
+/**
+ * Additional negative terms for empty-scene backgrounds (rooms, shops, locations).
+ * Keeps living figures out of environment art so mob/NPC sprites composited on top
+ * don't produce creepy doubles of inhabitants baked into the background.
+ */
+export const EMPTY_SCENE_NEGATIVE = `person, people, human, humans, humanoid, humanoids, character, characters, figure, figures, silhouette, silhouettes, man, woman, men, women, child, children, face, faces, portrait, crowd, crowds, creature, creatures, beast, beasts, monster, monsters, npc, merchant, shopkeeper, guard, villager, adventurer, traveler, customer, patron, worker`;
+
+/**
+ * Pick a negative prompt for the given asset type. Backgrounds/rooms/shops get
+ * additional exclusions for living figures.
+ */
+export function getNegativePrompt(assetType?: string): string {
+  if (assetType === "background") {
+    return `${UNIVERSAL_NEGATIVE}, ${EMPTY_SCENE_NEGATIVE}`;
+  }
+  return UNIVERSAL_NEGATIVE;
+}
+
 /** Appended verbatim to every gentle_magic prompt after LLM enhancement. */
 export const GENTLE_MAGIC_SUFFIX = `Rendered in the Surreal Gentle Magic style (surreal_softmagic_v1). Digital fantasy painting in the style of a dreamy storybook illustration — NOT a photograph, NOT a 3D render, NOT concept art. Visible painterly brushwork with soft textured rendering throughout.
 

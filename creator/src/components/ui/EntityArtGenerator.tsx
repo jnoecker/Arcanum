@@ -4,7 +4,7 @@ import { open } from "@tauri-apps/plugin-dialog";
 import { useAssetStore } from "@/stores/assetStore";
 import { useProjectStore } from "@/stores/projectStore";
 import { useImageSrc, isLegacyImagePath } from "@/lib/useImageSrc";
-import { getEnhanceSystemPrompt, ART_STYLE_LABELS, UNIVERSAL_NEGATIVE, getStyleSuffix, type ArtStyle } from "@/lib/arcanumPrompts";
+import { getEnhanceSystemPrompt, ART_STYLE_LABELS, getNegativePrompt, getStyleSuffix, type ArtStyle } from "@/lib/arcanumPrompts";
 import type { ArtStyleSurface } from "@/lib/loreGeneration";
 import { IMAGE_MODELS, ENTITY_DIMENSIONS, DIMENSION_PRESETS, imageGenerateCommand, resolveImageModel, requestsTransparentBackground } from "@/types/assets";
 import type { AssetContext, GeneratedImage } from "@/types/assets";
@@ -229,7 +229,7 @@ export function EntityArtGenerator({
 
       const params = {
         prompt: finalPrompt,
-        negativePrompt: UNIVERSAL_NEGATIVE,
+        negativePrompt: getNegativePrompt(assetType),
         model: modelId,
         width: activeDims.width,
         height: activeDims.height,

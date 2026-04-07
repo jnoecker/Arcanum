@@ -12,7 +12,7 @@ import {
   entityPrompt,
   type DefaultImageKind,
 } from "@/lib/entityPrompts";
-import { getEnhanceSystemPrompt, UNIVERSAL_NEGATIVE } from "@/lib/arcanumPrompts";
+import { getEnhanceSystemPrompt, getNegativePrompt } from "@/lib/arcanumPrompts";
 import { imageGenerateCommand, resolveImageModel, requestsTransparentBackground, type AssetContext, type AssetEntry, type GeneratedImage } from "@/types/assets";
 import { InlineError, Spinner } from "@/components/ui/FormWidgets";
 import type { WorldFile } from "@/types/world";
@@ -303,7 +303,7 @@ export function ZoneAssetWorkbench({ zoneId, world, onWorldChange }: ZoneAssetWo
     const assetType = assetTypeForKind(selectedKind);
     const image = await invoke<GeneratedImage>(command, {
       prompt,
-      negativePrompt: UNIVERSAL_NEGATIVE,
+      negativePrompt: getNegativePrompt(assetType),
       model: defaultModel.id,
       width: dimensions.width,
       height: dimensions.height,

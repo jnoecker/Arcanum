@@ -7,7 +7,7 @@ import {
   roomContext,
 } from "@/lib/entityPrompts";
 import {
-  UNIVERSAL_NEGATIVE,
+  getNegativePrompt,
   getEnhanceSystemPrompt,
   type ArtStyle,
 } from "@/lib/arcanumPrompts";
@@ -209,7 +209,7 @@ export async function runBatchArtGeneration(
 
         const image = await invoke<GeneratedImage>(command, {
           prompt: finalPrompt,
-          negativePrompt: UNIVERSAL_NEGATIVE,
+          negativePrompt: getNegativePrompt(batchAssetType),
           model: model?.id,
           width: dims.width,
           height: dims.height,

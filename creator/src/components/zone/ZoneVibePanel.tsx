@@ -4,7 +4,7 @@ import { useVibeStore } from "@/stores/vibeStore";
 import { useAssetStore } from "@/stores/assetStore";
 import { buildVibeInput } from "@/lib/vibePrompts";
 import { defaultImageContext, defaultImagePrompt, type DefaultImageKind } from "@/lib/entityPrompts";
-import { getEnhanceSystemPrompt, UNIVERSAL_NEGATIVE } from "@/lib/arcanumPrompts";
+import { getEnhanceSystemPrompt, getNegativePrompt } from "@/lib/arcanumPrompts";
 import { useImageSrc } from "@/lib/useImageSrc";
 import { imageGenerateCommand, resolveImageModel, requestsTransparentBackground, type GeneratedImage } from "@/types/assets";
 import type { WorldFile } from "@/types/world";
@@ -171,7 +171,7 @@ export function ZoneVibePanel({ zoneId, world, onWorldChange }: ZoneVibePanelPro
 
       const image = await invoke<GeneratedImage>(imageGenerateCommand(imageProvider), {
         prompt,
-        negativePrompt: UNIVERSAL_NEGATIVE,
+        negativePrompt: getNegativePrompt(assetType),
         model: defaultModel.id,
         width: dimensionsForKind(kind).width,
         height: dimensionsForKind(kind).height,

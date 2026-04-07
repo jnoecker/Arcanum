@@ -3,6 +3,14 @@ import { type ArtStyle, getPreamble, getStyleSuffix, FORMAT_BY_TYPE } from "./ar
 
 export type DefaultImageKind = "room" | "mob" | "item";
 
+/**
+ * Directive appended to room/shop/location contexts to keep living figures
+ * out of background art. Mobs and NPCs are rendered as separate sprites on top
+ * of the room background, so any figures baked into the background produce
+ * visible duplication.
+ */
+export const EMPTY_SCENE_DIRECTIVE = `IMPORTANT — empty environment only: depict the space itself with NO people, NO characters, NO creatures, NO humanoids, NO NPCs, and NO figures of any kind. Any inhabitants mentioned above are atmospheric context only — do not draw them. Mobs and NPCs will be composited on top as separate sprites, so any figures in the background cause visible duplication. If a person or creature is central to the scene's identity, represent them indirectly through belongings, an empty seat, tools mid-use, footprints, or a trail of light — never the figure itself.`;
+
 // ─── Context Builders ────────────────────────────────────────────
 // These build rich entity descriptions for the LLM to work with.
 // They are NOT image prompts — the LLM turns them into image prompts.
@@ -13,6 +21,7 @@ export function roomContext(roomId: string, room: RoomFile): string {
   if (room.description) parts.push(`Description: ${room.description}`);
   if (room.station) parts.push(`Contains a ${room.station.toLowerCase()} crafting station`);
   parts.push("Composition: wide landscape, suitable for a game room background");
+  parts.push(EMPTY_SCENE_DIRECTIVE);
   return parts.join("\n");
 }
 
@@ -48,7 +57,8 @@ export function shopContext(shopId: string, shop: ShopFile): string {
   if (shop.items && shop.items.length > 0) {
     parts.push(`Sells: ${shop.items.join(", ")}`);
   }
-  parts.push("Composition: wide landscape, a marketplace scene");
+  parts.push("Composition: wide landscape, an empty marketplace interior — storefront, shelves, wares, and architecture only");
+  parts.push(EMPTY_SCENE_DIRECTIVE);
   return parts.join("\n");
 }
 
@@ -112,12 +122,16 @@ export function roomPrompt(_roomId: string, room: RoomFile, style: ArtStyle = "g
 
 ${setting}${station} Rendered as a dreamlike interior space — soft lavender and pale blue ambient light diffusing through gentle atmospheric haze, floating motes of warm light drifting lazily, organic curves and lived-in details, moss green and dusty rose accents on natural surfaces, soft gold highlights on magical elements, painterly, luminous, breathable
 
+${EMPTY_SCENE_DIRECTIVE}
+
 ${getStyleSuffix("worldbuilding")}`;
   }
 
   return `${preamble}
 
-${setting}${station} Rendered as a baroque cosmic interior — deep indigo shadows, aurum-gold light pooling at architectural details, rococo scrollwork framing the space, blue-violet atmospheric mist, painterly, luminous, extremely detailed, wide composition suitable for a game room background`;
+${setting}${station} Rendered as a baroque cosmic interior — deep indigo shadows, aurum-gold light pooling at architectural details, rococo scrollwork framing the space, blue-violet atmospheric mist, painterly, luminous, extremely detailed, wide composition suitable for a game room background
+
+${EMPTY_SCENE_DIRECTIVE}`;
 }
 
 /** Build a full prompt for a mob portrait. */
@@ -201,14 +215,18 @@ export function shopPrompt(_shopId: string, shop: ShopFile, style: ArtStyle = "g
   if (style === "gentle_magic") {
     return `${FORMAT_BY_TYPE.room}. ${preamble}
 
-A gentle magical marketplace called "${shop.name}" — cozy shelves and display cases holding softly glowing artifacts, warm ambient light filtering through atmospheric haze, floating motes of gold drifting between items, lavender and pale blue tones in the shadows, dusty rose accents on wooden surfaces, a sense of wonder and quiet abundance, organic curves and lived-in warmth, painterly, luminous
+A gentle magical marketplace interior called "${shop.name}" — cozy shelves and display cases holding softly glowing artifacts, warm ambient light filtering through atmospheric haze, floating motes of gold drifting between items, lavender and pale blue tones in the shadows, dusty rose accents on wooden surfaces, a sense of wonder and quiet abundance, organic curves and lived-in warmth, painterly, luminous
+
+${EMPTY_SCENE_DIRECTIVE}
 
 ${getStyleSuffix("worldbuilding")}`;
   }
 
   return `${preamble}
 
-An arcane marketplace called "${shop.name}" — baroque display cases of glowing energy holding luminous artifacts, aurum-gold light pooling on shelves traced with rococo scrollwork, deep indigo shadows between alcoves, blue-violet atmospheric mist, a sense of abundance and ancient commerce, painterly, luminous, wide composition`;
+An arcane marketplace interior called "${shop.name}" — baroque display cases of glowing energy holding luminous artifacts, aurum-gold light pooling on shelves traced with rococo scrollwork, deep indigo shadows between alcoves, blue-violet atmospheric mist, a sense of abundance and ancient commerce, painterly, luminous, wide composition
+
+${EMPTY_SCENE_DIRECTIVE}`;
 }
 
 /** Build a full prompt for a trainer image. */
@@ -276,7 +294,9 @@ export function defaultImagePrompt(
 Fallback room illustration for ${world.zone}. ${vibeSection}
 ${zoneSummary}
 
-No named characters, no specific plot moment, and no readable text. Focus on an atmospheric establishing scene that can gracefully stand in for any unillustrated room in the zone. Painterly, luminous, softly enchanted, emotionally safe.
+Focus on an atmospheric establishing scene that can gracefully stand in for any unillustrated room in the zone. Painterly, luminous, softly enchanted, emotionally safe. No readable text.
+
+${EMPTY_SCENE_DIRECTIVE}
 
 ${getStyleSuffix("worldbuilding")}`;
       case "mob":
@@ -307,7 +327,9 @@ ${getStyleSuffix("worldbuilding")}`;
 Fallback room illustration for ${world.zone}. ${vibeSection}
 ${zoneSummary}
 
-Wide atmospheric environment art suitable for any room in the zone.`;
+Wide atmospheric environment art suitable for any room in the zone.
+
+${EMPTY_SCENE_DIRECTIVE}`;
     case "mob":
       return `${preamble}
 

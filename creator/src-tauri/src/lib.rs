@@ -18,6 +18,7 @@ mod project_settings;
 mod settings;
 mod sketch;
 mod video_encode;
+mod video_export;
 mod vibes;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -57,6 +58,10 @@ pub fn run() {
             runware::runware_generate_image,
             ffmpeg::check_ffmpeg_status,
             ffmpeg::ensure_ffmpeg_ready,
+            video_export::save_video_frame,
+            video_export::cleanup_video_export_session,
+            video_export::resolve_first_existing_path,
+            video_export::export_story_video,
             openai_images::openai_generate_image,
             openai_tts::openai_tts_generate,
             runware::runware_generate_audio,

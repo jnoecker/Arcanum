@@ -1,16 +1,19 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { useStoryStore } from "@/stores/storyStore";
 import { useLoreStore } from "@/stores/loreStore";
 import { useProjectStore } from "@/stores/projectStore";
 import { useZoneStore } from "@/stores/zoneStore";
+import { useAssetStore } from "@/stores/assetStore";
 import { loadStory, saveStory } from "@/lib/storyPersistence";
+import { useResolvedSceneData } from "@/lib/useResolvedSceneData";
 import { ActionButton, Spinner, EditableField } from "@/components/ui/FormWidgets";
 import { SceneTimeline } from "./SceneTimeline";
 import { SceneDetailEditor } from "./SceneDetailEditor";
 import { PresentationMode } from "./PresentationMode";
 import { StorySettingsSection } from "./StorySettingsSection";
 import { StoryAIToolbar } from "./StoryAIToolbar";
+import { StoryExportDialog } from "./StoryExportDialog";
 
 interface StoryEditorPanelProps {
   storyId: string;
@@ -32,6 +35,10 @@ export function StoryEditorPanel({ storyId }: StoryEditorPanelProps) {
   const [loading, setLoading] = useState(false);
   const [loadError, setLoadError] = useState(false);
   const [isPresenting, setIsPresenting] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+
+  // Stores needed for the export dialog (resolved scenes + audio paths).
+  const assetsDir = useAssetStore((s) => s.assetsDir);
 
   // Derive zone name from zoneStore
   const zones = useZoneStore((s) => s.zones);
@@ -172,11 +179,33 @@ export function StoryEditorPanel({ storyId }: StoryEditorPanelProps) {
     (a, b) => a.sortOrder - b.sortOrder,
   );
   const canPresent = sortedScenes.length > 0;
+  const canExport = sortedScenes.length > 0;
   const initialSceneIndex = Math.max(
     0,
     sortedScenes.findIndex((s) => s.id === activeSceneId),
   );
   const activeScene = sortedScenes.find((s) => s.id === activeSceneId);
+
+  // Resolved scene data for the export dialog. The hook runs always so
+  // images are warm by the time the user clicks Export, but the IPC
+  // calls are cheap + cached, and the dialog only opens on demand.
+  const resolvedSceneData = useResolvedSceneData(sortedScenes, story.zoneId);
+  const resolvedScenesForExport = useMemo(
+    () =>
+      resolvedSceneData.map((rs) => ({
+        sceneId: rs.sceneId,
+        roomImageSrc: rs.roomImageSrc,
+        entities: rs.entities.map((e) => ({
+          entity: e.entity,
+          name: e.name,
+          imageSrc: e.imageSrc,
+        })),
+      })),
+    [resolvedSceneData],
+  );
+
+  // Zone world data (for audio refs).
+  const zoneWorld = useZoneStore((s) => s.zones.get(story.zoneId)?.data);
 
   return (
     <div className="flex flex-col gap-6">
@@ -195,7 +224,7 @@ export function StoryEditorPanel({ storyId }: StoryEditorPanelProps) {
           </span>
         </div>
 
-        {/* Present + Undo / Redo */}
+        {/* Present + Export + Undo / Redo */}
         <div className="flex shrink-0 items-center gap-2">
           <button
             type="button"
@@ -212,6 +241,25 @@ export function StoryEditorPanel({ storyId }: StoryEditorPanelProps) {
               <path d="M2.5 1v10l8-5z" />
             </svg>
             Present
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setIsExporting(true)}
+            disabled={!canExport}
+            title={canExport ? "Export story as cinematic video" : "Add scenes to export"}
+            className={[
+              "flex items-center gap-1.5 rounded-full border border-border-default bg-bg-secondary px-3 py-1.5",
+              "text-xs font-sans font-medium uppercase tracking-[0.12em] text-text-primary",
+              "hover:border-border-focus hover:bg-bg-hover transition-colors",
+              !canExport ? "opacity-45 cursor-not-allowed" : "",
+            ].join(" ")}
+          >
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+              <path d="M6 1v7m0 0l3-3m-3 3L3 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M1 9v1a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            Export
           </button>
 
           <div className="mx-0.5 h-5 w-px bg-border-muted" />
@@ -284,6 +332,18 @@ export function StoryEditorPanel({ storyId }: StoryEditorPanelProps) {
           onExit={handlePresentationExit}
         />,
         document.body,
+      )}
+
+      {/* Video Export Dialog */}
+      {isExporting && story && project && zoneWorld && (
+        <StoryExportDialog
+          story={story}
+          world={zoneWorld}
+          resolvedScenes={resolvedScenesForExport}
+          project={project}
+          assetsDir={assetsDir}
+          onClose={() => setIsExporting(false)}
+        />
       )}
     </div>
   );

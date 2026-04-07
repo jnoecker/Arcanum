@@ -28,6 +28,8 @@ function GenerationControls({
   setToneHint,
   useLoreContext,
   setUseLoreContext,
+  useGridOverlay,
+  setUseGridOverlay,
   onGenerate,
   loading,
   disabled,
@@ -38,6 +40,8 @@ function GenerationControls({
   setToneHint: (s: string) => void;
   useLoreContext: boolean;
   setUseLoreContext: (b: boolean) => void;
+  useGridOverlay: boolean;
+  setUseGridOverlay: (b: boolean) => void;
   onGenerate: () => void;
   loading: boolean;
   disabled: boolean;
@@ -67,15 +71,29 @@ function GenerationControls({
           />
         </FieldRow>
       </div>
-      <label className="mt-3 flex cursor-pointer items-center gap-2 text-xs text-text-secondary">
-        <input
-          type="checkbox"
-          checked={useLoreContext}
-          onChange={(e) => setUseLoreContext(e.target.checked)}
-          className="h-3.5 w-3.5"
-        />
-        Use existing world lore as context
-      </label>
+      <div className="mt-3 flex flex-col gap-1.5">
+        <label className="flex cursor-pointer items-center gap-2 text-xs text-text-secondary">
+          <input
+            type="checkbox"
+            checked={useLoreContext}
+            onChange={(e) => setUseLoreContext(e.target.checked)}
+            className="h-3.5 w-3.5"
+          />
+          Use existing world lore as context
+        </label>
+        <label className="flex cursor-pointer items-center gap-2 text-xs text-text-secondary">
+          <input
+            type="checkbox"
+            checked={useGridOverlay}
+            onChange={(e) => setUseGridOverlay(e.target.checked)}
+            className="h-3.5 w-3.5"
+          />
+          Overlay reference grid on map
+          <span className="text-2xs text-text-muted">
+            (much more accurate placement; recommended)
+          </span>
+        </label>
+      </div>
       <div className="mt-4 flex items-center gap-3">
         <ActionButton
           onClick={onGenerate}
@@ -450,6 +468,7 @@ export function WorldPlannerPanel() {
   const [targetCount, setTargetCount] = useState(8);
   const [toneHint, setToneHint] = useState("");
   const [useLoreContext, setUseLoreContext] = useState(true);
+  const [useGridOverlay, setUseGridOverlay] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -483,6 +502,7 @@ export function WorldPlannerPanel() {
         targetCount,
         toneHint,
         useLoreContext,
+        useGridOverlay,
       });
       setSuggestions(result.suggestions);
       setWarnings(result.warnings);
@@ -581,6 +601,8 @@ export function WorldPlannerPanel() {
         setToneHint={setToneHint}
         useLoreContext={useLoreContext}
         setUseLoreContext={setUseLoreContext}
+        useGridOverlay={useGridOverlay}
+        setUseGridOverlay={setUseGridOverlay}
         onGenerate={handleGenerate}
         loading={loading}
         disabled={!sourceMap || !mapImage}

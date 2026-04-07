@@ -103,6 +103,20 @@ pub async fn resolve_first_existing_path(
     Ok(None)
 }
 
+/// Requests cancellation of an in-flight story video export.
+///
+/// Returns `true` if the session was found in the cancellation
+/// registry and flagged, `false` if no such session is running
+/// (already finished, never started, or the wrong id). The actual
+/// cancellation takes effect with a ~500ms latency — the orchestrator
+/// polls the flag between pipeline stages and inside the ffmpeg
+/// spawn loops. When it fires, ffmpeg is killed, the session temp
+/// dir is wiped, and `export_story_video` returns an error.
+#[tauri::command]
+pub async fn cancel_story_video_export(session_id: String) -> Result<bool, String> {
+    Ok(crate::cancellation::cancel(&session_id))
+}
+
 /// Deletes the session temp dir. Called after a successful export or
 /// when the user cancels mid-export.
 #[tauri::command]
@@ -244,12 +258,49 @@ pub async fn export_story_video(
     app: AppHandle,
     request: VideoExportRequest,
 ) -> Result<VideoExportResult, String> {
+    // Register a cancellation flag keyed by session id so the
+    // frontend can request an abort via `cancel_story_video_export`.
+    // The flag is shared between this orchestrator, the mix_audio
+    // runner, and the encode_video_segments runner. On any exit path
+    // we unregister it from the global registry so stale entries
+    // don't accumulate.
+    let cancel_flag = crate::cancellation::register(request.session_id.clone());
+    let session_id = request.session_id.clone();
+
+    let result = run_export(&app, request, &cancel_flag).await;
+
+    crate::cancellation::unregister(&session_id);
+
+    // If the export was cancelled mid-run, mop up the session temp
+    // dir so half-written frames and audio don't leak. Best-effort —
+    // swallow cleanup errors because the primary error (cancel) is
+    // already what we're returning.
+    if crate::cancellation::is_cancelled(&cancel_flag) || result.is_err() {
+        if let Ok(dir) = session_dir(&app, &session_id) {
+            if dir.exists() {
+                let _ = tokio::fs::remove_dir_all(&dir).await;
+            }
+        }
+    }
+
+    result
+}
+
+/// Inner implementation of `export_story_video` that receives the
+/// shared cancellation flag and polls it between stages. Split out
+/// so the outer command can guarantee unregister + cleanup on every
+/// exit path via a plain `?` flow inside.
+async fn run_export(
+    app: &AppHandle,
+    request: VideoExportRequest,
+    cancel_flag: &std::sync::atomic::AtomicBool,
+) -> Result<VideoExportResult, String> {
     if request.scenes.is_empty() {
         return Err("Cannot export: no scenes provided".to_string());
     }
 
     let profile = parse_profile(&request.profile)?;
-    let session = session_dir(&app, &request.session_id)?;
+    let session = session_dir(app, &request.session_id)?;
     tokio::fs::create_dir_all(&session)
         .await
         .map_err(|e| format!("Failed to create session dir: {e}"))?;
@@ -266,14 +317,21 @@ pub async fn export_story_video(
     }
 
     // ─── Stage 1: Audio mix ──────────────────────────────────
-    emit_progress(&app, "audio_mix", "Mixing narration, music, and ambient…");
-    audio_mix::mix_audio(&app, request.audio.clone(), audio_temp.clone())
-        .await
-        .map_err(|e| format!("Audio mix failed: {e}"))?;
+    crate::cancellation::check(cancel_flag)?;
+    emit_progress(app, "audio_mix", "Mixing narration, music, and ambient…");
+    audio_mix::mix_audio(
+        app,
+        request.audio.clone(),
+        audio_temp.clone(),
+        Some(cancel_flag),
+    )
+    .await
+    .map_err(|e| format!("Audio mix failed: {e}"))?;
 
     // ─── Stage 2: Video encode ───────────────────────────────
+    crate::cancellation::check(cancel_flag)?;
     emit_progress(
-        &app,
+        app,
         "video_encode",
         format!("Encoding {} scenes at {}x{} @ {}fps…", request.scenes.len(), request.width, request.height, request.fps),
     );
@@ -298,7 +356,7 @@ pub async fn export_story_video(
         .unwrap_or(false);
 
     let (caption_font_path, caption_lines) = if captions_present {
-        let font = crate::captions::caption_font_path(&app)?
+        let font = crate::captions::caption_font_path(app)?
             .to_string_lossy()
             .to_string();
         let track = request.captions.as_ref().unwrap();
@@ -336,15 +394,22 @@ pub async fn export_story_video(
         caption_lines,
     };
 
-    let encode_output =
-        video_encode::encode_video_segments(&app, encode_input, video_temp.clone())
-            .await
-            .map_err(|e| format!("Video encode failed: {e}"))?;
+    let encode_output = video_encode::encode_video_segments(
+        app,
+        encode_input,
+        video_temp.clone(),
+        Some(cancel_flag),
+    )
+    .await
+    .map_err(|e| format!("Video encode failed: {e}"))?;
 
     // ─── Stage 3: Mux ────────────────────────────────────────
-    emit_progress(&app, "mux", "Muxing video and audio…");
+    // Mux is fast (stream copy only) and the previous stages already
+    // honored the cancel flag, so we just check once at the boundary.
+    crate::cancellation::check(cancel_flag)?;
+    emit_progress(app, "mux", "Muxing video and audio…");
     video_encode::mux_video_and_audio(
-        &app,
+        app,
         video_temp.clone(),
         audio_temp.clone(),
         output_path.clone(),
@@ -353,7 +418,7 @@ pub async fn export_story_video(
     .map_err(|e| format!("Mux failed: {e}"))?;
 
     // ─── Stage 4: Cleanup + result ───────────────────────────
-    emit_progress(&app, "cleanup", "Cleaning up temp files…");
+    emit_progress(app, "cleanup", "Cleaning up temp files…");
     // Don't hard-fail the whole export if cleanup stumbles.
     if let Err(e) = tokio::fs::remove_file(&audio_temp).await {
         eprintln!("warn: failed to remove temp audio {audio_temp:?}: {e}");
@@ -367,7 +432,7 @@ pub async fn export_story_video(
         .map(|m| m.len())
         .unwrap_or(0);
 
-    emit_progress(&app, "done", "Export complete");
+    emit_progress(app, "done", "Export complete");
 
     Ok(VideoExportResult {
         output_path: output_path.to_string_lossy().to_string(),

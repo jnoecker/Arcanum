@@ -33,6 +33,7 @@
 
 use std::path::{Path, PathBuf};
 use std::process::Stdio;
+use std::sync::atomic::AtomicBool;
 
 use serde::{Deserialize, Serialize};
 use tokio::io::{AsyncBufReadExt, BufReader};
@@ -327,11 +328,17 @@ fn build_filter_complex(
 /// progress and forward it to the UI via `video_export:progress`
 /// events. Stderr is buffered in the background and surfaced only
 /// if ffmpeg exits with a non-zero status.
+///
+/// When a `cancel_flag` is supplied and it flips to `true` mid-run,
+/// the spawned ffmpeg child is killed and the function returns
+/// `Err("Export cancelled by user")`. Cancellation is polled once
+/// per progress block (~500ms latency worst case).
 #[allow(dead_code)] // consumed by the export orchestrator (PR 7)
 pub async fn mix_audio(
     app: &AppHandle,
     input: AudioMixInput,
     output_path: PathBuf,
+    cancel_flag: Option<&AtomicBool>,
 ) -> Result<AudioMixOutput, String> {
     let ffmpeg_path = ffmpeg::ffmpeg_binary_path(app).await?;
     let cmd = build_mix_command(&input, &output_path)?;
@@ -374,10 +381,19 @@ pub async fn mix_audio(
 
     // Read progress from stdout as ffmpeg emits it (~every 500ms).
     // Each complete key=value block terminates with `progress=continue`
-    // or `progress=end` and flushes one FfmpegProgressEvent.
+    // or `progress=end` and flushes one FfmpegProgressEvent. We also
+    // poll the cancellation flag on each line so cancel has ~500ms
+    // worst-case latency (the interval between progress blocks).
     let mut parser = FfmpegProgressParser::new();
     let mut stdout_reader = BufReader::new(stdout).lines();
+    let mut cancelled = false;
     while let Ok(Some(line)) = stdout_reader.next_line().await {
+        if let Some(flag) = cancel_flag {
+            if crate::cancellation::is_cancelled(flag) {
+                cancelled = true;
+                break;
+            }
+        }
         if let Some(event) = parser.feed_line(&line) {
             let fraction = event.fraction(total_duration_ms);
             emit_stage_progress(
@@ -392,6 +408,15 @@ pub async fn mix_audio(
                 break;
             }
         }
+    }
+
+    if cancelled {
+        let _ = child.start_kill();
+        let _ = child.wait().await;
+        // Drop the stderr handle without awaiting — the background
+        // task exits when the child's stderr pipe closes.
+        drop(stderr_handle);
+        return Err("Export cancelled by user".to_string());
     }
 
     let exit_status = child

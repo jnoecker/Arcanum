@@ -3,6 +3,7 @@ mod anthropic;
 mod arcanum_meta;
 mod assets;
 mod audio_mix;
+mod cancellation;
 mod captions;
 mod deepinfra;
 mod ffmpeg;
@@ -65,6 +66,7 @@ pub fn run() {
             video_export::cleanup_video_export_session,
             video_export::resolve_first_existing_path,
             video_export::export_story_video,
+            video_export::cancel_story_video_export,
             openai_images::openai_generate_image,
             openai_tts::openai_tts_generate,
             runware::runware_generate_audio,

@@ -100,6 +100,26 @@ export interface ExportStoryVideoOptions {
   modelOverride?: OpenAiTtsModel;
   /** Progress callback — fires at every stage transition. */
   onProgress?: (event: ExportProgressEvent) => void;
+  /**
+   * Optional AbortSignal. When aborted, the orchestrator bails at the
+   * next stage boundary and calls `cancel_story_video_export` on the
+   * Rust side so any in-flight ffmpeg process gets killed. Temp files
+   * are cleaned up automatically. Throws a `DOMException` with name
+   * `"AbortError"` — callers should treat abort as non-error UX.
+   */
+  signal?: AbortSignal;
+}
+
+/**
+ * Thrown by `exportStoryVideo` when the caller aborts via the
+ * optional AbortSignal. Matches the fetch/DOM convention so callers
+ * can differentiate abort from real errors via `e.name === "AbortError"`.
+ */
+export class ExportAbortedError extends Error {
+  readonly name = "AbortError";
+  constructor(message = "Export cancelled by user") {
+    super(message);
+  }
 }
 
 export interface ExportStoryVideoResult {
@@ -409,6 +429,7 @@ export async function exportStoryVideo(
     assetsDir,
     project,
     onProgress,
+    signal,
   } = options;
 
   const preset = getPreset(presetId);
@@ -416,6 +437,25 @@ export async function exportStoryVideo(
   const emit = (event: ExportProgressEvent) => {
     onProgress?.(event);
   };
+
+  /** Throws if the caller's AbortSignal has fired. */
+  const throwIfAborted = () => {
+    if (signal?.aborted) {
+      throw new ExportAbortedError();
+    }
+  };
+
+  // When the abort signal fires, forward it to the Rust side so any
+  // in-flight ffmpeg process gets killed. We can't `await` inside a
+  // synchronous event listener, but invoke() returns a promise and
+  // we just fire-and-forget — the orchestrator itself will catch
+  // the abort on the next `throwIfAborted` check.
+  const onAbortForwarded = () => {
+    invoke("cancel_story_video_export", { sessionId }).catch((e) => {
+      console.warn("[exportStoryVideo] failed to signal Rust cancel:", e);
+    });
+  };
+  signal?.addEventListener("abort", onAbortForwarded, { once: true });
 
   // ─── Subscribe to Rust-side progress relayed from export_story_video ──
   // Rust emits stage-transition events (stage_fraction: null) and
@@ -468,6 +508,8 @@ export async function exportStoryVideo(
   }
 
   try {
+    throwIfAborted();
+
     // ─── Stage 1: ffmpeg availability ────────────────────────
     emit({ stage: "ffmpeg", fraction: 0.0, message: "Checking ffmpeg…" });
     const ffmpegStatus = await checkFfmpegStatus();
@@ -479,6 +521,7 @@ export async function exportStoryVideo(
       });
       await ensureFfmpegReady();
     }
+    throwIfAborted();
 
     // ─── Stage 2: initial timeline from word counts ──────────
     emit({ stage: "timeline", fraction: 0.08, message: "Computing timeline…" });
@@ -507,6 +550,7 @@ export async function exportStoryVideo(
     const narrationCache = new Map<string, NarrationAudio | null>();
 
     for (let i = 0; i < scenesBySortOrder.length; i++) {
+      throwIfAborted();
       const scene = scenesBySortOrder[i]!;
       emit({
         stage: "tts",
@@ -525,6 +569,7 @@ export async function exportStoryVideo(
       });
       narrationCache.set(scene.id, audio);
     }
+    throwIfAborted();
     console.log(
       "[exportStoryVideo] TTS done",
       scenesBySortOrder.map((s) => ({
@@ -719,6 +764,7 @@ export async function exportStoryVideo(
     // ─── Stage 6: render frames + save to disk ───────────────
     const savedFrames: RustSceneExportEntry[] = [];
     for (let i = 0; i < scenesBySortOrder.length; i++) {
+      throwIfAborted();
       const scene = scenesBySortOrder[i]!;
       emit({
         stage: "frames",
@@ -923,13 +969,25 @@ export async function exportStoryVideo(
         crossfadeMs: exportRequest.crossfadeMs,
       },
     });
+    throwIfAborted();
     emit({
       stage: "export",
       fraction: 0.7,
       message: "Encoding video…",
     });
+    // The Rust orchestrator polls its own cancellation flag between
+    // stages and inside the ffmpeg spawn loops. If the caller aborts
+    // while this await is in flight, our signal listener above fires
+    // `cancel_story_video_export` which flips the flag; Rust then
+    // returns an error that we convert back to ExportAbortedError.
     const result = await invoke<RustVideoExportResult>("export_story_video", {
       request: exportRequest,
+    }).catch((e) => {
+      const msg = typeof e === "string" ? e : (e as Error).message;
+      if (signal?.aborted || msg.includes("cancelled by user")) {
+        throw new ExportAbortedError();
+      }
+      throw e;
     });
 
     // ─── Stage 10: cleanup + done ────────────────────────────
@@ -960,6 +1018,7 @@ export async function exportStoryVideo(
     if (unlistenProgress) {
       unlistenProgress();
     }
+    signal?.removeEventListener("abort", onAbortForwarded);
   }
 }
 

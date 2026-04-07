@@ -1,5 +1,11 @@
 import { invoke } from "@tauri-apps/api/core";
 import type { WorldLore, LoreMap, ZonePlan, ZonePlanRegion } from "@/types/lore";
+import {
+  cellRangeToPixelBox,
+  chooseGridSpec,
+  renderGridOverlay,
+  type GridSpec,
+} from "./gridOverlay";
 
 // ─── Generation contract ────────────────────────────────────────────
 
@@ -10,6 +16,12 @@ export interface ZonePlanGenerationOptions {
   toneHint?: string;
   /** Whether to feed existing world lore as context. */
   useLoreContext?: boolean;
+  /**
+   * Pre-render a labeled grid onto the map before sending it to the
+   * vision model, then ask the model for grid-cell coordinates instead
+   * of raw pixels. Dramatically improves spatial accuracy. Default: true.
+   */
+  useGridOverlay?: boolean;
 }
 
 /**
@@ -30,6 +42,58 @@ export interface ZonePlanSuggestion {
 }
 
 // ─── Prompt construction ────────────────────────────────────────────
+
+function buildGridSystemPrompt(spec: GridSpec): string {
+  const lastCol = String.fromCharCode(64 + spec.cols);
+  return `You are a world-building cartographer AI. You will be shown a map image with a labeled grid overlay drawn on top of it. Use the grid to break the map into a set of high-level zones suitable for a MUD game.
+
+The grid has ${spec.cols} columns labeled A through ${lastCol} and ${spec.rows} rows labeled 1 through ${spec.rows}. Each cell label appears in the top-left corner of its cell on the image. Refer to cells like "A1" (top-left), "${lastCol}${spec.rows}" (bottom-right), etc.
+
+For each zone you propose, return:
+- "name": a short evocative name (2-5 words)
+- "blurb": a 1-2 sentence theme description capturing what this zone feels like and what's unique about it
+- "hooks": 1-3 short bullet points seeding mob types, factions, or story hooks (each under 12 words)
+- "colStart", "colEnd": the LEFTMOST and RIGHTMOST columns of the zone's bounding cells, as letters (e.g. "A", "C"). Both inclusive.
+- "rowStart", "rowEnd": the TOPMOST and BOTTOMMOST rows of the zone's bounding cells, as integers 1-${spec.rows}. Both inclusive.
+- "borders": an array of zone names (strings) that this zone borders or directly connects to. Each name MUST exactly match another zone in this same response. Borders must be reciprocal: if A lists B, B must list A.
+
+Spatial rules — read carefully, this is the part models get wrong:
+1. Use the grid you can see on the image. Identify the cells the zone occupies, then report the bounding cell range.
+2. Spread zones across the map. Most maps want at least one zone in each populated quadrant — top-left, top-right, bottom-left, bottom-right, and the centre.
+3. Together, the zones should cover roughly 70-95% of the map cells. It is fine to skip open ocean or impassable wastes.
+4. Zones should not heavily overlap. Brief overlap at borders is okay; one zone fully contained inside another is not.
+5. Use natural barriers (mountain ranges, rivers, coasts, forests) as zone boundaries when present. A zone should rarely cross a major mountain range or wide river.
+6. Prefer existing labelled regions on the map. If a name appears on the map, use it.
+7. Borders correspond to physical adjacency or named connections (passes, bridges, roads). A zone in column A should not border a zone in column ${lastCol} unless something on the map explicitly links them.
+
+Author voice rules:
+- Each zone should feel distinct from its neighbours. Avoid two zones with nearly the same theme.
+- Hooks should be specific and evocative, not generic.
+
+Output format:
+- Output ONLY valid JSON, no markdown fences, no explanation, no trailing commentary.
+- The response must be a single JSON object: { "zones": [ { ... }, ... ] }
+
+Example output for a fictional ${spec.cols}-column × ${spec.rows}-row map:
+{
+  "zones": [
+    {
+      "name": "Frostspire Peaks",
+      "blurb": "A jagged mountain range walling off the northern wastes. Snow never melts above the treeline.",
+      "hooks": ["frost giants stir in deep crevasses", "abandoned dwarven holds"],
+      "colStart": "B", "colEnd": "${spec.cols >= 5 ? "E" : lastCol}", "rowStart": 1, "rowEnd": 2,
+      "borders": ["Verdant Plains"]
+    },
+    {
+      "name": "Verdant Plains",
+      "blurb": "Rolling grasslands south of the peaks, dotted with farming hamlets and standing stones.",
+      "hooks": ["wandering wagon caravans", "harvest festivals turning sinister"],
+      "colStart": "A", "colEnd": "${spec.cols >= 5 ? "D" : lastCol}", "rowStart": 3, "rowEnd": 4,
+      "borders": ["Frostspire Peaks"]
+    }
+  ]
+}`;
+}
 
 const SYSTEM_PROMPT = `You are a world-building cartographer AI. You will be shown a world map image and asked to break it into a set of high-level zones suitable for a MUD game.
 
@@ -175,10 +239,10 @@ export async function generateZonePlans(
     targetCount,
     toneHint,
     useLoreContext = true,
+    useGridOverlay = true,
   } = options;
 
   const contextBlock = useLoreContext ? buildLoreContextBlock(lore) : "";
-  const anchorBlock = buildAnchorBlock(map);
   const countLine = targetCount
     ? `Target zone count: ${targetCount} (you may produce 1-2 fewer or more if the geography demands it).`
     : `Choose a sensible number of zones (typically 5-12) based on map complexity.`;
@@ -186,6 +250,39 @@ export async function generateZonePlans(
     ? `Author guidance: ${toneHint.trim()}`
     : "";
 
+  // ─── Grid mode ──────────────────────────────────────────────────
+  if (useGridOverlay) {
+    const spec = chooseGridSpec(map.width, map.height);
+    const overlay = await renderGridOverlay(imageDataUrl, spec);
+    const lastCol = String.fromCharCode(64 + spec.cols);
+
+    const userPrompt = [
+      `Map: "${map.title}"`,
+      `The image has a labeled ${spec.cols}×${spec.rows} grid overlay (columns A-${lastCol}, rows 1-${spec.rows}).`,
+      "",
+      countLine,
+      toneLine,
+      "",
+      buildAnchorBlockGrid(map, spec),
+      contextBlock,
+      "Identify the zones from the map, then for each zone report the bounding cell range using the visible grid labels. Respond with JSON only.",
+    ].join("\n");
+
+    const response = await invoke<string>("llm_complete_with_vision", {
+      systemPrompt: buildGridSystemPrompt(spec),
+      userPrompt,
+      imageDataUrl: overlay.dataUrl,
+    });
+
+    const parsed = parseGridZoneResponse(response, spec);
+    return repairZonePlanSuggestions(parsed, {
+      width: map.width,
+      height: map.height,
+    });
+  }
+
+  // ─── Legacy raw-pixel mode ──────────────────────────────────────
+  const anchorBlock = buildAnchorBlock(map);
   const userPrompt = [
     `Map: "${map.title}"`,
     `Image dimensions: ${map.width} pixels wide × ${map.height} pixels tall.`,
@@ -196,9 +293,7 @@ export async function generateZonePlans(
     anchorBlock,
     contextBlock,
     "Before answering, mentally divide the map into thirds vertically and horizontally so you can spread zones across all populated regions. Then respond with JSON only.",
-  ]
-    .filter((line) => line !== "" || true)
-    .join("\n");
+  ].join("\n");
 
   const response = await invoke<string>("llm_complete_with_vision", {
     systemPrompt: SYSTEM_PROMPT,
@@ -211,6 +306,112 @@ export async function generateZonePlans(
     width: map.width,
     height: map.height,
   });
+}
+
+// ─── Grid-mode helpers ──────────────────────────────────────────────
+
+/**
+ * Anchor block phrased in terms of grid cells. We translate each pin's
+ * pixel position into the cell that contains it so the model can
+ * reference anchors in the same vocabulary as its output.
+ */
+function buildAnchorBlockGrid(map: LoreMap, spec: GridSpec): string {
+  if (!map.pins || map.pins.length === 0) return "";
+  const cellW = map.width / spec.cols;
+  const cellH = map.height / spec.rows;
+  const lines: string[] = [];
+  for (const pin of map.pins) {
+    const label = (pin.label ?? "").trim();
+    if (!label) continue;
+    const [lat, lng] = pin.position;
+    const x = lng;
+    const y = map.height - lat;
+    const c = Math.max(0, Math.min(spec.cols - 1, Math.floor(x / cellW)));
+    const r = Math.max(0, Math.min(spec.rows - 1, Math.floor(y / cellH)));
+    const cellLabel = `${String.fromCharCode(65 + c)}${r + 1}`;
+    lines.push(`- "${label}" sits in cell ${cellLabel}`);
+  }
+  if (lines.length === 0) return "";
+  return [
+    "Known reference points on this map (use these as anchors):",
+    ...lines,
+    "",
+  ].join("\n");
+}
+
+/**
+ * Parse a grid-mode JSON response into ZonePlanSuggestions, translating
+ * cell ranges into pixel bboxes (CRS.Simple coords).
+ */
+export function parseGridZoneResponse(
+  response: string,
+  spec: GridSpec,
+): ZonePlanSuggestion[] {
+  const cleaned = response.replace(/```json\n?|\n?```/g, "").trim();
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(cleaned);
+  } catch {
+    const match = cleaned.match(/\{[\s\S]*\}/);
+    if (!match) return [];
+    try {
+      parsed = JSON.parse(match[0]);
+    } catch {
+      return [];
+    }
+  }
+
+  const root = parsed as { zones?: unknown };
+  const zonesRaw = Array.isArray(root) ? root : root?.zones;
+  if (!Array.isArray(zonesRaw)) return [];
+
+  const out: ZonePlanSuggestion[] = [];
+  zonesRaw.forEach((item, idx) => {
+    if (!item || typeof item !== "object") return;
+    const z = item as Record<string, unknown>;
+
+    const name = String(z.name ?? "").trim();
+    if (!name) return;
+
+    const blurb = String(z.blurb ?? "").trim();
+    const hooks: string[] = Array.isArray(z.hooks)
+      ? (z.hooks as unknown[]).map((h) => String(h ?? "").trim()).filter(Boolean)
+      : [];
+
+    const colStart = String(z.colStart ?? z.col_start ?? "").trim();
+    const colEnd = String(z.colEnd ?? z.col_end ?? colStart).trim();
+    const rowStart = Number(z.rowStart ?? z.row_start ?? 0);
+    const rowEnd = Number(z.rowEnd ?? z.row_end ?? rowStart);
+
+    const pixelBox = cellRangeToPixelBox(
+      { colStart, colEnd, rowStart, rowEnd },
+      spec,
+    );
+    if (!pixelBox) return;
+
+    // Convert top-left pixel box to CRS.Simple (lat = height - y - h).
+    const region: ZonePlanRegion = {
+      x: pixelBox.x,
+      y: spec.imageHeight - pixelBox.y - pixelBox.h,
+      w: pixelBox.w,
+      h: pixelBox.h,
+    };
+
+    const borderNames: string[] = Array.isArray(z.borders)
+      ? (z.borders as unknown[]).map((b) => String(b ?? "").trim()).filter(Boolean)
+      : [];
+
+    out.push({
+      tempId: `zp_temp_${idx}`,
+      name,
+      blurb,
+      hooks,
+      region,
+      borderNames,
+    });
+  });
+
+  return out;
 }
 
 // ─── Repair pass ────────────────────────────────────────────────────

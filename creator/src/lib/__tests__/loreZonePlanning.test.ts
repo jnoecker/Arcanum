@@ -1,10 +1,12 @@
 import { describe, it, expect } from "vitest";
 import {
   parseZoneResponse,
+  parseGridZoneResponse,
   repairZonePlanSuggestions,
   suggestionsToZonePlans,
   type ZonePlanSuggestion,
 } from "../loreZonePlanning";
+import type { GridSpec } from "../gridOverlay";
 import type { LoreMap } from "@/types/lore";
 
 const MAP: LoreMap = {
@@ -200,6 +202,84 @@ describe("repairZonePlanSuggestions: overlap detection", () => {
     ];
     const { warnings } = repairZonePlanSuggestions(input, DIMS);
     expect(warnings.find((w) => w.includes("overlap"))).toBeUndefined();
+  });
+});
+
+// ─── parseGridZoneResponse ──────────────────────────────────────────
+
+describe("parseGridZoneResponse", () => {
+  const spec: GridSpec = {
+    cols: 10,
+    rows: 8,
+    imageWidth: 1000,
+    imageHeight: 800,
+  };
+
+  it("parses cell ranges and converts to CRS.Simple region", () => {
+    const json = JSON.stringify({
+      zones: [
+        {
+          name: "North",
+          blurb: "cold",
+          colStart: "A",
+          colEnd: "J",
+          rowStart: 1,
+          rowEnd: 2,
+          borders: ["South"],
+        },
+        {
+          name: "South",
+          blurb: "warm",
+          colStart: "A",
+          colEnd: "J",
+          rowStart: 7,
+          rowEnd: 8,
+          borders: ["North"],
+        },
+      ],
+    });
+    const result = parseGridZoneResponse(json, spec);
+    expect(result).toHaveLength(2);
+    // North zone: rows 1-2 → top of image (y=0..200 in top-left coords)
+    // CRS.Simple: y = height - 0 - 200 = 600
+    const north = result.find((s) => s.name === "North")!;
+    expect(north.region.x).toBe(0);
+    expect(north.region.w).toBe(1000);
+    expect(north.region.h).toBe(200);
+    expect(north.region.y).toBe(600);
+
+    // South zone: rows 7-8 → bottom of image (y=600..800 in top-left coords)
+    // CRS.Simple: y = height - 600 - 200 = 0
+    const south = result.find((s) => s.name === "South")!;
+    expect(south.region.y).toBe(0);
+    expect(south.region.h).toBe(200);
+  });
+
+  it("accepts snake_case keys as a fallback", () => {
+    const json = JSON.stringify({
+      zones: [
+        {
+          name: "X",
+          col_start: "A",
+          col_end: "B",
+          row_start: 1,
+          row_end: 1,
+        },
+      ],
+    });
+    expect(parseGridZoneResponse(json, spec)).toHaveLength(1);
+  });
+
+  it("drops zones with unparseable cells", () => {
+    const json = JSON.stringify({
+      zones: [
+        { name: "Bad", colStart: "?", colEnd: "?", rowStart: 1, rowEnd: 1 },
+        { name: "Good", colStart: "A", colEnd: "A", rowStart: 1, rowEnd: 1 },
+      ],
+    });
+    const result = parseGridZoneResponse(json, spec);
+    expect(result).toHaveLength(1);
+    expect(result[0]?.name).toBe("Good");
   });
 });
 

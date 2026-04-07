@@ -2,8 +2,13 @@ import type { Node } from "@xyflow/react";
 import type { WorldFile } from "@/types/world";
 import { exitTarget } from "@/lib/zoneEdits";
 
-const CELL_W = 300;
-const CELL_H = 140;
+/** Default room dimensions when no measurement is available (matches RoomNode). */
+const DEFAULT_NODE_WIDTH = 220;
+const DEFAULT_NODE_HEIGHT = 140;
+
+/** Gutter added between columns and rows in pixels. */
+const COL_GUTTER = 80;
+const ROW_GUTTER = 60;
 
 /** Compass direction → grid offset (x, y). Y-axis is inverted: negative = up. */
 const DIR_OFFSET: Record<string, [number, number]> = {
@@ -19,13 +24,34 @@ const DIR_OFFSET: Record<string, [number, number]> = {
   d: [1, 1],
 };
 
+export interface LayoutMeasurement {
+  width: number;
+  height: number;
+}
+
 /**
  * Layout rooms on a grid using compass directions from exits.
- * BFS from startRoom, placing each neighbor at the grid offset
- * implied by the exit direction. Collisions are resolved by
- * shifting to the nearest empty cell.
+ *
+ * BFS from startRoom, placing each neighbor at the grid offset implied by
+ * the exit direction. Collisions are resolved by spiraling to the nearest
+ * empty cell.
+ *
+ * Unlike a fixed-cell grid, the conversion from grid coordinates to pixel
+ * coordinates uses the **max width of each column** and **max height of
+ * each row**, prefix-summed. This means rooms with different sizes get
+ * appropriate spacing without overlap, and uniformly-sized rooms pack
+ * tightly. Nodes are centered within their row/column cell.
+ *
+ * @param nodes          The raw nodes from `zoneToGraph`.
+ * @param world          The zone WorldFile (for `rooms`, `startRoom`, exits).
+ * @param measurements   Optional map of nodeId → measured size. Missing or
+ *                       zero-sized entries fall back to sensible defaults.
  */
-export function compassLayout(nodes: Node[], world: WorldFile): Node[] {
+export function compassLayout(
+  nodes: Node[],
+  world: WorldFile,
+  measurements?: Map<string, LayoutMeasurement>,
+): Node[] {
   const allNodeIds = new Set(nodes.map((n) => n.id));
   const grid = new Map<string, string>(); // "gx,gy" → nodeId
   const pos = new Map<string, [number, number]>(); // nodeId → [gx, gy]
@@ -89,14 +115,63 @@ export function compassLayout(nodes: Node[], world: WorldFile): Node[] {
     }
   }
 
-  // Convert grid coordinates to pixel positions
+  if (pos.size === 0) return nodes;
+
+  // ─── Grid → pixel conversion (max-extent per row/column) ──────────
+  const getDim = (id: string): LayoutMeasurement => {
+    const m = measurements?.get(id);
+    if (m && m.width > 0 && m.height > 0) return m;
+    return { width: DEFAULT_NODE_WIDTH, height: DEFAULT_NODE_HEIGHT };
+  };
+
+  let minGx = Infinity;
+  let maxGx = -Infinity;
+  let minGy = Infinity;
+  let maxGy = -Infinity;
+  for (const [, [gx, gy]] of pos) {
+    if (gx < minGx) minGx = gx;
+    if (gx > maxGx) maxGx = gx;
+    if (gy < minGy) minGy = gy;
+    if (gy > maxGy) maxGy = gy;
+  }
+
+  const colCount = maxGx - minGx + 1;
+  const rowCount = maxGy - minGy + 1;
+  const colWidth: number[] = new Array(colCount).fill(DEFAULT_NODE_WIDTH);
+  const rowHeight: number[] = new Array(rowCount).fill(DEFAULT_NODE_HEIGHT);
+
+  for (const [id, [gx, gy]] of pos) {
+    const dim = getDim(id);
+    const ci = gx - minGx;
+    const ri = gy - minGy;
+    if (dim.width > colWidth[ci]!) colWidth[ci] = dim.width;
+    if (dim.height > rowHeight[ri]!) rowHeight[ri] = dim.height;
+  }
+
+  // Prefix-sum start positions (top-left of each cell).
+  const colStart: number[] = new Array(colCount);
+  const rowStart: number[] = new Array(rowCount);
+  let acc = 0;
+  for (let i = 0; i < colCount; i++) {
+    colStart[i] = acc;
+    acc += colWidth[i]! + COL_GUTTER;
+  }
+  acc = 0;
+  for (let i = 0; i < rowCount; i++) {
+    rowStart[i] = acc;
+    acc += rowHeight[i]! + ROW_GUTTER;
+  }
+
   return nodes.map((node) => {
     const p = pos.get(node.id);
     if (!p) return node;
-    return {
-      ...node,
-      position: { x: p[0] * CELL_W, y: p[1] * CELL_H },
-    };
+    const ci = p[0] - minGx;
+    const ri = p[1] - minGy;
+    const dim = getDim(node.id);
+    // Center node within its (possibly larger) cell.
+    const x = colStart[ci]! + (colWidth[ci]! - dim.width) / 2;
+    const y = rowStart[ri]! + (rowHeight[ri]! - dim.height) / 2;
+    return { ...node, position: { x, y } };
   });
 }
 

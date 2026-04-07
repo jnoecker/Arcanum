@@ -61,44 +61,29 @@ export function WelcomeScreen({ onNewProject }: WelcomeScreenProps) {
       <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(34,41,60,0.18),rgba(34,41,60,0.84))]" />
       <div className="absolute left-[-8rem] top-[-6rem] h-[28rem] w-[28rem] rounded-full bg-[radial-gradient(circle,rgba(168,151,210,0.22),transparent_66%)] blur-3xl" />
 
-      <div className="relative z-10 mx-auto flex w-full max-w-4xl flex-1 flex-col justify-center gap-6 px-6 py-8 lg:px-10">
-        <div className="text-center">
-          <p className="text-2xs uppercase tracking-wide-ui text-text-muted">Arcanum</p>
-          <h1 className="mt-4 font-display text-4xl leading-[1.04] text-text-primary lg:text-5xl">
-            Shape worlds, rules, and wonders from a single instrument.
-          </h1>
-          <p className="mx-auto mt-4 max-w-2xl text-sm leading-7 text-text-secondary lg:text-base">
-            Open an existing realm or carve a new one into being, then tune its systems, art, and lore without leaving the workshop.
-          </p>
-        </div>
+      <div className="relative z-10 mx-auto flex w-full max-w-6xl flex-1 items-center px-6 py-8 lg:px-10">
+        <div className="grid w-full gap-6 lg:grid-cols-[minmax(18rem,0.72fr)_minmax(0,1.18fr)]">
+          <div className="flex flex-col justify-center gap-6">
+            <div>
+              <p className="text-2xs uppercase tracking-wide-ui text-text-muted">Creator&apos;s Instrument</p>
+              <h1 className="mt-4 max-w-xl font-display text-4xl leading-[1.02] text-text-primary lg:text-5xl">
+                Return to a world already in motion, or found a new canon.
+              </h1>
+              <p className="mt-4 max-w-lg text-sm leading-7 text-text-secondary lg:text-base">
+                Arcanum is built for long sessions of shaping zones, systems, lore, and art. Enter through the most direct path and keep working.
+              </p>
+            </div>
 
-        <div className="grid min-h-0 gap-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(20rem,0.9fr)]">
-          <div className="rounded-3xl border border-white/10 bg-[linear-gradient(155deg,rgba(54,63,90,0.9),rgba(37,45,68,0.92))] p-6 shadow-panel">
-            <h2 className="font-display text-2xl text-text-primary">Enter the studio</h2>
-            <p className="mt-2 text-sm leading-7 text-text-secondary">
-              Return to your last working world, begin a fresh canon, or open a realm already on disk.
-            </p>
-
-            <div className="mt-6 flex flex-col gap-4">
-              {/* Resume latest — primary action when a recent project exists */}
-              {recentProjects[0] && (
-                <button
-                  onClick={() => void handleOpenRecent(recentProjects[0]!)}
-                  disabled={loading === recentProjects[0]!.path}
-                  className="rounded-3xl border border-[var(--border-accent-ring)] bg-[linear-gradient(135deg,rgba(168,151,210,0.34),rgba(140,174,201,0.22))] px-5 py-4 text-left text-sm font-medium text-text-primary transition hover:shadow-[0_14px_34px_rgba(137,155,214,0.28)] disabled:opacity-50"
-                >
-                  <div>{loading === recentProjects[0]!.path ? "Opening..." : `Resume: ${recentProjects[0]!.name}`}</div>
-                  <div className="mt-1 truncate text-xs font-normal text-text-secondary">{recentProjects[0]!.path}</div>
-                </button>
-              )}
-              <div className="grid gap-3 md:grid-cols-2">
+            <div className="rounded-3xl border border-white/10 bg-[linear-gradient(155deg,rgba(54,63,90,0.9),rgba(37,45,68,0.92))] p-6 shadow-panel">
+              <p className="text-2xs uppercase tracking-wide-ui text-text-muted">Studio paths</p>
+              <div className="mt-4 flex flex-col gap-3">
                 <button
                   onClick={onNewProject}
-                  className="rounded-3xl border border-white/10 bg-black/12 px-5 py-4 text-left text-sm font-medium text-text-primary transition hover:bg-white/10"
+                  className="rounded-3xl border border-[var(--border-accent-ring)] bg-[linear-gradient(135deg,rgba(168,151,210,0.26),rgba(200,151,46,0.16))] px-5 py-4 text-left text-sm font-medium text-text-primary transition hover:shadow-[0_14px_34px_rgba(168,151,210,0.2)]"
                 >
                   <div className="text-3xs uppercase tracking-ui text-text-muted">Founding</div>
-                  <div className="mt-2">Create new project</div>
-                  <div className="mt-1 text-xs font-normal text-text-secondary">Lay down a new world scaffold and start tuning it immediately.</div>
+                  <div className="mt-2 font-display text-lg">Create new project</div>
+                  <div className="mt-1 text-xs font-normal text-text-secondary">Lay down a fresh scaffold, then move directly into worldmaking.</div>
                 </button>
                 <button
                   onClick={handleOpen}
@@ -110,7 +95,7 @@ export function WelcomeScreen({ onNewProject }: WelcomeScreenProps) {
                 </button>
                 <button
                   onClick={() => setShowR2Import(true)}
-                  className="rounded-3xl border border-white/10 bg-black/12 px-5 py-4 text-left text-sm font-medium text-text-primary transition hover:bg-white/10 md:col-span-2"
+                  className="rounded-3xl border border-white/10 bg-black/12 px-5 py-4 text-left text-sm font-medium text-text-primary transition hover:bg-white/10"
                 >
                   <div className="text-3xs uppercase tracking-ui text-text-muted">Recovery</div>
                   <div className="mt-2">Import from R2</div>
@@ -121,49 +106,73 @@ export function WelcomeScreen({ onNewProject }: WelcomeScreenProps) {
           </div>
 
           <div className="min-h-0 rounded-3xl border border-white/10 bg-[linear-gradient(155deg,rgba(54,63,90,0.9),rgba(37,45,68,0.92))] p-6 shadow-panel">
-            <div className="mb-4 flex items-center justify-between">
-              <h3 className="font-display text-2xl text-text-primary">Recent worlds</h3>
+            <div className="mb-5 flex items-center justify-between gap-4">
+              <div>
+                <p className="text-2xs uppercase tracking-wide-ui text-text-muted">Recent worlds</p>
+                <h2 className="mt-2 font-display text-3xl text-text-primary">Resume the latest work</h2>
+              </div>
               {recentProjects.length > 0 && (
-                <span className="text-xs uppercase tracking-ui text-text-muted">
+                <span className="shrink-0 text-xs uppercase tracking-ui text-text-muted">
                   {recentProjects.length} saved
                 </span>
               )}
             </div>
+
             {recentProjects.length > 0 ? (
-              <ul className="flex max-h-[22rem] flex-col gap-2 overflow-y-auto pr-1">
-                {recentProjects.map((project) => (
-                  <li
-                    key={project.path}
-                    className="group flex items-center gap-2 rounded-3xl border border-white/8 bg-black/12 px-4 py-3 transition hover:bg-white/8"
-                  >
-                    <button
-                      onClick={() => handleOpenRecent(project)}
-                      disabled={loading === project.path}
-                      className="min-w-0 flex-1 text-left"
-                    >
-                      <div className="truncate text-sm font-medium text-text-primary">
-                        {loading === project.path ? "Opening..." : project.name}
-                      </div>
-                      <div className="mt-1 truncate text-2xs text-text-muted">
-                        {project.path}
-                      </div>
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleRemoveRecent(project.path);
-                      }}
-                      className="shrink-0 rounded-full border border-white/8 px-2 py-1 text-xs text-text-muted opacity-0 transition hover:border-status-error/40 hover:text-status-error group-hover:opacity-100 focus:opacity-100"
-                      title="Remove from recent"
-                    >
-                      Remove
-                    </button>
-                  </li>
-                ))}
-              </ul>
+              <div className="flex min-h-0 flex-col gap-4">
+                <button
+                  onClick={() => void handleOpenRecent(recentProjects[0]!)}
+                  disabled={loading === recentProjects[0]!.path}
+                  className="rounded-3xl border border-[var(--border-accent-ring)] bg-[linear-gradient(135deg,rgba(168,151,210,0.34),rgba(200,151,46,0.18))] px-5 py-5 text-left shadow-[0_16px_40px_rgba(8,10,18,0.22)] transition hover:shadow-[0_18px_46px_rgba(168,151,210,0.24)] disabled:opacity-50"
+                >
+                  <div className="text-3xs uppercase tracking-ui text-text-muted">Last opened realm</div>
+                  <div className="mt-3 font-display text-2xl text-text-primary">
+                    {loading === recentProjects[0]!.path ? "Opening..." : recentProjects[0]!.name}
+                  </div>
+                  <div className="mt-2 truncate text-xs text-text-secondary">{recentProjects[0]!.path}</div>
+                </button>
+
+                {recentProjects.length > 1 ? (
+                  <ul className="flex max-h-[20rem] flex-col gap-2 overflow-y-auto pr-1">
+                    {recentProjects.slice(1).map((project) => (
+                      <li
+                        key={project.path}
+                        className="group flex items-center gap-2 rounded-3xl border border-white/8 bg-black/12 px-4 py-3 transition hover:bg-white/8"
+                      >
+                        <button
+                          onClick={() => handleOpenRecent(project)}
+                          disabled={loading === project.path}
+                          className="min-w-0 flex-1 text-left"
+                        >
+                          <div className="truncate text-sm font-medium text-text-primary">
+                            {loading === project.path ? "Opening..." : project.name}
+                          </div>
+                          <div className="mt-1 truncate text-2xs text-text-muted">
+                            {project.path}
+                          </div>
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleRemoveRecent(project.path);
+                          }}
+                          className="shrink-0 rounded-full border border-white/8 px-2 py-1 text-xs text-text-muted opacity-0 transition hover:border-status-error/40 hover:text-status-error group-hover:opacity-100 focus:opacity-100"
+                          title="Remove from recent"
+                        >
+                          Remove
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <div className="rounded-3xl border border-dashed border-white/10 bg-black/12 px-4 py-6 text-sm leading-7 text-text-muted">
+                    No older worlds are on hand yet. The latest realm is ready above.
+                  </div>
+                )}
+              </div>
             ) : (
               <div className="rounded-3xl border border-dashed border-white/10 bg-black/12 px-4 py-8 text-sm leading-7 text-text-muted">
-                Your worlds will appear here once created. Start a new one above.
+                Your worlds will gather here once created. Found a new one to establish the archive.
               </div>
             )}
           </div>

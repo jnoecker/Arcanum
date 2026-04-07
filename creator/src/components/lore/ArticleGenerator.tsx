@@ -4,6 +4,7 @@ import type { ArticleTemplate } from "@/types/lore";
 import { TEMPLATE_SCHEMAS } from "@/lib/loreTemplates";
 import { generateArticle } from "@/lib/loreGeneration";
 import { SelectInput } from "@/components/ui/FormWidgets";
+import { useFocusTrap } from "@/lib/useFocusTrap";
 
 const TEMPLATE_OPTIONS = Object.values(TEMPLATE_SCHEMAS)
   .filter((s) => s.template !== "world_setting")
@@ -21,6 +22,7 @@ export function ArticleGenerator({
   const [concept, setConcept] = useState("");
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const trapRef = useFocusTrap<HTMLDivElement>(generating ? undefined : onClose);
 
   const handleGenerate = useCallback(async () => {
     if (!concept.trim()) return;
@@ -40,14 +42,18 @@ export function ArticleGenerator({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="gen-article-title"
-      onKeyDown={(e) => { if (e.key === "Escape" && !generating) onClose(); }}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
+      onClick={(e) => {
+        if (e.target === e.currentTarget && !generating) onClose();
+      }}
     >
-      <div className="absolute inset-0 bg-black/60" aria-hidden="true" onClick={onClose} />
-      <div className="relative w-full max-w-lg rounded-3xl border border-white/10 bg-bg-secondary p-6 shadow-panel">
+      <div
+        ref={trapRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="gen-article-title"
+        className="relative w-full max-w-lg rounded-3xl border border-white/10 bg-bg-secondary p-6 shadow-panel"
+      >
         <h3 id="gen-article-title" className="font-display text-xl text-text-primary">Generate Article</h3>
         <p className="mt-1 text-xs text-text-muted">
           Describe your concept and the AI will generate a complete article with structured fields and content.
@@ -74,14 +80,13 @@ export function ArticleGenerator({
             />
           </div>
 
-          {error && (
-            <p className="text-xs text-status-error">{error}</p>
-          )}
+          {error && <p role="alert" className="text-xs text-status-error">{error}</p>}
         </div>
 
         <div className="mt-5 flex justify-end gap-2">
           <button
             onClick={onClose}
+            disabled={generating}
             className="rounded-full px-4 py-2 text-xs text-text-muted hover:text-text-primary"
           >
             Cancel

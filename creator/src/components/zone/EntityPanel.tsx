@@ -49,13 +49,13 @@ export function EntityPanel({
   }, [world, selection]);
 
   return (
-    <div className="relative flex min-h-0 min-w-0 w-80 flex-1 flex-col border-l border-border-default bg-bg-secondary">
+    <div className="relative flex min-h-0 min-w-0 w-[clamp(19rem,26vw,26rem)] flex-1 flex-col border-l border-border-default bg-bg-secondary max-[1100px]:max-h-[min(45vh,32rem)] max-[1100px]:w-full max-[1100px]:border-l-0 max-[1100px]:border-t">
       <img src={sidebarBg} alt="" className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-[0.12]" />
       {/* Header with back button */}
       <div className="relative z-10 shrink-0 flex items-center gap-2 border-b border-border-default px-4 py-2">
         <button
           onClick={onClose}
-          className="h-5 w-5 rounded text-xs text-text-muted transition-colors hover:bg-bg-elevated hover:text-text-primary"
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded text-xs text-text-muted transition-colors hover:bg-bg-elevated hover:text-text-primary"
           title="Back to room"
         >
           &#x2190;
@@ -63,7 +63,7 @@ export function EntityPanel({
         <span className="font-display text-2xs uppercase tracking-widest text-text-muted">
           {selection.kind}
         </span>
-        <span className="text-xs font-medium text-text-primary">
+        <span className="min-w-0 flex-1 truncate text-xs font-medium text-text-primary" title={selection.id}>
           {selection.id}
         </span>
         <button

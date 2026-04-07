@@ -4,6 +4,7 @@ import type { ArtStyle } from "@/types/lore";
 import { Section, ActionButton, Spinner } from "@/components/ui/FormWidgets";
 import { ART_STYLE_PRESETS, artStyleFromPreset } from "@/lib/artStylePresets";
 import { generateArtStyle, refineArtStyle } from "@/lib/artStyleGeneration";
+import { useFocusTrap } from "@/lib/useFocusTrap";
 
 // ─── Helpers ───────────────────────────────────────────────────────
 
@@ -145,6 +146,7 @@ function AiGenerateDialog({
   const [theme, setTheme] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const trapRef = useFocusTrap<HTMLDivElement>(busy ? undefined : onClose);
 
   const submit = async () => {
     if (!theme.trim() || busy) return;
@@ -161,8 +163,19 @@ function AiGenerateDialog({
   };
 
   return (
-    <div className="dialog-overlay" role="dialog" aria-modal="true" aria-labelledby="ai-gen-title">
-      <div className="dialog-shell flex w-full max-w-xl flex-col">
+    <div
+      className="dialog-overlay"
+      onClick={(e) => {
+        if (e.target === e.currentTarget && !busy) onClose();
+      }}
+    >
+      <div
+        ref={trapRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="ai-gen-title"
+        className="dialog-shell flex w-full max-w-xl flex-col"
+      >
         <div className="dialog-header">
           <div className="min-w-0 flex-1">
             <h3 id="ai-gen-title" className="font-display text-base text-text-primary">Generate art style</h3>
@@ -180,7 +193,7 @@ function AiGenerateDialog({
             autoFocus
             className="w-full resize-y rounded border border-border-default bg-bg-primary px-3 py-2 text-sm text-text-primary outline-none focus:border-accent/50 focus-visible:ring-2 focus-visible:ring-border-active"
           />
-          {error && <p className="text-2xs text-status-error">{error}</p>}
+          {error && <p role="alert" className="text-2xs text-status-error">{error}</p>}
           <p className="text-2xs text-text-muted/80">
             Tip: the world's tone (if set in World Setting) is included as context so the style stays on-theme.
           </p>
@@ -210,6 +223,7 @@ function RefineDialog({
   const [instruction, setInstruction] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const trapRef = useFocusTrap<HTMLDivElement>(busy ? undefined : onClose);
 
   const submit = async () => {
     if (!instruction.trim() || busy) return;
@@ -226,8 +240,19 @@ function RefineDialog({
   };
 
   return (
-    <div className="dialog-overlay" role="dialog" aria-modal="true" aria-labelledby="refine-title">
-      <div className="dialog-shell flex w-full max-w-xl flex-col">
+    <div
+      className="dialog-overlay"
+      onClick={(e) => {
+        if (e.target === e.currentTarget && !busy) onClose();
+      }}
+    >
+      <div
+        ref={trapRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="refine-title"
+        className="dialog-shell flex w-full max-w-xl flex-col"
+      >
         <div className="dialog-header">
           <div className="min-w-0 flex-1">
             <h3 id="refine-title" className="font-display text-base text-text-primary">Refine "{style.name}"</h3>
@@ -245,7 +270,7 @@ function RefineDialog({
             autoFocus
             className="w-full resize-y rounded border border-border-default bg-bg-primary px-3 py-2 text-sm text-text-primary outline-none focus:border-accent/50 focus-visible:ring-2 focus-visible:ring-border-active"
           />
-          {error && <p className="text-2xs text-status-error">{error}</p>}
+          {error && <p role="alert" className="text-2xs text-status-error">{error}</p>}
         </div>
         <div className="dialog-footer">
           <ActionButton variant="ghost" size="sm" onClick={onClose} disabled={busy}>Cancel</ActionButton>

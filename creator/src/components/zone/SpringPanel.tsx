@@ -17,9 +17,10 @@ interface SpringPanelProps {
   /** Key that changes when the panel content switches (e.g. roomId) */
   contentKey: string;
   children: ReactNode;
+  className?: string;
 }
 
-export function SpringPanel({ contentKey, children }: SpringPanelProps) {
+export function SpringPanel({ contentKey, children, className }: SpringPanelProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const prevKeyRef = useRef<string | null>(null);
   const reducedMotion = useRef(
@@ -66,7 +67,7 @@ export function SpringPanel({ contentKey, children }: SpringPanelProps) {
   }, [contentKey]);
 
   return (
-    <div ref={containerRef} className="flex min-h-0 shrink-0 flex-col">
+    <div ref={containerRef} className={`flex min-h-0 shrink-0 flex-col ${className ?? ""}`}>
       {children}
     </div>
   );

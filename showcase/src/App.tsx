@@ -2,6 +2,7 @@ import { lazy, Suspense } from "react";
 import { Routes, Route } from "react-router-dom";
 import { useShowcase } from "@/lib/DataContext";
 import { Layout } from "@/components/Layout";
+import { ShowcaseEmptyState, showcaseButtonClassNames } from "@/components/ShowcasePrimitives";
 
 const HomePage = lazy(() => import("@/pages/HomePage").then(m => ({ default: m.HomePage })));
 const ArticlesPage = lazy(() => import("@/pages/ArticlesPage").then(m => ({ default: m.ArticlesPage })));
@@ -14,28 +15,55 @@ const StoryPlayerPage = lazy(() => import("@/pages/StoryPlayerPage").then(m => (
 const NotFoundPage = lazy(() => import("@/pages/NotFoundPage").then(m => ({ default: m.NotFoundPage })));
 
 export function App() {
-  const { loading, error } = useShowcase();
+  const { loading, error, reload } = useShowcase();
+  const isOffline = typeof navigator !== "undefined" && !navigator.onLine;
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <p className="font-display text-accent text-xl tracking-[0.22em] animate-pulse">
-          Loading world data...
-        </p>
+      <div className="flex min-h-screen items-center justify-center px-6">
+        <ShowcaseEmptyState
+          className="max-w-md animate-pulse"
+          title="Loading World Data"
+          description="Preparing the codex, maps, and stories for this world."
+        />
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center max-w-md">
-          <h1 className="font-display text-accent text-xl mb-4">Failed to Load</h1>
-          <p className="text-text-secondary text-sm">{error}</p>
-          <p className="text-text-muted text-xs mt-4">
-            Make sure <code className="bg-black/20 px-1.5 py-0.5 rounded">public/data/showcase.json</code> exists.
-          </p>
-        </div>
+      <div className="flex min-h-screen items-center justify-center px-6">
+        <ShowcaseEmptyState
+          className="max-w-md"
+          title="Failed to Load"
+          description={
+            <>
+              <p className="break-words text-text-secondary">{error}</p>
+              <p className="mt-3">
+                Make sure <code>public/data/showcase.json</code> exists.
+              </p>
+              {isOffline && (
+                <p className="mt-2">
+                  Your device appears to be offline. Reconnect and try again.
+                </p>
+              )}
+            </>
+          }
+          actions={
+            <>
+              <button type="button" onClick={reload} className={showcaseButtonClassNames.primary}>
+                Try again
+              </button>
+              <button
+                type="button"
+                onClick={() => window.location.reload()}
+                className={showcaseButtonClassNames.secondary}
+              >
+                Reload page
+              </button>
+            </>
+          }
+        />
       </div>
     );
   }

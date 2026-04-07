@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import DOMPurify from "dompurify";
 import { useShowcase } from "@/lib/DataContext";
+import { showcaseButtonClassNames } from "@/components/ShowcasePrimitives";
 import { TEMPLATE_LABELS, TEMPLATE_COLORS } from "@/lib/templates";
 import type { ArticleTemplate } from "@/types/showcase";
 
@@ -24,11 +25,17 @@ export function HomePage() {
   const bannerSubtitle = meta.showcase?.bannerSubtitle ?? meta.tagline;
   const worldSetting = articles.find((a) => a.template === "world_setting");
   const heroImage = meta.showcase?.bannerImage ?? worldSetting?.imageUrl;
+  const articleCount = articles.filter((a) => a.template !== "world_setting").length;
+  const timelineCount = data.timelineEvents?.length ?? 0;
+  const mapCount = maps?.length ?? 0;
 
   const featured = [...articles]
     .filter((a) => a.imageUrl && a.template !== "world_setting")
     .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
     .slice(0, 9);
+  const spotlight = featured[0];
+  const sideFeatures = featured.slice(1, 3);
+  const ledgerFeatures = featured.slice(3, 8);
 
   const searchResults = useMemo(() => {
     if (!search.trim()) return [];
@@ -56,7 +63,10 @@ export function HomePage() {
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
       if (!isOpen || searchResults.length === 0) {
-        if (e.key === "Escape") { setSearch(""); setIsOpen(false); }
+        if (e.key === "Escape") {
+          setSearch("");
+          setIsOpen(false);
+        }
         return;
       }
       switch (e.key) {
@@ -84,7 +94,7 @@ export function HomePage() {
           break;
       }
     },
-    [isOpen, searchResults, activeIndex, navigateToResult],
+    [activeIndex, isOpen, navigateToResult, searchResults],
   );
 
   useEffect(() => {
@@ -93,8 +103,13 @@ export function HomePage() {
     el?.scrollIntoView({ block: "nearest" });
   }, [activeIndex]);
 
-  useEffect(() => { setActiveIndex(-1); }, [searchResults]);
-  useEffect(() => { setIsOpen(search.trim().length > 0); }, [search]);
+  useEffect(() => {
+    setActiveIndex(-1);
+  }, [searchResults]);
+
+  useEffect(() => {
+    setIsOpen(search.trim().length > 0);
+  }, [search]);
 
   const searchContainerRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -112,228 +127,277 @@ export function HomePage() {
 
   return (
     <div>
-      {/* ── Hero ── */}
       <section className="relative mb-16">
-        {heroImage && (
-          <div className="relative -mx-5 sm:-mx-8 -mt-10 sm:-mt-14 mb-10 overflow-hidden">
-            <img
-              src={heroImage}
-              alt={bannerTitle}
-              className="w-full h-[360px] sm:h-[440px] object-cover"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-bg-abyss via-bg-abyss/50 to-bg-abyss/10" />
-            <div className="absolute bottom-0 inset-x-0 px-5 sm:px-8 pb-8 sm:pb-12">
-              <h1 className="font-display text-4xl sm:text-5xl lg:text-6xl tracking-[0.12em] text-accent-emphasis mb-3 drop-shadow-lg animate-fade-in-up">
+        <div className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-[linear-gradient(160deg,rgba(41,49,73,0.96),rgba(23,29,47,0.92))] shadow-[var(--shadow-hero)]">
+          {heroImage && (
+            <>
+              <img
+                src={heroImage}
+                alt={bannerTitle}
+                className="absolute inset-0 h-full w-full object-cover opacity-32"
+              />
+              <div className="absolute inset-0 bg-[linear-gradient(100deg,rgba(15,20,40,0.96),rgba(15,20,40,0.74),rgba(15,20,40,0.88))]" />
+            </>
+          )}
+
+          <div className="relative grid gap-8 px-6 py-8 sm:px-8 sm:py-10 lg:grid-cols-[minmax(0,1.25fr)_minmax(19rem,0.8fr)] lg:gap-10 lg:px-10">
+            <div className="max-w-3xl">
+              <p className="text-[10px] uppercase tracking-[0.34em] text-[var(--color-aurum-pale)]">
+                Public Atlas
+              </p>
+              <h1 className="mt-4 font-display text-4xl leading-[1.03] text-accent-emphasis sm:text-5xl lg:text-6xl">
                 {bannerTitle}
               </h1>
               {bannerSubtitle && (
-                <p className="text-text-secondary text-lg sm:text-xl max-w-2xl drop-shadow-md animate-fade-in-up" style={{ animationDelay: "100ms" }}>
+                <p className="mt-4 max-w-2xl text-base leading-8 text-text-secondary sm:text-lg">
                   {bannerSubtitle}
                 </p>
               )}
+              <div className="mt-6 flex flex-wrap gap-x-6 gap-y-2 text-xs uppercase tracking-[0.22em] text-text-muted">
+                <span>{articleCount} codex entries</span>
+                {mapCount > 0 && <span>{mapCount} mapped regions</span>}
+                {timelineCount > 0 && <span>{timelineCount} dated events</span>}
+              </div>
+            </div>
+
+            <div
+              ref={searchContainerRef}
+              className="relative self-end rounded-[1.75rem] border border-[var(--border-aurum)] bg-[linear-gradient(180deg,rgba(15,20,40,0.82),rgba(28,34,52,0.88))] p-5 shadow-[var(--glow-aurum)]"
+            >
+              <p className="text-[10px] uppercase tracking-[0.32em] text-text-muted">
+                Begin Here
+              </p>
+              <h2 className="mt-3 font-display text-2xl text-[var(--color-aurum-pale)]">
+                Seek a name, place, or omen
+              </h2>
+              <p className="mt-2 text-sm leading-7 text-text-secondary">
+                Search first, then follow the threads wherever the canon opens.
+              </p>
+
+              <div className="mt-5 opacity-90 transition-opacity duration-300 focus-within:opacity-100">
+                <input
+                  type="text"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder="Search the codex..."
+                  role="combobox"
+                  aria-expanded={isOpen && searchResults.length > 0}
+                  aria-controls={listboxId}
+                  aria-activedescendant={activeIndex >= 0 ? `search-result-${activeIndex}` : undefined}
+                  aria-autocomplete="list"
+                  className="w-full rounded-2xl border border-[var(--border-aurum)] bg-bg-abyss/70 px-4 py-3 text-sm text-text-primary placeholder:text-text-muted/70 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-aurum)]/35"
+                />
+                {isOpen && searchResults.length > 0 && (
+                  <div
+                    ref={listRef}
+                    id={listboxId}
+                    role="listbox"
+                    className="absolute inset-x-5 top-[calc(100%-0.15rem)] z-20 mt-2 max-h-80 overflow-y-auto rounded-2xl border border-border-muted/60 bg-bg-primary/98 shadow-[var(--shadow-panel)] animate-[fadeIn_120ms_ease-out]"
+                  >
+                    {searchResults.map((a, i) => (
+                      <button
+                        type="button"
+                        key={a.id}
+                        id={`search-result-${i}`}
+                        role="option"
+                        aria-selected={i === activeIndex}
+                        tabIndex={-1}
+                        onClick={() => navigateToResult(a.id)}
+                        className={`flex w-full items-center gap-3 px-4 py-3 text-left transition-colors duration-150 ${
+                          i === activeIndex ? "bg-bg-hover" : "hover:bg-bg-hover"
+                        }`}
+                      >
+                        {a.imageUrl && (
+                          <img src={a.imageUrl} alt="" className="h-9 w-9 shrink-0 rounded-md object-cover" />
+                        )}
+                        <div className="min-w-0">
+                          <div className="truncate text-sm text-text-primary">{a.title}</div>
+                          <div className="text-xs text-text-muted">{TEMPLATE_LABELS[a.template]}</div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {isOpen && search.trim() && searchResults.length === 0 && (
+                  <div className="absolute inset-x-5 top-[calc(100%-0.15rem)] z-20 mt-2 rounded-2xl border border-border-muted/60 bg-bg-primary/98 px-4 py-4 text-sm text-text-muted shadow-[var(--shadow-panel)] animate-[fadeIn_120ms_ease-out]">
+                    No entries found for "{search}"
+                  </div>
+                )}
+              </div>
+
+              <div className="mt-5 flex flex-wrap gap-2">
+                <Link to="/articles" className={showcaseButtonClassNames.primary}>
+                  Enter the Codex
+                </Link>
+                {mapCount > 0 && (
+                  <Link to="/maps" className={showcaseButtonClassNames.secondary}>
+                    View Maps
+                  </Link>
+                )}
+                {timelineCount > 0 && (
+                  <Link to="/timeline" className={showcaseButtonClassNames.secondary}>
+                    Follow Time
+                  </Link>
+                )}
+                <Link to="/graph" className={showcaseButtonClassNames.quiet}>
+                  Trace connections
+                </Link>
+              </div>
             </div>
           </div>
-        )}
+        </div>
+      </section>
 
-        {!heroImage && (
-          <div className="py-16 sm:py-20 mb-8">
-            <h1 className="font-display text-4xl sm:text-5xl lg:text-6xl tracking-[0.12em] text-accent-emphasis mb-4 animate-fade-in-up">
-              {bannerTitle}
-            </h1>
-            {bannerSubtitle && (
-              <p className="text-text-secondary text-lg sm:text-xl max-w-2xl animate-fade-in-up" style={{ animationDelay: "100ms" }}>
-                {bannerSubtitle}
-              </p>
-            )}
-          </div>
-        )}
-
-        {/* World overview */}
-        {worldSetting?.contentHtml && (
-          <div
-            className="prose max-w-3xl mb-12"
-            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(worldSetting.contentHtml) }}
-          />
-        )}
-
-        {/* Search */}
-        <div className="opacity-80 focus-within:opacity-100 transition-opacity duration-300">
-        <div ref={searchContainerRef} className="relative max-w-md">
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="Search the codex..."
-            role="combobox"
-            aria-expanded={isOpen && searchResults.length > 0}
-            aria-controls={listboxId}
-            aria-activedescendant={activeIndex >= 0 ? `search-result-${activeIndex}` : undefined}
-            aria-autocomplete="list"
-            className="w-full bg-bg-secondary/60 border border-border-muted/60 rounded-lg px-4 py-3 text-sm
-                       text-text-primary placeholder:text-text-muted/70
-                       focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:border-accent/40
-                       transition-colors duration-300"
-          />
-          {isOpen && searchResults.length > 0 && (
+      <section className="mb-20 grid gap-6 lg:grid-cols-[minmax(0,1.08fr)_minmax(18rem,0.92fr)]">
+        <div className="min-w-0">
+          {worldSetting?.contentHtml ? (
             <div
-              ref={listRef}
-              id={listboxId}
-              role="listbox"
-              className="absolute z-20 top-full mt-2 w-full bg-bg-primary/98 border border-border-muted/60
-                         rounded-lg shadow-[var(--shadow-panel)] max-h-80 overflow-y-auto
-                         animate-[fadeIn_120ms_ease-out]"
+              className="prose max-w-none"
+              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(worldSetting.contentHtml) }}
+            />
+          ) : (
+            <div className="rounded-[1.75rem] border border-white/8 bg-[linear-gradient(180deg,rgba(49,58,86,0.34),rgba(38,47,71,0.16))] p-6">
+              <p className="text-[10px] uppercase tracking-[0.3em] text-text-muted">World Overview</p>
+              <p className="mt-4 text-base leading-8 text-text-secondary">
+                Enter through the codex, map the terrain, and follow the line of events through the world&apos;s own record.
+              </p>
+            </div>
+          )}
+        </div>
+
+        <aside className="grid gap-4 self-start">
+          <Link
+            to="/articles"
+            className="group overflow-hidden rounded-[1.75rem] border border-[var(--border-aurum)] bg-[linear-gradient(150deg,rgba(200,151,46,0.18),rgba(34,41,60,0.92),rgba(34,41,60,0.96))] px-5 py-5 shadow-[var(--glow-aurum)] transition-transform duration-300 hover:-translate-y-0.5"
+          >
+            <p className="text-[10px] uppercase tracking-[0.32em] text-[var(--color-aurum-pale)]">First Passage</p>
+            <h2 className="mt-3 font-display text-2xl text-accent-emphasis">Enter the Codex</h2>
+            <p className="mt-2 text-sm leading-7 text-text-secondary">
+              Move through characters, places, factions, and relics in the order that best reveals the world.
+            </p>
+            <p className="mt-4 text-xs uppercase tracking-[0.22em] text-text-muted">
+              {articleCount} linked entries
+            </p>
+          </Link>
+
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
+            {mapCount > 0 && (
+              <Link
+                to="/maps"
+                className="rounded-[1.5rem] border border-white/8 bg-[linear-gradient(180deg,rgba(49,58,86,0.36),rgba(38,47,71,0.12))] px-5 py-4 transition-colors duration-300 hover:border-border-default hover:text-text-primary"
+              >
+                <p className="text-[10px] uppercase tracking-[0.28em] text-text-muted">Survey</p>
+                <h3 className="mt-2 font-display text-xl text-[var(--color-aurum-pale)]">Maps</h3>
+                <p className="mt-2 text-sm leading-7 text-text-secondary">{mapCount} regions with linked pins and places.</p>
+              </Link>
+            )}
+            {timelineCount > 0 && (
+              <Link
+                to="/timeline"
+                className="rounded-[1.5rem] border border-white/8 bg-[linear-gradient(180deg,rgba(49,58,86,0.3),rgba(38,47,71,0.12))] px-5 py-4 transition-colors duration-300 hover:border-border-default hover:text-text-primary"
+              >
+                <p className="text-[10px] uppercase tracking-[0.28em] text-text-muted">Chronicle</p>
+                <h3 className="mt-2 font-display text-xl text-accent">Timeline</h3>
+                <p className="mt-2 text-sm leading-7 text-text-secondary">{timelineCount} events arranged across eras and ages.</p>
+              </Link>
+            )}
+            <Link
+              to="/graph"
+              className="rounded-[1.5rem] border border-white/8 bg-[linear-gradient(180deg,rgba(49,58,86,0.24),rgba(38,47,71,0.12))] px-5 py-4 transition-colors duration-300 hover:border-border-default hover:text-text-primary"
             >
-              {searchResults.map((a, i) => (
-                <div
+              <p className="text-[10px] uppercase tracking-[0.28em] text-text-muted">Threads</p>
+              <h3 className="mt-2 font-display text-xl text-accent">Connections</h3>
+              <p className="mt-2 text-sm leading-7 text-text-secondary">Follow alliances, rivalries, and associations across the canon.</p>
+            </Link>
+          </div>
+        </aside>
+      </section>
+
+      {spotlight && (
+        <section>
+          <div className="mb-8 flex items-center gap-4">
+            <h2 className="font-display text-sm uppercase tracking-[0.28em] text-[var(--color-aurum-pale)]">
+              Recent Illuminations
+            </h2>
+            <div className="h-px flex-1 bg-[linear-gradient(90deg,rgba(200,151,46,0.35),rgba(57,69,95,0.16))]" />
+          </div>
+
+          <div className="grid gap-5 lg:grid-cols-[minmax(0,1.15fr)_minmax(19rem,0.85fr)]">
+            <Link
+              to={`/articles/${encodeURIComponent(spotlight.id)}`}
+              className="group relative overflow-hidden rounded-[2rem] border border-white/10 bg-bg-secondary/30 shadow-[var(--shadow-image)]"
+            >
+              {spotlight.imageUrl && (
+                <img
+                  src={spotlight.imageUrl}
+                  alt={spotlight.title}
+                  loading="lazy"
+                  className="h-[22rem] w-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.02] sm:h-[28rem]"
+                />
+              )}
+              <div className="absolute inset-0 bg-gradient-to-t from-bg-abyss via-bg-abyss/20 to-transparent" />
+              <div className="absolute inset-x-0 bottom-0 p-6 sm:p-8">
+                <p className="text-[10px] uppercase tracking-[0.24em]" style={{ color: TEMPLATE_COLORS[spotlight.template] }}>
+                  {TEMPLATE_LABELS[spotlight.template]}
+                </p>
+                <h3 className="mt-3 font-display text-2xl text-accent-emphasis transition-colors duration-300 group-hover:text-[var(--color-aurum-pale)] sm:text-3xl">
+                  {spotlight.title}
+                </h3>
+              </div>
+            </Link>
+
+            <div className="grid gap-4">
+              {sideFeatures.map((a) => (
+                <Link
                   key={a.id}
-                  id={`search-result-${i}`}
-                  role="option"
-                  aria-selected={i === activeIndex}
-                  onClick={() => navigateToResult(a.id)}
-                  className={`cursor-pointer flex items-center gap-3 px-4 py-3 transition-colors duration-150 ${
-                    i === activeIndex ? "bg-bg-hover" : "hover:bg-bg-hover"
-                  }`}
+                  to={`/articles/${encodeURIComponent(a.id)}`}
+                  className="group flex min-h-[11rem] overflow-hidden rounded-[1.5rem] border border-white/8 bg-[linear-gradient(180deg,rgba(49,58,86,0.26),rgba(38,47,71,0.14))]"
                 >
                   {a.imageUrl && (
-                    <img src={a.imageUrl} alt="" className="w-9 h-9 rounded-md object-cover shrink-0" />
+                    <div className="w-[42%] shrink-0 overflow-hidden">
+                      <img
+                        src={a.imageUrl}
+                        alt={a.title}
+                        loading="lazy"
+                        className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.03]"
+                      />
+                    </div>
                   )}
-                  <div className="min-w-0">
-                    <div className="text-text-primary text-sm truncate">{a.title}</div>
-                    <div className="text-text-muted text-xs">{TEMPLATE_LABELS[a.template]}</div>
+                  <div className="flex min-w-0 flex-1 flex-col justify-end p-5">
+                    <p className="text-[10px] uppercase tracking-[0.22em]" style={{ color: TEMPLATE_COLORS[a.template] }}>
+                      {TEMPLATE_LABELS[a.template]}
+                    </p>
+                    <h3 className="mt-3 font-display text-xl leading-tight text-accent-emphasis transition-colors duration-300 group-hover:text-[var(--color-aurum-pale)]">
+                      {a.title}
+                    </h3>
+                  </div>
+                </Link>
+              ))}
+
+              {ledgerFeatures.length > 0 && (
+                <div className="rounded-[1.5rem] border border-white/8 bg-[linear-gradient(180deg,rgba(49,58,86,0.2),rgba(38,47,71,0.12))] p-4">
+                  <p className="text-[10px] uppercase tracking-[0.28em] text-text-muted">Continue Reading</p>
+                  <div className="mt-3 space-y-2">
+                    {ledgerFeatures.map((a) => (
+                      <Link
+                        key={a.id}
+                        to={`/articles/${encodeURIComponent(a.id)}`}
+                        className="flex items-center justify-between gap-4 rounded-2xl px-3 py-3 transition-colors duration-300 hover:bg-white/6"
+                      >
+                        <div className="min-w-0">
+                          <p className="text-[10px] uppercase tracking-[0.18em]" style={{ color: TEMPLATE_COLORS[a.template] }}>
+                            {TEMPLATE_LABELS[a.template]}
+                          </p>
+                          <p className="mt-1 truncate font-display text-sm text-accent-emphasis">{a.title}</p>
+                        </div>
+                        <span className="shrink-0 text-[var(--color-aurum-pale)]">↗</span>
+                      </Link>
+                    ))}
                   </div>
                 </div>
-              ))}
+              )}
             </div>
-          )}
-          {isOpen && search.trim() && searchResults.length === 0 && (
-            <div className="absolute z-20 top-full mt-2 w-full bg-bg-primary/98 border border-border-muted/60
-                            rounded-lg shadow-[var(--shadow-panel)] px-4 py-4 text-text-muted text-sm
-                            animate-[fadeIn_120ms_ease-out]">
-              No entries found for "{search}"
-            </div>
-          )}
-        </div>
-        </div>
-      </section>
-
-      {/* ── Navigation links ── */}
-      <section className="flex flex-wrap items-center divide-x divide-border-muted/30 mb-20">
-        <Link
-          to="/articles"
-          className="group flex items-center gap-3 px-5 py-3 text-text-secondary text-sm font-display
-                     tracking-[0.14em] hover:text-accent transition-colors duration-300 first:pl-0
-                     focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:rounded"
-        >
-          Codex <span className="text-text-muted group-hover:text-accent/60 transition-colors">({articles.filter((a) => a.template !== "world_setting").length})</span>
-        </Link>
-        {(maps?.length ?? 0) > 0 && (
-          <Link
-            to="/maps"
-            className="group flex items-center gap-3 px-5 py-3 text-text-secondary text-sm font-display
-                       tracking-[0.14em] hover:text-accent transition-colors duration-300 pl-5
-                       focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:rounded"
-          >
-            Maps <span className="text-text-muted group-hover:text-accent/60 transition-colors">({maps.length})</span>
-          </Link>
-        )}
-        {(data.timelineEvents?.length ?? 0) > 0 && (
-          <Link
-            to="/timeline"
-            className="group flex items-center gap-3 px-5 py-3 text-text-secondary text-sm font-display
-                       tracking-[0.14em] hover:text-accent transition-colors duration-300 pl-5
-                       focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:rounded"
-          >
-            Timeline <span className="text-text-muted group-hover:text-accent/60 transition-colors">({data.timelineEvents!.length})</span>
-          </Link>
-        )}
-        <Link
-          to="/graph"
-          className="group flex items-center gap-3 px-5 py-3 text-text-secondary text-sm font-display
-                     tracking-[0.14em] hover:text-accent transition-colors duration-300 pl-5
-                     focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:rounded"
-        >
-          Connections
-        </Link>
-      </section>
-
-      {/* ── Featured ── */}
-      {featured.length > 0 && (
-        <section>
-          <div className="flex items-center gap-4 mb-8">
-            <h2 className="font-display text-accent text-sm tracking-[0.22em] uppercase">
-              Explore Further
-            </h2>
-            <div className="flex-1 h-px bg-border-muted/40" />
-          </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-            {/* Hero featured article — double-width portrait */}
-            {featured[0] && (() => {
-              const a = featured[0];
-              const color = TEMPLATE_COLORS[a.template];
-              return (
-                <Link
-                  key={a.id}
-                  to={`/articles/${encodeURIComponent(a.id)}`}
-                  className="group relative col-span-2 row-span-2 overflow-hidden rounded-xl transition-shadow duration-500
-                             hover:shadow-[0_16px_48px_rgba(168,151,210,0.18)]
-                             focus-visible:ring-2 focus-visible:ring-accent/40"
-                >
-                  {a.imageUrl && (
-                    <div className="h-full overflow-hidden bg-bg-tertiary/30">
-                      <img
-                        src={a.imageUrl}
-                        alt={a.title}
-                        loading="lazy"
-                        className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-700 ease-out"
-                      />
-                    </div>
-                  )}
-                  <div className="absolute inset-0 bg-gradient-to-t from-bg-abyss/90 via-bg-abyss/20 to-transparent" />
-                  <div className="absolute bottom-0 inset-x-0 p-5 sm:p-6">
-                    <div className="text-[10px] tracking-[0.16em] uppercase mb-2 transition-colors duration-300" style={{ color }}>
-                      {TEMPLATE_LABELS[a.template]}
-                    </div>
-                    <h3 className="font-display text-accent-emphasis text-xl sm:text-2xl group-hover:text-accent transition-colors duration-300">
-                      {a.title}
-                    </h3>
-                  </div>
-                </Link>
-              );
-            })()}
-
-            {/* Remaining featured — portrait cards filling the grid */}
-            {featured.slice(1).map((a) => {
-              const color = TEMPLATE_COLORS[a.template];
-              return (
-                <Link
-                  key={a.id}
-                  to={`/articles/${encodeURIComponent(a.id)}`}
-                  className="group overflow-hidden rounded-lg transition-shadow duration-500
-                             hover:shadow-[0_8px_28px_rgba(168,151,210,0.12)]
-                             focus-visible:ring-2 focus-visible:ring-accent/40"
-                >
-                  {a.imageUrl && (
-                    <div className="aspect-[3/4] overflow-hidden bg-bg-tertiary/30">
-                      <img
-                        src={a.imageUrl}
-                        alt={a.title}
-                        loading="lazy"
-                        className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-700 ease-out"
-                      />
-                    </div>
-                  )}
-                  <div className="px-3 py-2.5 bg-bg-secondary/40">
-                    <div className="text-[9px] tracking-[0.14em] uppercase mb-0.5 transition-colors duration-300" style={{ color }}>
-                      {TEMPLATE_LABELS[a.template]}
-                    </div>
-                    <h3 className="font-display text-accent-emphasis text-[13px] leading-tight group-hover:text-accent transition-colors duration-300 line-clamp-2">
-                      {a.title}
-                    </h3>
-                  </div>
-                </Link>
-              );
-            })}
           </div>
         </section>
       )}

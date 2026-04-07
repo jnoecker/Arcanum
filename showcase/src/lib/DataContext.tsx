@@ -9,6 +9,7 @@ interface DataContextValue {
   error: string | null;
   articleById: Map<string, ShowcaseArticle>;
   storyById: Map<string, ShowcaseStory>;
+  reload: () => void;
 }
 
 interface RuntimeConfig {
@@ -21,6 +22,7 @@ const DataContext = createContext<DataContextValue>({
   error: null,
   articleById: new Map(),
   storyById: new Map(),
+  reload: () => {},
 });
 
 export function DataProvider({ children }: { children: ReactNode }) {
@@ -29,13 +31,18 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState<string | null>(null);
   const [articleById, setArticleById] = useState<Map<string, ShowcaseArticle>>(new Map());
   const [storyById, setStoryById] = useState<Map<string, ShowcaseStory>>(new Map());
+  const [reloadToken, setReloadToken] = useState(0);
 
   useEffect(() => {
-    let cancelled = false;
+    const controller = new AbortController();
+    const { signal } = controller;
 
     const load = async () => {
       try {
-        const configResp = await fetch("/config.json", { cache: "no-store" });
+        setLoading(true);
+        setError(null);
+
+        const configResp = await fetch("/config.json", { cache: "no-store", signal });
         let runtimeUrl: string | undefined;
         if (configResp.ok) {
           const config = await configResp.json() as RuntimeConfig;
@@ -43,7 +50,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         }
 
         const dataUrl = runtimeUrl || import.meta.env.VITE_SHOWCASE_URL || "/data/showcase.json";
-        const r = await fetch(dataUrl);
+        const r = await fetch(dataUrl, { signal });
         if (!r.ok) throw new Error(`Failed to load showcase data (${r.status})`);
         const d: ShowcaseData = await r.json();
 
@@ -52,7 +59,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
           a.searchText = a.contentHtml.replace(/<[^>]+>/g, "").toLowerCase();
         }
 
-        if (cancelled) return;
+        if (signal.aborted) return;
 
         setData(d);
         const map = new Map<string, ShowcaseArticle>();
@@ -64,21 +71,35 @@ export function DataProvider({ children }: { children: ReactNode }) {
         applyBranding(d.meta);
         injectManifest(d.meta);
       } catch (e) {
-        if (!cancelled) setError(String(e));
+        if (signal.aborted) return;
+
+        setData(null);
+        setArticleById(new Map());
+        setStoryById(new Map());
+        setError(e instanceof Error ? e.message : String(e));
       } finally {
-        if (!cancelled) setLoading(false);
+        if (!signal.aborted) setLoading(false);
       }
     };
 
     load();
 
     return () => {
-      cancelled = true;
+      controller.abort();
     };
-  }, []);
+  }, [reloadToken]);
 
   return (
-    <DataContext.Provider value={{ data, loading, error, articleById, storyById }}>
+    <DataContext.Provider
+      value={{
+        data,
+        loading,
+        error,
+        articleById,
+        storyById,
+        reload: () => setReloadToken((value) => value + 1),
+      }}
+    >
       {children}
     </DataContext.Provider>
   );

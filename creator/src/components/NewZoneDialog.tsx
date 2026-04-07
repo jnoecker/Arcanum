@@ -57,6 +57,7 @@ const STOPWORDS = new Set([
   "the", "a", "an", "and", "or", "of", "in", "on", "at", "to", "with",
   "for", "from", "by", "is", "as", "this", "that", "these", "those",
 ]);
+const MAX_ZONE_ID_LENGTH = 40;
 
 function deriveZoneId(description: string): string {
   if (!description) return "";
@@ -70,7 +71,17 @@ function deriveZoneId(description: string): string {
   const picked = words.slice(0, 3).join("_");
   if (!picked) return "";
   // Must start with a letter
-  return picked.replace(/^[^a-z]+/, "").slice(0, 40);
+  return picked.replace(/^[^a-z]+/, "").slice(0, MAX_ZONE_ID_LENGTH);
+}
+
+function normalizeZoneId(value: string): string {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/[\s-]+/g, "_")
+    .replace(/[^a-z0-9_]/g, "")
+    .replace(/_+/g, "_")
+    .slice(0, MAX_ZONE_ID_LENGTH);
 }
 
 // ─── Component ──────────────────────────────────────────────────────
@@ -92,20 +103,24 @@ export function NewZoneDialog({ onClose }: NewZoneDialogProps) {
   const [size, setSize] = useState<SizePresetId>("small");
   const [error, setError] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
-  const trapRef = useFocusTrap<HTMLDivElement>(onClose);
+  const trapRef = useFocusTrap<HTMLDivElement>(creating ? undefined : onClose);
 
   const plainDescription = useMemo(
     () => tiptapToPlainText(description).trim(),
     [description],
   );
   const hasDescription = plainDescription.length > 0;
+  const normalizedZoneIdInput = useMemo(
+    () => normalizeZoneId(zoneIdInput),
+    [zoneIdInput],
+  );
 
   // Effective zone ID: user input overrides; otherwise derive from description.
   const effectiveZoneId = useMemo(() => {
-    const fromInput = zoneIdInput.trim().toLowerCase().replace(/\s+/g, "_");
+    const fromInput = normalizedZoneIdInput;
     if (fromInput) return fromInput;
     return deriveZoneId(description);
-  }, [zoneIdInput, description]);
+  }, [normalizedZoneIdInput, description]);
 
   const idValid = /^[a-z][a-z0-9_]*$/.test(effectiveZoneId);
   const idTaken = effectiveZoneId.length > 0 && zones.has(effectiveZoneId);
@@ -141,7 +156,7 @@ export function NewZoneDialog({ onClose }: NewZoneDialogProps) {
   // ─── Create handler ───────────────────────────────────────────────
 
   const handleCreate = async () => {
-    if (!project || !idValid || idTaken) return;
+    if (!project || !idValid || idTaken || creating) return;
     setCreating(true);
     setError(null);
 
@@ -208,7 +223,8 @@ export function NewZoneDialog({ onClose }: NewZoneDialogProps) {
         role="dialog"
         aria-modal="true"
         aria-labelledby="new-zone-dialog-title"
-        className="mx-4 flex max-h-[90vh] w-[640px] flex-col rounded-lg border border-border-default bg-bg-secondary shadow-xl"
+        aria-describedby="new-zone-dialog-description"
+        className="mx-4 flex max-h-[90vh] w-full max-w-[min(40rem,calc(100vw-2rem))] flex-col rounded-lg border border-border-default bg-bg-secondary shadow-xl"
       >
         <div className="border-b border-border-default px-5 py-3">
           <h2
@@ -217,7 +233,7 @@ export function NewZoneDialog({ onClose }: NewZoneDialogProps) {
           >
             New Zone
           </h2>
-          <p className="mt-0.5 text-2xs text-text-muted">
+          <p id="new-zone-dialog-description" className="mt-0.5 text-2xs text-text-muted">
             Describe a region of your world. AI will draft rooms, mobs, and items
             from your description.
           </p>
@@ -290,6 +306,8 @@ export function NewZoneDialog({ onClose }: NewZoneDialogProps) {
               value={zoneIdInput}
               onChange={(e) => setZoneIdInput(e.target.value)}
               placeholder={deriveZoneId(description) || "e.g. dark_forest"}
+              maxLength={80}
+              aria-invalid={effectiveZoneId ? !idValid || idTaken : undefined}
               aria-describedby={
                 effectiveZoneId && !idValid
                   ? "zone-id-format-error"
@@ -299,6 +317,11 @@ export function NewZoneDialog({ onClose }: NewZoneDialogProps) {
               }
               className="h-8 w-full rounded border border-border-default bg-bg-primary px-2 text-xs text-text-primary outline-none placeholder:text-text-muted focus:border-accent focus-visible:ring-2 focus-visible:ring-border-active"
             />
+            {zoneIdInput.trim() && normalizedZoneIdInput !== zoneIdInput.trim().toLowerCase() && (
+              <p className="mt-1 text-2xs text-text-muted">
+                Zone IDs are normalized to lowercase letters, numbers, and underscores.
+              </p>
+            )}
             {effectiveZoneId && !idValid && (
               <p id="zone-id-format-error" className="mt-1 text-2xs text-status-error">
                 ID must start with a letter and contain only lowercase letters,
@@ -317,20 +340,21 @@ export function NewZoneDialog({ onClose }: NewZoneDialogProps) {
             )}
           </div>
 
-          {error && <p className="text-xs text-status-error">{error}</p>}
+          {error && <p role="alert" className="break-words text-xs text-status-error">{error}</p>}
         </div>
 
-        <div className="flex justify-end gap-2 border-t border-border-default px-5 py-3">
+        <div className="flex flex-col-reverse gap-2 border-t border-border-default px-5 py-3 sm:flex-row sm:justify-end">
           <button
             onClick={onClose}
-            className="rounded bg-bg-elevated px-4 py-1.5 text-xs font-medium text-text-primary transition-colors hover:bg-bg-hover"
+            disabled={creating}
+            className="rounded bg-bg-elevated px-4 py-2 text-xs font-medium text-text-primary transition-colors hover:bg-bg-hover sm:px-4 sm:py-1.5"
           >
             Cancel
           </button>
           <button
             onClick={handleCreate}
             disabled={!canCreate}
-            className="rounded bg-accent px-4 py-1.5 text-xs font-medium text-accent-emphasis transition-all hover:shadow-[var(--glow-aurum)] hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40"
+            className="rounded bg-accent px-4 py-2 text-xs font-medium text-accent-emphasis transition-all hover:shadow-[var(--glow-aurum)] hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40 sm:px-4 sm:py-1.5"
           >
             {creating
               ? size === "stub" || !hasDescription

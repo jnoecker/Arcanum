@@ -189,19 +189,21 @@ export function RoomPanel({
   }, [world, roomId, onWorldChange, onSelectEntity]);
 
   return (
-    <div className="relative flex min-h-0 min-w-0 w-72 flex-1 flex-col border-l border-border-default bg-bg-secondary">
+    <div className="relative flex min-h-0 min-w-0 w-[clamp(18rem,24vw,24rem)] flex-1 flex-col border-l border-border-default bg-bg-secondary max-[1100px]:max-h-[min(45vh,32rem)] max-[1100px]:w-full max-[1100px]:border-l-0 max-[1100px]:border-t">
       <img src={sidebarBg} alt="" className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-[0.12]" />
       {/* Header */}
       <div className="relative z-10 shrink-0 border-b border-border-default px-4 py-3">
-        <div className="flex items-start justify-between">
-          <div>
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0 flex-1">
             <EditableField
               value={room.title}
               onCommit={(v) => handleFieldChange("title", v)}
-              className="text-sm font-semibold text-text-primary"
+              className="truncate text-sm font-semibold text-text-primary"
               label="room title"
             />
-            <p className="mt-0.5 text-xs text-text-muted">{roomId}</p>
+            <p className="mt-0.5 truncate text-xs text-text-muted" title={roomId}>
+              {roomId}
+            </p>
             {isStartRoom && (
               <span className="mt-1 inline-block rounded bg-accent/20 px-1.5 py-0.5 text-2xs font-medium text-accent">
                 Start Room
@@ -258,8 +260,11 @@ export function RoomPanel({
                   <td className="py-1 pr-2 font-medium text-text-primary">
                     {exit.direction.toUpperCase()}
                   </td>
-                  <td className="py-1 text-text-secondary">
-                    <span className={exit.target.includes(":") ? "text-accent" : ""}>
+                  <td className="min-w-0 py-1 text-text-secondary">
+                    <span
+                      className={`block break-all ${exit.target.includes(":") ? "text-accent" : ""}`}
+                      title={exit.target}
+                    >
                       {exit.target}
                     </span>
                     {exit.hasDoor && (
@@ -336,10 +341,12 @@ export function RoomPanel({
               <li key={id}>
                 <button
                   onClick={() => onSelectEntity({ kind: "mob", id })}
-                  className="w-full rounded px-1 py-0.5 text-left text-xs transition-colors hover:bg-bg-tertiary"
+                  className="flex w-full min-w-0 items-baseline gap-1 rounded px-1 py-0.5 text-left text-xs transition-colors hover:bg-bg-tertiary"
                 >
-                  <span className="font-medium text-text-primary">{mob.name}</span>
-                  <span className="ml-1 text-text-muted">
+                  <span className="truncate font-medium text-text-primary" title={mob.name}>
+                    {mob.name}
+                  </span>
+                  <span className="truncate text-text-muted">
                     {mob.tier ?? "standard"} L{mob.level ?? 1}
                   </span>
                 </button>
@@ -363,13 +370,13 @@ export function RoomPanel({
               <li key={id}>
                 <button
                   onClick={() => onSelectEntity({ kind: "item", id })}
-                  className="w-full rounded px-1 py-0.5 text-left text-xs transition-colors hover:bg-bg-tertiary"
+                  className="flex w-full min-w-0 items-baseline gap-1 rounded px-1 py-0.5 text-left text-xs transition-colors hover:bg-bg-tertiary"
                 >
-                  <span className="font-medium text-text-primary">
+                  <span className="truncate font-medium text-text-primary" title={item.displayName}>
                     {item.displayName}
                   </span>
                   {item.slot && (
-                    <span className="ml-1 text-text-muted">[{item.slot}]</span>
+                    <span className="truncate text-text-muted">[{item.slot}]</span>
                   )}
                 </button>
               </li>
@@ -392,10 +399,12 @@ export function RoomPanel({
               <li key={id}>
                 <button
                   onClick={() => onSelectEntity({ kind: "shop", id })}
-                  className="w-full rounded px-1 py-0.5 text-left text-xs transition-colors hover:bg-bg-tertiary"
+                  className="flex w-full min-w-0 items-baseline gap-1 rounded px-1 py-0.5 text-left text-xs transition-colors hover:bg-bg-tertiary"
                 >
-                  <span className="font-medium text-text-primary">{shop.name}</span>
-                  <span className="ml-1 text-text-muted">
+                  <span className="truncate font-medium text-text-primary" title={shop.name}>
+                    {shop.name}
+                  </span>
+                  <span className="truncate text-text-muted">
                     ({shop.items?.length ?? 0} items)
                   </span>
                 </button>
@@ -419,10 +428,14 @@ export function RoomPanel({
               <li key={id}>
                 <button
                   onClick={() => onSelectEntity({ kind: "trainer", id })}
-                  className="w-full rounded px-1 py-0.5 text-left text-xs transition-colors hover:bg-bg-tertiary"
+                  className="flex w-full min-w-0 items-baseline gap-1 rounded px-1 py-0.5 text-left text-xs transition-colors hover:bg-bg-tertiary"
                 >
-                  <span className="font-medium text-text-primary">{trainer.name}</span>
-                  <span className="ml-1 text-text-muted">[{getTrainerClasses(trainer).join(", ") || "?"}]</span>
+                  <span className="truncate font-medium text-text-primary" title={trainer.name}>
+                    {trainer.name}
+                  </span>
+                  <span className="truncate text-text-muted">
+                    [{getTrainerClasses(trainer).join(", ") || "?"}]
+                  </span>
                 </button>
               </li>
             ))}
@@ -448,12 +461,12 @@ export function RoomPanel({
               <li key={id}>
                 <button
                   onClick={() => onSelectEntity({ kind: "gatheringNode", id })}
-                  className="w-full rounded px-1 py-0.5 text-left text-xs transition-colors hover:bg-bg-tertiary"
+                  className="flex w-full min-w-0 items-baseline gap-1 rounded px-1 py-0.5 text-left text-xs transition-colors hover:bg-bg-tertiary"
                 >
-                  <span className="font-medium text-text-primary">
+                  <span className="truncate font-medium text-text-primary" title={node.displayName}>
                     {node.displayName}
                   </span>
-                  <span className="ml-1 text-text-muted">{node.skill}</span>
+                  <span className="truncate text-text-muted">{node.skill}</span>
                 </button>
               </li>
             ))}
@@ -471,9 +484,11 @@ export function RoomPanel({
               <li key={id}>
                 <button
                   onClick={() => onSelectEntity({ kind: "quest", id })}
-                  className="w-full rounded px-1 py-0.5 text-left text-xs transition-colors hover:bg-bg-tertiary"
+                  className="w-full min-w-0 rounded px-1 py-0.5 text-left text-xs transition-colors hover:bg-bg-tertiary"
                 >
-                  <span className="font-medium text-text-primary">{quest.name}</span>
+                  <span className="block truncate font-medium text-text-primary" title={quest.name}>
+                    {quest.name}
+                  </span>
                 </button>
               </li>
             ))}
@@ -634,4 +649,3 @@ export function RoomPanel({
     </div>
   );
 }
-

@@ -19,10 +19,10 @@ function NavItem({ to, label, onClick }: { to: string; label: string; onClick?: 
       end={to === "/"}
       onClick={onClick}
       className={({ isActive }) =>
-        `block px-3 py-2 sm:py-1.5 text-[13px] font-display tracking-[0.2em] uppercase transition-colors duration-300 ${
+        `relative block px-3 py-2 sm:py-1.5 text-[12px] font-display tracking-[0.2em] uppercase transition-colors duration-300 after:mt-1 after:block after:h-px after:origin-left after:transition-transform after:duration-300 ${
           isActive
-            ? "text-accent"
-            : "text-text-muted hover:text-text-primary"
+            ? "text-[var(--color-aurum-pale)] after:scale-x-100 after:bg-[var(--color-aurum)]"
+            : "text-text-muted hover:text-text-primary after:scale-x-0 after:bg-border-muted/70 hover:after:scale-x-100"
         }`
       }
     >
@@ -72,9 +72,18 @@ export function Layout({ children }: { children: ReactNode }) {
           ? "bg-bg-abyss/85 backdrop-blur-md border-b border-border-muted/50 shadow-[0_4px_24px_rgba(8,10,18,0.3)]"
           : "bg-transparent border-b border-transparent"
       }`}>
-        <div className="max-w-5xl mx-auto px-5 sm:px-8 py-4 flex items-center justify-between">
-          <NavLink to="/" className="font-display text-accent text-lg tracking-[0.28em] uppercase hover:text-accent-emphasis transition-colors duration-300 focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:rounded-md">
-            {worldName}
+        <div className="max-w-5xl mx-auto px-5 sm:px-8 py-4 flex items-center justify-between gap-4">
+          <NavLink
+            to="/"
+            className="min-w-0 max-w-[min(22rem,calc(100vw-7rem))] rounded-md transition-colors duration-300 focus-visible:ring-2 focus-visible:ring-accent/40"
+            title={worldName}
+          >
+            <span className="block text-[9px] uppercase tracking-[0.34em] text-text-muted/80">
+              Atlas Of
+            </span>
+            <span className="mt-1 block text-balance break-words font-display text-[1.05rem] tracking-[0.28em] uppercase text-[var(--color-aurum-pale)] hover:text-accent-emphasis">
+              {worldName}
+            </span>
           </NavLink>
 
           {/* Desktop nav */}
@@ -87,9 +96,10 @@ export function Layout({ children }: { children: ReactNode }) {
           {/* Mobile menu button */}
           <button
             onClick={() => setMenuOpen((v) => !v)}
-            className="sm:hidden p-2 text-text-secondary hover:text-text-primary transition-colors focus-visible:ring-2 focus-visible:ring-accent/40"
+            className="sm:hidden min-h-11 min-w-11 rounded-md p-2 text-text-secondary hover:text-text-primary transition-colors focus-visible:ring-2 focus-visible:ring-accent/40"
             aria-expanded={menuOpen}
             aria-label="Toggle navigation menu"
+            aria-controls="mobile-navigation"
           >
             <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
               {menuOpen ? (
@@ -111,6 +121,7 @@ export function Layout({ children }: { children: ReactNode }) {
         {/* Mobile nav dropdown */}
         {menuOpen && (
           <nav
+            id="mobile-navigation"
             className="sm:hidden border-t border-border-muted/50 bg-bg-abyss/95 backdrop-blur-md px-5 py-3 animate-[fadeIn_150ms_ease-out]"
             aria-label="Main navigation"
           >
@@ -123,7 +134,7 @@ export function Layout({ children }: { children: ReactNode }) {
 
       {/* Atmospheric glow */}
       <div aria-hidden="true" className="pointer-events-none fixed inset-0 z-0">
-        <div className="absolute top-[-12rem] left-[-8rem] w-[36rem] h-[36rem] rounded-full bg-[radial-gradient(circle,rgba(168,151,210,0.10),transparent_65%)] blur-3xl" />
+        <div className="absolute top-[-12rem] left-[-8rem] w-[36rem] h-[36rem] rounded-full bg-[radial-gradient(circle,rgba(200,151,46,0.11),transparent_65%)] blur-3xl" />
         <div className="absolute bottom-[-16rem] right-[-10rem] w-[40rem] h-[40rem] rounded-full bg-[radial-gradient(circle,rgba(140,174,201,0.08),transparent_70%)] blur-3xl" />
       </div>
 
@@ -136,7 +147,9 @@ export function Layout({ children }: { children: ReactNode }) {
       </main>
 
       <footer className="border-t border-border-muted/30 py-8 text-center">
-        <p className="text-text-muted text-xs tracking-[0.1em]">{footerText}</p>
+        <p className="mx-auto max-w-3xl break-words px-5 text-text-muted text-xs tracking-[0.1em]">
+          {footerText}
+        </p>
       </footer>
     </div>
   );

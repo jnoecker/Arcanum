@@ -7,6 +7,7 @@
 // Escape key closes the overlay.
 
 import { useEffect, useRef } from "react";
+import { useFocusTrap } from "@/lib/useFocusTrap";
 
 interface CinematicOverlayProps {
   /** Public MP4 URL on R2. */
@@ -19,6 +20,7 @@ interface CinematicOverlayProps {
 
 export function CinematicOverlay({ src, title, onClose }: CinematicOverlayProps) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const trapRef = useFocusTrap<HTMLDivElement>(onClose);
 
   // Close on Escape.
   useEffect(() => {
@@ -56,9 +58,10 @@ export function CinematicOverlay({ src, title, onClose }: CinematicOverlayProps)
 
   return (
     <div
+      ref={trapRef}
       role="dialog"
       aria-modal="true"
-      aria-label={`${title} cinematic`}
+      aria-labelledby="cinematic-overlay-title"
       className="fixed inset-0 z-[60] flex flex-col items-center justify-center bg-black/90 backdrop-blur-sm"
       onClick={(e) => {
         // Click on the backdrop (not the video itself) closes.
@@ -66,12 +69,18 @@ export function CinematicOverlay({ src, title, onClose }: CinematicOverlayProps)
       }}
     >
       {/* Header with title + close */}
-      <div className="absolute top-0 left-0 right-0 flex items-center justify-between px-6 py-4 text-white">
-        <h2 className="font-display text-lg tracking-wide">{title}</h2>
+      <div className="absolute top-0 left-0 right-0 flex items-start justify-between gap-4 px-6 py-4 text-white">
+        <h2
+          id="cinematic-overlay-title"
+          className="min-w-0 flex-1 text-pretty break-words font-display text-lg tracking-wide"
+        >
+          {title}
+        </h2>
         <button
           type="button"
           onClick={onClose}
           aria-label="Close cinematic"
+          title="Close cinematic"
           className="flex h-10 w-10 items-center justify-center rounded-full border border-white/20 bg-black/40 text-white transition-colors hover:bg-white/10"
         >
           <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">

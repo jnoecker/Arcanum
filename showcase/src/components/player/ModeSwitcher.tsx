@@ -1,6 +1,3 @@
-// ─── ModeSwitcher ─────────────────────────────────────────────────
-// Segmented toggle for player navigation mode: Click | Auto | Scroll.
-
 export type PlayerMode = "click" | "auto" | "scroll";
 
 interface ModeSwitcherProps {
@@ -8,10 +5,10 @@ interface ModeSwitcherProps {
   onChange: (mode: PlayerMode) => void;
 }
 
-const MODES: { value: PlayerMode; label: string }[] = [
-  { value: "click", label: "Click" },
-  { value: "auto", label: "Auto" },
-  { value: "scroll", label: "Scroll" },
+const MODES: { value: PlayerMode; label: string; shortDescription: string }[] = [
+  { value: "click", label: "Click", shortDescription: "Manual" },
+  { value: "auto", label: "Auto", shortDescription: "Timed" },
+  { value: "scroll", label: "Scroll", shortDescription: "Exhibit" },
 ];
 
 export function ModeSwitcher({ mode, onChange }: ModeSwitcherProps) {
@@ -19,23 +16,30 @@ export function ModeSwitcher({ mode, onChange }: ModeSwitcherProps) {
     <div
       role="radiogroup"
       aria-label="Navigation mode"
-      className="flex rounded-lg border border-border-muted/40 overflow-hidden"
+      className="inline-flex flex-wrap gap-2 rounded-[1.2rem] border border-border-muted/30 bg-bg-secondary/25 p-1.5"
     >
-      {MODES.map((m) => (
-        <button
-          key={m.value}
-          role="radio"
-          aria-checked={mode === m.value}
-          onClick={() => onChange(m.value)}
-          className={`px-3 py-1.5 text-[12px] font-display tracking-[0.12em] uppercase transition-colors duration-200 ${
-            mode === m.value
-              ? "bg-accent/12 text-accent"
-              : "text-text-muted hover:text-text-secondary"
-          }`}
-        >
-          {m.label}
-        </button>
-      ))}
+      {MODES.map((entry) => {
+        const active = mode === entry.value;
+        return (
+          <button
+            key={entry.value}
+            type="button"
+            role="radio"
+            aria-checked={active}
+            onClick={() => onChange(entry.value)}
+            className={`min-h-11 rounded-[0.95rem] px-3 py-2 text-left transition-colors duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-aurum)]/35 ${
+              active
+                ? "border border-[var(--color-aurum)]/35 bg-[var(--color-aurum)]/10 text-[var(--color-aurum-pale)]"
+                : "border border-transparent bg-transparent text-text-muted hover:text-text-secondary"
+            }`}
+          >
+            <span className="block font-display text-[0.72rem] uppercase tracking-[0.18em]">{entry.label}</span>
+            <span className="mt-1 block text-[0.68rem] uppercase tracking-[0.16em] text-current/75">
+              {entry.shortDescription}
+            </span>
+          </button>
+        );
+      })}
     </div>
   );
 }

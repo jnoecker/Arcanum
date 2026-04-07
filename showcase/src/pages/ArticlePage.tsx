@@ -1,8 +1,9 @@
-import { useParams, Link } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
 import DOMPurify from "dompurify";
+import { Link, useParams } from "react-router-dom";
+import { ShowcaseEmptyState, ShowcasePanel, showcaseButtonClassNames } from "@/components/ShowcasePrimitives";
 import { useShowcase } from "@/lib/DataContext";
-import { TEMPLATE_LABELS, TEMPLATE_COLORS } from "@/lib/templates";
+import { TEMPLATE_COLORS, TEMPLATE_LABELS } from "@/lib/templates";
 import type { ShowcaseArticle, ShowcaseStory } from "@/types/showcase";
 
 const RELATION_TYPE_LABELS: Record<string, string> = {
@@ -14,9 +15,7 @@ const RELATION_TYPE_LABELS: Record<string, string> = {
   mentioned: "Mentioned",
 };
 
-/** Order in which relation groups appear in the sidebar */
 const RELATION_TYPE_ORDER = ["ally", "rival", "member_of", "located_in", "related", "mentioned"];
-
 const MENTIONED_LIMIT = 5;
 
 interface ResolvedRelation {
@@ -24,99 +23,113 @@ interface ResolvedRelation {
   type: string;
   label?: string;
   target?: ShowcaseArticle;
-  /** For reverse relations, the title of the article that references this one */
   sourceTitle?: string;
   reverse?: boolean;
 }
 
-function ConnectionsSection({
-  relations,
-  color,
-}: {
-  relations: ResolvedRelation[];
-  color: string;
-}) {
+function decodeRouteId(value: string | undefined): string | undefined {
+  if (!value) {
+    return undefined;
+  }
+
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return undefined;
+  }
+}
+
+function formatFieldLabel(key: string) {
+  return key.replace(/([A-Z])/g, " $1").replace(/[_-]+/g, " ").trim();
+}
+
+function summarizeArticle(article: ShowcaseArticle) {
+  const text = article.searchText?.trim() ?? "";
+  if (!text) {
+    return "This record has been published to the codex without a formal abstract.";
+  }
+
+  const normalized = text.replace(/\s+/g, " ").trim();
+  if (normalized.length <= 240) {
+    return normalized;
+  }
+
+  return `${normalized.slice(0, 237).trimEnd()}...`;
+}
+
+function ConnectionsSection({ relations, color }: { relations: ResolvedRelation[]; color: string }) {
   const [mentionedExpanded, setMentionedExpanded] = useState(false);
 
-  // Group relations by type
   const grouped = useMemo(() => {
-    const map = new Map<string, ResolvedRelation[]>();
-    for (const r of relations) {
-      const key = r.type;
-      if (!map.has(key)) map.set(key, []);
-      map.get(key)!.push(r);
+    const groupedRelations = new Map<string, ResolvedRelation[]>();
+    for (const relation of relations) {
+      const bucket = groupedRelations.get(relation.type) ?? [];
+      bucket.push(relation);
+      groupedRelations.set(relation.type, bucket);
     }
-    return map;
+    return groupedRelations;
   }, [relations]);
 
-  // Sort groups by defined order, unknown types go last
   const sortedGroups = useMemo(() => {
     const entries = [...grouped.entries()];
-    entries.sort((a, b) => {
-      const ai = RELATION_TYPE_ORDER.indexOf(a[0]);
-      const bi = RELATION_TYPE_ORDER.indexOf(b[0]);
-      return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
+    entries.sort((left, right) => {
+      const leftIndex = RELATION_TYPE_ORDER.indexOf(left[0]);
+      const rightIndex = RELATION_TYPE_ORDER.indexOf(right[0]);
+      return (leftIndex === -1 ? 999 : leftIndex) - (rightIndex === -1 ? 999 : rightIndex);
     });
     return entries;
   }, [grouped]);
 
-  if (relations.length === 0) return null;
+  if (relations.length === 0) {
+    return null;
+  }
 
   return (
-    <div className="rounded-xl overflow-hidden border-t-2" style={{ borderTopColor: `${color}30` }}>
-      <div className="px-5 py-3 bg-bg-tertiary/40">
-        <h3 className="font-display text-[11px] tracking-[0.2em] uppercase" style={{ color }}>
-          Connections
-        </h3>
-      </div>
-      <div className="px-5 py-4 space-y-4 bg-bg-secondary/30">
-        {sortedGroups.map(([type, items]) => {
-          const isMentioned = type === "mentioned";
-          const displayItems =
-            isMentioned && !mentionedExpanded ? items.slice(0, MENTIONED_LIMIT) : items;
-          const hiddenCount = items.length - MENTIONED_LIMIT;
+    <ShowcasePanel title="Relation Index" toneColor={color} bodyClassName="space-y-4">
+      {sortedGroups.map(([type, items]) => {
+        const isMentioned = type === "mentioned";
+        const displayItems = isMentioned && !mentionedExpanded ? items.slice(0, MENTIONED_LIMIT) : items;
+        const hiddenCount = items.length - MENTIONED_LIMIT;
 
-          return (
-            <div key={type}>
-              <div className="flex items-center gap-2 mb-2">
-                <span className="text-text-muted text-[10px] tracking-[0.15em] uppercase font-display">
-                  {RELATION_TYPE_LABELS[type] ?? type}
-                </span>
-                <span className="text-text-muted/50 text-[10px]">({items.length})</span>
-              </div>
-              <div className="space-y-1.5">
-                {displayItems.map((r) => (
-                  <RelationLink key={`${r.targetId}:${r.type}:${r.reverse ? "rev" : "fwd"}`} relation={r} />
-                ))}
-              </div>
-              {isMentioned && hiddenCount > 0 && !mentionedExpanded && (
-                <button
-                  onClick={() => setMentionedExpanded(true)}
-                  className="mt-1.5 text-[11px] text-text-link hover:text-accent transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:rounded"
-                >
-                  and {hiddenCount} more...
-                </button>
-              )}
-              {isMentioned && mentionedExpanded && items.length > MENTIONED_LIMIT && (
-                <button
-                  onClick={() => setMentionedExpanded(false)}
-                  className="mt-1.5 text-[11px] text-text-link hover:text-accent transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:rounded"
-                >
-                  show less
-                </button>
-              )}
+        return (
+          <div key={type}>
+            <div className="mb-2 flex items-center gap-2">
+              <span className="font-display text-[0.65rem] uppercase tracking-[0.18em] text-text-muted">
+                {RELATION_TYPE_LABELS[type] ?? type}
+              </span>
+              <span className="text-[0.65rem] text-text-muted/55">({items.length})</span>
             </div>
-          );
-        })}
+            <div className="space-y-2">
+              {displayItems.map((relation) => (
+                <RelationLink key={`${relation.targetId}:${relation.type}:${relation.reverse ? "rev" : "fwd"}`} relation={relation} />
+              ))}
+            </div>
+            {isMentioned && hiddenCount > 0 && !mentionedExpanded ? (
+              <button
+                type="button"
+                onClick={() => setMentionedExpanded(true)}
+                className={`${showcaseButtonClassNames.quiet} mt-2`}
+              >
+                Show {hiddenCount} more
+              </button>
+            ) : null}
+            {isMentioned && mentionedExpanded && items.length > MENTIONED_LIMIT ? (
+              <button
+                type="button"
+                onClick={() => setMentionedExpanded(false)}
+                className={`${showcaseButtonClassNames.quiet} mt-2`}
+              >
+                Show fewer
+              </button>
+            ) : null}
+          </div>
+        );
+      })}
 
-        <Link
-          to="/graph"
-          className="mt-3 block text-center text-[11px] text-text-link hover:text-accent transition-colors duration-200"
-        >
-          See all connections &rarr;
-        </Link>
-      </div>
-    </div>
+      <Link to="/graph" className={`${showcaseButtonClassNames.quiet} mt-2 justify-center`}>
+        Open the full weave
+      </Link>
+    </ShowcasePanel>
   );
 }
 
@@ -125,29 +138,26 @@ function RelationLink({ relation }: { relation: ResolvedRelation }) {
   const imageUrl = relation.target?.imageUrl;
 
   return (
-    <div className="flex items-center gap-2">
-      {imageUrl && (
-        <img
-          src={imageUrl}
-          alt=""
-          className="w-8 h-8 rounded-md object-cover shrink-0"
-          loading="lazy"
-        />
-      )}
-      {relation.target ? (
-        <Link
-          to={`/articles/${encodeURIComponent(relation.targetId)}`}
-          className="text-sm px-2 py-0.5 rounded-md bg-accent/6 text-text-link hover:bg-accent/14
-                     hover:text-accent transition-colors duration-200 truncate min-w-0"
-        >
-          {title}
-        </Link>
+    <div className="flex items-center gap-3 rounded-2xl border border-border-muted/25 bg-bg-secondary/45 px-3 py-2">
+      {imageUrl ? (
+        <img src={imageUrl} alt="" className="h-10 w-10 shrink-0 rounded-xl object-cover" loading="lazy" />
       ) : (
-        <span className="text-text-muted text-sm italic truncate min-w-0">{title}</span>
+        <span className="h-10 w-10 shrink-0 rounded-xl bg-bg-tertiary/60" aria-hidden="true" />
       )}
-      {relation.reverse && (
-        <span className="text-text-muted/40 text-[9px] italic shrink-0">&larr;</span>
-      )}
+      <div className="min-w-0 flex-1">
+        {relation.target ? (
+          <Link
+            to={`/articles/${encodeURIComponent(relation.targetId)}`}
+            className="block truncate text-sm text-text-link transition-colors duration-200 hover:text-accent"
+          >
+            {title}
+          </Link>
+        ) : (
+          <span className="block truncate text-sm italic text-text-muted">{title}</span>
+        )}
+        {relation.label ? <p className="mt-0.5 truncate text-[0.72rem] text-text-muted">{relation.label}</p> : null}
+      </div>
+      {relation.reverse ? <span className="shrink-0 text-[0.7rem] text-text-muted/50">&larr;</span> : null}
     </div>
   );
 }
@@ -156,95 +166,88 @@ function ArticleGallery({ images, title }: { images: string[]; title: string }) 
   const [activeIndex, setActiveIndex] = useState(0);
 
   return (
-    <div className="mb-8 animate-fade-in-up">
-      {/* Main image */}
-      <div className="relative max-w-md mx-auto rounded-xl overflow-hidden shadow-[var(--shadow-image)]">
-        {images.map((src, i) => (
-          <img
-            key={`${src}-${i}`}
-            src={src}
-            alt={i === 0 ? title : `${title} — gallery ${i}`}
-            className={`w-full h-auto transition-opacity duration-300 ${
-              i === activeIndex ? "opacity-100" : "opacity-0 absolute inset-0"
-            }`}
-          />
-        ))}
+    <div className="space-y-4">
+      <div className="overflow-hidden rounded-[1.5rem] border border-[var(--color-aurum)]/20 bg-[linear-gradient(180deg,rgba(17,17,27,0.88),rgba(8,8,14,0.96))] p-3 shadow-[var(--shadow-deep)]">
+        <div className="relative overflow-hidden rounded-[1.1rem] bg-bg-tertiary/40">
+          {images.map((src, index) => (
+            <img
+              key={`${src}-${index}`}
+              src={src}
+              alt={index === 0 ? title : `${title} - gallery ${index + 1}`}
+              className={`w-full transition-opacity duration-300 ${index === activeIndex ? "opacity-100" : "absolute inset-0 opacity-0"}`}
+            />
+          ))}
+        </div>
       </div>
 
-      {/* Thumbnail strip */}
-      {images.length > 1 && (
-        <div className="mt-4 flex justify-center gap-2">
-          {images.map((src, i) => (
+      {images.length > 1 ? (
+        <div className="flex flex-wrap gap-2">
+          {images.map((src, index) => (
             <button
-              key={`${src}-${i}`}
-              onClick={() => setActiveIndex(i)}
-              aria-label={i === 0 ? "Primary image" : `Gallery image ${i}`}
-              aria-current={i === activeIndex ? "true" : undefined}
-              className={`h-12 w-12 shrink-0 overflow-hidden rounded-lg border-2 transition-[border-color,opacity,transform,box-shadow] duration-200 focus-visible:ring-2 focus-visible:ring-accent/40 ${
-                i === activeIndex
-                  ? "border-accent/70 scale-105 shadow-[0_0_12px_rgba(168,151,210,0.25)]"
-                  : "border-white/10 opacity-60 hover:opacity-90 hover:border-white/25"
+              key={`${src}-${index}`}
+              type="button"
+              onClick={() => setActiveIndex(index)}
+              aria-label={index === 0 ? "Primary image" : `Gallery image ${index + 1}`}
+              aria-current={index === activeIndex ? "true" : undefined}
+              className={`h-14 w-14 overflow-hidden rounded-2xl border transition-[border-color,transform,opacity] duration-200 focus-visible:ring-2 focus-visible:ring-[var(--color-aurum)]/35 ${
+                index === activeIndex
+                  ? "border-[var(--color-aurum)]/55 opacity-100"
+                  : "border-border-muted/30 opacity-65 hover:opacity-100"
               }`}
             >
-              <img
-                src={src}
-                alt=""
-                className="h-full w-full object-cover"
-                loading="lazy"
-              />
+              <img src={src} alt="" className="h-full w-full object-cover" loading="lazy" />
             </button>
           ))}
         </div>
-      )}
+      ) : null}
     </div>
   );
 }
-
-// ─── Featured-in-stories sidebar section ────────────────────────────
 
 function FeaturedInStories({ stories, color }: { stories: ShowcaseStory[]; color: string }) {
-  if (stories.length === 0) return null;
+  if (stories.length === 0) {
+    return null;
+  }
+
   return (
-    <div className="rounded-xl overflow-hidden border-t-2" style={{ borderTopColor: `${color}30` }}>
-      <div className="px-5 py-3 bg-bg-tertiary/40">
-        <h3 className="font-display text-[11px] tracking-[0.2em] uppercase" style={{ color }}>
-          Featured In Stories
-        </h3>
-      </div>
-      <ul className="px-3 py-2 bg-bg-secondary/30 space-y-1">
-        {stories.map((s) => (
-          <li key={s.id}>
-            <Link
-              to={`/stories/${encodeURIComponent(s.id)}`}
-              className="flex items-center gap-2 rounded px-2 py-1.5 text-xs text-text-secondary hover:bg-bg-hover hover:text-text-primary transition-colors"
-            >
-              {s.coverImageUrl ? (
-                <img src={s.coverImageUrl} alt="" className="h-8 w-12 rounded object-cover" />
-              ) : (
-                <span className="h-8 w-12 rounded bg-bg-tertiary" />
-              )}
-              <span className="flex-1 truncate">{s.title}</span>
-            </Link>
-          </li>
-        ))}
-      </ul>
-    </div>
+    <ShowcasePanel title="Stage Appearances" toneColor={color} bodyClassName="space-y-2">
+      {stories.map((story) => (
+        <Link
+          key={story.id}
+          to={`/stories/${encodeURIComponent(story.id)}`}
+          className="flex items-center gap-3 rounded-2xl border border-border-muted/25 bg-bg-secondary/45 px-3 py-2 transition-colors duration-200 hover:bg-bg-hover/25"
+        >
+          {story.coverImageUrl ? (
+            <img src={story.coverImageUrl} alt="" className="h-10 w-14 rounded-xl object-cover" loading="lazy" />
+          ) : (
+            <span className="h-10 w-14 rounded-xl bg-bg-tertiary/60" aria-hidden="true" />
+          )}
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-sm text-text-primary">{story.title}</p>
+            <p className="mt-0.5 truncate text-[0.72rem] text-text-muted">
+              {new Intl.NumberFormat().format(story.sceneCount)} scene{story.sceneCount === 1 ? "" : "s"}
+            </p>
+          </div>
+        </Link>
+      ))}
+    </ShowcasePanel>
   );
 }
 
-/** Find every story that references the given article ID at story or scene level. */
-function findStoriesFeaturingArticle(
-  stories: ShowcaseStory[] | undefined,
-  articleId: string,
-): ShowcaseStory[] {
-  if (!stories) return [];
-  return stories.filter((s) => {
-    if (s.linkedArticleIds?.includes(articleId)) return true;
-    if (s.featuredCharacterIds?.includes(articleId)) return true;
-    return s.scenes.some(
-      (sc) =>
-        sc.linkedArticleIds?.includes(articleId) ||
-        sc.linkedLocationArticleId === articleId,
+function findStoriesFeaturingArticle(stories: ShowcaseStory[] | undefined, articleId: string) {
+  if (!stories) {
+    return [];
+  }
+
+  return stories.filter((story) => {
+    if (story.linkedArticleIds?.includes(articleId)) {
+      return true;
+    }
+    if (story.featuredCharacterIds?.includes(articleId)) {
+      return true;
+    }
+    return story.scenes.some(
+      (scene) => scene.linkedArticleIds?.includes(articleId) || scene.linkedLocationArticleId === articleId,
     );
   });
 }
@@ -253,223 +256,279 @@ export function ArticlePage() {
   const { id } = useParams<{ id: string }>();
   const { data, articleById } = useShowcase();
 
-  const article = id ? articleById.get(decodeURIComponent(id)) : undefined;
+  const decodedId = decodeRouteId(id);
+  const article = decodedId ? articleById.get(decodedId) : undefined;
 
   useEffect(() => {
-    document.title = article ? `${article.title} — ${data?.meta.worldName ?? "World Lore"}` : "Not Found";
+    document.title = article ? `${article.title} - ${data?.meta.worldName ?? "World Lore"}` : "Article Not Found";
   }, [article, data?.meta.worldName]);
 
   const siblings = useMemo(() => {
-    if (!article || !data) return { prev: undefined, next: undefined };
+    if (!article || !data) {
+      return { prev: undefined, next: undefined };
+    }
+
     const sameType = data.articles
-      .filter((a) => a.template === article.template)
-      .sort((a, b) => a.title.localeCompare(b.title));
-    const idx = sameType.findIndex((a) => a.id === article.id);
+      .filter((entry) => entry.template === article.template)
+      .sort((left, right) => left.title.localeCompare(right.title));
+    const index = sameType.findIndex((entry) => entry.id === article.id);
+
     return {
-      prev: idx > 0 ? sameType[idx - 1] : undefined,
-      next: idx < sameType.length - 1 ? sameType[idx + 1] : undefined,
+      prev: index > 0 ? sameType[index - 1] : undefined,
+      next: index < sameType.length - 1 ? sameType[index + 1] : undefined,
     };
   }, [article, data]);
 
+  const reverseRelations = useMemo(() => {
+    if (!data || !article) {
+      return [];
+    }
+
+    return data.articles
+      .filter((entry) => entry.id !== article.id && entry.relations.some((relation) => relation.targetId === article.id))
+      .flatMap((entry) =>
+        entry.relations
+          .filter((relation) => relation.targetId === article.id)
+          .map((relation) => ({
+            ...relation,
+            targetId: entry.id,
+            sourceTitle: entry.title,
+            target: articleById.get(entry.id),
+            reverse: true,
+          })),
+      );
+  }, [article, articleById, data]);
+
   if (!article) {
     return (
-      <div className="text-center py-24">
-        <h1 className="font-display text-accent text-2xl mb-3">Article Not Found</h1>
-        <p className="text-text-muted mb-6">This entry has been lost to the ages.</p>
-        <Link to="/articles" className="text-text-link text-sm hover:text-accent transition-colors duration-300">
-          Return to the Codex
-        </Link>
-      </div>
+      <ShowcaseEmptyState
+        className="py-8"
+        title="Article not found"
+        description="This entry cannot be recovered from the public archive."
+        actions={
+          <Link to="/articles" className={showcaseButtonClassNames.secondary}>
+            Return to the codex
+          </Link>
+        }
+      />
     );
   }
 
   const color = TEMPLATE_COLORS[article.template];
-  const fieldEntries = Object.entries(article.fields).filter(
-    ([, v]) => v !== undefined && v !== null && v !== "",
-  );
-  // Forward relations: this article → targets
-  const forwardRelations: ResolvedRelation[] = article.relations.map((r) => ({
-    ...r,
-    target: articleById.get(r.targetId),
+  const fieldEntries = Object.entries(article.fields).filter(([, value]) => value !== undefined && value !== null && value !== "");
+  const heroSummary = summarizeArticle(article);
+  const imageUrls = [article.imageUrl, ...(article.galleryUrls ?? [])].filter((value): value is string => Boolean(value));
+
+  const forwardRelations: ResolvedRelation[] = article.relations.map((relation) => ({
+    ...relation,
+    target: articleById.get(relation.targetId),
     reverse: false,
   }));
 
-  // Reverse relations: other articles → this article
-  const reverseRelations = useMemo(() => {
-    if (!data) return [];
-    return data.articles
-      .filter((a) => a.id !== article.id && a.relations.some((r) => r.targetId === article.id))
-      .flatMap((a) =>
-        a.relations
-          .filter((r) => r.targetId === article.id)
-          .map((r) => ({
-            ...r,
-            targetId: a.id,
-            sourceTitle: a.title,
-            target: articleById.get(a.id),
-            reverse: true,
-          }))
-      );
-  }, [data, article.id, articleById]);
+  const featuredInStories = findStoriesFeaturingArticle(data?.stories, article.id);
 
-  // Stories that feature this article (story-level or scene-level linked)
-  const featuredInStories = useMemo(
-    () => findStoriesFeaturingArticle(data?.stories, article.id),
-    [data?.stories, article.id],
-  );
-
-  // Merge forward and reverse, deduplicating by targetId+type
   const allRelations = useMemo(() => {
     const seen = new Set<string>();
-    const result: ResolvedRelation[] = [];
-    for (const r of forwardRelations) {
-      const key = `${r.targetId}:${r.type}`;
+    const merged: ResolvedRelation[] = [];
+
+    for (const relation of forwardRelations) {
+      const key = `${relation.targetId}:${relation.type}`;
       if (!seen.has(key)) {
         seen.add(key);
-        result.push(r);
+        merged.push(relation);
       }
     }
-    for (const r of reverseRelations) {
-      const key = `${r.targetId}:${r.type}`;
+
+    for (const relation of reverseRelations) {
+      const key = `${relation.targetId}:${relation.type}`;
       if (!seen.has(key)) {
         seen.add(key);
-        result.push(r);
+        merged.push(relation);
       }
     }
-    return result;
+
+    return merged;
   }, [forwardRelations, reverseRelations]);
 
   return (
-    <div className="max-w-4xl mx-auto">
-      {/* Breadcrumb */}
-      <nav aria-label="Breadcrumb" className="mb-8">
-        <ol className="flex items-center gap-2 text-xs text-text-muted">
-          <li><Link to="/articles" className="hover:text-text-link transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:rounded">Codex</Link></li>
-          <li aria-hidden="true" className="opacity-40">/</li>
-          <li>
-            <Link
-              to={`/articles?template=${article.template}`}
-              className="hover:text-text-link transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:rounded"
-              style={{ color }}
-            >
-              {TEMPLATE_LABELS[article.template]}
+    <div className="space-y-8">
+      <section className="grid gap-5 xl:grid-cols-[minmax(0,1.25fr)_minmax(20rem,0.9fr)]">
+        <div className="rounded-[1.75rem] border border-[var(--color-aurum)]/20 bg-[radial-gradient(circle_at_top_left,rgba(214,177,90,0.14),transparent_44%),linear-gradient(155deg,rgba(18,18,28,0.98),rgba(9,10,18,0.94))] px-6 py-7 shadow-[var(--shadow-deep)] sm:px-8">
+          <nav aria-label="Breadcrumb">
+            <ol className="flex flex-wrap items-center gap-2 text-[0.72rem] uppercase tracking-[0.18em] text-text-muted">
+              <li>
+                <Link to="/articles" className="transition-colors duration-200 hover:text-text-link">
+                  Codex
+                </Link>
+              </li>
+              <li aria-hidden="true" className="opacity-40">/</li>
+              <li>
+                <Link
+                  to={`/articles?template=${article.template}`}
+                  className="transition-colors duration-200 hover:text-text-link"
+                  style={{ color }}
+                >
+                  {TEMPLATE_LABELS[article.template]}
+                </Link>
+              </li>
+            </ol>
+          </nav>
+
+          <p className="mt-5 text-[0.68rem] uppercase tracking-[0.36em]" style={{ color }}>
+            Archive folio
+          </p>
+          <h1 className="mt-3 break-words font-display text-4xl leading-tight text-[var(--color-aurum-pale)] sm:text-5xl">
+            {article.title}
+          </h1>
+          <p className="mt-5 max-w-3xl text-sm leading-7 text-text-secondary sm:text-[0.95rem]">{heroSummary}</p>
+
+          {article.tags.length > 0 ? (
+            <div className="mt-5 flex flex-wrap gap-2">
+              {article.tags.map((tag) => (
+                <span
+                  key={tag}
+                  className="rounded-full border bg-white/[0.03] px-3 py-1 text-[0.72rem]"
+                  style={{ borderColor: color, color }}
+                >
+                  {tag}
+                </span>
+              ))}
+            </div>
+          ) : null}
+
+          <div className="mt-6 flex flex-wrap gap-3">
+            <Link to={`/articles?template=${article.template}`} className={showcaseButtonClassNames.secondary}>
+              More {TEMPLATE_LABELS[article.template]}
             </Link>
-          </li>
-          <li aria-hidden="true" className="opacity-40">/</li>
-          <li aria-current="page" className="text-text-secondary truncate max-w-[200px]">{article.title}</li>
-        </ol>
-      </nav>
+            {article.template === "story" ? (
+              <Link to={`/stories/${encodeURIComponent(article.id)}`} className={showcaseButtonClassNames.primary}>
+                Play story
+              </Link>
+            ) : null}
+          </div>
 
-      {/* Article image / gallery */}
-      {(() => {
-        const allImages = [
-          article.imageUrl,
-          ...(article.galleryUrls ?? []),
-        ].filter((u): u is string => !!u);
-        if (allImages.length === 0) return null;
-        return <ArticleGallery images={allImages} title={article.title} />;
-      })()}
-
-      {/* Header */}
-      <div className="mb-10 pl-5 pt-5 rounded-t-lg" style={{ borderTop: `2px solid ${color}30` }}>
-        <div
-          className="text-[11px] tracking-[0.18em] uppercase font-display mb-2"
-          style={{ color }}
-        >
-          {TEMPLATE_LABELS[article.template]}
+          <div className="mt-8 grid gap-3 sm:grid-cols-3">
+            <div className="rounded-[1.3rem] border border-border-muted/30 bg-bg-secondary/45 px-4 py-4">
+              <p className="text-[0.65rem] uppercase tracking-[0.24em] text-text-muted">Record details</p>
+              <p className="mt-2 font-display text-2xl text-accent-emphasis">
+                {new Intl.NumberFormat().format(fieldEntries.length)}
+              </p>
+            </div>
+            <div className="rounded-[1.3rem] border border-border-muted/30 bg-bg-secondary/45 px-4 py-4">
+              <p className="text-[0.65rem] uppercase tracking-[0.24em] text-text-muted">Connections</p>
+              <p className="mt-2 font-display text-2xl text-accent-emphasis">
+                {new Intl.NumberFormat().format(allRelations.length)}
+              </p>
+            </div>
+            <div className="rounded-[1.3rem] border border-border-muted/30 bg-bg-secondary/45 px-4 py-4">
+              <p className="text-[0.65rem] uppercase tracking-[0.24em] text-text-muted">Story appearances</p>
+              <p className="mt-2 font-display text-2xl text-accent-emphasis">
+                {new Intl.NumberFormat().format(featuredInStories.length)}
+              </p>
+            </div>
+          </div>
         </div>
-        <h1 className="font-display text-3xl sm:text-4xl text-accent-emphasis tracking-[0.04em] leading-tight">
-          {article.title}
-        </h1>
-        {article.tags.length > 0 && (
-          <div className="flex flex-wrap gap-2 mt-4">
-            {article.tags.map((tag) => (
-              <span
-                key={tag}
-                className="bg-accent/8 text-accent-muted text-xs px-2.5 py-1 rounded-md"
-              >
-                {tag}
-              </span>
-            ))}
+
+        {imageUrls.length > 0 ? (
+          <div className="rounded-[1.75rem] border border-border-muted/35 bg-[linear-gradient(180deg,rgba(18,18,28,0.92),rgba(10,10,18,0.98))] px-5 py-5 shadow-[var(--shadow-deep)]">
+            <p className="text-[0.68rem] uppercase tracking-[0.3em] text-[var(--color-aurum)]/80">Illuminated plate</p>
+            <p className="mt-2 font-display text-xl text-accent-emphasis">Image record</p>
+            <div className="mt-5">
+              <ArticleGallery images={imageUrls} title={article.title} />
+            </div>
+          </div>
+        ) : (
+          <div className="rounded-[1.75rem] border border-border-muted/35 bg-[linear-gradient(180deg,rgba(18,18,28,0.92),rgba(10,10,18,0.98))] px-5 py-5 shadow-[var(--shadow-deep)]">
+            <p className="text-[0.68rem] uppercase tracking-[0.3em] text-[var(--color-aurum)]/80">Catalog notes</p>
+            <p className="mt-2 font-display text-xl text-accent-emphasis">Record summary</p>
+            <div className="mt-5 space-y-3">
+              {fieldEntries.slice(0, 4).map(([key, value]) => (
+                <div key={key} className="rounded-[1.2rem] border border-border-muted/25 bg-bg-secondary/45 px-4 py-3">
+                  <p className="text-[0.68rem] uppercase tracking-[0.18em] text-text-muted">{formatFieldLabel(key)}</p>
+                  <p className="mt-1 break-words text-sm text-text-primary">
+                    {Array.isArray(value) ? value.join(", ") : String(value)}
+                  </p>
+                </div>
+              ))}
+              {fieldEntries.length === 0 ? (
+                <p className="text-sm leading-7 text-text-muted">No structured field details were published with this entry.</p>
+              ) : null}
+            </div>
           </div>
         )}
-      </div>
+      </section>
 
-      {article.template === "story" && (
-        <Link
-          to={`/stories/${encodeURIComponent(article.id)}`}
-          className="flex items-center justify-center gap-3 py-4 rounded-lg border border-accent/30 bg-accent/6 hover:bg-accent/12 transition-colors duration-300 mb-10"
-        >
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" className="text-accent">
-            <path d="M4 2.5v11l9.5-5.5z" />
-          </svg>
-          <span className="text-[12px] font-display text-accent tracking-[0.16em] uppercase">Play Story</span>
-        </Link>
-      )}
+      <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_19rem]">
+        <article className="rounded-[1.75rem] border border-border-muted/35 bg-[linear-gradient(180deg,rgba(18,18,28,0.94),rgba(10,10,18,0.98))] px-6 py-6 shadow-[var(--shadow-deep)] sm:px-8">
+          <div className="border-b border-border-muted/25 pb-5">
+            <p className="text-[0.68rem] uppercase tracking-[0.3em] text-[var(--color-aurum)]/80">Primary text</p>
+            <h2 className="mt-2 font-display text-2xl text-[var(--color-aurum-pale)]">Published entry</h2>
+          </div>
 
-      <div className="flex flex-col lg:flex-row gap-10">
-        {/* Main content */}
-        <article className="flex-1 min-w-0">
-          <div
-            className="prose"
-            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(article.contentHtml) }}
-          />
+          {article.contentHtml.trim() ? (
+            <div
+              className="article-prose prose mt-8"
+              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(article.contentHtml) }}
+            />
+          ) : (
+            <div className="mt-8">
+              <ShowcaseEmptyState
+                title="No published entry yet"
+                description="This record does not currently include body text."
+              />
+            </div>
+          )}
 
-          {/* Prev / Next */}
-          {(siblings.prev || siblings.next) && (
-            <nav className="flex items-stretch gap-4 mt-14 pt-10 border-t border-border-muted/40" aria-label="Adjacent articles">
+          {siblings.prev || siblings.next ? (
+            <nav className="mt-14 grid gap-4 border-t border-border-muted/25 pt-8 sm:grid-cols-2" aria-label="Adjacent articles">
               {siblings.prev ? (
                 <Link
                   to={`/articles/${encodeURIComponent(siblings.prev.id)}`}
-                  className="flex-1 group rounded-lg border border-border-muted/40 p-4 hover:border-accent/30 transition-colors duration-300 text-left focus-visible:ring-2 focus-visible:ring-accent/40"
+                  className="group rounded-[1.35rem] border border-border-muted/30 bg-bg-secondary/40 px-5 py-5 transition-colors duration-300 hover:border-[var(--color-aurum)]/25"
                 >
-                  <div className="text-text-muted text-[11px] tracking-[0.1em] uppercase mb-1.5">&larr; Previous</div>
-                  <div className="font-display text-sm text-text-primary group-hover:text-accent transition-colors duration-300 truncate">
+                  <p className="text-[0.68rem] uppercase tracking-[0.22em] text-text-muted">&larr; Previous folio</p>
+                  <p className="mt-2 truncate font-display text-lg text-accent-emphasis transition-colors duration-300 group-hover:text-[var(--color-aurum-pale)]">
                     {siblings.prev.title}
-                  </div>
+                  </p>
                 </Link>
-              ) : <div className="flex-1" />}
+              ) : (
+                <div className="hidden sm:block" />
+              )}
+
               {siblings.next ? (
                 <Link
                   to={`/articles/${encodeURIComponent(siblings.next.id)}`}
-                  className="flex-1 group rounded-lg border border-border-muted/40 p-4 hover:border-accent/30 transition-colors duration-300 text-right focus-visible:ring-2 focus-visible:ring-accent/40"
+                  className="group rounded-[1.35rem] border border-border-muted/30 bg-bg-secondary/40 px-5 py-5 text-right transition-colors duration-300 hover:border-[var(--color-aurum)]/25"
                 >
-                  <div className="text-text-muted text-[11px] tracking-[0.1em] uppercase mb-1.5">Next &rarr;</div>
-                  <div className="font-display text-sm text-text-primary group-hover:text-accent transition-colors duration-300 truncate">
+                  <p className="text-[0.68rem] uppercase tracking-[0.22em] text-text-muted">Next folio &rarr;</p>
+                  <p className="mt-2 truncate font-display text-lg text-accent-emphasis transition-colors duration-300 group-hover:text-[var(--color-aurum-pale)]">
                     {siblings.next.title}
-                  </div>
+                  </p>
                 </Link>
-              ) : <div className="flex-1" />}
+              ) : (
+                <div className="hidden sm:block" />
+              )}
             </nav>
-          )}
+          ) : null}
         </article>
 
-        {/* Sidebar */}
-        <aside className="lg:w-72 shrink-0 space-y-6">
-          {fieldEntries.length > 0 && (
-            <div className="rounded-xl overflow-hidden border-t-2" style={{ borderTopColor: `${color}30` }}>
-              <div className="px-5 py-3 bg-bg-tertiary/40">
-                <h3 className="font-display text-[11px] tracking-[0.2em] uppercase" style={{ color }}>
-                  Details
-                </h3>
-              </div>
-              <dl className="px-5 py-4 space-y-3 bg-bg-secondary/30">
+        <aside className="space-y-5 xl:sticky xl:top-24 xl:self-start">
+          {fieldEntries.length > 0 ? (
+            <ShowcasePanel title="Field Notes" toneColor={color} bodyClassName="space-y-3">
+              <dl className="space-y-3">
                 {fieldEntries.map(([key, value]) => (
                   <div key={key}>
-                    <dt className="text-text-muted text-[11px] capitalize tracking-wide">
-                      {key.replace(/([A-Z])/g, " $1").trim()}
-                    </dt>
-                    <dd className="text-text-primary text-sm mt-0.5">
+                    <dt className="text-[0.68rem] uppercase tracking-[0.18em] text-text-muted">{formatFieldLabel(key)}</dt>
+                    <dd className="mt-1 break-words text-sm text-text-primary">
                       {Array.isArray(value) ? value.join(", ") : String(value)}
                     </dd>
                   </div>
                 ))}
               </dl>
-            </div>
-          )}
+            </ShowcasePanel>
+          ) : null}
 
           <ConnectionsSection relations={allRelations} color={color} />
-
           <FeaturedInStories stories={featuredInStories} color={color} />
         </aside>
       </div>

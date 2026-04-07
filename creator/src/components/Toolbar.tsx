@@ -166,10 +166,10 @@ export function Toolbar({ workspace, setWorkspace }: ToolbarProps) {
                 <h1 className="min-w-0 truncate font-display text-[clamp(1.25rem,2vw,1.75rem)] leading-tight text-text-primary">
                   {project?.name ?? "No world open"}
                 </h1>
+                <p className="mt-1 truncate text-xs text-text-secondary">
+                  {activeTab ? `${activeSurface.kicker} • ${activeSurface.title}` : activeSurface.title}
+                </p>
               </div>
-              <span className="shrink-0 rounded-full border border-white/10 bg-black/10 px-2.5 py-0.5 text-[9px] uppercase tracking-ui text-text-secondary">
-                {activeSurface.kicker}
-              </span>
             </div>
 
             <div className="xl:justify-self-center">
@@ -356,14 +356,7 @@ export function Toolbar({ workspace, setWorkspace }: ToolbarProps) {
                 )}
               </div>
 
-              <button
-                onClick={openGallery}
-                className="rounded-full border border-white/10 bg-black/10 px-2.5 py-1.5 text-2xs text-text-secondary transition hover:bg-white/8 hover:text-text-primary"
-              >
-                View Gallery
-              </button>
-
-              <ActionButton onClick={openGenerator} title="Generate new art" aria-label="Generate new art" variant="primary" className="text-stellar-blue">
+              <ActionButton onClick={openGenerator} title="Generate new art" aria-label="Generate new art" variant="secondary" className="text-stellar-blue">
                 Render Art
               </ActionButton>
 
@@ -378,23 +371,33 @@ export function Toolbar({ workspace, setWorkspace }: ToolbarProps) {
                 </ActionButton>
               )}
 
-              <ActionButton
-                onClick={() => setShowDiff(true)}
-                disabled={(dirtyCount === 0 && !configDirty) || saving}
-                title="Review and save changes"
-                variant={saved || dirtyCount > 0 || configDirty ? "primary" : "secondary"}
-                className={saved ? "border-status-success/40 bg-status-success/15 text-status-success" : ""}
-              >
-                <span role="status" aria-live="polite">
-                  {saving ? (
-                    <span className="flex items-center gap-1.5"><Spinner />Saving</span>
-                  ) : saved ? (
-                    <span className="animate-saved-flash">Committed</span>
-                  ) : dirtyCount > 0 || configDirty ? (
-                    `Commit ${dirtyCount + (configDirty ? 1 : 0)} change${dirtyCount + (configDirty ? 1 : 0) === 1 ? "" : "s"}`
-                  ) : "No Changes"}
-                </span>
-              </ActionButton>
+              <div className="rounded-3xl border border-[var(--border-accent-ring)] bg-[linear-gradient(145deg,rgba(28,34,52,0.94),rgba(18,23,38,0.94))] px-3 py-2 shadow-glow">
+                <p className="text-[9px] uppercase tracking-wide-ui text-text-muted">
+                  {saved ? "Session committed" : dirtyCount > 0 || configDirty ? "Unsaved work" : "Session stable"}
+                </p>
+                <div className="mt-2 flex items-center gap-3">
+                  <span className="text-xs text-text-secondary">
+                    {dirtyCount + (configDirty ? 1 : 0)} pending
+                  </span>
+                  <ActionButton
+                    onClick={() => setShowDiff(true)}
+                    disabled={(dirtyCount === 0 && !configDirty) || saving}
+                    title="Review and save changes"
+                    variant={saved || dirtyCount > 0 || configDirty ? "primary" : "secondary"}
+                    className={saved ? "border-status-success/40 bg-status-success/15 text-status-success" : ""}
+                  >
+                    <span role="status" aria-live="polite">
+                      {saving ? (
+                        <span className="flex items-center gap-1.5"><Spinner />Saving</span>
+                      ) : saved ? (
+                        <span className="animate-saved-flash">Committed</span>
+                      ) : dirtyCount > 0 || configDirty ? (
+                        `Review ${dirtyCount + (configDirty ? 1 : 0)} change${dirtyCount + (configDirty ? 1 : 0) === 1 ? "" : "s"}`
+                      ) : "No Changes"}
+                    </span>
+                  </ActionButton>
+                </div>
+              </div>
             </div>
           </div>
         </div>

@@ -46,6 +46,8 @@ export function BatchLegacyImport({ onClose }: { onClose: () => void }) {
   const doneCount = targets?.filter((target) => target.status === "done").length ?? 0;
   const skippedCount = targets?.filter((target) => target.status === "skipped").length ?? 0;
   const errorCount = targets?.filter((target) => target.status === "error").length ?? 0;
+  const completedCount = doneCount + skippedCount + errorCount;
+  const importProgress = targets && targets.length > 0 ? completedCount / targets.length : 0;
   const importFinished = targets !== null && !running && (doneCount + skippedCount + errorCount) === targets.length;
   const hasLocalImages = targets !== null && targets.length > 0;
   const needsImport = hasLocalImages && !importFinished;
@@ -251,13 +253,13 @@ export function BatchLegacyImport({ onClose }: { onClose: () => void }) {
                   <div
                     className="h-3 overflow-hidden rounded-full border border-white/8 bg-black/18"
                     role="progressbar"
-                    aria-valuenow={doneCount + skippedCount + errorCount}
+                    aria-valuenow={completedCount}
                     aria-valuemax={targets!.length}
                     aria-label="Import progress"
                   >
                     <div
-                      className="h-full rounded-full bg-[linear-gradient(90deg,rgba(168,151,210,0.92),rgba(140,174,201,0.9))] transition-[width] duration-300"
-                      style={{ width: `${((doneCount + skippedCount + errorCount) / targets!.length) * 100}%` }}
+                      className="h-full origin-left rounded-full bg-[linear-gradient(90deg,rgba(168,151,210,0.92),rgba(140,174,201,0.9))] transition-transform duration-300"
+                      style={{ transform: `scaleX(${importProgress})` }}
                     />
                   </div>
                 </div>

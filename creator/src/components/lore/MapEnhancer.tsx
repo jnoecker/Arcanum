@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import type { GeneratedImage } from "@/types/assets";
+import { useFocusTrap } from "@/lib/useFocusTrap";
 
 interface CropRect {
   x: number;
@@ -27,6 +28,7 @@ export function MapEnhancer({
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const trapRef = useFocusTrap<HTMLDivElement>(generating ? undefined : onClose);
 
   // Load the map image onto canvas
   useEffect(() => {
@@ -172,14 +174,19 @@ export function MapEnhancer({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="map-enhance-title"
-      onKeyDown={(e) => { if (e.key === "Escape" && !generating) onClose(); }}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70"
+      onClick={(e) => {
+        if (e.target === e.currentTarget && !generating) onClose();
+      }}
     >
-      <div className="absolute inset-0 bg-black/70" aria-hidden="true" onClick={onClose} />
-      <div className="relative flex max-h-[90vh] w-full max-w-4xl flex-col gap-4 overflow-y-auto rounded-3xl border border-white/10 bg-bg-secondary p-6 shadow-panel">
+      <div
+        ref={trapRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="map-enhance-title"
+        aria-describedby="map-enhance-description"
+        className="relative flex max-h-[90vh] w-full max-w-4xl flex-col gap-4 overflow-y-auto rounded-3xl border border-white/10 bg-bg-secondary p-6 shadow-panel"
+      >
         <div className="flex items-center justify-between">
           <h3 id="map-enhance-title" className="font-display text-xl text-text-primary">Enhance Map Region</h3>
           <button onClick={onClose} className="rounded px-2 py-1 text-xs text-text-muted hover:bg-bg-tertiary hover:text-text-primary">
@@ -187,7 +194,7 @@ export function MapEnhancer({
           </button>
         </div>
 
-        <p className="text-xs text-text-muted">
+        <p id="map-enhance-description" className="text-xs text-text-muted">
           Draw a rectangle on the map to select a region, then describe how the AI should enhance it.
         </p>
 
@@ -197,12 +204,13 @@ export function MapEnhancer({
             ref={canvasRef}
             role="img"
             aria-label="Map region selector — draw a rectangle to select an area"
-            className="cursor-crosshair"
+            className="cursor-crosshair touch-none"
             onMouseDown={handleMouseDown}
             onMouseMove={handleMouseMove}
             onMouseUp={handleMouseUp}
             onMouseLeave={handleMouseUp}
             onTouchStart={(e) => {
+              e.preventDefault();
               const touch = e.touches[0];
               if (!touch) return;
               const rect = canvasRef.current?.getBoundingClientRect();
@@ -210,6 +218,7 @@ export function MapEnhancer({
               handleMouseDown({ clientX: touch.clientX, clientY: touch.clientY } as unknown as React.MouseEvent<HTMLCanvasElement>);
             }}
             onTouchMove={(e) => {
+              e.preventDefault();
               const touch = e.touches[0];
               if (!touch) return;
               handleMouseMove({ clientX: touch.clientX, clientY: touch.clientY } as unknown as React.MouseEvent<HTMLCanvasElement>);
@@ -251,7 +260,7 @@ export function MapEnhancer({
             </span>
           </div>
 
-          {error && <p className="text-xs text-status-error">{error}</p>}
+          {error && <p role="alert" className="text-xs text-status-error">{error}</p>}
 
           {/* Preview */}
           {previewUrl && (

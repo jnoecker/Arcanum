@@ -1,6 +1,7 @@
 import { useState, useCallback } from "react";
 import { useLoreStore } from "@/stores/loreStore";
 import { generateWorldSeed } from "@/lib/loreGeneration";
+import { useFocusTrap } from "@/lib/useFocusTrap";
 
 export function WorldSeedWizard({
   onClose,
@@ -20,6 +21,7 @@ export function WorldSeedWizard({
     hasCalendar: boolean;
     eventCount: number;
   } | null>(null);
+  const trapRef = useFocusTrap<HTMLDivElement>(generating ? undefined : onClose);
 
   const handleGenerate = useCallback(async () => {
     if (!concept.trim()) return;
@@ -62,14 +64,18 @@ export function WorldSeedWizard({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="seed-wizard-title"
-      onKeyDown={(e) => { if (e.key === "Escape" && !generating) onClose(); }}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
+      onClick={(e) => {
+        if (e.target === e.currentTarget && !generating) onClose();
+      }}
     >
-      <div className="absolute inset-0 bg-black/60" aria-hidden="true" onClick={result ? onClose : undefined} />
-      <div className="relative w-full max-w-xl rounded-3xl border border-white/10 bg-bg-secondary p-6 shadow-panel">
+      <div
+        ref={trapRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="seed-wizard-title"
+        className="relative w-full max-w-xl rounded-3xl border border-white/10 bg-bg-secondary p-6 shadow-panel"
+      >
         <h3 id="seed-wizard-title" className="font-display text-xl text-text-primary">Seed a World</h3>
         <p className="mt-1 text-xs text-text-muted">
           Describe your world concept in a paragraph and the AI will generate a complete
@@ -91,9 +97,7 @@ export function WorldSeedWizard({
               />
             </div>
 
-            {error && (
-              <p className="mt-2 text-xs text-status-error">{error}</p>
-            )}
+            {error && <p role="alert" className="mt-2 text-xs text-status-error">{error}</p>}
 
             {generating && (
               <div className="mt-4 flex items-center gap-2 text-xs text-accent">

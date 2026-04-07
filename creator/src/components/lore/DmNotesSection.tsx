@@ -54,15 +54,19 @@ export function DmNotesSection({ value, onChange }: DmNotesSectionProps) {
 
       {/* Expandable content */}
       <div
-        className={`overflow-hidden transition-[max-height] duration-200 ${
-          expanded ? "max-h-[500px]" : "max-h-0"
-        }`}
-        style={{ transitionTimingFunction: "var(--ease-unfurl)" }}
+        className="grid overflow-hidden transition-[grid-template-rows] duration-200"
+        style={{
+          gridTemplateRows: expanded ? "1fr" : "0fr",
+          transitionTimingFunction: "var(--ease-unfurl)",
+        }}
       >
-        <div className="border-t border-amber-900/30">
+        <div className="min-h-0 overflow-hidden">
           <textarea
             rows={3}
-            className="bg-transparent px-3 py-2 text-base text-text-secondary placeholder:text-text-muted/40 focus:outline-none resize-none w-full"
+            tabIndex={expanded ? 0 : -1}
+            className={`w-full resize-none bg-transparent px-3 py-2 text-base text-text-secondary placeholder:text-text-muted/40 focus:outline-none transition-[opacity,transform] duration-200 ${
+              expanded ? "translate-y-0 opacity-100" : "-translate-y-1 opacity-0"
+            }`}
             placeholder="Private notes for the DM..."
             value={value}
             onChange={(e) => onChange(e.target.value)}

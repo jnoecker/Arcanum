@@ -69,57 +69,70 @@ export function MapViewer({ map }: MapViewerProps) {
           const article = pin.articleId ? articleById.get(pin.articleId) : undefined;
           const pxX = pin.position[1] * scale;
           const pxY = (map.height - pin.position[0]) * scale;
+          const tooltipId = `map-pin-tooltip-${pin.id}`;
+          const pinLabel = article?.title ?? pin.label ?? `Map pin ${pin.id}`;
 
-          const inner = (
-            <div
-              key={pin.id}
-              className="absolute -translate-x-1/2 -translate-y-1/2 group"
-              style={{ left: pxX, top: pxY }}
-              onMouseEnter={() => setHoveredPin(pin)}
-              onMouseLeave={() => setHoveredPin(null)}
-              onFocus={() => setHoveredPin(pin)}
-              onBlur={() => setHoveredPin(null)}
-            >
-              {/* Invisible hit area (44px) */}
-              <div className="absolute inset-0 -m-3 w-12 h-12 cursor-pointer" />
-              {/* Visible pin (24px) */}
-              <div
-                className="w-6 h-6 rounded-full border-2 border-bg-primary shadow-lg transition-transform
-                           group-hover:scale-125 group-focus-within:scale-125"
+          const pinContent = (
+            <>
+              <span className="sr-only">{pinLabel}</span>
+              <span className="absolute inset-0 -m-3 h-12 w-12" aria-hidden="true" />
+              <span
+                aria-hidden="true"
+                className="block w-6 h-6 rounded-full border-2 border-bg-primary shadow-lg transition-transform group-hover:scale-125 group-focus-visible:scale-125"
                 style={{ backgroundColor: pin.color ?? "var(--color-accent)" }}
               />
 
-              {/* Tooltip */}
               {hoveredPin?.id === pin.id && (pin.label || article) && (
-                <div
-                  className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 whitespace-nowrap
-                             bg-bg-primary/95 border border-border-muted rounded-md px-2.5 py-1.5
-                             shadow-[var(--shadow-deep)] text-xs z-10 pointer-events-none"
+                <span
+                  id={tooltipId}
+                  className="absolute bottom-full left-1/2 z-10 mb-2 w-max max-w-[min(16rem,calc(100vw-2rem))] -translate-x-1/2 whitespace-normal break-words rounded-md border border-border-muted bg-bg-primary/95 px-2.5 py-1.5 text-xs shadow-[var(--shadow-deep)] pointer-events-none"
                   role="tooltip"
                 >
-                  <div className="text-accent-emphasis font-display">
+                  <span className="block text-accent-emphasis font-display">
                     {article?.title ?? pin.label}
-                  </div>
+                  </span>
                   {article && pin.label && pin.label !== article.title && (
-                    <div className="text-text-muted">{pin.label}</div>
+                    <span className="block text-text-muted">{pin.label}</span>
                   )}
-                </div>
+                </span>
               )}
-            </div>
+            </>
           );
+
+          const sharedProps = {
+            className: "absolute -translate-x-1/2 -translate-y-1/2 group rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40",
+            style: { left: pxX, top: pxY },
+            onMouseEnter: () => setHoveredPin(pin),
+            onMouseLeave: () => setHoveredPin(null),
+            onFocus: () => setHoveredPin(pin),
+            onBlur: () => setHoveredPin(null),
+            "aria-describedby": hoveredPin?.id === pin.id ? tooltipId : undefined,
+          } as const;
 
           if (article) {
             return (
               <Link
                 key={pin.id}
                 to={`/articles/${encodeURIComponent(pin.articleId!)}`}
-                aria-label={article.title}
+                aria-label={pinLabel}
+                {...sharedProps}
               >
-                {inner}
+                {pinContent}
               </Link>
             );
           }
-          return inner;
+
+          return (
+            <div
+              key={pin.id}
+              tabIndex={0}
+              role="img"
+              aria-label={pinLabel}
+              {...sharedProps}
+            >
+              {pinContent}
+            </div>
+          );
         })}
       </div>
     </div>

@@ -28,11 +28,15 @@
 // to a `concat` filter which is simpler and faster.
 
 use std::path::{Path, PathBuf};
+use std::process::Stdio;
 
 use serde::{Deserialize, Serialize};
+use tokio::io::{AsyncBufReadExt, BufReader};
 use tokio::process::Command;
 
 use crate::ffmpeg;
+use crate::ffmpeg_progress::FfmpegProgressParser;
+use crate::video_export::emit_stage_progress;
 use tauri::AppHandle;
 
 // ─── Types ───────────────────────────────────────────────────────
@@ -139,6 +143,12 @@ pub fn build_video_encode_command(
     args.push("-hide_banner".to_string());
     args.push("-loglevel".to_string());
     args.push("error".to_string());
+    // Stream progress key=value pairs to stdout so the async runner
+    // can forward intra-stage progress to the UI. `-nostats` keeps
+    // the normal stats line off stderr (the progress stream replaces it).
+    args.push("-progress".to_string());
+    args.push("pipe:1".to_string());
+    args.push("-nostats".to_string());
 
     // ─── Inputs: one -loop -t -i triplet per scene ───────────
     for scene in &input.scenes {
@@ -412,6 +422,13 @@ pub fn compute_total_duration_ms(input: &VideoEncodeInput) -> u64 {
 /// Spawns ffmpeg to encode a sequence of scene PNGs into a silent
 /// video. Returns the output file path and the computed total
 /// duration (with crossfade overlaps subtracted).
+///
+/// Streams ffmpeg's `-progress pipe:1` output to parse per-frame
+/// progress and forward it to the UI via `video_export:progress`
+/// events. The progress fraction is relative to the total computed
+/// output duration (same value returned in `VideoEncodeOutput`).
+/// Stderr is buffered in the background and surfaced only if
+/// ffmpeg exits with a non-zero status.
 #[allow(dead_code)] // consumed by the export orchestrator (PR 8)
 pub async fn encode_video_segments(
     app: &AppHandle,
@@ -419,6 +436,7 @@ pub async fn encode_video_segments(
     output_path: PathBuf,
 ) -> Result<VideoEncodeOutput, String> {
     let ffmpeg_path = ffmpeg::ffmpeg_binary_path(app).await?;
+    let total_duration_ms = compute_total_duration_ms(&input);
     let cmd = build_video_encode_command(&input, &output_path)?;
 
     if let Some(parent) = output_path.parent() {
@@ -427,24 +445,81 @@ pub async fn encode_video_segments(
             .map_err(|e| format!("Failed to create video output dir: {e}"))?;
     }
 
-    let output = Command::new(&ffmpeg_path)
+    let mut child = Command::new(&ffmpeg_path)
         .args(&cmd.args)
-        .output()
-        .await
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
         .map_err(|e| format!("Failed to spawn ffmpeg for video encode: {e}"))?;
 
-    if !output.status.success() {
-        let stderr = String::from_utf8_lossy(&output.stderr);
+    let stdout = child
+        .stdout
+        .take()
+        .ok_or_else(|| "ffmpeg stdout pipe was not captured".to_string())?;
+    let stderr = child
+        .stderr
+        .take()
+        .ok_or_else(|| "ffmpeg stderr pipe was not captured".to_string())?;
+
+    // Background stderr drain — prevents the child from blocking on
+    // a full stderr buffer while we're reading stdout for progress.
+    let stderr_handle = tokio::spawn(async move {
+        let mut reader = BufReader::new(stderr).lines();
+        let mut buf: Vec<String> = Vec::new();
+        while let Ok(Some(line)) = reader.next_line().await {
+            buf.push(line);
+        }
+        buf
+    });
+
+    // Parse progress blocks as ffmpeg emits them. For long encodes
+    // (4K archive preset, 2+ minute stories) this is what turns the
+    // UI progress bar from "stuck at 72%" into a smooth scrub.
+    let mut parser = FfmpegProgressParser::new();
+    let mut stdout_reader = BufReader::new(stdout).lines();
+    while let Ok(Some(line)) = stdout_reader.next_line().await {
+        if let Some(event) = parser.feed_line(&line) {
+            let fraction = event.fraction(total_duration_ms);
+            let message = match (event.frame, event.fps) {
+                (Some(frame), Some(fps)) => {
+                    format!("Encoding video — frame {frame} @ {fps:.0} fps")
+                }
+                (Some(frame), None) => format!("Encoding video — frame {frame}"),
+                _ => "Encoding video…".to_string(),
+            };
+            emit_stage_progress(
+                app,
+                "video_encode",
+                message,
+                fraction,
+                event.speed,
+                event.frame,
+            );
+            if event.ended {
+                break;
+            }
+        }
+    }
+
+    let exit_status = child
+        .wait()
+        .await
+        .map_err(|e| format!("Failed to wait on ffmpeg: {e}"))?;
+    let stderr_lines = stderr_handle
+        .await
+        .map_err(|e| format!("stderr drain task panicked: {e}"))?;
+
+    if !exit_status.success() {
         return Err(format!(
             "ffmpeg video encode failed (exit {}): {}",
-            output.status.code().unwrap_or(-1),
-            stderr.trim(),
+            exit_status.code().unwrap_or(-1),
+            stderr_lines.join("\n").trim(),
         ));
     }
 
     Ok(VideoEncodeOutput {
         file_path: output_path.to_string_lossy().to_string(),
-        total_duration_ms: compute_total_duration_ms(&input),
+        total_duration_ms,
     })
 }
 

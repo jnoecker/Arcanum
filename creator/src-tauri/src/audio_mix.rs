@@ -32,11 +32,15 @@
 // Returns an error if there is nothing to mix at all.
 
 use std::path::{Path, PathBuf};
+use std::process::Stdio;
 
 use serde::{Deserialize, Serialize};
+use tokio::io::{AsyncBufReadExt, BufReader};
 use tokio::process::Command;
 
 use crate::ffmpeg;
+use crate::ffmpeg_progress::FfmpegProgressParser;
+use crate::video_export::emit_stage_progress;
 use tauri::AppHandle;
 
 // ─── Types ───────────────────────────────────────────────────────
@@ -128,6 +132,12 @@ pub fn build_mix_command(
     args.push("-hide_banner".to_string());
     args.push("-loglevel".to_string());
     args.push("error".to_string());
+    // Emit progress key=value pairs to stdout so the async runner
+    // can parse them and forward intra-stage progress events to the
+    // UI. Stderr is reserved for actual error messages.
+    args.push("-progress".to_string());
+    args.push("pipe:1".to_string());
+    args.push("-nostats".to_string());
 
     // ─── Inputs (in declared order, indexed for the filter) ──
     let mut next_index: usize = 0;
@@ -312,6 +322,11 @@ fn build_filter_complex(
 /// `build_mix_command`. Resolves ffmpeg from the bundled cache or
 /// system PATH (must already be available — call `ensure_ffmpeg_ready`
 /// from the frontend before invoking this).
+///
+/// Streams ffmpeg's `-progress pipe:1` output to parse per-frame
+/// progress and forward it to the UI via `video_export:progress`
+/// events. Stderr is buffered in the background and surfaced only
+/// if ffmpeg exits with a non-zero status.
 #[allow(dead_code)] // consumed by the export orchestrator (PR 7)
 pub async fn mix_audio(
     app: &AppHandle,
@@ -327,24 +342,77 @@ pub async fn mix_audio(
             .map_err(|e| format!("Failed to create output directory: {e}"))?;
     }
 
-    let output = Command::new(&ffmpeg_path)
+    let total_duration_ms = input.total_duration_ms;
+
+    let mut child = Command::new(&ffmpeg_path)
         .args(&cmd.args)
-        .output()
-        .await
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
         .map_err(|e| format!("Failed to spawn ffmpeg: {e}"))?;
 
-    if !output.status.success() {
-        let stderr = String::from_utf8_lossy(&output.stderr);
+    let stdout = child
+        .stdout
+        .take()
+        .ok_or_else(|| "ffmpeg stdout pipe was not captured".to_string())?;
+    let stderr = child
+        .stderr
+        .take()
+        .ok_or_else(|| "ffmpeg stderr pipe was not captured".to_string())?;
+
+    // Drain stderr in the background so the child can't block on a
+    // full stderr pipe while we're reading stdout. The collected
+    // lines are surfaced only if ffmpeg exits non-zero.
+    let stderr_handle = tokio::spawn(async move {
+        let mut reader = BufReader::new(stderr).lines();
+        let mut buf: Vec<String> = Vec::new();
+        while let Ok(Some(line)) = reader.next_line().await {
+            buf.push(line);
+        }
+        buf
+    });
+
+    // Read progress from stdout as ffmpeg emits it (~every 500ms).
+    // Each complete key=value block terminates with `progress=continue`
+    // or `progress=end` and flushes one FfmpegProgressEvent.
+    let mut parser = FfmpegProgressParser::new();
+    let mut stdout_reader = BufReader::new(stdout).lines();
+    while let Ok(Some(line)) = stdout_reader.next_line().await {
+        if let Some(event) = parser.feed_line(&line) {
+            let fraction = event.fraction(total_duration_ms);
+            emit_stage_progress(
+                app,
+                "audio_mix",
+                "Mixing narration, music, and ambient…",
+                fraction,
+                event.speed,
+                event.frame,
+            );
+            if event.ended {
+                break;
+            }
+        }
+    }
+
+    let exit_status = child
+        .wait()
+        .await
+        .map_err(|e| format!("Failed to wait on ffmpeg: {e}"))?;
+    let stderr_lines = stderr_handle
+        .await
+        .map_err(|e| format!("stderr drain task panicked: {e}"))?;
+
+    if !exit_status.success() {
         return Err(format!(
             "ffmpeg audio mix failed (exit {}): {}",
-            output.status.code().unwrap_or(-1),
-            stderr.trim(),
+            exit_status.code().unwrap_or(-1),
+            stderr_lines.join("\n").trim(),
         ));
     }
 
     Ok(AudioMixOutput {
         file_path: output_path.to_string_lossy().to_string(),
-        duration_ms: input.total_duration_ms,
+        duration_ms: total_duration_ms,
     })
 }
 

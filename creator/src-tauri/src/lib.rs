@@ -6,6 +6,7 @@ mod audio_mix;
 mod captions;
 mod deepinfra;
 mod ffmpeg;
+mod ffmpeg_progress;
 mod git;
 mod generation;
 mod llm;

@@ -3,6 +3,7 @@ mod anthropic;
 mod arcanum_meta;
 mod assets;
 mod audio_mix;
+mod captions;
 mod deepinfra;
 mod ffmpeg;
 mod git;

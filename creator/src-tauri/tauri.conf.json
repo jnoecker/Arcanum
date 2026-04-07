@@ -35,5 +35,11 @@
     "shell": {
       "open": false
     }
+  },
+  "bundle": {
+    "active": true,
+    "resources": [
+      "resources/fonts/*.ttf"
+    ]
   }
 }

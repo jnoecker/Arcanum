@@ -128,6 +128,20 @@ interface RustSceneExportEntry {
   durationMs: number;
 }
 
+interface RustCaptionChunk {
+  text: string;
+  startMs: number;
+  endMs: number;
+}
+
+interface RustCaptionTrack {
+  chunks: RustCaptionChunk[];
+  style: {
+    placement: "lower-third" | "upper-third" | "center";
+    fontScale: number;
+  };
+}
+
 interface RustVideoExportRequest {
   sessionId: string;
   scenes: RustSceneExportEntry[];
@@ -138,6 +152,7 @@ interface RustVideoExportRequest {
   videoBitrateKbps: number;
   profile: string;
   crossfadeMs: number | null;
+  captions: RustCaptionTrack | null;
   outputPath: string;
 }
 
@@ -713,9 +728,11 @@ export async function exportStoryVideo(
     // the PR 7 video encoder handles crossfade overlap itself).
     const totalDurationMs = savedFrames.reduce((sum, f) => sum + f.durationMs, 0);
 
-    // Narration tracks: resolve TTS file paths + absolute offsets.
-    // Absolute offset = cumulative scene start + per-scene narrationStartMs.
+    // Narration tracks + caption chunks: both walk the same scene
+    // sequence and use the same cumulative-offset math, so build them
+    // in one pass.
     const narrations: RustNarrationTrack[] = [];
+    const captionChunks: RustCaptionChunk[] = [];
     let cumulativeMs = 0;
     for (let i = 0; i < scenesBySortOrder.length; i++) {
       const scene = scenesBySortOrder[i]!;
@@ -727,8 +744,37 @@ export async function exportStoryVideo(
           offsetMs: cumulativeMs + timelineEntry.narrationStartMs,
         });
       }
+      // Caption chunks: paragraph-sized subtitle pieces with absolute
+      // video timestamps. The timeline entry already has them in
+      // scene-relative time (offset by narrationStartMs), so we shift
+      // by cumulativeMs to get absolute video time.
+      if (preset.burnedCaptions && timelineEntry) {
+        for (const chunk of timelineEntry.narrationChunks) {
+          const text = chunk.text.trim();
+          if (!text) continue;
+          captionChunks.push({
+            text,
+            startMs: cumulativeMs + chunk.startMs,
+            endMs: cumulativeMs + chunk.endMs,
+          });
+        }
+      }
       cumulativeMs += savedFrames[i]!.durationMs;
     }
+
+    // Build the caption track only if the preset wants captions AND
+    // we actually produced chunks (a story with no narration text
+    // would have an empty list).
+    const captionTrack: RustCaptionTrack | null =
+      preset.burnedCaptions && captionChunks.length > 0
+        ? {
+            chunks: captionChunks,
+            style: {
+              placement: preset.captionPlacement,
+              fontScale: preset.captionScale,
+            },
+          }
+        : null;
 
     const exportRequest: RustVideoExportRequest = {
       sessionId,
@@ -752,6 +798,7 @@ export async function exportStoryVideo(
       )
         ? 500
         : null,
+      captions: captionTrack,
       outputPath,
     };
 
@@ -766,6 +813,15 @@ export async function exportStoryVideo(
         hasAmbient: !!exportRequest.audio.ambientPath,
         totalDurationMs: exportRequest.audio.totalDurationMs,
       },
+      captions: exportRequest.captions
+        ? {
+            chunkCount: exportRequest.captions.chunks.length,
+            placement: exportRequest.captions.style.placement,
+            fontScale: exportRequest.captions.style.fontScale,
+            firstChunk: exportRequest.captions.chunks[0],
+            lastChunk: exportRequest.captions.chunks[exportRequest.captions.chunks.length - 1],
+          }
+        : null,
       video: {
         width: exportRequest.width,
         height: exportRequest.height,

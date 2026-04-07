@@ -82,6 +82,20 @@ pub struct VideoEncodeInput {
     /// Crossfade duration between consecutive scenes. `None` or `Some(0)`
     /// means hard cuts (using the concat filter instead of xfade).
     pub crossfade_ms: Option<u64>,
+    /// Optional caption track to burn in via ffmpeg's drawtext filter.
+    /// `None` produces a video without burned-in captions.
+    pub captions: Option<crate::captions::CaptionTrack>,
+    /// Absolute filesystem path to the caption font (TTF/OTF). Required
+    /// when `captions` is `Some` — caller must resolve this via
+    /// `captions::caption_font_path` first. Ignored when there are no
+    /// captions.
+    pub caption_font_path: Option<String>,
+    /// Absolute paths to pre-written caption text files, parallel to
+    /// `captions.chunks`. The async runner (`encode_video_segments`)
+    /// writes these files before spawning ffmpeg; the pure command
+    /// builder consumes them. Required (and same length as chunks)
+    /// when `captions` is `Some`.
+    pub caption_text_files: Vec<String>,
 }
 
 /// Result of a successful video encode.
@@ -252,6 +266,36 @@ fn validate_encode_input(input: &VideoEncodeInput) -> Result<(), String> {
         }
     }
 
+    // Captions require a resolved font path AND pre-written text
+    // file paths. The async runner writes the files before invoking
+    // this command builder, so caption_text_files must already be
+    // populated and parallel to track.chunks. We validate both here
+    // so the pure builder stays a pure function.
+    if let Some(track) = input.captions.as_ref() {
+        if !track.chunks.is_empty() {
+            match input.caption_font_path.as_ref() {
+                None => {
+                    return Err(
+                        "Captions provided but caption_font_path is missing.".to_string(),
+                    );
+                }
+                Some(p) if p.is_empty() => {
+                    return Err(
+                        "Captions provided but caption_font_path is empty.".to_string(),
+                    );
+                }
+                _ => {}
+            }
+            if input.caption_text_files.len() != track.chunks.len() {
+                return Err(format!(
+                    "Captions have {} chunks but caption_text_files has {} entries; the runner must pre-write one file per chunk.",
+                    track.chunks.len(),
+                    input.caption_text_files.len(),
+                ));
+            }
+        }
+    }
+
     Ok(())
 }
 
@@ -259,6 +303,16 @@ fn validate_encode_input(input: &VideoEncodeInput) -> Result<(), String> {
 
 fn build_video_filter_complex(input: &VideoEncodeInput) -> Result<String, String> {
     let mut parts: Vec<String> = Vec::new();
+
+    // The video chain ends in this label. When captions are present
+    // it's an intermediate label ([v]); the drawtext chain takes [v]
+    // and emits [out]. When captions are absent it's [out] directly.
+    // The CLI -map argument always points at [out] either way.
+    let effective_captions = input
+        .captions
+        .as_ref()
+        .filter(|t| !t.chunks.is_empty());
+    let video_end_label = if effective_captions.is_some() { "v" } else { "out" };
 
     // Step 1: format every input as yuv420p with a stable label.
     for i in 0..input.scenes.len() {
@@ -278,7 +332,7 @@ fn build_video_filter_complex(input: &VideoEncodeInput) -> Result<String, String
 
         for i in 1..input.scenes.len() {
             let next_label = if i == input.scenes.len() - 1 {
-                "out".to_string()
+                video_end_label.to_string()
             } else {
                 format!("v{i}")
             };
@@ -293,8 +347,8 @@ fn build_video_filter_complex(input: &VideoEncodeInput) -> Result<String, String
             chain_length_ms += input.scenes[i].duration_ms - xfade_ms;
         }
     } else if input.scenes.len() == 1 {
-        // Single scene: rename s0 → out.
-        parts.push("[s0]copy[out]".to_string());
+        // Single scene: rename s0 → final video label.
+        parts.push(format!("[s0]copy[{video_end_label}]"));
     } else {
         // Hard cuts via concat filter — much simpler than the xfade chain.
         let labels: String = (0..input.scenes.len())
@@ -302,9 +356,32 @@ fn build_video_filter_complex(input: &VideoEncodeInput) -> Result<String, String
             .collect::<Vec<_>>()
             .join("");
         parts.push(format!(
-            "{labels}concat=n={count}:v=1:a=0[out]",
+            "{labels}concat=n={count}:v=1:a=0[{video_end_label}]",
             count = input.scenes.len(),
         ));
+    }
+
+    // Append the burned-in caption layer when present. The drawtext
+    // chain consumes [v] and emits [out]. Each caption references a
+    // pre-written text file so we sidestep ffmpeg's filter quoting
+    // entirely (see captions.rs for the rationale).
+    if let Some(track) = effective_captions {
+        let font_path = input
+            .caption_font_path
+            .as_ref()
+            .ok_or("Captions present but caption_font_path is missing")?;
+        let caption_paths: Vec<std::path::PathBuf> = input
+            .caption_text_files
+            .iter()
+            .map(std::path::PathBuf::from)
+            .collect();
+        let drawtext_chain = crate::captions::build_drawtext_chain(
+            track,
+            font_path,
+            &caption_paths,
+            input.height,
+        );
+        parts.push(format!("[v]{drawtext_chain}[out]"));
     }
 
     Ok(parts.join(";"))
@@ -437,6 +514,39 @@ mod tests {
             video_bitrate_kbps: 6000,
             profile: H264Profile::High,
             crossfade_ms: None,
+            captions: None,
+            caption_font_path: None,
+            caption_text_files: Vec::new(),
+        }
+    }
+
+    /// Helper that populates input with synthetic caption_text_files
+    /// paths (one per chunk). Tests don't actually write the files
+    /// since the pure builder doesn't read them — it only embeds the
+    /// path strings in the filter_complex.
+    fn populate_caption_files(input: &mut VideoEncodeInput) {
+        if let Some(track) = input.captions.as_ref() {
+            input.caption_text_files = (0..track.chunks.len())
+                .map(|i| format!("/tmp/caption_{i:04}.txt"))
+                .collect();
+        }
+    }
+
+    fn caption_track(chunks: Vec<crate::captions::CaptionChunk>) -> crate::captions::CaptionTrack {
+        crate::captions::CaptionTrack {
+            chunks,
+            style: crate::captions::CaptionStyle {
+                placement: crate::captions::CaptionPlacement::LowerThird,
+                font_scale: 1.0,
+            },
+        }
+    }
+
+    fn caption_chunk(text: &str, start_ms: u64, end_ms: u64) -> crate::captions::CaptionChunk {
+        crate::captions::CaptionChunk {
+            text: text.to_string(),
+            start_ms,
+            end_ms,
         }
     }
 
@@ -693,6 +803,132 @@ mod tests {
         assert!(filter.contains("[2:v]format=yuv420p[s2]"));
     }
 
+    // ─── caption integration ─────────────────────────────────
+
+    #[test]
+    fn no_captions_emits_video_to_out_directly() {
+        let input = input_with(vec![frame("/a.png", 5000), frame("/b.png", 5000)]);
+        let cmd = build_video_encode_command(&input, &out()).unwrap();
+        let filter = extract_filter(&cmd);
+        // Hard cuts → concat directly to [out]
+        assert!(filter.contains("concat=n=2:v=1:a=0[out]"));
+        // No drawtext anywhere
+        assert!(!filter.contains("drawtext"));
+        assert!(!filter.contains("[v]"));
+    }
+
+    #[test]
+    fn captions_emit_video_to_v_then_drawtext_to_out() {
+        let mut input = input_with(vec![frame("/a.png", 5000), frame("/b.png", 5000)]);
+        input.captions = Some(caption_track(vec![caption_chunk("Hello", 1000, 4000)]));
+        input.caption_font_path = Some("/fonts/CrimsonPro-Variable.ttf".to_string());
+        populate_caption_files(&mut input);
+        let cmd = build_video_encode_command(&input, &out()).unwrap();
+        let filter = extract_filter(&cmd);
+        // Concat now goes to intermediate [v] label
+        assert!(filter.contains("concat=n=2:v=1:a=0[v]"));
+        // drawtext chain consumes [v] and emits [out]
+        assert!(filter.contains("[v]drawtext="));
+        assert!(filter.contains("[out]"));
+        // Caption references its pre-written text file via textfile=
+        // (no surrounding single quotes — see captions.rs for why)
+        assert!(filter.contains("textfile=/tmp/caption_0000.txt"));
+        // Timing made it through; commas in `between` are escaped so
+        // ffmpeg's chain parser doesn't break.
+        assert!(filter.contains(r"between(t\,1.000\,4.000)"));
+    }
+
+    #[test]
+    fn captions_with_xfade_chain_terminates_at_v_then_drawtext() {
+        let mut input = input_with(vec![
+            frame("/a.png", 5000),
+            frame("/b.png", 5000),
+            frame("/c.png", 5000),
+        ]);
+        input.crossfade_ms = Some(500);
+        input.captions = Some(caption_track(vec![caption_chunk("Hi", 0, 1000)]));
+        input.caption_font_path = Some("/fonts/font.ttf".to_string());
+        populate_caption_files(&mut input);
+        let cmd = build_video_encode_command(&input, &out()).unwrap();
+        let filter = extract_filter(&cmd);
+        // Chain: s0(5000) → s1(5000) at offset 4500 → v1(9500) → s2(5000) at offset 9000 → v(14000)
+        // The final xfade emits [v] (not [out]) because captions consume it.
+        assert!(filter.contains("[v1][s2]xfade=transition=fade:duration=0.500:offset=9.000[v]"));
+        // Drawtext takes over from there
+        assert!(filter.contains("[v]drawtext="));
+        assert!(filter.ends_with("[out]"));
+    }
+
+    #[test]
+    fn captions_with_single_scene_uses_copy_then_drawtext() {
+        let mut input = input_with(vec![frame("/a.png", 5000)]);
+        input.captions = Some(caption_track(vec![caption_chunk("Solo", 0, 5000)]));
+        input.caption_font_path = Some("/fonts/font.ttf".to_string());
+        populate_caption_files(&mut input);
+        let cmd = build_video_encode_command(&input, &out()).unwrap();
+        let filter = extract_filter(&cmd);
+        assert!(filter.contains("[s0]copy[v]"));
+        assert!(filter.contains("[v]drawtext="));
+        assert!(filter.contains("textfile=/tmp/caption_0000.txt"));
+    }
+
+    #[test]
+    fn empty_caption_chunks_skip_drawtext_layer_entirely() {
+        let mut input = input_with(vec![frame("/a.png", 5000)]);
+        input.captions = Some(caption_track(vec![]));
+        input.caption_font_path = Some("/fonts/font.ttf".to_string());
+        let cmd = build_video_encode_command(&input, &out()).unwrap();
+        let filter = extract_filter(&cmd);
+        // Falls back to the no-captions path: copy [s0] directly to [out]
+        assert!(filter.contains("[s0]copy[out]"));
+        assert!(!filter.contains("drawtext"));
+    }
+
+    #[test]
+    fn errors_when_captions_have_chunks_but_no_font_path() {
+        let mut input = input_with(vec![frame("/a.png", 5000)]);
+        input.captions = Some(caption_track(vec![caption_chunk("hi", 0, 1000)]));
+        input.caption_font_path = None;
+        populate_caption_files(&mut input);
+        let err = build_video_encode_command(&input, &out()).unwrap_err();
+        assert!(err.contains("caption_font_path is missing"));
+    }
+
+    #[test]
+    fn errors_when_caption_font_path_is_empty_string() {
+        let mut input = input_with(vec![frame("/a.png", 5000)]);
+        input.captions = Some(caption_track(vec![caption_chunk("hi", 0, 1000)]));
+        input.caption_font_path = Some("".to_string());
+        populate_caption_files(&mut input);
+        let err = build_video_encode_command(&input, &out()).unwrap_err();
+        assert!(err.contains("empty"));
+    }
+
+    #[test]
+    fn errors_when_caption_text_files_count_does_not_match_chunks() {
+        let mut input = input_with(vec![frame("/a.png", 5000)]);
+        input.captions = Some(caption_track(vec![
+            caption_chunk("hi", 0, 1000),
+            caption_chunk("there", 1000, 2000),
+        ]));
+        input.caption_font_path = Some("/fonts/font.ttf".to_string());
+        // Only one text file for two chunks → mismatch
+        input.caption_text_files = vec!["/tmp/c0.txt".to_string()];
+        let err = build_video_encode_command(&input, &out()).unwrap_err();
+        assert!(err.contains("caption_text_files"));
+    }
+
+    #[test]
+    fn empty_caption_chunks_do_not_require_font_path() {
+        // Edge case: caller passed an empty caption track (e.g. user
+        // disabled captions in the dialog mid-export). We treat this
+        // as "no captions" and don't require a font path.
+        let mut input = input_with(vec![frame("/a.png", 5000)]);
+        input.captions = Some(caption_track(vec![]));
+        input.caption_font_path = None;
+        assert!(build_video_encode_command(&input, &out()).is_ok());
+    }
+
     // ─── mux command builder ─────────────────────────────────
 
     #[test]
@@ -822,6 +1058,9 @@ mod tests {
             video_bitrate_kbps: 1500,
             profile: H264Profile::High,
             crossfade_ms: Some(500),
+            captions: None,
+            caption_font_path: None,
+            caption_text_files: Vec::new(),
         };
         let cmd = build_video_encode_command(&input, &video_path).unwrap();
         let result = StdCommand::new(&ffmpeg_bin)
@@ -899,6 +1138,144 @@ mod tests {
             metadata.len(),
         );
         eprintln!("Final muxed mp4: {} bytes", metadata.len());
+
+        let _ = std::fs::remove_dir_all(&tmp);
+    }
+
+    // ─── Integration test: caption burn-in with real ffmpeg ────
+    //
+    // Generates synthetic scene PNGs, builds a caption track with two
+    // chunks, and runs the encoder against the bundled CrimsonPro
+    // font. Verifies the output exists and has the expected duration.
+    //
+    // This is the closest we get to end-to-end caption verification
+    // without doing pixel-level OCR. If the filtergraph string is
+    // malformed, ffmpeg will reject it with a parse error and the
+    // test will fail loudly with the stderr output.
+    //
+    //   cargo test video_encode::tests::burns_real_captions_via_ffmpeg \
+    //     -- --ignored --nocapture
+    #[test]
+    #[ignore]
+    fn burns_real_captions_via_ffmpeg() {
+        use std::process::Command as StdCommand;
+
+        let tmp = std::env::temp_dir().join(format!(
+            "arcanum-captions-test-{}",
+            std::process::id(),
+        ));
+        std::fs::create_dir_all(&tmp).unwrap();
+
+        // Resolve ffmpeg (download on first use if needed).
+        let ffmpeg_bin = match which::which("ffmpeg") {
+            Ok(p) => p,
+            Err(_) => {
+                eprintln!("ffmpeg not on PATH; downloading via ffmpeg-sidecar...");
+                crate::ffmpeg::download_ffmpeg_blocking(&tmp)
+                    .expect("downloading ffmpeg should succeed")
+            }
+        };
+
+        // Resolve the bundled font directly from the source tree.
+        // CARGO_MANIFEST_DIR is the src-tauri directory, and the font
+        // lives at resources/fonts/<name>.
+        let font_path = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("resources")
+            .join("fonts")
+            .join("CrimsonPro-Variable.ttf");
+        assert!(
+            font_path.exists(),
+            "bundled caption font missing at {}",
+            font_path.display(),
+        );
+
+        // 1) Generate two synthetic scene PNGs.
+        let frames = [
+            (tmp.join("scene_001.png"), "navy"),
+            (tmp.join("scene_002.png"), "darkgreen"),
+        ];
+        for (path, color) in &frames {
+            let status = StdCommand::new(&ffmpeg_bin)
+                .args([
+                    "-y",
+                    "-hide_banner",
+                    "-loglevel",
+                    "error",
+                    "-f",
+                    "lavfi",
+                    "-i",
+                    &format!("color=c={color}:s=640x360:d=1"),
+                    "-frames:v",
+                    "1",
+                    path.to_str().unwrap(),
+                ])
+                .status()
+                .unwrap();
+            assert!(status.success(), "failed to generate {path:?}");
+        }
+
+        // 2) Build the encode command with captions. The caption text
+        //    files must be pre-written to disk before invoking ffmpeg
+        //    (textfile= syntax) — the orchestrator does this in real
+        //    use; we replicate it here.
+        let captions = crate::captions::CaptionTrack {
+            chunks: vec![
+                crate::captions::CaptionChunk {
+                    text: "First scene caption with a comma, an apostrophe's flair".to_string(),
+                    start_ms: 200,
+                    end_ms: 2800,
+                },
+                crate::captions::CaptionChunk {
+                    text: "Second scene reveals a deeper truth".to_string(),
+                    start_ms: 3200,
+                    end_ms: 5800,
+                },
+            ],
+            style: crate::captions::CaptionStyle {
+                placement: crate::captions::CaptionPlacement::LowerThird,
+                font_scale: 1.0,
+            },
+        };
+        let plan = crate::captions::caption_text_file_plan(&captions, &tmp, 640, 360);
+        let mut caption_text_files: Vec<String> = Vec::new();
+        for (path, content) in &plan {
+            std::fs::write(path, content).expect("write caption text file");
+            caption_text_files.push(path.to_string_lossy().to_string());
+        }
+
+        let video_path = tmp.join("captioned.mp4");
+        let input = VideoEncodeInput {
+            scenes: vec![
+                frame(&frames[0].0.to_string_lossy(), 3000),
+                frame(&frames[1].0.to_string_lossy(), 3000),
+            ],
+            width: 640,
+            height: 360,
+            fps: 30,
+            video_bitrate_kbps: 1500,
+            profile: H264Profile::High,
+            crossfade_ms: None,
+            captions: Some(captions),
+            caption_font_path: Some(font_path.to_string_lossy().to_string()),
+            caption_text_files,
+        };
+        let cmd = build_video_encode_command(&input, &video_path).unwrap();
+        let result = StdCommand::new(&ffmpeg_bin)
+            .args(&cmd.args)
+            .output()
+            .unwrap();
+        if !result.status.success() {
+            let stderr = String::from_utf8_lossy(&result.stderr);
+            panic!("captioned video encode failed: {stderr}");
+        }
+        assert!(video_path.exists(), "captioned video should exist");
+        let metadata = std::fs::metadata(&video_path).unwrap();
+        assert!(
+            metadata.len() > 1000,
+            "captioned mp4 is suspiciously small: {} bytes",
+            metadata.len(),
+        );
+        eprintln!("Captioned mp4: {} bytes", metadata.len());
 
         let _ = std::fs::remove_dir_all(&tmp);
     }

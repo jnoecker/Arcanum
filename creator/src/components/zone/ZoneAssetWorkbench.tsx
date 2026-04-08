@@ -15,6 +15,10 @@ import {
 import { getEnhanceSystemPrompt, getNegativePrompt } from "@/lib/arcanumPrompts";
 import { imageGenerateCommand, resolveImageModel, requestsTransparentBackground, type AssetContext, type AssetEntry, type GeneratedImage } from "@/types/assets";
 import { InlineError, Spinner } from "@/components/ui/FormWidgets";
+import {
+  loadCollapsedZoneAssetSections,
+  saveCollapsedZoneAssetSections,
+} from "@/lib/uiPersistence";
 import type { WorldFile } from "@/types/world";
 
 type EntityKind = "room" | "mob" | "item" | "shop";
@@ -177,6 +181,41 @@ export function ZoneAssetWorkbench({ zoneId, world, onWorldChange }: ZoneAssetWo
   const [importing, setImporting] = useState(false);
   const [removingBg, setRemovingBg] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [collapsedSections, setCollapsedSections] = useState<Set<string>>(
+    () => new Set(loadCollapsedZoneAssetSections(zoneId)),
+  );
+
+  useEffect(() => {
+    setCollapsedSections(new Set(loadCollapsedZoneAssetSections(zoneId)));
+    setSearchQuery("");
+  }, [zoneId]);
+
+  useEffect(() => {
+    saveCollapsedZoneAssetSections(zoneId, [...collapsedSections]);
+  }, [zoneId, collapsedSections]);
+
+  const toggleSection = useCallback((id: string) => {
+    setCollapsedSections((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+
+  const normalizedQuery = searchQuery.trim().toLowerCase();
+  const isSearching = normalizedQuery.length > 0;
+  const entityMatchesQuery = useCallback(
+    (entity: BrowseEntity) => {
+      if (!normalizedQuery) return true;
+      return (
+        entity.label.toLowerCase().includes(normalizedQuery) ||
+        entity.id.toLowerCase().includes(normalizedQuery)
+      );
+    },
+    [normalizedQuery],
+  );
 
   const entityGroups = useMemo(() => {
     const grouped = new Map<EntityKind, BrowseEntity[]>();
@@ -469,72 +508,143 @@ export function ZoneAssetWorkbench({ zoneId, world, onWorldChange }: ZoneAssetWo
       ) : (
         <div className="grid gap-5 xl:grid-cols-[0.62fr_1.38fr]">
           <div className="rounded-3xl border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] p-4">
-            <div className="max-h-[44rem] overflow-y-auto pr-1">
-              <div className="mb-5">
-                <div className="mb-2 flex items-center justify-between">
-                  <div className="text-2xs uppercase tracking-ui text-text-muted">Zone defaults</div>
-                  <div className="text-2xs text-text-muted">{DEFAULT_KIND_ORDER.length}</div>
-                </div>
-                <div className="flex flex-col gap-2">
-                  {DEFAULT_KIND_ORDER.map((kind) => {
-                    const key: WorkbenchKey = `default:${kind}`;
-                    const selected = selectedKey === key;
-                    const usageCount = fallbackUsageCount(world, kind);
-                    const hasImage = !!world.image?.[kind];
-                    return (
-                      <button
-                        key={kind}
-                        onClick={() => setSelectedKey(key)}
-                        className={`flex items-center gap-3 rounded-2xl border px-3 py-3 text-left transition ${
-                          selected ? "border-border-active bg-gradient-active" : "border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] hover:bg-[var(--chrome-highlight-strong)]"
-                        }`}
-                      >
-                        <span className={`h-2.5 w-2.5 rounded-full ${hasImage ? "bg-status-success" : "bg-text-muted/50"}`} />
-                        <div className="min-w-0 flex-1">
-                          <div className="truncate text-sm text-text-primary">{DEFAULT_KIND_LABELS[kind]}</div>
-                          <div className="truncate text-2xs text-text-muted">
-                            {usageCount > 0 ? `${usageCount} fallback uses pending` : "Currently optional"}
-                          </div>
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {KIND_ORDER.map((kind) => {
-                const items = entityGroups.get(kind) ?? [];
-                if (items.length === 0) return null;
+            <div className="mb-3 flex items-center gap-2">
+              <input
+                type="search"
+                value={searchQuery}
+                onChange={(event) => setSearchQuery(event.target.value)}
+                placeholder="Search entities by name or id…"
+                aria-label="Filter zone assets"
+                className="w-full rounded-full border border-[var(--chrome-stroke)] bg-surface-scrim px-4 py-2 text-xs text-text-primary outline-none transition placeholder:text-text-muted focus:border-border-active focus-visible:ring-2 focus-visible:ring-border-active"
+              />
+              {isSearching && (
+                <button
+                  onClick={() => setSearchQuery("")}
+                  aria-label="Clear search"
+                  className="shrink-0 rounded-full border border-[var(--chrome-stroke)] bg-[var(--chrome-highlight)] px-3 py-2 text-2xs text-text-muted transition hover:bg-[var(--chrome-highlight-strong)]"
+                >
+                  Clear
+                </button>
+              )}
+            </div>
+            <div className="max-h-[40rem] overflow-y-auto pr-1">
+              {(() => {
+                const defaultsCollapsed = !isSearching && collapsedSections.has("defaults");
                 return (
-                  <div key={kind} className="mb-4">
-                    <div className="mb-2 flex items-center justify-between">
-                      <div className="text-2xs uppercase tracking-ui text-text-muted">{KIND_LABELS[kind]}</div>
-                      <div className="text-2xs text-text-muted">{items.length}</div>
-                    </div>
-                    <div className="flex flex-col gap-2">
-                      {items.map((entity) => {
-                        const key: WorkbenchKey = `entity:${entity.kind}:${entity.id}`;
-                        const selected = selectedKey === key;
-                        return (
-                          <button
-                            key={key}
-                            onClick={() => setSelectedKey(key)}
-                            className={`flex items-center gap-3 rounded-2xl border px-3 py-3 text-left transition ${
-                              selected ? "border-border-active bg-gradient-active" : "border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] hover:bg-[var(--chrome-highlight-strong)]"
-                            }`}
-                          >
-                            <span className={`h-2.5 w-2.5 rounded-full ${entity.image ? "bg-status-success" : "bg-text-muted/50"}`} />
-                            <div className="min-w-0 flex-1">
-                              <div className="truncate text-sm text-text-primary">{entity.label}</div>
-                              <div className="truncate text-2xs text-text-muted">{entity.id}</div>
-                            </div>
-                          </button>
-                        );
-                      })}
-                    </div>
+                  <div className="mb-5">
+                    <button
+                      type="button"
+                      onClick={() => toggleSection("defaults")}
+                      aria-expanded={!defaultsCollapsed}
+                      aria-label={`${defaultsCollapsed ? "Expand" : "Collapse"} Zone defaults`}
+                      className="mb-2 flex w-full items-center gap-1.5 rounded-md px-1 py-1 transition hover:bg-[var(--chrome-highlight)]"
+                    >
+                      <svg
+                        className={`h-3 w-3 shrink-0 text-text-muted transition-transform duration-150 ${defaultsCollapsed ? "" : "rotate-90"}`}
+                        viewBox="0 0 12 12"
+                        fill="currentColor"
+                      >
+                        <path d="M4.5 2L9 6L4.5 10z" />
+                      </svg>
+                      <span className="text-2xs uppercase tracking-ui text-text-muted">Zone defaults</span>
+                      <span className="ml-auto text-2xs text-text-muted">{DEFAULT_KIND_ORDER.length}</span>
+                    </button>
+                    {!defaultsCollapsed && (
+                      <div className="flex flex-col gap-2">
+                        {DEFAULT_KIND_ORDER.map((kind) => {
+                          const key: WorkbenchKey = `default:${kind}`;
+                          const selected = selectedKey === key;
+                          const usageCount = fallbackUsageCount(world, kind);
+                          const hasImage = !!world.image?.[kind];
+                          return (
+                            <button
+                              key={kind}
+                              onClick={() => setSelectedKey(key)}
+                              className={`flex items-center gap-3 rounded-2xl border px-3 py-3 text-left transition ${
+                                selected ? "border-border-active bg-gradient-active" : "border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] hover:bg-[var(--chrome-highlight-strong)]"
+                              }`}
+                            >
+                              <span className={`h-2.5 w-2.5 rounded-full ${hasImage ? "bg-status-success" : "bg-text-muted/50"}`} />
+                              <div className="min-w-0 flex-1">
+                                <div className="truncate text-sm text-text-primary">{DEFAULT_KIND_LABELS[kind]}</div>
+                                <div className="truncate text-2xs text-text-muted">
+                                  {usageCount > 0 ? `${usageCount} fallback uses pending` : "Currently optional"}
+                                </div>
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
                 );
-              })}
+              })()}
+
+              {(() => {
+                const visibleGroups = KIND_ORDER.map((kind) => {
+                  const items = (entityGroups.get(kind) ?? []).filter(entityMatchesQuery);
+                  const totalCount = entityGroups.get(kind)?.length ?? 0;
+                  return { kind, items, totalCount };
+                }).filter((group) => group.totalCount > 0);
+                const anyMatches = visibleGroups.some((group) => group.items.length > 0);
+                if (isSearching && !anyMatches) {
+                  return (
+                    <div className="rounded-2xl border border-dashed border-[var(--chrome-stroke-strong)] px-4 py-6 text-center text-xs text-text-muted">
+                      No entities match “{searchQuery}”.
+                    </div>
+                  );
+                }
+                return visibleGroups.map(({ kind, items, totalCount }) => {
+                  if (isSearching && items.length === 0) return null;
+                  const collapsed = !isSearching && collapsedSections.has(kind);
+                  return (
+                    <div key={kind} className="mb-4">
+                      <button
+                        type="button"
+                        onClick={() => toggleSection(kind)}
+                        aria-expanded={!collapsed}
+                        aria-label={`${collapsed ? "Expand" : "Collapse"} ${KIND_LABELS[kind]}`}
+                        className="mb-2 flex w-full items-center gap-1.5 rounded-md px-1 py-1 transition hover:bg-[var(--chrome-highlight)]"
+                      >
+                        <svg
+                          className={`h-3 w-3 shrink-0 text-text-muted transition-transform duration-150 ${collapsed ? "" : "rotate-90"}`}
+                          viewBox="0 0 12 12"
+                          fill="currentColor"
+                        >
+                          <path d="M4.5 2L9 6L4.5 10z" />
+                        </svg>
+                        <span className="text-2xs uppercase tracking-ui text-text-muted">{KIND_LABELS[kind]}</span>
+                        <span className="ml-auto text-2xs text-text-muted">
+                          {isSearching ? `${items.length} / ${totalCount}` : totalCount}
+                        </span>
+                      </button>
+                      {!collapsed && (
+                        <div className="flex flex-col gap-2">
+                          {items.map((entity) => {
+                            const key: WorkbenchKey = `entity:${entity.kind}:${entity.id}`;
+                            const selected = selectedKey === key;
+                            return (
+                              <button
+                                key={key}
+                                onClick={() => setSelectedKey(key)}
+                                className={`flex items-center gap-3 rounded-2xl border px-3 py-3 text-left transition ${
+                                  selected ? "border-border-active bg-gradient-active" : "border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] hover:bg-[var(--chrome-highlight-strong)]"
+                                }`}
+                              >
+                                <span className={`h-2.5 w-2.5 rounded-full ${entity.image ? "bg-status-success" : "bg-text-muted/50"}`} />
+                                <div className="min-w-0 flex-1">
+                                  <div className="truncate text-sm text-text-primary">{entity.label}</div>
+                                  <div className="truncate text-2xs text-text-muted">{entity.id}</div>
+                                </div>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  );
+                });
+              })()}
             </div>
           </div>
 

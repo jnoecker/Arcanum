@@ -98,8 +98,13 @@ export function EntityArtGenerator({
   const contextRef = useRef(context);
   contextRef.current = context;
 
-  const mountedRef = useRef(true);
+  // Track whether the component is currently mounted so handleGenerate can
+  // auto-accept results that arrive after the user navigated away. The setup
+  // body must reset this to true so StrictMode's mount→cleanup→mount cycle
+  // doesn't leave it stuck at false on a still-mounted component.
+  const mountedRef = useRef(false);
   useEffect(() => {
+    mountedRef.current = true;
     return () => {
       mountedRef.current = false;
       const img = pendingResultRef.current;

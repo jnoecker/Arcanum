@@ -32,10 +32,12 @@ export function HomePage() {
   const featured = [...articles]
     .filter((a) => a.imageUrl && a.template !== "world_setting")
     .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
-    .slice(0, 9);
-  const spotlight = featured[0];
-  const sideFeatures = featured.slice(1, 3);
-  const ledgerFeatures = featured.slice(3, 8);
+    .slice(0, 6);
+
+  // `<p></p>` and similar empty markup is truthy but renders nothing — strip tags
+  // and whitespace before deciding whether to show the prose column.
+  const worldSettingProse = worldSetting?.contentHtml?.replace(/<[^>]+>/g, "").trim();
+  const hasWorldSettingProse = Boolean(worldSettingProse);
 
   const searchResults = useMemo(() => {
     if (!search.trim()) return [];
@@ -140,9 +142,9 @@ export function HomePage() {
             </>
           )}
 
-          <div className="relative grid gap-8 px-6 py-8 sm:px-8 sm:py-10 lg:grid-cols-[minmax(0,1fr)_minmax(18rem,22rem)] lg:gap-10 lg:px-10 xl:grid-cols-[minmax(0,1.2fr)_minmax(21rem,0.82fr)]">
+          <div className="relative grid gap-8 px-6 py-8 sm:px-8 sm:py-10 lg:grid-cols-[minmax(0,1fr)_minmax(18rem,22rem)] lg:items-center lg:gap-10 lg:px-10 xl:grid-cols-[minmax(0,1.2fr)_minmax(21rem,0.82fr)]">
             <div className="max-w-3xl">
-              <h1 className="mt-4 font-display text-4xl leading-[1.03] text-accent-emphasis sm:text-5xl lg:text-6xl">
+              <h1 className="font-display text-4xl leading-[1.03] text-accent-emphasis sm:text-5xl lg:text-6xl">
                 {bannerTitle}
               </h1>
               {bannerSubtitle && (
@@ -150,25 +152,22 @@ export function HomePage() {
                   {bannerSubtitle}
                 </p>
               )}
-              <p className="mt-6 max-w-2xl text-sm leading-7 text-text-muted">
-                Start with {articleCount} published entries
-                {mapCount > 0 ? `, ${mapCount} mapped regions` : ""}
-                {timelineCount > 0 ? `, and ${timelineCount} dated events` : ""}.
-              </p>
+              <div className="mt-6 flex flex-wrap gap-x-6 gap-y-2 text-sm text-text-muted">
+                <span><span className="font-display text-lg text-accent-emphasis">{articleCount}</span> entries</span>
+                {mapCount > 0 && (
+                  <span><span className="font-display text-lg text-accent-emphasis">{mapCount}</span> {mapCount === 1 ? "map" : "maps"}</span>
+                )}
+                {timelineCount > 0 && (
+                  <span><span className="font-display text-lg text-accent-emphasis">{timelineCount}</span> dated events</span>
+                )}
+              </div>
             </div>
 
             <div
               ref={searchContainerRef}
-              className={`${showcaseSurfaceClassNames.note} relative self-end p-5`}
+              className={`${showcaseSurfaceClassNames.note} relative p-5`}
             >
-              <h2 className="mt-3 font-display text-2xl text-[var(--color-aurum-pale)]">
-                Find a person, place, or relic
-              </h2>
-              <p className="mt-2 text-sm leading-7 text-text-secondary">
-                Search the archive directly, or open the codex and browse by type.
-              </p>
-
-              <div className="mt-5 opacity-90 transition-opacity duration-300 focus-within:opacity-100">
+              <div className="opacity-90 transition-opacity duration-300 focus-within:opacity-100">
                 <input
                   type="text"
                   value={search}
@@ -243,162 +242,138 @@ export function HomePage() {
         </div>
       </section>
 
-      <section className="mb-20 grid gap-6 lg:grid-cols-[minmax(0,1.08fr)_minmax(18rem,0.92fr)]">
-        <div className="min-w-0">
-          {worldSetting?.contentHtml ? (
-            <div
-              className="prose max-w-none"
-              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(worldSetting.contentHtml) }}
-            />
-          ) : (
-            <div className="px-1">
-              <p className="text-base leading-8 text-text-secondary">
-                Enter through the codex, map the terrain, and follow the line of events through the world&apos;s own record.
-              </p>
-            </div>
-          )}
-        </div>
-
-        <aside className="grid gap-5 self-start">
+      {(() => {
+        const entryCards: React.ReactNode[] = [
           <Link
+            key="codex"
             to="/articles"
-            className={`${showcaseSurfaceClassNames.note} group overflow-hidden px-5 py-5 transition-transform duration-300 hover:-translate-y-0.5`}
+            className={`${showcaseSurfaceClassNames.note} group flex h-full flex-col overflow-hidden p-6 transition-transform duration-300 hover:-translate-y-0.5`}
           >
             <h2 className="font-display text-2xl text-accent-emphasis">Browse the codex</h2>
-            <p className="mt-2 text-sm leading-7 text-text-secondary">
+            <p className="mt-2 flex-1 text-sm leading-7 text-text-secondary">
               Move through characters, places, factions, and relics in whatever order opens the world fastest.
             </p>
-            <p className="mt-4 text-sm text-text-muted">
+            <p className="mt-4 text-xs uppercase tracking-[0.18em] text-text-muted">
               {articleCount} linked entries
             </p>
-          </Link>
-
-          <div className="border-t border-border-muted/25 pt-4">
-            <p className="text-xs uppercase tracking-[0.24em] text-text-muted">Other ways in</p>
-            <div className="mt-3 space-y-2">
-            {mapCount > 0 && (
-              <Link
-                to="/maps"
-                className="flex items-start justify-between gap-4 rounded-2xl px-3 py-3 transition-colors duration-300 hover:bg-white/6"
-              >
-                <div>
-                  <h3 className="font-display text-xl text-[var(--color-aurum-pale)]">Maps</h3>
-                  <p className="mt-1 text-sm leading-7 text-text-secondary">{mapCount} regions with linked pins and places.</p>
-                </div>
-                <span className="pt-1 text-[var(--color-aurum-pale)]">↗</span>
-              </Link>
-            )}
-            {timelineCount > 0 && (
-              <Link
-                to="/timeline"
-                className="flex items-start justify-between gap-4 rounded-2xl px-3 py-3 transition-colors duration-300 hover:bg-white/6"
-              >
-                <div>
-                  <h3 className="font-display text-xl text-accent">Timeline</h3>
-                  <p className="mt-1 text-sm leading-7 text-text-secondary">{timelineCount} events arranged across eras and ages.</p>
-                </div>
-                <span className="pt-1 text-[var(--color-aurum-pale)]">↗</span>
-              </Link>
-            )}
+          </Link>,
+        ];
+        if (mapCount > 0) {
+          entryCards.push(
             <Link
-              to="/graph"
-              className="flex items-start justify-between gap-4 rounded-2xl px-3 py-3 transition-colors duration-300 hover:bg-white/6"
+              key="maps"
+              to="/maps"
+              className={`${showcaseSurfaceClassNames.sectionSoft} group flex h-full flex-col overflow-hidden p-6 transition-transform duration-300 hover:-translate-y-0.5`}
             >
-              <div>
-                <h3 className="font-display text-xl text-accent">Connections</h3>
-                <p className="mt-1 text-sm leading-7 text-text-secondary">Follow alliances, rivalries, and associations across the canon.</p>
-              </div>
-              <span className="pt-1 text-[var(--color-aurum-pale)]">↗</span>
-            </Link>
-            </div>
-          </div>
-        </aside>
-      </section>
+              <h3 className="font-display text-2xl text-[var(--color-aurum-pale)]">Maps</h3>
+              <p className="mt-2 flex-1 text-sm leading-7 text-text-secondary">
+                Regions with linked pins, places, and routes through the terrain.
+              </p>
+              <p className="mt-4 text-xs uppercase tracking-[0.18em] text-text-muted">
+                {mapCount} {mapCount === 1 ? "region" : "regions"}
+              </p>
+            </Link>,
+          );
+        }
+        if (timelineCount > 0) {
+          entryCards.push(
+            <Link
+              key="timeline"
+              to="/timeline"
+              className={`${showcaseSurfaceClassNames.sectionSoft} group flex h-full flex-col overflow-hidden p-6 transition-transform duration-300 hover:-translate-y-0.5`}
+            >
+              <h3 className="font-display text-2xl text-[var(--color-aurum-pale)]">Timeline</h3>
+              <p className="mt-2 flex-1 text-sm leading-7 text-text-secondary">
+                Dated events arranged across eras and ages of the world.
+              </p>
+              <p className="mt-4 text-xs uppercase tracking-[0.18em] text-text-muted">
+                {timelineCount} {timelineCount === 1 ? "event" : "events"}
+              </p>
+            </Link>,
+          );
+        }
+        entryCards.push(
+          <Link
+            key="graph"
+            to="/graph"
+            className={`${showcaseSurfaceClassNames.sectionSoft} group flex h-full flex-col overflow-hidden p-6 transition-transform duration-300 hover:-translate-y-0.5`}
+          >
+            <h3 className="font-display text-2xl text-[var(--color-aurum-pale)]">Connections</h3>
+            <p className="mt-2 flex-1 text-sm leading-7 text-text-secondary">
+              Follow alliances, rivalries, and associations across the canon.
+            </p>
+            <p className="mt-4 text-xs uppercase tracking-[0.18em] text-text-muted">
+              Relationship graph
+            </p>
+          </Link>,
+        );
 
-      {spotlight && (
+        if (hasWorldSettingProse) {
+          return (
+            <section className="mb-20 grid gap-8 lg:grid-cols-[minmax(0,1.08fr)_minmax(18rem,0.92fr)]">
+              <div className="min-w-0">
+                <div
+                  className="prose max-w-none"
+                  dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(worldSetting!.contentHtml) }}
+                />
+              </div>
+              <aside className="grid gap-4 self-start">
+                {entryCards}
+              </aside>
+            </section>
+          );
+        }
+
+        return (
+          <section className="mb-20">
+            <div className={`grid gap-4 ${entryCards.length === 4 ? "sm:grid-cols-2" : "sm:grid-cols-2 lg:grid-cols-3"}`}>
+              {entryCards}
+            </div>
+          </section>
+        );
+      })()}
+
+      {featured.length > 0 && (
         <section>
           <div className="mb-8 flex items-center gap-4">
             <h2 className="font-display text-sm uppercase tracking-[0.28em] text-[var(--color-aurum-pale)]">
               Recent entries
             </h2>
             <div className="h-px flex-1 bg-[linear-gradient(90deg,rgba(200,151,46,0.35),rgba(57,69,95,0.16))]" />
+            <Link
+              to="/articles"
+              className="text-xs uppercase tracking-[0.22em] text-text-muted transition-colors duration-300 hover:text-[var(--color-aurum-pale)]"
+            >
+              View all ↗
+            </Link>
           </div>
 
-          <div className="grid gap-5 lg:grid-cols-[minmax(0,1.15fr)_minmax(19rem,0.85fr)]">
-            <Link
-              to={`/articles/${encodeURIComponent(spotlight.id)}`}
-              className="group relative overflow-hidden rounded-[2rem] border border-white/10 bg-bg-secondary/30 shadow-[var(--shadow-image)]"
-            >
-              {spotlight.imageUrl && (
-                <img
-                  src={spotlight.imageUrl}
-                  alt={spotlight.title}
-                  loading="lazy"
-                  className="h-[22rem] w-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.02] sm:h-[28rem]"
-                />
-              )}
-              <div className="absolute inset-0 bg-gradient-to-t from-bg-abyss via-bg-abyss/20 to-transparent" />
-              <div className="absolute inset-x-0 bottom-0 p-6 sm:p-8">
-                <p className="text-[10px] uppercase tracking-[0.24em]" style={{ color: TEMPLATE_COLORS[spotlight.template] }}>
-                  {TEMPLATE_LABELS[spotlight.template]}
-                </p>
-                <h3 className="mt-3 font-display text-2xl text-accent-emphasis transition-colors duration-300 group-hover:text-[var(--color-aurum-pale)] sm:text-3xl">
-                  {spotlight.title}
-                </h3>
-              </div>
-            </Link>
-
-            <div className="grid gap-4">
-              {sideFeatures.map((a) => (
-                <Link
-                  key={a.id}
-                  to={`/articles/${encodeURIComponent(a.id)}`}
-                  className={`${showcaseSurfaceClassNames.sectionSoft} group flex min-h-[11rem] flex-col overflow-hidden sm:flex-row`}
-                >
-                  {a.imageUrl && (
-                    <div className="h-40 w-full shrink-0 overflow-hidden sm:h-auto sm:w-[42%]">
-                      <img
-                        src={a.imageUrl}
-                        alt={a.title}
-                        loading="lazy"
-                        className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.03]"
-                      />
-                    </div>
-                  )}
-                  <div className="flex min-w-0 flex-1 flex-col justify-end p-5">
-                    <p className="text-[10px] uppercase tracking-[0.22em]" style={{ color: TEMPLATE_COLORS[a.template] }}>
-                      {TEMPLATE_LABELS[a.template]}
-                    </p>
-                    <h3 className="mt-3 font-display text-xl leading-tight text-accent-emphasis transition-colors duration-300 group-hover:text-[var(--color-aurum-pale)]">
-                      {a.title}
-                    </h3>
-                  </div>
-                </Link>
-              ))}
-
-              {ledgerFeatures.length > 0 && (
-                <div className={`${showcaseSurfaceClassNames.sectionSoft} p-4`}>
-                  <p className="text-[10px] uppercase tracking-[0.28em] text-text-muted">More to explore</p>
-                  <div className="mt-3 space-y-2">
-                    {ledgerFeatures.map((a) => (
-                      <Link
-                        key={a.id}
-                        to={`/articles/${encodeURIComponent(a.id)}`}
-                        className="flex items-center justify-between gap-4 rounded-2xl px-3 py-3 transition-colors duration-300 hover:bg-white/6"
-                      >
-                        <div className="min-w-0">
-                          <p className="text-[10px] uppercase tracking-[0.18em]" style={{ color: TEMPLATE_COLORS[a.template] }}>
-                            {TEMPLATE_LABELS[a.template]}
-                          </p>
-                          <p className="mt-1 truncate font-display text-sm text-accent-emphasis">{a.title}</p>
-                        </div>
-                        <span className="shrink-0 text-[var(--color-aurum-pale)]">↗</span>
-                      </Link>
-                    ))}
-                  </div>
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {featured.map((a) => (
+              <Link
+                key={a.id}
+                to={`/articles/${encodeURIComponent(a.id)}`}
+                className="group relative flex aspect-[4/5] overflow-hidden rounded-[1.75rem] border border-white/10 bg-bg-secondary/30 shadow-[var(--shadow-image)]"
+              >
+                {a.imageUrl && (
+                  <img
+                    src={a.imageUrl}
+                    alt={a.title}
+                    loading="lazy"
+                    className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.04]"
+                  />
+                )}
+                <div className="absolute inset-0 bg-gradient-to-t from-bg-abyss via-bg-abyss/30 to-transparent" />
+                <div className="absolute inset-x-0 bottom-0 p-5">
+                  <p className="text-[10px] uppercase tracking-[0.24em]" style={{ color: TEMPLATE_COLORS[a.template] }}>
+                    {TEMPLATE_LABELS[a.template]}
+                  </p>
+                  <h3 className="mt-2 font-display text-xl leading-tight text-accent-emphasis transition-colors duration-300 group-hover:text-[var(--color-aurum-pale)]">
+                    {a.title}
+                  </h3>
                 </div>
-              )}
-            </div>
+              </Link>
+            ))}
           </div>
         </section>
       )}

@@ -42,11 +42,18 @@ export function DataProvider({ children }: { children: ReactNode }) {
         setLoading(true);
         setError(null);
 
-        const configResp = await fetch("/config.json", { cache: "no-store", signal });
+        // Try to read runtime config, but tolerate the SPA fallback returning index.html
+        // (Cloudflare Pages rewrites unknown paths to index.html with a 200 status).
         let runtimeUrl: string | undefined;
-        if (configResp.ok) {
-          const config = await configResp.json() as RuntimeConfig;
-          runtimeUrl = config.showcaseUrl?.trim() || undefined;
+        try {
+          const configResp = await fetch("/config.json", { cache: "no-store", signal });
+          const contentType = configResp.headers.get("content-type") ?? "";
+          if (configResp.ok && contentType.includes("application/json")) {
+            const config = await configResp.json() as RuntimeConfig;
+            runtimeUrl = config.showcaseUrl?.trim() || undefined;
+          }
+        } catch {
+          // No runtime config — fall through to env var or local file.
         }
 
         const dataUrl = runtimeUrl || import.meta.env.VITE_SHOWCASE_URL || "/data/showcase.json";

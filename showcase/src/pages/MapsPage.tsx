@@ -73,42 +73,11 @@ export function MapsPage() {
     );
   }
 
-  const totalPins = maps.reduce((sum, map) => sum + map.pins.length, 0);
   const activePins = activeMap?.pins.length ?? 0;
   const linkedPins = activeMap?.pins.filter((pin) => Boolean(pin.articleId)).length ?? 0;
 
   return (
     <div className="space-y-6">
-      <section className="grid gap-6 xl:grid-cols-[minmax(0,1.3fr)_minmax(18rem,0.85fr)]">
-        <div className={`${showcaseSurfaceClassNames.hero} px-6 py-7 sm:px-8`}>
-          <h1 className="mt-3 max-w-3xl font-display text-3xl leading-tight text-[var(--color-aurum-pale)] sm:text-4xl">
-            Cross the dominions by plate, route, and pinned testimony.
-          </h1>
-          <p className="mt-4 max-w-2xl text-sm leading-7 text-text-secondary sm:text-[0.95rem]">
-            Each published chart carries its own field of landmarks, letting readers move from a coast, fortress, or
-            shrine directly into the codex entries tied to that ground.
-          </p>
-          <p className="mt-6 text-sm leading-7 text-text-muted">
-            {new Intl.NumberFormat().format(maps.length)} published charts with {new Intl.NumberFormat().format(totalPins)} pinned sites.{" "}
-            {activeMap ? `${activeMap.title} is open.` : ""}
-          </p>
-        </div>
-
-        <div className="flex flex-col justify-end gap-4 px-1 pb-1 xl:pl-6">
-          <p className="font-display text-2xl text-accent-emphasis">
-            {new Intl.NumberFormat().format(activePins)} markers on this plate
-          </p>
-          <p className="text-sm leading-7 text-text-secondary">
-            {new Intl.NumberFormat().format(linkedPins)} of them open directly into article records, while the rest
-            preserve place memory as unlinked notes on the terrain.
-          </p>
-          <p className="text-sm leading-7 text-text-muted">
-            Use the atlas index below to jump between plates. Wide charts keep their original canvas dimensions so the
-            topography stays readable before you descend into individual pins.
-          </p>
-        </div>
-      </section>
-
       {activeMap ? (
         <section className={`${showcaseSurfaceClassNames.section} overflow-hidden`}>
           <div className="flex flex-wrap items-end justify-between gap-4 border-b border-border-muted/25 px-5 py-5 sm:px-6">

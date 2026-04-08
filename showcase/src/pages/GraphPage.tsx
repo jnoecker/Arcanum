@@ -104,34 +104,8 @@ function GraphInner() {
 
   return (
     <div className="space-y-6">
-      <section className={`${showcaseSurfaceClassNames.hero} px-6 py-7 sm:px-8`}>
-        <h1 className="mt-3 max-w-3xl font-display text-3xl leading-tight text-[var(--color-aurum-pale)] sm:text-4xl">
-          Survey alliances, feuds, blood ties, and territorial claims as a living weave.
-        </h1>
-        <p className="mt-4 max-w-2xl text-sm leading-7 text-text-secondary sm:text-[0.95rem]">
-          This chamber shows how a court leans on a city, how a ruin keeps appearing in rival chronicles, and where
-          one name is only a passing mention instead of a binding thread.
-        </p>
-        <p className="mt-6 text-sm leading-7 text-text-muted">
-          {new Intl.NumberFormat().format(nodes.length)} visible nodes and {new Intl.NumberFormat().format(edges.length)} visible threads
-          {hasActiveFilters ? " under the current filters." : " in the full survey."}
-        </p>
-      </section>
-
       <section className={`${showcaseSurfaceClassNames.section} px-5 py-5 sm:px-6`}>
-        <div className="flex flex-wrap items-end justify-between gap-4 border-b border-border-muted/25 pb-4">
-          <div>
-            <h2 className="mt-2 font-display text-3xl text-[var(--color-aurum-pale)]">
-              {hasActiveFilters ? "Filtered relationship field" : "Full relationship field"}
-            </h2>
-          </div>
-          <p className="max-w-xl text-sm leading-7 text-text-muted lg:text-right">
-            {hasActiveFilters ? "The view is narrowed." : "The full relationship field is visible."}{" "}
-            {shouldVirtualizeGraph ? "Large exports render visible elements only." : "The full graph is rendered at once."}
-          </p>
-        </div>
-
-        <div className="showcase-viewport mt-5 overflow-hidden rounded-[1.35rem] border border-border-muted/25 bg-[var(--color-graph-bg)]">
+        <div className="showcase-viewport overflow-hidden rounded-[1.35rem] border border-border-muted/25 bg-[var(--color-graph-bg)]">
           {nodes.length > 0 ? (
             <ReactFlow
               nodes={nodes}
@@ -195,13 +169,10 @@ function GraphInner() {
         </div>
       </section>
 
-      <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(18rem,0.8fr)]">
+      <section className="grid gap-4 xl:grid-cols-2">
         <div className={`${showcaseSurfaceClassNames.sectionSoft} px-5 py-5`}>
           <div className="flex items-center justify-between gap-3">
-            <div>
-              <p className="text-[0.68rem] uppercase tracking-[0.3em] text-text-muted">Article type</p>
-              <h2 className="mt-2 font-display text-xl text-accent-emphasis">Filter the graph</h2>
-            </div>
+            <p className="text-[0.68rem] uppercase tracking-[0.3em] text-text-muted">Article type</p>
             {hasActiveFilters ? (
               <button
                 type="button"
@@ -215,7 +186,7 @@ function GraphInner() {
               </button>
             ) : null}
           </div>
-          <div className="mt-5 flex flex-wrap gap-2">
+          <div className="mt-3 flex flex-wrap gap-2">
             {templates.map((template) => (
               <button
                 key={template}
@@ -233,8 +204,7 @@ function GraphInner() {
 
         <div className={`${showcaseSurfaceClassNames.sectionSoft} px-5 py-5`}>
           <p className="text-[0.68rem] uppercase tracking-[0.3em] text-text-muted">Relation</p>
-          <h2 className="mt-2 font-display text-xl text-accent-emphasis">Choose the thread</h2>
-          <div className="mt-5 flex flex-wrap gap-2">
+          <div className="mt-3 flex flex-wrap gap-2">
             {RELATION_TYPE_OPTIONS.map((option) => (
               <button
                 key={option.value}
@@ -248,15 +218,6 @@ function GraphInner() {
               </button>
             ))}
           </div>
-        </div>
-
-        <div className={`${showcaseSurfaceClassNames.sectionSoft} px-5 py-5`}>
-          <p className="text-[0.68rem] uppercase tracking-[0.3em] text-text-muted">How to read it</p>
-          <p className="mt-3 font-display text-xl text-[var(--color-aurum-pale)]">Follow weight before noise.</p>
-          <p className="mt-3 text-sm leading-7 text-text-secondary">
-            Dense exports render only visible elements at scale, keeping the chamber responsive while still exposing the
-            strongest bonds first.
-          </p>
         </div>
       </section>
     </div>

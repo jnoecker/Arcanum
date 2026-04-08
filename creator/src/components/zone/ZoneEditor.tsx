@@ -160,6 +160,15 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
   useEffect(() => {
     const nav = consumeNavigation();
     if (!nav || nav.zoneId !== zoneId) return;
+    if (nav.view) {
+      // Loose string -> ViewMode cast. Unknown view modes fall back to the
+      // current mode, which is harmless.
+      const allowed: ViewMode[] = ["map", "assets", "media", "dungeon"];
+      if ((allowed as string[]).includes(nav.view)) {
+        setViewMode(nav.view as ViewMode);
+      }
+      return;
+    }
     if (nav.entityKind && nav.entityId) {
       setSelectedEntity({ kind: nav.entityKind as EntitySelection["kind"], id: nav.entityId });
       setSelectedRoomId(null);

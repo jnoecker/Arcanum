@@ -15,6 +15,8 @@ export interface PendingNavigation {
   roomId?: string;
   entityKind?: string;
   entityId?: string;
+  /** Switch the zone editor to a specific view mode (e.g. "dungeon"). */
+  view?: string;
 }
 
 interface ProjectStore {

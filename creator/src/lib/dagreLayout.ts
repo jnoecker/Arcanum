@@ -175,6 +175,64 @@ export function compassLayout(
   });
 }
 
+/**
+ * Compute the bounding rectangle for a set of positioned nodes.
+ *
+ * Used to drive `reactFlow.fitBounds()` deterministically — without this,
+ * we'd have to rely on `fitView()` which reads DOM-measured dimensions and
+ * may see zero-sized or stale measurements right after a layout change.
+ *
+ * Dimensions are sourced in order of preference:
+ *   1. Explicit `measurements` map (freshest — passed by the caller)
+ *   2. Node's own `measured.width/height` (ReactFlow runtime)
+ *   3. Node's static `width/height`
+ *   4. DEFAULT_NODE_WIDTH / DEFAULT_NODE_HEIGHT
+ *
+ * Returns `null` if there are no nodes to bound.
+ */
+export function getLayoutBounds(
+  nodes: Node[],
+  measurements?: Map<string, LayoutMeasurement>,
+): { x: number; y: number; width: number; height: number } | null {
+  if (nodes.length === 0) return null;
+
+  let minX = Infinity;
+  let minY = Infinity;
+  let maxX = -Infinity;
+  let maxY = -Infinity;
+
+  for (const node of nodes) {
+    const m = measurements?.get(node.id);
+    const width =
+      (m && m.width > 0 ? m.width : undefined) ??
+      node.measured?.width ??
+      node.width ??
+      DEFAULT_NODE_WIDTH;
+    const height =
+      (m && m.height > 0 ? m.height : undefined) ??
+      node.measured?.height ??
+      node.height ??
+      DEFAULT_NODE_HEIGHT;
+
+    const x = node.position?.x ?? 0;
+    const y = node.position?.y ?? 0;
+
+    if (x < minX) minX = x;
+    if (y < minY) minY = y;
+    if (x + width > maxX) maxX = x + width;
+    if (y + height > maxY) maxY = y + height;
+  }
+
+  if (!isFinite(minX) || !isFinite(minY)) return null;
+
+  return {
+    x: minX,
+    y: minY,
+    width: maxX - minX,
+    height: maxY - minY,
+  };
+}
+
 /** Spiral outward from (x, y) to find the nearest unoccupied grid cell. */
 function findEmpty(
   x: number,

@@ -1,5 +1,6 @@
 import { useState, useMemo, useCallback } from "react";
 import { useLoreStore, selectArticles } from "@/stores/loreStore";
+import { useToastStore } from "@/stores/toastStore";
 import { inferRelations, type RelationSuggestion } from "@/lib/loreRelationInference";
 
 function suggestionKey(s: RelationSuggestion) {
@@ -17,12 +18,37 @@ export function RelationInferencePanel() {
 
   const handleScan = useCallback(() => {
     setLoading(true);
+    // Defer to next tick so the button shows "Analyzing…" before the
+    // synchronous scan runs (purely cosmetic — inferRelations is sync).
     setTimeout(() => {
-      setSuggestions(inferRelations(articles));
-      setDismissed(new Set());
-      setAccepted(new Set());
-      setScanned(true);
-      setLoading(false);
+      try {
+        const result = inferRelations(articles);
+        setSuggestions(result);
+        setDismissed(new Set());
+        setAccepted(new Set());
+        setScanned(true);
+        if (result.length === 0) {
+          useToastStore.getState().show(
+            "No missing relations detected",
+          );
+        } else {
+          useToastStore.getState().show(
+            `Found ${result.length} relation suggestion${result.length !== 1 ? "s" : ""}`,
+          );
+        }
+      } catch (err) {
+        // Surface inference failures instead of leaving the button stuck
+        // on "Analyzing…". The scan previously ate exceptions silently
+        // because setLoading(false) lived on the happy path only.
+        console.error("Relation inference failed:", err);
+        const message = err instanceof Error ? err.message : String(err);
+        useToastStore.getState().show(
+          `Relation suggest failed: ${message}`,
+          4000,
+        );
+      } finally {
+        setLoading(false);
+      }
     }, 0);
   }, [articles]);
 

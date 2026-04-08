@@ -221,6 +221,8 @@ function SpriteLightbox({
       const context = { zone: "sprites", entity_type: "player_sprite", entity_id: key };
       const entry = await removeBgAndSave(src, "player_sprite", context, variantGroup);
       if (entry) onRemoveBg();
+    } catch (err) {
+      console.error("[player sprite] bg removal failed:", err);
     } finally {
       setRemovingBg(false);
     }

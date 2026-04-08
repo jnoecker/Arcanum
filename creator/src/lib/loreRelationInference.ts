@@ -18,12 +18,14 @@ export function inferRelations(
   articles: Record<string, Article>,
 ): RelationSuggestion[] {
   const suggestions: RelationSuggestion[] = [];
-  const articleList = Object.values(articles);
+  const articleList = Object.values(articles).filter(
+    (a): a is Article => a != null && typeof a.title === "string",
+  );
 
   // Build title→id map for text-field matching (leader, territory, etc.)
   const titleToId = new Map<string, string>();
   for (const a of articleList) {
-    titleToId.set(a.title.toLowerCase(), a.id);
+    if (a.title) titleToId.set(a.title.toLowerCase(), a.id);
   }
 
   for (const article of articleList) {

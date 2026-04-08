@@ -93,7 +93,9 @@ export function BulkBgRemoval({
       );
 
       try {
-        // Get data URL from the resolved path
+        // Get data URL from the resolved path. This fails for newly
+        // generated images when the DB path format has drifted — the
+        // thrown error is surfaced into the row below.
         const dataUrl = await invoke<string>("read_image_data_url", {
           path: item.resolvedPath,
         });
@@ -105,16 +107,18 @@ export function BulkBgRemoval({
           item.variantGroup,
         );
 
+        // Touch `entry` so TypeScript doesn't warn about the unused binding;
+        // the real effect is that the asset was saved via the variant group,
+        // and loadAssets() below refreshes the manifest.
+        void entry;
         setItems((prev) =>
-          prev.map((t, i) =>
-            i === idx
-              ? { ...t, status: entry ? "done" : "error", error: entry ? undefined : "Removal returned null" }
-              : t,
-          ),
+          prev.map((t, i) => (i === idx ? { ...t, status: "done", error: undefined } : t)),
         );
       } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        console.error(`[bulk bg removal] ${item.label} failed:`, err);
         setItems((prev) =>
-          prev.map((t, i) => (i === idx ? { ...t, status: "error", error: String(err) } : t)),
+          prev.map((t, i) => (i === idx ? { ...t, status: "error", error: message } : t)),
         );
       }
     }

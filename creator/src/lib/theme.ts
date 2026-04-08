@@ -1,21 +1,21 @@
-// ─── Theme system ───────────────────────────────────────────────────
+// Theme system
 // 4-color theme palettes derive the full set of CSS custom properties used
 // throughout the app. The user picks (or pastes) Background, Surface, Text,
-// and Accent — everything else is derived from those four anchors.
+// and Accent. Everything else is derived from those four anchors.
 //
 // Status colors, class identity colors, lore template colors, diff colors,
-// and chart colors are intentionally NOT themed — they are semantic.
+// and chart colors are intentionally NOT themed. They are semantic.
 
 export interface ThemePalette {
   /** Name shown in the UI. */
   name: string;
-  /** Darkest color — drives the abyss / page background. */
+  /** Background anchor. Drives the page and large chrome surfaces. */
   background: string;
-  /** Mid surface — drives panels, sections, hover states, borders. */
+  /** Mid surface. Drives panels, sections, hover states, and borders. */
   surface: string;
-  /** Light color — drives primary text. */
+  /** Primary text anchor. */
   text: string;
-  /** Saturated pop — drives accent, links, glows, active states. */
+  /** Saturated pop. Drives accent, links, glows, and active states. */
   accent: string;
 }
 
@@ -74,7 +74,7 @@ export const PRESET_THEMES: ThemePalette[] = [
   },
 ];
 
-// ─── Color math ─────────────────────────────────────────────────────
+// Color math
 
 export interface RGB {
   r: number;
@@ -105,7 +105,7 @@ export function rgbTuple(hex: string): string {
   return `${Math.round(r)} ${Math.round(g)} ${Math.round(b)}`;
 }
 
-/** Linearly mix two hex colors. t=0 → a, t=1 → b. */
+/** Linearly mix two hex colors. t=0 -> a, t=1 -> b. */
 export function mix(a: string, b: string, t: number): string {
   const ra = hexToRgb(a);
   const rb = hexToRgb(b);
@@ -126,7 +126,14 @@ export function luminance(hex: string): number {
   return 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
 }
 
-// ─── Derivation ─────────────────────────────────────────────────────
+/** WCAG contrast ratio between two hex colors. */
+export function contrastRatio(a: string, b: string): number {
+  const lighter = Math.max(luminance(a), luminance(b));
+  const darker = Math.min(luminance(a), luminance(b));
+  return (lighter + 0.05) / (darker + 0.05);
+}
+
+// Derivation
 
 /** Build the full CSS-variable map from a 4-color palette. */
 export function themeToVars(theme: ThemePalette): Record<string, string> {
@@ -135,67 +142,79 @@ export function themeToVars(theme: ThemePalette): Record<string, string> {
   const text = theme.text;
   const accent = theme.accent;
 
-  // Detect light vs dark theme so chrome stroke/fill colors flip orientation.
-  // For a dark theme we use white-tinted strokes and dark fills; for a light
-  // theme we use dark-tinted strokes and light fills.
+  // Determine whether the palette is light-on-dark or dark-on-light from the
+  // relationship between the background and text anchors.
   const bgLum = luminance(bg);
-  const isLight = bgLum > 0.5;
+  const textLum = luminance(text);
+  const isLight = bgLum >= textLum;
 
-  // Background ramp: darker (or lighter) than bg for the abyss, then surface,
-  // with lighter variants mixed toward the surface color.
-  const abyss = isLight ? mix(bg, "#ffffff", 0.18) : mix(bg, "#000000", 0.18);
+  // Background ramp.
+  const abyss = isLight ? mix(bg, text, 0.10) : mix(bg, "#000000", 0.18);
   const bgPrimary = bg;
-  const bgSecondary = mix(bg, surface, 0.4);
+  const bgSecondary = isLight ? mix(bg, surface, 0.62) : mix(bg, surface, 0.4);
   const bgTertiary = surface;
-  const bgElevated = surface;
-  const bgHover = mix(surface, text, 0.08);
+  const bgElevated = isLight ? mix(surface, "#ffffff", 0.14) : surface;
+  const bgHover = isLight ? mix(surface, text, 0.10) : mix(surface, text, 0.08);
 
   // Borders.
-  const borderMuted = mix(surface, text, 0.05);
-  const borderDefault = mix(surface, text, 0.18);
+  const borderMuted = isLight ? mix(surface, text, 0.10) : mix(surface, text, 0.05);
+  const borderDefault = isLight ? mix(surface, text, 0.22) : mix(surface, text, 0.18);
   const borderFocus = accent;
 
   // Text ramp.
   const textPrimary = text;
-  const textSecondary = mix(text, bg, 0.22);
-  const textMuted = mix(text, bg, 0.42);
+  const textSecondary = isLight ? mix(text, bg, 0.14) : mix(text, bg, 0.22);
+  const textMuted = isLight ? mix(text, bg, 0.32) : mix(text, bg, 0.42);
 
   // Accent variants.
-  const accentMuted = mix(accent, bg, 0.22);
+  const accentMuted = mix(accent, bg, isLight ? 0.18 : 0.22);
   const accentEmphasis = text;
 
-  // Warm: tracks accent (since 4-color palettes give us only one pop color).
+  // Warm accent follows the single accent anchor.
   const warm = accent;
   const warmPale = mix(accent, text, 0.38);
   const warmDeep = mix(accent, bg, 0.42);
 
-  // Surface scrims (panel backdrops).
-  const scrim = rgba(bg, 0.72);
-  const scrimLight = rgba(bg, 0.46);
+  // Surface scrims.
+  const scrim = isLight ? rgba(mix(surface, text, 0.08), 0.84) : rgba(bg, 0.72);
+  const scrimLight = isLight ? rgba(mix(surface, bg, 0.40), 0.72) : rgba(bg, 0.46);
 
   // Graph backgrounds.
-  const graphBg = isLight ? mix(bg, "#ffffff", 0.18) : mix(bg, "#000000", 0.32);
-  const graphGrid = mix(bg, surface, 0.5);
+  const graphBg = isLight ? mix(bg, text, 0.06) : mix(bg, "#000000", 0.32);
+  const graphGrid = isLight ? mix(bg, text, 0.18) : mix(bg, surface, 0.5);
   const graphNode = surface;
-  const graphEdge = mix(surface, text, 0.32);
+  const graphEdge = mix(surface, text, isLight ? 0.44 : 0.32);
   const graphEdgeUp = accent;
 
-  // Pick a text color that contrasts with accent for "on accent" surfaces
-  // (e.g. primary buttons that fill with accent).
-  const accentLum = luminance(accent);
-  const textOnAccent = accentLum > 0.55 ? bg : text;
+  // Choose whichever anchor contrasts more strongly on accent-filled surfaces.
+  const textOnAccent = contrastRatio(accent, text) >= contrastRatio(accent, bg)
+    ? text
+    : bg;
 
-  // Chrome stroke/fill orientation. On dark themes, strokes are light overlays
-  // and fills are dark overlays (using #ffffff and #000000). On light themes
-  // we flip both.
-  const strokeColor = isLight ? "#000000" : "#ffffff";
-  const fillColor = isLight ? "#ffffff" : "#000000";
+  // Chrome tokens. Light themes lean on inked overlays and real shadows
+  // instead of whitening everything into haze.
+  const strokeColor = text;
+  const fillColor = isLight ? mix(surface, text, 0.16) : mix(bg, "#000000", 0.72);
+  const highlightColor = isLight ? text : "#ffffff";
+  const shadowColor = isLight ? text : "#000000";
+  const overlayColor = isLight ? text : abyss;
+
+  const panelTop = isLight ? mix(surface, "#ffffff", 0.14) : surface;
+  const panelBottom = isLight ? mix(bg, text, 0.04) : bg;
+  const panelLightTop = isLight ? mix(surface, "#ffffff", 0.24) : surface;
+  const panelLightBottom = isLight ? mix(bg, text, 0.02) : bg;
+
+  const activeStart = isLight ? 0.18 : 0.16;
+  const activeEnd = isLight ? 0.09 : 0.10;
+  const activeStrongStart = isLight ? 0.26 : 0.22;
+  const activeStrongEnd = isLight ? 0.15 : 0.14;
+  const glowTopAlpha = isLight ? 0.12 : 0.18;
+  const bodyGlowPrimary = isLight ? 0.10 : 0.18;
+  const bodyGlowSecondary = isLight ? 0.06 : 0.10;
 
   return {
-    // ─── Mode flag ──────────────────────────────────────────
     "--theme-mode": isLight ? "light" : "dark",
 
-    // ─── RGB tuples (used with `rgb(var(--x-rgb) / alpha)`) ─
     "--bg-rgb": rgbTuple(bg),
     "--surface-rgb": rgbTuple(surface),
     "--text-rgb": rgbTuple(text),
@@ -203,8 +222,10 @@ export function themeToVars(theme: ThemePalette): Record<string, string> {
     "--abyss-rgb": rgbTuple(abyss),
     "--stroke-rgb": rgbTuple(strokeColor),
     "--fill-rgb": rgbTuple(fillColor),
+    "--highlight-rgb": rgbTuple(highlightColor),
+    "--shadow-rgb": rgbTuple(shadowColor),
+    "--overlay-rgb": rgbTuple(overlayColor),
 
-    // ─── Backgrounds ─────────────────────────────────────
     "--color-bg-abyss": abyss,
     "--color-bg-primary": bgPrimary,
     "--color-bg-secondary": bgSecondary,
@@ -212,13 +233,11 @@ export function themeToVars(theme: ThemePalette): Record<string, string> {
     "--color-bg-elevated": bgElevated,
     "--color-bg-hover": bgHover,
 
-    // ─── Borders ─────────────────────────────────────────
     "--color-border-default": borderDefault,
     "--color-border-muted": borderMuted,
     "--color-border-focus": borderFocus,
     "--color-border-active": rgba(accent, 0.35),
 
-    // ─── Text ────────────────────────────────────────────
     "--color-text-primary": textPrimary,
     "--color-text-secondary": textSecondary,
     "--color-text-muted": textMuted,
@@ -226,66 +245,62 @@ export function themeToVars(theme: ThemePalette): Record<string, string> {
     "--color-text-dirty": mix(accent, text, 0.3),
     "--color-text-on-accent": textOnAccent,
 
-    // ─── Accent ──────────────────────────────────────────
     "--color-accent": accent,
     "--color-accent-muted": accentMuted,
     "--color-accent-emphasis": accentEmphasis,
 
-    // ─── Warm (decorative, tracks accent) ────────────────
     "--color-warm": warm,
     "--color-warm-pale": warmPale,
     "--color-warm-deep": warmDeep,
 
-    // ─── Surfaces ────────────────────────────────────────
     "--color-surface-scrim": scrim,
     "--color-surface-scrim-light": scrimLight,
     "--color-surface-card": rgba(mix(surface, text, 0.05), 0.6),
 
-    // ─── Chrome (mode-aware overlays) ────────────────────
-    // Borders / strokes
-    "--chrome-stroke": `rgb(var(--stroke-rgb) / 0.10)`,
-    "--chrome-stroke-strong": `rgb(var(--stroke-rgb) / 0.16)`,
-    "--chrome-stroke-emphasis": `rgb(var(--stroke-rgb) / 0.22)`,
-    // Fills
-    "--chrome-fill": `rgb(var(--fill-rgb) / 0.16)`,
-    "--chrome-fill-soft": `rgb(var(--fill-rgb) / 0.08)`,
-    "--chrome-fill-strong": `rgb(var(--fill-rgb) / 0.32)`,
-    // Highlights (top edges, hover lifts) — always biased to the strong side
-    "--chrome-highlight": `rgb(var(--stroke-rgb) / 0.06)`,
-    "--chrome-highlight-strong": `rgb(var(--stroke-rgb) / 0.12)`,
+    "--chrome-stroke": "rgb(var(--stroke-rgb) / 0.10)",
+    "--chrome-stroke-strong": "rgb(var(--stroke-rgb) / 0.16)",
+    "--chrome-stroke-emphasis": "rgb(var(--stroke-rgb) / 0.22)",
+    "--chrome-fill": "rgb(var(--fill-rgb) / 0.16)",
+    "--chrome-fill-soft": "rgb(var(--fill-rgb) / 0.08)",
+    "--chrome-fill-strong": "rgb(var(--fill-rgb) / 0.32)",
+    "--chrome-highlight": "rgb(var(--highlight-rgb) / 0.06)",
+    "--chrome-highlight-strong": "rgb(var(--highlight-rgb) / 0.12)",
 
-    // ─── Graph (zone map) ────────────────────────────────
     "--color-graph-bg": graphBg,
     "--color-graph-grid": graphGrid,
     "--color-graph-node": graphNode,
     "--color-graph-edge": graphEdge,
     "--color-graph-edge-up": graphEdgeUp,
 
-    // ─── Derived rgba tokens (the :root block) ───────────
-    "--glow-accent": `0 0 32px rgb(var(--accent-rgb) / 0.28)`,
-    "--glow-accent-strong": `0 0 48px rgb(var(--text-rgb) / 0.32)`,
-    "--glow-warm": `0 0 32px rgb(var(--accent-rgb) / 0.32)`,
+    "--glow-accent": "0 0 32px rgb(var(--accent-rgb) / 0.28)",
+    "--glow-accent-strong": isLight
+      ? "0 0 40px rgb(var(--accent-rgb) / 0.18)"
+      : "0 0 48px rgb(var(--text-rgb) / 0.32)",
+    "--glow-warm": "0 0 32px rgb(var(--accent-rgb) / 0.32)",
     "--glow-warm-strong": `0 0 48px ${rgba(warmPale, 0.42)}`,
-    "--glow-violet": `0 0 28px rgb(var(--accent-rgb) / 0.24)`,
-    "--glow-blue": `0 0 24px rgb(var(--accent-rgb) / 0.22)`,
+    "--glow-violet": "0 0 28px rgb(var(--accent-rgb) / 0.24)",
+    "--glow-blue": "0 0 24px rgb(var(--accent-rgb) / 0.22)",
 
-    "--border-accent-ring": `rgb(var(--accent-rgb) / 0.45)`,
-    "--border-accent-subtle": `rgb(var(--accent-rgb) / 0.35)`,
-    "--border-glow": `rgb(var(--text-rgb) / 0.25)`,
-    "--border-glow-strong": `rgb(var(--text-rgb) / 0.48)`,
+    "--border-accent-ring": "rgb(var(--accent-rgb) / 0.45)",
+    "--border-accent-subtle": "rgb(var(--accent-rgb) / 0.35)",
+    "--border-glow": isLight
+      ? "rgb(var(--accent-rgb) / 0.22)"
+      : "rgb(var(--text-rgb) / 0.25)",
+    "--border-glow-strong": isLight
+      ? "rgb(var(--accent-rgb) / 0.36)"
+      : "rgb(var(--text-rgb) / 0.48)",
 
-    "--bg-accent-subtle": `rgb(var(--accent-rgb) / 0.14)`,
-    "--bg-accent-hover": `rgb(var(--accent-rgb) / 0.20)`,
+    "--bg-accent-subtle": "rgb(var(--accent-rgb) / 0.14)",
+    "--bg-accent-hover": "rgb(var(--accent-rgb) / 0.20)",
 
-    "--bg-active": `linear-gradient(135deg, rgb(var(--accent-rgb) / 0.16), rgb(var(--accent-rgb) / 0.10))`,
-    "--bg-active-strong": `linear-gradient(135deg, rgb(var(--accent-rgb) / 0.22), rgb(var(--accent-rgb) / 0.14))`,
-    "--bg-panel": `linear-gradient(160deg, rgb(var(--surface-rgb) / 0.95), rgb(var(--bg-rgb) / 0.92))`,
-    "--bg-panel-light": `linear-gradient(160deg, rgb(var(--surface-rgb) / 0.85), rgb(var(--bg-rgb) / 0.85))`,
-    "--bg-glow-top": `linear-gradient(180deg, rgb(var(--accent-rgb) / 0.18), transparent)`,
+    "--bg-active": `linear-gradient(135deg, rgb(var(--accent-rgb) / ${activeStart}), rgb(var(--accent-rgb) / ${activeEnd}))`,
+    "--bg-active-strong": `linear-gradient(135deg, rgb(var(--accent-rgb) / ${activeStrongStart}), rgb(var(--accent-rgb) / ${activeStrongEnd}))`,
+    "--bg-panel": `linear-gradient(160deg, ${rgba(panelTop, 0.96)}, ${rgba(panelBottom, 0.92)})`,
+    "--bg-panel-light": `linear-gradient(160deg, ${rgba(panelLightTop, 0.88)}, ${rgba(panelLightBottom, 0.88)})`,
+    "--bg-glow-top": `linear-gradient(180deg, rgb(var(--accent-rgb) / ${glowTopAlpha}), transparent)`,
     "--graph-minimap-mask": rgba(graphBg, 0.8),
 
-    // ─── Body background gradients ───────────────────────
-    "--body-bg": `radial-gradient(circle at 14% 12%, rgb(var(--accent-rgb) / 0.18), transparent 36%), radial-gradient(circle at 84% 14%, rgb(var(--accent-rgb) / 0.10), transparent 34%), linear-gradient(180deg, ${bgPrimary} 0%, ${abyss} 100%)`,
+    "--body-bg": `radial-gradient(circle at 14% 12%, rgb(var(--accent-rgb) / ${bodyGlowPrimary}), transparent 36%), radial-gradient(circle at 84% 14%, rgb(var(--accent-rgb) / ${bodyGlowSecondary}), transparent 34%), linear-gradient(180deg, ${bgPrimary} 0%, ${abyss} 100%)`,
   };
 }
 
@@ -306,7 +321,7 @@ export function clearTheme(): void {
   }
 }
 
-// ─── Persistence ────────────────────────────────────────────────────
+// Persistence
 
 const STORAGE_KEY = "arcanum.theme.v1";
 

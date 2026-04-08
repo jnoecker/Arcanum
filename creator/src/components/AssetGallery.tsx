@@ -2,7 +2,9 @@ import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
 import { useAssetStore } from "@/stores/assetStore";
+import { useToastStore } from "@/stores/toastStore";
 import { useFocusTrap } from "@/lib/useFocusTrap";
+import { removeBgAndSave, shouldRemoveBg } from "@/lib/useBackgroundRemoval";
 import type { AssetEntry, AssetType, SyncProgress, SyncScope } from "@/types/assets";
 import { Spinner } from "@/components/ui/FormWidgets";
 
@@ -94,6 +96,7 @@ export function AssetGallery({ onClose }: { onClose: () => void }) {
   const [sort, setSort] = useState<SortKey>("newest");
   const [deleting, setDeleting] = useState(false);
   const [importing, setImporting] = useState(false);
+  const [removingBg, setRemovingBg] = useState(false);
   const [previewCache, setPreviewCache] = useState<Record<string, string>>({});
   const [syncResult, setSyncResult] = useState<SyncProgress | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -186,6 +189,30 @@ export function AssetGallery({ onClose }: { onClose: () => void }) {
       if (selected?.id === entry.id) setSelected(null);
     } finally {
       setDeleting(false);
+    }
+  };
+
+  const handleRemoveBackground = async (entry: AssetEntry) => {
+    if (!assetsDir) return;
+    setRemovingBg(true);
+    try {
+      const path = localAssetPath(assetsDir, entry);
+      const dataUrl = await invoke<string>("read_image_data_url", { path });
+      const newEntry = await removeBgAndSave(
+        dataUrl,
+        entry.asset_type,
+        entry.context,
+        entry.variant_group || undefined,
+      );
+      await loadAssets();
+      setSelected(newEntry);
+      useToastStore.getState().show("Background removed", 2000);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      console.error("[gallery bg removal] failed:", err);
+      useToastStore.getState().show(`Background removal failed: ${message}`, 4000);
+    } finally {
+      setRemovingBg(false);
     }
   };
 
@@ -641,13 +668,23 @@ export function AssetGallery({ onClose }: { onClose: () => void }) {
                 </div>
               </div>
 
-              <div className="shrink-0 border-t border-border-default p-3">
+              <div className="shrink-0 space-y-2 border-t border-border-default p-3">
+                {mediaKindForAsset(selected) === "image" && shouldRemoveBg(selected.asset_type) && (
+                  <button
+                    onClick={() => handleRemoveBackground(selected)}
+                    disabled={removingBg || deleting || !selected.variant_group}
+                    title={selected.variant_group ? undefined : "Asset has no variant group — cannot save as variant"}
+                    className="w-full rounded border border-accent/40 px-2 py-1.5 text-xs text-accent transition-colors hover:bg-accent/10 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {removingBg ? <span className="flex items-center justify-center gap-1.5"><Spinner />Removing background</span> : "Remove Background"}
+                  </button>
+                )}
                 <button
                   onClick={() => handleDelete(selected)}
-                  disabled={deleting}
+                  disabled={deleting || removingBg}
                   className="w-full rounded border border-status-danger/40 px-2 py-1.5 text-xs text-status-danger transition-colors hover:bg-status-danger/10 disabled:opacity-50"
                 >
-                  {deleting ? <span className="flex items-center gap-1.5"><Spinner />Deleting</span> : "Delete Asset"}
+                  {deleting ? <span className="flex items-center justify-center gap-1.5"><Spinner />Deleting</span> : "Delete Asset"}
                 </button>
               </div>
             </div>

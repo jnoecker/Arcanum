@@ -23,6 +23,7 @@ import {
   addQuest,
   addGatheringNode,
   addRecipe,
+  setDungeon,
   generateEntityId,
   generateRoomId,
 } from "@/lib/zoneEdits";
@@ -43,6 +44,17 @@ interface CategoryDef {
   collection: keyof WorldFile;
   nameField: string;
   addFn?: (world: WorldFile, zoneId: string) => WorldFile;
+  /**
+   * When true, the collection is a singular field on `WorldFile` (e.g. `dungeon`)
+   * rather than a `Record<string, Entity>`. Rendered as at most one entry.
+   */
+  singular?: boolean;
+  /**
+   * Optional view mode to switch to when the entry (or the Add button) is
+   * clicked, instead of routing to the standard entity panel. Used for
+   * singular entities that have their own dedicated view (e.g. "dungeon").
+   */
+  targetView?: string;
 }
 
 const CATEGORIES: CategoryDef[] = [
@@ -140,6 +152,20 @@ const CATEGORIES: CategoryDef[] = [
       } as RecipeFile);
     },
   },
+  {
+    key: "dungeon",
+    label: "Dungeon",
+    collection: "dungeon",
+    nameField: "name",
+    singular: true,
+    targetView: "dungeon",
+    addFn: (world) =>
+      setDungeon(world, {
+        name: `${world.zone} Dungeon`,
+        roomCountMin: 20,
+        roomCountMax: 25,
+      }),
+  },
 ];
 
 
@@ -168,7 +194,9 @@ function ZoneTree({
   };
 
   const handleEntityClick = (cat: CategoryDef, entityId: string) => {
-    if (cat.key === "room") {
+    if (cat.targetView) {
+      navigateTo({ zoneId, view: cat.targetView });
+    } else if (cat.key === "room") {
       navigateTo({ zoneId, roomId: entityId });
     } else {
       navigateTo({ zoneId, entityKind: cat.key, entityId });
@@ -180,6 +208,10 @@ function ZoneTree({
     try {
       const next = cat.addFn(world, zoneId);
       updateZone(zoneId, next);
+      if (cat.singular) {
+        if (cat.targetView) navigateTo({ zoneId, view: cat.targetView });
+        return;
+      }
       const collection = next[cat.collection] as Record<string, unknown> | undefined;
       const oldCollection = world[cat.collection] as Record<string, unknown> | undefined;
       if (collection && oldCollection) {
@@ -241,6 +273,47 @@ function ZoneTree({
       {expanded && (
         <div className="ml-10 mt-2 flex flex-col gap-2.5 border-l border-accent/15 pl-4">
           {CATEGORIES.map((cat) => {
+            // Singular collections (e.g. `dungeon`) render at most one entry.
+            if (cat.singular) {
+              const data = world[cat.collection] as Record<string, unknown> | undefined;
+              const present = !!data;
+              if (!present && !cat.addFn) return null;
+              const name = present && data ? (data[cat.nameField] as string | undefined) : undefined;
+              return (
+                <div key={cat.key} className="border-t border-[var(--chrome-stroke)] pt-2 first:border-t-0 first:pt-0">
+                  <div className="flex items-center gap-2">
+                    <span className="font-display font-semibold text-2xs uppercase tracking-label text-text-secondary">
+                      {cat.label}
+                    </span>
+                    <span className="text-2xs text-text-muted">{present ? 1 : 0}</span>
+                    {!present && cat.addFn && (
+                      <button
+                        onClick={() => handleAdd(cat)}
+                        className="ml-auto rounded-full border border-[var(--chrome-stroke)] px-2 py-1 text-2xs text-text-muted transition hover:bg-[var(--chrome-highlight-strong)] hover:text-text-primary"
+                        title={`Add ${cat.label.toLowerCase()}`}
+                        aria-label={`Add ${cat.label.toLowerCase()}`}
+                      >
+                        Add
+                      </button>
+                    )}
+                  </div>
+                  {present && (
+                    <ul className="flex flex-col">
+                      <li>
+                        <button
+                          onClick={() => handleEntityClick(cat, cat.key)}
+                          className="w-full truncate rounded-xl px-2 py-1.5 text-left text-xs text-text-muted transition hover:bg-accent/8 hover:text-text-primary"
+                          title={name || cat.label}
+                        >
+                          {name || cat.label}
+                        </button>
+                      </li>
+                    </ul>
+                  )}
+                </div>
+              );
+            }
+
             const collection = world[cat.collection] as Record<string, Record<string, unknown>> | undefined;
             const entries = collection ? Object.entries(collection) : [];
             if (entries.length === 0 && !cat.addFn) return null;

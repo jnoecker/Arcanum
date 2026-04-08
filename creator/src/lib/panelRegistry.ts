@@ -112,6 +112,7 @@ const LORE_PANELS: PanelDef[] = [
 // ─── Operations panels ──────────────────────────────────────────────
 
 const OPERATIONS_PANELS: PanelDef[] = [
+  { id: "appearance", label: "Appearance", group: "operations", host: "command", kicker: "Operations", title: "Appearance", description: "Theme color palette — pick or paste 4 colors to retheme the app.", maxWidth: "max-w-5xl" },
   { id: "services", label: "Services", group: "operations", host: "config", kicker: "Operations", title: "Services", description: "API keys, image providers, and LLM settings.", maxWidth: "max-w-5xl" },
   { id: "deployment", label: "Deployment", group: "operations", host: "config", kicker: "Operations", title: "Deployment", description: "Export, sync, and deploy your MUD.", maxWidth: "max-w-5xl" },
   { id: "sharedAssets", label: "Shared Assets", group: "operations", host: "config", kicker: "Operations", title: "Shared assets", description: "Global asset keys and image configuration.", maxWidth: "max-w-5xl" },

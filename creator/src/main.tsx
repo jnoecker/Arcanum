@@ -14,6 +14,10 @@ import "@fontsource/jetbrains-mono/500.css";
 
 import { App } from "./App";
 import "./index.css";
+import { bootstrapTheme } from "./stores/themeStore";
+
+// Apply persisted theme before first render to avoid a flash of defaults.
+bootstrapTheme();
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>

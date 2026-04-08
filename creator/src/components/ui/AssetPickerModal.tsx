@@ -36,40 +36,72 @@ function LazyThumb({
   );
 }
 
+export type AssetPickerMediaKind = "image" | "audio" | "video";
+
 interface AssetPickerModalProps {
   onSelect: (fileName: string) => void;
   onClose: () => void;
+  /** Which kind of media to show — defaults to "image" */
+  mediaKind?: AssetPickerMediaKind;
+  /** Pre-select a filter tab by asset_type (e.g. "entity_portrait") */
+  initialFilter?: string;
 }
 
-export function AssetPickerModal({ onSelect, onClose }: AssetPickerModalProps) {
+const MEDIA_KIND_EXTENSIONS: Record<AssetPickerMediaKind, RegExp> = {
+  image: /\.(png|jpe?g|webp)$/i,
+  audio: /\.(mp3|ogg|flac|wav)$/i,
+  video: /\.(mp4|webm)$/i,
+};
+
+const MEDIA_KIND_LABELS: Record<AssetPickerMediaKind, { title: string; noun: string; plural: string }> = {
+  image: { title: "Pick an Asset", noun: "image", plural: "images" },
+  audio: { title: "Pick an Audio Clip", noun: "clip", plural: "clips" },
+  video: { title: "Pick a Video", noun: "video", plural: "videos" },
+};
+
+export function AssetPickerModal({
+  onSelect,
+  onClose,
+  mediaKind = "image",
+  initialFilter,
+}: AssetPickerModalProps) {
   const assets = useAssetStore((s) => s.assets);
   const assetsDir = useAssetStore((s) => s.assetsDir);
   const loadAssets = useAssetStore((s) => s.loadAssets);
 
-  const [filter, setFilter] = useState<string>("all");
+  const [filter, setFilter] = useState<string>(initialFilter ?? "all");
   const [imageCache, setImageCache] = useState<Record<string, string>>({});
   const trapRef = useFocusTrap<HTMLDivElement>(onClose);
+  const kindLabels = MEDIA_KIND_LABELS[mediaKind];
+  const extensionPattern = MEDIA_KIND_EXTENSIONS[mediaKind];
 
   useEffect(() => {
     loadAssets();
   }, [loadAssets]);
 
+  // Only surface filter tabs for types that actually contain this media kind
   const types = useMemo(
-    () => Array.from(new Set(assets.map((a) => a.asset_type))),
-    [assets],
+    () =>
+      Array.from(
+        new Set(
+          assets
+            .filter((a) => extensionPattern.test(a.file_name))
+            .map((a) => a.asset_type),
+        ),
+      ),
+    [assets, extensionPattern],
   );
 
-  // Only show image assets (exclude video/audio by checking file extension)
   const sorted = useMemo(() => {
-    const imageAssets = assets.filter(
+    const matching = assets.filter(
       (a) =>
         (filter === "all" || a.asset_type === filter) &&
-        /\.(png|jpe?g|webp)$/i.test(a.file_name),
+        extensionPattern.test(a.file_name),
     );
-    return [...imageAssets].sort((a, b) =>
+    return [...matching].sort((a, b) =>
       b.created_at.localeCompare(a.created_at),
     );
-  }, [assets, filter]);
+  }, [assets, filter, extensionPattern]);
 
   const loadImage = useCallback(
     (entry: AssetEntry) => {
@@ -96,10 +128,10 @@ export function AssetPickerModal({ onSelect, onClose }: AssetPickerModalProps) {
         <div className="flex shrink-0 items-center justify-between border-b border-border-default px-5 py-3">
           <div className="flex items-center gap-3">
             <h2 id="asset-picker-title" className="font-display text-sm tracking-wide text-text-primary">
-              Pick an Asset
+              {kindLabels.title}
             </h2>
             <span className="text-xs text-text-muted">
-              {sorted.length} image{sorted.length !== 1 ? "s" : ""}
+              {sorted.length} {sorted.length === 1 ? kindLabels.noun : kindLabels.plural}
             </span>
           </div>
           <button
@@ -143,7 +175,9 @@ export function AssetPickerModal({ onSelect, onClose }: AssetPickerModalProps) {
           {sorted.length === 0 ? (
             <div className="flex h-32 items-center justify-center">
               <p className="text-sm text-text-muted">
-                No images in the library yet. Use the Generator to conjure some.
+                {mediaKind === "image"
+                  ? "No images in the library yet. Use the Generator to conjure some."
+                  : `No ${kindLabels.plural} in the library yet. Import one to get started.`}
               </p>
             </div>
           ) : (
@@ -159,20 +193,31 @@ export function AssetPickerModal({ onSelect, onClose }: AssetPickerModalProps) {
                   title={`${asset.asset_type} — ${asset.file_name}`}
                 >
                   <div className="aspect-square bg-bg-primary">
-                    {imageCache[asset.id] ? (
-                      <img
-                        src={imageCache[asset.id]}
-                        alt=""
-                        className="h-full w-full object-cover"
-                      />
+                    {mediaKind === "image" ? (
+                      imageCache[asset.id] ? (
+                        <img
+                          src={imageCache[asset.id]}
+                          alt=""
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <LazyThumb asset={asset} onVisible={loadImage} />
+                      )
                     ) : (
-                      <LazyThumb asset={asset} onVisible={loadImage} />
+                      <div className="flex h-full w-full items-center justify-center text-2xl text-text-muted">
+                        {mediaKind === "audio" ? "♪" : "▶"}
+                      </div>
                     )}
                   </div>
                   <div className="px-1.5 py-1">
                     <p className="truncate text-3xs text-text-muted">
                       {asset.asset_type.replace(/_/g, " ")}
                     </p>
+                    {mediaKind !== "image" && (
+                      <p className="truncate text-3xs text-text-secondary" title={asset.file_name}>
+                        {asset.file_name}
+                      </p>
+                    )}
                   </div>
                 </button>
               ))}

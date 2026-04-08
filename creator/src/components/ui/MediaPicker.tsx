@@ -2,6 +2,7 @@ import { useState } from "react";
 import { open } from "@tauri-apps/plugin-dialog";
 import { useAssetStore } from "@/stores/assetStore";
 import { useMediaSrc } from "@/lib/useMediaSrc";
+import { AssetPickerModal } from "./AssetPickerModal";
 import type { AssetContext } from "@/types/assets";
 
 interface MediaPickerProps {
@@ -32,6 +33,7 @@ export function MediaPicker({
 }: MediaPickerProps) {
   const importAsset = useAssetStore((s) => s.importAsset);
   const [importing, setImporting] = useState(false);
+  const [showGalleryPicker, setShowGalleryPicker] = useState(false);
 
   const dataSrc = useMediaSrc(value);
 
@@ -87,6 +89,13 @@ export function MediaPicker({
         >
           {importing ? "Importing..." : `Pick ${mediaType === "audio" ? "Audio" : "Video"}`}
         </button>
+        <button
+          onClick={() => setShowGalleryPicker(true)}
+          disabled={importing}
+          className="flex-1 rounded bg-bg-elevated px-2 py-1 text-2xs font-medium text-text-secondary transition-colors hover:bg-bg-hover hover:text-text-primary disabled:opacity-50"
+        >
+          Gallery
+        </button>
         {value && (
           <button
             onClick={() => onChange(undefined)}
@@ -96,6 +105,15 @@ export function MediaPicker({
           </button>
         )}
       </div>
+
+      {showGalleryPicker && (
+        <AssetPickerModal
+          mediaKind={mediaType}
+          initialFilter={assetType}
+          onSelect={(fileName) => onChange(fileName)}
+          onClose={() => setShowGalleryPicker(false)}
+        />
+      )}
     </div>
   );
 }

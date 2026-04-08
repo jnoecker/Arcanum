@@ -9,6 +9,7 @@ import type { ArtStyleSurface } from "@/lib/loreGeneration";
 import { IMAGE_MODELS, ENTITY_DIMENSIONS, DIMENSION_PRESETS, imageGenerateCommand, resolveImageModel, requestsTransparentBackground } from "@/types/assets";
 import type { AssetContext, GeneratedImage } from "@/types/assets";
 import { VariantStrip } from "./VariantStrip";
+import { AssetPickerModal } from "./AssetPickerModal";
 import { removeBgAndSave, shouldRemoveBg } from "@/lib/useBackgroundRemoval";
 import { InlineError } from "./FormWidgets";
 
@@ -87,6 +88,7 @@ export function EntityArtGenerator({
   // Whether the current prompt has been LLM-enhanced (skip re-enhancement during generation)
   const [enhanced, setEnhanced] = useState(false);
   const [removingBg, setRemovingBg] = useState(false);
+  const [showGalleryPicker, setShowGalleryPicker] = useState(false);
 
   // Refs to track pending results across unmount — auto-accept if user navigates away
   const pendingResultRef = useRef<GeneratedImage | null>(null);
@@ -455,6 +457,13 @@ export function EntityArtGenerator({
             >
               {importing ? "Importing..." : "Pick Image"}
             </button>
+            <button
+              onClick={() => setShowGalleryPicker(true)}
+              disabled={removingBg}
+              className="flex-1 rounded bg-bg-elevated px-2 py-1 text-2xs font-medium text-text-secondary transition-colors hover:bg-bg-hover hover:text-text-primary disabled:opacity-50"
+            >
+              Gallery
+            </button>
             {(hasApiKey || hasLlmKey) && (
               <button
                 onClick={() => setShowPrompt((v) => !v)}
@@ -547,6 +556,15 @@ export function EntityArtGenerator({
 
       {error && (
         <InlineError error={error} onDismiss={() => setError(null)} onRetry={handleGenerate} />
+      )}
+
+      {showGalleryPicker && (
+        <AssetPickerModal
+          mediaKind="image"
+          initialFilter={assetType}
+          onSelect={(fileName) => onAccept(fileName)}
+          onClose={() => setShowGalleryPicker(false)}
+        />
       )}
     </div>
   );

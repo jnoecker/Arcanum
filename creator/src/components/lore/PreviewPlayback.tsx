@@ -22,7 +22,7 @@ export function PreviewPlayback({ playing, onToggle }: PreviewPlaybackProps) {
         type="button"
         className={[
           "h-9 backdrop-blur-sm border rounded-md px-3 flex items-center gap-2",
-          "transition-all duration-[180ms]",
+          "transition-[color,background-color,border-color,box-shadow,opacity] duration-[180ms]",
           "opacity-70 hover:opacity-100",
           playing
             ? "bg-bg-elevated/80 border-border-default shadow-[0_0_12px_rgba(200,164,106,0.4)] animate-pulse"

@@ -139,7 +139,7 @@ export function RenameZoneDialog({ zoneId, onClose }: RenameZoneDialogProps) {
           <button
             onClick={handleRename}
             disabled={!idValid || idTaken || idUnchanged || renaming || !project || !existing}
-            className="rounded bg-accent px-4 py-1.5 text-xs font-medium text-accent-emphasis transition-all hover:shadow-[var(--glow-aurum)] hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40"
+            className="rounded bg-accent px-4 py-1.5 text-xs font-medium text-accent-emphasis transition-[color,background-color,box-shadow,filter,opacity] hover:shadow-[var(--glow-aurum)] hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40"
           >
             {renaming ? "Renaming..." : "Rename Zone"}
           </button>

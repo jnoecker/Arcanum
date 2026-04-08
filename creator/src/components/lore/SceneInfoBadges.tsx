@@ -101,7 +101,7 @@ function ArticleBadgeChip({ articleId }: { articleId: string }) {
   if (!article) return null;
   return (
     <div
-      className="flex items-center gap-1.5 rounded-full border border-white/20 bg-black/50 px-2 py-0.5 backdrop-blur-sm"
+      className="flex items-center gap-1.5 rounded-full border border-white/20 bg-black/75 px-2 py-0.5"
       title={article.title}
     >
       {src ? (
@@ -125,12 +125,12 @@ function TitleCardOverlay({ scene }: { scene: Scene }) {
   return (
     <div
       className={[
-        "rounded backdrop-blur-sm px-4 py-1.5",
+        "rounded px-4 py-1.5",
         "font-display tracking-[0.25em] uppercase",
-        isYear ? "text-base text-warm border border-warm/30 bg-black/50" : "",
+        isYear ? "text-base text-warm border border-warm/30 bg-black/75" : "",
         isLocation ? "text-sm text-white border-b border-white/30 bg-transparent" : "",
-        isCharacter ? "text-sm text-accent border border-accent/30 bg-black/50" : "",
-        !isYear && !isLocation && !isCharacter ? "text-xs text-white/90 bg-black/40" : "",
+        isCharacter ? "text-sm text-accent border border-accent/30 bg-black/75" : "",
+        !isYear && !isLocation && !isCharacter ? "text-xs text-white/90 bg-black/70" : "",
       ].join(" ")}
       style={{ textShadow: "0 1px 4px rgba(0,0,0,0.7)" }}
     >
@@ -161,7 +161,7 @@ export function SceneInfoBadges({ scene, mode = "ambient" }: SceneInfoBadgesProp
     >
       {/* Top-left: year/era badge */}
       {timeline && (
-        <div className="absolute left-3 top-3 flex flex-col items-start gap-0.5 rounded border border-warm/40 bg-black/55 px-2 py-1 backdrop-blur-sm">
+        <div className="absolute left-3 top-3 flex flex-col items-start gap-0.5 rounded border border-warm/40 bg-black/80 px-2 py-1">
           <span
             className="font-display text-base leading-none tracking-[0.18em] text-warm"
             style={{ textShadow: "0 1px 3px rgba(0,0,0,0.6)" }}

@@ -68,7 +68,7 @@ const VariantThumb = memo(function VariantThumb({
     <button
       onClick={onSelect}
       title={`${entry.is_active ? "(active) " : ""}${entry.created_at}\n${entry.prompt}`}
-      className={`relative h-10 w-10 shrink-0 overflow-hidden rounded border-2 transition-all ${
+      className={`relative h-10 w-10 shrink-0 overflow-hidden rounded border-2 transition-[border-color,opacity] ${
         entry.is_active
           ? "border-accent ring-2 ring-accent/40"
           : "border-border-default opacity-50 hover:opacity-80 hover:border-accent/50"

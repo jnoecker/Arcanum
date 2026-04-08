@@ -428,7 +428,7 @@ function RunningView({ progress }: { progress: ExportProgressEvent | null }) {
       <div className="w-full max-w-md">
         <div className="h-2 overflow-hidden rounded-full bg-bg-elevated">
           <div
-            className="h-full bg-accent transition-all duration-300 ease-out"
+            className="h-full bg-accent transition-[width] duration-300 ease-out"
             style={{ width: `${pct}%` }}
           />
         </div>

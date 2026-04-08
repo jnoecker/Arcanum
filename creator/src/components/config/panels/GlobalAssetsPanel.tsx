@@ -309,7 +309,7 @@ export function GlobalAssetsPanel({ config, onChange }: ConfigPanelProps) {
             <button
               onClick={handleAdd}
               disabled={!newKey.trim()}
-              className="rounded bg-accent px-3 py-1.5 text-xs font-medium text-accent-emphasis transition-all hover:bg-accent/90 disabled:opacity-40"
+              className="rounded bg-accent px-3 py-1.5 text-xs font-medium text-accent-emphasis transition-[color,background-color,opacity] hover:bg-accent/90 disabled:opacity-40"
             >
               + Add
             </button>

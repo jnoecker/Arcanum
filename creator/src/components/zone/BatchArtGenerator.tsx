@@ -186,7 +186,7 @@ export function BatchArtGenerator({
             </div>
             <div className="h-1.5 overflow-hidden rounded-full bg-bg-primary">
               <div
-                className="h-full rounded-full bg-accent transition-all"
+                className="h-full rounded-full bg-accent transition-[width]"
                 style={{ width: `${bgRemoval
                   ? (bgRemoval.total > 0 ? (bgRemoval.done / bgRemoval.total) * 100 : 0)
                   : ((doneCount + errorCount) / checkedTargets.length) * 100}%` }}

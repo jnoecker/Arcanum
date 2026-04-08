@@ -163,6 +163,18 @@ export function EntityOverlay({
     [entity.id, localPos, onReposition, onSelect],
   );
 
+  // Keyboard activation for role="button": Enter/Space selects the entity.
+  // Repositioning remains mouse/touch-only (drag is pointer-based).
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLDivElement>) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        onSelect(entity.id);
+      }
+    },
+    [entity.id, onSelect],
+  );
+
   // ─── Render ────────────────────────────────────────────────────
 
   return (
@@ -190,6 +202,7 @@ export function EntityOverlay({
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
+      onKeyDown={handleKeyDown}
     >
       {/* Entity sprite or placeholder */}
       {src ? (

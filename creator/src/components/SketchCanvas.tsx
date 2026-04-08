@@ -135,7 +135,7 @@ export function SketchCanvas({
         <button
           type="button"
           onClick={handleExport}
-          className="rounded bg-gradient-to-r from-accent-muted to-accent px-4 py-1.5 text-xs font-medium text-accent-emphasis transition-all hover:brightness-110"
+          className="rounded bg-gradient-to-r from-accent-muted to-accent px-4 py-1.5 text-xs font-medium text-accent-emphasis transition-[filter] hover:brightness-110"
         >
           Analyze Sketch
         </button>

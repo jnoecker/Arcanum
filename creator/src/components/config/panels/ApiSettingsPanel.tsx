@@ -223,7 +223,7 @@ export function ApiSettingsPanel({
           <button
             onClick={handleSave}
             disabled={!isUserDirty || saving}
-            className="rounded bg-gradient-to-r from-accent-muted to-accent px-4 py-1.5 text-xs font-medium text-accent-emphasis transition-all hover:shadow-[var(--glow-aurum)] hover:brightness-110 disabled:opacity-50"
+            className="action-button action-button-primary action-button-md focus-ring"
           >
             {saving ? "Saving..." : "Save Account Keys"}
           </button>
@@ -534,7 +534,7 @@ export function ApiSettingsPanel({
               <button
                 onClick={handleSaveProject}
                 disabled={!isProjectDirty || saving}
-                className="rounded bg-gradient-to-r from-accent-muted to-accent px-4 py-1.5 text-xs font-medium text-accent-emphasis transition-all hover:shadow-[var(--glow-aurum)] hover:brightness-110 disabled:opacity-50"
+                className="action-button action-button-primary action-button-md focus-ring"
               >
                 {saving ? "Saving..." : "Save Project Settings"}
               </button>

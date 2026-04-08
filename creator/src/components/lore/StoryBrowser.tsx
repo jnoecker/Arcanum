@@ -85,7 +85,7 @@ export function StoryBrowser() {
         </div>
         <button
           onClick={() => setShowNewStory(true)}
-          className="rounded bg-gradient-to-r from-accent-muted to-accent px-4 py-1.5 text-xs font-medium text-accent-emphasis transition-all hover:brightness-110"
+          className="action-button action-button-primary action-button-md focus-ring"
         >
           New Story
         </button>

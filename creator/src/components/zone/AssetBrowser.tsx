@@ -220,7 +220,7 @@ export function AssetBrowser({ zoneId, world, onWorldChange }: AssetBrowserProps
             </span>
             <div className="h-1 flex-1 overflow-hidden rounded-full bg-bg-elevated">
               <div
-                className="h-full rounded-full bg-accent transition-all"
+                className="h-full rounded-full bg-accent transition-[width]"
                 style={{
                   width: `${totalCount > 0 ? (withImageCount / totalCount) * 100 : 0}%`,
                 }}
@@ -397,7 +397,7 @@ function VariantThumb({
     <button
       onClick={onSelect}
       title={entry.created_at}
-      className={`relative h-14 w-14 shrink-0 overflow-hidden rounded border-2 transition-all ${
+      className={`relative h-14 w-14 shrink-0 overflow-hidden rounded border-2 transition-[border-color,box-shadow] ${
         entry.is_active
           ? "border-accent shadow-[0_0_6px_var(--color-accent)]"
           : "border-border-default hover:border-accent/50"

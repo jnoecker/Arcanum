@@ -38,6 +38,7 @@ function TagEditor({
         </span>
       ))}
       <input
+        aria-label="Add article keyword"
         className="focus-ring min-w-[6rem] flex-1 rounded bg-transparent px-1 py-0.5 text-xs text-text-primary"
         placeholder="Add a keyword..."
         onKeyDown={(e) => {

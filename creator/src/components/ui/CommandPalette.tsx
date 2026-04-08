@@ -139,6 +139,15 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
     return colors[type] ?? "bg-white/10 text-text-muted";
   };
 
+  const typeGlyph = (type: string) => {
+    const glyphs: Record<string, string> = {
+      panel: "\u25A4", // ▤ (panel/layout)
+      article: "\u00B6", // ¶ (pilcrow, article)
+      zone: "\u2302", // ⌂ (house/zone)
+    };
+    return glyphs[type] ?? "\u25CB";
+  };
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-start justify-center pt-[15vh]"
@@ -201,8 +210,11 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
                 }`}
               >
                 <span
-                  className={`shrink-0 rounded-full px-2 py-0.5 text-3xs font-medium uppercase ${typeBadge(item.type)}`}
+                  className={`inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-3xs font-medium uppercase ${typeBadge(item.type)}`}
                 >
+                  <span aria-hidden="true" className="text-xs leading-none">
+                    {typeGlyph(item.type)}
+                  </span>
                   {item.type}
                 </span>
                 <div className="min-w-0 flex-1">

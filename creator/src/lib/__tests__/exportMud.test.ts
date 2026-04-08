@@ -193,6 +193,10 @@ describe("buildMonolithicConfigObject", () => {
     expect(runtime.engine.classStartRooms.BULWARK).toBe("tutorial_glade:training_grounds");
     expect(runtime.engine.statusEffects.definitions.fortress_stance.effectType).toBe("stat_buff");
     expect(runtime.engine.abilities.definitions.shield_bash.image).toBe("shield_bash.png");
+    // Unset skillPointCost is omitted so the Kotlin default of 1 applies
+    expect(
+      "skillPointCost" in runtime.engine.abilities.definitions.shield_bash,
+    ).toBe(false);
     expect(runtime.engine.achievementCategories.categories.combat.displayName).toBe("Combat");
     expect(runtime.engine.questObjectiveTypes.types.kill.displayName).toBe("Kill");
     expect(runtime.images.globalAssets).toEqual({});
@@ -216,6 +220,38 @@ describe("buildMonolithicConfigObject", () => {
     expect(runtime.engine.dailyQuests.enabled).toBe(false);
     expect(runtime.engine.dailyQuests.dailySlots).toBe(3);
     expect(runtime.engine.dailyQuests.dailyPool).toEqual([]);
+  });
+
+  it("emits non-default skillPointCost values on abilities", () => {
+    const config: AppConfig = {
+      ...BASE_CONFIG,
+      abilities: {
+        free_spark: {
+          displayName: "Free Spark",
+          manaCost: 5,
+          cooldownMs: 0,
+          levelRequired: 1,
+          targetType: "ENEMY",
+          skillPointCost: 0,
+          effect: { type: "DIRECT_DAMAGE", value: 3 },
+        },
+        pricey_blast: {
+          displayName: "Pricey Blast",
+          manaCost: 10,
+          cooldownMs: 2000,
+          levelRequired: 5,
+          targetType: "ENEMY",
+          skillPointCost: 3,
+          effect: { type: "DIRECT_DAMAGE", value: 20 },
+        },
+      },
+    };
+
+    const runtime = buildMonolithicConfigObject(config) as any;
+    const defs = runtime.engine.abilities.definitions;
+
+    expect(defs.free_spark.skillPointCost).toBe(0);
+    expect(defs.pricey_blast.skillPointCost).toBe(3);
   });
 
   it("disables global quests during export when objectives are missing", () => {
@@ -284,5 +320,45 @@ ambonmud:
 
     const parsed = parse(yaml) as any;
     expect(parsed.ambonmud.engine.achievementCategories.categories.combat.displayName).toBe("Combat");
+  });
+
+  it("preserves ability skillPointCost through parse and re-export", () => {
+    const yaml = `
+ambonmud:
+  server:
+    telnetPort: 4000
+    webPort: 8080
+  world:
+    startRoom: hub:square
+    resources: []
+  engine:
+    abilities:
+      definitions:
+        free_spark:
+          displayName: Free Spark
+          manaCost: 5
+          cooldownMs: 0
+          levelRequired: 1
+          skillPointCost: 0
+          targetType: ENEMY
+          effect: { type: DIRECT_DAMAGE, value: 3 }
+        pricey_blast:
+          displayName: Pricey Blast
+          manaCost: 10
+          cooldownMs: 2000
+          levelRequired: 5
+          skillPointCost: 3
+          targetType: ENEMY
+          effect: { type: DIRECT_DAMAGE, value: 20 }
+`;
+
+    const config = parseAppConfigYaml(yaml);
+    expect(config.abilities.free_spark?.skillPointCost).toBe(0);
+    expect(config.abilities.pricey_blast?.skillPointCost).toBe(3);
+
+    const runtime = buildMonolithicConfigObject(config) as any;
+    const defs = runtime.engine.abilities.definitions;
+    expect(defs.free_spark.skillPointCost).toBe(0);
+    expect(defs.pricey_blast.skillPointCost).toBe(3);
   });
 });

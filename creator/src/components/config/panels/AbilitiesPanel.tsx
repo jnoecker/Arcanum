@@ -247,6 +247,16 @@ export function AbilityDetail({
           min={1}
         />
       </FieldRow>
+      <FieldRow
+        label="Skill Point Cost"
+        hint="How many skill points a trainer charges for this ability. 0 = auto-learned once the player meets level, class, and prerequisite gates."
+      >
+        <NumberInput
+          value={ability.skillPointCost ?? 1}
+          onCommit={(v) => patch({ skillPointCost: v ?? 0 })}
+          min={0}
+        />
+      </FieldRow>
       <FieldRow label="Target">
         <SelectInput
           value={ability.targetType}

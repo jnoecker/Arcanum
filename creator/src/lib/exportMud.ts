@@ -773,6 +773,7 @@ export function abilityToPlain(a: AppConfig["abilities"][string]): Record<string
   if (a.prerequisites && a.prerequisites.length > 0) obj.prerequisites = a.prerequisites;
   if (a.tree) obj.tree = a.tree;
   if (a.tier != null) obj.tier = a.tier;
+  if (a.skillPointCost != null && a.skillPointCost !== 1) obj.skillPointCost = a.skillPointCost;
   return obj;
 }
 

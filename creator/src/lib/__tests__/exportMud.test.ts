@@ -197,6 +197,43 @@ describe("buildMonolithicConfigObject", () => {
     expect(runtime.engine.questObjectiveTypes.types.kill.displayName).toBe("Kill");
     expect(runtime.images.globalAssets).toEqual({});
   });
+
+  it("disables daily quests during export when pools are incomplete", () => {
+    const config: AppConfig = {
+      ...BASE_CONFIG,
+      dailyQuests: {
+        enabled: true,
+        streakBonusPercent: 10,
+        dailySlots: 3,
+        weeklySlots: 1,
+        dailyPool: [],
+        weeklyPool: [],
+      },
+    };
+
+    const runtime = buildMonolithicConfigObject(config) as any;
+
+    expect(runtime.engine.dailyQuests.enabled).toBe(false);
+    expect(runtime.engine.dailyQuests.dailySlots).toBe(3);
+    expect(runtime.engine.dailyQuests.dailyPool).toEqual([]);
+  });
+
+  it("disables global quests during export when objectives are missing", () => {
+    const config: AppConfig = {
+      ...BASE_CONFIG,
+      globalQuests: {
+        enabled: true,
+        intervalMs: 7_200_000,
+        durationMs: 1_800_000,
+        objectives: [],
+      },
+    };
+
+    const runtime = buildMonolithicConfigObject(config) as any;
+
+    expect(runtime.engine.globalQuests.enabled).toBe(false);
+    expect(runtime.engine.globalQuests.objectives).toEqual([]);
+  });
 });
 
 describe("parseAppConfigYaml", () => {

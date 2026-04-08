@@ -210,15 +210,23 @@ export function normalizeCurrenciesConfig(config?: AppConfig["currencies"]): App
 
 export function normalizeDailyQuestsConfig(config?: AppConfig["dailyQuests"]): AppConfig["dailyQuests"] | undefined {
   if (!config) return undefined;
+  const dailySlots = config.dailySlots ?? 3;
+  const weeklySlots = config.weeklySlots ?? 1;
+  const dailyPool = config.dailyPool ?? [];
+  const weeklyPool = config.weeklyPool ?? [];
+  // Disable export when the feature is turned on but the authored pools are incomplete.
+  const enabled = config.enabled
+    && dailyPool.length >= dailySlots
+    && weeklyPool.length >= weeklySlots;
   return {
-    enabled: config.enabled,
+    enabled,
     resetHourUtc: config.resetHourUtc ?? 0,
-    dailySlots: config.dailySlots ?? 3,
-    weeklySlots: config.weeklySlots ?? 1,
+    dailySlots,
+    weeklySlots,
     streakBonusPercent: config.streakBonusPercent,
     streakMaxDays: config.streakMaxDays ?? 7,
-    dailyPool: config.dailyPool ?? [],
-    weeklyPool: config.weeklyPool ?? [],
+    dailyPool,
+    weeklyPool,
   };
 }
 
@@ -239,8 +247,11 @@ export function normalizeAutoQuestsConfig(config?: AppConfig["autoQuests"]): App
 
 export function normalizeGlobalQuestsConfig(config?: AppConfig["globalQuests"]): AppConfig["globalQuests"] | undefined {
   if (!config) return undefined;
+  const objectives = config.objectives ?? [];
+  // Global quests must have at least one authored objective or the runtime rejects startup.
+  const enabled = config.enabled && objectives.length > 0;
   return {
-    enabled: config.enabled,
+    enabled,
     intervalMs: config.intervalMs,
     durationMs: config.durationMs,
     announceIntervalMs: config.announceIntervalMs ?? 300_000,
@@ -251,7 +262,7 @@ export function normalizeGlobalQuestsConfig(config?: AppConfig["globalQuests"]):
     rewardXpFirst: config.rewardXpFirst ?? 5000,
     rewardXpSecond: config.rewardXpSecond ?? 2500,
     rewardXpThird: config.rewardXpThird ?? 1000,
-    objectives: config.objectives ?? [],
+    objectives,
   };
 }
 

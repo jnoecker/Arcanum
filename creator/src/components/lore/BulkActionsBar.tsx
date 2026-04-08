@@ -128,35 +128,35 @@ export function BulkActionsBar() {
       <button
         onClick={() => bulkSetDraft(ids, true)}
         aria-label="Mark selected as draft"
-        className="rounded-full border border-white/8 px-2 py-0.5 text-3xs text-text-secondary hover:bg-white/8"
+        className="rounded-full border border-[var(--chrome-stroke)] px-2 py-0.5 text-3xs text-text-secondary hover:bg-[var(--chrome-highlight-strong)]"
       >
         Draft
       </button>
       <button
         onClick={() => bulkSetDraft(ids, false)}
         aria-label="Publish selected"
-        className="rounded-full border border-white/8 px-2 py-0.5 text-3xs text-text-secondary hover:bg-white/8"
+        className="rounded-full border border-[var(--chrome-stroke)] px-2 py-0.5 text-3xs text-text-secondary hover:bg-[var(--chrome-highlight-strong)]"
       >
         Publish
       </button>
       <button
         onClick={() => setShowTag(true)}
         aria-label="Tag selected articles"
-        className="rounded-full border border-white/8 px-2 py-0.5 text-3xs text-text-secondary hover:bg-white/8"
+        className="rounded-full border border-[var(--chrome-stroke)] px-2 py-0.5 text-3xs text-text-secondary hover:bg-[var(--chrome-highlight-strong)]"
       >
         Tag
       </button>
       <button
         onClick={() => setShowTemplate(true)}
         aria-label="Change template of selected articles"
-        className="rounded-full border border-white/8 px-2 py-0.5 text-3xs text-text-secondary hover:bg-white/8"
+        className="rounded-full border border-[var(--chrome-stroke)] px-2 py-0.5 text-3xs text-text-secondary hover:bg-[var(--chrome-highlight-strong)]"
       >
         Template
       </button>
       <button
         onClick={() => setShowDelete(true)}
         aria-label="Delete selected articles"
-        className="rounded-full border border-white/8 px-2 py-0.5 text-3xs text-status-danger hover:bg-status-danger/10"
+        className="rounded-full border border-[var(--chrome-stroke)] px-2 py-0.5 text-3xs text-status-danger hover:bg-status-danger/10"
       >
         Delete
       </button>
@@ -169,7 +169,7 @@ export function BulkActionsBar() {
       </button>
 
       {showTag && (
-        <div className="absolute left-0 right-0 top-full z-10 mt-1 rounded-lg border border-white/10 bg-bg-primary p-3 shadow-lg">
+        <div className="absolute left-0 right-0 top-full z-10 mt-1 rounded-lg border border-[var(--chrome-stroke)] bg-bg-primary p-3 shadow-lg">
           <div className="flex gap-1.5">
             <input
               value={tagInput}

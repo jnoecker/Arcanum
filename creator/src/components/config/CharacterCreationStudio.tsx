@@ -47,7 +47,7 @@ export function CharacterCreationStudio({
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="rounded-3xl border border-white/8 bg-black/12 p-5">
+      <div className="rounded-3xl border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] p-5">
         <p className="text-2xs uppercase tracking-ui text-text-muted">Character creation</p>
         <h4 className="mt-2 font-display text-2xl text-text-primary">Starting resources</h4>
         <p className="mt-2 max-w-3xl text-sm leading-7 text-text-secondary">
@@ -64,7 +64,7 @@ export function CharacterCreationStudio({
         </div>
       </div>
 
-      <div className="rounded-3xl border border-white/8 bg-black/12 p-5">
+      <div className="rounded-3xl border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] p-5">
         <p className="text-2xs uppercase tracking-ui text-text-muted">Character creation</p>
         <h4 className="mt-2 font-display text-2xl text-text-primary">New-player defaults</h4>
         <p className="mt-2 max-w-3xl text-sm leading-7 text-text-secondary">

@@ -10,7 +10,7 @@ const HpBar = memo(function HpBar({ hp, maxHp }: { hp: number; maxHp: number }) 
   return (
     <div className="flex items-center gap-2">
       <div
-        className="h-1.5 w-16 overflow-hidden rounded-full bg-white/10"
+        className="h-1.5 w-16 overflow-hidden rounded-full bg-[var(--chrome-highlight-strong)]"
         role="progressbar"
         aria-valuenow={hp}
         aria-valuemin={0}
@@ -36,7 +36,7 @@ const MobRow = memo(function MobRow({
   return (
     <button
       onClick={() => onSelect(mob.id)}
-      className="flex w-full items-center gap-3 rounded-2xl border border-white/8 bg-white/4 px-4 py-3 text-left transition-colors duration-200 hover:border-accent/20 hover:bg-accent/[0.04] hover:shadow-[inset_3px_0_0_var(--color-accent)] focus-visible:ring-2 focus-visible:ring-border-active focus-visible:outline-none"
+      className="flex w-full items-center gap-3 rounded-2xl border border-[var(--chrome-stroke)] bg-[var(--chrome-highlight)] px-4 py-3 text-left transition-colors duration-200 hover:border-accent/20 hover:bg-accent/[0.04] hover:shadow-[inset_3px_0_0_var(--color-accent)] focus-visible:ring-2 focus-visible:ring-border-active focus-visible:outline-none"
     >
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
@@ -88,7 +88,7 @@ export function AdminMobList() {
             <select
               value={zoneFilter}
               onChange={(e) => setZoneFilter(e.target.value)}
-              className="rounded-full border border-white/10 bg-black/40 px-3 py-1.5 text-xs text-text-secondary transition focus-visible:ring-2 focus-visible:ring-border-active focus-visible:outline-none"
+              className="rounded-full border border-[var(--chrome-stroke)] bg-[var(--chrome-fill-strong)] px-3 py-1.5 text-xs text-text-secondary transition focus-visible:ring-2 focus-visible:ring-border-active focus-visible:outline-none"
               aria-label="Filter by zone"
             >
               <option value="">All zones</option>
@@ -106,7 +106,7 @@ export function AdminMobList() {
       </div>
 
       {filteredMobs.length === 0 ? (
-        <div className="rounded-3xl border border-dashed border-white/12 bg-white/4 px-6 py-12 text-center">
+        <div className="rounded-3xl border border-dashed border-[var(--chrome-stroke-strong)] bg-[var(--chrome-highlight)] px-6 py-12 text-center">
           <p className="font-display text-base text-text-secondary">No creatures stir</p>
           <p className="mt-1 text-sm text-text-muted">
             {zoneFilter

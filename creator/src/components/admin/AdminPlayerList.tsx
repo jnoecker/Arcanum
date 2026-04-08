@@ -11,7 +11,7 @@ function HpBar({ hp, maxHp }: { hp: number; maxHp: number }) {
   return (
     <div className="flex items-center gap-2">
       <div
-        className="h-1.5 w-16 overflow-hidden rounded-full bg-white/10"
+        className="h-1.5 w-16 overflow-hidden rounded-full bg-[var(--chrome-highlight-strong)]"
         role="progressbar"
         aria-valuenow={hp}
         aria-valuemin={0}
@@ -37,7 +37,7 @@ function PlayerRow({
   return (
     <button
       onClick={() => onSelect(player.name)}
-      className="flex w-full items-center gap-3 rounded-2xl border border-white/8 bg-white/4 px-4 py-3 text-left transition-colors duration-200 hover:border-accent/20 hover:bg-accent/[0.04] hover:shadow-[inset_3px_0_0_var(--color-accent)] focus-visible:ring-2 focus-visible:ring-border-active focus-visible:outline-none"
+      className="flex w-full items-center gap-3 rounded-2xl border border-[var(--chrome-stroke)] bg-[var(--chrome-highlight)] px-4 py-3 text-left transition-colors duration-200 hover:border-accent/20 hover:bg-accent/[0.04] hover:shadow-[inset_3px_0_0_var(--color-accent)] focus-visible:ring-2 focus-visible:ring-border-active focus-visible:outline-none"
     >
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
@@ -113,12 +113,12 @@ export function AdminPlayerList() {
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           placeholder="Search by name (online or offline)..."
-          className="h-9 min-w-0 flex-1 rounded-xl border border-white/10 bg-black/15 px-3 text-sm text-text-primary placeholder:text-text-muted focus:border-border-active focus:outline-none focus-visible:ring-2 focus-visible:ring-border-active"
+          className="h-9 min-w-0 flex-1 rounded-xl border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] px-3 text-sm text-text-primary placeholder:text-text-muted focus:border-border-active focus:outline-none focus-visible:ring-2 focus-visible:ring-border-active"
         />
         <button
           type="submit"
           disabled={!searchQuery.trim()}
-          className="h-9 rounded-xl border border-white/10 bg-black/10 px-4 text-xs font-medium text-text-primary transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40 focus-visible:ring-2 focus-visible:ring-border-active focus-visible:outline-none"
+          className="h-9 rounded-xl border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] px-4 text-xs font-medium text-text-primary transition hover:bg-[var(--chrome-highlight-strong)] disabled:cursor-not-allowed disabled:opacity-40 focus-visible:ring-2 focus-visible:ring-border-active focus-visible:outline-none"
         >
           Search
         </button>
@@ -128,7 +128,7 @@ export function AdminPlayerList() {
       )}
 
       {players.length === 0 ? (
-        <div className="rounded-3xl border border-dashed border-white/12 bg-white/4 px-6 py-12 text-center">
+        <div className="rounded-3xl border border-dashed border-[var(--chrome-stroke-strong)] bg-[var(--chrome-highlight)] px-6 py-12 text-center">
           <p className="font-display text-base text-text-secondary">The world is still</p>
           <p className="mt-1 text-sm text-text-muted">No souls walk the land at this moment. Use search to find offline players.</p>
         </div>

@@ -4,7 +4,7 @@ import type { ItemEntry } from "@/types/admin";
 
 const ItemRow = memo(function ItemRow({ item }: { item: ItemEntry }) {
   return (
-    <div className="flex w-full items-center gap-3 rounded-2xl border border-white/8 bg-white/4 px-4 py-3 transition-colors duration-200">
+    <div className="flex w-full items-center gap-3 rounded-2xl border border-[var(--chrome-stroke)] bg-[var(--chrome-highlight)] px-4 py-3 transition-colors duration-200">
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
           <span className="truncate font-display text-sm text-text-primary">
@@ -64,7 +64,7 @@ export function AdminItemList() {
       </div>
 
       {items.length === 0 ? (
-        <div className="rounded-3xl border border-dashed border-white/12 bg-white/4 px-6 py-12 text-center">
+        <div className="rounded-3xl border border-dashed border-[var(--chrome-stroke-strong)] bg-[var(--chrome-highlight)] px-6 py-12 text-center">
           <p className="font-display text-base text-text-secondary">No items found</p>
           <p className="mt-1 text-sm text-text-muted">
             The server has no items registered.

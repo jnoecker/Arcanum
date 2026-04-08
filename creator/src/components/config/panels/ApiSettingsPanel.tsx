@@ -521,7 +521,7 @@ export function ApiSettingsPanel({
               </div>
 
               {showDeploymentActions && (
-                <div className="mt-1 rounded-2xl border border-white/10 bg-black/10 px-4 py-3 text-2xs leading-6 text-text-secondary">
+                <div className="mt-1 rounded-2xl border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] px-4 py-3 text-2xs leading-6 text-text-secondary">
                   Runtime publishing now lives in Operations / Handoff.
                 </div>
               )}

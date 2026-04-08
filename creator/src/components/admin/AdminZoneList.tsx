@@ -15,14 +15,14 @@ function ZoneRow({
       className={`flex w-full items-center gap-3 rounded-2xl border px-4 py-3 text-left transition-colors duration-200 hover:border-accent/20 hover:bg-accent/[0.04] hover:shadow-[inset_3px_0_0_var(--color-accent)] focus-visible:ring-2 focus-visible:ring-border-active focus-visible:outline-none ${
         zone.playersOnline > 0
           ? "border-accent/15 bg-accent/[0.03]"
-          : "border-white/8 bg-white/4"
+          : "border-[var(--chrome-stroke)] bg-[var(--chrome-highlight)]"
       }`}
     >
       <div className="min-w-0 flex-1">
         <span className="truncate font-display text-sm text-text-primary">{zone.name}</span>
       </div>
       <div className="flex shrink-0 gap-3 text-2xs text-text-muted">
-        <span className="rounded-full bg-black/15 px-2 py-1">
+        <span className="rounded-full bg-[var(--chrome-fill)] px-2 py-1">
           {zone.roomCount} room{zone.roomCount !== 1 ? "s" : ""}
         </span>
         {zone.playersOnline > 0 && (
@@ -30,7 +30,7 @@ function ZoneRow({
             {zone.playersOnline} player{zone.playersOnline !== 1 ? "s" : ""}
           </span>
         )}
-        <span className="rounded-full bg-black/15 px-2 py-1">
+        <span className="rounded-full bg-[var(--chrome-fill)] px-2 py-1">
           {zone.mobsAlive} mob{zone.mobsAlive !== 1 ? "s" : ""}
         </span>
       </div>
@@ -61,7 +61,7 @@ export function AdminZoneList() {
       </div>
 
       {zones.length === 0 ? (
-        <div className="rounded-3xl border border-dashed border-white/12 bg-white/4 px-6 py-12 text-center">
+        <div className="rounded-3xl border border-dashed border-[var(--chrome-stroke-strong)] bg-[var(--chrome-highlight)] px-6 py-12 text-center">
           <p className="font-display text-base text-text-secondary">No regions manifest</p>
           <p className="mt-1 text-sm text-text-muted">The server has no zones loaded.</p>
         </div>

@@ -211,7 +211,7 @@ export function BatchLegacyImport({ onClose }: { onClose: () => void }) {
               <p className="mt-3 text-sm leading-7 text-text-secondary">
                 The importer will inspect the local resources tree, collect images, video, and audio, then prepare them for migration.
               </p>
-              <p className="mt-4 rounded-2xl border border-white/8 bg-black/12 px-4 py-3 font-mono text-xs text-text-muted">
+              <p className="mt-4 rounded-2xl border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] px-4 py-3 font-mono text-xs text-text-muted">
                 {mudDir ? `${mudDir}/src/main/resources/` : "No project directory is available."}
               </p>
               <div className="mt-5">
@@ -235,7 +235,7 @@ export function BatchLegacyImport({ onClose }: { onClose: () => void }) {
             <div className="panel-surface-light rounded-3xl p-5">
               <div className="flex flex-wrap items-center gap-2">
                 <p className="text-2xs uppercase tracking-wide-ui text-text-muted">Asset queue</p>
-                <span className="rounded-full border border-white/10 bg-black/10 px-3 py-1 text-2xs text-text-secondary">
+                <span className="rounded-full border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] px-3 py-1 text-2xs text-text-secondary">
                   {targets!.length} candidate{targets!.length !== 1 ? "s" : ""}
                 </span>
               </div>
@@ -251,7 +251,7 @@ export function BatchLegacyImport({ onClose }: { onClose: () => void }) {
                     </span>
                   </div>
                   <div
-                    className="h-3 overflow-hidden rounded-full border border-white/8 bg-black/18"
+                    className="h-3 overflow-hidden rounded-full border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)]"
                     role="progressbar"
                     aria-valuenow={completedCount}
                     aria-valuemax={targets!.length}
@@ -268,8 +268,8 @@ export function BatchLegacyImport({ onClose }: { onClose: () => void }) {
               {!running && !importFinished && (
                 <div className="mt-4 max-h-72 space-y-2 overflow-y-auto pr-1">
                   {targets!.map((target, index) => (
-                    <div key={index} className="flex items-center gap-3 rounded-2xl border border-white/8 bg-black/12 px-4 py-3 text-sm">
-                      <span className="flex h-10 w-10 items-center justify-center rounded-full border border-white/8 bg-white/4 text-2xs text-text-muted">
+                    <div key={index} className="flex items-center gap-3 rounded-2xl border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] px-4 py-3 text-sm">
+                      <span className="flex h-10 w-10 items-center justify-center rounded-full border border-[var(--chrome-stroke)] bg-[var(--chrome-highlight)] text-2xs text-text-muted">
                         {index + 1}
                       </span>
                       <span className="min-w-0 flex-1 truncate font-mono text-text-secondary">
@@ -289,7 +289,7 @@ export function BatchLegacyImport({ onClose }: { onClose: () => void }) {
           )}
 
           {syncStatus && (
-            <div className="rounded-3xl border border-white/8 bg-black/12 px-4 py-3 text-sm text-text-secondary">
+            <div className="rounded-3xl border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] px-4 py-3 text-sm text-text-secondary">
               {syncStatus}
             </div>
           )}
@@ -333,7 +333,7 @@ export function BatchLegacyImport({ onClose }: { onClose: () => void }) {
                   </p>
                   <div className="mt-3 max-h-44 space-y-2 overflow-y-auto pr-1 text-xs text-text-secondary">
                     {migrationReport.errors.map((entry, index) => (
-                      <div key={index} className="rounded-2xl border border-status-error/18 bg-black/10 px-3 py-2">
+                      <div key={index} className="rounded-2xl border border-status-error/18 bg-[var(--chrome-fill)] px-3 py-2">
                         {entry}
                       </div>
                     ))}
@@ -361,7 +361,7 @@ function StepPill({ phase }: { phase: Phase }) {
             : "Complete";
 
   return (
-    <span className="rounded-full border border-white/10 bg-black/10 px-3 py-1 text-2xs text-text-secondary">
+    <span className="rounded-full border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] px-3 py-1 text-2xs text-text-secondary">
       {label}
     </span>
   );
@@ -385,7 +385,7 @@ function StageCard({
           ? "border-[var(--border-accent-subtle)] bg-[rgba(168,151,210,0.12)]"
           : active
             ? "border-[var(--border-glow-strong)] bg-[rgba(140,174,201,0.12)]"
-            : "border-white/8 bg-black/12"
+            : "border-[var(--chrome-stroke)] bg-[var(--chrome-fill)]"
       }`}
     >
       <p className="font-display text-sm text-text-primary">{title}</p>

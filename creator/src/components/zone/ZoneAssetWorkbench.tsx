@@ -144,10 +144,10 @@ const VariantCard = memo(function VariantCard({ entry, assetsDir, onClick }: { e
     <button
       onClick={onClick}
       className={`relative h-16 w-16 shrink-0 overflow-hidden rounded-2xl border-2 transition ${
-        entry.is_active ? "border-accent shadow-[0_0_0_1px_var(--border-accent-ring)]" : "border-white/12 hover:border-[var(--border-glow)]"
+        entry.is_active ? "border-accent shadow-[0_0_0_1px_var(--border-accent-ring)]" : "border-[var(--chrome-stroke-strong)] hover:border-[var(--border-glow)]"
       }`}
     >
-      {thumbSrc ? <img src={thumbSrc} alt="" loading="lazy" className="h-full w-full object-cover" /> : <div className="h-full w-full bg-white/6" />}
+      {thumbSrc ? <img src={thumbSrc} alt="" loading="lazy" className="h-full w-full object-cover" /> : <div className="h-full w-full bg-[var(--chrome-highlight)]" />}
     </button>
   );
 });
@@ -443,7 +443,7 @@ export function ZoneAssetWorkbench({ zoneId, world, onWorldChange }: ZoneAssetWo
   const completion = totalSlots > 0 ? Math.round(((completedEntityCount + completedDefaultCount) / totalSlots) * 100) : 0;
 
   return (
-    <section className="rounded-3xl border border-white/10 bg-gradient-panel p-5 shadow-section">
+    <section className="rounded-3xl border border-[var(--chrome-stroke)] bg-gradient-panel p-5 shadow-section">
       <div className="mb-5 flex items-center justify-between gap-4">
         <div>
           <h2 className="font-display text-xl text-text-primary">Zone assets</h2>
@@ -456,19 +456,19 @@ export function ZoneAssetWorkbench({ zoneId, world, onWorldChange }: ZoneAssetWo
             <span>Coverage</span>
             <span>{completion}%</span>
           </div>
-          <div className="h-2 overflow-hidden rounded-full bg-black/14">
+          <div className="h-2 overflow-hidden rounded-full bg-[var(--chrome-fill)]">
             <div className="h-full rounded-full bg-[linear-gradient(90deg,rgba(168,151,210,0.95),rgba(140,174,201,0.9))]" style={{ width: `${completion}%` }} />
           </div>
         </div>
       </div>
 
       {!selectedTarget ? (
-        <div className="rounded-2xl border border-dashed border-white/12 bg-black/12 px-4 py-8 text-sm text-text-muted">
+        <div className="rounded-2xl border border-dashed border-[var(--chrome-stroke-strong)] bg-[var(--chrome-fill)] px-4 py-8 text-sm text-text-muted">
           Select a zone with entities to start generating and reviewing art.
         </div>
       ) : (
         <div className="grid gap-5 xl:grid-cols-[0.62fr_1.38fr]">
-          <div className="rounded-3xl border border-white/8 bg-black/12 p-4">
+          <div className="rounded-3xl border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] p-4">
             <div className="max-h-[44rem] overflow-y-auto pr-1">
               <div className="mb-5">
                 <div className="mb-2 flex items-center justify-between">
@@ -486,7 +486,7 @@ export function ZoneAssetWorkbench({ zoneId, world, onWorldChange }: ZoneAssetWo
                         key={kind}
                         onClick={() => setSelectedKey(key)}
                         className={`flex items-center gap-3 rounded-2xl border px-3 py-3 text-left transition ${
-                          selected ? "border-border-active bg-gradient-active" : "border-white/8 bg-black/10 hover:bg-white/8"
+                          selected ? "border-border-active bg-gradient-active" : "border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] hover:bg-[var(--chrome-highlight-strong)]"
                         }`}
                       >
                         <span className={`h-2.5 w-2.5 rounded-full ${hasImage ? "bg-status-success" : "bg-text-muted/50"}`} />
@@ -520,7 +520,7 @@ export function ZoneAssetWorkbench({ zoneId, world, onWorldChange }: ZoneAssetWo
                             key={key}
                             onClick={() => setSelectedKey(key)}
                             className={`flex items-center gap-3 rounded-2xl border px-3 py-3 text-left transition ${
-                              selected ? "border-border-active bg-gradient-active" : "border-white/8 bg-black/10 hover:bg-white/8"
+                              selected ? "border-border-active bg-gradient-active" : "border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] hover:bg-[var(--chrome-highlight-strong)]"
                             }`}
                           >
                             <span className={`h-2.5 w-2.5 rounded-full ${entity.image ? "bg-status-success" : "bg-text-muted/50"}`} />
@@ -540,10 +540,10 @@ export function ZoneAssetWorkbench({ zoneId, world, onWorldChange }: ZoneAssetWo
 
           <div className="flex flex-col gap-5">
             {/* Preview row — wide horizontal card */}
-            <div className="rounded-3xl border border-white/8 bg-black/12 p-4">
+            <div className="rounded-3xl border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] p-4">
               <div className="flex gap-5">
                 {/* Image preview */}
-                <div className="flex shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-white/8 bg-[linear-gradient(180deg,rgba(34,41,60,0.8),rgba(28,34,52,0.88))] p-3" style={{ width: "16rem", height: "10rem" }}>
+                <div className="flex shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-[var(--chrome-stroke)] bg-[linear-gradient(180deg,rgba(34,41,60,0.8),rgba(28,34,52,0.88))] p-3" style={{ width: "16rem", height: "10rem" }}>
                   {selectedSrc ? (
                     <img src={selectedSrc} alt={targetTitle(selectedTarget)} className="max-h-full max-w-full rounded-xl object-contain shadow-section" />
                   ) : (
@@ -561,7 +561,7 @@ export function ZoneAssetWorkbench({ zoneId, world, onWorldChange }: ZoneAssetWo
                       <h3 className="mt-0.5 font-display text-xl text-text-primary">{targetTitle(selectedTarget)}</h3>
                       <div className="mt-0.5 text-xs text-text-secondary">{targetSubtitle(selectedTarget, world)}</div>
                     </div>
-                    <span className="rounded-full bg-white/8 px-3 py-1 text-2xs uppercase tracking-label text-text-muted">
+                    <span className="rounded-full bg-[var(--chrome-highlight-strong)] px-3 py-1 text-2xs uppercase tracking-label text-text-muted">
                       {variants.length} variants
                     </span>
                   </div>
@@ -587,7 +587,7 @@ export function ZoneAssetWorkbench({ zoneId, world, onWorldChange }: ZoneAssetWo
             </div>
 
             {/* Prompt engineering — full width */}
-            <div className="rounded-3xl border border-white/8 bg-black/12 p-4">
+            <div className="rounded-3xl border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] p-4">
               <div className="mb-3 text-2xs uppercase tracking-ui text-text-muted">Prompt engineering</div>
 
               <div className="grid gap-4 lg:grid-cols-[1fr_1fr]">
@@ -604,7 +604,7 @@ export function ZoneAssetWorkbench({ zoneId, world, onWorldChange }: ZoneAssetWo
                     <button
                       onClick={handleGeneratePrompt}
                       disabled={!hasLlmKey || generatingPrompt || generatingImage || removingBg}
-                      className="rounded-full border border-white/10 bg-white/6 px-3 py-1 text-2xs font-medium text-text-primary transition enabled:hover:bg-white/10 disabled:opacity-50"
+                      className="rounded-full border border-[var(--chrome-stroke)] bg-[var(--chrome-highlight)] px-3 py-1 text-2xs font-medium text-text-primary transition enabled:hover:bg-[var(--chrome-highlight-strong)] disabled:opacity-50"
                     >
                       {generatingPrompt ? (
                         <span className="flex items-center gap-1.5"><Spinner />Enhancing</span>
@@ -622,19 +622,19 @@ export function ZoneAssetWorkbench({ zoneId, world, onWorldChange }: ZoneAssetWo
                       setPromptGeneratedByLlm(false);
                     }}
                     rows={8}
-                    className="w-full flex-1 resize-y rounded-2xl border border-white/10 bg-surface-scrim px-4 py-3 font-mono text-xs leading-6 text-text-secondary outline-none transition focus:border-border-active focus-visible:ring-2 focus-visible:ring-border-active"
+                    className="w-full flex-1 resize-y rounded-2xl border border-[var(--chrome-stroke)] bg-surface-scrim px-4 py-3 font-mono text-xs leading-6 text-text-secondary outline-none transition focus:border-border-active focus-visible:ring-2 focus-visible:ring-border-active"
                     placeholder={selectedTarget.mode === "default" ? "Describe the fallback for this zone asset, then click Enhance prompt..." : "Describe this entity, then click Enhance prompt..."}
                   />
                 </div>
 
                 <div className="flex flex-col gap-3">
                   {zoneVibe && (
-                    <div className="rounded-2xl border border-white/8 bg-surface-scrim-light px-4 py-3">
+                    <div className="rounded-2xl border border-[var(--chrome-stroke)] bg-surface-scrim-light px-4 py-3">
                       <div className="text-2xs uppercase tracking-ui text-text-muted">Zone vibe</div>
                       <div className="mt-1.5 max-h-24 overflow-y-auto whitespace-pre-wrap text-xs leading-5 text-text-secondary">{zoneVibe}</div>
                     </div>
                   )}
-                  <div className="rounded-2xl border border-white/8 bg-surface-scrim-light px-4 py-3">
+                  <div className="rounded-2xl border border-[var(--chrome-stroke)] bg-surface-scrim-light px-4 py-3">
                     <div className="text-2xs uppercase tracking-ui text-text-muted">
                       {selectedTarget.mode === "default" ? "Zone default context" : "Entity context"}
                     </div>
@@ -650,7 +650,7 @@ export function ZoneAssetWorkbench({ zoneId, world, onWorldChange }: ZoneAssetWo
                   onChange={(event) => setBatchCount(Number(event.target.value))}
                   disabled={!hasImageKey || generatingPrompt || generatingImage || removingBg}
                   aria-label="Number of variants to generate"
-                  className="rounded-full border border-white/10 bg-white/6 px-3 py-2 text-xs font-medium text-text-primary outline-none transition focus-visible:ring-2 focus-visible:ring-border-active disabled:opacity-50"
+                  className="rounded-full border border-[var(--chrome-stroke)] bg-[var(--chrome-highlight)] px-3 py-2 text-xs font-medium text-text-primary outline-none transition focus-visible:ring-2 focus-visible:ring-border-active disabled:opacity-50"
                 >
                   <option value={1} className="bg-bg-primary">×1</option>
                   <option value={2} className="bg-bg-primary">×2</option>
@@ -675,18 +675,18 @@ export function ZoneAssetWorkbench({ zoneId, world, onWorldChange }: ZoneAssetWo
                     "Generate image"
                   )}
                 </button>
-                <span className="mx-1 h-6 w-px bg-white/10" aria-hidden="true" />
+                <span className="mx-1 h-6 w-px bg-[var(--chrome-highlight-strong)]" aria-hidden="true" />
                 <button
                   onClick={handleImport}
                   disabled={importing || generatingPrompt || generatingImage || removingBg}
-                  className="rounded-full border border-white/10 bg-white/6 px-4 py-2 text-xs font-medium text-text-primary transition enabled:hover:bg-white/10 disabled:opacity-50"
+                  className="rounded-full border border-[var(--chrome-stroke)] bg-[var(--chrome-highlight)] px-4 py-2 text-xs font-medium text-text-primary transition enabled:hover:bg-[var(--chrome-highlight-strong)] disabled:opacity-50"
                 >
                   {importing ? <span className="flex items-center gap-1.5"><Spinner />Importing</span> : "Import image"}
                 </button>
                 <button
                   onClick={handleRemoveBg}
                   disabled={removingBg || generatingImage || !previewEntry || !selectedSrc || !selectedKind || !shouldRemoveBg(assetTypeForKind(selectedKind))}
-                  className="rounded-full border border-white/10 bg-white/6 px-4 py-2 text-xs font-medium text-text-primary transition enabled:hover:bg-white/10 disabled:opacity-50"
+                  className="rounded-full border border-[var(--chrome-stroke)] bg-[var(--chrome-highlight)] px-4 py-2 text-xs font-medium text-text-primary transition enabled:hover:bg-[var(--chrome-highlight-strong)] disabled:opacity-50"
                 >
                   {removingBg ? <span className="flex items-center gap-1.5"><Spinner />Removing BG</span> : "Remove BG"}
                 </button>

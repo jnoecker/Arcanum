@@ -129,7 +129,7 @@ export function DefinitionWorkbench<T>({
                 className={`rounded-2xl border px-4 py-3 text-left transition ${
                   selectedCard
                     ? "border-border-active bg-gradient-active"
-                    : "border-white/8 bg-white/4 hover:bg-white/8"
+                    : "border-[var(--chrome-stroke)] bg-[var(--chrome-highlight)] hover:bg-[var(--chrome-highlight-strong)]"
                 }`}
               >
                 <div className="min-w-0">
@@ -151,7 +151,7 @@ export function DefinitionWorkbench<T>({
             );
           })}
           {itemIds.length === 0 && (
-            <div className="rounded-2xl border border-dashed border-white/12 bg-white/4 px-4 py-6 text-sm text-text-muted">
+            <div className="rounded-2xl border border-dashed border-[var(--chrome-stroke-strong)] bg-[var(--chrome-highlight)] px-4 py-6 text-sm text-text-muted">
               {emptyMessage}
             </div>
           )}
@@ -160,7 +160,7 @@ export function DefinitionWorkbench<T>({
 
       {selectedId && selected ? (
         <div className="panel-surface rounded-3xl p-5">
-          <div className="flex flex-wrap items-start justify-between gap-4 border-b border-white/8 pb-4">
+          <div className="flex flex-wrap items-start justify-between gap-4 border-b border-[var(--chrome-stroke)] pb-4">
             <div>
               <p className="text-2xs uppercase tracking-ui text-text-muted">{title}</p>
               <h4 className="mt-2 font-display text-3xl text-text-primary">{getDisplayName(selected)}</h4>

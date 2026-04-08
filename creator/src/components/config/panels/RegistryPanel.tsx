@@ -40,7 +40,7 @@ export function RegistryPanel<T>({
   getDisplayName,
   onRenameId,
 }: RegistryPanelProps<T>) {
-  const allIds = Object.keys(items);
+  const allIds = items ? Object.keys(items) : [];
   const [expanded, setExpanded] = useState<string | null>(null);
   const [newId, setNewId] = useState("");
   const [search, setSearch] = useState("");

@@ -98,13 +98,13 @@ const VariantCard = memo(function VariantCard({
       className={`relative h-16 w-16 shrink-0 overflow-hidden rounded-2xl border-2 transition ${
         entry.is_active
           ? "border-accent shadow-[0_0_0_1px_var(--border-accent-ring)]"
-          : "border-white/12 hover:border-[var(--border-glow)]"
+          : "border-[var(--chrome-stroke-strong)] hover:border-[var(--border-glow)]"
       }`}
     >
       {thumbSrc ? (
         <img src={thumbSrc} alt="" loading="lazy" className="h-full w-full object-cover" />
       ) : (
-        <div className="h-full w-full bg-white/6" />
+        <div className="h-full w-full bg-[var(--chrome-highlight)]" />
       )}
     </button>
   );
@@ -575,7 +575,7 @@ export function AbilityStudio() {
   const batchCompleted = batchProgress.done + batchProgress.failed;
 
   return (
-    <section className="rounded-3xl border border-white/10 bg-gradient-panel p-5 shadow-section">
+    <section className="rounded-3xl border border-[var(--chrome-stroke)] bg-gradient-panel p-5 shadow-section">
       <div className="mb-5 flex items-center justify-between gap-4">
         <div>
           <h2 className="font-display text-xl text-text-primary">Ability studio</h2>
@@ -593,7 +593,7 @@ export function AbilityStudio() {
           <button
             onClick={handleGenerateTemplate}
             disabled={!hasLlmKey || anyBusy}
-            className="rounded-full border border-white/10 bg-white/6 px-4 py-2 text-xs font-medium text-text-primary transition enabled:hover:bg-white/10 disabled:opacity-50"
+            className="rounded-full border border-[var(--chrome-stroke)] bg-[var(--chrome-highlight)] px-4 py-2 text-xs font-medium text-text-primary transition enabled:hover:bg-[var(--chrome-highlight-strong)] disabled:opacity-50"
           >
             {generatingTemplate ? (
               <span className="flex items-center gap-1.5"><Spinner />Generating template</span>
@@ -611,7 +611,7 @@ export function AbilityStudio() {
           <button
             onClick={handleGenerateAll}
             disabled={!hasImageKey || anyBusy}
-            className="rounded-full border border-white/10 bg-white/6 px-4 py-2 text-xs font-medium text-text-primary transition enabled:hover:bg-white/10 disabled:opacity-50"
+            className="rounded-full border border-[var(--chrome-stroke)] bg-[var(--chrome-highlight)] px-4 py-2 text-xs font-medium text-text-primary transition enabled:hover:bg-[var(--chrome-highlight-strong)] disabled:opacity-50"
           >
             {batchGenerating ? (
               <span className="flex items-center gap-1.5"><Spinner />Generating tab</span>
@@ -622,7 +622,7 @@ export function AbilityStudio() {
 
       {/* Batch progress bar */}
       {batchGenerating && batchProgress.total > 0 && (
-        <div className="mb-5 rounded-2xl border border-white/8 bg-black/12 px-4 py-3">
+        <div className="mb-5 rounded-2xl border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] px-4 py-3">
           <div className="mb-2 flex items-center justify-between text-xs">
             <span className="text-text-secondary">
               {batchCompleted} of {batchProgress.total}
@@ -650,12 +650,12 @@ export function AbilityStudio() {
       )}
 
       {!selectedTarget ? (
-        <div className="rounded-2xl border border-dashed border-white/12 bg-black/12 px-4 py-8 text-sm text-text-muted">
+        <div className="rounded-2xl border border-dashed border-[var(--chrome-stroke-strong)] bg-[var(--chrome-fill)] px-4 py-8 text-sm text-text-muted">
           Add abilities or status effects in config to start generating icons.
         </div>
       ) : (
         <div className="grid gap-5 xl:grid-cols-[0.62fr_1.38fr]">
-          <div className="rounded-3xl border border-white/8 bg-black/12 p-4">
+          <div className="rounded-3xl border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] p-4">
             <div className="mb-3 flex flex-wrap gap-2">
               {tabs.map((tab) => {
                 // Compute per-tab counts for badge
@@ -679,8 +679,8 @@ export function AbilityStudio() {
                       activeTab === tab
                         ? "border-border-active bg-[var(--bg-accent-subtle)] text-text-primary"
                         : tabMissing > 0
-                          ? "border-accent/30 bg-accent/5 text-text-muted hover:bg-white/8"
-                          : "border-white/8 bg-black/10 text-text-muted hover:bg-white/8"
+                          ? "border-accent/30 bg-accent/5 text-text-muted hover:bg-[var(--chrome-highlight-strong)]"
+                          : "border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] text-text-muted hover:bg-[var(--chrome-highlight-strong)]"
                     }`}
                   >
                     {tab === STATUS_TAB ? "Status Effects" : tab === GENERAL_TAB ? "General" : config.classes[tab]?.displayName || tab}
@@ -702,7 +702,7 @@ export function AbilityStudio() {
                       className={`flex items-center gap-3 rounded-2xl border px-3 py-3 text-left transition ${
                         selected
                           ? "border-border-active bg-gradient-active"
-                          : "border-white/8 bg-black/10 hover:bg-white/8"
+                          : "border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] hover:bg-[var(--chrome-highlight-strong)]"
                       }`}
                     >
                       <span className={`h-2.5 w-2.5 rounded-full ${target.image ? "bg-status-success" : "bg-text-muted/50"}`} />
@@ -719,9 +719,9 @@ export function AbilityStudio() {
 
           <div className="flex flex-col gap-5">
             {/* Preview row — wide horizontal card */}
-            <div className="rounded-3xl border border-white/8 bg-black/12 p-4">
+            <div className="rounded-3xl border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] p-4">
               <div className="flex gap-5">
-                <div className="flex shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-white/8 bg-gradient-panel p-3" style={{ width: "10rem", height: "10rem" }}>
+                <div className="flex shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-[var(--chrome-stroke)] bg-gradient-panel p-3" style={{ width: "10rem", height: "10rem" }}>
                   {selectedSrc ? (
                     <img src={selectedSrc} alt={selectedTarget.label} className="max-h-full max-w-full rounded-xl object-contain shadow-section" />
                   ) : (
@@ -738,7 +738,7 @@ export function AbilityStudio() {
                       <h3 className="mt-0.5 font-display text-xl text-text-primary">{selectedTarget.label}</h3>
                       <div className="mt-0.5 text-xs text-text-secondary">{selectedTarget.subtitle}</div>
                     </div>
-                    <span className="rounded-full bg-white/8 px-3 py-1 text-2xs uppercase tracking-label text-text-muted">
+                    <span className="rounded-full bg-[var(--chrome-highlight-strong)] px-3 py-1 text-2xs uppercase tracking-label text-text-muted">
                       {variants.length} variants
                     </span>
                   </div>
@@ -758,7 +758,7 @@ export function AbilityStudio() {
             </div>
 
             {/* Prompt engineering — full width */}
-            <div className="rounded-3xl border border-white/8 bg-black/12 p-4">
+            <div className="rounded-3xl border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] p-4">
               <div className="mb-3 flex items-center justify-between">
                 <div className="text-2xs uppercase tracking-ui text-text-muted">Prompt engineering</div>
                 {template && (
@@ -776,11 +776,11 @@ export function AbilityStudio() {
                     setPromptGeneratedByLlm(false);
                   }}
                   rows={8}
-                  className="w-full resize-y rounded-2xl border border-white/10 bg-surface-scrim px-4 py-3 font-mono text-xs leading-6 text-text-secondary outline-none transition focus:border-border-active focus-visible:ring-2 focus-visible:ring-border-active"
+                  className="w-full resize-y rounded-2xl border border-[var(--chrome-stroke)] bg-surface-scrim px-4 py-3 font-mono text-xs leading-6 text-text-secondary outline-none transition focus:border-border-active focus-visible:ring-2 focus-visible:ring-border-active"
                   placeholder="Generate an icon prompt..."
                 />
 
-                <div className="rounded-2xl border border-white/8 bg-surface-scrim-light px-4 py-3">
+                <div className="rounded-2xl border border-[var(--chrome-stroke)] bg-surface-scrim-light px-4 py-3">
                   <div className="text-2xs uppercase tracking-ui text-text-muted">Definition context</div>
                   <div className="mt-1.5 max-h-36 overflow-y-auto whitespace-pre-wrap text-xs leading-5 text-text-secondary">
                     {selectedTarget.kind === "ability" && selectedTarget.ability
@@ -796,14 +796,14 @@ export function AbilityStudio() {
                 <button
                   onClick={handleGeneratePrompt}
                   disabled={!hasLlmKey || anyBusy}
-                  className="rounded-full border border-white/10 bg-white/6 px-4 py-2 text-xs font-medium text-text-primary transition enabled:hover:bg-white/10 disabled:opacity-50"
+                  className="rounded-full border border-[var(--chrome-stroke)] bg-[var(--chrome-highlight)] px-4 py-2 text-xs font-medium text-text-primary transition enabled:hover:bg-[var(--chrome-highlight-strong)] disabled:opacity-50"
                 >
                   {generatingPrompt ? <span className="flex items-center gap-1.5"><Spinner />Generating</span> : "Generate prompt"}
                 </button>
                 <button
                   onClick={handleEnhancePrompt}
                   disabled={!hasLlmKey || !promptDraft.trim() || anyBusy}
-                  className="rounded-full border border-white/10 bg-white/6 px-4 py-2 text-xs font-medium text-text-primary transition enabled:hover:bg-white/10 disabled:opacity-50"
+                  className="rounded-full border border-[var(--chrome-stroke)] bg-[var(--chrome-highlight)] px-4 py-2 text-xs font-medium text-text-primary transition enabled:hover:bg-[var(--chrome-highlight-strong)] disabled:opacity-50"
                 >
                   Enhance prompt
                 </button>
@@ -811,7 +811,7 @@ export function AbilityStudio() {
                   <button
                     onClick={handleFillFromTemplate}
                     disabled={anyBusy}
-                    className="rounded-full border border-white/10 bg-white/6 px-4 py-2 text-xs font-medium text-text-primary transition enabled:hover:bg-white/10 disabled:opacity-50"
+                    className="rounded-full border border-[var(--chrome-stroke)] bg-[var(--chrome-highlight)] px-4 py-2 text-xs font-medium text-text-primary transition enabled:hover:bg-[var(--chrome-highlight-strong)] disabled:opacity-50"
                   >
                     Fill from template
                   </button>
@@ -826,7 +826,7 @@ export function AbilityStudio() {
                 <button
                   onClick={handleImport}
                   disabled={anyBusy}
-                  className="rounded-full border border-white/10 bg-white/6 px-4 py-2 text-xs font-medium text-text-primary transition enabled:hover:bg-white/10 disabled:opacity-50"
+                  className="rounded-full border border-[var(--chrome-stroke)] bg-[var(--chrome-highlight)] px-4 py-2 text-xs font-medium text-text-primary transition enabled:hover:bg-[var(--chrome-highlight-strong)] disabled:opacity-50"
                 >
                   {importing ? <span className="flex items-center gap-1.5"><Spinner />Importing</span> : "Import image"}
                 </button>

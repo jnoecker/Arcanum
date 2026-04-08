@@ -282,7 +282,7 @@ export function AssetGallery({ onClose }: { onClose: () => void }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--chrome-fill-soft)]0">
       <div ref={trapRef} role="dialog" aria-modal="true" aria-labelledby="gallery-title" className="mx-4 flex max-h-[90vh] w-full max-w-6xl flex-col rounded-3xl border border-border-default bg-bg-secondary shadow-xl">
         <div className="flex shrink-0 items-center justify-between border-b border-border-default px-5 py-3">
           <div className="flex flex-wrap items-center gap-3">
@@ -294,7 +294,7 @@ export function AssetGallery({ onClose }: { onClose: () => void }) {
             <button
               onClick={handleImport}
               disabled={importing}
-              className="rounded-full border border-white/10 bg-black/10 px-3 py-1.5 text-2xs font-medium text-accent transition-colors hover:bg-accent/15 disabled:cursor-not-allowed disabled:opacity-50"
+              className="rounded-full border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] px-3 py-1.5 text-2xs font-medium text-accent transition-colors hover:bg-accent/15 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {importing ? <span className="flex items-center gap-1.5"><Spinner />Importing</span> : "Import"}
             </button>
@@ -314,7 +314,7 @@ export function AssetGallery({ onClose }: { onClose: () => void }) {
                     setSyncResult(result);
                   }}
                   disabled={syncing || unsyncedCount === 0}
-                  className="rounded-full border border-white/10 px-3 py-1.5 text-2xs font-medium transition-colors enabled:bg-accent/15 enabled:text-accent enabled:hover:bg-accent/25 disabled:cursor-not-allowed disabled:text-text-muted disabled:opacity-50"
+                  className="rounded-full border border-[var(--chrome-stroke)] px-3 py-1.5 text-2xs font-medium transition-colors enabled:bg-accent/15 enabled:text-accent enabled:hover:bg-accent/25 disabled:cursor-not-allowed disabled:text-text-muted disabled:opacity-50"
                 >
                   {syncing ? <span className="flex items-center gap-1.5"><Spinner />Syncing</span> : unsyncedCount > 0 ? `Sync ${unsyncedCount} to R2` : "All synced"}
                 </button>
@@ -338,7 +338,7 @@ export function AssetGallery({ onClose }: { onClose: () => void }) {
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex flex-wrap items-center gap-2">
               <span className="text-2xs uppercase tracking-ui text-text-muted">View</span>
-              <div className="flex gap-1 rounded-full border border-white/10 bg-black/10 p-1">
+              <div className="flex gap-1 rounded-full border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] p-1">
                 {(["curated", "all"] as ViewMode[]).map((mode) => (
                   <button
                     key={mode}
@@ -357,7 +357,7 @@ export function AssetGallery({ onClose }: { onClose: () => void }) {
 
             <div className="flex items-center gap-2">
               <span className="text-2xs uppercase tracking-ui text-text-muted">Sort</span>
-              <div className="flex gap-1 rounded-full border border-white/10 bg-black/10 p-1">
+              <div className="flex gap-1 rounded-full border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] p-1">
                 {(["newest", "oldest", "type"] as SortKey[]).map((key) => (
                   <button
                     key={key}
@@ -385,7 +385,7 @@ export function AssetGallery({ onClose }: { onClose: () => void }) {
                   className={`rounded-full border px-3 py-1 text-2xs transition-colors ${
                     mediaFilter === kind
                       ? "border-border-active bg-gradient-active-strong text-text-primary"
-                      : "border-white/10 bg-black/10 text-text-muted hover:text-text-secondary"
+                      : "border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] text-text-muted hover:text-text-secondary"
                   }`}
                 >
                   {kind}
@@ -404,7 +404,7 @@ export function AssetGallery({ onClose }: { onClose: () => void }) {
                   className={`rounded-full border px-3 py-1 text-2xs capitalize transition-colors ${
                     workspaceFilter === ws
                       ? "border-border-active bg-gradient-active-strong text-text-primary"
-                      : "border-white/10 bg-black/10 text-text-muted hover:text-text-secondary"
+                      : "border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] text-text-muted hover:text-text-secondary"
                   }`}
                 >
                   {ws === "all" ? "All assets" : ws}
@@ -419,7 +419,7 @@ export function AssetGallery({ onClose }: { onClose: () => void }) {
                   className={`rounded-full border px-3 py-1 text-2xs transition-colors ${
                     typeFilter === "all"
                       ? "border-border-active bg-gradient-active-strong text-text-primary"
-                      : "border-white/10 bg-black/10 text-text-muted hover:text-text-secondary"
+                      : "border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] text-text-muted hover:text-text-secondary"
                   }`}
                 >
                   All types
@@ -431,7 +431,7 @@ export function AssetGallery({ onClose }: { onClose: () => void }) {
                     className={`rounded-full border px-3 py-1 text-2xs transition-colors ${
                       typeFilter === type
                         ? "border-border-active bg-gradient-active-strong text-text-primary"
-                        : "border-white/10 bg-black/10 text-text-muted hover:text-text-secondary"
+                        : "border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] text-text-muted hover:text-text-secondary"
                     }`}
                   >
                     {type.replace(/_/g, " ")}
@@ -449,7 +449,7 @@ export function AssetGallery({ onClose }: { onClose: () => void }) {
                     className={`rounded-full border px-3 py-1 text-2xs transition-colors ${
                       zoneFilter === "all"
                         ? "border-border-active bg-gradient-active-strong text-text-primary"
-                        : "border-white/10 bg-black/10 text-text-muted hover:text-text-secondary"
+                        : "border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] text-text-muted hover:text-text-secondary"
                     }`}
                   >
                     All zones
@@ -460,7 +460,7 @@ export function AssetGallery({ onClose }: { onClose: () => void }) {
                       className={`rounded-full border px-3 py-1 text-2xs transition-colors ${
                         zoneFilter === "__global__"
                           ? "border-border-active bg-gradient-active-strong text-text-primary"
-                          : "border-white/10 bg-black/10 text-text-muted hover:text-text-secondary"
+                          : "border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] text-text-muted hover:text-text-secondary"
                       }`}
                     >
                       Global
@@ -473,7 +473,7 @@ export function AssetGallery({ onClose }: { onClose: () => void }) {
                       className={`rounded-full border px-3 py-1 text-2xs transition-colors ${
                         zoneFilter === zone
                           ? "border-border-active bg-gradient-active-strong text-text-primary"
-                          : "border-white/10 bg-black/10 text-text-muted hover:text-text-secondary"
+                          : "border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] text-text-muted hover:text-text-secondary"
                       }`}
                     >
                       {zone.replace(/_/g, " ")}

@@ -236,7 +236,7 @@ export function TierSpriteScaffold({ onClose, onComplete }: TierSpriteScaffoldPr
 
   if (!config || !gaps) {
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--chrome-fill-soft)]0">
         <div className="rounded-lg border border-border-default bg-bg-secondary p-6 text-sm text-text-secondary">
           No config loaded.
         </div>
@@ -250,7 +250,7 @@ export function TierSpriteScaffold({ onClose, onComplete }: TierSpriteScaffoldPr
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--chrome-fill-soft)]0"
       onClick={phase === "running" ? undefined : onClose}
     >
       <div

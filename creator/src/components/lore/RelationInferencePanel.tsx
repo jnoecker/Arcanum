@@ -75,7 +75,7 @@ export function RelationInferencePanel() {
         {scanned && visible.length > 0 && highCount > 0 && (
           <button
             onClick={handleAcceptAllHigh}
-            className="focus-ring rounded-full border border-white/10 px-3 py-1.5 text-2xs text-text-secondary transition hover:bg-white/8"
+            className="focus-ring rounded-full border border-[var(--chrome-stroke)] px-3 py-1.5 text-2xs text-text-secondary transition hover:bg-[var(--chrome-highlight-strong)]"
           >
             Accept All High ({highCount})
           </button>
@@ -88,7 +88,7 @@ export function RelationInferencePanel() {
       </div>
 
       {scanned && visible.length === 0 && (
-        <p className="rounded-2xl border border-dashed border-white/10 bg-black/10 px-4 py-6 text-center text-sm text-text-muted">
+        <p className="rounded-2xl border border-dashed border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] px-4 py-6 text-center text-sm text-text-muted">
           {accepted.size > 0
             ? `All done! ${accepted.size} relation${accepted.size !== 1 ? "s" : ""} accepted.`
             : "No missing relations detected."}
@@ -100,13 +100,13 @@ export function RelationInferencePanel() {
           {visible.map((s) => (
             <div
               key={suggestionKey(s)}
-              className="rounded-xl border border-white/8 bg-black/10 px-4 py-3"
+              className="rounded-xl border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] px-4 py-3"
             >
               <div className="mb-1 flex items-center gap-2">
                 <span className="text-xs text-text-primary">
                   {articles[s.sourceId]?.title ?? s.sourceId}
                 </span>
-                <span className="rounded bg-white/10 px-1.5 py-0.5 text-3xs text-text-muted">
+                <span className="rounded bg-[var(--chrome-highlight-strong)] px-1.5 py-0.5 text-3xs text-text-muted">
                   {s.label ?? s.type}
                 </span>
                 <span className="text-2xs text-text-muted">&rarr;</span>
@@ -117,7 +117,7 @@ export function RelationInferencePanel() {
                   className={`ml-auto rounded-full px-2 py-0.5 text-3xs ${
                     s.confidence === "high"
                       ? "bg-accent/15 text-accent"
-                      : "bg-white/8 text-text-muted"
+                      : "bg-[var(--chrome-highlight-strong)] text-text-muted"
                   }`}
                 >
                   {s.confidence}
@@ -133,7 +133,7 @@ export function RelationInferencePanel() {
                 </button>
                 <button
                   onClick={() => handleDismiss(s)}
-                  className="rounded-full border border-white/8 px-2.5 py-1 text-2xs text-text-muted transition hover:bg-white/8"
+                  className="rounded-full border border-[var(--chrome-stroke)] px-2.5 py-1 text-2xs text-text-muted transition hover:bg-[var(--chrome-highlight-strong)]"
                 >
                   Dismiss
                 </button>

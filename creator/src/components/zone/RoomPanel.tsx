@@ -251,7 +251,7 @@ export function RoomPanel({
       {/* Exits */}
       <Section title="Exits">
         {exits.length === 0 ? (
-          <p className="rounded-lg border border-dashed border-white/8 bg-black/6 px-3 py-2 text-center text-xs italic text-text-muted">No exits</p>
+          <p className="rounded-lg border border-dashed border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] px-3 py-2 text-center text-xs italic text-text-muted">No exits</p>
         ) : (
           <table className="w-full text-xs">
             <tbody>
@@ -334,7 +334,7 @@ export function RoomPanel({
         actions={<IconButton onClick={handleAddMob} title="Add mob">+</IconButton>}
       >
         {mobs.length === 0 ? (
-          <p className="rounded-lg border border-dashed border-white/8 bg-black/6 px-3 py-2 text-center text-xs italic text-text-muted">No mobs in this room</p>
+          <p className="rounded-lg border border-dashed border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] px-3 py-2 text-center text-xs italic text-text-muted">No mobs in this room</p>
         ) : (
           <ul className="flex flex-col gap-0.5">
             {mobs.map(([id, mob]) => (
@@ -363,7 +363,7 @@ export function RoomPanel({
         actions={<IconButton onClick={handleAddItem} title="Add item">+</IconButton>}
       >
         {items.length === 0 ? (
-          <p className="rounded-lg border border-dashed border-white/8 bg-black/6 px-3 py-2 text-center text-xs italic text-text-muted">No items in this room</p>
+          <p className="rounded-lg border border-dashed border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] px-3 py-2 text-center text-xs italic text-text-muted">No items in this room</p>
         ) : (
           <ul className="flex flex-col gap-0.5">
             {items.map(([id, item]) => (
@@ -392,7 +392,7 @@ export function RoomPanel({
         actions={<IconButton onClick={handleAddShop} title="Add shop">+</IconButton>}
       >
         {shops.length === 0 ? (
-          <p className="rounded-lg border border-dashed border-white/8 bg-black/6 px-3 py-2 text-center text-xs italic text-text-muted">No shops in this room</p>
+          <p className="rounded-lg border border-dashed border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] px-3 py-2 text-center text-xs italic text-text-muted">No shops in this room</p>
         ) : (
           <ul className="flex flex-col gap-0.5">
             {shops.map(([id, shop]) => (
@@ -421,7 +421,7 @@ export function RoomPanel({
         actions={<IconButton onClick={handleAddTrainer} title="Add trainer">+</IconButton>}
       >
         {trainers.length === 0 ? (
-          <p className="rounded-lg border border-dashed border-white/8 bg-black/6 px-3 py-2 text-center text-xs italic text-text-muted">No trainers in this room</p>
+          <p className="rounded-lg border border-dashed border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] px-3 py-2 text-center text-xs italic text-text-muted">No trainers in this room</p>
         ) : (
           <ul className="flex flex-col gap-0.5">
             {trainers.map(([id, trainer]) => (
@@ -454,7 +454,7 @@ export function RoomPanel({
         }
       >
         {gatheringNodes.length === 0 ? (
-          <p className="rounded-lg border border-dashed border-white/8 bg-black/6 px-3 py-2 text-center text-xs italic text-text-muted">No gathering nodes</p>
+          <p className="rounded-lg border border-dashed border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] px-3 py-2 text-center text-xs italic text-text-muted">No gathering nodes</p>
         ) : (
           <ul className="flex flex-col gap-0.5">
             {gatheringNodes.map(([id, node]) => (
@@ -477,7 +477,7 @@ export function RoomPanel({
       {/* Quests */}
       <Section title={`Quests (${quests.length})`} defaultExpanded={false}>
         {quests.length === 0 ? (
-          <p className="rounded-lg border border-dashed border-white/8 bg-black/6 px-3 py-2 text-center text-xs italic text-text-muted">No quests from this room</p>
+          <p className="rounded-lg border border-dashed border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] px-3 py-2 text-center text-xs italic text-text-muted">No quests from this room</p>
         ) : (
           <ul className="flex flex-col gap-0.5">
             {quests.map(([id, quest]) => (

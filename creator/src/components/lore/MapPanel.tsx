@@ -64,13 +64,13 @@ function ColorPalettePicker({
                 onClick={() => onChange(cl.color)}
                 className={`flex items-center gap-1.5 rounded px-1.5 py-0.5 text-2xs transition ${
                   value === cl.color
-                    ? "bg-white/10 text-text-primary"
-                    : "text-text-secondary hover:bg-white/5 hover:text-text-primary"
+                    ? "bg-[var(--chrome-highlight-strong)] text-text-primary"
+                    : "text-text-secondary hover:bg-[var(--chrome-highlight)] hover:text-text-primary"
                 }`}
                 title={cl.name}
               >
                 <span
-                  className="inline-block h-3 w-3 shrink-0 rounded-sm border border-white/20"
+                  className="inline-block h-3 w-3 shrink-0 rounded-sm border border-[var(--chrome-stroke-emphasis)]"
                   style={{ backgroundColor: cl.color }}
                 />
                 {editingId === cl.id ? (
@@ -111,7 +111,7 @@ function ColorPalettePicker({
                   updateColorLabel(cl.id, { color: e.target.value });
                   if (value === cl.color) onChange(e.target.value);
                 }}
-                className="h-10 w-10 shrink-0 cursor-pointer rounded-full border border-white/10 bg-transparent p-1 opacity-0 transition group-hover:opacity-100"
+                className="h-10 w-10 shrink-0 cursor-pointer rounded-full border border-[var(--chrome-stroke)] bg-transparent p-1 opacity-0 transition group-hover:opacity-100"
                 title="Change color"
               />
               <button
@@ -133,7 +133,7 @@ function ColorPalettePicker({
             type="color"
             value={newColor}
             onChange={(e) => setNewColor(e.target.value)}
-            className="h-11 w-11 shrink-0 cursor-pointer rounded-full border border-white/10 bg-transparent p-1"
+            className="h-11 w-11 shrink-0 cursor-pointer rounded-full border border-[var(--chrome-stroke)] bg-transparent p-1"
           />
           <input
             ref={nameRef}
@@ -171,7 +171,7 @@ function ColorPalettePicker({
           type="color"
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className="h-11 w-11 cursor-pointer rounded-full border border-white/10 bg-bg-primary p-1"
+          className="h-11 w-11 cursor-pointer rounded-full border border-[var(--chrome-stroke)] bg-bg-primary p-1"
         />
         <span className="text-2xs text-text-muted">Custom</span>
       </div>
@@ -252,7 +252,7 @@ function ArticleCombobox({
 
       {open && (
         <div className="absolute left-0 right-0 top-full z-50 mt-1 flex max-h-60 flex-col overflow-hidden rounded-lg border border-border-default bg-bg-secondary shadow-lg">
-          <div className="shrink-0 border-b border-white/6 p-1.5">
+          <div className="shrink-0 border-b border-[var(--chrome-stroke)] p-1.5">
             <input
               ref={inputRef}
               type="text"
@@ -266,7 +266,7 @@ function ArticleCombobox({
             <button
               onClick={() => { onChange(undefined); setOpen(false); setFilter(""); }}
               className={`w-full rounded px-2 py-1 text-left text-xs transition ${
-                !value ? "bg-white/10 text-text-primary" : "text-text-muted hover:bg-white/5 hover:text-text-secondary"
+                !value ? "bg-[var(--chrome-highlight-strong)] text-text-primary" : "text-text-muted hover:bg-[var(--chrome-highlight)] hover:text-text-secondary"
               }`}
             >
               Unmarked
@@ -282,8 +282,8 @@ function ArticleCombobox({
                     onClick={() => { onChange(a.id); setOpen(false); setFilter(""); }}
                     className={`w-full rounded px-2 py-1 text-left text-xs transition ${
                       value === a.id
-                        ? "bg-white/10 text-text-primary"
-                        : "text-text-secondary hover:bg-white/5 hover:text-text-primary"
+                        ? "bg-[var(--chrome-highlight-strong)] text-text-primary"
+                        : "text-text-secondary hover:bg-[var(--chrome-highlight)] hover:text-text-primary"
                     }`}
                   >
                     {a.title}
@@ -325,7 +325,7 @@ function PinEditor({
         <h4 className="font-display text-sm text-text-primary">Edit Pin</h4>
         <button
           onClick={onClose}
-          className="focus-ring flex h-11 w-11 items-center justify-center rounded-full text-xs text-text-muted hover:bg-white/6 hover:text-text-primary"
+          className="focus-ring flex h-11 w-11 items-center justify-center rounded-full text-xs text-text-muted hover:bg-[var(--chrome-highlight)] hover:text-text-primary"
         >
           Done
         </button>
@@ -597,7 +597,7 @@ export function MapPanel() {
           </div>
 
           {/* Pin sidebar */}
-          <div className="rounded-2xl border border-white/8 bg-black/12 p-4">
+          <div className="rounded-2xl border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] p-4">
             {selectedPinId && selectedMap ? (
               <PinEditor
                 map={selectedMap}

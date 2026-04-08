@@ -59,10 +59,10 @@ function VariantCard({ entry, assetsDir, onClick }: { entry: AssetEntry; assetsD
     <button
       onClick={onClick}
       className={`relative h-16 w-16 shrink-0 overflow-hidden rounded-2xl border-2 transition ${
-        entry.is_active ? "border-accent shadow-[0_0_0_1px_var(--border-accent-ring)]" : "border-white/12 hover:border-[var(--border-glow)]"
+        entry.is_active ? "border-accent shadow-[0_0_0_1px_var(--border-accent-ring)]" : "border-[var(--chrome-stroke-strong)] hover:border-[var(--border-glow)]"
       }`}
     >
-      {thumbSrc ? <img src={thumbSrc} alt="" loading="lazy" className="h-full w-full object-cover" /> : <div className="h-full w-full bg-white/6" />}
+      {thumbSrc ? <img src={thumbSrc} alt="" loading="lazy" className="h-full w-full object-cover" /> : <div className="h-full w-full bg-[var(--chrome-highlight)]" />}
     </button>
   );
 }
@@ -321,7 +321,7 @@ export function PortraitStudio({ selectedZoneId }: { selectedZoneId: string | nu
   }
 
   return (
-    <section className="rounded-3xl border border-white/10 bg-gradient-panel p-5 shadow-section">
+    <section className="rounded-3xl border border-[var(--chrome-stroke)] bg-gradient-panel p-5 shadow-section">
       <div className="mb-5 flex items-center justify-between gap-4">
         <div>
           <h2 className="font-display text-xl text-text-primary">Portrait studio</h2>
@@ -331,21 +331,21 @@ export function PortraitStudio({ selectedZoneId }: { selectedZoneId: string | nu
           <button
             onClick={generateTemplateAction}
             disabled={!hasLlmKey || generatingTemplate}
-            className="rounded-full border border-white/10 bg-white/6 px-4 py-2 text-xs font-medium text-text-primary transition enabled:hover:bg-white/10 disabled:opacity-50"
+            className="rounded-full border border-[var(--chrome-stroke)] bg-[var(--chrome-highlight)] px-4 py-2 text-xs font-medium text-text-primary transition enabled:hover:bg-[var(--chrome-highlight-strong)] disabled:opacity-50"
           >
             {generatingTemplate ? <span className="flex items-center gap-1.5"><Spinner />Generating template</span> : template ? "Regenerate template" : "Generate template"}
           </button>
           <button
             onClick={() => handleBatchGenerate("race")}
             disabled={!hasImageKey || batchGenerating !== null}
-            className="rounded-full border border-white/10 bg-white/6 px-4 py-2 text-xs font-medium text-text-primary transition enabled:hover:bg-white/10 disabled:opacity-50"
+            className="rounded-full border border-[var(--chrome-stroke)] bg-[var(--chrome-highlight)] px-4 py-2 text-xs font-medium text-text-primary transition enabled:hover:bg-[var(--chrome-highlight-strong)] disabled:opacity-50"
           >
             {batchGenerating === "race" ? <span className="flex items-center gap-1.5"><Spinner />Generating races</span> : "Generate all races"}
           </button>
           <button
             onClick={() => handleBatchGenerate("class")}
             disabled={!hasImageKey || batchGenerating !== null}
-            className="rounded-full border border-white/10 bg-white/6 px-4 py-2 text-xs font-medium text-text-primary transition enabled:hover:bg-white/10 disabled:opacity-50"
+            className="rounded-full border border-[var(--chrome-stroke)] bg-[var(--chrome-highlight)] px-4 py-2 text-xs font-medium text-text-primary transition enabled:hover:bg-[var(--chrome-highlight-strong)] disabled:opacity-50"
           >
             {batchGenerating === "class" ? <span className="flex items-center gap-1.5"><Spinner />Generating classes</span> : "Generate all classes"}
           </button>
@@ -353,12 +353,12 @@ export function PortraitStudio({ selectedZoneId }: { selectedZoneId: string | nu
       </div>
 
       {!selectedTarget ? (
-        <div className="rounded-2xl border border-dashed border-white/12 bg-black/12 px-4 py-8 text-sm text-text-muted">
+        <div className="rounded-2xl border border-dashed border-[var(--chrome-stroke-strong)] bg-[var(--chrome-fill)] px-4 py-8 text-sm text-text-muted">
           Define races or classes in config to start generating portraits.
         </div>
       ) : (
         <div className="grid gap-5 xl:grid-cols-[0.62fr_1.38fr]">
-          <div className="rounded-3xl border border-white/8 bg-black/12 p-4">
+          <div className="rounded-3xl border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] p-4">
             <div className="max-h-[44rem] overflow-y-auto pr-1">
               {(["race", "class"] as PortraitKind[]).map((kind) => (
                 <div key={kind} className="mb-4">
@@ -375,7 +375,7 @@ export function PortraitStudio({ selectedZoneId }: { selectedZoneId: string | nu
                           key={key}
                           onClick={() => setSelectedKey(key)}
                           className={`flex items-center gap-3 rounded-2xl border px-3 py-3 text-left transition ${
-                            selected ? "border-border-active bg-gradient-active" : "border-white/8 bg-black/10 hover:bg-white/8"
+                            selected ? "border-border-active bg-gradient-active" : "border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] hover:bg-[var(--chrome-highlight-strong)]"
                           }`}
                         >
                           <span className={`h-2.5 w-2.5 rounded-full ${target.image ? "bg-status-success" : "bg-text-muted/50"}`} />
@@ -394,9 +394,9 @@ export function PortraitStudio({ selectedZoneId }: { selectedZoneId: string | nu
 
           <div className="flex flex-col gap-5">
             {/* Preview row — wide horizontal card */}
-            <div className="rounded-3xl border border-white/8 bg-black/12 p-4">
+            <div className="rounded-3xl border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] p-4">
               <div className="flex gap-5">
-                <div className="flex shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-white/8 bg-[linear-gradient(180deg,rgba(34,41,60,0.8),rgba(28,34,52,0.88))] p-3" style={{ width: "12rem", height: "16rem" }}>
+                <div className="flex shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-[var(--chrome-stroke)] bg-[linear-gradient(180deg,rgba(34,41,60,0.8),rgba(28,34,52,0.88))] p-3" style={{ width: "12rem", height: "16rem" }}>
                   {selectedSrc ? <img src={selectedSrc} alt={selectedTarget.label} className="max-h-full max-w-full rounded-xl object-contain shadow-section" /> : <div className="text-center text-xs text-text-muted">No portrait yet</div>}
                 </div>
 
@@ -407,7 +407,7 @@ export function PortraitStudio({ selectedZoneId }: { selectedZoneId: string | nu
                       <h3 className="mt-0.5 font-display text-xl text-text-primary">{selectedTarget.label}</h3>
                       <div className="mt-0.5 text-xs text-text-secondary">{selectedTarget.id}</div>
                     </div>
-                    <span className="rounded-full bg-white/8 px-3 py-1 text-2xs uppercase tracking-label text-text-muted">{variants.length} variants</span>
+                    <span className="rounded-full bg-[var(--chrome-highlight-strong)] px-3 py-1 text-2xs uppercase tracking-label text-text-muted">{variants.length} variants</span>
                   </div>
 
                   {variants.length > 0 && (
@@ -425,7 +425,7 @@ export function PortraitStudio({ selectedZoneId }: { selectedZoneId: string | nu
             </div>
 
             {/* Prompt engineering — full width */}
-            <div className="rounded-3xl border border-white/8 bg-black/12 p-4">
+            <div className="rounded-3xl border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] p-4">
               <div className="mb-3 text-2xs uppercase tracking-ui text-text-muted">Prompt engineering</div>
 
               <div className="grid gap-4 lg:grid-cols-[1fr_1fr]">
@@ -433,18 +433,18 @@ export function PortraitStudio({ selectedZoneId }: { selectedZoneId: string | nu
                   value={promptDraft}
                   onChange={(event) => setPromptDraft(event.target.value)}
                   rows={8}
-                  className="w-full resize-y rounded-2xl border border-white/10 bg-surface-scrim px-4 py-3 font-mono text-xs leading-6 text-text-secondary outline-none transition focus:border-border-active focus-visible:ring-2 focus-visible:ring-border-active"
+                  className="w-full resize-y rounded-2xl border border-[var(--chrome-stroke)] bg-surface-scrim px-4 py-3 font-mono text-xs leading-6 text-text-secondary outline-none transition focus:border-border-active focus-visible:ring-2 focus-visible:ring-border-active"
                   placeholder="Generate a portrait prompt..."
                 />
 
                 <div className="flex flex-col gap-3">
                   {vibe && (
-                    <div className="rounded-2xl border border-white/8 bg-surface-scrim-light px-4 py-3">
+                    <div className="rounded-2xl border border-[var(--chrome-stroke)] bg-surface-scrim-light px-4 py-3">
                       <div className="text-2xs uppercase tracking-ui text-text-muted">Portrait vibe context</div>
                       <div className="mt-1.5 max-h-24 overflow-y-auto whitespace-pre-wrap text-xs leading-5 text-text-secondary">{vibe}</div>
                     </div>
                   )}
-                  <div className="rounded-2xl border border-white/8 bg-surface-scrim-light px-4 py-3">
+                  <div className="rounded-2xl border border-[var(--chrome-stroke)] bg-surface-scrim-light px-4 py-3">
                     <div className="text-2xs uppercase tracking-ui text-text-muted">Portrait context</div>
                     <div className="mt-1.5 max-h-24 overflow-y-auto whitespace-pre-wrap text-xs leading-5 text-text-secondary">{selectedTarget.context}</div>
                   </div>
@@ -454,7 +454,7 @@ export function PortraitStudio({ selectedZoneId }: { selectedZoneId: string | nu
               <div className="mt-4 flex flex-wrap gap-2">
                 <button
                   onClick={handleGeneratePrompt}
-                  className="rounded-full border border-white/10 bg-white/6 px-4 py-2 text-xs font-medium text-text-primary transition hover:bg-white/10"
+                  className="rounded-full border border-[var(--chrome-stroke)] bg-[var(--chrome-highlight)] px-4 py-2 text-xs font-medium text-text-primary transition hover:bg-[var(--chrome-highlight-strong)]"
                 >
                   Generate prompt
                 </button>

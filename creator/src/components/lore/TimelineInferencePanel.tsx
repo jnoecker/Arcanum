@@ -88,7 +88,7 @@ export function TimelineInferencePanel() {
       {error && <p className="mb-3 text-xs text-status-danger">{error}</p>}
 
       {suggestions.length > 0 && visible.length === 0 && !loading && (
-        <p className="rounded-2xl border border-dashed border-white/10 bg-black/10 px-4 py-6 text-sm text-text-muted">
+        <p className="rounded-2xl border border-dashed border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] px-4 py-6 text-sm text-text-muted">
           All suggestions processed. {accepted.size} accepted.
         </p>
       )}
@@ -100,16 +100,16 @@ export function TimelineInferencePanel() {
             return (
               <div
                 key={i}
-                className="rounded-xl border border-white/8 bg-black/10 px-4 py-3"
+                className="rounded-xl border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] px-4 py-3"
               >
                 <div className="mb-1 flex flex-wrap items-center gap-2">
                   <span className="text-xs font-medium text-text-primary">
                     {s.title}
                   </span>
-                  <span className="rounded bg-white/10 px-1.5 py-0.5 text-3xs text-text-muted">
+                  <span className="rounded bg-[var(--chrome-highlight-strong)] px-1.5 py-0.5 text-3xs text-text-muted">
                     Year {s.year}
                   </span>
-                  <span className="rounded bg-white/10 px-1.5 py-0.5 text-3xs text-text-muted">
+                  <span className="rounded bg-[var(--chrome-highlight-strong)] px-1.5 py-0.5 text-3xs text-text-muted">
                     {s.eraName}
                   </span>
                   <span
@@ -117,8 +117,8 @@ export function TimelineInferencePanel() {
                       s.importance === "legendary"
                         ? "bg-accent/20 text-accent"
                         : s.importance === "major"
-                          ? "bg-white/10 text-text-primary"
-                          : "bg-white/5 text-text-muted"
+                          ? "bg-[var(--chrome-highlight-strong)] text-text-primary"
+                          : "bg-[var(--chrome-highlight)] text-text-muted"
                     }`}
                   >
                     {s.importance}
@@ -145,7 +145,7 @@ export function TimelineInferencePanel() {
                       onClick={() =>
                         setDismissed((prev) => new Set(prev).add(i))
                       }
-                      className="rounded-full border border-white/8 px-2.5 py-1 text-2xs text-text-muted hover:bg-white/8"
+                      className="rounded-full border border-[var(--chrome-stroke)] px-2.5 py-1 text-2xs text-text-muted hover:bg-[var(--chrome-highlight-strong)]"
                     >
                       Dismiss
                     </button>

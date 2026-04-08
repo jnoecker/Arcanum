@@ -3,7 +3,7 @@ import { useAdminStore } from "@/stores/adminStore";
 
 const Section = memo(function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-3xl border border-white/10 bg-gradient-panel-light p-4 shadow-section">
+    <div className="rounded-3xl border border-[var(--chrome-stroke)] bg-gradient-panel-light p-4 shadow-section">
       <h4 className="mb-2 text-2xs uppercase tracking-wide-ui text-text-muted">{title}</h4>
       {children}
     </div>
@@ -12,7 +12,7 @@ const Section = memo(function Section({ title, children }: { title: string; chil
 
 const StatRow = memo(function StatRow({ label, value, valueClass }: { label: string; value: string | number; valueClass?: string }) {
   return (
-    <div className="flex items-center justify-between border-b border-white/6 py-2 last:border-b-0">
+    <div className="flex items-center justify-between border-b border-[var(--chrome-stroke)] py-2 last:border-b-0">
       <span className="text-xs capitalize text-text-muted">{label}</span>
       <span className={`text-xs ${valueClass ?? "text-text-primary"}`}>{value}</span>
     </div>
@@ -24,11 +24,11 @@ const HpBar = memo(function HpBar({ label, current, max }: { label: string; curr
   const pct = Math.round((current / max) * 100);
   const color = pct > 60 ? "bg-status-success" : pct > 25 ? "bg-status-warning" : "bg-status-error";
   return (
-    <div className="flex items-center justify-between border-b border-white/6 py-2 last:border-b-0">
+    <div className="flex items-center justify-between border-b border-[var(--chrome-stroke)] py-2 last:border-b-0">
       <span className="text-xs text-text-muted">{label}</span>
       <div className="flex items-center gap-2">
         <div
-          className="h-1.5 w-16 overflow-hidden rounded-full bg-white/10"
+          className="h-1.5 w-16 overflow-hidden rounded-full bg-[var(--chrome-highlight-strong)]"
           role="progressbar"
           aria-valuenow={current}
           aria-valuemin={0}
@@ -60,7 +60,7 @@ export function AdminRoomDetail() {
       <div className="flex items-center gap-3">
         <button
           onClick={clearSelectedRoom}
-          className="rounded-full border border-white/10 bg-black/10 px-3 py-1 text-xs text-text-muted transition hover:bg-white/10 hover:text-text-primary focus-visible:ring-2 focus-visible:ring-border-active focus-visible:outline-none"
+          className="rounded-full border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] px-3 py-1 text-xs text-text-muted transition hover:bg-[var(--chrome-highlight-strong)] hover:text-text-primary focus-visible:ring-2 focus-visible:ring-border-active focus-visible:outline-none"
         >
           &#x2190; Back
         </button>
@@ -69,7 +69,7 @@ export function AdminRoomDetail() {
           <p className="mt-0.5 font-mono text-2xs text-text-muted">{room.id}</p>
         </div>
         {hasCoords && (
-          <span className="shrink-0 rounded-full bg-black/15 px-2.5 py-0.5 font-mono text-2xs text-text-muted">
+          <span className="shrink-0 rounded-full bg-[var(--chrome-fill)] px-2.5 py-0.5 font-mono text-2xs text-text-muted">
             ({room.mapX}, {room.mapY})
           </span>
         )}
@@ -77,7 +77,7 @@ export function AdminRoomDetail() {
 
       {/* Description */}
       {room.description && (
-        <div className="rounded-3xl border border-white/10 bg-gradient-panel-light p-4 shadow-section">
+        <div className="rounded-3xl border border-[var(--chrome-stroke)] bg-gradient-panel-light p-4 shadow-section">
           <p className="text-sm leading-6 text-text-secondary">{room.description}</p>
         </div>
       )}
@@ -90,7 +90,7 @@ export function AdminRoomDetail() {
               {room.exits.map((exit) => (
                 <div
                   key={exit.direction}
-                  className="flex items-center justify-between border-b border-white/6 py-2 last:border-b-0"
+                  className="flex items-center justify-between border-b border-[var(--chrome-stroke)] py-2 last:border-b-0"
                 >
                   <span className="text-xs font-medium text-stellar-blue">{exit.direction}</span>
                   <span className="font-mono text-xs text-text-secondary">{exit.target}</span>
@@ -147,7 +147,7 @@ export function AdminRoomDetail() {
             {room.features.map((feature) => (
               <span
                 key={feature}
-                className="rounded-full bg-black/15 px-2.5 py-1 text-2xs text-text-muted"
+                className="rounded-full bg-[var(--chrome-fill)] px-2.5 py-1 text-2xs text-text-muted"
               >
                 {feature}
               </span>

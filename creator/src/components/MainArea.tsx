@@ -12,10 +12,10 @@ class PanelErrorBoundary extends Component<{ children: ReactNode }, { error: Err
       return (
         <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-4 p-8">
           <h2 className="font-display text-lg text-status-error">Panel Crashed</h2>
-          <pre className="max-w-2xl overflow-auto rounded-lg border border-status-error/30 bg-black/30 p-4 text-xs text-text-secondary">
+          <pre className="max-w-2xl overflow-auto rounded-lg border border-status-error/30 bg-[var(--chrome-fill-strong)] p-4 text-xs text-text-secondary">
             {this.state.error.message}{"\n"}{this.state.error.stack}
           </pre>
-          <button onClick={() => this.setState({ error: null })} className="rounded-full border border-white/10 px-4 py-2 text-xs text-accent hover:bg-accent/10">
+          <button onClick={() => this.setState({ error: null })} className="rounded-full border border-[var(--chrome-stroke)] px-4 py-2 text-xs text-accent hover:bg-accent/10">
             Try Again
           </button>
         </div>

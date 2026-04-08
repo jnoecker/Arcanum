@@ -310,7 +310,7 @@ export function MudImportWizard({ onClose }: { onClose: () => void }) {
       titleId="mud-import-title"
       title="Import MUD Zone"
       subtitle="Convert DikuMUD / CircleMUD / ROM / SMAUG area files to Ambon format using AI"
-      status={<span className="rounded-full border border-white/10 bg-black/10 px-2.5 py-1 text-2xs text-text-secondary">Step {stepLabel}</span>}
+      status={<span className="rounded-full border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] px-2.5 py-1 text-2xs text-text-secondary">Step {stepLabel}</span>}
       widthClassName="max-w-3xl"
       onClose={converting ? undefined : onClose}
       footer={
@@ -401,7 +401,7 @@ export function MudImportWizard({ onClose }: { onClose: () => void }) {
               {files.map((file, idx) => (
                 <label
                   key={file.path}
-                  className="flex items-center gap-3 rounded-lg border border-white/6 px-3 py-2 transition hover:border-white/12 hover:bg-white/3 cursor-pointer"
+                  className="flex items-center gap-3 rounded-lg border border-[var(--chrome-stroke)] px-3 py-2 transition hover:border-[var(--chrome-stroke-strong)] hover:bg-white/3 cursor-pointer"
                 >
                   <input
                     type="checkbox"
@@ -450,7 +450,7 @@ export function MudImportWizard({ onClose }: { onClose: () => void }) {
           </div>
 
           {chunkEstimate && (
-            <div className="rounded-lg border border-white/8 bg-white/3 p-3">
+            <div className="rounded-lg border border-[var(--chrome-stroke)] bg-white/3 p-3">
               <p className="text-xs font-medium text-text-secondary">Conversion Plan</p>
               <div className="mt-2 grid grid-cols-2 gap-x-6 gap-y-1 text-xs text-text-muted">
                 {(Object.entries(chunkEstimate.byType) as [MudFileType, number][])
@@ -483,7 +483,7 @@ export function MudImportWizard({ onClose }: { onClose: () => void }) {
               <span>Progress</span>
               <span>{doneChunks + errorChunks} / {totalChunks}</span>
             </div>
-            <div className="h-2 rounded-full bg-white/8 overflow-hidden">
+            <div className="h-2 rounded-full bg-[var(--chrome-highlight-strong)] overflow-hidden">
               <div
                 className="h-full rounded-full bg-accent transition-[width] duration-300"
                 style={{ width: `${totalChunks > 0 ? ((doneChunks + errorChunks) / totalChunks) * 100 : 0}%` }}
@@ -517,7 +517,7 @@ export function MudImportWizard({ onClose }: { onClose: () => void }) {
           </div>
 
           {/* Log */}
-          <div className="max-h-48 overflow-y-auto rounded-lg border border-white/6 bg-black/20 p-3 font-mono text-2xs text-text-muted">
+          <div className="max-h-48 overflow-y-auto rounded-lg border border-[var(--chrome-stroke)] bg-[var(--chrome-fill-strong)] p-3 font-mono text-2xs text-text-muted">
             {conversionLog.map((line, i) => (
               <div key={i}>{line}</div>
             ))}
@@ -547,7 +547,7 @@ export function MudImportWizard({ onClose }: { onClose: () => void }) {
           {/* Stats */}
           <div className="grid grid-cols-4 gap-3">
             {([["Rooms", importResult.stats.rooms], ["Mobs", importResult.stats.mobs], ["Items", importResult.stats.items], ["Shops", importResult.stats.shops]] as const).map(([label, count]) => (
-              <div key={label} className="rounded-lg border border-white/8 bg-white/3 p-3 text-center">
+              <div key={label} className="rounded-lg border border-[var(--chrome-stroke)] bg-white/3 p-3 text-center">
                 <div className="text-lg font-display text-text-primary">{count}</div>
                 <div className="text-2xs text-text-muted">{label}</div>
               </div>
@@ -560,7 +560,7 @@ export function MudImportWizard({ onClose }: { onClose: () => void }) {
               <summary className="cursor-pointer text-xs text-status-warning hover:text-status-warning">
                 {importResult.warnings.length} warning{importResult.warnings.length !== 1 ? "s" : ""} — click to expand
               </summary>
-              <div className="mt-2 max-h-36 overflow-y-auto rounded-lg border border-white/6 bg-black/20 p-3 text-2xs text-text-muted space-y-0.5">
+              <div className="mt-2 max-h-36 overflow-y-auto rounded-lg border border-[var(--chrome-stroke)] bg-[var(--chrome-fill-strong)] p-3 text-2xs text-text-muted space-y-0.5">
                 {importResult.warnings.map((w, i) => (
                   <div key={i}>{w}</div>
                 ))}
@@ -573,7 +573,7 @@ export function MudImportWizard({ onClose }: { onClose: () => void }) {
             <summary className="cursor-pointer text-xs text-text-secondary hover:text-text-primary">
               Preview generated YAML
             </summary>
-            <pre className="mt-2 max-h-64 overflow-auto rounded-lg border border-white/6 bg-black/20 p-3 font-mono text-2xs text-text-muted whitespace-pre-wrap">
+            <pre className="mt-2 max-h-64 overflow-auto rounded-lg border border-[var(--chrome-stroke)] bg-[var(--chrome-fill-strong)] p-3 font-mono text-2xs text-text-muted whitespace-pre-wrap">
               {importResult.yaml}
             </pre>
           </details>

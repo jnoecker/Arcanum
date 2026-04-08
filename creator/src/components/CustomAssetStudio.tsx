@@ -79,13 +79,13 @@ function VariantCard({
       className={`relative h-16 w-16 shrink-0 overflow-hidden rounded-2xl border-2 transition ${
         entry.is_active
           ? "border-accent shadow-[0_0_0_1px_var(--border-accent-ring)]"
-          : "border-white/12 hover:border-[var(--border-glow)]"
+          : "border-[var(--chrome-stroke-strong)] hover:border-[var(--border-glow)]"
       }`}
     >
       {thumbSrc ? (
         <img src={thumbSrc} alt="" loading="lazy" className="h-full w-full object-cover" />
       ) : (
-        <div className="h-full w-full bg-white/6" />
+        <div className="h-full w-full bg-[var(--chrome-highlight)]" />
       )}
     </button>
   );
@@ -342,7 +342,7 @@ export function CustomAssetStudio({ selectedZoneId }: { selectedZoneId: string |
   };
 
   return (
-    <section className="rounded-3xl border border-white/10 bg-gradient-panel p-5 shadow-section">
+    <section className="rounded-3xl border border-[var(--chrome-stroke)] bg-gradient-panel p-5 shadow-section">
       <div className="mb-4">
         <h2 className="font-display text-xl text-text-primary">Custom asset studio</h2>
         <p className="mt-1 text-sm text-text-secondary">
@@ -359,7 +359,7 @@ export function CustomAssetStudio({ selectedZoneId }: { selectedZoneId: string |
                 value={title}
                 onChange={(event) => setTitle(event.target.value)}
                 placeholder="Moonwell loading vignette"
-                className="w-full rounded-2xl border border-white/10 bg-surface-scrim px-4 py-3 text-sm text-text-primary outline-none transition focus:border-border-active focus-visible:ring-2 focus-visible:ring-border-active"
+                className="w-full rounded-2xl border border-[var(--chrome-stroke)] bg-surface-scrim px-4 py-3 text-sm text-text-primary outline-none transition focus:border-border-active focus-visible:ring-2 focus-visible:ring-border-active"
               />
             </div>
             <div>
@@ -368,7 +368,7 @@ export function CustomAssetStudio({ selectedZoneId }: { selectedZoneId: string |
                 value={globalAssetKey}
                 onChange={(event) => setGlobalAssetKey(event.target.value)}
                 placeholder="loading_moonwell"
-                className="w-full rounded-2xl border border-white/10 bg-surface-scrim px-4 py-3 text-sm text-text-primary outline-none transition focus:border-border-active focus-visible:ring-2 focus-visible:ring-border-active"
+                className="w-full rounded-2xl border border-[var(--chrome-stroke)] bg-surface-scrim px-4 py-3 text-sm text-text-primary outline-none transition focus:border-border-active focus-visible:ring-2 focus-visible:ring-border-active"
               />
             </div>
           </div>
@@ -379,7 +379,7 @@ export function CustomAssetStudio({ selectedZoneId }: { selectedZoneId: string |
               <select
                 value={assetType}
                 onChange={(event) => setAssetType(event.target.value as AssetType)}
-                className="w-full rounded-2xl border border-white/10 bg-surface-scrim px-4 py-3 text-sm text-text-primary outline-none transition focus:border-border-active focus-visible:ring-2 focus-visible:ring-border-active"
+                className="w-full rounded-2xl border border-[var(--chrome-stroke)] bg-surface-scrim px-4 py-3 text-sm text-text-primary outline-none transition focus:border-border-active focus-visible:ring-2 focus-visible:ring-border-active"
               >
                 {CUSTOM_ASSET_TYPES.map((type) => (
                   <option key={type} value={type}>
@@ -393,7 +393,7 @@ export function CustomAssetStudio({ selectedZoneId }: { selectedZoneId: string |
               <select
                 value={zoneId}
                 onChange={(event) => setZoneId(event.target.value)}
-                className="w-full rounded-2xl border border-white/10 bg-surface-scrim px-4 py-3 text-sm text-text-primary outline-none transition focus:border-border-active focus-visible:ring-2 focus-visible:ring-border-active"
+                className="w-full rounded-2xl border border-[var(--chrome-stroke)] bg-surface-scrim px-4 py-3 text-sm text-text-primary outline-none transition focus:border-border-active focus-visible:ring-2 focus-visible:ring-border-active"
               >
                 <option value="">No zone context</option>
                 {zoneOptions.map((zone) => (
@@ -415,12 +415,12 @@ export function CustomAssetStudio({ selectedZoneId }: { selectedZoneId: string |
               }}
               rows={5}
               placeholder="Describe the asset you want. The generator will translate it into your world's visual style."
-              className="w-full resize-y rounded-2xl border border-white/10 bg-surface-scrim px-4 py-3 text-sm leading-6 text-text-secondary outline-none transition focus:border-border-active focus-visible:ring-2 focus-visible:ring-border-active"
+              className="w-full resize-y rounded-2xl border border-[var(--chrome-stroke)] bg-surface-scrim px-4 py-3 text-sm leading-6 text-text-secondary outline-none transition focus:border-border-active focus-visible:ring-2 focus-visible:ring-border-active"
             />
           </div>
 
           {zoneVibe && (
-            <div className="rounded-2xl border border-white/8 bg-surface-scrim-light px-4 py-3">
+            <div className="rounded-2xl border border-[var(--chrome-stroke)] bg-surface-scrim-light px-4 py-3">
               <div className="text-2xs uppercase tracking-ui text-text-muted">Selected zone vibe</div>
               <div className="mt-2 whitespace-pre-wrap text-xs leading-6 text-text-secondary">{zoneVibe}</div>
             </div>
@@ -435,7 +435,7 @@ export function CustomAssetStudio({ selectedZoneId }: { selectedZoneId: string |
                 setPromptGeneratedByLlm(false);
               }}
               rows={10}
-              className="w-full resize-y rounded-2xl border border-white/10 bg-surface-scrim px-4 py-3 font-mono text-xs leading-6 text-text-secondary outline-none transition focus:border-border-active focus-visible:ring-2 focus-visible:ring-border-active"
+              className="w-full resize-y rounded-2xl border border-[var(--chrome-stroke)] bg-surface-scrim px-4 py-3 font-mono text-xs leading-6 text-text-secondary outline-none transition focus:border-border-active focus-visible:ring-2 focus-visible:ring-border-active"
               placeholder="Generate a prompt from your brief..."
             />
           </div>
@@ -444,7 +444,7 @@ export function CustomAssetStudio({ selectedZoneId }: { selectedZoneId: string |
             <button
               onClick={handleGeneratePrompt}
               disabled={!hasLlmKey || !description.trim() || generatingPrompt || generatingImage || batchGenerating}
-              className="rounded-full border border-white/10 bg-white/6 px-4 py-2 text-xs font-medium text-text-primary transition enabled:hover:bg-white/10 disabled:opacity-50"
+              className="rounded-full border border-[var(--chrome-stroke)] bg-[var(--chrome-highlight)] px-4 py-2 text-xs font-medium text-text-primary transition enabled:hover:bg-[var(--chrome-highlight-strong)] disabled:opacity-50"
             >
               {generatingPrompt ? <span className="flex items-center gap-1.5"><Spinner />Generating prompt</span> : "Generate prompt"}
             </button>
@@ -458,14 +458,14 @@ export function CustomAssetStudio({ selectedZoneId }: { selectedZoneId: string |
             <button
               onClick={handleGenerateFour}
               disabled={!hasImageKey || !promptDraft.trim() || generatingPrompt || generatingImage || batchGenerating}
-              className="rounded-full border border-white/10 bg-white/6 px-4 py-2 text-xs font-medium text-text-primary transition enabled:hover:bg-white/10 disabled:opacity-50"
+              className="rounded-full border border-[var(--chrome-stroke)] bg-[var(--chrome-highlight)] px-4 py-2 text-xs font-medium text-text-primary transition enabled:hover:bg-[var(--chrome-highlight-strong)] disabled:opacity-50"
             >
               {batchGenerating ? <span className="flex items-center gap-1.5"><Spinner />Generating 4</span> : "Generate 4"}
             </button>
             <button
               onClick={handleImport}
               disabled={importing || generatingPrompt || generatingImage || batchGenerating}
-              className="rounded-full border border-white/10 bg-white/6 px-4 py-2 text-xs font-medium text-text-primary transition enabled:hover:bg-white/10 disabled:opacity-50"
+              className="rounded-full border border-[var(--chrome-stroke)] bg-[var(--chrome-highlight)] px-4 py-2 text-xs font-medium text-text-primary transition enabled:hover:bg-[var(--chrome-highlight-strong)] disabled:opacity-50"
             >
               {importing ? <span className="flex items-center gap-1.5"><Spinner />Importing</span> : "Import image"}
             </button>
@@ -476,7 +476,7 @@ export function CustomAssetStudio({ selectedZoneId }: { selectedZoneId: string |
           )}
         </div>
 
-        <div className="rounded-3xl border border-white/8 bg-black/12 p-4">
+        <div className="rounded-3xl border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] p-4">
           <div className="mb-3 flex items-start justify-between gap-3">
             <div>
               <div className="text-2xs uppercase tracking-ui text-text-muted">Preview</div>
@@ -485,12 +485,12 @@ export function CustomAssetStudio({ selectedZoneId }: { selectedZoneId: string |
                 {globalAssetKey.trim() ? `images.globalAssets.${slugify(globalAssetKey)}` : "Library-only asset"}
               </div>
             </div>
-            <span className="rounded-full bg-white/8 px-3 py-1 text-2xs uppercase tracking-label text-text-muted">
+            <span className="rounded-full bg-[var(--chrome-highlight-strong)] px-3 py-1 text-2xs uppercase tracking-label text-text-muted">
               {variants.length} variants
             </span>
           </div>
 
-          <div className="flex min-h-[22rem] items-center justify-center overflow-hidden rounded-2xl border border-white/8 bg-[linear-gradient(180deg,rgba(34,41,60,0.8),rgba(28,34,52,0.88))] p-4">
+          <div className="flex min-h-[22rem] items-center justify-center overflow-hidden rounded-2xl border border-[var(--chrome-stroke)] bg-[linear-gradient(180deg,rgba(34,41,60,0.8),rgba(28,34,52,0.88))] p-4">
             {previewSrc ? (
               <img src={previewSrc} alt={title || "Custom asset"} className="max-h-[30rem] max-w-full rounded-2xl object-contain shadow-section" />
             ) : (
@@ -498,7 +498,7 @@ export function CustomAssetStudio({ selectedZoneId }: { selectedZoneId: string |
             )}
           </div>
 
-          <div className="mt-3 rounded-2xl border border-white/8 bg-surface-scrim-light px-4 py-3">
+          <div className="mt-3 rounded-2xl border border-[var(--chrome-stroke)] bg-surface-scrim-light px-4 py-3">
             <div className="text-2xs uppercase tracking-ui text-text-muted">Registration</div>
             <div className="mt-2 text-xs leading-6 text-text-secondary">
               {globalAssetKey.trim()

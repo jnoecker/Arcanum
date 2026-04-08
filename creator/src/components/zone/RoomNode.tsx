@@ -69,7 +69,7 @@ function SpriteThumb({ sprite }: { sprite: EntitySprite }) {
       src={src}
       alt={sprite.name}
       title={`${sprite.kind}: ${sprite.name}`}
-      className="h-6 w-6 rounded-sm border border-white/20 object-cover"
+      className="h-6 w-6 rounded-sm border border-[var(--chrome-stroke-emphasis)] object-cover"
     />
   );
 }

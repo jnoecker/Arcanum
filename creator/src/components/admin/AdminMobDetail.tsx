@@ -3,7 +3,7 @@ import { useAdminStore } from "@/stores/adminStore";
 
 const Section = memo(function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-3xl border border-white/10 bg-gradient-panel-light p-4 shadow-section">
+    <div className="rounded-3xl border border-[var(--chrome-stroke)] bg-gradient-panel-light p-4 shadow-section">
       <h4 className="mb-2 text-2xs uppercase tracking-wide-ui text-text-muted">{title}</h4>
       {children}
     </div>
@@ -12,7 +12,7 @@ const Section = memo(function Section({ title, children }: { title: string; chil
 
 const StatRow = memo(function StatRow({ label, value, valueClass }: { label: string; value: string | number; valueClass?: string }) {
   return (
-    <div className="flex items-center justify-between border-b border-white/6 py-2 last:border-b-0">
+    <div className="flex items-center justify-between border-b border-[var(--chrome-stroke)] py-2 last:border-b-0">
       <span className="text-xs capitalize text-text-muted">{label}</span>
       <span className={`text-xs ${valueClass ?? "text-text-primary"}`}>{value}</span>
     </div>
@@ -34,11 +34,11 @@ const VitalBar = memo(function VitalBar({
 }) {
   const pct = max > 0 ? Math.round((current / max) * 100) : 0;
   return (
-    <div className="flex items-center justify-between border-b border-white/6 py-2 last:border-b-0">
+    <div className="flex items-center justify-between border-b border-[var(--chrome-stroke)] py-2 last:border-b-0">
       <span className="text-xs text-text-muted">{label}</span>
       <div className="flex items-center gap-2">
         <div
-          className="h-1.5 w-14 overflow-hidden rounded-full bg-white/10"
+          className="h-1.5 w-14 overflow-hidden rounded-full bg-[var(--chrome-highlight-strong)]"
           role="progressbar"
           aria-valuenow={current}
           aria-valuemin={0}
@@ -70,7 +70,7 @@ export function AdminMobDetail() {
       <div className="flex items-center gap-3">
         <button
           onClick={clearSelectedMob}
-          className="rounded-full border border-white/10 bg-black/10 px-3 py-1 text-xs text-text-muted transition hover:bg-white/10 hover:text-text-primary focus-visible:ring-2 focus-visible:ring-border-active focus-visible:outline-none"
+          className="rounded-full border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] px-3 py-1 text-xs text-text-muted transition hover:bg-[var(--chrome-highlight-strong)] hover:text-text-primary focus-visible:ring-2 focus-visible:ring-border-active focus-visible:outline-none"
         >
           &#x2190; Back
         </button>

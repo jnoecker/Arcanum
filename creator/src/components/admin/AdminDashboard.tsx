@@ -151,8 +151,8 @@ export function AdminDashboard() {
       <div className="relative z-10 min-h-0 flex-1 overflow-y-auto">
         <div id="admin-panel" role="tabpanel" aria-labelledby={`admin-tab-${adminSubView}`} className="mx-auto w-full max-w-5xl px-6 py-4 pb-8">
           {!isConnected ? (
-            <div className="flex flex-col items-center gap-6 rounded-3xl border border-white/8 bg-gradient-panel px-8 py-16 text-center shadow-section">
-              <div className="flex h-14 w-14 items-center justify-center rounded-full border border-white/10 bg-black/20">
+            <div className="flex flex-col items-center gap-6 rounded-3xl border border-[var(--chrome-stroke)] bg-gradient-panel px-8 py-16 text-center shadow-section">
+              <div className="flex h-14 w-14 items-center justify-center rounded-full border border-[var(--chrome-stroke)] bg-[var(--chrome-fill-strong)]">
                 <div className="h-3 w-3 rounded-full bg-server-stopped" />
               </div>
               <div>
@@ -166,21 +166,21 @@ export function AdminDashboard() {
 
               {/* Setup guidance */}
               <div className="mt-2 grid max-w-lg gap-3 text-left">
-                <div className="rounded-2xl border border-white/8 bg-white/[0.03] px-4 py-3">
+                <div className="rounded-2xl border border-[var(--chrome-stroke)] bg-[var(--chrome-highlight)] px-4 py-3">
                   <p className="text-2xs uppercase tracking-ui text-text-muted">1. Start the admin server</p>
                   <p className="mt-1 text-xs leading-5 text-text-secondary">
                     Set <span className="font-mono text-stellar-blue">ambonmud.admin.enabled: true</span> and
                     a <span className="font-mono text-stellar-blue">token</span> in your server config.
                   </p>
                 </div>
-                <div className="rounded-2xl border border-white/8 bg-white/[0.03] px-4 py-3">
+                <div className="rounded-2xl border border-[var(--chrome-stroke)] bg-[var(--chrome-highlight)] px-4 py-3">
                   <p className="text-2xs uppercase tracking-ui text-text-muted">2. Connect from here</p>
                   <p className="mt-1 text-xs leading-5 text-text-secondary">
                     Enter the admin URL (default <span className="font-mono text-text-muted">http://localhost:9091</span>) and
                     the token you configured.
                   </p>
                 </div>
-                <div className="rounded-2xl border border-white/8 bg-white/[0.03] px-4 py-3">
+                <div className="rounded-2xl border border-[var(--chrome-stroke)] bg-[var(--chrome-highlight)] px-4 py-3">
                   <p className="text-2xs uppercase tracking-ui text-text-muted">3. Observe and reshape</p>
                   <p className="mt-1 text-xs leading-5 text-text-secondary">
                     Monitor players, inspect zones, and hot-reload world data without restarting the server.

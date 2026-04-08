@@ -6,7 +6,7 @@ const ShopRow = memo(function ShopRow({ shop }: { shop: ShopEntry }) {
   const [expanded, setExpanded] = useState(false);
 
   return (
-    <div className="rounded-2xl border border-white/8 bg-white/4 transition-colors duration-200">
+    <div className="rounded-2xl border border-[var(--chrome-stroke)] bg-[var(--chrome-highlight)] transition-colors duration-200">
       <button
         onClick={() => setExpanded(!expanded)}
         className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors duration-200 hover:bg-accent/[0.04] focus-visible:ring-2 focus-visible:ring-border-active focus-visible:outline-none rounded-2xl"
@@ -32,12 +32,12 @@ const ShopRow = memo(function ShopRow({ shop }: { shop: ShopEntry }) {
       </button>
 
       {expanded && shop.items.length > 0 && (
-        <div className="border-t border-white/6 px-4 pb-3 pt-2">
+        <div className="border-t border-[var(--chrome-stroke)] px-4 pb-3 pt-2">
           <div className="flex flex-col gap-1">
             {shop.items.map((item) => (
               <div
                 key={item.id}
-                className="flex items-center justify-between rounded-xl bg-white/[0.02] px-3 py-2"
+                className="flex items-center justify-between rounded-xl bg-[var(--chrome-highlight)] px-3 py-2"
               >
                 <div className="flex items-center gap-2">
                   <span className="text-xs text-text-primary">{item.displayName}</span>
@@ -82,7 +82,7 @@ export function AdminShopList() {
       </div>
 
       {shops.length === 0 ? (
-        <div className="rounded-3xl border border-dashed border-white/12 bg-white/4 px-6 py-12 text-center">
+        <div className="rounded-3xl border border-dashed border-[var(--chrome-stroke-strong)] bg-[var(--chrome-highlight)] px-6 py-12 text-center">
           <p className="font-display text-base text-text-secondary">No shops found</p>
           <p className="mt-1 text-sm text-text-muted">
             The server has no shops registered.

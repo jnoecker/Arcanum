@@ -41,7 +41,7 @@ interface StepState {
 const EXPORT_DIR_KEY = "arcanum-runtime-export-dir";
 
 const STATUS_STYLES: Record<StepStatus, string> = {
-  idle: "border-white/10 bg-black/10 text-text-secondary",
+  idle: "border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] text-text-secondary",
   running: "border-border-active bg-status-info/15 text-text-primary",
   success: "border-status-success/30 bg-status-success/10 text-status-success",
   warning: "border-status-warning/30 bg-status-warning/10 text-status-warning",
@@ -73,7 +73,7 @@ function StepCard({
   children?: ReactNode;
 }) {
   return (
-    <section className="rounded-3xl border border-white/10 bg-gradient-panel-light p-4 shadow-section">
+    <section className="rounded-3xl border border-[var(--chrome-stroke)] bg-gradient-panel-light p-4 shadow-section">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <h3 className="font-display text-xl text-text-primary">{title}</h3>
@@ -90,7 +90,7 @@ function StepCard({
         <button
           onClick={() => void onAction()}
           disabled={disabled || state.status === "running"}
-          className="rounded-full border border-white/10 bg-black/10 px-4 py-2 text-xs font-medium text-text-primary transition enabled:hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40"
+          className="rounded-full border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] px-4 py-2 text-xs font-medium text-text-primary transition enabled:hover:bg-[var(--chrome-highlight-strong)] disabled:cursor-not-allowed disabled:opacity-40"
         >
           {state.status === "running" ? "Working..." : actionLabel}
         </button>
@@ -98,7 +98,7 @@ function StepCard({
       </div>
 
       {state.errors.length > 0 && (
-        <div className="mt-3 rounded-2xl border border-status-error/20 bg-black/10 p-3 text-2xs text-status-error">
+        <div className="mt-3 rounded-2xl border border-status-error/20 bg-[var(--chrome-fill)] p-3 text-2xs text-status-error">
           {state.errors.slice(0, 5).map((error, index) => (
             <div key={index}>{error}</div>
           ))}
@@ -499,7 +499,7 @@ export function RuntimeHandoffStudio() {
 
   if (!project || !config) {
     return (
-      <div className="rounded-3xl border border-white/10 bg-black/10 p-5 text-sm text-text-secondary">
+      <div className="rounded-3xl border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] p-5 text-sm text-text-secondary">
         Open a world project before using the deployment pipeline.
       </div>
     );
@@ -507,7 +507,7 @@ export function RuntimeHandoffStudio() {
 
   return (
     <div className="flex flex-col gap-4">
-      <section className="rounded-3xl border border-white/10 bg-[linear-gradient(145deg,rgba(73,84,118,0.94),rgba(49,60,90,0.92))] p-4 shadow-[0_18px_60px_rgba(9,12,24,0.32)]">
+      <section className="rounded-3xl border border-[var(--chrome-stroke)] bg-[linear-gradient(145deg,rgba(73,84,118,0.94),rgba(49,60,90,0.92))] p-4 shadow-[0_18px_60px_rgba(9,12,24,0.32)]">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <p className="text-2xs uppercase tracking-wide-ui text-text-muted">Handoff</p>
@@ -526,7 +526,7 @@ export function RuntimeHandoffStudio() {
             </button>
             <button
               onClick={openValidationResults}
-              className="rounded-full border border-white/10 bg-black/10 px-4 py-2 text-xs font-medium text-text-primary transition hover:bg-white/10"
+              className="rounded-full border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] px-4 py-2 text-xs font-medium text-text-primary transition hover:bg-[var(--chrome-highlight-strong)]"
             >
               Open validation
             </button>
@@ -534,26 +534,26 @@ export function RuntimeHandoffStudio() {
         </div>
 
         <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-          <div className="rounded-2xl border border-white/10 bg-black/10 p-3">
+          <div className="rounded-2xl border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] p-3">
             <p className="text-2xs uppercase tracking-ui text-text-muted">Project</p>
             <p className="mt-2 text-sm text-text-primary">{project.mudDir}</p>
             <p className="mt-2 text-xs text-text-secondary">
               {zones.size} loaded zone{zones.size !== 1 ? "s" : ""} | {dirtyZones} dirty
             </p>
           </div>
-          <div className="rounded-2xl border border-white/10 bg-black/10 p-3">
+          <div className="rounded-2xl border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] p-3">
             <p className="text-2xs uppercase tracking-ui text-text-muted">R2 delivery</p>
             <p className="mt-2 text-sm text-text-primary">{settings?.r2_bucket || "No bucket configured"}</p>
             <p className="mt-2 text-xs text-text-secondary">
               {settings?.r2_custom_domain || "No custom domain"} | {hasR2 ? "ready" : "credentials incomplete"}
             </p>
           </div>
-          <div className="rounded-2xl border border-white/10 bg-black/10 p-3">
+          <div className="rounded-2xl border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] p-3">
             <p className="text-2xs uppercase tracking-ui text-text-muted">Curated assets</p>
             <p className="mt-2 text-sm text-text-primary">{curatedAssetCount} active assets</p>
             <p className="mt-2 text-xs text-text-secondary">{unsyncedCuratedAssetCount} not yet synced to R2</p>
           </div>
-          <div className="rounded-2xl border border-white/10 bg-black/10 p-3">
+          <div className="rounded-2xl border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] p-3">
             <p className="text-2xs uppercase tracking-ui text-text-muted">Config state</p>
             <p className="mt-2 text-sm text-text-primary">{configDirty ? "Config has unsaved edits" : "Config is clean"}</p>
             <p className="mt-2 text-xs text-text-secondary">{globalAssetCount} registered global asset keys</p>
@@ -561,7 +561,7 @@ export function RuntimeHandoffStudio() {
         </div>
 
         {workflowMessage && (
-          <div className="mt-3 rounded-2xl border border-white/10 bg-black/10 px-4 py-3 text-sm text-text-secondary">
+          <div className="mt-3 rounded-2xl border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] px-4 py-3 text-sm text-text-secondary">
             {workflowMessage}
           </div>
         )}
@@ -589,7 +589,7 @@ export function RuntimeHandoffStudio() {
               value={deployCommitMsg}
               onChange={(e) => setDeployCommitMsg(e.target.value)}
               placeholder="Commit message"
-              className="w-full rounded-full border border-white/10 bg-black/10 px-4 py-2 text-xs text-text-primary placeholder:text-text-muted outline-none focus:border-border-active focus-visible:ring-2 focus-visible:ring-border-active"
+              className="w-full rounded-full border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] px-4 py-2 text-xs text-text-primary placeholder:text-text-muted outline-none focus:border-border-active focus-visible:ring-2 focus-visible:ring-border-active"
             />
           </StepCard>
         )}
@@ -615,11 +615,11 @@ export function RuntimeHandoffStudio() {
               value={exportDir}
               onChange={(event) => setExportDir(event.target.value)}
               placeholder="Choose a MUD checkout directory"
-              className="min-w-[18rem] flex-1 rounded-full border border-white/10 bg-black/10 px-4 py-2 text-xs text-text-primary placeholder:text-text-muted outline-none focus:border-border-active focus-visible:ring-2 focus-visible:ring-border-active"
+              className="min-w-[18rem] flex-1 rounded-full border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] px-4 py-2 text-xs text-text-primary placeholder:text-text-muted outline-none focus:border-border-active focus-visible:ring-2 focus-visible:ring-border-active"
             />
             <button
               onClick={() => void handleChooseExportDir()}
-              className="rounded-full border border-white/10 bg-black/10 px-4 py-2 text-xs font-medium text-text-primary transition hover:bg-white/10"
+              className="rounded-full border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] px-4 py-2 text-xs font-medium text-text-primary transition hover:bg-[var(--chrome-highlight-strong)]"
             >
               Choose folder
             </button>
@@ -640,7 +640,7 @@ export function RuntimeHandoffStudio() {
               <select
                 value={syncScope}
                 onChange={(event) => setSyncScope(event.target.value as SyncScope)}
-                className="rounded-full border border-white/10 bg-black/10 px-3 py-1.5 text-xs text-text-primary outline-none focus-visible:ring-2 focus-visible:ring-border-active"
+                className="rounded-full border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] px-3 py-1.5 text-xs text-text-primary outline-none focus-visible:ring-2 focus-visible:ring-border-active"
               >
                 <option value="approved">Approved only</option>
                 <option value="all">Everything</option>
@@ -649,13 +649,13 @@ export function RuntimeHandoffStudio() {
             <button
               onClick={() => void handleExportLocal()}
               disabled={exportingLocal}
-              className="rounded-full border border-white/10 bg-black/10 px-4 py-2 text-xs font-medium text-text-primary transition hover:bg-white/10 disabled:opacity-40"
+              className="rounded-full border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] px-4 py-2 text-xs font-medium text-text-primary transition hover:bg-[var(--chrome-highlight-strong)] disabled:opacity-40"
             >
               {exportingLocal ? "Exporting..." : "Export images locally"}
             </button>
           </div>
           {localExportResult && (
-            <div className="mt-2 rounded-2xl border border-white/10 bg-black/10 px-4 py-3 text-xs text-text-secondary">
+            <div className="mt-2 rounded-2xl border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] px-4 py-3 text-xs text-text-secondary">
               Exported {localExportResult.copied} images ({localExportResult.skipped} already present, {localExportResult.errors.length} errors)
               {localExportResult.errors.length > 0 && (
                 <ul className="mt-1 text-status-error">

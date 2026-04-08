@@ -255,8 +255,9 @@ export function AppearancePanel() {
   };
 
   return (
-    <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-6 py-6">
-      <header>
+    <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
+      <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-6 py-6">
+        <header>
         <p className="text-3xs uppercase tracking-wide-ui text-text-muted">Operations</p>
         <h2 className="mt-2 font-display text-3xl text-text-primary">Appearance</h2>
         <p className="mt-2 max-w-3xl text-sm leading-6 text-text-secondary">
@@ -372,6 +373,7 @@ export function AppearancePanel() {
         >
           Save theme
         </button>
+      </div>
       </div>
     </div>
   );

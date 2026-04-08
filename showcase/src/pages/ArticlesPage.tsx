@@ -62,11 +62,6 @@ export function ArticlesPage() {
     );
   }, [activeTemplate, articles, search]);
 
-  const totalCount = grouped.reduce((sum, [, group]) => sum + group.length, 0);
-  const routeCount = articles.filter((article) => article.template !== "world_setting").length;
-  const totalCountLabel = useMemo(() => new Intl.NumberFormat().format(totalCount), [totalCount]);
-  const routeCountLabel = useMemo(() => new Intl.NumberFormat().format(routeCount), [routeCount]);
-
   if (!data) {
     return null;
   }
@@ -78,113 +73,73 @@ export function ArticlesPage() {
 
   return (
     <div className="space-y-8">
-      <section className="grid gap-6 xl:grid-cols-[minmax(0,1.45fr)_minmax(20rem,0.85fr)]">
-        <div className="relative overflow-hidden rounded-[2rem] border border-[var(--color-aurum)]/25 bg-[radial-gradient(circle_at_top_left,rgba(214,177,90,0.16),transparent_45%),linear-gradient(160deg,rgba(18,18,28,0.98),rgba(9,10,18,0.92))] px-6 py-7 shadow-[var(--shadow-deep)] sm:px-8 sm:py-8">
-          <h1 className="mt-3 max-w-3xl font-display text-3xl leading-tight text-[var(--color-aurum-pale)] sm:text-4xl">
-            Trace the houses, ruins, sects, and relics that keep the world legible.
-          </h1>
-          <p className="mt-4 max-w-2xl text-sm leading-7 text-text-secondary sm:text-[0.95rem]">
-            The public codex gathers every published record into named shelves, so readers can hunt a bloodline, a
-            border town, or a forbidden rite without losing the larger archive around it.
-          </p>
-          <p className="mt-6 text-sm leading-7 text-text-muted">
-            {routeCountLabel} published entries across {templates.length} shelves.{" "}
-            {activeTemplate ? `${TEMPLATE_LABELS[activeTemplate]} is selected.` : "All shelves are open."}
-          </p>
-        </div>
+      <section className="rounded-[1.5rem] border border-border-muted/35 bg-[linear-gradient(180deg,rgba(18,18,28,0.9),rgba(10,11,18,0.97))] px-5 py-4 shadow-[var(--shadow-deep)] sm:px-6">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center">
+          <input
+            type="text"
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="Search the codex…"
+            aria-label="Search articles"
+            className="min-h-11 w-full rounded-2xl border border-border-muted/50 bg-bg-abyss/80 px-4 py-2.5 text-sm text-text-primary placeholder:text-text-muted/70 focus:outline-none focus-visible:border-[var(--color-aurum)]/35 focus-visible:ring-2 focus-visible:ring-[var(--color-aurum)]/35 lg:max-w-sm"
+          />
 
-        <div className="flex flex-col justify-end gap-4 px-1 pb-1 xl:pl-6">
-          <p className="font-display text-2xl text-accent-emphasis">Read laterally, not just alphabetically.</p>
-          <p className="text-sm leading-7 text-text-secondary">
-            Tags and shelf filters surface echoing subjects across distant entries, useful when one name appears in
-            several wars, courts, or faiths.
-          </p>
-          <p className="text-sm leading-7 text-text-muted">
-            {totalCountLabel} entries match the current view.{" "}
-            {search.trim() ? `Search is narrowed by "${search.trim()}".` : "No title or tag search is active."}
-          </p>
-        </div>
-      </section>
-
-      <section className="rounded-[1.75rem] border border-border-muted/35 bg-[linear-gradient(180deg,rgba(18,18,28,0.9),rgba(10,11,18,0.97))] px-5 py-5 shadow-[var(--shadow-deep)] sm:px-6">
-        <div className="grid gap-5 xl:grid-cols-[minmax(0,1.05fr)_minmax(0,1.35fr)_minmax(15rem,0.7fr)] xl:items-end">
-          <label className="block">
-            <span className="text-[0.68rem] uppercase tracking-[0.26em] text-text-muted">Search</span>
-            <input
-              type="text"
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder="Seek a dynasty, region, relic, or rite"
-              aria-label="Search articles"
-              className="mt-2 min-h-12 w-full rounded-2xl border border-border-muted/50 bg-bg-abyss/80 px-4 py-3 text-sm text-text-primary placeholder:text-text-muted/70 focus:outline-none focus-visible:border-[var(--color-aurum)]/35 focus-visible:ring-2 focus-visible:ring-[var(--color-aurum)]/35"
-            />
-          </label>
-
-          <div>
-            <div className="flex items-center justify-between gap-3">
-              <span className="text-[0.68rem] uppercase tracking-[0.26em] text-text-muted">Article type</span>
-              {(activeTemplate || search.trim()) && (
-                <button type="button" onClick={clearFilters} className={showcaseButtonClassNames.quiet}>
-                  Reset
-                </button>
-              )}
-            </div>
-            <div className="mt-3 flex flex-wrap gap-2">
+          <div className="flex flex-1 flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setSearchParams({})}
+              aria-pressed={!activeTemplate}
+              className="showcase-pill"
+              data-active={!activeTemplate}
+            >
+              All
+            </button>
+            {templates.map((template) => (
               <button
+                key={template}
                 type="button"
-                onClick={() => setSearchParams({})}
-                aria-pressed={!activeTemplate}
-                className="showcase-pill justify-start"
-                data-active={!activeTemplate}
+                onClick={() => setSearchParams({ template })}
+                aria-pressed={activeTemplate === template}
+                className="showcase-pill"
+                data-active={activeTemplate === template}
               >
-                All shelves
+                {TEMPLATE_LABELS[template]}
               </button>
-              {templates.map((template) => (
-                <button
-                  key={template}
-                  type="button"
-                  onClick={() => setSearchParams({ template })}
-                  aria-pressed={activeTemplate === template}
-                  className="showcase-pill justify-start text-left"
-                  data-active={activeTemplate === template}
-                >
-                  {TEMPLATE_LABELS[template]}
-                </button>
-              ))}
-            </div>
+            ))}
           </div>
 
-          <div>
-            <span className="text-[0.68rem] uppercase tracking-[0.26em] text-text-muted">View</span>
-            <div className="mt-3 grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => setView("list")}
-                aria-pressed={view === "list"}
-                className={`min-h-12 rounded-2xl border px-4 py-3 text-left transition-colors duration-300 ${
-                  view === "list"
-                    ? "border-[var(--color-aurum)]/35 bg-[var(--color-aurum)]/10 text-[var(--color-aurum-pale)]"
-                    : "border-border-muted/40 bg-bg-secondary/50 text-text-secondary hover:text-text-primary"
-                }`}
-              >
-                <span className="block text-[0.7rem] uppercase tracking-[0.24em]">Shelf</span>
-                <span className="mt-1 block text-sm">Reading list</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setView("grid")}
-                aria-pressed={view === "grid"}
-                className={`min-h-12 rounded-2xl border px-4 py-3 text-left transition-colors duration-300 ${
-                  view === "grid"
-                    ? "border-[var(--color-aurum)]/35 bg-[var(--color-aurum)]/10 text-[var(--color-aurum-pale)]"
-                    : "border-border-muted/40 bg-bg-secondary/50 text-text-secondary hover:text-text-primary"
-                }`}
-              >
-                <span className="block text-[0.7rem] uppercase tracking-[0.24em]">Cabinet</span>
-                <span className="mt-1 block text-sm">Illustrated grid</span>
-              </button>
-            </div>
+          <div className="flex items-center gap-1 rounded-full border border-border-muted/40 bg-bg-secondary/50 p-1">
+            <button
+              type="button"
+              onClick={() => setView("list")}
+              aria-pressed={view === "list"}
+              className={`rounded-full px-3 py-1.5 text-xs uppercase tracking-[0.18em] transition-colors duration-200 ${
+                view === "list"
+                  ? "bg-[var(--color-aurum)]/15 text-[var(--color-aurum-pale)]"
+                  : "text-text-muted hover:text-text-primary"
+              }`}
+            >
+              List
+            </button>
+            <button
+              type="button"
+              onClick={() => setView("grid")}
+              aria-pressed={view === "grid"}
+              className={`rounded-full px-3 py-1.5 text-xs uppercase tracking-[0.18em] transition-colors duration-200 ${
+                view === "grid"
+                  ? "bg-[var(--color-aurum)]/15 text-[var(--color-aurum-pale)]"
+                  : "text-text-muted hover:text-text-primary"
+              }`}
+            >
+              Grid
+            </button>
           </div>
+
+          {(activeTemplate || search.trim()) && (
+            <button type="button" onClick={clearFilters} className={showcaseButtonClassNames.quiet}>
+              Reset
+            </button>
+          )}
         </div>
       </section>
 

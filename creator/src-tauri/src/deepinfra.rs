@@ -294,35 +294,6 @@ pub async fn read_image_data_url(path: String) -> Result<String, String> {
 
 // ─── Prompt Enhancement ──────────────────────────────────────────────
 
-#[derive(Debug, Serialize)]
-struct ChatRequest {
-    model: String,
-    messages: Vec<ChatMessage>,
-    max_tokens: u32,
-    temperature: f32,
-}
-
-#[derive(Debug, Serialize)]
-struct ChatMessage {
-    role: String,
-    content: String,
-}
-
-#[derive(Debug, Deserialize)]
-struct ChatResponse {
-    choices: Vec<ChatChoice>,
-}
-
-#[derive(Debug, Deserialize)]
-struct ChatChoice {
-    message: ChatResponseMessage,
-}
-
-#[derive(Debug, Deserialize)]
-struct ChatResponseMessage {
-    content: String,
-}
-
 #[tauri::command]
 pub async fn enhance_prompt(
     app: AppHandle,
@@ -331,21 +302,4 @@ pub async fn enhance_prompt(
 ) -> Result<String, String> {
     let settings = settings::get_settings(app).await?;
     llm::complete_from_settings(&settings, &system_prompt, &prompt, 512).await
-}
-
-/// Strip `<think>...</think>` reasoning blocks that some models emit.
-fn strip_think_tags(text: &str) -> String {
-    let result = text;
-    while let Some(start) = result.find("<think>") {
-        if let Some(end) = result.find("</think>") {
-            let before = &result[..start];
-            let after = &result[end + "</think>".len()..];
-            let combined = format!("{before}{after}");
-            return strip_think_tags(combined.trim());
-        } else {
-            // Unclosed <think> — strip from <think> to end
-            return result[..start].trim().to_string();
-        }
-    }
-    result.to_string()
 }

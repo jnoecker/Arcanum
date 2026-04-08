@@ -61,13 +61,13 @@ export function GuildHallsPanel({ config, onChange }: ConfigPanelProps) {
         onItemsChange={(roomTemplates) => patchGuildHalls({ roomTemplates })}
         defaultItem={defaultTemplate}
         renderSummary={summarize}
-        getDisplayName={(t) => t.displayName}
+        getDisplayName={(t) => t.displayName ?? ""}
         placeholder="template_id"
         renderDetail={(_id, t, patch) => (
           <>
             <FieldRow label="Display Name" hint="Name shown to players for this room type.">
               <TextInput
-                value={t.displayName}
+                value={t.displayName ?? ""}
                 onCommit={(v) => patch({ displayName: v })}
               />
             </FieldRow>

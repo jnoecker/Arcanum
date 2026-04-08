@@ -37,7 +37,7 @@ export function DailyQuestsPanel({ config, onChange }: ConfigPanelProps) {
           </FieldRow>
           <FieldRow label="Reset Time (UTC)" hint="Time of day in UTC when daily quests refresh. Format: HH:MM (e.g. '00:00' for midnight).">
             <TextInput
-              value={dq.resetTimeUtc}
+              value={dq.resetTimeUtc ?? "00:00"}
               onCommit={(v) => patch({ resetTimeUtc: v || "00:00" })}
               placeholder="00:00"
             />
@@ -56,7 +56,7 @@ export function DailyQuestsPanel({ config, onChange }: ConfigPanelProps) {
         title="Quest Pools"
         description="Named pools of quest IDs. Each pool is drawn from independently during the daily refresh. Add pools like 'combat', 'gathering', 'social' and populate them with quest IDs from your zone files."
       >
-        <PoolEditor pools={dq.pools} onChange={(pools) => patch({ pools })} />
+        <PoolEditor pools={dq.pools ?? {}} onChange={(pools) => patch({ pools })} />
       </Section>
     </>
   );

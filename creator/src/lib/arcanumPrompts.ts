@@ -86,6 +86,7 @@ export const FORMAT_BY_TYPE: Record<string, string> = {
   room: "16:9 landscape background illustration, wide establishing shot, no characters in foreground",
   mob: "1:1 square character portrait centered in frame, full body visible, solid pale lavender (#d8d0e8) background",
   item: "1:1 square item icon centered in frame, floating on solid pale lavender (#d8d0e8) background, no hands or characters",
+  gathering_node: "1:1 square interactable resource node sprite, 3/4 isometric perspective view of an in-world harvest point grounded on the floor, full silhouette visible, solid pale lavender (#d8d0e8) background, no hands, no characters, no UI",
   ability_icon: "1:1 square ability icon centered in frame, symbolic/iconic representation, solid pale lavender (#d8d0e8) background",
   status_effect_icon: "1:1 square status effect icon centered in frame, symbolic/iconic representation, solid pale lavender (#d8d0e8) background",
   race_portrait: "2:3 portrait orientation character portrait, close-up to mid-shot framing, richly detailed painterly environment background",
@@ -109,6 +110,7 @@ export const FORMAT_BY_ASSET_TYPE: Partial<Record<AssetType, string>> = {
   mob: FORMAT_BY_TYPE.mob,
   pet: FORMAT_BY_TYPE.mob,
   item: FORMAT_BY_TYPE.item,
+  gathering_node: FORMAT_BY_TYPE.gathering_node,
   player_sprite: FORMAT_BY_TYPE.mob,
   race_portrait: FORMAT_BY_TYPE.race_portrait,
   class_portrait: FORMAT_BY_TYPE.class_portrait,
@@ -302,6 +304,13 @@ export const ASSET_TEMPLATES: Record<AssetType, { label: string; templates: Reco
     templates: {
       arcanum: `A single fantastical object floating against deep cosmic indigo void — the item rendered in fine detail with realistic materials and textures lit by concentrated aurum-gold light that pools and blooms around its form, baroque energy scrollwork curling subtly around the object as ornamental framing that dissolves into darkness at the edges, cool blue-violet atmospheric glow providing depth behind, the object casts no harsh shadow but sits within a soft halo of warm golden luminescence, centered square composition like a game inventory icon, painterly, luminous, extremely detailed, precious and significant`,
       gentle_magic: `A single fantastical object resting on a soft surface against deep mist-blue background — the item rendered with warm realistic detail and gentle ambient lighting, a subtle magical glow emanates from within in lavender or soft gold, small details suggest enchantment — faint light motes rising from the surface, a shimmer along an edge, tiny flowers or moss growing where the object meets the ground, soft diffused bloom around the brightest points, no harsh shadows, centered square composition like a game inventory icon, painterly, luminous, dreamlike, the object feels precious and handcrafted`,
+    },
+  },
+  gathering_node: {
+    label: "Gathering Node",
+    templates: {
+      arcanum: `A solitary interactable resource node grounded on a dark cosmic-stone floor — perhaps an aurum-veined ore outcrop, a cluster of luminous crystalline herbs, a glowing tide-pool, or a hollow at the base of an ancient tree — rendered with faithful material detail in the Arcanum palette, warm aurum-gold light pooling on the harvestable surfaces with soft bloom, baroque energy filaments curling from the node like delicate scrollwork tendrils, deep cosmic indigo and abyssal navy void surrounding it, blue-violet atmospheric mist drifting around the base, the silhouette is clearly readable as something a player would walk up to and gather from, centered square composition with the node grounded at the lower third of the frame, painterly oil technique, extremely detailed, no characters, no hands, no UI`,
+      gentle_magic: `A solitary interactable resource node resting on a soft mossy patch of ground — perhaps a pale silver ore vein in a weathered stone, a cluster of luminous lavender mushrooms, a small herb patch with dusty rose blossoms, or a calm reflective pool flecked with soft gold — rendered with warm gentle detail in the Gentle Magic palette, source-ambiguous diffused light with no harsh shadows, faint floating motes of warm gold drifting upward from the harvestable surfaces, pale blue and lavender atmospheric haze fading to deep mist behind, tiny moss-green tufts and dusty rose buds at the base, the silhouette is clearly readable as something a player would walk up to and gather from, centered square composition with the node grounded at the lower third of the frame, painterly, luminous, dreamlike, no characters, no hands, no UI`,
     },
   },
   ability_icon: {

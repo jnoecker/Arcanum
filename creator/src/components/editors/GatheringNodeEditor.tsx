@@ -11,14 +11,17 @@ import {
   SelectInput,
   IconButton,
 } from "@/components/ui/FormWidgets";
-import { DeleteEntityButton } from "./EditorShared";
+import { DeleteEntityButton, MediaSection } from "./EditorShared";
+import { gatheringNodePrompt, gatheringNodeContext } from "@/lib/entityPrompts";
 import { useConfigStore } from "@/stores/configStore";
+import { useVibeStore } from "@/stores/vibeStore";
 
 interface GatheringNodeEditorProps {
   nodeId: string;
   world: WorldFile;
   onWorldChange: (world: WorldFile) => void;
   onDelete: () => void;
+  zoneId?: string;
 }
 
 const FALLBACK_GATHERING_SKILLS = [
@@ -31,6 +34,7 @@ export function GatheringNodeEditor({
   world,
   onWorldChange,
   onDelete,
+  zoneId,
 }: GatheringNodeEditorProps) {
   const { entity: node, patch, handleDelete, rooms } =
     useEntityEditor<GatheringNodeFile>(
@@ -231,6 +235,15 @@ export function GatheringNodeEditor({
         )}
       </Section>
 
+      <MediaSection
+        image={node.image}
+        onImageChange={(v) => patch({ image: v })}
+        getPrompt={(style) => gatheringNodePrompt(nodeId, node, style)}
+        entityContext={gatheringNodeContext(nodeId, node)}
+        assetType="gathering_node"
+        context={zoneId ? { zone: zoneId, entity_type: "gatheringNode", entity_id: nodeId } : undefined}
+        vibe={zoneId ? useVibeStore.getState().getVibe(zoneId) : undefined}
+      />
       <DeleteEntityButton onClick={handleDelete} label="Delete Gathering Node" />
     </>
   );

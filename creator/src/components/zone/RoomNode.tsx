@@ -92,7 +92,7 @@ function RoomBackground({ image }: { image?: string }) {
 
 /** Compact info badge shown at the bottom of image-backed nodes */
 function InfoBadge({ d }: { d: RoomNodeData }) {
-  const hasEntities = d.mobCount > 0 || d.itemCount > 0 || d.shopCount > 0 || d.station;
+  const hasEntities = d.mobCount > 0 || d.itemCount > 0 || d.shopCount > 0 || d.gatheringNodeCount > 0 || d.station;
 
   return (
     <div className="relative mt-auto flex flex-col gap-0.5">
@@ -114,6 +114,7 @@ function InfoBadge({ d }: { d: RoomNodeData }) {
             {d.mobCount > 0 && <span title="Mobs" aria-label={`${d.mobCount} mobs`}>⚔{d.mobCount}</span>}
             {d.itemCount > 0 && <span title="Items" aria-label={`${d.itemCount} items`}>◆{d.itemCount}</span>}
             {d.shopCount > 0 && <span title="Shops" aria-label={`${d.shopCount} shops`}>⛋{d.shopCount}</span>}
+            {d.gatheringNodeCount > 0 && <span title="Gathering nodes" aria-label={`${d.gatheringNodeCount} gathering nodes`}>⛏{d.gatheringNodeCount}</span>}
             {d.station && (
               <span className="text-status-info" title={`Station: ${d.station}`} aria-label={`Crafting station: ${d.station}`}>⚒</span>
             )}
@@ -215,11 +216,12 @@ export const RoomNode = memo(function RoomNode({ data, selected }: NodeProps<Roo
           )}
 
           {/* Entity badges (for entities without images) */}
-          {(d.mobCount > 0 || d.itemCount > 0 || d.shopCount > 0 || d.station) && (
+          {(d.mobCount > 0 || d.itemCount > 0 || d.shopCount > 0 || d.gatheringNodeCount > 0 || d.station) && (
             <div className="mt-1 flex items-center gap-2 text-2xs text-text-muted">
               {d.mobCount > 0 && <span title="Mobs">⚔{d.mobCount}</span>}
               {d.itemCount > 0 && <span title="Items">◆{d.itemCount}</span>}
               {d.shopCount > 0 && <span title="Shops">⛋{d.shopCount}</span>}
+              {d.gatheringNodeCount > 0 && <span title="Gathering nodes">⛏{d.gatheringNodeCount}</span>}
               {d.station && (
                 <span className="text-status-info" title={`Station: ${d.station}`}>⚒</span>
               )}

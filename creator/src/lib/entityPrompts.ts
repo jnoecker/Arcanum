@@ -1,4 +1,4 @@
-import type { RoomFile, MobFile, ItemFile, ShopFile, TrainerFile, WorldFile } from "@/types/world";
+import type { RoomFile, MobFile, ItemFile, ShopFile, TrainerFile, GatheringNodeFile, WorldFile } from "@/types/world";
 import { getTrainerPrimaryClass } from "@/lib/trainers";
 import { type ArtStyle, getPreamble, getStyleSuffix, FORMAT_BY_TYPE } from "./arcanumPrompts";
 
@@ -63,6 +63,22 @@ export function shopContext(shopId: string, shop: ShopFile): string {
   return parts.join("\n");
 }
 
+/** Build a context description for a gathering node. */
+export function gatheringNodeContext(nodeId: string, node: GatheringNodeFile): string {
+  const parts = [`Gathering node "${node.displayName}" (id: ${nodeId})`];
+  parts.push(`Skill: ${node.skill}${node.skillRequired ? ` (requires level ${node.skillRequired})` : ""}`);
+  const yieldNames = (node.yields ?? []).map((y) => y.itemId).filter(Boolean);
+  if (yieldNames.length > 0) {
+    parts.push(`Yields: ${yieldNames.join(", ")}`);
+  }
+  const rareNames = (node.rareYields ?? []).map((y) => y.itemId).filter(Boolean);
+  if (rareNames.length > 0) {
+    parts.push(`Rare yields: ${rareNames.join(", ")}`);
+  }
+  parts.push("Composition: a single grounded interactable resource node sprite that a player walks up to and gathers from. NO characters, NO hands, NO UI.");
+  return parts.join("\n");
+}
+
 /** Dispatch to the right context builder by entity kind. */
 export function entityContext(kind: string, id: string, entity: unknown): string {
   switch (kind) {
@@ -70,6 +86,7 @@ export function entityContext(kind: string, id: string, entity: unknown): string
     case "mob": return mobContext(id, entity as MobFile);
     case "item": return itemContext(id, entity as ItemFile);
     case "shop": return shopContext(id, entity as ShopFile);
+    case "gatheringNode": return gatheringNodeContext(id, entity as GatheringNodeFile);
     default: return `${kind} entity "${id}"`;
   }
 }
@@ -248,6 +265,33 @@ ${getStyleSuffix("worldbuilding")}`;
 An arcane portrait of a ${cls} class trainer called "${trainer.name}" — a powerful mentor in baroque armor or robes befitting a ${cls}, aurum-gold light illuminating their form, deep indigo background with traced energy patterns, blue-violet atmospheric mist, a sense of mastery and ancient knowledge, painterly, luminous`;
 }
 
+/** Build a full prompt for a gathering node sprite. */
+export function gatheringNodePrompt(
+  _nodeId: string,
+  node: GatheringNodeFile,
+  style: ArtStyle = "gentle_magic",
+): string {
+  const preamble = getPreamble(style, "worldbuilding");
+  const skillHint = node.skill ? ` harvested via ${node.skill}` : "";
+  const yieldHint = (node.yields ?? []).length > 0
+    ? ` Yields ${(node.yields ?? []).map((y) => y.itemId).filter(Boolean).join(", ")}.`
+    : "";
+
+  if (style === "gentle_magic") {
+    return `${FORMAT_BY_TYPE.gathering_node}. ${preamble}
+
+A single interactable resource node called "${node.displayName}"${skillHint}.${yieldHint} Rendered as a small grounded sprite resting on a soft mossy patch — clearly readable as something a player would walk up to and gather from, source-ambiguous diffused light, faint floating motes of warm gold drifting upward, pale blue and lavender atmospheric haze, dusty rose and moss-green accents at the base, painterly, luminous, dreamlike, NO characters, NO hands, NO UI
+
+${getStyleSuffix("worldbuilding")}`;
+  }
+
+  return `${FORMAT_BY_TYPE.gathering_node}. ${preamble}
+
+A single interactable resource node called "${node.displayName}"${skillHint}.${yieldHint} Rendered as a grounded sprite resting on dark cosmic-stone — warm aurum-gold light pooling on the harvestable surfaces with soft bloom, baroque energy filaments curling from the node like delicate scrollwork tendrils, deep cosmic indigo void surrounding it, blue-violet atmospheric mist drifting around the base, painterly oil technique, extremely detailed, NO characters, NO hands, NO UI
+
+${getStyleSuffix("worldbuilding")}`;
+}
+
 /** Dispatch to the right prompt builder by entity kind. */
 export function entityPrompt(
   kind: string,
@@ -266,6 +310,8 @@ export function entityPrompt(
       return shopPrompt(id, entity as ShopFile, style);
     case "trainer":
       return trainerPrompt(id, entity as TrainerFile, style);
+    case "gatheringNode":
+      return gatheringNodePrompt(id, entity as GatheringNodeFile, style);
     default: {
       const preamble = getPreamble(style, "worldbuilding");
       return style === "gentle_magic"

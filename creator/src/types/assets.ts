@@ -51,6 +51,7 @@ export type AssetType =
   | "mob"
   | "pet"
   | "item"
+  | "gathering_node"
   | "player_sprite"
   | "race_portrait"
   | "class_portrait"
@@ -218,6 +219,7 @@ export const ENTITY_DIMENSIONS: Record<string, { width: number; height: number; 
   mob: { width: 512, height: 512, label: "512×512 (Portrait)" },
   pet: { width: 512, height: 512, label: "512×512 (Portrait)" },
   item: { width: 256, height: 256, label: "256×256 (Icon)" },
+  gathering_node: { width: 512, height: 512, label: "512×512 (Sprite)" },
   ability: { width: 256, height: 256, label: "256×256 (Icon)" },
   shop: { width: 1920, height: 1080, label: "1920×1080 (Landscape)" },
   player_sprite: { width: 512, height: 512, label: "512×512 (Portrait)" },

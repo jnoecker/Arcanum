@@ -138,6 +138,7 @@ export function EntityPanel({
           world={world}
           onWorldChange={onWorldChange}
           onDelete={handleDelete}
+          zoneId={zoneId}
         />
       )}
       {selection.kind === "recipe" && (

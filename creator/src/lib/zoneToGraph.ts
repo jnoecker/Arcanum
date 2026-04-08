@@ -30,7 +30,7 @@ export function GRAPH() {
 
 export interface EntitySprite {
   id: string;
-  kind: "mob" | "item" | "shop";
+  kind: "mob" | "item" | "shop" | "gatheringNode";
   name: string;
   image?: string;
 }
@@ -43,6 +43,7 @@ export interface RoomNodeData extends Record<string, unknown> {
   mobCount: number;
   itemCount: number;
   shopCount: number;
+  gatheringNodeCount: number;
   station?: string;
   image?: string;
   entities: EntitySprite[];
@@ -95,6 +96,7 @@ export function zoneToGraph(
   const mobsPerRoom = new Map<string, number>();
   const itemsPerRoom = new Map<string, number>();
   const shopsPerRoom = new Map<string, number>();
+  const gatheringNodesPerRoom = new Map<string, number>();
 
   for (const mob of Object.values(world.mobs ?? {})) {
     mobsPerRoom.set(mob.room, (mobsPerRoom.get(mob.room) ?? 0) + 1);
@@ -106,6 +108,9 @@ export function zoneToGraph(
   }
   for (const shop of Object.values(world.shops ?? {})) {
     shopsPerRoom.set(shop.room, (shopsPerRoom.get(shop.room) ?? 0) + 1);
+  }
+  for (const node of Object.values(world.gatheringNodes ?? {})) {
+    gatheringNodesPerRoom.set(node.room, (gatheringNodesPerRoom.get(node.room) ?? 0) + 1);
   }
 
   // Collect entity sprites per room
@@ -126,6 +131,9 @@ export function zoneToGraph(
   for (const [id, shop] of Object.entries(world.shops ?? {})) {
     pushEntity(shop.room, { id, kind: "shop", name: shop.name, image: shop.image });
   }
+  for (const [id, node] of Object.entries(world.gatheringNodes ?? {})) {
+    pushEntity(node.room, { id, kind: "gatheringNode", name: node.displayName, image: node.image });
+  }
 
   // Build room nodes
   const nodes: Node[] = [];
@@ -142,6 +150,7 @@ export function zoneToGraph(
         mobCount: mobsPerRoom.get(roomId) ?? 0,
         itemCount: itemsPerRoom.get(roomId) ?? 0,
         shopCount: shopsPerRoom.get(roomId) ?? 0,
+        gatheringNodeCount: gatheringNodesPerRoom.get(roomId) ?? 0,
         station: room.station,
         image: room.image,
         entities: entitiesPerRoom.get(roomId) ?? [],

@@ -429,6 +429,7 @@ export function validateZone(
   for (const [nodeId, node] of Object.entries(world.gatheringNodes ?? {})) {
     const entity = `gatheringNode:${nodeId}`;
     if (!node.displayName?.trim()) addIssue(issues, "warning", entity, "Gathering node has no display name");
+    if (!node.image) addIssue(issues, "warning", entity, "Gathering node has no image — players will see a missing sprite");
     if (!roomIds.has(node.room)) addIssue(issues, "error", entity, `Room "${node.room}" does not exist`);
     if (!node.yields || node.yields.length === 0) {
       addIssue(issues, "warning", entity, "Gathering node has no yields");

@@ -74,7 +74,7 @@ function CalendarEditor({
           <div className="flex items-center justify-between gap-2">
             <input
               aria-label="Calendar name"
-              className="ornate-input min-h-11 min-w-0 flex-1 rounded-2xl bg-black/10 px-4 py-3 font-display text-sm text-text-primary"
+              className="ornate-input min-h-11 min-w-0 flex-1 rounded-2xl bg-[var(--chrome-fill)] px-4 py-3 font-display text-sm text-text-primary"
               value={cal.name}
               onChange={(e) => patchCalendar(cal.id, { name: e.target.value })}
             />
@@ -93,7 +93,7 @@ function CalendarEditor({
                     aria-label={`Color for ${era.name}`}
                     value={era.color || "#a897d2"}
                     onChange={(e) => patchEra(cal.id, era.id, { color: e.target.value })}
-                    className="h-11 w-11 cursor-pointer rounded-full border border-white/10 bg-transparent p-1"
+                    className="h-11 w-11 cursor-pointer rounded-full border border-[var(--chrome-stroke)] bg-transparent p-1"
                     title="Era color"
                   />
                   <input

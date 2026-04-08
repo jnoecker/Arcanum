@@ -127,7 +127,7 @@ export function StatusEffectDesigner({
 
   return (
     <div className="grid gap-5 xl:grid-cols-[20rem_minmax(0,1fr)]">
-      <div className="rounded-3xl border border-white/8 bg-black/12 p-4">
+      <div className="rounded-3xl border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] p-4">
         <div className="mb-4">
           <p className="text-2xs uppercase tracking-ui text-text-muted">Condition roster</p>
           <h4 className="mt-2 font-display text-xl text-text-primary">{Object.keys(config.statusEffects).length} conditions</h4>
@@ -141,11 +141,11 @@ export function StatusEffectDesigner({
               if (event.key === "Enter") addStatusEffect();
             }}
             placeholder="New condition id"
-            className="min-w-0 flex-1 rounded-full border border-white/10 bg-white/8 px-4 py-2 text-xs text-text-primary outline-none focus-visible:ring-2 focus-visible:ring-border-active"
+            className="min-w-0 flex-1 rounded-full border border-[var(--chrome-stroke)] bg-[var(--chrome-highlight-strong)] px-4 py-2 text-xs text-text-primary outline-none focus-visible:ring-2 focus-visible:ring-border-active"
           />
           <button
             onClick={addStatusEffect}
-            className="rounded-full border border-white/10 bg-white/8 px-4 py-2 text-xs text-text-primary transition hover:bg-white/12"
+            className="rounded-full border border-[var(--chrome-stroke)] bg-[var(--chrome-highlight-strong)] px-4 py-2 text-xs text-text-primary transition hover:bg-[var(--chrome-highlight-strong)]"
           >
             Add
           </button>
@@ -155,7 +155,7 @@ export function StatusEffectDesigner({
           value={search}
           onChange={(event) => setSearch(event.target.value)}
           placeholder="Search conditions"
-          className="mt-3 w-full rounded-full border border-white/10 bg-white/8 px-4 py-2 text-xs text-text-primary outline-none focus-visible:ring-2 focus-visible:ring-border-active"
+          className="mt-3 w-full rounded-full border border-[var(--chrome-stroke)] bg-[var(--chrome-highlight-strong)] px-4 py-2 text-xs text-text-primary outline-none focus-visible:ring-2 focus-visible:ring-border-active"
         />
 
         <div className="mt-4 flex max-h-[38rem] flex-col gap-2 overflow-y-auto pr-1">
@@ -172,7 +172,7 @@ export function StatusEffectDesigner({
                 className={`rounded-2xl border px-4 py-3 text-left transition ${
                   selectedCard
                     ? "border-border-active bg-gradient-active"
-                    : "border-white/8 bg-white/4 hover:bg-white/8"
+                    : "border-[var(--chrome-stroke)] bg-[var(--chrome-highlight)] hover:bg-[var(--chrome-highlight-strong)]"
                 }`}
               >
                 <div className="flex items-start justify-between gap-3">
@@ -197,7 +197,7 @@ export function StatusEffectDesigner({
             );
           })}
           {effectIds.length === 0 && (
-            <div className="rounded-2xl border border-dashed border-white/12 bg-white/4 px-4 py-6 text-sm text-text-muted">
+            <div className="rounded-2xl border border-dashed border-[var(--chrome-stroke-strong)] bg-[var(--chrome-highlight)] px-4 py-6 text-sm text-text-muted">
               No conditions match the current search.
             </div>
           )}
@@ -205,8 +205,8 @@ export function StatusEffectDesigner({
       </div>
 
       {selectedId && selected ? (
-        <div className="rounded-3xl border border-white/8 bg-black/12 p-5">
-          <div className="flex flex-wrap items-start justify-between gap-4 border-b border-white/8 pb-4">
+        <div className="rounded-3xl border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] p-5">
+          <div className="flex flex-wrap items-start justify-between gap-4 border-b border-[var(--chrome-stroke)] pb-4">
             <div>
               <p className="text-2xs uppercase tracking-ui text-text-muted">Condition designer</p>
               <h4 className="mt-2 font-display text-3xl text-text-primary">{selected.displayName}</h4>
@@ -215,11 +215,11 @@ export function StatusEffectDesigner({
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
-              <span className="rounded-full bg-white/8 px-3 py-1 text-xs text-text-secondary">{selected.effectType}</span>
-              <span className="rounded-full bg-white/8 px-3 py-1 text-xs text-text-secondary">{selected.stackBehavior ?? "REFRESH"}</span>
-              <span className="rounded-full bg-white/8 px-3 py-1 text-xs text-text-secondary">{selected.durationMs}ms</span>
+              <span className="rounded-full bg-[var(--chrome-highlight-strong)] px-3 py-1 text-xs text-text-secondary">{selected.effectType}</span>
+              <span className="rounded-full bg-[var(--chrome-highlight-strong)] px-3 py-1 text-xs text-text-secondary">{selected.stackBehavior ?? "REFRESH"}</span>
+              <span className="rounded-full bg-[var(--chrome-highlight-strong)] px-3 py-1 text-xs text-text-secondary">{selected.durationMs}ms</span>
               {selected.tickIntervalMs ? (
-                <span className="rounded-full bg-white/8 px-3 py-1 text-xs text-text-secondary">Tick {selected.tickIntervalMs}ms</span>
+                <span className="rounded-full bg-[var(--chrome-highlight-strong)] px-3 py-1 text-xs text-text-secondary">Tick {selected.tickIntervalMs}ms</span>
               ) : null}
             </div>
           </div>
@@ -234,12 +234,12 @@ export function StatusEffectDesigner({
                     if (event.key === "Enter") commitRename();
                     if (event.key === "Escape") setRenaming(false);
                   }}
-                  className="rounded-full border border-white/10 bg-white/8 px-4 py-2 text-xs text-text-primary outline-none focus-visible:ring-2 focus-visible:ring-border-active"
+                  className="rounded-full border border-[var(--chrome-stroke)] bg-[var(--chrome-highlight-strong)] px-4 py-2 text-xs text-text-primary outline-none focus-visible:ring-2 focus-visible:ring-border-active"
                 />
-                <button onClick={commitRename} title="Confirm rename" className="rounded-full border border-white/10 bg-white/8 px-4 py-2 text-xs text-text-primary hover:bg-white/12">
+                <button onClick={commitRename} title="Confirm rename" className="rounded-full border border-[var(--chrome-stroke)] bg-[var(--chrome-highlight-strong)] px-4 py-2 text-xs text-text-primary hover:bg-[var(--chrome-highlight-strong)]">
                   Rename
                 </button>
-                <button onClick={() => setRenaming(false)} title="Cancel rename" className="rounded-full border border-white/10 bg-transparent px-4 py-2 text-xs text-text-secondary hover:bg-white/8">
+                <button onClick={() => setRenaming(false)} title="Cancel rename" className="rounded-full border border-[var(--chrome-stroke)] bg-transparent px-4 py-2 text-xs text-text-secondary hover:bg-[var(--chrome-highlight-strong)]">
                   Cancel
                 </button>
               </>
@@ -250,7 +250,7 @@ export function StatusEffectDesigner({
                     setRenameValue(selectedId);
                     setRenaming(true);
                   }}
-                  className="rounded-full border border-white/10 bg-white/8 px-4 py-2 text-xs text-text-primary hover:bg-white/12"
+                  className="rounded-full border border-[var(--chrome-stroke)] bg-[var(--chrome-highlight-strong)] px-4 py-2 text-xs text-text-primary hover:bg-[var(--chrome-highlight-strong)]"
                 >
                   Rename ID
                 </button>
@@ -275,7 +275,7 @@ export function StatusEffectDesigner({
           </div>
         </div>
       ) : (
-        <div className="rounded-3xl border border-dashed border-white/12 bg-white/4 px-6 py-10 text-sm text-text-muted">
+        <div className="rounded-3xl border border-dashed border-[var(--chrome-stroke-strong)] bg-[var(--chrome-highlight)] px-6 py-10 text-sm text-text-muted">
           Create a condition to start designing it.
         </div>
       )}

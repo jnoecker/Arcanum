@@ -119,7 +119,7 @@ function Node({ node, style, dragHandle }: NodeRendererProps<TreeNode>) {
           className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border text-3xs transition ${
             isMultiSelected
               ? "border-accent/50 bg-accent/20 text-accent"
-              : "border-white/20 bg-white/5 text-transparent hover:border-white/30"
+              : "border-[var(--chrome-stroke-emphasis)] bg-[var(--chrome-highlight)] text-transparent hover:border-white/30"
           }`}
           aria-label={isMultiSelected ? "Deselect" : "Select"}
         >
@@ -290,7 +290,7 @@ export function ArticleTree() {
                   selectArticle(r.articleId);
                   openTab(panelTab("lore"));
                 }}
-                className="rounded-lg border border-white/6 bg-black/10 px-3 py-2 text-left transition hover:bg-white/6"
+                className="rounded-lg border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] px-3 py-2 text-left transition hover:bg-[var(--chrome-highlight)]"
               >
                 <div className="flex items-center gap-1.5">
                   <span
@@ -305,7 +305,7 @@ export function ArticleTree() {
                   <span className="truncate text-xs text-text-primary">
                     {r.title}
                   </span>
-                  <span className="ml-auto shrink-0 rounded bg-white/8 px-1.5 py-0.5 text-[9px] text-text-muted">
+                  <span className="ml-auto shrink-0 rounded bg-[var(--chrome-highlight-strong)] px-1.5 py-0.5 text-[9px] text-text-muted">
                     {r.matchIn}
                   </span>
                 </div>

@@ -73,7 +73,7 @@ export function MapAnalysisPanel({
   );
 
   return (
-    <div className="rounded-xl border border-white/8 bg-black/10 p-4">
+    <div className="rounded-xl border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] p-4">
       <div className="mb-3 flex items-center gap-3">
         <button
           onClick={handleAnalyze}
@@ -113,7 +113,7 @@ export function MapAnalysisPanel({
             return (
               <div
                 key={i}
-                className="flex items-center gap-2 rounded-lg border border-white/6 bg-black/10 px-3 py-2"
+                className="flex items-center gap-2 rounded-lg border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] px-3 py-2"
               >
                 <div className="min-w-0 flex-1">
                   <span className="text-xs text-text-primary">{s.label}</span>
@@ -133,8 +133,8 @@ export function MapAnalysisPanel({
                     s.confidence === "high"
                       ? "bg-accent/15 text-accent"
                       : s.confidence === "medium"
-                        ? "bg-white/8 text-text-secondary"
-                        : "bg-white/5 text-text-muted"
+                        ? "bg-[var(--chrome-highlight-strong)] text-text-secondary"
+                        : "bg-[var(--chrome-highlight)] text-text-muted"
                   }`}
                 >
                   {s.confidence}
@@ -149,7 +149,7 @@ export function MapAnalysisPanel({
                   onClick={() =>
                     setDismissed((prev) => new Set(prev).add(i))
                   }
-                  className="rounded-full border border-white/8 px-2 py-0.5 text-3xs text-text-muted hover:bg-white/8"
+                  className="rounded-full border border-[var(--chrome-stroke)] px-2 py-0.5 text-3xs text-text-muted hover:bg-[var(--chrome-highlight-strong)]"
                 >
                   Skip
                 </button>

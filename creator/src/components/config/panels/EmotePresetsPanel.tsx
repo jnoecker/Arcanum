@@ -36,7 +36,7 @@ export function EmotePresetsPanel({ config, onChange }: ConfigPanelProps) {
         {presets.map((preset, i) => (
           <div
             key={i}
-            className="rounded-xl border border-white/8 bg-black/12 p-4"
+            className="rounded-xl border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] p-4"
           >
             <div className="mb-2 flex items-center justify-between">
               <span className="text-xs font-medium text-text-secondary">

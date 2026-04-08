@@ -143,7 +143,7 @@ function ZoneTree({
           onClick={() => setExpanded((v) => !v)}
           aria-expanded={expanded}
           aria-label={expanded ? "Collapse zone" : "Expand zone"}
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-2xs text-text-muted transition hover:bg-white/8 hover:text-text-primary"
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-2xs text-text-muted transition hover:bg-[var(--chrome-highlight-strong)] hover:text-text-primary"
         >
           {expanded ? "\u25BE" : "\u25B8"}
         </button>
@@ -152,7 +152,7 @@ function ZoneTree({
           className={`min-w-0 flex-1 rounded-2xl border px-3 py-2 text-left text-sm transition ${
             isActive
               ? "border-border-active bg-gradient-active text-text-primary"
-              : "border-white/8 bg-black/10 text-text-secondary hover:bg-white/8 hover:text-text-primary"
+              : "border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] text-text-secondary hover:bg-[var(--chrome-highlight-strong)] hover:text-text-primary"
           }`}
         >
           <span className="truncate font-medium" title={zoneState.data.zone || zoneId}>{zoneState.data.zone || zoneId}</span>
@@ -161,7 +161,7 @@ function ZoneTree({
         </button>
         <button
           onClick={() => onRename(zoneId)}
-          className="shrink-0 rounded-full border border-white/8 px-2.5 py-1.5 text-2xs text-text-muted opacity-0 transition hover:border-accent/40 hover:text-accent focus:opacity-100 group-hover/zone:opacity-100 group-focus-within/zone:opacity-100"
+          className="shrink-0 rounded-full border border-[var(--chrome-stroke)] px-2.5 py-1.5 text-2xs text-text-muted opacity-0 transition hover:border-accent/40 hover:text-accent focus:opacity-100 group-hover/zone:opacity-100 group-focus-within/zone:opacity-100"
           title="Rename zone"
           aria-label="Rename zone"
         >
@@ -169,7 +169,7 @@ function ZoneTree({
         </button>
         <button
           onClick={() => onDelete(zoneId)}
-          className="shrink-0 rounded-full border border-white/8 px-2.5 py-1.5 text-2xs text-text-muted opacity-0 transition hover:border-status-danger/40 hover:text-status-danger focus:opacity-100 group-hover/zone:opacity-100 group-focus-within/zone:opacity-100"
+          className="shrink-0 rounded-full border border-[var(--chrome-stroke)] px-2.5 py-1.5 text-2xs text-text-muted opacity-0 transition hover:border-status-danger/40 hover:text-status-danger focus:opacity-100 group-hover/zone:opacity-100 group-focus-within/zone:opacity-100"
           title="Delete zone"
           aria-label="Delete zone"
         >
@@ -185,7 +185,7 @@ function ZoneTree({
             if (entries.length === 0 && !cat.addFn) return null;
 
             return (
-              <div key={cat.key} className="border-t border-white/5 pt-2 first:border-t-0 first:pt-0">
+              <div key={cat.key} className="border-t border-[var(--chrome-stroke)] pt-2 first:border-t-0 first:pt-0">
                 <div className="flex items-center gap-2">
                   <span className="font-display font-semibold text-2xs uppercase tracking-label text-text-secondary">
                     {cat.label}
@@ -196,7 +196,7 @@ function ZoneTree({
                   {cat.addFn && (
                     <button
                       onClick={() => handleAdd(cat)}
-                      className="ml-auto rounded-full border border-white/8 px-2 py-1 text-2xs text-text-muted transition hover:bg-white/8 hover:text-text-primary"
+                      className="ml-auto rounded-full border border-[var(--chrome-stroke)] px-2 py-1 text-2xs text-text-muted transition hover:bg-[var(--chrome-highlight-strong)] hover:text-text-primary"
                       title={`Add ${cat.label.replace(/s$/, "").toLowerCase()}`}
                       aria-label={`Add ${cat.label.replace(/s$/, "").toLowerCase()}`}
                     >
@@ -268,8 +268,8 @@ function PanelPill({ panel, activeTabId, openTab, compact }: {
         compact ? "px-2 py-1.5 text-3xs" : "px-2.5 py-2 text-2xs"
       } ${
         isActive
-          ? "border-[var(--border-glow-strong)] bg-[linear-gradient(135deg,rgba(168,151,210,0.25),rgba(140,174,201,0.15))] text-text-primary shadow-glow"
-          : "border-white/8 bg-white/[0.04] text-text-muted hover:border-white/14 hover:bg-white/8 hover:text-text-primary"
+          ? "border-[var(--border-glow-strong)] bg-[linear-gradient(135deg,rgb(var(--accent-rgb)/0.25),rgb(var(--accent-rgb)/0.12))] text-text-primary shadow-glow"
+          : "border-[var(--chrome-stroke)] bg-[var(--chrome-highlight)] text-text-muted hover:border-[var(--chrome-stroke-strong)] hover:bg-[var(--chrome-highlight-strong)] hover:text-text-primary"
       }`}
     >
       {panel.label}
@@ -333,7 +333,7 @@ function PanelButtonGrid({
         return (
           <section
             key={group.id}
-            className={`border-t border-white/8 pt-1.5 first:border-t-0 first:pt-0 ${
+            className={`border-t border-[var(--chrome-stroke)] pt-1.5 first:border-t-0 first:pt-0 ${
               isActiveSection ? "border-l-2 border-l-accent/30 pl-1" : ""
             }`}
           >
@@ -342,7 +342,7 @@ function PanelButtonGrid({
               onClick={() => toggleSection(group.id)}
               aria-expanded={!isCollapsed}
               aria-label={`${isCollapsed ? "Expand" : "Collapse"} ${group.label}`}
-              className="mb-1 flex w-full items-center gap-1.5 rounded-md px-1 py-1 transition hover:bg-white/4"
+              className="mb-1 flex w-full items-center gap-1.5 rounded-md px-1 py-1 transition hover:bg-[var(--chrome-highlight)]"
             >
               <svg
                 className={`h-3 w-3 shrink-0 text-text-muted transition-transform duration-150 ${isCollapsed ? "" : "rotate-90"}`}
@@ -364,9 +364,9 @@ function PanelButtonGrid({
                     <div key={subGroup ?? "_"}>
                       {subGroup && (
                         <div className="mb-1 mt-0.5 flex items-center gap-2">
-                          <div className="h-px flex-1 bg-white/6" />
+                          <div className="h-px flex-1 bg-[var(--chrome-highlight)]" />
                           <span className="text-3xs uppercase tracking-label text-text-muted/50">{subGroup}</span>
-                          <div className="h-px flex-1 bg-white/6" />
+                          <div className="h-px flex-1 bg-[var(--chrome-highlight)]" />
                         </div>
                       )}
                       <div className="flex flex-wrap gap-1">
@@ -388,7 +388,7 @@ function PanelButtonGrid({
                       onClick={(e) => { e.stopPropagation(); setExpandedGroups((s) => new Set(s).add(group.id)); }}
                       aria-label={`Show ${hiddenCount} more panels`}
                       aria-expanded={false}
-                      className="rounded-full border border-dashed border-white/10 px-2.5 py-1.5 text-2xs text-text-muted transition hover:border-white/20 hover:text-text-secondary"
+                      className="rounded-full border border-dashed border-[var(--chrome-stroke)] px-2.5 py-1.5 text-2xs text-text-muted transition hover:border-[var(--chrome-stroke-emphasis)] hover:text-text-secondary"
                     >
                       +{hiddenCount} more
                     </button>
@@ -399,7 +399,7 @@ function PanelButtonGrid({
                         e.stopPropagation();
                         setExpandedGroups((s) => { const next = new Set(s); next.delete(group.id); return next; });
                       }}
-                      className="rounded-full border border-dashed border-white/10 px-2.5 py-1.5 text-2xs text-text-muted transition hover:border-white/20 hover:text-text-secondary"
+                      className="rounded-full border border-dashed border-[var(--chrome-stroke)] px-2.5 py-1.5 text-2xs text-text-muted transition hover:border-[var(--chrome-stroke-emphasis)] hover:text-text-secondary"
                     >
                       Less
                     </button>
@@ -470,7 +470,7 @@ export function Sidebar({ workspace }: { workspace: Workspace }) {
   );
 
   return (
-    <aside className="relative flex w-full shrink-0 flex-col overflow-hidden rounded-3xl border border-white/10 bg-gradient-panel shadow-[0_18px_56px_rgba(8,10,18,0.32)] lg:h-full lg:w-[23rem]">
+    <aside className="relative flex min-h-0 w-full shrink-0 flex-col overflow-hidden rounded-3xl border border-[var(--chrome-stroke)] bg-gradient-panel shadow-panel lg:w-[23rem]">
       <div className="pointer-events-none absolute inset-x-0 top-0 h-48 bg-gradient-glow-top" />
 
       <div className="relative z-10 shrink-0 px-4 pt-4">
@@ -484,7 +484,7 @@ export function Sidebar({ workspace }: { workspace: Workspace }) {
       </div>
 
       <div
-        className="relative z-10 min-h-0 max-h-[22rem] shrink overflow-y-auto border-b border-white/10 px-4 py-4 lg:max-h-[45%]"
+        className="relative z-10 min-h-0 max-h-[22rem] shrink overflow-y-auto border-b border-[var(--chrome-stroke)] px-4 py-4 lg:max-h-[45%]"
         style={{ maskImage: "linear-gradient(to bottom, transparent 0, black 8px, black calc(100% - 16px), transparent 100%)", WebkitMaskImage: "linear-gradient(to bottom, transparent 0, black 8px, black calc(100% - 16px), transparent 100%)" }}
       >
         {workspace === "worldmaker" ? (
@@ -541,7 +541,7 @@ export function Sidebar({ workspace }: { workspace: Workspace }) {
         {isSearching ? (
           <div className="py-2">
             {grouped.size === 0 ? (
-              <p className="rounded-2xl border border-dashed border-white/10 bg-black/10 px-4 py-6 text-sm text-text-muted">
+              <p className="rounded-2xl border border-dashed border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] px-4 py-6 text-sm text-text-muted">
                 Nothing matches that query across your zones.
               </p>
             ) : (
@@ -562,9 +562,9 @@ export function Sidebar({ workspace }: { workspace: Workspace }) {
                             }
                             clearQuery();
                           }}
-                          className="flex w-full items-center gap-2 rounded-2xl border border-white/8 bg-black/10 px-3 py-2 text-left text-xs transition hover:bg-white/8 hover:text-text-primary"
+                          className="flex w-full items-center gap-2 rounded-2xl border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] px-3 py-2 text-left text-xs transition hover:bg-[var(--chrome-highlight-strong)] hover:text-text-primary"
                         >
-                          <span className="shrink-0 rounded-full bg-white/8 px-2 py-1 font-mono text-2xs text-text-muted">
+                          <span className="shrink-0 rounded-full bg-[var(--chrome-highlight-strong)] px-2 py-1 font-mono text-2xs text-text-muted">
                             {ENTITY_TYPE_LABELS[entry.entityType]}
                           </span>
                           <span className="truncate" title={entry.displayName}>{entry.displayName}</span>
@@ -590,7 +590,7 @@ export function Sidebar({ workspace }: { workspace: Workspace }) {
               ) : null}
             </div>
             {sortedZones.length === 0 ? (
-              <div className="rounded-2xl border border-dashed border-white/10 bg-black/10 px-4 py-5 text-sm text-text-muted">
+              <div className="rounded-2xl border border-dashed border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] px-4 py-5 text-sm text-text-muted">
                 {hasProject ? (
                   <>
                     <p className="mb-3 leading-relaxed">
@@ -638,7 +638,7 @@ export function Sidebar({ workspace }: { workspace: Workspace }) {
         )}
       </div>
 
-      <div className="relative z-10 border-t border-white/10 px-4 py-3 text-2xs text-text-muted">
+      <div className="relative z-10 border-t border-[var(--chrome-stroke)] px-4 py-3 text-2xs text-text-muted">
         `Ctrl+K` command palette | `Ctrl+S` commit | `Ctrl+,` tune the instrument
       </div>
 

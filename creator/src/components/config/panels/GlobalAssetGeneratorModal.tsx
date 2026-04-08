@@ -230,7 +230,7 @@ export function GlobalAssetGeneratorModal({ asset, onClose, onComplete }: Props)
       widthClassName="max-w-3xl"
       onClose={onClose}
       status={
-        <span className="rounded-full border border-white/10 bg-black/10 px-3 py-1 text-2xs text-text-secondary">
+        <span className="rounded-full border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] px-3 py-1 text-2xs text-text-secondary">
           {STAGE_LABEL[stage]}
         </span>
       }
@@ -268,7 +268,7 @@ export function GlobalAssetGeneratorModal({ asset, onClose, onComplete }: Props)
         <div className="grid gap-5">
           <section className="panel-surface-light rounded-3xl p-5">
             <div className="grid gap-5">
-              <div className="rounded-3xl border border-white/8 bg-black/12 p-4">
+              <div className="rounded-3xl border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] p-4">
                 <p className="text-2xs uppercase tracking-wide-ui text-text-muted">
                   Global asset key
                 </p>
@@ -299,7 +299,7 @@ export function GlobalAssetGeneratorModal({ asset, onClose, onComplete }: Props)
                 </p>
               </div>
 
-              <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-white/8 bg-black/12 p-4">
+              <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] p-4">
                 <input
                   type="checkbox"
                   checked={removeBg}
@@ -332,7 +332,7 @@ export function GlobalAssetGeneratorModal({ asset, onClose, onComplete }: Props)
       )}
 
       {(stage === "generating" || stage === "removing_bg") && (
-        <div className="relative overflow-hidden rounded-3xl border border-white/8">
+        <div className="relative overflow-hidden rounded-3xl border border-[var(--chrome-stroke)]">
           <div className="relative flex min-h-[20rem] flex-col items-center justify-center gap-5 px-6 py-12 text-center">
             <Spinner className="h-8 w-8 border-2" />
             <p className="font-display text-lg text-text-primary">
@@ -352,14 +352,14 @@ export function GlobalAssetGeneratorModal({ asset, onClose, onComplete }: Props)
       {stage === "preview" && result && (
         <div className="grid gap-5">
           <section className="panel-surface-light rounded-3xl p-5">
-            <div className="overflow-hidden rounded-3xl border border-white/8 bg-[color-mix(in_srgb,var(--accent)_8%,transparent)]">
+            <div className="overflow-hidden rounded-3xl border border-[var(--chrome-stroke)] bg-[color-mix(in_srgb,var(--accent)_8%,transparent)]">
               <img src={result.data_url} alt="Generated global asset" className="w-full" />
             </div>
             <div className="mt-4 flex flex-wrap items-center gap-2 text-xs text-text-muted">
-              <span className="rounded-full border border-white/10 bg-black/10 px-3 py-1">
+              <span className="rounded-full border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] px-3 py-1">
                 {result.width}x{result.height}
               </span>
-              <span className="rounded-full border border-white/10 bg-black/10 px-3 py-1">
+              <span className="rounded-full border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] px-3 py-1">
                 {result.model.split("/").pop()}
               </span>
               {removeBg && (

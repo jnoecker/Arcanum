@@ -64,7 +64,7 @@ function LoreBibleExport() {
   };
 
   return (
-    <div className="rounded-xl border border-white/8 bg-black/10 p-4">
+    <div className="rounded-xl border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] p-4">
       <h3 className="mb-2 font-display text-sm text-text-primary">Lore Bible</h3>
       <p className="mb-3 text-2xs text-text-secondary">
         Export the entire lore corpus as a readable Markdown document.
@@ -180,7 +180,7 @@ export function DocumentLibraryPanel() {
           </button>
           <button
             onClick={() => setShowImportWizard(true)}
-            className="focus-ring rounded-full border border-white/10 px-3 py-1.5 text-xs font-medium text-text-secondary transition hover:bg-white/8 hover:text-text-primary"
+            className="focus-ring rounded-full border border-[var(--chrome-stroke)] px-3 py-1.5 text-xs font-medium text-text-secondary transition hover:bg-[var(--chrome-highlight-strong)] hover:text-text-primary"
           >
             Import Markdown
           </button>

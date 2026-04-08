@@ -31,6 +31,13 @@ export const DEFAULT_THEME: ThemePalette = {
 export const PRESET_THEMES: ThemePalette[] = [
   DEFAULT_THEME,
   {
+    name: "Parchment (light)",
+    background: "#f4ede0",
+    surface: "#e6dcc6",
+    text: "#2a2418",
+    accent: "#8a5a2b",
+  },
+  {
     name: "Aurum Dusk",
     background: "#1a1410",
     surface: "#2e241c",
@@ -92,6 +99,12 @@ export function rgba(hex: string, alpha: number): string {
   return `rgba(${Math.round(r)}, ${Math.round(g)}, ${Math.round(b)}, ${alpha})`;
 }
 
+/** Space-separated R G B tuple suitable for `rgb(var(--xxx-rgb) / alpha)` syntax. */
+export function rgbTuple(hex: string): string {
+  const { r, g, b } = hexToRgb(hex);
+  return `${Math.round(r)} ${Math.round(g)} ${Math.round(b)}`;
+}
+
 /** Linearly mix two hex colors. t=0 → a, t=1 → b. */
 export function mix(a: string, b: string, t: number): string {
   const ra = hexToRgb(a);
@@ -122,21 +135,27 @@ export function themeToVars(theme: ThemePalette): Record<string, string> {
   const text = theme.text;
   const accent = theme.accent;
 
-  // Background ramp: darker than bg for the abyss, then surface, with lighter
-  // variants mixed toward the surface color.
-  const abyss = mix(bg, "#000000", 0.18);
+  // Detect light vs dark theme so chrome stroke/fill colors flip orientation.
+  // For a dark theme we use white-tinted strokes and dark fills; for a light
+  // theme we use dark-tinted strokes and light fills.
+  const bgLum = luminance(bg);
+  const isLight = bgLum > 0.5;
+
+  // Background ramp: darker (or lighter) than bg for the abyss, then surface,
+  // with lighter variants mixed toward the surface color.
+  const abyss = isLight ? mix(bg, "#ffffff", 0.18) : mix(bg, "#000000", 0.18);
   const bgPrimary = bg;
   const bgSecondary = mix(bg, surface, 0.4);
   const bgTertiary = surface;
   const bgElevated = surface;
   const bgHover = mix(surface, text, 0.08);
 
-  // Borders: from muted (closer to surface) to default (mid) to accent-tinted focus.
+  // Borders.
   const borderMuted = mix(surface, text, 0.05);
   const borderDefault = mix(surface, text, 0.18);
   const borderFocus = accent;
 
-  // Text ramp: primary is the literal text color, lower tiers mix toward bg.
+  // Text ramp.
   const textPrimary = text;
   const textSecondary = mix(text, bg, 0.22);
   const textMuted = mix(text, bg, 0.42);
@@ -145,9 +164,7 @@ export function themeToVars(theme: ThemePalette): Record<string, string> {
   const accentMuted = mix(accent, bg, 0.22);
   const accentEmphasis = text;
 
-  // Warm: a tonally shifted version of the accent — slightly toward the
-  // complementary warm side. We just use accent-mixed-with-text for a softer
-  // glow band when the accent itself is cool.
+  // Warm: tracks accent (since 4-color palettes give us only one pop color).
   const warm = accent;
   const warmPale = mix(accent, text, 0.38);
   const warmDeep = mix(accent, bg, 0.42);
@@ -156,14 +173,37 @@ export function themeToVars(theme: ThemePalette): Record<string, string> {
   const scrim = rgba(bg, 0.72);
   const scrimLight = rgba(bg, 0.46);
 
-  // Graph backgrounds — keep them tied to bg ramp.
-  const graphBg = mix(bg, "#000000", 0.32);
+  // Graph backgrounds.
+  const graphBg = isLight ? mix(bg, "#ffffff", 0.18) : mix(bg, "#000000", 0.32);
   const graphGrid = mix(bg, surface, 0.5);
   const graphNode = surface;
   const graphEdge = mix(surface, text, 0.32);
   const graphEdgeUp = accent;
 
+  // Pick a text color that contrasts with accent for "on accent" surfaces
+  // (e.g. primary buttons that fill with accent).
+  const accentLum = luminance(accent);
+  const textOnAccent = accentLum > 0.55 ? bg : text;
+
+  // Chrome stroke/fill orientation. On dark themes, strokes are light overlays
+  // and fills are dark overlays (using #ffffff and #000000). On light themes
+  // we flip both.
+  const strokeColor = isLight ? "#000000" : "#ffffff";
+  const fillColor = isLight ? "#ffffff" : "#000000";
+
   return {
+    // ─── Mode flag ──────────────────────────────────────────
+    "--theme-mode": isLight ? "light" : "dark",
+
+    // ─── RGB tuples (used with `rgb(var(--x-rgb) / alpha)`) ─
+    "--bg-rgb": rgbTuple(bg),
+    "--surface-rgb": rgbTuple(surface),
+    "--text-rgb": rgbTuple(text),
+    "--accent-rgb": rgbTuple(accent),
+    "--abyss-rgb": rgbTuple(abyss),
+    "--stroke-rgb": rgbTuple(strokeColor),
+    "--fill-rgb": rgbTuple(fillColor),
+
     // ─── Backgrounds ─────────────────────────────────────
     "--color-bg-abyss": abyss,
     "--color-bg-primary": bgPrimary,
@@ -184,6 +224,7 @@ export function themeToVars(theme: ThemePalette): Record<string, string> {
     "--color-text-muted": textMuted,
     "--color-text-link": accent,
     "--color-text-dirty": mix(accent, text, 0.3),
+    "--color-text-on-accent": textOnAccent,
 
     // ─── Accent ──────────────────────────────────────────
     "--color-accent": accent,
@@ -198,6 +239,20 @@ export function themeToVars(theme: ThemePalette): Record<string, string> {
     // ─── Surfaces ────────────────────────────────────────
     "--color-surface-scrim": scrim,
     "--color-surface-scrim-light": scrimLight,
+    "--color-surface-card": rgba(mix(surface, text, 0.05), 0.6),
+
+    // ─── Chrome (mode-aware overlays) ────────────────────
+    // Borders / strokes
+    "--chrome-stroke": `rgb(var(--stroke-rgb) / 0.10)`,
+    "--chrome-stroke-strong": `rgb(var(--stroke-rgb) / 0.16)`,
+    "--chrome-stroke-emphasis": `rgb(var(--stroke-rgb) / 0.22)`,
+    // Fills
+    "--chrome-fill": `rgb(var(--fill-rgb) / 0.16)`,
+    "--chrome-fill-soft": `rgb(var(--fill-rgb) / 0.08)`,
+    "--chrome-fill-strong": `rgb(var(--fill-rgb) / 0.32)`,
+    // Highlights (top edges, hover lifts) — always biased to the strong side
+    "--chrome-highlight": `rgb(var(--stroke-rgb) / 0.06)`,
+    "--chrome-highlight-strong": `rgb(var(--stroke-rgb) / 0.12)`,
 
     // ─── Graph (zone map) ────────────────────────────────
     "--color-graph-bg": graphBg,
@@ -207,27 +262,30 @@ export function themeToVars(theme: ThemePalette): Record<string, string> {
     "--color-graph-edge-up": graphEdgeUp,
 
     // ─── Derived rgba tokens (the :root block) ───────────
-    "--glow-accent": `0 0 32px ${rgba(accent, 0.28)}`,
-    "--glow-accent-strong": `0 0 48px ${rgba(text, 0.32)}`,
-    "--glow-warm": `0 0 32px ${rgba(warm, 0.32)}`,
+    "--glow-accent": `0 0 32px rgb(var(--accent-rgb) / 0.28)`,
+    "--glow-accent-strong": `0 0 48px rgb(var(--text-rgb) / 0.32)`,
+    "--glow-warm": `0 0 32px rgb(var(--accent-rgb) / 0.32)`,
     "--glow-warm-strong": `0 0 48px ${rgba(warmPale, 0.42)}`,
-    "--glow-violet": `0 0 28px ${rgba(accent, 0.24)}`,
-    "--glow-blue": `0 0 24px ${rgba(mix(accent, text, 0.4), 0.22)}`,
+    "--glow-violet": `0 0 28px rgb(var(--accent-rgb) / 0.24)`,
+    "--glow-blue": `0 0 24px rgb(var(--accent-rgb) / 0.22)`,
 
-    "--border-accent-ring": rgba(accent, 0.45),
-    "--border-accent-subtle": rgba(accent, 0.35),
-    "--border-glow": rgba(text, 0.25),
-    "--border-glow-strong": rgba(text, 0.48),
+    "--border-accent-ring": `rgb(var(--accent-rgb) / 0.45)`,
+    "--border-accent-subtle": `rgb(var(--accent-rgb) / 0.35)`,
+    "--border-glow": `rgb(var(--text-rgb) / 0.25)`,
+    "--border-glow-strong": `rgb(var(--text-rgb) / 0.48)`,
 
-    "--bg-accent-subtle": rgba(accent, 0.14),
-    "--bg-accent-hover": rgba(accent, 0.2),
+    "--bg-accent-subtle": `rgb(var(--accent-rgb) / 0.14)`,
+    "--bg-accent-hover": `rgb(var(--accent-rgb) / 0.20)`,
 
-    "--bg-active": `linear-gradient(135deg, ${rgba(accent, 0.16)}, ${rgba(mix(accent, text, 0.4), 0.12)})`,
-    "--bg-active-strong": `linear-gradient(135deg, ${rgba(accent, 0.18)}, ${rgba(mix(accent, text, 0.4), 0.14)})`,
-    "--bg-panel": `linear-gradient(160deg, ${rgba(mix(surface, text, 0.05), 0.95)}, ${rgba(bgPrimary, 0.92)})`,
-    "--bg-panel-light": `linear-gradient(160deg, ${rgba(mix(surface, text, 0.08), 0.9)}, ${rgba(mix(bgPrimary, surface, 0.4), 0.92)})`,
-    "--bg-glow-top": `linear-gradient(180deg, ${rgba(accent, 0.18)}, transparent)`,
+    "--bg-active": `linear-gradient(135deg, rgb(var(--accent-rgb) / 0.16), rgb(var(--accent-rgb) / 0.10))`,
+    "--bg-active-strong": `linear-gradient(135deg, rgb(var(--accent-rgb) / 0.22), rgb(var(--accent-rgb) / 0.14))`,
+    "--bg-panel": `linear-gradient(160deg, rgb(var(--surface-rgb) / 0.95), rgb(var(--bg-rgb) / 0.92))`,
+    "--bg-panel-light": `linear-gradient(160deg, rgb(var(--surface-rgb) / 0.85), rgb(var(--bg-rgb) / 0.85))`,
+    "--bg-glow-top": `linear-gradient(180deg, rgb(var(--accent-rgb) / 0.18), transparent)`,
     "--graph-minimap-mask": rgba(graphBg, 0.8),
+
+    // ─── Body background gradients ───────────────────────
+    "--body-bg": `radial-gradient(circle at 14% 12%, rgb(var(--accent-rgb) / 0.18), transparent 36%), radial-gradient(circle at 84% 14%, rgb(var(--accent-rgb) / 0.10), transparent 34%), linear-gradient(180deg, ${bgPrimary} 0%, ${abyss} 100%)`,
   };
 }
 

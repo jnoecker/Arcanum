@@ -116,7 +116,7 @@ function PoolEditor({
         <button
           onClick={addPool}
           disabled={!newPoolName.trim()}
-          className="focus-ring rounded border border-white/10 bg-bg-tertiary px-3 py-1.5 text-2xs font-medium text-accent transition hover:bg-bg-tertiary/80 disabled:cursor-not-allowed disabled:opacity-40"
+          className="focus-ring rounded border border-[var(--chrome-stroke)] bg-bg-tertiary px-3 py-1.5 text-2xs font-medium text-accent transition hover:bg-bg-tertiary/80 disabled:cursor-not-allowed disabled:opacity-40"
         >
           Add Pool
         </button>

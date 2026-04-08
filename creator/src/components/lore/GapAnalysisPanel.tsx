@@ -65,7 +65,7 @@ export function GapAnalysisPanel() {
             return (
               <div
                 key={idx}
-                className="rounded-xl border border-white/8 bg-black/10 px-4 py-3"
+                className="rounded-xl border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] px-4 py-3"
               >
                 <div className="mb-1 flex items-center gap-2">
                   <span className="rounded-full bg-status-warning/15 px-2 py-0.5 text-3xs font-medium text-status-warning">
@@ -97,7 +97,7 @@ export function GapAnalysisPanel() {
                     onClick={() =>
                       setDismissed((s) => new Set(s).add(idx))
                     }
-                    className="ml-auto rounded-full border border-white/8 px-2 py-0.5 text-3xs text-text-muted transition hover:bg-white/8"
+                    className="ml-auto rounded-full border border-[var(--chrome-stroke)] px-2 py-0.5 text-3xs text-text-muted transition hover:bg-[var(--chrome-highlight-strong)]"
                   >
                     Dismiss
                   </button>

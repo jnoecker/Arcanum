@@ -240,6 +240,6 @@ function StatusDot({ status }: { status: TargetState["status"] }) {
     status === "error" ? "bg-status-error" :
     status === "processing" ? "bg-status-warning animate-pulse" :
     status === "skipped" ? "bg-white/20" :
-    "bg-white/10";
+    "bg-[var(--chrome-highlight-strong)]";
   return <span className={`h-2 w-2 shrink-0 rounded-full ${cls}`} />;
 }

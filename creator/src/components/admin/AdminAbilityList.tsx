@@ -4,7 +4,7 @@ import type { AbilityEntry } from "@/types/admin";
 
 const StatRow = memo(function StatRow({ label, value }: { label: string; value: string | number }) {
   return (
-    <div className="flex items-center justify-between border-b border-white/6 py-2 last:border-b-0">
+    <div className="flex items-center justify-between border-b border-[var(--chrome-stroke)] py-2 last:border-b-0">
       <span className="text-xs text-text-muted">{label}</span>
       <span className="text-xs text-text-primary">{value}</span>
     </div>
@@ -13,7 +13,7 @@ const StatRow = memo(function StatRow({ label, value }: { label: string; value: 
 
 const Section = memo(function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-3xl border border-white/10 bg-gradient-panel-light p-4 shadow-section">
+    <div className="rounded-3xl border border-[var(--chrome-stroke)] bg-gradient-panel-light p-4 shadow-section">
       <h4 className="mb-2 text-2xs uppercase tracking-wide-ui text-text-muted">{title}</h4>
       {children}
     </div>
@@ -30,7 +30,7 @@ const AbilityRow = memo(function AbilityRow({
   return (
     <button
       onClick={() => onSelect(ability.id)}
-      className="flex w-full items-center gap-3 rounded-2xl border border-white/8 bg-white/4 px-4 py-3 text-left transition-colors duration-200 hover:border-accent/20 hover:bg-accent/[0.04] hover:shadow-[inset_3px_0_0_var(--color-accent)] focus-visible:ring-2 focus-visible:ring-border-active focus-visible:outline-none"
+      className="flex w-full items-center gap-3 rounded-2xl border border-[var(--chrome-stroke)] bg-[var(--chrome-highlight)] px-4 py-3 text-left transition-colors duration-200 hover:border-accent/20 hover:bg-accent/[0.04] hover:shadow-[inset_3px_0_0_var(--color-accent)] focus-visible:ring-2 focus-visible:ring-border-active focus-visible:outline-none"
     >
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
@@ -70,7 +70,7 @@ function AbilityDetail({
       <div className="flex items-center gap-3">
         <button
           onClick={onBack}
-          className="rounded-full border border-white/10 bg-black/10 px-3 py-1 text-xs text-text-muted transition hover:bg-white/10 hover:text-text-primary focus-visible:ring-2 focus-visible:ring-border-active focus-visible:outline-none"
+          className="rounded-full border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] px-3 py-1 text-xs text-text-muted transition hover:bg-[var(--chrome-highlight-strong)] hover:text-text-primary focus-visible:ring-2 focus-visible:ring-border-active focus-visible:outline-none"
         >
           &#x2190; Back
         </button>
@@ -129,7 +129,7 @@ export function AdminAbilityList() {
       </div>
 
       {abilities.length === 0 ? (
-        <div className="rounded-3xl border border-dashed border-white/12 bg-white/4 px-6 py-12 text-center">
+        <div className="rounded-3xl border border-dashed border-[var(--chrome-stroke-strong)] bg-[var(--chrome-highlight)] px-6 py-12 text-center">
           <p className="font-display text-base text-text-secondary">No abilities found</p>
           <p className="mt-1 text-sm text-text-muted">
             The server has no abilities registered.

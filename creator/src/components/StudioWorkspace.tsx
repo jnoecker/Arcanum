@@ -62,7 +62,7 @@ function ZoneSelector({
         className={`focus-ring flex items-center gap-2 rounded-full border px-4 py-2 text-left transition ${
           open
             ? "border-border-active bg-gradient-active"
-            : "border-white/10 bg-white/[0.04] hover:bg-white/7"
+            : "border-[var(--chrome-stroke)] bg-[var(--chrome-highlight)] hover:bg-[var(--chrome-highlight)]"
         }`}
       >
         <span className="text-2xs uppercase tracking-ui text-text-muted">Zone</span>
@@ -78,9 +78,9 @@ function ZoneSelector({
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full z-20 mt-1 w-80 rounded-2xl border border-white/12 bg-bg-secondary shadow-xl">
+        <div className="absolute right-0 top-full z-20 mt-1 w-80 rounded-2xl border border-[var(--chrome-stroke-strong)] bg-bg-secondary shadow-xl">
           {zones.length > 6 && (
-            <div className="border-b border-white/8 px-3 py-2">
+            <div className="border-b border-[var(--chrome-stroke)] px-3 py-2">
               <input
                 autoFocus
                 value={search}
@@ -106,7 +106,7 @@ function ZoneSelector({
                     className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition ${
                       selected
                         ? "bg-gradient-active text-text-primary"
-                        : "text-text-secondary hover:bg-white/6"
+                        : "text-text-secondary hover:bg-[var(--chrome-highlight)]"
                     }`}
                   >
                     <div className="min-w-0 flex-1">
@@ -193,7 +193,7 @@ export function StudioWorkspace({ panelId }: { panelId: string }) {
                   className={`focus-ring rounded-full border px-4 py-2 text-xs font-medium transition ${
                     artSubTab === tab.id
                       ? "border-[var(--border-glow-strong)] bg-[linear-gradient(135deg,rgba(168,151,210,0.25),rgba(140,174,201,0.15))] text-text-primary shadow-glow"
-                      : "border-white/8 bg-white/[0.04] text-text-muted hover:border-white/14 hover:bg-white/8 hover:text-text-primary"
+                      : "border-[var(--chrome-stroke)] bg-[var(--chrome-highlight)] text-text-muted hover:border-[var(--chrome-stroke-strong)] hover:bg-[var(--chrome-highlight-strong)] hover:text-text-primary"
                   }`}
                 >
                   {tab.label}

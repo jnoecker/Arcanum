@@ -136,7 +136,7 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
       article: "bg-accent/15 text-accent",
       zone: "bg-status-success/20 text-status-success",
     };
-    return colors[type] ?? "bg-white/10 text-text-muted";
+    return colors[type] ?? "bg-[var(--chrome-highlight-strong)] text-text-muted";
   };
 
   const typeGlyph = (type: string) => {
@@ -153,13 +153,13 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
       className="fixed inset-0 z-50 flex items-start justify-center pt-[15vh]"
       onClick={onClose}
     >
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+      <div className="absolute inset-0 bg-[var(--chrome-fill-soft)]0 backdrop-blur-sm" />
       <div
         ref={trapRef}
         role="dialog"
         aria-modal="true"
         aria-label="Command palette"
-        className="relative w-full max-w-lg rounded-2xl border border-white/10 bg-bg-primary shadow-[0_24px_80px_rgba(8,10,18,0.6)]"
+        className="relative w-full max-w-lg rounded-2xl border border-[var(--chrome-stroke)] bg-bg-primary shadow-[0_24px_80px_rgba(8,10,18,0.6)]"
         onClick={(e) => e.stopPropagation()}
       >
         <input
@@ -176,7 +176,7 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
           aria-describedby={statusId}
           aria-expanded={filtered.length > 0}
           aria-activedescendant={activeOptionId}
-          className="w-full rounded-t-2xl border-b border-white/8 bg-transparent px-5 py-4 text-sm text-text-primary placeholder:text-text-muted outline-none focus-visible:ring-2 focus-visible:ring-border-active"
+          className="w-full rounded-t-2xl border-b border-[var(--chrome-stroke)] bg-transparent px-5 py-4 text-sm text-text-primary placeholder:text-text-muted outline-none focus-visible:ring-2 focus-visible:ring-border-active"
         />
         <p id={statusId} role="status" aria-live="polite" className="sr-only">
           {filtered.length === 0
@@ -206,7 +206,7 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
                 aria-selected={i === selectedIndex}
                 tabIndex={-1}
                 className={`flex w-full items-center gap-3 px-5 py-2.5 text-left transition ${
-                  i === selectedIndex ? "bg-white/8" : "hover:bg-white/4"
+                  i === selectedIndex ? "bg-[var(--chrome-highlight-strong)]" : "hover:bg-[var(--chrome-highlight)]"
                 }`}
               >
                 <span
@@ -229,13 +229,13 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
             ))
           )}
         </div>
-        <div className="border-t border-white/6 px-5 py-2 text-3xs text-text-muted">
-          <kbd className="rounded bg-white/8 px-1.5 py-0.5">&uarr;&darr;</kbd>{" "}
+        <div className="border-t border-[var(--chrome-stroke)] px-5 py-2 text-3xs text-text-muted">
+          <kbd className="rounded bg-[var(--chrome-highlight-strong)] px-1.5 py-0.5">&uarr;&darr;</kbd>{" "}
           navigate
           <span className="mx-2">&middot;</span>
-          <kbd className="rounded bg-white/8 px-1.5 py-0.5">&crarr;</kbd> open
+          <kbd className="rounded bg-[var(--chrome-highlight-strong)] px-1.5 py-0.5">&crarr;</kbd> open
           <span className="mx-2">&middot;</span>
-          <kbd className="rounded bg-white/8 px-1.5 py-0.5">esc</kbd> close
+          <kbd className="rounded bg-[var(--chrome-highlight-strong)] px-1.5 py-0.5">esc</kbd> close
         </div>
       </div>
     </div>

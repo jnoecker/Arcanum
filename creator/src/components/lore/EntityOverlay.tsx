@@ -70,7 +70,7 @@ function RemoveButton({ onClick }: { onClick: () => void }) {
   return (
     <button
       type="button"
-      className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-black/60 hover:bg-black/80 opacity-0 group-hover:opacity-100 transition-opacity duration-150"
+      className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-[var(--chrome-fill-soft)]0 hover:bg-[var(--chrome-fill-soft)]0 opacity-0 group-hover:opacity-100 transition-opacity duration-150"
       onClick={(e) => {
         e.stopPropagation();
         onClick();

@@ -377,7 +377,7 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
         <img src={subtoolbarBg} alt="" className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-[0.10]" />
 
         {/* Undo / Redo */}
-        <div className="flex items-center gap-0.5 border-r border-white/8 pr-3 max-[1180px]:pr-0 max-[1180px]:border-r-0">
+        <div className="flex items-center gap-0.5 border-r border-[var(--chrome-stroke)] pr-3 max-[1180px]:pr-0 max-[1180px]:border-r-0">
           <button
             onClick={() => { undo(zoneId); useToastStore.getState().show("Change undone"); }}
             disabled={!canUndo}
@@ -445,7 +445,7 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
         </label>
 
         {/* Zone name */}
-        <div className="ml-auto flex min-w-0 items-center gap-2 border-l border-white/8 pl-3 max-[1180px]:order-4 max-[1180px]:ml-0 max-[1180px]:w-full max-[1180px]:border-l-0 max-[1180px]:pl-0 max-[1180px]:pt-1">
+        <div className="ml-auto flex min-w-0 items-center gap-2 border-l border-[var(--chrome-stroke)] pl-3 max-[1180px]:order-4 max-[1180px]:ml-0 max-[1180px]:w-full max-[1180px]:border-l-0 max-[1180px]:pl-0 max-[1180px]:pt-1">
           <span className="truncate font-display text-sm font-semibold uppercase tracking-widest text-text-primary">
             {zoneState.data.zone}
           </span>
@@ -503,7 +503,7 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
             ))}
           </div>
 
-          <div className="flex items-center gap-2 border-l border-white/8 pl-3 max-[1180px]:w-full max-[1180px]:flex-wrap max-[1180px]:justify-end max-[1180px]:border-l-0 max-[1180px]:pl-0">
+          <div className="flex items-center gap-2 border-l border-[var(--chrome-stroke)] pl-3 max-[1180px]:w-full max-[1180px]:flex-wrap max-[1180px]:justify-end max-[1180px]:border-l-0 max-[1180px]:pl-0">
             <button
               onClick={() => setShowBatchArt(true)}
               className="h-6 rounded px-2 text-xs text-stellar-blue transition-colors hover:bg-stellar-blue/10 max-[1180px]:h-9"
@@ -514,7 +514,7 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
             </button>
             <button
               onClick={() => setShowBulkBgRemoval(true)}
-              className="h-6 rounded px-2 text-xs text-text-secondary transition-colors hover:bg-white/6 hover:text-text-primary max-[1180px]:h-9"
+              className="h-6 rounded px-2 text-xs text-text-secondary transition-colors hover:bg-[var(--chrome-highlight)] hover:text-text-primary max-[1180px]:h-9"
               title="Remove backgrounds from mob and item images"
               aria-label="Bulk remove backgrounds"
             >
@@ -523,7 +523,7 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
             <button
               onClick={handleRelayout}
               disabled={roomCount === 0}
-              className="h-6 rounded px-2 text-xs text-text-secondary transition-colors hover:bg-white/6 hover:text-text-primary disabled:opacity-30 max-[1180px]:h-9"
+              className="h-6 rounded px-2 text-xs text-text-secondary transition-colors hover:bg-[var(--chrome-highlight)] hover:text-text-primary disabled:opacity-30 max-[1180px]:h-9"
               title="Re-run BFS layout and fit view"
               aria-label="Re-layout rooms"
             >
@@ -658,7 +658,7 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
             {/* First-zone onboarding hint */}
             {roomCount <= 1 && !hintDismissed && viewMode === "map" && (
               <div className="pointer-events-auto absolute inset-x-0 bottom-4 z-[2] flex justify-center">
-                <div className="flex items-center gap-4 rounded-2xl border border-white/10 bg-bg-secondary/95 px-5 py-3 shadow-section">
+                <div className="flex items-center gap-4 rounded-2xl border border-[var(--chrome-stroke)] bg-bg-secondary/95 px-5 py-3 shadow-section">
                   <div>
                     <p className="text-sm text-text-primary">
                       Click the <span className="font-mono text-accent">+</span> handles on a room's edges to create exits to new rooms.
@@ -672,7 +672,7 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
                       setHintDismissed(true);
                       localStorage.setItem("arcanum:zone-hint-dismissed", "1");
                     }}
-                    className="shrink-0 rounded-full border border-white/10 px-3 py-1.5 text-xs text-text-muted transition hover:bg-white/8 hover:text-text-primary"
+                    className="shrink-0 rounded-full border border-[var(--chrome-stroke)] px-3 py-1.5 text-xs text-text-muted transition hover:bg-[var(--chrome-highlight-strong)] hover:text-text-primary"
                   >
                     Got it
                   </button>

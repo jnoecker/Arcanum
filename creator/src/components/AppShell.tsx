@@ -39,19 +39,19 @@ export function AppShell() {
   }, []);
 
   return (
-    <div className="relative flex min-h-screen min-h-dvh flex-col overflow-x-hidden bg-bg-abyss">
+    <div className="relative flex h-screen h-dvh flex-col overflow-hidden bg-bg-abyss">
       <div aria-hidden="true" className="pointer-events-none absolute inset-0">
-        <div className="absolute left-[-10rem] top-[-8rem] h-[34rem] w-[34rem] rounded-full bg-[radial-gradient(circle,rgba(168,151,210,0.14),transparent_68%)] blur-3xl" />
-        <div className="absolute bottom-[-14rem] right-[-12rem] h-[40rem] w-[40rem] rounded-full bg-[radial-gradient(circle,rgba(140,174,201,0.12),transparent_72%)] blur-3xl" />
+        <div className="absolute left-[-10rem] top-[-8rem] h-[34rem] w-[34rem] rounded-full bg-[radial-gradient(circle,rgb(var(--accent-rgb)/0.14),transparent_68%)] blur-3xl" />
+        <div className="absolute bottom-[-14rem] right-[-12rem] h-[40rem] w-[40rem] rounded-full bg-[radial-gradient(circle,rgb(var(--accent-rgb)/0.10),transparent_72%)] blur-3xl" />
       </div>
-      <header><Toolbar workspace={workspace} setWorkspace={setWorkspace} /></header>
-      <div className="relative z-10 flex flex-1 flex-col gap-3 px-4 pb-3 lg:min-h-0 lg:flex-row">
-        <aside className="min-w-0 lg:min-h-0"><Sidebar workspace={workspace} /></aside>
-        <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-3xl border border-white/10 bg-bg-primary shadow-panel">
+      <header className="shrink-0"><Toolbar workspace={workspace} setWorkspace={setWorkspace} /></header>
+      <div className="relative z-10 flex min-h-0 flex-1 flex-col gap-3 px-4 pb-3 lg:flex-row">
+        <Sidebar workspace={workspace} />
+        <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-3xl border border-[var(--chrome-stroke)] bg-bg-primary shadow-panel">
           <MainArea workspace={workspace} />
         </main>
       </div>
-      <footer><StatusBar /></footer>
+      <footer className="shrink-0"><StatusBar /></footer>
       {showPalette && <CommandPalette onClose={() => setShowPalette(false)} />}
       <Suspense>
         {showHelp && <ShortcutsHelp onClose={() => setShowHelp(false)} />}

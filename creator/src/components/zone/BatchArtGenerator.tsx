@@ -123,7 +123,7 @@ export function BatchArtGenerator({
             </p>
           </div>
           <div className="flex shrink-0 flex-col items-end gap-2 text-right">
-            <span className="rounded-full border border-white/10 bg-black/10 px-3 py-1 text-2xs text-text-secondary">
+            <span className="rounded-full border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] px-3 py-1 text-2xs text-text-secondary">
               {checkedTargets.length} of {targets.length} selected
             </span>
             {!running && doneCount === 0 && (

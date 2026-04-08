@@ -68,7 +68,7 @@ export function AdminBroadcastPanel() {
           onChange={(e) => setMessage(e.target.value.slice(0, MAX_LENGTH))}
           placeholder="Enter your message to the world..."
           rows={3}
-          className="w-full resize-none rounded-xl border border-white/10 bg-black/15 px-4 py-3 text-sm text-text-primary placeholder:text-text-muted focus:border-border-active focus:outline-none focus-visible:ring-2 focus-visible:ring-border-active"
+          className="w-full resize-none rounded-xl border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] px-4 py-3 text-sm text-text-primary placeholder:text-text-muted focus:border-border-active focus:outline-none focus-visible:ring-2 focus-visible:ring-border-active"
         />
         <div className="mt-1 text-right text-2xs text-text-muted">
           {message.length}/{MAX_LENGTH}

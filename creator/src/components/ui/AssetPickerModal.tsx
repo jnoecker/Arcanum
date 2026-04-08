@@ -86,7 +86,7 @@ export function AssetPickerModal({ onSelect, onClose }: AssetPickerModalProps) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--chrome-fill-soft)]0"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}

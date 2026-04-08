@@ -86,7 +86,7 @@ export function AdminReloadPanel() {
             className={`rounded-2xl border px-4 py-3 text-left transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-border-active focus-visible:outline-none ${
               selectedTarget === t.id
                 ? "border-border-active bg-gradient-active-strong shadow-sm shadow-accent/10"
-                : "border-white/8 bg-white/4 hover:border-white/15 hover:bg-white/7"
+                : "border-[var(--chrome-stroke)] bg-[var(--chrome-highlight)] hover:border-[var(--chrome-stroke-strong)] hover:bg-[var(--chrome-highlight)]"
             }`}
           >
             <div className="font-display text-sm text-text-primary">{t.label}</div>

@@ -42,7 +42,7 @@ export function AdminConnectionBar() {
     <div className={`rounded-3xl border p-4 shadow-section transition-colors duration-500 ${
       isConnected
         ? "border-accent/20 bg-gradient-to-r from-accent/[0.05] via-bg-elevated/80 to-bg-elevated/80"
-        : "border-white/10 bg-gradient-panel-light"
+        : "border-[var(--chrome-stroke)] bg-gradient-panel-light"
     }`}>
       <div className="flex items-center gap-3">
         <div className={`h-2.5 w-2.5 shrink-0 rounded-full ${STATUS_STYLES[connectionStatus]}`} />
@@ -75,7 +75,7 @@ export function AdminConnectionBar() {
             onChange={(e) => setUrl(e.target.value)}
             placeholder="http://localhost:9091"
             disabled={isConnected || isConnecting}
-            className="h-9 w-full rounded-xl border border-white/10 bg-black/15 px-3 text-sm text-text-primary placeholder:text-text-muted focus:border-border-active focus:outline-none focus-visible:ring-2 focus-visible:ring-border-active disabled:opacity-50"
+            className="h-9 w-full rounded-xl border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] px-3 text-sm text-text-primary placeholder:text-text-muted focus:border-border-active focus:outline-none focus-visible:ring-2 focus-visible:ring-border-active disabled:opacity-50"
           />
         </div>
 
@@ -91,7 +91,7 @@ export function AdminConnectionBar() {
               onChange={(e) => setToken(e.target.value)}
               placeholder="admin token"
               disabled={isConnected || isConnecting}
-              className="h-9 w-full rounded-xl border border-white/10 bg-black/15 px-3 pr-8 text-sm text-text-primary placeholder:text-text-muted focus:border-border-active focus:outline-none focus-visible:ring-2 focus-visible:ring-border-active disabled:opacity-50"
+              className="h-9 w-full rounded-xl border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] px-3 pr-8 text-sm text-text-primary placeholder:text-text-muted focus:border-border-active focus:outline-none focus-visible:ring-2 focus-visible:ring-border-active disabled:opacity-50"
             />
             <button
               type="button"
@@ -108,7 +108,7 @@ export function AdminConnectionBar() {
         {isConnected ? (
           <button
             onClick={handleDisconnect}
-            className="h-9 rounded-xl border border-white/10 bg-black/10 px-4 text-xs font-medium text-text-primary transition hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-border-active focus-visible:outline-none"
+            className="h-9 rounded-xl border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] px-4 text-xs font-medium text-text-primary transition hover:bg-[var(--chrome-highlight-strong)] focus-visible:ring-2 focus-visible:ring-border-active focus-visible:outline-none"
           >
             Disconnect
           </button>

@@ -39,7 +39,7 @@ export function AdminConfigPanel({ config, onChange }: ConfigPanelProps) {
             label="Auth Token"
             hint="Managed by the mud deployment layer. Arcanum writes a blank token to project YAML and expects the runtime token to come from SSM or environment variables."
           >
-            <div className="rounded-xl border border-white/10 bg-black/15 px-3 py-2 text-sm leading-6 text-text-secondary">
+            <div className="rounded-xl border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] px-3 py-2 text-sm leading-6 text-text-secondary">
               Runtime-managed via <span className="font-mono text-stellar-blue">AMBONMUD_ADMIN_TOKEN</span>.
             </div>
           </FieldRow>

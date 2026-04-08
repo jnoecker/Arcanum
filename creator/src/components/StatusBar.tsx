@@ -26,7 +26,7 @@ export function StatusBar() {
           World pulse
         </span>
 
-        <span className="rounded-full border border-white/10 bg-black/10 px-3 py-1 text-text-muted">
+        <span className="rounded-full border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] px-3 py-1 text-text-muted">
           {totalZones} zone{totalZones !== 1 ? "s" : ""} loaded
         </span>
 
@@ -83,7 +83,7 @@ export function StatusBar() {
                 ? "border-server-error/20 bg-server-error/15 text-server-error"
                 : adminStatus === "connecting"
                   ? "border-server-starting/20 bg-server-starting/15 text-server-starting"
-                  : "border-white/10 bg-black/10 text-text-muted"
+                  : "border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] text-text-muted"
           }`}
         >
           {adminStatus === "connected"

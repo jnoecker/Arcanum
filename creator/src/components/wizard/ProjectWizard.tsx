@@ -88,7 +88,7 @@ export function ProjectWizard({ onClose }: ProjectWizardProps) {
                 Choose a location, seed the world from a template, and set the first thematic constraints before opening the workspace.
               </p>
             </div>
-            <span className="rounded-full border border-white/10 bg-black/10 px-3 py-1 text-2xs text-text-secondary">
+            <span className="rounded-full border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] px-3 py-1 text-2xs text-text-secondary">
               Step {step} of {STEP_COUNT}
             </span>
           </div>

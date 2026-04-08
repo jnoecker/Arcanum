@@ -60,7 +60,7 @@ export function TabBar({ workspace }: { workspace: Workspace }) {
   if (tabs.length === 0) return null;
 
   return (
-    <div className="relative shrink-0 border-b border-white/6 bg-bg-secondary/40 px-3 py-1.5">
+    <div className="relative shrink-0 border-b border-[var(--chrome-stroke)] bg-bg-secondary/40 px-3 py-1.5">
       {hasOverflow && (
         <div className="pointer-events-none absolute right-0 top-0 z-10 h-full w-10 bg-gradient-to-l from-bg-secondary/80 to-transparent" />
       )}
@@ -76,7 +76,7 @@ export function TabBar({ workspace }: { workspace: Workspace }) {
             onClick={closeAllTabs}
             title="Close all tabs"
             aria-label="Close all tabs"
-            className="focus-ring flex shrink-0 items-center rounded-lg px-2 py-1.5 text-text-muted transition hover:bg-white/4 hover:text-text-primary"
+            className="focus-ring flex shrink-0 items-center rounded-lg px-2 py-1.5 text-text-muted transition hover:bg-[var(--chrome-highlight)] hover:text-text-primary"
           >
             <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
               <path d="M3 3l6 6M9 3l-6 6" />
@@ -94,10 +94,10 @@ export function TabBar({ workspace }: { workspace: Workspace }) {
               key={tab.id}
               className={`group flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-1.5 transition ${
                 isActive
-                  ? "bg-white/8 shadow-sm"
+                  ? "bg-[var(--chrome-highlight-strong)] shadow-sm"
                   : inWorkspace
-                    ? "hover:bg-white/4"
-                    : "opacity-40 hover:bg-white/4 hover:opacity-70"
+                    ? "hover:bg-[var(--chrome-highlight)]"
+                    : "opacity-40 hover:bg-[var(--chrome-highlight)] hover:opacity-70"
               }`}
             >
               <button
@@ -136,7 +136,7 @@ export function TabBar({ workspace }: { workspace: Workspace }) {
               </button>
               <button
                 aria-label={`Close ${tab.label}`}
-                className="focus-ring rounded-full p-0.5 text-text-muted opacity-0 transition-opacity hover:bg-white/10 hover:text-text-primary group-hover:opacity-70 group-focus-within:opacity-70"
+                className="focus-ring rounded-full p-0.5 text-text-muted opacity-0 transition-opacity hover:bg-[var(--chrome-highlight-strong)] hover:text-text-primary group-hover:opacity-70 group-focus-within:opacity-70"
                 onClick={() => closeTab(tab.id)}
               >
                 <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">

@@ -185,7 +185,7 @@ export function MapEnhancer({
         aria-modal="true"
         aria-labelledby="map-enhance-title"
         aria-describedby="map-enhance-description"
-        className="relative flex max-h-[90vh] w-full max-w-4xl flex-col gap-4 overflow-y-auto rounded-3xl border border-white/10 bg-bg-secondary p-6 shadow-panel"
+        className="relative flex max-h-[90vh] w-full max-w-4xl flex-col gap-4 overflow-y-auto rounded-3xl border border-[var(--chrome-stroke)] bg-bg-secondary p-6 shadow-panel"
       >
         <div className="flex items-center justify-between">
           <h3 id="map-enhance-title" className="font-display text-xl text-text-primary">Enhance Map Region</h3>

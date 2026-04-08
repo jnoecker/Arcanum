@@ -1,7 +1,6 @@
 use base64::Engine;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
-use std::path::PathBuf;
 use tauri::{AppHandle, Manager};
 
 use crate::{deepinfra::GeneratedImage, generation, settings};
@@ -54,14 +53,6 @@ struct RunwareResponse {
 struct RunwareImageResult {
     #[serde(alias = "imageURL", alias = "imageUrl")]
     image_url: Option<String>,
-}
-
-fn assets_dir(app: &AppHandle) -> Result<PathBuf, String> {
-    let dir = app
-        .path()
-        .app_data_dir()
-        .map_err(|e| format!("Failed to get app data dir: {e}"))?;
-    Ok(dir.join("assets").join("images"))
 }
 
 /// Round to nearest multiple of 16, clamped to Runware's 128–2048 range.

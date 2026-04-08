@@ -202,7 +202,7 @@ export function normalizeCurrenciesConfig(config?: AppConfig["currencies"]): App
       displayName: def.displayName,
       abbreviation: def.abbreviation ?? "",
       description: def.description ?? "",
-    })) as AppConfig["currencies"]["definitions"],
+    })) as NonNullable<AppConfig["currencies"]>["definitions"],
     honorPerPvpKill: config.honorPerPvpKill ?? 10,
     tokensPerCraft: config.tokensPerCraft ?? 1,
   };

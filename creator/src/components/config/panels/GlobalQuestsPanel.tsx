@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { ConfigPanelProps } from "./types";
-import type { GlobalQuestsConfig } from "@/types/config";
+import type { GlobalQuestsConfig, GlobalQuestObjectiveConfig } from "@/types/config";
 import {
   Section,
   FieldRow,
@@ -12,7 +12,7 @@ const DEFAULT_GLOBAL_QUESTS: GlobalQuestsConfig = {
   enabled: false,
   intervalMs: 3_600_000,
   durationMs: 1_800_000,
-  objectives: {},
+  objectives: [],
   rewards: {},
 };
 
@@ -58,8 +58,8 @@ export function GlobalQuestsPanel({ config, onChange }: ConfigPanelProps) {
       >
         <JsonEditor
           label="Objectives"
-          value={gq.objectives}
-          onChange={(v) => patch({ objectives: v })}
+          value={gq.objectives ?? []}
+          onChange={(v) => patch({ objectives: v as GlobalQuestObjectiveConfig[] })}
         />
       </Section>
 
@@ -69,8 +69,8 @@ export function GlobalQuestsPanel({ config, onChange }: ConfigPanelProps) {
       >
         <JsonEditor
           label="Rewards"
-          value={gq.rewards}
-          onChange={(v) => patch({ rewards: v })}
+          value={gq.rewards ?? {}}
+          onChange={(v) => patch({ rewards: v as Record<string, unknown> })}
         />
       </Section>
     </>
@@ -85,8 +85,8 @@ function JsonEditor({
   onChange,
 }: {
   label: string;
-  value: Record<string, unknown>;
-  onChange: (v: Record<string, unknown>) => void;
+  value: unknown;
+  onChange: (v: unknown) => void;
 }) {
   const serialized = JSON.stringify(value, null, 2);
   const [draft, setDraft] = useState(serialized);
@@ -100,12 +100,12 @@ function JsonEditor({
   const commit = () => {
     try {
       const parsed = JSON.parse(draft);
-      if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
-        setError("Must be a JSON object");
+      if (typeof parsed !== "object" || parsed === null) {
+        setError("Must be a JSON object or array");
         return;
       }
       setError(null);
-      onChange(parsed as Record<string, unknown>);
+      onChange(parsed);
     } catch {
       setError("Invalid JSON");
     }

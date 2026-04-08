@@ -402,7 +402,7 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
         <button
           onClick={handleSave}
           disabled={!zoneState.dirty || saving}
-          className={`focus-ring h-7 rounded-full px-3 text-xs font-medium transition-all duration-500 max-[1180px]:h-9 ${
+          className={`focus-ring h-7 rounded-full px-3 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity] duration-500 max-[1180px]:h-9 ${
             saving
               ? "border border-[rgba(200,164,106,0.4)] bg-[linear-gradient(145deg,rgba(200,164,106,0.22),rgba(43,52,76,0.9))] text-warm-pale shadow-[0_4px_16px_rgba(200,164,106,0.18)]"
               : justSaved
@@ -453,7 +453,7 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
             {roomCount} room{roomCount !== 1 ? "s" : ""}
           </span>
           {zoneState.dirty && (
-            <span className="shrink-0 rounded-full bg-[rgba(200,164,106,0.15)] px-2 py-0.5 text-3xs text-warm-pale">modified</span>
+            <span className="shrink-0 rounded-full bg-warm/15 px-2 py-0.5 text-3xs text-warm-pale">modified</span>
           )}
         </div>
 
@@ -563,7 +563,7 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
             ) : (
               <button
                 onClick={handleStartAddRoom}
-                className="h-6 rounded-full border border-[rgba(200,164,106,0.35)] bg-[rgba(200,164,106,0.15)] px-3 text-xs text-warm-pale hover:bg-[rgba(200,164,106,0.25)] max-[1180px]:h-9"
+                className="h-6 rounded-full border border-warm/35 bg-warm/15 px-3 text-xs text-warm-pale hover:bg-warm/25 max-[1180px]:h-9"
                 title="Add Room"
               >
                 + Room
@@ -658,7 +658,7 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
             {/* First-zone onboarding hint */}
             {roomCount <= 1 && !hintDismissed && viewMode === "map" && (
               <div className="pointer-events-auto absolute inset-x-0 bottom-4 z-[2] flex justify-center">
-                <div className="flex items-center gap-4 rounded-2xl border border-white/10 bg-gradient-panel bg-[radial-gradient(circle_at_center,rgba(200,164,106,0.08),transparent_60%)] px-5 py-3 shadow-section backdrop-blur-xl">
+                <div className="flex items-center gap-4 rounded-2xl border border-white/10 bg-bg-secondary/95 px-5 py-3 shadow-section">
                   <div>
                     <p className="text-sm text-text-primary">
                       Click the <span className="font-mono text-accent">+</span> handles on a room's edges to create exits to new rooms.

@@ -1,4 +1,5 @@
 import { useRef, useState, useCallback, useEffect, useMemo } from "react";
+import { useShallow } from "zustand/shallow";
 import { invoke } from "@tauri-apps/api/core";
 import { useZoneStore, type ZoneState } from "@/stores/zoneStore";
 import { useProjectStore } from "@/stores/projectStore";
@@ -340,6 +341,7 @@ function PanelButtonGrid({
             <button
               onClick={() => toggleSection(group.id)}
               aria-expanded={!isCollapsed}
+              aria-label={`${isCollapsed ? "Expand" : "Collapse"} ${group.label}`}
               className="mb-1 flex w-full items-center gap-1.5 rounded-md px-1 py-1 transition hover:bg-white/4"
             >
               <svg
@@ -384,6 +386,8 @@ function PanelButtonGrid({
                   {needsCollapse && !expanded && (
                     <button
                       onClick={(e) => { e.stopPropagation(); setExpandedGroups((s) => new Set(s).add(group.id)); }}
+                      aria-label={`Show ${hiddenCount} more panels`}
+                      aria-expanded={false}
                       className="rounded-full border border-dashed border-white/10 px-2.5 py-1.5 text-2xs text-text-muted transition hover:border-white/20 hover:text-text-secondary"
                     >
                       +{hiddenCount} more
@@ -414,8 +418,9 @@ function PanelButtonGrid({
 export function Sidebar({ workspace }: { workspace: Workspace }) {
   const zones = useZoneStore((s) => s.zones);
   const openTab = useProjectStore((s) => s.openTab);
-  const openTabs = useProjectStore((s) => s.tabs);
-  const activeTabId = useProjectStore((s) => s.activeTabId);
+  const { tabs: openTabs, activeTabId, project } = useProjectStore(
+    useShallow((s) => ({ tabs: s.tabs, activeTabId: s.activeTabId, project: s.project })),
+  );
   const navigateTo = useProjectStore((s) => s.navigateTo);
   const closeTab = useProjectStore((s) => s.closeTab);
   const removeZone = useZoneStore((s) => s.removeZone);
@@ -427,7 +432,7 @@ export function Sidebar({ workspace }: { workspace: Workspace }) {
   const [showNewZone, setShowNewZone] = useState(false);
   const [renameTarget, setRenameTarget] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
-  const hasProject = !!useProjectStore((s) => s.project);
+  const hasProject = !!project;
 
   const handleSearchKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
@@ -438,8 +443,6 @@ export function Sidebar({ workspace }: { workspace: Workspace }) {
     },
     [clearQuery],
   );
-
-  const project = useProjectStore((s) => s.project);
 
   const handleDeleteZone = useCallback(async (zoneId: string) => {
     const zoneState = zones.get(zoneId);
@@ -596,7 +599,7 @@ export function Sidebar({ workspace }: { workspace: Workspace }) {
                     </p>
                     <button
                       onClick={() => setShowNewZone(true)}
-                      className="focus-ring rounded-full bg-accent px-4 py-1.5 text-2xs font-medium text-accent-emphasis transition-all hover:shadow-[var(--glow-aurum)] hover:brightness-110"
+                      className="focus-ring rounded-full bg-accent px-4 py-1.5 text-2xs font-medium text-accent-emphasis transition-[box-shadow,filter] hover:shadow-[var(--glow-aurum)] hover:brightness-110"
                     >
                       Create your first zone
                     </button>

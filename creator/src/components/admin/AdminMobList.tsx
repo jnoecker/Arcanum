@@ -88,7 +88,7 @@ export function AdminMobList() {
             <select
               value={zoneFilter}
               onChange={(e) => setZoneFilter(e.target.value)}
-              className="rounded-full border border-white/10 bg-black/20 px-3 py-1.5 text-xs text-text-secondary backdrop-blur-sm transition focus-visible:ring-2 focus-visible:ring-border-active focus-visible:outline-none"
+              className="rounded-full border border-white/10 bg-black/40 px-3 py-1.5 text-xs text-text-secondary transition focus-visible:ring-2 focus-visible:ring-border-active focus-visible:outline-none"
               aria-label="Filter by zone"
             >
               <option value="">All zones</option>

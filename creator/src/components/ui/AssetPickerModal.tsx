@@ -155,7 +155,7 @@ export function AssetPickerModal({ onSelect, onClose }: AssetPickerModalProps) {
                     onSelect(asset.file_name);
                     onClose();
                   }}
-                  className="group overflow-hidden rounded-lg border border-border-default transition-all hover:border-accent hover:shadow-[var(--glow-aurum)]"
+                  className="group overflow-hidden rounded-lg border border-border-default transition-[border-color,box-shadow] hover:border-accent hover:shadow-[var(--glow-aurum)]"
                   title={`${asset.asset_type} — ${asset.file_name}`}
                 >
                   <div className="aspect-square bg-bg-primary">

@@ -354,7 +354,7 @@ export function NewZoneDialog({ onClose }: NewZoneDialogProps) {
           <button
             onClick={handleCreate}
             disabled={!canCreate}
-            className="rounded bg-accent px-4 py-2 text-xs font-medium text-accent-emphasis transition-all hover:shadow-[var(--glow-aurum)] hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40 sm:px-4 sm:py-1.5"
+            className="rounded bg-accent px-4 py-2 text-xs font-medium text-accent-emphasis transition-[box-shadow,filter,opacity] hover:shadow-[var(--glow-aurum)] hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40 sm:px-4 sm:py-1.5"
           >
             {creating
               ? size === "stub" || !hasDescription

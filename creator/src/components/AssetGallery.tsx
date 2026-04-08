@@ -499,7 +499,7 @@ export function AssetGallery({ onClose }: { onClose: () => void }) {
                   <button
                     key={asset.id}
                     onClick={() => setSelected(asset)}
-                    className={`group overflow-hidden rounded-lg border text-left transition-all ${
+                    className={`group overflow-hidden rounded-lg border text-left transition-[border-color,box-shadow] ${
                       selected?.id === asset.id
                         ? "border-accent shadow-[var(--glow-aurum)]"
                         : "border-border-default hover:border-border-hover"

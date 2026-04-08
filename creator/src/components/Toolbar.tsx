@@ -35,6 +35,13 @@ const ADMIN_STATUS_LABELS: Record<string, string> = {
   error: "Link lost",
 };
 
+const ADMIN_STATUS_GLYPHS: Record<string, string> = {
+  disconnected: "\u25CB", // ○
+  connecting: "\u25D0", // ◐
+  connected: "\u25CF", // ●
+  error: "\u2715", // ✕
+};
+
 
 interface ToolbarProps {
   workspace: Workspace;
@@ -226,11 +233,13 @@ export function Toolbar({ workspace, setWorkspace }: ToolbarProps) {
                   aria-expanded={showUtilityMenu}
                   aria-haspopup="true"
                 >
-                  <div
-                    className={`h-2.5 w-2.5 shrink-0 rounded-full ${ADMIN_STATUS_COLORS[adminConnectionStatus]}`}
+                  <span
+                    className={`flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full text-[9px] leading-none text-bg-abyss ${ADMIN_STATUS_COLORS[adminConnectionStatus]}`}
                     role="status"
                     aria-label={ADMIN_STATUS_LABELS[adminConnectionStatus]}
-                  />
+                  >
+                    <span aria-hidden="true">{ADMIN_STATUS_GLYPHS[adminConnectionStatus]}</span>
+                  </span>
                   <span className="min-w-0 truncate">World Tools</span>
                 </ActionButton>
                 {showUtilityMenu && (

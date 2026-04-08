@@ -116,7 +116,7 @@ export function PresetCard({ preset, metrics, isSelected, isDimmed, onSelect }: 
       className={[
         "max-w-[320px] w-full rounded-xl border p-6 text-left",
         "bg-bg-tertiary cursor-pointer",
-        "transition-all duration-200 hover:bg-bg-hover",
+        "transition-[color,background-color,border-color,box-shadow,opacity] duration-200 hover:bg-bg-hover",
         borderClass,
         glowClass,
         dimClass,

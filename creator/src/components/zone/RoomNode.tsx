@@ -55,7 +55,7 @@ const plusHandleStyle: React.CSSProperties = {
   cursor: "crosshair",
   fontSize: 12,
   color: "color-mix(in srgb, var(--color-text-muted) 60%, transparent)",
-  transition: "all 0.15s",
+  transition: "background-color 0.15s, border-color 0.15s, color 0.15s",
   zIndex: 10,
 };
 

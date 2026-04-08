@@ -642,7 +642,7 @@ export function AbilityStudio() {
           </div>
           <div className="h-2 overflow-hidden rounded-full bg-bg-primary">
             <div
-              className="h-full rounded-full bg-accent transition-all"
+              className="h-full rounded-full bg-accent transition-[width]"
               style={{ width: `${(batchCompleted / batchProgress.total) * 100}%` }}
             />
           </div>
@@ -721,7 +721,7 @@ export function AbilityStudio() {
             {/* Preview row — wide horizontal card */}
             <div className="rounded-3xl border border-white/8 bg-black/12 p-4">
               <div className="flex gap-5">
-                <div className="flex shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-white/8 bg-[linear-gradient(180deg,rgba(34,41,60,0.8),rgba(28,34,52,0.88))] p-3" style={{ width: "10rem", height: "10rem" }}>
+                <div className="flex shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-white/8 bg-gradient-panel p-3" style={{ width: "10rem", height: "10rem" }}>
                   {selectedSrc ? (
                     <img src={selectedSrc} alt={selectedTarget.label} className="max-h-full max-w-full rounded-xl object-contain shadow-section" />
                   ) : (

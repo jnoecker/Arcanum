@@ -485,7 +485,7 @@ export function MudImportWizard({ onClose }: { onClose: () => void }) {
             </div>
             <div className="h-2 rounded-full bg-white/8 overflow-hidden">
               <div
-                className="h-full rounded-full bg-accent transition-all duration-300"
+                className="h-full rounded-full bg-accent transition-[width] duration-300"
                 style={{ width: `${totalChunks > 0 ? ((doneChunks + errorChunks) / totalChunks) * 100 : 0}%` }}
               />
             </div>

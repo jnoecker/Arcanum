@@ -183,7 +183,7 @@ export function BulkBgRemoval({
         <div className="mb-3">
           <div className="h-1.5 overflow-hidden rounded-full bg-bg-primary">
             <div
-              className="h-full rounded-full bg-accent transition-all"
+              className="h-full rounded-full bg-accent transition-[width]"
               style={{ width: `${checkedCount > 0 ? (processedCount / checkedCount) * 100 : 0}%` }}
             />
           </div>

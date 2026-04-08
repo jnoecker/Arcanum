@@ -42,7 +42,7 @@ const EXPORT_DIR_KEY = "arcanum-runtime-export-dir";
 
 const STATUS_STYLES: Record<StepStatus, string> = {
   idle: "border-white/10 bg-black/10 text-text-secondary",
-  running: "border-border-active bg-[rgba(140,174,201,0.14)] text-text-primary",
+  running: "border-border-active bg-status-info/15 text-text-primary",
   success: "border-status-success/30 bg-status-success/10 text-status-success",
   warning: "border-status-warning/30 bg-status-warning/10 text-status-warning",
   error: "border-status-error/30 bg-status-error/10 text-status-error",

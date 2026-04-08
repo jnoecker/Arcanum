@@ -2,19 +2,13 @@ import { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
 import { useLoreStore, selectArticles, selectMaps, selectColorLabels } from "@/stores/loreStore";
-import { useImageSrc } from "@/lib/useImageSrc";
+import { useImageSrcStatus } from "@/lib/useImageSrc";
 import type { LoreMap, Article } from "@/types/lore";
 import { TEMPLATE_SCHEMAS } from "@/lib/loreTemplates";
 import { ActionButton, FieldRow, TextInput } from "@/components/ui/FormWidgets";
 import { MapViewer } from "./MapViewer";
 import { MapEnhancer } from "./MapEnhancer";
 import { MapAnalysisPanel } from "./MapAnalysisPanel";
-
-// ─── Map image hook ─────────────────────────────────────────────────
-
-function useMapImage(imageAsset: string | undefined): string | null {
-  return useImageSrc(imageAsset);
-}
 
 // ─── Color palette picker ──────────────────────────────────────────
 
@@ -394,7 +388,7 @@ export function MapPanel() {
     [maps, selectedMapId],
   );
 
-  const mapImage = useMapImage(selectedMap?.imageAsset);
+  const { src: mapImage, status: mapImageStatus } = useImageSrcStatus(selectedMap?.imageAsset);
 
   const handleUploadMap = useCallback(async () => {
     try {
@@ -635,6 +629,26 @@ export function MapPanel() {
               </div>
             )}
           </div>
+        </div>
+      ) : selectedMap && mapImageStatus === "error" ? (
+        <div className="flex h-64 flex-col items-center justify-center gap-3 rounded-lg border border-dashed border-status-danger/50 px-6 text-center text-sm text-text-muted">
+          <p className="font-display text-base text-status-danger">
+            Map image not found in asset cache
+          </p>
+          <p className="max-w-md text-xs text-text-muted">
+            The file <code className="font-mono text-2xs text-text-secondary">{selectedMap.imageAsset}</code> is
+            referenced by this map but no longer exists locally. Use{" "}
+            <span className="text-text-secondary">Replace Image</span> above to re-import it
+            (uploading the same source file will restore it with the same hash).
+          </p>
+          <ActionButton
+            onClick={handleReplaceImage}
+            disabled={replacing}
+            variant="primary"
+            size="sm"
+          >
+            {replacing ? "Replacing..." : "Replace Image"}
+          </ActionButton>
         </div>
       ) : selectedMap && !mapImage ? (
         <div className="flex h-64 items-center justify-center rounded-lg border border-dashed border-border-muted text-sm text-text-muted">

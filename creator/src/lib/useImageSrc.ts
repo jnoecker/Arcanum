@@ -18,17 +18,25 @@ export function isLegacyImagePath(path: string | undefined): boolean {
   return true;
 }
 
+export type ImageLoadStatus = "idle" | "loading" | "loaded" | "error";
+
+export interface ImageLoadResult {
+  src: string | null;
+  status: ImageLoadStatus;
+}
+
 /**
- * Load an image from a local file path via IPC, returning a data URL.
+ * Load an image from a local file path via IPC, returning a data URL plus status.
  * Handles three kinds of paths:
  * - R2 hash filenames (e.g. "abc123...def.png") → resolve from local asset cache
  * - Legacy relative paths (e.g. "zone/image.png") → resolve from MUD images dir
  * - Absolute paths → load directly
  */
-export function useImageSrc(filePath: string | undefined): string | null {
+export function useImageSrcStatus(filePath: string | undefined): ImageLoadResult {
   const mudDir = useProjectStore((s) => s.project?.mudDir);
   const assetsDir = useAssetStore((s) => s.assetsDir);
   const [src, setSrc] = useState<string | null>(null);
+  const [status, setStatus] = useState<ImageLoadStatus>("idle");
 
   const candidates = useMemo(() => {
     if (!filePath) return [];
@@ -51,32 +59,51 @@ export function useImageSrc(filePath: string | undefined): string | null {
   }, [filePath, mudDir, assetsDir]);
 
   useEffect(() => {
-    if (candidates.length === 0) {
+    if (!filePath) {
       setSrc(null);
+      setStatus("idle");
+      return;
+    }
+    if (candidates.length === 0) {
+      // We have a filePath but cannot construct any candidate (e.g. assetsDir
+      // not loaded yet). Stay in "loading" until candidates resolve.
+      setSrc(null);
+      setStatus("loading");
       return;
     }
 
     let cancelled = false;
+    setStatus("loading");
 
-    // Try each candidate path in order
     (async () => {
       for (const path of candidates) {
         if (cancelled) return;
         try {
           const dataUrl = await invoke<string>("read_image_data_url", { path });
-          if (!cancelled) setSrc(dataUrl);
+          if (!cancelled) {
+            setSrc(dataUrl);
+            setStatus("loaded");
+          }
           return;
         } catch {
           // Try next candidate
         }
       }
-      if (!cancelled) setSrc(null);
+      if (!cancelled) {
+        setSrc(null);
+        setStatus("error");
+      }
     })();
 
     return () => {
       cancelled = true;
     };
-  }, [candidates]);
+  }, [candidates, filePath]);
 
-  return src;
+  return { src, status };
+}
+
+/** Backwards-compatible thin wrapper that returns just the data URL. */
+export function useImageSrc(filePath: string | undefined): string | null {
+  return useImageSrcStatus(filePath).src;
 }

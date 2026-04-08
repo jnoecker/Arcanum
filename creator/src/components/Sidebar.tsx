@@ -19,10 +19,22 @@ import {
   addMob,
   addItem,
   addShop,
+  addTrainer,
+  addQuest,
+  addGatheringNode,
+  addRecipe,
   generateEntityId,
   generateRoomId,
 } from "@/lib/zoneEdits";
-import type { MobFile, ItemFile, ShopFile } from "@/types/world";
+import type {
+  MobFile,
+  ItemFile,
+  ShopFile,
+  TrainerFile,
+  QuestFile,
+  GatheringNodeFile,
+  RecipeFile,
+} from "@/types/world";
 
 
 interface CategoryDef {
@@ -76,9 +88,58 @@ const CATEGORIES: CategoryDef[] = [
       return addShop(world, id, { name: id, room: firstRoom, items: [] } as ShopFile);
     },
   },
-  { key: "quest", label: "Quests", collection: "quests", nameField: "name" },
-  { key: "gatheringNode", label: "Gathering", collection: "gatheringNodes", nameField: "skill" },
-  { key: "recipe", label: "Recipes", collection: "recipes", nameField: "displayName" },
+  {
+    key: "trainer",
+    label: "Trainers",
+    collection: "trainers",
+    nameField: "name",
+    addFn: (world) => {
+      const id = generateEntityId(world, "trainers");
+      const firstRoom = Object.keys(world.rooms)[0] ?? "";
+      return addTrainer(world, id, { name: id, room: firstRoom } as TrainerFile);
+    },
+  },
+  {
+    key: "gatheringNode",
+    label: "Gathering Nodes",
+    collection: "gatheringNodes",
+    nameField: "displayName",
+    addFn: (world) => {
+      const id = generateEntityId(world, "gatheringNodes");
+      const firstRoom = Object.keys(world.rooms)[0] ?? "";
+      return addGatheringNode(world, id, {
+        displayName: id,
+        skill: "",
+        yields: [],
+        room: firstRoom,
+      } as GatheringNodeFile);
+    },
+  },
+  {
+    key: "quest",
+    label: "Quests",
+    collection: "quests",
+    nameField: "name",
+    addFn: (world) => {
+      const id = generateEntityId(world, "quests");
+      return addQuest(world, id, { name: id, giver: "" } as QuestFile);
+    },
+  },
+  {
+    key: "recipe",
+    label: "Recipes",
+    collection: "recipes",
+    nameField: "displayName",
+    addFn: (world) => {
+      const id = generateEntityId(world, "recipes");
+      return addRecipe(world, id, {
+        displayName: id,
+        skill: "",
+        materials: [],
+        outputItemId: "",
+      } as RecipeFile);
+    },
+  },
 ];
 
 

@@ -128,10 +128,12 @@ export function WorldSettingPanel() {
     const parts: string[] = [];
     const name = typeof fields.name === "string" ? fields.name : "";
     const tagline = typeof fields.tagline === "string" ? fields.tagline : "";
+    const tone = typeof fields.tone === "string" ? fields.tone : "";
     const era = typeof fields.era === "string" ? fields.era : "";
     const themes = Array.isArray(fields.themes) ? fields.themes : [];
     if (name) parts.push(`World name: ${name}`);
     if (tagline) parts.push(`Tagline: ${tagline}`);
+    if (tone) parts.push(`Tone: ${tone}`);
     if (era) parts.push(`Current era: ${era}`);
     if (themes.length) parts.push(`Themes: ${themes.join(", ")}`);
     if (content) parts.push(`Overview: ${content}`);
@@ -156,6 +158,13 @@ export function WorldSettingPanel() {
               placeholder="A one-line hook for your setting"
             />
           </FieldRow>
+          <FieldRow label="Tone">
+            <TextInput
+              value={getField(article ?? { fields: {} } as Article, "tone")}
+              onCommit={(v) => patchField("tone", v || undefined)}
+              placeholder="e.g. whimsical, grimdark, heroic, cozy, surreal"
+            />
+          </FieldRow>
           <FieldRow label="Current era">
             <TextInput
               value={getField(article ?? { fields: {} } as Article, "era")}
@@ -173,6 +182,16 @@ export function WorldSettingPanel() {
         <ThemesList
           items={getFieldTags(article ?? { fields: {} } as Article, "themes")}
           onChange={(themes) => patchField("themes", themes)}
+        />
+      </Section>
+
+      <Section title="Visual Style">
+        <LoreTextArea
+          label="Art direction for generated images"
+          value={getField(article ?? { fields: {} } as Article, "visualStyle")}
+          onCommit={(v) => patchField("visualStyle", v || undefined)}
+          placeholder="Describe the image-generation style for this world — e.g. dreamy watercolor storybook, gritty dark fantasy oil painting, painterly high fantasy with desaturated earth tones..."
+          rows={5}
         />
       </Section>
 

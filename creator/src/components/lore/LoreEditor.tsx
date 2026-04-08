@@ -1,15 +1,17 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useEditor, EditorContent, type Editor } from "@tiptap/react";
-import StarterKit from "@tiptap/starter-kit";
+import { EditorContent, ReactRenderer, useEditor, type Editor } from "@tiptap/react";
 import Mention from "@tiptap/extension-mention";
 import Link from "@tiptap/extension-link";
 import Placeholder from "@tiptap/extension-placeholder";
-import { ReactRenderer } from "@tiptap/react";
-import tippy, { type Instance as TippyInstance } from "tippy.js";
+import StarterKit from "@tiptap/starter-kit";
 import { invoke } from "@tauri-apps/api/core";
+import tippy, { type Instance as TippyInstance } from "tippy.js";
+import { InlineError } from "@/components/ui/FormWidgets";
+import { getContinueWritingPrompt, getLoreEnhancePrompt } from "@/lib/lorePrompts";
+import { getPromptLlmConfigurationError } from "@/lib/promptLlm";
+import { plainTextToTiptap, tiptapToPlainText } from "@/lib/loreRelations";
+import { useAssetStore } from "@/stores/assetStore";
 import { useLoreStore } from "@/stores/loreStore";
-import { getLoreEnhancePrompt, getContinueWritingPrompt } from "@/lib/lorePrompts";
-import { tiptapToPlainText, plainTextToTiptap } from "@/lib/loreRelations";
 import { MentionList, type MentionListRef } from "./MentionList";
 
 interface LoreEditorProps {
@@ -23,8 +25,6 @@ interface LoreEditorProps {
   /** Extra context appended to the user prompt. */
   context?: string;
 }
-
-// ─── Toolbar button ─────────────────────────────────────────────────
 
 function ToolbarButton({
   active,
@@ -54,8 +54,6 @@ function ToolbarButton({
     </button>
   );
 }
-
-// ─── Toolbar ────────────────────────────────────────────────────────
 
 function EditorToolbar({ editor }: { editor: Editor }) {
   return (
@@ -122,7 +120,11 @@ function EditorToolbar({ editor }: { editor: Editor }) {
   );
 }
 
-// ─── Main editor ────────────────────────────────────────────────────
+function normalizeLlmError(err: unknown, fallback: string): string {
+  if (err instanceof Error && err.message.trim()) return err.message;
+  const message = String(err).trim();
+  return message || fallback;
+}
 
 export function LoreEditor({
   value,
@@ -133,16 +135,21 @@ export function LoreEditor({
   context,
 }: LoreEditorProps) {
   const [loading, setLoading] = useState<"generate" | "enhance" | "continue" | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const commitRef = useRef(onCommit);
   commitRef.current = onCommit;
+  const settings = useAssetStore((s) => s.settings);
+  const llmConfigurationError = getPromptLlmConfigurationError(settings);
 
-  // Migrate plain text to Tiptap JSON on first render
   const initialContent = useRef(() => {
     if (!value) return undefined;
     if (value.startsWith("{")) {
-      try { return JSON.parse(value); } catch { /* fall through */ }
+      try {
+        return JSON.parse(value);
+      } catch {
+        // Fall through to plain text migration.
+      }
     }
-    // Plain text: wrap in Tiptap doc
     const json = plainTextToTiptap(value);
     return JSON.parse(json);
   });
@@ -232,19 +239,17 @@ export function LoreEditor({
         class: "lore-editor-content prose prose-sm prose-invert max-w-none px-3 py-2 outline-none min-h-[8rem]",
       },
     },
-    onUpdate: ({ editor: e }) => {
-      const json = JSON.stringify(e.getJSON());
+    onUpdate: ({ editor: activeEditor }) => {
+      const json = JSON.stringify(activeEditor.getJSON());
       commitRef.current(json);
     },
   });
 
-  // Sync external value changes (e.g., from LLM generation)
   const lastExternalValue = useRef(value);
   useEffect(() => {
     if (!editor || value === lastExternalValue.current) return;
     lastExternalValue.current = value;
 
-    // Avoid re-setting if the editor's own content matches
     const currentJson = JSON.stringify(editor.getJSON());
     if (currentJson === value) return;
 
@@ -252,9 +257,11 @@ export function LoreEditor({
       try {
         editor.commands.setContent(JSON.parse(value));
         return;
-      } catch { /* fall through */ }
+      } catch {
+        // Fall through to plain text parsing.
+      }
     }
-    // Plain text
+
     if (value) {
       editor.commands.setContent(JSON.parse(plainTextToTiptap(value)));
     } else {
@@ -262,14 +269,18 @@ export function LoreEditor({
     }
   }, [editor, value]);
 
-  // ─── LLM actions ─────────────────────────────────────────────────
-
   const plainText = editor ? tiptapToPlainText(JSON.stringify(editor.getJSON())) : "";
   const isEmpty = !plainText.trim();
 
   const handleGenerate = useCallback(async () => {
     if (!generateSystemPrompt || !generateUserPrompt) return;
+    if (llmConfigurationError) {
+      setError(llmConfigurationError);
+      return;
+    }
+
     setLoading("generate");
+    setError(null);
     try {
       const parts = [generateUserPrompt];
       if (context) parts.push(`\nWorld context: ${context}`);
@@ -278,20 +289,32 @@ export function LoreEditor({
         userPrompt: parts.join("\n"),
       });
       const trimmed = result.trim();
+      if (!trimmed) {
+        throw new Error("AI returned no content.");
+      }
+
       const json = plainTextToTiptap(trimmed);
       lastExternalValue.current = json;
       editor?.commands.setContent(JSON.parse(json));
       commitRef.current(json);
-    } catch {
-      // Silent fail
+    } catch (err) {
+      const message = normalizeLlmError(err, "Lore generation failed.");
+      setError(message);
+      console.error("[LoreEditor.generate]", message);
     } finally {
       setLoading(null);
     }
-  }, [editor, generateSystemPrompt, generateUserPrompt, context]);
+  }, [context, editor, generateSystemPrompt, generateUserPrompt, llmConfigurationError]);
 
   const handleEnhance = useCallback(async () => {
     if (!plainText) return;
+    if (llmConfigurationError) {
+      setError(llmConfigurationError);
+      return;
+    }
+
     setLoading("enhance");
+    setError(null);
     try {
       const parts = [plainText];
       if (context) parts.push(`\nWorld context: ${context}`);
@@ -300,20 +323,32 @@ export function LoreEditor({
         userPrompt: parts.join("\n"),
       });
       const trimmed = result.trim();
+      if (!trimmed) {
+        throw new Error("AI returned no content.");
+      }
+
       const json = plainTextToTiptap(trimmed);
       lastExternalValue.current = json;
       editor?.commands.setContent(JSON.parse(json));
       commitRef.current(json);
-    } catch {
-      // Silent fail
+    } catch (err) {
+      const message = normalizeLlmError(err, "Lore enhancement failed.");
+      setError(message);
+      console.error("[LoreEditor.enhance]", message);
     } finally {
       setLoading(null);
     }
-  }, [editor, plainText, context]);
+  }, [context, editor, llmConfigurationError, plainText]);
 
   const handleContinue = useCallback(async () => {
     if (!plainText) return;
+    if (llmConfigurationError) {
+      setError(llmConfigurationError);
+      return;
+    }
+
     setLoading("continue");
+    setError(null);
     try {
       const parts = [
         "Continue writing from where the author left off. Maintain the same voice, tone, and style. Do not repeat what was already written. Output only the new continuation text.\n",
@@ -324,21 +359,26 @@ export function LoreEditor({
         systemPrompt: getContinueWritingPrompt(),
         userPrompt: parts.join("\n"),
       });
-      // Append the continuation to existing content
       const continuation = result.trim();
-      if (continuation && editor) {
+      if (!continuation) {
+        throw new Error("AI returned no continuation.");
+      }
+
+      if (editor) {
         editor.commands.focus("end");
         editor.commands.insertContent(`<p></p><p>${continuation.replace(/\n\n+/g, "</p><p>").replace(/\n/g, "<br>")}</p>`);
         const json = JSON.stringify(editor.getJSON());
         lastExternalValue.current = json;
         commitRef.current(json);
       }
-    } catch {
-      // Silent fail
+    } catch (err) {
+      const message = normalizeLlmError(err, "Lore expansion failed.");
+      setError(message);
+      console.error("[LoreEditor.continue]", message);
     } finally {
       setLoading(null);
     }
-  }, [editor, plainText, context]);
+  }, [context, editor, llmConfigurationError, plainText]);
 
   const showGenerate = generateSystemPrompt && generateUserPrompt && isEmpty;
   const showEnhance = !isEmpty;
@@ -353,8 +393,8 @@ export function LoreEditor({
           {showGenerate && (
             <button
               onClick={handleGenerate}
-              disabled={loading !== null}
-              title="Generate content from scratch using AI"
+              disabled={loading !== null || !!llmConfigurationError}
+              title={llmConfigurationError ?? "Generate content from scratch using AI"}
               className="rounded px-2 py-0.5 text-2xs text-accent transition-colors hover:bg-accent/10 disabled:opacity-50"
             >
               {loading === "generate" ? "Generating..." : "Generate"}
@@ -363,8 +403,8 @@ export function LoreEditor({
           {showContinue && (
             <button
               onClick={handleContinue}
-              disabled={loading !== null}
-              title="Expand — AI writes more from where you left off"
+              disabled={loading !== null || !!llmConfigurationError}
+              title={llmConfigurationError ?? "Expand - AI writes more from where you left off"}
               className="rounded px-2 py-0.5 text-2xs text-accent transition-colors hover:bg-accent/10 disabled:opacity-50"
             >
               {loading === "continue" ? "Expanding..." : "Expand"}
@@ -373,13 +413,18 @@ export function LoreEditor({
           {showEnhance && (
             <button
               onClick={handleEnhance}
-              disabled={loading !== null}
-              title="Expand and enrich the existing text"
+              disabled={loading !== null || !!llmConfigurationError}
+              title={llmConfigurationError ?? "Expand and enrich the existing text"}
               className="rounded px-2 py-0.5 text-2xs text-accent transition-colors hover:bg-accent/10 disabled:opacity-50"
             >
               {loading === "enhance" ? "Enhancing..." : "Enhance"}
             </button>
           )}
+        </div>
+      )}
+      {error && (
+        <div className="border-t border-border-muted px-2 py-2">
+          <InlineError error={error} onDismiss={() => setError(null)} />
         </div>
       )}
     </div>

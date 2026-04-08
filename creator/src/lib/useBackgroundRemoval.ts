@@ -1,6 +1,7 @@
 import { useState, useCallback } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import type { AssetContext, AssetEntry } from "@/types/assets";
+import { BG_REMOVAL_ASSET_TYPES } from "./arcanumPrompts";
 
 // ─── Worker-based background removal ─────────────────────────────────
 // WASM/ONNX inference runs in a dedicated Web Worker so the UI stays responsive.
@@ -96,15 +97,11 @@ function enqueueBgTask<T>(run: () => Promise<T>): Promise<T> {
   });
 }
 
-/** Asset types that benefit from background removal (sprites, not scene backgrounds). */
-const BG_REMOVAL_TYPES = new Set([
-  "mob", "item", "pet", "entity_portrait", "ability_sprite",
-  "player_sprite", "race_portrait", "class_portrait",
-]);
-
-/** Returns true if the given asset type should have bg removal applied. */
+/** Returns true if the given asset type should have bg removal applied.
+ *  Sourced from `arcanumPrompts.BG_REMOVAL_ASSET_TYPES` so the prompt-pipeline
+ *  sprite safety injection and the runtime bg-removal pass can't drift apart. */
 export function shouldRemoveBg(assetType: string): boolean {
-  return BG_REMOVAL_TYPES.has(assetType);
+  return BG_REMOVAL_ASSET_TYPES.has(assetType);
 }
 
 /**

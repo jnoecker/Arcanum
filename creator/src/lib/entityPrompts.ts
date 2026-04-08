@@ -1,6 +1,6 @@
 import type { RoomFile, MobFile, ItemFile, ShopFile, TrainerFile, GatheringNodeFile, WorldFile } from "@/types/world";
 import { getTrainerPrimaryClass } from "@/lib/trainers";
-import { type ArtStyle, getPreamble, getStyleSuffix, FORMAT_BY_TYPE } from "./arcanumPrompts";
+import { type ArtStyle, getPreamble, getStyleSuffix, FORMAT_BY_TYPE, withSpriteSafety } from "./arcanumPrompts";
 
 export type DefaultImageKind = "room" | "mob" | "item";
 
@@ -168,11 +168,14 @@ export function mobPrompt(_mobId: string, mob: MobFile, style: ArtStyle = "gentl
     };
     const desc = tierDesc[tier] ?? tierDesc.standard;
 
-    return `${FORMAT_BY_TYPE.mob}. ${preamble}
+    return withSpriteSafety(
+      `${FORMAT_BY_TYPE.mob}. ${preamble}
 
-Portrait of ${desc} known as "${mob.name}", level ${level}.${mobDesc} Depicted with soft organic forms and gentle curves, ambient lavender and pale blue light diffusing around the figure, floating motes of warm gold light, subtle magical glow emanating naturally from within, dreamlike atmospheric haze, dusty rose and moss green accents, painterly, luminous
+Portrait of ${desc} known as "${mob.name}", level ${level}.${mobDesc} Depicted with soft organic forms and gentle curves, subtle magical glow emanating naturally from within, painterly, luminous
 
-${getStyleSuffix("worldbuilding")}`;
+${getStyleSuffix("worldbuilding")}`,
+      "mob",
+    );
   }
 
   const tierDesc: Record<string, string> = {
@@ -183,9 +186,12 @@ ${getStyleSuffix("worldbuilding")}`;
   };
   const desc = tierDesc[tier] ?? tierDesc.standard;
 
-  return `${preamble}
+  return withSpriteSafety(
+    `${FORMAT_BY_TYPE.mob}. ${preamble}
 
-Portrait of ${desc} known as "${mob.name}", level ${level}.${mobDesc} Rendered with aurum-gold highlights on key features, deep indigo background with blue-violet nebula wisps, baroque energy accents framing the figure, ornate frame edges dissolving into darkness, painterly, luminous, vertical portrait composition`;
+Portrait of ${desc} known as "${mob.name}", level ${level}.${mobDesc} Rendered with aurum-gold highlights on key features, painterly, luminous, centered composition`,
+    "mob",
+  );
 }
 
 /** Build a full prompt for an item image. */
@@ -253,16 +259,22 @@ export function trainerPrompt(_trainerId: string, trainer: TrainerFile, style: A
   const cls = getTrainerPrimaryClass(trainer)?.toLowerCase() ?? "warrior";
 
   if (style === "gentle_magic") {
-    return `${FORMAT_BY_TYPE.mob}. ${preamble}
+    return withSpriteSafety(
+      `${FORMAT_BY_TYPE.mob}. ${preamble}
 
-A gentle magical portrait of a ${cls} class trainer called "${trainer.name}" — a wise mentor figure in soft flowing robes or battle-worn attire appropriate for a ${cls}, warm ambient light, floating motes of gold, lavender and pale blue tones, a sense of knowledge and patient guidance, painterly, luminous
+A gentle magical portrait of a ${cls} class trainer called "${trainer.name}" — a wise mentor figure in soft flowing robes or battle-worn attire appropriate for a ${cls}, a sense of knowledge and patient guidance, painterly, luminous
 
-${getStyleSuffix("worldbuilding")}`;
+${getStyleSuffix("worldbuilding")}`,
+      "mob",
+    );
   }
 
-  return `${preamble}
+  return withSpriteSafety(
+    `${FORMAT_BY_TYPE.mob}. ${preamble}
 
-An arcane portrait of a ${cls} class trainer called "${trainer.name}" — a powerful mentor in baroque armor or robes befitting a ${cls}, aurum-gold light illuminating their form, deep indigo background with traced energy patterns, blue-violet atmospheric mist, a sense of mastery and ancient knowledge, painterly, luminous`;
+An arcane portrait of a ${cls} class trainer called "${trainer.name}" — a powerful mentor in baroque armor or robes befitting a ${cls}, a sense of mastery and ancient knowledge, painterly, luminous`,
+    "mob",
+  );
 }
 
 /** Build a full prompt for a gathering node sprite. */

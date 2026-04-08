@@ -116,6 +116,7 @@ const BASE_CONFIG: AppConfig = {
   globalAssets: {
     video_available_indicator: "video_available_indicator.png",
     shop_kiosk: "shop_kiosk.png",
+    puzzle_kiosk: "puzzle_kiosk.png",
     dialog_indicator: "dialog_indicator.png",
     aggro_indicator: "aggro_indicator.png",
     quest_available_indicator: "quest_available_indicator.png",

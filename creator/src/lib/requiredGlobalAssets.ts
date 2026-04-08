@@ -49,6 +49,15 @@ export const REQUIRED_GLOBAL_ASSETS: readonly RequiredGlobalAsset[] = [
     transparent: true,
   },
   {
+    key: "puzzle_kiosk",
+    defaultFilename: "puzzle_kiosk.png",
+    label: "Puzzle Kiosk",
+    description: "Overlay placed on rooms that host a puzzle; clicking opens the puzzle flow.",
+    assetType: "ability_icon",
+    defaultPrompt: "A single interlocking jigsaw piece icon, centered, soft glow.",
+    transparent: true,
+  },
+  {
     key: "dialog_indicator",
     defaultFilename: "dialog_indicator.png",
     label: "Dialog Indicator",

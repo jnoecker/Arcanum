@@ -3,6 +3,8 @@ import { Section, IconButton } from "@/components/ui/FormWidgets";
 
 export interface RegistryPanelProps<T> {
   title: string;
+  /** Optional description shown under the section title. */
+  description?: string;
   items: Record<string, T>;
   onItemsChange: (items: Record<string, T>) => void;
   /** Return a string to show in the collapsed header badge area. */
@@ -29,6 +31,7 @@ export interface RegistryPanelProps<T> {
 
 export function RegistryPanel<T>({
   title,
+  description,
   items,
   onItemsChange,
   renderSummary,
@@ -86,6 +89,7 @@ export function RegistryPanel<T>({
   return (
     <Section
       title={`${title} (${allIds.length})`}
+      description={description}
       actions={
         <div className="flex items-center gap-1">
           <input
@@ -127,7 +131,7 @@ export function RegistryPanel<T>({
             return (
               <div
                 key={id}
-                className="rounded border border-border-muted bg-bg-primary"
+                className="rounded border border-border-muted/40 bg-bg-primary/30 transition-colors hover:border-border-muted/70 hover:bg-bg-primary/50"
               >
                 <button
                   type="button"
@@ -161,12 +165,12 @@ export function RegistryPanel<T>({
                   </span>
                 </button>
                 {isOpen && (
-                  <div className="border-t border-border-muted px-2 py-2">
+                  <div className="border-t border-border-muted/40 px-2 py-2">
                     <div className="flex flex-col gap-1.5">
                       {renderDetail(id, item, (p) => patch(id, p))}
                     </div>
                     {onRenameId && (
-                      <div className="mt-2 border-t border-border-muted pt-2">
+                      <div className="mt-2 border-t border-border-muted/40 pt-2">
                         {renaming === id ? (
                           <div className="flex items-center gap-1">
                             <input

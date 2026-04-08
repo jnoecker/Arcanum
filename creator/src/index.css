@@ -14,6 +14,9 @@
   --abyss-rgb: 28 33 49;
   --stroke-rgb: 255 255 255;
   --fill-rgb: 8 12 28;
+  --highlight-rgb: 255 255 255;
+  --shadow-rgb: 8 12 28;
+  --overlay-rgb: 28 33 49;
 
   /* ─── Typography ─── */
   --font-sans: 'Crimson Pro', Georgia, serif;
@@ -52,16 +55,16 @@
   --color-text-on-accent: #22293c;
 
   /* ─── Chrome (mode-aware overlays) ─── */
-  /* These reference the *-rgb tuples above so the JS theme system can flip them
-     for light themes by changing --stroke-rgb / --fill-rgb. */
+  /* These reference the *-rgb tuples above so the JS theme system can rebalance
+     strokes, fills, highlights, shadows, and overlays per mode. */
   --chrome-stroke:          rgb(var(--stroke-rgb) / 0.10);
   --chrome-stroke-strong:   rgb(var(--stroke-rgb) / 0.16);
   --chrome-stroke-emphasis: rgb(var(--stroke-rgb) / 0.22);
   --chrome-fill:            rgb(var(--fill-rgb) / 0.16);
   --chrome-fill-soft:       rgb(var(--fill-rgb) / 0.08);
   --chrome-fill-strong:     rgb(var(--fill-rgb) / 0.32);
-  --chrome-highlight:       rgb(var(--stroke-rgb) / 0.06);
-  --chrome-highlight-strong: rgb(var(--stroke-rgb) / 0.12);
+  --chrome-highlight:       rgb(var(--highlight-rgb) / 0.06);
+  --chrome-highlight-strong: rgb(var(--highlight-rgb) / 0.12);
 
   /* ─── Surfaces ─── */
   --color-surface-card: rgb(var(--surface-rgb) / 0.6);
@@ -169,8 +172,8 @@
   --glow-blue:          0 0 24px rgb(var(--accent-rgb) / 0.22);
 
   /* Shadows */
-  --shadow-section:  0 16px 44px rgb(var(--fill-rgb) / 0.24);
-  --shadow-panel:    0 18px 60px rgb(var(--fill-rgb) / 0.38);
+  --shadow-section:  0 16px 44px rgb(var(--shadow-rgb) / 0.24);
+  --shadow-panel:    0 18px 60px rgb(var(--shadow-rgb) / 0.38);
   --shadow-glow:     0 10px 26px rgb(var(--accent-rgb) / 0.22);
 
   /* Easing */
@@ -549,7 +552,7 @@ select,
   padding: 1.25rem;
   background:
     radial-gradient(circle at top, rgb(var(--accent-rgb) / 0.12), transparent 34%),
-    rgb(var(--abyss-rgb) / 0.76);
+    rgb(var(--overlay-rgb) / 0.72);
   backdrop-filter: blur(14px);
 }
 

@@ -18,7 +18,6 @@ import { exportShowcaseData } from "@/lib/exportShowcase";
 
 const DiffModal = lazy(() => import("./ui/DiffModal").then((m) => ({ default: m.DiffModal })));
 const BatchLegacyImport = lazy(() => import("./BatchLegacyImport").then((m) => ({ default: m.BatchLegacyImport })));
-const SketchImportWizard = lazy(() => import("./SketchImportWizard").then((m) => ({ default: m.SketchImportWizard })));
 const MudImportWizard = lazy(() => import("./MudImportWizard").then((m) => ({ default: m.MudImportWizard })));
 
 const ADMIN_STATUS_COLORS: Record<string, string> = {
@@ -65,7 +64,6 @@ export function Toolbar({ workspace, setWorkspace }: ToolbarProps) {
   const [saved, setSaved] = useState(false);
   const [showDiff, setShowDiff] = useState(false);
   const [showLegacyImport, setShowLegacyImport] = useState(false);
-  const [showSketchImport, setShowSketchImport] = useState(false);
   const [showMudImport, setShowMudImport] = useState(false);
   const [showUtilityMenu, setShowUtilityMenu] = useState(false);
   const openGenerator = useAssetStore((s) => s.openGenerator);
@@ -332,16 +330,6 @@ export function Toolbar({ workspace, setWorkspace }: ToolbarProps) {
                             role="menuitem"
                             onClick={() => {
                               setShowUtilityMenu(false);
-                              setShowSketchImport(true);
-                            }}
-                            className="chrome-menu-item focus-ring flex min-h-11 items-center rounded-2xl px-4 py-3 text-left text-sm"
-                          >
-                            Import From Sketch
-                          </button>
-                          <button
-                            role="menuitem"
-                            onClick={() => {
-                              setShowUtilityMenu(false);
                               setShowMudImport(true);
                             }}
                             className="chrome-menu-item focus-ring flex min-h-11 items-center rounded-2xl px-4 py-3 text-left text-sm"
@@ -440,10 +428,6 @@ export function Toolbar({ workspace, setWorkspace }: ToolbarProps) {
 
         {showLegacyImport && (
           <BatchLegacyImport onClose={() => setShowLegacyImport(false)} />
-        )}
-
-        {showSketchImport && (
-          <SketchImportWizard onClose={() => setShowSketchImport(false)} />
         )}
 
         {showMudImport && (

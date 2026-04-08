@@ -206,6 +206,11 @@ export function AbilityDesigner({
                   <span>{ability.targetType}</span>
                   <span>Lvl {ability.levelRequired}</span>
                   {classId && <span>{classId}</span>}
+                  {(ability.skillPointCost ?? 1) === 0 ? (
+                    <span className="text-badge-success">Auto</span>
+                  ) : (
+                    <span>{ability.skillPointCost ?? 1} SP</span>
+                  )}
                 </div>
                 <div className="mt-3 text-xs text-text-secondary">{summarizeAbility(ability)}</div>
               </button>
@@ -234,6 +239,25 @@ export function AbilityDesigner({
               <span className="rounded-full bg-[var(--chrome-highlight-strong)] px-3 py-1 text-xs text-text-secondary">{selected.targetType}</span>
               <span className="rounded-full bg-[var(--chrome-highlight-strong)] px-3 py-1 text-xs text-text-secondary">Mana {selected.manaCost}</span>
               <span className="rounded-full bg-[var(--chrome-highlight-strong)] px-3 py-1 text-xs text-text-secondary">CD {selected.cooldownMs}ms</span>
+              {(() => {
+                const cost = selected.skillPointCost ?? 1;
+                return (
+                  <span
+                    className={`rounded-full px-3 py-1 text-xs ${
+                      cost === 0
+                        ? "bg-badge-success-bg text-badge-success"
+                        : "bg-[var(--chrome-highlight-strong)] text-text-secondary"
+                    }`}
+                    title={
+                      cost === 0
+                        ? "Auto-learned when level, class, and prerequisites are met"
+                        : `Costs ${cost} skill ${cost === 1 ? "point" : "points"} at a trainer`
+                    }
+                  >
+                    {cost === 0 ? "Auto-learn" : `${cost} SP`}
+                  </span>
+                );
+              })()}
             </div>
           </div>
 

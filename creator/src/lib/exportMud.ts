@@ -58,7 +58,7 @@ function sanitizeAdminConfigForRuntime(admin: AppConfig["admin"] | undefined): A
     // The runtime token is injected by the mud deployment layer via env/SSM.
     // Arcanum should never persist it into project config.
     token: "",
-    basePath: admin?.basePath ?? "/admin/",
+    basePath: admin?.basePath ?? "/",
     grafanaUrl: admin?.grafanaUrl ?? "",
     corsOrigins: admin?.corsOrigins,
   };
@@ -160,6 +160,116 @@ function normalizedStatusEffectTypes(config: AppConfig): AppConfig["statusEffect
   }
 
   return merged;
+}
+
+export function normalizeLotteryConfig(config?: AppConfig["lottery"]): AppConfig["lottery"] | undefined {
+  if (!config) return undefined;
+  return {
+    enabled: config.enabled,
+    ticketCost: config.ticketCost,
+    drawingIntervalMs: config.drawingIntervalMs,
+    jackpotSeedGold: config.jackpotSeedGold ?? config.jackpotBase ?? 500,
+    jackpotPercentFromTickets: config.jackpotPercentFromTickets ?? 80,
+    maxTicketsPerPlayer: config.maxTicketsPerPlayer ?? 10,
+  };
+}
+
+export function normalizeGamblingConfig(config?: AppConfig["gambling"]): AppConfig["gambling"] | undefined {
+  if (!config) return undefined;
+  return {
+    enabled: config.enabled,
+    diceMinBet: config.diceMinBet ?? config.minBet ?? 10,
+    diceMaxBet: config.diceMaxBet ?? config.maxBet ?? 10_000,
+    diceWinChance: config.diceWinChance ?? config.winChance ?? 0.45,
+    diceWinMultiplier: config.diceWinMultiplier ?? config.winMultiplier ?? 2.0,
+    cooldownMs: config.cooldownMs ?? 5_000,
+  };
+}
+
+export function normalizeRespecConfig(config?: AppConfig["respec"]): AppConfig["respec"] | undefined {
+  if (!config) return undefined;
+  return {
+    enabled: config.enabled ?? true,
+    goldCost: config.goldCost,
+    cooldownMs: config.cooldownMs,
+  };
+}
+
+export function normalizeCurrenciesConfig(config?: AppConfig["currencies"]): AppConfig["currencies"] | undefined {
+  if (!config) return undefined;
+  return {
+    definitions: mapEntries(config.definitions, (def) => ({
+      displayName: def.displayName,
+      abbreviation: def.abbreviation ?? "",
+      description: def.description ?? "",
+    })) as AppConfig["currencies"]["definitions"],
+    honorPerPvpKill: config.honorPerPvpKill ?? 10,
+    tokensPerCraft: config.tokensPerCraft ?? 1,
+  };
+}
+
+export function normalizeDailyQuestsConfig(config?: AppConfig["dailyQuests"]): AppConfig["dailyQuests"] | undefined {
+  if (!config) return undefined;
+  return {
+    enabled: config.enabled,
+    resetHourUtc: config.resetHourUtc ?? 0,
+    dailySlots: config.dailySlots ?? 3,
+    weeklySlots: config.weeklySlots ?? 1,
+    streakBonusPercent: config.streakBonusPercent,
+    streakMaxDays: config.streakMaxDays ?? 7,
+    dailyPool: config.dailyPool ?? [],
+    weeklyPool: config.weeklyPool ?? [],
+  };
+}
+
+export function normalizeAutoQuestsConfig(config?: AppConfig["autoQuests"]): AppConfig["autoQuests"] | undefined {
+  if (!config) return undefined;
+  return {
+    enabled: config.enabled,
+    timeLimitMs: config.timeLimitMs,
+    cooldownMs: config.cooldownMs,
+    rewardGoldBase: config.rewardGoldBase ?? 50,
+    rewardGoldPerLevel: config.rewardGoldPerLevel ?? 10,
+    rewardXpBase: config.rewardXpBase ?? 100,
+    rewardXpPerLevel: config.rewardXpPerLevel ?? 25,
+    killCountMin: config.killCountMin ?? 3,
+    killCountMax: config.killCountMax ?? 8,
+  };
+}
+
+export function normalizeGlobalQuestsConfig(config?: AppConfig["globalQuests"]): AppConfig["globalQuests"] | undefined {
+  if (!config) return undefined;
+  return {
+    enabled: config.enabled,
+    intervalMs: config.intervalMs,
+    durationMs: config.durationMs,
+    announceIntervalMs: config.announceIntervalMs ?? 300_000,
+    minPlayersOnline: config.minPlayersOnline ?? 2,
+    rewardGoldFirst: config.rewardGoldFirst ?? 2000,
+    rewardGoldSecond: config.rewardGoldSecond ?? 1000,
+    rewardGoldThird: config.rewardGoldThird ?? 500,
+    rewardXpFirst: config.rewardXpFirst ?? 5000,
+    rewardXpSecond: config.rewardXpSecond ?? 2500,
+    rewardXpThird: config.rewardXpThird ?? 1000,
+    objectives: config.objectives ?? [],
+  };
+}
+
+export function normalizeGuildHallsConfig(config?: AppConfig["guildHalls"]): AppConfig["guildHalls"] | undefined {
+  if (!config) return undefined;
+  const sourceTemplates = config.templates ?? config.roomTemplates ?? {};
+  const templates = mapEntries(sourceTemplates, (template) => ({
+    title: template.title ?? template.displayName ?? "",
+    description: template.description ?? "",
+    hasStorage: template.hasStorage ?? false,
+  })) as NonNullable<AppConfig["guildHalls"]>["templates"];
+  return {
+    enabled: config.enabled,
+    purchaseCost: config.purchaseCost ?? config.baseCost ?? 50_000,
+    roomCost: config.roomCost ?? 10_000,
+    maxRooms: config.maxRooms ?? 10,
+    templates,
+  };
 }
 
 export function buildMonolithicConfigObject(
@@ -308,17 +418,17 @@ export function buildMonolithicConfigObject(
   engine.classStartRooms = classStartRooms;
 
   // Optional engine subsystems — pass through as-is
-  if (c.lottery) engine.lottery = c.lottery;
-  if (c.gambling) engine.gambling = c.gambling;
-  if (c.respec) engine.respec = c.respec;
+  if (c.lottery) engine.lottery = normalizeLotteryConfig(c.lottery);
+  if (c.gambling) engine.gambling = normalizeGamblingConfig(c.gambling);
+  if (c.respec) engine.respec = normalizeRespecConfig(c.respec);
   if (c.prestige) engine.prestige = c.prestige;
-  if (c.dailyQuests) engine.dailyQuests = c.dailyQuests;
-  if (c.autoQuests) engine.autoQuests = c.autoQuests;
-  if (c.globalQuests) engine.globalQuests = c.globalQuests;
-  if (c.guildHalls) engine.guildHalls = c.guildHalls;
+  if (c.dailyQuests) engine.dailyQuests = normalizeDailyQuestsConfig(c.dailyQuests);
+  if (c.autoQuests) engine.autoQuests = normalizeAutoQuestsConfig(c.autoQuests);
+  if (c.globalQuests) engine.globalQuests = normalizeGlobalQuestsConfig(c.globalQuests);
+  if (c.guildHalls) engine.guildHalls = normalizeGuildHallsConfig(c.guildHalls);
   if (c.factions) engine.factions = c.factions;
   if (c.leaderboard) engine.leaderboard = c.leaderboard;
-  if (c.currencies) engine.currencies = c.currencies;
+  if (c.currencies) engine.currencies = normalizeCurrenciesConfig(c.currencies);
 
   engine.achievementCategories = { categories: withFallbackMap(c.achievementCategories, DEFAULT_ACHIEVEMENT_CATEGORIES) };
   engine.achievementCriterionTypes = { types: withFallbackMap(c.achievementCriterionTypes, DEFAULT_ACHIEVEMENT_CRITERION_TYPES) };
@@ -369,6 +479,7 @@ export function buildMonolithicConfigObject(
     server: {
       telnetPort: c.server.telnetPort,
       webPort: c.server.webPort,
+      productionMode: c.server.productionMode ?? false,
       inboundChannelCapacity: 10000,
       outboundChannelCapacity: 10000,
       sessionOutboundQueueCapacity: 200,
@@ -424,8 +535,9 @@ export function buildMonolithicConfigObject(
     observability: {
       metricsEnabled: c.observability?.metricsEnabled ?? true,
       metricsEndpoint: c.observability?.metricsEndpoint ?? "/metrics",
-      metricsHttpPort: c.observability?.metricsHttpPort ?? 9090,
-      staticTags: {},
+      metricsHttpPort: c.observability?.metricsHttpPort ?? 9099,
+      metricsHttpHost: c.observability?.metricsHttpHost ?? "0.0.0.0",
+      staticTags: c.observability?.staticTags ?? {},
     },
     admin: {
       enabled: adminConfig.enabled,
@@ -645,8 +757,11 @@ export function abilityToPlain(a: AppConfig["abilities"][string]): Record<string
   };
   if (a.description) obj.description = a.description;
   if (a.image) obj.image = normalizeAssetRef(a.image);
-  if (a.requiredClass != null) obj.requiredClass = a.requiredClass;
-  if (a.classRestriction) obj.classRestriction = a.classRestriction;
+  const requiredClass = a.requiredClass?.trim() || a.classRestriction?.trim();
+  if (requiredClass) obj.requiredClass = requiredClass;
+  if (a.prerequisites && a.prerequisites.length > 0) obj.prerequisites = a.prerequisites;
+  if (a.tree) obj.tree = a.tree;
+  if (a.tier != null) obj.tier = a.tier;
   return obj;
 }
 
@@ -656,21 +771,20 @@ export function statusEffectToPlain(e: AppConfig["statusEffects"][string]): Reco
     effectType: normalizeStatusEffectTypeId(e.effectType),
     durationMs: e.durationMs,
   };
-  if (e.image) obj.image = normalizeAssetRef(e.image);
   if (e.tickIntervalMs != null) obj.tickIntervalMs = e.tickIntervalMs;
-  if (e.tickValue != null) obj.tickValue = e.tickValue;
-  if (e.tickMinValue != null) obj.tickMinValue = e.tickMinValue;
-  if (e.tickMaxValue != null) obj.tickMaxValue = e.tickMaxValue;
+  const tickMinValue = e.tickMinValue ?? e.tickValue;
+  const tickMaxValue = e.tickMaxValue ?? e.tickValue;
+  if (tickMinValue != null) obj.tickMinValue = tickMinValue;
+  if (tickMaxValue != null) obj.tickMaxValue = tickMaxValue;
   if (e.shieldAmount != null) obj.shieldAmount = e.shieldAmount;
   if (e.stackBehavior) obj.stackBehavior = e.stackBehavior;
   if (e.maxStacks != null) obj.maxStacks = e.maxStacks;
-  if (e.strMod != null) obj.strMod = e.strMod;
-  if (e.dexMod != null) obj.dexMod = e.dexMod;
-  if (e.conMod != null) obj.conMod = e.conMod;
-  if (e.intMod != null) obj.intMod = e.intMod;
-  if (e.wisMod != null) obj.wisMod = e.wisMod;
-  if (e.chaMod != null) obj.chaMod = e.chaMod;
-  if (e.statMods && Object.keys(e.statMods).length > 0) obj.statMods = e.statMods;
+  if (e.strMod != null || e.statMods?.STR != null) obj.strMod = e.strMod ?? e.statMods?.STR;
+  if (e.dexMod != null || e.statMods?.DEX != null) obj.dexMod = e.dexMod ?? e.statMods?.DEX;
+  if (e.conMod != null || e.statMods?.CON != null) obj.conMod = e.conMod ?? e.statMods?.CON;
+  if (e.intMod != null || e.statMods?.INT != null) obj.intMod = e.intMod ?? e.statMods?.INT;
+  if (e.wisMod != null || e.statMods?.WIS != null) obj.wisMod = e.wisMod ?? e.statMods?.WIS;
+  if (e.chaMod != null || e.statMods?.CHA != null) obj.chaMod = e.chaMod ?? e.statMods?.CHA;
   return obj;
 }
 

@@ -77,7 +77,7 @@ describe("validateZone", () => {
     world.rooms.room1.exits = {
       n: { to: "room2", door: { locked: true, key: "missing_key" } },
     };
-    const issues = warnings(validateZone(world));
+    const issues = errors(validateZone(world));
     expect(issues.some((i) => i.message.includes("missing_key"))).toBe(true);
   });
 
@@ -106,9 +106,9 @@ describe("validateZone", () => {
 
   it("warns on invalid drop chance", () => {
     const world = makeValidWorld();
-    world.mobs!.rat.drops = [{ itemId: "sword", chance: 0 }];
-    const issues = warnings(validateZone(world));
-    expect(issues.some((i) => i.message.includes("invalid chance"))).toBe(true);
+    world.mobs!.rat.drops = [{ itemId: "sword", chance: 1.5 }];
+    const issues = errors(validateZone(world));
+    expect(issues.some((i) => i.message.includes("chance"))).toBe(true);
   });
 
   it("errors on patrol route with non-existent room", () => {
@@ -150,12 +150,35 @@ describe("validateZone", () => {
     expect(issues.some((i) => i.message.includes("empty text"))).toBe(true);
   });
 
+  it("errors when dialogue is missing a root node", () => {
+    const world = makeValidWorld();
+    world.mobs!.rat.dialogue = {
+      intro: { text: "Hello" },
+    };
+    const issues = errors(validateZone(world));
+    expect(issues.some((i) => i.message.includes("root"))).toBe(true);
+  });
+
   // ─── Item checks ────────────────────────────────────────────
   it("errors if item room does not exist", () => {
     const world = makeValidWorld();
     world.items!.sword.room = "missing";
     const issues = errors(validateZone(world));
     expect(issues.some((i) => i.entity === "item:sword")).toBe(true);
+  });
+
+  it("errors on deprecated mob item placement", () => {
+    const world = makeValidWorld();
+    world.items!.sword.mob = "rat";
+    const issues = errors(validateZone(world));
+    expect(issues.some((i) => i.message.toLowerCase().includes("deprecated"))).toBe(true);
+  });
+
+  it("errors when item onUse has no positive effect", () => {
+    const world = makeValidWorld();
+    world.items!.sword.onUse = { healHp: 0, grantXp: 0 };
+    const issues = errors(validateZone(world));
+    expect(issues.some((i) => i.message.includes("positive effect"))).toBe(true);
   });
 
   // ─── Shop checks ───────────────────────────────────────────
@@ -227,6 +250,21 @@ describe("validateZone", () => {
     expect(issues.some((i) => i.message.includes("missing_item"))).toBe(true);
   });
 
+  it("errors on rare yield chance outside server range", () => {
+    const world = makeValidWorld();
+    world.gatheringNodes = {
+      ore: {
+        displayName: "Ore",
+        skill: "MINING",
+        yields: [{ itemId: "sword" }],
+        rareYields: [{ itemId: "sword", dropChance: 0 }],
+        room: "room1",
+      },
+    };
+    const issues = errors(validateZone(world));
+    expect(issues.some((i) => i.message.includes("dropChance"))).toBe(true);
+  });
+
   // ─── Recipe checks ────────────────────────────────────────
   it("warns on recipe output item not in zone", () => {
     const world = makeValidWorld();
@@ -256,5 +294,33 @@ describe("validateZone", () => {
     };
     const issues = warnings(validateZone(world));
     expect(issues.some((i) => i.message.includes("missing_mat"))).toBe(true);
+  });
+
+  it("errors on recipe material quantity below 1", () => {
+    const world = makeValidWorld();
+    world.recipes = {
+      r1: {
+        displayName: "Recipe",
+        skill: "SMITHING",
+        materials: [{ itemId: "sword", quantity: 0 }],
+        outputItemId: "sword",
+      },
+    };
+    const issues = errors(validateZone(world));
+    expect(issues.some((i) => i.message.includes("quantity"))).toBe(true);
+  });
+
+  it("errors on invalid puzzle reward", () => {
+    const world = makeValidWorld();
+    world.puzzles = {
+      gate: {
+        type: "riddle",
+        roomId: "room1",
+        answer: "key",
+        reward: { type: "give_gold", amount: 0 },
+      },
+    };
+    const issues = errors(validateZone(world));
+    expect(issues.some((i) => i.entity === "puzzle:gate")).toBe(true);
   });
 });

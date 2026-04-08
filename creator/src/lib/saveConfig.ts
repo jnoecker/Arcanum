@@ -14,6 +14,14 @@ import {
   enchantmentToPlain,
   buildMonolithicConfigObject,
   loadSlotPositions,
+  normalizeLotteryConfig,
+  normalizeGamblingConfig,
+  normalizeRespecConfig,
+  normalizeCurrenciesConfig,
+  normalizeDailyQuestsConfig,
+  normalizeAutoQuestsConfig,
+  normalizeGlobalQuestsConfig,
+  normalizeGuildHallsConfig,
 } from "@/lib/exportMud";
 import type { AppConfig } from "@/types/config";
 
@@ -206,17 +214,17 @@ async function saveSplitConfig(projectDir: string): Promise<void> {
       weather: config.weather,
       worldEvents: Object.keys(config.worldEvents.definitions).length > 0
         ? config.worldEvents : undefined,
-      lottery: config.lottery,
-      gambling: config.gambling,
-      respec: config.respec,
+      lottery: normalizeLotteryConfig(config.lottery),
+      gambling: normalizeGamblingConfig(config.gambling),
+      respec: normalizeRespecConfig(config.respec),
       prestige: config.prestige,
-      dailyQuests: config.dailyQuests,
-      autoQuests: config.autoQuests,
-      globalQuests: config.globalQuests,
-      guildHalls: config.guildHalls,
+      dailyQuests: normalizeDailyQuestsConfig(config.dailyQuests),
+      autoQuests: normalizeAutoQuestsConfig(config.autoQuests),
+      globalQuests: normalizeGlobalQuestsConfig(config.globalQuests),
+      guildHalls: normalizeGuildHallsConfig(config.guildHalls),
       factions: config.factions,
       leaderboard: config.leaderboard,
-      currencies: config.currencies,
+      currencies: normalizeCurrenciesConfig(config.currencies),
     })),
 
     write("assets", cleanObj({

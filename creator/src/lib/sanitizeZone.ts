@@ -12,7 +12,9 @@ import type {
   BtNodeFile,
   StatMap,
   FeatureFile,
+  DoorFile,
 } from "@/types/world";
+import { getTrainerClasses, setTrainerClasses } from "./trainers";
 
 // ─── ID sanitization ──────────────────────────────────────────────
 
@@ -89,6 +91,62 @@ function remapBtRoutes(node: BtNodeFile, roomRemap: Map<string, string>): BtNode
   return result;
 }
 
+function resolveDoorKeyId(door?: DoorFile): string | undefined {
+  return door?.keyItemId ?? door?.key;
+}
+
+function normalizeDoorFile(door?: DoorFile): DoorFile | undefined {
+  if (!door) return undefined;
+
+  const normalized: DoorFile = {};
+  const initialState = door.initialState ?? (door.locked ? "locked" : door.closed ? "closed" : undefined);
+  const keyItemId = resolveDoorKeyId(door);
+
+  if (initialState) normalized.initialState = initialState;
+  if (keyItemId) normalized.keyItemId = keyItemId;
+  if (door.keyConsumed != null) normalized.keyConsumed = door.keyConsumed;
+  if (door.resetWithZone != null) normalized.resetWithZone = door.resetWithZone;
+
+  return Object.keys(normalized).length > 0 ? normalized : undefined;
+}
+
+function normalizeRoomOutput(room: RoomFile): RoomFile {
+  let next: RoomFile = { ...room, audio: undefined };
+  if (room.exits) {
+    const exits: Record<string, string | ExitValue> = {};
+    for (const [dir, exit] of Object.entries(room.exits)) {
+      exits[dir] =
+        typeof exit === "string"
+          ? exit
+          : {
+              ...exit,
+              door: normalizeDoorFile(exit.door),
+            };
+    }
+    next = { ...next, exits };
+  }
+  return next;
+}
+
+function normalizeTrainerOutput(trainer: TrainerFile): TrainerFile {
+  return {
+    ...trainer,
+    ...setTrainerClasses(getTrainerClasses(trainer)),
+  };
+}
+
+function normalizePuzzleReward(
+  reward: NonNullable<WorldFile["puzzles"]>[string]["reward"],
+): NonNullable<WorldFile["puzzles"]>[string]["reward"] {
+  if (reward.type === "give_gold") {
+    return { ...reward, gold: reward.gold ?? reward.amount, amount: undefined };
+  }
+  if (reward.type === "give_xp") {
+    return { ...reward, xp: reward.xp ?? reward.amount, amount: undefined };
+  }
+  return reward;
+}
+
 // ─── Phase 1: Remap all entity IDs and references ─────────────────
 
 interface RemapTables {
@@ -122,7 +180,14 @@ function applyIdRemaps(world: WorldFile, t: RemapTables): WorldFile {
           exits[dir] = exit.includes(":") ? exit : rId(exit, t.room);
         } else {
           const to = exit.to.includes(":") ? exit.to : rId(exit.to, t.room);
-          const door = exit.door?.key ? { ...exit.door, key: rId(exit.door.key, t.item) } : exit.door;
+          const doorKey = resolveDoorKeyId(exit.door);
+          const door = doorKey
+            ? {
+                ...exit.door,
+                key: exit.door?.key ? rId(exit.door.key, t.item) : undefined,
+                keyItemId: exit.door?.keyItemId ? rId(exit.door.keyItemId, t.item) : undefined,
+              }
+            : exit.door;
           exits[dir] = { ...exit, to, door };
         }
       }
@@ -382,8 +447,16 @@ function stripDanglingReferences(world: WorldFile): WorldFile {
     for (const [dir, exit] of Object.entries(room.exits)) {
       const target = typeof exit === "string" ? exit : exit.to;
       if (!target.includes(":") && !roomIds.has(target)) continue;
-      if (typeof exit !== "string" && exit.door?.key && !itemIds.has(exit.door.key)) {
-        exits[dir] = { ...exit, door: { ...exit.door, key: undefined } };
+      const doorKey = typeof exit === "string" ? undefined : resolveDoorKeyId(exit.door);
+      if (typeof exit !== "string" && doorKey && !itemIds.has(doorKey)) {
+        exits[dir] = {
+          ...exit,
+          door: {
+            ...exit.door,
+            key: undefined,
+            keyItemId: undefined,
+          },
+        };
       } else {
         exits[dir] = exit;
       }
@@ -506,8 +579,24 @@ function cleanOutput(world: WorldFile): WorldFile {
     }
   }
 
+  const rooms = Object.fromEntries(
+    Object.entries(world.rooms).map(([id, room]) => [id, normalizeRoomOutput(room)]),
+  );
+
+  const trainers = world.trainers && hasEntries(world.trainers)
+    ? Object.fromEntries(
+        Object.entries(world.trainers).map(([id, trainer]) => [id, normalizeTrainerOutput(trainer)]),
+      )
+    : undefined;
+
+  const puzzles = world.puzzles && hasEntries(world.puzzles)
+    ? Object.fromEntries(
+        Object.entries(world.puzzles).map(([id, puzzle]) => [id, { ...puzzle, reward: normalizePuzzleReward(puzzle.reward) }]),
+      )
+    : undefined;
+
   // Build result with only non-empty optional collections
-  const result: WorldFile = { zone, startRoom, rooms: world.rooms };
+  const result: WorldFile = { zone, startRoom, rooms };
 
   if (world.lifespan != null && world.lifespan > 0) result.lifespan = world.lifespan;
   if (world.graphical) result.graphical = true;
@@ -517,11 +606,11 @@ function cleanOutput(world: WorldFile): WorldFile {
   if (hasEntries(world.mobs)) result.mobs = world.mobs;
   if (hasEntries(items)) result.items = items;
   if (hasEntries(world.shops)) result.shops = world.shops;
-  if (hasEntries(world.trainers)) result.trainers = world.trainers;
+  if (hasEntries(trainers)) result.trainers = trainers;
   if (hasEntries(world.quests)) result.quests = world.quests;
   if (hasEntries(world.gatheringNodes)) result.gatheringNodes = world.gatheringNodes;
   if (hasEntries(world.recipes)) result.recipes = world.recipes;
-  if (hasEntries(world.puzzles)) result.puzzles = world.puzzles;
+  if (hasEntries(puzzles)) result.puzzles = puzzles;
   if (world.dungeon) result.dungeon = world.dungeon;
 
   return result;

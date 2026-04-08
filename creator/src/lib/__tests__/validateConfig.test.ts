@@ -5,7 +5,25 @@ import type { AppConfig } from "@/types/config";
 /** Minimal valid config for tests to spread over */
 const BASE_CONFIG: AppConfig = {
   server: { telnetPort: 4000, webPort: 8080 },
+  admin: { enabled: false, port: 9091, token: "", basePath: "/", grafanaUrl: "", corsOrigins: [] },
+  observability: { metricsEnabled: true, metricsEndpoint: "/metrics", metricsHttpPort: 9099, metricsHttpHost: "0.0.0.0", staticTags: {} },
+  logging: { level: "INFO", packageLevels: {} },
   world: { startRoom: "" },
+  navigation: {
+    recall: {
+      cooldownMs: 300000,
+      messages: {
+        combatBlocked: "",
+        cooldownRemaining: "",
+        castBegin: "",
+        unreachable: "",
+        departNotice: "",
+        arriveNotice: "",
+        arrival: "",
+      },
+    },
+  },
+  commands: {},
   classStartRooms: {},
   stats: {
     definitions: {
@@ -80,12 +98,17 @@ const BASE_CONFIG: AppConfig = {
   craftingSkills: {},
   craftingStationTypes: {},
   housing: { enabled: false, entryExitDirection: "SOUTH", templates: {} },
+  guild: { founderRank: "leader", defaultRank: "member" },
+  friends: { maxFriends: 50 },
+  emotePresets: { presets: [] },
   enchanting: { maxEnchantmentsPerItem: 1, definitions: {} },
   bank: { maxItems: 50 },
   worldTime: { cycleLengthMs: 3600000, dawnHour: 5, dayHour: 8, duskHour: 18, nightHour: 21 },
   weather: { minTransitionMs: 300000, maxTransitionMs: 900000 },
   worldEvents: { definitions: {} },
   pets: {},
+  skillPoints: { interval: 2 },
+  multiclass: { minLevel: 10, goldCost: 500 },
   guildRanks: {},
   mobActionDelay: { minActionDelayMillis: 8000, maxActionDelayMillis: 20000 },
   characterCreation: { startingGold: 0 },
@@ -134,6 +157,17 @@ describe("validateConfig", () => {
     const issues = validateConfig(cfg);
     expect(issues).toContainEqual(
       expect.objectContaining({ entity: "server", message: expect.stringContaining("different") }),
+    );
+  });
+
+  it("flags invalid observability endpoint", () => {
+    const cfg = {
+      ...BASE_CONFIG,
+      observability: { ...BASE_CONFIG.observability, metricsEndpoint: "metrics" },
+    };
+    const issues = validateConfig(cfg);
+    expect(issues).toContainEqual(
+      expect.objectContaining({ entity: "observability", severity: "error" }),
     );
   });
 
@@ -308,6 +342,37 @@ describe("validateConfig", () => {
     const issues = validateConfig(cfg);
     expect(issues).toContainEqual(
       expect.objectContaining({ entity: "combat", severity: "warning" }),
+    );
+  });
+
+  it("flags stale lottery config that would export invalid values", () => {
+    const cfg = {
+      ...BASE_CONFIG,
+      lottery: {
+        enabled: true,
+        ticketCost: 0,
+        drawingIntervalMs: 0,
+        jackpotSeedGold: -1,
+      },
+    };
+    const issues = validateConfig(cfg);
+    expect(issues.some((i) => i.entity === "lottery" && i.severity === "error")).toBe(true);
+  });
+
+  it("flags gambling win chance outside 0..1", () => {
+    const cfg = {
+      ...BASE_CONFIG,
+      gambling: {
+        enabled: true,
+        diceMinBet: 10,
+        diceMaxBet: 100,
+        diceWinChance: 2,
+        diceWinMultiplier: 2,
+      },
+    };
+    const issues = validateConfig(cfg);
+    expect(issues).toContainEqual(
+      expect.objectContaining({ entity: "gambling", severity: "error" }),
     );
   });
 

@@ -467,6 +467,51 @@ describe("sanitizeZone — output cleanup", () => {
     const result = sanitizeZone(world);
     expect(result.zone).toBe("zone_123");
   });
+
+  it("canonicalizes legacy door fields on output", () => {
+    const world: WorldFile = {
+      zone: "test",
+      startRoom: "room_a",
+      rooms: {
+        room_a: {
+          title: "A",
+          description: "A",
+          exits: {
+            n: { to: "room_b", door: { locked: true, key: "iron_key" } },
+          },
+        },
+        room_b: { title: "B", description: "B" },
+      },
+      items: {
+        iron_key: { displayName: "Iron Key" },
+      },
+    };
+
+    const result = sanitizeZone(world);
+    const exit = result.rooms.room_a.exits!.n as { door: Record<string, unknown> };
+    expect(exit.door).toEqual({ initialState: "locked", keyItemId: "iron_key" });
+  });
+
+  it("strips legacy room audio field on output", () => {
+    const result = sanitizeZone(makeWorld({
+      rooms: {
+        room_a: { title: "A", description: "A", audio: "legacy.ogg" },
+        room_b: { title: "B", description: "B" },
+      },
+    }));
+    expect(result.rooms.room_a.audio).toBeUndefined();
+  });
+
+  it("writes single-class and multi-class trainers in minimal schema", () => {
+    const result = sanitizeZone(makeWorld({
+      trainers: {
+        warrior_trainer: { name: "Trainer", class: "WARRIOR", classes: ["WARRIOR"], room: "room_a" },
+        academy_master: { name: "Master", class: "WARRIOR", classes: ["WARRIOR", "ROGUE"], room: "room_b" },
+      },
+    }));
+    expect(result.trainers!.warrior_trainer).toMatchObject({ class: "WARRIOR", classes: undefined });
+    expect(result.trainers!.academy_master).toMatchObject({ class: undefined, classes: ["WARRIOR", "ROGUE"] });
+  });
 });
 
 // ─── sanitizeZone — complex end-to-end scenario ──────────────────

@@ -1,4 +1,12 @@
-import type { WorldFile } from "@/types/world";
+import type {
+  WorldFile,
+  DoorFile,
+  FeatureFile,
+  PuzzleFile,
+  PuzzleReward,
+  RareYieldFile,
+  RecipeFile,
+} from "@/types/world";
 import type { EquipmentSlotDefinition } from "@/types/config";
 import { exitTarget } from "./zoneEdits";
 import { getTrainerClasses } from "./trainers";
@@ -7,21 +15,249 @@ export type Severity = "error" | "warning";
 
 export interface ValidationIssue {
   severity: Severity;
-  /** e.g. "room:tavern", "mob:rat", "quest:fetch_sword" */
   entity: string;
   message: string;
 }
 
-/** Fallback class set for projects that don't define `classes` in config. */
 const DEFAULT_VALID_CLASSES = new Set(["WARRIOR", "MAGE", "CLERIC", "ROGUE"]);
+const LOCKABLE_STATES = new Set(["open", "closed", "locked"]);
+const LEVER_STATES = new Set(["up", "down"]);
+const PUZZLE_TYPES = new Set(["riddle", "sequence"]);
+const PUZZLE_REWARD_TYPES = new Set(["unlock_exit", "give_item", "give_gold", "give_xp"]);
 
-/**
- * Validate a single zone's WorldFile for referential integrity and
- * common mistakes. Returns an array of issues (empty = valid).
- *
- * Pass `validClasses` (uppercase class IDs) so trainer-class warnings
- * respect the project's actual class roster instead of the legacy default.
- */
+function addIssue(
+  issues: ValidationIssue[],
+  severity: Severity,
+  entity: string,
+  message: string,
+): void {
+  issues.push({ severity, entity, message });
+}
+
+function resolveDoorKeyId(door?: DoorFile): string | undefined {
+  return door?.keyItemId ?? door?.key;
+}
+
+function resolveDoorState(door?: DoorFile): string | undefined {
+  return door?.initialState ?? (door?.locked ? "locked" : door?.closed ? "closed" : undefined);
+}
+
+function hasPositiveOnUse(item: NonNullable<WorldFile["items"]>[string]): boolean {
+  const onUse = item.onUse;
+  if (!onUse) return false;
+  return (onUse.healHp ?? 0) > 0 || (onUse.grantXp ?? 0) > 0;
+}
+
+function validateDoor(
+  issues: ValidationIssue[],
+  entity: string,
+  label: string,
+  door: DoorFile | undefined,
+  itemIds: Set<string>,
+): void {
+  if (!door) return;
+
+  const state = resolveDoorState(door);
+  if (state && !LOCKABLE_STATES.has(state.toLowerCase())) {
+    addIssue(issues, "error", entity, `${label} has invalid initialState "${state}"`);
+  }
+
+  const keyItemId = resolveDoorKeyId(door);
+  if (keyItemId && !itemIds.has(keyItemId)) {
+    addIssue(issues, "error", entity, `${label} key "${keyItemId}" is not a known item in this zone`);
+  }
+}
+
+function validateFeature(
+  issues: ValidationIssue[],
+  entity: string,
+  featureId: string,
+  feature: FeatureFile,
+  itemIds: Set<string>,
+): void {
+  const type = feature.type.trim().toUpperCase();
+  if (!feature.displayName?.trim()) {
+    addIssue(issues, "error", entity, `Feature "${featureId}" has no displayName`);
+  }
+  if (!feature.keyword?.trim()) {
+    addIssue(issues, "error", entity, `Feature "${featureId}" has no keyword`);
+  }
+
+  switch (type) {
+    case "CONTAINER":
+      if (feature.initialState && !LOCKABLE_STATES.has(feature.initialState.toLowerCase())) {
+        addIssue(issues, "error", entity, `Feature "${featureId}" has invalid initialState "${feature.initialState}"`);
+      }
+      if (feature.keyItemId && !itemIds.has(feature.keyItemId)) {
+        addIssue(issues, "error", entity, `Feature "${featureId}" key "${feature.keyItemId}" is not a known item in this zone`);
+      }
+      for (const itemId of feature.items ?? []) {
+        if (!itemIds.has(itemId)) {
+          addIssue(issues, "error", entity, `Feature "${featureId}" contains unknown item "${itemId}"`);
+        }
+      }
+      break;
+    case "LEVER":
+      if (feature.initialState && !LEVER_STATES.has(feature.initialState.toLowerCase())) {
+        addIssue(issues, "error", entity, `Feature "${featureId}" has invalid initialState "${feature.initialState}"`);
+      }
+      break;
+    case "SIGN":
+      if (!feature.text?.trim()) {
+        addIssue(issues, "error", entity, `Sign feature "${featureId}" must have non-empty text`);
+      }
+      break;
+    default:
+      addIssue(issues, "error", entity, `Feature "${featureId}" has unknown type "${feature.type}"`);
+      break;
+  }
+}
+
+function validateRareYield(
+  issues: ValidationIssue[],
+  entity: string,
+  label: string,
+  rareYield: RareYieldFile,
+  itemIds: Set<string>,
+): void {
+  if (!rareYield.itemId) {
+    addIssue(issues, "error", entity, `${label} has empty item ID`);
+  } else if (!itemIds.has(rareYield.itemId)) {
+    addIssue(issues, "warning", entity, `${label} item "${rareYield.itemId}" is not a known item in this zone`);
+  }
+  if ((rareYield.quantity ?? 1) < 1) {
+    addIssue(issues, "error", entity, `${label} quantity must be >= 1`);
+  }
+  if (rareYield.dropChance <= 0 || rareYield.dropChance > 1) {
+    addIssue(issues, "error", entity, `${label} dropChance ${rareYield.dropChance} out of range ((0.0, 1.0])`);
+  }
+}
+
+function validateRecipe(
+  issues: ValidationIssue[],
+  recipeId: string,
+  recipe: RecipeFile,
+  itemIds: Set<string>,
+): void {
+  const entity = `recipe:${recipeId}`;
+  if (!recipe.displayName?.trim()) {
+    addIssue(issues, "warning", entity, "Recipe has no display name");
+  }
+  if (!recipe.outputItemId) {
+    addIssue(issues, "warning", entity, "Recipe has no output item");
+  } else if (!itemIds.has(recipe.outputItemId)) {
+    addIssue(issues, "warning", entity, `Output item "${recipe.outputItemId}" is not a known item in this zone`);
+  }
+  if ((recipe.outputQuantity ?? 1) < 1) {
+    addIssue(issues, "error", entity, "Output quantity must be at least 1");
+  }
+  if (!recipe.materials || recipe.materials.length === 0) {
+    addIssue(issues, "warning", entity, "Recipe has no materials");
+  } else {
+    for (const [index, mat] of recipe.materials.entries()) {
+      if (!mat.itemId) {
+        addIssue(issues, "warning", entity, "Material has empty item ID");
+      } else if (!itemIds.has(mat.itemId)) {
+        addIssue(issues, "warning", entity, `Material item "${mat.itemId}" is not a known item in this zone`);
+      }
+      if (mat.quantity < 1) {
+        addIssue(issues, "error", entity, `Material #${index + 1} quantity must be at least 1`);
+      }
+    }
+  }
+}
+
+function validatePuzzleReward(
+  issues: ValidationIssue[],
+  entity: string,
+  reward: PuzzleReward,
+  itemIds: Set<string>,
+  roomIds: Set<string>,
+): void {
+  const type = reward.type.trim().toLowerCase();
+  if (!PUZZLE_REWARD_TYPES.has(type)) {
+    addIssue(issues, "error", entity, `Puzzle has unknown reward type "${reward.type}"`);
+    return;
+  }
+
+  if (type === "unlock_exit") {
+    if (!reward.exitDirection?.trim()) {
+      addIssue(issues, "error", entity, "unlock_exit reward requires exitDirection");
+    }
+    if (!reward.targetRoom?.trim()) {
+      addIssue(issues, "error", entity, "unlock_exit reward requires targetRoom");
+    } else if (!reward.targetRoom.includes(":") && !roomIds.has(reward.targetRoom)) {
+      addIssue(issues, "error", entity, `unlock_exit reward targetRoom "${reward.targetRoom}" does not exist`);
+    }
+  }
+  if (type === "give_item") {
+    if (!reward.itemId?.trim()) {
+      addIssue(issues, "error", entity, "give_item reward requires itemId");
+    } else if (!itemIds.has(reward.itemId)) {
+      addIssue(issues, "warning", entity, `give_item reward item "${reward.itemId}" is not a known item in this zone`);
+    }
+  }
+  const goldAmount = reward.gold ?? reward.amount ?? 0;
+  const xpAmount = reward.xp ?? reward.amount ?? 0;
+  if (type === "give_gold" && goldAmount <= 0) {
+    addIssue(issues, "error", entity, "give_gold reward requires amount > 0");
+  }
+  if (type === "give_xp" && xpAmount <= 0) {
+    addIssue(issues, "error", entity, "give_xp reward requires amount > 0");
+  }
+}
+
+function validatePuzzle(
+  issues: ValidationIssue[],
+  puzzleId: string,
+  puzzle: PuzzleFile,
+  roomIds: Set<string>,
+  mobIds: Set<string>,
+  itemIds: Set<string>,
+): void {
+  const entity = `puzzle:${puzzleId}`;
+  const type = puzzle.type.trim().toLowerCase();
+
+  if (!PUZZLE_TYPES.has(type)) {
+    addIssue(issues, "error", entity, `Puzzle has unknown type "${puzzle.type}"`);
+  }
+  if (!puzzle.roomId?.trim()) {
+    addIssue(issues, "error", entity, "Puzzle has no roomId");
+  } else if (!puzzle.roomId.includes(":") && !roomIds.has(puzzle.roomId)) {
+    addIssue(issues, "error", entity, `Puzzle room "${puzzle.roomId}" does not exist`);
+  }
+  if (puzzle.mobId && !mobIds.has(puzzle.mobId)) {
+    addIssue(issues, "warning", entity, `Puzzle mob "${puzzle.mobId}" is not a known mob in this zone`);
+  }
+
+  if (type === "riddle") {
+    const answers = [
+      ...(puzzle.answer?.trim() ? [puzzle.answer.trim()] : []),
+      ...((puzzle.acceptableAnswers ?? []).map((answer) => answer.trim()).filter(Boolean)),
+    ];
+    if (answers.length === 0) {
+      addIssue(issues, "error", entity, "Riddle puzzle must have at least one answer");
+    }
+  }
+
+  if (type === "sequence") {
+    if (!puzzle.steps || puzzle.steps.length === 0) {
+      addIssue(issues, "error", entity, "Sequence puzzle must have at least one step");
+    } else {
+      for (const [index, step] of puzzle.steps.entries()) {
+        if (!step.feature?.trim()) {
+          addIssue(issues, "error", entity, `Step #${index + 1} feature cannot be blank`);
+        }
+        if (!step.action?.trim()) {
+          addIssue(issues, "error", entity, `Step #${index + 1} action cannot be blank`);
+        }
+      }
+    }
+  }
+
+  validatePuzzleReward(issues, entity, puzzle.reward, itemIds, roomIds);
+}
+
 export function validateZone(
   world: WorldFile,
   equipmentSlots?: Record<string, EquipmentSlotDefinition>,
@@ -31,476 +267,236 @@ export function validateZone(
   const roomIds = new Set(Object.keys(world.rooms));
   const mobIds = new Set(Object.keys(world.mobs ?? {}));
   const itemIds = new Set(Object.keys(world.items ?? {}));
+  const VALID_CLASSES = validClasses ?? DEFAULT_VALID_CLASSES;
 
-  // ─── Zone-level checks ──────────────────────────────────────────
   if (!world.startRoom) {
-    issues.push({
-      severity: "error",
-      entity: "zone",
-      message: "No start room defined",
-    });
+    addIssue(issues, "error", "zone", "No start room defined");
   } else if (!roomIds.has(world.startRoom)) {
-    issues.push({
-      severity: "error",
-      entity: "zone",
-      message: `Start room "${world.startRoom}" does not exist`,
-    });
+    addIssue(issues, "error", "zone", `Start room "${world.startRoom}" does not exist`);
   }
-
   if (roomIds.size === 0) {
-    issues.push({
-      severity: "error",
-      entity: "zone",
-      message: "Zone has no rooms",
-    });
+    addIssue(issues, "error", "zone", "Zone has no rooms");
   }
 
-  // ─── Room checks ────────────────────────────────────────────────
   for (const [roomId, room] of Object.entries(world.rooms)) {
-    if (!room.title?.trim()) {
-      issues.push({
-        severity: "warning",
-        entity: `room:${roomId}`,
-        message: "Room has no title",
-      });
-    }
-    if (!room.description?.trim()) {
-      issues.push({
-        severity: "warning",
-        entity: `room:${roomId}`,
-        message: "Room has no description",
-      });
-    }
+    const entity = `room:${roomId}`;
+    if (!room.title?.trim()) addIssue(issues, "warning", entity, "Room has no title");
+    if (!room.description?.trim()) addIssue(issues, "warning", entity, "Room has no description");
 
-    // Exit targets
     for (const [dir, exit] of Object.entries(room.exits ?? {})) {
       const target = exitTarget(exit);
-      // Cross-zone exits (contain ":") are not validated here
       if (!target.includes(":") && !roomIds.has(target)) {
-        issues.push({
-          severity: "error",
-          entity: `room:${roomId}`,
-          message: `Exit "${dir}" points to non-existent room "${target}"`,
-        });
+        addIssue(issues, "error", entity, `Exit "${dir}" points to non-existent room "${target}"`);
       }
+      if (typeof exit !== "string") {
+        validateDoor(issues, entity, `Exit "${dir}" door`, exit.door, itemIds);
+      }
+    }
 
-      // Door key validation
-      if (typeof exit !== "string" && exit.door?.key) {
-        if (!itemIds.has(exit.door.key)) {
-          issues.push({
-            severity: "warning",
-            entity: `room:${roomId}`,
-            message: `Exit "${dir}" door key "${exit.door.key}" is not a known item in this zone`,
-          });
-        }
-      }
+    for (const [featureId, feature] of Object.entries(room.features ?? {})) {
+      validateFeature(issues, entity, featureId, feature, itemIds);
     }
   }
 
-  // ─── Mob checks ─────────────────────────────────────────────────
   for (const [mobId, mob] of Object.entries(world.mobs ?? {})) {
-    if (!mob.name?.trim()) {
-      issues.push({
-        severity: "warning",
-        entity: `mob:${mobId}`,
-        message: "Mob has no name",
-      });
-    }
-    if (!roomIds.has(mob.room)) {
-      issues.push({
-        severity: "error",
-        entity: `mob:${mobId}`,
-        message: `Room "${mob.room}" does not exist`,
-      });
-    }
+    const entity = `mob:${mobId}`;
+    if (!mob.name?.trim()) addIssue(issues, "warning", entity, "Mob has no name");
+    if (!roomIds.has(mob.room)) addIssue(issues, "error", entity, `Room "${mob.room}" does not exist`);
 
-    // Drop references
-    for (const drop of mob.drops ?? []) {
+    for (const [index, drop] of (mob.drops ?? []).entries()) {
       if (!drop.itemId) {
-        issues.push({
-          severity: "warning",
-          entity: `mob:${mobId}`,
-          message: "Drop has empty item ID",
-        });
+        addIssue(issues, "warning", entity, "Drop has empty item ID");
       } else if (!itemIds.has(drop.itemId)) {
-        issues.push({
-          severity: "warning",
-          entity: `mob:${mobId}`,
-          message: `Drop item "${drop.itemId}" is not a known item in this zone`,
-        });
+        addIssue(issues, "warning", entity, `Drop item "${drop.itemId}" is not a known item in this zone`);
       }
-      if (drop.chance <= 0 || drop.chance > 100) {
-        issues.push({
-          severity: "warning",
-          entity: `mob:${mobId}`,
-          message: `Drop "${drop.itemId}" has invalid chance ${drop.chance}`,
-        });
+      if (Number.isNaN(drop.chance) || drop.chance < 0 || drop.chance > 1) {
+        addIssue(issues, "error", entity, `Drop #${index + 1} has invalid chance ${drop.chance}; expected 0.0-1.0`);
       }
     }
 
-    // Behavior patrol route
     if (mob.behavior?.params?.patrolRoute) {
       for (const routeRoom of mob.behavior.params.patrolRoute) {
         if (!roomIds.has(routeRoom)) {
-          issues.push({
-            severity: "error",
-            entity: `mob:${mobId}`,
-            message: `Patrol route room "${routeRoom}" does not exist`,
-          });
+          addIssue(issues, "error", entity, `Patrol route room "${routeRoom}" does not exist`);
         }
       }
     }
 
-    // Quest references
     for (const questId of mob.quests ?? []) {
       if (!world.quests?.[questId]) {
-        issues.push({
-          severity: "error",
-          entity: `mob:${mobId}`,
-          message: `Quest "${questId}" does not exist`,
-        });
+        addIssue(issues, "error", entity, `Quest "${questId}" does not exist`);
       }
     }
 
-    // Dialogue node references
     if (mob.dialogue) {
       const dialogueIds = new Set(Object.keys(mob.dialogue));
+      if (!dialogueIds.has("root")) {
+        addIssue(issues, "error", entity, "Dialogue must contain a \"root\" node");
+      }
       for (const [nodeId, node] of Object.entries(mob.dialogue)) {
         if (!node.text?.trim()) {
-          issues.push({
-            severity: "warning",
-            entity: `mob:${mobId}`,
-            message: `Dialogue node "${nodeId}" has empty text`,
-          });
+          addIssue(issues, "warning", entity, `Dialogue node "${nodeId}" has empty text`);
         }
         for (const choice of node.choices ?? []) {
           if (!choice.text?.trim()) {
-            issues.push({
-              severity: "warning",
-              entity: `mob:${mobId}`,
-              message: `Dialogue node "${nodeId}" has a choice with empty text`,
-            });
+            addIssue(issues, "warning", entity, `Dialogue node "${nodeId}" has a choice with empty text`);
           }
           if (choice.next && !dialogueIds.has(choice.next)) {
-            issues.push({
-              severity: "error",
-              entity: `mob:${mobId}`,
-              message: `Dialogue choice in "${nodeId}" points to non-existent node "${choice.next}"`,
-            });
+            addIssue(issues, "error", entity, `Dialogue choice in "${nodeId}" points to non-existent node "${choice.next}"`);
           }
         }
       }
     }
   }
 
-  // ─── Item checks ────────────────────────────────────────────────
   for (const [itemId, item] of Object.entries(world.items ?? {})) {
-    if (!item.displayName?.trim()) {
-      issues.push({
-        severity: "warning",
-        entity: `item:${itemId}`,
-        message: "Item has no display name",
-      });
-    }
+    const entity = `item:${itemId}`;
+    if (!item.displayName?.trim()) addIssue(issues, "warning", entity, "Item has no display name");
     if (item.room && !roomIds.has(item.room)) {
-      issues.push({
-        severity: "error",
-        entity: `item:${itemId}`,
-        message: `Room "${item.room}" does not exist`,
-      });
+      addIssue(issues, "error", entity, `Room "${item.room}" does not exist`);
+    }
+    if (item.mob?.trim()) {
+      addIssue(issues, "error", entity, "Deprecated `mob` placement is not supported; use mobs.<id>.drops instead");
+    }
+    if (item.room?.trim() && item.mob?.trim()) {
+      addIssue(issues, "error", entity, "Item cannot be placed in both a room and a mob");
+    }
+    if (item.onUse) {
+      if ((item.onUse.healHp ?? 0) < 0) addIssue(issues, "error", entity, "onUse.healHp must be >= 0");
+      if ((item.onUse.grantXp ?? 0) < 0) addIssue(issues, "error", entity, "onUse.grantXp must be >= 0");
+      if (!hasPositiveOnUse(item)) addIssue(issues, "error", entity, "onUse must define at least one positive effect");
     }
     if (item.slot && equipmentSlots && Object.keys(equipmentSlots).length > 0) {
       if (!equipmentSlots[item.slot] && !equipmentSlots[item.slot.toLowerCase()]) {
-        issues.push({
-          severity: "warning",
-          entity: `item:${itemId}`,
-          message: `Slot "${item.slot}" is not a defined equipment slot`,
-        });
+        addIssue(issues, "warning", entity, `Slot "${item.slot}" is not a defined equipment slot`);
       }
     }
   }
 
-  // ─── Shop checks ───────────────────────────────────────────────
   for (const [shopId, shop] of Object.entries(world.shops ?? {})) {
-    if (!shop.name?.trim()) {
-      issues.push({
-        severity: "warning",
-        entity: `shop:${shopId}`,
-        message: "Shop has no name",
-      });
-    }
-    if (!roomIds.has(shop.room)) {
-      issues.push({
-        severity: "error",
-        entity: `shop:${shopId}`,
-        message: `Room "${shop.room}" does not exist`,
-      });
-    }
+    const entity = `shop:${shopId}`;
+    if (!shop.name?.trim()) addIssue(issues, "warning", entity, "Shop has no name");
+    if (!roomIds.has(shop.room)) addIssue(issues, "error", entity, `Room "${shop.room}" does not exist`);
     for (const itemId of shop.items ?? []) {
       if (!itemIds.has(itemId)) {
-        issues.push({
-          severity: "warning",
-          entity: `shop:${shopId}`,
-          message: `Inventory item "${itemId}" is not a known item in this zone`,
-        });
+        addIssue(issues, "warning", entity, `Inventory item "${itemId}" is not a known item in this zone`);
       }
     }
   }
 
-  // ─── Trainer checks ────────────────────────────────────────
-  const VALID_CLASSES = validClasses ?? DEFAULT_VALID_CLASSES;
   const trainerRooms = new Set<string>();
   for (const [trainerId, trainer] of Object.entries(world.trainers ?? {})) {
-    if (!trainer.name?.trim()) {
-      issues.push({
-        severity: "warning",
-        entity: `trainer:${trainerId}`,
-        message: "Trainer has no name",
-      });
-    }
-    if (!roomIds.has(trainer.room)) {
-      issues.push({
-        severity: "error",
-        entity: `trainer:${trainerId}`,
-        message: `Room "${trainer.room}" does not exist`,
-      });
-    }
+    const entity = `trainer:${trainerId}`;
+    if (!trainer.name?.trim()) addIssue(issues, "warning", entity, "Trainer has no name");
+    if (!roomIds.has(trainer.room)) addIssue(issues, "error", entity, `Room "${trainer.room}" does not exist`);
     const trainerClassList = getTrainerClasses(trainer);
     if (trainerClassList.length === 0) {
-      issues.push({
-        severity: "error",
-        entity: `trainer:${trainerId}`,
-        message: "Trainer has no class",
-      });
+      addIssue(issues, "error", entity, "Trainer has no class");
     } else {
       for (const cls of trainerClassList) {
         if (!VALID_CLASSES.has(cls.toUpperCase())) {
-          issues.push({
-            severity: "warning",
-            entity: `trainer:${trainerId}`,
-            message: `Class "${cls}" is not a standard class`,
-          });
+          addIssue(issues, "warning", entity, `Class "${cls}" is not a standard class`);
         }
       }
     }
     if (trainerRooms.has(trainer.room)) {
-      issues.push({
-        severity: "warning",
-        entity: `trainer:${trainerId}`,
-        message: `Room "${trainer.room}" already has a trainer`,
-      });
+      addIssue(issues, "warning", entity, `Room "${trainer.room}" already has a trainer`);
     }
     trainerRooms.add(trainer.room);
   }
 
-  // ─── Quest checks ──────────────────────────────────────────────
   for (const [questId, quest] of Object.entries(world.quests ?? {})) {
-    if (!quest.name?.trim()) {
-      issues.push({
-        severity: "warning",
-        entity: `quest:${questId}`,
-        message: "Quest has no name",
-      });
-    }
+    const entity = `quest:${questId}`;
+    if (!quest.name?.trim()) addIssue(issues, "warning", entity, "Quest has no name");
     if (!quest.giver) {
-      issues.push({
-        severity: "warning",
-        entity: `quest:${questId}`,
-        message: "Quest has no giver",
-      });
+      addIssue(issues, "warning", entity, "Quest has no giver");
     } else if (!mobIds.has(quest.giver)) {
-      issues.push({
-        severity: "warning",
-        entity: `quest:${questId}`,
-        message: `Giver mob "${quest.giver}" is not a known mob in this zone`,
-      });
+      addIssue(issues, "warning", entity, `Giver mob "${quest.giver}" is not a known mob in this zone`);
     }
     if (!quest.objectives || quest.objectives.length === 0) {
-      issues.push({
-        severity: "warning",
-        entity: `quest:${questId}`,
-        message: "Quest has no objectives",
-      });
+      addIssue(issues, "warning", entity, "Quest has no objectives");
     } else {
-      for (const obj of quest.objectives) {
-        if (!obj.type) {
-          issues.push({
-            severity: "warning",
-            entity: `quest:${questId}`,
-            message: "Objective has no type",
-          });
-        }
-        if (!obj.targetKey) {
-          issues.push({
-            severity: "warning",
-            entity: `quest:${questId}`,
-            message: "Objective has no target key",
-          });
+      for (const [index, obj] of quest.objectives.entries()) {
+        if (!obj.type) addIssue(issues, "warning", entity, "Objective has no type");
+        if (!obj.targetKey) addIssue(issues, "warning", entity, "Objective has no target key");
+        if (obj.count != null && obj.count < 1) {
+          addIssue(issues, "error", entity, `Objective #${index + 1} count must be at least 1`);
         }
       }
     }
   }
 
-  // ─── Gathering node checks ─────────────────────────────────────
   for (const [nodeId, node] of Object.entries(world.gatheringNodes ?? {})) {
-    if (!node.displayName?.trim()) {
-      issues.push({
-        severity: "warning",
-        entity: `gatheringNode:${nodeId}`,
-        message: "Gathering node has no display name",
-      });
-    }
-    if (!roomIds.has(node.room)) {
-      issues.push({
-        severity: "error",
-        entity: `gatheringNode:${nodeId}`,
-        message: `Room "${node.room}" does not exist`,
-      });
-    }
+    const entity = `gatheringNode:${nodeId}`;
+    if (!node.displayName?.trim()) addIssue(issues, "warning", entity, "Gathering node has no display name");
+    if (!roomIds.has(node.room)) addIssue(issues, "error", entity, `Room "${node.room}" does not exist`);
     if (!node.yields || node.yields.length === 0) {
-      issues.push({
-        severity: "warning",
-        entity: `gatheringNode:${nodeId}`,
-        message: "Gathering node has no yields",
-      });
+      addIssue(issues, "warning", entity, "Gathering node has no yields");
     } else {
-      for (const y of node.yields) {
-        if (!y.itemId) {
-          issues.push({
-            severity: "warning",
-            entity: `gatheringNode:${nodeId}`,
-            message: "Yield has empty item ID",
-          });
-        } else if (!itemIds.has(y.itemId)) {
-          issues.push({
-            severity: "warning",
-            entity: `gatheringNode:${nodeId}`,
-            message: `Yield item "${y.itemId}" is not a known item in this zone`,
-          });
+      for (const [index, yieldDef] of node.yields.entries()) {
+        if (!yieldDef.itemId) {
+          addIssue(issues, "warning", entity, "Yield has empty item ID");
+        } else if (!itemIds.has(yieldDef.itemId)) {
+          addIssue(issues, "warning", entity, `Yield item "${yieldDef.itemId}" is not a known item in this zone`);
+        }
+        if ((yieldDef.minQuantity ?? 1) < 1) {
+          addIssue(issues, "error", entity, `Yield #${index + 1} minQuantity must be at least 1`);
+        }
+        if ((yieldDef.maxQuantity ?? 1) < (yieldDef.minQuantity ?? 1)) {
+          addIssue(issues, "error", entity, `Yield #${index + 1} maxQuantity must be >= minQuantity`);
         }
       }
     }
-    if (node.rareYields) {
-      for (const ry of node.rareYields) {
-        if (!ry.itemId) {
-          issues.push({
-            severity: "warning",
-            entity: `gatheringNode:${nodeId}`,
-            message: "Rare yield has empty item ID",
-          });
-        } else if (!itemIds.has(ry.itemId)) {
-          issues.push({
-            severity: "warning",
-            entity: `gatheringNode:${nodeId}`,
-            message: `Rare yield item "${ry.itemId}" is not a known item in this zone`,
-          });
-        }
-        if (ry.dropChance < 0 || ry.dropChance > 1) {
-          issues.push({
-            severity: "error",
-            entity: `gatheringNode:${nodeId}`,
-            message: `Rare yield "${ry.itemId}" dropChance ${ry.dropChance} out of range (0.0-1.0)`,
-          });
-        }
-      }
+    for (const [index, rareYield] of (node.rareYields ?? []).entries()) {
+      validateRareYield(issues, entity, `Rare yield #${index + 1}`, rareYield, itemIds);
     }
   }
 
-  // ─── Recipe checks ─────────────────────────────────────────────
   for (const [recipeId, recipe] of Object.entries(world.recipes ?? {})) {
-    if (!recipe.displayName?.trim()) {
-      issues.push({
-        severity: "warning",
-        entity: `recipe:${recipeId}`,
-        message: "Recipe has no display name",
-      });
-    }
-    if (!recipe.outputItemId) {
-      issues.push({
-        severity: "warning",
-        entity: `recipe:${recipeId}`,
-        message: "Recipe has no output item",
-      });
-    } else if (!itemIds.has(recipe.outputItemId)) {
-      issues.push({
-        severity: "warning",
-        entity: `recipe:${recipeId}`,
-        message: `Output item "${recipe.outputItemId}" is not a known item in this zone`,
-      });
-    }
-    if (!recipe.materials || recipe.materials.length === 0) {
-      issues.push({
-        severity: "warning",
-        entity: `recipe:${recipeId}`,
-        message: "Recipe has no materials",
-      });
-    } else {
-      for (const mat of recipe.materials) {
-        if (!mat.itemId) {
-          issues.push({
-            severity: "warning",
-            entity: `recipe:${recipeId}`,
-            message: "Material has empty item ID",
-          });
-        } else if (!itemIds.has(mat.itemId)) {
-          issues.push({
-            severity: "warning",
-            entity: `recipe:${recipeId}`,
-            message: `Material item "${mat.itemId}" is not a known item in this zone`,
-          });
-        }
-      }
-    }
+    validateRecipe(issues, recipeId, recipe, itemIds);
   }
 
-  // ─── Dungeon template checks ────────────────────────────────────
+  for (const [puzzleId, puzzle] of Object.entries(world.puzzles ?? {})) {
+    validatePuzzle(issues, puzzleId, puzzle, roomIds, mobIds, itemIds);
+  }
+
   if (world.dungeon) {
     const d = world.dungeon;
-    if (!d.name?.trim()) {
-      issues.push({ severity: "warning", entity: "dungeon", message: "Dungeon has no name" });
-    }
+    if (!d.name?.trim()) addIssue(issues, "warning", "dungeon", "Dungeon has no name");
     if (d.roomCountMin != null && d.roomCountMin < 3) {
-      issues.push({ severity: "error", entity: "dungeon", message: "Room count min must be >= 3" });
+      addIssue(issues, "error", "dungeon", "Room count min must be >= 3");
     }
     if (d.roomCountMax != null && d.roomCountMin != null && d.roomCountMax < d.roomCountMin) {
-      issues.push({ severity: "error", entity: "dungeon", message: "Room count max must be >= min" });
+      addIssue(issues, "error", "dungeon", "Room count max must be >= min");
     }
     const categories = Object.entries(d.roomTemplates ?? {});
     if (categories.length === 0) {
-      issues.push({ severity: "warning", entity: "dungeon", message: "Dungeon has no room template categories" });
+      addIssue(issues, "warning", "dungeon", "Dungeon has no room template categories");
     }
     for (const [cat, templates] of categories) {
-      if (templates.length === 0) {
-        issues.push({ severity: "warning", entity: "dungeon", message: `Room category "${cat}" is empty` });
-      }
+      if (templates.length === 0) addIssue(issues, "warning", "dungeon", `Room category "${cat}" is empty`);
       for (const tpl of templates) {
-        if (!tpl.title?.trim()) {
-          issues.push({ severity: "warning", entity: "dungeon", message: `Room template in "${cat}" has no title` });
-        }
+        if (!tpl.title?.trim()) addIssue(issues, "warning", "dungeon", `Room template in "${cat}" has no title`);
       }
     }
     if (d.portalRoom && !world.rooms[d.portalRoom]) {
-      issues.push({ severity: "warning", entity: "dungeon", message: `Portal room "${d.portalRoom}" not found in this zone` });
+      addIssue(issues, "warning", "dungeon", `Portal room "${d.portalRoom}" not found in this zone`);
     }
     const pools = Object.entries(d.mobPools ?? {}) as [string, string[] | undefined][];
-    if (pools.length === 0) {
-      issues.push({ severity: "warning", entity: "dungeon", message: "Dungeon has no mob pools" });
-    }
-    for (const [pool, mobIds] of pools) {
-      if (!mobIds || mobIds.length === 0) {
-        issues.push({ severity: "warning", entity: "dungeon", message: `Mob pool "${pool}" is empty` });
+    if (pools.length === 0) addIssue(issues, "warning", "dungeon", "Dungeon has no mob pools");
+    for (const [pool, poolMobIds] of pools) {
+      if (!poolMobIds || poolMobIds.length === 0) {
+        addIssue(issues, "warning", "dungeon", `Mob pool "${pool}" is empty`);
       }
     }
-    const bossMobs = d.mobPools?.boss ?? [];
-    if (bossMobs.length === 0) {
-      issues.push({ severity: "error", entity: "dungeon", message: "Dungeon must have at least one boss in mobPools.boss" });
+    if ((d.mobPools?.boss ?? []).length === 0) {
+      addIssue(issues, "error", "dungeon", "Dungeon must have at least one boss in mobPools.boss");
     }
   }
 
   return issues;
 }
 
-/** Validate all zones and return a map of zoneId -> issues. */
 export function validateAllZones(
   zones: Map<string, { data: WorldFile }>,
   equipmentSlots?: Record<string, EquipmentSlotDefinition>,

@@ -46,6 +46,7 @@ export interface RoomFile {
   video?: string;
   music?: string;
   ambient?: string;
+  /** Legacy Arcanum-only alias; stripped on output. */
   audio?: string;
 }
 
@@ -55,8 +56,15 @@ export interface ExitValue {
 }
 
 export interface DoorFile {
+  initialState?: string;
+  keyItemId?: string;
+  keyConsumed?: boolean;
+  resetWithZone?: boolean;
+  /** Legacy alias; normalized to `initialState` on output. */
   closed?: boolean;
+  /** Legacy alias; normalized to `initialState` on output. */
   locked?: boolean;
+  /** Legacy alias; normalized to `keyItemId` on output. */
   key?: string;
 }
 
@@ -308,6 +316,9 @@ export interface PuzzleReward {
   exitDirection?: string;
   targetRoom?: string;
   itemId?: string;
+  gold?: number;
+  xp?: number;
+  /** Legacy alias used by older creator code; normalized on output. */
   amount?: number;
 }
 

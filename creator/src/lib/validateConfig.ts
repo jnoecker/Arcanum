@@ -2,6 +2,39 @@ import type { AppConfig } from "@/types/config";
 import { missingRequiredGlobalAssets } from "./requiredGlobalAssets";
 import type { ValidationIssue } from "./validateZone";
 
+function normalizedLottery(config: AppConfig["lottery"]) {
+  if (!config) return undefined;
+  return {
+    enabled: config.enabled,
+    ticketCost: config.ticketCost,
+    drawingIntervalMs: config.drawingIntervalMs,
+    jackpotSeedGold: config.jackpotSeedGold ?? config.jackpotBase ?? 0,
+    jackpotPercentFromTickets: config.jackpotPercentFromTickets ?? 80,
+    maxTicketsPerPlayer: config.maxTicketsPerPlayer ?? 10,
+  };
+}
+
+function normalizedGambling(config: AppConfig["gambling"]) {
+  if (!config) return undefined;
+  return {
+    enabled: config.enabled,
+    diceMinBet: config.diceMinBet ?? config.minBet ?? 0,
+    diceMaxBet: config.diceMaxBet ?? config.maxBet ?? 0,
+    diceWinChance: config.diceWinChance ?? config.winChance ?? 0,
+    diceWinMultiplier: config.diceWinMultiplier ?? config.winMultiplier ?? 0,
+    cooldownMs: config.cooldownMs ?? 0,
+  };
+}
+
+function normalizedRespec(config: AppConfig["respec"]) {
+  if (!config) return undefined;
+  return {
+    enabled: config.enabled ?? true,
+    goldCost: config.goldCost,
+    cooldownMs: config.cooldownMs,
+  };
+}
+
 /**
  * Validate an AppConfig for referential integrity and common mistakes.
  * Returns an array of issues (empty = valid).
@@ -32,6 +65,13 @@ export function validateConfig(config: AppConfig): ValidationIssue[] {
       severity: "error",
       entity: "server",
       message: "Telnet and web ports must be different",
+    });
+  }
+  if (config.observability.metricsEndpoint && !config.observability.metricsEndpoint.startsWith("/")) {
+    issues.push({
+      severity: "error",
+      entity: "observability",
+      message: "Metrics endpoint must start with '/'",
     });
   }
 
@@ -110,11 +150,12 @@ export function validateConfig(config: AppConfig): ValidationIssue[] {
         message: `Summon effect references unknown pet "${a.effect.petTemplateKey}"`,
       });
     }
-    if (a.classRestriction && classIds.size > 0 && !classIds.has(a.classRestriction)) {
+    const requiredClass = a.requiredClass?.trim() || a.classRestriction?.trim();
+    if (requiredClass && classIds.size > 0 && !classIds.has(requiredClass)) {
       issues.push({
         severity: "warning",
         entity: `ability:${id}`,
-        message: `Class restriction "${a.classRestriction}" is not defined`,
+        message: `Required class "${requiredClass}" is not defined`,
       });
     }
   }
@@ -576,6 +617,92 @@ export function validateConfig(config: AppConfig): ValidationIssue[] {
         entity: `emotePreset:${i}`,
         message: `Emote preset #${i + 1} has an empty action`,
       });
+    }
+  }
+
+  const lottery = normalizedLottery(config.lottery);
+  if (lottery?.enabled) {
+    if (lottery.ticketCost <= 0) issues.push({ severity: "error", entity: "lottery", message: "Ticket cost must be > 0" });
+    if (lottery.drawingIntervalMs <= 0) issues.push({ severity: "error", entity: "lottery", message: "Drawing interval must be > 0" });
+    if (lottery.jackpotSeedGold < 0) issues.push({ severity: "error", entity: "lottery", message: "Jackpot seed gold must be >= 0" });
+    if (lottery.jackpotPercentFromTickets < 0 || lottery.jackpotPercentFromTickets > 100) {
+      issues.push({ severity: "error", entity: "lottery", message: "jackpotPercentFromTickets must be in 0..100" });
+    }
+    if (lottery.maxTicketsPerPlayer <= 0) {
+      issues.push({ severity: "error", entity: "lottery", message: "maxTicketsPerPlayer must be > 0" });
+    }
+  }
+
+  const gambling = normalizedGambling(config.gambling);
+  if (gambling?.enabled) {
+    if (gambling.diceMinBet <= 0) issues.push({ severity: "error", entity: "gambling", message: "diceMinBet must be > 0" });
+    if (gambling.diceMaxBet < gambling.diceMinBet) issues.push({ severity: "error", entity: "gambling", message: "diceMaxBet must be >= diceMinBet" });
+    if (gambling.diceWinChance < 0 || gambling.diceWinChance > 1) issues.push({ severity: "error", entity: "gambling", message: "diceWinChance must be in 0.0..1.0" });
+    if (gambling.diceWinMultiplier <= 0) issues.push({ severity: "error", entity: "gambling", message: "diceWinMultiplier must be > 0" });
+    if (gambling.cooldownMs < 0) issues.push({ severity: "error", entity: "gambling", message: "cooldownMs must be >= 0" });
+  }
+
+  const respec = normalizedRespec(config.respec);
+  if (respec) {
+    if (respec.goldCost < 0) issues.push({ severity: "error", entity: "respec", message: "goldCost must be >= 0" });
+    if (respec.cooldownMs < 0) issues.push({ severity: "error", entity: "respec", message: "cooldownMs must be >= 0" });
+  }
+
+  if (config.currencies) {
+    for (const [id, def] of Object.entries(config.currencies.definitions)) {
+      if (!def.displayName?.trim()) issues.push({ severity: "error", entity: `currency:${id}`, message: "Display name is required" });
+      if ((def.maxAmount ?? 0) < 0) issues.push({ severity: "error", entity: `currency:${id}`, message: "maxAmount must be >= 0" });
+    }
+    if ((config.currencies.honorPerPvpKill ?? 10) < 0) issues.push({ severity: "error", entity: "currencies", message: "honorPerPvpKill must be >= 0" });
+    if ((config.currencies.tokensPerCraft ?? 1) < 0) issues.push({ severity: "error", entity: "currencies", message: "tokensPerCraft must be >= 0" });
+  }
+
+  if (config.dailyQuests?.enabled) {
+    const dq = config.dailyQuests;
+    if ((dq.resetHourUtc ?? 0) < 0 || (dq.resetHourUtc ?? 0) > 23) issues.push({ severity: "error", entity: "dailyQuests", message: "resetHourUtc must be 0..23" });
+    if ((dq.dailySlots ?? 3) < 0 || (dq.dailySlots ?? 3) > 20) issues.push({ severity: "error", entity: "dailyQuests", message: "dailySlots must be 0..20" });
+    if ((dq.weeklySlots ?? 1) < 0 || (dq.weeklySlots ?? 1) > 20) issues.push({ severity: "error", entity: "dailyQuests", message: "weeklySlots must be 0..20" });
+    if (dq.streakBonusPercent < 0) issues.push({ severity: "error", entity: "dailyQuests", message: "streakBonusPercent must be >= 0" });
+    if ((dq.streakMaxDays ?? 7) < 0) issues.push({ severity: "error", entity: "dailyQuests", message: "streakMaxDays must be >= 0" });
+    if ((dq.dailyPool?.length ?? 0) < (dq.dailySlots ?? 3) && (dq.dailySlots ?? 3) > 0) {
+      issues.push({ severity: "error", entity: "dailyQuests", message: "dailyPool must have at least dailySlots entries" });
+    }
+    if ((dq.weeklyPool?.length ?? 0) < (dq.weeklySlots ?? 1) && (dq.weeklySlots ?? 1) > 0) {
+      issues.push({ severity: "error", entity: "dailyQuests", message: "weeklyPool must have at least weeklySlots entries" });
+    }
+  }
+
+  if (config.autoQuests) {
+    const aq = config.autoQuests;
+    if (aq.timeLimitMs <= 0) issues.push({ severity: "error", entity: "autoQuests", message: "timeLimitMs must be > 0" });
+    if (aq.cooldownMs < 0) issues.push({ severity: "error", entity: "autoQuests", message: "cooldownMs must be >= 0" });
+    if ((aq.rewardGoldBase ?? 50) < 0) issues.push({ severity: "error", entity: "autoQuests", message: "rewardGoldBase must be >= 0" });
+    if ((aq.rewardGoldPerLevel ?? 10) < 0) issues.push({ severity: "error", entity: "autoQuests", message: "rewardGoldPerLevel must be >= 0" });
+    if ((aq.rewardXpBase ?? 100) < 0) issues.push({ severity: "error", entity: "autoQuests", message: "rewardXpBase must be >= 0" });
+    if ((aq.rewardXpPerLevel ?? 25) < 0) issues.push({ severity: "error", entity: "autoQuests", message: "rewardXpPerLevel must be >= 0" });
+    if ((aq.killCountMin ?? 3) <= 0) issues.push({ severity: "error", entity: "autoQuests", message: "killCountMin must be > 0" });
+    if ((aq.killCountMax ?? 8) < (aq.killCountMin ?? 3)) issues.push({ severity: "error", entity: "autoQuests", message: "killCountMax must be >= killCountMin" });
+  }
+
+  if (config.globalQuests?.enabled) {
+    const gq = config.globalQuests;
+    if (gq.intervalMs <= 0) issues.push({ severity: "error", entity: "globalQuests", message: "intervalMs must be > 0" });
+    if (gq.durationMs <= 0) issues.push({ severity: "error", entity: "globalQuests", message: "durationMs must be > 0" });
+    if ((gq.announceIntervalMs ?? 300_000) <= 0) issues.push({ severity: "error", entity: "globalQuests", message: "announceIntervalMs must be > 0" });
+    if ((gq.minPlayersOnline ?? 2) < 1) issues.push({ severity: "error", entity: "globalQuests", message: "minPlayersOnline must be >= 1" });
+    if ((gq.objectives?.length ?? 0) === 0) issues.push({ severity: "error", entity: "globalQuests", message: "At least one objective is required" });
+  }
+
+  if (config.guildHalls) {
+    const gh = config.guildHalls;
+    const templates = gh.templates ?? gh.roomTemplates ?? {};
+    if ((gh.purchaseCost ?? gh.baseCost ?? 50_000) < 0) issues.push({ severity: "error", entity: "guildHalls", message: "purchaseCost must be >= 0" });
+    if ((gh.roomCost ?? 10_000) < 0) issues.push({ severity: "error", entity: "guildHalls", message: "roomCost must be >= 0" });
+    if ((gh.maxRooms ?? 10) < 1) issues.push({ severity: "error", entity: "guildHalls", message: "maxRooms must be >= 1" });
+    for (const [id, template] of Object.entries(templates)) {
+      if (!(template.title ?? template.displayName)?.trim()) {
+        issues.push({ severity: "error", entity: `guildHallTemplate:${id}`, message: "Title is required" });
+      }
     }
   }
 

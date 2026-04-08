@@ -117,17 +117,17 @@ export function parseAppConfigYaml(content: string): AppConfig {
     images: parseImagesConfig(root.images),
     globalAssets: parseGlobalAssets((root.images as Record<string, unknown> | undefined)?.globalAssets ?? root.globalAssets),
     playerTiers: parsePlayerTiers(root.playerTiers),
-    lottery: engine.lottery as AppConfig["lottery"],
-    gambling: engine.gambling as AppConfig["gambling"],
-    respec: engine.respec as AppConfig["respec"],
+    lottery: parseLotteryConfig(engine.lottery),
+    gambling: parseGamblingConfig(engine.gambling),
+    respec: parseRespecConfig(engine.respec),
     prestige: engine.prestige as AppConfig["prestige"],
-    dailyQuests: engine.dailyQuests as AppConfig["dailyQuests"],
-    autoQuests: engine.autoQuests as AppConfig["autoQuests"],
-    globalQuests: engine.globalQuests as AppConfig["globalQuests"],
-    guildHalls: engine.guildHalls as AppConfig["guildHalls"],
+    dailyQuests: parseDailyQuestsConfig(engine.dailyQuests),
+    autoQuests: parseAutoQuestsConfig(engine.autoQuests),
+    globalQuests: parseGlobalQuestsConfig(engine.globalQuests),
+    guildHalls: parseGuildHallsConfig(engine.guildHalls),
     factions: engine.factions as AppConfig["factions"],
     leaderboard: engine.leaderboard as AppConfig["leaderboard"],
-    currencies: engine.currencies as AppConfig["currencies"],
+    currencies: parseCurrenciesConfig(engine.currencies),
     rawSections: collectRawSections(root, engine),
   };
 }
@@ -179,6 +179,7 @@ function parseServerConfig(raw: unknown): AppConfig["server"] {
   return {
     telnetPort: asNumber(s.telnetPort, 4000),
     webPort: asNumber(s.webPort, 8080),
+    productionMode: asBool(s.productionMode, false),
   };
 }
 
@@ -188,8 +189,9 @@ function parseAdminConfig(raw: unknown): AppConfig["admin"] {
     enabled: s.enabled === true,
     port: asNumber(s.port, 9091),
     token: asString(s.token, ""),
-    basePath: asString(s.basePath, "/admin/"),
+    basePath: asString(s.basePath, "/"),
     grafanaUrl: asString(s.grafanaUrl, ""),
+    corsOrigins: parseStringArray(s.corsOrigins, []),
   };
 }
 
@@ -198,7 +200,9 @@ function parseObservabilityConfig(raw: unknown): AppConfig["observability"] {
   return {
     metricsEnabled: s.metricsEnabled === true,
     metricsEndpoint: asString(s.metricsEndpoint, "/metrics"),
-    metricsHttpPort: asNumber(s.metricsHttpPort, 9090),
+    metricsHttpPort: asNumber(s.metricsHttpPort, 9099),
+    metricsHttpHost: asString(s.metricsHttpHost, "0.0.0.0"),
+    staticTags: parseStringMap(s.staticTags),
   };
 }
 
@@ -409,6 +413,178 @@ function parseImagesConfig(raw: unknown): AppConfig["images"] {
   };
 }
 
+function parseLotteryConfig(raw: unknown): AppConfig["lottery"] {
+  if (!raw || typeof raw !== "object") return undefined;
+  const s = raw as Record<string, unknown>;
+  return {
+    enabled: asBool(s.enabled, true),
+    ticketCost: asNumber(s.ticketCost, 100),
+    drawingIntervalMs: asNumber(s.drawingIntervalMs, 3_600_000),
+    jackpotSeedGold: asNumber(s.jackpotSeedGold, asNumber(s.jackpotBase, 500)),
+    jackpotPercentFromTickets: asNumber(s.jackpotPercentFromTickets, 80),
+    maxTicketsPerPlayer: asNumber(s.maxTicketsPerPlayer, 10),
+    jackpotBase: typeof s.jackpotBase === "number" ? s.jackpotBase : undefined,
+  };
+}
+
+function parseGamblingConfig(raw: unknown): AppConfig["gambling"] {
+  if (!raw || typeof raw !== "object") return undefined;
+  const s = raw as Record<string, unknown>;
+  return {
+    enabled: asBool(s.enabled, true),
+    diceMinBet: asNumber(s.diceMinBet, asNumber(s.minBet, 10)),
+    diceMaxBet: asNumber(s.diceMaxBet, asNumber(s.maxBet, 10_000)),
+    diceWinChance: asNumber(s.diceWinChance, asNumber(s.winChance, 0.45)),
+    diceWinMultiplier: asNumber(s.diceWinMultiplier, asNumber(s.winMultiplier, 2.0)),
+    cooldownMs: asNumber(s.cooldownMs, 5_000),
+    minBet: typeof s.minBet === "number" ? s.minBet : undefined,
+    maxBet: typeof s.maxBet === "number" ? s.maxBet : undefined,
+    winChance: typeof s.winChance === "number" ? s.winChance : undefined,
+    winMultiplier: typeof s.winMultiplier === "number" ? s.winMultiplier : undefined,
+  };
+}
+
+function parseRespecConfig(raw: unknown): AppConfig["respec"] {
+  if (!raw || typeof raw !== "object") return undefined;
+  const s = raw as Record<string, unknown>;
+  return {
+    enabled: asBool(s.enabled, true),
+    goldCost: asNumber(s.goldCost, 1000),
+    cooldownMs: asNumber(s.cooldownMs, 3_600_000),
+  };
+}
+
+function parseCurrenciesConfig(raw: unknown): AppConfig["currencies"] {
+  if (!raw || typeof raw !== "object") return undefined;
+  const s = raw as Record<string, unknown>;
+  const definitions: NonNullable<AppConfig["currencies"]>["definitions"] = {};
+  for (const [id, def] of Object.entries(asRecord<Record<string, unknown>>(s.definitions))) {
+    definitions[id] = {
+      displayName: asString(def.displayName, id),
+      abbreviation: typeof def.abbreviation === "string" ? def.abbreviation : undefined,
+      description: typeof def.description === "string" ? def.description : undefined,
+      maxAmount: typeof def.maxAmount === "number" ? def.maxAmount : undefined,
+    };
+  }
+  return {
+    definitions,
+    honorPerPvpKill: asNumber(s.honorPerPvpKill, 10),
+    tokensPerCraft: asNumber(s.tokensPerCraft, 1),
+  };
+}
+
+function parseDailyQuestDefinitions(raw: unknown): import("@/types/config").DailyQuestDefinition[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .filter((entry): entry is Record<string, unknown> => entry != null && typeof entry === "object")
+    .map((entry) => ({
+      type: asString(entry.type, "kill"),
+      targetCount: typeof entry.targetCount === "number" ? entry.targetCount : undefined,
+      description: typeof entry.description === "string" ? entry.description : undefined,
+      goldReward: typeof entry.goldReward === "number" ? entry.goldReward : undefined,
+      xpReward: typeof entry.xpReward === "number" ? entry.xpReward : undefined,
+    }));
+}
+
+function parseDailyQuestsConfig(raw: unknown): AppConfig["dailyQuests"] {
+  if (!raw || typeof raw !== "object") return undefined;
+  const s = raw as Record<string, unknown>;
+  let resetHourUtc: number | undefined;
+  if (typeof s.resetHourUtc === "number") {
+    resetHourUtc = s.resetHourUtc;
+  } else if (typeof s.resetTimeUtc === "string") {
+    const match = s.resetTimeUtc.match(/^(\d{1,2})/);
+    if (match) resetHourUtc = Number.parseInt(match[1]!, 10);
+  }
+  return {
+    enabled: asBool(s.enabled, false),
+    resetHourUtc,
+    dailySlots: asNumber(s.dailySlots, 3),
+    weeklySlots: asNumber(s.weeklySlots, 1),
+    streakBonusPercent: asNumber(s.streakBonusPercent, 10),
+    streakMaxDays: asNumber(s.streakMaxDays, 7),
+    dailyPool: parseDailyQuestDefinitions(s.dailyPool),
+    weeklyPool: parseDailyQuestDefinitions(s.weeklyPool),
+    resetTimeUtc: typeof s.resetTimeUtc === "string" ? s.resetTimeUtc : undefined,
+    pools: typeof s.pools === "object" && s.pools != null ? (s.pools as Record<string, string[]>) : undefined,
+  };
+}
+
+function parseAutoQuestsConfig(raw: unknown): AppConfig["autoQuests"] {
+  if (!raw || typeof raw !== "object") return undefined;
+  const s = raw as Record<string, unknown>;
+  return {
+    enabled: asBool(s.enabled, true),
+    timeLimitMs: asNumber(s.timeLimitMs, 600_000),
+    cooldownMs: asNumber(s.cooldownMs, 60_000),
+    rewardGoldBase: asNumber(s.rewardGoldBase, 50),
+    rewardGoldPerLevel: asNumber(s.rewardGoldPerLevel, 10),
+    rewardXpBase: asNumber(s.rewardXpBase, 100),
+    rewardXpPerLevel: asNumber(s.rewardXpPerLevel, 25),
+    killCountMin: asNumber(s.killCountMin, 3),
+    killCountMax: asNumber(s.killCountMax, 8),
+    rewardScaling: typeof s.rewardScaling === "number" ? s.rewardScaling : undefined,
+  };
+}
+
+function parseGlobalQuestObjectives(raw: unknown): import("@/types/config").GlobalQuestObjectiveConfig[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .filter((entry): entry is Record<string, unknown> => entry != null && typeof entry === "object")
+    .map((entry) => ({
+      type: asString(entry.type, "kill"),
+      targetCount: typeof entry.targetCount === "number" ? entry.targetCount : undefined,
+      description: typeof entry.description === "string" ? entry.description : undefined,
+    }));
+}
+
+function parseGlobalQuestsConfig(raw: unknown): AppConfig["globalQuests"] {
+  if (!raw || typeof raw !== "object") return undefined;
+  const s = raw as Record<string, unknown>;
+  return {
+    enabled: asBool(s.enabled, true),
+    intervalMs: asNumber(s.intervalMs, 7_200_000),
+    durationMs: asNumber(s.durationMs, 1_800_000),
+    announceIntervalMs: asNumber(s.announceIntervalMs, 300_000),
+    minPlayersOnline: asNumber(s.minPlayersOnline, 2),
+    rewardGoldFirst: asNumber(s.rewardGoldFirst, 2000),
+    rewardGoldSecond: asNumber(s.rewardGoldSecond, 1000),
+    rewardGoldThird: asNumber(s.rewardGoldThird, 500),
+    rewardXpFirst: asNumber(s.rewardXpFirst, 5000),
+    rewardXpSecond: asNumber(s.rewardXpSecond, 2500),
+    rewardXpThird: asNumber(s.rewardXpThird, 1000),
+    objectives: parseGlobalQuestObjectives(s.objectives),
+    rewards: typeof s.rewards === "object" && s.rewards != null ? (s.rewards as Record<string, unknown>) : undefined,
+  };
+}
+
+function parseGuildHallsConfig(raw: unknown): AppConfig["guildHalls"] {
+  if (!raw || typeof raw !== "object") return undefined;
+  const s = raw as Record<string, unknown>;
+  const rawTemplates = asRecord<Record<string, unknown>>(s.templates ?? s.roomTemplates);
+  const templates: NonNullable<AppConfig["guildHalls"]>["templates"] = {};
+  for (const [id, template] of Object.entries(rawTemplates)) {
+    templates[id] = {
+      title: asString(template.title ?? template.displayName, id),
+      displayName: typeof template.displayName === "string" ? template.displayName : undefined,
+      description: asString(template.description, ""),
+      cost: typeof template.cost === "number" ? template.cost : undefined,
+      hasStorage: asBool(template.hasStorage, false),
+    };
+  }
+  return {
+    enabled: asBool(s.enabled, true),
+    purchaseCost: asNumber(s.purchaseCost, asNumber(s.baseCost, 50_000)),
+    roomCost: asNumber(s.roomCost, 10_000),
+    maxRooms: asNumber(s.maxRooms, 10),
+    templates,
+    baseCost: typeof s.baseCost === "number" ? s.baseCost : undefined,
+    roomTemplates: typeof s.roomTemplates === "object" && s.roomTemplates != null
+      ? (s.roomTemplates as Record<string, import("@/types/config").GuildHallRoomTemplate>)
+      : undefined,
+  };
+}
+
 function parseGlobalAssets(raw: unknown): Record<string, string> {
   if (!raw || typeof raw !== "object") return {};
   const result: Record<string, string> = {};
@@ -470,6 +646,15 @@ function parseAchievementDefs(raw: unknown): Record<string, import("@/types/conf
 function parseSimpleSection<T>(raw: unknown, defaults: T): T {
   if (!raw || typeof raw !== "object") return defaults;
   return { ...defaults, ...(raw as Partial<T>) };
+}
+
+function parseStringMap(raw: unknown): Record<string, string> {
+  if (!raw || typeof raw !== "object") return {};
+  const parsed: Record<string, string> = {};
+  for (const [k, v] of Object.entries(raw as Record<string, unknown>)) {
+    if (typeof v === "string") parsed[k] = v;
+  }
+  return parsed;
 }
 
 /** Collect any top-level or engine keys we don't explicitly parse */
@@ -912,6 +1097,17 @@ async function loadSplitConfig(projectDir: string): Promise<AppConfig | null> {
       images: parseImagesConfig(assetsRaw.images ?? assetsRaw),
       globalAssets: parseGlobalAssets((assetsRaw.images as Record<string, unknown> | undefined)?.globalAssets ?? assetsRaw.globalAssets),
       playerTiers: parsePlayerTiers(assetsRaw.playerTiers),
+      lottery: parseLotteryConfig(worldRaw.lottery),
+      gambling: parseGamblingConfig(worldRaw.gambling),
+      respec: parseRespecConfig(worldRaw.respec),
+      prestige: worldRaw.prestige as AppConfig["prestige"],
+      dailyQuests: parseDailyQuestsConfig(worldRaw.dailyQuests),
+      autoQuests: parseAutoQuestsConfig(worldRaw.autoQuests),
+      globalQuests: parseGlobalQuestsConfig(worldRaw.globalQuests),
+      guildHalls: parseGuildHallsConfig(worldRaw.guildHalls),
+      factions: worldRaw.factions as AppConfig["factions"],
+      leaderboard: worldRaw.leaderboard as AppConfig["leaderboard"],
+      currencies: parseCurrenciesConfig(worldRaw.currencies),
 
       rawSections: {},
     };

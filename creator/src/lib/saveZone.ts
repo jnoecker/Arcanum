@@ -2,6 +2,8 @@ import { writeTextFile } from "@tauri-apps/plugin-fs";
 import { stringify } from "yaml";
 import { normalizeWorldAssetRefs } from "@/lib/assetRefs";
 import { sanitizeZone } from "@/lib/sanitizeZone";
+import { validateZone } from "@/lib/validateZone";
+import { useConfigStore } from "@/stores/configStore";
 import { useZoneStore } from "@/stores/zoneStore";
 
 const YAML_OPTS = {
@@ -17,7 +19,16 @@ const YAML_OPTS = {
 export function serializeZone(zoneId: string): string {
   const zone = useZoneStore.getState().zones.get(zoneId);
   if (!zone) throw new Error(`Zone "${zoneId}" not found`);
-  return stringify(normalizeWorldAssetRefs(sanitizeZone(zone.data)), YAML_OPTS);
+  const sanitized = normalizeWorldAssetRefs(sanitizeZone(zone.data));
+  const config = useConfigStore.getState().config;
+  const validClasses = config ? new Set(Object.keys(config.classes).map((id) => id.toUpperCase())) : undefined;
+  const issues = validateZone(sanitized, config?.equipmentSlots, validClasses);
+  const errors = issues.filter((issue) => issue.severity === "error");
+  if (errors.length > 0) {
+    const summary = errors.slice(0, 5).map((issue) => `${issue.entity}: ${issue.message}`).join("; ");
+    throw new Error(`Zone validation failed: ${summary}`);
+  }
+  return stringify(sanitized, YAML_OPTS);
 }
 
 /**

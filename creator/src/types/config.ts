@@ -591,6 +591,7 @@ export interface PrestigeConfig {
 // ─── Respec ────────────────────────────────────────────────────────
 
 export interface RespecConfig {
+  enabled?: boolean;
   goldCost: number;
   cooldownMs: number;
 }
@@ -599,12 +600,15 @@ export interface RespecConfig {
 
 export interface CurrencyDefinition {
   displayName: string;
+  abbreviation?: string;
   description?: string;
   maxAmount?: number;
 }
 
 export interface CurrenciesConfig {
   definitions: Record<string, CurrencyDefinition>;
+  honorPerPvpKill?: number;
+  tokensPerCraft?: number;
 }
 
 // ─── Lottery ───────────────────────────────────────────────────────
@@ -613,17 +617,25 @@ export interface LotteryConfig {
   enabled: boolean;
   ticketCost: number;
   drawingIntervalMs: number;
-  jackpotBase: number;
+  jackpotSeedGold: number;
+  jackpotPercentFromTickets?: number;
+  maxTicketsPerPlayer?: number;
+  jackpotBase?: number;
 }
 
 // ─── Gambling ──────────────────────────────────────────────────────
 
 export interface GamblingConfig {
   enabled: boolean;
-  minBet: number;
-  maxBet: number;
-  winChance: number;
-  winMultiplier: number;
+  diceMinBet: number;
+  diceMaxBet: number;
+  diceWinChance: number;
+  diceWinMultiplier: number;
+  cooldownMs?: number;
+  minBet?: number;
+  maxBet?: number;
+  winChance?: number;
+  winMultiplier?: number;
 }
 
 // ─── Auto Quests (Bounties) ────────────────────────────────────────
@@ -632,16 +644,42 @@ export interface AutoQuestsConfig {
   enabled: boolean;
   timeLimitMs: number;
   cooldownMs: number;
-  rewardScaling: number;
+  rewardGoldBase?: number;
+  rewardGoldPerLevel?: number;
+  rewardXpBase?: number;
+  rewardXpPerLevel?: number;
+  killCountMin?: number;
+  killCountMax?: number;
+  rewardScaling?: number;
+}
+
+export interface DailyQuestDefinition {
+  type: string;
+  targetCount?: number;
+  description?: string;
+  goldReward?: number;
+  xpReward?: number;
 }
 
 // ─── Daily/Weekly Quests ───────────────────────────────────────────
 
 export interface DailyQuestsConfig {
   enabled: boolean;
-  resetTimeUtc: string;
+  resetHourUtc?: number;
+  dailySlots?: number;
+  weeklySlots?: number;
   streakBonusPercent: number;
-  pools: Record<string, string[]>;
+  streakMaxDays?: number;
+  dailyPool?: DailyQuestDefinition[];
+  weeklyPool?: DailyQuestDefinition[];
+  resetTimeUtc?: string;
+  pools?: Record<string, string[]>;
+}
+
+export interface GlobalQuestObjectiveConfig {
+  type: string;
+  targetCount?: number;
+  description?: string;
 }
 
 // ─── Global Quests ─────────────────────────────────────────────────
@@ -650,22 +688,36 @@ export interface GlobalQuestsConfig {
   enabled: boolean;
   intervalMs: number;
   durationMs: number;
-  objectives: Record<string, unknown>;
-  rewards: Record<string, unknown>;
+  announceIntervalMs?: number;
+  minPlayersOnline?: number;
+  rewardGoldFirst?: number;
+  rewardGoldSecond?: number;
+  rewardGoldThird?: number;
+  rewardXpFirst?: number;
+  rewardXpSecond?: number;
+  rewardXpThird?: number;
+  objectives?: GlobalQuestObjectiveConfig[];
+  rewards?: Record<string, unknown>;
 }
 
 // ─── Guild Halls ───────────────────────────────────────────────────
 
 export interface GuildHallRoomTemplate {
-  displayName: string;
+  title?: string;
+  displayName?: string;
   description: string;
-  cost: number;
+  cost?: number;
+  hasStorage?: boolean;
 }
 
 export interface GuildHallsConfig {
   enabled: boolean;
-  baseCost: number;
-  roomTemplates: Record<string, GuildHallRoomTemplate>;
+  purchaseCost?: number;
+  roomCost?: number;
+  maxRooms?: number;
+  templates?: Record<string, GuildHallRoomTemplate>;
+  baseCost?: number;
+  roomTemplates?: Record<string, GuildHallRoomTemplate>;
 }
 
 export interface LeaderboardConfig {

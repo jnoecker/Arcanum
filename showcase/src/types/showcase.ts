@@ -75,6 +75,8 @@ export interface TimelineEvent {
   title: string;
   description?: string;
   importance: "minor" | "major" | "legendary";
+  /** Resolved URL for the event's own background image (independent of any linked article). */
+  imageUrl?: string;
 }
 
 export interface ColorLabel {

@@ -18,6 +18,9 @@ import {
   SelectInput,
   IconButton,
 } from "@/components/ui/FormWidgets";
+import { EntityArtGenerator } from "@/components/ui/EntityArtGenerator";
+import { getTimelineEventPrompt, getTimelineEventContext } from "@/lib/loreArtPrompts";
+import type { AssetContext } from "@/types/assets";
 import { TimelineView } from "./TimelineView";
 import { TimelineInferencePanel } from "./TimelineInferencePanel";
 
@@ -412,6 +415,37 @@ function EventInspector({
         ) : (
           <p className="mt-2 text-sm leading-6 text-text-muted">None</p>
         )}
+      </div>
+
+      <div className="mt-5 rounded-[1.2rem] border border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] px-4 py-4">
+        <p className="text-[0.65rem] uppercase tracking-[0.24em] text-text-muted">Event Image</p>
+        <p className="mt-1 text-2xs text-text-muted/80">
+          Renders as a transparent backdrop on the timeline. Independent of any linked article.
+        </p>
+        <div className="mt-3">
+          <FieldRow label="Filename">
+            <TextInput
+              value={event.image ?? ""}
+              onCommit={(value) => onUpdate({ image: value || undefined })}
+              placeholder="None"
+            />
+          </FieldRow>
+        </div>
+        <div className="mt-3">
+          <EntityArtGenerator
+            getPrompt={(style) => getTimelineEventPrompt(event, style)}
+            entityContext={getTimelineEventContext(event)}
+            currentImage={event.image}
+            onAccept={(filePath) => onUpdate({ image: filePath })}
+            assetType="lore_event"
+            context={{
+              zone: "lore",
+              entity_type: "lore_event",
+              entity_id: event.id,
+            } satisfies AssetContext}
+            surface="lore"
+          />
+        </div>
       </div>
 
       <div className="mt-5">

@@ -400,7 +400,10 @@ export function exportShowcaseData(
     articles,
     maps,
     calendarSystems: lore.calendarSystems,
-    timelineEvents: lore.timelineEvents,
+    timelineEvents: (lore.timelineEvents ?? []).map(({ image, ...event }) => ({
+      ...event,
+      imageUrl: resolveImage(image),
+    })),
     colorLabels: lore.colorLabels,
     stories,
   };

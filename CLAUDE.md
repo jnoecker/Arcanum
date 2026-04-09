@@ -70,6 +70,10 @@ npx wrangler pages deploy dist --project-name=ambon-showcase
   - `adminStore` -- admin panel state, live server connection, player/zone/mob/quest data
   - `gitStore` -- git repository status, commit history, branch management
   - `spriteDefinitionStore` -- player sprite definitions: tiers, achievements, staff categories, variants
+  - `storyStore` -- story/scene composition and visual storytelling
+  - `themeStore` -- runtime theme state
+  - `toastStore` -- toast notification queue
+  - `tuningWizardStore` -- tuning wizard state (presets, comparisons, pending changes)
 - **Types**: `src/types/` mirrors Kotlin DTOs from `reference/world-yaml-dtos/`
 - **YAML I/O**: Uses `yaml` package CST mode for format-preserving round-trip. See `src/lib/loader.ts`, `src/lib/saveZone.ts`, `src/lib/saveConfig.ts`.
 - **Validation**: Client-side validation in `src/lib/validateZone.ts` and `src/lib/validateConfig.ts`. Must mirror rules from `reference/world-loader/WorldLoader.kt`.
@@ -89,6 +93,7 @@ npx wrangler pages deploy dist --project-name=ambon-showcase
 - `deepinfra.rs` -- DeepInfra API client for AI image generation
 - `runware.rs` -- Runware API client (alternative image provider)
 - `openai_images.rs` -- OpenAI image generation provider (GPT Image)
+- `openai_tts.rs` -- OpenAI text-to-speech API client
 - `generation.rs` -- Image generation utilities (dimension capping to 1024px, format inference, resize pipeline)
 - `assets.rs` -- Asset manifest (JSON) management, content-addressed storage (SHA256 hash filenames)
 - `r2.rs` -- Cloudflare R2 sync with AWS Signature V4 signing (no SDK dependency), showcase deploy
@@ -99,6 +104,14 @@ npx wrangler pages deploy dist --project-name=ambon-showcase
 - `admin.rs` -- HTTP client for remote AmbonMUD admin API (players, zones, mobs, quests, achievements)
 - `git.rs` -- Git repository operations (init, status, commit, push, pull, branch management, PR creation)
 - `sketch.rs` -- Sketch-to-image analysis via LLM for art enhancement
+- `arcanum_meta.rs` -- Build metadata and version info
+- `audio_mix.rs` -- Audio mixing and processing
+- `cancellation.rs` -- Task cancellation support for long-running operations
+- `captions.rs` -- Caption/subtitle generation
+- `ffmpeg.rs` -- FFmpeg integration for media processing
+- `ffmpeg_progress.rs` -- FFmpeg progress tracking
+- `video_encode.rs` -- Video encoding pipeline
+- `video_export.rs` -- Video export and rendering
 
 ### Showcase (showcase/)
 
@@ -303,7 +316,7 @@ A tuning wizard for Arcanum that helps MUD builders understand and configure the
 - Hooks: camelCase with `use` prefix -- `useEntityEditor.ts`, `useImageSrc.ts`, `useArrayField.ts`
 - Libraries/utilities: camelCase `.ts` -- `zoneEdits.ts`, `normalize.ts`, `loader.ts`
 - Stores: camelCase with `Store` suffix -- `zoneStore.ts`, `projectStore.ts`, `assetStore.ts`
-- Types: camelCase `.ts` in `creator/src/types/` -- `world.ts`, `config.ts`, `lore.ts`, `project.ts`
+- Types: camelCase `.ts` in `creator/src/types/` -- `world.ts`, `config.ts`, `lore.ts`, `project.ts`, `story.ts`
 - Rust modules: snake_case `.rs` -- `project.rs`, `deepinfra.rs`, `openai_images.rs`
 - camelCase for all TypeScript functions: `loadAllZones`, `parseAppConfigYaml`, `normalizeId`
 - snake_case for all Rust functions: `validate_mud_dir`, `generate_image`, `read_image_data_url`
@@ -426,7 +439,7 @@ A tuning wizard for Arcanum that helps MUD builders understand and configure the
 - No barrel files (index.ts re-exports) -- import directly from source files
 - One primary export per file for components
 - Utility files may export multiple related functions (e.g., `zoneEdits.ts` exports all CRUD functions)
-- Types grouped by domain in `creator/src/types/`: `world.ts`, `config.ts`, `lore.ts`, `project.ts`
+- Types grouped by domain in `creator/src/types/`: `world.ts`, `config.ts`, `lore.ts`, `project.ts`, `story.ts`
 
 ## Architecture
 
@@ -434,7 +447,7 @@ A tuning wizard for Arcanum that helps MUD builders understand and configure the
 - Frontend-heavy: most business logic lives in TypeScript (stores, lib utilities, validation)
 - Rust backend is a thin service layer: file I/O, HTTP clients for external APIs, asset management, git operations
 - Communication via Tauri `invoke()` calls returning `Result<T, String>`
-- State managed by 11 independent Zustand stores with no cross-store subscriptions (stores read each other via `getState()` when needed)
+- State managed by 15 independent Zustand stores with no cross-store subscriptions (stores read each other via `getState()` when needed)
 - Two project formats: "legacy" (Gradle-based AmbonMUD checkout) and "standalone" (flat directory with split YAML files)
 ## Layers
 - Purpose: Application chrome, workspace switching, navigation, tab management
@@ -492,7 +505,7 @@ A tuning wizard for Arcanum that helps MUD builders understand and configure the
 - Entry point: `lib.rs` (registers all commands), `main.rs` (Tauri bootstrap)
 - Purpose: TypeScript type definitions mirroring Kotlin DTOs from the AmbonMUD server
 - Location: `creator/src/types/`
-- Key files: `world.ts` (zone/room/mob/item types), `config.ts` (AppConfig), `project.ts` (Project, Tab), `lore.ts` (WorldLore, Article), `assets.ts` (Settings, AssetEntry), `admin.ts`, `sprites.ts`, `sketch.ts`
+- Key files: `world.ts` (zone/room/mob/item types), `config.ts` (AppConfig), `project.ts` (Project, Tab), `lore.ts` (WorldLore, Article), `assets.ts` (Settings, AssetEntry), `admin.ts`, `sprites.ts`, `sketch.ts`, `story.ts` (story/scene composition types)
 ## Data Flow
 - Each Zustand store is independent — no middleware chaining
 - Zone store: manual undo/redo with `past`/`future` arrays per zone (100-entry max)

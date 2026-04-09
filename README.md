@@ -97,7 +97,7 @@ npm run build        # Production build (fetches from R2 via VITE_SHOWCASE_URL)
 |-------|------------|
 | Desktop framework | Tauri v2 |
 | Frontend | React 19, TypeScript 5.8 |
-| Build | Vite 7, Bun |
+| Build | Vite 6, Bun |
 | Styling | Tailwind CSS 4 |
 | State management | Zustand 5 + Zundo (undo/redo) |
 | Graph editor | XY Flow (React Flow) |
@@ -111,9 +111,12 @@ npm run build        # Production build (fetches from R2 via VITE_SHOWCASE_URL)
 
 ## Prerequisites
 
-- [Bun](https://bun.sh/) (package manager and script runner)
-- [Rust](https://rustup.rs/) (for the Tauri backend)
-- An AmbonMUD project directory to point Arcanum at
+- [Bun](https://bun.sh/) (package manager and script runner for the creator app)
+- [Rust](https://rustup.rs/) (Rust toolchain for the Tauri backend)
+- [Tauri CLI v2](https://v2.tauri.app/) (`cargo install tauri-cli`)
+- [Node.js + npm](https://nodejs.org/) (for the showcase site only)
+- Git (for git integration features)
+- Windows: WebView2 runtime (included in Windows 10/11)
 
 ## Getting Started
 
@@ -139,18 +142,22 @@ bun run tauri build
 ## Project Structure
 
 ```
-AmbonArcanum/
+Arcanum/
   creator/                    # Arcanum (Tauri application)
     src/                      # React frontend
       components/
+        admin/                #   Admin panel (live server connection, player/mob management)
         config/panels/        #   Config editor panels (stats, abilities, classes, etc.)
         editors/              #   Entity editors (mob, item, shop, quest, etc.)
         lore/                 #   Lore system (article editor, maps, timeline, relations)
+        map/                  #   Interactive world map navigation
+        settings/             #   Settings panels (user + project settings)
+        tuning/               #   Tuning wizard (presets, comparisons, per-category approval)
         zone/                 #   Zone map editor (React Flow graph, room panel, starfield)
         ui/                   #   Shared UI components (form widgets, diff modal, focus trap)
         wizard/               #   Project creation wizard (multi-step)
       stores/                 #   Zustand state stores
-      types/                  #   TypeScript type definitions (world, config, project, assets, lore)
+      types/                  #   TypeScript type definitions (world, config, project, assets, lore, story, sprites)
       lib/                    #   Utilities, hooks, validation, YAML I/O, prompt templates
       assets/                 #   Background images for UI surfaces
     src-tauri/
@@ -161,6 +168,8 @@ AmbonArcanum/
         project_settings.rs   #   Project-level settings (<project>/.arcanum/settings.json)
         deepinfra.rs          #   DeepInfra API client (image generation)
         runware.rs            #   Runware API client (alternative image provider)
+        openai_images.rs      #   OpenAI image generation provider
+        openai_tts.rs         #   OpenAI text-to-speech API client
         assets.rs             #   Asset manifest management (SHA-256 content-addressed)
         r2.rs                 #   Cloudflare R2 sync (AWS SigV4 signing) + showcase deploy
         llm.rs                #   LLM integration for prompt enhancement
@@ -170,10 +179,15 @@ AmbonArcanum/
         generation.rs         #   Image generation utilities (dimension cap, format inference)
         admin.rs              #   Remote admin API client (player/zone/mob management)
         git.rs                #   Git operations (init, commit, push, pull, branch, PR)
-        openai_images.rs      #   OpenAI image generation provider
         sketch.rs             #   Sketch analysis for image enhancement
-        server.rs             #   MUD server process management
         arcanum_meta.rs       #   Build metadata and version info
+        audio_mix.rs          #   Audio mixing and processing
+        cancellation.rs       #   Task cancellation for long-running operations
+        captions.rs           #   Caption/subtitle generation
+        ffmpeg.rs             #   FFmpeg integration for media processing
+        ffmpeg_progress.rs    #   FFmpeg progress tracking
+        video_encode.rs       #   Video encoding pipeline
+        video_export.rs       #   Video export and rendering
   showcase/                   # Public lore showcase website (Vite + React SPA)
     src/
       components/             #   Layout, MapViewer, ShowcaseNode
@@ -210,6 +224,17 @@ AmbonArcanum/
 | `adminStore` | Admin panel state, live server connection, player/zone/mob/quest/achievement data |
 | `gitStore` | Git repository status, commit history, branch management |
 | `spriteDefinitionStore` | Player sprite definitions: tiers, achievements, staff categories, variants |
+| `storyStore` | Story/scene composition and visual storytelling |
+| `themeStore` | Runtime theme state |
+| `toastStore` | Toast notification queue |
+| `tuningWizardStore` | Tuning wizard state: presets, comparisons, pending changes |
+
+## CI/CD
+
+GitHub Actions workflows in `.github/workflows/`:
+
+- **`ci.yml`** -- Runs on PRs and pushes to `main`. TypeScript type checks + Rust checks + tests for the creator; TypeScript check + build for the showcase.
+- **`release.yml`** -- Triggered by version tags or manual dispatch. Builds cross-platform installers (Windows, macOS Intel/ARM, Linux) using the Tauri GitHub Action and creates a GitHub release.
 
 ## Design System
 

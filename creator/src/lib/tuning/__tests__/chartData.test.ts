@@ -224,12 +224,12 @@ describe("buildStatRadarData", () => {
 // ─── CHART_COLORS ─────────────────────────────────────────────────
 
 describe("CHART_COLORS", () => {
-  it("currentSeries is #dccbb3", () => {
-    expect(CHART_COLORS.currentSeries).toBe("#dccbb3");
+  it("currentSeries uses the semantic text token", () => {
+    expect(CHART_COLORS.currentSeries).toBe("var(--color-text-secondary)");
   });
 
-  it("presetSeries is #ff7d00", () => {
-    expect(CHART_COLORS.presetSeries).toBe("#ff7d00");
+  it("presetSeries uses the semantic accent token", () => {
+    expect(CHART_COLORS.presetSeries).toBe("var(--color-accent)");
   });
 
   it("has all 9 color keys", () => {

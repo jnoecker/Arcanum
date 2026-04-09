@@ -11,10 +11,14 @@ export function HealthCheckBanner() {
   if (healthWarnings.length === 0) return null;
 
   return (
-    <div className="mx-6 mt-4 rounded-lg border border-status-warning/30 bg-status-warning/[0.08] px-4 py-3 animate-unfurl-in">
+    <div
+      role="status"
+      aria-live="polite"
+      className="mx-6 mt-4 rounded-[1.25rem] border border-status-warning/30 bg-status-warning/[0.08] px-4 py-3 animate-unfurl-in"
+    >
       <div className="flex items-start gap-3">
         {/* Warning icon */}
-        <span className="text-status-warning">&#9888;</span>
+        <span aria-hidden="true" className="text-status-warning">&#9888;</span>
         {/* Warning content */}
         <div className="min-w-0 flex-1">
           <h4 className="font-sans text-sm font-semibold text-status-warning">
@@ -30,6 +34,7 @@ export function HealthCheckBanner() {
         <button
           type="button"
           onClick={() => setHealthWarnings([])}
+          aria-label="Dismiss balance warnings"
           className="ml-auto shrink-0 text-text-muted hover:text-text-primary"
         >
           &#10005;

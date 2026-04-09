@@ -2,8 +2,7 @@
 // Single KPI card for one TuningSection. Shows 2-3 curated derived
 // metrics with current vs preset values and delta badges.
 
-import { useRef, useEffect, useMemo } from "react";
-import tippy from "tippy.js";
+import { useMemo } from "react";
 import { TuningSection } from "@/lib/tuning/types";
 import type { MetricSnapshot } from "@/lib/tuning/types";
 import { pctDelta, deltaDirection, deltaColor } from "@/lib/tuning/deltaUtils";
@@ -53,20 +52,6 @@ function MetricRow({
   formulaTooltip,
   showHeader,
 }: MetricRowData & { showHeader?: boolean }) {
-  const labelRef = useRef<HTMLSpanElement>(null);
-
-  useEffect(() => {
-    if (!labelRef.current || !formulaTooltip) return;
-    const t = tippy(labelRef.current, {
-      content: formulaTooltip,
-      theme: "arcanum",
-      placement: "top-start",
-      delay: [200, 100],
-      maxWidth: 260,
-    });
-    return () => t.destroy();
-  }, [formulaTooltip]);
-
   const dir = deltaDirection(current, preset);
   const color = deltaColor(dir);
   const delta = pctDelta(current, preset);
@@ -74,27 +59,29 @@ function MetricRow({
   return (
     <div>
       {showHeader && (
-        <div className="mb-1 flex items-baseline justify-between gap-2">
+        <div className="mb-1 grid grid-cols-[minmax(0,1fr)_auto_auto] items-baseline gap-2">
           <span className="flex-1" />
-          <span className="w-[72px] text-right font-sans text-[12px] uppercase tracking-wide text-text-muted">
+          <span className="text-right font-sans text-[12px] uppercase tracking-wide text-text-muted">
             Current
           </span>
-          <span className="w-[110px] text-right font-sans text-[12px] uppercase tracking-wide text-text-muted">
+          <span className="text-right font-sans text-[12px] uppercase tracking-wide text-text-muted">
             Preset
           </span>
         </div>
       )}
-      <div className="flex items-baseline justify-between gap-2 py-1">
+      <div className="grid grid-cols-[minmax(0,1fr)_auto_auto] items-baseline gap-2 py-1">
         <span
-          ref={labelRef}
-          className="flex-1 cursor-default font-sans text-[14px] text-text-secondary"
+          tabIndex={0}
+          title={formulaTooltip}
+          aria-label={`${label}. ${formulaTooltip}`}
+          className="focus-ring rounded-sm font-sans text-[14px] text-text-secondary"
         >
           {label}
         </span>
-        <span className="w-[72px] text-right font-mono text-[13px] text-text-muted">
+        <span className="text-right font-mono text-[13px] text-text-muted">
           {format(current)}
         </span>
-        <span className={`w-[110px] text-right font-mono text-[13px] ${color}`}>
+        <span className={`text-right font-mono text-[13px] ${color}`}>
           {format(preset)}{" "}
           {dir !== "same" ? delta : "\u2014"}
         </span>
@@ -201,7 +188,7 @@ export function MetricCard({ section, currentMetrics, presetMetrics, diffCount }
   );
 
   return (
-    <div className="rounded-xl border border-border-muted bg-bg-secondary p-4">
+    <div className="panel-surface rounded-[1.5rem] p-4">
       <h3 className="mb-2 font-display text-[14px] font-normal uppercase tracking-[0.5px] text-text-secondary">
         {section}
       </h3>

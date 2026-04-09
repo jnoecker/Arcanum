@@ -15,14 +15,17 @@ import {
 } from "recharts";
 import type { StatRadarPoint } from "@/lib/tuning/chartData";
 import { CHART_COLORS } from "@/lib/tuning/chartColors";
+import { usePrefersReducedMotion } from "@/lib/usePrefersReducedMotion";
 
 interface StatRadarChartProps {
   data: StatRadarPoint[];
 }
 
 export function StatRadarChart({ data }: StatRadarChartProps) {
+  const prefersReducedMotion = usePrefersReducedMotion();
+
   return (
-    <div className="rounded-lg border border-border-muted bg-bg-tertiary p-4">
+    <div className="panel-surface rounded-[1.5rem] p-4">
       <h3 className="mb-2 font-display text-[14px] font-normal uppercase tracking-[0.5px] text-text-secondary">
         STAT PROFILE
       </h3>
@@ -45,7 +48,7 @@ export function StatRadarChart({ data }: StatRadarChartProps) {
             fill={CHART_COLORS.currentSeries}
             fillOpacity={0.15}
             strokeWidth={1.5}
-            isAnimationActive={true}
+            isAnimationActive={!prefersReducedMotion}
             animationDuration={300}
           />
           <Radar
@@ -55,7 +58,7 @@ export function StatRadarChart({ data }: StatRadarChartProps) {
             fill={CHART_COLORS.presetSeries}
             fillOpacity={0.25}
             strokeWidth={1.5}
-            isAnimationActive={true}
+            isAnimationActive={!prefersReducedMotion}
             animationDuration={300}
           />
           <Tooltip />

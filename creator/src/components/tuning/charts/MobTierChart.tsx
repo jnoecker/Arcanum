@@ -16,6 +16,7 @@ import {
 import type { AppConfig } from "@/types/config";
 import { buildMobTierData, type MobTierPoint } from "@/lib/tuning/chartData";
 import { CHART_COLORS } from "@/lib/tuning/chartColors";
+import { usePrefersReducedMotion } from "@/lib/usePrefersReducedMotion";
 
 interface MobTierChartProps {
   currentConfig: AppConfig;
@@ -64,6 +65,7 @@ function MobTierTooltip({ active, payload, label }: {
 
 export function MobTierChart({ currentConfig }: MobTierChartProps) {
   const [selectedLevel, setSelectedLevel] = useState(30);
+  const prefersReducedMotion = usePrefersReducedMotion();
 
   const data = useMemo(
     () => buildMobTierData(currentConfig, selectedLevel),
@@ -71,12 +73,13 @@ export function MobTierChart({ currentConfig }: MobTierChartProps) {
   );
 
   return (
-    <div className="rounded-lg border border-border-muted bg-bg-tertiary p-4">
+    <div className="panel-surface rounded-[1.5rem] p-4">
       <div className="mb-2 flex items-center justify-between">
         <h3 className="font-display text-[14px] font-normal uppercase tracking-[0.5px] text-text-secondary">
           MOB POWER
         </h3>
         <select
+          aria-label="Select mob power preview level"
           className="ornate-input px-2 py-0.5 text-[13px]"
           value={selectedLevel}
           onChange={(e) => setSelectedLevel(Number(e.target.value))}
@@ -112,7 +115,7 @@ export function MobTierChart({ currentConfig }: MobTierChartProps) {
             dataKey="hp"
             name="HP"
             fill={CHART_COLORS.barHp}
-            isAnimationActive={true}
+            isAnimationActive={!prefersReducedMotion}
             animationDuration={300}
             animationEasing="ease-out"
           />
@@ -120,7 +123,7 @@ export function MobTierChart({ currentConfig }: MobTierChartProps) {
             dataKey="damage"
             name="Damage"
             fill={CHART_COLORS.barDamage}
-            isAnimationActive={true}
+            isAnimationActive={!prefersReducedMotion}
             animationDuration={300}
             animationEasing="ease-out"
           />
@@ -128,7 +131,7 @@ export function MobTierChart({ currentConfig }: MobTierChartProps) {
             dataKey="armor"
             name="Armor"
             fill={CHART_COLORS.barArmor}
-            isAnimationActive={true}
+            isAnimationActive={!prefersReducedMotion}
             animationDuration={300}
             animationEasing="ease-out"
           />
@@ -136,7 +139,7 @@ export function MobTierChart({ currentConfig }: MobTierChartProps) {
             dataKey="xp"
             name="XP"
             fill={CHART_COLORS.barXp}
-            isAnimationActive={true}
+            isAnimationActive={!prefersReducedMotion}
             animationDuration={300}
             animationEasing="ease-out"
           />

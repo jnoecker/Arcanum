@@ -113,9 +113,11 @@ export function PresetCard({ preset, metrics, isSelected, isDimmed, onSelect }: 
     <button
       type="button"
       onClick={onSelect}
+      aria-pressed={isSelected}
+      aria-label={`${preset.name} preset${isSelected ? ", selected" : ""}`}
       className={[
-        "max-w-[320px] w-full rounded-xl border p-6 text-left",
-        "bg-bg-tertiary cursor-pointer",
+        "focus-ring panel-surface relative w-full overflow-hidden rounded-[1.75rem] p-6 text-left",
+        "min-h-[16rem] cursor-pointer",
         "transition-[color,background-color,border-color,box-shadow,opacity] duration-200 hover:bg-bg-hover",
         borderClass,
         glowClass,
@@ -124,7 +126,11 @@ export function PresetCard({ preset, metrics, isSelected, isDimmed, onSelect }: 
         .filter(Boolean)
         .join(" ")}
     >
+      <div className="pointer-events-none absolute inset-x-5 top-0 h-px bg-gradient-to-r from-transparent via-accent/45 to-transparent opacity-70" />
       <div className="flex flex-col gap-4">
+        <p className={`font-display text-2xs uppercase tracking-wide-ui ${accent.text}`}>
+          Tuning preset
+        </p>
         {/* Preset name */}
         <h3 className="font-display text-lg font-semibold leading-[1.2] tracking-[0.5px] text-text-primary">
           {preset.name}

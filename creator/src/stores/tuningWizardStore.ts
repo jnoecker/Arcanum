@@ -13,6 +13,7 @@ import { deepMerge, buildPartialFromDiffs } from "@/lib/tuning/merge";
 import { checkTuningHealth } from "@/lib/tuning/healthCheck";
 import type { HealthWarning } from "@/lib/tuning/healthCheck";
 import type { AppConfig } from "@/types/config";
+import { useToastStore } from "@/stores/toastStore";
 
 const ALL_SECTIONS = new Set([
   TuningSection.CombatStats,
@@ -31,6 +32,7 @@ interface TuningWizardStore {
   undoAvailable: boolean;
   healthWarnings: HealthWarning[];
   applySuccess: boolean;
+  actionError: string | null;
   selectPreset: (id: string | null) => void;
   setSearchQuery: (q: string) => void;
   toggleSection: (s: TuningSection) => void;
@@ -42,6 +44,7 @@ interface TuningWizardStore {
   resetWizard: () => void;
   setHealthWarnings: (w: HealthWarning[]) => void;
   clearApplySuccess: () => void;
+  clearActionError: () => void;
 }
 
 export const useTuningWizardStore = create<TuningWizardStore>((set, get) => ({
@@ -54,6 +57,7 @@ export const useTuningWizardStore = create<TuningWizardStore>((set, get) => ({
   undoAvailable: false,
   healthWarnings: [],
   applySuccess: false,
+  actionError: null,
 
   selectPreset: (id) =>
     set({
@@ -61,6 +65,7 @@ export const useTuningWizardStore = create<TuningWizardStore>((set, get) => ({
       acceptedSections: new Set(ALL_SECTIONS),
       healthWarnings: [],
       applySuccess: false,
+      actionError: null,
     }),
 
   setSearchQuery: (q) => set({ searchQuery: q }),
@@ -104,6 +109,7 @@ export const useTuningWizardStore = create<TuningWizardStore>((set, get) => ({
     if (!selectedPresetId || acceptedSections.size === 0) return;
 
     const config = useConfigStore.getState().config;
+    const wasDirty = useConfigStore.getState().dirty;
     const project = useProjectStore.getState().project;
     if (!config || !project) return;
 
@@ -127,42 +133,90 @@ export const useTuningWizardStore = create<TuningWizardStore>((set, get) => ({
       partial,
     ) as unknown as AppConfig;
 
-    // Apply to configStore and persist (D-11)
-    useConfigStore.getState().updateConfig(merged);
-    const { saveProjectConfig } = await import("@/lib/saveConfig");
-    await saveProjectConfig(project);
-    useConfigStore.getState().markClean();
+    try {
+      // Apply to configStore and persist (D-11)
+      useConfigStore.getState().updateConfig(merged);
+      const { saveProjectConfig } = await import("@/lib/saveConfig");
+      await saveProjectConfig(project);
+      useConfigStore.getState().markClean();
 
-    // Health check (D-09): only when mixed sections
-    const postMetrics = computeMetrics(merged);
-    const warnings = checkTuningHealth(preMetrics, postMetrics, acceptedSections);
+      // Health check (D-09): only when mixed sections
+      const postMetrics = computeMetrics(merged);
+      const warnings = checkTuningHealth(preMetrics, postMetrics, acceptedSections);
 
-    set({
-      configSnapshot: snapshot,
-      undoAvailable: true,
-      applySuccess: true,
-      healthWarnings: warnings,
-    });
+      set({
+        configSnapshot: snapshot,
+        undoAvailable: true,
+        applySuccess: true,
+        healthWarnings: warnings,
+        actionError: null,
+      });
+      useToastStore.getState().show({
+        kicker: "Tuning Wizard",
+        message: "Preset sections applied and saved.",
+        variant: "astral",
+      });
+    } catch (err) {
+      useConfigStore.getState().updateConfig(snapshot);
+      if (!wasDirty) {
+        useConfigStore.getState().markClean();
+      }
+      const message = err instanceof Error ? err.message : String(err);
+      set({
+        configSnapshot: null,
+        undoAvailable: false,
+        applySuccess: false,
+        healthWarnings: [],
+        actionError: message,
+      });
+      useToastStore.getState().show({
+        kicker: "Tuning Wizard",
+        message: `Apply failed: ${message}`,
+        variant: "ember",
+      }, 4000);
+    }
   },
 
   undoApply: async () => {
     const { configSnapshot } = get();
     if (!configSnapshot) return;
 
+    const wasDirty = useConfigStore.getState().dirty;
     const project = useProjectStore.getState().project;
     if (!project) return;
 
-    useConfigStore.getState().updateConfig(configSnapshot);
-    const { saveProjectConfig } = await import("@/lib/saveConfig");
-    await saveProjectConfig(project);
-    useConfigStore.getState().markClean();
+    try {
+      useConfigStore.getState().updateConfig(configSnapshot);
+      const { saveProjectConfig } = await import("@/lib/saveConfig");
+      await saveProjectConfig(project);
+      useConfigStore.getState().markClean();
 
-    set({
-      configSnapshot: null,
-      undoAvailable: false,
-      healthWarnings: [],
-      applySuccess: false,
-    });
+      set({
+        configSnapshot: null,
+        undoAvailable: false,
+        healthWarnings: [],
+        applySuccess: false,
+        actionError: null,
+      });
+      useToastStore.getState().show({
+        kicker: "Tuning Wizard",
+        message: "Last preset apply was undone.",
+      });
+    } catch (err) {
+      if (!wasDirty) {
+        useConfigStore.getState().markClean();
+      }
+      const message = err instanceof Error ? err.message : String(err);
+      set({
+        applySuccess: false,
+        actionError: message,
+      });
+      useToastStore.getState().show({
+        kicker: "Tuning Wizard",
+        message: `Undo failed: ${message}`,
+        variant: "ember",
+      }, 4000);
+    }
   },
 
   resetWizard: () =>
@@ -176,8 +230,10 @@ export const useTuningWizardStore = create<TuningWizardStore>((set, get) => ({
       undoAvailable: false,
       healthWarnings: [],
       applySuccess: false,
+      actionError: null,
     }),
 
   setHealthWarnings: (w) => set({ healthWarnings: w }),
   clearApplySuccess: () => set({ applySuccess: false }),
+  clearActionError: () => set({ actionError: null }),
 }));

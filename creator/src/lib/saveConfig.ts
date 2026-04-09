@@ -211,7 +211,13 @@ async function saveSplitConfig(projectDir: string): Promise<void> {
         ? housingToPlain(config.housing) : undefined,
       bank: config.bank.maxItems !== 50 ? config.bank : undefined,
       worldTime: config.worldTime,
-      weather: config.weather,
+      weather: {
+        minTransitionMs: config.weather.minTransitionMs,
+        maxTransitionMs: config.weather.maxTransitionMs,
+        ...(Object.keys(config.weather.types).length > 0 ? { types: config.weather.types } : {}),
+      },
+      environment: (config.environment.defaultTheme.moteColors.length > 0 || Object.keys(config.environment.zones).length > 0)
+        ? config.environment : undefined,
       worldEvents: Object.keys(config.worldEvents.definitions).length > 0
         ? config.worldEvents : undefined,
       lottery: normalizeLotteryConfig(config.lottery),

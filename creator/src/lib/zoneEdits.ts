@@ -2,6 +2,8 @@ import type {
   WorldFile,
   RoomFile,
   ExitValue,
+  DoorFile,
+  FeatureFile,
   MobFile,
   ItemFile,
   ShopFile,
@@ -228,6 +230,251 @@ export function deleteExit(
   }
 
   return next;
+}
+
+// ─── Exit door operations ───────────────────────────────────────────
+
+/**
+ * Canonical door initial states. Mirrors the Kotlin {@code DoorFile.initialState}
+ * values the MUD accepts ("open" | "closed" | "locked").
+ */
+export const DOOR_INITIAL_STATES = ["open", "closed", "locked"] as const;
+export type DoorInitialState = typeof DOOR_INITIAL_STATES[number];
+
+/**
+ * Attach or replace the door on an existing exit. Converts shorthand
+ * (string) exit values to the object form. The door patch is merged with
+ * any existing door fields and undefined entries are stripped so we never
+ * emit noise into YAML.
+ */
+export function setExitDoor(
+  world: WorldFile,
+  sourceRoom: string,
+  direction: string,
+  doorPatch: Partial<DoorFile>,
+): WorldFile {
+  const srcExits = world.rooms[sourceRoom]?.exits;
+  if (!srcExits || !(direction in srcExits)) {
+    throw new Error(`Exit "${direction}" from "${sourceRoom}" does not exist`);
+  }
+  const next = clone(world);
+  const exit = next.rooms[sourceRoom]!.exits![direction]!;
+  const to = typeof exit === "string" ? exit : exit.to;
+  const existingDoor = typeof exit === "string" ? undefined : exit.door;
+  const merged: DoorFile = { ...(existingDoor ?? {}), ...doorPatch };
+  const cleaned = cleanDoor(merged);
+  const nextExit: ExitValue = { to };
+  if (cleaned) nextExit.door = cleaned;
+  next.rooms[sourceRoom]!.exits![direction] = nextExit;
+  return next;
+}
+
+/**
+ * Remove the door from an exit. If the exit no longer has a door we collapse
+ * the object form back to the shorthand string form for cleaner YAML.
+ */
+export function removeExitDoor(
+  world: WorldFile,
+  sourceRoom: string,
+  direction: string,
+): WorldFile {
+  const srcExits = world.rooms[sourceRoom]?.exits;
+  if (!srcExits || !(direction in srcExits)) {
+    throw new Error(`Exit "${direction}" from "${sourceRoom}" does not exist`);
+  }
+  const next = clone(world);
+  const exit = next.rooms[sourceRoom]!.exits![direction]!;
+  if (typeof exit === "string") return world;
+  next.rooms[sourceRoom]!.exits![direction] = exit.to;
+  return next;
+}
+
+/**
+ * Strip undefined/legacy keys from a door and return `undefined` if nothing
+ * meaningful remains. Used by both editor helpers and sanitizeZone.
+ */
+function cleanDoor(door: DoorFile): DoorFile | undefined {
+  const out: DoorFile = {};
+  if (door.initialState) out.initialState = door.initialState;
+  if (door.keyItemId) out.keyItemId = door.keyItemId;
+  if (door.keyConsumed != null) out.keyConsumed = door.keyConsumed;
+  if (door.resetWithZone != null) out.resetWithZone = door.resetWithZone;
+  return Object.keys(out).length > 0 ? out : undefined;
+}
+
+// ─── Room feature operations ────────────────────────────────────────
+
+/**
+ * Feature types supported by the Kotlin FeatureFile. Keep in sync with
+ * `reference/world-yaml-dtos/FeatureFile.kt`.
+ */
+export const FEATURE_TYPES = ["CONTAINER", "LEVER", "SIGN"] as const;
+export type FeatureType = typeof FEATURE_TYPES[number];
+
+export const CONTAINER_STATES = ["open", "closed", "locked"] as const;
+export const LEVER_STATES = ["up", "down"] as const;
+
+/** Build a sensible blank feature of the given type. */
+export function defaultFeature(type: FeatureType, featureKey: string): FeatureFile {
+  const base: FeatureFile = {
+    type,
+    displayName: featureKey.replace(/_/g, " "),
+    keyword: featureKey,
+  };
+  if (type === "CONTAINER") {
+    base.initialState = "closed";
+    base.resetWithZone = true;
+    base.items = [];
+  } else if (type === "LEVER") {
+    base.initialState = "up";
+    base.resetWithZone = true;
+  } else if (type === "SIGN") {
+    base.text = "";
+  }
+  return base;
+}
+
+/** Generate a unique feature key within the room. */
+export function generateFeatureId(
+  world: WorldFile,
+  roomId: string,
+  type: FeatureType,
+): string {
+  const room = world.rooms[roomId];
+  if (!room) throw new Error(`Room "${roomId}" does not exist`);
+  const prefix = type.toLowerCase();
+  const existing = room.features ?? {};
+  let n = Object.keys(existing).filter((k) => k.startsWith(prefix)).length + 1;
+  while (existing[`${prefix}_${n}`]) n++;
+  return `${prefix}_${n}`;
+}
+
+export function addFeature(
+  world: WorldFile,
+  roomId: string,
+  featureId: string,
+  feature: FeatureFile,
+): WorldFile {
+  if (!world.rooms[roomId]) {
+    throw new Error(`Room "${roomId}" does not exist`);
+  }
+  if (world.rooms[roomId].features?.[featureId]) {
+    throw new Error(`Feature "${featureId}" already exists in room "${roomId}"`);
+  }
+  const next = clone(world);
+  const room = next.rooms[roomId]!;
+  if (!room.features) room.features = {};
+  room.features[featureId] = cleanFeature(feature);
+  return next;
+}
+
+export function updateFeature(
+  world: WorldFile,
+  roomId: string,
+  featureId: string,
+  patch: Partial<FeatureFile>,
+): WorldFile {
+  const existing = world.rooms[roomId]?.features?.[featureId];
+  if (!existing) {
+    throw new Error(`Feature "${featureId}" does not exist in room "${roomId}"`);
+  }
+  const next = clone(world);
+  next.rooms[roomId]!.features![featureId] = cleanFeature({ ...existing, ...patch });
+  return next;
+}
+
+export function removeFeature(
+  world: WorldFile,
+  roomId: string,
+  featureId: string,
+): WorldFile {
+  if (!world.rooms[roomId]?.features?.[featureId]) {
+    throw new Error(`Feature "${featureId}" does not exist in room "${roomId}"`);
+  }
+  const next = clone(world);
+  const room = next.rooms[roomId]!;
+  delete room.features![featureId];
+  if (Object.keys(room.features!).length === 0) {
+    delete room.features;
+  }
+  return next;
+}
+
+/**
+ * Rename a feature's local key while preserving its position in insertion
+ * order. The local key is what sequence puzzle steps reference via
+ * `steps[].feature`, so keeping it stable and visible matters.
+ */
+export function renameFeature(
+  world: WorldFile,
+  roomId: string,
+  oldId: string,
+  newId: string,
+): WorldFile {
+  if (oldId === newId) return world;
+  const room = world.rooms[roomId];
+  if (!room?.features?.[oldId]) {
+    throw new Error(`Feature "${oldId}" does not exist in room "${roomId}"`);
+  }
+  if (room.features[newId]) {
+    throw new Error(`Feature "${newId}" already exists in room "${roomId}"`);
+  }
+  const next = clone(world);
+  const rebuilt: Record<string, FeatureFile> = {};
+  for (const [key, value] of Object.entries(next.rooms[roomId]!.features!)) {
+    rebuilt[key === oldId ? newId : key] = value;
+  }
+  next.rooms[roomId]!.features = rebuilt;
+  return next;
+}
+
+/**
+ * Reorder features within a room by providing the new ordered key list. Keys
+ * not in the list are dropped (so callers should pass the full set).
+ */
+export function reorderFeatures(
+  world: WorldFile,
+  roomId: string,
+  orderedIds: string[],
+): WorldFile {
+  const room = world.rooms[roomId];
+  if (!room?.features) {
+    throw new Error(`Room "${roomId}" has no features to reorder`);
+  }
+  const next = clone(world);
+  const current = next.rooms[roomId]!.features!;
+  const rebuilt: Record<string, FeatureFile> = {};
+  for (const id of orderedIds) {
+    if (current[id]) rebuilt[id] = current[id];
+  }
+  next.rooms[roomId]!.features = rebuilt;
+  return next;
+}
+
+/**
+ * Strip empty / type-inappropriate fields from a feature so the YAML stays
+ * minimal. E.g. a LEVER should not carry `items` or `text`.
+ */
+function cleanFeature(feature: FeatureFile): FeatureFile {
+  const type = feature.type.trim().toUpperCase();
+  const out: FeatureFile = {
+    type,
+    displayName: feature.displayName ?? "",
+    keyword: feature.keyword ?? "",
+  };
+  if (type === "CONTAINER") {
+    if (feature.initialState) out.initialState = feature.initialState;
+    if (feature.keyItemId) out.keyItemId = feature.keyItemId;
+    if (feature.keyConsumed != null) out.keyConsumed = feature.keyConsumed;
+    if (feature.resetWithZone != null) out.resetWithZone = feature.resetWithZone;
+    if (feature.items && feature.items.length > 0) out.items = [...feature.items];
+  } else if (type === "LEVER") {
+    if (feature.initialState) out.initialState = feature.initialState;
+    if (feature.resetWithZone != null) out.resetWithZone = feature.resetWithZone;
+  } else if (type === "SIGN") {
+    if (feature.text != null) out.text = feature.text;
+  }
+  return out;
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────

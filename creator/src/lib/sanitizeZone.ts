@@ -110,20 +110,53 @@ function normalizeDoorFile(door?: DoorFile): DoorFile | undefined {
   return Object.keys(normalized).length > 0 ? normalized : undefined;
 }
 
+function normalizeFeatureFile(feature: FeatureFile): FeatureFile {
+  const type = feature.type.trim().toUpperCase();
+  const out: FeatureFile = {
+    type,
+    displayName: feature.displayName ?? "",
+    keyword: feature.keyword ?? "",
+  };
+  if (type === "CONTAINER") {
+    if (feature.initialState) out.initialState = feature.initialState;
+    if (feature.keyItemId) out.keyItemId = feature.keyItemId;
+    if (feature.keyConsumed != null) out.keyConsumed = feature.keyConsumed;
+    if (feature.resetWithZone != null) out.resetWithZone = feature.resetWithZone;
+    if (feature.items && feature.items.length > 0) out.items = [...feature.items];
+  } else if (type === "LEVER") {
+    if (feature.initialState) out.initialState = feature.initialState;
+    if (feature.resetWithZone != null) out.resetWithZone = feature.resetWithZone;
+  } else if (type === "SIGN") {
+    if (feature.text != null) out.text = feature.text;
+  }
+  return out;
+}
+
 function normalizeRoomOutput(room: RoomFile): RoomFile {
   let next: RoomFile = { ...room, audio: undefined };
   if (room.exits) {
     const exits: Record<string, string | ExitValue> = {};
     for (const [dir, exit] of Object.entries(room.exits)) {
-      exits[dir] =
-        typeof exit === "string"
-          ? exit
-          : {
-              ...exit,
-              door: normalizeDoorFile(exit.door),
-            };
+      if (typeof exit === "string") {
+        exits[dir] = exit;
+      } else {
+        const door = normalizeDoorFile(exit.door);
+        exits[dir] = door ? { to: exit.to, door } : exit.to;
+      }
     }
     next = { ...next, exits };
+  }
+  if (room.features) {
+    const features: Record<string, FeatureFile> = {};
+    for (const [id, feature] of Object.entries(room.features)) {
+      features[id] = normalizeFeatureFile(feature);
+    }
+    if (Object.keys(features).length > 0) {
+      next = { ...next, features };
+    } else {
+      const { features: _unused, ...withoutFeatures } = next;
+      next = withoutFeatures;
+    }
   }
   return next;
 }

@@ -323,4 +323,58 @@ describe("validateZone", () => {
     const issues = errors(validateZone(world));
     expect(issues.some((i) => i.entity === "puzzle:gate")).toBe(true);
   });
+
+  // ─── Sequence puzzle feature refs ───────────────────────────
+  it("accepts sequence steps that reference a feature's local key", () => {
+    const world = makeValidWorld();
+    world.rooms.room1.features = {
+      vault_lever: { type: "LEVER", displayName: "a lever", keyword: "lever", initialState: "up" },
+    };
+    world.puzzles = {
+      open_vault: {
+        type: "sequence",
+        roomId: "room1",
+        steps: [{ feature: "vault_lever", action: "pull" }],
+        reward: { type: "give_gold", gold: 10 },
+      },
+    };
+    const issues = validateZone(world);
+    expect(issues.filter((i) => i.entity === "puzzle:open_vault")).toHaveLength(0);
+  });
+
+  it("accepts sequence steps that reference a feature's keyword (back-compat)", () => {
+    const world = makeValidWorld();
+    world.rooms.room1.features = {
+      vault_lever: { type: "LEVER", displayName: "a lever", keyword: "lever", initialState: "up" },
+    };
+    world.puzzles = {
+      open_vault: {
+        type: "sequence",
+        roomId: "room1",
+        steps: [{ feature: "lever", action: "pull" }],
+        reward: { type: "give_gold", gold: 10 },
+      },
+    };
+    const issues = validateZone(world);
+    expect(issues.filter((i) => i.entity === "puzzle:open_vault")).toHaveLength(0);
+  });
+
+  it("warns when a sequence step references an unknown feature", () => {
+    const world = makeValidWorld();
+    world.rooms.room1.features = {
+      vault_lever: { type: "LEVER", displayName: "a lever", keyword: "lever", initialState: "up" },
+    };
+    world.puzzles = {
+      open_vault: {
+        type: "sequence",
+        roomId: "room1",
+        steps: [{ feature: "missing_lever", action: "pull" }],
+        reward: { type: "give_gold", gold: 10 },
+      },
+    };
+    const puzzleIssues = validateZone(world).filter((i) => i.entity === "puzzle:open_vault");
+    expect(puzzleIssues.some((i) => i.severity === "warning" && i.message.includes("missing_lever"))).toBe(
+      true,
+    );
+  });
 });

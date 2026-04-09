@@ -211,6 +211,7 @@ function validatePuzzle(
   issues: ValidationIssue[],
   puzzleId: string,
   puzzle: PuzzleFile,
+  world: WorldFile,
   roomIds: Set<string>,
   mobIds: Set<string>,
   itemIds: Set<string>,
@@ -244,9 +245,38 @@ function validatePuzzle(
     if (!puzzle.steps || puzzle.steps.length === 0) {
       addIssue(issues, "error", entity, "Sequence puzzle must have at least one step");
     } else {
+      // Resolve the puzzle room's features so we can check step.feature refs.
+      // Accept either the local feature key OR the feature keyword — the
+      // authored YAML can stabilize on the local key, but older content
+      // still matches by keyword at runtime.
+      const puzzleRoom = puzzle.roomId && !puzzle.roomId.includes(":")
+        ? world.rooms[puzzle.roomId]
+        : undefined;
+      const roomFeatureKeys = new Set<string>();
+      if (puzzleRoom?.features) {
+        for (const [fId, f] of Object.entries(puzzleRoom.features)) {
+          roomFeatureKeys.add(fId.toLowerCase());
+          if (f.keyword) roomFeatureKeys.add(f.keyword.trim().toLowerCase());
+        }
+      }
+
       for (const [index, step] of puzzle.steps.entries()) {
         if (!step.feature?.trim()) {
           addIssue(issues, "error", entity, `Step #${index + 1} feature cannot be blank`);
+        } else if (puzzleRoom && roomFeatureKeys.size > 0 && !roomFeatureKeys.has(step.feature.trim().toLowerCase())) {
+          addIssue(
+            issues,
+            "warning",
+            entity,
+            `Step #${index + 1} feature "${step.feature}" does not match any feature in room "${puzzle.roomId}"`,
+          );
+        } else if (puzzleRoom && roomFeatureKeys.size === 0) {
+          addIssue(
+            issues,
+            "warning",
+            entity,
+            `Step #${index + 1} references feature "${step.feature}" but room "${puzzle.roomId}" has no features defined`,
+          );
         }
         if (!step.action?.trim()) {
           addIssue(issues, "error", entity, `Step #${index + 1} action cannot be blank`);
@@ -458,7 +488,7 @@ export function validateZone(
   }
 
   for (const [puzzleId, puzzle] of Object.entries(world.puzzles ?? {})) {
-    validatePuzzle(issues, puzzleId, puzzle, roomIds, mobIds, itemIds);
+    validatePuzzle(issues, puzzleId, puzzle, world, roomIds, mobIds, itemIds);
   }
 
   if (world.dungeon) {

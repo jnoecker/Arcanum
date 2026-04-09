@@ -25,6 +25,15 @@ import {
   updateRecipe,
   deleteRecipe,
   generateEntityId,
+  setExitDoor,
+  removeExitDoor,
+  addFeature,
+  updateFeature,
+  removeFeature,
+  renameFeature,
+  reorderFeatures,
+  defaultFeature,
+  generateFeatureId,
 } from "../zoneEdits";
 import type { WorldFile } from "@/types/world";
 
@@ -413,5 +422,148 @@ describe("generateEntityId", () => {
     expect(generateEntityId(world, "quests")).toMatch(/^test_quest\d+$/);
     expect(generateEntityId(world, "gatheringNodes")).toMatch(/^test_node\d+$/);
     expect(generateEntityId(world, "recipes")).toMatch(/^test_recipe\d+$/);
+  });
+});
+
+// ─── Exit doors ─────────────────────────────────────────────────────
+
+describe("setExitDoor", () => {
+  it("converts a string exit into an object form with door", () => {
+    const world = makeWorld();
+    const next = setExitDoor(world, "room1", "n", { initialState: "closed" });
+    const exit = next.rooms.room1.exits?.n;
+    expect(typeof exit).toBe("object");
+    expect((exit as any).to).toBe("room2");
+    expect((exit as any).door.initialState).toBe("closed");
+  });
+
+  it("merges a door patch with existing door fields", () => {
+    let world = makeWorld();
+    world = setExitDoor(world, "room1", "n", {
+      initialState: "locked",
+      keyItemId: "sword",
+    });
+    world = setExitDoor(world, "room1", "n", { keyConsumed: true });
+    const exit = world.rooms.room1.exits?.n as any;
+    expect(exit.door.initialState).toBe("locked");
+    expect(exit.door.keyItemId).toBe("sword");
+    expect(exit.door.keyConsumed).toBe(true);
+  });
+
+  it("throws when the exit does not exist", () => {
+    const world = makeWorld();
+    expect(() => setExitDoor(world, "room1", "w", { initialState: "closed" })).toThrow(
+      "does not exist",
+    );
+  });
+});
+
+describe("removeExitDoor", () => {
+  it("collapses the object form back to the shorthand string", () => {
+    let world = makeWorld();
+    world = setExitDoor(world, "room1", "n", { initialState: "locked", keyItemId: "sword" });
+    world = removeExitDoor(world, "room1", "n");
+    expect(world.rooms.room1.exits?.n).toBe("room2");
+  });
+
+  it("is a no-op on shorthand exits", () => {
+    const world = makeWorld();
+    const next = removeExitDoor(world, "room1", "n");
+    expect(next.rooms.room1.exits?.n).toBe("room2");
+  });
+});
+
+// ─── Room features ──────────────────────────────────────────────────
+
+describe("addFeature", () => {
+  it("adds a feature to a room that had none", () => {
+    const world = makeWorld();
+    const next = addFeature(world, "room1", "vault_lever", defaultFeature("LEVER", "vault_lever"));
+    expect(next.rooms.room1.features?.vault_lever?.type).toBe("LEVER");
+    expect(next.rooms.room1.features?.vault_lever?.initialState).toBe("up");
+  });
+
+  it("throws when the feature ID is already in use", () => {
+    let world = makeWorld();
+    world = addFeature(world, "room1", "vault_lever", defaultFeature("LEVER", "vault_lever"));
+    expect(() =>
+      addFeature(world, "room1", "vault_lever", defaultFeature("LEVER", "vault_lever")),
+    ).toThrow("already exists");
+  });
+
+  it("strips type-inappropriate fields on add", () => {
+    const world = makeWorld();
+    const next = addFeature(world, "room1", "sign1", {
+      type: "SIGN",
+      displayName: "a weathered sign",
+      keyword: "sign",
+      text: "Beware the deep.",
+      items: ["sword"], // Not valid for SIGN
+      initialState: "closed", // Not valid for SIGN
+    });
+    const f = next.rooms.room1.features?.sign1;
+    expect(f?.text).toBe("Beware the deep.");
+    expect(f?.items).toBeUndefined();
+    expect(f?.initialState).toBeUndefined();
+  });
+});
+
+describe("updateFeature", () => {
+  it("patches feature fields and preserves type cleanliness", () => {
+    let world = makeWorld();
+    world = addFeature(world, "room1", "chest", defaultFeature("CONTAINER", "chest"));
+    world = updateFeature(world, "room1", "chest", { items: ["sword"], keyItemId: "sword" });
+    const f = world.rooms.room1.features?.chest;
+    expect(f?.items).toEqual(["sword"]);
+    expect(f?.keyItemId).toBe("sword");
+  });
+});
+
+describe("removeFeature", () => {
+  it("removes the feature and clears the features map when empty", () => {
+    let world = makeWorld();
+    world = addFeature(world, "room1", "lever", defaultFeature("LEVER", "lever"));
+    world = removeFeature(world, "room1", "lever");
+    expect(world.rooms.room1.features).toBeUndefined();
+  });
+});
+
+describe("renameFeature", () => {
+  it("renames preserving the feature's value and ordering", () => {
+    let world = makeWorld();
+    world = addFeature(world, "room1", "a", defaultFeature("LEVER", "a"));
+    world = addFeature(world, "room1", "b", defaultFeature("LEVER", "b"));
+    world = addFeature(world, "room1", "c", defaultFeature("LEVER", "c"));
+    world = renameFeature(world, "room1", "b", "middle");
+    const keys = Object.keys(world.rooms.room1.features!);
+    expect(keys).toEqual(["a", "middle", "c"]);
+  });
+
+  it("throws if the new ID collides", () => {
+    let world = makeWorld();
+    world = addFeature(world, "room1", "a", defaultFeature("LEVER", "a"));
+    world = addFeature(world, "room1", "b", defaultFeature("LEVER", "b"));
+    expect(() => renameFeature(world, "room1", "a", "b")).toThrow("already exists");
+  });
+});
+
+describe("reorderFeatures", () => {
+  it("reorders the features map to match the supplied order", () => {
+    let world = makeWorld();
+    world = addFeature(world, "room1", "a", defaultFeature("LEVER", "a"));
+    world = addFeature(world, "room1", "b", defaultFeature("LEVER", "b"));
+    world = addFeature(world, "room1", "c", defaultFeature("LEVER", "c"));
+    world = reorderFeatures(world, "room1", ["c", "a", "b"]);
+    expect(Object.keys(world.rooms.room1.features!)).toEqual(["c", "a", "b"]);
+  });
+});
+
+describe("generateFeatureId", () => {
+  it("picks a unique key per feature type", () => {
+    let world = makeWorld();
+    const first = generateFeatureId(world, "room1", "LEVER");
+    world = addFeature(world, "room1", first, defaultFeature("LEVER", first));
+    const second = generateFeatureId(world, "room1", "LEVER");
+    expect(second).not.toBe(first);
   });
 });

@@ -1,6 +1,7 @@
 import { useMemo, useEffect, useState, useCallback } from "react";
-import type { LoreMap, MapPin } from "@/types/lore";
+import type { LoreMap, MapPin, ZonePlan } from "@/types/lore";
 import { useLoreStore, selectArticles } from "@/stores/loreStore";
+import { regionToLeafletBounds } from "@/lib/zoneRegionGeometry";
 
 // ─── Custom pin icon ────────────────────────────────────────────────
 
@@ -26,12 +27,18 @@ export function MapViewer({
   onSelectPin,
   addMode,
   onAddComplete,
+  zonePlans = [],
+  selectedZonePlanId = null,
+  onSelectZonePlan,
 }: {
   map: LoreMap;
   imageUrl: string;
   onSelectPin: (id: string | null) => void;
   addMode: boolean;
   onAddComplete: () => void;
+  zonePlans?: ZonePlan[];
+  selectedZonePlanId?: string | null;
+  onSelectZonePlan?: (id: string) => void;
 }) {
   const articles = useLoreStore(selectArticles);
   const addPin = useLoreStore((s) => s.addPin);
@@ -135,6 +142,38 @@ export function MapViewer({
         <RL.ImageOverlay url={imageUrl} bounds={bounds} />
         <MapClickHandler mapId={map.id} addMode={addMode} onAddComplete={onAddComplete} addPin={addPin} RL={RL} />
         <MapInvalidator RL={RL} />
+
+        {zonePlans.map((plan) => {
+          if (!plan.region) return null;
+          const bounds = regionToLeafletBounds(plan.region);
+          const isSelected = plan.id === selectedZonePlanId;
+
+          return (
+            <RL.Rectangle
+              key={plan.id}
+              bounds={[
+                [bounds.south, bounds.west],
+                [bounds.north, bounds.east],
+              ]}
+              pathOptions={{
+                color: isSelected ? "#f2d087" : "#d8b56a",
+                weight: isSelected ? 2.5 : 1.5,
+                opacity: isSelected ? 0.95 : 0.7,
+                fillColor: isSelected ? "#e8bd62" : "#b78a3f",
+                fillOpacity: isSelected ? 0.18 : 0.1,
+              }}
+              eventHandlers={{
+                click: () => onSelectZonePlan?.(plan.id),
+              }}
+            >
+              <RL.Tooltip permanent direction="center" opacity={0.9}>
+                <div className="px-1 py-0.5 text-[10px] font-medium">
+                  {plan.name}
+                </div>
+              </RL.Tooltip>
+            </RL.Rectangle>
+          );
+        })}
 
         {map.pins.map((pin) => {
           const icon = pinIcons[pin.color || "default"] ?? pinIcons.default!;

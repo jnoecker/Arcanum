@@ -35,6 +35,10 @@ export interface ZonePlanGenerationOptions {
    * grid. More reliable for complex maps but doubles cost. Default: false.
    */
   twoPass?: boolean;
+  /** Optional scoped parent region name when subdividing an existing zone. */
+  focusRegionName?: string;
+  /** Optional thematic blurb from the parent zone when planning subregions. */
+  focusRegionBlurb?: string;
 }
 
 /** Cardinal hint produced by the structure pass. */
@@ -66,6 +70,24 @@ export interface ZonePlanSuggestion {
   region: ZonePlanRegion;
   /** Names of bordering zones, resolved against other suggestions by name. */
   borderNames: string[];
+}
+
+function buildTargetCountLine(targetCount?: number): string {
+  if (!targetCount) {
+    return "Choose a sensible number of zones (typically 8-18) based on map complexity.";
+  }
+  const hierarchyHint = targetCount >= 30
+    ? " Because this is a high count, keep the zones broad and high-level rather than inventing tiny micro-zones; the user can refine individual regions later."
+    : "";
+  return `Target zone count: ${targetCount} (you may produce a few fewer or more if the geography demands it).${hierarchyHint}`;
+}
+
+function buildScopeLine(options: ZonePlanGenerationOptions): string {
+  if (!options.focusRegionName) return "";
+  const blurb = options.focusRegionBlurb?.trim()
+    ? ` Parent region theme: ${options.focusRegionBlurb.trim()}`
+    : "";
+  return `Planning scope: this image is a cropped view of the parent region "${options.focusRegionName}". Subdivide only this region into smaller zones and keep the result coherent with the parent theme.${blurb}`;
 }
 
 // ─── Prompt construction ────────────────────────────────────────────
@@ -282,9 +304,8 @@ async function runStructurePass(
   const contextBlock = options.useLoreContext !== false
     ? buildLoreContextBlock(lore)
     : "";
-  const countLine = options.targetCount
-    ? `Target zone count: ${options.targetCount}.`
-    : `Choose 5-12 zones based on map complexity.`;
+  const countLine = buildTargetCountLine(options.targetCount);
+  const scopeLine = buildScopeLine(options);
   const toneLine = options.toneHint?.trim()
     ? `Author guidance: ${options.toneHint.trim()}`
     : "";
@@ -293,6 +314,7 @@ async function runStructurePass(
     `Map: "${map.title}"`,
     "",
     countLine,
+    scopeLine,
     toneLine,
     "",
     contextBlock,
@@ -575,9 +597,8 @@ export async function generateZonePlans(
   }
 
   const contextBlock = useLoreContext ? buildLoreContextBlock(lore) : "";
-  const countLine = targetCount
-    ? `Target zone count: ${targetCount} (you may produce 1-2 fewer or more if the geography demands it).`
-    : `Choose a sensible number of zones (typically 5-12) based on map complexity.`;
+  const countLine = buildTargetCountLine(targetCount);
+  const scopeLine = buildScopeLine(options);
   const toneLine = toneHint?.trim()
     ? `Author guidance: ${toneHint.trim()}`
     : "";
@@ -593,6 +614,7 @@ export async function generateZonePlans(
       `The image has a labeled ${spec.cols}×${spec.rows} grid overlay (columns A-${lastCol}, rows 1-${spec.rows}).`,
       "",
       countLine,
+      scopeLine,
       toneLine,
       "",
       buildAnchorBlockGrid(map, spec),
@@ -627,6 +649,7 @@ export async function generateZonePlans(
     `Image dimensions: ${map.width} pixels wide × ${map.height} pixels tall.`,
     "",
     countLine,
+    scopeLine,
     toneLine,
     "",
     anchorBlock,

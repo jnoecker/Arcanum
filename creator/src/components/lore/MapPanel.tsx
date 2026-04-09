@@ -1,7 +1,13 @@
 import { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
-import { useLoreStore, selectArticles, selectMaps, selectColorLabels } from "@/stores/loreStore";
+import {
+  useLoreStore,
+  selectArticles,
+  selectMaps,
+  selectColorLabels,
+  selectZonePlans,
+} from "@/stores/loreStore";
 import { useImageSrcStatus } from "@/lib/useImageSrc";
 import type { LoreMap, Article } from "@/types/lore";
 import { TEMPLATE_SCHEMAS } from "@/lib/loreTemplates";
@@ -370,6 +376,7 @@ function PinEditor({
 
 export function MapPanel() {
   const maps = useLoreStore(selectMaps);
+  const zonePlans = useLoreStore(selectZonePlans);
   const selectedMapId = useLoreStore((s) => s.selectedMapId);
   const selectMap = useLoreStore((s) => s.selectMap);
   const createMap = useLoreStore((s) => s.createMap);
@@ -386,6 +393,13 @@ export function MapPanel() {
   const selectedMap = useMemo(
     () => maps.find((m) => m.id === selectedMapId) ?? null,
     [maps, selectedMapId],
+  );
+  const mapZonePlans = useMemo(
+    () =>
+      selectedMap
+        ? zonePlans.filter((plan) => plan.mapId === selectedMap.id && plan.region)
+        : [],
+    [zonePlans, selectedMap],
   );
 
   const { src: mapImage, status: mapImageStatus } = useImageSrcStatus(selectedMap?.imageAsset);
@@ -571,6 +585,7 @@ export function MapPanel() {
               onSelectPin={setSelectedPinId}
               addMode={addPinMode}
               onAddComplete={() => setAddPinMode(false)}
+              zonePlans={mapZonePlans}
             />
 
             {/* Pin mode toolbar */}

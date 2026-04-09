@@ -104,6 +104,8 @@ export interface ZonePlan {
   hooks?: string[];
   /** Source map this plan was generated against (LoreMap.id). */
   mapId?: string;
+  /** Optional parent zone plan when this is a subregion decomposition. */
+  parentId?: string;
   /** Approximate region within the source map (CRS.Simple coords). */
   region?: ZonePlanRegion;
   /** Other ZonePlan IDs this zone borders / connects to. */

@@ -31,6 +31,8 @@ interface ProjectStore {
   pendingNavigation: PendingNavigation | null;
   /** Global flag to show the MUD import wizard. Palette & sidebar both toggle this. */
   showMudImport: boolean;
+  /** Global flag to show the zone YAML import dialog. */
+  showImportZone: boolean;
   /** When non-null, the main area shows the world map / island view instead
    *  of the active tab. Cleared by openTab / setActiveTab. */
   mapView: MapView;
@@ -52,6 +54,7 @@ interface ProjectStore {
   navigateTo: (nav: PendingNavigation) => void;
   consumeNavigation: () => PendingNavigation | null;
   setShowMudImport: (show: boolean) => void;
+  setShowImportZone: (show: boolean) => void;
   /** Show the top-level world map (clears any open island detail). */
   openWorldMap: () => void;
   /** Drill into a specific island detail view. */
@@ -69,6 +72,7 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
   adminContentSubView: "abilities",
   pendingNavigation: null,
   showMudImport: false,
+  showImportZone: false,
   mapView: "world",
   settingsOpen: false,
 
@@ -131,6 +135,7 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
     return nav;
   },
   setShowMudImport: (showMudImport) => set({ showMudImport }),
+  setShowImportZone: (showImportZone) => set({ showImportZone }),
 
   openWorldMap: () => set({ mapView: "world" }),
   openIsland: (island) => set({ mapView: { island } }),

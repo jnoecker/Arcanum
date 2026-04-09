@@ -8,6 +8,7 @@ import type { WorldFile } from "@/types/world";
 import { ArticleTree } from "./lore/ArticleTree";
 import { BulkActionsBar } from "./lore/BulkActionsBar";
 import { NewZoneDialog } from "./NewZoneDialog";
+import { ImportZoneDialog } from "./ImportZoneDialog";
 import { RenameZoneDialog } from "./RenameZoneDialog";
 import { ConfirmDialog } from "./ConfirmDialog";
 import { CosmicBackdrop } from "./ui/CosmicBackdrop";
@@ -369,6 +370,8 @@ export function Sidebar() {
   const articles = useLoreStore(selectArticles);
   const articleCount = Object.keys(articles).length;
   const [showNewZone, setShowNewZone] = useState(false);
+  const showImportZone = useProjectStore((s) => s.showImportZone);
+  const setShowImportZone = useProjectStore((s) => s.setShowImportZone);
   const [renameTarget, setRenameTarget] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const hasProject = !!project;
@@ -444,6 +447,14 @@ export function Sidebar() {
                 </span>
               )}
               <button
+                onClick={() => setShowImportZone(true)}
+                className="focus-ring shell-pill rounded-full px-3 py-1 text-2xs font-medium"
+                title="Import zone YAML files"
+              >
+                Import
+              </button>
+
+              <button
                 onClick={() => setShowNewZone(true)}
                 className="focus-ring shell-pill rounded-full px-3 py-1 text-2xs font-medium"
                 title="New zone"
@@ -494,6 +505,8 @@ export function Sidebar() {
       </div>
 
       {showNewZone && <NewZoneDialog onClose={() => setShowNewZone(false)} />}
+      {showImportZone && <ImportZoneDialog onClose={() => setShowImportZone(false)} />}
+
       {renameTarget && (
         <RenameZoneDialog
           zoneId={renameTarget}

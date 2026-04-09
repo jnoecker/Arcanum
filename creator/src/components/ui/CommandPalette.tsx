@@ -22,6 +22,7 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
   const trapRef = useFocusTrap<HTMLDivElement>(onClose);
   const openTab = useProjectStore((s) => s.openTab);
   const setShowMudImport = useProjectStore((s) => s.setShowMudImport);
+  const setShowImportZone = useProjectStore((s) => s.setShowImportZone);
   const openGenerator = useAssetStore((s) => s.openGenerator);
   const openGallery = useAssetStore((s) => s.openGallery);
   const selectArticle = useLoreStore((s) => s.selectArticle);
@@ -39,6 +40,13 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
       title: "Import MUD Zone",
       subtitle: "Import a zone from an existing AmbonMUD checkout",
       action: () => setShowMudImport(true),
+    });
+    result.push({
+      id: "action:import-zone-yaml",
+      type: "action",
+      title: "Import Zone YAML",
+      subtitle: "Import AmbonMUD zone YAML files into the project",
+      action: () => setShowImportZone(true),
     });
     result.push({
       id: "action:render-art",
@@ -93,7 +101,7 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
     }
 
     return result;
-  }, [articles, zones, openTab, selectArticle, setShowMudImport, openGenerator, openGallery]);
+  }, [articles, zones, openTab, selectArticle, setShowMudImport, setShowImportZone, openGenerator, openGallery]);
 
   // Filter
   const filtered = useMemo(() => {

@@ -4,6 +4,7 @@ import { parseDocument } from "yaml";
 import type { WorldFile } from "@/types/world";
 import type { AppConfig } from "@/types/config";
 import type { Project } from "@/types/project";
+import { normalizeExitDirections } from "@/lib/zoneEdits";
 import {
   DEFAULT_ACHIEVEMENT_CATEGORIES,
   DEFAULT_ACHIEVEMENT_CRITERION_TYPES,
@@ -40,6 +41,7 @@ export async function loadAllZones(
         const data = doc.toJS() as WorldFile;
 
         if (data.zone && data.rooms) {
+          normalizeExitDirections(data);
           result[data.zone] = { filePath, data };
         }
       } catch (err) {
@@ -952,6 +954,7 @@ async function loadStandaloneZones(
         const data = doc.toJS() as WorldFile;
 
         if (data.zone && data.rooms) {
+          normalizeExitDirections(data);
           result[data.zone] = { filePath, data };
         }
       } catch (err) {

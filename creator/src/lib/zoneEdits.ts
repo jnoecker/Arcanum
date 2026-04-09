@@ -35,6 +35,47 @@ export const OPPOSITE: Record<string, string> = {
   d: "u",
 };
 
+/** Map long-form direction names to their abbreviated forms. */
+const DIR_ABBREV: Record<string, string> = {
+  north: "n",
+  south: "s",
+  east: "e",
+  west: "w",
+  northeast: "ne",
+  northwest: "nw",
+  southeast: "se",
+  southwest: "sw",
+  up: "u",
+  down: "d",
+};
+
+/** Normalize a direction key to its abbreviated form (n/s/e/w/etc.). */
+export function normalizeDir(dir: string): string {
+  return DIR_ABBREV[dir.toLowerCase()] ?? dir;
+}
+
+/**
+ * Normalize all exit direction keys in a WorldFile from long-form
+ * ("north", "south") to abbreviated form ("n", "s").
+ * Mutates in place and returns the same object.
+ */
+export function normalizeExitDirections(world: WorldFile): WorldFile {
+  for (const room of Object.values(world.rooms)) {
+    if (!room.exits) continue;
+    const normalized: Record<string, string | ExitValue> = {};
+    let changed = false;
+    for (const [dir, val] of Object.entries(room.exits)) {
+      const abbr = normalizeDir(dir);
+      if (abbr !== dir) changed = true;
+      normalized[abbr] = val;
+    }
+    if (changed) {
+      room.exits = normalized;
+    }
+  }
+  return world;
+}
+
 // ─── Generic entity CRUD ────────────────────────────────────────────
 
 type EntityCollection =

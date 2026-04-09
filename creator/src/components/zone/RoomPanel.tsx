@@ -9,6 +9,8 @@ import {
   addShop,
   addTrainer,
   addGatheringNode,
+  addPuzzle,
+  defaultPuzzle,
   generateEntityId,
 } from "@/lib/zoneEdits";
 import { ExitDoorEditor } from "./ExitDoorEditor";
@@ -27,7 +29,7 @@ import { useAssetStore } from "@/stores/assetStore";
 import { ZoneVibePanel } from "./ZoneVibePanel";
 import sidebarBg from "@/assets/sidebar-bg.png";
 
-export type EntityKind = "mob" | "item" | "shop" | "trainer" | "quest" | "gatheringNode" | "recipe";
+export type EntityKind = "mob" | "item" | "shop" | "trainer" | "quest" | "gatheringNode" | "recipe" | "puzzle";
 
 export interface EntitySelection {
   kind: EntityKind;
@@ -123,6 +125,10 @@ export function RoomPanel({
       }),
     [world.quests, world.mobs, zoneId, roomId],
   );
+  const puzzles = useMemo(
+    () => Object.entries(world.puzzles ?? {}).filter(([, p]) => p.roomId === roomId),
+    [world.puzzles, roomId],
+  );
 
   const handleFieldChange = useCallback(
     (field: "title" | "description" | "station", value: string) => {
@@ -193,6 +199,16 @@ export function RoomPanel({
     onWorldChange(next);
     onSelectEntity({ kind: "gatheringNode", id });
   }, [world, roomId, onWorldChange, onSelectEntity]);
+
+  const handleAddPuzzle = useCallback(
+    (type: "riddle" | "sequence") => {
+      const id = generateEntityId(world, "puzzles");
+      const next = addPuzzle(world, id, defaultPuzzle(roomId, type));
+      onWorldChange(next);
+      onSelectEntity({ kind: "puzzle", id });
+    },
+    [world, roomId, onWorldChange, onSelectEntity],
+  );
 
   return (
     <div className="relative flex min-h-0 min-w-0 w-[clamp(18rem,24vw,24rem)] flex-1 flex-col border-l border-border-default bg-bg-secondary max-[1100px]:max-h-[min(45vh,32rem)] max-[1100px]:w-full max-[1100px]:border-l-0 max-[1100px]:border-t">
@@ -526,6 +542,42 @@ export function RoomPanel({
                   <span className="block truncate font-medium text-text-primary" title={quest.name}>
                     {quest.name}
                   </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Section>
+
+      {/* Puzzles */}
+      <Section
+        title={`Puzzles (${puzzles.length})`}
+        defaultExpanded={puzzles.length > 0}
+        actions={
+          <div className="flex items-center gap-0.5">
+            <IconButton onClick={() => handleAddPuzzle("riddle")} title="Add riddle puzzle">
+              R
+            </IconButton>
+            <IconButton onClick={() => handleAddPuzzle("sequence")} title="Add sequence puzzle">
+              S
+            </IconButton>
+          </div>
+        }
+      >
+        {puzzles.length === 0 ? (
+          <p className="rounded-lg border border-dashed border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] px-3 py-2 text-center text-xs italic text-text-muted">No puzzles in this room</p>
+        ) : (
+          <ul className="flex flex-col gap-0.5">
+            {puzzles.map(([id, puzzle]) => (
+              <li key={id}>
+                <button
+                  onClick={() => onSelectEntity({ kind: "puzzle", id })}
+                  className="flex w-full min-w-0 items-baseline gap-1 rounded px-1 py-0.5 text-left text-xs transition-colors hover:bg-bg-tertiary"
+                >
+                  <span className="truncate font-medium text-text-primary" title={id}>
+                    {id}
+                  </span>
+                  <span className="truncate text-text-muted">[{puzzle.type}]</span>
                 </button>
               </li>
             ))}

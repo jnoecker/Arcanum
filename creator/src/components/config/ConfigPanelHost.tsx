@@ -33,6 +33,7 @@ import { FactionPanel } from "./panels/FactionPanel";
 import { PetsPanel } from "./panels/PetsPanel";
 import { EnchantingPanel } from "./panels/EnchantingPanel";
 import { WorldEventsPanel } from "./panels/WorldEventsPanel";
+import { WeatherEnvironmentPanel } from "./panels/WeatherEnvironmentPanel";
 import { CurrenciesPanel } from "./panels/CurrenciesPanel";
 
 import { AchievementDesigner } from "./AchievementDesigner";
@@ -140,6 +141,8 @@ function renderPanel(panelId: string, props: ConfigPanelProps): ReactNode {
       return <PetsPanel config={config} onChange={onChange} />;
     case "worldEvents":
       return <WorldEventsPanel config={config} onChange={onChange} />;
+    case "weatherEnvironment":
+      return <WeatherEnvironmentPanel config={config} onChange={onChange} />;
     case "currencies":
       return <CurrenciesPanel config={config} onChange={onChange} />;
 

@@ -218,9 +218,44 @@ export interface WorldTimeConfig {
 
 // ─── Weather ───────────────────────────────────────────────────────
 
+export interface WeatherTypeDefinition {
+  displayName: string;
+  description?: string;
+  weight: number;
+  particleHint?: string;
+  icon?: string;
+}
+
 export interface WeatherConfig {
   minTransitionMs: number;
   maxTransitionMs: number;
+  types: Record<string, WeatherTypeDefinition>;
+}
+
+// ─── Environment Themes ───────────────────────────────────────────
+
+export interface MoteColor {
+  core: string;
+  glow: string;
+}
+
+export interface SkyGradient {
+  top: string;
+  bottom: string;
+}
+
+export type TimePeriod = "DAWN" | "DAY" | "DUSK" | "NIGHT";
+
+export interface EnvironmentTheme {
+  moteColors: MoteColor[];
+  skyGradients: Partial<Record<TimePeriod, SkyGradient>>;
+  transitionColors: string[];
+  weatherParticleOverrides?: Record<string, string>;
+}
+
+export interface EnvironmentConfig {
+  defaultTheme: EnvironmentTheme;
+  zones: Record<string, Partial<EnvironmentTheme>>;
 }
 
 // ─── Seasonal Events ───────────────────────────────────────────────
@@ -784,6 +819,7 @@ export interface AppConfig {
   bank: BankConfig;
   worldTime: WorldTimeConfig;
   weather: WeatherConfig;
+  environment: EnvironmentConfig;
   worldEvents: WorldEventsConfig;
   pets: Record<string, PetDefinitionConfig>;
   prestige?: PrestigeConfig;

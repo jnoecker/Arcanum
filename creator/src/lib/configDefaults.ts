@@ -15,7 +15,7 @@
 // baseline that should generally only be *added to* per project, not
 // trimmed away.
 
-import type { AppConfig } from "@/types/config";
+import type { AppConfig, EnvironmentTheme, EnvironmentConfig } from "@/types/config";
 
 // ─── Registries with simple map shapes ─────────────────────────────
 
@@ -498,4 +498,40 @@ export const DEFAULT_EMOTE_PRESETS: AppConfig["emotePresets"] = {
     { label: "Salute", emoji: "\uD83E\uDEE1", action: "salutes." },
     { label: "Cry", emoji: "\uD83D\uDE22", action: "cries." },
   ],
+};
+
+// ─── Weather type defaults ───────────────────────────────────────
+//
+// Config-driven weather types. The server selects weather by weighted
+// random from this registry. Each type can specify a particleHint
+// for the web client's particle renderer.
+
+export const DEFAULT_WEATHER_TYPES: AppConfig["weather"]["types"] = {
+  CLEAR: { displayName: "Clear", weight: 3.0, particleHint: "", icon: "\u2600\uFE0F" },
+  RAIN: { displayName: "Rain", weight: 2.0, particleHint: "rain", icon: "\u2614" },
+  STORM: { displayName: "Storm", weight: 0.5, particleHint: "storm", icon: "\u26C8\uFE0F" },
+  FOG: { displayName: "Fog", weight: 1.0, particleHint: "fog", icon: "\uD83C\uDF2B\uFE0F" },
+  SNOW: { displayName: "Snow", weight: 0.8, particleHint: "snow", icon: "\u2744\uFE0F" },
+  WIND: { displayName: "Wind", weight: 1.0, particleHint: "wind", icon: "\uD83D\uDCA8" },
+};
+
+// ─── Environment theme defaults ──────────────────────────────────
+
+export const DEFAULT_ENVIRONMENT_THEME: EnvironmentTheme = {
+  moteColors: [
+    { core: "#c8b8e8", glow: "#a897d2" },
+  ],
+  skyGradients: {
+    DAWN: { top: "#2a1a3a", bottom: "#c88060" },
+    DAY: { top: "#4a6ea0", bottom: "#87ceeb" },
+    DUSK: { top: "#3a2040", bottom: "#c86848" },
+    NIGHT: { top: "#0a0c14", bottom: "#1a1c2e" },
+  },
+  transitionColors: ["#c8b8e8", "#a897d2", "#8caec9"],
+  weatherParticleOverrides: {},
+};
+
+export const DEFAULT_ENVIRONMENT_CONFIG: EnvironmentConfig = {
+  defaultTheme: DEFAULT_ENVIRONMENT_THEME,
+  zones: {},
 };

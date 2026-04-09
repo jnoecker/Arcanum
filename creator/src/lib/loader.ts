@@ -16,6 +16,9 @@ import {
   DEFAULT_STATUS_EFFECTS,
   DEFAULT_COMMANDS,
   DEFAULT_EMOTE_PRESETS,
+  DEFAULT_WEATHER_TYPES,
+  DEFAULT_ENVIRONMENT_CONFIG,
+  DEFAULT_ENVIRONMENT_THEME,
 } from "@/lib/configDefaults";
 
 /**
@@ -109,7 +112,8 @@ export function parseAppConfigYaml(content: string): AppConfig {
     multiclass: parseMulticlassConfig(engine.multiclass),
     bank: parseBankConfig(engine.bank),
     worldTime: parseWorldTimeConfig(engine.worldTime),
-    weather: parseWeatherConfig(engine.weather),
+    weather: (() => { const w = parseWeatherConfig(engine.weather); return { ...w, types: withDefaults(w.types, DEFAULT_WEATHER_TYPES) }; })(),
+    environment: parseEnvironmentConfig(engine.environment),
     worldEvents: parseWorldEventsConfig(engine.worldEvents),
     pets: parsePetDefinitions(engine.pets),
     guild: parseGuildConfig(engine.guildRanks),
@@ -680,7 +684,7 @@ function collectRawSections(
     "effectTypes", "targetTypes", "stackBehaviors",
     "craftingSkills", "craftingStationTypes",
     "scheduler", "friends", "debug", "classStartRooms", "emotePresets", "housing", "pets", "enchanting", "bank",
-    "worldTime", "weather", "worldEvents", "skillPoints", "multiclass",
+    "worldTime", "weather", "worldEvents", "environment", "skillPoints", "multiclass",
     "lottery", "gambling", "respec", "prestige", "dailyQuests", "autoQuests", "globalQuests",
     "guildHalls", "factions", "leaderboard", "currencies",
   ]);
@@ -765,12 +769,106 @@ function parseWorldTimeConfig(raw: unknown): import("@/types/config").WorldTimeC
 }
 
 function parseWeatherConfig(raw: unknown): import("@/types/config").WeatherConfig {
-  if (!raw || typeof raw !== "object") return { minTransitionMs: 300000, maxTransitionMs: 900000 };
+  if (!raw || typeof raw !== "object") return { minTransitionMs: 300000, maxTransitionMs: 900000, types: {} };
   const s = raw as Record<string, unknown>;
   return {
     minTransitionMs: asNumber(s.minTransitionMs, 300000),
     maxTransitionMs: asNumber(s.maxTransitionMs, 900000),
+    types: parseWeatherTypes(s.types),
   };
+}
+
+function parseWeatherTypes(raw: unknown): Record<string, import("@/types/config").WeatherTypeDefinition> {
+  if (!raw || typeof raw !== "object") return {};
+  const out: Record<string, import("@/types/config").WeatherTypeDefinition> = {};
+  for (const [id, v] of Object.entries(raw as Record<string, unknown>)) {
+    if (!v || typeof v !== "object") continue;
+    const t = v as Record<string, unknown>;
+    out[id] = {
+      displayName: asString(t.displayName, id),
+      description: typeof t.description === "string" ? t.description : undefined,
+      weight: asNumber(t.weight, 1.0),
+      particleHint: typeof t.particleHint === "string" ? t.particleHint : undefined,
+      icon: typeof t.icon === "string" ? t.icon : undefined,
+    };
+  }
+  return out;
+}
+
+function parseEnvironmentConfig(raw: unknown): import("@/types/config").EnvironmentConfig {
+  if (!raw || typeof raw !== "object") return DEFAULT_ENVIRONMENT_CONFIG;
+  const s = raw as Record<string, unknown>;
+  return {
+    defaultTheme: parseEnvironmentTheme(s.defaultTheme) ?? DEFAULT_ENVIRONMENT_THEME,
+    zones: parseEnvironmentZones(s.zones),
+  };
+}
+
+function parseEnvironmentTheme(raw: unknown): import("@/types/config").EnvironmentTheme | null {
+  if (!raw || typeof raw !== "object") return null;
+  const s = raw as Record<string, unknown>;
+  return {
+    moteColors: parseMoteColors(s.moteColors),
+    skyGradients: parseSkyGradients(s.skyGradients),
+    transitionColors: parseStringArray(s.transitionColors, []),
+    weatherParticleOverrides: asStringRecord(s.weatherParticleOverrides),
+  };
+}
+
+function parseMoteColors(raw: unknown): import("@/types/config").MoteColor[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .filter((v): v is Record<string, unknown> => !!v && typeof v === "object")
+    .map((v) => ({
+      core: typeof v.core === "string" ? v.core : "#ffffff",
+      glow: typeof v.glow === "string" ? v.glow : "#ffffff",
+    }));
+}
+
+function parseSkyGradients(raw: unknown): Partial<Record<import("@/types/config").TimePeriod, import("@/types/config").SkyGradient>> {
+  if (!raw || typeof raw !== "object") return {};
+  const s = raw as Record<string, unknown>;
+  const out: Partial<Record<import("@/types/config").TimePeriod, import("@/types/config").SkyGradient>> = {};
+  for (const period of ["DAWN", "DAY", "DUSK", "NIGHT"] as const) {
+    const v = s[period];
+    if (v && typeof v === "object") {
+      const g = v as Record<string, unknown>;
+      out[period] = {
+        top: typeof g.top === "string" ? g.top : "#000000",
+        bottom: typeof g.bottom === "string" ? g.bottom : "#000000",
+      };
+    }
+  }
+  return out;
+}
+
+function asStringRecord(raw: unknown): Record<string, string> {
+  if (!raw || typeof raw !== "object") return {};
+  const out: Record<string, string> = {};
+  for (const [k, v] of Object.entries(raw as Record<string, unknown>)) {
+    if (typeof v === "string") out[k] = v;
+  }
+  return out;
+}
+
+function parseEnvironmentZones(raw: unknown): Record<string, Partial<import("@/types/config").EnvironmentTheme>> {
+  if (!raw || typeof raw !== "object") return {};
+  const out: Record<string, Partial<import("@/types/config").EnvironmentTheme>> = {};
+  for (const [zoneId, v] of Object.entries(raw as Record<string, unknown>)) {
+    if (!v || typeof v !== "object") continue;
+    const s = v as Record<string, unknown>;
+    const theme: Partial<import("@/types/config").EnvironmentTheme> = {};
+    const mc = parseMoteColors(s.moteColors);
+    if (mc.length > 0) theme.moteColors = mc;
+    const sg = parseSkyGradients(s.skyGradients);
+    if (Object.keys(sg).length > 0) theme.skyGradients = sg;
+    const tc = parseStringArray(s.transitionColors, []);
+    if (tc.length > 0) theme.transitionColors = tc;
+    const wpo = asStringRecord(s.weatherParticleOverrides);
+    if (Object.keys(wpo).length > 0) theme.weatherParticleOverrides = wpo;
+    if (Object.keys(theme).length > 0) out[zoneId] = theme;
+  }
+  return out;
 }
 
 function parseWorldEventsConfig(raw: unknown): import("@/types/config").WorldEventsConfig {
@@ -1039,7 +1137,8 @@ async function loadSplitConfig(projectDir: string): Promise<AppConfig | null> {
       housing: parseHousingConfig(worldRaw.housing),
       bank: parseBankConfig(worldRaw.bank),
       worldTime: parseWorldTimeConfig(worldRaw.worldTime),
-      weather: parseWeatherConfig(worldRaw.weather),
+      weather: (() => { const w = parseWeatherConfig(worldRaw.weather); return { ...w, types: withDefaults(w.types, DEFAULT_WEATHER_TYPES) }; })(),
+      environment: parseEnvironmentConfig(worldRaw.environment),
       worldEvents: parseWorldEventsConfig(worldRaw.worldEvents),
       pets: parsePetDefinitions(petsRaw),
       guild: parseGuildConfig(worldRaw.guildRanks),

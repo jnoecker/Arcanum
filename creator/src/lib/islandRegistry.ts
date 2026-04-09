@@ -109,17 +109,18 @@ const ORRERY_HOTSPOTS: PanelHotspot[] = [
 
 const LIVING_WORLD_PANELS = [
   "currencies", "guilds", "guildHalls", "worldEvents",
-  "quests", "achievementDefs", "emotes",
+  "quests", "achievementDefs", "emotes", "weatherEnvironment",
 ];
 
 const LIVING_WORLD_HOTSPOTS: PanelHotspot[] = [
-  { panelId: "currencies",       x:  1, y: 18, w: 22, h: 33 },
-  { panelId: "guilds",           x: 23, y:  4, w: 19, h: 34 },
-  { panelId: "guildHalls",       x: 47, y:  3, w: 37, h: 39 },
-  { panelId: "worldEvents",      x: 78, y: 24, w: 22, h: 30 },
-  { panelId: "quests",           x: 67, y: 54, w: 33, h: 35 },
-  { panelId: "achievementDefs",  x: 33, y: 65, w: 34, h: 24 },
-  { panelId: "emotes",           x:  1, y: 51, w: 29, h: 20 },
+  { panelId: "currencies",            x:  1, y: 18, w: 22, h: 33 },
+  { panelId: "guilds",                x: 23, y:  4, w: 19, h: 34 },
+  { panelId: "guildHalls",            x: 47, y:  3, w: 37, h: 39 },
+  { panelId: "worldEvents",           x: 27, y: 46, w: 47, h: 15 },
+  { panelId: "weatherEnvironment",    x: 78, y: 24, w: 22, h: 30 },
+  { panelId: "quests",                x: 67, y: 54, w: 33, h: 35 },
+  { panelId: "achievementDefs",       x: 33, y: 65, w: 34, h: 24 },
+  { panelId: "emotes",                x:  1, y: 51, w: 29, h: 20 },
 ];
 
 // ─── Arcanum ────────────────────────────────────────────────────────

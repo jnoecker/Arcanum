@@ -467,6 +467,44 @@ export function validateConfig(config: AppConfig): ValidationIssue[] {
     issues.push({ severity: "warning", entity: "weather", message: "Min transition time exceeds max transition time" });
   }
 
+  // ─── Weather Types ──────────────────────────────────────────────
+  for (const [id, wt] of Object.entries(config.weather.types)) {
+    if (!wt.displayName?.trim()) {
+      issues.push({ severity: "error", entity: `weatherType:${id}`, message: "Display name is required" });
+    }
+    if (wt.weight <= 0) {
+      issues.push({ severity: "warning", entity: `weatherType:${id}`, message: "Weight should be greater than 0" });
+    }
+  }
+
+  // ─── Environment Themes ─────────────────────────────────────────
+  const hexRe = /^#[0-9a-fA-F]{6}$/;
+  if (config.environment) {
+    const dt = config.environment.defaultTheme;
+    for (let i = 0; i < dt.moteColors.length; i++) {
+      const mc = dt.moteColors[i]!;
+      if (!hexRe.test(mc.core)) {
+        issues.push({ severity: "warning", entity: `environment:defaultTheme:moteColor[${i}]`, message: `Invalid core color: ${mc.core}` });
+      }
+      if (!hexRe.test(mc.glow)) {
+        issues.push({ severity: "warning", entity: `environment:defaultTheme:moteColor[${i}]`, message: `Invalid glow color: ${mc.glow}` });
+      }
+    }
+    for (const [period, sg] of Object.entries(dt.skyGradients)) {
+      if (sg && !hexRe.test(sg.top)) {
+        issues.push({ severity: "warning", entity: `environment:defaultTheme:sky:${period}`, message: `Invalid top color: ${sg.top}` });
+      }
+      if (sg && !hexRe.test(sg.bottom)) {
+        issues.push({ severity: "warning", entity: `environment:defaultTheme:sky:${period}`, message: `Invalid bottom color: ${sg.bottom}` });
+      }
+    }
+    for (let i = 0; i < dt.transitionColors.length; i++) {
+      if (!hexRe.test(dt.transitionColors[i]!)) {
+        issues.push({ severity: "warning", entity: `environment:defaultTheme:transition[${i}]`, message: `Invalid color: ${dt.transitionColors[i]}` });
+      }
+    }
+  }
+
   // ─── World Events ───────────────────────────────────────────
   for (const [id, evt] of Object.entries(config.worldEvents.definitions)) {
     if (!evt.displayName?.trim()) {

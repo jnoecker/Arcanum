@@ -391,7 +391,16 @@ export function buildMonolithicConfigObject(
   engine.worldTime = c.worldTime;
 
   // Weather
-  engine.weather = c.weather;
+  engine.weather = {
+    minTransitionMs: c.weather.minTransitionMs,
+    maxTransitionMs: c.weather.maxTransitionMs,
+    ...(Object.keys(c.weather.types).length > 0 ? { types: c.weather.types } : {}),
+  };
+
+  // Environment
+  if (c.environment && (c.environment.defaultTheme.moteColors.length > 0 || Object.keys(c.environment.zones).length > 0)) {
+    engine.environment = c.environment;
+  }
 
   // World Events
   if (Object.keys(c.worldEvents.definitions).length > 0) {

@@ -12,6 +12,7 @@ import type {
   GatheringNodeFile,
   RecipeFile,
   DungeonFile,
+  PuzzleFile,
 } from "@/types/world";
 
 // ─── Pure helpers for WorldFile mutation (immutable) ─────────────────
@@ -36,7 +37,15 @@ export const OPPOSITE: Record<string, string> = {
 
 // ─── Generic entity CRUD ────────────────────────────────────────────
 
-type EntityCollection = "mobs" | "items" | "shops" | "trainers" | "quests" | "gatheringNodes" | "recipes";
+type EntityCollection =
+  | "mobs"
+  | "items"
+  | "shops"
+  | "trainers"
+  | "quests"
+  | "gatheringNodes"
+  | "recipes"
+  | "puzzles";
 
 const ENTITY_LABELS: Record<EntityCollection, string> = {
   mobs: "Mob",
@@ -46,6 +55,7 @@ const ENTITY_LABELS: Record<EntityCollection, string> = {
   quests: "Quest",
   gatheringNodes: "Gathering node",
   recipes: "Recipe",
+  puzzles: "Puzzle",
 };
 
 function addEntity<T>(
@@ -106,6 +116,12 @@ function removeEntitiesInRoom(world: WorldFile, roomId: string): void {
     if (!map) continue;
     for (const [id, entity] of Object.entries(map)) {
       if (entity.room === roomId) delete map[id];
+    }
+  }
+  // Puzzles live at zone level but reference a room via puzzle.roomId.
+  if (world.puzzles) {
+    for (const [id, puzzle] of Object.entries(world.puzzles)) {
+      if (puzzle.roomId === roomId) delete world.puzzles[id];
     }
   }
 }
@@ -625,6 +641,39 @@ export function updateRecipe(world: WorldFile, recipeId: string, patch: Partial<
 
 export function deleteRecipe(world: WorldFile, recipeId: string): WorldFile {
   return removeEntity(world, "recipes", recipeId);
+}
+
+// ─── Puzzle operations ─────────────────────────────────────────────
+
+export function addPuzzle(world: WorldFile, puzzleId: string, puzzle: PuzzleFile): WorldFile {
+  return addEntity(world, "puzzles", puzzleId, puzzle, puzzle.roomId.includes(":") ? undefined : puzzle.roomId);
+}
+
+export function updatePuzzle(world: WorldFile, puzzleId: string, patch: Partial<PuzzleFile>): WorldFile {
+  return updateEntity(world, "puzzles", puzzleId, patch);
+}
+
+export function deletePuzzle(world: WorldFile, puzzleId: string): WorldFile {
+  return removeEntity(world, "puzzles", puzzleId);
+}
+
+/** Build a sensible blank puzzle for the given room and type. */
+export function defaultPuzzle(roomId: string, type: "riddle" | "sequence"): PuzzleFile {
+  if (type === "riddle") {
+    return {
+      type: "riddle",
+      roomId,
+      question: "",
+      answer: "",
+      reward: { type: "give_gold", gold: 10 },
+    };
+  }
+  return {
+    type: "sequence",
+    roomId,
+    steps: [],
+    reward: { type: "give_gold", gold: 10 },
+  };
 }
 
 // ─── ID generation helpers ──────────────────────────────────────────

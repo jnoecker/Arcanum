@@ -34,6 +34,10 @@ import {
   reorderFeatures,
   defaultFeature,
   generateFeatureId,
+  addPuzzle,
+  updatePuzzle,
+  deletePuzzle,
+  defaultPuzzle,
 } from "../zoneEdits";
 import type { WorldFile } from "@/types/world";
 
@@ -565,5 +569,63 @@ describe("generateFeatureId", () => {
     world = addFeature(world, "room1", first, defaultFeature("LEVER", first));
     const second = generateFeatureId(world, "room1", "LEVER");
     expect(second).not.toBe(first);
+  });
+});
+
+// ─── Puzzles ────────────────────────────────────────────────────────
+
+describe("addPuzzle", () => {
+  it("adds a riddle puzzle to an empty puzzles map", () => {
+    const world = makeWorld();
+    const next = addPuzzle(world, "riddle1", defaultPuzzle("room1", "riddle"));
+    expect(next.puzzles?.riddle1?.type).toBe("riddle");
+    expect(next.puzzles?.riddle1?.roomId).toBe("room1");
+  });
+
+  it("adds a sequence puzzle with empty steps", () => {
+    const world = makeWorld();
+    const next = addPuzzle(world, "seq1", defaultPuzzle("room1", "sequence"));
+    expect(next.puzzles?.seq1?.type).toBe("sequence");
+    expect(next.puzzles?.seq1?.steps).toEqual([]);
+  });
+
+  it("throws when the puzzle's room does not exist", () => {
+    const world = makeWorld();
+    expect(() => addPuzzle(world, "oops", defaultPuzzle("missing_room", "riddle"))).toThrow(
+      "does not exist",
+    );
+  });
+
+  it("throws on duplicate puzzle IDs", () => {
+    let world = makeWorld();
+    world = addPuzzle(world, "p1", defaultPuzzle("room1", "riddle"));
+    expect(() => addPuzzle(world, "p1", defaultPuzzle("room1", "riddle"))).toThrow("already exists");
+  });
+});
+
+describe("updatePuzzle", () => {
+  it("patches puzzle fields", () => {
+    let world = makeWorld();
+    world = addPuzzle(world, "p1", defaultPuzzle("room1", "riddle"));
+    world = updatePuzzle(world, "p1", { question: "What has keys but cannot open locks?" });
+    expect(world.puzzles?.p1?.question).toBe("What has keys but cannot open locks?");
+  });
+});
+
+describe("deletePuzzle", () => {
+  it("removes a puzzle by ID", () => {
+    let world = makeWorld();
+    world = addPuzzle(world, "p1", defaultPuzzle("room1", "riddle"));
+    world = deletePuzzle(world, "p1");
+    expect(world.puzzles?.p1).toBeUndefined();
+  });
+});
+
+describe("deleteRoom cascades to puzzles", () => {
+  it("removes puzzles whose roomId matches the deleted room", () => {
+    let world = makeWorld();
+    world = addPuzzle(world, "p1", defaultPuzzle("room2", "riddle"));
+    world = deleteRoom(world, "room2");
+    expect(world.puzzles?.p1).toBeUndefined();
   });
 });

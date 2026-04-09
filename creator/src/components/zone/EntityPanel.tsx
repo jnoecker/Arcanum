@@ -8,6 +8,7 @@ import { TrainerEditor } from "@/components/editors/TrainerEditor";
 import { QuestEditor } from "@/components/editors/QuestEditor";
 import { GatheringNodeEditor } from "@/components/editors/GatheringNodeEditor";
 import { RecipeEditor } from "@/components/editors/RecipeEditor";
+import { PuzzleEditor } from "@/components/editors/PuzzleEditor";
 import { YamlPreview } from "@/components/ui/YamlPreview";
 import sidebarBg from "@/assets/sidebar-bg.png";
 
@@ -19,6 +20,7 @@ const COLLECTION_MAP: Record<string, string> = {
   quest: "quests",
   gatheringNode: "gatheringNodes",
   recipe: "recipes",
+  puzzle: "puzzles",
 };
 
 interface EntityPanelProps {
@@ -148,6 +150,14 @@ export function EntityPanel({
           onWorldChange={onWorldChange}
           onDelete={handleDelete}
           zoneId={zoneId}
+        />
+      )}
+      {selection.kind === "puzzle" && (
+        <PuzzleEditor
+          puzzleId={selection.id}
+          world={world}
+          onWorldChange={onWorldChange}
+          onDelete={handleDelete}
         />
       )}
       </>

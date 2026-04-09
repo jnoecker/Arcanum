@@ -1,8 +1,9 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLoreStore, selectMaps, selectZonePlans } from "@/stores/loreStore";
 import { useProjectStore } from "@/stores/projectStore";
 import { useZoneStore } from "@/stores/zoneStore";
 import { useImageSrc } from "@/lib/useImageSrc";
+import { cropImageDataUrl } from "@/lib/cropImageDataUrl";
 import {
   generateZonePlans,
   suggestionsToZonePlans,
@@ -10,6 +11,12 @@ import {
 } from "@/lib/loreZonePlanning";
 import { createZoneFromPlan } from "@/lib/createZoneFromPlan";
 import type { ZonePlan } from "@/types/lore";
+import { regionToPercentRect } from "@/lib/zoneRegionGeometry";
+import {
+  regionContainsPoint,
+  translateRegionToAbsolute,
+  translateRegionToLocal,
+} from "@/lib/zoneRegionGeometry";
 import {
   ActionButton,
   FieldRow,
@@ -18,6 +25,74 @@ import {
   Spinner,
 } from "@/components/ui/FormWidgets";
 import { ZonePlanGraph } from "./ZonePlanGraph";
+
+const MAX_TARGET_ZONE_COUNT = 70;
+
+function ZoneRegionPreview({
+  plans,
+  mapWidth,
+  mapHeight,
+  selectedPlanId,
+  hoveredPlanId,
+  onSelect,
+  onHover,
+}: {
+  plans: ZonePlan[];
+  mapWidth: number;
+  mapHeight: number;
+  selectedPlanId: string | null;
+  hoveredPlanId: string | null;
+  onSelect: (id: string) => void;
+  onHover: (id: string | null) => void;
+}) {
+  const visiblePlans = plans.filter((plan) => plan.region);
+
+  if (visiblePlans.length === 0) return null;
+
+  return (
+    <div className="pointer-events-none absolute inset-0">
+      {visiblePlans.map((plan) => {
+        const region = plan.region;
+        if (!region) return null;
+        const rect = regionToPercentRect(region, mapWidth, mapHeight);
+        const active = plan.id === selectedPlanId || plan.id === hoveredPlanId;
+
+        return (
+          <button
+            key={plan.id}
+            type="button"
+            className="pointer-events-auto absolute overflow-hidden rounded-md border text-left transition"
+            style={{
+              left: `${rect.left}%`,
+              top: `${rect.top}%`,
+              width: `${rect.width}%`,
+              height: `${rect.height}%`,
+              borderColor: active
+                ? "rgba(242, 208, 135, 0.95)"
+                : "rgba(216, 181, 106, 0.7)",
+              background: active
+                ? "linear-gradient(180deg, rgba(232, 189, 98, 0.22), rgba(150, 102, 35, 0.16))"
+                : "linear-gradient(180deg, rgba(184, 130, 50, 0.16), rgba(84, 53, 14, 0.12))",
+              boxShadow: active
+                ? "0 0 0 1px rgba(242, 208, 135, 0.18), inset 0 0 0 1px rgba(255,255,255,0.08)"
+                : "inset 0 0 0 1px rgba(255,255,255,0.04)",
+            }}
+            title={plan.name}
+            onClick={() => onSelect(plan.id)}
+            onMouseEnter={() => onHover(plan.id)}
+            onMouseLeave={() => onHover(null)}
+          >
+            <span
+              className="absolute left-1.5 top-1.5 max-w-[calc(100%-0.75rem)] truncate rounded bg-black/70 px-1.5 py-0.5 font-display text-[10px] tracking-[0.12em] text-warm-pale"
+            >
+              {plan.name}
+            </span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
 
 // ─── Generation controls ────────────────────────────────────────────
 
@@ -65,10 +140,10 @@ function GenerationControls({
             value={targetCount}
             onCommit={(v) => {
               if (v == null) return;
-              setTargetCount(Math.max(1, Math.min(20, Math.round(v))));
+              setTargetCount(Math.max(1, Math.min(MAX_TARGET_ZONE_COUNT, Math.round(v))));
             }}
             min={1}
-            max={20}
+            max={MAX_TARGET_ZONE_COUNT}
           />
         </FieldRow>
         <FieldRow label="Tone / scope hint (optional)">
@@ -79,6 +154,10 @@ function GenerationControls({
           />
         </FieldRow>
       </div>
+      <p className="mt-2 text-2xs text-text-muted">
+        Larger counts are meant for broad world slices. For about 30+ zones,
+        think high-level regions now, then plan each region in more detail later.
+      </p>
       <div className="mt-3 flex flex-col gap-1.5">
         <label className="flex cursor-pointer items-center gap-2 text-xs text-text-secondary">
           <input
@@ -250,10 +329,14 @@ function ZonePlanEditor({
   plan,
   allPlans,
   onClose,
+  onPlanSubregions,
+  isScopeTarget,
 }: {
   plan: ZonePlan;
   allPlans: ZonePlan[];
   onClose: () => void;
+  onPlanSubregions: (id: string) => void;
+  isScopeTarget: boolean;
 }) {
   const updateZonePlan = useLoreStore((s) => s.updateZonePlan);
   const deleteZonePlan = useLoreStore((s) => s.deleteZonePlan);
@@ -270,6 +353,7 @@ function ZonePlanEditor({
 
   const otherPlans = allPlans.filter((p) => p.id !== plan.id);
   const borders = new Set(plan.borders ?? []);
+  const childCount = allPlans.filter((p) => p.parentId === plan.id).length;
 
   const handleCreateZone = async () => {
     if (!project) return;
@@ -384,9 +468,23 @@ function ZonePlanEditor({
       </div>
 
       {plan.region && (
-        <div className="rounded-lg border border-white/6 bg-black/15 p-2 text-2xs text-text-muted">
-          Region: {Math.round(plan.region.x)},{Math.round(plan.region.y)} ·{" "}
-          {Math.round(plan.region.w)}×{Math.round(plan.region.h)}px
+        <div className="flex flex-col gap-2 rounded-lg border border-white/6 bg-black/15 p-2 text-2xs text-text-muted">
+          <div>
+            Region: {Math.round(plan.region.x)},{Math.round(plan.region.y)} ·{" "}
+            {Math.round(plan.region.w)}×{Math.round(plan.region.h)}px
+          </div>
+          <div className="flex items-center justify-between gap-2">
+            <span>
+              Subregions: {childCount}
+            </span>
+            <ActionButton
+              onClick={() => onPlanSubregions(plan.id)}
+              variant={isScopeTarget ? "secondary" : "ghost"}
+              size="sm"
+            >
+              {isScopeTarget ? "Planning Here" : "Plan Subregions"}
+            </ActionButton>
+          </div>
         </div>
       )}
 
@@ -512,34 +610,175 @@ export function WorldPlannerPanel() {
   const [dismissed, setDismissed] = useState<Set<string>>(new Set());
   const [accepted, setAccepted] = useState<Set<string>>(new Set());
 
+  const [planningParentId, setPlanningParentId] = useState<string | null>(null);
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
+  const [hoveredPlanId, setHoveredPlanId] = useState<string | null>(null);
+  const scopePlan = useMemo(
+    () => plans.find((p) => p.id === planningParentId) ?? null,
+    [plans, planningParentId],
+  );
+  const scopeRegion = scopePlan?.region;
+
+  const [showAllMaps, setShowAllMaps] = useState(false);
+  const mapPlans = useMemo(
+    () =>
+      plans.filter((p) => !sourceMapId || !p.mapId || p.mapId === sourceMapId),
+    [plans, sourceMapId],
+  );
+  const visiblePlans = useMemo(
+    () => {
+      const pool = showAllMaps ? plans : mapPlans;
+      if (planningParentId) {
+        return pool.filter((p) => p.parentId === planningParentId);
+      }
+      return pool.filter((p) => !p.parentId);
+    },
+    [plans, mapPlans, planningParentId, showAllMaps],
+  );
   const selectedPlan = useMemo(
-    () => plans.find((p) => p.id === selectedPlanId) ?? null,
-    [plans, selectedPlanId],
+    () => visiblePlans.find((p) => p.id === selectedPlanId) ?? null,
+    [visiblePlans, selectedPlanId],
+  );
+  const previewPlans = useMemo(() => {
+    if (planningParentId && scopeRegion) {
+      return visiblePlans
+        .filter((plan) => plan.region)
+        .map((plan) => ({
+          ...plan,
+          region: plan.region ? translateRegionToLocal(plan.region, scopeRegion) : undefined,
+        }));
+    }
+    return plans.filter((plan) => plan.mapId === sourceMapId && !plan.parentId);
+  }, [planningParentId, plans, scopeRegion, sourceMapId, visiblePlans]);
+
+  const [planningImage, setPlanningImage] = useState<string | null>(null);
+  const [planningImageLoading, setPlanningImageLoading] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function preparePlanningImage() {
+      if (!mapImage) {
+        setPlanningImage(null);
+        setPlanningImageLoading(false);
+        return;
+      }
+
+      if (!scopeRegion) {
+        setPlanningImage(mapImage);
+        setPlanningImageLoading(false);
+        return;
+      }
+
+      setPlanningImageLoading(true);
+      try {
+        const cropped = await cropImageDataUrl(mapImage, scopeRegion);
+        if (!cancelled) {
+          setPlanningImage(cropped.dataUrl);
+        }
+      } catch (err) {
+        console.error("Failed to crop scope image:", err);
+        if (!cancelled) setPlanningImage(mapImage);
+      } finally {
+        if (!cancelled) setPlanningImageLoading(false);
+      }
+    }
+
+    preparePlanningImage();
+    return () => {
+      cancelled = true;
+    };
+  }, [mapImage, scopeRegion]);
+
+  const planningMap = useMemo(() => {
+    if (!sourceMap) return null;
+    if (!scopeRegion || !scopePlan) return sourceMap;
+
+    const scopedPins = sourceMap.pins
+      .filter((pin) => regionContainsPoint(scopeRegion, pin.position[1], pin.position[0]))
+      .map((pin) => ({
+        ...pin,
+        position: [
+          pin.position[0] - scopeRegion.y,
+          pin.position[1] - scopeRegion.x,
+        ] as [number, number],
+      }));
+
+    return {
+      ...sourceMap,
+      title: `${sourceMap.title} — ${scopePlan.name}`,
+      width: Math.round(scopeRegion.w),
+      height: Math.round(scopeRegion.h),
+      pins: scopedPins,
+    };
+  }, [scopePlan, scopeRegion, sourceMap]);
+
+  useEffect(() => {
+    if (planningParentId && (!scopePlan || scopePlan.mapId !== sourceMapId)) {
+      setPlanningParentId(null);
+    }
+  }, [planningParentId, scopePlan, sourceMapId]);
+
+  useEffect(() => {
+    if (selectedPlanId && !visiblePlans.some((plan) => plan.id === selectedPlanId)) {
+      setSelectedPlanId(null);
+    }
+  }, [selectedPlanId, visiblePlans]);
+
+  const resetStagedSuggestions = useCallback(() => {
+    setSuggestions([]);
+    setWarnings([]);
+    setDismissed(new Set());
+    setAccepted(new Set());
+  }, []);
+
+  const enterScope = useCallback(
+    (planId: string) => {
+      const plan = plans.find((entry) => entry.id === planId);
+      if (!plan?.region) return;
+      setPlanningParentId(planId);
+      setSelectedPlanId(null);
+      setHoveredPlanId(null);
+      resetStagedSuggestions();
+    },
+    [plans, resetStagedSuggestions],
   );
 
-  // Filter committed plans by source map for the graph view
-  const [showAllMaps, setShowAllMaps] = useState(false);
-  const visiblePlans = useMemo(
-    () =>
-      showAllMaps
-        ? plans
-        : plans.filter((p) => !p.mapId || p.mapId === sourceMapId),
-    [plans, showAllMaps, sourceMapId],
+  const exitScope = useCallback(() => {
+    setPlanningParentId(null);
+    setSelectedPlanId(null);
+    setHoveredPlanId(null);
+    resetStagedSuggestions();
+  }, [resetStagedSuggestions]);
+
+  const commitSuggestions = useCallback(
+    (batch: ZonePlanSuggestion[]) => {
+      if (!sourceMap) return [];
+      return suggestionsToZonePlans(batch, sourceMap.id).map((plan) => ({
+        ...plan,
+        parentId: planningParentId ?? undefined,
+        region: scopeRegion && plan.region
+          ? translateRegionToAbsolute(plan.region, scopeRegion)
+          : plan.region,
+      }));
+    },
+    [planningParentId, scopeRegion, sourceMap],
   );
 
   const handleGenerate = useCallback(async () => {
-    if (!sourceMap || !mapImage || !lore) return;
+    if (!planningMap || !planningImage || !lore) return;
     setLoading(true);
     setError(null);
     try {
-      const result = await generateZonePlans(sourceMap, mapImage, lore, {
+      const result = await generateZonePlans(planningMap, planningImage, lore, {
         targetCount,
         toneHint,
         useLoreContext,
         useGridOverlay,
         twoPass,
         selfCheck,
+        focusRegionName: scopePlan?.name,
+        focusRegionBlurb: scopePlan?.blurb,
       });
       setSuggestions(result.suggestions);
       setWarnings(result.warnings);
@@ -553,23 +792,30 @@ export function WorldPlannerPanel() {
     } finally {
       setLoading(false);
     }
-  }, [sourceMap, mapImage, lore, targetCount, toneHint, useLoreContext]);
+  }, [
+    planningMap,
+    planningImage,
+    lore,
+    targetCount,
+    toneHint,
+    useLoreContext,
+    useGridOverlay,
+    twoPass,
+    selfCheck,
+    scopePlan,
+  ]);
 
   const handleAccept = useCallback(
     (tempId: string) => {
-      const s = suggestions.find((x) => x.tempId === tempId);
-      if (!s || !sourceMap) return;
-      // Convert just this one — borderNames will only resolve to other already-committed
-      // suggestions in this batch via name lookup, which we don't track here.
-      // For per-item accept we drop borders; bulk accept-all preserves them.
-      const [committed] = suggestionsToZonePlans([s], sourceMap.id);
+      const suggestion = suggestions.find((x) => x.tempId === tempId);
+      if (!suggestion) return;
+      const [committed] = commitSuggestions([suggestion]);
       if (committed) {
-        // Strip borders since we don't have ids for the rest of the batch yet.
         addZonePlans([{ ...committed, borders: undefined }]);
       }
       setAccepted((prev) => new Set(prev).add(tempId));
     },
-    [suggestions, sourceMap, addZonePlans],
+    [suggestions, commitSuggestions, addZonePlans],
   );
 
   const handleDismiss = useCallback((tempId: string) => {
@@ -577,12 +823,11 @@ export function WorldPlannerPanel() {
   }, []);
 
   const handleAcceptAll = useCallback(() => {
-    if (!sourceMap) return;
     const remaining = suggestions.filter(
       (s) => !dismissed.has(s.tempId) && !accepted.has(s.tempId),
     );
     if (remaining.length === 0) return;
-    const committed = suggestionsToZonePlans(remaining, sourceMap.id);
+    const committed = commitSuggestions(remaining);
     addZonePlans(committed);
     setAccepted(
       new Set(
@@ -591,7 +836,7 @@ export function WorldPlannerPanel() {
           .map((s) => s.tempId),
       ),
     );
-  }, [suggestions, dismissed, accepted, sourceMap, addZonePlans]);
+  }, [suggestions, dismissed, accepted, commitSuggestions, addZonePlans]);
 
   if (!lore) return null;
 
@@ -619,14 +864,62 @@ export function WorldPlannerPanel() {
         )}
       </div>
 
+      {sourceMap && (
+        <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-white/8 bg-black/12 px-4 py-3">
+          <span className="text-2xs uppercase tracking-[0.18em] text-text-muted">
+            Planning Scope
+          </span>
+          {scopePlan ? (
+            <>
+              <span className="font-display text-sm text-text-primary">
+                {scopePlan.name}
+              </span>
+              <span className="text-2xs text-text-muted">
+                Subdivide this region into smaller zones.
+              </span>
+              <ActionButton onClick={exitScope} variant="ghost" size="sm">
+                Back to Whole Map
+              </ActionButton>
+            </>
+          ) : (
+            <>
+              <span className="font-display text-sm text-text-primary">
+                Whole Map
+              </span>
+              <span className="text-2xs text-text-muted">
+                Start broad, then click a zone’s "Plan Subregions" action to break it down further.
+              </span>
+            </>
+          )}
+        </div>
+      )}
+
       {/* Map preview */}
-      {sourceMap && mapImage && (
-        <div className="overflow-hidden rounded-xl border border-white/8 bg-black/30">
-          <img
-            src={mapImage}
-            alt={sourceMap.title}
-            className="block max-h-72 w-full object-contain"
-          />
+      {sourceMap && planningImage && (
+        <div className="overflow-hidden rounded-xl border border-white/8 bg-black/30 p-3">
+          <div className="flex justify-center">
+            <div className="relative">
+              <img
+                src={planningImage}
+                alt={scopePlan ? `${sourceMap.title} — ${scopePlan.name}` : sourceMap.title}
+                className="block max-h-72 max-w-full rounded-lg"
+              />
+              <ZoneRegionPreview
+                plans={previewPlans}
+                mapWidth={planningMap?.width ?? sourceMap.width}
+                mapHeight={planningMap?.height ?? sourceMap.height}
+                selectedPlanId={selectedPlanId}
+                hoveredPlanId={hoveredPlanId}
+                onSelect={setSelectedPlanId}
+                onHover={setHoveredPlanId}
+              />
+            </div>
+          </div>
+          {planningImageLoading && (
+            <p className="mt-2 text-center text-2xs text-text-muted">
+              Preparing scoped map preview...
+            </p>
+          )}
         </div>
       )}
 
@@ -646,7 +939,7 @@ export function WorldPlannerPanel() {
         setSelfCheck={setSelfCheck}
         onGenerate={handleGenerate}
         loading={loading}
-        disabled={!sourceMap || !mapImage}
+        disabled={!planningMap || !planningImage || planningImageLoading}
       />
 
       {error && (
@@ -701,22 +994,27 @@ export function WorldPlannerPanel() {
         <ZonePlanGraph
           plans={visiblePlans}
           selectedId={selectedPlanId}
+          hoveredId={hoveredPlanId}
           onSelect={setSelectedPlanId}
+          onHover={setHoveredPlanId}
         />
         <div className="rounded-2xl border border-white/8 bg-black/12 p-4">
           {selectedPlan ? (
             <ZonePlanEditor
               plan={selectedPlan}
-              allPlans={visiblePlans}
+              allPlans={plans}
               onClose={() => setSelectedPlanId(null)}
+              onPlanSubregions={enterScope}
+              isScopeTarget={planningParentId === selectedPlan.id}
             />
           ) : (
             <div className="flex flex-col gap-2 text-xs text-text-muted">
-              <p>Click a zone in the graph to edit it.</p>
               <p>
-                Generated zones link back to their source map via the region
-                bounding box. You can later attach an actual zone YAML file once
-                you start building it.
+                Click a zone in the graph to edit it.
+              </p>
+              <p>
+                Plan the whole world first, then pick a broad zone and use
+                "Plan Subregions" to break that slice down further.
               </p>
             </div>
           )}

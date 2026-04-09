@@ -23,12 +23,14 @@ interface ZoneNodeData {
   label: string;
   blurb: string;
   selected: boolean;
+  hovered: boolean;
   [key: string]: unknown;
 }
 
 function ZonePlanNode({ data }: NodeProps) {
   const d = data as ZoneNodeData;
   const accent = "var(--color-template-location)";
+  const active = d.selected || d.hovered;
   return (
     <>
       <Handle
@@ -39,13 +41,18 @@ function ZonePlanNode({ data }: NodeProps) {
       <div
         className="flex flex-col gap-1 rounded-xl border px-3 py-2 shadow-md"
         style={{
-          borderColor: d.selected
+          borderColor: active
             ? `color-mix(in srgb, ${accent} 70%, transparent)`
             : `color-mix(in srgb, ${accent} 31%, transparent)`,
-          background: `linear-gradient(135deg, color-mix(in srgb, ${accent} 14%, transparent), color-mix(in srgb, ${accent} 6%, transparent))`,
+          background: active
+            ? `linear-gradient(135deg, color-mix(in srgb, ${accent} 24%, transparent), color-mix(in srgb, ${accent} 10%, transparent))`
+            : `linear-gradient(135deg, color-mix(in srgb, ${accent} 14%, transparent), color-mix(in srgb, ${accent} 6%, transparent))`,
           minWidth: NODE_WIDTH,
           maxWidth: NODE_WIDTH,
           backdropFilter: "blur(8px)",
+          boxShadow: active
+            ? "0 0 0 1px rgba(255, 215, 140, 0.2), 0 12px 30px rgba(0, 0, 0, 0.28)"
+            : undefined,
         }}
       >
         <span className="truncate text-sm font-medium text-text-primary">
@@ -73,6 +80,7 @@ const nodeTypes: NodeTypes = {
 function buildGraph(
   plans: ZonePlan[],
   selectedId: string | null,
+  hoveredId: string | null,
 ): { nodes: Node[]; edges: Edge[] } {
   if (plans.length === 0) return { nodes: [], edges: [] };
 
@@ -83,6 +91,7 @@ function buildGraph(
       label: p.name,
       blurb: p.blurb,
       selected: p.id === selectedId,
+      hovered: p.id === hoveredId,
     },
     position: { x: 0, y: 0 },
   }));
@@ -134,15 +143,19 @@ function buildGraph(
 export function ZonePlanGraph({
   plans,
   selectedId,
+  hoveredId,
   onSelect,
+  onHover,
 }: {
   plans: ZonePlan[];
   selectedId: string | null;
+  hoveredId: string | null;
   onSelect: (id: string | null) => void;
+  onHover: (id: string | null) => void;
 }) {
   const { nodes, edges } = useMemo(
-    () => buildGraph(plans, selectedId),
-    [plans, selectedId],
+    () => buildGraph(plans, selectedId, hoveredId),
+    [plans, selectedId, hoveredId],
   );
 
   if (plans.length === 0) {
@@ -165,6 +178,8 @@ export function ZonePlanGraph({
           nodeTypes={nodeTypes}
           fitView
           onNodeClick={(_, n) => onSelect(n.id)}
+          onNodeMouseEnter={(_, n) => onHover(n.id)}
+          onNodeMouseLeave={() => onHover(null)}
           onPaneClick={() => onSelect(null)}
           proOptions={{ hideAttribution: true }}
         >

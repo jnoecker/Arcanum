@@ -1,14 +1,10 @@
-import { useRef, useState, useCallback, useEffect, useMemo } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { useShallow } from "zustand/shallow";
 import { invoke } from "@tauri-apps/api/core";
 import { useZoneStore, type ZoneState } from "@/stores/zoneStore";
 import { useProjectStore } from "@/stores/projectStore";
 import { useLoreStore, selectArticles } from "@/stores/loreStore";
-import type { Tab } from "@/types/project";
 import type { WorldFile } from "@/types/world";
-import { useGlobalSearch, ENTITY_TYPE_LABELS } from "@/lib/useGlobalSearch";
-import { WORLDMAKER_GROUPS, LORE_GROUPS, panelTab, type Workspace, type PanelDef } from "@/lib/panelRegistry";
-import { loadCollapsedSections, saveCollapsedSections } from "@/lib/uiPersistence";
 import { ArticleTree } from "./lore/ArticleTree";
 import { BulkActionsBar } from "./lore/BulkActionsBar";
 import { NewZoneDialog } from "./NewZoneDialog";
@@ -39,22 +35,15 @@ import type {
 } from "@/types/world";
 
 
+// ─── Zone entity categories ─────────────────────────────────────────
+
 interface CategoryDef {
   key: string;
   label: string;
   collection: keyof WorldFile;
   nameField: string;
   addFn?: (world: WorldFile, zoneId: string) => WorldFile;
-  /**
-   * When true, the collection is a singular field on `WorldFile` (e.g. `dungeon`)
-   * rather than a `Record<string, Entity>`. Rendered as at most one entry.
-   */
   singular?: boolean;
-  /**
-   * Optional view mode to switch to when the entry (or the Add button) is
-   * clicked, instead of routing to the standard entity panel. Used for
-   * singular entities that have their own dedicated view (e.g. "dungeon").
-   */
   targetView?: string;
 }
 
@@ -170,6 +159,8 @@ const CATEGORIES: CategoryDef[] = [
 ];
 
 
+// ─── Zone tree node ─────────────────────────────────────────────────
+
 function ZoneTree({
   zoneId,
   zoneState,
@@ -274,7 +265,6 @@ function ZoneTree({
       {expanded && (
         <div className="ml-10 mt-2 flex flex-col gap-2.5 border-l border-accent/15 pl-4">
           {CATEGORIES.map((cat) => {
-            // Singular collections (e.g. `dungeon`) render at most one entry.
             if (cat.singular) {
               const data = world[cat.collection] as Record<string, unknown> | undefined;
               const present = !!data;
@@ -367,217 +357,21 @@ function ZoneTree({
 }
 
 
-const PILL_COLLAPSE_THRESHOLD = 8;
-const PILL_COLLAPSE_MIN_HIDDEN = 3;
+// ─── Sidebar ────────────────────────────────────────────────────────
 
-/** Group panels by their subGroup field, preserving order of first appearance. */
-function groupBySubGroup(panels: PanelDef[]): { subGroup: string | null; panels: PanelDef[] }[] {
-  const result: { subGroup: string | null; panels: PanelDef[] }[] = [];
-  const map = new Map<string | null, PanelDef[]>();
-  for (const p of panels) {
-    const key = p.subGroup ?? null;
-    if (!map.has(key)) {
-      const arr: PanelDef[] = [];
-      map.set(key, arr);
-      result.push({ subGroup: key, panels: arr });
-    }
-    map.get(key)!.push(p);
-  }
-  return result;
-}
-
-function PanelPill({ panel, activeTabId, openTab, compact }: {
-  panel: PanelDef;
-  activeTabId: string | null;
-  openTab: (tab: Tab) => void;
-  compact?: boolean;
-}) {
-  const tab = panelTab(panel.id);
-  const isActive = activeTabId === tab.id;
-  return (
-    <button
-      onClick={() => openTab(tab)}
-      aria-current={isActive ? "page" : undefined}
-      title={panel.description}
-      className={`focus-ring rounded-full border font-medium leading-tight transition ${
-        compact ? "px-2 py-1.5 text-3xs" : "px-2.5 py-2 text-2xs"
-      } ${
-        isActive
-          ? "border-[var(--border-glow-strong)] bg-[linear-gradient(135deg,rgb(var(--accent-rgb)/0.25),rgb(var(--accent-rgb)/0.12))] text-text-primary shadow-glow"
-          : "border-[var(--chrome-stroke)] bg-[var(--chrome-highlight)] text-text-muted hover:border-[var(--chrome-stroke-strong)] hover:bg-[var(--chrome-highlight-strong)] hover:text-text-primary"
-      }`}
-    >
-      {panel.label}
-    </button>
-  );
-}
-
-function PanelButtonGrid({
-  groups,
-  activeTabId,
-  openTab,
-}: {
-  groups: { id: string; label: string; panels: PanelDef[] }[];
-  activeTabId: string | null;
-  openTab: (tab: Tab) => void;
-}) {
-  const [collapsedSections, setCollapsedSections] = useState<Set<string>>(
-    () => new Set(loadCollapsedSections()),
-  );
-  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
-
-  // Persist collapsed sections
-  useEffect(() => {
-    saveCollapsedSections([...collapsedSections]);
-  }, [collapsedSections]);
-
-  const toggleSection = useCallback((id: string) => {
-    setCollapsedSections((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  }, []);
-
-  // Determine which section the active tab belongs to
-  const activeSectionId = useMemo(() => {
-    if (!activeTabId) return null;
-    const panelId = activeTabId.replace(/^panel:/, "");
-    for (const group of groups) {
-      if (group.panels.some((p) => p.id === panelId)) return group.id;
-    }
-    return null;
-  }, [activeTabId, groups]);
-
-  return (
-    <nav className="flex flex-col gap-1">
-      {groups.map((group) => {
-        const isCollapsed = collapsedSections.has(group.id);
-        const hasSubGroups = group.panels.some((p) => p.subGroup);
-        const isActiveSection = activeSectionId === group.id;
-
-        // For flat sections (no sub-groups), use pill collapse
-        const expanded = expandedGroups.has(group.id);
-        const hiddenCount = group.panels.length - PILL_COLLAPSE_THRESHOLD;
-        const needsCollapse = !hasSubGroups && hiddenCount >= PILL_COLLAPSE_MIN_HIDDEN;
-        const visiblePanels = needsCollapse && !expanded
-          ? group.panels.slice(0, PILL_COLLAPSE_THRESHOLD)
-          : group.panels;
-
-        return (
-          <section
-            key={group.id}
-            className={`border-t border-[var(--chrome-stroke)] pt-1.5 first:border-t-0 first:pt-0 ${
-              isActiveSection ? "border-l-2 border-l-accent/30 pl-1" : ""
-            }`}
-          >
-            {/* Accordion header */}
-            <button
-              onClick={() => toggleSection(group.id)}
-              aria-expanded={!isCollapsed}
-              aria-label={`${isCollapsed ? "Expand" : "Collapse"} ${group.label}`}
-              className="mb-1 flex w-full items-center gap-1.5 rounded-md px-1 py-1 transition hover:bg-[var(--chrome-highlight)]"
-            >
-              <svg
-                className={`h-3 w-3 shrink-0 text-text-muted transition-transform duration-150 ${isCollapsed ? "" : "rotate-90"}`}
-                viewBox="0 0 12 12"
-                fill="currentColor"
-              >
-                <path d="M4.5 2L9 6L4.5 10z" />
-              </svg>
-              <h3 className="text-2xs font-medium uppercase tracking-label text-text-secondary">{group.label}</h3>
-              <span className="ml-auto shrink-0 text-3xs text-text-muted">{group.panels.length}</span>
-            </button>
-
-            {/* Collapsed: show nothing. Expanded: pills with optional sub-groups */}
-            {!isCollapsed && (
-              hasSubGroups ? (
-                // Sub-grouped layout (Characters, World)
-                <div className="flex flex-col gap-2 pb-1">
-                  {groupBySubGroup(group.panels as PanelDef[]).map(({ subGroup, panels }) => (
-                    <div key={subGroup ?? "_"}>
-                      {subGroup && (
-                        <div className="mb-1 mt-0.5 flex items-center gap-2">
-                          <div className="h-px flex-1 bg-[var(--chrome-highlight)]" />
-                          <span className="text-3xs uppercase tracking-label text-text-muted/50">{subGroup}</span>
-                          <div className="h-px flex-1 bg-[var(--chrome-highlight)]" />
-                        </div>
-                      )}
-                      <div className="flex flex-wrap gap-1">
-                        {panels.map((panel) => (
-                          <PanelPill key={panel.id} panel={panel} activeTabId={activeTabId} openTab={openTab} compact />
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                // Flat layout with optional "+N more" collapse
-                <div className="flex flex-wrap gap-1.5 pb-1">
-                  {(visiblePanels as PanelDef[]).map((panel) => (
-                    <PanelPill key={panel.id} panel={panel} activeTabId={activeTabId} openTab={openTab} />
-                  ))}
-                  {needsCollapse && !expanded && (
-                    <button
-                      onClick={(e) => { e.stopPropagation(); setExpandedGroups((s) => new Set(s).add(group.id)); }}
-                      aria-label={`Show ${hiddenCount} more panels`}
-                      aria-expanded={false}
-                      className="rounded-full border border-dashed border-[var(--chrome-stroke)] px-2.5 py-1.5 text-2xs text-text-muted transition hover:border-[var(--chrome-stroke-emphasis)] hover:text-text-secondary"
-                    >
-                      +{hiddenCount} more
-                    </button>
-                  )}
-                  {needsCollapse && expanded && (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setExpandedGroups((s) => { const next = new Set(s); next.delete(group.id); return next; });
-                      }}
-                      className="rounded-full border border-dashed border-[var(--chrome-stroke)] px-2.5 py-1.5 text-2xs text-text-muted transition hover:border-[var(--chrome-stroke-emphasis)] hover:text-text-secondary"
-                    >
-                      Less
-                    </button>
-                  )}
-                </div>
-              )
-            )}
-          </section>
-        );
-      })}
-    </nav>
-  );
-}
-
-
-export function Sidebar({ workspace }: { workspace: Workspace }) {
+export function Sidebar() {
   const zones = useZoneStore((s) => s.zones);
-  const openTab = useProjectStore((s) => s.openTab);
   const { tabs: openTabs, activeTabId, project } = useProjectStore(
     useShallow((s) => ({ tabs: s.tabs, activeTabId: s.activeTabId, project: s.project })),
   );
-  const navigateTo = useProjectStore((s) => s.navigateTo);
   const closeTab = useProjectStore((s) => s.closeTab);
   const removeZone = useZoneStore((s) => s.removeZone);
   const articles = useLoreStore(selectArticles);
   const articleCount = Object.keys(articles).length;
-  const { query, setQuery, clearQuery, grouped, isSearching } =
-    useGlobalSearch();
-  const searchRef = useRef<HTMLInputElement>(null);
   const [showNewZone, setShowNewZone] = useState(false);
   const [renameTarget, setRenameTarget] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const hasProject = !!project;
-
-  const handleSearchKeyDown = useCallback(
-    (e: React.KeyboardEvent) => {
-      if (e.key === "Escape") {
-        clearQuery();
-        searchRef.current?.blur();
-      }
-    },
-    [clearQuery],
-  );
 
   const handleDeleteZone = useCallback(async (zoneId: string) => {
     const zoneState = zones.get(zoneId);
@@ -609,24 +403,46 @@ export function Sidebar({ workspace }: { workspace: Workspace }) {
       <CosmicBackdrop variant="panel" className="opacity-90" />
       <div className="pointer-events-none absolute inset-x-0 top-0 h-48 bg-gradient-glow-top" />
 
-      <div className="relative z-10 shrink-0 px-4 pt-4">
+      {/* ── Stats bar ────────────────────────────────────────────── */}
+      <div className="relative z-10 shrink-0 px-4 pt-4 pb-2">
         <div className="flex items-center gap-3 px-1 text-3xs text-text-muted">
           <span>{zones.size} zones</span>
-          <span className="text-border-default">·</span>
+          <span className="text-border-default">&middot;</span>
           <span>{articleCount} lore</span>
-          <span className="text-border-default">·</span>
+          <span className="text-border-default">&middot;</span>
           <span>{openTabs.length} open</span>
         </div>
       </div>
 
-      <div
-        className="relative z-10 min-h-0 max-h-[22rem] shrink overflow-y-auto border-b border-[var(--chrome-stroke)] px-4 py-4 lg:max-h-[45%]"
-        style={{ maskImage: "linear-gradient(to bottom, transparent 0, black 8px, black calc(100% - 16px), transparent 100%)", WebkitMaskImage: "linear-gradient(to bottom, transparent 0, black 8px, black calc(100% - 16px), transparent 100%)" }}
-      >
-        {workspace === "worldmaker" ? (
-          <>
-            <div className="mb-2 flex items-center justify-between gap-3">
-              <h2 className="text-2xs font-medium uppercase tracking-label text-text-secondary">Surfaces</h2>
+      {/* ── Two-pane layout: Articles on top, Cartography on bottom ── */}
+      <div className="relative z-10 flex min-h-0 flex-1 flex-col">
+        {/* ── Articles (top half) ──────────────────────────────────
+             ArticleTree has its own search bar and scroll container,
+             so we do NOT add overflow-y-auto here. */}
+        <div className="flex min-h-0 flex-1 flex-col px-4 pb-3">
+          <div className="mb-1 mt-1 shrink-0 flex items-center justify-between">
+            <h2 className="text-2xs font-medium uppercase tracking-label text-text-secondary">
+              Articles
+              <span className="ml-2 text-3xs font-normal text-text-muted">{articleCount}</span>
+            </h2>
+          </div>
+          <BulkActionsBar />
+          <ArticleTree />
+        </div>
+
+        {/* ── Divider ── */}
+        <div className="shrink-0 mx-4 border-t border-accent/20" />
+
+        {/* ── Cartography (bottom half) ────────────────────────── */}
+        <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-4 pt-3">
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="text-2xs font-medium uppercase tracking-label text-text-secondary">Cartography</h2>
+            <div className="flex items-center gap-2">
+              {hasProject && (
+                <span className="text-2xs uppercase tracking-label text-text-muted">
+                  {sortedZones.length} zone{sortedZones.length === 1 ? "" : "s"}
+                </span>
+              )}
               <button
                 onClick={() => setShowNewZone(true)}
                 className="focus-ring shell-pill rounded-full px-3 py-1 text-2xs font-medium"
@@ -635,147 +451,46 @@ export function Sidebar({ workspace }: { workspace: Workspace }) {
                 New zone
               </button>
             </div>
-            <PanelButtonGrid groups={WORLDMAKER_GROUPS} activeTabId={activeTabId} openTab={openTab} />
-          </>
-        ) : (
-          <>
-            <div className="mb-2">
-              <h2 className="text-2xs font-medium uppercase tracking-label text-text-secondary">Surfaces</h2>
+          </div>
+          {sortedZones.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] px-4 py-5 text-sm text-text-muted">
+              {hasProject ? (
+                <>
+                  <p className="mb-3 leading-relaxed">
+                    This world has no zones yet. Create your first zone to
+                    begin shaping it.
+                  </p>
+                  <button
+                    onClick={() => setShowNewZone(true)}
+                    className="focus-ring rounded-full bg-accent px-4 py-1.5 text-2xs font-medium text-accent-emphasis transition-[box-shadow,filter] hover:shadow-[var(--glow-aurum)] hover:brightness-110"
+                  >
+                    Create your first zone
+                  </button>
+                </>
+              ) : (
+                <p className="leading-relaxed">Open a world to begin shaping it.</p>
+              )}
             </div>
-            <PanelButtonGrid groups={LORE_GROUPS} activeTabId={activeTabId} openTab={openTab} />
-          </>
-        )}
-      </div>
-
-      {/* ── Search (worldmaker only — lore has its own article search) ── */}
-      {workspace === "worldmaker" && <div className="relative z-10 shrink-0 px-4 py-3">
-        <div className="relative">
-          <input
-            ref={searchRef}
-            type="text"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            onKeyDown={handleSearchKeyDown}
-            aria-label="Search entities"
-            placeholder="Seek rooms, mobs, quests..."
-            className="ornate-input h-10 w-full rounded-full px-4 pr-10 text-sm text-text-primary"
-          />
-          {query && (
-            <button
-              aria-label="Clear search"
-              onClick={clearQuery}
-              className="focus-ring absolute right-3 top-1/2 -translate-y-1/2 rounded p-1 text-sm text-text-muted hover:text-text-primary"
-            >
-              ✕
-            </button>
+          ) : (
+            <ul className="flex flex-col gap-0.5">
+              {sortedZones.map(([zoneId, zoneState]) => (
+                <ZoneTree
+                  key={zoneId}
+                  zoneId={zoneId}
+                  zoneState={zoneState}
+                  isActive={activeTabId === `zone:${zoneId}`}
+                  onDelete={(id) => setDeleteTarget(id)}
+                  onRename={(id) => setRenameTarget(id)}
+                />
+              ))}
+            </ul>
           )}
         </div>
-      </div>}
-
-      {/* ── Bottom: zones or articles list ── */}
-      <div className="relative z-10 min-h-0 flex-1 overflow-y-auto px-4 pb-4">
-        {isSearching ? (
-          <div className="py-2">
-            {grouped.size === 0 ? (
-              <p className="rounded-2xl border border-dashed border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] px-4 py-6 text-sm text-text-muted">
-                Nothing matches that query across your zones.
-              </p>
-            ) : (
-              [...grouped.entries()].map(([zoneId, entries]) => (
-                <div key={zoneId} className="mb-4">
-                  <h3 className="mb-2 text-2xs font-medium uppercase tracking-label text-text-secondary">{zoneId}</h3>
-                  <ul className="flex flex-col gap-0.5">
-                    {entries.map((entry) => (
-                      <li key={`${entry.entityType}:${entry.entityId}`}>
-                        <button
-                          onClick={() => {
-                            const tab: Tab = { id: `zone:${entry.zoneId}`, kind: "zone", label: entry.zoneId };
-                            openTab(tab);
-                            if (entry.entityType === "room") {
-                              navigateTo({ zoneId: entry.zoneId, roomId: entry.entityId });
-                            } else {
-                              navigateTo({ zoneId: entry.zoneId, entityKind: entry.entityType, entityId: entry.entityId });
-                            }
-                            clearQuery();
-                          }}
-                          className="flex w-full items-center gap-2 rounded-2xl border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] px-3 py-2 text-left text-xs transition hover:bg-[var(--chrome-highlight-strong)] hover:text-text-primary"
-                        >
-                          <span className="shrink-0 rounded-full bg-[var(--chrome-highlight-strong)] px-2 py-1 font-mono text-2xs text-text-muted">
-                            {ENTITY_TYPE_LABELS[entry.entityType]}
-                          </span>
-                          <span className="truncate" title={entry.displayName}>{entry.displayName}</span>
-                          {entry.entityId !== entry.displayName && (
-                            <span className="ml-auto shrink-0 text-2xs text-text-muted">{entry.entityId}</span>
-                          )}
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ))
-            )}
-          </div>
-        ) : workspace === "worldmaker" ? (
-          <div className="py-2">
-            <div className="mb-3 flex items-center justify-between">
-              <h2 className="text-2xs font-medium uppercase tracking-label text-text-secondary">Cartography</h2>
-              {hasProject ? (
-                <span className="text-2xs uppercase tracking-label text-text-muted">
-                  {sortedZones.length} zone{sortedZones.length === 1 ? "" : "s"}
-                </span>
-              ) : null}
-            </div>
-            {sortedZones.length === 0 ? (
-              <div className="rounded-2xl border border-dashed border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] px-4 py-5 text-sm text-text-muted">
-                {hasProject ? (
-                  <>
-                    <p className="mb-3 leading-relaxed">
-                      This world has no zones yet. Create your first zone to
-                      begin shaping it.
-                    </p>
-                    <button
-                      onClick={() => setShowNewZone(true)}
-                      className="focus-ring rounded-full bg-accent px-4 py-1.5 text-2xs font-medium text-accent-emphasis transition-[box-shadow,filter] hover:shadow-[var(--glow-aurum)] hover:brightness-110"
-                    >
-                      Create your first zone
-                    </button>
-                  </>
-                ) : (
-                  <p className="leading-relaxed">Open a world to begin shaping it.</p>
-                )}
-              </div>
-            ) : (
-              <ul className="flex flex-col gap-0.5">
-                {sortedZones.map(([zoneId, zoneState]) => (
-                  <ZoneTree
-                    key={zoneId}
-                    zoneId={zoneId}
-                    zoneState={zoneState}
-                    isActive={activeTabId === `zone:${zoneId}`}
-                    onDelete={(id) => setDeleteTarget(id)}
-                    onRename={(id) => setRenameTarget(id)}
-                  />
-                ))}
-              </ul>
-            )}
-          </div>
-        ) : (
-          /* Lore workspace: article tree */
-          <div className="py-2">
-            <div className="mb-3 flex items-center justify-between">
-              <h2 className="text-2xs font-medium uppercase tracking-label text-text-secondary">
-                Canon roots
-                <span className="ml-2 text-3xs font-normal text-text-muted">{articleCount}</span>
-              </h2>
-            </div>
-            <BulkActionsBar />
-            <ArticleTree />
-          </div>
-        )}
       </div>
 
+      {/* ── Footer hints ─────────────────────────────────────────── */}
       <div className="relative z-10 border-t border-[var(--chrome-stroke)] px-4 py-3 text-2xs text-text-muted">
-        `Ctrl+K` command palette | `Ctrl+S` commit | `Ctrl+,` tune the instrument
+        Ctrl+M map | Ctrl+K palette | Ctrl+, settings
       </div>
 
       {showNewZone && <NewZoneDialog onClose={() => setShowNewZone(false)} />}

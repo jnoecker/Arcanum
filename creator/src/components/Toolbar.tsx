@@ -1,7 +1,6 @@
 import { lazy, Suspense, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { useProjectStore } from "@/stores/projectStore";
-import type { Workspace } from "@/lib/panelRegistry";
 import { useAssetStore } from "@/stores/assetStore";
 import { useLoreStore, selectArticleCount } from "@/stores/loreStore";
 import { useToastStore } from "@/stores/toastStore";
@@ -14,14 +13,14 @@ const PublishWorldModal = lazy(() =>
 );
 
 interface ToolbarProps {
-  workspace: Workspace;
-  setWorkspace: (workspace: Workspace) => void;
   onNewProject: () => void;
 }
 
-export function Toolbar({ workspace, setWorkspace, onNewProject }: ToolbarProps) {
+export function Toolbar({ onNewProject }: ToolbarProps) {
   const project = useProjectStore((s) => s.project);
-  const workspaceRefs = useRef<Array<HTMLButtonElement | null>>([]);
+  const openWorldMap = useProjectStore((s) => s.openWorldMap);
+  const setSettingsOpen = useProjectStore((s) => s.setSettingsOpen);
+  const mapView = useProjectStore((s) => s.mapView);
   const projectButtonRef = useRef<HTMLButtonElement | null>(null);
   const openGenerator = useAssetStore((s) => s.openGenerator);
   const openGallery = useAssetStore((s) => s.openGallery);
@@ -98,48 +97,23 @@ export function Toolbar({ workspace, setWorkspace, onNewProject }: ToolbarProps)
             )}
           </div>
 
-          {/* ── Center: workspace segmented pill ──────────────────────── */}
+          {/* ── Center: home (world map) button ───────────────────────── */}
           <div className="shrink-0">
-            <div className="segmented-control" role="tablist" aria-label="Creator mode">
-              {([
-                { id: "worldmaker" as const, label: "Worldmaker", tip: "Zones, systems, and runtime craft" },
-                { id: "lore" as const, label: "Lore", tip: "Canon, maps, and narrative structure" },
-              ]).map((entry, index) => (
-                <button
-                  key={entry.id}
-                  ref={(node) => {
-                    workspaceRefs.current[index] = node;
-                  }}
-                  role="tab"
-                  aria-selected={workspace === entry.id}
-                  tabIndex={workspace === entry.id ? 0 : -1}
-                  title={entry.tip}
-                  onClick={() => setWorkspace(entry.id)}
-                  onKeyDown={(event) => {
-                    if (event.key === "ArrowRight" || event.key === "ArrowDown") {
-                      event.preventDefault();
-                      const nextIndex = (index + 1) % 2;
-                      const nextWorkspace = nextIndex === 0 ? "worldmaker" : "lore";
-                      setWorkspace(nextWorkspace);
-                      workspaceRefs.current[nextIndex]?.focus();
-                    } else if (event.key === "ArrowLeft" || event.key === "ArrowUp") {
-                      event.preventDefault();
-                      const nextIndex = (index - 1 + 2) % 2;
-                      const nextWorkspace = nextIndex === 0 ? "worldmaker" : "lore";
-                      setWorkspace(nextWorkspace);
-                      workspaceRefs.current[nextIndex]?.focus();
-                    }
-                  }}
-                  className={`focus-ring rounded-full px-4 py-1.5 font-display text-sm transition ${
-                    workspace === entry.id
-                      ? "bg-[var(--chrome-fill)] text-accent shadow-glow"
-                      : "text-text-secondary hover:bg-[var(--chrome-highlight)] hover:text-text-primary"
-                  }`}
-                >
-                  {entry.label}
-                </button>
-              ))}
-            </div>
+            <button
+              type="button"
+              onClick={openWorldMap}
+              title="Return to the world map (Ctrl+M)"
+              aria-label="World map"
+              aria-pressed={mapView === "world"}
+              className={`focus-ring rounded-full border px-5 py-1.5 font-display text-sm uppercase tracking-wide-ui transition ${
+                mapView === "world"
+                  ? "border-accent/80 bg-accent/15 text-accent shadow-glow"
+                  : "border-[var(--chrome-stroke)] bg-[var(--chrome-fill)]/40 text-text-secondary hover:border-accent/60 hover:text-accent"
+              }`}
+            >
+              <span aria-hidden="true" className="mr-1.5">{"\u{1F30D}"}</span>
+              World Map
+            </button>
           </div>
 
           {/* ── Right: actions ─────────────────────────────────────────── */}
@@ -162,32 +136,42 @@ export function Toolbar({ workspace, setWorkspace, onNewProject }: ToolbarProps)
               Gallery
             </ActionButton>
 
-            {workspace === "lore" ? (
-              <ActionButton
-                onClick={() => void handleExportShowcase()}
-                disabled={!hasLore || exporting}
-                title="Sync assets and publish lore to the showcase"
-                variant="primary"
-              >
-                {exporting ? (
-                  <span className="flex items-center gap-1.5">
-                    <Spinner />
-                    Publishing
-                  </span>
-                ) : (
-                  "Publish Lore"
-                )}
-              </ActionButton>
-            ) : (
-              <ActionButton
-                onClick={() => setShowPublishWorld(true)}
-                disabled={!project}
-                title="Save, validate, and deploy the entire world to R2"
-                variant="primary"
-              >
-                Publish World
-              </ActionButton>
-            )}
+            <ActionButton
+              onClick={() => void handleExportShowcase()}
+              disabled={!hasLore || exporting}
+              title="Sync assets and publish lore to the showcase"
+              variant="ghost"
+            >
+              {exporting ? (
+                <span className="flex items-center gap-1.5">
+                  <Spinner />
+                  Publishing
+                </span>
+              ) : (
+                "Publish Lore"
+              )}
+            </ActionButton>
+
+            <ActionButton
+              onClick={() => setShowPublishWorld(true)}
+              disabled={!project}
+              title="Save, validate, and deploy the entire world to R2"
+              variant="primary"
+            >
+              Publish World
+            </ActionButton>
+
+            <button
+              type="button"
+              onClick={() => setSettingsOpen(true)}
+              title="Open settings (Ctrl+,)"
+              aria-label="Open settings"
+              className="focus-ring ml-1 rounded-full border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)]/40 p-2 text-text-secondary transition hover:border-accent/60 hover:text-accent"
+            >
+              <span aria-hidden="true" className="block text-base leading-none">
+                {"\u2699\uFE0F"}
+              </span>
+            </button>
           </div>
         </div>
       </div>

@@ -1,13 +1,16 @@
 import { create } from "zustand";
 import { invoke } from "@tauri-apps/api/core";
 import { saveUIState, loadUIState } from "@/lib/uiPersistence";
-import { panelTab } from "@/lib/panelRegistry";
+import type { Island } from "@/lib/panelRegistry";
 import type {
   Project,
   Tab,
   AdminSubView,
   AdminContentSubView,
 } from "@/types/project";
+
+/** Which surface the main area is showing. `null` means "the active tab". */
+export type MapView = "world" | { island: Island } | null;
 
 /** Navigation target for sidebar -> zone editor entity selection. */
 export interface PendingNavigation {
@@ -28,6 +31,11 @@ interface ProjectStore {
   pendingNavigation: PendingNavigation | null;
   /** Global flag to show the MUD import wizard. Palette & sidebar both toggle this. */
   showMudImport: boolean;
+  /** When non-null, the main area shows the world map / island view instead
+   *  of the active tab. Cleared by openTab / setActiveTab. */
+  mapView: MapView;
+  /** True when the unified Settings modal is open. */
+  settingsOpen: boolean;
 
   setProject: (project: Project) => void;
   closeProject: () => void;
@@ -44,6 +52,13 @@ interface ProjectStore {
   navigateTo: (nav: PendingNavigation) => void;
   consumeNavigation: () => PendingNavigation | null;
   setShowMudImport: (show: boolean) => void;
+  /** Show the top-level world map (clears any open island detail). */
+  openWorldMap: () => void;
+  /** Drill into a specific island detail view. */
+  openIsland: (island: Island) => void;
+  /** Close the map overlay and return to the active tab. */
+  closeMap: () => void;
+  setSettingsOpen: (open: boolean) => void;
 }
 
 export const useProjectStore = create<ProjectStore>((set, get) => ({
@@ -54,15 +69,17 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
   adminContentSubView: "abilities",
   pendingNavigation: null,
   showMudImport: false,
+  mapView: "world",
+  settingsOpen: false,
 
   setProject: (project) => {
-    const art = panelTab("art");
     set({
       project,
-      tabs: [art],
-      activeTabId: art.id,
+      tabs: [],
+      activeTabId: null,
       adminSubView: "overview",
       adminContentSubView: "abilities",
+      mapView: "world",
     });
     // Tell the Rust backend which project is active so get_settings
     // automatically merges project-level settings (R2 credentials, etc.)
@@ -71,16 +88,16 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
 
   closeProject: () => {
     invoke("set_active_project_dir", { projectDir: null }).catch(() => {});
-    set({ project: null, tabs: [], activeTabId: null });
+    set({ project: null, tabs: [], activeTabId: null, mapView: "world" });
   },
 
   openTab: (tab) => {
     const { tabs } = get();
     const existing = tabs.find((t) => t.id === tab.id);
     if (existing) {
-      set({ activeTabId: tab.id });
+      set({ activeTabId: tab.id, mapView: null });
     } else {
-      set({ tabs: [...tabs, tab], activeTabId: tab.id });
+      set({ tabs: [...tabs, tab], activeTabId: tab.id, mapView: null });
     }
   },
 
@@ -94,11 +111,12 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
     set({ tabs: filtered, activeTabId: newActive });
   },
 
-  closeAllTabs: () => set({ tabs: [], activeTabId: null }),
+  closeAllTabs: () => set({ tabs: [], activeTabId: null, mapView: "world" }),
 
-  setActiveTab: (tabId) => set({ activeTabId: tabId }),
+  setActiveTab: (tabId) => set({ activeTabId: tabId, mapView: null }),
 
-  restoreTabs: (tabs, activeTabId) => set({ tabs, activeTabId }),
+  restoreTabs: (tabs, activeTabId) =>
+    set({ tabs, activeTabId, mapView: tabs.length > 0 ? null : "world" }),
   setAdminSubView: (adminSubView) => set({ adminSubView }),
   setAdminContentSubView: (adminContentSubView) => set({ adminContentSubView }),
 
@@ -113,6 +131,11 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
     return nav;
   },
   setShowMudImport: (showMudImport) => set({ showMudImport }),
+
+  openWorldMap: () => set({ mapView: "world" }),
+  openIsland: (island) => set({ mapView: { island } }),
+  closeMap: () => set({ mapView: null }),
+  setSettingsOpen: (settingsOpen) => set({ settingsOpen }),
 }));
 
 // ─── Debounced persistence ─────────────────────────────────────────

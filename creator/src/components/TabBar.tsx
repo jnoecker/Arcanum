@@ -1,9 +1,8 @@
 import { useRef, useEffect, useState, useCallback } from "react";
 import { useProjectStore } from "@/stores/projectStore";
 import { PANEL_MAP } from "@/lib/panelRegistry";
-import type { Workspace } from "@/lib/panelRegistry";
 
-export function TabBar({ workspace }: { workspace: Workspace }) {
+export function TabBar() {
   const tabs = useProjectStore((s) => s.tabs);
   const activeTabId = useProjectStore((s) => s.activeTabId);
   const setActiveTab = useProjectStore((s) => s.setActiveTab);
@@ -48,15 +47,6 @@ export function TabBar({ workspace }: { workspace: Workspace }) {
     tabRefs.current[nextIndex]?.focus();
   };
 
-  const isTabInWorkspace = (tab: typeof tabs[number]): boolean => {
-    if (tab.kind === "panel" && tab.panelId) {
-      const panel = PANEL_MAP[tab.panelId];
-      return panel ? (panel.host === "lore" ? workspace === "lore" : workspace === "worldmaker") : true;
-    }
-    // Zone, console, admin, sprites are worldmaker
-    return workspace === "worldmaker";
-  };
-
   if (tabs.length === 0) return null;
 
   return (
@@ -85,7 +75,6 @@ export function TabBar({ workspace }: { workspace: Workspace }) {
         )}
         {tabs.map((tab, index) => {
           const isActive = tab.id === activeTabId;
-          const inWorkspace = isTabInWorkspace(tab);
           const panel = tab.kind === "panel" && tab.panelId ? PANEL_MAP[tab.panelId] : null;
           const kicker = panel?.kicker ?? (tab.kind === "zone" ? "Zone" : tab.kind === "admin" ? "Admin" : tab.kind === "console" ? "Console" : "Surface");
 
@@ -95,9 +84,7 @@ export function TabBar({ workspace }: { workspace: Workspace }) {
               className={`group flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-1.5 transition ${
                 isActive
                   ? "bg-[var(--chrome-highlight-strong)] shadow-sm"
-                  : inWorkspace
-                    ? "hover:bg-[var(--chrome-highlight)]"
-                    : "opacity-40 hover:bg-[var(--chrome-highlight)] hover:opacity-70"
+                  : "hover:bg-[var(--chrome-highlight)]"
               }`}
             >
               <button

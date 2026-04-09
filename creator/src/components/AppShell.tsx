@@ -1,4 +1,4 @@
-import { lazy, Suspense, useCallback, useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { Toolbar } from "./Toolbar";
 import { Sidebar } from "./Sidebar";
 
@@ -7,8 +7,6 @@ import { StatusBar } from "./StatusBar";
 import { useKeyboardShortcuts } from "@/lib/useKeyboardShortcuts";
 import { useAssetStore } from "@/stores/assetStore";
 import { useProjectStore } from "@/stores/projectStore";
-import type { Workspace } from "@/lib/panelRegistry";
-import { loadWorkspace, saveWorkspace } from "@/lib/uiPersistence";
 import { CommandPalette } from "./ui/CommandPalette";
 import { Toast } from "./ui/Toast";
 import { CosmicBackdrop } from "./ui/CosmicBackdrop";
@@ -17,6 +15,7 @@ const ShortcutsHelp = lazy(() => import("./ui/ShortcutsHelp").then((m) => ({ def
 const AssetGenerator = lazy(() => import("./AssetGenerator").then((m) => ({ default: m.AssetGenerator })));
 const AssetGallery = lazy(() => import("./AssetGallery").then((m) => ({ default: m.AssetGallery })));
 const MudImportWizard = lazy(() => import("./MudImportWizard").then((m) => ({ default: m.MudImportWizard })));
+const SettingsOverlay = lazy(() => import("./settings/SettingsOverlay").then((m) => ({ default: m.SettingsOverlay })));
 
 interface AppShellProps {
   onNewProject: () => void;
@@ -29,11 +28,10 @@ export function AppShell({ onNewProject }: AppShellProps) {
   const closeGallery = useAssetStore((s) => s.closeGallery);
   const showMudImport = useProjectStore((s) => s.showMudImport);
   const setShowMudImport = useProjectStore((s) => s.setShowMudImport);
-  const [workspace, setWorkspaceState] = useState<Workspace>(loadWorkspace);
-  const setWorkspace = useCallback((next: Workspace) => {
-    setWorkspaceState(next);
-    saveWorkspace(next);
-  }, []);
+  const mapView = useProjectStore((s) => s.mapView);
+  const openWorldMap = useProjectStore((s) => s.openWorldMap);
+  const settingsOpen = useProjectStore((s) => s.settingsOpen);
+  const setSettingsOpen = useProjectStore((s) => s.setSettingsOpen);
   const [showPalette, setShowPalette] = useState(false);
 
   useEffect(() => {
@@ -41,11 +39,24 @@ export function AppShell({ onNewProject }: AppShellProps) {
       if ((e.ctrlKey || e.metaKey) && e.key === "k") {
         e.preventDefault();
         setShowPalette((v) => !v);
+      } else if ((e.ctrlKey || e.metaKey) && (e.key === "m" || e.key === "M")) {
+        e.preventDefault();
+        openWorldMap();
+      } else if ((e.ctrlKey || e.metaKey) && e.key === ",") {
+        e.preventDefault();
+        setSettingsOpen(true);
+      } else if (e.key === "Escape" && mapView && typeof mapView === "object") {
+        // Escape from an island detail returns to the world map.
+        openWorldMap();
       }
     }
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, []);
+  }, [mapView, openWorldMap, setSettingsOpen]);
+
+  // Hide the sidebar entirely on the top-level world map. It remains
+  // available on island detail views and inside tabs.
+  const showSidebar = mapView !== "world";
 
   return (
     <div className="relative flex h-screen h-dvh flex-col overflow-hidden bg-bg-abyss">
@@ -54,9 +65,9 @@ export function AppShell({ onNewProject }: AppShellProps) {
         <div className="absolute left-[-10rem] top-[-8rem] h-[34rem] w-[34rem] rounded-full bg-[radial-gradient(circle,rgb(var(--accent-rgb)/0.14),transparent_68%)] blur-3xl" />
         <div className="absolute bottom-[-14rem] right-[-12rem] h-[40rem] w-[40rem] rounded-full bg-[radial-gradient(circle,rgb(var(--accent-rgb)/0.10),transparent_72%)] blur-3xl" />
       </div>
-      <header className="shrink-0"><Toolbar workspace={workspace} setWorkspace={setWorkspace} onNewProject={onNewProject} /></header>
+      <header className="shrink-0"><Toolbar onNewProject={onNewProject} /></header>
       <div className="relative z-10 flex min-h-0 flex-1 flex-col gap-3 px-4 pb-3 pt-5 lg:flex-row">
-        <Sidebar workspace={workspace} />
+        {showSidebar && <Sidebar />}
         <main
           className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden"
           style={{
@@ -64,7 +75,7 @@ export function AppShell({ onNewProject }: AppShellProps) {
             WebkitMaskImage: "linear-gradient(to bottom, transparent 0, black 18px, black 100%)",
           }}
         >
-          <MainArea workspace={workspace} />
+          <MainArea />
         </main>
       </div>
       <footer className="shrink-0"><StatusBar /></footer>
@@ -74,6 +85,7 @@ export function AppShell({ onNewProject }: AppShellProps) {
         {generatorOpen && <AssetGenerator />}
         {galleryOpen && <AssetGallery onClose={closeGallery} />}
         {showMudImport && <MudImportWizard onClose={() => setShowMudImport(false)} />}
+        {settingsOpen && <SettingsOverlay onClose={() => setSettingsOpen(false)} />}
       </Suspense>
       <Toast />
     </div>

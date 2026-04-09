@@ -6,7 +6,6 @@ import { panelTab } from "@/lib/panelRegistry";
 import type { Article, ArticleTemplate } from "@/types/lore";
 import { TEMPLATE_SCHEMAS } from "@/lib/loreTemplates";
 import { searchArticles } from "@/lib/loreSearch";
-import { ActionButton } from "@/components/ui/FormWidgets";
 import { NewStoryDialog } from "./NewStoryDialog";
 
 const TEMPLATE_DOT_COLORS: Record<ArticleTemplate, string> = {
@@ -256,7 +255,7 @@ export function ArticleTree() {
     .map(([key, s]) => ({ value: key, label: s.label }));
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex min-h-0 flex-1 flex-col">
       {/* Search */}
       <div className="mb-2 flex items-center gap-1.5">
         <input
@@ -280,7 +279,7 @@ export function ArticleTree() {
       </div>
 
       {/* Tree / Content search results */}
-      <div className="min-h-0 flex-1 overflow-y-auto">
+      <div className="min-h-0 flex-1 overflow-y-auto scrollbar-hide">
         {searchContent && search.trim().length >= 3 ? (
           <div className="flex flex-col gap-1">
             {contentResults.map((r) => (
@@ -349,19 +348,6 @@ export function ArticleTree() {
             )}
           </>
         )}
-      </div>
-
-      {/* New Story button */}
-      <div className="mt-2 border-t border-border-muted pt-2">
-        <ActionButton variant="ghost" size="sm" onClick={() => setShowNewStoryDialog(true)} className="w-full justify-center gap-1.5 text-2xs">
-          <svg width="12" height="12" viewBox="0 0 14 14" fill="none" className="shrink-0">
-            <rect x="1" y="3" width="12" height="9" rx="1.5" stroke="currentColor" strokeWidth="1.2" fill="none" />
-            <rect x="1" y="1" width="12" height="3" rx="1" stroke="currentColor" strokeWidth="1.2" fill="none" />
-            <line x1="4" y1="1" x2="5.5" y2="4" stroke="currentColor" strokeWidth="1" />
-            <line x1="8" y1="1" x2="9.5" y2="4" stroke="currentColor" strokeWidth="1" />
-          </svg>
-          New Story
-        </ActionButton>
       </div>
 
       {/* Add new article */}

@@ -1,7 +1,9 @@
 import { lazy, Suspense, Component, type ReactNode, type ErrorInfo } from "react";
 import { useProjectStore } from "@/stores/projectStore";
-import { PANEL_MAP, panelTab, type Workspace } from "@/lib/panelRegistry";
+import { PANEL_MAP } from "@/lib/panelRegistry";
 import { StudioWorkspace } from "./StudioWorkspace";
+import { WorldMap } from "./map/WorldMap";
+import { IslandView } from "./map/IslandView";
 
 class PanelErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
   state: { error: Error | null } = { error: null };
@@ -45,44 +47,25 @@ function LazyFallback() {
   );
 }
 
-export function MainArea({ workspace }: { workspace: Workspace }) {
+export function MainArea() {
   const tabs = useProjectStore((s) => s.tabs);
   const activeTabId = useProjectStore((s) => s.activeTabId);
-  const openTab = useProjectStore((s) => s.openTab);
+  const mapView = useProjectStore((s) => s.mapView);
   const activeTab = tabs.find((t) => t.id === activeTabId);
   const activeTabIndex = tabs.findIndex((t) => t.id === activeTabId);
 
-  if (!activeTab) {
+  // Map takes precedence over the active tab when it's the current surface.
+  if (mapView === "world" || !activeTab) {
     return (
-      <div className="flex min-h-0 flex-1 items-center justify-center px-6 py-8">
-        <div className="panel-surface max-w-2xl rounded-3xl px-8 py-10 text-center">
-          <div className="ornate-divider mb-3" />
-          <p className="text-3xs uppercase tracking-wide-ui text-text-muted">
-            {workspace === "worldmaker" ? "Awaiting a surface" : "Awaiting a canon task"}
-          </p>
-          <h2 className="mt-3 font-display text-3xl text-text-primary">
-            {workspace === "worldmaker" ? "Open a surface" : "Open a surface"}
-          </h2>
-          <p className="mx-auto mt-3 max-w-xl text-sm leading-7 text-text-secondary">
-            {workspace === "worldmaker"
-              ? "Choose a zone, open the art studio, or tune the systems that shape this world."
-              : "Start with the world setting, build the codex, or chart the maps."}
-          </p>
-          <div className="mt-6 flex flex-wrap justify-center gap-2">
-            {(workspace === "worldmaker"
-              ? [panelTab("art"), panelTab("worldServer"), panelTab("classes")]
-              : [panelTab("lore"), panelTab("worldSetting"), panelTab("loreMaps")]
-            ).map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => openTab(tab)}
-                className="focus-ring shell-pill-primary rounded-full px-4 py-2 text-xs font-medium"
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
-        </div>
+      <div className="flex min-h-0 flex-1 flex-col">
+        <WorldMap />
+      </div>
+    );
+  }
+  if (mapView && typeof mapView === "object" && "island" in mapView) {
+    return (
+      <div className="flex min-h-0 flex-1 flex-col">
+        <IslandView island={mapView.island} />
       </div>
     );
   }

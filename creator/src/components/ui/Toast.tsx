@@ -2,14 +2,16 @@ import { useEffect, useState } from "react";
 import { useToastStore } from "@/stores/toastStore";
 
 export function Toast() {
-  const message = useToastStore((s) => s.message);
+  const toast = useToastStore((s) => s.toast);
   const [visible, setVisible] = useState(false);
   const [rendered, setRendered] = useState(false);
+  const [displayedToast, setDisplayedToast] = useState(toast);
 
   useEffect(() => {
-    if (message) {
+    if (toast) {
+      setDisplayedToast(toast);
       setRendered(true);
-      // Trigger enter transition on next frame
+      // Trigger enter transition on next frame.
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
           setVisible(true);
@@ -17,13 +19,16 @@ export function Toast() {
       });
     } else {
       setVisible(false);
-      // Wait for exit transition before unmounting
+      // Wait for exit transition before unmounting.
       const id = setTimeout(() => setRendered(false), 200);
       return () => clearTimeout(id);
     }
-  }, [message]);
+  }, [toast]);
 
   if (!rendered) return null;
+
+  const variant = displayedToast?.variant ?? "default";
+  const glyph = displayedToast?.glyph ?? (variant === "ember" ? "\u2726" : variant === "astral" ? "\u2736" : "\u2727");
 
   return (
     <div
@@ -32,13 +37,22 @@ export function Toast() {
       className="pointer-events-none fixed inset-x-0 bottom-6 z-50 flex justify-center"
     >
       <div
-        className={`max-w-sm rounded-xl border border-border-default/60 bg-bg-tertiary px-4 py-2 font-body text-sm text-text-secondary shadow-section transition-[opacity,transform] duration-200 ease-out ${
+        className={`toast-shell toast-shell-${variant} max-w-md transition-[opacity,transform] duration-200 ease-out ${
           visible
             ? "translate-y-0 opacity-100"
             : "translate-y-2 opacity-0"
         }`}
       >
-        {message}
+        <div className="toast-ornament" aria-hidden="true">
+          <span className="toast-glyph">{glyph}</span>
+          <span className="toast-tail" />
+        </div>
+        <div className="min-w-0">
+          {displayedToast?.kicker && (
+            <p className="toast-kicker">{displayedToast.kicker}</p>
+          )}
+          <p className="toast-message">{displayedToast?.message}</p>
+        </div>
       </div>
     </div>
   );

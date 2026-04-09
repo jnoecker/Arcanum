@@ -26,6 +26,8 @@ interface ProjectStore {
   adminSubView: AdminSubView;
   adminContentSubView: AdminContentSubView;
   pendingNavigation: PendingNavigation | null;
+  /** Global flag to show the MUD import wizard. Palette & sidebar both toggle this. */
+  showMudImport: boolean;
 
   setProject: (project: Project) => void;
   closeProject: () => void;
@@ -41,6 +43,7 @@ interface ProjectStore {
   setAdminContentSubView: (subView: AdminContentSubView) => void;
   navigateTo: (nav: PendingNavigation) => void;
   consumeNavigation: () => PendingNavigation | null;
+  setShowMudImport: (show: boolean) => void;
 }
 
 export const useProjectStore = create<ProjectStore>((set, get) => ({
@@ -50,6 +53,7 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
   adminSubView: "overview",
   adminContentSubView: "abilities",
   pendingNavigation: null,
+  showMudImport: false,
 
   setProject: (project) => {
     const art = panelTab("art");
@@ -108,6 +112,7 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
     if (nav) set({ pendingNavigation: null });
     return nav;
   },
+  setShowMudImport: (showMudImport) => set({ showMudImport }),
 }));
 
 // ─── Debounced persistence ─────────────────────────────────────────

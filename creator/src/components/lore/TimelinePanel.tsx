@@ -48,13 +48,13 @@ function parseYearInput(value: string): number | undefined {
 function importanceClasses(importance: TimelineEvent["importance"]) {
   if (importance === "legendary") {
     return {
-      dot: "bg-[var(--color-warm)] shadow-[0_0_18px_rgba(200,164,106,0.32)]",
-      pill: "border-[rgba(200,164,106,0.28)] bg-[rgba(200,164,106,0.12)] text-[var(--color-warm-pale)]",
+      dot: "bg-[var(--color-warm)] shadow-[0_0_18px_rgb(var(--accent-rgb)/0.32)]",
+      pill: "border-[rgb(var(--accent-rgb)/0.28)] bg-[rgb(var(--accent-rgb)/0.12)] text-[var(--color-warm-pale)]",
     };
   }
   if (importance === "major") {
     return {
-      dot: "bg-accent shadow-[0_0_18px_rgba(168,151,210,0.24)]",
+      dot: "bg-accent shadow-[0_0_18px_rgb(var(--accent-rgb)/0.24)]",
       pill: "border-[var(--border-accent-subtle)] bg-[var(--bg-accent-subtle)] text-text-primary",
     };
   }
@@ -190,7 +190,7 @@ function CalendarEditor({
                 <input
                   type="color"
                   aria-label={`Color for ${era.name}`}
-                  value={era.color || "#a897d2"}
+                  value={era.color || "#ff7d00"}
                   onChange={(e) => patchEra(calendar.id, era.id, { color: e.target.value })}
                   className="h-11 w-11 cursor-pointer rounded-full border border-[var(--chrome-stroke)] bg-transparent p-1"
                   title="Era color"
@@ -486,7 +486,7 @@ function ChronicleEventRow({
       }}
       className={`focus-ring group relative grid w-full gap-4 rounded-[1.35rem] border px-4 py-4 text-left transition md:grid-cols-[9.5rem_minmax(0,1fr)] ${
         selected
-          ? "border-[var(--border-accent-ring)] bg-[linear-gradient(145deg,rgba(168,151,210,0.16),rgba(28,33,49,0.92))] shadow-[var(--shadow-glow)]"
+          ? "border-[var(--border-accent-ring)] bg-[linear-gradient(145deg,rgb(var(--accent-rgb)/0.16),rgb(var(--bg-rgb)/0.92))] shadow-[var(--shadow-glow)]"
           : "border-transparent bg-transparent hover:border-border-muted/40 hover:bg-bg-secondary/25"
       }`}
       aria-pressed={selected}
@@ -666,7 +666,7 @@ export function TimelinePanel() {
 
   return (
     <div className="flex flex-col gap-6">
-      <section className="rounded-[2rem] border border-border-muted/40 bg-[radial-gradient(circle_at_top_left,rgba(200,164,106,0.12),transparent_36%),linear-gradient(155deg,rgba(18,22,35,0.98),rgba(10,12,22,0.96))] p-6 shadow-[var(--shadow-panel)]">
+      <section className="rounded-[2rem] border border-border-muted/40 bg-[radial-gradient(circle_at_top_left,rgb(var(--accent-rgb)/0.12),transparent_36%),linear-gradient(155deg,rgb(var(--bg-rgb)/0.98),rgb(var(--abyss-rgb)/0.96))] p-6 shadow-[var(--shadow-panel)]">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <p className="text-[0.65rem] uppercase tracking-[0.32em] text-[var(--color-warm)]/80">

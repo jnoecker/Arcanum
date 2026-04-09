@@ -7,16 +7,16 @@
 
   /* ─── RGB tuples for synthesized rgba() values ─── */
   /* Override these via the JS theme system; defaults match the dark Arcanum palette. */
-  --bg-rgb: 34 41 60;
-  --surface-rgb: 49 58 86;
-  --text-rgb: 219 227 248;
-  --accent-rgb: 168 151 210;
-  --abyss-rgb: 28 33 49;
-  --stroke-rgb: 255 255 255;
-  --fill-rgb: 8 12 28;
-  --highlight-rgb: 255 255 255;
-  --shadow-rgb: 8 12 28;
-  --overlay-rgb: 28 33 49;
+  --bg-rgb: 0 21 36;
+  --surface-rgb: 21 97 109;
+  --text-rgb: 255 236 209;
+  --accent-rgb: 255 125 0;
+  --abyss-rgb: 0 10 18;
+  --stroke-rgb: 255 236 209;
+  --fill-rgb: 0 12 20;
+  --highlight-rgb: 255 236 209;
+  --shadow-rgb: 0 8 14;
+  --overlay-rgb: 0 10 18;
 
   /* ─── Typography ─── */
   --font-sans: 'Crimson Pro', Georgia, serif;
@@ -35,24 +35,24 @@
   --letter-spacing-wide-ui: 0.32em;
 
   /* ─── Deep Space (Backgrounds) ─── */
-  --color-bg-abyss:     #22293c;
-  --color-bg-primary:   #2a3149;
-  --color-bg-secondary: #262f47;
-  --color-bg-tertiary:  #313a56;
-  --color-bg-elevated:  #313a56;
-  --color-bg-hover:     #3a4668;
+  --color-bg-abyss:     #001524;
+  --color-bg-primary:   #032534;
+  --color-bg-secondary: #073746;
+  --color-bg-tertiary:  #0f5160;
+  --color-bg-elevated:  #15616d;
+  --color-bg-hover:     #1d7280;
 
   /* ─── Borders ─── */
-  --color-border-default: #56617d;
-  --color-border-muted:   #39455f;
-  --color-border-focus:   #b88faa;
+  --color-border-default: #2e7680;
+  --color-border-muted:   #174852;
+  --color-border-focus:   #ff7d00;
 
   /* ─── Text ─── */
-  --color-text-primary:   #dbe3f8;
-  --color-text-secondary: #aebada;
-  --color-text-muted:     #95a0bf;
-  --color-text-link:      #b88faa;
-  --color-text-on-accent: #22293c;
+  --color-text-primary:   #ffecd1;
+  --color-text-secondary: #dccbb3;
+  --color-text-muted:     #ad9d88;
+  --color-text-link:      #ff7d00;
+  --color-text-on-accent: #001524;
 
   /* ─── Chrome (mode-aware overlays) ─── */
   /* These reference the *-rgb tuples above so the JS theme system can rebalance
@@ -70,37 +70,37 @@
   --color-surface-card: rgb(var(--surface-rgb) / 0.6);
 
   /* ─── Accent — Aurum (the creative force) ─── */
-  --color-accent:          #a897d2;
-  --color-accent-muted:    #8d79be;
-  --color-accent-emphasis: #dbe3f8;
+  --color-accent:          #ff7d00;
+  --color-accent-muted:    #c96300;
+  --color-accent-emphasis: #ffecd1;
 
   /* ─── Warm Accent (primary creative actions) ─── */
-  --color-warm:          #c8a46a;
-  --color-warm-pale:     #e2c89a;
-  --color-warm-deep:     #a07840;
+  --color-warm:          #ff7d00;
+  --color-warm-pale:     #ffb86b;
+  --color-warm-deep:     #78290f;
 
   /* ─── Cool Accents ─── */
-  --color-violet:       #a897d2;
-  --color-stellar-blue: #8caec9;
-  --color-arcane-teal:  #a3c48e;
+  --color-violet:       #c0622a;
+  --color-stellar-blue: #2f93a1;
+  --color-arcane-teal:  #15616d;
 
   /* ─── Status Colors ─── */
-  --color-status-success: #a3c48e;
-  --color-status-warning: #bea873;
-  --color-status-error:   #dbb8b8;
-  --color-status-info:    #8caec9;
-  --color-status-danger:  #dbb8b8;
+  --color-status-success: #7cb66d;
+  --color-status-warning: #ff9d3d;
+  --color-status-error:   #d9756b;
+  --color-status-info:    #2f93a1;
+  --color-status-danger:  #d9756b;
 
   /* ─── Badge Colors (vivid variants for small text on dark backgrounds) ─── */
-  --color-badge-success:    #aecc98;
-  --color-badge-success-bg: rgba(141, 169, 123, 0.16);
-  --color-badge-dirty-bg:   rgba(184, 143, 170, 0.16);
+  --color-badge-success:    #9ace8b;
+  --color-badge-success-bg: rgba(124, 182, 109, 0.16);
+  --color-badge-dirty-bg:   rgba(255, 125, 0, 0.16);
 
   /* ─── Server Status ─── */
-  --color-server-stopped:  #6f7da1;
-  --color-server-starting: #bea873;
-  --color-server-running:  #a3c48e;
-  --color-server-error:    #dbb8b8;
+  --color-server-stopped:  #6d8b92;
+  --color-server-starting: #ff9d3d;
+  --color-server-running:  #ff7d00;
+  --color-server-error:    #d9756b;
 
   /* ─── Active/Selected State ─── */
   --color-border-active: rgb(var(--accent-rgb) / 0.35);
@@ -110,53 +110,53 @@
   --color-surface-scrim-light: rgb(var(--bg-rgb) / 0.46);
 
   /* ─── Diff (Code Review) ─── */
-  --color-diff-add-bg:   #0a2a2a;
-  --color-diff-add-text: #4aaa7a;
-  --color-diff-del-bg:   #2a0a14;
-  --color-diff-del-text: #c05060;
+  --color-diff-add-bg:   #0d2d22;
+  --color-diff-add-text: #75c48d;
+  --color-diff-del-bg:   #35150f;
+  --color-diff-del-text: #e08a73;
 
   /* ─── Graph / Zone Map ─── */
-  --color-graph-bg:      #080c1c;
-  --color-graph-grid:    #1e2748;
-  --color-graph-node:    #2a3460;
-  --color-graph-edge:    #6a7aac;
-  --color-graph-edge-up: #7a5fc0;
-  --color-graph-cross:   #c8972e;
-  --color-graph-door:    #e2bc6a;
+  --color-graph-bg:      #000d16;
+  --color-graph-grid:    #0d3c46;
+  --color-graph-node:    #0f5160;
+  --color-graph-edge:    #2f93a1;
+  --color-graph-edge-up: #ff7d00;
+  --color-graph-cross:   #78290f;
+  --color-graph-door:    #ffb86b;
 
   /* ─── Class Identity Colors ─── */
-  --color-class-bulwark:     #bea873;
-  --color-class-warden:      #c4956a;
-  --color-class-arcanist:    #a897d2;
-  --color-class-faeweaver:   #8da97b;
-  --color-class-necromancer: #7a8a6e;
-  --color-class-veil:        #6e5a8a;
-  --color-class-binder:      #bea873;
-  --color-class-stormblade:  #8caec9;
-  --color-class-herald:      #d4c8a0;
-  --color-class-starweaver:  #b88faa;
-  --color-class-fallback:    #95a0bf;
+  --color-class-bulwark:     #ff9d3d;
+  --color-class-warden:      #c0622a;
+  --color-class-arcanist:    #2f93a1;
+  --color-class-faeweaver:   #7cb66d;
+  --color-class-necromancer: #6e8d5a;
+  --color-class-veil:        #78290f;
+  --color-class-binder:      #ffb86b;
+  --color-class-stormblade:  #55aebe;
+  --color-class-herald:      #ffecd1;
+  --color-class-starweaver:  #d88c3a;
+  --color-class-fallback:    #ad9d88;
 
   /* ─── Lore Template Colors ─── */
-  --color-template-world:        #a897d2;
-  --color-template-character:    #a897d2;
-  --color-template-location:     #8caec9;
-  --color-template-organization: #bea873;
-  --color-template-item:         #a3c48e;
-  --color-template-species:      #c4956a;
-  --color-template-event:        #bea873;
-  --color-template-language:     #95a0bf;
-  --color-template-profession:   #d4c8a0;
-  --color-template-ability:      #b88faa;
-  --color-template-freeform:     #95a0bf;
-  --color-template-story:        #c98fb8;
+  --color-template-world:        #ff7d00;
+  --color-template-character:    #d88c3a;
+  --color-template-location:     #2f93a1;
+  --color-template-organization: #ff9d3d;
+  --color-template-item:         #ffb86b;
+  --color-template-species:      #c0622a;
+  --color-template-event:        #ff7d00;
+  --color-template-language:     #ad9d88;
+  --color-template-profession:   #ffecd1;
+  --color-template-ability:      #15616d;
+  --color-template-freeform:     #ad9d88;
+  --color-template-story:        #78290f;
 
   /* ─── Chart / Visualization ─── */
-  --color-chart-hp:   #c05060;
-  --color-chart-mana: #4e7fd4;
+  --color-chart-hp:   #d9756b;
+  --color-chart-mana: #2f93a1;
 
   /* ─── Miscellaneous ─── */
-  --color-text-dirty: #d6b1c1;
+  --color-text-dirty: #ffb07a;
 }
 
 /* ─── Arcanum Design Tokens ─── */
@@ -320,6 +320,58 @@ select,
 @keyframes warm-breathe {
   0%, 100% { box-shadow: 0 0 12px rgb(var(--accent-rgb) / 0.2); }
   50%      { box-shadow: 0 0 20px rgb(var(--accent-rgb) / 0.4); }
+}
+
+@keyframes celestial-bloom {
+  0% {
+    opacity: 0;
+    transform: scale(0.72);
+  }
+  18% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.22);
+  }
+}
+
+@keyframes constellation-sweep {
+  0% {
+    opacity: 0;
+    transform: translate3d(-120%, 28%, 0) rotate(-16deg);
+  }
+  30% {
+    opacity: 0.75;
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(120%, -28%, 0) rotate(-16deg);
+  }
+}
+
+@keyframes toast-tail-drift {
+  0%, 100% {
+    opacity: 0.45;
+    transform: scaleX(0.92);
+  }
+  50% {
+    opacity: 0.9;
+    transform: scaleX(1);
+  }
+}
+
+@keyframes toast-glyph-glimmer {
+  0%, 100% {
+    transform: scale(0.96) rotate(0deg);
+    text-shadow: 0 0 10px rgb(var(--text-rgb) / 0.16);
+  }
+  50% {
+    transform: scale(1.06) rotate(10deg);
+    text-shadow:
+      0 0 18px rgb(var(--text-rgb) / 0.3),
+      0 0 28px rgb(var(--accent-rgb) / 0.18);
+  }
 }
 
 .animate-warm-breathe {
@@ -496,6 +548,147 @@ select,
   border-color: rgb(var(--accent-rgb) / 0.38);
   background:
     linear-gradient(145deg, rgb(var(--accent-rgb) / 0.20), rgb(var(--surface-rgb) / 0.9));
+}
+
+.delight-button {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.delight-button > * {
+  position: relative;
+  z-index: 1;
+}
+
+.delight-button::before,
+.delight-button::after {
+  content: "";
+  position: absolute;
+  inset: -20%;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0;
+}
+
+.delight-button::before {
+  background:
+    radial-gradient(circle, rgb(var(--text-rgb) / 0.28) 0 12%, transparent 44%),
+    radial-gradient(circle, rgb(var(--accent-rgb) / 0.28) 0 34%, transparent 72%);
+  filter: blur(10px);
+}
+
+.delight-button::after {
+  inset: -36%;
+  background: linear-gradient(
+    115deg,
+    transparent 28%,
+    rgb(var(--text-rgb) / 0.10) 46%,
+    rgb(var(--accent-rgb) / 0.30) 50%,
+    rgb(var(--text-rgb) / 0.10) 54%,
+    transparent 72%
+  );
+}
+
+.delight-button-commit::before {
+  background:
+    radial-gradient(circle, rgb(var(--text-rgb) / 0.22) 0 12%, transparent 44%),
+    radial-gradient(circle, rgb(var(--surface-rgb) / 0.26) 0 34%, transparent 72%);
+}
+
+.delight-button-publish::before {
+  background:
+    radial-gradient(circle, rgb(var(--text-rgb) / 0.28) 0 12%, transparent 44%),
+    radial-gradient(circle, rgb(var(--accent-rgb) / 0.34) 0 34%, transparent 72%);
+}
+
+.delight-button.is-delighting::before {
+  animation: celestial-bloom 820ms var(--ease-unfurl) forwards;
+}
+
+.delight-button.is-delighting::after {
+  animation: constellation-sweep 920ms var(--ease-unfurl) forwards;
+}
+
+.toast-shell {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  width: min(28rem, calc(100vw - 2rem));
+  padding: 0.9rem 1rem 0.95rem;
+  border-radius: 1.15rem;
+  border: 1px solid rgb(var(--text-rgb) / 0.14);
+  background:
+    radial-gradient(circle at top left, rgb(var(--text-rgb) / 0.07), transparent 38%),
+    linear-gradient(155deg, rgb(var(--surface-rgb) / 0.94), rgb(var(--bg-rgb) / 0.94));
+  box-shadow:
+    inset 0 1px 0 rgb(var(--text-rgb) / 0.08),
+    var(--shadow-section);
+  color: var(--color-text-secondary);
+}
+
+.toast-shell-default {
+  border-color: rgb(var(--text-rgb) / 0.12);
+}
+
+.toast-shell-astral {
+  border-color: rgb(var(--surface-rgb) / 0.45);
+  background:
+    radial-gradient(circle at 18% 16%, rgb(var(--surface-rgb) / 0.24), transparent 34%),
+    radial-gradient(circle at 82% 20%, rgb(var(--text-rgb) / 0.08), transparent 28%),
+    linear-gradient(155deg, rgb(var(--surface-rgb) / 0.94), rgb(var(--bg-rgb) / 0.95));
+}
+
+.toast-shell-ember {
+  border-color: rgb(var(--accent-rgb) / 0.38);
+  background:
+    radial-gradient(circle at 16% 18%, rgb(var(--accent-rgb) / 0.20), transparent 34%),
+    radial-gradient(circle at 82% 20%, rgb(var(--text-rgb) / 0.08), transparent 28%),
+    linear-gradient(155deg, rgb(var(--surface-rgb) / 0.94), rgb(var(--bg-rgb) / 0.95));
+}
+
+.toast-ornament {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  flex: 0 0 auto;
+}
+
+.toast-glyph {
+  position: relative;
+  z-index: 1;
+  font-size: 1rem;
+  line-height: 1;
+  color: var(--color-text-primary);
+  animation: toast-glyph-glimmer 3.2s ease-in-out infinite;
+}
+
+.toast-tail {
+  position: absolute;
+  inset-inline: 0.1rem;
+  height: 1px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, transparent, rgb(var(--text-rgb) / 0.24), rgb(var(--accent-rgb) / 0.48), transparent);
+  animation: toast-tail-drift 2.8s ease-in-out infinite;
+}
+
+.toast-kicker {
+  margin: 0 0 0.18rem;
+  font-family: "Cinzel", Palatino, serif;
+  font-size: 0.68rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-text-primary);
+}
+
+.toast-message {
+  margin: 0;
+  font-size: 0.92rem;
+  line-height: 1.45;
+  color: var(--color-text-secondary);
 }
 
 .segmented-control {
@@ -745,6 +938,154 @@ select,
   to   { transform: translateY(-0.5rem); }
 }
 
+@keyframes nebula-drift {
+  0%   { transform: translate3d(-2%, -1%, 0) scale(1); }
+  50%  { transform: translate3d(2%, 1.5%, 0) scale(1.04); }
+  100% { transform: translate3d(-1%, 2%, 0) scale(1); }
+}
+
+@keyframes stardust-shift {
+  from {
+    background-position:
+      0 0,
+      0 0,
+      0 0,
+      center;
+  }
+  to {
+    background-position:
+      -180px 140px,
+      120px -160px,
+      -80px 120px,
+      center;
+  }
+}
+
+@keyframes cosmic-glimmer {
+  0%, 100% { opacity: 0.45; }
+  50%      { opacity: 0.8; }
+}
+
+.cosmic-backdrop {
+  z-index: 0;
+}
+
+.cosmic-nebula-layer,
+.cosmic-starfield-layer,
+.cosmic-orbit-layer {
+  position: absolute;
+  inset: 0;
+}
+
+.cosmic-nebula-layer {
+  inset: -12%;
+  background:
+    radial-gradient(circle at 18% 16%, rgb(var(--accent-rgb) / 0.14), transparent 24%),
+    radial-gradient(circle at 76% 12%, rgb(var(--surface-rgb) / 0.16), transparent 28%),
+    radial-gradient(circle at 62% 74%, rgb(var(--text-rgb) / 0.08), transparent 18%),
+    radial-gradient(circle at 16% 78%, rgb(var(--accent-rgb) / 0.08), transparent 16%),
+    radial-gradient(circle at 88% 66%, rgb(var(--surface-rgb) / 0.10), transparent 18%);
+  filter: blur(34px);
+  opacity: 0.72;
+  animation: nebula-drift 34s var(--ease-cosmic) infinite alternate;
+}
+
+.cosmic-starfield-layer {
+  background-image:
+    radial-gradient(circle at 18% 24%, rgb(var(--text-rgb) / 0.20) 0 1px, transparent 1.8px),
+    radial-gradient(circle at 72% 18%, rgb(var(--accent-rgb) / 0.18) 0 1.1px, transparent 1.9px),
+    radial-gradient(circle at 48% 78%, rgb(var(--text-rgb) / 0.10) 0 0.9px, transparent 1.6px),
+    radial-gradient(circle at center, rgb(var(--text-rgb) / 0.03), transparent 62%);
+  background-size:
+    180px 150px,
+    240px 200px,
+    320px 260px,
+    100% 100%;
+  background-repeat: repeat;
+  mix-blend-mode: screen;
+  opacity: 0.42;
+  animation:
+    stardust-shift 80s linear infinite,
+    cosmic-glimmer 7s var(--ease-cosmic) infinite;
+}
+
+.cosmic-orbit-layer {
+  inset: -8%;
+  background:
+    radial-gradient(circle at 80% 20%, transparent 0 26%, rgb(var(--accent-rgb) / 0.08) 26.4%, transparent 27.1%),
+    radial-gradient(circle at 24% 72%, transparent 0 22%, rgb(var(--surface-rgb) / 0.10) 22.4%, transparent 23.1%),
+    radial-gradient(circle at 62% 32%, rgb(var(--text-rgb) / 0.12) 0 1.2px, transparent 2px),
+    radial-gradient(circle at 34% 48%, rgb(var(--accent-rgb) / 0.12) 0 1.4px, transparent 2.1px);
+  opacity: 0.38;
+  mix-blend-mode: screen;
+  animation: nebula-drift 48s var(--ease-cosmic) infinite alternate-reverse;
+}
+
+.cosmic-backdrop-shell .cosmic-nebula-layer {
+  opacity: 0.78;
+  filter: blur(46px);
+}
+
+.cosmic-backdrop-shell .cosmic-starfield-layer {
+  opacity: 0.5;
+}
+
+.cosmic-backdrop-panel .cosmic-nebula-layer {
+  opacity: 0.3;
+  filter: blur(24px);
+}
+
+.cosmic-backdrop-panel .cosmic-starfield-layer {
+  opacity: 0.24;
+}
+
+.cosmic-backdrop-panel .cosmic-orbit-layer {
+  opacity: 0.2;
+}
+
+.cosmic-backdrop-welcome .cosmic-nebula-layer {
+  opacity: 0.88;
+  filter: blur(52px);
+}
+
+.cosmic-backdrop-welcome .cosmic-starfield-layer {
+  opacity: 0.56;
+}
+
+.cosmic-backdrop-welcome .cosmic-orbit-layer {
+  opacity: 0.46;
+}
+
+.instrument-panel,
+.panel-surface,
+.panel-surface-light {
+  position: relative;
+  isolation: isolate;
+}
+
+.instrument-panel::after,
+.panel-surface::after,
+.panel-surface-light::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background:
+    linear-gradient(180deg, rgb(var(--text-rgb) / 0.05), transparent 34%),
+    radial-gradient(circle at 12% 18%, rgb(var(--text-rgb) / 0.10) 0 1px, transparent 1.7px),
+    radial-gradient(circle at 82% 12%, rgb(var(--accent-rgb) / 0.12) 0 1.1px, transparent 1.8px),
+    radial-gradient(circle at 50% -10%, rgb(var(--accent-rgb) / 0.10), transparent 40%);
+  background-size:
+    100% 100%,
+    220px 180px,
+    280px 220px,
+    100% 100%;
+  background-repeat: no-repeat, repeat, repeat, no-repeat;
+  mix-blend-mode: screen;
+  opacity: 0.36;
+}
+
 @supports (animation-timeline: scroll()) {
   .studio-parallax-slow {
     animation: parallax-drift-slow linear both;
@@ -835,6 +1176,19 @@ textarea:focus-visible,
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+
+  .cosmic-nebula-layer,
+  .cosmic-starfield-layer,
+  .cosmic-orbit-layer {
+    animation: none !important;
+  }
+
+  .delight-button::before,
+  .delight-button::after,
+  .toast-glyph,
+  .toast-tail {
+    animation: none !important;
   }
 }
 

@@ -174,7 +174,7 @@ export function DocumentLibraryPanel() {
         <div className="flex flex-wrap gap-2">
           <button
             onClick={handleImport}
-            className="rounded-full border border-[rgba(184,216,232,0.28)] bg-gradient-active-strong px-3 py-1.5 text-xs text-text-primary transition hover:shadow-glow"
+            className="rounded-full border border-[rgb(var(--accent-rgb)/0.28)] bg-gradient-active-strong px-3 py-1.5 text-xs text-text-primary transition hover:shadow-glow"
           >
             Import .md
           </button>

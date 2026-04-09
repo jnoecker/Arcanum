@@ -1,142 +1,36 @@
-import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { lazy, Suspense, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { useProjectStore } from "@/stores/projectStore";
-import { PANEL_MAP, panelTab, type Workspace } from "@/lib/panelRegistry";
-import { useZoneStore, selectDirtyCount } from "@/stores/zoneStore";
-import { useValidationStore } from "@/stores/validationStore";
-import { saveAllZones } from "@/lib/saveZone";
-import { saveProjectConfig } from "@/lib/saveConfig";
-import { validateAllZones } from "@/lib/validateZone";
-import { validateConfig } from "@/lib/validateConfig";
-import { useConfigStore } from "@/stores/configStore";
-import { ValidationPanel } from "./ValidationPanel";
+import type { Workspace } from "@/lib/panelRegistry";
 import { useAssetStore } from "@/stores/assetStore";
-import { useAdminStore } from "@/stores/adminStore";
 import { useLoreStore, selectArticleCount } from "@/stores/loreStore";
+import { useToastStore } from "@/stores/toastStore";
 import { ActionButton, Spinner } from "./ui/FormWidgets";
 import { exportShowcaseData } from "@/lib/exportShowcase";
+import { ProjectSwitcherMenu } from "./ui/ProjectSwitcherMenu";
 
-const DiffModal = lazy(() => import("./ui/DiffModal").then((m) => ({ default: m.DiffModal })));
-const BatchLegacyImport = lazy(() => import("./BatchLegacyImport").then((m) => ({ default: m.BatchLegacyImport })));
-const MudImportWizard = lazy(() => import("./MudImportWizard").then((m) => ({ default: m.MudImportWizard })));
-
-const ADMIN_STATUS_COLORS: Record<string, string> = {
-  disconnected: "bg-server-stopped",
-  connecting: "bg-server-starting",
-  connected: "bg-server-running animate-aurum-pulse",
-  error: "bg-server-error",
-};
-
-const ADMIN_STATUS_LABELS: Record<string, string> = {
-  disconnected: "No link",
-  connecting: "Reaching...",
-  connected: "Linked",
-  error: "Link lost",
-};
-
-const ADMIN_STATUS_GLYPHS: Record<string, string> = {
-  disconnected: "\u25CB", // ○
-  connecting: "\u25D0", // ◐
-  connected: "\u25CF", // ●
-  error: "\u2715", // ✕
-};
-
+const PublishWorldModal = lazy(() =>
+  import("./PublishWorldModal").then((m) => ({ default: m.PublishWorldModal })),
+);
 
 interface ToolbarProps {
   workspace: Workspace;
   setWorkspace: (workspace: Workspace) => void;
+  onNewProject: () => void;
 }
 
-export function Toolbar({ workspace, setWorkspace }: ToolbarProps) {
+export function Toolbar({ workspace, setWorkspace, onNewProject }: ToolbarProps) {
   const project = useProjectStore((s) => s.project);
-  const tabs = useProjectStore((s) => s.tabs);
-  const activeTabId = useProjectStore((s) => s.activeTabId);
-  const openTab = useProjectStore((s) => s.openTab);
-  const adminConnectionStatus = useAdminStore((s) => s.connectionStatus);
-  const dirtyCount = useZoneStore(selectDirtyCount);
-  const zones = useZoneStore((s) => s.zones);
   const workspaceRefs = useRef<Array<HTMLButtonElement | null>>([]);
-  const setValidationResults = useValidationStore((s) => s.setResults);
-  const openValidationPanel = useValidationStore((s) => s.openPanel);
-  const hasConfig = useConfigStore((s) => !!s.config);
-  const configDirty = useConfigStore((s) => s.dirty);
-  const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
-  const [showDiff, setShowDiff] = useState(false);
-  const [showLegacyImport, setShowLegacyImport] = useState(false);
-  const [showMudImport, setShowMudImport] = useState(false);
-  const [showUtilityMenu, setShowUtilityMenu] = useState(false);
+  const projectButtonRef = useRef<HTMLButtonElement | null>(null);
   const openGenerator = useAssetStore((s) => s.openGenerator);
   const openGallery = useAssetStore((s) => s.openGallery);
-  const isStandalone = project?.format === "standalone";
+  const showToast = useToastStore((s) => s.show);
   const articleCount = useLoreStore(selectArticleCount);
   const hasLore = articleCount > 0;
   const [exporting, setExporting] = useState(false);
-  const activeTab = tabs.find((tab) => tab.id === activeTabId) ?? null;
-  const utilityMenuRef = useRef<HTMLDivElement | null>(null);
-
-  useEffect(() => {
-    if (!showUtilityMenu) return;
-    const handlePointerDown = (event: MouseEvent) => {
-      if (!utilityMenuRef.current?.contains(event.target as Node)) {
-        setShowUtilityMenu(false);
-      }
-    };
-    window.addEventListener("mousedown", handlePointerDown);
-    return () => window.removeEventListener("mousedown", handlePointerDown);
-  }, [showUtilityMenu]);
-
-  useEffect(() => {
-    if (!showUtilityMenu) return;
-    function handleKey(e: KeyboardEvent) {
-      if (e.key === "Escape") {
-        e.preventDefault();
-        setShowUtilityMenu(false);
-      }
-    }
-    window.addEventListener("keydown", handleKey);
-    return () => window.removeEventListener("keydown", handleKey);
-  }, [showUtilityMenu]);
-
-  const activeSurface = useMemo(() => {
-    if (!activeTab) {
-      return {
-        kicker: "No surface active",
-        title: "Awaiting a world to shape",
-      };
-    }
-    if (activeTab.kind === "panel" && activeTab.panelId) {
-      const panel = PANEL_MAP[activeTab.panelId];
-      return {
-        kicker: panel?.kicker ?? "Surface",
-        title: panel?.title ?? activeTab.label,
-      };
-    }
-    if (activeTab.kind === "zone") {
-      return {
-        kicker: "Zone cartography",
-        title: activeTab.label,
-      };
-    }
-    if (activeTab.kind === "admin") {
-      return {
-        kicker: "Runtime command",
-        title: "Admin dashboard",
-      };
-    }
-    return {
-      kicker: "Workbench",
-      title: activeTab.label,
-    };
-  }, [activeTab]);
-
-  const handleOpenAdmin = () => {
-    openTab(panelTab("admin"));
-  };
-
-  const handleOpenHandoff = () => {
-    useProjectStore.getState().openTab(panelTab("deployment"));
-  };
+  const [showSwitcher, setShowSwitcher] = useState(false);
+  const [showPublishWorld, setShowPublishWorld] = useState(false);
 
   const handleExportShowcase = async () => {
     const lore = useLoreStore.getState().lore;
@@ -152,6 +46,15 @@ export function Toolbar({ workspace, setWorkspace }: ToolbarProps) {
       const data = exportShowcaseData(lore, imageBaseUrl);
       const json = JSON.stringify(data);
       await invoke<string>("deploy_showcase_to_r2", { jsonContent: json });
+      showToast(
+        {
+          variant: "ember",
+          kicker: "Atlas launched",
+          message: "Lore now shimmers across the showcase firmament.",
+          glyph: "\u2726",
+        },
+        3200,
+      );
     } catch (err) {
       console.error("Showcase deploy failed:", err);
     } finally {
@@ -161,277 +64,137 @@ export function Toolbar({ workspace, setWorkspace }: ToolbarProps) {
 
   return (
     <>
-      <div className="relative z-20 flex shrink-0 items-center px-4 pt-3">
-        <div className="instrument-panel relative min-w-0 flex-1 rounded-3xl px-5 py-3">
-          <div className="pointer-events-none absolute right-[-8rem] top-[-6rem] h-[20rem] w-[20rem] rounded-full bg-[radial-gradient(circle,rgb(var(--accent-rgb)/0.16),transparent_72%)] blur-3xl" />
-          <div className="relative flex flex-wrap items-center gap-4">
-            <div className="mr-auto flex min-w-0 items-center gap-3">
-              <div className="min-w-0">
-                <p className="text-[9px] uppercase tracking-wide-ui text-text-muted">Creator&apos;s instrument</p>
-                <h1 className="min-w-0 truncate font-display text-[clamp(1.25rem,2vw,1.75rem)] leading-tight text-text-primary">
-                  {project?.name ?? "No world open"}
-                </h1>
-                <p className="mt-1 truncate text-xs text-text-secondary">
-                  {activeTab ? `${activeSurface.kicker} • ${activeSurface.title}` : activeSurface.title}
-                </p>
-              </div>
-            </div>
-
-            <div className="xl:justify-self-center">
-              <div className="segmented-control min-w-0" role="tablist" aria-label="Creator mode">
-                {([
-                  { id: "worldmaker" as const, label: "Worldmaker", tip: "Zones, systems, and runtime craft" },
-                  { id: "lore" as const, label: "Lore", tip: "Canon, maps, and narrative structure" },
-                ]).map((entry, index) => (
-                  <button
-                    key={entry.id}
-                    ref={(node) => {
-                      workspaceRefs.current[index] = node;
-                    }}
-                    role="tab"
-                    aria-selected={workspace === entry.id}
-                    tabIndex={workspace === entry.id ? 0 : -1}
-                    title={entry.tip}
-                    onClick={() => setWorkspace(entry.id)}
-                    onKeyDown={(event) => {
-                      if (event.key === "ArrowRight" || event.key === "ArrowDown") {
-                        event.preventDefault();
-                        const nextIndex = (index + 1) % 2;
-                        const nextWorkspace = nextIndex === 0 ? "worldmaker" : "lore";
-                        setWorkspace(nextWorkspace);
-                        workspaceRefs.current[nextIndex]?.focus();
-                      } else if (event.key === "ArrowLeft" || event.key === "ArrowUp") {
-                        event.preventDefault();
-                        const nextIndex = (index - 1 + 2) % 2;
-                        const nextWorkspace = nextIndex === 0 ? "worldmaker" : "lore";
-                        setWorkspace(nextWorkspace);
-                        workspaceRefs.current[nextIndex]?.focus();
-                      }
-                    }}
-                    className={`focus-ring rounded-full px-4 py-1.5 font-display text-sm transition ${
-                      workspace === entry.id
-                        ? "bg-[var(--chrome-fill)] text-accent shadow-glow"
-                        : "text-text-secondary hover:bg-[var(--chrome-highlight)] hover:text-text-primary"
-                    }`}
-                  >
-                    {entry.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-2 xl:justify-end">
-              <div ref={utilityMenuRef} className="relative">
-                <ActionButton
-                  onClick={() => setShowUtilityMenu((value) => !value)}
-                  variant="secondary"
-                  className="text-stellar-blue"
-                  title="Open import, validation, runtime, and gallery tools"
-                  aria-label="Open import, validation, runtime, and gallery tools"
-                  aria-expanded={showUtilityMenu}
-                  aria-haspopup="true"
+      <div className="relative z-20 shrink-0 px-5 pt-4">
+        <div className="flex w-full items-center gap-4">
+          {/* ── Left: project-name switcher ───────────────────────────── */}
+          <div className="relative flex min-w-0 flex-1 items-center">
+            <button
+              ref={projectButtonRef}
+              onClick={() => setShowSwitcher((v) => !v)}
+              aria-haspopup="menu"
+              aria-expanded={showSwitcher}
+              title="Switch world"
+              className="focus-ring group/project min-w-0 rounded-2xl px-3 py-1 text-left transition hover:bg-[var(--chrome-highlight)]/30"
+            >
+              <span className="flex min-w-0 items-baseline gap-2">
+                <span className="truncate font-display text-[clamp(1.5rem,2.4vw,2.25rem)] uppercase leading-none tracking-[0.18em] text-accent">
+                  {project?.name ?? "No world"}
+                </span>
+                <span
+                  aria-hidden="true"
+                  className="shrink-0 text-xs text-text-muted opacity-60 transition group-hover/project:opacity-100"
                 >
-                  <span
-                    className={`flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full text-[9px] leading-none text-bg-abyss ${ADMIN_STATUS_COLORS[adminConnectionStatus]}`}
-                    role="status"
-                    aria-label={ADMIN_STATUS_LABELS[adminConnectionStatus]}
-                  >
-                    <span aria-hidden="true">{ADMIN_STATUS_GLYPHS[adminConnectionStatus]}</span>
-                  </span>
-                  <span className="min-w-0 truncate">World Tools</span>
-                </ActionButton>
-                {showUtilityMenu && (
-                  <div className="instrument-panel absolute right-0 top-full z-20 mt-3 w-[min(22rem,90vw)] rounded-3xl p-3" role="menu">
-                    <div className="space-y-3">
-                      <div>
-                        <p className="px-2 text-2xs uppercase tracking-wide-ui text-text-muted">Runtime</p>
-                        <div className="mt-2 grid gap-2">
-                          <button
-                            role="menuitem"
-                            onClick={() => {
-                              setShowUtilityMenu(false);
-                              handleOpenAdmin();
-                            }}
-                            className="chrome-menu-item focus-ring flex min-h-11 items-center justify-between rounded-2xl px-4 py-3 text-left text-sm"
-                          >
-                            <span>Runtime Admin</span>
-                            <span className="text-2xs uppercase tracking-label text-text-muted">
-                              {ADMIN_STATUS_LABELS[adminConnectionStatus]}
-                            </span>
-                          </button>
-                          {isStandalone && (
-                            <button
-                              role="menuitem"
-                              onClick={() => {
-                                setShowUtilityMenu(false);
-                                handleOpenHandoff();
-                              }}
-                              disabled={!hasConfig}
-                              className="chrome-menu-item focus-ring flex min-h-11 items-center rounded-2xl px-4 py-3 text-left text-sm disabled:cursor-not-allowed disabled:opacity-40"
-                            >
-                              Export Runtime
-                            </button>
-                          )}
-                          <button
-                            role="menuitem"
-                            onClick={() => {
-                              const config = useConfigStore.getState().config;
-                              const validClasses = config?.classes
-                                ? new Set(Object.keys(config.classes).map((k) => k.toUpperCase()))
-                                : undefined;
-                              const results = validateAllZones(
-                                zones,
-                                config?.equipmentSlots,
-                                validClasses,
-                              );
-                              if (config) {
-                                const configIssues = validateConfig(config);
-                                if (configIssues.length > 0) {
-                                  results.set("Config", configIssues);
-                                }
-                              }
-                              setValidationResults(results);
-                              openValidationPanel();
-                              setShowUtilityMenu(false);
-                            }}
-                            disabled={zones.size === 0 && !hasConfig}
-                            className="chrome-menu-item focus-ring flex min-h-11 items-center rounded-2xl px-4 py-3 text-left text-sm disabled:cursor-not-allowed disabled:opacity-40"
-                          >
-                            Run Validation
-                          </button>
-                        </div>
-                      </div>
+                  ▾
+                </span>
+              </span>
+            </button>
 
-                      <div>
-                        <p className="px-2 text-2xs uppercase tracking-wide-ui text-text-muted">Publication and Imports</p>
-                        <div className="mt-2 grid gap-2">
-                          <button
-                            role="menuitem"
-                            onClick={() => {
-                              setShowUtilityMenu(false);
-                              void handleExportShowcase();
-                            }}
-                            disabled={!hasLore || exporting}
-                            className="chrome-menu-item focus-ring flex min-h-11 items-center rounded-2xl px-4 py-3 text-left text-sm disabled:cursor-not-allowed disabled:opacity-40"
-                          >
-                            {exporting ? "Publishing Lore..." : "Publish Lore Atlas"}
-                          </button>
-                          <button
-                            role="menuitem"
-                            onClick={() => {
-                              setShowUtilityMenu(false);
-                              setShowLegacyImport(true);
-                            }}
-                            className="chrome-menu-item focus-ring flex min-h-11 items-center rounded-2xl px-4 py-3 text-left text-sm"
-                          >
-                            Restore Legacy Media
-                          </button>
-                          <button
-                            role="menuitem"
-                            onClick={() => {
-                              setShowUtilityMenu(false);
-                              setShowMudImport(true);
-                            }}
-                            className="chrome-menu-item focus-ring flex min-h-11 items-center rounded-2xl px-4 py-3 text-left text-sm"
-                          >
-                            Import MUD Zone
-                          </button>
-                          <button
-                            role="menuitem"
-                            onClick={() => {
-                              setShowUtilityMenu(false);
-                              openGallery();
-                            }}
-                            className="chrome-menu-item focus-ring flex min-h-11 items-center rounded-2xl px-4 py-3 text-left text-sm"
-                          >
-                            Browse Asset Gallery
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+            {showSwitcher && (
+              <ProjectSwitcherMenu
+                anchorRef={projectButtonRef}
+                onClose={() => setShowSwitcher(false)}
+                onNewProject={onNewProject}
+              />
+            )}
+          </div>
+
+          {/* ── Center: workspace segmented pill ──────────────────────── */}
+          <div className="shrink-0">
+            <div className="segmented-control" role="tablist" aria-label="Creator mode">
+              {([
+                { id: "worldmaker" as const, label: "Worldmaker", tip: "Zones, systems, and runtime craft" },
+                { id: "lore" as const, label: "Lore", tip: "Canon, maps, and narrative structure" },
+              ]).map((entry, index) => (
+                <button
+                  key={entry.id}
+                  ref={(node) => {
+                    workspaceRefs.current[index] = node;
+                  }}
+                  role="tab"
+                  aria-selected={workspace === entry.id}
+                  tabIndex={workspace === entry.id ? 0 : -1}
+                  title={entry.tip}
+                  onClick={() => setWorkspace(entry.id)}
+                  onKeyDown={(event) => {
+                    if (event.key === "ArrowRight" || event.key === "ArrowDown") {
+                      event.preventDefault();
+                      const nextIndex = (index + 1) % 2;
+                      const nextWorkspace = nextIndex === 0 ? "worldmaker" : "lore";
+                      setWorkspace(nextWorkspace);
+                      workspaceRefs.current[nextIndex]?.focus();
+                    } else if (event.key === "ArrowLeft" || event.key === "ArrowUp") {
+                      event.preventDefault();
+                      const nextIndex = (index - 1 + 2) % 2;
+                      const nextWorkspace = nextIndex === 0 ? "worldmaker" : "lore";
+                      setWorkspace(nextWorkspace);
+                      workspaceRefs.current[nextIndex]?.focus();
+                    }
+                  }}
+                  className={`focus-ring rounded-full px-4 py-1.5 font-display text-sm transition ${
+                    workspace === entry.id
+                      ? "bg-[var(--chrome-fill)] text-accent shadow-glow"
+                      : "text-text-secondary hover:bg-[var(--chrome-highlight)] hover:text-text-primary"
+                  }`}
+                >
+                  {entry.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* ── Right: actions ─────────────────────────────────────────── */}
+          <div className="flex min-w-0 flex-1 shrink-0 items-center justify-end gap-2">
+            <ActionButton
+              onClick={openGenerator}
+              variant="ghost"
+              title="Generate new art"
+              aria-label="Generate new art"
+            >
+              Render Art
+            </ActionButton>
+
+            <ActionButton
+              onClick={openGallery}
+              variant="ghost"
+              title="Browse the asset gallery"
+              aria-label="Browse the asset gallery"
+            >
+              Gallery
+            </ActionButton>
+
+            {workspace === "lore" ? (
+              <ActionButton
+                onClick={() => void handleExportShowcase()}
+                disabled={!hasLore || exporting}
+                title="Sync assets and publish lore to the showcase"
+                variant="primary"
+              >
+                {exporting ? (
+                  <span className="flex items-center gap-1.5">
+                    <Spinner />
+                    Publishing
+                  </span>
+                ) : (
+                  "Publish Lore"
                 )}
-              </div>
-
-              <ActionButton onClick={openGenerator} title="Generate new art" aria-label="Generate new art" variant="secondary" className="text-stellar-blue">
-                Render Art
               </ActionButton>
-
-              {workspace === "lore" && (
-                <ActionButton
-                  onClick={() => void handleExportShowcase()}
-                  disabled={!hasLore || exporting}
-                  title="Sync assets and publish lore to the showcase"
-                  variant="primary"
-                >
-                  {exporting ? <span className="flex items-center gap-1.5"><Spinner />Publishing</span> : "Publish Lore"}
-                </ActionButton>
-              )}
-
-              <div className="rounded-3xl border border-[var(--border-accent-ring)] bg-[linear-gradient(145deg,rgb(var(--surface-rgb)/0.94),rgb(var(--bg-rgb)/0.94))] px-3 py-2 shadow-glow">
-                <p className="text-[9px] uppercase tracking-wide-ui text-text-muted">
-                  {saved ? "Session committed" : dirtyCount > 0 || configDirty ? "Unsaved work" : "Session stable"}
-                </p>
-                <div className="mt-2 flex items-center gap-3">
-                  <span className="text-xs text-text-secondary">
-                    {dirtyCount + (configDirty ? 1 : 0)} pending
-                  </span>
-                  <ActionButton
-                    onClick={() => setShowDiff(true)}
-                    disabled={(dirtyCount === 0 && !configDirty) || saving}
-                    title="Review and save changes"
-                    variant={saved || dirtyCount > 0 || configDirty ? "primary" : "secondary"}
-                    className={saved ? "border-status-success/40 bg-status-success/15 text-status-success" : ""}
-                  >
-                    <span role="status" aria-live="polite">
-                      {saving ? (
-                        <span className="flex items-center gap-1.5"><Spinner />Saving</span>
-                      ) : saved ? (
-                        <span className="animate-saved-flash">Committed</span>
-                      ) : dirtyCount > 0 || configDirty ? (
-                        `Review ${dirtyCount + (configDirty ? 1 : 0)} change${dirtyCount + (configDirty ? 1 : 0) === 1 ? "" : "s"}`
-                      ) : "No Changes"}
-                    </span>
-                  </ActionButton>
-                </div>
-              </div>
-            </div>
+            ) : (
+              <ActionButton
+                onClick={() => setShowPublishWorld(true)}
+                disabled={!project}
+                title="Save, validate, and deploy the entire world to R2"
+                variant="primary"
+              >
+                Publish World
+              </ActionButton>
+            )}
           </div>
         </div>
       </div>
 
-      <ValidationPanel />
-
       <Suspense>
-        {showDiff && (
-          <DiffModal
-            onCancel={() => setShowDiff(false)}
-            onConfirm={async () => {
-              setShowDiff(false);
-              setSaving(true);
-              try {
-                await saveAllZones();
-                const currentProject = useProjectStore.getState().project;
-                if (currentProject && useConfigStore.getState().dirty) {
-                  await saveProjectConfig(currentProject);
-                }
-                setSaved(true);
-                setTimeout(() => setSaved(false), 2000);
-              } catch (err) {
-                console.error("Save failed:", err);
-              } finally {
-                setSaving(false);
-              }
-            }}
-          />
-        )}
-
-        {showLegacyImport && (
-          <BatchLegacyImport onClose={() => setShowLegacyImport(false)} />
-        )}
-
-        {showMudImport && (
-          <MudImportWizard onClose={() => setShowMudImport(false)} />
+        {showPublishWorld && (
+          <PublishWorldModal onClose={() => setShowPublishWorld(false)} />
         )}
       </Suspense>
     </>

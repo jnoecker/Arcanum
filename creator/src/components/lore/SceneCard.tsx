@@ -41,7 +41,7 @@ export function SceneCard({
         isDragging ? "opacity-50" : ""
       } ${
         isSelected
-          ? "border border-accent bg-bg-elevated shadow-[0_0_12px_rgba(168,151,210,0.2)]"
+          ? "border border-accent bg-bg-elevated shadow-[0_0_12px_rgb(var(--accent-rgb)/0.2)]"
           : "border border-border-default bg-bg-primary hover:bg-bg-tertiary"
       }`}
       aria-selected={isSelected}

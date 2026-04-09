@@ -25,8 +25,8 @@ export function PreviewPlayback({ playing, onToggle }: PreviewPlaybackProps) {
           "transition-[color,background-color,border-color,box-shadow,opacity] duration-[180ms]",
           "opacity-70 hover:opacity-100",
           playing
-            ? "bg-bg-elevated/80 border-border-default shadow-[0_0_12px_rgba(200,164,106,0.4)] animate-pulse"
-            : "bg-bg-elevated/80 border-border-muted hover:bg-bg-elevated hover:border-border-default hover:shadow-[0_0_8px_rgba(168,151,210,0.3)]",
+            ? "bg-bg-elevated/80 border-border-default shadow-[0_0_12px_rgb(var(--accent-rgb)/0.4)] animate-pulse"
+            : "bg-bg-elevated/80 border-border-muted hover:bg-bg-elevated hover:border-border-default hover:shadow-[0_0_8px_rgb(var(--accent-rgb)/0.3)]",
         ].join(" ")}
         onClick={onToggle}
         aria-label={playing ? "Stop scene animation" : "Preview scene animation"}

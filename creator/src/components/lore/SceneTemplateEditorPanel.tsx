@@ -10,8 +10,8 @@ import { Section, ActionButton } from "@/components/ui/FormWidgets";
 import type { CustomSceneTemplate } from "@/types/lore";
 
 const PALETTE = [
-  "#a897d2", "#8caec9", "#bea873", "#a3c48e", "#c4956a",
-  "#b88faa", "#95a0bf", "#d4c8a0", "#7a8a6e", "#6e5a8a",
+  "#ff7d00", "#15616d", "#ffecd1", "#78290f", "#ffb86b",
+  "#2f93a1", "#c0622a", "#ad9d88", "#7cb66d", "#d88c3a",
 ];
 
 // Stable empty fallback so the selector below doesn't return a fresh array

@@ -20,81 +20,75 @@ export function StatusBar() {
   const warningCount = allIssues.filter((issue) => issue.severity === "warning").length;
 
   return (
-    <div className="relative z-10 shrink-0 px-4 pb-2">
-      <div className="instrument-panel relative flex flex-wrap items-center gap-2.5 overflow-hidden rounded-2xl px-4 py-1.5 text-xs">
-        <span className="font-display font-semibold text-3xs uppercase tracking-wide-ui text-text-muted/70">
-          World pulse
+    <div className="relative z-10 flex shrink-0 flex-wrap items-center gap-2 px-6 pb-3 pt-1 text-xs">
+      <span className="rounded-full border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] px-3 py-1 text-text-muted">
+        {totalZones} zone{totalZones !== 1 ? "s" : ""} loaded
+      </span>
+
+      {hasDirty && (
+        <span className="rounded-full border border-status-warning/20 bg-status-warning/12 px-3 py-1 text-status-warning">
+          {dirtyZones > 0 && `${dirtyZones} zone${dirtyZones !== 1 ? "s" : ""} modified`}
+          {dirtyZones > 0 && configDirty && " | "}
+          {configDirty && "Config modified"}
         </span>
+      )}
 
-        <span className="rounded-full border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] px-3 py-1 text-text-muted">
-          {totalZones} zone{totalZones !== 1 ? "s" : ""} loaded
-        </span>
-
-        {hasDirty && (
-          <span className="rounded-full border border-status-warning/20 bg-status-warning/12 px-3 py-1 text-status-warning">
-            {dirtyZones > 0 && `${dirtyZones} zone${dirtyZones !== 1 ? "s" : ""} modified`}
-            {dirtyZones > 0 && configDirty && " | "}
-            {configDirty && "Config modified"}
-          </span>
-        )}
-
-        {validationResults && (
-          <button
-            onClick={openValidationPanel}
-            className={`focus-ring flex items-center gap-1.5 rounded-full px-3 py-1 text-xs transition-colors hover:brightness-125 ${
-              errorCount > 0
-                ? "border border-status-error/20 bg-status-error/15 text-status-error"
-                : warningCount > 0
-                  ? "border border-status-warning/20 bg-status-warning/12 text-status-warning"
-                  : "border border-status-success/20 bg-status-success/12 text-status-success"
-            }`}
-            title="Open validation results"
-          >
-            {errorCount > 0 && (
-              <span className="animate-crimson-pulse">
-                {errorCount} error{errorCount !== 1 ? "s" : ""}
-              </span>
-            )}
-            {errorCount > 0 && warningCount > 0 && (
-              <span className="text-text-muted/60">|</span>
-            )}
-            {warningCount > 0 && (
-              <span>
-                {warningCount} warning{warningCount !== 1 ? "s" : ""}
-              </span>
-            )}
-            {errorCount === 0 && warningCount === 0 && (
-              <span>&#x2713; valid</span>
-            )}
-          </button>
-        )}
-
-        <div className="flex-1" />
-
-        {adminStatus === "error" && lastError && (
-          <span className="truncate text-status-error">{lastError}</span>
-        )}
-
-        <span
-          className={`rounded-full border px-3 py-1 ${
-            adminStatus === "connected"
-              ? "border-server-running/20 bg-server-running/15 text-server-running"
-              : adminStatus === "error"
-                ? "border-server-error/20 bg-server-error/15 text-server-error"
-                : adminStatus === "connecting"
-                  ? "border-server-starting/20 bg-server-starting/15 text-server-starting"
-                  : "border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] text-text-muted"
+      {validationResults && (
+        <button
+          onClick={openValidationPanel}
+          className={`focus-ring flex items-center gap-1.5 rounded-full px-3 py-1 text-xs transition-colors hover:brightness-125 ${
+            errorCount > 0
+              ? "border border-status-error/20 bg-status-error/15 text-status-error"
+              : warningCount > 0
+                ? "border border-status-warning/20 bg-status-warning/12 text-status-warning"
+                : "border border-status-success/20 bg-status-success/12 text-status-success"
           }`}
+          title="Open validation results"
         >
-          {adminStatus === "connected"
-            ? "Linked"
-            : adminStatus === "connecting"
-              ? "Reaching..."
-              : adminStatus === "error"
-                ? "Link lost"
-                : "No link"}
-        </span>
-      </div>
+          {errorCount > 0 && (
+            <span className="animate-crimson-pulse">
+              {errorCount} error{errorCount !== 1 ? "s" : ""}
+            </span>
+          )}
+          {errorCount > 0 && warningCount > 0 && (
+            <span className="text-text-muted/60">|</span>
+          )}
+          {warningCount > 0 && (
+            <span>
+              {warningCount} warning{warningCount !== 1 ? "s" : ""}
+            </span>
+          )}
+          {errorCount === 0 && warningCount === 0 && (
+            <span>&#x2713; valid</span>
+          )}
+        </button>
+      )}
+
+      <div className="flex-1" />
+
+      {adminStatus === "error" && lastError && (
+        <span className="truncate text-status-error">{lastError}</span>
+      )}
+
+      <span
+        className={`rounded-full border px-3 py-1 ${
+          adminStatus === "connected"
+            ? "border-server-running/20 bg-server-running/15 text-server-running"
+            : adminStatus === "error"
+              ? "border-server-error/20 bg-server-error/15 text-server-error"
+              : adminStatus === "connecting"
+                ? "border-server-starting/20 bg-server-starting/15 text-server-starting"
+                : "border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] text-text-muted"
+        }`}
+      >
+        {adminStatus === "connected"
+          ? "Linked"
+          : adminStatus === "connecting"
+            ? "Reaching..."
+            : adminStatus === "error"
+              ? "Link lost"
+              : "No link"}
+      </span>
     </div>
   );
 }

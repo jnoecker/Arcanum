@@ -167,8 +167,8 @@ export function buildRelationGraph(
         target: rel.targetId,
         label: rel.type,
         type: "smoothstep",
-        style: { stroke: RELATION_COLORS[rel.type] ?? "#56617d", strokeWidth: 1.5 },
-        labelStyle: { fill: "#95a0bf", fontSize: 10 },
+        style: { stroke: RELATION_COLORS[rel.type] ?? "#2e7680", strokeWidth: 1.5 },
+        labelStyle: { fill: "#ad9d88", fontSize: 10 },
       });
     }
 
@@ -186,8 +186,8 @@ export function buildRelationGraph(
         target: m.targetId,
         label: "mentions",
         type: "smoothstep",
-        style: { stroke: "#56617d", strokeDasharray: "4 2", strokeWidth: 1.5 },
-        labelStyle: { fill: "#7a849e", fontSize: 10 },
+        style: { stroke: "#2e7680", strokeDasharray: "4 2", strokeWidth: 1.5 },
+        labelStyle: { fill: "#ad9d88", fontSize: 10 },
       });
     }
   }
@@ -247,9 +247,9 @@ function applyDagreLayout(nodes: Node[], edges: Edge[]): Node[] {
 
 const RELATION_COLORS: Record<string, string> = {
   ally: "#a3c48e",
-  rival: "#dbb8b8",
-  member_of: "#8caec9",
-  located_in: "#8caec9",
-  related: "#a897d2",
-  mentioned: "#56617d",
+  rival: "#d9756b",
+  member_of: "#2f93a1",
+  located_in: "#2f93a1",
+  related: "#ff7d00",
+  mentioned: "#2e7680",
 };

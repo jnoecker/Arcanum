@@ -19,7 +19,7 @@ import { MapAnalysisPanel } from "./MapAnalysisPanel";
 // ─── Color palette picker ──────────────────────────────────────────
 
 const DEFAULT_MAP_COLOR = "var(--color-template-world)";
-const DEFAULT_MAP_COLOR_HEX = "#a897d2"; // hex fallback for <input type="color">
+const DEFAULT_MAP_COLOR_HEX = "#ff7d00"; // hex fallback for <input type="color">
 
 function ColorPalettePicker({
   value,

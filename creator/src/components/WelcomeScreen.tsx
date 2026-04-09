@@ -6,6 +6,7 @@ import {
   type RecentProject,
 } from "@/lib/uiPersistence";
 import { ErrorDialog } from "./ErrorDialog";
+import { CosmicBackdrop } from "./ui/CosmicBackdrop";
 import splashHero from "@/assets/splash-hero.jpg";
 
 const ImportFromR2Dialog = lazy(() => import("./ImportFromR2Dialog").then((m) => ({ default: m.ImportFromR2Dialog })));
@@ -53,13 +54,14 @@ export function WelcomeScreen({ onNewProject }: WelcomeScreenProps) {
 
   return (
     <div className="relative flex min-h-screen min-h-dvh overflow-x-hidden overflow-y-auto bg-bg-abyss">
+      <CosmicBackdrop variant="welcome" />
       <img
         src={splashHero}
         alt=""
         className="absolute inset-0 h-full w-full object-cover opacity-25"
       />
-      <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(34,41,60,0.18),rgba(34,41,60,0.84))]" />
-      <div className="absolute left-[-8rem] top-[-6rem] h-[28rem] w-[28rem] rounded-full bg-[radial-gradient(circle,rgba(168,151,210,0.22),transparent_66%)] blur-3xl" />
+      <div className="absolute inset-0 bg-[linear-gradient(180deg,rgb(var(--bg-rgb)/0.18),rgb(var(--bg-rgb)/0.84))]" />
+      <div className="absolute left-[-8rem] top-[-6rem] h-[28rem] w-[28rem] rounded-full bg-[radial-gradient(circle,rgb(var(--accent-rgb)/0.22),transparent_66%)] blur-3xl" />
 
       <div className="relative z-10 mx-auto flex w-full max-w-6xl flex-1 items-center px-6 py-8 lg:px-10">
         <div className="grid w-full gap-6 lg:grid-cols-[minmax(18rem,0.64fr)_minmax(0,1.24fr)]">
@@ -73,11 +75,11 @@ export function WelcomeScreen({ onNewProject }: WelcomeScreenProps) {
               </p>
             </div>
 
-            <div className="rounded-3xl border border-[var(--chrome-stroke)] bg-[linear-gradient(155deg,rgba(54,63,90,0.9),rgba(37,45,68,0.92))] p-6 shadow-panel">
+            <div className="rounded-3xl border border-[var(--chrome-stroke)] bg-[linear-gradient(155deg,rgb(var(--surface-rgb)/0.78),rgb(var(--bg-rgb)/0.92))] p-6 shadow-panel">
               <div className="mt-1 flex flex-col gap-4">
                 <button
                   onClick={onNewProject}
-                  className="rounded-3xl border border-[var(--border-accent-ring)] bg-[linear-gradient(135deg,rgba(168,151,210,0.26),rgba(200,151,46,0.16))] px-5 py-5 text-left text-sm font-medium text-text-primary transition hover:shadow-[0_14px_34px_rgba(168,151,210,0.2)]"
+                  className="rounded-3xl border border-[var(--border-accent-ring)] bg-[linear-gradient(135deg,rgb(var(--accent-rgb)/0.26),rgb(var(--surface-rgb)/0.18))] px-5 py-5 text-left text-sm font-medium text-text-primary transition hover:shadow-[0_14px_34px_rgb(var(--accent-rgb)/0.2)]"
                 >
                   <div className="font-display text-xl">Create new project</div>
                   <div className="mt-2 text-xs font-normal leading-6 text-text-secondary">Lay down a fresh scaffold, then move directly into worldmaking.</div>
@@ -91,7 +93,7 @@ export function WelcomeScreen({ onNewProject }: WelcomeScreenProps) {
                       <div>Open existing project</div>
                       <div className="mt-1 text-xs font-normal leading-6 text-text-secondary">Reconnect to a local project folder and restore its working state.</div>
                     </div>
-                    <span className="pt-1 text-[var(--color-aurum-pale)]">↗</span>
+                    <span className="pt-1 text-[var(--color-warm-pale)]">↗</span>
                   </button>
                   <button
                     onClick={() => setShowR2Import(true)}
@@ -101,14 +103,14 @@ export function WelcomeScreen({ onNewProject }: WelcomeScreenProps) {
                       <div>Import from R2</div>
                       <div className="mt-1 text-xs font-normal leading-6 text-text-secondary">Pull a published world down from R2 and continue shaping it locally.</div>
                     </div>
-                    <span className="pt-1 text-[var(--color-aurum-pale)]">↗</span>
+                    <span className="pt-1 text-[var(--color-warm-pale)]">↗</span>
                   </button>
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="min-h-0 rounded-3xl border border-[var(--chrome-stroke)] bg-[linear-gradient(155deg,rgba(54,63,90,0.9),rgba(37,45,68,0.92))] p-6 shadow-panel">
+          <div className="min-h-0 rounded-3xl border border-[var(--chrome-stroke)] bg-[linear-gradient(155deg,rgb(var(--surface-rgb)/0.78),rgb(var(--bg-rgb)/0.92))] p-6 shadow-panel">
             <div className="mb-5 flex items-center justify-between gap-4">
               <div>
                 <h2 className="font-display text-3xl text-text-primary">Continue where you left off</h2>
@@ -125,7 +127,7 @@ export function WelcomeScreen({ onNewProject }: WelcomeScreenProps) {
                 <button
                   onClick={() => void handleOpenRecent(recentProjects[0]!)}
                   disabled={loading === recentProjects[0]!.path}
-                  className="rounded-3xl border border-[var(--border-accent-ring)] bg-[linear-gradient(135deg,rgba(168,151,210,0.34),rgba(200,151,46,0.18))] px-5 py-5 text-left shadow-[0_16px_40px_rgba(8,10,18,0.22)] transition hover:shadow-[0_18px_46px_rgba(168,151,210,0.24)] disabled:opacity-50"
+                  className="rounded-3xl border border-[var(--border-accent-ring)] bg-[linear-gradient(135deg,rgb(var(--accent-rgb)/0.34),rgb(var(--surface-rgb)/0.18))] px-5 py-5 text-left shadow-[0_16px_40px_rgb(var(--shadow-rgb)/0.22)] transition hover:shadow-[0_18px_46px_rgb(var(--accent-rgb)/0.24)] disabled:opacity-50"
                 >
                   <div className="mt-3 font-display text-2xl text-text-primary">
                     {loading === recentProjects[0]!.path ? "Opening..." : recentProjects[0]!.name}

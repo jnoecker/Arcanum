@@ -186,7 +186,7 @@ export function EquipmentSlotsPanel({ config, onChange }: ConfigPanelProps) {
               }}
               className={`group focus-ring flex min-h-11 cursor-pointer items-center gap-3 rounded-2xl px-3 py-2 text-sm transition ${
                 selectedId === id
-                  ? "border border-[var(--border-glow-strong)] bg-[linear-gradient(145deg,rgba(168,151,210,0.18),rgba(42,50,71,0.9))] text-text-primary shadow-glow"
+                  ? "border border-[var(--border-glow-strong)] bg-[linear-gradient(145deg,rgb(var(--accent-rgb)/0.18),rgb(var(--bg-rgb)/0.9))] text-text-primary shadow-glow"
                   : "border border-transparent text-text-secondary hover:bg-[var(--chrome-highlight)] hover:text-text-primary"
               }`}
               aria-label={`${slot.displayName} slot`}

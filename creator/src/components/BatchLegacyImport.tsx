@@ -258,7 +258,7 @@ export function BatchLegacyImport({ onClose }: { onClose: () => void }) {
                     aria-label="Import progress"
                   >
                     <div
-                      className="h-full origin-left rounded-full bg-[linear-gradient(90deg,rgba(168,151,210,0.92),rgba(140,174,201,0.9))] transition-transform duration-300"
+                      className="h-full origin-left rounded-full bg-[linear-gradient(90deg,rgb(var(--accent-rgb)/0.92),rgb(var(--surface-rgb)/0.9))] transition-transform duration-300"
                       style={{ transform: `scaleX(${importProgress})` }}
                     />
                   </div>
@@ -382,9 +382,9 @@ function StageCard({
     <div
       className={`rounded-3xl border px-4 py-3 ${
         done
-          ? "border-[var(--border-accent-subtle)] bg-[rgba(168,151,210,0.12)]"
+          ? "border-[var(--border-accent-subtle)] bg-[rgb(var(--accent-rgb)/0.12)]"
           : active
-            ? "border-[var(--border-glow-strong)] bg-[rgba(140,174,201,0.12)]"
+            ? "border-[var(--border-glow-strong)] bg-[rgb(var(--surface-rgb)/0.12)]"
             : "border-[var(--chrome-stroke)] bg-[var(--chrome-fill)]"
       }`}
     >

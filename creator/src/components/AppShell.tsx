@@ -6,20 +6,29 @@ import { MainArea } from "./MainArea";
 import { StatusBar } from "./StatusBar";
 import { useKeyboardShortcuts } from "@/lib/useKeyboardShortcuts";
 import { useAssetStore } from "@/stores/assetStore";
+import { useProjectStore } from "@/stores/projectStore";
 import type { Workspace } from "@/lib/panelRegistry";
 import { loadWorkspace, saveWorkspace } from "@/lib/uiPersistence";
 import { CommandPalette } from "./ui/CommandPalette";
 import { Toast } from "./ui/Toast";
+import { CosmicBackdrop } from "./ui/CosmicBackdrop";
 
 const ShortcutsHelp = lazy(() => import("./ui/ShortcutsHelp").then((m) => ({ default: m.ShortcutsHelp })));
 const AssetGenerator = lazy(() => import("./AssetGenerator").then((m) => ({ default: m.AssetGenerator })));
 const AssetGallery = lazy(() => import("./AssetGallery").then((m) => ({ default: m.AssetGallery })));
+const MudImportWizard = lazy(() => import("./MudImportWizard").then((m) => ({ default: m.MudImportWizard })));
 
-export function AppShell() {
+interface AppShellProps {
+  onNewProject: () => void;
+}
+
+export function AppShell({ onNewProject }: AppShellProps) {
   const { showHelp, setShowHelp } = useKeyboardShortcuts();
   const generatorOpen = useAssetStore((s) => s.generatorOpen);
   const galleryOpen = useAssetStore((s) => s.galleryOpen);
   const closeGallery = useAssetStore((s) => s.closeGallery);
+  const showMudImport = useProjectStore((s) => s.showMudImport);
+  const setShowMudImport = useProjectStore((s) => s.setShowMudImport);
   const [workspace, setWorkspaceState] = useState<Workspace>(loadWorkspace);
   const setWorkspace = useCallback((next: Workspace) => {
     setWorkspaceState(next);
@@ -40,14 +49,21 @@ export function AppShell() {
 
   return (
     <div className="relative flex h-screen h-dvh flex-col overflow-hidden bg-bg-abyss">
+      <CosmicBackdrop variant="shell" />
       <div aria-hidden="true" className="pointer-events-none absolute inset-0">
         <div className="absolute left-[-10rem] top-[-8rem] h-[34rem] w-[34rem] rounded-full bg-[radial-gradient(circle,rgb(var(--accent-rgb)/0.14),transparent_68%)] blur-3xl" />
         <div className="absolute bottom-[-14rem] right-[-12rem] h-[40rem] w-[40rem] rounded-full bg-[radial-gradient(circle,rgb(var(--accent-rgb)/0.10),transparent_72%)] blur-3xl" />
       </div>
-      <header className="shrink-0"><Toolbar workspace={workspace} setWorkspace={setWorkspace} /></header>
-      <div className="relative z-10 flex min-h-0 flex-1 flex-col gap-3 px-4 pb-3 lg:flex-row">
+      <header className="shrink-0"><Toolbar workspace={workspace} setWorkspace={setWorkspace} onNewProject={onNewProject} /></header>
+      <div className="relative z-10 flex min-h-0 flex-1 flex-col gap-3 px-4 pb-3 pt-5 lg:flex-row">
         <Sidebar workspace={workspace} />
-        <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-3xl border border-[var(--chrome-stroke)] bg-bg-primary shadow-panel">
+        <main
+          className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden"
+          style={{
+            maskImage: "linear-gradient(to bottom, transparent 0, black 18px, black 100%)",
+            WebkitMaskImage: "linear-gradient(to bottom, transparent 0, black 18px, black 100%)",
+          }}
+        >
           <MainArea workspace={workspace} />
         </main>
       </div>
@@ -57,6 +73,7 @@ export function AppShell() {
         {showHelp && <ShortcutsHelp onClose={() => setShowHelp(false)} />}
         {generatorOpen && <AssetGenerator />}
         {galleryOpen && <AssetGallery onClose={closeGallery} />}
+        {showMudImport && <MudImportWizard onClose={() => setShowMudImport(false)} />}
       </Suspense>
       <Toast />
     </div>

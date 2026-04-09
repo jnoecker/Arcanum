@@ -269,7 +269,7 @@ export function SceneTimeline({
 
         <DragOverlay>
           {activeDragScene ? (
-            <div className="w-[140px] h-[88px] flex-shrink-0 flex flex-col gap-2 px-3 py-2 rounded-xl border border-accent bg-bg-elevated shadow-[0_0_12px_rgba(168,151,210,0.2)] cursor-grabbing">
+            <div className="w-[140px] h-[88px] flex-shrink-0 flex flex-col gap-2 px-3 py-2 rounded-xl border border-accent bg-bg-elevated shadow-[0_0_12px_rgb(var(--accent-rgb)/0.2)] cursor-grabbing">
               <span className="text-2xs text-text-muted self-end">
                 {scenes.findIndex((s) => s.id === activeDragScene.id) + 1}
               </span>

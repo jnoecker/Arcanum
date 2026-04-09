@@ -39,15 +39,15 @@ describe("SCENE_TEMPLATE_PRESETS", () => {
   );
 
   it("establishing_shot has correct badge color", () => {
-    expect(SCENE_TEMPLATE_PRESETS.establishing_shot.badgeColor).toBe("#8caec9");
+    expect(SCENE_TEMPLATE_PRESETS.establishing_shot.badgeColor).toBe("#15616d");
   });
 
   it("encounter has correct badge color", () => {
-    expect(SCENE_TEMPLATE_PRESETS.encounter.badgeColor).toBe("#c4956a");
+    expect(SCENE_TEMPLATE_PRESETS.encounter.badgeColor).toBe("#ff7d00");
   });
 
   it("discovery has correct badge color", () => {
-    expect(SCENE_TEMPLATE_PRESETS.discovery.badgeColor).toBe("#a3c48e");
+    expect(SCENE_TEMPLATE_PRESETS.discovery.badgeColor).toBe("#ffb86b");
   });
 });
 

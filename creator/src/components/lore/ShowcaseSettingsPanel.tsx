@@ -134,14 +134,14 @@ export function ShowcaseSettingsPanel() {
           <div className="flex items-center gap-2">
             <input
               type="color"
-              value={settings.accentColor || "#a897d2"}
+              value={settings.accentColor || "#ff7d00"}
               onChange={(e) => update({ accentColor: e.target.value })}
               className="h-8 w-12 cursor-pointer rounded border border-border-default bg-bg-primary"
             />
             <TextInput
               value={settings.accentColor ?? ""}
               onCommit={(v) => update({ accentColor: v || undefined })}
-              placeholder="#a897d2"
+              placeholder="#ff7d00"
             />
           </div>
         </FieldRow>
@@ -149,14 +149,14 @@ export function ShowcaseSettingsPanel() {
           <div className="flex items-center gap-2">
             <input
               type="color"
-              value={settings.bgColor || "#22293c"}
+              value={settings.bgColor || "#001524"}
               onChange={(e) => update({ bgColor: e.target.value })}
               className="h-8 w-12 cursor-pointer rounded border border-border-default bg-bg-primary"
             />
             <TextInput
               value={settings.bgColor ?? ""}
               onCommit={(v) => update({ bgColor: v || undefined })}
-              placeholder="#22293c"
+              placeholder="#001524"
             />
           </div>
         </FieldRow>

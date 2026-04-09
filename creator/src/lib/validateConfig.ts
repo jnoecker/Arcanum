@@ -158,6 +158,13 @@ export function validateConfig(config: AppConfig): ValidationIssue[] {
         message: `Required class "${requiredClass}" is not defined`,
       });
     }
+    if (a.skillPointCost != null && a.skillPointCost < 0) {
+      issues.push({
+        severity: "error",
+        entity: `ability:${id}`,
+        message: `skillPointCost must be >= 0 (got ${a.skillPointCost})`,
+      });
+    }
   }
 
   // ─── Status effects ──────────────────────────────────────────

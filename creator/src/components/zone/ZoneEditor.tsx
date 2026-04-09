@@ -20,7 +20,7 @@ import { useProjectStore } from "@/stores/projectStore";
 import { useAssetStore } from "@/stores/assetStore";
 import { useToastStore } from "@/stores/toastStore";
 import { zoneToGraph, GRAPH } from "@/lib/zoneToGraph";
-import { compassLayout, type LayoutMeasurement } from "@/lib/dagreLayout";
+import { compassLayout, getLayoutBounds, type LayoutMeasurement } from "@/lib/dagreLayout";
 import { addRoom, addExit, deleteExit, generateRoomId } from "@/lib/zoneEdits";
 import { saveZone } from "@/lib/saveZone";
 import type { WorldFile } from "@/types/world";
@@ -38,6 +38,7 @@ import { SpringPanel } from "./SpringPanel";
 import { ZoneMediaPanel } from "./ZoneMediaPanel";
 import { DungeonEditor, DungeonEmptyState } from "@/components/editors/DungeonEditor";
 import { setDungeon, removeDungeon } from "@/lib/zoneEdits";
+import { normalizeAssetRef } from "@/lib/assetRefs";
 import builderBg from "@/assets/builder-bg.jpg";
 import subtoolbarBg from "@/assets/subtoolbar-bg.jpg";
 
@@ -65,13 +66,29 @@ interface ZoneEditorProps {
 function collectBgRemovalTargets(world: WorldFile, zoneId: string, assetsDir: string): BulkBgTarget[] {
   const targets: BulkBgTarget[] = [];
 
+  // Always run the entity image through `normalizeAssetRef` before building
+  // the absolute filesystem path. Without this, freshly generated images
+  // whose refs weren't saved yet (still carrying a legacy path prefix or a
+  // `/images/...` engine ref) produce broken resolvedPaths like
+  // `...\images\/images/foo.png`, which silently fails `read_image_data_url`.
+  const resolveImagePath = (imageRef: string): string | null => {
+    const normalized = normalizeAssetRef(imageRef);
+    if (!normalized) return null;
+    // Engine-relative refs (/images/subdir/foo.png) are never on local disk
+    // in the same place — skip them instead of producing a bad path.
+    if (normalized.startsWith("/")) return null;
+    return `${assetsDir}\\images\\${normalized}`;
+  };
+
   for (const [id, mob] of Object.entries(world.mobs ?? {})) {
     if (!mob.image) continue;
+    const resolvedPath = resolveImagePath(mob.image);
+    if (!resolvedPath) continue;
     targets.push({
       id: `mob:${id}`,
       label: `${mob.name} (mob)`,
       imagePath: mob.image,
-      resolvedPath: `${assetsDir}\\images\\${mob.image}`,
+      resolvedPath,
       assetType: "mob",
       variantGroup: `mob:${zoneId}:${id}`,
       context: { zone: zoneId, entity_type: "mob", entity_id: id },
@@ -80,11 +97,13 @@ function collectBgRemovalTargets(world: WorldFile, zoneId: string, assetsDir: st
 
   for (const [id, item] of Object.entries(world.items ?? {})) {
     if (!item.image) continue;
+    const resolvedPath = resolveImagePath(item.image);
+    if (!resolvedPath) continue;
     targets.push({
       id: `item:${id}`,
       label: `${item.displayName} (item)`,
       imagePath: item.image,
-      resolvedPath: `${assetsDir}\\images\\${item.image}`,
+      resolvedPath,
       assetType: "item",
       variantGroup: `item:${zoneId}:${id}`,
       context: { zone: zoneId, entity_type: "item", entity_id: id },
@@ -141,6 +160,15 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
   useEffect(() => {
     const nav = consumeNavigation();
     if (!nav || nav.zoneId !== zoneId) return;
+    if (nav.view) {
+      // Loose string -> ViewMode cast. Unknown view modes fall back to the
+      // current mode, which is harmless.
+      const allowed: ViewMode[] = ["map", "assets", "media", "dungeon"];
+      if ((allowed as string[]).includes(nav.view)) {
+        setViewMode(nav.view as ViewMode);
+      }
+      return;
+    }
     if (nav.entityKind && nav.entityId) {
       setSelectedEntity({ kind: nav.entityKind as EntitySelection["kind"], id: nav.entityId });
       setSelectedRoomId(null);
@@ -222,6 +250,12 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
   // Discard manual positions and re-run the BFS/compass layout using the
   // currently measured room sizes (so variable-height rooms don't overlap),
   // then fit the viewport to the result.
+  //
+  // We compute the target bounds from the fresh layout + current measurements
+  // and call `fitBounds` directly, instead of `fitView` on a setTimeout. The
+  // old approach was racy: `fitView` reads node measurements from the DOM,
+  // which weren't updated yet immediately after `setNodes`, so it would
+  // compute bounds from stale positions and zoom out to a lost viewport.
   const handleRelayout = useCallback(() => {
     if (!zoneState) return;
     const measurements = new Map<string, LayoutMeasurement>();
@@ -235,11 +269,65 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
     const { nodes: rawNodes } = zoneToGraph(zoneState.data);
     const fresh = compassLayout(rawNodes, zoneState.data, measurements);
     setNodes(fresh);
-    setTimeout(() => {
-      reactFlow.fitView({ padding: 0.2, duration: 400 });
-    }, 0);
+    const bounds = getLayoutBounds(fresh, measurements);
+    if (bounds && bounds.width > 0 && bounds.height > 0) {
+      reactFlow.fitBounds(bounds, { padding: 0.2, duration: 400 });
+    }
     useToastStore.getState().show("Zone re-laid out");
   }, [zoneState, setNodes, reactFlow]);
+
+  // ─── Initial fit-to-view ─────────────────────────────────────────
+  // The `fitView` prop on <ReactFlow> is unreliable here: on first mount the
+  // nodes may not yet have DOM measurements (so bounds collapse), and when
+  // the user switches view modes (map → assets → map) the ReactFlow child
+  // remounts with stale measurements from the previous mount.
+  //
+  // Instead, we run a one-shot fit whenever the map view becomes active for
+  // a given zone, using our deterministic `getLayoutBounds` helper. The ref
+  // key is `${zoneId}:${mapMountCount}` so a view-mode round trip re-fits.
+  const mapMountCountRef = useRef(0);
+  useEffect(() => {
+    if (viewMode === "map") {
+      mapMountCountRef.current += 1;
+    }
+  }, [viewMode]);
+
+  const fitDoneRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (viewMode !== "map") return;
+    if (nodes.length === 0) return;
+    const key = `${zoneId}:${mapMountCountRef.current}`;
+    if (fitDoneRef.current === key) return;
+
+    // Defer to the next frame so RoomNode has a chance to mount and measure.
+    // Two rAFs: one to let React commit, one to let ReactFlow observe DOM.
+    let cancelled = false;
+    const raf1 = requestAnimationFrame(() => {
+      if (cancelled) return;
+      const raf2 = requestAnimationFrame(() => {
+        if (cancelled) return;
+        const measured = reactFlow.getNodes();
+        const measurements = new Map<string, LayoutMeasurement>();
+        for (const node of measured) {
+          const width = node.measured?.width ?? node.width;
+          const height = node.measured?.height ?? node.height;
+          if (width && height) {
+            measurements.set(node.id, { width, height });
+          }
+        }
+        const bounds = getLayoutBounds(measured, measurements);
+        if (bounds && bounds.width > 0 && bounds.height > 0) {
+          reactFlow.fitBounds(bounds, { padding: 0.2, duration: 0 });
+          fitDoneRef.current = key;
+        }
+      });
+      return () => cancelAnimationFrame(raf2);
+    });
+    return () => {
+      cancelled = true;
+      cancelAnimationFrame(raf1);
+    };
+  }, [zoneId, nodes.length, reactFlow, viewMode]);
 
   const applyWorldChange = useCallback(
     (next: WorldFile) => {
@@ -377,7 +465,7 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
         <img src={subtoolbarBg} alt="" className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-[0.10]" />
 
         {/* Undo / Redo */}
-        <div className="flex items-center gap-0.5 border-r border-white/8 pr-3 max-[1180px]:pr-0 max-[1180px]:border-r-0">
+        <div className="flex items-center gap-0.5 border-r border-[var(--chrome-stroke)] pr-3 max-[1180px]:pr-0 max-[1180px]:border-r-0">
           <button
             onClick={() => { undo(zoneId); useToastStore.getState().show("Change undone"); }}
             disabled={!canUndo}
@@ -445,7 +533,7 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
         </label>
 
         {/* Zone name */}
-        <div className="ml-auto flex min-w-0 items-center gap-2 border-l border-white/8 pl-3 max-[1180px]:order-4 max-[1180px]:ml-0 max-[1180px]:w-full max-[1180px]:border-l-0 max-[1180px]:pl-0 max-[1180px]:pt-1">
+        <div className="ml-auto flex min-w-0 items-center gap-2 border-l border-[var(--chrome-stroke)] pl-3 max-[1180px]:order-4 max-[1180px]:ml-0 max-[1180px]:w-full max-[1180px]:border-l-0 max-[1180px]:pl-0 max-[1180px]:pt-1">
           <span className="truncate font-display text-sm font-semibold uppercase tracking-widest text-text-primary">
             {zoneState.data.zone}
           </span>
@@ -503,7 +591,7 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
             ))}
           </div>
 
-          <div className="flex items-center gap-2 border-l border-white/8 pl-3 max-[1180px]:w-full max-[1180px]:flex-wrap max-[1180px]:justify-end max-[1180px]:border-l-0 max-[1180px]:pl-0">
+          <div className="flex items-center gap-2 border-l border-[var(--chrome-stroke)] pl-3 max-[1180px]:w-full max-[1180px]:flex-wrap max-[1180px]:justify-end max-[1180px]:border-l-0 max-[1180px]:pl-0">
             <button
               onClick={() => setShowBatchArt(true)}
               className="h-6 rounded px-2 text-xs text-stellar-blue transition-colors hover:bg-stellar-blue/10 max-[1180px]:h-9"
@@ -514,7 +602,7 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
             </button>
             <button
               onClick={() => setShowBulkBgRemoval(true)}
-              className="h-6 rounded px-2 text-xs text-text-secondary transition-colors hover:bg-white/6 hover:text-text-primary max-[1180px]:h-9"
+              className="h-6 rounded px-2 text-xs text-text-secondary transition-colors hover:bg-[var(--chrome-highlight)] hover:text-text-primary max-[1180px]:h-9"
               title="Remove backgrounds from mob and item images"
               aria-label="Bulk remove backgrounds"
             >
@@ -523,7 +611,7 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
             <button
               onClick={handleRelayout}
               disabled={roomCount === 0}
-              className="h-6 rounded px-2 text-xs text-text-secondary transition-colors hover:bg-white/6 hover:text-text-primary disabled:opacity-30 max-[1180px]:h-9"
+              className="h-6 rounded px-2 text-xs text-text-secondary transition-colors hover:bg-[var(--chrome-highlight)] hover:text-text-primary disabled:opacity-30 max-[1180px]:h-9"
               title="Re-run BFS layout and fit view"
               aria-label="Re-layout rooms"
             >
@@ -623,8 +711,6 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
               onSelectionChange={onSelectionChange}
               onNodeClick={onNodeClick}
               onPaneClick={onPaneClick}
-              fitView
-              fitViewOptions={{ padding: 0.2 }}
               minZoom={0.1}
               maxZoom={2}
               proOptions={{ hideAttribution: true }}
@@ -658,7 +744,7 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
             {/* First-zone onboarding hint */}
             {roomCount <= 1 && !hintDismissed && viewMode === "map" && (
               <div className="pointer-events-auto absolute inset-x-0 bottom-4 z-[2] flex justify-center">
-                <div className="flex items-center gap-4 rounded-2xl border border-white/10 bg-bg-secondary/95 px-5 py-3 shadow-section">
+                <div className="flex items-center gap-4 rounded-2xl border border-[var(--chrome-stroke)] bg-bg-secondary/95 px-5 py-3 shadow-section">
                   <div>
                     <p className="text-sm text-text-primary">
                       Click the <span className="font-mono text-accent">+</span> handles on a room's edges to create exits to new rooms.
@@ -672,7 +758,7 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
                       setHintDismissed(true);
                       localStorage.setItem("arcanum:zone-hint-dismissed", "1");
                     }}
-                    className="shrink-0 rounded-full border border-white/10 px-3 py-1.5 text-xs text-text-muted transition hover:bg-white/8 hover:text-text-primary"
+                    className="shrink-0 rounded-full border border-[var(--chrome-stroke)] px-3 py-1.5 text-xs text-text-muted transition hover:bg-[var(--chrome-highlight-strong)] hover:text-text-primary"
                   >
                     Got it
                   </button>

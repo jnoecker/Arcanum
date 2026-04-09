@@ -135,7 +135,7 @@ export function EditableField({
   if (!editing) {
     return (
       <div
-        className={`focus-ring cursor-text rounded border-b border-dashed border-white/10 px-1 -mx-1 hover:border-white/20 hover:bg-bg-tertiary ${className ?? ""}`}
+        className={`focus-ring cursor-text rounded border-b border-dashed border-[var(--chrome-stroke)] px-1 -mx-1 hover:border-[var(--chrome-stroke-emphasis)] hover:bg-bg-tertiary ${className ?? ""}`}
         role="button"
         tabIndex={0}
         aria-expanded={editing}
@@ -200,7 +200,7 @@ export function EditableTextArea({
   if (!editing) {
     return (
       <div
-        className="focus-ring cursor-text rounded border-b border-dashed border-white/10 px-1 -mx-1 text-xs leading-relaxed text-text-secondary hover:border-white/20 hover:bg-bg-tertiary"
+        className="focus-ring cursor-text rounded border-b border-dashed border-[var(--chrome-stroke)] px-1 -mx-1 text-xs leading-relaxed text-text-secondary hover:border-[var(--chrome-stroke-emphasis)] hover:bg-bg-tertiary"
         role="button"
         tabIndex={0}
         aria-expanded={editing}

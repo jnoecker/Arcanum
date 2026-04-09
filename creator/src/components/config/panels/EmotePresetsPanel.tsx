@@ -1,6 +1,12 @@
 import type { ConfigPanelProps } from "./types";
 import type { EmotePreset } from "@/types/config";
-import { Section, FieldRow, TextInput } from "@/components/ui/FormWidgets";
+import {
+  Section,
+  FieldRow,
+  TextInput,
+  ActionButton,
+  IconButton,
+} from "@/components/ui/FormWidgets";
 
 export function EmotePresetsPanel({ config, onChange }: ConfigPanelProps) {
   const presets = config.emotePresets.presets;
@@ -23,85 +29,105 @@ export function EmotePresetsPanel({ config, onChange }: ConfigPanelProps) {
     if (to < 0 || to >= presets.length) return;
     const next = [...presets];
     const [item] = next.splice(from, 1);
-    next.splice(to, 0, item!);
+    if (!item) return;
+    next.splice(to, 0, item);
     update(next);
   };
 
   return (
     <Section
       title="Emote Presets"
-      description="Quick-action emotes shown to players in the chat panel. Each preset has a label, emoji, and the action text broadcast to the room (e.g. 'waves.'). Order here matches display order in the client."
+      description="Quick-action emotes surfaced as buttons in the player's chat panel. Each preset broadcasts a short room message (e.g. 'Lira waves.') when clicked — perfect for social MUDs that want roleplay gestures a click away. The order here determines display order in the client."
     >
-      <div className="flex flex-col gap-3">
+      <div className="flex flex-col gap-1.5">
+        {presets.length === 0 && (
+          <p className="text-2xs text-text-muted">
+            No emote presets yet. Add one to give players a quick-action button.
+          </p>
+        )}
+
         {presets.map((preset, i) => (
           <div
             key={i}
-            className="rounded-xl border border-white/8 bg-black/12 p-4"
+            className="flex flex-col gap-1.5 border-b border-border-muted/30 pb-2 pt-2 first:pt-0 last:border-0 last:pb-0"
           >
-            <div className="mb-2 flex items-center justify-between">
-              <span className="text-xs font-medium text-text-secondary">
-                #{i + 1}{preset.label ? ` — ${preset.label}` : ""}
+            <div className="flex items-center justify-between gap-2">
+              <span className="font-display text-2xs uppercase tracking-widest text-text-muted">
+                #{i + 1}
+                {preset.label ? (
+                  <span className="ml-2 text-text-secondary normal-case tracking-normal">
+                    {preset.label}
+                  </span>
+                ) : null}
               </span>
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-0.5">
                 {i > 0 && (
-                  <button
+                  <IconButton
                     onClick={() => movePreset(i, i - 1)}
                     title="Move up"
-                    className="h-6 w-6 rounded text-xs text-text-muted transition-colors hover:bg-bg-elevated hover:text-text-primary"
+                    size="sm"
                   >
-                    ↑
-                  </button>
+                    &#x2191;
+                  </IconButton>
                 )}
                 {i < presets.length - 1 && (
-                  <button
+                  <IconButton
                     onClick={() => movePreset(i, i + 1)}
                     title="Move down"
-                    className="h-6 w-6 rounded text-xs text-text-muted transition-colors hover:bg-bg-elevated hover:text-text-primary"
+                    size="sm"
                   >
-                    ↓
-                  </button>
+                    &#x2193;
+                  </IconButton>
                 )}
-                <button
+                <IconButton
                   onClick={() => removePreset(i)}
-                  title="Remove"
-                  className="h-6 w-6 rounded text-xs text-text-muted transition-colors hover:bg-status-danger/10 hover:text-status-danger"
+                  title="Remove preset"
+                  danger
+                  size="sm"
                 >
-                  ✕
-                </button>
+                  &#x2715;
+                </IconButton>
               </div>
             </div>
-            <div className="flex flex-col gap-1.5">
-              <FieldRow label="Label" hint="Button text shown to the player.">
-                <TextInput
-                  value={preset.label}
-                  onCommit={(v) => patchPreset(i, { label: v })}
-                  placeholder="Wave"
-                />
-              </FieldRow>
-              <FieldRow label="Emoji" hint="Emoji shown on the button.">
-                <TextInput
-                  value={preset.emoji}
-                  onCommit={(v) => patchPreset(i, { emoji: v })}
-                  placeholder="👋"
-                />
-              </FieldRow>
-              <FieldRow label="Action" hint="Room broadcast text (e.g. 'waves.'). The player's name is prepended automatically.">
-                <TextInput
-                  value={preset.action}
-                  onCommit={(v) => patchPreset(i, { action: v })}
-                  placeholder="waves."
-                />
-              </FieldRow>
-            </div>
+
+            <FieldRow
+              label="Label"
+              hint="Button text shown to the player in the chat panel. Keep it short: a single word or two."
+            >
+              <TextInput
+                value={preset.label}
+                onCommit={(v) => patchPreset(i, { label: v })}
+                placeholder="Wave"
+              />
+            </FieldRow>
+            <FieldRow
+              label="Emoji"
+              hint="Optional emoji rendered on the button next to the label. Any single unicode glyph works."
+            >
+              <TextInput
+                value={preset.emoji}
+                onCommit={(v) => patchPreset(i, { emoji: v })}
+                placeholder="👋"
+              />
+            </FieldRow>
+            <FieldRow
+              label="Action"
+              hint="Room broadcast text. The player's name is prepended automatically, so 'waves.' becomes 'Lira waves.'"
+            >
+              <TextInput
+                value={preset.action}
+                onCommit={(v) => patchPreset(i, { action: v })}
+                placeholder="waves."
+              />
+            </FieldRow>
           </div>
         ))}
 
-        <button
-          onClick={addPreset}
-          className="self-start rounded-full border border-[rgba(184,216,232,0.28)] bg-gradient-active-strong px-4 py-2 text-xs font-medium text-text-primary transition hover:shadow-[0_10px_20px_rgba(137,155,214,0.2)]"
-        >
-          + Add Emote Preset
-        </button>
+        <div className="pt-1">
+          <ActionButton variant="secondary" size="sm" onClick={addPreset}>
+            + Add Emote Preset
+          </ActionButton>
+        </div>
       </div>
     </Section>
   );

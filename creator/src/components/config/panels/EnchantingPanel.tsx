@@ -11,6 +11,7 @@ import {
   NumberInput,
   TextInput,
   SelectInput,
+  ActionButton,
   IconButton,
 } from "@/components/ui/FormWidgets";
 import { RegistryPanel } from "./RegistryPanel";
@@ -88,10 +89,16 @@ export function EnchantingPanel({ config, onChange }: ConfigPanelProps) {
   );
 
   return (
-    <div className="flex flex-col gap-6">
-      <Section title="Global Settings" defaultExpanded>
+    <>
+      <Section
+        title="Global Settings"
+        description="Enchanting lets players permanently augment gear with stat and damage bonuses. Global settings control the overall scarcity and power ceiling of enchantments across the whole game."
+      >
         <div className="flex flex-col gap-1.5">
-          <FieldRow label="Max Enchantments Per Item" hint="How many enchantments a single item can hold.">
+          <FieldRow
+            label="Max Per Item"
+            hint="Upper limit on how many enchantments a single item can hold. 1 keeps builds simple and readable; 3+ encourages deep customization but can produce very powerful late-game gear."
+          >
             <NumberInput
               value={config.enchanting.maxEnchantmentsPerItem}
               onCommit={(v) => patchGlobal({ maxEnchantmentsPerItem: v ?? 1 })}
@@ -121,6 +128,35 @@ export function EnchantingPanel({ config, onChange }: ConfigPanelProps) {
           />
         )}
       />
+    </>
+  );
+}
+
+function SubGroup({
+  title,
+  description,
+  actions,
+  children,
+}: {
+  title: string;
+  description?: string;
+  actions?: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="mt-2 border-t border-border-muted/40 pt-2 first:mt-0 first:border-0 first:pt-0">
+      <div className="flex items-center justify-between">
+        <h5 className="font-display text-2xs uppercase tracking-widest text-text-muted">
+          {title}
+        </h5>
+        {actions}
+      </div>
+      {description && (
+        <p className="mt-0.5 text-2xs leading-snug text-text-muted/60">
+          {description}
+        </p>
+      )}
+      <div className="mt-1.5 flex flex-col gap-1.5">{children}</div>
     </div>
   );
 }
@@ -139,10 +175,17 @@ function EnchantmentDetail({
   statOptions: { value: string; label: string }[];
 }) {
   const addMaterial = () => {
-    patch({ materials: [...enchantment.materials, { itemId: "", quantity: 1 }] });
+    patch({
+      materials: [...enchantment.materials, { itemId: "", quantity: 1 }],
+    });
   };
-  const updateMaterial = (idx: number, mp: Partial<EnchantmentMaterialConfig>) => {
-    const mats = enchantment.materials.map((m, i) => (i === idx ? { ...m, ...mp } : m));
+  const updateMaterial = (
+    idx: number,
+    mp: Partial<EnchantmentMaterialConfig>,
+  ) => {
+    const mats = enchantment.materials.map((m, i) =>
+      i === idx ? { ...m, ...mp } : m,
+    );
     patch({ materials: mats });
   };
   const removeMaterial = (idx: number) => {
@@ -159,7 +202,9 @@ function EnchantmentDetail({
     const bonuses = { ...enchantment.statBonuses };
     if (oldStat !== newStat) delete bonuses[oldStat];
     bonuses[newStat] = value;
-    patch({ statBonuses: Object.keys(bonuses).length > 0 ? bonuses : undefined });
+    patch({
+      statBonuses: Object.keys(bonuses).length > 0 ? bonuses : undefined,
+    });
   };
   const removeStatBonus = (stat: string) => {
     const { [stat]: _, ...rest } = enchantment.statBonuses ?? {};
@@ -168,148 +213,197 @@ function EnchantmentDetail({
 
   return (
     <>
-      <FieldRow label="Display Name">
-        <TextInput
-          value={enchantment.displayName}
-          onCommit={(v) => patch({ displayName: v })}
-        />
-      </FieldRow>
-      <FieldRow label="Skill" hint="Which crafting skill is used.">
-        <SelectInput
-          value={enchantment.skill}
-          onCommit={(v) => patch({ skill: v })}
-          options={craftingSkillOptions}
-          allowEmpty
-          placeholder="enchanting"
-        />
-      </FieldRow>
-      <FieldRow label="Skill Required" hint="Minimum skill level to use this enchantment.">
-        <NumberInput
-          value={enchantment.skillRequired}
-          onCommit={(v) => patch({ skillRequired: v ?? 1 })}
-          min={1}
-        />
-      </FieldRow>
-      <FieldRow label="XP Reward" hint="Enchanting XP awarded on use.">
-        <NumberInput
-          value={enchantment.xpReward}
-          onCommit={(v) => patch({ xpReward: v ?? 30 })}
-          min={0}
-        />
-      </FieldRow>
+      <SubGroup
+        title="Identity & Cost"
+        description="How this enchantment presents to players and what it takes to apply. Higher skill requirements gate powerful effects behind progression; XP rewards shape how quickly enchanters level up."
+      >
+        <FieldRow
+          label="Display Name"
+          hint="The name players see in item descriptions and crafting menus. Example: 'Runes of Warding' or 'Flame Etching'."
+        >
+          <TextInput
+            value={enchantment.displayName}
+            onCommit={(v) => patch({ displayName: v })}
+          />
+        </FieldRow>
+        <FieldRow
+          label="Skill"
+          hint="Which crafting skill is trained and checked. Usually 'enchanting', but could be 'runesmithing' or another custom crafting discipline."
+        >
+          <SelectInput
+            value={enchantment.skill}
+            onCommit={(v) => patch({ skill: v })}
+            options={craftingSkillOptions}
+            allowEmpty
+            placeholder="enchanting"
+          />
+        </FieldRow>
+        <FieldRow
+          label="Skill Required"
+          hint="Minimum skill level to attempt this enchantment. Use this to gate stronger effects behind long practice — 1 for starter runes, 50+ for endgame augments."
+        >
+          <NumberInput
+            value={enchantment.skillRequired}
+            onCommit={(v) => patch({ skillRequired: v ?? 1 })}
+            min={1}
+          />
+        </FieldRow>
+        <FieldRow
+          label="XP Reward"
+          hint="Crafting XP granted each time this enchantment is successfully applied. Tune to match progression pace — weak enchantments give small amounts, rare ones give more."
+        >
+          <NumberInput
+            value={enchantment.xpReward}
+            onCommit={(v) => patch({ xpReward: v ?? 30 })}
+            min={0}
+          />
+        </FieldRow>
+      </SubGroup>
 
-      {/* ── Bonuses ── */}
-      <div className="mt-1 border-t border-border-muted pt-1.5">
-        <h5 className="mb-1 text-2xs font-display uppercase tracking-widest text-text-muted">
-          Bonuses
-        </h5>
-        <div className="flex flex-col gap-1.5">
-          <FieldRow label="Damage Bonus" hint="Extra damage added to the item.">
-            <NumberInput
-              value={enchantment.damageBonus ?? 0}
-              onCommit={(v) => patch({ damageBonus: v || undefined })}
-              min={0}
-            />
-          </FieldRow>
-          <FieldRow label="Armor Bonus" hint="Extra armor added to the item.">
-            <NumberInput
-              value={enchantment.armorBonus ?? 0}
-              onCommit={(v) => patch({ armorBonus: v || undefined })}
-              min={0}
-            />
-          </FieldRow>
-        </div>
+      <SubGroup
+        title="Flat Bonuses"
+        description="Simple additive bonuses applied to the enchanted item. Damage stacks onto weapon hits; armor stacks onto mitigation rolls."
+      >
+        <FieldRow
+          label="Damage Bonus"
+          hint="Flat damage added to each successful hit with the enchanted weapon. +1 to +3 is subtle; +5 and above noticeably shifts combat math."
+        >
+          <NumberInput
+            value={enchantment.damageBonus ?? 0}
+            onCommit={(v) => patch({ damageBonus: v || undefined })}
+            min={0}
+          />
+        </FieldRow>
+        <FieldRow
+          label="Armor Bonus"
+          hint="Flat armor added to the equipped piece. Stack multiple armor enchantments to build tank sets."
+        >
+          <NumberInput
+            value={enchantment.armorBonus ?? 0}
+            onCommit={(v) => patch({ armorBonus: v || undefined })}
+            min={0}
+          />
+        </FieldRow>
+      </SubGroup>
 
-        {/* ── Stat bonuses ── */}
-        <div className="mt-2">
-          <div className="flex items-center justify-between">
-            <span className="text-2xs text-text-muted">Stat Bonuses</span>
-            <IconButton onClick={addStatBonus} title="Add stat bonus">+</IconButton>
-          </div>
-          {Object.entries(enchantment.statBonuses ?? {}).map(([stat, val]) => (
-            <div key={stat} className="mt-1 flex items-center gap-2">
-              <SelectInput
-                value={stat}
-                onCommit={(v) => updateStatBonus(stat, v, val)}
-                options={statOptions}
-              />
-              <NumberInput
-                value={val}
-                onCommit={(v) => updateStatBonus(stat, stat, v ?? 1)}
-                min={1}
-              />
-              <IconButton onClick={() => removeStatBonus(stat)} title="Remove" danger>&times;</IconButton>
+      <SubGroup
+        title="Stat Bonuses"
+        description="Grant bonus points to any stat defined in your Stats config. Useful for class-themed enchantments (e.g. +Intelligence for mage gear)."
+        actions={
+          <ActionButton variant="secondary" size="sm" onClick={addStatBonus}>
+            + Add Stat
+          </ActionButton>
+        }
+      >
+        {Object.keys(enchantment.statBonuses ?? {}).length === 0 ? (
+          <p className="text-2xs text-text-muted">
+            No stat bonuses. Add one to boost a specific attribute.
+          </p>
+        ) : (
+          Object.entries(enchantment.statBonuses ?? {}).map(([stat, val]) => (
+            <div key={stat} className="flex items-center gap-2">
+              <div className="min-w-0 flex-1">
+                <SelectInput
+                  value={stat}
+                  onCommit={(v) => updateStatBonus(stat, v, val)}
+                  options={statOptions}
+                />
+              </div>
+              <div className="w-20 shrink-0">
+                <NumberInput
+                  value={val}
+                  onCommit={(v) => updateStatBonus(stat, stat, v ?? 1)}
+                  min={1}
+                />
+              </div>
+              <IconButton
+                onClick={() => removeStatBonus(stat)}
+                title="Remove stat bonus"
+                danger
+              >
+                &times;
+              </IconButton>
             </div>
-          ))}
-        </div>
-      </div>
+          ))
+        )}
+      </SubGroup>
 
-      {/* ── Target slots ── */}
-      <div className="mt-1 border-t border-border-muted pt-1.5">
-        <h5 className="mb-1 text-2xs font-display uppercase tracking-widest text-text-muted">
-          Target Slots
-        </h5>
-        <p className="mb-2 text-2xs text-text-muted">
-          Equipment slots this enchantment can be applied to. Leave empty for any slot.
-        </p>
+      <SubGroup
+        title="Target Slots"
+        description="Restrict which equipment slots this enchantment can be applied to. Leave all unselected to allow any slot — useful for generic enchantments like 'Minor Ward'."
+      >
         <div className="flex flex-wrap gap-1.5">
           {equipSlotOptions.map(({ value, label }) => {
             const selected = enchantment.targetSlots?.includes(value) ?? false;
             return (
               <button
                 key={value}
+                type="button"
                 onClick={() => {
                   const current = enchantment.targetSlots ?? [];
                   const next = selected
                     ? current.filter((s) => s !== value)
                     : [...current, value];
-                  patch({ targetSlots: next.length > 0 ? next : undefined });
+                  patch({
+                    targetSlots: next.length > 0 ? next : undefined,
+                  });
                 }}
-                className={`rounded-full border px-3 py-1 text-2xs transition ${
-                  selected
+                className={
+                  "focus-ring rounded-full border px-3 py-1 text-2xs transition " +
+                  (selected
                     ? "border-accent/50 bg-accent/15 text-accent"
-                    : "border-border-default bg-bg-primary text-text-muted hover:border-border-hover"
-                }`}
+                    : "border-border-muted bg-bg-primary/40 text-text-muted hover:border-border-default hover:text-text-secondary")
+                }
+                aria-pressed={selected}
               >
                 {label}
               </button>
             );
           })}
         </div>
-      </div>
+      </SubGroup>
 
-      {/* ── Materials ── */}
-      <div className="mt-1 border-t border-border-muted pt-1.5">
-        <div className="flex items-center justify-between">
-          <h5 className="text-2xs font-display uppercase tracking-widest text-text-muted">
-            Materials
-          </h5>
-          <IconButton onClick={addMaterial} title="Add material">+</IconButton>
-        </div>
+      <SubGroup
+        title="Materials"
+        description="Items consumed each time this enchantment is applied. Acts as a gold sink and creates demand for gathering and trading. Leave empty for free enchantments."
+        actions={
+          <ActionButton variant="secondary" size="sm" onClick={addMaterial}>
+            + Add Material
+          </ActionButton>
+        }
+      >
         {enchantment.materials.length === 0 ? (
-          <p className="mt-1 text-2xs text-text-muted">No materials required. Add one above.</p>
+          <p className="text-2xs text-text-muted">
+            No materials required. Add one to create a resource cost.
+          </p>
         ) : (
-          <div className="mt-1 flex flex-col gap-1.5">
-            {enchantment.materials.map((mat, i) => (
-              <div key={i} className="flex items-center gap-2">
+          enchantment.materials.map((mat, i) => (
+            <div key={i} className="flex items-center gap-2">
+              <div className="min-w-0 flex-1">
                 <TextInput
                   value={mat.itemId}
                   onCommit={(v) => updateMaterial(i, { itemId: v })}
                   placeholder="item_id"
                 />
-                <div className="w-20 shrink-0">
-                  <NumberInput
-                    value={mat.quantity}
-                    onCommit={(v) => updateMaterial(i, { quantity: v ?? 1 })}
-                    min={1}
-                  />
-                </div>
-                <IconButton onClick={() => removeMaterial(i)} title="Remove" danger>&times;</IconButton>
               </div>
-            ))}
-          </div>
+              <div className="w-20 shrink-0">
+                <NumberInput
+                  value={mat.quantity}
+                  onCommit={(v) => updateMaterial(i, { quantity: v ?? 1 })}
+                  min={1}
+                />
+              </div>
+              <IconButton
+                onClick={() => removeMaterial(i)}
+                title="Remove material"
+                danger
+              >
+                &times;
+              </IconButton>
+            </div>
+          ))
         )}
-      </div>
+      </SubGroup>
     </>
   );
 }

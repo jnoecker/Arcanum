@@ -1,4 +1,4 @@
-import type { Article, ArticleTemplate } from "@/types/lore";
+import type { Article, ArticleTemplate, TimelineEvent } from "@/types/lore";
 import type { ArtStyle } from "@/lib/arcanumPrompts";
 import { useLoreStore } from "@/stores/loreStore";
 import { tiptapToPlainText } from "@/lib/loreRelations";
@@ -87,6 +87,54 @@ export function getArticlePrompt(article: Article, style: ArtStyle): string {
 
   parts.push("No text, no runes, no words, no letters");
   return parts.join(". ");
+}
+
+/**
+ * Build a fallback image prompt for a timeline event.
+ */
+export function getTimelineEventPrompt(event: TimelineEvent, style: ArtStyle): string {
+  const ctx = worldContext();
+  const parts: string[] = [
+    "16:9 cinematic scene illustration, dramatic atmospheric composition, painterly historical chronicle",
+  ];
+  if (ctx) parts.push(ctx);
+  parts.push(event.title);
+  if (event.description) parts.push(event.description);
+
+  if (style === "arcanum") {
+    parts.push("Deep cosmic indigo and abyssal navy backgrounds, baroque rococo light scrollwork, golden accents");
+  } else {
+    parts.push("Soft lavender and pale blue undertones, ambient diffused lighting, dreamlike atmosphere");
+  }
+
+  parts.push("No text, no runes, no words, no letters");
+  return parts.join(". ");
+}
+
+/**
+ * Build rich entity context for LLM prompt enhancement of a timeline event.
+ */
+export function getTimelineEventContext(event: TimelineEvent): string {
+  const parts: string[] = [
+    "Article type: timeline_event",
+    `Title: ${event.title}`,
+    `Importance: ${event.importance}`,
+  ];
+  if (event.description) parts.push(`Description: ${event.description}`);
+
+  // Pull in linked article context if present
+  if (event.articleId) {
+    const articles = useLoreStore.getState().lore?.articles ?? {};
+    const linked = articles[event.articleId];
+    if (linked) {
+      parts.push(`Linked article: ${linked.title} (${linked.template})`);
+    }
+  }
+
+  const ctx = worldContext();
+  if (ctx) parts.push(`World: ${ctx}`);
+
+  return parts.join("\n");
 }
 
 /**

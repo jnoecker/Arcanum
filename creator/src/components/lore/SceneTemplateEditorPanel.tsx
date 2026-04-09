@@ -14,6 +14,10 @@ const PALETTE = [
   "#b88faa", "#95a0bf", "#d4c8a0", "#7a8a6e", "#6e5a8a",
 ];
 
+// Stable empty fallback so the selector below doesn't return a fresh array
+// every render and trigger an infinite re-render via useSyncExternalStore.
+const EMPTY_TEMPLATES: CustomSceneTemplate[] = [];
+
 function generateId(label: string): string {
   return label
     .toLowerCase()
@@ -160,7 +164,7 @@ function TemplateEditor({
 // ─── Main panel ────────────────────────────────────────────────────
 
 export function SceneTemplateEditorPanel() {
-  const customTemplates = useLoreStore((s) => s.lore?.customSceneTemplates ?? []);
+  const customTemplates = useLoreStore((s) => s.lore?.customSceneTemplates) ?? EMPTY_TEMPLATES;
   const addCustomSceneTemplate = useLoreStore((s) => s.addCustomSceneTemplate);
   const updateCustomSceneTemplate = useLoreStore((s) => s.updateCustomSceneTemplate);
   const deleteCustomSceneTemplate = useLoreStore((s) => s.deleteCustomSceneTemplate);

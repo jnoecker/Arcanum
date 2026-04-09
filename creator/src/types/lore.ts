@@ -140,6 +140,8 @@ export interface TimelineEvent {
   title: string;
   description?: string;
   importance: "minor" | "major" | "legendary";
+  /** Asset filename for the event's own background image (independent of any linked article). */
+  image?: string;
 }
 
 // ─── Documents (internal notes, lore bibles) ─────────────────────

@@ -55,7 +55,7 @@ export function VersionControlPanel() {
   // Format guard
   if (!project || project.format !== "standalone") {
     return (
-      <div className="rounded-2xl border border-white/10 bg-black/10 px-6 py-8 text-center text-sm text-text-muted">
+      <div className="rounded-2xl border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] px-6 py-8 text-center text-sm text-text-muted">
         Version control is available for standalone projects only.
       </div>
     );
@@ -116,7 +116,7 @@ export function VersionControlPanel() {
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-1.5">
               <span className="text-2xs uppercase tracking-wider text-text-muted">Branch</span>
-              <span className="rounded bg-white/8 px-2 py-0.5 font-mono text-xs text-text-primary">
+              <span className="rounded bg-[var(--chrome-highlight-strong)] px-2 py-0.5 font-mono text-xs text-text-primary">
                 {status?.branch || "—"}
               </span>
             </div>
@@ -139,7 +139,7 @@ export function VersionControlPanel() {
           <button
             onClick={refresh}
             disabled={loading}
-            className="rounded px-2 py-1 text-2xs text-text-muted transition hover:bg-white/5 hover:text-text-primary disabled:opacity-50"
+            className="rounded px-2 py-1 text-2xs text-text-muted transition hover:bg-[var(--chrome-highlight)] hover:text-text-primary disabled:opacity-50"
           >
             {loading ? <Spinner /> : "Refresh"}
           </button>
@@ -166,7 +166,7 @@ export function VersionControlPanel() {
                 if (remoteUrl.trim()) setRemote(mudDir, remoteUrl.trim());
               }}
               disabled={!remoteUrl.trim()}
-              className="shrink-0 rounded bg-white/8 px-3 py-1.5 text-xs text-text-primary transition hover:bg-white/12 disabled:opacity-50"
+              className="shrink-0 rounded bg-[var(--chrome-highlight-strong)] px-3 py-1.5 text-xs text-text-primary transition hover:bg-[var(--chrome-highlight-strong)] disabled:opacity-50"
             >
               Set Remote
             </button>
@@ -214,7 +214,7 @@ export function VersionControlPanel() {
             <button
               onClick={() => push(mudDir)}
               disabled={pushing || !hasPat}
-              className="rounded bg-white/8 px-4 py-1.5 text-xs text-text-primary transition hover:bg-white/12 disabled:opacity-50"
+              className="rounded bg-[var(--chrome-highlight-strong)] px-4 py-1.5 text-xs text-text-primary transition hover:bg-[var(--chrome-highlight-strong)] disabled:opacity-50"
             >
               {pushing ? <><Spinner className="mr-1.5" /> Pushing...</> : "Push"}
               {(status?.ahead ?? 0) > 0 && (
@@ -226,7 +226,7 @@ export function VersionControlPanel() {
             <button
               onClick={() => pull(mudDir)}
               disabled={pulling || !hasPat}
-              className="rounded bg-white/8 px-4 py-1.5 text-xs text-text-primary transition hover:bg-white/12 disabled:opacity-50"
+              className="rounded bg-[var(--chrome-highlight-strong)] px-4 py-1.5 text-xs text-text-primary transition hover:bg-[var(--chrome-highlight-strong)] disabled:opacity-50"
             >
               {pulling ? <><Spinner className="mr-1.5" /> Pulling...</> : "Pull"}
               {(status?.behind ?? 0) > 0 && (
@@ -306,7 +306,7 @@ export function VersionControlPanel() {
             href={prResult.pr_url}
             target="_blank"
             rel="noopener noreferrer"
-            className="mt-2 inline-block rounded bg-white/8 px-3 py-1.5 text-xs text-accent transition hover:bg-white/12"
+            className="mt-2 inline-block rounded bg-[var(--chrome-highlight-strong)] px-3 py-1.5 text-xs text-accent transition hover:bg-[var(--chrome-highlight-strong)]"
           >
             Open PR on GitHub &rarr;
           </a>
@@ -340,7 +340,7 @@ export function VersionControlPanel() {
 
 function Card({ children, className }: { children: React.ReactNode; className?: string }) {
   return (
-    <div className={`rounded-2xl border border-white/10 bg-black/10 px-5 py-4 ${className ?? ""}`}>
+    <div className={`rounded-2xl border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] px-5 py-4 ${className ?? ""}`}>
       {children}
     </div>
   );

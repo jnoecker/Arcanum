@@ -17,6 +17,7 @@ export interface PersistedUI {
   workspace?: "worldmaker" | "lore";
   collapsedSidebarSections?: string[];
   artSubTab?: "direction" | "assets" | "custom";
+  collapsedZoneAssetSections?: Record<string, string[]>;
 }
 
 export function saveUIState(state: PersistedUI): void {
@@ -125,6 +126,23 @@ export function saveCollapsedSections(sections: string[]): void {
 
 export function loadCollapsedSections(): string[] {
   return loadUIState()?.collapsedSidebarSections ?? [];
+}
+
+export function saveCollapsedZoneAssetSections(zoneId: string, sections: string[]): void {
+  const state = loadUIState();
+  if (!state) return;
+  const existing = state.collapsedZoneAssetSections ?? {};
+  const next: Record<string, string[]> = { ...existing };
+  if (sections.length === 0) {
+    delete next[zoneId];
+  } else {
+    next[zoneId] = sections;
+  }
+  saveUIState({ ...state, collapsedZoneAssetSections: next });
+}
+
+export function loadCollapsedZoneAssetSections(zoneId: string): string[] {
+  return loadUIState()?.collapsedZoneAssetSections?.[zoneId] ?? [];
 }
 
 export function saveArtSubTab(tab: "direction" | "assets" | "custom"): void {

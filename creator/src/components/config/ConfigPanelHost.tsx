@@ -260,7 +260,7 @@ export function ConfigPanelHost({ panelId }: { panelId: string }) {
                 onClick={handleSave}
                 disabled={!dirty || saving}
                 aria-label={saving ? "Saving configuration" : "Save configuration"}
-                className="focus-ring rounded-full border border-white/10 bg-bg-primary/80 px-3 py-1 text-2xs font-medium text-accent shadow-md backdrop-blur-sm transition hover:bg-bg-primary disabled:cursor-not-allowed disabled:opacity-40"
+                className="focus-ring rounded-full border border-[var(--chrome-stroke)] bg-bg-primary/80 px-3 py-1 text-2xs font-medium text-accent shadow-md backdrop-blur-sm transition hover:bg-bg-primary disabled:cursor-not-allowed disabled:opacity-40"
               >
                 {saving ? <span className="flex items-center gap-1.5"><Spinner />Saving</span> : "Save Config"}
               </button>

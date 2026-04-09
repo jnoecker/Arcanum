@@ -245,7 +245,7 @@ export function ArticleEditor({ articleId }: { articleId: string }) {
           <button
             onClick={() => setShowRewrite(true)}
             title="Rewrite article with specific instructions"
-            className="rounded-full border border-white/8 px-2.5 py-1 text-2xs text-text-secondary hover:bg-white/8 hover:text-text-primary"
+            className="rounded-full border border-[var(--chrome-stroke)] px-2.5 py-1 text-2xs text-text-secondary hover:bg-[var(--chrome-highlight-strong)] hover:text-text-primary"
           >
             Rewrite
           </button>
@@ -253,7 +253,7 @@ export function ArticleEditor({ articleId }: { articleId: string }) {
             onClick={() => {
               duplicateArticle(articleId);
             }}
-            className="focus-ring rounded-full border border-white/10 px-3 py-1 text-2xs font-medium text-text-secondary transition hover:bg-white/8 hover:text-text-primary"
+            className="focus-ring rounded-full border border-[var(--chrome-stroke)] px-3 py-1 text-2xs font-medium text-text-secondary transition hover:bg-[var(--chrome-highlight-strong)] hover:text-text-primary"
             title="Duplicate this article"
           >
             Duplicate

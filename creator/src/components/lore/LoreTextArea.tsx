@@ -1,7 +1,9 @@
-import { useState, useCallback } from "react";
+import { useCallback, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
-import { CommitTextarea } from "@/components/ui/FormWidgets";
+import { CommitTextarea, InlineError } from "@/components/ui/FormWidgets";
 import { getLoreEnhancePrompt } from "@/lib/lorePrompts";
+import { getPromptLlmConfigurationError } from "@/lib/promptLlm";
+import { useAssetStore } from "@/stores/assetStore";
 
 interface LoreTextAreaProps {
   label: string;
@@ -11,7 +13,7 @@ interface LoreTextAreaProps {
   rows?: number;
   /** System prompt for generating text from scratch. */
   generateSystemPrompt?: string;
-  /** User prompt builder for generation — receives current world context. */
+  /** User prompt builder for generation - receives current world context. */
   generateUserPrompt?: string;
   /** System prompt for enhancing existing text. Defaults to getLoreEnhancePrompt(). */
   enhanceSystemPrompt?: string;
@@ -35,10 +37,19 @@ export function LoreTextArea({
   context,
 }: LoreTextAreaProps) {
   const [loading, setLoading] = useState<"generate" | "enhance" | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const settings = useAssetStore((s) => s.settings);
+  const llmConfigurationError = getPromptLlmConfigurationError(settings);
 
   const handleGenerate = useCallback(async () => {
     if (!generateSystemPrompt || !generateUserPrompt) return;
+    if (llmConfigurationError) {
+      setError(llmConfigurationError);
+      return;
+    }
+
     setLoading("generate");
+    setError(null);
     try {
       const parts = [generateUserPrompt];
       if (context) parts.push(`\nWorld context: ${context}`);
@@ -46,17 +57,27 @@ export function LoreTextArea({
         systemPrompt: generateSystemPrompt,
         userPrompt: parts.join("\n"),
       });
-      onCommit(result.trim());
-    } catch {
-      // Silently fail — user can retry
+      const trimmed = result.trim();
+      if (!trimmed) {
+        throw new Error("AI returned no content.");
+      }
+      onCommit(trimmed);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
     } finally {
       setLoading(null);
     }
-  }, [generateSystemPrompt, generateUserPrompt, context, onCommit]);
+  }, [context, generateSystemPrompt, generateUserPrompt, llmConfigurationError, onCommit]);
 
   const handleEnhance = useCallback(async () => {
     if (!value) return;
+    if (llmConfigurationError) {
+      setError(llmConfigurationError);
+      return;
+    }
+
     setLoading("enhance");
+    setError(null);
     try {
       const parts = [value];
       if (context) parts.push(`\nWorld context: ${context}`);
@@ -64,13 +85,17 @@ export function LoreTextArea({
         systemPrompt: enhanceSystemPrompt ?? getLoreEnhancePrompt(),
         userPrompt: parts.join("\n"),
       });
-      onCommit(result.trim());
-    } catch {
-      // Silently fail — user can retry
+      const trimmed = result.trim();
+      if (!trimmed) {
+        throw new Error("AI returned no content.");
+      }
+      onCommit(trimmed);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
     } finally {
       setLoading(null);
     }
-  }, [value, enhanceSystemPrompt, context, onCommit]);
+  }, [context, enhanceSystemPrompt, llmConfigurationError, onCommit, value]);
 
   const showGenerate = generateSystemPrompt && generateUserPrompt && !value;
   const showEnhance = !!value;
@@ -89,9 +114,9 @@ export function LoreTextArea({
           {showGenerate && (
             <button
               onClick={handleGenerate}
-              disabled={loading !== null}
+              disabled={loading !== null || !!llmConfigurationError}
               className="rounded px-2 py-0.5 text-2xs text-accent transition-colors hover:bg-accent/10 disabled:opacity-50"
-              title="Use AI to generate initial content"
+              title={llmConfigurationError ?? "Use AI to generate initial content"}
             >
               {loading === "generate" ? "Generating..." : "Generate"}
             </button>
@@ -99,13 +124,18 @@ export function LoreTextArea({
           {showEnhance && (
             <button
               onClick={handleEnhance}
-              disabled={loading !== null}
+              disabled={loading !== null || !!llmConfigurationError}
               className="rounded px-2 py-0.5 text-2xs text-accent transition-colors hover:bg-accent/10 disabled:opacity-50"
-              title="Use AI to expand and enrich this text"
+              title={llmConfigurationError ?? "Use AI to expand and enrich this text"}
             >
               {loading === "enhance" ? "Enhancing..." : "Enhance"}
             </button>
           )}
+        </div>
+      )}
+      {error && (
+        <div className="mt-2">
+          <InlineError error={error} onDismiss={() => setError(null)} />
         </div>
       )}
     </div>

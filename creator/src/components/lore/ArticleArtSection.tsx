@@ -18,16 +18,16 @@ function GalleryThumbnail({
   const src = useImageSrc(filename);
 
   return (
-    <div className="group relative h-16 w-16 shrink-0 overflow-hidden rounded-lg border border-white/10 bg-black/20">
+    <div className="group relative h-16 w-16 shrink-0 overflow-hidden rounded-lg border border-[var(--chrome-stroke)] bg-[var(--chrome-fill-strong)]">
       {src ? (
         <img src={src} alt="" className="h-full w-full object-cover" />
       ) : (
         <div className="flex h-full w-full items-center justify-center text-2xs text-text-muted">...</div>
       )}
-      <div className="absolute inset-0 flex items-center justify-center gap-1 bg-black/60 opacity-0 transition group-hover:opacity-100">
+      <div className="absolute inset-0 flex items-center justify-center gap-1 bg-[var(--chrome-fill-soft)]0 opacity-0 transition group-hover:opacity-100">
         <button
           onClick={onPromote}
-          className="rounded-full bg-white/15 p-1 text-3xs text-text-primary hover:bg-white/25"
+          className="rounded-full bg-[var(--chrome-highlight-strong)] p-1 text-3xs text-text-primary hover:bg-[var(--chrome-highlight-strong)]"
           title="Set as primary image"
           aria-label="Set as primary image"
         >
@@ -35,7 +35,7 @@ function GalleryThumbnail({
         </button>
         <button
           onClick={onRemove}
-          className="rounded-full bg-white/15 p-1 text-3xs text-status-danger hover:bg-status-danger/30"
+          className="rounded-full bg-[var(--chrome-highlight-strong)] p-1 text-3xs text-status-danger hover:bg-status-danger/30"
           title="Remove from gallery"
           aria-label="Remove from gallery"
         >
@@ -113,14 +113,14 @@ export function ArticleArtSection({
         />
 
         {/* Gallery */}
-        <div className="mt-2 border-t border-white/8 pt-3">
+        <div className="mt-2 border-t border-[var(--chrome-stroke)] pt-3">
           <div className="mb-2 flex items-center justify-between">
             <p className="text-2xs font-medium uppercase tracking-ui text-text-muted">
               Gallery{gallery.length > 0 ? ` (${gallery.length})` : ""}
             </p>
             <button
               onClick={() => setShowGalleryGenerator((v) => !v)}
-              className="rounded-full border border-white/8 px-2 py-0.5 text-2xs text-text-secondary transition hover:border-white/14 hover:bg-white/8 hover:text-text-primary"
+              className="rounded-full border border-[var(--chrome-stroke)] px-2 py-0.5 text-2xs text-text-secondary transition hover:border-[var(--chrome-stroke-strong)] hover:bg-[var(--chrome-highlight-strong)] hover:text-text-primary"
             >
               {showGalleryGenerator ? "Hide" : "Add Art"}
             </button>

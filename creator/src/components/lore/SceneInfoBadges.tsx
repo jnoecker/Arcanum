@@ -77,7 +77,7 @@ function MiniMap({
     : null;
 
   return (
-    <div className="relative h-20 w-28 overflow-hidden rounded border border-white/20 shadow-lg">
+    <div className="relative h-20 w-28 overflow-hidden rounded border border-[var(--chrome-stroke-emphasis)] shadow-lg">
       <img src={src} alt="" className="h-full w-full object-cover" draggable={false} />
       {xPct !== null && yPct !== null && (
         <span
@@ -101,7 +101,7 @@ function ArticleBadgeChip({ articleId }: { articleId: string }) {
   if (!article) return null;
   return (
     <div
-      className="flex items-center gap-1.5 rounded-full border border-white/20 bg-black/75 px-2 py-0.5"
+      className="flex items-center gap-1.5 rounded-full border border-[var(--chrome-stroke-emphasis)] bg-black/75 px-2 py-0.5"
       title={article.title}
     >
       {src ? (
@@ -161,7 +161,7 @@ export function SceneInfoBadges({ scene, mode = "ambient" }: SceneInfoBadgesProp
     >
       {/* Top-left: year/era badge */}
       {timeline && (
-        <div className="absolute left-3 top-3 flex flex-col items-start gap-0.5 rounded border border-warm/40 bg-black/80 px-2 py-1">
+        <div className="absolute left-3 top-3 flex flex-col items-start gap-0.5 rounded border border-warm/40 bg-[var(--chrome-fill-soft)]0 px-2 py-1">
           <span
             className="font-display text-base leading-none tracking-[0.18em] text-warm"
             style={{ textShadow: "0 1px 3px rgba(0,0,0,0.6)" }}

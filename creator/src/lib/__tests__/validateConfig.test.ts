@@ -116,6 +116,10 @@ const BASE_CONFIG: AppConfig = {
   globalAssets: {
     video_available_indicator: "video_available_indicator.png",
     shop_kiosk: "shop_kiosk.png",
+    puzzle_kiosk: "puzzle_kiosk.png",
+    feature_door: "feature_door.png",
+    feature_container: "feature_container.png",
+    feature_lever: "feature_lever.png",
     dialog_indicator: "dialog_indicator.png",
     aggro_indicator: "aggro_indicator.png",
     quest_available_indicator: "quest_available_indicator.png",
@@ -246,6 +250,52 @@ describe("validateConfig", () => {
     };
     const issues = validateConfig(cfg);
     expect(issues.filter((i) => i.entity.startsWith("ability:"))).toEqual([]);
+  });
+
+  it("flags negative skillPointCost on an ability", () => {
+    const cfg = {
+      ...BASE_CONFIG,
+      abilities: {
+        bogus_cost: {
+          displayName: "Bogus Cost",
+          manaCost: 5,
+          cooldownMs: 0,
+          levelRequired: 1,
+          targetType: "ENEMY",
+          skillPointCost: -1,
+          effect: { type: "DIRECT_DAMAGE", value: 5 },
+        },
+      },
+    };
+    const issues = validateConfig(cfg);
+    expect(issues).toContainEqual(
+      expect.objectContaining({
+        entity: "ability:bogus_cost",
+        severity: "error",
+        message: expect.stringContaining("skillPointCost"),
+      }),
+    );
+  });
+
+  it("accepts a zero skillPointCost (auto-learned ability)", () => {
+    const cfg = {
+      ...BASE_CONFIG,
+      abilities: {
+        free_spark: {
+          displayName: "Free Spark",
+          manaCost: 5,
+          cooldownMs: 0,
+          levelRequired: 1,
+          targetType: "ENEMY",
+          skillPointCost: 0,
+          effect: { type: "DIRECT_DAMAGE", value: 3 },
+        },
+      },
+    };
+    const issues = validateConfig(cfg);
+    expect(
+      issues.filter((i) => i.entity === "ability:free_spark"),
+    ).toEqual([]);
   });
 
   it("warns about ability with unknown class restriction", () => {

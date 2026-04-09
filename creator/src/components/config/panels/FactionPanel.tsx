@@ -6,6 +6,7 @@ import {
   FieldRow,
   TextInput,
   NumberInput,
+  ActionButton,
   IconButton,
   CommitTextarea,
 } from "@/components/ui/FormWidgets";
@@ -68,60 +69,125 @@ export function FactionPanel() {
   if (!config) return null;
 
   return (
-    <div className="space-y-6">
-      <Section title="Global Settings" defaultExpanded>
+    <>
+      <Section
+        title="Global Settings"
+        description="Factions are political and social groups in your world — thieves guilds, royal courts, mercenary companies. Players earn or lose reputation by completing quests and killing mobs, which unlocks shops, quests, and areas tied to each faction."
+      >
         <div className="flex flex-col gap-1.5">
-          <FieldRow label="Default Reputation" hint="Starting reputation with all factions">
-            <NumberInput value={factions.defaultReputation} onCommit={(v) => patch({ defaultReputation: v ?? 0 })} />
+          <FieldRow
+            label="Default Reputation"
+            hint="Starting reputation each new player has with every faction. 0 is neutral. Positive values make the world friendlier to newcomers; negative values create a harsher debut."
+          >
+            <NumberInput
+              value={factions.defaultReputation}
+              onCommit={(v) => patch({ defaultReputation: v ?? 0 })}
+            />
           </FieldRow>
-          <FieldRow label="Kill Penalty" hint="Base rep lost with a mob's faction per kill (scaled by level)">
-            <NumberInput value={factions.killPenalty} onCommit={(v) => patch({ killPenalty: v ?? 5 })} min={0} />
+          <FieldRow
+            label="Kill Penalty"
+            hint="Base reputation lost with a mob's own faction when a player kills it, scaled by mob level. 5 is a modest penalty — try 10 for a harsher consequence or 2 for a forgiving world."
+          >
+            <NumberInput
+              value={factions.killPenalty}
+              onCommit={(v) => patch({ killPenalty: v ?? 5 })}
+              min={0}
+            />
           </FieldRow>
-          <FieldRow label="Kill Bonus" hint="Base rep gained with enemy factions per kill (scaled by level)">
-            <NumberInput value={factions.killBonus} onCommit={(v) => patch({ killBonus: v ?? 3 })} min={0} />
+          <FieldRow
+            label="Kill Bonus"
+            hint="Base reputation gained with the mob's enemy factions per kill, scaled by level. Encourages players to pick sides. 3 is a gentle nudge; raise to speed up faction alignment."
+          >
+            <NumberInput
+              value={factions.killBonus}
+              onCommit={(v) => patch({ killBonus: v ?? 3 })}
+              min={0}
+            />
           </FieldRow>
         </div>
       </Section>
 
       <Section
         title={`Factions (${factionIds.length})`}
-        defaultExpanded
+        description="Define each faction's name, flavor text, and rival factions. Mobs and quests reference these IDs, and players accrue reputation with each one over the course of play."
         actions={
           <div className="flex items-center gap-1.5">
-            <input
+            <TextInput
               value={newFactionId}
-              onChange={(e) => setNewFactionId(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && addFaction()}
+              onCommit={setNewFactionId}
               placeholder="new_faction_id"
-              className="w-36 rounded border border-border-default bg-bg-primary px-2 py-1 text-xs text-text-primary outline-none placeholder:text-text-muted focus:border-accent/50 focus-visible:ring-2 focus-visible:ring-border-active"
+              dense
             />
-            <IconButton onClick={addFaction} title="Add faction">+</IconButton>
+            <ActionButton
+              variant="secondary"
+              size="sm"
+              onClick={addFaction}
+              disabled={!newFactionId.trim()}
+            >
+              + Add
+            </ActionButton>
           </div>
         }
       >
         {factionIds.length === 0 ? (
-          <p className="text-xs text-text-muted">No factions defined. Add one above.</p>
+          <p className="text-2xs leading-relaxed text-text-muted/70">
+            No factions defined yet. Enter an ID above (like "thieves_guild" or "royal_court") and click Add.
+          </p>
         ) : (
-          <div className="flex flex-col gap-4">
+          <div className="flex flex-col">
             {factionIds.map((id) => {
               const def = factions.definitions[id]!;
               return (
-                <div key={id} className="rounded-lg border border-border-muted bg-bg-secondary/40 p-3 space-y-2">
+                <div
+                  key={id}
+                  className="flex flex-col gap-1.5 border-b border-border-muted/30 pb-3 pt-3 first:pt-0 last:border-0 last:pb-0"
+                >
                   <div className="flex items-center justify-between">
-                    <span className="font-mono text-xs text-text-muted">{id}</span>
-                    <IconButton onClick={() => deleteFaction(id)} title="Delete faction" danger>&times;</IconButton>
+                    <span className="font-mono text-2xs uppercase tracking-widest text-text-muted">
+                      {id}
+                    </span>
+                    <IconButton
+                      onClick={() => deleteFaction(id)}
+                      title="Delete faction"
+                      size="sm"
+                      danger
+                    >
+                      &times;
+                    </IconButton>
                   </div>
-                  <FieldRow label="Name">
-                    <TextInput value={def.name} onCommit={(v) => patchDefinition(id, { name: v })} />
+                  <FieldRow
+                    label="Name"
+                    hint="Display name shown to players in reputation readouts and quest text."
+                  >
+                    <TextInput
+                      value={def.name}
+                      onCommit={(v) => patchDefinition(id, { name: v })}
+                    />
                   </FieldRow>
-                  <FieldRow label="Description">
-                    <TextInput value={def.description ?? ""} onCommit={(v) => patchDefinition(id, { description: v || undefined })} placeholder="Faction description" />
+                  <FieldRow
+                    label="Description"
+                    hint="Short flavor summary. Shown in faction info commands and help text."
+                  >
+                    <TextInput
+                      value={def.description ?? ""}
+                      onCommit={(v) => patchDefinition(id, { description: v || undefined })}
+                      placeholder="A secretive order of..."
+                    />
                   </FieldRow>
-                  <FieldRow label="Enemies" hint="Comma-separated faction IDs">
+                  <FieldRow
+                    label="Enemies"
+                    hint="Comma-separated faction IDs. Killing a member of this faction grants reputation with its enemies, and vice versa."
+                  >
                     <TextInput
                       value={(def.enemies ?? []).join(", ")}
-                      onCommit={(v) => patchDefinition(id, { enemies: v ? v.split(",").map((s) => s.trim()).filter(Boolean) : undefined })}
-                      placeholder="faction_a, faction_b"
+                      onCommit={(v) =>
+                        patchDefinition(id, {
+                          enemies: v
+                            ? v.split(",").map((s) => s.trim()).filter(Boolean)
+                            : undefined,
+                        })
+                      }
+                      placeholder="thieves_guild, shadow_cabal"
                     />
                   </FieldRow>
                 </div>
@@ -131,38 +197,60 @@ export function FactionPanel() {
         )}
       </Section>
 
-      <Section title="Quest Rewards" defaultExpanded={false} description="Map quest IDs to faction reputation changes.">
-        <CommitTextarea
-          label="Quest Rewards (YAML)"
-          value={factions.questRewards ? Object.entries(factions.questRewards).map(([qid, rewards]) =>
-            `${qid}:\n${Object.entries(rewards).map(([fid, amt]) => `  ${fid}: ${amt}`).join("\n")}`
-          ).join("\n") : ""}
-          onCommit={(v) => {
-            // Simple key-value parser for quest rewards
-            if (!v.trim()) { patch({ questRewards: undefined }); return; }
-            try {
-              const rewards: Record<string, Record<string, number>> = {};
-              let currentQuest = "";
-              for (const line of v.split("\n")) {
-                const trimmed = line.trimEnd();
-                if (!trimmed) continue;
-                if (!trimmed.startsWith(" ")) {
-                  currentQuest = trimmed.replace(/:$/, "").trim();
-                  rewards[currentQuest] = {};
-                } else if (currentQuest) {
-                  const match = trimmed.match(/^\s+(\S+)\s*:\s*(-?\d+)/);
-                  if (match && match[1] && match[2]) rewards[currentQuest]![match[1]] = parseInt(match[2]);
-                }
-              }
-              patch({ questRewards: Object.keys(rewards).length > 0 ? rewards : undefined });
-            } catch {
-              // Ignore parse errors
+      <Section
+        title="Quest Rewards"
+        description="Map quest IDs to faction reputation changes granted on completion. Use this to push players toward or away from factions based on the jobs they take."
+        defaultExpanded={false}
+      >
+        <div className="flex flex-col gap-1.5">
+          <CommitTextarea
+            label="Rewards (YAML)"
+            value={
+              factions.questRewards
+                ? Object.entries(factions.questRewards)
+                    .map(
+                      ([qid, rewards]) =>
+                        `${qid}:\n${Object.entries(rewards)
+                          .map(([fid, amt]) => `  ${fid}: ${amt}`)
+                          .join("\n")}`,
+                    )
+                    .join("\n")
+                : ""
             }
-          }}
-          placeholder="quest_id:\n  faction_id: 100\n  other_faction: -50"
-          rows={6}
-        />
+            onCommit={(v) => {
+              // Simple key-value parser for quest rewards
+              if (!v.trim()) {
+                patch({ questRewards: undefined });
+                return;
+              }
+              try {
+                const rewards: Record<string, Record<string, number>> = {};
+                let currentQuest = "";
+                for (const line of v.split("\n")) {
+                  const trimmed = line.trimEnd();
+                  if (!trimmed) continue;
+                  if (!trimmed.startsWith(" ")) {
+                    currentQuest = trimmed.replace(/:$/, "").trim();
+                    rewards[currentQuest] = {};
+                  } else if (currentQuest) {
+                    const match = trimmed.match(/^\s+(\S+)\s*:\s*(-?\d+)/);
+                    if (match && match[1] && match[2])
+                      rewards[currentQuest]![match[1]] = parseInt(match[2]);
+                  }
+                }
+                patch({
+                  questRewards:
+                    Object.keys(rewards).length > 0 ? rewards : undefined,
+                });
+              } catch {
+                // Ignore parse errors
+              }
+            }}
+            placeholder={"rescue_the_merchant:\n  royal_court: 100\n  thieves_guild: -50"}
+            rows={6}
+          />
+        </div>
       </Section>
-    </div>
+    </>
   );
 }

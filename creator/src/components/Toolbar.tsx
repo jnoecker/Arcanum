@@ -18,7 +18,6 @@ import { exportShowcaseData } from "@/lib/exportShowcase";
 
 const DiffModal = lazy(() => import("./ui/DiffModal").then((m) => ({ default: m.DiffModal })));
 const BatchLegacyImport = lazy(() => import("./BatchLegacyImport").then((m) => ({ default: m.BatchLegacyImport })));
-const SketchImportWizard = lazy(() => import("./SketchImportWizard").then((m) => ({ default: m.SketchImportWizard })));
 const MudImportWizard = lazy(() => import("./MudImportWizard").then((m) => ({ default: m.MudImportWizard })));
 
 const ADMIN_STATUS_COLORS: Record<string, string> = {
@@ -65,7 +64,6 @@ export function Toolbar({ workspace, setWorkspace }: ToolbarProps) {
   const [saved, setSaved] = useState(false);
   const [showDiff, setShowDiff] = useState(false);
   const [showLegacyImport, setShowLegacyImport] = useState(false);
-  const [showSketchImport, setShowSketchImport] = useState(false);
   const [showMudImport, setShowMudImport] = useState(false);
   const [showUtilityMenu, setShowUtilityMenu] = useState(false);
   const openGenerator = useAssetStore((s) => s.openGenerator);
@@ -165,7 +163,7 @@ export function Toolbar({ workspace, setWorkspace }: ToolbarProps) {
     <>
       <div className="relative z-20 flex shrink-0 items-center px-4 pt-3">
         <div className="instrument-panel relative min-w-0 flex-1 rounded-3xl px-5 py-3">
-          <div className="pointer-events-none absolute right-[-8rem] top-[-6rem] h-[20rem] w-[20rem] rounded-full bg-[radial-gradient(circle,rgba(168,151,210,0.16),transparent_72%)] blur-3xl" />
+          <div className="pointer-events-none absolute right-[-8rem] top-[-6rem] h-[20rem] w-[20rem] rounded-full bg-[radial-gradient(circle,rgb(var(--accent-rgb)/0.16),transparent_72%)] blur-3xl" />
           <div className="relative flex flex-wrap items-center gap-4">
             <div className="mr-auto flex min-w-0 items-center gap-3">
               <div className="min-w-0">
@@ -212,8 +210,8 @@ export function Toolbar({ workspace, setWorkspace }: ToolbarProps) {
                     }}
                     className={`focus-ring rounded-full px-4 py-1.5 font-display text-sm transition ${
                       workspace === entry.id
-                        ? "bg-white/10 text-accent shadow-glow"
-                        : "text-text-secondary hover:bg-white/5 hover:text-text-primary"
+                        ? "bg-[var(--chrome-fill)] text-accent shadow-glow"
+                        : "text-text-secondary hover:bg-[var(--chrome-highlight)] hover:text-text-primary"
                     }`}
                   >
                     {entry.label}
@@ -254,7 +252,7 @@ export function Toolbar({ workspace, setWorkspace }: ToolbarProps) {
                               setShowUtilityMenu(false);
                               handleOpenAdmin();
                             }}
-                            className="focus-ring flex min-h-11 items-center justify-between rounded-2xl border border-white/8 bg-black/12 px-4 py-3 text-left text-sm text-text-secondary transition hover:border-white/14 hover:bg-white/6 hover:text-text-primary"
+                            className="chrome-menu-item focus-ring flex min-h-11 items-center justify-between rounded-2xl px-4 py-3 text-left text-sm"
                           >
                             <span>Runtime Admin</span>
                             <span className="text-2xs uppercase tracking-label text-text-muted">
@@ -269,7 +267,7 @@ export function Toolbar({ workspace, setWorkspace }: ToolbarProps) {
                                 handleOpenHandoff();
                               }}
                               disabled={!hasConfig}
-                              className="focus-ring flex min-h-11 items-center rounded-2xl border border-white/8 bg-black/12 px-4 py-3 text-left text-sm text-text-secondary transition hover:border-white/14 hover:bg-white/6 hover:text-text-primary disabled:cursor-not-allowed disabled:opacity-40"
+                              className="chrome-menu-item focus-ring flex min-h-11 items-center rounded-2xl px-4 py-3 text-left text-sm disabled:cursor-not-allowed disabled:opacity-40"
                             >
                               Export Runtime
                             </button>
@@ -297,7 +295,7 @@ export function Toolbar({ workspace, setWorkspace }: ToolbarProps) {
                               setShowUtilityMenu(false);
                             }}
                             disabled={zones.size === 0 && !hasConfig}
-                            className="focus-ring flex min-h-11 items-center rounded-2xl border border-white/8 bg-black/12 px-4 py-3 text-left text-sm text-text-secondary transition hover:border-white/14 hover:bg-white/6 hover:text-text-primary disabled:cursor-not-allowed disabled:opacity-40"
+                            className="chrome-menu-item focus-ring flex min-h-11 items-center rounded-2xl px-4 py-3 text-left text-sm disabled:cursor-not-allowed disabled:opacity-40"
                           >
                             Run Validation
                           </button>
@@ -314,7 +312,7 @@ export function Toolbar({ workspace, setWorkspace }: ToolbarProps) {
                               void handleExportShowcase();
                             }}
                             disabled={!hasLore || exporting}
-                            className="focus-ring flex min-h-11 items-center rounded-2xl border border-white/8 bg-black/12 px-4 py-3 text-left text-sm text-text-secondary transition hover:border-white/14 hover:bg-white/6 hover:text-text-primary disabled:cursor-not-allowed disabled:opacity-40"
+                            className="chrome-menu-item focus-ring flex min-h-11 items-center rounded-2xl px-4 py-3 text-left text-sm disabled:cursor-not-allowed disabled:opacity-40"
                           >
                             {exporting ? "Publishing Lore..." : "Publish Lore Atlas"}
                           </button>
@@ -324,7 +322,7 @@ export function Toolbar({ workspace, setWorkspace }: ToolbarProps) {
                               setShowUtilityMenu(false);
                               setShowLegacyImport(true);
                             }}
-                            className="focus-ring flex min-h-11 items-center rounded-2xl border border-white/8 bg-black/12 px-4 py-3 text-left text-sm text-text-secondary transition hover:border-white/14 hover:bg-white/6 hover:text-text-primary"
+                            className="chrome-menu-item focus-ring flex min-h-11 items-center rounded-2xl px-4 py-3 text-left text-sm"
                           >
                             Restore Legacy Media
                           </button>
@@ -332,19 +330,9 @@ export function Toolbar({ workspace, setWorkspace }: ToolbarProps) {
                             role="menuitem"
                             onClick={() => {
                               setShowUtilityMenu(false);
-                              setShowSketchImport(true);
-                            }}
-                            className="focus-ring flex min-h-11 items-center rounded-2xl border border-white/8 bg-black/12 px-4 py-3 text-left text-sm text-text-secondary transition hover:border-white/14 hover:bg-white/6 hover:text-text-primary"
-                          >
-                            Import From Sketch
-                          </button>
-                          <button
-                            role="menuitem"
-                            onClick={() => {
-                              setShowUtilityMenu(false);
                               setShowMudImport(true);
                             }}
-                            className="focus-ring flex min-h-11 items-center rounded-2xl border border-white/8 bg-black/12 px-4 py-3 text-left text-sm text-text-secondary transition hover:border-white/14 hover:bg-white/6 hover:text-text-primary"
+                            className="chrome-menu-item focus-ring flex min-h-11 items-center rounded-2xl px-4 py-3 text-left text-sm"
                           >
                             Import MUD Zone
                           </button>
@@ -354,7 +342,7 @@ export function Toolbar({ workspace, setWorkspace }: ToolbarProps) {
                               setShowUtilityMenu(false);
                               openGallery();
                             }}
-                            className="focus-ring flex min-h-11 items-center rounded-2xl border border-white/8 bg-black/12 px-4 py-3 text-left text-sm text-text-secondary transition hover:border-white/14 hover:bg-white/6 hover:text-text-primary"
+                            className="chrome-menu-item focus-ring flex min-h-11 items-center rounded-2xl px-4 py-3 text-left text-sm"
                           >
                             Browse Asset Gallery
                           </button>
@@ -380,7 +368,7 @@ export function Toolbar({ workspace, setWorkspace }: ToolbarProps) {
                 </ActionButton>
               )}
 
-              <div className="rounded-3xl border border-[var(--border-accent-ring)] bg-[linear-gradient(145deg,rgba(28,34,52,0.94),rgba(18,23,38,0.94))] px-3 py-2 shadow-glow">
+              <div className="rounded-3xl border border-[var(--border-accent-ring)] bg-[linear-gradient(145deg,rgb(var(--surface-rgb)/0.94),rgb(var(--bg-rgb)/0.94))] px-3 py-2 shadow-glow">
                 <p className="text-[9px] uppercase tracking-wide-ui text-text-muted">
                   {saved ? "Session committed" : dirtyCount > 0 || configDirty ? "Unsaved work" : "Session stable"}
                 </p>
@@ -440,10 +428,6 @@ export function Toolbar({ workspace, setWorkspace }: ToolbarProps) {
 
         {showLegacyImport && (
           <BatchLegacyImport onClose={() => setShowLegacyImport(false)} />
-        )}
-
-        {showSketchImport && (
-          <SketchImportWizard onClose={() => setShowSketchImport(false)} />
         )}
 
         {showMudImport && (

@@ -168,7 +168,7 @@ function TemplateForm({
           </button>
         </div>
         {draft.fields.length === 0 ? (
-          <p className="rounded-lg border border-dashed border-white/10 bg-black/10 px-4 py-6 text-center text-xs text-text-muted">
+          <p className="rounded-lg border border-dashed border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] px-4 py-6 text-center text-xs text-text-muted">
             No fields yet. Articles of this template will only have a title and body text.
           </p>
         ) : (
@@ -248,7 +248,7 @@ export function TemplateEditorPanel() {
       {/* Custom templates */}
       <Section title="Custom Templates">
         {customTemplates.length === 0 && !creating ? (
-          <p className="rounded-lg border border-dashed border-white/10 bg-black/10 px-4 py-6 text-center text-xs text-text-muted">
+          <p className="rounded-lg border border-dashed border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] px-4 py-6 text-center text-xs text-text-muted">
             No custom templates yet. Create one to add new article types.
           </p>
         ) : (
@@ -282,13 +282,13 @@ export function TemplateEditorPanel() {
                     </div>
                     <button
                       onClick={() => { setEditing(t.id); setCreating(false); }}
-                      className="rounded-full border border-white/8 px-2.5 py-1 text-2xs text-text-secondary hover:bg-white/8"
+                      className="rounded-full border border-[var(--chrome-stroke)] px-2.5 py-1 text-2xs text-text-secondary hover:bg-[var(--chrome-highlight-strong)]"
                     >
                       Edit
                     </button>
                     <button
                       onClick={() => deleteCustomTemplate(t.id)}
-                      className="rounded-full border border-white/8 px-2.5 py-1 text-2xs text-text-muted hover:text-status-danger"
+                      className="rounded-full border border-[var(--chrome-stroke)] px-2.5 py-1 text-2xs text-text-muted hover:text-status-danger"
                     >
                       Delete
                     </button>

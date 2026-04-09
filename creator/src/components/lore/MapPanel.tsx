@@ -8,19 +8,13 @@ import {
   selectColorLabels,
   selectZonePlans,
 } from "@/stores/loreStore";
-import { useImageSrc } from "@/lib/useImageSrc";
+import { useImageSrcStatus } from "@/lib/useImageSrc";
 import type { LoreMap, Article } from "@/types/lore";
 import { TEMPLATE_SCHEMAS } from "@/lib/loreTemplates";
 import { ActionButton, FieldRow, TextInput } from "@/components/ui/FormWidgets";
 import { MapViewer } from "./MapViewer";
 import { MapEnhancer } from "./MapEnhancer";
 import { MapAnalysisPanel } from "./MapAnalysisPanel";
-
-// ─── Map image hook ─────────────────────────────────────────────────
-
-function useMapImage(imageAsset: string | undefined): string | null {
-  return useImageSrc(imageAsset);
-}
 
 // ─── Color palette picker ──────────────────────────────────────────
 
@@ -70,13 +64,13 @@ function ColorPalettePicker({
                 onClick={() => onChange(cl.color)}
                 className={`flex items-center gap-1.5 rounded px-1.5 py-0.5 text-2xs transition ${
                   value === cl.color
-                    ? "bg-white/10 text-text-primary"
-                    : "text-text-secondary hover:bg-white/5 hover:text-text-primary"
+                    ? "bg-[var(--chrome-highlight-strong)] text-text-primary"
+                    : "text-text-secondary hover:bg-[var(--chrome-highlight)] hover:text-text-primary"
                 }`}
                 title={cl.name}
               >
                 <span
-                  className="inline-block h-3 w-3 shrink-0 rounded-sm border border-white/20"
+                  className="inline-block h-3 w-3 shrink-0 rounded-sm border border-[var(--chrome-stroke-emphasis)]"
                   style={{ backgroundColor: cl.color }}
                 />
                 {editingId === cl.id ? (
@@ -117,7 +111,7 @@ function ColorPalettePicker({
                   updateColorLabel(cl.id, { color: e.target.value });
                   if (value === cl.color) onChange(e.target.value);
                 }}
-                className="h-10 w-10 shrink-0 cursor-pointer rounded-full border border-white/10 bg-transparent p-1 opacity-0 transition group-hover:opacity-100"
+                className="h-10 w-10 shrink-0 cursor-pointer rounded-full border border-[var(--chrome-stroke)] bg-transparent p-1 opacity-0 transition group-hover:opacity-100"
                 title="Change color"
               />
               <button
@@ -139,7 +133,7 @@ function ColorPalettePicker({
             type="color"
             value={newColor}
             onChange={(e) => setNewColor(e.target.value)}
-            className="h-11 w-11 shrink-0 cursor-pointer rounded-full border border-white/10 bg-transparent p-1"
+            className="h-11 w-11 shrink-0 cursor-pointer rounded-full border border-[var(--chrome-stroke)] bg-transparent p-1"
           />
           <input
             ref={nameRef}
@@ -177,7 +171,7 @@ function ColorPalettePicker({
           type="color"
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className="h-11 w-11 cursor-pointer rounded-full border border-white/10 bg-bg-primary p-1"
+          className="h-11 w-11 cursor-pointer rounded-full border border-[var(--chrome-stroke)] bg-bg-primary p-1"
         />
         <span className="text-2xs text-text-muted">Custom</span>
       </div>
@@ -258,7 +252,7 @@ function ArticleCombobox({
 
       {open && (
         <div className="absolute left-0 right-0 top-full z-50 mt-1 flex max-h-60 flex-col overflow-hidden rounded-lg border border-border-default bg-bg-secondary shadow-lg">
-          <div className="shrink-0 border-b border-white/6 p-1.5">
+          <div className="shrink-0 border-b border-[var(--chrome-stroke)] p-1.5">
             <input
               ref={inputRef}
               type="text"
@@ -272,7 +266,7 @@ function ArticleCombobox({
             <button
               onClick={() => { onChange(undefined); setOpen(false); setFilter(""); }}
               className={`w-full rounded px-2 py-1 text-left text-xs transition ${
-                !value ? "bg-white/10 text-text-primary" : "text-text-muted hover:bg-white/5 hover:text-text-secondary"
+                !value ? "bg-[var(--chrome-highlight-strong)] text-text-primary" : "text-text-muted hover:bg-[var(--chrome-highlight)] hover:text-text-secondary"
               }`}
             >
               Unmarked
@@ -288,8 +282,8 @@ function ArticleCombobox({
                     onClick={() => { onChange(a.id); setOpen(false); setFilter(""); }}
                     className={`w-full rounded px-2 py-1 text-left text-xs transition ${
                       value === a.id
-                        ? "bg-white/10 text-text-primary"
-                        : "text-text-secondary hover:bg-white/5 hover:text-text-primary"
+                        ? "bg-[var(--chrome-highlight-strong)] text-text-primary"
+                        : "text-text-secondary hover:bg-[var(--chrome-highlight)] hover:text-text-primary"
                     }`}
                   >
                     {a.title}
@@ -331,7 +325,7 @@ function PinEditor({
         <h4 className="font-display text-sm text-text-primary">Edit Pin</h4>
         <button
           onClick={onClose}
-          className="focus-ring flex h-11 w-11 items-center justify-center rounded-full text-xs text-text-muted hover:bg-white/6 hover:text-text-primary"
+          className="focus-ring flex h-11 w-11 items-center justify-center rounded-full text-xs text-text-muted hover:bg-[var(--chrome-highlight)] hover:text-text-primary"
         >
           Done
         </button>
@@ -408,7 +402,7 @@ export function MapPanel() {
     [zonePlans, selectedMap],
   );
 
-  const mapImage = useMapImage(selectedMap?.imageAsset);
+  const { src: mapImage, status: mapImageStatus } = useImageSrcStatus(selectedMap?.imageAsset);
 
   const handleUploadMap = useCallback(async () => {
     try {
@@ -612,7 +606,7 @@ export function MapPanel() {
           </div>
 
           {/* Pin sidebar */}
-          <div className="rounded-2xl border border-white/8 bg-black/12 p-4">
+          <div className="rounded-2xl border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] p-4">
             {selectedPinId && selectedMap ? (
               <PinEditor
                 map={selectedMap}
@@ -650,6 +644,26 @@ export function MapPanel() {
               </div>
             )}
           </div>
+        </div>
+      ) : selectedMap && mapImageStatus === "error" ? (
+        <div className="flex h-64 flex-col items-center justify-center gap-3 rounded-lg border border-dashed border-status-danger/50 px-6 text-center text-sm text-text-muted">
+          <p className="font-display text-base text-status-danger">
+            Map image not found in asset cache
+          </p>
+          <p className="max-w-md text-xs text-text-muted">
+            The file <code className="font-mono text-2xs text-text-secondary">{selectedMap.imageAsset}</code> is
+            referenced by this map but no longer exists locally. Use{" "}
+            <span className="text-text-secondary">Replace Image</span> above to re-import it
+            (uploading the same source file will restore it with the same hash).
+          </p>
+          <ActionButton
+            onClick={handleReplaceImage}
+            disabled={replacing}
+            variant="primary"
+            size="sm"
+          >
+            {replacing ? "Replacing..." : "Replace Image"}
+          </ActionButton>
         </div>
       ) : selectedMap && !mapImage ? (
         <div className="flex h-64 items-center justify-center rounded-lg border border-dashed border-border-muted text-sm text-text-muted">

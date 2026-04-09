@@ -2,7 +2,9 @@ import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
 import { useAssetStore } from "@/stores/assetStore";
+import { useToastStore } from "@/stores/toastStore";
 import { useFocusTrap } from "@/lib/useFocusTrap";
+import { removeBgAndSave, shouldRemoveBg } from "@/lib/useBackgroundRemoval";
 import type { AssetEntry, AssetType, SyncProgress, SyncScope } from "@/types/assets";
 import { Spinner } from "@/components/ui/FormWidgets";
 
@@ -94,6 +96,7 @@ export function AssetGallery({ onClose }: { onClose: () => void }) {
   const [sort, setSort] = useState<SortKey>("newest");
   const [deleting, setDeleting] = useState(false);
   const [importing, setImporting] = useState(false);
+  const [removingBg, setRemovingBg] = useState(false);
   const [previewCache, setPreviewCache] = useState<Record<string, string>>({});
   const [syncResult, setSyncResult] = useState<SyncProgress | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -186,6 +189,30 @@ export function AssetGallery({ onClose }: { onClose: () => void }) {
       if (selected?.id === entry.id) setSelected(null);
     } finally {
       setDeleting(false);
+    }
+  };
+
+  const handleRemoveBackground = async (entry: AssetEntry) => {
+    if (!assetsDir) return;
+    setRemovingBg(true);
+    try {
+      const path = localAssetPath(assetsDir, entry);
+      const dataUrl = await invoke<string>("read_image_data_url", { path });
+      const newEntry = await removeBgAndSave(
+        dataUrl,
+        entry.asset_type,
+        entry.context,
+        entry.variant_group || undefined,
+      );
+      await loadAssets();
+      setSelected(newEntry);
+      useToastStore.getState().show("Background removed", 2000);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      console.error("[gallery bg removal] failed:", err);
+      useToastStore.getState().show(`Background removal failed: ${message}`, 4000);
+    } finally {
+      setRemovingBg(false);
     }
   };
 
@@ -282,7 +309,7 @@ export function AssetGallery({ onClose }: { onClose: () => void }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--chrome-fill-soft)]0">
       <div ref={trapRef} role="dialog" aria-modal="true" aria-labelledby="gallery-title" className="mx-4 flex max-h-[90vh] w-full max-w-6xl flex-col rounded-3xl border border-border-default bg-bg-secondary shadow-xl">
         <div className="flex shrink-0 items-center justify-between border-b border-border-default px-5 py-3">
           <div className="flex flex-wrap items-center gap-3">
@@ -294,7 +321,7 @@ export function AssetGallery({ onClose }: { onClose: () => void }) {
             <button
               onClick={handleImport}
               disabled={importing}
-              className="rounded-full border border-white/10 bg-black/10 px-3 py-1.5 text-2xs font-medium text-accent transition-colors hover:bg-accent/15 disabled:cursor-not-allowed disabled:opacity-50"
+              className="rounded-full border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] px-3 py-1.5 text-2xs font-medium text-accent transition-colors hover:bg-accent/15 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {importing ? <span className="flex items-center gap-1.5"><Spinner />Importing</span> : "Import"}
             </button>
@@ -314,7 +341,7 @@ export function AssetGallery({ onClose }: { onClose: () => void }) {
                     setSyncResult(result);
                   }}
                   disabled={syncing || unsyncedCount === 0}
-                  className="rounded-full border border-white/10 px-3 py-1.5 text-2xs font-medium transition-colors enabled:bg-accent/15 enabled:text-accent enabled:hover:bg-accent/25 disabled:cursor-not-allowed disabled:text-text-muted disabled:opacity-50"
+                  className="rounded-full border border-[var(--chrome-stroke)] px-3 py-1.5 text-2xs font-medium transition-colors enabled:bg-accent/15 enabled:text-accent enabled:hover:bg-accent/25 disabled:cursor-not-allowed disabled:text-text-muted disabled:opacity-50"
                 >
                   {syncing ? <span className="flex items-center gap-1.5"><Spinner />Syncing</span> : unsyncedCount > 0 ? `Sync ${unsyncedCount} to R2` : "All synced"}
                 </button>
@@ -338,7 +365,7 @@ export function AssetGallery({ onClose }: { onClose: () => void }) {
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex flex-wrap items-center gap-2">
               <span className="text-2xs uppercase tracking-ui text-text-muted">View</span>
-              <div className="flex gap-1 rounded-full border border-white/10 bg-black/10 p-1">
+              <div className="flex gap-1 rounded-full border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] p-1">
                 {(["curated", "all"] as ViewMode[]).map((mode) => (
                   <button
                     key={mode}
@@ -357,7 +384,7 @@ export function AssetGallery({ onClose }: { onClose: () => void }) {
 
             <div className="flex items-center gap-2">
               <span className="text-2xs uppercase tracking-ui text-text-muted">Sort</span>
-              <div className="flex gap-1 rounded-full border border-white/10 bg-black/10 p-1">
+              <div className="flex gap-1 rounded-full border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] p-1">
                 {(["newest", "oldest", "type"] as SortKey[]).map((key) => (
                   <button
                     key={key}
@@ -385,7 +412,7 @@ export function AssetGallery({ onClose }: { onClose: () => void }) {
                   className={`rounded-full border px-3 py-1 text-2xs transition-colors ${
                     mediaFilter === kind
                       ? "border-border-active bg-gradient-active-strong text-text-primary"
-                      : "border-white/10 bg-black/10 text-text-muted hover:text-text-secondary"
+                      : "border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] text-text-muted hover:text-text-secondary"
                   }`}
                 >
                   {kind}
@@ -404,7 +431,7 @@ export function AssetGallery({ onClose }: { onClose: () => void }) {
                   className={`rounded-full border px-3 py-1 text-2xs capitalize transition-colors ${
                     workspaceFilter === ws
                       ? "border-border-active bg-gradient-active-strong text-text-primary"
-                      : "border-white/10 bg-black/10 text-text-muted hover:text-text-secondary"
+                      : "border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] text-text-muted hover:text-text-secondary"
                   }`}
                 >
                   {ws === "all" ? "All assets" : ws}
@@ -419,7 +446,7 @@ export function AssetGallery({ onClose }: { onClose: () => void }) {
                   className={`rounded-full border px-3 py-1 text-2xs transition-colors ${
                     typeFilter === "all"
                       ? "border-border-active bg-gradient-active-strong text-text-primary"
-                      : "border-white/10 bg-black/10 text-text-muted hover:text-text-secondary"
+                      : "border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] text-text-muted hover:text-text-secondary"
                   }`}
                 >
                   All types
@@ -431,7 +458,7 @@ export function AssetGallery({ onClose }: { onClose: () => void }) {
                     className={`rounded-full border px-3 py-1 text-2xs transition-colors ${
                       typeFilter === type
                         ? "border-border-active bg-gradient-active-strong text-text-primary"
-                        : "border-white/10 bg-black/10 text-text-muted hover:text-text-secondary"
+                        : "border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] text-text-muted hover:text-text-secondary"
                     }`}
                   >
                     {type.replace(/_/g, " ")}
@@ -449,7 +476,7 @@ export function AssetGallery({ onClose }: { onClose: () => void }) {
                     className={`rounded-full border px-3 py-1 text-2xs transition-colors ${
                       zoneFilter === "all"
                         ? "border-border-active bg-gradient-active-strong text-text-primary"
-                        : "border-white/10 bg-black/10 text-text-muted hover:text-text-secondary"
+                        : "border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] text-text-muted hover:text-text-secondary"
                     }`}
                   >
                     All zones
@@ -460,7 +487,7 @@ export function AssetGallery({ onClose }: { onClose: () => void }) {
                       className={`rounded-full border px-3 py-1 text-2xs transition-colors ${
                         zoneFilter === "__global__"
                           ? "border-border-active bg-gradient-active-strong text-text-primary"
-                          : "border-white/10 bg-black/10 text-text-muted hover:text-text-secondary"
+                          : "border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] text-text-muted hover:text-text-secondary"
                       }`}
                     >
                       Global
@@ -473,7 +500,7 @@ export function AssetGallery({ onClose }: { onClose: () => void }) {
                       className={`rounded-full border px-3 py-1 text-2xs transition-colors ${
                         zoneFilter === zone
                           ? "border-border-active bg-gradient-active-strong text-text-primary"
-                          : "border-white/10 bg-black/10 text-text-muted hover:text-text-secondary"
+                          : "border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] text-text-muted hover:text-text-secondary"
                       }`}
                     >
                       {zone.replace(/_/g, " ")}
@@ -641,13 +668,23 @@ export function AssetGallery({ onClose }: { onClose: () => void }) {
                 </div>
               </div>
 
-              <div className="shrink-0 border-t border-border-default p-3">
+              <div className="shrink-0 space-y-2 border-t border-border-default p-3">
+                {mediaKindForAsset(selected) === "image" && shouldRemoveBg(selected.asset_type) && (
+                  <button
+                    onClick={() => handleRemoveBackground(selected)}
+                    disabled={removingBg || deleting || !selected.variant_group}
+                    title={selected.variant_group ? undefined : "Asset has no variant group — cannot save as variant"}
+                    className="w-full rounded border border-accent/40 px-2 py-1.5 text-xs text-accent transition-colors hover:bg-accent/10 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {removingBg ? <span className="flex items-center justify-center gap-1.5"><Spinner />Removing background</span> : "Remove Background"}
+                  </button>
+                )}
                 <button
                   onClick={() => handleDelete(selected)}
-                  disabled={deleting}
+                  disabled={deleting || removingBg}
                   className="w-full rounded border border-status-danger/40 px-2 py-1.5 text-xs text-status-danger transition-colors hover:bg-status-danger/10 disabled:opacity-50"
                 >
-                  {deleting ? <span className="flex items-center gap-1.5"><Spinner />Deleting</span> : "Delete Asset"}
+                  {deleting ? <span className="flex items-center justify-center gap-1.5"><Spinner />Deleting</span> : "Delete Asset"}
                 </button>
               </div>
             </div>

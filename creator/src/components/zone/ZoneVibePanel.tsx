@@ -45,13 +45,13 @@ function DefaultThumb({ fileName, label, generating }: { fileName?: string; labe
 
   return (
     <>
-      <div className="rounded-2xl border border-white/8 bg-surface-scrim-light p-2">
+      <div className="rounded-2xl border border-[var(--chrome-stroke)] bg-surface-scrim-light p-2">
         <div className="mb-2 text-2xs uppercase tracking-ui text-text-muted">{label}</div>
         <button
           type="button"
           onClick={() => { if (src && !generating) setExpanded(true); }}
           disabled={!src || generating}
-          className="flex aspect-square w-full items-center justify-center overflow-hidden rounded-xl border border-white/8 bg-black/20 transition-opacity enabled:cursor-pointer enabled:hover:opacity-80"
+          className="flex aspect-square w-full items-center justify-center overflow-hidden rounded-xl border border-[var(--chrome-stroke)] bg-[var(--chrome-fill-strong)] transition-opacity enabled:cursor-pointer enabled:hover:opacity-80"
         >
           {generating ? (
             <div className="h-5 w-5 rounded-full border-2 border-accent border-t-transparent animate-spin" />
@@ -65,7 +65,7 @@ function DefaultThumb({ fileName, label, generating }: { fileName?: string; labe
 
       {expanded && src && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--chrome-fill-soft)]0"
           onClick={() => setExpanded(false)}
         >
           <div className="relative mx-8 max-h-[85vh] max-w-[85vw]">
@@ -75,13 +75,13 @@ function DefaultThumb({ fileName, label, generating }: { fileName?: string; labe
               className="max-h-[85vh] max-w-[85vw] cursor-pointer rounded-lg object-contain shadow-2xl"
             />
             <div className="absolute left-0 right-0 top-full mt-3 text-center">
-              <span className="rounded-full bg-black/60 px-3 py-1 text-2xs uppercase tracking-ui text-text-muted backdrop-blur-sm">
+              <span className="rounded-full bg-[var(--chrome-fill-soft)]0 px-3 py-1 text-2xs uppercase tracking-ui text-text-muted backdrop-blur-sm">
                 {label}
               </span>
             </div>
             <button
               onClick={() => setExpanded(false)}
-              className="absolute -right-3 -top-3 flex h-7 w-7 items-center justify-center rounded-full border border-white/15 bg-bg-secondary text-sm text-text-muted transition-colors hover:text-text-primary"
+              className="absolute -right-3 -top-3 flex h-7 w-7 items-center justify-center rounded-full border border-[var(--chrome-stroke-strong)] bg-bg-secondary text-sm text-text-muted transition-colors hover:text-text-primary"
             >
               &times;
             </button>

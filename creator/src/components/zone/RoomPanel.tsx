@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from "react";
-import type { WorldFile, ExitValue } from "@/types/world";
+import type { WorldFile, ExitValue, DoorFile } from "@/types/world";
 import {
   updateRoom,
   deleteRoom,
@@ -9,8 +9,12 @@ import {
   addShop,
   addTrainer,
   addGatheringNode,
+  addPuzzle,
+  defaultPuzzle,
   generateEntityId,
 } from "@/lib/zoneEdits";
+import { ExitDoorEditor } from "./ExitDoorEditor";
+import { RoomFeaturesEditor } from "./RoomFeaturesEditor";
 import { EditableField, EditableTextArea, Section, IconButton, FieldRow, TextInput } from "@/components/ui/FormWidgets";
 import { YamlPreview } from "@/components/ui/YamlPreview";
 import { EntityArtGenerator } from "@/components/ui/EntityArtGenerator";
@@ -25,7 +29,7 @@ import { useAssetStore } from "@/stores/assetStore";
 import { ZoneVibePanel } from "./ZoneVibePanel";
 import sidebarBg from "@/assets/sidebar-bg.png";
 
-export type EntityKind = "mob" | "item" | "shop" | "trainer" | "quest" | "gatheringNode" | "recipe";
+export type EntityKind = "mob" | "item" | "shop" | "trainer" | "quest" | "gatheringNode" | "recipe" | "puzzle";
 
 export interface EntitySelection {
   kind: EntityKind;
@@ -43,6 +47,7 @@ interface RoomPanelProps {
 
 function resolveExitTarget(exit: string | ExitValue): {
   target: string;
+  door?: DoorFile;
   hasDoor: boolean;
   isLocked: boolean;
   keyItem?: string;
@@ -50,11 +55,13 @@ function resolveExitTarget(exit: string | ExitValue): {
   if (typeof exit === "string") {
     return { target: exit, hasDoor: false, isLocked: false };
   }
+  const state = exit.door?.initialState?.toLowerCase() ?? (exit.door?.locked ? "locked" : undefined);
   return {
     target: exit.to,
+    door: exit.door,
     hasDoor: !!exit.door,
-    isLocked: !!exit.door?.locked,
-    keyItem: exit.door?.key,
+    isLocked: state === "locked",
+    keyItem: exit.door?.keyItemId ?? exit.door?.key,
   };
 }
 
@@ -67,6 +74,7 @@ export function RoomPanel({
   onSelectEntity,
 }: RoomPanelProps) {
   const [showYaml, setShowYaml] = useState(false);
+  const [expandedDoor, setExpandedDoor] = useState<string | null>(null);
   const vibe = useVibeStore((s) => s.getVibe(zoneId));
   const assetsDir = useAssetStore((s) => s.assetsDir);
   const room = world.rooms[roomId];
@@ -116,6 +124,10 @@ export function RoomPanel({
         return giverMob && giverMob[1].room === roomId;
       }),
     [world.quests, world.mobs, zoneId, roomId],
+  );
+  const puzzles = useMemo(
+    () => Object.entries(world.puzzles ?? {}).filter(([, p]) => p.roomId === roomId),
+    [world.puzzles, roomId],
   );
 
   const handleFieldChange = useCallback(
@@ -188,6 +200,16 @@ export function RoomPanel({
     onSelectEntity({ kind: "gatheringNode", id });
   }, [world, roomId, onWorldChange, onSelectEntity]);
 
+  const handleAddPuzzle = useCallback(
+    (type: "riddle" | "sequence") => {
+      const id = generateEntityId(world, "puzzles");
+      const next = addPuzzle(world, id, defaultPuzzle(roomId, type));
+      onWorldChange(next);
+      onSelectEntity({ kind: "puzzle", id });
+    },
+    [world, roomId, onWorldChange, onSelectEntity],
+  );
+
   return (
     <div className="relative flex min-h-0 min-w-0 w-[clamp(18rem,24vw,24rem)] flex-1 flex-col border-l border-border-default bg-bg-secondary max-[1100px]:max-h-[min(45vh,32rem)] max-[1100px]:w-full max-[1100px]:border-l-0 max-[1100px]:border-t">
       <img src={sidebarBg} alt="" className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-[0.12]" />
@@ -251,43 +273,74 @@ export function RoomPanel({
       {/* Exits */}
       <Section title="Exits">
         {exits.length === 0 ? (
-          <p className="rounded-lg border border-dashed border-white/8 bg-black/6 px-3 py-2 text-center text-xs italic text-text-muted">No exits</p>
+          <p className="rounded-lg border border-dashed border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] px-3 py-2 text-center text-xs italic text-text-muted">No exits</p>
         ) : (
-          <table className="w-full text-xs">
-            <tbody>
-              {exits.map((exit) => (
-                <tr key={exit.direction} className="group border-b border-border-muted last:border-0">
-                  <td className="py-1 pr-2 font-medium text-text-primary">
-                    {exit.direction.toUpperCase()}
-                  </td>
-                  <td className="min-w-0 py-1 text-text-secondary">
+          <ul className="flex flex-col gap-1 text-xs">
+            {exits.map((exit) => {
+              const isExpanded = expandedDoor === exit.direction;
+              return (
+                <li key={exit.direction} className="group rounded border border-transparent hover:border-border-muted">
+                  <div className="flex items-center gap-2 px-1 py-1">
+                    <span className="w-6 shrink-0 font-medium text-text-primary">
+                      {exit.direction.toUpperCase()}
+                    </span>
                     <span
-                      className={`block break-all ${exit.target.includes(":") ? "text-accent" : ""}`}
+                      className={`min-w-0 flex-1 break-all text-text-secondary ${exit.target.includes(":") ? "text-accent" : ""}`}
                       title={exit.target}
                     >
                       {exit.target}
                     </span>
-                    {exit.hasDoor && (
-                      <span className="ml-1 text-status-warning">
-                        {exit.isLocked ? "\uD83D\uDD12" : "\uD83D\uDEAA"}
-                      </span>
-                    )}
-                  </td>
-                  <td className="w-6 py-1 text-right">
+                    <button
+                      onClick={() => setExpandedDoor(isExpanded ? null : exit.direction)}
+                      className={`shrink-0 rounded px-1 py-0.5 text-2xs transition-colors ${
+                        exit.hasDoor
+                          ? "text-status-warning hover:bg-bg-elevated"
+                          : "text-text-muted opacity-0 hover:bg-bg-elevated hover:text-text-primary group-hover:opacity-100 focus-visible:opacity-100"
+                      }`}
+                      title={exit.hasDoor ? "Edit door" : "Add door"}
+                      aria-label={exit.hasDoor ? "Edit door" : "Add door"}
+                      aria-expanded={isExpanded}
+                    >
+                      {exit.hasDoor ? (exit.isLocked ? "\uD83D\uDD12 Door" : "\uD83D\uDEAA Door") : "+ Door"}
+                    </button>
                     <button
                       onClick={() => handleDeleteExit(exit.direction)}
-                      className="invisible text-text-muted transition-colors hover:text-status-danger group-hover:visible focus-visible:visible"
+                      className="shrink-0 text-text-muted opacity-0 transition-colors hover:text-status-danger group-hover:opacity-100 focus-visible:opacity-100"
                       title="Delete exit"
                       aria-label="Delete exit"
                     >
                       &times;
                     </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                  </div>
+                  {isExpanded && (
+                    <div className="px-1 pb-1">
+                      <ExitDoorEditor
+                        world={world}
+                        roomId={roomId}
+                        direction={exit.direction}
+                        door={exit.door}
+                        onWorldChange={onWorldChange}
+                      />
+                    </div>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
         )}
+      </Section>
+
+      {/* Room features */}
+      <Section
+        title={`Features (${Object.keys(room.features ?? {}).length})`}
+        description="Containers, levers, and signs players can interact with in this room."
+        defaultExpanded={Object.keys(room.features ?? {}).length > 0}
+      >
+        <RoomFeaturesEditor
+          world={world}
+          roomId={roomId}
+          onWorldChange={onWorldChange}
+        />
       </Section>
 
       {/* Station */}
@@ -334,7 +387,7 @@ export function RoomPanel({
         actions={<IconButton onClick={handleAddMob} title="Add mob">+</IconButton>}
       >
         {mobs.length === 0 ? (
-          <p className="rounded-lg border border-dashed border-white/8 bg-black/6 px-3 py-2 text-center text-xs italic text-text-muted">No mobs in this room</p>
+          <p className="rounded-lg border border-dashed border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] px-3 py-2 text-center text-xs italic text-text-muted">No mobs in this room</p>
         ) : (
           <ul className="flex flex-col gap-0.5">
             {mobs.map(([id, mob]) => (
@@ -363,7 +416,7 @@ export function RoomPanel({
         actions={<IconButton onClick={handleAddItem} title="Add item">+</IconButton>}
       >
         {items.length === 0 ? (
-          <p className="rounded-lg border border-dashed border-white/8 bg-black/6 px-3 py-2 text-center text-xs italic text-text-muted">No items in this room</p>
+          <p className="rounded-lg border border-dashed border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] px-3 py-2 text-center text-xs italic text-text-muted">No items in this room</p>
         ) : (
           <ul className="flex flex-col gap-0.5">
             {items.map(([id, item]) => (
@@ -392,7 +445,7 @@ export function RoomPanel({
         actions={<IconButton onClick={handleAddShop} title="Add shop">+</IconButton>}
       >
         {shops.length === 0 ? (
-          <p className="rounded-lg border border-dashed border-white/8 bg-black/6 px-3 py-2 text-center text-xs italic text-text-muted">No shops in this room</p>
+          <p className="rounded-lg border border-dashed border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] px-3 py-2 text-center text-xs italic text-text-muted">No shops in this room</p>
         ) : (
           <ul className="flex flex-col gap-0.5">
             {shops.map(([id, shop]) => (
@@ -421,7 +474,7 @@ export function RoomPanel({
         actions={<IconButton onClick={handleAddTrainer} title="Add trainer">+</IconButton>}
       >
         {trainers.length === 0 ? (
-          <p className="rounded-lg border border-dashed border-white/8 bg-black/6 px-3 py-2 text-center text-xs italic text-text-muted">No trainers in this room</p>
+          <p className="rounded-lg border border-dashed border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] px-3 py-2 text-center text-xs italic text-text-muted">No trainers in this room</p>
         ) : (
           <ul className="flex flex-col gap-0.5">
             {trainers.map(([id, trainer]) => (
@@ -454,7 +507,7 @@ export function RoomPanel({
         }
       >
         {gatheringNodes.length === 0 ? (
-          <p className="rounded-lg border border-dashed border-white/8 bg-black/6 px-3 py-2 text-center text-xs italic text-text-muted">No gathering nodes</p>
+          <p className="rounded-lg border border-dashed border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] px-3 py-2 text-center text-xs italic text-text-muted">No gathering nodes</p>
         ) : (
           <ul className="flex flex-col gap-0.5">
             {gatheringNodes.map(([id, node]) => (
@@ -477,7 +530,7 @@ export function RoomPanel({
       {/* Quests */}
       <Section title={`Quests (${quests.length})`} defaultExpanded={false}>
         {quests.length === 0 ? (
-          <p className="rounded-lg border border-dashed border-white/8 bg-black/6 px-3 py-2 text-center text-xs italic text-text-muted">No quests from this room</p>
+          <p className="rounded-lg border border-dashed border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] px-3 py-2 text-center text-xs italic text-text-muted">No quests from this room</p>
         ) : (
           <ul className="flex flex-col gap-0.5">
             {quests.map(([id, quest]) => (
@@ -489,6 +542,42 @@ export function RoomPanel({
                   <span className="block truncate font-medium text-text-primary" title={quest.name}>
                     {quest.name}
                   </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Section>
+
+      {/* Puzzles */}
+      <Section
+        title={`Puzzles (${puzzles.length})`}
+        defaultExpanded={puzzles.length > 0}
+        actions={
+          <div className="flex items-center gap-0.5">
+            <IconButton onClick={() => handleAddPuzzle("riddle")} title="Add riddle puzzle">
+              R
+            </IconButton>
+            <IconButton onClick={() => handleAddPuzzle("sequence")} title="Add sequence puzzle">
+              S
+            </IconButton>
+          </div>
+        }
+      >
+        {puzzles.length === 0 ? (
+          <p className="rounded-lg border border-dashed border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] px-3 py-2 text-center text-xs italic text-text-muted">No puzzles in this room</p>
+        ) : (
+          <ul className="flex flex-col gap-0.5">
+            {puzzles.map(([id, puzzle]) => (
+              <li key={id}>
+                <button
+                  onClick={() => onSelectEntity({ kind: "puzzle", id })}
+                  className="flex w-full min-w-0 items-baseline gap-1 rounded px-1 py-0.5 text-left text-xs transition-colors hover:bg-bg-tertiary"
+                >
+                  <span className="truncate font-medium text-text-primary" title={id}>
+                    {id}
+                  </span>
+                  <span className="truncate text-text-muted">[{puzzle.type}]</span>
                 </button>
               </li>
             ))}

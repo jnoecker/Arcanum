@@ -63,7 +63,7 @@ export function ImagesPanel({ config, onChange }: ConfigPanelProps) {
               </button>
             </span>
           ))}
-          <span className="flex items-center rounded-full border border-white/10 bg-white/4 px-3 py-1 text-xs text-text-muted">
+          <span className="flex items-center rounded-full border border-[var(--chrome-stroke)] bg-[var(--chrome-highlight)] px-3 py-1 text-xs text-text-muted">
             <span className="font-mono">tstaff</span>
           </span>
 

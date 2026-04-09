@@ -1,6 +1,7 @@
 import { useState, useCallback } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import type { AssetContext, AssetEntry } from "@/types/assets";
+import { BG_REMOVAL_ASSET_TYPES } from "./arcanumPrompts";
 
 // ─── Worker-based background removal ─────────────────────────────────
 // WASM/ONNX inference runs in a dedicated Web Worker so the UI stays responsive.
@@ -52,80 +53,99 @@ export async function removeBackground(imageDataUrl: string): Promise<Blob> {
 // ─── Sequential queue ─────────────────────────────────────────────
 // Serialize requests so we don't send multiple large data URLs
 // to the worker at once (memory pressure).
+//
+// NOTE: the queue runner must never let a task throw out of the while
+// loop, because that would leave `bgQueueRunning = true` and wedge the
+// whole queue for the rest of the session. Per-task errors are surfaced
+// through the per-task promise (reject), not through the runner.
 
-type QueueEntry = { run: () => Promise<void>; resolve: () => void };
-const bgQueue: QueueEntry[] = [];
+interface QueueEntry<T> {
+  run: () => Promise<T>;
+  resolve: (value: T) => void;
+  reject: (error: unknown) => void;
+}
+
+const bgQueue: QueueEntry<unknown>[] = [];
 let bgQueueRunning = false;
 
 async function processBgQueue() {
   if (bgQueueRunning) return;
   bgQueueRunning = true;
-  while (bgQueue.length > 0) {
-    const entry = bgQueue.shift()!;
-    await entry.run();
-    entry.resolve();
+  try {
+    while (bgQueue.length > 0) {
+      const entry = bgQueue.shift()!;
+      try {
+        const value = await entry.run();
+        entry.resolve(value);
+      } catch (err) {
+        entry.reject(err);
+      }
+    }
+  } finally {
+    bgQueueRunning = false;
   }
-  bgQueueRunning = false;
 }
 
-function enqueueBgTask(run: () => Promise<void>): Promise<void> {
-  return new Promise<void>((resolve) => {
-    bgQueue.push({ run, resolve });
+function enqueueBgTask<T>(run: () => Promise<T>): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    bgQueue.push({
+      run: run as () => Promise<unknown>,
+      resolve: resolve as (v: unknown) => void,
+      reject,
+    });
     processBgQueue();
   });
 }
 
-/** Asset types that benefit from background removal (sprites, not scene backgrounds). */
-const BG_REMOVAL_TYPES = new Set([
-  "mob", "item", "pet", "entity_portrait", "ability_sprite",
-  "player_sprite", "race_portrait", "class_portrait",
-]);
-
-/** Returns true if the given asset type should have bg removal applied. */
+/** Returns true if the given asset type should have bg removal applied.
+ *  Sourced from `arcanumPrompts.BG_REMOVAL_ASSET_TYPES` so the prompt-pipeline
+ *  sprite safety injection and the runtime bg-removal pass can't drift apart. */
 export function shouldRemoveBg(assetType: string): boolean {
-  return BG_REMOVAL_TYPES.has(assetType);
+  return BG_REMOVAL_ASSET_TYPES.has(assetType);
 }
 
 /**
  * Run background removal on a data URL and save the result as an asset variant.
- * Returns the saved AssetEntry, or null if removal failed.
+ * Throws on failure so callers can surface the real error message — the old
+ * "swallow and return null" behavior made every failure look identical in
+ * the bulk UI ("Removal returned null") and hid actual causes like worker
+ * crashes or oversized input.
+ *
+ * Existing call sites that relied on null-return can still get that behavior
+ * by appending `.catch(() => null)`.
  */
 export async function removeBgAndSave(
   imageDataUrl: string,
   assetType: string,
   context?: AssetContext,
   variantGroup?: string,
-): Promise<AssetEntry | null> {
-  let result: AssetEntry | null = null;
-  await enqueueBgTask(async () => {
-    console.log(`[bg-removal] Starting for ${assetType}${variantGroup ? ` (variant: ${variantGroup})` : ""}`);
-    try {
-      const blob = await removeBackground(imageDataUrl);
-      const buffer = await blob.arrayBuffer();
-      const bytes = new Uint8Array(buffer);
-      const chunks: string[] = [];
-      const CHUNK = 8192;
-      for (let i = 0; i < bytes.length; i += CHUNK) {
-        chunks.push(String.fromCharCode(...bytes.subarray(i, i + CHUNK)));
-      }
-      const b64 = btoa(chunks.join(""));
-
-      const entry = await invoke<AssetEntry>("save_bytes_as_asset", {
-        bytesB64: b64,
-        assetType,
-        context: context ?? null,
-        variantGroup: variantGroup ?? null,
-      });
-      if (variantGroup) {
-        await invoke("set_active_variant", { variantGroup, assetId: entry.id });
-        console.log(`[bg-removal] Set as active variant for ${variantGroup}`);
-      }
-      result = entry;
-    } catch (e) {
-      console.error("[bg-removal] Failed:", e);
+): Promise<AssetEntry> {
+  return enqueueBgTask(async () => {
+    console.log(
+      `[bg-removal] Starting for ${assetType}${variantGroup ? ` (variant: ${variantGroup})` : ""}`,
+    );
+    const blob = await removeBackground(imageDataUrl);
+    const buffer = await blob.arrayBuffer();
+    const bytes = new Uint8Array(buffer);
+    const chunks: string[] = [];
+    const CHUNK = 8192;
+    for (let i = 0; i < bytes.length; i += CHUNK) {
+      chunks.push(String.fromCharCode(...bytes.subarray(i, i + CHUNK)));
     }
+    const b64 = btoa(chunks.join(""));
+
+    const entry = await invoke<AssetEntry>("save_bytes_as_asset", {
+      bytesB64: b64,
+      assetType,
+      context: context ?? null,
+      variantGroup: variantGroup ?? null,
+    });
+    if (variantGroup) {
+      await invoke("set_active_variant", { variantGroup, assetId: entry.id });
+      console.log(`[bg-removal] Set as active variant for ${variantGroup}`);
+    }
+    return entry;
   });
-  return result;
 }
 
 /** React hook for background removal with loading/error state. */

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { compassLayout, type LayoutMeasurement } from "../dagreLayout";
+import { compassLayout, getLayoutBounds, type LayoutMeasurement } from "../dagreLayout";
 import { zoneToGraph } from "../zoneToGraph";
 import type { WorldFile } from "@/types/world";
 
@@ -125,5 +125,58 @@ describe("compassLayout", () => {
     const b = laid.find((n) => n.id === "b")!;
     // Default column width 220 + 80 gutter = 300.
     expect(b.position.x - a.position.x).toBe(300);
+  });
+});
+
+describe("getLayoutBounds", () => {
+  it("returns null for an empty node list", () => {
+    expect(getLayoutBounds([])).toBeNull();
+  });
+
+  it("bounds a single default-sized node at its origin", () => {
+    const world = makeWorld({
+      solo: { title: "Solo", description: "" },
+    });
+    const { nodes } = zoneToGraph(world);
+    const laid = compassLayout(nodes, world);
+    const bounds = getLayoutBounds(laid);
+    expect(bounds).not.toBeNull();
+    // Default 220x140 node at (0,0).
+    expect(bounds).toEqual({ x: 0, y: 0, width: 220, height: 140 });
+  });
+
+  it("bounds an east-chain using supplied measurements", () => {
+    const world = makeWorld({
+      a: { title: "A", description: "", exits: { e: "b" } },
+      b: { title: "B", description: "" },
+    });
+    const { nodes } = zoneToGraph(world);
+    const measurements = new Map<string, LayoutMeasurement>([
+      ["a", { width: 220, height: 140 }],
+      ["b", { width: 220, height: 140 }],
+    ]);
+    const laid = compassLayout(nodes, world, measurements);
+    const bounds = getLayoutBounds(laid, measurements);
+    // Two 220-wide nodes with a 80-gutter stride of 300 → total width 520,
+    // single row of height 140.
+    expect(bounds).toEqual({ x: 0, y: 0, width: 520, height: 140 });
+  });
+
+  it("prefers explicit measurements over node.measured values", () => {
+    // Simulate stale DOM measurements on a node by placing a bogus
+    // `measured` field that should be ignored in favor of the map.
+    const world = makeWorld({
+      a: { title: "A", description: "" },
+    });
+    const { nodes } = zoneToGraph(world);
+    const laid = compassLayout(nodes, world).map((n) => ({
+      ...n,
+      measured: { width: 999, height: 999 },
+    }));
+    const overrides = new Map<string, LayoutMeasurement>([
+      ["a", { width: 100, height: 50 }],
+    ]);
+    const bounds = getLayoutBounds(laid, overrides);
+    expect(bounds).toEqual({ x: 0, y: 0, width: 100, height: 50 });
   });
 });

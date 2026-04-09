@@ -12,10 +12,10 @@ class PanelErrorBoundary extends Component<{ children: ReactNode }, { error: Err
       return (
         <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-4 p-8">
           <h2 className="font-display text-lg text-status-error">Panel Crashed</h2>
-          <pre className="max-w-2xl overflow-auto rounded-lg border border-status-error/30 bg-black/30 p-4 text-xs text-text-secondary">
+          <pre className="max-w-2xl overflow-auto rounded-lg border border-status-error/30 bg-[var(--chrome-fill-strong)] p-4 text-xs text-text-secondary">
             {this.state.error.message}{"\n"}{this.state.error.stack}
           </pre>
-          <button onClick={() => this.setState({ error: null })} className="rounded-full border border-white/10 px-4 py-2 text-xs text-accent hover:bg-accent/10">
+          <button onClick={() => this.setState({ error: null })} className="rounded-full border border-[var(--chrome-stroke)] px-4 py-2 text-xs text-accent hover:bg-accent/10">
             Try Again
           </button>
         </div>
@@ -32,6 +32,7 @@ const PlayerSpriteManager = lazy(() => import("./PlayerSpriteManager").then(m =>
 const Console = lazy(() => import("./Console").then(m => ({ default: m.Console })));
 const AdminDashboard = lazy(() => import("./admin/AdminDashboard").then(m => ({ default: m.AdminDashboard })));
 const TuningWizard = lazy(() => import("./tuning/TuningWizard").then(m => ({ default: m.TuningWizard })));
+const AppearancePanel = lazy(() => import("./AppearancePanel").then(m => ({ default: m.AppearancePanel })));
 
 function LazyFallback() {
   return (
@@ -102,6 +103,7 @@ export function MainArea({ workspace }: { workspace: Workspace }) {
           case "console": content = <Console />; break;
           case "admin": content = <AdminDashboard />; break;
           case "tuningWizard": content = <TuningWizard />; break;
+          case "appearance": content = <AppearancePanel />; break;
           default: content = null;
         }
       } else {

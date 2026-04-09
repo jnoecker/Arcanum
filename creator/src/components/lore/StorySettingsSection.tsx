@@ -34,7 +34,7 @@ function CoverImage({
           <Spinner />
         </div>
       )}
-      <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity group-hover:opacity-100">
+      <div className="absolute inset-0 flex items-center justify-center bg-[var(--chrome-fill-strong)] opacity-0 transition-opacity group-hover:opacity-100">
         <span className="text-sm font-medium text-white">Change</span>
       </div>
     </button>

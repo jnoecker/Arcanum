@@ -60,7 +60,7 @@ export function MentionSuggestionsPanel() {
       </div>
 
       {scanned && visible.length === 0 && (
-        <p className="rounded-2xl border border-dashed border-white/10 bg-black/10 px-4 py-6 text-sm text-text-muted">
+        <p className="rounded-2xl border border-dashed border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] px-4 py-6 text-sm text-text-muted">
           No missing mentions found. All plain-text references are already
           linked.
         </p>
@@ -71,7 +71,7 @@ export function MentionSuggestionsPanel() {
           {visible.map((s) => (
             <div
               key={`${s.sourceId}:${s.targetId}`}
-              className="rounded-xl border border-white/8 bg-black/10 px-4 py-3"
+              className="rounded-xl border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] px-4 py-3"
             >
               <div className="mb-1 flex items-center gap-2">
                 <button
@@ -91,7 +91,7 @@ export function MentionSuggestionsPanel() {
                   className={`ml-auto rounded-full px-2 py-0.5 text-3xs ${
                     s.quality === "exact"
                       ? "bg-accent/15 text-accent"
-                      : "bg-white/8 text-text-muted"
+                      : "bg-[var(--chrome-highlight-strong)] text-text-muted"
                   }`}
                 >
                   {s.quality}
@@ -103,7 +103,7 @@ export function MentionSuggestionsPanel() {
               <div className="flex gap-2">
                 <button
                   onClick={() => handleDismiss(s.sourceId, s.targetId)}
-                  className="rounded-full border border-white/8 px-2.5 py-1 text-2xs text-text-muted transition hover:bg-white/8 hover:text-text-primary"
+                  className="rounded-full border border-[var(--chrome-stroke)] px-2.5 py-1 text-2xs text-text-muted transition hover:bg-[var(--chrome-highlight-strong)] hover:text-text-primary"
                 >
                   Dismiss
                 </button>

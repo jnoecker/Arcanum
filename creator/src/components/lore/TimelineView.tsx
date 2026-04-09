@@ -1,15 +1,11 @@
-import { useMemo, useRef, useState, useCallback } from "react";
+import { useMemo, useState, useCallback } from "react";
 import type { CalendarSystem, TimelineEvent } from "@/types/lore";
-import { absoluteYear, eventRange, buildEraBands } from "@/lib/loreCalendar";
+import { absoluteYear, buildEraBands, eventRange, sortEvents } from "@/lib/loreCalendar";
 
-const TRACK_HEIGHT = 220;
-const EVENT_AREA_TOP = 60;
-const MARKER_Y = 140;
+const TRACK_HEIGHT = 148;
+const TRACK_Y = 94;
+const MARKER_Y = 62;
 
-const IMPORTANCE_RADIUS = { minor: 4, major: 7, legendary: 11 };
-const IMPORTANCE_STROKE = { minor: 1, major: 1.5, legendary: 2 };
-
-// Era band background tints — derived from design token palette
 const ERA_COLORS = [
   "rgba(168, 151, 210, 0.12)",
   "rgba(140, 174, 201, 0.12)",
@@ -24,103 +20,94 @@ export function TimelineView({
   calendars,
   selectedEventId,
   onSelectEvent,
+  range,
 }: {
   events: TimelineEvent[];
   calendars: CalendarSystem[];
   selectedEventId: string | null;
   onSelectEvent: (id: string | null) => void;
+  range?: { min: number; max: number } | null;
 }) {
-  const containerRef = useRef<HTMLDivElement>(null);
   const [zoom, setZoom] = useState(1);
 
-  const range = useMemo(() => eventRange(events, calendars), [events, calendars]);
-  const span = range.max - range.min || 100;
-  const baseWidth = 1200;
-  const svgWidth = Math.max(baseWidth * zoom, 600);
+  const computedRange = useMemo(() => range ?? eventRange(events, calendars), [range, events, calendars]);
+  const span = computedRange.max - computedRange.min || 100;
+  const svgWidth = Math.max(720, 1200 * zoom);
   const pxPerYear = svgWidth / span;
 
   const yearToX = useCallback(
-    (year: number) => (year - range.min) * pxPerYear,
-    [range.min, pxPerYear],
+    (year: number) => (year - computedRange.min) * pxPerYear,
+    [computedRange.min, pxPerYear],
   );
 
-  const eraBands = useMemo(
-    () => buildEraBands(calendars, range.max),
-    [calendars, range.max],
-  );
+  const eraBands = useMemo(() => buildEraBands(calendars, computedRange.max), [calendars, computedRange.max]);
+  const sortedEvents = useMemo(() => sortEvents(events, calendars), [events, calendars]);
 
-  const sortedEvents = useMemo(
-    () => [...events].sort((a, b) => absoluteYear(a, calendars) - absoluteYear(b, calendars)),
-    [events, calendars],
-  );
-
-  // Compute tick marks
   const ticks = useMemo(() => {
-    const step = Math.max(1, Math.pow(10, Math.floor(Math.log10(span / 8))));
+    const rawStep = span / 6;
+    const step = Math.max(1, Math.pow(10, Math.floor(Math.log10(rawStep || 1))));
+    const start = Math.ceil(computedRange.min / step) * step;
     const result: number[] = [];
-    const start = Math.ceil(range.min / step) * step;
-    for (let y = start; y <= range.max; y += step) {
+    for (let y = start; y <= computedRange.max; y += step) {
       result.push(y);
     }
     return result;
-  }, [range, span]);
+  }, [computedRange.max, computedRange.min, span]);
 
   return (
-    <div className="flex flex-col gap-2">
-      {/* Zoom controls */}
-      <div className="flex items-center gap-2">
-        <span className="text-2xs text-text-muted">Zoom:</span>
-        {[0.5, 1, 2, 4].map((z) => (
-          <button
-            key={z}
-            onClick={() => setZoom(z)}
-            aria-label={`Zoom ${z}x`}
-            aria-pressed={zoom === z}
-            className={`rounded px-2.5 py-1 text-2xs transition ${
-              zoom === z
-                ? "bg-accent/20 text-accent"
-                : "text-text-muted hover:bg-bg-tertiary hover:text-text-primary"
-            }`}
-          >
-            {z}x
-          </button>
-        ))}
+    <div className="rounded-[1.6rem] border border-border-muted/50 bg-[linear-gradient(180deg,rgba(11,14,24,0.98),rgba(20,24,38,0.88))] p-4 shadow-[var(--shadow-section)]">
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+        <p className="text-[0.65rem] uppercase tracking-[0.28em] text-[var(--color-warm)]/80">
+          Chronicle Overview
+        </p>
+        <div className="flex items-center gap-1 rounded-full border border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] p-1">
+          {[0.75, 1, 1.5, 2].map((value) => (
+            <button
+              key={value}
+              type="button"
+              onClick={() => setZoom(value)}
+              aria-label={`Zoom overview to ${value}x`}
+              aria-pressed={zoom === value}
+              className={`focus-ring rounded-full px-3 py-1 text-2xs transition ${
+                zoom === value
+                  ? "bg-[var(--bg-active-strong)] text-text-primary shadow-[var(--shadow-glow)]"
+                  : "text-text-muted hover:bg-[var(--chrome-highlight)] hover:text-text-primary"
+              }`}
+            >
+              {value}x
+            </button>
+          ))}
+        </div>
       </div>
 
-      {/* Scrollable SVG */}
-      <div
-        ref={containerRef}
-        className="overflow-x-auto rounded-lg border border-border-muted bg-graph-bg"
-      >
+      <div className="overflow-x-auto rounded-[1.25rem] border border-border-muted/35 bg-bg-abyss/70">
         <svg
           width={svgWidth}
           height={TRACK_HEIGHT}
           className="select-none"
           role="img"
-          aria-label={`Timeline with ${events.length} events across ${calendars.length} calendar systems`}
+          aria-label={`Overview timeline with ${events.length} visible events`}
         >
-          {/* Era bands */}
-          {eraBands.map((band, i) => {
+          {eraBands.map((band, index) => {
             const x = yearToX(band.startYear);
-            const w = yearToX(band.endYear) - x;
-            const fill = band.era.color || ERA_COLORS[i % ERA_COLORS.length];
+            const width = Math.max(1, yearToX(band.endYear) - x);
             return (
-              <g key={`${band.era.id}-${i}`}>
+              <g key={`${band.calendarName}:${band.era.id}`}>
                 <rect
                   x={x}
-                  y={0}
-                  width={Math.max(w, 1)}
-                  height={TRACK_HEIGHT}
-                  fill={fill}
+                  y={16}
+                  width={width}
+                  height={52}
+                  fill={band.era.color || ERA_COLORS[index % ERA_COLORS.length]}
+                  rx={12}
                 />
-                {w > 60 && (
+                {width > 96 && (
                   <text
-                    x={x + 8}
-                    y={24}
-                    fill="var(--color-text-muted)"
-                    fontSize={11}
+                    x={x + 10}
+                    y={34}
+                    fill="var(--color-text-secondary)"
+                    fontSize={10}
                     style={{ fontFamily: "var(--font-display), Palatino, serif" }}
-                    fontWeight={600}
                   >
                     {band.era.name}
                   </text>
@@ -129,7 +116,6 @@ export function TimelineView({
             );
           })}
 
-          {/* Baseline */}
           <line
             x1={0}
             y1={MARKER_Y}
@@ -139,82 +125,75 @@ export function TimelineView({
             strokeWidth={1}
           />
 
-          {/* Year ticks */}
           {ticks.map((year) => {
             const x = yearToX(year);
             return (
               <g key={year}>
                 <line
                   x1={x}
-                  y1={MARKER_Y - 4}
+                  y1={TRACK_Y}
                   x2={x}
-                  y2={MARKER_Y + 4}
-                  stroke="var(--color-border-default)"
+                  y2={MARKER_Y - 6}
+                  stroke="var(--color-border-muted)"
                   strokeWidth={1}
+                  opacity={0.6}
                 />
                 <text
                   x={x}
-                  y={MARKER_Y + 16}
+                  y={TRACK_Y + 18}
                   textAnchor="middle"
-                  fill="var(--color-border-default)"
+                  fill="var(--color-text-muted)"
                   fontSize={9}
                   style={{ fontFamily: "var(--font-mono), Consolas, monospace" }}
                 >
-                  {year}
+                  {Math.round(year)}
                 </text>
               </g>
             );
           })}
 
-          {/* Event markers */}
           {sortedEvents.map((event) => {
             const x = yearToX(absoluteYear(event, calendars));
-            const r = IMPORTANCE_RADIUS[event.importance];
-            const sw = IMPORTANCE_STROKE[event.importance];
             const isSelected = event.id === selectedEventId;
-            const fill = isSelected ? "var(--color-accent)" : event.importance === "legendary" ? "var(--color-status-warning)" : "var(--color-stellar-blue)";
-            const strokeColor = isSelected ? "var(--color-text-primary)" : "transparent";
-
+            const fill =
+              event.importance === "legendary"
+                ? "var(--color-warm)"
+                : event.importance === "major"
+                  ? "var(--color-accent)"
+                  : "var(--color-stellar-blue)";
+            const radius = event.importance === "legendary" ? 8 : event.importance === "major" ? 6 : 4;
             return (
               <g
                 key={event.id}
                 className="cursor-pointer"
-                onClick={() => onSelectEvent(event.id === selectedEventId ? null : event.id)}
+                onClick={() => onSelectEvent(event.id)}
               >
-                {/* Vertical stem */}
+                {isSelected && (
+                  <circle
+                    cx={x}
+                    cy={MARKER_Y}
+                    r={radius + 5}
+                    fill={fill}
+                    opacity={0.18}
+                  />
+                )}
                 <line
                   x1={x}
-                  y1={EVENT_AREA_TOP + 20}
+                  y1={MARKER_Y}
                   x2={x}
-                  y2={MARKER_Y}
+                  y2={34}
                   stroke={fill}
-                  strokeWidth={0.5}
-                  opacity={0.5}
+                  strokeWidth={isSelected ? 1.8 : 1}
+                  opacity={isSelected ? 0.9 : 0.35}
                 />
-                {/* Marker dot */}
                 <circle
                   cx={x}
-                  cy={EVENT_AREA_TOP + 20}
-                  r={r}
+                  cy={MARKER_Y}
+                  r={radius}
                   fill={fill}
-                  stroke={strokeColor}
-                  strokeWidth={sw}
-                  opacity={0.9}
+                  stroke={isSelected ? "var(--color-text-primary)" : "transparent"}
+                  strokeWidth={1.4}
                 />
-                {/* Title label */}
-                <text
-                  x={x}
-                  y={EVENT_AREA_TOP + 8}
-                  textAnchor="middle"
-                  fill={isSelected ? "var(--color-text-primary)" : "var(--color-text-secondary)"}
-                  fontSize={10}
-                  style={{ fontFamily: "var(--font-sans)" }}
-                  fontWeight={isSelected ? 600 : 400}
-                >
-                  {event.title.length > 20
-                    ? `${event.title.slice(0, 18)}...`
-                    : event.title}
-                </text>
               </g>
             );
           })}

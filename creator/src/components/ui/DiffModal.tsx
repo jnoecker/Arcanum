@@ -37,7 +37,7 @@ export function DiffModal({ onConfirm, onCancel }: DiffModalProps) {
       widthClassName="max-w-4xl"
       onClose={onCancel}
       status={
-        <span className="rounded-full border border-white/10 bg-black/10 px-3 py-1 text-2xs text-text-secondary">
+        <span className="rounded-full border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] px-3 py-1 text-2xs text-text-secondary">
           {diffs ? `${diffs.length} file${diffs.length !== 1 ? "s" : ""}` : "Reading changes"}
         </span>
       }
@@ -77,11 +77,11 @@ export function DiffModal({ onConfirm, onCancel }: DiffModalProps) {
           <section key={diff.label} className="panel-surface-light rounded-3xl p-4">
             <div className="mb-3 flex flex-wrap items-center gap-2">
               <h3 className="font-display text-sm text-text-primary">{diff.label}</h3>
-              <span className="rounded-full border border-white/10 bg-black/10 px-3 py-1 text-2xs text-text-secondary">
+              <span className="rounded-full border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] px-3 py-1 text-2xs text-text-secondary">
                 {diff.changeCount} change{diff.changeCount !== 1 ? "s" : ""}
               </span>
             </div>
-            <div className="max-h-72 overflow-auto rounded-2xl border border-white/8 bg-[rgba(8,12,28,0.42)] font-mono text-2xs leading-5">
+            <div className="max-h-72 overflow-auto rounded-2xl border border-[var(--chrome-stroke)] bg-[rgba(8,12,28,0.42)] font-mono text-2xs leading-5">
               {diff.lines.map((line, index) => (
                 <div
                   key={index}

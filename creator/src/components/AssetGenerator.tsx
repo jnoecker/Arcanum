@@ -196,7 +196,7 @@ export function AssetGenerator() {
       widthClassName="max-w-5xl"
       onClose={closeGenerator}
       status={
-        <span className="rounded-full border border-white/10 bg-black/10 px-3 py-1 text-2xs text-text-secondary">
+        <span className="rounded-full border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] px-3 py-1 text-2xs text-text-secondary">
           {stage === "compose" ? "Prompt forge" : stage === "generating" ? "Rendering" : "Preview"}
         </span>
       }
@@ -230,7 +230,7 @@ export function AssetGenerator() {
         <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_20rem]">
           <section className="panel-surface-light rounded-3xl p-5">
             <div className="grid gap-5">
-              <div className="rounded-3xl border border-white/8 bg-black/12 p-4">
+              <div className="rounded-3xl border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] p-4">
                 <p className="text-2xs uppercase tracking-wide-ui text-text-muted">Style system</p>
                 <p className="mt-2 font-display text-base text-text-primary">{ART_STYLE_LABELS[artStyle]}</p>
               </div>
@@ -272,7 +272,7 @@ export function AssetGenerator() {
                         className={`focus-ring rounded-3xl border p-4 text-left transition ${
                           modelId === model.id
                             ? "border-[var(--border-glow-strong)] bg-[linear-gradient(145deg,rgba(168,151,210,0.18),rgba(42,50,71,0.9))] shadow-glow"
-                            : "border-white/8 bg-black/12 hover:border-white/14 hover:bg-white/6"
+                            : "border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] hover:border-[var(--chrome-stroke-strong)] hover:bg-[var(--chrome-highlight)]"
                         }`}
                       >
                         <input
@@ -362,7 +362,7 @@ export function AssetGenerator() {
               <p>
                 Use asset type to control composition, then add only the details that make this image belong to the world you are building.
               </p>
-              <div className="rounded-3xl border border-white/8 bg-black/12 p-4">
+              <div className="rounded-3xl border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] p-4">
                 <p className="font-display text-sm text-text-primary">Best results</p>
                 <ul className="mt-2 list-disc space-y-1 pl-5 text-xs text-text-secondary">
                   <li>Name atmosphere before decoration.</li>
@@ -376,7 +376,7 @@ export function AssetGenerator() {
       )}
 
       {stage === "generating" && (
-        <div className="relative overflow-hidden rounded-3xl border border-white/8">
+        <div className="relative overflow-hidden rounded-3xl border border-[var(--chrome-stroke)]">
           <img src={loadingVignette} alt="" className="absolute inset-0 h-full w-full object-cover opacity-20" />
           <div className="absolute inset-0 bg-gradient-to-t from-bg-secondary via-bg-secondary/78 to-bg-secondary/55" />
           <div className="relative flex min-h-[24rem] flex-col items-center justify-center gap-5 px-6 py-12 text-center">
@@ -392,14 +392,14 @@ export function AssetGenerator() {
       {stage === "preview" && result && (
         <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_20rem]">
           <section className="panel-surface-light rounded-3xl p-5">
-            <div className="overflow-hidden rounded-3xl border border-white/8 bg-black/14">
+            <div className="overflow-hidden rounded-3xl border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)]">
               <img src={result.data_url} alt="Generated art" className="w-full" />
             </div>
             <div className="mt-4 flex flex-wrap items-center gap-2 text-xs text-text-muted">
-              <span className="rounded-full border border-white/10 bg-black/10 px-3 py-1">
+              <span className="rounded-full border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] px-3 py-1">
                 {result.width}x{result.height}
               </span>
-              <span className="rounded-full border border-white/10 bg-black/10 px-3 py-1">
+              <span className="rounded-full border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] px-3 py-1">
                 {result.model.split("/").pop()}
               </span>
             </div>

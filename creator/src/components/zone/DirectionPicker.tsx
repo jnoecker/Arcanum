@@ -65,7 +65,7 @@ export function DirectionPicker({
   }, [onCancel]);
 
   return (
-    <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/40">
+    <div className="absolute inset-0 z-50 flex items-center justify-center bg-[var(--chrome-fill-strong)]">
       <div
         ref={trapRef}
         role="dialog"

@@ -85,7 +85,7 @@ export function LoggingPanel({ config, onChange }: ConfigPanelProps) {
             <button
               onClick={addPackageLevel}
               disabled={!newPkg.trim()}
-              className="shrink-0 rounded-xl border border-white/10 bg-black/10 px-3 py-1 text-2xs text-text-primary transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40 focus-visible:ring-2 focus-visible:ring-border-active focus-visible:outline-none"
+              className="shrink-0 rounded-xl border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] px-3 py-1 text-2xs text-text-primary transition hover:bg-[var(--chrome-highlight-strong)] disabled:cursor-not-allowed disabled:opacity-40 focus-visible:ring-2 focus-visible:ring-border-active focus-visible:outline-none"
             >
               Add
             </button>

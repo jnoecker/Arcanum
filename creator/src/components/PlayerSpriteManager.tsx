@@ -172,7 +172,7 @@ const SpriteThumbnail = memo(function SpriteThumbnail({
   const clickable = onClick && src;
   if (!src) {
     return (
-      <div className={`flex ${size} items-center justify-center rounded-lg border border-dashed border-white/12 bg-white/4 text-2xs text-text-muted`}>
+      <div className={`flex ${size} items-center justify-center rounded-lg border border-dashed border-[var(--chrome-stroke-strong)] bg-[var(--chrome-highlight)] text-2xs text-text-muted`}>
         --
       </div>
     );
@@ -221,6 +221,8 @@ function SpriteLightbox({
       const context = { zone: "sprites", entity_type: "player_sprite", entity_id: key };
       const entry = await removeBgAndSave(src, "player_sprite", context, variantGroup);
       if (entry) onRemoveBg();
+    } catch (err) {
+      console.error("[player sprite] bg removal failed:", err);
     } finally {
       setRemovingBg(false);
     }
@@ -229,7 +231,7 @@ function SpriteLightbox({
   return (
     <div
       ref={lightboxTrapRef}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/80"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--chrome-fill-soft)]0"
       onClick={onClose}
     >
       <div
@@ -466,7 +468,7 @@ function RequirementRow({
   onRemove: (index: number) => void;
 }) {
   return (
-    <div className="flex items-center gap-2 rounded-lg border border-white/8 bg-black/12 px-3 py-2">
+    <div className="flex items-center gap-2 rounded-lg border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] px-3 py-2">
       <select
         value={req.type}
         onChange={(e) => onChange(index, emptyRequirement(e.target.value as RequirementType))}
@@ -569,7 +571,7 @@ function VariantRow({
   onClickThumbnail?: () => void;
 }) {
   return (
-    <div className="flex items-start gap-3 rounded-xl border border-white/8 bg-black/12 p-3">
+    <div className="flex items-start gap-3 rounded-xl border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] p-3">
       <SpriteThumbnail fileName={assetFileName} label={variant.imageId} onClick={onClickThumbnail} />
 
       <div className="flex min-w-0 flex-1 flex-col gap-2">
@@ -908,7 +910,7 @@ function SpriteDetailEditor({
             ))}
           </div>
         ) : (
-          <div className="flex items-center gap-3 rounded-xl border border-white/8 bg-black/12 p-3">
+          <div className="flex items-center gap-3 rounded-xl border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] p-3">
             <SpriteThumbnail
               fileName={spriteAssetMap.get(id)?.fileName}
               label={id}
@@ -1453,10 +1455,10 @@ export function PlayerSpriteManager() {
               return (
                 <div
                   key={id}
-                  className={`flex w-full items-center gap-2 border-b border-white/5 px-3 py-2.5 text-left text-xs transition ${
+                  className={`flex w-full items-center gap-2 border-b border-[var(--chrome-stroke)] px-3 py-2.5 text-left text-xs transition ${
                     selectedId === id
                       ? "bg-gradient-active text-text-primary"
-                      : "text-text-secondary hover:bg-white/5"
+                      : "text-text-secondary hover:bg-[var(--chrome-highlight)]"
                   }`}
                 >
                   <input
@@ -1479,7 +1481,7 @@ export function PlayerSpriteManager() {
                           {def.requirements.map((req, i) => (
                             <span
                               key={i}
-                              className="rounded-full bg-white/8 px-1.5 py-0.5 text-3xs text-text-muted"
+                              className="rounded-full bg-[var(--chrome-highlight-strong)] px-1.5 py-0.5 text-3xs text-text-muted"
                             >
                               {requirementLabel(req)}
                             </span>

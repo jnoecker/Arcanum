@@ -123,6 +123,64 @@ export function getFormatForAssetType(assetType: AssetType): string {
 /** Universal negative prompt — appended to all generations */
 export const UNIVERSAL_NEGATIVE = `text, words, letters, runes, glyphs, watermarks, logos, signatures, modern technology, computers, user interfaces, neon colors, hot pink, electric blue, lime green, saturated primaries, pure black, harsh shadows, hard edges, sharp rim lights, spotlight effects, high-contrast chiaroscuro, brutalist shapes, mechanical rigidity, flat design, cartoon, anime, photorealism, studio lighting, stock photo aesthetic, horror elements, gore, nudity, nude, naked, bare chest, exposed breasts, cleavage, nsfw, topless, revealing, skimpy, sexualized`;
 
+// ─── Sprite safety (for bg-removal pipeline) ───────────────────────
+//
+// Assets in BG_REMOVAL_ASSET_TYPES have their backgrounds algorithmically
+// cut out after generation (see `useBackgroundRemoval.ts`). That matting
+// step has two recurring failure modes:
+//
+//   1. Decorative "sticker sheet" backgrounds — baroque frames, cosmic
+//      scrollwork, quilt patterns, nebula wisps — confuse the segmenter
+//      and leave halos or chunks of background baked into the sprite.
+//   2. Semi-transparent wings, tails, membranes, and gauzy cloaks get
+//      classified as background and deleted. Faeries end up with one
+//      wing, dragons lose their tail tip, etc.
+//
+// SPRITE_SAFETY_DIRECTIVE is hard language injected into every prompt for
+// bg-removable asset types to force a flat background and fully opaque
+// appendages. Keep it explicit and repetitive — the LLM enhancer strips
+// soft language like "preferably" or "try to".
+
+/** Asset types that undergo background removal after generation.
+ *  Single source of truth — `useBackgroundRemoval.ts` imports from here. */
+export const BG_REMOVAL_ASSET_TYPES: ReadonlySet<string> = new Set([
+  "mob",
+  "item",
+  "pet",
+  "entity_portrait",
+  "ability_sprite",
+  "player_sprite",
+  "race_portrait",
+  "class_portrait",
+]);
+
+/** True if the asset type's final image will have its background removed. */
+export function needsBgRemovalSafety(assetType: string): boolean {
+  return BG_REMOVAL_ASSET_TYPES.has(assetType);
+}
+
+/** Hard constraints appended to prompts for assets that will be matted out
+ *  of their background. See comment block above for failure-mode context. */
+export const SPRITE_SAFETY_DIRECTIVE = `HARD CONSTRAINTS FOR ISOLATED SPRITE SUBJECT (this image will be algorithmically cut out from its background, so these rules are non-negotiable and OVERRIDE any conflicting style guidance above):
+
+1. BACKGROUND: a single completely flat, uniform, solid pale lavender (#d8d0e8) field. Featureless empty color and NOTHING else. NO decorative borders, NO baroque frames, NO ornamental scrollwork, NO filigree, NO rococo curls, NO nebula wisps, NO cosmic mist, NO atmospheric haze, NO floating light motes, NO particles, NO sparkles, NO ground plane, NO moss or flowers, NO quilt pattern, NO sticker-sheet grid, NO vignette, NO gradient. The background is empty flat color — a chroma key, not a scene.
+
+2. FULL SILHOUETTE WITHIN FRAME: the subject's entire silhouette — including EVERY appendage (wings, tails, horns, antlers, extra limbs, ears, cloaks, robes, hair, staves, wands, weapons, floating accessories) — must be fully contained within the image with clear empty padding on all four sides. Nothing touches or exits the image edges. Do not crop any part of the figure.
+
+3. WINGS AND APPENDAGES MUST BE FULLY OPAQUE: wings, fins, membranes, gossamer insect wings, gauzy veils, spectral trails, and every winged or membranous feature must be rendered as FULLY OPAQUE solid-colored shapes with clearly visible outlines against the background. NOT translucent. NOT semi-transparent. NOT gauzy. NOT see-through. NOT motion-blurred. NOT dissolving into particles. Every wing has a crisp, dark, continuous outline.
+
+4. SYMMETRIC PAIRS COMPLETE: if the creature has paired features (two wings, two horns, two antennae, two ears), BOTH members of the pair must be clearly visible, anatomically attached to the body, and equally well-defined. No single-winged faeries. No half-visible tails disappearing behind the torso.
+
+5. CONNECTED FIGURE: the subject is a single connected silhouette. No detached floating parts, no dispersing sparkle clouds that blend into the background, no parts of the body rendered as energy trails or particle effects.`;
+
+/** Append sprite safety directive to a prompt when the asset type will be
+ *  run through background removal. Safe to call with any asset type — it's
+ *  a no-op for non-sprite types. */
+export function withSpriteSafety(prompt: string, assetType: string): string {
+  if (!needsBgRemovalSafety(assetType)) return prompt;
+  return `${prompt}\n\n${SPRITE_SAFETY_DIRECTIVE}`;
+}
+
 /**
  * Additional negative terms for empty-scene backgrounds (rooms, shops, locations).
  * Keeps living figures out of environment art so mob/NPC sprites composited on top
@@ -518,10 +576,24 @@ EFFECT COLOR MODIFIERS:
 - Buffs: ascending arrows, radiant auras, empowering glows
 - Debuffs: descending spirals, dark mists, weakening auras`;
 
+/** Hard-constraint block injected into the enhance system prompt for
+ *  asset types that will be run through background removal. Tells the
+ *  LLM that sprite safety rules override any stylistic conflict. */
+const SPRITE_SAFETY_ENHANCER_BLOCK = `
+
+SPRITE SAFETY RULES (this asset will be algorithmically matted out of its background — these rules are non-negotiable and OVERRIDE any conflicting style guidance):
+- The background MUST be described as a flat uniform pale lavender (#d8d0e8) field, empty and featureless. Strip out any decorative frames, scrollwork, nebula, mist, motes, particles, ground planes, or sticker-sheet patterns the source prompt may describe.
+- Wings, tails, fins, membranes, cloaks, and all appendages must be described as FULLY OPAQUE solid shapes with clear outlines. Never translucent, gauzy, semi-transparent, dissolving into light, or trailing particles.
+- The full figure including every wing, horn, limb, and accessory must fit within the frame with clear padding on all sides. Never crop.
+- If the creature has paired features (two wings, two horns, two ears), explicitly state that BOTH are fully visible and anatomically attached.
+- The subject must be a single connected silhouette. No detached floating parts, no energy trails, no sparkle clouds that blend into the background.
+- If the original prompt describes a decorative cosmic/baroque/scrollwork background, REPLACE it with the plain lavender field. Do not soften these rules with "preferably" or "mostly" — state them as hard requirements.`;
+
 /** Get the system prompt for prompt enhancement — defers to world visual style when defined */
 export function getEnhanceSystemPrompt(style: ArtStyle, assetType?: string, surface?: ArtStyleSurface): string {
   const visualStyle = buildVisualStyleDirective(surface);
   const tone = buildToneDirective();
+  const spriteSafety = assetType && needsBgRemovalSafety(assetType) ? SPRITE_SAFETY_ENHANCER_BLOCK : "";
 
   // If the world defines a visual style, use a generic enhancer that defers to it
   if (visualStyle || tone) {
@@ -541,7 +613,7 @@ When enhancing a prompt:
 3. Add composition and quality terms appropriate to the world's visual style
 4. Replace any readable text, signs, or inscriptions with abstract symbols or glowing runes — AI cannot render legible text
 5. Ensure the prompt avoids: photorealism, modern technology, flat design, cartoon, anime
-6. Output ONLY the enhanced prompt text — no explanation, no preamble, no formatting${palettes}`;
+6. Output ONLY the enhanced prompt text — no explanation, no preamble, no formatting${palettes}${spriteSafety}`;
   }
 
   // No world style defined — fall back to the legacy style-specific prompts
@@ -551,7 +623,7 @@ When enhancing a prompt:
   const palettes = (assetType === "ability_icon" || assetType === "status_effect_icon" || assetType === "ability_sprite")
     ? `\n\n${CLASS_COLOR_PALETTES}`
     : "";
-  return `${base}${palettes}`;
+  return `${base}${palettes}${spriteSafety}`;
 }
 
 const CUSTOM_ASSET_SYSTEM_PROMPT_ARCANUM = `You are an expert image prompt engineer for AI image generators. You work exclusively within the Arcanum art style (arcanum_v1).
@@ -615,11 +687,13 @@ export function buildCustomAssetPrompt(
   const vibeSection = zoneVibe ? `\nZone atmosphere: ${zoneVibe}` : "";
   const preamble = getPreamble(style, surface);
 
-  return `${formatSpec}. ${preamble}
+  const base = `${formatSpec}. ${preamble}
 
 User brief: ${description}${vibeSection}
 
 ${getStyleSuffix(surface)}`;
+
+  return withSpriteSafety(base, assetType);
 }
 
 /** Compose a full prompt from template + context */

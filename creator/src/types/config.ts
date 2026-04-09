@@ -77,6 +77,12 @@ export interface AbilityDefinitionConfig {
   tier?: number;
   /** Ability IDs that must be learned before this one */
   prerequisites?: string[];
+  /**
+   * Skill points needed to learn this ability from a trainer.
+   * Defaults to 1. A value of 0 means the ability auto-grants
+   * once the player meets level, class, and prerequisite gates.
+   */
+  skillPointCost?: number;
 }
 
 // ─── Status Effects ─────────────────────────────────────────────────

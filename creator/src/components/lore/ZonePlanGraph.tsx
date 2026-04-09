@@ -168,7 +168,7 @@ export function ZonePlanGraph({
 
   return (
     <div
-      className="rounded-xl border border-white/8 bg-black/20"
+      className="rounded-xl border border-[var(--chrome-stroke)] bg-[var(--chrome-fill-strong)]"
       style={{ height: "min(60vh, 500px)" }}
     >
       <ReactFlowProvider>

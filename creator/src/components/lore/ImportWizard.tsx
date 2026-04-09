@@ -152,7 +152,7 @@ export function ImportWizard({ onClose }: { onClose: () => void }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+        className="absolute inset-0 bg-[var(--chrome-fill-soft)]0 backdrop-blur-sm"
         onClick={onClose}
       />
       <div
@@ -160,10 +160,10 @@ export function ImportWizard({ onClose }: { onClose: () => void }) {
         role="dialog"
         aria-modal="true"
         aria-label="Import Markdown files"
-        className="relative flex w-full max-w-2xl max-h-[80vh] flex-col overflow-hidden rounded-2xl border border-white/10 bg-bg-primary shadow-[0_24px_80px_rgba(8,10,18,0.6)]"
+        className="relative flex w-full max-w-2xl max-h-[80vh] flex-col overflow-hidden rounded-2xl border border-[var(--chrome-stroke)] bg-bg-primary shadow-[0_24px_80px_rgba(8,10,18,0.6)]"
       >
         {/* Header */}
-        <div className="shrink-0 border-b border-white/8 px-6 py-4">
+        <div className="shrink-0 border-b border-[var(--chrome-stroke)] px-6 py-4">
           <h2 className="font-display text-lg text-text-primary">
             Import Markdown
           </h2>
@@ -217,7 +217,7 @@ export function ImportWizard({ onClose }: { onClose: () => void }) {
                   className={`flex items-center gap-3 rounded-xl border px-4 py-3 ${
                     c.selected
                       ? "border-accent/20 bg-accent/5"
-                      : "border-white/6 bg-black/10 opacity-50"
+                      : "border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] opacity-50"
                   }`}
                 >
                   <input
@@ -275,7 +275,7 @@ export function ImportWizard({ onClose }: { onClose: () => void }) {
         </div>
 
         {/* Footer */}
-        <div className="shrink-0 border-t border-white/8 px-6 py-3 flex items-center justify-between">
+        <div className="shrink-0 border-t border-[var(--chrome-stroke)] px-6 py-3 flex items-center justify-between">
           <button
             onClick={onClose}
             className="text-xs text-text-muted hover:text-text-primary transition"

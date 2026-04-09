@@ -73,7 +73,7 @@ export function WelcomeScreen({ onNewProject }: WelcomeScreenProps) {
               </p>
             </div>
 
-            <div className="rounded-3xl border border-white/10 bg-[linear-gradient(155deg,rgba(54,63,90,0.9),rgba(37,45,68,0.92))] p-6 shadow-panel">
+            <div className="rounded-3xl border border-[var(--chrome-stroke)] bg-[linear-gradient(155deg,rgba(54,63,90,0.9),rgba(37,45,68,0.92))] p-6 shadow-panel">
               <div className="mt-1 flex flex-col gap-4">
                 <button
                   onClick={onNewProject}
@@ -82,10 +82,10 @@ export function WelcomeScreen({ onNewProject }: WelcomeScreenProps) {
                   <div className="font-display text-xl">Create new project</div>
                   <div className="mt-2 text-xs font-normal leading-6 text-text-secondary">Lay down a fresh scaffold, then move directly into worldmaking.</div>
                 </button>
-                <div className="space-y-2 border-t border-white/10 pt-4">
+                <div className="space-y-2 border-t border-[var(--chrome-stroke)] pt-4">
                   <button
                     onClick={handleOpen}
-                    className="flex w-full items-start justify-between gap-4 rounded-2xl px-3 py-3 text-left text-sm font-medium text-text-primary transition hover:bg-white/8"
+                    className="flex w-full items-start justify-between gap-4 rounded-2xl px-3 py-3 text-left text-sm font-medium text-text-primary transition hover:bg-[var(--chrome-highlight-strong)]"
                   >
                     <div>
                       <div>Open existing project</div>
@@ -95,7 +95,7 @@ export function WelcomeScreen({ onNewProject }: WelcomeScreenProps) {
                   </button>
                   <button
                     onClick={() => setShowR2Import(true)}
-                    className="flex w-full items-start justify-between gap-4 rounded-2xl px-3 py-3 text-left text-sm font-medium text-text-primary transition hover:bg-white/8"
+                    className="flex w-full items-start justify-between gap-4 rounded-2xl px-3 py-3 text-left text-sm font-medium text-text-primary transition hover:bg-[var(--chrome-highlight-strong)]"
                   >
                     <div>
                       <div>Import from R2</div>
@@ -108,7 +108,7 @@ export function WelcomeScreen({ onNewProject }: WelcomeScreenProps) {
             </div>
           </div>
 
-          <div className="min-h-0 rounded-3xl border border-white/10 bg-[linear-gradient(155deg,rgba(54,63,90,0.9),rgba(37,45,68,0.92))] p-6 shadow-panel">
+          <div className="min-h-0 rounded-3xl border border-[var(--chrome-stroke)] bg-[linear-gradient(155deg,rgba(54,63,90,0.9),rgba(37,45,68,0.92))] p-6 shadow-panel">
             <div className="mb-5 flex items-center justify-between gap-4">
               <div>
                 <h2 className="font-display text-3xl text-text-primary">Continue where you left off</h2>
@@ -138,7 +138,7 @@ export function WelcomeScreen({ onNewProject }: WelcomeScreenProps) {
                     {recentProjects.slice(1).map((project) => (
                       <li
                         key={project.path}
-                        className="group flex items-center gap-2 rounded-3xl border border-white/8 bg-black/12 px-4 py-3 transition hover:bg-white/8"
+                        className="group flex items-center gap-2 rounded-3xl border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] px-4 py-3 transition hover:bg-[var(--chrome-highlight-strong)]"
                       >
                         <button
                           onClick={() => handleOpenRecent(project)}
@@ -157,7 +157,7 @@ export function WelcomeScreen({ onNewProject }: WelcomeScreenProps) {
                             e.stopPropagation();
                             handleRemoveRecent(project.path);
                           }}
-                          className="shrink-0 rounded-full border border-white/8 px-2 py-1 text-xs text-text-muted opacity-0 transition hover:border-status-error/40 hover:text-status-error group-hover:opacity-100 focus:opacity-100"
+                          className="shrink-0 rounded-full border border-[var(--chrome-stroke)] px-2 py-1 text-xs text-text-muted opacity-0 transition hover:border-status-error/40 hover:text-status-error group-hover:opacity-100 focus:opacity-100"
                           title="Remove from recent"
                         >
                           Remove
@@ -166,13 +166,13 @@ export function WelcomeScreen({ onNewProject }: WelcomeScreenProps) {
                     ))}
                   </ul>
                 ) : (
-                  <div className="rounded-3xl border border-dashed border-white/10 bg-black/12 px-4 py-6 text-sm leading-7 text-text-muted">
+                  <div className="rounded-3xl border border-dashed border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] px-4 py-6 text-sm leading-7 text-text-muted">
                     No older worlds are on hand yet. Your latest project is ready above.
                   </div>
                 )}
               </div>
             ) : (
-              <div className="rounded-3xl border border-dashed border-white/10 bg-black/12 px-4 py-8 text-sm leading-7 text-text-muted">
+              <div className="rounded-3xl border border-dashed border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] px-4 py-8 text-sm leading-7 text-text-muted">
                 Your recent projects will appear here once you start building.
               </div>
             )}

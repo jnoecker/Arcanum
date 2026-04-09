@@ -130,8 +130,8 @@ export function MediaStudio({ zoneId, world, onWorldChange }: MediaStudioProps) 
 
   if (!zoneId || !world) {
     return (
-      <section className="rounded-3xl border border-white/10 bg-gradient-panel p-5 shadow-section">
-        <div className="rounded-3xl border border-dashed border-white/12 bg-white/4 px-4 py-8 text-sm text-text-muted">
+      <section className="rounded-3xl border border-[var(--chrome-stroke)] bg-gradient-panel p-5 shadow-section">
+        <div className="rounded-3xl border border-dashed border-[var(--chrome-stroke-strong)] bg-[var(--chrome-highlight)] px-4 py-8 text-sm text-text-muted">
           Select a zone to shape its music, ambience, and cinematics from the studio.
         </div>
       </section>
@@ -184,7 +184,7 @@ export function MediaStudio({ zoneId, world, onWorldChange }: MediaStudioProps) 
   const roomSlots = MEDIA_SLOTS.filter((s) => s.scope === "room");
 
   return (
-    <section className="rounded-3xl border border-white/10 bg-gradient-panel p-5 shadow-section">
+    <section className="rounded-3xl border border-[var(--chrome-stroke)] bg-gradient-panel p-5 shadow-section">
       <div className="mb-5 flex items-center justify-between gap-4">
         <div>
           <p className="text-2xs uppercase tracking-wide-ui text-text-muted">Media studio</p>
@@ -195,7 +195,7 @@ export function MediaStudio({ zoneId, world, onWorldChange }: MediaStudioProps) 
           <select
             value={selectedRoomId ?? ""}
             onChange={(event) => setSelectedRoomId(event.target.value || null)}
-            className="rounded-full border border-white/12 bg-bg-secondary px-4 py-2 text-xs text-text-primary outline-none focus-visible:ring-2 focus-visible:ring-border-active [&>option]:bg-bg-secondary [&>option]:text-text-primary"
+            className="rounded-full border border-[var(--chrome-stroke-strong)] bg-bg-secondary px-4 py-2 text-xs text-text-primary outline-none focus-visible:ring-2 focus-visible:ring-border-active [&>option]:bg-bg-secondary [&>option]:text-text-primary"
           >
             {roomEntries.map(([roomId, room]) => (
               <option key={roomId} value={roomId}>{room.title}</option>
@@ -206,7 +206,7 @@ export function MediaStudio({ zoneId, world, onWorldChange }: MediaStudioProps) 
 
       <div className="grid gap-5 xl:grid-cols-[0.62fr_1.38fr]">
         {/* Slot list */}
-        <div className="rounded-3xl border border-white/8 bg-black/12 p-4">
+        <div className="rounded-3xl border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] p-4">
           <div className="flex flex-col gap-2">
             <div className="mb-1 text-2xs uppercase tracking-ui text-text-muted">Zone</div>
             {zoneSlots.map((slot) => {
@@ -217,7 +217,7 @@ export function MediaStudio({ zoneId, world, onWorldChange }: MediaStudioProps) 
                   key={slot.id}
                   onClick={() => setSelectedSlotId(slot.id)}
                   className={`flex items-center gap-3 rounded-2xl border px-3 py-3 text-left transition ${
-                    selected ? "border-border-active bg-gradient-active" : "border-white/8 bg-black/10 hover:bg-white/8"
+                    selected ? "border-border-active bg-gradient-active" : "border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] hover:bg-[var(--chrome-highlight-strong)]"
                   }`}
                 >
                   <span className={`h-2.5 w-2.5 rounded-full ${value ? "bg-status-success" : "bg-text-muted/50"}`} />
@@ -242,7 +242,7 @@ export function MediaStudio({ zoneId, world, onWorldChange }: MediaStudioProps) 
                   key={slot.id}
                   onClick={() => setSelectedSlotId(slot.id)}
                   className={`flex items-center gap-3 rounded-2xl border px-3 py-3 text-left transition ${
-                    selected ? "border-border-active bg-gradient-active" : "border-white/8 bg-black/10 hover:bg-white/8"
+                    selected ? "border-border-active bg-gradient-active" : "border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] hover:bg-[var(--chrome-highlight-strong)]"
                   }`}
                 >
                   <span className={`h-2.5 w-2.5 rounded-full ${value ? "bg-status-success" : "bg-text-muted/50"}`} />
@@ -261,14 +261,14 @@ export function MediaStudio({ zoneId, world, onWorldChange }: MediaStudioProps) 
         {/* Detail panel */}
         <div className="flex flex-col gap-5">
           {/* Assignment card */}
-          <div className="rounded-3xl border border-white/8 bg-black/12 p-4">
+          <div className="rounded-3xl border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] p-4">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <div className="text-2xs uppercase tracking-ui text-text-muted">{selectedSlot.scope}</div>
                 <h3 className="mt-0.5 font-display text-xl text-text-primary">{selectedSlot.label}</h3>
                 <p className="mt-1 text-xs leading-5 text-text-secondary">{selectedSlot.description}</p>
               </div>
-              <span className="rounded-full bg-white/8 px-3 py-1 text-2xs uppercase tracking-label text-text-muted">
+              <span className="rounded-full bg-[var(--chrome-highlight-strong)] px-3 py-1 text-2xs uppercase tracking-label text-text-muted">
                 {currentValue ? "Assigned" : "Empty"}
               </span>
             </div>
@@ -301,7 +301,7 @@ export function MediaStudio({ zoneId, world, onWorldChange }: MediaStudioProps) 
 
           {/* Generator card */}
           {selectedSlot.generatorType !== "none" && (
-            <div className="rounded-3xl border border-white/8 bg-black/12 p-4">
+            <div className="rounded-3xl border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] p-4">
               <div className="mb-3 text-2xs uppercase tracking-ui text-text-muted">
                 {selectedSlot.generatorType === "video" ? "Video generator" : "Audio generator"}
               </div>

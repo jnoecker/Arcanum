@@ -100,7 +100,7 @@ const LORE_PANELS: PanelDef[] = [
   { id: "codex", label: "Codex", group: "lore", host: "lore", kicker: "Reference", title: "Lore codex", description: "Wiki-style articles for places, legends, creatures, deities, and more.", maxWidth: "max-w-5xl" },
   { id: "loreMaps", label: "Maps", group: "lore", host: "lore", kicker: "Cartography", title: "World maps", description: "Upload maps, place pins, and link locations to lore articles.", maxWidth: "max-w-7xl" },
   { id: "worldPlanner", label: "World Planner", group: "lore", host: "lore", kicker: "Cartography", title: "World planner", description: "AI-powered breakdown of a world map into high-level zones with connectivity.", maxWidth: "max-w-7xl" },
-  { id: "loreTimeline", label: "Timeline", group: "lore", host: "lore", kicker: "Chronicle", title: "Timeline", description: "Custom calendar systems, eras, and historical events.", maxWidth: "max-w-5xl" },
+  { id: "loreTimeline", label: "Timeline", group: "lore", host: "lore", kicker: "Chronicle", title: "Timeline", description: "Custom calendar systems, eras, and historical events.", maxWidth: "max-w-7xl" },
   { id: "loreRelations", label: "Relations", group: "lore", host: "lore", kicker: "Connections", title: "Relationship graph", description: "Visual graph of connections between articles, factions, and characters.", maxWidth: "max-w-7xl" },
   { id: "loreDocuments", label: "Documents", group: "lore", host: "lore", kicker: "Archive", title: "Document library", description: "Internal notes, lore bibles, and reference documents.", maxWidth: "max-w-5xl" },
   { id: "showcaseSettings", label: "Showcase", group: "lore", host: "lore", kicker: "Publication", title: "Showcase settings", description: "Branding and appearance for the published showcase site.", maxWidth: "max-w-5xl" },
@@ -112,6 +112,7 @@ const LORE_PANELS: PanelDef[] = [
 // ─── Operations panels ──────────────────────────────────────────────
 
 const OPERATIONS_PANELS: PanelDef[] = [
+  { id: "appearance", label: "Appearance", group: "operations", host: "command", kicker: "Operations", title: "Appearance", description: "Theme color palette — pick or paste 4 colors to retheme the app.", maxWidth: "max-w-5xl" },
   { id: "services", label: "Services", group: "operations", host: "config", kicker: "Operations", title: "Services", description: "API keys, image providers, and LLM settings.", maxWidth: "max-w-5xl" },
   { id: "deployment", label: "Deployment", group: "operations", host: "config", kicker: "Operations", title: "Deployment", description: "Export, sync, and deploy your MUD.", maxWidth: "max-w-5xl" },
   { id: "sharedAssets", label: "Shared Assets", group: "operations", host: "config", kicker: "Operations", title: "Shared assets", description: "Global asset keys and image configuration.", maxWidth: "max-w-5xl" },

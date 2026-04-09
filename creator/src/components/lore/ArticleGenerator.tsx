@@ -42,7 +42,7 @@ export function ArticleGenerator({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--chrome-fill-soft)]0"
       onClick={(e) => {
         if (e.target === e.currentTarget && !generating) onClose();
       }}
@@ -52,7 +52,7 @@ export function ArticleGenerator({
         role="dialog"
         aria-modal="true"
         aria-labelledby="gen-article-title"
-        className="relative w-full max-w-lg rounded-3xl border border-white/10 bg-bg-secondary p-6 shadow-panel"
+        className="relative w-full max-w-lg rounded-3xl border border-[var(--chrome-stroke)] bg-bg-secondary p-6 shadow-panel"
       >
         <h3 id="gen-article-title" className="font-display text-xl text-text-primary">Generate Article</h3>
         <p className="mt-1 text-xs text-text-muted">

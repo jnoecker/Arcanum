@@ -507,7 +507,7 @@ export function RuntimeHandoffStudio() {
 
   return (
     <div className="flex flex-col gap-4">
-      <section className="rounded-3xl border border-[var(--chrome-stroke)] bg-[linear-gradient(145deg,rgba(73,84,118,0.94),rgba(49,60,90,0.92))] p-4 shadow-[0_18px_60px_rgba(9,12,24,0.32)]">
+      <section className="panel-surface rounded-3xl p-4 shadow-section">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <p className="text-2xs uppercase tracking-wide-ui text-text-muted">Handoff</p>

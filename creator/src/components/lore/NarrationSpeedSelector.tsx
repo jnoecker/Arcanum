@@ -50,7 +50,7 @@ export function NarrationSpeedSelector({
       <div
         role="radiogroup"
         aria-label="Narration speed"
-        className="flex w-[200px] h-7 bg-bg-tertiary rounded-md overflow-hidden"
+        className="flex w-full max-w-[200px] h-7 bg-bg-tertiary rounded-md overflow-hidden"
       >
         {SPEED_OPTIONS.map((option) => {
           const active = option.value === effectiveValue;

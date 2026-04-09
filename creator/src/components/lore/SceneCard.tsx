@@ -37,7 +37,7 @@ export function SceneCard({
       ref={setNodeRef}
       style={style}
       type="button"
-      className={`w-[140px] h-[88px] flex-shrink-0 flex flex-col gap-2 px-3 py-2 rounded-xl cursor-grab transition-[border-color,background-color] duration-[160ms] ${
+      className={`w-[clamp(120px,18vw,160px)] h-[clamp(72px,12vw,96px)] flex-shrink-0 flex flex-col gap-2 px-3 py-2 rounded-xl cursor-grab transition-[border-color,background-color] duration-[160ms] ${
         isDragging ? "opacity-50" : ""
       } ${
         isSelected

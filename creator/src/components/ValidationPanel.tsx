@@ -87,9 +87,9 @@ function ZoneIssueGroup({
   const warns = issues.filter((i) => i.severity === "warning");
 
   return (
-    <div>
+    <section aria-labelledby={`zone-issues-${zoneId}`}>
       <div className="mb-1 flex items-center gap-2">
-        <h3 className="font-display text-xs text-text-primary">{zoneId}</h3>
+        <h3 id={`zone-issues-${zoneId}`} className="font-display text-xs text-text-primary">{zoneId}</h3>
         <span className="text-2xs text-text-muted">
           {errs.length}E / {warns.length}W
         </span>
@@ -112,6 +112,6 @@ function ZoneIssueGroup({
           </li>
         ))}
       </ul>
-    </div>
+    </section>
   );
 }

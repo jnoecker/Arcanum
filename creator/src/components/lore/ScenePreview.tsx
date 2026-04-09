@@ -331,7 +331,7 @@ export function ScenePreview({ scene, storyId, zoneId }: ScenePreviewProps) {
             >
               <div className="bg-gradient-to-t from-black/60 to-transparent px-6 py-4">
                 <p
-                  className="font-body text-sm text-white leading-relaxed line-clamp-3"
+                  className="font-body text-sm text-text-primary leading-relaxed line-clamp-3"
                   style={{ textShadow: "0 1px 3px rgba(0,0,0,0.5)" }}
                 >
                   {narrationText}

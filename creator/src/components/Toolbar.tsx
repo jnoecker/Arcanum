@@ -72,11 +72,12 @@ export function Toolbar({ onNewProject }: ToolbarProps) {
               onClick={() => setShowSwitcher((v) => !v)}
               aria-haspopup="menu"
               aria-expanded={showSwitcher}
+              aria-label="Switch project"
               title="Switch world"
               className="focus-ring group/project min-w-0 rounded-2xl px-3 py-1 text-left transition hover:bg-[var(--chrome-highlight)]/30"
             >
               <span className="flex min-w-0 items-baseline gap-2">
-                <span className="truncate font-display text-[clamp(1.5rem,2.4vw,2.25rem)] uppercase leading-none tracking-[0.18em] text-accent">
+                <span className="truncate font-display text-[clamp(1.5rem,2.4vw,2.25rem)] uppercase leading-none tracking-[0.18em] text-aurum">
                   {project?.name ?? "No world"}
                 </span>
                 <span

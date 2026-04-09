@@ -3,6 +3,9 @@ import type { LoreMap, MapPin, ZonePlan } from "@/types/lore";
 import { useLoreStore, selectArticles } from "@/stores/loreStore";
 import { regionToLeafletBounds } from "@/lib/zoneRegionGeometry";
 
+const ACCENT_COLOR = "#ff7d00";
+const ACCENT_SELECTED = "#ffb86b";
+
 // ─── Custom pin icon ────────────────────────────────────────────────
 
 function makePinIcon(L: typeof import("leaflet"), color?: string) {
@@ -156,10 +159,10 @@ export function MapViewer({
                 [bounds.north, bounds.east],
               ]}
               pathOptions={{
-                color: isSelected ? "#f2d087" : "#d8b56a",
+                color: isSelected ? ACCENT_SELECTED : ACCENT_COLOR,
                 weight: isSelected ? 2.5 : 1.5,
                 opacity: isSelected ? 0.95 : 0.7,
-                fillColor: isSelected ? "#e8bd62" : "#b78a3f",
+                fillColor: isSelected ? ACCENT_SELECTED : ACCENT_COLOR,
                 fillOpacity: isSelected ? 0.18 : 0.1,
               }}
               eventHandlers={{

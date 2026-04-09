@@ -117,9 +117,9 @@ export function MainArea() {
     <div
       id="workspace-panel"
       role="tabpanel"
-      aria-label={activeTab.label}
       aria-labelledby={activeTabIndex >= 0 ? `workspace-tab-${activeTabIndex}` : undefined}
       className="flex min-h-0 flex-1 flex-col"
+      style={{ viewTransitionName: "workspace-panel" }}
     >
       <PanelErrorBoundary>
         <Suspense fallback={<LazyFallback />}>

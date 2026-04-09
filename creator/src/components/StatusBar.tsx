@@ -80,14 +80,20 @@ export function StatusBar() {
                 ? "border-server-starting/20 bg-server-starting/15 text-server-starting"
                 : "border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] text-text-muted"
         }`}
+        title={
+          adminStatus === "connected" ? "AmbonMUD server is online" :
+          adminStatus === "connecting" ? "Establishing connection to AmbonMUD server" :
+          adminStatus === "error" ? "Connection to AmbonMUD server failed" :
+          "Not connected to any AmbonMUD server"
+        }
       >
         {adminStatus === "connected"
-          ? "Linked"
+          ? "● Linked"
           : adminStatus === "connecting"
-            ? "Reaching..."
+            ? "◌ Reaching..."
             : adminStatus === "error"
-              ? "Link lost"
-              : "No link"}
+              ? "● Link lost"
+              : "○ No link"}
       </span>
     </div>
   );

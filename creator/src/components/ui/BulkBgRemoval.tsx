@@ -210,7 +210,7 @@ export function BulkBgRemoval({
               className={`flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs transition ${
                 item.status === "skipped"
                   ? "opacity-40 cursor-default"
-                  : "hover:bg-white/3 cursor-pointer"
+                  : "hover:bg-text-primary/3 cursor-pointer"
               }`}
             >
               <input
@@ -243,7 +243,7 @@ function StatusDot({ status }: { status: TargetState["status"] }) {
     status === "done" ? "bg-status-success" :
     status === "error" ? "bg-status-error" :
     status === "processing" ? "bg-status-warning animate-pulse" :
-    status === "skipped" ? "bg-white/20" :
+    status === "skipped" ? "bg-text-primary/20" :
     "bg-[var(--chrome-highlight-strong)]";
   return <span className={`h-2 w-2 shrink-0 rounded-full ${cls}`} />;
 }

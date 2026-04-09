@@ -106,7 +106,7 @@ export function DirectionPicker({
                   onClick={() => setSelected(dir)}
                   className={`h-11 w-11 rounded text-2xs font-medium transition-colors focus-visible:ring-2 focus-visible:ring-accent/60 ${
                     selected === dir
-                      ? "bg-accent text-white"
+                      ? "bg-accent text-text-primary"
                       : "bg-bg-tertiary text-text-secondary hover:bg-bg-elevated"
                   }`}
                 >
@@ -124,7 +124,7 @@ export function DirectionPicker({
             onClick={() => setSelected("u")}
             className={`h-11 flex-1 rounded text-2xs font-medium transition-colors focus-visible:ring-2 focus-visible:ring-accent/60 ${
               selected === "u"
-                ? "bg-accent text-white"
+                ? "bg-accent text-text-primary"
                 : "bg-bg-tertiary text-text-secondary hover:bg-bg-elevated"
             }`}
           >
@@ -134,7 +134,7 @@ export function DirectionPicker({
             onClick={() => setSelected("d")}
             className={`h-11 flex-1 rounded text-2xs font-medium transition-colors focus-visible:ring-2 focus-visible:ring-accent/60 ${
               selected === "d"
-                ? "bg-accent text-white"
+                ? "bg-accent text-text-primary"
                 : "bg-bg-tertiary text-text-secondary hover:bg-bg-elevated"
             }`}
           >

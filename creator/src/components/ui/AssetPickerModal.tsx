@@ -144,7 +144,7 @@ export function AssetPickerModal({
         </div>
 
         {/* Type filters */}
-        <div className="flex shrink-0 items-center gap-1 border-b border-border-default px-5 py-2">
+        <div className="flex shrink-0 items-center gap-1 border-b border-border-default px-5 py-2" role="group" aria-label="Filter assets by type">
           <button
             onClick={() => setFilter("all")}
             className={`rounded px-2 py-0.5 text-2xs transition-colors ${
@@ -204,7 +204,7 @@ export function AssetPickerModal({
                         <LazyThumb asset={asset} onVisible={loadImage} />
                       )
                     ) : (
-                      <div className="flex h-full w-full items-center justify-center text-2xl text-text-muted">
+                      <div className="flex h-full w-full items-center justify-center text-2xl text-text-muted" aria-label={mediaKind === "audio" ? "Audio file" : "Video file"}>
                         {mediaKind === "audio" ? "♪" : "▶"}
                       </div>
                     )}

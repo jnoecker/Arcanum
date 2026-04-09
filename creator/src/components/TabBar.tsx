@@ -58,7 +58,7 @@ export function TabBar() {
         ref={scrollRef}
         className="flex gap-1.5 overflow-x-auto scrollbar-hide"
         role="tablist"
-        aria-label="Open workspaces"
+        aria-label="Open tabs"
         onScroll={checkOverflow}
       >
         {tabs.length > 1 && (
@@ -81,7 +81,7 @@ export function TabBar() {
           return (
             <div
               key={tab.id}
-              className={`group flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-1.5 transition ${
+              className={`group flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-1.5 [transition:background-color_160ms_var(--ease-unfurl),box-shadow_160ms_var(--ease-unfurl)] ${
                 isActive
                   ? "bg-[var(--chrome-highlight-strong)] shadow-sm"
                   : "hover:bg-[var(--chrome-highlight)]"
@@ -97,7 +97,13 @@ export function TabBar() {
                 aria-controls="workspace-panel"
                 tabIndex={isActive ? 0 : -1}
                 className="focus-ring min-w-0 rounded text-left"
-                onClick={() => setActiveTab(tab.id)}
+                onClick={() => {
+                  if (typeof document.startViewTransition === "function") {
+                    document.startViewTransition(() => { setActiveTab(tab.id); });
+                  } else {
+                    setActiveTab(tab.id);
+                  }
+                }}
                 onKeyDown={(event) => {
                   if (event.key === "ArrowRight") {
                     event.preventDefault();

@@ -190,7 +190,7 @@ function CalendarEditor({
                 <input
                   type="color"
                   aria-label={`Color for ${era.name}`}
-                  value={era.color || "#ff7d00"}
+                  value={era.color || "#ff7d00"} /* design-system: --color-accent */
                   onChange={(e) => patchEra(calendar.id, era.id, { color: e.target.value })}
                   className="h-11 w-11 cursor-pointer rounded-full border border-[var(--chrome-stroke)] bg-transparent p-1"
                   title="Era color"

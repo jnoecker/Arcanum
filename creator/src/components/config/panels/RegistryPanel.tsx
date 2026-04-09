@@ -138,6 +138,7 @@ export function RegistryPanel<T>({
                   className="flex w-full cursor-pointer items-center justify-between px-2 py-1.5 text-left"
                   onClick={() => setExpanded(isOpen ? null : id)}
                   aria-expanded={isOpen}
+                  aria-label={`Toggle ${id}`}
                 >
                   <span className="text-xs text-text-primary">
                     <span className="font-semibold">

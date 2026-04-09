@@ -228,7 +228,7 @@ function ZoneTree({
         <button
           onClick={() => setExpanded((v) => !v)}
           aria-expanded={expanded}
-          aria-label={expanded ? "Collapse zone" : "Expand zone"}
+          aria-label={expanded ? `Collapse ${zoneState.data.zone || zoneId}` : `Expand ${zoneState.data.zone || zoneId}`}
           className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-2xs text-text-muted transition hover:bg-[var(--chrome-highlight-strong)] hover:text-text-primary"
         >
           {expanded ? "\u25BE" : "\u25B8"}
@@ -434,7 +434,7 @@ export function Sidebar() {
         </div>
 
         {/* ── Divider ── */}
-        <div className="shrink-0 mx-4 border-t border-accent/20" />
+        <div className="ornate-divider mx-4 shrink-0" aria-hidden="true" />
 
         {/* ── Cartography (bottom half) ────────────────────────── */}
         <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-4 pt-3">
@@ -450,6 +450,7 @@ export function Sidebar() {
                 onClick={() => setShowImportZone(true)}
                 className="focus-ring shell-pill rounded-full px-3 py-1 text-2xs font-medium"
                 title="Import zone YAML files"
+                aria-label="Import zone YAML files"
               >
                 Import
               </button>

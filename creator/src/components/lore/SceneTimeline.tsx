@@ -185,7 +185,7 @@ export function SceneTimeline({
 
   if (scenes.length === 0) {
     return (
-      <div className="relative rounded-xl panel-surface-light h-[120px]">
+      <div className="relative rounded-xl panel-surface-light min-h-[120px]">
         <div className="flex flex-col items-center justify-center h-full gap-2">
           <ActionButton variant="primary" size="md" onClick={handleAddScene}>
             Add your first scene
@@ -201,7 +201,7 @@ export function SceneTimeline({
   // ─── Timeline with scenes ──────────────────────────────────────────
 
   return (
-    <div className="relative rounded-xl panel-surface-light h-[120px]">
+    <div className="relative rounded-xl panel-surface-light min-h-[120px]">
       {/* Scroll fade indicators */}
       <div
         className={`absolute left-0 top-0 bottom-0 w-6 bg-gradient-to-r from-[rgba(8,12,28,0.14)] to-transparent pointer-events-none z-[1] transition-opacity duration-150 ${
@@ -269,7 +269,7 @@ export function SceneTimeline({
 
         <DragOverlay>
           {activeDragScene ? (
-            <div className="w-[140px] h-[88px] flex-shrink-0 flex flex-col gap-2 px-3 py-2 rounded-xl border border-accent bg-bg-elevated shadow-[0_0_12px_rgb(var(--accent-rgb)/0.2)] cursor-grabbing">
+            <div className="w-[clamp(120px,18vw,160px)] h-[clamp(72px,12vw,96px)] flex-shrink-0 flex flex-col gap-2 px-3 py-2 rounded-xl border border-accent bg-bg-elevated shadow-[0_0_12px_rgb(var(--accent-rgb)/0.2)] cursor-grabbing">
               <span className="text-2xs text-text-muted self-end">
                 {scenes.findIndex((s) => s.id === activeDragScene.id) + 1}
               </span>

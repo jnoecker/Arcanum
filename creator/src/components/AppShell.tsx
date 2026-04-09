@@ -18,6 +18,11 @@ const AssetGallery = lazy(() => import("./AssetGallery").then((m) => ({ default:
 const MudImportWizard = lazy(() => import("./MudImportWizard").then((m) => ({ default: m.MudImportWizard })));
 const SettingsOverlay = lazy(() => import("./settings/SettingsOverlay").then((m) => ({ default: m.SettingsOverlay })));
 
+const FILIGREE_MASK: React.CSSProperties = {
+  maskImage: "linear-gradient(to bottom, transparent 0, black 18px, black 100%)",
+  WebkitMaskImage: "linear-gradient(to bottom, transparent 0, black 18px, black 100%)",
+};
+
 interface AppShellProps {
   onNewProject: () => void;
 }
@@ -71,10 +76,7 @@ export function AppShell({ onNewProject }: AppShellProps) {
         {showSidebar && <Sidebar />}
         <main
           className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden"
-          style={{
-            maskImage: "linear-gradient(to bottom, transparent 0, black 18px, black 100%)",
-            WebkitMaskImage: "linear-gradient(to bottom, transparent 0, black 18px, black 100%)",
-          }}
+          style={FILIGREE_MASK}
         >
           <MainArea />
         </main>

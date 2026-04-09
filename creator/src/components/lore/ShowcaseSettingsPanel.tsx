@@ -134,7 +134,7 @@ export function ShowcaseSettingsPanel() {
           <div className="flex items-center gap-2">
             <input
               type="color"
-              value={settings.accentColor || "#ff7d00"}
+              value={settings.accentColor || "#ff7d00"} /* design-system: --color-accent */
               onChange={(e) => update({ accentColor: e.target.value })}
               className="h-8 w-12 cursor-pointer rounded border border-border-default bg-bg-primary"
             />
@@ -149,7 +149,7 @@ export function ShowcaseSettingsPanel() {
           <div className="flex items-center gap-2">
             <input
               type="color"
-              value={settings.bgColor || "#001524"}
+              value={settings.bgColor || "#001524"} /* design-system: --color-bg-abyss */
               onChange={(e) => update({ bgColor: e.target.value })}
               className="h-8 w-12 cursor-pointer rounded border border-border-default bg-bg-primary"
             />

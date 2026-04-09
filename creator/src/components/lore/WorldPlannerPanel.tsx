@@ -130,7 +130,7 @@ function GenerationControls({
   disabled: boolean;
 }) {
   return (
-    <div className="rounded-2xl border border-white/8 bg-black/15 p-4">
+    <div className="rounded-2xl border border-text-primary/8 bg-bg-abyss/15 p-4">
       <h3 className="mb-3 font-display text-sm text-text-primary">
         Generate Zones from Map
       </h3>
@@ -273,7 +273,7 @@ function SuggestionReview({
           {visible.map((s) => (
             <div
               key={s.tempId}
-              className="rounded-lg border border-white/8 bg-black/15 p-3"
+              className="rounded-lg border border-text-primary/8 bg-bg-abyss/15 p-3"
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0 flex-1">
@@ -387,7 +387,7 @@ function ZonePlanEditor({
         <h4 className="font-display text-sm text-text-primary">Edit Zone</h4>
         <button
           onClick={onClose}
-          className="focus-ring flex h-8 items-center justify-center rounded-full px-3 text-2xs text-text-muted hover:bg-white/6 hover:text-text-primary"
+          className="focus-ring flex h-8 items-center justify-center rounded-full px-3 text-2xs text-text-muted hover:bg-text-primary/6 hover:text-text-primary"
         >
           Done
         </button>
@@ -452,7 +452,7 @@ function ZonePlanEditor({
             {otherPlans.map((p) => (
               <label
                 key={p.id}
-                className="flex cursor-pointer items-center gap-2 rounded px-1.5 py-1 text-2xs text-text-secondary hover:bg-white/5"
+                className="flex cursor-pointer items-center gap-2 rounded px-1.5 py-1 text-2xs text-text-secondary hover:bg-text-primary/5"
               >
                 <input
                   type="checkbox"
@@ -468,7 +468,7 @@ function ZonePlanEditor({
       </div>
 
       {plan.region && (
-        <div className="flex flex-col gap-2 rounded-lg border border-white/6 bg-black/15 p-2 text-2xs text-text-muted">
+        <div className="flex flex-col gap-2 rounded-lg border border-white/6 bg-bg-abyss/15 p-2 text-2xs text-text-muted">
           <div>
             Region: {Math.round(plan.region.x)},{Math.round(plan.region.y)} ·{" "}
             {Math.round(plan.region.w)}×{Math.round(plan.region.h)}px
@@ -489,7 +489,7 @@ function ZonePlanEditor({
       )}
 
       {/* Zone scaffold link */}
-      <div className="rounded-lg border border-white/6 bg-black/15 p-2.5">
+      <div className="rounded-lg border border-white/6 bg-bg-abyss/15 p-2.5">
         <div className="mb-1.5 text-2xs uppercase tracking-wider text-text-muted">
           Linked Zone
         </div>
@@ -865,7 +865,7 @@ export function WorldPlannerPanel() {
       </div>
 
       {sourceMap && (
-        <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-white/8 bg-black/12 px-4 py-3">
+        <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-text-primary/8 bg-bg-abyss/15 px-4 py-3">
           <span className="text-2xs uppercase tracking-[0.18em] text-text-muted">
             Planning Scope
           </span>
@@ -896,7 +896,7 @@ export function WorldPlannerPanel() {
 
       {/* Map preview */}
       {sourceMap && planningImage && (
-        <div className="overflow-hidden rounded-xl border border-white/8 bg-black/30 p-3">
+        <div className="overflow-hidden rounded-xl border border-text-primary/8 bg-bg-abyss/15 p-3">
           <div className="flex justify-center">
             <div className="relative">
               <img
@@ -998,7 +998,7 @@ export function WorldPlannerPanel() {
           onSelect={setSelectedPlanId}
           onHover={setHoveredPlanId}
         />
-        <div className="rounded-2xl border border-white/8 bg-black/12 p-4">
+        <div className="rounded-2xl border border-text-primary/8 bg-bg-abyss/15 p-4">
           {selectedPlan ? (
             <ZonePlanEditor
               plan={selectedPlan}

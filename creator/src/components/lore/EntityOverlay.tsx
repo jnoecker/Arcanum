@@ -195,7 +195,7 @@ export function EntityOverlay({
         width: `${width}px`,
       }}
       role="button"
-      aria-label={entityName}
+      aria-label={`${entityName}, draggable ${entity.entityType}`}
       aria-pressed={selected}
       aria-roledescription="draggable entity"
       tabIndex={0}
@@ -223,8 +223,8 @@ export function EntityOverlay({
 
       {/* Name label */}
       <p
-        className="text-center font-body text-xs text-white whitespace-nowrap overflow-hidden text-ellipsis pointer-events-none"
-        style={{ textShadow: "0 1px 3px rgba(0,0,0,0.8)" }}
+        className="text-center font-body text-xs text-text-primary whitespace-nowrap overflow-hidden text-ellipsis pointer-events-none"
+        style={{ textShadow: "0 1px 3px rgb(var(--shadow-rgb) / 0.8)" }}
       >
         {entityName}
       </p>

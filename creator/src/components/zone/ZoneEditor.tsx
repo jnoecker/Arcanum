@@ -461,15 +461,15 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       {/* Zone toolbar */}
-      <div className="relative flex shrink-0 items-center gap-3 overflow-hidden border-b border-border-default bg-bg-secondary px-3 py-1.5 max-[1180px]:flex-wrap max-[1180px]:items-start max-[1180px]:gap-x-4 max-[1180px]:gap-y-2">
+      <div className="relative flex shrink-0 items-center gap-3 overflow-hidden border-b border-border-default bg-bg-secondary px-3 py-1.5 max-[1100px]:flex-wrap max-[1100px]:items-start max-[1100px]:gap-x-4 max-[1100px]:gap-y-2">
         <img src={subtoolbarBg} alt="" className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-[0.10]" />
 
         {/* Undo / Redo */}
-        <div className="flex items-center gap-0.5 border-r border-[var(--chrome-stroke)] pr-3 max-[1180px]:pr-0 max-[1180px]:border-r-0">
+        <div className="flex items-center gap-0.5 border-r border-[var(--chrome-stroke)] pr-3 max-[1100px]:pr-0 max-[1100px]:border-r-0">
           <button
             onClick={() => { undo(zoneId); useToastStore.getState().show("Change undone"); }}
             disabled={!canUndo}
-            className="h-6 w-6 rounded text-xs text-accent transition-colors enabled:hover:bg-accent/10 disabled:opacity-30 max-[1180px]:h-9 max-[1180px]:w-9"
+            className="h-6 w-6 rounded text-xs text-accent transition-colors enabled:hover:bg-accent/10 disabled:opacity-30 max-[1100px]:h-9 max-[1100px]:w-9"
             title="Undo (Ctrl+Z)"
             aria-label="Undo"
           >
@@ -478,7 +478,7 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
           <button
             onClick={() => { redo(zoneId); useToastStore.getState().show("Change restored"); }}
             disabled={!canRedo}
-            className="h-6 w-6 rounded text-xs text-accent transition-colors enabled:hover:bg-accent/10 disabled:opacity-30 max-[1180px]:h-9 max-[1180px]:w-9"
+            className="h-6 w-6 rounded text-xs text-accent transition-colors enabled:hover:bg-accent/10 disabled:opacity-30 max-[1100px]:h-9 max-[1100px]:w-9"
             title="Redo (Ctrl+Shift+Z)"
             aria-label="Redo"
           >
@@ -490,7 +490,7 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
         <button
           onClick={handleSave}
           disabled={!zoneState.dirty || saving}
-          className={`focus-ring h-7 rounded-full px-3 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity] duration-500 max-[1180px]:h-9 ${
+          className={`focus-ring h-7 rounded-full px-3 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity] duration-500 max-[1100px]:h-9 ${
             saving
               ? "border border-[rgb(var(--accent-rgb)/0.4)] bg-[linear-gradient(145deg,rgb(var(--accent-rgb)/0.22),rgb(var(--bg-rgb)/0.9))] text-warm-pale shadow-[0_4px_16px_rgb(var(--accent-rgb)/0.18)]"
               : justSaved
@@ -505,7 +505,7 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
         </button>
 
         {/* Graphical zone toggle */}
-        <label className="flex items-center gap-2 text-xs text-text-secondary max-[1180px]:min-h-9">
+        <label className="flex items-center gap-2 text-xs text-text-secondary max-[1100px]:min-h-9">
           <input
             type="checkbox"
             checked={!!zoneState.data.graphical}
@@ -519,7 +519,7 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
         </label>
 
         {/* PvP zone toggle */}
-        <label className="flex items-center gap-2 text-xs text-text-secondary max-[1180px]:min-h-9">
+        <label className="flex items-center gap-2 text-xs text-text-secondary max-[1100px]:min-h-9">
           <input
             type="checkbox"
             checked={!!zoneState.data.pvpEnabled}
@@ -533,7 +533,7 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
         </label>
 
         {/* Zone name */}
-        <div className="ml-auto flex min-w-0 items-center gap-2 border-l border-[var(--chrome-stroke)] pl-3 max-[1180px]:order-4 max-[1180px]:ml-0 max-[1180px]:w-full max-[1180px]:border-l-0 max-[1180px]:pl-0 max-[1180px]:pt-1">
+        <div className="ml-auto flex min-w-0 items-center gap-2 border-l border-[var(--chrome-stroke)] pl-3 max-[1100px]:order-4 max-[1100px]:ml-0 max-[1100px]:w-full max-[1100px]:border-l-0 max-[1100px]:pl-0 max-[1100px]:pt-1">
           <span className="truncate font-display text-sm font-semibold uppercase tracking-widest text-text-primary">
             {zoneState.data.zone}
           </span>
@@ -545,7 +545,7 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
           )}
         </div>
 
-        <div className="flex shrink-0 items-center gap-2 max-[1180px]:order-3 max-[1180px]:w-full max-[1180px]:flex-wrap max-[1180px]:justify-between">
+        <div className="flex shrink-0 items-center gap-2 max-[1100px]:order-3 max-[1100px]:w-full max-[1100px]:flex-wrap max-[1100px]:justify-between">
           {/* View toggle */}
           <div className="segmented-control" role="tablist" aria-label="Zone views">
             {viewModes.map((mode, i, arr) => (
@@ -581,7 +581,7 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
                     viewTabRefs.current[viewModes.length - 1]?.focus();
                   }
                 }}
-                className={`segmented-button focus-ring h-6 px-2 text-2xs font-medium tracking-wide max-[1180px]:h-9 max-[1180px]:px-3 ${
+                className={`segmented-button focus-ring h-6 px-2 text-2xs font-medium tracking-wide max-[1100px]:h-9 max-[1100px]:px-3 ${
                   i === 0 ? "rounded-l-full" : i === arr.length - 1 ? "rounded-r-full" : ""
                 }`}
                 data-active={viewMode === mode}
@@ -591,10 +591,10 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
             ))}
           </div>
 
-          <div className="flex items-center gap-2 border-l border-[var(--chrome-stroke)] pl-3 max-[1180px]:w-full max-[1180px]:flex-wrap max-[1180px]:justify-end max-[1180px]:border-l-0 max-[1180px]:pl-0">
+          <div className="flex items-center gap-2 border-l border-[var(--chrome-stroke)] pl-3 max-[1100px]:w-full max-[1100px]:flex-wrap max-[1100px]:justify-end max-[1100px]:border-l-0 max-[1100px]:pl-0">
             <button
               onClick={() => setShowBatchArt(true)}
-              className="h-6 rounded px-2 text-xs text-stellar-blue transition-colors hover:bg-stellar-blue/10 max-[1180px]:h-9"
+              className="h-6 rounded px-2 text-xs text-stellar-blue transition-colors hover:bg-stellar-blue/10 max-[1100px]:h-9"
               title="Generate art for all entities"
               aria-label="Generate art for all entities"
             >
@@ -602,7 +602,7 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
             </button>
             <button
               onClick={() => setShowBulkBgRemoval(true)}
-              className="h-6 rounded px-2 text-xs text-text-secondary transition-colors hover:bg-[var(--chrome-highlight)] hover:text-text-primary max-[1180px]:h-9"
+              className="h-6 rounded px-2 text-xs text-text-secondary transition-colors hover:bg-[var(--chrome-highlight)] hover:text-text-primary max-[1100px]:h-9"
               title="Remove backgrounds from mob and item images"
               aria-label="Bulk remove backgrounds"
             >
@@ -611,7 +611,7 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
             <button
               onClick={handleRelayout}
               disabled={roomCount === 0}
-              className="h-6 rounded px-2 text-xs text-text-secondary transition-colors hover:bg-[var(--chrome-highlight)] hover:text-text-primary disabled:opacity-30 max-[1180px]:h-9"
+              className="h-6 rounded px-2 text-xs text-text-secondary transition-colors hover:bg-[var(--chrome-highlight)] hover:text-text-primary disabled:opacity-30 max-[1100px]:h-9"
               title="Re-run BFS layout and fit view"
               aria-label="Re-layout rooms"
             >
@@ -623,27 +623,27 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
                   e.preventDefault();
                   handleConfirmAddRoom();
                 }}
-                className="flex items-center gap-1 max-[1180px]:w-full max-[1180px]:flex-wrap"
+                className="flex items-center gap-1 max-[1100px]:w-full max-[1100px]:flex-wrap"
               >
                 <input
                   ref={addRoomInputRef}
                   value={newRoomId}
                   onChange={(e) => setNewRoomId(e.target.value)}
-                  className="ornate-input h-6 w-40 rounded px-1.5 text-xs text-text-primary max-[1180px]:h-9 max-[1180px]:min-w-0 max-[1180px]:flex-1"
+                  className="ornate-input h-6 w-40 rounded px-1.5 text-xs text-text-primary max-[1100px]:h-9 max-[1100px]:min-w-0 max-[1100px]:flex-1"
                   placeholder="room_id"
                   aria-label="New room ID"
                   autoFocus
                 />
                 <button
                   type="submit"
-                  className="h-6 rounded bg-accent/20 px-2 text-xs text-accent hover:bg-accent/30 max-[1180px]:h-9"
+                  className="h-6 rounded bg-accent/20 px-2 text-xs text-accent hover:bg-accent/30 max-[1100px]:h-9"
                 >
                   Add
                 </button>
                 <button
                   type="button"
                   onClick={() => setShowAddRoom(false)}
-                  className="h-6 rounded px-1.5 text-xs text-text-muted hover:text-text-primary max-[1180px]:h-9"
+                  className="h-6 rounded px-1.5 text-xs text-text-muted hover:text-text-primary max-[1100px]:h-9"
                 >
                   Cancel
                 </button>
@@ -651,7 +651,7 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
             ) : (
               <button
                 onClick={handleStartAddRoom}
-                className="h-6 rounded-full border border-warm/35 bg-warm/15 px-3 text-xs text-warm-pale hover:bg-warm/25 max-[1180px]:h-9"
+                className="h-6 rounded-full border border-warm/35 bg-warm/15 px-3 text-xs text-warm-pale hover:bg-warm/25 max-[1100px]:h-9"
                 title="Add Room"
               >
                 + Room

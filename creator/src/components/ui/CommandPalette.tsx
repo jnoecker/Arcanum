@@ -225,7 +225,7 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
           id={listboxId}
           role="listbox"
           aria-label="Command palette results"
-          className="max-h-[360px] overflow-y-auto py-2"
+          className="max-h-[min(360px,60vh)] overflow-y-auto py-2"
         >
           {filtered.length === 0 ? (
             <p className="px-5 py-6 text-center text-sm text-text-muted">
@@ -266,7 +266,7 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
             ))
           )}
         </div>
-        <div className="border-t border-[var(--chrome-stroke)] px-5 py-2 text-3xs text-text-muted">
+        <div className="border-t border-[var(--chrome-stroke)] px-5 py-2 text-3xs text-text-muted" role="note" aria-label="Keyboard shortcuts">
           <kbd className="rounded bg-[var(--chrome-highlight-strong)] px-1.5 py-0.5">&uarr;&darr;</kbd>{" "}
           navigate
           <span className="mx-2">&middot;</span>

@@ -120,7 +120,7 @@ function Node({ node, style, dragHandle }: NodeRendererProps<TreeNode>) {
               ? "border-accent/50 bg-accent/20 text-accent"
               : "border-[var(--chrome-stroke-emphasis)] bg-[var(--chrome-highlight)] text-transparent hover:border-white/30"
           }`}
-          aria-label={isMultiSelected ? "Deselect" : "Select"}
+          aria-label={isMultiSelected ? `Deselect ${node.data.name}` : `Select ${node.data.name}`}
         >
           {isMultiSelected ? "\u2713" : ""}
         </span>

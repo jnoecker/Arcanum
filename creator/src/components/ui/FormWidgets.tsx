@@ -165,6 +165,7 @@ export function EditableField({
       autoFocus
       className={`ornate-input w-full rounded px-1 -mx-1 ${className ?? ""}`}
       value={draft}
+      aria-label={label ?? undefined}
       onChange={(e) => setDraft(e.target.value)}
       onBlur={() => {
         setEditing(false);
@@ -229,6 +230,7 @@ export function EditableTextArea({
       rows={4}
       className="ornate-input w-full resize-y rounded px-1 -mx-1 text-xs leading-relaxed text-text-secondary"
       value={draft}
+      aria-label={label ?? undefined}
       onChange={(e) => setDraft(e.target.value)}
       onBlur={() => {
         setEditing(false);
@@ -263,7 +265,7 @@ export function Section({
   const contentId = "section-content-" + title.replace(/\s+/g, "-").toLowerCase();
 
   return (
-    <div className="border-b border-border-muted px-4 py-3">
+    <div className="border-b border-border-muted px-4 py-4">
       <div className="flex items-center gap-2">
         <button
           type="button"
@@ -273,7 +275,7 @@ export function Section({
           className="focus-ring flex items-center gap-1.5 rounded text-left"
         >
           <span
-            className={`inline-block text-[9px] text-text-muted transition-transform duration-200 ${expanded ? "rotate-90" : ""}`}
+            className={`inline-block text-[9px] text-text-muted [transition:transform_220ms_var(--ease-unfurl)] ${expanded ? "rotate-90" : ""}`}
             aria-hidden="true"
           >
             &#x25B6;
@@ -289,7 +291,7 @@ export function Section({
           {description && (
             <p className="mb-2 mt-1.5 text-2xs leading-relaxed text-text-muted/70">{description}</p>
           )}
-          <div id={contentId} className="mt-1.5">{children}</div>
+          <div id={contentId} className="section-content mt-2.5">{children}</div>
         </>
       )}
     </div>
@@ -522,8 +524,9 @@ export function CommitTextarea({
 
   return (
     <div className="mt-1">
-      <label className="text-xs text-text-muted">{label}</label>
+      <label htmlFor="commit-msg" className="text-xs text-text-muted">{label}</label>
       <textarea
+        id="commit-msg"
         rows={rows}
         className="ornate-input mt-0.5 w-full resize-y rounded px-1.5 py-1 text-xs leading-relaxed text-text-primary"
         placeholder={placeholder}

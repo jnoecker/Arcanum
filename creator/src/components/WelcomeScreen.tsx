@@ -75,7 +75,7 @@ export function WelcomeScreen({ onNewProject }: WelcomeScreenProps) {
               </p>
             </div>
 
-            <div className="rounded-3xl border border-[var(--chrome-stroke)] bg-[linear-gradient(155deg,rgb(var(--surface-rgb)/0.78),rgb(var(--bg-rgb)/0.92))] p-6 shadow-panel">
+            <div className="rounded-2xl border border-[var(--chrome-stroke)] bg-[linear-gradient(155deg,rgb(var(--surface-rgb)/0.78),rgb(var(--bg-rgb)/0.92))] p-6 shadow-panel">
               <div className="mt-1 flex flex-col gap-4">
                 <button
                   onClick={onNewProject}
@@ -110,7 +110,7 @@ export function WelcomeScreen({ onNewProject }: WelcomeScreenProps) {
             </div>
           </div>
 
-          <div className="min-h-0 rounded-3xl border border-[var(--chrome-stroke)] bg-[linear-gradient(155deg,rgb(var(--surface-rgb)/0.78),rgb(var(--bg-rgb)/0.92))] p-6 shadow-panel">
+          <div className="min-h-0 rounded-2xl border border-[var(--chrome-stroke)] bg-[linear-gradient(155deg,rgb(var(--surface-rgb)/0.78),rgb(var(--bg-rgb)/0.92))] p-6 shadow-panel">
             <div className="mb-5 flex items-center justify-between gap-4">
               <div>
                 <h2 className="font-display text-3xl text-text-primary">Continue where you left off</h2>
@@ -161,6 +161,7 @@ export function WelcomeScreen({ onNewProject }: WelcomeScreenProps) {
                           }}
                           className="shrink-0 rounded-full border border-[var(--chrome-stroke)] px-2 py-1 text-xs text-text-muted opacity-0 transition hover:border-status-error/40 hover:text-status-error group-hover:opacity-100 focus:opacity-100"
                           title="Remove from recent"
+                          aria-label={`Remove ${project.name} from recent projects`}
                         >
                           Remove
                         </button>
@@ -175,7 +176,7 @@ export function WelcomeScreen({ onNewProject }: WelcomeScreenProps) {
               </div>
             ) : (
               <div className="rounded-3xl border border-dashed border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] px-4 py-8 text-sm leading-7 text-text-muted">
-                Your recent projects will appear here once you start building.
+                No world has opened here yet. Begin one above and it will be waiting when you return.
               </div>
             )}
           </div>

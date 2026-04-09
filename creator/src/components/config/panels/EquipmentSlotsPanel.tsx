@@ -292,7 +292,7 @@ export function EquipmentSlotsPanel({ config, onChange }: ConfigPanelProps) {
                   savePositions(next);
                 }}
                 className={`focus-ring absolute flex items-center justify-center rounded-full transition-[transform,border-color,background-color,box-shadow] duration-150 ${
-                  isDragging ? "z-20 cursor-grabbing scale-105" : "cursor-grab"
+                  isDragging ? "z-20 cursor-grabbing shadow-lg ring-1 ring-accent/30" : "cursor-grab"
                 }`}
                 style={{
                   width: 44,

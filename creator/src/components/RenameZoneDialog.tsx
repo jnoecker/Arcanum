@@ -107,14 +107,14 @@ export function RenameZoneDialog({ zoneId, onClose }: RenameZoneDialogProps) {
               className="h-8 w-full rounded border border-border-default bg-bg-primary px-2 font-mono text-xs text-text-primary outline-none placeholder:text-text-muted focus:border-accent focus-visible:ring-2 focus-visible:ring-border-active"
             />
             {newId && !idValid && (
-              <p id="rename-zone-format-error" className="mt-1 text-2xs text-status-error">
+              <span role="alert" id="rename-zone-format-error" className="mt-1 block text-2xs text-status-error">
                 Must start with a letter, only lowercase letters, numbers, and underscores.
-              </p>
+              </span>
             )}
             {idTaken && (
-              <p id="rename-zone-taken-error" className="mt-1 text-2xs text-status-error">
+              <span role="alert" id="rename-zone-taken-error" className="mt-1 block text-2xs text-status-error">
                 Zone "{trimmedId}" already exists.
-              </p>
+              </span>
             )}
           </div>
 

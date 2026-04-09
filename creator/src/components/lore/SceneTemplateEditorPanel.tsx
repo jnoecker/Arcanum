@@ -9,7 +9,7 @@ import { plainTextToTiptap, tiptapToPlainText } from "@/lib/loreRelations";
 import { Section, ActionButton } from "@/components/ui/FormWidgets";
 import type { CustomSceneTemplate } from "@/types/lore";
 
-const PALETTE = [
+const TEMPLATE_COLORS = [
   "#ff7d00", "#15616d", "#ffecd1", "#78290f", "#ffb86b",
   "#2f93a1", "#c0622a", "#ad9d88", "#7cb66d", "#d88c3a",
 ];
@@ -30,7 +30,7 @@ function emptyTemplate(): CustomSceneTemplate {
   return {
     id: `scene_tpl_${Date.now()}`,
     label: "",
-    badgeColor: PALETTE[0]!,
+    badgeColor: TEMPLATE_COLORS[0]!,
     defaultTitle: "",
     defaultNarration: JSON.stringify({
       type: "doc",
@@ -124,14 +124,14 @@ function TemplateEditor({
             Badge color
           </label>
           <div className="flex flex-wrap gap-1">
-            {PALETTE.map((c) => (
+            {TEMPLATE_COLORS.map((c) => (
               <button
                 key={c}
                 type="button"
                 onClick={() => onChange({ badgeColor: c })}
                 aria-label={`Use color ${c}`}
                 aria-pressed={template.badgeColor === c}
-                className="h-6 w-6 rounded-full border-2 transition-transform hover:scale-110"
+                className="h-6 w-6 rounded-full border-2 transition hover:ring-2 hover:ring-accent/50"
                 style={{
                   backgroundColor: c,
                   borderColor: template.badgeColor === c ? "white" : "transparent",

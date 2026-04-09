@@ -134,7 +134,7 @@ export function EntityPicker({ zoneId, scene, storyId }: EntityPickerProps) {
 
   if (!zoneState) {
     return (
-      <div className="w-[280px] shrink-0 bg-bg-secondary border-l border-border-default flex items-center justify-center">
+      <div className="w-[clamp(16rem,20vw,20rem)] shrink-0 bg-bg-secondary border-l border-border-default flex items-center justify-center">
         <p className="text-xs text-text-muted font-body px-4 text-center">
           Load zone to browse entities
         </p>
@@ -177,7 +177,7 @@ export function EntityPicker({ zoneId, scene, storyId }: EntityPickerProps) {
 
   return (
     <div
-      className="w-[280px] shrink-0 bg-bg-secondary border-l border-border-default flex flex-col overflow-hidden transition-[width] duration-200"
+      className="w-[clamp(16rem,20vw,20rem)] shrink-0 bg-bg-secondary border-l border-border-default flex flex-col overflow-hidden transition-[width] duration-200"
       id="entity-picker-content"
     >
       {/* Header with collapse toggle */}

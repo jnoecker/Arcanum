@@ -65,7 +65,6 @@ export function IslandView({ island }: IslandViewProps) {
       const pos = getPercent(e);
       if (pos) {
         setClicks((prev) => [...prev, pos]);
-        console.log(`[${island}] click: x=${pos.x}, y=${pos.y}`);
       }
     },
     [getPercent, island],
@@ -203,7 +202,7 @@ export function IslandView({ island }: IslandViewProps) {
                   style={{ top: `${mousePos.y}%`, left: 0, width: "100%" }}
                 />
                 <div
-                  className="pointer-events-none absolute z-50 rounded bg-black/80 px-2 py-1 font-mono text-xs text-white"
+                  className="pointer-events-none absolute z-50 rounded bg-bg-abyss/80 px-2 py-1 font-mono text-xs text-text-primary"
                   style={{ left: `${mousePos.x + 1}%`, top: `${mousePos.y + 1}%` }}
                 >
                   x: {mousePos.x}%, y: {mousePos.y}%
@@ -215,15 +214,15 @@ export function IslandView({ island }: IslandViewProps) {
 
         {/* ── Click log (always visible if clicks exist) ─────────── */}
         {clicks.length > 0 && (
-          <div className="absolute bottom-2 right-2 z-50 max-h-48 overflow-y-auto rounded-lg bg-black/90 p-2 font-mono text-[10px] text-green-400">
+          <div className="absolute bottom-2 right-2 z-50 max-h-48 overflow-y-auto rounded-lg bg-bg-abyss/90 p-2 font-mono text-[10px] text-status-success">
             <div className="mb-1 flex items-center justify-between gap-2">
-              <span className="text-white/60">{island} clicks</span>
+              <span className="text-text-secondary">{island} clicks</span>
               <button
                 onClick={(e) => {
                   e.stopPropagation();
                   setClicks([]);
                 }}
-                className="text-red-400 hover:text-red-300"
+                className="text-status-error hover:text-status-error"
               >
                 clear
               </button>

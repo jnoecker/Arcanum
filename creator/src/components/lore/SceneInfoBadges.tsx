@@ -81,11 +81,11 @@ function MiniMap({
       <img src={src} alt="" className="h-full w-full object-cover" draggable={false} />
       {xPct !== null && yPct !== null && (
         <span
-          className="absolute h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full ring-2 ring-white/70 animate-pulse"
+          className="absolute h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full ring-2 ring-accent animate-aurum-pulse"
           style={{
             left: `${xPct}%`,
             top: `${yPct}%`,
-            backgroundColor: pinColor ?? "#fbbf24",
+            backgroundColor: pinColor ?? "var(--color-accent-emphasis)",
           }}
         />
       )}
@@ -101,15 +101,15 @@ function ArticleBadgeChip({ articleId }: { articleId: string }) {
   if (!article) return null;
   return (
     <div
-      className="flex items-center gap-1.5 rounded-full border border-[var(--chrome-stroke-emphasis)] bg-black/75 px-2 py-0.5"
+      className="flex items-center gap-1.5 rounded-full border border-[var(--chrome-stroke-emphasis)] bg-bg-abyss/75 px-2 py-0.5"
       title={article.title}
     >
       {src ? (
         <img src={src} alt="" className="h-4 w-4 rounded-full object-cover" />
       ) : (
-        <span className="h-4 w-4 rounded-full bg-white/20" />
+        <span className="h-4 w-4 rounded-full bg-text-primary/20" />
       )}
-      <span className="max-w-[100px] truncate text-2xs text-white/90">{article.title}</span>
+      <span className="max-w-[100px] truncate text-2xs text-text-primary">{article.title}</span>
     </div>
   );
 }
@@ -127,12 +127,12 @@ function TitleCardOverlay({ scene }: { scene: Scene }) {
       className={[
         "rounded px-4 py-1.5",
         "font-display tracking-[0.25em] uppercase",
-        isYear ? "text-base text-warm border border-warm/30 bg-black/75" : "",
-        isLocation ? "text-sm text-white border-b border-white/30 bg-transparent" : "",
-        isCharacter ? "text-sm text-accent border border-accent/30 bg-black/75" : "",
-        !isYear && !isLocation && !isCharacter ? "text-xs text-white/90 bg-black/70" : "",
+        isYear ? "text-base text-warm border border-warm/30 bg-bg-abyss/75" : "",
+        isLocation ? "text-sm text-text-primary border-b border-text-primary/30 bg-transparent" : "",
+        isCharacter ? "text-sm text-accent border border-accent/30 bg-bg-abyss/75" : "",
+        !isYear && !isLocation && !isCharacter ? "text-xs text-text-primary bg-bg-abyss/70" : "",
       ].join(" ")}
-      style={{ textShadow: "0 1px 4px rgba(0,0,0,0.7)" }}
+      style={{ textShadow: "0 1px 4px rgb(var(--shadow-rgb) / 0.7)" }}
     >
       {card.text}
     </div>
@@ -164,12 +164,12 @@ export function SceneInfoBadges({ scene, mode = "ambient" }: SceneInfoBadgesProp
         <div className="absolute left-3 top-3 flex flex-col items-start gap-0.5 rounded border border-warm/40 bg-[var(--chrome-fill-soft)]0 px-2 py-1">
           <span
             className="font-display text-base leading-none tracking-[0.18em] text-warm"
-            style={{ textShadow: "0 1px 3px rgba(0,0,0,0.6)" }}
+            style={{ textShadow: "0 1px 3px rgb(var(--shadow-rgb) / 0.6)" }}
           >
             {timeline.year}
             {timeline.era && <span className="ml-1 text-2xs uppercase tracking-[0.2em]">{timeline.era}</span>}
           </span>
-          <span className="max-w-[180px] truncate text-2xs text-white/70">{timeline.title}</span>
+          <span className="max-w-[180px] truncate text-2xs text-text-primary">{timeline.title}</span>
         </div>
       )}
 
@@ -185,7 +185,7 @@ export function SceneInfoBadges({ scene, mode = "ambient" }: SceneInfoBadgesProp
             pinColor={mapInfo.pin?.color}
           />
           {mapInfo.pin?.label && (
-            <div className="mt-1 max-w-[112px] truncate text-right text-2xs text-white/80" style={{ textShadow: "0 1px 2px rgba(0,0,0,0.7)" }}>
+            <div className="mt-1 max-w-[112px] truncate text-right text-2xs text-text-primary" style={{ textShadow: "0 1px 2px rgb(var(--shadow-rgb) / 0.7)" }}>
               {mapInfo.pin.label}
             </div>
           )}

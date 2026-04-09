@@ -114,7 +114,7 @@ export function ProjectSwitcherMenu({ anchorRef, onClose, onNewProject }: Projec
                   </button>
                   <button
                     onClick={(e) => handleRemoveRecent(e, project.path)}
-                    aria-label={`Forget ${project.name}`}
+                    aria-label={`Remove ${project.name || project.path} from recent projects`}
                     title="Forget this world"
                     className="focus-ring shrink-0 rounded-full border border-[var(--chrome-stroke)] px-2 py-1 text-2xs text-text-muted opacity-0 transition hover:border-status-danger/40 hover:text-status-danger focus:opacity-100 group-hover/recent:opacity-100"
                   >

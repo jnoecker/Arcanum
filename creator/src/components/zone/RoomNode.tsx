@@ -108,9 +108,9 @@ function InfoBadge({ d }: { d: RoomNodeData }) {
 
       {/* Room ID + entity counts in a single row */}
       <div className="flex items-center gap-1.5">
-        <span className="truncate text-3xs text-white/60">{d.roomId}</span>
+        <span className="truncate text-3xs text-text-secondary">{d.roomId}</span>
         {hasEntities && (
-          <div className="flex items-center gap-1.5 text-3xs text-white/70">
+          <div className="flex items-center gap-1.5 text-3xs text-text-primary">
             {d.mobCount > 0 && <span title="Mobs" aria-label={`${d.mobCount} mobs`}>⚔{d.mobCount}</span>}
             {d.itemCount > 0 && <span title="Items" aria-label={`${d.itemCount} items`}>◆{d.itemCount}</span>}
             {d.shopCount > 0 && <span title="Shops" aria-label={`${d.shopCount} shops`}>⛋{d.shopCount}</span>}
@@ -148,7 +148,7 @@ export const RoomNode = memo(function RoomNode({ data, selected }: NodeProps<Roo
           : d.isStartRoom
             ? "border-accent/50"
             : "border-border-default"
-      } ${hasImage ? "bg-black" : "bg-bg-elevated"}`}
+      } ${hasImage ? "bg-bg-abyss" : "bg-bg-elevated"}`}
       style={{ width: 220, minHeight: hasImage ? 100 : undefined }}
     >
       {/* Room background image — full opacity */}

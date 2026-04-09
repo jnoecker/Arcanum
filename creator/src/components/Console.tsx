@@ -158,6 +158,7 @@ export function Console() {
 
         {/* Level filter */}
         <select
+          aria-label="Minimum log level"
           value={minLevel}
           onChange={(e) => {
             setMinLevel(e.target.value);
@@ -177,6 +178,7 @@ export function Console() {
 
         {/* Logger filter */}
         <select
+          aria-label="Logger filter"
           value={loggerFilter}
           onChange={(e) => {
             setLoggerFilter(e.target.value);

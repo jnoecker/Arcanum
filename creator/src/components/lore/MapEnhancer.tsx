@@ -65,7 +65,7 @@ export function MapEnhancer({
           rect.x, rect.y, rect.w, rect.h,
         );
         // Draw crop border
-        ctx.strokeStyle = "#ff7d00"; // mirrors --color-accent
+        ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue("--color-accent").trim();
         ctx.lineWidth = 2;
         ctx.setLineDash([6, 3]);
         ctx.strokeRect(rect.x, rect.y, rect.w, rect.h);
@@ -174,7 +174,7 @@ export function MapEnhancer({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-bg-abyss/70"
       onClick={(e) => {
         if (e.target === e.currentTarget && !generating) onClose();
       }}

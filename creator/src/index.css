@@ -73,6 +73,7 @@
   --color-accent:          #ff7d00;
   --color-accent-muted:    #c96300;
   --color-accent-emphasis: #ffecd1;
+  --color-aurum:           #e2bc6a;
 
   /* ─── Warm Accent (primary creative actions) ─── */
   --color-warm:          #ff7d00;
@@ -180,6 +181,9 @@
   --ease-unfurl:   cubic-bezier(0.16, 1, 0.3, 1);
   --ease-dissolve: cubic-bezier(0.7, 0, 0.84, 0);
   --ease-cosmic:   cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Glow — Aurum (gold hover bloom on accent-colored buttons and nav items) */
+  --glow-aurum: 0 0 28px rgb(var(--accent-rgb) / 0.44);
 
   /* Accent border variants */
   --border-accent-ring:   rgb(var(--accent-rgb) / 0.45);
@@ -428,6 +432,11 @@ select,
   transform: translateY(-1px);
 }
 
+.shell-pill:active:not(:disabled) {
+  transform: scale(0.97) translateY(0);
+  transition-duration: 80ms;
+}
+
 .shell-pill-primary {
   border: 1px solid var(--border-accent-subtle);
   background: var(--bg-active-strong);
@@ -464,6 +473,11 @@ select,
 
 .action-button:hover:not(:disabled) {
   transform: translateY(-1px);
+}
+
+.action-button:active:not(:disabled) {
+  transform: scale(0.97) translateY(0);
+  transition-duration: 80ms;
 }
 
 .action-button:disabled {
@@ -1372,4 +1386,43 @@ textarea:focus-visible,
 }
 [data-theme~='arcanum'] .tippy-box[data-placement^='right'] > .tippy-arrow::before {
   border-right-color: var(--color-bg-elevated);
+}
+
+/* ─── View Transitions — Workspace Panel ───────────────────────────── */
+@keyframes vt-dissolve-out {
+  to { opacity: 0; transform: scale(0.99); }
+}
+@keyframes vt-unfurl-in {
+  from { opacity: 0; transform: scale(0.97); }
+}
+
+::view-transition-old(workspace-panel) {
+  animation: 180ms var(--ease-dissolve) both vt-dissolve-out;
+}
+::view-transition-new(workspace-panel) {
+  animation: 300ms var(--ease-unfurl) both vt-unfurl-in;
+}
+
+/* ─── Section content reveal (@starting-style) ─────────────────────── */
+.section-content {
+  transition:
+    opacity 220ms var(--ease-unfurl),
+    transform 220ms var(--ease-unfurl);
+}
+@starting-style {
+  .section-content {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+}
+
+/* ─── Reduced-motion overrides ──────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(workspace-panel),
+  ::view-transition-new(workspace-panel) {
+    animation: none;
+  }
+  .section-content {
+    transition: none;
+  }
 }

@@ -59,6 +59,7 @@ function ZoneSelector({
     <div ref={ref} className="relative">
       <button
         onClick={() => setOpen(!open)}
+        aria-label="Select zone"
         className={`focus-ring flex items-center gap-2 rounded-full border px-4 py-2 text-left transition ${
           open
             ? "border-border-active bg-gradient-active"

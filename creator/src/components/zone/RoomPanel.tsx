@@ -285,7 +285,7 @@ export function RoomPanel({
                       {exit.direction.toUpperCase()}
                     </span>
                     <span
-                      className={`min-w-0 flex-1 break-all text-text-secondary ${exit.target.includes(":") ? "text-accent" : ""}`}
+                      className={`min-w-0 flex-1 truncate text-text-secondary ${exit.target.includes(":") ? "text-accent" : ""}`}
                       title={exit.target}
                     >
                       {exit.target}

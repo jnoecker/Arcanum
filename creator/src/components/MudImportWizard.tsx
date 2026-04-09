@@ -401,7 +401,7 @@ export function MudImportWizard({ onClose }: { onClose: () => void }) {
               {files.map((file, idx) => (
                 <label
                   key={file.path}
-                  className="flex items-center gap-3 rounded-lg border border-[var(--chrome-stroke)] px-3 py-2 transition hover:border-[var(--chrome-stroke-strong)] hover:bg-white/3 cursor-pointer"
+                  className="flex items-center gap-3 rounded-lg border border-[var(--chrome-stroke)] px-3 py-2 transition hover:border-[var(--chrome-stroke-strong)] hover:bg-text-primary/3 cursor-pointer"
                 >
                   <input
                     type="checkbox"
@@ -450,7 +450,7 @@ export function MudImportWizard({ onClose }: { onClose: () => void }) {
           </div>
 
           {chunkEstimate && (
-            <div className="rounded-lg border border-[var(--chrome-stroke)] bg-white/3 p-3">
+            <div className="rounded-lg border border-[var(--chrome-stroke)] bg-text-primary/3 p-3">
               <p className="text-xs font-medium text-text-secondary">Conversion Plan</p>
               <div className="mt-2 grid grid-cols-2 gap-x-6 gap-y-1 text-xs text-text-muted">
                 {(Object.entries(chunkEstimate.byType) as [MudFileType, number][])
@@ -499,7 +499,7 @@ export function MudImportWizard({ onClose }: { onClose: () => void }) {
                   r.status === "done" ? "bg-status-success" :
                   r.status === "error" ? "bg-status-error" :
                   r.status === "converting" ? "bg-status-warning animate-pulse" :
-                  "bg-white/20"
+                  "bg-text-primary/20"
                 }`} />
                 <span className="text-text-muted">
                   {FILE_TYPE_LABELS[r.chunk.fileType]} #{r.chunk.index + 1}
@@ -547,7 +547,7 @@ export function MudImportWizard({ onClose }: { onClose: () => void }) {
           {/* Stats */}
           <div className="grid grid-cols-4 gap-3">
             {([["Rooms", importResult.stats.rooms], ["Mobs", importResult.stats.mobs], ["Items", importResult.stats.items], ["Shops", importResult.stats.shops]] as const).map(([label, count]) => (
-              <div key={label} className="rounded-lg border border-[var(--chrome-stroke)] bg-white/3 p-3 text-center">
+              <div key={label} className="rounded-lg border border-[var(--chrome-stroke)] bg-text-primary/3 p-3 text-center">
                 <div className="text-lg font-display text-text-primary">{count}</div>
                 <div className="text-2xs text-text-muted">{label}</div>
               </div>

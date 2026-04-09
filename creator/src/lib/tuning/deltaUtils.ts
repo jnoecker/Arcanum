@@ -39,9 +39,9 @@ export function pctDelta(oldVal: number, newVal: number): string {
 
 /** Impact badge colors matching Arcanum design system (D-11, UI-SPEC). */
 const IMPACT_COLORS: Record<string, string> = {
-  high: "#d9756b",   // status-error
-  medium: "#ff9d3d", // status-warning
-  low: "#ad9d88",    // text-muted
+  high: "var(--color-status-error)",
+  medium: "var(--color-status-warning)",
+  low: "var(--color-text-muted)",
 };
 
 const IMPACT_LABELS: Record<string, string> = {
@@ -62,9 +62,20 @@ export function buildTooltipContent(meta: FieldMeta): string {
   if (meta.interactionNote) {
     parts.push(`<div style="margin-bottom:6px;opacity:0.8">Interacts with: ${meta.interactionNote}</div>`);
   }
-  const color = IMPACT_COLORS[meta.impact] ?? "#ad9d88";
+  const color = IMPACT_COLORS[meta.impact] ?? "var(--color-text-muted)";
   const label = IMPACT_LABELS[meta.impact] ?? "LOW IMPACT";
   parts.push(`<span style="color:${color};font-size:11px;font-weight:600;letter-spacing:0.5px">${label}</span>`);
   parts.push(`</div>`);
   return parts.join("");
+}
+
+/** Lightweight plain-text tooltip for dense tables where DOM tooltips are too expensive. */
+export function buildTooltipText(meta: FieldMeta): string {
+  const parts = [meta.description];
+  if (meta.interactionNote) {
+    parts.push(`Interacts with: ${meta.interactionNote}`);
+  }
+  const label = IMPACT_LABELS[meta.impact] ?? "LOW IMPACT";
+  parts.push(`Impact: ${label}`);
+  return parts.join("\n");
 }

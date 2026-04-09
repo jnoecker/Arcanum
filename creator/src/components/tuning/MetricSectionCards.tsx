@@ -25,7 +25,7 @@ export function MetricSectionCards({
   diffCounts,
 }: MetricSectionCardsProps) {
   return (
-    <div className="animate-unfurl-in mt-6 mb-6 grid grid-cols-2 gap-4 px-6">
+    <div className="animate-unfurl-in mb-6 mt-6 grid grid-cols-1 gap-4 px-6 xl:grid-cols-2">
       {CARD_ORDER.map((section) => (
         <MetricCard
           key={section}

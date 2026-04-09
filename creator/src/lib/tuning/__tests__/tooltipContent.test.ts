@@ -24,19 +24,19 @@ describe("buildTooltipContent", () => {
   it("includes HIGH IMPACT badge with correct color for high impact", () => {
     const html = buildTooltipContent(makeMeta({ impact: "high" }));
     expect(html).toContain("HIGH IMPACT");
-    expect(html).toContain("#d9756b");
+    expect(html).toContain("var(--color-status-error)");
   });
 
   it("includes MEDIUM IMPACT badge with correct color", () => {
     const html = buildTooltipContent(makeMeta({ impact: "medium" }));
     expect(html).toContain("MEDIUM IMPACT");
-    expect(html).toContain("#ff9d3d");
+    expect(html).toContain("var(--color-status-warning)");
   });
 
   it("includes LOW IMPACT badge with correct color", () => {
     const html = buildTooltipContent(makeMeta({ impact: "low" }));
     expect(html).toContain("LOW IMPACT");
-    expect(html).toContain("#ad9d88");
+    expect(html).toContain("var(--color-text-muted)");
   });
 
   it("includes interaction note when present", () => {

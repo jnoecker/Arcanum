@@ -22,7 +22,9 @@ import { MetricSectionCards } from "./MetricSectionCards";
 import { ApplyFooterBar } from "./ApplyFooterBar";
 import { HealthCheckBanner } from "./HealthCheckBanner";
 import { ChartRow } from "./charts/ChartRow";
-import { Spinner } from "@/components/ui/FormWidgets";
+import { ActionButton, Spinner } from "@/components/ui/FormWidgets";
+import { useToastStore } from "@/stores/toastStore";
+import { usePrefersReducedMotion } from "@/lib/usePrefersReducedMotion";
 
 const ALL_SECTIONS_ORDERED = [
   TuningSection.CombatStats,
@@ -57,6 +59,9 @@ export function TuningWizard() {
 
   const browserRef = useRef<HTMLDivElement>(null);
   const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const showToast = useToastStore((s) => s.show);
+  const prefersReducedMotion = usePrefersReducedMotion();
 
   /** Inline edit: update a single field by dot-path in the config. */
   const handleValueChange = useCallback(
@@ -73,16 +78,29 @@ export function TuningWizard() {
   const handleSave = useCallback(async () => {
     if (!project || saving) return;
     setSaving(true);
+    setSaveError(null);
     try {
       const { saveProjectConfig } = await import("@/lib/saveConfig");
       await saveProjectConfig(project);
       useConfigStore.getState().markClean();
+      showToast({
+        kicker: "Tuning Wizard",
+        message: "Configuration saved.",
+        variant: "astral",
+      });
     } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      setSaveError(message);
+      showToast({
+        kicker: "Tuning Wizard",
+        message: `Save failed: ${message}`,
+        variant: "ember",
+      }, 4000);
       console.error("Tuning save failed:", err);
     } finally {
       setSaving(false);
     }
-  }, [project, saving]);
+  }, [project, saving, showToast]);
 
   /** Compute metrics for each preset by merging onto current config. */
   const presetMetrics = useMemo(() => {
@@ -182,9 +200,12 @@ export function TuningWizard() {
   /** Scroll parameter browser into view when a preset is selected. */
   useEffect(() => {
     if (selectedPresetId && browserRef.current) {
-      browserRef.current.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      browserRef.current.scrollIntoView({
+        behavior: prefersReducedMotion ? "auto" : "smooth",
+        block: "nearest",
+      });
     }
-  }, [selectedPresetId]);
+  }, [prefersReducedMotion, selectedPresetId]);
 
   function handleSelect(preset: TuningPreset) {
     if (selectedPresetId === preset.id) {
@@ -213,23 +234,35 @@ export function TuningWizard() {
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
       {/* Title section + save button */}
-      <div className="flex items-center justify-between px-6 pt-16">
-        <h1 className="font-display text-[22px] leading-[1.2] tracking-[1px] text-text-primary">
-          Tuning Wizard
-        </h1>
-        {(dirty || saving) && (
-          <button
+      <div className="flex flex-col gap-4 px-6 pt-12 md:flex-row md:items-start md:justify-between">
+        <div className="min-w-0">
+          <h1 className="font-display text-[22px] leading-[1.2] tracking-[1px] text-text-primary">
+            Tuning Wizard
+          </h1>
+          <p className="mt-2 max-w-3xl text-sm text-text-secondary">
+            Compare curated balance presets, accept the sections you want, and keep the final save explicit.
+          </p>
+          {saveError && (
+            <p role="alert" className="mt-2 text-2xs text-status-error">
+              Save failed: {saveError}
+            </p>
+          )}
+        </div>
+        {(dirty || saving || saveError) && (
+          <ActionButton
+            variant="secondary"
             onClick={handleSave}
             disabled={!dirty || saving}
-            className="focus-ring rounded-full border border-[var(--chrome-stroke)] bg-bg-primary/80 px-4 py-1.5 text-sm font-medium text-accent shadow-md backdrop-blur-sm transition hover:bg-bg-primary disabled:cursor-not-allowed disabled:opacity-40"
+            aria-label={saving ? "Saving tuning changes" : "Save tuning changes"}
+            className="self-start"
           >
-            {saving ? <span className="flex items-center gap-1.5"><Spinner />Saving</span> : "Save Changes"}
-          </button>
+            {saving ? <><Spinner />Saving</> : "Save Changes"}
+          </ActionButton>
         )}
       </div>
 
       {/* Preset card grid */}
-      <div className="grid grid-cols-3 justify-items-center gap-4 px-6 mt-8 max-w-[1020px] mx-auto">
+      <div className="mx-auto mt-8 grid w-full max-w-6xl grid-cols-1 gap-4 px-6 lg:grid-cols-2 2xl:grid-cols-3">
         {TUNING_PRESETS.map((preset) => (
           <PresetCard
             key={preset.id}

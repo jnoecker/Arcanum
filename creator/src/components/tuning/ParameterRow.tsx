@@ -2,10 +2,9 @@
 // Single parameter row showing label with tooltip, current value (editable),
 // optional preset value with diff highlighting and percentage delta.
 
-import { useRef, useEffect, useState } from "react";
-import tippy from "tippy.js";
+import { useState } from "react";
 import type { FieldMeta } from "@/lib/tuning/types";
-import { pctDelta, deltaDirection, deltaColor, buildTooltipContent } from "@/lib/tuning/deltaUtils";
+import { pctDelta, deltaDirection, deltaColor, buildTooltipText } from "@/lib/tuning/deltaUtils";
 
 interface ParameterRowProps {
   path: string;
@@ -38,27 +37,12 @@ export function ParameterRow({
   even,
   onValueChange,
 }: ParameterRowProps) {
-  const labelRef = useRef<HTMLSpanElement>(null);
   const [editingValue, setEditingValue] = useState<string | null>(null);
-
-  // Tooltip on field label (D-10, D-11, UI-04)
-  useEffect(() => {
-    if (!labelRef.current) return;
-    const content = buildTooltipContent(meta);
-    const instance = tippy(labelRef.current, {
-      content,
-      allowHTML: true,
-      theme: "arcanum",
-      placement: "top-start",
-      delay: [250, 100],
-      maxWidth: 280,
-    });
-    return () => instance.destroy();
-  }, [meta.description, meta.interactionNote, meta.impact]);
+  const tooltipText = buildTooltipText(meta);
 
   const gridCols = hasPreset
-    ? "grid-cols-[1.2fr_100px_140px_1.5fr]"
-    : "grid-cols-[1.2fr_120px_1.5fr]";
+    ? "md:grid-cols-[minmax(0,1.35fr)_minmax(120px,auto)] xl:grid-cols-[minmax(0,1.15fr)_100px_140px_minmax(0,1.5fr)]"
+    : "md:grid-cols-[minmax(0,1.35fr)_minmax(120px,auto)] xl:grid-cols-[minmax(0,1.2fr)_120px_minmax(0,1.5fr)]";
 
   const rowHighlight =
     isChanged && presetAccentBorder ? `border-l-2 ${presetAccentBorder}` : "";
@@ -121,7 +105,8 @@ export function ParameterRow({
           type="checkbox"
           checked={currentValue as boolean}
           onChange={handleToggleBoolean}
-          className="h-3.5 w-3.5 cursor-pointer accent-accent"
+          aria-label={`Toggle ${meta.label}`}
+          className="h-4 w-4 cursor-pointer accent-accent"
         />
       </label>
     );
@@ -139,7 +124,8 @@ export function ParameterRow({
           if (e.key === "Escape") setEditingValue(null);
         }}
         onFocus={() => setEditingValue(String(currentValue))}
-        className="w-full rounded bg-transparent text-right font-mono text-sm text-text-secondary outline-none ring-1 ring-transparent transition-colors focus:ring-accent/50 hover:ring-white/20 px-1.5 py-0.5"
+        aria-label={`Edit ${meta.label}`}
+        className="min-h-11 w-full rounded bg-transparent px-1.5 py-0.5 text-right font-mono text-sm text-text-secondary outline-none ring-1 ring-transparent transition-colors hover:ring-white/20 focus:ring-accent/50"
       />
     );
   } else {
@@ -152,12 +138,14 @@ export function ParameterRow({
 
   return (
     <div
-      className={`grid min-h-[40px] items-center gap-x-4 py-2 px-2 transition-colors duration-200 hover:bg-bg-hover ${gridCols} ${rowHighlight} ${stripe}`}
+      className={`grid min-h-[40px] grid-cols-1 gap-x-4 gap-y-2 px-2 py-3 transition-colors duration-200 hover:bg-bg-hover ${gridCols} ${rowHighlight} ${stripe}`}
     >
       {/* Label with tooltip */}
       <span
-        ref={labelRef}
-        className="cursor-default font-sans text-[15px] font-semibold text-text-primary"
+        tabIndex={0}
+        title={tooltipText}
+        aria-label={`${meta.label}. ${tooltipText}`}
+        className="focus-ring rounded-sm font-sans text-[15px] font-semibold text-text-primary"
       >
         {meta.label}
       </span>
@@ -173,7 +161,7 @@ export function ParameterRow({
       )}
 
       {/* Description */}
-      <span className="truncate font-sans text-sm text-text-muted">
+      <span className="font-sans text-sm leading-5 text-text-muted md:col-span-2 xl:col-auto">
         {meta.description}
       </span>
     </div>

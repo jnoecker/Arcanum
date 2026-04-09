@@ -41,6 +41,9 @@ export function ParameterSection({
   presetAccentBorder,
   onValueChange,
 }: ParameterSectionProps) {
+  const sectionSlug = section.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+  const regionId = `tuning-section-${sectionSlug}`;
+  const titleId = `${regionId}-title`;
   const changedCount = useMemo(
     () => fields.filter(([path]) => diffMap.has(path)).length,
     [fields, diffMap],
@@ -52,6 +55,8 @@ export function ParameterSection({
       <button
         type="button"
         onClick={onToggleCollapsed}
+        aria-expanded={!isCollapsed}
+        aria-controls={regionId}
         className="flex w-full cursor-pointer items-center gap-3 border-t border-border-muted py-3"
       >
         {/* Section acceptance checkbox (D-01) */}
@@ -61,12 +66,15 @@ export function ParameterSection({
             checked={isAccepted}
             onClick={(e) => e.stopPropagation()}
             onChange={onToggleAccepted}
-            className="h-4 w-4 cursor-pointer accent-accent"
+            aria-labelledby={titleId}
+            aria-label={`Include ${section} when applying the preset`}
+            className="h-5 w-5 cursor-pointer accent-accent"
           />
         )}
 
         {/* Chevron */}
         <span
+          aria-hidden="true"
           className={`inline-block text-text-muted transition-transform duration-200 ${
             isCollapsed ? "rotate-0" : "rotate-90"
           }`}
@@ -75,7 +83,7 @@ export function ParameterSection({
         </span>
 
         {/* Section name */}
-        <span className="font-display text-sm uppercase tracking-[0.5px] text-text-secondary">
+        <span id={titleId} className="font-display text-sm uppercase tracking-[0.5px] text-text-secondary">
           {section}
         </span>
 
@@ -94,7 +102,7 @@ export function ParameterSection({
 
       {/* Parameter rows */}
       {!isCollapsed && (
-        <div>
+        <div id={regionId} role="region" aria-labelledby={titleId}>
           {fields.map(([path, meta], idx) => {
             const diff = diffMap.get(path);
             const currentValue = getNestedValue(currentConfig, path);

@@ -15,6 +15,7 @@ import {
 } from "recharts";
 import type { XpCurvePoint } from "@/lib/tuning/chartData";
 import { CHART_COLORS } from "@/lib/tuning/chartColors";
+import { usePrefersReducedMotion } from "@/lib/usePrefersReducedMotion";
 
 interface XpCurveChartProps {
   data: XpCurvePoint[];
@@ -31,8 +32,10 @@ function formatLargeNumber(v: number): string {
 }
 
 export function XpCurveChart({ data }: XpCurveChartProps) {
+  const prefersReducedMotion = usePrefersReducedMotion();
+
   return (
-    <div className="rounded-lg border border-border-muted bg-bg-tertiary p-4">
+    <div className="panel-surface rounded-[1.5rem] p-4">
       <h3 className="mb-2 font-display text-[14px] font-normal uppercase tracking-[0.5px] text-text-secondary">
         XP CURVE
       </h3>
@@ -58,7 +61,7 @@ export function XpCurveChart({ data }: XpCurveChartProps) {
             stroke={CHART_COLORS.currentSeries}
             strokeWidth={2}
             dot={false}
-            isAnimationActive={true}
+            isAnimationActive={!prefersReducedMotion}
             animationDuration={300}
             animationEasing="ease-out"
           />
@@ -69,7 +72,7 @@ export function XpCurveChart({ data }: XpCurveChartProps) {
             stroke={CHART_COLORS.presetSeries}
             strokeWidth={2}
             dot={false}
-            isAnimationActive={true}
+            isAnimationActive={!prefersReducedMotion}
             animationDuration={300}
             animationEasing="ease-out"
           />

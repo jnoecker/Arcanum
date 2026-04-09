@@ -32,18 +32,19 @@ export function SearchFilterBar() {
   }, [searchQuery]);
 
   return (
-    <div className="sticky top-0 z-10 mt-12 mb-6 flex items-center gap-4 border-b border-border-muted bg-bg-primary px-6 pb-4">
+    <div className="sticky top-0 z-10 mt-12 mb-6 flex flex-wrap items-center gap-3 border-b border-border-muted bg-bg-primary/95 px-6 pb-4 pt-2 backdrop-blur-sm">
       {/* Search input */}
       <input
         type="text"
         value={localQuery}
         onChange={(e) => setLocalQuery(e.target.value)}
         placeholder="Search parameters..."
-        className="ornate-input flex-1 rounded px-3 py-2 font-sans text-[15px] text-text-primary"
+        aria-label="Search tuning parameters"
+        className="ornate-input min-h-11 min-w-[16rem] flex-1 rounded px-3 py-2 font-sans text-[15px] text-text-primary"
       />
 
       {/* Section filter chips */}
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2" aria-label="Section filters">
         {ALL_SECTIONS.map((section) => {
           const isActive = activeSections.has(section);
           return (
@@ -51,7 +52,8 @@ export function SearchFilterBar() {
               key={section}
               type="button"
               onClick={() => toggleSection(section)}
-              className={`cursor-pointer rounded-full border px-2 py-1 font-sans text-sm font-semibold uppercase tracking-[0.18em] transition-colors duration-150 ${
+              aria-pressed={isActive}
+              className={`focus-ring min-h-11 cursor-pointer rounded-full border px-3 py-1.5 font-sans text-sm font-semibold uppercase tracking-[0.18em] transition-colors duration-150 ${
                 isActive
                   ? "border-accent/[0.35] bg-accent/[0.14] text-accent"
                   : "border-border-muted bg-bg-secondary text-text-muted"

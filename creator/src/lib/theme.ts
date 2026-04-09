@@ -21,10 +21,10 @@ export interface ThemePalette {
 
 export const DEFAULT_THEME: ThemePalette = {
   name: "Arcanum (default)",
-  background: "#22293c",
-  surface: "#313a56",
-  text: "#dbe3f8",
-  accent: "#a897d2",
+  background: "#001524",
+  surface: "#15616d",
+  text: "#ffecd1",
+  accent: "#ff7d00",
 };
 
 /** Built-in palettes the user can apply with one click. */
@@ -374,9 +374,9 @@ export function normalizeHex(s: string): string {
   return "#" + full.toLowerCase();
 }
 
-/** Parse a free-form palette paste (whitespace, commas, newlines) into 4 hexes. */
+/** Parse a free-form palette paste (whitespace, commas, newlines) into 4+ hexes. */
 export function parsePalettePaste(input: string): string[] | null {
   const tokens = input.match(/#?[0-9a-fA-F]{6}/g);
   if (!tokens || tokens.length < 4) return null;
-  return tokens.slice(0, 4).map(normalizeHex);
+  return [...new Set(tokens.map(normalizeHex))];
 }

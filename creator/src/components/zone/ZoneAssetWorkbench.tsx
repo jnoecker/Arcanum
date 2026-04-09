@@ -496,7 +496,7 @@ export function ZoneAssetWorkbench({ zoneId, world, onWorldChange }: ZoneAssetWo
             <span>{completion}%</span>
           </div>
           <div className="h-2 overflow-hidden rounded-full bg-[var(--chrome-fill)]">
-            <div className="h-full rounded-full bg-[linear-gradient(90deg,rgba(168,151,210,0.95),rgba(140,174,201,0.9))]" style={{ width: `${completion}%` }} />
+            <div className="h-full rounded-full bg-[linear-gradient(90deg,rgb(var(--accent-rgb)/0.95),rgb(var(--surface-rgb)/0.9))]" style={{ width: `${completion}%` }} />
           </div>
         </div>
       </div>

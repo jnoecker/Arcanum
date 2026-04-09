@@ -520,7 +520,7 @@ export function RuntimeHandoffStudio() {
             <button
               onClick={() => void handleRunAll()}
               disabled={runningAll}
-              className="rounded-full border border-[var(--border-accent-subtle)] bg-[linear-gradient(135deg,rgba(168,151,210,0.26),rgba(140,174,201,0.18))] px-4 py-2 text-xs font-medium text-text-primary transition hover:shadow-glow disabled:cursor-not-allowed disabled:opacity-40"
+              className="rounded-full border border-[var(--border-accent-subtle)] bg-[linear-gradient(135deg,rgb(var(--accent-rgb)/0.26),rgb(var(--surface-rgb)/0.18))] px-4 py-2 text-xs font-medium text-text-primary transition hover:shadow-glow disabled:cursor-not-allowed disabled:opacity-40"
             >
               {runningAll ? "Publishing..." : "Publish all"}
             </button>

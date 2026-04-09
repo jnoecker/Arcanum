@@ -4,13 +4,13 @@
 // Used by Recharts SVG rendering in visualization components.
 
 export const CHART_COLORS = {
-  currentSeries: "#aebada",   // text-text-secondary -- muted current config
-  presetSeries: "#c8a46a",    // warm aurum-gold -- preset visually dominates
-  grid: "#39455f",            // border-muted
-  axisText: "#95a0bf",        // text-muted
-  axisLine: "#56617d",        // border-default
-  barHp: "#c05060",           // chart-hp
-  barDamage: "#dbb8b8",       // status-error warm red
-  barArmor: "#8caec9",        // stellar-blue
-  barXp: "#a3c48e",           // status-success green
+  currentSeries: "#dccbb3",   // text-text-secondary -- muted current config
+  presetSeries: "#ff7d00",    // ember orange -- preset visually dominates
+  grid: "#174852",            // border-muted
+  axisText: "#ad9d88",        // text-muted
+  axisLine: "#2e7680",        // border-default
+  barHp: "#d9756b",           // chart-hp
+  barDamage: "#e08a73",       // status-error warm red
+  barArmor: "#2f93a1",        // stellar-blue
+  barXp: "#7cb66d",           // status-success green
 } as const;

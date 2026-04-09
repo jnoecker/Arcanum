@@ -224,12 +224,12 @@ describe("buildStatRadarData", () => {
 // ─── CHART_COLORS ─────────────────────────────────────────────────
 
 describe("CHART_COLORS", () => {
-  it("currentSeries is #aebada", () => {
-    expect(CHART_COLORS.currentSeries).toBe("#aebada");
+  it("currentSeries is #dccbb3", () => {
+    expect(CHART_COLORS.currentSeries).toBe("#dccbb3");
   });
 
-  it("presetSeries is #c8a46a", () => {
-    expect(CHART_COLORS.presetSeries).toBe("#c8a46a");
+  it("presetSeries is #ff7d00", () => {
+    expect(CHART_COLORS.presetSeries).toBe("#ff7d00");
   });
 
   it("has all 9 color keys", () => {

@@ -18,10 +18,6 @@ export function QuestTaxonomyDesigner({
 }) {
   return (
     <div className="flex flex-col gap-6">
-      <div className="rounded-3xl border border-[rgba(184,216,232,0.14)] bg-[linear-gradient(145deg,rgba(92,106,147,0.18),rgba(42,51,79,0.22))] px-5 py-4 text-sm leading-7 text-text-secondary">
-        Objective and completion type IDs are referenced by zone quest data. Renaming is not yet supported — add, edit, or delete types here.
-      </div>
-
       <DefinitionWorkbench
         title="Objective type designer"
         countLabel="Objective types"

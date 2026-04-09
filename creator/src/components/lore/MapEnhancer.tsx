@@ -65,7 +65,7 @@ export function MapEnhancer({
           rect.x, rect.y, rect.w, rect.h,
         );
         // Draw crop border
-        ctx.strokeStyle = "#a897d2"; // mirrors --color-accent
+        ctx.strokeStyle = "#ff7d00"; // mirrors --color-accent
         ctx.lineWidth = 2;
         ctx.setLineDash([6, 3]);
         ctx.strokeRect(rect.x, rect.y, rect.w, rect.h);
@@ -281,7 +281,7 @@ export function MapEnhancer({
           <button
             onClick={handleGenerate}
             disabled={generating || !crop || !prompt.trim()}
-            className="rounded-full border border-[rgba(184,216,232,0.28)] bg-gradient-active-strong px-5 py-2 text-xs font-medium text-text-primary transition enabled:hover:shadow-glow disabled:opacity-40"
+            className="rounded-full border border-[rgb(var(--accent-rgb)/0.28)] bg-gradient-active-strong px-5 py-2 text-xs font-medium text-text-primary transition enabled:hover:shadow-glow disabled:opacity-40"
           >
             {generating ? "Enhancing..." : "Enhance Region"}
           </button>

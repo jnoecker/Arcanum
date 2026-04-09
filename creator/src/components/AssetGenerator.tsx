@@ -271,7 +271,7 @@ export function AssetGenerator() {
                         key={model.id}
                         className={`focus-ring rounded-3xl border p-4 text-left transition ${
                           modelId === model.id
-                            ? "border-[var(--border-glow-strong)] bg-[linear-gradient(145deg,rgba(168,151,210,0.18),rgba(42,50,71,0.9))] shadow-glow"
+                            ? "border-[var(--border-glow-strong)] bg-[linear-gradient(145deg,rgb(var(--accent-rgb)/0.18),rgb(var(--bg-rgb)/0.9))] shadow-glow"
                             : "border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] hover:border-[var(--chrome-stroke-strong)] hover:bg-[var(--chrome-highlight)]"
                         }`}
                       >

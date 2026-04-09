@@ -345,7 +345,7 @@ export function DungeonEmptyState({ onAdd }: { onAdd: () => void }) {
       </p>
       <button
         onClick={onAdd}
-        className="rounded-full border border-[rgba(184,216,232,0.28)] bg-gradient-active-strong px-5 py-2 text-xs text-text-primary transition hover:shadow-glow"
+        className="rounded-full border border-[rgb(var(--accent-rgb)/0.28)] bg-gradient-active-strong px-5 py-2 text-xs text-text-primary transition hover:shadow-glow"
       >
         Add Dungeon Template
       </button>

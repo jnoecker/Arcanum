@@ -49,17 +49,46 @@ function chroma(hex: string): number {
 }
 
 function buildPaletteFromPaste(colors: string[], mode: PasteMode): ThemePalette {
-  const sorted = [...colors].sort((a, b) => luminance(a) - luminance(b));
+  const unique = [...new Set(colors)];
+  const sorted = [...unique].sort((a, b) => luminance(a) - luminance(b));
   const darkest = sorted[0]!;
-  const mid1 = sorted[1]!;
-  const mid2 = sorted[2]!;
-  const lightest = sorted[3]!;
-  const accent = chroma(mid2) > chroma(mid1) ? mid2 : mid1;
-  const surface = accent === mid1 ? mid2 : mid1;
+  const lightest = sorted[sorted.length - 1]!;
+  const background = mode === "light" ? lightest : darkest;
+  const text = mode === "light" ? darkest : lightest;
+  const candidates = unique.filter((color) => color !== background && color !== text);
+
+  const fallbackAccent = mode === "light"
+    ? sorted[Math.max(0, sorted.length - 2)] ?? background
+    : sorted[1] ?? text;
+  const accent = candidates.length > 0
+    ? candidates.reduce((best, color) => {
+        const bestChroma = chroma(best);
+        const colorChroma = chroma(color);
+        if (colorChroma !== bestChroma) {
+          return colorChroma > bestChroma ? color : best;
+        }
+        return contrastRatio(color, background) > contrastRatio(best, background) ? color : best;
+      }, candidates[0]!)
+    : fallbackAccent;
+
+  const surfaceCandidates = candidates.filter((color) => color !== accent);
+  const backgroundLum = luminance(background);
+  const textLum = luminance(text);
+  const targetLum = backgroundLum + (textLum - backgroundLum) * (mode === "light" ? 0.2 : 0.28);
+  const fallbackSurface = mode === "light"
+    ? sorted[Math.max(0, sorted.length - 2)] ?? accent
+    : sorted[Math.min(1, sorted.length - 1)] ?? accent;
+  const surface = surfaceCandidates.length > 0
+    ? surfaceCandidates.reduce((best, color) => {
+        const bestScore = Math.abs(luminance(best) - targetLum) + chroma(best) / 2550;
+        const colorScore = Math.abs(luminance(color) - targetLum) + chroma(color) / 2550;
+        return colorScore < bestScore ? color : best;
+      }, surfaceCandidates[0]!)
+    : fallbackSurface;
 
   return mode === "light"
-    ? { name: "Custom (pasted)", background: lightest, surface, text: darkest, accent }
-    : { name: "Custom (pasted)", background: darkest, surface, text: lightest, accent };
+    ? { name: "Custom (pasted)", background, surface, text, accent }
+    : { name: "Custom (pasted)", background, surface, text, accent };
 }
 
 function textOnAccent(palette: Pick<ThemePalette, "background" | "text" | "accent">): string {
@@ -152,7 +181,7 @@ function SlotEditor({
               (e.target as HTMLInputElement).blur();
             }
           }}
-          placeholder="#22293c"
+          placeholder="#001524"
           className="ornate-input flex-1 font-mono text-xs"
           spellCheck={false}
         />
@@ -187,7 +216,7 @@ function PreviewCard({ palette }: { palette: ThemePalette }) {
         </span>
       </div>
       <h3 className="mt-2 font-display text-2xl" style={{ color: palette.text }}>
-        Aurum dusk over the abyss
+        Ember tide across the deep
       </h3>
       <p className="mt-2 text-sm leading-6" style={{ color: palette.text, opacity: 0.78 }}>
         This preview shows how the page, panel, text, and accent anchors work together before you save.
@@ -318,8 +347,8 @@ export function AppearancePanel() {
           <p className="text-3xs uppercase tracking-wide-ui text-text-muted">Operations</p>
           <h2 className="mt-2 font-display text-3xl text-text-primary">Appearance</h2>
           <p className="mt-2 max-w-3xl text-sm leading-6 text-text-secondary">
-            Pick a 4-color palette to retheme the entire app. Background, Surface, Text, and Accent
-            drive every UI surface while semantic colors stay fixed.
+            Pick a 4-color anchor palette to retheme the entire app. Background, Surface, Text, and
+            Accent drive every UI surface while semantic colors stay fixed.
           </p>
         </header>
 
@@ -370,7 +399,7 @@ export function AppearancePanel() {
                   Paste a palette
                 </label>
                 <p className="mt-1 text-2xs text-text-muted">
-                  Copy 4 hex codes from coolors.co, lospec, or anywhere. The mode controls whether the darkest or lightest color becomes the page background.
+                  Copy 4 or more hex codes from Coolors, Lospec, or anywhere. The mode controls whether the darkest or lightest color becomes the page background.
                 </p>
               </div>
               <div className="segmented-control">
@@ -395,7 +424,7 @@ export function AppearancePanel() {
                 onKeyDown={(e) => {
                   if (e.key === "Enter") handlePaste();
                 }}
-                placeholder="#22293c #313a56 #dbe3f8 #a897d2"
+                placeholder="#001524 #15616d #ffecd1 #ff7d00 #78290f"
                 className="ornate-input flex-1 font-mono text-xs"
                 spellCheck={false}
               />

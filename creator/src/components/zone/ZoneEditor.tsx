@@ -492,11 +492,11 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
           disabled={!zoneState.dirty || saving}
           className={`focus-ring h-7 rounded-full px-3 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity] duration-500 max-[1180px]:h-9 ${
             saving
-              ? "border border-[rgba(200,164,106,0.4)] bg-[linear-gradient(145deg,rgba(200,164,106,0.22),rgba(43,52,76,0.9))] text-warm-pale shadow-[0_4px_16px_rgba(200,164,106,0.18)]"
+              ? "border border-[rgb(var(--accent-rgb)/0.4)] bg-[linear-gradient(145deg,rgb(var(--accent-rgb)/0.22),rgb(var(--bg-rgb)/0.9))] text-warm-pale shadow-[0_4px_16px_rgb(var(--accent-rgb)/0.18)]"
               : justSaved
                 ? "border border-status-success/30 text-status-success"
                 : zoneState.dirty
-                  ? "border border-[rgba(200,164,106,0.4)] bg-[linear-gradient(145deg,rgba(200,164,106,0.22),rgba(43,52,76,0.9))] text-warm-pale shadow-[0_4px_16px_rgba(200,164,106,0.18)]"
+                  ? "border border-[rgb(var(--accent-rgb)/0.4)] bg-[linear-gradient(145deg,rgb(var(--accent-rgb)/0.22),rgb(var(--bg-rgb)/0.9))] text-warm-pale shadow-[0_4px_16px_rgb(var(--accent-rgb)/0.18)]"
                   : "text-text-muted opacity-40"
           }`}
           title="Save (Ctrl+S)"

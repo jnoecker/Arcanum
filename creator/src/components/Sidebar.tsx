@@ -14,6 +14,7 @@ import { BulkActionsBar } from "./lore/BulkActionsBar";
 import { NewZoneDialog } from "./NewZoneDialog";
 import { RenameZoneDialog } from "./RenameZoneDialog";
 import { ConfirmDialog } from "./ConfirmDialog";
+import { CosmicBackdrop } from "./ui/CosmicBackdrop";
 import {
   addRoom,
   addMob,
@@ -605,6 +606,7 @@ export function Sidebar({ workspace }: { workspace: Workspace }) {
 
   return (
     <aside className="relative flex min-h-0 w-full shrink-0 flex-col overflow-hidden rounded-3xl border border-[var(--chrome-stroke)] bg-gradient-panel shadow-panel lg:w-[23rem]">
+      <CosmicBackdrop variant="panel" className="opacity-90" />
       <div className="pointer-events-none absolute inset-x-0 top-0 h-48 bg-gradient-glow-top" />
 
       <div className="relative z-10 shrink-0 px-4 pt-4">

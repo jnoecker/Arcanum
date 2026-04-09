@@ -2,12 +2,13 @@ import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { useProjectStore } from "@/stores/projectStore";
 import { useLoreStore, selectArticles } from "@/stores/loreStore";
 import { useZoneStore } from "@/stores/zoneStore";
+import { useAssetStore } from "@/stores/assetStore";
 import { ALL_PANELS, panelTab } from "@/lib/panelRegistry";
 import { useFocusTrap } from "@/lib/useFocusTrap";
 
 interface PaletteItem {
   id: string;
-  type: "panel" | "article" | "zone";
+  type: "panel" | "article" | "zone" | "action";
   title: string;
   subtitle: string;
   action: () => void;
@@ -20,6 +21,9 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
   const listRef = useRef<HTMLDivElement>(null);
   const trapRef = useFocusTrap<HTMLDivElement>(onClose);
   const openTab = useProjectStore((s) => s.openTab);
+  const setShowMudImport = useProjectStore((s) => s.setShowMudImport);
+  const openGenerator = useAssetStore((s) => s.openGenerator);
+  const openGallery = useAssetStore((s) => s.openGallery);
   const selectArticle = useLoreStore((s) => s.selectArticle);
   const articles = useLoreStore(selectArticles);
   const zones = useZoneStore((s) => s.zones);
@@ -27,6 +31,29 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
   // Build searchable items
   const items = useMemo<PaletteItem[]>(() => {
     const result: PaletteItem[] = [];
+
+    // Actions (global commands)
+    result.push({
+      id: "action:import-mud-zone",
+      type: "action",
+      title: "Import MUD Zone",
+      subtitle: "Import a zone from an existing AmbonMUD checkout",
+      action: () => setShowMudImport(true),
+    });
+    result.push({
+      id: "action:render-art",
+      type: "action",
+      title: "Render Art",
+      subtitle: "Open the asset generator",
+      action: () => openGenerator(),
+    });
+    result.push({
+      id: "action:browse-gallery",
+      type: "action",
+      title: "Browse Asset Gallery",
+      subtitle: "Open the asset gallery",
+      action: () => openGallery(),
+    });
 
     // Panels
     for (const panel of ALL_PANELS) {
@@ -66,7 +93,7 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
     }
 
     return result;
-  }, [articles, zones, openTab, selectArticle]);
+  }, [articles, zones, openTab, selectArticle, setShowMudImport, openGenerator, openGallery]);
 
   // Filter
   const filtered = useMemo(() => {
@@ -135,6 +162,7 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
       panel: "bg-stellar-blue/20 text-stellar-blue",
       article: "bg-accent/15 text-accent",
       zone: "bg-status-success/20 text-status-success",
+      action: "bg-warm/20 text-warm",
     };
     return colors[type] ?? "bg-[var(--chrome-highlight-strong)] text-text-muted";
   };
@@ -144,6 +172,7 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
       panel: "\u25A4", // ▤ (panel/layout)
       article: "\u00B6", // ¶ (pilcrow, article)
       zone: "\u2302", // ⌂ (house/zone)
+      action: "\u25B8", // ▸ (action)
     };
     return glyphs[type] ?? "\u25CB";
   };

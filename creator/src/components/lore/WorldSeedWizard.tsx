@@ -117,7 +117,7 @@ export function WorldSeedWizard({
               <button
                 onClick={handleGenerate}
                 disabled={generating || !concept.trim()}
-                className="rounded-full border border-[rgba(184,216,232,0.28)] bg-gradient-active-strong px-5 py-2 text-xs font-medium text-text-primary transition enabled:hover:shadow-glow disabled:opacity-40"
+                className="rounded-full border border-[rgb(var(--accent-rgb)/0.28)] bg-gradient-active-strong px-5 py-2 text-xs font-medium text-text-primary transition enabled:hover:shadow-glow disabled:opacity-40"
               >
                 {generating ? "Generating..." : "Generate World"}
               </button>
@@ -141,7 +141,7 @@ export function WorldSeedWizard({
             <div className="mt-5 flex justify-end">
               <button
                 onClick={onClose}
-                className="rounded-full border border-[rgba(184,216,232,0.28)] bg-gradient-active-strong px-5 py-2 text-xs font-medium text-text-primary transition hover:shadow-glow"
+                className="rounded-full border border-[rgb(var(--accent-rgb)/0.28)] bg-gradient-active-strong px-5 py-2 text-xs font-medium text-text-primary transition hover:shadow-glow"
               >
                 Start Exploring
               </button>

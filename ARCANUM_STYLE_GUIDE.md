@@ -1,9 +1,11 @@
 # Arcanum Design System
 
 **Version:** arcanum_v1
-**Last Updated:** March 7, 2026
+**Last Updated:** April 8, 2026
 **Scope:** Unified aesthetic for the Arcanum creator tool — server management, world building, zone editing, and configuration. Covers both the Arcanum (creator UI) and Gentle Magic (world content) art styles.
 **Product:** Arcanum (standalone creator tool, separate from the AmbonMUD game client)
+
+**UI Palette Refresh:** The creator UI now uses a midnight, tide-teal, parchment, ember, and umber palette. When examples elsewhere in this document still mention the legacy aurum/violet chrome, prefer the Color System and CSS token sections below for current UI work.
 
 ---
 
@@ -30,7 +32,7 @@ This style is:
 
 - **Cosmological, not intimate** — Scale is always implied. The user is working at the level of worlds.
 - **Baroque in detail, cosmic in composition** — Ornamentation is present and deliberate, but it serves the grandeur rather than decorating for decoration's sake.
-- **Gold against the void** — Warm aurum light is the primary creative accent. It appears only where something is alive, active, or important. Against deep cosmic indigo, a single gold highlight carries enormous weight.
+- **Ember against the deep** — Ember-orange light is the primary creative accent. It appears only where something is alive, active, or important. Against midnight blue and tide-teal structure, a single ember highlight carries enormous weight.
 - **Unhurried** — The cosmos does not rush. Animations are slow, deliberate, and inevitable. Nothing snaps; everything unfurls.
 
 **Key Principle:** This is not a modern SaaS dashboard dressed up with a dark theme. It is a window into the architecture of a world. Every panel, button, and indicator should feel like it was carved into existence by the same force that shaped the land.
@@ -46,7 +48,7 @@ This style is:
 The baroque tradition is defined by movement, abundance, and the refusal to let any surface rest passively. Applied cosmologically, this means:
 
 - **C-curves and S-curves** — The primary unit of ornamentation. Borders, dividers, and decorative elements terminate in curls rather than hard stops.
-- **Acanthus light scrollwork** — Panel borders and section dividers may incorporate subtle curling flourishes rendered as faint gold or violet lines, as if traced by the Creator's hand.
+- **Acanthus light scrollwork** — Panel borders and section dividers may incorporate subtle curling flourishes rendered as faint ember or tide-teal lines, as if traced by the Creator's hand.
 - **Spiral arms** — Active or highlighted elements trail gentle spiraling light threads, tightening toward a center as they dissipate.
 - **Gradual dissolution** — Nothing abruptly ends. Decorative elements fade to transparency at their extremities. Hard termination is forbidden.
 
@@ -69,13 +71,13 @@ This is deep-space luminosity, not ambient diffusion.
 
 **The two light modes:**
 
-1. **Concentrated Aurum** — Warm gold-amber light emanating from active, important, or alive elements. It has a clear source. It pools and fades outward. The server is running; this is what that looks like.
+1. **Concentrated Ember** — Warm ember-orange light emanates from active, important, or alive elements. It has a clear source. It pools and fades outward. The server is running; this is what that looks like.
 
-2. **Nebula-violet ambient fill** — A cool blue-violet glow that fills the darkness without illuminating it. It gives the deep background depth and dimension without competing with the Aurum.
+2. **Tide-teal ambient fill** — A cool teal glow fills the darkness without flattening it. It gives the deep background depth and dimension without competing with the ember accent.
 
 **Rules:**
-- Gold light only appears where something demands attention or represents the active creative force.
-- Blue-violet light is the atmosphere, the medium through which the tool exists.
+- Ember light only appears where something demands attention or represents the active creative force.
+- Tide-teal light is the atmosphere, the medium through which the tool exists.
 - Stars and pinpoint lights (tiny, pure white) live in background art, not in UI chrome.
 - Glow should bloom softly — a 20-40px feathered spread on important elements.
 - No hard drop shadows. All shadows use the deep indigo base color and spread widely.
@@ -90,91 +92,91 @@ This is deep-space luminosity, not ambient diffusion.
 
 | Name | Hex | Use |
 |------|-----|-----|
-| Abyssal Navy | `#080c1c` | Deepest background, outermost shell |
-| Cosmic Indigo | `#0f1428` | Primary panel base |
-| Deep Nebula | `#161b38` | Elevated panel surfaces |
-| Celestial Slate | `#1e2748` | Highest surfaces, focused panels |
-| Void Edge | `#2a3460` | Borders, dividers, structural lines |
+| Midnight Trough | `#001524` | Deepest background, outermost shell |
+| Tidewell | `#032534` | Primary panel base |
+| Harbor Glass | `#073746` | Secondary panel surfaces |
+| Deep Current | `#0f5160` | Focused or active surfaces |
+| Salt Teal | `#15616d` | Elevated surfaces and structural tint |
 
-#### Cool Accents (Structure & Information)
+#### Structure & Information
 
 | Name | Hex | Use |
 |------|-----|-----|
-| Nebula Violet | `#7a5fc0` | Secondary accent, tree connectors, structural chrome |
-| Stellar Blue | `#4e7fd4` | Info states, links, selected items, cool highlights |
-| Arcane Teal | `#3aa8b8` | Data/schema elements, optional third accent |
+| Tide Teal | `#15616d` | Structural chrome, surfaces, selectors |
+| Bright Current | `#2f93a1` | Info states, links, charts, selected items |
+| Weathered Copper | `#c0622a` | Secondary warm structure, category accents |
 
 #### Warm Accents (The Creative Force)
 
 | Name | Hex | Use |
 |------|-----|-----|
-| Aurum | `#c8972e` | Primary creative accent — active states, primary buttons, running server |
-| Pale Aurum | `#e2bc6a` | Gold highlights, glow centers, hover states |
-| Amber Thread | `#a07820` | Pressed/active button fill, gold border variant |
+| Hearth Ember | `#ff7d00` | Primary creative accent — active states, primary buttons, running server |
+| Ember Bloom | `#ffb86b` | Highlights, glow centers, hover states |
+| Charred Umber | `#78290f` | Pressed state, shadowed warm accent, lowlight depth |
 
 #### Text & Neutrals
 
 | Name | Hex | Use |
 |------|-----|-----|
-| Stardust | `#c2cef0` | Primary text |
-| Cosmic Haze | `#6a7aac` | Secondary text, captions, disabled labels |
-| Faint Starlight | `#3a4880` | Placeholder text, very subtle separators |
+| Ivory Parchment | `#ffecd1` | Primary text |
+| Weathered Linen | `#dccbb3` | Secondary text, captions |
+| Driftwood | `#ad9d88` | Placeholder text, subtle separators, inactive labels |
 
 #### Semantic States
 
 | State | Color | Hex | Notes |
 |-------|-------|-----|-------|
-| Server Running | Aurum | `#c8972e` | Pulsing gold, rotation in background |
-| Server Stopped | Cosmic Haze | `#6a7aac` | Still, cool, no animation |
-| Server Error | Void Crimson | `#8a2a3c` | Deep desaturated red — the void has been disturbed |
-| Success | Nebula Green | `#3a8a6a` | Muted teal-green |
-| Warning | Pale Aurum | `#e2bc6a` | Gold-adjacent, urgent but not alarming |
-| Info | Stellar Blue | `#4e7fd4` | Informational, structural |
-| Destructive | Void Crimson | `#8a2a3c` | Delete, force-stop, irreversible |
+| Server Running | Hearth Ember | `#ff7d00` | Breathing ember pulse, active creator energy |
+| Server Stopped | Drift Teal | `#6d8b92` | Still, cool, no animation |
+| Server Error | Void Crimson | `#d9756b` | Deep desaturated red — the void has been disturbed |
+| Success | Moss Signal | `#7cb66d` | Muted green with enough contrast on dark chrome |
+| Warning | Ember Bloom | `#ff9d3d` | Urgent without reading as destructive |
+| Info | Bright Current | `#2f93a1` | Informational, structural |
+| Destructive | Void Crimson | `#d9756b` | Delete, force-stop, irreversible |
 
 ### Design Tokens (CSS)
 
 ```css
 /* Backgrounds */
---bg-abyss:         #080c1c;
---bg-primary:       #0f1428;
---bg-elevated:      #161b38;
---bg-surface:       #1e2748;
+--bg-abyss:         #001524;
+--bg-primary:       #032534;
+--bg-elevated:      #0f5160;
+--bg-surface:       #15616d;
 
 /* Accents */
---accent-aurum:     #c8972e;
---accent-aurum-pale:#e2bc6a;
---accent-aurum-deep:#a07820;
---accent-violet:    #7a5fc0;
---accent-blue:      #4e7fd4;
---accent-teal:      #3aa8b8;
+--accent-ember:     #ff7d00;
+--accent-ember-pale:#ffb86b;
+--accent-ember-deep:#78290f;
+--accent-current:   #2f93a1;
+--accent-teal:      #15616d;
+--accent-copper:    #c0622a;
 
 /* Borders */
---border-void:      #2a3460;
---border-aurum:     rgba(200, 151, 46, 0.4);
---border-violet:    rgba(122, 95, 192, 0.35);
+--border-void:      #2e7680;
+--border-ember:     rgba(255, 125, 0, 0.4);
+--border-teal:      rgba(21, 97, 109, 0.35);
 
 /* Text */
---text-primary:     #c2cef0;
---text-secondary:   #6a7aac;
---text-disabled:    #3a4880;
+--text-primary:     #ffecd1;
+--text-secondary:   #dccbb3;
+--text-disabled:    #ad9d88;
 
 /* Glows */
---glow-aurum:       0 0 32px rgba(200, 151, 46, 0.35);
---glow-aurum-strong:0 0 48px rgba(226, 188, 106, 0.5);
---glow-violet:      0 0 28px rgba(122, 95, 192, 0.3);
---glow-blue:        0 0 24px rgba(78, 127, 212, 0.25);
+--glow-ember:       0 0 32px rgba(255, 125, 0, 0.35);
+--glow-ember-strong:0 0 48px rgba(255, 184, 107, 0.5);
+--glow-teal:        0 0 28px rgba(21, 97, 109, 0.3);
+--glow-current:     0 0 24px rgba(47, 147, 161, 0.25);
 
 /* Shadows */
---shadow-deep:      0 8px 32px rgba(4, 6, 18, 0.7);
---shadow-panel:     0 16px 56px rgba(4, 6, 18, 0.8);
+--shadow-deep:      0 8px 32px rgba(0, 8, 14, 0.7);
+--shadow-panel:     0 16px 56px rgba(0, 8, 14, 0.8);
 
 /* Semantic */
---state-running:    #c8972e;
---state-stopped:    #6a7aac;
---state-error:      #8a2a3c;
---state-success:    #3a8a6a;
---state-warning:    #e2bc6a;
+--state-running:    #ff7d00;
+--state-stopped:    #6d8b92;
+--state-error:      #d9756b;
+--state-success:    #7cb66d;
+--state-warning:    #ff9d3d;
 ```
 
 ### Opacity Guidelines

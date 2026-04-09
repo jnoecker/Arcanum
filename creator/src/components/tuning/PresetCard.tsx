@@ -15,13 +15,13 @@ interface PresetCardProps {
 const PRESET_ACCENTS: Record<string, { border: string; glow: string; text: string; bg: string }> = {
   casual: {
     border: "border-warm",
-    glow: "shadow-[0_0_20px_rgba(200,164,106,0.35)]",
+    glow: "shadow-[0_0_20px_rgb(var(--accent-rgb)/0.35)]",
     text: "text-warm",
     bg: "bg-warm/[0.14]",
   },
   balanced: {
     border: "border-stellar-blue",
-    glow: "shadow-[0_0_20px_rgba(140,174,201,0.35)]",
+    glow: "shadow-[0_0_20px_rgba(47,147,161,0.35)]",
     text: "text-stellar-blue",
     bg: "bg-stellar-blue/[0.14]",
   },
@@ -45,7 +45,7 @@ const PRESET_ACCENTS: Record<string, { border: string; glow: string; text: strin
   },
   loreExplorer: {
     border: "border-accent",
-    glow: "shadow-[0_0_20px_rgba(168,151,210,0.35)]",
+    glow: "shadow-[0_0_20px_rgb(var(--accent-rgb)/0.35)]",
     text: "text-accent",
     bg: "bg-accent/[0.14]",
   },

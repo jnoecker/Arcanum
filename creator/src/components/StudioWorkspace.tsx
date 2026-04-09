@@ -192,7 +192,7 @@ export function StudioWorkspace({ panelId }: { panelId: string }) {
                   onClick={() => { setArtSubTab(tab.id); saveArtSubTab(tab.id); }}
                   className={`focus-ring rounded-full border px-4 py-2 text-xs font-medium transition ${
                     artSubTab === tab.id
-                      ? "border-[var(--border-glow-strong)] bg-[linear-gradient(135deg,rgba(168,151,210,0.25),rgba(140,174,201,0.15))] text-text-primary shadow-glow"
+                      ? "border-[var(--border-glow-strong)] bg-[linear-gradient(135deg,rgb(var(--accent-rgb)/0.25),rgb(var(--surface-rgb)/0.15))] text-text-primary shadow-glow"
                       : "border-[var(--chrome-stroke)] bg-[var(--chrome-highlight)] text-text-muted hover:border-[var(--chrome-stroke-strong)] hover:bg-[var(--chrome-highlight-strong)] hover:text-text-primary"
                   }`}
                 >

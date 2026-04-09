@@ -16,7 +16,7 @@ export const SCENE_TEMPLATE_PRESETS: Record<SceneTemplate, SceneTemplatePreset> 
   establishing_shot: {
     id: "establishing_shot",
     label: "Establishing Shot",
-    badgeColor: "#8caec9",
+    badgeColor: "#15616d",
     defaultTitle: "The Scene Opens",
     defaultNarration: JSON.stringify({
       type: "doc",
@@ -37,7 +37,7 @@ export const SCENE_TEMPLATE_PRESETS: Record<SceneTemplate, SceneTemplatePreset> 
   encounter: {
     id: "encounter",
     label: "Encounter",
-    badgeColor: "#c4956a",
+    badgeColor: "#ff7d00",
     defaultTitle: "A Confrontation",
     defaultNarration: JSON.stringify({
       type: "doc",
@@ -58,7 +58,7 @@ export const SCENE_TEMPLATE_PRESETS: Record<SceneTemplate, SceneTemplatePreset> 
   discovery: {
     id: "discovery",
     label: "Discovery",
-    badgeColor: "#a3c48e",
+    badgeColor: "#ffb86b",
     defaultTitle: "What Lies Hidden",
     defaultNarration: JSON.stringify({
       type: "doc",

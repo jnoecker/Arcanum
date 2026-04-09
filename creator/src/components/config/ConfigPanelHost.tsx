@@ -59,7 +59,7 @@ function Section({
   return (
     <section className="panel-surface rounded-3xl p-5 shadow-section">
       <div className="mb-3">
-        <p className="border-l-2 border-[rgba(140,174,201,0.3)] pl-2 text-2xs uppercase tracking-wide-ui text-text-muted">{kicker}</p>
+        <p className="border-l-2 border-[rgb(var(--surface-rgb)/0.3)] pl-2 text-2xs uppercase tracking-wide-ui text-text-muted">{kicker}</p>
         <h3 className="mt-2 font-display font-semibold text-xl text-text-primary">{title}</h3>
         <p className="mt-2 max-w-3xl text-sm leading-6 text-text-secondary">{description}</p>
       </div>

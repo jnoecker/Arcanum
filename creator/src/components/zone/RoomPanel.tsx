@@ -192,15 +192,18 @@ export function RoomPanel({
   const assetsDir = useAssetStore((s) => s.assetsDir);
   const loadedZones = useZoneStore((s) => s.zones);
   /** Narrow selector: only extract zone IDs, start rooms, and room keys —
-   *  avoids recomputing exitSuggestions when unrelated zone data changes. */
-  const foreignZoneMeta = useZoneStore(useCallback((s) => {
+   *  avoids recomputing exitSuggestions when unrelated zone data changes.
+   *  Returns a JSON string to ensure referential stability across renders
+   *  (the selector always builds a new array, which would fail Object.is). */
+  const foreignZoneMetaJson = useZoneStore(useCallback((s) => {
     const result: Array<{ id: string; startRoom: string; roomIds: string[] }> = [];
     for (const [id, state] of s.zones) {
       if (id === zoneId) continue;
       result.push({ id, startRoom: state.data.startRoom, roomIds: Object.keys(state.data.rooms).slice(0, 50) });
     }
-    return result;
+    return JSON.stringify(result);
   }, [zoneId]));
+  const foreignZoneMeta = useMemo(() => JSON.parse(foreignZoneMetaJson) as Array<{ id: string; startRoom: string; roomIds: string[] }>, [foreignZoneMetaJson]);
   const craftingStationTypes = useConfigStore((s) => s.config?.craftingStationTypes);
   const room = world.rooms[roomId];
   if (!room) return null;

@@ -19,7 +19,7 @@ import {
 } from "@/lib/zoneEdits";
 import { ExitDoorEditor } from "./ExitDoorEditor";
 import { RoomFeaturesEditor } from "./RoomFeaturesEditor";
-import { EditableField, EditableTextArea, Section, IconButton, FieldRow, TextInput, SelectInput, CheckboxInput } from "@/components/ui/FormWidgets";
+import { EditableField, EditableTextArea, Section, IconButton, FieldRow, TextInput, SelectInput, CheckboxInput, TabBar } from "@/components/ui/FormWidgets";
 import { YamlPreview } from "@/components/ui/YamlPreview";
 import { EntityArtGenerator } from "@/components/ui/EntityArtGenerator";
 import { MediaPicker } from "@/components/ui/MediaPicker";
@@ -77,6 +77,13 @@ const FALLBACK_STATION_OPTIONS = [
   { value: "alchemy_table", label: "Alchemy Table" },
   { value: "workbench", label: "Workbench" },
   { value: "enchanting_table", label: "Enchanting Table" },
+] as const;
+
+type RoomTab = "room" | "entities" | "media";
+const ROOM_TABS: readonly { value: RoomTab; label: string }[] = [
+  { value: "room", label: "Room" },
+  { value: "entities", label: "Entities" },
+  { value: "media", label: "Media" },
 ] as const;
 
 function buildExitDraft(direction = ""): ExitDraft {
@@ -175,6 +182,7 @@ export function RoomPanel({
   onSelectEntity,
 }: RoomPanelProps) {
   const [showYaml, setShowYaml] = useState(false);
+  const [activeTab, setActiveTab] = useState<RoomTab>("room");
   const [expandedDoor, setExpandedDoor] = useState<string | null>(null);
   const [exitDrafts, setExitDrafts] = useState<Record<string, ExitDraft>>({});
   const [newExitDraft, setNewExitDraft] = useState<ExitDraft>(() => buildExitDraft());
@@ -488,6 +496,10 @@ export function RoomPanel({
         <YamlPreview data={{ [roomId]: room }} label={`room: ${roomId}`} />
       ) : (
       <>
+      <TabBar tabs={ROOM_TABS} active={activeTab} onChange={setActiveTab} />
+
+      {activeTab === "room" && (
+      <>
       {/* Description */}
       <Section
         title="Description"
@@ -775,7 +787,11 @@ export function RoomPanel({
           </FieldRow>
         </div>
       </Section>
+      </>
+      )}
 
+      {activeTab === "entities" && (
+      <>
       {/* Mobs */}
       <Section
         title={`Mobs (${mobs.length})`}
@@ -1020,14 +1036,18 @@ export function RoomPanel({
           </ul>
         )}
       </Section>
+      </>
+      )}
 
+      {activeTab === "media" && (
+      <>
       {/* Zone Vibe */}
       <Section title="Zone Vibe" defaultExpanded={false}>
         <ZoneVibePanel zoneId={zoneId} world={world} onWorldChange={onWorldChange} />
       </Section>
 
       {/* Media */}
-      <Section title="Media" defaultExpanded={false}>
+      <Section title="Image &amp; Video">
         <div className="flex flex-col gap-1.5">
           <div className="flex items-center gap-1 text-xs">
             <span className="w-12 shrink-0 text-text-muted">Image</span>
@@ -1076,7 +1096,7 @@ export function RoomPanel({
       </Section>
 
       {/* Audio */}
-      <Section title="Audio" defaultExpanded={false}>
+      <Section title="Audio">
         <div className="flex flex-col gap-1.5">
           <FieldRow label="Music">
             <TextInput
@@ -1156,8 +1176,10 @@ export function RoomPanel({
           />
         </div>
       </Section>
+      </>
+      )}
 
-      {/* Delete Room */}
+      {/* Delete Room — always visible below tabs */}
       {!isStartRoom && (
         <div className="px-4 py-3">
           <button

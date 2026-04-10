@@ -10,6 +10,10 @@ import {
   NumberInput,
   SelectInput,
   IconButton,
+  EntityHeader,
+  FieldGrid,
+  CompactField,
+  ArrayRow,
 } from "@/components/ui/FormWidgets";
 import { DialogueEditor } from "./DialogueEditor";
 import { DeleteEntityButton, EnhanceDescriptionButton, MediaSection } from "./EditorShared";
@@ -101,67 +105,65 @@ export function MobEditor({
 
   return (
     <>
+      {/* Entity header — always visible */}
+      <EntityHeader type="Mob">
+        <TextInput value={mob.name} onCommit={(v) => patch({ name: v })} />
+        <div className="flex items-center gap-1">
+          <div className="min-w-0 flex-1">
+            <TextInput
+              value={mob.description ?? ""}
+              onCommit={(v) => patch({ description: v || undefined })}
+              placeholder="Visual description for art generation"
+            />
+          </div>
+          <EnhanceDescriptionButton
+            entitySummary={`Mob "${mob.name}", tier: ${mob.tier ?? "standard"}, level: ${mob.level ?? 1}${mob.behavior?.template ? `, behavior: ${mob.behavior.template}` : ""}`}
+            currentDescription={mob.description}
+            onAccept={(v) => patch({ description: v })}
+            vibe={zoneId ? useVibeStore.getState().getVibe(zoneId) : undefined}
+          />
+        </div>
+        <SelectInput
+          value={mob.room}
+          options={rooms}
+          onCommit={(v) => patch({ room: v })}
+        />
+      </EntityHeader>
+
       {/* Core fields */}
       <Section title="Basics">
-        <div className="flex flex-col gap-1.5">
-          <FieldRow label="Name">
-            <TextInput value={mob.name} onCommit={(v) => patch({ name: v })} />
-          </FieldRow>
-          <FieldRow label="Desc">
-            <div className="flex items-center gap-1">
-              <div className="min-w-0 flex-1">
-                <TextInput
-                  value={mob.description ?? ""}
-                  onCommit={(v) => patch({ description: v || undefined })}
-                  placeholder="Visual description for art generation"
-                />
-              </div>
-              <EnhanceDescriptionButton
-                entitySummary={`Mob "${mob.name}", tier: ${mob.tier ?? "standard"}, level: ${mob.level ?? 1}${mob.behavior?.template ? `, behavior: ${mob.behavior.template}` : ""}`}
-                currentDescription={mob.description}
-                onAccept={(v) => patch({ description: v })}
-                vibe={zoneId ? useVibeStore.getState().getVibe(zoneId) : undefined}
-              />
-            </div>
-          </FieldRow>
-          <FieldRow label="Room">
-            <SelectInput
-              value={mob.room}
-              options={rooms}
-              onCommit={(v) => patch({ room: v })}
-            />
-          </FieldRow>
-          <FieldRow label="Tier">
+        <FieldGrid>
+          <CompactField label="Tier">
             <SelectInput
               value={mob.tier ?? "standard"}
               options={TIER_OPTIONS}
               onCommit={(v) => patch({ tier: v })}
             />
-          </FieldRow>
-          <FieldRow label="Level">
+          </CompactField>
+          <CompactField label="Level">
             <NumberInput
               value={mob.level}
               onCommit={(v) => patch({ level: v })}
               placeholder="1"
               min={1}
             />
-          </FieldRow>
-          <FieldRow label="Respawn (s)">
+          </CompactField>
+          <CompactField label="Respawn (s)">
             <NumberInput
               value={mob.respawnSeconds}
               onCommit={(v) => patch({ respawnSeconds: v })}
               placeholder="Default"
               min={0}
             />
-          </FieldRow>
-          <FieldRow label="Faction">
+          </CompactField>
+          <CompactField label="Faction">
             <TextInput
               value={mob.faction ?? ""}
               onCommit={(v) => patch({ faction: v || undefined })}
               placeholder="Faction ID (e.g. crimson_guild)"
             />
-          </FieldRow>
-        </div>
+          </CompactField>
+        </FieldGrid>
       </Section>
 
       {/* Stat overrides */}
@@ -169,64 +171,64 @@ export function MobEditor({
         <p className="mb-1 text-2xs text-text-muted">
           Leave blank to use tier defaults
         </p>
-        <div className="flex flex-col gap-1.5">
-          <FieldRow label="HP">
+        <FieldGrid>
+          <CompactField label="HP" span>
             <NumberInput
               value={mob.hp}
               onCommit={(v) => patch({ hp: v })}
               placeholder="Auto"
               min={1}
             />
-          </FieldRow>
-          <FieldRow label="Min Damage">
+          </CompactField>
+          <CompactField label="Min Damage">
             <NumberInput
               value={mob.minDamage}
               onCommit={(v) => patch({ minDamage: v })}
               placeholder="Auto"
               min={0}
             />
-          </FieldRow>
-          <FieldRow label="Max Damage">
+          </CompactField>
+          <CompactField label="Max Damage">
             <NumberInput
               value={mob.maxDamage}
               onCommit={(v) => patch({ maxDamage: v })}
               placeholder="Auto"
               min={0}
             />
-          </FieldRow>
-          <FieldRow label="Armor">
+          </CompactField>
+          <CompactField label="Armor" span>
             <NumberInput
               value={mob.armor}
               onCommit={(v) => patch({ armor: v })}
               placeholder="Auto"
               min={0}
             />
-          </FieldRow>
-          <FieldRow label="XP Reward">
+          </CompactField>
+          <CompactField label="XP Reward" span>
             <NumberInput
               value={mob.xpReward}
               onCommit={(v) => patch({ xpReward: v })}
               placeholder="Auto"
               min={0}
             />
-          </FieldRow>
-          <FieldRow label="Gold Min">
+          </CompactField>
+          <CompactField label="Gold Min">
             <NumberInput
               value={mob.goldMin}
               onCommit={(v) => patch({ goldMin: v })}
               placeholder="Auto"
               min={0}
             />
-          </FieldRow>
-          <FieldRow label="Gold Max">
+          </CompactField>
+          <CompactField label="Gold Max">
             <NumberInput
               value={mob.goldMax}
               onCommit={(v) => patch({ goldMax: v })}
               placeholder="Auto"
               min={0}
             />
-          </FieldRow>
-        </div>
+          </CompactField>
+        </FieldGrid>
       </Section>
 
       {/* Drops */}
@@ -242,33 +244,28 @@ export function MobEditor({
         ) : (
           <div className="flex flex-col gap-1.5">
             {(mob.drops ?? []).map((drop, i) => (
-              <div key={i} className="flex items-center gap-1">
-                <div className="min-w-0 flex-1">
-                  <TextInput
-                    value={drop.itemId}
-                    onCommit={(v) => handleUpdateDrop(i, "itemId", v)}
-                    placeholder="item_id"
-                  />
+              <ArrayRow key={i} onRemove={() => handleDeleteDrop(i)}>
+                <div className="flex items-center gap-1">
+                  <div className="min-w-0 flex-1">
+                    <TextInput
+                      value={drop.itemId}
+                      onCommit={(v) => handleUpdateDrop(i, "itemId", v)}
+                      placeholder="item_id"
+                    />
+                  </div>
+                  <div className="w-16 shrink-0">
+                    <NumberInput
+                      value={drop.chance}
+                      onCommit={(v) =>
+                        handleUpdateDrop(i, "chance", v ?? 100)
+                      }
+                      min={0}
+                      max={100}
+                    />
+                  </div>
+                  <span className="text-2xs text-text-muted">%</span>
                 </div>
-                <div className="w-16 shrink-0">
-                  <NumberInput
-                    value={drop.chance}
-                    onCommit={(v) =>
-                      handleUpdateDrop(i, "chance", v ?? 100)
-                    }
-                    min={0}
-                    max={100}
-                  />
-                </div>
-                <span className="text-2xs text-text-muted">%</span>
-                <IconButton
-                  onClick={() => handleDeleteDrop(i)}
-                  title="Remove drop"
-                  danger
-                >
-                  &times;
-                </IconButton>
-              </div>
+              </ArrayRow>
             ))}
           </div>
         )}

@@ -10,6 +10,10 @@ import {
   NumberInput,
   SelectInput,
   IconButton,
+  EntityHeader,
+  FieldGrid,
+  CompactField,
+  ArrayRow,
 } from "@/components/ui/FormWidgets";
 import { DeleteEntityButton, MediaSection } from "./EditorShared";
 import { gatheringNodePrompt, gatheringNodeContext } from "@/lib/entityPrompts";
@@ -84,60 +88,67 @@ export function GatheringNodeEditor({
 
   return (
     <>
-      <Section title="Basics">
-        <div className="flex flex-col gap-1.5">
-          <FieldRow label="Display Name">
-            <TextInput
-              value={node.displayName}
-              onCommit={(v) => patch({ displayName: v })}
-            />
-          </FieldRow>
-          <FieldRow label="Keyword">
-            <TextInput
-              value={node.keyword ?? ""}
-              onCommit={(v) => patch({ keyword: v || undefined })}
-              placeholder="Auto"
-            />
-          </FieldRow>
-          <FieldRow label="Skill">
+      <EntityHeader type="Gathering Node">
+        <FieldRow label="Display Name">
+          <TextInput
+            value={node.displayName}
+            onCommit={(v) => patch({ displayName: v })}
+          />
+        </FieldRow>
+        <FieldRow label="Keyword">
+          <TextInput
+            value={node.keyword ?? ""}
+            onCommit={(v) => patch({ keyword: v || undefined })}
+            placeholder="Auto"
+          />
+        </FieldRow>
+        <FieldRow label="Room">
+          <SelectInput
+            value={node.room}
+            options={rooms}
+            onCommit={(v) => patch({ room: v })}
+          />
+        </FieldRow>
+      </EntityHeader>
+
+      <Section title="Mechanics">
+        <FieldGrid>
+          <CompactField label="Skill">
             <SelectInput
               value={node.skill}
               options={gatheringSkillOptions}
               onCommit={(v) => patch({ skill: v })}
+              dense
             />
-          </FieldRow>
-          <FieldRow label="Skill Req.">
+          </CompactField>
+          <CompactField label="Skill Req.">
             <NumberInput
               value={node.skillRequired}
               onCommit={(v) => patch({ skillRequired: v })}
               placeholder="1"
               min={1}
+              dense
             />
-          </FieldRow>
-          <FieldRow label="Room">
-            <SelectInput
-              value={node.room}
-              options={rooms}
-              onCommit={(v) => patch({ room: v })}
-            />
-          </FieldRow>
-          <FieldRow label="Respawn (s)">
+          </CompactField>
+          <CompactField label="Respawn (s)">
             <NumberInput
               value={node.respawnSeconds}
               onCommit={(v) => patch({ respawnSeconds: v })}
               placeholder="60"
               min={1}
+              dense
             />
-          </FieldRow>
-          <FieldRow label="XP Reward">
+          </CompactField>
+          <CompactField label="XP Reward">
             <NumberInput
               value={node.xpReward}
               onCommit={(v) => patch({ xpReward: v })}
               placeholder="10"
               min={0}
+              dense
             />
-          </FieldRow>
-        </div>
+          </CompactField>
+        </FieldGrid>
       </Section>
 
       <Section
@@ -152,50 +163,34 @@ export function GatheringNodeEditor({
         ) : (
           <div className="flex flex-col gap-2">
             {yields.map((y, i) => (
-              <div
-                key={i}
-                className="rounded border border-border-muted p-1.5"
-              >
-                <div className="mb-1 flex items-center justify-between">
-                  <span className="text-2xs font-medium text-text-muted">
-                    #{i + 1}
-                  </span>
-                  <IconButton
-                    onClick={() => handleDeleteYield(i)}
-                    title="Remove yield"
-                    danger
-                  >
-                    &times;
-                  </IconButton>
-                </div>
-                <div className="flex flex-col gap-1">
-                  <FieldRow label="Item ID">
+              <ArrayRow key={i} index={i} onRemove={() => handleDeleteYield(i)}>
+                <FieldGrid cols={3}>
+                  <CompactField label="Item ID" span>
                     <TextInput
                       value={y.itemId}
                       onCommit={(v) => handleUpdateYield(i, "itemId", v)}
                       placeholder="item_id"
+                      dense
                     />
-                  </FieldRow>
-                  <FieldRow label="Min Qty">
+                  </CompactField>
+                  <CompactField label="Min Qty">
                     <NumberInput
                       value={y.minQuantity}
-                      onCommit={(v) =>
-                        handleUpdateYield(i, "minQuantity", v ?? 1)
-                      }
+                      onCommit={(v) => handleUpdateYield(i, "minQuantity", v ?? 1)}
                       min={1}
+                      dense
                     />
-                  </FieldRow>
-                  <FieldRow label="Max Qty">
+                  </CompactField>
+                  <CompactField label="Max Qty">
                     <NumberInput
                       value={y.maxQuantity}
-                      onCommit={(v) =>
-                        handleUpdateYield(i, "maxQuantity", v ?? 1)
-                      }
+                      onCommit={(v) => handleUpdateYield(i, "maxQuantity", v ?? 1)}
                       min={1}
+                      dense
                     />
-                  </FieldRow>
-                </div>
-              </div>
+                  </CompactField>
+                </FieldGrid>
+              </ArrayRow>
             ))}
           </div>
         )}
@@ -213,23 +208,19 @@ export function GatheringNodeEditor({
         ) : (
           <div className="flex flex-col gap-2">
             {rareYields.map((y, i) => (
-              <div key={i} className="rounded border border-border-muted p-1.5">
-                <div className="mb-1 flex items-center justify-between">
-                  <span className="text-2xs font-medium text-text-muted">#{i + 1}</span>
-                  <IconButton onClick={() => handleDeleteRare(i)} title="Remove" danger>&times;</IconButton>
-                </div>
-                <div className="flex flex-col gap-1">
-                  <FieldRow label="Item ID">
-                    <TextInput value={y.itemId} onCommit={(v) => handleUpdateRare(i, "itemId", v)} placeholder="item_id" />
-                  </FieldRow>
-                  <FieldRow label="Quantity">
-                    <NumberInput value={y.quantity} onCommit={(v) => handleUpdateRare(i, "quantity", v ?? 1)} min={1} />
-                  </FieldRow>
-                  <FieldRow label="Drop Chance">
-                    <NumberInput value={y.dropChance} onCommit={(v) => handleUpdateRare(i, "dropChance", v ?? 0.1)} min={0} max={1} step={0.01} />
-                  </FieldRow>
-                </div>
-              </div>
+              <ArrayRow key={i} index={i} onRemove={() => handleDeleteRare(i)}>
+                <FieldGrid cols={3}>
+                  <CompactField label="Item ID" span>
+                    <TextInput value={y.itemId} onCommit={(v) => handleUpdateRare(i, "itemId", v)} placeholder="item_id" dense />
+                  </CompactField>
+                  <CompactField label="Quantity">
+                    <NumberInput value={y.quantity} onCommit={(v) => handleUpdateRare(i, "quantity", v ?? 1)} min={1} dense />
+                  </CompactField>
+                  <CompactField label="Drop Chance">
+                    <NumberInput value={y.dropChance} onCommit={(v) => handleUpdateRare(i, "dropChance", v ?? 0.1)} min={0} max={1} step={0.01} dense />
+                  </CompactField>
+                </FieldGrid>
+              </ArrayRow>
             ))}
           </div>
         )}

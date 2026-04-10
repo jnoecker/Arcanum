@@ -8,6 +8,7 @@ import {
   TextInput,
   SelectInput,
   IconButton,
+  EntityHeader,
 } from "@/components/ui/FormWidgets";
 import { DeleteEntityButton, MediaSection } from "./EditorShared";
 import { trainerPrompt } from "@/lib/entityPrompts";
@@ -101,78 +102,77 @@ export function TrainerEditor({
 
   return (
     <>
-      <Section title="Basics">
+      <EntityHeader type="Trainer">
+        <FieldRow label="Name">
+          <TextInput value={trainer.name} onCommit={(v) => patch({ name: v })} />
+        </FieldRow>
+        <FieldRow label="Room">
+          <SelectInput
+            value={trainer.room}
+            options={rooms}
+            onCommit={(v) => patch({ room: v })}
+          />
+        </FieldRow>
+      </EntityHeader>
+
+      <Section
+        title="Classes"
+        description={
+          selectedClasses.length > 1
+            ? "Multi-class trainer — teaches all listed classes from this room."
+            : "Add a second class to make this a multi-class trainer."
+        }
+      >
         <div className="flex flex-col gap-1.5">
-          <FieldRow label="Name">
-            <TextInput value={trainer.name} onCommit={(v) => patch({ name: v })} />
-          </FieldRow>
-          <FieldRow
-            label="Classes"
-            hint={
-              selectedClasses.length > 1
-                ? "Multi-class trainer — teaches all listed classes from this room."
-                : "Add a second class to make this a multi-class trainer."
-            }
-          >
-            <div className="flex flex-col gap-1.5">
-              {selectedClasses.length === 0 ? (
-                <div className="text-xs italic text-text-muted">No class assigned</div>
-              ) : (
-                <div className="flex flex-wrap gap-1.5">
-                  {selectedClasses.map((classId) => (
-                    <div
-                      key={classId}
-                      className="flex items-center gap-1 rounded border border-border-default bg-bg-tertiary/60 px-1 py-0.5"
-                    >
-                      <SelectInput
-                        value={classId}
-                        options={[
-                          { value: classId, label: classLabel(classId) },
-                          ...availableClasses,
-                        ]}
-                        onCommit={(v) => handleReplaceClass(classId, v)}
-                      />
-                      {selectedClasses.length > 1 && (
-                        <IconButton
-                          onClick={() => handleRemoveClass(classId)}
-                          title={`Remove ${classLabel(classId)}`}
-                          danger
-                        >
-                          ✕
-                        </IconButton>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-              {availableClasses.length > 0 && (
-                <select
-                  className="ornate-input self-start rounded border border-border-default bg-bg-primary px-2 py-1 text-xs text-text-primary"
-                  value=""
-                  onChange={(e) => {
-                    const v = e.target.value;
-                    if (v) handleAddClass(v);
-                  }}
+          {selectedClasses.length === 0 ? (
+            <div className="text-xs italic text-text-muted">No class assigned</div>
+          ) : (
+            <div className="flex flex-wrap gap-1.5">
+              {selectedClasses.map((classId) => (
+                <div
+                  key={classId}
+                  className="flex items-center gap-1 rounded border border-border-default bg-bg-tertiary/60 px-1 py-0.5"
                 >
-                  <option value="">
-                    + add {selectedClasses.length === 0 ? "class" : "another class"}
-                  </option>
-                  {availableClasses.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </select>
-              )}
+                  <SelectInput
+                    value={classId}
+                    options={[
+                      { value: classId, label: classLabel(classId) },
+                      ...availableClasses,
+                    ]}
+                    onCommit={(v) => handleReplaceClass(classId, v)}
+                  />
+                  {selectedClasses.length > 1 && (
+                    <IconButton
+                      onClick={() => handleRemoveClass(classId)}
+                      title={`Remove ${classLabel(classId)}`}
+                      danger
+                    >
+                      ✕
+                    </IconButton>
+                  )}
+                </div>
+              ))}
             </div>
-          </FieldRow>
-          <FieldRow label="Room">
-            <SelectInput
-              value={trainer.room}
-              options={rooms}
-              onCommit={(v) => patch({ room: v })}
-            />
-          </FieldRow>
+          )}
+          {availableClasses.length > 0 && (
+            <select
+              className="ornate-input self-start rounded border border-border-default bg-bg-primary px-2 py-1 text-xs text-text-primary"
+              value=""
+              onChange={(e) => {
+                const v = e.target.value;
+                if (v) handleAddClass(v);
+              }}
+            >
+              <option value="">
+                + add {selectedClasses.length === 0 ? "class" : "another class"}
+              </option>
+              {availableClasses.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+          )}
         </div>
       </Section>
 

@@ -5,11 +5,14 @@ import { useEntityEditor } from "@/lib/useEntityEditor";
 import { useArrayField } from "@/lib/useArrayField";
 import {
   Section,
-  FieldRow,
   TextInput,
   NumberInput,
   SelectInput,
   IconButton,
+  EntityHeader,
+  FieldGrid,
+  CompactField,
+  ArrayRow,
 } from "@/components/ui/FormWidgets";
 import { DeleteEntityButton, MediaSection } from "./EditorShared";
 import { getPreamble, type ArtStyle } from "@/lib/arcanumPrompts";
@@ -84,83 +87,88 @@ export function RecipeEditor({
 
   return (
     <>
+      <EntityHeader type="Recipe">
+        <TextInput
+          value={recipe.displayName}
+          onCommit={(v) => patch({ displayName: v })}
+          placeholder="Display Name"
+        />
+      </EntityHeader>
+
       <Section title="Basics">
-        <div className="flex flex-col gap-1.5">
-          <FieldRow label="Display Name">
+        <FieldGrid cols={2}>
+          <CompactField label="Output Item ID" span>
             <TextInput
-              value={recipe.displayName}
-              onCommit={(v) => patch({ displayName: v })}
+              value={recipe.outputItemId}
+              onCommit={(v) => patch({ outputItemId: v })}
+              placeholder="item_id"
+              dense
             />
-          </FieldRow>
-          <FieldRow label="Skill">
+          </CompactField>
+          <CompactField label="Output Quantity">
+            <NumberInput
+              value={recipe.outputQuantity}
+              onCommit={(v) => patch({ outputQuantity: v })}
+              placeholder="1"
+              min={1}
+              dense
+            />
+          </CompactField>
+          <CompactField label="XP Reward">
+            <NumberInput
+              value={recipe.xpReward}
+              onCommit={(v) => patch({ xpReward: v })}
+              placeholder="25"
+              min={0}
+              dense
+            />
+          </CompactField>
+          <CompactField label="Skill">
             <SelectInput
               value={recipe.skill}
               options={craftingSkillOptions}
               onCommit={(v) => patch({ skill: v })}
+              dense
             />
-          </FieldRow>
-          <FieldRow label="Skill Req.">
+          </CompactField>
+          <CompactField label="Skill Req.">
             <NumberInput
               value={recipe.skillRequired}
               onCommit={(v) => patch({ skillRequired: v })}
               placeholder="1"
               min={1}
+              dense
             />
-          </FieldRow>
-          <FieldRow label="Level Req.">
+          </CompactField>
+          <CompactField label="Level Req.">
             <NumberInput
               value={recipe.levelRequired}
               onCommit={(v) => patch({ levelRequired: v })}
               placeholder="1"
               min={1}
+              dense
             />
-          </FieldRow>
-          <FieldRow label="Station">
+          </CompactField>
+          <CompactField label="Station">
             <SelectInput
               value={recipe.station ?? ""}
               options={stationOptions}
               onCommit={(v) => patch({ station: v || undefined })}
               allowEmpty
               placeholder="— none —"
+              dense
             />
-          </FieldRow>
-          <FieldRow label="Station Bonus">
+          </CompactField>
+          <CompactField label="Station Bonus" span>
             <NumberInput
               value={recipe.stationBonus}
               onCommit={(v) => patch({ stationBonus: v })}
               placeholder="0"
               min={0}
+              dense
             />
-          </FieldRow>
-          <FieldRow label="XP Reward">
-            <NumberInput
-              value={recipe.xpReward}
-              onCommit={(v) => patch({ xpReward: v })}
-              placeholder="25"
-              min={0}
-            />
-          </FieldRow>
-        </div>
-      </Section>
-
-      <Section title="Output">
-        <div className="flex flex-col gap-1.5">
-          <FieldRow label="Item ID">
-            <TextInput
-              value={recipe.outputItemId}
-              onCommit={(v) => patch({ outputItemId: v })}
-              placeholder="item_id"
-            />
-          </FieldRow>
-          <FieldRow label="Quantity">
-            <NumberInput
-              value={recipe.outputQuantity}
-              onCommit={(v) => patch({ outputQuantity: v })}
-              placeholder="1"
-              min={1}
-            />
-          </FieldRow>
-        </div>
+          </CompactField>
+        </FieldGrid>
       </Section>
 
       <Section
@@ -177,31 +185,28 @@ export function RecipeEditor({
         ) : (
           <div className="flex flex-col gap-1.5">
             {materials.map((mat, i) => (
-              <div key={i} className="flex items-center gap-1">
-                <div className="min-w-0 flex-1">
-                  <TextInput
-                    value={mat.itemId}
-                    onCommit={(v) => handleUpdateMaterial(i, "itemId", v)}
-                    placeholder="item_id"
-                  />
+              <ArrayRow key={i} onRemove={() => handleDeleteMaterial(i)}>
+                <div className="flex items-center gap-1">
+                  <div className="min-w-0 flex-1">
+                    <TextInput
+                      value={mat.itemId}
+                      onCommit={(v) => handleUpdateMaterial(i, "itemId", v)}
+                      placeholder="item_id"
+                      dense
+                    />
+                  </div>
+                  <div className="w-12 shrink-0">
+                    <NumberInput
+                      value={mat.quantity}
+                      onCommit={(v) =>
+                        handleUpdateMaterial(i, "quantity", v ?? 1)
+                      }
+                      min={1}
+                      dense
+                    />
+                  </div>
                 </div>
-                <div className="w-12 shrink-0">
-                  <NumberInput
-                    value={mat.quantity}
-                    onCommit={(v) =>
-                      handleUpdateMaterial(i, "quantity", v ?? 1)
-                    }
-                    min={1}
-                  />
-                </div>
-                <IconButton
-                  onClick={() => handleDeleteMaterial(i)}
-                  title="Remove material"
-                  danger
-                >
-                  &times;
-                </IconButton>
-              </div>
+              </ArrayRow>
             ))}
           </div>
         )}

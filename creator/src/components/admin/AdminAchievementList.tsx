@@ -1,5 +1,6 @@
 import { memo, useEffect } from "react";
 import { useAdminStore } from "@/stores/adminStore";
+import { ActionButton, Badge, EmptyState } from "@/components/ui/FormWidgets";
 import type { AchievementEntry } from "@/types/admin";
 
 const StatRow = memo(function StatRow({ label, value }: { label: string; value: string | number }) {
@@ -37,13 +38,13 @@ const AchievementRow = memo(function AchievementRow({
           <span className="truncate font-display text-sm text-text-primary">
             {achievement.displayName}
           </span>
-          <span className="rounded-full bg-violet/12 px-2 py-0.5 text-2xs text-violet">
+          <Badge variant="violet">
             {achievement.category}
-          </span>
+          </Badge>
           {achievement.hidden && (
-            <span className="rounded-full bg-[var(--chrome-fill-strong)] px-2 py-0.5 text-2xs text-text-muted">
+            <Badge variant="muted">
               Hidden
-            </span>
+            </Badge>
           )}
         </div>
       </div>
@@ -66,22 +67,19 @@ function AchievementDetail({
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center gap-3">
-        <button
-          onClick={onBack}
-          className="rounded-full border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] px-3 py-1 text-xs text-text-muted transition hover:bg-[var(--chrome-highlight-strong)] hover:text-text-primary focus-visible:ring-2 focus-visible:ring-border-active focus-visible:outline-none"
-        >
+        <ActionButton variant="ghost" size="sm" onClick={onBack}>
           &#x2190; Back
-        </button>
+        </ActionButton>
         <h3 className="font-display text-xl text-text-primary">
           {achievement.displayName}
         </h3>
-        <span className="rounded-full bg-violet/12 px-2 py-0.5 text-2xs text-violet">
+        <Badge variant="violet">
           {achievement.category}
-        </span>
+        </Badge>
         {achievement.hidden && (
-          <span className="rounded-full bg-[var(--chrome-fill-strong)] px-2 py-0.5 text-2xs text-text-muted">
+          <Badge variant="muted">
             Hidden
-          </span>
+          </Badge>
         )}
       </div>
 
@@ -103,9 +101,9 @@ function AchievementDetail({
                 className="rounded-2xl border border-[var(--chrome-stroke)] bg-[var(--chrome-highlight)] px-4 py-3"
               >
                 <div className="flex items-center gap-2">
-                  <span className="rounded-full bg-stellar-blue/12 px-2 py-0.5 text-2xs text-stellar-blue">
+                  <Badge variant="info">
                     {c.type}
-                  </span>
+                  </Badge>
                   <span className="text-xs text-text-muted">{c.targetId}</span>
                   <span className="ml-auto text-xs text-text-primary">
                     x{c.count}
@@ -174,14 +172,7 @@ export function AdminAchievementList() {
       </div>
 
       {achievements.length === 0 ? (
-        <div className="rounded-3xl border border-dashed border-[var(--chrome-stroke-strong)] bg-[var(--chrome-highlight)] px-6 py-12 text-center">
-          <p className="font-display text-base text-text-secondary">
-            No achievements found
-          </p>
-          <p className="mt-1 text-sm text-text-muted">
-            The server has no achievements registered.
-          </p>
-        </div>
+        <EmptyState title="No achievements found" description="The server has no achievements registered." />
       ) : (
         <div className="flex flex-col gap-1.5">
           {achievements.map((a) => (

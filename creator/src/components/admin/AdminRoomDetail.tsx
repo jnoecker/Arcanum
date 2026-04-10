@@ -1,5 +1,6 @@
 import { memo } from "react";
 import { useAdminStore } from "@/stores/adminStore";
+import { ActionButton } from "@/components/ui/FormWidgets";
 
 const Section = memo(function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -58,12 +59,9 @@ export function AdminRoomDetail() {
     <div className="flex flex-col gap-4">
       {/* Header */}
       <div className="flex items-center gap-3">
-        <button
-          onClick={clearSelectedRoom}
-          className="rounded-full border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] px-3 py-1 text-xs text-text-muted transition hover:bg-[var(--chrome-highlight-strong)] hover:text-text-primary focus-visible:ring-2 focus-visible:ring-border-active focus-visible:outline-none"
-        >
+        <ActionButton variant="ghost" size="sm" onClick={clearSelectedRoom}>
           &#x2190; Back
-        </button>
+        </ActionButton>
         <div className="min-w-0 flex-1">
           <h3 className="truncate font-display text-xl text-text-primary">{room.title}</h3>
           <p className="mt-0.5 font-mono text-2xs text-text-muted">{room.id}</p>

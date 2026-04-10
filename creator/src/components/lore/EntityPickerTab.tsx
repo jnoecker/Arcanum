@@ -42,7 +42,7 @@ function EntityThumb({
   // Image path exists but still loading
   if (image && !src) {
     return (
-      <div className="h-8 w-8 rounded bg-bg-elevated animate-pulse shrink-0" />
+      <div className="h-8 w-8 rounded bg-bg-elevated animate-cosmic-glimmer shrink-0" />
     );
   }
 
@@ -134,7 +134,7 @@ export function EntityPickerTab({
         placeholder={`Filter ${entityType}s...`}
         value={search}
         onChange={(e) => setSearch(e.target.value)}
-        className="w-full bg-bg-tertiary rounded-md py-2 px-3 text-xs font-body text-text-primary placeholder:text-text-muted/40 border border-border-muted focus:border-accent/40 focus:outline-none"
+        className="w-full bg-bg-tertiary rounded-md py-2 px-3 text-xs text-text-primary placeholder:text-text-muted/40 border border-border-muted focus:border-accent/40 focus:outline-none"
       />
 
       {/* Scrollable entity list */}
@@ -155,18 +155,18 @@ export function EntityPickerTab({
                 }`}
               >
                 <EntityThumb image={entity.image} entityType={entityType} />
-                <span className="text-sm font-body text-text-primary truncate">
+                <span className="text-sm text-text-primary truncate">
                   {entity.name}
                 </span>
               </button>
             );
           })
         ) : search ? (
-          <p className="text-xs text-text-muted text-center py-4 font-body">
+          <p className="text-xs text-text-muted text-center py-4">
             No matches for &ldquo;{search}&rdquo;
           </p>
         ) : (
-          <p className="text-xs text-text-muted text-center py-4 font-body">
+          <p className="text-xs text-text-muted text-center py-4">
             No {entityType}s in this zone
           </p>
         )}

@@ -1,4 +1,5 @@
 import { useAdminStore } from "@/stores/adminStore";
+import { ActionButton, Badge } from "@/components/ui/FormWidgets";
 import type { ZoneDetail } from "@/types/admin";
 
 export function AdminZoneDetail({
@@ -20,12 +21,9 @@ export function AdminZoneDetail({
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center gap-3">
-        <button
-          onClick={onBack}
-          className="rounded-full border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] px-3 py-1 text-xs text-text-muted transition hover:bg-[var(--chrome-highlight-strong)] hover:text-text-primary focus-visible:ring-2 focus-visible:ring-border-active focus-visible:outline-none"
-        >
+        <ActionButton variant="ghost" size="sm" onClick={onBack}>
           &#x2190; Back
-        </button>
+        </ActionButton>
         <h3 className="font-display text-xl text-text-primary">{zone.name}</h3>
         <span className="text-2xs uppercase tracking-ui text-text-muted">
           {zone.rooms.length} room{zone.rooms.length !== 1 ? "s" : ""}
@@ -64,20 +62,14 @@ export function AdminZoneDetail({
             {(room.players.length > 0 || room.mobs.length > 0) && (
               <div className="mt-2 flex flex-wrap gap-1.5">
                 {room.players.map((name, i) => (
-                  <span
-                    key={`p:${name}:${i}`}
-                    className="rounded-full bg-status-success/12 px-2 py-0.5 text-2xs text-status-success"
-                  >
+                  <Badge key={`p:${name}:${i}`} variant="success">
                     {name}
-                  </span>
+                  </Badge>
                 ))}
                 {room.mobs.map((name, i) => (
-                  <span
-                    key={`m:${name}:${i}`}
-                    className="rounded-full bg-status-warning/12 px-2 py-0.5 text-2xs text-status-warning"
-                  >
+                  <Badge key={`m:${name}:${i}`} variant="warning">
                     {name}
-                  </span>
+                  </Badge>
                 ))}
               </div>
             )}

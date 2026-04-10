@@ -42,7 +42,7 @@ export function ArticleGenerator({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--chrome-fill-soft)]0"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--chrome-fill-soft)]"
       onClick={(e) => {
         if (e.target === e.currentTarget && !generating) onClose();
       }}

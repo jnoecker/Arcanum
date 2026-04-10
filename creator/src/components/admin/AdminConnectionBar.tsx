@@ -99,6 +99,7 @@ export function AdminConnectionBar() {
               className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-text-muted hover:text-text-primary focus-visible:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-active"
               title={showToken ? "Hide token" : "Show token"}
               aria-label={showToken ? "Hide token" : "Show token"}
+              aria-expanded={showToken}
             >
               {showToken ? "Hide" : "Show"}
             </button>

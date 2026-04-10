@@ -175,7 +175,7 @@ export function ScenePreview({ scene, storyId, zoneId }: ScenePreviewProps) {
   return (
     <div
       ref={containerRef}
-      className="relative aspect-video w-full overflow-hidden rounded-lg border border-border-default bg-black"
+      className="relative aspect-video w-full overflow-hidden rounded-lg border border-border-default bg-bg-abyss"
       onClick={handleContainerClick}
     >
       {/* Layer 0: Room background */}
@@ -188,7 +188,7 @@ export function ScenePreview({ scene, storyId, zoneId }: ScenePreviewProps) {
         />
       ) : roomImageFile && !roomSrc ? (
         /* Loading skeleton */
-        <div className="absolute inset-0 animate-pulse bg-bg-tertiary/30" />
+        <div className="absolute inset-0 animate-cosmic-glimmer bg-bg-tertiary/30" />
       ) : null}
 
       {/* Empty state -- no room or custom background selected */}
@@ -197,10 +197,10 @@ export function ScenePreview({ scene, storyId, zoneId }: ScenePreviewProps) {
           className="absolute inset-0 flex flex-col items-center justify-center border-2 border-dashed border-border-default"
           role="status"
         >
-          <p className="text-sm text-text-muted font-body">
+          <p className="text-sm text-text-muted">
             Select a room to set the background
           </p>
-          <p className="mt-1 text-xs text-text-muted/70 font-body flex items-center gap-1">
+          <p className="mt-1 text-xs text-text-muted/70 flex items-center gap-1">
             Browse rooms in the Entity Picker to choose a backdrop for this scene.
             <svg
               width="16"
@@ -331,7 +331,7 @@ export function ScenePreview({ scene, storyId, zoneId }: ScenePreviewProps) {
             >
               <div className="bg-gradient-to-t from-black/60 to-transparent px-6 py-4">
                 <p
-                  className="font-body text-sm text-text-primary leading-relaxed line-clamp-3"
+                  className="text-sm text-text-primary leading-relaxed line-clamp-3"
                   style={{ textShadow: "0 1px 3px rgba(0,0,0,0.5)" }}
                 >
                   {narrationText}

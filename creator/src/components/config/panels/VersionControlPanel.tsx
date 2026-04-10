@@ -365,7 +365,7 @@ function MessageBanner({
       }`}
     >
       <span>{error || success}</span>
-      <button onClick={onDismiss} className="ml-2 opacity-60 hover:opacity-100">&times;</button>
+      <button onClick={onDismiss} className="ml-2 opacity-60 hover:opacity-100" aria-label="Dismiss">&times;</button>
     </div>
   );
 }

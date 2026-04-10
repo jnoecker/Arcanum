@@ -190,7 +190,7 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
       className="fixed inset-0 z-50 flex items-start justify-center pt-[15vh]"
       onClick={onClose}
     >
-      <div className="absolute inset-0 bg-[var(--chrome-fill-soft)]0 backdrop-blur-sm" />
+      <div className="absolute inset-0 bg-surface-scrim" />
       <div
         ref={trapRef}
         role="dialog"

@@ -176,7 +176,7 @@ export function BulkActionsBar() {
               onChange={(e) => setTagInput(e.target.value)}
               placeholder="Tag to add..."
               aria-label="Enter tag to add"
-              className="ornate-input min-w-0 flex-1 rounded px-2 py-1 text-xs"
+              className="ornate-input min-w-0 flex-1 px-2 py-1 text-xs"
               onKeyDown={(e) => {
                 if (e.key === "Enter" && tagInput.trim()) {
                   bulkAddTags(ids, [tagInput.trim()]);

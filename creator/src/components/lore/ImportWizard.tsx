@@ -152,7 +152,7 @@ export function ImportWizard({ onClose }: { onClose: () => void }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div
-        className="absolute inset-0 bg-[var(--chrome-fill-soft)]0 backdrop-blur-sm"
+        className="absolute inset-0 bg-surface-scrim"
         onClick={onClose}
       />
       <div
@@ -244,7 +244,7 @@ export function ImportWizard({ onClose }: { onClose: () => void }) {
                     onChange={(e) =>
                       setTemplate(i, e.target.value as ArticleTemplate)
                     }
-                    className="ornate-input rounded px-2 py-1 text-xs"
+                    className="ornate-input px-2 py-1 text-xs"
                   >
                     {templateOptions.map((o) => (
                       <option key={o.value} value={o.value}>

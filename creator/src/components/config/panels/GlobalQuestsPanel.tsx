@@ -115,7 +115,7 @@ function JsonEditor({
     <div>
       <textarea
         rows={8}
-        className="ornate-input w-full resize-y rounded px-3 py-2 font-mono text-xs leading-relaxed text-text-primary"
+        className="ornate-input w-full resize-y px-3 py-2 font-mono text-xs leading-relaxed text-text-primary"
         value={draft}
         onChange={(e) => setDraft(e.target.value)}
         onFocus={() => setFocused(true)}

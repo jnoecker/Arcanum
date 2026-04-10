@@ -467,6 +467,7 @@ export function EntityArtGenerator({
             {(hasApiKey || hasLlmKey) && (
               <button
                 onClick={() => setShowPrompt((v) => !v)}
+                aria-expanded={showPrompt}
                 className="rounded px-1.5 py-1 text-2xs text-text-muted transition-colors hover:text-text-secondary"
               >
                 {showPrompt ? "Hide" : "Prompt"}

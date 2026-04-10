@@ -116,7 +116,7 @@ export function IslandView({ island }: IslandViewProps) {
         />
 
         {/* Title block (top center) */}
-        <div className="pointer-events-none absolute left-1/2 top-4 -translate-x-1/2 select-none rounded-2xl border border-accent/40 bg-bg-abyss/85 px-6 py-3 text-center shadow-[0_10px_48px_rgba(0,0,0,0.6)] backdrop-blur-sm">
+        <div className="pointer-events-none absolute left-1/2 top-4 -translate-x-1/2 select-none rounded-2xl border border-accent/40 bg-bg-abyss/90 px-6 py-3 text-center shadow-[0_10px_48px_rgba(0,0,0,0.6)]">
           <div className="text-3xs uppercase tracking-[0.28em] text-text-muted">
             Realm
           </div>
@@ -128,7 +128,7 @@ export function IslandView({ island }: IslandViewProps) {
         <button
           type="button"
           onClick={openWorldMap}
-          className="focus-ring group/back pointer-events-auto absolute left-4 top-4 z-10 flex items-center gap-1.5 rounded-full border border-accent/40 bg-bg-abyss/85 px-4 py-2 font-display text-xs uppercase tracking-wide-ui text-accent shadow-[0_8px_28px_rgba(0,0,0,0.55)] backdrop-blur-sm transition hover:border-accent hover:bg-accent/15"
+          className="focus-ring group/back pointer-events-auto absolute left-4 top-4 z-10 flex items-center gap-1.5 rounded-full border border-accent/40 bg-bg-abyss/90 px-4 py-2 font-display text-xs uppercase tracking-wide-ui text-accent shadow-[0_8px_28px_rgba(0,0,0,0.55)] transition hover:border-accent hover:bg-accent/15"
           aria-label="Back to world map"
         >
           <span aria-hidden="true" className="transition group-hover/back:-translate-x-0.5">
@@ -238,7 +238,7 @@ export function IslandView({ island }: IslandViewProps) {
         {/* Hover tooltip (bottom center) */}
         {!calibrating && (
           <div
-            className={`pointer-events-none absolute bottom-6 left-1/2 -translate-x-1/2 max-w-xl rounded-2xl border border-accent/40 bg-bg-abyss/90 px-5 py-3 text-center shadow-[0_10px_36px_rgba(0,0,0,0.6)] backdrop-blur-sm transition-all duration-200 ${
+            className={`pointer-events-none absolute bottom-6 left-1/2 -translate-x-1/2 max-w-xl rounded-2xl border border-accent/40 bg-bg-abyss/90 px-5 py-3 text-center shadow-[0_10px_36px_rgba(0,0,0,0.6)] transition-all duration-200 ${
               hoveredPanel ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"
             }`}
           >

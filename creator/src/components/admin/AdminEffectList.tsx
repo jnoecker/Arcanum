@@ -1,5 +1,6 @@
 import { memo, useEffect } from "react";
 import { useAdminStore } from "@/stores/adminStore";
+import { ActionButton, Badge, EmptyState } from "@/components/ui/FormWidgets";
 import type { EffectEntry } from "@/types/admin";
 
 const StatRow = memo(function StatRow({ label, value }: { label: string; value: string | number }) {
@@ -37,9 +38,9 @@ const EffectRow = memo(function EffectRow({
           <span className="truncate font-display text-sm text-text-primary">
             {effect.displayName}
           </span>
-          <span className="rounded-full bg-stellar-blue/12 px-2 py-0.5 text-2xs text-stellar-blue">
+          <Badge variant="info">
             {effect.effectType}
-          </span>
+          </Badge>
         </div>
         <div className="mt-1 flex flex-wrap gap-2 text-2xs">
           <span className="text-text-muted">
@@ -65,16 +66,13 @@ function EffectDetail({
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center gap-3">
-        <button
-          onClick={onBack}
-          className="rounded-full border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] px-3 py-1 text-xs text-text-muted transition hover:bg-[var(--chrome-highlight-strong)] hover:text-text-primary focus-visible:ring-2 focus-visible:ring-border-active focus-visible:outline-none"
-        >
+        <ActionButton variant="ghost" size="sm" onClick={onBack}>
           &#x2190; Back
-        </button>
+        </ActionButton>
         <h3 className="font-display text-xl text-text-primary">{effect.displayName}</h3>
-        <span className="rounded-full bg-stellar-blue/12 px-2 py-0.5 text-2xs text-stellar-blue">
+        <Badge variant="info">
           {effect.effectType}
-        </span>
+        </Badge>
       </div>
 
       <Section title="Properties">
@@ -133,12 +131,7 @@ export function AdminEffectList() {
       </div>
 
       {effects.length === 0 ? (
-        <div className="rounded-3xl border border-dashed border-[var(--chrome-stroke-strong)] bg-[var(--chrome-highlight)] px-6 py-12 text-center">
-          <p className="font-display text-base text-text-secondary">No effects found</p>
-          <p className="mt-1 text-sm text-text-muted">
-            The server has no status effects registered.
-          </p>
-        </div>
+        <EmptyState title="No effects found" description="The server has no status effects registered." />
       ) : (
         <div className="flex flex-col gap-1.5">
           {effects.map((e) => (

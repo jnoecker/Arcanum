@@ -462,7 +462,7 @@ export function AppearancePanel() {
           </p>
         </section>
 
-        <div className="sticky bottom-4 flex items-center justify-end gap-2 rounded-2xl border border-border-muted bg-bg-secondary/80 p-3 backdrop-blur">
+        <div className="sticky bottom-4 flex items-center justify-end gap-2 rounded-2xl border border-border-muted bg-bg-secondary/90 p-3">
           <button
             type="button"
             onClick={handleReset}

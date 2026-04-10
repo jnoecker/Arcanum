@@ -146,6 +146,7 @@ export function ArticleMultiPicker({
           type="button"
           onClick={() => setOpen((v) => !v)}
           aria-label={ariaLabel ?? placeholder ?? "Link article"}
+          aria-expanded={open}
           className="rounded-full border border-dashed border-border-default px-2 py-0.5 text-2xs text-text-muted hover:border-accent/40 hover:text-accent"
         >
           + {placeholder ?? "Link article"}
@@ -238,6 +239,7 @@ export function ArticleSinglePicker({
           type="button"
           onClick={() => setOpen((v) => !v)}
           aria-label={ariaLabel ?? placeholder ?? "Link article"}
+          aria-expanded={open}
           className="rounded-full border border-dashed border-border-default px-2 py-0.5 text-2xs text-text-muted hover:border-accent/40 hover:text-accent"
         >
           + {placeholder ?? "Link article"}

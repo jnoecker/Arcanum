@@ -135,7 +135,7 @@ export function EntityPicker({ zoneId, scene, storyId }: EntityPickerProps) {
   if (!zoneState) {
     return (
       <div className="w-[clamp(16rem,20vw,20rem)] shrink-0 bg-bg-secondary border-l border-border-default flex items-center justify-center">
-        <p className="text-xs text-text-muted font-body px-4 text-center">
+        <p className="text-xs text-text-muted px-4 text-center">
           Load zone to browse entities
         </p>
       </div>

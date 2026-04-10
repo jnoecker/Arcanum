@@ -161,7 +161,7 @@ export function SceneInfoBadges({ scene, mode = "ambient" }: SceneInfoBadgesProp
     >
       {/* Top-left: year/era badge */}
       {timeline && (
-        <div className="absolute left-3 top-3 flex flex-col items-start gap-0.5 rounded border border-warm/40 bg-[var(--chrome-fill-soft)]0 px-2 py-1">
+        <div className="absolute left-3 top-3 flex flex-col items-start gap-0.5 rounded border border-warm/40 bg-[var(--chrome-fill-soft)] px-2 py-1">
           <span
             className="font-display text-base leading-none tracking-[0.18em] text-warm"
             style={{ textShadow: "0 1px 3px rgb(var(--shadow-rgb) / 0.6)" }}

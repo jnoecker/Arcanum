@@ -1,5 +1,6 @@
 import { memo } from "react";
 import { useAdminStore } from "@/stores/adminStore";
+import { ActionButton, Badge } from "@/components/ui/FormWidgets";
 
 const Section = memo(function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -68,17 +69,14 @@ export function AdminMobDetail() {
     <div className="flex flex-col gap-4">
       {/* Header */}
       <div className="flex items-center gap-3">
-        <button
-          onClick={clearSelectedMob}
-          className="rounded-full border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] px-3 py-1 text-xs text-text-muted transition hover:bg-[var(--chrome-highlight-strong)] hover:text-text-primary focus-visible:ring-2 focus-visible:ring-border-active focus-visible:outline-none"
-        >
+        <ActionButton variant="ghost" size="sm" onClick={clearSelectedMob}>
           &#x2190; Back
-        </button>
+        </ActionButton>
         <h3 className="font-display text-xl text-text-primary">{mob.name}</h3>
         {mob.aggressive && (
-          <span className="rounded-full bg-status-error/12 px-2 py-0.5 text-2xs text-status-error">
+          <Badge variant="error">
             Aggressive
-          </span>
+          </Badge>
         )}
       </div>
 

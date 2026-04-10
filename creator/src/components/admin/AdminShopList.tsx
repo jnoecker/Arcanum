@@ -1,5 +1,6 @@
 import { memo, useEffect, useState } from "react";
 import { useAdminStore } from "@/stores/adminStore";
+import { Badge, EmptyState } from "@/components/ui/FormWidgets";
 import type { ShopEntry } from "@/types/admin";
 
 const ShopRow = memo(function ShopRow({ shop }: { shop: ShopEntry }) {
@@ -10,6 +11,7 @@ const ShopRow = memo(function ShopRow({ shop }: { shop: ShopEntry }) {
       <button
         onClick={() => setExpanded(!expanded)}
         className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors duration-200 hover:bg-accent/[0.04] focus-visible:ring-2 focus-visible:ring-border-active focus-visible:outline-none rounded-2xl"
+        aria-expanded={expanded}
       >
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
@@ -42,9 +44,9 @@ const ShopRow = memo(function ShopRow({ shop }: { shop: ShopEntry }) {
                 <div className="flex items-center gap-2">
                   <span className="text-xs text-text-primary">{item.displayName}</span>
                   {item.slot && (
-                    <span className="rounded-full bg-stellar-blue/12 px-2 py-0.5 text-2xs text-stellar-blue">
+                    <Badge variant="info">
                       {item.slot}
-                    </span>
+                    </Badge>
                   )}
                 </div>
                 <span className="text-xs text-status-warning">
@@ -82,12 +84,7 @@ export function AdminShopList() {
       </div>
 
       {shops.length === 0 ? (
-        <div className="rounded-3xl border border-dashed border-[var(--chrome-stroke-strong)] bg-[var(--chrome-highlight)] px-6 py-12 text-center">
-          <p className="font-display text-base text-text-secondary">No shops found</p>
-          <p className="mt-1 text-sm text-text-muted">
-            The server has no shops registered.
-          </p>
-        </div>
+        <EmptyState title="No shops found" description="The server has no shops registered." />
       ) : (
         <div className="flex flex-col gap-1.5">
           {shops.map((s) => (

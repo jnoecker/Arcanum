@@ -19,6 +19,8 @@ export const ExitDeleteContext = createContext<
   ((sourceRoom: string, direction: string) => void) | null
 >(null);
 
+const LABEL_TEXT_STYLE: React.CSSProperties = { fontSize: 10, fontWeight: 500 };
+
 export function ExitEdge({
   id,
   sourceX,
@@ -62,11 +64,7 @@ export function ExitEdge({
             style={{ backgroundColor: graph.bg, opacity: 0.95 }}
           >
             <span
-              style={{
-                color: graph.edge,
-                fontSize: 10,
-                fontWeight: 500,
-              }}
+              style={{ ...LABEL_TEXT_STYLE, color: graph.edge }}
             >
               {label}
             </span>

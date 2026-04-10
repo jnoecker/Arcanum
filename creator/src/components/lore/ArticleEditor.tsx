@@ -100,7 +100,7 @@ function RelationsEditor({
           <select
             ref={targetRef}
             aria-label="Target article"
-            className="ornate-input flex-1 rounded px-2 py-1 text-xs text-text-secondary"
+            className="ornate-input flex-1 px-2 py-1 text-xs text-text-secondary"
             defaultValue=""
           >
             <option value="">Connect to a legend...</option>
@@ -111,7 +111,7 @@ function RelationsEditor({
           <input
             ref={typeRef}
             aria-label="Relation type"
-            className="ornate-input w-24 rounded px-2 py-1 text-xs text-text-primary"
+            className="ornate-input w-24 px-2 py-1 text-xs text-text-primary"
             placeholder="e.g. allied with, born in"
             defaultValue="related"
           />
@@ -208,7 +208,7 @@ export function ArticleEditor({ articleId }: { articleId: string }) {
                   value={newId}
                   onChange={(e) => setNewId(e.target.value)}
                   onKeyDown={(e) => e.key === "Escape" && setRenaming(false)}
-                  className="ornate-input w-40 rounded px-1.5 py-0.5 text-2xs text-text-primary"
+                  className="ornate-input w-40 px-1.5 py-0.5 text-2xs text-text-primary"
                   placeholder="new_article_id"
                 />
                 <button type="submit" className="text-2xs text-accent hover:text-text-primary">Rename</button>

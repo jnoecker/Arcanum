@@ -260,7 +260,7 @@ export function ArticleTree() {
       <div className="mb-2 flex items-center gap-1.5">
         <input
           aria-label="Search articles"
-          className="ornate-input min-w-0 flex-1 rounded px-2 py-1.5 text-xs text-text-primary"
+          className="ornate-input min-w-0 flex-1 px-2 py-1.5 text-xs text-text-primary"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder={searchContent ? "Search all content..." : "Search legends..."}
@@ -355,7 +355,7 @@ export function ArticleTree() {
         <div className="flex gap-1.5">
           <input
             aria-label="New article title"
-            className="ornate-input min-w-0 flex-1 rounded px-2 py-1.5 text-xs text-text-primary"
+            className="ornate-input min-w-0 flex-1 px-2 py-1.5 text-xs text-text-primary"
             value={newTitle}
             onChange={(e) => setNewTitle(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleAdd()}
@@ -372,7 +372,7 @@ export function ArticleTree() {
         </div>
         <select
           aria-label="Article template type"
-          className="ornate-input rounded px-2 py-1.5 text-xs text-text-secondary"
+          className="ornate-input px-2 py-1.5 text-xs text-text-secondary"
           value={newTemplate}
           onChange={(e) => setNewTemplate(e.target.value as ArticleTemplate)}
         >

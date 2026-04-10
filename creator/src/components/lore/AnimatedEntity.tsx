@@ -200,7 +200,7 @@ export function AnimatedEntity({
 
       {/* Name label */}
       <p
-        className="text-center font-body text-xs text-text-primary whitespace-nowrap overflow-hidden text-ellipsis pointer-events-none"
+        className="text-center text-xs text-text-primary whitespace-nowrap overflow-hidden text-ellipsis pointer-events-none"
         style={{ textShadow: "0 1px 3px rgb(var(--shadow-rgb) / 0.8)" }}
       >
         {entityName}

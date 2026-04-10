@@ -48,6 +48,18 @@ interface CategoryDef {
   targetView?: string;
 }
 
+const CATEGORY_COLORS: Record<string, string> = {
+  room: "var(--color-entity-room)",
+  mob: "var(--color-entity-mob)",
+  item: "var(--color-entity-item)",
+  shop: "var(--color-entity-shop)",
+  trainer: "var(--color-entity-trainer)",
+  quest: "var(--color-entity-quest)",
+  gatheringNode: "var(--color-entity-gather)",
+  recipe: "var(--color-entity-recipe)",
+  dungeon: "var(--color-entity-dungeon)",
+};
+
 const CATEGORIES: CategoryDef[] = [
   {
     key: "room",
@@ -235,15 +247,15 @@ function ZoneTree({
         </button>
         <button
           onClick={handleZoneClick}
-          className={`min-w-0 flex-1 rounded-2xl border px-3 py-2 text-left text-sm transition ${
+          className={`flex min-w-0 flex-1 items-baseline gap-2 rounded-2xl border px-3 py-2 text-left text-sm transition ${
             isActive
               ? "border-border-active bg-gradient-active text-text-primary"
               : "border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] text-text-secondary hover:bg-[var(--chrome-highlight-strong)] hover:text-text-primary"
           }`}
         >
-          <span className="truncate font-medium" title={zoneState.data.zone || zoneId}>{zoneState.data.zone || zoneId}</span>
-          <span className="ml-2 truncate text-2xs text-text-muted" title={zoneId}>{zoneId}</span>
-          {zoneState.dirty && <span className="ml-2 shrink-0 text-2xs text-text-dirty">Unsaved</span>}
+          <span className="min-w-0 truncate font-medium" title={zoneState.data.zone || zoneId}>{zoneState.data.zone || zoneId}</span>
+          <span className="shrink-0 text-2xs text-text-muted" title={zoneId}>{zoneId}</span>
+          {zoneState.dirty && <span className="shrink-0 text-2xs text-text-dirty">Unsaved</span>}
         </button>
         <button
           onClick={() => onRename(zoneId)}
@@ -274,6 +286,11 @@ function ZoneTree({
               return (
                 <div key={cat.key} className="border-t border-[var(--chrome-stroke)] pt-2 first:border-t-0 first:pt-0">
                   <div className="flex items-center gap-2">
+                    <span
+                      className="inline-block h-1.5 w-1.5 shrink-0 rounded-full"
+                      style={{ background: CATEGORY_COLORS[cat.key] }}
+                      aria-hidden="true"
+                    />
                     <span className="font-display font-semibold text-2xs uppercase tracking-label text-text-secondary">
                       {cat.label}
                     </span>
@@ -313,6 +330,11 @@ function ZoneTree({
             return (
               <div key={cat.key} className="border-t border-[var(--chrome-stroke)] pt-2 first:border-t-0 first:pt-0">
                 <div className="flex items-center gap-2">
+                  <span
+                    className="inline-block h-1.5 w-1.5 shrink-0 rounded-full"
+                    style={{ background: CATEGORY_COLORS[cat.key] }}
+                    aria-hidden="true"
+                  />
                   <span className="font-display font-semibold text-2xs uppercase tracking-label text-text-secondary">
                     {cat.label}
                   </span>

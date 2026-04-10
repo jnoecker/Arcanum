@@ -45,20 +45,20 @@ export function ApplyFooterBar() {
   }
 
   return (
-    <div className="sticky bottom-0 z-10 border-t border-border-muted bg-bg-primary/95 px-6 py-3 shadow-section backdrop-blur-sm animate-unfurl-in">
+    <div className="sticky bottom-0 z-10 border-t border-border-muted bg-bg-primary/95 px-6 py-3 shadow-section animate-unfurl-in">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         {/* Left: section count summary + success flash */}
         <div className="flex min-w-0 flex-col gap-1 sm:flex-row sm:items-center">
-          <span className="font-sans text-sm text-text-secondary">
+          <span className="text-sm text-text-secondary">
             {acceptedCount} of {totalSections} sections selected
           </span>
           {applySuccess && (
-            <span className="font-sans text-sm font-semibold text-status-success animate-saved-flash sm:ml-3">
+            <span className="text-sm font-semibold text-status-success animate-saved-flash sm:ml-3">
               Applied!
             </span>
           )}
           {actionError && (
-            <span role="alert" className="font-sans text-sm text-status-error sm:ml-3">
+            <span role="alert" className="text-sm text-status-error sm:ml-3">
               {actionError}
             </span>
           )}

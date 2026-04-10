@@ -24,7 +24,7 @@ function GalleryThumbnail({
       ) : (
         <div className="flex h-full w-full items-center justify-center text-2xs text-text-muted">...</div>
       )}
-      <div className="absolute inset-0 flex items-center justify-center gap-1 bg-[var(--chrome-fill-soft)]0 opacity-0 transition group-hover:opacity-100">
+      <div className="absolute inset-0 flex items-center justify-center gap-1 bg-[var(--chrome-fill-soft)] opacity-0 transition group-hover:opacity-100">
         <button
           onClick={onPromote}
           className="rounded-full bg-[var(--chrome-highlight-strong)] p-1 text-3xs text-text-primary hover:bg-[var(--chrome-highlight-strong)]"
@@ -120,6 +120,7 @@ export function ArticleArtSection({
             </p>
             <button
               onClick={() => setShowGalleryGenerator((v) => !v)}
+              aria-expanded={showGalleryGenerator}
               className="rounded-full border border-[var(--chrome-stroke)] px-2 py-0.5 text-2xs text-text-secondary transition hover:border-[var(--chrome-stroke-strong)] hover:bg-[var(--chrome-highlight-strong)] hover:text-text-primary"
             >
               {showGalleryGenerator ? "Hide" : "Add Art"}

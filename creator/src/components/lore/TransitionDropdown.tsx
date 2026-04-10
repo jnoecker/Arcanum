@@ -18,7 +18,7 @@ export function TransitionDropdown({ value, onChange }: TransitionDropdownProps)
         value={value}
         onChange={(event) => onChange(event.target.value as TransitionType)}
         aria-label="Scene transition type"
-        className="rounded-md border border-border-muted bg-bg-elevated px-3 py-1.5 font-body text-xs text-text-primary outline-none transition-colors duration-[180ms] hover:border-border-default focus:border-border-focus"
+        className="rounded-md border border-border-muted bg-bg-elevated px-3 py-1.5 text-xs text-text-primary outline-none transition-colors duration-[180ms] hover:border-border-default focus:border-border-focus"
       >
         {TRANSITION_OPTIONS.map((option) => (
           <option key={option.value} value={option.value}>

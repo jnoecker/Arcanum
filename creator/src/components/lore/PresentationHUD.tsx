@@ -10,9 +10,8 @@ interface PresentationHUDProps {
 export function PresentationHUD({ currentIndex, totalScenes, visible }: PresentationHUDProps) {
   return (
     <div
-      className="absolute top-8 right-8 z-[50] rounded-full px-3 py-1.5 backdrop-blur-sm"
+      className="absolute top-8 right-8 z-[50] rounded-full bg-surface-scrim px-3 py-1.5"
       style={{
-        background: "rgba(24, 30, 45, 0.72)",
         opacity: visible ? 1 : 0,
         transition: visible
           ? "opacity 200ms cubic-bezier(0.16, 1, 0.3, 1)"

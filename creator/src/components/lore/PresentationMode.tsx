@@ -252,7 +252,7 @@ export function PresentationMode({
   return (
     <div
       ref={containerRef}
-      className="fixed inset-0 z-[60] flex items-center justify-center bg-black"
+      className="fixed inset-0 z-[60] flex items-center justify-center bg-bg-abyss"
       style={{ cursor: cursorVisible ? "default" : "none" }}
       onClick={handleClick}
       onContextMenu={handleRightClick}

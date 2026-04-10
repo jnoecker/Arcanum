@@ -135,7 +135,7 @@ export function NewStoryDialog({ onClose }: NewStoryDialogProps) {
                 if (e.key === "Enter" && canCreate) handleCreate();
               }}
               disabled={submitting}
-              className="w-full rounded-lg border border-border-default bg-bg-elevated px-3 py-2 font-body text-text-primary placeholder:text-text-muted/50 focus:border-accent focus:outline-none disabled:opacity-60"
+              className="w-full rounded-lg border border-border-default bg-bg-elevated px-3 py-2 text-text-primary placeholder:text-text-muted/50 focus:border-accent focus:outline-none disabled:opacity-60"
             />
           </div>
 
@@ -148,7 +148,7 @@ export function NewStoryDialog({ onClose }: NewStoryDialogProps) {
               <select
                 id="story-zone"
                 disabled
-                className="w-full rounded-lg border border-border-default bg-bg-elevated px-3 py-2 font-body text-text-muted/60"
+                className="w-full rounded-lg border border-border-default bg-bg-elevated px-3 py-2 text-text-muted/60"
               >
                 <option>Load a zone to create a story</option>
               </select>
@@ -158,7 +158,7 @@ export function NewStoryDialog({ onClose }: NewStoryDialogProps) {
                 value={zoneId}
                 onChange={(e) => setZoneId(e.target.value)}
                 disabled={submitting}
-                className="w-full rounded-lg border border-border-default bg-bg-elevated px-3 py-2 font-body text-text-primary focus:border-accent focus:outline-none disabled:opacity-60"
+                className="w-full rounded-lg border border-border-default bg-bg-elevated px-3 py-2 text-text-primary focus:border-accent focus:outline-none disabled:opacity-60"
               >
                 <option value="">Select a zone</option>
                 {zoneOptions.map((opt) => (

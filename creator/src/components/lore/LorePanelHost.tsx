@@ -109,6 +109,7 @@ export function LorePanelHost({ panelId }: { panelId: string }) {
   if (!lore) {
     return (
       <div className="flex flex-1 flex-col items-center justify-center gap-3 text-center">
+        <div className="ornate-divider" />
         <p className="font-display text-base text-text-muted">The Archive Awaits</p>
         <p className="max-w-xs text-xs leading-6 text-text-muted/60">Open a world project to begin recording its lore.</p>
       </div>
@@ -135,7 +136,7 @@ export function LorePanelHost({ panelId }: { panelId: string }) {
                 onClick={handleSave}
                 disabled={!dirty || saving}
                 aria-label={saving ? "Saving lore" : "Save lore"}
-                className="focus-ring rounded-full border border-[var(--chrome-stroke)] bg-bg-primary/80 px-3 py-1 text-2xs font-medium text-accent shadow-md backdrop-blur-sm transition hover:bg-bg-primary disabled:cursor-not-allowed disabled:opacity-40"
+                className="focus-ring rounded-full border border-[var(--chrome-stroke)] bg-bg-primary/80 px-3 py-1 text-2xs font-medium text-accent shadow-md transition hover:bg-bg-primary disabled:cursor-not-allowed disabled:opacity-40"
               >
                 {saving ? <span className="flex items-center gap-1.5"><Spinner />Saving</span> : "Save Lore"}
               </button>

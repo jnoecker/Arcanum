@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { useAssetStore } from "@/stores/assetStore";
 import { useConfigStore } from "@/stores/configStore";
@@ -8,7 +8,6 @@ import {
   getPreamble,
   getEnhanceSystemPrompt,
   composePrompt,
-  ART_STYLE_LABELS,
   UNIVERSAL_NEGATIVE,
   type ArtStyle,
 } from "@/lib/arcanumPrompts";
@@ -18,13 +17,24 @@ import loadingVignette from "@/assets/loading-vignette.jpg";
 import { ActionButton, DialogShell, Spinner } from "./ui/FormWidgets";
 
 const GENERATION_MESSAGES = [
-  "The Arcanum renders your vision...",
-  "Weaving light from the void...",
-  "Shaping form from the aether...",
-  "Distilling essence into image...",
-  "The cosmos aligns to your intent...",
-  "Drawing pigment from starlight...",
-  "Illuminating the unseen...",
+  "Generating image...",
+  "Processing prompt...",
+  "Rendering artwork...",
+  "Almost there...",
+];
+
+interface AssetCategory {
+  label: string;
+  types: AssetType[];
+}
+
+const ASSET_CATEGORIES: AssetCategory[] = [
+  { label: "World",      types: ["room", "zone_map", "gathering_node", "background"] },
+  { label: "Characters",  types: ["mob", "pet", "player_sprite", "entity_portrait", "class_portrait", "race_portrait"] },
+  { label: "Items",       types: ["item", "ability_icon", "ability_sprite", "status_effect_icon"] },
+  { label: "Lore",        types: ["lore_character", "lore_location", "lore_organization", "lore_species", "lore_item", "lore_event", "lore_map"] },
+  { label: "UI",          types: ["ornament", "panel_header", "splash_hero", "loading_vignette", "empty_state", "status_art"] },
+  { label: "Audio/Video", types: ["music", "ambient", "audio", "video"] },
 ];
 
 type Stage = "compose" | "generating" | "preview";
@@ -37,13 +47,14 @@ export function AssetGenerator() {
 
   const [stage, setStage] = useState<Stage>("compose");
   const [artStyle] = useState<ArtStyle>("gentle_magic");
-  const [assetType, setAssetType] = useState<AssetType>("background");
+  const [category, setCategory] = useState(ASSET_CATEGORIES[0]!.label);
+  const [assetType, setAssetType] = useState<AssetType>("room");
   const [modelId, setModelId] = useState<string>(() => {
     const provider = settings?.image_provider ?? "deepinfra";
     return resolveImageModel(provider, settings?.image_model)?.id ?? IMAGE_MODELS[0]!.id;
   });
   const [customization, setCustomization] = useState("");
-  const [prompt, setPrompt] = useState(() => composePrompt("background", "gentle_magic"));
+  const [prompt, setPrompt] = useState(() => composePrompt("room", "gentle_magic"));
   const [enhancedPrompt, setEnhancedPrompt] = useState("");
   const [useEnhanced, setUseEnhanced] = useState(false);
   const [enhancing, setEnhancing] = useState(false);
@@ -70,6 +81,21 @@ export function AssetGenerator() {
       (imageProvider === "runware" && settings.runware_api_key.length > 0) ||
       (imageProvider === "openai" && settings.openai_api_key.length > 0))
   );
+
+  const activeCategory = useMemo(
+    () => ASSET_CATEGORIES.find((c) => c.label === category) ?? ASSET_CATEGORIES[0]!,
+    [category],
+  );
+
+  const handleCategoryChange = (label: string) => {
+    setCategory(label);
+    const cat = ASSET_CATEGORIES.find((c) => c.label === label) ?? ASSET_CATEGORIES[0]!;
+    const first = cat.types[0]!;
+    setAssetType(first);
+    setPrompt(composePrompt(first, artStyle, customization || undefined));
+    setEnhancedPrompt("");
+    setUseEnhanced(false);
+  };
 
   const handleTypeChange = (type: AssetType) => {
     setAssetType(type);
@@ -181,7 +207,7 @@ export function AssetGenerator() {
         }
       >
         <div className="panel-surface-light rounded-3xl p-5 text-sm leading-7 text-text-secondary">
-          The art studio is ready, but there is no active provider credential yet.
+          No active image provider credential found. Add one in API Settings first.
         </div>
       </DialogShell>
     );
@@ -191,15 +217,9 @@ export function AssetGenerator() {
     <DialogShell
       dialogRef={trapRef}
       titleId="asset-gen-title"
-      title="Conjure New Art"
-      subtitle="Compose the intent, refine the prompt, and let the worldmaking instrument render a new image into the asset vault."
-      widthClassName="max-w-5xl"
+      title="New Asset"
+      widthClassName="max-w-3xl"
       onClose={closeGenerator}
-      status={
-        <span className="rounded-full border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] px-3 py-1 text-2xs text-text-secondary">
-          {stage === "compose" ? "Prompt forge" : stage === "generating" ? "Rendering" : "Preview"}
-        </span>
-      }
       footer={
         <>
           {stage === "compose" && (
@@ -227,151 +247,135 @@ export function AssetGenerator() {
       }
     >
       {stage === "compose" && (
-        <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_20rem]">
-          <section className="panel-surface-light rounded-3xl p-5">
-            <div className="grid gap-5">
-              <div className="rounded-3xl border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] p-4">
-                <p className="text-2xs uppercase tracking-wide-ui text-text-muted">Style system</p>
-                <p className="mt-2 font-display text-base text-text-primary">{ART_STYLE_LABELS[artStyle]}</p>
-              </div>
-
-              <div>
-                <fieldset>
-                  <legend className="mb-2 block text-2xs uppercase tracking-wide-ui text-text-muted">Asset Type</legend>
-                  <div className="flex flex-wrap gap-2">
-                    {(Object.entries(ASSET_TEMPLATES) as [AssetType, { label: string }][]).map(([key, { label }]) => (
-                      <label
-                        key={key}
-                        className={[
-                          "focus-ring action-button justify-start",
-                          assetType === key ? "action-button-primary" : "action-button-secondary",
-                        ].join(" ")}
-                      >
-                        <input
-                          type="radio"
-                          name="asset-generator-type"
-                          value={key}
-                          checked={assetType === key}
-                          onChange={() => handleTypeChange(key)}
-                          className="sr-only"
-                        />
-                        {label}
-                      </label>
-                    ))}
-                  </div>
-                </fieldset>
-              </div>
-
-              <div>
-                <fieldset>
-                  <legend className="mb-2 block text-2xs uppercase tracking-wide-ui text-text-muted">Model</legend>
-                  <div className="grid gap-3">
-                    {IMAGE_MODELS.filter((model) => model.provider === imageProvider).map((model) => (
-                      <label
-                        key={model.id}
-                        className={`focus-ring rounded-3xl border p-4 text-left transition ${
-                          modelId === model.id
-                            ? "border-[var(--border-glow-strong)] bg-[linear-gradient(145deg,rgb(var(--accent-rgb)/0.18),rgb(var(--bg-rgb)/0.9))] shadow-glow"
-                            : "border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] hover:border-[var(--chrome-stroke-strong)] hover:bg-[var(--chrome-highlight)]"
-                        }`}
-                      >
-                        <input
-                          type="radio"
-                          name="asset-generator-model"
-                          value={model.id}
-                          checked={modelId === model.id}
-                          onChange={() => setModelId(model.id)}
-                          className="sr-only"
-                        />
-                        <div className="font-display text-sm text-text-primary">{model.label}</div>
-                        <div className="mt-1 text-xs leading-6 text-text-secondary">{model.description}</div>
-                      </label>
-                    ))}
-                  </div>
-                </fieldset>
-              </div>
-
-              <div>
-                <label htmlFor="asset-gen-customization" className="mb-2 block text-2xs uppercase tracking-wide-ui text-text-muted">
-                  Customization
+        <div className="grid gap-4">
+          <div className="grid gap-2">
+            <div className="flex gap-1">
+              {ASSET_CATEGORIES.map((cat) => (
+                <button
+                  key={cat.label}
+                  type="button"
+                  onClick={() => handleCategoryChange(cat.label)}
+                  className={[
+                    "rounded-lg px-3 py-1.5 text-xs font-display transition",
+                    category === cat.label
+                      ? "bg-accent/20 text-accent border border-accent/40"
+                      : "text-text-secondary hover:text-text-primary hover:bg-bg-hover border border-transparent",
+                  ].join(" ")}
+                >
+                  {cat.label}
+                </button>
+              ))}
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              {activeCategory.types.map((key) => (
+                <label
+                  key={key}
+                  className={[
+                    "focus-ring action-button justify-start text-xs",
+                    assetType === key ? "action-button-primary" : "action-button-secondary",
+                  ].join(" ")}
+                >
+                  <input
+                    type="radio"
+                    name="asset-generator-type"
+                    value={key}
+                    checked={assetType === key}
+                    onChange={() => handleTypeChange(key)}
+                    className="sr-only"
+                  />
+                  {ASSET_TEMPLATES[key].label}
                 </label>
-                <input
-                  id="asset-gen-customization"
-                  type="text"
-                  value={customization}
-                  onChange={(e) => handleCustomizationChange(e.target.value)}
-                  placeholder="Forest clearing with ancient ruins, storm-lit harbor, ruined observatory..."
-                  className="ornate-input min-h-11 w-full rounded-2xl px-4 py-3 text-sm"
-                />
-              </div>
+              ))}
+            </div>
+          </div>
 
-              <div>
-                <div className="mb-2 flex flex-wrap items-center gap-2">
-                  <label htmlFor="asset-gen-prompt" className="text-2xs uppercase tracking-wide-ui text-text-muted">Prompt</label>
-                  <div className="ml-auto flex flex-wrap gap-2">
-                    {enhancedPrompt && (
-                      <>
-                        <ActionButton
-                          onClick={() => setUseEnhanced(true)}
-                          variant={useEnhanced ? "primary" : "ghost"}
-                          size="sm"
-                        >
-                          Enhanced
-                        </ActionButton>
-                        <ActionButton
-                          onClick={() => setUseEnhanced(false)}
-                          variant={!useEnhanced ? "primary" : "ghost"}
-                          size="sm"
-                        >
-                          Original
-                        </ActionButton>
-                      </>
-                    )}
-                    <ActionButton onClick={handleEnhance} disabled={enhancing} variant="secondary">
-                      {enhancing && <Spinner />}
-                      {enhancing ? "Enhancing" : "Refine Prompt"}
+          <fieldset>
+            <legend className="mb-2 block text-2xs uppercase tracking-wide-ui text-text-muted">Model</legend>
+            <div className="flex flex-wrap gap-2">
+              {IMAGE_MODELS.filter((model) => model.provider === imageProvider).map((model) => (
+                <label
+                  key={model.id}
+                  className={[
+                    "focus-ring action-button justify-start",
+                    modelId === model.id ? "action-button-primary" : "action-button-secondary",
+                  ].join(" ")}
+                >
+                  <input
+                    type="radio"
+                    name="asset-generator-model"
+                    value={model.id}
+                    checked={modelId === model.id}
+                    onChange={() => setModelId(model.id)}
+                    className="sr-only"
+                  />
+                  {model.label}
+                </label>
+              ))}
+            </div>
+          </fieldset>
+
+          <div>
+            <label htmlFor="asset-gen-customization" className="mb-1.5 block text-2xs uppercase tracking-wide-ui text-text-muted">
+              Customization
+            </label>
+            <input
+              id="asset-gen-customization"
+              type="text"
+              value={customization}
+              onChange={(e) => handleCustomizationChange(e.target.value)}
+              placeholder="e.g. forest clearing with ancient ruins, storm-lit harbor..."
+              className="ornate-input min-h-11 w-full rounded-2xl px-4 py-3 text-sm"
+            />
+          </div>
+
+          <div>
+            <div className="mb-1.5 flex flex-wrap items-center gap-2">
+              <label htmlFor="asset-gen-prompt" className="text-2xs uppercase tracking-wide-ui text-text-muted">Prompt</label>
+              <div className="ml-auto flex flex-wrap gap-2">
+                {enhancedPrompt && (
+                  <>
+                    <ActionButton
+                      onClick={() => setUseEnhanced(true)}
+                      variant={useEnhanced ? "primary" : "ghost"}
+                      size="sm"
+                    >
+                      Enhanced
                     </ActionButton>
-                  </div>
-                </div>
-                <textarea
-                  id="asset-gen-prompt"
-                  value={useEnhanced && enhancedPrompt ? enhancedPrompt : prompt}
-                  onChange={(e) => {
-                    if (useEnhanced) {
-                      setEnhancedPrompt(e.target.value);
-                    } else {
-                      setPrompt(e.target.value);
-                    }
-                  }}
-                  rows={8}
-                  className="ornate-input min-h-[15rem] w-full resize-y rounded-3xl px-4 py-4 font-mono text-xs leading-7 text-text-secondary"
-                />
-              </div>
-
-              {error && (
-                <div role="alert" className="rounded-3xl border border-status-error/30 bg-status-error/10 px-4 py-3 text-sm text-status-error">
-                  {error}
-                </div>
-              )}
-            </div>
-          </section>
-
-          <aside className="instrument-panel rounded-3xl p-5">
-            <p className="text-2xs uppercase tracking-wide-ui text-text-muted">Render intent</p>
-            <div className="mt-4 space-y-4 text-sm leading-7 text-text-secondary">
-              <p>
-                Use asset type to control composition, then add only the details that make this image belong to the world you are building.
-              </p>
-              <div className="rounded-3xl border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] p-4">
-                <p className="font-display text-sm text-text-primary">Best results</p>
-                <ul className="mt-2 list-disc space-y-1 pl-5 text-xs text-text-secondary">
-                  <li>Name atmosphere before decoration.</li>
-                  <li>Use one memorable landmark or gesture.</li>
-                  <li>Keep background and subject intent consistent.</li>
-                </ul>
+                    <ActionButton
+                      onClick={() => setUseEnhanced(false)}
+                      variant={!useEnhanced ? "primary" : "ghost"}
+                      size="sm"
+                    >
+                      Original
+                    </ActionButton>
+                  </>
+                )}
+                <ActionButton onClick={handleEnhance} disabled={enhancing} variant="secondary" size="sm">
+                  {enhancing && <Spinner />}
+                  {enhancing ? "Enhancing..." : "Refine Prompt"}
+                </ActionButton>
               </div>
             </div>
-          </aside>
+            <textarea
+              id="asset-gen-prompt"
+              value={useEnhanced && enhancedPrompt ? enhancedPrompt : prompt}
+              onChange={(e) => {
+                if (useEnhanced) {
+                  setEnhancedPrompt(e.target.value);
+                } else {
+                  setPrompt(e.target.value);
+                }
+              }}
+              rows={6}
+              className="ornate-input min-h-[10rem] w-full resize-y rounded-2xl px-4 py-3 font-mono text-xs leading-7 text-text-secondary"
+            />
+          </div>
+
+          {error && (
+            <div role="alert" className="rounded-2xl border border-status-error/30 bg-status-error/10 px-4 py-3 text-sm text-status-error">
+              {error}
+            </div>
+          )}
         </div>
       )}
 
@@ -383,19 +387,19 @@ export function AssetGenerator() {
             <Spinner className="h-8 w-8 border-2" />
             <p className="font-display text-lg text-text-primary">{GENERATION_MESSAGES[msgIndex]}</p>
             <p className="max-w-xl text-sm leading-7 text-text-secondary">
-              Creator is preparing a {ASSET_TEMPLATES[assetType].label.toLowerCase()} using {IMAGE_MODELS.find((model) => model.id === modelId)?.label ?? "the selected model"}.
+              {ASSET_TEMPLATES[assetType].label} &middot; {IMAGE_MODELS.find((model) => model.id === modelId)?.label ?? "selected model"}
             </p>
           </div>
         </div>
       )}
 
       {stage === "preview" && result && (
-        <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_20rem]">
-          <section className="panel-surface-light rounded-3xl p-5">
-            <div className="overflow-hidden rounded-3xl border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)]">
-              <img src={result.data_url} alt="Generated art" className="w-full" />
-            </div>
-            <div className="mt-4 flex flex-wrap items-center gap-2 text-xs text-text-muted">
+        <div className="grid gap-4">
+          <div className="overflow-hidden rounded-2xl border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)]">
+            <img src={result.data_url} alt="Generated art" className="w-full" />
+          </div>
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="flex flex-wrap items-center gap-2 text-xs text-text-muted">
               <span className="rounded-full border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] px-3 py-1">
                 {result.width}x{result.height}
               </span>
@@ -403,32 +407,25 @@ export function AssetGenerator() {
                 {result.model.split("/").pop()}
               </span>
             </div>
-            {error && (
-              <div role="alert" className="mt-4 rounded-3xl border border-status-error/30 bg-status-error/10 px-4 py-3 text-sm text-status-error">
-                {error}
-              </div>
-            )}
-          </section>
-
-          <aside className="instrument-panel rounded-3xl p-5">
-            <p className="text-2xs uppercase tracking-wide-ui text-text-muted">Archive</p>
-            <div className="mt-4">
-              <label htmlFor="asset-gen-global-key" className="mb-1.5 block text-2xs uppercase tracking-wide-ui text-text-muted">
-                Save As Global Asset
+            <div className="ml-auto flex items-center gap-2">
+              <label htmlFor="asset-gen-global-key" className="text-xs text-text-muted">
+                Global asset key
               </label>
               <input
                 id="asset-gen-global-key"
                 type="text"
                 value={globalAssetKey}
                 onChange={(e) => setGlobalAssetKey(e.target.value)}
-                placeholder="compass_rose, world_map, login_splash"
-                className="ornate-input min-h-11 w-full rounded-2xl px-4 py-3 text-sm"
+                placeholder="optional, e.g. compass_rose"
+                className="ornate-input w-52 rounded-lg px-3 py-1.5 text-xs"
               />
-              <p className="mt-2 text-xs leading-6 text-text-secondary">
-                Optional. Provide a key and Creator will register the accepted image under <span className="font-mono">images.globalAssets</span>.
-              </p>
             </div>
-          </aside>
+          </div>
+          {error && (
+            <div role="alert" className="rounded-2xl border border-status-error/30 bg-status-error/10 px-4 py-3 text-sm text-status-error">
+              {error}
+            </div>
+          )}
         </div>
       )}
     </DialogShell>

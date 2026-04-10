@@ -41,7 +41,7 @@ interface Props {
 }
 
 const STAGE_LABEL: Record<Stage, string> = {
-  compose: "Prompt forge",
+  compose: "Compose",
   generating: "Rendering",
   removing_bg: "Removing background",
   preview: "Preview",
@@ -215,7 +215,7 @@ export function GlobalAssetGeneratorModal({ asset, onClose, onComplete }: Props)
         }
       >
         <div className="panel-surface-light rounded-3xl p-5 text-sm leading-7 text-text-secondary">
-          The art studio is ready, but there is no active provider credential yet.
+          No active image provider credential found. Add one in API Settings first.
         </div>
       </DialogShell>
     );
@@ -342,7 +342,7 @@ export function GlobalAssetGeneratorModal({ asset, onClose, onComplete }: Props)
             </p>
             <p className="max-w-xl text-sm leading-7 text-text-secondary">
               {stage === "generating"
-                ? `Conjuring a ${asset.label.toLowerCase()} for your project.`
+                ? `Generating ${asset.label.toLowerCase()} with ${model?.label ?? "selected model"}.`
                 : "Isolating the icon so it composites cleanly onto rooms and NPCs."}
             </p>
           </div>

@@ -29,21 +29,22 @@ const DEFAULT_POSITIONS: SlotPosition[] = [
   { x: 68, y: 28 },  // right shoulder
 ];
 
+/** Get the position for a slot, reading from its config x/y fields. */
+function getSlotPosition(slot: EquipmentSlotDefinition, fallbackIndex: number): SlotPosition {
+  if (slot.x != null && slot.y != null) {
+    return { x: slot.x, y: slot.y };
+  }
+  return DEFAULT_POSITIONS[fallbackIndex % DEFAULT_POSITIONS.length]!;
+}
+
 export function EquipmentSlotsPanel({ config, onChange }: ConfigPanelProps) {
   const mudDir = useProjectStore((s) => s.project?.mudDir);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [newSlotId, setNewSlotId] = useState("");
-  const [positions, setPositions] = useState<Record<string, SlotPosition>>({});
   const [dragging, setDragging] = useState<string | null>(null);
+  const [dragPos, setDragPos] = useState<SlotPosition | null>(null);
+  const [migrated, setMigrated] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
-
-  // Load arcanum meta on mount
-  useEffect(() => {
-    if (!mudDir) return;
-    invoke<ArcanumMeta>("load_arcanum_meta", { mudDir }).then((meta) => {
-      setPositions(meta.wearSlotPositions ?? {});
-    });
-  }, [mudDir]);
 
   const slots = config.equipmentSlots;
   const sortedSlots = useMemo(
@@ -52,21 +53,48 @@ export function EquipmentSlotsPanel({ config, onChange }: ConfigPanelProps) {
     [slots],
   );
 
-  const savePositions = useCallback(
-    async (next: Record<string, SlotPosition>) => {
-      setPositions(next);
-      if (!mudDir) return;
-      try {
-        await invoke("save_arcanum_meta", {
-          mudDir,
-          meta: { wearSlotPositions: next },
-        });
-      } catch (err) {
-        console.error("Failed to save arcanum meta:", err);
-      }
-    },
-    [mudDir],
-  );
+  // One-time migration: if any slot is missing x/y but arcanum-meta has
+  // positions, migrate them into the config store.
+  useEffect(() => {
+    if (migrated || !mudDir) return;
+    const slotEntries = Object.entries(slots);
+    const anyMissing = slotEntries.some(([, s]) => s.x == null || s.y == null);
+    if (!anyMissing) {
+      setMigrated(true);
+      return;
+    }
+    invoke<ArcanumMeta>("load_arcanum_meta", { mudDir })
+      .then((meta) => {
+        const metaPositions = meta.wearSlotPositions ?? {};
+        // Lowercase keys to match config slot IDs
+        const normalized: Record<string, SlotPosition> = {};
+        for (const [id, pos] of Object.entries(metaPositions)) {
+          normalized[id.trim().toLowerCase()] = pos;
+        }
+        let changed = false;
+        const patched: Record<string, EquipmentSlotDefinition> = {};
+        for (const [id, slot] of slotEntries) {
+          if (slot.x == null || slot.y == null) {
+            const metaPos = normalized[id];
+            if (metaPos) {
+              patched[id] = { ...slot, x: metaPos.x, y: metaPos.y };
+              changed = true;
+            } else {
+              patched[id] = slot;
+            }
+          } else {
+            patched[id] = slot;
+          }
+        }
+        if (changed) {
+          onChange({ equipmentSlots: patched });
+        }
+        setMigrated(true);
+      })
+      .catch(() => {
+        setMigrated(true);
+      });
+  }, [mudDir, migrated, slots, onChange]);
 
   const handleAddSlot = useCallback(() => {
     const id = newSlotId.trim().toLowerCase().replace(/\s+/g, "_");
@@ -75,31 +103,26 @@ export function EquipmentSlotsPanel({ config, onChange }: ConfigPanelProps) {
       sortedSlots.length > 0
         ? Math.max(...sortedSlots.map(([, s]) => s.order)) + 1
         : 0;
+    const posIndex = Object.keys(slots).length % DEFAULT_POSITIONS.length;
+    const defaultPos = DEFAULT_POSITIONS[posIndex]!;
     onChange({
       equipmentSlots: {
         ...slots,
-        [id]: { displayName: newSlotId.trim(), order: nextOrder },
+        [id]: { displayName: newSlotId.trim(), order: nextOrder, x: defaultPos.x, y: defaultPos.y },
       },
     });
-    // Assign a default position
-    const posIndex = Object.keys(slots).length % DEFAULT_POSITIONS.length;
-    const defaultPos = DEFAULT_POSITIONS[posIndex]!;
-    savePositions({ ...positions, [id]: defaultPos });
     setNewSlotId("");
     setSelectedId(id);
-  }, [newSlotId, slots, sortedSlots, onChange, positions, savePositions]);
+  }, [newSlotId, slots, sortedSlots, onChange]);
 
   const handleDeleteSlot = useCallback(
     (id: string) => {
       const next = { ...slots };
       delete next[id];
       onChange({ equipmentSlots: next });
-      const nextPos = { ...positions };
-      delete nextPos[id];
-      savePositions(nextPos);
       if (selectedId === id) setSelectedId(null);
     },
-    [slots, positions, selectedId, onChange, savePositions],
+    [slots, selectedId, onChange],
   );
 
   const handlePatchSlot = useCallback(
@@ -117,6 +140,7 @@ export function EquipmentSlotsPanel({ config, onChange }: ConfigPanelProps) {
       e.stopPropagation();
       (e.target as HTMLElement).setPointerCapture(e.pointerId);
       setDragging(slotId);
+      setDragPos(null);
       setSelectedId(slotId);
     },
     [],
@@ -128,17 +152,18 @@ export function EquipmentSlotsPanel({ config, onChange }: ConfigPanelProps) {
       const rect = containerRef.current.getBoundingClientRect();
       const x = Math.max(0, Math.min(100, ((e.clientX - rect.left) / rect.width) * 100));
       const y = Math.max(0, Math.min(100, ((e.clientY - rect.top) / rect.height) * 100));
-      setPositions((prev) => ({ ...prev, [dragging]: { x, y } }));
+      setDragPos({ x, y });
     },
     [dragging],
   );
 
   const handlePointerUp = useCallback(() => {
-    if (dragging) {
-      savePositions(positions);
-      setDragging(null);
+    if (dragging && dragPos) {
+      handlePatchSlot(dragging, { x: dragPos.x, y: dragPos.y });
     }
-  }, [dragging, positions, savePositions]);
+    setDragging(null);
+    setDragPos(null);
+  }, [dragging, dragPos, handlePatchSlot]);
 
   const selected = selectedId ? slots[selectedId] : null;
 
@@ -259,10 +284,12 @@ export function EquipmentSlotsPanel({ config, onChange }: ConfigPanelProps) {
           />
 
           {/* Slot markers */}
-          {sortedSlots.map(([id, slot]) => {
-            const pos = positions[id] ?? DEFAULT_POSITIONS[0]!;
+          {sortedSlots.map(([id, slot], index) => {
+            const isDraggingThis = id === dragging;
+            const pos = isDraggingThis && dragPos
+              ? dragPos
+              : getSlotPosition(slot, index);
             const isSelected = id === selectedId;
-            const isDragging = id === dragging;
             return (
               <div
                 key={id}
@@ -281,18 +308,14 @@ export function EquipmentSlotsPanel({ config, onChange }: ConfigPanelProps) {
                   else return;
                   e.preventDefault();
                   setSelectedId(id);
-                  const cur = positions[id] ?? DEFAULT_POSITIONS[0]!;
-                  const next = {
-                    ...positions,
-                    [id]: {
-                      x: Math.max(0, Math.min(100, cur.x + dx)),
-                      y: Math.max(0, Math.min(100, cur.y + dy)),
-                    },
-                  };
-                  savePositions(next);
+                  const cur = getSlotPosition(slot, index);
+                  handlePatchSlot(id, {
+                    x: Math.max(0, Math.min(100, cur.x + dx)),
+                    y: Math.max(0, Math.min(100, cur.y + dy)),
+                  });
                 }}
                 className={`focus-ring absolute flex items-center justify-center rounded-full transition-[transform,border-color,background-color,box-shadow] duration-150 ${
-                  isDragging ? "z-20 cursor-grabbing shadow-lg ring-1 ring-accent/30" : "cursor-grab"
+                  isDraggingThis ? "z-20 cursor-grabbing shadow-lg ring-1 ring-accent/30" : "cursor-grab"
                 }`}
                 style={{
                   width: 44,
@@ -308,7 +331,7 @@ export function EquipmentSlotsPanel({ config, onChange }: ConfigPanelProps) {
                     isSelected
                       ? "border-accent bg-accent/70 ring-2 ring-accent-emphasis"
                       : "border-accent/60 bg-accent/40"
-                  } ${!isDragging && !isSelected ? "animate-aurum-pulse" : ""}`}
+                  } ${!isDraggingThis && !isSelected ? "animate-aurum-pulse" : ""}`}
                 >
                   {slot.displayName.charAt(0).toUpperCase()}
                 </div>

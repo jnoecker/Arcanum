@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import { exportMudFormat, buildMonolithicConfig, loadSlotPositions, generateSpritesYaml } from "@/lib/exportMud";
+import { exportMudFormat, buildMonolithicConfig, generateSpritesYaml } from "@/lib/exportMud";
 import { YAML_OPTS } from "@/lib/yamlOpts";
 import { saveProjectConfig } from "@/lib/saveConfig";
 import { saveAllZones } from "@/lib/saveZone";
@@ -154,9 +154,8 @@ export async function deployRuntimeAchievements(): Promise<string> {
 }
 
 export async function deployRuntimeConfig(project: Project): Promise<string> {
-  const slotPositions = await loadSlotPositions(project.mudDir);
   const configContent = project.format === "standalone"
-    ? buildMonolithicConfig(undefined, slotPositions)
+    ? buildMonolithicConfig()
     : undefined;
 
   return invoke<string>("deploy_config_to_r2", {

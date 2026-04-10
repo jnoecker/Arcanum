@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/FormWidgets";
 import { DeleteEntityButton, EnhanceDescriptionButton, MediaSection } from "./EditorShared";
 import { itemPrompt, itemContext } from "@/lib/entityPrompts";
+import { keywordFromId } from "@/lib/sanitizeZone";
 import { useVibeStore } from "@/stores/vibeStore";
 import { useConfigStore } from "@/stores/configStore";
 
@@ -125,7 +126,7 @@ export function ItemEditor({
                 <TextInput
                   value={item.keyword ?? ""}
                   onCommit={(v) => patch({ keyword: v || undefined })}
-                  placeholder="Auto"
+                  placeholder={keywordFromId(itemId)}
                 />
               </div>
               <CheckboxInput

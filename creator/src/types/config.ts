@@ -375,6 +375,8 @@ export interface GroupConfig {
 export interface EquipmentSlotDefinition {
   displayName: string;
   order: number;
+  x?: number;  // Paper-doll X position (0-100%)
+  y?: number;  // Paper-doll Y position (0-100%)
 }
 
 // ─── Gender ─────────────────────────────────────────────────────────

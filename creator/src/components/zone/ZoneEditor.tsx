@@ -185,6 +185,13 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
     if (!zoneState) return;
     updateZone(zoneId, { ...zoneState.data, pvpEnabled: e.target.checked || undefined });
   }, [zoneState, updateZone, zoneId]);
+  const handleLifespanChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!zoneState) return;
+    const raw = e.target.value.trim();
+    const n = raw === "" ? undefined : Math.max(0, Math.round(Number(raw)));
+    if (n !== undefined && isNaN(n)) return;
+    updateZone(zoneId, { ...zoneState.data, lifespan: n || undefined });
+  }, [zoneState, updateZone, zoneId]);
 
   // Auto-close entity panel if the selected entity was removed (e.g. by undo)
   useEffect(() => {
@@ -575,6 +582,21 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
             className="accent-accent"
           />
           PvP zone
+        </label>
+
+        {/* Lifespan (reset timer) */}
+        <label className="flex items-center gap-1.5 text-xs text-text-secondary max-[1100px]:min-h-9" title="Zone reset interval in MUD ticks (minutes). 0 or empty = never resets.">
+          <span className="whitespace-nowrap">Lifespan</span>
+          <input
+            type="number"
+            min={0}
+            max={9999}
+            step={1}
+            value={zoneState.data.lifespan ?? ""}
+            onChange={handleLifespanChange}
+            placeholder="0"
+            className="ornate-input w-16 px-1.5 py-0.5 text-xs text-text-primary"
+          />
         </label>
 
         {/* Zone name */}

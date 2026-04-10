@@ -3,7 +3,6 @@ import { invoke } from "@tauri-apps/api/core";
 import { stringify } from "yaml";
 import { normalizeAssetRef, normalizeConfigAssetRefs, normalizeGlobalAssetMap } from "@/lib/assetRefs";
 import { useConfigStore } from "@/stores/configStore";
-import { useProjectStore } from "@/stores/projectStore";
 import { useZoneStore, type ZoneState } from "@/stores/zoneStore";
 import { serializeZone } from "@/lib/saveZone";
 import { useSpriteDefinitionStore } from "@/stores/spriteDefinitionStore";
@@ -278,7 +277,8 @@ export function normalizeGuildHallsConfig(config?: AppConfig["guildHalls"]): App
 export function buildMonolithicConfigObject(
   config?: AppConfig | null,
   zones?: Map<string, ZoneState>,
-  slotPositions?: SlotPositionMap,
+  /** @deprecated Slot positions now live on EquipmentSlotDefinition.x/y — this param is ignored. */
+  _slotPositions?: SlotPositionMap,
 ): Record<string, unknown> {
   const rawConfig = config ?? useConfigStore.getState().config;
   const c = rawConfig ? normalizeConfigAssetRefs(rawConfig) : rawConfig;
@@ -358,15 +358,12 @@ export function buildMonolithicConfigObject(
     definitions: mapEntries(c.races, raceToPlain),
   };
   engine.equipment = {
-    slots: mapEntries(c.equipmentSlots, (s, id) => {
-      const pos = slotPositions?.[id];
-      return {
-        displayName: s.displayName,
-        order: s.order,
-        x: pos?.x ?? 50,
-        y: pos?.y ?? 50,
-      };
-    }),
+    slots: mapEntries(c.equipmentSlots, (s) => ({
+      displayName: s.displayName,
+      order: s.order,
+      x: s.x ?? 50,
+      y: s.y ?? 50,
+    })),
   };
   engine.characterCreation = c.characterCreation;
   engine.genders = c.genders;
@@ -600,8 +597,8 @@ export function buildMonolithicConfigObject(
  * Wraps everything under the `ambonmud` root key with the `engine` sub-tree,
  * matching the structure that AmbonMUD server expects.
  */
-export function buildMonolithicConfig(config?: AppConfig | null, slotPositions?: SlotPositionMap): string {
-  return stringify({ ambonmud: buildMonolithicConfigObject(config, undefined, slotPositions) }, YAML_OPTS);
+export function buildMonolithicConfig(config?: AppConfig | null): string {
+  return stringify({ ambonmud: buildMonolithicConfigObject(config) }, YAML_OPTS);
 }
 
 /**
@@ -611,11 +608,8 @@ export function buildMonolithicConfig(config?: AppConfig | null, slotPositions?:
 export async function exportMudFormat(outputDir: string): Promise<ExportResult> {
   const config = useConfigStore.getState().config;
   const zones = useZoneStore.getState().zones;
-  const mudDir = useProjectStore.getState().project?.mudDir;
 
   if (!config) throw new Error("No config loaded");
-
-  const slotPositions = await loadSlotPositions(mudDir);
 
   const resourcesDir = `${outputDir}/src/main/resources`;
   const worldDir = `${resourcesDir}/world`;
@@ -624,7 +618,7 @@ export async function exportMudFormat(outputDir: string): Promise<ExportResult> 
   await mkdir(worldDir, { recursive: true });
 
   // Write monolithic config
-  const configYaml = buildMonolithicConfig(config, slotPositions);
+  const configYaml = buildMonolithicConfig(config);
   await writeTextFile(`${resourcesDir}/application.yaml`, configYaml);
 
   // Write sprites manifest

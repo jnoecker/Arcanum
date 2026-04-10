@@ -180,7 +180,11 @@ export function QuestEditor({
                     <TextInput
                       value={obj.description ?? ""}
                       onCommit={(v) => handleUpdateObjective(i, "description", v)}
-                      placeholder="Optional"
+                      placeholder={
+                        obj.type && obj.targetKey
+                          ? `${obj.type.toLowerCase()} ${obj.targetKey} x${obj.count ?? 1}`
+                          : "Optional"
+                      }
                       dense
                     />
                   </CompactField>

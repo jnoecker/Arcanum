@@ -18,6 +18,12 @@ import type {
 import { resolveDoorKeyId } from "./doorHelpers";
 import { getTrainerClasses, setTrainerClasses } from "./trainers";
 
+/** Derive keyword from entity ID: extract part after last colon, or full ID. Matches Kotlin `keywordFromId`. */
+export function keywordFromId(id: string): string {
+  const idx = id.lastIndexOf(":");
+  return idx >= 0 ? id.slice(idx + 1) : id;
+}
+
 // ─── ID sanitization ──────────────────────────────────────────────
 
 const NUMERIC_ONLY_RE = /^\d+$/;
@@ -449,7 +455,8 @@ function stripInvalidEntities(world: WorldFile): WorldFile {
     items = {};
     for (const [id, item] of Object.entries(world.items)) {
       const room = item.room && roomIds.has(item.room) ? item.room : undefined;
-      items[id] = { ...item, displayName: item.displayName?.trim() || id, room };
+      const keyword = item.keyword?.trim() || undefined;
+      items[id] = { ...item, displayName: item.displayName?.trim() || id, room, keyword: keyword || keywordFromId(id) };
     }
   }
 
@@ -479,7 +486,8 @@ function stripInvalidEntities(world: WorldFile): WorldFile {
     gatheringNodes = {};
     for (const [id, node] of Object.entries(world.gatheringNodes)) {
       if (!roomIds.has(node.room)) continue;
-      gatheringNodes[id] = { ...node, displayName: node.displayName?.trim() || id };
+      const keyword = node.keyword?.trim() || undefined;
+      gatheringNodes[id] = { ...node, displayName: node.displayName?.trim() || id, keyword: keyword || keywordFromId(id) };
     }
   }
 

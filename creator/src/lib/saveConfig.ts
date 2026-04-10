@@ -13,7 +13,6 @@ import {
   petToPlain,
   enchantmentToPlain,
   buildMonolithicConfigObject,
-  loadSlotPositions,
   normalizeLotteryConfig,
   normalizeGamblingConfig,
   normalizeRespecConfig,
@@ -56,14 +55,12 @@ export async function saveConfig(mudDir: string): Promise<void> {
   const resourcesDir = `${mudDir}/src/main/resources`;
   const basePath = `${resourcesDir}/application.yaml`;
 
-  const slotPositions = await loadSlotPositions(mudDir);
-
   // Always write to application.yaml — Arcanum is the primary config editor.
   // The -local overlay pattern is for manual dev overrides, not Arcanum output.
   const content = await readTextFile(basePath);
   const doc = parseDocument(content);
 
-  doc.set("ambonmud", buildMonolithicConfigObject(config, undefined, slotPositions));
+  doc.set("ambonmud", buildMonolithicConfigObject(config));
 
   await writeTextFile(basePath, doc.toString());
 
@@ -93,8 +90,6 @@ async function saveSplitConfig(projectDir: string): Promise<void> {
   const state = useConfigStore.getState();
   const config = state.config ? normalizeConfigAssetRefs(state.config) : state.config;
   if (!config) throw new Error("No config loaded");
-
-  const slotPositions = await loadSlotPositions(projectDir);
 
   const dir = `${projectDir}/config`;
   const write = (name: string, data: unknown) =>
@@ -131,15 +126,12 @@ async function saveSplitConfig(projectDir: string): Promise<void> {
     }),
 
     write("equipment", {
-      slots: mapEntries(config.equipmentSlots, (s, id) => {
-        const pos = slotPositions[id];
-        return {
-          displayName: s.displayName,
-          order: s.order,
-          x: pos?.x ?? 50,
-          y: pos?.y ?? 50,
-        };
-      }),
+      slots: mapEntries(config.equipmentSlots, (s) => ({
+        displayName: s.displayName,
+        order: s.order,
+        x: s.x ?? 50,
+        y: s.y ?? 50,
+      })),
     }),
 
     write("combat", {

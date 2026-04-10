@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/FormWidgets";
 import { DeleteEntityButton, MediaSection } from "./EditorShared";
 import { gatheringNodePrompt, gatheringNodeContext } from "@/lib/entityPrompts";
+import { keywordFromId } from "@/lib/sanitizeZone";
 import { useConfigStore } from "@/stores/configStore";
 import { useVibeStore } from "@/stores/vibeStore";
 
@@ -101,7 +102,7 @@ export function GatheringNodeEditor({
           <TextInput
             value={node.keyword ?? ""}
             onCommit={(v) => patch({ keyword: v || undefined })}
-            placeholder="Auto"
+            placeholder={keywordFromId(nodeId)}
           />
         </FieldRow>
         <FieldRow label="Room">

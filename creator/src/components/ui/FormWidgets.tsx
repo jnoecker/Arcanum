@@ -1,4 +1,4 @@
-import { useState, type ButtonHTMLAttributes, type ReactNode, type Ref } from "react";
+import { useState, type ButtonHTMLAttributes, type ReactNode, type Ref, type CSSProperties } from "react";
 
 function cx(...classes: Array<string | false | null | undefined>) {
   return classes.filter(Boolean).join(" ");
@@ -609,6 +609,135 @@ export function InlineError({
           )}
         </div>
       )}
+    </div>
+  );
+}
+
+// ─── Compact layout primitives ──────────────────────────────────
+
+/** Grid layout for placing related fields side by side. */
+export function FieldGrid({
+  children,
+  cols = 2,
+}: {
+  children: ReactNode;
+  cols?: 2 | 3;
+}) {
+  return (
+    <div
+      className="grid gap-x-3 gap-y-1.5"
+      style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` } as CSSProperties}
+    >
+      {children}
+    </div>
+  );
+}
+
+/** Label-above-input field for use inside FieldGrid. */
+export function CompactField({
+  label,
+  hint,
+  span,
+  children,
+}: {
+  label: string;
+  hint?: string;
+  /** Span the full grid width. */
+  span?: boolean;
+  children: ReactNode;
+}) {
+  return (
+    <label className={cx("flex flex-col gap-0.5", span && "col-span-full")}>
+      <span className="text-2xs text-text-muted">{label}</span>
+      {children}
+      {hint && <span className="text-2xs leading-snug text-text-muted/60">{hint}</span>}
+    </label>
+  );
+}
+
+/** Always-visible header area above collapsible sections. */
+export function EntityHeader({
+  type,
+  children,
+}: {
+  /** Entity type badge label (e.g. "Mob", "Item"). */
+  type: string;
+  children: ReactNode;
+}) {
+  return (
+    <div className="border-b border-border-muted px-4 py-3">
+      <div className="mb-2 flex items-center gap-2">
+        <span className="rounded bg-accent/15 px-1.5 py-0.5 text-2xs font-semibold uppercase tracking-wider text-accent">
+          {type}
+        </span>
+      </div>
+      <div className="flex flex-col gap-1.5">{children}</div>
+    </div>
+  );
+}
+
+/** Lightweight array row — left accent border instead of full bordered card. */
+export function ArrayRow({
+  index,
+  onRemove,
+  children,
+}: {
+  index?: number;
+  onRemove?: () => void;
+  children: ReactNode;
+}) {
+  return (
+    <div className="border-l-2 border-accent/20 py-1.5 pl-2.5">
+      <div className="flex items-start justify-between gap-1">
+        <div className="min-w-0 flex-1">
+          {index != null && (
+            <span className="mb-0.5 block text-2xs font-medium text-text-muted">
+              #{index + 1}
+            </span>
+          )}
+          {children}
+        </div>
+        {onRemove && (
+          <button
+            onClick={onRemove}
+            className="shrink-0 rounded px-1 py-0.5 text-xs text-text-muted transition-colors hover:bg-status-danger/10 hover:text-status-danger"
+            title="Remove"
+            aria-label="Remove"
+          >
+            &times;
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/** Horizontal tab bar for sub-navigation within a panel. */
+export function TabBar<T extends string>({
+  tabs,
+  active,
+  onChange,
+}: {
+  tabs: readonly { value: T; label: string }[];
+  active: T;
+  onChange: (tab: T) => void;
+}) {
+  return (
+    <div className="flex border-b border-border-muted">
+      {tabs.map((tab) => (
+        <button
+          key={tab.value}
+          onClick={() => onChange(tab.value)}
+          className={cx(
+            "px-3 py-2 text-xs font-medium transition-colors",
+            active === tab.value
+              ? "border-b-2 border-accent text-accent"
+              : "text-text-muted hover:text-text-secondary",
+          )}
+        >
+          {tab.label}
+        </button>
+      ))}
     </div>
   );
 }

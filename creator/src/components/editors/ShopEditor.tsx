@@ -8,6 +8,7 @@ import {
   TextInput,
   SelectInput,
   IconButton,
+  EntityHeader,
 } from "@/components/ui/FormWidgets";
 import { DeleteEntityButton, MediaSection } from "./EditorShared";
 import { shopPrompt } from "@/lib/entityPrompts";
@@ -67,20 +68,18 @@ export function ShopEditor({
 
   return (
     <>
-      <Section title="Basics">
-        <div className="flex flex-col gap-1.5">
-          <FieldRow label="Name">
-            <TextInput value={shop.name} onCommit={(v) => patch({ name: v })} />
-          </FieldRow>
-          <FieldRow label="Room">
-            <SelectInput
-              value={shop.room}
-              options={rooms}
-              onCommit={(v) => patch({ room: v })}
-            />
-          </FieldRow>
-        </div>
-      </Section>
+      <EntityHeader type="Shop">
+        <FieldRow label="Name">
+          <TextInput value={shop.name} onCommit={(v) => patch({ name: v })} />
+        </FieldRow>
+        <FieldRow label="Room">
+          <SelectInput
+            value={shop.room}
+            options={rooms}
+            onCommit={(v) => patch({ room: v })}
+          />
+        </FieldRow>
+      </EntityHeader>
 
       <Section
         title={`Inventory (${shop.items?.length ?? 0})`}

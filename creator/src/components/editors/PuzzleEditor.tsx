@@ -17,6 +17,9 @@ import {
   CheckboxInput,
   CommitTextarea,
   IconButton,
+  EntityHeader,
+  FieldGrid,
+  CompactField,
 } from "@/components/ui/FormWidgets";
 import { DeleteEntityButton } from "./EditorShared";
 
@@ -154,33 +157,36 @@ export function PuzzleEditor({
 
   return (
     <>
-      <Section title="Basics">
-        <div className="flex flex-col gap-1.5">
-          <FieldRow label="Type">
+      <EntityHeader type="Puzzle">
+        <FieldGrid cols={2}>
+          <CompactField label="Type">
             <SelectInput
               value={puzzleType}
               options={PUZZLE_TYPE_OPTIONS}
               onCommit={(v) => patch({ type: v })}
+              dense
             />
-          </FieldRow>
-          <FieldRow label="Room" hint="Room where the puzzle lives.">
+          </CompactField>
+          <CompactField label="Room" hint="Room where the puzzle lives.">
             <SelectInput
               value={puzzle.roomId}
               options={rooms}
               onCommit={(v) => patch({ roomId: v })}
+              dense
             />
-          </FieldRow>
-          <FieldRow label="Mob (optional)" hint="NPC that voices the puzzle (riddle only).">
-            <SelectInput
-              value={puzzle.mobId ?? ""}
-              options={zoneMobOptions}
-              onCommit={(v) => patch({ mobId: v || undefined })}
-              placeholder="— none —"
-              allowEmpty
-            />
-          </FieldRow>
-        </div>
-      </Section>
+          </CompactField>
+        </FieldGrid>
+        <CompactField label="Mob (optional)" hint="NPC that voices the puzzle (riddle only).">
+          <SelectInput
+            value={puzzle.mobId ?? ""}
+            options={zoneMobOptions}
+            onCommit={(v) => patch({ mobId: v || undefined })}
+            placeholder="— none —"
+            allowEmpty
+            dense
+          />
+        </CompactField>
+      </EntityHeader>
 
       {puzzleType === "riddle" && (
         <Section title="Riddle">
@@ -357,41 +363,43 @@ export function PuzzleEditor({
         </div>
       </Section>
 
-      <Section title="Messages" defaultExpanded={false}>
-        <div className="flex flex-col gap-1.5">
-          <FieldRow label="On success">
+      <Section title="Settings" defaultExpanded={false}>
+        <FieldGrid cols={2}>
+          <CompactField label="On success">
             <TextInput
               value={puzzle.successMessage ?? ""}
               onCommit={(v) => patch({ successMessage: v || undefined })}
               placeholder="A hidden door grinds open..."
+              dense
             />
-          </FieldRow>
-          <FieldRow label="On fail">
+          </CompactField>
+          <CompactField label="On fail">
             <TextInput
               value={puzzle.failMessage ?? ""}
               onCommit={(v) => patch({ failMessage: v || undefined })}
               placeholder="Nothing happens."
+              dense
             />
-          </FieldRow>
-        </div>
-      </Section>
-
-      <Section title="Behavior" defaultExpanded={false}>
-        <div className="flex flex-col gap-1.5">
-          <FieldRow label="Cooldown (ms)" hint="Delay before players can retry after failing.">
+          </CompactField>
+          <CompactField label="Cooldown (ms)" hint="Delay before players can retry after failing.">
             <NumberInput
               value={puzzle.cooldownMs}
               onCommit={(v) => patch({ cooldownMs: v })}
               min={0}
               placeholder="0"
+              dense
             />
-          </FieldRow>
-          <CheckboxInput
-            checked={!!puzzle.resetOnFail}
-            onCommit={(v) => patch({ resetOnFail: v || undefined })}
-            label="Reset progress on fail"
-          />
-        </div>
+          </CompactField>
+          <CompactField label="Reset on fail">
+            <div className="flex items-center pt-2">
+              <CheckboxInput
+                checked={!!puzzle.resetOnFail}
+                onCommit={(v) => patch({ resetOnFail: v || undefined })}
+                label="Reset progress on fail"
+              />
+            </div>
+          </CompactField>
+        </FieldGrid>
       </Section>
 
       <DeleteEntityButton onClick={handleDelete} label="Delete Puzzle" />

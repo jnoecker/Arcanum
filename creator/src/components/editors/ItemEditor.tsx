@@ -9,6 +9,9 @@ import {
   NumberInput,
   SelectInput,
   CheckboxInput,
+  EntityHeader,
+  FieldGrid,
+  CompactField,
 } from "@/components/ui/FormWidgets";
 import { DeleteEntityButton, EnhanceDescriptionButton, MediaSection } from "./EditorShared";
 import { itemPrompt, itemContext } from "@/lib/entityPrompts";
@@ -83,47 +86,60 @@ export function ItemEditor({
 
   return (
     <>
-      {/* Core fields */}
-      <Section title="Basics">
-        <div className="flex flex-col gap-1.5">
-          <FieldRow label="Display Name">
-            <TextInput
-              value={item.displayName}
-              onCommit={(v) => patch({ displayName: v })}
-            />
-          </FieldRow>
-          <FieldRow label="Keyword">
-            <TextInput
-              value={item.keyword ?? ""}
-              onCommit={(v) => patch({ keyword: v || undefined })}
-              placeholder="Auto"
-            />
-          </FieldRow>
-          <FieldRow label="Description">
-            <div className="flex items-center gap-1">
-              <div className="min-w-0 flex-1">
-                <TextInput
-                  value={item.description ?? ""}
-                  onCommit={(v) => patch({ description: v || undefined })}
-                  placeholder="None"
-                />
-              </div>
-              <EnhanceDescriptionButton
-                entitySummary={`Item "${item.displayName}"${item.slot ? `, slot: ${item.slot}` : ""}${item.damage ? `, damage: ${item.damage}` : ""}${item.armor ? `, armor: ${item.armor}` : ""}${item.consumable ? ", consumable" : ""}`}
-                currentDescription={item.description}
-                onAccept={(v) => patch({ description: v })}
-                vibe={zoneId ? useVibeStore.getState().getVibe(zoneId) : undefined}
+      {/* Entity header — always visible */}
+      <EntityHeader type="Item">
+        <FieldRow label="Display Name">
+          <TextInput
+            value={item.displayName}
+            onCommit={(v) => patch({ displayName: v })}
+          />
+        </FieldRow>
+        <FieldRow label="Description">
+          <div className="flex items-center gap-1">
+            <div className="min-w-0 flex-1">
+              <TextInput
+                value={item.description ?? ""}
+                onCommit={(v) => patch({ description: v || undefined })}
+                placeholder="None"
               />
             </div>
-          </FieldRow>
-          <FieldRow label="Room">
-            <SelectInput
-              value={item.room ?? ""}
-              options={rooms}
-              onCommit={(v) => patch({ room: v || undefined })}
-              allowEmpty
-              placeholder="— unplaced —"
+            <EnhanceDescriptionButton
+              entitySummary={`Item "${item.displayName}"${item.slot ? `, slot: ${item.slot}` : ""}${item.damage ? `, damage: ${item.damage}` : ""}${item.armor ? `, armor: ${item.armor}` : ""}${item.consumable ? ", consumable" : ""}`}
+              currentDescription={item.description}
+              onAccept={(v) => patch({ description: v })}
+              vibe={zoneId ? useVibeStore.getState().getVibe(zoneId) : undefined}
             />
+          </div>
+        </FieldRow>
+        <FieldRow label="Room">
+          <SelectInput
+            value={item.room ?? ""}
+            options={rooms}
+            onCommit={(v) => patch({ room: v || undefined })}
+            allowEmpty
+            placeholder="— unplaced —"
+          />
+        </FieldRow>
+      </EntityHeader>
+
+      {/* Identity */}
+      <Section title="Identity">
+        <div className="flex flex-col gap-1.5">
+          <FieldRow label="Keyword">
+            <div className="flex items-center gap-2">
+              <div className="min-w-0 flex-1">
+                <TextInput
+                  value={item.keyword ?? ""}
+                  onCommit={(v) => patch({ keyword: v || undefined })}
+                  placeholder="Auto"
+                />
+              </div>
+              <CheckboxInput
+                checked={item.matchByKey ?? false}
+                onCommit={(v) => patch({ matchByKey: v || undefined })}
+                label="Match by keyword"
+              />
+            </div>
           </FieldRow>
           <FieldRow label="Base Price">
             <NumberInput
@@ -133,42 +149,79 @@ export function ItemEditor({
               min={0}
             />
           </FieldRow>
-          <CheckboxInput
-            checked={item.matchByKey ?? false}
-            onCommit={(v) => patch({ matchByKey: v || undefined })}
-            label="Match by keyword"
-          />
         </div>
       </Section>
 
-      {/* Equipment */}
-      <Section title="Equipment" defaultExpanded={false}>
+      {/* Properties — merged Equipment + Consumable */}
+      <Section title="Properties" defaultExpanded={false}>
         <div className="flex flex-col gap-1.5">
-          <FieldRow label="Slot">
-            <SelectInput
-              value={item.slot ?? ""}
-              options={slotOptions}
-              onCommit={(v) => patch({ slot: v || undefined })}
-              allowEmpty
-              placeholder="— none —"
-            />
-          </FieldRow>
-          <FieldRow label="Damage">
-            <NumberInput
-              value={item.damage}
-              onCommit={(v) => patch({ damage: v })}
-              placeholder="0"
-              min={0}
-            />
-          </FieldRow>
-          <FieldRow label="Armor">
-            <NumberInput
-              value={item.armor}
-              onCommit={(v) => patch({ armor: v })}
-              placeholder="0"
-              min={0}
-            />
-          </FieldRow>
+          <FieldGrid cols={2}>
+            <CompactField label="Slot" span>
+              <SelectInput
+                value={item.slot ?? ""}
+                options={slotOptions}
+                onCommit={(v) => patch({ slot: v || undefined })}
+                allowEmpty
+                placeholder="— none —"
+                dense
+              />
+            </CompactField>
+            <CompactField label="Damage">
+              <NumberInput
+                value={item.damage}
+                onCommit={(v) => patch({ damage: v })}
+                placeholder="0"
+                min={0}
+                dense
+              />
+            </CompactField>
+            <CompactField label="Armor">
+              <NumberInput
+                value={item.armor}
+                onCommit={(v) => patch({ armor: v })}
+                placeholder="0"
+                min={0}
+                dense
+              />
+            </CompactField>
+          </FieldGrid>
+          <hr className="my-2 border-border-muted" />
+          <CheckboxInput
+            checked={item.consumable ?? false}
+            onCommit={(v) => patch({ consumable: v || undefined })}
+            label="Is consumable"
+          />
+          {item.consumable && (
+            <FieldGrid cols={2}>
+              <CompactField label="Charges" span>
+                <NumberInput
+                  value={item.charges}
+                  onCommit={(v) => patch({ charges: v })}
+                  placeholder="Unlimited"
+                  min={1}
+                  dense
+                />
+              </CompactField>
+              <CompactField label="Heal HP">
+                <NumberInput
+                  value={onUse.healHp}
+                  onCommit={(v) => handleOnUseChange("healHp", v)}
+                  placeholder="0"
+                  min={0}
+                  dense
+                />
+              </CompactField>
+              <CompactField label="Grant XP">
+                <NumberInput
+                  value={onUse.grantXp}
+                  onCommit={(v) => handleOnUseChange("grantXp", v)}
+                  placeholder="0"
+                  min={0}
+                  dense
+                />
+              </CompactField>
+            </FieldGrid>
+          )}
         </div>
       </Section>
 
@@ -194,45 +247,6 @@ export function ItemEditor({
             existingStats={Object.keys(stats)}
             onAdd={(statId) => handleStatChange(statId, 1)}
           />
-        </div>
-      </Section>
-
-      {/* Consumable */}
-      <Section title="Consumable" defaultExpanded={false}>
-        <div className="flex flex-col gap-1.5">
-          <CheckboxInput
-            checked={item.consumable ?? false}
-            onCommit={(v) => patch({ consumable: v || undefined })}
-            label="Is consumable"
-          />
-          {item.consumable && (
-            <>
-              <FieldRow label="Charges">
-                <NumberInput
-                  value={item.charges}
-                  onCommit={(v) => patch({ charges: v })}
-                  placeholder="Unlimited"
-                  min={1}
-                />
-              </FieldRow>
-              <FieldRow label="Heal HP">
-                <NumberInput
-                  value={onUse.healHp}
-                  onCommit={(v) => handleOnUseChange("healHp", v)}
-                  placeholder="0"
-                  min={0}
-                />
-              </FieldRow>
-              <FieldRow label="Grant XP">
-                <NumberInput
-                  value={onUse.grantXp}
-                  onCommit={(v) => handleOnUseChange("grantXp", v)}
-                  placeholder="0"
-                  min={0}
-                />
-              </FieldRow>
-            </>
-          )}
         </div>
       </Section>
 

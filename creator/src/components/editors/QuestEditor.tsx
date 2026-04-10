@@ -15,6 +15,10 @@ import {
   NumberInput,
   SelectInput,
   IconButton,
+  EntityHeader,
+  FieldGrid,
+  CompactField,
+  ArrayRow,
 } from "@/components/ui/FormWidgets";
 import { DeleteEntityButton } from "./EditorShared";
 import { useConfigStore } from "@/stores/configStore";
@@ -105,34 +109,39 @@ export function QuestEditor({
 
   return (
     <>
+      <EntityHeader type="Quest">
+        <FieldRow label="Name">
+          <TextInput value={quest.name} onCommit={(v) => patch({ name: v })} />
+        </FieldRow>
+        <FieldRow label="Description">
+          <TextInput
+            value={quest.description ?? ""}
+            onCommit={(v) => patch({ description: v || undefined })}
+            placeholder="None"
+          />
+        </FieldRow>
+      </EntityHeader>
+
       <Section title="Basics">
-        <div className="flex flex-col gap-1.5">
-          <FieldRow label="Name">
-            <TextInput value={quest.name} onCommit={(v) => patch({ name: v })} />
-          </FieldRow>
-          <FieldRow label="Description">
-            <TextInput
-              value={quest.description ?? ""}
-              onCommit={(v) => patch({ description: v || undefined })}
-              placeholder="None"
-            />
-          </FieldRow>
-          <FieldRow label="Giver (mob)">
+        <FieldGrid>
+          <CompactField label="Giver (mob)">
             <SelectInput
               value={quest.giver}
               options={zoneMobs}
               onCommit={(v) => patch({ giver: v })}
               placeholder="— select mob —"
+              dense
             />
-          </FieldRow>
-          <FieldRow label="Completion">
+          </CompactField>
+          <CompactField label="Completion">
             <SelectInput
               value={quest.completionType ?? "AUTO"}
               options={completionOptions}
               onCommit={(v) => patch({ completionType: v })}
+              dense
             />
-          </FieldRow>
-        </div>
+          </CompactField>
+        </FieldGrid>
       </Section>
 
       <Section
@@ -148,82 +157,71 @@ export function QuestEditor({
         ) : (
           <div className="flex flex-col gap-2">
             {objectives.map((obj, i) => (
-              <div
-                key={i}
-                className="rounded border border-border-muted p-1.5"
-              >
-                <div className="mb-1 flex items-center justify-between">
-                  <span className="text-2xs font-medium text-text-muted">
-                    #{i + 1}
-                  </span>
-                  <IconButton
-                    onClick={() => handleDeleteObjective(i)}
-                    title="Remove objective"
-                    danger
-                  >
-                    &times;
-                  </IconButton>
-                </div>
-                <div className="flex flex-col gap-1">
-                  <FieldRow label="Type">
+              <ArrayRow key={i} index={i} onRemove={() => handleDeleteObjective(i)}>
+                <FieldGrid>
+                  <CompactField label="Type">
                     <SelectInput
                       value={obj.type}
                       options={objectiveTypeOptions}
                       onCommit={(v) => handleUpdateObjective(i, "type", v)}
+                      dense
                     />
-                  </FieldRow>
-                  <FieldRow label="Target">
+                  </CompactField>
+                  <CompactField label="Target">
                     <TextInput
                       value={obj.targetKey}
-                      onCommit={(v) =>
-                        handleUpdateObjective(i, "targetKey", v)
-                      }
+                      onCommit={(v) => handleUpdateObjective(i, "targetKey", v)}
                       placeholder="mob/item ID"
+                      dense
                     />
-                  </FieldRow>
-                  <FieldRow label="Count">
+                  </CompactField>
+                </FieldGrid>
+                <FieldGrid>
+                  <CompactField label="Count">
                     <NumberInput
                       value={obj.count}
-                      onCommit={(v) =>
-                        handleUpdateObjective(i, "count", v ?? 1)
-                      }
+                      onCommit={(v) => handleUpdateObjective(i, "count", v ?? 1)}
                       min={1}
+                      dense
                     />
-                  </FieldRow>
-                  <FieldRow label="Description">
+                  </CompactField>
+                  <CompactField label="Description">
                     <TextInput
                       value={obj.description ?? ""}
-                      onCommit={(v) =>
-                        handleUpdateObjective(i, "description", v)
-                      }
+                      onCommit={(v) => handleUpdateObjective(i, "description", v)}
                       placeholder="Optional"
+                      dense
                     />
-                  </FieldRow>
-                </div>
-              </div>
+                  </CompactField>
+                </FieldGrid>
+              </ArrayRow>
             ))}
           </div>
         )}
       </Section>
 
       <Section title="Rewards" defaultExpanded={false}>
-        <div className="flex flex-col gap-1.5">
-          <FieldRow label="XP">
+        <FieldGrid>
+          <CompactField label="XP">
             <NumberInput
               value={rewards.xp}
               onCommit={(v) => handleRewardChange("xp", v)}
               placeholder="0"
               min={0}
+              dense
             />
-          </FieldRow>
-          <FieldRow label="Gold">
+          </CompactField>
+          <CompactField label="Gold">
             <NumberInput
               value={rewards.gold}
               onCommit={(v) => handleRewardChange("gold", v)}
               placeholder="0"
               min={0}
+              dense
             />
-          </FieldRow>
+          </CompactField>
+        </FieldGrid>
+        <div className="mt-2">
           <FieldRow label="Currencies" hint="Secondary currency rewards (e.g. quest_points, honor)">
             <div className="flex flex-col gap-1">
               {Object.entries(rewards.currencies ?? {}).map(([key, amount]) => (

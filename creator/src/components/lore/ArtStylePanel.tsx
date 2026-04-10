@@ -96,6 +96,7 @@ function CreateMenu({
         size="sm"
         onClick={() => setOpen((v) => !v)}
         disabled={disabled}
+        aria-expanded={open}
       >
         + New style
       </ActionButton>

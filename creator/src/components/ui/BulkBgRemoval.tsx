@@ -242,7 +242,7 @@ function StatusDot({ status }: { status: TargetState["status"] }) {
   const cls =
     status === "done" ? "bg-status-success" :
     status === "error" ? "bg-status-error" :
-    status === "processing" ? "bg-status-warning animate-pulse" :
+    status === "processing" ? "bg-status-warning animate-warm-breathe" :
     status === "skipped" ? "bg-text-primary/20" :
     "bg-[var(--chrome-highlight-strong)]";
   return <span className={`h-2 w-2 shrink-0 rounded-full ${cls}`} />;

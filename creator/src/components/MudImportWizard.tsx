@@ -498,7 +498,7 @@ export function MudImportWizard({ onClose }: { onClose: () => void }) {
                 <span className={`h-2 w-2 rounded-full shrink-0 ${
                   r.status === "done" ? "bg-status-success" :
                   r.status === "error" ? "bg-status-error" :
-                  r.status === "converting" ? "bg-status-warning animate-pulse" :
+                  r.status === "converting" ? "bg-status-warning animate-warm-breathe" :
                   "bg-text-primary/20"
                 }`} />
                 <span className="text-text-muted">

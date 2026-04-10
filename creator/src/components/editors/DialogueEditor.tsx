@@ -250,6 +250,7 @@ function DialogueNodeCard({
         <button
           onClick={() => setCollapsed(!collapsed)}
           className="h-4 w-4 shrink-0 text-2xs text-text-muted transition-colors hover:text-text-primary"
+          aria-expanded={!collapsed}
         >
           {collapsed ? "\u25B6" : "\u25BC"}
         </button>
@@ -380,6 +381,7 @@ function ChoiceRow({ choice, nextOptions, onUpdate, onDelete }: ChoiceRowProps) 
               : "text-text-muted hover:text-text-primary"
           }`}
           title="Toggle conditions"
+          aria-expanded={expanded}
         >
           &#x2699;
         </button>

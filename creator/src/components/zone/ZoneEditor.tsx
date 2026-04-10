@@ -168,6 +168,24 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
     () => localStorage.getItem("arcanum:zone-hint-dismissed") === "1",
   );
 
+  // Stable callbacks for toolbar actions
+  const handleUndo = useCallback(() => {
+    undo(zoneId);
+    useToastStore.getState().show("Change undone");
+  }, [undo, zoneId]);
+  const handleRedo = useCallback(() => {
+    redo(zoneId);
+    useToastStore.getState().show("Change restored");
+  }, [redo, zoneId]);
+  const handleGraphicalToggle = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!zoneState) return;
+    updateZone(zoneId, { ...zoneState.data, graphical: e.target.checked || undefined });
+  }, [zoneState, updateZone, zoneId]);
+  const handlePvpToggle = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!zoneState) return;
+    updateZone(zoneId, { ...zoneState.data, pvpEnabled: e.target.checked || undefined });
+  }, [zoneState, updateZone, zoneId]);
+
   // Auto-close entity panel if the selected entity was removed (e.g. by undo)
   useEffect(() => {
     if (!selectedEntity || !zoneState) return;
@@ -500,7 +518,7 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
         {/* Undo / Redo */}
         <div className="flex items-center gap-0.5 border-r border-[var(--chrome-stroke)] pr-3 max-[1100px]:pr-0 max-[1100px]:border-r-0">
           <button
-            onClick={() => { undo(zoneId); useToastStore.getState().show("Change undone"); }}
+            onClick={handleUndo}
             disabled={!canUndo}
             className="h-6 w-6 rounded text-xs text-accent transition-colors enabled:hover:bg-accent/10 disabled:opacity-30 max-[1100px]:h-9 max-[1100px]:w-9"
             title="Undo (Ctrl+Z)"
@@ -509,7 +527,7 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
             &#x21B6;
           </button>
           <button
-            onClick={() => { redo(zoneId); useToastStore.getState().show("Change restored"); }}
+            onClick={handleRedo}
             disabled={!canRedo}
             className="h-6 w-6 rounded text-xs text-accent transition-colors enabled:hover:bg-accent/10 disabled:opacity-30 max-[1100px]:h-9 max-[1100px]:w-9"
             title="Redo (Ctrl+Shift+Z)"
@@ -542,10 +560,7 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
           <input
             type="checkbox"
             checked={!!zoneState.data.graphical}
-            onChange={(e) => {
-              const updated = { ...zoneState.data, graphical: e.target.checked || undefined };
-              updateZone(zoneId, updated);
-            }}
+            onChange={handleGraphicalToggle}
             className="accent-accent"
           />
           Graphical zone
@@ -556,10 +571,7 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
           <input
             type="checkbox"
             checked={!!zoneState.data.pvpEnabled}
-            onChange={(e) => {
-              const updated = { ...zoneState.data, pvpEnabled: e.target.checked || undefined };
-              updateZone(zoneId, updated);
-            }}
+            onChange={handlePvpToggle}
             className="accent-accent"
           />
           PvP zone

@@ -21,7 +21,7 @@ export function ShortcutsHelp({ onClose }: ShortcutsHelpProps) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--chrome-fill-soft)]0"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--chrome-fill-soft)]"
       onClick={onClose}
     >
       <div

@@ -88,13 +88,13 @@ export function ParameterSection({
         </span>
 
         {/* Field count badge */}
-        <span className="rounded-full bg-accent/[0.14] px-2 py-0.5 font-sans text-sm text-accent">
+        <span className="rounded-full bg-accent/[0.14] px-2 py-0.5 text-sm text-accent">
           {fields.length}
         </span>
 
         {/* Changes count badge -- shown when collapsed with preset active */}
         {hasPreset && changedCount > 0 && (
-          <span className="rounded-full bg-status-success/[0.14] px-2 py-0.5 font-sans text-[13px] text-status-success">
+          <span className="rounded-full bg-status-success/[0.14] px-2 py-0.5 text-[13px] text-status-success">
             {changedCount} changed
           </span>
         )}

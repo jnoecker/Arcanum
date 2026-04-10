@@ -104,7 +104,7 @@ export function SceneContextMenu({
     <div
       ref={menuRef}
       tabIndex={-1}
-      className="animate-unfurl-in bg-bg-elevated border border-border-default rounded-lg backdrop-blur-sm min-w-[180px] py-1 shadow-[var(--shadow-panel)] outline-none"
+      className="animate-unfurl-in bg-bg-elevated border border-border-default rounded-lg min-w-[180px] py-1 shadow-[var(--shadow-panel)] outline-none"
       style={{ position: "fixed", left: x, top: y, zIndex: 60 }}
     >
       {/* Duplicate Scene */}
@@ -134,7 +134,7 @@ export function SceneContextMenu({
 
         {showTemplateSubmenu && (
           <div
-            className="absolute left-full top-0 bg-bg-elevated border border-border-default rounded-lg backdrop-blur-sm min-w-[180px] py-1 shadow-[var(--shadow-panel)]"
+            className="absolute left-full top-0 bg-bg-elevated border border-border-default rounded-lg min-w-[180px] py-1 shadow-[var(--shadow-panel)]"
             style={{ zIndex: 61 }}
           >
             {templates.map((tpl) => (

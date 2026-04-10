@@ -63,7 +63,7 @@ export function TypewriterNarration({
       variants={containerVariants}
       initial={prefersReducedMotion ? "visible" : "hidden"}
       animate={playing ? "visible" : "hidden"}
-      className="font-body text-[15px] text-white leading-relaxed px-6 py-4"
+      className="text-[15px] text-text-primary leading-relaxed px-6 py-4"
       style={{ textShadow: "0 1px 3px rgba(0,0,0,0.5)" }}
       aria-live="polite"
     >

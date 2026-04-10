@@ -83,7 +83,7 @@ function ZoneRegionPreview({
             onMouseLeave={() => onHover(null)}
           >
             <span
-              className="absolute left-1.5 top-1.5 max-w-[calc(100%-0.75rem)] truncate rounded bg-black/70 px-1.5 py-0.5 font-display text-[10px] tracking-[0.12em] text-warm-pale"
+              className="absolute left-1.5 top-1.5 max-w-[calc(100%-0.75rem)] truncate rounded bg-surface-scrim px-1.5 py-0.5 font-display text-[10px] tracking-[0.12em] text-warm-pale"
             >
               {plan.name}
             </span>

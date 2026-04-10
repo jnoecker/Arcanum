@@ -21,11 +21,11 @@ export function HealthCheckBanner() {
         <span aria-hidden="true" className="text-status-warning">&#9888;</span>
         {/* Warning content */}
         <div className="min-w-0 flex-1">
-          <h4 className="font-sans text-sm font-semibold text-status-warning">
+          <h4 className="text-sm font-semibold text-status-warning">
             Balance Warning
           </h4>
           {healthWarnings.map((w, i) => (
-            <p key={i} className="mt-1 font-sans text-sm text-text-secondary">
+            <p key={i} className="mt-1 text-sm text-text-secondary">
               {w.message}
             </p>
           ))}

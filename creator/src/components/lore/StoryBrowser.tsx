@@ -12,7 +12,7 @@ import { Spinner } from "@/components/ui/FormWidgets";
 /** Thumbnail for a story's cover image. */
 function StoryThumb({ fileName }: { fileName: string }) {
   const src = useImageSrc(fileName);
-  if (!src) return <div className="h-full w-full animate-pulse bg-bg-elevated" />;
+  if (!src) return <div className="h-full w-full animate-cosmic-glimmer bg-bg-elevated" />;
   return <img src={src} alt="" className="h-full w-full object-cover" />;
 }
 

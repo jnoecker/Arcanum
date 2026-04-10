@@ -51,6 +51,7 @@ function DefaultThumb({ fileName, label, generating }: { fileName?: string; labe
           type="button"
           onClick={() => { if (src && !generating) setExpanded(true); }}
           disabled={!src || generating}
+          aria-expanded={expanded}
           className="flex aspect-square w-full items-center justify-center overflow-hidden rounded-xl border border-[var(--chrome-stroke)] bg-[var(--chrome-fill-strong)] transition-opacity enabled:cursor-pointer enabled:hover:opacity-80"
         >
           {generating ? (
@@ -65,7 +66,7 @@ function DefaultThumb({ fileName, label, generating }: { fileName?: string; labe
 
       {expanded && src && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--chrome-fill-soft)]0"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--chrome-fill-soft)]"
           onClick={() => setExpanded(false)}
         >
           <div className="relative mx-8 max-h-[85vh] max-w-[85vw]">
@@ -75,7 +76,7 @@ function DefaultThumb({ fileName, label, generating }: { fileName?: string; labe
               className="max-h-[85vh] max-w-[85vw] cursor-pointer rounded-lg object-contain shadow-2xl"
             />
             <div className="absolute left-0 right-0 top-full mt-3 text-center">
-              <span className="rounded-full bg-[var(--chrome-fill-soft)]0 px-3 py-1 text-2xs uppercase tracking-ui text-text-muted backdrop-blur-sm">
+              <span className="rounded-full bg-bg-primary/90 px-3 py-1 text-2xs uppercase tracking-ui text-text-muted">
                 {label}
               </span>
             </div>

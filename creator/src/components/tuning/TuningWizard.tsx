@@ -221,10 +221,10 @@ export function TuningWizard() {
   if (!config) {
     return (
       <div className="flex min-h-0 flex-1 flex-col items-center justify-center">
-        <h2 className="font-sans text-lg font-semibold text-text-secondary">
+        <h2 className="text-lg font-semibold text-text-secondary">
           No configuration loaded
         </h2>
-        <p className="mt-2 font-sans text-[15px] text-text-muted">
+        <p className="mt-2 text-[15px] text-text-muted">
           Open a project with an application.yaml to begin tuning.
         </p>
       </div>
@@ -304,10 +304,10 @@ export function TuningWizard() {
       <div ref={browserRef} className={`px-6 ${selectedPresetId ? "pb-20" : "pb-8"}`}>
         {totalFilteredCount === 0 ? (
           <div className="flex flex-col items-center justify-center py-16">
-            <p className="font-sans text-lg font-semibold text-text-secondary">
+            <p className="text-lg font-semibold text-text-secondary">
               No parameters found
             </p>
-            <p className="mt-2 font-sans text-[15px] text-text-muted">
+            <p className="mt-2 text-[15px] text-text-muted">
               Try broadening your search or enabling more section filters.
             </p>
           </div>

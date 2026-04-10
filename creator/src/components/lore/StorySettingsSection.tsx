@@ -35,7 +35,7 @@ function CoverImage({
         </div>
       )}
       <div className="absolute inset-0 flex items-center justify-center bg-[var(--chrome-fill-strong)] opacity-0 transition-opacity group-hover:opacity-100">
-        <span className="text-sm font-medium text-white">Change</span>
+        <span className="text-sm font-medium text-text-primary">Change</span>
       </div>
     </button>
   );

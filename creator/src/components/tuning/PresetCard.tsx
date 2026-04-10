@@ -137,7 +137,7 @@ export function PresetCard({ preset, metrics, isSelected, isDimmed, onSelect }: 
         </h3>
 
         {/* Description */}
-        <p className="font-sans text-[15px] leading-[1.6] text-text-secondary line-clamp-2">
+        <p className="text-[15px] leading-[1.6] text-text-secondary line-clamp-2">
           {preset.description}
         </p>
 
@@ -145,7 +145,7 @@ export function PresetCard({ preset, metrics, isSelected, isDimmed, onSelect }: 
         <div className="flex flex-col gap-2">
           {indicators.map((ind) => (
             <div key={ind.label} className="flex items-center justify-between gap-2">
-              <span className="font-sans text-sm text-text-muted">{ind.label}</span>
+              <span className="text-sm text-text-muted">{ind.label}</span>
               <span
                 className={`${accent.bg} ${accent.text} rounded-full px-2 py-0.5 font-mono text-sm`}
               >

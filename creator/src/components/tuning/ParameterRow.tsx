@@ -145,7 +145,7 @@ export function ParameterRow({
         tabIndex={0}
         title={tooltipText}
         aria-label={`${meta.label}. ${tooltipText}`}
-        className="focus-ring rounded-sm font-sans text-[15px] font-semibold text-text-primary"
+        className="focus-ring rounded-sm text-[15px] font-semibold text-text-primary"
       >
         {meta.label}
       </span>
@@ -161,7 +161,7 @@ export function ParameterRow({
       )}
 
       {/* Description */}
-      <span className="font-sans text-sm leading-5 text-text-muted md:col-span-2 xl:col-auto">
+      <span className="text-sm leading-5 text-text-muted md:col-span-2 xl:col-auto">
         {meta.description}
       </span>
     </div>

@@ -29,7 +29,7 @@ export function AdminOverviewPanel() {
     return (
       <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-border-default/40 bg-bg-secondary/60 px-6 py-12 text-center">
         <div className="h-2 w-2 rounded-full bg-server-starting motion-safe:animate-aurum-pulse" />
-        <p className="font-body text-sm text-text-muted">Reaching into the world...</p>
+        <p className="text-sm text-text-muted">Reaching into the world...</p>
       </div>
     );
   }
@@ -47,7 +47,7 @@ export function AdminOverviewPanel() {
       <div className="my-3 h-px bg-border-default/40" />
 
       {/* Narrative readout */}
-      <div className="space-y-2 font-body text-base leading-relaxed text-text-secondary">
+      <div className="space-y-2 text-base leading-relaxed text-text-secondary">
         <p>
           {hasPlayers ? (
             <>
@@ -81,7 +81,7 @@ export function AdminOverviewPanel() {
         <div className="h-px flex-1 bg-border-default/40" />
       </div>
 
-      <div className="space-y-1 font-body text-xs text-text-muted">
+      <div className="space-y-1 text-xs text-text-muted">
         {lastRefreshed && (
           <p>Last scrying: <span className="text-text-secondary">{relativeTime}</span></p>
         )}

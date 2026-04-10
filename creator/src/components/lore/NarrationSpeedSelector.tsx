@@ -38,7 +38,7 @@ export function NarrationSpeedSelector({
     <div className="flex flex-col gap-1">
       {/* Label with override indicator */}
       <div className="flex items-center gap-1.5">
-        <span className="font-body text-[10px] text-text-muted uppercase tracking-[0.18em]">
+        <span className="text-[10px] text-text-muted uppercase tracking-[0.18em]">
           Narration Speed
         </span>
         {isOverridden && (
@@ -60,7 +60,7 @@ export function NarrationSpeedSelector({
               type="button"
               role="radio"
               aria-checked={active}
-              className={`flex-1 flex items-center justify-center cursor-pointer transition-colors duration-[180ms] font-body text-xs ${
+              className={`flex-1 flex items-center justify-center cursor-pointer transition-colors duration-[180ms] text-xs ${
                 active
                   ? "bg-bg-elevated text-accent"
                   : "text-text-muted hover:text-text-secondary"

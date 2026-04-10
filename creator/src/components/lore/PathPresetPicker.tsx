@@ -19,12 +19,12 @@ interface PresetDropdownProps {
 function PresetDropdown({ label, ariaLabel, presets, value, onChange }: PresetDropdownProps) {
   return (
     <div className="flex flex-col gap-1">
-      <span className="font-body text-xs text-text-muted">{label}</span>
+      <span className="text-xs text-text-muted">{label}</span>
       <select
         value={value ?? ""}
         onChange={(event) => onChange(event.target.value || undefined)}
         aria-label={ariaLabel}
-        className="w-full min-w-0 rounded-md border border-border-muted bg-bg-elevated px-3 py-1.5 font-body text-xs text-text-primary outline-none transition-colors duration-[180ms] hover:border-border-default focus:border-border-focus sm:max-w-[160px]"
+        className="w-full min-w-0 rounded-md border border-border-muted bg-bg-elevated px-3 py-1.5 text-xs text-text-primary outline-none transition-colors duration-[180ms] hover:border-border-default focus:border-border-focus sm:max-w-[160px]"
       >
         <option value="">None</option>
         {presets.map((preset) => (
@@ -44,7 +44,7 @@ export function PathPresetPicker({
 }: PathPresetPickerProps) {
   if (entities.length === 0) {
     return (
-      <p className="font-body text-xs text-text-muted italic">
+      <p className="text-xs text-text-muted italic">
         Add entities to set movement paths
       </p>
     );
@@ -60,7 +60,7 @@ export function PathPresetPicker({
         <h4 className="font-display text-sm uppercase tracking-[0.18em] text-text-muted">
           Movement Paths
         </h4>
-        <p className="font-body text-xs text-text-muted italic">
+        <p className="text-xs text-text-muted italic">
           Select an entity to set movement paths
         </p>
       </div>

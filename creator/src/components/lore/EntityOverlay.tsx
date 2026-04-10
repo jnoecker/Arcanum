@@ -70,7 +70,7 @@ function RemoveButton({ onClick }: { onClick: () => void }) {
   return (
     <button
       type="button"
-      className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-[var(--chrome-fill-soft)]0 hover:bg-[var(--chrome-fill-soft)]0 opacity-0 group-hover:opacity-100 transition-opacity duration-150"
+      className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-[var(--chrome-fill-soft)] hover:bg-[var(--chrome-fill-soft)] opacity-0 group-hover:opacity-100 transition-opacity duration-150"
       onClick={(e) => {
         e.stopPropagation();
         onClick();
@@ -223,7 +223,7 @@ export function EntityOverlay({
 
       {/* Name label */}
       <p
-        className="text-center font-body text-xs text-text-primary whitespace-nowrap overflow-hidden text-ellipsis pointer-events-none"
+        className="text-center text-xs text-text-primary whitespace-nowrap overflow-hidden text-ellipsis pointer-events-none"
         style={{ textShadow: "0 1px 3px rgb(var(--shadow-rgb) / 0.8)" }}
       >
         {entityName}

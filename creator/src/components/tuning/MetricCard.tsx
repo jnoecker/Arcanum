@@ -61,10 +61,10 @@ function MetricRow({
       {showHeader && (
         <div className="mb-1 grid grid-cols-[minmax(0,1fr)_auto_auto] items-baseline gap-2">
           <span className="flex-1" />
-          <span className="text-right font-sans text-[12px] uppercase tracking-wide text-text-muted">
+          <span className="text-right text-[12px] uppercase tracking-wide text-text-muted">
             Current
           </span>
-          <span className="text-right font-sans text-[12px] uppercase tracking-wide text-text-muted">
+          <span className="text-right text-[12px] uppercase tracking-wide text-text-muted">
             Preset
           </span>
         </div>
@@ -74,7 +74,7 @@ function MetricRow({
           tabIndex={0}
           title={formulaTooltip}
           aria-label={`${label}. ${formulaTooltip}`}
-          className="focus-ring rounded-sm font-sans text-[14px] text-text-secondary"
+          className="focus-ring rounded-sm text-[14px] text-text-secondary"
         >
           {label}
         </span>

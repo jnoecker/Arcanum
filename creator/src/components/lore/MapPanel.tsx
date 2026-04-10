@@ -118,6 +118,7 @@ function ColorPalettePicker({
                 onClick={() => removeColorLabel(cl.id)}
                 className="shrink-0 text-2xs text-text-muted opacity-0 transition hover:text-status-danger group-hover:opacity-100"
                 title="Remove label"
+                aria-label="Remove label"
               >
                 &times;
               </button>

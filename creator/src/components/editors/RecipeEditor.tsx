@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useConfigOptions } from "@/lib/useConfigOptions";
 import type { WorldFile, RecipeFile, RecipeMaterialFile } from "@/types/world";
 import { updateRecipe, deleteRecipe } from "@/lib/zoneEdits";
 import { useEntityEditor } from "@/lib/useEntityEditor";
@@ -54,22 +54,10 @@ export function RecipeEditor({
     onDelete,
   );
   const craftingSkills = useConfigStore((s) => s.config?.craftingSkills);
-  const craftingSkillOptions = useMemo(() => {
-    if (craftingSkills && Object.keys(craftingSkills).length > 0) {
-      return Object.entries(craftingSkills)
-        .map(([id, def]) => ({ value: id, label: def.displayName }));
-    }
-    return FALLBACK_CRAFTING_SKILLS;
-  }, [craftingSkills]);
+  const craftingSkillOptions = useConfigOptions(craftingSkills, FALLBACK_CRAFTING_SKILLS);
 
   const stationTypes = useConfigStore((s) => s.config?.craftingStationTypes);
-  const stationOptions = useMemo(() => {
-    if (stationTypes && Object.keys(stationTypes).length > 0) {
-      return Object.entries(stationTypes)
-        .map(([id, def]) => ({ value: id, label: def.displayName }));
-    }
-    return FALLBACK_STATION_OPTIONS;
-  }, [stationTypes]);
+  const stationOptions = useConfigOptions(stationTypes, FALLBACK_STATION_OPTIONS);
 
   if (!recipe) return null;
 

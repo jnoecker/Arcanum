@@ -31,7 +31,7 @@ export function AchievementDesigner({
         defaultItem={defaultAchievementCategoryDefinition}
         getDisplayName={(category) => category.displayName}
         renderSummary={summarizeAchievementCategory}
-        renderDetail={(category, patch) => (
+        renderDetail={(_id, category, patch) => (
           <AchievementCategoryDetail category={category} patch={patch} />
         )}
         onItemsChange={(achievementCategories) => onChange({ achievementCategories })}
@@ -51,7 +51,7 @@ export function AchievementDesigner({
         getDisplayName={(criterion) => criterion.displayName}
         renderSummary={summarizeAchievementCriterionType}
         renderBadges={(criterion) => (criterion.progressFormat ? ["Tracked"] : ["Simple"])}
-        renderDetail={(criterion, patch) => (
+        renderDetail={(_id, criterion, patch) => (
           <AchievementCriterionTypeDetail criterion={criterion} patch={patch} />
         )}
         onItemsChange={(achievementCriterionTypes) => onChange({ achievementCriterionTypes })}

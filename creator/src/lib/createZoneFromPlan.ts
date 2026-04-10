@@ -7,12 +7,7 @@ import { zoneFilePath } from "@/lib/projectPaths";
 import type { Project } from "@/types/project";
 import type { ZonePlan } from "@/types/lore";
 import type { WorldFile } from "@/types/world";
-
-const YAML_OPTS = {
-  lineWidth: 120,
-  defaultKeyType: "PLAIN" as const,
-  defaultStringType: "PLAIN" as const,
-};
+import { YAML_OPTS } from "@/lib/yamlOpts";
 
 /**
  * Convert a ZonePlan name into a valid zone id (lowercase, underscores,

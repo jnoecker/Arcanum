@@ -135,20 +135,16 @@ pub async fn runware_generate_image(
         number_results: 1,
     };
 
-    let client = reqwest::Client::new();
+    let client = crate::http::shared_client();
     let response = client
         .post(API_URL)
-        .header("Authorization", format!("Bearer {}", s.runware_api_key))
+        .header("Authorization", crate::http::bearer_header(&s.runware_api_key))
         .json(&vec![task])
         .send()
         .await
         .map_err(|e| format!("Runware API request failed: {e}"))?;
 
-    if !response.status().is_success() {
-        let status = response.status();
-        let text = response.text().await.unwrap_or_default();
-        return Err(format!("Runware API error ({status}): {text}"));
-    }
+    let response = crate::http::check_response(response).await?;
 
     let text = response
         .text()
@@ -265,20 +261,16 @@ pub async fn runware_generate_audio(
         },
     };
 
-    let client = reqwest::Client::new();
+    let client = crate::http::shared_client();
     let response = client
         .post(API_URL)
-        .header("Authorization", format!("Bearer {}", s.runware_api_key))
+        .header("Authorization", crate::http::bearer_header(&s.runware_api_key))
         .json(&vec![task])
         .send()
         .await
         .map_err(|e| format!("Runware API request failed: {e}"))?;
 
-    if !response.status().is_success() {
-        let status = response.status();
-        let text = response.text().await.unwrap_or_default();
-        return Err(format!("Runware API error ({status}): {text}"));
-    }
+    let response = crate::http::check_response(response).await?;
 
     let resp: RunwareAudioResponse = response
         .json()
@@ -385,20 +377,16 @@ pub async fn runware_generate_video(
         output_format: "MP4".to_string(),
     };
 
-    let client = reqwest::Client::new();
+    let client = crate::http::shared_client();
     let response = client
         .post(API_URL)
-        .header("Authorization", format!("Bearer {}", s.runware_api_key))
+        .header("Authorization", crate::http::bearer_header(&s.runware_api_key))
         .json(&vec![task])
         .send()
         .await
         .map_err(|e| format!("Runware API request failed: {e}"))?;
 
-    if !response.status().is_success() {
-        let status = response.status();
-        let text = response.text().await.unwrap_or_default();
-        return Err(format!("Runware API error ({status}): {text}"));
-    }
+    let response = crate::http::check_response(response).await?;
 
     let resp: RunwareVideoResponse = response
         .json()

@@ -77,7 +77,7 @@ pub async fn complete(
         }],
     };
 
-    let client = reqwest::Client::new();
+    let client = crate::http::shared_client();
     let response = client
         .post(API_URL)
         .header("x-api-key", api_key)
@@ -88,11 +88,7 @@ pub async fn complete(
         .await
         .map_err(|e| format!("Anthropic API request failed: {e}"))?;
 
-    if !response.status().is_success() {
-        let status = response.status();
-        let text = response.text().await.unwrap_or_default();
-        return Err(format!("Anthropic API error ({status}): {text}"));
-    }
+    let response = crate::http::check_response(response).await?;
 
     let resp: AnthropicResponse = response
         .json()
@@ -135,7 +131,7 @@ pub async fn complete_with_vision(
         }],
     };
 
-    let client = reqwest::Client::new();
+    let client = crate::http::shared_client();
     let response = client
         .post(API_URL)
         .header("x-api-key", api_key)
@@ -146,11 +142,7 @@ pub async fn complete_with_vision(
         .await
         .map_err(|e| format!("Anthropic API request failed: {e}"))?;
 
-    if !response.status().is_success() {
-        let status = response.status();
-        let text = response.text().await.unwrap_or_default();
-        return Err(format!("Anthropic API error ({status}): {text}"));
-    }
+    let response = crate::http::check_response(response).await?;
 
     let resp: AnthropicResponse = response
         .json()

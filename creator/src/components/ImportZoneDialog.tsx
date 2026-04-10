@@ -11,12 +11,7 @@ import { useFocusTrap } from "@/lib/useFocusTrap";
 import { DialogShell, ActionButton, Spinner } from "./ui/FormWidgets";
 import { normalizeExitDirections } from "@/lib/zoneEdits";
 import type { WorldFile } from "@/types/world";
-
-const YAML_OPTS = {
-  lineWidth: 120,
-  defaultKeyType: "PLAIN" as const,
-  defaultStringType: "PLAIN" as const,
-};
+import { YAML_OPTS } from "@/lib/yamlOpts";
 
 const ZONE_ID_RE = /^[a-z][a-z0-9_]*$/;
 

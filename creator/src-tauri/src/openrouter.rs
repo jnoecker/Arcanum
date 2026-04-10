@@ -54,21 +54,17 @@ pub async fn complete(
         temperature: 0.7,
     };
 
-    let client = reqwest::Client::new();
+    let client = crate::http::shared_client();
     let response = client
         .post(API_URL)
-        .header("Authorization", format!("Bearer {api_key}"))
+        .header("Authorization", crate::http::bearer_header(api_key))
         .header("HTTP-Referer", "https://arcanum.dev")
         .json(&body)
         .send()
         .await
         .map_err(|e| format!("OpenRouter API request failed: {e}"))?;
 
-    if !response.status().is_success() {
-        let status = response.status();
-        let text = response.text().await.unwrap_or_default();
-        return Err(format!("OpenRouter API error ({status}): {text}"));
-    }
+    let response = crate::http::check_response(response).await?;
 
     let resp: ChatResponse = response
         .json()

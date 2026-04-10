@@ -5,12 +5,7 @@ import { sanitizeZone } from "@/lib/sanitizeZone";
 import { validateZone } from "@/lib/validateZone";
 import { useConfigStore } from "@/stores/configStore";
 import { useZoneStore } from "@/stores/zoneStore";
-
-const YAML_OPTS = {
-  lineWidth: 120,
-  defaultKeyType: "PLAIN" as const,
-  defaultStringType: "PLAIN" as const,
-};
+import { YAML_OPTS } from "@/lib/yamlOpts";
 
 /**
  * Serialize a zone's data to YAML without writing to disk.

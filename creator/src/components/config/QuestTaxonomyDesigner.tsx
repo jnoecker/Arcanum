@@ -31,7 +31,7 @@ export function QuestTaxonomyDesigner({
         defaultItem={defaultQuestObjectiveTypeDefinition}
         getDisplayName={(objectiveType) => objectiveType.displayName}
         renderSummary={summarizeQuestObjectiveType}
-        renderDetail={(objectiveType, patch) => (
+        renderDetail={(_id, objectiveType, patch) => (
           <QuestObjectiveTypeDetail objectiveType={objectiveType} patch={patch} />
         )}
         onItemsChange={(questObjectiveTypes) => onChange({ questObjectiveTypes })}
@@ -50,7 +50,7 @@ export function QuestTaxonomyDesigner({
         defaultItem={defaultQuestCompletionTypeDefinition}
         getDisplayName={(completionType) => completionType.displayName}
         renderSummary={summarizeQuestCompletionType}
-        renderDetail={(completionType, patch) => (
+        renderDetail={(_id, completionType, patch) => (
           <QuestCompletionTypeDetail completionType={completionType} patch={patch} />
         )}
         onItemsChange={(questCompletionTypes) => onChange({ questCompletionTypes })}

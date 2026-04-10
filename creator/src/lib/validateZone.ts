@@ -8,6 +8,7 @@ import type {
   RecipeFile,
 } from "@/types/world";
 import type { EquipmentSlotDefinition } from "@/types/config";
+import { resolveDoorKeyId, resolveDoorState } from "./doorHelpers";
 import { exitTarget } from "./zoneEdits";
 import { getTrainerClasses } from "./trainers";
 
@@ -32,14 +33,6 @@ function addIssue(
   message: string,
 ): void {
   issues.push({ severity, entity, message });
-}
-
-function resolveDoorKeyId(door?: DoorFile): string | undefined {
-  return door?.keyItemId ?? door?.key;
-}
-
-function resolveDoorState(door?: DoorFile): string | undefined {
-  return door?.initialState ?? (door?.locked ? "locked" : door?.closed ? "closed" : undefined);
 }
 
 function hasPositiveOnUse(item: NonNullable<WorldFile["items"]>[string]): boolean {

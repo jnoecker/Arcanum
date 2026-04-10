@@ -113,7 +113,7 @@ export function CharacterCreationStudio({
         getDisplayName={(gender) => gender.displayName}
         renderSummary={summarizeGender}
         renderBadges={(gender) => (gender.spriteCode ? [gender.spriteCode] : ["Uses id"])}
-        renderDetail={(gender, patch) => (
+        renderDetail={(_id, gender, patch) => (
           <GenderDetail gender={gender} patchGender={patch} />
         )}
         onItemsChange={(genders) => onChange({ genders })}

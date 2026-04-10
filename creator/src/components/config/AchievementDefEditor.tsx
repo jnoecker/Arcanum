@@ -283,7 +283,7 @@ export function AchievementDefEditor({
       getDisplayName={(def) => def.displayName}
       renderSummary={summarizeAchievementDef}
       renderBadges={badgesForDef}
-      renderDetail={(def, patch) => (
+      renderDetail={(_id, def, patch) => (
         <AchievementDefDetail def={def} patch={patch} config={config} />
       )}
       onItemsChange={(achievementDefs) => onChange({ achievementDefs })}

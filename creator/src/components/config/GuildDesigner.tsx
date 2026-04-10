@@ -119,7 +119,7 @@ export function GuildDesigner({
         getDisplayName={(rank) => rank.displayName}
         renderSummary={summarizeGuildRank}
         renderBadges={(rank) => rank.permissions?.length ? [`${rank.permissions.length} perms`] : ["No perms"]}
-        renderDetail={(rank, patch) => (
+        renderDetail={(_id, rank, patch) => (
           <GuildRankDetail rank={rank} patchRank={patch} togglePermission={togglePermission} />
         )}
         onItemsChange={(guildRanks) => onChange({ guildRanks })}

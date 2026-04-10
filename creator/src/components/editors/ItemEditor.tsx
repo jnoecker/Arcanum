@@ -1,7 +1,8 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useState } from "react";
 import type { WorldFile, ItemFile, ItemOnUse } from "@/types/world";
 import { updateItem, deleteItem } from "@/lib/zoneEdits";
 import { useEntityEditor } from "@/lib/useEntityEditor";
+import { useConfigOptions } from "@/lib/useConfigOptions";
 import {
   Section,
   FieldRow,
@@ -43,18 +44,11 @@ export function ItemEditor({
     onDelete,
   );
   const equipmentSlots = useConfigStore((s) => s.config?.equipmentSlots);
-  const slotOptions = useMemo(() => {
-    if (equipmentSlots && Object.keys(equipmentSlots).length > 0) {
-      return Object.entries(equipmentSlots)
-        .sort(([, a], [, b]) => a.order - b.order)
-        .map(([id, def]) => ({ value: id, label: def.displayName }));
-    }
-    return [
-      { value: "head", label: "Head" },
-      { value: "body", label: "Body" },
-      { value: "hand", label: "Hand" },
-    ];
-  }, [equipmentSlots]);
+  const slotOptions = useConfigOptions(equipmentSlots, [
+    { value: "head", label: "Head" },
+    { value: "body", label: "Body" },
+    { value: "hand", label: "Hand" },
+  ]);
 
   if (!item) return null;
 

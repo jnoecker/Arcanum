@@ -1,67 +1,11 @@
-import { useState, useCallback, useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import { useLoreStore, selectArticles } from "@/stores/loreStore";
 import type { Article } from "@/types/lore";
 import { Section, FieldRow, TextInput } from "@/components/ui/FormWidgets";
 import { LoreTextArea } from "./LoreTextArea";
 import { LoreEditor } from "./LoreEditor";
+import { TagListEditor } from "./TagListEditor";
 import { getWorldSettingGeneratePrompt } from "@/lib/lorePrompts";
-
-// ─── String list editor (themes) ───────────────────────────────────
-
-function ThemesList({
-  items,
-  onChange,
-}: {
-  items: string[];
-  onChange: (items: string[]) => void;
-}) {
-  const [draft, setDraft] = useState("");
-
-  const add = () => {
-    const v = draft.trim();
-    if (!v || items.includes(v)) return;
-    onChange([...items, v]);
-    setDraft("");
-  };
-
-  return (
-    <div>
-      <div className="mb-1.5 flex flex-wrap gap-1.5">
-        {items.map((t, i) => (
-          <span
-            key={i}
-            className="inline-flex items-center gap-1 rounded-full border border-border-muted bg-bg-tertiary px-2.5 py-0.5 text-xs text-text-secondary"
-          >
-            {t}
-            <button
-              onClick={() => onChange(items.filter((_, j) => j !== i))}
-              className="ml-0.5 text-text-muted hover:text-status-danger"
-              title="Remove"
-            >
-              &times;
-            </button>
-          </span>
-        ))}
-      </div>
-      <div className="flex gap-1.5">
-        <input
-          className="flex-1 rounded border border-border-default bg-bg-primary px-2 py-1 text-xs text-text-primary outline-none focus:border-accent/50 focus-visible:ring-2 focus-visible:ring-border-active"
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && add()}
-          placeholder="Add a theme..."
-        />
-        <button
-          onClick={add}
-          disabled={!draft.trim()}
-          className="rounded border border-border-default px-2 py-1 text-xs text-text-secondary transition hover:bg-bg-tertiary disabled:opacity-40"
-        >
-          Add
-        </button>
-      </div>
-    </div>
-  );
-}
 
 // ─── Helpers ────────────────────────────────────────────────────────
 
@@ -179,9 +123,10 @@ export function WorldSettingPanel() {
         <p className="mb-2 text-xs text-text-muted">
           Narrative tone and recurring motifs that shape your world's stories.
         </p>
-        <ThemesList
+        <TagListEditor
           items={getFieldTags(article ?? { fields: {} } as Article, "themes")}
           onChange={(themes) => patchField("themes", themes)}
+          placeholder="Add a theme..."
         />
       </Section>
 

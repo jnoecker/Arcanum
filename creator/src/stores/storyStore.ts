@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import type { Story, Scene } from "@/types/story";
+import { snapshot as histSnapshot, undo as histUndo, redo as histRedo } from "@/lib/historyStack";
 
 const MAX_STORY_HISTORY = 50;
 
@@ -12,9 +13,8 @@ export const generateSceneId = (): string =>
 
 /** Snapshot the current stories onto the undo stack, clearing the redo stack. */
 function snapshotStory(state: StoryState): Pick<StoryState, "storyPast" | "storyFuture"> {
-  const past = [...state.storyPast, structuredClone(state.stories)];
-  if (past.length > MAX_STORY_HISTORY) past.shift();
-  return { storyPast: past, storyFuture: [] };
+  const { past, future } = histSnapshot(state.storyPast, structuredClone(state.stories), MAX_STORY_HISTORY);
+  return { storyPast: past, storyFuture: future };
 }
 
 interface StoryState {
@@ -92,26 +92,16 @@ export const useStoryStore = create<StoryStore>()((set) => ({
 
   undoStory: () =>
     set((s) => {
-      if (s.storyPast.length === 0) return s;
-      const past = [...s.storyPast];
-      const previous = past.pop()!;
-      return {
-        storyPast: past,
-        storyFuture: [structuredClone(s.stories), ...s.storyFuture],
-        stories: previous,
-      };
+      const result = histUndo(s.storyPast, structuredClone(s.stories), s.storyFuture);
+      if (!result) return s;
+      return { storyPast: result.past, storyFuture: result.future, stories: result.data };
     }),
 
   redoStory: () =>
     set((s) => {
-      if (s.storyFuture.length === 0) return s;
-      const future = [...s.storyFuture];
-      const next = future.shift()!;
-      return {
-        storyFuture: future,
-        storyPast: [...s.storyPast, structuredClone(s.stories)],
-        stories: next,
-      };
+      const result = histRedo(s.storyPast, structuredClone(s.stories), s.storyFuture);
+      if (!result) return s;
+      return { storyPast: result.past, storyFuture: result.future, stories: result.data };
     }),
 
   markClean: (id) =>

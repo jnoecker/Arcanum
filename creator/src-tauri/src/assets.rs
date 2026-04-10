@@ -96,11 +96,7 @@ async fn save_manifest(app: &AppHandle, manifest: &Manifest) -> Result<(), Strin
             .await
             .map_err(|e| format!("Failed to create assets dir: {e}"))?;
     }
-    let json = serde_json::to_string_pretty(manifest)
-        .map_err(|e| format!("Failed to serialize manifest: {e}"))?;
-    tokio::fs::write(&path, json)
-        .await
-        .map_err(|e| format!("Failed to write manifest: {e}"))
+    crate::fs_utils::write_json_file(&path, manifest, "manifest").await
 }
 
 #[tauri::command]

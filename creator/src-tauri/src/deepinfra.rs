@@ -113,20 +113,16 @@ pub async fn generate_image(
     };
 
     let url = format!("{INFERENCE_URL}/{model}");
-    let client = reqwest::Client::new();
+    let client = crate::http::shared_client();
     let response = client
         .post(&url)
-        .header("Authorization", format!("Bearer {}", settings.deepinfra_api_key))
+        .header("Authorization", crate::http::bearer_header(&settings.deepinfra_api_key))
         .json(&body)
         .send()
         .await
         .map_err(|e| format!("API request failed: {e}"))?;
 
-    if !response.status().is_success() {
-        let status = response.status();
-        let text = response.text().await.unwrap_or_default();
-        return Err(format!("API error ({status}): {text}"));
-    }
+    let response = crate::http::check_response(response).await?;
 
     let resp: ImageResponse = response
         .json()
@@ -219,20 +215,16 @@ pub async fn img2img_generate(
     };
 
     let url = format!("{INFERENCE_URL}/{model}");
-    let client = reqwest::Client::new();
+    let client = crate::http::shared_client();
     let response = client
         .post(&url)
-        .header("Authorization", format!("Bearer {}", settings.deepinfra_api_key))
+        .header("Authorization", crate::http::bearer_header(&settings.deepinfra_api_key))
         .json(&body)
         .send()
         .await
         .map_err(|e| format!("img2img API request failed: {e}"))?;
 
-    if !response.status().is_success() {
-        let status = response.status();
-        let text = response.text().await.unwrap_or_default();
-        return Err(format!("img2img API error ({status}): {text}"));
-    }
+    let response = crate::http::check_response(response).await?;
 
     let resp: ImageResponse = response
         .json()

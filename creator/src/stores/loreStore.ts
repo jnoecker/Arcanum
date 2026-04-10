@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import type { WorldLore, Article, ArticleTemplate, ColorLabel, LoreMap, MapPin, CalendarSystem, TimelineEvent, LoreDocument, TemplateOverrides, ShowcaseSettings, CustomTemplateDefinition, CustomSceneTemplate, ArtStyle, ZonePlan } from "@/types/lore";
+import { snapshot as histSnapshot, undo as histUndo, redo as histRedo } from "@/lib/historyStack";
 
 const MAX_LORE_HISTORY = 50;
 
@@ -31,9 +32,8 @@ export const selectArticleCount = (s: { lore: WorldLore | null }) => Object.keys
 /** Snapshot the current lore onto the undo stack, clearing the redo stack. */
 function snapshotLore(state: LoreState): Pick<LoreState, "lorePast" | "loreFuture"> {
   if (!state.lore) return { lorePast: state.lorePast, loreFuture: state.loreFuture };
-  const past = [...state.lorePast, structuredClone(state.lore)];
-  if (past.length > MAX_LORE_HISTORY) past.shift();
-  return { lorePast: past, loreFuture: [] };
+  const { past, future } = histSnapshot(state.lorePast, structuredClone(state.lore), MAX_LORE_HISTORY);
+  return { lorePast: past, loreFuture: future };
 }
 
 interface LoreState {
@@ -902,28 +902,18 @@ export const useLoreStore = create<LoreStore>((set, get) => ({
 
   undoLore: () =>
     set((s) => {
-      if (!s.lore || s.lorePast.length === 0) return s;
-      const past = [...s.lorePast];
-      const prev = past.pop()!;
-      return {
-        lore: prev,
-        dirty: true,
-        lorePast: past,
-        loreFuture: [s.lore, ...s.loreFuture],
-      };
+      if (!s.lore) return s;
+      const result = histUndo(s.lorePast, s.lore, s.loreFuture);
+      if (!result) return s;
+      return { lore: result.data, dirty: true, lorePast: result.past, loreFuture: result.future };
     }),
 
   redoLore: () =>
     set((s) => {
-      if (!s.lore || s.loreFuture.length === 0) return s;
-      const future = [...s.loreFuture];
-      const next = future.shift()!;
-      return {
-        lore: next,
-        dirty: true,
-        lorePast: [...s.lorePast, s.lore],
-        loreFuture: future,
-      };
+      if (!s.lore) return s;
+      const result = histRedo(s.lorePast, s.lore, s.loreFuture);
+      if (!result) return s;
+      return { lore: result.data, dirty: true, lorePast: result.past, loreFuture: result.future };
     }),
 
   canUndoLore: () => get().lorePast.length > 0,

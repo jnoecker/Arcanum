@@ -156,7 +156,7 @@ export function TrainerEditor({
           )}
           {availableClasses.length > 0 && (
             <select
-              className="ornate-input self-start rounded border border-border-default bg-bg-primary px-2 py-1 text-xs text-text-primary"
+              className="ornate-input self-start border border-border-default bg-bg-primary px-2 py-1 text-xs text-text-primary"
               value=""
               onChange={(e) => {
                 const v = e.target.value;

@@ -1,5 +1,6 @@
 import { memo, useEffect, useState } from "react";
 import { useAdminStore } from "@/stores/adminStore";
+import { Badge, EmptyState } from "@/components/ui/FormWidgets";
 import type { MobSummary } from "@/types/admin";
 
 const HpBar = memo(function HpBar({ hp, maxHp }: { hp: number; maxHp: number }) {
@@ -42,9 +43,9 @@ const MobRow = memo(function MobRow({
         <div className="flex items-center gap-2">
           <span className="truncate font-display text-sm text-text-primary">{mob.name}</span>
           {mob.aggressive && (
-            <span className="rounded-full bg-status-error/12 px-2 py-0.5 text-2xs text-status-error">
+            <Badge variant="error">
               Aggressive
-            </span>
+            </Badge>
           )}
         </div>
         <div className="mt-1 flex flex-wrap gap-2 text-2xs">
@@ -106,14 +107,12 @@ export function AdminMobList() {
       </div>
 
       {filteredMobs.length === 0 ? (
-        <div className="rounded-3xl border border-dashed border-[var(--chrome-stroke-strong)] bg-[var(--chrome-highlight)] px-6 py-12 text-center">
-          <p className="font-display text-base text-text-secondary">No creatures stir</p>
-          <p className="mt-1 text-sm text-text-muted">
-            {zoneFilter
-              ? "No mobs are alive in this zone."
-              : "No mobs are alive on the server."}
-          </p>
-        </div>
+        <EmptyState
+          title="No creatures stir"
+          description={zoneFilter
+            ? "No mobs are alive in this zone."
+            : "No mobs are alive on the server."}
+        />
       ) : (
         <div className="flex flex-col gap-1.5">
           {filteredMobs.map((mob) => (

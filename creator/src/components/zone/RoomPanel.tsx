@@ -190,6 +190,16 @@ export function RoomPanel({
   const vibe = useVibeStore((s) => s.getVibe(zoneId));
   const assetsDir = useAssetStore((s) => s.assetsDir);
   const loadedZones = useZoneStore((s) => s.zones);
+  /** Narrow selector: only extract zone IDs, start rooms, and room keys —
+   *  avoids recomputing exitSuggestions when unrelated zone data changes. */
+  const foreignZoneMeta = useZoneStore(useCallback((s) => {
+    const result: Array<{ id: string; startRoom: string; roomIds: string[] }> = [];
+    for (const [id, state] of s.zones) {
+      if (id === zoneId) continue;
+      result.push({ id, startRoom: state.data.startRoom, roomIds: Object.keys(state.data.rooms).slice(0, 50) });
+    }
+    return result;
+  }, [zoneId]));
   const craftingStationTypes = useConfigStore((s) => s.config?.craftingStationTypes);
   const room = world.rooms[roomId];
   if (!room) return null;
@@ -236,20 +246,18 @@ export function RoomPanel({
 
   const exitSuggestions = useMemo(() => {
     const localRoomIds = Object.keys(world.rooms).sort();
-    const foreignZones = [...loadedZones.entries()]
-      .filter(([loadedZoneId]) => loadedZoneId !== zoneId)
-      .sort(([a], [b]) => a.localeCompare(b));
+    const sorted = [...foreignZoneMeta].sort((a, b) => a.id.localeCompare(b.id));
 
     const suggestions = new Set<string>(localRoomIds);
-    for (const [foreignZoneId, foreignZoneState] of foreignZones) {
-      suggestions.add(`${foreignZoneId}:`);
-      suggestions.add(`${foreignZoneId}:${foreignZoneState.data.startRoom}`);
-      for (const foreignRoomId of Object.keys(foreignZoneState.data.rooms).slice(0, 50)) {
-        suggestions.add(`${foreignZoneId}:${foreignRoomId}`);
+    for (const fz of sorted) {
+      suggestions.add(`${fz.id}:`);
+      suggestions.add(`${fz.id}:${fz.startRoom}`);
+      for (const foreignRoomId of fz.roomIds) {
+        suggestions.add(`${fz.id}:${foreignRoomId}`);
       }
     }
     return [...suggestions];
-  }, [loadedZones, world.rooms, zoneId]);
+  }, [foreignZoneMeta, world.rooms]);
 
   // Find entities in this room
   const mobs = useMemo(
@@ -448,7 +456,7 @@ export function RoomPanel({
   );
 
   return (
-    <div className="relative flex min-h-0 min-w-0 w-[clamp(18rem,24vw,24rem)] flex-1 flex-col border-l border-border-default bg-bg-secondary max-[1100px]:max-h-[min(45vh,32rem)] max-[1100px]:w-full max-[1100px]:border-l-0 max-[1100px]:border-t">
+    <div className="relative flex min-h-0 min-w-0 w-[clamp(16rem,24vw,24rem)] flex-1 flex-col border-l border-border-default bg-bg-secondary max-[1100px]:max-h-[min(45vh,32rem)] max-[1100px]:w-full max-[1100px]:border-l-0 max-[1100px]:border-t">
       <img src={sidebarBg} alt="" className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-[0.12]" />
       {/* Header */}
       <div className="relative z-10 shrink-0 border-b border-border-default px-4 py-3">
@@ -556,7 +564,7 @@ export function RoomPanel({
                         <select
                           value={draft.direction}
                           onChange={(e) => updateExitDraftState(exit.direction, { direction: e.target.value })}
-                          className="ornate-input mt-1 w-full rounded px-2 py-1 text-xs text-text-primary"
+                          className="ornate-input mt-1 w-full px-2 py-1 text-xs text-text-primary"
                         >
                           {EXIT_DIRECTION_OPTIONS.map((option) => (
                             <option key={option.value} value={option.value}>
@@ -573,7 +581,7 @@ export function RoomPanel({
                           onChange={(e) => updateExitDraftState(exit.direction, { target: e.target.value })}
                           placeholder="room_id or zone:room_id"
                           list={`exit-target-suggestions-${roomId}`}
-                          className={`ornate-input mt-1 w-full rounded px-2 py-1 text-xs ${isCrossZone ? "text-accent" : "text-text-primary"}`}
+                          className={`ornate-input mt-1 w-full px-2 py-1 text-xs ${isCrossZone ? "text-accent" : "text-text-primary"}`}
                         />
                       </label>
                     </div>
@@ -664,7 +672,7 @@ export function RoomPanel({
                     setNewExitDraft((current) => ({ ...current, direction: e.target.value }));
                     setExitError(null);
                   }}
-                  className="ornate-input mt-1 w-full rounded px-2 py-1 text-xs text-text-primary"
+                  className="ornate-input mt-1 w-full px-2 py-1 text-xs text-text-primary"
                 >
                   {EXIT_DIRECTION_OPTIONS.map((option) => (
                     <option key={option.value} value={option.value}>
@@ -689,7 +697,7 @@ export function RoomPanel({
                   }}
                   placeholder="room_id or zone:room_id"
                   list={`exit-target-suggestions-${roomId}`}
-                  className={`ornate-input mt-1 w-full rounded px-2 py-1 text-xs ${newExitDraft.target.includes(":") ? "text-accent" : "text-text-primary"}`}
+                  className={`ornate-input mt-1 w-full px-2 py-1 text-xs ${newExitDraft.target.includes(":") ? "text-accent" : "text-text-primary"}`}
                 />
               </label>
             </div>

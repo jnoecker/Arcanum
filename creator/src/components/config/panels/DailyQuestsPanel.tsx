@@ -105,7 +105,7 @@ function PoolEditor({
       <div className="flex items-center gap-2">
         <input
           type="text"
-          className="ornate-input min-h-9 flex-1 rounded px-2 py-1 text-xs text-text-primary"
+          className="ornate-input min-h-9 flex-1 px-2 py-1 text-xs text-text-primary"
           value={newPoolName}
           onChange={(e) => setNewPoolName(e.target.value)}
           placeholder="New pool name..."
@@ -166,7 +166,7 @@ function PoolRow({
       </div>
       <input
         type="text"
-        className="ornate-input min-h-9 w-full rounded px-2 py-1 text-xs text-text-primary"
+        className="ornate-input min-h-9 w-full px-2 py-1 text-xs text-text-primary"
         value={draft}
         onChange={(e) => setDraft(e.target.value)}
         onFocus={() => setFocused(true)}

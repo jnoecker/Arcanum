@@ -152,6 +152,17 @@
   --color-template-freeform:     #ad9d88;
   --color-template-story:        #78290f;
 
+  /* ─── Entity Category Colors ─── */
+  --color-entity-room:     #2f93a1;  /* stellar-blue — architectural */
+  --color-entity-mob:      #ff7d00;  /* accent — dangerous */
+  --color-entity-item:     #e2bc6a;  /* aurum — valuable */
+  --color-entity-shop:     #ffb86b;  /* warm-pale — commercial */
+  --color-entity-trainer:  #7cb66d;  /* success — knowledge */
+  --color-entity-quest:    #d88c3a;  /* character-gold — adventure */
+  --color-entity-gather:   #55aebe;  /* stormblade — natural */
+  --color-entity-recipe:   #6e8d5a;  /* necromancer — earthy crafting */
+  --color-entity-dungeon:  #d9756b;  /* danger — perilous */
+
   /* ─── Chart / Visualization ─── */
   --color-chart-hp:   #d9756b;
   --color-chart-mana: #2f93a1;
@@ -382,6 +393,10 @@ select,
   animation: warm-breathe 3s var(--ease-cosmic) infinite;
 }
 
+.animate-cosmic-glimmer {
+  animation: cosmic-glimmer 3s var(--ease-cosmic) infinite;
+}
+
 .focus-ring:focus-visible {
   outline: none;
   box-shadow:
@@ -391,6 +406,7 @@ select,
 
 .ornate-input {
   border: 1px solid var(--color-border-default);
+  border-radius: 0.5rem;
   background: var(--color-surface-scrim);
   color: var(--color-text-primary);
   transition:
@@ -1418,11 +1434,16 @@ textarea:focus-visible,
 
 /* ─── Reduced-motion overrides ──────────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
   ::view-transition-old(workspace-panel),
   ::view-transition-new(workspace-panel) {
     animation: none;
-  }
-  .section-content {
-    transition: none;
   }
 }

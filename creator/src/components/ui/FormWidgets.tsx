@@ -163,7 +163,7 @@ export function EditableField({
   return (
     <input
       autoFocus
-      className={`ornate-input w-full rounded px-1 -mx-1 ${className ?? ""}`}
+      className={`ornate-input w-full px-1 -mx-1 ${className ?? ""}`}
       value={draft}
       aria-label={label ?? undefined}
       onChange={(e) => setDraft(e.target.value)}
@@ -228,7 +228,7 @@ export function EditableTextArea({
     <textarea
       autoFocus
       rows={4}
-      className="ornate-input w-full resize-y rounded px-1 -mx-1 text-xs leading-relaxed text-text-secondary"
+      className="ornate-input w-full resize-y px-1 -mx-1 text-xs leading-relaxed text-text-secondary"
       value={draft}
       aria-label={label ?? undefined}
       onChange={(e) => setDraft(e.target.value)}
@@ -265,7 +265,10 @@ export function Section({
   const contentId = "section-content-" + title.replace(/\s+/g, "-").toLowerCase();
 
   return (
-    <div className="border-b border-border-muted px-4 py-4">
+    <div className={cx(
+      "border-b border-border-muted border-l-2 py-4 pl-3.5 pr-4 [transition:background-color_200ms_var(--ease-unfurl),border-color_200ms_var(--ease-unfurl)]",
+      expanded ? "border-l-accent/20 bg-[var(--chrome-fill-soft)]" : "border-l-transparent"
+    )}>
       <div className="flex items-center gap-2">
         <button
           type="button"
@@ -280,7 +283,10 @@ export function Section({
           >
             &#x25B6;
           </span>
-          <h4 className="font-display font-semibold text-2xs uppercase tracking-widest text-text-muted">
+          <h4 className={cx(
+            "font-display font-semibold text-2xs uppercase tracking-widest [transition:color_200ms_var(--ease-unfurl)]",
+            expanded ? "text-text-secondary" : "text-text-muted"
+          )}>
             {title}
           </h4>
         </button>
@@ -353,7 +359,7 @@ export function TextInput({
     <input
       type={type}
       className={cx(
-        "ornate-input w-full rounded text-xs text-text-primary",
+        "ornate-input w-full text-xs text-text-primary",
         dense ? "min-h-9 px-2 py-1" : "min-h-11 px-3 py-2",
         className,
       )}
@@ -416,7 +422,7 @@ export function NumberInput({
     <input
       type="number"
       className={cx(
-        "ornate-input w-full rounded text-xs text-text-primary",
+        "ornate-input w-full text-xs text-text-primary",
         dense ? "min-h-9 px-2 py-1" : "min-h-11 px-3 py-2",
       )}
       value={draft}
@@ -460,7 +466,7 @@ export function SelectInput({
   return (
     <select
       className={cx(
-        "ornate-input w-full rounded text-xs text-text-primary",
+        "ornate-input w-full text-xs text-text-primary",
         dense ? "min-h-9 px-2 py-1" : "min-h-11 px-3 py-2",
       )}
       value={value}
@@ -528,7 +534,7 @@ export function CommitTextarea({
       <textarea
         id="commit-msg"
         rows={rows}
-        className="ornate-input mt-0.5 w-full resize-y rounded px-1.5 py-1 text-xs leading-relaxed text-text-primary"
+        className="ornate-input mt-0.5 w-full resize-y px-1.5 py-1 text-xs leading-relaxed text-text-primary"
         placeholder={placeholder}
         value={draft}
         onChange={(e) => setDraft(e.target.value)}
@@ -655,6 +661,17 @@ export function CompactField({
   );
 }
 
+const ENTITY_TYPE_COLORS: Record<string, string> = {
+  Mob: "var(--color-entity-mob)",
+  Item: "var(--color-entity-item)",
+  Shop: "var(--color-entity-shop)",
+  Trainer: "var(--color-entity-trainer)",
+  Quest: "var(--color-entity-quest)",
+  "Gathering Node": "var(--color-entity-gather)",
+  Recipe: "var(--color-entity-recipe)",
+  Puzzle: "var(--color-entity-dungeon)",
+};
+
 /** Always-visible header area above collapsible sections. */
 export function EntityHeader({
   type,
@@ -664,10 +681,14 @@ export function EntityHeader({
   type: string;
   children: ReactNode;
 }) {
+  const badgeColor = ENTITY_TYPE_COLORS[type] ?? "var(--color-accent)";
   return (
     <div className="border-b border-border-muted px-4 py-3">
       <div className="mb-2 flex items-center gap-2">
-        <span className="rounded bg-accent/15 px-1.5 py-0.5 text-2xs font-semibold uppercase tracking-wider text-accent">
+        <span
+          className="rounded px-1.5 py-0.5 text-2xs font-semibold uppercase tracking-wider"
+          style={{ color: badgeColor, background: `color-mix(in srgb, ${badgeColor} 15%, transparent)` }}
+        >
           {type}
         </span>
       </div>
@@ -738,6 +759,63 @@ export function TabBar<T extends string>({
           {tab.label}
         </button>
       ))}
+    </div>
+  );
+}
+
+/** Colored pill badge for status, category, or metadata labels. */
+export function Badge({
+  variant = "muted",
+  children,
+  className,
+}: {
+  variant?: "accent" | "success" | "warning" | "error" | "info" | "violet" | "muted";
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <span
+      className={cx(
+        "rounded-full px-2 py-0.5 text-2xs font-medium",
+        variant === "accent" && "bg-accent/12 text-accent",
+        variant === "success" && "bg-status-success/12 text-status-success",
+        variant === "warning" && "bg-status-warning/12 text-status-warning",
+        variant === "error" && "bg-status-error/12 text-status-error",
+        variant === "info" && "bg-stellar-blue/12 text-stellar-blue",
+        variant === "violet" && "bg-violet/12 text-violet",
+        variant === "muted" && "bg-[var(--chrome-fill-strong)] text-text-muted",
+        className,
+      )}
+    >
+      {children}
+    </span>
+  );
+}
+
+/** Dashed-border placeholder for empty lists and panels. */
+export function EmptyState({
+  title,
+  description,
+  action,
+  compact,
+}: {
+  title: string;
+  description?: string;
+  action?: ReactNode;
+  compact?: boolean;
+}) {
+  return (
+    <div
+      className={cx(
+        "border border-dashed border-[var(--chrome-stroke-strong)] bg-[var(--chrome-highlight)] text-center",
+        compact ? "rounded-2xl px-4 py-6" : "rounded-3xl px-6 py-12",
+      )}
+    >
+      <p className={compact ? "text-sm text-text-muted" : "font-display text-base text-text-secondary"}>
+        {title}
+      </p>
+      {description && <p className="mt-1 text-sm text-text-muted">{description}</p>}
+      {action && <div className="mt-3">{action}</div>}
     </div>
   );
 }

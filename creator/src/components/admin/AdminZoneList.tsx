@@ -1,4 +1,5 @@
 import { useAdminStore } from "@/stores/adminStore";
+import { EmptyState } from "@/components/ui/FormWidgets";
 import type { ZoneSummary } from "@/types/admin";
 import { AdminZoneDetail } from "./AdminZoneDetail";
 
@@ -61,10 +62,7 @@ export function AdminZoneList() {
       </div>
 
       {zones.length === 0 ? (
-        <div className="rounded-3xl border border-dashed border-[var(--chrome-stroke-strong)] bg-[var(--chrome-highlight)] px-6 py-12 text-center">
-          <p className="font-display text-base text-text-secondary">No regions manifest</p>
-          <p className="mt-1 text-sm text-text-muted">The server has no zones loaded.</p>
-        </div>
+        <EmptyState title="No regions manifest" description="The server has no zones loaded." />
       ) : (
         <div className="flex flex-col gap-1.5">
           {zones.map((z) => (

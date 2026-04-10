@@ -1,5 +1,6 @@
 import { memo, useState, useRef, useEffect } from "react";
 import { useAdminStore } from "@/stores/adminStore";
+import { ActionButton, Badge } from "@/components/ui/FormWidgets";
 import type { PlayerDetail } from "@/types/admin";
 
 const StatRow = memo(function StatRow({ label, value, valueClass }: { label: string; value: string | number; valueClass?: string }) {
@@ -69,17 +70,14 @@ export function AdminPlayerDetail({
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center gap-3">
-        <button
-          onClick={onBack}
-          className="rounded-full border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] px-3 py-1 text-xs text-text-muted transition hover:bg-[var(--chrome-highlight-strong)] hover:text-text-primary focus-visible:ring-2 focus-visible:ring-border-active focus-visible:outline-none"
-        >
+        <ActionButton variant="ghost" size="sm" onClick={onBack}>
           &#x2190; Back
-        </button>
+        </ActionButton>
         <h3 className="font-display text-xl text-text-primary">{player.name}</h3>
         {player.isStaff && (
-          <span className="rounded-full bg-violet/15 px-2 py-0.5 text-2xs text-violet">
+          <Badge variant="violet">
             Staff
-          </span>
+          </Badge>
         )}
         {player.activeTitle && (
           <span className="text-xs italic text-text-secondary">{player.activeTitle}</span>

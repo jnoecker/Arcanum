@@ -32,7 +32,7 @@ export function SearchFilterBar() {
   }, [searchQuery]);
 
   return (
-    <div className="sticky top-0 z-10 mt-12 mb-6 flex flex-wrap items-center gap-3 border-b border-border-muted bg-bg-primary/95 px-6 pb-4 pt-2 backdrop-blur-sm">
+    <div className="sticky top-0 z-10 mt-12 mb-6 flex flex-wrap items-center gap-3 border-b border-border-muted bg-bg-primary/95 px-6 pb-4 pt-2">
       {/* Search input */}
       <input
         type="text"
@@ -40,7 +40,7 @@ export function SearchFilterBar() {
         onChange={(e) => setLocalQuery(e.target.value)}
         placeholder="Search parameters..."
         aria-label="Search tuning parameters"
-        className="ornate-input min-h-11 min-w-[16rem] flex-1 rounded px-3 py-2 font-sans text-[15px] text-text-primary"
+        className="ornate-input min-h-11 min-w-[16rem] flex-1 px-3 py-2 text-[15px] text-text-primary"
       />
 
       {/* Section filter chips */}
@@ -53,7 +53,7 @@ export function SearchFilterBar() {
               type="button"
               onClick={() => toggleSection(section)}
               aria-pressed={isActive}
-              className={`focus-ring min-h-11 cursor-pointer rounded-full border px-3 py-1.5 font-sans text-sm font-semibold uppercase tracking-[0.18em] transition-colors duration-150 ${
+              className={`focus-ring min-h-11 cursor-pointer rounded-full border px-3 py-1.5 text-sm font-semibold uppercase tracking-[0.18em] transition-colors duration-150 ${
                 isActive
                   ? "border-accent/[0.35] bg-accent/[0.14] text-accent"
                   : "border-border-muted bg-bg-secondary text-text-muted"

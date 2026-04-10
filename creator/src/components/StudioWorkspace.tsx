@@ -246,14 +246,17 @@ export function StudioWorkspace({ panelId }: { panelId: string }) {
               </>
             ) : (
               <>
-                {artSubTab !== "custom" && (
+                {artSubTab !== "custom" ? (
                   <section className="panel-surface rounded-3xl p-5">
-                    <div className="panel-surface-light rounded-3xl border-dashed px-4 py-8 text-sm text-text-muted">
-                      Open a world folder and select a zone to start generating zone art.
+                    <div className="flex min-h-[16rem] flex-col items-center justify-center gap-3 text-center">
+                      <div className="ornate-divider" />
+                      <p className="font-display text-base text-text-secondary">The Canvas Awaits</p>
+                      <p className="max-w-sm text-xs leading-6 text-text-muted/70">
+                        Select a zone from the picker above to begin shaping its visual identity — room art, mob portraits, and item icons.
+                      </p>
                     </div>
                   </section>
-                )}
-                {artSubTab === "custom" && (
+                ) : (
                   <CustomAssetStudio selectedZoneId={selectedZoneId} />
                 )}
               </>

@@ -59,7 +59,7 @@ function Section({
 }) {
   return (
     <section className="panel-surface rounded-3xl p-5 shadow-section">
-      <div className="mb-3">
+      <div className="mb-5 border-b border-border-muted pb-4">
         <p className="border-l-2 border-[rgb(var(--surface-rgb)/0.3)] pl-2 text-2xs uppercase tracking-wide-ui text-text-muted">{kicker}</p>
         <h3 className="mt-2 font-display font-semibold text-xl text-text-primary">{title}</h3>
         <p className="mt-2 max-w-3xl text-sm leading-6 text-text-secondary">{description}</p>
@@ -237,6 +237,7 @@ export function ConfigPanelHost({ panelId }: { panelId: string }) {
   if (!config) {
     return (
       <div className="flex flex-1 flex-col items-center justify-center gap-3 text-center">
+        <div className="ornate-divider" />
         <p className="font-display text-base text-text-muted">The Workbench Awaits</p>
         <p className="max-w-xs text-xs leading-6 text-text-muted/60">Open a world project to begin shaping its rules and systems.</p>
       </div>
@@ -263,7 +264,7 @@ export function ConfigPanelHost({ panelId }: { panelId: string }) {
                 onClick={handleSave}
                 disabled={!dirty || saving}
                 aria-label={saving ? "Saving configuration" : "Save configuration"}
-                className="focus-ring rounded-full border border-[var(--chrome-stroke)] bg-bg-primary/80 px-3 py-1 text-2xs font-medium text-accent shadow-md backdrop-blur-sm transition hover:bg-bg-primary disabled:cursor-not-allowed disabled:opacity-40"
+                className="focus-ring rounded-full border border-[var(--chrome-stroke)] bg-bg-primary/80 px-3 py-1 text-2xs font-medium text-accent shadow-md transition hover:bg-bg-primary disabled:cursor-not-allowed disabled:opacity-40"
               >
                 {saving ? <span className="flex items-center gap-1.5"><Spinner />Saving</span> : "Save Config"}
               </button>

@@ -1,5 +1,6 @@
 import { memo, useEffect } from "react";
 import { useAdminStore } from "@/stores/adminStore";
+import { Badge, EmptyState } from "@/components/ui/FormWidgets";
 import type { ItemEntry } from "@/types/admin";
 
 const ItemRow = memo(function ItemRow({ item }: { item: ItemEntry }) {
@@ -11,14 +12,14 @@ const ItemRow = memo(function ItemRow({ item }: { item: ItemEntry }) {
             {item.displayName}
           </span>
           {item.slot && (
-            <span className="rounded-full bg-stellar-blue/12 px-2 py-0.5 text-2xs text-stellar-blue">
+            <Badge variant="info">
               {item.slot}
-            </span>
+            </Badge>
           )}
           {item.consumable && (
-            <span className="rounded-full bg-status-success/12 px-2 py-0.5 text-2xs text-status-success">
+            <Badge variant="success">
               Consumable
-            </span>
+            </Badge>
           )}
         </div>
         <div className="mt-1 flex flex-wrap gap-2 text-2xs">
@@ -64,12 +65,7 @@ export function AdminItemList() {
       </div>
 
       {items.length === 0 ? (
-        <div className="rounded-3xl border border-dashed border-[var(--chrome-stroke-strong)] bg-[var(--chrome-highlight)] px-6 py-12 text-center">
-          <p className="font-display text-base text-text-secondary">No items found</p>
-          <p className="mt-1 text-sm text-text-muted">
-            The server has no items registered.
-          </p>
-        </div>
+        <EmptyState title="No items found" description="The server has no items registered." />
       ) : (
         <div className="flex flex-col gap-1.5">
           {items.map((item) => (

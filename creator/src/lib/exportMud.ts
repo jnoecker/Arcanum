@@ -57,9 +57,6 @@ function sanitizeAdminConfigForRuntime(admin: AppConfig["admin"] | undefined): A
 
 function applyRawSections(target: Record<string, unknown>, rawSections: AppConfig["rawSections"]): void {
   for (const [key, value] of Object.entries(rawSections)) {
-    if (key === "root.mode") {
-      continue;
-    }
     if (key.startsWith("root.")) {
       target[key.slice(5)] = value;
     } else if (key.startsWith("engine.")) {
@@ -445,101 +442,57 @@ export function buildMonolithicConfigObject(
   engine.questCompletionTypes = { types: withFallbackMap(c.questCompletionTypes, DEFAULT_QUEST_COMPLETION_TYPES) };
 
   const ambonmud: Record<string, unknown> = {
-    mode: "STANDALONE",
+    mode: c.mode ?? "STANDALONE",
     sharding: {
-      enabled: false,
-      engineId: "engine-1",
-      zones: [],
-      advertiseHost: "localhost",
-      registry: { type: "STATIC", leaseTtlSeconds: 30, assignments: [] },
-      handoff: { ackTimeoutMs: 2000 },
-      playerIndex: { enabled: false, heartbeatMs: 10000 },
-      instancing: {
-        enabled: false,
-        defaultCapacity: 200,
-        loadReportIntervalMs: 5000,
-        startZoneMinInstances: 1,
-        autoScale: {
-          enabled: false,
-          evaluationIntervalMs: 30000,
-          scaleUpThreshold: 0.8,
-          scaleDownThreshold: 0.2,
-          cooldownMs: 60000,
-        },
-      },
+      enabled: c.sharding.enabled,
+      engineId: c.sharding.engineId,
+      zones: c.sharding.zones,
+      advertiseHost: c.sharding.advertiseHost,
+      ...(c.sharding.advertisePort != null ? { advertisePort: c.sharding.advertisePort } : {}),
+      registry: c.sharding.registry,
+      handoff: c.sharding.handoff,
+      playerIndex: c.sharding.playerIndex,
+      instancing: c.sharding.instancing,
     },
     grpc: {
-      server: { port: 9090 },
-      client: { engineHost: "localhost", enginePort: 9090 },
+      server: c.grpc.server,
+      client: c.grpc.client,
+      sharedSecret: c.grpc.sharedSecret || undefined,
+      allowPlaintext: c.grpc.allowPlaintext,
+      timestampToleranceMs: c.grpc.timestampToleranceMs,
     },
     gateway: {
-      id: 0,
-      snowflake: { idLeaseTtlSeconds: 300 },
-      reconnect: {
-        maxAttempts: 10,
-        initialDelayMs: 1000,
-        maxDelayMs: 30000,
-        jitterFactor: 0.2,
-        streamVerifyMs: 2000,
-      },
-      startZone: "",
-      engines: [],
+      id: c.gateway.id,
+      snowflake: c.gateway.snowflake,
+      reconnect: c.gateway.reconnect,
+      startZone: c.gateway.startZone || undefined,
+      engines: c.gateway.engines.length > 0 ? c.gateway.engines : [],
     },
     server: {
       telnetPort: c.server.telnetPort,
       webPort: c.server.webPort,
       productionMode: c.server.productionMode ?? false,
-      inboundChannelCapacity: 10000,
-      outboundChannelCapacity: 10000,
-      sessionOutboundQueueCapacity: 200,
-      maxInboundEventsPerTick: 1000,
-      tickMillis: 100,
-      inboundBudgetMs: 30,
+      inboundChannelCapacity: c.server.inboundChannelCapacity,
+      outboundChannelCapacity: c.server.outboundChannelCapacity,
+      sessionOutboundQueueCapacity: c.server.sessionOutboundQueueCapacity,
+      maxInboundEventsPerTick: c.server.maxInboundEventsPerTick,
+      tickMillis: c.server.tickMillis,
+      inboundBudgetMs: c.server.inboundBudgetMs,
     },
     world: {
       startRoom: c.world.startRoom,
       resources: c.world.resources,
     },
-    persistence: {
-      backend: "YAML",
-      rootDir: "data/players",
-      worker: {
-        enabled: true,
-        flushIntervalMs: 5000,
-      },
-    },
-    database: {
-      jdbcUrl: "jdbc:postgresql://localhost:5432/ambonmud",
-      username: "ambon",
-      password: "ambon",
-      maxPoolSize: 5,
-      minimumIdle: 1,
-    },
-    login: {
-      maxWrongPasswordRetries: 3,
-      maxFailedAttemptsBeforeDisconnect: 3,
-      maxConcurrentLogins: 150,
-      authThreads: 8,
-    },
+    persistence: c.persistence,
+    database: c.database,
+    login: c.login,
     engine,
     progression: c.progression,
-    transport: {
-      telnet: {
-        maxLineLen: 1024,
-        maxNonPrintablePerLine: 32,
-        socketBacklog: 256,
-      },
-      websocket: {
-        host: "0.0.0.0",
-        stopGraceMillis: 1000,
-        stopTimeoutMillis: 2000,
-      },
-      maxInboundBackpressureFailures: 3,
-    },
+    transport: c.transport,
     demo: {
-      autoLaunchBrowser: false,
-      webClientHost: "localhost",
-      webClientUrl: null,
+      autoLaunchBrowser: c.demo.autoLaunchBrowser,
+      webClientHost: c.demo.webClientHost,
+      webClientUrl: c.demo.webClientUrl,
     },
     observability: {
       metricsEnabled: c.observability?.metricsEnabled ?? true,
@@ -564,16 +517,10 @@ export function buildMonolithicConfigObject(
       },
     },
     redis: {
-      enabled: false,
-      uri: "redis://localhost:6379",
-      cacheTtlSeconds: 3600,
-      bus: {
-        enabled: false,
-        inboundChannel: "ambon:inbound",
-        outboundChannel: "ambon:outbound",
-        instanceId: "",
-        sharedSecret: "CHANGE_ME",
-      },
+      enabled: c.redis.enabled,
+      uri: c.redis.uri,
+      cacheTtlSeconds: c.redis.cacheTtlSeconds,
+      bus: c.redis.bus,
     },
     images: {
       baseUrl: imageBaseUrl,

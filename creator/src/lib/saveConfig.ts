@@ -167,6 +167,7 @@ async function saveSplitConfig(projectDir: string): Promise<void> {
     }),
 
     write("world", cleanObj({
+      mode: config.mode,
       server: config.server,
       admin: sanitizeAdminConfigForSave(config.admin),
       observability: config.observability,
@@ -218,6 +219,15 @@ async function saveSplitConfig(projectDir: string): Promise<void> {
       factions: config.factions,
       leaderboard: config.leaderboard,
       currencies: normalizeCurrenciesConfig(config.currencies),
+      persistence: config.persistence,
+      login: config.login,
+      transport: config.transport,
+      demo: config.demo,
+      database: config.database,
+      redis: config.redis,
+      grpc: config.grpc,
+      gateway: config.gateway,
+      sharding: config.sharding,
     })),
 
     write("assets", cleanObj({

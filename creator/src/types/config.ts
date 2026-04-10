@@ -583,6 +583,188 @@ export interface ServerConfig {
   telnetPort: number;
   webPort: number;
   productionMode?: boolean;
+  inboundChannelCapacity: number;
+  outboundChannelCapacity: number;
+  sessionOutboundQueueCapacity: number;
+  maxInboundEventsPerTick: number;
+  tickMillis: number;
+  inboundBudgetMs: number;
+}
+
+// ─── Deployment mode ───────────────────────────────────────────────
+
+export type DeploymentMode = "STANDALONE" | "ENGINE" | "GATEWAY";
+
+// ─── Persistence ───────────────────────────────────────────────────
+
+export type PersistenceBackend = "YAML" | "POSTGRES";
+
+export interface PersistenceWorkerConfig {
+  enabled: boolean;
+  flushIntervalMs: number;
+}
+
+export interface PersistenceConfig {
+  backend: PersistenceBackend;
+  rootDir: string;
+  worker: PersistenceWorkerConfig;
+}
+
+// ─── Login ─────────────────────────────────────────────────────────
+
+export interface LoginConfig {
+  maxWrongPasswordRetries: number;
+  maxFailedAttemptsBeforeDisconnect: number;
+  maxConcurrentLogins: number;
+  authThreads: number;
+}
+
+// ─── Transport ─────────────────────────────────────────────────────
+
+export interface TelnetTransportConfig {
+  maxLineLen: number;
+  maxNonPrintablePerLine: number;
+  socketBacklog: number;
+  maxConnections: number;
+}
+
+export interface WebSocketTransportConfig {
+  host: string;
+  stopGraceMillis: number;
+  stopTimeoutMillis: number;
+}
+
+export interface TransportConfig {
+  telnet: TelnetTransportConfig;
+  websocket: WebSocketTransportConfig;
+  maxInboundBackpressureFailures: number;
+}
+
+// ─── Demo ──────────────────────────────────────────────────────────
+
+export interface DemoConfig {
+  autoLaunchBrowser: boolean;
+  webClientHost: string;
+  webClientUrl: string | null;
+}
+
+// ─── Database ──────────────────────────────────────────────────────
+
+export interface DatabaseConfig {
+  jdbcUrl: string;
+  username: string;
+  password: string;
+  maxPoolSize: number;
+  minimumIdle: number;
+}
+
+// ─── Redis ─────────────────────────────────────────────────────────
+
+export interface RedisBusConfig {
+  enabled: boolean;
+  inboundChannel: string;
+  outboundChannel: string;
+  instanceId: string;
+  sharedSecret: string;
+}
+
+export interface RedisConfig {
+  enabled: boolean;
+  uri: string;
+  cacheTtlSeconds: number;
+  bus: RedisBusConfig;
+}
+
+// ─── gRPC ──────────────────────────────────────────────────────────
+
+export interface GrpcServerConfig {
+  port: number;
+  controlPlaneSendTimeoutMs: number;
+}
+
+export interface GrpcClientConfig {
+  engineHost: string;
+  enginePort: number;
+}
+
+export interface GrpcConfig {
+  server: GrpcServerConfig;
+  client: GrpcClientConfig;
+  sharedSecret: string;
+  allowPlaintext: boolean;
+  timestampToleranceMs: number;
+}
+
+// ─── Gateway ───────────────────────────────────────────────────────
+
+export interface SnowflakeConfig {
+  idLeaseTtlSeconds: number;
+}
+
+export interface GatewayReconnectConfig {
+  maxAttempts: number;
+  initialDelayMs: number;
+  maxDelayMs: number;
+  jitterFactor: number;
+  streamVerifyMs: number;
+}
+
+export interface GatewayEngineEntry {
+  host: string;
+  port: number;
+}
+
+export interface GatewayConfig {
+  id: number;
+  snowflake: SnowflakeConfig;
+  reconnect: GatewayReconnectConfig;
+  engines: GatewayEngineEntry[];
+  startZone: string;
+}
+
+// ─── Sharding ──────────────────────────────────────────────────────
+
+export interface ShardingRegistryConfig {
+  type: string;
+  leaseTtlSeconds: number;
+  assignments: string[];
+}
+
+export interface ShardingHandoffConfig {
+  ackTimeoutMs: number;
+}
+
+export interface PlayerIndexConfig {
+  enabled: boolean;
+  heartbeatMs: number;
+}
+
+export interface AutoScaleConfig {
+  enabled: boolean;
+  evaluationIntervalMs: number;
+  scaleUpThreshold: number;
+  scaleDownThreshold: number;
+  cooldownMs: number;
+}
+
+export interface InstanceConfig {
+  enabled: boolean;
+  defaultCapacity: number;
+  loadReportIntervalMs: number;
+  startZoneMinInstances: number;
+  autoScale: AutoScaleConfig;
+}
+
+export interface ShardingConfig {
+  enabled: boolean;
+  engineId: string;
+  zones: string[];
+  registry: ShardingRegistryConfig;
+  handoff: ShardingHandoffConfig;
+  advertiseHost: string;
+  advertisePort: number | null;
+  playerIndex: PlayerIndexConfig;
+  instancing: InstanceConfig;
 }
 
 // ─── Admin ──────────────────────────────────────────────────────────
@@ -771,6 +953,7 @@ export interface LeaderboardConfig {
 // ─── Top-level config state ─────────────────────────────────────────
 
 export interface AppConfig {
+  mode: DeploymentMode;
   server: ServerConfig;
   admin: AdminServerConfig;
   observability: ObservabilityConfig;
@@ -836,6 +1019,15 @@ export interface AppConfig {
   leaderboard?: LeaderboardConfig;
   globalAssets: Record<string, string>;
   playerTiers?: Record<string, TierDefinitionConfig>;
+  persistence: PersistenceConfig;
+  login: LoginConfig;
+  transport: TransportConfig;
+  demo: DemoConfig;
+  database: DatabaseConfig;
+  redis: RedisConfig;
+  grpc: GrpcConfig;
+  gateway: GatewayConfig;
+  sharding: ShardingConfig;
   /** Raw YAML content for unrecognized sections */
   rawSections: Record<string, unknown>;
 }

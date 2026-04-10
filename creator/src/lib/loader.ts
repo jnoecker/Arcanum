@@ -72,6 +72,7 @@ export function parseAppConfigYaml(content: string): AppConfig {
   const progression = (root.progression ?? {}) as Record<string, unknown>;
 
   return {
+    mode: parseDeploymentMode(root.mode),
     server: parseServerConfig(root.server),
     admin: parseAdminConfig(root.admin),
     observability: parseObservabilityConfig(root.observability),
@@ -134,6 +135,15 @@ export function parseAppConfigYaml(content: string): AppConfig {
     factions: engine.factions as AppConfig["factions"],
     leaderboard: engine.leaderboard as AppConfig["leaderboard"],
     currencies: parseCurrenciesConfig(engine.currencies),
+    persistence: parsePersistenceConfig(root.persistence),
+    login: parseLoginConfig(root.login),
+    transport: parseTransportConfig(root.transport),
+    demo: parseDemoConfig(root.demo),
+    database: parseDatabaseConfig(root.database),
+    redis: parseRedisConfig(root.redis),
+    grpc: parseGrpcConfig(root.grpc),
+    gateway: parseGatewayConfig(root.gateway),
+    sharding: parseShardingConfig(root.sharding),
     rawSections: collectRawSections(root, engine),
   };
 }
@@ -180,12 +190,185 @@ export async function loadAppConfig(
 
 // ─── Parsing helpers ────────────────────────────────────────────────
 
+function parseDeploymentMode(raw: unknown): AppConfig["mode"] {
+  const val = typeof raw === "string" ? raw.toUpperCase() : "";
+  if (val === "ENGINE" || val === "GATEWAY") return val;
+  return "STANDALONE";
+}
+
 function parseServerConfig(raw: unknown): AppConfig["server"] {
   const s = (raw ?? {}) as Record<string, unknown>;
   return {
     telnetPort: asNumber(s.telnetPort, 4000),
     webPort: asNumber(s.webPort, 8080),
     productionMode: asBool(s.productionMode, false),
+    inboundChannelCapacity: asNumber(s.inboundChannelCapacity, 10000),
+    outboundChannelCapacity: asNumber(s.outboundChannelCapacity, 10000),
+    sessionOutboundQueueCapacity: asNumber(s.sessionOutboundQueueCapacity, 200),
+    maxInboundEventsPerTick: asNumber(s.maxInboundEventsPerTick, 1000),
+    tickMillis: asNumber(s.tickMillis, 100),
+    inboundBudgetMs: asNumber(s.inboundBudgetMs, 30),
+  };
+}
+
+function parsePersistenceConfig(raw: unknown): AppConfig["persistence"] {
+  const s = (raw ?? {}) as Record<string, unknown>;
+  const worker = (s.worker ?? {}) as Record<string, unknown>;
+  return {
+    backend: s.backend === "POSTGRES" ? "POSTGRES" : "YAML",
+    rootDir: asString(s.rootDir, "data/players"),
+    worker: {
+      enabled: asBool(worker.enabled, true),
+      flushIntervalMs: asNumber(worker.flushIntervalMs, 5000),
+    },
+  };
+}
+
+function parseLoginConfig(raw: unknown): AppConfig["login"] {
+  const s = (raw ?? {}) as Record<string, unknown>;
+  return {
+    maxWrongPasswordRetries: asNumber(s.maxWrongPasswordRetries, 3),
+    maxFailedAttemptsBeforeDisconnect: asNumber(s.maxFailedAttemptsBeforeDisconnect, 3),
+    maxConcurrentLogins: asNumber(s.maxConcurrentLogins, 50),
+    authThreads: asNumber(s.authThreads, 8),
+  };
+}
+
+function parseTransportConfig(raw: unknown): AppConfig["transport"] {
+  const s = (raw ?? {}) as Record<string, unknown>;
+  const telnet = (s.telnet ?? {}) as Record<string, unknown>;
+  const ws = (s.websocket ?? {}) as Record<string, unknown>;
+  return {
+    telnet: {
+      maxLineLen: asNumber(telnet.maxLineLen, 1024),
+      maxNonPrintablePerLine: asNumber(telnet.maxNonPrintablePerLine, 32),
+      socketBacklog: asNumber(telnet.socketBacklog, 256),
+      maxConnections: asNumber(telnet.maxConnections, 5000),
+    },
+    websocket: {
+      host: asString(ws.host, "0.0.0.0"),
+      stopGraceMillis: asNumber(ws.stopGraceMillis, 1000),
+      stopTimeoutMillis: asNumber(ws.stopTimeoutMillis, 2000),
+    },
+    maxInboundBackpressureFailures: asNumber(s.maxInboundBackpressureFailures, 3),
+  };
+}
+
+function parseDemoConfig(raw: unknown): AppConfig["demo"] {
+  const s = (raw ?? {}) as Record<string, unknown>;
+  return {
+    autoLaunchBrowser: asBool(s.autoLaunchBrowser, false),
+    webClientHost: asString(s.webClientHost, "localhost"),
+    webClientUrl: typeof s.webClientUrl === "string" ? s.webClientUrl : null,
+  };
+}
+
+function parseDatabaseConfig(raw: unknown): AppConfig["database"] {
+  const s = (raw ?? {}) as Record<string, unknown>;
+  return {
+    jdbcUrl: asString(s.jdbcUrl, "jdbc:postgresql://localhost:5432/ambonmud"),
+    username: asString(s.username, "ambon"),
+    password: asString(s.password, "ambon"),
+    maxPoolSize: asNumber(s.maxPoolSize, 5),
+    minimumIdle: asNumber(s.minimumIdle, 1),
+  };
+}
+
+function parseRedisConfig(raw: unknown): AppConfig["redis"] {
+  const s = (raw ?? {}) as Record<string, unknown>;
+  const bus = (s.bus ?? {}) as Record<string, unknown>;
+  return {
+    enabled: asBool(s.enabled, false),
+    uri: asString(s.uri, "redis://localhost:6379"),
+    cacheTtlSeconds: asNumber(s.cacheTtlSeconds, 3600),
+    bus: {
+      enabled: asBool(bus.enabled, false),
+      inboundChannel: asString(bus.inboundChannel, "ambon:inbound"),
+      outboundChannel: asString(bus.outboundChannel, "ambon:outbound"),
+      instanceId: asString(bus.instanceId, ""),
+      sharedSecret: asString(bus.sharedSecret, ""),
+    },
+  };
+}
+
+function parseGrpcConfig(raw: unknown): AppConfig["grpc"] {
+  const s = (raw ?? {}) as Record<string, unknown>;
+  const server = (s.server ?? {}) as Record<string, unknown>;
+  const client = (s.client ?? {}) as Record<string, unknown>;
+  return {
+    server: {
+      port: asNumber(server.port, 9090),
+      controlPlaneSendTimeoutMs: asNumber(server.controlPlaneSendTimeoutMs, 2000),
+    },
+    client: {
+      engineHost: asString(client.engineHost, "localhost"),
+      enginePort: asNumber(client.enginePort, 9090),
+    },
+    sharedSecret: asString(s.sharedSecret, ""),
+    allowPlaintext: asBool(s.allowPlaintext, true),
+    timestampToleranceMs: asNumber(s.timestampToleranceMs, 30000),
+  };
+}
+
+function parseGatewayConfig(raw: unknown): AppConfig["gateway"] {
+  const s = (raw ?? {}) as Record<string, unknown>;
+  const snowflake = (s.snowflake ?? {}) as Record<string, unknown>;
+  const reconnect = (s.reconnect ?? {}) as Record<string, unknown>;
+  return {
+    id: asNumber(s.id, 0),
+    snowflake: {
+      idLeaseTtlSeconds: asNumber(snowflake.idLeaseTtlSeconds, 300),
+    },
+    reconnect: {
+      maxAttempts: asNumber(reconnect.maxAttempts, 10),
+      initialDelayMs: asNumber(reconnect.initialDelayMs, 1000),
+      maxDelayMs: asNumber(reconnect.maxDelayMs, 30000),
+      jitterFactor: asNumber(reconnect.jitterFactor, 0.2),
+      streamVerifyMs: asNumber(reconnect.streamVerifyMs, 2000),
+    },
+    engines: Array.isArray(s.engines) ? s.engines as AppConfig["gateway"]["engines"] : [],
+    startZone: asString(s.startZone, ""),
+  };
+}
+
+function parseShardingConfig(raw: unknown): AppConfig["sharding"] {
+  const s = (raw ?? {}) as Record<string, unknown>;
+  const registry = (s.registry ?? {}) as Record<string, unknown>;
+  const handoff = (s.handoff ?? {}) as Record<string, unknown>;
+  const playerIndex = (s.playerIndex ?? {}) as Record<string, unknown>;
+  const instancing = (s.instancing ?? {}) as Record<string, unknown>;
+  const autoScale = (instancing.autoScale ?? {}) as Record<string, unknown>;
+  return {
+    enabled: asBool(s.enabled, false),
+    engineId: asString(s.engineId, "engine-1"),
+    zones: Array.isArray(s.zones) ? s.zones as string[] : [],
+    registry: {
+      type: asString(registry.type, "STATIC"),
+      leaseTtlSeconds: asNumber(registry.leaseTtlSeconds, 30),
+      assignments: Array.isArray(registry.assignments) ? registry.assignments as string[] : [],
+    },
+    handoff: {
+      ackTimeoutMs: asNumber(handoff.ackTimeoutMs, 2000),
+    },
+    advertiseHost: asString(s.advertiseHost, "localhost"),
+    advertisePort: typeof s.advertisePort === "number" ? s.advertisePort : null,
+    playerIndex: {
+      enabled: asBool(playerIndex.enabled, false),
+      heartbeatMs: asNumber(playerIndex.heartbeatMs, 10000),
+    },
+    instancing: {
+      enabled: asBool(instancing.enabled, false),
+      defaultCapacity: asNumber(instancing.defaultCapacity, 200),
+      loadReportIntervalMs: asNumber(instancing.loadReportIntervalMs, 5000),
+      startZoneMinInstances: asNumber(instancing.startZoneMinInstances, 1),
+      autoScale: {
+        enabled: asBool(autoScale.enabled, false),
+        evaluationIntervalMs: asNumber(autoScale.evaluationIntervalMs, 30000),
+        scaleUpThreshold: asNumber(autoScale.scaleUpThreshold, 0.8),
+        scaleDownThreshold: asNumber(autoScale.scaleDownThreshold, 0.2),
+        cooldownMs: asNumber(autoScale.cooldownMs, 60000),
+      },
+    },
   };
 }
 
@@ -669,8 +852,8 @@ function collectRawSections(
   engine: Record<string, unknown>,
 ): Record<string, unknown> {
   const knownRoot = new Set([
-    "mode", "server", "engine", "progression", "images", "globalAssets", "playerTiers", "world", "persistence",
-    "login", "transport", "demo", "observability", "admin",
+    "mode", "server", "engine", "progression", "images", "globalAssets", "playerTiers", "world",
+    "persistence", "login", "transport", "demo", "observability", "admin",
     "logging", "database", "redis", "grpc", "gateway", "sharding",
     "videos", "audio",
   ]);
@@ -1125,6 +1308,7 @@ async function loadSplitConfig(projectDir: string): Promise<AppConfig | null> {
 
     const config: AppConfig = {
       // world.yaml
+      mode: parseDeploymentMode(worldRaw.mode),
       server: parseServerConfig(worldRaw.server),
       admin: parseAdminConfig(worldRaw.admin),
       observability: parseObservabilityConfig(worldRaw.observability),
@@ -1210,6 +1394,16 @@ async function loadSplitConfig(projectDir: string): Promise<AppConfig | null> {
       factions: worldRaw.factions as AppConfig["factions"],
       leaderboard: worldRaw.leaderboard as AppConfig["leaderboard"],
       currencies: parseCurrenciesConfig(worldRaw.currencies),
+
+      persistence: parsePersistenceConfig(worldRaw.persistence),
+      login: parseLoginConfig(worldRaw.login),
+      transport: parseTransportConfig(worldRaw.transport),
+      demo: parseDemoConfig(worldRaw.demo),
+      database: parseDatabaseConfig(worldRaw.database),
+      redis: parseRedisConfig(worldRaw.redis),
+      grpc: parseGrpcConfig(worldRaw.grpc),
+      gateway: parseGatewayConfig(worldRaw.gateway),
+      sharding: parseShardingConfig(worldRaw.sharding),
 
       rawSections: {},
     };

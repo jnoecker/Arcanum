@@ -90,6 +90,7 @@ const CHARACTER_PANELS: PanelDef[] = [
 const WORLD_PANELS: PanelDef[] = [
   { id: "tuningWizard", label: "Tuning Wizard", group: "world", host: "command", kicker: "World", title: "Tuning Wizard", description: "Configure all game balance — presets, inline editing, and before/after comparison.", maxWidth: "max-w-7xl", island: "orrery", glyph: "\u2699\uFE0F" },
   { id: "worldServer", label: "World & Server", group: "world", host: "config", kicker: "Infrastructure", title: "World & server", description: "Start room, server ports, admin API, observability, and logging.", maxWidth: "max-w-5xl", island: "orrery", glyph: "\u{1F30D}" },
+  { id: "infrastructure", label: "Infrastructure", group: "world", host: "config", kicker: "Deployment", title: "Infrastructure", description: "Deployment mode, persistence, login, transport, database, Redis, gRPC, gateway, and sharding.", maxWidth: "max-w-5xl", island: "orrery", glyph: "\u{1F3D7}\uFE0F" },
   { id: "commands", label: "Commands", group: "world", host: "config", kicker: "Commands", title: "Command designer", description: "Custom commands, usage strings, and categories.", maxWidth: "max-w-5xl", island: "loom", glyph: "\u{1F58B}\uFE0F" },
 ];
 

@@ -45,6 +45,7 @@ import { ApiSettingsPanel } from "./panels/ApiSettingsPanel";
 import { RuntimeHandoffStudio } from "./RuntimeHandoffStudio";
 import { RawYamlPanel } from "./panels/RawYamlPanel";
 import { VersionControlPanel } from "./panels/VersionControlPanel";
+import { InfrastructurePanel } from "./panels/InfrastructurePanel";
 
 function Section({
   kicker,
@@ -121,6 +122,8 @@ function renderPanel(panelId: string, props: ConfigPanelProps): ReactNode {
           </Section>
         </>
       );
+    case "infrastructure":
+      return <InfrastructurePanel config={config} onChange={onChange} />;
     case "commands":
       return <CommandDesigner config={config} onChange={onChange} />;
     case "crafting":

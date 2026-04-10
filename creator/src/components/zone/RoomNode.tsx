@@ -90,12 +90,33 @@ function RoomBackground({ image }: { image?: string }) {
   );
 }
 
+/** Role pill badges (bank, tavern/lottery, dungeon) */
+function RoleBadges({ d }: { d: RoomNodeData }) {
+  if (!d.bank && !d.tavern && !d.dungeon) return null;
+  return (
+    <div className="relative flex flex-wrap gap-1">
+      {d.bank && (
+        <span className="rounded bg-status-info/20 px-1 text-3xs font-semibold text-status-info" title="Bank">Bank</span>
+      )}
+      {d.tavern && (
+        <span className="rounded bg-status-warning/20 px-1 text-3xs font-semibold text-status-warning" title="Lottery (tavern)">Lottery</span>
+      )}
+      {d.dungeon && (
+        <span className="rounded bg-status-error/20 px-1 text-3xs font-semibold text-status-error" title="Dungeon portal">Dungeon</span>
+      )}
+    </div>
+  );
+}
+
 /** Compact info badge shown at the bottom of image-backed nodes */
 function InfoBadge({ d }: { d: RoomNodeData }) {
   const hasEntities = d.mobCount > 0 || d.itemCount > 0 || d.shopCount > 0 || d.gatheringNodeCount > 0 || d.station;
 
   return (
     <div className="relative mt-auto flex flex-col gap-0.5">
+      {/* Role badges */}
+      <RoleBadges d={d} />
+
       {/* Title */}
       <div className="flex items-center gap-1">
         {d.isStartRoom && (
@@ -214,6 +235,9 @@ export const RoomNode = memo(function RoomNode({ data, selected }: NodeProps<Roo
               ))}
             </div>
           )}
+
+          {/* Role badges */}
+          <RoleBadges d={d} />
 
           {/* Entity badges (for entities without images) */}
           {(d.mobCount > 0 || d.itemCount > 0 || d.shopCount > 0 || d.gatheringNodeCount > 0 || d.station) && (

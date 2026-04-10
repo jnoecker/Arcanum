@@ -45,6 +45,9 @@ export interface RoomNodeData extends Record<string, unknown> {
   shopCount: number;
   gatheringNodeCount: number;
   station?: string;
+  bank?: boolean;
+  tavern?: boolean;
+  dungeon?: boolean;
   image?: string;
   entities: EntitySprite[];
 }
@@ -152,6 +155,9 @@ export function zoneToGraph(
         shopCount: shopsPerRoom.get(roomId) ?? 0,
         gatheringNodeCount: gatheringNodesPerRoom.get(roomId) ?? 0,
         station: room.station,
+        bank: room.bank,
+        tavern: room.tavern,
+        dungeon: room.dungeon,
         image: room.image,
         entities: entitiesPerRoom.get(roomId) ?? [],
       } satisfies RoomNodeData,

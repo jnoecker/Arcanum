@@ -758,7 +758,7 @@ export function RoomPanel({
       <Section
         title="Room Roles"
         description="Capabilities owned directly by the room itself rather than separate placed entities."
-        defaultExpanded={!!room.station || !!room.bank || !!room.tavern}
+        defaultExpanded={!!room.station || !!room.bank || !!room.tavern || !!room.dungeon}
       >
         <div className="flex flex-col gap-2">
           <FieldRow
@@ -785,12 +785,22 @@ export function RoomPanel({
           </FieldRow>
           <FieldRow
             label="Tavern"
-            hint="Marks this room as a tavern / rest point for tavern-specific commands and systems."
+            hint="Marks this room as a tavern / rest point. Shows the lottery kiosk in the web client."
           >
             <CheckboxInput
               checked={room.tavern ?? false}
               onCommit={(value) => onWorldChange(updateRoom(world, roomId, { tavern: value || undefined }))}
               label="Room functions as a tavern"
+            />
+          </FieldRow>
+          <FieldRow
+            label="Dungeon"
+            hint="Marks this room as a dungeon portal entrance. Shows the dungeon kiosk in the web client."
+          >
+            <CheckboxInput
+              checked={room.dungeon ?? false}
+              onCommit={(value) => onWorldChange(updateRoom(world, roomId, { dungeon: value || undefined }))}
+              label="Room contains a dungeon portal"
             />
           </FieldRow>
         </div>

@@ -5,6 +5,7 @@ import {
   updateRoom,
   addExit,
   deleteExit,
+  updateExit,
   generateRoomId,
   addMob,
   updateMob,
@@ -187,6 +188,45 @@ describe("deleteExit", () => {
   it("throws for non-existent exit", () => {
     const world = makeWorld();
     expect(() => deleteExit(world, "room1", "w")).toThrow("does not exist");
+  });
+});
+
+describe("updateExit", () => {
+  it("updates the target and preserves bidirectional links", () => {
+    let world = makeWorld();
+    world = addRoom(world, "room3", {
+      title: "Room 3",
+      description: "A third room",
+    });
+
+    const next = updateExit(world, "room1", "n", "e", "room3", true);
+    expect(next.rooms.room1.exits?.n).toBeUndefined();
+    expect(next.rooms.room1.exits?.e).toBe("room3");
+    expect(next.rooms.room2.exits?.s).toBeUndefined();
+    expect(next.rooms.room3.exits?.w).toBe("room1");
+  });
+
+  it("supports converting a same-zone exit into a cross-zone exit", () => {
+    const world = makeWorld();
+    const next = updateExit(world, "room1", "n", "n", "otherzone:gate", true);
+    expect(next.rooms.room1.exits?.n).toBe("otherzone:gate");
+    expect(next.rooms.room2.exits?.s).toBeUndefined();
+  });
+
+  it("preserves door data when editing the exit", () => {
+    let world = makeWorld();
+    world = setExitDoor(world, "room1", "n", { initialState: "locked", keyItemId: "sword" });
+    world = addRoom(world, "room3", {
+      title: "Room 3",
+      description: "A third room",
+    });
+
+    const next = updateExit(world, "room1", "n", "e", "room3", false);
+    expect(next.rooms.room1.exits?.n).toBeUndefined();
+    expect(next.rooms.room1.exits?.e).toEqual({
+      to: "room3",
+      door: { initialState: "locked", keyItemId: "sword" },
+    });
   });
 });
 

@@ -176,7 +176,7 @@ export function TrainerEditor({
         </div>
       </Section>
 
-      <MediaSection image={trainer.image} onImageChange={(v) => patch({ image: v })} getPrompt={(style) => trainerPrompt(trainerId, trainer, style)} assetType="background" context={zoneId ? { zone: zoneId, entity_type: "trainer", entity_id: trainerId } : undefined} />
+      <MediaSection image={trainer.image} onImageChange={(v) => patch({ image: v })} getPrompt={(style) => trainerPrompt(trainerId, trainer, style)} assetType="entity_portrait" context={zoneId ? { zone: zoneId, entity_type: "trainer", entity_id: trainerId } : undefined} />
       <DeleteEntityButton onClick={handleDelete} label="Delete Trainer" />
     </>
   );

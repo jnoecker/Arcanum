@@ -110,6 +110,36 @@ function collectBgRemovalTargets(world: WorldFile, zoneId: string, assetsDir: st
     });
   }
 
+  for (const [id, trainer] of Object.entries(world.trainers ?? {})) {
+    if (!trainer.image) continue;
+    const resolvedPath = resolveImagePath(trainer.image);
+    if (!resolvedPath) continue;
+    targets.push({
+      id: `trainer:${id}`,
+      label: `${trainer.name} (trainer)`,
+      imagePath: trainer.image,
+      resolvedPath,
+      assetType: "entity_portrait",
+      variantGroup: `trainer:${zoneId}:${id}`,
+      context: { zone: zoneId, entity_type: "trainer", entity_id: id },
+    });
+  }
+
+  for (const [id, node] of Object.entries(world.gatheringNodes ?? {})) {
+    if (!node.image) continue;
+    const resolvedPath = resolveImagePath(node.image);
+    if (!resolvedPath) continue;
+    targets.push({
+      id: `gatheringNode:${id}`,
+      label: `${node.displayName} (gathering node)`,
+      imagePath: node.image,
+      resolvedPath,
+      assetType: "gathering_node",
+      variantGroup: `gatheringNode:${zoneId}:${id}`,
+      context: { zone: zoneId, entity_type: "gatheringNode", entity_id: id },
+    });
+  }
+
   return targets;
 }
 
@@ -344,13 +374,15 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
       if (!source || !target) return;
 
       // Only allow room-to-room connections
-      if (target.startsWith("xzone:")) return;
+      const resolvedTarget = target.startsWith("xzone:")
+        ? target.slice("xzone:".length)
+        : target;
 
       // Extract direction from sourceHandle (e.g. "source-n" → "n")
       const inferredDir = sourceHandle?.replace("source-", "") ?? "n";
 
       // Show direction picker instead of immediately creating exit
-      setPendingConnection({ source, target, inferredDir });
+      setPendingConnection({ source, target: resolvedTarget, inferredDir });
     },
     [zoneState],
   );
@@ -390,8 +422,10 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
   const onSelectionChange = useCallback(
     ({ nodes: selected }: OnSelectionChangeParams) => {
       const roomNode = selected.find((n) => n.type === "room");
-      setSelectedRoomId(roomNode ? roomNode.id : null);
-      if (roomNode) setSelectedEntity(null);
+      if (roomNode) {
+        setSelectedRoomId(roomNode.id);
+        setSelectedEntity(null);
+      }
     },
     [],
   );
@@ -404,8 +438,7 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
   }, []);
 
   const onPaneClick = useCallback(() => {
-    setSelectedRoomId(null);
-    setSelectedEntity(null);
+    // Keep the active side panel stable during ordinary map clicks and drags.
   }, []);
 
   // ─── Add room ────────────────────────────────────────────────────
@@ -815,6 +848,7 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
                 roomId={selectedRoomId}
                 world={zoneState.data}
                 onWorldChange={applyWorldChange}
+                onClose={() => setSelectedRoomId(null)}
                 onRoomDeleted={() => setSelectedRoomId(null)}
                 onSelectEntity={setSelectedEntity}
               />

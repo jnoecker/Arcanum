@@ -292,6 +292,49 @@ export function deleteExit(
 // ─── Exit door operations ───────────────────────────────────────────
 
 /**
+ * Update an existing exit's direction, target, and bidirectional behavior.
+ * Preserves any door metadata on the source exit while reworking the reverse
+ * link when the destination is in the current zone.
+ */
+export function updateExit(
+  world: WorldFile,
+  sourceRoom: string,
+  currentDirection: string,
+  nextDirection: string,
+  nextTargetRoom: string,
+  bidirectional = true,
+): WorldFile {
+  const existing = world.rooms[sourceRoom]?.exits?.[currentDirection];
+  if (!existing) {
+    throw new Error(`Exit "${currentDirection}" from "${sourceRoom}" does not exist`);
+  }
+
+  const normalizedDirection = normalizeDir(nextDirection.trim());
+  const trimmedTarget = nextTargetRoom.trim();
+  if (!normalizedDirection) {
+    throw new Error("Exit direction is required");
+  }
+  if (!trimmedTarget) {
+    throw new Error("Exit target is required");
+  }
+
+  const currentExits = world.rooms[sourceRoom]?.exits ?? {};
+  if (normalizedDirection !== currentDirection && currentExits[normalizedDirection]) {
+    throw new Error(`Exit "${normalizedDirection}" from "${sourceRoom}" already exists`);
+  }
+
+  const door = typeof existing === "string" ? undefined : existing.door;
+  const effectiveBidirectional = bidirectional && !trimmedTarget.includes(":");
+
+  let next = deleteExit(world, sourceRoom, currentDirection, true);
+  next = addExit(next, sourceRoom, normalizedDirection, trimmedTarget, effectiveBidirectional);
+  if (door) {
+    next = setExitDoor(next, sourceRoom, normalizedDirection, door);
+  }
+  return next;
+}
+
+/**
  * Canonical door initial states. Mirrors the Kotlin {@code DoorFile.initialState}
  * values the MUD accepts ("open" | "closed" | "locked").
  */

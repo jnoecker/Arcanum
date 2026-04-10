@@ -6,8 +6,8 @@ import { useZoneStore } from "@/stores/zoneStore";
 type CrossZoneNodeType = Node<CrossZoneNodeData, "crossZone">;
 
 const handleStyle: React.CSSProperties = {
-  width: 6,
-  height: 6,
+  width: 14,
+  height: 14,
   background: "transparent",
   border: "none",
 };
@@ -53,7 +53,7 @@ export function CrossZoneNode({ data }: NodeProps<CrossZoneNodeType>) {
             position={pos}
             id={`target-${pos === Position.Top ? "n" : pos === Position.Bottom ? "s" : pos === Position.Left ? "w" : "e"}`}
             style={handleStyle}
-            isConnectable={false}
+            isConnectable
           />
         ),
       )}

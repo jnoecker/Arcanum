@@ -203,6 +203,11 @@ export function imageGenerateCommand(provider: string): string {
 /** Asset types that benefit from provider-native transparent backgrounds. */
 export function requestsTransparentBackground(assetType?: AssetType | string | null): boolean {
   switch (assetType) {
+    case "mob":
+    case "item":
+    case "pet":
+    case "entity_portrait":
+    case "gathering_node":
     case "player_sprite":
     case "ability_icon":
     case "status_effect_icon":

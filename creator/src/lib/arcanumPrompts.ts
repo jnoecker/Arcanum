@@ -148,6 +148,7 @@ export const BG_REMOVAL_ASSET_TYPES: ReadonlySet<string> = new Set([
   "item",
   "pet",
   "entity_portrait",
+  "gathering_node",
   "ability_sprite",
   "player_sprite",
   "race_portrait",

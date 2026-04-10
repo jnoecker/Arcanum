@@ -1,9 +1,11 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { WorldFile, ExitValue, DoorFile } from "@/types/world";
 import {
   updateRoom,
   deleteRoom,
+  addExit,
   deleteExit,
+  updateExit,
   addMob,
   addItem,
   addShop,
@@ -12,10 +14,12 @@ import {
   addPuzzle,
   defaultPuzzle,
   generateEntityId,
+  OPPOSITE,
+  normalizeDir,
 } from "@/lib/zoneEdits";
 import { ExitDoorEditor } from "./ExitDoorEditor";
 import { RoomFeaturesEditor } from "./RoomFeaturesEditor";
-import { EditableField, EditableTextArea, Section, IconButton, FieldRow, TextInput } from "@/components/ui/FormWidgets";
+import { EditableField, EditableTextArea, Section, IconButton, FieldRow, TextInput, SelectInput, CheckboxInput } from "@/components/ui/FormWidgets";
 import { YamlPreview } from "@/components/ui/YamlPreview";
 import { EntityArtGenerator } from "@/components/ui/EntityArtGenerator";
 import { MediaPicker } from "@/components/ui/MediaPicker";
@@ -26,6 +30,8 @@ import { getTrainerClasses } from "@/lib/trainers";
 import { EnhanceDescriptionButton } from "@/components/editors/EditorShared";
 import { useVibeStore } from "@/stores/vibeStore";
 import { useAssetStore } from "@/stores/assetStore";
+import { useZoneStore } from "@/stores/zoneStore";
+import { useConfigStore } from "@/stores/configStore";
 import { ZoneVibePanel } from "./ZoneVibePanel";
 import sidebarBg from "@/assets/sidebar-bg.png";
 
@@ -41,8 +47,44 @@ interface RoomPanelProps {
   roomId: string;
   world: WorldFile;
   onWorldChange: (world: WorldFile) => void;
+  onClose: () => void;
   onRoomDeleted: () => void;
   onSelectEntity: (selection: EntitySelection) => void;
+}
+
+interface ExitDraft {
+  direction: string;
+  target: string;
+  bidirectional: boolean;
+}
+
+const EXIT_DIRECTION_OPTIONS = [
+  { value: "", label: "Choose..." },
+  { value: "n", label: "North" },
+  { value: "s", label: "South" },
+  { value: "e", label: "East" },
+  { value: "w", label: "West" },
+  { value: "ne", label: "Northeast" },
+  { value: "nw", label: "Northwest" },
+  { value: "se", label: "Southeast" },
+  { value: "sw", label: "Southwest" },
+  { value: "u", label: "Up" },
+  { value: "d", label: "Down" },
+] as const;
+
+const FALLBACK_STATION_OPTIONS = [
+  { value: "forge", label: "Forge" },
+  { value: "alchemy_table", label: "Alchemy Table" },
+  { value: "workbench", label: "Workbench" },
+  { value: "enchanting_table", label: "Enchanting Table" },
+] as const;
+
+function buildExitDraft(direction = ""): ExitDraft {
+  return { direction, target: "", bidirectional: true };
+}
+
+function nextExitDirection(exits: Record<string, string | ExitValue> | undefined): string {
+  return EXIT_DIRECTION_OPTIONS.find((option) => option.value && !exits?.[option.value])?.value ?? "";
 }
 
 function resolveExitTarget(exit: string | ExitValue): {
@@ -65,31 +107,141 @@ function resolveExitTarget(exit: string | ExitValue): {
   };
 }
 
+function isBidirectionalExit(
+  world: WorldFile,
+  sourceRoomId: string,
+  direction: string,
+  target: string,
+): boolean {
+  if (target.includes(":")) return false;
+  const reverseDirection = OPPOSITE[direction];
+  if (!reverseDirection) return false;
+  const reverseExit = world.rooms[target]?.exits?.[reverseDirection];
+  if (!reverseExit) return false;
+  const reverseTarget = typeof reverseExit === "string" ? reverseExit : reverseExit.to;
+  return reverseTarget === sourceRoomId;
+}
+
+function resolveExitInput(
+  rawValue: string,
+  currentZoneId: string,
+  world: WorldFile,
+  loadedZones: Map<string, { data: WorldFile }>,
+): string {
+  const value = rawValue.trim();
+  if (!value) return "";
+
+  if (!value.includes(":")) {
+    if (world.rooms[value]) return value;
+    const localMatches = Object.keys(world.rooms).filter((roomId) => roomId.startsWith(value));
+    if (localMatches.length === 1) return localMatches[0]!;
+    return value;
+  }
+
+  const parts = value.split(":", 2);
+  const zonePrefix = (parts[0] ?? "").trim();
+  const roomPrefixRaw = parts[1] ?? "";
+  const roomPrefix = roomPrefixRaw.trim();
+  if (!zonePrefix) return value;
+
+  const exactZone = loadedZones.get(zonePrefix);
+  const matchedZoneId = exactZone
+    ? zonePrefix
+    : [...loadedZones.keys()].find((loadedZoneId) => loadedZoneId.startsWith(zonePrefix));
+  if (!matchedZoneId) return value;
+
+  const zone = loadedZones.get(matchedZoneId)?.data;
+  if (!zone) return value;
+  if (matchedZoneId === currentZoneId) {
+    if (!roomPrefix) return zone.startRoom;
+    if (zone.rooms[roomPrefix]) return roomPrefix;
+    const localMatches = Object.keys(zone.rooms).filter((roomId) => roomId.startsWith(roomPrefix));
+    return localMatches.length === 1 ? localMatches[0]! : roomPrefix;
+  }
+
+  if (!roomPrefix) return `${matchedZoneId}:${zone.startRoom}`;
+  if (zone.rooms[roomPrefix]) return `${matchedZoneId}:${roomPrefix}`;
+  const roomMatches = Object.keys(zone.rooms).filter((roomId) => roomId.startsWith(roomPrefix));
+  return roomMatches.length === 1 ? `${matchedZoneId}:${roomMatches[0]}` : `${matchedZoneId}:${roomPrefix}`;
+}
+
 export function RoomPanel({
   zoneId,
   roomId,
   world,
   onWorldChange,
+  onClose,
   onRoomDeleted,
   onSelectEntity,
 }: RoomPanelProps) {
   const [showYaml, setShowYaml] = useState(false);
   const [expandedDoor, setExpandedDoor] = useState<string | null>(null);
+  const [exitDrafts, setExitDrafts] = useState<Record<string, ExitDraft>>({});
+  const [newExitDraft, setNewExitDraft] = useState<ExitDraft>(() => buildExitDraft());
+  const [exitError, setExitError] = useState<string | null>(null);
   const vibe = useVibeStore((s) => s.getVibe(zoneId));
   const assetsDir = useAssetStore((s) => s.assetsDir);
+  const loadedZones = useZoneStore((s) => s.zones);
+  const craftingStationTypes = useConfigStore((s) => s.config?.craftingStationTypes);
   const room = world.rooms[roomId];
   if (!room) return null;
 
   const isStartRoom = roomId === world.startRoom;
+
+  const stationOptions = useMemo(() => {
+    if (craftingStationTypes && Object.keys(craftingStationTypes).length > 0) {
+      return Object.entries(craftingStationTypes).map(([id, stationType]) => ({
+        value: id,
+        label: stationType.displayName || id,
+      }));
+    }
+    return [...FALLBACK_STATION_OPTIONS];
+  }, [craftingStationTypes]);
 
   const exits = useMemo(
     () =>
       Object.entries(room.exits ?? {}).map(([dir, val]) => ({
         direction: dir,
         ...resolveExitTarget(val),
+        isBidirectional: isBidirectionalExit(world, roomId, dir, resolveExitTarget(val).target),
       })),
-    [room.exits],
+    [room.exits, roomId, world],
   );
+
+  useEffect(() => {
+    setExitDrafts(
+      Object.fromEntries(
+        exits.map((exit) => [
+          exit.direction,
+          {
+            direction: exit.direction,
+            target: exit.target,
+            bidirectional: exit.isBidirectional,
+          },
+        ]),
+      ),
+    );
+    setNewExitDraft(buildExitDraft(nextExitDirection(room.exits)));
+    setExpandedDoor((current) => (current && room.exits?.[current] ? current : null));
+    setExitError(null);
+  }, [exits, room.exits]);
+
+  const exitSuggestions = useMemo(() => {
+    const localRoomIds = Object.keys(world.rooms).sort();
+    const foreignZones = [...loadedZones.entries()]
+      .filter(([loadedZoneId]) => loadedZoneId !== zoneId)
+      .sort(([a], [b]) => a.localeCompare(b));
+
+    const suggestions = new Set<string>(localRoomIds);
+    for (const [foreignZoneId, foreignZoneState] of foreignZones) {
+      suggestions.add(`${foreignZoneId}:`);
+      suggestions.add(`${foreignZoneId}:${foreignZoneState.data.startRoom}`);
+      for (const foreignRoomId of Object.keys(foreignZoneState.data.rooms).slice(0, 50)) {
+        suggestions.add(`${foreignZoneId}:${foreignRoomId}`);
+      }
+    }
+    return [...suggestions];
+  }, [loadedZones, world.rooms, zoneId]);
 
   // Find entities in this room
   const mobs = useMemo(
@@ -143,10 +295,87 @@ export function RoomPanel({
 
   const handleDeleteExit = useCallback(
     (direction: string) => {
+      setExitError(null);
       onWorldChange(deleteExit(world, roomId, direction));
     },
     [world, roomId, onWorldChange],
   );
+
+  const updateExitDraftState = useCallback(
+    (key: string, patch: Partial<ExitDraft>) => {
+      setExitDrafts((current) => {
+        const existing = current[key] ?? buildExitDraft(key);
+        const next = { ...existing, ...patch };
+        if (next.target.includes(":")) {
+          next.bidirectional = false;
+        }
+        return { ...current, [key]: next };
+      });
+      setExitError(null);
+    },
+    [],
+  );
+
+  const handleApplyExit = useCallback(
+    (currentDirection: string) => {
+      const draft = exitDrafts[currentDirection];
+      if (!draft) return;
+      try {
+        const resolvedTarget = resolveExitInput(
+          draft.target,
+          zoneId,
+          world,
+          loadedZones,
+        );
+        const next = updateExit(
+          world,
+          roomId,
+          currentDirection,
+          normalizeDir(draft.direction),
+          resolvedTarget,
+          draft.bidirectional,
+        );
+        onWorldChange(next);
+        setExitError(null);
+      } catch (error) {
+        setExitError(error instanceof Error ? error.message : "Failed to update exit");
+      }
+    },
+    [exitDrafts, loadedZones, onWorldChange, roomId, world, zoneId],
+  );
+
+  const handleCreateExit = useCallback(() => {
+    try {
+      const direction = normalizeDir(newExitDraft.direction);
+      const target = resolveExitInput(
+        newExitDraft.target,
+        zoneId,
+        world,
+        loadedZones,
+      );
+      if (!direction) {
+        throw new Error("Exit direction is required");
+      }
+      if (!target) {
+        throw new Error("Exit target is required");
+      }
+      if (room.exits?.[direction]) {
+        throw new Error(`Exit "${direction}" from "${roomId}" already exists`);
+      }
+      const next = addExit(
+        world,
+        roomId,
+        direction,
+        target,
+        newExitDraft.bidirectional,
+      );
+      onWorldChange(next);
+      setExitError(null);
+      setExpandedDoor(null);
+    } catch (error) {
+      setExitError(error instanceof Error ? error.message : "Failed to create exit");
+    }
+  }, [loadedZones, newExitDraft, onWorldChange, roomId, world, zoneId]);
 
   const handleDeleteRoom = useCallback(() => {
     try {
@@ -243,6 +472,14 @@ export function RoomPanel({
           >
             YAML
           </button>
+          <button
+            onClick={onClose}
+            className="shrink-0 rounded px-1.5 py-0.5 text-xs text-text-muted transition-colors hover:bg-bg-elevated hover:text-text-primary"
+            title="Close room panel"
+            aria-label="Close room panel"
+          >
+            &times;
+          </button>
         </div>
       </div>
 
@@ -271,69 +508,223 @@ export function RoomPanel({
       </Section>
 
       {/* Exits */}
-      <Section title="Exits">
-        {exits.length === 0 ? (
-          <p className="rounded-lg border border-dashed border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] px-3 py-2 text-center text-xs italic text-text-muted">No exits</p>
-        ) : (
-          <ul className="flex flex-col gap-1 text-xs">
-            {exits.map((exit) => {
-              const isExpanded = expandedDoor === exit.direction;
-              return (
-                <li key={exit.direction} className="group rounded border border-transparent hover:border-border-muted">
-                  <div className="flex items-center gap-2 px-1 py-1">
-                    <span className="w-6 shrink-0 font-medium text-text-primary">
-                      {exit.direction.toUpperCase()}
-                    </span>
-                    <span
-                      className={`min-w-0 flex-1 truncate text-text-secondary ${exit.target.includes(":") ? "text-accent" : ""}`}
-                      title={exit.target}
-                    >
-                      {exit.target}
-                    </span>
-                    <button
-                      onClick={() => setExpandedDoor(isExpanded ? null : exit.direction)}
-                      className={`shrink-0 rounded px-1 py-0.5 text-2xs transition-colors ${
-                        exit.hasDoor
-                          ? "text-status-warning hover:bg-bg-elevated"
-                          : "text-text-muted opacity-0 hover:bg-bg-elevated hover:text-text-primary group-hover:opacity-100 focus-visible:opacity-100"
-                      }`}
-                      title={exit.hasDoor ? "Edit door" : "Add door"}
-                      aria-label={exit.hasDoor ? "Edit door" : "Add door"}
-                      aria-expanded={isExpanded}
-                    >
-                      {exit.hasDoor ? (exit.isLocked ? "\uD83D\uDD12 Door" : "\uD83D\uDEAA Door") : "+ Door"}
-                    </button>
-                    <button
-                      onClick={() => handleDeleteExit(exit.direction)}
-                      className="shrink-0 text-text-muted opacity-0 transition-colors hover:text-status-danger group-hover:opacity-100 focus-visible:opacity-100"
-                      title="Delete exit"
-                      aria-label="Delete exit"
-                    >
-                      &times;
-                    </button>
-                  </div>
-                  {isExpanded && (
-                    <div className="px-1 pb-1">
-                      <ExitDoorEditor
-                        world={world}
-                        roomId={roomId}
-                        direction={exit.direction}
-                        door={exit.door}
-                        onWorldChange={onWorldChange}
-                      />
+      <Section
+        title={`Exits (${exits.length})`}
+        description="Edit room links here. Cross-zone targets use the `zone:room` format and stay one-way from this zone."
+      >
+        <div className="flex flex-col gap-2">
+          {exitError && (
+            <p className="rounded border border-status-error/30 bg-status-error/10 px-3 py-2 text-2xs text-status-error">
+              {exitError}
+            </p>
+          )}
+
+          {exits.length === 0 ? (
+            <p className="rounded-lg border border-dashed border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] px-3 py-2 text-center text-xs italic text-text-muted">No exits</p>
+          ) : (
+            <ul className="flex flex-col gap-2 text-xs">
+              {exits.map((exit) => {
+                const isExpanded = expandedDoor === exit.direction;
+                const draft = exitDrafts[exit.direction] ?? {
+                  direction: exit.direction,
+                  target: exit.target,
+                  bidirectional: exit.isBidirectional,
+                };
+                const isCrossZone = draft.target.includes(":");
+                const hasChanges =
+                  normalizeDir(draft.direction) !== exit.direction
+                  || draft.target.trim() !== exit.target
+                  || (!!draft.bidirectional && !isCrossZone) !== exit.isBidirectional;
+
+                return (
+                  <li key={exit.direction} className="rounded-lg border border-border-muted bg-bg-tertiary/35 p-2">
+                    <div className="grid grid-cols-[5.5rem_minmax(0,1fr)] gap-2">
+                      <label className="text-2xs text-text-muted">
+                        Direction
+                        <select
+                          value={draft.direction}
+                          onChange={(e) => updateExitDraftState(exit.direction, { direction: e.target.value })}
+                          className="ornate-input mt-1 w-full rounded px-2 py-1 text-xs text-text-primary"
+                        >
+                          {EXIT_DIRECTION_OPTIONS.map((option) => (
+                            <option key={option.value} value={option.value}>
+                              {option.label}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+
+                      <label className="min-w-0 text-2xs text-text-muted">
+                        Target
+                        <input
+                          value={draft.target}
+                          onChange={(e) => updateExitDraftState(exit.direction, { target: e.target.value })}
+                          placeholder="room_id or zone:room_id"
+                          list={`exit-target-suggestions-${roomId}`}
+                          className={`ornate-input mt-1 w-full rounded px-2 py-1 text-xs ${isCrossZone ? "text-accent" : "text-text-primary"}`}
+                        />
+                      </label>
                     </div>
-                  )}
-                </li>
-              );
-            })}
-          </ul>
-        )}
+
+                    <div className="mt-2 flex flex-wrap items-center gap-2">
+                      <label className={`flex items-center gap-1.5 text-2xs ${isCrossZone ? "text-text-muted/50" : "text-text-secondary"}`}>
+                        <input
+                          type="checkbox"
+                          checked={!isCrossZone && draft.bidirectional}
+                          disabled={isCrossZone}
+                          onChange={(e) => updateExitDraftState(exit.direction, { bidirectional: e.target.checked })}
+                          className="accent-accent"
+                        />
+                        Reverse link
+                      </label>
+
+                      {isCrossZone && (
+                        <span className="rounded bg-accent/10 px-1.5 py-0.5 text-2xs text-accent">
+                          Cross-zone
+                        </span>
+                      )}
+
+                      <button
+                        onClick={() => handleApplyExit(exit.direction)}
+                        disabled={!hasChanges}
+                        className="rounded border border-accent/30 px-2 py-1 text-2xs text-accent transition-colors enabled:hover:bg-accent/10 disabled:opacity-40"
+                      >
+                        Apply
+                      </button>
+
+                      <button
+                        onClick={() => setExpandedDoor(isExpanded ? null : exit.direction)}
+                        className={`rounded px-2 py-1 text-2xs transition-colors ${
+                          exit.hasDoor
+                            ? "text-status-warning hover:bg-bg-elevated"
+                            : "text-text-muted hover:bg-bg-elevated hover:text-text-primary"
+                        }`}
+                        title={exit.hasDoor ? "Edit door" : "Add door"}
+                        aria-label={exit.hasDoor ? "Edit door" : "Add door"}
+                        aria-expanded={isExpanded}
+                      >
+                        {exit.hasDoor ? (exit.isLocked ? "\uD83D\uDD12 Door" : "\uD83D\uDEAA Door") : "+ Door"}
+                      </button>
+
+                      <button
+                        onClick={() => handleDeleteExit(exit.direction)}
+                        className="ml-auto shrink-0 text-text-muted transition-colors hover:text-status-danger"
+                        title="Delete exit"
+                        aria-label="Delete exit"
+                      >
+                        &times;
+                      </button>
+                    </div>
+
+                    {isExpanded && (
+                      <div className="mt-2">
+                        <ExitDoorEditor
+                          world={world}
+                          roomId={roomId}
+                          direction={exit.direction}
+                          door={exit.door}
+                          onWorldChange={onWorldChange}
+                        />
+                      </div>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+
+          <div className="rounded-xl border border-accent/25 bg-[linear-gradient(180deg,rgba(var(--accent-rgb),0.12),rgba(var(--accent-rgb),0.04))] p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
+            <div className="flex items-center gap-2">
+              <span className="rounded-full border border-accent/35 bg-accent/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-accent">
+                New
+              </span>
+              <p className="text-2xs uppercase tracking-widest text-text-secondary">Create Exit</p>
+            </div>
+            <p className="mt-1 text-2xs leading-relaxed text-text-muted">
+              Start with a direction, then target a local room or type a loaded foreign zone like <span className="font-mono text-accent">otherzone:</span>.
+            </p>
+            <div className="mt-2 grid grid-cols-[5.5rem_minmax(0,1fr)] gap-2">
+              <label className="text-2xs text-text-muted">
+                Direction
+                <select
+                  value={newExitDraft.direction}
+                  onChange={(e) => {
+                    setNewExitDraft((current) => ({ ...current, direction: e.target.value }));
+                    setExitError(null);
+                  }}
+                  className="ornate-input mt-1 w-full rounded px-2 py-1 text-xs text-text-primary"
+                >
+                  {EXIT_DIRECTION_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="min-w-0 text-2xs text-text-muted">
+                Target
+                <input
+                  value={newExitDraft.target}
+                  onChange={(e) => {
+                    const target = e.target.value;
+                    setNewExitDraft((current) => ({
+                      ...current,
+                      target,
+                      bidirectional: target.includes(":") ? false : current.bidirectional,
+                    }));
+                    setExitError(null);
+                  }}
+                  placeholder="room_id or zone:room_id"
+                  list={`exit-target-suggestions-${roomId}`}
+                  className={`ornate-input mt-1 w-full rounded px-2 py-1 text-xs ${newExitDraft.target.includes(":") ? "text-accent" : "text-text-primary"}`}
+                />
+              </label>
+            </div>
+
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              <label className={`flex items-center gap-1.5 text-2xs ${newExitDraft.target.includes(":") ? "text-text-muted/50" : "text-text-secondary"}`}>
+                <input
+                  type="checkbox"
+                  checked={!newExitDraft.target.includes(":") && newExitDraft.bidirectional}
+                  disabled={newExitDraft.target.includes(":")}
+                  onChange={(e) => {
+                    setNewExitDraft((current) => ({ ...current, bidirectional: e.target.checked }));
+                    setExitError(null);
+                  }}
+                  className="accent-accent"
+                />
+                Reverse link
+              </label>
+
+              {newExitDraft.target.includes(":") && (
+                <span className="rounded bg-accent/10 px-1.5 py-0.5 text-2xs text-accent">
+                  Cross-zone
+                </span>
+              )}
+
+              <button
+                onClick={handleCreateExit}
+                disabled={!newExitDraft.direction || !newExitDraft.target.trim()}
+                className="rounded border border-accent/30 px-2 py-1 text-2xs text-accent transition-colors hover:bg-accent/10"
+              >
+                Create
+              </button>
+            </div>
+          </div>
+
+          <datalist id={`exit-target-suggestions-${roomId}`}>
+            {exitSuggestions.map((suggestion) => (
+              <option key={suggestion} value={suggestion} />
+            ))}
+          </datalist>
+        </div>
       </Section>
 
       {/* Room features */}
       <Section
         title={`Features (${Object.keys(room.features ?? {}).length})`}
-        description="Containers, levers, and signs players can interact with in this room."
+        description="Containers, levers, and signs players can interact with in this room. Sequence puzzles below can reference these same feature keys."
         defaultExpanded={Object.keys(room.features ?? {}).length > 0}
       >
         <RoomFeaturesEditor
@@ -343,41 +734,46 @@ export function RoomPanel({
         />
       </Section>
 
-      {/* Station */}
-      <Section title="Crafting Station" defaultExpanded={false}>
-        <EditableField
-          value={room.station ?? ""}
-          onCommit={(v) => handleFieldChange("station", v)}
-          placeholder="None"
-          className="text-xs text-status-info"
-          label="crafting station"
-        />
-      </Section>
-
-      {/* Bank */}
-      <Section title="Bank" defaultExpanded={false}>
-        <label className="flex items-center gap-2 text-xs text-text-secondary">
-          <input
-            type="checkbox"
-            checked={room.bank ?? false}
-            onChange={(e) => onWorldChange(updateRoom(world, roomId, { bank: e.target.checked || undefined }))}
-            className="accent-accent"
-          />
-          This room has a bank NPC (enables deposit/withdraw commands)
-        </label>
-      </Section>
-
-      {/* Tavern */}
-      <Section title="Tavern" defaultExpanded={false}>
-        <label className="flex items-center gap-2 text-xs text-text-secondary">
-          <input
-            type="checkbox"
-            checked={room.tavern ?? false}
-            onChange={(e) => onWorldChange(updateRoom(world, roomId, { tavern: e.target.checked || undefined }))}
-            className="accent-accent"
-          />
-          Tavern (enables gambling)
-        </label>
+      {/* Room roles */}
+      <Section
+        title="Room Roles"
+        description="Capabilities owned directly by the room itself rather than separate placed entities."
+        defaultExpanded={!!room.station || !!room.bank || !!room.tavern}
+      >
+        <div className="flex flex-col gap-2">
+          <FieldRow
+            label="Station"
+            hint="Choose a configured crafting station type. This is a room capability, not a separate NPC."
+          >
+            <SelectInput
+              value={room.station ?? ""}
+              options={stationOptions}
+              onCommit={(v) => handleFieldChange("station", v)}
+              placeholder="No station"
+              allowEmpty
+            />
+          </FieldRow>
+          <FieldRow
+            label="Bank"
+            hint="Enables deposit and withdraw commands in this room. No separate bank NPC is required by this schema."
+          >
+            <CheckboxInput
+              checked={room.bank ?? false}
+              onCommit={(value) => onWorldChange(updateRoom(world, roomId, { bank: value || undefined }))}
+              label="Room functions as a bank"
+            />
+          </FieldRow>
+          <FieldRow
+            label="Tavern"
+            hint="Marks this room as a tavern / rest point for tavern-specific commands and systems."
+          >
+            <CheckboxInput
+              checked={room.tavern ?? false}
+              onCommit={(value) => onWorldChange(updateRoom(world, roomId, { tavern: value || undefined }))}
+              label="Room functions as a tavern"
+            />
+          </FieldRow>
+        </div>
       </Section>
 
       {/* Mobs */}
@@ -438,92 +834,123 @@ export function RoomPanel({
         )}
       </Section>
 
-      {/* Shops */}
+      {/* Services */}
       <Section
-        title={`Shops (${shops.length})`}
+        title={`Services (${shops.length + trainers.length + gatheringNodes.length})`}
         defaultExpanded={false}
-        actions={<IconButton onClick={handleAddShop} title="Add shop">+</IconButton>}
-      >
-        {shops.length === 0 ? (
-          <p className="rounded-lg border border-dashed border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] px-3 py-2 text-center text-xs italic text-text-muted">No shops in this room</p>
-        ) : (
-          <ul className="flex flex-col gap-0.5">
-            {shops.map(([id, shop]) => (
-              <li key={id}>
-                <button
-                  onClick={() => onSelectEntity({ kind: "shop", id })}
-                  className="flex w-full min-w-0 items-baseline gap-1 rounded px-1 py-0.5 text-left text-xs transition-colors hover:bg-bg-tertiary"
-                >
-                  <span className="truncate font-medium text-text-primary" title={shop.name}>
-                    {shop.name}
-                  </span>
-                  <span className="truncate text-text-muted">
-                    ({shop.items?.length ?? 0} items)
-                  </span>
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
-      </Section>
-
-      {/* Trainers */}
-      <Section
-        title={`Trainers (${trainers.length})`}
-        defaultExpanded={false}
-        actions={<IconButton onClick={handleAddTrainer} title="Add trainer">+</IconButton>}
-      >
-        {trainers.length === 0 ? (
-          <p className="rounded-lg border border-dashed border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] px-3 py-2 text-center text-xs italic text-text-muted">No trainers in this room</p>
-        ) : (
-          <ul className="flex flex-col gap-0.5">
-            {trainers.map(([id, trainer]) => (
-              <li key={id}>
-                <button
-                  onClick={() => onSelectEntity({ kind: "trainer", id })}
-                  className="flex w-full min-w-0 items-baseline gap-1 rounded px-1 py-0.5 text-left text-xs transition-colors hover:bg-bg-tertiary"
-                >
-                  <span className="truncate font-medium text-text-primary" title={trainer.name}>
-                    {trainer.name}
-                  </span>
-                  <span className="truncate text-text-muted">
-                    [{getTrainerClasses(trainer).join(", ") || "?"}]
-                  </span>
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
-      </Section>
-
-      {/* Gathering Nodes */}
-      <Section
-        title={`Gathering (${gatheringNodes.length})`}
-        defaultExpanded={false}
+        description="Room-scoped services and interactables that players use here."
         actions={
-          <IconButton onClick={handleAddGatheringNode} title="Add gathering node">
-            +
-          </IconButton>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={handleAddShop}
+              className="rounded border border-border-default px-2 py-1 text-2xs text-text-secondary transition-colors hover:bg-bg-elevated hover:text-text-primary"
+              title="Add shop"
+            >
+              + Shop
+            </button>
+            <button
+              onClick={handleAddTrainer}
+              className="rounded border border-border-default px-2 py-1 text-2xs text-text-secondary transition-colors hover:bg-bg-elevated hover:text-text-primary"
+              title="Add trainer"
+            >
+              + Trainer
+            </button>
+            <button
+              onClick={handleAddGatheringNode}
+              className="rounded border border-border-default px-2 py-1 text-2xs text-text-secondary transition-colors hover:bg-bg-elevated hover:text-text-primary"
+              title="Add gathering node"
+            >
+              + Node
+            </button>
+          </div>
         }
       >
-        {gatheringNodes.length === 0 ? (
-          <p className="rounded-lg border border-dashed border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] px-3 py-2 text-center text-xs italic text-text-muted">No gathering nodes</p>
+        {shops.length + trainers.length + gatheringNodes.length === 0 ? (
+          <p className="rounded-lg border border-dashed border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] px-3 py-2 text-center text-xs italic text-text-muted">No service entities in this room</p>
         ) : (
-          <ul className="flex flex-col gap-0.5">
-            {gatheringNodes.map(([id, node]) => (
-              <li key={id}>
-                <button
-                  onClick={() => onSelectEntity({ kind: "gatheringNode", id })}
-                  className="flex w-full min-w-0 items-baseline gap-1 rounded px-1 py-0.5 text-left text-xs transition-colors hover:bg-bg-tertiary"
-                >
-                  <span className="truncate font-medium text-text-primary" title={node.displayName}>
-                    {node.displayName}
-                  </span>
-                  <span className="truncate text-text-muted">{node.skill}</span>
-                </button>
-              </li>
-            ))}
-          </ul>
+          <div className="flex flex-col gap-3">
+            <div>
+              <div className="mb-1 flex items-center gap-2">
+                <span className="text-2xs uppercase tracking-widest text-text-muted">Shops</span>
+                <span className="text-2xs text-text-muted">{shops.length}</span>
+              </div>
+              {shops.length === 0 ? (
+                <p className="text-xs italic text-text-muted">No shops in this room</p>
+              ) : (
+                <ul className="flex flex-col gap-0.5">
+                  {shops.map(([id, shop]) => (
+                    <li key={id}>
+                      <button
+                        onClick={() => onSelectEntity({ kind: "shop", id })}
+                        className="flex w-full min-w-0 items-baseline gap-1 rounded px-1 py-0.5 text-left text-xs transition-colors hover:bg-bg-tertiary"
+                      >
+                        <span className="truncate font-medium text-text-primary" title={shop.name}>
+                          {shop.name}
+                        </span>
+                        <span className="truncate text-text-muted">
+                          ({shop.items?.length ?? 0} items)
+                        </span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+
+            <div>
+              <div className="mb-1 flex items-center gap-2">
+                <span className="text-2xs uppercase tracking-widest text-text-muted">Training</span>
+                <span className="text-2xs text-text-muted">{trainers.length}</span>
+              </div>
+              {trainers.length === 0 ? (
+                <p className="text-xs italic text-text-muted">No training service in this room</p>
+              ) : (
+                <ul className="flex flex-col gap-0.5">
+                  {trainers.map(([id, trainer]) => (
+                    <li key={id}>
+                      <button
+                        onClick={() => onSelectEntity({ kind: "trainer", id })}
+                        className="flex w-full min-w-0 items-baseline gap-1 rounded px-1 py-0.5 text-left text-xs transition-colors hover:bg-bg-tertiary"
+                      >
+                        <span className="truncate font-medium text-text-primary" title={trainer.name}>
+                          {trainer.name}
+                        </span>
+                        <span className="truncate text-text-muted">
+                          [{getTrainerClasses(trainer).join(", ") || "?"}]
+                        </span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+
+            <div>
+              <div className="mb-1 flex items-center gap-2">
+                <span className="text-2xs uppercase tracking-widest text-text-muted">Gathering</span>
+                <span className="text-2xs text-text-muted">{gatheringNodes.length}</span>
+              </div>
+              {gatheringNodes.length === 0 ? (
+                <p className="text-xs italic text-text-muted">No gathering nodes in this room</p>
+              ) : (
+                <ul className="flex flex-col gap-0.5">
+                  {gatheringNodes.map(([id, node]) => (
+                    <li key={id}>
+                      <button
+                        onClick={() => onSelectEntity({ kind: "gatheringNode", id })}
+                        className="flex w-full min-w-0 items-baseline gap-1 rounded px-1 py-0.5 text-left text-xs transition-colors hover:bg-bg-tertiary"
+                      >
+                        <span className="truncate font-medium text-text-primary" title={node.displayName}>
+                          {node.displayName}
+                        </span>
+                        <span className="truncate text-text-muted">{node.skill}</span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </div>
         )}
       </Section>
 
@@ -552,15 +979,24 @@ export function RoomPanel({
       {/* Puzzles */}
       <Section
         title={`Puzzles (${puzzles.length})`}
+        description="Sequence puzzles usually target room features like levers and containers defined above."
         defaultExpanded={puzzles.length > 0}
         actions={
-          <div className="flex items-center gap-0.5">
-            <IconButton onClick={() => handleAddPuzzle("riddle")} title="Add riddle puzzle">
-              R
-            </IconButton>
-            <IconButton onClick={() => handleAddPuzzle("sequence")} title="Add sequence puzzle">
-              S
-            </IconButton>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => handleAddPuzzle("riddle")}
+              className="rounded border border-border-default px-2 py-1 text-2xs text-text-secondary transition-colors hover:bg-bg-elevated hover:text-text-primary"
+              title="Add riddle puzzle"
+            >
+              + Riddle
+            </button>
+            <button
+              onClick={() => handleAddPuzzle("sequence")}
+              className="rounded border border-border-default px-2 py-1 text-2xs text-text-secondary transition-colors hover:bg-bg-elevated hover:text-text-primary"
+              title="Add sequence puzzle"
+            >
+              + Sequence
+            </button>
           </div>
         }
       >

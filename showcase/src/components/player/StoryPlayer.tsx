@@ -106,7 +106,7 @@ export function StoryPlayer({ story }: StoryPlayerProps) {
 
   return (
     <div className="space-y-4">
-      <div className="rounded-[1.45rem] border border-[var(--color-aurum)]/20 bg-[linear-gradient(180deg,rgba(18,18,28,0.88),rgba(10,10,18,0.96))] px-4 py-4 shadow-[var(--shadow-section)] sm:px-5">
+      <div className="rounded-[1.45rem] border border-[var(--color-aurum)]/20 bg-[linear-gradient(180deg,rgba(3,37,52,0.88),rgba(0,21,36,0.96))] px-4 py-4 shadow-[var(--shadow-section)] sm:px-5">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div className="min-w-0">
             <p className="text-[0.68rem] uppercase tracking-[0.3em] text-[var(--color-aurum)]/80">Projection controls</p>
@@ -139,7 +139,7 @@ export function StoryPlayer({ story }: StoryPlayerProps) {
       </div>
 
       {mode !== "scroll" ? (
-        <div className="rounded-[1.6rem] border border-border-muted/35 bg-[linear-gradient(180deg,rgba(18,18,28,0.92),rgba(10,10,18,0.98))] p-3 shadow-[var(--shadow-deep)] sm:p-4">
+        <div className="rounded-[1.6rem] border border-border-muted/35 bg-[linear-gradient(180deg,rgba(3,37,52,0.92),rgba(0,21,36,0.98))] p-3 shadow-[var(--shadow-deep)] sm:p-4">
           <div className="relative overflow-hidden rounded-[1.2rem] border border-border-muted/20">
             <div
               onClick={goNext}
@@ -186,7 +186,7 @@ export function StoryPlayer({ story }: StoryPlayerProps) {
           </div>
         </div>
       ) : (
-        <div className="rounded-[1.6rem] border border-border-muted/35 bg-[linear-gradient(180deg,rgba(18,18,28,0.92),rgba(10,10,18,0.98))] p-4 shadow-[var(--shadow-deep)]">
+        <div className="rounded-[1.6rem] border border-border-muted/35 bg-[linear-gradient(180deg,rgba(3,37,52,0.92),rgba(0,21,36,0.98))] p-4 shadow-[var(--shadow-deep)]">
           <div className="mb-4 flex flex-col gap-3 border-b border-border-muted/25 pb-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p className="text-[0.68rem] uppercase tracking-[0.3em] text-[var(--color-aurum)]/80">Scroll exhibition</p>

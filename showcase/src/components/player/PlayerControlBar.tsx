@@ -71,7 +71,7 @@ export function PlayerControlBar({
   onIntervalChange,
 }: PlayerControlBarProps) {
   return (
-    <div className="rounded-[1.35rem] border border-border-muted/30 bg-[linear-gradient(180deg,rgba(16,17,26,0.92),rgba(9,10,17,0.96))] px-4 py-4">
+    <div className="rounded-[1.35rem] border border-border-muted/30 bg-[linear-gradient(180deg,rgba(2,30,44,0.92),rgba(0,18,30,0.96))] px-4 py-4">
       <div className="grid gap-4 xl:grid-cols-[auto_minmax(0,1fr)_auto] xl:items-center">
         <div className="flex items-center gap-2">
           <button

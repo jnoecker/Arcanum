@@ -92,7 +92,7 @@ export function StoryPlayerPage() {
   return (
     <div className="mx-auto max-w-6xl space-y-8">
       <section className="grid gap-5 xl:grid-cols-[minmax(0,1.25fr)_minmax(20rem,0.9fr)]">
-        <div className="rounded-[1.75rem] border border-[var(--color-aurum)]/20 bg-[radial-gradient(circle_at_top_left,rgba(214,177,90,0.14),transparent_44%),linear-gradient(155deg,rgba(18,18,28,0.98),rgba(9,10,18,0.94))] px-6 py-7 shadow-[var(--shadow-deep)] sm:px-8">
+        <div className="rounded-[1.75rem] border border-[var(--color-aurum)]/20 bg-[radial-gradient(circle_at_top_left,rgba(255,125,0,0.14),transparent_44%),linear-gradient(155deg,rgba(3,37,52,0.98),rgba(0,18,30,0.94))] px-6 py-7 shadow-[var(--shadow-deep)] sm:px-8">
           <nav aria-label="Breadcrumb">
             <ol className="flex flex-wrap items-center gap-2 text-[0.72rem] uppercase tracking-[0.18em] text-text-muted">
               <li>
@@ -165,13 +165,13 @@ export function StoryPlayerPage() {
           </div>
         </div>
 
-        <div className="rounded-[1.75rem] border border-border-muted/35 bg-[linear-gradient(180deg,rgba(18,18,28,0.92),rgba(10,10,18,0.98))] px-5 py-5 shadow-[var(--shadow-deep)]">
+        <div className="rounded-[1.75rem] border border-border-muted/35 bg-[linear-gradient(180deg,rgba(3,37,52,0.92),rgba(0,21,36,0.98))] px-5 py-5 shadow-[var(--shadow-deep)]">
           {story.coverImageUrl ? (
             <div className="overflow-hidden rounded-[1.35rem] border border-[var(--color-aurum)]/15">
               <img src={story.coverImageUrl} alt={story.title} className="aspect-[4/3] w-full object-cover" />
             </div>
           ) : (
-            <div className="rounded-[1.35rem] bg-[linear-gradient(135deg,rgba(214,177,90,0.12),transparent_55%),linear-gradient(160deg,rgba(31,32,47,0.92),rgba(12,12,19,0.88))] px-6 py-12">
+            <div className="rounded-[1.35rem] bg-[linear-gradient(135deg,rgba(255,125,0,0.12),transparent_55%),linear-gradient(160deg,rgba(7,55,70,0.92),rgba(0,21,36,0.88))] px-6 py-12">
               <p className="text-[0.68rem] uppercase tracking-[0.3em] text-[var(--color-aurum)]/80">Program note</p>
               <p className="mt-3 font-display text-2xl text-[var(--color-aurum-pale)]">No cover plate</p>
               <p className="mt-3 text-sm leading-7 text-text-secondary">
@@ -203,7 +203,7 @@ export function StoryPlayerPage() {
       </section>
 
       <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_19rem]">
-        <section className="rounded-[1.75rem] border border-border-muted/35 bg-[linear-gradient(180deg,rgba(18,18,28,0.94),rgba(10,10,18,0.98))] px-5 py-5 shadow-[var(--shadow-deep)] sm:px-6">
+        <section className="rounded-[1.75rem] border border-border-muted/35 bg-[linear-gradient(180deg,rgba(3,37,52,0.94),rgba(0,21,36,0.98))] px-5 py-5 shadow-[var(--shadow-deep)] sm:px-6">
           <div className="border-b border-border-muted/25 pb-5">
             <p className="text-[0.68rem] uppercase tracking-[0.3em] text-[var(--color-aurum)]/80">Interactive stage</p>
             <h2 className="mt-2 font-display text-2xl text-[var(--color-aurum-pale)]">Scene player</h2>

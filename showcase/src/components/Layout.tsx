@@ -69,7 +69,7 @@ export function Layout({ children }: { children: ReactNode }) {
 
       <header className={`sticky top-0 z-50 transition-[background-color,border-color,box-shadow] duration-300 ${
         scrolled
-          ? "bg-bg-abyss/85 backdrop-blur-md border-b border-border-muted/50 shadow-[0_4px_24px_rgba(8,10,18,0.3)]"
+          ? "bg-bg-abyss/85 backdrop-blur-md border-b border-border-muted/50 shadow-[0_4px_24px_rgba(0,8,14,0.3)]"
           : "bg-transparent border-b border-transparent"
       }`}>
         <div className="max-w-5xl mx-auto px-5 sm:px-8 py-4 flex items-center justify-between gap-4">
@@ -134,8 +134,8 @@ export function Layout({ children }: { children: ReactNode }) {
 
       {/* Atmospheric glow */}
       <div aria-hidden="true" className="pointer-events-none fixed inset-0 z-0">
-        <div className="absolute top-[-12rem] left-[-8rem] w-[36rem] h-[36rem] rounded-full bg-[radial-gradient(circle,rgba(200,151,46,0.11),transparent_65%)] blur-3xl" />
-        <div className="absolute bottom-[-16rem] right-[-10rem] w-[40rem] h-[40rem] rounded-full bg-[radial-gradient(circle,rgba(140,174,201,0.08),transparent_70%)] blur-3xl" />
+        <div className="absolute top-[-12rem] left-[-8rem] w-[36rem] h-[36rem] rounded-full bg-[radial-gradient(circle,rgba(255,125,0,0.11),transparent_65%)] blur-3xl" />
+        <div className="absolute bottom-[-16rem] right-[-10rem] w-[40rem] h-[40rem] rounded-full bg-[radial-gradient(circle,rgba(47,147,161,0.08),transparent_70%)] blur-3xl" />
       </div>
 
       <main

@@ -4,7 +4,7 @@ import DOMPurify from "dompurify";
 import { useShowcase } from "@/lib/DataContext";
 import { showcaseButtonClassNames, showcaseSurfaceClassNames } from "@/components/ShowcasePrimitives";
 import { TEMPLATE_LABELS, TEMPLATE_COLORS } from "@/lib/templates";
-import type { ArticleTemplate } from "@/types/showcase";
+
 
 export function HomePage() {
   const { data } = useShowcase();
@@ -138,7 +138,7 @@ export function HomePage() {
                 alt={bannerTitle}
                 className="absolute inset-0 h-full w-full object-cover opacity-32"
               />
-              <div className="absolute inset-0 bg-[linear-gradient(100deg,rgba(15,20,40,0.96),rgba(15,20,40,0.74),rgba(15,20,40,0.88))]" />
+              <div className="absolute inset-0 bg-[linear-gradient(100deg,rgba(0,21,36,0.96),rgba(0,21,36,0.74),rgba(0,21,36,0.88))]" />
             </>
           )}
 
@@ -242,96 +242,14 @@ export function HomePage() {
         </div>
       </section>
 
-      {(() => {
-        const entryCards: React.ReactNode[] = [
-          <Link
-            key="codex"
-            to="/articles"
-            className={`${showcaseSurfaceClassNames.note} group flex h-full flex-col overflow-hidden p-6 transition-transform duration-300 hover:-translate-y-0.5`}
-          >
-            <h2 className="font-display text-2xl text-accent-emphasis">Browse the codex</h2>
-            <p className="mt-2 flex-1 text-sm leading-7 text-text-secondary">
-              Move through characters, places, factions, and relics in whatever order opens the world fastest.
-            </p>
-            <p className="mt-4 text-xs uppercase tracking-[0.18em] text-text-muted">
-              {articleCount} linked entries
-            </p>
-          </Link>,
-        ];
-        if (mapCount > 0) {
-          entryCards.push(
-            <Link
-              key="maps"
-              to="/maps"
-              className={`${showcaseSurfaceClassNames.sectionSoft} group flex h-full flex-col overflow-hidden p-6 transition-transform duration-300 hover:-translate-y-0.5`}
-            >
-              <h3 className="font-display text-2xl text-[var(--color-aurum-pale)]">Maps</h3>
-              <p className="mt-2 flex-1 text-sm leading-7 text-text-secondary">
-                Regions with linked pins, places, and routes through the terrain.
-              </p>
-              <p className="mt-4 text-xs uppercase tracking-[0.18em] text-text-muted">
-                {mapCount} {mapCount === 1 ? "region" : "regions"}
-              </p>
-            </Link>,
-          );
-        }
-        if (timelineCount > 0) {
-          entryCards.push(
-            <Link
-              key="timeline"
-              to="/timeline"
-              className={`${showcaseSurfaceClassNames.sectionSoft} group flex h-full flex-col overflow-hidden p-6 transition-transform duration-300 hover:-translate-y-0.5`}
-            >
-              <h3 className="font-display text-2xl text-[var(--color-aurum-pale)]">Timeline</h3>
-              <p className="mt-2 flex-1 text-sm leading-7 text-text-secondary">
-                Dated events arranged across eras and ages of the world.
-              </p>
-              <p className="mt-4 text-xs uppercase tracking-[0.18em] text-text-muted">
-                {timelineCount} {timelineCount === 1 ? "event" : "events"}
-              </p>
-            </Link>,
-          );
-        }
-        entryCards.push(
-          <Link
-            key="graph"
-            to="/graph"
-            className={`${showcaseSurfaceClassNames.sectionSoft} group flex h-full flex-col overflow-hidden p-6 transition-transform duration-300 hover:-translate-y-0.5`}
-          >
-            <h3 className="font-display text-2xl text-[var(--color-aurum-pale)]">Connections</h3>
-            <p className="mt-2 flex-1 text-sm leading-7 text-text-secondary">
-              Follow alliances, rivalries, and associations across the canon.
-            </p>
-            <p className="mt-4 text-xs uppercase tracking-[0.18em] text-text-muted">
-              Relationship graph
-            </p>
-          </Link>,
-        );
-
-        if (hasWorldSettingProse) {
-          return (
-            <section className="mb-20 grid gap-8 lg:grid-cols-[minmax(0,1.08fr)_minmax(18rem,0.92fr)]">
-              <div className="min-w-0">
-                <div
-                  className="prose max-w-none"
-                  dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(worldSetting!.contentHtml) }}
-                />
-              </div>
-              <aside className="grid gap-4 self-start">
-                {entryCards}
-              </aside>
-            </section>
-          );
-        }
-
-        return (
-          <section className="mb-20">
-            <div className={`grid gap-4 ${entryCards.length === 4 ? "sm:grid-cols-2" : "sm:grid-cols-2 lg:grid-cols-3"}`}>
-              {entryCards}
-            </div>
-          </section>
-        );
-      })()}
+      {hasWorldSettingProse && (
+        <section className="mb-20">
+          <div
+            className="prose max-w-none"
+            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(worldSetting!.contentHtml) }}
+          />
+        </section>
+      )}
 
       {featured.length > 0 && (
         <section>
@@ -339,7 +257,7 @@ export function HomePage() {
             <h2 className="font-display text-sm uppercase tracking-[0.28em] text-[var(--color-aurum-pale)]">
               Recent entries
             </h2>
-            <div className="h-px flex-1 bg-[linear-gradient(90deg,rgba(200,151,46,0.35),rgba(57,69,95,0.16))]" />
+            <div className="h-px flex-1 bg-[linear-gradient(90deg,rgba(255,125,0,0.35),rgba(23,72,82,0.16))]" />
             <Link
               to="/articles"
               className="text-xs uppercase tracking-[0.22em] text-text-muted transition-colors duration-300 hover:text-[var(--color-aurum-pale)]"

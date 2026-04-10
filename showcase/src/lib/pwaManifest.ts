@@ -7,8 +7,8 @@ export function injectManifest(meta: ShowcaseData["meta"]): void {
   const s = meta.showcase;
   const name = s?.bannerTitle ?? meta.worldName ?? "World Lore";
   const shortName = name.slice(0, 12);
-  const themeColor = s?.accentColor ?? "#a897d2";
-  const bgColor = s?.bgColor ?? "#22293c";
+  const themeColor = s?.accentColor ?? "#ff7d00";
+  const bgColor = s?.bgColor ?? "#001524";
 
   const icons = [];
   if (s?.faviconUrl) {

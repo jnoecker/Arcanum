@@ -35,8 +35,8 @@ function StoryTile({ story, featured = false }: { story: ShowcaseStory; featured
         <div
           className={
             featured
-              ? "aspect-[16/9] bg-[linear-gradient(135deg,rgba(214,177,90,0.14),transparent_55%),linear-gradient(160deg,rgba(31,32,47,0.96),rgba(12,12,19,0.88))]"
-              : "aspect-[4/3] bg-[linear-gradient(135deg,rgba(214,177,90,0.1),transparent_55%),linear-gradient(160deg,rgba(31,32,47,0.92),rgba(12,12,19,0.88))]"
+              ? "aspect-[16/9] bg-[linear-gradient(135deg,rgba(255,125,0,0.14),transparent_55%),linear-gradient(160deg,rgba(7,55,70,0.96),rgba(0,21,36,0.88))]"
+              : "aspect-[4/3] bg-[linear-gradient(135deg,rgba(255,125,0,0.1),transparent_55%),linear-gradient(160deg,rgba(7,55,70,0.92),rgba(0,21,36,0.88))]"
           }
           aria-hidden="true"
         />

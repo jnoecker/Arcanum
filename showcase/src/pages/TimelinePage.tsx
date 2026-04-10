@@ -76,7 +76,7 @@ export function TimelinePage() {
         {grouped.map(({ calendar, eraMap, events: sortedEvents }) => (
           <section
             key={calendar?.id ?? "unknown-calendar"}
-            className="rounded-[1.6rem] border border-border-muted/35 bg-[linear-gradient(180deg,rgba(18,18,28,0.92),rgba(10,10,18,0.98))] px-5 py-5 shadow-[var(--shadow-deep)] sm:px-6"
+            className="rounded-[1.6rem] border border-border-muted/35 bg-[linear-gradient(180deg,rgba(3,37,52,0.92),rgba(0,21,36,0.98))] px-5 py-5 shadow-[var(--shadow-deep)] sm:px-6"
           >
             <div className="flex flex-wrap items-end justify-between gap-4 border-b border-border-muted/25 pb-4">
               <div>
@@ -110,7 +110,7 @@ export function TimelinePage() {
                           loading="lazy"
                           className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-25"
                         />
-                        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(105deg,rgba(10,11,18,0.92)_0%,rgba(10,11,18,0.72)_45%,rgba(10,11,18,0.55)_100%)]" />
+                        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(105deg,rgba(0,21,36,0.92)_0%,rgba(0,21,36,0.72)_45%,rgba(0,21,36,0.55)_100%)]" />
                       </>
                     )}
                     <div className="relative">

@@ -73,7 +73,7 @@ export function ArticlesPage() {
 
   return (
     <div className="space-y-8">
-      <section className="rounded-[1.5rem] border border-border-muted/35 bg-[linear-gradient(180deg,rgba(18,18,28,0.9),rgba(10,11,18,0.97))] px-5 py-4 shadow-[var(--shadow-deep)] sm:px-6">
+      <section className="rounded-[1.5rem] border border-border-muted/35 bg-[linear-gradient(180deg,rgba(3,37,52,0.9),rgba(0,21,36,0.97))] px-5 py-4 shadow-[var(--shadow-deep)] sm:px-6">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center">
           <input
             type="text"
@@ -174,7 +174,7 @@ export function ArticlesPage() {
             return (
               <section
                 key={template}
-                className="rounded-[1.5rem] border border-border-muted/35 bg-[linear-gradient(180deg,rgba(19,20,30,0.76),rgba(12,12,20,0.94))] px-5 py-5 shadow-[var(--shadow-deep)] sm:px-6"
+                className="rounded-[1.5rem] border border-border-muted/35 bg-[linear-gradient(180deg,rgba(3,37,52,0.76),rgba(0,21,36,0.94))] px-5 py-5 shadow-[var(--shadow-deep)] sm:px-6"
               >
                 <div className="flex flex-wrap items-end justify-between gap-3 border-b border-border-muted/25 pb-4">
                   <div>
@@ -231,7 +231,7 @@ export function ArticlesPage() {
                             {TEMPLATE_LABELS[article.template]}
                           </span>
                           <span className="text-sm text-[var(--color-aurum)] transition-transform duration-300 group-hover:translate-x-1">
-                            Read entry
+                            &rarr;
                           </span>
                         </div>
                       </Link>
@@ -256,7 +256,7 @@ export function ArticlesPage() {
                           </div>
                         ) : (
                           <div
-                            className="aspect-[4/3] bg-[linear-gradient(135deg,rgba(214,177,90,0.14),transparent_55%),linear-gradient(160deg,rgba(31,32,47,0.96),rgba(12,12,19,0.88))]"
+                            className="aspect-[4/3] bg-[linear-gradient(135deg,rgba(255,125,0,0.14),transparent_55%),linear-gradient(160deg,rgba(7,55,70,0.96),rgba(0,21,36,0.88))]"
                             aria-hidden="true"
                           />
                         )}

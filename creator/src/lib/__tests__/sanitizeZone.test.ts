@@ -316,15 +316,15 @@ describe("sanitizeZone — dangling reference cleanup", () => {
           name: "Goblin",
           room: "room_a",
           drops: [
-            { itemId: "gold", chance: 50 },
-            { itemId: "nonexistent", chance: 30 },
+            { itemId: "gold", chance: 0.5 },
+            { itemId: "nonexistent", chance: 0.3 },
           ],
         },
       },
     });
 
     const result = sanitizeZone(world);
-    expect(result.mobs!["goblin"]!.drops).toEqual([{ itemId: "gold", chance: 50 }]);
+    expect(result.mobs!["goblin"]!.drops).toEqual([{ itemId: "gold", chance: 0.5 }]);
   });
 
   it("strips non-existent quests from mob.quests", () => {

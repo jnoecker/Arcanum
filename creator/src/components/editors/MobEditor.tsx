@@ -75,7 +75,7 @@ export function MobEditor({
   } = useArrayField<MobDropFile>(
     mob.drops,
     (drops) => patch({ drops }),
-    { itemId: "", chance: 100 },
+    { itemId: "", chance: 1 },
   );
 
   // ─── Behavior helpers ─────────────────────────────────────────
@@ -255,9 +255,9 @@ export function MobEditor({
                   </div>
                   <div className="w-16 shrink-0">
                     <NumberInput
-                      value={drop.chance}
+                      value={Math.round((drop.chance ?? 1) * 100)}
                       onCommit={(v) =>
-                        handleUpdateDrop(i, "chance", v ?? 100)
+                        handleUpdateDrop(i, "chance", (v ?? 100) / 100)
                       }
                       min={0}
                       max={100}

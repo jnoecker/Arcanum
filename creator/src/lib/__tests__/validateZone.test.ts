@@ -212,13 +212,13 @@ describe("validateZone", () => {
     expect(issues.some((i) => i.message.includes("missing_mob"))).toBe(true);
   });
 
-  it("warns if quest has no objectives", () => {
+  it("errors if quest has no objectives", () => {
     const world = makeValidWorld();
     world.quests = {
       q1: { name: "Quest", giver: "rat" },
     };
-    const issues = warnings(validateZone(world));
-    expect(issues.some((i) => i.message.includes("no objectives"))).toBe(true);
+    const issues = errors(validateZone(world));
+    expect(issues.some((i) => i.message.includes("at least one objective"))).toBe(true);
   });
 
   // ─── Gathering node checks ────────────────────────────────

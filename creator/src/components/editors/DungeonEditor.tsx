@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback } from "react";
 import type { WorldFile, DungeonFile, DungeonRoomTemplate, DungeonLootTable, DungeonMobPool } from "@/types/world";
 import { updateDungeon } from "@/lib/zoneEdits";
 import {
@@ -8,6 +8,7 @@ import {
   NumberInput,
   IconButton,
   CommitTextarea,
+  SelectInput,
 } from "@/components/ui/FormWidgets";
 import { DeleteEntityButton } from "./EditorShared";
 
@@ -17,7 +18,26 @@ interface DungeonEditorProps {
   onDelete: () => void;
 }
 
-// ─── Sub-component: dynamic key + list editor for room templates ──
+// ─── Valid dungeon enums (must match Kotlin DungeonRoomType / DungeonDifficulty) ──
+
+const ROOM_TYPE_OPTIONS = [
+  { value: "entrance", label: "Entrance" },
+  { value: "corridor", label: "Corridor" },
+  { value: "chamber", label: "Chamber" },
+  { value: "treasure", label: "Treasure" },
+  { value: "boss", label: "Boss" },
+];
+
+const DIFFICULTY_OPTIONS = [
+  { value: "lore", label: "Lore" },
+  { value: "normal", label: "Normal" },
+  { value: "hard", label: "Hard" },
+  { value: "heroic", label: "Heroic" },
+];
+
+const MOB_POOL_KEYS = ["common", "elite", "boss"] as const;
+
+// ─── Sub-component: room templates editor with fixed categories ──
 
 function RoomTemplatesEditor({
   templates,
@@ -26,13 +46,12 @@ function RoomTemplatesEditor({
   templates: Record<string, DungeonRoomTemplate[]>;
   onChange: (t: Record<string, DungeonRoomTemplate[]>) => void;
 }) {
-  const [newCategory, setNewCategory] = useState("");
+  const existingKeys = new Set(Object.keys(templates));
+  const available = ROOM_TYPE_OPTIONS.filter((o) => !existingKeys.has(o.value));
 
-  const addCategory = () => {
-    const key = newCategory.trim().toLowerCase().replace(/\s+/g, "_");
+  const addCategory = (key: string) => {
     if (!key || templates[key]) return;
     onChange({ ...templates, [key]: [] });
-    setNewCategory("");
   };
 
   const removeCategory = (key: string) => {
@@ -83,95 +102,69 @@ function RoomTemplatesEditor({
           {list.length === 0 && <p className="text-2xs text-text-muted">No templates. Click + to add one.</p>}
         </div>
       ))}
-      <div className="flex items-center gap-2">
-        <input
-          value={newCategory}
-          onChange={(e) => setNewCategory(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && addCategory()}
-          placeholder="New category name"
-          className="min-w-0 flex-1 rounded border border-border-default bg-bg-primary px-2 py-1 text-xs text-text-primary outline-none placeholder:text-text-muted focus:border-accent/50 focus-visible:ring-2 focus-visible:ring-border-active"
-        />
-        <button onClick={addCategory} className="text-2xs text-accent hover:text-text-primary">Add Category</button>
-      </div>
+      {available.length > 0 && (
+        <div className="flex items-center gap-2">
+          <SelectInput
+            value=""
+            onCommit={addCategory}
+            options={available}
+            placeholder="Add room type..."
+            allowEmpty
+          />
+        </div>
+      )}
     </div>
   );
 }
 
-// ─── Sub-component: string pool editor (mob pools) ────────────────
+// ─── Sub-component: fixed mob pool editor (common/elite/boss) ────
 
-function StringPoolsEditor({
+function MobPoolsEditor({
   pools,
   onChange,
-  itemLabel,
 }: {
-  pools: Record<string, string[]>;
-  onChange: (p: Record<string, string[]>) => void;
-  itemLabel: string;
+  pools: DungeonMobPool;
+  onChange: (p: DungeonMobPool) => void;
 }) {
-  const [newPool, setNewPool] = useState("");
-
-  const addPool = () => {
-    const key = newPool.trim().toLowerCase().replace(/\s+/g, "_");
-    if (!key || pools[key]) return;
-    onChange({ ...pools, [key]: [] });
-    setNewPool("");
-  };
-
-  const removePool = (key: string) => {
-    const next = { ...pools };
-    delete next[key];
-    onChange(next);
-  };
-
-  const addItem = (pool: string) => {
+  const addItem = (pool: typeof MOB_POOL_KEYS[number]) => {
     onChange({ ...pools, [pool]: [...(pools[pool] ?? []), ""] });
   };
 
-  const updateItem = (pool: string, idx: number, value: string) => {
+  const updateItem = (pool: typeof MOB_POOL_KEYS[number], idx: number, value: string) => {
     const list = [...(pools[pool] ?? [])];
     list[idx] = value;
     onChange({ ...pools, [pool]: list });
   };
 
-  const removeItem = (pool: string, idx: number) => {
+  const removeItem = (pool: typeof MOB_POOL_KEYS[number], idx: number) => {
     onChange({ ...pools, [pool]: (pools[pool] ?? []).filter((_, i) => i !== idx) });
   };
 
   return (
     <div className="space-y-3">
-      {Object.entries(pools).map(([pool, items]) => (
-        <div key={pool} className="rounded-lg border border-border-muted bg-bg-secondary/40 p-3">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-medium text-accent uppercase tracking-[0.1em]">{pool}</span>
-            <div className="flex items-center gap-1">
-              <IconButton title={`Add ${itemLabel}`} onClick={() => addItem(pool)}>+</IconButton>
-              <IconButton title="Remove pool" onClick={() => removePool(pool)}>&times;</IconButton>
+      {MOB_POOL_KEYS.map((pool) => {
+        const items = pools[pool] ?? [];
+        return (
+          <div key={pool} className="rounded-lg border border-border-muted bg-bg-secondary/40 p-3">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-medium text-accent uppercase tracking-[0.1em]">{pool}</span>
+              <IconButton title={`Add mob`} onClick={() => addItem(pool)}>+</IconButton>
             </div>
+            {items.map((item, i) => (
+              <div key={i} className="mb-1 flex items-center gap-2">
+                <TextInput value={item} onCommit={(v) => updateItem(pool, i, v)} placeholder="mob ID" />
+                <IconButton title="Remove" onClick={() => removeItem(pool, i)}>&times;</IconButton>
+              </div>
+            ))}
+            {items.length === 0 && <p className="text-2xs text-text-muted">Empty pool.</p>}
           </div>
-          {items.map((item, i) => (
-            <div key={i} className="mb-1 flex items-center gap-2">
-              <TextInput value={item} onCommit={(v) => updateItem(pool, i, v)} placeholder={`${itemLabel} ID`} />
-              <IconButton title="Remove" onClick={() => removeItem(pool, i)}>&times;</IconButton>
-            </div>
-          ))}
-          {items.length === 0 && <p className="text-2xs text-text-muted">Empty pool.</p>}
-        </div>
-      ))}
-      <div className="flex items-center gap-2">
-        <input
-          value={newPool}
-          onChange={(e) => setNewPool(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && addPool()}
-          placeholder="New pool name"
-          className="min-w-0 flex-1 rounded border border-border-default bg-bg-primary px-2 py-1 text-xs text-text-primary outline-none placeholder:text-text-muted focus:border-accent/50 focus-visible:ring-2 focus-visible:ring-border-active"
-        />
-        <button onClick={addPool} className="text-2xs text-accent hover:text-text-primary">Add Pool</button>
-      </div>
+        );
+      })}
     </div>
   );
 }
 
-// ─── Sub-component: loot tables editor ────────────────────────────
+// ─── Sub-component: loot tables editor with fixed difficulty tiers ──
 
 function LootTablesEditor({
   tables,
@@ -180,13 +173,12 @@ function LootTablesEditor({
   tables: Record<string, DungeonLootTable>;
   onChange: (t: Record<string, DungeonLootTable>) => void;
 }) {
-  const [newTier, setNewTier] = useState("");
+  const existingKeys = new Set(Object.keys(tables));
+  const available = DIFFICULTY_OPTIONS.filter((o) => !existingKeys.has(o.value));
 
-  const addTier = () => {
-    const key = newTier.trim().toLowerCase().replace(/\s+/g, "_");
+  const addTier = (key: string) => {
     if (!key || tables[key]) return;
     onChange({ ...tables, [key]: {} });
-    setNewTier("");
   };
 
   const removeTier = (key: string) => {
@@ -238,16 +230,17 @@ function LootTablesEditor({
           ))}
         </div>
       ))}
-      <div className="flex items-center gap-2">
-        <input
-          value={newTier}
-          onChange={(e) => setNewTier(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && addTier()}
-          placeholder="New difficulty tier"
-          className="min-w-0 flex-1 rounded border border-border-default bg-bg-primary px-2 py-1 text-xs text-text-primary outline-none placeholder:text-text-muted focus:border-accent/50 focus-visible:ring-2 focus-visible:ring-border-active"
-        />
-        <button onClick={addTier} className="text-2xs text-accent hover:text-text-primary">Add Tier</button>
-      </div>
+      {available.length > 0 && (
+        <div className="flex items-center gap-2">
+          <SelectInput
+            value=""
+            onCommit={addTier}
+            options={available}
+            placeholder="Add difficulty tier..."
+            allowEmpty
+          />
+        </div>
+      )}
     </div>
   );
 }
@@ -255,7 +248,6 @@ function LootTablesEditor({
 // ─── Main editor ──────────────────────────────────────────────────
 
 const DEFAULT_ROOM_CATEGORIES = ["entrance", "corridor", "chamber", "treasure", "boss"];
-const DEFAULT_MOB_POOLS = ["common", "elite", "boss"];
 const DEFAULT_LOOT_TIERS = ["lore", "normal", "hard", "heroic"];
 
 export function DungeonEditor({ world, onWorldChange, onDelete }: DungeonEditorProps) {
@@ -315,10 +307,9 @@ export function DungeonEditor({ world, onWorldChange, onDelete }: DungeonEditorP
       </Section>
 
       <Section title="Mob Pools">
-        <StringPoolsEditor
-          pools={(dungeon.mobPools ?? Object.fromEntries(DEFAULT_MOB_POOLS.map((p) => [p, []]))) as Record<string, string[]>}
-          onChange={(mobPools) => patch({ mobPools: mobPools as unknown as DungeonMobPool })}
-          itemLabel="mob"
+        <MobPoolsEditor
+          pools={dungeon.mobPools ?? { common: [], elite: [], boss: [] }}
+          onChange={(mobPools) => patch({ mobPools })}
         />
       </Section>
 

@@ -13,6 +13,7 @@ import type {
   StatMap,
   FeatureFile,
   DoorFile,
+  DungeonLootTable,
 } from "@/types/world";
 import { resolveDoorKeyId } from "./doorHelpers";
 import { getTrainerClasses, setTrainerClasses } from "./trainers";
@@ -246,7 +247,11 @@ function applyIdRemaps(world: WorldFile, t: RemapTables): WorldFile {
       const key = t.mob.get(oldId);
       if (key === "") continue;
       let m: MobFile = { ...mob, room: rId(mob.room, t.room) };
-      if (mob.drops) m.drops = mob.drops.map((d) => ({ ...d, itemId: rId(d.itemId, t.item) }));
+      if (mob.drops) m.drops = mob.drops.map((d) => ({
+        ...d,
+        itemId: rId(d.itemId, t.item),
+        chance: d.chance > 1 ? d.chance / 100 : d.chance,
+      }));
       if (mob.quests) m.quests = rArray(mob.quests, t.quest);
       if (mob.behavior?.params?.patrolRoute) {
         m = {
@@ -361,11 +366,34 @@ function applyIdRemaps(world: WorldFile, t: RemapTables): WorldFile {
     puzzles = newPuzzles;
   }
 
-  // Dungeon: remap portal room
-  const dungeon =
-    world.dungeon?.portalRoom && t.room.size > 0
-      ? { ...world.dungeon, portalRoom: rId(world.dungeon.portalRoom, t.room) }
-      : world.dungeon;
+  // Dungeon: remap portal room, mob pool IDs, loot table item IDs
+  let dungeon = world.dungeon;
+  if (dungeon) {
+    if (dungeon.portalRoom && t.room.size > 0) {
+      dungeon = { ...dungeon, portalRoom: rId(dungeon.portalRoom, t.room) };
+    }
+    if (dungeon.mobPools && t.mob.size > 0) {
+      const mp = dungeon.mobPools;
+      dungeon = {
+        ...dungeon,
+        mobPools: {
+          common: mp.common ? rArray(mp.common, t.mob) : undefined,
+          elite: mp.elite ? rArray(mp.elite, t.mob) : undefined,
+          boss: mp.boss ? rArray(mp.boss, t.mob) : undefined,
+        },
+      };
+    }
+    if (dungeon.lootTables && t.item.size > 0) {
+      const remapped: Record<string, DungeonLootTable> = {};
+      for (const [tier, lt] of Object.entries(dungeon.lootTables)) {
+        remapped[tier] = {
+          mobDrops: lt.mobDrops ? rArray(lt.mobDrops, t.item) : undefined,
+          completionRewards: lt.completionRewards ? rArray(lt.completionRewards, t.item) : undefined,
+        };
+      }
+      dungeon = { ...dungeon, lootTables: remapped };
+    }
+  }
 
   return {
     ...world,
@@ -501,7 +529,12 @@ function stripDanglingReferences(world: WorldFile): WorldFile {
     for (const [id, mob] of Object.entries(world.mobs)) {
       let m = mob;
       if (mob.drops) {
-        const valid = mob.drops.filter((d) => d.itemId && itemIds.has(d.itemId));
+        const valid = mob.drops
+          .filter((d) => d.itemId && itemIds.has(d.itemId))
+          .map((d) => ({
+            ...d,
+            chance: d.chance > 1 ? d.chance / 100 : Math.max(0, Math.min(1, d.chance)),
+          }));
         m = { ...m, drops: valid.length > 0 ? valid : undefined };
       }
       if (mob.quests) {
@@ -600,12 +633,22 @@ function cleanOutput(world: WorldFile): WorldFile {
     startRoom = Object.keys(world.rooms)[0] ?? startRoom;
   }
 
-  // Clean items: strip zero stats
+  // Clean items: strip zero stats, normalize onUse/charges
   let items: Record<string, ItemFile> | undefined;
   if (world.items && hasEntries(world.items)) {
     items = {};
     for (const [id, item] of Object.entries(world.items)) {
-      items[id] = { ...item, stats: stripZeroStats(item.stats) };
+      let cleaned: ItemFile = { ...item, stats: stripZeroStats(item.stats) };
+      // Strip onUse if no positive effect
+      if (cleaned.onUse) {
+        const hasEffect = (cleaned.onUse.healHp ?? 0) > 0 || (cleaned.onUse.grantXp ?? 0) > 0;
+        if (!hasEffect) cleaned = { ...cleaned, onUse: undefined };
+      }
+      // Strip charges if invalid (must be > 0 when present)
+      if (cleaned.charges != null && cleaned.charges <= 0) {
+        cleaned = { ...cleaned, charges: undefined };
+      }
+      items[id] = cleaned;
     }
   }
 

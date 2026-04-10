@@ -145,7 +145,7 @@ function validateRecipe(
     addIssue(issues, "error", entity, "Output quantity must be at least 1");
   }
   if (!recipe.materials || recipe.materials.length === 0) {
-    addIssue(issues, "warning", entity, "Recipe has no materials");
+    addIssue(issues, "error", entity, "Recipe must have at least one material");
   } else {
     for (const [index, mat] of recipe.materials.entries()) {
       if (!mat.itemId) {
@@ -325,6 +325,9 @@ export function validateZone(
     const entity = `mob:${mobId}`;
     if (!mob.name?.trim()) addIssue(issues, "warning", entity, "Mob has no name");
     if (!roomIds.has(mob.room)) addIssue(issues, "error", entity, `Room "${mob.room}" does not exist`);
+    if (mob.respawnSeconds != null && mob.respawnSeconds <= 0) {
+      addIssue(issues, "error", entity, "Respawn seconds must be greater than 0");
+    }
 
     for (const [index, drop] of (mob.drops ?? []).entries()) {
       if (!drop.itemId) {
@@ -437,7 +440,7 @@ export function validateZone(
       addIssue(issues, "warning", entity, `Giver mob "${quest.giver}" is not a known mob in this zone`);
     }
     if (!quest.objectives || quest.objectives.length === 0) {
-      addIssue(issues, "warning", entity, "Quest has no objectives");
+      addIssue(issues, "error", entity, "Quest must have at least one objective");
     } else {
       for (const [index, obj] of quest.objectives.entries()) {
         if (!obj.type) addIssue(issues, "warning", entity, "Objective has no type");
@@ -455,7 +458,7 @@ export function validateZone(
     if (!node.image) addIssue(issues, "warning", entity, "Gathering node has no image — players will see a missing sprite");
     if (!roomIds.has(node.room)) addIssue(issues, "error", entity, `Room "${node.room}" does not exist`);
     if (!node.yields || node.yields.length === 0) {
-      addIssue(issues, "warning", entity, "Gathering node has no yields");
+      addIssue(issues, "error", entity, "Gathering node must have at least one yield");
     } else {
       for (const [index, yieldDef] of node.yields.entries()) {
         if (!yieldDef.itemId) {

@@ -11,11 +11,22 @@ import {
   DEFAULT_ASSET_CATEGORIES,
   type RequiredDefaultAsset,
 } from "@/lib/requiredDefaultAssets";
+import { BUNDLED_DEFAULT_ASSETS } from "@/assets/defaults";
 import type { RequiredGlobalAsset } from "@/lib/requiredGlobalAssets";
 import { GlobalAssetGeneratorModal } from "./GlobalAssetGeneratorModal";
 
-function AssetThumbnail({ filename }: { filename: string }) {
+function AssetThumbnail({ filename, fallback }: { filename: string; fallback?: string }) {
   const src = useImageSrc(filename);
+  if (!src && fallback) {
+    return (
+      <img
+        src={fallback}
+        alt=""
+        loading="lazy"
+        className="h-10 w-10 shrink-0 rounded border border-border-default object-cover opacity-60"
+      />
+    );
+  }
   if (!src) {
     return (
       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded border border-border-default bg-bg-primary text-[8px] text-text-muted">
@@ -105,7 +116,7 @@ export function DefaultAssetsPanel({ config, onChange }: ConfigPanelProps) {
         key={spec.key}
         className="flex items-start gap-3 rounded border border-border-default bg-bg-primary/50 px-3 py-2"
       >
-        <AssetThumbnail filename={value} />
+        <AssetThumbnail filename={value} fallback={BUNDLED_DEFAULT_ASSETS[spec.key]} />
         <div className="flex min-w-0 flex-1 flex-col gap-1">
           <div className="flex items-baseline gap-2">
             <span className="font-mono text-xs font-medium text-accent">

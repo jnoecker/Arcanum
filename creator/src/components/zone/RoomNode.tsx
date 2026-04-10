@@ -3,6 +3,7 @@ import { Handle, Position, type NodeProps, type Node } from "@xyflow/react";
 import type { RoomNodeData, EntitySprite } from "@/lib/zoneToGraph";
 import { useImageSrc } from "@/lib/useImageSrc";
 import missingRoomBg from "@/assets/missing-room.jpg";
+import { ROLE_ICONS } from "@/assets/ui";
 
 type RoomNodeType = Node<RoomNodeData, "room">;
 
@@ -90,19 +91,34 @@ function RoomBackground({ image }: { image?: string }) {
   );
 }
 
-/** Role pill badges (bank, tavern/lottery, dungeon) */
+/** Role pill badges (bank, tavern/lottery, dungeon, auction) */
 function RoleBadges({ d }: { d: RoomNodeData }) {
-  if (!d.bank && !d.tavern && !d.dungeon) return null;
+  if (!d.bank && !d.tavern && !d.dungeon && !d.auction) return null;
   return (
     <div className="relative flex flex-wrap gap-1">
       {d.bank && (
-        <span className="rounded bg-status-info/20 px-1 text-3xs font-semibold text-status-info" title="Bank">Bank</span>
+        <span className="flex items-center gap-0.5 rounded bg-status-info/20 px-1 text-3xs font-semibold text-status-info" title="Bank">
+          <img src={ROLE_ICONS.bank} alt="" className="h-3 w-3" />
+          Bank
+        </span>
       )}
       {d.tavern && (
-        <span className="rounded bg-status-warning/20 px-1 text-3xs font-semibold text-status-warning" title="Lottery (tavern)">Lottery</span>
+        <span className="flex items-center gap-0.5 rounded bg-status-warning/20 px-1 text-3xs font-semibold text-status-warning" title="Lottery (tavern)">
+          <img src={ROLE_ICONS.tavern} alt="" className="h-3 w-3" />
+          Lottery
+        </span>
       )}
       {d.dungeon && (
-        <span className="rounded bg-status-error/20 px-1 text-3xs font-semibold text-status-error" title="Dungeon portal">Dungeon</span>
+        <span className="flex items-center gap-0.5 rounded bg-status-error/20 px-1 text-3xs font-semibold text-status-error" title="Dungeon portal">
+          <img src={ROLE_ICONS.dungeon} alt="" className="h-3 w-3" />
+          Dungeon
+        </span>
+      )}
+      {d.auction && (
+        <span className="flex items-center gap-0.5 rounded bg-accent/20 px-1 text-3xs font-semibold text-accent" title="Auction house">
+          <img src={ROLE_ICONS.auction} alt="" className="h-3 w-3" />
+          Auction
+        </span>
       )}
     </div>
   );
@@ -137,7 +153,9 @@ function InfoBadge({ d }: { d: RoomNodeData }) {
             {d.shopCount > 0 && <span title="Shops" aria-label={`${d.shopCount} shops`}>⛋{d.shopCount}</span>}
             {d.gatheringNodeCount > 0 && <span title="Gathering nodes" aria-label={`${d.gatheringNodeCount} gathering nodes`}>⛏{d.gatheringNodeCount}</span>}
             {d.station && (
-              <span className="text-status-info" title={`Station: ${d.station}`} aria-label={`Crafting station: ${d.station}`}>⚒</span>
+              <span className="inline-flex items-center gap-0.5 text-status-info" title={`Station: ${d.station}`} aria-label={`Crafting station: ${d.station}`}>
+                <img src={ROLE_ICONS.station} alt="" className="h-3 w-3" />⚒
+              </span>
             )}
           </div>
         )}
@@ -247,7 +265,9 @@ export const RoomNode = memo(function RoomNode({ data, selected }: NodeProps<Roo
               {d.shopCount > 0 && <span title="Shops">⛋{d.shopCount}</span>}
               {d.gatheringNodeCount > 0 && <span title="Gathering nodes">⛏{d.gatheringNodeCount}</span>}
               {d.station && (
-                <span className="text-status-info" title={`Station: ${d.station}`}>⚒</span>
+                <span className="inline-flex items-center gap-0.5 text-status-info" title={`Station: ${d.station}`}>
+                  <img src={ROLE_ICONS.station} alt="" className="h-3 w-3" />⚒
+                </span>
               )}
             </div>
           )}

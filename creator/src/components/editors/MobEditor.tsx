@@ -19,6 +19,7 @@ import { DialogueEditor } from "./DialogueEditor";
 import { DeleteEntityButton, EnhanceDescriptionButton, MediaSection } from "./EditorShared";
 import { mobPrompt, mobContext } from "@/lib/entityPrompts";
 import { useVibeStore } from "@/stores/vibeStore";
+import { CATEGORY_ICONS } from "@/assets/ui";
 
 interface MobEditorProps {
   mobId: string;
@@ -166,11 +167,16 @@ export function MobEditor({
             />
           </CompactField>
           <CompactField label="Category">
-            <SelectInput
-              value={mob.category ?? "humanoid"}
-              options={CATEGORY_OPTIONS}
-              onCommit={(v) => patch({ category: v === "humanoid" ? undefined : v })}
-            />
+            <div className="flex items-center gap-1.5">
+              {CATEGORY_ICONS[mob.category ?? "humanoid"] && (
+                <img src={CATEGORY_ICONS[mob.category ?? "humanoid"]} alt="" className="h-5 w-5 shrink-0" />
+              )}
+              <SelectInput
+                value={mob.category ?? "humanoid"}
+                options={CATEGORY_OPTIONS}
+                onCommit={(v) => patch({ category: v === "humanoid" ? undefined : v })}
+              />
+            </div>
           </CompactField>
           <CompactField label="Faction">
             <TextInput

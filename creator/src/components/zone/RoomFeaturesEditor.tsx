@@ -21,6 +21,7 @@ import {
   SelectInput,
   TextInput,
 } from "@/components/ui/FormWidgets";
+import { FEATURE_ICONS } from "@/assets/ui";
 
 interface RoomFeaturesEditorProps {
   world: WorldFile;
@@ -54,7 +55,12 @@ export function RoomFeaturesEditor({ world, roomId, onWorldChange }: RoomFeature
       <div className="flex flex-wrap items-center gap-1.5">
         {FEATURE_TYPES.map((t) => (
           <ActionButton key={t} size="sm" variant="secondary" onClick={() => handleAdd(t)}>
-            + {labelForType(t)}
+            <span className="inline-flex items-center gap-1">
+              {FEATURE_ICONS[t.toLowerCase()] && (
+                <img src={FEATURE_ICONS[t.toLowerCase()]} alt="" className="h-3 w-3" />
+              )}
+              + {labelForType(t)}
+            </span>
           </ActionButton>
         ))}
       </div>
@@ -155,7 +161,10 @@ function FeatureRow({
   return (
     <div className="rounded border border-border-muted bg-bg-tertiary/40 p-2">
       <div className="flex items-center gap-1.5">
-        <span className="rounded bg-bg-elevated px-1.5 py-0.5 font-display text-2xs uppercase tracking-wider text-accent">
+        <span className="flex items-center gap-1 rounded bg-bg-elevated px-1.5 py-0.5 font-display text-2xs uppercase tracking-wider text-accent">
+          {FEATURE_ICONS[type.toLowerCase()] && (
+            <img src={FEATURE_ICONS[type.toLowerCase()]} alt="" className="h-3.5 w-3.5" />
+          )}
           {labelForType(type)}
         </span>
         <div className="flex-1" />

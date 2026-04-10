@@ -41,6 +41,7 @@ import { setDungeon, removeDungeon } from "@/lib/zoneEdits";
 import { normalizeAssetRef } from "@/lib/assetRefs";
 import builderBg from "@/assets/builder-bg.jpg";
 import subtoolbarBg from "@/assets/subtoolbar-bg.jpg";
+import { TERRAIN_ICONS } from "@/assets/ui";
 
 type ViewMode = "map" | "assets" | "media" | "dungeon";
 
@@ -607,6 +608,9 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
         {/* Default terrain */}
         <label className="flex items-center gap-1.5 text-xs text-text-secondary max-[1100px]:min-h-9" title="Default terrain type for all rooms in this zone (rooms can override).">
           <span className="whitespace-nowrap">Terrain</span>
+          {TERRAIN_ICONS[zoneState.data.terrain ?? "outside"] && (
+            <img src={TERRAIN_ICONS[zoneState.data.terrain ?? "outside"]} alt="" className="h-5 w-5 rounded" />
+          )}
           <select
             value={zoneState.data.terrain ?? ""}
             onChange={handleTerrainChange}

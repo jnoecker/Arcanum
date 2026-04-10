@@ -34,6 +34,7 @@ import { useZoneStore } from "@/stores/zoneStore";
 import { useConfigStore } from "@/stores/configStore";
 import { ZoneVibePanel } from "./ZoneVibePanel";
 import sidebarBg from "@/assets/sidebar-bg.png";
+import { ROLE_ICONS, TERRAIN_ICONS, ENTITY_ICONS } from "@/assets/ui";
 
 export type EntityKind = "mob" | "item" | "shop" | "trainer" | "quest" | "gatheringNode" | "recipe" | "puzzle";
 
@@ -765,24 +766,29 @@ export function RoomPanel({
           label="Terrain"
           hint="Determines weather effects and default room background. Sheltered terrains (inside, underground, underwater) suppress weather particles."
         >
-          <SelectInput
-            value={room.terrain ?? ""}
-            options={[
-              { value: "inside", label: "Inside" },
-              { value: "outside", label: "Outside" },
-              { value: "forest", label: "Forest" },
-              { value: "mountain", label: "Mountain" },
-              { value: "underground", label: "Underground" },
-              { value: "underwater", label: "Underwater" },
-              { value: "desert", label: "Desert" },
-              { value: "swamp", label: "Swamp" },
-              { value: "urban", label: "Urban" },
-              { value: "sky", label: "Sky" },
-            ]}
-            onCommit={(v) => onWorldChange(updateRoom(world, roomId, { terrain: v || undefined }))}
-            placeholder="Inherit from zone"
-            allowEmpty
-          />
+          <div className="flex items-center gap-2">
+            {room.terrain && TERRAIN_ICONS[room.terrain] && (
+              <img src={TERRAIN_ICONS[room.terrain]} alt="" className="h-5 w-5 rounded" />
+            )}
+            <SelectInput
+              value={room.terrain ?? ""}
+              options={[
+                { value: "inside", label: "Inside" },
+                { value: "outside", label: "Outside" },
+                { value: "forest", label: "Forest" },
+                { value: "mountain", label: "Mountain" },
+                { value: "underground", label: "Underground" },
+                { value: "underwater", label: "Underwater" },
+                { value: "desert", label: "Desert" },
+                { value: "swamp", label: "Swamp" },
+                { value: "urban", label: "Urban" },
+                { value: "sky", label: "Sky" },
+              ]}
+              onCommit={(v) => onWorldChange(updateRoom(world, roomId, { terrain: v || undefined }))}
+              placeholder="Inherit from zone"
+              allowEmpty
+            />
+          </div>
         </FieldRow>
       </Section>
 
@@ -797,53 +803,68 @@ export function RoomPanel({
             label="Station"
             hint="Choose a configured crafting station type. This is a room capability, not a separate NPC."
           >
-            <SelectInput
-              value={room.station ?? ""}
-              options={stationOptions}
-              onCommit={(v) => handleFieldChange("station", v)}
-              placeholder="No station"
-              allowEmpty
-            />
+            <div className="flex items-center gap-2">
+              <img src={ROLE_ICONS.station} alt="" className="h-5 w-5" />
+              <SelectInput
+                value={room.station ?? ""}
+                options={stationOptions}
+                onCommit={(v) => handleFieldChange("station", v)}
+                placeholder="No station"
+                allowEmpty
+              />
+            </div>
           </FieldRow>
           <FieldRow
             label="Bank"
             hint="Enables deposit and withdraw commands in this room. No separate bank NPC is required by this schema."
           >
-            <CheckboxInput
-              checked={room.bank ?? false}
-              onCommit={(value) => onWorldChange(updateRoom(world, roomId, { bank: value || undefined }))}
-              label="Room functions as a bank"
-            />
+            <div className="flex items-center gap-2">
+              <img src={ROLE_ICONS.bank} alt="" className="h-5 w-5" />
+              <CheckboxInput
+                checked={room.bank ?? false}
+                onCommit={(value) => onWorldChange(updateRoom(world, roomId, { bank: value || undefined }))}
+                label="Room functions as a bank"
+              />
+            </div>
           </FieldRow>
           <FieldRow
             label="Tavern"
             hint="Marks this room as a tavern / rest point. Shows the lottery kiosk in the web client."
           >
-            <CheckboxInput
-              checked={room.tavern ?? false}
-              onCommit={(value) => onWorldChange(updateRoom(world, roomId, { tavern: value || undefined }))}
-              label="Room functions as a tavern"
-            />
+            <div className="flex items-center gap-2">
+              <img src={ROLE_ICONS.tavern} alt="" className="h-5 w-5" />
+              <CheckboxInput
+                checked={room.tavern ?? false}
+                onCommit={(value) => onWorldChange(updateRoom(world, roomId, { tavern: value || undefined }))}
+                label="Room functions as a tavern"
+              />
+            </div>
           </FieldRow>
           <FieldRow
             label="Dungeon"
             hint="Marks this room as a dungeon portal entrance. Shows the dungeon kiosk in the web client."
           >
-            <CheckboxInput
-              checked={room.dungeon ?? false}
-              onCommit={(value) => onWorldChange(updateRoom(world, roomId, { dungeon: value || undefined }))}
-              label="Room contains a dungeon portal"
-            />
+            <div className="flex items-center gap-2">
+              <img src={ROLE_ICONS.dungeon} alt="" className="h-5 w-5" />
+              <CheckboxInput
+                checked={room.dungeon ?? false}
+                onCommit={(value) => onWorldChange(updateRoom(world, roomId, { dungeon: value || undefined }))}
+                label="Room contains a dungeon portal"
+              />
+            </div>
           </FieldRow>
           <FieldRow
             label="Auction"
             hint="Marks this room as having an auction house. Shows the auction badge in the web client."
           >
-            <CheckboxInput
-              checked={room.auction ?? false}
-              onCommit={(value) => onWorldChange(updateRoom(world, roomId, { auction: value || undefined }))}
-              label="Room has an auction house"
-            />
+            <div className="flex items-center gap-2">
+              <img src={ROLE_ICONS.auction} alt="" className="h-5 w-5" />
+              <CheckboxInput
+                checked={room.auction ?? false}
+                onCommit={(value) => onWorldChange(updateRoom(world, roomId, { auction: value || undefined }))}
+                label="Room has an auction house"
+              />
+            </div>
           </FieldRow>
         </div>
       </Section>
@@ -868,6 +889,7 @@ export function RoomPanel({
                   onClick={() => onSelectEntity({ kind: "mob", id })}
                   className="flex w-full min-w-0 items-baseline gap-1 rounded px-1 py-0.5 text-left text-xs transition-colors hover:bg-bg-tertiary"
                 >
+                  <img src={ENTITY_ICONS.mob} alt="" className="h-3.5 w-3.5 shrink-0 self-center" />
                   <span className="truncate font-medium text-text-primary" title={mob.name}>
                     {mob.name}
                   </span>
@@ -897,6 +919,7 @@ export function RoomPanel({
                   onClick={() => onSelectEntity({ kind: "item", id })}
                   className="flex w-full min-w-0 items-baseline gap-1 rounded px-1 py-0.5 text-left text-xs transition-colors hover:bg-bg-tertiary"
                 >
+                  <img src={ENTITY_ICONS.item} alt="" className="h-3.5 w-3.5 shrink-0 self-center" />
                   <span className="truncate font-medium text-text-primary" title={item.displayName}>
                     {item.displayName}
                   </span>
@@ -960,6 +983,7 @@ export function RoomPanel({
                         onClick={() => onSelectEntity({ kind: "shop", id })}
                         className="flex w-full min-w-0 items-baseline gap-1 rounded px-1 py-0.5 text-left text-xs transition-colors hover:bg-bg-tertiary"
                       >
+                        <img src={ENTITY_ICONS.shop} alt="" className="h-3.5 w-3.5 shrink-0 self-center" />
                         <span className="truncate font-medium text-text-primary" title={shop.name}>
                           {shop.name}
                         </span>
@@ -988,6 +1012,7 @@ export function RoomPanel({
                         onClick={() => onSelectEntity({ kind: "trainer", id })}
                         className="flex w-full min-w-0 items-baseline gap-1 rounded px-1 py-0.5 text-left text-xs transition-colors hover:bg-bg-tertiary"
                       >
+                        <img src={ENTITY_ICONS.trainer} alt="" className="h-3.5 w-3.5 shrink-0 self-center" />
                         <span className="truncate font-medium text-text-primary" title={trainer.name}>
                           {trainer.name}
                         </span>
@@ -1016,6 +1041,7 @@ export function RoomPanel({
                         onClick={() => onSelectEntity({ kind: "gatheringNode", id })}
                         className="flex w-full min-w-0 items-baseline gap-1 rounded px-1 py-0.5 text-left text-xs transition-colors hover:bg-bg-tertiary"
                       >
+                        <img src={ENTITY_ICONS.gatheringNode} alt="" className="h-3.5 w-3.5 shrink-0 self-center" />
                         <span className="truncate font-medium text-text-primary" title={node.displayName}>
                           {node.displayName}
                         </span>
@@ -1040,9 +1066,10 @@ export function RoomPanel({
               <li key={id}>
                 <button
                   onClick={() => onSelectEntity({ kind: "quest", id })}
-                  className="w-full min-w-0 rounded px-1 py-0.5 text-left text-xs transition-colors hover:bg-bg-tertiary"
+                  className="flex w-full min-w-0 items-baseline gap-1 rounded px-1 py-0.5 text-left text-xs transition-colors hover:bg-bg-tertiary"
                 >
-                  <span className="block truncate font-medium text-text-primary" title={quest.name}>
+                  <img src={ENTITY_ICONS.quest} alt="" className="h-3.5 w-3.5 shrink-0 self-center" />
+                  <span className="truncate font-medium text-text-primary" title={quest.name}>
                     {quest.name}
                   </span>
                 </button>
@@ -1086,6 +1113,7 @@ export function RoomPanel({
                   onClick={() => onSelectEntity({ kind: "puzzle", id })}
                   className="flex w-full min-w-0 items-baseline gap-1 rounded px-1 py-0.5 text-left text-xs transition-colors hover:bg-bg-tertiary"
                 >
+                  <img src={ENTITY_ICONS.puzzle} alt="" className="h-3.5 w-3.5 shrink-0 self-center" />
                   <span className="truncate font-medium text-text-primary" title={id}>
                     {id}
                   </span>

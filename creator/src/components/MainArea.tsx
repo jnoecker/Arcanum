@@ -55,17 +55,19 @@ export function MainArea() {
   const activeTabIndex = tabs.findIndex((t) => t.id === activeTabId);
 
   // Map takes precedence over the active tab when it's the current surface.
-  if (mapView === "world" || !activeTab) {
-    return (
-      <div className="flex min-h-0 flex-1 flex-col">
-        <WorldMap />
-      </div>
-    );
-  }
+  // Island check must come before !activeTab fallback — otherwise the world
+  // map renders when an island is selected but no tabs are open yet.
   if (mapView && typeof mapView === "object" && "island" in mapView) {
     return (
       <div className="flex min-h-0 flex-1 flex-col">
         <IslandView island={mapView.island} />
+      </div>
+    );
+  }
+  if (mapView === "world" || !activeTab) {
+    return (
+      <div className="flex min-h-0 flex-1 flex-col">
+        <WorldMap />
       </div>
     );
   }

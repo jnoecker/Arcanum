@@ -35,6 +35,15 @@ const TIER_OPTIONS = [
   { value: "boss", label: "Boss" },
 ];
 
+const CATEGORY_OPTIONS = [
+  { value: "humanoid", label: "Humanoid" },
+  { value: "beast", label: "Beast" },
+  { value: "undead", label: "Undead" },
+  { value: "elemental", label: "Elemental" },
+  { value: "construct", label: "Construct" },
+  { value: "aberration", label: "Aberration" },
+];
+
 const BEHAVIOR_TEMPLATES = [
   { value: "", label: "— none —" },
   { value: "PATROL", label: "Patrol" },
@@ -154,6 +163,13 @@ export function MobEditor({
               onCommit={(v) => patch({ respawnSeconds: v })}
               placeholder="Default"
               min={0}
+            />
+          </CompactField>
+          <CompactField label="Category">
+            <SelectInput
+              value={mob.category ?? "humanoid"}
+              options={CATEGORY_OPTIONS}
+              onCommit={(v) => patch({ category: v === "humanoid" ? undefined : v })}
             />
           </CompactField>
           <CompactField label="Faction">

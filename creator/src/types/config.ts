@@ -1018,6 +1018,7 @@ export interface AppConfig {
   guildHalls?: GuildHallsConfig;
   leaderboard?: LeaderboardConfig;
   globalAssets: Record<string, string>;
+  defaultAssets: Record<string, string>;
   playerTiers?: Record<string, TierDefinitionConfig>;
   persistence: PersistenceConfig;
   login: LoginConfig;

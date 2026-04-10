@@ -123,6 +123,7 @@ export function parseAppConfigYaml(content: string): AppConfig {
     emotePresets: withEmotePresetDefaults(parseEmotePresetsConfig(engine.emotePresets)),
     images: parseImagesConfig(root.images),
     globalAssets: parseGlobalAssets((root.images as Record<string, unknown> | undefined)?.globalAssets ?? root.globalAssets),
+    defaultAssets: parseGlobalAssets((root.images as Record<string, unknown> | undefined)?.defaultAssets ?? root.defaultAssets),
     playerTiers: parsePlayerTiers(root.playerTiers),
     lottery: parseLotteryConfig(engine.lottery),
     gambling: parseGamblingConfig(engine.gambling),
@@ -852,7 +853,7 @@ function collectRawSections(
   engine: Record<string, unknown>,
 ): Record<string, unknown> {
   const knownRoot = new Set([
-    "mode", "server", "engine", "progression", "images", "globalAssets", "playerTiers", "world",
+    "mode", "server", "engine", "progression", "images", "globalAssets", "defaultAssets", "playerTiers", "world",
     "persistence", "login", "transport", "demo", "observability", "admin",
     "logging", "database", "redis", "grpc", "gateway", "sharding",
     "videos", "audio",
@@ -1382,6 +1383,7 @@ async function loadSplitConfig(projectDir: string): Promise<AppConfig | null> {
       // assets.yaml
       images: parseImagesConfig(assetsRaw.images ?? assetsRaw),
       globalAssets: parseGlobalAssets((assetsRaw.images as Record<string, unknown> | undefined)?.globalAssets ?? assetsRaw.globalAssets),
+      defaultAssets: parseGlobalAssets((assetsRaw.images as Record<string, unknown> | undefined)?.defaultAssets ?? assetsRaw.defaultAssets),
       playerTiers: parsePlayerTiers(assetsRaw.playerTiers),
       lottery: parseLotteryConfig(worldRaw.lottery),
       gambling: parseGamblingConfig(worldRaw.gambling),

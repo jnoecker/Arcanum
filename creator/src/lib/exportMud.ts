@@ -526,6 +526,7 @@ export function buildMonolithicConfigObject(
       baseUrl: imageBaseUrl,
       spriteLevelTiers: c.images.spriteLevelTiers,
       globalAssets: normalizeGlobalAssetMap(c.globalAssets),
+      defaultAssets: normalizeGlobalAssetMap(c.defaultAssets ?? {}),
     },
     videos: {
       baseUrl: siblingMediaBaseUrl(imageBaseUrl, "videos"),

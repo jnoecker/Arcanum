@@ -21,6 +21,13 @@ export interface ValidationIssue {
 }
 
 const DEFAULT_VALID_CLASSES = new Set(["WARRIOR", "MAGE", "CLERIC", "ROGUE"]);
+const VALID_TERRAINS = new Set([
+  "inside", "outside", "forest", "mountain", "underground",
+  "underwater", "desert", "swamp", "urban", "sky",
+]);
+const VALID_MOB_CATEGORIES = new Set([
+  "humanoid", "beast", "undead", "elemental", "construct", "aberration",
+]);
 const LOCKABLE_STATES = new Set(["open", "closed", "locked"]);
 const LEVER_STATES = new Set(["up", "down"]);
 const PUZZLE_TYPES = new Set(["riddle", "sequence"]);
@@ -300,11 +307,17 @@ export function validateZone(
   if (roomIds.size === 0) {
     addIssue(issues, "error", "zone", "Zone has no rooms");
   }
+  if (world.terrain && !VALID_TERRAINS.has(world.terrain)) {
+    addIssue(issues, "warning", "zone", `Terrain "${world.terrain}" is not a recognized terrain type`);
+  }
 
   for (const [roomId, room] of Object.entries(world.rooms)) {
     const entity = `room:${roomId}`;
     if (!room.title?.trim()) addIssue(issues, "warning", entity, "Room has no title");
     if (!room.description?.trim()) addIssue(issues, "warning", entity, "Room has no description");
+    if (room.terrain && !VALID_TERRAINS.has(room.terrain)) {
+      addIssue(issues, "warning", entity, `Terrain "${room.terrain}" is not a recognized terrain type`);
+    }
 
     for (const [dir, exit] of Object.entries(room.exits ?? {})) {
       const target = exitTarget(exit);
@@ -325,6 +338,9 @@ export function validateZone(
     const entity = `mob:${mobId}`;
     if (!mob.name?.trim()) addIssue(issues, "warning", entity, "Mob has no name");
     if (!roomIds.has(mob.room)) addIssue(issues, "error", entity, `Room "${mob.room}" does not exist`);
+    if (mob.category && !VALID_MOB_CATEGORIES.has(mob.category)) {
+      addIssue(issues, "warning", entity, `Category "${mob.category}" is not a recognized mob category`);
+    }
     if (mob.respawnSeconds != null && mob.respawnSeconds <= 0) {
       addIssue(issues, "error", entity, "Respawn seconds must be greater than 0");
     }

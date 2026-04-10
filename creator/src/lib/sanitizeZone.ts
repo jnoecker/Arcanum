@@ -680,6 +680,7 @@ function cleanOutput(world: WorldFile): WorldFile {
   const result: WorldFile = { zone, startRoom, rooms };
 
   if (world.lifespan != null && world.lifespan > 0) result.lifespan = world.lifespan;
+  if (world.terrain) result.terrain = world.terrain;
   if (world.graphical) result.graphical = true;
   if (world.pvpEnabled) result.pvpEnabled = true;
   if (world.image) result.image = world.image;

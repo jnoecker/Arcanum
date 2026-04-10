@@ -234,6 +234,7 @@ async function saveSplitConfig(projectDir: string): Promise<void> {
       images: cleanObj({
         ...config.images,
         globalAssets: Object.keys(config.globalAssets).length > 0 ? normalizeGlobalAssetMap(config.globalAssets) : undefined,
+        defaultAssets: Object.keys(config.defaultAssets).length > 0 ? normalizeGlobalAssetMap(config.defaultAssets) : undefined,
       }),
       playerTiers: config.playerTiers && Object.keys(config.playerTiers).length > 0 ? config.playerTiers : undefined,
     })),

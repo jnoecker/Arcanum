@@ -40,6 +40,7 @@ import { AchievementDesigner } from "./AchievementDesigner";
 import { AchievementDefEditor } from "./AchievementDefEditor";
 import { QuestTaxonomyDesigner } from "./QuestTaxonomyDesigner";
 import { GlobalAssetsPanel } from "./panels/GlobalAssetsPanel";
+import { DefaultAssetsPanel } from "./panels/DefaultAssetsPanel";
 
 import { ApiSettingsPanel } from "./panels/ApiSettingsPanel";
 import { RuntimeHandoffStudio } from "./RuntimeHandoffStudio";
@@ -161,6 +162,7 @@ function renderPanel(panelId: string, props: ConfigPanelProps): ReactNode {
         <div className="flex flex-col gap-6">
           <ImagesPanel config={config} onChange={onChange} />
           <GlobalAssetsPanel config={config} onChange={onChange} />
+          <DefaultAssetsPanel config={config} onChange={onChange} />
         </div>
       );
 

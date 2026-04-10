@@ -192,6 +192,11 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
     if (n !== undefined && isNaN(n)) return;
     updateZone(zoneId, { ...zoneState.data, lifespan: n || undefined });
   }, [zoneState, updateZone, zoneId]);
+  const handleTerrainChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
+    if (!zoneState) return;
+    const v = e.target.value;
+    updateZone(zoneId, { ...zoneState.data, terrain: v || undefined });
+  }, [zoneState, updateZone, zoneId]);
 
   // Auto-close entity panel if the selected entity was removed (e.g. by undo)
   useEffect(() => {
@@ -597,6 +602,28 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
             placeholder="0"
             className="ornate-input w-16 px-1.5 py-0.5 text-xs text-text-primary"
           />
+        </label>
+
+        {/* Default terrain */}
+        <label className="flex items-center gap-1.5 text-xs text-text-secondary max-[1100px]:min-h-9" title="Default terrain type for all rooms in this zone (rooms can override).">
+          <span className="whitespace-nowrap">Terrain</span>
+          <select
+            value={zoneState.data.terrain ?? ""}
+            onChange={handleTerrainChange}
+            className="ornate-input px-1.5 py-0.5 text-xs text-text-primary"
+          >
+            <option value="">Default (outside)</option>
+            <option value="inside">Inside</option>
+            <option value="outside">Outside</option>
+            <option value="forest">Forest</option>
+            <option value="mountain">Mountain</option>
+            <option value="underground">Underground</option>
+            <option value="underwater">Underwater</option>
+            <option value="desert">Desert</option>
+            <option value="swamp">Swamp</option>
+            <option value="urban">Urban</option>
+            <option value="sky">Sky</option>
+          </select>
         </label>
 
         {/* Zone name */}

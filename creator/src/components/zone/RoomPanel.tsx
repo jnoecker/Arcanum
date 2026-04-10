@@ -755,10 +755,42 @@ export function RoomPanel({
       </Section>
 
       {/* Room roles */}
+      {/* Terrain override */}
+      <Section
+        title="Terrain"
+        description="Override the zone-level terrain for this room. Leave blank to inherit the zone default."
+        defaultExpanded={!!room.terrain}
+      >
+        <FieldRow
+          label="Terrain"
+          hint="Determines weather effects and default room background. Sheltered terrains (inside, underground, underwater) suppress weather particles."
+        >
+          <SelectInput
+            value={room.terrain ?? ""}
+            options={[
+              { value: "inside", label: "Inside" },
+              { value: "outside", label: "Outside" },
+              { value: "forest", label: "Forest" },
+              { value: "mountain", label: "Mountain" },
+              { value: "underground", label: "Underground" },
+              { value: "underwater", label: "Underwater" },
+              { value: "desert", label: "Desert" },
+              { value: "swamp", label: "Swamp" },
+              { value: "urban", label: "Urban" },
+              { value: "sky", label: "Sky" },
+            ]}
+            onCommit={(v) => onWorldChange(updateRoom(world, roomId, { terrain: v || undefined }))}
+            placeholder="Inherit from zone"
+            allowEmpty
+          />
+        </FieldRow>
+      </Section>
+
+      {/* Room roles */}
       <Section
         title="Room Roles"
         description="Capabilities owned directly by the room itself rather than separate placed entities."
-        defaultExpanded={!!room.station || !!room.bank || !!room.tavern || !!room.dungeon}
+        defaultExpanded={!!room.station || !!room.bank || !!room.tavern || !!room.dungeon || !!room.auction}
       >
         <div className="flex flex-col gap-2">
           <FieldRow
@@ -801,6 +833,16 @@ export function RoomPanel({
               checked={room.dungeon ?? false}
               onCommit={(value) => onWorldChange(updateRoom(world, roomId, { dungeon: value || undefined }))}
               label="Room contains a dungeon portal"
+            />
+          </FieldRow>
+          <FieldRow
+            label="Auction"
+            hint="Marks this room as having an auction house. Shows the auction badge in the web client."
+          >
+            <CheckboxInput
+              checked={room.auction ?? false}
+              onCommit={(value) => onWorldChange(updateRoom(world, roomId, { auction: value || undefined }))}
+              label="Room has an auction house"
             />
           </FieldRow>
         </div>

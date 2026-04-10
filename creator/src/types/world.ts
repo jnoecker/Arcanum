@@ -7,6 +7,7 @@ export interface WorldFile {
   zone: string;
   lifespan?: number;
   startRoom: string;
+  terrain?: string;
   graphical?: boolean;
   pvpEnabled?: boolean;
   puzzles?: Record<string, PuzzleFile>;
@@ -39,10 +40,12 @@ export interface RoomFile {
   description: string;
   exits?: Record<string, string | ExitValue>;
   features?: Record<string, FeatureFile>;
+  terrain?: string;
   station?: string;
   bank?: boolean;
   tavern?: boolean;
   dungeon?: boolean;
+  auction?: boolean;
   image?: string;
   video?: string;
   music?: string;
@@ -91,6 +94,7 @@ export interface MobFile {
   room: string;
   tier?: string;
   level?: number;
+  category?: string;
   hp?: number;
   minDamage?: number;
   maxDamage?: number;

@@ -56,6 +56,7 @@ export function normalizeConfigAssetRefs(config: AppConfig): AppConfig {
       image: normalizeAssetRef(race.image),
     })),
     globalAssets: normalizeGlobalAssetMap(config.globalAssets),
+    defaultAssets: normalizeGlobalAssetMap(config.defaultAssets ?? {}),
   };
 }
 

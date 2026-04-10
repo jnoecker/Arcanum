@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import type { WorldFile, GatheringNodeFile, GatheringYieldFile, RareYieldFile } from "@/types/world";
 import { updateGatheringNode, deleteGatheringNode } from "@/lib/zoneEdits";
 import { useEntityEditor } from "@/lib/useEntityEditor";
+import { useConfigOptions } from "@/lib/useConfigOptions";
 import { useArrayField } from "@/lib/useArrayField";
 import {
   Section,
@@ -52,14 +53,15 @@ export function GatheringNodeEditor({
     );
 
   const craftingSkills = useConfigStore((s) => s.config?.craftingSkills);
-  const gatheringSkillOptions = useMemo(() => {
-    if (craftingSkills && Object.keys(craftingSkills).length > 0) {
-      return Object.entries(craftingSkills)
-        .filter(([, def]) => def.type === "gathering")
-        .map(([id, def]) => ({ value: id, label: def.displayName }));
+  const gatheringSkills = useMemo(() => {
+    if (!craftingSkills) return undefined;
+    const filtered: Record<string, typeof craftingSkills[string]> = {};
+    for (const [id, def] of Object.entries(craftingSkills)) {
+      if (def.type === "gathering") filtered[id] = def;
     }
-    return FALLBACK_GATHERING_SKILLS;
+    return Object.keys(filtered).length > 0 ? filtered : undefined;
   }, [craftingSkills]);
+  const gatheringSkillOptions = useConfigOptions(gatheringSkills, FALLBACK_GATHERING_SKILLS);
 
   if (!node) return null;
 

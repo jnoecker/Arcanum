@@ -449,10 +449,10 @@ async fn create_github_pr(
         "base": base,
     });
 
-    let client = reqwest::Client::new();
+    let client = crate::http::shared_client();
     let response = client
         .post(&url)
-        .header("Authorization", format!("Bearer {pat}"))
+        .header("Authorization", crate::http::bearer_header(pat))
         .header("Accept", "application/vnd.github+json")
         .header("User-Agent", "Arcanum")
         .json(&payload)
@@ -460,11 +460,7 @@ async fn create_github_pr(
         .await
         .map_err(|e| format!("GitHub API request failed: {e}"))?;
 
-    if !response.status().is_success() {
-        let status = response.status();
-        let text = response.text().await.unwrap_or_default();
-        return Err(format!("GitHub API error ({status}): {text}"));
-    }
+    let response = crate::http::check_response(response).await?;
 
     let resp: serde_json::Value = response
         .json()

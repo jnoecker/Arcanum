@@ -1,70 +1,11 @@
-import { useMemo, useState, useCallback } from "react";
+import { useMemo, useCallback } from "react";
 import { useLoreStore, selectArticles } from "@/stores/loreStore";
 import type { Article, ArticleRelation } from "@/types/lore";
 import { DefinitionWorkbench } from "@/components/config/DefinitionWorkbench";
 import { Section, FieldRow, TextInput } from "@/components/ui/FormWidgets";
 import { LoreEditor } from "./LoreEditor";
+import { TagListEditor } from "./TagListEditor";
 import { getFactionGeneratePrompt } from "@/lib/lorePrompts";
-
-// ─── String list editor ─────────────────────────────────────────────
-
-function TagList({
-  items,
-  onChange,
-  placeholder,
-}: {
-  items: string[];
-  onChange: (items: string[]) => void;
-  placeholder?: string;
-}) {
-  const [draft, setDraft] = useState("");
-
-  const add = () => {
-    const v = draft.trim();
-    if (!v || items.includes(v)) return;
-    onChange([...items, v]);
-    setDraft("");
-  };
-
-  return (
-    <div>
-      {items.length > 0 && (
-        <div className="mb-1.5 flex flex-wrap gap-1">
-          {items.map((t, i) => (
-            <span
-              key={i}
-              className="inline-flex items-center gap-0.5 rounded-full border border-border-muted bg-bg-tertiary px-2 py-0.5 text-2xs text-text-secondary"
-            >
-              {t}
-              <button
-                onClick={() => onChange(items.filter((_, j) => j !== i))}
-                className="ml-0.5 text-text-muted hover:text-status-danger"
-              >
-                &times;
-              </button>
-            </span>
-          ))}
-        </div>
-      )}
-      <div className="flex gap-1.5">
-        <input
-          className="flex-1 rounded border border-border-default bg-bg-primary px-2 py-0.5 text-xs text-text-primary outline-none focus:border-accent/50 focus-visible:ring-2 focus-visible:ring-border-active"
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && add()}
-          placeholder={placeholder ?? "Add..."}
-        />
-        <button
-          onClick={add}
-          disabled={!draft.trim()}
-          className="rounded border border-border-default px-2 py-0.5 text-xs text-text-secondary hover:bg-bg-tertiary disabled:opacity-40"
-        >
-          +
-        </button>
-      </div>
-    </div>
-  );
-}
 
 // ─── Faction multi-select (allies/rivals) ──────────────────────────
 
@@ -234,7 +175,7 @@ function FactionDetail({
       </Section>
 
       <Section title="Values">
-        <TagList
+        <TagListEditor
           items={faction.values}
           onChange={(values) => patch({ values })}
           placeholder="Add a core value..."
@@ -358,8 +299,7 @@ export function FactionsPanel() {
         if (f.rivals.length) badges.push(`${f.rivals.length} rivals`);
         return badges;
       }}
-      renderDetail={(faction, patch) => {
-        const factionId = Object.entries(factionViews).find(([, f]) => f === faction)?.[0] ?? "";
+      renderDetail={(factionId, faction, patch) => {
         return (
           <FactionDetail
             faction={faction}

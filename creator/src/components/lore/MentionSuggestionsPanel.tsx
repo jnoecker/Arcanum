@@ -1,15 +1,20 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { useLoreStore, selectArticles } from "@/stores/loreStore";
 import {
   scanForMissingSuggestions,
   type MentionSuggestion,
 } from "@/lib/loreMentionScan";
+import { SuggestionPanel } from "@/components/lore/SuggestionPanel";
+
+interface MentionItem {
+  key: string;
+  suggestion: MentionSuggestion;
+}
 
 export function MentionSuggestionsPanel() {
   const articles = useLoreStore(selectArticles);
   const selectArticle = useLoreStore((s) => s.selectArticle);
-  const [suggestions, setSuggestions] = useState<MentionSuggestion[]>([]);
-  const [dismissed, setDismissed] = useState<Set<string>>(new Set());
+  const [items, setItems] = useState<MentionItem[]>([]);
   const [scanned, setScanned] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -17,29 +22,16 @@ export function MentionSuggestionsPanel() {
     setLoading(true);
     setTimeout(() => {
       const results = scanForMissingSuggestions(articles);
-      setSuggestions(results);
-      setDismissed(new Set());
+      setItems(
+        results.map((s) => ({
+          key: `${s.sourceId}:${s.targetId}`,
+          suggestion: s,
+        })),
+      );
       setScanned(true);
       setLoading(false);
     }, 0);
   }, [articles]);
-
-  const handleDismiss = useCallback(
-    (sourceId: string, targetId: string) => {
-      setDismissed((s) => new Set(s).add(`${sourceId}:${targetId}`));
-    },
-    [],
-  );
-
-  const visible = useMemo(
-    () =>
-      suggestions.filter(
-        (s) => !dismissed.has(`${s.sourceId}:${s.targetId}`),
-      ),
-    [suggestions, dismissed],
-  );
-
-  const exactCount = visible.filter((s) => s.quality === "exact").length;
 
   return (
     <div>
@@ -53,26 +45,26 @@ export function MentionSuggestionsPanel() {
         </button>
         {scanned && (
           <span className="text-2xs text-text-muted">
-            {visible.length} suggestion{visible.length !== 1 ? "s" : ""}
-            {exactCount > 0 && ` (${exactCount} exact)`}
+            {items.length} suggestion{items.length !== 1 ? "s" : ""}
+            {(() => {
+              const exactCount = items.filter(
+                (i) => i.suggestion.quality === "exact",
+              ).length;
+              return exactCount > 0 ? ` (${exactCount} exact)` : "";
+            })()}
           </span>
         )}
       </div>
 
-      {scanned && visible.length === 0 && (
-        <p className="rounded-2xl border border-dashed border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] px-4 py-6 text-sm text-text-muted">
-          No missing mentions found. All plain-text references are already
-          linked.
-        </p>
-      )}
-
-      {visible.length > 0 && (
-        <div className="flex flex-col gap-2">
-          {visible.map((s) => (
-            <div
-              key={`${s.sourceId}:${s.targetId}`}
-              className="rounded-xl border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] px-4 py-3"
-            >
+      <SuggestionPanel<MentionItem>
+        items={items}
+        loading={loading}
+        trackAccepted={false}
+        emptyMessage="No missing mentions found. All plain-text references are already linked."
+        renderCard={(item, { onDismiss }) => {
+          const s = item.suggestion;
+          return (
+            <>
               <div className="mb-1 flex items-center gap-2">
                 <button
                   onClick={() => selectArticle(s.sourceId)}
@@ -102,16 +94,16 @@ export function MentionSuggestionsPanel() {
               </p>
               <div className="flex gap-2">
                 <button
-                  onClick={() => handleDismiss(s.sourceId, s.targetId)}
+                  onClick={onDismiss}
                   className="rounded-full border border-[var(--chrome-stroke)] px-2.5 py-1 text-2xs text-text-muted transition hover:bg-[var(--chrome-highlight-strong)] hover:text-text-primary"
                 >
                   Dismiss
                 </button>
               </div>
-            </div>
-          ))}
-        </div>
-      )}
+            </>
+          );
+        }}
+      />
     </div>
   );
 }

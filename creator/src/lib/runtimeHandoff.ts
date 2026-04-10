@@ -1,5 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import { exportMudFormat, buildMonolithicConfig, loadSlotPositions, generateSpritesYaml } from "@/lib/exportMud";
+import { YAML_OPTS } from "@/lib/yamlOpts";
 import { saveProjectConfig } from "@/lib/saveConfig";
 import { saveAllZones } from "@/lib/saveZone";
 import { useSpriteDefinitionStore } from "@/stores/spriteDefinitionStore";
@@ -147,7 +148,7 @@ export async function deployRuntimeAchievements(): Promise<string> {
   const { stringify } = await import("yaml");
   const content = stringify(
     { achievements: config?.achievementDefs ?? {} },
-    { lineWidth: 120, defaultKeyType: "PLAIN" as const, defaultStringType: "PLAIN" as const },
+    YAML_OPTS,
   );
   return invoke<string>("deploy_achievements_to_r2", { achievementsContent: content });
 }

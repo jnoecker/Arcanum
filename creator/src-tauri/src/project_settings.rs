@@ -85,11 +85,7 @@ pub async fn save_project_settings(
             .await
             .map_err(|e| format!("Failed to create .arcanum dir: {e}"))?;
     }
-    let json = serde_json::to_string_pretty(&settings)
-        .map_err(|e| format!("Failed to serialize project settings: {e}"))?;
-    tokio::fs::write(&path, json)
-        .await
-        .map_err(|e| format!("Failed to write project settings: {e}"))?;
+    crate::fs_utils::write_json_file(&path, &settings, "project settings").await?;
     // Update cache with freshly saved settings
     {
         let mut cache = PROJECT_SETTINGS_CACHE.write().await;

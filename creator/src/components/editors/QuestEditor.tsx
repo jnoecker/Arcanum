@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from "react";
+import { useCallback } from "react";
 import type {
   WorldFile,
   QuestFile,
@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/FormWidgets";
 import { DeleteEntityButton } from "./EditorShared";
 import { useConfigStore } from "@/stores/configStore";
+import { useConfigOptions } from "@/lib/useConfigOptions";
 
 interface QuestEditorProps {
   questId: string;
@@ -60,20 +61,10 @@ export function QuestEditor({
     onDelete,
   );
   const completionTypes = useConfigStore((s) => s.config?.questCompletionTypes);
-  const completionOptions = useMemo(() => {
-    if (completionTypes && Object.keys(completionTypes).length > 0) {
-      return Object.entries(completionTypes).map(([id, def]) => ({ value: id, label: def.displayName }));
-    }
-    return FALLBACK_COMPLETION_OPTIONS;
-  }, [completionTypes]);
+  const completionOptions = useConfigOptions(completionTypes, FALLBACK_COMPLETION_OPTIONS);
 
   const objectiveTypes = useConfigStore((s) => s.config?.questObjectiveTypes);
-  const objectiveTypeOptions = useMemo(() => {
-    if (objectiveTypes && Object.keys(objectiveTypes).length > 0) {
-      return Object.entries(objectiveTypes).map(([id, def]) => ({ value: id, label: def.displayName }));
-    }
-    return FALLBACK_OBJECTIVE_TYPES;
-  }, [objectiveTypes]);
+  const objectiveTypeOptions = useConfigOptions(objectiveTypes, FALLBACK_OBJECTIVE_TYPES);
 
   if (!quest) return null;
 

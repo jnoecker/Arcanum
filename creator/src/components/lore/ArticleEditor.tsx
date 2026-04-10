@@ -9,51 +9,8 @@ import { getCodexGeneratePrompt } from "@/lib/lorePrompts";
 import { buildWorldContext } from "@/lib/loreGeneration";
 import { ArticleArtSection } from "./ArticleArtSection";
 import { RewriteDialog } from "./RewriteDialog";
+import { TagListEditor } from "./TagListEditor";
 import type { RewriteResult } from "@/lib/loreRewrite";
-
-// ─── Tag list (compact) ────────────────────────────────────────────
-
-function TagEditor({
-  tags,
-  onChange,
-}: {
-  tags: string[];
-  onChange: (tags: string[]) => void;
-}) {
-  return (
-    <div className="flex flex-wrap items-center gap-1">
-      {tags.map((t, i) => (
-        <span
-          key={i}
-          className="inline-flex items-center gap-0.5 rounded-full border border-border-muted bg-bg-tertiary px-2 py-0.5 text-2xs text-text-secondary"
-        >
-          {t}
-          <button
-            aria-label="Remove tag"
-            onClick={() => onChange(tags.filter((_, j) => j !== i))}
-            className="ml-0.5 text-text-muted hover:text-status-danger"
-          >
-            &times;
-          </button>
-        </span>
-      ))}
-      <input
-        aria-label="Add article keyword"
-        className="focus-ring min-w-[6rem] flex-1 rounded bg-transparent px-1 py-0.5 text-xs text-text-primary"
-        placeholder="Add a keyword..."
-        onKeyDown={(e) => {
-          if (e.key === "Enter") {
-            const v = e.currentTarget.value.trim();
-            if (v && !tags.includes(v)) {
-              onChange([...tags, v]);
-              e.currentTarget.value = "";
-            }
-          }
-        }}
-      />
-    </div>
-  );
-}
 
 // ─── Template guide (editable description + AI description) ───────
 
@@ -300,9 +257,10 @@ export function ArticleEditor({ articleId }: { articleId: string }) {
 
       {/* Tags */}
       <Section title="Keywords" defaultExpanded={false}>
-        <TagEditor
-          tags={article.tags ?? []}
+        <TagListEditor
+          items={article.tags ?? []}
           onChange={(tags) => patch({ tags: tags.length > 0 ? tags : undefined })}
+          placeholder="Add a keyword..."
         />
       </Section>
 

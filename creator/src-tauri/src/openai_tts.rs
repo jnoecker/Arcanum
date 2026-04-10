@@ -168,20 +168,16 @@ pub async fn openai_tts_generate(
         speed,
     };
 
-    let client = reqwest::Client::new();
+    let client = crate::http::shared_client();
     let response = client
         .post(API_URL)
-        .header("Authorization", format!("Bearer {}", settings.openai_api_key))
+        .header("Authorization", crate::http::bearer_header(&settings.openai_api_key))
         .json(&body)
         .send()
         .await
         .map_err(|e| format!("OpenAI TTS request failed: {e}"))?;
 
-    if !response.status().is_success() {
-        let status = response.status();
-        let text = response.text().await.unwrap_or_default();
-        return Err(format!("OpenAI TTS error ({status}): {text}"));
-    }
+    let response = crate::http::check_response(response).await?;
 
     let bytes = response
         .bytes()

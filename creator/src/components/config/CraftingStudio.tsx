@@ -94,7 +94,7 @@ export function CraftingStudio({
         getDisplayName={(skill) => skill.displayName}
         renderSummary={summarizeCraftingSkill}
         renderBadges={(skill) => [skill.type]}
-        renderDetail={(skill, patch) => (
+        renderDetail={(_id, skill, patch) => (
           <CraftingSkillDetail skill={skill} patch={patch} />
         )}
         onItemsChange={(craftingSkills) => onChange({ craftingSkills })}
@@ -113,7 +113,7 @@ export function CraftingStudio({
         defaultItem={defaultCraftingStationTypeDefinition}
         getDisplayName={(stationType) => stationType.displayName}
         renderSummary={summarizeCraftingStationType}
-        renderDetail={(stationType, patch) => (
+        renderDetail={(_id, stationType, patch) => (
           <CraftingStationTypeDetail stationType={stationType} patch={patch} />
         )}
         onItemsChange={(craftingStationTypes) => onChange({ craftingStationTypes })}

@@ -5,12 +5,7 @@ import { DEFAULT_WORLD_LORE } from "@/types/lore";
 import type { WorldLore, WorldLoreV1, Article, ArticleRelation, ArticleTemplate, LoreDocument, TemplateOverrides, ShowcaseSettings, CustomTemplateDefinition, CustomSceneTemplate, ArtStyle, ZonePlan } from "@/types/lore";
 import type { Project } from "@/types/project";
 import { CODEX_CATEGORY_TO_TEMPLATE } from "@/lib/loreTemplates";
-
-const YAML_OPTS = {
-  lineWidth: 120,
-  defaultKeyType: "PLAIN" as const,
-  defaultStringType: "PLAIN" as const,
-};
+import { YAML_OPTS } from "@/lib/yamlOpts";
 
 export function lorePath(project: Project): string {
   return project.format === "standalone"

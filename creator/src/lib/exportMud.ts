@@ -18,23 +18,15 @@ import {
   DEFAULT_ABILITY_TARGET_TYPES,
 } from "@/lib/configDefaults";
 
+import { YAML_OPTS } from "@/lib/yamlOpts";
+
 export type SlotPositionMap = Record<string, { x: number; y: number }>;
-
-const YAML_OPTS = {
-  lineWidth: 120,
-  defaultKeyType: "PLAIN" as const,
-  defaultStringType: "PLAIN" as const,
-};
-
-function cloneRecord<T extends Record<string, unknown>>(value: T): T {
-  return JSON.parse(JSON.stringify(value)) as T;
-}
 
 function withFallbackMap<T>(
   value: Record<string, T>,
   fallback: Record<string, T>,
 ): Record<string, T> {
-  return Object.keys(value).length > 0 ? value : cloneRecord(fallback);
+  return Object.keys(value).length > 0 ? value : structuredClone(fallback);
 }
 
 function normalizeBaseUrl(value: string, fallback: string): string {
@@ -142,7 +134,7 @@ function normalizeStatusEffectTypeId(effectType: string): string {
 
 function normalizedStatusEffectTypes(config: AppConfig): AppConfig["statusEffectTypes"] {
   const merged = {
-    ...cloneRecord(DEFAULT_STATUS_EFFECT_TYPES),
+    ...structuredClone(DEFAULT_STATUS_EFFECT_TYPES),
     ...config.statusEffectTypes,
   };
 

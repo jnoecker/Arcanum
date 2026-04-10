@@ -75,20 +75,16 @@ pub async fn complete_from_settings(
                 "temperature": 0.7
             });
 
-            let client = reqwest::Client::new();
+            let client = crate::http::shared_client();
             let response = client
                 .post(chat_url)
-                .header("Authorization", format!("Bearer {}", s.deepinfra_api_key))
+                .header("Authorization", crate::http::bearer_header(&s.deepinfra_api_key))
                 .json(&body)
                 .send()
                 .await
                 .map_err(|e| format!("DeepInfra API request failed: {e}"))?;
 
-            if !response.status().is_success() {
-                let status = response.status();
-                let text = response.text().await.unwrap_or_default();
-                return Err(format!("DeepInfra API error ({status}): {text}"));
-            }
+            let response = crate::http::check_response(response).await?;
 
             let resp: serde_json::Value = response
                 .json()

@@ -54,11 +54,7 @@ pub async fn save_admin_config(
             .await
             .map_err(|e| format!("Failed to create admin config dir: {e}"))?;
     }
-    let json = serde_json::to_string_pretty(&config)
-        .map_err(|e| format!("Failed to serialize admin config: {e}"))?;
-    tokio::fs::write(&path, json)
-        .await
-        .map_err(|e| format!("Failed to write admin config: {e}"))
+    crate::fs_utils::write_json_file(&path, &config, "admin config").await
 }
 
 // ─── HTTP client helpers ───────────────────────────────────────────

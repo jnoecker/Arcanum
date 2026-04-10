@@ -56,11 +56,6 @@ pub async fn save_arcanum_meta(
         .await
         .map_err(|e| format!("Failed to create arcanum-meta dir: {e}"))?;
 
-    let json = serde_json::to_string_pretty(&meta)
-        .map_err(|e| format!("Failed to serialize arcanum meta: {e}"))?;
-
     let path = dir.join(format!("{}.json", project_hash(&mud_dir)));
-    tokio::fs::write(&path, json)
-        .await
-        .map_err(|e| format!("Failed to write arcanum meta: {e}"))
+    crate::fs_utils::write_json_file(&path, &meta, "arcanum meta").await
 }

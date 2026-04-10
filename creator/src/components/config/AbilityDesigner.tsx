@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo } from "react";
 import type { AbilityDefinitionConfig, AbilityEffectConfig, AppConfig } from "@/types/config";
 import {
   AbilityDetail,
@@ -6,16 +6,13 @@ import {
   renameAbilityDefinition,
   summarizeAbility,
 } from "@/components/config/panels/AbilitiesPanel";
+import { DefinitionWorkbench } from "./DefinitionWorkbench";
 
 const FALLBACK_TARGET_TYPES = [
   { value: "enemy", label: "Enemy" },
   { value: "self", label: "Self" },
   { value: "ally", label: "Ally" },
 ];
-
-function normalizeAbilityId(raw: string) {
-  return raw.trim().toLowerCase().replace(/\s+/g, "_");
-}
 
 export function AbilityDesigner({
   config,
@@ -24,12 +21,6 @@ export function AbilityDesigner({
   config: AppConfig;
   onChange: (patch: Partial<AppConfig>) => void;
 }) {
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [search, setSearch] = useState("");
-  const [newId, setNewId] = useState("");
-  const [renaming, setRenaming] = useState(false);
-  const [renameValue, setRenameValue] = useState("");
-
   const targetTypeOptions = useMemo(() => {
     const entries = Object.entries(config.abilityTargetTypes);
     if (entries.length > 0) {
@@ -65,12 +56,36 @@ export function AbilityDesigner({
     [config.pets],
   );
 
-  const abilityIds = useMemo(
-    () =>
-      Object.keys(config.abilities).filter((id) => {
-        if (!search.trim()) return true;
-        const q = search.toLowerCase();
-        const ability = config.abilities[id]!;
+  const patchEffect = useCallback(
+    (
+      ability: AbilityDefinitionConfig,
+      patch: (p: Partial<AbilityDefinitionConfig>) => void,
+      effectPatch: Partial<AbilityEffectConfig>,
+    ) => {
+      const nextEffect =
+        effectPatch.type && effectPatch.type !== ability.effect.type
+          ? { type: effectPatch.type } as AbilityEffectConfig
+          : { ...ability.effect, ...effectPatch };
+      patch({ effect: nextEffect });
+    },
+    [],
+  );
+
+  return (
+    <DefinitionWorkbench
+      title="Ability designer"
+      countLabel="Ability roster"
+      description="Target rules, class access, effects, and icon identity."
+      addPlaceholder="New ability id"
+      searchPlaceholder="Search abilities"
+      emptyMessage="No abilities match the current search."
+      emptyTitle="Create an ability to start designing it."
+      items={config.abilities}
+      defaultItem={defaultAbilityDefinition}
+      getDisplayName={(ability) => ability.displayName}
+      renderSummary={summarizeAbility}
+      idTransform={(raw) => raw.trim().toLowerCase().replace(/\s+/g, "_")}
+      searchFilter={(id, ability, q) => {
         const restriction = ability.requiredClass || ability.classRestriction || "";
         return (
           id.toLowerCase().includes(q) ||
@@ -78,247 +93,80 @@ export function AbilityDesigner({
           restriction.toLowerCase().includes(q) ||
           ability.effect.type.toLowerCase().includes(q)
         );
-      }),
-    [config.abilities, search],
-  );
-
-  useEffect(() => {
-    if (selectedId && config.abilities[selectedId]) return;
-    setSelectedId(abilityIds[0] ?? Object.keys(config.abilities)[0] ?? null);
-  }, [abilityIds, config.abilities, selectedId]);
-
-  const selected = selectedId ? config.abilities[selectedId] ?? null : null;
-
-  const addAbility = () => {
-    const id = normalizeAbilityId(newId);
-    if (!id || config.abilities[id]) return;
-    onChange({
-      abilities: {
-        ...config.abilities,
-        [id]: defaultAbilityDefinition(newId.trim()),
-      },
-    });
-    setSelectedId(id);
-    setNewId("");
-  };
-
-  const patchAbility = (id: string, patch: Partial<AbilityDefinitionConfig>) => {
-    onChange({
-      abilities: {
-        ...config.abilities,
-        [id]: { ...config.abilities[id]!, ...patch },
-      },
-    });
-  };
-
-  const deleteAbility = (id: string) => {
-    const next = { ...config.abilities };
-    delete next[id];
-    onChange({ abilities: next });
-    if (selectedId === id) setSelectedId(null);
-  };
-
-  const commitRename = () => {
-    if (!selectedId) return;
-    const nextId = normalizeAbilityId(renameValue);
-    if (!nextId || nextId === selectedId || config.abilities[nextId]) return;
-    onChange({ abilities: renameAbilityDefinition(config, selectedId, nextId) });
-    setSelectedId(nextId);
-    setRenaming(false);
-  };
-
-  const patchEffect = (
-    ability: AbilityDefinitionConfig,
-    patch: (p: Partial<AbilityDefinitionConfig>) => void,
-    effectPatch: Partial<AbilityEffectConfig>,
-  ) => {
-    const nextEffect =
-      effectPatch.type && effectPatch.type !== ability.effect.type
-        ? { type: effectPatch.type } as AbilityEffectConfig
-        : { ...ability.effect, ...effectPatch };
-    patch({ effect: nextEffect });
-  };
-
-  return (
-    <div className="grid gap-5 xl:grid-cols-[20rem_minmax(0,1fr)]">
-      <div className="rounded-3xl border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] p-4">
-        <div className="mb-4">
-          <p className="text-2xs uppercase tracking-ui text-text-muted">Ability roster</p>
-          <h4 className="mt-2 font-display text-xl text-text-primary">{Object.keys(config.abilities).length} abilities</h4>
-        </div>
-
-        <div className="flex gap-2">
-          <input
-            value={newId}
-            onChange={(event) => setNewId(event.target.value)}
-            onKeyDown={(event) => {
-              if (event.key === "Enter") addAbility();
-            }}
-            placeholder="New ability id"
-            className="min-w-0 flex-1 rounded-full border border-[var(--chrome-stroke)] bg-[var(--chrome-highlight-strong)] px-4 py-2 text-xs text-text-primary outline-none focus-visible:ring-2 focus-visible:ring-border-active"
-          />
-          <button
-            onClick={addAbility}
-            className="rounded-full border border-[var(--chrome-stroke)] bg-[var(--chrome-highlight-strong)] px-4 py-2 text-xs text-text-primary transition hover:bg-[var(--chrome-highlight-strong)]"
-          >
-            Add
-          </button>
-        </div>
-
-        <input
-          value={search}
-          onChange={(event) => setSearch(event.target.value)}
-          placeholder="Search abilities"
-          className="mt-3 w-full rounded-full border border-[var(--chrome-stroke)] bg-[var(--chrome-highlight-strong)] px-4 py-2 text-xs text-text-primary outline-none focus-visible:ring-2 focus-visible:ring-border-active"
-        />
-
-        <div className="mt-4 flex max-h-[38rem] flex-col gap-2 overflow-y-auto pr-1">
-          {abilityIds.map((id) => {
-            const ability = config.abilities[id]!;
-            const selectedCard = id === selectedId;
-            const classId = ability.requiredClass || ability.classRestriction;
+      }}
+      renderListCard={(id, ability) => {
+        const classId = ability.requiredClass || ability.classRestriction;
+        return (
+          <>
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <div className="truncate font-display text-lg text-text-primary">{ability.displayName}</div>
+                <div className="mt-1 truncate text-2xs text-text-muted">{id}</div>
+              </div>
+              {ability.image && (
+                <span className="rounded-full bg-badge-success-bg px-2 py-1 text-2xs uppercase tracking-label text-badge-success">
+                  Art
+                </span>
+              )}
+            </div>
+            <div className="mt-3 flex flex-wrap gap-2 text-2xs uppercase tracking-label text-text-muted">
+              <span>{ability.effect.type}</span>
+              <span>{ability.targetType}</span>
+              <span>Lvl {ability.levelRequired}</span>
+              {classId && <span>{classId}</span>}
+              {(ability.skillPointCost ?? 1) === 0 ? (
+                <span className="text-badge-success">Auto</span>
+              ) : (
+                <span>{ability.skillPointCost ?? 1} SP</span>
+              )}
+            </div>
+            <div className="mt-3 text-xs text-text-secondary">{summarizeAbility(ability)}</div>
+          </>
+        );
+      }}
+      renderDetailHeader={(_, ability) => (
+        <div className="flex flex-wrap gap-2">
+          <span className="rounded-full bg-[var(--chrome-highlight-strong)] px-3 py-1 text-xs text-text-secondary">{ability.effect.type}</span>
+          <span className="rounded-full bg-[var(--chrome-highlight-strong)] px-3 py-1 text-xs text-text-secondary">{ability.targetType}</span>
+          <span className="rounded-full bg-[var(--chrome-highlight-strong)] px-3 py-1 text-xs text-text-secondary">Mana {ability.manaCost}</span>
+          <span className="rounded-full bg-[var(--chrome-highlight-strong)] px-3 py-1 text-xs text-text-secondary">CD {ability.cooldownMs}ms</span>
+          {(() => {
+            const cost = ability.skillPointCost ?? 1;
             return (
-              <button
-                key={id}
-                onClick={() => {
-                  setSelectedId(id);
-                  setRenaming(false);
-                }}
-                className={`rounded-2xl border px-4 py-3 text-left transition ${
-                  selectedCard
-                    ? "border-border-active bg-gradient-active"
-                    : "border-[var(--chrome-stroke)] bg-[var(--chrome-highlight)] hover:bg-[var(--chrome-highlight-strong)]"
+              <span
+                className={`rounded-full px-3 py-1 text-xs ${
+                  cost === 0
+                    ? "bg-badge-success-bg text-badge-success"
+                    : "bg-[var(--chrome-highlight-strong)] text-text-secondary"
                 }`}
+                title={
+                  cost === 0
+                    ? "Auto-learned when level, class, and prerequisites are met"
+                    : `Costs ${cost} skill ${cost === 1 ? "point" : "points"} at a trainer`
+                }
               >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <div className="truncate font-display text-lg text-text-primary">{ability.displayName}</div>
-                    <div className="mt-1 truncate text-2xs text-text-muted">{id}</div>
-                  </div>
-                  {ability.image && (
-                    <span className="rounded-full bg-badge-success-bg px-2 py-1 text-2xs uppercase tracking-label text-badge-success">
-                      Art
-                    </span>
-                  )}
-                </div>
-                <div className="mt-3 flex flex-wrap gap-2 text-2xs uppercase tracking-label text-text-muted">
-                  <span>{ability.effect.type}</span>
-                  <span>{ability.targetType}</span>
-                  <span>Lvl {ability.levelRequired}</span>
-                  {classId && <span>{classId}</span>}
-                  {(ability.skillPointCost ?? 1) === 0 ? (
-                    <span className="text-badge-success">Auto</span>
-                  ) : (
-                    <span>{ability.skillPointCost ?? 1} SP</span>
-                  )}
-                </div>
-                <div className="mt-3 text-xs text-text-secondary">{summarizeAbility(ability)}</div>
-              </button>
+                {cost === 0 ? "Auto-learn" : `${cost} SP`}
+              </span>
             );
-          })}
-          {abilityIds.length === 0 && (
-            <div className="rounded-2xl border border-dashed border-[var(--chrome-stroke-strong)] bg-[var(--chrome-highlight)] px-4 py-6 text-sm text-text-muted">
-              No abilities match the current search.
-            </div>
-          )}
-        </div>
-      </div>
-
-      {selectedId && selected ? (
-        <div className="rounded-3xl border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] p-5">
-          <div className="flex flex-wrap items-start justify-between gap-4 border-b border-[var(--chrome-stroke)] pb-4">
-            <div>
-              <p className="text-2xs uppercase tracking-ui text-text-muted">Ability designer</p>
-              <h4 className="mt-2 font-display text-3xl text-text-primary">{selected.displayName}</h4>
-              <p className="mt-2 max-w-2xl text-sm leading-7 text-text-secondary">
-                Target rules, class access, effects, and icon identity.
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <span className="rounded-full bg-[var(--chrome-highlight-strong)] px-3 py-1 text-xs text-text-secondary">{selected.effect.type}</span>
-              <span className="rounded-full bg-[var(--chrome-highlight-strong)] px-3 py-1 text-xs text-text-secondary">{selected.targetType}</span>
-              <span className="rounded-full bg-[var(--chrome-highlight-strong)] px-3 py-1 text-xs text-text-secondary">Mana {selected.manaCost}</span>
-              <span className="rounded-full bg-[var(--chrome-highlight-strong)] px-3 py-1 text-xs text-text-secondary">CD {selected.cooldownMs}ms</span>
-              {(() => {
-                const cost = selected.skillPointCost ?? 1;
-                return (
-                  <span
-                    className={`rounded-full px-3 py-1 text-xs ${
-                      cost === 0
-                        ? "bg-badge-success-bg text-badge-success"
-                        : "bg-[var(--chrome-highlight-strong)] text-text-secondary"
-                    }`}
-                    title={
-                      cost === 0
-                        ? "Auto-learned when level, class, and prerequisites are met"
-                        : `Costs ${cost} skill ${cost === 1 ? "point" : "points"} at a trainer`
-                    }
-                  >
-                    {cost === 0 ? "Auto-learn" : `${cost} SP`}
-                  </span>
-                );
-              })()}
-            </div>
-          </div>
-
-          <div className="mt-4 flex flex-wrap items-center gap-2">
-            {renaming ? (
-              <>
-                <input
-                  value={renameValue}
-                  onChange={(event) => setRenameValue(event.target.value)}
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter") commitRename();
-                    if (event.key === "Escape") setRenaming(false);
-                  }}
-                  className="rounded-full border border-[var(--chrome-stroke)] bg-[var(--chrome-highlight-strong)] px-4 py-2 text-xs text-text-primary outline-none focus-visible:ring-2 focus-visible:ring-border-active"
-                />
-                <button onClick={commitRename} title="Confirm rename" className="rounded-full border border-[var(--chrome-stroke)] bg-[var(--chrome-highlight-strong)] px-4 py-2 text-xs text-text-primary hover:bg-[var(--chrome-highlight-strong)]">
-                  Rename
-                </button>
-                <button onClick={() => setRenaming(false)} title="Cancel rename" className="rounded-full border border-[var(--chrome-stroke)] bg-transparent px-4 py-2 text-xs text-text-secondary hover:bg-[var(--chrome-highlight-strong)]">
-                  Cancel
-                </button>
-              </>
-            ) : (
-              <>
-                <button
-                  onClick={() => {
-                    setRenameValue(selectedId);
-                    setRenaming(true);
-                  }}
-                  className="rounded-full border border-[var(--chrome-stroke)] bg-[var(--chrome-highlight-strong)] px-4 py-2 text-xs text-text-primary hover:bg-[var(--chrome-highlight-strong)]"
-                >
-                  Rename ID
-                </button>
-                <button
-                  onClick={() => deleteAbility(selectedId)}
-                  className="rounded-full border border-status-danger/40 bg-status-danger/10 px-4 py-2 text-xs text-status-danger hover:bg-status-danger/15"
-                >
-                  Delete Ability
-                </button>
-              </>
-            )}
-          </div>
-
-          <div className="mt-4">
-            <AbilityDetail
-              id={selectedId}
-              ability={selected}
-              patch={(patch) => patchAbility(selectedId, patch)}
-              classOptions={classOptions}
-              statusEffectOptions={statusEffectOptions}
-              targetTypeOptions={targetTypeOptions}
-              petOptions={petOptions}
-              patchEffect={patchEffect}
-            />
-          </div>
-        </div>
-      ) : (
-        <div className="rounded-3xl border border-dashed border-[var(--chrome-stroke-strong)] bg-[var(--chrome-highlight)] px-6 py-10 text-sm text-text-muted">
-          Create an ability to start designing it.
+          })()}
         </div>
       )}
-    </div>
+      onRename={(oldId, newId) => {
+        onChange({ abilities: renameAbilityDefinition(config, oldId, newId) });
+      }}
+      renderDetail={(id, ability, patch) => (
+        <AbilityDetail
+          id={id}
+          ability={ability}
+          patch={patch}
+          classOptions={classOptions}
+          statusEffectOptions={statusEffectOptions}
+          targetTypeOptions={targetTypeOptions}
+          petOptions={petOptions}
+          patchEffect={patchEffect}
+        />
+      )}
+      onItemsChange={(abilities) => onChange({ abilities })}
+    />
   );
 }

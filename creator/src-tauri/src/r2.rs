@@ -442,7 +442,7 @@ pub async fn sync_assets(app: AppHandle, scope: Option<String>) -> Result<SyncPr
         .filter(|a| a.sync_status != "synced" && should_sync_asset(a, &sync_scope, &active_set))
         .collect();
     let base_dir = assets_base_dir(&app)?;
-    let client = reqwest::Client::new();
+    let client = crate::http::shared_client();
 
     let mut progress = SyncProgress {
         total: unsynced.len(),
@@ -567,7 +567,7 @@ pub async fn delete_from_r2(app: AppHandle, file_name: String) -> Result<(), Str
         return Ok(());
     }
 
-    let client = reqwest::Client::new();
+    let client = crate::http::shared_client();
     delete_object(
         &client,
         &s.r2_account_id,
@@ -599,7 +599,7 @@ pub async fn deploy_sprites_to_r2(app: AppHandle, sprites_yaml: Option<String>) 
         .collect();
 
     let base_dir = assets_base_dir(&app)?;
-    let client = reqwest::Client::new();
+    let client = crate::http::shared_client();
 
     let mut progress = SyncProgress {
         total: sprites.len(),
@@ -711,7 +711,7 @@ pub async fn deploy_global_assets_to_r2(
     let all_assets = assets::list_assets(app.clone()).await?;
 
     let base_dir = assets_base_dir(&app)?;
-    let client = reqwest::Client::new();
+    let client = crate::http::shared_client();
 
     let mut progress = SyncProgress {
         total: entries.len(),
@@ -815,7 +815,7 @@ pub async fn deploy_config_to_r2(
             .map_err(|e| format!("Failed to read application-local.yaml: {e}. Save your config first."))?
     };
 
-    let client = reqwest::Client::new();
+    let client = crate::http::shared_client();
     let object_key = "config/application-local.yaml";
 
     upload_object(
@@ -849,7 +849,7 @@ pub async fn deploy_achievements_to_r2(
         return Err("R2 credentials not configured. Set them in Settings.".to_string());
     }
 
-    let client = reqwest::Client::new();
+    let client = crate::http::shared_client();
     let object_key = "world/achievements.yaml";
 
     upload_object(
@@ -925,7 +925,7 @@ pub async fn deploy_zones_to_r2(
     let fmt = format.as_deref().unwrap_or("legacy");
     let zone_files = collect_zone_files(&mud_dir, fmt)?;
 
-    let client = reqwest::Client::new();
+    let client = crate::http::shared_client();
     let mut progress = SyncProgress {
         total: zone_files.len(),
         uploaded: 0,
@@ -998,7 +998,7 @@ pub async fn import_from_r2(app: AppHandle) -> Result<R2ImportResult, String> {
     }
 
     let domain = s.r2_custom_domain.trim_end_matches('/');
-    let client = reqwest::Client::new();
+    let client = crate::http::shared_client();
 
     // Fetch config
     let config_url = format!("{domain}/config/application-local.yaml");
@@ -1131,7 +1131,7 @@ pub async fn deploy_story_video_to_r2(
         return Err("Cinematic file is empty".to_string());
     }
 
-    let client = reqwest::Client::new();
+    let client = crate::http::shared_client();
     let object_key = format!("showcase/videos/{story_id}.mp4");
 
     upload_object(
@@ -1165,7 +1165,7 @@ pub async fn deploy_showcase_to_r2(
         return Err("R2 credentials not configured. Set them in Settings.".to_string());
     }
 
-    let client = reqwest::Client::new();
+    let client = crate::http::shared_client();
     let object_key = "showcase/showcase.json";
 
     upload_object(

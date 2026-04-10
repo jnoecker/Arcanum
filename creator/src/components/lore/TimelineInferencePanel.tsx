@@ -1,10 +1,17 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { useLoreStore } from "@/stores/loreStore";
 import {
   inferTimelineEvents,
   type TimelineSuggestion,
   type InferenceProgress,
 } from "@/lib/loreTimelineInference";
+import { SuggestionPanel } from "@/components/lore/SuggestionPanel";
+
+interface TimelineItem {
+  key: string;
+  suggestion: TimelineSuggestion;
+  index: number;
+}
 
 function suggestionKey(s: TimelineSuggestion) {
   return `${s.articleId}:${s.year}:${s.title.toLowerCase()}`;
@@ -14,9 +21,7 @@ export function TimelineInferencePanel() {
   const lore = useLoreStore((s) => s.lore);
   const addTimelineEvent = useLoreStore((s) => s.addTimelineEvent);
   const selectArticle = useLoreStore((s) => s.selectArticle);
-  const [suggestions, setSuggestions] = useState<TimelineSuggestion[]>([]);
-  const [dismissed, setDismissed] = useState<Set<string>>(new Set());
-  const [accepted, setAccepted] = useState<Set<string>>(new Set());
+  const [items, setItems] = useState<TimelineItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [progress, setProgress] = useState<InferenceProgress | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -30,14 +35,9 @@ export function TimelineInferencePanel() {
     setProgress(null);
     try {
       const results = await inferTimelineEvents(lore, undefined, setProgress);
-      // Filter out anything the user already dismissed or accepted in this
-      // session — the LLM is stateless so rejected suggestions otherwise
-      // re-surface on every re-run.
-      const filtered = results.filter((s) => {
-        const key = suggestionKey(s);
-        return !dismissed.has(key) && !accepted.has(key);
-      });
-      setSuggestions(filtered);
+      setItems(
+        results.map((s, i) => ({ key: suggestionKey(s), suggestion: s, index: i })),
+      );
       setScanned(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
@@ -45,12 +45,13 @@ export function TimelineInferencePanel() {
       setLoading(false);
       setProgress(null);
     }
-  }, [lore, dismissed, accepted]);
+  }, [lore]);
 
   const acceptOne = useCallback(
-    (s: TimelineSuggestion, idx: number) => {
+    (item: TimelineItem) => {
+      const s = item.suggestion;
       addTimelineEvent({
-        id: `inferred_${Date.now()}_${idx}`,
+        id: `inferred_${Date.now()}_${item.index}`,
         title: s.title,
         year: s.year,
         eraId: s.eraId,
@@ -63,43 +64,12 @@ export function TimelineInferencePanel() {
     [lore, addTimelineEvent],
   );
 
-  const handleAccept = useCallback(
-    (s: TimelineSuggestion, idx: number) => {
-      acceptOne(s, idx);
-      setAccepted((prev) => new Set(prev).add(suggestionKey(s)));
+  const handleApproveAll = useCallback(
+    (visible: TimelineItem[]) => {
+      for (const item of visible) acceptOne(item);
     },
     [acceptOne],
   );
-
-  const handleDismiss = useCallback((s: TimelineSuggestion) => {
-    setDismissed((prev) => new Set(prev).add(suggestionKey(s)));
-  }, []);
-
-  const visible = useMemo(
-    () =>
-      suggestions.filter((s) => {
-        const key = suggestionKey(s);
-        return !dismissed.has(key) && !accepted.has(key);
-      }),
-    [suggestions, dismissed, accepted],
-  );
-
-  const handleApproveAll = useCallback(() => {
-    const newlyAccepted = new Set(accepted);
-    visible.forEach((s, i) => {
-      acceptOne(s, i);
-      newlyAccepted.add(suggestionKey(s));
-    });
-    setAccepted(newlyAccepted);
-  }, [visible, accepted, acceptOne]);
-
-  const handleDenyAll = useCallback(() => {
-    setDismissed((prev) => {
-      const next = new Set(prev);
-      visible.forEach((s) => next.add(suggestionKey(s)));
-      return next;
-    });
-  }, [visible]);
 
   return (
     <div>
@@ -141,22 +111,6 @@ export function TimelineInferencePanel() {
         >
           {loading ? "Analyzing..." : scanned ? "Rescan" : "Infer Timeline"}
         </button>
-        {!loading && visible.length > 0 && (
-          <>
-            <button
-              onClick={handleApproveAll}
-              className="focus-ring rounded-full border border-accent/30 bg-accent/10 px-3 py-1.5 text-2xs text-accent transition hover:bg-accent/20"
-            >
-              Approve all ({visible.length})
-            </button>
-            <button
-              onClick={handleDenyAll}
-              className="focus-ring rounded-full border border-[var(--chrome-stroke)] px-3 py-1.5 text-2xs text-text-muted transition hover:bg-[var(--chrome-highlight-strong)]"
-            >
-              Deny all
-            </button>
-          </>
-        )}
         {loading && progress && (
           <span className="text-2xs text-text-muted">
             Batch {progress.batch} of {progress.totalBatches}
@@ -167,30 +121,19 @@ export function TimelineInferencePanel() {
             Add a calendar system first
           </span>
         )}
-        {!loading && visible.length > 0 && (
-          <span className="ml-auto text-2xs text-text-muted">
-            {visible.length} pending
-          </span>
-        )}
       </div>
 
       {error && <p className="mb-3 text-xs text-status-danger">{error}</p>}
 
-      {scanned && visible.length === 0 && !loading && (
-        <p className="rounded-2xl border border-dashed border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] px-4 py-6 text-sm text-text-muted">
-          {accepted.size > 0 || dismissed.size > 0
-            ? `All suggestions processed. ${accepted.size} approved, ${dismissed.size} denied.`
-            : "No suggestions found."}
-        </p>
-      )}
-
-      {visible.length > 0 && (
-        <div className="flex flex-col gap-2">
-          {visible.map((s, i) => (
-            <div
-              key={suggestionKey(s)}
-              className="rounded-xl border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] px-4 py-3"
-            >
+      <SuggestionPanel<TimelineItem>
+        items={items}
+        loading={loading}
+        onApprove={acceptOne}
+        onApproveAll={handleApproveAll}
+        renderCard={(item, { onApprove, onDismiss }) => {
+          const s = item.suggestion;
+          return (
+            <>
               <div className="mb-1 flex flex-wrap items-center gap-2">
                 <span className="text-xs font-medium text-text-primary">
                   {s.title}
@@ -225,23 +168,23 @@ export function TimelineInferencePanel() {
                 </button>
                 <div className="ml-auto flex gap-2">
                   <button
-                    onClick={() => handleAccept(s, i)}
+                    onClick={onApprove}
                     className="rounded-full border border-accent/30 bg-accent/10 px-2.5 py-1 text-2xs text-accent hover:bg-accent/20"
                   >
                     Approve
                   </button>
                   <button
-                    onClick={() => handleDismiss(s)}
+                    onClick={onDismiss}
                     className="rounded-full border border-[var(--chrome-stroke)] px-2.5 py-1 text-2xs text-text-muted hover:bg-[var(--chrome-highlight-strong)]"
                   >
                     Deny
                   </button>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
-      )}
+            </>
+          );
+        }}
+      />
     </div>
   );
 }

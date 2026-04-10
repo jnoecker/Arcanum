@@ -40,7 +40,7 @@ export function CommandDesigner({
       getDisplayName={(command) => command.usage.split(/\s/)[0] ?? ""}
       renderSummary={summarizeCommand}
       renderBadges={(command) => (command.staff ? ["Staff"] : ["Player"])}
-      renderDetail={(command, patch) => (
+      renderDetail={(_id, command, patch) => (
         <CommandDetail cmd={command} patch={patch} categoryOptions={categoryOptions} />
       )}
       onItemsChange={(commands) => onChange({ commands })}

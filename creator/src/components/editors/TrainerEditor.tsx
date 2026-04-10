@@ -1,4 +1,5 @@
 import { useCallback, useMemo } from "react";
+import { useConfigOptions } from "@/lib/useConfigOptions";
 import type { WorldFile, TrainerFile } from "@/types/world";
 import { updateTrainer, deleteTrainer } from "@/lib/zoneEdits";
 import { useEntityEditor } from "@/lib/useEntityEditor";
@@ -47,18 +48,8 @@ export function TrainerEditor({
     onDelete,
   );
 
-  const config = useConfigStore((s) => s.config);
-
-  const classOptions = useMemo(
-    () =>
-      config && Object.keys(config.classes).length > 0
-        ? Object.entries(config.classes).map(([id, cls]) => ({
-            value: id,
-            label: cls.displayName || id,
-          }))
-        : FALLBACK_CLASSES,
-    [config],
-  );
+  const classes = useConfigStore((s) => s.config?.classes);
+  const classOptions = useConfigOptions(classes, FALLBACK_CLASSES);
 
   const selectedClasses = useMemo(
     () => (trainer ? getTrainerClasses(trainer) : []),

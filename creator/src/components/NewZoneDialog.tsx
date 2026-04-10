@@ -36,12 +36,7 @@ import {
   type WizardStep,
   type SizePresetId,
 } from "./NewZoneDialogSteps";
-
-const YAML_OPTS = {
-  lineWidth: 120,
-  defaultKeyType: "PLAIN" as const,
-  defaultStringType: "PLAIN" as const,
-};
+import { YAML_OPTS } from "@/lib/yamlOpts";
 
 // ─── Wizard component ──────────────────────────────────────────────
 

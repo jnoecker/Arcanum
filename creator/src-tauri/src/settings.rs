@@ -199,11 +199,7 @@ pub async fn save_settings(app: AppHandle, settings: Settings) -> Result<(), Str
             .await
             .map_err(|e| format!("Failed to create settings dir: {e}"))?;
     }
-    let json = serde_json::to_string_pretty(&settings)
-        .map_err(|e| format!("Failed to serialize settings: {e}"))?;
-    tokio::fs::write(&path, json)
-        .await
-        .map_err(|e| format!("Failed to write settings: {e}"))?;
+    crate::fs_utils::write_json_file(&path, &settings, "settings").await?;
     // Update cache with freshly saved settings
     {
         let mut cache = USER_SETTINGS_CACHE.write().await;

@@ -24,12 +24,7 @@ import {
   normalizeGuildHallsConfig,
 } from "@/lib/exportMud";
 import type { AppConfig } from "@/types/config";
-
-const YAML_OPTS = {
-  lineWidth: 120,
-  defaultKeyType: "PLAIN" as const,
-  defaultStringType: "PLAIN" as const,
-};
+import { YAML_OPTS } from "@/lib/yamlOpts";
 
 function sanitizeAdminConfigForSave(admin: AppConfig["admin"]): AppConfig["admin"] {
   return {

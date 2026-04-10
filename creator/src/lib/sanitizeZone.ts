@@ -14,6 +14,7 @@ import type {
   FeatureFile,
   DoorFile,
 } from "@/types/world";
+import { resolveDoorKeyId } from "./doorHelpers";
 import { getTrainerClasses, setTrainerClasses } from "./trainers";
 
 // ─── ID sanitization ──────────────────────────────────────────────
@@ -89,10 +90,6 @@ function remapBtRoutes(node: BtNodeFile, roomRemap: Map<string, string>): BtNode
   if (node.route) result = { ...result, route: rArray(node.route, roomRemap) };
   if (node.children) result = { ...result, children: node.children.map((c) => remapBtRoutes(c, roomRemap)) };
   return result;
-}
-
-function resolveDoorKeyId(door?: DoorFile): string | undefined {
-  return door?.keyItemId ?? door?.key;
 }
 
 function normalizeDoorFile(door?: DoorFile): DoorFile | undefined {

@@ -31,13 +31,9 @@ pub async fn save_zone_vibe(
         zone_id: zone_id.clone(),
         vibe_text,
     };
-    let json = serde_json::to_string_pretty(&vibe)
-        .map_err(|e| format!("Failed to serialize vibe: {e}"))?;
 
     let path = dir.join(format!("{zone_id}.json"));
-    tokio::fs::write(&path, json)
-        .await
-        .map_err(|e| format!("Failed to write vibe: {e}"))
+    crate::fs_utils::write_json_file(&path, &vibe, "vibe").await
 }
 
 #[tauri::command]

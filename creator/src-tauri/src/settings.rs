@@ -66,6 +66,10 @@ pub struct Settings {
     pub r2_custom_domain: String,
     #[serde(default)]
     pub github_pat: String,
+    #[serde(default)]
+    pub hub_api_url: String,
+    #[serde(default)]
+    pub hub_api_key: String,
 }
 
 fn default_image_model() -> String {
@@ -118,6 +122,8 @@ impl Default for Settings {
             r2_bucket: String::new(),
             r2_custom_domain: String::new(),
             github_pat: String::new(),
+            hub_api_url: String::new(),
+            hub_api_key: String::new(),
         }
     }
 }
@@ -172,6 +178,8 @@ pub async fn get_settings(app: AppHandle) -> Result<Settings, String> {
                 openrouter_api_key: user.openrouter_api_key,
                 openai_api_key: user.openai_api_key,
                 github_pat: user.github_pat,
+                hub_api_url: user.hub_api_url,
+                hub_api_key: user.hub_api_key,
                 image_model: ps.image_model,
                 enhance_model: ps.enhance_model,
                 prompt_llm_provider: ps.prompt_llm_provider,
@@ -230,6 +238,8 @@ pub async fn get_merged_settings(
             openrouter_api_key: user.openrouter_api_key,
             openai_api_key: user.openai_api_key,
             github_pat: user.github_pat,
+            hub_api_url: user.hub_api_url,
+            hub_api_key: user.hub_api_key,
             // Everything else from project
             image_model: ps.image_model,
             enhance_model: ps.enhance_model,

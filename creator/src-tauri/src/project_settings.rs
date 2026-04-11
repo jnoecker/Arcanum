@@ -39,6 +39,14 @@ pub struct ProjectSettings {
     pub r2_bucket: String,
     #[serde(default)]
     pub r2_custom_domain: String,
+    #[serde(default)]
+    pub hub_world_slug: String,
+    #[serde(default)]
+    pub hub_world_listed: bool,
+    #[serde(default)]
+    pub hub_world_display_name: String,
+    #[serde(default)]
+    pub hub_world_tagline: String,
 }
 
 pub fn project_settings_path(project_dir: &str) -> PathBuf {
@@ -115,6 +123,10 @@ pub async fn seed_project_settings(
         r2_secret_access_key: user_settings.r2_secret_access_key,
         r2_bucket: user_settings.r2_bucket,
         r2_custom_domain: user_settings.r2_custom_domain,
+        hub_world_slug: String::new(),
+        hub_world_listed: false,
+        hub_world_display_name: String::new(),
+        hub_world_tagline: String::new(),
     };
     save_project_settings(project_dir, ps.clone()).await?;
     Ok(ps)

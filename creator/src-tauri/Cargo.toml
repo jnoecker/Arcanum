@@ -32,6 +32,7 @@ tauri-plugin-window-state = "2.4.1"
 imagesize = "0.13"
 regex = "1"
 image = { version = "0.25", default-features = false, features = ["jpeg", "png", "webp"] }
+webp = "0.3"
 ffmpeg-sidecar = "2"
 which = "6"
 

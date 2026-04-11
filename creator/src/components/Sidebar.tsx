@@ -7,6 +7,7 @@ import { useLoreStore, selectArticles } from "@/stores/loreStore";
 import type { WorldFile } from "@/types/world";
 import { ArticleTree } from "./lore/ArticleTree";
 import { BulkActionsBar } from "./lore/BulkActionsBar";
+import { panelTab } from "@/lib/panelRegistry";
 import { NewZoneDialog } from "./NewZoneDialog";
 import { ImportZoneDialog } from "./ImportZoneDialog";
 import { RenameZoneDialog } from "./RenameZoneDialog";
@@ -388,6 +389,7 @@ export function Sidebar() {
     useShallow((s) => ({ tabs: s.tabs, activeTabId: s.activeTabId, project: s.project })),
   );
   const closeTab = useProjectStore((s) => s.closeTab);
+  const openTab = useProjectStore((s) => s.openTab);
   const removeZone = useZoneStore((s) => s.removeZone);
   const articles = useLoreStore(selectArticles);
   const articleCount = Object.keys(articles).length;
@@ -430,12 +432,20 @@ export function Sidebar() {
 
       {/* ── Stats bar ────────────────────────────────────────────── */}
       <div className="relative z-10 shrink-0 px-4 pt-4 pb-2">
-        <div className="flex items-center gap-3 px-1 text-3xs text-text-muted">
+        <div className="flex items-center gap-2 px-1 text-3xs text-text-muted">
           <span>{zones.size} zones</span>
           <span className="text-border-default">&middot;</span>
           <span>{articleCount} lore</span>
           <span className="text-border-default">&middot;</span>
           <span>{openTabs.length} open</span>
+          <button
+            onClick={() => openTab(panelTab("worldSetting"))}
+            className="focus-ring shell-pill ml-auto rounded-full px-2 py-0.5 font-display text-[9px] font-semibold uppercase tracking-wide-ui text-accent"
+            title="Open world settings"
+            aria-label="Open world settings"
+          >
+            World Settings
+          </button>
         </div>
       </div>
 

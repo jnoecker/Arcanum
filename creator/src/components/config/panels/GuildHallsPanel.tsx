@@ -24,8 +24,11 @@ export function GuildHallsPanel({ config, onChange }: ConfigPanelProps) {
   const guildHalls = {
     enabled: false,
     baseCost: 0,
-    roomTemplates: {} as Record<string, GuildHallRoomTemplate>,
     ...config.guildHalls,
+    roomTemplates: (config.guildHalls?.roomTemplates ?? {}) as Record<
+      string,
+      GuildHallRoomTemplate
+    >,
   };
 
   const patchGuildHalls = (p: Partial<AppConfig["guildHalls"]>) =>

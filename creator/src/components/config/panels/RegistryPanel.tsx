@@ -43,7 +43,8 @@ export function RegistryPanel<T>({
   getDisplayName,
   onRenameId,
 }: RegistryPanelProps<T>) {
-  const allIds = items ? Object.keys(items) : [];
+  const safeItems = items ?? ({} as Record<string, T>);
+  const allIds = Object.keys(safeItems);
   const [expanded, setExpanded] = useState<string | null>(null);
   const [newId, setNewId] = useState("");
   const [search, setSearch] = useState("");
@@ -51,40 +52,40 @@ export function RegistryPanel<T>({
   const [renameValue, setRenameValue] = useState("");
 
   const filteredIds = useMemo(() => {
-    const ids = Object.keys(items);
+    const ids = Object.keys(safeItems);
     if (!search.trim() || !getDisplayName) return ids;
     const q = search.toLowerCase();
     return ids.filter(
       (id) =>
         id.toLowerCase().includes(q) ||
-        getDisplayName(items[id]!).toLowerCase().includes(q),
+        getDisplayName(safeItems[id]!).toLowerCase().includes(q),
     );
-  }, [items, search, getDisplayName]);
+  }, [safeItems, search, getDisplayName]);
 
   const patch = useCallback(
     (id: string, p: Partial<T>) => {
-      onItemsChange({ ...items, [id]: { ...items[id]!, ...p } });
+      onItemsChange({ ...safeItems, [id]: { ...safeItems[id]!, ...p } });
     },
-    [items, onItemsChange],
+    [safeItems, onItemsChange],
   );
 
   const deleteItem = useCallback(
     (id: string) => {
-      const next = { ...items };
+      const next = { ...safeItems };
       delete next[id];
       onItemsChange(next);
       if (expanded === id) setExpanded(null);
     },
-    [items, onItemsChange, expanded],
+    [safeItems, onItemsChange, expanded],
   );
 
   const addItem = useCallback(() => {
     const id = idTransform(newId);
-    if (!id || items[id]) return;
-    onItemsChange({ ...items, [id]: defaultItem(newId.trim()) });
+    if (!id || safeItems[id]) return;
+    onItemsChange({ ...safeItems, [id]: defaultItem(newId.trim()) });
     setNewId("");
     setExpanded(id);
-  }, [newId, items, onItemsChange, idTransform, defaultItem]);
+  }, [newId, safeItems, onItemsChange, idTransform, defaultItem]);
 
   return (
     <Section
@@ -125,7 +126,7 @@ export function RegistryPanel<T>({
       ) : (
         <div className="flex flex-col gap-1">
           {filteredIds.map((id) => {
-            const item = items[id]!;
+            const item = safeItems[id]!;
             const isOpen = expanded === id;
             const summary = renderSummary(id, item);
             return (
@@ -181,7 +182,7 @@ export function RegistryPanel<T>({
                               onKeyDown={(e) => {
                                 if (e.key === "Enter") {
                                   const nid = idTransform(renameValue);
-                                  if (nid && nid !== id && !items[nid]) {
+                                  if (nid && nid !== id && !safeItems[nid]) {
                                     onRenameId(id, nid);
                                     setExpanded(nid);
                                     setRenaming(null);
@@ -195,7 +196,7 @@ export function RegistryPanel<T>({
                             <button
                               onClick={() => {
                                 const nid = idTransform(renameValue);
-                                if (nid && nid !== id && !items[nid]) {
+                                if (nid && nid !== id && !safeItems[nid]) {
                                   onRenameId(id, nid);
                                   setExpanded(nid);
                                   setRenaming(null);

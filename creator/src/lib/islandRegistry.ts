@@ -28,7 +28,7 @@ export interface PanelHotspot extends HotspotBox {
   panelId: string;
 }
 
-export type IslandActionKind = "newZone" | "openZoneView";
+export type IslandActionKind = "newZone" | "openZoneView" | "openSettings";
 
 export interface IslandAction {
   id: string;
@@ -95,13 +95,13 @@ const LOOM_HOTSPOTS: PanelHotspot[] = [
 // ─── Orrery ─────────────────────────────────────────────────────────
 
 const ORRERY_PANELS = [
-  "factions", "worldServer", "housing", "achievements",
+  "factions", "world", "housing", "achievements",
   "enchanting", "crafting", "creation", "tuningWizard",
 ];
 
 const ORRERY_HOTSPOTS: PanelHotspot[] = [
   { panelId: "factions",         x:  6, y: 25, w: 24, h: 17 },
-  { panelId: "worldServer",      x: 33, y: 24, w: 33, h: 35 },
+  { panelId: "world",            x: 33, y: 24, w: 33, h: 35 },
   { panelId: "housing",          x: 68, y: 24, w: 28, h: 18 },
   { panelId: "achievements",     x: 69, y: 43, w: 27, h: 22 },
   { panelId: "enchanting",       x: 66, y: 65, w: 33, h: 23 },
@@ -114,7 +114,7 @@ const ORRERY_HOTSPOTS: PanelHotspot[] = [
 
 const LIVING_WORLD_PANELS = [
   "currencies", "guilds", "guildHalls", "worldEvents",
-  "quests", "achievementDefs", "emotes", "weatherEnvironment",
+  "quests", "sharedAssets", "emotes", "weatherEnvironment",
 ];
 
 const LIVING_WORLD_HOTSPOTS: PanelHotspot[] = [
@@ -124,7 +124,7 @@ const LIVING_WORLD_HOTSPOTS: PanelHotspot[] = [
   { panelId: "worldEvents",           x: 27, y: 46, w: 47, h: 15 },
   { panelId: "weatherEnvironment",    x: 78, y: 24, w: 22, h: 30 },
   { panelId: "quests",                x: 67, y: 54, w: 33, h: 35 },
-  { panelId: "achievementDefs",       x: 33, y: 65, w: 34, h: 24 },
+  { panelId: "sharedAssets",          x: 33, y: 65, w: 34, h: 24 },
   { panelId: "emotes",                x:  1, y: 51, w: 29, h: 20 },
 ];
 
@@ -148,17 +148,26 @@ const ARCANUM_HOTSPOTS: PanelHotspot[] = [
 // ─── Spire ──────────────────────────────────────────────────────────
 
 const SPIRE_PANELS = [
-  "characterSprites", "stats", "sharedAssets",
-  "console", "deployment", "admin",
+  "serverConfig", "stats", "console",
+  "deployment", "admin",
 ];
 
 const SPIRE_HOTSPOTS: PanelHotspot[] = [
-  { panelId: "characterSprites", x: 23, y: 72, w: 54, h: 12 },
+  { panelId: "serverConfig",     x: 23, y: 72, w: 54, h: 12 },
   { panelId: "stats",            x: 29, y: 60, w: 42, h: 12 },
-  { panelId: "sharedAssets",     x: 33, y: 48, w: 35, h: 12 },
-  { panelId: "console",          x: 35, y: 36, w: 30, h: 12 },
-  { panelId: "deployment",       x: 40, y: 23, w: 21, h: 13 },
-  { panelId: "admin",            x: 42, y: 10, w: 16, h: 12 },
+  { panelId: "console",          x: 33, y: 48, w: 35, h: 12 },
+  { panelId: "deployment",       x: 35, y: 36, w: 30, h: 12 },
+  { panelId: "admin",            x: 40, y: 23, w: 21, h: 13 },
+];
+
+const SPIRE_ACTIONS: IslandAction[] = [
+  {
+    id: "openSettings",
+    label: "Settings",
+    kind: "openSettings",
+    glyph: "\u2699\uFE0F",
+    hotspot: { x: 42, y: 10, w: 16, h: 12 },
+  },
 ];
 
 // ─── Island definitions ─────────────────────────────────────────────
@@ -226,6 +235,7 @@ export const ISLANDS: Record<Island, IslandDef | null> = {
     image: "/menus/spire.jpg",
     panelIds: SPIRE_PANELS,
     hotspots: SPIRE_HOTSPOTS,
+    actions: SPIRE_ACTIONS,
   },
   settings: null,
 };

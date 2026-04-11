@@ -36,7 +36,6 @@ import { WeatherEnvironmentPanel } from "./panels/WeatherEnvironmentPanel";
 import { CurrenciesPanel } from "./panels/CurrenciesPanel";
 
 import { AchievementDesigner } from "./AchievementDesigner";
-import { AchievementDefEditor } from "./AchievementDefEditor";
 import { QuestTaxonomyDesigner } from "./QuestTaxonomyDesigner";
 import { GlobalAssetsPanel } from "./panels/GlobalAssetsPanel";
 import { DefaultAssetsPanel } from "./panels/DefaultAssetsPanel";
@@ -87,8 +86,6 @@ function renderPanel(panelId: string, props: ConfigPanelProps): ReactNode {
       return <CharacterCreationStudio config={config} onChange={onChange} />;
     case "equipment":
       return <EquipmentSlotsPanel config={config} onChange={onChange} />;
-    case "characterSprites":
-      return <ImagesPanel config={config} onChange={onChange} />;
 
     // Abilities
     case "stats":
@@ -99,12 +96,11 @@ function renderPanel(panelId: string, props: ConfigPanelProps): ReactNode {
       return <StatusEffectDesigner config={config} onChange={onChange} />;
 
     // World
-    case "worldServer":
+    case "world":
+      return <WorldPanel config={config} onChange={onChange} />;
+    case "serverConfig":
       return (
         <>
-          <Section kicker="World topology" title="World resources, start rooms, and spawn rules" description="Global world references and namespaced start rooms.">
-            <WorldPanel config={config} onChange={onChange} />
-          </Section>
           <Section kicker="Server runtime" title="Ports and server process behavior" description="Ports and server process settings.">
             <ServerPanel config={config} onChange={onChange} />
           </Section>
@@ -149,8 +145,6 @@ function renderPanel(panelId: string, props: ConfigPanelProps): ReactNode {
     // Content
     case "achievements":
       return <AchievementDesigner config={config} onChange={onChange} />;
-    case "achievementDefs":
-      return <AchievementDefEditor config={config} onChange={onChange} />;
     case "quests":
       return <QuestTaxonomyDesigner config={config} onChange={onChange} />;
     case "sharedAssets":

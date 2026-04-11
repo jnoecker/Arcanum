@@ -30,6 +30,7 @@ export function IslandView({ island }: IslandViewProps) {
   const def = ISLANDS[island];
   const openTab = useProjectStore((s) => s.openTab);
   const openWorldMap = useProjectStore((s) => s.openWorldMap);
+  const setSettingsOpen = useProjectStore((s) => s.setSettingsOpen);
   const [hoveredPanelId, setHoveredPanelId] = useState<string | null>(null);
   const [showNewZone, setShowNewZone] = useState(false);
   const [showZonePicker, setShowZonePicker] = useState(false);
@@ -98,6 +99,10 @@ export function IslandView({ island }: IslandViewProps) {
         setShowNewZone(true);
         return;
       }
+      if (action.kind === "openSettings") {
+        setSettingsOpen(true);
+        return;
+      }
       if (action.kind === "openZoneView") {
         const zones = useZoneStore.getState().zones;
         if (zones.size === 0) {
@@ -112,7 +117,7 @@ export function IslandView({ island }: IslandViewProps) {
         setShowZonePicker(true);
       }
     },
-    [openZoneTab],
+    [openZoneTab, setSettingsOpen],
   );
 
   if (!def) {

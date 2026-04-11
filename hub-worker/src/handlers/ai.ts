@@ -34,8 +34,8 @@ const IMAGE_MODELS = new Set([
 ]);
 
 // Background removal is locked to a single model — no caller choice.
-// Bria RMBG v2.0 is fast, high quality, and runs ~$0.006/image in
-// practice, so it fits comfortably inside the same image quota.
+// Bria RMBG v2.0 is fast, high quality, and priced at ~$0.018/image
+// which fits comfortably inside the same image quota.
 const BG_REMOVAL_MODEL = "bria:2@1";
 
 // Default Runware FLUX model matches creator/src-tauri/src/runware.rs.

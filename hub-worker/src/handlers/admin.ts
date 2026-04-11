@@ -25,8 +25,22 @@ interface AdminUserView {
   worlds: { slug: string; listed: boolean; lastPublishAt: number | null; bytesUsed: number }[];
 }
 
-function cors(env: Env) {
-  return { origin: env.ADMIN_ORIGIN };
+/**
+ * Resolve which origin (from the comma-separated ADMIN_ORIGIN
+ * allowlist) to echo back in Access-Control-Allow-Origin. If the
+ * request's Origin header matches one of the allowlisted origins we
+ * echo it back verbatim; otherwise we fall back to the first entry,
+ * which effectively refuses CORS for any other browser-originated
+ * caller.
+ */
+function cors(env: Env, req: Request) {
+  const allowlist = (env.ADMIN_ORIGIN ?? "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  const requestOrigin = req.headers.get("Origin") ?? "";
+  const matched = allowlist.find((o) => o === requestOrigin);
+  return { origin: matched ?? allowlist[0] ?? "*" };
 }
 
 function toUserView(user: UserRow, worlds: WorldRow[]): AdminUserView {
@@ -48,69 +62,72 @@ function toUserView(user: UserRow, worlds: WorldRow[]): AdminUserView {
 // ─── Router ──────────────────────────────────────────────────────────
 
 export async function handleAdmin(req: Request, env: Env, pathname: string): Promise<Response> {
-  if (req.method === "OPTIONS") return preflight(cors(env));
+  const c = cors(env, req);
+  if (req.method === "OPTIONS") return preflight(c);
 
   // /admin/users
   if (pathname === "/admin/users") {
-    if (req.method === "GET") return await adminListUsers(env);
-    if (req.method === "POST") return await adminCreateUser(req, env);
-    return error(405, "Method not allowed", cors(env));
+    if (req.method === "GET") return await adminListUsers(env, c);
+    if (req.method === "POST") return await adminCreateUser(req, env, c);
+    return error(405, "Method not allowed", c);
   }
 
   // /admin/users/<id>
   const userMatch = /^\/admin\/users\/([^/]+)$/.exec(pathname);
   if (userMatch && userMatch[1]) {
     const id = userMatch[1];
-    if (req.method === "DELETE") return await adminDeleteUser(env, id);
-    return error(405, "Method not allowed", cors(env));
+    if (req.method === "DELETE") return await adminDeleteUser(env, id, c);
+    return error(405, "Method not allowed", c);
   }
 
   // /admin/users/<id>/regenerate-key
   const regenMatch = /^\/admin\/users\/([^/]+)\/regenerate-key$/.exec(pathname);
   if (regenMatch && regenMatch[1]) {
     const id = regenMatch[1];
-    if (req.method === "POST") return await adminRegenerateKey(env, id);
-    return error(405, "Method not allowed", cors(env));
+    if (req.method === "POST") return await adminRegenerateKey(env, id, c);
+    return error(405, "Method not allowed", c);
   }
 
   // /admin/worlds
   if (pathname === "/admin/worlds") {
-    if (req.method === "GET") return await adminListWorlds(env);
-    return error(405, "Method not allowed", cors(env));
+    if (req.method === "GET") return await adminListWorlds(env, c);
+    return error(405, "Method not allowed", c);
   }
 
   // /admin/worlds/<slug>
   const worldMatch = /^\/admin\/worlds\/([^/]+)$/.exec(pathname);
   if (worldMatch && worldMatch[1]) {
     const slug = worldMatch[1];
-    if (req.method === "DELETE") return await adminDeleteWorld(env, slug);
-    return error(405, "Method not allowed", cors(env));
+    if (req.method === "DELETE") return await adminDeleteWorld(env, slug, c);
+    return error(405, "Method not allowed", c);
   }
 
-  return error(404, "Not found", cors(env));
+  return error(404, "Not found", c);
 }
 
 // ─── Handlers ────────────────────────────────────────────────────────
 
-async function adminListUsers(env: Env): Promise<Response> {
+type Cors = ReturnType<typeof cors>;
+
+async function adminListUsers(env: Env, c: Cors): Promise<Response> {
   const users = await listUsers(env);
   const views: AdminUserView[] = [];
   for (const user of users) {
     const worlds = await listWorldsForUser(env, user.id);
     views.push(toUserView(user, worlds));
   }
-  return json({ users: views }, {}, cors(env));
+  return json({ users: views }, {}, c);
 }
 
-async function adminCreateUser(req: Request, env: Env): Promise<Response> {
+async function adminCreateUser(req: Request, env: Env, c: Cors): Promise<Response> {
   let body: { displayName?: string; email?: string };
   try {
     body = (await req.json()) as typeof body;
   } catch {
-    return error(400, "Invalid JSON body", cors(env));
+    return error(400, "Invalid JSON body", c);
   }
   const displayName = (body.displayName ?? "").trim();
-  if (!displayName) return error(400, "displayName is required", cors(env));
+  if (!displayName) return error(400, "displayName is required", c);
   const email = (body.email ?? "").trim() || null;
 
   const { plain, hash } = await generateApiKey();
@@ -118,11 +135,11 @@ async function adminCreateUser(req: Request, env: Env): Promise<Response> {
   try {
     await createUser(env, { id, display_name: displayName, email, api_key_hash: hash });
   } catch (e) {
-    return error(500, `Failed to create user: ${String(e)}`, cors(env));
+    return error(500, `Failed to create user: ${String(e)}`, c);
   }
 
   const user = await getUserById(env, id);
-  if (!user) return error(500, "User created but not readable", cors(env));
+  if (!user) return error(500, "User created but not readable", c);
 
   return json(
     {
@@ -130,13 +147,13 @@ async function adminCreateUser(req: Request, env: Env): Promise<Response> {
       apiKey: plain, // shown once
     },
     { status: 201 },
-    cors(env),
+    c,
   );
 }
 
-async function adminDeleteUser(env: Env, id: string): Promise<Response> {
+async function adminDeleteUser(env: Env, id: string, c: Cors): Promise<Response> {
   const user = await getUserById(env, id);
-  if (!user) return error(404, "User not found", cors(env));
+  if (!user) return error(404, "User not found", c);
 
   // Wipe the user's worlds from R2 before the DB cascade removes them.
   const worlds = await listWorldsForUser(env, id);
@@ -144,18 +161,18 @@ async function adminDeleteUser(env: Env, id: string): Promise<Response> {
     await deleteWorldFromR2(env, world.slug);
   }
   await deleteUser(env, id);
-  return json({ ok: true, deletedWorlds: worlds.length }, {}, cors(env));
+  return json({ ok: true, deletedWorlds: worlds.length }, {}, c);
 }
 
-async function adminRegenerateKey(env: Env, id: string): Promise<Response> {
+async function adminRegenerateKey(env: Env, id: string, c: Cors): Promise<Response> {
   const user = await getUserById(env, id);
-  if (!user) return error(404, "User not found", cors(env));
+  if (!user) return error(404, "User not found", c);
   const { plain, hash } = await generateApiKey();
   await updateUserApiKeyHash(env, id, hash);
-  return json({ apiKey: plain }, {}, cors(env));
+  return json({ apiKey: plain }, {}, c);
 }
 
-async function adminListWorlds(env: Env): Promise<Response> {
+async function adminListWorlds(env: Env, c: Cors): Promise<Response> {
   const worlds = await listAllWorlds(env);
   return json(
     {
@@ -171,16 +188,16 @@ async function adminListWorlds(env: Env): Promise<Response> {
       })),
     },
     {},
-    cors(env),
+    c,
   );
 }
 
-async function adminDeleteWorld(env: Env, slug: string): Promise<Response> {
+async function adminDeleteWorld(env: Env, slug: string, c: Cors): Promise<Response> {
   const world = await getWorldBySlug(env, slug);
-  if (!world) return error(404, "World not found", cors(env));
+  if (!world) return error(404, "World not found", c);
   await deleteWorldFromR2(env, slug);
   await deleteWorld(env, slug);
-  return json({ ok: true }, {}, cors(env));
+  return json({ ok: true }, {}, c);
 }
 
 // ─── Shared R2 wipe ──────────────────────────────────────────────────
@@ -199,4 +216,4 @@ async function deleteWorldFromR2(env: Env, slug: string): Promise<void> {
   } while (cursor);
 }
 
-export const adminCorsHeaders = (env: Env) => corsHeaders(cors(env));
+export const adminCorsHeaders = (env: Env, req: Request) => corsHeaders(cors(env, req));

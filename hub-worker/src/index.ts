@@ -47,7 +47,7 @@ export default {
       if (imageMatch && imageMatch[1]) {
         return await serveImage(env, host.slug, imageMatch[1]);
       }
-      // Everything else on <slug>.arcanum.ambon.dev is an SPA route —
+      // Everything else on <slug>.arcanum-hub.com is an SPA route —
       // the bundled index.html boots the showcase app, which then
       // fetches /showcase.json from this same origin.
       return await env.ASSETS.fetch(req);
@@ -57,16 +57,17 @@ export default {
   },
 } satisfies ExportedHandler<Env>;
 
-// ─── /api/* router (production: api.hub.arcanum.app) ───────────────
+// ─── /api/* router (production: api.arcanum-hub.com) ───────────────
 
 async function routeApi(req: Request, env: Env, pathname: string): Promise<Response> {
   // Admin endpoints
   if (pathname.startsWith("/admin/")) {
     if (req.method === "OPTIONS") {
-      return new Response(null, { status: 204, headers: adminCorsHeaders(env) });
+      return new Response(null, { status: 204, headers: adminCorsHeaders(env, req) });
     }
     if (!isAdmin(req, env)) {
-      return error(401, "Admin key required", { origin: env.ADMIN_ORIGIN });
+      const origin = req.headers.get("Origin") ?? env.ADMIN_ORIGIN.split(",")[0]?.trim() ?? "*";
+      return error(401, "Admin key required", { origin });
     }
     return await handleAdmin(req, env, pathname);
   }

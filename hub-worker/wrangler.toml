@@ -8,31 +8,31 @@ compatibility_flags = ["nodejs_compat"]
 workers_dev = true
 
 # ─── Routes ──────────────────────────────────────────────────────────
-# Production routing on the ambon.dev zone. The Worker serves
-# everything under arcanum.ambon.dev and its subdomains — the showcase
-# SPA (via the ASSETS binding below), the publish + admin API on the
-# api. subdomain, and the per-world /showcase.json + /images/* reads
-# from R2.
+# Production routing on the arcanum-hub.com zone. The Worker serves
+# everything under arcanum-hub.com and its subdomains — the showcase
+# SPA (via the ASSETS binding below), the publish + admin API on
+# api.arcanum-hub.com, and the per-world /showcase.json + /images/*
+# reads from R2.
 #
-# Cloudflare Pages rejects wildcard custom domains, so we do all the
-# SPA serving from the Worker itself via an [assets] binding pointed
-# at ../showcase/dist. The hub-admin Pages project stays as-is.
+# arcanum-hub.com is a dedicated apex, which means Cloudflare's free
+# Universal SSL covers the apex + *.arcanum-hub.com out of the box —
+# no Advanced Certificate Manager needed.
 
 [[routes]]
-pattern = "api.arcanum.ambon.dev/*"
-zone_name = "ambon.dev"
+pattern = "api.arcanum-hub.com/*"
+zone_name = "arcanum-hub.com"
 
 [[routes]]
-pattern = "arcanum.ambon.dev/*"
-zone_name = "ambon.dev"
+pattern = "arcanum-hub.com/*"
+zone_name = "arcanum-hub.com"
 
 [[routes]]
-pattern = "*.arcanum.ambon.dev/*"
-zone_name = "ambon.dev"
+pattern = "*.arcanum-hub.com/*"
+zone_name = "arcanum-hub.com"
 
 # ─── Assets (showcase SPA) ──────────────────────────────────────────
 # Build the showcase first with
-#   cd ../showcase && VITE_HUB_ROOT_DOMAIN=arcanum.ambon.dev npm run build
+#   cd ../showcase && VITE_HUB_ROOT_DOMAIN=arcanum-hub.com npm run build
 # then `wrangler deploy` uploads the resulting dist/ alongside the
 # Worker. The SPA's own client-side routing is handled by the
 # single-page-application fallback.
@@ -59,10 +59,13 @@ bucket_name = "arcanum-hub"
 
 [vars]
 # The root domain that subdomains hang off of. Used to extract the
-# world slug from the Host header: "<slug>.arcanum.ambon.dev" → "slug".
-HUB_ROOT_DOMAIN = "arcanum.ambon.dev"
-# Public origin of the admin SPA — used for CORS allowlist.
-ADMIN_ORIGIN = "https://arcanum-hub-admin.pages.dev"
+# world slug from the Host header: "<slug>.arcanum-hub.com" → "slug".
+HUB_ROOT_DOMAIN = "arcanum-hub.com"
+# Public origins of the admin SPA — comma-separated CORS allowlist.
+# The admin dashboard can be reached at the nice URL once admin. is
+# wired up as a Pages custom domain, and at the pages.dev fallback
+# either way.
+ADMIN_ORIGIN = "https://admin.arcanum-hub.com,https://arcanum-hub-admin.pages.dev"
 
 # Secrets (set with `wrangler secret put`):
 #   HUB_ADMIN_KEY   — master key for admin dashboard login

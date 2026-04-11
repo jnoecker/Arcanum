@@ -81,9 +81,9 @@ export function newId(): string {
 // ─── Host parsing ────────────────────────────────────────────────────
 
 export interface HostInfo {
-  /** The full hostname (e.g. "mystara.hub.arcanum.app"). */
+  /** The full hostname (e.g. "mystara.arcanum-hub.com"). */
   host: string;
-  /** The root domain (e.g. "hub.arcanum.app"). */
+  /** The root domain (e.g. "arcanum-hub.com"). */
   rootDomain: string;
   /** "api" for api.<root>, "root" for the bare root, "world" for <slug>.<root>, "unknown" otherwise. */
   kind: "api" | "root" | "world" | "unknown";
@@ -100,7 +100,7 @@ export function parseHost(host: string, rootDomain: string): HostInfo {
 
   if (h.endsWith(`.${root}`)) {
     const slug = h.slice(0, h.length - root.length - 1);
-    // Avoid misclassifying sub-subdomains like "foo.bar.hub.arcanum.app".
+    // Avoid misclassifying sub-subdomains like "foo.bar.arcanum-hub.com".
     if (slug && !slug.includes(".") && isValidSlug(slug)) {
       return { host: h, rootDomain: root, kind: "world", slug };
     }

@@ -194,7 +194,7 @@ export function PublishHubDialog({ onClose }: PublishHubDialogProps) {
           />
           <p className="mt-1 text-2xs text-text-muted">
             Your world will live at{" "}
-            <code className="font-mono text-accent/70">{slug || "<slug>"}.hub.arcanum.app</code>
+            <code className="font-mono text-accent/70">{slug || "<slug>"}.arcanum-hub.com</code>
             {slug && !slugValid && (
               <span className="ml-2 text-status-error">(invalid — 3-32 chars, a-z0-9-)</span>
             )}

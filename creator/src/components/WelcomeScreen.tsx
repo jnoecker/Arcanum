@@ -10,6 +10,7 @@ import { CosmicBackdrop } from "./ui/CosmicBackdrop";
 import splashHero from "@/assets/splash-hero.jpg";
 
 const ImportFromR2Dialog = lazy(() => import("./ImportFromR2Dialog").then((m) => ({ default: m.ImportFromR2Dialog })));
+const OnboardingFlow = lazy(() => import("./onboarding/OnboardingFlow").then((m) => ({ default: m.OnboardingFlow })));
 
 interface WelcomeScreenProps {
   onNewProject: () => void;
@@ -20,6 +21,7 @@ export function WelcomeScreen({ onNewProject }: WelcomeScreenProps) {
   const [errors, setErrors] = useState<string[] | null>(null);
   const [loading, setLoading] = useState<string | null>(null);
   const [showR2Import, setShowR2Import] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
   const [recentProjects, setRecentProjects] = useState<RecentProject[]>(
     () => loadUIState()?.recentProjects ?? [],
   );
@@ -78,11 +80,21 @@ export function WelcomeScreen({ onNewProject }: WelcomeScreenProps) {
             <div className="rounded-2xl border border-[var(--chrome-stroke)] bg-[linear-gradient(155deg,rgb(var(--surface-rgb)/0.78),rgb(var(--bg-rgb)/0.92))] p-6 shadow-panel">
               <div className="mt-1 flex flex-col gap-4">
                 <button
-                  onClick={onNewProject}
-                  className="rounded-3xl border border-[var(--border-accent-ring)] bg-[linear-gradient(135deg,rgb(var(--accent-rgb)/0.26),rgb(var(--surface-rgb)/0.18))] px-5 py-5 text-left text-sm font-medium text-text-primary transition hover:shadow-[0_14px_34px_rgb(var(--accent-rgb)/0.2)]"
+                  onClick={() => setShowOnboarding(true)}
+                  className="rounded-3xl border border-[var(--border-accent-ring)] bg-[linear-gradient(135deg,rgb(var(--accent-rgb)/0.34),rgb(var(--surface-rgb)/0.18))] px-5 py-5 text-left text-sm font-medium text-text-primary shadow-[0_16px_40px_rgb(var(--accent-rgb)/0.18)] transition hover:shadow-[0_18px_46px_rgb(var(--accent-rgb)/0.28)]"
                 >
-                  <div className="font-display text-xl">Create new project</div>
-                  <div className="mt-2 text-xs font-normal leading-6 text-text-secondary">Lay down a fresh scaffold, then move directly into worldmaking.</div>
+                  <div className="flex items-center gap-2">
+                    <div className="font-display text-xl">Start with Arcanum Hub</div>
+                    <span className="rounded-full border border-[var(--border-accent-ring)] bg-[var(--chrome-fill)] px-2 py-0.5 text-2xs uppercase tracking-ui text-accent">New</span>
+                  </div>
+                  <div className="mt-2 text-xs font-normal leading-6 text-text-secondary">Drop in a hub API key and we'll generate your first zone, art and all, in about a minute.</div>
+                </button>
+                <button
+                  onClick={onNewProject}
+                  className="rounded-2xl border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] px-5 py-4 text-left text-sm font-medium text-text-primary transition hover:border-[var(--border-accent-ring)] hover:bg-[var(--chrome-highlight-strong)]"
+                >
+                  <div className="font-display text-lg">Create new project</div>
+                  <div className="mt-1 text-xs font-normal leading-6 text-text-secondary">Bring your own API keys. Lay down a fresh scaffold and go.</div>
                 </button>
                 <div className="space-y-2 border-t border-[var(--chrome-stroke)] pt-4">
                   <button
@@ -194,6 +206,12 @@ export function WelcomeScreen({ onNewProject }: WelcomeScreenProps) {
       <Suspense>
         {showR2Import && (
           <ImportFromR2Dialog onClose={() => setShowR2Import(false)} />
+        )}
+      </Suspense>
+
+      <Suspense>
+        {showOnboarding && (
+          <OnboardingFlow onClose={() => setShowOnboarding(false)} />
         )}
       </Suspense>
     </div>

@@ -6,4 +6,8 @@ export interface Env {
   HUB_ROOT_DOMAIN: string;
   ADMIN_ORIGIN: string;
   HUB_ADMIN_KEY: string;
+  // ─── AI provider secrets (for hub-proxied generation) ───────────────
+  RUNWARE_API_KEY: string;
+  OPENROUTER_API_KEY: string;
+  ANTHROPIC_API_KEY: string;
 }

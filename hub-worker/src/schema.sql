@@ -1,5 +1,9 @@
 -- Arcanum Hub D1 schema
 -- Run with: wrangler d1 execute arcanum-hub --local --file=./src/schema.sql
+--
+-- This file describes the target shape of the schema. For existing
+-- deployments, apply the diff files under src/migrations/ instead of
+-- rerunning this — CREATE TABLE IF NOT EXISTS won't alter columns.
 
 CREATE TABLE IF NOT EXISTS users (
   id TEXT PRIMARY KEY,
@@ -7,7 +11,14 @@ CREATE TABLE IF NOT EXISTS users (
   email TEXT,
   api_key_hash TEXT NOT NULL UNIQUE,
   created_at INTEGER NOT NULL,
-  last_publish_at INTEGER
+  last_publish_at INTEGER,
+  -- Lifetime hub-AI quotas, tied to the api_key_hash. On key rotation
+  -- the *_used counters are reset to 0, giving the legit user a fresh
+  -- allowance while invalidating any leaked copy of the old key.
+  images_used INTEGER NOT NULL DEFAULT 0,
+  images_quota INTEGER NOT NULL DEFAULT 500,
+  prompts_used INTEGER NOT NULL DEFAULT 0,
+  prompts_quota INTEGER NOT NULL DEFAULT 5000
 );
 
 CREATE INDEX IF NOT EXISTS idx_users_api_key_hash ON users(api_key_hash);

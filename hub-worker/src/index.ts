@@ -1,6 +1,7 @@
 import type { Env } from "./env";
 import { authenticateUser, isAdmin } from "./auth";
 import { handleAdmin, adminCorsHeaders } from "./handlers/admin";
+import { handleAi } from "./handlers/ai";
 import { checkExisting, uploadImage, uploadManifest } from "./handlers/publish";
 import { serveHubIndex, serveImage, serveShowcaseJson } from "./handlers/showcase";
 import { corsHeaders, error, parseHost, preflight, RESERVED_SUBDOMAINS } from "./util";
@@ -99,6 +100,14 @@ async function routeApi(req: Request, env: Env, pathname: string): Promise<Respo
       return await uploadImage(req, env, user);
     }
     return error(404, "Not found", { origin: "*" });
+  }
+
+  // AI generation endpoints (hub-proxied) — same Bearer auth as publish.
+  if (pathname.startsWith("/ai/")) {
+    if (req.method === "OPTIONS") return preflight({ origin: "*" });
+    const user = await authenticateUser(req, env);
+    if (!user) return error(401, "API key required", { origin: "*" });
+    return await handleAi(req, env, pathname, user);
   }
 
   // Public endpoints

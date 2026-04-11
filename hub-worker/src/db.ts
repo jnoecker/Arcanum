@@ -7,6 +7,10 @@ export interface UserRow {
   api_key_hash: string;
   created_at: number;
   last_publish_at: number | null;
+  images_used: number;
+  images_quota: number;
+  prompts_used: number;
+  prompts_quota: number;
 }
 
 export interface WorldRow {
@@ -54,8 +58,47 @@ export async function updateUserApiKeyHash(
   userId: string,
   apiKeyHash: string,
 ): Promise<void> {
-  await env.DB.prepare("UPDATE users SET api_key_hash = ? WHERE id = ?")
+  // Rotating a key resets both AI quotas. The whole point of the
+  // "lifetime + reset on rotation" design: the old key is dead, so
+  // whoever had it can't burn more; the new key gets a fresh allowance.
+  await env.DB.prepare(
+    "UPDATE users SET api_key_hash = ?, images_used = 0, prompts_used = 0 WHERE id = ?",
+  )
     .bind(apiKeyHash, userId)
+    .run();
+}
+
+export async function incrementImageUsage(env: Env, userId: string): Promise<void> {
+  await env.DB.prepare("UPDATE users SET images_used = images_used + 1 WHERE id = ?")
+    .bind(userId)
+    .run();
+}
+
+export async function incrementPromptUsage(env: Env, userId: string): Promise<void> {
+  await env.DB.prepare("UPDATE users SET prompts_used = prompts_used + 1 WHERE id = ?")
+    .bind(userId)
+    .run();
+}
+
+export async function setUserQuotas(
+  env: Env,
+  userId: string,
+  quotas: { images_quota?: number; prompts_quota?: number },
+): Promise<void> {
+  const sets: string[] = [];
+  const vals: (number | string)[] = [];
+  if (typeof quotas.images_quota === "number") {
+    sets.push("images_quota = ?");
+    vals.push(quotas.images_quota);
+  }
+  if (typeof quotas.prompts_quota === "number") {
+    sets.push("prompts_quota = ?");
+    vals.push(quotas.prompts_quota);
+  }
+  if (sets.length === 0) return;
+  vals.push(userId);
+  await env.DB.prepare(`UPDATE users SET ${sets.join(", ")} WHERE id = ?`)
+    .bind(...vals)
     .run();
 }
 

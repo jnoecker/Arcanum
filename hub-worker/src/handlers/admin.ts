@@ -8,6 +8,7 @@ import {
   listAllWorlds,
   listUsers,
   listWorldsForUser,
+  setUserQuotas,
   updateUserApiKeyHash,
   type UserRow,
   type WorldRow,
@@ -22,6 +23,12 @@ interface AdminUserView {
   email: string | null;
   createdAt: number;
   lastPublishAt: number | null;
+  usage: {
+    imagesUsed: number;
+    imagesQuota: number;
+    promptsUsed: number;
+    promptsQuota: number;
+  };
   worlds: { slug: string; listed: boolean; lastPublishAt: number | null; bytesUsed: number }[];
 }
 
@@ -50,6 +57,12 @@ function toUserView(user: UserRow, worlds: WorldRow[]): AdminUserView {
     email: user.email,
     createdAt: user.created_at,
     lastPublishAt: user.last_publish_at,
+    usage: {
+      imagesUsed: user.images_used,
+      imagesQuota: user.images_quota,
+      promptsUsed: user.prompts_used,
+      promptsQuota: user.prompts_quota,
+    },
     worlds: worlds.map((w) => ({
       slug: w.slug,
       listed: Boolean(w.listed),
@@ -85,6 +98,14 @@ export async function handleAdmin(req: Request, env: Env, pathname: string): Pro
   if (regenMatch && regenMatch[1]) {
     const id = regenMatch[1];
     if (req.method === "POST") return await adminRegenerateKey(env, id, c);
+    return error(405, "Method not allowed", c);
+  }
+
+  // /admin/users/<id>/quotas
+  const quotaMatch = /^\/admin\/users\/([^/]+)\/quotas$/.exec(pathname);
+  if (quotaMatch && quotaMatch[1]) {
+    const id = quotaMatch[1];
+    if (req.method === "POST") return await adminUpdateQuotas(req, env, id, c);
     return error(405, "Method not allowed", c);
   }
 
@@ -168,8 +189,43 @@ async function adminRegenerateKey(env: Env, id: string, c: Cors): Promise<Respon
   const user = await getUserById(env, id);
   if (!user) return error(404, "User not found", c);
   const { plain, hash } = await generateApiKey();
+  // updateUserApiKeyHash also zeros out images_used and prompts_used —
+  // rotation gives the legit user a fresh quota and kills any leaked key.
   await updateUserApiKeyHash(env, id, hash);
   return json({ apiKey: plain }, {}, c);
+}
+
+async function adminUpdateQuotas(
+  req: Request,
+  env: Env,
+  id: string,
+  c: Cors,
+): Promise<Response> {
+  const user = await getUserById(env, id);
+  if (!user) return error(404, "User not found", c);
+
+  let body: { imagesQuota?: number; promptsQuota?: number };
+  try {
+    body = (await req.json()) as typeof body;
+  } catch {
+    return error(400, "Invalid JSON body", c);
+  }
+
+  const updates: { images_quota?: number; prompts_quota?: number } = {};
+  if (typeof body.imagesQuota === "number" && body.imagesQuota >= 0) {
+    updates.images_quota = Math.floor(body.imagesQuota);
+  }
+  if (typeof body.promptsQuota === "number" && body.promptsQuota >= 0) {
+    updates.prompts_quota = Math.floor(body.promptsQuota);
+  }
+  if (!updates.images_quota && !updates.prompts_quota) {
+    return error(400, "Nothing to update", c);
+  }
+
+  await setUserQuotas(env, id, updates);
+  const fresh = await getUserById(env, id);
+  if (!fresh) return error(500, "User disappeared after update", c);
+  return json({ user: toUserView(fresh, []) }, {}, c);
 }
 
 async function adminListWorlds(env: Env, c: Cors): Promise<Response> {

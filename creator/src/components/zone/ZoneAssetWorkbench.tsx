@@ -93,6 +93,19 @@ function updateEntityImage(world: WorldFile, entity: BrowseEntity, image: string
   return { ...world, [collection]: { ...entities, [entity.id]: { ...entities[entity.id], image } } };
 }
 
+/** Resolve an entity object from a WorldFile by kind + id. Returns
+ *  undefined if the collection or entry doesn't exist. Kept in one place
+ *  so new kinds don't silently fall through to the wrong collection. */
+function resolveEntity(world: WorldFile, kind: EntityKind, id: string): unknown {
+  switch (kind) {
+    case "room": return world.rooms?.[id];
+    case "mob": return world.mobs?.[id];
+    case "item": return world.items?.[id];
+    case "shop": return world.shops?.[id];
+    case "gatheringNode": return world.gatheringNodes?.[id];
+  }
+}
+
 function updateDefaultImage(world: WorldFile, kind: DefaultImageKind, image: string): WorldFile {
   return { ...world, image: { ...(world.image ?? {}), [kind]: image } };
 }
@@ -291,10 +304,7 @@ export function ZoneAssetWorkbench({ zoneId, world, onWorldChange }: ZoneAssetWo
       setError(null);
       return;
     }
-    const collection = selectedTarget.entity.kind === "room"
-      ? world.rooms
-      : (selectedTarget.entity.kind === "mob" ? world.mobs : selectedTarget.entity.kind === "item" ? world.items : world.shops) ?? {};
-    const entity = collection[selectedTarget.entity.id as keyof typeof collection];
+    const entity = resolveEntity(world, selectedTarget.entity.kind, selectedTarget.entity.id);
     setPromptDraft(entityPrompt(selectedTarget.entity.kind, selectedTarget.entity.id, entity, artStyle));
     setPromptGeneratedByLlm(false);
     setError(null);
@@ -308,10 +318,7 @@ export function ZoneAssetWorkbench({ zoneId, world, onWorldChange }: ZoneAssetWo
   const buildContext = useCallback(() => {
     if (!selectedTarget) return "";
     if (selectedTarget.mode === "default") return defaultImageContext(selectedTarget.kind, world);
-    const collection = selectedTarget.entity.kind === "room"
-      ? world.rooms
-      : (selectedTarget.entity.kind === "mob" ? world.mobs : selectedTarget.entity.kind === "item" ? world.items : world.shops) ?? {};
-    const entity = collection[selectedTarget.entity.id as keyof typeof collection];
+    const entity = resolveEntity(world, selectedTarget.entity.kind, selectedTarget.entity.id);
     return entityContext(selectedTarget.entity.kind, selectedTarget.entity.id, entity);
   }, [selectedTarget, world]);
 

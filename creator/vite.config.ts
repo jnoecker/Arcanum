@@ -34,6 +34,15 @@ export default defineConfig(async () => ({
   worker: {
     format: "es" as const,
   },
+  // Force-include deps that are only referenced from inside a Web
+  // Worker. Vite's dependency scanner doesn't crawl worker source
+  // files at startup, so it discovers them on first worker
+  // instantiation — which triggers a full-page reload ("new
+  // dependencies optimized") and nukes in-progress edits. Including
+  // them here makes the dev server pre-bundle them up front.
+  optimizeDeps: {
+    include: ["@imgly/background-removal"],
+  },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),

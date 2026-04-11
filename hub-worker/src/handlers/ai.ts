@@ -5,9 +5,10 @@
 // clamp potentially-expensive parameters (dimensions, step counts,
 // GPT quality tier) so a single request can't blow through the budget.
 //
-//   POST /ai/image/generate   → Runware (FLUX.2 or GPT Image 1.5)
-//   POST /ai/llm/complete     → OpenRouter → DeepSeek V3.2
-//   POST /ai/llm/vision       → Anthropic Claude Sonnet 4.6
+//   POST /ai/image/generate            → Runware (FLUX.2 or GPT Image 1.5)
+//   POST /ai/image/remove-background   → Runware Bria RMBG v2.0
+//   POST /ai/llm/complete              → OpenRouter → DeepSeek V3.2
+//   POST /ai/llm/vision                → Anthropic Claude Sonnet 4.6
 //
 // Vision calls bill against the same `prompts_used` counter as
 // completions — they're bucketed together as "LLM calls" per the
@@ -31,6 +32,11 @@ const IMAGE_MODELS = new Set([
   "runware:400@2", // FLUX.2 (commercial)
   "openai:4@1", // GPT Image 1.5
 ]);
+
+// Background removal is locked to a single model — no caller choice.
+// Bria RMBG v2.0 is fast, high quality, and priced at ~$0.018/image
+// which fits comfortably inside the same image quota.
+const BG_REMOVAL_MODEL = "bria:2@1";
 
 // Default Runware FLUX model matches creator/src-tauri/src/runware.rs.
 const DEFAULT_IMAGE_MODEL = "runware:400@2";
@@ -61,6 +67,9 @@ export async function handleAi(
 
   if (pathname === "/ai/image/generate" && req.method === "POST") {
     return await imageGenerate(req, env, user);
+  }
+  if (pathname === "/ai/image/remove-background" && req.method === "POST") {
+    return await imageRemoveBackground(req, env, user);
   }
   if (pathname === "/ai/llm/complete" && req.method === "POST") {
     return await llmComplete(req, env, user);
@@ -256,6 +265,117 @@ async function imageGenerate(req: Request, env: Env, user: UserRow): Promise<Res
       width,
       height,
       model,
+      cost: item.cost,
+      usage: {
+        images_used: user.images_used + 1,
+        images_quota: user.images_quota,
+      },
+    },
+    {},
+    CORS,
+  );
+}
+
+// ─── Background removal (Bria RMBG v2.0) ─────────────────────────────
+//
+// Server-side background removal via Runware's Bria model. Bills
+// against the same `images_used` counter as image generation — it's
+// one upstream image API call — so quota-exhausted users can't farm
+// free bg-removal by switching modes.
+
+interface RemoveBgBody {
+  imageDataUrl?: string;
+}
+
+interface RunwareRemoveBgTask {
+  taskType: "removeBackground";
+  taskUUID: string;
+  model: string;
+  outputType: "base64Data";
+  outputFormat: "PNG";
+  inputs: { image: string };
+  providerSettings: { bria: { preserveAlpha: boolean } };
+  includeCost: boolean;
+}
+
+async function imageRemoveBackground(req: Request, env: Env, user: UserRow): Promise<Response> {
+  if (user.images_used >= user.images_quota) {
+    return quotaExceeded("images", user.images_used, user.images_quota);
+  }
+
+  let body: RemoveBgBody;
+  try {
+    body = (await req.json()) as RemoveBgBody;
+  } catch {
+    return error(400, "Invalid JSON body", CORS);
+  }
+
+  const image = (body.imageDataUrl ?? "").trim();
+  if (!image) return error(400, "Missing imageDataUrl", CORS);
+  // Accept either a data URL or a plain URL. Anything that is neither
+  // (e.g. raw base64 with no prefix) gets a helpful error instead of
+  // being forwarded and failing upstream with a Runware 400.
+  if (!/^data:image\/[a-z+]+;base64,/.test(image) && !/^https?:\/\//.test(image)) {
+    return error(
+      400,
+      "imageDataUrl must be a base64 data URL (data:image/...;base64,...) or an https URL",
+      CORS,
+    );
+  }
+  // Rough size guard for data URLs: a 10 MB decoded ceiling mirrors the
+  // vision handler.
+  if (image.startsWith("data:")) {
+    const commaIdx = image.indexOf(",");
+    const b64Len = commaIdx >= 0 ? image.length - commaIdx - 1 : image.length;
+    if (b64Len * 0.75 > MAX_VISION_IMAGE_BYTES) {
+      return error(413, "Image exceeds 10 MB", CORS);
+    }
+  }
+
+  const task: RunwareRemoveBgTask = {
+    taskType: "removeBackground",
+    taskUUID: crypto.randomUUID(),
+    model: BG_REMOVAL_MODEL,
+    outputType: "base64Data",
+    outputFormat: "PNG",
+    inputs: { image },
+    providerSettings: { bria: { preserveAlpha: false } },
+    includeCost: true,
+  };
+
+  const upstream = await fetch("https://api.runware.ai/v1", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${env.RUNWARE_API_KEY}`,
+    },
+    body: JSON.stringify([task]),
+  });
+
+  if (!upstream.ok) {
+    const text = await upstream.text().catch(() => "");
+    return error(upstream.status, `Runware error (${upstream.status}): ${text.slice(0, 500)}`, CORS);
+  }
+
+  const raw = (await upstream.json()) as {
+    data?: RunwareSuccessItem[];
+    errors?: { message?: string; code?: string }[];
+  };
+  if (raw.errors?.length) {
+    const msg = raw.errors[0]?.message ?? "unknown Runware error";
+    return error(502, `Runware: ${msg}`, CORS);
+  }
+  const item = raw.data?.find((d) => d.taskUUID === task.taskUUID);
+  if (!item) return error(502, "Runware returned no image", CORS);
+
+  await incrementImageUsage(env, user.id);
+
+  return json(
+    {
+      imageURL: item.imageURL,
+      imageBase64Data: item.imageBase64Data,
+      imageDataURI: item.imageDataURI,
+      model: BG_REMOVAL_MODEL,
       cost: item.cost,
       usage: {
         images_used: user.images_used + 1,

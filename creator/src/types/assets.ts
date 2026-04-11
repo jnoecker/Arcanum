@@ -69,6 +69,10 @@ export type AssetType =
 
 export type SyncScope = "approved" | "all";
 
+/** Background removal backend. "local" runs Imgly/ONNX in a Web Worker;
+ *  "runware" calls Bria RMBG v2.0 via Runware (or the hub proxy). */
+export type BgRemovalProvider = "local" | "runware";
+
 /** Mirrors the Rust Settings struct */
 export interface Settings {
   deepinfra_api_key: string;
@@ -84,6 +88,7 @@ export interface Settings {
   batch_concurrency: number;
   auto_enhance_prompts: boolean;
   auto_remove_bg: boolean;
+  bg_removal_provider: BgRemovalProvider;
   r2_account_id: string;
   r2_access_key_id: string;
   r2_secret_access_key: string;
@@ -105,6 +110,7 @@ export interface ProjectSettings {
   batch_concurrency: number;
   auto_enhance_prompts: boolean;
   auto_remove_bg: boolean;
+  bg_removal_provider: BgRemovalProvider;
   r2_account_id: string;
   r2_access_key_id: string;
   r2_secret_access_key: string;

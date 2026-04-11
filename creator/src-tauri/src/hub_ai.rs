@@ -72,6 +72,20 @@ struct HubImageResponse {
 }
 
 #[derive(Debug, Serialize)]
+struct HubRemoveBgRequest<'a> {
+    #[serde(rename = "imageDataUrl")]
+    image_data_url: &'a str,
+}
+
+#[derive(Debug, Deserialize)]
+struct HubRemoveBgResponse {
+    #[serde(rename = "imageBase64Data")]
+    image_base64_data: Option<String>,
+    #[serde(rename = "imageURL")]
+    image_url: Option<String>,
+}
+
+#[derive(Debug, Serialize)]
 struct HubLlmRequest<'a> {
     #[serde(skip_serializing_if = "Option::is_none")]
     system: Option<&'a str>,
@@ -216,6 +230,46 @@ pub async fn generate_image(
         behavior.output_format,
     )
     .await
+}
+
+/// Hub-proxied background removal (Bria RMBG v2.0 via Runware).
+/// Returns the processed PNG bytes as base64.
+pub async fn remove_background(s: &Settings, image_data_url: &str) -> Result<String, String> {
+    let body = HubRemoveBgRequest { image_data_url };
+    let url = format!("{}/ai/image/remove-background", base_url(s));
+    let client = crate::http::shared_client();
+    let response = client
+        .post(&url)
+        .bearer_auth(&s.hub_api_key)
+        .json(&body)
+        .send()
+        .await
+        .map_err(|e| format!("Hub request failed: {e}"))?;
+
+    let status = response.status();
+    if !status.is_success() {
+        return Err(format_hub_error(response, status).await);
+    }
+    let parsed: HubRemoveBgResponse = response
+        .json()
+        .await
+        .map_err(|e| format!("Failed to parse hub bg-removal response: {e}"))?;
+
+    if let Some(b64) = parsed.image_base64_data {
+        return Ok(b64);
+    }
+    if let Some(u) = parsed.image_url {
+        let bytes = client
+            .get(&u)
+            .send()
+            .await
+            .map_err(|e| format!("Failed to download hub bg-removed image: {e}"))?
+            .bytes()
+            .await
+            .map_err(|e| format!("Failed to read hub bg-removed image bytes: {e}"))?;
+        return Ok(base64::engine::general_purpose::STANDARD.encode(&bytes));
+    }
+    Err("Hub bg-removal response contained no image data".to_string())
 }
 
 /// Hub-proxied text LLM completion (DeepSeek V3.2).

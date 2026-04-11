@@ -286,6 +286,157 @@ pub async fn runware_generate_image(
     .await
 }
 
+// ─── Background Removal (Bria RMBG v2.0) ─────────────────────────────
+//
+// Server-side background removal via Runware's Bria model. An
+// alternative to the local @imgly/background-removal WASM pipeline for
+// users whose machines can't run onnxruntime reliably, or who prefer
+// the quality of the Bria model. In hub mode this short-circuits to
+// the hub proxy; otherwise it calls Runware directly with the user's
+// runware_api_key.
+//
+// The command takes a data URL (what the frontend has on hand after
+// image generation) and returns the PNG bytes as base64, matching the
+// shape the existing `removeBackground()` helper expects so all the
+// current call sites keep working unchanged.
+
+const BG_REMOVAL_MODEL: &str = "bria:2@1";
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct BriaProviderSettings {
+    preserve_alpha: bool,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RemoveBgProviderSettings {
+    bria: BriaProviderSettings,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RemoveBgInputs {
+    image: String,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RunwareRemoveBgTask {
+    task_type: String,
+    #[serde(rename = "taskUUID")]
+    task_uuid: String,
+    model: String,
+    output_type: String,
+    output_format: String,
+    inputs: RemoveBgInputs,
+    provider_settings: RemoveBgProviderSettings,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct RunwareRemoveBgResponse {
+    data: Option<Vec<RunwareRemoveBgResult>>,
+    errors: Option<Vec<RunwareRemoveBgError>>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct RunwareRemoveBgResult {
+    #[serde(alias = "imageURL", alias = "imageUrl")]
+    image_url: Option<String>,
+    image_base64_data: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+struct RunwareRemoveBgError {
+    message: Option<String>,
+}
+
+/// Server-side background removal via Runware Bria RMBG v2.0.
+/// Takes a data URL and returns the processed PNG as base64.
+#[tauri::command]
+pub async fn runware_remove_background(
+    app: AppHandle,
+    image_data_url: String,
+) -> Result<String, String> {
+    let s = settings::get_settings(app).await?;
+
+    // Hub mode: proxy the request so the user's Runware key doesn't
+    // need to be configured locally. The hub enforces quota and bills
+    // this against the lifetime image counter.
+    if crate::hub_ai::is_enabled(&s) {
+        return crate::hub_ai::remove_background(&s, &image_data_url).await;
+    }
+
+    if s.runware_api_key.is_empty() {
+        return Err("Runware API key not configured. Set it in Settings.".to_string());
+    }
+
+    let task = RunwareRemoveBgTask {
+        task_type: "removeBackground".to_string(),
+        task_uuid: uuid::Uuid::new_v4().to_string(),
+        model: BG_REMOVAL_MODEL.to_string(),
+        output_type: "base64Data".to_string(),
+        output_format: "PNG".to_string(),
+        inputs: RemoveBgInputs { image: image_data_url },
+        provider_settings: RemoveBgProviderSettings {
+            bria: BriaProviderSettings { preserve_alpha: false },
+        },
+    };
+
+    let client = crate::http::shared_client();
+    let response = client
+        .post(API_URL)
+        .header("Authorization", crate::http::bearer_header(&s.runware_api_key))
+        .json(&vec![task])
+        .send()
+        .await
+        .map_err(|e| format!("Runware bg-removal request failed: {e}"))?;
+
+    let response = crate::http::check_response(response).await?;
+
+    let text = response
+        .text()
+        .await
+        .map_err(|e| format!("Failed to read Runware bg-removal response: {e}"))?;
+
+    let parsed: RunwareRemoveBgResponse = serde_json::from_str(&text)
+        .map_err(|e| format!("Failed to parse Runware bg-removal response: {e}\nBody: {text}"))?;
+
+    if let Some(errs) = parsed.errors {
+        let msg = errs
+            .into_iter()
+            .find_map(|e| e.message)
+            .unwrap_or_else(|| "unknown Runware error".to_string());
+        return Err(format!("Runware bg-removal: {msg}"));
+    }
+
+    let first = parsed
+        .data
+        .and_then(|mut d| d.drain(..).next())
+        .ok_or_else(|| format!("No result in Runware bg-removal response. Body: {text}"))?;
+
+    // Prefer inline base64; fall back to downloading from URL if the
+    // API returned one instead (shouldn't happen with outputType =
+    // base64Data but defensive).
+    if let Some(b64) = first.image_base64_data {
+        return Ok(b64);
+    }
+    if let Some(url) = first.image_url {
+        let bytes = client
+            .get(&url)
+            .send()
+            .await
+            .map_err(|e| format!("Failed to download bg-removed image: {e}"))?
+            .bytes()
+            .await
+            .map_err(|e| format!("Failed to read bg-removed image bytes: {e}"))?;
+        return Ok(base64::engine::general_purpose::STANDARD.encode(&bytes));
+    }
+    Err("Runware bg-removal returned no image data".to_string())
+}
+
 // ─── Audio Generation ────────────────────────────────────────────────
 
 #[derive(Debug, Serialize)]

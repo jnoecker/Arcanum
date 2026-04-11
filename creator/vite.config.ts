@@ -39,6 +39,17 @@ export default defineConfig(async () => ({
     port: 1420,
     strictPort: true,
     host: host || false,
+    // Cross-origin isolation enables SharedArrayBuffer, which lets
+    // @imgly/background-removal run its WASM/ONNX inference with
+    // multi-threading (numThreads = navigator.hardwareConcurrency)
+    // instead of falling back to single-threaded execution.
+    // `credentialless` is used instead of `require-corp` so that
+    // staticimgly.com (which doesn't send CORP headers) can still
+    // serve the model files — the browser just drops credentials.
+    headers: {
+      "Cross-Origin-Opener-Policy": "same-origin",
+      "Cross-Origin-Embedder-Policy": "credentialless",
+    },
     hmr: host
       ? {
           protocol: "ws",

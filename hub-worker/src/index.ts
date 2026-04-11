@@ -122,8 +122,8 @@ async function routeDev(req: Request, env: Env, url: URL): Promise<Response> {
 
 Production host layout:
   - api.${env.HUB_ROOT_DOMAIN}/        publish + admin API
-  - hub.${env.HUB_ROOT_DOMAIN}/        landing index (served by showcase SPA)
-  - <slug>.${env.HUB_ROOT_DOMAIN}/     per-world showcase (SPA + /showcase.json)
+  - ${env.HUB_ROOT_DOMAIN}/             landing index (served by showcase SPA)
+  - <slug>.${env.HUB_ROOT_DOMAIN}/      per-world showcase (SPA + /showcase.json)
 
 Dev shortcuts:
   - /api/publish/*   (path-prefixed)

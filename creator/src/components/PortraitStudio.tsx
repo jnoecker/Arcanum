@@ -4,8 +4,13 @@ import { useAssetStore } from "@/stores/assetStore";
 import { useConfigStore } from "@/stores/configStore";
 import { useVibeStore } from "@/stores/vibeStore";
 import { useImageSrc } from "@/lib/useImageSrc";
-import { composePrompt, UNIVERSAL_NEGATIVE, type ArtStyle } from "@/lib/arcanumPrompts";
-import { fillPortraitTemplate, generatePortraitTemplate, type PortraitPromptTemplate } from "@/lib/portraitPromptGen";
+import { UNIVERSAL_NEGATIVE } from "@/lib/arcanumPrompts";
+import {
+  buildFallbackPortraitPrompt,
+  fillPortraitTemplate,
+  generatePortraitTemplate,
+  type PortraitPromptTemplate,
+} from "@/lib/portraitPromptGen";
 import { imageGenerateCommand, resolveImageModel, type AssetEntry, type GeneratedImage } from "@/types/assets";
 import { InlineError, Spinner } from "@/components/ui/FormWidgets";
 
@@ -71,7 +76,6 @@ export function PortraitStudio({ selectedZoneId }: { selectedZoneId: string | nu
   const config = useConfigStore((s) => s.config);
   const updateConfig = useConfigStore((s) => s.updateConfig);
   const settings = useAssetStore((s) => s.settings);
-  const artStyle = useAssetStore((s) => s.artStyle);
   const acceptAsset = useAssetStore((s) => s.acceptAsset);
   const listVariants = useAssetStore((s) => s.listVariants);
   const setActiveVariant = useAssetStore((s) => s.setActiveVariant);
@@ -167,8 +171,8 @@ export function PortraitStudio({ selectedZoneId }: { selectedZoneId: string | nu
       setPromptDraft(fillPortraitTemplate(template, { portraitType: selectedTarget.kind, key: selectedTarget.id }));
       return;
     }
-    setPromptDraft(composePrompt(selectedTarget.kind === "race" ? "race_portrait" : "class_portrait", artStyle as ArtStyle, `${selectedTarget.kind}: ${selectedTarget.label}`));
-  }, [artStyle, selectedTarget, template, variants]);
+    setPromptDraft(buildFallbackPortraitPrompt({ portraitType: selectedTarget.kind, key: selectedTarget.id }));
+  }, [selectedTarget, template, variants]);
 
   const imageProvider = settings?.image_provider ?? "deepinfra";
   const defaultModel = resolveImageModel(imageProvider, settings?.image_model);
@@ -233,7 +237,7 @@ export function PortraitStudio({ selectedZoneId }: { selectedZoneId: string | nu
       if (template) {
         setPromptDraft(fillPortraitTemplate(template, { portraitType: selectedTarget.kind, key: selectedTarget.id }));
       } else {
-        setPromptDraft(composePrompt(selectedTarget.kind === "race" ? "race_portrait" : "class_portrait", artStyle as ArtStyle, `${selectedTarget.kind}: ${selectedTarget.label}`));
+        setPromptDraft(buildFallbackPortraitPrompt({ portraitType: selectedTarget.kind, key: selectedTarget.id }));
       }
     } catch (e) {
       setError(String(e));
@@ -292,7 +296,7 @@ export function PortraitStudio({ selectedZoneId }: { selectedZoneId: string | nu
       for (const target of pending) {
         const prompt = template
           ? fillPortraitTemplate(template, { portraitType: target.kind, key: target.id })
-          : composePrompt(target.kind === "race" ? "race_portrait" : "class_portrait", artStyle as ArtStyle, `${target.kind}: ${target.label}`);
+          : buildFallbackPortraitPrompt({ portraitType: target.kind, key: target.id });
         await runGeneration(target, prompt, true);
       }
       await loadAssets();

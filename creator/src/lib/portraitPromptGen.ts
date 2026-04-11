@@ -159,3 +159,31 @@ export function fillPortraitTemplate(
 
   return `${getPortraitPromptPrefix()}\n\n${filled}\n\n${getStyleSuffix("worldbuilding")}`;
 }
+
+/**
+ * Build a portrait prompt without an LLM-generated template. Used as the
+ * fallback when PortraitStudio opens fresh and there's no cached template.
+ *
+ * The legacy path (composePrompt with hardcoded arcanum/gentle_magic
+ * templates) overrode the world visualStyle because those templates bake
+ * their own palette into the positive prompt. This helper wraps a minimal
+ * subject description with getPortraitPromptPrefix() and
+ * getStyleSuffix("worldbuilding"), so the world's visualStyle (or the
+ * generic portrait fallback) is the authoritative aesthetic.
+ */
+export function buildFallbackPortraitPrompt(dimensions: PortraitDimensions): string {
+  const prefix = getPortraitPromptPrefix();
+  const suffix = getStyleSuffix("worldbuilding");
+
+  if (dimensions.portraitType === "race") {
+    const raceDesc = getRaceBodyDescription(dimensions.key) || dimensions.key;
+    const body = `${RACE_FORMAT_SPEC}. Subject: a ${dimensions.key} — ${raceDesc}. The race's natural form, no class outfit.`;
+    return `${prefix}\n\n${body}\n\n${suffix}`;
+  }
+
+  const showcaseRace = getShowcaseRace(dimensions.key);
+  const raceDesc = getRaceBodyDescription(showcaseRace) || "humanoid adventurer";
+  const classOutfit = getClassOutfitDescription(dimensions.key) || dimensions.key;
+  const body = `${CLASS_FORMAT_SPEC}. Subject: a ${showcaseRace} ${dimensions.key} — ${raceDesc}, ${classOutfit}.`;
+  return `${prefix}\n\n${body}\n\n${suffix}`;
+}

@@ -1,11 +1,18 @@
 import { invoke } from "@tauri-apps/api/core";
-import { parseLlmJson } from "./arcanumPrompts";
+import { getStyleSuffix, parseLlmJson } from "./arcanumPrompts";
 import { useConfigStore } from "@/stores/configStore";
-import { buildToneDirective } from "./loreGeneration";
+import { buildToneDirective, buildVisualStyleDirective } from "./loreGeneration";
 import {
   DEFAULT_RACE_BODY_DESCRIPTIONS,
   DEFAULT_CLASS_OUTFIT_DESCRIPTIONS,
 } from "./defaultSpriteData";
+
+// Fallback art-direction when the world has no visualStyle defined.
+// Kept lean — we never want project-specific aesthetic baked into code —
+// but dense enough to stop FLUX drifting into its default painterly
+// ranger-in-a-forest look on a minimal prompt.
+const GENERIC_SPRITE_STYLE_FALLBACK =
+  "Digital fantasy character illustration, painterly with clear readable silhouette, consistent world aesthetic. NOT a photograph, NOT a 3D render, NOT concept art.";
 
 // ─── Types ───────────────────────────────────────────────────────────
 
@@ -80,7 +87,20 @@ export function buildSpritePrompt(
     subject.push("wearing simple traveler's clothing");
   }
 
-  return `1:1 square portrait, full body, centered, clean background. ${subject.join(", ")}. Painterly fantasy character, digital illustration`;
+  // Wire world-defined visualStyle and tone into the prompt so sprites
+  // respect the same aesthetic as portraits and world art. Without this,
+  // FLUX ignores the world and falls back to its generic painterly
+  // fantasy default.
+  const visualStyle = buildVisualStyleDirective("worldbuilding");
+  const toneDirective = buildToneDirective();
+  const prefix = visualStyle
+    ? `${visualStyle}. NOT a photograph, NOT a 3D render, NOT concept art.`
+    : GENERIC_SPRITE_STYLE_FALLBACK;
+  const toneLine = toneDirective ? `\n${toneDirective}\n` : "";
+
+  const body = `1:1 square full-body character illustration, centered, clean neutral background. ${subject.join(", ")}`;
+
+  return `${prefix}${toneLine}\n\n${body}\n\n${getStyleSuffix("worldbuilding")}`;
 }
 
 export function fillSpriteTemplate(

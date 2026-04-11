@@ -90,6 +90,8 @@ export interface Settings {
   r2_bucket: string;
   r2_custom_domain: string;
   github_pat: string;
+  hub_api_url: string;
+  hub_api_key: string;
 }
 
 /** Project-level settings stored in <project_dir>/.arcanum/settings.json */
@@ -107,6 +109,38 @@ export interface ProjectSettings {
   r2_secret_access_key: string;
   r2_bucket: string;
   r2_custom_domain: string;
+  hub_world_slug: string;
+  hub_world_listed: boolean;
+  hub_world_display_name: string;
+  hub_world_tagline: string;
+}
+
+/** Mirrors the Rust HubPublishRequest struct */
+export interface HubPublishRequest {
+  showcase_json: string;
+  slug: string;
+  listed: boolean;
+  display_name?: string | null;
+  tagline?: string | null;
+}
+
+/** Mirrors the Rust HubPublishResult struct */
+export interface HubPublishResult {
+  slug: string;
+  url: string;
+  images_total: number;
+  images_uploaded: number;
+  images_reused: number;
+  images_failed: number;
+  bytes_uploaded: number;
+  errors: string[];
+}
+
+export interface HubPublishProgress {
+  phase: "collecting" | "encoding" | "uploading" | "manifest";
+  current: number;
+  total: number;
+  label: string;
 }
 
 /** Mirrors the Rust SyncProgress struct */

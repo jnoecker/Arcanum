@@ -100,7 +100,7 @@ const BG_REMOVAL_PROVIDERS = [
   {
     id: "runware" as const,
     label: "Runware (Bria RMBG v2.0)",
-    description: "Server-side, high quality. ~$0.018/image when using direct Runware; billed against your hub image quota in hub mode.",
+    description: "Server-side, high quality. ~$0.006/image on direct Runware; billed against your hub image quota in hub mode.",
   },
 ];
 

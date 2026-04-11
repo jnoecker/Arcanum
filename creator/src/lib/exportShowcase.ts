@@ -58,10 +58,63 @@ export interface ShowcaseMap {
   }[];
 }
 
+// ─── HTML entity normalization ────────────────────────────────────
+
+/**
+ * Decode common HTML entities in a text string. LLM output occasionally
+ * contains literal `&amp;` / `&lt;` / etc. inside JSON string values, which
+ * then flow into article titles, fields, and TipTap text nodes. Without
+ * normalization they either render as visible entities (title/field case)
+ * or double-escape during `escapeHtml` (TipTap content case).
+ */
+function decodeHtmlEntities(text: string): string {
+  return text.replace(/&(amp|lt|gt|quot|#39|apos);/g, (_, entity) => {
+    switch (entity) {
+      case "amp":
+        return "&";
+      case "lt":
+        return "<";
+      case "gt":
+        return ">";
+      case "quot":
+        return '"';
+      case "#39":
+      case "apos":
+        return "'";
+      default:
+        return `&${entity};`;
+    }
+  });
+}
+
+/** Decode a single string; pass through non-string values unchanged. */
+function decodeMaybeString<T>(value: T): T {
+  return typeof value === "string" ? (decodeHtmlEntities(value) as unknown as T) : value;
+}
+
+/**
+ * Shallow-decode a fields record. String values are decoded; string arrays
+ * are decoded element-wise. Nested objects are preserved as-is (TipTap JSON
+ * content flows through `tiptapToHtml` which handles decode separately).
+ */
+function decodeFields(fields: Record<string, unknown>): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(fields)) {
+    if (typeof value === "string") {
+      out[key] = decodeHtmlEntities(value);
+    } else if (Array.isArray(value)) {
+      out[key] = value.map((v) => (typeof v === "string" ? decodeHtmlEntities(v) : v));
+    } else {
+      out[key] = value;
+    }
+  }
+  return out;
+}
+
 // ─── TipTap JSON → HTML converter ─────────────────────────────────
 
 function escapeHtml(text: string): string {
-  return text
+  return decodeHtmlEntities(text)
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
@@ -263,7 +316,7 @@ export function exportStories(
         .sort((a, b) => a.sortOrder - b.sortOrder)
         .map((scene) => ({
           id: scene.id,
-          title: scene.title,
+          title: decodeHtmlEntities(scene.title),
           sortOrder: scene.sortOrder,
           roomImageUrl: scene.roomId ? resolveImageUrl(resolveRoomImage(scene.roomId)) : undefined,
           narration: scene.narration,
@@ -274,7 +327,7 @@ export function exportStories(
             id: e.id,
             entityType: e.entityType,
             entityId: e.entityId,
-            name: resolveEntityName(e.entityType, e.entityId),
+            name: decodeHtmlEntities(resolveEntityName(e.entityType, e.entityId)),
             imageUrl: resolveImageUrl(resolveEntityImage(e.entityType, e.entityId)),
             slot: e.slot,
             position: e.position,
@@ -287,23 +340,25 @@ export function exportStories(
           linkedMapId: scene.linkedMapId,
           linkedPinId: scene.linkedPinId,
           linkedTimelineEventId: scene.linkedTimelineEventId,
-          titleCard: scene.titleCard,
+          titleCard: scene.titleCard
+            ? { ...scene.titleCard, text: decodeHtmlEntities(scene.titleCard.text) }
+            : undefined,
           effects: scene.effects,
         }));
 
       return {
         id: story.id,
-        title: story.title,
+        title: decodeHtmlEntities(story.title),
         zoneId: story.zoneId,
-        zoneName,
+        zoneName: zoneName ? decodeHtmlEntities(zoneName) : undefined,
         coverImageUrl: resolveImageUrl(story.coverImage),
         sceneCount: scenes.length,
         scenes,
         narrationSpeed: story.narrationSpeed,
         createdAt: story.createdAt,
         updatedAt: story.updatedAt,
-        synopsis: story.synopsis,
-        tags: story.tags,
+        synopsis: decodeMaybeString(story.synopsis),
+        tags: story.tags?.map(decodeHtmlEntities),
         linkedArticleIds: story.linkedArticleIds,
         featuredCharacterIds: story.featuredCharacterIds,
         primaryMapId: story.primaryMapId,
@@ -330,8 +385,10 @@ export function exportShowcaseData(
 
   // Extract world metadata from world_setting article
   const ws = Object.values(lore.articles).find((a) => a.template === "world_setting");
-  const worldName = (ws?.fields?.name as string) ?? ws?.title ?? "Untitled World";
-  const tagline = (ws?.fields?.tagline as string) ?? undefined;
+  const worldNameRaw = (ws?.fields?.name as string) ?? ws?.title ?? "Untitled World";
+  const taglineRaw = (ws?.fields?.tagline as string) ?? undefined;
+  const worldName = decodeHtmlEntities(worldNameRaw);
+  const tagline = taglineRaw != null ? decodeHtmlEntities(taglineRaw) : undefined;
 
   // Convert articles (exclude drafts)
   const draftIds = new Set(
@@ -356,11 +413,11 @@ export function exportShowcaseData(
     return {
       id: a.id,
       template: a.template,
-      title: a.title,
-      fields: a.fields,
+      title: decodeHtmlEntities(a.title),
+      fields: decodeFields(a.fields),
       contentHtml: tiptapToHtml(a.content),
-      tags: a.tags ?? [],
-      relations: merged,
+      tags: (a.tags ?? []).map(decodeHtmlEntities),
+      relations: merged.map((r) => ({ ...r, label: decodeMaybeString(r.label) })),
       imageUrl: resolveImage(a.image),
       galleryUrls: a.gallery?.length ? a.gallery.map(resolveImage).filter((u): u is string => !!u) : undefined,
       createdAt: a.createdAt,
@@ -371,7 +428,7 @@ export function exportShowcaseData(
   // Convert maps
   const maps: ShowcaseMap[] = (lore.maps ?? []).map((m) => ({
     id: m.id,
-    title: m.title,
+    title: decodeHtmlEntities(m.title),
     imageUrl: resolveImage(m.imageAsset) ?? "",
     width: m.width,
     height: m.height,
@@ -379,7 +436,7 @@ export function exportShowcaseData(
       id: p.id,
       articleId: p.articleId,
       position: p.position,
-      label: p.label,
+      label: decodeMaybeString(p.label),
       color: p.color,
     })),
   }));
@@ -392,6 +449,10 @@ export function exportShowcaseData(
       imageBaseUrl: baseUrl,
       showcase: lore.showcaseSettings ? {
         ...lore.showcaseSettings,
+        navLogoText: decodeMaybeString(lore.showcaseSettings.navLogoText),
+        bannerTitle: decodeMaybeString(lore.showcaseSettings.bannerTitle),
+        bannerSubtitle: decodeMaybeString(lore.showcaseSettings.bannerSubtitle),
+        footerText: decodeMaybeString(lore.showcaseSettings.footerText),
         // Resolve asset filenames to full R2 URLs
         faviconUrl: resolveImage(lore.showcaseSettings.faviconUrl),
         bannerImage: resolveImage(lore.showcaseSettings.bannerImage),
@@ -402,6 +463,8 @@ export function exportShowcaseData(
     calendarSystems: lore.calendarSystems,
     timelineEvents: (lore.timelineEvents ?? []).map(({ image, ...event }) => ({
       ...event,
+      title: decodeHtmlEntities(event.title),
+      description: decodeMaybeString(event.description),
       imageUrl: resolveImage(image),
     })),
     colorLabels: lore.colorLabels,

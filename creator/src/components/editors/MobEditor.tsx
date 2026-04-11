@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import type { WorldFile, MobFile, MobDropFile } from "@/types/world";
 import { updateMob, deleteMob } from "@/lib/zoneEdits";
 import { useEntityEditor } from "@/lib/useEntityEditor";
@@ -14,6 +14,7 @@ import {
   FieldGrid,
   CompactField,
   ArrayRow,
+  TabBar,
 } from "@/components/ui/FormWidgets";
 import { DialogueEditor } from "./DialogueEditor";
 import { DeleteEntityButton, EnhanceDescriptionButton, MediaSection } from "./EditorShared";
@@ -54,6 +55,14 @@ const BEHAVIOR_TEMPLATES = [
   { value: "STATIC", label: "Static" },
 ];
 
+type MobTab = "mob" | "rewards" | "dialogue" | "media";
+const MOB_TABS: readonly { value: MobTab; label: string }[] = [
+  { value: "mob", label: "Mob" },
+  { value: "rewards", label: "Rewards" },
+  { value: "dialogue", label: "Dialogue" },
+  { value: "media", label: "Media" },
+] as const;
+
 export function MobEditor({
   mobId,
   world,
@@ -61,6 +70,7 @@ export function MobEditor({
   onDelete,
   zoneId,
 }: MobEditorProps) {
+  const [activeTab, setActiveTab] = useState<MobTab>("mob");
   const { entity: mob, patch, handleDelete, rooms } = useEntityEditor<MobFile>(
     world,
     mobId,
@@ -77,7 +87,6 @@ export function MobEditor({
     name: q.name,
   }));
 
-  // ─── Drop helpers ──────────────────────────────────────────────
   const {
     add: handleAddDrop,
     update: handleUpdateDrop,
@@ -88,7 +97,6 @@ export function MobEditor({
     { itemId: "", chance: 1 },
   );
 
-  // ─── Behavior helpers ─────────────────────────────────────────
   const handleBehaviorTemplate = useCallback(
     (template: string) => {
       if (!template) {
@@ -101,7 +109,6 @@ export function MobEditor({
     [mob.behavior, patch],
   );
 
-  // ─── Quest assignment ─────────────────────────────────────────
   const handleToggleQuest = useCallback(
     (questId: string) => {
       const current = mob.quests ?? [];
@@ -115,7 +122,6 @@ export function MobEditor({
 
   return (
     <>
-      {/* Entity header — always visible */}
       <EntityHeader type="Mob">
         <TextInput value={mob.name} onCommit={(v) => patch({ name: v })} />
         <div className="flex items-center gap-1">
@@ -140,293 +146,313 @@ export function MobEditor({
         />
       </EntityHeader>
 
-      {/* Core fields */}
-      <Section title="Basics">
-        <FieldGrid>
-          <CompactField label="Tier">
-            <SelectInput
-              value={mob.tier ?? "standard"}
-              options={TIER_OPTIONS}
-              onCommit={(v) => patch({ tier: v })}
-            />
-          </CompactField>
-          <CompactField label="Level">
-            <NumberInput
-              value={mob.level}
-              onCommit={(v) => patch({ level: v })}
-              placeholder="1"
-              min={1}
-            />
-          </CompactField>
-          <CompactField label="Respawn (s)">
-            <NumberInput
-              value={mob.respawnSeconds}
-              onCommit={(v) => patch({ respawnSeconds: v })}
-              placeholder="Default"
-              min={0}
-            />
-          </CompactField>
-          <CompactField label="Category">
-            <div className="flex items-center gap-1.5">
-              {CATEGORY_ICONS[mob.category ?? "humanoid"] && (
-                <img src={CATEGORY_ICONS[mob.category ?? "humanoid"]} alt="" className="h-5 w-5 shrink-0" />
-              )}
-              <SelectInput
-                value={mob.category ?? "humanoid"}
-                options={CATEGORY_OPTIONS}
-                onCommit={(v) => patch({ category: v === "humanoid" ? undefined : v })}
-              />
-            </div>
-          </CompactField>
-          <CompactField label="Faction">
-            <TextInput
-              value={mob.faction ?? ""}
-              onCommit={(v) => patch({ faction: v || undefined })}
-              placeholder="Faction ID (e.g. crimson_guild)"
-            />
-          </CompactField>
-        </FieldGrid>
-      </Section>
+      <TabBar tabs={MOB_TABS} active={activeTab} onChange={setActiveTab} />
 
-      {/* Stat overrides */}
-      <Section title="Stat Overrides" defaultExpanded={false}>
-        <p className="mb-1 text-2xs text-text-muted">
-          Leave blank to use tier defaults
-        </p>
-        <FieldGrid>
-          <CompactField label="HP" span>
-            <NumberInput
-              value={mob.hp}
-              onCommit={(v) => patch({ hp: v })}
-              placeholder="Auto"
-              min={1}
-            />
-          </CompactField>
-          <CompactField label="Min Damage">
-            <NumberInput
-              value={mob.minDamage}
-              onCommit={(v) => patch({ minDamage: v })}
-              placeholder="Auto"
-              min={0}
-            />
-          </CompactField>
-          <CompactField label="Max Damage">
-            <NumberInput
-              value={mob.maxDamage}
-              onCommit={(v) => patch({ maxDamage: v })}
-              placeholder="Auto"
-              min={0}
-            />
-          </CompactField>
-          <CompactField label="Armor" span>
-            <NumberInput
-              value={mob.armor}
-              onCommit={(v) => patch({ armor: v })}
-              placeholder="Auto"
-              min={0}
-            />
-          </CompactField>
-          <CompactField label="XP Reward" span>
-            <NumberInput
-              value={mob.xpReward}
-              onCommit={(v) => patch({ xpReward: v })}
-              placeholder="Auto"
-              min={0}
-            />
-          </CompactField>
-          <CompactField label="Gold Min">
-            <NumberInput
-              value={mob.goldMin}
-              onCommit={(v) => patch({ goldMin: v })}
-              placeholder="Auto"
-              min={0}
-            />
-          </CompactField>
-          <CompactField label="Gold Max">
-            <NumberInput
-              value={mob.goldMax}
-              onCommit={(v) => patch({ goldMax: v })}
-              placeholder="Auto"
-              min={0}
-            />
-          </CompactField>
-        </FieldGrid>
-      </Section>
-
-      {/* Drops */}
-      <Section
-        title={`Drops (${mob.drops?.length ?? 0})`}
-        defaultExpanded={false}
-        actions={
-          <IconButton onClick={handleAddDrop} title="Add drop">+</IconButton>
-        }
-      >
-        {(mob.drops ?? []).length === 0 ? (
-          <p className="text-xs text-text-muted">No drops</p>
-        ) : (
-          <div className="flex flex-col gap-1.5">
-            {(mob.drops ?? []).map((drop, i) => (
-              <ArrayRow key={i} onRemove={() => handleDeleteDrop(i)}>
-                <div className="flex items-center gap-1">
-                  <div className="min-w-0 flex-1">
-                    <TextInput
-                      value={drop.itemId}
-                      onCommit={(v) => handleUpdateDrop(i, "itemId", v)}
-                      placeholder="item_id"
-                    />
-                  </div>
-                  <div className="w-16 shrink-0">
-                    <NumberInput
-                      value={Math.round((drop.chance ?? 1) * 100)}
-                      onCommit={(v) =>
-                        handleUpdateDrop(i, "chance", (v ?? 100) / 100)
-                      }
-                      min={0}
-                      max={100}
-                    />
-                  </div>
-                  <span className="text-2xs text-text-muted">%</span>
+      {activeTab === "mob" && (
+        <>
+          <Section title="Basics">
+            <FieldGrid>
+              <CompactField label="Tier">
+                <SelectInput
+                  value={mob.tier ?? "standard"}
+                  options={TIER_OPTIONS}
+                  onCommit={(v) => patch({ tier: v })}
+                />
+              </CompactField>
+              <CompactField label="Level">
+                <NumberInput
+                  value={mob.level}
+                  onCommit={(v) => patch({ level: v })}
+                  placeholder="1"
+                  min={1}
+                />
+              </CompactField>
+              <CompactField label="Respawn (s)">
+                <NumberInput
+                  value={mob.respawnSeconds}
+                  onCommit={(v) => patch({ respawnSeconds: v })}
+                  placeholder="Default"
+                  min={0}
+                />
+              </CompactField>
+              <CompactField label="Category">
+                <div className="flex items-center gap-1.5">
+                  {CATEGORY_ICONS[mob.category ?? "humanoid"] && (
+                    <img src={CATEGORY_ICONS[mob.category ?? "humanoid"]} alt="" className="h-5 w-5 shrink-0" />
+                  )}
+                  <SelectInput
+                    value={mob.category ?? "humanoid"}
+                    options={CATEGORY_OPTIONS}
+                    onCommit={(v) => patch({ category: v === "humanoid" ? undefined : v })}
+                  />
                 </div>
-              </ArrayRow>
-            ))}
-          </div>
-        )}
-      </Section>
-
-      {/* Behavior */}
-      <Section title="Behavior" defaultExpanded={false}>
-        <div className="flex flex-col gap-1.5">
-          <FieldRow label="Template">
-            <SelectInput
-              value={mob.behavior?.template ?? ""}
-              options={BEHAVIOR_TEMPLATES}
-              onCommit={handleBehaviorTemplate}
-            />
-          </FieldRow>
-          {mob.behavior?.template === "PATROL" && (
-            <FieldRow label="Patrol Route">
-              <TextInput
-                value={(mob.behavior.params?.patrolRoute ?? []).join(", ")}
-                onCommit={(v) => {
-                  const route = v
-                    .split(",")
-                    .map((s) => s.trim())
-                    .filter(Boolean);
-                  patch({
-                    behavior: {
-                      ...mob.behavior!,
-                      params: { ...mob.behavior!.params, patrolRoute: route },
-                    },
-                  });
-                }}
-                placeholder="room1, room2, room3"
-              />
-            </FieldRow>
-          )}
-          {mob.behavior?.template === "FLEE_LOW_HP" && (
-            <FieldRow label="Flee HP %">
-              <NumberInput
-                value={mob.behavior.params?.fleeHpPercent ?? 20}
-                onCommit={(v) =>
-                  patch({
-                    behavior: {
-                      ...mob.behavior!,
-                      params: { ...mob.behavior!.params, fleeHpPercent: v },
-                    },
-                  })
-                }
-                min={1}
-                max={99}
-              />
-            </FieldRow>
-          )}
-          {mob.behavior?.template === "WANDER" && (
-            <FieldRow label="Max Distance">
-              <NumberInput
-                value={mob.behavior.params?.maxWanderDistance ?? 3}
-                onCommit={(v) =>
-                  patch({
-                    behavior: {
-                      ...mob.behavior!,
-                      params: { ...mob.behavior!.params, maxWanderDistance: v },
-                    },
-                  })
-                }
-                min={1}
-              />
-            </FieldRow>
-          )}
-          {mob.behavior && (
-            <>
-              <FieldRow label="Aggro Msg">
+              </CompactField>
+              <CompactField label="Faction">
                 <TextInput
-                  value={mob.behavior.params?.aggroMessage ?? ""}
-                  onCommit={(v) =>
-                    patch({
-                      behavior: {
-                        ...mob.behavior!,
-                        params: {
-                          ...mob.behavior!.params,
-                          aggroMessage: v || undefined,
-                        },
-                      },
-                    })
-                  }
-                  placeholder="Optional"
+                  value={mob.faction ?? ""}
+                  onCommit={(v) => patch({ faction: v || undefined })}
+                  placeholder="Faction ID (e.g. crimson_guild)"
+                />
+              </CompactField>
+            </FieldGrid>
+          </Section>
+
+          <Section title="Behavior">
+            <div className="flex flex-col gap-1.5">
+              <FieldRow label="Template">
+                <SelectInput
+                  value={mob.behavior?.template ?? ""}
+                  options={BEHAVIOR_TEMPLATES}
+                  onCommit={handleBehaviorTemplate}
                 />
               </FieldRow>
-              <FieldRow label="Flee Msg">
-                <TextInput
-                  value={mob.behavior.params?.fleeMessage ?? ""}
-                  onCommit={(v) =>
-                    patch({
-                      behavior: {
-                        ...mob.behavior!,
-                        params: {
-                          ...mob.behavior!.params,
-                          fleeMessage: v || undefined,
+              {mob.behavior?.template === "PATROL" && (
+                <FieldRow label="Patrol Route">
+                  <TextInput
+                    value={(mob.behavior.params?.patrolRoute ?? []).join(", ")}
+                    onCommit={(v) => {
+                      const route = v
+                        .split(",")
+                        .map((s) => s.trim())
+                        .filter(Boolean);
+                      patch({
+                        behavior: {
+                          ...mob.behavior!,
+                          params: { ...mob.behavior!.params, patrolRoute: route },
                         },
-                      },
-                    })
-                  }
-                  placeholder="Optional"
-                />
-              </FieldRow>
-            </>
-          )}
-        </div>
-      </Section>
+                      });
+                    }}
+                    placeholder="room1, room2, room3"
+                  />
+                </FieldRow>
+              )}
+              {mob.behavior?.template === "FLEE_LOW_HP" && (
+                <FieldRow label="Flee HP %">
+                  <NumberInput
+                    value={mob.behavior.params?.fleeHpPercent ?? 20}
+                    onCommit={(v) =>
+                      patch({
+                        behavior: {
+                          ...mob.behavior!,
+                          params: { ...mob.behavior!.params, fleeHpPercent: v },
+                        },
+                      })
+                    }
+                    min={1}
+                    max={99}
+                  />
+                </FieldRow>
+              )}
+              {mob.behavior?.template === "WANDER" && (
+                <FieldRow label="Max Distance">
+                  <NumberInput
+                    value={mob.behavior.params?.maxWanderDistance ?? 3}
+                    onCommit={(v) =>
+                      patch({
+                        behavior: {
+                          ...mob.behavior!,
+                          params: { ...mob.behavior!.params, maxWanderDistance: v },
+                        },
+                      })
+                    }
+                    min={1}
+                  />
+                </FieldRow>
+              )}
+              {mob.behavior && (
+                <>
+                  <FieldRow label="Aggro Msg">
+                    <TextInput
+                      value={mob.behavior.params?.aggroMessage ?? ""}
+                      onCommit={(v) =>
+                        patch({
+                          behavior: {
+                            ...mob.behavior!,
+                            params: {
+                              ...mob.behavior!.params,
+                              aggroMessage: v || undefined,
+                            },
+                          },
+                        })
+                      }
+                      placeholder="Optional"
+                    />
+                  </FieldRow>
+                  <FieldRow label="Flee Msg">
+                    <TextInput
+                      value={mob.behavior.params?.fleeMessage ?? ""}
+                      onCommit={(v) =>
+                        patch({
+                          behavior: {
+                            ...mob.behavior!,
+                            params: {
+                              ...mob.behavior!.params,
+                              fleeMessage: v || undefined,
+                            },
+                          },
+                        })
+                      }
+                      placeholder="Optional"
+                    />
+                  </FieldRow>
+                </>
+              )}
+            </div>
+          </Section>
 
-      {/* Quest assignment */}
-      {zoneQuests.length > 0 && (
-        <Section title="Quests" defaultExpanded={false}>
-          <div className="flex flex-col gap-0.5">
-            {zoneQuests.map((q) => (
-              <label
-                key={q.id}
-                className="flex items-center gap-1.5 rounded px-1 py-0.5 text-xs text-text-secondary hover:bg-bg-tertiary"
-              >
-                <input
-                  type="checkbox"
-                  checked={(mob.quests ?? []).includes(q.id)}
-                  onChange={() => handleToggleQuest(q.id)}
-                  className="accent-accent"
+          <Section title="Stat Overrides" defaultExpanded={false}>
+            <p className="mb-1 text-2xs text-text-muted">
+              Leave blank to use tier defaults
+            </p>
+            <FieldGrid>
+              <CompactField label="HP" span>
+                <NumberInput
+                  value={mob.hp}
+                  onCommit={(v) => patch({ hp: v })}
+                  placeholder="Auto"
+                  min={1}
                 />
-                {q.name || q.id}
-              </label>
-            ))}
-          </div>
-        </Section>
+              </CompactField>
+              <CompactField label="Min Damage">
+                <NumberInput
+                  value={mob.minDamage}
+                  onCommit={(v) => patch({ minDamage: v })}
+                  placeholder="Auto"
+                  min={0}
+                />
+              </CompactField>
+              <CompactField label="Max Damage">
+                <NumberInput
+                  value={mob.maxDamage}
+                  onCommit={(v) => patch({ maxDamage: v })}
+                  placeholder="Auto"
+                  min={0}
+                />
+              </CompactField>
+              <CompactField label="Armor" span>
+                <NumberInput
+                  value={mob.armor}
+                  onCommit={(v) => patch({ armor: v })}
+                  placeholder="Auto"
+                  min={0}
+                />
+              </CompactField>
+              <CompactField label="XP Reward" span>
+                <NumberInput
+                  value={mob.xpReward}
+                  onCommit={(v) => patch({ xpReward: v })}
+                  placeholder="Auto"
+                  min={0}
+                />
+              </CompactField>
+              <CompactField label="Gold Min">
+                <NumberInput
+                  value={mob.goldMin}
+                  onCommit={(v) => patch({ goldMin: v })}
+                  placeholder="Auto"
+                  min={0}
+                />
+              </CompactField>
+              <CompactField label="Gold Max">
+                <NumberInput
+                  value={mob.goldMax}
+                  onCommit={(v) => patch({ goldMax: v })}
+                  placeholder="Auto"
+                  min={0}
+                />
+              </CompactField>
+            </FieldGrid>
+          </Section>
+        </>
       )}
 
-      {/* Dialogue */}
-      <DialogueEditor
-        mobId={mobId}
-        world={world}
-        onWorldChange={onWorldChange}
-      />
+      {activeTab === "rewards" && (
+        <>
+          <Section
+            title={`Drops (${mob.drops?.length ?? 0})`}
+            actions={
+              <IconButton onClick={handleAddDrop} title="Add drop">+</IconButton>
+            }
+          >
+            {(mob.drops ?? []).length === 0 ? (
+              <p className="text-xs text-text-muted">No drops</p>
+            ) : (
+              <div className="flex flex-col gap-1.5">
+                {(mob.drops ?? []).map((drop, i) => (
+                  <ArrayRow key={i} onRemove={() => handleDeleteDrop(i)}>
+                    <div className="flex items-center gap-1">
+                      <div className="min-w-0 flex-1">
+                        <TextInput
+                          value={drop.itemId}
+                          onCommit={(v) => handleUpdateDrop(i, "itemId", v)}
+                          placeholder="item_id"
+                        />
+                      </div>
+                      <div className="w-16 shrink-0">
+                        <NumberInput
+                          value={Math.round((drop.chance ?? 1) * 100)}
+                          onCommit={(v) =>
+                            handleUpdateDrop(i, "chance", (v ?? 100) / 100)
+                          }
+                          min={0}
+                          max={100}
+                        />
+                      </div>
+                      <span className="text-2xs text-text-muted">%</span>
+                    </div>
+                  </ArrayRow>
+                ))}
+              </div>
+            )}
+          </Section>
 
-      <MediaSection image={mob.image} onImageChange={(v) => patch({ image: v })} video={mob.video} onVideoChange={(v) => patch({ video: v })} getPrompt={(style) => mobPrompt(mobId, mob, style)} entityContext={mobContext(mobId, mob)} assetType="entity_portrait" context={zoneId ? { zone: zoneId, entity_type: "mob", entity_id: mobId } : undefined} vibe={zoneId ? useVibeStore.getState().getVibe(zoneId) : undefined} />
+          <Section title={`Quests (${mob.quests?.length ?? 0})`}>
+            {zoneQuests.length === 0 ? (
+              <p className="text-xs text-text-muted">No quests defined in this zone</p>
+            ) : (
+              <div className="flex flex-col gap-0.5">
+                {zoneQuests.map((q) => (
+                  <label
+                    key={q.id}
+                    className="flex items-center gap-1.5 rounded px-1 py-0.5 text-xs text-text-secondary hover:bg-bg-tertiary"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={(mob.quests ?? []).includes(q.id)}
+                      onChange={() => handleToggleQuest(q.id)}
+                      className="accent-accent"
+                    />
+                    {q.name || q.id}
+                  </label>
+                ))}
+              </div>
+            )}
+          </Section>
+        </>
+      )}
+
+      {activeTab === "dialogue" && (
+        <DialogueEditor
+          mobId={mobId}
+          world={world}
+          onWorldChange={onWorldChange}
+        />
+      )}
+
+      {activeTab === "media" && (
+        <MediaSection
+          image={mob.image}
+          onImageChange={(v) => patch({ image: v })}
+          video={mob.video}
+          onVideoChange={(v) => patch({ video: v })}
+          getPrompt={(style) => mobPrompt(mobId, mob, style)}
+          entityContext={mobContext(mobId, mob)}
+          assetType="entity_portrait"
+          context={zoneId ? { zone: zoneId, entity_type: "mob", entity_id: mobId } : undefined}
+          vibe={zoneId ? useVibeStore.getState().getVibe(zoneId) : undefined}
+        />
+      )}
+
       <DeleteEntityButton onClick={handleDelete} label="Delete Mob" />
     </>
   );

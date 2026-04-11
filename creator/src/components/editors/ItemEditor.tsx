@@ -13,6 +13,7 @@ import {
   EntityHeader,
   FieldGrid,
   CompactField,
+  TabBar,
 } from "@/components/ui/FormWidgets";
 import { DeleteEntityButton, EnhanceDescriptionButton, MediaSection } from "./EditorShared";
 import { itemPrompt, itemContext } from "@/lib/entityPrompts";
@@ -28,6 +29,12 @@ interface ItemEditorProps {
   zoneId?: string;
 }
 
+type ItemTab = "item" | "media";
+const ITEM_TABS: readonly { value: ItemTab; label: string }[] = [
+  { value: "item", label: "Item" },
+  { value: "media", label: "Media" },
+] as const;
+
 export function ItemEditor({
   itemId,
   zoneId,
@@ -35,6 +42,7 @@ export function ItemEditor({
   onWorldChange,
   onDelete,
 }: ItemEditorProps) {
+  const [activeTab, setActiveTab] = useState<ItemTab>("item");
   const { entity: item, patch, handleDelete, rooms } = useEntityEditor<ItemFile>(
     world,
     itemId,
@@ -53,7 +61,6 @@ export function ItemEditor({
 
   if (!item) return null;
 
-  // ─── Stat helpers ─────────────────────────────────────────────
   const stats = item.stats ?? {};
   const handleStatChange = useCallback(
     (statId: string, value: number | undefined) => {
@@ -68,7 +75,6 @@ export function ItemEditor({
     [stats, patch],
   );
 
-  // ─── OnUse helpers ────────────────────────────────────────────
   const onUse = item.onUse ?? {};
   const handleOnUseChange = useCallback(
     (field: keyof ItemOnUse, value: number | undefined) => {
@@ -81,7 +87,6 @@ export function ItemEditor({
 
   return (
     <>
-      {/* Entity header — always visible */}
       <EntityHeader type="Item">
         <FieldRow label="Display Name">
           <TextInput
@@ -117,141 +122,155 @@ export function ItemEditor({
         </FieldRow>
       </EntityHeader>
 
-      {/* Identity */}
-      <Section title="Identity">
-        <div className="flex flex-col gap-1.5">
-          <FieldRow label="Keyword">
-            <div className="flex items-center gap-2">
-              <div className="min-w-0 flex-1">
-                <TextInput
-                  value={item.keyword ?? ""}
-                  onCommit={(v) => patch({ keyword: v || undefined })}
-                  placeholder={keywordFromId(itemId)}
+      <TabBar tabs={ITEM_TABS} active={activeTab} onChange={setActiveTab} />
+
+      {activeTab === "item" && (
+        <>
+          <Section title="Identity">
+            <div className="flex flex-col gap-1.5">
+              <FieldRow label="Keyword">
+                <div className="flex items-center gap-2">
+                  <div className="min-w-0 flex-1">
+                    <TextInput
+                      value={item.keyword ?? ""}
+                      onCommit={(v) => patch({ keyword: v || undefined })}
+                      placeholder={keywordFromId(itemId)}
+                    />
+                  </div>
+                  <CheckboxInput
+                    checked={item.matchByKey ?? false}
+                    onCommit={(v) => patch({ matchByKey: v || undefined })}
+                    label="Match by keyword"
+                  />
+                </div>
+              </FieldRow>
+              <FieldRow label="Base Price">
+                <NumberInput
+                  value={item.basePrice}
+                  onCommit={(v) => patch({ basePrice: v })}
+                  placeholder="0"
+                  min={0}
                 />
-              </div>
+              </FieldRow>
+            </div>
+          </Section>
+
+          <Section title="Properties">
+            <div className="flex flex-col gap-1.5">
+              <FieldGrid cols={2}>
+                <CompactField label="Slot" span>
+                  <SelectInput
+                    value={item.slot ?? ""}
+                    options={slotOptions}
+                    onCommit={(v) => patch({ slot: v || undefined })}
+                    allowEmpty
+                    placeholder="— none —"
+                    dense
+                  />
+                </CompactField>
+                <CompactField label="Damage">
+                  <NumberInput
+                    value={item.damage}
+                    onCommit={(v) => patch({ damage: v })}
+                    placeholder="0"
+                    min={0}
+                    dense
+                  />
+                </CompactField>
+                <CompactField label="Armor">
+                  <NumberInput
+                    value={item.armor}
+                    onCommit={(v) => patch({ armor: v })}
+                    placeholder="0"
+                    min={0}
+                    dense
+                  />
+                </CompactField>
+              </FieldGrid>
+              <hr className="my-2 border-border-muted" />
               <CheckboxInput
-                checked={item.matchByKey ?? false}
-                onCommit={(v) => patch({ matchByKey: v || undefined })}
-                label="Match by keyword"
+                checked={item.consumable ?? false}
+                onCommit={(v) => patch({ consumable: v || undefined })}
+                label="Is consumable"
+              />
+              {item.consumable && (
+                <FieldGrid cols={2}>
+                  <CompactField label="Charges" span>
+                    <NumberInput
+                      value={item.charges}
+                      onCommit={(v) => patch({ charges: v })}
+                      placeholder="Unlimited"
+                      min={1}
+                      dense
+                    />
+                  </CompactField>
+                  <CompactField label="Heal HP">
+                    <NumberInput
+                      value={onUse.healHp}
+                      onCommit={(v) => handleOnUseChange("healHp", v)}
+                      placeholder="0"
+                      min={0}
+                      dense
+                    />
+                  </CompactField>
+                  <CompactField label="Grant XP">
+                    <NumberInput
+                      value={onUse.grantXp}
+                      onCommit={(v) => handleOnUseChange("grantXp", v)}
+                      placeholder="0"
+                      min={0}
+                      dense
+                    />
+                  </CompactField>
+                </FieldGrid>
+              )}
+            </div>
+          </Section>
+
+          <Section title="Stat Bonuses">
+            <p className="mb-1 text-2xs text-text-muted">
+              Only non-zero values are saved
+            </p>
+            <div className="flex flex-col gap-1">
+              {Object.entries(stats).map(([statId, value]) => (
+                <div key={statId} className="flex items-center gap-1">
+                  <span className="w-16 shrink-0 text-xs font-medium text-text-primary">
+                    {statId}
+                  </span>
+                  <NumberInput
+                    value={value}
+                    onCommit={(v) => handleStatChange(statId, v)}
+                  />
+                </div>
+              ))}
+              <AddStatRow
+                existingStats={Object.keys(stats)}
+                onAdd={(statId) => handleStatChange(statId, 1)}
               />
             </div>
-          </FieldRow>
-          <FieldRow label="Base Price">
-            <NumberInput
-              value={item.basePrice}
-              onCommit={(v) => patch({ basePrice: v })}
-              placeholder="0"
-              min={0}
-            />
-          </FieldRow>
-        </div>
-      </Section>
+          </Section>
+        </>
+      )}
 
-      {/* Properties — merged Equipment + Consumable */}
-      <Section title="Properties" defaultExpanded={false}>
-        <div className="flex flex-col gap-1.5">
-          <FieldGrid cols={2}>
-            <CompactField label="Slot" span>
-              <SelectInput
-                value={item.slot ?? ""}
-                options={slotOptions}
-                onCommit={(v) => patch({ slot: v || undefined })}
-                allowEmpty
-                placeholder="— none —"
-                dense
-              />
-            </CompactField>
-            <CompactField label="Damage">
-              <NumberInput
-                value={item.damage}
-                onCommit={(v) => patch({ damage: v })}
-                placeholder="0"
-                min={0}
-                dense
-              />
-            </CompactField>
-            <CompactField label="Armor">
-              <NumberInput
-                value={item.armor}
-                onCommit={(v) => patch({ armor: v })}
-                placeholder="0"
-                min={0}
-                dense
-              />
-            </CompactField>
-          </FieldGrid>
-          <hr className="my-2 border-border-muted" />
-          <CheckboxInput
-            checked={item.consumable ?? false}
-            onCommit={(v) => patch({ consumable: v || undefined })}
-            label="Is consumable"
-          />
-          {item.consumable && (
-            <FieldGrid cols={2}>
-              <CompactField label="Charges" span>
-                <NumberInput
-                  value={item.charges}
-                  onCommit={(v) => patch({ charges: v })}
-                  placeholder="Unlimited"
-                  min={1}
-                  dense
-                />
-              </CompactField>
-              <CompactField label="Heal HP">
-                <NumberInput
-                  value={onUse.healHp}
-                  onCommit={(v) => handleOnUseChange("healHp", v)}
-                  placeholder="0"
-                  min={0}
-                  dense
-                />
-              </CompactField>
-              <CompactField label="Grant XP">
-                <NumberInput
-                  value={onUse.grantXp}
-                  onCommit={(v) => handleOnUseChange("grantXp", v)}
-                  placeholder="0"
-                  min={0}
-                  dense
-                />
-              </CompactField>
-            </FieldGrid>
-          )}
-        </div>
-      </Section>
+      {activeTab === "media" && (
+        <MediaSection
+          image={item.image}
+          onImageChange={(v) => patch({ image: v })}
+          video={item.video}
+          onVideoChange={(v) => patch({ video: v })}
+          getPrompt={(style) => itemPrompt(itemId, item, style)}
+          entityContext={itemContext(itemId, item)}
+          assetType="entity_portrait"
+          context={zoneId ? { zone: zoneId, entity_type: "item", entity_id: itemId } : undefined}
+          vibe={zoneId ? useVibeStore.getState().getVibe(zoneId) : undefined}
+        />
+      )}
 
-      {/* Stat bonuses */}
-      <Section title="Stat Bonuses" defaultExpanded={false}>
-        <p className="mb-1 text-2xs text-text-muted">
-          Only non-zero values are saved
-        </p>
-        <div className="flex flex-col gap-1">
-          {/* Show existing stats + add button */}
-          {Object.entries(stats).map(([statId, value]) => (
-            <div key={statId} className="flex items-center gap-1">
-              <span className="w-16 shrink-0 text-xs font-medium text-text-primary">
-                {statId}
-              </span>
-              <NumberInput
-                value={value}
-                onCommit={(v) => handleStatChange(statId, v)}
-              />
-            </div>
-          ))}
-          <AddStatRow
-            existingStats={Object.keys(stats)}
-            onAdd={(statId) => handleStatChange(statId, 1)}
-          />
-        </div>
-      </Section>
-
-      <MediaSection image={item.image} onImageChange={(v) => patch({ image: v })} video={item.video} onVideoChange={(v) => patch({ video: v })} getPrompt={(style) => itemPrompt(itemId, item, style)} entityContext={itemContext(itemId, item)} assetType="entity_portrait" context={zoneId ? { zone: zoneId, entity_type: "item", entity_id: itemId } : undefined} vibe={zoneId ? useVibeStore.getState().getVibe(zoneId) : undefined} />
       <DeleteEntityButton onClick={handleDelete} label="Delete Item" />
     </>
   );
 }
 
-/** Inline component to add a new stat key. */
 function AddStatRow({
   existingStats,
   onAdd,

@@ -114,7 +114,12 @@ pub async fn openai_generate_image(
         prompt: final_prompt.clone(),
         n: 1,
         size,
-        quality: quality.or_else(|| Some("high".to_string())),
+        // Default to "low" to match the Runware path in runware.rs and
+        // the hub proxy in hub_ai — all three now agree. Arcanum's
+        // workflow generates a lot of images and low-quality GPT Image
+        // 1.5 is still visually strong for game assets at ~1/15th the
+        // price of high.
+        quality: quality.or_else(|| Some("low".to_string())),
         background: if behavior.transparent_background {
             Some("transparent".to_string())
         } else {

@@ -117,6 +117,7 @@ interface RunwareImageTask {
   ipAdapters?: { model: string; guideImage: string }[];
   outputFormat: string;
   numberResults: number;
+  includeCost: boolean;
   providerSettings?: {
     openai: { quality: string; background: string };
   };
@@ -183,6 +184,10 @@ async function imageGenerate(req: Request, env: Env, user: UserRow): Promise<Res
     model,
     outputFormat: body.outputFormat ?? "PNG",
     numberResults: 1,
+    // Ask Runware to include cost in the response so we can log it
+    // and surface it in the hub response. Used for verifying quality
+    // tier (low: ~$0.009, medium: ~$0.034, high: ~$0.133 for GPT Image).
+    includeCost: true,
   };
 
   if (isGptImage) {

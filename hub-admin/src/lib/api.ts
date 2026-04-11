@@ -30,12 +30,20 @@ export interface HubWorldSummary {
   bytesUsed: number;
 }
 
+export interface HubUsage {
+  imagesUsed: number;
+  imagesQuota: number;
+  promptsUsed: number;
+  promptsQuota: number;
+}
+
 export interface HubUser {
   id: string;
   displayName: string;
   email: string | null;
   createdAt: number;
   lastPublishAt: number | null;
+  usage: HubUsage;
   worlds: HubWorldSummary[];
 }
 
@@ -121,6 +129,21 @@ export async function regenerateKey(
   return await request<{ apiKey: string }>(
     `/admin/users/${encodeURIComponent(userId)}/regenerate-key`,
     { method: "POST", adminKey },
+  );
+}
+
+export async function updateQuotas(
+  adminKey: string,
+  userId: string,
+  quotas: { imagesQuota?: number; promptsQuota?: number },
+): Promise<{ user: HubUser }> {
+  return await request<{ user: HubUser }>(
+    `/admin/users/${encodeURIComponent(userId)}/quotas`,
+    {
+      method: "POST",
+      adminKey,
+      body: JSON.stringify(quotas),
+    },
   );
 }
 

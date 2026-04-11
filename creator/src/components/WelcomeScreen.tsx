@@ -55,17 +55,17 @@ export function WelcomeScreen({ onNewProject }: WelcomeScreenProps) {
   };
 
   return (
-    <div className="relative flex min-h-screen min-h-dvh overflow-x-hidden overflow-y-auto bg-bg-abyss">
+    <div className="relative h-screen h-dvh overflow-x-hidden overflow-y-auto bg-bg-abyss">
       <CosmicBackdrop variant="welcome" />
       <img
         src={splashHero}
         alt=""
-        className="absolute inset-0 h-full w-full object-cover opacity-25"
+        className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-25"
       />
-      <div className="absolute inset-0 bg-[linear-gradient(180deg,rgb(var(--bg-rgb)/0.18),rgb(var(--bg-rgb)/0.84))]" />
-      <div className="absolute left-[-8rem] top-[-6rem] h-[28rem] w-[28rem] rounded-full bg-[radial-gradient(circle,rgb(var(--accent-rgb)/0.22),transparent_66%)] blur-3xl" />
+      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgb(var(--bg-rgb)/0.18),rgb(var(--bg-rgb)/0.84))]" />
+      <div className="pointer-events-none absolute left-[-8rem] top-[-6rem] h-[28rem] w-[28rem] rounded-full bg-[radial-gradient(circle,rgb(var(--accent-rgb)/0.22),transparent_66%)] blur-3xl" />
 
-      <div className="relative z-10 mx-auto flex w-full max-w-6xl flex-1 items-center px-6 py-8 lg:px-10">
+      <div className="relative z-10 mx-auto flex min-h-full w-full max-w-6xl items-center px-6 py-8 lg:px-10">
         <div className="grid w-full gap-6 lg:grid-cols-[minmax(18rem,0.64fr)_minmax(0,1.24fr)]">
           <div className="flex flex-col justify-center gap-6">
             <div>

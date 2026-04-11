@@ -49,6 +49,7 @@ function parseDefinition(id: string, entry: Record<string, unknown>): SpriteDefi
     description: entry.description ? String(entry.description) : undefined,
     artDirection: entry.artDirection ? String(entry.artDirection) : undefined,
     category: entry.category === "staff" ? "staff" : "general",
+    gender: entry.gender ? String(entry.gender) : undefined,
     sortOrder: Number(entry.sortOrder) || 0,
     requirements,
     image: entry.image ? String(entry.image) : undefined,
@@ -80,6 +81,7 @@ function definitionToPlain(def: SpriteDefinition): Record<string, unknown> {
   if (def.description) out.description = def.description;
   if (def.artDirection) out.artDirection = def.artDirection;
   out.category = def.category;
+  if (def.gender) out.gender = def.gender;
   out.sortOrder = def.sortOrder;
   // Always emit a non-empty requirements list. The MUD's SpriteLoader rejects
   // sprites with no unlock specification (it reads an empty `type` field and

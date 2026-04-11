@@ -85,9 +85,7 @@ pub fn infer_behavior(
         _ => OutputFormat::Png,
     };
 
-    let transparent_background = transparent_background.unwrap_or_else(|| {
-        matches!(asset_type, "player_sprite" | "ability_sprite")
-    });
+    let transparent_background = transparent_background.unwrap_or(false);
 
     ImageBehavior {
         target_width: width.max(1),

@@ -124,7 +124,6 @@ export function parseAppConfigYaml(content: string): AppConfig {
     images: parseImagesConfig(root.images),
     globalAssets: parseGlobalAssets((root.images as Record<string, unknown> | undefined)?.globalAssets ?? root.globalAssets),
     defaultAssets: parseGlobalAssets((root.images as Record<string, unknown> | undefined)?.defaultAssets ?? root.defaultAssets),
-    playerTiers: parsePlayerTiers(root.playerTiers),
     lottery: parseLotteryConfig(engine.lottery),
     gambling: parseGamblingConfig(engine.gambling),
     respec: parseRespecConfig(engine.respec),
@@ -595,11 +594,8 @@ function parseEmotePresetsConfig(raw: unknown): AppConfig["emotePresets"] {
 
 function parseImagesConfig(raw: unknown): AppConfig["images"] {
   const s = (raw ?? {}) as Record<string, unknown>;
-  const tiers = parseNumberArray(s.spriteLevelTiers, [50, 40, 30, 20, 10, 1]);
   return {
     baseUrl: asString(s.baseUrl, "/images/"),
-    // Migrate legacy t0 base tier → t1 (MUD can't deserialize tier 0)
-    spriteLevelTiers: tiers.map((t) => (t === 0 ? 1 : t)),
   };
 }
 
@@ -784,27 +780,6 @@ function parseGlobalAssets(raw: unknown): Record<string, string> {
   return result;
 }
 
-function parsePlayerTiers(raw: unknown): Record<string, import("@/types/config").TierDefinitionConfig> | undefined {
-  if (!raw || typeof raw !== "object") return undefined;
-  const result: Record<string, import("@/types/config").TierDefinitionConfig> = {};
-  for (const [k, v] of Object.entries(raw as Record<string, unknown>)) {
-    if (v && typeof v === "object") {
-      const tier = v as Record<string, unknown>;
-      result[k] = {
-        displayName: asString(tier.displayName, k),
-        levels: asString(tier.levels, ""),
-        visualDescription: asString(tier.visualDescription, ""),
-      };
-    }
-  }
-  // Migrate legacy t0 → t1 (MUD can't deserialize tier 0)
-  if (result.t0 && !result.t1) {
-    result.t1 = result.t0;
-    delete result.t0;
-  }
-  return Object.keys(result).length > 0 ? result : undefined;
-}
-
 function parseMapSection<T>(raw: unknown, key: string): Record<string, T> {
   if (!raw || typeof raw !== "object") return {};
   const section = (raw as Record<string, unknown>)[key];
@@ -853,7 +828,7 @@ function collectRawSections(
   engine: Record<string, unknown>,
 ): Record<string, unknown> {
   const knownRoot = new Set([
-    "mode", "server", "engine", "progression", "images", "globalAssets", "defaultAssets", "playerTiers", "world",
+    "mode", "server", "engine", "progression", "images", "globalAssets", "defaultAssets", "world",
     "persistence", "login", "transport", "demo", "observability", "admin",
     "logging", "database", "redis", "grpc", "gateway", "sharding",
     "videos", "audio",
@@ -1178,10 +1153,6 @@ function asBool(val: unknown, fallback: boolean): boolean {
   return typeof val === "boolean" ? val : fallback;
 }
 
-function parseNumberArray(val: unknown, fallback: number[]): number[] {
-  if (!Array.isArray(val)) return fallback;
-  return val.filter((v): v is number => typeof v === "number");
-}
 
 function parseStringArray(val: unknown, fallback: string[]): string[] {
   if (!Array.isArray(val)) return fallback;
@@ -1384,7 +1355,6 @@ async function loadSplitConfig(projectDir: string): Promise<AppConfig | null> {
       images: parseImagesConfig(assetsRaw.images ?? assetsRaw),
       globalAssets: parseGlobalAssets((assetsRaw.images as Record<string, unknown> | undefined)?.globalAssets ?? assetsRaw.globalAssets),
       defaultAssets: parseGlobalAssets((assetsRaw.images as Record<string, unknown> | undefined)?.defaultAssets ?? assetsRaw.defaultAssets),
-      playerTiers: parsePlayerTiers(assetsRaw.playerTiers),
       lottery: parseLotteryConfig(worldRaw.lottery),
       gambling: parseGamblingConfig(worldRaw.gambling),
       respec: parseRespecConfig(worldRaw.respec),

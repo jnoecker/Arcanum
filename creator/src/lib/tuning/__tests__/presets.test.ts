@@ -89,7 +89,7 @@ const FULL_MOCK_CONFIG: AppConfig = {
   guild: { founderRank: "LEADER", defaultRank: "MEMBER" },
   guildRanks: { LEADER: { displayName: "Leader", level: 10 }, MEMBER: { displayName: "Member", level: 1 } },
   friends: { maxFriends: 50 },
-  images: { baseUrl: "", spriteLevelTiers: [] },
+  images: { baseUrl: "" },
   emotePresets: { presets: [] },
   factions: { defaultReputation: 0, killPenalty: 10, killBonus: 5, definitions: {} },
   enchanting: { maxEnchantmentsPerItem: 3, definitions: {} },

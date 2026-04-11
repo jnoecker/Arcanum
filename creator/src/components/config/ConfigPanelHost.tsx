@@ -12,7 +12,6 @@ import { RaceDesigner } from "./RaceDesigner";
 import { CharacterCreationStudio } from "./CharacterCreationStudio";
 import { EquipmentSlotsPanel } from "./panels/EquipmentSlotsPanel";
 import { ImagesPanel } from "./panels/ImagesPanel";
-import { PlayerTiersPanel } from "./panels/PlayerTiersPanel";
 
 import { StatsPanel } from "./panels/StatsPanel";
 import { AbilityDesigner } from "./AbilityDesigner";
@@ -87,12 +86,7 @@ function renderPanel(panelId: string, props: ConfigPanelProps): ReactNode {
     case "equipment":
       return <EquipmentSlotsPanel config={config} onChange={onChange} />;
     case "characterSprites":
-      return (
-        <div className="flex flex-col gap-6">
-          <ImagesPanel config={config} onChange={onChange} />
-          <PlayerTiersPanel config={config} onChange={onChange} />
-        </div>
-      );
+      return <ImagesPanel config={config} onChange={onChange} />;
 
     // Abilities
     case "stats":

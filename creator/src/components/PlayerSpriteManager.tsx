@@ -10,9 +10,7 @@ import { BulkBgRemoval } from "@/components/ui/BulkBgRemoval";
 import { ENTITY_DIMENSIONS, imageGenerateCommand, resolveImageModel, requestsTransparentBackground } from "@/types/assets";
 import {
   buildSpritePrompt,
-  enhanceSpritePrompt,
   generateSpriteTemplate,
-  getTierDefinitions,
   type SpriteDimensions,
   type SpritePromptTemplate,
 } from "@/lib/spritePromptGen";
@@ -23,10 +21,9 @@ import type {
   RequirementType,
 } from "@/types/sprites";
 import type { GeneratedImage, AssetContext, SyncProgress } from "@/types/assets";
-import type { AppConfig, TierDefinitionConfig } from "@/types/config";
 import { ActionButton } from "./ui/FormWidgets";
 import { ConfirmDialog } from "./ConfirmDialog";
-import { TierSpriteScaffold } from "./TierSpriteScaffold";
+import { SpriteScaffold } from "./SpriteScaffold";
 import {
   SpriteThumbnail,
   SpriteLightbox,
@@ -50,7 +47,7 @@ function primaryAssetKey(id: string, def: SpriteDefinition): string {
 }
 
 const SPRITE_TEMPLATE_VIBE =
-  "Dreamy character creation sprites for a magical fantasy world, cohesive with a softly enchanted storybook aesthetic.";
+  "Character creation sprites for a fantasy world — each one should be a compelling standalone portrait.";
 
 function findRequirement<T extends RequirementType>(
   requirements: SpriteRequirement[],
@@ -61,50 +58,19 @@ function findRequirement<T extends RequirementType>(
   );
 }
 
-function tierStartLevel(definition: TierDefinitionConfig): number | null {
-  const levels = definition.levels.match(/\d+/g);
-  if (!levels?.length) return null;
-  return Number(levels[0]);
-}
-
-function inferTierFromLevel(level: number, tierDefinitions: Record<string, TierDefinitionConfig>): string {
-  const candidates = Object.entries(tierDefinitions)
-    .filter(([key]) => key !== "tstaff")
-    .map(([key, value]) => ({ key, start: tierStartLevel(value) ?? Number.POSITIVE_INFINITY }))
-    .sort((a, b) => a.start - b.start);
-
-  let selected = candidates[0]?.key ?? "t1";
-  for (const candidate of candidates) {
-    if (level >= candidate.start) selected = candidate.key;
-  }
-  return selected;
-}
-
 function resolveSpriteDimensions(
   definition: SpriteDefinition,
   variant: SpriteVariant | undefined,
-  config: AppConfig | null,
 ): SpriteDimensions {
-  const tierDefinitions = config?.playerTiers ?? getTierDefinitions();
   const race = variant?.race
     || findRequirement(definition.requirements, "race")?.race
-    || config?.characterCreation.defaultRace
-    || Object.keys(config?.races ?? {})[0]
-    || "archae";
+    || undefined;
   const playerClass = variant?.playerClass
     || findRequirement(definition.requirements, "class")?.playerClass
-    || "base";
-  const isStaff = definition.category === "staff" || Boolean(findRequirement(definition.requirements, "staff"));
-  const minLevel = findRequirement(definition.requirements, "minLevel")?.level;
-  const tier = isStaff
-    ? "tstaff"
-    : minLevel != null
-      ? inferTierFromLevel(minLevel, tierDefinitions)
-      : playerClass === "base"
-        ? "t1"
-        : inferTierFromLevel(10, tierDefinitions);
+    || undefined;
+  const gender = variant?.gender || definition.gender || undefined;
 
-  return { race, playerClass, tier };
+  return { race, playerClass, gender };
 }
 
 function findSpriteEntry(
@@ -167,8 +133,8 @@ export function PlayerSpriteManager() {
   const spriteTemplateRef = useRef<SpritePromptTemplate | null>(null);
   const spriteTemplatePromiseRef = useRef<Promise<SpritePromptTemplate | null> | null>(null);
 
-  const races = useMemo(() => config ? Object.keys(config.races).map((r) => r.toUpperCase()) : [], [config]);
-  const classes = useMemo(() => config ? Object.keys(config.classes).map((c) => c.toUpperCase()) : [], [config]);
+  const races = useMemo(() => config ? Object.keys(config.races) : [], [config]);
+  const classes = useMemo(() => config ? Object.keys(config.classes).filter((c) => c !== "base") : [], [config]);
 
   const imageProvider = settings?.image_provider ?? "deepinfra";
   const hasApiKey = !!(settings && (
@@ -216,7 +182,6 @@ export function PlayerSpriteManager() {
     const promise = generateSpriteTemplate(
       Object.keys(config.races),
       Object.keys(config.classes),
-      Object.keys(config.playerTiers ?? getTierDefinitions()),
       SPRITE_TEMPLATE_VIBE,
     )
       .then((template) => {
@@ -288,15 +253,13 @@ export function PlayerSpriteManager() {
         if (!resolved) throw new Error(`Unable to resolve sprite definition for "${imageId}".`);
 
         const template = await ensureSpriteTemplate();
-        const dimensions = resolveSpriteDimensions(resolved.definition, resolved.variant, config);
+        const dimensions = resolveSpriteDimensions(resolved.definition, resolved.variant);
         const rawPrompt = buildSpritePrompt(
           dimensions,
           template,
           spritePromptNotes(resolved.definition, resolved.variant),
         );
-        const finalPrompt = hasLlmKey
-          ? await enhanceSpritePrompt(rawPrompt)
-          : rawPrompt;
+        const finalPrompt = rawPrompt;
         const model = resolveImageModel(imageProvider, settings?.image_model);
         if (!model) throw new Error("No image model available");
 
@@ -403,7 +366,7 @@ export function PlayerSpriteManager() {
       if (!resolved) return;
 
       const template = await ensureSpriteTemplate();
-      const dimensions = resolveSpriteDimensions(resolved.definition, resolved.variant, config);
+      const dimensions = resolveSpriteDimensions(resolved.definition, resolved.variant);
       const rawPrompt = buildSpritePrompt(
         dimensions,
         template,
@@ -423,9 +386,7 @@ export function PlayerSpriteManager() {
       setGenerationError(null);
 
       try {
-        const finalPrompt = hasLlmKey
-          ? await enhanceSpritePrompt(editedPrompt)
-          : editedPrompt;
+        const finalPrompt = editedPrompt;
         const model = resolveImageModel(imageProvider, settings?.image_model);
         if (!model) throw new Error("No image model available");
 
@@ -684,7 +645,7 @@ export function PlayerSpriteManager() {
 
       {/* Fill Gaps scaffold dialog */}
       {showScaffold && (
-        <TierSpriteScaffold
+        <SpriteScaffold
           onClose={() => setShowScaffold(false)}
           onComplete={() => void loadAssets()}
         />

@@ -1,9 +1,8 @@
 import { memo, useState, useCallback } from "react";
-import { invoke } from "@tauri-apps/api/core";
 import { useImageSrc } from "@/lib/useImageSrc";
 import { useFocusTrap } from "@/lib/useFocusTrap";
 import { removeBgAndSave } from "@/lib/useBackgroundRemoval";
-import { buildToneDirective } from "@/lib/loreGeneration";
+import { generateArtDirection } from "@/lib/spritePromptGen";
 import type { BulkBgTarget } from "@/components/ui/BulkBgRemoval";
 import type {
   SpriteDefinition,
@@ -196,36 +195,15 @@ export function ArtDirectionField({
     setGenerating(true);
     setError(null);
     try {
-      const toneDirective = buildToneDirective();
-      const toneBlock = toneDirective
-        ? `\nWorld tone: ${toneDirective}\nAll descriptions must match this tone.`
-        : "";
-
-      const context = [
-        `Sprite: ${def.displayName}`,
-        def.category === "staff" ? "Category: Staff (game administrator)" : "Category: General",
-        def.requirements.length > 0
-          ? `Requirements: ${def.requirements.map(requirementLabel).join(", ")}`
-          : "Requirements: None (available to all players)",
-        def.description ? `Flavor text: ${def.description}` : null,
-        def.artDirection ? `Current art direction (improve this): ${def.artDirection}` : null,
-      ].filter(Boolean).join("\n");
-
-      const systemPrompt = `You are an expert visual art director for fantasy RPG character sprites. Given context about a sprite, write a concise visual description that an AI image generator can use to produce a compelling character portrait.${toneBlock}
-
-Rules:
-- Focus on visual appearance: body type, clothing, armor, weapons, magical effects, color palette, mood
-- Be specific and vivid but concise (2-4 sentences)
-- Match the sprite's tier/requirements — higher level = more impressive gear and effects
-- For achievement sprites, make the visual reflect the accomplishment
-- For staff sprites, emphasize authority and cosmic power
-- Output ONLY the visual description — no quotes, no explanation`;
-
-      const result = await invoke<string>("llm_complete", {
-        systemPrompt,
-        userPrompt: context,
-      });
-      onPatch({ artDirection: result.trim() });
+      const raceReq = def.requirements.find((r) => r.type === "race");
+      const classReq = def.requirements.find((r) => r.type === "class");
+      const result = await generateArtDirection(
+        def.displayName,
+        raceReq?.type === "race" ? raceReq.race : undefined,
+        classReq?.type === "class" ? classReq.playerClass : undefined,
+        def.gender,
+      );
+      onPatch({ artDirection: result });
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       setError(msg);
@@ -671,7 +649,7 @@ export function SpriteDetailEditor({
 
       {/* Basic fields */}
       <div className="flex flex-col gap-3">
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-4 gap-3">
           <label className="flex flex-col gap-1 text-xs text-text-secondary">
             Display Name
             <input
@@ -689,6 +667,19 @@ export function SpriteDetailEditor({
             >
               <option value="general">General</option>
               <option value="staff">Staff</option>
+            </select>
+          </label>
+          <label className="flex flex-col gap-1 text-xs text-text-secondary">
+            Gender
+            <select
+              className="ornate-input min-h-11 rounded-2xl px-4 py-3 text-sm text-text-primary"
+              value={def.gender ?? ""}
+              onChange={(e) => onPatch({ gender: e.target.value || undefined })}
+            >
+              <option value="">Any</option>
+              <option value="male">Male</option>
+              <option value="female">Female</option>
+              <option value="nonbinary">Nonbinary</option>
             </select>
           </label>
           <label className="flex flex-col gap-1 text-xs text-text-secondary">

@@ -524,7 +524,6 @@ export function buildMonolithicConfigObject(
     },
     images: {
       baseUrl: imageBaseUrl,
-      spriteLevelTiers: c.images.spriteLevelTiers,
       globalAssets: normalizeGlobalAssetMap(c.globalAssets),
       defaultAssets: normalizeGlobalAssetMap(c.defaultAssets ?? {}),
     },

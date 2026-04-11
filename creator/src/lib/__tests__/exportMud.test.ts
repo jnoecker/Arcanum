@@ -109,7 +109,7 @@ const BASE_CONFIG: AppConfig = {
   guildRanks: {},
   friends: { maxFriends: 50 },
   mobActionDelay: { minActionDelayMillis: 8000, maxActionDelayMillis: 20000 },
-  images: { baseUrl: "https://assets.ambon.dev", spriteLevelTiers: [50, 40, 30, 20, 10, 1] },
+  images: { baseUrl: "https://assets.ambon.dev" },
   globalAssets: {},
   skillPoints: {
     interval: 5,
@@ -299,7 +299,6 @@ ambonmud:
     rewards: { hpPerLevel: 2, manaPerLevel: 5, fullHealOnLevelUp: true, fullManaOnLevelUp: true, baseHp: 10, baseMana: 20 }
   images:
     baseUrl: https://assets.ambon.dev/
-    spriteLevelTiers: [50, 40, 30, 20, 10, 1]
     globalAssets:
       minimap_unexplored: fog.png
   engine:

@@ -116,6 +116,7 @@ export function RaceDetail({
   const buildContext = () => {
     const parts = [`Race: ${race.displayName}`];
     if (race.description) parts.push(`Description: ${race.description}`);
+    if (race.bodyDescription) parts.push(`Physical appearance: ${race.bodyDescription}`);
     if (race.backstory) parts.push(`Backstory: ${race.backstory}`);
     if (race.traits?.length) parts.push(`Traits: ${race.traits.join(", ")}`);
     if (race.statMods) {

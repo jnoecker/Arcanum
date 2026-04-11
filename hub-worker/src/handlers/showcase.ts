@@ -2,7 +2,7 @@ import type { Env } from "../env";
 import { listListedWorlds } from "../db";
 import { error, json } from "../util";
 
-// ─── GET /showcase.json (called on <slug>.hub.arcanum.app) ───────────
+// ─── GET /showcase.json (called on <slug>.arcanum-hub.com) ───────────
 export async function serveShowcaseJson(env: Env, slug: string): Promise<Response> {
   const obj = await env.BUCKET.get(`worlds/${slug}/showcase.json`);
   if (!obj) return error(404, `No showcase published for "${slug}"`, { origin: "*" });

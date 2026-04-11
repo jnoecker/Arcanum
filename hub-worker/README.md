@@ -58,15 +58,18 @@ GET  /                             readme / help
 
 Set up these three routes in Cloudflare once DNS is ready:
 
-- `api.hub.arcanum.app/*`
-- `hub.arcanum.app/*`
-- `*.hub.arcanum.app/*`
+- `api.arcanum-hub.com/*`
+- `arcanum-hub.com/*`
+- `*.arcanum-hub.com/*`
 
-The bare `hub.arcanum.app` host is intended to be served by the
-`showcase/` Cloudflare Pages project (with a Worker route for
-`/api/index`). `<slug>.hub.arcanum.app` is also served by that Pages
-project for SPA assets; the Worker only intercepts `/showcase.json`
-and `/images/*.webp`.
+The Worker owns every path under these hosts. SPA assets (the
+multi-tenant showcase build) are bundled into the Worker via the
+`[assets]` binding pointed at `../showcase/dist`. The Worker
+intercepts `/api/*`, `/showcase.json`, and `/images/*.webp` before
+falling through to the SPA via `run_worker_first = true`.
+
+Cloudflare Pages rejects wildcard custom domains, which is why the
+SPA ships inside the Worker rather than from a Pages project.
 
 ## R2 layout
 

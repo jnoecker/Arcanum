@@ -232,7 +232,7 @@ export function ApiSettingsPanel({
               type="text"
               value={draft.hub_api_url}
               onChange={(e) => setDraft({ ...draft, hub_api_url: e.target.value })}
-              placeholder="https://api.hub.arcanum.app"
+              placeholder="https://api.arcanum-hub.com"
               className="w-full rounded border border-border-default bg-bg-primary px-3 py-1.5 text-xs text-text-primary placeholder:text-text-muted outline-none focus:border-accent/50 focus-visible:ring-2 focus-visible:ring-border-active"
             />
             <p className="mt-1 text-2xs text-text-muted">
@@ -595,7 +595,7 @@ export function ApiSettingsPanel({
                 <p className="mt-1 text-2xs text-text-muted">
                   3–32 chars, lowercase + digits + dashes. Your world will live at{" "}
                   <code className="font-mono text-accent/70">
-                    {projectDraft.hub_world_slug || "<slug>"}.hub.arcanum.app
+                    {projectDraft.hub_world_slug || "<slug>"}.arcanum-hub.com
                   </code>
                 </p>
               </div>

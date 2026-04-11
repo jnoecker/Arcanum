@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { Section, FieldRow, TextInput } from "@/components/ui/FormWidgets";
 import { EntityArtGenerator } from "@/components/ui/EntityArtGenerator";
@@ -8,6 +8,46 @@ import { VideoGenerator } from "@/components/ui/VideoGenerator";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import type { ArtStyle } from "@/lib/arcanumPrompts";
 import type { AssetContext } from "@/types/assets";
+
+export function MediaDisclosure({
+  label,
+  hasValue,
+  children,
+}: {
+  label: string;
+  hasValue: boolean;
+  children: ReactNode;
+}) {
+  const [expanded, setExpanded] = useState(hasValue);
+
+  if (!expanded) {
+    return (
+      <button
+        onClick={() => setExpanded(true)}
+        className="self-start rounded-full border border-border-default bg-bg-elevated px-3 py-1 text-2xs font-medium text-text-secondary transition-colors hover:bg-bg-hover hover:text-text-primary"
+      >
+        + {label}
+      </button>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-1.5 rounded border border-border-default/60 bg-bg-primary/30 px-2 py-2">
+      <div className="flex items-center justify-between">
+        <span className="text-2xs font-semibold uppercase tracking-wider text-text-muted">{label}</span>
+        <button
+          onClick={() => setExpanded(false)}
+          className="rounded px-1 text-sm leading-none text-text-muted transition-colors hover:text-text-primary"
+          title={`Hide ${label}`}
+          aria-label={`Hide ${label}`}
+        >
+          &times;
+        </button>
+      </div>
+      {children}
+    </div>
+  );
+}
 
 export function DeleteEntityButton({
   onClick,
@@ -142,28 +182,30 @@ export function MediaSection({
 }) {
   return (
     <Section title="Media">
-      <div className="flex flex-col gap-1.5">
-        <FieldRow label="Image">
-          <TextInput
-            value={image ?? ""}
-            onCommit={(v) => onImageChange(v || undefined)}
-            placeholder="None"
-          />
-        </FieldRow>
-        {getPrompt && (
-          <EntityArtGenerator
-            getPrompt={getPrompt}
-            entityContext={entityContext}
-            currentImage={image}
-            onAccept={(filePath) => onImageChange(filePath)}
-            assetType={assetType}
-            context={context}
-            vibe={vibe}
-            surface="worldbuilding"
-          />
-        )}
+      <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-1.5">
+          <FieldRow label="Image">
+            <TextInput
+              value={image ?? ""}
+              onCommit={(v) => onImageChange(v || undefined)}
+              placeholder="None"
+            />
+          </FieldRow>
+          {getPrompt && (
+            <EntityArtGenerator
+              getPrompt={getPrompt}
+              entityContext={entityContext}
+              currentImage={image}
+              onAccept={(filePath) => onImageChange(filePath)}
+              assetType={assetType}
+              context={context}
+              vibe={vibe}
+              surface="worldbuilding"
+            />
+          )}
+        </div>
         {onVideoChange && (
-          <>
+          <MediaDisclosure label="Video" hasValue={!!video}>
             <FieldRow label="Video">
               <TextInput
                 value={video ?? ""}
@@ -183,7 +225,7 @@ export function MediaSection({
                 onAccept={(filePath) => onVideoChange(filePath)}
               />
             )}
-          </>
+          </MediaDisclosure>
         )}
       </div>
     </Section>
@@ -216,9 +258,9 @@ export function AudioSection({
 
   return (
     <Section title="Audio">
-      <div className="flex flex-col gap-1.5">
+      <div className="flex flex-col gap-3">
         {onMusicChange && (
-          <>
+          <MediaDisclosure label="Music" hasValue={!!music}>
             <FieldRow label="Music">
               <TextInput
                 value={music ?? ""}
@@ -239,10 +281,10 @@ export function AudioSection({
               currentAudio={music}
               onAccept={(filePath) => onMusicChange(filePath)}
             />
-          </>
+          </MediaDisclosure>
         )}
         {onAmbientChange && (
-          <>
+          <MediaDisclosure label="Ambient" hasValue={!!ambient}>
             <FieldRow label="Ambient">
               <TextInput
                 value={ambient ?? ""}
@@ -256,10 +298,10 @@ export function AudioSection({
               mediaType="audio"
               assetType="ambient"
             />
-          </>
+          </MediaDisclosure>
         )}
         {onAudioChange && (
-          <>
+          <MediaDisclosure label="Audio" hasValue={!!audio}>
             <FieldRow label="Audio">
               <TextInput
                 value={audio ?? ""}
@@ -273,7 +315,7 @@ export function AudioSection({
               mediaType="audio"
               assetType="audio"
             />
-          </>
+          </MediaDisclosure>
         )}
       </div>
     </Section>

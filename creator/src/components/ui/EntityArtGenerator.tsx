@@ -71,13 +71,14 @@ export function EntityArtGenerator({
 }: EntityArtGeneratorProps) {
   const settings = useAssetStore((s) => s.settings);
   const artStyle = useAssetStore((s) => s.artStyle);
+  const setArtStyle = useAssetStore((s) => s.setArtStyle);
   const importAsset = useAssetStore((s) => s.importAsset);
   const mudDir = useProjectStore((s) => s.project?.mudDir);
   const [stage, setStage] = useState<Stage>("idle");
   const [result, setResult] = useState<GeneratedImage | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [editedPrompt, setEditedPrompt] = useState<string | null>(null);
-  const [showPrompt, setShowPrompt] = useState(false);
+  const [showAdvanced, setShowAdvanced] = useState(false);
   const [enhancing, setEnhancing] = useState(false);
   const [importing, setImporting] = useState(false);
   const [dimOverride, setDimOverride] = useState<{ width: number; height: number } | null>(null);
@@ -383,65 +384,51 @@ export function EntityArtGenerator({
       )}
 
       {stage === "idle" && (
-        <div className="flex flex-col gap-1">
+        <div className="flex flex-col gap-1.5">
+          {/* Prompt box — always visible when any AI key is configured */}
           {(hasApiKey || hasLlmKey) && (
-            <div className="rounded border border-border-default/60 bg-bg-primary/60 px-2 py-1 text-2xs text-text-secondary">
-              Style system: {ART_STYLE_LABELS[artStyle]}
-            </div>
-          )}
-
-          {/* Dimension override */}
-          {hasApiKey && (
-            <div className="flex items-center gap-1">
-              <span className="text-2xs text-text-muted">{activeDims.width}×{activeDims.height}</span>
-              <select
-                value={dimOverride ? `${dimOverride.width}x${dimOverride.height}` : ""}
-                onChange={(e) => {
-                  if (!e.target.value) {
-                    setDimOverride(null);
-                  } else {
-                    const parts = e.target.value.split("x").map(Number);
-                    setDimOverride({ width: parts[0]!, height: parts[1]! });
-                  }
-                }}
-                className="rounded border border-border-default bg-bg-primary px-1 py-0.5 text-2xs text-text-secondary outline-none focus-visible:ring-2 focus-visible:ring-border-active"
-              >
-                <option value="">Default</option>
-                {DIMENSION_PRESETS.map((p) => (
-                  <option key={p.label} value={`${p.width}x${p.height}`}>{p.label}</option>
-                ))}
-              </select>
-            </div>
-          )}
-
-          {/* Model selector */}
-          {hasApiKey && availableModels.length > 0 && (
-            <div className="flex flex-col gap-0.5">
+            <div className="flex flex-col gap-1">
+              <textarea
+                value={activePrompt}
+                onChange={(e) => setEditedPrompt(e.target.value)}
+                rows={4}
+                className="w-full resize-y rounded border border-border-default bg-bg-primary px-2 py-1 font-mono text-2xs leading-relaxed text-text-secondary outline-none focus:border-accent/50 focus-visible:ring-2 focus-visible:ring-border-active"
+              />
               <div className="flex items-center gap-1">
-                <select
-                  value={modelOverride ?? ""}
-                  onChange={(e) => setModelOverride(e.target.value || null)}
-                  className="rounded border border-border-default bg-bg-primary px-1 py-0.5 text-2xs text-text-secondary outline-none focus-visible:ring-2 focus-visible:ring-border-active"
+                <button
+                  onClick={handleEnhance}
+                  disabled={enhancing || !hasLlmKey}
+                  title={!hasLlmKey ? "Configure an LLM provider to enable prompt enhancement" : undefined}
+                  className="rounded px-1.5 py-0.5 text-2xs text-accent transition-colors hover:bg-accent/10 disabled:opacity-40"
                 >
-                  <option value="">Default ({resolveImageModel(imageProvider, settings?.image_model)?.label ?? "first available"})</option>
-                  {availableModels.map((m) => (
-                    <option key={m.id} value={m.id}>{m.label}</option>
-                  ))}
-                  <option value="__custom__">Custom...</option>
-                </select>
+                  {enhancing ? "Enhancing..." : enhanced ? "Re-enhance" : "Enhance Prompt"}
+                </button>
+                {enhanced && (
+                  <span className="rounded bg-accent/15 px-1.5 py-0.5 text-2xs font-medium text-accent">
+                    Enhanced
+                  </span>
+                )}
+                {editedPrompt && (
+                  <button
+                    onClick={() => {
+                      setEditedPrompt(null);
+                      setEnhanced(false);
+                    }}
+                    className="rounded px-1.5 py-0.5 text-2xs text-text-muted transition-colors hover:text-text-secondary"
+                  >
+                    Reset
+                  </button>
+                )}
+                {(entityContext || vibe) && !enhanced && hasLlmKey && (
+                  <span className="ml-auto truncate text-2xs italic text-text-muted">
+                    Entity + vibe auto-injected on generate
+                  </span>
+                )}
               </div>
-              {modelOverride === "__custom__" && (
-                <input
-                  type="text"
-                  value={customModel}
-                  onChange={(e) => setCustomModel(e.target.value)}
-                  placeholder="e.g. runware:400@2"
-                  className="rounded border border-border-default bg-bg-primary px-1.5 py-0.5 font-mono text-2xs text-text-secondary outline-none focus:border-accent/50 focus-visible:ring-2 focus-visible:ring-border-active"
-                />
-              )}
             </div>
           )}
 
+          {/* Action row: Generate / Pick / Gallery + advanced toggle */}
           <div className="flex gap-1">
             {hasApiKey && (
               <button
@@ -466,58 +453,84 @@ export function EntityArtGenerator({
             >
               Gallery
             </button>
-            {(hasApiKey || hasLlmKey) && (
+            {hasApiKey && (
               <button
-                onClick={() => setShowPrompt((v) => !v)}
-                aria-expanded={showPrompt}
-                className="rounded px-1.5 py-1 text-2xs text-text-muted transition-colors hover:text-text-secondary"
+                onClick={() => setShowAdvanced((v) => !v)}
+                aria-expanded={showAdvanced}
+                title="Model & size"
+                className={`shrink-0 rounded px-2 py-1 text-2xs transition-colors ${
+                  showAdvanced
+                    ? "bg-accent/15 text-accent"
+                    : "text-text-muted hover:bg-bg-elevated hover:text-text-secondary"
+                }`}
               >
-                {showPrompt ? "Hide" : "Prompt"}
+                ⚙
               </button>
             )}
           </div>
 
-          {showPrompt && (hasApiKey || hasLlmKey) && (
-            <div className="flex flex-col gap-1">
-              <textarea
-                value={activePrompt}
-                onChange={(e) => setEditedPrompt(e.target.value)}
-                rows={4}
-                className="w-full resize-y rounded border border-border-default bg-bg-primary px-2 py-1 font-mono text-2xs leading-relaxed text-text-secondary outline-none focus:border-accent/50 focus-visible:ring-2 focus-visible:ring-border-active"
-              />
+          {/* Advanced: style + model + dimension overrides (hidden by default) */}
+          {showAdvanced && hasApiKey && (
+            <div className="flex flex-col gap-1 rounded border border-border-default/60 bg-bg-primary/40 px-2 py-1.5">
               <div className="flex items-center gap-1">
-                <button
-                  onClick={handleEnhance}
-                  disabled={enhancing}
-                  className="rounded px-1.5 py-0.5 text-2xs text-accent transition-colors hover:bg-accent/10 disabled:opacity-50"
+                <span className="w-10 shrink-0 text-2xs text-text-muted">Style</span>
+                <select
+                  value={artStyle}
+                  onChange={(e) => setArtStyle(e.target.value as ArtStyle)}
+                  className="ml-auto min-w-0 flex-1 rounded border border-border-default bg-bg-primary px-1 py-0.5 text-2xs text-text-secondary outline-none focus-visible:ring-2 focus-visible:ring-border-active"
                 >
-                  {enhancing ? "..." : enhanced ? "Re-enhance" : "Enhance"}
-                </button>
-                {enhanced && (
-                  <span className="rounded bg-accent/15 px-1.5 py-0.5 text-2xs font-medium text-accent">
-                    Enhanced
-                  </span>
-                )}
-                {editedPrompt && (
-                  <button
-                    onClick={() => {
-                      setEditedPrompt(null);
-                      setEnhanced(false);
-                    }}
-                    className="rounded px-1.5 py-0.5 text-2xs text-text-muted transition-colors hover:text-text-secondary"
-                  >
-                    Reset
-                  </button>
-                )}
+                  {(Object.keys(ART_STYLE_LABELS) as ArtStyle[]).map((style) => (
+                    <option key={style} value={style}>{ART_STYLE_LABELS[style]}</option>
+                  ))}
+                </select>
               </div>
-              {(entityContext || vibe) && (
-                <p className="text-2xs italic text-text-muted">
-                  {!hasLlmKey
-                    ? "Configure an LLM provider to enable auto-enhanced prompts"
-                    : enhanced
-                      ? "Prompt already enhanced — will be sent as-is during generation"
-                      : "Entity details + zone vibe auto-injected during generation"}
-                </p>
+              <div className="flex items-center gap-1">
+                <span className="w-10 shrink-0 text-2xs text-text-muted">Size</span>
+                <span className="shrink-0 text-2xs text-text-muted">{activeDims.width}×{activeDims.height}</span>
+                <select
+                  value={dimOverride ? `${dimOverride.width}x${dimOverride.height}` : ""}
+                  onChange={(e) => {
+                    if (!e.target.value) {
+                      setDimOverride(null);
+                    } else {
+                      const parts = e.target.value.split("x").map(Number);
+                      setDimOverride({ width: parts[0]!, height: parts[1]! });
+                    }
+                  }}
+                  className="ml-auto rounded border border-border-default bg-bg-primary px-1 py-0.5 text-2xs text-text-secondary outline-none focus-visible:ring-2 focus-visible:ring-border-active"
+                >
+                  <option value="">Default</option>
+                  {DIMENSION_PRESETS.map((p) => (
+                    <option key={p.label} value={`${p.width}x${p.height}`}>{p.label}</option>
+                  ))}
+                </select>
+              </div>
+              {availableModels.length > 0 && (
+                <div className="flex flex-col gap-1">
+                  <div className="flex items-center gap-1">
+                    <span className="w-10 shrink-0 text-2xs text-text-muted">Model</span>
+                    <select
+                      value={modelOverride ?? ""}
+                      onChange={(e) => setModelOverride(e.target.value || null)}
+                      className="ml-auto min-w-0 flex-1 rounded border border-border-default bg-bg-primary px-1 py-0.5 text-2xs text-text-secondary outline-none focus-visible:ring-2 focus-visible:ring-border-active"
+                    >
+                      <option value="">Default ({resolveImageModel(imageProvider, settings?.image_model)?.label ?? "first available"})</option>
+                      {availableModels.map((m) => (
+                        <option key={m.id} value={m.id}>{m.label}</option>
+                      ))}
+                      <option value="__custom__">Custom...</option>
+                    </select>
+                  </div>
+                  {modelOverride === "__custom__" && (
+                    <input
+                      type="text"
+                      value={customModel}
+                      onChange={(e) => setCustomModel(e.target.value)}
+                      placeholder="e.g. runware:400@2"
+                      className="rounded border border-border-default bg-bg-primary px-1.5 py-0.5 font-mono text-2xs text-text-secondary outline-none focus:border-accent/50 focus-visible:ring-2 focus-visible:ring-border-active"
+                    />
+                  )}
+                </div>
               )}
             </div>
           )}

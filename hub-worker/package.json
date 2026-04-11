@@ -5,13 +5,15 @@
   "type": "module",
   "scripts": {
     "dev": "wrangler dev",
-    "deploy": "wrangler deploy",
+    "deploy": "npm run build:assets && wrangler deploy",
+    "build:assets": "cd ../showcase && cross-env VITE_HUB_ROOT_DOMAIN=arcanum.ambon.dev npm run build && node -e \"require('fs').rmSync('dist/_redirects',{force:true})\"",
     "db:init:local": "wrangler d1 execute arcanum-hub --local --file=./src/schema.sql",
     "db:init:remote": "wrangler d1 execute arcanum-hub --remote --file=./src/schema.sql",
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20250101.0",
+    "cross-env": "^7.0.3",
     "typescript": "^5.7.0",
     "wrangler": "^3.100.0"
   }

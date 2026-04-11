@@ -9,6 +9,11 @@ export interface RecentProject {
   lastOpened: number;
 }
 
+export interface AtlasPosition {
+  x: number;
+  y: number;
+}
+
 export interface PersistedUI {
   lastProjectPath: string;
   tabs: Tab[];
@@ -18,6 +23,11 @@ export interface PersistedUI {
   collapsedSidebarSections?: string[];
   artSubTab?: "direction" | "assets" | "custom";
   collapsedZoneAssetSections?: Record<string, string[]>;
+  /**
+   * Atlas cluster positions, keyed first by project path, then by zone id.
+   * Populated when the user drags a cluster in the World Atlas view.
+   */
+  atlasClusterPositions?: Record<string, Record<string, AtlasPosition>>;
 }
 
 export function saveUIState(state: PersistedUI): void {
@@ -154,4 +164,39 @@ export function saveArtSubTab(tab: "direction" | "assets" | "custom"): void {
 
 export function loadArtSubTab(): "direction" | "assets" | "custom" {
   return loadUIState()?.artSubTab ?? "direction";
+}
+
+// ─── Atlas cluster positions ────────────────────────────────────────
+
+export function loadAtlasClusterPositions(
+  projectPath: string,
+): Record<string, AtlasPosition> {
+  if (!projectPath) return {};
+  return loadUIState()?.atlasClusterPositions?.[projectPath] ?? {};
+}
+
+export function saveAtlasClusterPosition(
+  projectPath: string,
+  zoneId: string,
+  position: AtlasPosition,
+): void {
+  if (!projectPath || !zoneId) return;
+  const state = loadUIState();
+  if (!state) return;
+  const all = state.atlasClusterPositions ?? {};
+  const forProject = { ...(all[projectPath] ?? {}) };
+  forProject[zoneId] = { x: position.x, y: position.y };
+  saveUIState({
+    ...state,
+    atlasClusterPositions: { ...all, [projectPath]: forProject },
+  });
+}
+
+export function clearAtlasClusterPositions(projectPath: string): void {
+  if (!projectPath) return;
+  const state = loadUIState();
+  if (!state?.atlasClusterPositions) return;
+  if (!(projectPath in state.atlasClusterPositions)) return;
+  const { [projectPath]: _removed, ...rest } = state.atlasClusterPositions;
+  saveUIState({ ...state, atlasClusterPositions: rest });
 }

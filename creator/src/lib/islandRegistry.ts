@@ -28,6 +28,16 @@ export interface PanelHotspot extends HotspotBox {
   panelId: string;
 }
 
+export type IslandActionKind = "newZone" | "openZoneView";
+
+export interface IslandAction {
+  id: string;
+  label: string;
+  kind: IslandActionKind;
+  glyph?: string;
+  hotspot: HotspotBox;
+}
+
 export interface IslandDef {
   id: Island;
   title: string;
@@ -35,12 +45,7 @@ export interface IslandDef {
   image: string;
   panelIds: string[];
   hotspots: PanelHotspot[];
-  primaryAction?: {
-    id: string;
-    label: string;
-    glyph: string;
-    hotspot: HotspotBox;
-  };
+  actions?: IslandAction[];
 }
 
 // ─── Main view hotspots ─────────────────────────────────────────────
@@ -166,12 +171,21 @@ export const ISLANDS: Record<Island, IslandDef | null> = {
     image: "/menus/forge.jpg",
     panelIds: FORGE_PANELS,
     hotspots: FORGE_HOTSPOTS,
-    primaryAction: {
-      id: "newZone",
-      label: "New Zone",
-      glyph: "\u2795",
-      hotspot: { x: 35, y: 57, w: 30, h: 22 },
-    },
+    actions: [
+      {
+        id: "openZoneView",
+        label: "Open Zone",
+        kind: "openZoneView",
+        hotspot: { x: 36, y: 16, w: 28, h: 31 },
+      },
+      {
+        id: "newZone",
+        label: "New Zone",
+        kind: "newZone",
+        glyph: "\u2795",
+        hotspot: { x: 35, y: 57, w: 30, h: 22 },
+      },
+    ],
   },
   loom: {
     id: "loom",

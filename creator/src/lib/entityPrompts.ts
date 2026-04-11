@@ -1,4 +1,4 @@
-import type { RoomFile, MobFile, ItemFile, ShopFile, TrainerFile, GatheringNodeFile, WorldFile } from "@/types/world";
+import type { RoomFile, MobFile, ItemFile, ShopFile, TrainerFile, GatheringNodeFile, WorldFile, DungeonFile, DungeonRoomTemplate } from "@/types/world";
 import { getTrainerPrimaryClass } from "@/lib/trainers";
 import { type ArtStyle, getPreamble, getStyleSuffix, FORMAT_BY_TYPE, withSpriteSafety } from "./arcanumPrompts";
 
@@ -61,6 +61,92 @@ export function shopContext(shopId: string, shop: ShopFile): string {
   parts.push("Composition: wide landscape, an empty marketplace interior — storefront, shelves, wares, and architecture only");
   parts.push(EMPTY_SCENE_DIRECTIVE);
   return parts.join("\n");
+}
+
+/** Build a context description for a dungeon template. */
+export function dungeonContext(dungeon: DungeonFile, zoneName: string): string {
+  const parts = [`Dungeon "${dungeon.name}" in the "${zoneName}" zone`];
+  if (dungeon.description) parts.push(`Description: ${dungeon.description}`);
+  const min = dungeon.roomCountMin ?? 20;
+  const max = dungeon.roomCountMax ?? 25;
+  parts.push(`A procedurally assembled dungeon instance of ${min}–${max} rooms`);
+  if (dungeon.minLevel) parts.push(`Minimum player level: ${dungeon.minLevel}`);
+  const roomTypes = Object.keys(dungeon.roomTemplates ?? {});
+  if (roomTypes.length > 0) parts.push(`Room types present: ${roomTypes.join(", ")}`);
+  parts.push(
+    "Composition: dramatic wide establishing shot of the dungeon's entrance or signature space — sense of scale, atmospheric depth, a threshold the player is about to cross",
+  );
+  parts.push(EMPTY_SCENE_DIRECTIVE);
+  return parts.join("\n");
+}
+
+/** Build a context description for a single dungeon room template. */
+export function dungeonRoomTemplateContext(
+  category: string,
+  tpl: DungeonRoomTemplate,
+  dungeon: DungeonFile,
+): string {
+  const parts = [`Room template (type: ${category}) for dungeon "${dungeon.name}"`];
+  if (tpl.title) parts.push(`Title: ${tpl.title}`);
+  if (tpl.description) parts.push(`Description: ${tpl.description}`);
+  if (dungeon.description) parts.push(`Dungeon context: ${dungeon.description}`);
+  parts.push(`Purpose: one of many ${category} variants the server picks from when assembling an instance`);
+  parts.push("Composition: wide landscape, suitable for a game room background");
+  parts.push(EMPTY_SCENE_DIRECTIVE);
+  return parts.join("\n");
+}
+
+/** Build a full prompt for a dungeon hero image. */
+export function dungeonPrompt(dungeon: DungeonFile, style: ArtStyle = "gentle_magic"): string {
+  const preamble = getPreamble(style, "worldbuilding");
+  const setting = dungeon.description
+    ? `A dungeon called "${dungeon.name}": ${dungeon.description}.`
+    : `A dungeon known as "${dungeon.name}".`;
+
+  if (style === "gentle_magic") {
+    return `${FORMAT_BY_TYPE.room}. ${preamble}
+
+${setting} Rendered as a dreamlike dungeon threshold — soft lavender and pale blue ambient light pooling at the entrance, organic weathered stonework, drifting motes of warm gold, moss green and dusty rose accents on ancient carvings, atmospheric haze receding into deeper darkness, dramatic scale, painterly, luminous
+
+${EMPTY_SCENE_DIRECTIVE}
+
+${getStyleSuffix("worldbuilding")}`;
+  }
+
+  return `${preamble}
+
+${setting} Rendered as a baroque cosmic dungeon entrance — deep indigo shadows swallowing the far reaches, aurum-gold light pooling at the threshold archway, rococo scrollwork framing weathered stone, blue-violet atmospheric mist curling from within, painterly, luminous, wide establishing composition suitable for a dungeon title card
+
+${EMPTY_SCENE_DIRECTIVE}`;
+}
+
+/** Build a full prompt for a single dungeon room template. */
+export function dungeonRoomTemplatePrompt(
+  category: string,
+  tpl: DungeonRoomTemplate,
+  style: ArtStyle = "gentle_magic",
+): string {
+  const preamble = getPreamble(style, "worldbuilding");
+  const title = tpl.title || `dungeon ${category}`;
+  const setting = tpl.description
+    ? `A dungeon ${category} called "${title}": ${tpl.description}.`
+    : `A dungeon ${category} known as "${title}".`;
+
+  if (style === "gentle_magic") {
+    return `${FORMAT_BY_TYPE.room}. ${preamble}
+
+${setting} Rendered as a dreamlike dungeon space — soft lavender and pale blue ambient light, organic weathered stone, drifting motes of warm gold, moss green accents on old surfaces, atmospheric haze, painterly, luminous
+
+${EMPTY_SCENE_DIRECTIVE}
+
+${getStyleSuffix("worldbuilding")}`;
+  }
+
+  return `${preamble}
+
+${setting} Rendered as a baroque cosmic dungeon chamber — deep indigo shadows, aurum-gold light pooling at architectural details, rococo scrollwork framing stone, blue-violet atmospheric mist, painterly, luminous, wide composition suitable for a game room background
+
+${EMPTY_SCENE_DIRECTIVE}`;
 }
 
 /** Build a context description for a gathering node. */

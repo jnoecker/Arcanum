@@ -29,6 +29,7 @@ class PanelErrorBoundary extends Component<{ children: ReactNode }, { error: Err
 }
 
 const ZoneEditor = lazy(() => import("./zone/ZoneEditor").then(m => ({ default: m.ZoneEditor })));
+const ZoneAtlasView = lazy(() => import("./zone/ZoneAtlasView").then(m => ({ default: m.ZoneAtlasView })));
 const ConfigPanelHost = lazy(() => import("./config/ConfigPanelHost").then(m => ({ default: m.ConfigPanelHost })));
 const LorePanelHost = lazy(() => import("./lore/LorePanelHost").then(m => ({ default: m.LorePanelHost })));
 const PlayerSpriteManager = lazy(() => import("./PlayerSpriteManager").then(m => ({ default: m.PlayerSpriteManager })));
@@ -123,6 +124,11 @@ export function MainArea() {
       const zoneId = activeTab.id.replace(/^zone:/, "");
       panelIsland = "forge";
       content = <ZoneEditor key={zoneId} zoneId={zoneId} />;
+      break;
+    }
+    case "zoneAtlas": {
+      panelIsland = "forge";
+      content = <ZoneAtlasView />;
       break;
     }
     // Legacy tab kinds — kept for backward compatibility with persisted tabs

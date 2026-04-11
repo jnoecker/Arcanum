@@ -771,32 +771,36 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
 
       {/* Map + Panel, Asset Browser, Media Panel, or Dungeon Editor */}
       {viewMode === "dungeon" ? (
-        <div id="zone-view-panel" role="tabpanel" aria-labelledby={`zone-view-tab-${viewMode}`} className="min-h-0 min-w-0 flex-1 overflow-y-auto px-4 py-4">
-          <div className="mx-auto max-w-2xl">
-            {zoneState.data.dungeon ? (
-              <DungeonEditor
-                world={zoneState.data}
-                onWorldChange={applyWorldChange}
-                onDelete={() => {
-                  applyWorldChange(removeDungeon(zoneState.data));
-                  setViewMode("map");
-                }}
-              />
-            ) : (
-              <DungeonEmptyState
-                onAdd={() => {
-                  applyWorldChange(setDungeon(zoneState.data, {
-                    name: zoneState.data.zone + " Dungeon",
-                    roomCountMin: 20,
-                    roomCountMax: 25,
-                  }));
-                }}
-              />
-            )}
-          </div>
+        <div id="zone-view-panel" role="tabpanel" aria-labelledby={`zone-view-tab-${viewMode}`} className="flex min-h-0 min-w-0 flex-1 flex-col">
+          {zoneState.data.dungeon ? (
+            <DungeonEditor
+              zoneId={zoneId}
+              world={zoneState.data}
+              onWorldChange={applyWorldChange}
+              onDelete={() => {
+                applyWorldChange(removeDungeon(zoneState.data));
+                setViewMode("map");
+              }}
+              onJumpToEntity={(kind, id) => {
+                setViewMode("map");
+                setSelectedEntity({ kind, id });
+                setSelectedRoomId(null);
+              }}
+            />
+          ) : (
+            <DungeonEmptyState
+              onAdd={() => {
+                applyWorldChange(setDungeon(zoneState.data, {
+                  name: zoneState.data.zone + " Dungeon",
+                  roomCountMin: 20,
+                  roomCountMax: 25,
+                }));
+              }}
+            />
+          )}
         </div>
       ) : viewMode === "media" ? (
-        <div id="zone-view-panel" role="tabpanel" aria-labelledby={`zone-view-tab-${viewMode}`} className="min-h-0 min-w-0 flex-1">
+        <div id="zone-view-panel" role="tabpanel" aria-labelledby={`zone-view-tab-${viewMode}`} className="flex min-h-0 min-w-0 flex-1 flex-col">
           <ZoneMediaPanel zoneId={zoneId} world={zoneState.data} onWorldChange={applyWorldChange} />
         </div>
       ) : viewMode === "assets" ? (

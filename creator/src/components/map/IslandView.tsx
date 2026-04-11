@@ -1,11 +1,14 @@
-import { useState, useCallback, useRef, lazy, Suspense } from "react";
+import { useState, useCallback, useRef, lazy, Suspense, useMemo } from "react";
 import { useProjectStore } from "@/stores/projectStore";
-import { ISLANDS } from "@/lib/islandRegistry";
+import { useZoneStore } from "@/stores/zoneStore";
+import { ISLANDS, type IslandAction } from "@/lib/islandRegistry";
 import {
   PANEL_MAP,
   panelTab,
   type Island,
 } from "@/lib/panelRegistry";
+import { DialogShell } from "@/components/ui/FormWidgets";
+import { useFocusTrap } from "@/lib/useFocusTrap";
 
 const NewZoneDialog = lazy(() =>
   import("../NewZoneDialog").then((m) => ({ default: m.NewZoneDialog })),
@@ -29,7 +32,15 @@ export function IslandView({ island }: IslandViewProps) {
   const openWorldMap = useProjectStore((s) => s.openWorldMap);
   const [hoveredPanelId, setHoveredPanelId] = useState<string | null>(null);
   const [showNewZone, setShowNewZone] = useState(false);
+  const [showZonePicker, setShowZonePicker] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  const openZoneTab = useCallback(
+    (zoneId: string) => {
+      openTab({ id: `zone:${zoneId}`, kind: "zone", label: zoneId });
+    },
+    [openTab],
+  );
 
   // ── Calibration mode (hold Alt) ───────────────────────────────
   const [calibrating, setCalibrating] = useState(false);
@@ -81,11 +92,28 @@ export function IslandView({ island }: IslandViewProps) {
     [openTab],
   );
 
-  const handlePrimary = useCallback(() => {
-    if (island === "forge") {
-      setShowNewZone(true);
-    }
-  }, [island]);
+  const handleAction = useCallback(
+    (action: IslandAction) => {
+      if (action.kind === "newZone") {
+        setShowNewZone(true);
+        return;
+      }
+      if (action.kind === "openZoneView") {
+        const zones = useZoneStore.getState().zones;
+        if (zones.size === 0) {
+          setShowNewZone(true);
+          return;
+        }
+        if (zones.size === 1) {
+          const zoneId = zones.keys().next().value;
+          if (zoneId) openZoneTab(zoneId);
+          return;
+        }
+        setShowZonePicker(true);
+      }
+    },
+    [openZoneTab],
+  );
 
   if (!def) {
     return (
@@ -167,25 +195,27 @@ export function IslandView({ island }: IslandViewProps) {
             );
           })}
 
-        {/* Primary action (e.g. Forge's "+ New Zone") */}
-        {!calibrating && def.primaryAction && (
-          <button
-            type="button"
-            onClick={handlePrimary}
-            className="focus-ring absolute flex items-end justify-center rounded-2xl pb-1 transition-all duration-200 hover:bg-accent/10"
-            style={{
-              left: `${def.primaryAction.hotspot.x}%`,
-              top: `${def.primaryAction.hotspot.y}%`,
-              width: `${def.primaryAction.hotspot.w}%`,
-              height: `${def.primaryAction.hotspot.h}%`,
-            }}
-            aria-label={def.primaryAction.label}
-          >
-            <span className="rounded-md bg-bg-abyss/70 px-2 py-0.5 font-display text-[11px] font-semibold uppercase tracking-wide-ui text-accent drop-shadow-[0_1px_4px_rgba(0,0,0,0.9)]">
-              {def.primaryAction.label}
-            </span>
-          </button>
-        )}
+        {/* Island-level actions (e.g. Forge's "+ New Zone" / "Open Zone") */}
+        {!calibrating &&
+          def.actions?.map((action) => (
+            <button
+              key={action.id}
+              type="button"
+              onClick={() => handleAction(action)}
+              className="focus-ring absolute flex items-end justify-center rounded-2xl pb-1 transition-all duration-200 hover:bg-accent/10"
+              style={{
+                left: `${action.hotspot.x}%`,
+                top: `${action.hotspot.y}%`,
+                width: `${action.hotspot.w}%`,
+                height: `${action.hotspot.h}%`,
+              }}
+              aria-label={action.label}
+            >
+              <span className="rounded-md bg-bg-abyss/70 px-2 py-0.5 font-display text-[11px] font-semibold uppercase tracking-wide-ui text-accent drop-shadow-[0_1px_4px_rgba(0,0,0,0.9)]">
+                {action.label}
+              </span>
+            </button>
+          ))}
 
         {/* ── Calibration overlay (Alt mode) ─────────────────────── */}
         {calibrating && (
@@ -255,6 +285,143 @@ export function IslandView({ island }: IslandViewProps) {
       <Suspense>
         {showNewZone && <NewZoneDialog onClose={() => setShowNewZone(false)} />}
       </Suspense>
+      {showZonePicker && (
+        <ZonePickerDialog
+          onClose={() => setShowZonePicker(false)}
+          onSelect={(zoneId) => {
+            setShowZonePicker(false);
+            openZoneTab(zoneId);
+          }}
+          onOpenAtlas={() => {
+            setShowZonePicker(false);
+            openTab({ id: "zoneAtlas", kind: "zoneAtlas", label: "World Atlas" });
+          }}
+          onCreateNew={() => {
+            setShowZonePicker(false);
+            setShowNewZone(true);
+          }}
+        />
+      )}
     </div>
+  );
+}
+
+// ─── Zone picker dialog ───────────────────────────────────────────
+
+function ZonePickerDialog({
+  onClose,
+  onSelect,
+  onOpenAtlas,
+  onCreateNew,
+}: {
+  onClose: () => void;
+  onSelect: (zoneId: string) => void;
+  onOpenAtlas: () => void;
+  onCreateNew: () => void;
+}) {
+  const trapRef = useFocusTrap<HTMLDivElement>(onClose);
+  const zones = useZoneStore((s) => s.zones);
+  const [query, setQuery] = useState("");
+
+  const entries = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    const list = Array.from(zones.entries()).map(([id, state]) => ({
+      id,
+      name: state.data.zone || id,
+      rooms: Object.keys(state.data.rooms ?? {}).length,
+    }));
+    const filtered = !q
+      ? list
+      : list.filter(
+          (z) =>
+            z.id.toLowerCase().includes(q) || z.name.toLowerCase().includes(q),
+        );
+    return filtered.sort((a, b) => a.name.localeCompare(b.name));
+  }, [zones, query]);
+
+  return (
+    <DialogShell
+      dialogRef={trapRef}
+      titleId="zone-picker-title"
+      title="Open Zone"
+      subtitle="Pick a zone to open the map view."
+      widthClassName="max-w-md"
+      onClose={onClose}
+    >
+      <button
+        type="button"
+        onClick={onOpenAtlas}
+        className="mb-3 flex w-full items-center gap-3 rounded border border-accent/40 bg-gradient-active-strong px-3 py-2 text-left transition-colors hover:bg-accent/15"
+      >
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className="h-5 w-5 text-accent"
+        >
+          <circle cx="12" cy="12" r="9" />
+          <path d="M3 12h18" />
+          <path d="M12 3a14 14 0 0 1 0 18" />
+          <path d="M12 3a14 14 0 0 0 0 18" />
+        </svg>
+        <div className="min-w-0 flex-1">
+          <div className="font-display text-sm uppercase tracking-widest text-accent">
+            World Atlas
+          </div>
+          <div className="mt-0.5 text-2xs text-text-muted">
+            All zones at once — click any room to jump in.
+          </div>
+        </div>
+        <span className="text-text-muted">→</span>
+      </button>
+      <input
+        type="text"
+        autoFocus
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+        placeholder="Search zones..."
+        className="ornate-input mb-3 w-full px-3 py-2 text-sm text-text-primary"
+      />
+      <div className="flex max-h-96 flex-col gap-1 overflow-y-auto">
+        {entries.length === 0 && (
+          <p className="rounded border border-dashed border-border-muted px-3 py-6 text-center text-2xs italic text-text-muted">
+            No zones match.
+          </p>
+        )}
+        {entries.map((z) => (
+          <button
+            key={z.id}
+            type="button"
+            onClick={() => onSelect(z.id)}
+            className="flex items-center gap-3 rounded border border-border-muted bg-[var(--chrome-fill-soft)] px-3 py-2 text-left transition-colors hover:border-accent/40 hover:bg-[var(--chrome-highlight)]"
+          >
+            <div className="min-w-0 flex-1">
+              <div className="truncate font-display text-sm uppercase tracking-widest text-accent">
+                {z.name}
+              </div>
+              <div className="mt-0.5 flex items-center gap-2 text-2xs text-text-muted">
+                <span className="font-mono">{z.id}</span>
+                <span>·</span>
+                <span>
+                  {z.rooms} {z.rooms === 1 ? "room" : "rooms"}
+                </span>
+              </div>
+            </div>
+            <span className="text-text-muted transition-colors group-hover:text-accent">→</span>
+          </button>
+        ))}
+        <button
+          type="button"
+          onClick={onCreateNew}
+          className="mt-1 flex items-center gap-2 rounded border border-dashed border-border-muted px-3 py-2 text-left text-xs text-accent transition-colors hover:border-accent/40 hover:bg-[var(--chrome-highlight)]"
+        >
+          <span className="font-mono">+</span>
+          <span>Create new zone…</span>
+        </button>
+      </div>
+    </DialogShell>
   );
 }

@@ -242,30 +242,20 @@ export function imageGenerateCommand(provider: string): string {
   }
 }
 
-/** Returns true if the model natively generates transparent backgrounds for eligible asset types,
- *  meaning client-side BG removal should be skipped to avoid double processing. */
-export function modelNativelyTransparent(provider: string, modelId?: string): boolean {
-  // GPT Image 1.5 via Runware sends background:"transparent" for sprite-type assets
-  if (provider === "runware" && modelId?.startsWith("openai:")) return true;
-  // Direct OpenAI provider sends transparentBackground flag
-  if (provider === "openai") return true;
+/** Returns true if the model natively generates transparent backgrounds,
+ *  meaning client-side BG removal should be skipped to avoid double processing.
+ *  Currently always false — native transparency is disabled because GPT Image 1.5
+ *  produces degraded output in transparent mode. */
+export function modelNativelyTransparent(_provider: string, _modelId?: string): boolean {
   return false;
 }
 
-/** Asset types that benefit from provider-native transparent backgrounds. */
-export function requestsTransparentBackground(assetType?: AssetType | string | null): boolean {
-  switch (assetType) {
-    case "mob":
-    case "item":
-    case "pet":
-    case "entity_portrait":
-    case "gathering_node":
-    case "player_sprite":
-    case "ability_sprite":
-      return true;
-    default:
-      return false;
-  }
+/** Whether to request native transparent background from the image provider.
+ *  Disabled: GPT Image 1.5's transparent mode degrades output quality
+ *  (doll-like figures, wrong proportions). Client-side bg-removal handles
+ *  transparency after generation instead. */
+export function requestsTransparentBackground(_assetType?: AssetType | string | null): boolean {
+  return false;
 }
 
 /** Default image dimensions per entity type */

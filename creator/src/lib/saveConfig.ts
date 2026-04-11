@@ -236,7 +236,6 @@ async function saveSplitConfig(projectDir: string): Promise<void> {
         globalAssets: Object.keys(config.globalAssets).length > 0 ? normalizeGlobalAssetMap(config.globalAssets) : undefined,
         defaultAssets: Object.keys(config.defaultAssets).length > 0 ? normalizeGlobalAssetMap(config.defaultAssets) : undefined,
       }),
-      playerTiers: config.playerTiers && Object.keys(config.playerTiers).length > 0 ? config.playerTiers : undefined,
     })),
 
     write("pets", Object.keys(config.pets ?? {}).length > 0

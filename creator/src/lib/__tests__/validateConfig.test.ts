@@ -114,7 +114,7 @@ const BASE_CONFIG: AppConfig = {
   guildRanks: {},
   mobActionDelay: { minActionDelayMillis: 8000, maxActionDelayMillis: 20000 },
   characterCreation: { startingGold: 0 },
-  images: { baseUrl: "/images/", spriteLevelTiers: [50, 40, 30, 20, 10, 1] },
+  images: { baseUrl: "/images/" },
   globalAssets: {
     video_available_indicator: "video_available_indicator.png",
     shop_kiosk: "shop_kiosk.png",

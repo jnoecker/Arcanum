@@ -90,13 +90,12 @@ fn snap_gpt_image_dims(w: u32, h: u32) -> (u32, u32) {
     }
 }
 
-/// Asset types that benefit from transparent backgrounds in GPT Image 1.5.
-fn wants_transparent_bg(asset_type: Option<&str>) -> bool {
-    matches!(
-        asset_type,
-        Some("mob" | "item" | "pet" | "entity_portrait" | "gathering_node"
-            | "player_sprite" | "ability_sprite")
-    )
+/// Whether to request native transparent background from GPT Image 1.5.
+/// Disabled: transparent mode degrades GPT's output quality significantly
+/// (doll-like figures, wrong proportions, dark renders). The client-side
+/// bg-removal pipeline handles transparency after generation instead.
+fn wants_transparent_bg(_asset_type: Option<&str>) -> bool {
+    false
 }
 
 fn is_gpt_image_model(model: &str) -> bool {

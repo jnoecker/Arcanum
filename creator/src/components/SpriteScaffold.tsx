@@ -10,30 +10,42 @@ import { removeBgAndSave, shouldRemoveBg } from "@/lib/useBackgroundRemoval";
 import { ENTITY_DIMENSIONS, imageGenerateCommand, resolveImageModel, requestsTransparentBackground, modelNativelyTransparent } from "@/types/assets";
 import {
   buildSpritePrompt,
-  enhanceSpritePrompt,
+  generateArtDirection,
   generateSpriteTemplate,
-  getTierDefinitions,
   type SpritePromptTemplate,
 } from "@/lib/spritePromptGen";
 import {
   computeGaps,
   scaffoldDefinitions,
   type GapSummary,
-} from "@/lib/tierSpriteScaffold";
+  type ScaffoldMode,
+} from "@/lib/spriteScaffold";
 import type { GeneratedImage, AssetContext } from "@/types/assets";
 import { ActionButton } from "./ui/FormWidgets";
 
 const SPRITE_TEMPLATE_VIBE =
-  "Dreamy character creation sprites for a magical fantasy world, cohesive with a softly enchanted storybook aesthetic.";
+  "Character creation sprites for a fantasy world — each one should be a compelling standalone portrait.";
 
-interface TierSpriteScaffoldProps {
+const GENDER_OPTIONS = [
+  { value: "male", label: "Male" },
+  { value: "female", label: "Female" },
+  { value: "nonbinary", label: "Nonbinary" },
+];
+
+const MODE_OPTIONS: { value: ScaffoldMode; label: string; description: string }[] = [
+  { value: "race_class", label: "Race \u00D7 Class", description: "One sprite per race and class combination" },
+  { value: "race_only", label: "Race only", description: "One sprite per race, no class gear" },
+  { value: "class_only", label: "Class only", description: "One sprite per class, no race specified" },
+];
+
+interface SpriteScaffoldProps {
   onClose: () => void;
   onComplete: () => void;
 }
 
 type Phase = "select" | "running" | "done";
 
-export function TierSpriteScaffold({ onClose, onComplete }: TierSpriteScaffoldProps) {
+export function SpriteScaffold({ onClose, onComplete }: SpriteScaffoldProps) {
   const config = useConfigStore((s) => s.config);
   const definitions = useSpriteDefinitionStore((s) => s.definitions);
   const setDefinition = useSpriteDefinitionStore((s) => s.setDefinition);
@@ -44,7 +56,8 @@ export function TierSpriteScaffold({ onClose, onComplete }: TierSpriteScaffoldPr
   const loadAssets = useAssetStore((s) => s.loadAssets);
 
   const [phase, setPhase] = useState<Phase>("select");
-  const [tierFilter, setTierFilter] = useState<Set<string>>(new Set());
+  const [mode, setMode] = useState<ScaffoldMode>("race_class");
+  const [selectedGenders, setSelectedGenders] = useState<Set<string>>(new Set());
   const [raceFilter, setRaceFilter] = useState<Set<string>>(new Set());
   const [classFilter, setClassFilter] = useState<Set<string>>(new Set());
   const [progress, setProgress] = useState({ done: 0, failed: 0, total: 0 });
@@ -64,13 +77,13 @@ export function TierSpriteScaffold({ onClose, onComplete }: TierSpriteScaffoldPr
     settings?.openrouter_api_key
   );
 
-  // Compute gaps
+  const genders = useMemo(() => [...selectedGenders], [selectedGenders]);
+
   const gaps: GapSummary | null = useMemo(() => {
     if (!config) return null;
-    return computeGaps(config, definitions);
-  }, [config, definitions]);
+    return computeGaps(config, definitions, genders, mode);
+  }, [config, definitions, genders, mode]);
 
-  // Available filter values
   const races = useMemo(() => {
     if (!config) return [];
     return Object.keys(config.races);
@@ -78,19 +91,17 @@ export function TierSpriteScaffold({ onClose, onComplete }: TierSpriteScaffoldPr
 
   const classes = useMemo(() => {
     if (!config) return [];
-    return ["base", ...Object.keys(config.classes).filter((c) => c !== "base")];
+    return Object.keys(config.classes).filter((c) => c !== "base");
   }, [config]);
 
-  // Filtered missing slots
   const filteredMissing = useMemo(() => {
     if (!gaps) return [];
     return gaps.missing.filter((slot) => {
-      if (tierFilter.size > 0 && !tierFilter.has(slot.tier)) return false;
-      if (raceFilter.size > 0 && !raceFilter.has(slot.race)) return false;
-      if (classFilter.size > 0 && !classFilter.has(slot.playerClass)) return false;
+      if (slot.race && raceFilter.size > 0 && !raceFilter.has(slot.race)) return false;
+      if (slot.playerClass && classFilter.size > 0 && !classFilter.has(slot.playerClass)) return false;
       return true;
     });
-  }, [gaps, tierFilter, raceFilter, classFilter]);
+  }, [gaps, raceFilter, classFilter]);
 
   const toggleFilter = useCallback(
     (setFn: React.Dispatch<React.SetStateAction<Set<string>>>, value: string) => {
@@ -126,21 +137,18 @@ export function TierSpriteScaffold({ onClose, onComplete }: TierSpriteScaffoldPr
     const slots = [...filteredMissing];
     setProgress({ done: 0, failed: 0, total: slots.length });
 
-    // Create all definitions first
     const pairs = scaffoldDefinitions(slots, config, Object.keys(definitions).length);
     for (const [id, def] of pairs) {
       setDefinition(id, def);
     }
     await saveDefinitions(project);
 
-    // Generate sprite template
     let template: SpritePromptTemplate | null = null;
     if (hasLlmKey) {
       try {
         template = await generateSpriteTemplate(
           Object.keys(config.races),
           Object.keys(config.classes),
-          Object.keys(config.playerTiers ?? getTierDefinitions()),
           SPRITE_TEMPLATE_VIBE,
         );
       } catch {
@@ -148,13 +156,11 @@ export function TierSpriteScaffold({ onClose, onComplete }: TierSpriteScaffoldPr
       }
     }
 
-    // Batch generate with concurrency
     const concurrency = settings.batch_concurrency ?? 3;
     const queue = [...slots.keys()];
     let done = 0;
     let failed = 0;
 
-    // Collect bg removal promises so we can await them
     const pendingBgRemovals: Promise<unknown>[] = [];
 
     const worker = async () => {
@@ -166,10 +172,27 @@ export function TierSpriteScaffold({ onClose, onComplete }: TierSpriteScaffoldPr
         setCurrentLabel(slot.id.replace(/_/g, " "));
 
         try {
-          const dimensions = { race: slot.race, playerClass: slot.playerClass, tier: slot.tier };
-          const prompt = hasLlmKey
-            ? await enhanceSpritePrompt(buildSpritePrompt(dimensions, template))
-            : buildSpritePrompt(dimensions, template);
+          const dimensions = { race: slot.race, playerClass: slot.playerClass, gender: slot.gender };
+
+          let artDirection: string | undefined;
+          if (hasLlmKey) {
+            try {
+              const defForSlot = pairs.find(([id]) => id === slot.id)?.[1];
+              artDirection = await generateArtDirection(
+                defForSlot?.displayName ?? slot.id,
+                slot.race,
+                slot.playerClass,
+                slot.gender,
+              );
+              if (artDirection) {
+                setDefinition(slot.id, { ...defForSlot!, artDirection });
+              }
+            } catch {
+              // Art direction is best-effort; proceed without it
+            }
+          }
+
+          const prompt = buildSpritePrompt(dimensions, template, artDirection);
 
           const model = resolveImageModel(imageProvider, settings?.image_model);
           if (!model) throw new Error("No image model available");
@@ -204,7 +227,7 @@ export function TierSpriteScaffold({ onClose, onComplete }: TierSpriteScaffoldPr
 
           done++;
         } catch (err) {
-          console.error(`[tier-scaffold] Failed ${slot.id}:`, err);
+          console.error(`[sprite-scaffold] Failed ${slot.id}:`, err);
           failed++;
         }
 
@@ -218,8 +241,6 @@ export function TierSpriteScaffold({ onClose, onComplete }: TierSpriteScaffoldPr
     );
     await Promise.all(workers);
 
-    // Await background removals before finishing — ensures the bg-free variants
-    // are registered in the asset manifest before we report completion.
     if (pendingBgRemovals.length > 0) {
       setCurrentLabel(`Removing backgrounds (${pendingBgRemovals.length})...`);
       await Promise.all(pendingBgRemovals);
@@ -248,6 +269,14 @@ export function TierSpriteScaffold({ onClose, onComplete }: TierSpriteScaffoldPr
   const totalExpected = gaps.expected.length;
   const totalExisting = gaps.existing.length;
   const totalMissing = gaps.missing.length;
+  const showRaceFilter = mode !== "class_only";
+  const showClassFilter = mode !== "race_only";
+
+  const genderHint = selectedGenders.size === 0
+    ? "No gender specified — LLM picks freely"
+    : mode === "race_class"
+      ? `Each race\u00D7class generates ${selectedGenders.size} sprite${selectedGenders.size > 1 ? "s" : ""}`
+      : `Each entry generates ${selectedGenders.size} sprite${selectedGenders.size > 1 ? "s" : ""}`;
 
   return (
     <div
@@ -266,10 +295,10 @@ export function TierSpriteScaffold({ onClose, onComplete }: TierSpriteScaffoldPr
         <div className="flex items-center justify-between border-b border-border-default px-5 py-3">
           <div>
             <h2 id="scaffold-title" className="font-display text-sm tracking-wide text-text-primary">
-              Fill Tier Sprite Gaps
+              Fill Sprite Gaps
             </h2>
             <p className="mt-0.5 text-2xs text-text-muted">
-              {totalExisting} of {totalExpected} tier sprites defined
+              {totalExisting} of {totalExpected} sprites defined
               {totalMissing > 0 && <> — <span className="text-accent">{totalMissing} missing</span></>}
             </p>
           </div>
@@ -277,104 +306,155 @@ export function TierSpriteScaffold({ onClose, onComplete }: TierSpriteScaffoldPr
 
         {phase === "select" && (
           <>
-            {/* Per-tier breakdown */}
+            {/* Mode selector */}
             <div className="border-b border-border-default px-5 py-3">
+              <h3 className="mb-2 text-2xs font-medium uppercase tracking-label text-text-muted">
+                Mode
+              </h3>
               <div className="flex flex-wrap gap-2">
-                {Object.entries(gaps.byTier).map(([tier, counts]) => (
+                {MODE_OPTIONS.map((opt) => (
                   <button
-                    key={tier}
-                    onClick={() => toggleFilter(setTierFilter, tier)}
+                    key={opt.value}
+                    onClick={() => { setMode(opt.value); setRaceFilter(new Set()); setClassFilter(new Set()); }}
                     className={`rounded-full border px-3 py-1 text-xs transition-colors ${
-                      tierFilter.size === 0 || tierFilter.has(tier)
-                        ? counts.missing > 0
-                          ? "border-accent/40 bg-accent/10 text-accent"
-                          : "border-status-success/40 bg-status-success/10 text-status-success"
-                        : "border-border-default bg-bg-primary text-text-muted opacity-50"
+                      mode === opt.value
+                        ? "border-accent/40 bg-accent/10 text-accent"
+                        : "border-border-default bg-bg-primary text-text-muted"
                     }`}
+                    title={opt.description}
                   >
-                    {tier}
-                    <span className="ml-1.5 text-2xs">
-                      {counts.existing}/{counts.total}
-                    </span>
+                    {opt.label}
                   </button>
                 ))}
+                <span className="ml-2 self-center text-2xs text-text-muted">
+                  {MODE_OPTIONS.find((o) => o.value === mode)?.description}
+                </span>
               </div>
-              {tierFilter.size > 0 && (
-                <button
-                  onClick={() => setTierFilter(new Set())}
-                  className="mt-1.5 text-2xs text-text-muted hover:text-text-secondary"
-                >
-                  Clear tier filter
-                </button>
-              )}
             </div>
 
-            {/* Race/class filters */}
-            <div className="flex min-h-0 flex-1 overflow-hidden">
-              <div className="flex-1 overflow-y-auto border-r border-border-default px-4 py-3">
-                <h3 className="mb-2 text-2xs font-medium uppercase tracking-label text-text-muted">
-                  Races
-                </h3>
-                <div className="flex flex-wrap gap-1">
-                  {races.map((race) => (
-                    <button
-                      key={race}
-                      onClick={() => toggleFilter(setRaceFilter, race)}
-                      className={`rounded-full border px-2 py-0.5 text-2xs transition-colors ${
-                        raceFilter.size === 0 || raceFilter.has(race)
-                          ? "border-accent/30 text-text-secondary"
-                          : "border-border-default text-text-muted opacity-50"
-                      }`}
-                    >
-                      {config.races[race]?.displayName ?? race}
-                    </button>
-                  ))}
-                </div>
-                {raceFilter.size > 0 && (
+            {/* Gender selection */}
+            <div className="border-b border-border-default px-5 py-3">
+              <h3 className="mb-2 text-2xs font-medium uppercase tracking-label text-text-muted">
+                Gender
+              </h3>
+              <div className="flex flex-wrap items-center gap-2">
+                {GENDER_OPTIONS.map((opt) => (
                   <button
-                    onClick={() => setRaceFilter(new Set())}
+                    key={opt.value}
+                    onClick={() => toggleFilter(setSelectedGenders, opt.value)}
+                    className={`rounded-full border px-3 py-1 text-xs transition-colors ${
+                      selectedGenders.has(opt.value)
+                        ? "border-accent/40 bg-accent/10 text-accent"
+                        : "border-border-default bg-bg-primary text-text-muted"
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+                <span className="ml-2 text-2xs text-text-muted">
+                  {genderHint}
+                </span>
+              </div>
+            </div>
+
+            {/* Per-group breakdown pills */}
+            {Object.keys(gaps.byGroup).length > 0 && (
+              <div className="border-b border-border-default px-5 py-3">
+                <div className="flex flex-wrap gap-2">
+                  {Object.entries(gaps.byGroup).map(([key, counts]) => {
+                    const displayName = mode === "class_only"
+                      ? (config.classes[key]?.displayName ?? key)
+                      : (config.races[key]?.displayName ?? key);
+                    const isFiltered = mode === "class_only" ? classFilter : raceFilter;
+                    const setFiltered = mode === "class_only" ? setClassFilter : setRaceFilter;
+                    return (
+                      <button
+                        key={key}
+                        onClick={() => toggleFilter(setFiltered, key)}
+                        className={`rounded-full border px-3 py-1 text-xs transition-colors ${
+                          isFiltered.size === 0 || isFiltered.has(key)
+                            ? counts.missing > 0
+                              ? "border-accent/40 bg-accent/10 text-accent"
+                              : "border-status-success/40 bg-status-success/10 text-status-success"
+                            : "border-border-default bg-bg-primary text-text-muted opacity-50"
+                        }`}
+                      >
+                        {displayName}
+                        <span className="ml-1.5 text-2xs">
+                          {counts.existing}/{counts.total}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+                {(raceFilter.size > 0 || classFilter.size > 0) && (
+                  <button
+                    onClick={() => { setRaceFilter(new Set()); setClassFilter(new Set()); }}
                     className="mt-1.5 text-2xs text-text-muted hover:text-text-secondary"
                   >
-                    Clear
+                    Clear filter
                   </button>
                 )}
               </div>
+            )}
 
-              <div className="flex-1 overflow-y-auto px-4 py-3">
-                <h3 className="mb-2 text-2xs font-medium uppercase tracking-label text-text-muted">
-                  Classes
-                </h3>
-                <div className="flex flex-wrap gap-1">
-                  {classes.map((cls) => (
-                    <button
-                      key={cls}
-                      onClick={() => toggleFilter(setClassFilter, cls)}
-                      className={`rounded-full border px-2 py-0.5 text-2xs transition-colors ${
-                        classFilter.size === 0 || classFilter.has(cls)
-                          ? "border-accent/30 text-text-secondary"
-                          : "border-border-default text-text-muted opacity-50"
-                      }`}
-                    >
-                      {cls === "base" ? "Base (race only)" : (config.classes[cls]?.displayName ?? cls)}
-                    </button>
-                  ))}
+            {/* Secondary axis filter (only for race×class mode) */}
+            {mode === "race_class" && (
+              <div className="min-h-0 flex-1 overflow-y-auto px-5 py-3">
+                <div className="flex gap-6">
+                  {showRaceFilter && (
+                    <div className="flex-1">
+                      <h3 className="mb-2 text-2xs font-medium uppercase tracking-label text-text-muted">
+                        Races
+                      </h3>
+                      <div className="flex flex-wrap gap-1">
+                        {races.map((race) => (
+                          <button
+                            key={race}
+                            onClick={() => toggleFilter(setRaceFilter, race)}
+                            className={`rounded-full border px-2 py-0.5 text-2xs transition-colors ${
+                              raceFilter.size === 0 || raceFilter.has(race)
+                                ? "border-accent/30 text-text-secondary"
+                                : "border-border-default text-text-muted opacity-50"
+                            }`}
+                          >
+                            {config.races[race]?.displayName ?? race}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {showClassFilter && (
+                    <div className="flex-1">
+                      <h3 className="mb-2 text-2xs font-medium uppercase tracking-label text-text-muted">
+                        Classes
+                      </h3>
+                      <div className="flex flex-wrap gap-1">
+                        {classes.map((cls) => (
+                          <button
+                            key={cls}
+                            onClick={() => toggleFilter(setClassFilter, cls)}
+                            className={`rounded-full border px-2 py-0.5 text-2xs transition-colors ${
+                              classFilter.size === 0 || classFilter.has(cls)
+                                ? "border-accent/30 text-text-secondary"
+                                : "border-border-default text-text-muted opacity-50"
+                            }`}
+                          >
+                            {config.classes[cls]?.displayName ?? cls}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
-                {classFilter.size > 0 && (
-                  <button
-                    onClick={() => setClassFilter(new Set())}
-                    className="mt-1.5 text-2xs text-text-muted hover:text-text-secondary"
-                  >
-                    Clear
-                  </button>
-                )}
               </div>
-            </div>
+            )}
 
             {/* Selection summary + actions */}
             <div className="flex items-center justify-between border-t border-border-default px-5 py-3">
               <span className="text-xs text-text-secondary">
                 {filteredMissing.length} sprite{filteredMissing.length !== 1 ? "s" : ""} to create
-                {(tierFilter.size > 0 || raceFilter.size > 0 || classFilter.size > 0) && (
+                {(raceFilter.size > 0 || classFilter.size > 0) && (
                   <span className="text-text-muted"> (filtered)</span>
                 )}
               </span>

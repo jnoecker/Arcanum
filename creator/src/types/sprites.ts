@@ -56,6 +56,7 @@ export interface SpriteDefinition {
   /** Visual prompt guidance for AI image generation — separate from player-facing description. */
   artDirection?: string;
   category: "general" | "staff";
+  gender?: string;
   sortOrder: number;
   requirements: SpriteRequirement[];
   /** Single-image shorthand — creates one variant with the sprite's ID as imageId. */

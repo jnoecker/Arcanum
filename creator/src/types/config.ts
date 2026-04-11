@@ -555,19 +555,10 @@ export interface RaceDefinitionConfig {
   staffPrompt?: string;
 }
 
-// ─── Player Tiers ───────────────────────────────────────────────────
-
-export interface TierDefinitionConfig {
-  displayName: string;
-  levels: string;
-  visualDescription: string;
-}
-
 // ─── Images ─────────────────────────────────────────────────────────
 
 export interface ImagesConfig {
   baseUrl: string;
-  spriteLevelTiers: number[];
 }
 
 // ─── World ──────────────────────────────────────────────────────────
@@ -1019,7 +1010,6 @@ export interface AppConfig {
   leaderboard?: LeaderboardConfig;
   globalAssets: Record<string, string>;
   defaultAssets: Record<string, string>;
-  playerTiers?: Record<string, TierDefinitionConfig>;
   persistence: PersistenceConfig;
   login: LoginConfig;
   transport: TransportConfig;

@@ -6,6 +6,7 @@ import {
   deleteWorld,
   listUsers,
   regenerateKey,
+  updateQuotas,
   type HubUser,
 } from "../lib/api";
 
@@ -23,6 +24,49 @@ function formatBytes(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+// Inline progress bar for usage columns.
+function UsageBar({ used, quota, label }: { used: number; quota: number; label: string }) {
+  const pct = quota === 0 ? 0 : Math.min(100, Math.round((used / quota) * 100));
+  // Yellow past 80%, red past 95%, otherwise accent gold.
+  const color = pct >= 95 ? "var(--danger)" : pct >= 80 ? "#d8c268" : "var(--accent)";
+  return (
+    <div style={{ minWidth: 120 }}>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          fontSize: "0.7rem",
+          color: "var(--muted)",
+          marginBottom: 2,
+        }}
+      >
+        <span>{label}</span>
+        <span style={{ fontVariantNumeric: "tabular-nums" }}>
+          {used.toLocaleString()} / {quota.toLocaleString()}
+        </span>
+      </div>
+      <div
+        style={{
+          height: 4,
+          width: "100%",
+          background: "var(--bg)",
+          borderRadius: 2,
+          overflow: "hidden",
+        }}
+      >
+        <div
+          style={{
+            height: "100%",
+            width: `${pct}%`,
+            background: color,
+            transition: "width 0.3s",
+          }}
+        />
+      </div>
+    </div>
+  );
 }
 
 export function UsersPage({ adminKey, onLogout }: UsersPageProps) {
@@ -100,6 +144,31 @@ export function UsersPage({ adminKey, onLogout }: UsersPageProps) {
     }
   };
 
+  const handleEditQuotas = async (user: HubUser) => {
+    const imagesStr = window.prompt(
+      `New images quota for ${user.displayName} (current: ${user.usage.imagesQuota})`,
+      String(user.usage.imagesQuota),
+    );
+    if (imagesStr === null) return;
+    const promptsStr = window.prompt(
+      `New prompts quota for ${user.displayName} (current: ${user.usage.promptsQuota})`,
+      String(user.usage.promptsQuota),
+    );
+    if (promptsStr === null) return;
+    const imagesQuota = parseInt(imagesStr, 10);
+    const promptsQuota = parseInt(promptsStr, 10);
+    if (!Number.isFinite(imagesQuota) || !Number.isFinite(promptsQuota)) {
+      setError("Quotas must be numbers");
+      return;
+    }
+    try {
+      await updateQuotas(adminKey, user.id, { imagesQuota, promptsQuota });
+      await refresh();
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : String(e));
+    }
+  };
+
   const handleDeleteWorld = async (slug: string) => {
     const ok = window.confirm(`Wipe world "${slug}" from the hub? This cannot be undone.`);
     if (!ok) return;
@@ -166,9 +235,9 @@ export function UsersPage({ adminKey, onLogout }: UsersPageProps) {
               <tr>
                 <th>Name</th>
                 <th>Email</th>
+                <th>AI Usage</th>
                 <th>Worlds</th>
                 <th>Last publish</th>
-                <th>Created</th>
                 <th></th>
               </tr>
             </thead>
@@ -177,6 +246,20 @@ export function UsersPage({ adminKey, onLogout }: UsersPageProps) {
                 <tr key={user.id}>
                   <td>{user.displayName}</td>
                   <td className="muted">{user.email ?? "—"}</td>
+                  <td>
+                    <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem" }}>
+                      <UsageBar
+                        used={user.usage.imagesUsed}
+                        quota={user.usage.imagesQuota}
+                        label="Images"
+                      />
+                      <UsageBar
+                        used={user.usage.promptsUsed}
+                        quota={user.usage.promptsQuota}
+                        label="Prompts"
+                      />
+                    </div>
+                  </td>
                   <td>
                     {user.worlds.length === 0 ? (
                       <span className="muted">none</span>
@@ -217,9 +300,9 @@ export function UsersPage({ adminKey, onLogout }: UsersPageProps) {
                     )}
                   </td>
                   <td className="muted">{formatDate(user.lastPublishAt)}</td>
-                  <td className="muted">{formatDate(user.createdAt)}</td>
                   <td>
-                    <div style={{ display: "flex", gap: "0.35rem" }}>
+                    <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
+                      <button onClick={() => void handleEditQuotas(user)}>Edit quotas</button>
                       <button onClick={() => void handleRegenerate(user)}>Rotate key</button>
                       <button className="danger" onClick={() => void handleDeleteUser(user)}>
                         Delete

@@ -1,0 +1,45 @@
+name = "arcanum-hub"
+main = "src/index.ts"
+compatibility_date = "2025-01-15"
+compatibility_flags = ["nodejs_compat"]
+
+# ─── Routes ──────────────────────────────────────────────────────────
+# Set these once you have a real domain. For placeholder use:
+#   - api.hub.arcanum.app/*   (publish + admin API)
+#   - hub.arcanum.app/*       (landing page — serves showcase index API)
+#   - *.hub.arcanum.app/*     (per-world subdomains — serves showcase.json)
+#
+# Until the domain is configured, wrangler dev on http://127.0.0.1:8787
+# works fine; the Worker falls back to routing by URL path segments.
+#
+# [[routes]]
+# pattern = "api.hub.arcanum.app/*"
+# zone_name = "arcanum.app"
+#
+# [[routes]]
+# pattern = "hub.arcanum.app/*"
+# zone_name = "arcanum.app"
+#
+# [[routes]]
+# pattern = "*.hub.arcanum.app/*"
+# zone_name = "arcanum.app"
+
+# ─── Bindings ────────────────────────────────────────────────────────
+[[d1_databases]]
+binding = "DB"
+database_name = "arcanum-hub"
+database_id = "REPLACE_WITH_D1_ID"
+
+[[r2_buckets]]
+binding = "BUCKET"
+bucket_name = "arcanum-hub"
+
+[vars]
+# The root domain that subdomains hang off of. Used to extract the
+# world slug from the Host header: "<slug>.hub.arcanum.app" → "slug".
+HUB_ROOT_DOMAIN = "hub.arcanum.app"
+# Public origin of the admin SPA — used for CORS allowlist.
+ADMIN_ORIGIN = "https://arcanum-hub-admin.pages.dev"
+
+# Secrets (set with `wrangler secret put`):
+#   HUB_ADMIN_KEY   — master key for admin dashboard login

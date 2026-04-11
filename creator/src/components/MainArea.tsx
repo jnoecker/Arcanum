@@ -1,6 +1,7 @@
 import { lazy, Suspense, Component, type ReactNode, type ErrorInfo } from "react";
 import { useProjectStore } from "@/stores/projectStore";
-import { PANEL_MAP } from "@/lib/panelRegistry";
+import { PANEL_MAP, type Island } from "@/lib/panelRegistry";
+import { ISLANDS } from "@/lib/islandRegistry";
 import { StudioWorkspace } from "./StudioWorkspace";
 import { WorldMap } from "./map/WorldMap";
 import { IslandView } from "./map/IslandView";
@@ -35,6 +36,25 @@ const Console = lazy(() => import("./Console").then(m => ({ default: m.Console }
 const AdminDashboard = lazy(() => import("./admin/AdminDashboard").then(m => ({ default: m.AdminDashboard })));
 const TuningWizard = lazy(() => import("./tuning/TuningWizard").then(m => ({ default: m.TuningWizard })));
 const AppearancePanel = lazy(() => import("./AppearancePanel").then(m => ({ default: m.AppearancePanel })));
+
+function IslandBackPill({ island }: { island: Island }) {
+  const openIsland = useProjectStore((s) => s.openIsland);
+  const def = ISLANDS[island];
+  if (!def) return null;
+  return (
+    <div className="flex-none px-4 pt-3 pb-1">
+      <button
+        type="button"
+        onClick={() => openIsland(island)}
+        className="focus-ring group/back inline-flex items-center gap-1.5 rounded-full border border-accent/40 bg-bg-abyss/90 px-4 py-1.5 font-display text-xs uppercase tracking-wide-ui text-accent shadow-md transition hover:border-accent hover:bg-accent/15"
+        aria-label={`Back to ${def.title}`}
+      >
+        <span aria-hidden="true" className="transition group-hover/back:-translate-x-0.5">←</span>
+        {def.title}
+      </button>
+    </div>
+  );
+}
 
 function LazyFallback() {
   return (
@@ -73,10 +93,13 @@ export function MainArea() {
   }
 
   let content: React.ReactNode;
+  let panelIsland: Island | undefined;
+
   switch (activeTab.kind) {
     case "panel": {
       const panelId = activeTab.panelId ?? "art";
       const def = PANEL_MAP[panelId];
+      panelIsland = def?.island;
       if (def?.host === "studio") {
         content = <StudioWorkspace panelId={panelId} />;
       } else if (def?.host === "lore") {
@@ -98,22 +121,28 @@ export function MainArea() {
     }
     case "zone": {
       const zoneId = activeTab.id.replace(/^zone:/, "");
+      panelIsland = "forge";
       content = <ZoneEditor key={zoneId} zoneId={zoneId} />;
       break;
     }
     // Legacy tab kinds — kept for backward compatibility with persisted tabs
     case "console":
+      panelIsland = "spire";
       content = <Console />;
       break;
     case "sprites":
+      panelIsland = "forge";
       content = <PlayerSpriteManager />;
       break;
     case "admin":
+      panelIsland = "spire";
       content = <AdminDashboard />;
       break;
     default:
       content = null;
   }
+
+  const showBackPill = panelIsland != null && panelIsland !== "settings";
 
   return (
     <div
@@ -123,6 +152,7 @@ export function MainArea() {
       className="flex min-h-0 flex-1 flex-col"
       style={{ viewTransitionName: "workspace-panel" }}
     >
+      {showBackPill && <IslandBackPill island={panelIsland!} />}
       <PanelErrorBoundary>
         <Suspense fallback={<LazyFallback />}>
           {content}

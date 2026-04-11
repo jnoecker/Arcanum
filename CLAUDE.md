@@ -11,7 +11,9 @@ Arcanum is a Tauri 2 desktop app for building MUD game worlds. React 19 + TypeSc
 - `creator/` -- The Tauri application (frontend + backend)
 - `creator/src/` -- React frontend (components, stores, types, lib)
 - `creator/src-tauri/src/` -- Rust backend (Tauri commands)
-- `showcase/` -- Public lore showcase website (Vite + React SPA, deployed to Cloudflare Pages)
+- `showcase/` -- Public lore showcase website (Vite + React SPA). Runs in three modes: self-hosted (existing `lore.ambon.dev`), hub landing (`arcanum-hub.com`), and per-world subdomain (`<slug>.arcanum-hub.com`). The hub modes are selected at runtime via `detectHubMode()` against `VITE_HUB_ROOT_DOMAIN`.
+- `hub-worker/` -- Cloudflare Worker backing the central Arcanum Hub at `arcanum-hub.com`. Owns publish API, admin API, AI proxy (image/LLM/vision), and ships the showcase SPA via an `[assets]` binding. Bindings: D1 `arcanum-hub` (users, worlds, quotas), R2 `arcanum-hub` (per-world showcase.json + WebP images).
+- `hub-admin/` -- Tiny Vite + React SPA for admin-only user + quota management, deployed to `arcanum-hub-admin.pages.dev` (proxied through `admin.arcanum-hub.com`). Master-key auth against `HUB_ADMIN_KEY` secret.
 - `reference/` -- Kotlin source files from AmbonMUD server (read-only reference)
 - `ARCANUM_STYLE_GUIDE.md` -- Design system (colors, typography, components, both art styles)
 
@@ -50,8 +52,30 @@ npm run typecheck
 # Production build
 npm run build
 
-# Deploy to Cloudflare Pages
+# Deploy to Cloudflare Pages (self-hosted, lore.ambon.dev)
 npx wrangler pages deploy dist --project-name=ambon-showcase
+```
+
+### Hub worker + admin
+
+```bash
+cd hub-worker
+
+# Deploy worker (also rebuilds the showcase SPA with the hub env var
+# and uploads it via the [assets] binding)
+npm run deploy
+
+# Apply a migration to the live D1
+npx wrangler d1 execute arcanum-hub --remote --file=./src/migrations/<file>.sql
+
+# Set a provider secret (interactive)
+npx wrangler secret put RUNWARE_API_KEY
+
+cd ../hub-admin
+
+# Build + deploy the admin SPA
+VITE_HUB_API_URL=https://api.arcanum-hub.com npm run build
+npx wrangler pages deploy dist --project-name=arcanum-hub-admin --branch=main
 ```
 
 ## Architecture
@@ -98,9 +122,11 @@ npx wrangler pages deploy dist --project-name=ambon-showcase
 - `assets.rs` -- Asset manifest (JSON) management, content-addressed storage (SHA256 hash filenames)
 - `r2.rs` -- Cloudflare R2 sync with AWS Signature V4 signing (no SDK dependency), showcase deploy
 - `vibes.rs` -- Zone vibe/context metadata for LLM-informed art generation
-- `llm.rs` -- LLM integration for prompt enhancement and vision analysis dispatch (Anthropic, OpenRouter, DeepInfra)
+- `llm.rs` -- LLM integration for prompt enhancement and vision analysis dispatch (Anthropic, OpenRouter, DeepInfra). Short-circuits to `hub_ai` when `settings.use_hub_ai` is on.
 - `anthropic.rs` -- Anthropic Claude API client (text completion + vision)
 - `openrouter.rs` -- OpenRouter API client for LLM completion
+- `hub.rs` -- Showcase publish pipeline to the central hub. Builds ShowcaseData, strips story `cinematicUrl`, re-encodes every referenced image as lossy WebP via `libwebp`, content-addresses the blobs, diffs against the hub's existing set, uploads missing images + manifest. Progress events stream via `hub-publish-progress`.
+- `hub_ai.rs` -- Hub-mode proxy client for image/LLM/vision calls. `is_enabled(&settings)` gates whether the existing provider commands (`runware_generate_image`, `openai_generate_image`, `deepinfra::generate_image`, `llm_complete`, `llm_complete_with_vision`) short-circuit to `/ai/*` endpoints on `api.arcanum-hub.com`. Returns the same `GeneratedImage` shape as the direct-provider path so the frontend is unaware of hub mode.
 - `admin.rs` -- HTTP client for remote AmbonMUD admin API (players, zones, mobs, quests, achievements)
 - `git.rs` -- Git repository operations (init, status, commit, push, pull, branch management, PR creation)
 - `sketch.rs` -- Sketch-to-image analysis via LLM for art enhancement
@@ -115,13 +141,32 @@ npx wrangler pages deploy dist --project-name=ambon-showcase
 
 ### Showcase (showcase/)
 
-- Standalone Vite + React 19 + Tailwind 4 SPA deployed to Cloudflare Pages
-- Reads `showcase.json` from R2 at runtime (`VITE_SHOWCASE_URL` env var in production, `/data/showcase.json` locally)
+- Standalone Vite + React 19 + Tailwind 4 SPA. Self-hosted deploys still go to Cloudflare Pages (`ambon-showcase` project at `lore.ambon.dev`); the hub serves the same bundle via the Worker's `[assets]` binding, built with `VITE_HUB_ROOT_DOMAIN=arcanum-hub.com`.
+- `src/lib/hubMode.ts::detectHubMode()` inspects `window.location.hostname` against `VITE_HUB_ROOT_DOMAIN`. Returns `"root"` (landing), `"world"` with a slug (per-world), or `"self-hosted"` (fallback).
+- `DataContext` branches on the result: root mode skips data loading and the `App` shortcut routes to `HubIndexPage` which fetches `/api/index`; world mode fetches `/showcase.json` from the same origin (the Worker resolves the slug from the Host header); self-hosted behaves exactly as before.
 - Types in `src/types/showcase.ts` mirror `ShowcaseData` from `creator/src/lib/exportShowcase.ts`
-- Pages: Home, Codex (ArticlesPage), Article detail (ArticlePage), Maps, Timeline, Connections (GraphPage), 404
+- Pages: Home, Codex (ArticlesPage), Article detail (ArticlePage), Maps, Timeline, Connections (GraphPage), HubIndexPage, 404
 - Article detail includes image gallery (crossfade + thumbnail selector) and grouped bidirectional relationship sidebar
 - Map pins use Leaflet CRS.Simple coordinates: `position[0]` = lat (Y from bottom), `position[1]` = lng (X). Showcase converts to pixels: `px_x = lng * scale`, `px_y = (height - lat) * scale`
-- `wrangler.toml` for Cloudflare Pages deployment; `_redirects` for SPA routing
+- `wrangler.toml` for Cloudflare Pages deployment; `_redirects` for SPA routing; `public/.assetsignore` excludes `_redirects` from Worker asset uploads (Pages and Workers Assets have different SPA-fallback mechanisms)
+
+### Hub (hub-worker/ + hub-admin/)
+
+- **Domain layout** on `arcanum-hub.com` (dedicated apex; Universal SSL covers the whole first-level subdomain space):
+  - `arcanum-hub.com/` — landing page (showcase SPA rendering `HubIndexPage`)
+  - `api.arcanum-hub.com/*` — publish + admin + AI API (all JSON)
+  - `<slug>.arcanum-hub.com/` — per-world showcase SPA + `/showcase.json` + `/images/<hash>.webp`
+  - `admin.arcanum-hub.com/` — admin SPA, transparently reverse-proxied by the Worker to `arcanum-hub-admin.pages.dev` (Pages custom domains lose to Worker wildcard routes in Cloudflare's precedence)
+- **Worker bindings** (`hub-worker/wrangler.toml`):
+  - `DB` — D1 `arcanum-hub` (users, worlds, AI quotas)
+  - `BUCKET` — R2 `arcanum-hub` (worlds/<slug>/showcase.json + worlds/<slug>/images/<hash>.webp)
+  - `ASSETS` — showcase `dist/` ships alongside the Worker script; `not_found_handling = "single-page-application"` + `run_worker_first = true` so API paths aren't absorbed by SPA fallback
+  - Secrets: `HUB_ADMIN_KEY` (admin master key), `RUNWARE_API_KEY`, `OPENROUTER_API_KEY`, `ANTHROPIC_API_KEY`
+- **Publish API** (Bearer auth, users table): `POST /publish/check-existing`, `PUT /publish/image/<hash>.webp`, `POST /publish/manifest`. Slug ownership is enforced per publish. Creator side: `creator/src-tauri/src/hub.rs::publish_to_hub`.
+- **AI proxy** (Bearer auth, per-user lifetime quotas — default 500 images / 5000 LLM calls, stored as columns on `users`, reset on API key rotation): `POST /ai/image/generate` → Runware (`runware:400@2` FLUX.2, `openai:4@1` GPT Image 1.5), `POST /ai/llm/complete` → OpenRouter DeepSeek V3.2 (`deepseek/deepseek-v3.2-20251201`), `POST /ai/llm/vision` → Claude Sonnet 4.6. Vision calls bill against `prompts_used`. Model allowlist + guardrails (steps ≤ 32, dimensions ≤ 1024, GPT quality forced to `"low"`) enforced server-side.
+- **Admin API** (X-Admin-Key header): `GET/POST /admin/users`, `DELETE /admin/users/<id>`, `POST /admin/users/<id>/regenerate-key` (zeros usage counters), `POST /admin/users/<id>/quotas` (per-user override), `GET /admin/worlds`, `DELETE /admin/worlds/<slug>`.
+- **Reserved subdomains**: `admin`, `www`, `hub`, `mail`, `ftp`, `ns1`, `ns2` are refused by `isValidSlug()` so nobody can claim them as world slugs. The Worker's `handleReservedSubdomain` proxies `admin.` to the Pages deployment and 301s `www.` to the apex.
+- **Hub AI mode on the client**: flipped via `settings.use_hub_ai` (user-level boolean in `~/.tauri/settings.json`). When on, the existing image/LLM/vision Tauri commands check `hub_ai::is_enabled(&settings)` at the top and short-circuit to `hub_ai::generate_image` / `hub_ai::complete` / `hub_ai::complete_with_vision` before touching direct-provider code. The frontend doesn't know about hub mode at all — same command names, same response shapes.
 
 ### IPC Pattern
 
@@ -192,6 +237,17 @@ Images are served to the frontend as base64 data URLs via the `read_image_data_u
 - **Rewrite vs Enhance**: "Enhance" improves prose quality without changing meaning. "Rewrite" takes user instructions and may change content, fields, or both. Rewrite returns JSON with `content` + `fields` keys; Enhance returns plain text. Both are in the LoreEditor/ArticleEditor toolbar.
 - **PDF export**: Uses `window.print()` on a styled HTML document generated from the Markdown Lore Bible. Fonts are loaded from Google Fonts in the print document (requires internet). The print window opens in a new tab.
 - **Toolbar background image**: The toolbar filigree (`toolbar-bg.jpg`) was intentionally removed — the `instrument-panel` gradient is sufficient.
+- **Worker routes beat Pages custom domains**: In Cloudflare's routing precedence, a Worker route always wins over a Pages custom domain on the same hostname. `admin.arcanum-hub.com` is a Pages deploy but can't use its own custom domain — the Worker's `*.arcanum-hub.com/*` wildcard intercepts first. Fix in `hub-worker/src/index.ts::handleReservedSubdomain`: detect reserved leaf names and reverse-proxy to the Pages deployment. If you add more subdomains (e.g. `status.`, `docs.`), they need entries in `RESERVED_SUBDOMAINS` or they'll be treated as world slugs.
+- **Pages rejects wildcard custom domains**: `*.arcanum-hub.com` can't be added to a Pages project in the Cloudflare dashboard — it errors with "add a valid domain." That's why the hub ships the showcase SPA from inside the Worker via an `[assets]` binding. Never try to move the per-world SPA back to Pages.
+- **Cloudflare Universal SSL scope**: Free Universal SSL certs only cover the apex + first-level subdomains of a zone. `arcanum-hub.com` works because the hub has its own dedicated apex. Don't put the hub under a deeper path of an existing zone (e.g. `*.arcanum.ambon.dev` would need Advanced Certificate Manager at $10/mo for the wildcard cert, and the original plan broke on this).
+- **`_redirects` file vs Worker assets**: `showcase/public/_redirects` is the Pages SPA-fallback rule. Workers Assets flags it as an infinite-loop redirect and refuses to deploy. `showcase/public/.assetsignore` excludes it from Worker uploads without breaking the Pages deploy on `lore.ambon.dev`. Don't delete either file — both are load-bearing for their respective deploy targets.
+- **`run_worker_first = true` is required**: Workers Assets defaults to serving static files before running the script. With SPA fallback enabled, that means `/api/index` and `/showcase.json` get absorbed as `index.html` and the Worker never sees them. `run_worker_first = true` in `[assets]` keeps the Worker authoritative; handlers that want to fall through to the SPA call `env.ASSETS.fetch(req)` explicitly.
+- **Hub mode is transparent**: The frontend has no awareness of `use_hub_ai`. The branching lives in the Rust command dispatchers (`runware.rs`, `openai_images.rs`, `deepinfra.rs`, `llm.rs`) — each checks `hub_ai::is_enabled(&settings)` at the top and short-circuits to `hub_ai::*` before its direct-provider code. When you add a new AI-dispatching command, add the same early-return branch. Frontend settings UI still has a checkbox for users to flip the mode.
+- **Hub AI quota pattern**: `users.images_used` and `users.prompts_used` are lifetime counters (not rolling windows). Vision calls bucket into `prompts_used`. Both reset to 0 whenever `updateUserApiKeyHash()` runs — that's how rotation serves double duty as both security (invalidate leaked key) and replenishment (fresh allowance). Never increment the counter on a failed provider call; hub handlers only increment after upstream returns 2xx.
+- **Hub model allowlist is hard**: `hub-worker/src/handlers/ai.ts` rejects any model ID not in the `IMAGE_MODELS` set or the hardcoded `LLM_MODEL`/`VISION_MODEL`. Extending to a new model means editing the allowlist and, for images, confirming the provider settings shape (GPT Image needs `providerSettings.openai`, FLUX doesn't). The creator side has `hub_ai::translate_model_for_hub()` for mapping direct-provider model names to hub-supported IDs (e.g. DeepInfra FLUX → `runware:400@2`).
+- **DeepInfra in hub mode**: DeepInfra is not a hub provider. When `use_hub_ai` is on, `deepinfra::generate_image` translates the requested DeepInfra model to Runware FLUX.2 via `translate_model_for_hub()`. Projects that still have `image_provider: "deepinfra"` in their settings keep working — they just get served by Runware instead.
+- **Hub deploy script rebuilds showcase**: `hub-worker/package.json::build:assets` runs the showcase build with the hub env var, then drops the `_redirects` file from `dist/` before `wrangler deploy` picks it up. If you run `wrangler deploy` directly instead of `npm run deploy`, you'll ship whatever stale bundle is in `showcase/dist/` — typically the self-hosted build without hub mode.
+- **Anthropic vision via hub**: Billed separately from image gen — the hub's `ANTHROPIC_API_KEY` needs credit on the Anthropic console. Low balance manifests as a 400 from the provider with "Your credit balance is too low." The hub correctly passes the error through without incrementing `prompts_used`.
 
 ## Project
 

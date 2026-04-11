@@ -2,14 +2,30 @@ import { useCallback, useMemo, useState } from "react";
 import { useConfigStore } from "@/stores/configStore";
 import type { FactionConfig, FactionDefinition } from "@/types/config";
 import {
-  Section,
-  FieldRow,
   TextInput,
   NumberInput,
-  ActionButton,
-  IconButton,
+  SelectInput,
   CommitTextarea,
+  FieldGrid,
+  CompactField,
+  Badge,
 } from "@/components/ui/FormWidgets";
+
+function cx(...c: Array<string | false | null | undefined>) {
+  return c.filter(Boolean).join(" ");
+}
+
+function normalizeId(raw: string): string {
+  return raw
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, "_")
+    .replace(/[^a-z0-9_]/g, "");
+}
+
+function titleCaseFromId(id: string): string {
+  return id.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+}
 
 const DEFAULT_FACTION_CONFIG: FactionConfig = {
   defaultReputation: 0,
@@ -21,7 +37,11 @@ const DEFAULT_FACTION_CONFIG: FactionConfig = {
 export function FactionPanel() {
   const config = useConfigStore((s) => s.config);
   const updateConfig = useConfigStore((s) => s.updateConfig);
-  const [newFactionId, setNewFactionId] = useState("");
+  const [selected, setSelected] = useState<string | null>(null);
+  const [newId, setNewId] = useState("");
+  const [renaming, setRenaming] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState("");
+  const [newQuestId, setNewQuestId] = useState("");
 
   const factions = config?.factions ?? DEFAULT_FACTION_CONFIG;
 
@@ -43,214 +63,837 @@ export function FactionPanel() {
   );
 
   const addFaction = useCallback(() => {
-    const id = newFactionId.trim().toLowerCase().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "");
+    const id = normalizeId(newId);
     if (!id || factions.definitions[id]) return;
-    const defs = { ...factions.definitions, [id]: { name: id.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()) } };
+    const defs = {
+      ...factions.definitions,
+      [id]: { name: titleCaseFromId(id) },
+    };
     patch({ definitions: defs });
-    setNewFactionId("");
-  }, [newFactionId, factions.definitions, patch]);
+    setNewId("");
+    setSelected(id);
+  }, [newId, factions.definitions, patch]);
 
   const deleteFaction = useCallback(
     (id: string) => {
       const { [id]: _, ...rest } = factions.definitions;
-      // Also remove from enemies lists
-      for (const def of Object.values(rest)) {
-        if (def.enemies) {
-          def.enemies = def.enemies.filter((e) => e !== id);
+      const cleaned: Record<string, FactionDefinition> = {};
+      for (const [k, def] of Object.entries(rest)) {
+        cleaned[k] = {
+          ...def,
+          enemies: def.enemies?.filter((e) => e !== id),
+        };
+        if (cleaned[k]!.enemies?.length === 0) {
+          delete cleaned[k]!.enemies;
         }
       }
-      patch({ definitions: rest });
+      const nextRewards = factions.questRewards
+        ? Object.fromEntries(
+            Object.entries(factions.questRewards)
+              .map(([qid, rewards]) => {
+                const { [id]: _removed, ...kept } = rewards;
+                return [qid, kept] as const;
+              })
+              .filter(([, r]) => Object.keys(r).length > 0),
+          )
+        : undefined;
+      patch({
+        definitions: cleaned,
+        questRewards:
+          nextRewards && Object.keys(nextRewards).length > 0
+            ? nextRewards
+            : undefined,
+      });
+      if (selected === id) setSelected(null);
     },
-    [factions.definitions, patch],
+    [factions.definitions, factions.questRewards, patch, selected],
   );
 
-  const factionIds = useMemo(() => Object.keys(factions.definitions), [factions.definitions]);
+  const renameFaction = useCallback(
+    (oldId: string, rawNewId: string) => {
+      const newId = normalizeId(rawNewId);
+      if (!newId || oldId === newId || factions.definitions[newId]) return;
+      const next: Record<string, FactionDefinition> = {};
+      for (const [k, v] of Object.entries(factions.definitions)) {
+        const def = { ...v };
+        if (def.enemies) {
+          def.enemies = def.enemies.map((e) => (e === oldId ? newId : e));
+        }
+        next[k === oldId ? newId : k] = def;
+      }
+      const nextRewards = factions.questRewards
+        ? Object.fromEntries(
+            Object.entries(factions.questRewards).map(([qid, rewards]) => {
+              const remapped = { ...rewards };
+              if (oldId in remapped) {
+                remapped[newId] = remapped[oldId]!;
+                delete remapped[oldId];
+              }
+              return [qid, remapped];
+            }),
+          )
+        : undefined;
+      patch({ definitions: next, questRewards: nextRewards });
+      if (selected === oldId) setSelected(newId);
+      setRenaming(null);
+    },
+    [factions.definitions, factions.questRewards, patch, selected],
+  );
+
+  const addQuestReward = useCallback(() => {
+    const qid = newQuestId.trim();
+    if (!qid) return;
+    const existing = factions.questRewards ?? {};
+    if (existing[qid]) return;
+    patch({ questRewards: { ...existing, [qid]: {} } });
+    setNewQuestId("");
+  }, [newQuestId, factions.questRewards, patch]);
+
+  const patchQuestReward = useCallback(
+    (questId: string, factionId: string, amount: number | undefined) => {
+      const existing = factions.questRewards ?? {};
+      const entry = { ...(existing[questId] ?? {}) };
+      if (amount == null || amount === 0) {
+        delete entry[factionId];
+      } else {
+        entry[factionId] = amount;
+      }
+      const next = { ...existing, [questId]: entry };
+      patch({ questRewards: next });
+    },
+    [factions.questRewards, patch],
+  );
+
+  const renameQuestReward = useCallback(
+    (oldQid: string, newQid: string) => {
+      const trimmed = newQid.trim();
+      if (!trimmed || oldQid === trimmed) return;
+      const existing = factions.questRewards ?? {};
+      if (existing[trimmed]) return;
+      const next: Record<string, Record<string, number>> = {};
+      for (const [qid, rewards] of Object.entries(existing)) {
+        next[qid === oldQid ? trimmed : qid] = rewards;
+      }
+      patch({ questRewards: next });
+    },
+    [factions.questRewards, patch],
+  );
+
+  const deleteQuestReward = useCallback(
+    (questId: string) => {
+      const existing = factions.questRewards ?? {};
+      const { [questId]: _, ...rest } = existing;
+      patch({
+        questRewards: Object.keys(rest).length > 0 ? rest : undefined,
+      });
+    },
+    [factions.questRewards, patch],
+  );
+
+  const factionIds = useMemo(
+    () => Object.keys(factions.definitions),
+    [factions.definitions],
+  );
+
+  const factionLabelMap = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const [id, def] of Object.entries(factions.definitions)) {
+      m.set(id, def.name);
+    }
+    return m;
+  }, [factions.definitions]);
+
+  const factionOptions = useMemo(
+    () =>
+      factionIds.map((id) => ({
+        value: id,
+        label: factions.definitions[id]!.name,
+      })),
+    [factionIds, factions.definitions],
+  );
 
   if (!config) return null;
 
   return (
-    <>
-      <Section
-        title="Global Settings"
-        description="Factions are political and social groups in your world — thieves guilds, royal courts, mercenary companies. Players earn or lose reputation by completing quests and killing mobs, which unlocks shops, quests, and areas tied to each faction."
-      >
-        <div className="flex flex-col gap-1.5">
-          <FieldRow
-            label="Default Reputation"
-            hint="Starting reputation each new player has with every faction. 0 is neutral. Positive values make the world friendlier to newcomers; negative values create a harsher debut."
-          >
-            <NumberInput
-              value={factions.defaultReputation}
-              onCommit={(v) => patch({ defaultReputation: v ?? 0 })}
-            />
-          </FieldRow>
-          <FieldRow
-            label="Kill Penalty"
-            hint="Base reputation lost with a mob's own faction when a player kills it, scaled by mob level. 5 is a modest penalty — try 10 for a harsher consequence or 2 for a forgiving world."
-          >
-            <NumberInput
-              value={factions.killPenalty}
-              onCommit={(v) => patch({ killPenalty: v ?? 5 })}
-              min={0}
-            />
-          </FieldRow>
-          <FieldRow
-            label="Kill Bonus"
-            hint="Base reputation gained with the mob's enemy factions per kill, scaled by level. Encourages players to pick sides. 3 is a gentle nudge; raise to speed up faction alignment."
-          >
-            <NumberInput
-              value={factions.killBonus}
-              onCommit={(v) => patch({ killBonus: v ?? 3 })}
-              min={0}
-            />
-          </FieldRow>
-        </div>
-      </Section>
+    <div className="flex flex-col gap-6">
+      <section className="panel-surface relative overflow-hidden rounded-3xl p-6 shadow-section">
+        <div className="relative z-10 flex flex-col gap-5">
+          <div className="max-w-2xl">
+            <p className="border-l-2 border-accent/30 pl-2 text-2xs uppercase tracking-wide-ui text-text-muted">
+              Political landscape
+            </p>
+            <h2 className="mt-2 font-display font-semibold text-xl text-text-primary">
+              Factions &amp; Reputation
+            </h2>
+            <p className="mt-2 text-sm leading-6 text-text-secondary">
+              Guilds, courts, cabals, and mercenary companies. Players earn or
+              lose standing with each through quests and combat; reputation
+              gates shops, quests, and regions tied to each group.
+            </p>
+          </div>
 
-      <Section
-        title={`Factions (${factionIds.length})`}
-        description="Define each faction's name, flavor text, and rival factions. Mobs and quests reference these IDs, and players accrue reputation with each one over the course of play."
-        actions={
+          <div className="flex flex-wrap items-end gap-4 border-t border-border-muted/50 pt-4">
+            <GlobalStat
+              label="Starting rep"
+              hint="Where new players begin with every faction."
+            >
+              <NumberInput
+                value={factions.defaultReputation}
+                onCommit={(v) => patch({ defaultReputation: v ?? 0 })}
+              />
+            </GlobalStat>
+            <GlobalStat
+              label="Kill penalty"
+              hint="Lost with the mob's own faction per kill (× level)."
+              tint="rose"
+            >
+              <NumberInput
+                value={factions.killPenalty}
+                onCommit={(v) => patch({ killPenalty: v ?? 5 })}
+                min={0}
+              />
+            </GlobalStat>
+            <GlobalStat
+              label="Kill bonus"
+              hint="Gained with the victim's enemy factions per kill (× level)."
+              tint="emerald"
+            >
+              <NumberInput
+                value={factions.killBonus}
+                onCommit={(v) => patch({ killBonus: v ?? 3 })}
+                min={0}
+              />
+            </GlobalStat>
+
+            <div className="ml-auto text-right">
+              <p className="font-display text-2xl font-semibold leading-none text-text-primary">
+                {factionIds.length}
+              </p>
+              <p className="mt-1 text-2xs uppercase tracking-wider text-text-muted">
+                {factionIds.length === 1 ? "faction" : "factions"}
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="flex flex-col gap-3">
+        <header className="flex items-end justify-between gap-3">
+          <div>
+            <h3 className="font-display font-semibold text-base text-text-primary">
+              Allegiances
+            </h3>
+            <p className="mt-0.5 text-2xs leading-relaxed text-text-muted/70">
+              Every political group in the world. Mobs and quests reference
+              these IDs.
+            </p>
+          </div>
           <div className="flex items-center gap-1.5">
-            <TextInput
-              value={newFactionId}
-              onCommit={setNewFactionId}
+            <input
+              className="w-44 rounded border border-border-default bg-bg-primary px-2 py-1 text-xs text-text-primary outline-none focus:border-accent/50 focus-visible:ring-2 focus-visible:ring-border-active"
               placeholder="new_faction_id"
-              dense
+              value={newId}
+              onChange={(e) => setNewId(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") addFaction();
+              }}
             />
-            <ActionButton
-              variant="secondary"
-              size="sm"
+            <button
+              type="button"
               onClick={addFaction}
-              disabled={!newFactionId.trim()}
+              disabled={!newId.trim()}
+              className="focus-ring rounded border border-accent/40 bg-accent/10 px-2.5 py-1 text-xs font-medium text-accent transition hover:bg-accent/20 disabled:cursor-not-allowed disabled:opacity-40"
             >
               + Add
-            </ActionButton>
+            </button>
           </div>
-        }
-      >
+        </header>
+
         {factionIds.length === 0 ? (
-          <p className="text-2xs leading-relaxed text-text-muted/70">
-            No factions defined yet. Enter an ID above (like "thieves_guild" or "royal_court") and click Add.
-          </p>
+          <div className="rounded-2xl border border-dashed border-border-muted/60 bg-bg-primary/20 px-6 py-12 text-center">
+            <p className="font-display text-sm text-text-muted">
+              No factions defined.
+            </p>
+            <p className="mt-1 text-2xs text-text-muted/70">
+              Add a guild, a court, or a cabal — try{" "}
+              <code className="text-text-muted">thieves_guild</code> or{" "}
+              <code className="text-text-muted">royal_court</code>.
+            </p>
+          </div>
         ) : (
-          <div className="flex flex-col">
-            {factionIds.map((id) => {
-              const def = factions.definitions[id]!;
-              return (
-                <div
-                  key={id}
-                  className="flex flex-col gap-1.5 border-b border-border-muted/30 pb-3 pt-3 first:pt-0 last:border-0 last:pb-0"
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="font-mono text-2xs uppercase tracking-widest text-text-muted">
-                      {id}
-                    </span>
-                    <IconButton
-                      onClick={() => deleteFaction(id)}
-                      title="Delete faction"
-                      size="sm"
-                      danger
-                    >
-                      &times;
-                    </IconButton>
-                  </div>
-                  <FieldRow
-                    label="Name"
-                    hint="Display name shown to players in reputation readouts and quest text."
-                  >
-                    <TextInput
-                      value={def.name}
-                      onCommit={(v) => patchDefinition(id, { name: v })}
-                    />
-                  </FieldRow>
-                  <FieldRow
-                    label="Description"
-                    hint="Short flavor summary. Shown in faction info commands and help text."
-                  >
-                    <TextInput
-                      value={def.description ?? ""}
-                      onCommit={(v) => patchDefinition(id, { description: v || undefined })}
-                      placeholder="A secretive order of..."
-                    />
-                  </FieldRow>
-                  <FieldRow
-                    label="Enemies"
-                    hint="Comma-separated faction IDs. Killing a member of this faction grants reputation with its enemies, and vice versa."
-                  >
-                    <TextInput
-                      value={(def.enemies ?? []).join(", ")}
-                      onCommit={(v) =>
-                        patchDefinition(id, {
-                          enemies: v
-                            ? v.split(",").map((s) => s.trim()).filter(Boolean)
-                            : undefined,
-                        })
-                      }
-                      placeholder="thieves_guild, shadow_cabal"
-                    />
-                  </FieldRow>
-                </div>
-              );
-            })}
+          <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
+            {factionIds.map((id) => (
+              <FactionCard
+                key={id}
+                id={id}
+                definition={factions.definitions[id]!}
+                factionLabelMap={factionLabelMap}
+                selected={selected === id}
+                onSelect={() => setSelected(selected === id ? null : id)}
+                onDelete={() => deleteFaction(id)}
+              />
+            ))}
           </div>
         )}
-      </Section>
 
-      <Section
-        title="Quest Rewards"
-        description="Map quest IDs to faction reputation changes granted on completion. Use this to push players toward or away from factions based on the jobs they take."
-        defaultExpanded={false}
-      >
-        <div className="flex flex-col gap-1.5">
-          <CommitTextarea
-            label="Rewards (YAML)"
-            value={
-              factions.questRewards
-                ? Object.entries(factions.questRewards)
-                    .map(
-                      ([qid, rewards]) =>
-                        `${qid}:\n${Object.entries(rewards)
-                          .map(([fid, amt]) => `  ${fid}: ${amt}`)
-                          .join("\n")}`,
-                    )
-                    .join("\n")
-                : ""
-            }
-            onCommit={(v) => {
-              // Simple key-value parser for quest rewards
-              if (!v.trim()) {
-                patch({ questRewards: undefined });
-                return;
-              }
-              try {
-                const rewards: Record<string, Record<string, number>> = {};
-                let currentQuest = "";
-                for (const line of v.split("\n")) {
-                  const trimmed = line.trimEnd();
-                  if (!trimmed) continue;
-                  if (!trimmed.startsWith(" ")) {
-                    currentQuest = trimmed.replace(/:$/, "").trim();
-                    rewards[currentQuest] = {};
-                  } else if (currentQuest) {
-                    const match = trimmed.match(/^\s+(\S+)\s*:\s*(-?\d+)/);
-                    if (match && match[1] && match[2])
-                      rewards[currentQuest]![match[1]] = parseInt(match[2]);
-                  }
-                }
-                patch({
-                  questRewards:
-                    Object.keys(rewards).length > 0 ? rewards : undefined,
-                });
-              } catch {
-                // Ignore parse errors
-              }
+        {selected && factions.definitions[selected] && (
+          <FactionEditor
+            id={selected}
+            definition={factions.definitions[selected]!}
+            factionIds={factionIds}
+            factionLabelMap={factionLabelMap}
+            renaming={renaming === selected}
+            renameValue={renameValue}
+            onStartRename={() => {
+              setRenaming(selected);
+              setRenameValue(selected);
             }}
-            placeholder={"rescue_the_merchant:\n  royal_court: 100\n  thieves_guild: -50"}
-            rows={6}
+            onRenameChange={setRenameValue}
+            onCommitRename={() => renameFaction(selected, renameValue)}
+            onCancelRename={() => setRenaming(null)}
+            onPatch={(p) => patchDefinition(selected, p)}
+            onClose={() => setSelected(null)}
+            onDelete={() => deleteFaction(selected)}
           />
+        )}
+      </section>
+
+      <section className="flex flex-col gap-3">
+        <header className="flex items-end justify-between gap-3">
+          <div>
+            <h3 className="font-display font-semibold text-base text-text-primary">
+              Quest Reputation Rewards
+            </h3>
+            <p className="mt-0.5 max-w-xl text-2xs leading-relaxed text-text-muted/70">
+              Reputation changes granted when a quest completes. Push players
+              toward or away from factions based on the jobs they accept.
+            </p>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <input
+              className="w-44 rounded border border-border-default bg-bg-primary px-2 py-1 text-xs text-text-primary outline-none focus:border-accent/50 focus-visible:ring-2 focus-visible:ring-border-active"
+              placeholder="quest_id"
+              value={newQuestId}
+              onChange={(e) => setNewQuestId(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") addQuestReward();
+              }}
+            />
+            <button
+              type="button"
+              onClick={addQuestReward}
+              disabled={!newQuestId.trim()}
+              className="focus-ring rounded border border-accent/40 bg-accent/10 px-2.5 py-1 text-xs font-medium text-accent transition hover:bg-accent/20 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              + Map quest
+            </button>
+          </div>
+        </header>
+
+        {!factions.questRewards ||
+        Object.keys(factions.questRewards).length === 0 ? (
+          <div className="rounded-2xl border border-dashed border-border-muted/60 bg-bg-primary/20 px-6 py-8 text-center">
+            <p className="text-2xs text-text-muted/70">
+              No quest rewards mapped. Type a quest ID above to connect it to
+              reputation changes.
+            </p>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-2">
+            {Object.entries(factions.questRewards).map(([qid, rewards]) => (
+              <QuestRewardRow
+                key={qid}
+                questId={qid}
+                rewards={rewards}
+                factionOptions={factionOptions}
+                onRename={(newQid) => renameQuestReward(qid, newQid)}
+                onPatch={(factionId, amount) =>
+                  patchQuestReward(qid, factionId, amount)
+                }
+                onDelete={() => deleteQuestReward(qid)}
+              />
+            ))}
+          </div>
+        )}
+      </section>
+    </div>
+  );
+}
+
+function GlobalStat({
+  label,
+  hint,
+  tint = "neutral",
+  children,
+}: {
+  label: string;
+  hint?: string;
+  tint?: "neutral" | "rose" | "emerald";
+  children: React.ReactNode;
+}) {
+  const tintClass =
+    tint === "rose"
+      ? "border-status-error/30 bg-status-error/[0.06]"
+      : tint === "emerald"
+        ? "border-status-success/30 bg-status-success/[0.06]"
+        : "border-border-muted/60 bg-bg-primary/30";
+  return (
+    <div
+      className={cx(
+        "flex min-w-[8rem] flex-col gap-1 rounded-xl border px-3 py-2",
+        tintClass,
+      )}
+    >
+      <p className="font-display text-[0.6rem] font-semibold uppercase tracking-wider text-text-muted">
+        {label}
+      </p>
+      {children}
+      {hint && (
+        <p className="text-[0.6rem] leading-snug text-text-muted/60">{hint}</p>
+      )}
+    </div>
+  );
+}
+
+interface FactionCardProps {
+  id: string;
+  definition: FactionDefinition;
+  factionLabelMap: Map<string, string>;
+  selected: boolean;
+  onSelect: () => void;
+  onDelete: () => void;
+}
+
+function FactionCard({
+  id,
+  definition,
+  factionLabelMap,
+  selected,
+  onSelect,
+  onDelete,
+}: FactionCardProps) {
+  const enemies = definition.enemies ?? [];
+
+  return (
+    <div
+      className={cx(
+        "group relative overflow-hidden rounded-2xl border transition",
+        selected
+          ? "border-accent/60 bg-accent/[0.07] shadow-[0_0_28px_-10px_rgb(var(--accent-rgb)/0.65)]"
+          : "border-border-muted/50 bg-bg-primary/25 hover:border-border-default hover:bg-bg-primary/40",
+      )}
+    >
+      <button
+        type="button"
+        onClick={onSelect}
+        aria-expanded={selected}
+        className="focus-ring flex w-full flex-col gap-2 p-3 text-left"
+      >
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <h4 className="truncate font-display text-sm font-semibold text-text-primary">
+              {definition.name || id}
+            </h4>
+            <p className="truncate font-mono text-2xs uppercase tracking-widest text-text-muted/70">
+              {id}
+            </p>
+          </div>
         </div>
-      </Section>
-    </>
+
+        {definition.description && (
+          <p className="line-clamp-2 text-2xs italic leading-snug text-text-muted/70">
+            {definition.description}
+          </p>
+        )}
+
+        <div className="flex flex-wrap items-center gap-1.5 pt-1">
+          {enemies.length === 0 ? (
+            <Badge variant="muted">No rivals</Badge>
+          ) : (
+            <>
+              <span className="text-[0.55rem] font-semibold uppercase tracking-wider text-text-muted/60">
+                Rivals ·
+              </span>
+              {enemies.slice(0, 4).map((e) => {
+                const label = factionLabelMap.get(e);
+                const missing = !label;
+                return (
+                  <span
+                    key={e}
+                    className={cx(
+                      "rounded-full border px-2 py-0.5 font-display text-2xs",
+                      missing
+                        ? "border-status-warning/40 bg-status-warning/10 text-status-warning"
+                        : "border-status-error/30 bg-status-error/10 text-status-error",
+                    )}
+                    title={missing ? `Unknown faction: ${e}` : undefined}
+                  >
+                    {label ?? `? ${e}`}
+                  </span>
+                );
+              })}
+              {enemies.length > 4 && (
+                <span className="text-2xs text-text-muted/60">
+                  +{enemies.length - 4} more
+                </span>
+              )}
+            </>
+          )}
+        </div>
+      </button>
+
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          onDelete();
+        }}
+        aria-label={`Delete ${id}`}
+        className="focus-ring absolute right-2 top-2 rounded p-1 text-text-muted/40 opacity-0 transition hover:bg-status-error/15 hover:text-status-error group-hover:opacity-100"
+      >
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+          <path
+            d="M4 4L12 12M12 4L4 12"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+          />
+        </svg>
+      </button>
+    </div>
+  );
+}
+
+interface FactionEditorProps {
+  id: string;
+  definition: FactionDefinition;
+  factionIds: string[];
+  factionLabelMap: Map<string, string>;
+  renaming: boolean;
+  renameValue: string;
+  onStartRename: () => void;
+  onRenameChange: (v: string) => void;
+  onCommitRename: () => void;
+  onCancelRename: () => void;
+  onPatch: (p: Partial<FactionDefinition>) => void;
+  onClose: () => void;
+  onDelete: () => void;
+}
+
+function FactionEditor({
+  id,
+  definition,
+  factionIds,
+  factionLabelMap,
+  renaming,
+  renameValue,
+  onStartRename,
+  onRenameChange,
+  onCommitRename,
+  onCancelRename,
+  onPatch,
+  onClose,
+  onDelete,
+}: FactionEditorProps) {
+  const enemies = definition.enemies ?? [];
+  const others = factionIds.filter((fid) => fid !== id);
+
+  const toggleEnemy = (enemyId: string) => {
+    const next = enemies.includes(enemyId)
+      ? enemies.filter((e) => e !== enemyId)
+      : [...enemies, enemyId];
+    onPatch({ enemies: next.length > 0 ? next : undefined });
+  };
+
+  return (
+    <div className="panel-surface relative overflow-hidden rounded-2xl p-5 shadow-section">
+      <div className="relative z-10">
+        <div className="mb-5 flex items-start justify-between gap-3 border-b border-border-muted/50 pb-3">
+          <div className="min-w-0">
+            <p className="text-2xs uppercase tracking-wider text-text-muted">
+              Editing faction
+            </p>
+            <div className="mt-0.5 flex flex-wrap items-baseline gap-2">
+              <h3 className="font-display font-semibold text-base text-text-primary">
+                {definition.name || id}
+              </h3>
+              {renaming ? (
+                <span className="inline-flex items-center gap-1">
+                  <input
+                    autoFocus
+                    className="w-40 rounded border border-border-default bg-bg-primary px-1.5 py-0.5 font-sans text-xs text-text-primary outline-none focus:border-accent/50"
+                    value={renameValue}
+                    onChange={(e) => onRenameChange(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") onCommitRename();
+                      if (e.key === "Escape") onCancelRename();
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={onCommitRename}
+                    className="rounded bg-accent/20 px-1.5 py-0.5 text-2xs text-accent hover:bg-accent/30"
+                  >
+                    Save
+                  </button>
+                  <button
+                    type="button"
+                    onClick={onCancelRename}
+                    className="rounded px-1.5 py-0.5 text-2xs text-text-muted hover:text-text-primary"
+                  >
+                    Cancel
+                  </button>
+                </span>
+              ) : (
+                <button
+                  type="button"
+                  onClick={onStartRename}
+                  title="Rename ID"
+                  className="font-mono text-xs font-normal uppercase tracking-widest text-text-muted/70 underline-offset-2 hover:text-text-primary hover:underline"
+                >
+                  {id}
+                </button>
+              )}
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="focus-ring shrink-0 rounded-full border border-border-muted/60 px-3 py-1 text-2xs text-text-muted transition hover:border-border-default hover:text-text-primary"
+          >
+            Close
+          </button>
+        </div>
+
+        <div className="flex flex-col gap-5">
+          <FieldGrid>
+            <CompactField
+              label="Display name"
+              span
+              hint="Shown in reputation readouts, quest text, and faction commands."
+            >
+              <TextInput
+                value={definition.name}
+                onCommit={(v) => onPatch({ name: v })}
+                placeholder="The Royal Court"
+              />
+            </CompactField>
+            <CompactField
+              label="Flavor description"
+              span
+              hint="Short summary shown in faction info and help text."
+            >
+              <CommitTextarea
+                label="Description"
+                value={definition.description ?? ""}
+                onCommit={(v) =>
+                  onPatch({ description: v || undefined })
+                }
+                placeholder="A secretive order of spellwrights who..."
+                rows={2}
+              />
+            </CompactField>
+          </FieldGrid>
+
+          <div>
+            <div className="mb-2">
+              <p className="font-display text-2xs uppercase tracking-wider text-text-muted">
+                Rivals
+              </p>
+              <p className="mt-0.5 text-2xs leading-snug text-text-muted/60">
+                Killing a member of this faction grants reputation with the
+                selected rivals, and vice versa.
+              </p>
+            </div>
+            {others.length === 0 ? (
+              <p className="text-2xs italic text-text-muted/60">
+                Add another faction to set up rivalries.
+              </p>
+            ) : (
+              <div className="flex flex-wrap gap-1.5">
+                {others.map((eid) => {
+                  const on = enemies.includes(eid);
+                  return (
+                    <button
+                      key={eid}
+                      type="button"
+                      onClick={() => toggleEnemy(eid)}
+                      aria-pressed={on}
+                      className={cx(
+                        "focus-ring rounded-full border px-3 py-1 text-2xs font-medium transition",
+                        on
+                          ? "border-status-error/45 bg-status-error/15 text-status-error"
+                          : "border-border-muted/60 bg-bg-primary/40 text-text-muted hover:border-border-default hover:text-text-secondary",
+                      )}
+                    >
+                      {factionLabelMap.get(eid) ?? eid}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          <div className="flex justify-end border-t border-border-muted/50 pt-4">
+            <button
+              type="button"
+              onClick={onDelete}
+              className="focus-ring rounded border border-status-error/30 bg-status-error/10 px-2.5 py-1 text-2xs font-medium text-status-error transition hover:bg-status-error/20"
+            >
+              Delete faction
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+interface QuestRewardRowProps {
+  questId: string;
+  rewards: Record<string, number>;
+  factionOptions: { value: string; label: string }[];
+  onRename: (newId: string) => void;
+  onPatch: (factionId: string, amount: number | undefined) => void;
+  onDelete: () => void;
+}
+
+function QuestRewardRow({
+  questId,
+  rewards,
+  factionOptions,
+  onRename,
+  onPatch,
+  onDelete,
+}: QuestRewardRowProps) {
+  const [newFaction, setNewFaction] = useState("");
+  const [newAmount, setNewAmount] = useState<number>(50);
+  const entries = Object.entries(rewards);
+
+  const availableFactions = factionOptions.filter(
+    (opt) => !(opt.value in rewards),
+  );
+
+  const addPair = () => {
+    if (!newFaction) return;
+    onPatch(newFaction, newAmount);
+    setNewFaction("");
+    setNewAmount(50);
+  };
+
+  return (
+    <div className="rounded-2xl border border-border-muted/50 bg-bg-primary/25 p-3">
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex min-w-0 items-center gap-2">
+          <span className="font-display text-[0.6rem] font-semibold uppercase tracking-wider text-text-muted">
+            Quest
+          </span>
+          <div className="min-w-0 flex-1">
+            <TextInput
+              value={questId}
+              onCommit={onRename}
+              placeholder="quest_id"
+            />
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={onDelete}
+          aria-label={`Remove ${questId}`}
+          className="focus-ring rounded p-1 text-text-muted/50 transition hover:bg-status-error/15 hover:text-status-error"
+        >
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+            <path
+              d="M4 4L12 12M12 4L4 12"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+            />
+          </svg>
+        </button>
+      </div>
+
+      {entries.length === 0 ? (
+        <p className="mt-2 text-2xs italic text-text-muted/60">
+          No reputation changes mapped yet.
+        </p>
+      ) : (
+        <div className="mt-2 flex flex-col gap-1.5">
+          {entries.map(([fid, delta]) => {
+            const positive = delta >= 0;
+            return (
+              <div
+                key={fid}
+                className={cx(
+                  "flex items-center gap-2 rounded-lg border px-2 py-1",
+                  positive
+                    ? "border-status-success/25 bg-status-success/[0.06]"
+                    : "border-status-error/25 bg-status-error/[0.06]",
+                )}
+              >
+                <span
+                  className={cx(
+                    "flex-1 truncate font-display text-xs font-semibold",
+                    positive ? "text-status-success" : "text-status-error",
+                  )}
+                >
+                  {factionOptions.find((o) => o.value === fid)?.label ?? fid}
+                </span>
+                <div className="w-24 shrink-0">
+                  <NumberInput
+                    value={delta}
+                    onCommit={(v) => onPatch(fid, v)}
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={() => onPatch(fid, undefined)}
+                  aria-label="Remove"
+                  className="focus-ring rounded p-1 text-text-muted/60 transition hover:bg-status-error/15 hover:text-status-error"
+                >
+                  <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
+                    <path
+                      d="M4 4L12 12M12 4L4 12"
+                      stroke="currentColor"
+                      strokeWidth="1.5"
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {availableFactions.length > 0 && (
+        <div className="mt-2 flex items-center gap-2 border-t border-border-muted/30 pt-2">
+          <div className="min-w-0 flex-1">
+            <SelectInput
+              value={newFaction}
+              onCommit={setNewFaction}
+              options={[
+                { value: "", label: "— pick a faction —" },
+                ...availableFactions,
+              ]}
+            />
+          </div>
+          <div className="w-24 shrink-0">
+            <NumberInput
+              value={newAmount}
+              onCommit={(v) => setNewAmount(v ?? 0)}
+            />
+          </div>
+          <button
+            type="button"
+            onClick={addPair}
+            disabled={!newFaction}
+            className="focus-ring rounded border border-accent/40 bg-accent/10 px-2 py-0.5 text-2xs font-medium text-accent transition hover:bg-accent/20 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            + Add
+          </button>
+        </div>
+      )}
+    </div>
   );
 }

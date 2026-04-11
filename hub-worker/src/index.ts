@@ -28,13 +28,14 @@ export default {
     }
 
     if (host.kind === "root") {
-      // Landing page lives on the showcase SPA deployment. The Worker just
-      // serves the index JSON for that SPA to consume.
+      // Landing page: the Worker serves the showcase SPA bundle from
+      // the ASSETS binding. `/api/index` is intercepted here so the
+      // SPA can fetch the listed-worlds directory.
       if (url.pathname === "/api/index") {
         if (req.method === "OPTIONS") return preflight({ origin: "*" });
         return await serveHubIndex(env);
       }
-      return error(404, "Not found", { origin: "*" });
+      return await env.ASSETS.fetch(req);
     }
 
     if (host.kind === "world" && host.slug) {
@@ -46,11 +47,10 @@ export default {
       if (imageMatch && imageMatch[1]) {
         return await serveImage(env, host.slug, imageMatch[1]);
       }
-      // Any other path under <slug>.hub.example.com is the SPA's job.
-      // In the deployed setup, Pages serves the SPA and the Worker only
-      // runs on /showcase.json + /images/*. When running the Worker in
-      // isolation, just 404 so it's obvious routing is needed.
-      return error(404, "SPA routes are served by Pages", { origin: "*" });
+      // Everything else on <slug>.arcanum.ambon.dev is an SPA route —
+      // the bundled index.html boots the showcase app, which then
+      // fetches /showcase.json from this same origin.
+      return await env.ASSETS.fetch(req);
     }
 
     return error(404, "Unknown host", { origin: "*" });

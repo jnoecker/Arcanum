@@ -8,31 +8,44 @@ compatibility_flags = ["nodejs_compat"]
 workers_dev = true
 
 # ─── Routes ──────────────────────────────────────────────────────────
-# Production routing on the ambon.dev zone:
-#   - api.arcanum.ambon.dev/*      publish + admin API
-#   - arcanum.ambon.dev/api/index  hub landing directory JSON
-#   - *.arcanum.ambon.dev/showcase.json
-#   - *.arcanum.ambon.dev/images/*  per-world images from R2
+# Production routing on the ambon.dev zone. The Worker serves
+# everything under arcanum.ambon.dev and its subdomains — the showcase
+# SPA (via the ASSETS binding below), the publish + admin API on the
+# api. subdomain, and the per-world /showcase.json + /images/* reads
+# from R2.
 #
-# The Worker sits in front of these paths. Everything else on
-# `arcanum.ambon.dev` + `*.arcanum.ambon.dev` falls through to the
-# Cloudflare Pages project that serves the multi-tenant showcase SPA.
+# Cloudflare Pages rejects wildcard custom domains, so we do all the
+# SPA serving from the Worker itself via an [assets] binding pointed
+# at ../showcase/dist. The hub-admin Pages project stays as-is.
 
 [[routes]]
 pattern = "api.arcanum.ambon.dev/*"
 zone_name = "ambon.dev"
 
 [[routes]]
-pattern = "arcanum.ambon.dev/api/*"
+pattern = "arcanum.ambon.dev/*"
 zone_name = "ambon.dev"
 
 [[routes]]
-pattern = "*.arcanum.ambon.dev/showcase.json"
+pattern = "*.arcanum.ambon.dev/*"
 zone_name = "ambon.dev"
 
-[[routes]]
-pattern = "*.arcanum.ambon.dev/images/*"
-zone_name = "ambon.dev"
+# ─── Assets (showcase SPA) ──────────────────────────────────────────
+# Build the showcase first with
+#   cd ../showcase && VITE_HUB_ROOT_DOMAIN=arcanum.ambon.dev npm run build
+# then `wrangler deploy` uploads the resulting dist/ alongside the
+# Worker. The SPA's own client-side routing is handled by the
+# single-page-application fallback.
+
+[assets]
+directory = "../showcase/dist"
+binding = "ASSETS"
+not_found_handling = "single-page-application"
+# The Worker has to inspect the Host header and intercept specific
+# paths (/api/*, /showcase.json, /images/*) before static assets are
+# served — otherwise those paths would be absorbed by the SPA
+# fallback and the API would be unreachable.
+run_worker_first = true
 
 # ─── Bindings ────────────────────────────────────────────────────────
 [[d1_databases]]

@@ -54,6 +54,8 @@ pub struct Settings {
     pub auto_enhance_prompts: bool,
     #[serde(default)]
     pub auto_remove_bg: bool,
+    #[serde(default = "default_bg_removal_provider")]
+    pub bg_removal_provider: String,
     #[serde(default)]
     pub r2_account_id: String,
     #[serde(default)]
@@ -105,6 +107,10 @@ fn default_auto_enhance_prompts() -> bool {
     true
 }
 
+fn default_bg_removal_provider() -> String {
+    "local".to_string()
+}
+
 impl Default for Settings {
     fn default() -> Self {
         Self {
@@ -121,6 +127,7 @@ impl Default for Settings {
             batch_concurrency: default_batch_concurrency(),
             auto_enhance_prompts: default_auto_enhance_prompts(),
             auto_remove_bg: false,
+            bg_removal_provider: default_bg_removal_provider(),
             r2_account_id: String::new(),
             r2_access_key_id: String::new(),
             r2_secret_access_key: String::new(),
@@ -195,6 +202,7 @@ pub async fn get_settings(app: AppHandle) -> Result<Settings, String> {
                 batch_concurrency: ps.batch_concurrency,
                 auto_enhance_prompts: ps.auto_enhance_prompts,
                 auto_remove_bg: ps.auto_remove_bg,
+                bg_removal_provider: ps.bg_removal_provider,
                 r2_account_id: ps.r2_account_id,
                 r2_access_key_id: ps.r2_access_key_id,
                 r2_secret_access_key: ps.r2_secret_access_key,
@@ -257,6 +265,7 @@ pub async fn get_merged_settings(
             batch_concurrency: ps.batch_concurrency,
             auto_enhance_prompts: ps.auto_enhance_prompts,
             auto_remove_bg: ps.auto_remove_bg,
+            bg_removal_provider: ps.bg_removal_provider,
             r2_account_id: ps.r2_account_id,
             r2_access_key_id: ps.r2_access_key_id,
             r2_secret_access_key: ps.r2_secret_access_key,

@@ -5,6 +5,10 @@ use tokio::sync::RwLock;
 
 const PROJECT_SETTINGS_FILE: &str = ".arcanum/settings.json";
 
+fn default_bg_removal_provider() -> String {
+    "local".to_string()
+}
+
 /// Cached project settings — keyed by project_dir to avoid re-reading from disk.
 static PROJECT_SETTINGS_CACHE: LazyLock<RwLock<Option<(String, ProjectSettings)>>> =
     LazyLock::new(|| RwLock::new(None));
@@ -29,6 +33,8 @@ pub struct ProjectSettings {
     pub auto_enhance_prompts: bool,
     #[serde(default)]
     pub auto_remove_bg: bool,
+    #[serde(default = "default_bg_removal_provider")]
+    pub bg_removal_provider: String,
     #[serde(default)]
     pub r2_account_id: String,
     #[serde(default)]
@@ -118,6 +124,11 @@ pub async fn seed_project_settings(
         batch_concurrency: user_settings.batch_concurrency,
         auto_enhance_prompts: user_settings.auto_enhance_prompts,
         auto_remove_bg: user_settings.auto_remove_bg,
+        bg_removal_provider: if user_settings.bg_removal_provider.is_empty() {
+            "local".to_string()
+        } else {
+            user_settings.bg_removal_provider
+        },
         r2_account_id: user_settings.r2_account_id,
         r2_access_key_id: user_settings.r2_access_key_id,
         r2_secret_access_key: user_settings.r2_secret_access_key,

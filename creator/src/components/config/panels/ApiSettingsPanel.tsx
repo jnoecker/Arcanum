@@ -88,7 +88,21 @@ const PROJECT_FIELDS = [
   "batch_concurrency",
   "auto_enhance_prompts",
   "auto_remove_bg",
+  "bg_removal_provider",
 ] as const satisfies readonly (keyof ProjectSettings)[];
+
+const BG_REMOVAL_PROVIDERS = [
+  {
+    id: "local" as const,
+    label: "Local (on-device)",
+    description: "Runs the @imgly / ONNX model in a Web Worker. Free, but uses CPU/RAM.",
+  },
+  {
+    id: "runware" as const,
+    label: "Runware (Bria RMBG v2.0)",
+    description: "Server-side, high quality. ~$0.018/image when using direct Runware; billed against your hub image quota in hub mode.",
+  },
+];
 
 export function ApiSettingsPanel() {
   const settings = useAssetStore((s) => s.settings);
@@ -415,11 +429,48 @@ export function ApiSettingsPanel() {
                 <span>
                   <span className="text-text-primary">Auto-remove background for sprite assets</span>
                   <span className="mt-0.5 block text-3xs text-text-muted/70">
-                    Client-side AI background removal on mobs, items, abilities, and portraits. Saved
-                    as a transparent variant alongside the original.
+                    AI background removal on mobs, items, abilities, and portraits. Saved as a
+                    transparent variant alongside the original.
                   </span>
                 </span>
               </label>
+
+              <div className="ml-6">
+                <h5 className="mb-1 text-2xs uppercase tracking-wider text-text-muted">
+                  Background removal backend
+                </h5>
+                <div className="flex flex-col gap-1">
+                  {BG_REMOVAL_PROVIDERS.map((p) => {
+                    const selected =
+                      (projectDraft.bg_removal_provider || "local") === p.id;
+                    return (
+                      <label
+                        key={p.id}
+                        className={`flex cursor-pointer items-start gap-2 rounded px-3 py-2 text-xs transition-colors ${
+                          selected
+                            ? "bg-accent/10 text-text-primary"
+                            : "text-text-secondary hover:bg-bg-elevated"
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          name="bg_removal_provider"
+                          value={p.id}
+                          checked={selected}
+                          onChange={() =>
+                            setProjectDraft({ ...projectDraft, bg_removal_provider: p.id })
+                          }
+                          className="mt-0.5 accent-accent"
+                        />
+                        <div className="min-w-0">
+                          <div className="font-medium">{p.label}</div>
+                          <div className="text-3xs text-text-muted/80">{p.description}</div>
+                        </div>
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
           </div>
         </section>

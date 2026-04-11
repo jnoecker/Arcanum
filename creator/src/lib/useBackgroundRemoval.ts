@@ -1,7 +1,19 @@
 import { useState, useCallback } from "react";
 import { invoke } from "@tauri-apps/api/core";
-import type { AssetContext, AssetEntry } from "@/types/assets";
+import type { AssetContext, AssetEntry, BgRemovalProvider } from "@/types/assets";
+import { useAssetStore } from "@/stores/assetStore";
 import { BG_REMOVAL_ASSET_TYPES } from "./arcanumPrompts";
+
+// ─── Provider resolution ─────────────────────────────────────────────
+// The background-removal backend is a project-level setting
+// (projectSettings.bg_removal_provider). We read from the asset store
+// at call time so each invocation picks up the live value — users can
+// switch between local and Runware without reloading.
+
+function currentBgProvider(): BgRemovalProvider {
+  const ps = useAssetStore.getState().projectSettings;
+  return ps?.bg_removal_provider === "runware" ? "runware" : "local";
+}
 
 // ─── Worker-based background removal ─────────────────────────────────
 // WASM/ONNX inference runs in a dedicated Web Worker so the UI stays responsive.
@@ -37,8 +49,18 @@ function getWorker(): Worker {
   return worker;
 }
 
-/** Remove background from an image data URL. Runs in a Web Worker. */
+/** Remove background from an image data URL.
+ *  Dispatches based on the project's bg_removal_provider setting:
+ *  - "local": runs the Imgly/ONNX model in a Web Worker.
+ *  - "runware": calls Runware Bria RMBG v2.0 (direct or via hub). */
 export async function removeBackground(imageDataUrl: string): Promise<Blob> {
+  if (currentBgProvider() === "runware") {
+    return removeBackgroundRunware(imageDataUrl);
+  }
+  return removeBackgroundLocal(imageDataUrl);
+}
+
+function removeBackgroundLocal(imageDataUrl: string): Promise<Blob> {
   const id = nextId++;
   const w = getWorker();
   return new Promise<Blob>((resolve, reject) => {
@@ -48,6 +70,16 @@ export async function removeBackground(imageDataUrl: string): Promise<Blob> {
     });
     w.postMessage({ id, imageDataUrl });
   });
+}
+
+async function removeBackgroundRunware(imageDataUrl: string): Promise<Blob> {
+  // The Rust side handles hub-mode short-circuiting, so this one
+  // command name works in both direct and hub configurations.
+  const b64 = await invoke<string>("runware_remove_background", { imageDataUrl });
+  const bin = atob(b64);
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return new Blob([bytes], { type: "image/png" });
 }
 
 // ─── Sequential queue ─────────────────────────────────────────────

@@ -64,6 +64,7 @@ pub fn run() {
             llm::llm_complete,
             llm::llm_complete_with_vision,
             runware::runware_generate_image,
+            runware::runware_remove_background,
             ffmpeg::check_ffmpeg_status,
             ffmpeg::ensure_ffmpeg_ready,
             video_export::save_video_frame,

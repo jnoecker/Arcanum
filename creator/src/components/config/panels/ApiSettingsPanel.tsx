@@ -1,8 +1,66 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useAssetStore } from "@/stores/assetStore";
 import { useProjectStore } from "@/stores/projectStore";
 import { IMAGE_MODELS } from "@/types/assets";
-import type { Settings, ProjectSettings } from "@/types/assets";
+import type { ProjectSettings, Settings } from "@/types/assets";
+
+// ─── Provider catalog ──────────────────────────────────────────────
+// Kept local so the panel stays self-contained. Adjusting the list
+// here is the only touch point when a new provider key is added.
+
+interface ProviderCard {
+  id: "deepinfra" | "anthropic" | "openrouter" | "runware" | "openai";
+  label: string;
+  keyField: keyof Settings & (
+    | "deepinfra_api_key"
+    | "anthropic_api_key"
+    | "openrouter_api_key"
+    | "runware_api_key"
+    | "openai_api_key"
+  );
+  helpUrl: string;
+  /** Which pipelines this provider feeds. Displayed under the key
+   *  field so users know what this key unlocks. */
+  uses: string;
+}
+
+const PROVIDER_CARDS: ProviderCard[] = [
+  {
+    id: "deepinfra",
+    label: "DeepInfra",
+    keyField: "deepinfra_api_key",
+    helpUrl: "deepinfra.com/dash/api_keys",
+    uses: "Image generation (FLUX) and LLM prompt enhancement.",
+  },
+  {
+    id: "anthropic",
+    label: "Anthropic (Claude)",
+    keyField: "anthropic_api_key",
+    helpUrl: "console.anthropic.com/settings/keys",
+    uses: "LLM prompt enhancement and vision map analysis.",
+  },
+  {
+    id: "openrouter",
+    label: "OpenRouter",
+    keyField: "openrouter_api_key",
+    helpUrl: "openrouter.ai/keys",
+    uses: "LLM prompt enhancement (unified provider gateway).",
+  },
+  {
+    id: "runware",
+    label: "Runware",
+    keyField: "runware_api_key",
+    helpUrl: "runware.ai/account/api-keys",
+    uses: "Image generation (FLUX, FLUX.2, GPT Image 1.5).",
+  },
+  {
+    id: "openai",
+    label: "OpenAI",
+    keyField: "openai_api_key",
+    helpUrl: "platform.openai.com/api-keys",
+    uses: "Image generation (GPT Image 1.5) and text-to-speech.",
+  },
+];
 
 const LLM_PROVIDERS = [
   { id: "deepinfra", label: "DeepInfra", keyField: "deepinfra_api_key" as const },
@@ -16,13 +74,23 @@ const IMAGE_PROVIDERS = [
   { id: "openai", label: "OpenAI" },
 ];
 
-export function ApiSettingsPanel({
-  initialSection = "providers",
-  showDeploymentActions = true,
-}: {
-  initialSection?: "providers" | "delivery";
-  showDeploymentActions?: boolean;
-}) {
+// Keys this panel edits on the user-level Settings. Kept narrow so
+// dirty detection doesn't react to hub/R2/PAT edits happening elsewhere.
+const ACCOUNT_KEY_FIELDS = PROVIDER_CARDS.map((p) => p.keyField);
+
+// Keys this panel edits on ProjectSettings. Excludes R2 (own panel) and
+// hub world fields (own panel).
+const PROJECT_FIELDS = [
+  "prompt_llm_provider",
+  "image_provider",
+  "image_model",
+  "enhance_model",
+  "batch_concurrency",
+  "auto_enhance_prompts",
+  "auto_remove_bg",
+] as const satisfies readonly (keyof ProjectSettings)[];
+
+export function ApiSettingsPanel() {
   const settings = useAssetStore((s) => s.settings);
   const loadSettings = useAssetStore((s) => s.loadSettings);
   const saveSettings = useAssetStore((s) => s.saveSettings);
@@ -49,16 +117,28 @@ export function ApiSettingsPanel({
   }, [projectSettings]);
 
   if (!draft) {
-    return (
-      <div className="text-xs text-text-muted">Loading settings...</div>
-    );
+    return <div className="text-xs text-text-muted">Loading settings...</div>;
   }
 
-  const handleSave = async () => {
+  const accountDirty =
+    !settings || ACCOUNT_KEY_FIELDS.some((k) => draft[k] !== settings[k]);
+  const projectDirty =
+    !!(projectSettings && projectDraft) &&
+    PROJECT_FIELDS.some((k) => projectDraft[k] !== projectSettings[k]);
+
+  const hasPendingChanges = accountDirty || projectDirty;
+
+  async function handleSave() {
+    if (!draft) return;
     setSaving(true);
     setError(null);
     try {
-      await saveSettings(draft);
+      if (accountDirty) {
+        await saveSettings(draft);
+      }
+      if (projectDirty && projectDir && projectDraft) {
+        await saveProjectSettings(projectDir, projectDraft);
+      }
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
     } catch (e) {
@@ -66,262 +146,103 @@ export function ApiSettingsPanel({
     } finally {
       setSaving(false);
     }
-  };
-
-  const handleSaveProject = async () => {
-    if (!projectDir || !projectDraft) return;
-    setSaving(true);
-    setError(null);
-    try {
-      await saveProjectSettings(projectDir, projectDraft);
-      setSaved(true);
-      setTimeout(() => setSaved(false), 2000);
-    } catch (e) {
-      setError(String(e));
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const isUserDirty = !settings || (["deepinfra_api_key", "runware_api_key", "anthropic_api_key", "openrouter_api_key", "openai_api_key", "github_pat", "hub_api_url", "hub_api_key", "use_hub_ai"] as const).some(
-    (k) => draft[k] !== settings[k],
-  );
-
-  const isProjectDirty = projectSettings && projectDraft && (Object.keys(projectDraft) as (keyof ProjectSettings)[]).some(
-    (k) => projectDraft[k] !== projectSettings[k],
-  );
+  }
 
   const filteredModels = IMAGE_MODELS.filter(
     (m) => m.provider === (projectDraft?.image_provider ?? draft.image_provider),
   );
-  const showProviderSections = initialSection !== "delivery";
-  const showDeliverySection = true;
 
   return (
-    <div className="flex flex-col gap-6">
-      {/* ─── API Keys ─────────────────────────────────────────── */}
-      {showProviderSections && <div>
-        <h3 className="mb-3 font-display text-xs uppercase tracking-widest text-text-muted">
-          API Keys
+    <div className="flex flex-col gap-8">
+      {/* ─── Account keys ─────────────────────────────────────── */}
+      <section>
+        <h3 className="mb-1 font-display text-sm uppercase tracking-widest text-text-primary">
+          Account API keys
         </h3>
-        <div className="flex flex-col gap-3">
-          <div>
-            <label htmlFor="deepinfra-api-key" className="mb-1 block text-2xs uppercase tracking-wider text-text-muted">
-              DeepInfra API Key
-            </label>
-            <input
-              id="deepinfra-api-key"
-              type="password"
-              value={draft.deepinfra_api_key}
-              onChange={(e) =>
-                setDraft({ ...draft, deepinfra_api_key: e.target.value })
-              }
-              placeholder="Enter your DeepInfra API key"
-              className="w-full rounded border border-border-default bg-bg-primary px-3 py-1.5 text-xs text-text-primary placeholder:text-text-muted outline-none focus:border-accent/50 focus-visible:ring-2 focus-visible:ring-border-active"
-            />
-            <p className="mt-1 text-2xs text-text-muted">
-              Get your key at deepinfra.com/dash/api_keys
-            </p>
-          </div>
-
-          <div>
-            <label htmlFor="anthropic-api-key" className="mb-1 block text-2xs uppercase tracking-wider text-text-muted">
-              Anthropic API Key
-            </label>
-            <input
-              id="anthropic-api-key"
-              type="password"
-              value={draft.anthropic_api_key}
-              onChange={(e) =>
-                setDraft({ ...draft, anthropic_api_key: e.target.value })
-              }
-              placeholder="Enter your Anthropic API key"
-              className="w-full rounded border border-border-default bg-bg-primary px-3 py-1.5 text-xs text-text-primary placeholder:text-text-muted outline-none focus:border-accent/50 focus-visible:ring-2 focus-visible:ring-border-active"
-            />
-          </div>
-
-          <div>
-            <label htmlFor="openrouter-api-key" className="mb-1 block text-2xs uppercase tracking-wider text-text-muted">
-              OpenRouter API Key
-            </label>
-            <input
-              id="openrouter-api-key"
-              type="password"
-              value={draft.openrouter_api_key}
-              onChange={(e) =>
-                setDraft({ ...draft, openrouter_api_key: e.target.value })
-              }
-              placeholder="Enter your OpenRouter API key"
-              className="w-full rounded border border-border-default bg-bg-primary px-3 py-1.5 text-xs text-text-primary placeholder:text-text-muted outline-none focus:border-accent/50 focus-visible:ring-2 focus-visible:ring-border-active"
-            />
-          </div>
-
-          <div>
-            <label htmlFor="runware-api-key" className="mb-1 block text-2xs uppercase tracking-wider text-text-muted">
-              Runware API Key
-            </label>
-            <input
-              id="runware-api-key"
-              type="password"
-              value={draft.runware_api_key}
-              onChange={(e) =>
-                setDraft({ ...draft, runware_api_key: e.target.value })
-              }
-              placeholder="Enter your Runware API key"
-              className="w-full rounded border border-border-default bg-bg-primary px-3 py-1.5 text-xs text-text-primary placeholder:text-text-muted outline-none focus:border-accent/50 focus-visible:ring-2 focus-visible:ring-border-active"
-            />
-          </div>
-
-          <div>
-            <label htmlFor="openai-api-key" className="mb-1 block text-2xs uppercase tracking-wider text-text-muted">
-              OpenAI API Key
-            </label>
-            <input
-              id="openai-api-key"
-              type="password"
-              value={draft.openai_api_key}
-              onChange={(e) =>
-                setDraft({ ...draft, openai_api_key: e.target.value })
-              }
-              placeholder="Enter your OpenAI API key"
-              className="w-full rounded border border-border-default bg-bg-primary px-3 py-1.5 text-xs text-text-primary placeholder:text-text-muted outline-none focus:border-accent/50 focus-visible:ring-2 focus-visible:ring-border-active"
-            />
-          </div>
+        <p className="mb-4 text-2xs text-text-muted">
+          Provider credentials used when you're not routing through the Arcanum Hub. Each key is
+          stored on this machine only.
+        </p>
+        <div className="grid gap-3 md:grid-cols-2">
+          {PROVIDER_CARDS.map((p) => {
+            const configured = !!draft[p.keyField];
+            return (
+              <div
+                key={p.id}
+                className={`rounded-2xl border px-4 py-3 transition ${
+                  configured
+                    ? "border-accent/20 bg-[var(--chrome-fill)]"
+                    : "border-[var(--chrome-stroke)] bg-[var(--chrome-fill)]"
+                }`}
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <label
+                    htmlFor={`apikey-${p.id}`}
+                    className="font-display text-xs uppercase tracking-wide-ui text-text-primary"
+                  >
+                    {p.label}
+                  </label>
+                  <span
+                    className={`rounded-full px-2 py-0.5 text-3xs uppercase tracking-ui ${
+                      configured
+                        ? "bg-status-success/15 text-status-success"
+                        : "bg-[var(--chrome-highlight)] text-text-muted"
+                    }`}
+                  >
+                    {configured ? "set" : "empty"}
+                  </span>
+                </div>
+                <input
+                  id={`apikey-${p.id}`}
+                  type="password"
+                  value={draft[p.keyField]}
+                  onChange={(e) => setDraft({ ...draft, [p.keyField]: e.target.value })}
+                  placeholder={`Enter your ${p.label} API key`}
+                  className="mt-2 w-full rounded border border-border-default bg-bg-primary px-3 py-1.5 text-xs text-text-primary placeholder:text-text-muted outline-none focus:border-accent/50 focus-visible:ring-2 focus-visible:ring-border-active"
+                />
+                <p className="mt-2 text-2xs text-text-muted/80">{p.uses}</p>
+                <p className="mt-0.5 text-3xs text-text-muted/60">
+                  Get your key at <code className="font-mono text-accent/70">{p.helpUrl}</code>
+                </p>
+              </div>
+            );
+          })}
         </div>
-      </div>}
 
-      {/* GitHub (Version Control) */}
-      <div className="border-t border-border-default pt-4">
-        <h3 className="mb-3 font-display text-sm uppercase tracking-widest text-text-muted">
-          GitHub
-        </h3>
-        <div className="flex flex-col gap-3">
-          <div>
-            <label htmlFor="github-pat" className="mb-1 block text-2xs uppercase tracking-wider text-text-muted">
-              Personal Access Token
-            </label>
-            <input
-              id="github-pat"
-              type="password"
-              value={draft.github_pat}
-              onChange={(e) =>
-                setDraft({ ...draft, github_pat: e.target.value })
-              }
-              placeholder="ghp_..."
-              className="w-full rounded border border-border-default bg-bg-primary px-3 py-1.5 text-xs text-text-primary placeholder:text-text-muted outline-none focus:border-accent/50 focus-visible:ring-2 focus-visible:ring-border-active"
-            />
-            <p className="mt-1 text-2xs text-text-muted">
-              Needs <code className="font-mono text-accent/70">repo</code> scope. Used for push, pull, and PR creation.
-            </p>
+        {draft.use_hub_ai && (
+          <div className="mt-4 rounded-2xl border border-accent/30 bg-accent/5 px-4 py-3 text-2xs leading-5 text-accent">
+            Hub AI mode is on. Every image, LLM, and vision call routes through the hub and uses
+            your hub quota — these keys are only used for direct-provider fallback. Change the
+            routing in Settings → Arcanum Hub.
           </div>
-        </div>
-      </div>
+        )}
+      </section>
 
-      {/* ─── Arcanum Hub ──────────────────────────────────── */}
-      <div>
-        <h3 className="mb-3 font-display text-sm uppercase tracking-widest text-text-muted">
-          Arcanum Hub
-        </h3>
-        <div className="flex flex-col gap-3">
-          <div>
-            <label htmlFor="hub-api-url" className="mb-1 block text-2xs uppercase tracking-wider text-text-muted">
-              Hub API URL
-            </label>
-            <input
-              id="hub-api-url"
-              type="text"
-              value={draft.hub_api_url}
-              onChange={(e) => setDraft({ ...draft, hub_api_url: e.target.value })}
-              placeholder="https://api.arcanum-hub.com"
-              className="w-full rounded border border-border-default bg-bg-primary px-3 py-1.5 text-xs text-text-primary placeholder:text-text-muted outline-none focus:border-accent/50 focus-visible:ring-2 focus-visible:ring-border-active"
-            />
-            <p className="mt-1 text-2xs text-text-muted">
-              Base URL of the hub API. Leave blank to disable hub publishing.
-            </p>
-          </div>
-          <div>
-            <label htmlFor="hub-api-key" className="mb-1 block text-2xs uppercase tracking-wider text-text-muted">
-              Hub API Key
-            </label>
-            <input
-              id="hub-api-key"
-              type="password"
-              value={draft.hub_api_key}
-              onChange={(e) => setDraft({ ...draft, hub_api_key: e.target.value })}
-              placeholder="hub_..."
-              className="w-full rounded border border-border-default bg-bg-primary px-3 py-1.5 text-xs text-text-primary placeholder:text-text-muted outline-none focus:border-accent/50 focus-visible:ring-2 focus-visible:ring-border-active"
-            />
-            <p className="mt-1 text-2xs text-text-muted">
-              Minted by the hub admin. The world slug and listing toggle live under each project below.
-            </p>
-          </div>
-          <label className="mt-1 flex cursor-pointer items-start gap-2 text-xs text-text-secondary">
-            <input
-              type="checkbox"
-              checked={draft.use_hub_ai}
-              onChange={(e) => setDraft({ ...draft, use_hub_ai: e.target.checked })}
-              className="mt-0.5 accent-accent"
-            />
-            <span>
-              Use Arcanum Hub for AI generation
-              <span className="mt-0.5 block text-2xs text-text-muted/70">
-                When on, image generation (FLUX.2, GPT Image 1.5), prompt enhancement (DeepSeek), and vision analysis (Claude) route through the hub and count against your playtest quotas. No other API keys are needed. Leave off to use your own provider keys directly.
-              </span>
-            </span>
-          </label>
-        </div>
-      </div>
+      {/* ─── Pipeline ─────────────────────────────────────────── */}
+      {projectDir && projectDraft ? (
+        <section className="border-t border-border-default pt-6">
+          <h3 className="mb-1 font-display text-sm uppercase tracking-widest text-text-primary">
+            Project pipeline
+          </h3>
+          <p className="mb-4 text-2xs text-text-muted">
+            Per-project choices for which provider and model power each step.
+          </p>
 
-      {/* Save user settings */}
-      <div className="sticky bottom-0 -mx-6 border-t border-border-default bg-bg-secondary px-6 py-3">
-        <div className="flex items-center gap-2">
-          <button
-            onClick={handleSave}
-            disabled={!isUserDirty || saving}
-            className="action-button action-button-primary action-button-md focus-ring"
-          >
-            {saving ? "Saving..." : "Save Account Keys"}
-          </button>
-          {saved && !isProjectDirty && (
-            <span className="text-xs text-status-success">Saved</span>
-          )}
-          {isUserDirty && (
-            <span className="text-xs text-accent">modified</span>
-          )}
-          {error && (
-            <span className="text-xs text-status-error">{error}</span>
-          )}
-        </div>
-      </div>
-
-      {/* ─── Project Settings Header ────────────────────── */}
-      {projectDir && projectDraft && (
-        <div className="mt-8 border-t-2 border-accent/20 pt-6">
-          <div className="mb-4">
-            <h2 className="font-display text-sm uppercase tracking-widest text-accent">
-              Project Configuration
-            </h2>
-            <p className="mt-1 text-2xs text-text-muted">
-              These settings are stored per-project and can differ between worlds.
-            </p>
-          </div>
-
-          {/* ─── Provider Selection ───────────────────────────────── */}
-          {showProviderSections && <div className="border-t border-border-default pt-4">
-            <h3 className="mb-3 font-display text-xs uppercase tracking-widest text-text-muted">
-              Providers
-            </h3>
-            <div className="flex flex-col gap-3">
-              <fieldset className="contents">
-                <legend className="mb-1 block text-2xs uppercase tracking-wider text-text-muted">
-                  Prompt Enhancement LLM
-                </legend>
-                <div className="flex flex-col gap-1">
-                  {LLM_PROVIDERS.map((p) => (
+          <div className="grid gap-5 md:grid-cols-2">
+            {/* Prompt LLM */}
+            <div>
+              <h4 className="mb-2 text-2xs uppercase tracking-wider text-text-muted">
+                Prompt LLM
+              </h4>
+              <div className="flex flex-col gap-1">
+                {LLM_PROVIDERS.map((p) => {
+                  const hasKey = !!draft[p.keyField];
+                  const selected = projectDraft.prompt_llm_provider === p.id;
+                  return (
                     <label
                       key={p.id}
                       className={`flex cursor-pointer items-center gap-2 rounded px-3 py-1.5 text-xs transition-colors ${
-                        projectDraft.prompt_llm_provider === p.id
+                        selected
                           ? "bg-accent/10 text-text-primary"
                           : "text-text-secondary hover:bg-bg-elevated"
                       }`}
@@ -330,31 +251,53 @@ export function ApiSettingsPanel({
                         type="radio"
                         name="llm_provider"
                         value={p.id}
-                        checked={projectDraft.prompt_llm_provider === p.id}
+                        checked={selected}
                         onChange={() =>
                           setProjectDraft({ ...projectDraft, prompt_llm_provider: p.id })
                         }
                         className="accent-accent"
                       />
-                      <span className="font-medium">{p.label}</span>
-                      {!draft[p.keyField] && (
-                        <span className="text-2xs text-text-muted">(no key)</span>
+                      <span className="flex-1 font-medium">{p.label}</span>
+                      {!hasKey && (
+                        <span className="rounded-full bg-[var(--chrome-highlight)] px-2 py-0.5 text-3xs text-text-muted">
+                          no key
+                        </span>
                       )}
                     </label>
-                  ))}
-                </div>
-              </fieldset>
+                  );
+                })}
+              </div>
 
-              <fieldset className="contents">
-                <legend className="mb-1 block text-2xs uppercase tracking-wider text-text-muted">
-                  Image Generation Provider
-                </legend>
-                <div className="flex flex-col gap-1">
-                  {IMAGE_PROVIDERS.map((p) => (
+              <label htmlFor="enhance-model" className="mt-3 block text-2xs uppercase tracking-wider text-text-muted">
+                Enhancement model
+              </label>
+              <input
+                id="enhance-model"
+                type="text"
+                value={projectDraft.enhance_model}
+                onChange={(e) =>
+                  setProjectDraft({ ...projectDraft, enhance_model: e.target.value })
+                }
+                className="mt-1 w-full rounded border border-border-default bg-bg-primary px-3 py-1.5 text-xs text-text-primary outline-none focus:border-accent/50 focus-visible:ring-2 focus-visible:ring-border-active"
+              />
+              <p className="mt-1 text-3xs text-text-muted/70">
+                Free-form model ID. Used by DeepInfra and OpenRouter.
+              </p>
+            </div>
+
+            {/* Image pipeline */}
+            <div>
+              <h4 className="mb-2 text-2xs uppercase tracking-wider text-text-muted">
+                Image generation
+              </h4>
+              <div className="flex flex-col gap-1">
+                {IMAGE_PROVIDERS.map((p) => {
+                  const selected = projectDraft.image_provider === p.id;
+                  return (
                     <label
                       key={p.id}
                       className={`flex cursor-pointer items-center gap-2 rounded px-3 py-1.5 text-xs transition-colors ${
-                        projectDraft.image_provider === p.id
+                        selected
                           ? "bg-accent/10 text-text-primary"
                           : "text-text-secondary hover:bg-bg-elevated"
                       }`}
@@ -363,7 +306,7 @@ export function ApiSettingsPanel({
                         type="radio"
                         name="image_provider"
                         value={p.id}
-                        checked={projectDraft.image_provider === p.id}
+                        checked={selected}
                         onChange={() =>
                           setProjectDraft({ ...projectDraft, image_provider: p.id })
                         }
@@ -371,74 +314,55 @@ export function ApiSettingsPanel({
                       />
                       <span className="font-medium">{p.label}</span>
                     </label>
-                  ))}
-                </div>
-              </fieldset>
+                  );
+                })}
+              </div>
+
+              <h4 className="mt-3 mb-1 text-2xs uppercase tracking-wider text-text-muted">
+                Default model
+              </h4>
+              <div className="flex flex-col gap-1">
+                {filteredModels.map((model) => {
+                  const selected = projectDraft.image_model === model.id;
+                  return (
+                    <label
+                      key={model.id}
+                      className={`flex cursor-pointer items-start gap-2 rounded px-3 py-2 text-xs transition-colors ${
+                        selected
+                          ? "bg-accent/10 text-text-primary"
+                          : "text-text-secondary hover:bg-bg-elevated"
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="image_model"
+                        value={model.id}
+                        checked={selected}
+                        onChange={() =>
+                          setProjectDraft({ ...projectDraft, image_model: model.id })
+                        }
+                        className="mt-0.5 accent-accent"
+                      />
+                      <div className="min-w-0">
+                        <div className="font-medium">{model.label}</div>
+                        <div className="text-3xs text-text-muted/80">{model.description}</div>
+                      </div>
+                    </label>
+                  );
+                })}
+              </div>
             </div>
-          </div>}
+          </div>
 
-          {/* ─── Image Model ──────────────────────────────────────── */}
-          {showProviderSections && <fieldset className="border-t border-border-default pt-4">
-            <legend className="mb-1 block font-display text-2xs uppercase tracking-widest text-text-muted">
-              Default Image Model
-            </legend>
-            <div className="flex flex-col gap-1.5">
-              {filteredModels.map((model) => (
-                <label
-                  key={model.id}
-                  className={`flex cursor-pointer items-center gap-2 rounded px-3 py-2 text-xs transition-colors ${
-                    projectDraft.image_model === model.id
-                      ? "bg-accent/10 text-text-primary"
-                      : "text-text-secondary hover:bg-bg-elevated"
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name="image_model"
-                    value={model.id}
-                    checked={projectDraft.image_model === model.id}
-                    onChange={() =>
-                      setProjectDraft({ ...projectDraft, image_model: model.id })
-                    }
-                    className="accent-accent"
-                  />
-                  <div>
-                    <span className="font-medium">{model.label}</span>
-                    <span className="ml-2 text-text-muted">{model.description}</span>
-                  </div>
-                </label>
-              ))}
-            </div>
-          </fieldset>}
-
-          {/* ─── Enhance Model ────────────────────────────────────── */}
-          {showProviderSections && <div>
-            <label htmlFor="enhance-model" className="mb-1 block font-display text-2xs uppercase tracking-widest text-text-muted">
-              Prompt Enhancement Model
-            </label>
-            <input
-              id="enhance-model"
-              type="text"
-              value={projectDraft.enhance_model}
-              onChange={(e) =>
-                setProjectDraft({ ...projectDraft, enhance_model: e.target.value })
-              }
-              className="w-full rounded border border-border-default bg-bg-primary px-3 py-1.5 text-xs text-text-primary outline-none focus:border-accent/50 focus-visible:ring-2 focus-visible:ring-border-active"
-            />
-            <p className="mt-1 text-2xs text-text-muted">
-              Used by DeepInfra and OpenRouter providers
-            </p>
-          </div>}
-
-          {/* ─── Generation Options ───────────────────────────────── */}
-          {showProviderSections && <div className="border-t border-border-default pt-4">
-            <h3 className="mb-3 font-display text-xs uppercase tracking-widest text-text-muted">
-              Generation Options
-            </h3>
+          {/* Generation options */}
+          <div className="mt-6 border-t border-border-muted pt-4">
+            <h4 className="mb-3 text-2xs uppercase tracking-wider text-text-muted">
+              Generation options
+            </h4>
             <div className="flex flex-col gap-3">
-              <div>
-                <label htmlFor="batch-concurrency" className="mb-1 block text-2xs uppercase tracking-wider text-text-muted">
-                  Batch Concurrency
+              <div className="flex items-center gap-3">
+                <label htmlFor="batch-concurrency" className="text-2xs uppercase tracking-wider text-text-muted">
+                  Batch concurrency
                 </label>
                 <input
                   id="batch-concurrency"
@@ -447,242 +371,82 @@ export function ApiSettingsPanel({
                   max={20}
                   value={projectDraft.batch_concurrency}
                   onChange={(e) =>
-                    setProjectDraft({ ...projectDraft, batch_concurrency: parseInt(e.target.value) || 5 })
+                    setProjectDraft({
+                      ...projectDraft,
+                      batch_concurrency: parseInt(e.target.value) || 5,
+                    })
                   }
                   className="w-20 rounded border border-border-default bg-bg-primary px-3 py-1.5 text-xs text-text-primary outline-none focus:border-accent/50 focus-visible:ring-2 focus-visible:ring-border-active"
                 />
-                <p className="mt-1 text-2xs text-text-muted">
-                  Max parallel image generations during batch operations
-                </p>
+                <span className="text-3xs text-text-muted/70">
+                  Max parallel image generations during batch operations.
+                </span>
               </div>
 
-              <label className="flex cursor-pointer items-center gap-2 text-xs text-text-secondary">
+              <label className="flex cursor-pointer items-start gap-2 text-xs text-text-secondary">
                 <input
                   type="checkbox"
                   checked={projectDraft.auto_enhance_prompts}
                   onChange={(e) =>
-                    setProjectDraft({ ...projectDraft, auto_enhance_prompts: e.target.checked })
+                    setProjectDraft({
+                      ...projectDraft,
+                      auto_enhance_prompts: e.target.checked,
+                    })
                   }
-                  className="accent-accent"
+                  className="mt-0.5 accent-accent"
                 />
-                Auto-enhance prompts before image generation
+                <span>
+                  <span className="text-text-primary">Auto-enhance prompts before generation</span>
+                  <span className="mt-0.5 block text-3xs text-text-muted/70">
+                    Runs the prompt LLM inside the generation pipeline before image models are called.
+                  </span>
+                </span>
               </label>
-              <p className="ml-6 -mt-1 text-2xs text-text-muted/60">
-                Runs the configured prompt LLM inside the shared generation pipeline before image models are called.
-              </p>
 
-              <label className="flex cursor-pointer items-center gap-2 text-xs text-text-secondary">
+              <label className="flex cursor-pointer items-start gap-2 text-xs text-text-secondary">
                 <input
                   type="checkbox"
                   checked={projectDraft.auto_remove_bg}
                   onChange={(e) =>
                     setProjectDraft({ ...projectDraft, auto_remove_bg: e.target.checked })
                   }
-                  className="accent-accent"
+                  className="mt-0.5 accent-accent"
                 />
-                Auto-remove background for mob/item sprites
+                <span>
+                  <span className="text-text-primary">Auto-remove background for sprite assets</span>
+                  <span className="mt-0.5 block text-3xs text-text-muted/70">
+                    Client-side AI background removal on mobs, items, abilities, and portraits. Saved
+                    as a transparent variant alongside the original.
+                  </span>
+                </span>
               </label>
-              <p className="ml-6 -mt-1 text-2xs text-text-muted/60">
-                Runs client-side AI background removal on sprite-type assets (mobs, items, abilities, player sprites, race/class portraits) after generation. The transparent version is saved as a variant alongside the original.
-              </p>
-            </div>
-          </div>}
-
-          {/* ─── R2 Section ───────────────────────────────────────── */}
-          {showDeliverySection && <div className="border-t border-border-default pt-4">
-            <h3 className="mb-3 font-display text-xs uppercase tracking-widest text-text-muted">
-              Cloudflare R2 (Asset CDN)
-            </h3>
-            <div className="flex flex-col gap-3">
-              <div>
-                <label htmlFor="r2-account-id" className="mb-1 block text-2xs uppercase tracking-wider text-text-muted">
-                  Account ID
-                </label>
-                <input
-                  id="r2-account-id"
-                  type="text"
-                  value={projectDraft.r2_account_id}
-                  onChange={(e) =>
-                    setProjectDraft({ ...projectDraft, r2_account_id: e.target.value })
-                  }
-                  placeholder="Cloudflare account ID"
-                  className="w-full rounded border border-border-default bg-bg-primary px-3 py-1.5 text-xs text-text-primary placeholder:text-text-muted outline-none focus:border-accent/50 focus-visible:ring-2 focus-visible:ring-border-active"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label htmlFor="r2-access-key-id" className="mb-1 block text-2xs uppercase tracking-wider text-text-muted">
-                    Access Key ID
-                  </label>
-                  <input
-                    id="r2-access-key-id"
-                    type="text"
-                    value={projectDraft.r2_access_key_id}
-                    onChange={(e) =>
-                      setProjectDraft({ ...projectDraft, r2_access_key_id: e.target.value })
-                    }
-                    placeholder="R2 access key"
-                    className="w-full rounded border border-border-default bg-bg-primary px-3 py-1.5 text-xs text-text-primary placeholder:text-text-muted outline-none focus:border-accent/50 focus-visible:ring-2 focus-visible:ring-border-active"
-                  />
-                </div>
-                <div>
-                  <label htmlFor="r2-secret-access-key" className="mb-1 block text-2xs uppercase tracking-wider text-text-muted">
-                    Secret Access Key
-                  </label>
-                  <input
-                    id="r2-secret-access-key"
-                    type="password"
-                    value={projectDraft.r2_secret_access_key}
-                    onChange={(e) =>
-                      setProjectDraft({ ...projectDraft, r2_secret_access_key: e.target.value })
-                    }
-                    placeholder="R2 secret key"
-                    className="w-full rounded border border-border-default bg-bg-primary px-3 py-1.5 text-xs text-text-primary placeholder:text-text-muted outline-none focus:border-accent/50 focus-visible:ring-2 focus-visible:ring-border-active"
-                  />
-                </div>
-              </div>
-              <div>
-                <label htmlFor="r2-bucket" className="mb-1 block text-2xs uppercase tracking-wider text-text-muted">
-                  Bucket Name
-                </label>
-                <input
-                  id="r2-bucket"
-                  type="text"
-                  value={projectDraft.r2_bucket}
-                  onChange={(e) =>
-                    setProjectDraft({ ...projectDraft, r2_bucket: e.target.value })
-                  }
-                  placeholder="my-assets-bucket"
-                  className="w-full rounded border border-border-default bg-bg-primary px-3 py-1.5 text-xs text-text-primary placeholder:text-text-muted outline-none focus:border-accent/50 focus-visible:ring-2 focus-visible:ring-border-active"
-                />
-              </div>
-              <div>
-                <label htmlFor="r2-custom-domain" className="mb-1 block text-2xs uppercase tracking-wider text-text-muted">
-                  Custom Domain
-                </label>
-                <input
-                  id="r2-custom-domain"
-                  type="text"
-                  value={projectDraft.r2_custom_domain}
-                  onChange={(e) =>
-                    setProjectDraft({ ...projectDraft, r2_custom_domain: e.target.value })
-                  }
-                  placeholder="https://assets.example.com"
-                  className="w-full rounded border border-border-default bg-bg-primary px-3 py-1.5 text-xs text-text-primary placeholder:text-text-muted outline-none focus:border-accent/50 focus-visible:ring-2 focus-visible:ring-border-active"
-                />
-                <p className="mt-1 text-2xs text-text-muted">
-                  Public URL for the game client to load images from
-                </p>
-              </div>
-
-              {showDeploymentActions && (
-                <div className="mt-1 rounded-2xl border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] px-4 py-3 text-2xs leading-6 text-text-secondary">
-                  Runtime publishing now lives in Operations / Handoff.
-                </div>
-              )}
-            </div>
-          </div>}
-
-          {/* ─── Hub World (per-project) ──────────────────────────── */}
-          {showDeliverySection && <div className="border-t border-border-default pt-4">
-            <h3 className="mb-3 font-display text-xs uppercase tracking-widest text-text-muted">
-              Hub World
-            </h3>
-            <div className="flex flex-col gap-3">
-              <div>
-                <label htmlFor="hub-world-slug" className="mb-1 block text-2xs uppercase tracking-wider text-text-muted">
-                  World Slug
-                </label>
-                <input
-                  id="hub-world-slug"
-                  type="text"
-                  value={projectDraft.hub_world_slug}
-                  onChange={(e) =>
-                    setProjectDraft({
-                      ...projectDraft,
-                      hub_world_slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""),
-                    })
-                  }
-                  placeholder="mystara"
-                  className="w-full rounded border border-border-default bg-bg-primary px-3 py-1.5 text-xs text-text-primary placeholder:text-text-muted outline-none focus:border-accent/50 focus-visible:ring-2 focus-visible:ring-border-active"
-                />
-                <p className="mt-1 text-2xs text-text-muted">
-                  3–32 chars, lowercase + digits + dashes. Your world will live at{" "}
-                  <code className="font-mono text-accent/70">
-                    {projectDraft.hub_world_slug || "<slug>"}.arcanum-hub.com
-                  </code>
-                </p>
-              </div>
-              <div>
-                <label htmlFor="hub-world-display-name" className="mb-1 block text-2xs uppercase tracking-wider text-text-muted">
-                  Display Name
-                </label>
-                <input
-                  id="hub-world-display-name"
-                  type="text"
-                  value={projectDraft.hub_world_display_name}
-                  onChange={(e) =>
-                    setProjectDraft({ ...projectDraft, hub_world_display_name: e.target.value })
-                  }
-                  placeholder="Defaults to the lore world name"
-                  className="w-full rounded border border-border-default bg-bg-primary px-3 py-1.5 text-xs text-text-primary placeholder:text-text-muted outline-none focus:border-accent/50 focus-visible:ring-2 focus-visible:ring-border-active"
-                />
-              </div>
-              <div>
-                <label htmlFor="hub-world-tagline" className="mb-1 block text-2xs uppercase tracking-wider text-text-muted">
-                  Tagline (for the hub index)
-                </label>
-                <input
-                  id="hub-world-tagline"
-                  type="text"
-                  value={projectDraft.hub_world_tagline}
-                  onChange={(e) =>
-                    setProjectDraft({ ...projectDraft, hub_world_tagline: e.target.value })
-                  }
-                  placeholder="One-line pitch"
-                  className="w-full rounded border border-border-default bg-bg-primary px-3 py-1.5 text-xs text-text-primary placeholder:text-text-muted outline-none focus:border-accent/50 focus-visible:ring-2 focus-visible:ring-border-active"
-                />
-              </div>
-              <label className="flex cursor-pointer items-center gap-2 text-xs text-text-secondary">
-                <input
-                  type="checkbox"
-                  checked={projectDraft.hub_world_listed}
-                  onChange={(e) =>
-                    setProjectDraft({ ...projectDraft, hub_world_listed: e.target.checked })
-                  }
-                  className="accent-accent"
-                />
-                List this world on the hub's public index
-              </label>
-              <p className="ml-6 -mt-1 text-2xs text-text-muted/60">
-                Unlisted worlds still work by direct URL — they just don't appear in the landing directory.
-              </p>
-            </div>
-          </div>}
-
-          {/* Save project settings */}
-          <div className="sticky bottom-0 -mx-6 border-t border-border-default bg-bg-secondary px-6 py-3">
-            <div className="flex items-center gap-2">
-              <button
-                onClick={handleSaveProject}
-                disabled={!isProjectDirty || saving}
-                className="action-button action-button-primary action-button-md focus-ring"
-              >
-                {saving ? "Saving..." : "Save Project Settings"}
-              </button>
-              {saved && !isUserDirty && (
-                <span className="text-xs text-status-success">Saved</span>
-              )}
-              {isProjectDirty && (
-                <span className="text-xs text-accent">modified</span>
-              )}
-              {error && (
-                <span className="text-xs text-status-error">{error}</span>
-              )}
             </div>
           </div>
-        </div>
+        </section>
+      ) : (
+        <section className="rounded-2xl border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] px-5 py-4 text-xs text-text-muted">
+          Project pipeline settings (provider selection, model choice, generation options) appear
+          here once a world project is open.
+        </section>
       )}
+
+      {/* ─── Save bar ─────────────────────────────────────────── */}
+      <div className="sticky bottom-0 -mx-6 border-t border-border-default bg-bg-secondary px-6 py-3">
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleSave}
+            disabled={!hasPendingChanges || saving}
+            className="action-button action-button-primary action-button-md focus-ring"
+          >
+            {saving ? "Saving..." : "Save"}
+          </button>
+          {saved && <span className="text-xs text-status-success">Saved</span>}
+          {hasPendingChanges && !saving && (
+            <span className="text-xs text-accent">modified</span>
+          )}
+          {error && <span className="text-xs text-status-error">{error}</span>}
+        </div>
+      </div>
     </div>
   );
 }

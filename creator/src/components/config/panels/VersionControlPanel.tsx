@@ -4,6 +4,79 @@ import { useAssetStore } from "@/stores/assetStore";
 import { useGitStore } from "@/stores/gitStore";
 import { Spinner } from "@/components/ui/FormWidgets";
 
+// ─── GitHub PAT card ───────────────────────────────────────────────
+
+function GitHubPatCard() {
+  const settings = useAssetStore((s) => s.settings);
+  const saveSettings = useAssetStore((s) => s.saveSettings);
+  const [draft, setDraft] = useState<string>(settings?.github_pat ?? "");
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setDraft(settings?.github_pat ?? "");
+  }, [settings?.github_pat]);
+
+  const dirty = draft !== (settings?.github_pat ?? "");
+
+  const handleSave = async () => {
+    if (!settings) return;
+    setSaving(true);
+    setError(null);
+    try {
+      await saveSettings({ ...settings, github_pat: draft });
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    } catch (e) {
+      setError(String(e));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const configured = !!settings?.github_pat;
+
+  return (
+    <Card>
+      <div className="flex items-center justify-between gap-2">
+        <h3 className="font-display text-sm text-text-primary">GitHub access</h3>
+        <span
+          className={`rounded-full px-2 py-0.5 text-3xs uppercase tracking-ui ${
+            configured
+              ? "bg-status-success/15 text-status-success"
+              : "bg-[var(--chrome-highlight)] text-text-muted"
+          }`}
+        >
+          {configured ? "configured" : "not set"}
+        </span>
+      </div>
+      <p className="mt-1 text-2xs text-text-muted">
+        Personal access token used for push, pull, and PR creation. Needs the{" "}
+        <code className="font-mono text-accent/70">repo</code> scope.
+      </p>
+      <div className="mt-3 flex items-center gap-2">
+        <input
+          type="password"
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          placeholder="ghp_..."
+          className="min-w-0 flex-1 rounded border border-border-default bg-bg-primary px-3 py-1.5 text-xs text-text-primary placeholder:text-text-muted outline-none focus:border-accent/50 focus-visible:ring-2 focus-visible:ring-border-active"
+        />
+        <button
+          onClick={handleSave}
+          disabled={!dirty || saving}
+          className="rounded bg-accent px-3 py-1.5 text-xs font-medium text-accent-emphasis transition hover:bg-accent/90 disabled:opacity-50"
+        >
+          {saving ? "Saving..." : "Save"}
+        </button>
+      </div>
+      {saved && <p className="mt-1 text-2xs text-status-success">Saved</p>}
+      {error && <p className="mt-1 text-2xs text-status-error">{error}</p>}
+    </Card>
+  );
+}
+
 // ─── Version Control Panel ─────────────────────────────────────────
 
 export function VersionControlPanel() {
@@ -70,6 +143,7 @@ export function VersionControlPanel() {
   if (!isRepo && !loading) {
     return (
       <div className="flex flex-col gap-4">
+        <GitHubPatCard />
         <Card>
           <h3 className="font-display text-sm text-text-primary">Initialize Repository</h3>
           <p className="mt-1 text-xs leading-relaxed text-text-secondary">
@@ -110,6 +184,8 @@ export function VersionControlPanel() {
   // ─── Main repo view ────────────────────────────────────────────
   return (
     <div className="flex flex-col gap-4">
+      <GitHubPatCard />
+
       {/* Status header */}
       <Card>
         <div className="flex items-center justify-between">
@@ -237,7 +313,7 @@ export function VersionControlPanel() {
             </button>
             {!hasPat && (
               <span className="text-2xs text-text-muted">
-                Set a GitHub PAT in Services to enable sync.
+                Add a GitHub PAT above to enable sync.
               </span>
             )}
           </div>

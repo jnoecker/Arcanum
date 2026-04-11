@@ -25,6 +25,7 @@ type StepKey =
   | "gitCommit"
   | "validate"
   | "export"
+  | "exportImages"
   | "assets"
   | "globals"
   | "sprites"
@@ -138,6 +139,7 @@ export function RuntimeHandoffStudio() {
     gitCommit: { status: "idle", detail: "Commit and push project changes to git.", errors: [] },
     validate: { status: "idle", detail: "Run config and zone validation before publishing.", errors: [] },
     export: { status: "idle", detail: "Export a server bundle to a local MUD directory.", errors: [] },
+    exportImages: { status: "idle", detail: "Copy curated images to a local folder.", errors: [] },
     assets: { status: "idle", detail: "Upload approved gallery assets to R2.", errors: [] },
     globals: { status: "idle", detail: "Upload global asset files to R2.", errors: [] },
     sprites: { status: "idle", detail: "Upload player sprite files to R2.", errors: [] },
@@ -454,11 +456,29 @@ export function RuntimeHandoffStudio() {
     if (!dir) return;
     setExportingLocal(true);
     setLocalExportResult(null);
+    setStepState("exportImages", {
+      status: "running",
+      detail: `Copying curated images to ${dir}...`,
+      errors: [],
+    });
     try {
       const result = await invoke<ExportResult>("export_assets_to_dir", { targetDir: dir });
       setLocalExportResult(result);
+      const summary = `${result.copied} copied | ${result.skipped} already present${
+        result.errors.length > 0 ? ` | ${result.errors.length} failed` : ""
+      } → ${dir}`;
+      setStepState("exportImages", {
+        status: result.errors.length > 0 ? "warning" : "success",
+        detail: summary,
+        errors: result.errors,
+      });
     } catch (e) {
       setLocalExportResult({ total: 0, copied: 0, skipped: 0, errors: [String(e)] });
+      setStepState("exportImages", {
+        status: "error",
+        detail: "Local image export failed.",
+        errors: [String(e)],
+      });
     } finally {
       setExportingLocal(false);
     }
@@ -627,8 +647,28 @@ export function RuntimeHandoffStudio() {
         </StepCard>
 
         <StepCard
-          title="4. Publish curated assets"
-          description="Upload approved art and media to R2."
+          title="4. Export curated images"
+          description="Copy every approved image to a local folder. Works whether or not R2 is configured — handy for self-hosted deploys, backups, or handing art off to someone else."
+          state={steps.exportImages}
+          actionLabel={exportingLocal ? "Exporting..." : "Choose folder & export"}
+          disabled={exportingLocal}
+          onAction={handleExportLocal}
+        >
+          {localExportResult && localExportResult.errors.length > 0 && (
+            <div className="rounded-2xl border border-status-error/30 bg-[var(--chrome-fill)] px-4 py-3 text-2xs text-status-error">
+              {localExportResult.errors.slice(0, 5).map((e, i) => (
+                <div key={i}>{e}</div>
+              ))}
+              {localExportResult.errors.length > 5 && (
+                <div>...and {localExportResult.errors.length - 5} more</div>
+              )}
+            </div>
+          )}
+        </StepCard>
+
+        <StepCard
+          title="5. Publish curated assets to R2"
+          description="Upload approved art and media to R2 for runtime delivery."
           state={steps.assets}
           actionLabel="Sync curated assets"
           disabled={!hasR2}
@@ -646,28 +686,11 @@ export function RuntimeHandoffStudio() {
                 <option value="all">Everything</option>
               </select>
             </div>
-            <button
-              onClick={() => void handleExportLocal()}
-              disabled={exportingLocal}
-              className="rounded-full border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] px-4 py-2 text-xs font-medium text-text-primary transition hover:bg-[var(--chrome-highlight-strong)] disabled:opacity-40"
-            >
-              {exportingLocal ? "Exporting..." : "Export images locally"}
-            </button>
           </div>
-          {localExportResult && (
-            <div className="mt-2 rounded-2xl border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] px-4 py-3 text-xs text-text-secondary">
-              Exported {localExportResult.copied} images ({localExportResult.skipped} already present, {localExportResult.errors.length} errors)
-              {localExportResult.errors.length > 0 && (
-                <ul className="mt-1 text-status-error">
-                  {localExportResult.errors.slice(0, 5).map((e, i) => <li key={i}>{e}</li>)}
-                </ul>
-              )}
-            </div>
-          )}
         </StepCard>
 
         <StepCard
-          title="5. Publish explicit global assets"
+          title="6. Publish explicit global assets"
           description="Upload global asset files to R2."
           state={steps.globals}
           actionLabel="Publish globals"
@@ -676,7 +699,7 @@ export function RuntimeHandoffStudio() {
         />
 
         <StepCard
-          title="6. Publish player sprites"
+          title="7. Publish player sprites"
           description="Deploy the player sprite atlas files."
           state={steps.sprites}
           actionLabel="Publish sprites"
@@ -685,7 +708,7 @@ export function RuntimeHandoffStudio() {
         />
 
         <StepCard
-          title="7. Deploy runtime config"
+          title="8. Deploy runtime config"
           description="Upload the assembled runtime config the MUD server pulls from R2."
           state={steps.config}
           actionLabel="Deploy config"
@@ -694,7 +717,7 @@ export function RuntimeHandoffStudio() {
         />
 
         <StepCard
-          title="8. Deploy achievements"
+          title="9. Deploy achievements"
           description="Upload achievements.yaml to R2."
           state={steps.achievements}
           actionLabel="Deploy achievements"
@@ -703,7 +726,7 @@ export function RuntimeHandoffStudio() {
         />
 
         <StepCard
-          title="9. Deploy zone YAML"
+          title="10. Deploy zone YAML"
           description="Upload zone files to R2."
           state={steps.zones}
           actionLabel="Deploy zones"

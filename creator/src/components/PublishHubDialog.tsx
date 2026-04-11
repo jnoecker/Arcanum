@@ -168,7 +168,7 @@ export function PublishHubDialog({ onClose }: PublishHubDialogProps) {
     >
       {!hubConfigured && (
         <div className="mb-4 rounded-lg border border-status-warning/40 bg-status-warning/10 px-4 py-3 text-xs text-status-warning">
-          Hub API URL and API key are not configured. Open <strong>Settings → Services</strong> and fill in the Arcanum Hub section.
+          Hub API URL and API key are not configured. Open <strong>Settings → Arcanum Hub</strong> and fill in the connection section.
         </div>
       )}
 

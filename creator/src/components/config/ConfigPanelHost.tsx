@@ -42,6 +42,8 @@ import { GlobalAssetsPanel } from "./panels/GlobalAssetsPanel";
 import { DefaultAssetsPanel } from "./panels/DefaultAssetsPanel";
 
 import { ApiSettingsPanel } from "./panels/ApiSettingsPanel";
+import { HubSettingsPanel } from "./panels/HubSettingsPanel";
+import { R2SettingsPanel } from "./panels/R2SettingsPanel";
 import { RuntimeHandoffStudio } from "./RuntimeHandoffStudio";
 import { RawYamlPanel } from "./panels/RawYamlPanel";
 import { VersionControlPanel } from "./panels/VersionControlPanel";
@@ -163,6 +165,10 @@ function renderPanel(panelId: string, props: ConfigPanelProps): ReactNode {
     // Operations
     case "services":
       return <ApiSettingsPanel />;
+    case "hubSettings":
+      return <HubSettingsPanel />;
+    case "r2Settings":
+      return <R2SettingsPanel />;
     case "deployment":
       return <RuntimeHandoffStudio />;
     case "rawYaml":

@@ -41,7 +41,31 @@ export function preflight(cors: CorsOpts = {}): Response {
 
 const SLUG_RE = /^[a-z0-9][a-z0-9-]{1,30}[a-z0-9]$/;
 
+/**
+ * Subdomain names a world owner can't claim — they belong to the
+ * hub itself. `api` is handled specially upstream of parseHost, but
+ * it's also listed here so the reservation is all in one place.
+ */
+export const RESERVED_SUBDOMAINS = new Set([
+  "api",
+  "admin",
+  "www",
+  "hub",
+  "mail",
+  "ftp",
+  "ns1",
+  "ns2",
+]);
+
 export function isValidSlug(slug: string): boolean {
+  if (RESERVED_SUBDOMAINS.has(slug)) return false;
+  return SLUG_RE.test(slug);
+}
+
+/** Slug validator that skips the reserved list — used when we've
+ * already established the subdomain is meant for a world (e.g. in
+ * admin-side validation) and just want the shape check. */
+export function isValidSlugShape(slug: string): boolean {
   return SLUG_RE.test(slug);
 }
 

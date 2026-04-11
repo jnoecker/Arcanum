@@ -3,12 +3,23 @@ import { authenticateUser, isAdmin } from "./auth";
 import { handleAdmin, adminCorsHeaders } from "./handlers/admin";
 import { checkExisting, uploadImage, uploadManifest } from "./handlers/publish";
 import { serveHubIndex, serveImage, serveShowcaseJson } from "./handlers/showcase";
-import { corsHeaders, error, parseHost, preflight } from "./util";
+import { corsHeaders, error, parseHost, preflight, RESERVED_SUBDOMAINS } from "./util";
 
 export default {
   async fetch(req: Request, env: Env): Promise<Response> {
     const url = new URL(req.url);
     const host = parseHost(url.hostname, env.HUB_ROOT_DOMAIN);
+
+    // ─── Reserved subdomains ─────────────────────────────────────────
+    // Worker routes take precedence over Pages custom domains in
+    // Cloudflare's routing order, so our wildcard `*.arcanum-hub.com`
+    // route catches hosts like admin.arcanum-hub.com before Pages
+    // ever sees them. For reserved leaf names we handle this ourselves
+    // — admin/ is transparently proxied to the arcanum-hub-admin
+    // Pages deployment, www/ redirects to the apex, other reserved
+    // names 404.
+    const reservedResponse = await handleReservedSubdomain(req, url, env.HUB_ROOT_DOMAIN);
+    if (reservedResponse) return reservedResponse;
 
     // ─── Development fallback ────────────────────────────────────────
     // When running on wrangler dev or any non-hub host, fall back to
@@ -97,6 +108,48 @@ async function routeApi(req: Request, env: Env, pathname: string): Promise<Respo
   }
 
   return error(404, "Not found", { origin: "*" });
+}
+
+// ─── Reserved-subdomain safety net ─────────────────────────────────
+// The Worker's wildcard route beats Pages custom domains, so any
+// subdomain that should be served by Pages (or should simply not be
+// a world) has to be handled here. For `admin` we reverse-proxy to
+// the admin Pages deployment so the admin.<root> URL still works;
+// `www` redirects to the apex; others 404.
+async function handleReservedSubdomain(
+  req: Request,
+  url: URL,
+  rootDomain: string,
+): Promise<Response | null> {
+  const host = url.hostname.toLowerCase();
+  const root = rootDomain.toLowerCase();
+  if (!host.endsWith(`.${root}`)) return null;
+  const leaf = host.slice(0, host.length - root.length - 1);
+  if (leaf.includes(".")) return null;
+  // `api` is handled by the API host branch, not as a reserved name.
+  if (leaf === "api") return null;
+  if (!RESERVED_SUBDOMAINS.has(leaf)) return null;
+
+  if (leaf === "admin") {
+    // Transparent reverse proxy to the admin Pages deployment.
+    // Browser URL stays as admin.<root>; Pages serves the SPA.
+    const upstream = new URL(url);
+    upstream.hostname = "arcanum-hub-admin.pages.dev";
+    upstream.port = "";
+    upstream.protocol = "https:";
+    const upstreamReq = new Request(upstream.toString(), req);
+    upstreamReq.headers.set("Host", "arcanum-hub-admin.pages.dev");
+    return fetch(upstreamReq);
+  }
+  if (leaf === "www") {
+    return Response.redirect(`https://${root}${url.pathname}${url.search}`, 301);
+  }
+  // Any other reserved name → 404 so it doesn't silently serve the
+  // wrong content.
+  return new Response(`Reserved subdomain "${leaf}" is not routed.`, {
+    status: 404,
+    headers: { "Content-Type": "text/plain; charset=utf-8" },
+  });
 }
 
 // ─── Development (wrangler dev) fallback router ─────────────────────

@@ -120,6 +120,38 @@ pub async fn runware_generate_image(
     auto_enhance: Option<bool>,
 ) -> Result<GeneratedImage, String> {
     let s = settings::get_settings(app.clone()).await?;
+
+    // Hub mode: proxy the request through the Arcanum Hub. The hub
+    // enforces model allowlist, dimension caps, and quota; we just
+    // pass the user's intent through and let the hub decide what's
+    // permitted.
+    if crate::hub_ai::is_enabled(&s) {
+        let enhanced = generation::maybe_enhance_prompt(
+            &app,
+            &prompt,
+            asset_type.as_deref(),
+            auto_enhance,
+        )
+        .await?;
+        return crate::hub_ai::generate_image(
+            &app,
+            &s,
+            &prompt,
+            &enhanced,
+            asset_type.as_deref(),
+            model.as_deref(),
+            width.unwrap_or(1024),
+            height.unwrap_or(1024),
+            negative_prompt.as_deref(),
+            steps,
+            guidance,
+            seed_image.as_deref(),
+            guide_image.as_deref(),
+            Some(wants_transparent_bg(asset_type.as_deref())),
+        )
+        .await;
+    }
+
     if s.runware_api_key.is_empty() {
         return Err("Runware API key not configured. Set it in Settings.".to_string());
     }

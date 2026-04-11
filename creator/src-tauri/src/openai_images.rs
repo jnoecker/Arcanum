@@ -43,6 +43,44 @@ pub async fn openai_generate_image(
     transparent_background: Option<bool>,
 ) -> Result<GeneratedImage, String> {
     let settings = settings::get_settings(app.clone()).await?;
+
+    // Hub mode: route through the hub's Runware proxy, which serves
+    // GPT Image 1.5 under `openai:4@1`. The `quality` arg is ignored
+    // because the hub forces "low" server-side.
+    if crate::hub_ai::is_enabled(&settings) {
+        let _ = quality;
+        let enhanced = generation::maybe_enhance_prompt(
+            &app,
+            &prompt,
+            asset_type.as_deref(),
+            auto_enhance,
+        )
+        .await?;
+        // Map the OpenAI model name to the Runware AIR identifier.
+        let hub_model = match model.as_deref() {
+            Some("gpt-image-1") | Some("openai:4@1") | None => Some("openai:4@1"),
+            Some(other) if other.starts_with("openai:") => Some("openai:4@1"),
+            Some(_) => None,
+        };
+        return crate::hub_ai::generate_image(
+            &app,
+            &settings,
+            &prompt,
+            &enhanced,
+            asset_type.as_deref(),
+            hub_model,
+            width.unwrap_or(1024),
+            height.unwrap_or(1024),
+            None,
+            None,
+            None,
+            None,
+            None,
+            transparent_background,
+        )
+        .await;
+    }
+
     if settings.openai_api_key.is_empty() {
         return Err("OpenAI API key not configured. Set it in Settings.".to_string());
     }

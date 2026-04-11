@@ -84,6 +84,42 @@ pub async fn generate_image(
     auto_enhance: Option<bool>,
 ) -> Result<GeneratedImage, String> {
     let settings = settings::get_settings(app.clone()).await?;
+
+    // Hub mode: there's no DeepInfra path on the hub — we translate
+    // to Runware FLUX.2 and forward. The enhanced prompt is computed
+    // here the same way the direct path does so quota-counted calls
+    // look identical either way.
+    if crate::hub_ai::is_enabled(&settings) {
+        let enhanced = generation::maybe_enhance_prompt(
+            &app,
+            &prompt,
+            asset_type.as_deref(),
+            auto_enhance,
+        )
+        .await?;
+        let hub_model = crate::hub_ai::translate_model_for_hub(
+            model.as_deref().unwrap_or(&settings.image_model),
+        )
+        .unwrap_or("runware:400@2");
+        return crate::hub_ai::generate_image(
+            &app,
+            &settings,
+            &prompt,
+            &enhanced,
+            asset_type.as_deref(),
+            Some(hub_model),
+            width.unwrap_or(1024),
+            height.unwrap_or(1024),
+            None,
+            steps,
+            guidance,
+            None,
+            None,
+            None,
+        )
+        .await;
+    }
+
     if settings.deepinfra_api_key.is_empty() {
         return Err("DeepInfra API key not configured. Set it in Settings.".to_string());
     }

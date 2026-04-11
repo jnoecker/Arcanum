@@ -4,6 +4,8 @@ import { invoke } from "@tauri-apps/api/core";
 import { useZoneStore, type ZoneState } from "@/stores/zoneStore";
 import { useProjectStore } from "@/stores/projectStore";
 import { useLoreStore, selectArticles } from "@/stores/loreStore";
+import { useToastStore } from "@/stores/toastStore";
+import { saveZone } from "@/lib/saveZone";
 import type { WorldFile } from "@/types/world";
 import { ArticleTree } from "./lore/ArticleTree";
 import { BulkActionsBar } from "./lore/BulkActionsBar";
@@ -192,6 +194,7 @@ function ZoneTree({
   const navigateTo = useProjectStore((s) => s.navigateTo);
   const updateZone = useZoneStore((s) => s.updateZone);
   const [expanded, setExpanded] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   const world = zoneState.data;
 
@@ -235,6 +238,28 @@ function ZoneTree({
     }
   };
 
+  const handleSaveZone = async () => {
+    if (saving) return;
+    setSaving(true);
+    try {
+      await saveZone(zoneId);
+      useToastStore.getState().show({
+        kicker: "Saved",
+        message: zoneState.data.zone || zoneId,
+        variant: "astral",
+      });
+    } catch (err) {
+      console.error("Zone save failed:", err);
+      useToastStore.getState().show({
+        kicker: "Save failed",
+        message: err instanceof Error ? err.message : "Unknown error",
+        variant: "ember",
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <li className="group/zone">
       <div className="flex items-center gap-1">
@@ -256,28 +281,40 @@ function ZoneTree({
         >
           <span className="min-w-0 truncate font-medium" title={zoneState.data.zone || zoneId}>{zoneState.data.zone || zoneId}</span>
           <span className="shrink-0 text-2xs text-text-muted" title={zoneId}>{zoneId}</span>
-          {zoneState.dirty && <span className="shrink-0 text-2xs text-text-dirty">Unsaved</span>}
         </button>
-        <button
-          onClick={() => onRename(zoneId)}
-          className="shrink-0 rounded-full border border-[var(--chrome-stroke)] px-2.5 py-1.5 text-2xs text-text-muted opacity-0 transition hover:border-accent/40 hover:text-accent focus:opacity-100 group-hover/zone:opacity-100 group-focus-within/zone:opacity-100"
-          title="Rename zone"
-          aria-label="Rename zone"
-        >
-          Rename
-        </button>
-        <button
-          onClick={() => onDelete(zoneId)}
-          className="shrink-0 rounded-full border border-[var(--chrome-stroke)] px-2.5 py-1.5 text-2xs text-text-muted opacity-0 transition hover:border-status-danger/40 hover:text-status-danger focus:opacity-100 group-hover/zone:opacity-100 group-focus-within/zone:opacity-100"
-          title="Delete zone"
-          aria-label="Delete zone"
-        >
-          Remove
-        </button>
+        {zoneState.dirty && (
+          <button
+            onClick={handleSaveZone}
+            disabled={saving}
+            className="shrink-0 rounded-full border border-accent/50 bg-accent/12 px-2.5 py-1.5 text-2xs font-semibold uppercase tracking-label text-accent shadow-[0_0_12px_rgb(var(--accent-rgb)/0.25)] transition hover:border-accent hover:bg-accent/20 hover:shadow-[0_0_18px_rgb(var(--accent-rgb)/0.45)] disabled:opacity-60 animate-warm-breathe"
+            title={`Save ${zoneState.data.zone || zoneId}`}
+            aria-label={`Save ${zoneState.data.zone || zoneId}`}
+          >
+            {saving ? "…" : "Save"}
+          </button>
+        )}
       </div>
 
       {expanded && (
         <div className="ml-10 mt-2 flex flex-col gap-2.5 border-l border-accent/15 pl-4">
+          <div className="flex items-center gap-1.5 pb-0.5">
+            <button
+              onClick={() => onRename(zoneId)}
+              className="rounded-full border border-[var(--chrome-stroke)] px-2.5 py-1 text-2xs text-text-muted transition hover:border-accent/40 hover:text-accent"
+              title="Rename zone"
+              aria-label="Rename zone"
+            >
+              Rename
+            </button>
+            <button
+              onClick={() => onDelete(zoneId)}
+              className="rounded-full border border-[var(--chrome-stroke)] px-2.5 py-1 text-2xs text-text-muted transition hover:border-status-danger/40 hover:text-status-danger"
+              title="Delete zone"
+              aria-label="Delete zone"
+            >
+              Remove
+            </button>
+          </div>
           {CATEGORIES.map((cat) => {
             if (cat.singular) {
               const data = world[cat.collection] as Record<string, unknown> | undefined;

@@ -9,6 +9,7 @@ import { useAssetStore } from "@/stores/assetStore";
 import { useProjectStore } from "@/stores/projectStore";
 import { CommandPalette } from "./ui/CommandPalette";
 import { Toast } from "./ui/Toast";
+import { FloatingSaveButton } from "./ui/FloatingSaveButton";
 import { CosmicBackdrop } from "./ui/CosmicBackdrop";
 import { ValidationPanel } from "./ValidationPanel";
 
@@ -87,6 +88,7 @@ export function AppShell({ onNewProject }: AppShellProps) {
         {settingsOpen && <SettingsOverlay onClose={() => setSettingsOpen(false)} />}
       </Suspense>
       <Toast />
+      <FloatingSaveButton />
       <ValidationPanel />
     </div>
   );

@@ -2,9 +2,7 @@ import { useEffect, useState } from "react";
 import { useProjectStore } from "@/stores/projectStore";
 import { useZoneStore } from "@/stores/zoneStore";
 import { useLoreStore } from "@/stores/loreStore";
-import { saveAllZones } from "@/lib/saveZone";
-import { saveProjectConfig } from "@/lib/saveConfig";
-import { useConfigStore } from "@/stores/configStore";
+import { saveEverything } from "@/lib/saveAll";
 import { PANEL_MAP, panelTab } from "@/lib/panelRegistry";
 import { useToastStore } from "@/stores/toastStore";
 
@@ -35,15 +33,9 @@ export function useKeyboardShortcuts() {
       // ─── Ctrl+S → save all ───────────────────────────────────
       if (e.key === "s") {
         e.preventDefault();
-        saveAllZones().catch((err) =>
-          console.error("Zone save failed:", err),
+        saveEverything().catch((err) =>
+          console.error("Save all failed:", err),
         );
-        const project = useProjectStore.getState().project;
-        if (project && useConfigStore.getState().dirty) {
-          saveProjectConfig(project).catch((err) =>
-            console.error("Config save failed:", err),
-          );
-        }
         return;
       }
 

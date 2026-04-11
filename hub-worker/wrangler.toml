@@ -2,33 +2,43 @@ name = "arcanum-hub"
 main = "src/index.ts"
 compatibility_date = "2025-01-15"
 compatibility_flags = ["nodejs_compat"]
+# Keep the workers.dev preview URL enabled for smoke tests before the
+# custom DNS routes resolve. The dev-fallback router in src/index.ts
+# kicks in when the host doesn't match HUB_ROOT_DOMAIN.
+workers_dev = true
 
 # ─── Routes ──────────────────────────────────────────────────────────
-# Set these once you have a real domain. For placeholder use:
-#   - api.hub.arcanum.app/*   (publish + admin API)
-#   - hub.arcanum.app/*       (landing page — serves showcase index API)
-#   - *.hub.arcanum.app/*     (per-world subdomains — serves showcase.json)
+# Production routing on the ambon.dev zone:
+#   - api.arcanum.ambon.dev/*      publish + admin API
+#   - arcanum.ambon.dev/api/index  hub landing directory JSON
+#   - *.arcanum.ambon.dev/showcase.json
+#   - *.arcanum.ambon.dev/images/*  per-world images from R2
 #
-# Until the domain is configured, wrangler dev on http://127.0.0.1:8787
-# works fine; the Worker falls back to routing by URL path segments.
-#
-# [[routes]]
-# pattern = "api.hub.arcanum.app/*"
-# zone_name = "arcanum.app"
-#
-# [[routes]]
-# pattern = "hub.arcanum.app/*"
-# zone_name = "arcanum.app"
-#
-# [[routes]]
-# pattern = "*.hub.arcanum.app/*"
-# zone_name = "arcanum.app"
+# The Worker sits in front of these paths. Everything else on
+# `arcanum.ambon.dev` + `*.arcanum.ambon.dev` falls through to the
+# Cloudflare Pages project that serves the multi-tenant showcase SPA.
+
+[[routes]]
+pattern = "api.arcanum.ambon.dev/*"
+zone_name = "ambon.dev"
+
+[[routes]]
+pattern = "arcanum.ambon.dev/api/*"
+zone_name = "ambon.dev"
+
+[[routes]]
+pattern = "*.arcanum.ambon.dev/showcase.json"
+zone_name = "ambon.dev"
+
+[[routes]]
+pattern = "*.arcanum.ambon.dev/images/*"
+zone_name = "ambon.dev"
 
 # ─── Bindings ────────────────────────────────────────────────────────
 [[d1_databases]]
 binding = "DB"
 database_name = "arcanum-hub"
-database_id = "REPLACE_WITH_D1_ID"
+database_id = "1dc58d0f-0a64-4ef3-8fc1-d32bdf49a7fd"
 
 [[r2_buckets]]
 binding = "BUCKET"
@@ -36,8 +46,8 @@ bucket_name = "arcanum-hub"
 
 [vars]
 # The root domain that subdomains hang off of. Used to extract the
-# world slug from the Host header: "<slug>.hub.arcanum.app" → "slug".
-HUB_ROOT_DOMAIN = "hub.arcanum.app"
+# world slug from the Host header: "<slug>.arcanum.ambon.dev" → "slug".
+HUB_ROOT_DOMAIN = "arcanum.ambon.dev"
 # Public origin of the admin SPA — used for CORS allowlist.
 ADMIN_ORIGIN = "https://arcanum-hub-admin.pages.dev"
 

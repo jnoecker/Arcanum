@@ -11,6 +11,9 @@ import { ProjectSwitcherMenu } from "./ui/ProjectSwitcherMenu";
 const PublishWorldModal = lazy(() =>
   import("./PublishWorldModal").then((m) => ({ default: m.PublishWorldModal })),
 );
+const PublishHubDialog = lazy(() =>
+  import("./PublishHubDialog").then((m) => ({ default: m.PublishHubDialog })),
+);
 
 interface ToolbarProps {
   onNewProject: () => void;
@@ -30,6 +33,7 @@ export function Toolbar({ onNewProject }: ToolbarProps) {
   const [exporting, setExporting] = useState(false);
   const [showSwitcher, setShowSwitcher] = useState(false);
   const [showPublishWorld, setShowPublishWorld] = useState(false);
+  const [showPublishHub, setShowPublishHub] = useState(false);
 
   const handleExportShowcase = async () => {
     const lore = useLoreStore.getState().lore;
@@ -140,7 +144,7 @@ export function Toolbar({ onNewProject }: ToolbarProps) {
             <ActionButton
               onClick={() => void handleExportShowcase()}
               disabled={!hasLore || exporting}
-              title="Sync assets and publish lore to the showcase"
+              title="Sync assets and publish lore to your self-hosted R2 showcase"
               variant="ghost"
             >
               {exporting ? (
@@ -151,6 +155,15 @@ export function Toolbar({ onNewProject }: ToolbarProps) {
               ) : (
                 "Publish Lore"
               )}
+            </ActionButton>
+
+            <ActionButton
+              onClick={() => setShowPublishHub(true)}
+              disabled={!hasLore}
+              title="Publish compressed lore + images to the central Arcanum Hub"
+              variant="ghost"
+            >
+              Publish to Hub
             </ActionButton>
 
             <ActionButton
@@ -180,6 +193,9 @@ export function Toolbar({ onNewProject }: ToolbarProps) {
       <Suspense>
         {showPublishWorld && (
           <PublishWorldModal onClose={() => setShowPublishWorld(false)} />
+        )}
+        {showPublishHub && (
+          <PublishHubDialog onClose={() => setShowPublishHub(false)} />
         )}
       </Suspense>
     </>

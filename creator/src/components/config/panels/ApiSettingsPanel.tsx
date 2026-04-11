@@ -83,7 +83,7 @@ export function ApiSettingsPanel({
     }
   };
 
-  const isUserDirty = !settings || (["deepinfra_api_key", "runware_api_key", "anthropic_api_key", "openrouter_api_key", "openai_api_key", "github_pat"] as const).some(
+  const isUserDirty = !settings || (["deepinfra_api_key", "runware_api_key", "anthropic_api_key", "openrouter_api_key", "openai_api_key", "github_pat", "hub_api_url", "hub_api_key"] as const).some(
     (k) => draft[k] !== settings[k],
   );
 
@@ -212,6 +212,47 @@ export function ApiSettingsPanel({
             />
             <p className="mt-1 text-2xs text-text-muted">
               Needs <code className="font-mono text-accent/70">repo</code> scope. Used for push, pull, and PR creation.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* ─── Arcanum Hub ──────────────────────────────────── */}
+      <div>
+        <h3 className="mb-3 font-display text-sm uppercase tracking-widest text-text-muted">
+          Arcanum Hub
+        </h3>
+        <div className="flex flex-col gap-3">
+          <div>
+            <label htmlFor="hub-api-url" className="mb-1 block text-2xs uppercase tracking-wider text-text-muted">
+              Hub API URL
+            </label>
+            <input
+              id="hub-api-url"
+              type="text"
+              value={draft.hub_api_url}
+              onChange={(e) => setDraft({ ...draft, hub_api_url: e.target.value })}
+              placeholder="https://api.hub.arcanum.app"
+              className="w-full rounded border border-border-default bg-bg-primary px-3 py-1.5 text-xs text-text-primary placeholder:text-text-muted outline-none focus:border-accent/50 focus-visible:ring-2 focus-visible:ring-border-active"
+            />
+            <p className="mt-1 text-2xs text-text-muted">
+              Base URL of the hub API. Leave blank to disable hub publishing.
+            </p>
+          </div>
+          <div>
+            <label htmlFor="hub-api-key" className="mb-1 block text-2xs uppercase tracking-wider text-text-muted">
+              Hub API Key
+            </label>
+            <input
+              id="hub-api-key"
+              type="password"
+              value={draft.hub_api_key}
+              onChange={(e) => setDraft({ ...draft, hub_api_key: e.target.value })}
+              placeholder="hub_..."
+              className="w-full rounded border border-border-default bg-bg-primary px-3 py-1.5 text-xs text-text-primary placeholder:text-text-muted outline-none focus:border-accent/50 focus-visible:ring-2 focus-visible:ring-border-active"
+            />
+            <p className="mt-1 text-2xs text-text-muted">
+              Minted by the hub admin. The world slug and listing toggle live under each project below.
             </p>
           </div>
         </div>
@@ -525,6 +566,83 @@ export function ApiSettingsPanel({
                   Runtime publishing now lives in Operations / Handoff.
                 </div>
               )}
+            </div>
+          </div>}
+
+          {/* ─── Hub World (per-project) ──────────────────────────── */}
+          {showDeliverySection && <div className="border-t border-border-default pt-4">
+            <h3 className="mb-3 font-display text-xs uppercase tracking-widest text-text-muted">
+              Hub World
+            </h3>
+            <div className="flex flex-col gap-3">
+              <div>
+                <label htmlFor="hub-world-slug" className="mb-1 block text-2xs uppercase tracking-wider text-text-muted">
+                  World Slug
+                </label>
+                <input
+                  id="hub-world-slug"
+                  type="text"
+                  value={projectDraft.hub_world_slug}
+                  onChange={(e) =>
+                    setProjectDraft({
+                      ...projectDraft,
+                      hub_world_slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""),
+                    })
+                  }
+                  placeholder="mystara"
+                  className="w-full rounded border border-border-default bg-bg-primary px-3 py-1.5 text-xs text-text-primary placeholder:text-text-muted outline-none focus:border-accent/50 focus-visible:ring-2 focus-visible:ring-border-active"
+                />
+                <p className="mt-1 text-2xs text-text-muted">
+                  3–32 chars, lowercase + digits + dashes. Your world will live at{" "}
+                  <code className="font-mono text-accent/70">
+                    {projectDraft.hub_world_slug || "<slug>"}.hub.arcanum.app
+                  </code>
+                </p>
+              </div>
+              <div>
+                <label htmlFor="hub-world-display-name" className="mb-1 block text-2xs uppercase tracking-wider text-text-muted">
+                  Display Name
+                </label>
+                <input
+                  id="hub-world-display-name"
+                  type="text"
+                  value={projectDraft.hub_world_display_name}
+                  onChange={(e) =>
+                    setProjectDraft({ ...projectDraft, hub_world_display_name: e.target.value })
+                  }
+                  placeholder="Defaults to the lore world name"
+                  className="w-full rounded border border-border-default bg-bg-primary px-3 py-1.5 text-xs text-text-primary placeholder:text-text-muted outline-none focus:border-accent/50 focus-visible:ring-2 focus-visible:ring-border-active"
+                />
+              </div>
+              <div>
+                <label htmlFor="hub-world-tagline" className="mb-1 block text-2xs uppercase tracking-wider text-text-muted">
+                  Tagline (for the hub index)
+                </label>
+                <input
+                  id="hub-world-tagline"
+                  type="text"
+                  value={projectDraft.hub_world_tagline}
+                  onChange={(e) =>
+                    setProjectDraft({ ...projectDraft, hub_world_tagline: e.target.value })
+                  }
+                  placeholder="One-line pitch"
+                  className="w-full rounded border border-border-default bg-bg-primary px-3 py-1.5 text-xs text-text-primary placeholder:text-text-muted outline-none focus:border-accent/50 focus-visible:ring-2 focus-visible:ring-border-active"
+                />
+              </div>
+              <label className="flex cursor-pointer items-center gap-2 text-xs text-text-secondary">
+                <input
+                  type="checkbox"
+                  checked={projectDraft.hub_world_listed}
+                  onChange={(e) =>
+                    setProjectDraft({ ...projectDraft, hub_world_listed: e.target.checked })
+                  }
+                  className="accent-accent"
+                />
+                List this world on the hub's public index
+              </label>
+              <p className="ml-6 -mt-1 text-2xs text-text-muted/60">
+                Unlisted worlds still work by direct URL — they just don't appear in the landing directory.
+              </p>
             </div>
           </div>}
 

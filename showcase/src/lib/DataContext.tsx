@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useEffect, type ReactNode } from "
 import type { ShowcaseData, ShowcaseArticle, ShowcaseStory } from "@/types/showcase";
 import { applyBranding } from "@/lib/applyBranding";
 import { injectManifest } from "@/lib/pwaManifest";
+import { detectHubMode } from "@/lib/hubMode";
 
 interface DataContextValue {
   data: ShowcaseData | null;
@@ -10,6 +11,8 @@ interface DataContextValue {
   articleById: Map<string, ShowcaseArticle>;
   storyById: Map<string, ShowcaseStory>;
   reload: () => void;
+  /** True when running at the hub root domain (no slug). HubIndexPage renders instead of per-world content. */
+  isHubRoot: boolean;
 }
 
 interface RuntimeConfig {
@@ -23,6 +26,7 @@ const DataContext = createContext<DataContextValue>({
   articleById: new Map(),
   storyById: new Map(),
   reload: () => {},
+  isHubRoot: false,
 });
 
 export function DataProvider({ children }: { children: ReactNode }) {
@@ -32,6 +36,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const [articleById, setArticleById] = useState<Map<string, ShowcaseArticle>>(new Map());
   const [storyById, setStoryById] = useState<Map<string, ShowcaseStory>>(new Map());
   const [reloadToken, setReloadToken] = useState(0);
+  const hubMode = detectHubMode();
 
   useEffect(() => {
     const controller = new AbortController();
@@ -41,6 +46,15 @@ export function DataProvider({ children }: { children: ReactNode }) {
       try {
         setLoading(true);
         setError(null);
+
+        // Hub root: no data to load — the HubIndexPage fetches /api/index directly.
+        if (hubMode.kind === "root") {
+          setData(null);
+          setArticleById(new Map());
+          setStoryById(new Map());
+          setLoading(false);
+          return;
+        }
 
         // Try to read runtime config, but tolerate the SPA fallback returning index.html
         // (Cloudflare Pages rewrites unknown paths to index.html with a 200 status).
@@ -53,10 +67,15 @@ export function DataProvider({ children }: { children: ReactNode }) {
             runtimeUrl = config.showcaseUrl?.trim() || undefined;
           }
         } catch {
-          // No runtime config — fall through to env var or local file.
+          // No runtime config — fall through to hub subdomain, env var, or local file.
         }
 
-        const dataUrl = runtimeUrl || import.meta.env.VITE_SHOWCASE_URL || "/data/showcase.json";
+        // Hub subdomain mode fetches showcase.json from the same origin —
+        // the Worker serves it from R2 keyed by the Host header's slug.
+        const hubUrl = hubMode.kind === "world" ? "/showcase.json" : undefined;
+
+        const dataUrl =
+          runtimeUrl || hubUrl || import.meta.env.VITE_SHOWCASE_URL || "/data/showcase.json";
         const r = await fetch(dataUrl, { signal });
         if (!r.ok) throw new Error(`Failed to load showcase data (${r.status})`);
         const d: ShowcaseData = await r.json();
@@ -94,6 +113,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     return () => {
       controller.abort();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [reloadToken]);
 
   return (
@@ -105,6 +125,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         articleById,
         storyById,
         reload: () => setReloadToken((value) => value + 1),
+        isHubRoot: hubMode.kind === "root",
       }}
     >
       {children}

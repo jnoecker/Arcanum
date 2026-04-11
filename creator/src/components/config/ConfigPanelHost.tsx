@@ -11,7 +11,6 @@ import { ClassDesigner } from "./ClassDesigner";
 import { RaceDesigner } from "./RaceDesigner";
 import { CharacterCreationStudio } from "./CharacterCreationStudio";
 import { EquipmentSlotsPanel } from "./panels/EquipmentSlotsPanel";
-import { ImagesPanel } from "./panels/ImagesPanel";
 
 import { StatsPanel } from "./panels/StatsPanel";
 import { AbilityDesigner } from "./AbilityDesigner";
@@ -37,8 +36,7 @@ import { CurrenciesPanel } from "./panels/CurrenciesPanel";
 
 import { AchievementDesigner } from "./AchievementDesigner";
 import { QuestTaxonomyDesigner } from "./QuestTaxonomyDesigner";
-import { GlobalAssetsPanel } from "./panels/GlobalAssetsPanel";
-import { DefaultAssetsPanel } from "./panels/DefaultAssetsPanel";
+import { SharedAssetsPanel } from "./panels/SharedAssetsPanel";
 
 import { ApiSettingsPanel } from "./panels/ApiSettingsPanel";
 import { HubSettingsPanel } from "./panels/HubSettingsPanel";
@@ -148,13 +146,7 @@ function renderPanel(panelId: string, props: ConfigPanelProps): ReactNode {
     case "quests":
       return <QuestTaxonomyDesigner config={config} onChange={onChange} />;
     case "sharedAssets":
-      return (
-        <div className="flex flex-col gap-6">
-          <ImagesPanel config={config} onChange={onChange} />
-          <GlobalAssetsPanel config={config} onChange={onChange} />
-          <DefaultAssetsPanel config={config} onChange={onChange} />
-        </div>
-      );
+      return <SharedAssetsPanel config={config} onChange={onChange} />;
 
     // Operations
     case "services":

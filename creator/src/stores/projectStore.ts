@@ -152,10 +152,10 @@ useProjectStore.subscribe((state) => {
   persistTimer = setTimeout(() => {
     const existing = loadUIState();
     saveUIState({
+      ...(existing ?? { recentProjects: [] }),
       lastProjectPath: state.project!.mudDir,
       tabs: state.tabs,
       activeTabId: state.activeTabId,
-      recentProjects: existing?.recentProjects ?? [],
     });
   }, 500);
 });

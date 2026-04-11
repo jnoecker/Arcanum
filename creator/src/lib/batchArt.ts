@@ -12,13 +12,14 @@ import {
   type ArtStyle,
 } from "@/lib/arcanumPrompts";
 import type { GeneratedImage } from "@/types/assets";
-import { ENTITY_DIMENSIONS, imageGenerateCommand, resolveImageModel, requestsTransparentBackground } from "@/types/assets";
+import { ENTITY_DIMENSIONS, imageGenerateCommand, resolveImageModel, requestsTransparentBackground, modelNativelyTransparent } from "@/types/assets";
 import { removeBgAndSave, shouldRemoveBg } from "@/lib/useBackgroundRemoval";
 
 export function assetTypeForKind(kind: string): string {
   if (kind === "room") return "background";
   if (kind === "mob") return "mob";
   if (kind === "item") return "item";
+  if (kind === "gatheringNode") return "gathering_node";
   if (kind === "shop") return "background";
   return "background";
 }
@@ -73,6 +74,18 @@ export function collectTargets(world: WorldFile): BatchTarget[] {
     });
   }
 
+  for (const [id, node] of Object.entries(world.gatheringNodes ?? {})) {
+    const hasImage = !!node.image;
+    targets.push({
+      kind: "gatheringNode",
+      id,
+      label: `Node: ${node.displayName}`,
+      checked: !hasImage,
+      hasExisting: hasImage,
+      status: "pending",
+    });
+  }
+
   for (const [id, shop] of Object.entries(world.shops ?? {})) {
     const hasImage = !!shop.image;
     targets.push({
@@ -88,6 +101,16 @@ export function collectTargets(world: WorldFile): BatchTarget[] {
   return targets;
 }
 
+function collectionForKind(kind: string): string {
+  switch (kind) {
+    case "mob": return "mobs";
+    case "item": return "items";
+    case "gatheringNode": return "gatheringNodes";
+    case "shop": return "shops";
+    default: return "mobs";
+  }
+}
+
 export function getTargetPrompt(
   target: BatchTarget,
   world: WorldFile,
@@ -97,11 +120,9 @@ export function getTargetPrompt(
   if (kind === "room") {
     return roomPrompt(id, world.rooms[id]!, style);
   }
-  const collection =
-    kind === "mob" ? "mobs" : kind === "item" ? "items" : "shops";
   const entity = (
     world as unknown as Record<string, Record<string, unknown> | undefined>
-  )[collection]?.[id];
+  )[collectionForKind(kind)]?.[id];
   return entityPrompt(kind, id, entity, style);
 }
 
@@ -113,11 +134,9 @@ export function getTargetContext(
   if (kind === "room") {
     return roomContext(id, world.rooms[id]!);
   }
-  const collection =
-    kind === "mob" ? "mobs" : kind === "item" ? "items" : "shops";
   const entity = (
     world as unknown as Record<string, Record<string, unknown> | undefined>
-  )[collection]?.[id];
+  )[collectionForKind(kind)]?.[id];
   return entityContext(kind, id, entity);
 }
 
@@ -239,8 +258,9 @@ export async function runBatchArtGeneration(
           )
           .catch(() => {});
 
-        // Queue background removal — we'll await all of them before saving
-        if (autoRemoveBg && shouldRemoveBg(batchAssetType) && image.data_url) {
+        // Queue background removal — skip if the model already produced native transparency
+        const skipBgRemoval = modelNativelyTransparent(imageProvider, model?.id) && requestsTransparentBackground(batchAssetType);
+        if (autoRemoveBg && shouldRemoveBg(batchAssetType) && image.data_url && !skipBgRemoval) {
           pendingBgRemovals.push({
             promise: removeBgAndSave(image.data_url, batchAssetType, batchContext, variantGroup),
             kind: target.kind,
@@ -261,12 +281,7 @@ export async function runBatchArtGeneration(
             },
           };
         } else {
-          const collection =
-            kind === "mob"
-              ? "mobs"
-              : kind === "item"
-                ? "items"
-                : "shops";
+          const collection = collectionForKind(kind);
           const entities = (cur as Record<string, unknown>)[
             collection
           ] as Record<string, Record<string, unknown>> | undefined;

@@ -21,7 +21,7 @@ import {
 } from "@/lib/uiPersistence";
 import type { WorldFile } from "@/types/world";
 
-type EntityKind = "room" | "mob" | "item" | "shop";
+type EntityKind = "room" | "mob" | "item" | "shop" | "gatheringNode";
 type WorkbenchKey = `default:${DefaultImageKind}` | `entity:${EntityKind}:${string}`;
 
 interface BrowseEntity {
@@ -41,13 +41,14 @@ interface ZoneAssetWorkbenchProps {
   onWorldChange: (world: WorldFile) => void;
 }
 
-const KIND_ORDER: EntityKind[] = ["room", "mob", "item", "shop"];
+const KIND_ORDER: EntityKind[] = ["room", "mob", "item", "gatheringNode", "shop"];
 const DEFAULT_KIND_ORDER: DefaultImageKind[] = ["room", "mob", "item"];
 
 const KIND_LABELS: Record<EntityKind, string> = {
   room: "Rooms",
   mob: "Mobs",
   item: "Items",
+  gatheringNode: "Gathering Nodes",
   shop: "Shops",
 };
 
@@ -62,6 +63,7 @@ function collectEntities(world: WorldFile): BrowseEntity[] {
   for (const [id, room] of Object.entries(world.rooms)) entities.push({ kind: "room", id, label: room.title || id, image: room.image });
   for (const [id, mob] of Object.entries(world.mobs ?? {})) entities.push({ kind: "mob", id, label: mob.name || id, image: mob.image });
   for (const [id, item] of Object.entries(world.items ?? {})) entities.push({ kind: "item", id, label: item.displayName || id, image: item.image });
+  for (const [id, node] of Object.entries(world.gatheringNodes ?? {})) entities.push({ kind: "gatheringNode", id, label: node.displayName || id, image: node.image });
   for (const [id, shop] of Object.entries(world.shops ?? {})) entities.push({ kind: "shop", id, label: shop.name || id, image: shop.image });
   return entities;
 }
@@ -69,12 +71,13 @@ function collectEntities(world: WorldFile): BrowseEntity[] {
 function assetTypeForKind(kind: EntityKind | DefaultImageKind): string {
   if (kind === "room" || kind === "shop") return "background";
   if (kind === "mob") return "mob";
+  if (kind === "gatheringNode") return "gathering_node";
   return "item";
 }
 
 function dimensionsForKind(kind: EntityKind | DefaultImageKind): { width: number; height: number } {
   if (kind === "room" || kind === "shop") return { width: 1920, height: 1080 };
-  if (kind === "mob") return { width: 512, height: 512 };
+  if (kind === "mob" || kind === "gatheringNode") return { width: 512, height: 512 };
   return { width: 256, height: 256 };
 }
 
@@ -84,7 +87,7 @@ function updateEntityImage(world: WorldFile, entity: BrowseEntity, image: string
     if (!room) return world;
     return { ...world, rooms: { ...world.rooms, [entity.id]: { ...room, image } } };
   }
-  const collection = entity.kind === "mob" ? "mobs" : entity.kind === "item" ? "items" : "shops";
+  const collection = entity.kind === "mob" ? "mobs" : entity.kind === "item" ? "items" : entity.kind === "gatheringNode" ? "gatheringNodes" : "shops";
   const entities = world[collection] as Record<string, Record<string, unknown>> | undefined;
   if (!entities?.[entity.id]) return world;
   return { ...world, [collection]: { ...entities, [entity.id]: { ...entities[entity.id], image } } };

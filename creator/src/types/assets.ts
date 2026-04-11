@@ -171,6 +171,13 @@ export const IMAGE_MODELS = [
     provider: "openai" as const,
     defaultSteps: 1,
   },
+  {
+    id: "openai:4@1",
+    label: "GPT Image 1.5 (Runware)",
+    description: "GPT-image-1 via Runware, ~$0.009/image",
+    provider: "runware" as const,
+    defaultSteps: 1,
+  },
 ] as const;
 
 /** Resolve the Tauri command name for a given image provider. */
@@ -198,6 +205,16 @@ export function imageGenerateCommand(provider: string): string {
     case "openai": return "openai_generate_image";
     default: return "generate_image";
   }
+}
+
+/** Returns true if the model natively generates transparent backgrounds for eligible asset types,
+ *  meaning client-side BG removal should be skipped to avoid double processing. */
+export function modelNativelyTransparent(provider: string, modelId?: string): boolean {
+  // GPT Image 1.5 via Runware sends background:"transparent" for sprite-type assets
+  if (provider === "runware" && modelId?.startsWith("openai:")) return true;
+  // Direct OpenAI provider sends transparentBackground flag
+  if (provider === "openai") return true;
+  return false;
 }
 
 /** Asset types that benefit from provider-native transparent backgrounds. */

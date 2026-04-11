@@ -19,7 +19,7 @@ import {
 } from "@/lib/zoneEdits";
 import { ExitDoorEditor } from "./ExitDoorEditor";
 import { RoomFeaturesEditor } from "./RoomFeaturesEditor";
-import { EditableField, EditableTextArea, Section, IconButton, FieldRow, TextInput, SelectInput, CheckboxInput, TabBar } from "@/components/ui/FormWidgets";
+import { EditableField, EditableTextArea, Section, IconButton, FieldRow, TextInput, SelectInput, TabBar } from "@/components/ui/FormWidgets";
 import { YamlPreview } from "@/components/ui/YamlPreview";
 import { EntityArtGenerator } from "@/components/ui/EntityArtGenerator";
 import { MediaPicker } from "@/components/ui/MediaPicker";
@@ -798,77 +798,63 @@ export function RoomPanel({
       {/* Room roles */}
       <Section
         title="Room Roles"
-        description="Capabilities owned directly by the room itself rather than separate placed entities."
         defaultExpanded={!!room.station || !!room.bank || !!room.tavern || !!room.dungeon || !!room.auction}
       >
         <div className="flex flex-col gap-2">
-          <FieldRow
-            label="Station"
-            hint="Choose a configured crafting station type. This is a room capability, not a separate NPC."
-          >
-            <div className="flex items-center gap-2">
-              <img src={ROLE_ICONS.station} alt="" className="h-5 w-5" />
+          {/* Station — dropdown instead of toggle */}
+          <div className="flex items-center gap-3">
+            <img
+              src={ROLE_ICONS.station}
+              alt=""
+              className={`h-10 w-10 shrink-0 transition-all duration-200 ${
+                room.station
+                  ? "opacity-100 drop-shadow-[0_0_6px_rgba(212,175,55,0.5)]"
+                  : "opacity-30 grayscale"
+              }`}
+            />
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="text-sm font-display text-text-secondary whitespace-nowrap">Station</span>
               <SelectInput
                 value={room.station ?? ""}
                 options={stationOptions}
                 onCommit={(v) => handleFieldChange("station", v)}
-                placeholder="No station"
+                placeholder="None"
                 allowEmpty
               />
             </div>
-          </FieldRow>
-          <FieldRow
-            label="Bank"
-            hint="Enables deposit and withdraw commands in this room. No separate bank NPC is required by this schema."
-          >
-            <div className="flex items-center gap-2">
-              <img src={ROLE_ICONS.bank} alt="" className="h-5 w-5" />
-              <CheckboxInput
-                checked={room.bank ?? false}
-                onCommit={(value) => onWorldChange(updateRoom(world, roomId, { bank: value || undefined }))}
-                label="Room functions as a bank"
-              />
-            </div>
-          </FieldRow>
-          <FieldRow
-            label="Tavern"
-            hint="Marks this room as a tavern / rest point. Shows the lottery kiosk in the web client."
-          >
-            <div className="flex items-center gap-2">
-              <img src={ROLE_ICONS.tavern} alt="" className="h-5 w-5" />
-              <CheckboxInput
-                checked={room.tavern ?? false}
-                onCommit={(value) => onWorldChange(updateRoom(world, roomId, { tavern: value || undefined }))}
-                label="Room functions as a tavern"
-              />
-            </div>
-          </FieldRow>
-          <FieldRow
-            label="Dungeon"
-            hint="Marks this room as a dungeon portal entrance. Shows the dungeon kiosk in the web client."
-          >
-            <div className="flex items-center gap-2">
-              <img src={ROLE_ICONS.dungeon} alt="" className="h-5 w-5" />
-              <CheckboxInput
-                checked={room.dungeon ?? false}
-                onCommit={(value) => onWorldChange(updateRoom(world, roomId, { dungeon: value || undefined }))}
-                label="Room contains a dungeon portal"
-              />
-            </div>
-          </FieldRow>
-          <FieldRow
-            label="Auction"
-            hint="Marks this room as having an auction house. Shows the auction badge in the web client."
-          >
-            <div className="flex items-center gap-2">
-              <img src={ROLE_ICONS.auction} alt="" className="h-5 w-5" />
-              <CheckboxInput
-                checked={room.auction ?? false}
-                onCommit={(value) => onWorldChange(updateRoom(world, roomId, { auction: value || undefined }))}
-                label="Room has an auction house"
-              />
-            </div>
-          </FieldRow>
+          </div>
+          {/* Boolean role toggles */}
+          {([
+            { key: "bank" as const, label: "Bank", icon: ROLE_ICONS.bank },
+            { key: "tavern" as const, label: "Tavern", icon: ROLE_ICONS.tavern },
+            { key: "dungeon" as const, label: "Dungeon", icon: ROLE_ICONS.dungeon },
+            { key: "auction" as const, label: "Auction", icon: ROLE_ICONS.auction },
+          ] as const).map(({ key, label, icon }) => {
+            const active = !!(room[key]);
+            return (
+              <button
+                key={key}
+                type="button"
+                className="flex items-center gap-3 group cursor-pointer rounded-md px-1 py-1 -mx-1 hover:bg-bg-hover transition-colors"
+                onClick={() => onWorldChange(updateRoom(world, roomId, { [key]: active ? undefined : true }))}
+              >
+                <img
+                  src={icon}
+                  alt=""
+                  className={`h-10 w-10 shrink-0 transition-all duration-200 ${
+                    active
+                      ? "opacity-100 drop-shadow-[0_0_6px_rgba(212,175,55,0.5)]"
+                      : "opacity-30 grayscale group-hover:opacity-50 group-hover:grayscale-[50%]"
+                  }`}
+                />
+                <span className={`text-sm font-display transition-colors duration-200 ${
+                  active ? "text-accent" : "text-text-muted group-hover:text-text-secondary"
+                }`}>
+                  {label}
+                </span>
+              </button>
+            );
+          })}
         </div>
       </Section>
       </>

@@ -154,13 +154,9 @@ export async function deployRuntimeAchievements(): Promise<string> {
 }
 
 export async function deployRuntimeConfig(project: Project): Promise<string> {
-  const configContent = project.format === "standalone"
-    ? buildMonolithicConfig()
-    : undefined;
-
   return invoke<string>("deploy_config_to_r2", {
     mudDir: project.mudDir,
-    configContent,
+    configContent: buildMonolithicConfig(),
   });
 }
 

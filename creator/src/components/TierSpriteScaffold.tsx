@@ -7,7 +7,7 @@ import { useProjectStore } from "@/stores/projectStore";
 import { useFocusTrap } from "@/lib/useFocusTrap";
 import { UNIVERSAL_NEGATIVE } from "@/lib/arcanumPrompts";
 import { removeBgAndSave, shouldRemoveBg } from "@/lib/useBackgroundRemoval";
-import { ENTITY_DIMENSIONS, imageGenerateCommand, resolveImageModel, requestsTransparentBackground } from "@/types/assets";
+import { ENTITY_DIMENSIONS, imageGenerateCommand, resolveImageModel, requestsTransparentBackground, modelNativelyTransparent } from "@/types/assets";
 import {
   buildSpritePrompt,
   enhanceSpritePrompt,
@@ -195,7 +195,8 @@ export function TierSpriteScaffold({ onClose, onComplete }: TierSpriteScaffoldPr
 
           await acceptAsset(image, "player_sprite", prompt, assetContext, variantGroup, true);
 
-          if (settings.auto_remove_bg && shouldRemoveBg("player_sprite") && image.data_url) {
+          const skipBgRemoval = modelNativelyTransparent(imageProvider, model.id) && requestsTransparentBackground("player_sprite");
+          if (settings.auto_remove_bg && shouldRemoveBg("player_sprite") && image.data_url && !skipBgRemoval) {
             pendingBgRemovals.push(
               removeBgAndSave(image.data_url, "player_sprite", assetContext, variantGroup).catch(() => {}),
             );

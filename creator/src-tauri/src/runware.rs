@@ -18,6 +18,19 @@ struct RunwareIpAdapter {
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
+struct OpenAIImageSettings {
+    quality: String,
+    background: String,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct ImageProviderSettings {
+    openai: OpenAIImageSettings,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
 struct RunwareImageTask {
     task_type: String,
     #[serde(rename = "taskUUID")]
@@ -40,6 +53,8 @@ struct RunwareImageTask {
     ip_adapters: Option<Vec<RunwareIpAdapter>>,
     output_format: String,
     number_results: u32,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    provider_settings: Option<ImageProviderSettings>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -59,6 +74,33 @@ struct RunwareImageResult {
 fn round_to_16(v: u32) -> u32 {
     let rounded = (v + 8) / 16 * 16;
     rounded.clamp(128, 2048)
+}
+
+/// Snap to the nearest valid GPT Image 1.5 size that matches the target aspect ratio.
+/// Valid sizes: 1024×1024, 1536×1024, 1024×1536.
+/// Prefers 1024×1024 when the target is roughly square (within 4:3).
+fn snap_gpt_image_dims(w: u32, h: u32) -> (u32, u32) {
+    let ratio = w as f64 / h as f64;
+    if ratio > 1.34 {
+        (1536, 1024)
+    } else if ratio < 0.75 {
+        (1024, 1536)
+    } else {
+        (1024, 1024)
+    }
+}
+
+/// Asset types that benefit from transparent backgrounds in GPT Image 1.5.
+fn wants_transparent_bg(asset_type: Option<&str>) -> bool {
+    matches!(
+        asset_type,
+        Some("mob" | "item" | "pet" | "entity_portrait" | "gathering_node"
+            | "player_sprite" | "ability_icon" | "status_effect_icon" | "ability_sprite")
+    )
+}
+
+fn is_gpt_image_model(model: &str) -> bool {
+    model.starts_with("openai:")
 }
 
 #[tauri::command]
@@ -85,11 +127,15 @@ pub async fn runware_generate_image(
     // Keep original target dims for final resize, cap for generation
     let target_w = width.unwrap_or(1024);
     let target_h = height.unwrap_or(1024);
-    // Cap to 1024px long edge first, then round to Runware's multiple-of-16 requirement
-    let (capped_w, capped_h) = generation::cap_generation_dims(target_w, target_h);
-    let w = round_to_16(capped_w);
-    let h = round_to_16(capped_h);
     let mdl = model.unwrap_or_else(|| "runware:400@2".to_string());
+
+    // GPT Image 1.5 only supports fixed dimensions; FLUX models use multiples of 16
+    let (w, h) = if is_gpt_image_model(&mdl) {
+        snap_gpt_image_dims(target_w, target_h)
+    } else {
+        let (capped_w, capped_h) = generation::cap_generation_dims(target_w, target_h);
+        (round_to_16(capped_w), round_to_16(capped_h))
+    };
     let final_prompt = generation::maybe_enhance_prompt(
         &app,
         &prompt,
@@ -118,21 +164,35 @@ pub async fn runware_generate_image(
         }]
     });
 
+    // Build provider settings for GPT Image models
+    let provider_settings = if is_gpt_image_model(&mdl) {
+        let transparent = wants_transparent_bg(asset_type.as_deref());
+        Some(ImageProviderSettings {
+            openai: OpenAIImageSettings {
+                quality: "low".to_string(),
+                background: if transparent { "transparent" } else { "opaque" }.to_string(),
+            },
+        })
+    } else {
+        None
+    };
+
     let task = RunwareImageTask {
         task_type: "imageInference".to_string(),
         task_uuid: uuid::Uuid::new_v4().to_string(),
         positive_prompt: final_prompt.clone(),
-        negative_prompt,
+        negative_prompt: if is_gpt_image_model(&mdl) { None } else { negative_prompt },
         width: w,
         height: h,
         model: mdl.clone(),
-        steps,
-        cfg_scale: guidance,
+        steps: if is_gpt_image_model(&mdl) { None } else { steps },
+        cfg_scale: if is_gpt_image_model(&mdl) { None } else { guidance },
         seed_image: normalized_seed_image,
         strength: seed_strength,
         ip_adapters,
         output_format: "PNG".to_string(),
         number_results: 1,
+        provider_settings,
     };
 
     let client = crate::http::shared_client();
@@ -172,7 +232,15 @@ pub async fn runware_generate_image(
         .await
         .map_err(|e| format!("Failed to read image bytes: {e}"))?
         .to_vec();
-    let behavior = generation::infer_behavior(asset_type.as_deref(), target_w, target_h, None);
+    // GPT Image models with transparent background produce native transparency — tell the
+    // processing pipeline to preserve alpha instead of flattening against lavender.
+    let native_transparent = is_gpt_image_model(&mdl) && wants_transparent_bg(asset_type.as_deref());
+    let behavior = generation::infer_behavior(
+        asset_type.as_deref(),
+        target_w,
+        target_h,
+        if native_transparent { Some(true) } else { None },
+    );
     let processed = generation::process_image_bytes(&bytes, &behavior)?;
 
     generation::persist_generated_image(

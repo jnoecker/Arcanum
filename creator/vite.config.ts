@@ -1,11 +1,36 @@
-import { defineConfig } from "vite";
+import { defineConfig, type Plugin } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "path";
 
 const host = process.env.TAURI_DEV_HOST;
 
+// Middleware plugin that unconditionally stamps COOP + COEP on every
+// response from the dev server. Vite's `server.headers` option drops
+// through some internal transforms (notably worker-script responses),
+// so rely on this plugin instead. SharedArrayBuffer — and therefore
+// multi-threaded WASM in @imgly/background-removal — requires both
+// the top-level document AND every subresponse to carry these.
+// COEP: credentialless keeps staticimgly.com (no CORP headers) loadable.
+const crossOriginIsolation = (): Plugin => ({
+  name: "cross-origin-isolation",
+  configureServer(server) {
+    server.middlewares.use((_req, res, next) => {
+      res.setHeader("Cross-Origin-Opener-Policy", "same-origin");
+      res.setHeader("Cross-Origin-Embedder-Policy", "credentialless");
+      next();
+    });
+  },
+  configurePreviewServer(server) {
+    server.middlewares.use((_req, res, next) => {
+      res.setHeader("Cross-Origin-Opener-Policy", "same-origin");
+      res.setHeader("Cross-Origin-Embedder-Policy", "credentialless");
+      next();
+    });
+  },
+});
+
 export default defineConfig(async () => ({
-  plugins: [react()],
+  plugins: [react(), crossOriginIsolation()],
   worker: {
     format: "es" as const,
   },
@@ -39,17 +64,6 @@ export default defineConfig(async () => ({
     port: 1420,
     strictPort: true,
     host: host || false,
-    // Cross-origin isolation enables SharedArrayBuffer, which lets
-    // @imgly/background-removal run its WASM/ONNX inference with
-    // multi-threading (numThreads = navigator.hardwareConcurrency)
-    // instead of falling back to single-threaded execution.
-    // `credentialless` is used instead of `require-corp` so that
-    // staticimgly.com (which doesn't send CORP headers) can still
-    // serve the model files — the browser just drops credentials.
-    headers: {
-      "Cross-Origin-Opener-Policy": "same-origin",
-      "Cross-Origin-Embedder-Policy": "credentialless",
-    },
     hmr: host
       ? {
           protocol: "ws",

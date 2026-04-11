@@ -19,6 +19,12 @@ import { bootstrapTheme } from "./stores/themeStore";
 // Apply persisted theme before first render to avoid a flash of defaults.
 bootstrapTheme();
 
+// One-shot diagnostic for the cross-origin isolation feature that BG
+// removal needs for multi-threaded WASM. If this logs `false` the COOP/
+// COEP headers aren't making it to the top-level document — check the
+// Network tab of DevTools for the index.html response headers.
+console.info("[arcanum] crossOriginIsolated =", self.crossOriginIsolated);
+
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <App />

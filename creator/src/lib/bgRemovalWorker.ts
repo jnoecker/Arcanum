@@ -3,6 +3,12 @@
 
 import { removeBackground } from "@imgly/background-removal";
 
+// Diagnostic: logs once the worker spins up so we can tell whether this
+// worker context is cross-origin-isolated. Multi-threaded WASM in
+// onnxruntime requires crossOriginIsolated === true in BOTH the main
+// document and every worker spawned from it.
+console.info("[bg-worker] crossOriginIsolated =", self.crossOriginIsolated);
+
 self.onmessage = async (
   e: MessageEvent<{ id: number; imageDataUrl: string }>,
 ) => {

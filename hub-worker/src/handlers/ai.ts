@@ -37,7 +37,7 @@ const DEFAULT_IMAGE_MODEL = "runware:400@2";
 
 // DeepSeek V3.2 via OpenRouter. Locked to one model so there's no
 // cost-surprise from a mistyped model name.
-const LLM_MODEL = "deepseek/deepseek-v3.2-20251201";
+const LLM_MODEL = "deepseek/deepseek-v3.2-exp";
 
 // Claude Sonnet 4.6 for vision.
 const VISION_MODEL = "claude-sonnet-4-6";
@@ -307,7 +307,7 @@ async function llmComplete(req: Request, env: Env, user: UserRow): Promise<Respo
     body: JSON.stringify({
       model: LLM_MODEL,
       messages,
-      max_tokens: clamp(body.maxTokens ?? 1024, 16, 4096),
+      max_tokens: clamp(body.maxTokens ?? 1024, 16, 8192),
       temperature: clamp(body.temperature ?? 0.7, 0, 2),
     }),
   });

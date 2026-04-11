@@ -13,10 +13,21 @@ const GraphPage = lazy(() => import("@/pages/GraphPage").then(m => ({ default: m
 const StoriesPage = lazy(() => import("@/pages/StoriesPage").then(m => ({ default: m.StoriesPage })));
 const StoryPlayerPage = lazy(() => import("@/pages/StoryPlayerPage").then(m => ({ default: m.StoryPlayerPage })));
 const NotFoundPage = lazy(() => import("@/pages/NotFoundPage").then(m => ({ default: m.NotFoundPage })));
+const HubIndexPage = lazy(() => import("@/pages/HubIndexPage").then(m => ({ default: m.HubIndexPage })));
 
 export function App() {
-  const { loading, error, reload } = useShowcase();
+  const { loading, error, reload, isHubRoot } = useShowcase();
   const isOffline = typeof navigator !== "undefined" && !navigator.onLine;
+
+  // Hub root: no per-world data, just render the directory. Skips the
+  // normal Layout (which pulls a world name from data that doesn't exist here).
+  if (isHubRoot) {
+    return (
+      <Suspense fallback={null}>
+        <HubIndexPage />
+      </Suspense>
+    );
+  }
 
   if (loading) {
     return (

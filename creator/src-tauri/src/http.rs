@@ -1,13 +1,17 @@
 use std::sync::OnceLock;
 
 /// Shared reqwest client for connection pooling across all API modules.
-/// Uses a 30-second timeout to accommodate image generation and R2 uploads.
+/// Total timeout is sized for image generation (FLUX.2 at 1024px through
+/// the hub can take ~30–90s in practice), while connect_timeout stays
+/// short so DNS or TLS failures still fail fast instead of stalling the
+/// whole timeout budget.
 static SHARED_CLIENT: OnceLock<reqwest::Client> = OnceLock::new();
 
 pub fn shared_client() -> &'static reqwest::Client {
     SHARED_CLIENT.get_or_init(|| {
         reqwest::Client::builder()
-            .timeout(std::time::Duration::from_secs(30))
+            .connect_timeout(std::time::Duration::from_secs(10))
+            .timeout(std::time::Duration::from_secs(120))
             .build()
             .expect("Failed to build HTTP client")
     })

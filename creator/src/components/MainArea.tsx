@@ -79,14 +79,14 @@ export function MainArea() {
   // map renders when an island is selected but no tabs are open yet.
   if (mapView && typeof mapView === "object" && "island" in mapView) {
     return (
-      <div className="flex min-h-0 flex-1 flex-col">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col">
         <IslandView island={mapView.island} />
       </div>
     );
   }
   if (mapView === "world" || !activeTab) {
     return (
-      <div className="flex min-h-0 flex-1 flex-col">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col">
         <WorldMap />
       </div>
     );
@@ -149,7 +149,7 @@ export function MainArea() {
       id="workspace-panel"
       role="tabpanel"
       aria-labelledby={activeTabIndex >= 0 ? `workspace-tab-${activeTabIndex}` : undefined}
-      className="flex min-h-0 flex-1 flex-col"
+      className="flex min-h-0 min-w-0 flex-1 flex-col"
       style={{ viewTransitionName: "workspace-panel" }}
     >
       {showBackPill && <IslandBackPill island={panelIsland!} />}

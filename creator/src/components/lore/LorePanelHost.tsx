@@ -117,8 +117,8 @@ export function LorePanelHost({ panelId }: { panelId: string }) {
   }
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col">
-      <div className="relative min-h-0 flex-1 overflow-y-auto">
+    <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+      <div className="relative min-h-0 min-w-0 flex-1 overflow-y-auto">
         <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
           <img
             src={configBg}

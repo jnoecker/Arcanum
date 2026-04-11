@@ -523,129 +523,16 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
   const viewModes: ViewMode[] = ["map", "assets", "media", "dungeon"];
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col">
+    <div className="flex min-h-0 min-w-0 flex-1 flex-col">
       {/* Zone toolbar */}
-      <div className="relative flex shrink-0 items-center gap-3 overflow-hidden border-b border-border-default bg-bg-secondary px-3 py-1.5 max-[1100px]:flex-wrap max-[1100px]:items-start max-[1100px]:gap-x-4 max-[1100px]:gap-y-2">
+      <div className="relative flex shrink-0 items-stretch gap-4 overflow-hidden border-b border-border-default bg-bg-secondary px-3 py-2">
         <img src={subtoolbarBg} alt="" className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-[0.10]" />
 
-        {/* Undo / Redo */}
-        <div className="flex items-center gap-0.5 border-r border-[var(--chrome-stroke)] pr-3 max-[1100px]:pr-0 max-[1100px]:border-r-0">
-          <button
-            onClick={handleUndo}
-            disabled={!canUndo}
-            className="h-6 w-6 rounded text-xs text-accent transition-colors enabled:hover:bg-accent/10 disabled:opacity-30 max-[1100px]:h-9 max-[1100px]:w-9"
-            title="Undo (Ctrl+Z)"
-            aria-label="Undo"
-          >
-            &#x21B6;
-          </button>
-          <button
-            onClick={handleRedo}
-            disabled={!canRedo}
-            className="h-6 w-6 rounded text-xs text-accent transition-colors enabled:hover:bg-accent/10 disabled:opacity-30 max-[1100px]:h-9 max-[1100px]:w-9"
-            title="Redo (Ctrl+Shift+Z)"
-            aria-label="Redo"
-          >
-            &#x21B7;
-          </button>
-        </div>
-
-        {/* Save */}
-        <button
-          onClick={handleSave}
-          disabled={!zoneState.dirty || saving}
-          className={`focus-ring h-7 rounded-full px-3 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity] duration-500 max-[1100px]:h-9 ${
-            saving
-              ? "border border-[rgb(var(--accent-rgb)/0.4)] bg-[linear-gradient(145deg,rgb(var(--accent-rgb)/0.22),rgb(var(--bg-rgb)/0.9))] text-warm-pale shadow-[0_4px_16px_rgb(var(--accent-rgb)/0.18)]"
-              : justSaved
-                ? "border border-status-success/30 text-status-success"
-                : zoneState.dirty
-                  ? "border border-[rgb(var(--accent-rgb)/0.4)] bg-[linear-gradient(145deg,rgb(var(--accent-rgb)/0.22),rgb(var(--bg-rgb)/0.9))] text-warm-pale shadow-[0_4px_16px_rgb(var(--accent-rgb)/0.18)]"
-                  : "text-text-muted opacity-40"
-          }`}
-          title="Save (Ctrl+S)"
-        >
-          {saving ? "Saving..." : justSaved ? "\u2713 Saved" : "Save"}
-        </button>
-
-        {/* Graphical zone toggle */}
-        <label className="flex items-center gap-2 text-xs text-text-secondary max-[1100px]:min-h-9">
-          <input
-            type="checkbox"
-            checked={!!zoneState.data.graphical}
-            onChange={handleGraphicalToggle}
-            className="accent-accent"
-          />
-          Graphical zone
-        </label>
-
-        {/* PvP zone toggle */}
-        <label className="flex items-center gap-2 text-xs text-text-secondary max-[1100px]:min-h-9">
-          <input
-            type="checkbox"
-            checked={!!zoneState.data.pvpEnabled}
-            onChange={handlePvpToggle}
-            className="accent-accent"
-          />
-          PvP zone
-        </label>
-
-        {/* Lifespan (reset timer) */}
-        <label className="flex items-center gap-1.5 text-xs text-text-secondary max-[1100px]:min-h-9" title="Zone reset interval in MUD ticks (minutes). 0 or empty = never resets.">
-          <span className="whitespace-nowrap">Lifespan</span>
-          <input
-            type="number"
-            min={0}
-            max={9999}
-            step={1}
-            value={zoneState.data.lifespan ?? ""}
-            onChange={handleLifespanChange}
-            placeholder="0"
-            className="ornate-input w-16 px-1.5 py-0.5 text-xs text-text-primary"
-          />
-        </label>
-
-        {/* Default terrain */}
-        <label className="flex items-center gap-1.5 text-xs text-text-secondary max-[1100px]:min-h-9" title="Default terrain type for all rooms in this zone (rooms can override).">
-          <span className="whitespace-nowrap">Terrain</span>
-          {TERRAIN_ICONS[zoneState.data.terrain ?? "outside"] && (
-            <img src={TERRAIN_ICONS[zoneState.data.terrain ?? "outside"]} alt="" className="h-5 w-5 rounded" />
-          )}
-          <select
-            value={zoneState.data.terrain ?? ""}
-            onChange={handleTerrainChange}
-            className="ornate-input px-1.5 py-0.5 text-xs text-text-primary"
-          >
-            <option value="">Default (outside)</option>
-            <option value="inside">Inside</option>
-            <option value="outside">Outside</option>
-            <option value="forest">Forest</option>
-            <option value="mountain">Mountain</option>
-            <option value="underground">Underground</option>
-            <option value="underwater">Underwater</option>
-            <option value="desert">Desert</option>
-            <option value="swamp">Swamp</option>
-            <option value="urban">Urban</option>
-            <option value="sky">Sky</option>
-          </select>
-        </label>
-
-        {/* Zone name */}
-        <div className="ml-auto flex min-w-0 items-center gap-2 border-l border-[var(--chrome-stroke)] pl-3 max-[1100px]:order-4 max-[1100px]:ml-0 max-[1100px]:w-full max-[1100px]:border-l-0 max-[1100px]:pl-0 max-[1100px]:pt-1">
-          <span className="truncate font-display text-sm font-semibold uppercase tracking-widest text-text-primary">
-            {zoneState.data.zone}
-          </span>
-          <span className="shrink-0 text-xs text-text-muted">
-            {roomCount} room{roomCount !== 1 ? "s" : ""}
-          </span>
-          {zoneState.dirty && (
-            <span className="shrink-0 rounded-full bg-warm/15 px-2 py-0.5 text-3xs text-warm-pale">modified</span>
-          )}
-        </div>
-
-        <div className="flex shrink-0 items-center gap-2 max-[1100px]:order-3 max-[1100px]:w-full max-[1100px]:flex-wrap max-[1100px]:justify-between">
-          {/* View toggle */}
-          <div className="segmented-control" role="tablist" aria-label="Zone views">
+        {/* Left column: two stacked rows (view tabs on top, config on bottom) */}
+        <div className="relative z-10 flex min-w-0 flex-1 flex-col gap-1.5">
+          {/* Row 1: view tabs + action buttons */}
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="segmented-control" role="tablist" aria-label="Zone views">
             {viewModes.map((mode, i, arr) => (
               <button
                 key={mode}
@@ -689,7 +576,7 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
             ))}
           </div>
 
-          <div className="flex items-center gap-2 border-l border-[var(--chrome-stroke)] pl-3 max-[1100px]:w-full max-[1100px]:flex-wrap max-[1100px]:justify-end max-[1100px]:border-l-0 max-[1100px]:pl-0">
+          <div className="flex flex-wrap items-center gap-2 border-l border-[var(--chrome-stroke)] pl-3">
             <button
               onClick={() => setShowBatchArt(true)}
               className="h-6 rounded px-2 text-xs text-stellar-blue transition-colors hover:bg-stellar-blue/10 max-[1100px]:h-9"
@@ -721,7 +608,7 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
                   e.preventDefault();
                   handleConfirmAddRoom();
                 }}
-                className="flex items-center gap-1 max-[1100px]:w-full max-[1100px]:flex-wrap"
+                className="flex items-center gap-1"
               >
                 <input
                   ref={addRoomInputRef}
@@ -756,12 +643,135 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
               </button>
             )}
           </div>
+          </div>
+
+          {/* Row 2: undo/redo, save, and zone config */}
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
+            {/* Undo / Redo */}
+            <div className="flex items-center gap-0.5 border-r border-[var(--chrome-stroke)] pr-3">
+              <button
+                onClick={handleUndo}
+                disabled={!canUndo}
+                className="h-6 w-6 rounded text-xs text-accent transition-colors enabled:hover:bg-accent/10 disabled:opacity-30 max-[1100px]:h-9 max-[1100px]:w-9"
+                title="Undo (Ctrl+Z)"
+                aria-label="Undo"
+              >
+                &#x21B6;
+              </button>
+              <button
+                onClick={handleRedo}
+                disabled={!canRedo}
+                className="h-6 w-6 rounded text-xs text-accent transition-colors enabled:hover:bg-accent/10 disabled:opacity-30 max-[1100px]:h-9 max-[1100px]:w-9"
+                title="Redo (Ctrl+Shift+Z)"
+                aria-label="Redo"
+              >
+                &#x21B7;
+              </button>
+            </div>
+
+            {/* Save */}
+            <button
+              onClick={handleSave}
+              disabled={!zoneState.dirty || saving}
+              className={`focus-ring h-7 rounded-full px-3 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity] duration-500 max-[1100px]:h-9 ${
+                saving
+                  ? "border border-[rgb(var(--accent-rgb)/0.4)] bg-[linear-gradient(145deg,rgb(var(--accent-rgb)/0.22),rgb(var(--bg-rgb)/0.9))] text-warm-pale shadow-[0_4px_16px_rgb(var(--accent-rgb)/0.18)]"
+                  : justSaved
+                    ? "border border-status-success/30 text-status-success"
+                    : zoneState.dirty
+                      ? "border border-[rgb(var(--accent-rgb)/0.4)] bg-[linear-gradient(145deg,rgb(var(--accent-rgb)/0.22),rgb(var(--bg-rgb)/0.9))] text-warm-pale shadow-[0_4px_16px_rgb(var(--accent-rgb)/0.18)]"
+                      : "text-text-muted opacity-40"
+              }`}
+              title="Save (Ctrl+S)"
+            >
+              {saving ? "Saving..." : justSaved ? "\u2713 Saved" : "Save"}
+            </button>
+
+            {/* Graphical zone toggle */}
+            <label className="flex items-center gap-2 text-xs text-text-secondary max-[1100px]:min-h-9">
+              <input
+                type="checkbox"
+                checked={!!zoneState.data.graphical}
+                onChange={handleGraphicalToggle}
+                className="accent-accent"
+              />
+              Graphical zone
+            </label>
+
+            {/* PvP zone toggle */}
+            <label className="flex items-center gap-2 text-xs text-text-secondary max-[1100px]:min-h-9">
+              <input
+                type="checkbox"
+                checked={!!zoneState.data.pvpEnabled}
+                onChange={handlePvpToggle}
+                className="accent-accent"
+              />
+              PvP zone
+            </label>
+
+            {/* Lifespan (reset timer) */}
+            <label className="flex items-center gap-1.5 text-xs text-text-secondary max-[1100px]:min-h-9" title="Zone reset interval in MUD ticks (minutes). 0 or empty = never resets.">
+              <span className="whitespace-nowrap">Lifespan</span>
+              <input
+                type="number"
+                min={0}
+                max={9999}
+                step={1}
+                value={zoneState.data.lifespan ?? ""}
+                onChange={handleLifespanChange}
+                placeholder="0"
+                className="ornate-input w-16 px-1.5 py-0.5 text-xs text-text-primary"
+              />
+            </label>
+
+            {/* Default terrain */}
+            <label className="flex items-center gap-1.5 text-xs text-text-secondary max-[1100px]:min-h-9" title="Default terrain type for all rooms in this zone (rooms can override).">
+              <span className="whitespace-nowrap">Terrain</span>
+              {TERRAIN_ICONS[zoneState.data.terrain ?? "outside"] && (
+                <img src={TERRAIN_ICONS[zoneState.data.terrain ?? "outside"]} alt="" className="h-5 w-5 rounded" />
+              )}
+              <select
+                value={zoneState.data.terrain ?? ""}
+                onChange={handleTerrainChange}
+                className="ornate-input px-1.5 py-0.5 text-xs text-text-primary"
+              >
+                <option value="">Default (outside)</option>
+                <option value="inside">Inside</option>
+                <option value="outside">Outside</option>
+                <option value="forest">Forest</option>
+                <option value="mountain">Mountain</option>
+                <option value="underground">Underground</option>
+                <option value="underwater">Underwater</option>
+                <option value="desert">Desert</option>
+                <option value="swamp">Swamp</option>
+                <option value="urban">Urban</option>
+                <option value="sky">Sky</option>
+              </select>
+            </label>
+          </div>
+        </div>
+
+        {/* Right column: zone name + room count, vertically centered, spans both rows */}
+        <div className="relative z-10 flex w-[24rem] shrink-0 items-center border-l border-[var(--chrome-stroke)] pl-4 max-[1280px]:w-[18rem] max-[1024px]:w-[14rem] max-[768px]:hidden">
+          <div className="flex w-full min-w-0 flex-col items-end gap-1">
+            <span className="w-full truncate text-right font-display text-xl font-semibold uppercase leading-none tracking-widest text-text-primary">
+              {zoneState.data.zone}
+            </span>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-text-muted">
+                {roomCount} room{roomCount !== 1 ? "s" : ""}
+              </span>
+              {zoneState.dirty && (
+                <span className="rounded-full bg-warm/15 px-2 py-0.5 text-3xs text-warm-pale">modified</span>
+              )}
+            </div>
+          </div>
         </div>
       </div>
 
       {/* Map + Panel, Asset Browser, Media Panel, or Dungeon Editor */}
       {viewMode === "dungeon" ? (
-        <div id="zone-view-panel" role="tabpanel" aria-labelledby={`zone-view-tab-${viewMode}`} className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
+        <div id="zone-view-panel" role="tabpanel" aria-labelledby={`zone-view-tab-${viewMode}`} className="min-h-0 min-w-0 flex-1 overflow-y-auto px-4 py-4">
           <div className="mx-auto max-w-2xl">
             {zoneState.data.dungeon ? (
               <DungeonEditor
@@ -786,16 +796,16 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
           </div>
         </div>
       ) : viewMode === "media" ? (
-        <div id="zone-view-panel" role="tabpanel" aria-labelledby={`zone-view-tab-${viewMode}`} className="min-h-0 flex-1">
+        <div id="zone-view-panel" role="tabpanel" aria-labelledby={`zone-view-tab-${viewMode}`} className="min-h-0 min-w-0 flex-1">
           <ZoneMediaPanel zoneId={zoneId} world={zoneState.data} onWorldChange={applyWorldChange} />
         </div>
       ) : viewMode === "assets" ? (
-        <div id="zone-view-panel" role="tabpanel" aria-labelledby={`zone-view-tab-${viewMode}`} className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
+        <div id="zone-view-panel" role="tabpanel" aria-labelledby={`zone-view-tab-${viewMode}`} className="min-h-0 min-w-0 flex-1 overflow-y-auto px-4 py-4">
           <ZoneAssetWorkbench zoneId={zoneId} world={zoneState.data} onWorldChange={applyWorldChange} />
         </div>
       ) : (
-        <div id="zone-view-panel" role="tabpanel" aria-labelledby={`zone-view-tab-${viewMode}`} className="flex min-h-0 flex-1 max-[1100px]:flex-col">
-          <div className="relative min-h-0 flex-1">
+        <div id="zone-view-panel" role="tabpanel" aria-labelledby={`zone-view-tab-${viewMode}`} className="flex min-h-0 min-w-0 flex-1 max-[1100px]:flex-col">
+          <div className="relative min-h-0 min-w-0 flex-1">
             <Starfield />
             <ExitDeleteContext.Provider value={handleDeleteExitFromGraph}>
             <ReactFlow

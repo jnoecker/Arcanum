@@ -177,7 +177,7 @@ export function StudioWorkspace({ panelId }: { panelId: string }) {
 
 
   return (
-    <div className="min-h-0 flex-1 overflow-y-auto px-6 py-6">
+    <div className="min-h-0 min-w-0 flex-1 overflow-y-auto px-6 py-6">
       <div className="mx-auto flex max-w-7xl flex-col gap-6">
         {panelId === "art" && (
           <>

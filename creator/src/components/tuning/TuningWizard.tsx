@@ -232,7 +232,7 @@ export function TuningWizard() {
   }
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
+    <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto">
       {/* Title section + save button */}
       <div className="flex flex-col gap-4 px-6 pt-12 md:flex-row md:items-start md:justify-between">
         <div className="min-w-0">

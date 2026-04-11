@@ -83,7 +83,7 @@ export function ApiSettingsPanel({
     }
   };
 
-  const isUserDirty = !settings || (["deepinfra_api_key", "runware_api_key", "anthropic_api_key", "openrouter_api_key", "openai_api_key", "github_pat", "hub_api_url", "hub_api_key"] as const).some(
+  const isUserDirty = !settings || (["deepinfra_api_key", "runware_api_key", "anthropic_api_key", "openrouter_api_key", "openai_api_key", "github_pat", "hub_api_url", "hub_api_key", "use_hub_ai"] as const).some(
     (k) => draft[k] !== settings[k],
   );
 
@@ -255,6 +255,20 @@ export function ApiSettingsPanel({
               Minted by the hub admin. The world slug and listing toggle live under each project below.
             </p>
           </div>
+          <label className="mt-1 flex cursor-pointer items-start gap-2 text-xs text-text-secondary">
+            <input
+              type="checkbox"
+              checked={draft.use_hub_ai}
+              onChange={(e) => setDraft({ ...draft, use_hub_ai: e.target.checked })}
+              className="mt-0.5 accent-accent"
+            />
+            <span>
+              Use Arcanum Hub for AI generation
+              <span className="mt-0.5 block text-2xs text-text-muted/70">
+                When on, image generation (FLUX.2, GPT Image 1.5), prompt enhancement (DeepSeek), and vision analysis (Claude) route through the hub and count against your playtest quotas. No other API keys are needed. Leave off to use your own provider keys directly.
+              </span>
+            </span>
+          </label>
         </div>
       </div>
 

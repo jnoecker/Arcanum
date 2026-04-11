@@ -70,6 +70,11 @@ pub struct Settings {
     pub hub_api_url: String,
     #[serde(default)]
     pub hub_api_key: String,
+    /// When true, image generation + LLM calls route through the hub
+    /// (using hub_api_url + hub_api_key) instead of direct provider
+    /// APIs. The hub enforces model allowlist and per-user quotas.
+    #[serde(default)]
+    pub use_hub_ai: bool,
 }
 
 fn default_image_model() -> String {
@@ -124,6 +129,7 @@ impl Default for Settings {
             github_pat: String::new(),
             hub_api_url: String::new(),
             hub_api_key: String::new(),
+            use_hub_ai: false,
         }
     }
 }
@@ -180,6 +186,7 @@ pub async fn get_settings(app: AppHandle) -> Result<Settings, String> {
                 github_pat: user.github_pat,
                 hub_api_url: user.hub_api_url,
                 hub_api_key: user.hub_api_key,
+                use_hub_ai: user.use_hub_ai,
                 image_model: ps.image_model,
                 enhance_model: ps.enhance_model,
                 prompt_llm_provider: ps.prompt_llm_provider,
@@ -240,6 +247,7 @@ pub async fn get_merged_settings(
             github_pat: user.github_pat,
             hub_api_url: user.hub_api_url,
             hub_api_key: user.hub_api_key,
+            use_hub_ai: user.use_hub_ai,
             // Everything else from project
             image_model: ps.image_model,
             enhance_model: ps.enhance_model,

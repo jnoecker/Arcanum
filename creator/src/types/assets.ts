@@ -92,6 +92,7 @@ export interface Settings {
   github_pat: string;
   hub_api_url: string;
   hub_api_key: string;
+  use_hub_ai: boolean;
 }
 
 /** Project-level settings stored in <project_dir>/.arcanum/settings.json */

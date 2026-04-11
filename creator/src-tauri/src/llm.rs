@@ -24,6 +24,13 @@ pub async fn complete_from_settings(
     user_prompt: &str,
     max_tokens: u32,
 ) -> Result<String, String> {
+    // Hub mode: route through the central proxy regardless of the
+    // local provider selection. Quota + model allowlist live on the
+    // hub side. Errors bubble up with human-friendly messages.
+    if crate::hub_ai::is_enabled(s) {
+        return crate::hub_ai::complete(s, system_prompt, user_prompt, max_tokens).await;
+    }
+
     let raw = match s.prompt_llm_provider.as_str() {
         "anthropic" => {
             if s.anthropic_api_key.is_empty() {
@@ -125,6 +132,18 @@ pub async fn llm_complete_with_vision(
     image_data_url: String,
 ) -> Result<String, String> {
     let s = settings::get_settings(app).await?;
+
+    // Hub mode: vision routes through the hub's Claude proxy, which
+    // counts against the same prompts_used quota as text completions.
+    if crate::hub_ai::is_enabled(&s) {
+        return crate::hub_ai::complete_with_vision(
+            &s,
+            &system_prompt,
+            &user_prompt,
+            &image_data_url,
+        )
+        .await;
+    }
 
     if s.anthropic_api_key.is_empty() {
         return Err("Anthropic API key required for vision analysis. Set it in Settings.".to_string());

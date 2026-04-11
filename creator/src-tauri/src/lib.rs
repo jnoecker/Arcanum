@@ -13,6 +13,7 @@ mod git;
 mod generation;
 mod http;
 mod hub;
+mod hub_ai;
 mod llm;
 mod openai_images;
 mod openai_tts;

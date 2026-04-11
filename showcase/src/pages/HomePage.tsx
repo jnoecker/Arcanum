@@ -167,7 +167,7 @@ export function HomePage() {
               ref={searchContainerRef}
               className={`${showcaseSurfaceClassNames.note} relative p-5`}
             >
-              <div className="opacity-90 transition-opacity duration-300 focus-within:opacity-100">
+              <div className="relative opacity-90 transition-opacity duration-300 focus-within:opacity-100">
                 <input
                   type="text"
                   value={search}

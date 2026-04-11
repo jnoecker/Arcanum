@@ -95,7 +95,7 @@ fn wants_transparent_bg(asset_type: Option<&str>) -> bool {
     matches!(
         asset_type,
         Some("mob" | "item" | "pet" | "entity_portrait" | "gathering_node"
-            | "player_sprite" | "ability_icon" | "status_effect_icon" | "ability_sprite")
+            | "player_sprite" | "ability_sprite")
     )
 }
 

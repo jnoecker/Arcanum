@@ -226,8 +226,6 @@ export function requestsTransparentBackground(assetType?: AssetType | string | n
     case "entity_portrait":
     case "gathering_node":
     case "player_sprite":
-    case "ability_icon":
-    case "status_effect_icon":
     case "ability_sprite":
       return true;
     default:

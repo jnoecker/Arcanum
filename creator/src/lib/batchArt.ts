@@ -9,6 +9,7 @@ import {
 import {
   getNegativePrompt,
   getEnhanceSystemPrompt,
+  getStyleSuffix,
   type ArtStyle,
 } from "@/lib/arcanumPrompts";
 import type { GeneratedImage } from "@/types/assets";
@@ -178,6 +179,10 @@ export async function runBatchArtGeneration(
     targets.findIndex((tt) => tt.kind === t.kind && tt.id === t.id),
   );
 
+  const model = resolveImageModel(imageProvider, configuredModel);
+  const nativeTransparency = modelNativelyTransparent(imageProvider, model?.id);
+  const styleSuffix = getStyleSuffix("worldbuilding");
+
   const worker = async () => {
     while (queue.length > 0 && !abortRef.current) {
       const idx = queue.shift();
@@ -190,10 +195,11 @@ export async function runBatchArtGeneration(
       try {
         const basePrompt = getTargetPrompt(target, worldRef.current, artStyle);
         const context = getTargetContext(target, worldRef.current);
+        const batchAssetType = assetTypeForKind(target.kind);
 
         let finalPrompt = basePrompt;
         try {
-          const systemPrompt = getEnhanceSystemPrompt(artStyle, undefined, "worldbuilding");
+          const systemPrompt = getEnhanceSystemPrompt(artStyle, batchAssetType, "worldbuilding", nativeTransparency);
           let userPrompt: string;
           if (context) {
             const parts = [
@@ -218,13 +224,16 @@ export async function runBatchArtGeneration(
           // Fall back to base prompt
         }
 
+        // Append style suffix to ensure consistent aesthetic (matches individual path)
+        if (!finalPrompt.includes(styleSuffix.slice(0, 40))) {
+          finalPrompt = `${finalPrompt}\n\n${styleSuffix}`;
+        }
+
         const dims = ENTITY_DIMENSIONS[target.kind] ?? {
           width: 1024,
           height: 1024,
         };
         const command = imageGenerateCommand(imageProvider);
-        const model = resolveImageModel(imageProvider, configuredModel);
-        const batchAssetType = assetTypeForKind(target.kind);
 
         const image = await invoke<GeneratedImage>(command, {
           prompt: finalPrompt,
@@ -259,7 +268,7 @@ export async function runBatchArtGeneration(
           .catch(() => {});
 
         // Queue background removal — skip if the model already produced native transparency
-        const skipBgRemoval = modelNativelyTransparent(imageProvider, model?.id) && requestsTransparentBackground(batchAssetType);
+        const skipBgRemoval = nativeTransparency && requestsTransparentBackground(batchAssetType);
         if (autoRemoveBg && shouldRemoveBg(batchAssetType) && image.data_url && !skipBgRemoval) {
           pendingBgRemovals.push({
             promise: removeBgAndSave(image.data_url, batchAssetType, batchContext, variantGroup),

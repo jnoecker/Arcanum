@@ -84,11 +84,11 @@ export const STYLE_SUFFIX = GENERIC_STYLE_FALLBACK;
 /** Format specification per entity type for image generation */
 export const FORMAT_BY_TYPE: Record<string, string> = {
   room: "16:9 landscape background illustration, wide establishing shot, no characters in foreground",
-  mob: "1:1 square character portrait centered in frame, full body visible, solid pale lavender (#d8d0e8) background",
-  item: "1:1 square item icon centered in frame, floating on solid pale lavender (#d8d0e8) background, no hands or characters",
-  gathering_node: "1:1 square interactable resource node sprite, 3/4 isometric perspective view of an in-world harvest point grounded on the floor, full silhouette visible, solid pale lavender (#d8d0e8) background, no hands, no characters, no UI",
-  ability_icon: "1:1 square ability icon centered in frame, symbolic/iconic representation, solid pale lavender (#d8d0e8) background",
-  status_effect_icon: "1:1 square status effect icon centered in frame, symbolic/iconic representation, solid pale lavender (#d8d0e8) background",
+  mob: "1:1 square character portrait centered in frame, full body visible, clean simple background",
+  item: "1:1 square item icon centered in frame, floating on a clean simple background, no hands or characters",
+  gathering_node: "1:1 square interactable resource node sprite, 3/4 isometric perspective view of an in-world harvest point grounded on the floor, full silhouette visible, clean simple background, no hands, no characters, no UI",
+  ability_icon: "1:1 square ability icon centered in frame, symbolic/iconic representation",
+  status_effect_icon: "1:1 square status effect icon centered in frame, symbolic/iconic representation",
   race_portrait: "2:3 portrait orientation character portrait, close-up to mid-shot framing, richly detailed painterly environment background",
   class_portrait: "2:3 portrait orientation action portrait, mid-shot framing, dynamic or atmospheric pose, richly detailed painterly environment background",
 };
@@ -174,12 +174,19 @@ export const SPRITE_SAFETY_DIRECTIVE = `HARD CONSTRAINTS FOR ISOLATED SPRITE SUB
 
 5. CONNECTED FIGURE: the subject is a single connected silhouette. No detached floating parts, no dispersing sparkle clouds that blend into the background, no parts of the body rendered as energy trails or particle effects.`;
 
-/** Append sprite safety directive to a prompt when the asset type will be
- *  run through background removal. Safe to call with any asset type — it's
- *  a no-op for non-sprite types. */
-export function withSpriteSafety(prompt: string, assetType: string): string {
+/** Light framing guidance for models that generate native transparency.
+ *  No lavender background or opacity rules — just keep the figure in frame. */
+export const SPRITE_FRAMING_DIRECTIVE = `FRAMING RULES FOR ISOLATED SPRITE:
+- The subject's entire figure — including all appendages (wings, tails, horns, weapons, cloaks) — must be fully contained within the image with padding on all sides. Do not crop any part.
+- If the creature has paired features (two wings, two horns), both must be visible.
+- The subject should be a single connected figure. No detached floating parts or particle trails that break the silhouette.`;
+
+/** Append sprite constraints to a prompt. Uses full lavender-bg rules for
+ *  BG-removal models, light framing for native-transparency models. */
+export function withSpriteSafety(prompt: string, assetType: string, nativeTransparency?: boolean): string {
   if (!needsBgRemovalSafety(assetType)) return prompt;
-  return `${prompt}\n\n${SPRITE_SAFETY_DIRECTIVE}`;
+  const directive = nativeTransparency ? SPRITE_FRAMING_DIRECTIVE : SPRITE_SAFETY_DIRECTIVE;
+  return `${prompt}\n\n${directive}`;
 }
 
 /**
@@ -577,9 +584,7 @@ EFFECT COLOR MODIFIERS:
 - Buffs: ascending arrows, radiant auras, empowering glows
 - Debuffs: descending spirals, dark mists, weakening auras`;
 
-/** Hard-constraint block injected into the enhance system prompt for
- *  asset types that will be run through background removal. Tells the
- *  LLM that sprite safety rules override any stylistic conflict. */
+/** Full sprite safety block for BG-removal models (FLUX etc.) */
 const SPRITE_SAFETY_ENHANCER_BLOCK = `
 
 SPRITE SAFETY RULES (this asset will be algorithmically matted out of its background — these rules are non-negotiable and OVERRIDE any conflicting style guidance):
@@ -590,11 +595,23 @@ SPRITE SAFETY RULES (this asset will be algorithmically matted out of its backgr
 - The subject must be a single connected silhouette. No detached floating parts, no energy trails, no sparkle clouds that blend into the background.
 - If the original prompt describes a decorative cosmic/baroque/scrollwork background, REPLACE it with the plain lavender field. Do not soften these rules with "preferably" or "mostly" — state them as hard requirements.`;
 
-/** Get the system prompt for prompt enhancement — defers to world visual style when defined */
-export function getEnhanceSystemPrompt(style: ArtStyle, assetType?: string, surface?: ArtStyleSurface): string {
+/** Light framing block for native-transparency models (GPT Image, OpenAI) */
+const SPRITE_FRAMING_ENHANCER_BLOCK = `
+
+SPRITE FRAMING (this asset will be rendered on a transparent background):
+- The full figure including all appendages (wings, tails, horns, weapons, cloaks) must fit within the frame with padding on all sides. Never crop any part of the subject.
+- If the creature has paired features (two wings, two horns), both must be fully visible.
+- The subject should be a single connected figure with a clear silhouette.
+- Do NOT describe a specific background — the model will generate transparency automatically.`;
+
+/** Get the system prompt for prompt enhancement — defers to world visual style when defined.
+ *  Pass `nativeTransparency` to use lighter framing rules instead of full BG-removal safety. */
+export function getEnhanceSystemPrompt(style: ArtStyle, assetType?: string, surface?: ArtStyleSurface, nativeTransparency?: boolean): string {
   const visualStyle = buildVisualStyleDirective(surface);
   const tone = buildToneDirective();
-  const spriteSafety = assetType && needsBgRemovalSafety(assetType) ? SPRITE_SAFETY_ENHANCER_BLOCK : "";
+  const spriteSafety = assetType && needsBgRemovalSafety(assetType)
+    ? (nativeTransparency ? SPRITE_FRAMING_ENHANCER_BLOCK : SPRITE_SAFETY_ENHANCER_BLOCK)
+    : "";
 
   // If the world defines a visual style, use a generic enhancer that defers to it
   if (visualStyle || tone) {

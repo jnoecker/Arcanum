@@ -86,7 +86,7 @@ pub fn infer_behavior(
     };
 
     let transparent_background = transparent_background.unwrap_or_else(|| {
-        matches!(asset_type, "player_sprite" | "ability_icon" | "status_effect_icon" | "ability_sprite")
+        matches!(asset_type, "player_sprite" | "ability_sprite")
     });
 
     ImageBehavior {
@@ -96,39 +96,6 @@ pub fn infer_behavior(
         transparent_background,
     }
 }
-
-/// Asset types that will have their background removed after generation.
-/// Keep in sync with `BG_REMOVAL_ASSET_TYPES` in `src/lib/arcanumPrompts.ts`.
-const BG_REMOVAL_ASSET_TYPES: &[&str] = &[
-    "mob",
-    "item",
-    "pet",
-    "entity_portrait",
-    "ability_sprite",
-    "player_sprite",
-    "race_portrait",
-    "class_portrait",
-];
-
-fn needs_sprite_safety(asset_type: Option<&str>) -> bool {
-    match asset_type {
-        Some(t) => BG_REMOVAL_ASSET_TYPES.contains(&t),
-        None => false,
-    }
-}
-
-/// Hard-constraint block appended to the enhance system prompt for assets
-/// that will be matted out of their background. Mirrors
-/// `SPRITE_SAFETY_ENHANCER_BLOCK` in `src/lib/arcanumPrompts.ts`.
-const SPRITE_SAFETY_ENHANCER_BLOCK: &str = r#"
-
-SPRITE SAFETY RULES (this asset will be algorithmically matted out of its background — non-negotiable, OVERRIDES any conflicting style guidance):
-- The background MUST be described as a flat uniform pale lavender (#d8d0e8) field, empty and featureless. Strip out any decorative frames, scrollwork, nebula, mist, motes, particles, ground planes, or sticker-sheet patterns the source prompt may describe.
-- Wings, tails, fins, membranes, cloaks, and all appendages must be described as FULLY OPAQUE solid shapes with clear outlines. Never translucent, gauzy, semi-transparent, dissolving into light, or trailing particles.
-- The full figure including every wing, horn, limb, and accessory must fit within the frame with clear padding on all sides. Never crop.
-- If the creature has paired features (two wings, two horns, two ears), explicitly state that BOTH are fully visible and anatomically attached.
-- The subject must be a single connected silhouette. No detached floating parts, no energy trails, no sparkle clouds that blend into the background.
-- If the original prompt describes a decorative cosmic/baroque/scrollwork background, REPLACE it with the plain lavender field."#;
 
 pub async fn maybe_enhance_prompt(
     app: &AppHandle,
@@ -142,19 +109,13 @@ pub async fn maybe_enhance_prompt(
         return Ok(prompt.to_string());
     }
 
-    let base_system_prompt = r#"You refine prompts for fantasy game asset generation.
+    let system_prompt = r#"You refine prompts for fantasy game asset generation.
 
 Preserve the original subject, composition, style system, hard constraints, and safety boundaries.
 Improve specificity around material, lighting, silhouette, atmosphere, and visual readability.
 Do not add readable text. Do not add extra subjects unless the prompt already implies them.
 If the prompt already contains a named style or rendering suffix, preserve it.
 Output only the revised prompt text."#;
-
-    let system_prompt = if needs_sprite_safety(asset_type) {
-        format!("{base_system_prompt}{SPRITE_SAFETY_ENHANCER_BLOCK}")
-    } else {
-        base_system_prompt.to_string()
-    };
 
     let user_prompt = match asset_type {
         Some(asset_type) if !asset_type.is_empty() => format!(
@@ -163,7 +124,7 @@ Output only the revised prompt text."#;
         _ => format!("Refine this image prompt without changing its intent:\n{prompt}"),
     };
 
-    match llm::complete_from_settings(&cfg, &system_prompt, &user_prompt, 700).await {
+    match llm::complete_from_settings(&cfg, system_prompt, &user_prompt, 700).await {
         Ok(enhanced) if !enhanced.trim().is_empty() => Ok(enhanced),
         Ok(_) => Ok(prompt.to_string()),
         Err(_) => Ok(prompt.to_string()),

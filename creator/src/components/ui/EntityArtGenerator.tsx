@@ -6,7 +6,7 @@ import { useProjectStore } from "@/stores/projectStore";
 import { useImageSrc, isLegacyImagePath } from "@/lib/useImageSrc";
 import { getEnhanceSystemPrompt, ART_STYLE_LABELS, getNegativePrompt, getStyleSuffix, type ArtStyle } from "@/lib/arcanumPrompts";
 import type { ArtStyleSurface } from "@/lib/loreGeneration";
-import { IMAGE_MODELS, ENTITY_DIMENSIONS, DIMENSION_PRESETS, imageGenerateCommand, resolveImageModel, requestsTransparentBackground } from "@/types/assets";
+import { IMAGE_MODELS, ENTITY_DIMENSIONS, DIMENSION_PRESETS, imageGenerateCommand, resolveImageModel, requestsTransparentBackground, modelNativelyTransparent } from "@/types/assets";
 import type { AssetContext, GeneratedImage } from "@/types/assets";
 import { VariantStrip } from "./VariantStrip";
 import { AssetPickerModal } from "./AssetPickerModal";
@@ -172,9 +172,11 @@ export function EntityArtGenerator({
     })();
   }, [currentImage, mudDir, assetType, context, importAsset, variantGroup]);
 
+  const nativeTransparency = modelNativelyTransparent(imageProvider, resolveImageModel(imageProvider, settings?.image_model)?.id);
+
   /** Enhance a prompt via LLM, injecting entity context, style guide, and zone vibe. */
   const enhancePrompt = async (prompt: string): Promise<string> => {
-    const systemPrompt = getEnhanceSystemPrompt(artStyle, assetType, surface);
+    const systemPrompt = getEnhanceSystemPrompt(artStyle, assetType, surface, nativeTransparency);
     const parts: string[] = [];
 
     // When we have rich entity context, lead with that so the LLM

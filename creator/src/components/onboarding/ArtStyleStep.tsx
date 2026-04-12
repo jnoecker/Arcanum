@@ -14,8 +14,7 @@ interface StyleOption {
   description: string;
   provider: "runware" | "openai";
   model: string;
-  previewBackground: string;
-  previewHint: string;
+  previewImage: string;
 }
 
 const STYLE_OPTIONS: StyleOption[] = [
@@ -27,9 +26,7 @@ const STYLE_OPTIONS: StyleOption[] = [
       "Painterly, illustrated, a little cinematic. Leans into high-contrast lighting and moody atmosphere — the look of a hand-painted fantasy cover.",
     provider: "runware",
     model: "runware:400@2",
-    previewBackground:
-      "linear-gradient(140deg, #2a1840 0%, #6d3a8a 45%, #c58a4a 100%)",
-    previewHint: "Moody, painterly, hand-illustrated",
+    previewImage: "/onboarding/flux-sample.jpg",
   },
   {
     id: "gpt",
@@ -39,9 +36,7 @@ const STYLE_OPTIONS: StyleOption[] = [
       "Soft edges, gentle palettes, a storybook warmth. Reads more like animation concept art — approachable, friendly, and lightly whimsical.",
     provider: "openai",
     model: "openai:4@1",
-    previewBackground:
-      "linear-gradient(140deg, #f6d6c0 0%, #e3a0c5 40%, #8b7ac0 100%)",
-    previewHint: "Soft, warm, storybook",
+    previewImage: "/onboarding/gpt-sample.jpg",
   },
 ];
 
@@ -90,17 +85,12 @@ export function ArtStyleStep({ onDone }: ArtStyleStepProps) {
               disabled={pending !== null}
               className="group flex flex-col overflow-hidden rounded-3xl border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] text-left transition hover:border-[var(--border-accent-ring)] hover:shadow-[0_16px_40px_rgb(var(--accent-rgb)/0.16)] disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {/* Preview: hand-committed sample images go in creator/public/onboarding/.
-                  Until those exist we render a representative gradient so the flow still reads. */}
-              <div
-                className="relative flex h-48 items-end p-4"
-                style={{ background: option.previewBackground }}
-              >
-                <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,rgb(255_255_255/0.12),transparent_60%)]" />
-                <div className="relative z-10">
-                  <div className="text-2xs uppercase tracking-ui text-white/70">Sample</div>
-                  <div className="mt-1 font-display text-sm text-white/90">{option.previewHint}</div>
-                </div>
+              <div className="relative h-48 overflow-hidden">
+                <img
+                  src={option.previewImage}
+                  alt={`${option.label} style sample`}
+                  className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                />
                 {isPending && (
                   <div className="absolute inset-0 flex items-center justify-center bg-black/40">
                     <div className="h-6 w-6 rounded-full border-2 border-white/70 border-t-transparent animate-spin" />

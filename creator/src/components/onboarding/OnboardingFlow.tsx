@@ -1,20 +1,30 @@
 import { useState } from "react";
 import { useFocusTrap } from "@/lib/useFocusTrap";
-import type { OnboardingZoneTemplate } from "@/lib/onboardingZoneTemplates";
 import { HubKeyStep } from "./HubKeyStep";
-import { ArtStyleStep, type OnboardingImageStyle } from "./ArtStyleStep";
-import { ZoneTemplateStep } from "./ZoneTemplateStep";
+import { ArtStyleStep } from "./ArtStyleStep";
+import { FlavorStep } from "./FlavorStep";
 import { GeneratingStep } from "./GeneratingStep";
+import type { OnboardingFlavor } from "@/lib/baseTemplate/flavors";
+import { startReSkin } from "@/lib/baseTemplate/reSkinPipeline";
+import type { ReSkinProgress, ReSkinResults } from "@/lib/baseTemplate/reSkinPipeline";
 
-export type OnboardingStep = "hubKey" | "artStyle" | "zoneTemplate" | "generating";
+export type OnboardingStep = "hubKey" | "flavor" | "artStyle" | "generating";
 
-const STEP_ORDER: OnboardingStep[] = ["hubKey", "artStyle", "zoneTemplate", "generating"];
+const STEP_ORDER: OnboardingStep[] = ["hubKey", "flavor", "artStyle", "generating"];
 
 const STEP_LABELS: Record<OnboardingStep, string> = {
   hubKey: "Connect to Arcanum Hub",
+  flavor: "Choose your world's theme",
   artStyle: "Pick your image style",
-  zoneTemplate: "Choose a first world",
   generating: "Forging your world",
+};
+
+const INITIAL_RESKIN_PROGRESS: ReSkinProgress = {
+  classesAndAbilities: "pending",
+  races: "pending",
+  rooms: "pending",
+  entities: "pending",
+  artStyle: "pending",
 };
 
 interface OnboardingFlowProps {
@@ -24,19 +34,21 @@ interface OnboardingFlowProps {
 export function OnboardingFlow({ onClose }: OnboardingFlowProps) {
   const trapRef = useFocusTrap<HTMLDivElement>(onClose);
   const [step, setStep] = useState<OnboardingStep>("hubKey");
-  const [imageStyle, setImageStyle] = useState<OnboardingImageStyle | null>(null);
-  const [template, setTemplate] = useState<OnboardingZoneTemplate | null>(null);
+  const [reSkinPromise, setReSkinPromise] = useState<Promise<ReSkinResults> | null>(null);
+  const [reSkinProgress, setReSkinProgress] = useState<ReSkinProgress>(INITIAL_RESKIN_PROGRESS);
 
   const stepIndex = STEP_ORDER.indexOf(step);
   const canCloseFromCurrentStep = step !== "generating";
 
-  const handleHubKeyDone = () => setStep("artStyle");
-  const handleArtStyleDone = (style: OnboardingImageStyle) => {
-    setImageStyle(style);
-    setStep("zoneTemplate");
+  const handleHubKeyDone = () => setStep("flavor");
+
+  const handleFlavorDone = (flavor: OnboardingFlavor) => {
+    const promise = startReSkin(flavor.seedPrompt, setReSkinProgress);
+    setReSkinPromise(promise);
+    setStep("artStyle");
   };
-  const handleTemplateDone = (picked: OnboardingZoneTemplate) => {
-    setTemplate(picked);
+
+  const handleArtStyleDone = () => {
     setStep("generating");
   };
 
@@ -85,12 +97,14 @@ export function OnboardingFlow({ onClose }: OnboardingFlowProps) {
 
         <div className="dialog-body">
           {step === "hubKey" && <HubKeyStep onDone={handleHubKeyDone} />}
+          {step === "flavor" && (
+            <FlavorStep onDone={handleFlavorDone} onBack={() => setStep("hubKey")} />
+          )}
           {step === "artStyle" && <ArtStyleStep onDone={handleArtStyleDone} />}
-          {step === "zoneTemplate" && <ZoneTemplateStep onDone={handleTemplateDone} />}
-          {step === "generating" && imageStyle && template && (
+          {step === "generating" && reSkinPromise && (
             <GeneratingStep
-              imageStyle={imageStyle}
-              template={template}
+              reSkinPromise={reSkinPromise}
+              reSkinProgress={reSkinProgress}
               onFinished={onClose}
             />
           )}

@@ -8,30 +8,23 @@ import { useAssetStore } from "@/stores/assetStore";
 import { useConfigStore } from "@/stores/configStore";
 import { useProjectStore } from "@/stores/projectStore";
 import { useZoneStore } from "@/stores/zoneStore";
-import { useVibeStore } from "@/stores/vibeStore";
-import { applyTemplate, TEMPLATES } from "@/lib/templates";
+import { applyTemplate } from "@/lib/templates";
 import { saveProjectConfig } from "@/lib/saveConfig";
 import { zoneFilePath } from "@/lib/projectPaths";
-import { addRecentProject, saveArtSubTab } from "@/lib/uiPersistence";
-import {
-  generateZoneContent,
-  createFallbackZone,
-  type ZoneGenerationParams,
-} from "@/lib/generateZoneContent";
-import { roomPrompt, mobPrompt, itemPrompt } from "@/lib/entityPrompts";
-import { getNegativePrompt } from "@/lib/arcanumPrompts";
-import {
-  imageGenerateCommand,
-  resolveImageModel,
-  requestsTransparentBackground,
-  type GeneratedImage,
-} from "@/types/assets";
+import { addRecentProject } from "@/lib/uiPersistence";
 import { YAML_OPTS } from "@/lib/yamlOpts";
-import type { WorldFile } from "@/types/world";
-import type { OnboardingZoneTemplate } from "@/lib/onboardingZoneTemplates";
-import type { OnboardingImageStyle } from "./ArtStyleStep";
+import { BASE_ACADEMY_ZONE } from "@/lib/baseTemplate/baseZone";
+import {
+  BASE_STATS,
+  BASE_CLASSES,
+  BASE_ABILITIES,
+  BASE_STATUS_EFFECTS,
+  BASE_RACES,
+  BASE_PETS,
+} from "@/lib/baseTemplate/baseConfig";
+import type { ReSkinProgress, ReSkinResults } from "@/lib/baseTemplate/reSkinPipeline";
 
-type Phase = "project" | "zone" | "art" | "opening" | "done";
+type Phase = "creating" | "applying" | "ready";
 
 interface PhaseInfo {
   id: Phase;
@@ -39,21 +32,28 @@ interface PhaseInfo {
 }
 
 const PHASES: PhaseInfo[] = [
-  { id: "project", label: "Creating your project folder" },
-  { id: "zone", label: "Sketching the first zone" },
-  { id: "art", label: "Rendering your first art" },
-  { id: "opening", label: "Opening the workspace" },
+  { id: "creating", label: "Creating your world" },
+  { id: "applying", label: "Applying your theme" },
+  { id: "ready", label: "Ready!" },
+];
+
+interface ReSkinItemInfo {
+  key: keyof ReSkinProgress;
+  label: string;
+}
+
+const RESKIN_ITEMS: ReSkinItemInfo[] = [
+  { key: "classesAndAbilities", label: "Classes & Abilities" },
+  { key: "races", label: "Races" },
+  { key: "rooms", label: "Rooms" },
+  { key: "entities", label: "Entities" },
+  { key: "artStyle", label: "Art Style" },
 ];
 
 interface GeneratingStepProps {
-  imageStyle: OnboardingImageStyle;
-  template: OnboardingZoneTemplate;
+  reSkinPromise: Promise<ReSkinResults>;
+  reSkinProgress: ReSkinProgress;
   onFinished: () => void;
-}
-
-function pickRandom<T>(items: T[]): T | undefined {
-  if (items.length === 0) return undefined;
-  return items[Math.floor(Math.random() * items.length)];
 }
 
 function joinPath(parent: string, child: string): string {
@@ -83,15 +83,21 @@ async function createProjectWithRetry(
   throw new Error("Could not find an unused project name under the default location.");
 }
 
-export function GeneratingStep({ imageStyle, template, onFinished }: GeneratingStepProps) {
+function slugify(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "")
+    || "academy";
+}
+
+export function GeneratingStep({ reSkinPromise, reSkinProgress, onFinished }: GeneratingStepProps) {
   const { openDir } = useOpenProject();
   const settings = useAssetStore((s) => s.settings);
-  const acceptAsset = useAssetStore((s) => s.acceptAsset);
-  const loadAssets = useAssetStore((s) => s.loadAssets);
-  const [activePhase, setActivePhase] = useState<Phase>("project");
+  const [activePhase, setActivePhase] = useState<Phase>("creating");
   const [error, setError] = useState<string | null>(null);
   const [warning, setWarning] = useState<string | null>(null);
-  const [finishedMessage, setFinishedMessage] = useState<string | null>(null);
+  const [academyName, setAcademyName] = useState<string | null>(null);
   const hasStartedRef = useRef(false);
 
   useEffect(() => {
@@ -102,216 +108,178 @@ export function GeneratingStep({ imageStyle, template, onFinished }: GeneratingS
     const run = async () => {
       let localWarning: string | null = null;
       try {
-        // ─── Phase 1: Create project ────────────────────────────
-        setActivePhase("project");
+        // ─── Phase 1: Create project + wait for re-skin ──────────
+        setActivePhase("creating");
         const home = await homeDir();
         const parentDir = joinPath(home, "Arcanum Worlds");
-        const baseName = template.id === "custom" ? "my_world" : template.id;
-        const { mudDir, projectName } = await createProjectWithRetry(parentDir, baseName);
+
+        const [reSkinResults] = await Promise.all([
+          reSkinPromise.catch((e) => {
+            localWarning = `Theme re-skin encountered an issue (${String(e)}). Starting with the default academy template.`;
+            return null as ReSkinResults | null;
+          }),
+          // Start project creation in parallel with re-skin
+          Promise.resolve(),
+        ]);
+
+        const zoneData = reSkinResults?.zone ?? BASE_ACADEMY_ZONE;
+        const resolvedAcademyName = reSkinResults?.academyName ?? "The Academy";
+        setAcademyName(resolvedAcademyName);
+
+        const projectSlug = slugify(resolvedAcademyName);
+        const { mudDir, projectName } = await createProjectWithRetry(parentDir, projectSlug);
 
         const openResult = await openDir(mudDir, "standalone");
         if (!openResult.success) {
           throw new Error(openResult.errors?.join(", ") ?? "Failed to open project");
         }
 
-        // Apply the classic_fantasy config silently — user is picking zone
-        // aesthetic here, not rule system.
-        const classic = TEMPLATES.find((t) => t.id === "classic_fantasy");
+        // ─── Phase 2: Apply re-skinned content ──────────────────
+        setActivePhase("applying");
+
         const baseConfig = useConfigStore.getState().config;
         const project = useProjectStore.getState().project;
-        if (baseConfig && classic && project) {
-          const merged = applyTemplate(baseConfig, classic.configOverrides);
-          useConfigStore.getState().updateConfig(merged);
-          await saveProjectConfig(project);
+        if (!baseConfig || !project) {
+          throw new Error("Project state was lost during onboarding.");
         }
 
-        // ─── Phase 2: Generate the zone ──────────────────────────
-        setActivePhase("zone");
-        const zoneId = template.id === "custom" ? "first_zone" : template.id;
-        const config = useConfigStore.getState().config;
-        const statNames = config?.stats?.definitions
-          ? Object.values(config.stats.definitions).map((s) => s.id)
-          : [];
-        const equipmentSlots = config?.equipmentSlots ? Object.keys(config.equipmentSlots) : [];
-        const classNames = config?.classes
-          ? Object.values(config.classes).map((c) => c.displayName).filter(Boolean)
-          : [];
-
-        const genParams: ZoneGenerationParams = {
-          zoneName: template.name,
-          zoneTheme: template.seedPrompt,
-          backgroundContext: template.backgroundContext || undefined,
-          worldTheme: template.seedPrompt,
-          roomCount: template.roomCount,
-          mobCount: template.mobCount,
-          itemCount: template.itemCount,
-          statNames,
-          equipmentSlots,
-          classNames,
-        };
-
-        let world: WorldFile;
-        try {
-          world = await generateZoneContent(genParams);
-        } catch (e) {
-          localWarning = `Hub couldn't generate a zone (${String(e)}). Starting with an empty stub you can edit.`;
-          world = createFallbackZone(template.name, template.roomCount);
-        }
-
-        // ─── Phase 3: Generate representative art in parallel ───
-        setActivePhase("art");
-        const provider = imageStyle === "flux" ? "runware" : "openai";
-        const modelId = imageStyle === "flux" ? "runware:400@2" : "openai:4@1";
-        const resolvedModel = resolveImageModel(provider, modelId);
-
-        const pickedRoomId = pickRandom(Object.keys(world.rooms));
-        const pickedMobId = pickRandom(Object.keys(world.mobs ?? {}));
-        const pickedItemId = pickRandom(Object.keys(world.items ?? {}));
-
-        interface DefaultJob {
-          kind: "room" | "mob" | "item";
-          prompt: string;
-          assetType: "background" | "mob" | "item";
-          width: number;
-          height: number;
-        }
-        const jobs: DefaultJob[] = [];
-        if (pickedRoomId && world.rooms[pickedRoomId]) {
-          jobs.push({
-            kind: "room",
-            prompt: roomPrompt(pickedRoomId, world.rooms[pickedRoomId], "gentle_magic"),
-            assetType: "background",
-            width: 1920,
-            height: 1080,
-          });
-        }
-        if (pickedMobId && world.mobs?.[pickedMobId]) {
-          jobs.push({
-            kind: "mob",
-            prompt: mobPrompt(pickedMobId, world.mobs[pickedMobId], "gentle_magic"),
-            assetType: "mob",
-            width: 512,
-            height: 512,
-          });
-        }
-        if (pickedItemId && world.items?.[pickedItemId]) {
-          jobs.push({
-            kind: "item",
-            prompt: itemPrompt(pickedItemId, world.items[pickedItemId], "gentle_magic"),
-            assetType: "item",
-            width: 256,
-            height: 256,
-          });
-        }
-
-        const results = resolvedModel
-          ? await Promise.allSettled(
-              jobs.map(async (job) => {
-                const image = await invoke<GeneratedImage>(imageGenerateCommand(provider), {
-                  prompt: job.prompt,
-                  negativePrompt: getNegativePrompt(job.assetType),
-                  model: resolvedModel.id,
-                  width: job.width,
-                  height: job.height,
-                  steps: resolvedModel.defaultSteps ?? 4,
-                  guidance:
-                    "defaultGuidance" in resolvedModel ? resolvedModel.defaultGuidance : null,
-                  assetType: job.assetType,
-                  autoEnhance: false,
-                  transparentBackground:
-                    provider === "openai" && requestsTransparentBackground(job.assetType),
-                });
-                const fileName = image.file_path.split(/[\\/]/).pop() ?? image.hash;
-                await acceptAsset(
-                  image,
-                  job.assetType,
-                  job.prompt,
-                  { zone: zoneId, entity_type: "default", entity_id: job.kind },
-                  `default:${zoneId}:${job.kind}`,
-                  true,
-                );
-                return { kind: job.kind, fileName };
-              }),
-            )
-          : [];
-
-        const imageMap: { room?: string; mob?: string; item?: string } = {};
-        let failedCount = 0;
-        for (const r of results) {
-          if (r.status === "fulfilled") {
-            imageMap[r.value.kind] = r.value.fileName;
-          } else {
-            failedCount++;
-          }
-        }
-        if (failedCount > 0 && !localWarning) {
-          localWarning = `${failedCount} of ${results.length} starter images didn't render. You can retry from the Zone Direction panel.`;
-        }
-        if (localWarning) setWarning(localWarning);
-
-        world = {
-          ...world,
-          image: {
-            ...(world.image ?? {}),
-            ...imageMap,
+        const configOverrides: Record<string, unknown> = {
+          stats: { definitions: BASE_STATS },
+          classes: reSkinResults?.classes ?? BASE_CLASSES,
+          abilities: reSkinResults?.abilities ?? BASE_ABILITIES,
+          statusEffects: reSkinResults?.statusEffects ?? BASE_STATUS_EFFECTS,
+          races: reSkinResults?.races ?? BASE_RACES,
+          pets: reSkinResults?.pets ?? BASE_PETS,
+          equipmentSlots: {
+            head: { displayName: "Head", order: 1 },
+            chest: { displayName: "Chest", order: 2 },
+            legs: { displayName: "Legs", order: 3 },
+            feet: { displayName: "Feet", order: 4 },
+            hands: { displayName: "Hands", order: 5 },
+            main_hand: { displayName: "Main Hand", order: 6 },
+            off_hand: { displayName: "Off Hand", order: 7 },
+            ring: { displayName: "Ring", order: 8 },
+            neck: { displayName: "Neck", order: 9 },
           },
         };
 
-        // ─── Phase 4: Write zone to disk + open workspace ───────
-        setActivePhase("opening");
-        const project2 = useProjectStore.getState().project;
-        if (!project2) throw new Error("Project state was lost during onboarding.");
+        const merged = applyTemplate(baseConfig, configOverrides);
+        useConfigStore.getState().updateConfig(merged);
+        await saveProjectConfig(project);
 
+        const zoneId = slugify(resolvedAcademyName);
+        const zoneToWrite = { ...zoneData, zone: zoneId };
         await invoke("create_zone_directory", {
-          projectDir: project2.mudDir,
+          projectDir: project.mudDir,
           zoneId,
         });
-        const filePath = zoneFilePath(project2, zoneId);
-        const yaml = stringify(world, YAML_OPTS);
+        const filePath = zoneFilePath(project, zoneId);
+        const yaml = stringify(zoneToWrite, YAML_OPTS);
         await writeTextFile(filePath, yaml);
-        useZoneStore.getState().loadZone(zoneId, filePath, world);
+        useZoneStore.getState().loadZone(zoneId, filePath, zoneToWrite);
 
-        if (template.vibeText) {
-          await useVibeStore.getState().saveVibe(zoneId, template.vibeText).catch(() => {});
+        if (reSkinResults?.artStyle) {
+          try {
+            const projectDir = project.mudDir;
+            const projectSettings = useAssetStore.getState().projectSettings;
+            if (projectSettings && projectDir) {
+              await useAssetStore.getState().saveProjectSettings(projectDir, {
+                ...projectSettings,
+              });
+            }
+          } catch {
+            // Non-critical — art style can be set later
+          }
         }
 
-        await loadAssets();
-        addRecentProject(project2.mudDir, projectName);
-        saveArtSubTab("direction");
+        addRecentProject(project.mudDir, projectName);
         useProjectStore.getState().openTab({
-          id: "panel:art",
-          kind: "panel",
-          panelId: "art",
-          label: "Art",
+          id: `zone:${zoneId}`,
+          kind: "zone",
+          label: zoneId,
         });
 
-        setActivePhase("done");
-        setFinishedMessage(`"${template.name}" is ready to shape.`);
-        setTimeout(() => {
-          onFinished();
-        }, 600);
+        if (localWarning) setWarning(localWarning);
+        setActivePhase("ready");
       } catch (e) {
         setError(e instanceof Error ? e.message : String(e));
       }
     };
 
     void run();
-  }, [settings, template, imageStyle, acceptAsset, loadAssets, openDir, onFinished]);
+  }, [settings, reSkinPromise, openDir, onFinished]);
 
   const activeIndex = PHASES.findIndex((p) => p.id === activePhase);
+
+  if (activePhase === "ready" && !error) {
+    return (
+      <div className="flex flex-col gap-6">
+        <div className="flex flex-col items-center gap-4 py-4">
+          <div className="flex h-16 w-16 items-center justify-center rounded-full border border-status-success/40 bg-status-success/10">
+            <span className="text-2xl text-status-success">&#10003;</span>
+          </div>
+          <div className="text-center">
+            <h3 className="font-display text-2xl text-text-primary">
+              {academyName ? `"${academyName}" is ready` : "Your world is ready"}
+            </h3>
+            <p className="mt-2 text-sm text-text-secondary">
+              Your academy is set up and waiting to be explored.
+            </p>
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] p-5">
+          <div className="mb-3 text-2xs uppercase tracking-ui text-text-muted">
+            What you can do next
+          </div>
+          <ul className="flex flex-col gap-3">
+            <li className="flex items-start gap-3 text-sm text-text-secondary">
+              <span className="mt-0.5 shrink-0 text-accent">&#9670;</span>
+              <span>Explore the academy to learn the MUD features</span>
+            </li>
+            <li className="flex items-start gap-3 text-sm text-text-secondary">
+              <span className="mt-0.5 shrink-0 text-accent">&#9670;</span>
+              <span>Open the Art panel to generate visuals for your world</span>
+            </li>
+            <li className="flex items-start gap-3 text-sm text-text-secondary">
+              <span className="mt-0.5 shrink-0 text-accent">&#9670;</span>
+              <span>Customize classes, races, and abilities in the Config panel</span>
+            </li>
+            <li className="flex items-start gap-3 text-sm text-text-secondary">
+              <span className="mt-0.5 shrink-0 text-accent">&#9670;</span>
+              <span>Build new zones with the Zone Builder</span>
+            </li>
+          </ul>
+        </div>
+
+        {warning && (
+          <div className="rounded-2xl border border-status-warning/40 bg-status-warning/5 px-5 py-3 text-xs leading-6 text-text-secondary">
+            {warning}
+          </div>
+        )}
+
+        <button
+          onClick={onFinished}
+          className="w-full rounded-2xl border border-[var(--border-accent-ring)] bg-[linear-gradient(135deg,rgb(var(--accent-rgb)/0.3),rgb(var(--surface-rgb)/0.18))] px-6 py-4 font-display text-lg text-text-primary transition hover:shadow-[0_14px_34px_rgb(var(--accent-rgb)/0.2)]"
+        >
+          Enter Your World
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-3">
         <p className="text-sm leading-7 text-text-secondary">
-          Hold tight while the hub forges "{template.name}". This takes about a minute — zone layout
-          first, then three representative pieces of art.
+          Applying your chosen theme to the academy template. This usually takes just a few seconds.
         </p>
       </div>
 
+      {/* Phase progress */}
       <ol className="flex flex-col gap-3">
         {PHASES.map((phase, i) => {
-          const isDone = activeIndex > i || activePhase === "done";
+          const isDone = activeIndex > i;
           const isActive = activePhase === phase.id;
           return (
             <li
@@ -320,7 +288,7 @@ export function GeneratingStep({ imageStyle, template, onFinished }: GeneratingS
             >
               <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[var(--chrome-stroke-strong)] bg-bg-secondary">
                 {isDone ? (
-                  <span className="text-xs text-status-success">✓</span>
+                  <span className="text-xs text-status-success">&#10003;</span>
                 ) : isActive ? (
                   <div className="h-4 w-4 rounded-full border-2 border-accent border-t-transparent animate-spin" />
                 ) : (
@@ -341,6 +309,42 @@ export function GeneratingStep({ imageStyle, template, onFinished }: GeneratingS
         })}
       </ol>
 
+      {/* Re-skin progress detail */}
+      <div className="rounded-2xl border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] px-5 py-4">
+        <div className="mb-3 text-2xs uppercase tracking-ui text-text-muted">
+          Theme re-skin progress
+        </div>
+        <div className="flex flex-col gap-2">
+          {RESKIN_ITEMS.map((item) => {
+            const status = reSkinProgress[item.key];
+            return (
+              <div key={item.key} className="flex items-center gap-3">
+                <div className="flex h-5 w-5 shrink-0 items-center justify-center">
+                  {status === "done" ? (
+                    <span className="text-xs text-status-success">&#10003;</span>
+                  ) : status === "failed" ? (
+                    <span className="text-xs text-status-error">&#10007;</span>
+                  ) : (
+                    <div className="h-3.5 w-3.5 rounded-full border-2 border-accent border-t-transparent animate-spin" />
+                  )}
+                </div>
+                <span
+                  className={`text-xs ${
+                    status === "done"
+                      ? "text-text-secondary"
+                      : status === "failed"
+                        ? "text-status-error"
+                        : "text-text-primary"
+                  }`}
+                >
+                  {item.label}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
       {warning && (
         <div className="rounded-2xl border border-status-warning/40 bg-status-warning/5 px-5 py-3 text-xs leading-6 text-text-secondary">
           {warning}
@@ -351,12 +355,6 @@ export function GeneratingStep({ imageStyle, template, onFinished }: GeneratingS
         <div className="rounded-2xl border border-status-error/40 bg-status-error/5 px-5 py-3">
           <div className="text-2xs uppercase tracking-ui text-status-error">Something went wrong</div>
           <p className="mt-1 text-xs leading-6 text-text-secondary">{error}</p>
-        </div>
-      )}
-
-      {finishedMessage && (
-        <div className="rounded-2xl border border-status-success/40 bg-status-success/5 px-5 py-3 text-xs leading-6 text-text-secondary">
-          {finishedMessage}
         </div>
       )}
     </div>

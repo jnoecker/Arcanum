@@ -1,0 +1,1138 @@
+import type { WorldFile } from "@/types/world";
+
+export const BASE_ACADEMY_ZONE: WorldFile = {
+  zone: "academy",
+  startRoom: "academy_gates",
+  terrain: "inside",
+  graphical: true,
+  rooms: {
+    academy_gates: {
+      title: "The Academy Gates",
+      description:
+        "You stand before a towering iron portcullis set into walls of ancient grey stone, flanked by weathered statues of forgotten scholars. Torch sconces flicker with steady amber flame, casting long shadows across the flagstone path. Above the gate, carved letters spell out THE ACADEMY in deep relief, and ivy creeps along the mortar lines as though the building itself has stood for centuries beyond counting.\n\n" +
+        'A bronze orientation plaque is mounted beside the gate. It reads: "Welcome, new student! Your vitals bar at the bottom of the screen shows your health, mana, and gold. The icons along the sidebar open panels for your inventory, quests, spellbook, and more. Click on characters and objects to interact with them! Open the chest nearby to claim your welcome gift."\n\n' +
+        "The Grand Hall lies to the south.",
+      exits: {
+        s: "grand_hall",
+      },
+      features: {
+        welcome_chest: {
+          type: "CONTAINER",
+          displayName: "a weathered oak chest",
+          keyword: "chest",
+          initialState: "closed",
+          items: ["leather_hood", "healing_potion"],
+        },
+      },
+    },
+    grand_hall: {
+      title: "The Grand Hall",
+      description:
+        "A vast rotunda of pale stone rises around you, its vaulted ceiling lost in shadow above. Massive pillars carved with arcane runes line the perimeter, and an iron chandelier the size of a wagon wheel hangs from thick chains, its dozens of candles filling the hall with warm, unsteady light. Faded banners bearing the Academy's crest — a tower wreathed in flame — hang between the columns, stirring in drafts from unseen passages.\n\n" +
+        'A parchment map pinned to one of the pillars reads: "Navigate using the compass rose or by clicking exits in the room description. Use the chat bar to talk with other students — try Say for the room, Gossip for the academy, or OOC for out-of-character chat. Click the emote button to express yourself! The Who panel shows other students online, and the Friends panel lets you keep track of companions."\n\n' +
+        "Paths lead east to the Scholar's Study, west to the Common Room, and south to the Armory. A winding staircase climbs upward to the Catacombs. The Academy Gates are back to the north. A corridor leads northeast to the Stylist's Parlor.",
+      exits: {
+        n: "academy_gates",
+        e: "scholars_study",
+        w: "common_room",
+        s: "armory",
+        u: "catacombs",
+        ne: "stylist_parlor",
+      },
+    },
+    scholars_study: {
+      title: "The Scholar's Study",
+      description:
+        "A circular chamber lined floor to ceiling with overstuffed bookshelves, their contents ranging from crumbling grimoires to neatly bound treatises on the arcane arts. A heavy oak desk dominates the center of the room, covered in star charts, ink-stained quills, and a brass astrolabe that turns slowly of its own accord. The air carries the scent of old parchment and candle wax.\n\n" +
+        'A student\'s guide pinned to the door reads: "Click on Scholar Elara to start a conversation. Dialogue choices appear at the bottom — explore all the options to learn the most! Some NPCs offer quests, some offer lore, and some just have something interesting to say."\n\n' +
+        "The Grand Hall is to the west, and the Training Yard lies to the south.",
+      exits: {
+        w: "grand_hall",
+        s: "training_yard",
+      },
+    },
+    common_room: {
+      title: "The Common Room",
+      description:
+        "A broad, low-ceilinged hall warmed by a roaring stone hearth at its center. Long wooden tables are scattered with half-finished games of cards and dice, tankards of ale, and platters of bread and cheese. The walls are hung with trophies — mounted antlers, rusted swords, and framed certificates of past graduates. A polished bar counter runs along the far wall, tended by a stout barkeep who polishes mugs with practiced ease.\n\n" +
+        'A carved wooden sign behind the bar reads: "Welcome to the Common Room! This is the academy\'s tavern — check the Lottery panel in your sidebar for daily drawings and use the gambling features to try your luck! The Leaderboard panel shows how you rank against other students across various categories."\n\n' +
+        "The Grand Hall is to the east, and the Treasury is to the south.",
+      tavern: true,
+      exits: {
+        e: "grand_hall",
+        s: "treasury",
+      },
+    },
+    treasury: {
+      title: "The Treasury",
+      description:
+        "A squat, heavily fortified chamber behind a door of banded iron. Stone strongboxes line the walls, each bearing a different seal, and a massive vault door of dwarven steel dominates the back wall, its surface etched with protective wards that glow faintly in the torchlight. A clerk sits behind a reinforced counter, a ledger open before him and a set of brass scales at his elbow.\n\n" +
+        'A brass plaque on the counter reads: "The Treasury safely stores your gold and valuables! Open the Bank panel in your sidebar to deposit gold for safekeeping or withdraw it when you need to make purchases. Your savings earn interest at the Academy — even while you are away!"\n\n' +
+        "The Common Room is back to the north.",
+      bank: true,
+      exits: {
+        n: "common_room",
+      },
+    },
+    armory: {
+      title: "The Armory",
+      description:
+        "A long stone hall lined with weapon racks and armor stands, each piece gleaming with careful maintenance. Swords, axes, maces, and bows hang in neat rows along the walls. Suits of chainmail and leather armor stand at attention on wooden mannequins. A broad counter of scarred oak separates the browsing area from the stockroom beyond, where crates of supplies are stacked to the ceiling.\n\n" +
+        'A posted notice on the wall reads: "Click on Quartermaster Bren to browse the shop catalog! To equip purchased items, open your Inventory panel and click items to equip them to your character. Your Equipment section shows what you\'re wearing. You can sell items you no longer need back to the shop for gold."\n\n' +
+        "The Grand Hall is to the north. The Workshop is to the east. The Proving Grounds are to the south.",
+      exits: {
+        n: "grand_hall",
+        e: "workshop",
+        s: "proving_grounds",
+      },
+    },
+    training_yard: {
+      title: "The Training Yard",
+      terrain: "outside",
+      description:
+        "An open-air courtyard paved with worn flagstones, surrounded by high walls scarred with blade marks and scorch stains from countless practice sessions. Straw-stuffed training dummies stand in rows, many bearing fresh cuts and dents. A raised wooden platform at the center serves as the instructor's stage, and racks of blunted practice weapons line the perimeter. The air smells of sweat, iron, and the faint tang of spent magic.\n\n" +
+        'A training manual posted on the wall reads: "Click on Instructor Valence to open the Training panel! Choose a class to unlock, then learn abilities. Drag learned abilities from your Spellbook panel to the action bar at the bottom of your screen for quick access. Each ability has a cooldown after use — watch the timer on the button. Abilities cost mana, shown in your vitals bar."\n\n' +
+        "The Scholar's Study is to the north, and the Riddle Tower is to the south.",
+      exits: {
+        n: "scholars_study",
+        s: "riddle_tower",
+      },
+    },
+    workshop: {
+      title: "The Workshop",
+      description:
+        "A cluttered workroom thick with the smell of hot metal and alchemical reagents. Sturdy workbenches line the walls, covered with hammers, tongs, mortar and pestle sets, and half-finished projects. A brick forge glows in one corner, its bellows operated by an ingenious foot-pedal mechanism. Shelves of bottled substances in every color catch the firelight, and a stained recipe board hangs above the main bench.\n\n" +
+        'A workshop guide pinned to the wall reads: "Open the Crafting panel in your sidebar to view available recipes! You\'ll need materials from the Herb Garden to the south. This room has a workbench — crafting here gives a bonus to certain recipes. Your crafting and gathering skill levels are also shown in the Crafting panel."\n\n' +
+        "The Armory is to the west, and the Herb Garden is to the south.",
+      station: "alchemy_table",
+      exits: {
+        w: "armory",
+        s: "herb_garden",
+      },
+    },
+    herb_garden: {
+      title: "The Herb Garden",
+      terrain: "forest",
+      description:
+        "A walled garden open to the sky, where medicinal herbs and rare plants grow in carefully tended beds separated by gravel paths. Trellises of climbing ivy and flowering vines partition the space into alcoves, and a small fountain burbles at the center. Spider webs glisten with morning dew between the hedgerows, and veins of raw iron ore push through the earth along the garden's stone border, exposed by years of erosion.\n\n" +
+        'A garden sign reads: "This is a gathering area! Look for resource nodes highlighted in the room — the spider webs yield spider silk, and the ore veins yield raw materials. Click on them or use the Crafting panel to see nearby nodes and gather materials. Then head north to the Workshop to craft something!"\n\n' +
+        "The Workshop is back to the north.",
+      exits: {
+        n: "workshop",
+      },
+    },
+    proving_grounds: {
+      title: "The Proving Grounds",
+      terrain: "outside",
+      description:
+        "A broad, fenced enclosure of packed earth and sparse grass where the Academy's combat trials take place. Flickering wisps of pale light drift aimlessly through the air. Dark slimes ooze along the ground, leaving glistening trails. Small, bat-winged imps cackle from their perches on the fence posts. The ground is pocked with craters and scorch marks from previous encounters.\n\n" +
+        'A safety notice on the fence reads: "Welcome to the Proving Grounds! Click on a hostile creature to target it, then use abilities from your action bar to engage in combat. Watch the combat log for battle updates, and keep an eye on your health in the vitals bar. Use consumable items from your inventory if you need healing. If things get dangerous, you can always flee! Defeated creatures may drop useful items — check your inventory after combat."\n\n' +
+        "Someone has dropped a healing potion on the ground near the gate.\n\n" +
+        "The Armory is to the north. The Riddle Tower is to the east. The Throne Room lies to the south.",
+      exits: {
+        n: "armory",
+        e: "riddle_tower",
+        s: "throne_room",
+      },
+    },
+    riddle_tower: {
+      title: "The Riddle Tower",
+      description:
+        "A narrow, cylindrical tower room with walls of ancient grey stone, covered in faded inscriptions and carved symbols that seem to shift when viewed from the corner of your eye. The floor is a mosaic depicting a great battle between scholars and dark forces. At the center, a stone gargoyle perches on a pedestal, its stony features frozen in an expression of amused cunning. An old riddle is carved into the wall behind it.\n\n" +
+        'A student\'s note stuck to the door reads: "Some challenges at the Academy are puzzles, not fights! Read the riddle carefully and submit your answer through the dialogue that appears. Correct answers earn rewards. This one unlocks the door to the south!"\n\n' +
+        "A heavy door of ironbound oak blocks the passage to the south, secured by an elaborate lock that glimmers with enchantment.\n\n" +
+        "The Proving Grounds are to the west, and the Training Yard is to the north.",
+      exits: {
+        n: "training_yard",
+        w: "proving_grounds",
+        s: {
+          to: "secret_library",
+          door: {
+            initialState: "locked",
+            keyItemId: "puzzle_key",
+            keyConsumed: true,
+          },
+        },
+      },
+    },
+    secret_library: {
+      title: "The Secret Library",
+      description:
+        "A hushed, reverent chamber hidden behind the tower's enchanted door. Towering shelves of leather-bound tomes stretch into the shadows overhead, their spines marked with gilt lettering in a dozen languages. A reading alcove in the corner holds a worn leather armchair and a brass oil lamp that burns with a steady, unwavering flame. The air is thick with the scent of aged parchment and old magic.\n\n" +
+        'An orientation guide rests on the reading desk, covering advanced Academy features: "Congratulations on solving the puzzle! As you continue your adventures beyond the Academy, you\'ll discover more features through the sidebar panels: Housing lets you own a personal dwelling. The Auction panel connects you to a global marketplace. Mail lets you send letters to other students. Trading enables face-to-face item exchanges. Pets let you bond with a creature companion. And Factions track your reputation with the various powers of the realm. Explore every panel — there\'s always more to discover!"\n\n' +
+        "The Riddle Tower is back to the north.",
+      exits: {
+        n: "riddle_tower",
+      },
+      features: {
+        ancient_bookcase: {
+          type: "CONTAINER",
+          displayName: "a dusty ancient bookcase",
+          keyword: "bookcase",
+          initialState: "closed",
+          items: ["elixir_of_clarity", "enchanted_cloth"],
+        },
+      },
+    },
+    throne_room: {
+      title: "The Throne Room",
+      description:
+        "The ceremonial heart of the Academy — a vast hall with a vaulted ceiling supported by massive stone columns. Faded tapestries depicting the Academy's history hang between iron torch brackets. At the far end, an ornate stone throne sits upon a raised dais, its armrests carved with rearing griffins. But between you and the throne, the shadows thicken unnaturally. Something lurks here — the Academy's ultimate test.\n\n" +
+        'A plaque near the entrance reads: "The Throne Room is where your journey culminates! After defeating challenges, check the Quest panel to turn in completed quests. Open the Character panel to review your stats, and check the Achievements panel for milestones you\'ve reached. The Prestige panel shows advanced progression options for experienced students."\n\n' +
+        "A battered treasure chest sits near the base of the throne.\n\n" +
+        "The Proving Grounds are back to the north.",
+      exits: {
+        n: "proving_grounds",
+      },
+      features: {
+        treasure_chest: {
+          type: "CONTAINER",
+          displayName: "a battered iron-bound chest",
+          keyword: "chest",
+          initialState: "closed",
+          items: ["academy_banner", "hearty_ration"],
+        },
+      },
+    },
+    catacombs: {
+      title: "The Catacombs",
+      terrain: "underground",
+      description:
+        "A winding staircase descends from the Grand Hall into a damp, torch-lit passage carved from the bedrock beneath the Academy. The walls are lined with alcoves holding ancient stone sarcophagi, their lids cracked and displaced. The air is cold and carries the faint echo of distant, inhuman sounds. A shimmering portal arch stands against the far wall, its surface rippling like disturbed water, leading into the unknown depths below.\n\n" +
+        'A bulletin board by the stairs reads: "Dungeons are instanced adventures — open the Dungeon panel in your sidebar to see available dungeons and start a run! For the best experience, bring friends — use the Group panel to invite other students and tackle dungeons together. The Guild panel lets you form permanent organizations with shared chat, a roster, and a guild hall. Strength in numbers!"\n\n' +
+        "The Grand Hall is back down the stairs.",
+      dungeon: true,
+      exits: {
+        d: "grand_hall",
+      },
+    },
+    stylist_parlor: {
+      title: "The Stylist's Parlor",
+      stylist: true,
+      description:
+        "A well-appointed chamber of polished mirrors and soft lamplight. Tall looking glasses in ornate frames line the walls, each reflecting a subtly different version of whoever stands before it — here a change of hairstyle, there an altered complexion, in another a different set of features entirely. A velvet-cushioned chair sits before the largest mirror, and shelves of cosmetic implements, dyes, and enchanted scissors gleam nearby. The air smells faintly of rosewater and sandalwood.\n\n" +
+        'A gilded card on the vanity reads: "Welcome to the Stylist\'s Parlor! Here you can customize your character\'s appearance, change your name, and adjust how the world sees you. Click on Stylist Maren to begin — she can help you look exactly the way you want. Don\'t worry, changes can always be undone!"\n\n' +
+        "The Grand Hall is back to the southwest.",
+      exits: {
+        sw: "grand_hall",
+      },
+    },
+    mob_templates: {
+      title: "Template Chamber",
+      description:
+        "An internal room used to stage dungeon mob templates. Players cannot reach this room.",
+    },
+  },
+  mobs: {
+    headmaster_aldric: {
+      name: "Headmaster Aldric",
+      room: "academy_gates",
+      tier: "standard",
+      level: 10,
+      hp: 999,
+      minDamage: 1,
+      maxDamage: 1,
+      xpReward: 0,
+      goldMin: 0,
+      goldMax: 0,
+      quests: ["grand_tour"],
+      dialogue: {
+        root: {
+          text: 'A tall, silver-haired man in deep blue robes regards you with keen, appraising eyes. A heavy medallion bearing the Academy\'s seal hangs at his chest, and his staff — iron-shod and rune-carved — rests in the crook of his arm. "Welcome to the Academy, student. I am Headmaster Aldric, keeper of this institution. You have arrived at a fortuitous time — we have much to show you. Shall I explain how the Academy works, or would you prefer a quest to guide your exploration?"',
+          choices: [
+            { text: "Tell me about the quest!", next: "quest_info" },
+            { text: "How does the Academy work?", next: "how_it_works" },
+            { text: "I'll explore on my own, thanks.", next: "farewell" },
+          ],
+        },
+        quest_info: {
+          text: "Very well. I call it 'The Grand Tour.' As you explore the Academy, you will encounter various creatures — wisps, sprites, slimes, and worse. Some carry Arcane Fragments, crystallized shards of raw magical energy. Collect three and return them to me for a handsome reward. You can track your progress in the Quest panel on your sidebar — look for the scroll icon.",
+          choices: [
+            { text: "I'll get right on it!", next: "farewell" },
+            {
+              text: "Any advice for a new student?",
+              next: "advice",
+            },
+          ],
+        },
+        how_it_works: {
+          text: "The Academy is a place of learning for aspiring adventurers — warriors, mages, and all manner of heroes. Every room teaches something new. Your vitals bar at the bottom of the screen shows your health, mana, and gold. The sidebar panels — those icons along the edge — give you access to your inventory, quest log, spellbook, and much more. Click on anyone or anything that catches your eye. The Academy rewards curiosity.",
+          choices: [
+            {
+              text: "That's helpful. What about the quest?",
+              next: "quest_info",
+            },
+            {
+              text: "I think I understand. I'll start exploring!",
+              next: "farewell",
+            },
+          ],
+        },
+        advice: {
+          text: "Of course. Head south to the Grand Hall — it is the heart of the Academy, with paths to every wing. I would suggest visiting the Armory first to equip yourself, then the Training Yard to learn some abilities. The Proving Grounds are where you will find creatures to practice combat against. And do not overlook the side wings — the Common Room to the west has refreshment and entertainment, and the Scholar's Study to the east holds fascinating conversations. Every panel in your sidebar has something to discover.",
+          choices: [
+            { text: "Thanks, Headmaster!", next: "farewell" },
+          ],
+        },
+        farewell: {
+          text: "May your blade stay sharp and your mind sharper. Remember — at the Academy, knowledge is the most powerful weapon of all. Off you go!",
+        },
+      },
+    },
+    scholar_elara: {
+      name: "Scholar Elara",
+      room: "scholars_study",
+      tier: "standard",
+      level: 8,
+      hp: 999,
+      minDamage: 1,
+      maxDamage: 1,
+      xpReward: 0,
+      goldMin: 0,
+      goldMax: 0,
+      dialogue: {
+        root: {
+          text: 'A slender woman in spectacles and ink-stained robes looks up from a heavy tome, brushing a strand of auburn hair from her face. Her desk is buried under scrolls and star charts, and a brass astrolabe spins lazily beside her. "Ah, a new student! Welcome to my study. I am Scholar Elara, and I teach the art of discourse and diplomacy — vital skills for any adventurer. You are practicing right now, in fact. Shall we continue?"',
+          choices: [
+            { text: "Tell me about yourself.", next: "about_self" },
+            { text: "What can I learn here?", next: "learn_here" },
+            { text: "What's south of here?", next: "directions" },
+            { text: "Goodbye, Scholar.", next: "farewell" },
+          ],
+        },
+        about_self: {
+          text: 'I was once a wandering sage, traveling from library to library in search of lost knowledge. I spent years cataloging forgotten histories and deciphering ancient scripts. The Headmaster found me poring over manuscripts in a ruined archive and offered me a position here. I have been teaching ever since — there is no better audience than eager young minds.',
+          choices: [
+            {
+              text: "That's fascinating. What do you teach?",
+              next: "learn_here",
+            },
+            {
+              text: "Do you miss the open road?",
+              next: "miss_road",
+            },
+            { text: "Goodbye, Scholar.", next: "farewell" },
+          ],
+        },
+        miss_road: {
+          text: "Elara pauses, her gaze drifting to the window. \"Sometimes. The road offers freedom — new horizons each day, the thrill of discovery around every bend. But here, I have something the road never gave me: students who carry my teachings forward into the world. I think that is worth the trade. But enough about me — the Academy has so much more to show you! The Training Yard is just south of here.\"",
+          choices: [
+            { text: "I'll head there. Thanks!", next: "farewell" },
+          ],
+        },
+        learn_here: {
+          text: "This study demonstrates the dialogue system. When you click on a character who has something to say, you will see a conversation like this one — with choices that branch into different paths. Some conversations lead to quests, some to lore, some to hints. Always explore all the options! Every NPC at the Academy has something worth hearing.",
+          choices: [
+            {
+              text: "Good to know. What else is nearby?",
+              next: "directions",
+            },
+            {
+              text: "Thanks for the lesson, Scholar.",
+              next: "farewell",
+            },
+          ],
+        },
+        directions: {
+          text: "South of here you will find the Training Yard, where Instructor Valence teaches the combat arts. West returns you to the Grand Hall — the Academy's central hub. If you have not visited the Armory yet, I would recommend it. Difficult to fight monsters without proper equipment!",
+          choices: [
+            { text: "I'll check it out.", next: "farewell" },
+          ],
+        },
+        farewell: {
+          text: "Study well, student. And remember — in every conversation, there is something hidden. You just have to ask the right questions.",
+        },
+      },
+    },
+    quartermaster_bren: {
+      name: "Quartermaster Bren",
+      room: "armory",
+      tier: "standard",
+      level: 5,
+      hp: 999,
+      minDamage: 1,
+      maxDamage: 1,
+      xpReward: 0,
+      goldMin: 0,
+      goldMax: 0,
+      dialogue: {
+        root: {
+          text: "A broad-shouldered man with a scarred jaw and thick forearms leans against the counter, arms folded. A leather apron covers his chain shirt, and a ring of keys jingles at his belt. \"Welcome to the Armory. I'm Quartermaster Bren — I keep this place stocked and the students equipped. Click on me to browse the supply catalog. You can also sell things you don't need for some extra gold.\"",
+          choices: [
+            { text: "Show me your wares.", next: "farewell" },
+            { text: "How does shopping work?", next: "how_shop" },
+            { text: "Just looking around.", next: "farewell" },
+          ],
+        },
+        how_shop: {
+          text: "Simple enough. Click on me and the shop panel opens. Items on the left are what I sell — click one to buy it. Your inventory panel shows what you are carrying. To equip armor or weapons, open the equipment section and click the item you want to wear. You can sell items back to me too, though I only pay half price. A quartermaster has expenses, you understand.",
+          choices: [
+            { text: "Makes sense. Let me browse!", next: "farewell" },
+          ],
+        },
+        farewell: {
+          text: "Good trading. And if you find anything interesting in your travels, I am always buying.",
+        },
+      },
+    },
+    instructor_valence: {
+      name: "Instructor Valence",
+      room: "training_yard",
+      tier: "elite",
+      level: 10,
+      hp: 999,
+      minDamage: 1,
+      maxDamage: 1,
+      xpReward: 0,
+      goldMin: 0,
+      goldMax: 0,
+      dialogue: {
+        root: {
+          text: "A battle-hardened knight in burnished plate armor stands at attention on the training platform, a longsword resting point-down before her. Her eyes are sharp and appraising, and her bearing radiates the confidence of someone who has seen a hundred battles and won them all. \"Student! I am Instructor Valence, and I teach every discipline the Academy offers. Click on me to open the training panel — pick a class, unlock it, and start learning abilities. Then drag your new skills to the action bar at the bottom of your screen!\"",
+          choices: [
+            { text: "What classes are available?", next: "classes" },
+            {
+              text: "I'd like to start training!",
+              next: "farewell",
+            },
+            {
+              text: "Where should I go after training?",
+              next: "after_training",
+            },
+            { text: "Maybe later.", next: "farewell" },
+          ],
+        },
+        classes: {
+          text: "Five paths of power! WARRIOR — steel and stamina, the unyielding front line. MAGE — arcane devastation unleashed from a distance. CLERIC — healing light that sustains your allies through the darkest trials. ROGUE — shadows and precision strikes, ending fights before they begin. RANGER — nature's ally, fighting alongside summoned companions. You can unlock multiple classes over time! Start with whatever calls to you. After you unlock a class, learn its abilities — they will appear in your Spellbook panel.",
+          choices: [
+            { text: "Let's begin!", next: "farewell" },
+            {
+              text: "Can I learn more than one class?",
+              next: "multiclass",
+            },
+          ],
+        },
+        multiclass: {
+          text: "Absolutely. That is the beauty of the Academy. Unlock as many as you like. Your Spellbook panel shows all learned abilities regardless of class. Drag them to your action bar for quick access. Each ability has a cooldown after use — watch the timer on the button. Now go forth and train!",
+          choices: [{ text: "On it!", next: "farewell" }],
+        },
+        after_training: {
+          text: "Once you have learned some abilities, head south to the Proving Grounds! That is where you can practice combat against creatures. Remember to equip your gear first — the Armory is north, then west. And keep an eye on your health in the vitals bar!",
+          choices: [
+            { text: "Good advice. Thanks!", next: "farewell" },
+          ],
+        },
+        farewell: {
+          text: "Courage is not the absence of fear — it is the will to act in spite of it. Train well!",
+        },
+      },
+    },
+    groundskeeper_thorne: {
+      name: "Groundskeeper Thorne",
+      room: "proving_grounds",
+      tier: "standard",
+      level: 5,
+      hp: 999,
+      minDamage: 1,
+      maxDamage: 1,
+      xpReward: 0,
+      goldMin: 0,
+      goldMax: 0,
+      quests: ["creature_roundup"],
+      dialogue: {
+        root: {
+          text: "A weathered old man in a muddy leather coat trudges over, leaning on a gnarled walking stick. His face is deeply lined and tanned from years outdoors, and a ring of iron keys clinks at his hip. \"Ah, a student! I'm Groundskeeper Thorne. I tend the creatures in the Proving Grounds, but some have gotten... spirited lately. The shadow slimes and cave imps are causing trouble. Could you help put them down? Bring me their fangs as proof.\"",
+          choices: [
+            { text: "I'll help wrangle them!", next: "accepted" },
+            {
+              text: "What creatures are here?",
+              next: "creatures",
+            },
+            { text: "Not right now.", next: "farewell" },
+          ],
+        },
+        accepted: {
+          text: "Good on you! Just engage the creatures in combat — click on one to target it, then use your abilities from the action bar. Collect three beast fangs from the ones you defeat. Keep an eye on the combat log for battle details, and don't forget you can use consumable items if your health gets low! Check your Quest panel to track your progress.",
+          choices: [{ text: "On it!", next: "farewell" }],
+        },
+        creatures: {
+          text: "The wandering wisps are harmless little lights — they will drift away from you. But the shadow slimes are aggressive — they will attack on sight! And the cave imps are worse. If you get in over your head, you can always flee. The wisps and sprites drop Arcane Fragments too, if you are collecting those for the Headmaster's quest.",
+          choices: [
+            {
+              text: "I'll help round them up!",
+              next: "accepted",
+            },
+            { text: "Maybe later.", next: "farewell" },
+          ],
+        },
+        farewell: {
+          text: "Be careful with the imps — they bite! And the invisible ones are the worst. ...Don't tell them I said that.",
+        },
+      },
+    },
+    puzzlewright: {
+      name: "the Puzzlewright",
+      room: "riddle_tower",
+      tier: "standard",
+      level: 5,
+      hp: 999,
+      minDamage: 1,
+      maxDamage: 1,
+      xpReward: 0,
+      goldMin: 0,
+      goldMax: 0,
+      dialogue: {
+        root: {
+          text: "A stone gargoyle perches on its pedestal, its carved features twisted into an expression of amused cunning. It speaks in a voice like tumbling gravel. \"Ah, a STUDENT! I do so love students. They always think they know the answer. Tell me — do YOU know the answer? Of course you don't. You haven't heard the question yet. Would you like to?\"",
+          choices: [
+            { text: "Ask me your riddle!", next: "riddle_hint" },
+            {
+              text: "What happens if I answer correctly?",
+              next: "reward_info",
+            },
+            { text: "I'll come back later.", next: "farewell" },
+          ],
+        },
+        riddle_hint: {
+          text: "The riddle is inscribed on the wall behind me. Read it carefully! When you think you know the answer, respond through the dialogue that appears. I will tell you if you are right. And don't worry — you can try as many times as you like. The best riddles deserve patience.",
+          choices: [
+            { text: "I'll give it a shot.", next: "farewell" },
+          ],
+        },
+        reward_info: {
+          text: "Answer correctly and you will receive a very special key — one that opens the locked door to the south. Behind that door lies the Secret Library, full of ancient knowledge and rare treasures. Worth the brain exercise, I promise!",
+          choices: [
+            {
+              text: "Sounds worth it. Let me try the riddle.",
+              next: "farewell",
+            },
+          ],
+        },
+        farewell: {
+          text: "Think carefully! The answer is always simpler than you expect.",
+        },
+      },
+    },
+    artificer_wren: {
+      name: "Artificer Wren",
+      room: "workshop",
+      tier: "weak",
+      level: 3,
+      hp: 999,
+      minDamage: 1,
+      maxDamage: 1,
+      xpReward: 0,
+      goldMin: 0,
+      goldMax: 0,
+      dialogue: {
+        root: {
+          text: "A wiry gnome in a soot-stained apron peers up at you through a pair of oversized brass goggles, a smith's hammer in one hand and a bubbling flask in the other. Sparks and alchemical fumes trail in her wake as she gestures excitedly at the workbenches. \"A new crafter! Oh, this is my favorite part! Open the Crafting panel in your sidebar — you'll see recipes for things you can make! But you'll need materials first. Head south to the Herb Garden to gather some!\"",
+          choices: [
+            { text: "How does crafting work?", next: "how_craft" },
+            { text: "What can I make?", next: "what_make" },
+            {
+              text: "I'll go gather materials first.",
+              next: "farewell",
+            },
+          ],
+        },
+        how_craft: {
+          text: "First, gather materials — the Herb Garden south of here has spider silk and iron ore. Then come back here and open the Crafting panel. Select a recipe, and if you have the right materials, you can craft the item! This room has a workbench, which gives a bonus to certain recipes. The Crafting panel also shows your gathering and crafting skill levels.",
+          choices: [
+            { text: "What can I make?", next: "what_make" },
+            {
+              text: "Got it! I'll start gathering.",
+              next: "farewell",
+            },
+          ],
+        },
+        what_make: {
+          text: "Right now I have got two recipes ready for beginners! The Warding Pendant is a protective charm — good for defense. The Bottled Starlight is a consumable that grants experience. Both need materials from the Herb Garden. Gather spider silk and iron ore, then come back and craft away!",
+          choices: [
+            {
+              text: "I'll go gather materials!",
+              next: "farewell",
+            },
+          ],
+        },
+        farewell: {
+          text: "Think big, craft bigger! And watch out for the spiders in the garden — they are friendly, but their webs are VERY sticky.",
+        },
+      },
+    },
+    stylist_maren: {
+      name: "Stylist Maren",
+      room: "stylist_parlor",
+      tier: "standard",
+      level: 5,
+      hp: 999,
+      minDamage: 1,
+      maxDamage: 1,
+      xpReward: 0,
+      goldMin: 0,
+      goldMax: 0,
+      dialogue: {
+        root: {
+          text: "A graceful half-elf with nimble fingers and an appraising eye steps forward, a pair of enchanted silver scissors hanging from a chain at her waist. Her own appearance seems to shift subtly in the mirror light — now dark-haired, now fair, now somewhere in between. \"Welcome, dear! I am Stylist Maren. I can change your appearance, your name — anything about how the world sees you. Shall we get started, or would you like to know more first?\"",
+          choices: [
+            {
+              text: "What can you change about me?",
+              next: "what_change",
+            },
+            { text: "Let's get started!", next: "farewell" },
+            { text: "Just browsing for now.", next: "farewell" },
+          ],
+        },
+        what_change: {
+          text: "I can adjust your appearance — hairstyle, coloring, features, build, the works. I can also change your name if you fancy a fresh start. Everything I do can be reversed, so there is no need to worry about commitment. Think of it as trying on a new outfit, but for your very identity!",
+          choices: [
+            {
+              text: "Sounds wonderful. Let's begin!",
+              next: "farewell",
+            },
+            {
+              text: "I'll think about it and come back.",
+              next: "farewell",
+            },
+          ],
+        },
+        farewell: {
+          text: "Whenever you are ready, just click on me. Everyone deserves to look their best!",
+        },
+      },
+    },
+    wandering_wisp: {
+      name: "a wandering wisp",
+      room: "grand_hall",
+      tier: "weak",
+      level: 1,
+      category: "elemental",
+      respawnSeconds: 30,
+      behavior: {
+        template: "wander",
+      },
+      drops: [
+        { itemId: "arcane_fragment", chance: 0.5 },
+        { itemId: "beast_fang", chance: 0.3 },
+      ],
+    },
+    flickering_sprite: {
+      name: "a flickering sprite",
+      room: "proving_grounds",
+      tier: "weak",
+      level: 1,
+      category: "elemental",
+      respawnSeconds: 30,
+      behavior: {
+        template: "wander",
+      },
+      drops: [
+        { itemId: "arcane_fragment", chance: 0.4 },
+        { itemId: "beast_fang", chance: 0.5 },
+      ],
+    },
+    shadow_slime: {
+      name: "a shadow slime",
+      room: "proving_grounds",
+      tier: "standard",
+      category: "aberration",
+      level: 2,
+      respawnSeconds: 45,
+      behavior: {
+        template: "wander_aggro",
+        params: {
+          aggroMessage:
+            "The shadow slime quivers, sprouts jagged tendrils of darkness, and lunges at you with a wet, squelching impact!",
+        },
+      },
+      drops: [
+        { itemId: "arcane_fragment", chance: 0.3 },
+        { itemId: "beast_fang", chance: 0.7 },
+        { itemId: "spider_silk", chance: 0.2 },
+      ],
+    },
+    cave_imp: {
+      name: "a cave imp",
+      room: "proving_grounds",
+      tier: "standard",
+      level: 3,
+      category: "aberration",
+      respawnSeconds: 60,
+      behavior: {
+        template: "aggro_guard",
+        params: {
+          aggroMessage:
+            "The cave imp cackles with malicious glee and launches itself at you, claws outstretched!",
+        },
+      },
+      drops: [
+        { itemId: "arcane_fragment", chance: 0.4 },
+        { itemId: "beast_fang", chance: 0.8 },
+        { itemId: "healing_potion", chance: 0.3 },
+      ],
+    },
+    dread_warden: {
+      name: "the Dread Warden",
+      room: "throne_room",
+      tier: "boss",
+      level: 7,
+      category: "undead",
+      respawnSeconds: 180,
+      behavior: {
+        template: "aggro_guard",
+        params: {
+          aggroMessage:
+            "The shadows at the far end of the hall coalesce into a towering figure of rusted armor and cold malice. Two pinpoints of baleful light burn within its visor. The Dread Warden has awakened.",
+        },
+      },
+      drops: [
+        { itemId: "arcane_fragment", chance: 1 },
+        { itemId: "shadow_cloak", chance: 0.4 },
+        { itemId: "hearty_ration", chance: 0.8 },
+      ],
+    },
+    skeleton_warrior: {
+      name: "a skeleton warrior",
+      room: "mob_templates",
+      tier: "standard",
+      level: 3,
+      category: "undead",
+      drops: [
+        { itemId: "arcane_fragment", chance: 0.3 },
+        { itemId: "spider_silk", chance: 0.2 },
+      ],
+    },
+    wraith: {
+      name: "a wraith",
+      room: "mob_templates",
+      tier: "elite",
+      level: 5,
+      category: "undead",
+      drops: [
+        { itemId: "arcane_fragment", chance: 0.5 },
+        { itemId: "enchanted_cloth", chance: 0.2 },
+      ],
+    },
+    fallen_champion: {
+      name: "the Fallen Champion",
+      room: "mob_templates",
+      tier: "boss",
+      level: 8,
+      category: "undead",
+      drops: [
+        { itemId: "shadow_cloak", chance: 0.3 },
+        { itemId: "elixir_of_clarity", chance: 0.8 },
+      ],
+    },
+  },
+  items: {
+    leather_hood: {
+      displayName: "a leather hood",
+      keyword: "hood",
+      description:
+        "A sturdy hood of tanned leather, reinforced with iron rivets along the brow. It fits snugly and smells faintly of oil and woodsmoke.",
+      slot: "head",
+      armor: 2,
+      basePrice: 15,
+    },
+    iron_sword: {
+      displayName: "an iron sword",
+      keyword: "sword",
+      description:
+        "A plain but well-forged sword of dark iron. The blade is straight and double-edged, balanced for quick strikes. Its leather-wrapped grip is worn smooth from use.",
+      slot: "weapon",
+      damage: 4,
+      basePrice: 30,
+    },
+    chain_mail: {
+      displayName: "a suit of chain mail",
+      keyword: "mail",
+      description:
+        "Interlocking iron rings woven into a heavy shirt that falls to mid-thigh. The links are well-oiled and whisper softly with each movement.",
+      slot: "body",
+      armor: 3,
+      basePrice: 35,
+    },
+    leather_gloves: {
+      displayName: "a pair of leather gloves",
+      keyword: "gloves",
+      description:
+        "Supple leather gloves with reinforced knuckles and a sure grip. The fingertips are slightly worn, suggesting they once belonged to a skilled craftsman.",
+      slot: "hand",
+      armor: 1,
+      basePrice: 12,
+    },
+    healing_potion: {
+      displayName: "a healing potion",
+      keyword: "potion",
+      description:
+        "A small glass vial filled with a luminous red liquid that swirls gently on its own. It tastes of bitter herbs and warmth, and mends wounds with surprising speed.",
+      consumable: true,
+      onUse: {
+        healHp: 15,
+      },
+      basePrice: 5,
+    },
+    hearty_ration: {
+      displayName: "a hearty ration",
+      keyword: "ration",
+      description:
+        "A generous portion of salted meat, hard cheese, and dense bread wrapped in waxed cloth. Filling and restorative, the kind of meal that puts strength back in weary limbs.",
+      consumable: true,
+      onUse: {
+        healHp: 30,
+      },
+      basePrice: 15,
+    },
+    elixir_of_clarity: {
+      displayName: "an elixir of clarity",
+      keyword: "elixir",
+      description:
+        "A tiny crystal phial of liquid so clear it is almost invisible. Drinking it sharpens the senses and fills the mind with luminous understanding.",
+      consumable: true,
+      onUse: {
+        healHp: 20,
+        grantXp: 25,
+      },
+      basePrice: 20,
+    },
+    arcane_fragment: {
+      displayName: "an arcane fragment",
+      keyword: "fragment",
+      description:
+        "A translucent crystal shard that pulses with soft inner light and hums a faint, resonant note. Headmaster Aldric collects these.",
+      basePrice: 0,
+    },
+    beast_fang: {
+      displayName: "a beast fang",
+      keyword: "fang",
+      description:
+        "A curved, ivory-white fang still sharp at the tip. It is warm to the touch and carries a faint, musky scent.",
+      basePrice: 0,
+    },
+    spider_silk: {
+      displayName: "a strand of spider silk",
+      keyword: "silk",
+      description:
+        "An impossibly fine thread spun by the garden spiders. Stronger than steel wire at a fraction of the weight, it catches the light with a faint iridescent sheen.",
+      basePrice: 4,
+    },
+    iron_ore: {
+      displayName: "a nugget of iron ore",
+      keyword: "ore",
+      description:
+        "A dense lump of dark, metallic ore streaked with rust-red veins. Warm to the touch and heavy for its size.",
+      basePrice: 6,
+    },
+    enchanted_cloth: {
+      displayName: "a scrap of enchanted cloth",
+      keyword: "cloth",
+      description:
+        "Fabric so fine it seems woven from moonlight itself. It feels like holding a cool breeze and carries a faint luminous shimmer.",
+      basePrice: 10,
+    },
+    warding_pendant: {
+      displayName: "a warding pendant",
+      keyword: "pendant",
+      description:
+        "A delicate pendant wrought from iron ore and spider silk, set with a small protective ward-stone. It hums faintly when danger is near.",
+      slot: "hand",
+      armor: 2,
+      stats: {
+        constitution: 1,
+      },
+      basePrice: 40,
+    },
+    bottled_starlight: {
+      displayName: "a vial of bottled starlight",
+      keyword: "starlight",
+      description:
+        "A small corked bottle filled with glittering motes of captured starlight that swirl in mesmerizing patterns. Drinking it fills you with a surge of insight.",
+      consumable: true,
+      onUse: {
+        healHp: 5,
+        grantXp: 50,
+      },
+      basePrice: 25,
+    },
+    shadow_cloak: {
+      displayName: "the Dread Warden's cloak",
+      keyword: "cloak",
+      description:
+        "A sweeping cloak of living shadow, taken from the Dread Warden itself. Darkness pools at its hem and whispers follow in its wake, but the cloak protects its wearer fiercely.",
+      slot: "body",
+      armor: 4,
+      stats: {
+        constitution: 2,
+      },
+      basePrice: 100,
+    },
+    puzzle_key: {
+      displayName: "a key shaped from pure insight",
+      keyword: "key",
+      description:
+        "A crystalline key that materialized from the answer to a riddle. It changes shape subtly in your hand, always fitting whatever lock it encounters — but only once.",
+      basePrice: 0,
+    },
+    academy_banner: {
+      displayName: "an Academy banner",
+      keyword: "banner",
+      description:
+        "A small triangular pennant in deep blue and gold, emblazoned with the Academy crest — a tower wreathed in flame. It radiates a faint warmth when held.",
+      basePrice: 0,
+    },
+    dropped_potion: {
+      displayName: "a healing potion",
+      keyword: "potion",
+      description:
+        "A small glass vial filled with a luminous red liquid. Someone must have dropped this during a fight.",
+      consumable: true,
+      onUse: {
+        healHp: 15,
+      },
+      basePrice: 5,
+      room: "proving_grounds",
+    },
+  },
+  shops: {
+    academy_supply: {
+      name: "Academy Armory Supplies",
+      room: "armory",
+      items: [
+        "iron_sword",
+        "chain_mail",
+        "leather_gloves",
+        "leather_hood",
+        "healing_potion",
+        "hearty_ration",
+        "elixir_of_clarity",
+      ],
+    },
+  },
+  trainers: {
+    valence_trainer: {
+      name: "Instructor Valence",
+      room: "training_yard",
+      classes: ["WARRIOR", "MAGE", "CLERIC", "ROGUE", "RANGER"],
+    },
+  },
+  quests: {
+    grand_tour: {
+      name: "The Grand Tour",
+      description:
+        "Headmaster Aldric has asked you to explore the Academy and collect three Arcane Fragments from the creatures that roam the grounds. These crystallized shards of magical energy prove you have engaged with the Academy's inhabitants. Track your progress in the Quest panel!",
+      giver: "headmaster_aldric",
+      objectives: [
+        {
+          type: "collect",
+          targetKey: "arcane_fragment",
+          count: 3,
+          description: "Collect Arcane Fragments from Academy creatures",
+        },
+      ],
+      rewards: {
+        xp: 150,
+        gold: 75,
+      },
+    },
+    creature_roundup: {
+      name: "Creature Roundup",
+      description:
+        "Groundskeeper Thorne needs help managing the rowdier creatures in the Proving Grounds. Defeat them in combat and collect their beast fangs as proof. Track your progress in the Quest panel!",
+      giver: "groundskeeper_thorne",
+      objectives: [
+        {
+          type: "collect",
+          targetKey: "beast_fang",
+          count: 3,
+          description: "Collect beast fangs from Proving Grounds creatures",
+        },
+      ],
+      rewards: {
+        xp: 100,
+        gold: 50,
+      },
+    },
+  },
+  gatheringNodes: {
+    spider_silk_web: {
+      displayName: "a glistening spider web",
+      keyword: "web",
+      skill: "herbalism",
+      skillRequired: 1,
+      room: "herb_garden",
+      respawnSeconds: 30,
+      xpReward: 15,
+      yields: [
+        {
+          itemId: "spider_silk",
+          minQuantity: 1,
+          maxQuantity: 3,
+        },
+      ],
+      rareYields: [
+        {
+          itemId: "enchanted_cloth",
+          quantity: 1,
+          dropChance: 0.15,
+        },
+      ],
+    },
+    ore_formation: {
+      displayName: "a vein of iron ore",
+      keyword: "vein",
+      skill: "mining",
+      skillRequired: 1,
+      room: "herb_garden",
+      respawnSeconds: 30,
+      xpReward: 15,
+      yields: [
+        {
+          itemId: "iron_ore",
+          minQuantity: 1,
+          maxQuantity: 2,
+        },
+      ],
+    },
+  },
+  recipes: {
+    pendant_recipe: {
+      displayName: "Warding Pendant",
+      skill: "smithing",
+      skillRequired: 1,
+      levelRequired: 1,
+      materials: [
+        { itemId: "iron_ore", quantity: 2 },
+        { itemId: "spider_silk", quantity: 1 },
+      ],
+      outputItemId: "warding_pendant",
+      outputQuantity: 1,
+      station: "WORKBENCH",
+      xpReward: 25,
+    },
+    starlight_recipe: {
+      displayName: "Bottled Starlight",
+      skill: "alchemy",
+      skillRequired: 1,
+      levelRequired: 1,
+      materials: [
+        { itemId: "spider_silk", quantity: 2 },
+        { itemId: "iron_ore", quantity: 1 },
+      ],
+      outputItemId: "bottled_starlight",
+      outputQuantity: 1,
+      xpReward: 20,
+    },
+  },
+  puzzles: {
+    tower_riddle: {
+      type: "riddle",
+      roomId: "riddle_tower",
+      mobId: "puzzlewright",
+      question:
+        'The Puzzlewright grins its stony grin and gestures to the inscription carved into the tower wall. It reads: "I have cities, but no houses live there. I have mountains, but no trees grow there. I have water, but no fish swim there. I have roads, but no travelers walk there. What am I?"',
+      answer: "map",
+      acceptableAnswers: ["a map", "maps"],
+      reward: {
+        type: "give_item",
+        itemId: "puzzle_key",
+      },
+      successMessage:
+        'The Puzzlewright erupts in delighted laughter, scattering small chips of stone. "YES! A map, of course! You adventurers always overlook the obvious!" A crystalline key materializes in the air before you, solidifying from pure insight, and drops into your hands.',
+      failMessage:
+        'The Puzzlewright tilts its head and clicks its stone tongue. "Hmm, not quite! Think carefully — what has all those things, but none of the life? Try again!"',
+      cooldownMs: 0,
+    },
+  },
+  dungeon: {
+    name: "academy",
+    description:
+      "A shifting labyrinth beneath the Academy where restless undead and forgotten horrors take physical form. Each expedition is different — the corridors rearrange, the creatures change, and the rewards vary.",
+    minLevel: 1,
+    roomCountMin: 4,
+    roomCountMax: 8,
+    portalRoom: "catacombs",
+    roomTemplates: {
+      entrance: [
+        {
+          title: "Catacomb Threshold",
+          description:
+            "Cracked flagstones give way to packed earth. The air is thick and damp, heavy with the smell of mildew and old stone. Flickering torches in rusted sconces light the way forward.",
+        },
+        {
+          title: "The Descending Stair",
+          description:
+            "A spiral staircase descends into shifting darkness. Each step is worn smooth by centuries of use. The walls are slick with condensation, and the air grows colder with each turn.",
+        },
+      ],
+      corridor: [
+        {
+          title: "The Crumbling Passage",
+          description:
+            "A narrow corridor whose walls are cracked and crumbling, revealing older stonework beneath. Iron torch brackets line the walls at uneven intervals, some still holding guttering flames.",
+        },
+        {
+          title: "The Bone-Lined Hall",
+          description:
+            "Skulls and femurs are set into the walls in grim geometric patterns — the ancient burial customs of some forgotten order. The air smells of dust and dry decay.",
+        },
+        {
+          title: "The Echoing Corridor",
+          description:
+            "A long passage where every footstep echoes back threefold. The stone floor is worn into shallow grooves by the passage of countless feet over the centuries. Water drips somewhere in the darkness ahead.",
+        },
+      ],
+      chamber: [
+        {
+          title: "The Guard Barracks",
+          description:
+            "Rows of stone bunks line the walls of this underground chamber, their occupants long since turned to dust. Rusted weapons and rotting leather gear are scattered across the floor. Something stirs in the shadows.",
+        },
+        {
+          title: "The Collapsed Crypt",
+          description:
+            "Half the ceiling has caved in here, letting roots dangle through the rubble from the world above. Broken sarcophagi spill their contents across the floor — bones, grave goods, and things that should have stayed buried.",
+        },
+        {
+          title: "The Ritual Chamber",
+          description:
+            "Arcane circles are etched into the stone floor, still faintly glowing with residual power. Shattered alchemical equipment lines the workbenches, and something has made a nest of old scrolls in the corner.",
+        },
+      ],
+      treasure: [
+        {
+          title: "The Vault",
+          description:
+            "A reinforced chamber whose iron door has been forced open from the inside. Overturned strongboxes and scattered coins litter the floor. Among the mundane debris, genuine treasures glint in the torchlight.",
+        },
+      ],
+      boss: [
+        {
+          title: "The Sunken Hall",
+          description:
+            "An enormous underground hall where the floor drops away into stagnant black water. A single stone platform rises from the depths at the center, connected by narrow bridges of crumbling masonry. Something ancient and powerful waits here — the source of the catacombs' darkest horrors.",
+        },
+        {
+          title: "The Fallen Headmaster's Study",
+          description:
+            "A twisted mirror of the Academy above — desks overturned, bookshelves toppled, and the walls covered in mad scribblings. At the headmaster's desk sits a figure in rotting robes, its hollow eyes burning with undying malice.",
+        },
+      ],
+    },
+    mobPools: {
+      common: ["skeleton_warrior", "shadow_slime"],
+      elite: ["wraith"],
+      boss: ["fallen_champion"],
+    },
+    lootTables: {
+      normal: {
+        mobDrops: ["healing_potion", "spider_silk", "iron_ore"],
+        completionRewards: ["warding_pendant", "hearty_ration"],
+      },
+      hard: {
+        mobDrops: ["hearty_ration", "enchanted_cloth", "iron_ore"],
+        completionRewards: ["shadow_cloak", "elixir_of_clarity"],
+      },
+    },
+  },
+};

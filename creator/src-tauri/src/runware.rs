@@ -618,7 +618,7 @@ pub async fn runware_generate_video(
     let input_image = format!("data:image/png;base64,{b64}");
 
     let task = RunwareVideoTask {
-        task_type: "imageToVideo".to_string(),
+        task_type: "videoInference".to_string(),
         task_uuid: uuid::Uuid::new_v4().to_string(),
         input_image,
         positive_prompt: prompt,

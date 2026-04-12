@@ -570,50 +570,8 @@ pub async fn runware_generate_audio(
 
 // ─── Video Generation ────────────────────────────────────────────────
 
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
-struct RunwareVideoInputs {
-    frame_images: Vec<String>,
-}
-
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
-struct RunwareVideoSettings {
-    audio: bool,
-}
-
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
-struct RunwareVideoTask {
-    task_type: String,
-    #[serde(rename = "taskUUID")]
-    task_uuid: String,
-    model: String,
-    positive_prompt: String,
-    inputs: RunwareVideoInputs,
-    resolution: String,
-    #[serde(serialize_with = "serialize_as_float")]
-    duration: f32,
-    output_format: String,
-    delivery_method: String,
-    settings: RunwareVideoSettings,
-}
-
-/// Ensure the duration serializes as a JSON float (`5.0`) not integer (`5`).
-/// serde_json's f32 formatter can drop the decimal point; promoting to f64
-/// and using serialize_f64 guarantees a `.0` suffix for whole numbers.
-fn serialize_as_float<S: serde::Serializer>(val: &f32, s: S) -> Result<S::Ok, S::Error> {
-    s.serialize_f64(*val as f64)
-}
-
-/// Lightweight polling task to retrieve async results.
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
-struct RunwarePollTask {
-    task_type: String,
-    #[serde(rename = "taskUUID")]
-    task_uuid: String,
-}
+// Video request/poll are built via serde_json::json! to avoid
+// serialization quirks with the Runware API's type checking.
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -651,25 +609,21 @@ pub async fn runware_generate_video(
     let b64 = base64::engine::general_purpose::STANDARD.encode(&image_bytes);
     let input_image = format!("data:image/png;base64,{b64}");
 
-    let dur = (duration_seconds.unwrap_or(5) as f32).min(15.0).max(1.0);
+    let dur = duration_seconds.unwrap_or(5).clamp(1, 15);
 
     let task_uuid = uuid::Uuid::new_v4().to_string();
-    let task = RunwareVideoTask {
-        task_type: "videoInference".to_string(),
-        task_uuid: task_uuid.clone(),
-        model: model.unwrap_or(s.video_model),
-        positive_prompt: prompt,
-        inputs: RunwareVideoInputs {
-            frame_images: vec![input_image],
-        },
-        resolution: "360p".to_string(),
-        duration: dur,
-        output_format: "MP4".to_string(),
-        delivery_method: "async".to_string(),
-        settings: RunwareVideoSettings {
-            audio: audio.unwrap_or(false),
-        },
-    };
+    let task = serde_json::json!({
+        "taskType": "videoInference",
+        "taskUUID": task_uuid,
+        "model": model.unwrap_or(s.video_model),
+        "positivePrompt": prompt,
+        "inputs": { "frameImages": [input_image] },
+        "resolution": "360p",
+        "duration": dur,
+        "outputFormat": "MP4",
+        "deliveryMethod": "async",
+        "settings": { "audio": audio.unwrap_or(false) },
+    });
 
     let client = crate::http::shared_client();
 
@@ -685,10 +639,10 @@ pub async fn runware_generate_video(
     let _ = crate::http::check_response(response).await?;
 
     // Poll for completion — video generation is async
-    let poll_task = vec![RunwarePollTask {
-        task_type: "getResponse".to_string(),
-        task_uuid: task_uuid.clone(),
-    }];
+    let poll_task = serde_json::json!([{
+        "taskType": "getResponse",
+        "taskUUID": task_uuid,
+    }]);
 
     let max_polls = 120; // ~10 minutes at 5s intervals
     for _ in 0..max_polls {

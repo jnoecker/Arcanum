@@ -79,14 +79,28 @@ export async function sha256Hex(input: string | ArrayBuffer): Promise<string> {
     .join("");
 }
 
-/** Generate a new API key. Returns both the plain text (shown once) and its SHA-256 hash (stored). */
-export async function generateApiKey(): Promise<{ plain: string; hash: string }> {
+/**
+ * Generate a new API key. Returns both the plain text (shown once)
+ * and its SHA-256 hash (stored).
+ *
+ * The tier is encoded in the prefix (`hubk_full_...` / `hubk_pub_...`)
+ * so the creator can auto-detect publish-only keys and disable its
+ * "Use Hub AI" toggle. The prefix is purely a UX hint — the worker
+ * still looks up the authoritative tier in D1 on every `/ai/*` call.
+ * Legacy `hub_<random>` keys (no tier segment) from before this
+ * feature keep working; they're all tagged `tier='full'` by the
+ * 0002 migration.
+ */
+export async function generateApiKey(
+  tier: "full" | "publish",
+): Promise<{ plain: string; hash: string }> {
   const bytes = new Uint8Array(24);
   crypto.getRandomValues(bytes);
   const tail = Array.from(bytes)
     .map((b) => b.toString(16).padStart(2, "0"))
     .join("");
-  const plain = `hub_${tail}`;
+  const segment = tier === "publish" ? "pub" : "full";
+  const plain = `hubk_${segment}_${tail}`;
   const hash = await sha256Hex(plain);
   return { plain, hash };
 }

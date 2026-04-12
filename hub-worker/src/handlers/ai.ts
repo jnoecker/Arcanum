@@ -65,6 +65,23 @@ export async function handleAi(
 ): Promise<Response> {
   if (req.method === "OPTIONS") return preflight(CORS);
 
+  // Tier gate. Publish-only users have valid credentials for /publish/*
+  // but cannot spend AI budget. D1 is the authoritative tier — the
+  // `hubk_pub_` prefix on their key is just a UX hint the creator
+  // reads to disable the toggle. Never trust the prefix; check here.
+  if (user.tier !== "full") {
+    return json(
+      {
+        error: "tier_forbidden",
+        message:
+          "This API key is publish-only and cannot use hub AI features. Ask the hub admin for a full-tier key.",
+        tier: user.tier,
+      },
+      { status: 403 },
+      CORS,
+    );
+  }
+
   if (pathname === "/ai/image/generate" && req.method === "POST") {
     return await imageGenerate(req, env, user);
   }

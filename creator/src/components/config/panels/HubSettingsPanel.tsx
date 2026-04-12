@@ -60,6 +60,22 @@ export function HubSettingsPanel() {
     return <div className="text-xs text-text-muted">Loading settings...</div>;
   }
 
+  // Tier auto-detection from the key prefix. The hub issues
+  // `hubk_full_…` for full-tier keys and `hubk_pub_…` for publish-only
+  // keys; legacy `hub_…` keys from before the tier feature are
+  // grandfathered as full. The prefix is a UX hint only — the hub
+  // enforces the authoritative tier on every /ai/* call.
+  const keyIsPublishOnly = account.hub_api_key.startsWith("hubk_pub_");
+
+  // If a publish-only key is entered, force the "use hub AI" flag off
+  // in the draft so saving doesn't persist an impossible combination.
+  useEffect(() => {
+    if (keyIsPublishOnly && account.use_hub_ai) {
+      setAccount({ ...account, use_hub_ai: false });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [keyIsPublishOnly]);
+
   const accountDirty =
     !settings || HUB_ACCOUNT_KEYS.some((k) => account[k] !== settings[k]);
   const worldDirty =
@@ -126,14 +142,25 @@ export function HubSettingsPanel() {
               type="password"
               value={account.hub_api_key}
               onChange={(e) => setAccount({ ...account, hub_api_key: e.target.value })}
-              placeholder="hub_..."
+              placeholder="hubk_full_..."
               className="w-full rounded border border-border-default bg-bg-primary px-3 py-1.5 text-xs text-text-primary placeholder:text-text-muted outline-none focus:border-accent/50 focus-visible:ring-2 focus-visible:ring-border-active"
             />
+            {keyIsPublishOnly && (
+              <p className="mt-1 text-2xs text-warm-pale">
+                Publish-only key detected. AI routing is unavailable for this tier —
+                the hub will reject `/ai/*` calls. Publish still works normally.
+              </p>
+            )}
           </div>
-          <label className="mt-2 flex cursor-pointer items-start gap-2 rounded-lg border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] px-3 py-2 text-xs text-text-secondary">
+          <label
+            className={`mt-2 flex items-start gap-2 rounded-lg border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] px-3 py-2 text-xs text-text-secondary ${
+              keyIsPublishOnly ? "cursor-not-allowed opacity-50" : "cursor-pointer"
+            }`}
+          >
             <input
               type="checkbox"
-              checked={account.use_hub_ai}
+              checked={account.use_hub_ai && !keyIsPublishOnly}
+              disabled={keyIsPublishOnly}
               onChange={(e) => setAccount({ ...account, use_hub_ai: e.target.checked })}
               className="mt-0.5 accent-accent"
             />

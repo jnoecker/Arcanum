@@ -1,5 +1,7 @@
 import type { Env } from "./env";
 
+export type UserTier = "full" | "publish";
+
 export interface UserRow {
   id: string;
   display_name: string;
@@ -11,6 +13,7 @@ export interface UserRow {
   images_quota: number;
   prompts_used: number;
   prompts_quota: number;
+  tier: UserTier;
 }
 
 export interface WorldRow {
@@ -43,13 +46,19 @@ export async function listUsers(env: Env): Promise<UserRow[]> {
 
 export async function createUser(
   env: Env,
-  user: { id: string; display_name: string; email: string | null; api_key_hash: string },
+  user: {
+    id: string;
+    display_name: string;
+    email: string | null;
+    api_key_hash: string;
+    tier: UserTier;
+  },
 ): Promise<void> {
   const now = Date.now();
   await env.DB.prepare(
-    "INSERT INTO users (id, display_name, email, api_key_hash, created_at) VALUES (?, ?, ?, ?, ?)",
+    "INSERT INTO users (id, display_name, email, api_key_hash, created_at, tier) VALUES (?, ?, ?, ?, ?, ?)",
   )
-    .bind(user.id, user.display_name, user.email, user.api_key_hash, now)
+    .bind(user.id, user.display_name, user.email, user.api_key_hash, now, user.tier)
     .run();
 }
 
@@ -65,6 +74,23 @@ export async function updateUserApiKeyHash(
     "UPDATE users SET api_key_hash = ?, images_used = 0, prompts_used = 0 WHERE id = ?",
   )
     .bind(apiKeyHash, userId)
+    .run();
+}
+
+// Tier changes always auto-rotate the key — the prefix encodes the
+// tier as a UX hint for the creator, so changing tier without
+// rotating would leave a stale prefix that misleads the client.
+// Counters reset alongside the rotation, same as updateUserApiKeyHash.
+export async function updateUserTierAndKey(
+  env: Env,
+  userId: string,
+  tier: UserTier,
+  apiKeyHash: string,
+): Promise<void> {
+  await env.DB.prepare(
+    "UPDATE users SET tier = ?, api_key_hash = ?, images_used = 0, prompts_used = 0 WHERE id = ?",
+  )
+    .bind(tier, apiKeyHash, userId)
     .run();
 }
 

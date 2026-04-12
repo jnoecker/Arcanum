@@ -346,6 +346,15 @@ async fn format_hub_error(response: reqwest::Response, status: reqwest::StatusCo
     // Try to parse the structured error body for a friendlier message.
     if let Ok(body) = serde_json::from_str::<HubErrorBody>(&text) {
         let err = body.error.as_deref().unwrap_or("");
+        // Publish-only tier trying to hit /ai/* — distinct from a bad
+        // key so the toast can tell the user exactly what to do.
+        if err == "tier_forbidden" {
+            return "Your hub API key is publish-only and cannot use hub AI features. \
+                    Either ask the hub admin for a full-tier key, or disable \
+                    \"Use Arcanum Hub for AI generation\" in Settings → Arcanum Hub \
+                    and configure a direct provider key instead."
+                .to_string();
+        }
         if err.starts_with("hub_quota_exceeded:") {
             let kind = err.trim_start_matches("hub_quota_exceeded:");
             if let (Some(used), Some(quota)) = (body.used, body.quota) {
@@ -360,6 +369,7 @@ async fn format_hub_error(response: reqwest::Response, status: reqwest::StatusCo
     }
     match status.as_u16() {
         401 => "Hub rejected your API key. Check Settings → Arcanum Hub.".to_string(),
+        403 => "Hub refused the request. Your key may not have permission for this endpoint.".to_string(),
         429 => "Hub quota exceeded. Ask the admin to rotate your key.".to_string(),
         _ => format!("Hub error ({status}): {}", text.chars().take(500).collect::<String>()),
     }

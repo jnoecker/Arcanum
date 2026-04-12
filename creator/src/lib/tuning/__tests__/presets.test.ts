@@ -232,8 +232,8 @@ describe("validation", () => {
 describe("field coverage", () => {
   const allPaths = Object.keys(FIELD_METADATA);
 
-  it("FIELD_METADATA has 136 entries (sanity check)", () => {
-    expect(allPaths).toHaveLength(136);
+  it("FIELD_METADATA has 137 entries (sanity check)", () => {
+    expect(allPaths).toHaveLength(137);
   });
 
   for (const preset of TUNING_PRESETS) {

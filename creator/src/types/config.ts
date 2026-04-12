@@ -854,6 +854,12 @@ export interface GamblingConfig {
   winMultiplier?: number;
 }
 
+// ─── Stylist ───────────────────────────────────────────────────────
+
+export interface StylistConfig {
+  feeGold: number;
+}
+
 // ─── Auto Quests (Bounties) ────────────────────────────────────────
 
 export interface AutoQuestsConfig {
@@ -1003,6 +1009,7 @@ export interface AppConfig {
   currencies?: CurrenciesConfig;
   lottery?: LotteryConfig;
   gambling?: GamblingConfig;
+  stylist?: StylistConfig;
   autoQuests?: AutoQuestsConfig;
   dailyQuests?: DailyQuestsConfig;
   globalQuests?: GlobalQuestsConfig;

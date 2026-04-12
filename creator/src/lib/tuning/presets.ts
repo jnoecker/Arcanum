@@ -153,6 +153,11 @@ export const CASUAL_PRESET: TuningPreset = {
       jackpotBase: 1000,
     },
 
+    // ─── Stylist ─────────────────────────────────────────────────────
+    stylist: {
+      feeGold: 250,
+    },
+
     // ─── Bank ────────────────────────────────────────────────────────
     bank: {
       maxItems: 100,
@@ -445,6 +450,11 @@ export const BALANCED_PRESET: TuningPreset = {
       ticketCost: 25,
       drawingIntervalMs: 3600000,
       jackpotBase: 500,
+    },
+
+    // ─── Stylist ─────────────────────────────────────────────────────
+    stylist: {
+      feeGold: 500,
     },
 
     // ─── Bank ────────────────────────────────────────────────────────
@@ -741,6 +751,11 @@ export const HARDCORE_PRESET: TuningPreset = {
       jackpotBase: 200,
     },
 
+    // ─── Stylist ─────────────────────────────────────────────────────
+    stylist: {
+      feeGold: 1000,
+    },
+
     // ─── Bank ────────────────────────────────────────────────────────
     bank: {
       maxItems: 30,
@@ -932,6 +947,7 @@ export const SOLO_STORY_PRESET: TuningPreset = {
     crafting: { maxSkillLevel: 40, baseXpPerLevel: 60, xpExponent: 1.2, gatherCooldownMs: 1500, stationBonusQuantity: 3 },
     gambling: { enabled: true, minBet: 5, maxBet: 300, winChance: 0.55, winMultiplier: 2.0 },
     lottery: { enabled: true, ticketCost: 5, drawingIntervalMs: 1200000, jackpotBase: 1500 },
+    stylist: { feeGold: 200 },
     bank: { maxItems: 150 },
     enchanting: { maxEnchantmentsPerItem: 5 },
     progression: {
@@ -992,6 +1008,7 @@ export const PVP_ARENA_PRESET: TuningPreset = {
     crafting: { maxSkillLevel: 80, baseXpPerLevel: 120, xpExponent: 1.6, gatherCooldownMs: 4000, stationBonusQuantity: 1 },
     gambling: { enabled: true, minBet: 20, maxBet: 1500, winChance: 0.4, winMultiplier: 2.5 },
     lottery: { enabled: false, ticketCost: 50, drawingIntervalMs: 7200000, jackpotBase: 300 },
+    stylist: { feeGold: 1500 },
     bank: { maxItems: 40 },
     enchanting: { maxEnchantmentsPerItem: 2 },
     progression: {
@@ -1052,6 +1069,7 @@ export const LORE_EXPLORER_PRESET: TuningPreset = {
     crafting: { maxSkillLevel: 30, baseXpPerLevel: 30, xpExponent: 1.1, gatherCooldownMs: 1000, stationBonusQuantity: 5 },
     gambling: { enabled: true, minBet: 1, maxBet: 100, winChance: 0.6, winMultiplier: 3.0 },
     lottery: { enabled: true, ticketCost: 1, drawingIntervalMs: 600000, jackpotBase: 5000 },
+    stylist: { feeGold: 50 },
     bank: { maxItems: 200 },
     enchanting: { maxEnchantmentsPerItem: 6 },
     progression: {

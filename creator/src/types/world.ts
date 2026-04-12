@@ -46,6 +46,7 @@ export interface RoomFile {
   tavern?: boolean;
   dungeon?: boolean;
   auction?: boolean;
+  stylist?: boolean;
   image?: string;
   video?: string;
   music?: string;

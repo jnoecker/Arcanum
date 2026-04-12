@@ -126,6 +126,7 @@ export function parseAppConfigYaml(content: string): AppConfig {
     defaultAssets: parseGlobalAssets((root.images as Record<string, unknown> | undefined)?.defaultAssets ?? root.defaultAssets),
     lottery: parseLotteryConfig(engine.lottery),
     gambling: parseGamblingConfig(engine.gambling),
+    stylist: parseStylistConfig(engine.stylist),
     respec: parseRespecConfig(engine.respec),
     prestige: engine.prestige as AppConfig["prestige"],
     dailyQuests: parseDailyQuestsConfig(engine.dailyQuests),
@@ -630,6 +631,14 @@ function parseGamblingConfig(raw: unknown): AppConfig["gambling"] {
   };
 }
 
+function parseStylistConfig(raw: unknown): AppConfig["stylist"] {
+  if (!raw || typeof raw !== "object") return undefined;
+  const s = raw as Record<string, unknown>;
+  return {
+    feeGold: asNumber(s.feeGold, 500),
+  };
+}
+
 function parseRespecConfig(raw: unknown): AppConfig["respec"] {
   if (!raw || typeof raw !== "object") return undefined;
   const s = raw as Record<string, unknown>;
@@ -844,7 +853,7 @@ function collectRawSections(
     "craftingSkills", "craftingStationTypes",
     "scheduler", "friends", "debug", "classStartRooms", "emotePresets", "housing", "pets", "enchanting", "bank",
     "worldTime", "weather", "worldEvents", "environment", "skillPoints", "multiclass",
-    "lottery", "gambling", "respec", "prestige", "dailyQuests", "autoQuests", "globalQuests",
+    "lottery", "gambling", "stylist", "respec", "prestige", "dailyQuests", "autoQuests", "globalQuests",
     "guildHalls", "factions", "leaderboard", "currencies",
   ]);
 
@@ -1357,6 +1366,7 @@ async function loadSplitConfig(projectDir: string): Promise<AppConfig | null> {
       defaultAssets: parseGlobalAssets((assetsRaw.images as Record<string, unknown> | undefined)?.defaultAssets ?? assetsRaw.defaultAssets),
       lottery: parseLotteryConfig(worldRaw.lottery),
       gambling: parseGamblingConfig(worldRaw.gambling),
+      stylist: parseStylistConfig(worldRaw.stylist),
       respec: parseRespecConfig(worldRaw.respec),
       prestige: worldRaw.prestige as AppConfig["prestige"],
       dailyQuests: parseDailyQuestsConfig(worldRaw.dailyQuests),

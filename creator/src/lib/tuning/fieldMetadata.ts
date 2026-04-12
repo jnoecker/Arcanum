@@ -588,6 +588,16 @@ export const FIELD_METADATA: Record<string, FieldMeta> = {
     impact: "low",
   },
 
+  // ─── Stylist ───────────────────────────────────────────────────────
+
+  "stylist.feeGold": {
+    label: "Stylist Fee (Gold)",
+    description: "Gold charged per race change at a stylist NPC",
+    section: TuningSection.EconomyCrafting,
+    min: 0,
+    impact: "low",
+  },
+
   // ─── Bank ──────────────────────────────────────────────────────────
 
   "bank.maxItems": {

@@ -133,6 +133,7 @@ const BASE_CONFIG: AppConfig = {
     dungeon_portal_widget: "dungeon_portal_widget.png",
     auction_hall_widget: "auction_hall_widget.png",
     duel_arena_widget: "duel_arena_widget.png",
+    stylist_mirror: "stylist_mirror.png",
     minimap_unexplored: "minimap-unexplored.png",
     map_background: "map_background.png",
   },

@@ -8,6 +8,7 @@ import roleAuction from "./role_auction.png";
 import roleBank from "./role_bank.png";
 import roleDungeon from "./role_dungeon.png";
 import roleStation from "./role_station.png";
+import roleStylist from "./role_stylist.png";
 import roleTavern from "./role_tavern.png";
 
 // Feature type icons (16×16) — room feature badges
@@ -51,6 +52,7 @@ export const ROLE_ICONS: Record<string, string> = {
   dungeon: roleDungeon,
   auction: roleAuction,
   station: roleStation,
+  stylist: roleStylist,
 };
 
 /** Feature type (lowercase) → icon URL. */

@@ -174,6 +174,13 @@ export function normalizeGamblingConfig(config?: AppConfig["gambling"]): AppConf
   };
 }
 
+export function normalizeStylistConfig(config?: AppConfig["stylist"]): AppConfig["stylist"] | undefined {
+  if (!config) return undefined;
+  return {
+    feeGold: config.feeGold ?? 500,
+  };
+}
+
 export function normalizeRespecConfig(config?: AppConfig["respec"]): AppConfig["respec"] | undefined {
   if (!config) return undefined;
   return {
@@ -426,6 +433,7 @@ export function buildMonolithicConfigObject(
   // Optional engine subsystems — pass through as-is
   if (c.lottery) engine.lottery = normalizeLotteryConfig(c.lottery);
   if (c.gambling) engine.gambling = normalizeGamblingConfig(c.gambling);
+  if (c.stylist) engine.stylist = normalizeStylistConfig(c.stylist);
   if (c.respec) engine.respec = normalizeRespecConfig(c.respec);
   if (c.prestige) engine.prestige = c.prestige;
   if (c.dailyQuests) engine.dailyQuests = normalizeDailyQuestsConfig(c.dailyQuests);

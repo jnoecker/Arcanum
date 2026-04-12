@@ -184,6 +184,16 @@ export const REQUIRED_GLOBAL_ASSETS: readonly RequiredGlobalAsset[] = [
     transparent: true,
   },
   {
+    key: "stylist_mirror",
+    defaultFilename: "stylist_mirror.png",
+    label: "Stylist Mirror",
+    description: "Mirror shown in rooms with a stylist NPC who can change a player's race.",
+    assetType: "ability_icon",
+    defaultPrompt:
+      "An ornate full-length standing mirror with a decorative metallic frame, a spectral silhouette reflected in its glowing glass, soft starlight sparkles on the surface, centered, transparent background.",
+    transparent: true,
+  },
+  {
     key: "minimap_unexplored",
     defaultFilename: "minimap-unexplored.png",
     label: "Minimap — Unexplored",

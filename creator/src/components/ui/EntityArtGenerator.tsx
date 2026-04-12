@@ -3,7 +3,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
 import { useAssetStore } from "@/stores/assetStore";
 import { useProjectStore } from "@/stores/projectStore";
-import { useImageSrc, isLegacyImagePath } from "@/lib/useImageSrc";
+import { useImageSrc, isLegacyImagePath, isR2HashPath } from "@/lib/useImageSrc";
 import { getEnhanceSystemPrompt, ART_STYLE_LABELS, getNegativePrompt, getStyleSuffix, type ArtStyle } from "@/lib/arcanumPrompts";
 import type { ArtStyleSurface } from "@/lib/loreGeneration";
 import { IMAGE_MODELS, ENTITY_DIMENSIONS, DIMENSION_PRESETS, imageGenerateCommand, resolveImageModel, requestsTransparentBackground, modelNativelyTransparent } from "@/types/assets";
@@ -89,6 +89,7 @@ export function EntityArtGenerator({
   // Whether the current prompt has been LLM-enhanced (skip re-enhancement during generation)
   const [enhanced, setEnhanced] = useState(false);
   const [removingBg, setRemovingBg] = useState(false);
+  const [flipping, setFlipping] = useState(false);
   const [showGalleryPicker, setShowGalleryPicker] = useState(false);
 
   // Refs to track pending results across unmount — auto-accept if user navigates away
@@ -371,6 +372,28 @@ export function EntityArtGenerator({
             }}
           />
         </div>
+      )}
+
+      {/* Flip button */}
+      {stage === "idle" && currentImage && isR2HashPath(currentImage) && (
+        <button
+          onClick={async () => {
+            setFlipping(true);
+            try {
+              const newFileName = await invoke<string>("flip_image", { imageRef: currentImage });
+              onAccept(newFileName);
+            } catch (e) {
+              console.error("Flip failed:", e);
+            } finally {
+              setFlipping(false);
+            }
+          }}
+          disabled={flipping}
+          className="self-start rounded px-1.5 py-0.5 text-2xs text-text-secondary transition-colors hover:bg-accent/10 hover:text-accent disabled:opacity-40"
+          title="Flip image horizontally"
+        >
+          {flipping ? "Flipping..." : "\u21C4 Flip"}
+        </button>
       )}
 
       {/* Variant history strip */}

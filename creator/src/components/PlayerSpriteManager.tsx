@@ -681,6 +681,10 @@ export function PlayerSpriteManager() {
             setViewSprite(null);
             void loadAssets();
           }}
+          onFlip={() => {
+            setViewSprite(null);
+            void loadAssets();
+          }}
           onClose={() => setViewSprite(null)}
         />
       )}

@@ -91,6 +91,7 @@ pub fn run() {
             assets::export_assets_to_dir,
             assets::migrate_sprite_tier,
             assets::expand_base_sprites,
+            assets::flip_image,
             r2::import_from_r2,
             r2::sync_assets,
             r2::get_sync_status,

@@ -1,7 +1,9 @@
 use base64::Engine;
 use chrono::{DateTime, Utc};
+use image::GenericImageView;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
+use std::io::Cursor;
 use std::path::PathBuf;
 use std::sync::LazyLock;
 use tauri::{AppHandle, Manager};
@@ -961,4 +963,104 @@ pub async fn bulk_import_images(
 
     save_manifest(&app, &manifest).await?;
     Ok(result)
+}
+
+/// Flip an image horizontally and save it as a new content-addressed asset.
+/// Accepts the raw image reference (R2 hash filename) and resolves it from
+/// the local assets/images/ directory.
+#[tauri::command]
+pub async fn flip_image(app: AppHandle, image_ref: String) -> Result<String, String> {
+    let src_path = assets_dir(&app)?.join("images").join(&image_ref);
+    if !src_path.exists() {
+        return Err(format!("Image not found: {image_ref}"));
+    }
+
+    let bytes = tokio::fs::read(&src_path)
+        .await
+        .map_err(|e| format!("Failed to read image: {e}"))?;
+
+    let img = image::load_from_memory(&bytes)
+        .map_err(|e| format!("Failed to decode image: {e}"))?;
+
+    let flipped = img.fliph();
+    let (w, h) = flipped.dimensions();
+
+    let ext = std::path::Path::new(&image_ref)
+        .extension()
+        .and_then(|e| e.to_str())
+        .unwrap_or("png")
+        .to_lowercase();
+
+    let (fmt, encoded) = match ext.as_str() {
+        "jpg" | "jpeg" => {
+            let mut cursor = Cursor::new(Vec::new());
+            let mut encoder = image::codecs::jpeg::JpegEncoder::new_with_quality(&mut cursor, 88);
+            encoder
+                .encode_image(&flipped)
+                .map_err(|e| format!("Failed to encode JPEG: {e}"))?;
+            ("jpg", cursor.into_inner())
+        }
+        _ => {
+            let mut cursor = Cursor::new(Vec::new());
+            flipped
+                .write_to(&mut cursor, image::ImageFormat::Png)
+                .map_err(|e| format!("Failed to encode PNG: {e}"))?;
+            ("png", cursor.into_inner())
+        }
+    };
+    let ext = fmt;
+
+    let mut hasher = Sha256::new();
+    hasher.update(&encoded);
+    let hash = format!("{:x}", hasher.finalize());
+    let file_name = format!("{hash}.{ext}");
+
+    let images_dir = assets_dir(&app)?.join("images");
+    tokio::fs::create_dir_all(&images_dir)
+        .await
+        .map_err(|e| format!("Failed to create images dir: {e}"))?;
+
+    let dest = images_dir.join(&file_name);
+    if !dest.exists() {
+        tokio::fs::write(&dest, &encoded)
+            .await
+            .map_err(|e| format!("Failed to write flipped image: {e}"))?;
+    }
+
+    // Register in manifest so it appears in the gallery
+    let _lock = MANIFEST_LOCK.lock().await;
+    let mut manifest = load_manifest(&app).await?;
+    if !manifest.assets.iter().any(|a| a.hash == hash) {
+        let source = manifest.assets.iter().find(|a| a.file_name == image_ref);
+        let entry = AssetEntry {
+            id: uuid::Uuid::new_v4().to_string(),
+            hash,
+            prompt: source.map_or("Flipped".to_string(), |s| format!("Flipped: {}", s.prompt)),
+            enhanced_prompt: source.map_or_else(String::new, |s| s.enhanced_prompt.clone()),
+            model: source.map_or("flip".to_string(), |s| s.model.clone()),
+            asset_type: source.map_or("entity_portrait".to_string(), |s| s.asset_type.clone()),
+            context: source.map_or_else(AssetContext::default, |s| s.context.clone()),
+            created_at: Utc::now(),
+            file_name: file_name.clone(),
+            width: w,
+            height: h,
+            sync_status: "local".to_string(),
+            variant_group: source.map_or_else(String::new, |s| s.variant_group.clone()),
+            is_active: true,
+        };
+
+        let vg = &entry.variant_group;
+        if !vg.is_empty() {
+            for a in manifest.assets.iter_mut() {
+                if &a.variant_group == vg {
+                    a.is_active = false;
+                }
+            }
+        }
+
+        manifest.assets.push(entry);
+        save_manifest(&app, &manifest).await?;
+    }
+
+    Ok(file_name)
 }

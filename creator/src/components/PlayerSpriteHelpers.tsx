@@ -1,5 +1,6 @@
 import { memo, useState, useCallback } from "react";
-import { useImageSrc } from "@/lib/useImageSrc";
+import { invoke } from "@tauri-apps/api/core";
+import { useImageSrc, isR2HashPath } from "@/lib/useImageSrc";
 import { useFocusTrap } from "@/lib/useFocusTrap";
 import { removeBgAndSave } from "@/lib/useBackgroundRemoval";
 import { generateArtDirection } from "@/lib/spritePromptGen";
@@ -85,6 +86,7 @@ export function SpriteLightbox({
   onRegenerate,
   onDelete,
   onRemoveBg,
+  onFlip,
   onClose,
 }: {
   spriteKey: string;
@@ -95,10 +97,12 @@ export function SpriteLightbox({
   onRegenerate: () => void;
   onDelete: () => void;
   onRemoveBg: () => void;
+  onFlip?: (newFileName: string) => void;
   onClose: () => void;
 }) {
   const src = useImageSrc(fileName);
   const [removingBg, setRemovingBg] = useState(false);
+  const [flipping, setFlipping] = useState(false);
   const lightboxTrapRef = useFocusTrap<HTMLDivElement>(onClose);
 
   const handleRemoveBg = async () => {
@@ -153,6 +157,25 @@ export function SpriteLightbox({
           >
             {removingBg ? "Removing BG..." : "Remove BG"}
           </ActionButton>
+          {isR2HashPath(fileName) && onFlip && (
+            <ActionButton
+              onClick={async () => {
+                setFlipping(true);
+                try {
+                  const newFileName = await invoke<string>("flip_image", { imageRef: fileName });
+                  onFlip(newFileName);
+                } catch (e) {
+                  console.error("Flip failed:", e);
+                } finally {
+                  setFlipping(false);
+                }
+              }}
+              disabled={flipping}
+              variant="secondary"
+            >
+              {flipping ? "Flipping..." : "\u21C4 Flip"}
+            </ActionButton>
+          )}
           <ActionButton
             onClick={onDelete}
             disabled={!canDelete}

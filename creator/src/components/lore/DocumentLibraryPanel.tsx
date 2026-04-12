@@ -8,6 +8,7 @@ import { Section, CommitTextarea } from "@/components/ui/FormWidgets";
 import { exportLoreBible } from "@/lib/exportLoreBible";
 import { loreBibleToHtml } from "@/lib/loreBibleHtml";
 import { ImportWizard } from "./ImportWizard";
+import { WorldbuilderImportWizard } from "./WorldbuilderImportWizard";
 
 function LoreBibleExport() {
   const lore = useLoreStore((s) => s.lore);
@@ -117,6 +118,7 @@ export function DocumentLibraryPanel() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [newTitle, setNewTitle] = useState("");
   const [showImportWizard, setShowImportWizard] = useState(false);
+  const [showWorldbuilderWizard, setShowWorldbuilderWizard] = useState(false);
 
   const selected = selectedId ? documents.find((d) => d.id === selectedId) ?? null : null;
 
@@ -183,6 +185,12 @@ export function DocumentLibraryPanel() {
             className="focus-ring rounded-full border border-[var(--chrome-stroke)] px-3 py-1.5 text-xs font-medium text-text-secondary transition hover:bg-[var(--chrome-highlight-strong)] hover:text-text-primary"
           >
             Import Markdown
+          </button>
+          <button
+            onClick={() => setShowWorldbuilderWizard(true)}
+            className="focus-ring rounded-full border border-[var(--chrome-stroke)] px-3 py-1.5 text-xs font-medium text-text-secondary transition hover:bg-[var(--chrome-highlight-strong)] hover:text-text-primary"
+          >
+            Import from Worldbuilder
           </button>
           <button
             onClick={handleCreate}
@@ -264,6 +272,9 @@ export function DocumentLibraryPanel() {
     </div>
       {showImportWizard && (
         <ImportWizard onClose={() => setShowImportWizard(false)} />
+      )}
+      {showWorldbuilderWizard && (
+        <WorldbuilderImportWizard onClose={() => setShowWorldbuilderWizard(false)} />
       )}
     </div>
   );

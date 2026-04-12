@@ -8,9 +8,8 @@ import type { MetricSnapshot } from "./types";
 import { REPRESENTATIVE_LEVELS } from "./types";
 
 /**
- * XP required to reach a given level.
- * Formula inferred from XpCurveConfig field semantics -- exact Kotlin
- * computation not in reference/.
+ * XP required to reach a given level. Formula inferred from
+ * XpCurveConfig field semantics.
  */
 export function xpForLevel(
   level: number,

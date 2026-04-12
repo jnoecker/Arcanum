@@ -2,9 +2,9 @@
 //
 // The MUD supports both single-class trainers (`class: WARRIOR`) and
 // multi-class trainers (`classes: [WARRIOR, ROGUE]`). When the loader
-// sees both, `classes` wins — see the precedence rule in
-// reference/.../world/load/WorldLoader.kt. These helpers centralize
-// that logic so every call site stays consistent.
+// sees both, `classes` wins — this matches the server's WorldLoader
+// precedence rule. These helpers centralize that logic so every call
+// site stays consistent.
 
 import type { TrainerFile } from "@/types/world";
 

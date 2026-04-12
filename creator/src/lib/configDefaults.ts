@@ -1,8 +1,8 @@
 // ─── Canonical MUD defaults ─────────────────────────────────────────
 //
 // These mirror the defaults shipped with the AmbonMUD server
-// (reference/config/AppConfig.kt companion objects and the canonical
-// reference/config/application.yaml). When a new (or empty) project
+// (AppConfig companion objects and the canonical shipped
+// application.yaml). When a new (or empty) project
 // loads a config section with no user data, we fill in the MUD's
 // canonical values so the editors have something useful to show —
 // the server itself would apply the same defaults if it saw an empty
@@ -30,8 +30,8 @@ export const DEFAULT_ACHIEVEMENT_CATEGORIES: AppConfig["achievementCategories"] 
 /**
  * Achievement criterion types. The MUD companion default is only the
  * first three ({kill, reach_level, quest_complete}), but the example
- * zones under reference/example-zones/achievements.yaml reference the
- * broader set and the server's achievement listener handles all of
+ * zones reference the broader set and the server's achievement
+ * listener handles all of
  * these. We ship the superset so authors can wire up crafting, gathering,
  * dungeon, and guild achievements without editing the taxonomy first.
  */
@@ -75,10 +75,10 @@ export const DEFAULT_QUEST_COMPLETION_TYPES: AppConfig["questCompletionTypes"] =
 //
 // These three registries describe *how* a status effect behaves
 // (ticking damage, modifying stats, stacking) and are hardcoded in the
-// MUD's status-effect engine. They come from
-// reference/config/AppConfig.kt companion objects. Creator needs them
-// present so the Condition designer dropdowns are populated even
-// before the user opens a full MUD config.
+// MUD's status-effect engine. They come from the server's AppConfig
+// companion objects. Creator needs them present so the Condition
+// designer dropdowns are populated even before the user opens a full
+// MUD config.
 
 export const DEFAULT_STATUS_EFFECT_TYPES: AppConfig["statusEffectTypes"] = {
   dot: { displayName: "Damage Over Time", ticksDamage: true },
@@ -105,7 +105,7 @@ export const DEFAULT_ABILITY_TARGET_TYPES: AppConfig["abilityTargetTypes"] = {
 // ─── Canonical status effects ("conditions") ───────────────────────
 //
 // Thirty-six buff/debuff/shield/DoT/HoT definitions from the shipping
-// reference/config/application.yaml. Many of these are referenced by
+// server application.yaml. Many of these are referenced by
 // name from hardcoded ability implementations on the server, so
 // projects that don't define them will have broken abilities — we
 // ship them as a baseline so the Condition designer starts populated.
@@ -358,8 +358,8 @@ export const DEFAULT_STATUS_EFFECTS: AppConfig["statusEffects"] = {
 
 // ─── Canonical player + staff commands ─────────────────────────────
 //
-// Sourced from reference/config/AppConfig.kt CommandsConfig
-// .defaultCommandEntries(). The server's command dispatcher looks up
+// Sourced from the server's CommandsConfig.defaultCommandEntries().
+// The server's command dispatcher looks up
 // handlers by these IDs, so projects that strip the list down below
 // the hardcoded set will have broken commands. We ship the full list
 // as a baseline.

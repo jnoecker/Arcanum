@@ -4,13 +4,6 @@
 
 Required Notice: Copyright (c) 2026 John Noecker Jr.
 
-## Scope
-
-This license applies to all files in this repository **except** the
-`reference/` directory, which contains source material from
-[AmbonMUD](https://github.com/jnoecker/AmbonMUD) and retains its
-original AmbonMUD license.
-
 For commercial licensing inquiries, please open an issue on the project
 repository.
 

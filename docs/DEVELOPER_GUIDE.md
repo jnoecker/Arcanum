@@ -79,7 +79,7 @@ AmbonArcanum/
 │   │   ├── components/      #     UI — AppShell, editors, panels, lore, zone, wizard, ...
 │   │   ├── stores/          #     Zustand stores (15 independent stores)
 │   │   ├── lib/             #     Pure utilities — YAML I/O, validation, prompt templates, edit functions
-│   │   ├── types/           #     TypeScript types — mirrors Kotlin DTOs in reference/
+│   │   ├── types/           #     TypeScript types — mirrors the AmbonMUD server's YAML DTOs
 │   │   ├── assets/          #     Background images for UI surfaces
 │   │   ├── App.tsx          #     Root component (welcome vs AppShell)
 │   │   ├── main.tsx         #     Vite entry point
@@ -106,8 +106,6 @@ AmbonArcanum/
 │
 ├── hub-admin/               # Optional admin SPA for hub user/quota management
 │   └── src/                 #   Master-key gated against HUB_ADMIN_KEY
-│
-├── reference/               # Read-only — AmbonMUD Kotlin source (source of truth for YAML DTOs)
 │
 ├── docs/                    # You are here
 ├── .github/workflows/       # ci.yml, release.yml
@@ -171,7 +169,7 @@ Deep details live in [`CLAUDE.md`](../CLAUDE.md). The one-page version:
 | Add a lore article template | Extend `TEMPLATE_SCHEMAS` in `creator/src/lib/loreTemplates.ts` |
 | Add an AI asset type | Add templates in `creator/src/lib/arcanumPrompts.ts` + wire into the asset generator |
 | Add a Tauri command | Create or extend a module in `creator/src-tauri/src/`, register it in `lib.rs` |
-| Add a validation rule | Extend `creator/src/lib/validateZone.ts` or `validateConfig.ts`. Must mirror `reference/world-loader/WorldLoader.kt`. |
+| Add a validation rule | Extend `creator/src/lib/validateZone.ts` or `validateConfig.ts`. Must mirror the AmbonMUD server's `WorldLoader` rules. |
 | Add undo to a new mutation | Zone store: call `pushHistory()` before the change. Lore store: call `snapshotLore(s)` inside `set()`. |
 
 ## Hub development (optional)
@@ -279,5 +277,3 @@ Every lore mutation must call `snapshotLore(s)` inside the `set()` callback. Mis
 - [`../CLAUDE.md`](../CLAUDE.md) — architecture details, coding conventions, and the full list of known pitfalls
 - [`../ARCANUM_STYLE_GUIDE.md`](../ARCANUM_STYLE_GUIDE.md) — design system
 - [`../hub-worker/README.md`](../hub-worker/README.md) — hub routing, R2 layout, admin endpoints
-- [`../reference/docs/WORLD_YAML_SPEC.md`](../reference/docs/WORLD_YAML_SPEC.md) — zone YAML schema (read-only reference)
-- [`../reference/docs/STAT_SYSTEM_SPEC.md`](../reference/docs/STAT_SYSTEM_SPEC.md) — stat system specification (read-only reference)

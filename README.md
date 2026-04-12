@@ -14,7 +14,6 @@ Built with Tauri 2 (Rust backend, React 19 frontend). Windows-first, cross-platf
 | `showcase/` | The public showcase SPA (Vite + React). Runs in three modes: self-hosted, Arcanum Hub landing, and per-world hub subdomain |
 | `hub-worker/` | Cloudflare Worker backing the central Arcanum Hub — publish API, admin API, AI proxy, and the multi-tenant showcase assets |
 | `hub-admin/` | Small React SPA for hub user/quota management, deployed to Cloudflare Pages |
-| `reference/` | Read-only Kotlin source from the AmbonMUD server — the source of truth for YAML DTOs and server-side validation rules. **Do not modify.** |
 | `docs/` | Developer documentation (see [`docs/DEVELOPER_GUIDE.md`](docs/DEVELOPER_GUIDE.md)) |
 
 ## Quick start
@@ -165,10 +164,7 @@ See [`ARCANUM_STYLE_GUIDE.md`](ARCANUM_STYLE_GUIDE.md) for the full palette, typ
 - [`ARCANUM_STYLE_GUIDE.md`](ARCANUM_STYLE_GUIDE.md) — design system source of truth
 - [`.impeccable.md`](.impeccable.md) — condensed design context
 - [`hub-worker/README.md`](hub-worker/README.md) — hub architecture and deployment
-- [`reference/docs/WORLD_YAML_SPEC.md`](reference/docs/WORLD_YAML_SPEC.md) — zone YAML format specification (read-only)
 
 ## License
 
 Arcanum is licensed under the [PolyForm Noncommercial License 1.0.0](LICENSE.md). Personal projects, hobby use, research, education, and nonprofit work are all welcome. Commercial use is **not** permitted under this license — open an issue on the repository to discuss commercial terms.
-
-The `reference/` directory contains source material from [AmbonMUD](https://github.com/jnoecker/AmbonMUD) and retains its original AmbonMUD license — it is not covered by PolyForm Noncommercial.

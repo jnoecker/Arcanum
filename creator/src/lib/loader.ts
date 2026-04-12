@@ -1404,7 +1404,7 @@ function asRecord<T>(val: unknown): Record<string, T> {
 
 /**
  * Lowercase + trim equipment slot keys to match the MUD's validation rule
- * (see validateEngineEquipment in reference/config/AppConfig.kt). Auto-heals
+ * (matches the server's validateEngineEquipment). Auto-heals
  * legacy projects whose templates wrote uppercase keys like "HEAD". On
  * collision (e.g. both "HEAD" and "head"), the last entry wins.
  */

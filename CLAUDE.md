@@ -14,7 +14,6 @@ Arcanum is a Tauri 2 desktop worldbuilding tool. React 19 + TypeScript 5.8 front
 - `showcase/` — public lore viewer SPA (Vite + React 19 + Tailwind 4). Runs in three modes selected at runtime by `detectHubMode()`: **self-hosted** (`lore.ambon.dev`), **hub root** (`arcanum-hub.com`), and **per-world hub subdomain** (`<slug>.arcanum-hub.com`).
 - `hub-worker/` — Cloudflare Worker backing the central Arcanum Hub. Owns publish API, admin API, AI proxy (image/LLM/vision), and ships the showcase SPA via an `[assets]` binding. Bindings: D1 `arcanum-hub` (users, worlds, quotas), R2 `arcanum-hub` (per-world `showcase.json` + WebP images).
 - `hub-admin/` — small Vite + React SPA for admin-only user/quota management, deployed to Cloudflare Pages and reverse-proxied through `admin.arcanum-hub.com`. Master-key auth against `HUB_ADMIN_KEY`.
-- `reference/` — read-only Kotlin source from the AmbonMUD server. Source of truth for YAML DTO shapes and server-side validation rules. **Never modify.**
 - `docs/` — developer documentation
 - `ARCANUM_STYLE_GUIDE.md` — design system (palette, typography, motion, components, art prompts)
 - `.impeccable.md` — condensed design context for AI-assisted development
@@ -74,9 +73,9 @@ npx wrangler pages deploy dist --project-name=arcanum-hub-admin --branch=main
   - `themeStore` — runtime theme state
   - `toastStore` — toast notification queue
   - `tuningWizardStore` — tuning wizard state: presets, comparisons, pending changes
-- **Types** — `src/types/` mirrors Kotlin DTOs from `reference/world-yaml-dtos/`. Suffix with `File` for YAML-serialized types (`RoomFile`, `MobFile`), `Store` for store interfaces, `Props` for component props.
+- **Types** — `src/types/` mirrors the AmbonMUD server's YAML DTOs. Suffix with `File` for YAML-serialized types (`RoomFile`, `MobFile`), `Store` for store interfaces, `Props` for component props.
 - **YAML I/O** — `yaml` package in CST mode for format-preserving round-trip. Loaders in `src/lib/loader.ts`, savers in `src/lib/saveZone.ts` and `src/lib/saveConfig.ts`. Zone key ordering: `zone, lifespan, startRoom, image, audio, rooms, mobs, items, shops, quests, gatheringNodes, recipes`. Only serialize non-zero values in StatMap fields.
-- **Validation** — Client-side in `src/lib/validateZone.ts` and `src/lib/validateConfig.ts`. Must mirror `reference/world-loader/WorldLoader.kt`.
+- **Validation** — Client-side in `src/lib/validateZone.ts` and `src/lib/validateConfig.ts`. Must mirror the AmbonMUD server's `WorldLoader` rules.
 - **Graph** — Zone maps use XY Flow with dagre layout. Custom `RoomNode` with background images, entity sprites, and visible exit handles. See `src/components/zone/`.
 - **Panel registry** — `src/lib/panelRegistry.ts` defines ~60 panels across 7 groups (studio, characters, world, lore, content, operations, command). Each panel has a `host` type (`studio` / `config` / `lore` / `command`) that `MainArea.tsx` uses to route to the right container.
 - **Art generation** — Project-defined `visualStyle` field drives prompts for all generated images. `getStyleSuffix()` and `getPreamble()` defer to the world's visual style when set, falling back to built-in "arcanum" or "gentle_magic" styles. `buildToneDirective()` is injected into every AI system prompt. Templates in `src/lib/arcanumPrompts.ts`, keyed by asset type. Generation dimensions capped at 1024px (resized to the final target in Rust). Class color palettes injected for ability/status icon generation.
@@ -234,7 +233,6 @@ Images are served to the frontend as base64 data URLs via the `read_image_data_u
 - **Tauri asset protocol on Windows** — Don't use `convertFileSrc()` for images. Use the `read_image_data_url` IPC command instead.
 - **Flex scrolling** — Containers that need to scroll must have `min-h-0 flex-1` on the parent to allow `overflow-y-auto` to work.
 - **Settings split** — Settings are split into user-level (API keys in `~/.tauri/settings.json`) and project-level (art/R2 config in `<project>/.arcanum/settings.json`). `get_merged_settings` combines both. `loadSettings()` in `assetStore` auto-seeds project settings on first open. When adding a new setting, decide whether it's per-user or per-project, then update the corresponding Rust struct (`Settings` or `ProjectSettings`) and TypeScript interface (`Settings` or `ProjectSettings` in `types/assets.ts`).
-- **Reference files** — The `reference/` directory is read-only Kotlin source from the AmbonMUD server. Never modify these files — they're the source of truth for type shapes and validation rules.
 - **ReactFlow backgrounds** — ReactFlow renders its own opaque canvas layer. To overlay background images on the zone builder, place them ON TOP with `pointer-events-none`, `z-[1]`, and `mix-blend-screen` — not behind the canvas.
 - **Server detection** — The server outputs `"AmbonMUD listening on telnet port {port}"` when ready. Match this exact string in `useServerManager.ts`.
 - **Config data-driven fields** — Many game systems (equipment slots, crafting skills, station types) are data-driven from `application.yaml`. Editors like `ItemEditor`, `RecipeEditor`, `GatheringNodeEditor` derive dropdown options from `configStore` with fallback to hardcoded defaults.
@@ -270,5 +268,3 @@ Images are served to the frontend as base64 data URLs via the `read_image_data_u
 - [`README.md`](README.md) — project overview and feature summary
 - [`ARCANUM_STYLE_GUIDE.md`](ARCANUM_STYLE_GUIDE.md) — design system
 - [`hub-worker/README.md`](hub-worker/README.md) — hub architecture and routing
-- [`reference/docs/WORLD_YAML_SPEC.md`](reference/docs/WORLD_YAML_SPEC.md) — zone YAML schema (read-only reference)
-- [`reference/docs/STAT_SYSTEM_SPEC.md`](reference/docs/STAT_SYSTEM_SPEC.md) — stat system specification (read-only reference)

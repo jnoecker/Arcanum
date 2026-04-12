@@ -195,7 +195,7 @@ export interface TrainerFile {
   class?: string;
   /**
    * Multi-class list. When set and non-empty, takes precedence over {@link class}
-   * — matches the loader rule in reference/.../WorldLoader.kt. Use this for
+   * — matches the server's WorldLoader precedence rule. Use this for
    * trainers that teach two or more classes (e.g. a combat academy master
    * teaching WARRIOR + ROGUE + RANGER).
    */

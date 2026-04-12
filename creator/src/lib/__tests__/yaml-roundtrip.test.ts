@@ -4,7 +4,7 @@ import { join } from "path";
 import { parseDocument, stringify } from "yaml";
 import type { WorldFile } from "@/types/world";
 
-const ZONE_DIR = join(__dirname, "../../../../reference/example-zones");
+const ZONE_DIR = join(__dirname, "fixtures/example-zones");
 
 /** Get all YAML files from the example-zones directory */
 function getZoneFiles(): string[] {

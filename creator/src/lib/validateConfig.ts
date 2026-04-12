@@ -216,7 +216,7 @@ export function validateConfig(config: AppConfig): ValidationIssue[] {
   }
 
   // ─── Equipment Slots ────────────────────────────────────────────
-  // Mirrors validateEngineEquipment() in reference/config/AppConfig.kt
+  // Mirrors the server's validateEngineEquipment() rule
   if (Object.keys(config.equipmentSlots).length === 0) {
     issues.push({
       severity: "error",
@@ -534,7 +534,7 @@ export function validateConfig(config: AppConfig): ValidationIssue[] {
   }
 
   // ─── Mob tiers ───────────────────────────────────────────────
-  // Mirrors validateMobTier() in reference/config/AppConfig.kt
+  // Mirrors the server's validateMobTier() rule
   const mobTierEntries: [string, typeof config.mobTiers.weak][] = [
     ["weak", config.mobTiers.weak],
     ["standard", config.mobTiers.standard],

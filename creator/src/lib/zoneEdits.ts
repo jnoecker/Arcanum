@@ -405,8 +405,8 @@ function cleanDoor(door: DoorFile): DoorFile | undefined {
 // ─── Room feature operations ────────────────────────────────────────
 
 /**
- * Feature types supported by the Kotlin FeatureFile. Keep in sync with
- * `reference/world-yaml-dtos/FeatureFile.kt`.
+ * Feature types supported by the server's FeatureFile DTO. Keep in sync
+ * with the Kotlin enum if the server ever grows a new one.
  */
 export const FEATURE_TYPES = ["CONTAINER", "LEVER", "SIGN"] as const;
 export type FeatureType = typeof FEATURE_TYPES[number];

@@ -12,7 +12,7 @@ import {
 } from "@/lib/tuning/formulas";
 import { REPRESENTATIVE_LEVELS } from "@/lib/tuning/types";
 
-// ─── Kotlin default values from reference/config/AppConfig.kt ──────
+// ─── Server-side Kotlin default values from AppConfig ─────────────
 
 const DEFAULT_XP = { baseXp: 100, exponent: 2.0, linearXp: 0, multiplier: 1.0 };
 

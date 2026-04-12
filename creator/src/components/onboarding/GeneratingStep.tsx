@@ -115,10 +115,12 @@ export function GeneratingStep({ reSkinPromise, reSkinProgress, onFinished }: Ge
 
         // Race a 45-second timeout against the re-skin promise so we
         // never hang indefinitely — fall back to the base template.
+        // DeepSeek generates at ~25 tok/s; the largest call can take
+        // 4+ minutes. Give the full pipeline 6 minutes before falling back.
         const reSkinWithTimeout = Promise.race([
           reSkinPromise,
           new Promise<null>((resolve) => {
-            setTimeout(() => resolve(null), 90_000);
+            setTimeout(() => resolve(null), 360_000);
           }),
         ]).catch((e) => {
           localWarning = `Theme re-skin encountered an issue (${String(e)}). Starting with the default academy template.`;

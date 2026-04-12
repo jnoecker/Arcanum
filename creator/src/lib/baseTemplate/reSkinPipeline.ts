@@ -71,9 +71,11 @@ function deepClone<T>(obj: T): T {
 }
 
 function llm(systemPrompt: string, userPrompt: string, maxTokens = 4096): Promise<string> {
+  // DeepSeek V3.2 generates ~25-50 tok/s. A 6K-token response at
+  // 25 tok/s takes ~240s. Give 5 minutes so large calls can finish.
   const call = invoke<string>("llm_complete", { systemPrompt, userPrompt, maxTokens });
   const timeout = new Promise<never>((_, reject) =>
-    setTimeout(() => reject(new Error("LLM call timed out after 60 seconds")), 60_000),
+    setTimeout(() => reject(new Error("LLM call timed out")), 300_000),
   );
   return Promise.race([call, timeout]);
 }
@@ -202,7 +204,7 @@ ${seedPrompt}
 INSTRUCTIONS:
 - Re-skin each class: change displayName, description, backstory, and outfitDescription to fit the theme.
 - Re-skin each ability: change displayName and description to fit the theme.
-- Backstories should be 2-3 paragraphs of rich worldbuilding that explain where this archetype comes from in the themed world.
+- Backstories should be 1 short paragraph (3-5 sentences) explaining where this archetype comes from in the themed world. Keep it concise.
 - Outfit descriptions should be vivid, specific, and visually distinctive — they are used to generate character art.
 - Ability descriptions should be concise (1-2 sentences) and evocative.
 - Maintain the same mechanical role for each class (tank, DPS caster, healer, stealth DPS, pet summoner).
@@ -220,7 +222,7 @@ ${seedPrompt}
 INSTRUCTIONS:
 - Re-skin each race: change displayName, description, backstory, traits, and bodyDescription.
 - The re-skinned races should fill the same narrative niche as the originals: HUMAN is the versatile generalist, SYLVAN is the agile/magical archetype, STONEHEART is the tough/resilient archetype.
-- Backstories should be 2-3 paragraphs of rich worldbuilding rooted in the theme.
+- Backstories should be 1 short paragraph (3-5 sentences) rooted in the theme. Keep it concise.
 - Traits should be 2-3 short trait names (single words or two-word phrases) that capture the race's identity in the themed world.
 - bodyDescription should be a detailed physical description suitable for generating character art — skin, build, features, hair, eyes, distinguishing marks.
 - Return ONLY valid JSON. Do not include any explanation, commentary, or markdown formatting outside the JSON object.`;
@@ -450,7 +452,7 @@ export async function startReSkin(
     }>("classes+abilities", classesSystemPrompt(seedPrompt), JSON.stringify({
       classes: buildClassesInput(),
       abilities: buildAbilitiesInput(),
-    }), 6144),
+    }), 4096),
 
     callAndParse<{
       races?: Record<string, { displayName?: string; description?: string; backstory?: string; traits?: string[]; bodyDescription?: string }>;

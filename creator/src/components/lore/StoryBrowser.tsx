@@ -1,9 +1,9 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { useLoreStore, selectArticles } from "@/stores/loreStore";
 import { useStoryStore } from "@/stores/storyStore";
 import { useProjectStore } from "@/stores/projectStore";
 import { useZoneStore } from "@/stores/zoneStore";
-import { loadStory } from "@/lib/storyPersistence";
+import { loadStory, deleteStoryFile } from "@/lib/storyPersistence";
 import { useImageSrc } from "@/lib/useImageSrc";
 import { StoryEditorPanel } from "./StoryEditorPanel";
 import { NewStoryDialog } from "./NewStoryDialog";
@@ -24,8 +24,23 @@ export function StoryBrowser() {
   const activeStoryId = useStoryStore((s) => s.activeStoryId);
   const setActiveStory = useStoryStore((s) => s.setActiveStory);
 
+  const deleteStory = useStoryStore((s) => s.deleteStory);
+  const deleteArticle = useLoreStore((s) => s.deleteArticle);
+
   const [showNewStory, setShowNewStory] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  const handleDelete = useCallback(
+    async (articleId: string, storyId: string) => {
+      deleteStory(storyId);
+      deleteArticle(articleId);
+      if (project) {
+        await deleteStoryFile(project, storyId).catch(() => {});
+      }
+      if (activeStoryId === storyId) setActiveStory(null);
+    },
+    [project, activeStoryId, deleteStory, deleteArticle, setActiveStory],
+  );
 
   // Collect all story-type articles
   const storyArticles = useMemo(() => {
@@ -120,36 +135,54 @@ export function StoryBrowser() {
             const sceneCount = stories[storyId]?.scenes.length;
 
             return (
-              <button
+              <div
                 key={article.id}
-                onClick={() => setActiveStory(storyId)}
-                className="group flex gap-3 rounded-xl border border-border-default bg-bg-primary p-3 text-left transition-colors hover:border-accent/40 hover:bg-bg-hover"
+                className="group relative flex gap-3 rounded-xl border border-border-default bg-bg-primary p-3 text-left transition-colors hover:border-accent/40 hover:bg-bg-hover"
               >
-                <div className="h-16 w-16 shrink-0 overflow-hidden rounded-lg border border-border-default bg-bg-elevated">
-                  {article.image ? (
-                    <StoryThumb fileName={article.image} />
-                  ) : (
-                    <div className="flex h-full w-full items-center justify-center text-2xs text-text-muted">
-                      No cover
-                    </div>
-                  )}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="truncate text-sm font-medium text-text-primary group-hover:text-accent">
-                    {article.title}
+                <button
+                  onClick={() => setActiveStory(storyId)}
+                  className="flex min-w-0 flex-1 gap-3 text-left"
+                >
+                  <div className="h-16 w-16 shrink-0 overflow-hidden rounded-lg border border-border-default bg-bg-elevated">
+                    {article.image ? (
+                      <StoryThumb fileName={article.image} />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center text-2xs text-text-muted">
+                        No cover
+                      </div>
+                    )}
                   </div>
-                  <div className="mt-0.5 text-2xs text-text-muted">
-                    {zoneName}
-                    {sceneCount != null && ` \u00B7 ${sceneCount} scene${sceneCount !== 1 ? "s" : ""}`}
-                  </div>
-                  {article.updatedAt && (
-                    <div className="mt-1 text-2xs text-text-muted">
-                      Updated{" "}
-                      {new Date(article.updatedAt).toLocaleDateString()}
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-sm font-medium text-text-primary group-hover:text-accent">
+                      {article.title}
                     </div>
-                  )}
-                </div>
-              </button>
+                    <div className="mt-0.5 text-2xs text-text-muted">
+                      {zoneName}
+                      {sceneCount != null && ` \u00B7 ${sceneCount} scene${sceneCount !== 1 ? "s" : ""}`}
+                    </div>
+                    {article.updatedAt && (
+                      <div className="mt-1 text-2xs text-text-muted">
+                        Updated{" "}
+                        {new Date(article.updatedAt).toLocaleDateString()}
+                      </div>
+                    )}
+                  </div>
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (confirm(`Delete story "${article.title}"?`)) {
+                      handleDelete(article.id, storyId);
+                    }
+                  }}
+                  className="absolute right-2 top-2 rounded p-1 text-text-muted opacity-0 transition-all hover:bg-status-error/10 hover:text-status-error group-hover:opacity-100"
+                  title="Delete story"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
+                  </svg>
+                </button>
+              </div>
             );
           })}
         </div>

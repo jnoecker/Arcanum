@@ -1,9 +1,10 @@
 import { useCallback, useMemo, useState } from "react";
 import type { ConfigPanelProps } from "./types";
-import type { PetDefinitionConfig } from "@/types/config";
+import type { PetDefinitionConfig, PetSpellConfig } from "@/types/config";
 import {
   TextInput,
   NumberInput,
+  SelectInput,
   CommitTextarea,
   FieldGrid,
   CompactField,
@@ -20,6 +21,24 @@ function cx(...c: Array<string | false | null | undefined>) {
 
 function normalizeId(raw: string): string {
   return raw.trim().toLowerCase().replace(/\s+/g, "_");
+}
+
+const THREAT_ROLES: { value: string; label: string }[] = [
+  { value: "tank", label: "Tank" },
+  { value: "balanced", label: "Balanced" },
+  { value: "dps", label: "DPS" },
+];
+
+const THREAT_VALUES: Record<string, number> = {
+  tank: 3.0,
+  balanced: 1.0,
+  dps: 0.0,
+};
+
+function threatRole(multiplier: number | undefined): string {
+  if (multiplier !== undefined && multiplier >= 2.0) return "tank";
+  if (multiplier === 0 || multiplier === undefined) return "dps";
+  return "balanced";
 }
 
 function defaultPetDefinition(raw: string): PetDefinitionConfig {
@@ -570,6 +589,24 @@ function PetEditor({
               </div>
             </div>
 
+            <div>
+              <p className="mb-2 font-display text-2xs uppercase tracking-wider text-text-muted">
+                Role
+              </p>
+              <SelectInput
+                value={threatRole(pet.threatMultiplier)}
+                onCommit={(v) =>
+                  onPatch({ threatMultiplier: THREAT_VALUES[v] })
+                }
+                options={THREAT_ROLES}
+              />
+            </div>
+
+            <SpellsSection
+              pet={pet}
+              onPatch={onPatch}
+            />
+
             <div className="mt-auto flex justify-end border-t border-border-muted/50 pt-3">
               <button
                 type="button"
@@ -582,6 +619,310 @@ function PetEditor({
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+function SpellsSection({
+  pet,
+  onPatch,
+}: {
+  pet: PetDefinitionConfig;
+  onPatch: (p: Partial<PetDefinitionConfig>) => void;
+}) {
+  const [addingSpell, setAddingSpell] = useState(false);
+  const [newSpellId, setNewSpellId] = useState("");
+  const [expanded, setExpanded] = useState<string | null>(null);
+
+  const spells = pet.spells ?? {};
+  const spellIds = Object.keys(spells);
+  const hasSpells = spellIds.length > 0;
+
+  const addSpell = (id: string) => {
+    const next = { ...(pet.spells ?? {}) };
+    next[id] = { displayName: "", message: "", weight: 1 };
+    onPatch({ spells: next });
+    setAddingSpell(false);
+    setNewSpellId("");
+    setExpanded(id);
+  };
+
+  const updateSpell = (id: string, field: string, value: unknown) => {
+    const next = { ...(pet.spells ?? {}) };
+    next[id] = { ...next[id], [field]: value } as PetSpellConfig;
+    onPatch({ spells: next });
+  };
+
+  const deleteSpell = (id: string) => {
+    const next = { ...(pet.spells ?? {}) };
+    delete next[id];
+    const cleaned = Object.keys(next).length > 0 ? next : undefined;
+    onPatch({
+      spells: cleaned,
+      defaultAttack: pet.defaultAttack === id ? undefined : pet.defaultAttack,
+    });
+    if (expanded === id) setExpanded(null);
+  };
+
+  return (
+    <div>
+      <div className="mb-2 flex items-baseline justify-between gap-2">
+        <p className="font-display text-2xs uppercase tracking-wider text-text-muted">
+          Spells ({spellIds.length})
+        </p>
+        <button
+          type="button"
+          onClick={() => setAddingSpell(true)}
+          className="focus-ring rounded border border-accent/40 bg-accent/10 px-2 py-0.5 text-2xs font-medium text-accent transition hover:bg-accent/20"
+        >
+          + Add Spell
+        </button>
+      </div>
+
+      {addingSpell && (
+        <div className="mb-2 flex items-center gap-1.5">
+          <input
+            autoFocus
+            className="w-40 rounded border border-border-default bg-bg-primary px-2 py-1 text-xs text-text-primary outline-none focus:border-accent/50 focus-visible:ring-2 focus-visible:ring-border-active"
+            placeholder="spell_id"
+            value={newSpellId}
+            onChange={(e) => setNewSpellId(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                const id = normalizeId(newSpellId);
+                if (id && !spells[id]) addSpell(id);
+              }
+              if (e.key === "Escape") {
+                setAddingSpell(false);
+                setNewSpellId("");
+              }
+            }}
+          />
+          <button
+            type="button"
+            onClick={() => {
+              const id = normalizeId(newSpellId);
+              if (id && !spells[id]) addSpell(id);
+            }}
+            disabled={!newSpellId.trim() || !!spells[normalizeId(newSpellId)]}
+            className="rounded bg-accent/20 px-1.5 py-1 text-2xs text-accent hover:bg-accent/30 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            Add
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setAddingSpell(false);
+              setNewSpellId("");
+            }}
+            className="rounded px-1.5 py-1 text-2xs text-text-muted hover:text-text-primary"
+          >
+            Cancel
+          </button>
+        </div>
+      )}
+
+      {hasSpells ? (
+        <div className="flex flex-col gap-2">
+          {spellIds.map((sid) => (
+            <SpellCard
+              key={sid}
+              id={sid}
+              spell={spells[sid]!}
+              expanded={expanded === sid}
+              onToggle={() => setExpanded(expanded === sid ? null : sid)}
+              onUpdate={(field, value) => updateSpell(sid, field, value)}
+              onDelete={() => deleteSpell(sid)}
+            />
+          ))}
+        </div>
+      ) : (
+        !addingSpell && (
+          <div className="rounded-xl border border-dashed border-border-muted/40 bg-bg-primary/20 px-4 py-4 text-center">
+            <p className="text-2xs text-text-muted/70">
+              No spells defined. Pets use standard melee by default.
+            </p>
+          </div>
+        )
+      )}
+
+      {hasSpells && (
+        <div className="mt-3">
+          <CompactField
+            label="Default attack"
+            hint="Which spell replaces the standard melee. Leave empty for normal attacks."
+          >
+            <SelectInput
+              value={pet.defaultAttack ?? ""}
+              onCommit={(v) =>
+                onPatch({ defaultAttack: v || undefined })
+              }
+              options={spellIds.map((sid) => ({
+                value: sid,
+                label: spells[sid]!.displayName || sid,
+              }))}
+              placeholder="Standard melee"
+              allowEmpty
+            />
+          </CompactField>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SpellCard({
+  id,
+  spell,
+  expanded,
+  onToggle,
+  onUpdate,
+  onDelete,
+}: {
+  id: string;
+  spell: PetSpellConfig;
+  expanded: boolean;
+  onToggle: () => void;
+  onUpdate: (field: string, value: unknown) => void;
+  onDelete: () => void;
+}) {
+  return (
+    <div
+      className={cx(
+        "overflow-hidden rounded-xl border transition",
+        expanded
+          ? "border-accent/40 bg-accent/[0.04]"
+          : "border-border-muted/40 bg-bg-primary/20",
+      )}
+    >
+      <div className="group flex items-center gap-2 px-3 py-2">
+        <button
+          type="button"
+          onClick={onToggle}
+          className="focus-ring flex min-w-0 flex-1 items-center gap-2 text-left"
+        >
+          <svg
+            width="12"
+            height="12"
+            viewBox="0 0 16 16"
+            fill="none"
+            className={cx(
+              "shrink-0 text-text-muted/60 transition-transform",
+              expanded && "rotate-90",
+            )}
+            aria-hidden="true"
+          >
+            <path
+              d="M6 4L10 8L6 12"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+          <span className="truncate font-display text-xs font-semibold text-text-primary">
+            {spell.displayName || id}
+          </span>
+          <span className="text-2xs text-text-muted/50">{id}</span>
+        </button>
+        <button
+          type="button"
+          onClick={onDelete}
+          aria-label={`Delete spell ${id}`}
+          className="focus-ring shrink-0 rounded p-1 text-text-muted/40 opacity-0 transition hover:bg-status-error/15 hover:text-status-error group-hover:opacity-100"
+        >
+          <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
+            <path
+              d="M4 4L12 12M12 4L4 12"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+            />
+          </svg>
+        </button>
+      </div>
+
+      {expanded && (
+        <div className="flex flex-col gap-3 border-t border-border-muted/30 px-3 pb-3 pt-3">
+          <FieldGrid>
+            <CompactField label="Display name" span>
+              <TextInput
+                value={spell.displayName}
+                onCommit={(v) => onUpdate("displayName", v)}
+                placeholder="e.g. Fire Bolt"
+              />
+            </CompactField>
+            <CompactField label="Message" span>
+              <TextInput
+                value={spell.message}
+                onCommit={(v) => onUpdate("message", v)}
+                placeholder="Combat message shown to target"
+              />
+            </CompactField>
+            <CompactField label="Room message" span>
+              <TextInput
+                value={spell.roomMessage ?? ""}
+                onCommit={(v) =>
+                  onUpdate("roomMessage", v || undefined)
+                }
+                placeholder="Message shown to the room (optional)"
+              />
+            </CompactField>
+          </FieldGrid>
+
+          <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+            <StatInput
+              label="Min DMG"
+              value={spell.minDamage ?? 0}
+              onCommit={(v) =>
+                onUpdate("minDamage", v || undefined)
+              }
+              tint="warm"
+            />
+            <StatInput
+              label="Max DMG"
+              value={spell.maxDamage ?? 0}
+              onCommit={(v) =>
+                onUpdate("maxDamage", v || undefined)
+              }
+              tint="warm"
+            />
+            <StatInput
+              label="Heal Min"
+              value={spell.healMin ?? 0}
+              onCommit={(v) =>
+                onUpdate("healMin", v || undefined)
+              }
+              tint="rose"
+            />
+            <StatInput
+              label="Heal Max"
+              value={spell.healMax ?? 0}
+              onCommit={(v) =>
+                onUpdate("healMax", v || undefined)
+              }
+              tint="rose"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-2.5">
+            <StatInput
+              label="Cooldown (ms)"
+              value={spell.cooldownMs ?? 0}
+              onCommit={(v) =>
+                onUpdate("cooldownMs", v || undefined)
+              }
+              tint="blue"
+            />
+            <StatInput
+              label="Weight"
+              value={spell.weight ?? 1}
+              onCommit={(v) => onUpdate("weight", v ?? 1)}
+              tint="blue"
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

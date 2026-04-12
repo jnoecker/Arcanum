@@ -56,7 +56,11 @@ function deepClone<T>(obj: T): T {
 }
 
 function llm(systemPrompt: string, userPrompt: string): Promise<string> {
-  return invoke<string>("llm_complete", { systemPrompt, userPrompt });
+  const call = invoke<string>("llm_complete", { systemPrompt, userPrompt });
+  const timeout = new Promise<never>((_, reject) =>
+    setTimeout(() => reject(new Error("LLM call timed out after 30 seconds")), 30_000),
+  );
+  return Promise.race([call, timeout]);
 }
 
 // ─── Input builders ───────────────────────────────────────────────

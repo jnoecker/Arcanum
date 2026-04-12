@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import type { WorldFile, MobFile, MobDropFile } from "@/types/world";
+import type { WorldFile, MobFile, MobDropFile, MobSpellFile } from "@/types/world";
 import { updateMob, deleteMob } from "@/lib/zoneEdits";
 import { useEntityEditor } from "@/lib/useEntityEditor";
 import { useArrayField } from "@/lib/useArrayField";
@@ -119,6 +119,53 @@ export function MobEditor({
     },
     [mob.quests, patch],
   );
+
+  const [addingSpell, setAddingSpell] = useState(false);
+  const [newSpellId, setNewSpellId] = useState("");
+
+  const spellEntries = Object.entries(mob.spells ?? {});
+
+  const handleAddSpell = useCallback(
+    (id: string) => {
+      const next = { ...(mob.spells ?? {}) };
+      next[id] = { displayName: "", message: "", weight: 1 };
+      patch({ spells: next });
+    },
+    [mob.spells, patch],
+  );
+
+  const handleUpdateSpell = useCallback(
+    (id: string, field: keyof MobSpellFile, value: unknown) => {
+      const next = { ...(mob.spells ?? {}) };
+      const existing = next[id];
+      if (!existing) return;
+      next[id] = { ...existing, [field]: value } as MobSpellFile;
+      patch({ spells: next });
+    },
+    [mob.spells, patch],
+  );
+
+  const handleDeleteSpell = useCallback(
+    (id: string) => {
+      const next = { ...(mob.spells ?? {}) };
+      delete next[id];
+      const cleaned = Object.keys(next).length > 0 ? next : undefined;
+      patch({
+        spells: cleaned,
+        defaultAttack: mob.defaultAttack === id ? undefined : mob.defaultAttack,
+      });
+    },
+    [mob.spells, mob.defaultAttack, patch],
+  );
+
+  const handleSubmitNewSpell = useCallback(() => {
+    const id = newSpellId.trim().replace(/\s+/g, "_");
+    if (id && !mob.spells?.[id]) {
+      handleAddSpell(id);
+    }
+    setNewSpellId("");
+    setAddingSpell(false);
+  }, [newSpellId, mob.spells, handleAddSpell]);
 
   return (
     <>
@@ -300,6 +347,74 @@ export function MobEditor({
             </div>
           </Section>
 
+          <Section
+            title={`Spells (${spellEntries.length})`}
+            defaultExpanded={spellEntries.length > 0}
+            actions={
+              addingSpell ? (
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    handleSubmitNewSpell();
+                  }}
+                  className="flex items-center gap-1"
+                >
+                  <input
+                    autoFocus
+                    value={newSpellId}
+                    onChange={(e) => setNewSpellId(e.target.value)}
+                    placeholder="spell_id"
+                    className="h-5 w-20 rounded border border-border-default bg-bg-primary px-1 text-2xs text-text-primary outline-none focus:border-accent focus-visible:ring-2 focus-visible:ring-border-active"
+                    onBlur={handleSubmitNewSpell}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setNewSpellId("");
+                      setAddingSpell(false);
+                    }}
+                    className="text-2xs text-text-muted hover:text-text-primary"
+                  >
+                    &times;
+                  </button>
+                </form>
+              ) : (
+                <IconButton onClick={() => setAddingSpell(true)} title="Add spell">
+                  +
+                </IconButton>
+              )
+            }
+          >
+            {spellEntries.length === 0 ? (
+              <p className="text-xs text-text-muted">No spells defined</p>
+            ) : (
+              <div className="flex flex-col gap-2">
+                {spellEntries.map(([spellId, spell]) => (
+                  <SpellCard
+                    key={spellId}
+                    spellId={spellId}
+                    spell={spell}
+                    onUpdate={(field, value) => handleUpdateSpell(spellId, field, value)}
+                    onDelete={() => handleDeleteSpell(spellId)}
+                  />
+                ))}
+              </div>
+            )}
+            <FieldRow label="Default Attack">
+              <SelectInput
+                value={mob.defaultAttack ?? ""}
+                options={[
+                  { value: "", label: "— standard melee —" },
+                  ...spellEntries.map(([id, s]) => ({
+                    value: id,
+                    label: s.displayName || id,
+                  })),
+                ]}
+                onCommit={(v) => patch({ defaultAttack: v || undefined })}
+              />
+            </FieldRow>
+          </Section>
+
           <Section title="Stat Overrides" defaultExpanded={false}>
             <p className="mb-1 text-2xs text-text-muted">
               Leave blank to use tier defaults
@@ -455,5 +570,146 @@ export function MobEditor({
 
       <DeleteEntityButton onClick={handleDelete} label="Delete Mob" />
     </>
+  );
+}
+
+// ─── Spell Card ─────────────────────────────────────────────────────
+
+function SpellCard({
+  spellId,
+  spell,
+  onUpdate,
+  onDelete,
+}: {
+  spellId: string;
+  spell: MobSpellFile;
+  onUpdate: (field: keyof MobSpellFile, value: unknown) => void;
+  onDelete: () => void;
+}) {
+  const [expanded, setExpanded] = useState(true);
+
+  return (
+    <div className="border-l-2 border-accent/20 pl-2.5">
+      <div className="flex items-center justify-between gap-1">
+        <button
+          type="button"
+          onClick={() => setExpanded((v) => !v)}
+          className="flex items-center gap-1.5 rounded text-left text-xs font-medium text-text-primary hover:text-accent"
+        >
+          <span
+            className={`inline-block text-[8px] text-text-muted [transition:transform_220ms_var(--ease-unfurl)] ${expanded ? "rotate-90" : ""}`}
+          >
+            &#x25B6;
+          </span>
+          {spell.displayName || spellId}
+        </button>
+        <span className="text-2xs text-text-muted">{spellId}</span>
+      </div>
+      {expanded && (
+        <div className="mt-1.5 flex flex-col gap-1.5">
+          <FieldRow label="Display Name">
+            <TextInput
+              value={spell.displayName}
+              onCommit={(v) => onUpdate("displayName", v)}
+              placeholder="Fireball"
+            />
+          </FieldRow>
+          <FieldRow label="Message">
+            <TextInput
+              value={spell.message}
+              onCommit={(v) => onUpdate("message", v)}
+              placeholder="The mob hurls a bolt of darkness at you"
+            />
+          </FieldRow>
+          <FieldRow label="Room Message">
+            <TextInput
+              value={spell.roomMessage ?? ""}
+              onCommit={(v) => onUpdate("roomMessage", v || undefined)}
+              placeholder="{mob} hurls darkness at {target}."
+            />
+          </FieldRow>
+          <FieldRow label="Damage">
+            <div className="flex items-center gap-1">
+              <div className="min-w-0 flex-1">
+                <NumberInput
+                  value={spell.minDamage}
+                  onCommit={(v) => onUpdate("minDamage", v)}
+                  placeholder="Min"
+                  min={0}
+                />
+              </div>
+              <span className="text-2xs text-text-muted">/</span>
+              <div className="min-w-0 flex-1">
+                <NumberInput
+                  value={spell.maxDamage}
+                  onCommit={(v) => onUpdate("maxDamage", v)}
+                  placeholder="Max"
+                  min={0}
+                />
+              </div>
+            </div>
+          </FieldRow>
+          <FieldRow label="Heal">
+            <div className="flex items-center gap-1">
+              <div className="min-w-0 flex-1">
+                <NumberInput
+                  value={spell.healMin}
+                  onCommit={(v) => onUpdate("healMin", v)}
+                  placeholder="Min"
+                  min={0}
+                />
+              </div>
+              <span className="text-2xs text-text-muted">/</span>
+              <div className="min-w-0 flex-1">
+                <NumberInput
+                  value={spell.healMax}
+                  onCommit={(v) => onUpdate("healMax", v)}
+                  placeholder="Max"
+                  min={0}
+                />
+              </div>
+            </div>
+          </FieldRow>
+          <FieldRow label="Cooldown / Weight">
+            <div className="flex items-center gap-1">
+              <div className="min-w-0 flex-1">
+                <NumberInput
+                  value={spell.cooldownMs}
+                  onCommit={(v) => onUpdate("cooldownMs", v)}
+                  placeholder="0 ms"
+                  min={0}
+                />
+              </div>
+              <span className="text-2xs text-text-muted">ms</span>
+              <span className="text-2xs text-text-muted">/</span>
+              <div className="w-16 shrink-0">
+                <NumberInput
+                  value={spell.weight}
+                  onCommit={(v) => onUpdate("weight", v)}
+                  placeholder="1"
+                  min={0}
+                />
+              </div>
+              <span className="text-2xs text-text-muted">wt</span>
+            </div>
+          </FieldRow>
+          <FieldRow label="Status Effect">
+            <TextInput
+              value={spell.statusEffectId ?? ""}
+              onCommit={(v) => onUpdate("statusEffectId", v || undefined)}
+              placeholder="Status effect ID (optional)"
+            />
+          </FieldRow>
+          <div className="flex justify-end pt-1">
+            <button
+              onClick={onDelete}
+              className="rounded px-2 py-0.5 text-2xs text-text-muted transition-colors hover:bg-status-danger/10 hover:text-status-danger"
+            >
+              Delete Spell
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }

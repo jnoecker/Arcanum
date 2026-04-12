@@ -108,26 +108,44 @@ export function GeneratingStep({ reSkinPromise, reSkinProgress, onFinished }: Ge
     const run = async () => {
       let localWarning: string | null = null;
       try {
-        // ─── Phase 1: Create project + wait for re-skin ──────────
+        // ─── Phase 1: Create project + wait for re-skin (parallel) ──
         setActivePhase("creating");
         const home = await homeDir();
         const parentDir = joinPath(home, "Arcanum Worlds");
 
-        const [reSkinResults] = await Promise.all([
-          reSkinPromise.catch((e) => {
-            localWarning = `Theme re-skin encountered an issue (${String(e)}). Starting with the default academy template.`;
-            return null as ReSkinResults | null;
+        // Race a 45-second timeout against the re-skin promise so we
+        // never hang indefinitely — fall back to the base template.
+        const reSkinWithTimeout = Promise.race([
+          reSkinPromise,
+          new Promise<null>((resolve) => {
+            setTimeout(() => resolve(null), 45_000);
           }),
-          // Start project creation in parallel with re-skin
-          Promise.resolve(),
+        ]).catch((e) => {
+          localWarning = `Theme re-skin encountered an issue (${String(e)}). Starting with the default academy template.`;
+          return null as ReSkinResults | null;
+        });
+
+        // Create the project directory immediately while re-skin runs.
+        // Use a temporary slug; we'll rename/re-slugify once we know the
+        // themed academy name.
+        const defaultSlug = "academy";
+        const projectPromise = createProjectWithRetry(parentDir, defaultSlug);
+
+        // Wait for both to finish.
+        const [reSkinResults, projectResult] = await Promise.all([
+          reSkinWithTimeout,
+          projectPromise,
         ]);
+
+        if (reSkinResults === null && !localWarning) {
+          localWarning = "Theme re-skin timed out. Starting with the default academy template.";
+        }
 
         const zoneData = reSkinResults?.zone ?? BASE_ACADEMY_ZONE;
         const resolvedAcademyName = reSkinResults?.academyName ?? "The Academy";
         setAcademyName(resolvedAcademyName);
 
-        const projectSlug = slugify(resolvedAcademyName);
-        const { mudDir, projectName } = await createProjectWithRetry(parentDir, projectSlug);
+        const { mudDir, projectName } = projectResult;
 
         const openResult = await openDir(mudDir, "standalone");
         if (!openResult.success) {

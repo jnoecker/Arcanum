@@ -118,7 +118,6 @@ interface MobTextInput {
   name: string;
   role?: string;
   category?: string;
-  dialogue?: Record<string, unknown>;
 }
 
 interface ItemTextInput {
@@ -130,29 +129,21 @@ interface ItemTextInput {
 function buildEntitiesInput() {
   const mobs: Record<string, MobTextInput> = {};
   const baseMobs = BASE_ACADEMY_ZONE.mobs ?? {};
+  const roleMap: Record<string, string> = {
+    headmaster_aldric: "Headmaster NPC, quest giver",
+    scholar_elara: "Scholar NPC, lore teacher",
+    quartermaster_bren: "Shopkeeper NPC",
+    instructor_valence: "Combat instructor NPC",
+    groundskeeper_thorne: "Groundskeeper NPC, quest giver",
+    puzzlewright: "Riddle gargoyle NPC",
+    artificer_wren: "Crafting instructor NPC",
+    stylist_maren: "Stylist NPC",
+  };
   for (const [id, mob] of Object.entries(baseMobs)) {
-    if ("dialogue" in mob && mob.dialogue) {
-      const roleMap: Record<string, string> = {
-        headmaster_aldric: "Headmaster and quest giver. Welcomes new students, explains the academy, and assigns the Grand Tour quest.",
-        scholar_elara: "Scholar and lore NPC. Teaches dialogue mechanics and gives directions.",
-        quartermaster_bren: "Shopkeeper in the armory. Sells equipment and explains the shop system.",
-        instructor_valence: "Combat instructor. Teaches class unlocking and ability training.",
-        groundskeeper_thorne: "Groundskeeper and quest giver. Manages proving grounds creatures, assigns the Creature Roundup quest.",
-        puzzlewright: "Stone gargoyle riddler. Guards the passage to the secret library with a riddle.",
-        artificer_wren: "Crafting instructor. Teaches the crafting and gathering systems.",
-        stylist_maren: "Appearance stylist. Lets players customize their look.",
-      };
-      mobs[id] = {
-        name: mob.name,
-        role: roleMap[id] ?? "NPC",
-        dialogue: mob.dialogue as Record<string, unknown>,
-      };
-    } else {
-      mobs[id] = {
-        name: mob.name,
-        category: mob.category ?? "creature",
-      };
-    }
+    mobs[id] = {
+      name: mob.name,
+      ...(roleMap[id] ? { role: roleMap[id] } : { category: mob.category ?? "creature" }),
+    };
   }
 
   const items: Record<string, ItemTextInput> = {};
@@ -237,31 +228,18 @@ INSTRUCTIONS:
 }
 
 function entitiesSystemPrompt(seedPrompt: string): string {
-  return `You are a creative writer re-skinning game entities (NPCs, creatures, items, shops, quests, and pets) for a themed MUD (text-based RPG). Your task is to transform names, descriptions, and dialogue to match a specific world theme while preserving all mechanical game values and tutorial content.
+  return `You are a creative writer re-skinning game entity names for a themed MUD (text-based RPG). Transform names and short descriptions to match the theme.
 
 WORLD THEME:
 ${seedPrompt}
 
-INSTRUCTIONS FOR MOBS:
-- For NPCs with dialogue: re-skin the name and rewrite ALL dialogue text to fit the theme. Keep the same dialogue tree structure — same node IDs (root, quest_info, how_it_works, etc.), same choice texts (re-skinned), same "next" pointers. The NPC's role and the information they convey must remain the same, but their personality, speech patterns, and references should match the themed world. Include the COMPLETE dialogue object with all nodes in your response.
-- For combat mobs: re-skin the name only. Keep category unchanged. If the mob has an aggroMessage in its behavior params, rewrite it to match the theme.
-- Maintain the mob's role: headmaster = leader/quest-giver, scholar = lore NPC, quartermaster = shopkeeper, instructor = trainer, groundskeeper = quest-giver, puzzlewright = riddler, artificer = crafter, stylist = appearance changer.
-
-INSTRUCTIONS FOR ITEMS:
-- Re-skin displayName, description, and keyword to fit the theme.
-- Keep the item's function recognizable (healing potion is still a healing consumable, armor is still protective gear, etc.).
-- Keywords should be a single word that players would type to interact with the item.
-
-INSTRUCTIONS FOR SHOPS:
-- Re-skin the shop name only.
-
-INSTRUCTIONS FOR QUESTS:
-- Re-skin the quest name and description. The description should still explain what the player needs to do, just framed in the themed world's context.
-
-INSTRUCTIONS FOR PETS:
-- Re-skin the pet name and description. Keep the same general creature role (combat companion, aerial attacker, tank/guardian).
-
-- Return ONLY valid JSON. Do not include any explanation, commentary, or markdown formatting outside the JSON object.`;
+INSTRUCTIONS:
+- For each mob: provide a re-skinned "name" that fits the theme and the mob's role.
+- For each item: provide a re-skinned "displayName", "description" (1 sentence), and "keyword" (single word).
+- For each shop: provide a re-skinned "name".
+- For each quest: provide a re-skinned "name" and "description" (1-2 sentences).
+- For each pet: provide a re-skinned "name" and "description" (1 sentence).
+- Return ONLY valid JSON. No explanation or markdown.`;
 }
 
 function artStyleSystemPrompt(seedPrompt: string): string {
@@ -347,7 +325,7 @@ function mergeZone(
   base: WorldFile,
   roomsSkinned: Record<string, { title?: string; description?: string }> | undefined,
   entitiesSkinned: {
-    mobs?: Record<string, { name?: string; dialogue?: Record<string, unknown> }>;
+    mobs?: Record<string, { name?: string }>;
     items?: Record<string, { displayName?: string; description?: string; keyword?: string }>;
     shops?: Record<string, { name?: string }>;
     quests?: Record<string, { name?: string; description?: string }>;
@@ -368,9 +346,6 @@ function mergeZone(
     for (const [id, overrides] of Object.entries(entitiesSkinned.mobs)) {
       if (result.mobs[id]) {
         if (overrides.name) result.mobs[id].name = overrides.name;
-        if (overrides.dialogue) {
-          result.mobs[id].dialogue = overrides.dialogue as typeof result.mobs[string]["dialogue"];
-        }
       }
     }
   }
@@ -430,7 +405,7 @@ export async function startReSkin(
   let skinnedPets = deepClone(BASE_PETS);
   let roomsSkinned: Record<string, { title?: string; description?: string }> | undefined;
   let entitiesSkinned: {
-    mobs?: Record<string, { name?: string; dialogue?: Record<string, unknown> }>;
+    mobs?: Record<string, { name?: string }>;
     items?: Record<string, { displayName?: string; description?: string; keyword?: string }>;
     shops?: Record<string, { name?: string }>;
     quests?: Record<string, { name?: string; description?: string }>;
@@ -484,10 +459,10 @@ export async function startReSkin(
     // ── Call 4: Entities ─────────────────────────────────────────────
     (async () => {
       const userPrompt = JSON.stringify(buildEntitiesInput());
-      // 8 NPCs with dialogue trees + 8 combat mobs + 17 items + shops + quests + pets
-      const raw = await llm(entitiesSystemPrompt(seedPrompt), userPrompt, 8192);
+      // Mob names + item names/descriptions + shop/quest/pet names
+      const raw = await llm(entitiesSystemPrompt(seedPrompt), userPrompt, 4096);
       const parsed = extractJson(raw) as {
-        mobs?: Record<string, { name?: string; dialogue?: Record<string, unknown> }>;
+        mobs?: Record<string, { name?: string }>;
         items?: Record<string, { displayName?: string; description?: string; keyword?: string }>;
         shops?: Record<string, { name?: string }>;
         quests?: Record<string, { name?: string; description?: string }>;

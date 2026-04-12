@@ -16,9 +16,10 @@ import { StoryExportDialog } from "./StoryExportDialog";
 
 interface StoryEditorPanelProps {
   storyId: string;
+  onDelete?: () => void;
 }
 
-export function StoryEditorPanel({ storyId }: StoryEditorPanelProps) {
+export function StoryEditorPanel({ storyId, onDelete }: StoryEditorPanelProps) {
   const project = useProjectStore((s) => s.project);
   const story = useStoryStore((s) => s.stories[storyId]);
   const dirty = useStoryStore((s) => s.dirty[storyId] ?? false);
@@ -289,6 +290,27 @@ export function StoryEditorPanel({ storyId }: StoryEditorPanelProps) {
               <path d="M9 4l3 3-3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </ActionButton>
+
+          {onDelete && (
+            <>
+              <div className="mx-0.5 h-5 w-px bg-border-muted" />
+              <ActionButton
+                variant="ghost"
+                size="icon"
+                onClick={() => {
+                  if (confirm(`Delete story "${story.title}"?`)) {
+                    onDelete();
+                  }
+                }}
+                aria-label="Delete story"
+                className="text-text-muted hover:text-status-error"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
+                </svg>
+              </ActionButton>
+            </>
+          )}
         </div>
       </div>
 

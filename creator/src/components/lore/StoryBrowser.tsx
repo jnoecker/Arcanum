@@ -81,7 +81,15 @@ export function StoryBrowser() {
           >
             &larr; All Stories
           </button>
-          <StoryEditorPanel storyId={activeStoryId} />
+          <StoryEditorPanel
+            storyId={activeStoryId}
+            onDelete={() => {
+              const article = storyArticles.find(
+                (a) => a.fields.storyId === activeStoryId,
+              );
+              if (article) handleDelete(article.id, activeStoryId);
+            }}
+          />
         </div>
       );
     }

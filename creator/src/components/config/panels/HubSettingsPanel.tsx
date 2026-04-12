@@ -56,25 +56,25 @@ export function HubSettingsPanel() {
     }
   }, [projectSettings]);
 
-  if (!account) {
-    return <div className="text-xs text-text-muted">Loading settings...</div>;
-  }
-
   // Tier auto-detection from the key prefix. The hub issues
   // `hubk_full_…` for full-tier keys and `hubk_pub_…` for publish-only
   // keys; legacy `hub_…` keys from before the tier feature are
   // grandfathered as full. The prefix is a UX hint only — the hub
   // enforces the authoritative tier on every /ai/* call.
-  const keyIsPublishOnly = account.hub_api_key.startsWith("hubk_pub_");
+  const keyIsPublishOnly = account?.hub_api_key.startsWith("hubk_pub_") ?? false;
 
   // If a publish-only key is entered, force the "use hub AI" flag off
   // in the draft so saving doesn't persist an impossible combination.
   useEffect(() => {
-    if (keyIsPublishOnly && account.use_hub_ai) {
+    if (account && keyIsPublishOnly && account.use_hub_ai) {
       setAccount({ ...account, use_hub_ai: false });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [keyIsPublishOnly]);
+
+  if (!account) {
+    return <div className="text-xs text-text-muted">Loading settings...</div>;
+  }
 
   const accountDirty =
     !settings || HUB_ACCOUNT_KEYS.some((k) => account[k] !== settings[k]);

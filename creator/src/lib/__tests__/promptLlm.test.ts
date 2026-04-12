@@ -13,7 +13,7 @@ function makeSettings(overrides: Partial<Settings> = {}): Settings {
     enhance_model: "Qwen/Qwen2.5-7B-Instruct",
     prompt_llm_provider: "deepinfra",
     image_provider: "deepinfra",
-    video_model: "runware:2",
+    video_model: "pixverse:1@8",
     batch_concurrency: 12,
     auto_enhance_prompts: true,
     auto_remove_bg: false,

@@ -572,16 +572,39 @@ pub async fn runware_generate_audio(
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
+struct RunwareVideoInputs {
+    frame_images: Vec<String>,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RunwareVideoSettings {
+    audio: bool,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
 struct RunwareVideoTask {
     task_type: String,
     #[serde(rename = "taskUUID")]
     task_uuid: String,
-    input_image: String,
-    positive_prompt: String,
     model: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    seconds_total: Option<u32>,
+    positive_prompt: String,
+    inputs: RunwareVideoInputs,
+    resolution: String,
+    duration: f32,
     output_format: String,
+    delivery_method: String,
+    settings: RunwareVideoSettings,
+}
+
+/// Lightweight polling task to retrieve async results.
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RunwarePollTask {
+    task_type: String,
+    #[serde(rename = "taskUUID")]
+    task_uuid: String,
 }
 
 #[derive(Debug, Deserialize)]
@@ -593,8 +616,10 @@ struct RunwareVideoResponse {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct RunwareVideoResult {
-    #[serde(alias = "videoURL", alias = "videoUrl")]
+    #[serde(default, alias = "videoURL", alias = "videoUrl")]
     video_url: Option<String>,
+    #[serde(default)]
+    task_type: Option<String>,
 }
 
 #[tauri::command]
@@ -604,6 +629,7 @@ pub async fn runware_generate_video(
     prompt: String,
     model: Option<String>,
     duration_seconds: Option<u32>,
+    audio: Option<bool>,
 ) -> Result<String, String> {
     let s = settings::get_settings(app.clone()).await?;
     if s.runware_api_key.is_empty() {
@@ -617,17 +643,29 @@ pub async fn runware_generate_video(
     let b64 = base64::engine::general_purpose::STANDARD.encode(&image_bytes);
     let input_image = format!("data:image/png;base64,{b64}");
 
+    let dur = (duration_seconds.unwrap_or(5) as f32).min(15.0).max(1.0);
+
+    let task_uuid = uuid::Uuid::new_v4().to_string();
     let task = RunwareVideoTask {
         task_type: "videoInference".to_string(),
-        task_uuid: uuid::Uuid::new_v4().to_string(),
-        input_image,
-        positive_prompt: prompt,
+        task_uuid: task_uuid.clone(),
         model: model.unwrap_or(s.video_model),
-        seconds_total: duration_seconds,
+        positive_prompt: prompt,
+        inputs: RunwareVideoInputs {
+            frame_images: vec![input_image],
+        },
+        resolution: "360p".to_string(),
+        duration: dur,
         output_format: "MP4".to_string(),
+        delivery_method: "async".to_string(),
+        settings: RunwareVideoSettings {
+            audio: audio.unwrap_or(false),
+        },
     };
 
     let client = crate::http::shared_client();
+
+    // Submit the async video generation task
     let response = client
         .post(API_URL)
         .header("Authorization", crate::http::bearer_header(&s.runware_api_key))
@@ -636,50 +674,76 @@ pub async fn runware_generate_video(
         .await
         .map_err(|e| format!("Runware API request failed: {e}"))?;
 
-    let response = crate::http::check_response(response).await?;
+    let _ = crate::http::check_response(response).await?;
 
-    let resp: RunwareVideoResponse = response
-        .json()
-        .await
-        .map_err(|e| format!("Failed to parse Runware video response: {e}"))?;
+    // Poll for completion — video generation is async
+    let poll_task = vec![RunwarePollTask {
+        task_type: "getResponse".to_string(),
+        task_uuid: task_uuid.clone(),
+    }];
 
-    let video_url = resp
-        .data
-        .first()
-        .and_then(|r| r.video_url.as_ref())
-        .ok_or("No video in Runware response")?;
+    let max_polls = 120; // ~10 minutes at 5s intervals
+    for _ in 0..max_polls {
+        tokio::time::sleep(std::time::Duration::from_secs(5)).await;
 
-    // Download video file
-    let video_response = client
-        .get(video_url)
-        .send()
-        .await
-        .map_err(|e| format!("Failed to download video: {e}"))?;
+        let poll_resp = client
+            .post(API_URL)
+            .header("Authorization", crate::http::bearer_header(&s.runware_api_key))
+            .json(&poll_task)
+            .send()
+            .await
+            .map_err(|e| format!("Runware poll request failed: {e}"))?;
 
-    let bytes = video_response
-        .bytes()
-        .await
-        .map_err(|e| format!("Failed to read video bytes: {e}"))?;
+        let poll_resp = crate::http::check_response(poll_resp).await?;
 
-    let mut hasher = Sha256::new();
-    hasher.update(&bytes);
-    let hash = format!("{:x}", hasher.finalize());
+        let resp: RunwareVideoResponse = poll_resp
+            .json()
+            .await
+            .map_err(|e| format!("Failed to parse Runware poll response: {e}"))?;
 
-    let dir = app
-        .path()
-        .app_data_dir()
-        .map_err(|e| format!("Failed to get app data dir: {e}"))?
-        .join("assets")
-        .join("video");
-    tokio::fs::create_dir_all(&dir)
-        .await
-        .map_err(|e| format!("Failed to create video dir: {e}"))?;
+        // Look for a videoInference result with a URL
+        if let Some(result) = resp.data.iter().find(|r| {
+            r.task_type.as_deref() == Some("videoInference") && r.video_url.is_some()
+        }) {
+            let video_url = result.video_url.as_ref().unwrap();
 
-    let filename = format!("{hash}.mp4");
-    let file_path = dir.join(&filename);
-    tokio::fs::write(&file_path, &bytes)
-        .await
-        .map_err(|e| format!("Failed to save video: {e}"))?;
+            // Download video file
+            let video_response = client
+                .get(video_url)
+                .send()
+                .await
+                .map_err(|e| format!("Failed to download video: {e}"))?;
 
-    Ok(file_path.to_string_lossy().to_string())
+            let bytes = video_response
+                .bytes()
+                .await
+                .map_err(|e| format!("Failed to read video bytes: {e}"))?;
+
+            let mut hasher = Sha256::new();
+            hasher.update(&bytes);
+            let hash = format!("{:x}", hasher.finalize());
+
+            let dir = app
+                .path()
+                .app_data_dir()
+                .map_err(|e| format!("Failed to get app data dir: {e}"))?
+                .join("assets")
+                .join("video");
+            tokio::fs::create_dir_all(&dir)
+                .await
+                .map_err(|e| format!("Failed to create video dir: {e}"))?;
+
+            let filename = format!("{hash}.mp4");
+            let file_path = dir.join(&filename);
+            tokio::fs::write(&file_path, &bytes)
+                .await
+                .map_err(|e| format!("Failed to save video: {e}"))?;
+
+            return Ok(file_path.to_string_lossy().to_string());
+        }
+
+        // If data is empty, the task is still processing — keep polling
+    }
+
+    Err("Video generation timed out after ~10 minutes".to_string())
 }

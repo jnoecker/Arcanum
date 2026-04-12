@@ -36,6 +36,7 @@ export function VideoGenerator({
   const importAsset = useAssetStore((s) => s.importAsset);
   const [prompt, setPrompt] = useState("");
   const [duration, setDuration] = useState(5);
+  const [audio, setAudio] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [enhancing, setEnhancing] = useState(false);
   const [resultPath, setResultPath] = useState<string | null>(null);
@@ -84,6 +85,7 @@ export function VideoGenerator({
         imagePath,
         prompt: prompt.trim(),
         durationSeconds: duration,
+        audio,
       });
       setResultPath(filePath);
     } catch (e) {
@@ -120,17 +122,28 @@ export function VideoGenerator({
         className="w-full resize-y rounded border border-border-default bg-bg-secondary px-2 py-1 font-mono text-2xs leading-relaxed text-text-secondary placeholder:text-text-muted outline-none focus:border-accent/50 focus-visible:ring-2 focus-visible:ring-border-active"
       />
 
-      <div className="flex items-center gap-2">
-        <label className="text-2xs text-text-muted">Duration:</label>
-        <input
-          type="number"
-          min={2}
-          max={30}
-          value={duration}
-          onChange={(e) => setDuration(Number(e.target.value))}
-          className="w-16 rounded border border-border-default bg-bg-secondary px-1.5 py-0.5 text-2xs text-text-secondary outline-none focus-visible:ring-2 focus-visible:ring-border-active"
-        />
-        <span className="text-2xs text-text-muted">sec</span>
+      <div className="flex items-center gap-3">
+        <div className="flex items-center gap-1.5">
+          <label className="text-2xs text-text-muted">Duration:</label>
+          <input
+            type="number"
+            min={1}
+            max={15}
+            value={duration}
+            onChange={(e) => setDuration(Math.min(15, Math.max(1, Number(e.target.value))))}
+            className="w-16 rounded border border-border-default bg-bg-secondary px-1.5 py-0.5 text-2xs text-text-secondary outline-none focus-visible:ring-2 focus-visible:ring-border-active"
+          />
+          <span className="text-2xs text-text-muted">sec</span>
+        </div>
+        <label className="flex items-center gap-1 text-2xs text-text-muted cursor-pointer">
+          <input
+            type="checkbox"
+            checked={audio}
+            onChange={(e) => setAudio(e.target.checked)}
+            className="accent-accent"
+          />
+          Audio
+        </label>
       </div>
 
       <div className="flex gap-1">

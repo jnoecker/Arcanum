@@ -96,7 +96,7 @@ fn default_image_provider() -> String {
 }
 
 fn default_video_model() -> String {
-    "runware:2".to_string()
+    "pixverse:1@8".to_string()
 }
 
 fn default_batch_concurrency() -> u32 {

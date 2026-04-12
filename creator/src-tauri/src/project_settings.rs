@@ -78,8 +78,9 @@ pub async fn get_project_settings(project_dir: String) -> Result<Option<ProjectS
     let data = tokio::fs::read_to_string(&path)
         .await
         .map_err(|e| format!("Failed to read project settings: {e}"))?;
-    let ps: ProjectSettings =
+    let mut ps: ProjectSettings =
         serde_json::from_str(&data).map_err(|e| format!("Failed to parse project settings: {e}"))?;
+    crate::settings::migrate_video_model(&mut ps.video_model);
     // Update cache
     {
         let mut cache = PROJECT_SETTINGS_CACHE.write().await;

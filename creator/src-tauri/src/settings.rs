@@ -149,6 +149,14 @@ fn settings_path(app: &AppHandle) -> Result<PathBuf, String> {
     Ok(dir.join(SETTINGS_FILE))
 }
 
+/// Migrate stale setting values to their current equivalents.
+/// Called after deserialization so persisted files with old defaults get fixed.
+pub fn migrate_video_model(model: &mut String) {
+    if model == "runware:2" {
+        *model = default_video_model();
+    }
+}
+
 /// Load user-level settings only (no project merge).
 pub async fn get_user_settings(app: &AppHandle) -> Result<Settings, String> {
     // Check cache first
@@ -160,7 +168,7 @@ pub async fn get_user_settings(app: &AppHandle) -> Result<Settings, String> {
     }
     // Cache miss — read from disk
     let path = settings_path(app)?;
-    let settings = if !path.exists() {
+    let mut settings: Settings = if !path.exists() {
         Settings::default()
     } else {
         let data = tokio::fs::read_to_string(&path)
@@ -168,6 +176,7 @@ pub async fn get_user_settings(app: &AppHandle) -> Result<Settings, String> {
             .map_err(|e| format!("Failed to read settings: {e}"))?;
         serde_json::from_str(&data).map_err(|e| format!("Failed to parse settings: {e}"))?
     };
+    migrate_video_model(&mut settings.video_model);
     // Update cache
     {
         let mut cache = USER_SETTINGS_CACHE.write().await;

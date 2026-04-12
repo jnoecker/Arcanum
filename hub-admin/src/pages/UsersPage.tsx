@@ -6,8 +6,10 @@ import {
   deleteWorld,
   listUsers,
   regenerateKey,
+  setUserTier,
   updateQuotas,
   type HubUser,
+  type HubUserTier,
 } from "../lib/api";
 
 interface UsersPageProps {
@@ -79,6 +81,7 @@ export function UsersPage({ adminKey, onLogout }: UsersPageProps) {
   const [creating, setCreating] = useState(false);
   const [newName, setNewName] = useState("");
   const [newEmail, setNewEmail] = useState("");
+  const [newTier, setNewTier] = useState<HubUserTier>("full");
 
   const refresh = useCallback(async () => {
     setLoading(true);
@@ -105,15 +108,39 @@ export function UsersPage({ adminKey, onLogout }: UsersPageProps) {
       const res = await createUser(adminKey, {
         displayName: newName.trim(),
         email: newEmail.trim() || null,
+        tier: newTier,
       });
       setRevealedKey({ apiKey: res.apiKey, label: `Key for ${res.user.displayName}` });
       setNewName("");
       setNewEmail("");
+      setNewTier("full");
       await refresh();
     } catch (e) {
       setError(e instanceof ApiError ? e.message : String(e));
     } finally {
       setCreating(false);
+    }
+  };
+
+  const handleSetTier = async (user: HubUser, tier: HubUserTier) => {
+    if (user.tier === tier) return;
+    const label =
+      tier === "publish"
+        ? `Downgrade ${user.displayName} to publish-only? Their current key will be rotated and they will lose access to all /ai/* features.`
+        : `Upgrade ${user.displayName} to full (publish + AI)? Their current key will be rotated.`;
+    const ok = window.confirm(label);
+    if (!ok) return;
+    try {
+      const res = await setUserTier(adminKey, user.id, tier);
+      if (res.apiKey) {
+        setRevealedKey({
+          apiKey: res.apiKey,
+          label: `New ${tier === "publish" ? "publish-only" : "full"} key for ${user.displayName}`,
+        });
+      }
+      await refresh();
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : String(e));
     }
   };
 
@@ -218,6 +245,45 @@ export function UsersPage({ adminKey, onLogout }: UsersPageProps) {
             disabled={creating}
           />
         </div>
+        <div className="field">
+          <label>Tier</label>
+          <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
+            <label style={{ display: "flex", gap: "0.5rem", alignItems: "flex-start", cursor: "pointer" }}>
+              <input
+                type="radio"
+                name="new-tier"
+                value="full"
+                checked={newTier === "full"}
+                onChange={() => setNewTier("full")}
+                disabled={creating}
+                style={{ marginTop: "0.2rem" }}
+              />
+              <span>
+                <strong>Full</strong> — showcase publish + hub AI (image, LLM, vision).
+                <span className="muted" style={{ display: "block", fontSize: "0.8rem" }}>
+                  Key prefix: <code>hubk_full_…</code>
+                </span>
+              </span>
+            </label>
+            <label style={{ display: "flex", gap: "0.5rem", alignItems: "flex-start", cursor: "pointer" }}>
+              <input
+                type="radio"
+                name="new-tier"
+                value="publish"
+                checked={newTier === "publish"}
+                onChange={() => setNewTier("publish")}
+                disabled={creating}
+                style={{ marginTop: "0.2rem" }}
+              />
+              <span>
+                <strong>Publish-only</strong> — showcase publish, no AI budget.
+                <span className="muted" style={{ display: "block", fontSize: "0.8rem" }}>
+                  Key prefix: <code>hubk_pub_…</code> — creator auto-disables hub AI toggle.
+                </span>
+              </span>
+            </label>
+          </div>
+        </div>
         <button className="primary" onClick={() => void handleCreate()} disabled={creating || !newName.trim()}>
           {creating ? "Creating…" : "Create user + mint key"}
         </button>
@@ -235,6 +301,7 @@ export function UsersPage({ adminKey, onLogout }: UsersPageProps) {
               <tr>
                 <th>Name</th>
                 <th>Email</th>
+                <th>Tier</th>
                 <th>AI Usage</th>
                 <th>Worlds</th>
                 <th>Last publish</th>
@@ -247,18 +314,40 @@ export function UsersPage({ adminKey, onLogout }: UsersPageProps) {
                   <td>{user.displayName}</td>
                   <td className="muted">{user.email ?? "—"}</td>
                   <td>
-                    <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem" }}>
-                      <UsageBar
-                        used={user.usage.imagesUsed}
-                        quota={user.usage.imagesQuota}
-                        label="Images"
-                      />
-                      <UsageBar
-                        used={user.usage.promptsUsed}
-                        quota={user.usage.promptsQuota}
-                        label="Prompts"
-                      />
-                    </div>
+                    <span
+                      style={{
+                        fontSize: "0.75rem",
+                        color: user.tier === "full" ? "var(--accent)" : "var(--muted)",
+                        border: `1px solid ${user.tier === "full" ? "var(--accent)" : "var(--muted)"}`,
+                        borderRadius: 3,
+                        padding: "0.1rem 0.4rem",
+                        textTransform: "uppercase",
+                        letterSpacing: "0.05em",
+                        fontVariant: "all-small-caps",
+                      }}
+                    >
+                      {user.tier === "full" ? "full" : "publish-only"}
+                    </span>
+                  </td>
+                  <td>
+                    {user.tier === "full" ? (
+                      <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem" }}>
+                        <UsageBar
+                          used={user.usage.imagesUsed}
+                          quota={user.usage.imagesQuota}
+                          label="Images"
+                        />
+                        <UsageBar
+                          used={user.usage.promptsUsed}
+                          quota={user.usage.promptsQuota}
+                          label="Prompts"
+                        />
+                      </div>
+                    ) : (
+                      <span className="muted" style={{ fontSize: "0.8rem" }}>
+                        n/a (publish-only)
+                      </span>
+                    )}
                   </td>
                   <td>
                     {user.worlds.length === 0 ? (
@@ -302,7 +391,18 @@ export function UsersPage({ adminKey, onLogout }: UsersPageProps) {
                   <td className="muted">{formatDate(user.lastPublishAt)}</td>
                   <td>
                     <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
-                      <button onClick={() => void handleEditQuotas(user)}>Edit quotas</button>
+                      {user.tier === "full" ? (
+                        <>
+                          <button onClick={() => void handleEditQuotas(user)}>Edit quotas</button>
+                          <button onClick={() => void handleSetTier(user, "publish")}>
+                            Downgrade to publish-only
+                          </button>
+                        </>
+                      ) : (
+                        <button onClick={() => void handleSetTier(user, "full")}>
+                          Upgrade to full
+                        </button>
+                      )}
                       <button onClick={() => void handleRegenerate(user)}>Rotate key</button>
                       <button className="danger" onClick={() => void handleDeleteUser(user)}>
                         Delete

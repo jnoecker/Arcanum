@@ -37,12 +37,15 @@ export interface HubUsage {
   promptsQuota: number;
 }
 
+export type HubUserTier = "full" | "publish";
+
 export interface HubUser {
   id: string;
   displayName: string;
   email: string | null;
   createdAt: number;
   lastPublishAt: number | null;
+  tier: HubUserTier;
   usage: HubUsage;
   worlds: HubWorldSummary[];
 }
@@ -106,13 +109,34 @@ export async function listUsers(adminKey: string): Promise<HubUser[]> {
 
 export async function createUser(
   adminKey: string,
-  payload: { displayName: string; email: string | null },
+  payload: { displayName: string; email: string | null; tier: HubUserTier },
 ): Promise<{ user: HubUser; apiKey: string }> {
   return await request<{ user: HubUser; apiKey: string }>("/admin/users", {
     method: "POST",
     adminKey,
     body: JSON.stringify(payload),
   });
+}
+
+/**
+ * Change a user's tier. The worker auto-rotates their API key when
+ * the tier actually changes, so `apiKey` will be non-null in that
+ * case and must be shown to the operator (the old key is dead).
+ * `apiKey` is null when the requested tier already matches.
+ */
+export async function setUserTier(
+  adminKey: string,
+  userId: string,
+  tier: HubUserTier,
+): Promise<{ user: HubUser; apiKey: string | null; unchanged?: boolean }> {
+  return await request<{ user: HubUser; apiKey: string | null; unchanged?: boolean }>(
+    `/admin/users/${encodeURIComponent(userId)}/tier`,
+    {
+      method: "POST",
+      adminKey,
+      body: JSON.stringify({ tier }),
+    },
+  );
 }
 
 export async function deleteUser(adminKey: string, userId: string): Promise<void> {

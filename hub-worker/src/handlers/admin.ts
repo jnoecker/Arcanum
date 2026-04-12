@@ -10,7 +10,9 @@ import {
   listWorldsForUser,
   setUserQuotas,
   updateUserApiKeyHash,
+  updateUserTierAndKey,
   type UserRow,
+  type UserTier,
   type WorldRow,
 } from "../db";
 import { corsHeaders, error, generateApiKey, json, newId, preflight } from "../util";
@@ -23,6 +25,7 @@ interface AdminUserView {
   email: string | null;
   createdAt: number;
   lastPublishAt: number | null;
+  tier: UserTier;
   usage: {
     imagesUsed: number;
     imagesQuota: number;
@@ -30,6 +33,11 @@ interface AdminUserView {
     promptsQuota: number;
   };
   worlds: { slug: string; listed: boolean; lastPublishAt: number | null; bytesUsed: number }[];
+}
+
+function parseTier(raw: unknown): UserTier | null {
+  if (raw === "full" || raw === "publish") return raw;
+  return null;
 }
 
 /**
@@ -57,6 +65,7 @@ function toUserView(user: UserRow, worlds: WorldRow[]): AdminUserView {
     email: user.email,
     createdAt: user.created_at,
     lastPublishAt: user.last_publish_at,
+    tier: user.tier,
     usage: {
       imagesUsed: user.images_used,
       imagesQuota: user.images_quota,
@@ -101,6 +110,14 @@ export async function handleAdmin(req: Request, env: Env, pathname: string): Pro
     return error(405, "Method not allowed", c);
   }
 
+  // /admin/users/<id>/tier
+  const tierMatch = /^\/admin\/users\/([^/]+)\/tier$/.exec(pathname);
+  if (tierMatch && tierMatch[1]) {
+    const id = tierMatch[1];
+    if (req.method === "POST") return await adminSetTier(req, env, id, c);
+    return error(405, "Method not allowed", c);
+  }
+
   // /admin/users/<id>/quotas
   const quotaMatch = /^\/admin\/users\/([^/]+)\/quotas$/.exec(pathname);
   if (quotaMatch && quotaMatch[1]) {
@@ -141,7 +158,7 @@ async function adminListUsers(env: Env, c: Cors): Promise<Response> {
 }
 
 async function adminCreateUser(req: Request, env: Env, c: Cors): Promise<Response> {
-  let body: { displayName?: string; email?: string };
+  let body: { displayName?: string; email?: string; tier?: string };
   try {
     body = (await req.json()) as typeof body;
   } catch {
@@ -150,11 +167,14 @@ async function adminCreateUser(req: Request, env: Env, c: Cors): Promise<Respons
   const displayName = (body.displayName ?? "").trim();
   if (!displayName) return error(400, "displayName is required", c);
   const email = (body.email ?? "").trim() || null;
+  // Tier defaults to "full" for back-compat with existing admin UIs
+  // that don't send the field yet.
+  const tier: UserTier = parseTier(body.tier) ?? "full";
 
-  const { plain, hash } = await generateApiKey();
+  const { plain, hash } = await generateApiKey(tier);
   const id = newId();
   try {
-    await createUser(env, { id, display_name: displayName, email, api_key_hash: hash });
+    await createUser(env, { id, display_name: displayName, email, api_key_hash: hash, tier });
   } catch (e) {
     return error(500, `Failed to create user: ${String(e)}`, c);
   }
@@ -188,11 +208,44 @@ async function adminDeleteUser(env: Env, id: string, c: Cors): Promise<Response>
 async function adminRegenerateKey(env: Env, id: string, c: Cors): Promise<Response> {
   const user = await getUserById(env, id);
   if (!user) return error(404, "User not found", c);
-  const { plain, hash } = await generateApiKey();
+  // Mint the new key with a prefix that matches the user's current
+  // tier so the creator's auto-detection stays consistent with D1.
+  const { plain, hash } = await generateApiKey(user.tier);
   // updateUserApiKeyHash also zeros out images_used and prompts_used —
   // rotation gives the legit user a fresh quota and kills any leaked key.
   await updateUserApiKeyHash(env, id, hash);
   return json({ apiKey: plain }, {}, c);
+}
+
+async function adminSetTier(req: Request, env: Env, id: string, c: Cors): Promise<Response> {
+  const user = await getUserById(env, id);
+  if (!user) return error(404, "User not found", c);
+
+  let body: { tier?: string };
+  try {
+    body = (await req.json()) as typeof body;
+  } catch {
+    return error(400, "Invalid JSON body", c);
+  }
+  const tier = parseTier(body.tier);
+  if (!tier) return error(400, "tier must be \"full\" or \"publish\"", c);
+
+  // No-op if the requested tier matches. We still return the user
+  // view so the admin UI can refresh, but skip rotation — rotating
+  // on a no-op would needlessly kill a working key.
+  if (tier === user.tier) {
+    return json({ user: toUserView(user, []), apiKey: null, unchanged: true }, {}, c);
+  }
+
+  // Tier change always auto-rotates the key so the prefix stays in
+  // sync with the stored tier and any key that leaked under the old
+  // tier is immediately invalidated.
+  const { plain, hash } = await generateApiKey(tier);
+  await updateUserTierAndKey(env, id, tier, hash);
+
+  const fresh = await getUserById(env, id);
+  if (!fresh) return error(500, "User disappeared after update", c);
+  return json({ user: toUserView(fresh, []), apiKey: plain }, {}, c);
 }
 
 async function adminUpdateQuotas(

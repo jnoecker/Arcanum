@@ -252,4 +252,8 @@ The Arcanum visual style is a baroque-cosmic aesthetic: deep indigo backgrounds,
 
 ## License
 
-Private project. All rights reserved.
+Arcanum is licensed under the [PolyForm Noncommercial License 1.0.0](LICENSE.md). You are free to download, use, modify, and share it for any noncommercial purpose — personal projects, hobby use, research, education, and nonprofit work are all welcome.
+
+Commercial use is **not** permitted under this license. If you'd like to use Arcanum commercially, please open an issue on the repository to discuss terms.
+
+The `reference/` directory contains source material from [AmbonMUD](https://github.com/jnoecker/AmbonMUD) and retains its original AmbonMUD license — it is not covered by PolyForm Noncommercial.

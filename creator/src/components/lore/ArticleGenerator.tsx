@@ -1,4 +1,5 @@
 import { useState, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { useLoreStore } from "@/stores/loreStore";
 import type { ArticleTemplate } from "@/types/lore";
 import { TEMPLATE_SCHEMAS } from "@/lib/loreTemplates";
@@ -40,7 +41,7 @@ export function ArticleGenerator({
     }
   }, [template, concept, createArticle, selectArticle, onClose]);
 
-  return (
+  return createPortal(
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--chrome-fill-soft)]"
       onClick={(e) => {
@@ -100,6 +101,7 @@ export function ArticleGenerator({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

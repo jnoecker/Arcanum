@@ -1,4 +1,5 @@
 import { useState, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { open } from "@tauri-apps/plugin-dialog";
 import { readDir, readTextFile } from "@tauri-apps/plugin-fs";
 import { useLoreStore } from "@/stores/loreStore";
@@ -149,7 +150,7 @@ export function ImportWizard({ onClose }: { onClose: () => void }) {
   }));
   const selectedCount = candidates.filter((c) => c.selected).length;
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div
         className="absolute inset-0 bg-surface-scrim"
@@ -304,6 +305,7 @@ export function ImportWizard({ onClose }: { onClose: () => void }) {
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

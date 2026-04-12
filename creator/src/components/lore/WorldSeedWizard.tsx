@@ -1,4 +1,5 @@
 import { useState, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { useLoreStore } from "@/stores/loreStore";
 import { generateWorldSeed } from "@/lib/loreGeneration";
 import { useFocusTrap } from "@/lib/useFocusTrap";
@@ -62,7 +63,7 @@ export function WorldSeedWizard({
     }
   }, [concept, createArticle, setCalendarSystems, setTimelineEvents, selectArticle]);
 
-  return (
+  return createPortal(
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--chrome-fill-soft)]"
       onClick={(e) => {
@@ -149,6 +150,7 @@ export function WorldSeedWizard({
           </>
         )}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

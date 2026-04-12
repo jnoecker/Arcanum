@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { useLoreStore } from "@/stores/loreStore";
 import { useConfigStore } from "@/stores/configStore";
 import { useZoneStore } from "@/stores/zoneStore";
@@ -228,7 +229,7 @@ export function WorldbuilderImportWizard({ onClose }: { onClose: () => void }) {
     (c) => c.selected && c.existingArticleId !== null && !overwriteExisting,
   ).length;
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="absolute inset-0 bg-surface-scrim" onClick={onClose} />
       <div
@@ -530,7 +531,8 @@ export function WorldbuilderImportWizard({ onClose }: { onClose: () => void }) {
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
 

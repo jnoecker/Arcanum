@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { invoke } from "@tauri-apps/api/core";
 import type { GeneratedImage } from "@/types/assets";
 import { useFocusTrap } from "@/lib/useFocusTrap";
@@ -172,7 +173,7 @@ export function MapEnhancer({
     }
   }, [crop, prompt, strength, extractCropBase64]);
 
-  return (
+  return createPortal(
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-bg-abyss/70"
       onClick={(e) => {
@@ -287,6 +288,7 @@ export function MapEnhancer({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

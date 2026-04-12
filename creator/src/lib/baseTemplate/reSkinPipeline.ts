@@ -46,9 +46,24 @@ export interface ReSkinResults {
 // ─── Helpers ──────────────────────────────────────────────────────
 
 function extractJson(raw: string): unknown {
+  // Try markdown code fence first
   const fenced = raw.match(/```(?:json)?\s*\n?([\s\S]*?)```/);
-  const text = fenced?.[1] ?? raw;
-  return JSON.parse(text.trim());
+  if (fenced) {
+    return JSON.parse(fenced[1]!.trim());
+  }
+
+  // Try raw parse
+  try {
+    return JSON.parse(raw.trim());
+  } catch {
+    // Model may have added text around the JSON — find the outermost { }
+    const start = raw.indexOf("{");
+    const end = raw.lastIndexOf("}");
+    if (start !== -1 && end > start) {
+      return JSON.parse(raw.slice(start, end + 1));
+    }
+    throw new Error(`Could not find JSON in LLM response (${raw.length} chars): ${raw.slice(0, 200)}...`);
+  }
 }
 
 function deepClone<T>(obj: T): T {
@@ -416,76 +431,49 @@ export async function startReSkin(
   };
   let zoneName = "";
 
+  // Wrap each call so parse failures log the raw response for debugging.
+  async function callAndParse<T>(label: string, systemPrompt: string, userPrompt: string, maxTokens: number): Promise<T> {
+    const raw = await llm(systemPrompt, userPrompt, maxTokens);
+    try {
+      return extractJson(raw) as T;
+    } catch (e) {
+      console.error(`Re-skin [${label}] JSON parse failed. Raw response (first 500 chars):`, raw.slice(0, 500));
+      throw e;
+    }
+  }
+
   // Fire all 5 calls in parallel
   const [classesResult, racesResult, roomsResult, entitiesResult, artResult] = await Promise.allSettled([
-    // ── Call 1: Classes + Abilities ──────────────────────────────────
-    (async () => {
-      const userPrompt = JSON.stringify({
-        classes: buildClassesInput(),
-        abilities: buildAbilitiesInput(),
-      });
-      // 5 classes × (name+desc+backstory+outfit) + 25 abilities × (name+desc)
-      const raw = await llm(classesSystemPrompt(seedPrompt), userPrompt, 6144);
-      const parsed = extractJson(raw) as {
-        classes?: Record<string, { displayName?: string; description?: string; backstory?: string; outfitDescription?: string }>;
-        abilities?: Record<string, { displayName?: string; description?: string }>;
-      };
-      return parsed;
-    })(),
+    callAndParse<{
+      classes?: Record<string, { displayName?: string; description?: string; backstory?: string; outfitDescription?: string }>;
+      abilities?: Record<string, { displayName?: string; description?: string }>;
+    }>("classes+abilities", classesSystemPrompt(seedPrompt), JSON.stringify({
+      classes: buildClassesInput(),
+      abilities: buildAbilitiesInput(),
+    }), 6144),
 
-    // ── Call 2: Races ────────────────────────────────────────────────
-    (async () => {
-      const userPrompt = JSON.stringify({ races: buildRacesInput() });
-      // 3 races × (name+desc+backstory+traits+bodyDescription)
-      const raw = await llm(racesSystemPrompt(seedPrompt), userPrompt, 4096);
-      const parsed = extractJson(raw) as {
-        races?: Record<string, { displayName?: string; description?: string; backstory?: string; traits?: string[]; bodyDescription?: string }>;
-      };
-      return parsed;
-    })(),
+    callAndParse<{
+      races?: Record<string, { displayName?: string; description?: string; backstory?: string; traits?: string[]; bodyDescription?: string }>;
+    }>("races", racesSystemPrompt(seedPrompt), JSON.stringify({ races: buildRacesInput() }), 4096),
 
-    // ── Call 3: Zone Rooms ───────────────────────────────────────────
-    (async () => {
-      const userPrompt = JSON.stringify({ rooms: buildRoomsInput() });
-      // 15 rooms × (title+description with tutorial text)
-      const raw = await llm(roomsSystemPrompt(seedPrompt), userPrompt, 8192);
-      const parsed = extractJson(raw) as {
-        zoneName?: string;
-        rooms?: Record<string, { title?: string; description?: string }>;
-      };
-      return parsed;
-    })(),
+    callAndParse<{
+      zoneName?: string;
+      rooms?: Record<string, { title?: string; description?: string }>;
+    }>("rooms", roomsSystemPrompt(seedPrompt), JSON.stringify({ rooms: buildRoomsInput() }), 8192),
 
-    // ── Call 4: Entities ─────────────────────────────────────────────
-    (async () => {
-      const userPrompt = JSON.stringify(buildEntitiesInput());
-      // Mob names + item names/descriptions + shop/quest/pet names
-      const raw = await llm(entitiesSystemPrompt(seedPrompt), userPrompt, 4096);
-      const parsed = extractJson(raw) as {
-        mobs?: Record<string, { name?: string }>;
-        items?: Record<string, { displayName?: string; description?: string; keyword?: string }>;
-        shops?: Record<string, { name?: string }>;
-        quests?: Record<string, { name?: string; description?: string }>;
-        pets?: Record<string, { name?: string; description?: string }>;
-      };
-      return parsed;
-    })(),
+    callAndParse<{
+      mobs?: Record<string, { name?: string }>;
+      items?: Record<string, { displayName?: string; description?: string; keyword?: string }>;
+      shops?: Record<string, { name?: string }>;
+      quests?: Record<string, { name?: string; description?: string }>;
+      pets?: Record<string, { name?: string; description?: string }>;
+    }>("entities", entitiesSystemPrompt(seedPrompt), JSON.stringify(buildEntitiesInput()), 4096),
 
-    // ── Call 5: Art Style ────────────────────────────────────────────
-    (async () => {
-      // Small output: name + 100-200 word basePrompt + optional surfaces
-      const raw = await llm(
-        artStyleSystemPrompt(seedPrompt),
-        "Generate an art style definition for this world theme.",
-        1024,
-      );
-      const parsed = extractJson(raw) as {
-        name?: string;
-        basePrompt?: string;
-        surfaces?: { worldbuilding?: string; lore?: string };
-      };
-      return parsed;
-    })(),
+    callAndParse<{
+      name?: string;
+      basePrompt?: string;
+      surfaces?: { worldbuilding?: string; lore?: string };
+    }>("art-style", artStyleSystemPrompt(seedPrompt), "Generate an art style definition for this world theme.", 1024),
   ]);
 
   // ── Process Call 1: Classes + Abilities ────────────────────────────

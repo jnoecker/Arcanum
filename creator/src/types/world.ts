@@ -109,8 +109,23 @@ export interface MobFile {
   dialogue?: Record<string, DialogueNodeFile>;
   quests?: string[];
   faction?: string;
+  spells?: Record<string, MobSpellFile>;
+  defaultAttack?: string;
   image?: string;
   video?: string;
+}
+
+export interface MobSpellFile {
+  displayName: string;
+  message: string;
+  roomMessage?: string;
+  minDamage?: number;
+  maxDamage?: number;
+  healMin?: number;
+  healMax?: number;
+  cooldownMs?: number;
+  weight?: number;
+  statusEffectId?: string;
 }
 
 export interface MobDropFile {

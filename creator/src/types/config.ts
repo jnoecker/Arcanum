@@ -32,6 +32,18 @@ export interface StatBindings {
 
 // ─── Pets / Companions ─────────────────────────────────────────────
 
+export interface PetSpellConfig {
+  displayName: string;
+  message: string;
+  roomMessage?: string;
+  minDamage?: number;
+  maxDamage?: number;
+  healMin?: number;
+  healMax?: number;
+  cooldownMs?: number;
+  weight?: number;
+}
+
 export interface PetDefinitionConfig {
   name: string;
   description?: string;
@@ -39,6 +51,9 @@ export interface PetDefinitionConfig {
   minDamage: number;
   maxDamage: number;
   armor: number;
+  threatMultiplier?: number;
+  spells?: Record<string, PetSpellConfig>;
+  defaultAttack?: string;
   image?: string;
 }
 

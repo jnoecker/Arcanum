@@ -12,6 +12,7 @@ import { applyTemplate } from "@/lib/templates";
 import { saveProjectConfig } from "@/lib/saveConfig";
 import { zoneFilePath } from "@/lib/projectPaths";
 import { addRecentProject } from "@/lib/uiPersistence";
+import { panelTab } from "@/lib/panelRegistry";
 import { YAML_OPTS } from "@/lib/yamlOpts";
 import { BASE_ACADEMY_ZONE } from "@/lib/baseTemplate/baseZone";
 import {
@@ -213,11 +214,7 @@ export function GeneratingStep({ reSkinPromise, reSkinProgress, onFinished }: Ge
         }
 
         addRecentProject(project.mudDir, projectName);
-        useProjectStore.getState().openTab({
-          id: `zone:${zoneId}`,
-          kind: "zone",
-          label: zoneId,
-        });
+        useProjectStore.getState().openTab(panelTab("art"));
 
         if (localWarning) setWarning(localWarning);
         setActivePhase("ready");

@@ -41,9 +41,9 @@ const BG_REMOVAL_MODEL = "bria:2@1";
 // Default Runware FLUX model matches creator/src-tauri/src/runware.rs.
 const DEFAULT_IMAGE_MODEL = "runware:400@2";
 
-// DeepSeek V3.2 via OpenRouter. Locked to one model so there's no
-// cost-surprise from a mistyped model name.
-const LLM_MODEL = "deepseek/deepseek-v3.2-exp";
+// Claude Haiku 4.5 via direct Anthropic API. Fast (~180 tok/s),
+// excellent at structured JSON, and cheap.
+const LLM_MODEL = "claude-haiku-4-5-20251001";
 
 // Claude Sonnet 4.6 for vision.
 const VISION_MODEL = "claude-sonnet-4-6";
@@ -404,7 +404,7 @@ async function imageRemoveBackground(req: Request, env: Env, user: UserRow): Pro
   );
 }
 
-// ─── LLM completion (DeepSeek V3.2) ──────────────────────────────────
+// ─── LLM completion (Claude Haiku 4.5 via Anthropic) ─────────────────
 
 interface LlmCompleteBody {
   system?: string;
@@ -429,37 +429,33 @@ async function llmComplete(req: Request, env: Env, user: UserRow): Promise<Respo
   if (!prompt) return error(400, "Missing prompt", CORS);
   if (prompt.length > MAX_LLM_INPUT_CHARS) return error(400, "Prompt too long", CORS);
 
-  const messages: { role: string; content: string }[] = [];
-  if (body.system?.trim()) messages.push({ role: "system", content: body.system.trim() });
-  messages.push({ role: "user", content: prompt });
-
-  const upstream = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+  const upstream = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${env.OPENROUTER_API_KEY}`,
-      "HTTP-Referer": "https://arcanum-hub.com",
-      "X-Title": "Arcanum Hub",
+      "x-api-key": env.ANTHROPIC_API_KEY,
+      "anthropic-version": "2023-06-01",
     },
     body: JSON.stringify({
       model: LLM_MODEL,
-      messages,
       max_tokens: clamp(body.maxTokens ?? 1024, 16, 8192),
-      temperature: clamp(body.temperature ?? 0.7, 0, 2),
+      temperature: clamp(body.temperature ?? 0.7, 0, 1),
+      system: body.system?.trim() || undefined,
+      messages: [{ role: "user", content: prompt }],
     }),
   });
 
   if (!upstream.ok) {
     const text = await upstream.text().catch(() => "");
-    return error(upstream.status, `OpenRouter error (${upstream.status}): ${text.slice(0, 500)}`, CORS);
+    return error(upstream.status, `Anthropic error (${upstream.status}): ${text.slice(0, 500)}`, CORS);
   }
 
   const raw = (await upstream.json()) as {
-    choices?: { message?: { content?: string } }[];
-    usage?: { prompt_tokens?: number; completion_tokens?: number };
+    content?: { type: string; text?: string }[];
+    usage?: { input_tokens?: number; output_tokens?: number };
   };
-  const content = raw.choices?.[0]?.message?.content ?? "";
-  if (!content) return error(502, "OpenRouter returned no content", CORS);
+  const content = raw.content?.find((b) => b.type === "text")?.text ?? "";
+  if (!content) return error(502, "Anthropic returned no content", CORS);
 
   await incrementPromptUsage(env, user.id);
 
@@ -470,8 +466,8 @@ async function llmComplete(req: Request, env: Env, user: UserRow): Promise<Respo
       usage: {
         prompts_used: user.prompts_used + 1,
         prompts_quota: user.prompts_quota,
-        prompt_tokens: raw.usage?.prompt_tokens,
-        completion_tokens: raw.usage?.completion_tokens,
+        prompt_tokens: raw.usage?.input_tokens,
+        completion_tokens: raw.usage?.output_tokens,
       },
     },
     {},

@@ -9,7 +9,7 @@
 // — the frontend is intentionally unaware that hub mode even exists.
 //
 // The hub enforces:
-//   - model allowlist (FLUX.2, GPT Image 1.5, DeepSeek V3.2, Claude 4.6)
+//   - model allowlist (FLUX.2, GPT Image 1.5, Claude Haiku 4.5, Claude Sonnet 4.6)
 //   - lifetime usage quotas
 //   - dimension + step caps
 //   - quality clamp for GPT Image ("low" always)
@@ -272,7 +272,7 @@ pub async fn remove_background(s: &Settings, image_data_url: &str) -> Result<Str
     Err("Hub bg-removal response contained no image data".to_string())
 }
 
-/// Hub-proxied text LLM completion (DeepSeek V3.2).
+/// Hub-proxied text LLM completion (Claude Haiku 4.5).
 pub async fn complete(
     s: &Settings,
     system_prompt: &str,

@@ -118,7 +118,7 @@ export function GeneratingStep({ reSkinPromise, reSkinProgress, onFinished }: Ge
         const reSkinWithTimeout = Promise.race([
           reSkinPromise,
           new Promise<null>((resolve) => {
-            setTimeout(() => resolve(null), 45_000);
+            setTimeout(() => resolve(null), 90_000);
           }),
         ]).catch((e) => {
           localWarning = `Theme re-skin encountered an issue (${String(e)}). Starting with the default academy template.`;

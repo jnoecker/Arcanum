@@ -55,10 +55,10 @@ function deepClone<T>(obj: T): T {
   return structuredClone(obj);
 }
 
-function llm(systemPrompt: string, userPrompt: string): Promise<string> {
-  const call = invoke<string>("llm_complete", { systemPrompt, userPrompt });
+function llm(systemPrompt: string, userPrompt: string, maxTokens = 4096): Promise<string> {
+  const call = invoke<string>("llm_complete", { systemPrompt, userPrompt, maxTokens });
   const timeout = new Promise<never>((_, reject) =>
-    setTimeout(() => reject(new Error("LLM call timed out after 30 seconds")), 30_000),
+    setTimeout(() => reject(new Error("LLM call timed out after 60 seconds")), 60_000),
   );
   return Promise.race([call, timeout]);
 }
@@ -449,7 +449,8 @@ export async function startReSkin(
         classes: buildClassesInput(),
         abilities: buildAbilitiesInput(),
       });
-      const raw = await llm(classesSystemPrompt(seedPrompt), userPrompt);
+      // 5 classes × (name+desc+backstory+outfit) + 25 abilities × (name+desc)
+      const raw = await llm(classesSystemPrompt(seedPrompt), userPrompt, 6144);
       const parsed = extractJson(raw) as {
         classes?: Record<string, { displayName?: string; description?: string; backstory?: string; outfitDescription?: string }>;
         abilities?: Record<string, { displayName?: string; description?: string }>;
@@ -460,7 +461,8 @@ export async function startReSkin(
     // ── Call 2: Races ────────────────────────────────────────────────
     (async () => {
       const userPrompt = JSON.stringify({ races: buildRacesInput() });
-      const raw = await llm(racesSystemPrompt(seedPrompt), userPrompt);
+      // 3 races × (name+desc+backstory+traits+bodyDescription)
+      const raw = await llm(racesSystemPrompt(seedPrompt), userPrompt, 4096);
       const parsed = extractJson(raw) as {
         races?: Record<string, { displayName?: string; description?: string; backstory?: string; traits?: string[]; bodyDescription?: string }>;
       };
@@ -470,7 +472,8 @@ export async function startReSkin(
     // ── Call 3: Zone Rooms ───────────────────────────────────────────
     (async () => {
       const userPrompt = JSON.stringify({ rooms: buildRoomsInput() });
-      const raw = await llm(roomsSystemPrompt(seedPrompt), userPrompt);
+      // 15 rooms × (title+description with tutorial text)
+      const raw = await llm(roomsSystemPrompt(seedPrompt), userPrompt, 8192);
       const parsed = extractJson(raw) as {
         zoneName?: string;
         rooms?: Record<string, { title?: string; description?: string }>;
@@ -481,7 +484,8 @@ export async function startReSkin(
     // ── Call 4: Entities ─────────────────────────────────────────────
     (async () => {
       const userPrompt = JSON.stringify(buildEntitiesInput());
-      const raw = await llm(entitiesSystemPrompt(seedPrompt), userPrompt);
+      // 8 NPCs with dialogue trees + 8 combat mobs + 17 items + shops + quests + pets
+      const raw = await llm(entitiesSystemPrompt(seedPrompt), userPrompt, 8192);
       const parsed = extractJson(raw) as {
         mobs?: Record<string, { name?: string; dialogue?: Record<string, unknown> }>;
         items?: Record<string, { displayName?: string; description?: string; keyword?: string }>;
@@ -494,9 +498,11 @@ export async function startReSkin(
 
     // ── Call 5: Art Style ────────────────────────────────────────────
     (async () => {
+      // Small output: name + 100-200 word basePrompt + optional surfaces
       const raw = await llm(
         artStyleSystemPrompt(seedPrompt),
         "Generate an art style definition for this world theme.",
+        1024,
       );
       const parsed = extractJson(raw) as {
         name?: string;

@@ -592,10 +592,27 @@ struct RunwareVideoTask {
     positive_prompt: String,
     inputs: RunwareVideoInputs,
     resolution: String,
+    #[serde(serialize_with = "serialize_as_float")]
     duration: f32,
     output_format: String,
     delivery_method: String,
     settings: RunwareVideoSettings,
+}
+
+/// Serde integers-as-floats: ensure `5.0_f32` serializes as `5.0` not `5`.
+fn serialize_as_float<S: serde::Serializer>(val: &f32, s: S) -> Result<S::Ok, S::Error> {
+    // serde_json serializes f32 whole numbers without a decimal point,
+    // but the Runware API rejects those as "not a float". Writing the
+    // raw token `5.0` via RawValue would work but is clunky; the
+    // simplest fix is to add a tiny epsilon so the value is never
+    // exactly integral while staying within the API's 1-15 range.
+    let v = *val;
+    if v == v.floor() {
+        // e.g. 5.0 → 5.001 — still rounds to 5 on the server side
+        s.serialize_f64((v as f64) + 0.001)
+    } else {
+        s.serialize_f64(v as f64)
+    }
 }
 
 /// Lightweight polling task to retrieve async results.

@@ -26,6 +26,7 @@ export interface ReSkinProgress {
   rooms: "pending" | "done" | "failed";
   entities: "pending" | "done" | "failed";
   artStyle: "pending" | "done" | "failed";
+  worldLore: "pending" | "done" | "failed";
 }
 
 export interface ReSkinResults {
@@ -411,6 +412,7 @@ export async function startReSkin(
     rooms: "pending",
     entities: "pending",
     artStyle: "pending",
+    worldLore: "pending",
   };
 
   const report = () => onProgress({ ...progress });

@@ -8,8 +8,10 @@ import { useAssetStore } from "@/stores/assetStore";
 import { useConfigStore } from "@/stores/configStore";
 import { useProjectStore } from "@/stores/projectStore";
 import { useZoneStore } from "@/stores/zoneStore";
+import { useLoreStore } from "@/stores/loreStore";
 import { applyTemplate } from "@/lib/templates";
 import { saveProjectConfig } from "@/lib/saveConfig";
+import { saveLore } from "@/lib/lorePersistence";
 import { zoneFilePath } from "@/lib/projectPaths";
 import { addRecentProject } from "@/lib/uiPersistence";
 import { panelTab } from "@/lib/panelRegistry";
@@ -24,6 +26,8 @@ import {
   BASE_PETS,
 } from "@/lib/baseTemplate/baseConfig";
 import type { ReSkinProgress, ReSkinResults } from "@/lib/baseTemplate/reSkinPipeline";
+import type { OnboardingFlavor } from "@/lib/baseTemplate/flavors";
+import type { Article } from "@/types/lore";
 
 type Phase = "creating" | "applying" | "ready";
 
@@ -49,11 +53,14 @@ const RESKIN_ITEMS: ReSkinItemInfo[] = [
   { key: "rooms", label: "Rooms" },
   { key: "entities", label: "Entities" },
   { key: "artStyle", label: "Art Style" },
+  { key: "worldLore", label: "World Lore" },
 ];
 
 interface GeneratingStepProps {
   reSkinPromise: Promise<ReSkinResults>;
   reSkinProgress: ReSkinProgress;
+  setReSkinProgress: React.Dispatch<React.SetStateAction<ReSkinProgress>>;
+  flavor: OnboardingFlavor;
   onFinished: () => void;
 }
 
@@ -92,7 +99,7 @@ function slugify(name: string): string {
     || "academy";
 }
 
-export function GeneratingStep({ reSkinPromise, reSkinProgress, onFinished }: GeneratingStepProps) {
+export function GeneratingStep({ reSkinPromise, reSkinProgress, setReSkinProgress, flavor, onFinished }: GeneratingStepProps) {
   const { openDir } = useOpenProject();
   const settings = useAssetStore((s) => s.settings);
   const [activePhase, setActivePhase] = useState<Phase>("creating");
@@ -211,6 +218,70 @@ export function GeneratingStep({ reSkinPromise, reSkinProgress, onFinished }: Ge
           } catch {
             // Non-critical — art style can be set later
           }
+        }
+
+        // ─── Phase 2b: Generate initial world lore article ────────
+        try {
+          setReSkinProgress((prev) => ({ ...prev, worldLore: "pending" }));
+          const classNames = Object.values(reSkinResults?.classes ?? BASE_CLASSES)
+            .map((c) => c.displayName)
+            .join(", ");
+          const raceNames = Object.values(reSkinResults?.races ?? BASE_RACES)
+            .map((r) => r.displayName)
+            .join(", ");
+
+          const lorePrompt = [
+            "Write a vivid 2-3 paragraph overview of this game world.",
+            "Use evocative, immersive prose — this will be the first thing a reader sees in the world's codex.",
+            "",
+            `WORLD NAME: ${resolvedAcademyName}`,
+            `THEME: ${flavor.name} — ${flavor.tagline}`,
+            `FLAVOR: ${flavor.description}`,
+            `CLASSES: ${classNames}`,
+            `RACES: ${raceNames}`,
+            reSkinResults?.artStyle
+              ? `VISUAL STYLE: ${reSkinResults.artStyle.name} — ${reSkinResults.artStyle.basePrompt}`
+              : "",
+            "",
+            "Return ONLY the prose paragraphs, no headings or markdown.",
+          ].filter(Boolean).join("\n");
+
+          const loreContent = await invoke<string>("llm_complete", {
+            systemPrompt:
+              "You are a world-building author. Write rich, atmospheric prose that draws readers into the setting. Be specific and concrete — name places, hint at history, evoke mood. Keep it under 300 words.",
+            userPrompt: lorePrompt,
+          });
+
+          const now = new Date().toISOString();
+          const article: Article = {
+            id: "world_overview",
+            template: "world_setting",
+            title: resolvedAcademyName,
+            fields: {
+              name: resolvedAcademyName,
+              tagline: flavor.tagline,
+              tone: flavor.name.toLowerCase(),
+              themes: [flavor.name],
+              ...(reSkinResults?.artStyle
+                ? { visualStyle: `${reSkinResults.artStyle.name} — ${reSkinResults.artStyle.basePrompt}` }
+                : {}),
+            },
+            content: loreContent.trim(),
+            tags: ["world"],
+            draft: false,
+            createdAt: now,
+            updatedAt: now,
+          };
+
+          const lore = useLoreStore.getState().lore;
+          if (lore) {
+            const updatedArticles = { ...lore.articles, [article.id]: article };
+            useLoreStore.getState().setLore({ ...lore, articles: updatedArticles });
+            await saveLore(project);
+          }
+          setReSkinProgress((prev) => ({ ...prev, worldLore: "done" }));
+        } catch {
+          setReSkinProgress((prev) => ({ ...prev, worldLore: "failed" }));
         }
 
         addRecentProject(project.mudDir, projectName);

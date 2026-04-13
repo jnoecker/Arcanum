@@ -25,6 +25,7 @@ const INITIAL_RESKIN_PROGRESS: ReSkinProgress = {
   rooms: "pending",
   entities: "pending",
   artStyle: "pending",
+  worldLore: "pending",
 };
 
 interface OnboardingFlowProps {
@@ -42,7 +43,10 @@ export function OnboardingFlow({ onClose }: OnboardingFlowProps) {
 
   const handleHubKeyDone = () => setStep("flavor");
 
+  const [selectedFlavor, setSelectedFlavor] = useState<OnboardingFlavor | null>(null);
+
   const handleFlavorDone = (flavor: OnboardingFlavor) => {
+    setSelectedFlavor(flavor);
     const promise = startReSkin(flavor.seedPrompt, setReSkinProgress);
     setReSkinPromise(promise);
     setStep("artStyle");
@@ -101,10 +105,12 @@ export function OnboardingFlow({ onClose }: OnboardingFlowProps) {
             <FlavorStep onDone={handleFlavorDone} onBack={() => setStep("hubKey")} />
           )}
           {step === "artStyle" && <ArtStyleStep onDone={handleArtStyleDone} />}
-          {step === "generating" && reSkinPromise && (
+          {step === "generating" && reSkinPromise && selectedFlavor && (
             <GeneratingStep
               reSkinPromise={reSkinPromise}
               reSkinProgress={reSkinProgress}
+              setReSkinProgress={setReSkinProgress}
+              flavor={selectedFlavor}
               onFinished={onClose}
             />
           )}

@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useProjectStore } from "@/stores/projectStore";
 import { useZoneStore } from "@/stores/zoneStore";
-import { useAssetStore } from "@/stores/assetStore";
 import { panelTab } from "@/lib/panelRegistry";
 import {
   loadGettingStarted,
@@ -24,7 +23,6 @@ interface GettingStartedPanelProps {
 export function GettingStartedPanel({ onClose }: GettingStartedPanelProps) {
   const openWorldMap = useProjectStore((s) => s.openWorldMap);
   const openTab = useProjectStore((s) => s.openTab);
-  const openGenerator = useAssetStore((s) => s.openGenerator);
   const zones = useZoneStore((s) => s.zones);
   const [completed, setCompleted] = useState<string[]>(() => loadGettingStarted().completed);
   const [visible, setVisible] = useState(false);
@@ -88,8 +86,8 @@ export function GettingStartedPanel({ onClose }: GettingStartedPanelProps) {
         glyph: "\u2694\uFE0F",
         title: "Discover Characters",
         description:
-          "Classes and races define who adventures in your world. Browse or create your own.",
-        action: () => openTab(panelTab("classes")),
+          "See the portraits for every class and race that inhabits your world.",
+        action: () => openTab(panelTab("portraits")),
       },
       {
         id: "art",
@@ -97,7 +95,7 @@ export function GettingStartedPanel({ onClose }: GettingStartedPanelProps) {
         title: "Generate Art",
         description:
           "Every creature, item, and place can have AI artwork. Try rendering your first image.",
-        action: () => openGenerator(),
+        action: () => openTab(panelTab("art")),
       },
       {
         id: "lore",
@@ -124,7 +122,7 @@ export function GettingStartedPanel({ onClose }: GettingStartedPanelProps) {
         action: () => openTab(panelTab("deployment")),
       },
     ];
-  }, [openWorldMap, openTab, openGenerator, zones]);
+  }, [openWorldMap, openTab, zones]);
 
   const completedCount = completed.length;
   const totalSteps = steps.length;

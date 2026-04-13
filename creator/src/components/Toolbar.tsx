@@ -17,9 +17,11 @@ const PublishHubDialog = lazy(() =>
 
 interface ToolbarProps {
   onNewProject: () => void;
+  onToggleGuide?: () => void;
+  guideOpen?: boolean;
 }
 
-export function Toolbar({ onNewProject }: ToolbarProps) {
+export function Toolbar({ onNewProject, onToggleGuide, guideOpen }: ToolbarProps) {
   const project = useProjectStore((s) => s.project);
   const openWorldMap = useProjectStore((s) => s.openWorldMap);
   const setSettingsOpen = useProjectStore((s) => s.setSettingsOpen);
@@ -174,6 +176,23 @@ export function Toolbar({ onNewProject }: ToolbarProps) {
             >
               Publish World
             </ActionButton>
+
+            <button
+              type="button"
+              onClick={onToggleGuide}
+              title="Getting started guide"
+              aria-label="Getting started guide"
+              aria-pressed={guideOpen}
+              className={`focus-ring ml-1 rounded-full border p-2 transition ${
+                guideOpen
+                  ? "border-accent/80 bg-accent/15 text-accent shadow-glow"
+                  : "border-[var(--chrome-stroke)] bg-[var(--chrome-fill)]/40 text-text-secondary hover:border-accent/60 hover:text-accent"
+              }`}
+            >
+              <span aria-hidden="true" className="block text-base leading-none">
+                {"\u{1F9ED}"}
+              </span>
+            </button>
 
             <button
               type="button"

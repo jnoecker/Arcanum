@@ -20,24 +20,24 @@ back to the existing self-hosted behaviour unchanged.
 ## Setup
 
 ```bash
-bun install
+npm install
 
 # Create the D1 database and R2 bucket (one-time):
 wrangler d1 create arcanum-hub
 wrangler r2 bucket create arcanum-hub
 
 # Copy the D1 database_id into wrangler.toml, then:
-bun run db:init:local      # dev
-bun run db:init:remote     # prod
+npm run db:init:local      # dev
+npm run db:init:remote     # prod
 
 # Set the admin master key (prod):
 wrangler secret put HUB_ADMIN_KEY
 
 # Dev server on http://127.0.0.1:8787:
-bun run dev
+npm run dev
 
 # Deploy:
-bun run deploy
+npm run deploy
 ```
 
 ## Development routing

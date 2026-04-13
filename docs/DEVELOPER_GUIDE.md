@@ -179,11 +179,11 @@ Only needed if you're working on publish/AI proxy/admin features.
 ```bash
 cd hub-worker
 npm install
-wrangler d1 create arcanum-hub        # One-time: creates the D1 database
-wrangler r2 bucket create arcanum-hub # One-time: creates the R2 bucket
+npx wrangler d1 create arcanum-hub        # One-time: creates the D1 database
+npx wrangler r2 bucket create arcanum-hub # One-time: creates the R2 bucket
 # Paste the database_id from the first command into wrangler.toml
 npm run db:init:local
-npm run dev                           # Local worker on :8787
+npm run dev                               # Local worker on :8787
 ```
 
 The worker uses path-prefixed routes in dev (`/api/publish/*`, `/dev/world/<slug>/showcase.json`) instead of the production subdomain layout. See [`hub-worker/README.md`](../hub-worker/README.md) for the full routing table.

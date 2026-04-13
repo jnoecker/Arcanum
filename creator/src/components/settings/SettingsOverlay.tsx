@@ -1,6 +1,7 @@
 import { lazy, Suspense, useState, useEffect, useMemo } from "react";
 import { PANEL_MAP, panelsForIsland } from "@/lib/panelRegistry";
 import type { PanelDef } from "@/lib/panelRegistry";
+import { PANEL_ICONS } from "@/assets/ui";
 
 const ConfigPanelHost = lazy(() =>
   import("../config/ConfigPanelHost").then((m) => ({ default: m.ConfigPanelHost })),
@@ -106,11 +107,13 @@ export function SettingsOverlay({ onClose }: SettingsOverlayProps) {
                       : "text-text-secondary hover:bg-[var(--chrome-highlight)] hover:text-text-primary"
                   }`}
                 >
-                  {p.glyph && (
+                  {PANEL_ICONS[p.id] ? (
+                    <img src={PANEL_ICONS[p.id]} alt="" aria-hidden="true" className="h-4 w-4 shrink-0 object-contain" />
+                  ) : p.glyph ? (
                     <span aria-hidden="true" className="text-base leading-none">
                       {p.glyph}
                     </span>
-                  )}
+                  ) : null}
                   <span className="font-display uppercase tracking-wide-ui text-[11px]">
                     {p.label}
                   </span>

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { AI_ENABLED } from "@/lib/featureFlags";
 import { invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
 import { useAssetStore } from "@/stores/assetStore";
@@ -340,6 +341,8 @@ export function CustomAssetStudio({ selectedZoneId }: { selectedZoneId: string |
       setError(String(e));
     }
   };
+
+  if (!AI_ENABLED) return null;
 
   return (
     <section className="rounded-3xl border border-[var(--chrome-stroke)] bg-gradient-panel p-5 shadow-section">

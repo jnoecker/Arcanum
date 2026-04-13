@@ -1,7 +1,7 @@
 {
   "name": "arcanum",
   "private": true,
-  "version": "1.6.0",
+  "version": "2.0.0-rc1",
   "license": "SEE LICENSE IN ../LICENSE.md",
   "type": "module",
   "scripts": {
@@ -10,7 +10,8 @@
     "preview": "vite preview",
     "tauri": "tauri",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "build:community": "cross-env VITE_AI=false tauri build -- --no-default-features"
   },
   "dependencies": {
     "@dagrejs/dagre": "^2.0.4",
@@ -55,6 +56,7 @@
     "@types/react-dom": "^19.0.0",
     "@vitejs/plugin-react": "^4.3.0",
     "autoprefixer": "^10.4.0",
+    "cross-env": "^10.1.0",
     "postcss": "^8.4.0",
     "tailwindcss": "^4.0.0",
     "typescript": "^5.8.0",

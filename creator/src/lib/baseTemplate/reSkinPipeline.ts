@@ -17,6 +17,7 @@ import {
   BASE_RACES,
   BASE_PETS,
 } from "./baseConfig";
+import { AI_ENABLED } from "@/lib/featureFlags";
 
 // ─── Public types ─────────────────────────────────────────────────
 
@@ -406,6 +407,7 @@ export async function startReSkin(
   seedPrompt: string,
   onProgress: (progress: ReSkinProgress) => void,
 ): Promise<ReSkinResults> {
+  if (!AI_ENABLED) throw new Error("AI features are not available in Community Edition");
   const progress: ReSkinProgress = {
     classesAndAbilities: "pending",
     races: "pending",

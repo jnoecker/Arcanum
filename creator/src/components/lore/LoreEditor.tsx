@@ -13,6 +13,7 @@ import { plainTextToTiptap, tiptapToPlainText } from "@/lib/loreRelations";
 import { useAssetStore } from "@/stores/assetStore";
 import { useLoreStore } from "@/stores/loreStore";
 import { MentionList, type MentionListRef } from "./MentionList";
+import { AI_ENABLED } from "@/lib/featureFlags";
 
 interface LoreEditorProps {
   value: string;
@@ -388,7 +389,7 @@ export function LoreEditor({
     <div className="rounded-lg border border-border-default bg-bg-primary">
       {editor && <EditorToolbar editor={editor} />}
       <EditorContent editor={editor} />
-      {(showGenerate || showEnhance || showContinue) && (
+      {AI_ENABLED && (showGenerate || showEnhance || showContinue) && (
         <div className="flex gap-2 border-t border-border-muted px-2 py-1">
           {showGenerate && (
             <button

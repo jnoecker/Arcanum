@@ -19,6 +19,7 @@ import {
   loadCollapsedZoneAssetSections,
   saveCollapsedZoneAssetSections,
 } from "@/lib/uiPersistence";
+import { AI_ENABLED } from "@/lib/featureFlags";
 import type { WorldFile } from "@/types/world";
 
 type EntityKind = "room" | "mob" | "item" | "shop" | "gatheringNode";
@@ -721,19 +722,21 @@ export function ZoneAssetWorkbench({ zoneId, world, onWorldChange }: ZoneAssetWo
                         </span>
                       )}
                     </div>
-                    <button
-                      onClick={handleGeneratePrompt}
-                      disabled={!hasLlmKey || generatingPrompt || generatingImage || removingBg}
-                      className="rounded-full border border-[var(--chrome-stroke)] bg-[var(--chrome-highlight)] px-3 py-1 text-2xs font-medium text-text-primary transition enabled:hover:bg-[var(--chrome-highlight-strong)] disabled:opacity-50"
-                    >
-                      {generatingPrompt ? (
-                        <span className="flex items-center gap-1.5"><Spinner />Enhancing</span>
-                      ) : promptGeneratedByLlm ? (
-                        "Re-enhance"
-                      ) : (
-                        "Enhance prompt"
-                      )}
-                    </button>
+                    {AI_ENABLED && (
+                      <button
+                        onClick={handleGeneratePrompt}
+                        disabled={!hasLlmKey || generatingPrompt || generatingImage || removingBg}
+                        className="rounded-full border border-[var(--chrome-stroke)] bg-[var(--chrome-highlight)] px-3 py-1 text-2xs font-medium text-text-primary transition enabled:hover:bg-[var(--chrome-highlight-strong)] disabled:opacity-50"
+                      >
+                        {generatingPrompt ? (
+                          <span className="flex items-center gap-1.5"><Spinner />Enhancing</span>
+                        ) : promptGeneratedByLlm ? (
+                          "Re-enhance"
+                        ) : (
+                          "Enhance prompt"
+                        )}
+                      </button>
+                    )}
                   </div>
                   <textarea
                     value={promptDraft}
@@ -764,38 +767,42 @@ export function ZoneAssetWorkbench({ zoneId, world, onWorldChange }: ZoneAssetWo
               </div>
 
               <div className="mt-4 flex flex-wrap items-center gap-2">
-                <span className="text-2xs uppercase tracking-ui text-text-muted">Step 2 · Generate</span>
-                <select
-                  value={batchCount}
-                  onChange={(event) => setBatchCount(Number(event.target.value))}
-                  disabled={!hasImageKey || generatingPrompt || generatingImage || removingBg}
-                  aria-label="Number of variants to generate"
-                  className="rounded-full border border-[var(--chrome-stroke)] bg-[var(--chrome-highlight)] px-3 py-2 text-xs font-medium text-text-primary outline-none transition focus-visible:ring-2 focus-visible:ring-border-active disabled:opacity-50"
-                >
-                  <option value={1} className="bg-bg-primary">×1</option>
-                  <option value={2} className="bg-bg-primary">×2</option>
-                  <option value={4} className="bg-bg-primary">×4</option>
-                  <option value={8} className="bg-bg-primary">×8</option>
-                </select>
-                <button
-                  onClick={handleGenerate}
-                  disabled={!hasImageKey || generatingPrompt || generatingImage || removingBg}
-                  className="rounded-full border border-[var(--border-accent-subtle)] bg-gradient-active-strong px-4 py-2 text-xs font-medium text-text-primary transition hover:brightness-110 disabled:opacity-50"
-                >
-                  {generatingImage ? (
-                    <span className="flex items-center gap-1.5">
-                      <Spinner />
-                      {batchCount > 1 ? `Generating ×${batchCount}` : "Generating image"}
-                    </span>
-                  ) : removingBg ? (
-                    <span className="flex items-center gap-1.5"><Spinner />Removing background</span>
-                  ) : batchCount > 1 ? (
-                    `Generate ×${batchCount}`
-                  ) : (
-                    "Generate image"
-                  )}
-                </button>
-                <span className="mx-1 h-6 w-px bg-[var(--chrome-highlight-strong)]" aria-hidden="true" />
+                {AI_ENABLED && (
+                  <>
+                    <span className="text-2xs uppercase tracking-ui text-text-muted">Step 2 · Generate</span>
+                    <select
+                      value={batchCount}
+                      onChange={(event) => setBatchCount(Number(event.target.value))}
+                      disabled={!hasImageKey || generatingPrompt || generatingImage || removingBg}
+                      aria-label="Number of variants to generate"
+                      className="rounded-full border border-[var(--chrome-stroke)] bg-[var(--chrome-highlight)] px-3 py-2 text-xs font-medium text-text-primary outline-none transition focus-visible:ring-2 focus-visible:ring-border-active disabled:opacity-50"
+                    >
+                      <option value={1} className="bg-bg-primary">×1</option>
+                      <option value={2} className="bg-bg-primary">×2</option>
+                      <option value={4} className="bg-bg-primary">×4</option>
+                      <option value={8} className="bg-bg-primary">×8</option>
+                    </select>
+                    <button
+                      onClick={handleGenerate}
+                      disabled={!hasImageKey || generatingPrompt || generatingImage || removingBg}
+                      className="rounded-full border border-[var(--border-accent-subtle)] bg-gradient-active-strong px-4 py-2 text-xs font-medium text-text-primary transition hover:brightness-110 disabled:opacity-50"
+                    >
+                      {generatingImage ? (
+                        <span className="flex items-center gap-1.5">
+                          <Spinner />
+                          {batchCount > 1 ? `Generating ×${batchCount}` : "Generating image"}
+                        </span>
+                      ) : removingBg ? (
+                        <span className="flex items-center gap-1.5"><Spinner />Removing background</span>
+                      ) : batchCount > 1 ? (
+                        `Generate ×${batchCount}`
+                      ) : (
+                        "Generate image"
+                      )}
+                    </button>
+                    <span className="mx-1 h-6 w-px bg-[var(--chrome-highlight-strong)]" aria-hidden="true" />
+                  </>
+                )}
                 <button
                   onClick={handleImport}
                   disabled={importing || generatingPrompt || generatingImage || removingBg}

@@ -4,6 +4,7 @@ import { useImageSrc, isR2HashPath } from "@/lib/useImageSrc";
 import { useFocusTrap } from "@/lib/useFocusTrap";
 import { removeBgAndSave } from "@/lib/useBackgroundRemoval";
 import { generateArtDirection } from "@/lib/spritePromptGen";
+import { AI_ENABLED } from "@/lib/featureFlags";
 import type { BulkBgTarget } from "@/components/ui/BulkBgRemoval";
 import type {
   SpriteDefinition,
@@ -239,14 +240,16 @@ export function ArtDirectionField({
     <div className="flex flex-col gap-1">
       <div className="flex items-center justify-between">
         <span className="text-xs text-text-secondary">Art Direction</span>
-        <button
-          onClick={handleAiSuggest}
-          disabled={generating || !hasLlmKey}
-          className="shrink-0 rounded px-1.5 py-0.5 text-2xs text-accent transition-colors hover:bg-accent/10 disabled:opacity-50"
-          title={hasLlmKey ? "Use AI to suggest visual art direction" : "No LLM API key configured"}
-        >
-          {generating ? "Generating..." : "AI Suggest"}
-        </button>
+        {AI_ENABLED && (
+          <button
+            onClick={handleAiSuggest}
+            disabled={generating || !hasLlmKey}
+            className="shrink-0 rounded px-1.5 py-0.5 text-2xs text-accent transition-colors hover:bg-accent/10 disabled:opacity-50"
+            title={hasLlmKey ? "Use AI to suggest visual art direction" : "No LLM API key configured"}
+          >
+            {generating ? "Generating..." : "AI Suggest"}
+          </button>
+        )}
       </div>
       <textarea
         className="ornate-input min-h-[5rem] resize-y rounded-3xl px-4 py-3 text-sm text-text-primary"
@@ -539,22 +542,26 @@ export function VariantRow({
       </div>
 
       <div className="flex shrink-0 flex-col gap-1">
-        <ActionButton
-          onClick={() => onGenerate(variant)}
-          disabled={!hasApiKey || generating}
-          variant="secondary"
-          size="sm"
-        >
-          {generating ? "..." : "Render"}
-        </ActionButton>
-        <ActionButton
-          onClick={() => onPreview(variant)}
-          disabled={!hasApiKey || generating}
-          variant="ghost"
-          size="sm"
-        >
-          Preview
-        </ActionButton>
+        {AI_ENABLED && (
+          <>
+            <ActionButton
+              onClick={() => onGenerate(variant)}
+              disabled={!hasApiKey || generating}
+              variant="secondary"
+              size="sm"
+            >
+              {generating ? "..." : "Render"}
+            </ActionButton>
+            <ActionButton
+              onClick={() => onPreview(variant)}
+              disabled={!hasApiKey || generating}
+              variant="ghost"
+              size="sm"
+            >
+              Preview
+            </ActionButton>
+          </>
+        )}
         <ActionButton
           onClick={() => onRemove(index)}
           variant="danger"
@@ -839,24 +846,26 @@ export function SpriteDetailEditor({
                 />
               </label>
             </div>
-            <div className="flex shrink-0 flex-col gap-1">
-              <ActionButton
-                onClick={() => onGenerateImage(id)}
-                disabled={!hasApiKey || generating === id}
-                variant="primary"
-                size="sm"
-              >
-                {generating === id ? "Generating..." : "Generate"}
-              </ActionButton>
-              <ActionButton
-                onClick={() => onPreviewGenerate(id)}
-                disabled={!hasApiKey || generating === id}
-                variant="secondary"
-                size="sm"
-              >
-                Preview
-              </ActionButton>
-            </div>
+            {AI_ENABLED && (
+              <div className="flex shrink-0 flex-col gap-1">
+                <ActionButton
+                  onClick={() => onGenerateImage(id)}
+                  disabled={!hasApiKey || generating === id}
+                  variant="primary"
+                  size="sm"
+                >
+                  {generating === id ? "Generating..." : "Generate"}
+                </ActionButton>
+                <ActionButton
+                  onClick={() => onPreviewGenerate(id)}
+                  disabled={!hasApiKey || generating === id}
+                  variant="secondary"
+                  size="sm"
+                >
+                  Preview
+                </ActionButton>
+              </div>
+            )}
           </div>
         )}
       </div>

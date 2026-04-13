@@ -1,4 +1,5 @@
 import { useState, useMemo, useRef, useCallback } from "react";
+import { AI_ENABLED } from "@/lib/featureFlags";
 import { invoke } from "@tauri-apps/api/core";
 import { useConfigStore } from "@/stores/configStore";
 import { useSpriteDefinitionStore } from "@/stores/spriteDefinitionStore";
@@ -255,6 +256,8 @@ export function SpriteScaffold({ onClose, onComplete }: SpriteScaffoldProps) {
     imageProvider, setDefinition, saveDefinitions,
     acceptAsset, loadAssets,
   ]);
+
+  if (!AI_ENABLED) return null;
 
   if (!config || !gaps) {
     return (

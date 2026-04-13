@@ -15,6 +15,7 @@ import {
 import type { GeneratedImage } from "@/types/assets";
 import { ENTITY_DIMENSIONS, imageGenerateCommand, resolveImageModel, requestsTransparentBackground, modelNativelyTransparent } from "@/types/assets";
 import { removeBgAndSave, shouldRemoveBg } from "@/lib/useBackgroundRemoval";
+import { AI_ENABLED } from "@/lib/featureFlags";
 
 export function assetTypeForKind(kind: string): string {
   if (kind === "room") return "background";
@@ -168,6 +169,7 @@ export async function runBatchArtGeneration(
   callbacks: ArtGenerationCallbacks,
   autoRemoveBg?: boolean,
 ): Promise<WorldFile> {
+  if (!AI_ENABLED) throw new Error("AI features are not available in Community Edition");
   // Use a ref-like container so all workers always read/write the latest world
   const worldRef = { current: { ...world } };
 

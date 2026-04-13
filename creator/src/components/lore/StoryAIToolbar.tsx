@@ -5,6 +5,7 @@
 //   - Synopsis:  reverse — fill story.synopsis from current scenes
 
 import { useState, useCallback } from "react";
+import { AI_ENABLED } from "@/lib/featureFlags";
 import { invoke } from "@tauri-apps/api/core";
 import { useStoryStore, generateSceneId } from "@/stores/storyStore";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
@@ -174,6 +175,8 @@ export function StoryAIToolbar({ story }: StoryAIToolbarProps) {
       setLoading(null);
     }
   }, [story, sortedScenes, updateStory]);
+
+  if (!AI_ENABLED) return null;
 
   // ─── Render ────────────────────────────────────────────────────
 

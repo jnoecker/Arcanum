@@ -3,6 +3,7 @@ import { useLoreStore } from "@/stores/loreStore";
 import type { Article, ArticleTemplate, CalendarSystem, CalendarEra, TimelineEvent } from "@/types/lore";
 import { TEMPLATE_SCHEMAS } from "@/lib/loreTemplates";
 import { tiptapToPlainText } from "@/lib/loreRelations";
+import { AI_ENABLED } from "@/lib/featureFlags";
 
 // ─── World context builder ──────────────────────────────────────────
 
@@ -221,6 +222,7 @@ export interface GenerateArticleOptions {
 }
 
 export async function generateArticle(opts: GenerateArticleOptions): Promise<Article> {
+  if (!AI_ENABLED) throw new Error("AI features are not available in Community Edition");
   const schema = TEMPLATE_SCHEMAS[opts.template];
   const fieldDesc = schema?.fields.map((f) => `  "${f.key}": ${f.type}`).join(",\n") ?? "";
 
@@ -273,6 +275,7 @@ export interface GenerateRelatedOptions {
 }
 
 export async function generateRelatedArticles(opts: GenerateRelatedOptions): Promise<Article[]> {
+  if (!AI_ENABLED) throw new Error("AI features are not available in Community Edition");
   const userPrompt = `Given this existing article:
 Title: ${opts.sourceArticle.title}
 Type: ${opts.sourceArticle.template}
@@ -322,6 +325,7 @@ export interface WorldSeedResult {
 }
 
 export async function generateWorldSeed(concept: string): Promise<WorldSeedResult> {
+  if (!AI_ENABLED) throw new Error("AI features are not available in Community Edition");
   const result = await invoke<string>("llm_complete", {
     systemPrompt: WORLD_SEED_SYSTEM,
     userPrompt: `World concept:\n${concept}`,

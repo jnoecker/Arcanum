@@ -6,6 +6,7 @@ import {
   DEFAULT_RACE_BODY_DESCRIPTIONS,
   DEFAULT_CLASS_OUTFIT_DESCRIPTIONS,
 } from "./defaultSpriteData";
+import { AI_ENABLED } from "@/lib/featureFlags";
 
 // Fallback art-direction when the world has no visualStyle defined.
 // Kept lean — we never want project-specific aesthetic baked into code —
@@ -117,6 +118,7 @@ export async function generateSpriteTemplate(
   classes: string[],
   zoneVibe: string,
 ): Promise<SpritePromptTemplate> {
+  if (!AI_ENABLED) throw new Error("AI features are not available in Community Edition");
   const raceList = races
     .map((r) => `- ${r}: ${getRaceBodyDescription(r)}`)
     .join("\n");
@@ -177,6 +179,7 @@ export async function generateArtDirection(
   playerClass?: string,
   gender?: string,
 ): Promise<string> {
+  if (!AI_ENABLED) throw new Error("AI features are not available in Community Edition");
   const toneDirective = buildToneDirective();
   const toneBlock = toneDirective
     ? `\nWorld tone: ${toneDirective}\nThe description must match this tone.`

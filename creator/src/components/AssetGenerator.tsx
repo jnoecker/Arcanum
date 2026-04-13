@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import { AI_ENABLED } from "@/lib/featureFlags";
 import { invoke } from "@tauri-apps/api/core";
 import { useAssetStore } from "@/stores/assetStore";
 import { useConfigStore } from "@/stores/configStore";
@@ -189,6 +190,8 @@ export function AssetGenerator() {
     setResult(null);
     setStage("compose");
   };
+
+  if (!AI_ENABLED) return null;
 
   if (!hasApiKey) {
     return (

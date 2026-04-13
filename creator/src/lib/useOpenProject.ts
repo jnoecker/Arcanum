@@ -11,6 +11,7 @@ import { useSpriteDefinitionStore } from "@/stores/spriteDefinitionStore";
 import { useStoryStore } from "@/stores/storyStore";
 import { loadAllStoryIds } from "@/lib/storyPersistence";
 import { loadUIState, addRecentProject } from "@/lib/uiPersistence";
+import { PANEL_MAP } from "@/lib/panelRegistry";
 import type { Project, ProjectFormat, Tab } from "@/types/project";
 
 interface ProjectValidation {
@@ -99,6 +100,10 @@ export function useOpenProject() {
         if (tab.kind === "zone") {
           const zoneId = tab.id.replace(/^zone:/, "");
           return zoneIds.has(zoneId);
+        }
+        if (tab.kind === "panel") {
+          const panelId = tab.id.replace(/^panel:/, "");
+          return !!PANEL_MAP[panelId];
         }
         return true; // config, console tabs always valid
       });

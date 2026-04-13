@@ -4,6 +4,7 @@ import { buildToneDirective } from "@/lib/loreGeneration";
 import { sanitizeLabel, inferDirection } from "@/lib/sketchToZone";
 import { LoreEditor } from "./lore/LoreEditor";
 import { SketchCanvas } from "./SketchCanvas";
+import { AI_ENABLED } from "@/lib/featureFlags";
 import type { WorldFile } from "@/types/world";
 import type { SketchParseResult } from "@/types/sketch";
 import type { FixedLayout, FixedLayoutRoom } from "@/lib/generateZoneContent";
@@ -490,103 +491,105 @@ export function LayoutStep({
         )}
       </div>
 
-      {/* Sketch */}
-      <div>
-        <label className="mb-1 block text-2xs uppercase tracking-wider text-text-muted">
-          Sketch
-          <span className="ml-2 font-normal normal-case text-text-muted">
-            (optional — defines the room layout)
-          </span>
-        </label>
+      {/* Sketch (requires AI vision) */}
+      {AI_ENABLED && (
+        <div>
+          <label className="mb-1 block text-2xs uppercase tracking-wider text-text-muted">
+            Sketch
+            <span className="ml-2 font-normal normal-case text-text-muted">
+              (optional — defines the room layout)
+            </span>
+          </label>
 
-        {/* Summary when we have a parsed sketch */}
-        {hasSketch && sketchParse && (
-          <div className="rounded border border-border-default bg-bg-primary p-3">
-            <div className="flex items-center justify-between">
-              <div className="text-xs text-text-secondary">
-                <span className="text-text-primary">
-                  {sketchParse.rooms.length}
-                </span>{" "}
-                rooms parsed,{" "}
-                <span className="text-text-primary">
-                  {sketchParse.connections.length}
-                </span>{" "}
-                connections
+          {/* Summary when we have a parsed sketch */}
+          {hasSketch && sketchParse && (
+            <div className="rounded border border-border-default bg-bg-primary p-3">
+              <div className="flex items-center justify-between">
+                <div className="text-xs text-text-secondary">
+                  <span className="text-text-primary">
+                    {sketchParse.rooms.length}
+                  </span>{" "}
+                  rooms parsed,{" "}
+                  <span className="text-text-primary">
+                    {sketchParse.connections.length}
+                  </span>{" "}
+                  connections
+                </div>
+                <button
+                  onClick={clearSketch}
+                  className="rounded bg-bg-elevated px-2 py-1 text-2xs font-medium text-text-primary hover:bg-bg-hover"
+                >
+                  Clear
+                </button>
               </div>
+              {sketchParse.rooms.length > 0 && (
+                <div className="mt-2 flex flex-wrap gap-1 text-2xs text-text-muted">
+                  {sketchParse.rooms.slice(0, 12).map((r) => (
+                    <span
+                      key={r.id}
+                      className="rounded bg-bg-elevated px-1.5 py-0.5"
+                    >
+                      {r.label || r.id}
+                    </span>
+                  ))}
+                  {sketchParse.rooms.length > 12 && (
+                    <span className="text-text-muted">
+                      +{sketchParse.rooms.length - 12} more
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Picker when no sketch yet */}
+          {!hasSketch && sketchMode === "none" && !analyzingSketch && (
+            <div className="flex gap-2">
               <button
-                onClick={clearSketch}
-                className="rounded bg-bg-elevated px-2 py-1 text-2xs font-medium text-text-primary hover:bg-bg-hover"
+                onClick={onPickPhoto}
+                className="flex flex-1 flex-col items-center gap-1 rounded border border-border-default bg-bg-primary p-4 text-xs font-medium text-text-primary transition-colors hover:border-accent/50 hover:bg-bg-elevated"
               >
-                Clear
+                <span className="text-lg">&#128247;</span>
+                Import photo
+                <span className="text-2xs font-normal text-text-muted">
+                  Hand-drawn on paper
+                </span>
+              </button>
+              <button
+                onClick={() => setSketchMode("draw")}
+                className="flex flex-1 flex-col items-center gap-1 rounded border border-border-default bg-bg-primary p-4 text-xs font-medium text-text-primary transition-colors hover:border-accent/50 hover:bg-bg-elevated"
+              >
+                <span className="text-lg">&#9998;</span>
+                Draw here
+                <span className="text-2xs font-normal text-text-muted">
+                  In-app canvas
+                </span>
               </button>
             </div>
-            {sketchParse.rooms.length > 0 && (
-              <div className="mt-2 flex flex-wrap gap-1 text-2xs text-text-muted">
-                {sketchParse.rooms.slice(0, 12).map((r) => (
-                  <span
-                    key={r.id}
-                    className="rounded bg-bg-elevated px-1.5 py-0.5"
-                  >
-                    {r.label || r.id}
-                  </span>
-                ))}
-                {sketchParse.rooms.length > 12 && (
-                  <span className="text-text-muted">
-                    +{sketchParse.rooms.length - 12} more
-                  </span>
-                )}
-              </div>
-            )}
-          </div>
-        )}
+          )}
 
-        {/* Picker when no sketch yet */}
-        {!hasSketch && sketchMode === "none" && !analyzingSketch && (
-          <div className="flex gap-2">
-            <button
-              onClick={onPickPhoto}
-              className="flex flex-1 flex-col items-center gap-1 rounded border border-border-default bg-bg-primary p-4 text-xs font-medium text-text-primary transition-colors hover:border-accent/50 hover:bg-bg-elevated"
-            >
-              <span className="text-lg">&#128247;</span>
-              Import photo
-              <span className="text-2xs font-normal text-text-muted">
-                Hand-drawn on paper
-              </span>
-            </button>
-            <button
-              onClick={() => setSketchMode("draw")}
-              className="flex flex-1 flex-col items-center gap-1 rounded border border-border-default bg-bg-primary p-4 text-xs font-medium text-text-primary transition-colors hover:border-accent/50 hover:bg-bg-elevated"
-            >
-              <span className="text-lg">&#9998;</span>
-              Draw here
-              <span className="text-2xs font-normal text-text-muted">
-                In-app canvas
-              </span>
-            </button>
-          </div>
-        )}
+          {/* Canvas */}
+          {sketchMode === "draw" && !hasSketch && !analyzingSketch && (
+            <div>
+              <SketchCanvas onExport={onCanvasExport} />
+              <button
+                onClick={() => setSketchMode("none")}
+                className="mt-2 rounded bg-bg-elevated px-3 py-1 text-2xs text-text-primary hover:bg-bg-hover"
+              >
+                Back
+              </button>
+            </div>
+          )}
 
-        {/* Canvas */}
-        {sketchMode === "draw" && !hasSketch && !analyzingSketch && (
-          <div>
-            <SketchCanvas onExport={onCanvasExport} />
-            <button
-              onClick={() => setSketchMode("none")}
-              className="mt-2 rounded bg-bg-elevated px-3 py-1 text-2xs text-text-primary hover:bg-bg-hover"
-            >
-              Back
-            </button>
-          </div>
-        )}
-
-        {/* Analyzing */}
-        {analyzingSketch && (
-          <div className="flex flex-col items-center gap-2 rounded border border-border-default bg-bg-primary py-6">
-            <div className="h-4 w-4 animate-spin rounded-full border-2 border-accent border-t-transparent" />
-            <p className="text-2xs text-text-muted">Analyzing sketch...</p>
-          </div>
-        )}
-      </div>
+          {/* Analyzing */}
+          {analyzingSketch && (
+            <div className="flex flex-col items-center gap-2 rounded border border-border-default bg-bg-primary py-6">
+              <div className="h-4 w-4 animate-spin rounded-full border-2 border-accent border-t-transparent" />
+              <p className="text-2xs text-text-muted">Analyzing sketch...</p>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

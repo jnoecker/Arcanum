@@ -3,6 +3,7 @@ import { invoke } from "@tauri-apps/api/core";
 import type { AssetContext, AssetEntry, BgRemovalProvider } from "@/types/assets";
 import { useAssetStore } from "@/stores/assetStore";
 import { BG_REMOVAL_ASSET_TYPES } from "./arcanumPrompts";
+import { AI_ENABLED } from "@/lib/featureFlags";
 
 // ─── Provider resolution ─────────────────────────────────────────────
 // The background-removal backend is a project-level setting
@@ -11,6 +12,7 @@ import { BG_REMOVAL_ASSET_TYPES } from "./arcanumPrompts";
 // switch between local and Runware without reloading.
 
 function currentBgProvider(): BgRemovalProvider {
+  if (!AI_ENABLED) return "local";
   const ps = useAssetStore.getState().projectSettings;
   return ps?.bg_removal_provider === "runware" ? "runware" : "local";
 }
@@ -54,6 +56,7 @@ function getWorker(): Worker {
  *  - "local": runs the Imgly/ONNX model in a Web Worker.
  *  - "runware": calls Runware Bria RMBG v2.0 (direct or via hub). */
 export async function removeBackground(imageDataUrl: string): Promise<Blob> {
+  if (!AI_ENABLED) return removeBackgroundLocal(imageDataUrl);
   if (currentBgProvider() === "runware") {
     return removeBackgroundRunware(imageDataUrl);
   }

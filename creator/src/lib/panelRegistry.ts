@@ -2,6 +2,8 @@
 // Central source of truth for all navigable panels. The sidebar, tab
 // bar, and main-area router all read from this registry.
 
+import { AI_ENABLED } from "@/lib/featureFlags";
+
 export type SidebarGroup =
   | "studio"
   | "characters"
@@ -44,6 +46,8 @@ export interface PanelDef {
   island?: Island;
   /** Short glyph (emoji or single char) shown beside the hotspot label. */
   glyph?: string;
+  /** Panel requires AI features and is hidden in the community build. */
+  aiOnly?: boolean;
 }
 
 // ─── Studio panels ──────────────────────────────────────────────────
@@ -66,8 +70,8 @@ const ART_STYLE_PANEL: PanelDef = {
 const STUDIO_PANELS: PanelDef[] = [
   { id: "art", label: "Art", group: "studio", host: "studio", kicker: "Studio", title: "Art", description: "Zone vibes, entity art, defaults, and free-form generation.", maxWidth: "max-w-7xl", island: "forge", glyph: "\u{1F3A8}" },
   { id: "media", label: "Media", group: "studio", host: "studio", kicker: "Studio", title: "Media", description: "Music, ambience, and cinematic staging.", maxWidth: "max-w-7xl", island: "forge", glyph: "\u{1F5BC}\uFE0F" },
-  { id: "portraits", label: "Portraits", group: "studio", host: "studio", kicker: "Studio", title: "Portraits", description: "Race and class portrait creation.", maxWidth: "max-w-7xl", island: "forge", glyph: "\u{1F464}" },
-  { id: "studioAbilities", label: "Icons", group: "studio", host: "studio", kicker: "Studio", title: "Icons", description: "Ability and status-effect icon generation.", maxWidth: "max-w-7xl", island: "forge", glyph: "\u{1F532}" },
+  { id: "portraits", label: "Portraits", group: "studio", host: "studio", kicker: "Studio", title: "Portraits", description: "Race and class portrait creation.", maxWidth: "max-w-7xl", island: "forge", glyph: "\u{1F464}", aiOnly: true },
+  { id: "studioAbilities", label: "Icons", group: "studio", host: "studio", kicker: "Studio", title: "Icons", description: "Ability and status-effect icon generation.", maxWidth: "max-w-7xl", island: "forge", glyph: "\u{1F532}", aiOnly: true },
   { id: "sprites", label: "Player Sprites", group: "studio", host: "command", kicker: "Studio", title: "Player sprites", description: "Visible identity, unlockable variants, and portrait logic.", maxWidth: "max-w-7xl", island: "forge", glyph: "\u{1F9CD}" },
   ART_STYLE_PANEL,
 ];
@@ -165,6 +169,7 @@ export const ALL_PANELS: PanelDef[] = (() => {
     ...COMMAND_PANELS,
   ]) {
     if (seen.has(p.id)) continue;
+    if (p.aiOnly && !AI_ENABLED) continue;
     seen.add(p.id);
     out.push(p);
   }
@@ -178,7 +183,7 @@ export const PANEL_MAP: Record<string, PanelDef> = Object.fromEntries(
 export type Workspace = "worldmaker" | "lore";
 
 export const WORLDMAKER_GROUPS: { id: SidebarGroup; label: string; panels: PanelDef[] }[] = [
-  { id: "studio", label: "Studio", panels: STUDIO_PANELS },
+  { id: "studio", label: "Studio", panels: STUDIO_PANELS.filter(p => !p.aiOnly || AI_ENABLED) },
   { id: "characters", label: "Characters", panels: CHARACTER_PANELS },
   { id: "world", label: "World", panels: WORLD_PANELS },
   { id: "systems", label: "Systems", panels: SYSTEMS_PANELS },

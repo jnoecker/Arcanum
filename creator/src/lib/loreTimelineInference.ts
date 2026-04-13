@@ -1,6 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import type { WorldLore, Article } from "@/types/lore";
 import { tiptapToPlainText } from "@/lib/loreRelations";
+import { AI_ENABLED } from "@/lib/featureFlags";
 
 export interface TimelineSuggestion {
   title: string;
@@ -41,6 +42,7 @@ export async function inferTimelineEvents(
   articleIds?: string[],
   onProgress?: (progress: InferenceProgress) => void,
 ): Promise<TimelineSuggestion[]> {
+  if (!AI_ENABLED) throw new Error("AI features are not available in Community Edition");
   const articles: Article[] = articleIds
     ? articleIds.reduce<Article[]>((acc, id) => {
         const a = lore.articles[id];

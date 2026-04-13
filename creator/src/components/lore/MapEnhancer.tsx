@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from "react";
+import { AI_ENABLED } from "@/lib/featureFlags";
 import { createPortal } from "react-dom";
 import { invoke } from "@tauri-apps/api/core";
 import type { GeneratedImage } from "@/types/assets";
@@ -172,6 +173,8 @@ export function MapEnhancer({
       setGenerating(false);
     }
   }, [crop, prompt, strength, extractCropBase64]);
+
+  if (!AI_ENABLED) return null;
 
   return createPortal(
     <div

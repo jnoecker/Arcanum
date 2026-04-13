@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { invoke } from "@tauri-apps/api/core";
 import { VIBE_SYSTEM_PROMPT } from "@/lib/vibePrompts";
+import { AI_ENABLED } from "@/lib/featureFlags";
 
 interface VibeState {
   vibes: Map<string, string>;
@@ -51,6 +52,7 @@ export const useVibeStore = create<VibeState>((set, get) => ({
   },
 
   generateVibe: async (zoneId, worldContext) => {
+    if (!AI_ENABLED) return "";
     const vibe = await invoke<string>("llm_complete", {
       systemPrompt: VIBE_SYSTEM_PROMPT,
       userPrompt: worldContext,

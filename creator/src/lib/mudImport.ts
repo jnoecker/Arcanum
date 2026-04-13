@@ -14,6 +14,7 @@ import type {
   ShopFile,
   ExitValue,
 } from "@/types/world";
+import { AI_ENABLED } from "@/lib/featureFlags";
 
 // ─── Types ─────────────────────────────────────────────────────────
 
@@ -393,6 +394,7 @@ const SYSTEM_PROMPTS: Record<MudFileType, string> = {
 export async function convertChunk(
   chunk: ConversionChunk,
 ): Promise<{ data: unknown[]; warnings: string[] }> {
+  if (!AI_ENABLED) throw new Error("AI features are not available in Community Edition");
   const systemPrompt = SYSTEM_PROMPTS[chunk.fileType];
   if (!systemPrompt) {
     throw new Error(`No conversion prompt for file type: ${chunk.fileType}`);

@@ -1,4 +1,5 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { AI_ENABLED } from "@/lib/featureFlags";
 import { invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
 import { useAssetStore } from "@/stores/assetStore";
@@ -570,6 +571,8 @@ export function AbilityStudio() {
   if (!config) {
     return null;
   }
+
+  if (!AI_ENABLED) return null;
 
   const anyBusy = generatingPrompt || generatingImage || batchGenerating || importing || generatingTemplate;
   const batchCompleted = batchProgress.done + batchProgress.failed;

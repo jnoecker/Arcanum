@@ -1,5 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import type { WorldLore, LoreMap } from "@/types/lore";
+import { AI_ENABLED } from "@/lib/featureFlags";
 
 export interface MapFeatureSuggestion {
   label: string;
@@ -37,6 +38,7 @@ export async function analyzeMap(
   imageDataUrl: string,
   lore: WorldLore,
 ): Promise<MapFeatureSuggestion[]> {
+  if (!AI_ENABLED) throw new Error("AI features are not available in Community Edition");
   const articleTitles = Object.values(lore.articles)
     .filter((a) => !a.draft)
     .map((a) => ({ id: a.id, title: a.title, template: a.template }));

@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from "react";
+import { AI_ENABLED } from "@/lib/featureFlags";
 import { invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
 import { useAssetStore } from "@/stores/assetStore";
@@ -408,8 +409,8 @@ export function EntityArtGenerator({
 
       {stage === "idle" && (
         <div className="flex flex-col gap-1.5">
-          {/* Prompt box — always visible when any AI key is configured */}
-          {(hasApiKey || hasLlmKey) && (
+          {/* Prompt box — visible when AI is enabled and any key is configured */}
+          {AI_ENABLED && (hasApiKey || hasLlmKey) && (
             <div className="flex flex-col gap-1">
               <textarea
                 value={activePrompt}
@@ -453,7 +454,7 @@ export function EntityArtGenerator({
 
           {/* Action row: Generate / Pick / Gallery + advanced toggle */}
           <div className="flex gap-1">
-            {hasApiKey && (
+            {AI_ENABLED && hasApiKey && (
               <button
                 onClick={handleGenerate}
                 disabled={removingBg}
@@ -476,7 +477,7 @@ export function EntityArtGenerator({
             >
               Gallery
             </button>
-            {hasApiKey && (
+            {AI_ENABLED && hasApiKey && (
               <button
                 onClick={() => setShowAdvanced((v) => !v)}
                 aria-expanded={showAdvanced}
@@ -493,7 +494,7 @@ export function EntityArtGenerator({
           </div>
 
           {/* Advanced: style + model + dimension overrides (hidden by default) */}
-          {showAdvanced && hasApiKey && (
+          {AI_ENABLED && showAdvanced && hasApiKey && (
             <div className="flex flex-col gap-1 rounded border border-border-default/60 bg-bg-primary/40 px-2 py-1.5">
               <div className="flex items-center gap-1">
                 <span className="w-10 shrink-0 text-2xs text-text-muted">Style</span>
@@ -560,7 +561,7 @@ export function EntityArtGenerator({
         </div>
       )}
 
-      {stage === "generating" && (
+      {AI_ENABLED && stage === "generating" && (
         <div className="flex items-center gap-2 py-2">
           <div className="h-4 w-4 rounded-full border-2 border-accent border-t-transparent animate-spin" />
           <span className="text-2xs text-text-secondary">
@@ -576,7 +577,7 @@ export function EntityArtGenerator({
         </div>
       )}
 
-      {stage === "preview" && (
+      {AI_ENABLED && stage === "preview" && (
         <div className="flex gap-1">
           <button
             onClick={handleAccept}

@@ -1,41 +1,46 @@
 mod admin;
+#[cfg(feature = "ai")]
 mod anthropic;
 mod arcanum_meta;
 mod assets;
 mod audio_mix;
 mod cancellation;
 mod captions;
+#[cfg(feature = "ai")]
 mod deepinfra;
 mod ffmpeg;
 mod ffmpeg_progress;
 mod fs_utils;
 mod git;
+#[cfg(feature = "ai")]
 mod generation;
 mod http;
 mod hub;
+#[cfg(feature = "ai")]
 mod hub_ai;
+#[cfg(feature = "ai")]
 mod llm;
+#[cfg(feature = "ai")]
 mod openai_images;
+#[cfg(feature = "ai")]
 mod openai_tts;
+#[cfg(feature = "ai")]
 mod openrouter;
 mod project;
 mod r2;
+#[cfg(feature = "ai")]
 mod runware;
 mod project_settings;
 mod settings;
+#[cfg(feature = "ai")]
 mod sketch;
 mod video_encode;
 mod video_export;
 mod vibes;
 
-#[cfg_attr(mobile, tauri::mobile_entry_point)]
-pub fn run() {
-    tauri::Builder::default()
-        .plugin(tauri_plugin_dialog::init())
-        .plugin(tauri_plugin_fs::init())
-        .plugin(tauri_plugin_shell::init())
-        .plugin(tauri_plugin_window_state::Builder::new().build())
-        .invoke_handler(tauri::generate_handler![
+macro_rules! base_handler {
+    ($($extra:path),* $(,)?) => {
+        tauri::generate_handler![
             project::validate_mud_dir,
             project::validate_project,
             project::create_standalone_project,
@@ -57,14 +62,7 @@ pub fn run() {
             project_settings::get_project_settings,
             project_settings::save_project_settings,
             project_settings::seed_project_settings,
-            deepinfra::generate_image,
-            deepinfra::img2img_generate,
-            deepinfra::enhance_prompt,
-            deepinfra::read_image_data_url,
-            llm::llm_complete,
-            llm::llm_complete_with_vision,
-            runware::runware_generate_image,
-            runware::runware_remove_background,
+            fs_utils::read_image_data_url,
             ffmpeg::check_ffmpeg_status,
             ffmpeg::ensure_ffmpeg_ready,
             video_export::save_video_frame,
@@ -72,10 +70,6 @@ pub fn run() {
             video_export::resolve_first_existing_path,
             video_export::export_story_video,
             video_export::cancel_story_video_export,
-            openai_images::openai_generate_image,
-            openai_tts::openai_tts_generate,
-            runware::runware_generate_audio,
-            runware::runware_generate_video,
             assets::accept_asset,
             assets::list_assets,
             assets::delete_asset,
@@ -109,7 +103,6 @@ pub fn run() {
             vibes::load_zone_vibe,
             arcanum_meta::load_arcanum_meta,
             arcanum_meta::save_arcanum_meta,
-            sketch::analyze_sketch,
             admin::load_admin_config,
             admin::save_admin_config,
             admin::admin_overview,
@@ -145,7 +138,41 @@ pub fn run() {
             git::git_abort_merge,
             git::git_log,
             git::git_create_pr,
-        ])
+            $($extra,)*
+        ]
+    }
+}
+
+#[cfg_attr(mobile, tauri::mobile_entry_point)]
+pub fn run() {
+    tauri::Builder::default()
+        .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_fs::init())
+        .plugin(tauri_plugin_shell::init())
+        .plugin(tauri_plugin_window_state::Builder::new().build())
+        .invoke_handler({
+            #[cfg(feature = "ai")]
+            {
+                base_handler![
+                    deepinfra::generate_image,
+                    deepinfra::img2img_generate,
+                    deepinfra::enhance_prompt,
+                    llm::llm_complete,
+                    llm::llm_complete_with_vision,
+                    runware::runware_generate_image,
+                    runware::runware_remove_background,
+                    runware::runware_generate_audio,
+                    runware::runware_generate_video,
+                    openai_images::openai_generate_image,
+                    openai_tts::openai_tts_generate,
+                    sketch::analyze_sketch,
+                ]
+            }
+            #[cfg(not(feature = "ai"))]
+            {
+                base_handler![]
+            }
+        })
         .build(tauri::generate_context!())
         .expect("error while building tauri application")
         .run(|_app, _event| {});

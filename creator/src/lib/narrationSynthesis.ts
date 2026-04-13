@@ -9,6 +9,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import { extractPlainText } from "@/lib/sceneLayout";
 import type { NarrationSpeed } from "@/lib/narrationSpeed";
+import { AI_ENABLED } from "@/lib/featureFlags";
 
 // ─── Types ───────────────────────────────────────────────────────
 
@@ -90,6 +91,7 @@ export function resolveTtsSpeed(speed: NarrationSpeed | number | undefined): num
 export async function synthesizeNarration(
   options: SynthesizeNarrationOptions,
 ): Promise<NarrationAudio> {
+  if (!AI_ENABLED) throw new Error("AI features are not available in Community Edition");
   const text = options.text.trim();
   if (!text) {
     throw new Error("Cannot synthesize narration from empty text.");

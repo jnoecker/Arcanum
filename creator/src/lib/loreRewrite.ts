@@ -4,6 +4,7 @@ import { TEMPLATE_SCHEMAS } from "@/lib/loreTemplates";
 import { buildWorldContext } from "@/lib/loreGeneration";
 import { tiptapToPlainText, plainTextToTiptap } from "@/lib/loreRelations";
 import { getRewriteSystemPrompt } from "@/lib/lorePrompts";
+import { AI_ENABLED } from "@/lib/featureFlags";
 
 export interface RewriteResult {
   content: string; // TipTap JSON string
@@ -14,6 +15,7 @@ export async function rewriteArticle(
   article: Article,
   instructions: string,
 ): Promise<RewriteResult> {
+  if (!AI_ENABLED) throw new Error("AI features are not available in Community Edition");
   const schema = TEMPLATE_SCHEMAS[article.template];
   const worldContext = buildWorldContext();
   const currentContent = tiptapToPlainText(article.content);

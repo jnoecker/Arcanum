@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useAssetStore } from "@/stores/assetStore";
 import { useProjectStore } from "@/stores/projectStore";
+import { AI_ENABLED } from "@/lib/featureFlags";
 import type { ProjectSettings, Settings } from "@/types/assets";
 
 type HubAccountDraft = Pick<Settings, "hub_api_url" | "hub_api_key" | "use_hub_ai">;
@@ -152,27 +153,29 @@ export function HubSettingsPanel() {
               </p>
             )}
           </div>
-          <label
-            className={`mt-2 flex items-start gap-2 rounded-lg border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] px-3 py-2 text-xs text-text-secondary ${
-              keyIsPublishOnly ? "cursor-not-allowed opacity-50" : "cursor-pointer"
-            }`}
-          >
-            <input
-              type="checkbox"
-              checked={account.use_hub_ai && !keyIsPublishOnly}
-              disabled={keyIsPublishOnly}
-              onChange={(e) => setAccount({ ...account, use_hub_ai: e.target.checked })}
-              className="mt-0.5 accent-accent"
-            />
-            <span>
-              <span className="text-text-primary">Use Arcanum Hub for AI generation</span>
-              <span className="mt-1 block text-2xs text-text-muted/80">
-                Route image generation (FLUX.2, GPT Image), prompt enhancement (DeepSeek), and
-                vision analysis (Claude) through the hub. You won't need any other provider keys,
-                and usage counts against your playtest quota.
+          {AI_ENABLED && (
+            <label
+              className={`mt-2 flex items-start gap-2 rounded-lg border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] px-3 py-2 text-xs text-text-secondary ${
+                keyIsPublishOnly ? "cursor-not-allowed opacity-50" : "cursor-pointer"
+              }`}
+            >
+              <input
+                type="checkbox"
+                checked={account.use_hub_ai && !keyIsPublishOnly}
+                disabled={keyIsPublishOnly}
+                onChange={(e) => setAccount({ ...account, use_hub_ai: e.target.checked })}
+                className="mt-0.5 accent-accent"
+              />
+              <span>
+                <span className="text-text-primary">Use Arcanum Hub for AI generation</span>
+                <span className="mt-1 block text-2xs text-text-muted/80">
+                  Route image generation (FLUX.2, GPT Image), prompt enhancement (DeepSeek), and
+                  vision analysis (Claude) through the hub. You won't need any other provider keys,
+                  and usage counts against your playtest quota.
+                </span>
               </span>
-            </span>
-          </label>
+            </label>
+          )}
         </div>
       </section>
 

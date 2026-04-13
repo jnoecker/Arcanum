@@ -7,6 +7,7 @@ import { useAssetStore } from "@/stores/assetStore";
 import { UNIVERSAL_NEGATIVE } from "@/lib/arcanumPrompts";
 import { removeBgAndSave } from "@/lib/useBackgroundRemoval";
 import { BulkBgRemoval } from "@/components/ui/BulkBgRemoval";
+import { AI_ENABLED } from "@/lib/featureFlags";
 import { ENTITY_DIMENSIONS, imageGenerateCommand, resolveImageModel, requestsTransparentBackground } from "@/types/assets";
 import {
   buildSpritePrompt,
@@ -244,7 +245,7 @@ export function PlayerSpriteManager() {
 
   const handleGenerateImage = useCallback(
     async (imageId: string) => {
-      if (!hasApiKey || !settings) return;
+      if (!AI_ENABLED || !hasApiKey || !settings) return;
       setGenerating(imageId);
       setGenerationError(null);
 

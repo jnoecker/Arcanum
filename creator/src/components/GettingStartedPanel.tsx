@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useProjectStore } from "@/stores/projectStore";
 import { useZoneStore } from "@/stores/zoneStore";
 import { panelTab } from "@/lib/panelRegistry";
+import { AI_ENABLED } from "@/lib/featureFlags";
 import {
   loadGettingStarted,
   markStepCompleted,
@@ -81,22 +82,22 @@ export function GettingStartedPanel({ onClose }: GettingStartedPanelProps) {
           }
         },
       },
-      {
+      ...(AI_ENABLED ? [{
         id: "characters",
         glyph: "\u2694\uFE0F",
         title: "Discover Characters",
         description:
           "See the portraits for every class and race that inhabits your world.",
         action: () => openTab(panelTab("portraits")),
-      },
-      {
+      }] : []),
+      ...(AI_ENABLED ? [{
         id: "art",
         glyph: "\u{1F3A8}",
         title: "Generate Art",
         description:
           "Every creature, item, and place can have AI artwork. Try rendering your first image.",
         action: () => openTab(panelTab("art")),
-      },
+      }] : []),
       {
         id: "lore",
         glyph: "\u{1F4DC}",

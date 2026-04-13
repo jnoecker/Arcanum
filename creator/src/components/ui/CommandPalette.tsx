@@ -4,6 +4,7 @@ import { useLoreStore, selectArticles } from "@/stores/loreStore";
 import { useZoneStore } from "@/stores/zoneStore";
 import { useAssetStore } from "@/stores/assetStore";
 import { ALL_PANELS, panelTab } from "@/lib/panelRegistry";
+import { AI_ENABLED } from "@/lib/featureFlags";
 import { useFocusTrap } from "@/lib/useFocusTrap";
 
 interface PaletteItem {
@@ -48,13 +49,15 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
       subtitle: "Import AmbonMUD zone YAML files into the project",
       action: () => setShowImportZone(true),
     });
-    result.push({
-      id: "action:render-art",
-      type: "action",
-      title: "Render Art",
-      subtitle: "Open the asset generator",
-      action: () => openGenerator(),
-    });
+    if (AI_ENABLED) {
+      result.push({
+        id: "action:render-art",
+        type: "action",
+        title: "Render Art",
+        subtitle: "Open the asset generator",
+        action: () => openGenerator(),
+      });
+    }
     result.push({
       id: "action:browse-gallery",
       type: "action",

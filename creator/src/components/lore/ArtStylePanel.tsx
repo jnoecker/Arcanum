@@ -5,6 +5,7 @@ import { Section, ActionButton, Spinner } from "@/components/ui/FormWidgets";
 import { ART_STYLE_PRESETS, artStyleFromPreset } from "@/lib/artStylePresets";
 import { generateArtStyle, refineArtStyle } from "@/lib/artStyleGeneration";
 import { useFocusTrap } from "@/lib/useFocusTrap";
+import { AI_ENABLED } from "@/lib/featureFlags";
 
 // ─── Helpers ───────────────────────────────────────────────────────
 
@@ -111,13 +112,15 @@ function CreateMenu({
             tabIndex={0}
           />
           <div className="absolute right-0 top-full z-20 mt-1 w-60 overflow-hidden rounded-lg border border-border-default bg-bg-secondary shadow-panel">
-            <button
-              onClick={() => { onAi(); setOpen(false); }}
-              className="block w-full border-b border-border-muted px-3 py-2 text-left text-xs text-text-primary transition hover:bg-bg-hover"
-            >
-              <span className="font-medium text-accent">✦ Generate with AI</span>
-              <span className="mt-0.5 block text-2xs text-text-muted">From a theme prompt</span>
-            </button>
+            {AI_ENABLED && (
+              <button
+                onClick={() => { onAi(); setOpen(false); }}
+                className="block w-full border-b border-border-muted px-3 py-2 text-left text-xs text-text-primary transition hover:bg-bg-hover"
+              >
+                <span className="font-medium text-accent">✦ Generate with AI</span>
+                <span className="mt-0.5 block text-2xs text-text-muted">From a theme prompt</span>
+              </button>
+            )}
             {ART_STYLE_PRESETS.map((preset) => (
               <button
                 key={preset.key}
@@ -394,9 +397,11 @@ export function ArtStylePanel() {
               lore art (character portraits, article heroes), with optional surface-specific overrides.
             </p>
             <div className="flex gap-2">
-              <ActionButton variant="primary" size="sm" onClick={() => setShowAiDialog(true)}>
-                ✦ Generate with AI
-              </ActionButton>
+              {AI_ENABLED && (
+                <ActionButton variant="primary" size="sm" onClick={() => setShowAiDialog(true)}>
+                  ✦ Generate with AI
+                </ActionButton>
+              )}
               <CreateMenu
                 onEmpty={handleCreateEmpty}
                 onPreset={handleCreatePreset}
@@ -478,9 +483,11 @@ export function ArtStylePanel() {
                     Set as active
                   </ActionButton>
                 )}
-                <ActionButton variant="ghost" size="sm" onClick={() => setShowRefineDialog(true)}>
-                  ✦ Refine with AI
-                </ActionButton>
+                {AI_ENABLED && (
+                  <ActionButton variant="ghost" size="sm" onClick={() => setShowRefineDialog(true)}>
+                    ✦ Refine with AI
+                  </ActionButton>
+                )}
                 <ActionButton variant="ghost" size="sm" onClick={() => handleDuplicate(selected.id)}>
                   Duplicate
                 </ActionButton>

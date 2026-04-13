@@ -4,6 +4,7 @@ import { CommitTextarea, InlineError } from "@/components/ui/FormWidgets";
 import { getLoreEnhancePrompt } from "@/lib/lorePrompts";
 import { getPromptLlmConfigurationError } from "@/lib/promptLlm";
 import { useAssetStore } from "@/stores/assetStore";
+import { AI_ENABLED } from "@/lib/featureFlags";
 
 interface LoreTextAreaProps {
   label: string;
@@ -109,7 +110,7 @@ export function LoreTextArea({
         placeholder={placeholder}
         rows={rows}
       />
-      {(showGenerate || showEnhance) && (
+      {AI_ENABLED && (showGenerate || showEnhance) && (
         <div className="mt-1 flex gap-2">
           {showGenerate && (
             <button

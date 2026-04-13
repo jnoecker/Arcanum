@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { AI_ENABLED } from "@/lib/featureFlags";
 import { createPortal } from "react-dom";
 import { invoke } from "@tauri-apps/api/core";
 import { useAssetStore } from "@/stores/assetStore";
@@ -198,6 +199,8 @@ export function GlobalAssetGeneratorModal({ asset, onClose, onComplete }: Props)
     setError(null);
     setStage("compose");
   };
+
+  if (!AI_ENABLED) return null;
 
   if (!hasApiKey) {
     return createPortal(

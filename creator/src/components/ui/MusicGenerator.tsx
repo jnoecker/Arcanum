@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
+import { AI_ENABLED } from "@/lib/featureFlags";
 import { useAssetStore } from "@/stores/assetStore";
 import { getAudioSystemPrompt, getDefaultDuration, type AudioTrackType } from "@/lib/musicPrompts";
 import { useMediaSrc } from "@/lib/useMediaSrc";
@@ -53,6 +54,8 @@ export function MusicGenerator({
   );
 
   const audioSrc = useMediaSrc(resultPath ?? currentAudio);
+
+  if (!AI_ENABLED) return null;
 
   if (!hasRunwareKey) return null;
 

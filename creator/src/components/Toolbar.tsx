@@ -7,6 +7,7 @@ import { useToastStore } from "@/stores/toastStore";
 import { ActionButton, Spinner } from "./ui/FormWidgets";
 import { exportShowcaseData } from "@/lib/exportShowcase";
 import { ProjectSwitcherMenu } from "./ui/ProjectSwitcherMenu";
+import { AI_ENABLED } from "@/lib/featureFlags";
 
 const PublishWorldModal = lazy(() =>
   import("./PublishWorldModal").then((m) => ({ default: m.PublishWorldModal })),
@@ -125,14 +126,16 @@ export function Toolbar({ onNewProject, onToggleGuide, guideOpen }: ToolbarProps
 
           {/* ── Right: actions ─────────────────────────────────────────── */}
           <div className="flex min-w-0 flex-1 shrink-0 items-center justify-end gap-2">
-            <ActionButton
-              onClick={openGenerator}
-              variant="ghost"
-              title="Generate new art"
-              aria-label="Generate new art"
-            >
-              Render Art
-            </ActionButton>
+            {AI_ENABLED && (
+              <ActionButton
+                onClick={openGenerator}
+                variant="ghost"
+                title="Generate new art"
+                aria-label="Generate new art"
+              >
+                Render Art
+              </ActionButton>
+            )}
 
             <ActionButton
               onClick={openGallery}

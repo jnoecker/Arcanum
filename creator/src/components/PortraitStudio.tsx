@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { AI_ENABLED } from "@/lib/featureFlags";
 import { invoke } from "@tauri-apps/api/core";
 import { useAssetStore } from "@/stores/assetStore";
 import { useConfigStore } from "@/stores/configStore";
@@ -319,6 +320,8 @@ export function PortraitStudio({ selectedZoneId }: { selectedZoneId: string | nu
       setError(String(e));
     }
   };
+
+  if (!AI_ENABLED) return null;
 
   if (!config) {
     return null;

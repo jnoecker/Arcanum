@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef } from "react";
+import { AI_ENABLED } from "@/lib/featureFlags";
 import type { WorldFile } from "@/types/world";
 import { ART_STYLE_LABELS } from "@/lib/arcanumPrompts";
 import { useAssetStore } from "@/stores/assetStore";
@@ -80,6 +81,8 @@ export function BatchArtGenerator({
     setBgRemoval(null);
     setRunning(false);
   }, [targets, world, onWorldChange, artStyle, vibe, imageProvider, concurrency, zoneId, acceptAsset, settings]);
+
+  if (!AI_ENABLED) return null;
 
   if (targets.length === 0) {
     return (

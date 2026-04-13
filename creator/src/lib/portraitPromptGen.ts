@@ -4,6 +4,7 @@ import { useConfigStore } from "@/stores/configStore";
 import { buildToneDirective, buildVisualStyleDirective } from "./loreGeneration";
 import { DEFAULT_CLASS_SHOWCASE_RACES } from "./defaultSpriteData";
 import { getRaceBodyDescription, getClassOutfitDescription } from "./spritePromptGen";
+import { AI_ENABLED } from "@/lib/featureFlags";
 
 // ─── Types ───────────────────────────────────────────────────────────
 
@@ -58,6 +59,7 @@ export async function generatePortraitTemplate(
   classes: string[],
   zoneVibe: string,
 ): Promise<PortraitPromptTemplate> {
+  if (!AI_ENABLED) throw new Error("AI features are not available in Community Edition");
   const raceList = races
     .map((r) => `- ${r}: ${getRaceBodyDescription(r)}`)
     .join("\n");

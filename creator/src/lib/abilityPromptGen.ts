@@ -2,6 +2,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { getStyleSuffix, parseLlmJson } from "./arcanumPrompts";
 import { buildToneDirective } from "./loreGeneration";
 import type { AbilityDefinitionConfig, StatusEffectDefinitionConfig } from "@/types/config";
+import { AI_ENABLED } from "@/lib/featureFlags";
 
 const FORMAT_SPEC =
   "1:1 square ability icon centered in frame, symbolic/iconic representation, solid pale lavender (#d8d0e8) background";
@@ -75,6 +76,7 @@ export async function generateAbilityPrompt(
   ability: AbilityDefinitionConfig,
   _abilityId: string,
 ): Promise<string> {
+  if (!AI_ENABLED) throw new Error("AI features are not available in Community Edition");
   const userContent = `Format: ${FORMAT_SPEC}
 
 Ability: ${ability.displayName}
@@ -100,6 +102,7 @@ export async function generateStatusEffectPrompt(
   effect: StatusEffectDefinitionConfig,
   _effectId: string,
 ): Promise<string> {
+  if (!AI_ENABLED) throw new Error("AI features are not available in Community Edition");
   const details = [
     `Effect type: ${effect.effectType}`,
     effect.durationMs ? `Duration: ${(effect.durationMs / 1000).toFixed(0)}s` : null,
@@ -140,6 +143,7 @@ export async function generateAbilityTemplate(
   classes: string[],
   effectTypes: string[],
 ): Promise<AbilityPromptTemplate> {
+  if (!AI_ENABLED) throw new Error("AI features are not available in Community Edition");
   const classList = classes
     .map((c) => `- ${c}: ${getClassPalette(c)}`)
     .join("\n");
@@ -244,6 +248,7 @@ export function fillStatusEffectTemplate(
  * Falls back to the original prompt if the LLM call fails.
  */
 export async function enhanceAbilityPrompt(rawPrompt: string): Promise<string> {
+  if (!AI_ENABLED) throw new Error("AI features are not available in Community Edition");
   const tone = buildToneDirective();
   const toneRule = tone ? `\n- Match the world's tone: ${tone}` : "";
 

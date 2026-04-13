@@ -7,10 +7,11 @@ import {
 } from "@/lib/uiPersistence";
 import { ErrorDialog } from "./ErrorDialog";
 import { CosmicBackdrop } from "./ui/CosmicBackdrop";
+import { AI_ENABLED } from "@/lib/featureFlags";
 import splashHero from "@/assets/splash-hero.jpg";
 
 const ImportFromR2Dialog = lazy(() => import("./ImportFromR2Dialog").then((m) => ({ default: m.ImportFromR2Dialog })));
-const OnboardingFlow = lazy(() => import("./onboarding/OnboardingFlow").then((m) => ({ default: m.OnboardingFlow })));
+const OnboardingFlow = __BUILD_VARIANT__ === "full" ? lazy(() => import("./onboarding/OnboardingFlow").then((m) => ({ default: m.OnboardingFlow }))) : () => null;
 
 interface WelcomeScreenProps {
   onNewProject: () => void;
@@ -122,25 +123,27 @@ export function WelcomeScreen({ onNewProject }: WelcomeScreenProps) {
 
           {/* ── Create paths ──────────────────────────────────────── */}
           <div className={`w-full ${mostRecent ? "mt-4" : "mt-10"} grid gap-3 sm:grid-cols-2`}>
-            <button
-              onClick={() => setShowOnboarding(true)}
-              className="group relative overflow-hidden rounded-2xl border border-[var(--border-accent-ring)]/60 px-5 py-5 text-left transition hover:border-[var(--border-accent-ring)] hover:shadow-[0_14px_36px_rgb(var(--accent-rgb)/0.18)]"
-              style={{
-                background: "linear-gradient(155deg, rgb(var(--accent-rgb) / 0.12), rgb(var(--surface-rgb) / 0.10) 50%, rgb(var(--bg-rgb) / 0.88))",
-              }}
-            >
-              <div className="flex items-center gap-2">
-                <span className="font-display text-sm text-text-primary">
-                  Start with Arcanum Hub
-                </span>
-                <span className="rounded-full border border-accent/30 bg-accent/10 px-1.5 py-px text-[10px] uppercase tracking-label text-accent">
-                  New
-                </span>
-              </div>
-              <p className="mt-2 text-2xs leading-relaxed text-text-muted">
-                Enter a hub API key and we'll generate your first zone, art and all, in about a minute.
-              </p>
-            </button>
+            {AI_ENABLED && (
+              <button
+                onClick={() => setShowOnboarding(true)}
+                className="group relative overflow-hidden rounded-2xl border border-[var(--border-accent-ring)]/60 px-5 py-5 text-left transition hover:border-[var(--border-accent-ring)] hover:shadow-[0_14px_36px_rgb(var(--accent-rgb)/0.18)]"
+                style={{
+                  background: "linear-gradient(155deg, rgb(var(--accent-rgb) / 0.12), rgb(var(--surface-rgb) / 0.10) 50%, rgb(var(--bg-rgb) / 0.88))",
+                }}
+              >
+                <div className="flex items-center gap-2">
+                  <span className="font-display text-sm text-text-primary">
+                    Start with Arcanum Hub
+                  </span>
+                  <span className="rounded-full border border-accent/30 bg-accent/10 px-1.5 py-px text-[10px] uppercase tracking-label text-accent">
+                    New
+                  </span>
+                </div>
+                <p className="mt-2 text-2xs leading-relaxed text-text-muted">
+                  Enter a hub API key and we'll generate your first zone, art and all, in about a minute.
+                </p>
+              </button>
+            )}
 
             <button
               onClick={onNewProject}
@@ -230,7 +233,7 @@ export function WelcomeScreen({ onNewProject }: WelcomeScreenProps) {
       </Suspense>
 
       <Suspense>
-        {showOnboarding && (
+        {AI_ENABLED && showOnboarding && (
           <OnboardingFlow onClose={() => setShowOnboarding(false)} />
         )}
       </Suspense>

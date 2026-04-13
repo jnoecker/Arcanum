@@ -7,6 +7,7 @@ import { defaultImageContext, defaultImagePrompt, type DefaultImageKind } from "
 import { getEnhanceSystemPrompt, getNegativePrompt } from "@/lib/arcanumPrompts";
 import { useImageSrc } from "@/lib/useImageSrc";
 import { imageGenerateCommand, resolveImageModel, requestsTransparentBackground, type GeneratedImage } from "@/types/assets";
+import { AI_ENABLED } from "@/lib/featureFlags";
 import type { WorldFile } from "@/types/world";
 
 interface ZoneVibePanelProps {
@@ -282,20 +283,24 @@ export function ZoneVibePanel({ zoneId, world, onWorldChange }: ZoneVibePanelPro
       />
 
       <div className="flex flex-wrap gap-1">
-        <button
-          onClick={handleGenerate}
-          disabled={generating || anyDefaultGenerating}
-          className="rounded bg-accent/15 px-2 py-0.5 text-2xs font-medium text-accent transition-colors hover:bg-accent/25 disabled:opacity-50"
-        >
-          {generating ? "Generating vibe..." : "Generate vibe + defaults"}
-        </button>
-        <button
-          onClick={() => generateAllDefaults(draft)}
-          disabled={!draft.trim() || anyDefaultGenerating || generating || !hasImageKey}
-          className="rounded bg-bg-elevated px-2 py-0.5 text-2xs font-medium text-text-secondary transition-colors hover:bg-bg-hover disabled:opacity-50"
-        >
-          {anyDefaultGenerating ? "Generating defaults..." : "Generate defaults"}
-        </button>
+        {AI_ENABLED && (
+          <button
+            onClick={handleGenerate}
+            disabled={generating || anyDefaultGenerating}
+            className="rounded bg-accent/15 px-2 py-0.5 text-2xs font-medium text-accent transition-colors hover:bg-accent/25 disabled:opacity-50"
+          >
+            {generating ? "Generating vibe..." : "Generate vibe + defaults"}
+          </button>
+        )}
+        {AI_ENABLED && (
+          <button
+            onClick={() => generateAllDefaults(draft)}
+            disabled={!draft.trim() || anyDefaultGenerating || generating || !hasImageKey}
+            className="rounded bg-bg-elevated px-2 py-0.5 text-2xs font-medium text-text-secondary transition-colors hover:bg-bg-hover disabled:opacity-50"
+          >
+            {anyDefaultGenerating ? "Generating defaults..." : "Generate defaults"}
+          </button>
+        )}
         {isDirty && (
           <button
             onClick={handleSave}

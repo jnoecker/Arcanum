@@ -6,6 +6,7 @@ import { MediaPicker } from "@/components/ui/MediaPicker";
 import { MusicGenerator } from "@/components/ui/MusicGenerator";
 import { VideoGenerator } from "@/components/ui/VideoGenerator";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
+import { AI_ENABLED } from "@/lib/featureFlags";
 import type { ArtStyle } from "@/lib/arcanumPrompts";
 import type { AssetContext } from "@/types/assets";
 
@@ -139,6 +140,8 @@ export function EnhanceDescriptionButton({
       setLoading(false);
     }
   };
+
+  if (!AI_ENABLED) return null;
 
   return (
     <div className="flex items-center gap-2">

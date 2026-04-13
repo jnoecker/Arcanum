@@ -20,6 +20,7 @@ import {
 import { BUNDLED_DEFAULT_ASSETS } from "@/assets/defaults";
 import type { SyncProgress } from "@/types/assets";
 import { GlobalAssetGeneratorModal } from "./GlobalAssetGeneratorModal";
+import { AI_ENABLED } from "@/lib/featureFlags";
 
 // ─── Types ──────────────────────────────────────────────────────────
 
@@ -190,7 +191,7 @@ function AssetCard({
       </div>
 
       <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover/card:opacity-100 focus-within:opacity-100">
-        {slot.generateSpec && (
+        {AI_ENABLED && slot.generateSpec && (
           <button
             onClick={onGenerate}
             className="focus-ring rounded border border-accent/40 px-1.5 py-0.5 text-[10px] text-accent transition-colors hover:bg-accent/10"

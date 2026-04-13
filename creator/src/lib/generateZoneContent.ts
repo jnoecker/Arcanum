@@ -2,6 +2,7 @@ import { invoke } from "@tauri-apps/api/core";
 import type { WorldFile, RoomFile, MobFile, ItemFile } from "@/types/world";
 import { buildToneDirective } from "./loreGeneration";
 import { OPPOSITE } from "./zoneEdits";
+import { AI_ENABLED } from "@/lib/featureFlags";
 
 // ─── Types ──────────────────────────────────────────────────────
 
@@ -578,6 +579,7 @@ function scaleMaxTokens(entityCount: number): number {
 export async function generateZoneContent(
   params: ZoneGenerationParams,
 ): Promise<WorldFile> {
+  if (!AI_ENABLED) throw new Error("AI features are not available in Community Edition");
   const userPrompt = buildUserPrompt(params);
   const systemBase =
     params.roomCount > SMALL_TOPOLOGY_LIMIT
@@ -606,6 +608,7 @@ export async function generateZoneFromSketch(
   params: ZoneGenerationParams,
   layout: FixedLayout,
 ): Promise<WorldFile> {
+  if (!AI_ENABLED) throw new Error("AI features are not available in Community Edition");
   if (layout.rooms.length === 0) {
     throw new Error("Sketch layout has no rooms");
   }
@@ -678,6 +681,7 @@ export interface ExtendZoneResult {
 export async function extendZoneContent(
   params: ExtendZoneParams,
 ): Promise<ExtendZoneResult> {
+  if (!AI_ENABLED) throw new Error("AI features are not available in Community Edition");
   const userPrompt = buildExtendUserPrompt(params);
   const systemPrompt = buildSystemPrompt(SYSTEM_PROMPT_EXTEND);
   const maxTokens = scaleMaxTokens(

@@ -6,6 +6,7 @@ import {
   renderGridOverlay,
   type GridSpec,
 } from "./gridOverlay";
+import { AI_ENABLED } from "@/lib/featureFlags";
 
 // ─── Generation contract ────────────────────────────────────────────
 
@@ -562,6 +563,7 @@ export async function generateZonePlans(
   lore: WorldLore,
   options: ZonePlanGenerationOptions = {},
 ): Promise<RepairResult> {
+  if (!AI_ENABLED) throw new Error("AI features are not available in Community Edition");
   const {
     targetCount,
     toneHint,

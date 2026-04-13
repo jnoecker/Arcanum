@@ -31,6 +31,9 @@ const crossOriginIsolation = (): Plugin => ({
 
 export default defineConfig(async () => ({
   plugins: [react(), crossOriginIsolation()],
+  define: {
+    __BUILD_VARIANT__: JSON.stringify(process.env.VITE_AI === 'false' ? 'community' : 'full'),
+  },
   worker: {
     format: "es" as const,
   },

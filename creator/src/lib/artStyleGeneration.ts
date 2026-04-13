@@ -2,6 +2,7 @@ import { invoke } from "@tauri-apps/api/core";
 import type { ArtStyle } from "@/types/lore";
 import { buildToneDirective } from "./loreGeneration";
 import { parseLlmJson } from "./arcanumPrompts";
+import { AI_ENABLED } from "@/lib/featureFlags";
 
 // ─── AI-assisted art style generation ───────────────────────────────
 //
@@ -39,6 +40,7 @@ Output ONLY valid JSON with this exact shape — no markdown fences, no commenta
  * Uses the world tone directive (if any) as context so the style stays on-theme.
  */
 export async function generateArtStyle(themePrompt: string): Promise<ArtStyle> {
+  if (!AI_ENABLED) throw new Error("AI features are not available in Community Edition");
   const tone = buildToneDirective();
   const toneBlock = tone ? `\n\nWorld context (stay consistent with this):\n${tone}` : "";
 
@@ -89,6 +91,7 @@ export async function refineArtStyle(
   style: ArtStyle,
   instruction: string,
 ): Promise<Partial<ArtStyle>> {
+  if (!AI_ENABLED) throw new Error("AI features are not available in Community Edition");
   const tone = buildToneDirective();
   const toneBlock = tone ? `\n\nWorld context (preserve consistency with this):\n${tone}` : "";
 

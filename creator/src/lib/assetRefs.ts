@@ -65,6 +65,7 @@ export function normalizeWorldAssetRefs(world: WorldFile): WorldFile {
     room: normalizeAssetRef(world.image?.room),
     mob: normalizeAssetRef(world.image?.mob),
     item: normalizeAssetRef(world.image?.item),
+    zoneMap: normalizeAssetRef(world.image?.zoneMap),
   });
   const audioDefaults = compactObject({
     music: normalizeAssetRef(world.audio?.music),

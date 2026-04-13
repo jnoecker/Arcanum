@@ -28,6 +28,7 @@ export interface ZoneImageDefaults {
   room?: string;
   mob?: string;
   item?: string;
+  zoneMap?: string;
 }
 
 export interface ZoneAudioDefaults {

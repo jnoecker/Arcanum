@@ -101,6 +101,11 @@ export function normalizeWorldAssetRefs(world: WorldFile): WorldFile {
         ...shop,
         image: normalizeAssetRef(shop.image),
       })),
+    gatheringNodes: mapOptionalEntries(world.gatheringNodes, (node) =>
+      compactObject({
+        ...node,
+        image: normalizeAssetRef(node.image),
+      })),
     recipes: mapOptionalEntries(world.recipes, (recipe) =>
       compactObject({
         ...recipe,

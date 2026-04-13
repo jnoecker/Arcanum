@@ -339,7 +339,10 @@ export function EntityArtGenerator({
       setRemovingBg(true);
       try {
         const entry = await removeBgAndSave(savedDataUrl, assetType, context, variantGroup).catch(() => null);
-        if (entry) await useAssetStore.getState().loadAssets();
+        if (entry) {
+          onAccept(entry.file_name);
+          await useAssetStore.getState().loadAssets();
+        }
       } finally {
         setRemovingBg(false);
       }

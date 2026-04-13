@@ -21,32 +21,25 @@ export type WizardStage =
 export interface WizardData {
   projectName: string;
   parentDir: string;
-  templateId: string;
   worldTheme: string;
   zoneTheme: string;
   telnetPort: number;
   webPort: number;
 }
 
+const TEMPLATE = TEMPLATES[0]!;
+
 const DEFAULT_DATA: WizardData = {
   projectName: "",
   parentDir: "",
-  templateId: "classic_fantasy",
-  worldTheme: "",
-  zoneTheme: "",
+  worldTheme: TEMPLATE.defaultWorldTheme ?? "",
+  zoneTheme: TEMPLATE.defaultZoneTheme ?? "",
   telnetPort: 4000,
   webPort: 8080,
 };
 
 export function useProjectWizard() {
-  const [data, setData] = useState<WizardData>(() => {
-    const template = TEMPLATES.find((t) => t.id === "classic_fantasy");
-    return {
-      ...DEFAULT_DATA,
-      worldTheme: template?.defaultWorldTheme ?? "",
-      zoneTheme: template?.defaultZoneTheme ?? "",
-    };
-  });
+  const [data, setData] = useState<WizardData>({ ...DEFAULT_DATA });
 
   const [stage, setStage] = useState<WizardStage>("idle");
   const [error, setError] = useState<string | null>(null);
@@ -59,22 +52,12 @@ export function useProjectWizard() {
     setData((prev) => ({ ...prev, ...partial }));
   }, []);
 
-  const selectTemplate = useCallback((templateId: string) => {
-    const template = TEMPLATES.find((t) => t.id === templateId);
-    setData((prev) => ({
-      ...prev,
-      templateId,
-      worldTheme: template?.defaultWorldTheme ?? "",
-      zoneTheme: template?.defaultZoneTheme ?? "",
-    }));
-  }, []);
-
   const create = useCallback(async () => {
     setStage("creating");
     setError(null);
 
     try {
-      const template = TEMPLATES.find((t) => t.id === data.templateId);
+      const template = TEMPLATE;
 
       // Create standalone project directory
       const mudDir = await invoke<string>("create_standalone_project", {
@@ -92,7 +75,7 @@ export function useProjectWizard() {
 
       // Apply template config overrides
       const config = useConfigStore.getState().config;
-      if (config && template) {
+      if (config) {
         const merged = applyTemplate(config, {
           ...template.configOverrides,
           server: {
@@ -106,7 +89,7 @@ export function useProjectWizard() {
 
       // Write starter zones
       const project = useProjectStore.getState().project;
-      const starterZone = template?.starterZones?.[0];
+      const starterZone = template.starterZones?.[0];
       if (starterZone && project) {
         await invoke("create_zone_directory", {
           projectDir: mudDir,
@@ -153,7 +136,6 @@ export function useProjectWizard() {
   return {
     data,
     update,
-    selectTemplate,
     stage,
     error,
     create,

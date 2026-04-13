@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLoreStore, selectArticleCount, selectArticles } from "@/stores/loreStore";
 import { ArticleEditor } from "./ArticleEditor";
 import { ArticleGenerator } from "./ArticleGenerator";
@@ -7,11 +7,19 @@ import { StoryEditorPanel } from "./StoryEditorPanel";
 
 export function ArticleBrowser() {
   const selectedArticleId = useLoreStore((s) => s.selectedArticleId);
+  const selectArticle = useLoreStore((s) => s.selectArticle);
   const articles = useLoreStore(selectArticles);
   const articleCount = useLoreStore(selectArticleCount);
   const selectedArticle = selectedArticleId ? articles[selectedArticleId] : null;
   const [showGenerator, setShowGenerator] = useState(false);
   const [showSeedWizard, setShowSeedWizard] = useState(false);
+
+  useEffect(() => {
+    if (!selectedArticleId && articleCount === 1) {
+      const onlyId = Object.keys(articles)[0];
+      if (onlyId) selectArticle(onlyId);
+    }
+  }, [selectedArticleId, articleCount, articles, selectArticle]);
 
   return (
     <>

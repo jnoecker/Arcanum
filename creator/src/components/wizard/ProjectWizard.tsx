@@ -3,16 +3,14 @@ import { useProjectWizard } from "@/lib/useProjectWizard";
 import { useFocusTrap } from "@/lib/useFocusTrap";
 import { ActionButton } from "@/components/ui/FormWidgets";
 import { LocationStep } from "./steps/LocationStep";
-import { TemplateStep } from "./steps/TemplateStep";
 import { WorldIdentityStep } from "./steps/WorldIdentityStep";
 
 const PROJECT_NAME_RE = /^[a-zA-Z][a-zA-Z0-9_-]*$/;
 
-const STEP_COUNT = 3;
+const STEP_COUNT = 2;
 
 const STEP_TITLES = [
   "Project Location",
-  "Choose a Template",
   "World Identity",
 ];
 
@@ -24,7 +22,7 @@ export function ProjectWizard({ onClose }: ProjectWizardProps) {
   const trapRef = useFocusTrap<HTMLDivElement>(onClose);
   const [step, setStep] = useState(1);
   const [nameError, setNameError] = useState<string | null>(null);
-  const { data, update, selectTemplate, stage, error, create, reset } =
+  const { data, update, stage, error, create, reset } =
     useProjectWizard();
 
   const validateStep1 = () => {
@@ -85,7 +83,7 @@ export function ProjectWizard({ onClose }: ProjectWizardProps) {
                 Create New Project
               </h2>
               <p className="dialog-subtitle">
-                Choose a location, seed the world from a template, and set the first thematic constraints before opening the workspace.
+                Choose a location and set the thematic direction for your world.
               </p>
             </div>
             <span className="rounded-full border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] px-3 py-1 text-2xs text-text-secondary">
@@ -120,12 +118,6 @@ export function ProjectWizard({ onClose }: ProjectWizardProps) {
             />
           )}
           {step === 2 && (
-            <TemplateStep
-              data={data}
-              onSelectTemplate={selectTemplate}
-            />
-          )}
-          {step === 3 && (
             <WorldIdentityStep data={data} onChange={update} />
           )}
         </div>

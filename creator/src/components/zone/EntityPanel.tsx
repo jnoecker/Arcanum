@@ -79,6 +79,14 @@ export function EntityPanel({
         >
           YAML
         </button>
+        <button
+          onClick={onClose}
+          className="shrink-0 rounded px-1.5 py-0.5 text-xs text-text-muted transition-colors hover:bg-bg-elevated hover:text-text-primary"
+          title="Close editor"
+          aria-label="Close editor"
+        >
+          &times;
+        </button>
       </div>
 
       {/* YAML preview or editor */}

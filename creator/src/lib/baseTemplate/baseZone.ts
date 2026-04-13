@@ -30,14 +30,13 @@ export const BASE_ACADEMY_ZONE: WorldFile = {
       description:
         "A vast rotunda of pale stone rises around you, its vaulted ceiling lost in shadow above. Massive pillars carved with arcane runes line the perimeter, and an iron chandelier the size of a wagon wheel hangs from thick chains, its dozens of candles filling the hall with warm, unsteady light. Faded banners bearing the Academy's crest — a tower wreathed in flame — hang between the columns, stirring in drafts from unseen passages.\n\n" +
         'A parchment map pinned to one of the pillars reads: "Navigate using the compass rose or by clicking exits in the room description. Use the chat bar to talk with other students — try Say for the room, Gossip for the academy, or OOC for out-of-character chat. Click the emote button to express yourself! The Who panel shows other students online, and the Friends panel lets you keep track of companions."\n\n' +
-        "Paths lead east to the Scholar's Study, west to the Common Room, and south to the Armory. A winding staircase climbs upward to the Catacombs. The Academy Gates are back to the north. A corridor leads northeast to the Stylist's Parlor.",
+        "Paths lead east to the Scholar's Study, west to the Common Room, and south to the Armory. A winding staircase climbs upward to the Catacombs. The Academy Gates are back to the north.",
       exits: {
         n: "academy_gates",
         e: "scholars_study",
         w: "common_room",
         s: "armory",
         u: "catacombs",
-        ne: "stylist_parlor",
       },
     },
     scholars_study: {
@@ -56,11 +55,12 @@ export const BASE_ACADEMY_ZONE: WorldFile = {
       description:
         "A broad, low-ceilinged hall warmed by a roaring stone hearth at its center. Long wooden tables are scattered with half-finished games of cards and dice, tankards of ale, and platters of bread and cheese. The walls are hung with trophies — mounted antlers, rusted swords, and framed certificates of past graduates. A polished bar counter runs along the far wall, tended by a stout barkeep who polishes mugs with practiced ease.\n\n" +
         'A carved wooden sign behind the bar reads: "Welcome to the Common Room! This is the academy\'s tavern — check the Lottery panel in your sidebar for daily drawings and use the gambling features to try your luck! The Leaderboard panel shows how you rank against other students across various categories."\n\n' +
-        "The Grand Hall is to the east, and the Treasury is to the south.",
+        "The Grand Hall is to the east, the Treasury is to the south, and the Stylist's Parlor lies to the north.",
       tavern: true,
       exits: {
         e: "grand_hall",
         s: "treasury",
+        n: "stylist_parlor",
       },
     },
     treasury: {
@@ -212,9 +212,9 @@ export const BASE_ACADEMY_ZONE: WorldFile = {
       description:
         "A well-appointed chamber of polished mirrors and soft lamplight. Tall looking glasses in ornate frames line the walls, each reflecting a subtly different version of whoever stands before it — here a change of hairstyle, there an altered complexion, in another a different set of features entirely. A velvet-cushioned chair sits before the largest mirror, and shelves of cosmetic implements, dyes, and enchanted scissors gleam nearby. The air smells faintly of rosewater and sandalwood.\n\n" +
         'A gilded card on the vanity reads: "Welcome to the Stylist\'s Parlor! Here you can customize your character\'s appearance, change your name, and adjust how the world sees you. Click on Stylist Maren to begin — she can help you look exactly the way you want. Don\'t worry, changes can always be undone!"\n\n' +
-        "The Grand Hall is back to the southwest.",
+        "The Common Room is back to the south.",
       exits: {
-        sw: "grand_hall",
+        s: "common_room",
       },
     },
     mob_templates: {

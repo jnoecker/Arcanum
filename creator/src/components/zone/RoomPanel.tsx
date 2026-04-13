@@ -51,6 +51,8 @@ interface RoomPanelProps {
   onClose: () => void;
   onRoomDeleted: () => void;
   onSelectEntity: (selection: EntitySelection) => void;
+  activeTab?: "room" | "entities" | "media";
+  onTabChange?: (tab: "room" | "entities" | "media") => void;
 }
 
 interface ExitDraft {
@@ -181,9 +183,12 @@ export function RoomPanel({
   onClose,
   onRoomDeleted,
   onSelectEntity,
+  activeTab: controlledTab,
+  onTabChange,
 }: RoomPanelProps) {
   const [showYaml, setShowYaml] = useState(false);
-  const [activeTab, setActiveTab] = useState<RoomTab>("room");
+  const activeTab = controlledTab ?? "room";
+  const setActiveTab = (tab: RoomTab) => onTabChange?.(tab);
   const [expandedDoor, setExpandedDoor] = useState<string | null>(null);
   const [exitDrafts, setExitDrafts] = useState<Record<string, ExitDraft>>({});
   const [newExitDraft, setNewExitDraft] = useState<ExitDraft>(() => buildExitDraft());

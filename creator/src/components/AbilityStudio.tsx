@@ -593,15 +593,6 @@ export function AbilityStudio() {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <button
-            onClick={handleGenerateTemplate}
-            disabled={!hasLlmKey || anyBusy}
-            className="rounded-full border border-[var(--chrome-stroke)] bg-[var(--chrome-highlight)] px-4 py-2 text-xs font-medium text-text-primary transition enabled:hover:bg-[var(--chrome-highlight-strong)] disabled:opacity-50"
-          >
-            {generatingTemplate ? (
-              <span className="flex items-center gap-1.5"><Spinner />Generating template</span>
-            ) : template ? "Regenerate template" : "Generate template"}
-          </button>
           <label className="flex cursor-pointer items-center gap-1.5 text-xs text-text-muted">
             <input
               type="checkbox"
@@ -611,6 +602,16 @@ export function AbilityStudio() {
             />
             Skip existing
           </label>
+          <button
+            onClick={handleGenerateTemplate}
+            disabled={!hasLlmKey || anyBusy}
+            title={template ? "Re-generate the shared prompt template" : "Generate a shared prompt template for consistent icon style (recommended before batch generation)"}
+            className="rounded-full border border-[var(--chrome-stroke)] bg-[var(--chrome-highlight)] px-4 py-2 text-xs font-medium text-text-primary transition enabled:hover:bg-[var(--chrome-highlight-strong)] disabled:opacity-50"
+          >
+            {generatingTemplate ? (
+              <span className="flex items-center gap-1.5"><Spinner />Generating template</span>
+            ) : template ? "Regenerate template" : "Generate template"}
+          </button>
           <button
             onClick={handleGenerateAll}
             disabled={!hasImageKey || anyBusy}
@@ -764,9 +765,13 @@ export function AbilityStudio() {
             <div className="rounded-3xl border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] p-4">
               <div className="mb-3 flex items-center justify-between">
                 <div className="text-2xs uppercase tracking-ui text-text-muted">Prompt engineering</div>
-                {template && (
+                {template ? (
                   <span className="rounded-full bg-status-success/10 px-2.5 py-0.5 text-3xs text-status-success">
                     Template active
+                  </span>
+                ) : (
+                  <span className="rounded-full bg-accent/10 px-2.5 py-0.5 text-3xs text-accent">
+                    No template — generate one for consistent style
                   </span>
                 )}
               </div>

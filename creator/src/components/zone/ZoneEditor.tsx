@@ -154,6 +154,7 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
   const canRedo = useZoneStore((s) => s.canRedo(zoneId));
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
   const [selectedEntity, setSelectedEntity] = useState<EntitySelection | null>(null);
+  const [roomPanelTab, setRoomPanelTab] = useState<"room" | "entities" | "media">("room");
   const [showAddRoom, setShowAddRoom] = useState(false);
   const [newRoomId, setNewRoomId] = useState("");
   const addRoomInputRef = useRef<HTMLInputElement>(null);
@@ -943,6 +944,8 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
                 onClose={() => setSelectedRoomId(null)}
                 onRoomDeleted={() => setSelectedRoomId(null)}
                 onSelectEntity={setSelectedEntity}
+                activeTab={roomPanelTab}
+                onTabChange={setRoomPanelTab}
               />
             </SpringPanel>
           ) : null}

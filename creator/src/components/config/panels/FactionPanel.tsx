@@ -43,7 +43,12 @@ export function FactionPanel() {
   const [renameValue, setRenameValue] = useState("");
   const [newQuestId, setNewQuestId] = useState("");
 
-  const factions = config?.factions ?? DEFAULT_FACTION_CONFIG;
+  const rawFactions = config?.factions;
+  const factions: FactionConfig = {
+    ...DEFAULT_FACTION_CONFIG,
+    ...rawFactions,
+    definitions: rawFactions?.definitions ?? {},
+  };
 
   const patch = useCallback(
     (p: Partial<FactionConfig>) => {

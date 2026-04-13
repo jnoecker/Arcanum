@@ -1,5 +1,14 @@
 import type { AppConfig } from "@/types/config";
 import type { WorldFile } from "@/types/world";
+import { BASE_ACADEMY_ZONE } from "@/lib/baseTemplate/baseZone";
+import {
+  BASE_STATS,
+  BASE_CLASSES,
+  BASE_ABILITIES,
+  BASE_STATUS_EFFECTS,
+  BASE_RACES,
+  BASE_PETS,
+} from "@/lib/baseTemplate/baseConfig";
 
 type DeepPartial<T> = {
   [P in keyof T]?: T[P] extends object ? DeepPartial<T[P]> : T[P];
@@ -16,119 +25,51 @@ export interface ProjectTemplate {
   starterZones?: WorldFile[];
 }
 
+const EQUIPMENT_SLOTS = {
+  head: { displayName: "Head", order: 1 },
+  chest: { displayName: "Chest", order: 2 },
+  legs: { displayName: "Legs", order: 3 },
+  feet: { displayName: "Feet", order: 4 },
+  hands: { displayName: "Hands", order: 5 },
+  main_hand: { displayName: "Main Hand", order: 6 },
+  off_hand: { displayName: "Off Hand", order: 7 },
+  ring: { displayName: "Ring", order: 8 },
+  neck: { displayName: "Neck", order: 9 },
+} as const;
+
+const GENDERS = {
+  MALE: { displayName: "Male" },
+  FEMALE: { displayName: "Female" },
+  NON_BINARY: { displayName: "Non-Binary" },
+} as const;
+
 export const TEMPLATES: ProjectTemplate[] = [
   {
     id: "classic_fantasy",
     name: "Classic Fantasy",
     description:
-      "6 stats (STR/DEX/CON/INT/WIS/CHA), 4 classes, 3 races, standard equipment slots, and a starter town zone.",
-    features: ["6 stats", "4 classes", "3 races", "9 equipment slots", "Starter town zone"],
+      "5 classes, 3 races, 25 abilities, pets, a full tutorial academy zone, and everything you need to start building.",
+    features: ["6 stats", "5 classes", "3 races", "25 abilities", "9 equipment slots", "Starter academy zone"],
     defaultWorldTheme: "A classic high-fantasy realm of swords, sorcery, and ancient ruins waiting to be explored.",
-    defaultZoneTheme: "A bustling medieval town square where adventurers gather before heading into the wild.",
+    defaultZoneTheme: "A grand academy where new adventurers learn the arts of combat, magic, and exploration.",
     configOverrides: {
-      stats: {
-        definitions: {
-          STR: { id: "STR", displayName: "Strength", abbreviation: "STR", description: "Physical power", baseStat: 10 },
-          DEX: { id: "DEX", displayName: "Dexterity", abbreviation: "DEX", description: "Agility and reflexes", baseStat: 10 },
-          CON: { id: "CON", displayName: "Constitution", abbreviation: "CON", description: "Health and endurance", baseStat: 10 },
-          INT: { id: "INT", displayName: "Intelligence", abbreviation: "INT", description: "Magical aptitude", baseStat: 10 },
-          WIS: { id: "WIS", displayName: "Wisdom", abbreviation: "WIS", description: "Insight and willpower", baseStat: 10 },
-          CHA: { id: "CHA", displayName: "Charisma", abbreviation: "CHA", description: "Force of personality", baseStat: 10 },
-        },
+      stats: { definitions: BASE_STATS },
+      classes: BASE_CLASSES,
+      abilities: BASE_ABILITIES,
+      statusEffects: BASE_STATUS_EFFECTS,
+      races: BASE_RACES,
+      pets: BASE_PETS,
+      equipmentSlots: EQUIPMENT_SLOTS,
+      genders: GENDERS,
+      characterCreation: {
+        startingGold: 100,
+        defaultRace: "HUMAN",
+        defaultClass: "WARRIOR",
+        defaultGender: "MALE",
       },
-      classes: {
-        WARRIOR: { displayName: "Warrior", hpPerLevel: 4, manaPerLevel: 1, primaryStat: "STR", description: "A stalwart fighter trained in martial combat." },
-        MAGE: { displayName: "Mage", hpPerLevel: 1, manaPerLevel: 5, primaryStat: "INT", description: "A scholar who wields arcane magic." },
-        CLERIC: { displayName: "Cleric", hpPerLevel: 2, manaPerLevel: 4, primaryStat: "WIS", description: "A healer who channels divine power." },
-        ROGUE: { displayName: "Rogue", hpPerLevel: 2, manaPerLevel: 2, primaryStat: "DEX", description: "A nimble trickster skilled in stealth." },
-      },
-      races: {
-        HUMAN: { displayName: "Human", description: "Versatile and adaptable." },
-        ELF: { displayName: "Elf", description: "Graceful and attuned to magic.", statMods: { DEX: 1, INT: 1, CON: -1 } },
-        DWARF: { displayName: "Dwarf", description: "Stout and resilient.", statMods: { CON: 2, CHA: -1 } },
-      },
-      equipmentSlots: {
-        head: { displayName: "Head", order: 1 },
-        chest: { displayName: "Chest", order: 2 },
-        legs: { displayName: "Legs", order: 3 },
-        feet: { displayName: "Feet", order: 4 },
-        hands: { displayName: "Hands", order: 5 },
-        main_hand: { displayName: "Main Hand", order: 6 },
-        off_hand: { displayName: "Off Hand", order: 7 },
-        ring: { displayName: "Ring", order: 8 },
-        neck: { displayName: "Neck", order: 9 },
-      },
-      world: { startRoom: "town_square:town_center" },
+      world: { startRoom: "academy:academy_gates" },
     },
-    starterZones: [
-      {
-        zone: "town_square",
-        lifespan: 30,
-        startRoom: "town_center",
-        rooms: {
-          town_center: {
-            title: "Town Center",
-            description: "A bustling town square with cobblestone paths radiating outward. A weathered fountain stands at the center, its water sparkling in the sunlight.",
-            exits: { north: "market", east: "tavern", south: "south_gate" },
-          },
-          market: {
-            title: "Market Street",
-            description: "Colorful stalls line both sides of a wide street. Merchants call out their wares to passing adventurers.",
-            exits: { south: "town_center" },
-          },
-          tavern: {
-            title: "The Rusty Tankard",
-            description: "A warm tavern filled with the smell of ale and roasting meat. A crackling fireplace illuminates the wooden interior.",
-            exits: { west: "town_center" },
-          },
-          south_gate: {
-            title: "South Gate",
-            description: "A heavy iron gate marks the southern boundary of town. Beyond lies the wilderness, where danger and adventure await.",
-            exits: { north: "town_center" },
-          },
-        },
-        mobs: {},
-        items: {},
-        shops: {},
-        quests: {},
-        gatheringNodes: {},
-        recipes: {},
-      },
-    ],
-  },
-  {
-    id: "minimal_sandbox",
-    name: "Minimal Sandbox",
-    description:
-      "Bare-bones setup with 3 stats, 1 class, 1 race. No starter zones — a clean slate for custom world building.",
-    features: ["3 stats", "1 class", "1 race", "Stat bindings pre-configured"],
-    defaultWorldTheme: "A simple world ready to be shaped by your imagination.",
-    defaultZoneTheme: "A quiet clearing where the story begins.",
-    configOverrides: {
-      stats: {
-        definitions: {
-          MIGHT: { id: "MIGHT", displayName: "Might", abbreviation: "MIG", description: "Physical and magical power", baseStat: 10 },
-          AGILITY: { id: "AGILITY", displayName: "Agility", abbreviation: "AGI", description: "Speed and finesse", baseStat: 10 },
-          VITALITY: { id: "VITALITY", displayName: "Vitality", abbreviation: "VIT", description: "Health and resilience", baseStat: 10 },
-        },
-        bindings: {
-          meleeDamageStat: "MIGHT",
-          spellDamageStat: "MIGHT",
-          dodgeStat: "AGILITY",
-          hpScalingStat: "VITALITY",
-          manaScalingStat: "MIGHT",
-          hpRegenStat: "VITALITY",
-          manaRegenStat: "MIGHT",
-          xpBonusStat: "AGILITY",
-        },
-      },
-      classes: {
-        ADVENTURER: { displayName: "Adventurer", hpPerLevel: 3, manaPerLevel: 3, description: "A jack of all trades." },
-      },
-      races: {
-        HUMAN: { displayName: "Human", description: "The common folk of the realm." },
-      },
-    },
+    starterZones: [BASE_ACADEMY_ZONE],
   },
 ];
 

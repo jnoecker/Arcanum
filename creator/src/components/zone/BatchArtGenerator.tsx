@@ -122,7 +122,7 @@ export function BatchArtGenerator({
               Batch Art
             </h2>
             <p className="dialog-subtitle">
-              Generate missing room and entity art for <span className="font-mono">{zoneId}</span>, then fold the accepted assets back into the zone data.
+              Select targets and generate art for <span className="font-mono">{zoneId}</span>.
             </p>
           </div>
           <div className="flex shrink-0 flex-col items-end gap-2 text-right">

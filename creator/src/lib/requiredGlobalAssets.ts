@@ -194,6 +194,16 @@ export const REQUIRED_GLOBAL_ASSETS: readonly RequiredGlobalAsset[] = [
     transparent: true,
   },
   {
+    key: "housing_broker",
+    defaultFilename: "housing_broker.png",
+    label: "Housing Broker",
+    description: "Badge shown on rooms with a housing broker NPC where players can buy and manage housing.",
+    assetType: "ability_icon",
+    defaultPrompt:
+      "A single ornate Victorian-style house icon with teal coloring and warm glowing windows, centered, transparent background.",
+    transparent: true,
+  },
+  {
     key: "minimap_unexplored",
     defaultFilename: "minimap-unexplored.png",
     label: "Minimap — Unexplored",

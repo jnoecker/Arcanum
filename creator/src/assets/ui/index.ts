@@ -8,6 +8,7 @@ import roleAuction from "./role_auction.png";
 import roleBank from "./role_bank.png";
 import roleDungeon from "./role_dungeon.png";
 import roleStation from "./role_station.png";
+import roleHousingBroker from "./role_housing_broker.png";
 import roleStylist from "./role_stylist.png";
 import roleTavern from "./role_tavern.png";
 
@@ -53,6 +54,7 @@ export const ROLE_ICONS: Record<string, string> = {
   auction: roleAuction,
   station: roleStation,
   stylist: roleStylist,
+  housingBroker: roleHousingBroker,
 };
 
 /** Feature type (lowercase) → icon URL. */

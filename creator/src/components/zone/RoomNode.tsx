@@ -91,9 +91,9 @@ function RoomBackground({ image }: { image?: string }) {
   );
 }
 
-/** Role pill badges (bank, tavern/lottery, dungeon, auction, stylist) */
+/** Role pill badges (bank, tavern/lottery, dungeon, auction, stylist, housingBroker) */
 function RoleBadges({ d }: { d: RoomNodeData }) {
-  if (!d.bank && !d.tavern && !d.dungeon && !d.auction && !d.stylist) return null;
+  if (!d.bank && !d.tavern && !d.dungeon && !d.auction && !d.stylist && !d.housingBroker) return null;
   return (
     <div className="relative flex flex-wrap gap-1">
       {d.bank && (
@@ -124,6 +124,12 @@ function RoleBadges({ d }: { d: RoomNodeData }) {
         <span className="flex items-center gap-0.5 rounded bg-accent/20 px-1 text-3xs font-semibold text-accent" title="Stylist (change race)">
           <img src={ROLE_ICONS.stylist} alt="" className="h-3 w-3" />
           Stylist
+        </span>
+      )}
+      {d.housingBroker && (
+        <span className="flex items-center gap-0.5 rounded bg-accent/20 px-1 text-3xs font-semibold text-accent" title="Housing Broker">
+          <img src={ROLE_ICONS.housingBroker} alt="" className="h-3 w-3" />
+          Housing
         </span>
       )}
     </div>

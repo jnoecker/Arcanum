@@ -50,6 +50,7 @@ export interface RoomNodeData extends Record<string, unknown> {
   dungeon?: boolean;
   auction?: boolean;
   stylist?: boolean;
+  housingBroker?: boolean;
   image?: string;
   entities: EntitySprite[];
 }
@@ -162,6 +163,7 @@ export function zoneToGraph(
         dungeon: room.dungeon,
         auction: room.auction,
         stylist: room.stylist,
+        housingBroker: room.housingBroker,
         image: room.image,
         entities: entitiesPerRoom.get(roomId) ?? [],
       } satisfies RoomNodeData,

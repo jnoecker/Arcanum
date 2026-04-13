@@ -47,6 +47,7 @@ export interface RoomFile {
   dungeon?: boolean;
   auction?: boolean;
   stylist?: boolean;
+  housingBroker?: boolean;
   image?: string;
   video?: string;
   music?: string;

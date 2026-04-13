@@ -134,6 +134,7 @@ const BASE_CONFIG: AppConfig = {
     auction_hall_widget: "auction_hall_widget.png",
     duel_arena_widget: "duel_arena_widget.png",
     stylist_mirror: "stylist_mirror.png",
+    housing_broker: "housing_broker.png",
     minimap_unexplored: "minimap-unexplored.png",
     map_background: "map_background.png",
   },

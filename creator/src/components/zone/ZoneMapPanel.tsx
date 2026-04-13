@@ -210,11 +210,11 @@ export function ZoneMapPanel({ zoneId, world, onWorldChange }: ZoneMapPanelProps
 
       {/* Current map display */}
       {(previewSrc || currentMapSrc) && (
-        <div className="relative overflow-hidden rounded-xl border border-border-default bg-bg-abyss">
+        <div className="relative shrink-0 overflow-hidden rounded-xl border border-border-default bg-bg-abyss">
           <img
             src={previewSrc ?? currentMapSrc!}
             alt={`${world.zone} zone map`}
-            className="w-full object-contain"
+            className="block w-full"
           />
           {previewSrc && (
             <div className="absolute inset-x-0 bottom-0 flex items-center justify-center gap-2 bg-gradient-to-t from-black/80 to-transparent px-4 pb-4 pt-10">

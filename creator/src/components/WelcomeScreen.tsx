@@ -54,144 +54,164 @@ export function WelcomeScreen({ onNewProject }: WelcomeScreenProps) {
     setRecentProjects((prev) => prev.filter((p) => p.path !== path));
   };
 
+  const mostRecent = recentProjects[0] ?? null;
+  const olderProjects = recentProjects.slice(1);
+
   return (
     <div className="relative h-screen h-dvh overflow-x-hidden overflow-y-auto bg-bg-abyss">
       <CosmicBackdrop variant="welcome" />
       <img
         src={splashHero}
         alt=""
-        className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-25"
+        className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-20"
       />
-      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgb(var(--bg-rgb)/0.18),rgb(var(--bg-rgb)/0.84))]" />
-      <div className="pointer-events-none absolute left-[-8rem] top-[-6rem] h-[28rem] w-[28rem] rounded-full bg-[radial-gradient(circle,rgb(var(--accent-rgb)/0.22),transparent_66%)] blur-3xl" />
+      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgb(var(--bg-rgb)/0.10)_0%,rgb(var(--bg-rgb)/0.50)_40%,rgb(var(--bg-rgb)/0.88)_100%)]" />
 
-      <div className="relative z-10 mx-auto flex min-h-full w-full max-w-6xl items-center px-6 py-8 lg:px-10">
-        <div className="grid w-full gap-6 lg:grid-cols-[minmax(18rem,0.64fr)_minmax(0,1.24fr)]">
-          <div className="flex flex-col justify-center gap-6">
-            <div>
-              <h1 className="mt-4 max-w-xl font-display text-4xl leading-[1.02] text-text-primary lg:text-5xl">
-                Return to a world already in motion, or start a new canon.
-              </h1>
-              <p className="mt-4 max-w-lg text-sm leading-7 text-text-secondary lg:text-base">
-                Arcanum is built for long sessions of shaping zones, systems, lore, and art. Enter through the most direct path and keep working.
-              </p>
-            </div>
+      <div className="relative z-10 flex min-h-full flex-col items-center justify-center px-6 py-12">
+        <div className="flex w-full max-w-xl flex-col items-center">
 
-            <div className="rounded-2xl border border-[var(--chrome-stroke)] bg-[linear-gradient(155deg,rgb(var(--surface-rgb)/0.78),rgb(var(--bg-rgb)/0.92))] p-6 shadow-panel">
-              <div className="mt-1 flex flex-col gap-4">
-                <button
-                  onClick={() => setShowOnboarding(true)}
-                  className="rounded-3xl border border-[var(--border-accent-ring)] bg-[linear-gradient(135deg,rgb(var(--accent-rgb)/0.34),rgb(var(--surface-rgb)/0.18))] px-5 py-5 text-left text-sm font-medium text-text-primary shadow-[0_16px_40px_rgb(var(--accent-rgb)/0.18)] transition hover:shadow-[0_18px_46px_rgb(var(--accent-rgb)/0.28)]"
-                >
-                  <div className="flex items-center gap-2">
-                    <div className="font-display text-xl">Start with Arcanum Hub</div>
-                    <span className="rounded-full border border-[var(--border-accent-ring)] bg-[var(--chrome-fill)] px-2 py-0.5 text-2xs uppercase tracking-ui text-accent">New</span>
-                  </div>
-                  <div className="mt-2 text-xs font-normal leading-6 text-text-secondary">Drop in a hub API key and we'll generate your first zone, art and all, in about a minute.</div>
-                </button>
-                <button
-                  onClick={onNewProject}
-                  className="rounded-2xl border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] px-5 py-4 text-left text-sm font-medium text-text-primary transition hover:border-[var(--border-accent-ring)] hover:bg-[var(--chrome-highlight-strong)]"
-                >
-                  <div className="font-display text-lg">Create new project</div>
-                  <div className="mt-1 text-xs font-normal leading-6 text-text-secondary">Bring your own API keys. Lay down a fresh scaffold and go.</div>
-                </button>
-                <div className="space-y-2 border-t border-[var(--chrome-stroke)] pt-4">
-                  <button
-                    onClick={handleOpen}
-                    className="flex w-full items-start justify-between gap-4 rounded-2xl px-3 py-3 text-left text-sm font-medium text-text-primary transition hover:bg-[var(--chrome-highlight-strong)]"
-                  >
-                    <div>
-                      <div>Open existing project</div>
-                      <div className="mt-1 text-xs font-normal leading-6 text-text-secondary">Reconnect to a local project folder and restore its working state.</div>
-                    </div>
-                    <span className="pt-1 text-[var(--color-warm-pale)]">↗</span>
-                  </button>
-                  <button
-                    onClick={() => setShowR2Import(true)}
-                    className="flex w-full items-start justify-between gap-4 rounded-2xl px-3 py-3 text-left text-sm font-medium text-text-primary transition hover:bg-[var(--chrome-highlight-strong)]"
-                  >
-                    <div>
-                      <div>Import from R2</div>
-                      <div className="mt-1 text-xs font-normal leading-6 text-text-secondary">Pull a published world down from R2 and continue shaping it locally.</div>
-                    </div>
-                    <span className="pt-1 text-[var(--color-warm-pale)]">↗</span>
-                  </button>
-                </div>
-              </div>
-            </div>
+          {/* ── Brand ─────────────────────────────────────────────── */}
+          <div className="flex flex-col items-center">
+            <h1
+              className="font-display text-[clamp(2.8rem,6vw,4.2rem)] uppercase leading-none tracking-[0.28em] text-text-primary"
+              style={{
+                textShadow: "0 0 48px rgb(var(--accent-rgb) / 0.30), 0 0 120px rgb(var(--accent-rgb) / 0.12)",
+              }}
+            >
+              Arcanum
+            </h1>
+            <div
+              className="mt-3 h-px w-24"
+              style={{
+                background: "linear-gradient(90deg, transparent, rgb(var(--accent-rgb) / 0.5), transparent)",
+              }}
+            />
+            <p className="mt-3 text-center font-display text-2xs uppercase tracking-ui text-text-muted">
+              Shape worlds. Forge legends.
+            </p>
           </div>
 
-          <div className="min-h-0 rounded-2xl border border-[var(--chrome-stroke)] bg-[linear-gradient(155deg,rgb(var(--surface-rgb)/0.78),rgb(var(--bg-rgb)/0.92))] p-6 shadow-panel">
-            <div className="mb-5 flex items-center justify-between gap-4">
-              <div>
-                <h2 className="font-display text-3xl text-text-primary">Continue where you left off</h2>
-              </div>
-              {recentProjects.length > 0 && (
-                <span className="shrink-0 text-xs text-text-muted">
-                  {recentProjects.length} saved
+          {/* ── Continue (most recent project) ────────────────────── */}
+          {mostRecent && (
+            <div className="mt-10 w-full">
+              <button
+                onClick={() => void handleOpenRecent(mostRecent)}
+                disabled={loading === mostRecent.path}
+                className="group relative w-full overflow-hidden rounded-3xl border border-[var(--border-accent-ring)] px-7 py-6 text-left transition hover:shadow-[0_20px_50px_rgb(var(--accent-rgb)/0.22)] disabled:opacity-50"
+                style={{
+                  background: "linear-gradient(135deg, rgb(var(--accent-rgb) / 0.18), rgb(var(--surface-rgb) / 0.14) 60%, rgb(var(--bg-rgb) / 0.90))",
+                }}
+              >
+                <div
+                  aria-hidden="true"
+                  className="pointer-events-none absolute -right-12 -top-12 h-40 w-40 rounded-full opacity-40 blur-3xl transition-opacity group-hover:opacity-60"
+                  style={{ background: "radial-gradient(circle, rgb(var(--accent-rgb) / 0.4), transparent 65%)" }}
+                />
+                <p className="relative font-display text-2xs uppercase tracking-ui text-accent">
+                  Continue
+                </p>
+                <p className="relative mt-2 font-display text-2xl tracking-wide text-text-primary">
+                  {loading === mostRecent.path ? "Opening\u2026" : mostRecent.name}
+                </p>
+                <p className="relative mt-1.5 truncate text-2xs text-text-muted">
+                  {mostRecent.path}
+                </p>
+              </button>
+            </div>
+          )}
+
+          {/* ── Create paths ──────────────────────────────────────── */}
+          <div className={`w-full ${mostRecent ? "mt-4" : "mt-10"} grid gap-3 sm:grid-cols-2`}>
+            <button
+              onClick={() => setShowOnboarding(true)}
+              className="group relative overflow-hidden rounded-2xl border border-[var(--border-accent-ring)]/60 px-5 py-5 text-left transition hover:border-[var(--border-accent-ring)] hover:shadow-[0_14px_36px_rgb(var(--accent-rgb)/0.18)]"
+              style={{
+                background: "linear-gradient(155deg, rgb(var(--accent-rgb) / 0.12), rgb(var(--surface-rgb) / 0.10) 50%, rgb(var(--bg-rgb) / 0.88))",
+              }}
+            >
+              <div className="flex items-center gap-2">
+                <span className="font-display text-sm text-text-primary">
+                  Start with Arcanum Hub
                 </span>
-              )}
-            </div>
-
-            {recentProjects.length > 0 ? (
-              <div className="flex min-h-0 flex-col gap-4">
-                <button
-                  onClick={() => void handleOpenRecent(recentProjects[0]!)}
-                  disabled={loading === recentProjects[0]!.path}
-                  className="rounded-3xl border border-[var(--border-accent-ring)] bg-[linear-gradient(135deg,rgb(var(--accent-rgb)/0.34),rgb(var(--surface-rgb)/0.18))] px-5 py-5 text-left shadow-[0_16px_40px_rgb(var(--shadow-rgb)/0.22)] transition hover:shadow-[0_18px_46px_rgb(var(--accent-rgb)/0.24)] disabled:opacity-50"
-                >
-                  <div className="mt-3 font-display text-2xl text-text-primary">
-                    {loading === recentProjects[0]!.path ? "Opening..." : recentProjects[0]!.name}
-                  </div>
-                  <div className="mt-2 truncate text-xs text-text-secondary">{recentProjects[0]!.path}</div>
-                </button>
-
-                {recentProjects.length > 1 ? (
-                  <ul className="flex max-h-[20rem] flex-col gap-2 overflow-y-auto pr-1">
-                    {recentProjects.slice(1).map((project) => (
-                      <li
-                        key={project.path}
-                        className="group flex items-center gap-2 rounded-3xl border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] px-4 py-3 transition hover:bg-[var(--chrome-highlight-strong)]"
-                      >
-                        <button
-                          onClick={() => handleOpenRecent(project)}
-                          disabled={loading === project.path}
-                          className="min-w-0 flex-1 text-left"
-                        >
-                          <div className="truncate text-sm font-medium text-text-primary">
-                            {loading === project.path ? "Opening..." : project.name}
-                          </div>
-                          <div className="mt-1 truncate text-2xs text-text-muted">
-                            {project.path}
-                          </div>
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleRemoveRecent(project.path);
-                          }}
-                          className="shrink-0 rounded-full border border-[var(--chrome-stroke)] px-2 py-1 text-xs text-text-muted opacity-0 transition hover:border-status-error/40 hover:text-status-error group-hover:opacity-100 focus:opacity-100"
-                          title="Remove from recent"
-                          aria-label={`Remove ${project.name} from recent projects`}
-                        >
-                          Remove
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <div className="rounded-3xl border border-dashed border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] px-4 py-6 text-sm leading-7 text-text-muted">
-                    No older worlds are on hand yet. Your latest project is ready above.
-                  </div>
-                )}
+                <span className="rounded-full border border-accent/30 bg-accent/10 px-1.5 py-px text-[10px] uppercase tracking-label text-accent">
+                  New
+                </span>
               </div>
-            ) : (
-              <div className="rounded-3xl border border-dashed border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] px-4 py-8 text-sm leading-7 text-text-muted">
-                No world has opened here yet. Begin one above and it will be waiting when you return.
-              </div>
-            )}
+              <p className="mt-2 text-2xs leading-relaxed text-text-muted">
+                Enter a hub API key and we'll generate your first zone, art and all, in about a minute.
+              </p>
+            </button>
+
+            <button
+              onClick={onNewProject}
+              className="group rounded-2xl border border-[var(--chrome-stroke)] px-5 py-5 text-left transition hover:border-[var(--border-accent-ring)]/50 hover:bg-[var(--chrome-fill)]/40"
+              style={{
+                background: "linear-gradient(155deg, rgb(var(--surface-rgb) / 0.08), rgb(var(--bg-rgb) / 0.80))",
+              }}
+            >
+              <p className="font-display text-sm text-text-primary">
+                Create new project
+              </p>
+              <p className="mt-2 text-2xs leading-relaxed text-text-muted">
+                Bring your own API keys. Lay down a fresh scaffold and go.
+              </p>
+            </button>
           </div>
+
+          {/* ── Secondary actions ──────────────────────────────────── */}
+          <div className="mt-4 flex w-full items-center justify-center gap-6">
+            <button
+              onClick={handleOpen}
+              className="focus-ring rounded-full px-3 py-1.5 text-2xs text-text-muted transition hover:text-accent"
+            >
+              Open existing project
+            </button>
+            <span className="text-2xs text-text-muted/30" aria-hidden="true">{"\u00B7"}</span>
+            <button
+              onClick={() => setShowR2Import(true)}
+              className="focus-ring rounded-full px-3 py-1.5 text-2xs text-text-muted transition hover:text-accent"
+            >
+              Import from R2
+            </button>
+          </div>
+
+          {/* ── Older recent projects ─────────────────────────────── */}
+          {olderProjects.length > 0 && (
+            <div className="mt-8 w-full">
+              <p className="mb-3 text-center font-display text-2xs uppercase tracking-ui text-text-muted">
+                Recent worlds
+              </p>
+              <div className="flex flex-col gap-1.5">
+                {olderProjects.map((project) => (
+                  <div
+                    key={project.path}
+                    className="group flex items-center gap-3 rounded-2xl border border-[var(--chrome-stroke)]/50 px-4 py-2.5 transition hover:border-[var(--chrome-stroke)] hover:bg-[var(--chrome-fill)]/30"
+                  >
+                    <button
+                      onClick={() => void handleOpenRecent(project)}
+                      disabled={loading === project.path}
+                      className="min-w-0 flex-1 text-left disabled:opacity-50"
+                    >
+                      <span className="text-xs text-text-primary">
+                        {loading === project.path ? "Opening\u2026" : project.name}
+                      </span>
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleRemoveRecent(project.path);
+                      }}
+                      className="shrink-0 rounded-full px-2 py-0.5 text-[10px] text-text-muted opacity-0 transition hover:text-status-error group-hover:opacity-100 focus:opacity-100"
+                      title="Remove from recent"
+                      aria-label={`Remove ${project.name} from recent projects`}
+                    >
+                      {"\u2715"}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
 

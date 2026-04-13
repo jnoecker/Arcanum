@@ -390,7 +390,7 @@ export function NewZoneDialog({ onClose }: NewZoneDialogProps) {
   // ─── Render ───────────────────────────────────────────────────
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--chrome-fill-soft)]">
+    <div className="modal-overlay">
       <div
         ref={trapRef}
         role="dialog"

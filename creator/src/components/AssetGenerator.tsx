@@ -396,7 +396,7 @@ export function AssetGenerator() {
       {stage === "preview" && result && (
         <div className="grid gap-4">
           <div className="overflow-hidden rounded-2xl border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)]">
-            <img src={result.data_url} alt="Generated art" className="w-full" />
+            <img src={result.data_url} alt="Generated art" loading="lazy" className="w-full" />
           </div>
           <div className="flex flex-wrap items-center gap-3">
             <div className="flex flex-wrap items-center gap-2 text-xs text-text-muted">

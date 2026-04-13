@@ -55,7 +55,7 @@ export function TimelineView({
   }, [computedRange.max, computedRange.min, span]);
 
   return (
-    <div className="rounded-[1.6rem] border border-border-muted/50 bg-[linear-gradient(180deg,rgba(11,14,24,0.98),rgba(20,24,38,0.88))] p-4 shadow-[var(--shadow-section)]">
+    <div className="rounded-[1.6rem] border border-border-muted/50 bg-[var(--bg-deep-section)] p-4 shadow-[var(--shadow-section)]">
       <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
         <p className="text-[0.65rem] uppercase tracking-[0.28em] text-[var(--color-warm)]/80">
           Chronicle Overview

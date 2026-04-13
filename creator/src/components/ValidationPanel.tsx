@@ -19,7 +19,7 @@ export function ValidationPanel() {
   const isClean = totalErrors === 0 && totalWarnings === 0;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--chrome-fill-soft)]">
+    <div className="modal-overlay">
       <div ref={trapRef} role="dialog" aria-modal="true" aria-labelledby="validation-dialog-title" className="mx-4 flex max-h-[80vh] w-full max-w-xl flex-col rounded-lg border border-border-default bg-bg-secondary shadow-xl">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-border-default px-5 py-3">

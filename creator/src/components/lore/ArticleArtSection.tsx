@@ -20,7 +20,7 @@ function GalleryThumbnail({
   return (
     <div className="group relative h-16 w-16 shrink-0 overflow-hidden rounded-lg border border-[var(--chrome-stroke)] bg-[var(--chrome-fill-strong)]">
       {src ? (
-        <img src={src} alt="" className="h-full w-full object-cover" />
+        <img src={src} alt="" loading="lazy" className="h-full w-full object-cover" />
       ) : (
         <div className="flex h-full w-full items-center justify-center text-2xs text-text-muted">...</div>
       )}

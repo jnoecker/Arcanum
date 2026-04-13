@@ -97,6 +97,7 @@ export function AppShell({ onNewProject }: AppShellProps) {
       <div className="relative z-10 flex min-h-0 flex-1 flex-col gap-3 px-4 pb-3 pt-5 lg:flex-row">
         <Sidebar />
         <main
+          aria-label="Content"
           className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden"
           style={FILIGREE_MASK}
         >

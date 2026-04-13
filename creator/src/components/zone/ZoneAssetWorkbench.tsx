@@ -663,7 +663,7 @@ export function ZoneAssetWorkbench({ zoneId, world, onWorldChange }: ZoneAssetWo
             <div className="rounded-3xl border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] p-4">
               <div className="flex gap-5">
                 {/* Image preview */}
-                <div className="flex shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-[var(--chrome-stroke)] bg-[linear-gradient(180deg,rgba(34,41,60,0.8),rgba(28,34,52,0.88))] p-3" style={{ width: "16rem", height: "10rem" }}>
+                <div className="flex shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-[var(--chrome-stroke)] bg-[var(--bg-preview)] p-3" style={{ width: "16rem", height: "10rem" }}>
                   {selectedSrc ? (
                     <img src={selectedSrc} alt={targetTitle(selectedTarget)} className="max-h-full max-w-full rounded-xl object-contain shadow-section" />
                   ) : (

@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useMemo } from "react";
+import { useState, useCallback, useEffect, useMemo, memo } from "react";
 import { useLoreStore, selectArticles, selectCalendars, selectEvents } from "@/stores/loreStore";
 import type { CalendarSystem, CalendarEra, TimelineEvent } from "@/types/lore";
 import {
@@ -164,7 +164,7 @@ function CalendarEditor({
       {calendars.map((calendar) => (
         <div
           key={calendar.id}
-          className="rounded-[1.5rem] border border-border-muted/45 bg-[linear-gradient(180deg,rgba(25,31,48,0.94),rgba(16,20,31,0.94))] p-4 shadow-[var(--shadow-section)]"
+          className="rounded-[1.5rem] border border-border-muted/45 bg-[var(--bg-deep-section)] p-4 shadow-[var(--shadow-section)]"
         >
           <div className="flex flex-wrap items-center gap-2">
             <input
@@ -259,7 +259,7 @@ function EventInspector({
 
   if (!resolvedEvent) {
     return (
-      <aside className="rounded-[2rem] border border-border-muted/40 bg-[linear-gradient(180deg,rgba(16,20,31,0.96),rgba(10,12,21,0.98))] p-5 shadow-[var(--shadow-panel)]">
+      <aside className="rounded-[2rem] border border-border-muted/40 bg-[var(--bg-deep-panel)] p-5 shadow-[var(--shadow-panel)]">
         <p className="text-[0.65rem] uppercase tracking-[0.28em] text-[var(--color-warm)]/80">
           Event Inspector
         </p>
@@ -297,7 +297,7 @@ function EventInspector({
   const style = importanceClasses(event.importance);
 
   return (
-    <aside className="rounded-[2rem] border border-border-muted/40 bg-[linear-gradient(180deg,rgba(16,20,31,0.96),rgba(10,12,21,0.98))] p-5 shadow-[var(--shadow-panel)] xl:sticky xl:top-5">
+    <aside className="rounded-[2rem] border border-border-muted/40 bg-[var(--bg-deep-panel)] p-5 shadow-[var(--shadow-panel)] xl:sticky xl:top-5">
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-[0.65rem] uppercase tracking-[0.28em] text-[var(--color-warm)]/80">
@@ -457,7 +457,7 @@ function EventInspector({
   );
 }
 
-function ChronicleEventRow({
+const ChronicleEventRow = memo(function ChronicleEventRow({
   entry,
   selected,
   onSelect,
@@ -534,7 +534,7 @@ function ChronicleEventRow({
       </div>
     </button>
   );
-}
+});
 
 export function TimelinePanel() {
   const calendars = useLoreStore(selectCalendars);
@@ -802,16 +802,16 @@ export function TimelinePanel() {
       </section>
 
       <div className="grid min-h-0 gap-6 xl:grid-cols-[minmax(0,1.65fr)_24rem]">
-        <section className="min-h-[44rem] rounded-[2rem] border border-border-muted/40 bg-[linear-gradient(180deg,rgba(16,20,31,0.96),rgba(10,12,21,0.98))] p-5 shadow-[var(--shadow-panel)]">
+        <section className="min-h-[44rem] rounded-[2rem] border border-border-muted/40 bg-[var(--bg-deep-panel)] p-5 shadow-[var(--shadow-panel)]">
           {(showSuggestions || showCalendarSetup) && (
             <div className="mb-5 flex flex-col gap-4">
               {showSuggestions && (
-                <div className="rounded-[1.6rem] border border-border-muted/35 bg-[linear-gradient(180deg,rgba(25,31,48,0.92),rgba(15,18,29,0.94))] p-5">
+                <div className="rounded-[1.6rem] border border-border-muted/35 bg-[var(--bg-deep-section)] p-5">
                   <TimelineInferencePanel />
                 </div>
               )}
               {showCalendarSetup && (
-                <div className="rounded-[1.6rem] border border-border-muted/35 bg-[linear-gradient(180deg,rgba(25,31,48,0.92),rgba(15,18,29,0.94))] p-5">
+                <div className="rounded-[1.6rem] border border-border-muted/35 bg-[var(--bg-deep-section)] p-5">
                   <CalendarEditor calendars={calendars} onChange={setCalendars} />
                 </div>
               )}
@@ -854,7 +854,7 @@ export function TimelinePanel() {
                 range={activeWindow}
               />
 
-              <div className="rounded-[1.6rem] border border-border-muted/35 bg-[linear-gradient(180deg,rgba(18,22,34,0.94),rgba(12,15,24,0.98))] p-5">
+              <div className="rounded-[1.6rem] border border-border-muted/35 bg-[var(--bg-deep-panel)] p-5">
                 <div className="flex flex-wrap items-end justify-between gap-3 border-b border-border-muted/25 pb-4">
                   <div>
                     <p className="text-[0.65rem] uppercase tracking-[0.28em] text-[var(--color-warm)]/80">

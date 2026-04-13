@@ -301,6 +301,7 @@ function PetCard({ id, pet, selected, onSelect, onDelete }: PetCardProps) {
             <img
               src={thumb}
               alt={pet.name}
+              loading="lazy"
               className="h-full w-full object-cover"
             />
           ) : (

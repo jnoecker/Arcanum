@@ -490,9 +490,9 @@ export function CustomAssetStudio({ selectedZoneId }: { selectedZoneId: string |
             </span>
           </div>
 
-          <div className="flex min-h-[22rem] items-center justify-center overflow-hidden rounded-2xl border border-[var(--chrome-stroke)] bg-[linear-gradient(180deg,rgba(34,41,60,0.8),rgba(28,34,52,0.88))] p-4">
+          <div className="flex min-h-[22rem] items-center justify-center overflow-hidden rounded-2xl border border-[var(--chrome-stroke)] bg-[var(--bg-preview)] p-4">
             {previewSrc ? (
-              <img src={previewSrc} alt={title || "Custom asset"} className="max-h-[30rem] max-w-full rounded-2xl object-contain shadow-section" />
+              <img src={previewSrc} alt={title || "Custom asset"} loading="lazy" className="max-h-[30rem] max-w-full rounded-2xl object-contain shadow-section" />
             ) : (
               <div className="text-center text-sm text-text-muted">Generate or import an asset to review it here.</div>
             )}

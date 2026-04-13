@@ -17,6 +17,7 @@
   --highlight-rgb: 255 236 209;
   --shadow-rgb: 0 8 14;
   --overlay-rgb: 0 10 18;
+  --aurum-rgb: 226 188 106;
 
   /* ─── Typography ─── */
   --font-sans: 'Crimson Pro', Georgia, serif;
@@ -82,14 +83,14 @@
 
   /* ─── Cool Accents ─── */
   --color-violet:       #c0622a;
-  --color-stellar-blue: #2f93a1;
+  --color-stellar-blue: #35a1b0;
   --color-arcane-teal:  #15616d;
 
   /* ─── Status Colors ─── */
   --color-status-success: #7cb66d;
   --color-status-warning: #ff9d3d;
   --color-status-error:   #d9756b;
-  --color-status-info:    #2f93a1;
+  --color-status-info:    #35a1b0;
   --color-status-danger:  #d9756b;
 
   /* ─── Badge Colors (vivid variants for small text on dark backgrounds) ─── */
@@ -120,7 +121,7 @@
   --color-graph-bg:      #000d16;
   --color-graph-grid:    #0d3c46;
   --color-graph-node:    #0f5160;
-  --color-graph-edge:    #2f93a1;
+  --color-graph-edge:    #35a1b0;
   --color-graph-edge-up: #ff7d00;
   --color-graph-cross:   #78290f;
   --color-graph-door:    #ffb86b;
@@ -128,7 +129,7 @@
   /* ─── Class Identity Colors ─── */
   --color-class-bulwark:     #ff9d3d;
   --color-class-warden:      #c0622a;
-  --color-class-arcanist:    #2f93a1;
+  --color-class-arcanist:    #35a1b0;
   --color-class-faeweaver:   #7cb66d;
   --color-class-necromancer: #6e8d5a;
   --color-class-veil:        #78290f;
@@ -141,7 +142,7 @@
   /* ─── Lore Template Colors ─── */
   --color-template-world:        #ff7d00;
   --color-template-character:    #d88c3a;
-  --color-template-location:     #2f93a1;
+  --color-template-location:     #35a1b0;
   --color-template-organization: #ff9d3d;
   --color-template-item:         #ffb86b;
   --color-template-species:      #c0622a;
@@ -153,7 +154,7 @@
   --color-template-story:        #78290f;
 
   /* ─── Entity Category Colors ─── */
-  --color-entity-room:     #2f93a1;  /* stellar-blue — architectural */
+  --color-entity-room:     #35a1b0;  /* stellar-blue — architectural */
   --color-entity-mob:      #ff7d00;  /* accent — dangerous */
   --color-entity-item:     #e2bc6a;  /* aurum — valuable */
   --color-entity-shop:     #ffb86b;  /* warm-pale — commercial */
@@ -165,7 +166,7 @@
 
   /* ─── Chart / Visualization ─── */
   --color-chart-hp:   #d9756b;
-  --color-chart-mana: #2f93a1;
+  --color-chart-mana: #35a1b0;
 
   /* ─── Miscellaneous ─── */
   --color-text-dirty: #ffb07a;
@@ -183,10 +184,17 @@
   --glow-violet:        0 0 28px rgb(var(--accent-rgb) / 0.24);
   --glow-blue:          0 0 24px rgb(var(--accent-rgb) / 0.22);
 
-  /* Shadows */
-  --shadow-section:  0 16px 44px rgb(var(--shadow-rgb) / 0.24);
-  --shadow-panel:    0 18px 60px rgb(var(--shadow-rgb) / 0.38);
-  --shadow-glow:     0 10px 26px rgb(var(--accent-rgb) / 0.22);
+  /* Shadows — depth tiers */
+  --shadow-section:     0 16px 44px rgb(var(--shadow-rgb) / 0.24);
+  --shadow-panel:       0 18px 60px rgb(var(--shadow-rgb) / 0.38);
+  --shadow-glow:        0 10px 26px rgb(var(--accent-rgb) / 0.22);
+  --shadow-drop:        0 8px 28px rgb(var(--shadow-rgb) / 0.55);
+  --shadow-vignette:    0 0 60px rgb(var(--shadow-rgb) / 0.60);
+  --shadow-dialog:      0 24px 80px rgb(var(--abyss-rgb) / 0.60);
+  --shadow-overlay:     0 30px 120px rgb(var(--shadow-rgb) / 0.75);
+  --shadow-text:        0 1px 3px rgb(var(--shadow-rgb) / 0.50);
+  --shadow-text-strong: 0 1px 2px rgb(var(--shadow-rgb) / 0.80);
+  --shadow-text-heavy:  0 1px 4px rgb(var(--shadow-rgb) / 0.90);
 
   /* Easing */
   --ease-unfurl:   cubic-bezier(0.16, 1, 0.3, 1);
@@ -212,7 +220,24 @@
   --bg-panel:         linear-gradient(160deg, rgb(var(--surface-rgb) / 0.95), rgb(var(--bg-rgb) / 0.92));
   --bg-panel-light:   linear-gradient(160deg, rgb(var(--surface-rgb) / 0.85), rgb(var(--bg-rgb) / 0.85));
   --bg-glow-top:      linear-gradient(180deg, rgb(var(--accent-rgb) / 0.18), transparent);
+  --bg-preview:       linear-gradient(180deg, rgb(var(--surface-rgb) / 0.40), rgb(var(--bg-rgb) / 0.88));
+  --bg-deep-panel:    linear-gradient(180deg, rgb(var(--bg-rgb) / 0.96), rgb(var(--abyss-rgb) / 0.98));
+  --bg-deep-section:  linear-gradient(180deg, rgb(var(--bg-rgb) / 0.92), rgb(var(--abyss-rgb) / 0.94));
+  --bg-gallery:       radial-gradient(circle at top, rgb(var(--text-rgb) / 0.12), rgb(var(--abyss-rgb) / 0.82));
   --graph-minimap-mask: rgb(var(--fill-rgb) / 0.8);
+
+  /* Scrim / overlay fills */
+  --bg-scrim-heavy:   rgb(var(--abyss-rgb) / 0.82);
+  --bg-scrim-code:    rgb(var(--abyss-rgb) / 0.42);
+  --bg-fade-edge:     rgb(var(--abyss-rgb) / 0.14);
+
+  /* Graph utility colors */
+  --graph-dot-color:  rgb(var(--text-rgb) / 0.05);
+  --graph-mask-color: rgb(var(--abyss-rgb) / 0.80);
+
+  /* Accent aurum variants */
+  --glow-aurum-drop:    0 0 6px rgb(var(--accent-rgb) / 0.50);
+  --border-aurum-inset: inset 0 0 0 1px rgb(var(--aurum-rgb) / 0.15);
 
   /* Body background — themed via the JS system, with a sensible default. */
   --body-bg:
@@ -765,6 +790,18 @@ select,
   box-shadow: var(--shadow-section);
 }
 
+/* Light overlay for simple modals, pickers, and confirmation dialogs. */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--chrome-fill-soft);
+}
+
+/* Rich overlay for full dialogs — radial accent glow + blur. */
 .dialog-overlay {
   position: fixed;
   inset: 0;
@@ -777,6 +814,43 @@ select,
     radial-gradient(circle at top, rgb(var(--accent-rgb) / 0.12), transparent 34%),
     rgb(var(--overlay-rgb) / 0.72);
   backdrop-filter: blur(14px);
+}
+
+/* Clickable row in admin list panels. */
+.admin-list-item {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 0.75rem;
+  border-radius: 1rem;
+  border: 1px solid var(--chrome-stroke);
+  background: var(--chrome-highlight);
+  padding: 0.75rem 1rem;
+  text-align: left;
+  transition: color 200ms, background-color 200ms, border-color 200ms, box-shadow 200ms;
+}
+
+.admin-list-item:hover {
+  border-color: rgb(var(--accent-rgb) / 0.20);
+  background: rgb(var(--accent-rgb) / 0.04);
+  box-shadow: inset 3px 0 0 var(--color-accent);
+}
+
+.admin-list-item:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--color-border-active);
+}
+
+/* Empty state placeholder (dashed border, muted italic text). */
+.empty-placeholder {
+  border-radius: 0.5rem;
+  border: 1px dashed var(--chrome-stroke);
+  background: var(--chrome-fill-soft);
+  padding: 0.5rem 0.75rem;
+  text-align: center;
+  font-size: 0.75rem;
+  font-style: italic;
+  color: var(--color-text-muted);
 }
 
 .dialog-shell {

@@ -248,8 +248,8 @@ function applyDagreLayout(nodes: Node[], edges: Edge[]): Node[] {
 const RELATION_COLORS: Record<string, string> = {
   ally: "#a3c48e",
   rival: "#d9756b",
-  member_of: "#2f93a1",
-  located_in: "#2f93a1",
+  member_of: "#35a1b0",
+  located_in: "#35a1b0",
   related: "#ff7d00",
   mentioned: "#2e7680",
 };

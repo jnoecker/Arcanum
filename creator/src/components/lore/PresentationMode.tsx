@@ -256,8 +256,7 @@ export function PresentationMode({
       style={{ cursor: cursorVisible ? "default" : "none" }}
       onClick={handleClick}
       onContextMenu={handleRightClick}
-      role="region"
-      aria-label="Story presentation"
+      role="presentation"
       tabIndex={-1}
     >
       {/* CinematicRenderer -- centered, fills viewport width, maintains 16:9 */}

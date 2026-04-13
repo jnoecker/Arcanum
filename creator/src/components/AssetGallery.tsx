@@ -280,7 +280,7 @@ export function AssetGallery({ onClose }: { onClose: () => void }) {
     }
 
     return (
-      <div className="flex h-full w-full flex-col items-center justify-center gap-2 bg-[radial-gradient(circle_at_top,rgba(183,204,231,0.2),rgba(15,18,30,0.82))] px-3 text-center">
+      <div className="flex h-full w-full flex-col items-center justify-center gap-2 bg-[var(--bg-gallery)] px-3 text-center">
         <div className="font-display text-lg text-text-primary">{kind === "audio" ? "Audio" : "Video"}</div>
         <div className="text-2xs uppercase tracking-ui text-text-muted">
           {asset.asset_type.replace(/_/g, " ")}
@@ -305,11 +305,11 @@ export function AssetGallery({ onClose }: { onClose: () => void }) {
     if (kind === "video") {
       return <video controls src={preview} className="w-full rounded" />;
     }
-    return <img src={preview} alt="Selected asset" className="w-full" />;
+    return <img src={preview} alt="Selected asset" loading="lazy" className="w-full" />;
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--chrome-fill-soft)]">
+    <div className="modal-overlay">
       <div ref={trapRef} role="dialog" aria-modal="true" aria-labelledby="gallery-title" className="mx-4 flex max-h-[90vh] w-full max-w-6xl flex-col rounded-3xl border border-border-default bg-bg-secondary shadow-xl">
         <div className="flex shrink-0 items-center justify-between border-b border-border-default px-5 py-3">
           <div className="flex flex-wrap items-center gap-3">

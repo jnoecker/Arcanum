@@ -321,6 +321,7 @@ function RoomCard({
             <img
               src={thumb}
               alt={t.title}
+              loading="lazy"
               className="h-full w-full object-cover"
             />
           ) : (

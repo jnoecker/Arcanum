@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { Handle, Position, type NodeProps } from "@xyflow/react";
 import type { ArticleTemplate } from "@/types/lore";
 
@@ -38,7 +39,7 @@ interface RelationNodeData {
   [key: string]: unknown;
 }
 
-export function RelationGraphNode({ data }: NodeProps) {
+export const RelationGraphNode = memo(function RelationGraphNode({ data }: NodeProps) {
   const d = data as RelationNodeData;
   const color = TEMPLATE_COLORS[d.template] ?? "var(--color-template-freeform)";
   const icon = TEMPLATE_LABELS[d.template] ?? "?";
@@ -71,4 +72,4 @@ export function RelationGraphNode({ data }: NodeProps) {
       <Handle type="source" position={Position.Right} style={{ background: color, border: "none", width: 8, height: 8 }} />
     </>
   );
-}
+});

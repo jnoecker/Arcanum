@@ -15,8 +15,8 @@ export function DmNotesOverlay({ notes, visible }: DmNotesOverlayProps) {
     <div
       className="absolute bottom-0 left-0 right-0 z-[50]"
       style={{
-        background: "rgba(7, 9, 18, 0.82)",
-        borderTop: "1px solid rgba(255, 255, 255, 0.08)",
+        background: "var(--bg-scrim-heavy)",
+        borderTop: "1px solid rgb(var(--text-rgb) / 0.08)",
         opacity: visible ? 1 : 0,
         transform: visible ? "translateY(0)" : "translateY(100%)",
         transition: visible

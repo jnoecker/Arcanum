@@ -81,7 +81,7 @@ export function DiffModal({ onConfirm, onCancel }: DiffModalProps) {
                 {diff.changeCount} change{diff.changeCount !== 1 ? "s" : ""}
               </span>
             </div>
-            <div className="max-h-72 overflow-auto rounded-2xl border border-[var(--chrome-stroke)] bg-[rgba(8,12,28,0.42)] font-mono text-2xs leading-5">
+            <div className="max-h-72 overflow-auto rounded-2xl border border-[var(--chrome-stroke)] bg-[var(--bg-scrim-code)] font-mono text-2xs leading-5">
               {diff.lines.map((line, index) => (
                 <div
                   key={index}

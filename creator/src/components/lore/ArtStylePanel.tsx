@@ -102,7 +102,14 @@ function CreateMenu({
       </ActionButton>
       {open && (
         <>
-          <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
+          <div
+            className="fixed inset-0 z-10"
+            onClick={() => setOpen(false)}
+            onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") setOpen(false); }}
+            role="button"
+            aria-label="Close menu"
+            tabIndex={0}
+          />
           <div className="absolute right-0 top-full z-20 mt-1 w-60 overflow-hidden rounded-lg border border-border-default bg-bg-secondary shadow-panel">
             <button
               onClick={() => { onAi(); setOpen(false); }}
@@ -437,7 +444,7 @@ export function ArtStylePanel() {
                   className={
                     "flex flex-col items-start gap-0.5 rounded-lg border px-3 py-2 text-left text-xs transition " +
                     (isSelected
-                      ? "border-accent/60 bg-bg-tertiary text-text-primary shadow-[inset_0_0_0_1px_rgba(226,188,106,0.15)]"
+                      ? "border-accent/60 bg-bg-tertiary text-text-primary shadow-[var(--border-aurum-inset)]"
                       : "border-border-muted bg-bg-primary/60 text-text-secondary hover:border-border-default hover:bg-bg-primary")
                   }
                 >

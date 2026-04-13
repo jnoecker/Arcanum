@@ -122,7 +122,7 @@ export function SpriteLightbox({
   return (
     <div
       ref={lightboxTrapRef}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--chrome-fill-soft)]"
+      className="modal-overlay"
       onClick={onClose}
     >
       <div

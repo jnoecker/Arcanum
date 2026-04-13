@@ -160,7 +160,7 @@ function RelationGraphInner() {
             />
             <MiniMap
               style={{ background: "var(--color-bg-secondary)" }}
-              maskColor="rgba(8, 12, 28, 0.8)"
+              maskColor="var(--graph-mask-color)"
               nodeColor="var(--color-accent)"
             />
           </ReactFlow>

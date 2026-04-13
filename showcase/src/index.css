@@ -34,14 +34,14 @@
 
   /* Cool Accents */
   --color-violet:       #c0622a;
-  --color-stellar-blue: #2f93a1;
+  --color-stellar-blue: #35a1b0;
   --color-arcane-teal:  #15616d;
 
   /* Status Colors */
   --color-status-success: #7cb66d;
   --color-status-warning: #ff9d3d;
   --color-status-error:   #d9756b;
-  --color-status-info:    #2f93a1;
+  --color-status-info:    #35a1b0;
 
   /* Graph */
   --color-graph-bg:   #000d16;
@@ -50,7 +50,7 @@
   /* Template Colors */
   --color-template-world:        #ff7d00;
   --color-template-character:    #d88c3a;
-  --color-template-location:     #2f93a1;
+  --color-template-location:     #35a1b0;
   --color-template-organization: #ff9d3d;
   --color-template-item:         #ffb86b;
   --color-template-species:      #c0622a;

@@ -67,6 +67,7 @@ export function AdminBroadcastPanel() {
           value={message}
           onChange={(e) => setMessage(e.target.value.slice(0, MAX_LENGTH))}
           placeholder="Enter your message to the world..."
+          aria-label="Broadcast message"
           rows={3}
           className="w-full resize-none rounded-xl border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] px-4 py-3 text-sm text-text-primary placeholder:text-text-muted focus:border-border-active focus:outline-none focus-visible:ring-2 focus-visible:ring-border-active"
         />

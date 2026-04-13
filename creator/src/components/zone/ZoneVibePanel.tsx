@@ -66,7 +66,7 @@ function DefaultThumb({ fileName, label, generating }: { fileName?: string; labe
 
       {expanded && src && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--chrome-fill-soft)]"
+          className="modal-overlay"
           onClick={() => setExpanded(false)}
         >
           <div className="relative mx-8 max-h-[85vh] max-w-[85vw]">

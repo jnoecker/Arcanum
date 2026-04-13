@@ -279,6 +279,7 @@ export function EquipmentSlotsPanel({ config, onChange }: ConfigPanelProps) {
           <img
             src={mannequinImg}
             alt="Equipment mannequin"
+            loading="lazy"
             className="pointer-events-none h-full w-full rounded-3xl object-cover"
             draggable={false}
           />

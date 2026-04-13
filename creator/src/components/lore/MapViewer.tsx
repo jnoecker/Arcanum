@@ -3,9 +3,6 @@ import type { LoreMap, MapPin, ZonePlan } from "@/types/lore";
 import { useLoreStore, selectArticles } from "@/stores/loreStore";
 import { regionToLeafletBounds } from "@/lib/zoneRegionGeometry";
 
-const ACCENT_COLOR = "#ff7d00";
-const ACCENT_SELECTED = "#ffb86b";
-
 // ─── Custom pin icon ────────────────────────────────────────────────
 
 function makePinIcon(L: typeof import("leaflet"), color?: string) {
@@ -46,6 +43,14 @@ export function MapViewer({
   const articles = useLoreStore(selectArticles);
   const addPin = useLoreStore((s) => s.addPin);
   const updatePin = useLoreStore((s) => s.updatePin);
+
+  const ACCENT_COLORS = useMemo(() => {
+    const s = getComputedStyle(document.documentElement);
+    return {
+      normal: s.getPropertyValue("--color-accent").trim(),
+      selected: s.getPropertyValue("--color-warm-pale").trim(),
+    };
+  }, []);
 
   const [leafletReady, setLeafletReady] = useState(false);
   const [modules, setModules] = useState<{
@@ -159,10 +164,10 @@ export function MapViewer({
                 [bounds.north, bounds.east],
               ]}
               pathOptions={{
-                color: isSelected ? ACCENT_SELECTED : ACCENT_COLOR,
+                color: isSelected ? ACCENT_COLORS.selected : ACCENT_COLORS.normal,
                 weight: isSelected ? 2.5 : 1.5,
                 opacity: isSelected ? 0.95 : 0.7,
-                fillColor: isSelected ? ACCENT_SELECTED : ACCENT_COLOR,
+                fillColor: isSelected ? ACCENT_COLORS.selected : ACCENT_COLORS.normal,
                 fillOpacity: isSelected ? 0.18 : 0.1,
               }}
               eventHandlers={{

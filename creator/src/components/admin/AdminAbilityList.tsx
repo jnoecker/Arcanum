@@ -31,7 +31,7 @@ const AbilityRow = memo(function AbilityRow({
   return (
     <button
       onClick={() => onSelect(ability.id)}
-      className="flex w-full items-center gap-3 rounded-2xl border border-[var(--chrome-stroke)] bg-[var(--chrome-highlight)] px-4 py-3 text-left transition-colors duration-200 hover:border-accent/20 hover:bg-accent/[0.04] hover:shadow-[inset_3px_0_0_var(--color-accent)] focus-visible:ring-2 focus-visible:ring-border-active focus-visible:outline-none"
+      className="admin-list-item"
     >
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">

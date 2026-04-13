@@ -460,7 +460,7 @@ export function RoomPanel({
   );
 
   return (
-    <div className="relative flex min-h-0 min-w-0 w-[clamp(16rem,24vw,24rem)] flex-1 flex-col border-l border-border-default bg-bg-secondary max-[1100px]:max-h-[min(45vh,32rem)] max-[1100px]:w-full max-[1100px]:border-l-0 max-[1100px]:border-t">
+    <div className="relative flex min-h-0 min-w-0 w-[clamp(14rem,24vw,24rem)] flex-1 flex-col border-l border-border-default bg-bg-secondary max-[1100px]:max-h-[min(45vh,32rem)] max-[1100px]:w-full max-[1100px]:border-l-0 max-[1100px]:border-t">
       <img src={sidebarBg} alt="" className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-[0.12]" />
       {/* Header */}
       <div className="relative z-10 shrink-0 border-b border-border-default px-4 py-3">
@@ -544,7 +544,7 @@ export function RoomPanel({
           )}
 
           {exits.length === 0 ? (
-            <p className="rounded-lg border border-dashed border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] px-3 py-2 text-center text-xs italic text-text-muted">No exits</p>
+            <p className="empty-placeholder">No exits</p>
           ) : (
             <ul className="flex flex-col gap-2 text-xs">
               {exits.map((exit) => {
@@ -657,7 +657,7 @@ export function RoomPanel({
             </ul>
           )}
 
-          <div className="rounded-xl border border-accent/25 bg-[linear-gradient(180deg,rgba(var(--accent-rgb),0.12),rgba(var(--accent-rgb),0.04))] p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
+          <div className="rounded-xl border border-accent/25 bg-[linear-gradient(180deg,rgba(var(--accent-rgb),0.12),rgba(var(--accent-rgb),0.04))] p-3 shadow-[inset_0_1px_0_rgb(var(--text-rgb)/0.03)]">
             <div className="flex items-center gap-2">
               <span className="rounded-full border border-accent/35 bg-accent/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-accent">
                 New
@@ -808,7 +808,7 @@ export function RoomPanel({
               alt=""
               className={`h-10 w-10 shrink-0 transition-all duration-200 ${
                 room.station
-                  ? "opacity-100 drop-shadow-[0_0_6px_rgba(212,175,55,0.5)]"
+                  ? "opacity-100 drop-shadow-[var(--glow-aurum-drop)]"
                   : "opacity-30 grayscale"
               }`}
             />
@@ -845,7 +845,7 @@ export function RoomPanel({
                   alt=""
                   className={`h-10 w-10 shrink-0 transition-all duration-200 ${
                     active
-                      ? "opacity-100 drop-shadow-[0_0_6px_rgba(212,175,55,0.5)]"
+                      ? "opacity-100 drop-shadow-[var(--glow-aurum-drop)]"
                       : "opacity-30 grayscale group-hover:opacity-50 group-hover:grayscale-[50%]"
                   }`}
                 />
@@ -871,7 +871,7 @@ export function RoomPanel({
         actions={<IconButton onClick={handleAddMob} title="Add mob">+</IconButton>}
       >
         {mobs.length === 0 ? (
-          <p className="rounded-lg border border-dashed border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] px-3 py-2 text-center text-xs italic text-text-muted">No mobs in this room</p>
+          <p className="empty-placeholder">No mobs in this room</p>
         ) : (
           <ul className="flex flex-col gap-0.5">
             {mobs.map(([id, mob]) => (
@@ -901,7 +901,7 @@ export function RoomPanel({
         actions={<IconButton onClick={handleAddItem} title="Add item">+</IconButton>}
       >
         {items.length === 0 ? (
-          <p className="rounded-lg border border-dashed border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] px-3 py-2 text-center text-xs italic text-text-muted">No items in this room</p>
+          <p className="empty-placeholder">No items in this room</p>
         ) : (
           <ul className="flex flex-col gap-0.5">
             {items.map(([id, item]) => (
@@ -956,7 +956,7 @@ export function RoomPanel({
         }
       >
         {shops.length + trainers.length + gatheringNodes.length === 0 ? (
-          <p className="rounded-lg border border-dashed border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] px-3 py-2 text-center text-xs italic text-text-muted">No service entities in this room</p>
+          <p className="empty-placeholder">No service entities in this room</p>
         ) : (
           <div className="flex flex-col gap-3">
             <div>
@@ -1050,7 +1050,7 @@ export function RoomPanel({
       {/* Quests */}
       <Section title={`Quests (${quests.length})`} defaultExpanded={false}>
         {quests.length === 0 ? (
-          <p className="rounded-lg border border-dashed border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] px-3 py-2 text-center text-xs italic text-text-muted">No quests from this room</p>
+          <p className="empty-placeholder">No quests from this room</p>
         ) : (
           <ul className="flex flex-col gap-0.5">
             {quests.map(([id, quest]) => (
@@ -1095,7 +1095,7 @@ export function RoomPanel({
         }
       >
         {puzzles.length === 0 ? (
-          <p className="rounded-lg border border-dashed border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] px-3 py-2 text-center text-xs italic text-text-muted">No puzzles in this room</p>
+          <p className="empty-placeholder">No puzzles in this room</p>
         ) : (
           <ul className="flex flex-col gap-0.5">
             {puzzles.map(([id, puzzle]) => (

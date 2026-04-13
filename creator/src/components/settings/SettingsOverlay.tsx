@@ -64,7 +64,7 @@ export function SettingsOverlay({ onClose }: SettingsOverlayProps) {
       onClick={onClose}
     >
       <div
-        className="panel-surface relative flex h-full max-h-[min(900px,92vh)] w-full max-w-6xl flex-col overflow-hidden rounded-3xl border border-accent/30 bg-bg-primary shadow-[0_30px_120px_rgba(0,0,0,0.75)]"
+        className="panel-surface relative flex h-full max-h-[min(900px,92vh)] w-full max-w-6xl flex-col overflow-hidden rounded-3xl border border-accent/30 bg-bg-primary shadow-[var(--shadow-overlay)]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}

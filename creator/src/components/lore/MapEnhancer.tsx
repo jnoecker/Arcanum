@@ -267,7 +267,7 @@ export function MapEnhancer({
           {previewUrl && (
             <div className="rounded-lg border border-accent/20 bg-accent/5 p-3">
               <p className="mb-2 text-xs text-accent">Preview — enhanced region:</p>
-              <img src={previewUrl} alt="Enhanced" className="max-h-64 rounded" />
+              <img src={previewUrl} alt="Enhanced" loading="lazy" className="max-h-64 rounded" />
             </div>
           )}
         </div>

@@ -182,6 +182,7 @@ function SlotEditor({
             }
           }}
           placeholder="#001524"
+          aria-label={`${slot.label} hex code`}
           className="ornate-input flex-1 font-mono text-xs"
           spellCheck={false}
         />

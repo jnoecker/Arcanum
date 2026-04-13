@@ -68,14 +68,14 @@ function ZoneRegionPreview({
               width: `${rect.width}%`,
               height: `${rect.height}%`,
               borderColor: active
-                ? "rgba(242, 208, 135, 0.95)"
-                : "rgba(216, 181, 106, 0.7)",
+                ? "rgb(var(--aurum-rgb) / 0.95)"
+                : "rgb(var(--aurum-rgb) / 0.70)",
               background: active
-                ? "linear-gradient(180deg, rgba(232, 189, 98, 0.22), rgba(150, 102, 35, 0.16))"
-                : "linear-gradient(180deg, rgba(184, 130, 50, 0.16), rgba(84, 53, 14, 0.12))",
+                ? "linear-gradient(180deg, rgb(var(--aurum-rgb) / 0.22), rgb(var(--aurum-rgb) / 0.10))"
+                : "linear-gradient(180deg, rgb(var(--aurum-rgb) / 0.12), rgb(var(--aurum-rgb) / 0.06))",
               boxShadow: active
-                ? "0 0 0 1px rgba(242, 208, 135, 0.18), inset 0 0 0 1px rgba(255,255,255,0.08)"
-                : "inset 0 0 0 1px rgba(255,255,255,0.04)",
+                ? "0 0 0 1px rgb(var(--aurum-rgb) / 0.18), inset 0 0 0 1px rgb(var(--text-rgb) / 0.08)"
+                : "inset 0 0 0 1px rgb(var(--text-rgb) / 0.04)",
             }}
             title={plan.name}
             onClick={() => onSelect(plan.id)}

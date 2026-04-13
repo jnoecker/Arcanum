@@ -209,6 +209,7 @@ export function EntityOverlay({
         <img
           src={src}
           alt={entityName}
+          loading="lazy"
           className="w-full h-auto object-contain pointer-events-none"
           draggable={false}
         />

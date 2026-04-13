@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useLoreStore } from "@/stores/loreStore";
 import { getAllSceneTemplates } from "@/lib/sceneTemplates";
@@ -68,9 +68,26 @@ export function SceneContextMenu({
   onClose,
 }: SceneContextMenuProps) {
   const menuRef = useRef<HTMLDivElement>(null);
+  const submenuRef = useRef<HTMLDivElement>(null);
+  const templateTriggerRef = useRef<HTMLButtonElement>(null);
   const [showTemplateSubmenu, setShowTemplateSubmenu] = useState(false);
   const customTemplates = useLoreStore((s) => s.lore?.customSceneTemplates);
   const templates = getAllSceneTemplates(customTemplates);
+
+  const getMenuItems = useCallback(
+    (container: HTMLElement | null): HTMLElement[] => {
+      if (!container) return [];
+      return Array.from(
+        container.querySelectorAll<HTMLElement>("[role='menuitem']"),
+      );
+    },
+    [],
+  );
+
+  const focusItem = useCallback((items: HTMLElement[], index: number) => {
+    const clamped = Math.max(0, Math.min(index, items.length - 1));
+    items[clamped]?.focus();
+  }, []);
 
   // Dismiss on outside click or Escape
   useEffect(() => {
@@ -81,7 +98,13 @@ export function SceneContextMenu({
     }
     function handleKeyDown(e: KeyboardEvent) {
       if (e.key === "Escape") {
-        onClose();
+        if (showTemplateSubmenu) {
+          setShowTemplateSubmenu(false);
+          templateTriggerRef.current?.focus();
+          e.stopPropagation();
+        } else {
+          onClose();
+        }
       }
     }
     document.addEventListener("mousedown", handleMouseDown);
@@ -90,26 +113,108 @@ export function SceneContextMenu({
       document.removeEventListener("mousedown", handleMouseDown);
       document.removeEventListener("keydown", handleKeyDown);
     };
-  }, [onClose]);
+  }, [onClose, showTemplateSubmenu]);
 
-  // Focus on mount
+  // Focus first menu item on mount
   useEffect(() => {
-    menuRef.current?.focus();
-  }, []);
+    const items = getMenuItems(menuRef.current);
+    const first = items[0];
+    if (first) {
+      first.focus();
+    } else {
+      menuRef.current?.focus();
+    }
+  }, [getMenuItems]);
+
+  // Focus first submenu item when submenu opens via keyboard
+  useEffect(() => {
+    if (showTemplateSubmenu && submenuRef.current) {
+      const items = getMenuItems(submenuRef.current);
+      const first = items[0];
+      if (first) {
+        requestAnimationFrame(() => first.focus());
+      }
+    }
+  }, [showTemplateSubmenu, getMenuItems]);
+
+  const handleMenuKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      const container = menuRef.current;
+      if (!container) return;
+
+      if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+        e.preventDefault();
+        const items = getMenuItems(container);
+        const currentIndex = items.indexOf(e.target as HTMLElement);
+        if (e.key === "ArrowDown") {
+          focusItem(items, currentIndex < items.length - 1 ? currentIndex + 1 : 0);
+        } else {
+          focusItem(items, currentIndex > 0 ? currentIndex - 1 : items.length - 1);
+        }
+      }
+
+      if (e.key === "ArrowRight") {
+        if (e.target === templateTriggerRef.current) {
+          e.preventDefault();
+          setShowTemplateSubmenu(true);
+        }
+      }
+
+      if (e.key === "ArrowLeft") {
+        if (showTemplateSubmenu) {
+          e.preventDefault();
+          setShowTemplateSubmenu(false);
+          templateTriggerRef.current?.focus();
+        }
+      }
+    },
+    [getMenuItems, focusItem, showTemplateSubmenu],
+  );
+
+  const handleSubmenuKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      const container = submenuRef.current;
+      if (!container) return;
+
+      if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+        e.preventDefault();
+        e.stopPropagation();
+        const items = getMenuItems(container);
+        const currentIndex = items.indexOf(e.target as HTMLElement);
+        if (e.key === "ArrowDown") {
+          focusItem(items, currentIndex < items.length - 1 ? currentIndex + 1 : 0);
+        } else {
+          focusItem(items, currentIndex > 0 ? currentIndex - 1 : items.length - 1);
+        }
+      }
+
+      if (e.key === "ArrowLeft" || e.key === "Escape") {
+        e.preventDefault();
+        e.stopPropagation();
+        setShowTemplateSubmenu(false);
+        templateTriggerRef.current?.focus();
+      }
+    },
+    [getMenuItems, focusItem],
+  );
 
   const menuItemClass =
-    "w-full px-3 py-2 flex items-center gap-2 text-2xs text-text-primary hover:bg-bg-hover transition-colors duration-[160ms] text-left";
+    "w-full px-3 py-2 flex items-center gap-2 text-2xs text-text-primary hover:bg-bg-hover focus:bg-bg-hover transition-colors duration-[160ms] text-left outline-none";
 
   return createPortal(
     <div
       ref={menuRef}
+      role="menu"
       tabIndex={-1}
       className="animate-unfurl-in bg-bg-elevated border border-border-default rounded-lg min-w-[180px] py-1 shadow-[var(--shadow-panel)] outline-none"
       style={{ position: "fixed", left: x, top: y, zIndex: 60 }}
+      onKeyDown={handleMenuKeyDown}
     >
       {/* Duplicate Scene */}
       <button
         type="button"
+        role="menuitem"
+        tabIndex={-1}
         className={menuItemClass}
         onClick={() => {
           onDuplicate(sceneId);
@@ -126,7 +231,22 @@ export function SceneContextMenu({
         onMouseEnter={() => setShowTemplateSubmenu(true)}
         onMouseLeave={() => setShowTemplateSubmenu(false)}
       >
-        <button type="button" className={menuItemClass}>
+        <button
+          ref={templateTriggerRef}
+          type="button"
+          role="menuitem"
+          tabIndex={-1}
+          aria-haspopup="true"
+          aria-expanded={showTemplateSubmenu}
+          className={menuItemClass}
+          onFocus={() => setShowTemplateSubmenu(true)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " " || e.key === "ArrowRight") {
+              e.preventDefault();
+              setShowTemplateSubmenu(true);
+            }
+          }}
+        >
           <SparkleIcon />
           Apply Template
           <span className="ml-auto text-text-muted">&#x25B8;</span>
@@ -134,13 +254,19 @@ export function SceneContextMenu({
 
         {showTemplateSubmenu && (
           <div
+            ref={submenuRef}
+            role="menu"
+            aria-label="Template options"
             className="absolute left-full top-0 bg-bg-elevated border border-border-default rounded-lg min-w-[180px] py-1 shadow-[var(--shadow-panel)]"
             style={{ zIndex: 61 }}
+            onKeyDown={handleSubmenuKeyDown}
           >
             {templates.map((tpl) => (
               <button
                 key={tpl.id}
                 type="button"
+                role="menuitem"
+                tabIndex={-1}
                 className={menuItemClass}
                 onClick={() => {
                   onApplyTemplate(sceneId, tpl.id);
@@ -165,6 +291,8 @@ export function SceneContextMenu({
                 <div className="border-t border-border-muted my-1" />
                 <button
                   type="button"
+                  role="menuitem"
+                  tabIndex={-1}
                   className={`${menuItemClass} text-text-muted`}
                   onClick={() => {
                     onClearTemplate(sceneId);
@@ -185,6 +313,8 @@ export function SceneContextMenu({
       {/* Delete Scene */}
       <button
         type="button"
+        role="menuitem"
+        tabIndex={-1}
         className={`${menuItemClass} text-status-danger`}
         onClick={() => {
           onDelete(sceneId);

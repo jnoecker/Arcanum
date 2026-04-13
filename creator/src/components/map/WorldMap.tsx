@@ -78,7 +78,7 @@ export function WorldMap() {
           src={MAIN_VIEW_IMAGE}
           alt=""
           draggable={false}
-          className="pointer-events-none absolute inset-0 h-full w-full select-none rounded-3xl shadow-[0_0_60px_rgba(0,0,0,0.6)] transition-[filter] duration-300"
+          className="pointer-events-none absolute inset-0 h-full w-full select-none rounded-3xl shadow-[var(--shadow-vignette)] transition-[filter] duration-300"
           style={{
             filter: hovered && !calibrating ? "brightness(0.55) saturate(0.85)" : "brightness(1)",
           }}
@@ -119,7 +119,7 @@ export function WorldMap() {
         {/* Floating title card */}
         {!calibrating && (
           <div
-            className={`pointer-events-none absolute left-1/2 top-6 -translate-x-1/2 select-none rounded-2xl border border-accent/40 bg-bg-abyss/90 px-6 py-3 text-center shadow-[0_10px_48px_rgba(0,0,0,0.6)] transition-all duration-300 ${
+            className={`pointer-events-none absolute left-1/2 top-6 -translate-x-1/2 select-none rounded-2xl border border-accent/40 bg-bg-abyss/90 px-6 py-3 text-center shadow-[var(--shadow-dialog)] transition-all duration-300 ${
               hoveredDef ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-2"
             }`}
           >

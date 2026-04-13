@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { memo, useCallback, useMemo, useState } from "react";
 import type { FeatureFile, WorldFile } from "@/types/world";
 import {
   CONTAINER_STATES,
@@ -65,7 +65,7 @@ export function RoomFeaturesEditor({ world, roomId, onWorldChange }: RoomFeature
         ))}
       </div>
       {features.length === 0 ? (
-        <p className="rounded-lg border border-dashed border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] px-3 py-2 text-center text-xs italic text-text-muted">
+        <p className="empty-placeholder">
           No features in this room
         </p>
       ) : (
@@ -105,7 +105,7 @@ interface FeatureRowProps {
   onWorldChange: (world: WorldFile) => void;
 }
 
-function FeatureRow({
+const FeatureRow = memo(function FeatureRow({
   world,
   roomId,
   featureId,
@@ -239,7 +239,7 @@ function FeatureRow({
       </div>
     </div>
   );
-}
+});
 
 interface ContainerFieldsProps {
   world: WorldFile;

@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useState, memo } from "react";
 import type { WorldFile, ItemFile, ItemOnUse } from "@/types/world";
 import { updateItem, deleteItem } from "@/lib/zoneEdits";
 import { useEntityEditor } from "@/lib/useEntityEditor";
@@ -271,7 +271,7 @@ export function ItemEditor({
   );
 }
 
-function AddStatRow({
+const AddStatRow = memo(function AddStatRow({
   existingStats,
   onAdd,
 }: {
@@ -329,4 +329,4 @@ function AddStatRow({
       + Add Stat Bonus
     </button>
   );
-}
+});

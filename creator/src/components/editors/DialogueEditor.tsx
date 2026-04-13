@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { memo, useCallback, useState } from "react";
 import type {
   WorldFile,
   DialogueNodeFile,
@@ -353,7 +353,7 @@ interface ChoiceRowProps {
   onDelete: () => void;
 }
 
-function ChoiceRow({ choice, nextOptions, onUpdate, onDelete }: ChoiceRowProps) {
+const ChoiceRow = memo(function ChoiceRow({ choice, nextOptions, onUpdate, onDelete }: ChoiceRowProps) {
   const [expanded, setExpanded] = useState(false);
   const hasConditions =
     choice.minLevel != null ||
@@ -432,7 +432,7 @@ function ChoiceRow({ choice, nextOptions, onUpdate, onDelete }: ChoiceRowProps) 
       )}
     </div>
   );
-}
+});
 
 // ─── Inline node ID label (click to rename) ─────────────────────────
 

@@ -150,7 +150,7 @@ function InfoBadge({ d }: { d: RoomNodeData }) {
         {d.isStartRoom && (
           <span className="text-accent text-2xs" title="Start room" aria-label="Start room">★</span>
         )}
-        <span className="truncate text-2xs font-semibold text-text-primary drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
+        <span className="truncate text-2xs font-semibold text-text-primary drop-shadow-[var(--shadow-text-strong)]">
           {d.title}
         </span>
       </div>

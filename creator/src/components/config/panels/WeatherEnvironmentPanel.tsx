@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo, useEffect } from "react";
+import { useState, useCallback, useMemo, useEffect, memo } from "react";
 import type { ConfigPanelProps, AppConfig } from "./types";
 import type {
   WeatherTypeDefinition,
@@ -94,7 +94,7 @@ function ColorField({
 
 // ─── Mote color row ──────────────────────────────────────────────
 
-function MoteColorRow({
+const MoteColorRow = memo(function MoteColorRow({
   mote,
   index,
   onChange,
@@ -131,7 +131,7 @@ function MoteColorRow({
       </IconButton>
     </div>
   );
-}
+});
 
 // ─── Main panel ──────────────────────────────────────────────────
 

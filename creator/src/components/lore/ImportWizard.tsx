@@ -161,7 +161,7 @@ export function ImportWizard({ onClose }: { onClose: () => void }) {
         role="dialog"
         aria-modal="true"
         aria-label="Import Markdown files"
-        className="relative flex w-full max-w-2xl max-h-[80vh] flex-col overflow-hidden rounded-2xl border border-[var(--chrome-stroke)] bg-bg-primary shadow-[0_24px_80px_rgba(8,10,18,0.6)]"
+        className="relative flex w-full max-w-2xl max-h-[80vh] flex-col overflow-hidden rounded-2xl border border-[var(--chrome-stroke)] bg-bg-primary shadow-[var(--shadow-dialog)]"
       >
         {/* Header */}
         <div className="shrink-0 border-b border-[var(--chrome-stroke)] px-6 py-4">

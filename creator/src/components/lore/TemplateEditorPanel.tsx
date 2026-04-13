@@ -1,13 +1,9 @@
 import { useState } from "react";
 import { useLoreStore } from "@/stores/loreStore";
-import { TEMPLATE_SCHEMAS } from "@/lib/loreTemplates";
+import { TEMPLATE_SCHEMAS, CUSTOM_TEMPLATE_COLORS } from "@/lib/loreTemplates";
 import type { CustomTemplateDefinition, CustomFieldDef } from "@/types/lore";
 import { Section, ActionButton } from "@/components/ui/FormWidgets";
 
-const TEMPLATE_COLORS = [
-  "#ff7d00", "#15616d", "#ffecd1", "#78290f", "#ffb86b",
-  "#2f93a1", "#c0622a", "#ad9d88", "#7cb66d", "#d88c3a",
-];
 
 function generateId(name: string): string {
   return name
@@ -97,7 +93,7 @@ function TemplateForm({
       id: "",
       displayName: "",
       pluralName: "",
-      color: TEMPLATE_COLORS[Math.floor(Math.random() * TEMPLATE_COLORS.length)] ?? "#ff7d00",
+      color: CUSTOM_TEMPLATE_COLORS[Math.floor(Math.random() * CUSTOM_TEMPLATE_COLORS.length)] ?? "#ff7d00",
       fields: [],
     },
   );

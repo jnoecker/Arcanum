@@ -258,7 +258,7 @@ export function SpriteScaffold({ onClose, onComplete }: SpriteScaffoldProps) {
 
   if (!config || !gaps) {
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--chrome-fill-soft)]">
+      <div className="modal-overlay">
         <div className="rounded-lg border border-border-default bg-bg-secondary p-6 text-sm text-text-secondary">
           No config loaded.
         </div>
@@ -280,7 +280,7 @@ export function SpriteScaffold({ onClose, onComplete }: SpriteScaffoldProps) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--chrome-fill-soft)]"
+      className="modal-overlay"
       onClick={phase === "running" ? undefined : onClose}
     >
       <div

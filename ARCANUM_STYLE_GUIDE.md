@@ -93,7 +93,7 @@ The canonical palette is the midnight / tide-teal / parchment / ember / umber sy
 | Name | Hex | Use | Token |
 |---|---|---|---|
 | Tide Teal | `#15616d` | Structural chrome, surfaces, selectors | `--color-arcane-teal` |
-| Bright Current | `#2f93a1` | Info states, links, charts, selected items | `--color-stellar-blue` |
+| Bright Current | `#35a1b0` | Info states, links, charts, selected items | `--color-stellar-blue` |
 | Weathered Copper | `#c0622a` | Secondary warm structure, category accents | `--color-violet` (legacy name) |
 
 ### Warm accents — the creative force
@@ -132,7 +132,7 @@ The canonical palette is the midnight / tide-teal / parchment / ember / umber sy
 | Server error | Void Crimson | `#d9756b` | `--color-server-error` | Slow low-frequency pulse |
 | Success | Moss Signal | `#7cb66d` | `--color-status-success` | Muted green, readable on dark chrome |
 | Warning | Ember Warning | `#ff9d3d` | `--color-status-warning` | Urgent without reading as destructive |
-| Info | Bright Current | `#2f93a1` | `--color-status-info` | Informational, structural |
+| Info | Bright Current | `#35a1b0` | `--color-status-info` | Informational, structural |
 | Error / Destructive | Void Crimson | `#d9756b` | `--color-status-error` | Delete, force-stop, irreversible |
 
 ### Opacity guidelines

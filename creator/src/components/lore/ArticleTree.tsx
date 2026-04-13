@@ -1,4 +1,4 @@
-import { useMemo, useState, useCallback, useRef, useEffect } from "react";
+import { memo, useMemo, useState, useCallback, useRef, useEffect } from "react";
 import { Tree, type NodeRendererProps, type TreeApi } from "react-arborist";
 import { useLoreStore, selectArticles } from "@/stores/loreStore";
 import { useProjectStore } from "@/stores/projectStore";
@@ -59,7 +59,7 @@ function buildTree(articles: Record<string, Article>): TreeNode[] {
 
 // Node renderer
 
-function Node({ node, style, dragHandle }: NodeRendererProps<TreeNode>) {
+const Node = memo(function Node({ node, style, dragHandle }: NodeRendererProps<TreeNode>) {
   const selectedArticleId = useLoreStore((s) => s.selectedArticleId);
   const selectArticle = useLoreStore((s) => s.selectArticle);
   const selectedArticleIds = useLoreStore((s) => s.selectedArticleIds);
@@ -160,7 +160,7 @@ function Node({ node, style, dragHandle }: NodeRendererProps<TreeNode>) {
       {node.data.draft && <span className="shrink-0 text-[9px] text-text-muted uppercase">draft</span>}
     </div>
   );
-}
+});
 
 // Main component
 

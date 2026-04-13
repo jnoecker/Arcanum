@@ -196,7 +196,7 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
         role="dialog"
         aria-modal="true"
         aria-label="Command palette"
-        className="relative w-full max-w-lg rounded-2xl border border-[var(--chrome-stroke)] bg-bg-primary shadow-[0_24px_80px_rgba(8,10,18,0.6)]"
+        className="relative w-full max-w-lg rounded-2xl border border-[var(--chrome-stroke)] bg-bg-primary shadow-[var(--shadow-dialog)]"
         onClick={(e) => e.stopPropagation()}
       >
         <input

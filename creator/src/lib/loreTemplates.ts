@@ -1,5 +1,11 @@
 import type { ArticleTemplate, CustomTemplateDefinition } from "@/types/lore";
 
+/** Color palette for custom template badge pickers — references design token hex values. */
+export const CUSTOM_TEMPLATE_COLORS = [
+  "#ff7d00", "#15616d", "#ffecd1", "#78290f", "#ffb86b",
+  "#35a1b0", "#c0622a", "#ad9d88", "#7cb66d", "#d88c3a",
+];
+
 // ─── Template field definitions ─────────────────────────────────────
 
 export interface TemplateFieldDef {

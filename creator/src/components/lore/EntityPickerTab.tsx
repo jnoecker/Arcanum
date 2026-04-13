@@ -33,6 +33,7 @@ function EntityThumb({
       <img
         src={src}
         alt=""
+        loading="lazy"
         className="h-8 w-8 rounded object-cover shrink-0"
         draggable={false}
       />

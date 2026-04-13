@@ -231,13 +231,20 @@ export function WorldbuilderImportWizard({ onClose }: { onClose: () => void }) {
 
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-surface-scrim" onClick={onClose} />
+      <div
+        className="absolute inset-0 bg-surface-scrim"
+        onClick={onClose}
+        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") onClose(); }}
+        role="button"
+        aria-label="Close dialog"
+        tabIndex={0}
+      />
       <div
         ref={trapRef}
         role="dialog"
         aria-modal="true"
         aria-label="Import from worldbuilder"
-        className="relative flex w-full max-w-3xl max-h-[85vh] flex-col overflow-hidden rounded-2xl border border-[var(--chrome-stroke)] bg-bg-primary shadow-[0_24px_80px_rgba(8,10,18,0.6)]"
+        className="relative flex w-full max-w-3xl max-h-[85vh] flex-col overflow-hidden rounded-2xl border border-[var(--chrome-stroke)] bg-bg-primary shadow-[var(--shadow-dialog)]"
       >
         {/* Header */}
         <div className="shrink-0 border-b border-[var(--chrome-stroke)] px-6 py-4">

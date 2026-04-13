@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { memo, useState } from "react";
 import { useAdminStore } from "@/stores/adminStore";
 import { Badge, EmptyState } from "@/components/ui/FormWidgets";
 import type { PlayerSummary } from "@/types/admin";
@@ -28,7 +28,7 @@ function HpBar({ hp, maxHp }: { hp: number; maxHp: number }) {
   );
 }
 
-function PlayerRow({
+const PlayerRow = memo(function PlayerRow({
   player,
   onSelect,
 }: {
@@ -38,7 +38,7 @@ function PlayerRow({
   return (
     <button
       onClick={() => onSelect(player.name)}
-      className="flex w-full items-center gap-3 rounded-2xl border border-[var(--chrome-stroke)] bg-[var(--chrome-highlight)] px-4 py-3 text-left transition-colors duration-200 hover:border-accent/20 hover:bg-accent/[0.04] hover:shadow-[inset_3px_0_0_var(--color-accent)] focus-visible:ring-2 focus-visible:ring-border-active focus-visible:outline-none"
+      className="admin-list-item"
     >
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
@@ -61,7 +61,7 @@ function PlayerRow({
       </div>
     </button>
   );
-}
+});
 
 export function AdminPlayerList() {
   const players = useAdminStore((s) => s.players);
@@ -114,6 +114,7 @@ export function AdminPlayerList() {
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           placeholder="Search by name (online or offline)..."
+          aria-label="Search players"
           className="h-9 min-w-0 flex-1 rounded-xl border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] px-3 text-sm text-text-primary placeholder:text-text-muted focus:border-border-active focus:outline-none focus-visible:ring-2 focus-visible:ring-border-active"
         />
         <button

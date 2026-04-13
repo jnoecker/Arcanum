@@ -40,7 +40,7 @@ export function SearchFilterBar() {
         onChange={(e) => setLocalQuery(e.target.value)}
         placeholder="Search parameters..."
         aria-label="Search tuning parameters"
-        className="ornate-input min-h-11 min-w-[16rem] flex-1 px-3 py-2 text-[15px] text-text-primary"
+        className="ornate-input min-h-11 min-w-[12rem] flex-1 px-3 py-2 text-[15px] text-text-primary"
       />
 
       {/* Section filter chips */}

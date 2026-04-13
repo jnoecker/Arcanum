@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useState, memo } from "react";
 import { useConfigStore } from "@/stores/configStore";
 import type { FactionConfig, FactionDefinition } from "@/types/config";
 import {
@@ -758,7 +758,7 @@ interface QuestRewardRowProps {
   onDelete: () => void;
 }
 
-function QuestRewardRow({
+const QuestRewardRow = memo(function QuestRewardRow({
   questId,
   rewards,
   factionOptions,
@@ -896,4 +896,4 @@ function QuestRewardRow({
       )}
     </div>
   );
-}
+});

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import type {
   WorldFile,
   DungeonFile,
@@ -193,7 +193,7 @@ function HeroImage({ image }: { image: string | undefined }) {
   return (
     <div className="relative mb-3 aspect-[16/9] overflow-hidden rounded border border-border-muted bg-bg-primary/40">
       {src ? (
-        <img src={src} alt="" className="absolute inset-0 h-full w-full object-cover" />
+        <img src={src} alt="" loading="lazy" className="absolute inset-0 h-full w-full object-cover" />
       ) : (
         <div className="flex h-full w-full flex-col items-center justify-center gap-2 text-text-muted">
           <ImageIcon />
@@ -485,7 +485,7 @@ function RoomTemplatesEditor({
   );
 }
 
-function RoomTemplateRow({
+const RoomTemplateRow = memo(function RoomTemplateRow({
   zoneId,
   dungeon,
   category,
@@ -512,7 +512,7 @@ function RoomTemplateRow({
     <div className="flex items-start gap-2 rounded border border-border-muted/60 bg-[var(--chrome-fill-soft)] px-2 py-2">
       <div className="relative h-16 w-24 shrink-0 overflow-hidden rounded border border-border-muted/60 bg-bg-primary/40">
         {src ? (
-          <img src={src} alt="" className="absolute inset-0 h-full w-full object-cover" />
+          <img src={src} alt="" loading="lazy" className="absolute inset-0 h-full w-full object-cover" />
         ) : (
           <div className="flex h-full w-full items-center justify-center text-text-muted">
             <ImageIcon />
@@ -566,7 +566,7 @@ function RoomTemplateRow({
       <IconButton title="Remove" onClick={onRemove}>&times;</IconButton>
     </div>
   );
-}
+});
 
 // ─── Mob pool sub-editor ──────────────────────────────────────────
 

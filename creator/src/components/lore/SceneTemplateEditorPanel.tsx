@@ -6,13 +6,9 @@ import { useState, useCallback } from "react";
 import { useLoreStore } from "@/stores/loreStore";
 import { SCENE_TEMPLATE_PRESETS } from "@/lib/sceneTemplates";
 import { plainTextToTiptap, tiptapToPlainText } from "@/lib/loreRelations";
+import { CUSTOM_TEMPLATE_COLORS } from "@/lib/loreTemplates";
 import { Section, ActionButton } from "@/components/ui/FormWidgets";
 import type { CustomSceneTemplate } from "@/types/lore";
-
-const TEMPLATE_COLORS = [
-  "#ff7d00", "#15616d", "#ffecd1", "#78290f", "#ffb86b",
-  "#2f93a1", "#c0622a", "#ad9d88", "#7cb66d", "#d88c3a",
-];
 
 // Stable empty fallback so the selector below doesn't return a fresh array
 // every render and trigger an infinite re-render via useSyncExternalStore.
@@ -30,7 +26,7 @@ function emptyTemplate(): CustomSceneTemplate {
   return {
     id: `scene_tpl_${Date.now()}`,
     label: "",
-    badgeColor: TEMPLATE_COLORS[0]!,
+    badgeColor: CUSTOM_TEMPLATE_COLORS[0]!,
     defaultTitle: "",
     defaultNarration: JSON.stringify({
       type: "doc",
@@ -124,7 +120,7 @@ function TemplateEditor({
             Badge color
           </label>
           <div className="flex flex-wrap gap-1">
-            {TEMPLATE_COLORS.map((c) => (
+            {CUSTOM_TEMPLATE_COLORS.map((c) => (
               <button
                 key={c}
                 type="button"

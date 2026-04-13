@@ -723,7 +723,7 @@ export function AbilityStudio() {
               <div className="flex gap-5">
                 <div className="flex shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-[var(--chrome-stroke)] bg-gradient-panel p-3" style={{ width: "10rem", height: "10rem" }}>
                   {selectedSrc ? (
-                    <img src={selectedSrc} alt={selectedTarget.label} className="max-h-full max-w-full rounded-xl object-contain shadow-section" />
+                    <img src={selectedSrc} alt={selectedTarget.label} loading="lazy" className="max-h-full max-w-full rounded-xl object-contain shadow-section" />
                   ) : (
                     <div className="text-center text-xs text-text-muted">No icon yet</div>
                   )}

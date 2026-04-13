@@ -463,7 +463,7 @@ export function Sidebar() {
   );
 
   return (
-    <aside className="relative flex min-h-0 w-full shrink-0 flex-col overflow-hidden rounded-3xl border border-[var(--chrome-stroke)] bg-gradient-panel shadow-panel lg:w-[23rem]">
+    <nav aria-label="Main navigation" className="relative flex min-h-0 w-full shrink-0 flex-col overflow-hidden rounded-3xl border border-[var(--chrome-stroke)] bg-gradient-panel shadow-panel lg:w-[clamp(16rem,22vw,23rem)]">
       <CosmicBackdrop variant="panel" className="opacity-90" />
       <div className="pointer-events-none absolute inset-x-0 top-0 h-48 bg-gradient-glow-top" />
 
@@ -593,6 +593,6 @@ export function Sidebar() {
           onCancel={() => setDeleteTarget(null)}
         />
       )}
-    </aside>
+    </nav>
   );
 }

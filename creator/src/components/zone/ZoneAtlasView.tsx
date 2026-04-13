@@ -46,7 +46,7 @@ interface ZoneGroupData extends Record<string, unknown> {
 function ZoneGroupNode({ data }: { data: ZoneGroupData }) {
   return (
     <div className="group relative h-full w-full cursor-grab rounded-2xl border border-dashed border-accent/25 bg-accent/[0.035] backdrop-blur-[2px] transition-colors hover:border-accent/55 hover:bg-accent/[0.08] active:cursor-grabbing">
-      <div className="pointer-events-none absolute left-4 top-4 flex select-none items-start gap-3 rounded-xl border border-accent/40 bg-bg-abyss/90 px-4 py-2 shadow-[0_8px_28px_rgba(0,0,0,0.55)]">
+      <div className="pointer-events-none absolute left-4 top-4 flex select-none items-start gap-3 rounded-xl border border-accent/40 bg-bg-abyss/90 px-4 py-2 shadow-[var(--shadow-drop)]">
         <div>
           <div className="font-display text-base uppercase tracking-[0.28em] text-accent">
             {data.zone}

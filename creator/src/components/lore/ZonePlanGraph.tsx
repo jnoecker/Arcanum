@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { memo, useMemo } from "react";
 import {
   ReactFlow,
   Background,
@@ -27,7 +27,7 @@ interface ZoneNodeData {
   [key: string]: unknown;
 }
 
-function ZonePlanNode({ data }: NodeProps) {
+const ZonePlanNode = memo(function ZonePlanNode({ data }: NodeProps) {
   const d = data as ZoneNodeData;
   const accent = "var(--color-template-location)";
   const active = d.selected || d.hovered;
@@ -51,7 +51,7 @@ function ZonePlanNode({ data }: NodeProps) {
           maxWidth: NODE_WIDTH,
           backdropFilter: "blur(8px)",
           boxShadow: active
-            ? "0 0 0 1px rgba(255, 215, 140, 0.2), 0 12px 30px rgba(0, 0, 0, 0.28)"
+            ? "0 0 0 1px rgb(var(--aurum-rgb) / 0.2), 0 12px 30px rgb(var(--shadow-rgb) / 0.28)"
             : undefined,
         }}
       >
@@ -71,7 +71,7 @@ function ZonePlanNode({ data }: NodeProps) {
       />
     </>
   );
-}
+});
 
 const nodeTypes: NodeTypes = {
   zonePlanNode: ZonePlanNode,
@@ -183,7 +183,7 @@ export function ZonePlanGraph({
           onPaneClick={() => onSelect(null)}
           proOptions={{ hideAttribution: true }}
         >
-          <Background variant={BackgroundVariant.Dots} gap={18} size={1} color="rgba(255,255,255,0.05)" />
+          <Background variant={BackgroundVariant.Dots} gap={18} size={1} color="var(--graph-dot-color)" />
           <Controls showInteractive={false} />
         </ReactFlow>
       </ReactFlowProvider>

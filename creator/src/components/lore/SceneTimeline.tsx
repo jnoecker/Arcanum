@@ -204,12 +204,12 @@ export function SceneTimeline({
     <div className="relative rounded-xl panel-surface-light min-h-[120px]">
       {/* Scroll fade indicators */}
       <div
-        className={`absolute left-0 top-0 bottom-0 w-6 bg-gradient-to-r from-[rgba(8,12,28,0.14)] to-transparent pointer-events-none z-[1] transition-opacity duration-150 ${
+        className={`absolute left-0 top-0 bottom-0 w-6 bg-gradient-to-r from-[var(--bg-fade-edge)] to-transparent pointer-events-none z-[1] transition-opacity duration-150 ${
           canScrollLeft ? "opacity-100" : "opacity-0"
         }`}
       />
       <div
-        className={`absolute right-0 top-0 bottom-0 w-6 bg-gradient-to-l from-[rgba(8,12,28,0.14)] to-transparent pointer-events-none z-[1] transition-opacity duration-150 ${
+        className={`absolute right-0 top-0 bottom-0 w-6 bg-gradient-to-l from-[var(--bg-fade-edge)] to-transparent pointer-events-none z-[1] transition-opacity duration-150 ${
           canScrollRight ? "opacity-100" : "opacity-0"
         }`}
       />

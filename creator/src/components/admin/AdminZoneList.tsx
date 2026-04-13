@@ -1,9 +1,10 @@
+import { memo } from "react";
 import { useAdminStore } from "@/stores/adminStore";
 import { EmptyState } from "@/components/ui/FormWidgets";
 import type { ZoneSummary } from "@/types/admin";
 import { AdminZoneDetail } from "./AdminZoneDetail";
 
-function ZoneRow({
+const ZoneRow = memo(function ZoneRow({
   zone,
   onSelect,
 }: {
@@ -37,7 +38,7 @@ function ZoneRow({
       </div>
     </button>
   );
-}
+});
 
 export function AdminZoneList() {
   const zones = useAdminStore((s) => s.zones);

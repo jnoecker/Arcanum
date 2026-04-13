@@ -64,7 +64,7 @@ export function TypewriterNarration({
       initial={prefersReducedMotion ? "visible" : "hidden"}
       animate={playing ? "visible" : "hidden"}
       className="text-[15px] text-text-primary leading-relaxed px-6 py-4"
-      style={{ textShadow: "0 1px 3px rgba(0,0,0,0.5)" }}
+      style={{ textShadow: "var(--shadow-text)" }}
       aria-live="polite"
     >
       {words.map((word, i) => (

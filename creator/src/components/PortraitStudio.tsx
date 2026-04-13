@@ -400,8 +400,8 @@ export function PortraitStudio({ selectedZoneId }: { selectedZoneId: string | nu
             {/* Preview row — wide horizontal card */}
             <div className="rounded-3xl border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] p-4">
               <div className="flex gap-5">
-                <div className="flex shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-[var(--chrome-stroke)] bg-[linear-gradient(180deg,rgba(34,41,60,0.8),rgba(28,34,52,0.88))] p-3" style={{ width: "12rem", height: "16rem" }}>
-                  {selectedSrc ? <img src={selectedSrc} alt={selectedTarget.label} className="max-h-full max-w-full rounded-xl object-contain shadow-section" /> : <div className="text-center text-xs text-text-muted">No portrait yet</div>}
+                <div className="flex shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-[var(--chrome-stroke)] bg-[var(--bg-preview)] p-3" style={{ width: "12rem", height: "16rem" }}>
+                  {selectedSrc ? <img src={selectedSrc} alt={selectedTarget.label} loading="lazy" className="max-h-full max-w-full rounded-xl object-contain shadow-section" /> : <div className="text-center text-xs text-text-muted">No portrait yet</div>}
                 </div>
 
                 <div className="min-w-0 flex-1">

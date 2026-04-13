@@ -28,7 +28,7 @@ function CoverImage({
       className="group relative w-full max-w-[200px] overflow-hidden rounded-xl border border-border-default"
     >
       {src ? (
-        <img src={src} alt="Story cover" className="w-full object-cover" />
+        <img src={src} alt="Story cover" loading="lazy" className="w-full object-cover" />
       ) : (
         <div className="flex h-[140px] w-full items-center justify-center">
           <Spinner />

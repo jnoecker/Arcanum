@@ -2,7 +2,7 @@
 // Single KPI card for one TuningSection. Shows 2-3 curated derived
 // metrics with current vs preset values and delta badges.
 
-import { useMemo } from "react";
+import { useMemo, memo } from "react";
 import { TuningSection } from "@/lib/tuning/types";
 import type { MetricSnapshot } from "@/lib/tuning/types";
 import { pctDelta, deltaDirection, deltaColor } from "@/lib/tuning/deltaUtils";
@@ -44,7 +44,7 @@ interface MetricCardProps {
 
 // ─── MetricRow (internal) ───────────────────────────────────────────
 
-function MetricRow({
+const MetricRow = memo(function MetricRow({
   label,
   current,
   preset,
@@ -88,7 +88,7 @@ function MetricRow({
       </div>
     </div>
   );
-}
+});
 
 // ─── Curated Metrics Per Section ────────────────────────────────────
 

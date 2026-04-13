@@ -749,10 +749,23 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
               </select>
             </label>
           </div>
+
+          {/* Compact zone badge — visible only when the right column is hidden */}
+          <div className="relative z-10 hidden items-center gap-2 border-t border-[var(--chrome-stroke)] pt-1.5 max-[768px]:flex">
+            <span className="min-w-0 truncate font-display text-sm font-semibold uppercase tracking-wide text-text-primary">
+              {zoneState.data.zone}
+            </span>
+            <span className="shrink-0 text-2xs text-text-muted">
+              {roomCount} room{roomCount !== 1 ? "s" : ""}
+            </span>
+            {zoneState.dirty && (
+              <span className="shrink-0 rounded-full bg-warm/15 px-1.5 py-0.5 text-3xs text-warm-pale">modified</span>
+            )}
+          </div>
         </div>
 
         {/* Right column: zone name + room count, vertically centered, spans both rows */}
-        <div className="relative z-10 flex w-[24rem] shrink-0 items-center border-l border-[var(--chrome-stroke)] pl-4 max-[1280px]:w-[18rem] max-[1024px]:w-[14rem] max-[768px]:hidden">
+        <div className="relative z-10 flex w-[clamp(14rem,18vw,24rem)] shrink-0 items-center border-l border-[var(--chrome-stroke)] pl-4 max-[768px]:hidden">
           <div className="flex w-full min-w-0 flex-col items-end gap-1">
             <span className="w-full truncate text-right font-display text-xl font-semibold uppercase leading-none tracking-widest text-text-primary">
               {zoneState.data.zone}

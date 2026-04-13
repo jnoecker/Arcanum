@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { memo, useState } from "react";
 import type { ConfigPanelProps } from "./types";
 import type { DailyQuestsConfig } from "@/types/config";
 import {
@@ -125,7 +125,7 @@ function PoolEditor({
   );
 }
 
-function PoolRow({
+const PoolRow = memo(function PoolRow({
   name,
   ids,
   onUpdate,
@@ -184,4 +184,4 @@ function PoolRow({
       </p>
     </div>
   );
-}
+});

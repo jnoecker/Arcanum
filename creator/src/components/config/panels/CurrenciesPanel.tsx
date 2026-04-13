@@ -9,6 +9,7 @@ import {
   IconButton,
   EmptyState,
 } from "@/components/ui/FormWidgets";
+import { MISC_COIN } from "@/assets/ui";
 
 function normalizeId(raw: string): string {
   return raw.trim().toLowerCase().replace(/[^a-z0-9_]+/g, "_");
@@ -23,8 +24,8 @@ function defaultCurrency(raw: string): CurrencyDefinition {
   };
 }
 
-// Fallback glyph when a currency has no emoji embedded in its display name.
-const DEFAULT_GLYPH = "\u{1FA99}"; // 🪙
+// Sentinel returned when a currency has no emoji embedded in its display name.
+const DEFAULT_GLYPH = "";
 
 function extractGlyph(displayName: string): { glyph: string; rest: string } {
   const trimmed = displayName.trim();
@@ -289,9 +290,13 @@ function CurrencyCard({
           Pouch preview
         </span>
         <div className="flex items-center gap-2">
-          <span className="text-xl leading-none" aria-hidden="true">
-            {glyph}
-          </span>
+          {glyph ? (
+            <span className="text-xl leading-none" aria-hidden="true">
+              {glyph}
+            </span>
+          ) : (
+            <img src={MISC_COIN} alt="" aria-hidden="true" className="h-5 w-5 shrink-0 object-contain" />
+          )}
           <div className="flex min-w-0 flex-1 items-baseline gap-1.5">
             <span className="truncate font-display text-sm font-semibold text-text-primary">
               {displayName}

@@ -8,6 +8,7 @@ import { ActionButton, Spinner } from "./ui/FormWidgets";
 import { exportShowcaseData } from "@/lib/exportShowcase";
 import { ProjectSwitcherMenu } from "./ui/ProjectSwitcherMenu";
 import { AI_ENABLED } from "@/lib/featureFlags";
+import { TB_WORLD_MAP, TB_COMPASS, TB_SETTINGS } from "@/assets/ui";
 
 const PublishWorldModal = lazy(() =>
   import("./PublishWorldModal").then((m) => ({ default: m.PublishWorldModal })),
@@ -119,7 +120,7 @@ export function Toolbar({ onNewProject, onToggleGuide, guideOpen }: ToolbarProps
                   : "border-[var(--chrome-stroke)] bg-[var(--chrome-fill)]/40 text-text-secondary hover:border-accent/60 hover:text-accent"
               }`}
             >
-              <span aria-hidden="true" className="mr-1.5">{"\u{1F30D}"}</span>
+              <img src={TB_WORLD_MAP} alt="" aria-hidden="true" className="mr-1.5 inline-block h-5 w-5 object-contain" />
               World Map
             </button>
           </div>
@@ -192,9 +193,7 @@ export function Toolbar({ onNewProject, onToggleGuide, guideOpen }: ToolbarProps
                   : "border-[var(--chrome-stroke)] bg-[var(--chrome-fill)]/40 text-text-secondary hover:border-accent/60 hover:text-accent"
               }`}
             >
-              <span aria-hidden="true" className="block text-base leading-none">
-                {"\u{1F9ED}"}
-              </span>
+              <img src={TB_COMPASS} alt="" aria-hidden="true" className="block h-5 w-5 object-contain" />
             </button>
 
             <button
@@ -204,9 +203,7 @@ export function Toolbar({ onNewProject, onToggleGuide, guideOpen }: ToolbarProps
               aria-label="Open settings"
               className="focus-ring ml-1 rounded-full border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)]/40 p-2 text-text-secondary transition hover:border-accent/60 hover:text-accent"
             >
-              <span aria-hidden="true" className="block text-base leading-none">
-                {"\u2699\uFE0F"}
-              </span>
+              <img src={TB_SETTINGS} alt="" aria-hidden="true" className="block h-5 w-5 object-contain" />
             </button>
           </div>
         </div>

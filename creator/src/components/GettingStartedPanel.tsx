@@ -8,10 +8,10 @@ import {
   markStepCompleted,
   dismissGettingStarted,
 } from "@/lib/gettingStartedPersistence";
+import { GS_ICONS } from "@/assets/ui";
 
 interface Step {
   id: string;
-  glyph: string;
   title: string;
   description: string;
   action: () => void;
@@ -58,7 +58,6 @@ export function GettingStartedPanel({ onClose }: GettingStartedPanelProps) {
     return [
       {
         id: "world-map",
-        glyph: "\u{1F30D}",
         title: "Explore the World Map",
         description:
           "Your home base. The map shows every workshop where you'll build your world.",
@@ -66,7 +65,6 @@ export function GettingStartedPanel({ onClose }: GettingStartedPanelProps) {
       },
       {
         id: "zone",
-        glyph: "\u{1F5FA}\uFE0F",
         title: "Visit a Zone",
         description:
           "Zones are regions with rooms, creatures, and items. Open one to see its graph.",
@@ -84,7 +82,6 @@ export function GettingStartedPanel({ onClose }: GettingStartedPanelProps) {
       },
       ...(AI_ENABLED ? [{
         id: "characters",
-        glyph: "\u2694\uFE0F",
         title: "Discover Characters",
         description:
           "See the portraits for every class and race that inhabits your world.",
@@ -92,7 +89,6 @@ export function GettingStartedPanel({ onClose }: GettingStartedPanelProps) {
       }] : []),
       ...(AI_ENABLED ? [{
         id: "art",
-        glyph: "\u{1F3A8}",
         title: "Generate Art",
         description:
           "Every creature, item, and place can have AI artwork. Try rendering your first image.",
@@ -100,7 +96,6 @@ export function GettingStartedPanel({ onClose }: GettingStartedPanelProps) {
       }] : []),
       {
         id: "lore",
-        glyph: "\u{1F4DC}",
         title: "Write Lore",
         description:
           "Build your world's history, culture, and legends. Articles, maps, and timelines.",
@@ -108,7 +103,6 @@ export function GettingStartedPanel({ onClose }: GettingStartedPanelProps) {
       },
       {
         id: "config",
-        glyph: "\u2699\uFE0F",
         title: "Shape Your World",
         description:
           "Fine-tune game mechanics — stats, combat, crafting, progression — to match your vision.",
@@ -116,7 +110,6 @@ export function GettingStartedPanel({ onClose }: GettingStartedPanelProps) {
       },
       {
         id: "publish",
-        glyph: "\u2728",
         title: "Share Your Creation",
         description:
           "Publish your world as a public showcase for others to explore and enjoy.",
@@ -235,15 +228,15 @@ export function GettingStartedPanel({ onClose }: GettingStartedPanelProps) {
                       : "border-[var(--chrome-stroke)] bg-[var(--chrome-fill)]/40 hover:border-accent/40 hover:bg-[var(--chrome-fill)]/60"
                   }`}
                 >
-                  {/* Glyph */}
-                  <span
-                    className={`mt-0.5 shrink-0 text-base leading-none transition-transform duration-300 ${
+                  {/* Icon */}
+                  <img
+                    src={GS_ICONS[step.id]}
+                    alt=""
+                    aria-hidden="true"
+                    className={`mt-0.5 h-5 w-5 shrink-0 object-contain transition-transform duration-300 ${
                       justCompleted ? "scale-125" : ""
                     }`}
-                    aria-hidden="true"
-                  >
-                    {step.glyph}
-                  </span>
+                  />
 
                   {/* Content */}
                   <div className="min-w-0 flex-1">

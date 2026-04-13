@@ -3,6 +3,7 @@ import { useAssetStore } from "@/stores/assetStore";
 import { useImageSrc } from "@/lib/useImageSrc";
 import type { WorldFile } from "@/types/world";
 import type { AssetEntry } from "@/types/assets";
+import { MISC_NO_IMAGE } from "@/assets/ui";
 
 // ─── Types ──────────────────────────────────────────────────────────
 
@@ -349,7 +350,7 @@ function PreviewPanel({
           />
         ) : (
           <div className="flex flex-col items-center gap-2 text-text-muted">
-            <span className="text-4xl opacity-30">&#x1F5BC;</span>
+            <img src={MISC_NO_IMAGE} alt="" aria-hidden="true" className="h-12 w-12 object-contain opacity-30" />
             <span className="text-xs">No image generated</span>
           </div>
         )}

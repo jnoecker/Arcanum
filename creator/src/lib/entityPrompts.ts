@@ -1,4 +1,5 @@
 import type { RoomFile, MobFile, ItemFile, ShopFile, TrainerFile, GatheringNodeFile, WorldFile, DungeonFile, DungeonRoomTemplate } from "@/types/world";
+import type { HousingTemplateDefinition } from "@/types/config";
 import { getTrainerPrimaryClass } from "@/lib/trainers";
 import { type ArtStyle, getPreamble, getStyleSuffix, FORMAT_BY_TYPE, withSpriteSafety } from "./arcanumPrompts";
 
@@ -163,6 +164,47 @@ export function gatheringNodeContext(nodeId: string, node: GatheringNodeFile): s
   }
   parts.push("Composition: a single grounded interactable resource node sprite that a player walks up to and gathers from. NO characters, NO hands, NO UI.");
   return parts.join("\n");
+}
+
+/** Build a context description for a housing room template. */
+export function housingRoomContext(id: string, template: HousingTemplateDefinition): string {
+  const parts = [`Housing room "${template.title}" (id: ${id})`];
+  if (template.description) parts.push(`Description: ${template.description}`);
+  if (template.station) parts.push(`Contains a ${template.station.toLowerCase()} crafting station`);
+  if (template.isEntry) parts.push("This is the entry room — the first room players see when they enter their home");
+  if (template.safe) parts.push("This room is a safe zone where combat cannot occur");
+  if (template.maxDroppedItems && template.maxDroppedItems > 0) parts.push(`Has a vault storing up to ${template.maxDroppedItems} items`);
+  parts.push("Composition: wide landscape, a personal dwelling interior — cozy, lived-in, a place of comfort and rest");
+  parts.push(EMPTY_SCENE_DIRECTIVE);
+  return parts.join("\n");
+}
+
+/** Build a full prompt for a housing room template image. */
+export function housingRoomPrompt(_id: string, template: HousingTemplateDefinition, style: ArtStyle = "gentle_magic"): string {
+  const preamble = getPreamble(style, "worldbuilding");
+  const setting = template.description
+    ? `A housing room called "${template.title}": ${template.description}.`
+    : `A personal dwelling room known as "${template.title}".`;
+
+  const station = template.station
+    ? ` A ${template.station.toLowerCase()} crafting station is present.`
+    : "";
+
+  if (style === "gentle_magic") {
+    return `${FORMAT_BY_TYPE.room}. ${preamble}
+
+${setting}${station} Rendered as a warm and inviting personal dwelling — soft amber and golden lantern light pooling on wooden surfaces, gentle atmospheric haze, lived-in comfort with personal belongings and soft furnishings, moss green and dusty rose accents on worn wood and stone, floating motes of warm light, a sense of home and safety, painterly, luminous, breathable
+
+${EMPTY_SCENE_DIRECTIVE}
+
+${getStyleSuffix("worldbuilding")}`;
+  }
+
+  return `${preamble}
+
+${setting}${station} Rendered as a baroque personal chamber — warm aurum-gold light from ornate fixtures pooling on fine surfaces, rococo scrollwork framing doorways and furniture, deep indigo shadows in the corners giving depth, a sense of personal sanctuary and comfort, painterly, luminous, wide composition suitable for a game room background
+
+${EMPTY_SCENE_DIRECTIVE}`;
 }
 
 /** Dispatch to the right context builder by entity kind. */

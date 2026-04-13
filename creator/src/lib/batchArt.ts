@@ -5,6 +5,10 @@ import {
   entityContext,
   roomPrompt,
   roomContext,
+  dungeonPrompt,
+  dungeonContext,
+  dungeonRoomTemplatePrompt,
+  dungeonRoomTemplateContext,
 } from "@/lib/entityPrompts";
 import {
   getNegativePrompt,
@@ -23,6 +27,8 @@ export function assetTypeForKind(kind: string): string {
   if (kind === "item") return "item";
   if (kind === "gatheringNode") return "gathering_node";
   if (kind === "shop") return "background";
+  if (kind === "dungeon") return "background";
+  if (kind === "dungeonRoom") return "background";
   return "background";
 }
 
@@ -100,6 +106,34 @@ export function collectTargets(world: WorldFile): BatchTarget[] {
     });
   }
 
+  if (world.dungeon) {
+    const d = world.dungeon;
+    const hasHero = !!d.image;
+    targets.push({
+      kind: "dungeon",
+      id: "main",
+      label: `Dungeon: ${d.name}`,
+      checked: !hasHero,
+      hasExisting: hasHero,
+      status: "pending",
+    });
+
+    for (const [category, templates] of Object.entries(d.roomTemplates ?? {})) {
+      for (let i = 0; i < templates.length; i++) {
+        const tpl = templates[i]!;
+        const hasImage = !!tpl.image;
+        targets.push({
+          kind: "dungeonRoom",
+          id: `${category}:${i}`,
+          label: `Dungeon Room: ${tpl.title || category}`,
+          checked: !hasImage,
+          hasExisting: hasImage,
+          status: "pending",
+        });
+      }
+    }
+  }
+
   return targets;
 }
 
@@ -122,6 +156,15 @@ export function getTargetPrompt(
   if (kind === "room") {
     return roomPrompt(id, world.rooms[id]!, style);
   }
+  if (kind === "dungeon" && world.dungeon) {
+    return dungeonPrompt(world.dungeon, style);
+  }
+  if (kind === "dungeonRoom" && world.dungeon) {
+    const [category, idxStr] = id.split(":");
+    const idx = parseInt(idxStr!, 10);
+    const tpl = world.dungeon.roomTemplates?.[category!]?.[idx];
+    if (tpl) return dungeonRoomTemplatePrompt(category!, tpl, style);
+  }
   const entity = (
     world as unknown as Record<string, Record<string, unknown> | undefined>
   )[collectionForKind(kind)]?.[id];
@@ -135,6 +178,15 @@ export function getTargetContext(
   const { kind, id } = target;
   if (kind === "room") {
     return roomContext(id, world.rooms[id]!);
+  }
+  if (kind === "dungeon" && world.dungeon) {
+    return dungeonContext(world.dungeon, world.zone);
+  }
+  if (kind === "dungeonRoom" && world.dungeon) {
+    const [category, idxStr] = id.split(":");
+    const idx = parseInt(idxStr!, 10);
+    const tpl = world.dungeon.roomTemplates?.[category!]?.[idx];
+    if (tpl) return dungeonRoomTemplateContext(category!, tpl, world.dungeon);
   }
   const entity = (
     world as unknown as Record<string, Record<string, unknown> | undefined>
@@ -291,6 +343,31 @@ export async function runBatchArtGeneration(
               [id]: { ...cur.rooms[id]!, image: fileName },
             },
           };
+        } else if (kind === "dungeon" && cur.dungeon) {
+          const fileName = image.file_path.split(/[\\/]/).pop() ?? image.hash;
+          worldRef.current = {
+            ...cur,
+            dungeon: { ...cur.dungeon, image: fileName },
+          };
+        } else if (kind === "dungeonRoom" && cur.dungeon) {
+          const [category, idxStr] = id.split(":");
+          const idx = parseInt(idxStr!, 10);
+          const templates = cur.dungeon.roomTemplates?.[category!];
+          if (templates?.[idx]) {
+            const fileName = image.file_path.split(/[\\/]/).pop() ?? image.hash;
+            const updatedTemplates = [...templates];
+            updatedTemplates[idx] = { ...templates[idx]!, image: fileName };
+            worldRef.current = {
+              ...cur,
+              dungeon: {
+                ...cur.dungeon,
+                roomTemplates: {
+                  ...cur.dungeon.roomTemplates,
+                  [category!]: updatedTemplates,
+                },
+              },
+            };
+          }
         } else {
           const collection = collectionForKind(kind);
           const entities = (cur as Record<string, unknown>)[

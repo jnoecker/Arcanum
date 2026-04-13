@@ -12,6 +12,8 @@ import {
 } from "@/components/ui/FormWidgets";
 import { useConfigStore } from "@/stores/configStore";
 import { useImageSrc } from "@/lib/useImageSrc";
+import { EntityArtGenerator } from "@/components/ui/EntityArtGenerator";
+import { housingRoomPrompt, housingRoomContext } from "@/lib/entityPrompts";
 
 function cx(...c: Array<string | false | null | undefined>) {
   return c.filter(Boolean).join(" ");
@@ -494,12 +496,22 @@ function RoomEditor({
 
           <CompactField
             label="Background image"
+            span
             hint="Optional asset filename. Leave blank to use house default."
           >
             <TextInput
               value={t.image ?? ""}
               onCommit={(v) => onPatch({ image: v || undefined })}
               placeholder="Optional"
+            />
+            <EntityArtGenerator
+              getPrompt={(style) => housingRoomPrompt(id, t, style)}
+              entityContext={housingRoomContext(id, t)}
+              currentImage={t.image}
+              onAccept={(filePath) => onPatch({ image: filePath })}
+              assetType="background"
+              context={{ zone: "config", entity_type: "housing_room", entity_id: id }}
+              surface="worldbuilding"
             />
           </CompactField>
         </FieldGrid>

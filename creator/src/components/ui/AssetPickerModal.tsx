@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { createPortal } from "react-dom";
 import { invoke } from "@tauri-apps/api/core";
 import { useAssetStore } from "@/stores/assetStore";
 import { useFocusTrap } from "@/lib/useFocusTrap";
@@ -116,7 +117,7 @@ export function AssetPickerModal({
     [assetsDir, imageCache],
   );
 
-  return (
+  return createPortal(
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--chrome-fill-soft)]"
       onClick={(e) => {
@@ -225,6 +226,7 @@ export function AssetPickerModal({
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { invoke } from "@tauri-apps/api/core";
 import { useAssetStore } from "@/stores/assetStore";
 import { useFocusTrap } from "@/lib/useFocusTrap";
@@ -199,7 +200,7 @@ export function GlobalAssetGeneratorModal({ asset, onClose, onComplete }: Props)
   };
 
   if (!hasApiKey) {
-    return (
+    return createPortal(
       <DialogShell
         dialogRef={trapRef}
         titleId="global-asset-gen-no-key-title"
@@ -217,11 +218,12 @@ export function GlobalAssetGeneratorModal({ asset, onClose, onComplete }: Props)
         <div className="panel-surface-light rounded-3xl p-5 text-sm leading-7 text-text-secondary">
           No active image provider credential found. Add one in API Settings first.
         </div>
-      </DialogShell>
+      </DialogShell>,
+      document.body,
     );
   }
 
-  return (
+  return createPortal(
     <DialogShell
       dialogRef={trapRef}
       titleId="global-asset-gen-title"
@@ -379,6 +381,7 @@ export function GlobalAssetGeneratorModal({ asset, onClose, onComplete }: Props)
           </section>
         </div>
       )}
-    </DialogShell>
+    </DialogShell>,
+    document.body,
   );
 }

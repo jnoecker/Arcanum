@@ -40,9 +40,13 @@ jobs:
         working-directory: creator
         run: bun run test
 
-      - name: Rust check
+      - name: Rust check (Full Edition)
         working-directory: creator/src-tauri
         run: cargo check
+
+      - name: Rust check (Community Edition)
+        working-directory: creator/src-tauri
+        run: cargo check --no-default-features
 
   check-showcase:
     name: Showcase (TypeScript + Build)

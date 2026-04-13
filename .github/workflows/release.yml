@@ -46,29 +46,34 @@ jobs:
               repo: context.repo.repo,
               tag_name: version,
               name: `Ambon Arcanum ${version}`,
-              body: `## Ambon Arcanum ${version}\n\nDownload the installer for your platform below.`,
+              body: `## Ambon Arcanum ${version}\n\nDownload the installer for your platform below.\n\n**Full Edition** — all features including AI art generation, LLM text, and vision analysis.\n\n**Community Edition** — same worldbuilding tools, no AI features.`,
               draft: true,
               prerelease: version.includes('-'),
             });
             return data.id;
 
   build:
-    name: Build (${{ matrix.label }})
+    name: Build (${{ matrix.label }} - ${{ matrix.edition }})
     needs: create-release
     permissions:
       contents: write
     strategy:
       fail-fast: false
       matrix:
+        edition: [full, community]
+        os: [windows, macos, linux]
         include:
-          - label: Windows
+          - os: windows
+            label: Windows
             runner: windows-latest
             target: x86_64-pc-windows-msvc
-          - label: macOS (Universal)
+          - os: macos
+            label: macOS (Universal)
             runner: macos-latest
             target: universal-apple-darwin
             rust_targets: aarch64-apple-darwin,x86_64-apple-darwin
-          - label: Linux
+          - os: linux
+            label: Linux
             runner: ubuntu-latest
             target: x86_64-unknown-linux-gnu
 
@@ -95,7 +100,8 @@ jobs:
         working-directory: creator
         run: bun install --frozen-lockfile
 
-      - name: Build Tauri app
+      - name: Build Tauri app (Full Edition)
+        if: matrix.edition == 'full'
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -110,6 +116,17 @@ jobs:
           projectPath: creator
           releaseId: ${{ needs.create-release.outputs.release_id }}
           args: --target ${{ matrix.target }}
+
+      - name: Build Tauri app (Community Edition)
+        if: matrix.edition == 'community'
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VITE_AI: "false"
+        with:
+          projectPath: creator
+          releaseId: ${{ needs.create-release.outputs.release_id }}
+          args: --target ${{ matrix.target }} --config '{"productName":"Arcanum Community"}' -- --no-default-features
 
   publish-release:
     name: Publish Release

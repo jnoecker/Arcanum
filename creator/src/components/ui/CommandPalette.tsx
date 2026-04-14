@@ -7,12 +7,52 @@ import { ALL_PANELS, panelTab } from "@/lib/panelRegistry";
 import { AI_ENABLED } from "@/lib/featureFlags";
 import { useFocusTrap } from "@/lib/useFocusTrap";
 
+type PaletteItemType =
+  | "panel"
+  | "article"
+  | "zone"
+  | "action"
+  | "room"
+  | "mob"
+  | "item"
+  | "shop"
+  | "trainer"
+  | "quest"
+  | "gather"
+  | "recipe"
+  | "puzzle";
+
 interface PaletteItem {
   id: string;
-  type: "panel" | "article" | "zone" | "action";
+  type: PaletteItemType;
   title: string;
   subtitle: string;
+  /** Extra text matched by the filter but not displayed (e.g. entity id). */
+  searchText?: string;
   action: () => void;
+}
+
+/** Types that only appear in results when the user has typed a query. */
+const ENTITY_TYPES: ReadonlySet<PaletteItemType> = new Set([
+  "room",
+  "mob",
+  "item",
+  "shop",
+  "trainer",
+  "quest",
+  "gather",
+  "recipe",
+  "puzzle",
+]);
+
+function scoreMatch(item: PaletteItem, q: string): number {
+  const title = item.title.toLowerCase();
+  if (title === q) return 100;
+  if (title.startsWith(q)) return 80;
+  if (title.includes(q)) return 60;
+  if (item.subtitle.toLowerCase().includes(q)) return 40;
+  if (item.searchText && item.searchText.toLowerCase().includes(q)) return 20;
+  return 0;
 }
 
 export function CommandPalette({ onClose }: { onClose: () => void }) {
@@ -22,6 +62,7 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
   const listRef = useRef<HTMLDivElement>(null);
   const trapRef = useFocusTrap<HTMLDivElement>(onClose);
   const openTab = useProjectStore((s) => s.openTab);
+  const navigateTo = useProjectStore((s) => s.navigateTo);
   const setShowMudImport = useProjectStore((s) => s.setShowMudImport);
   const setShowImportZone = useProjectStore((s) => s.setShowImportZone);
   const openGenerator = useAssetStore((s) => s.openGenerator);
@@ -103,20 +144,124 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
       });
     }
 
-    return result;
-  }, [articles, zones, openTab, selectArticle, setShowMudImport, setShowImportZone, openGenerator, openGallery]);
+    // Entities across all loaded zones (rooms, mobs, items, shops, trainers,
+    // quests, gathering nodes, recipes, puzzles). Only surfaced when the user
+    // types a query — see `filtered` below — so the palette's resting state
+    // stays focused on navigation.
+    for (const [zoneId, zoneState] of zones.entries()) {
+      const zone = zoneState.data;
+      const zoneName = zone.zone || zoneId;
 
-  // Filter
+      for (const [roomId, room] of Object.entries(zone.rooms ?? {})) {
+        result.push({
+          id: `room:${zoneId}:${roomId}`,
+          type: "room",
+          title: room.title || roomId,
+          subtitle: `${roomId} · ${zoneName}`,
+          searchText: roomId,
+          action: () => navigateTo({ zoneId, roomId }),
+        });
+      }
+      for (const [mobId, mob] of Object.entries(zone.mobs ?? {})) {
+        result.push({
+          id: `mob:${zoneId}:${mobId}`,
+          type: "mob",
+          title: mob.name || mobId,
+          subtitle: zoneName,
+          searchText: mobId,
+          action: () => navigateTo({ zoneId, entityKind: "mob", entityId: mobId }),
+        });
+      }
+      for (const [itemId, item] of Object.entries(zone.items ?? {})) {
+        result.push({
+          id: `item:${zoneId}:${itemId}`,
+          type: "item",
+          title: item.displayName || itemId,
+          subtitle: zoneName,
+          searchText: itemId,
+          action: () => navigateTo({ zoneId, entityKind: "item", entityId: itemId }),
+        });
+      }
+      for (const [shopId, shop] of Object.entries(zone.shops ?? {})) {
+        result.push({
+          id: `shop:${zoneId}:${shopId}`,
+          type: "shop",
+          title: shop.name || shopId,
+          subtitle: zoneName,
+          searchText: shopId,
+          action: () => navigateTo({ zoneId, entityKind: "shop", entityId: shopId }),
+        });
+      }
+      for (const [trainerId, trainer] of Object.entries(zone.trainers ?? {})) {
+        result.push({
+          id: `trainer:${zoneId}:${trainerId}`,
+          type: "trainer",
+          title: trainer.name || trainerId,
+          subtitle: zoneName,
+          searchText: trainerId,
+          action: () => navigateTo({ zoneId, entityKind: "trainer", entityId: trainerId }),
+        });
+      }
+      for (const [questId, quest] of Object.entries(zone.quests ?? {})) {
+        result.push({
+          id: `quest:${zoneId}:${questId}`,
+          type: "quest",
+          title: quest.name || questId,
+          subtitle: zoneName,
+          searchText: questId,
+          action: () => navigateTo({ zoneId, entityKind: "quest", entityId: questId }),
+        });
+      }
+      for (const [nodeId, node] of Object.entries(zone.gatheringNodes ?? {})) {
+        result.push({
+          id: `gather:${zoneId}:${nodeId}`,
+          type: "gather",
+          title: node.displayName || nodeId,
+          subtitle: zoneName,
+          searchText: nodeId,
+          action: () => navigateTo({ zoneId, entityKind: "gatheringNode", entityId: nodeId }),
+        });
+      }
+      for (const [recipeId, recipe] of Object.entries(zone.recipes ?? {})) {
+        result.push({
+          id: `recipe:${zoneId}:${recipeId}`,
+          type: "recipe",
+          title: recipe.displayName || recipeId,
+          subtitle: zoneName,
+          searchText: recipeId,
+          action: () => navigateTo({ zoneId, entityKind: "recipe", entityId: recipeId }),
+        });
+      }
+      for (const [puzzleId, puzzle] of Object.entries(zone.puzzles ?? {})) {
+        result.push({
+          id: `puzzle:${zoneId}:${puzzleId}`,
+          type: "puzzle",
+          title: puzzleId,
+          subtitle: `${puzzle.type} · ${zoneName}`,
+          searchText: puzzleId,
+          action: () => navigateTo({ zoneId, entityKind: "puzzle", entityId: puzzleId }),
+        });
+      }
+    }
+
+    return result;
+  }, [articles, zones, openTab, navigateTo, selectArticle, setShowMudImport, setShowImportZone, openGenerator, openGallery]);
+
+  // Filter. With no query, hide entity results so the resting palette stays
+  // focused on navigation. Once a query is present, rank by match quality so
+  // exact/prefix hits surface above loose substring matches.
   const filtered = useMemo(() => {
-    if (!query.trim()) return items.slice(0, 12);
+    if (!query.trim()) {
+      return items.filter((item) => !ENTITY_TYPES.has(item.type)).slice(0, 12);
+    }
     const q = query.toLowerCase();
-    return items
-      .filter(
-        (item) =>
-          item.title.toLowerCase().includes(q) ||
-          item.subtitle.toLowerCase().includes(q),
-      )
-      .slice(0, 12);
+    const scored: Array<{ item: PaletteItem; score: number }> = [];
+    for (const item of items) {
+      const score = scoreMatch(item, q);
+      if (score > 0) scored.push({ item, score });
+    }
+    scored.sort((a, b) => b.score - a.score);
+    return scored.slice(0, 20).map((s) => s.item);
   }, [items, query]);
   const listboxId = "command-palette-results";
   const statusId = "command-palette-status";
@@ -169,11 +314,22 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
   );
 
   const typeBadge = (type: string) => {
+    // Color buckets: rooms = aurum (spatial), mobs/trainers/shops = terracotta
+    // (living things with names), remaining content kinds = violet.
     const colors: Record<string, string> = {
       panel: "bg-stellar-blue/20 text-stellar-blue",
       article: "bg-accent/15 text-accent",
       zone: "bg-status-success/20 text-status-success",
       action: "bg-warm/20 text-warm",
+      room: "bg-aurum/20 text-aurum",
+      mob: "bg-status-danger/20 text-status-danger",
+      trainer: "bg-status-danger/20 text-status-danger",
+      shop: "bg-status-danger/20 text-status-danger",
+      item: "bg-violet/25 text-violet",
+      quest: "bg-violet/25 text-violet",
+      gather: "bg-violet/25 text-violet",
+      recipe: "bg-violet/25 text-violet",
+      puzzle: "bg-violet/25 text-violet",
     };
     return colors[type] ?? "bg-[var(--chrome-highlight-strong)] text-text-muted";
   };
@@ -184,6 +340,15 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
       article: "\u00B6", // ¶ (pilcrow, article)
       zone: "\u2302", // ⌂ (house/zone)
       action: "\u25B8", // ▸ (action)
+      room: "\u25AB", // ▫ (room)
+      mob: "\u2620", // ☠ (mob/creature)
+      trainer: "\u2694", // ⚔ (trainer / combat)
+      shop: "\u2696", // ⚖ (shop / commerce)
+      item: "\u25C6", // ◆ (item)
+      quest: "\u2726", // ✦ (quest goal)
+      gather: "\u273F", // ✿ (gathering node)
+      recipe: "\u270E", // ✎ (recipe)
+      puzzle: "\u2699", // ⚙ (puzzle)
     };
     return glyphs[type] ?? "\u25CB";
   };
@@ -208,7 +373,7 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Jump to article, panel, or zone..."
+          placeholder="Jump to room, mob, item, article, panel..."
           role="combobox"
           aria-label="Command palette search"
           aria-autocomplete="list"

@@ -42,13 +42,38 @@ export async function serveHubIndex(env: Env): Promise<Response> {
   const worlds = await listListedWorlds(env);
   return json(
     {
-      worlds: worlds.map((w) => ({
-        slug: w.slug,
-        displayName: w.display_name ?? w.slug,
-        tagline: w.tagline,
-        lastPublishAt: w.last_publish_at,
-        url: `https://${w.slug}.${env.HUB_ROOT_DOMAIN}/`,
-      })),
+      worlds: worlds.map((w) => {
+        // Tags are stored as a JSON string; parse defensively so a
+        // malformed row can't crash the whole directory fetch.
+        let tags: string[] = [];
+        if (w.tags) {
+          try {
+            const parsed = JSON.parse(w.tags);
+            if (Array.isArray(parsed)) {
+              tags = parsed.filter((t): t is string => typeof t === "string");
+            }
+          } catch {
+            tags = [];
+          }
+        }
+        const coverImageUrl = w.cover_image_hash
+          ? `https://${w.slug}.${env.HUB_ROOT_DOMAIN}/images/${w.cover_image_hash}.webp`
+          : null;
+        return {
+          slug: w.slug,
+          displayName: w.display_name ?? w.slug,
+          tagline: w.tagline,
+          lastPublishAt: w.last_publish_at,
+          url: `https://${w.slug}.${env.HUB_ROOT_DOMAIN}/`,
+          articleCount: w.article_count,
+          mapCount: w.map_count,
+          imageCount: w.image_count,
+          coverImageUrl,
+          tags,
+          authorDisplayName: w.author_display_name,
+          description: w.description,
+        };
+      }),
     },
     {},
     { origin: "*" },

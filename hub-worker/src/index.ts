@@ -1,9 +1,11 @@
 import type { Env } from "./env";
 import { authenticateUser, isAdmin } from "./auth";
+import { getWorldBySlug } from "./db";
 import { handleAdmin, adminCorsHeaders } from "./handlers/admin";
 import { handleAi } from "./handlers/ai";
 import { checkExisting, uploadImage, uploadManifest } from "./handlers/publish";
 import { serveHubIndex, serveImage, serveShowcaseJson } from "./handlers/showcase";
+import { injectOgForWorld } from "./og";
 import { corsHeaders, error, parseHost, preflight, RESERVED_SUBDOMAINS } from "./util";
 
 export default {
@@ -61,7 +63,13 @@ export default {
       }
       // Everything else on <slug>.arcanum-hub.com is an SPA route —
       // the bundled index.html boots the showcase app, which then
-      // fetches /showcase.json from this same origin.
+      // fetches /showcase.json from this same origin. For HTML
+      // requests we rewrite OG/Twitter meta tags so crawler previews
+      // reflect the actual world (and article, where applicable).
+      const world = await getWorldBySlug(env, host.slug);
+      if (world) {
+        return await injectOgForWorld(req, env, world);
+      }
       return await env.ASSETS.fetch(req);
     }
 

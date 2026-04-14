@@ -22,6 +22,7 @@ import { MetricSectionCards } from "./MetricSectionCards";
 import { ApplyFooterBar } from "./ApplyFooterBar";
 import { HealthCheckBanner } from "./HealthCheckBanner";
 import { ChartRow } from "./charts/ChartRow";
+import { SimulationLab } from "./simulations/SimulationLab";
 import { ActionButton, Spinner } from "@/components/ui/FormWidgets";
 import { useToastStore } from "@/stores/toastStore";
 import { usePrefersReducedMotion } from "@/lib/usePrefersReducedMotion";
@@ -293,6 +294,12 @@ export function TuningWizard() {
           presetMetrics={activePresetMetrics}
         />
       )}
+
+      {/* Simulation Lab — always visible, uses preset-merged config if active */}
+      <SimulationLab
+        activeConfig={presetConfig ?? config}
+        hasPresetSelected={selectedPresetId !== null}
+      />
 
       {/* Health check banner (D-08) -- after metric cards, before search */}
       <HealthCheckBanner />

@@ -868,6 +868,20 @@ pub async fn deploy_achievements_to_r2(
     Ok(format!("{domain}/{object_key}"))
 }
 
+/// Strip the `zoneMap` line from zone YAML bytes. This field is Arcanum-only
+/// and the MUD server's `ZoneImageDefaults` DTO will crash on it.
+fn strip_zone_map_field(body: &[u8]) -> Vec<u8> {
+    let text = String::from_utf8_lossy(body);
+    let filtered: Vec<&str> = text
+        .lines()
+        .filter(|line| {
+            let trimmed = line.trim_start();
+            !trimmed.starts_with("zoneMap:")
+        })
+        .collect();
+    filtered.join("\n").into_bytes()
+}
+
 /// Collect zone YAML files from a project directory.
 /// For legacy: reads from src/main/resources/world/*.yaml
 /// For standalone: reads from zones/*/zone.yaml, naming each as {zone_id}.yaml
@@ -945,6 +959,10 @@ pub async fn deploy_zones_to_r2(
                 continue;
             }
         };
+
+        // Strip `zoneMap` from the image defaults — the MUD server's
+        // ZoneImageDefaults DTO doesn't recognize it and will crash.
+        let body = strip_zone_map_field(&body);
 
         let object_key = format!("world/{name}");
         match upload_object(

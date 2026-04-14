@@ -21,9 +21,9 @@ import { TemplateEditorPanel } from "./TemplateEditorPanel";
 import { SceneTemplateEditorPanel } from "./SceneTemplateEditorPanel";
 import { StoryBrowser } from "./StoryBrowser";
 import { ArtStylePanel } from "./ArtStylePanel";
-import { WorldPlannerPanel } from "./WorldPlannerPanel";
 
-// Lazy-load MapPanel to isolate Leaflet CSS from the main bundle
+// Lazy-load MapPanel to isolate Leaflet CSS from the main bundle.
+// MapPanel hosts both the cartography view and the World Planner as tabs.
 const MapPanel = lazy(() => import("./MapPanel").then(m => ({ default: m.MapPanel })));
 
 function renderPanel(panelId: string): ReactNode {
@@ -40,8 +40,6 @@ function renderPanel(panelId: string): ReactNode {
       return <LoreCodexPanel />;
     case "loreMaps":
       return <Suspense fallback={<div className="flex h-64 items-center justify-center text-text-muted"><Spinner /> Loading maps...</div>}><MapPanel /></Suspense>;
-    case "worldPlanner":
-      return <WorldPlannerPanel />;
     case "loreTimeline":
       return <TimelinePanel />;
     case "loreRelations":

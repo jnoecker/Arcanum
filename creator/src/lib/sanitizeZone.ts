@@ -683,7 +683,14 @@ function cleanOutput(world: WorldFile): WorldFile {
   if (world.terrain) result.terrain = world.terrain;
   if (world.graphical) result.graphical = true;
   if (world.pvpEnabled) result.pvpEnabled = true;
-  if (world.image) result.image = world.image;
+  if (world.image) {
+    // Strip zoneMap — it's Arcanum-only; the MUD server's ZoneImageDefaults
+    // doesn't recognize it and will crash on the unknown field.
+    const { zoneMap: _, ...mudImage } = world.image;
+    if (Object.keys(mudImage).some((k) => (mudImage as Record<string, unknown>)[k] != null)) {
+      result.image = mudImage;
+    }
+  }
   if (world.audio) result.audio = world.audio;
   if (hasEntries(world.mobs)) result.mobs = world.mobs;
   if (hasEntries(items)) result.items = items;

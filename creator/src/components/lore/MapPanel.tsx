@@ -15,6 +15,7 @@ import { ActionButton, FieldRow, TextInput } from "@/components/ui/FormWidgets";
 import { MapViewer } from "./MapViewer";
 import { MapEnhancer } from "./MapEnhancer";
 import { MapAnalysisPanel } from "./MapAnalysisPanel";
+import { WorldPlannerPanel } from "./WorldPlannerPanel";
 
 // ─── Color palette picker ──────────────────────────────────────────
 
@@ -373,9 +374,9 @@ function PinEditor({
   );
 }
 
-// ─── Main panel ────────────────────────────────────────────────────
+// ─── Maps tab (cartography view) ───────────────────────────────────
 
-export function MapPanel() {
+function MapsTab() {
   const maps = useLoreStore(selectMaps);
   const zonePlans = useLoreStore(selectZonePlans);
   const selectedMapId = useLoreStore((s) => s.selectedMapId);
@@ -688,6 +689,69 @@ export function MapPanel() {
           onClose={() => setShowEnhancer(false)}
         />
       )}
+    </div>
+  );
+}
+
+// ─── Tabbed shell (Maps + World Planner) ───────────────────────────
+
+type MapsTabId = "maps" | "planner";
+
+const MAPS_TABS: { id: MapsTabId; label: string; hint: string }[] = [
+  { id: "maps", label: "Maps", hint: "Upload, pin, and annotate world maps." },
+  { id: "planner", label: "World Planner", hint: "Generate draft zones from a map." },
+];
+
+export function MapPanel() {
+  const [tab, setTab] = useState<MapsTabId>("maps");
+  const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
+
+  return (
+    <div className="flex flex-col gap-4">
+      <div
+        className="segmented-control"
+        role="tablist"
+        aria-label="Maps workspace"
+      >
+        {MAPS_TABS.map((t, index) => (
+          <button
+            key={t.id}
+            ref={(node) => {
+              tabRefs.current[index] = node;
+            }}
+            role="tab"
+            aria-selected={tab === t.id}
+            aria-controls={`maps-tabpanel-${t.id}`}
+            id={`maps-tab-${t.id}`}
+            tabIndex={tab === t.id ? 0 : -1}
+            title={t.hint}
+            onClick={() => setTab(t.id)}
+            onKeyDown={(event) => {
+              if (event.key === "ArrowRight") {
+                event.preventDefault();
+                const next = (index + 1) % MAPS_TABS.length;
+                setTab(MAPS_TABS[next]!.id);
+                tabRefs.current[next]?.focus();
+              } else if (event.key === "ArrowLeft") {
+                event.preventDefault();
+                const next = (index - 1 + MAPS_TABS.length) % MAPS_TABS.length;
+                setTab(MAPS_TABS[next]!.id);
+                tabRefs.current[next]?.focus();
+              }
+            }}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      <div
+        role="tabpanel"
+        id={`maps-tabpanel-${tab}`}
+        aria-labelledby={`maps-tab-${tab}`}
+      >
+        {tab === "maps" ? <MapsTab /> : <WorldPlannerPanel />}
+      </div>
     </div>
   );
 }

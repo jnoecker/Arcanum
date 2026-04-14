@@ -586,9 +586,12 @@ export function WorldPlannerPanel() {
   const maps = useLoreStore(selectMaps);
   const plans = useLoreStore(selectZonePlans);
   const addZonePlans = useLoreStore((s) => s.addZonePlans);
+  const globalSelectedMapId = useLoreStore((s) => s.selectedMapId);
 
+  // Default to the map the user was viewing in the Maps tab so the two tabs
+  // stay in sync when opened back-to-back.
   const [sourceMapId, setSourceMapId] = useState<string>(
-    () => maps[0]?.id ?? "",
+    () => globalSelectedMapId ?? maps[0]?.id ?? "",
   );
   const sourceMap = useMemo(
     () => maps.find((m) => m.id === sourceMapId) ?? null,

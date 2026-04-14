@@ -144,6 +144,7 @@ const OPERATIONS_PANELS: PanelDef[] = [
   { id: "sharedAssets", label: "Shared Assets", group: "operations", host: "config", kicker: "Operations", title: "Shared assets", description: "Global asset keys and image configuration.", maxWidth: "max-w-5xl", island: "livingWorld", glyph: "\u{1F4E6}" },
   { id: "rawYaml", label: "Raw YAML", group: "operations", host: "config", kicker: "Advanced", title: "Raw configuration", description: "Inspect or edit the exact serialized YAML when the structured editors are not enough.", maxWidth: "max-w-6xl", island: "settings", glyph: "\u{1F4DD}" },
   { id: "versionControl", label: "Version Control", group: "operations", host: "config", kicker: "Operations", title: "Version control", description: "Git status, commits, push/pull, and conflict resolution for standalone projects.", maxWidth: "max-w-5xl", island: "settings", glyph: "\u{1F33F}" },
+  { id: "backup", label: "Backups", group: "operations", host: "command", kicker: "Operations", title: "Backups & Snapshots", description: "Autosave, periodic snapshots, and zip archives. A safety net beyond git.", maxWidth: "max-w-5xl", island: "settings", glyph: "\u{1F5C4}\uFE0F" },
 ];
 
 // ─── Command panels ─────────────────────────────────────────────────

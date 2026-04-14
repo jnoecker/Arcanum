@@ -28,6 +28,7 @@ mod openai_tts;
 mod openrouter;
 mod project;
 mod r2;
+mod snapshots;
 #[cfg(feature = "ai")]
 mod runware;
 mod project_settings;
@@ -138,6 +139,13 @@ macro_rules! base_handler {
             git::git_abort_merge,
             git::git_log,
             git::git_create_pr,
+            snapshots::snapshot_create,
+            snapshots::snapshot_list,
+            snapshots::snapshot_delete,
+            snapshots::snapshot_restore,
+            snapshots::snapshot_prune,
+            snapshots::backup_export,
+            snapshots::backup_import,
             $($extra,)*
         ]
     }

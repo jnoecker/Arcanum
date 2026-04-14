@@ -8,6 +8,7 @@ import {
   updateWorldPublish,
 } from "../db";
 import { corsHeaders, error, isValidSlug, json, sha256Hex } from "../util";
+import { extractMetadata } from "../metadata";
 
 // ─── POST /publish/check-existing ────────────────────────────────────
 // Body: { slug, hashes: ["<sha256hex>.webp", ...] }
@@ -130,6 +131,10 @@ export async function uploadManifest(req: Request, env: Env, user: UserRow): Pro
     httpMetadata: { contentType: "application/json" },
   });
 
+  // Discovery metadata is derived from the manifest we just stored,
+  // so it can never drift from the actual published content.
+  const metadata = extractMetadata(body.showcase);
+
   // bytes_used is a coarse estimate — just the manifest size for now.
   // A follow-up could sum R2 listing for worlds/<slug>/ but listing is pricey.
   await updateWorldPublish(env, slug, {
@@ -137,6 +142,13 @@ export async function uploadManifest(req: Request, env: Env, user: UserRow): Pro
     tagline: body.tagline ?? null,
     display_name: body.displayName ?? null,
     bytes_used: bytes.byteLength,
+    article_count: metadata.article_count,
+    map_count: metadata.map_count,
+    image_count: metadata.image_count,
+    cover_image_hash: metadata.cover_image_hash,
+    tags: metadata.tags,
+    author_display_name: user.display_name,
+    description: metadata.description,
   });
   await touchUserPublish(env, user.id);
 

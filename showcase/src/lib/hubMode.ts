@@ -43,6 +43,16 @@ export interface HubIndexWorld {
   tagline: string | null;
   lastPublishAt: number | null;
   url: string;
+  // Discovery metadata. Older rows that haven't been re-published
+  // since migration 0003 will have zeros / null / empty here — the
+  // landing page renders gracefully in that case.
+  articleCount: number;
+  mapCount: number;
+  imageCount: number;
+  coverImageUrl: string | null;
+  tags: string[];
+  authorDisplayName: string | null;
+  description: string | null;
 }
 
 export interface HubIndexResponse {

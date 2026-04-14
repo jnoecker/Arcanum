@@ -25,6 +25,16 @@ export interface WorldRow {
   last_publish_at: number | null;
   bytes_used: number;
   created_at: number;
+  // Discovery metadata (migration 0003). All derived from the uploaded
+  // showcase.json on each publish; never authored by the creator directly.
+  article_count: number;
+  map_count: number;
+  image_count: number;
+  cover_image_hash: string | null;
+  /** JSON-encoded string[] of aggregated article tags, or null. */
+  tags: string | null;
+  author_display_name: string | null;
+  description: string | null;
 }
 
 // ─── Users ───────────────────────────────────────────────────────────
@@ -178,12 +188,27 @@ export async function createWorld(
 export async function updateWorldPublish(
   env: Env,
   slug: string,
-  opts: { listed: boolean; tagline: string | null; display_name: string | null; bytes_used: number },
+  opts: {
+    listed: boolean;
+    tagline: string | null;
+    display_name: string | null;
+    bytes_used: number;
+    article_count: number;
+    map_count: number;
+    image_count: number;
+    cover_image_hash: string | null;
+    tags: string | null;
+    author_display_name: string | null;
+    description: string | null;
+  },
 ): Promise<void> {
   await env.DB.prepare(
     `UPDATE worlds
      SET listed = ?, tagline = ?, display_name = COALESCE(?, display_name),
-         bytes_used = ?, last_publish_at = ?
+         bytes_used = ?, last_publish_at = ?,
+         article_count = ?, map_count = ?, image_count = ?,
+         cover_image_hash = ?, tags = ?,
+         author_display_name = ?, description = ?
      WHERE slug = ?`,
   )
     .bind(
@@ -192,6 +217,13 @@ export async function updateWorldPublish(
       opts.display_name,
       opts.bytes_used,
       Date.now(),
+      opts.article_count,
+      opts.map_count,
+      opts.image_count,
+      opts.cover_image_hash,
+      opts.tags,
+      opts.author_display_name,
+      opts.description,
       slug,
     )
     .run();

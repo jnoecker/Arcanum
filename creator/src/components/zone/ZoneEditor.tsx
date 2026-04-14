@@ -37,6 +37,7 @@ import { Starfield } from "./Starfield";
 import { SpringPanel } from "./SpringPanel";
 import { ZoneMediaPanel } from "./ZoneMediaPanel";
 import { ZoneMapPanel } from "./ZoneMapPanel";
+import { ZoneLayoutDoctor } from "./ZoneLayoutDoctor";
 import { DungeonEditor, DungeonEmptyState } from "@/components/editors/DungeonEditor";
 import { setDungeon, removeDungeon } from "@/lib/zoneEdits";
 import { normalizeAssetRef } from "@/lib/assetRefs";
@@ -44,7 +45,7 @@ import builderBg from "@/assets/builder-bg.jpg";
 import subtoolbarBg from "@/assets/subtoolbar-bg.jpg";
 import { TERRAIN_ICONS } from "@/assets/ui";
 
-type ViewMode = "map" | "assets" | "media" | "dungeon" | "zonemap";
+type ViewMode = "map" | "assets" | "media" | "dungeon" | "zonemap" | "doctor";
 
 const nodeTypes = {
   room: RoomNode,
@@ -226,7 +227,7 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
     if (nav.view) {
       // Loose string -> ViewMode cast. Unknown view modes fall back to the
       // current mode, which is harmless.
-      const allowed: ViewMode[] = ["map", "assets", "media", "dungeon", "zonemap"];
+      const allowed: ViewMode[] = ["map", "assets", "media", "dungeon", "zonemap", "doctor"];
       if ((allowed as string[]).includes(nav.view)) {
         setViewMode(nav.view as ViewMode);
       }
@@ -522,7 +523,7 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
   }
 
   const roomCount = Object.keys(zoneState.data.rooms).length;
-  const viewModes: ViewMode[] = ["map", "assets", "media", "dungeon", "zonemap"];
+  const viewModes: ViewMode[] = ["map", "assets", "media", "dungeon", "zonemap", "doctor"];
 
   return (
     <div className="flex min-h-0 min-w-0 flex-1 flex-col">
@@ -573,7 +574,7 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
                 }`}
                 data-active={viewMode === mode}
               >
-                {mode === "zonemap" ? "Zone Map" : mode.charAt(0).toUpperCase() + mode.slice(1)}
+                {mode === "zonemap" ? "Zone Map" : mode === "doctor" ? "Doctor" : mode.charAt(0).toUpperCase() + mode.slice(1)}
               </button>
             ))}
           </div>
@@ -784,8 +785,12 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
         </div>
       </div>
 
-      {/* Map + Panel, Asset Browser, Media Panel, Zone Map, or Dungeon Editor */}
-      {viewMode === "zonemap" ? (
+      {/* Map + Panel, Asset Browser, Media Panel, Zone Map, Doctor, or Dungeon Editor */}
+      {viewMode === "doctor" ? (
+        <div id="zone-view-panel" role="tabpanel" aria-labelledby={`zone-view-tab-${viewMode}`} className="flex min-h-0 min-w-0 flex-1 flex-col">
+          <ZoneLayoutDoctor zoneId={zoneId} world={zoneState.data} onWorldChange={applyWorldChange} />
+        </div>
+      ) : viewMode === "zonemap" ? (
         <div id="zone-view-panel" role="tabpanel" aria-labelledby={`zone-view-tab-${viewMode}`} className="flex min-h-0 min-w-0 flex-1 flex-col">
           <ZoneMapPanel zoneId={zoneId} world={zoneState.data} onWorldChange={applyWorldChange} />
         </div>

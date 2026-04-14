@@ -34,7 +34,7 @@ const ASSET_CATEGORIES: AssetCategory[] = [
   { label: "Characters",  types: ["mob", "pet", "player_sprite", "entity_portrait", "class_portrait", "race_portrait"] },
   { label: "Items",       types: ["item", "ability_icon", "ability_sprite", "status_effect_icon"] },
   { label: "Lore",        types: ["lore_character", "lore_location", "lore_organization", "lore_species", "lore_item", "lore_event", "lore_map"] },
-  { label: "UI",          types: ["ornament", "panel_header", "splash_hero", "loading_vignette", "empty_state", "status_art"] },
+  { label: "UI",          types: ["ornament", "panel_header", "splash_hero", "loading_vignette", "empty_state", "status_art", "showcase_banner", "showcase_favicon"] },
   { label: "Audio/Video", types: ["music", "ambient", "audio", "video"] },
 ];
 

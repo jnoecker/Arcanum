@@ -103,6 +103,8 @@ export const FORMAT_BY_ASSET_TYPE: Partial<Record<AssetType, string>> = {
   ability_icon: FORMAT_BY_TYPE.ability_icon,
   status_effect_icon: FORMAT_BY_TYPE.status_effect_icon,
   zone_map: "16:9 illustrated fantasy map or cartographic overview, top-down or elevated perspective, no readable labels",
+  showcase_banner: "21:9 ultra-wide cinematic hero banner, sweeping establishing vista, strong negative space in upper and lower thirds for title text overlay, no readable text",
+  showcase_favicon: "1:1 square world logo icon, bold centered emblem filling most of the frame, high-contrast silhouette that reads at tiny sizes, no text, no fine detail",
   splash_hero: "ultra-wide cinematic hero illustration, sweeping composition, welcoming focal vista",
   loading_vignette: "1:1 square atmospheric vignette, centered focal subject, meditative composition",
   panel_header: "4:1 ultra-wide horizontal header illustration, decorative and panoramic, readable text forbidden",
@@ -468,6 +470,20 @@ export const ASSET_TEMPLATES: Record<AssetType, { label: string; templates: Reco
     templates: {
       arcanum: `Top-down fantasy map illustration — parchment-toned with deep indigo ocean, golden coastline details, baroque cartouche borders, mountain ranges and forests rendered in rich oil-painting technique`,
       gentle_magic: `Top-down fantasy map illustration — soft watercolor style on cream parchment, gentle pastel terrain coloring, dreamy cloud-like borders, luminous compass rose`,
+    },
+  },
+  showcase_banner: {
+    label: "Showcase Banner",
+    templates: {
+      arcanum: `Ultra-wide cinematic hero banner for a worldbuilding website — a sweeping establishing vista of this fantasy world rendered in deep cosmic indigo and warm aurum-gold, baroque scrollwork of glowing energy threads tracing the horizon, layered atmospheric depth from distant silhouettes to luminous foreground, strong negative space in the upper and lower thirds to leave room for title text overlay, painterly oil technique, majestic and inviting, no characters in close foreground`,
+      gentle_magic: `Ultra-wide cinematic hero banner for a worldbuilding website — a sweeping dreamlike vista of this fantasy world in soft lavender and pale blue undertones, gentle atmospheric haze, warm gold sunlight diffusing through floating motes of light, slightly elongated organic silhouettes in the distance, strong negative space in the upper and lower thirds for title text overlay, painterly and luminous, emotionally warm and inviting, no characters in close foreground`,
+    },
+  },
+  showcase_favicon: {
+    label: "Showcase Favicon",
+    templates: {
+      arcanum: `A bold centered emblem for a world logo icon — a single iconic symbol representing this world's essence, rendered in concentrated aurum-gold light against a deep cosmic indigo background, baroque filigree curling inward toward the symbol, high contrast so the silhouette remains legible even at tiny sizes, centered square composition with the symbol filling most of the frame, painterly but simplified, no fine detail that would disappear when scaled down, no text`,
+      gentle_magic: `A bold centered emblem for a world logo icon — a single iconic symbol representing this world's essence, rendered as a softly glowing natural form in warm gold and dusty rose against a deep mist-blue background, gentle diffused bloom, high contrast so the silhouette remains legible even at tiny sizes, centered square composition with the symbol filling most of the frame, painterly but simplified, no fine detail that would disappear when scaled down, no text`,
     },
   },
 };

@@ -351,6 +351,16 @@ fn hub_profile(asset_type: &str) -> HubImageProfile {
             max_height: 2048,
             quality: 80.0,
         },
+        "showcase_banner" => HubImageProfile {
+            max_width: 1920,
+            max_height: 820,
+            quality: 82.0,
+        },
+        "showcase_favicon" => HubImageProfile {
+            max_width: 512,
+            max_height: 512,
+            quality: 85.0,
+        },
         _ => HubImageProfile {
             max_width: 1024,
             max_height: 1024,

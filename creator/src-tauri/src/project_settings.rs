@@ -9,6 +9,26 @@ fn default_bg_removal_provider() -> String {
     "local".to_string()
 }
 
+fn default_autosave_enabled() -> bool {
+    true
+}
+
+fn default_autosave_interval_minutes() -> u32 {
+    5
+}
+
+fn default_snapshot_enabled() -> bool {
+    true
+}
+
+fn default_snapshot_interval_minutes() -> u32 {
+    60
+}
+
+fn default_snapshot_keep_count() -> u32 {
+    10
+}
+
 /// Cached project settings — keyed by project_dir to avoid re-reading from disk.
 static PROJECT_SETTINGS_CACHE: LazyLock<RwLock<Option<(String, ProjectSettings)>>> =
     LazyLock::new(|| RwLock::new(None));
@@ -53,6 +73,18 @@ pub struct ProjectSettings {
     pub hub_world_display_name: String,
     #[serde(default)]
     pub hub_world_tagline: String,
+    #[serde(default = "default_autosave_enabled")]
+    pub autosave_enabled: bool,
+    #[serde(default = "default_autosave_interval_minutes")]
+    pub autosave_interval_minutes: u32,
+    #[serde(default = "default_snapshot_enabled")]
+    pub snapshot_enabled: bool,
+    #[serde(default = "default_snapshot_interval_minutes")]
+    pub snapshot_interval_minutes: u32,
+    #[serde(default = "default_snapshot_keep_count")]
+    pub snapshot_keep_count: u32,
+    #[serde(default)]
+    pub snapshot_include_assets: bool,
 }
 
 pub fn project_settings_path(project_dir: &str) -> PathBuf {
@@ -139,6 +171,12 @@ pub async fn seed_project_settings(
         hub_world_listed: false,
         hub_world_display_name: String::new(),
         hub_world_tagline: String::new(),
+        autosave_enabled: default_autosave_enabled(),
+        autosave_interval_minutes: default_autosave_interval_minutes(),
+        snapshot_enabled: default_snapshot_enabled(),
+        snapshot_interval_minutes: default_snapshot_interval_minutes(),
+        snapshot_keep_count: default_snapshot_keep_count(),
+        snapshot_include_assets: false,
     };
     save_project_settings(project_dir, ps.clone()).await?;
     Ok(ps)

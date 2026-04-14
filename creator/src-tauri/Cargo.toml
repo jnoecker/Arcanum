@@ -39,6 +39,8 @@ image = { version = "0.25", default-features = false, features = ["jpeg", "png",
 webp = "0.3"
 ffmpeg-sidecar = "2"
 which = "6"
+zip = { version = "2", default-features = false, features = ["deflate"] }
+walkdir = "2"
 
 [target.'cfg(windows)'.dependencies]
 windows-sys = { version = "0.59", features = ["Win32_Foundation", "Win32_System_JobObjects", "Win32_System_Threading"] }

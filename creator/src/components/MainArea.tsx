@@ -38,6 +38,7 @@ const AdminDashboard = lazy(() => import("./admin/AdminDashboard").then(m => ({ 
 const TuningWizard = lazy(() => import("./tuning/TuningWizard").then(m => ({ default: m.TuningWizard })));
 const AppearancePanel = lazy(() => import("./AppearancePanel").then(m => ({ default: m.AppearancePanel })));
 const PlaytestPanel = lazy(() => import("./playtest/PlaytestPanel").then(m => ({ default: m.PlaytestPanel })));
+const BackupPanel = lazy(() => import("./BackupPanel").then(m => ({ default: m.BackupPanel })));
 
 function IslandBackPill({ island }: { island: Island }) {
   const openIsland = useProjectStore((s) => s.openIsland);
@@ -115,6 +116,7 @@ export function MainArea() {
           case "tuningWizard": content = <TuningWizard />; break;
           case "appearance": content = <AppearancePanel />; break;
           case "playtest": content = <PlaytestPanel />; break;
+          case "backup": content = <BackupPanel />; break;
           default: content = null;
         }
       } else {

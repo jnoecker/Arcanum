@@ -120,6 +120,12 @@ export interface ProjectSettings {
   hub_world_listed: boolean;
   hub_world_display_name: string;
   hub_world_tagline: string;
+  autosave_enabled: boolean;
+  autosave_interval_minutes: number;
+  snapshot_enabled: boolean;
+  snapshot_interval_minutes: number;
+  snapshot_keep_count: number;
+  snapshot_include_assets: boolean;
 }
 
 /** Mirrors the Rust HubPublishRequest struct */

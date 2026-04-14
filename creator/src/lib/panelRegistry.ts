@@ -73,6 +73,7 @@ const STUDIO_PANELS: PanelDef[] = [
   { id: "portraits", label: "Portraits", group: "studio", host: "studio", kicker: "Studio", title: "Portraits", description: "Race and class portrait creation.", maxWidth: "max-w-7xl", island: "forge", glyph: "\u{1F464}", aiOnly: true },
   { id: "studioAbilities", label: "Icons", group: "studio", host: "studio", kicker: "Studio", title: "Icons", description: "Ability and status-effect icon generation.", maxWidth: "max-w-7xl", island: "forge", glyph: "\u{1F532}", aiOnly: true },
   { id: "sprites", label: "Player Sprites", group: "studio", host: "command", kicker: "Studio", title: "Player sprites", description: "Visible identity, unlockable variants, and portrait logic.", maxWidth: "max-w-7xl", island: "forge", glyph: "\u{1F9CD}" },
+  { id: "playtest", label: "Playtest", group: "studio", host: "command", kicker: "Studio", title: "Playtest", description: "Walk through your world room-by-room. Read descriptions, meet mobs, try dialogue, inspect items and gathering nodes.", maxWidth: "max-w-7xl", island: "forge", glyph: "\u{1F6B6}" },
   ART_STYLE_PANEL,
 ];
 

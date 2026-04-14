@@ -17,6 +17,7 @@ import "@xyflow/react/dist/style.css";
 
 import { useZoneStore } from "@/stores/zoneStore";
 import { useProjectStore } from "@/stores/projectStore";
+import { panelTab } from "@/lib/panelRegistry";
 import { useAssetStore } from "@/stores/assetStore";
 import { useToastStore } from "@/stores/toastStore";
 import { zoneToGraph, GRAPH } from "@/lib/zoneToGraph";
@@ -604,6 +605,18 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
               aria-label="Re-layout rooms"
             >
               Re-layout
+            </button>
+            <button
+              onClick={() => {
+                useProjectStore.getState().navigateTo({ zoneId });
+                useProjectStore.getState().openTab(panelTab("playtest"));
+              }}
+              disabled={roomCount === 0}
+              className="h-6 rounded-full border border-accent/40 bg-accent/10 px-3 text-xs text-accent transition-colors hover:bg-accent/20 disabled:opacity-30 max-[1100px]:h-9"
+              title="Walk through this zone as a player"
+              aria-label="Playtest this zone"
+            >
+              ▶ Playtest
             </button>
             {showAddRoom ? (
               <form

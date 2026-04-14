@@ -253,6 +253,12 @@ fn runtime_image_profile(asset_type: &str) -> Option<RuntimeImageProfile> {
         "lore_map" => {
             RuntimeImageProfile { max_width: 2048, max_height: 2048, jpeg_quality: 85 }
         }
+        "showcase_banner" => {
+            RuntimeImageProfile { max_width: 1920, max_height: 820, jpeg_quality: 85 }
+        }
+        "showcase_favicon" => {
+            RuntimeImageProfile { max_width: 512, max_height: 512, jpeg_quality: 88 }
+        }
         _ => return None,
     };
     Some(profile)

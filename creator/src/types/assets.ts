@@ -62,6 +62,8 @@ export type AssetType =
   | "lore_item"
   | "lore_event"
   | "lore_map"
+  | "showcase_banner"
+  | "showcase_favicon"
   | "music"
   | "ambient"
   | "audio"
@@ -290,6 +292,8 @@ export const ENTITY_DIMENSIONS: Record<string, { width: number; height: number; 
   lore_species: { width: 512, height: 512, label: "512×512 (Portrait)" },
   lore_item: { width: 256, height: 256, label: "256×256 (Icon)" },
   lore_event: { width: 1920, height: 1080, label: "1920×1080 (Scene)" },
+  showcase_banner: { width: 1792, height: 768, label: "1792×768 (Banner)" },
+  showcase_favicon: { width: 512, height: 512, label: "512×512 (Icon)" },
 };
 
 /** Common dimension presets for override dropdown */

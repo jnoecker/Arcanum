@@ -1,8 +1,9 @@
 import { create } from "zustand";
 import type { WorldLore, Article, ArticleTemplate, ColorLabel, LoreMap, MapPin, CalendarSystem, TimelineEvent, LoreDocument, TemplateOverrides, ShowcaseSettings, CustomTemplateDefinition, CustomSceneTemplate, ArtStyle, ZonePlan } from "@/types/lore";
 import { snapshot as histSnapshot, undo as histUndo, redo as histRedo } from "@/lib/historyStack";
+import { HISTORY_DEPTHS } from "@/lib/historyDepths";
 
-const MAX_LORE_HISTORY = 50;
+const MAX_LORE_HISTORY = HISTORY_DEPTHS.LORE;
 
 // Stable empty references for selectors (prevents infinite re-render loops)
 const EMPTY_ARTICLES: Record<string, Article> = {};

@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { useProjectStore } from "@/stores/projectStore";
 import { useZoneStore } from "@/stores/zoneStore";
 import { useLoreStore } from "@/stores/loreStore";
+import { useStoryStore } from "@/stores/storyStore";
+import { useConfigStore } from "@/stores/configStore";
 import { saveEverything } from "@/lib/saveAll";
 import { PANEL_MAP, panelTab } from "@/lib/panelRegistry";
 import { useToastStore } from "@/stores/toastStore";
@@ -42,29 +44,19 @@ export function useKeyboardShortcuts() {
       // Skip remaining shortcuts when typing in inputs
       if (inInput) return;
 
-      // ─── Ctrl+Z → undo (zone or lore, depending on context) ─
+      // ─── Ctrl+Z → undo (routed by active panel) ───────────
       if (e.key === "z" && !e.shiftKey) {
         e.preventDefault();
-        const activeZoneId = getActiveZoneId();
-        if (activeZoneId) {
-          useZoneStore.getState().undo(activeZoneId);
-          useToastStore.getState().show("Change undone");
-        } else if (isActiveLorePanel()) {
-          useLoreStore.getState().undoLore();
+        if (dispatchUndo()) {
           useToastStore.getState().show("Change undone");
         }
         return;
       }
 
-      // ─── Ctrl+Shift+Z / Ctrl+Y → redo (zone or lore) ───────
+      // ─── Ctrl+Shift+Z / Ctrl+Y → redo (routed by active panel) ───
       if ((e.key === "z" && e.shiftKey) || e.key === "y") {
         e.preventDefault();
-        const activeZoneId = getActiveZoneId();
-        if (activeZoneId) {
-          useZoneStore.getState().redo(activeZoneId);
-          useToastStore.getState().show("Change restored");
-        } else if (isActiveLorePanel()) {
-          useLoreStore.getState().redoLore();
+        if (dispatchRedo()) {
           useToastStore.getState().show("Change restored");
         }
         return;
@@ -123,9 +115,66 @@ function getActiveZoneId(): string | null {
   return activeTabId.replace(/^zone:/, "");
 }
 
-function isActiveLorePanel(): boolean {
+/** Active panel ID, or null if the active tab isn't a panel. */
+function getActivePanelId(): string | null {
   const { activeTabId } = useProjectStore.getState();
-  if (!activeTabId?.startsWith("panel:")) return false;
-  const panelId = activeTabId.replace(/^panel:/, "");
-  return PANEL_MAP[panelId]?.host === "lore";
+  if (!activeTabId?.startsWith("panel:")) return null;
+  return activeTabId.replace(/^panel:/, "");
+}
+
+/**
+ * Route Ctrl+Z to the correct store based on the active tab.
+ * Returns true if something was dispatched (so the caller can show a toast).
+ *
+ * Dispatch order matters: the Story Editor is a `lore` host panel, so it
+ * must be checked before the generic lore branch — otherwise Ctrl+Z in the
+ * story editor would wipe unrelated lore changes instead of undoing the
+ * user's story edit.
+ */
+function dispatchUndo(): boolean {
+  const activeZoneId = getActiveZoneId();
+  if (activeZoneId) {
+    useZoneStore.getState().undo(activeZoneId);
+    return true;
+  }
+  const panelId = getActivePanelId();
+  if (!panelId) return false;
+  if (panelId === "storyEditor") {
+    useStoryStore.getState().undoStory();
+    return true;
+  }
+  const host = PANEL_MAP[panelId]?.host;
+  if (host === "lore") {
+    useLoreStore.getState().undoLore();
+    return true;
+  }
+  if (host === "config") {
+    useConfigStore.getState().undoConfig();
+    return true;
+  }
+  return false;
+}
+
+function dispatchRedo(): boolean {
+  const activeZoneId = getActiveZoneId();
+  if (activeZoneId) {
+    useZoneStore.getState().redo(activeZoneId);
+    return true;
+  }
+  const panelId = getActivePanelId();
+  if (!panelId) return false;
+  if (panelId === "storyEditor") {
+    useStoryStore.getState().redoStory();
+    return true;
+  }
+  const host = PANEL_MAP[panelId]?.host;
+  if (host === "lore") {
+    useLoreStore.getState().redoLore();
+    return true;
+  }
+  if (host === "config") {
+    useConfigStore.getState().redoConfig();
+    return true;
+  }
+  return false;
 }

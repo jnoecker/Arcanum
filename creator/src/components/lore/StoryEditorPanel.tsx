@@ -23,11 +23,7 @@ export function StoryEditorPanel({ storyId, onDelete }: StoryEditorPanelProps) {
   const project = useProjectStore((s) => s.project);
   const story = useStoryStore((s) => s.stories[storyId]);
   const dirty = useStoryStore((s) => s.dirty[storyId] ?? false);
-  const canUndo = useStoryStore((s) => s.storyPast.length > 0);
-  const canRedo = useStoryStore((s) => s.storyFuture.length > 0);
   const updateStory = useStoryStore((s) => s.updateStory);
-  const undoStory = useStoryStore((s) => s.undoStory);
-  const redoStory = useStoryStore((s) => s.redoStory);
   const markClean = useStoryStore((s) => s.markClean);
   const activeSceneId = useStoryStore((s) => s.activeSceneId);
   const setActiveScene = useStoryStore((s) => s.setActiveScene);
@@ -224,7 +220,8 @@ export function StoryEditorPanel({ storyId, onDelete }: StoryEditorPanelProps) {
           </span>
         </div>
 
-        {/* Present + Export + Undo / Redo */}
+        {/* Present + Export + Delete. Undo/Redo now live in the LorePanelHost
+            toolbar so all lore panels surface them consistently. */}
         <div className="flex shrink-0 items-center gap-2">
           <button
             type="button"
@@ -261,35 +258,6 @@ export function StoryEditorPanel({ storyId, onDelete }: StoryEditorPanelProps) {
             </svg>
             Export
           </button>
-
-          <div className="mx-0.5 h-5 w-px bg-border-muted" />
-
-          <ActionButton
-            variant="ghost"
-            size="icon"
-            onClick={undoStory}
-            disabled={!canUndo}
-            aria-label="Undo"
-            className={!canUndo ? "opacity-45" : ""}
-          >
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-              <path d="M4 7h8a3 3 0 0 1 0 6H9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-              <path d="M7 4L4 7l3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </ActionButton>
-          <ActionButton
-            variant="ghost"
-            size="icon"
-            onClick={redoStory}
-            disabled={!canRedo}
-            aria-label="Redo"
-            className={!canRedo ? "opacity-45" : ""}
-          >
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-              <path d="M12 7H4a3 3 0 0 0 0 6h3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-              <path d="M9 4l3 3-3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </ActionButton>
 
           {onDelete && (
             <>

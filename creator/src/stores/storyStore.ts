@@ -1,8 +1,9 @@
 import { create } from "zustand";
 import type { Story, Scene } from "@/types/story";
 import { snapshot as histSnapshot, undo as histUndo, redo as histRedo } from "@/lib/historyStack";
+import { HISTORY_DEPTHS } from "@/lib/historyDepths";
 
-const MAX_STORY_HISTORY = 50;
+const MAX_STORY_HISTORY = HISTORY_DEPTHS.STORY;
 
 // Stable empty reference for selectors (prevents infinite re-render loops)
 const EMPTY_STORIES: Record<string, Story> = {};

@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { useStoryStore, selectActiveScene } from "../storyStore";
+import { HISTORY_DEPTHS } from "@/lib/historyDepths";
 import type { Story, Scene } from "@/types/story";
 
 function makeScene(overrides: Partial<Scene> = {}): Scene {
@@ -96,13 +97,15 @@ describe("storyStore", () => {
   });
 
   describe("undo stack cap", () => {
-    it("caps at 50 entries", () => {
+    it("caps at HISTORY_DEPTHS.STORY entries", () => {
       useStoryStore.getState().setStory(makeStory());
-      for (let i = 0; i < 52; i++) {
+      // Make enough edits to exceed the cap regardless of the exact value,
+      // then assert the stack was trimmed to the configured depth.
+      const overflow = HISTORY_DEPTHS.STORY + 3;
+      for (let i = 0; i < overflow; i++) {
         useStoryStore.getState().updateStory("story_test_abc1", { title: `Title ${i}` });
       }
-      // 1 from setStory + 52 from updateStory = 53 snapshots, capped at 50
-      expect(useStoryStore.getState().storyPast.length).toBe(50);
+      expect(useStoryStore.getState().storyPast.length).toBe(HISTORY_DEPTHS.STORY);
     });
   });
 

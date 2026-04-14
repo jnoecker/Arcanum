@@ -1,9 +1,12 @@
 import { lazy, Suspense, useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { useLoreStore } from "@/stores/loreStore";
+import { useStoryStore } from "@/stores/storyStore";
 import { useProjectStore } from "@/stores/projectStore";
+import { useToastStore } from "@/stores/toastStore";
 import { saveLore } from "@/lib/lorePersistence";
 import { PANEL_MAP } from "@/lib/panelRegistry";
 import { Spinner } from "@/components/ui/FormWidgets";
+import { UndoRedoButtons } from "@/components/ui/UndoRedoButtons";
 import configBg from "@/assets/config-bg.png";
 
 import { WorldSettingPanel } from "./WorldSettingPanel";
@@ -64,6 +67,16 @@ export function LorePanelHost({ panelId }: { panelId: string }) {
   const project = useProjectStore((s) => s.project);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+
+  // Story editor is a `lore` host panel but edits the story store, so the
+  // host-level undo buttons must route to the right store based on panelId.
+  const isStoryPanel = panelId === "storyEditor";
+  const loreUndoDepth = useLoreStore((s) => s.lorePast.length);
+  const loreRedoDepth = useLoreStore((s) => s.loreFuture.length);
+  const storyUndoDepth = useStoryStore((s) => s.storyPast.length);
+  const storyRedoDepth = useStoryStore((s) => s.storyFuture.length);
+  const undoDepth = isStoryPanel ? storyUndoDepth : loreUndoDepth;
+  const redoDepth = isStoryPanel ? storyRedoDepth : loreRedoDepth;
 
   const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   useEffect(() => {
@@ -129,19 +142,39 @@ export function LorePanelHost({ panelId }: { panelId: string }) {
         </div>
 
         <div className={`relative z-10 mx-auto flex flex-col gap-6 px-6 py-5 ${def?.maxWidth ?? "max-w-5xl"}`}>
-          {(dirty || saving || saveError) && (
-            <div className="pointer-events-auto sticky top-3 z-20 flex items-center justify-end gap-2">
-              {saveError && <span role="alert" className="text-2xs text-status-error">Save failed</span>}
-              <button
-                onClick={handleSave}
-                disabled={!dirty || saving}
-                aria-label={saving ? "Saving lore" : "Save lore"}
-                className="focus-ring rounded-full border border-[var(--chrome-stroke)] bg-bg-primary/80 px-3 py-1 text-2xs font-medium text-accent shadow-md transition hover:bg-bg-primary disabled:cursor-not-allowed disabled:opacity-40"
-              >
-                {saving ? <span className="flex items-center gap-1.5"><Spinner />Saving</span> : "Save Lore"}
-              </button>
-            </div>
-          )}
+          <div className="pointer-events-auto sticky top-3 z-20 flex items-center justify-end gap-2">
+            <UndoRedoButtons
+              canUndo={undoDepth > 0}
+              canRedo={redoDepth > 0}
+              undoDepth={undoDepth}
+              redoDepth={redoDepth}
+              onUndo={() => {
+                if (undoDepth === 0) return;
+                if (isStoryPanel) useStoryStore.getState().undoStory();
+                else useLoreStore.getState().undoLore();
+                useToastStore.getState().show("Change undone");
+              }}
+              onRedo={() => {
+                if (redoDepth === 0) return;
+                if (isStoryPanel) useStoryStore.getState().redoStory();
+                else useLoreStore.getState().redoLore();
+                useToastStore.getState().show("Change restored");
+              }}
+            />
+            {(dirty || saving || saveError) && (
+              <>
+                {saveError && <span role="alert" className="text-2xs text-status-error">Save failed</span>}
+                <button
+                  onClick={handleSave}
+                  disabled={!dirty || saving}
+                  aria-label={saving ? "Saving lore" : "Save lore"}
+                  className="focus-ring rounded-full border border-[var(--chrome-stroke)] bg-bg-primary/80 px-3 py-1 text-2xs font-medium text-accent shadow-md transition hover:bg-bg-primary disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  {saving ? <span className="flex items-center gap-1.5"><Spinner />Saving</span> : "Save Lore"}
+                </button>
+              </>
+            )}
+          </div>
           {renderPanel(panelId)}
         </div>
       </div>

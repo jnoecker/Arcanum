@@ -5,6 +5,8 @@ import { saveProjectConfig } from "@/lib/saveConfig";
 import { PANEL_MAP } from "@/lib/panelRegistry";
 import type { AppConfig } from "@/types/config";
 import { Spinner } from "@/components/ui/FormWidgets";
+import { UndoRedoButtons } from "@/components/ui/UndoRedoButtons";
+import { useToastStore } from "@/stores/toastStore";
 import configBg from "@/assets/config-bg.png";
 
 import { ClassDesigner } from "./ClassDesigner";
@@ -171,6 +173,10 @@ export function ConfigPanelHost({ panelId }: { panelId: string }) {
   const config = useConfigStore((s) => s.config);
   const dirty = useConfigStore((s) => s.dirty);
   const updateConfig = useConfigStore((s) => s.updateConfig);
+  const undoConfig = useConfigStore((s) => s.undoConfig);
+  const redoConfig = useConfigStore((s) => s.redoConfig);
+  const undoDepth = useConfigStore((s) => s.configPast.length);
+  const redoDepth = useConfigStore((s) => s.configFuture.length);
   const project = useProjectStore((s) => s.project);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -248,19 +254,39 @@ export function ConfigPanelHost({ panelId }: { panelId: string }) {
         </div>
 
         <div className={`relative z-10 mx-auto flex flex-col gap-6 px-6 py-5 ${def?.maxWidth ?? "max-w-5xl"}`}>
-          {(dirty || saving || saveError) && (
-            <div className="pointer-events-auto sticky top-3 z-20 flex items-center justify-end gap-2">
-              {saveError && <span role="alert" className="text-2xs text-status-error">Save failed</span>}
-              <button
-                onClick={handleSave}
-                disabled={!dirty || saving}
-                aria-label={saving ? "Saving configuration" : "Save configuration"}
-                className="focus-ring rounded-full border border-[var(--chrome-stroke)] bg-bg-primary/80 px-3 py-1 text-2xs font-medium text-accent shadow-md transition hover:bg-bg-primary disabled:cursor-not-allowed disabled:opacity-40"
-              >
-                {saving ? <span className="flex items-center gap-1.5"><Spinner />Saving</span> : "Save Config"}
-              </button>
-            </div>
-          )}
+          <div className="pointer-events-auto sticky top-3 z-20 flex items-center justify-end gap-2">
+            <UndoRedoButtons
+              canUndo={undoDepth > 0}
+              canRedo={redoDepth > 0}
+              undoDepth={undoDepth}
+              redoDepth={redoDepth}
+              onUndo={() => {
+                if (undoDepth > 0) {
+                  undoConfig();
+                  useToastStore.getState().show("Change undone");
+                }
+              }}
+              onRedo={() => {
+                if (redoDepth > 0) {
+                  redoConfig();
+                  useToastStore.getState().show("Change restored");
+                }
+              }}
+            />
+            {(dirty || saving || saveError) && (
+              <>
+                {saveError && <span role="alert" className="text-2xs text-status-error">Save failed</span>}
+                <button
+                  onClick={handleSave}
+                  disabled={!dirty || saving}
+                  aria-label={saving ? "Saving configuration" : "Save configuration"}
+                  className="focus-ring rounded-full border border-[var(--chrome-stroke)] bg-bg-primary/80 px-3 py-1 text-2xs font-medium text-accent shadow-md transition hover:bg-bg-primary disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  {saving ? <span className="flex items-center gap-1.5"><Spinner />Saving</span> : "Save Config"}
+                </button>
+              </>
+            )}
+          </div>
           {renderPanel(panelId, { config, onChange: handleChange })}
         </div>
       </div>

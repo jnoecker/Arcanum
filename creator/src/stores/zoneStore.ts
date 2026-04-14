@@ -1,7 +1,8 @@
 import { create } from "zustand";
 import type { WorldFile } from "@/types/world";
+import { HISTORY_DEPTHS } from "@/lib/historyDepths";
 
-const MAX_HISTORY = 100;
+const MAX_HISTORY = HISTORY_DEPTHS.ZONE;
 
 export interface ZoneState {
   filePath: string;

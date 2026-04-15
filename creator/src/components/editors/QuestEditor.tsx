@@ -21,6 +21,7 @@ import {
   ArrayRow,
 } from "@/components/ui/FormWidgets";
 import { DeleteEntityButton } from "./EditorShared";
+import { ReputationGateEditor } from "./ReputationGateEditor";
 import { useConfigStore } from "@/stores/configStore";
 import { useConfigOptions } from "@/lib/useConfigOptions";
 
@@ -264,6 +265,12 @@ export function QuestEditor({
           </FieldRow>
         </div>
       </Section>
+
+      <ReputationGateEditor
+        value={quest.requiredReputation}
+        onChange={(v) => patch({ requiredReputation: v })}
+        hint="Giver won't offer the quest to players who fail this gate."
+      />
 
       <DeleteEntityButton onClick={handleDelete} label="Delete Quest" />
     </>

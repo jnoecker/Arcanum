@@ -17,6 +17,7 @@ import "@xyflow/react/dist/style.css";
 
 import { useZoneStore } from "@/stores/zoneStore";
 import { useProjectStore } from "@/stores/projectStore";
+import { useConfigStore } from "@/stores/configStore";
 import { panelTab } from "@/lib/panelRegistry";
 import { useAssetStore } from "@/stores/assetStore";
 import { useToastStore } from "@/stores/toastStore";
@@ -151,6 +152,7 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
   const reactFlow = useReactFlow();
   const zoneState = useZoneStore((s) => s.zones.get(zoneId));
   const updateZone = useZoneStore((s) => s.updateZone);
+  const factionDefs = useConfigStore((s) => s.config?.factions?.definitions);
   const undo = useZoneStore((s) => s.undo);
   const redo = useZoneStore((s) => s.redo);
   const canUndo = useZoneStore((s) => s.canUndo(zoneId));
@@ -201,6 +203,11 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
     if (!zoneState) return;
     const v = e.target.value;
     updateZone(zoneId, { ...zoneState.data, terrain: v || undefined });
+  }, [zoneState, updateZone, zoneId]);
+  const handleFactionChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
+    if (!zoneState) return;
+    const v = e.target.value;
+    updateZone(zoneId, { ...zoneState.data, faction: v || undefined });
   }, [zoneState, updateZone, zoneId]);
 
   // Auto-close entity panel if the selected entity was removed (e.g. by undo)
@@ -764,6 +771,28 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
                 <option value="sky">Sky</option>
               </select>
             </label>
+
+            {/* Controlling faction */}
+            {factionDefs && Object.keys(factionDefs).length > 0 && (
+              <label
+                className="flex items-center gap-1.5 text-xs text-text-secondary max-[1100px]:min-h-9"
+                title="Faction that controls this region. Mobs without their own faction inherit it; guards react to rep against it."
+              >
+                <span className="whitespace-nowrap">Faction</span>
+                <select
+                  value={zoneState.data.faction ?? ""}
+                  onChange={handleFactionChange}
+                  className="ornate-input px-1.5 py-0.5 text-xs text-text-primary"
+                >
+                  <option value="">— none —</option>
+                  {Object.entries(factionDefs).map(([id, def]) => (
+                    <option key={id} value={id}>
+                      {def.name || id}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
           </div>
 
           {/* Compact zone badge — visible only when the right column is hidden */}

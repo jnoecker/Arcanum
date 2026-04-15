@@ -129,6 +129,34 @@ describe("compassLayout", () => {
 });
 
 describe("compassLayout fallbacks", () => {
+  it("stacks u/d-linked floors as separate islands below the start floor", () => {
+    // Two distinct floors connected only by stairs. The upstairs floor must
+    // not be tangled into the start floor's grid — it should sit cleanly
+    // below it with its own internal layout.
+    const world = makeWorld({
+      // Start floor: hub with one east neighbor.
+      hub: { title: "Hub", description: "", exits: { e: "lounge", u: "landing" } },
+      lounge: { title: "Lounge", description: "", exits: { w: "hub" } },
+      // Upstairs floor: landing + bedroom east of it.
+      landing: { title: "Landing", description: "", exits: { d: "hub", e: "bedroom" } },
+      bedroom: { title: "Bedroom", description: "", exits: { w: "landing" } },
+    });
+    const { nodes } = zoneToGraph(world);
+    const laid = compassLayout(nodes, world);
+    const hub = laid.find((n) => n.id === "hub")!;
+    const lounge = laid.find((n) => n.id === "lounge")!;
+    const landing = laid.find((n) => n.id === "landing")!;
+    const bedroom = laid.find((n) => n.id === "bedroom")!;
+    // Start floor: lounge to the east of hub, same row.
+    expect(lounge.position.x).toBeGreaterThan(hub.position.x);
+    expect(lounge.position.y).toBe(hub.position.y);
+    // Upstairs floor: landing strictly below the start floor.
+    expect(landing.position.y).toBeGreaterThan(lounge.position.y);
+    // Internal upstairs layout: bedroom east of landing on the same row.
+    expect(bedroom.position.x).toBeGreaterThan(landing.position.x);
+    expect(bedroom.position.y).toBe(landing.position.y);
+  });
+
   it("traverses u/d for reachability without pinning grid coordinates", () => {
     // Start has `u` to upstairs; upstairs has `e` to attic. Verify upstairs is
     // placed (reachable) and attic ends up east of upstairs on the grid.

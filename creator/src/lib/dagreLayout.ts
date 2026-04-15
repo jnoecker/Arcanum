@@ -9,6 +9,9 @@ const DEFAULT_NODE_HEIGHT = 140;
 const COL_GUTTER = 80;
 const ROW_GUTTER = 60;
 
+/** Empty grid rows inserted between separate floor islands. */
+const ISLAND_GAP = 3;
+
 /**
  * Compass direction → grid offset (x, y). Y-axis is inverted: negative = up.
  *
@@ -52,15 +55,20 @@ export interface LayoutMeasurement {
 /**
  * Layout rooms on a grid using compass directions from exits.
  *
- * BFS from startRoom, placing each neighbor at the grid offset implied by
- * the exit direction. Cardinals are processed before diagonals so well-formed
- * compass graphs lay out deterministically. Vertical exits (u/d) are traversed
- * for reachability but don't influence grid placement; vertical-only orphans
- * are stacked adjacent to their parent after main placement.
+ * Each "floor" — a maximal subgraph reachable through n/s/e/w/diagonals only —
+ * is laid out independently as its own island. u/d exits are NOT used for
+ * placement; instead, when BFS hits a u/d link, we record the target as the
+ * seed of the next floor island and stack it below the current one. This is
+ * intentional: stairs/portals don't have a sensible 2D position, and trying
+ * to satellite them onto the same grid was tangling unrelated floors.
  *
- * If the graph has too many geometric contradictions (rooms that compete for
- * the same grid cell), the compass result is discarded and the nodes are
- * re-laid using `@dagrejs/dagre` instead.
+ * The u/d edges still render between islands (zoneToGraph styles them as
+ * dashed vertical connections), so the visual story is "this floor connects
+ * to that floor via stairs" with each floor readable on its own.
+ *
+ * If the start floor has too many geometric contradictions (rooms competing
+ * for the same grid cell), the whole layout is discarded and re-run via
+ * `@dagrejs/dagre`.
  *
  * @param nodes          The raw nodes from `zoneToGraph`.
  * @param world          The zone WorldFile (for `rooms`, `startRoom`, exits).
@@ -77,7 +85,6 @@ export function compassLayout(
   const allNodeIds = new Set(nodes.map((n) => n.id));
   const grid = new Map<string, string>();
   const pos = new Map<string, [number, number]>();
-  const verticalLinks: Array<{ parent: string; child: string }> = [];
   let collisions = 0;
 
   function place(id: string, gx: number, gy: number) {
@@ -96,9 +103,22 @@ export function compassLayout(
     );
   }
 
-  function bfsFrom(startId: string, ox: number, oy: number) {
-    if (pos.has(startId)) return;
+  /**
+   * BFS-place a single floor (compass-connected component) starting from
+   * `startId` at grid origin (ox, oy). Returns the rooms placed in this call
+   * plus the u/d-linked target rooms that belong to *other* floors — the
+   * caller uses these to seed the next island below.
+   */
+  function placeFloor(startId: string, ox: number, oy: number): {
+    placed: string[];
+    nextFloorSeeds: string[];
+  } {
+    const placed: string[] = [];
+    const nextSeeds: string[] = [];
+    if (pos.has(startId)) return { placed, nextFloorSeeds: nextSeeds };
+
     place(startId, ox, oy);
+    placed.push(startId);
 
     const queue = [startId];
     while (queue.length > 0) {
@@ -118,54 +138,66 @@ export function compassLayout(
 
         const offset = DIR_OFFSET[dir];
         if (!offset) {
-          // u/d: remember the link and let the satellite pass seed a BFS
-          // from the parent's cell once it's been placed.
+          // u/d: don't pull the target into this floor — it lives on its own
+          // island. Note the link so the caller can seed the next floor.
           if (!raw.includes(":") && world.rooms[raw]) {
-            verticalLinks.push({ parent: cur, child: nodeId });
+            nextSeeds.push(nodeId);
           }
           continue;
         }
+
         place(nodeId, cx + offset[0], cy + offset[1]);
+        placed.push(nodeId);
 
         if (!raw.includes(":") && world.rooms[raw]) {
           queue.push(nodeId);
         }
       }
     }
+
+    return { placed, nextFloorSeeds: nextSeeds };
   }
 
-  bfsFrom(world.startRoom, 0, 0);
-
-  // Main-BFS collisions signal geometric contradictions in the exit graph.
-  // Satellite and orphan passes below legitimately collide on purpose (they
-  // seed from occupied cells) and shouldn't count toward the fallback budget.
-  const mainCollisions = collisions;
-  const mainPlaced = pos.size;
-
-  // Satellite pass: rooms reached only through u/d get seeded at the parent's
-  // cell (collision spiral lands them adjacent) and BFS continues from there
-  // so their own compass neighbors get placed too.
-  for (const { parent, child } of verticalLinks) {
-    if (pos.has(child)) continue;
-    const parentPos = pos.get(parent);
-    if (!parentPos) continue;
-    bfsFrom(child, parentPos[0], parentPos[1]);
-  }
-
-  // Any rooms still unplaced — no path from start at all — get dropped below
-  // the main graph as orphan clusters.
+  // Place the start floor, then walk u/d links breadth-first to find sibling
+  // floors and stack each one below the previous. Floors connected via stairs
+  // end up in vertical reading order (start → upstairs → attic, etc.); fully
+  // disconnected pockets fall through to the orphan sweep below.
   let maxY = 0;
-  for (const [, [, y]] of pos) {
-    maxY = Math.max(maxY, y);
+  const floorQueue: string[] = [world.startRoom];
+
+  function placeAndAdvance(seedId: string) {
+    const islandY = pos.size === 0 ? 0 : maxY + ISLAND_GAP;
+    const result = placeFloor(seedId, 0, islandY);
+    if (result.placed.length === 0) return;
+    for (const [, [, y]] of pos) {
+      if (y > maxY) maxY = y;
+    }
+    for (const next of result.nextFloorSeeds) {
+      if (!pos.has(next)) floorQueue.push(next);
+    }
   }
 
-  for (const roomId of Object.keys(world.rooms)) {
-    if (!pos.has(roomId)) {
-      bfsFrom(roomId, 0, maxY + 3);
-      for (const [, [, y]] of pos) {
-        maxY = Math.max(maxY, y);
-      }
+  // Main-BFS collisions are computed against the *first* floor only — the
+  // start floor is the canonical "is this graph grid-embeddable" sample.
+  let mainCollisions = 0;
+  let mainPlaced = 0;
+  while (floorQueue.length > 0) {
+    const seed = floorQueue.shift()!;
+    if (pos.has(seed)) continue;
+    const beforeCol = collisions;
+    const beforeSize = pos.size;
+    placeAndAdvance(seed);
+    if (mainPlaced === 0) {
+      mainCollisions = collisions - beforeCol;
+      mainPlaced = pos.size - beforeSize;
     }
+  }
+
+  // Final sweep: any rooms unreachable from start (or any floor reachable
+  // from it via u/d) become standalone islands below.
+  for (const roomId of Object.keys(world.rooms)) {
+    if (pos.has(roomId)) continue;
+    placeAndAdvance(roomId);
   }
 
   if (pos.size === 0) return nodes;

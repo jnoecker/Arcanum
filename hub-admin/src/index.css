@@ -19,6 +19,7 @@
   --accent-soft: rgba(255, 125, 0, 0.16);
   --danger: #c45a5a;
   --danger-soft: rgba(196, 90, 90, 0.12);
+  --warning: #d8a13a;
   --success: #7bc28e;
   color-scheme: dark;
 }

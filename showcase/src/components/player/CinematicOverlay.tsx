@@ -62,14 +62,14 @@ export function CinematicOverlay({ src, title, onClose }: CinematicOverlayProps)
       role="dialog"
       aria-modal="true"
       aria-labelledby="cinematic-overlay-title"
-      className="fixed inset-0 z-[60] flex flex-col items-center justify-center bg-black/90 backdrop-blur-sm"
+      className="fixed inset-0 z-[60] flex flex-col items-center justify-center bg-bg-abyss/95"
       onClick={(e) => {
         // Click on the backdrop (not the video itself) closes.
         if (e.target === e.currentTarget) onClose();
       }}
     >
       {/* Header with title + close */}
-      <div className="absolute top-0 left-0 right-0 flex items-start justify-between gap-4 px-6 py-4 text-white">
+      <div className="absolute top-0 left-0 right-0 flex items-start justify-between gap-4 px-6 py-4 text-text-primary">
         <h2
           id="cinematic-overlay-title"
           className="min-w-0 flex-1 text-pretty break-words font-display text-lg tracking-wide"
@@ -81,7 +81,7 @@ export function CinematicOverlay({ src, title, onClose }: CinematicOverlayProps)
           onClick={onClose}
           aria-label="Close cinematic"
           title="Close cinematic"
-          className="flex h-10 w-10 items-center justify-center rounded-full border border-white/20 bg-black/40 text-white transition-colors hover:bg-white/10"
+          className="flex h-11 w-11 items-center justify-center rounded-full border border-border-muted/40 bg-bg-abyss/60 text-text-primary transition-colors hover:bg-bg-secondary/40"
         >
           <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
             <path
@@ -110,7 +110,7 @@ export function CinematicOverlay({ src, title, onClose }: CinematicOverlayProps)
       </video>
 
       {/* Footer hint */}
-      <p className="absolute bottom-6 left-0 right-0 text-center text-xs text-white/50">
+      <p className="absolute bottom-6 left-0 right-0 text-center text-xs text-text-muted">
         Press Esc or click the backdrop to return to the interactive player.
       </p>
     </div>

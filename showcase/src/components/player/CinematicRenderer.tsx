@@ -82,7 +82,7 @@ export function CinematicRenderer({
 
   return (
     <div
-      className="relative aspect-video w-full overflow-hidden rounded-lg bg-black"
+      className="relative aspect-video w-full overflow-hidden rounded-lg bg-bg-abyss"
       role="region"
       aria-label="Scene playback"
     >

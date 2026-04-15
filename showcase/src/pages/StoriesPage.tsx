@@ -35,8 +35,8 @@ function StoryTile({ story, featured = false }: { story: ShowcaseStory; featured
         <div
           className={
             featured
-              ? "aspect-[16/9] bg-[linear-gradient(135deg,rgba(255,125,0,0.14),transparent_55%),linear-gradient(160deg,rgba(7,55,70,0.96),rgba(0,21,36,0.88))]"
-              : "aspect-[4/3] bg-[linear-gradient(135deg,rgba(255,125,0,0.1),transparent_55%),linear-gradient(160deg,rgba(7,55,70,0.92),rgba(0,21,36,0.88))]"
+              ? "aspect-[16/9] bg-gradient-story-tile"
+              : "aspect-[4/3] bg-gradient-story-tile-soft"
           }
           aria-hidden="true"
         />
@@ -68,7 +68,7 @@ function StoryTile({ story, featured = false }: { story: ShowcaseStory; featured
             {story.tags.slice(0, featured ? 4 : 3).map((tag) => (
               <span
                 key={tag}
-                className="rounded-full border border-border-muted/35 bg-white/[0.03] px-3 py-1 text-[0.72rem] text-text-secondary"
+                className="rounded-full border border-border-muted/35 bg-text-primary/[0.04] px-3 py-1 text-[0.72rem] text-text-secondary"
               >
                 {tag}
               </span>

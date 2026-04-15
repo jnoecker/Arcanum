@@ -138,7 +138,7 @@ export function HomePage() {
                 alt={bannerTitle}
                 className="absolute inset-0 h-full w-full object-cover opacity-32"
               />
-              <div className="absolute inset-0 bg-[linear-gradient(100deg,rgba(0,21,36,0.96),rgba(0,21,36,0.74),rgba(0,21,36,0.88))]" />
+              <div className="absolute inset-0 bg-gradient-hero-scrim" />
             </>
           )}
 
@@ -257,7 +257,7 @@ export function HomePage() {
             <h2 className="font-display text-sm uppercase tracking-[0.28em] text-[var(--color-aurum-pale)]">
               Recent entries
             </h2>
-            <div className="h-px flex-1 bg-[linear-gradient(90deg,rgba(255,125,0,0.35),rgba(23,72,82,0.16))]" />
+            <div className="h-px flex-1 bg-gradient-divider-ember" />
             <Link
               to="/articles"
               className="text-xs uppercase tracking-[0.22em] text-text-muted transition-colors duration-300 hover:text-[var(--color-aurum-pale)]"
@@ -271,7 +271,7 @@ export function HomePage() {
               <Link
                 key={a.id}
                 to={`/articles/${encodeURIComponent(a.id)}`}
-                className="group relative flex aspect-[4/5] overflow-hidden rounded-[1.75rem] border border-white/10 bg-bg-secondary/30 shadow-[var(--shadow-image)]"
+                className="group relative flex aspect-[4/5] overflow-hidden rounded-[1.75rem] border border-border-muted/30 bg-bg-secondary/30 shadow-[var(--shadow-image)]"
               >
                 {a.imageUrl && (
                   <img

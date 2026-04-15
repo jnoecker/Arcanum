@@ -134,8 +134,8 @@ export function Layout({ children }: { children: ReactNode }) {
 
       {/* Atmospheric glow */}
       <div aria-hidden="true" className="pointer-events-none fixed inset-0 z-0">
-        <div className="absolute top-[-12rem] left-[-8rem] w-[36rem] h-[36rem] rounded-full bg-[radial-gradient(circle,rgba(255,125,0,0.11),transparent_65%)] blur-3xl" />
-        <div className="absolute bottom-[-16rem] right-[-10rem] w-[40rem] h-[40rem] rounded-full bg-[radial-gradient(circle,rgba(47,147,161,0.08),transparent_70%)] blur-3xl" />
+        <div className="absolute top-[-12rem] left-[-8rem] w-[36rem] h-[36rem] rounded-full bg-glow-aurum-radial blur-3xl" />
+        <div className="absolute bottom-[-16rem] right-[-10rem] w-[40rem] h-[40rem] rounded-full bg-glow-stellar-radial blur-3xl" />
       </div>
 
       <main

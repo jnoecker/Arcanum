@@ -106,7 +106,7 @@ export function StoryPlayer({ story }: StoryPlayerProps) {
 
   return (
     <div className="space-y-4">
-      <div className="rounded-[1.45rem] border border-[var(--color-aurum)]/20 bg-[linear-gradient(180deg,rgba(3,37,52,0.88),rgba(0,21,36,0.96))] px-4 py-4 shadow-[var(--shadow-section)] sm:px-5">
+      <div className="rounded-[1.45rem] border border-[var(--color-aurum)]/20 bg-gradient-panel px-4 py-4 shadow-[var(--shadow-section)] sm:px-5">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div className="min-w-0">
             <p className="text-[0.68rem] uppercase tracking-[0.3em] text-[var(--color-aurum)]/80">Projection controls</p>
@@ -139,7 +139,7 @@ export function StoryPlayer({ story }: StoryPlayerProps) {
       </div>
 
       {mode !== "scroll" ? (
-        <div className="rounded-[1.6rem] border border-border-muted/35 bg-[linear-gradient(180deg,rgba(3,37,52,0.92),rgba(0,21,36,0.98))] p-3 shadow-[var(--shadow-deep)] sm:p-4">
+        <div className="rounded-[1.6rem] border border-border-muted/35 bg-gradient-panel-deep p-3 shadow-[var(--shadow-deep)] sm:p-4">
           <div className="relative overflow-hidden rounded-[1.2rem] border border-border-muted/20">
             <div
               onClick={goNext}
@@ -159,11 +159,11 @@ export function StoryPlayer({ story }: StoryPlayerProps) {
             </div>
 
             {autoTimerActive && mode === "auto" ? (
-              <div className="absolute inset-x-6 bottom-4 z-40 h-1 overflow-hidden rounded-full bg-black/35">
+              <div className="absolute inset-x-6 bottom-4 z-40 h-1 overflow-hidden rounded-full bg-bg-abyss/40">
                 <div
                   key={currentIndex}
                   ref={progressBarRef}
-                  className="h-full origin-left scale-x-0 rounded-full bg-[linear-gradient(90deg,var(--color-aurum),var(--color-aurum-pale))]"
+                  className="h-full origin-left scale-x-0 rounded-full bg-gradient-progress-aurum"
                 />
               </div>
             ) : null}
@@ -186,7 +186,7 @@ export function StoryPlayer({ story }: StoryPlayerProps) {
           </div>
         </div>
       ) : (
-        <div className="rounded-[1.6rem] border border-border-muted/35 bg-[linear-gradient(180deg,rgba(3,37,52,0.92),rgba(0,21,36,0.98))] p-4 shadow-[var(--shadow-deep)]">
+        <div className="rounded-[1.6rem] border border-border-muted/35 bg-gradient-panel-deep p-4 shadow-[var(--shadow-deep)]">
           <div className="mb-4 flex flex-col gap-3 border-b border-border-muted/25 pb-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p className="text-[0.68rem] uppercase tracking-[0.3em] text-[var(--color-aurum)]/80">Scroll exhibition</p>

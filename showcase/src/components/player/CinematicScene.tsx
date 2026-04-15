@@ -93,7 +93,7 @@ export function CinematicScene({
           draggable={false}
         />
       ) : (
-        <div className="absolute inset-0 bg-black" />
+        <div className="absolute inset-0 bg-bg-abyss" />
       )}
 
       {/* Layer 1: Back-row animated entities (z-10) */}
@@ -130,7 +130,7 @@ export function CinematicScene({
           className="absolute inset-x-0 bottom-0 pointer-events-none"
           style={{ zIndex: 30 }}
         >
-          <div className="bg-gradient-to-t from-black/60 to-transparent">
+          <div className="bg-gradient-narration-scrim">
             <TypewriterNarration
               narrationJson={narrationJson}
               playing={narrationPlaying}

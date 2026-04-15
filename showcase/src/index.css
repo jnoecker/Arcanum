@@ -347,6 +347,132 @@ body {
   color: var(--color-aurum-pale);
 }
 
+/* ─── Surface gradients ─────────────────────────────────────────── */
+/* Themed equivalents of the inline rgba() gradients that previously
+   hardcoded raw bg-primary/bg-abyss values. Using color-mix lets a
+   future light-theme swap cascade through the player and lore pages
+   without rewriting class strings. */
+
+.bg-gradient-panel-deep {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-bg-primary) 94%, transparent),
+    color-mix(in srgb, var(--color-bg-abyss) 98%, transparent)
+  );
+}
+
+.bg-gradient-panel {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-bg-primary) 88%, transparent),
+    color-mix(in srgb, var(--color-bg-abyss) 96%, transparent)
+  );
+}
+
+.bg-gradient-panel-soft {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-bg-primary) 78%, transparent),
+    color-mix(in srgb, var(--color-bg-abyss) 92%, transparent)
+  );
+}
+
+.bg-gradient-hero-ember {
+  background:
+    radial-gradient(
+      circle at top left,
+      color-mix(in srgb, var(--color-aurum) 14%, transparent),
+      transparent 44%
+    ),
+    linear-gradient(
+      155deg,
+      color-mix(in srgb, var(--color-bg-primary) 98%, transparent),
+      color-mix(in srgb, var(--color-bg-abyss) 94%, transparent)
+    );
+}
+
+.bg-gradient-story-tile {
+  background:
+    linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--color-aurum) 14%, transparent),
+      transparent 55%
+    ),
+    linear-gradient(
+      160deg,
+      color-mix(in srgb, var(--color-bg-secondary) 96%, transparent),
+      color-mix(in srgb, var(--color-bg-abyss) 88%, transparent)
+    );
+}
+
+.bg-gradient-story-tile-soft {
+  background:
+    linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--color-aurum) 10%, transparent),
+      transparent 55%
+    ),
+    linear-gradient(
+      160deg,
+      color-mix(in srgb, var(--color-bg-secondary) 92%, transparent),
+      color-mix(in srgb, var(--color-bg-abyss) 88%, transparent)
+    );
+}
+
+.bg-gradient-hero-scrim {
+  background: linear-gradient(
+    100deg,
+    color-mix(in srgb, var(--color-bg-abyss) 96%, transparent),
+    color-mix(in srgb, var(--color-bg-abyss) 74%, transparent),
+    color-mix(in srgb, var(--color-bg-abyss) 88%, transparent)
+  );
+}
+
+.bg-gradient-event-scrim {
+  background: linear-gradient(
+    105deg,
+    color-mix(in srgb, var(--color-bg-abyss) 92%, transparent) 0%,
+    color-mix(in srgb, var(--color-bg-abyss) 72%, transparent) 45%,
+    color-mix(in srgb, var(--color-bg-abyss) 55%, transparent) 100%
+  );
+}
+
+.bg-gradient-divider-ember {
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--color-aurum) 35%, transparent),
+    color-mix(in srgb, var(--color-border-muted) 16%, transparent)
+  );
+}
+
+.bg-glow-aurum-radial {
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--color-aurum) 11%, transparent),
+    transparent 65%
+  );
+}
+
+.bg-glow-stellar-radial {
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--color-stellar-blue) 8%, transparent),
+    transparent 70%
+  );
+}
+
+.bg-gradient-progress-aurum {
+  background: linear-gradient(90deg, var(--color-aurum), var(--color-aurum-pale));
+}
+
+.bg-gradient-narration-scrim {
+  background: linear-gradient(
+    to top,
+    color-mix(in srgb, var(--color-bg-abyss) 60%, transparent),
+    transparent
+  );
+}
+
 /* ─── Animations ────────────────────────────────────────────────── */
 
 @keyframes fadeIn {

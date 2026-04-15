@@ -33,7 +33,7 @@ function formatBytes(bytes: number): string {
 
 function UsageBar({ used, quota, label }: { used: number; quota: number; label: string }) {
   const pct = quota === 0 ? 0 : Math.min(100, Math.round((used / quota) * 100));
-  const color = pct >= 95 ? "var(--danger)" : pct >= 80 ? "#d8c268" : "var(--accent)";
+  const color = pct >= 95 ? "var(--danger)" : pct >= 80 ? "var(--warning)" : "var(--accent)";
   return (
     <div style={{ minWidth: 140 }}>
       <div

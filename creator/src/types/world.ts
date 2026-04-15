@@ -10,6 +10,8 @@ export interface WorldFile {
   terrain?: string;
   graphical?: boolean;
   pvpEnabled?: boolean;
+  /** Controlling faction ID (references FactionConfig.definitions). Drives "hostile territory" reactions. */
+  faction?: string;
   puzzles?: Record<string, PuzzleFile>;
   image?: ZoneImageDefaults;
   audio?: ZoneAudioDefaults;
@@ -22,6 +24,13 @@ export interface WorldFile {
   gatheringNodes?: Record<string, GatheringNodeFile>;
   recipes?: Record<string, RecipeFile>;
   dungeon?: DungeonFile;
+}
+
+/** Reputation gate: player must have `min ≤ rep ≤ max` with `faction` to use. */
+export interface ReputationRequirement {
+  faction: string;
+  min?: number;
+  max?: number;
 }
 
 export interface ZoneImageDefaults {
@@ -200,6 +209,8 @@ export interface ShopFile {
   room: string;
   items?: string[];
   image?: string;
+  /** Rep gate. Shop refuses to trade when the requirement fails. */
+  requiredReputation?: ReputationRequirement;
 }
 
 export interface TrainerFile {
@@ -228,6 +239,8 @@ export interface QuestFile {
   completionType?: string;
   objectives?: QuestObjectiveFile[];
   rewards?: QuestRewardsFile;
+  /** Rep gate. Giver will not offer the quest when the requirement fails. */
+  requiredReputation?: ReputationRequirement;
 }
 
 export interface QuestObjectiveFile {

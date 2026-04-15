@@ -377,4 +377,66 @@ describe("validateZone", () => {
       true,
     );
   });
+
+  // ─── Factions & reputation ────────────────────────────────────
+  describe("faction references", () => {
+    const known = new Set(["royal_court", "rebel_cell"]);
+
+    it("warns when zone-level faction is unknown", () => {
+      const world = makeValidWorld();
+      world.faction = "mystery_cult";
+      const issues = warnings(validateZone(world, undefined, undefined, known));
+      expect(issues.some((i) => i.entity === "zone" && i.message.includes("mystery_cult"))).toBe(true);
+    });
+
+    it("warns when mob faction is unknown", () => {
+      const world = makeValidWorld();
+      world.mobs!.rat!.faction = "mystery_cult";
+      const issues = warnings(validateZone(world, undefined, undefined, known));
+      expect(issues.some((i) => i.entity === "mob:rat")).toBe(true);
+    });
+
+    it("warns when shop rep gate faction is unknown", () => {
+      const world = makeValidWorld();
+      world.shops = {
+        armorer: {
+          name: "Armorer",
+          room: "room1",
+          requiredReputation: { faction: "mystery_cult", min: 250 },
+        },
+      };
+      const issues = warnings(validateZone(world, undefined, undefined, known));
+      expect(issues.some((i) => i.entity === "shop:armorer" && i.message.includes("mystery_cult"))).toBe(true);
+    });
+
+    it("errors when rep gate min > max", () => {
+      const world = makeValidWorld();
+      world.quests = {
+        q1: {
+          name: "Q",
+          giver: "rat",
+          objectives: [{ type: "KILL", targetKey: "rat", count: 1 }],
+          requiredReputation: { faction: "royal_court", min: 500, max: 100 },
+        },
+      };
+      const issues = errors(validateZone(world, undefined, undefined, known));
+      expect(issues.some((i) => i.entity === "quest:q1")).toBe(true);
+    });
+
+    it("accepts known faction refs without warning", () => {
+      const world = makeValidWorld();
+      world.faction = "royal_court";
+      world.mobs!.rat!.faction = "royal_court";
+      const issues = validateZone(world, undefined, undefined, known);
+      expect(issues.filter((i) => i.message.includes("royal_court"))).toHaveLength(0);
+    });
+
+    it("skips faction checks when knownFactions is not provided", () => {
+      const world = makeValidWorld();
+      world.faction = "anything";
+      world.mobs!.rat!.faction = "anything";
+      const issues = validateZone(world);
+      expect(issues.filter((i) => i.message.includes("anything"))).toHaveLength(0);
+    });
+  });
 });

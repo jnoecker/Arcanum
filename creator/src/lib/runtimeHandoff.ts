@@ -88,7 +88,10 @@ export function runWorkspaceValidation(): ValidationSummary {
   const validClasses = config?.classes
     ? new Set(Object.keys(config.classes).map((k) => k.toUpperCase()))
     : undefined;
-  const results = validateAllZones(zones, config?.equipmentSlots, validClasses);
+  const knownFactions = config?.factions?.definitions
+    ? new Set(Object.keys(config.factions.definitions))
+    : undefined;
+  const results = validateAllZones(zones, config?.equipmentSlots, validClasses, knownFactions);
 
   if (config) {
     const configIssues = validateConfig(config);

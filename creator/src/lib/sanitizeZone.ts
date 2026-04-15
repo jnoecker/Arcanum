@@ -683,6 +683,7 @@ function cleanOutput(world: WorldFile): WorldFile {
   if (world.terrain) result.terrain = world.terrain;
   if (world.graphical) result.graphical = true;
   if (world.pvpEnabled) result.pvpEnabled = true;
+  if (world.faction?.trim()) result.faction = world.faction.trim();
   if (world.image) {
     // Strip zoneMap — it's Arcanum-only; the MUD server's ZoneImageDefaults
     // doesn't recognize it and will crash on the unknown field.

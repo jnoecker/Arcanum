@@ -11,6 +11,7 @@ import {
   EntityHeader,
 } from "@/components/ui/FormWidgets";
 import { DeleteEntityButton, MediaSection } from "./EditorShared";
+import { ReputationGateEditor } from "./ReputationGateEditor";
 import { shopPrompt } from "@/lib/entityPrompts";
 
 interface ShopEditorProps {
@@ -114,6 +115,12 @@ export function ShopEditor({
           </div>
         )}
       </Section>
+
+      <ReputationGateEditor
+        value={shop.requiredReputation}
+        onChange={(v) => patch({ requiredReputation: v })}
+        hint="Players who fail the gate see the shop refuse service."
+      />
 
       <MediaSection image={shop.image} onImageChange={(v) => patch({ image: v })} getPrompt={(style) => shopPrompt(shopId, shop, style)} assetType="background" context={zoneId ? { zone: zoneId, entity_type: "shop", entity_id: shopId } : undefined} />
       <DeleteEntityButton onClick={handleDelete} label="Delete Shop" />

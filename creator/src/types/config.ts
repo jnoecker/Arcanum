@@ -340,12 +340,39 @@ export interface FactionDefinition {
   enemies?: string[];
 }
 
+export interface ReputationTier {
+  /** Stable ID used in data (e.g. "honored"). */
+  id: string;
+  /** Display label (e.g. "Honored"). */
+  label: string;
+  /** Minimum reputation (inclusive) for a player to be in this tier. */
+  minReputation: number;
+}
+
+/**
+ * Default reputation tiers. IDs are stable; labels and thresholds can be
+ * overridden per-project. The floor tier's minReputation is the absolute
+ * minimum rep the MUD will allow.
+ */
+export const DEFAULT_REPUTATION_TIERS: ReputationTier[] = [
+  { id: "hated", label: "Hated", minReputation: -20000 },
+  { id: "hostile", label: "Hostile", minReputation: -1000 },
+  { id: "unfriendly", label: "Unfriendly", minReputation: -500 },
+  { id: "neutral", label: "Neutral", minReputation: 0 },
+  { id: "friendly", label: "Friendly", minReputation: 250 },
+  { id: "honored", label: "Honored", minReputation: 1000 },
+  { id: "revered", label: "Revered", minReputation: 5000 },
+  { id: "exalted", label: "Exalted", minReputation: 20000 },
+];
+
 export interface FactionConfig {
   defaultReputation: number;
   killPenalty: number;
   killBonus: number;
   definitions: Record<string, FactionDefinition>;
   questRewards?: Record<string, Record<string, number>>;
+  /** Named reputation bands, ordered low→high. Omitted for the built-in default set. */
+  tiers?: ReputationTier[];
 }
 
 // ─── Navigation ────────────────────────────────────────────────────

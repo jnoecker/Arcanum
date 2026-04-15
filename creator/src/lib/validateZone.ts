@@ -292,12 +292,19 @@ export function validateZone(
   world: WorldFile,
   equipmentSlots?: Record<string, EquipmentSlotDefinition>,
   validClasses?: ReadonlySet<string>,
+  knownFactions?: ReadonlySet<string>,
 ): ValidationIssue[] {
   const issues: ValidationIssue[] = [];
   const roomIds = new Set(Object.keys(world.rooms));
   const mobIds = new Set(Object.keys(world.mobs ?? {}));
   const itemIds = new Set(Object.keys(world.items ?? {}));
   const VALID_CLASSES = validClasses ?? DEFAULT_VALID_CLASSES;
+  const factionCheck = (entity: string, factionId: string | undefined, label: string) => {
+    if (!factionId || !knownFactions) return;
+    if (!knownFactions.has(factionId)) {
+      addIssue(issues, "warning", entity, `${label} "${factionId}" is not a defined faction`);
+    }
+  };
 
   if (!world.startRoom) {
     addIssue(issues, "error", "zone", "No start room defined");
@@ -310,6 +317,7 @@ export function validateZone(
   if (world.terrain && !VALID_TERRAINS.has(world.terrain)) {
     addIssue(issues, "warning", "zone", `Terrain "${world.terrain}" is not a recognized terrain type`);
   }
+  factionCheck("zone", world.faction, "Controlling faction");
 
   for (const [roomId, room] of Object.entries(world.rooms)) {
     const entity = `room:${roomId}`;
@@ -338,6 +346,7 @@ export function validateZone(
     const entity = `mob:${mobId}`;
     if (!mob.name?.trim()) addIssue(issues, "warning", entity, "Mob has no name");
     if (!roomIds.has(mob.room)) addIssue(issues, "error", entity, `Room "${mob.room}" does not exist`);
+    factionCheck(entity, mob.faction, "Faction");
     if (mob.category && !VALID_MOB_CATEGORIES.has(mob.category)) {
       addIssue(issues, "warning", entity, `Category "${mob.category}" is not a recognized mob category`);
     }
@@ -424,6 +433,13 @@ export function validateZone(
         addIssue(issues, "warning", entity, `Inventory item "${itemId}" is not a known item in this zone`);
       }
     }
+    if (shop.requiredReputation) {
+      factionCheck(entity, shop.requiredReputation.faction, "Rep gate faction");
+      const { min, max } = shop.requiredReputation;
+      if (min != null && max != null && min > max) {
+        addIssue(issues, "error", entity, `Rep gate min (${min}) must be <= max (${max})`);
+      }
+    }
   }
 
   const trainerRooms = new Set<string>();
@@ -464,6 +480,13 @@ export function validateZone(
         if (obj.count != null && obj.count < 1) {
           addIssue(issues, "error", entity, `Objective #${index + 1} count must be at least 1`);
         }
+      }
+    }
+    if (quest.requiredReputation) {
+      factionCheck(entity, quest.requiredReputation.faction, "Rep gate faction");
+      const { min, max } = quest.requiredReputation;
+      if (min != null && max != null && min > max) {
+        addIssue(issues, "error", entity, `Rep gate min (${min}) must be <= max (${max})`);
       }
     }
   }
@@ -544,10 +567,11 @@ export function validateAllZones(
   zones: Map<string, { data: WorldFile }>,
   equipmentSlots?: Record<string, EquipmentSlotDefinition>,
   validClasses?: ReadonlySet<string>,
+  knownFactions?: ReadonlySet<string>,
 ): Map<string, ValidationIssue[]> {
   const results = new Map<string, ValidationIssue[]>();
   for (const [zoneId, zone] of zones) {
-    const issues = validateZone(zone.data, equipmentSlots, validClasses);
+    const issues = validateZone(zone.data, equipmentSlots, validClasses, knownFactions);
     if (issues.length > 0) {
       results.set(zoneId, issues);
     }

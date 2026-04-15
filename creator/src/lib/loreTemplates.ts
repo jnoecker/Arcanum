@@ -11,7 +11,15 @@ export const CUSTOM_TEMPLATE_COLORS = [
 export interface TemplateFieldDef {
   key: string;
   label: string;
-  type: "text" | "textarea" | "select" | "tags" | "article_ref" | "article_refs" | "number";
+  type:
+    | "text"
+    | "textarea"
+    | "select"
+    | "tags"
+    | "article_ref"
+    | "article_refs"
+    | "number"
+    | "config_faction_ref";
   options?: { value: string; label: string }[];
   placeholder?: string;
 }
@@ -57,6 +65,7 @@ export const TEMPLATE_SCHEMAS: Record<ArticleTemplate, TemplateSchema> = {
       { key: "leader", label: "Leader", type: "text", placeholder: "Current leader or ruling body" },
       { key: "territory", label: "Territory", type: "text", placeholder: "Regions or strongholds" },
       { key: "values", label: "Values", type: "tags", placeholder: "Add a core value..." },
+      { key: "configFactionId", label: "Game faction", type: "config_faction_ref", placeholder: "Link to a mechanical faction" },
     ],
   },
 

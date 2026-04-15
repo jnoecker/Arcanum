@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useState, memo } from "react";
 import { useConfigStore } from "@/stores/configStore";
-import type { FactionConfig, FactionDefinition } from "@/types/config";
+import type { FactionConfig, FactionDefinition, ReputationTier } from "@/types/config";
+import { DEFAULT_REPUTATION_TIERS } from "@/types/config";
 import {
   TextInput,
   NumberInput,
@@ -362,6 +363,18 @@ export function FactionPanel() {
           />
         )}
       </section>
+
+      <ReputationTiersSection
+        tiers={factions.tiers}
+        onChange={(tiers) => patch({ tiers })}
+      />
+
+      {factionIds.length > 1 && (
+        <RivalryGraph
+          definitions={factions.definitions}
+          factionLabelMap={factionLabelMap}
+        />
+      )}
 
       <section className="flex flex-col gap-3">
         <header className="flex items-end justify-between gap-3">
@@ -902,3 +915,262 @@ const QuestRewardRow = memo(function QuestRewardRow({
     </div>
   );
 });
+
+// ─── Reputation tiers ─────────────────────────────────────────────
+
+interface ReputationTiersSectionProps {
+  tiers: ReputationTier[] | undefined;
+  onChange: (tiers: ReputationTier[] | undefined) => void;
+}
+
+function ReputationTiersSection({ tiers, onChange }: ReputationTiersSectionProps) {
+  const effective = tiers && tiers.length > 0 ? tiers : DEFAULT_REPUTATION_TIERS;
+  const isDefault = !tiers || tiers.length === 0;
+
+  const patchTier = (index: number, p: Partial<ReputationTier>) => {
+    const next = [...effective];
+    next[index] = { ...next[index]!, ...p };
+    next.sort((a, b) => a.minReputation - b.minReputation);
+    onChange(next);
+  };
+
+  const addTier = () => {
+    const last = effective[effective.length - 1];
+    const next: ReputationTier = {
+      id: `tier_${effective.length + 1}`,
+      label: `Tier ${effective.length + 1}`,
+      minReputation: (last?.minReputation ?? 0) + 5000,
+    };
+    onChange([...effective, next]);
+  };
+
+  const deleteTier = (index: number) => {
+    if (effective.length <= 2) return;
+    const next = effective.filter((_, i) => i !== index);
+    onChange(next);
+  };
+
+  const resetToDefaults = () => {
+    onChange(undefined);
+  };
+
+  return (
+    <section className="flex flex-col gap-3">
+      <header className="flex items-end justify-between gap-3">
+        <div>
+          <h3 className="font-display font-semibold text-base text-text-primary">
+            Reputation Tiers
+          </h3>
+          <p className="mt-0.5 max-w-xl text-2xs leading-relaxed text-text-muted/70">
+            Named bands of standing. Each tier covers everything from its
+            threshold up to the next one. Referenced by reputation gates on
+            shops and quests.
+          </p>
+        </div>
+        <div className="flex items-center gap-1.5">
+          {!isDefault && (
+            <button
+              type="button"
+              onClick={resetToDefaults}
+              className="focus-ring rounded border border-border-muted/60 px-2.5 py-1 text-2xs text-text-muted hover:border-border-default hover:text-text-primary"
+            >
+              Reset to default
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={addTier}
+            className="focus-ring rounded border border-accent/40 bg-accent/10 px-2.5 py-1 text-xs font-medium text-accent transition hover:bg-accent/20"
+          >
+            + Add tier
+          </button>
+        </div>
+      </header>
+
+      <div className="flex flex-col gap-1.5 rounded-2xl border border-border-muted/50 bg-bg-primary/25 p-3">
+        {effective.map((tier, i) => {
+          const nextMin = effective[i + 1]?.minReputation;
+          return (
+            <div
+              key={i}
+              className="grid grid-cols-[1fr_1fr_1fr_auto] items-center gap-2"
+            >
+              <TextInput
+                value={tier.label}
+                onCommit={(v) => patchTier(i, { label: v })}
+                placeholder="Label"
+              />
+              <TextInput
+                value={tier.id}
+                onCommit={(v) => patchTier(i, { id: normalizeId(v) })}
+                placeholder="id"
+              />
+              <div className="flex items-center gap-1">
+                <NumberInput
+                  value={tier.minReputation}
+                  onCommit={(v) =>
+                    patchTier(i, { minReputation: v ?? 0 })
+                  }
+                />
+                {nextMin != null && (
+                  <span className="text-2xs text-text-muted/60 whitespace-nowrap">
+                    → {nextMin - 1}
+                  </span>
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={() => deleteTier(i)}
+                disabled={effective.length <= 2}
+                aria-label={`Delete ${tier.label}`}
+                className="focus-ring rounded p-1 text-text-muted/50 transition hover:bg-status-error/15 hover:text-status-error disabled:cursor-not-allowed disabled:opacity-30"
+              >
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                  <path
+                    d="M4 4L12 12M12 4L4 12"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                  />
+                </svg>
+              </button>
+            </div>
+          );
+        })}
+      </div>
+      {isDefault && (
+        <p className="text-2xs italic text-text-muted/60">
+          Using built-in defaults. Edit any value to override.
+        </p>
+      )}
+    </section>
+  );
+}
+
+// ─── Rivalry graph ────────────────────────────────────────────────
+
+interface RivalryGraphProps {
+  definitions: Record<string, FactionDefinition>;
+  factionLabelMap: Map<string, string>;
+}
+
+function RivalryGraph({ definitions, factionLabelMap }: RivalryGraphProps) {
+  const ids = Object.keys(definitions);
+
+  // Collect deduplicated rivalry edges (sorted tuple → visited set).
+  const edges = useMemo(() => {
+    const seen = new Set<string>();
+    const pairs: Array<[string, string]> = [];
+    for (const [aid, def] of Object.entries(definitions)) {
+      for (const bid of def.enemies ?? []) {
+        if (!definitions[bid]) continue;
+        const key = aid < bid ? `${aid}|${bid}` : `${bid}|${aid}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        pairs.push([aid, bid]);
+      }
+    }
+    return pairs;
+  }, [definitions]);
+
+  const layout = useMemo(() => {
+    const cx = 180;
+    const cy = 180;
+    const radius = 130;
+    const positions = new Map<string, { x: number; y: number }>();
+    const n = ids.length;
+    ids.forEach((id, i) => {
+      const angle = (2 * Math.PI * i) / n - Math.PI / 2;
+      positions.set(id, {
+        x: cx + radius * Math.cos(angle),
+        y: cy + radius * Math.sin(angle),
+      });
+    });
+    return positions;
+  }, [ids]);
+
+  if (ids.length < 2) return null;
+
+  return (
+    <section className="flex flex-col gap-3">
+      <header>
+        <h3 className="font-display font-semibold text-base text-text-primary">
+          Rivalry Map
+        </h3>
+        <p className="mt-0.5 text-2xs leading-relaxed text-text-muted/70">
+          Lines mark hostile pairs. Killing a member of one faction earns rep
+          with the other.
+        </p>
+      </header>
+
+      <div className="rounded-2xl border border-border-muted/50 bg-bg-primary/25 p-4">
+        <svg
+          viewBox="0 0 360 360"
+          className="mx-auto block h-auto w-full max-w-md"
+          role="img"
+          aria-label="Faction rivalry graph"
+        >
+          {edges.length === 0 && (
+            <text
+              x={180}
+              y={180}
+              textAnchor="middle"
+              className="fill-text-muted"
+              fontSize="11"
+              fontFamily="system-ui"
+            >
+              No rivalries defined
+            </text>
+          )}
+
+          {edges.map(([a, b], i) => {
+            const pa = layout.get(a);
+            const pb = layout.get(b);
+            if (!pa || !pb) return null;
+            return (
+              <line
+                key={i}
+                x1={pa.x}
+                y1={pa.y}
+                x2={pb.x}
+                y2={pb.y}
+                stroke="rgb(var(--status-error-rgb))"
+                strokeOpacity="0.45"
+                strokeWidth="1.5"
+                strokeDasharray="4 3"
+              />
+            );
+          })}
+
+          {ids.map((id) => {
+            const p = layout.get(id);
+            if (!p) return null;
+            const label = factionLabelMap.get(id) ?? id;
+            return (
+              <g key={id}>
+                <circle
+                  cx={p.x}
+                  cy={p.y}
+                  r={18}
+                  fill="rgb(var(--bg-primary-rgb))"
+                  stroke="rgb(var(--accent-rgb))"
+                  strokeOpacity="0.5"
+                  strokeWidth="1.5"
+                />
+                <text
+                  x={p.x}
+                  y={p.y + 32}
+                  textAnchor="middle"
+                  className="fill-text-primary font-display"
+                  fontSize="11"
+                >
+                  {label.length > 18 ? label.slice(0, 16) + "…" : label}
+                </text>
+              </g>
+            );
+          })}
+        </svg>
+      </div>
+    </section>
+  );
+}

@@ -5,6 +5,7 @@ import { getTemplateSchema } from "@/lib/loreTemplates";
 import { Section, FieldRow, TextInput, NumberInput, SelectInput } from "@/components/ui/FormWidgets";
 import { LoreTextArea } from "./LoreTextArea";
 import { useLoreStore, selectArticles } from "@/stores/loreStore";
+import { useConfigStore } from "@/stores/configStore";
 
 // ─── Tag list (inline) ─────────────────────────────────────────────
 
@@ -146,6 +147,45 @@ function ArticleRefsSelect({
   );
 }
 
+// ─── Config faction picker ─────────────────────────────────────────
+
+function ConfigFactionSelect({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (id: string) => void;
+}) {
+  const defs = useConfigStore((s) => s.config?.factions?.definitions);
+  const options = Object.entries(defs ?? {}).map(([id, def]) => ({
+    value: id,
+    label: `${def.name || id} (${id})`,
+  }));
+
+  if (options.length === 0) {
+    return (
+      <p className="text-2xs italic text-text-muted/70">
+        No factions defined yet. Add them in the Factions config panel.
+      </p>
+    );
+  }
+
+  return (
+    <select
+      className="rounded border border-border-default bg-bg-primary px-2 py-1 text-xs text-text-secondary outline-none focus:border-accent/50 focus-visible:ring-2 focus-visible:ring-border-active"
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+    >
+      <option value="">— none —</option>
+      {options.map((o) => (
+        <option key={o.value} value={o.value}>
+          {o.label}
+        </option>
+      ))}
+    </select>
+  );
+}
+
 // ─── Field renderer ────────────────────────────────────────────────
 
 function FieldRenderer({
@@ -213,6 +253,13 @@ function FieldRenderer({
         <ArticleRefsSelect
           selected={Array.isArray(value) ? value : []}
           onChange={(v) => onChange(v.length > 0 ? v : undefined)}
+        />
+      );
+    case "config_faction_ref":
+      return (
+        <ConfigFactionSelect
+          value={typeof value === "string" ? value : ""}
+          onChange={(v) => onChange(v || undefined)}
         />
       );
     default:

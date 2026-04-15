@@ -23,7 +23,7 @@ import { useAssetStore } from "@/stores/assetStore";
 import { useToastStore } from "@/stores/toastStore";
 import { zoneToGraph, GRAPH } from "@/lib/zoneToGraph";
 import { compassLayout, getLayoutBounds, type LayoutMeasurement } from "@/lib/dagreLayout";
-import { addRoom, addExit, deleteExit, generateRoomId } from "@/lib/zoneEdits";
+import { addRoom, addExit, deleteExit, deleteRoom, generateRoomId } from "@/lib/zoneEdits";
 import { saveZone } from "@/lib/saveZone";
 import type { WorldFile } from "@/types/world";
 import { RoomNode } from "./RoomNode";
@@ -461,6 +461,68 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
     [zoneState, applyWorldChange],
   );
 
+  // ReactFlow's built-in delete key removes nodes/edges from the local graph
+  // state, but without these handlers the WorldFile never learns about it —
+  // so deletions vanish on re-layout or reload. Route them back through the
+  // zoneEdits helpers.
+  const handleNodesDelete = useCallback(
+    (deleted: Array<{ id: string }>) => {
+      if (!zoneState) return;
+      let next = zoneState.data;
+      let blockedStartRoom = false;
+      let skippedCrossZone = false;
+      for (const node of deleted) {
+        if (node.id.startsWith("xzone:")) {
+          skippedCrossZone = true;
+          continue;
+        }
+        if (node.id === next.startRoom) {
+          blockedStartRoom = true;
+          continue;
+        }
+        if (!next.rooms[node.id]) continue;
+        try {
+          next = deleteRoom(next, node.id);
+        } catch {
+          // startRoom guard above already handles the common case.
+        }
+      }
+      if (next !== zoneState.data) {
+        applyWorldChange(next);
+        if (selectedRoomIdRef.current && !next.rooms[selectedRoomIdRef.current]) {
+          setSelectedRoomId(null);
+        }
+      }
+      if (blockedStartRoom) {
+        useToastStore.getState().show("Can't delete the start room");
+      }
+      if (skippedCrossZone) {
+        useToastStore.getState().show("Cross-zone link — edit the other zone to remove");
+      }
+    },
+    [zoneState, applyWorldChange],
+  );
+
+  const handleEdgesDelete = useCallback(
+    (deleted: Array<{ data?: unknown }>) => {
+      if (!zoneState) return;
+      let next = zoneState.data;
+      for (const edge of deleted) {
+        const d = edge.data as { sourceRoom?: string; direction?: string } | undefined;
+        if (!d?.sourceRoom || !d?.direction) continue;
+        try {
+          next = deleteExit(next, d.sourceRoom, d.direction, true);
+        } catch {
+          // Exit already gone — ignore.
+        }
+      }
+      if (next !== zoneState.data) {
+        applyWorldChange(next);
+      }
+    },
+    [zoneState, applyWorldChange],
+  );
+
   const onSelectionChange = useCallback(
     ({ nodes: selected }: OnSelectionChangeParams) => {
       const roomNode = selected.find((n) => n.type === "room");
@@ -883,6 +945,8 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
               edges={edges}
               onNodesChange={onNodesChange}
               onEdgesChange={onEdgesChange}
+              onNodesDelete={handleNodesDelete}
+              onEdgesDelete={handleEdgesDelete}
               onConnect={onConnect}
               nodeTypes={nodeTypes}
               edgeTypes={edgeTypes}

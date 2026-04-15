@@ -1,8 +1,38 @@
 # Arcanum Developer Guide
 
-Everything you need to go from a fresh clone to a working dev build, plus the workflow and architecture context to navigate the codebase.
+Everything a contributor needs to go from a fresh clone to a working dev build, plus the workflow, tech-stack, and architecture context to navigate the codebase.
 
-If you're already familiar with the repo layout, the top-level [`README.md`](../README.md) is the fast path. This guide is for someone opening Arcanum for the first time.
+If you're a user trying to install and run Arcanum, the top-level [`README.md`](../README.md) is the right place. This guide is for people working on Arcanum itself.
+
+## Repository layout
+
+| Directory | What it is |
+|---|---|
+| `creator/` | The Arcanum desktop app — Tauri shell, React frontend, Rust backend |
+| `showcase/` | The public showcase SPA (Vite + React). Runs in three modes: self-hosted, Arcanum Hub landing, and per-world hub subdomain |
+| `hub-worker/` | Cloudflare Worker backing the central Arcanum Hub — publish API, admin API, AI proxy, multi-tenant showcase assets |
+| `hub-admin/` | Small React SPA for hub user/quota management, deployed to Cloudflare Pages |
+| `docs/` | You are here |
+
+## Tech stack
+
+| Layer | Technology |
+|---|---|
+| Desktop shell | Tauri 2 (WebView2 on Windows) |
+| Frontend | React 19, TypeScript 5.8, Vite 6, Tailwind CSS 4 |
+| State | Zustand 5 + zundo (undo/redo middleware) |
+| Graphs | XY Flow (React Flow) + dagre |
+| Rich text | TipTap 3 |
+| Maps | Leaflet 1.9 + react-leaflet 5 (CRS.Simple) |
+| Charts | Recharts 3 (used by the balance simulation lab) |
+| YAML | `yaml` ^2.7 (CST mode) |
+| Backend | Rust 2021 edition, Tokio, `reqwest`, `image`, `webp`, `ffmpeg-sidecar` |
+| Asset CDN | Cloudflare R2 (S3-compatible, AWS SigV4 signing — no SDK) |
+| Image generation | DeepInfra, Runware, OpenAI |
+| LLM | Anthropic Claude, OpenRouter |
+| Testing | Vitest (data-layer only) |
+| Package managers | Bun (creator), npm (showcase / hub-worker / hub-admin) |
+| Fonts | Cinzel, Crimson Pro, JetBrains Mono (via Fontsource) |
 
 ## Prerequisites
 
@@ -31,7 +61,7 @@ Only required if you're touching the features that use them:
 - **Cloudflare R2** — asset CDN. Account ID, bucket, access key, secret, custom domain set in project settings.
 - **Cloudflare D1 + Workers + Pages** — only if you're developing against the hub.
 
-None of these are needed to build and launch Arcanum. You can explore the full UI without any keys configured; only the AI and publishing features will be gated.
+None of these are needed to build and launch Arcanum. You can explore the full UI without any keys configured; only the AI and publishing features will be gated. For a keys-free build, see the Community Edition section below.
 
 ## First build
 
@@ -68,7 +98,53 @@ cd src-tauri && cargo check && cd ..
 bun run test
 ```
 
-All three should pass on `main`. If any fail on a fresh clone, open an issue — the CI guarantees they pass on `main`.
+All three should pass on `main`. If any fail on a fresh clone, open an issue — CI guarantees they pass on `main`.
+
+## Development commands
+
+```bash
+# Creator (Tauri app)
+cd creator
+bun install
+bun run tauri dev                 # Vite dev server + Tauri window
+bunx tsc --noEmit                 # Type check
+bun run test                      # Vitest data-layer tests
+bun run test:watch                # Vitest in watch mode
+cd src-tauri && cargo check       # Rust check
+bun run tauri build               # Production bundle (Full Edition)
+bun run build:community           # Production bundle (Community Edition — AI-free)
+
+# Showcase (public SPA)
+cd showcase
+npm install
+npm run dev
+npm run typecheck
+npm run build
+npx wrangler pages deploy dist --project-name=ambon-showcase  # Self-hosted deploy
+
+# Hub worker (optional)
+cd hub-worker
+npm install
+npm run dev                       # wrangler dev on :8787
+npm run deploy                    # Rebuilds showcase with hub env var, then wrangler deploy
+
+# Hub admin (optional)
+cd hub-admin
+npm install
+VITE_HUB_API_URL=https://api.arcanum-hub.com npm run build
+npx wrangler pages deploy dist --project-name=arcanum-hub-admin --branch=main
+```
+
+### Community Edition build
+
+The Community Edition is a keys-free, AI-free build of Arcanum. It's configured at compile time — both the Rust and JS sides compile out all AI provider integrations.
+
+```bash
+cd creator
+bun run build:community           # cross-env VITE_AI=false tauri build -- --no-default-features
+```
+
+`VITE_AI=false` strips AI UI on the frontend. `--no-default-features` disables the corresponding Rust modules. The release workflow builds both editions side by side for every tag; see `.github/workflows/release.yml`.
 
 ## Directory map
 
@@ -77,7 +153,7 @@ AmbonArcanum/
 ├── creator/                 # Arcanum desktop app
 │   ├── src/                 #   React frontend (TypeScript)
 │   │   ├── components/      #     UI — AppShell, editors, panels, lore, zone, wizard, ...
-│   │   ├── stores/          #     Zustand stores (15 independent stores)
+│   │   ├── stores/          #     Zustand stores (~15 independent stores)
 │   │   ├── lib/             #     Pure utilities — YAML I/O, validation, prompt templates, edit functions
 │   │   ├── types/           #     TypeScript types — mirrors the AmbonMUD server's YAML DTOs
 │   │   ├── assets/          #     Background images for UI surfaces
@@ -107,9 +183,9 @@ AmbonArcanum/
 ├── hub-admin/               # Optional admin SPA for hub user/quota management
 │   └── src/                 #   Master-key gated against HUB_ADMIN_KEY
 │
-├── docs/                    # You are here
+├── docs/                    # Developer docs (you are here)
 ├── .github/workflows/       # ci.yml, release.yml
-├── README.md
+├── README.md                # End-user README
 ├── CLAUDE.md                # Architecture + conventions + known pitfalls
 ├── ARCANUM_STYLE_GUIDE.md   # Design system
 └── .impeccable.md           # Condensed design context
@@ -125,7 +201,7 @@ AmbonArcanum/
    - `bunx tsc --noEmit` — the strictest setting is `noUncheckedIndexedAccess`, which surfaces most real bugs as compile errors.
    - `cd src-tauri && cargo check` — only if you touched Rust.
    - `bun run test` — only if you touched data-layer code (`creator/src/lib/`, `creator/src/stores/`).
-4. Push and open a PR against `main`. CI runs typecheck + tests + `cargo check` on every push.
+4. Push and open a PR against `main`. CI runs typecheck + tests + `cargo check` (both Full and Community Editions) on every push.
 
 No formatter is configured. Follow the surrounding style:
 
@@ -144,13 +220,22 @@ Vitest runs **data-layer tests only** — no UI tests. Tests live alongside sour
 - Prefer small PRs. Split unrelated changes.
 - The commit message convention is free-form — look at `git log` for examples.
 
+## CI/CD
+
+GitHub Actions in `.github/workflows/`:
+
+- **`ci.yml`** — runs on PRs and pushes to `main`. Creator: `bun install --frozen-lockfile`, `tsc --noEmit`, `vitest run`, `cargo check` for Full and Community Editions. Showcase: `npm ci`, `npm run typecheck`, `npm run build`. Does not currently check `hub-worker` or `hub-admin`.
+- **`release.yml`** — triggered by `v*` tags or manual dispatch. Builds Windows, macOS Universal (aarch64 + x86_64), and Linux installers for **both editions** via `tauri-action`, attaches them to a draft GitHub release, then publishes it. Community builds use `--no-default-features` and `VITE_AI=false`.
+
 ## Architecture at a glance
 
 Deep details live in [`CLAUDE.md`](../CLAUDE.md). The one-page version:
 
 **Frontend-heavy.** Most business logic is TypeScript — the Rust backend is a thin service layer (file I/O, HTTP clients, asset management, git operations, FFmpeg integration). They talk through Tauri's `invoke()` IPC with every command returning `Result<T, String>`.
 
-**Fifteen independent Zustand stores.** No middleware chaining, no cross-store subscriptions. Stores read each other via `useOtherStore.getState()` when they need to. Always select individual fields (`useProjectStore((s) => s.project)`), never the whole store — this is what prevents re-render cascades.
+**Independent Zustand stores.** No middleware chaining, no cross-store subscriptions. Stores read each other via `useOtherStore.getState()` when they need to. Always select individual fields (`useProjectStore((s) => s.project)`), never the whole store — this is what prevents re-render cascades.
+
+**Unified undo/redo.** A single shared action dispatches Ctrl+Z/Ctrl+Y to whichever store owns the currently focused surface: zones use zundo (100-entry history), lore uses snapshot-based history (50 entries, via `snapshotLore(s)` inside `set()` callbacks), and stories/config plug into the same dispatcher. When adding a new undoable surface, wire it into the shared dispatcher — don't invent a new keyboard handler.
 
 **YAML is load-bearing.** Zone files and `application.yaml` are edited with the `yaml` package's CST mode so comments and field ordering survive round-trips. Loaders live in `creator/src/lib/loader.ts`; savers in `saveZone.ts` and `saveConfig.ts`.
 
@@ -158,19 +243,38 @@ Deep details live in [`CLAUDE.md`](../CLAUDE.md). The one-page version:
 
 **Panel registry drives navigation.** `creator/src/lib/panelRegistry.ts` defines ~60 panels across 7 groups. Each panel has a `host` type (`studio` / `config` / `lore` / `command`) that `MainArea.tsx` uses to route to the right container component.
 
+**Hub mode is transparent to the frontend.** `settings.use_hub_ai` is a user-level boolean. When on, the existing image/LLM/vision Tauri commands short-circuit to `hub_ai::*` before reaching their direct-provider code. The frontend doesn't branch on it.
+
 **Tauri commands are typed in TypeScript through inference only.** There's no codegen layer — when you add a command, mirror the types manually between `creator/src-tauri/src/*.rs` and the TypeScript call site.
+
+## Where newer features live
+
+A map of recent additions, in case you're trying to find one of them:
+
+| Feature | Primary location |
+|---|---|
+| Balance simulation lab (Tuning Wizard) | `creator/src/components/config/tuning/` + `tuningWizardStore` + `recharts` |
+| Showcase settings with AI art + live preview | `creator/src/components/config/panels/ShowcaseSettings*` + `exportShowcase.ts` |
+| World Planner (tab inside Maps panel) | `creator/src/components/lore/maps/WorldPlanner*` |
+| Offline backup (autosave, snapshots, zip) | `creator/src-tauri/src/project.rs` + backup scheduler in creator stores |
+| Hub discovery (rich cards, OG meta, search) | `hub-worker/src/handlers/` + `showcase/src/pages/HubIndexPage.tsx` |
+| Unified undo/redo | shared dispatcher across `zoneStore`, `loreStore`, `storyStore`, `configStore` |
+| Playtest walker | `creator/src/components/zone/playtest/` |
+| Cross-zone entity search in command palette | `creator/src/components/command-palette/` |
+| Zone Layout Doctor | zone validation module + UI surface in the zone panel |
+| AI zone map generator | `creator/src-tauri/src/` image pipeline + zone art prompts |
 
 ## Where new features typically go
 
 | You want to... | Go to... |
 |---|---|
 | Add a config panel (new `application.yaml` section) | `creator/src/components/config/panels/` + register in `panelRegistry.ts` |
-| Add a list-and-detail editor (abilities, classes, items) | Use `DefinitionWorkbench` pattern in `creator/src/components/config/` |
+| Add a list-and-detail editor (abilities, classes, items) | Use the `DefinitionWorkbench` pattern in `creator/src/components/config/` |
 | Add a lore article template | Extend `TEMPLATE_SCHEMAS` in `creator/src/lib/loreTemplates.ts` |
 | Add an AI asset type | Add templates in `creator/src/lib/arcanumPrompts.ts` + wire into the asset generator |
 | Add a Tauri command | Create or extend a module in `creator/src-tauri/src/`, register it in `lib.rs` |
 | Add a validation rule | Extend `creator/src/lib/validateZone.ts` or `validateConfig.ts`. Must mirror the AmbonMUD server's `WorldLoader` rules. |
-| Add undo to a new mutation | Zone store: call `pushHistory()` before the change. Lore store: call `snapshotLore(s)` inside `set()`. |
+| Add undo to a new mutation | Zone store: call `pushHistory()` before the change. Lore store: call `snapshotLore(s)` inside `set()`. Wire new surfaces into the shared undo dispatcher. |
 
 ## Hub development (optional)
 
@@ -186,7 +290,7 @@ npm run db:init:local
 npm run dev                               # Local worker on :8787
 ```
 
-The worker uses path-prefixed routes in dev (`/api/publish/*`, `/dev/world/<slug>/showcase.json`) instead of the production subdomain layout. See [`hub-worker/README.md`](../hub-worker/README.md) for the full routing table.
+The worker uses path-prefixed routes in dev (`/api/publish/*`, `/dev/world/<slug>/showcase.json`) instead of the production subdomain layout. See [`../hub-worker/README.md`](../hub-worker/README.md) for the full routing table.
 
 The hub worker also bundles the showcase SPA via `[assets]`. `npm run deploy` rebuilds the showcase with `VITE_HUB_ROOT_DOMAIN=arcanum-hub.com`, strips `_redirects` from `dist/` (Workers Assets rejects it), then runs `wrangler deploy`.
 
@@ -205,12 +309,14 @@ VITE_HUB_API_URL=http://127.0.0.1:8787 npm run dev
 1. Create `creator/src/stores/myStore.ts` with a typed `create<MyStore>((set, get) => ({ ... }))`.
 2. Import it with field-level selectors only: `const x = useMyStore((s) => s.x)`.
 3. Never subscribe to the whole store object — that re-renders on every change.
+4. If the store owns undoable state, register it with the shared undo dispatcher rather than implementing Ctrl+Z yourself.
 
 ### Adding a new Tauri command
 
 1. Add or extend a module in `creator/src-tauri/src/`. Function signature: `#[tauri::command] pub async fn my_command(...) -> Result<T, String>`.
 2. Register it in `lib.rs` under `invoke_handler![...]`.
 3. On the frontend: `import { invoke } from "@tauri-apps/api/core"` and call `await invoke<T>("my_command", { ... })`.
+4. If the command hits an AI provider, add the `hub_ai::is_enabled(&settings)` early-return branch so hub mode stays transparent.
 
 ### Updating a dependency
 
@@ -271,6 +377,16 @@ Every lore mutation must call `snapshotLore(s)` inside the `set()` callback. Mis
 ### Hub deploy shows stale showcase content
 
 `hub-worker` bundles the showcase `dist/` via its `[assets]` binding. Running `wrangler deploy` directly ships whatever's already in `showcase/dist/`, which is probably the self-hosted build. Always use `npm run deploy` inside `hub-worker/` — it rebuilds the showcase with the hub env var first.
+
+### Community Edition build fails with missing AI imports
+
+Make sure you're passing both switches: `VITE_AI=false` (for the JS bundle) and `--no-default-features` (for the Rust bundle). Using only one produces a mismatched build where one side expects APIs the other removed. The `build:community` script sets both.
+
+## Design system
+
+Dark-only. Deep midnight-teal backgrounds, hearth-ember warm accents, parchment-ivory text. All serif — Cinzel for display, Crimson Pro for body, JetBrains Mono for code. Design tokens live in `creator/src/index.css` (`@theme` block + `:root` custom properties) and are consumed through semantic Tailwind utilities (`bg-bg-primary`, `text-accent`, etc.).
+
+See [`../ARCANUM_STYLE_GUIDE.md`](../ARCANUM_STYLE_GUIDE.md) for the full palette, typography hierarchy, component specs, and art prompts. [`../.impeccable.md`](../.impeccable.md) has the condensed version used as AI design context.
 
 ## More reading
 

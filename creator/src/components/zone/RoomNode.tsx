@@ -86,7 +86,7 @@ function RoomBackground({ image }: { image?: string }) {
         className="pointer-events-none absolute inset-0 h-full w-full rounded object-cover"
       />
       {/* Gradient fade at bottom so the badge is readable */}
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-1/2 rounded-b bg-gradient-to-t from-black/70 to-transparent" />
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-1/2 rounded-b bg-gradient-to-t from-[var(--bg-scrim-heavy)] to-transparent" />
     </>
   );
 }

@@ -92,8 +92,8 @@ export function ArtStyleStep({ onDone }: ArtStyleStepProps) {
                   className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                 />
                 {isPending && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-black/40">
-                    <div className="h-6 w-6 rounded-full border-2 border-white/70 border-t-transparent animate-spin" />
+                  <div className="absolute inset-0 flex items-center justify-center bg-[var(--bg-scrim-heavy)]">
+                    <div className="h-6 w-6 rounded-full border-2 border-[var(--chrome-stroke-emphasis)] border-t-transparent animate-spin" />
                   </div>
                 )}
               </div>

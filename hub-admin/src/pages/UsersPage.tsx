@@ -373,7 +373,7 @@ export function UsersPage({ adminKey, onLogout }: UsersPageProps) {
                               key={w.slug}
                               style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap" }}
                             >
-                              <code>{w.slug}</code>
+                              <code style={{ wordBreak: "break-all" }}>{w.slug}</code>
                               {w.listed && <span className="listed-badge">listed</span>}
                               <span className="muted" style={{ fontSize: "0.82rem" }}>
                                 {formatBytes(w.bytesUsed)}

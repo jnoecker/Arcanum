@@ -230,7 +230,7 @@ export function StoryEditorPanel({ storyId, onDelete }: StoryEditorPanelProps) {
             title={canPresent ? "Present story (F5)" : "Add scenes to present"}
             className={[
               "action-button-primary flex items-center gap-1.5 rounded-full px-3 py-1.5",
-              "text-xs font-sans font-medium uppercase tracking-[0.12em]",
+              "text-xs font-medium uppercase tracking-[0.12em]",
               !canPresent ? "opacity-45 cursor-not-allowed" : "",
             ].join(" ")}
           >
@@ -247,7 +247,7 @@ export function StoryEditorPanel({ storyId, onDelete }: StoryEditorPanelProps) {
             title={canExport ? "Export story as cinematic video" : "Add scenes to export"}
             className={[
               "flex items-center gap-1.5 rounded-full border border-border-default bg-bg-secondary px-3 py-1.5",
-              "text-xs font-sans font-medium uppercase tracking-[0.12em] text-text-primary",
+              "text-xs font-medium uppercase tracking-[0.12em] text-text-primary",
               "hover:border-border-focus hover:bg-bg-hover transition-colors",
               !canExport ? "opacity-45 cursor-not-allowed" : "",
             ].join(" ")}

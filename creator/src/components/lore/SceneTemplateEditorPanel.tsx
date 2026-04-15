@@ -150,7 +150,7 @@ function TemplateEditor({
           }}
           rows={4}
           placeholder="The narrator falls silent. The world holds its breath..."
-          className="rounded border border-border-default bg-bg-primary px-2 py-1.5 text-xs text-text-primary outline-none focus:border-accent/50 resize-y font-sans"
+          className="rounded border border-border-default bg-bg-primary px-2 py-1.5 text-xs text-text-primary outline-none focus:border-accent/50 resize-y"
         />
       </div>
     </div>

@@ -468,7 +468,7 @@ function ZonePlanEditor({
       </div>
 
       {plan.region && (
-        <div className="flex flex-col gap-2 rounded-lg border border-white/6 bg-bg-abyss/15 p-2 text-2xs text-text-muted">
+        <div className="flex flex-col gap-2 rounded-lg border border-[var(--chrome-stroke)] bg-bg-abyss/15 p-2 text-2xs text-text-muted">
           <div>
             Region: {Math.round(plan.region.x)},{Math.round(plan.region.y)} ·{" "}
             {Math.round(plan.region.w)}×{Math.round(plan.region.h)}px
@@ -489,7 +489,7 @@ function ZonePlanEditor({
       )}
 
       {/* Zone scaffold link */}
-      <div className="rounded-lg border border-white/6 bg-bg-abyss/15 p-2.5">
+      <div className="rounded-lg border border-[var(--chrome-stroke)] bg-bg-abyss/15 p-2.5">
         <div className="mb-1.5 text-2xs uppercase tracking-wider text-text-muted">
           Linked Zone
         </div>

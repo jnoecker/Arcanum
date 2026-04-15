@@ -565,7 +565,7 @@ function EnchantmentEditor({
                 <span className="inline-flex items-center gap-1">
                   <input
                     autoFocus
-                    className="w-40 rounded border border-border-default bg-bg-primary px-1.5 py-0.5 font-sans text-xs text-text-primary outline-none focus:border-accent/50"
+                    className="w-40 rounded border border-border-default bg-bg-primary px-1.5 py-0.5 font-mono text-xs text-text-primary outline-none focus:border-accent/50"
                     value={renameValue}
                     onChange={(e) => onRenameChange(e.target.value)}
                     onKeyDown={(e) => {
@@ -593,7 +593,7 @@ function EnchantmentEditor({
                   type="button"
                   onClick={onStartRename}
                   title="Rename ID"
-                  className="font-sans text-xs font-normal text-text-muted/70 underline-offset-2 hover:text-text-primary hover:underline"
+                  className="font-mono text-xs font-normal text-text-muted/70 underline-offset-2 hover:text-text-primary hover:underline"
                 >
                   {id}
                 </button>

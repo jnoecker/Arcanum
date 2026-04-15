@@ -32,7 +32,7 @@ export function LoginPage({ onLogin }: LoginPageProps) {
     <>
       <h1>Arcanum Hub · Admin</h1>
       <p className="muted">Enter your master key to manage users and worlds.</p>
-      <div className="panel" style={{ maxWidth: 480 }}>
+      <div className="panel" style={{ maxWidth: "min(480px, 100%)" }}>
         <form onSubmit={handleSubmit}>
           {error && <div className="banner error">{error}</div>}
           <div className="field">

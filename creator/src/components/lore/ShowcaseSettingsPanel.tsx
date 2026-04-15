@@ -81,6 +81,7 @@ function ShowcasePreview({
     <div className="overflow-hidden rounded-xl border border-border-default shadow-lg">
       {/* Faux browser chrome */}
       <div className="flex items-center gap-1.5 border-b border-border-muted bg-bg-tertiary px-3 py-2">
+        {/* Fixed macOS-style window dots — intentional non-themed chrome */}
         <span className="h-2.5 w-2.5 rounded-full bg-red-500/60" />
         <span className="h-2.5 w-2.5 rounded-full bg-yellow-500/60" />
         <span className="h-2.5 w-2.5 rounded-full bg-green-500/60" />
@@ -101,12 +102,12 @@ function ShowcasePreview({
       {/* Page body */}
       <div style={{ backgroundColor: bg }} className="relative">
         {/* Nav bar */}
-        <div className="flex items-center justify-between border-b border-white/10 px-4 py-2.5">
+        <div className="flex items-center justify-between border-b border-[var(--chrome-stroke)] px-4 py-2.5">
           <div className="flex items-center gap-2">
             {faviconSrc && <img src={faviconSrc} alt="" className="h-5 w-5 rounded object-cover" />}
             <span className="font-display text-sm" style={{ color: accent }}>{navLogo}</span>
           </div>
-          <div className="flex gap-3 text-2xs text-white/70">
+          <div className="flex gap-3 text-2xs text-text-secondary">
             <span>Codex</span>
             <span>Maps</span>
             <span>Timeline</span>
@@ -118,7 +119,7 @@ function ShowcasePreview({
           {bannerSrc ? (
             <>
               <img src={bannerSrc} alt="" className="absolute inset-0 h-full w-full object-cover" />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-black/40" />
+              <div className="absolute inset-0 bg-gradient-to-t from-[var(--bg-scrim-heavy)] via-[var(--bg-scrim-code)] to-[var(--bg-scrim-heavy)]" />
             </>
           ) : (
             <div
@@ -130,7 +131,7 @@ function ShowcasePreview({
             />
           )}
           <div className="relative px-6 py-10 text-center">
-            <h1 className="font-display text-2xl font-semibold text-white drop-shadow" style={{ color: "white" }}>
+            <h1 className="font-display text-2xl font-semibold text-text-primary drop-shadow">
               {title}
             </h1>
             {subtitle && (
@@ -142,7 +143,7 @@ function ShowcasePreview({
         </div>
 
         {/* Footer */}
-        <div className="border-t border-white/10 px-4 py-2 text-center text-3xs text-white/50">
+        <div className="border-t border-[var(--chrome-stroke)] px-4 py-2 text-center text-3xs text-text-muted">
           {footer}
         </div>
       </div>

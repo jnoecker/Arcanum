@@ -21,7 +21,7 @@ export function PresentationHUD({ currentIndex, totalScenes, visible }: Presenta
       role="status"
       aria-label={`Scene ${currentIndex + 1} of ${totalScenes}`}
     >
-      <span className="text-sm font-sans text-text-primary">
+      <span className="text-sm text-text-primary">
         {currentIndex + 1} / {totalScenes}
       </span>
     </div>

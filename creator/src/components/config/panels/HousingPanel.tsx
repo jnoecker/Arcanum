@@ -425,7 +425,7 @@ function RoomEditor({
             </p>
             <h3 className="font-display font-semibold text-base text-text-primary">
               {t.title || id}
-              <span className="ml-2 font-sans text-xs font-normal text-text-muted/70">
+              <span className="ml-2 font-mono text-xs font-normal text-text-muted/70">
                 {id}
               </span>
             </h3>

@@ -396,7 +396,7 @@ export function VersionControlPanel() {
       {log.length > 0 && (
         <Card>
           <h3 className="mb-2 text-xs font-medium text-text-primary">Recent Commits</h3>
-          <div className="flex flex-col divide-y divide-white/6">
+          <div className="flex flex-col divide-y divide-[var(--chrome-stroke)]">
             {log.map((c) => (
               <div key={c.hash} className="flex items-baseline gap-2 py-1.5">
                 <code className="shrink-0 font-mono text-2xs text-accent/70">{c.short_hash}</code>

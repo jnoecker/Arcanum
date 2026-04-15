@@ -90,6 +90,16 @@ function CreateMenu({
   disabled?: boolean;
 }) {
   const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open]);
+
   return (
     <div className="relative">
       <ActionButton
@@ -97,6 +107,7 @@ function CreateMenu({
         size="sm"
         onClick={() => setOpen((v) => !v)}
         disabled={disabled}
+        aria-haspopup="menu"
         aria-expanded={open}
       >
         + New style
@@ -106,14 +117,16 @@ function CreateMenu({
           <div
             className="fixed inset-0 z-10"
             onClick={() => setOpen(false)}
-            onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") setOpen(false); }}
-            role="button"
-            aria-label="Close menu"
-            tabIndex={0}
+            aria-hidden="true"
           />
-          <div className="absolute right-0 top-full z-20 mt-1 w-60 overflow-hidden rounded-lg border border-border-default bg-bg-secondary shadow-panel">
+          <div
+            role="menu"
+            aria-label="Create new art style"
+            className="absolute right-0 top-full z-20 mt-1 w-60 overflow-hidden rounded-lg border border-border-default bg-bg-secondary shadow-panel"
+          >
             {AI_ENABLED && (
               <button
+                role="menuitem"
                 onClick={() => { onAi(); setOpen(false); }}
                 className="block w-full border-b border-border-muted px-3 py-2 text-left text-xs text-text-primary transition hover:bg-bg-hover"
               >
@@ -124,6 +137,7 @@ function CreateMenu({
             {ART_STYLE_PRESETS.map((preset) => (
               <button
                 key={preset.key}
+                role="menuitem"
                 onClick={() => { onPreset(preset.key); setOpen(false); }}
                 className="block w-full border-b border-border-muted px-3 py-2 text-left text-xs text-text-primary transition hover:bg-bg-hover"
               >
@@ -132,6 +146,7 @@ function CreateMenu({
               </button>
             ))}
             <button
+              role="menuitem"
               onClick={() => { onEmpty(); setOpen(false); }}
               className="block w-full px-3 py-2 text-left text-xs text-text-secondary transition hover:bg-bg-hover"
             >

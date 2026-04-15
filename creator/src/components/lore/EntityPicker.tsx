@@ -146,7 +146,7 @@ export function EntityPicker({ zoneId, scene, storyId }: EntityPickerProps) {
 
   if (collapsed) {
     return (
-      <div className="w-8 shrink-0 bg-bg-secondary border-l border-border-default flex flex-col items-center transition-[width] duration-200">
+      <div className="w-8 shrink-0 bg-bg-secondary border-l border-border-default flex flex-col items-center">
         <button
           type="button"
           onClick={() => setCollapsed(false)}
@@ -177,7 +177,7 @@ export function EntityPicker({ zoneId, scene, storyId }: EntityPickerProps) {
 
   return (
     <div
-      className="w-[clamp(16rem,20vw,20rem)] shrink-0 bg-bg-secondary border-l border-border-default flex flex-col overflow-hidden transition-[width] duration-200"
+      className="w-[clamp(16rem,20vw,20rem)] shrink-0 bg-bg-secondary border-l border-border-default flex flex-col overflow-hidden"
       id="entity-picker-content"
     >
       {/* Header with collapse toggle */}

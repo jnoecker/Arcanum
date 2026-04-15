@@ -125,7 +125,7 @@ export function ParameterRow({
         }}
         onFocus={() => setEditingValue(String(currentValue))}
         aria-label={`Edit ${meta.label}`}
-        className="min-h-11 w-full rounded bg-transparent px-1.5 py-0.5 text-right font-mono text-sm text-text-secondary outline-none ring-1 ring-transparent transition-colors hover:ring-white/20 focus:ring-accent/50"
+        className="min-h-11 w-full rounded bg-transparent px-1.5 py-0.5 text-right font-mono text-sm text-text-secondary outline-none ring-1 ring-transparent transition-colors hover:ring-[var(--chrome-stroke-strong)] focus:ring-accent/50"
       />
     );
   } else {

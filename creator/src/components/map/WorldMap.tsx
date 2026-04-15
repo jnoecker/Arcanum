@@ -150,11 +150,11 @@ export function WorldMap() {
         {calibrating && mousePos && (
           <>
             <div
-              className="pointer-events-none absolute z-50 border-l border-dashed border-white/50"
+              className="pointer-events-none absolute z-50 border-l border-dashed border-[var(--chrome-stroke-emphasis)]"
               style={{ left: `${mousePos.x}%`, top: 0, height: "100%" }}
             />
             <div
-              className="pointer-events-none absolute z-50 border-t border-dashed border-white/50"
+              className="pointer-events-none absolute z-50 border-t border-dashed border-[var(--chrome-stroke-emphasis)]"
               style={{ top: `${mousePos.y}%`, left: 0, width: "100%" }}
             />
             <div

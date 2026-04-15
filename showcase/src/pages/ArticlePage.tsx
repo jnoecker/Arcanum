@@ -189,7 +189,7 @@ function ArticleGallery({ images, title }: { images: string[]; title: string }) 
               onClick={() => setActiveIndex(index)}
               aria-label={index === 0 ? "Primary image" : `Gallery image ${index + 1}`}
               aria-current={index === activeIndex ? "true" : undefined}
-              className={`h-14 w-14 overflow-hidden rounded-2xl border transition-[border-color,transform,opacity] duration-200 focus-visible:ring-2 focus-visible:ring-[var(--color-aurum)]/35 ${
+              className={`h-11 w-11 overflow-hidden rounded-2xl border transition-[border-color,transform,opacity] duration-200 focus-visible:ring-2 focus-visible:ring-[var(--color-aurum)]/35 sm:h-14 sm:w-14 ${
                 index === activeIndex
                   ? "border-[var(--color-aurum)]/55 opacity-100"
                   : "border-border-muted/30 opacity-65 hover:opacity-100"

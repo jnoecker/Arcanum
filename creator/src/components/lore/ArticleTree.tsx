@@ -118,7 +118,7 @@ const Node = memo(function Node({ node, style, dragHandle }: NodeRendererProps<T
           className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border text-3xs transition ${
             isMultiSelected
               ? "border-accent/50 bg-accent/20 text-accent"
-              : "border-[var(--chrome-stroke-emphasis)] bg-[var(--chrome-highlight)] text-transparent hover:border-white/30"
+              : "border-[var(--chrome-stroke-emphasis)] bg-[var(--chrome-highlight)] text-transparent hover:border-[var(--chrome-stroke-emphasis)]"
           }`}
           aria-label={isMultiSelected ? `Deselect ${node.data.name}` : `Select ${node.data.name}`}
         >

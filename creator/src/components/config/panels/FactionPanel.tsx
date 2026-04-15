@@ -639,7 +639,7 @@ function FactionEditor({
                 <span className="inline-flex items-center gap-1">
                   <input
                     autoFocus
-                    className="w-40 rounded border border-border-default bg-bg-primary px-1.5 py-0.5 font-sans text-xs text-text-primary outline-none focus:border-accent/50"
+                    className="w-40 rounded border border-border-default bg-bg-primary px-1.5 py-0.5 font-mono text-xs text-text-primary outline-none focus:border-accent/50"
                     value={renameValue}
                     onChange={(e) => onRenameChange(e.target.value)}
                     onKeyDown={(e) => {

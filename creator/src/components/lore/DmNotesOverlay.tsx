@@ -26,7 +26,7 @@ export function DmNotesOverlay({ notes, visible }: DmNotesOverlayProps) {
       }}
     >
       <div className="max-w-[960px] mx-auto px-4 py-4">
-        <p className="text-[15px] leading-relaxed font-sans text-text-secondary">
+        <p className="text-[15px] leading-relaxed text-text-secondary">
           {notes}
         </p>
       </div>

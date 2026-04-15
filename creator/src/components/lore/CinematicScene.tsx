@@ -127,7 +127,7 @@ export function CinematicScene({
           className="absolute inset-x-0 bottom-0 pointer-events-none"
           style={{ zIndex: 30 }}
         >
-          <div className="bg-gradient-to-t from-black/60 to-transparent">
+          <div className="bg-gradient-to-t from-[var(--bg-scrim-heavy)] to-transparent">
             <TypewriterNarration
               narrationJson={narrationJson}
               playing={narrationPlaying}

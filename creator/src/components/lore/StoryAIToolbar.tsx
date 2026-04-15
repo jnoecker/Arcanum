@@ -182,7 +182,7 @@ export function StoryAIToolbar({ story }: StoryAIToolbarProps) {
 
   const btn = (active: boolean) =>
     [
-      "flex items-center gap-1 rounded-full border px-2.5 py-1 text-2xs font-sans transition-colors",
+      "flex items-center gap-1 rounded-full border px-2.5 py-1 text-2xs transition-colors",
       active
         ? "border-accent/50 bg-accent/10 text-accent"
         : "border-border-default text-text-muted hover:border-accent/40 hover:text-accent",

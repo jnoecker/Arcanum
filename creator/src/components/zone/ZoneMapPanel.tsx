@@ -217,7 +217,7 @@ export function ZoneMapPanel({ zoneId, world, onWorldChange }: ZoneMapPanelProps
             className="block w-full"
           />
           {previewSrc && (
-            <div className="absolute inset-x-0 bottom-0 flex items-center justify-center gap-2 bg-gradient-to-t from-black/80 to-transparent px-4 pb-4 pt-10">
+            <div className="absolute inset-x-0 bottom-0 flex items-center justify-center gap-2 bg-gradient-to-t from-[var(--bg-scrim-heavy)] to-transparent px-4 pb-4 pt-10">
               <span className="mr-2 text-2xs uppercase tracking-widest text-text-muted">
                 Preview
               </span>

@@ -270,7 +270,7 @@ export function ScenePreview({ scene, storyId, zoneId }: ScenePreviewProps) {
               className="absolute inset-x-0 bottom-0 pointer-events-none"
               style={{ zIndex: 30 }}
             >
-              <div className="bg-gradient-to-t from-black/60 to-transparent">
+              <div className="bg-gradient-to-t from-[var(--bg-scrim-heavy)] to-transparent">
                 <TypewriterNarration
                   narrationJson={scene.narration}
                   playing={previewPlaying}
@@ -329,7 +329,7 @@ export function ScenePreview({ scene, storyId, zoneId }: ScenePreviewProps) {
               className="absolute inset-x-0 bottom-0 pointer-events-none"
               style={{ zIndex: 30 }}
             >
-              <div className="bg-gradient-to-t from-black/60 to-transparent px-6 py-4">
+              <div className="bg-gradient-to-t from-[var(--bg-scrim-heavy)] to-transparent px-6 py-4">
                 <p
                   className="text-sm text-text-primary leading-relaxed line-clamp-3"
                   style={{ textShadow: "var(--shadow-text)" }}

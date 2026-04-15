@@ -725,6 +725,8 @@ export function MapPanel() {
             id={`maps-tab-${t.id}`}
             tabIndex={tab === t.id ? 0 : -1}
             title={t.hint}
+            className="segmented-button"
+            data-active={tab === t.id ? "true" : "false"}
             onClick={() => setTab(t.id)}
             onKeyDown={(event) => {
               if (event.key === "ArrowRight") {

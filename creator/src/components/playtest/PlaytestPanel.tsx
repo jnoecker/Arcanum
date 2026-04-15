@@ -899,6 +899,30 @@ export function PlaytestPanel() {
           <div className="flex min-w-0 flex-1 flex-col gap-5">
             <RoomImage imageRef={room.image} />
 
+            {/* Exits — primary navigation control, kept directly under the image */}
+            <div>
+              <div className="mb-2 font-display text-xs uppercase tracking-wide-ui text-text-muted">
+                Exits
+              </div>
+              {exits.length === 0 ? (
+                <p className="text-sm italic text-text-muted">No exits from this room.</p>
+              ) : (
+                <div className="flex flex-wrap gap-2">
+                  {exits.map((exit) => (
+                    <ExitButton
+                      key={exit.direction}
+                      exit={exit}
+                      onClick={() =>
+                        exit.targetExists
+                          ? traverse(exit.targetZoneId, exit.targetRoomId)
+                          : undefined
+                      }
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+
             <div>
               <h2 className="font-display text-2xl text-accent">{room.title}</h2>
               <p className="mt-3 whitespace-pre-wrap font-body text-base leading-relaxed text-text-primary">
@@ -1000,29 +1024,6 @@ export function PlaytestPanel() {
               />
             )}
 
-            {/* Exits */}
-            <div>
-              <div className="mb-2 font-display text-xs uppercase tracking-wide-ui text-text-muted">
-                Exits
-              </div>
-              {exits.length === 0 ? (
-                <p className="text-sm italic text-text-muted">No exits from this room.</p>
-              ) : (
-                <div className="flex flex-wrap gap-2">
-                  {exits.map((exit) => (
-                    <ExitButton
-                      key={exit.direction}
-                      exit={exit}
-                      onClick={() =>
-                        exit.targetExists
-                          ? traverse(exit.targetZoneId, exit.targetRoomId)
-                          : undefined
-                      }
-                    />
-                  ))}
-                </div>
-              )}
-            </div>
           </div>
 
           {/* Right: quest log */}

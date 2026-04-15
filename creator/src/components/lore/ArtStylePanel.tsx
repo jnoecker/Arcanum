@@ -6,6 +6,7 @@ import { ART_STYLE_PRESETS, artStyleFromPreset } from "@/lib/artStylePresets";
 import { generateArtStyle, refineArtStyle } from "@/lib/artStyleGeneration";
 import { useFocusTrap } from "@/lib/useFocusTrap";
 import { AI_ENABLED } from "@/lib/featureFlags";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 
 // ─── Helpers ───────────────────────────────────────────────────────
 
@@ -324,6 +325,7 @@ export function ArtStylePanel() {
   const [selectedId, setSelectedId] = useState<string | null>(activeId ?? styles[0]?.id ?? null);
   const [showAiDialog, setShowAiDialog] = useState(false);
   const [showRefineDialog, setShowRefineDialog] = useState(false);
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
 
   // Keep selection valid as the list mutates
   useEffect(() => {
@@ -380,9 +382,13 @@ export function ArtStylePanel() {
   const handleDelete = useCallback((id: string) => {
     const style = styles.find((s) => s.id === id);
     if (!style) return;
-    if (!window.confirm(`Delete art style "${style.name}"?`)) return;
-    deleteArtStyle(id);
-  }, [styles, deleteArtStyle]);
+    setPendingDeleteId(id);
+  }, [styles]);
+
+  const pendingDeleteStyle = useMemo(
+    () => (pendingDeleteId ? styles.find((s) => s.id === pendingDeleteId) ?? null : null),
+    [pendingDeleteId, styles],
+  );
 
   const handleDuplicate = useCallback((id: string) => {
     const source = styles.find((s) => s.id === id);
@@ -613,6 +619,21 @@ export function ArtStylePanel() {
           style={selected}
           onRefine={handleRefine}
           onClose={() => setShowRefineDialog(false)}
+        />
+      )}
+      {pendingDeleteStyle && (
+        <ConfirmDialog
+          title="Delete art style"
+          message={`Delete "${pendingDeleteStyle.name}"? Any world already using it will fall back to the default style.`}
+          confirmLabel="Delete"
+          cancelLabel="Keep it"
+          destructive
+          onCancel={() => setPendingDeleteId(null)}
+          onConfirm={() => {
+            const id = pendingDeleteStyle.id;
+            setPendingDeleteId(null);
+            deleteArtStyle(id);
+          }}
         />
       )}
     </>

@@ -6,6 +6,7 @@ import { AI_ENABLED } from "@/lib/featureFlags";
 import {
   loadGettingStarted,
   markStepCompleted,
+  markIntroSeen,
   dismissGettingStarted,
 } from "@/lib/gettingStartedPersistence";
 import { GS_ICONS } from "@/assets/ui";
@@ -28,9 +29,11 @@ export function GettingStartedPanel({ onClose }: GettingStartedPanelProps) {
   const openWorldMap = useProjectStore((s) => s.openWorldMap);
   const openTab = useProjectStore((s) => s.openTab);
   const zones = useZoneStore((s) => s.zones);
-  const [completed, setCompleted] = useState<string[]>(() => loadGettingStarted().completed);
+  const initialState = useRef(loadGettingStarted());
+  const [completed, setCompleted] = useState<string[]>(() => initialState.current.completed);
   const [visible, setVisible] = useState(false);
   const [activeStep, setActiveStep] = useState<string | null>(null);
+  const [showIntro, setShowIntro] = useState(() => !initialState.current.introSeen);
   const panelRef = useRef<HTMLDivElement>(null);
   const restoreFocusRef = useRef<HTMLElement | null>(null);
 
@@ -105,16 +108,16 @@ export function GettingStartedPanel({ onClose }: GettingStartedPanelProps) {
     return [
       {
         id: "world-map",
-        title: "Explore the World Map",
+        title: "See the World Map",
         description:
-          "Your home base. The map shows every workshop where you'll build your world.",
+          "An aerial view of everything you've built. Each island is a different kind of work — art, characters, systems, lore.",
         action: () => openWorldMap(),
       },
       {
         id: "zone",
-        title: "Visit a Zone",
+        title: "Open a Zone",
         description:
-          "Zones are regions with rooms, creatures, and items. Open one to see its graph.",
+          "A zone is a region — a forest, a city, a dungeon. Inside are rooms players walk between, and the creatures and items that live there.",
         action: () => {
           if (firstZoneId) {
             openTab({
@@ -129,37 +132,37 @@ export function GettingStartedPanel({ onClose }: GettingStartedPanelProps) {
       },
       ...(AI_ENABLED ? [{
         id: "characters",
-        title: "Discover Characters",
+        title: "Meet the Inhabitants",
         description:
-          "See the portraits for every class and race that inhabits your world.",
+          "The classes and races your players can choose. Each has a portrait, a backstory, and stats you can tune.",
         action: () => openTab(panelTab("portraits")),
       }] : []),
       ...(AI_ENABLED ? [{
         id: "art",
-        title: "Generate Art",
+        title: "Conjure Some Art",
         description:
-          "Every creature, item, and place can have AI artwork. Try rendering your first image.",
+          "Every creature, item, and place can have AI-generated artwork. Describe what you want, and it appears.",
         action: () => openTab(panelTab("art")),
       }] : []),
       {
         id: "lore",
-        title: "Write Lore",
+        title: "Write the Chronicle",
         description:
-          "Build your world's history, culture, and legends. Articles, maps, and timelines.",
+          "Histories, cultures, legends, maps, timelines. The written world behind the playable one.",
         action: () => openTab(panelTab("lore")),
       },
       {
         id: "config",
-        title: "Shape Your World",
+        title: "Tune the Rules",
         description:
-          "Fine-tune game mechanics — stats, combat, crafting, progression — to match your vision.",
+          "How combat feels, how crafting works, how players grow. The mechanics that make your world behave.",
         action: () => openTab(panelTab("tuningWizard")),
       },
       {
         id: "publish",
-        title: "Share Your Creation",
+        title: "Open Your World",
         description:
-          "Publish your world as a public showcase for others to explore and enjoy.",
+          "Publish a public showcase so others can read your lore, see your maps, and — if you run a server — join in.",
         action: () => openTab(panelTab("deployment")),
       },
     ];
@@ -217,13 +220,13 @@ export function GettingStartedPanel({ onClose }: GettingStartedPanelProps) {
           <div className="flex items-start justify-between">
             <div>
               <p className="font-display text-2xs uppercase tracking-ui text-accent">
-                Your Journey Begins
+                {showIntro ? "Welcome, Creator" : "Your Journey Begins"}
               </p>
               <h2
                 id="getting-started-title"
                 className="mt-1 font-display text-lg tracking-wide text-text-primary"
               >
-                Getting Started
+                {showIntro ? "A Window Into a World" : "Getting Started"}
               </h2>
             </div>
             <button
@@ -246,26 +249,113 @@ export function GettingStartedPanel({ onClose }: GettingStartedPanelProps) {
             </button>
           </div>
 
-          {/* Progress bar */}
-          <div className="mt-4">
-            <div className="flex items-center justify-between text-2xs text-text-muted">
-              <span>
-                {allDone
-                  ? "All explored!"
-                  : `${completedCount} of ${totalSteps} explored`}
-              </span>
-              <span>{Math.round(progress)}%</span>
+          {/* Progress bar — only on checklist view */}
+          {!showIntro && (
+            <div className="mt-4">
+              <div className="flex items-center justify-between text-2xs text-text-muted">
+                <span>
+                  {allDone
+                    ? "All explored!"
+                    : `${completedCount} of ${totalSteps} explored`}
+                </span>
+                <span>{Math.round(progress)}%</span>
+              </div>
+              <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-[var(--chrome-fill)]">
+                <div
+                  className="h-full rounded-full bg-accent transition-all duration-500 ease-out"
+                  style={{ width: `${progress}%` }}
+                />
+              </div>
             </div>
-            <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-[var(--chrome-fill)]">
-              <div
-                className="h-full rounded-full bg-accent transition-all duration-500 ease-out"
-                style={{ width: `${progress}%` }}
-              />
-            </div>
-          </div>
+          )}
         </div>
 
-        {/* Steps */}
+        {/* Body */}
+        {showIntro ? (
+          <div className="relative min-h-0 flex-1 overflow-y-auto px-6 py-6">
+            <div className="flex flex-col gap-5 text-sm leading-relaxed text-text-secondary">
+              <p>
+                Arcanum is the instrument for building a world. You sit
+                above it and shape what goes where.
+              </p>
+
+              <div className="flex flex-col gap-3">
+                <p className="font-display text-2xs uppercase tracking-ui text-accent">
+                  What a world is made of
+                </p>
+                <dl className="flex flex-col gap-2.5">
+                  <div>
+                    <dt className="font-display text-xs tracking-label text-text-primary">
+                      Zones & Rooms
+                    </dt>
+                    <dd className="mt-0.5 text-2xs leading-relaxed text-text-muted">
+                      A zone is a region. A room is one place inside it.
+                      Players walk from room to room.
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="font-display text-xs tracking-label text-text-primary">
+                      Creatures & Items
+                    </dt>
+                    <dd className="mt-0.5 text-2xs leading-relaxed text-text-muted">
+                      What the rooms contain. Friends, enemies, treasure,
+                      tools.
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="font-display text-xs tracking-label text-text-primary">
+                      Lore
+                    </dt>
+                    <dd className="mt-0.5 text-2xs leading-relaxed text-text-muted">
+                      The histories, cultures, and legends behind the
+                      playable world. Articles, maps, timelines.
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="font-display text-xs tracking-label text-text-primary">
+                      Characters & Rules
+                    </dt>
+                    <dd className="mt-0.5 text-2xs leading-relaxed text-text-muted">
+                      Who players can be, and how the world behaves
+                      around them.
+                    </dd>
+                  </div>
+                </dl>
+              </div>
+
+              <p className="text-2xs leading-relaxed text-text-muted">
+                Nothing you do is final. Everything can be renamed, moved,
+                regenerated, or undone. Start anywhere.
+              </p>
+            </div>
+
+            <div className="mt-7 flex flex-col gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  markIntroSeen();
+                  setShowIntro(false);
+                }}
+                className="focus-ring relative w-full overflow-hidden rounded-2xl border border-accent/40 px-5 py-3 text-center transition hover:border-accent hover:shadow-[0_10px_28px_rgb(var(--accent-rgb)/0.18)]"
+                style={{
+                  background:
+                    "linear-gradient(135deg, rgb(var(--accent-rgb) / 0.18), rgb(var(--surface-rgb) / 0.14) 60%, rgb(var(--bg-rgb) / 0.90))",
+                }}
+              >
+                <span className="font-display text-xs uppercase tracking-label text-text-primary">
+                  Show me the steps
+                </span>
+              </button>
+              <button
+                type="button"
+                onClick={handleClose}
+                className="focus-ring rounded-full px-3 py-1.5 text-2xs text-text-muted transition hover:text-accent"
+              >
+                I'll explore on my own
+              </button>
+            </div>
+          </div>
+        ) : (
         <div className="relative min-h-0 flex-1 overflow-y-auto px-4 py-4">
           <div className="flex flex-col gap-2">
             {steps.map((step) => {
@@ -357,16 +447,26 @@ export function GettingStartedPanel({ onClose }: GettingStartedPanelProps) {
             </div>
           )}
         </div>
+        )}
 
         {/* Footer */}
         <div className="relative shrink-0 border-t border-[var(--chrome-stroke)] px-6 py-4">
-          <p className="text-center text-2xs text-text-muted">
-            Press{" "}
-            <kbd className="rounded border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] px-1.5 py-0.5 font-mono text-[10px] text-text-secondary">
-              Ctrl+K
-            </kbd>{" "}
-            anytime to find anything
-          </p>
+          <div className="flex items-center justify-between gap-3">
+            <button
+              type="button"
+              onClick={handleClose}
+              className="focus-ring rounded-full px-2 py-1 text-2xs text-text-muted transition hover:text-accent"
+            >
+              Skip for now
+            </button>
+            <p className="text-2xs text-text-muted">
+              Press{" "}
+              <kbd className="rounded border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] px-1.5 py-0.5 font-mono text-[10px] text-text-secondary">
+                Ctrl+K
+              </kbd>{" "}
+              to find anything
+            </p>
+          </div>
         </div>
       </div>
     </div>

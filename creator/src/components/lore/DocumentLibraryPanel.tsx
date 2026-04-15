@@ -9,6 +9,7 @@ import { exportLoreBible } from "@/lib/exportLoreBible";
 import { loreBibleToHtml } from "@/lib/loreBibleHtml";
 import { ImportWizard } from "./ImportWizard";
 import { WorldbuilderImportWizard } from "./WorldbuilderImportWizard";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 
 function LoreBibleExport() {
   const lore = useLoreStore((s) => s.lore);
@@ -116,6 +117,7 @@ export function DocumentLibraryPanel() {
   const updateDocument = useLoreStore((s) => s.updateDocument);
   const deleteDocument = useLoreStore((s) => s.deleteDocument);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const [newTitle, setNewTitle] = useState("");
   const [showImportWizard, setShowImportWizard] = useState(false);
   const [showWorldbuilderWizard, setShowWorldbuilderWizard] = useState(false);
@@ -237,17 +239,28 @@ export function DocumentLibraryPanel() {
                 placeholder="Document title"
               />
               <button
-                onClick={() => {
-                  if (window.confirm(`Delete "${selected.title}"?`)) {
-                    deleteDocument(selected.id);
-                    setSelectedId(null);
-                  }
-                }}
+                onClick={() => setConfirmDelete(true)}
                 className="shrink-0 rounded-full border border-status-danger/40 bg-status-danger/10 px-3 py-1.5 text-2xs text-status-danger hover:bg-status-danger/15"
               >
                 Delete
               </button>
             </div>
+
+            {confirmDelete && (
+              <ConfirmDialog
+                title="Delete document"
+                message={`Delete "${selected.title}"? The document and its contents will be removed from this project.`}
+                confirmLabel="Delete"
+                cancelLabel="Keep it"
+                destructive
+                onCancel={() => setConfirmDelete(false)}
+                onConfirm={() => {
+                  setConfirmDelete(false);
+                  deleteDocument(selected.id);
+                  setSelectedId(null);
+                }}
+              />
+            )}
 
             <Section title="Content" defaultExpanded>
               <CommitTextarea
@@ -256,6 +269,7 @@ export function DocumentLibraryPanel() {
                 onCommit={(v) => updateDocument(selected.id, { content: v, updatedAt: new Date().toISOString() })}
                 placeholder="Write your notes here (Markdown supported)..."
                 rows={24}
+                size="body"
               />
             </Section>
 

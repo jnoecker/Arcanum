@@ -53,8 +53,10 @@ export function AppShell({ onNewProject }: AppShellProps) {
     guideAutoShown.current = true;
     const state = loadGettingStarted();
     if (!state.dismissed) {
-      // Slight delay so the shell renders first
-      const timer = setTimeout(() => setShowGuide(true), 600);
+      // Let the shell fully render and the user take in their surroundings
+      // before the guide slides in — 1.5s is long enough to feel invited,
+      // not interrupted.
+      const timer = setTimeout(() => setShowGuide(true), 1500);
       return () => clearTimeout(timer);
     }
   }, []);

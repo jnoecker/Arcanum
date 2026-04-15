@@ -11,6 +11,7 @@ import { ArticleArtSection } from "./ArticleArtSection";
 import { RewriteDialog } from "./RewriteDialog";
 import { TagListEditor } from "./TagListEditor";
 import type { RewriteResult } from "@/lib/loreRewrite";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 
 // ─── Template guide (editable description + AI description) ───────
 
@@ -102,6 +103,7 @@ export function ArticleEditor({ articleId }: { articleId: string }) {
   const [renaming, setRenaming] = useState(false);
   const [newId, setNewId] = useState("");
   const [showRewrite, setShowRewrite] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   const patch = useCallback(
     (p: Partial<Article>) => updateArticle(articleId, p),
@@ -216,17 +218,28 @@ export function ArticleEditor({ articleId }: { articleId: string }) {
             Duplicate
           </button>
           <button
-            onClick={() => {
-              if (window.confirm(`Delete "${article.title}"? This cannot be undone.`)) {
-                deleteArticle(articleId);
-              }
-            }}
+            onClick={() => setConfirmDelete(true)}
             className="rounded-full border border-status-danger/40 bg-status-danger/10 px-3 py-1.5 text-2xs text-status-danger hover:bg-status-danger/15"
           >
             Delete
           </button>
         </div>
       </div>
+
+      {confirmDelete && (
+        <ConfirmDialog
+          title="Delete article"
+          message={`Delete "${article.title}"? This cannot be undone.`}
+          confirmLabel="Delete"
+          cancelLabel="Keep it"
+          destructive
+          onCancel={() => setConfirmDelete(false)}
+          onConfirm={() => {
+            setConfirmDelete(false);
+            deleteArticle(articleId);
+          }}
+        />
+      )}
 
       {/* Template fields */}
       <TemplateFields

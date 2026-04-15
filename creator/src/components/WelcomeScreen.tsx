@@ -76,7 +76,7 @@ export function WelcomeScreen({ onNewProject }: WelcomeScreenProps) {
             <h1
               className="font-display text-[clamp(2.8rem,6vw,4.2rem)] uppercase leading-none tracking-[0.28em] text-text-primary"
               style={{
-                textShadow: "0 0 48px rgb(var(--accent-rgb) / 0.30), 0 0 120px rgb(var(--accent-rgb) / 0.12)",
+                textShadow: "0 0 36px rgb(var(--accent-rgb) / 0.22)",
               }}
             >
               Arcanum
@@ -98,23 +98,18 @@ export function WelcomeScreen({ onNewProject }: WelcomeScreenProps) {
               <button
                 onClick={() => void handleOpenRecent(mostRecent)}
                 disabled={loading === mostRecent.path}
-                className="group relative w-full overflow-hidden rounded-3xl border border-[var(--border-accent-ring)] px-7 py-6 text-left transition hover:shadow-[0_20px_50px_rgb(var(--accent-rgb)/0.22)] disabled:opacity-50"
+                className="group relative w-full overflow-hidden rounded-3xl border border-[var(--border-accent-ring)]/70 px-7 py-6 text-left transition hover:border-[var(--border-accent-ring)] hover:shadow-[0_14px_36px_rgb(var(--accent-rgb)/0.12)] disabled:opacity-50"
                 style={{
-                  background: "linear-gradient(135deg, rgb(var(--accent-rgb) / 0.18), rgb(var(--surface-rgb) / 0.14) 60%, rgb(var(--bg-rgb) / 0.90))",
+                  background: "linear-gradient(135deg, rgb(var(--accent-rgb) / 0.10), rgb(var(--surface-rgb) / 0.12) 70%, rgb(var(--bg-rgb) / 0.92))",
                 }}
               >
-                <div
-                  aria-hidden="true"
-                  className="pointer-events-none absolute -right-12 -top-12 h-40 w-40 rounded-full opacity-40 blur-3xl transition-opacity group-hover:opacity-60"
-                  style={{ background: "radial-gradient(circle, rgb(var(--accent-rgb) / 0.4), transparent 65%)" }}
-                />
-                <p className="relative font-display text-2xs uppercase tracking-ui text-accent">
+                <p className="font-display text-2xs uppercase tracking-ui text-accent">
                   Continue
                 </p>
-                <p className="relative mt-2 font-display text-2xl tracking-wide text-text-primary">
+                <p className="mt-2 font-display text-2xl tracking-wide text-text-primary">
                   {loading === mostRecent.path ? "Opening\u2026" : mostRecent.name}
                 </p>
-                <p className="relative mt-1.5 truncate text-2xs text-text-muted">
+                <p className="mt-1.5 truncate text-2xs text-text-muted">
                   {mostRecent.path}
                 </p>
               </button>
@@ -126,17 +121,18 @@ export function WelcomeScreen({ onNewProject }: WelcomeScreenProps) {
             {AI_ENABLED && (
               <button
                 onClick={() => setShowOnboarding(true)}
-                className="group relative overflow-hidden rounded-2xl border border-[var(--border-accent-ring)]/60 px-5 py-5 text-left transition hover:border-[var(--border-accent-ring)] hover:shadow-[0_14px_36px_rgb(var(--accent-rgb)/0.18)]"
-                style={{
-                  background: "linear-gradient(155deg, rgb(var(--accent-rgb) / 0.12), rgb(var(--surface-rgb) / 0.10) 50%, rgb(var(--bg-rgb) / 0.88))",
-                }}
+                className="group rounded-2xl border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)]/30 px-5 py-5 text-left transition hover:border-[var(--border-accent-ring)]/60 hover:bg-[var(--chrome-fill)]/50"
               >
                 <div className="flex items-center gap-2">
                   <span className="font-display text-sm text-text-primary">
                     Start with Arcanum Hub
                   </span>
-                  <span className="rounded-full border border-accent/30 bg-accent/10 px-1.5 py-px text-[10px] uppercase tracking-label text-accent">
-                    New
+                  <span
+                    aria-hidden="true"
+                    className="text-[10px] leading-none text-accent/70"
+                    title="New path"
+                  >
+                    &#x2666;
                   </span>
                 </div>
                 <p className="mt-2 text-2xs leading-relaxed text-text-muted">
@@ -147,10 +143,7 @@ export function WelcomeScreen({ onNewProject }: WelcomeScreenProps) {
 
             <button
               onClick={onNewProject}
-              className="group rounded-2xl border border-[var(--chrome-stroke)] px-5 py-5 text-left transition hover:border-[var(--border-accent-ring)]/50 hover:bg-[var(--chrome-fill)]/40"
-              style={{
-                background: "linear-gradient(155deg, rgb(var(--surface-rgb) / 0.08), rgb(var(--bg-rgb) / 0.80))",
-              }}
+              className="group rounded-2xl border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)]/20 px-5 py-5 text-left transition hover:border-[var(--border-accent-ring)]/50 hover:bg-[var(--chrome-fill)]/40"
             >
               <p className="font-display text-sm text-text-primary">
                 Create new project

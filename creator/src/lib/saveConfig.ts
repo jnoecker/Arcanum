@@ -29,7 +29,7 @@ import { YAML_OPTS } from "@/lib/yamlOpts";
 function sanitizeAdminConfigForSave(admin: AppConfig["admin"]): AppConfig["admin"] {
   return {
     ...admin,
-    token: "",
+    token: "OVERRIDE_ME_FROM_ENV",
   };
 }
 

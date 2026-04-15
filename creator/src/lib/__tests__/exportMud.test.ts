@@ -200,7 +200,7 @@ describe("buildMonolithicConfigObject", () => {
     expect(runtime.audio.baseUrl).toBe("https://assets.ambon.dev/");
     expect(runtime.videos.baseUrl).toBe("https://assets.ambon.dev/");
     expect(runtime.admin.enabled).toBe(true);
-    expect(runtime.admin.token).toBe("");
+    expect(runtime.admin.token).toBe("OVERRIDE_ME_FROM_ENV");
     expect(runtime.engine.classStartRooms.BULWARK).toBe("tutorial_glade:training_grounds");
     expect(runtime.engine.statusEffects.definitions.fortress_stance.effectType).toBe("stat_buff");
     expect(runtime.engine.abilities.definitions.shield_bash.image).toBe("shield_bash.png");

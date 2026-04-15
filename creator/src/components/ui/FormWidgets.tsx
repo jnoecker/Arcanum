@@ -1,4 +1,4 @@
-import { useState, type ButtonHTMLAttributes, type ReactNode, type Ref, type CSSProperties } from "react";
+import { useId, useState, type ButtonHTMLAttributes, type ReactNode, type Ref, type CSSProperties } from "react";
 
 function cx(...classes: Array<string | false | null | undefined>) {
   return classes.filter(Boolean).join(" ");
@@ -514,27 +514,40 @@ export function CommitTextarea({
   onCommit,
   placeholder,
   rows = 3,
+  size = "ui",
 }: {
   label: string;
   value: string;
   onCommit: (v: string) => void;
   placeholder?: string;
   rows?: number;
+  /** `"ui"` (default): 13px builder-chrome density. `"body"`: 15px reading-comfort for long-form writing surfaces like documents and notes. */
+  size?: "ui" | "body";
 }) {
   const [draft, setDraft] = useState(value);
   const [focused, setFocused] = useState(false);
+  const textareaId = useId();
 
   if (!focused && draft !== value) {
     setDraft(value);
   }
 
+  const textareaSizing =
+    size === "body"
+      ? "px-3 py-2.5 text-base leading-[1.7] font-serif"
+      : "px-1.5 py-1 text-xs leading-relaxed";
+
   return (
     <div className="mt-1">
-      <label htmlFor="commit-msg" className="text-xs text-text-muted">{label}</label>
+      {label && (
+        <label htmlFor={textareaId} className="text-xs text-text-muted">
+          {label}
+        </label>
+      )}
       <textarea
-        id="commit-msg"
+        id={textareaId}
         rows={rows}
-        className="ornate-input mt-0.5 w-full resize-y px-1.5 py-1 text-xs leading-relaxed text-text-primary"
+        className={`ornate-input mt-0.5 w-full resize-y text-text-primary ${textareaSizing}`}
         placeholder={placeholder}
         value={draft}
         onChange={(e) => setDraft(e.target.value)}

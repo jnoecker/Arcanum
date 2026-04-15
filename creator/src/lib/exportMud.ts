@@ -48,7 +48,7 @@ function sanitizeAdminConfigForRuntime(admin: AppConfig["admin"] | undefined): A
     port: admin?.port ?? 9091,
     // The runtime token is injected by the mud deployment layer via env/SSM.
     // Arcanum should never persist it into project config.
-    token: "",
+    token: "OVERRIDE_ME_FROM_ENV",
     basePath: admin?.basePath ?? "/",
     grafanaUrl: admin?.grafanaUrl ?? "",
     corsOrigins: admin?.corsOrigins,

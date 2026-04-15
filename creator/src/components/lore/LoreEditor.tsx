@@ -237,7 +237,7 @@ export function LoreEditor({
     content: initialContent.current(),
     editorProps: {
       attributes: {
-        class: "lore-editor-content prose prose-sm prose-invert max-w-none px-3 py-2 outline-none min-h-[8rem]",
+        class: "lore-editor-content prose prose-invert mx-auto max-w-[72ch] px-6 py-5 outline-none min-h-[12rem]",
       },
     },
     onUpdate: ({ editor: activeEditor }) => {

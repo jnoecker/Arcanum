@@ -33,6 +33,9 @@ import { RoomPanel, type EntitySelection } from "./RoomPanel";
 import { EntityPanel } from "./EntityPanel";
 import { DirectionPicker } from "./DirectionPicker";
 import { BatchArtGenerator } from "./BatchArtGenerator";
+import { RethemeDialog } from "./RethemeDialog";
+import { DuplicateZoneDialog } from "@/components/DuplicateZoneDialog";
+import { AI_ENABLED } from "@/lib/featureFlags";
 import { BulkBgRemoval, type BulkBgTarget } from "@/components/ui/BulkBgRemoval";
 import { ZoneAssetWorkbench } from "./ZoneAssetWorkbench";
 import { Starfield } from "./Starfield";
@@ -169,6 +172,8 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
   const [justSaved, setJustSaved] = useState(false);
   const [showBatchArt, setShowBatchArt] = useState(false);
   const [showBulkBgRemoval, setShowBulkBgRemoval] = useState(false);
+  const [showDuplicate, setShowDuplicate] = useState(false);
+  const [showRetheme, setShowRetheme] = useState(false);
   const assetsDir = useAssetStore((s) => s.assetsDir);
   const [viewMode, setViewMode] = useState<ViewMode>("map");
   const [hintDismissed, setHintDismissed] = useState(
@@ -676,6 +681,25 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
               Re-layout
             </button>
             <button
+              onClick={() => setShowDuplicate(true)}
+              className="h-6 rounded px-2 text-xs text-text-secondary transition-colors hover:bg-[var(--chrome-highlight)] hover:text-text-primary max-[1100px]:h-9"
+              title="Duplicate this zone into a new ID"
+              aria-label="Duplicate zone"
+            >
+              Duplicate
+            </button>
+            {AI_ENABLED && (
+              <button
+                onClick={() => setShowRetheme(true)}
+                disabled={roomCount === 0}
+                className="h-6 rounded px-2 text-xs text-stellar-blue transition-colors hover:bg-stellar-blue/10 disabled:opacity-30 max-[1100px]:h-9"
+                title="Rewrite titles and descriptions for a new theme (layout preserved)"
+                aria-label="Retheme zone"
+              >
+                Retheme
+              </button>
+            )}
+            <button
               onClick={() => {
                 useProjectStore.getState().navigateTo({ zoneId });
                 useProjectStore.getState().openTab(panelTab("playtest"));
@@ -1015,6 +1039,23 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
                 world={zoneState.data}
                 onWorldChange={applyWorldChange}
                 onClose={() => setShowBatchArt(false)}
+              />
+            )}
+
+            {/* Duplicate zone */}
+            {showDuplicate && (
+              <DuplicateZoneDialog
+                zoneId={zoneId}
+                onClose={() => setShowDuplicate(false)}
+              />
+            )}
+
+            {/* Retheme zone */}
+            {showRetheme && zoneState && (
+              <RethemeDialog
+                zoneId={zoneId}
+                world={zoneState.data}
+                onClose={() => setShowRetheme(false)}
               />
             )}
 

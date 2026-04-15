@@ -13,6 +13,7 @@ import { panelTab } from "@/lib/panelRegistry";
 import { NewZoneDialog } from "./NewZoneDialog";
 import { ImportZoneDialog } from "./ImportZoneDialog";
 import { RenameZoneDialog } from "./RenameZoneDialog";
+import { DuplicateZoneDialog } from "./DuplicateZoneDialog";
 import { ConfirmDialog } from "./ConfirmDialog";
 import { CosmicBackdrop } from "./ui/CosmicBackdrop";
 import {
@@ -183,12 +184,14 @@ function ZoneTree({
   isActive,
   onDelete,
   onRename,
+  onDuplicate,
 }: {
   zoneId: string;
   zoneState: ZoneState;
   isActive: boolean;
   onDelete: (zoneId: string) => void;
   onRename: (zoneId: string) => void;
+  onDuplicate: (zoneId: string) => void;
 }) {
   const openTab = useProjectStore((s) => s.openTab);
   const navigateTo = useProjectStore((s) => s.navigateTo);
@@ -305,6 +308,14 @@ function ZoneTree({
               aria-label="Rename zone"
             >
               Rename
+            </button>
+            <button
+              onClick={() => onDuplicate(zoneId)}
+              className="rounded-full border border-[var(--chrome-stroke)] px-2.5 py-1 text-2xs text-text-muted transition hover:border-accent/40 hover:text-accent"
+              title="Duplicate zone"
+              aria-label="Duplicate zone"
+            >
+              Duplicate
             </button>
             <button
               onClick={() => onDelete(zoneId)}
@@ -434,6 +445,7 @@ export function Sidebar() {
   const showImportZone = useProjectStore((s) => s.showImportZone);
   const setShowImportZone = useProjectStore((s) => s.setShowImportZone);
   const [renameTarget, setRenameTarget] = useState<string | null>(null);
+  const [duplicateTarget, setDuplicateTarget] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const hasProject = !!project;
 
@@ -562,6 +574,7 @@ export function Sidebar() {
                   isActive={activeTabId === `zone:${zoneId}`}
                   onDelete={(id) => setDeleteTarget(id)}
                   onRename={(id) => setRenameTarget(id)}
+                  onDuplicate={(id) => setDuplicateTarget(id)}
                 />
               ))}
             </ul>
@@ -576,6 +589,13 @@ export function Sidebar() {
 
       {showNewZone && <NewZoneDialog onClose={() => setShowNewZone(false)} />}
       {showImportZone && <ImportZoneDialog onClose={() => setShowImportZone(false)} />}
+
+      {duplicateTarget && (
+        <DuplicateZoneDialog
+          zoneId={duplicateTarget}
+          onClose={() => setDuplicateTarget(null)}
+        />
+      )}
 
       {renameTarget && (
         <RenameZoneDialog

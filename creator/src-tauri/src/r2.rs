@@ -407,6 +407,63 @@ fn find_asset_file(base: &Path, file_name: &str) -> Option<PathBuf> {
     None
 }
 
+// ─── Runtime sync-state cache ──────────────────────────────────────
+// Sprites and global assets upload to stable keys (not content-hashed), so a
+// remote HEAD probe can't tell whether the content has actually changed. We
+// keep a local map of {object_key → source sha256} and skip re-uploads when
+// the local file hashes to the same value we last uploaded. The cache is
+// advisory: delete it (or let it go stale) and the next publish will re-upload
+// everything — no correctness hazard, just wasted bandwidth.
+
+fn runtime_sync_state_path(app: &AppHandle) -> Result<PathBuf, String> {
+    let dir = app
+        .path()
+        .app_data_dir()
+        .map_err(|e| format!("Failed to get app data dir: {e}"))?;
+    Ok(dir.join("runtime_sync_state.json"))
+}
+
+async fn load_runtime_sync_state(
+    app: &AppHandle,
+) -> std::collections::HashMap<String, String> {
+    let path = match runtime_sync_state_path(app) {
+        Ok(p) => p,
+        Err(_) => return std::collections::HashMap::new(),
+    };
+    match tokio::fs::read(&path).await {
+        Ok(bytes) => serde_json::from_slice(&bytes).unwrap_or_default(),
+        Err(_) => std::collections::HashMap::new(),
+    }
+}
+
+async fn save_runtime_sync_state(
+    app: &AppHandle,
+    state: &std::collections::HashMap<String, String>,
+) {
+    let path = match runtime_sync_state_path(app) {
+        Ok(p) => p,
+        Err(_) => return,
+    };
+    if let Some(parent) = path.parent() {
+        let _ = tokio::fs::create_dir_all(parent).await;
+    }
+    if let Ok(bytes) = serde_json::to_vec_pretty(state) {
+        let _ = tokio::fs::write(&path, bytes).await;
+    }
+}
+
+/// Clear the runtime sync-state cache. Next publish will treat every file as
+/// new and re-upload. Exposed as a command so users can force a full republish.
+#[tauri::command]
+pub async fn clear_runtime_sync_state(app: AppHandle) -> Result<(), String> {
+    let path = runtime_sync_state_path(&app)?;
+    match tokio::fs::remove_file(&path).await {
+        Ok(()) => Ok(()),
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(()),
+        Err(e) => Err(format!("Failed to clear sync state: {e}")),
+    }
+}
+
 fn should_sync_asset(asset: &AssetEntry, scope: &str, active_set: &std::collections::HashSet<String>) -> bool {
     match scope {
         "all" => true,
@@ -606,6 +663,7 @@ pub async fn deploy_sprites_to_r2(app: AppHandle, sprites_yaml: Option<String>) 
 
     let base_dir = assets_base_dir(&app)?;
     let client = crate::http::shared_client();
+    let mut sync_state = load_runtime_sync_state(&app).await;
 
     let mut progress = SyncProgress {
         total: sprites.len(),
@@ -641,7 +699,15 @@ pub async fn deploy_sprites_to_r2(app: AppHandle, sprites_yaml: Option<String>) 
                 continue;
             }
         };
-        let body = optimized_runtime_image_bytes(&asset.asset_type, &asset.file_name, &object_key, &body);
+
+        // Skip re-upload if the source bytes match what we uploaded last time.
+        let src_hash = sha256_hex(&body);
+        if sync_state.get(&object_key).map(|h| h.as_str()) == Some(src_hash.as_str()) {
+            progress.skipped += 1;
+            continue;
+        }
+
+        let optimized = optimized_runtime_image_bytes(&asset.asset_type, &asset.file_name, &object_key, &body);
 
         // Upload under canonical path
         match upload_object(
@@ -651,13 +717,14 @@ pub async fn deploy_sprites_to_r2(app: AppHandle, sprites_yaml: Option<String>) 
             &s.r2_access_key_id,
             &s.r2_secret_access_key,
             &object_key,
-            body,
+            optimized,
             "image/png",
         )
         .await
         {
             Ok(()) => {
                 progress.uploaded += 1;
+                sync_state.insert(object_key.clone(), src_hash);
             }
             Err(e) => {
                 progress.failed += 1;
@@ -669,26 +736,36 @@ pub async fn deploy_sprites_to_r2(app: AppHandle, sprites_yaml: Option<String>) 
     // Upload sprites.yaml manifest if provided
     if let Some(yaml) = sprites_yaml {
         progress.total += 1;
-        match upload_object(
-            &client,
-            &s.r2_account_id,
-            &s.r2_bucket,
-            &s.r2_access_key_id,
-            &s.r2_secret_access_key,
-            "sprites.yaml",
-            yaml.into_bytes(),
-            "application/x-yaml",
-        )
-        .await
-        {
-            Ok(()) => progress.uploaded += 1,
-            Err(e) => {
-                progress.failed += 1;
-                progress.errors.push(format!("sprites.yaml: {e}"));
+        let yaml_bytes = yaml.into_bytes();
+        let src_hash = sha256_hex(&yaml_bytes);
+        if sync_state.get("sprites.yaml").map(|h| h.as_str()) == Some(src_hash.as_str()) {
+            progress.skipped += 1;
+        } else {
+            match upload_object(
+                &client,
+                &s.r2_account_id,
+                &s.r2_bucket,
+                &s.r2_access_key_id,
+                &s.r2_secret_access_key,
+                "sprites.yaml",
+                yaml_bytes,
+                "application/x-yaml",
+            )
+            .await
+            {
+                Ok(()) => {
+                    progress.uploaded += 1;
+                    sync_state.insert("sprites.yaml".to_string(), src_hash);
+                }
+                Err(e) => {
+                    progress.failed += 1;
+                    progress.errors.push(format!("sprites.yaml: {e}"));
+                }
             }
         }
     }
 
+    save_runtime_sync_state(&app, &sync_state).await;
     Ok(progress)
 }
 
@@ -718,6 +795,7 @@ pub async fn deploy_global_assets_to_r2(
 
     let base_dir = assets_base_dir(&app)?;
     let client = crate::http::shared_client();
+    let mut sync_state = load_runtime_sync_state(&app).await;
 
     let mut progress = SyncProgress {
         total: entries.len(),
@@ -757,12 +835,20 @@ pub async fn deploy_global_assets_to_r2(
                 continue;
             }
         };
+
+        // Skip re-upload if the source bytes match what we uploaded last time.
+        let src_hash = sha256_hex(&body);
+        if sync_state.get(&object_key).map(|h| h.as_str()) == Some(src_hash.as_str()) {
+            progress.skipped += 1;
+            continue;
+        }
+
         let asset_type = all_assets
             .iter()
             .find(|asset| asset.file_name == **file_name)
             .map(|asset| asset.asset_type.as_str())
             .unwrap_or("background");
-        let body = optimized_runtime_image_bytes(asset_type, file_name, &object_key, &body);
+        let optimized = optimized_runtime_image_bytes(asset_type, file_name, &object_key, &body);
 
         let content_type = detect_content_type(file_name);
 
@@ -774,13 +860,14 @@ pub async fn deploy_global_assets_to_r2(
             &s.r2_access_key_id,
             &s.r2_secret_access_key,
             &object_key,
-            body,
+            optimized,
             content_type,
         )
         .await
         {
             Ok(()) => {
                 progress.uploaded += 1;
+                sync_state.insert(object_key.clone(), src_hash);
             }
             Err(e) => {
                 progress.failed += 1;
@@ -789,6 +876,7 @@ pub async fn deploy_global_assets_to_r2(
         }
     }
 
+    save_runtime_sync_state(&app, &sync_state).await;
     Ok(progress)
 }
 

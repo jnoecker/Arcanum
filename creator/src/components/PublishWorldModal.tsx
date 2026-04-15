@@ -40,16 +40,20 @@ interface StepState {
   errors: string[];
 }
 
+// Order is intentional: text deploys (config, achievements, zones) come first
+// so the game server can pick up fresh data as soon as possible; image/sprite
+// asset uploads run after and are allowed to land over time. Within each
+// group, fastest stages run first.
 const STEP_ORDER: { key: StepKey; title: string; idleDetail: string }[] = [
   { key: "save", title: "Save workspace", idleDetail: "Save config and unsaved zones to disk." },
   { key: "diff", title: "Review diff", idleDetail: "Inspect pending changes before uploading." },
   { key: "validate", title: "Validate", idleDetail: "Run config and zone validation." },
-  { key: "assets", title: "Publish assets", idleDetail: "Upload approved gallery assets to R2." },
-  { key: "globals", title: "Publish globals", idleDetail: "Upload global asset keys to R2." },
-  { key: "sprites", title: "Publish sprites", idleDetail: "Upload player sprites to R2." },
   { key: "config", title: "Deploy config", idleDetail: "Upload runtime config to R2." },
   { key: "achievements", title: "Deploy achievements", idleDetail: "Upload achievements.yaml to R2." },
   { key: "zones", title: "Deploy zones", idleDetail: "Upload zone YAML files to R2." },
+  { key: "assets", title: "Publish assets", idleDetail: "Upload approved gallery assets to R2." },
+  { key: "globals", title: "Publish globals", idleDetail: "Upload changed global assets to R2." },
+  { key: "sprites", title: "Publish sprites", idleDetail: "Upload changed player sprites to R2." },
 ];
 
 const STATUS_STYLES: Record<StepStatus, string> = {
@@ -212,49 +216,10 @@ export function PublishWorldModal({ onClose }: PublishWorldModalProps) {
         throw error;
       }
 
-      // ── 4. Assets ─────────────────────────────────────────────────
-      setStep("assets", { status: "running", detail: "Syncing approved curated assets to R2..." });
-      try {
-        const result = await publishCuratedAssets("approved");
-        setStep("assets", {
-          status: result.failed > 0 ? "warning" : "success",
-          detail: formatSyncResult(result, "assets"),
-          errors: result.errors,
-        });
-      } catch (error) {
-        setStep("assets", { status: "error", detail: "Asset publish failed.", errors: [String(error)] });
-        throw error;
-      }
+      // Text-first ordering: get config/achievements/zones live so the game
+      // server can start reading fresh data, then backfill assets/globals/sprites.
 
-      // ── 5. Globals ────────────────────────────────────────────────
-      setStep("globals", { status: "running", detail: "Publishing global asset keys to R2..." });
-      try {
-        const result = await publishGlobalAssets();
-        setStep("globals", {
-          status: result.failed > 0 ? "warning" : "success",
-          detail: formatSyncResult(result, "globals"),
-          errors: result.errors,
-        });
-      } catch (error) {
-        setStep("globals", { status: "error", detail: "Global asset publish failed.", errors: [String(error)] });
-        throw error;
-      }
-
-      // ── 6. Sprites ────────────────────────────────────────────────
-      setStep("sprites", { status: "running", detail: "Publishing player sprites to R2..." });
-      try {
-        const result = await publishPlayerSprites();
-        setStep("sprites", {
-          status: result.failed > 0 ? "warning" : "success",
-          detail: formatSyncResult(result, "sprites"),
-          errors: result.errors,
-        });
-      } catch (error) {
-        setStep("sprites", { status: "error", detail: "Sprite publish failed.", errors: [String(error)] });
-        throw error;
-      }
-
-      // ── 7. Config ─────────────────────────────────────────────────
+      // ── 4. Config ─────────────────────────────────────────────────
       setStep("config", { status: "running", detail: "Uploading runtime config to R2..." });
       try {
         const url = await deployRuntimeConfig(project);
@@ -264,7 +229,7 @@ export function PublishWorldModal({ onClose }: PublishWorldModalProps) {
         throw error;
       }
 
-      // ── 8. Achievements ───────────────────────────────────────────
+      // ── 5. Achievements ───────────────────────────────────────────
       setStep("achievements", { status: "running", detail: "Uploading achievements.yaml to R2..." });
       try {
         const url = await deployRuntimeAchievements();
@@ -278,7 +243,7 @@ export function PublishWorldModal({ onClose }: PublishWorldModalProps) {
         throw error;
       }
 
-      // ── 9. Zones ──────────────────────────────────────────────────
+      // ── 6. Zones ──────────────────────────────────────────────────
       setStep("zones", { status: "running", detail: "Uploading zone YAML files to R2..." });
       try {
         const result = await deployRuntimeZones(project);
@@ -289,6 +254,48 @@ export function PublishWorldModal({ onClose }: PublishWorldModalProps) {
         });
       } catch (error) {
         setStep("zones", { status: "error", detail: "Zone deploy failed.", errors: [String(error)] });
+        throw error;
+      }
+
+      // ── 7. Assets ─────────────────────────────────────────────────
+      setStep("assets", { status: "running", detail: "Syncing approved curated assets to R2..." });
+      try {
+        const result = await publishCuratedAssets("approved");
+        setStep("assets", {
+          status: result.failed > 0 ? "warning" : "success",
+          detail: formatSyncResult(result, "assets"),
+          errors: result.errors,
+        });
+      } catch (error) {
+        setStep("assets", { status: "error", detail: "Asset publish failed.", errors: [String(error)] });
+        throw error;
+      }
+
+      // ── 8. Globals ────────────────────────────────────────────────
+      setStep("globals", { status: "running", detail: "Publishing changed global assets to R2..." });
+      try {
+        const result = await publishGlobalAssets();
+        setStep("globals", {
+          status: result.failed > 0 ? "warning" : "success",
+          detail: formatSyncResult(result, "globals"),
+          errors: result.errors,
+        });
+      } catch (error) {
+        setStep("globals", { status: "error", detail: "Global asset publish failed.", errors: [String(error)] });
+        throw error;
+      }
+
+      // ── 9. Sprites ────────────────────────────────────────────────
+      setStep("sprites", { status: "running", detail: "Publishing changed player sprites to R2..." });
+      try {
+        const result = await publishPlayerSprites();
+        setStep("sprites", {
+          status: result.failed > 0 ? "warning" : "success",
+          detail: formatSyncResult(result, "sprites"),
+          errors: result.errors,
+        });
+      } catch (error) {
+        setStep("sprites", { status: "error", detail: "Sprite publish failed.", errors: [String(error)] });
         throw error;
       }
 

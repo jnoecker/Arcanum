@@ -94,6 +94,7 @@ macro_rules! base_handler {
             r2::delete_from_r2,
             r2::deploy_sprites_to_r2,
             r2::deploy_global_assets_to_r2,
+            r2::clear_runtime_sync_state,
             r2::deploy_config_to_r2,
             r2::deploy_achievements_to_r2,
             r2::deploy_zones_to_r2,

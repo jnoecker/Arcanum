@@ -67,6 +67,7 @@ No markdown fences, no commentary.`;
     const exits = buildExitSummary(world, roomId);
     const problems = roomMismatches
       .map((m) => {
+        if (m.problem) return m.problem;
         if (m.mentionedDir) {
           return `Text says "${m.snippet}" but there is no ${DIR_LABELS[m.mentionedDir]} exit`;
         }

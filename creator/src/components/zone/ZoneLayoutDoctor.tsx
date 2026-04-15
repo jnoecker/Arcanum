@@ -32,6 +32,7 @@ const KIND_LABELS: Record<string, string> = {
   "contradictory-pair": "Contradictory Pair",
   "disconnected-room": "Disconnected Room",
   "text-direction-mismatch": "Text Mismatch",
+  "text-room-mismatch": "Text ↔ Layout Mismatch",
 };
 
 export function ZoneLayoutDoctor({ world, onWorldChange }: ZoneLayoutDoctorProps) {
@@ -127,8 +128,10 @@ export function ZoneLayoutDoctor({ world, onWorldChange }: ZoneLayoutDoctorProps
   // Counts by severity
   const errorCount = visibleIssues.filter((i) => i.severity === "error").length;
   const warningCount = visibleIssues.filter((i) => i.severity === "warning").length;
-  const textMismatchCount = visibleIssues.filter((i) => i.kind === "text-direction-mismatch").length;
-  const structuralCount = visibleIssues.filter((i) => i.kind !== "text-direction-mismatch").length;
+  const isTextIssue = (k: LayoutIssue["kind"]) =>
+    k === "text-direction-mismatch" || k === "text-room-mismatch";
+  const textMismatchCount = visibleIssues.filter((i) => isTextIssue(i.kind)).length;
+  const structuralCount = visibleIssues.filter((i) => !isTextIssue(i.kind)).length;
 
   const roomCount = Object.keys(world.rooms).length;
 
@@ -199,7 +202,7 @@ export function ZoneLayoutDoctor({ world, onWorldChange }: ZoneLayoutDoctorProps
             Structural Issues
           </h3>
           {visibleIssues
-            .filter((i) => i.kind !== "text-direction-mismatch")
+            .filter((i) => !isTextIssue(i.kind))
             .map((issue) => (
               <div
                 key={issue.key}
@@ -256,7 +259,7 @@ export function ZoneLayoutDoctor({ world, onWorldChange }: ZoneLayoutDoctorProps
 
           {/* Show text mismatch issue cards when no rewrites have been generated yet */}
           {rewrites.length === 0 && visibleIssues
-            .filter((i) => i.kind === "text-direction-mismatch")
+            .filter((i) => isTextIssue(i.kind))
             .map((issue) => (
               <div
                 key={issue.key}

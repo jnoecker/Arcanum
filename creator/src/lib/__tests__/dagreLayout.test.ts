@@ -128,6 +128,46 @@ describe("compassLayout", () => {
   });
 });
 
+describe("compassLayout fallbacks", () => {
+  it("traverses u/d for reachability without pinning grid coordinates", () => {
+    // Start has `u` to upstairs; upstairs has `e` to attic. Verify upstairs is
+    // placed (reachable) and attic ends up east of upstairs on the grid.
+    const world = makeWorld({
+      start: { title: "Start", description: "", exits: { u: "upstairs" } },
+      upstairs: { title: "Up", description: "", exits: { d: "start", e: "attic" } },
+      attic: { title: "Attic", description: "", exits: { w: "upstairs" } },
+    });
+    const { nodes } = zoneToGraph(world);
+    const laid = compassLayout(nodes, world);
+    const start = laid.find((n) => n.id === "start")!;
+    const upstairs = laid.find((n) => n.id === "upstairs")!;
+    const attic = laid.find((n) => n.id === "attic")!;
+    // `start` is the origin; `upstairs` is reached via u/d — should satellite
+    // onto the start cell (collision pushes it into an adjacent cell).
+    expect(start).toBeDefined();
+    expect(upstairs).toBeDefined();
+    // Attic sits east of upstairs.
+    expect(attic.position.x).toBeGreaterThan(upstairs.position.x);
+  });
+
+  it("still places all rooms when a graph is geometrically impossible", () => {
+    // A triangle of n/e/s-w exits that can't embed on a grid. The fallback
+    // should still give every room a finite position.
+    const world = makeWorld({
+      a: { title: "A", description: "", exits: { n: "b", e: "c" } },
+      b: { title: "B", description: "", exits: { s: "a", e: "c" } },
+      c: { title: "C", description: "", exits: { w: "a", sw: "b" } },
+    });
+    const { nodes } = zoneToGraph(world);
+    const laid = compassLayout(nodes, world);
+    expect(laid).toHaveLength(3);
+    for (const node of laid) {
+      expect(Number.isFinite(node.position.x)).toBe(true);
+      expect(Number.isFinite(node.position.y)).toBe(true);
+    }
+  });
+});
+
 describe("getLayoutBounds", () => {
   it("returns null for an empty node list", () => {
     expect(getLayoutBounds([])).toBeNull();

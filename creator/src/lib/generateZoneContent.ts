@@ -3,6 +3,7 @@ import type { WorldFile, RoomFile, MobFile, ItemFile } from "@/types/world";
 import { buildToneDirective } from "./loreGeneration";
 import { OPPOSITE } from "./zoneEdits";
 import { AI_ENABLED } from "@/lib/featureFlags";
+import { generateGridLayout } from "./gridGenerator";
 
 // ─── Types ──────────────────────────────────────────────────────
 
@@ -164,6 +165,11 @@ function applyHandTopology(rooms: LlmRoom[]): Record<string, RoomFile> {
 // The LLM may produce dangling exits, non-bidirectional pairs, or leave rooms
 // disconnected. We repair the graph so every room is reachable from the start.
 
+const DIR_OFFSET_2D: Record<string, [number, number]> = {
+  n: [0, -1], s: [0, 1], e: [1, 0], w: [-1, 0],
+  ne: [1, -1], nw: [-1, -1], se: [1, 1], sw: [-1, 1],
+};
+
 function repairExitGraph(rooms: LlmRoom[]): Record<string, RoomFile> {
   if (rooms.length === 0) return {};
 
@@ -178,23 +184,70 @@ function repairExitGraph(rooms: LlmRoom[]): Record<string, RoomFile> {
     };
   }
 
-  // Phase 1 — copy exits that point to valid rooms, ensure bidirectional links
+  // Trial grid for geometric consistency. An exit A→dir→B is only accepted
+  // if the cell it implies for B is either empty or already occupied by B.
+  // u/d are exempt: they don't participate in 2D placement.
+  const gridPos = new Map<string, [number, number]>();
+  const gridCell = new Map<string, string>();
+  if (rooms[0]) {
+    gridPos.set(rooms[0].id, [0, 0]);
+    gridCell.set("0,0", rooms[0].id);
+  }
+
+  function tryPlace(parentId: string, dir: string, childId: string): boolean {
+    const offset = DIR_OFFSET_2D[dir];
+    if (!offset) return true; // u/d: not grid-embedded, always allowed
+    const parentPos = gridPos.get(parentId);
+    if (!parentPos) return true; // parent not yet placed; skip consistency check
+    const [px, py] = parentPos;
+    const cx = px + offset[0];
+    const cy = py + offset[1];
+    const key = `${cx},${cy}`;
+    const existing = gridPos.get(childId);
+    if (existing) {
+      return existing[0] === cx && existing[1] === cy;
+    }
+    const occupant = gridCell.get(key);
+    if (occupant && occupant !== childId) return false;
+    gridPos.set(childId, [cx, cy]);
+    gridCell.set(key, childId);
+    return true;
+  }
+
+  // Phase 1 — prioritize cardinals, then diagonals, then vertical, so the
+  // most load-bearing directions pin the trial grid first.
+  const DIR_PRIORITY: Record<string, number> = {
+    n: 0, s: 0, e: 0, w: 0,
+    ne: 1, nw: 1, se: 1, sw: 1,
+    u: 2, d: 2,
+  };
+  type Candidate = { from: string; dir: string; to: string; priority: number };
+  const candidates: Candidate[] = [];
   for (const room of rooms) {
     if (!room.exits) continue;
     for (const [rawDir, target] of Object.entries(room.exits)) {
       const dir = rawDir.toLowerCase();
-      if (!OPPOSITE[dir]) continue; // unknown direction
-      if (!roomIds.has(target)) continue; // dangling
-      if (target === room.id) continue; // self-loop
-      // Skip if this room's exit slot is already taken by a bidi pair
-      if (result[room.id]!.exits![dir]) continue;
-      // Skip if the target already has the reverse exit pointing somewhere else
-      const rev = OPPOSITE[dir]!;
-      const existingRev = result[target]!.exits![rev];
-      if (existingRev && existingRev !== room.id) continue;
-      result[room.id]!.exits![dir] = target;
-      result[target]!.exits![rev] = room.id;
+      if (!OPPOSITE[dir]) continue;
+      if (!roomIds.has(target)) continue;
+      if (target === room.id) continue;
+      candidates.push({
+        from: room.id,
+        dir,
+        to: target,
+        priority: DIR_PRIORITY[dir] ?? 99,
+      });
     }
+  }
+  candidates.sort((a, b) => a.priority - b.priority);
+
+  for (const { from, dir, to } of candidates) {
+    if (result[from]!.exits![dir]) continue;
+    const rev = OPPOSITE[dir]!;
+    const existingRev = result[to]!.exits![rev];
+    if (existingRev && existingRev !== from) continue;
+    if (!tryPlace(from, dir, to)) continue;
+    result[from]!.exits![dir] = to;
+    result[to]!.exits![rev] = from;
   }
 
   // Phase 2 — check connectivity from first room, attach orphans
@@ -218,32 +271,38 @@ function repairExitGraph(rooms: LlmRoom[]): Record<string, RoomFile> {
   const orphans = rooms.filter((r) => !visited.has(r.id));
   if (orphans.length === 0) return result;
 
-  // Attach each orphan to a room in the connected set that has a free cardinal direction
+  // Attach each orphan to a room in the connected set via a cardinal that
+  // leaves the trial grid geometrically consistent.
   const CARDINALS = ["n", "s", "e", "w"];
   const connected = [...visited];
   for (const orphan of orphans) {
     let attached = false;
     for (const anchorId of connected) {
       const anchor = result[anchorId]!;
-      const free = CARDINALS.find((d) => !anchor.exits![d]);
-      if (!free) continue;
-      const rev = OPPOSITE[free]!;
-      if (result[orphan.id]!.exits![rev]) continue;
-      anchor.exits![free] = orphan.id;
-      result[orphan.id]!.exits![rev] = anchorId;
-      connected.push(orphan.id);
-      attached = true;
-      break;
+      for (const dir of CARDINALS) {
+        if (anchor.exits![dir]) continue;
+        const rev = OPPOSITE[dir]!;
+        if (result[orphan.id]!.exits![rev]) continue;
+        if (!tryPlace(anchorId, dir, orphan.id)) continue;
+        anchor.exits![dir] = orphan.id;
+        result[orphan.id]!.exits![rev] = anchorId;
+        connected.push(orphan.id);
+        attached = true;
+        break;
+      }
+      if (attached) break;
     }
-    // Last-resort fallback: attach to first room via "up"/"down" extradimensional exit
     if (!attached) {
+      // Vertical fallback: u/d don't touch the trial grid.
       const first = result[rooms[0]!.id]!;
       if (!first.exits!["u"]) {
         first.exits!["u"] = orphan.id;
         result[orphan.id]!.exits!["d"] = rooms[0]!.id;
+        connected.push(orphan.id);
       } else if (!first.exits!["d"]) {
         first.exits!["d"] = orphan.id;
         result[orphan.id]!.exits!["u"] = rooms[0]!.id;
+        connected.push(orphan.id);
       }
     }
   }
@@ -294,31 +353,6 @@ Rules:
 Respond with ONLY valid, strict JSON (no trailing commas, no comments, all property names double-quoted) matching this schema:
 {
   "rooms": [{ "id": string, "title": string, "description": string }],
-  "mobs": [{ "id": string, "name": string, "description": string, "tier": string, "room": string }],
-  "items": [{ "id": string, "displayName": string, "description": string, "slot"?: string, "damage"?: number, "armor"?: number, "stats"?: { statId: number }, "room"?: string }]
-}`;
-
-const SYSTEM_PROMPT_LARGE = `You are a creative game content designer for a text-based MUD (Multi-User Dungeon). Generate a full zone layout as structured JSON.
-
-Rules:
-- Room IDs must be snake_case, short and descriptive (e.g. "town_square", "cathedral_nave")
-- The first room in the list is the starting room (often a hub or entrance)
-- Every room must include an "exits" object mapping direction → target room ID
-- Valid directions: "n", "s", "e", "w", "ne", "nw", "se", "sw", "u", "d"
-- The exit graph must be CONNECTED — every room reachable from the first room
-- Exits should be roughly bidirectional: if A has exit "n" to B, then B should have exit "s" to A
-- Aim for an interesting topology: clusters, loops, dead-ends, and a clear spine. Avoid a pure linear chain
-- Most rooms should have 2-4 exits; hubs can have more, dead-ends have 1
-- Mob tiers: "weak", "standard", "elite", or "boss"
-- Mob IDs and item IDs must be snake_case
-- Mob "room" must be one of the room IDs you generate
-- Item slots must come from the provided equipment slots list, or be omitted for non-equipment items
-- ${ROOM_DESCRIPTION_GUIDANCE}
-- Match the world and zone themes in tone and content
-
-Respond with ONLY valid, strict JSON (no trailing commas, no comments, all property names double-quoted) matching this schema:
-{
-  "rooms": [{ "id": string, "title": string, "description": string, "exits": { "direction": "target_room_id" } }],
   "mobs": [{ "id": string, "name": string, "description": string, "tier": string, "room": string }],
   "items": [{ "id": string, "displayName": string, "description": string, "slot"?: string, "damage"?: number, "armor"?: number, "stats"?: { statId: number }, "room"?: string }]
 }`;
@@ -564,6 +598,80 @@ function contentToWorldFile(
   };
 }
 
+// ─── Rename rooms from titles ───────────────────────────────────
+
+function slugifyTitle(title: string): string {
+  const slug = title
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "")
+    .slice(0, 40);
+  return slug;
+}
+
+/**
+ * Rewrite room IDs to match their titles. Preserves exits, startRoom, and
+ * mob/item room refs. Rooms with empty or unusable titles keep their original
+ * IDs. Collisions get numeric suffixes (`forest_path_2`).
+ */
+function renameRoomsByTitle(world: WorldFile): WorldFile {
+  const remap = new Map<string, string>();
+  const taken = new Set<string>();
+
+  for (const [oldId, room] of Object.entries(world.rooms)) {
+    const base = slugifyTitle(room.title || "");
+    if (!base) {
+      remap.set(oldId, oldId);
+      taken.add(oldId);
+      continue;
+    }
+    let candidate = base;
+    let n = 2;
+    while (taken.has(candidate)) candidate = `${base}_${n++}`;
+    remap.set(oldId, candidate);
+    taken.add(candidate);
+  }
+
+  const remapTarget = (target: string): string => {
+    if (target.includes(":")) return target;
+    return remap.get(target) ?? target;
+  };
+
+  const newRooms: Record<string, RoomFile> = {};
+  for (const [oldId, room] of Object.entries(world.rooms)) {
+    const newId = remap.get(oldId)!;
+    const newExits: Record<string, string | { to: string; door?: unknown }> = {};
+    for (const [dir, exitVal] of Object.entries(room.exits ?? {})) {
+      if (typeof exitVal === "string") {
+        newExits[dir] = remapTarget(exitVal);
+      } else {
+        newExits[dir] = { ...exitVal, to: remapTarget(exitVal.to) };
+      }
+    }
+    newRooms[newId] = { ...room, exits: newExits as RoomFile["exits"] };
+  }
+
+  const newMobs: Record<string, MobFile> = {};
+  for (const [id, mob] of Object.entries(world.mobs ?? {})) {
+    newMobs[id] = { ...mob, room: remap.get(mob.room) ?? mob.room };
+  }
+
+  const newItems: Record<string, ItemFile> = {};
+  for (const [id, item] of Object.entries(world.items ?? {})) {
+    const out: ItemFile = { ...item };
+    if (item.room) out.room = remap.get(item.room) ?? item.room;
+    newItems[id] = out;
+  }
+
+  return {
+    ...world,
+    startRoom: remap.get(world.startRoom) ?? world.startRoom,
+    rooms: newRooms,
+    mobs: newMobs,
+    items: newItems,
+  };
+}
+
 // ─── Public API ─────────────────────────────────────────────────
 
 function buildSystemPrompt(base: string): string {
@@ -575,17 +683,31 @@ function scaleMaxTokens(entityCount: number): number {
   return Math.max(2048, Math.min(entityCount * 350, 16000));
 }
 
-/** Generate a fresh zone from scratch using the LLM. */
+/**
+ * Generate a fresh zone from scratch.
+ *
+ * For zones larger than `SMALL_TOPOLOGY_LIMIT` we now place rooms on a grid
+ * *first* with a deterministic random-walk, then ask the LLM to flavor the
+ * fixed layout (title + description per room). This replaces the old flow
+ * where the LLM invented free-form compass exits — which routinely produced
+ * geometrically impossible graphs and messy layouts after grid embedding.
+ */
 export async function generateZoneContent(
   params: ZoneGenerationParams,
 ): Promise<WorldFile> {
   if (!AI_ENABLED) throw new Error("AI features are not available in Community Edition");
+
+  if (params.roomCount > SMALL_TOPOLOGY_LIMIT) {
+    const layout = generateGridLayout({
+      count: params.roomCount,
+      seed: `${params.zoneName}|${params.zoneTheme}`,
+    });
+    const flavored = await generateZoneFromSketch(params, layout);
+    return renameRoomsByTitle(flavored);
+  }
+
   const userPrompt = buildUserPrompt(params);
-  const systemBase =
-    params.roomCount > SMALL_TOPOLOGY_LIMIT
-      ? SYSTEM_PROMPT_LARGE
-      : SYSTEM_PROMPT_SMALL;
-  const systemPrompt = buildSystemPrompt(systemBase);
+  const systemPrompt = buildSystemPrompt(SYSTEM_PROMPT_SMALL);
   const maxTokens = scaleMaxTokens(
     params.roomCount + params.mobCount + params.itemCount,
   );
@@ -710,10 +832,36 @@ export async function extendZoneContent(
     throw new Error("LLM returned no new rooms to add");
   }
 
-  const useHandTopology = uniqueRooms.length <= SMALL_TOPOLOGY_LIMIT;
-  const newRooms = useHandTopology
-    ? applyHandTopology(uniqueRooms)
-    : repairExitGraph(uniqueRooms);
+  let newRooms: Record<string, RoomFile>;
+  if (uniqueRooms.length <= SMALL_TOPOLOGY_LIMIT) {
+    newRooms = applyHandTopology(uniqueRooms);
+  } else {
+    // Grid-based extension: produce a clean spanning-tree layout and remap
+    // the positional IDs onto the LLM-named rooms in order.
+    const layout = generateGridLayout({
+      count: uniqueRooms.length,
+      seed: `${params.zoneName}|extend|${uniqueRooms[0]!.id}`,
+    });
+    const idRemap = new Map<string, string>();
+    layout.rooms.forEach((layoutRoom, idx) => {
+      idRemap.set(layoutRoom.id, uniqueRooms[idx]!.id);
+    });
+    newRooms = {};
+    for (const room of uniqueRooms) {
+      newRooms[room.id] = {
+        title: room.title,
+        description: room.description,
+        exits: {},
+      };
+    }
+    layout.rooms.forEach((layoutRoom) => {
+      const realId = idRemap.get(layoutRoom.id)!;
+      for (const [dir, target] of Object.entries(layoutRoom.exits)) {
+        const realTarget = idRemap.get(target);
+        if (realTarget) newRooms[realId]!.exits![dir] = realTarget;
+      }
+    });
+  }
 
   const newRoomIds = new Set(Object.keys(newRooms));
   const entryRoomId = uniqueRooms[0]!.id;
@@ -737,19 +885,31 @@ export function createFallbackZone(
     description: "A nondescript area waiting to be described.",
   }));
 
-  const rooms =
-    stubRooms.length <= SMALL_TOPOLOGY_LIMIT
-      ? applyHandTopology(stubRooms)
-      : repairExitGraph(
-          // Synthesize a simple chain so repair has something to work with
-          stubRooms.map((r, i): LlmRoom => {
-            const exits: Record<string, string> = {};
-            if (i < stubRooms.length - 1) {
-              exits["e"] = stubRooms[i + 1]!.id;
-            }
-            return { ...r, exits };
-          }),
-        );
+  let rooms: Record<string, RoomFile>;
+  if (stubRooms.length <= SMALL_TOPOLOGY_LIMIT) {
+    rooms = applyHandTopology(stubRooms);
+  } else {
+    const layout = generateGridLayout({ count: stubRooms.length, seed: zoneName });
+    rooms = {};
+    for (const stub of stubRooms) {
+      rooms[stub.id] = {
+        title: stub.title,
+        description: stub.description,
+        exits: {},
+      };
+    }
+    const idRemap = new Map<string, string>();
+    layout.rooms.forEach((layoutRoom, idx) => {
+      idRemap.set(layoutRoom.id, stubRooms[idx]!.id);
+    });
+    layout.rooms.forEach((layoutRoom) => {
+      const realId = idRemap.get(layoutRoom.id)!;
+      for (const [dir, target] of Object.entries(layoutRoom.exits)) {
+        const realTarget = idRemap.get(target);
+        if (realTarget) rooms[realId]!.exits![dir] = realTarget;
+      }
+    });
+  }
 
   return {
     zone: zoneName,
@@ -772,4 +932,6 @@ export const __test__ = {
   applyHandTopology,
   extractJson,
   parseGeneratedContent,
+  renameRoomsByTitle,
+  slugifyTitle,
 };

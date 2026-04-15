@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useProjectStore } from "@/stores/projectStore";
 import { useZoneStore } from "@/stores/zoneStore";
 import { panelTab } from "@/lib/panelRegistry";
@@ -9,6 +9,9 @@ import {
   dismissGettingStarted,
 } from "@/lib/gettingStartedPersistence";
 import { GS_ICONS } from "@/assets/ui";
+
+const FOCUSABLE_SELECTOR =
+  'a[href], button:not([disabled]), textarea, input, select, [tabindex]:not([tabindex="-1"])';
 
 interface Step {
   id: string;
@@ -28,6 +31,8 @@ export function GettingStartedPanel({ onClose }: GettingStartedPanelProps) {
   const [completed, setCompleted] = useState<string[]>(() => loadGettingStarted().completed);
   const [visible, setVisible] = useState(false);
   const [activeStep, setActiveStep] = useState<string | null>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const restoreFocusRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     requestAnimationFrame(() => setVisible(true));
@@ -40,6 +45,48 @@ export function GettingStartedPanel({ onClose }: GettingStartedPanelProps) {
       onClose();
     }, 280);
   }, [onClose]);
+
+  useEffect(() => {
+    restoreFocusRef.current = document.activeElement as HTMLElement | null;
+    const panel = panelRef.current;
+    if (panel) {
+      const first = panel.querySelector<HTMLElement>(FOCUSABLE_SELECTOR);
+      (first ?? panel).focus();
+    }
+
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.stopPropagation();
+        handleClose();
+        return;
+      }
+      if (e.key !== "Tab" || !panel) return;
+      const focusables = Array.from(
+        panel.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR),
+      ).filter((el) => !el.hasAttribute("disabled"));
+      if (focusables.length === 0) {
+        e.preventDefault();
+        panel.focus();
+        return;
+      }
+      const first = focusables[0]!;
+      const last = focusables[focusables.length - 1]!;
+      const active = document.activeElement as HTMLElement | null;
+      if (e.shiftKey && active === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && active === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    };
+
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      restoreFocusRef.current?.focus?.();
+    };
+  }, [handleClose]);
 
   const completeAndRun = useCallback(
     (stepId: string, action: () => void) => {
@@ -126,6 +173,9 @@ export function GettingStartedPanel({ onClose }: GettingStartedPanelProps) {
   return (
     <div
       className="fixed inset-0 z-[85] flex justify-end"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="getting-started-title"
       onClick={(e) => {
         if (e.target === e.currentTarget) handleClose();
       }}
@@ -142,7 +192,9 @@ export function GettingStartedPanel({ onClose }: GettingStartedPanelProps) {
 
       {/* Panel */}
       <div
-        className="relative flex h-full w-[26rem] max-w-[92vw] flex-col border-l border-[var(--chrome-stroke)] bg-bg-primary"
+        ref={panelRef}
+        tabIndex={-1}
+        className="relative flex h-full w-[26rem] max-w-[92vw] flex-col border-l border-[var(--chrome-stroke)] bg-bg-primary outline-none"
         style={{
           transform: visible ? "translateX(0)" : "translateX(100%)",
           opacity: visible ? 1 : 0,
@@ -167,7 +219,10 @@ export function GettingStartedPanel({ onClose }: GettingStartedPanelProps) {
               <p className="font-display text-2xs uppercase tracking-ui text-accent">
                 Your Journey Begins
               </p>
-              <h2 className="mt-1 font-display text-lg tracking-wide text-text-primary">
+              <h2
+                id="getting-started-title"
+                className="mt-1 font-display text-lg tracking-wide text-text-primary"
+              >
                 Getting Started
               </h2>
             </div>

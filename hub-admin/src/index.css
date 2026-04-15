@@ -1,13 +1,24 @@
+/* Hub Admin styling — aligned with the Arcanum design system
+ * (midnight trough + tide-teal surface + hearth ember accent,
+ *  Cinzel for display, Crimson Pro for body, JetBrains Mono for code).
+ */
+
 :root {
-  --bg: #0b0c14;
-  --panel: #141622;
-  --panel-hover: #1b1e2d;
-  --border: #272a3b;
-  --text: #e8e6f0;
-  --muted: #9a97ad;
-  --accent: #d8b668;
-  --accent-hover: #e4c57c;
-  --danger: #d86868;
+  /* Arcanum core palette (mirrors creator/src/index.css @theme block) */
+  --bg: #001524;
+  --bg-abyss: #000b11;
+  --panel: #0b3542;
+  --panel-hover: #15616d;
+  --border: rgba(255, 236, 209, 0.16);
+  --border-strong: rgba(255, 236, 209, 0.28);
+  --text: #ffecd1;
+  --text-secondary: #e3d1b6;
+  --muted: #a9957a;
+  --accent: #ff7d00;
+  --accent-hover: #ff9933;
+  --accent-soft: rgba(255, 125, 0, 0.16);
+  --danger: #c45a5a;
+  --danger-soft: rgba(196, 90, 90, 0.12);
   --success: #7bc28e;
   color-scheme: dark;
 }
@@ -16,56 +27,80 @@
   box-sizing: border-box;
 }
 
+html,
 body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  background: var(--bg);
-  color: var(--text);
   min-height: 100vh;
+  background:
+    radial-gradient(circle at 14% 12%, rgba(255, 125, 0, 0.1), transparent 36%),
+    radial-gradient(circle at 84% 14%, rgba(255, 125, 0, 0.06), transparent 34%),
+    linear-gradient(180deg, var(--bg) 0%, var(--bg-abyss) 100%);
+  color: var(--text);
+  font-family: "Crimson Pro", Georgia, "Times New Roman", serif;
+  font-size: 15px;
+  line-height: 1.55;
 }
 
 #root {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 2rem 1.5rem;
+  padding: 2rem 1.5rem 3rem;
 }
 
 h1,
 h2,
 h3 {
   margin: 0 0 0.75rem;
-  font-weight: 600;
+  font-family: "Cinzel", "Cinzel Decorative", Georgia, serif;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  color: var(--text);
 }
 
 h1 {
-  font-size: 1.75rem;
-  letter-spacing: 0.02em;
+  font-size: 1.9rem;
 }
 
 h2 {
-  font-size: 1.25rem;
-  color: var(--muted);
-  font-weight: 500;
+  font-size: 1.2rem;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+p {
+  margin: 0 0 0.75rem;
 }
 
 button {
   font: inherit;
+  font-family: "Cinzel", Georgia, serif;
+  font-size: 0.78rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
   cursor: pointer;
-  border: 1px solid var(--border);
-  background: var(--panel);
+  border: 1px solid var(--border-strong);
+  background: transparent;
   color: var(--text);
-  padding: 0.5rem 1rem;
-  border-radius: 6px;
-  transition: background 0.15s, border-color 0.15s;
+  padding: 0.55rem 1rem;
+  min-height: 2.5rem;
+  border-radius: 999px;
+  transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease, box-shadow 0.18s ease;
 }
 
 button:hover:not(:disabled) {
-  background: var(--panel-hover);
+  background: var(--accent-soft);
   border-color: var(--accent);
+  color: var(--accent);
+}
+
+button:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent);
 }
 
 button:disabled {
-  opacity: 0.5;
+  opacity: 0.45;
   cursor: not-allowed;
 }
 
@@ -79,6 +114,8 @@ button.primary {
 button.primary:hover:not(:disabled) {
   background: var(--accent-hover);
   border-color: var(--accent-hover);
+  color: var(--bg);
+  box-shadow: 0 0 24px rgba(255, 125, 0, 0.32);
 }
 
 button.danger {
@@ -87,49 +124,66 @@ button.danger {
 }
 
 button.danger:hover:not(:disabled) {
-  background: rgba(216, 104, 104, 0.1);
+  background: var(--danger-soft);
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+button.ghost {
+  border-color: transparent;
+  padding: 0.35rem 0.8rem;
+  min-height: 2rem;
 }
 
 input[type="text"],
 input[type="email"],
-input[type="password"] {
+input[type="password"],
+input[type="number"] {
   font: inherit;
-  background: var(--bg);
+  font-family: "Crimson Pro", serif;
+  background: var(--bg-abyss);
   color: var(--text);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  padding: 0.55rem 0.75rem;
   width: 100%;
+  min-height: 2.5rem;
 }
 
 input:focus {
   outline: none;
   border-color: var(--accent);
+  box-shadow: 0 0 16px rgba(255, 125, 0, 0.18);
 }
 
 .panel {
-  background: var(--panel);
+  background: linear-gradient(160deg, rgba(11, 53, 66, 0.72), rgba(0, 21, 36, 0.85));
   border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 1.5rem;
-  margin-bottom: 1.25rem;
+  border-radius: 16px;
+  padding: 1.75rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 24px 48px -24px rgba(0, 11, 17, 0.6);
 }
 
 .row {
   display: flex;
   gap: 0.75rem;
   align-items: center;
+  flex-wrap: wrap;
 }
 
 .field {
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
-  margin-bottom: 0.75rem;
+  margin-bottom: 0.85rem;
 }
 
 .field label {
-  font-size: 0.85rem;
+  font-family: "Cinzel", Georgia, serif;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
   color: var(--muted);
 }
 
@@ -139,15 +193,16 @@ input:focus {
 
 .banner {
   padding: 0.85rem 1rem;
-  border-radius: 6px;
+  border-radius: 10px;
   margin-bottom: 1rem;
   border: 1px solid var(--border);
-  background: var(--panel);
+  background: rgba(0, 11, 17, 0.5);
 }
 
 .banner.error {
   border-color: var(--danger);
   color: var(--danger);
+  background: var(--danger-soft);
 }
 
 .banner.success {
@@ -155,32 +210,51 @@ input:focus {
   color: var(--success);
 }
 
+/* Responsive table: horizontal scroll below ~960px, with sticky header. */
+.table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: rgba(0, 21, 36, 0.5);
+}
+
 table {
   width: 100%;
+  min-width: 880px;
   border-collapse: collapse;
 }
 
 th,
 td {
   text-align: left;
-  padding: 0.6rem 0.75rem;
+  padding: 0.75rem 0.9rem;
   border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+
+tr:last-child td {
+  border-bottom: none;
 }
 
 th {
   color: var(--muted);
+  font-family: "Cinzel", Georgia, serif;
   font-weight: 500;
-  font-size: 0.85rem;
+  font-size: 0.72rem;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.14em;
+  background: rgba(0, 11, 17, 0.55);
+  position: sticky;
+  top: 0;
+  z-index: 1;
 }
 
 code {
-  font-family: "JetBrains Mono", Menlo, monospace;
-  font-size: 0.9em;
-  background: var(--bg);
-  padding: 0.15rem 0.4rem;
-  border-radius: 3px;
+  font-family: "JetBrains Mono", "Fira Code", ui-monospace, Menlo, monospace;
+  font-size: 0.85em;
+  background: var(--bg-abyss);
+  padding: 0.15rem 0.45rem;
+  border-radius: 4px;
   border: 1px solid var(--border);
   word-break: break-all;
 }
@@ -189,7 +263,11 @@ code {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
   margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border);
 }
 
 .header .right {
@@ -201,18 +279,77 @@ code {
 .overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.7);
+  background: rgba(0, 11, 17, 0.72);
+  backdrop-filter: blur(6px);
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 1.5rem;
+  z-index: 100;
 }
 
 .modal {
-  background: var(--panel);
-  border: 1px solid var(--accent);
-  border-radius: 10px;
+  background: linear-gradient(160deg, rgba(11, 53, 66, 0.95), rgba(0, 21, 36, 0.98));
+  border: 1px solid rgba(255, 125, 0, 0.32);
+  border-radius: 16px;
   padding: 1.75rem;
-  max-width: 540px;
+  max-width: 560px;
   width: 100%;
+  box-shadow: 0 24px 64px -16px rgba(0, 0, 0, 0.75), 0 0 32px rgba(255, 125, 0, 0.12);
+  outline: none;
+}
+
+.key-reveal {
+  background: var(--bg-abyss);
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  padding: 0.85rem;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 0.88rem;
+  word-break: break-all;
+  margin-bottom: 1rem;
+  color: var(--text);
+}
+
+.tier-badge {
+  display: inline-block;
+  font-family: "Cinzel", Georgia, serif;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  border: 1px solid currentColor;
+}
+
+.tier-badge.full {
+  color: var(--accent);
+}
+
+.tier-badge.publish {
+  color: var(--muted);
+}
+
+.listed-badge {
+  font-family: "Cinzel", Georgia, serif;
+  font-size: 0.68rem;
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+  padding: 0.1rem 0.5rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.action-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  min-width: 11rem;
+}
+
+.action-stack hr {
+  border: none;
+  border-top: 1px dashed var(--border);
+  margin: 0.3rem 0;
 }

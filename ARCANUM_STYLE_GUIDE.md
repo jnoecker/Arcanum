@@ -13,8 +13,10 @@
 4. [Typography](#typography)
 5. [Motion & animation](#motion--animation)
 6. [Component design language](#component-design-language)
-7. [Art styles](#art-styles)
-8. [Validation checklist](#validation-checklist)
+7. [Product surfaces](#product-surfaces)
+8. [Accessibility](#accessibility)
+9. [Art styles](#art-styles)
+10. [Validation checklist](#validation-checklist)
 
 ---
 
@@ -154,6 +156,15 @@ Use semantic Tailwind classes rather than hard-coded colors:
 - Status: `text-status-success`, `text-status-warning`, `text-status-error`, `text-status-info`
 
 Hard-coded `rgba()` values or px sizes indicate a missing token, not a design choice.
+
+### User-customizable themes
+
+The canonical midnight-teal + ember palette is the default, but Arcanum is themeable. The Appearance panel (`creator/src/components/AppearancePanel.tsx`) lets users pick or paste a 4-color anchor palette — **background, surface, text, accent** — and `themeToVars()` in `creator/src/lib/theme.ts` derives every `--color-*`, `--chrome-*`, `--bg-*`, and `--glow-*` token from those four hexes.
+
+- Both dark and light palettes are first-class. `themeToVars()` branches on the luminance relationship between background and text — when the background is lighter than the text it produces inked overlays and real drop shadows instead of bloom-on-black.
+- Built-in presets include the default midnight-teal Arcanum, a Parchment light mode, Aurum Dusk, Verdant Hollow, Cinder Rose, Tidepool, and Lichen.
+- Identity colors are intentionally **not** themed: class colors, status-effect hues, diff red/green, and lore-template colors stay fixed so world data stays legible across palettes.
+- Implication for component authors: **always reference semantic tokens, never raw palette hexes.** A hardcoded `#ff7d00` will survive a theme swap; `text-accent` will follow it.
 
 ---
 
@@ -380,6 +391,36 @@ The most emotionally expressive component in the tool — it communicates the st
 - Text: Crimson Pro, 13px, Ivory Parchment
 - Box shadow: `var(--shadow-panel)`
 - Border radius: 8px
+
+---
+
+## Product surfaces
+
+Arcanum ships three UI surfaces. All three must read as the same product — same typography, same palette tokens, same motion vocabulary. If you can tell which app you're in purely by the chrome feeling different, something is wrong.
+
+### Creator (`creator/`)
+
+The primary surface. Baroque, cosmological, theme-configurable, built on Tailwind with the `--color-*` token system. This guide was written with the creator in mind; every rule here applies first and strongest here.
+
+### Showcase (`showcase/`)
+
+Public lore viewer. Tailwind 4. Consumes the same palette vocabulary, but the tone is slightly warmer and more reader-focused — this is where visitors meet a world, not where creators build one. Gradients for page chrome are allowed but should still resolve to palette-token colors, not one-off hexes.
+
+### Hub-admin (`hub-admin/`)
+
+Tiny admin app behind `admin.arcanum-hub.com`. Deliberately less baroque because it is rarely used, but it still follows the same rules: Cinzel headings, Crimson Pro body, JetBrains Mono for keys, and the midnight + ember palette from `hub-admin/src/index.css`. **No system font stack, no neutral gray admin-tool aesthetic.** All dialogs must use the shared `Dialog` primitive, never `window.confirm` / `window.prompt`. Tables wider than the viewport wrap in `.table-wrap` with a sticky header and horizontal scroll.
+
+---
+
+## Accessibility
+
+Arcanum is a tool people work in for hours — accessibility is part of the craft, not an afterthought. Minimum expectations:
+
+- **Keyboard**: every interactive element is reachable via Tab. Focus order matches visual order. Focus rings are visible (use the `focus-ring` utility in creator, `:focus-visible` with an ember shadow in hub-admin).
+- **Contrast**: the Appearance panel flags palettes that fall under WCAG AA. Components should not assume a specific luminance direction — use tokens like `text-text-on-accent` rather than `text-bg-primary` when placing text over accent fills.
+- **Motion**: respect `prefers-reduced-motion`. Disable ambient rotations and breathing pulses; keep functional feedback (focus ring, state transitions) but shorten to ≤120ms.
+- **Overlays**: any full-screen or viewport-blocking overlay must expose dialog semantics. That means `role="dialog"`, `aria-modal="true"`, `aria-labelledby` pointing at the heading, a focus trap inside the surface, `Escape` to close, and focus restoration to the triggering element on close. Reference implementations: `SettingsOverlay.tsx`, `GettingStartedPanel.tsx`, and `hub-admin/src/components/Dialog.tsx`. Never ship a bare `<div className="fixed inset-0">` as a modal.
+- **Destructive confirmations**: browser-native `confirm`/`prompt` are forbidden in product surfaces — they break focus management, ignore theming, and drop context about what's being destroyed. Use the shared confirm/prompt dialog primitives instead, with explicit destructive styling.
 
 ---
 

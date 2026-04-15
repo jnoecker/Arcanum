@@ -148,6 +148,26 @@ All public functions exposed to the frontend are `#[tauri::command]` and return 
 - **Reserved subdomains** — `admin`, `www`, `hub`, `mail`, `ftp`, `ns1`, `ns2` are refused by `isValidSlug()` so nobody can claim them as world slugs. The Worker's `handleReservedSubdomain` proxies `admin.` to the Pages deployment and 301s `www.` to the apex.
 - **Hub AI mode on the client** — flipped via `settings.use_hub_ai` (user-level boolean in `~/.tauri/settings.json`). When on, the existing image/LLM/vision Tauri commands check `hub_ai::is_enabled(&settings)` at the top and short-circuit to `hub_ai::generate_image` / `hub_ai::complete` / `hub_ai::complete_with_vision` before touching direct-provider code. The frontend doesn't know about hub mode at all — same command names, same response shapes.
 
+### Hub-admin visual contract
+
+`hub-admin/` is a small Vite + React SPA, but it is part of the Arcanum product surface — **never let it look like a generic dark admin tool.** Specifically:
+
+- Typography: Cinzel for headings and button labels, Crimson Pro for body copy, JetBrains Mono for keys, IDs, and slugs. Fonts are loaded from Google Fonts in `hub-admin/index.html`.
+- Palette: the same midnight-teal + ember tokens as the creator (`--bg`, `--panel`, `--accent`, etc. in `hub-admin/src/index.css`). No new hues, no Tailwind.
+- Dialogs: use the shared `Dialog` / `ConfirmDialog` / `QuotaDialog` primitives in `hub-admin/src/components/`. They handle `role="dialog"`, `aria-modal`, focus trap, focus restore, and Escape. **Do not** use `window.confirm` or `window.prompt` — destructive actions and numeric edits must go through dialog primitives so screen-reader and keyboard users get a consistent, labelled path.
+- Tables wider than ~880px must be wrapped in `.table-wrap` (which provides horizontal scroll + sticky header) so the admin panel reflows cleanly on narrow windows.
+
+### Accessibility — full-screen overlays and sheets
+
+Any full-viewport overlay the user can't click past must expose dialog semantics and trap focus:
+
+- `role="dialog"`, `aria-modal="true"`, `aria-labelledby` pointing at the heading.
+- On open: stash `document.activeElement`, move focus into the surface, listen for `Escape` to close.
+- On close: restore focus to the stashed element.
+- Tab and Shift+Tab must cycle within the surface, not leak into the obscured page.
+
+Reference implementations: `creator/src/components/settings/SettingsOverlay.tsx` (uses the `dialog-overlay` class contract), `creator/src/components/GettingStartedPanel.tsx` (side sheet with manual focus trap), and `hub-admin/src/components/Dialog.tsx` (shared primitive for the admin app). When adding a new overlay, copy the pattern — don't ship bare `<div className="fixed inset-0">` markup.
+
 ### IPC pattern
 
 Images are served to the frontend as base64 data URLs via the `read_image_data_url` Tauri command. This bypasses the Tauri asset protocol, which has issues on Windows.
@@ -185,8 +205,9 @@ Images are served to the frontend as base64 data URLs via the `read_image_data_u
 
 ### Styling
 
-- Dark theme only — deep midnight-teal backgrounds, hearth-ember accents. Follow [`ARCANUM_STYLE_GUIDE.md`](ARCANUM_STYLE_GUIDE.md).
-- Fonts: Cinzel (display), Crimson Pro (body), JetBrains Mono (code). No sans-serif anywhere.
+- Dark-optimized by default — deep midnight-teal backgrounds, hearth-ember accents. Follow [`ARCANUM_STYLE_GUIDE.md`](ARCANUM_STYLE_GUIDE.md).
+- **Themeable via the Appearance panel.** `themeStore` + `creator/src/lib/theme.ts` derive every `--color-*`, `--chrome-*`, `--bg-*`, and `--glow-*` CSS variable from a 4-color anchor palette (background, surface, text, accent). Both dark and light presets are supported (`PRESET_THEMES` includes Parchment, Aurum Dusk, Verdant Hollow, Cinder Rose, Tidepool, Lichen). `themeToVars()` chooses dark vs. light derivations from the luminance relationship between background and text. Never hardcode palette hexes in components — always reference semantic tokens so theme swaps stay coherent.
+- Fonts: Cinzel (display), Crimson Pro (body), JetBrains Mono (code). No sans-serif anywhere — this rule applies to creator, showcase, **and** hub-admin.
 - Design tokens defined in `creator/src/index.css` — use semantic utilities (`bg-bg-primary`, `text-text-primary`, `border-border-default`, `text-accent`, `text-warm`) rather than hard-coded colors.
 - Decorative backgrounds use low opacity (10–18%) with `pointer-events-none`.
 - Tab names and primary action buttons use ember accent (`text-accent`) for visual hierarchy.

@@ -4,6 +4,12 @@ import { useZoneStore } from "@/stores/zoneStore";
 import { useAssetStore } from "@/stores/assetStore";
 import { useProjectStore } from "@/stores/projectStore";
 import { normalizeAssetRef } from "@/lib/assetRefs";
+import mobPlaceholder from "@/assets/placeholder/mob.webp";
+import itemPlaceholder from "@/assets/placeholder/item.webp";
+import gatherPlaceholder from "@/assets/placeholder/gather.webp";
+import containerPlaceholder from "@/assets/placeholder/container.webp";
+import leverPlaceholder from "@/assets/placeholder/lever.webp";
+import signPlaceholder from "@/assets/placeholder/sign.webp";
 import type {
   WorldFile,
   RoomFile,
@@ -205,16 +211,14 @@ function RoomImage({ imageRef }: { imageRef: string | undefined }) {
 
 // ─── Small image tile (mobs/items/features) ─────────────────────────
 
-function EntityThumb({ imageRef, emoji }: { imageRef: string | undefined; emoji: string }) {
+function EntityThumb({ imageRef, fallbackUrl }: { imageRef: string | undefined; fallbackUrl: string }) {
   const dataUrl = useRoomImage(imageRef);
   return (
     <div className="relative h-14 w-14 flex-none overflow-hidden rounded-lg border border-border-default/60 bg-bg-abyss/70">
       {dataUrl ? (
         <img src={dataUrl} alt="" className="h-full w-full object-cover" />
       ) : (
-        <div className="flex h-full w-full items-center justify-center text-2xl opacity-70">
-          {emoji}
-        </div>
+        <img src={fallbackUrl} alt="" className="h-full w-full object-contain p-1 opacity-85" />
       )}
     </div>
   );
@@ -947,7 +951,7 @@ export function PlaytestPanel() {
                     <PresenceRow
                       key={`mob-${id}`}
                       imageRef={mob.image}
-                      emoji="🧍"
+                      fallbackUrl={mobPlaceholder}
                       title={mob.name}
                       subtitle={mobSubtitle(mob)}
                       onClick={() =>
@@ -966,7 +970,7 @@ export function PlaytestPanel() {
                     <PresenceRow
                       key={`item-${id}`}
                       imageRef={item.image}
-                      emoji="📦"
+                      fallbackUrl={itemPlaceholder}
                       title={item.displayName}
                       subtitle={item.slot ?? (item.consumable ? "Consumable" : "Item")}
                       onClick={() =>
@@ -978,7 +982,7 @@ export function PlaytestPanel() {
                     <PresenceRow
                       key={`gather-${id}`}
                       imageRef={node.image}
-                      emoji="⛏️"
+                      fallbackUrl={gatherPlaceholder}
                       title={node.displayName}
                       subtitle={`${node.skill}${node.skillRequired ? ` · Lvl ${node.skillRequired}` : ""}`}
                       onClick={() =>
@@ -990,7 +994,7 @@ export function PlaytestPanel() {
                     <PresenceRow
                       key={`feat-${id}`}
                       imageRef={undefined}
-                      emoji={featureEmoji(feature.type)}
+                      fallbackUrl={featureIcon(feature.type)}
                       title={feature.displayName}
                       subtitle={feature.type}
                       onClick={() =>
@@ -1080,14 +1084,14 @@ function RoomBadges({ room }: { room: RoomFile }) {
 
 function PresenceRow({
   imageRef,
-  emoji,
+  fallbackUrl,
   title,
   subtitle,
   badge,
   onClick,
 }: {
   imageRef: string | undefined;
-  emoji: string;
+  fallbackUrl: string;
   title: string;
   subtitle?: string;
   badge?: string;
@@ -1099,7 +1103,7 @@ function PresenceRow({
       onClick={onClick}
       className="focus-ring group flex items-center gap-3 rounded-lg border border-border-default/60 bg-bg-abyss/50 p-2 text-left transition hover:border-accent/50 hover:bg-accent/5"
     >
-      <EntityThumb imageRef={imageRef} emoji={emoji} />
+      <EntityThumb imageRef={imageRef} fallbackUrl={fallbackUrl} />
       <div className="min-w-0 flex-1">
         <div className="truncate font-display text-sm text-text-primary group-hover:text-accent">
           {title}
@@ -1246,16 +1250,16 @@ function HistoryList({ history }: { history: HistoryEntry[] }) {
   );
 }
 
-function featureEmoji(type: string): string {
+function featureIcon(type: string): string {
   switch (type.toUpperCase()) {
     case "CONTAINER":
-      return "📦";
+      return containerPlaceholder;
     case "LEVER":
-      return "🎚️";
+      return leverPlaceholder;
     case "SIGN":
-      return "📜";
+      return signPlaceholder;
     default:
-      return "◆";
+      return itemPlaceholder;
   }
 }
 

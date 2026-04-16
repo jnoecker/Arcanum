@@ -40,11 +40,27 @@ import { YAML_OPTS } from "@/lib/yamlOpts";
 
 // ─── Wizard component ──────────────────────────────────────────────
 
-interface NewZoneDialogProps {
-  onClose: () => void;
+/**
+ * Optional prefill for callers that already know what the zone should look
+ * like (e.g. the world planner creating a zone from a ZonePlan). When set,
+ * the wizard skips the Target step and opens on Content with the fields
+ * populated. The Target step is still reachable via the Back button if the
+ * user wants to tweak the zone id, but "new" remains the fixed target.
+ */
+export interface NewZoneDialogPrefill {
+  zoneId: string;
+  description: string;
+  backgroundNotes: string;
 }
 
-export function NewZoneDialog({ onClose }: NewZoneDialogProps) {
+interface NewZoneDialogProps {
+  onClose: () => void;
+  prefill?: NewZoneDialogPrefill;
+  /** Called after a new zone is successfully created, with its final id. */
+  onCreated?: (zoneId: string) => void;
+}
+
+export function NewZoneDialog({ onClose, prefill, onCreated }: NewZoneDialogProps) {
   const project = useProjectStore((s) => s.project);
   const loadZone = useZoneStore((s) => s.loadZone);
   const updateZone = useZoneStore((s) => s.updateZone);
@@ -55,19 +71,21 @@ export function NewZoneDialog({ onClose }: NewZoneDialogProps) {
   const vibes = useVibeStore((s) => s.vibes);
 
   // ─── Wizard state ─────────────────────────────────────────────
-  const [step, setStep] = useState<WizardStep>("target");
+  const [step, setStep] = useState<WizardStep>(prefill ? "content" : "target");
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const trapRef = useFocusTrap<HTMLDivElement>(creating ? undefined : onClose);
 
   // Target
   const [target, setTarget] = useState<"new" | "existing">("new");
-  const [zoneIdInput, setZoneIdInput] = useState("");
+  const [zoneIdInput, setZoneIdInput] = useState(prefill?.zoneId ?? "");
   const [existingZoneId, setExistingZoneId] = useState("");
 
   // Content
-  const [description, setDescription] = useState(""); // TipTap JSON
-  const [backgroundNotes, setBackgroundNotes] = useState("");
+  const [description, setDescription] = useState(prefill?.description ?? "");
+  const [backgroundNotes, setBackgroundNotes] = useState(
+    prefill?.backgroundNotes ?? "",
+  );
 
   // Layout
   const [size, setSize] = useState<SizePresetId>("small");
@@ -288,6 +306,7 @@ export function NewZoneDialog({ onClose }: NewZoneDialogProps) {
     setSuccessSummary(
       `Created zone "${zoneId}" with ${Object.keys(world.rooms).length} rooms.`,
     );
+    onCreated?.(zoneId);
     setStep("done");
   };
 

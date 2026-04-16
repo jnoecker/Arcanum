@@ -4,6 +4,7 @@ import { stringify } from "yaml";
 import { useZoneStore } from "@/stores/zoneStore";
 import { useProjectStore } from "@/stores/projectStore";
 import { zoneFilePath } from "@/lib/projectPaths";
+import { plainTextToTiptap } from "@/lib/loreRelations";
 import type { Project } from "@/types/project";
 import type { ZonePlan } from "@/types/lore";
 import type { WorldFile } from "@/types/world";
@@ -128,4 +129,87 @@ export async function createZoneFromPlan(
   openTab({ id: `zone:${zoneId}`, kind: "zone", label: zoneId });
 
   return { zoneId, filePath, world };
+}
+
+// ─── Prefill for the rich zone generator wizard ─────────────────────
+
+export interface ZonePlanPrefill {
+  /** Suggested zone id, already deduplicated against loaded zones. */
+  zoneId: string;
+  /** TipTap JSON document seeded from the plan's blurb/description/inhabitants/landmarks/hooks. */
+  description: string;
+  /** Plain-text context the LLM sees alongside the description. */
+  backgroundNotes: string;
+}
+
+function buildDescriptionProse(plan: ZonePlan): string {
+  const parts: string[] = [];
+  if (plan.blurb.trim()) parts.push(plan.blurb.trim());
+  if (plan.description?.trim()) parts.push(plan.description.trim());
+  if (plan.inhabitants && plan.inhabitants.length > 0) {
+    parts.push(
+      `Inhabitants: ${plan.inhabitants.filter(Boolean).join(", ")}.`,
+    );
+  }
+  if (plan.landmarks && plan.landmarks.length > 0) {
+    parts.push(
+      `Notable landmarks: ${plan.landmarks.filter(Boolean).join(", ")}.`,
+    );
+  }
+  if (plan.hooks && plan.hooks.length > 0) {
+    const hooks = plan.hooks.filter((h) => h.trim()).join("; ");
+    if (hooks) parts.push(`Story hooks: ${hooks}.`);
+  }
+  return parts.join("\n\n");
+}
+
+function buildBackgroundNotes(plan: ZonePlan, allPlans: ZonePlan[]): string {
+  const lines: string[] = [];
+
+  const parent = plan.parentId
+    ? allPlans.find((p) => p.id === plan.parentId)
+    : null;
+  if (parent) {
+    const parentBlurb = parent.blurb?.trim();
+    lines.push(
+      parentBlurb
+        ? `Parent region: ${parent.name} — ${parentBlurb}`
+        : `Parent region: ${parent.name}`,
+    );
+  }
+
+  if (plan.borders && plan.borders.length > 0) {
+    const neighbors = plan.borders
+      .map((id) => allPlans.find((p) => p.id === id)?.name)
+      .filter((n): n is string => !!n);
+    if (neighbors.length > 0) {
+      lines.push(`Borders: ${neighbors.join(", ")}.`);
+    }
+  }
+
+  if (plan.levelRange) {
+    lines.push(
+      `Target level range: ${plan.levelRange.min}-${plan.levelRange.max}.`,
+    );
+  }
+
+  return lines.join("\n");
+}
+
+/**
+ * Build the initial state for NewZoneDialog so the rich zone generator
+ * opens pre-filled with everything we know from the world plan.
+ */
+export function buildPlanPrefill(
+  plan: ZonePlan,
+  allPlans: ZonePlan[],
+): ZonePlanPrefill {
+  const base = slugifyZoneId(plan.name) ?? "new_zone";
+  const zoneId = findFreeZoneId(base);
+  const prose = buildDescriptionProse(plan);
+  return {
+    zoneId,
+    description: prose ? plainTextToTiptap(prose) : "",
+    backgroundNotes: buildBackgroundNotes(plan, allPlans),
+  };
 }

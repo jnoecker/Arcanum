@@ -9,7 +9,13 @@ import {
   suggestionsToZonePlans,
   type ZonePlanSuggestion,
 } from "@/lib/loreZonePlanning";
-import { createZoneFromPlan } from "@/lib/createZoneFromPlan";
+import {
+  buildPlanPrefill,
+  createZoneFromPlan,
+  type ZonePlanPrefill,
+} from "@/lib/createZoneFromPlan";
+import { NewZoneDialog } from "@/components/NewZoneDialog";
+import { AI_ENABLED } from "@/lib/featureFlags";
 import type { ZonePlan, ZonePlanRegion } from "@/types/lore";
 import {
   regionContainsPoint,
@@ -281,6 +287,9 @@ function ZonePlanEditor({
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [scaffolding, setScaffolding] = useState(false);
   const [scaffoldError, setScaffoldError] = useState<string | null>(null);
+  const [wizardPrefill, setWizardPrefill] = useState<ZonePlanPrefill | null>(
+    null,
+  );
 
   // If the linked zoneId no longer exists in the loaded zone set, treat
   // the plan as unlinked so the user can re-scaffold.
@@ -302,6 +311,11 @@ function ZonePlanEditor({
     } finally {
       setScaffolding(false);
     }
+  };
+
+  const handleGenerateWithAI = () => {
+    setScaffoldError(null);
+    setWizardPrefill(buildPlanPrefill(plan, allPlans));
   };
 
   const handleOpenLinkedZone = () => {
@@ -456,27 +470,51 @@ function ZonePlanEditor({
                 Linked zone "{plan.zoneId}" not loaded.
               </div>
             )}
-            <ActionButton
-              onClick={handleCreateZone}
-              disabled={scaffolding || !project}
-              variant="primary"
-              size="sm"
-              className="self-start"
-            >
-              {scaffolding ? (
-                <span className="flex items-center gap-1.5">
-                  <Spinner /> Creating...
-                </span>
-              ) : (
-                "Create Zone from Plan"
+            <div className="flex flex-wrap gap-1.5">
+              {AI_ENABLED && (
+                <ActionButton
+                  onClick={handleGenerateWithAI}
+                  disabled={scaffolding || !project}
+                  variant="primary"
+                  size="sm"
+                >
+                  Generate with AI…
+                </ActionButton>
               )}
-            </ActionButton>
+              <ActionButton
+                onClick={handleCreateZone}
+                disabled={scaffolding || !project}
+                variant={AI_ENABLED ? "ghost" : "primary"}
+                size="sm"
+              >
+                {scaffolding ? (
+                  <span className="flex items-center gap-1.5">
+                    <Spinner /> Creating...
+                  </span>
+                ) : (
+                  "Create Stub"
+                )}
+              </ActionButton>
+            </div>
+            <p className="text-2xs text-text-muted">
+              {AI_ENABLED
+                ? "Generate fills in rooms, mobs, and items from the plan. Stub creates a single empty room."
+                : "Creates a single empty room seeded with the plan's notes."}
+            </p>
             {scaffoldError && (
               <p className="text-2xs text-status-danger">{scaffoldError}</p>
             )}
           </div>
         )}
       </div>
+
+      {wizardPrefill && (
+        <NewZoneDialog
+          prefill={wizardPrefill}
+          onCreated={(zoneId) => updateZonePlan(plan.id, { zoneId })}
+          onClose={() => setWizardPrefill(null)}
+        />
+      )}
 
       {confirmDelete ? (
         <div className="flex items-center gap-1.5">

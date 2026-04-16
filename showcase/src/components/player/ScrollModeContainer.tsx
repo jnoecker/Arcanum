@@ -78,8 +78,8 @@ export function ScrollModeContainer({ story }: ScrollModeContainerProps) {
   return (
     <div
       ref={containerRef}
-      className="overflow-y-auto rounded-[1.35rem] border border-border-muted/25 bg-bg-abyss/45 p-3"
-      style={{ height: "calc(100vh - 240px)", scrollBehavior: "smooth" }}
+      className="h-[clamp(24rem,70vh,50rem)] overflow-y-auto rounded-[1.35rem] border border-border-muted/25 bg-bg-abyss/45 p-3"
+      style={{ scrollBehavior: "smooth" }}
     >
       <div className="mb-5 rounded-[1.2rem] border border-[var(--color-aurum)]/18 bg-gradient-panel-soft px-4 py-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">

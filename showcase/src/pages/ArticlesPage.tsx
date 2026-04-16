@@ -238,7 +238,7 @@ export function ArticlesPage() {
                     ))}
                   </div>
                 ) : (
-                  <div className="mt-5 grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
+                  <div className="mt-5 grid gap-4 sm:grid-cols-2 2xl:grid-cols-3">
                     {items.map((article) => (
                       <Link
                         key={article.id}

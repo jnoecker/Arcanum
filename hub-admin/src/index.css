@@ -132,8 +132,8 @@ button.danger:hover:not(:disabled) {
 
 button.ghost {
   border-color: transparent;
-  padding: 0.35rem 0.8rem;
-  min-height: 2rem;
+  padding: 0.55rem 0.95rem;
+  min-height: 2.75rem;
 }
 
 input[type="text"],
@@ -211,7 +211,8 @@ input:focus {
   color: var(--success);
 }
 
-/* Responsive table: horizontal scroll below ~960px, with sticky header. */
+/* Responsive table: reflows down to ~720px, then horizontal scroll
+ * inside .table-wrap kicks in for phone widths. */
 .table-wrap {
   overflow-x: auto;
   border: 1px solid var(--border);
@@ -221,7 +222,7 @@ input:focus {
 
 table {
   width: 100%;
-  min-width: 880px;
+  min-width: 720px;
   border-collapse: collapse;
 }
 

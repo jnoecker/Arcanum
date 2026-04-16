@@ -16,8 +16,8 @@ import "@xyflow/react/dist/style.css";
 import dagre from "@dagrejs/dagre";
 import type { ZonePlan } from "@/types/lore";
 
-const NODE_WIDTH = 200;
-const NODE_HEIGHT = 90;
+const NODE_WIDTH = 280;
+const NODE_HEIGHT = 110;
 
 interface ZoneNodeData {
   label: string;
@@ -39,27 +39,28 @@ const ZonePlanNode = memo(function ZonePlanNode({ data }: NodeProps) {
         style={{ background: accent, border: "none", width: 8, height: 8 }}
       />
       <div
-        className="flex flex-col gap-1 rounded-xl border px-3 py-2 shadow-md"
+        className="flex flex-col gap-1.5 rounded-xl border px-4 py-3 shadow-md"
         style={{
           borderColor: active
-            ? `color-mix(in srgb, ${accent} 70%, transparent)`
-            : `color-mix(in srgb, ${accent} 31%, transparent)`,
+            ? `color-mix(in srgb, ${accent} 80%, transparent)`
+            : `color-mix(in srgb, ${accent} 40%, transparent)`,
           background: active
-            ? `linear-gradient(135deg, color-mix(in srgb, ${accent} 24%, transparent), color-mix(in srgb, ${accent} 10%, transparent))`
-            : `linear-gradient(135deg, color-mix(in srgb, ${accent} 14%, transparent), color-mix(in srgb, ${accent} 6%, transparent))`,
+            ? `linear-gradient(135deg, color-mix(in srgb, ${accent} 28%, transparent), color-mix(in srgb, ${accent} 14%, transparent))`
+            : `linear-gradient(135deg, color-mix(in srgb, ${accent} 18%, transparent), color-mix(in srgb, ${accent} 8%, transparent))`,
           minWidth: NODE_WIDTH,
           maxWidth: NODE_WIDTH,
+          minHeight: NODE_HEIGHT,
           backdropFilter: "blur(8px)",
           boxShadow: active
-            ? "0 0 0 1px rgb(var(--aurum-rgb) / 0.2), 0 12px 30px rgb(var(--shadow-rgb) / 0.28)"
+            ? "0 0 0 2px rgb(var(--aurum-rgb) / 0.35), 0 12px 30px rgb(var(--shadow-rgb) / 0.32)"
             : undefined,
         }}
       >
-        <span className="truncate text-sm font-medium text-text-primary">
+        <span className="truncate font-display text-base font-medium text-text-primary">
           {d.label}
         </span>
         {d.blurb && (
-          <span className="line-clamp-2 text-2xs leading-snug text-text-muted">
+          <span className="line-clamp-2 text-xs leading-snug text-text-secondary">
             {d.blurb}
           </span>
         )}
@@ -117,7 +118,7 @@ function buildGraph(
   // Dagre layout
   const g = new dagre.graphlib.Graph();
   g.setDefaultEdgeLabel(() => ({}));
-  g.setGraph({ rankdir: "LR", nodesep: 50, ranksep: 90 });
+  g.setGraph({ rankdir: "LR", nodesep: 70, ranksep: 130 });
   for (const node of rawNodes) {
     g.setNode(node.id, { width: NODE_WIDTH, height: NODE_HEIGHT });
   }
@@ -167,26 +168,47 @@ export function ZonePlanGraph({
   }
 
   return (
-    <div
-      className="rounded-xl border border-[var(--chrome-stroke)] bg-[var(--chrome-fill-strong)]"
-      style={{ height: "min(60vh, 500px)" }}
-    >
-      <ReactFlowProvider>
-        <ReactFlow
-          nodes={nodes}
-          edges={edges}
-          nodeTypes={nodeTypes}
-          fitView
-          onNodeClick={(_, n) => onSelect(n.id)}
-          onNodeMouseEnter={(_, n) => onHover(n.id)}
-          onNodeMouseLeave={() => onHover(null)}
-          onPaneClick={() => onSelect(null)}
-          proOptions={{ hideAttribution: true }}
-        >
-          <Background variant={BackgroundVariant.Dots} gap={18} size={1} color="var(--graph-dot-color)" />
-          <Controls showInteractive={false} />
-        </ReactFlow>
-      </ReactFlowProvider>
+    <div className="flex flex-col gap-2">
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <h3 className="font-display text-sm text-text-primary">
+          Zone adjacency
+        </h3>
+        <div className="flex items-center gap-2 text-2xs text-text-muted">
+          <span className="inline-flex items-center gap-1.5">
+            <span
+              aria-hidden
+              className="inline-block h-px w-5"
+              style={{ background: "var(--color-template-location)", opacity: 0.7 }}
+            />
+            Lines = zones that share a border
+          </span>
+          <span className="text-text-muted/60">·</span>
+          <span>Click a node to edit it on the map above.</span>
+        </div>
+      </div>
+      <div
+        className="rounded-xl border border-[var(--chrome-stroke)] bg-[var(--chrome-fill-strong)]"
+        style={{ height: "min(70vh, 620px)" }}
+      >
+        <ReactFlowProvider>
+          <ReactFlow
+            nodes={nodes}
+            edges={edges}
+            nodeTypes={nodeTypes}
+            fitView
+            minZoom={0.3}
+            maxZoom={2.5}
+            onNodeClick={(_, n) => onSelect(n.id)}
+            onNodeMouseEnter={(_, n) => onHover(n.id)}
+            onNodeMouseLeave={() => onHover(null)}
+            onPaneClick={() => onSelect(null)}
+            proOptions={{ hideAttribution: true }}
+          >
+            <Background variant={BackgroundVariant.Dots} gap={18} size={1} color="var(--graph-dot-color)" />
+            <Controls showInteractive={false} />
+          </ReactFlow>
+        </ReactFlowProvider>
+      </div>
     </div>
   );
 }

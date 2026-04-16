@@ -50,6 +50,20 @@ export function buildWorldFileFromPlan(
   const startRoom = "entrance";
   const descParts: string[] = [];
   if (plan.blurb.trim()) descParts.push(plan.blurb.trim());
+  if (plan.description?.trim()) {
+    descParts.push("");
+    descParts.push(plan.description.trim());
+  }
+  if (plan.inhabitants && plan.inhabitants.length > 0) {
+    descParts.push("");
+    descParts.push("Inhabitants:");
+    for (const i of plan.inhabitants) descParts.push(`- ${i}`);
+  }
+  if (plan.landmarks && plan.landmarks.length > 0) {
+    descParts.push("");
+    descParts.push("Landmarks:");
+    for (const l of plan.landmarks) descParts.push(`- ${l}`);
+  }
   if (plan.hooks && plan.hooks.length > 0) {
     descParts.push("");
     descParts.push("Hooks:");

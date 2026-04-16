@@ -13,6 +13,7 @@ import { VariantStrip } from "./VariantStrip";
 import { AssetPickerModal } from "./AssetPickerModal";
 import { removeBgAndSave, shouldRemoveBg } from "@/lib/useBackgroundRemoval";
 import { InlineError } from "./FormWidgets";
+import { SketchDialog } from "./SketchDialog";
 
 type Stage = "idle" | "generating" | "preview";
 
@@ -92,6 +93,7 @@ export function EntityArtGenerator({
   const [removingBg, setRemovingBg] = useState(false);
   const [flipping, setFlipping] = useState(false);
   const [showGalleryPicker, setShowGalleryPicker] = useState(false);
+  const [showSketch, setShowSketch] = useState(false);
 
   // Refs to track pending results across unmount — auto-accept if user navigates away
   const pendingResultRef = useRef<GeneratedImage | null>(null);
@@ -480,6 +482,14 @@ export function EntityArtGenerator({
             >
               Gallery
             </button>
+            <button
+              onClick={() => setShowSketch(true)}
+              disabled={removingBg}
+              title="Draw a sketch (mouse or tablet)"
+              className="flex-1 rounded bg-bg-elevated px-2 py-1 text-2xs font-medium text-text-secondary transition-colors hover:bg-bg-hover hover:text-text-primary disabled:opacity-50"
+            >
+              Sketch
+            </button>
             {AI_ENABLED && hasApiKey && (
               <button
                 onClick={() => setShowAdvanced((v) => !v)}
@@ -609,6 +619,19 @@ export function EntityArtGenerator({
           onClose={() => setShowGalleryPicker(false)}
         />
       )}
+
+      <SketchDialog
+        open={showSketch}
+        title="Sketch image"
+        width={1024}
+        height={1024}
+        initialDataUrl={savedImageSrc || null}
+        assetType={assetType ?? "background"}
+        onClose={() => setShowSketch(false)}
+        onSave={(entry) => {
+          onAccept(entry.file_name);
+        }}
+      />
     </div>
   );
 }

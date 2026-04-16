@@ -10,8 +10,7 @@ import {
   type ZonePlanSuggestion,
 } from "@/lib/loreZonePlanning";
 import { createZoneFromPlan } from "@/lib/createZoneFromPlan";
-import type { ZonePlan } from "@/types/lore";
-import { regionToPercentRect } from "@/lib/zoneRegionGeometry";
+import type { ZonePlan, ZonePlanRegion } from "@/types/lore";
 import {
   regionContainsPoint,
   translateRegionToAbsolute,
@@ -25,74 +24,10 @@ import {
   Spinner,
 } from "@/components/ui/FormWidgets";
 import { ZonePlanGraph } from "./ZonePlanGraph";
+import { WorldPlannerMap } from "./WorldPlannerMap";
+import { ZonePlanTree } from "./ZonePlanTree";
 
 const MAX_TARGET_ZONE_COUNT = 70;
-
-function ZoneRegionPreview({
-  plans,
-  mapWidth,
-  mapHeight,
-  selectedPlanId,
-  hoveredPlanId,
-  onSelect,
-  onHover,
-}: {
-  plans: ZonePlan[];
-  mapWidth: number;
-  mapHeight: number;
-  selectedPlanId: string | null;
-  hoveredPlanId: string | null;
-  onSelect: (id: string) => void;
-  onHover: (id: string | null) => void;
-}) {
-  const visiblePlans = plans.filter((plan) => plan.region);
-
-  if (visiblePlans.length === 0) return null;
-
-  return (
-    <div className="pointer-events-none absolute inset-0">
-      {visiblePlans.map((plan) => {
-        const region = plan.region;
-        if (!region) return null;
-        const rect = regionToPercentRect(region, mapWidth, mapHeight);
-        const active = plan.id === selectedPlanId || plan.id === hoveredPlanId;
-
-        return (
-          <button
-            key={plan.id}
-            type="button"
-            className="pointer-events-auto absolute overflow-hidden rounded-md border text-left transition"
-            style={{
-              left: `${rect.left}%`,
-              top: `${rect.top}%`,
-              width: `${rect.width}%`,
-              height: `${rect.height}%`,
-              borderColor: active
-                ? "rgb(var(--aurum-rgb) / 0.95)"
-                : "rgb(var(--aurum-rgb) / 0.70)",
-              background: active
-                ? "linear-gradient(180deg, rgb(var(--aurum-rgb) / 0.22), rgb(var(--aurum-rgb) / 0.10))"
-                : "linear-gradient(180deg, rgb(var(--aurum-rgb) / 0.12), rgb(var(--aurum-rgb) / 0.06))",
-              boxShadow: active
-                ? "0 0 0 1px rgb(var(--aurum-rgb) / 0.18), inset 0 0 0 1px rgb(var(--text-rgb) / 0.08)"
-                : "inset 0 0 0 1px rgb(var(--text-rgb) / 0.04)",
-            }}
-            title={plan.name}
-            onClick={() => onSelect(plan.id)}
-            onMouseEnter={() => onHover(plan.id)}
-            onMouseLeave={() => onHover(null)}
-          >
-            <span
-              className="absolute left-1.5 top-1.5 max-w-[calc(100%-0.75rem)] truncate rounded bg-surface-scrim px-1.5 py-0.5 font-display text-[10px] tracking-[0.12em] text-warm-pale"
-            >
-              {plan.name}
-            </span>
-          </button>
-        );
-      })}
-    </div>
-  );
-}
 
 // ─── Generation controls ────────────────────────────────────────────
 
@@ -579,6 +514,53 @@ function ZonePlanEditor({
   );
 }
 
+// ─── Scope breadcrumbs ──────────────────────────────────────────────
+
+function ScopeBreadcrumbs({
+  plans,
+  currentId,
+  onNavigate,
+  onRoot,
+}: {
+  plans: ZonePlan[];
+  currentId: string;
+  onNavigate: (id: string) => void;
+  onRoot: () => void;
+}) {
+  const chain: ZonePlan[] = [];
+  let cursor: ZonePlan | undefined = plans.find((p) => p.id === currentId);
+  while (cursor) {
+    chain.unshift(cursor);
+    cursor = cursor.parentId ? plans.find((p) => p.id === cursor!.parentId) : undefined;
+  }
+
+  return (
+    <div className="flex items-center gap-1 font-display text-sm">
+      <button
+        onClick={onRoot}
+        className="focus-ring rounded px-1 text-text-muted hover:text-text-primary"
+      >
+        Map
+      </button>
+      {chain.map((p, i) => (
+        <span key={p.id} className="flex items-center gap-1">
+          <span className="text-text-muted/50">›</span>
+          {i < chain.length - 1 ? (
+            <button
+              onClick={() => onNavigate(p.id)}
+              className="focus-ring rounded px-1 text-text-muted hover:text-text-primary"
+            >
+              {p.name}
+            </button>
+          ) : (
+            <span className="text-text-primary">{p.name}</span>
+          )}
+        </span>
+      ))}
+    </div>
+  );
+}
+
 // ─── Main panel ─────────────────────────────────────────────────────
 
 export function WorldPlannerPanel() {
@@ -656,6 +638,7 @@ export function WorldPlannerPanel() {
 
   const [planningImage, setPlanningImage] = useState<string | null>(null);
   const [planningImageLoading, setPlanningImageLoading] = useState(false);
+  const [addRegionMode, setAddRegionMode] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -754,6 +737,14 @@ export function WorldPlannerPanel() {
     resetStagedSuggestions();
   }, [resetStagedSuggestions]);
 
+  const goUpOneLevel = useCallback(() => {
+    if (!scopePlan) return;
+    setPlanningParentId(scopePlan.parentId ?? null);
+    setSelectedPlanId(null);
+    setHoveredPlanId(null);
+    resetStagedSuggestions();
+  }, [scopePlan, resetStagedSuggestions]);
+
   const commitSuggestions = useCallback(
     (batch: ZonePlanSuggestion[]) => {
       if (!sourceMap) return [];
@@ -841,6 +832,40 @@ export function WorldPlannerPanel() {
     );
   }, [suggestions, dismissed, accepted, commitSuggestions, addZonePlans]);
 
+  const updateZonePlan = useLoreStore((s) => s.updateZonePlan);
+
+  const handleRegionUpdate = useCallback(
+    (planId: string, region: ZonePlanRegion) => {
+      const absolute =
+        scopeRegion ? translateRegionToAbsolute(region, scopeRegion) : region;
+      updateZonePlan(planId, { region: absolute });
+    },
+    [scopeRegion, updateZonePlan],
+  );
+
+  const handleAddRegion = useCallback(
+    (region: ZonePlanRegion) => {
+      if (!sourceMap) return;
+      const absolute =
+        scopeRegion ? translateRegionToAbsolute(region, scopeRegion) : region;
+      const id = `plan_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+      const now = new Date().toISOString();
+      const plan: ZonePlan = {
+        id,
+        name: "New region",
+        blurb: "",
+        mapId: sourceMap.id,
+        parentId: planningParentId ?? undefined,
+        region: absolute,
+        createdAt: now,
+        updatedAt: now,
+      };
+      addZonePlans([plan]);
+      setSelectedPlanId(id);
+    },
+    [addZonePlans, planningParentId, scopeRegion, sourceMap],
+  );
+
   if (!lore) return null;
 
   return (
@@ -870,19 +895,24 @@ export function WorldPlannerPanel() {
       {sourceMap && (
         <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-text-primary/8 bg-bg-abyss/15 px-4 py-3">
           <span className="text-2xs uppercase tracking-[0.18em] text-text-muted">
-            Planning Scope
+            Scope
           </span>
           {scopePlan ? (
             <>
-              <span className="font-display text-sm text-text-primary">
-                {scopePlan.name}
-              </span>
+              <ScopeBreadcrumbs plans={plans} currentId={scopePlan.id} onNavigate={enterScope} onRoot={exitScope} />
               <span className="text-2xs text-text-muted">
                 Subdivide this region into smaller zones.
               </span>
-              <ActionButton onClick={exitScope} variant="ghost" size="sm">
-                Back to Whole Map
-              </ActionButton>
+              <div className="flex items-center gap-1">
+                {scopePlan.parentId && (
+                  <ActionButton onClick={goUpOneLevel} variant="ghost" size="sm">
+                    Up one level
+                  </ActionButton>
+                )}
+                <ActionButton onClick={exitScope} variant="ghost" size="sm">
+                  Whole Map
+                </ActionButton>
+              </div>
             </>
           ) : (
             <>
@@ -890,40 +920,87 @@ export function WorldPlannerPanel() {
                 Whole Map
               </span>
               <span className="text-2xs text-text-muted">
-                Start broad, then click a zone’s "Plan Subregions" action to break it down further.
+                Start broad, then click a zone’s "Plan Subregions" to break it down further.
               </span>
             </>
           )}
         </div>
       )}
 
-      {/* Map preview */}
-      {sourceMap && planningImage && (
-        <div className="overflow-hidden rounded-xl border border-text-primary/8 bg-bg-abyss/15 p-3">
-          <div className="flex justify-center">
-            <div className="relative">
-              <img
-                src={planningImage}
-                alt={scopePlan ? `${sourceMap.title} — ${scopePlan.name}` : sourceMap.title}
-                className="block max-h-72 max-w-full rounded-lg"
-              />
-              <ZoneRegionPreview
-                plans={previewPlans}
-                mapWidth={planningMap?.width ?? sourceMap.width}
-                mapHeight={planningMap?.height ?? sourceMap.height}
-                selectedPlanId={selectedPlanId}
-                hoveredPlanId={hoveredPlanId}
-                onSelect={setSelectedPlanId}
-                onHover={setHoveredPlanId}
-              />
+      {/* Interactive planner map + editor sidebar */}
+      {sourceMap && planningImage && planningMap && (
+        <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_20rem]">
+          <div className="flex flex-col gap-2">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-2 text-2xs text-text-muted">
+                <span>
+                  Drag the center marker to move a region; corners to resize. Scroll to zoom.
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <ActionButton
+                  onClick={() => setAddRegionMode((v) => !v)}
+                  variant={addRegionMode ? "secondary" : "primary"}
+                  size="sm"
+                >
+                  {addRegionMode ? "Cancel" : "+ Add region"}
+                </ActionButton>
+              </div>
             </div>
+            <WorldPlannerMap
+              map={{
+                width: planningMap.width ?? sourceMap.width,
+                height: planningMap.height ?? sourceMap.height,
+              }}
+              imageUrl={planningImage}
+              plans={previewPlans}
+              selectedPlanId={selectedPlanId}
+              hoveredPlanId={hoveredPlanId}
+              onSelect={setSelectedPlanId}
+              onHover={setHoveredPlanId}
+              onUpdateRegion={handleRegionUpdate}
+              addMode={addRegionMode}
+              onAddRegion={handleAddRegion}
+              onAddComplete={() => setAddRegionMode(false)}
+              height="70vh"
+            />
+            {planningImageLoading && (
+              <p className="text-center text-2xs text-text-muted">
+                Preparing scoped map preview...
+              </p>
+            )}
           </div>
-          {planningImageLoading && (
-            <p className="mt-2 text-center text-2xs text-text-muted">
-              Preparing scoped map preview...
-            </p>
-          )}
+          <div className="rounded-2xl border border-text-primary/8 bg-bg-abyss/15 p-4">
+            {selectedPlan ? (
+              <ZonePlanEditor
+                plan={selectedPlan}
+                allPlans={plans}
+                onClose={() => setSelectedPlanId(null)}
+                onPlanSubregions={enterScope}
+                isScopeTarget={planningParentId === selectedPlan.id}
+              />
+            ) : (
+              <div className="flex flex-col gap-2 text-xs text-text-muted">
+                <p className="font-display text-sm text-text-primary">No region selected</p>
+                <p>Click a region on the map to edit its name, blurb, and connections.</p>
+                <p>
+                  Use <span className="text-text-secondary">+ Add region</span> to drop a new
+                  rectangle wherever you click on the map.
+                </p>
+              </div>
+            )}
+          </div>
         </div>
+      )}
+
+      {/* Full region hierarchy tree */}
+      {mapPlans.length > 0 && (
+        <ZonePlanTree
+          plans={mapPlans}
+          selectedId={selectedPlanId}
+          onSelect={setSelectedPlanId}
+          onNavigateScope={enterScope}
+        />
       )}
 
       {/* Generation controls */}
@@ -974,12 +1051,8 @@ export function WorldPlannerPanel() {
         onAcceptAll={handleAcceptAll}
       />
 
-      {/* Committed zone plans header */}
-      <div className="flex items-center justify-between">
-        <h3 className="font-display text-sm text-text-primary">
-          Zones ({visiblePlans.length})
-        </h3>
-        {plans.length > 0 && (
+      {plans.length > 0 && (
+        <div className="flex items-center justify-end">
           <label className="flex cursor-pointer items-center gap-2 text-2xs text-text-muted">
             <input
               type="checkbox"
@@ -989,40 +1062,17 @@ export function WorldPlannerPanel() {
             />
             Show zones from all maps
           </label>
-        )}
-      </div>
-
-      {/* Graph + editor */}
-      <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_18rem]">
-        <ZonePlanGraph
-          plans={visiblePlans}
-          selectedId={selectedPlanId}
-          hoveredId={hoveredPlanId}
-          onSelect={setSelectedPlanId}
-          onHover={setHoveredPlanId}
-        />
-        <div className="rounded-2xl border border-text-primary/8 bg-bg-abyss/15 p-4">
-          {selectedPlan ? (
-            <ZonePlanEditor
-              plan={selectedPlan}
-              allPlans={plans}
-              onClose={() => setSelectedPlanId(null)}
-              onPlanSubregions={enterScope}
-              isScopeTarget={planningParentId === selectedPlan.id}
-            />
-          ) : (
-            <div className="flex flex-col gap-2 text-xs text-text-muted">
-              <p>
-                Click a zone in the graph to edit it.
-              </p>
-              <p>
-                Plan the whole world first, then pick a broad zone and use
-                "Plan Subregions" to break that slice down further.
-              </p>
-            </div>
-          )}
         </div>
-      </div>
+      )}
+
+      {/* Adjacency graph */}
+      <ZonePlanGraph
+        plans={visiblePlans}
+        selectedId={selectedPlanId}
+        hoveredId={hoveredPlanId}
+        onSelect={setSelectedPlanId}
+        onHover={setHoveredPlanId}
+      />
     </div>
   );
 }

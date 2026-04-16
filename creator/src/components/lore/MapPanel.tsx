@@ -16,6 +16,8 @@ import { MapViewer } from "./MapViewer";
 import { MapEnhancer } from "./MapEnhancer";
 import { MapAnalysisPanel } from "./MapAnalysisPanel";
 import { WorldPlannerPanel } from "./WorldPlannerPanel";
+import { RegionWorkshopPanel } from "./RegionWorkshopPanel";
+import { SketchDialog } from "@/components/ui/SketchDialog";
 
 // ─── Color palette picker ──────────────────────────────────────────
 
@@ -391,6 +393,8 @@ function MapsTab() {
   const [replacing, setReplacing] = useState(false);
   const [showEnhancer, setShowEnhancer] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [sketchNewOpen, setSketchNewOpen] = useState(false);
+  const [sketchReplaceOpen, setSketchReplaceOpen] = useState(false);
 
   const selectedMap = useMemo(
     () => maps.find((m) => m.id === selectedMapId) ?? null,
@@ -507,6 +511,14 @@ function MapsTab() {
           {uploading ? "Importing..." : "Upload Map"}
         </ActionButton>
 
+        <ActionButton
+          onClick={() => setSketchNewOpen(true)}
+          variant="secondary"
+          title="Draw a rough map directly (great for mouse or drawing tablet)"
+        >
+          Sketch Map
+        </ActionButton>
+
         {selectedMap && (
           <>
             <ActionButton
@@ -531,6 +543,13 @@ function MapsTab() {
               variant="secondary"
             >
               {replacing ? "Replacing..." : "Replace Image"}
+            </ActionButton>
+            <ActionButton
+              onClick={() => setSketchReplaceOpen(true)}
+              title="Sketch a new map (keeps all pins)"
+              variant="secondary"
+            >
+              Sketch Over
             </ActionButton>
             {confirmDelete ? (
               <span className="flex items-center gap-1.5">
@@ -689,17 +708,59 @@ function MapsTab() {
           onClose={() => setShowEnhancer(false)}
         />
       )}
+
+      {/* Sketch new map */}
+      <SketchDialog
+        open={sketchNewOpen}
+        title="Sketch a new map"
+        width={1024}
+        height={768}
+        assetType="lore_map"
+        onClose={() => setSketchNewOpen(false)}
+        onSave={(entry) => {
+          const id = `map_${Date.now()}`;
+          createMap({
+            id,
+            title: "Sketched Map",
+            imageAsset: entry.file_name,
+            width: entry.width,
+            height: entry.height,
+            pins: [],
+          });
+          selectMap(id);
+        }}
+      />
+
+      {/* Sketch over existing map */}
+      <SketchDialog
+        open={sketchReplaceOpen}
+        title={selectedMap ? `Sketch over "${selectedMap.title}"` : "Sketch"}
+        width={selectedMap?.width ?? 1024}
+        height={selectedMap?.height ?? 768}
+        initialDataUrl={mapImage ?? null}
+        assetType="lore_map"
+        onClose={() => setSketchReplaceOpen(false)}
+        onSave={(entry) => {
+          if (!selectedMap) return;
+          updateMap(selectedMap.id, {
+            imageAsset: entry.file_name,
+            width: entry.width,
+            height: entry.height,
+          });
+        }}
+      />
     </div>
   );
 }
 
 // ─── Tabbed shell (Maps + World Planner) ───────────────────────────
 
-type MapsTabId = "maps" | "planner";
+type MapsTabId = "maps" | "planner" | "workshop";
 
 const MAPS_TABS: { id: MapsTabId; label: string; hint: string }[] = [
   { id: "maps", label: "Maps", hint: "Upload, pin, and annotate world maps." },
   { id: "planner", label: "World Planner", hint: "Generate draft zones from a map." },
+  { id: "workshop", label: "Region Workshop", hint: "Flesh out regions with lore, inhabitants, and landmarks." },
 ];
 
 export function MapPanel() {
@@ -725,7 +786,7 @@ export function MapPanel() {
             id={`maps-tab-${t.id}`}
             tabIndex={tab === t.id ? 0 : -1}
             title={t.hint}
-            className="segmented-button"
+            className="segmented-button focus-ring h-9 px-5 text-sm font-medium tracking-wide"
             data-active={tab === t.id ? "true" : "false"}
             onClick={() => setTab(t.id)}
             onKeyDown={(event) => {
@@ -752,7 +813,7 @@ export function MapPanel() {
         id={`maps-tabpanel-${tab}`}
         aria-labelledby={`maps-tab-${tab}`}
       >
-        {tab === "maps" ? <MapsTab /> : <WorldPlannerPanel />}
+        {tab === "maps" ? <MapsTab /> : tab === "planner" ? <WorldPlannerPanel /> : <RegionWorkshopPanel />}
       </div>
     </div>
   );

@@ -112,6 +112,16 @@ export interface ZonePlan {
   borders?: string[];
   /** Optional pointer to a real zone YAML file once the plan is built. */
   zoneId?: string;
+  /** Multi-paragraph description of the region's geography, atmosphere, and lore. */
+  description?: string;
+  /** Factions, peoples, or creatures that inhabit this region. */
+  inhabitants?: string[];
+  /** Notable locations, structures, or natural features within. */
+  landmarks?: string[];
+  /** Suggested player level range for this region. */
+  levelRange?: { min: number; max: number };
+  /** IDs of linked lore articles providing deeper context. */
+  linkedArticles?: string[];
   createdAt: string;
   updatedAt: string;
 }

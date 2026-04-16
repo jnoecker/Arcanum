@@ -7,12 +7,12 @@ const TRACK_Y = 94;
 const MARKER_Y = 62;
 
 const ERA_COLORS = [
-  "rgba(168, 151, 210, 0.12)",
-  "rgba(140, 174, 201, 0.12)",
-  "rgba(190, 168, 115, 0.12)",
-  "rgba(163, 196, 142, 0.12)",
-  "rgba(196, 149, 106, 0.12)",
-  "rgba(184, 143, 170, 0.12)",
+  "var(--color-era-1)",
+  "var(--color-era-2)",
+  "var(--color-era-3)",
+  "var(--color-era-4)",
+  "var(--color-era-5)",
+  "var(--color-era-6)",
 ];
 
 export function TimelineView({

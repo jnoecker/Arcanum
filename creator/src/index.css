@@ -93,6 +93,15 @@
   --color-status-info:    #35a1b0;
   --color-status-danger:  #d9756b;
 
+  /* ─── Timeline Era Bands ─── */
+  /* Surreal Gentle Magic palette at 12% alpha — keyed by band index in TimelineView. */
+  --color-era-1: rgba(168, 151, 210, 0.12); /* lavender */
+  --color-era-2: rgba(140, 174, 201, 0.12); /* pale blue */
+  --color-era-3: rgba(190, 168, 115, 0.12); /* soft gold */
+  --color-era-4: rgba(163, 196, 142, 0.12); /* moss green */
+  --color-era-5: rgba(196, 149, 106, 0.12); /* amber */
+  --color-era-6: rgba(184, 143, 170, 0.12); /* dusty rose */
+
   /* ─── Badge Colors (vivid variants for small text on dark backgrounds) ─── */
   --color-badge-success:    #9ace8b;
   --color-badge-success-bg: rgba(124, 182, 109, 0.16);

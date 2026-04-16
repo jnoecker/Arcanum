@@ -1,5 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useLoreStore, selectMaps, selectZonePlans } from "@/stores/loreStore";
+import {
+  useLoreStore,
+  selectArticles,
+  selectMaps,
+  selectZonePlans,
+} from "@/stores/loreStore";
 import { useProjectStore } from "@/stores/projectStore";
 import { useZoneStore } from "@/stores/zoneStore";
 import { useImageSrc } from "@/lib/useImageSrc";
@@ -281,6 +286,7 @@ function ZonePlanEditor({
 }) {
   const updateZonePlan = useLoreStore((s) => s.updateZonePlan);
   const deleteZonePlan = useLoreStore((s) => s.deleteZonePlan);
+  const articles = useLoreStore(selectArticles);
   const project = useProjectStore((s) => s.project);
   const openTab = useProjectStore((s) => s.openTab);
   const zones = useZoneStore((s) => s.zones);
@@ -315,7 +321,7 @@ function ZonePlanEditor({
 
   const handleGenerateWithAI = () => {
     setScaffoldError(null);
-    setWizardPrefill(buildPlanPrefill(plan, allPlans));
+    setWizardPrefill(buildPlanPrefill(plan, allPlans, articles));
   };
 
   const handleOpenLinkedZone = () => {

@@ -2,10 +2,16 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLoreStore, selectMaps, selectZonePlans, selectArticles } from "@/stores/loreStore";
 import { useProjectStore } from "@/stores/projectStore";
 import { useZoneStore } from "@/stores/zoneStore";
-import { createZoneFromPlan } from "@/lib/createZoneFromPlan";
+import {
+  buildPlanPrefill,
+  createZoneFromPlan,
+  type ZonePlanPrefill,
+} from "@/lib/createZoneFromPlan";
+import { NewZoneDialog } from "@/components/NewZoneDialog";
+import { AI_ENABLED } from "@/lib/featureFlags";
 import { useImageSrc } from "@/lib/useImageSrc";
 import { cropImageDataUrl } from "@/lib/cropImageDataUrl";
-import type { LoreMap, ZonePlan, ZonePlanRegion } from "@/types/lore";
+import type { Article, LoreMap, ZonePlan, ZonePlanRegion } from "@/types/lore";
 import { regionToPercentRect } from "@/lib/zoneRegionGeometry";
 import {
   ActionButton,
@@ -14,6 +20,7 @@ import {
   TextInput,
   Spinner,
 } from "@/components/ui/FormWidgets";
+import { LoreEditor } from "./LoreEditor";
 import { ZonePlanTree } from "./ZonePlanTree";
 
 // ─── Tag list editor (for inhabitants, landmarks) ──────────────────
@@ -287,10 +294,12 @@ function RegionEditor({
   plan,
   allPlans,
   maps,
+  articles,
 }: {
   plan: ZonePlan;
   allPlans: ZonePlan[];
   maps: LoreMap[];
+  articles: Record<string, Article>;
 }) {
   const updateZonePlan = useLoreStore((s) => s.updateZonePlan);
   const deleteZonePlan = useLoreStore((s) => s.deleteZonePlan);
@@ -300,6 +309,9 @@ function RegionEditor({
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [scaffolding, setScaffolding] = useState(false);
   const [scaffoldError, setScaffoldError] = useState<string | null>(null);
+  const [wizardPrefill, setWizardPrefill] = useState<ZonePlanPrefill | null>(
+    null,
+  );
 
   const linkedZoneExists = plan.zoneId ? zones.has(plan.zoneId) : false;
   const childCount = allPlans.filter((p) => p.parentId === plan.id).length;
@@ -321,6 +333,11 @@ function RegionEditor({
     } finally {
       setScaffolding(false);
     }
+  };
+
+  const handleGenerateWithAI = () => {
+    setScaffoldError(null);
+    setWizardPrefill(buildPlanPrefill(plan, allPlans, articles));
   };
 
   return (
@@ -366,12 +383,16 @@ function RegionEditor({
 
         <div>
           <label className="mb-1 block text-xs text-text-muted">Description</label>
-          <textarea
-            className="ornate-input min-h-[8rem] w-full resize-y rounded-xl px-3 py-2 text-sm leading-relaxed text-text-secondary"
+          <LoreEditor
             value={plan.description ?? ""}
-            onChange={(e) => updateZonePlan(plan.id, { description: e.target.value || undefined })}
-            placeholder="Geography, atmosphere, history, culture... describe what makes this region unique."
+            onCommit={(json) =>
+              updateZonePlan(plan.id, { description: json || undefined })
+            }
+            placeholder="Geography, atmosphere, history, culture... describe what makes this region unique. Type @ to mention a lore article."
           />
+          <p className="mt-1 text-2xs text-text-muted">
+            @mentioned articles are passed to the zone generator alongside linked articles.
+          </p>
         </div>
 
         <div className="grid gap-3 sm:grid-cols-2">
@@ -491,27 +512,51 @@ function RegionEditor({
                 Linked zone "{plan.zoneId}" not loaded.
               </div>
             )}
-            <ActionButton
-              onClick={handleCreateZone}
-              disabled={scaffolding || !project}
-              variant="primary"
-              size="sm"
-              className="self-start"
-            >
-              {scaffolding ? (
-                <span className="flex items-center gap-1.5">
-                  <Spinner /> Creating...
-                </span>
-              ) : (
-                "Create Zone from Plan"
+            <div className="flex flex-wrap gap-1.5">
+              {AI_ENABLED && (
+                <ActionButton
+                  onClick={handleGenerateWithAI}
+                  disabled={scaffolding || !project}
+                  variant="primary"
+                  size="sm"
+                >
+                  Generate with AI…
+                </ActionButton>
               )}
-            </ActionButton>
+              <ActionButton
+                onClick={handleCreateZone}
+                disabled={scaffolding || !project}
+                variant={AI_ENABLED ? "ghost" : "primary"}
+                size="sm"
+              >
+                {scaffolding ? (
+                  <span className="flex items-center gap-1.5">
+                    <Spinner /> Creating...
+                  </span>
+                ) : (
+                  "Create Stub"
+                )}
+              </ActionButton>
+            </div>
+            <p className="text-2xs text-text-muted">
+              {AI_ENABLED
+                ? "Generate fills in rooms, mobs, and items from the plan. Stub creates a single empty room."
+                : "Creates a single empty room seeded with the plan's notes."}
+            </p>
             {scaffoldError && (
               <p className="text-2xs text-status-danger">{scaffoldError}</p>
             )}
           </div>
         )}
       </div>
+
+      {wizardPrefill && (
+        <NewZoneDialog
+          prefill={wizardPrefill}
+          onCreated={(zoneId) => updateZonePlan(plan.id, { zoneId })}
+          onClose={() => setWizardPrefill(null)}
+        />
+      )}
 
       {/* Region coordinates */}
       {plan.region && (
@@ -568,6 +613,7 @@ export function RegionWorkshopPanel() {
   const lore = useLoreStore((s) => s.lore);
   const maps = useLoreStore(selectMaps);
   const plans = useLoreStore(selectZonePlans);
+  const articles = useLoreStore(selectArticles);
   const [sourceMapId, setSourceMapId] = useState<string>(() => maps[0]?.id ?? "");
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
 
@@ -636,7 +682,12 @@ export function RegionWorkshopPanel() {
         {/* Editor */}
         <div className="overflow-y-auto rounded-2xl border border-text-primary/8 bg-bg-abyss/15 p-5">
           {selectedPlan ? (
-            <RegionEditor plan={selectedPlan} allPlans={plans} maps={maps} />
+            <RegionEditor
+              plan={selectedPlan}
+              allPlans={plans}
+              maps={maps}
+              articles={articles}
+            />
           ) : (
             <div className="flex h-full flex-col items-center justify-center gap-3 text-center text-text-muted">
               <div className="font-display text-base text-text-secondary">

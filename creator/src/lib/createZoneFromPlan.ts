@@ -4,9 +4,13 @@ import { stringify } from "yaml";
 import { useZoneStore } from "@/stores/zoneStore";
 import { useProjectStore } from "@/stores/projectStore";
 import { zoneFilePath } from "@/lib/projectPaths";
-import { plainTextToTiptap } from "@/lib/loreRelations";
+import {
+  extractMentions,
+  plainTextToTiptap,
+  tiptapToPlainText,
+} from "@/lib/loreRelations";
 import type { Project } from "@/types/project";
-import type { ZonePlan } from "@/types/lore";
+import type { Article, ZonePlan } from "@/types/lore";
 import type { WorldFile } from "@/types/world";
 import { YAML_OPTS } from "@/lib/yamlOpts";
 
@@ -142,10 +146,22 @@ export interface ZonePlanPrefill {
   backgroundNotes: string;
 }
 
+/** Max number of referenced articles the LLM will see in backgroundNotes. */
+const MAX_REFERENCED_ARTICLES = 10;
+/** Max chars per article excerpt (after TipTap → plain text). */
+const MAX_ARTICLE_EXCERPT = 300;
+
+function planDescriptionToPlainText(plan: ZonePlan): string {
+  const raw = plan.description ?? "";
+  if (!raw.trim()) return "";
+  return tiptapToPlainText(raw).trim();
+}
+
 function buildDescriptionProse(plan: ZonePlan): string {
   const parts: string[] = [];
   if (plan.blurb.trim()) parts.push(plan.blurb.trim());
-  if (plan.description?.trim()) parts.push(plan.description.trim());
+  const descText = planDescriptionToPlainText(plan);
+  if (descText) parts.push(descText);
   if (plan.inhabitants && plan.inhabitants.length > 0) {
     parts.push(
       `Inhabitants: ${plan.inhabitants.filter(Boolean).join(", ")}.`,
@@ -163,15 +179,69 @@ function buildDescriptionProse(plan: ZonePlan): string {
   return parts.join("\n\n");
 }
 
-function buildBackgroundNotes(plan: ZonePlan, allPlans: ZonePlan[]): string {
-  const lines: string[] = [];
+/**
+ * Collect article IDs referenced by the plan — both explicit linkedArticles
+ * and @mentions inside the description — deduped, preserving declaration order.
+ */
+function collectReferencedArticleIds(plan: ZonePlan): string[] {
+  const ids: string[] = [];
+  const seen = new Set<string>();
+
+  for (const id of plan.linkedArticles ?? []) {
+    if (id && !seen.has(id)) {
+      seen.add(id);
+      ids.push(id);
+    }
+  }
+
+  if (plan.description) {
+    for (const rel of extractMentions(plan.description)) {
+      if (rel.targetId && !seen.has(rel.targetId)) {
+        seen.add(rel.targetId);
+        ids.push(rel.targetId);
+      }
+    }
+  }
+
+  return ids;
+}
+
+function buildArticleReferenceLine(article: Article): string {
+  const excerpt = tiptapToPlainText(article.content)
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, MAX_ARTICLE_EXCERPT);
+  return excerpt
+    ? `- [${article.template}] ${article.title} — ${excerpt}`
+    : `- [${article.template}] ${article.title}`;
+}
+
+function buildReferencedLoreBlock(
+  plan: ZonePlan,
+  articles: Record<string, Article>,
+): string {
+  const ids = collectReferencedArticleIds(plan).slice(0, MAX_REFERENCED_ARTICLES);
+  const lines = ids
+    .map((id) => articles[id])
+    .filter((a): a is Article => !!a)
+    .map(buildArticleReferenceLine);
+  if (lines.length === 0) return "";
+  return ["Referenced lore:", ...lines].join("\n");
+}
+
+function buildBackgroundNotes(
+  plan: ZonePlan,
+  allPlans: ZonePlan[],
+  articles: Record<string, Article>,
+): string {
+  const blocks: string[] = [];
 
   const parent = plan.parentId
     ? allPlans.find((p) => p.id === plan.parentId)
     : null;
   if (parent) {
     const parentBlurb = parent.blurb?.trim();
-    lines.push(
+    blocks.push(
       parentBlurb
         ? `Parent region: ${parent.name} — ${parentBlurb}`
         : `Parent region: ${parent.name}`,
@@ -183,26 +253,32 @@ function buildBackgroundNotes(plan: ZonePlan, allPlans: ZonePlan[]): string {
       .map((id) => allPlans.find((p) => p.id === id)?.name)
       .filter((n): n is string => !!n);
     if (neighbors.length > 0) {
-      lines.push(`Borders: ${neighbors.join(", ")}.`);
+      blocks.push(`Borders: ${neighbors.join(", ")}.`);
     }
   }
 
   if (plan.levelRange) {
-    lines.push(
+    blocks.push(
       `Target level range: ${plan.levelRange.min}-${plan.levelRange.max}.`,
     );
   }
 
-  return lines.join("\n");
+  const loreBlock = buildReferencedLoreBlock(plan, articles);
+  if (loreBlock) blocks.push(loreBlock);
+
+  return blocks.join("\n\n");
 }
 
 /**
  * Build the initial state for NewZoneDialog so the rich zone generator
- * opens pre-filled with everything we know from the world plan.
+ * opens pre-filled with everything we know from the world plan. Linked
+ * articles and @mentions in the description are resolved into a
+ * "Referenced lore:" block in backgroundNotes.
  */
 export function buildPlanPrefill(
   plan: ZonePlan,
   allPlans: ZonePlan[],
+  articles: Record<string, Article>,
 ): ZonePlanPrefill {
   const base = slugifyZoneId(plan.name) ?? "new_zone";
   const zoneId = findFreeZoneId(base);
@@ -210,6 +286,6 @@ export function buildPlanPrefill(
   return {
     zoneId,
     description: prose ? plainTextToTiptap(prose) : "",
-    backgroundNotes: buildBackgroundNotes(plan, allPlans),
+    backgroundNotes: buildBackgroundNotes(plan, allPlans, articles),
   };
 }

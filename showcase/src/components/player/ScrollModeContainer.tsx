@@ -81,7 +81,7 @@ export function ScrollModeContainer({ story }: ScrollModeContainerProps) {
       className="overflow-y-auto rounded-[1.35rem] border border-border-muted/25 bg-bg-abyss/45 p-3"
       style={{ height: "calc(100vh - 240px)", scrollBehavior: "smooth" }}
     >
-      <div className="mb-5 rounded-[1.2rem] border border-[var(--color-aurum)]/18 bg-[linear-gradient(180deg,rgba(2,32,46,0.78),rgba(0,21,36,0.92))] px-4 py-4">
+      <div className="mb-5 rounded-[1.2rem] border border-[var(--color-aurum)]/18 bg-gradient-panel-soft px-4 py-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <p className="text-[0.68rem] uppercase tracking-[0.3em] text-[var(--color-aurum)]/80">Sequence ledger</p>
@@ -138,7 +138,7 @@ export function ScrollModeContainer({ story }: ScrollModeContainerProps) {
                 ref={(element) => {
                   sceneRefs.current[index] = element;
                 }}
-                className="overflow-hidden rounded-[1.35rem] border border-border-muted/25 bg-black shadow-[var(--shadow-section)]"
+                className="overflow-hidden rounded-[1.35rem] border border-border-muted/25 bg-bg-abyss shadow-[var(--shadow-section)]"
               >
                 <div className="relative aspect-video w-full">
                   <LazyMotion features={loadMotionFeatures} strict>

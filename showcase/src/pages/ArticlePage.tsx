@@ -167,7 +167,7 @@ function ArticleGallery({ images, title }: { images: string[]; title: string }) 
 
   return (
     <div className="space-y-4">
-      <div className="overflow-hidden rounded-[1.5rem] border border-[var(--color-aurum)]/20 bg-[linear-gradient(180deg,rgba(2,32,46,0.88),rgba(0,15,24,0.96))] p-3 shadow-[var(--shadow-deep)]">
+      <div className="overflow-hidden rounded-[1.5rem] border border-[var(--color-aurum)]/20 bg-gradient-panel-deep p-3 shadow-[var(--shadow-deep)]">
         <div className="relative overflow-hidden rounded-[1.1rem] bg-bg-tertiary/40">
           {images.map((src, index) => (
             <img
@@ -362,7 +362,7 @@ export function ArticlePage() {
   return (
     <div className="space-y-8">
       <section className="grid gap-5 xl:grid-cols-[minmax(0,1.25fr)_minmax(20rem,0.9fr)]">
-        <div className="rounded-[1.75rem] border border-[var(--color-aurum)]/20 bg-[radial-gradient(circle_at_top_left,rgba(255,125,0,0.14),transparent_44%),linear-gradient(155deg,rgba(3,37,52,0.98),rgba(0,18,30,0.94))] px-6 py-7 shadow-[var(--shadow-deep)] sm:px-8">
+        <div className="rounded-[1.75rem] border border-[var(--color-aurum)]/20 bg-gradient-hero-ember px-6 py-7 shadow-[var(--shadow-deep)] sm:px-8">
           <nav aria-label="Breadcrumb">
             <ol className="flex flex-wrap items-center gap-2 text-[0.72rem] uppercase tracking-[0.18em] text-text-muted">
               <li>
@@ -396,7 +396,7 @@ export function ArticlePage() {
               {article.tags.map((tag) => (
                 <span
                   key={tag}
-                  className="rounded-full border bg-white/[0.03] px-3 py-1 text-[0.72rem]"
+                  className="rounded-full border bg-text-primary/[0.04] px-3 py-1 text-[0.72rem]"
                   style={{ borderColor: color, color }}
                 >
                   {tag}
@@ -417,7 +417,7 @@ export function ArticlePage() {
           </div>
         </div>
 
-        <div className="rounded-[1.75rem] border border-border-muted/35 bg-[linear-gradient(180deg,rgba(3,37,52,0.92),rgba(0,21,36,0.98))] px-5 py-5 shadow-[var(--shadow-deep)]">
+        <div className="rounded-[1.75rem] border border-border-muted/35 bg-gradient-panel-deep px-5 py-5 shadow-[var(--shadow-deep)]">
           <p className="text-[0.68rem] uppercase tracking-[0.3em] text-[var(--color-aurum)]/80">
             {imageUrls.length > 0 ? "Illuminated plate" : "Catalog notes"}
           </p>
@@ -476,7 +476,7 @@ export function ArticlePage() {
       </section>
 
       <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_19rem]">
-        <article className="rounded-[1.75rem] border border-border-muted/35 bg-[linear-gradient(180deg,rgba(3,37,52,0.94),rgba(0,21,36,0.98))] px-6 py-6 shadow-[var(--shadow-deep)] sm:px-8">
+        <article className="rounded-[1.75rem] border border-border-muted/35 bg-gradient-panel-deep px-6 py-6 shadow-[var(--shadow-deep)] sm:px-8">
           <div className="border-b border-border-muted/25 pb-5">
             <p className="text-[0.68rem] uppercase tracking-[0.3em] text-[var(--color-aurum)]/80">Primary text</p>
             <h2 className="mt-2 font-display text-2xl text-[var(--color-aurum-pale)]">Published entry</h2>

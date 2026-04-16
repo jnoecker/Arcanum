@@ -73,7 +73,7 @@ export function ArticlesPage() {
 
   return (
     <div className="space-y-8">
-      <section className="rounded-[1.5rem] border border-border-muted/35 bg-[linear-gradient(180deg,rgba(3,37,52,0.9),rgba(0,21,36,0.97))] px-5 py-4 shadow-[var(--shadow-deep)] sm:px-6">
+      <section className="rounded-[1.5rem] border border-border-muted/35 bg-gradient-panel px-5 py-4 shadow-[var(--shadow-deep)] sm:px-6">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center">
           <input
             type="text"
@@ -174,7 +174,7 @@ export function ArticlesPage() {
             return (
               <section
                 key={template}
-                className="rounded-[1.5rem] border border-border-muted/35 bg-[linear-gradient(180deg,rgba(3,37,52,0.76),rgba(0,21,36,0.94))] px-5 py-5 shadow-[var(--shadow-deep)] sm:px-6"
+                className="rounded-[1.5rem] border border-border-muted/35 bg-gradient-panel-soft px-5 py-5 shadow-[var(--shadow-deep)] sm:px-6"
               >
                 <div className="flex flex-wrap items-end justify-between gap-3 border-b border-border-muted/25 pb-4">
                   <div>
@@ -197,7 +197,7 @@ export function ArticlesPage() {
                       <Link
                         key={article.id}
                         to={`/articles/${encodeURIComponent(article.id)}`}
-                        className="group grid gap-4 px-1 py-4 transition-colors duration-300 hover:bg-white/[0.015] sm:grid-cols-[minmax(0,1fr)_auto]"
+                        className="group grid gap-4 px-1 py-4 transition-colors duration-300 hover:bg-text-primary/[0.02] sm:grid-cols-[minmax(0,1fr)_auto]"
                       >
                         <div className="flex min-w-0 items-start gap-4">
                           <div className="mt-1 h-10 w-1 shrink-0 rounded-full" style={{ backgroundColor: tone }} />
@@ -217,7 +217,7 @@ export function ArticlesPage() {
                               {article.tags.slice(0, 4).map((tag) => (
                                 <span
                                   key={tag}
-                                  className="rounded-full border bg-white/[0.03] px-3 py-1 text-[0.72rem] tracking-[0.14em]"
+                                  className="rounded-full border bg-text-primary/[0.04] px-3 py-1 text-[0.72rem] tracking-[0.14em]"
                                   style={{ borderColor: tone, color: tone }}
                                 >
                                   {tag}
@@ -256,7 +256,7 @@ export function ArticlesPage() {
                           </div>
                         ) : (
                           <div
-                            className="aspect-[4/3] bg-[linear-gradient(135deg,rgba(255,125,0,0.14),transparent_55%),linear-gradient(160deg,rgba(7,55,70,0.96),rgba(0,21,36,0.88))]"
+                            className="aspect-[4/3] bg-gradient-story-tile"
                             aria-hidden="true"
                           />
                         )}
@@ -272,7 +272,7 @@ export function ArticlesPage() {
                               {article.tags.slice(0, 3).map((tag) => (
                                 <span
                                   key={tag}
-                                  className="rounded-full border bg-white/[0.03] px-3 py-1 text-[0.72rem]"
+                                  className="rounded-full border bg-text-primary/[0.04] px-3 py-1 text-[0.72rem]"
                                   style={{ borderColor: tone, color: tone }}
                                 >
                                   {tag}

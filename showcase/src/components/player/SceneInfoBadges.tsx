@@ -60,11 +60,11 @@ function MiniMap({
   const yPercent = pinY !== undefined && mapHeight > 0 ? ((mapHeight - pinY) / mapHeight) * 100 : null;
 
   return (
-    <div className="relative h-24 w-32 overflow-hidden rounded-[1rem] border border-[var(--color-aurum)]/25 bg-black/40 shadow-[0_10px_30px_rgba(0,0,0,0.35)]">
+    <div className="relative h-24 w-32 overflow-hidden rounded-[1rem] border border-[var(--color-aurum)]/25 bg-bg-abyss/55 shadow-[0_10px_30px_rgba(0,0,0,0.35)]">
       <img src={imageUrl} alt="" className="h-full w-full object-cover opacity-95" draggable={false} />
       {xPercent !== null && yPercent !== null ? (
         <span
-          className="absolute h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full ring-2 ring-white/75"
+          className="absolute h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full ring-2 ring-text-primary/75"
           style={{
             left: `${xPercent}%`,
             top: `${yPercent}%`,
@@ -85,15 +85,15 @@ function ArticleBadgeChip({ articleId }: { articleId: string }) {
 
   return (
     <div
-      className="flex items-center gap-2 rounded-full border border-white/18 bg-black/55 px-2.5 py-1 backdrop-blur-sm"
+      className="flex items-center gap-2 rounded-full border border-border-muted/40 bg-bg-abyss/60 px-2.5 py-1 backdrop-blur-sm"
       title={article.title}
     >
       {article.imageUrl ? (
         <img src={article.imageUrl} alt="" className="h-5 w-5 rounded-full object-cover" />
       ) : (
-        <span className="h-5 w-5 rounded-full bg-white/20" />
+        <span className="h-5 w-5 rounded-full bg-text-primary/20" />
       )}
-      <span className="max-w-[120px] truncate text-[0.68rem] uppercase tracking-[0.14em] text-white/85">
+      <span className="max-w-[120px] truncate text-[0.68rem] uppercase tracking-[0.14em] text-text-primary/85">
         {article.title}
       </span>
     </div>
@@ -108,12 +108,12 @@ function TitleCardOverlay({ scene }: { scene: ShowcaseScene }) {
 
   const cardClassName =
     card.style === "year"
-      ? "border-[var(--color-aurum)]/35 bg-black/55 text-[var(--color-aurum-pale)]"
+      ? "border-[var(--color-aurum)]/35 bg-bg-abyss/60 text-[var(--color-aurum-pale)]"
       : card.style === "location"
-        ? "border-white/18 bg-black/38 text-white"
+        ? "border-border-muted/40 bg-bg-abyss/45 text-text-primary"
         : card.style === "character"
-          ? "border-accent/35 bg-black/50 text-accent-emphasis"
-          : "border-white/16 bg-black/45 text-white/90";
+          ? "border-accent/35 bg-bg-abyss/55 text-accent-emphasis"
+          : "border-border-muted/35 bg-bg-abyss/50 text-text-primary/90";
 
   return (
     <div
@@ -137,7 +137,7 @@ export function SceneInfoBadges({ scene }: SceneInfoBadgesProps) {
   return (
     <div className="pointer-events-none absolute inset-0" style={{ zIndex: 35 }} aria-hidden="true">
       {timeline ? (
-        <div className="absolute left-4 top-4 rounded-[1rem] border border-[var(--color-aurum)]/28 bg-black/55 px-3 py-2 backdrop-blur-sm">
+        <div className="absolute left-4 top-4 rounded-[1rem] border border-[var(--color-aurum)]/28 bg-bg-abyss/60 px-3 py-2 backdrop-blur-sm">
           <div className="flex items-end gap-2">
             <span
               className="font-display text-2xl leading-none text-[var(--color-aurum-pale)]"
@@ -151,7 +151,7 @@ export function SceneInfoBadges({ scene }: SceneInfoBadgesProps) {
               </span>
             ) : null}
           </div>
-          <p className="mt-1 max-w-[14rem] truncate text-[0.68rem] uppercase tracking-[0.14em] text-white/72">
+          <p className="mt-1 max-w-[14rem] truncate text-[0.68rem] uppercase tracking-[0.14em] text-text-secondary">
             {timeline.title}
           </p>
         </div>
@@ -168,7 +168,7 @@ export function SceneInfoBadges({ scene }: SceneInfoBadgesProps) {
             pinColor={mapInfo.pin?.color}
           />
           <p
-            className="mt-2 max-w-[8rem] truncate text-right text-[0.68rem] uppercase tracking-[0.14em] text-white/75"
+            className="mt-2 max-w-[8rem] truncate text-right text-[0.68rem] uppercase tracking-[0.14em] text-text-secondary"
             style={{ textShadow: "0 1px 2px rgba(0,0,0,0.75)" }}
           >
             {mapInfo.pin?.label ?? mapInfo.map.title}

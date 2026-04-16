@@ -17,7 +17,8 @@ import {
   type ArtStyle,
 } from "@/lib/arcanumPrompts";
 import type { GeneratedImage } from "@/types/assets";
-import { ENTITY_DIMENSIONS, imageGenerateCommand, resolveImageModel, requestsTransparentBackground, modelNativelyTransparent } from "@/types/assets";
+import { ENTITY_DIMENSIONS, requestsTransparentBackground, resolveImageModel, modelNativelyTransparent } from "@/types/assets";
+import { generateAssetImage } from "@/lib/imageGen";
 import { removeBgAndSave, shouldRemoveBg } from "@/lib/useBackgroundRemoval";
 import { AI_ENABLED } from "@/lib/featureFlags";
 
@@ -287,20 +288,21 @@ export async function runBatchArtGeneration(
           width: 1024,
           height: 1024,
         };
-        const command = imageGenerateCommand(imageProvider);
-
-        const image = await invoke<GeneratedImage>(command, {
-          prompt: finalPrompt,
-          negativePrompt: getNegativePrompt(batchAssetType),
-          model: model?.id,
-          width: dims.width,
-          height: dims.height,
-          steps: model?.defaultSteps ?? 4,
-          guidance: model && "defaultGuidance" in model ? model.defaultGuidance : null,
-          assetType: batchAssetType,
-          autoEnhance: false,
-          transparentBackground: imageProvider === "openai" && requestsTransparentBackground(batchAssetType),
-        });
+        const image = model
+          ? await generateAssetImage({
+              provider: imageProvider,
+              model,
+              prompt: finalPrompt,
+              width: dims.width,
+              height: dims.height,
+              assetType: batchAssetType,
+              negativePrompt: getNegativePrompt(batchAssetType),
+            })
+          : null;
+        if (!image) {
+          callbacks.onTargetUpdate(idx, { status: "error", error: `No model configured for provider ${imageProvider}` });
+          continue;
+        }
 
         callbacks.onTargetUpdate(idx, { status: "done", result: image });
 

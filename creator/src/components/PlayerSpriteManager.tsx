@@ -4,11 +4,11 @@ import { useSpriteDefinitionStore } from "@/stores/spriteDefinitionStore";
 import { useConfigStore } from "@/stores/configStore";
 import { useProjectStore } from "@/stores/projectStore";
 import { useAssetStore } from "@/stores/assetStore";
-import { UNIVERSAL_NEGATIVE } from "@/lib/arcanumPrompts";
 import { removeBgAndSave } from "@/lib/useBackgroundRemoval";
 import { BulkBgRemoval } from "@/components/ui/BulkBgRemoval";
 import { AI_ENABLED } from "@/lib/featureFlags";
-import { ENTITY_DIMENSIONS, imageGenerateCommand, resolveImageModel, requestsTransparentBackground } from "@/types/assets";
+import { ENTITY_DIMENSIONS, resolveImageModel } from "@/types/assets";
+import { generateAssetImage } from "@/lib/imageGen";
 import {
   buildSpritePrompt,
   generateSpriteTemplate,
@@ -21,7 +21,7 @@ import type {
   SpriteRequirement,
   RequirementType,
 } from "@/types/sprites";
-import type { GeneratedImage, AssetContext, SyncProgress } from "@/types/assets";
+import type { AssetContext, SyncProgress } from "@/types/assets";
 import { ActionButton } from "./ui/FormWidgets";
 import { ConfirmDialog } from "./ConfirmDialog";
 import { SpriteScaffold } from "./SpriteScaffold";
@@ -266,17 +266,13 @@ export function PlayerSpriteManager() {
 
         const dims = ENTITY_DIMENSIONS.player_sprite ?? { width: 512, height: 512 };
 
-        const image = await invoke<GeneratedImage>(imageGenerateCommand(imageProvider), {
+        const image = await generateAssetImage({
+          provider: imageProvider,
+          model,
           prompt: finalPrompt,
-          negativePrompt: UNIVERSAL_NEGATIVE,
-          model: model.id,
           width: dims.width,
           height: dims.height,
-          steps: model.defaultSteps,
-          guidance: "defaultGuidance" in model ? model.defaultGuidance : null,
           assetType: "player_sprite",
-          autoEnhance: false,
-          transparentBackground: imageProvider === "openai" && requestsTransparentBackground("player_sprite"),
         });
 
         const assetContext: AssetContext = { zone: "sprites", entity_type: "player_sprite", entity_id: imageId };
@@ -393,17 +389,13 @@ export function PlayerSpriteManager() {
 
         const dims = ENTITY_DIMENSIONS.player_sprite ?? { width: 512, height: 512 };
 
-        const image = await invoke<GeneratedImage>(imageGenerateCommand(imageProvider), {
+        const image = await generateAssetImage({
+          provider: imageProvider,
+          model,
           prompt: finalPrompt,
-          negativePrompt: UNIVERSAL_NEGATIVE,
-          model: model.id,
           width: dims.width,
           height: dims.height,
-          steps: model.defaultSteps,
-          guidance: "defaultGuidance" in model ? model.defaultGuidance : null,
           assetType: "player_sprite",
-          autoEnhance: false,
-          transparentBackground: imageProvider === "openai" && requestsTransparentBackground("player_sprite"),
         });
 
         const assetContext: AssetContext = { zone: "sprites", entity_type: "player_sprite", entity_id: imageId };

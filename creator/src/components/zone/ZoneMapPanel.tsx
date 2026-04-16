@@ -7,7 +7,8 @@ import { useLoreStore } from "@/stores/loreStore";
 import { useImageSrc } from "@/lib/useImageSrc";
 import { buildZoneMapPrompt, buildZoneMapContext } from "@/lib/zoneMapPrompt";
 import { getEnhanceSystemPrompt, getNegativePrompt } from "@/lib/arcanumPrompts";
-import { imageGenerateCommand, resolveImageModel, requestsTransparentBackground, type GeneratedImage } from "@/types/assets";
+import { resolveImageModel, type GeneratedImage } from "@/types/assets";
+import { generateAssetImage } from "@/lib/imageGen";
 import { compassLayout, getLayoutBounds } from "@/lib/dagreLayout";
 import { zoneToGraph } from "@/lib/zoneToGraph";
 import type { WorldFile } from "@/types/world";
@@ -111,17 +112,14 @@ export function ZoneMapPanel({ zoneId, world, onWorldChange }: ZoneMapPanelProps
         prompt = await invoke<string>("llm_complete", { systemPrompt, userPrompt });
       }
 
-      const image = await invoke<GeneratedImage>(imageGenerateCommand(imageProvider), {
+      const image = await generateAssetImage({
+        provider: imageProvider,
+        model,
         prompt,
-        negativePrompt: getNegativePrompt("zone_map"),
-        model: model.id,
         width: MAP_WIDTH,
         height: MAP_HEIGHT,
-        steps: model.defaultSteps ?? 4,
-        guidance: "defaultGuidance" in model ? model.defaultGuidance : null,
         assetType: "zone_map",
-        autoEnhance: false,
-        transparentBackground: imageProvider === "openai" && requestsTransparentBackground("zone_map"),
+        negativePrompt: getNegativePrompt("zone_map"),
       });
 
       if (generatingZoneRef.current === forZone) {

@@ -1,12 +1,11 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AI_ENABLED } from "@/lib/featureFlags";
-import { invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
 import { useAssetStore } from "@/stores/assetStore";
 import { Spinner, InlineError } from "@/components/ui/FormWidgets";
 import { useConfigStore } from "@/stores/configStore";
 import { useImageSrc } from "@/lib/useImageSrc";
-import { composePrompt, UNIVERSAL_NEGATIVE, type ArtStyle } from "@/lib/arcanumPrompts";
+import { composePrompt, type ArtStyle } from "@/lib/arcanumPrompts";
 import {
   generateAbilityPrompt,
   generateStatusEffectPrompt,
@@ -16,7 +15,8 @@ import {
   enhanceAbilityPrompt,
   type AbilityPromptTemplate,
 } from "@/lib/abilityPromptGen";
-import { imageGenerateCommand, resolveImageModel, requestsTransparentBackground, type AssetEntry, type GeneratedImage } from "@/types/assets";
+import { resolveImageModel, type AssetEntry } from "@/types/assets";
+import { generateAssetImage } from "@/lib/imageGen";
 import type { AbilityDefinitionConfig, StatusEffectDefinitionConfig } from "@/types/config";
 
 type AbilityStudioTab = string;
@@ -335,17 +335,14 @@ export function AbilityStudio() {
     if (!defaultModel) throw new Error(`No image model configured for provider ${imageProvider}.`);
     const assetType = assetTypeForTarget(target);
 
-    const image = await invoke<GeneratedImage>(imageGenerateCommand(imageProvider), {
+    const image = await generateAssetImage({
+      provider: imageProvider,
+      model: defaultModel,
       prompt,
-      negativePrompt: UNIVERSAL_NEGATIVE,
-      model: defaultModel.id,
       width: dimensionsForTarget().width,
       height: dimensionsForTarget().height,
-      steps: defaultModel.defaultSteps ?? 4,
-      guidance: "defaultGuidance" in defaultModel ? defaultModel.defaultGuidance : null,
       assetType,
       autoEnhance: skipEnhancement ? false : !promptGeneratedByLlm,
-      transparentBackground: imageProvider === "openai" && requestsTransparentBackground(assetType),
     });
 
     await acceptAsset(

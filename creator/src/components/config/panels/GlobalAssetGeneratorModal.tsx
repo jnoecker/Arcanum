@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { AI_ENABLED } from "@/lib/featureFlags";
 import { createPortal } from "react-dom";
-import { invoke } from "@tauri-apps/api/core";
 import { useAssetStore } from "@/stores/assetStore";
 import { useFocusTrap } from "@/lib/useFocusTrap";
 import { removeBgAndSave } from "@/lib/useBackgroundRemoval";
@@ -14,11 +13,10 @@ import {
 import { buildVisualStyleDirective } from "@/lib/loreGeneration";
 import {
   IMAGE_MODELS,
-  imageGenerateCommand,
   resolveImageModel,
-  requestsTransparentBackground,
   type GeneratedImage,
 } from "@/types/assets";
+import { generateAssetImage } from "@/lib/imageGen";
 import type { RequiredGlobalAsset } from "@/lib/requiredGlobalAssets";
 import { ActionButton, DialogShell, Spinner } from "@/components/ui/FormWidgets";
 
@@ -120,19 +118,16 @@ export function GlobalAssetGeneratorModal({ asset, onClose, onComplete }: Props)
           ? (model as { defaultGuidance: number }).defaultGuidance
           : null;
 
-      const command = imageGenerateCommand(imageProvider);
-      const image = await invoke<GeneratedImage>(command, {
+      const image = await generateAssetImage({
+        provider: imageProvider,
+        model: model ?? modelId,
         prompt: finalPrompt,
-        negativePrompt,
-        model: modelId,
         width: 1024,
         height: 1024,
+        assetType: asset.assetType,
         steps: model?.defaultSteps ?? null,
         guidance,
-        assetType: asset.assetType,
-        autoEnhance: false,
-        transparentBackground:
-          imageProvider === "openai" && requestsTransparentBackground(asset.assetType),
+        negativePrompt,
       });
       setResult(image);
       setStage("preview");

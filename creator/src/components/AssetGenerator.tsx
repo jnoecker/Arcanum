@@ -9,11 +9,11 @@ import {
   getPreamble,
   getEnhanceSystemPrompt,
   composePrompt,
-  UNIVERSAL_NEGATIVE,
   type ArtStyle,
 } from "@/lib/arcanumPrompts";
-import { IMAGE_MODELS, imageGenerateCommand, resolveImageModel, requestsTransparentBackground } from "@/types/assets";
+import { IMAGE_MODELS, resolveImageModel } from "@/types/assets";
 import type { AssetType, GeneratedImage } from "@/types/assets";
+import { generateAssetImage } from "@/lib/imageGen";
 import loadingVignette from "@/assets/loading-vignette.jpg";
 import { ActionButton, DialogShell, Spinner } from "./ui/FormWidgets";
 
@@ -139,18 +139,16 @@ export function AssetGenerator() {
       const guidance =
         model && "defaultGuidance" in model ? (model as { defaultGuidance: number }).defaultGuidance : null;
 
-      const command = imageGenerateCommand(imageProvider);
-      const image = await invoke<GeneratedImage>(command, {
+      const image = await generateAssetImage({
+        provider: imageProvider,
+        model: model ?? modelId,
         prompt: finalPrompt,
-        negativePrompt: UNIVERSAL_NEGATIVE,
-        model: modelId,
         width: 1024,
         height: 1024,
+        assetType,
         steps: model?.defaultSteps ?? null,
         guidance,
-        assetType,
         autoEnhance: !(useEnhanced && enhancedPrompt),
-        transparentBackground: imageProvider === "openai" && requestsTransparentBackground(assetType),
       });
       setResult(image);
       setStage("preview");

@@ -6,7 +6,8 @@ import { buildVibeInput } from "@/lib/vibePrompts";
 import { defaultImageContext, defaultImagePrompt, type DefaultImageKind } from "@/lib/entityPrompts";
 import { getEnhanceSystemPrompt, getNegativePrompt } from "@/lib/arcanumPrompts";
 import { useImageSrc } from "@/lib/useImageSrc";
-import { imageGenerateCommand, resolveImageModel, requestsTransparentBackground, type GeneratedImage } from "@/types/assets";
+import { resolveImageModel } from "@/types/assets";
+import { generateAssetImage } from "@/lib/imageGen";
 import { AI_ENABLED } from "@/lib/featureFlags";
 import type { WorldFile } from "@/types/world";
 
@@ -171,17 +172,14 @@ export function ZoneVibePanel({ zoneId, world, onWorldChange }: ZoneVibePanelPro
         prompt = await invoke<string>("llm_complete", { systemPrompt, userPrompt });
       }
 
-      const image = await invoke<GeneratedImage>(imageGenerateCommand(imageProvider), {
+      const image = await generateAssetImage({
+        provider: imageProvider,
+        model: defaultModel,
         prompt,
-        negativePrompt: getNegativePrompt(assetType),
-        model: defaultModel.id,
         width: dimensionsForKind(kind).width,
         height: dimensionsForKind(kind).height,
-        steps: defaultModel.defaultSteps ?? 4,
-        guidance: "defaultGuidance" in defaultModel ? defaultModel.defaultGuidance : null,
         assetType,
-        autoEnhance: false,
-        transparentBackground: imageProvider === "openai" && requestsTransparentBackground(assetType),
+        negativePrompt: getNegativePrompt(assetType),
       });
 
       const fileName = image.file_path.split(/[\\/]/).pop() ?? image.hash;

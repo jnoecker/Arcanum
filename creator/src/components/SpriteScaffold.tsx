@@ -1,14 +1,13 @@
 import { useState, useMemo, useRef, useCallback } from "react";
 import { AI_ENABLED } from "@/lib/featureFlags";
-import { invoke } from "@tauri-apps/api/core";
 import { useConfigStore } from "@/stores/configStore";
 import { useSpriteDefinitionStore } from "@/stores/spriteDefinitionStore";
 import { useAssetStore } from "@/stores/assetStore";
 import { useProjectStore } from "@/stores/projectStore";
 import { useFocusTrap } from "@/lib/useFocusTrap";
-import { UNIVERSAL_NEGATIVE } from "@/lib/arcanumPrompts";
 import { removeBgAndSave, shouldRemoveBg } from "@/lib/useBackgroundRemoval";
-import { ENTITY_DIMENSIONS, imageGenerateCommand, resolveImageModel, requestsTransparentBackground, modelNativelyTransparent } from "@/types/assets";
+import { ENTITY_DIMENSIONS, resolveImageModel, requestsTransparentBackground, modelNativelyTransparent } from "@/types/assets";
+import { generateAssetImage } from "@/lib/imageGen";
 import {
   buildSpritePrompt,
   generateArtDirection,
@@ -21,7 +20,7 @@ import {
   type GapSummary,
   type ScaffoldMode,
 } from "@/lib/spriteScaffold";
-import type { GeneratedImage, AssetContext } from "@/types/assets";
+import type { AssetContext } from "@/types/assets";
 import { ActionButton } from "./ui/FormWidgets";
 
 const SPRITE_TEMPLATE_VIBE =
@@ -200,17 +199,13 @@ export function SpriteScaffold({ onClose, onComplete }: SpriteScaffoldProps) {
 
           const dims = ENTITY_DIMENSIONS.player_sprite ?? { width: 512, height: 512 };
 
-          const image = await invoke<GeneratedImage>(imageGenerateCommand(imageProvider), {
+          const image = await generateAssetImage({
+            provider: imageProvider,
+            model,
             prompt,
-            negativePrompt: UNIVERSAL_NEGATIVE,
-            model: model.id,
             width: dims.width,
             height: dims.height,
-            steps: model.defaultSteps,
-            guidance: "defaultGuidance" in model ? model.defaultGuidance : null,
             assetType: "player_sprite",
-            autoEnhance: false,
-            transparentBackground: imageProvider === "openai" && requestsTransparentBackground("player_sprite"),
           });
 
           const imageId = slot.id;

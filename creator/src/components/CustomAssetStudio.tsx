@@ -12,9 +12,9 @@ import {
   buildCustomAssetPrompt,
   getCustomAssetSystemPrompt,
   getFormatForAssetType,
-  UNIVERSAL_NEGATIVE,
 } from "@/lib/arcanumPrompts";
-import { imageGenerateCommand, resolveImageModel, requestsTransparentBackground, type AssetEntry, type AssetType, type GeneratedImage } from "@/types/assets";
+import { resolveImageModel, type AssetEntry, type AssetType } from "@/types/assets";
+import { generateAssetImage } from "@/lib/imageGen";
 import { InlineError, Spinner } from "@/components/ui/FormWidgets";
 
 const CUSTOM_ASSET_TYPES: AssetType[] = [
@@ -228,17 +228,14 @@ export function CustomAssetStudio({ selectedZoneId }: { selectedZoneId: string |
   const runGeneration = useCallback(async (prompt: string, activate: boolean) => {
     if (!defaultModel) throw new Error(`No image model configured for provider ${imageProvider}.`);
 
-    const image = await invoke<GeneratedImage>(imageGenerateCommand(imageProvider), {
+    const image = await generateAssetImage({
+      provider: imageProvider,
+      model: defaultModel,
       prompt,
-      negativePrompt: UNIVERSAL_NEGATIVE,
-      model: defaultModel.id,
       width: dimensionsForAssetType(assetType).width,
       height: dimensionsForAssetType(assetType).height,
-      steps: defaultModel.defaultSteps ?? 4,
-      guidance: "defaultGuidance" in defaultModel ? defaultModel.defaultGuidance : null,
       assetType,
       autoEnhance: !promptGeneratedByLlm,
-      transparentBackground: imageProvider === "openai" && requestsTransparentBackground(assetType),
     });
 
     await acceptAsset(

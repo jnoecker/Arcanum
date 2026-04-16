@@ -7,8 +7,9 @@ import { useProjectStore } from "@/stores/projectStore";
 import { useImageSrc, isLegacyImagePath, isR2HashPath } from "@/lib/useImageSrc";
 import { getEnhanceSystemPrompt, ART_STYLE_LABELS, getNegativePrompt, getStyleSuffix, type ArtStyle } from "@/lib/arcanumPrompts";
 import type { ArtStyleSurface } from "@/lib/loreGeneration";
-import { IMAGE_MODELS, ENTITY_DIMENSIONS, DIMENSION_PRESETS, imageGenerateCommand, resolveImageModel, requestsTransparentBackground, modelNativelyTransparent } from "@/types/assets";
+import { IMAGE_MODELS, ENTITY_DIMENSIONS, DIMENSION_PRESETS, resolveImageModel, modelNativelyTransparent } from "@/types/assets";
 import type { AssetContext, GeneratedImage } from "@/types/assets";
+import { generateAssetImageWithRetry } from "@/lib/imageGen";
 import { VariantStrip } from "./VariantStrip";
 import { AssetPickerModal } from "./AssetPickerModal";
 import { removeBgAndSave, shouldRemoveBg } from "@/lib/useBackgroundRemoval";
@@ -239,29 +240,16 @@ export function EntityArtGenerator({
         finalPrompt = `${finalPrompt}\n\n${styleSuffix}`;
       }
 
-      const command = imageGenerateCommand(imageProvider);
-
-      const params = {
+      const image = await generateAssetImageWithRetry({
+        provider: imageProvider,
+        model: model ?? modelId,
         prompt: finalPrompt,
-        negativePrompt: getNegativePrompt(assetType),
-        model: modelId,
         width: activeDims.width,
         height: activeDims.height,
-        steps: model?.defaultSteps ?? 28,
-        guidance: model && "defaultGuidance" in model ? model.defaultGuidance : null,
         assetType,
-        autoEnhance: false,
-        transparentBackground: imageProvider === "openai" && requestsTransparentBackground(assetType),
-      };
-
-      let image: GeneratedImage;
-      try {
-        image = await invoke<GeneratedImage>(command, params);
-      } catch (firstErr) {
-        // Retry once after a brief pause
-        await new Promise((r) => setTimeout(r, 1000));
-        image = await invoke<GeneratedImage>(command, params);
-      }
+        steps: model?.defaultSteps ?? 28,
+        negativePrompt: getNegativePrompt(assetType),
+      });
       if (!mountedRef.current) {
         // Component unmounted during generation — auto-accept the result
         autoAcceptImage(image, finalPrompt, onAcceptRef.current, assetTypeRef.current, contextRef.current);

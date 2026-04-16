@@ -1,18 +1,17 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AI_ENABLED } from "@/lib/featureFlags";
-import { invoke } from "@tauri-apps/api/core";
 import { useAssetStore } from "@/stores/assetStore";
 import { useConfigStore } from "@/stores/configStore";
 import { useVibeStore } from "@/stores/vibeStore";
 import { useImageSrc } from "@/lib/useImageSrc";
-import { UNIVERSAL_NEGATIVE } from "@/lib/arcanumPrompts";
 import {
   buildFallbackPortraitPrompt,
   fillPortraitTemplate,
   generatePortraitTemplate,
   type PortraitPromptTemplate,
 } from "@/lib/portraitPromptGen";
-import { imageGenerateCommand, resolveImageModel, type AssetEntry, type GeneratedImage } from "@/types/assets";
+import { resolveImageModel, type AssetEntry } from "@/types/assets";
+import { generateAssetImage } from "@/lib/imageGen";
 import { InlineError, Spinner } from "@/components/ui/FormWidgets";
 
 type PortraitKind = "race" | "class";
@@ -249,14 +248,12 @@ export function PortraitStudio({ selectedZoneId }: { selectedZoneId: string | nu
     if (!defaultModel) throw new Error(`No image model configured for provider ${imageProvider}.`);
     const assetType = portraitAssetType(target);
 
-    const image = await invoke<GeneratedImage>(imageGenerateCommand(imageProvider), {
+    const image = await generateAssetImage({
+      provider: imageProvider,
+      model: defaultModel,
       prompt,
-      negativePrompt: UNIVERSAL_NEGATIVE,
-      model: defaultModel.id,
       width: dimensionsForPortrait(target.kind).width,
       height: dimensionsForPortrait(target.kind).height,
-      steps: defaultModel.defaultSteps ?? 4,
-      guidance: "defaultGuidance" in defaultModel ? defaultModel.defaultGuidance : null,
       assetType,
     });
 

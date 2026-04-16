@@ -10,8 +10,6 @@ import { UndoRedoButtons } from "@/components/ui/UndoRedoButtons";
 import configBg from "@/assets/config-bg.png";
 
 import { WorldSettingPanel } from "./WorldSettingPanel";
-import { FactionsPanel } from "./FactionsPanel";
-import { LoreCodexPanel } from "./LoreCodexPanel";
 import { ArticleBrowser } from "./ArticleBrowser";
 import { TimelinePanel } from "./TimelinePanel";
 import { RelationGraphPanel } from "./RelationGraphPanel";
@@ -34,10 +32,6 @@ function renderPanel(panelId: string): ReactNode {
       return <WorldSettingPanel />;
     case "artStyle":
       return <ArtStylePanel />;
-    case "factions":
-      return <FactionsPanel />;
-    case "codex":
-      return <LoreCodexPanel />;
     case "loreMaps":
       return <Suspense fallback={<div className="flex h-64 items-center justify-center text-text-muted"><Spinner /> Loading maps...</div>}><MapPanel /></Suspense>;
     case "loreTimeline":

@@ -1,5 +1,6 @@
 import type { Article, ArticleTemplate, TimelineEvent } from "@/types/lore";
-import type { ArtStyle } from "@/lib/arcanumPrompts";
+import { ARCANUM_PREAMBLE, GENTLE_MAGIC_PREAMBLE, type ArtStyle } from "@/lib/arcanumPrompts";
+import { buildVisualStyleDirective } from "@/lib/loreGeneration";
 import { useLoreStore } from "@/stores/loreStore";
 import { tiptapToPlainText } from "@/lib/loreRelations";
 
@@ -38,6 +39,17 @@ const FORMAT: Record<ArticleTemplate, string> = {
 };
 
 // ─── Prompt builders ────────────────────────────────────────────────
+
+/**
+ * Resolve the style directive for a fallback (non-LLM) lore prompt.
+ * Defers to the world-defined visual style when present; otherwise uses
+ * the canonical built-in preambles from arcanumPrompts.ts.
+ */
+function loreStyleDirective(style: ArtStyle): string {
+  const worldStyle = buildVisualStyleDirective("lore");
+  if (worldStyle) return worldStyle;
+  return style === "arcanum" ? ARCANUM_PREAMBLE : GENTLE_MAGIC_PREAMBLE;
+}
 
 function worldContext(): string {
   const articles = useLoreStore.getState().lore?.articles ?? {};
@@ -78,13 +90,7 @@ export function getArticlePrompt(article: Article, style: ArtStyle): string {
   const parts: string[] = [format];
   if (ctx) parts.push(ctx);
   parts.push(summary);
-
-  if (style === "arcanum") {
-    parts.push("Deep cosmic indigo and abyssal navy backgrounds, baroque rococo light scrollwork, golden accents");
-  } else {
-    parts.push("Soft lavender and pale blue undertones, ambient diffused lighting, dreamlike atmosphere");
-  }
-
+  parts.push(loreStyleDirective(style));
   parts.push("No text, no runes, no words, no letters");
   return parts.join(". ");
 }
@@ -100,13 +106,7 @@ export function getTimelineEventPrompt(event: TimelineEvent, style: ArtStyle): s
   if (ctx) parts.push(ctx);
   parts.push(event.title);
   if (event.description) parts.push(event.description);
-
-  if (style === "arcanum") {
-    parts.push("Deep cosmic indigo and abyssal navy backgrounds, baroque rococo light scrollwork, golden accents");
-  } else {
-    parts.push("Soft lavender and pale blue undertones, ambient diffused lighting, dreamlike atmosphere");
-  }
-
+  parts.push(loreStyleDirective(style));
   parts.push("No text, no runes, no words, no letters");
   return parts.join(". ");
 }

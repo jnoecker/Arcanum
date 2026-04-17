@@ -3,6 +3,7 @@ import { useAssetStore } from "@/stores/assetStore";
 import { useProjectStore } from "@/stores/projectStore";
 import { AI_ENABLED } from "@/lib/featureFlags";
 import type { ProjectSettings, Settings } from "@/types/assets";
+import { HubAccountStatus } from "./HubAccountStatus";
 
 type HubAccountDraft = Pick<Settings, "hub_api_url" | "hub_api_key" | "use_hub_ai">;
 type HubWorldDraft = Pick<
@@ -108,14 +109,25 @@ export function HubSettingsPanel() {
 
   return (
     <div className="flex flex-col gap-6">
-      {/* ─── Account ─────────────────────────────────────────── */}
+      {/* ─── Account status ──────────────────────────────────── */}
       <section>
+        <h3 className="mb-3 font-display text-sm uppercase tracking-widest text-text-primary">
+          Account
+        </h3>
+        <HubAccountStatus
+          apiKey={settings?.hub_api_key ?? ""}
+          apiUrl={(settings?.hub_api_url || "https://api.arcanum-hub.com").trim()}
+        />
+      </section>
+
+      {/* ─── Connection ──────────────────────────────────────── */}
+      <section className="border-t border-border-default pt-5">
         <h3 className="mb-1 font-display text-sm uppercase tracking-widest text-text-primary">
           Connection
         </h3>
         <p className="mb-4 text-2xs text-text-muted">
-          The hub is a shared playtest service. One key per user — the hub admin issues it,
-          and rotating the key refreshes your generation quota.
+          Your API key and the hub URL. Sign up in the onboarding flow, or paste an existing key below
+          if you already have one.
         </p>
         <div className="flex flex-col gap-3">
           <div>

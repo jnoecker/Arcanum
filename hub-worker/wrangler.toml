@@ -71,7 +71,7 @@ ADMIN_ORIGIN = "https://admin.arcanum-hub.com,https://arcanum-hub-admin.pages.de
 FROM_EMAIL = "Arcanum Hub <no-reply@arcanum-hub.com>"
 # Public Turnstile site key — safe to ship. Leave empty to disable
 # Turnstile verification (useful in dev).
-TURNSTILE_SITE_KEY = ""
+TURNSTILE_SITE_KEY = "0x4AAAAAAC-tx5qpomJo9lmk"
 
 # Secrets (set with `wrangler secret put`):
 #   HUB_ADMIN_KEY          — master key for admin dashboard login

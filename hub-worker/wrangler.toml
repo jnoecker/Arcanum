@@ -66,6 +66,16 @@ HUB_ROOT_DOMAIN = "arcanum-hub.com"
 # wired up as a Pages custom domain, and at the pages.dev fallback
 # either way.
 ADMIN_ORIGIN = "https://admin.arcanum-hub.com,https://arcanum-hub-admin.pages.dev"
+# Sender address for verification-code emails. Must be on a domain
+# that's verified in the Resend console.
+FROM_EMAIL = "Arcanum Hub <no-reply@arcanum-hub.com>"
+# Public Turnstile site key — safe to ship. Leave empty to disable
+# Turnstile verification (useful in dev).
+TURNSTILE_SITE_KEY = ""
 
 # Secrets (set with `wrangler secret put`):
-#   HUB_ADMIN_KEY   — master key for admin dashboard login
+#   HUB_ADMIN_KEY          — master key for admin dashboard login
+#   RESEND_API_KEY         — transactional email (https://resend.com)
+#   TURNSTILE_SECRET_KEY   — CF Turnstile secret; pair with the public
+#                            site key in [vars]. Leave unset to skip
+#                            Turnstile verification.

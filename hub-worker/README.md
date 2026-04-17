@@ -30,8 +30,13 @@ wrangler r2 bucket create arcanum-hub
 npm run db:init:local      # dev
 npm run db:init:remote     # prod
 
-# Set the admin master key (prod):
-wrangler secret put HUB_ADMIN_KEY
+# Set secrets (prod):
+wrangler secret put HUB_ADMIN_KEY         # admin dashboard master key
+wrangler secret put RESEND_API_KEY        # transactional email (https://resend.com)
+wrangler secret put TURNSTILE_SECRET_KEY  # CF Turnstile (pair with TURNSTILE_SITE_KEY in [vars])
+wrangler secret put RUNWARE_API_KEY       # image generation
+wrangler secret put OPENROUTER_API_KEY    # text LLM
+wrangler secret put ANTHROPIC_API_KEY     # vision LLM
 
 # Dev server on http://127.0.0.1:8787:
 npm run dev
@@ -39,6 +44,33 @@ npm run dev
 # Deploy:
 npm run deploy
 ```
+
+### Applying migrations
+
+Schema edits go in `src/migrations/NNNN_name.sql`. Apply them in
+order against the target environment:
+
+```bash
+wrangler d1 execute arcanum-hub --remote --file=./src/migrations/0004_self_registration.sql
+```
+
+### Self-registration setup
+
+Public signup (`/signup/*`) and account management (`/account/*`)
+require two external services:
+
+1. **Resend** — create an account, verify the domain you'll send from
+   (`arcanum-hub.com`), set `FROM_EMAIL` in `[vars]` to something on
+   that domain, and `wrangler secret put RESEND_API_KEY`. Without a
+   key the worker logs verification codes to `wrangler tail` instead
+   of emailing them — fine for dev, broken for users.
+2. **Cloudflare Turnstile** — create a site in the CF dashboard, add
+   `arcanum-hub.com`, `*.arcanum-hub.com`, `tauri.localhost`, and
+   `localhost` to the allowed domains. Put the public site key in
+   `wrangler.toml` `[vars].TURNSTILE_SITE_KEY` and
+   `wrangler secret put TURNSTILE_SECRET_KEY` for the server secret.
+   Without either, Turnstile verification is skipped (rate limits
+   + email verification still apply).
 
 ## Development routing
 

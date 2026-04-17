@@ -134,17 +134,26 @@ All public functions exposed to the frontend are `#[tauri::command]` and return 
   - `<slug>.arcanum-hub.com/` — per-world showcase SPA + `/showcase.json` + `/images/<hash>.webp`
   - `admin.arcanum-hub.com/` — admin SPA, transparently reverse-proxied by the Worker to `arcanum-hub-admin.pages.dev`
 - **Worker bindings** (`hub-worker/wrangler.toml`):
-  - `DB` — D1 `arcanum-hub` (users, worlds, AI quotas)
+  - `DB` — D1 `arcanum-hub` (users, worlds, AI quotas, verification_codes, signup_attempts)
   - `BUCKET` — R2 `arcanum-hub` (`worlds/<slug>/showcase.json` + `worlds/<slug>/images/<hash>.webp`)
   - `ASSETS` — showcase `dist/` ships alongside the Worker; `not_found_handling = "single-page-application"` + `run_worker_first = true` so API paths aren't absorbed by SPA fallback
-  - Secrets: `HUB_ADMIN_KEY`, `RUNWARE_API_KEY`, `OPENROUTER_API_KEY`, `ANTHROPIC_API_KEY`
+  - Secrets: `HUB_ADMIN_KEY`, `RESEND_API_KEY`, `TURNSTILE_SECRET_KEY`, `RUNWARE_API_KEY`, `OPENROUTER_API_KEY`, `ANTHROPIC_API_KEY`
+  - Vars: `FROM_EMAIL` (sender for verification codes, must be on a Resend-verified domain), `TURNSTILE_SITE_KEY` (public, paired with the secret)
+- **Self-registration** (public, `api.<root>`):
+  - Three tiers: `demo` (self-signup, 10 images/20 prompts, no publish), `full` (email-verified, 500 images/5000 prompts, publish), `publish` (admin-issued BYOK, publish-only).
+  - `POST /signup/demo` — Turnstile-gated anonymous signup. Returns `hubk_demo_…` key.
+  - `POST /signup/request` + `POST /signup/verify` — email + 6-digit code → `hubk_full_…` key. Resend delivers the email; dev stubs log to `wrangler tail` when `RESEND_API_KEY` is unset.
+  - `POST /account/upgrade/request` + `/verify` — promotes an authenticated demo user to full. Rotates the key, resets usage counters.
+  - `POST /account/rotate-key`, `GET /account`, `GET /config` (public Turnstile site key).
+  - Rate limit: 3 signup attempts per IP per rolling hour, tracked in `signup_attempts` and pruned opportunistically. Code expires in 15 minutes, 5 attempts per code.
+  - Publish endpoints gate on `email_verified` — demo users get a `publish_requires_verification` 403 until they upgrade.
 - **Publish API** (Bearer auth): `POST /publish/check-existing`, `PUT /publish/image/<hash>.webp`, `POST /publish/manifest`. Slug ownership enforced per publish. Creator side: `creator/src-tauri/src/hub.rs::publish_to_hub`.
 - **AI proxy** (Bearer auth, per-user lifetime quotas — default 500 images / 5000 LLM calls, stored on `users`, reset on API key rotation):
   - `POST /ai/image/generate` → Runware (`runware:400@2` FLUX.2, `openai:4@1` GPT Image 1.5)
   - `POST /ai/llm/complete` → OpenRouter DeepSeek V3.2 (`deepseek/deepseek-v3.2-20251201`)
   - `POST /ai/llm/vision` → Claude Sonnet 4.6
   - Vision calls bill against `prompts_used`. Model allowlist + guardrails (steps ≤ 32, dimensions ≤ 1024, GPT quality forced to `"low"`) enforced server-side.
-- **Admin API** (X-Admin-Key header): `GET/POST /admin/users`, `DELETE /admin/users/<id>`, `POST /admin/users/<id>/regenerate-key` (zeros usage counters), `POST /admin/users/<id>/quotas`, `GET /admin/worlds`, `DELETE /admin/worlds/<slug>`.
+- **Admin API** (X-Admin-Key header): `GET/POST /admin/users`, `DELETE /admin/users/<id>`, `POST /admin/users/<id>/regenerate-key` (zeros usage counters), `POST /admin/users/<id>/tier`, `POST /admin/users/<id>/quotas`, `GET /admin/worlds`, `DELETE /admin/worlds/<slug>`. Admin-minted users default to `email_verified=1`.
 - **Reserved subdomains** — `admin`, `www`, `hub`, `mail`, `ftp`, `ns1`, `ns2` are refused by `isValidSlug()` so nobody can claim them as world slugs. The Worker's `handleReservedSubdomain` proxies `admin.` to the Pages deployment and 301s `www.` to the apex.
 - **Hub AI mode on the client** — flipped via `settings.use_hub_ai` (user-level boolean in `~/.tauri/settings.json`). When on, the existing image/LLM/vision Tauri commands check `hub_ai::is_enabled(&settings)` at the top and short-circuit to `hub_ai::generate_image` / `hub_ai::complete` / `hub_ai::complete_with_vision` before touching direct-provider code. The frontend doesn't know about hub mode at all — same command names, same response shapes.
 

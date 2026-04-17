@@ -31,7 +31,7 @@ function getClassPalette(classId: string | undefined): string {
 // ─── Prompt generation system prompt ─────────────────────────────────
 
 function getAbilitySystemPrompt(): string {
-  const tone = buildToneDirective();
+  const tone = buildToneDirective({ imageContext: true });
   const toneBlock = tone ? `\n\nWorld context: ${tone}` : "";
   return `You are an expert image prompt engineer for AI image generators. You create prompts for fantasy RPG ability/spell/status-effect icons in the Surreal Gentle Magic design system.${toneBlock}
 
@@ -249,7 +249,7 @@ export function fillStatusEffectTemplate(
  */
 export async function enhanceAbilityPrompt(rawPrompt: string): Promise<string> {
   if (!AI_ENABLED) throw new Error("AI features are not available in Community Edition");
-  const tone = buildToneDirective();
+  const tone = buildToneDirective({ imageContext: true });
   const toneRule = tone ? `\n- Match the world's tone: ${tone}` : "";
 
   const systemPrompt = `You are an expert AI image prompt engineer. You receive a draft image generation prompt for a fantasy RPG ability icon and refine it into a stronger, more cohesive prompt.

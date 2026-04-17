@@ -624,7 +624,7 @@ SPRITE FRAMING (this asset will be rendered on a transparent background):
  *  Pass `nativeTransparency` to use lighter framing rules instead of full BG-removal safety. */
 export function getEnhanceSystemPrompt(style: ArtStyle, assetType?: string, surface?: ArtStyleSurface, nativeTransparency?: boolean): string {
   const visualStyle = buildVisualStyleDirective(surface);
-  const tone = buildToneDirective();
+  const tone = buildToneDirective({ imageContext: true });
   const spriteSafety = assetType && needsBgRemovalSafety(assetType)
     ? (nativeTransparency ? SPRITE_FRAMING_ENHANCER_BLOCK : SPRITE_SAFETY_ENHANCER_BLOCK)
     : "";
@@ -682,7 +682,7 @@ Output ONLY the finished prompt text — no explanation, no labels, no markdown.
 
 export function getCustomAssetSystemPrompt(style: ArtStyle, surface?: ArtStyleSurface): string {
   const visualStyle = buildVisualStyleDirective(surface);
-  const tone = buildToneDirective();
+  const tone = buildToneDirective({ imageContext: true });
 
   if (visualStyle || tone) {
     const toneBlock = tone ? `\n\nWorld context: ${tone}` : "";

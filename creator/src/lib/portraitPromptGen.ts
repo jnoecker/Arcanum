@@ -68,7 +68,7 @@ export async function generatePortraitTemplate(
     .map((c) => `- ${c}: ${getClassOutfitDescription(c)}`)
     .join("\n");
 
-  const toneDirective = buildToneDirective();
+  const toneDirective = buildToneDirective({ imageContext: true });
   const visualStyle = buildVisualStyleDirective("worldbuilding");
   const toneBlock = toneDirective ? `\nWorld context: ${toneDirective}` : "";
   const styleBlock = visualStyle

@@ -10,9 +10,16 @@ import { AI_ENABLED } from "@/lib/featureFlags";
 /**
  * Build a lightweight tone directive for AI system prompts.
  * Returns world name + tone + themes in ~50 words.
- * Injected into EVERY AI system prompt (text and image generation).
+ * Injected into EVERY AI system prompt.
+ *
+ * Pass `imageContext: true` for prompts that build English image-model
+ * prompts (sprites, portraits, art style descriptors). Those must stay
+ * in English because image models are trained predominantly on English
+ * captions. For regular text generation (lore prose, articles, zone
+ * descriptions), leave the option off so the world's output-language
+ * preference is honored.
  */
-export function buildToneDirective(): string {
+export function buildToneDirective(opts?: { imageContext?: boolean }): string {
   const lore = useLoreStore.getState().lore;
   if (!lore) return "";
 
@@ -24,16 +31,45 @@ export function buildToneDirective(): string {
   const tagline = typeof ws.fields.tagline === "string" ? ws.fields.tagline : "";
   const themes = Array.isArray(ws.fields.themes) ? ws.fields.themes.join(", ") : "";
 
-  if (!name && !tone && !tagline && !themes) return "";
-
   const parts: string[] = [];
   if (name) parts.push(`World: ${name}.`);
   if (tagline) parts.push(tagline);
   if (tone) parts.push(`Tone: ${tone}.`);
   if (themes) parts.push(`Themes: ${themes}.`);
-  parts.push("All generated content must match this world's tone and themes.");
+  if (parts.length > 0) {
+    parts.push("All generated content must match this world's tone and themes.");
+  }
+
+  if (!opts?.imageContext) {
+    const lang = buildLanguageDirective();
+    if (lang) parts.push(lang);
+  }
 
   return parts.join(" ");
+}
+
+/**
+ * Return the world's "write lore in this language" instruction, or ""
+ * if no language is configured (English is the default and needs no
+ * directive). Used standalone by callers that want fine control over
+ * placement, and appended automatically by buildToneDirective().
+ *
+ * The instruction explicitly preserves JSON keys, template names, and
+ * tag slugs in English so the data model stays consistent regardless
+ * of the prose language — field keys like "tagline" and template IDs
+ * like "character" are identifiers, not user-facing copy.
+ */
+export function buildLanguageDirective(): string {
+  const lore = useLoreStore.getState().lore;
+  if (!lore) return "";
+  const ws = Object.values(lore.articles).find((a) => a.template === "world_setting");
+  if (!ws) return "";
+  const raw = typeof ws.fields.language === "string" ? ws.fields.language.trim() : "";
+  if (!raw || raw === "other") return "";
+  return (
+    `Write all prose, titles, and descriptions in ${raw}. ` +
+    `Keep JSON field keys, template identifiers, tag slugs, and URL-safe IDs in English.`
+  );
 }
 
 /** Which surface an image is being generated for. Controls which per-surface override is appended. */
@@ -184,7 +220,10 @@ The content field should be rich, evocative prose suitable for a game world bibl
 Template-specific fields should be filled with concrete, specific values (not generic placeholders).`;
 }
 
-const WORLD_SEED_SYSTEM = `You are a world-building assistant for a fantasy MUD game.
+function getWorldSeedSystem(): string {
+  const lang = buildLanguageDirective();
+  const langBlock = lang ? `\n${lang}\n` : "";
+  return `You are a world-building assistant for a fantasy MUD game.${langBlock}
 Given a concept paragraph, generate a complete starter world as JSON with this exact shape:
 {
   "worldSetting": {
@@ -213,6 +252,7 @@ Given a concept paragraph, generate a complete starter world as JSON with this e
 Generate 3-5 organizations, 5-8 locations, 5-10 characters, 1 calendar with 2-4 eras, and 5-10 events.
 Content fields should be 2-4 paragraphs of rich, evocative prose.
 Output ONLY valid JSON — no markdown fences, no explanation.`;
+}
 
 // ─── Article generation ─────────────────────────────────────────────
 
@@ -327,7 +367,7 @@ export interface WorldSeedResult {
 export async function generateWorldSeed(concept: string): Promise<WorldSeedResult> {
   if (!AI_ENABLED) throw new Error("AI features are not available in Community Edition");
   const result = await invoke<string>("llm_complete", {
-    systemPrompt: WORLD_SEED_SYSTEM,
+    systemPrompt: getWorldSeedSystem(),
     userPrompt: `World concept:\n${concept}`,
     maxTokens: 16384,
   });

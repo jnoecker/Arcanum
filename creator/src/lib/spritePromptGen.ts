@@ -93,7 +93,7 @@ export function buildSpritePrompt(
   // FLUX ignores the world and falls back to its generic painterly
   // fantasy default.
   const visualStyle = buildVisualStyleDirective("worldbuilding");
-  const toneDirective = buildToneDirective();
+  const toneDirective = buildToneDirective({ imageContext: true });
   const prefix = visualStyle
     ? `${visualStyle}. NOT a photograph, NOT a 3D render, NOT concept art.`
     : GENERIC_SPRITE_STYLE_FALLBACK;
@@ -128,7 +128,7 @@ export async function generateSpriteTemplate(
     .map((c) => `- ${c}: ${getClassOutfitDescription(c)}`)
     .join("\n");
 
-  const toneDirective = buildToneDirective();
+  const toneDirective = buildToneDirective({ imageContext: true });
   const toneBlock = toneDirective
     ? `\n\nWorld context: ${toneDirective}\nDescriptions must match this tone.`
     : "";
@@ -180,7 +180,7 @@ export async function generateArtDirection(
   gender?: string,
 ): Promise<string> {
   if (!AI_ENABLED) throw new Error("AI features are not available in Community Edition");
-  const toneDirective = buildToneDirective();
+  const toneDirective = buildToneDirective({ imageContext: true });
   const toneBlock = toneDirective
     ? `\nWorld tone: ${toneDirective}\nThe description must match this tone.`
     : "";

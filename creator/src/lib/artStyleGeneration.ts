@@ -41,7 +41,7 @@ Output ONLY valid JSON with this exact shape — no markdown fences, no commenta
  */
 export async function generateArtStyle(themePrompt: string): Promise<ArtStyle> {
   if (!AI_ENABLED) throw new Error("AI features are not available in Community Edition");
-  const tone = buildToneDirective();
+  const tone = buildToneDirective({ imageContext: true });
   const toneBlock = tone ? `\n\nWorld context (stay consistent with this):\n${tone}` : "";
 
   const userPrompt = `Design a visual style guide for this theme: "${themePrompt}"${toneBlock}
@@ -92,7 +92,7 @@ export async function refineArtStyle(
   instruction: string,
 ): Promise<Partial<ArtStyle>> {
   if (!AI_ENABLED) throw new Error("AI features are not available in Community Edition");
-  const tone = buildToneDirective();
+  const tone = buildToneDirective({ imageContext: true });
   const toneBlock = tone ? `\n\nWorld context (preserve consistency with this):\n${tone}` : "";
 
   const userPrompt = `Existing style:

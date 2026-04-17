@@ -72,7 +72,7 @@ export function Toolbar({ onNewProject, onToggleGuide, guideOpen }: ToolbarProps
   return (
     <>
       <div className="relative z-20 shrink-0 px-5 pt-4">
-        <div className="flex w-full items-center gap-4">
+        <div className="flex w-full flex-wrap items-center gap-x-4 gap-y-2">
           {/* ── Left: project-name switcher ───────────────────────────── */}
           <div className="relative flex min-w-0 flex-1 items-center">
             <button
@@ -126,7 +126,7 @@ export function Toolbar({ onNewProject, onToggleGuide, guideOpen }: ToolbarProps
           </div>
 
           {/* ── Right: actions ─────────────────────────────────────────── */}
-          <div className="flex min-w-0 flex-1 shrink-0 items-center justify-end gap-2">
+          <div className="flex min-w-0 flex-1 flex-wrap items-center justify-end gap-2">
             {AI_ENABLED && (
               <ActionButton
                 onClick={openGenerator}

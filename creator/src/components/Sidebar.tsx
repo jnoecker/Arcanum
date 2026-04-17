@@ -481,15 +481,15 @@ export function Sidebar() {
 
       {/* ── Stats bar ────────────────────────────────────────────── */}
       <div className="relative z-10 shrink-0 px-4 pt-4 pb-2">
-        <div className="flex items-center gap-2 px-1 text-3xs text-text-muted">
-          <span>{zones.size} zones</span>
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 px-1 text-3xs text-text-muted">
+          <span className="whitespace-nowrap">{zones.size} zones</span>
           <span className="text-border-default">&middot;</span>
-          <span>{articleCount} lore</span>
+          <span className="whitespace-nowrap">{articleCount} lore</span>
           <span className="text-border-default">&middot;</span>
-          <span>{openTabs.length} open</span>
+          <span className="whitespace-nowrap">{openTabs.length} open</span>
           <button
             onClick={() => openTab(panelTab("worldSetting"))}
-            className="focus-ring shell-pill ml-auto rounded-full px-2 py-0.5 font-display text-[9px] font-semibold uppercase tracking-wide-ui text-accent"
+            className="focus-ring shell-pill ml-auto whitespace-nowrap rounded-full px-2 py-0.5 font-display text-[9px] font-semibold uppercase tracking-wide-ui text-accent"
             title="Open world settings"
             aria-label="Open world settings"
           >
@@ -518,18 +518,19 @@ export function Sidebar() {
         <div className="ornate-divider mx-4 shrink-0" aria-hidden="true" />
 
         {/* ── Cartography (bottom half) ────────────────────────── */}
-        <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-4 pt-3">
-          <div className="mb-3 flex items-center justify-between">
-            <h2 className="text-2xs font-medium uppercase tracking-label text-text-secondary">Cartography</h2>
-            <div className="flex items-center gap-2">
-              {hasProject && (
-                <span className="text-2xs uppercase tracking-label text-text-muted">
-                  {sortedZones.length} zone{sortedZones.length === 1 ? "" : "s"}
-                </span>
-              )}
+        <section aria-label="Cartography" className="min-h-0 flex-1 overflow-y-auto px-4 pb-4 pt-3">
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+            {hasProject ? (
+              <span className="whitespace-nowrap text-2xs uppercase tracking-label text-text-muted">
+                {sortedZones.length} zone{sortedZones.length === 1 ? "" : "s"}
+              </span>
+            ) : (
+              <span aria-hidden="true" />
+            )}
+            <div className="flex flex-wrap items-center gap-2">
               <button
                 onClick={() => setShowImportZone(true)}
-                className="focus-ring shell-pill rounded-full px-3 py-1 text-2xs font-medium"
+                className="focus-ring shell-pill whitespace-nowrap rounded-full px-3 py-1 text-2xs font-medium"
                 title="Import zone YAML files"
                 aria-label="Import zone YAML files"
               >
@@ -538,7 +539,7 @@ export function Sidebar() {
 
               <button
                 onClick={() => setShowNewZone(true)}
-                className="focus-ring shell-pill rounded-full px-3 py-1 text-2xs font-medium"
+                className="focus-ring shell-pill whitespace-nowrap rounded-full px-3 py-1 text-2xs font-medium"
                 title="New zone"
               >
                 New zone
@@ -579,7 +580,7 @@ export function Sidebar() {
               ))}
             </ul>
           )}
-        </div>
+        </section>
       </div>
 
       {/* ── Footer hints ─────────────────────────────────────────── */}

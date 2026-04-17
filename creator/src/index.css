@@ -512,6 +512,7 @@ select,
   font-size: 0.75rem;
   font-weight: 500;
   line-height: 1;
+  white-space: nowrap;
   color: var(--color-text-primary);
   transition:
     background-color 160ms var(--ease-unfurl),

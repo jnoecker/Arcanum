@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { fetchHubIndex, type HubIndexWorld } from "@/lib/hubMode";
 import { ShowcaseEmptyState } from "@/components/ShowcasePrimitives";
 
@@ -123,6 +124,20 @@ export function HubIndexPage() {
           A living atlas of worlds built in Arcanum. Each entry links to its own
           showcase — lore, maps, and stories published directly from the tool.
         </p>
+        <div className="mt-6 flex items-center justify-center gap-3 text-xs">
+          <Link
+            to="/signup"
+            className="rounded-full border border-accent/50 bg-accent/10 px-5 py-2 uppercase tracking-[0.18em] text-accent transition hover:bg-accent/20"
+          >
+            Get started free
+          </Link>
+          <Link
+            to="/account"
+            className="rounded-full border border-border-muted/50 px-5 py-2 uppercase tracking-[0.18em] text-text-muted transition hover:border-accent/50 hover:text-text-primary"
+          >
+            Sign in
+          </Link>
+        </div>
       </header>
 
       {totalWorlds > 0 && (

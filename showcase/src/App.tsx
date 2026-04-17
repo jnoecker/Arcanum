@@ -14,17 +14,25 @@ const StoriesPage = lazy(() => import("@/pages/StoriesPage").then(m => ({ defaul
 const StoryPlayerPage = lazy(() => import("@/pages/StoryPlayerPage").then(m => ({ default: m.StoryPlayerPage })));
 const NotFoundPage = lazy(() => import("@/pages/NotFoundPage").then(m => ({ default: m.NotFoundPage })));
 const HubIndexPage = lazy(() => import("@/pages/HubIndexPage").then(m => ({ default: m.HubIndexPage })));
+const SignupPage = lazy(() => import("@/pages/SignupPage").then(m => ({ default: m.SignupPage })));
+const AccountPage = lazy(() => import("@/pages/AccountPage").then(m => ({ default: m.AccountPage })));
 
 export function App() {
   const { loading, error, reload, isHubRoot } = useShowcase();
   const isOffline = typeof navigator !== "undefined" && !navigator.onLine;
 
-  // Hub root: no per-world data, just render the directory. Skips the
-  // normal Layout (which pulls a world name from data that doesn't exist here).
+  // Hub root: no per-world data. Small router for the landing +
+  // signup/account pages, all rendered without the per-world Layout
+  // (which depends on world metadata that doesn't exist here).
   if (isHubRoot) {
     return (
       <Suspense fallback={null}>
-        <HubIndexPage />
+        <Routes>
+          <Route path="/" element={<HubIndexPage />} />
+          <Route path="/signup" element={<SignupPage />} />
+          <Route path="/account" element={<AccountPage />} />
+          <Route path="*" element={<HubIndexPage />} />
+        </Routes>
       </Suspense>
     );
   }

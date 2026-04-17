@@ -7,6 +7,7 @@ import { checkExisting, uploadImage, uploadManifest } from "./handlers/publish";
 import { serveHubIndex, serveImage, serveShowcaseJson } from "./handlers/showcase";
 import { signupDemo, signupRequest, signupVerify } from "./handlers/signup";
 import {
+  deleteAccount,
   getAccount,
   rotateKey,
   upgradeRequest,
@@ -142,6 +143,7 @@ async function routeApi(req: Request, env: Env, pathname: string): Promise<Respo
     const user = await authenticateUser(req, env);
     if (!user) return error(401, "API key required", { origin: "*" });
     if (pathname === "/account" && req.method === "GET") return await getAccount(req, env, user);
+    if (pathname === "/account" && req.method === "DELETE") return await deleteAccount(req, env, user);
     if (pathname === "/account/rotate-key" && req.method === "POST") return await rotateKey(req, env, user);
     if (pathname === "/account/upgrade/request" && req.method === "POST") {
       return await upgradeRequest(req, env, user);

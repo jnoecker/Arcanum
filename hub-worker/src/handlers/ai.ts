@@ -12,8 +12,9 @@
 //
 // Vision calls bill against the same `prompts_used` counter as
 // completions — they're bucketed together as "LLM calls" per the
-// spec. Image calls use `images_used`. Both counters reset to 0 when
-// an admin regenerates the user's API key (see db.updateUserApiKeyHash).
+// spec. Image calls use `images_used`. Counters are decoupled from
+// key rotation; an admin resets them explicitly via
+// POST /admin/users/<id>/reset-usage.
 
 import type { Env } from "../env";
 import type { UserRow } from "../db";
@@ -104,7 +105,7 @@ function quotaExceeded(kind: "images" | "prompts", used: number, quota: number):
   return json(
     {
       error: `hub_quota_exceeded:${kind}`,
-      message: `You've used your lifetime ${kind} allowance (${used} / ${quota}). Ask the hub admin to rotate your key for a fresh allowance.`,
+      message: `You've used your lifetime ${kind} allowance (${used} / ${quota}). Ask the hub admin to reset your usage or raise your quota.`,
       used,
       quota,
     },
@@ -187,6 +188,24 @@ async function imageGenerate(req: Request, env: Env, user: UserRow): Promise<Res
   }
 
   const isGptImage = model.startsWith("openai:");
+
+  // GPT Image is ~10× the cost of FLUX per call. Only playtester-tier
+  // users (admin-invited) get access to it on the hub's dime; demo
+  // and self-signup users are locked to FLUX regardless of what their
+  // client asks for.
+  if (isGptImage && user.tier !== "playtester") {
+    return json(
+      {
+        error: "hub_model_forbidden",
+        message:
+          "Your tier can only use FLUX image models on the hub. Ask the hub admin for playtester access to enable GPT Image.",
+        tier: user.tier,
+        model,
+      },
+      { status: 403 },
+      CORS,
+    );
+  }
   const wantsTransparent = Boolean(body.transparentBackground);
 
   // ─── Dimension guardrail ─────────────────────────────────────────

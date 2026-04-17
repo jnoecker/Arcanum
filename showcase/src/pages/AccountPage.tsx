@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   clearStoredKey,
+  deleteAccount,
   fetchAccount,
   fetchHubConfig,
   loadStoredKey,
@@ -69,7 +70,7 @@ export function AccountPage() {
   };
 
   const handleRotate = async () => {
-    if (!confirm("Rotate your API key? The current key will be invalidated and usage counters will reset.")) return;
+    if (!confirm("Rotate your API key? The current key will be invalidated. Usage counters are preserved.")) return;
     setLoading(true);
     try {
       const { apiKey: fresh } = await rotateKey(apiKey);
@@ -77,6 +78,30 @@ export function AccountPage() {
       setApiKeyState(fresh);
       await refresh();
       alert(`New key:\n\n${fresh}\n\nCopy it somewhere safe — it replaces your old one in this browser already.`);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    const first = confirm(
+      "Permanently delete your Arcanum Hub account? This wipes your user record and every published world you own. The API key stops working immediately. This cannot be undone.",
+    );
+    if (!first) return;
+    const typed = prompt('Type "DELETE" to confirm.');
+    if (typed !== "DELETE") return;
+    setLoading(true);
+    try {
+      const res = await deleteAccount(apiKey);
+      clearStoredKey();
+      setApiKeyState("");
+      setAccount(null);
+      setWorlds([]);
+      alert(
+        `Account deleted. ${res.deletedWorlds} world${res.deletedWorlds === 1 ? "" : "s"} wiped from the hub.`,
+      );
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
@@ -104,6 +129,16 @@ export function AccountPage() {
       </header>
 
       <main className="mx-auto max-w-3xl px-6 py-12">
+        <div className="mb-6 rounded border border-[var(--warning)]/40 bg-[var(--warning)]/5 p-4 text-xs leading-6">
+          <strong className="font-display uppercase tracking-[0.14em] text-[var(--warning)]">
+            Beta preview
+          </strong>
+          <span className="text-text-muted">
+            {" "}— Arcanum Hub is under active development. Accounts, worlds, and usage counters may be
+            reset or wiped as we iterate. Accounts that abuse posted quotas will be revoked.
+          </span>
+        </div>
+
         {!apiKey && (
           <section className="rounded-xl border border-[var(--border)] bg-[var(--panel)] p-6">
             <h1 className="font-display text-2xl uppercase tracking-[0.18em]">Sign in</h1>
@@ -184,7 +219,7 @@ export function AccountPage() {
                 <div className="mt-5 flex flex-wrap items-center justify-between gap-3 rounded border border-accent/40 bg-accent/10 px-4 py-3 text-sm text-text-secondary">
                   <span>
                     Verify your email to upgrade to <strong className="text-text-primary">full tier</strong>{" "}
-                    (500 images, 5000 prompts, plus publishing).
+                    (500 images, 1000 prompts, plus publishing).
                   </span>
                   <button onClick={() => setShowUpgrade(true)} className={showcaseButtonClassNames.primary}>
                     Upgrade
@@ -207,9 +242,21 @@ export function AccountPage() {
               )}
 
               <div className="mt-5 flex items-center justify-between gap-3 text-xs text-text-muted">
-                <span>Rotating your key resets your usage counters and invalidates the old key.</span>
+                <span>Rotating your key invalidates the old one. Usage counters are preserved.</span>
                 <button onClick={handleRotate} disabled={loading} className={showcaseButtonClassNames.secondary}>
                   Rotate key
+                </button>
+              </div>
+              <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-[var(--border)] pt-4 text-xs text-text-muted">
+                <span>
+                  Delete your account and every world you own. GDPR right-to-erasure, no recovery.
+                </span>
+                <button
+                  onClick={handleDeleteAccount}
+                  disabled={loading}
+                  className="rounded-full border border-status-error/60 px-4 py-2 font-display text-xs uppercase tracking-wider text-status-error hover:bg-status-error/10"
+                >
+                  Delete my account
                 </button>
               </div>
             </section>
@@ -259,7 +306,9 @@ function TierBadge({ tier }: { tier: HubAccount["tier"] }) {
       ? "border-[var(--border)] bg-[var(--bg)] text-text-muted"
       : tier === "full"
         ? "border-accent/40 bg-accent/20 text-accent"
-        : "border-[var(--border)] bg-[var(--bg)] text-text-secondary";
+        : tier === "playtester"
+          ? "border-status-success/40 bg-status-success/15 text-status-success"
+          : "border-[var(--border)] bg-[var(--bg)] text-text-secondary";
   return (
     <span className={`rounded-full border px-3 py-1 text-xs uppercase tracking-wider ${style}`}>
       {tier}

@@ -37,7 +37,7 @@ export interface HubUsage {
   promptsQuota: number;
 }
 
-export type HubUserTier = "full" | "publish";
+export type HubUserTier = "full" | "publish" | "demo" | "playtester";
 
 export interface HubUser {
   id: string;
@@ -168,6 +168,19 @@ export async function updateQuotas(
       adminKey,
       body: JSON.stringify(quotas),
     },
+  );
+}
+
+/** Zero the user's lifetime usage counters without touching key,
+ *  tier, or quotas. Used when the admin wants to grant a fresh
+ *  allowance without rotating the key. */
+export async function resetUsage(
+  adminKey: string,
+  userId: string,
+): Promise<{ user: HubUser }> {
+  return await request<{ user: HubUser }>(
+    `/admin/users/${encodeURIComponent(userId)}/reset-usage`,
+    { method: "POST", adminKey },
   );
 }
 

@@ -16,6 +16,7 @@ const NotFoundPage = lazy(() => import("@/pages/NotFoundPage").then(m => ({ defa
 const HubIndexPage = lazy(() => import("@/pages/HubIndexPage").then(m => ({ default: m.HubIndexPage })));
 const SignupPage = lazy(() => import("@/pages/SignupPage").then(m => ({ default: m.SignupPage })));
 const AccountPage = lazy(() => import("@/pages/AccountPage").then(m => ({ default: m.AccountPage })));
+const PrivacyPage = lazy(() => import("@/pages/PrivacyPage").then(m => ({ default: m.PrivacyPage })));
 
 export function App() {
   const { loading, error, reload, isHubRoot } = useShowcase();
@@ -31,6 +32,7 @@ export function App() {
           <Route path="/" element={<HubIndexPage />} />
           <Route path="/signup" element={<SignupPage />} />
           <Route path="/account" element={<AccountPage />} />
+          <Route path="/privacy" element={<PrivacyPage />} />
           <Route path="*" element={<HubIndexPage />} />
         </Routes>
       </Suspense>

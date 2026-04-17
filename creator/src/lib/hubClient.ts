@@ -13,7 +13,7 @@ const DEFAULT_HUB_API_URL = "https://api.arcanum-hub.com";
 export interface HubUser {
   id: string;
   displayName: string;
-  tier: "demo" | "full" | "publish";
+  tier: "demo" | "full" | "publish" | "playtester";
   email: string | null;
   emailVerified: boolean;
   imagesQuota: number;
@@ -25,7 +25,7 @@ export interface HubAccount {
   displayName: string;
   email: string | null;
   emailVerified: boolean;
-  tier: "demo" | "full" | "publish";
+  tier: "demo" | "full" | "publish" | "playtester";
   createdAt: number;
   lastPublishAt: number | null;
   canPublish: boolean;

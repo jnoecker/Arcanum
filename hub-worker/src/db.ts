@@ -1,6 +1,6 @@
 import type { Env } from "./env";
 
-export type UserTier = "full" | "publish" | "demo";
+export type UserTier = "full" | "publish" | "demo" | "playtester";
 
 export interface UserRow {
   id: string;
@@ -17,12 +17,18 @@ export interface UserRow {
   email_verified: number;
 }
 
-// Default lifetime quotas by tier. Demo is deliberately tight — just
-// enough to experience the features end-to-end without costing real
-// money. Full is what email-verified signups get; publish is BYOK.
+// Default lifetime quotas by tier.
+//  - demo: deliberately tight — just enough to feel out the features
+//    without costing real money. FLUX-only (see handlers/ai.ts).
+//  - full: email-verified self-signup. FLUX-only, so the image budget
+//    can be generous while LLM calls stay capped.
+//  - playtester: admin-invited, trusted. All models (FLUX + GPT Image),
+//    high quotas.
+//  - publish: BYOK, no AI budget.
 export const DEFAULT_QUOTAS: Record<UserTier, { images: number; prompts: number }> = {
   demo: { images: 10, prompts: 20 },
-  full: { images: 500, prompts: 5000 },
+  full: { images: 500, prompts: 1000 },
+  playtester: { images: 2000, prompts: 20000 },
   publish: { images: 0, prompts: 0 },
 };
 
@@ -116,10 +122,10 @@ export async function getUserByEmail(env: Env, email: string): Promise<UserRow |
 }
 
 /**
- * Promote a demo user to full tier. Rotates the API key (zeroing
- * usage counters), attaches the verified email + display name, and
- * bumps quotas to full defaults. All-in-one so callers don't have to
- * juggle half-upgraded states.
+ * Promote a demo user to full tier. Rotates the API key, attaches the
+ * verified email + display name, and bumps quotas to full defaults.
+ * Usage counters are preserved — the new full quota is much larger
+ * than demo, so whatever a user spent as demo still fits.
  */
 export async function promoteUserToFull(
   env: Env,
@@ -136,8 +142,6 @@ export async function promoteUserToFull(
            display_name = ?,
            email_verified = 1,
            api_key_hash = ?,
-           images_used = 0,
-           prompts_used = 0,
            images_quota = ?,
            prompts_quota = ?
      WHERE id = ?`,
@@ -151,12 +155,11 @@ export async function updateUserApiKeyHash(
   userId: string,
   apiKeyHash: string,
 ): Promise<void> {
-  // Rotating a key resets both AI quotas. The whole point of the
-  // "lifetime + reset on rotation" design: the old key is dead, so
-  // whoever had it can't burn more; the new key gets a fresh allowance.
-  await env.DB.prepare(
-    "UPDATE users SET api_key_hash = ?, images_used = 0, prompts_used = 0 WHERE id = ?",
-  )
+  // Rotation kills the old key (invalidating anything leaked) but
+  // preserves usage counters — a rotation for security shouldn't
+  // silently refresh the user's allowance. Admins who *do* want to
+  // grant a fresh allowance use resetUserUsage separately.
+  await env.DB.prepare("UPDATE users SET api_key_hash = ? WHERE id = ?")
     .bind(apiKeyHash, userId)
     .run();
 }
@@ -164,7 +167,7 @@ export async function updateUserApiKeyHash(
 // Tier changes always auto-rotate the key — the prefix encodes the
 // tier as a UX hint for the creator, so changing tier without
 // rotating would leave a stale prefix that misleads the client.
-// Counters reset alongside the rotation, same as updateUserApiKeyHash.
+// Usage counters are preserved (use resetUserUsage to zero them).
 export async function updateUserTierAndKey(
   env: Env,
   userId: string,
@@ -172,9 +175,20 @@ export async function updateUserTierAndKey(
   apiKeyHash: string,
 ): Promise<void> {
   await env.DB.prepare(
-    "UPDATE users SET tier = ?, api_key_hash = ?, images_used = 0, prompts_used = 0 WHERE id = ?",
+    "UPDATE users SET tier = ?, api_key_hash = ? WHERE id = ?",
   )
     .bind(tier, apiKeyHash, userId)
+    .run();
+}
+
+/** Explicit usage reset — zeroes lifetime counters without touching
+ *  the key, tier, or quotas. Intended for "give this user a fresh
+ *  allowance" from the admin panel. */
+export async function resetUserUsage(env: Env, userId: string): Promise<void> {
+  await env.DB.prepare(
+    "UPDATE users SET images_used = 0, prompts_used = 0 WHERE id = ?",
+  )
+    .bind(userId)
     .run();
 }
 

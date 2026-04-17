@@ -84,21 +84,29 @@ export async function sha256Hex(input: string | ArrayBuffer): Promise<string> {
  * and its SHA-256 hash (stored).
  *
  * The tier is encoded in the prefix (`hubk_full_…`, `hubk_pub_…`,
- * `hubk_demo_…`) so the creator can auto-detect capability without
- * a round-trip. The prefix is purely a UX hint — the worker still
- * looks up the authoritative tier in D1 on every request. Legacy
- * `hub_<random>` keys (no tier segment) from before the tier feature
- * keep working; they're all tagged `tier='full'` by 0002.
+ * `hubk_demo_…`, `hubk_play_…`) so the creator can auto-detect
+ * capability without a round-trip. The prefix is purely a UX hint —
+ * the worker still looks up the authoritative tier in D1 on every
+ * request. Legacy `hub_<random>` keys (no tier segment) from before
+ * the tier feature keep working; they're all tagged `tier='full'`
+ * by migration 0002.
  */
 export async function generateApiKey(
-  tier: "full" | "publish" | "demo",
+  tier: "full" | "publish" | "demo" | "playtester",
 ): Promise<{ plain: string; hash: string }> {
   const bytes = new Uint8Array(24);
   crypto.getRandomValues(bytes);
   const tail = Array.from(bytes)
     .map((b) => b.toString(16).padStart(2, "0"))
     .join("");
-  const segment = tier === "publish" ? "pub" : tier === "demo" ? "demo" : "full";
+  const segment =
+    tier === "publish"
+      ? "pub"
+      : tier === "demo"
+        ? "demo"
+        : tier === "playtester"
+          ? "play"
+          : "full";
   const plain = `hubk_${segment}_${tail}`;
   const hash = await sha256Hex(plain);
   return { plain, hash };

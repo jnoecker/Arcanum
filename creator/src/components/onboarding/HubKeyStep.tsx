@@ -31,6 +31,7 @@ export function HubKeyStep({ onDone }: HubKeyStepProps) {
   const [displayName, setDisplayName] = useState("");
   const [code, setCode] = useState("");
   const [pastedKey, setPastedKey] = useState(settings?.hub_api_key ?? "");
+  const [privacyConsent, setPrivacyConsent] = useState(false);
 
   useEffect(() => {
     fetchHubConfig()
@@ -121,6 +122,17 @@ export function HubKeyStep({ onDone }: HubKeyStepProps) {
         </p>
       </div>
 
+      <div className="rounded border border-status-warning/40 bg-status-warning/5 p-3 text-2xs leading-5">
+        <strong className="font-display uppercase tracking-wider text-status-warning">
+          Beta preview
+        </strong>
+        <span className="text-text-muted">
+          {" "}— Arcanum Hub is in active development. Accounts, worlds, and usage counters may be
+          reset or wiped as we iterate. Accounts that abuse posted quotas will be revoked. Treat
+          anything you publish here as impermanent for now.
+        </span>
+      </div>
+
       {mode === "choose" && (
         <ChooseMode
           onDemo={() => {
@@ -170,10 +182,11 @@ export function HubKeyStep({ onDone }: HubKeyStepProps) {
             onToken={setTurnstileToken}
             onError={setError}
           />
+          <PrivacyConsent checked={privacyConsent} onChange={setPrivacyConsent} disabled={busy} />
           {error && <p className="text-2xs text-status-error">{error}</p>}
           <Actions
             onBack={() => setMode("choose")}
-            disabled={busy || (Boolean(turnstileSiteKey) && !turnstileToken)}
+            disabled={busy || !privacyConsent || (Boolean(turnstileSiteKey) && !turnstileToken)}
             busy={busy}
             primary="Create demo account"
           />
@@ -192,8 +205,8 @@ export function HubKeyStep({ onDone }: HubKeyStepProps) {
             Create your account
           </h3>
           <p className="text-xs leading-6 text-text-muted">
-            Verify your email to unlock full quotas (500 images, 5000 prompts) and the ability to
-            publish worlds to the public hub. We'll email a 6-digit code in a moment.
+            Verify your email to unlock full quotas (500 images, 1000 prompts — FLUX image models) and
+            the ability to publish worlds to the public hub. We'll email a 6-digit code in a moment.
           </p>
           <Field label="Email">
             <input
@@ -223,11 +236,13 @@ export function HubKeyStep({ onDone }: HubKeyStepProps) {
             onToken={setTurnstileToken}
             onError={setError}
           />
+          <PrivacyConsent checked={privacyConsent} onChange={setPrivacyConsent} disabled={busy} />
           {error && <p className="text-2xs text-status-error">{error}</p>}
           <Actions
             onBack={() => setMode("choose")}
             disabled={
               busy ||
+              !privacyConsent ||
               !email.trim() ||
               !displayName.trim() ||
               (Boolean(turnstileSiteKey) && !turnstileToken)
@@ -338,7 +353,7 @@ function ChooseMode({
       />
       <ChoiceCard
         title="Create an account"
-        description="Verify email for full quotas (500 images / 5000 prompts) and publishing."
+        description="Verify email for full quotas (500 images / 1000 prompts) and publishing."
         cta="Sign up"
         onClick={onSignup}
       />
@@ -392,6 +407,41 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
     <label className="flex flex-col gap-1.5">
       <span className="text-2xs uppercase tracking-ui text-text-muted">{label}</span>
       {children}
+    </label>
+  );
+}
+
+function PrivacyConsent({
+  checked,
+  onChange,
+  disabled,
+}: {
+  checked: boolean;
+  onChange: (v: boolean) => void;
+  disabled?: boolean;
+}) {
+  return (
+    <label className="flex items-start gap-2 text-2xs leading-5 text-text-muted">
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={(e) => onChange(e.target.checked)}
+        disabled={disabled}
+        className="mt-0.5 accent-accent"
+      />
+      <span>
+        I've read and agree to the{" "}
+        <a
+          href="https://arcanum-hub.com/privacy"
+          target="_blank"
+          rel="noreferrer"
+          className="text-accent underline"
+        >
+          privacy policy
+        </a>
+        . Arcanum Hub stores my display name, email (if provided), and usage counters. Accounts,
+        worlds, and counters may be wiped during beta development.
+      </span>
     </label>
   );
 }

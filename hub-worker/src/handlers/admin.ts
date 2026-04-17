@@ -8,6 +8,7 @@ import {
   listAllWorlds,
   listUsers,
   listWorldsForUser,
+  resetUserUsage,
   setUserQuotas,
   updateUserApiKeyHash,
   updateUserTierAndKey,
@@ -37,7 +38,7 @@ interface AdminUserView {
 }
 
 function parseTier(raw: unknown): UserTier | null {
-  if (raw === "full" || raw === "publish" || raw === "demo") return raw;
+  if (raw === "full" || raw === "publish" || raw === "demo" || raw === "playtester") return raw;
   return null;
 }
 
@@ -128,6 +129,14 @@ export async function handleAdmin(req: Request, env: Env, pathname: string): Pro
     return error(405, "Method not allowed", c);
   }
 
+  // /admin/users/<id>/reset-usage
+  const resetMatch = /^\/admin\/users\/([^/]+)\/reset-usage$/.exec(pathname);
+  if (resetMatch && resetMatch[1]) {
+    const id = resetMatch[1];
+    if (req.method === "POST") return await adminResetUsage(env, id, c);
+    return error(405, "Method not allowed", c);
+  }
+
   // /admin/worlds
   if (pathname === "/admin/worlds") {
     if (req.method === "GET") return await adminListWorlds(env, c);
@@ -169,9 +178,10 @@ async function adminCreateUser(req: Request, env: Env, c: Cors): Promise<Respons
   const displayName = (body.displayName ?? "").trim();
   if (!displayName) return error(400, "displayName is required", c);
   const email = (body.email ?? "").trim() || null;
-  // Tier defaults to "full" for back-compat with existing admin UIs
-  // that don't send the field yet.
-  const tier: UserTier = parseTier(body.tier) ?? "full";
+  // Tier defaults to "playtester" — admin-invited users are trusted,
+  // so they get high quotas and unrestricted image models. Older
+  // admin UIs that send no tier field inherit this default.
+  const tier: UserTier = parseTier(body.tier) ?? "playtester";
 
   const { plain, hash } = await generateApiKey(tier);
   const id = newId();
@@ -221,11 +231,21 @@ async function adminRegenerateKey(env: Env, id: string, c: Cors): Promise<Respon
   if (!user) return error(404, "User not found", c);
   // Mint the new key with a prefix that matches the user's current
   // tier so the creator's auto-detection stays consistent with D1.
+  // Rotation only invalidates the leaked key — usage counters are
+  // preserved. Use /admin/users/<id>/reset-usage to grant a fresh
+  // allowance.
   const { plain, hash } = await generateApiKey(user.tier);
-  // updateUserApiKeyHash also zeros out images_used and prompts_used —
-  // rotation gives the legit user a fresh quota and kills any leaked key.
   await updateUserApiKeyHash(env, id, hash);
   return json({ apiKey: plain }, {}, c);
+}
+
+async function adminResetUsage(env: Env, id: string, c: Cors): Promise<Response> {
+  const user = await getUserById(env, id);
+  if (!user) return error(404, "User not found", c);
+  await resetUserUsage(env, id);
+  const fresh = await getUserById(env, id);
+  if (!fresh) return error(500, "User disappeared after reset", c);
+  return json({ user: toUserView(fresh, []) }, {}, c);
 }
 
 async function adminSetTier(req: Request, env: Env, id: string, c: Cors): Promise<Response> {
@@ -239,7 +259,7 @@ async function adminSetTier(req: Request, env: Env, id: string, c: Cors): Promis
     return error(400, "Invalid JSON body", c);
   }
   const tier = parseTier(body.tier);
-  if (!tier) return error(400, "tier must be \"full\" or \"publish\"", c);
+  if (!tier) return error(400, "tier must be \"full\", \"playtester\", or \"publish\"", c);
 
   // No-op if the requested tier matches. We still return the user
   // view so the admin UI can refresh, but skip rotation — rotating
@@ -322,7 +342,7 @@ async function adminDeleteWorld(env: Env, slug: string, c: Cors): Promise<Respon
 
 // ─── Shared R2 wipe ──────────────────────────────────────────────────
 
-async function deleteWorldFromR2(env: Env, slug: string): Promise<void> {
+export async function deleteWorldFromR2(env: Env, slug: string): Promise<void> {
   // List + delete in batches. R2 list returns up to 1000 objects per call.
   let cursor: string | undefined;
   do {

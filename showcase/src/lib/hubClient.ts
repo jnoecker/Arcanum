@@ -10,7 +10,7 @@ const DEFAULT_HUB_API_URL = "https://api.arcanum-hub.com";
 export interface HubUser {
   id: string;
   displayName: string;
-  tier: "demo" | "full" | "publish";
+  tier: "demo" | "full" | "publish" | "playtester";
   email: string | null;
   emailVerified: boolean;
   imagesQuota: number;
@@ -22,7 +22,7 @@ export interface HubAccount {
   displayName: string;
   email: string | null;
   emailVerified: boolean;
-  tier: "demo" | "full" | "publish";
+  tier: "demo" | "full" | "publish" | "playtester";
   createdAt: number;
   lastPublishAt: number | null;
   canPublish: boolean;
@@ -121,6 +121,19 @@ export async function fetchAccount(
 export async function rotateKey(apiKey: string): Promise<{ apiKey: string }> {
   const resp = await fetch(`${baseUrl()}/account/rotate-key`, {
     method: "POST",
+    headers: authHeaders(apiKey),
+  });
+  return await readJson(resp);
+}
+
+/** Self-service account erasure (GDPR). Wipes the user row, all
+ *  owned worlds, and every R2 blob associated with them. The key
+ *  stops working as soon as this returns. */
+export async function deleteAccount(
+  apiKey: string,
+): Promise<{ ok: boolean; deletedWorlds: number }> {
+  const resp = await fetch(`${baseUrl()}/account`, {
+    method: "DELETE",
     headers: authHeaders(apiKey),
   });
   return await readJson(resp);

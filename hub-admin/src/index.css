@@ -328,6 +328,14 @@ code {
   color: var(--accent);
 }
 
+.tier-badge.playtester {
+  color: var(--success);
+}
+
+.tier-badge.demo {
+  color: var(--warning);
+}
+
 .tier-badge.publish {
   color: var(--muted);
 }

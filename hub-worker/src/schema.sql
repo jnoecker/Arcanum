@@ -12,15 +12,15 @@ CREATE TABLE IF NOT EXISTS users (
   api_key_hash TEXT NOT NULL UNIQUE,
   created_at INTEGER NOT NULL,
   last_publish_at INTEGER,
-  -- Lifetime hub-AI quotas, tied to the api_key_hash. On key rotation
-  -- the *_used counters are reset to 0, giving the legit user a fresh
-  -- allowance while invalidating any leaked copy of the old key.
+  -- Lifetime hub-AI quotas. Counters are decoupled from key rotation;
+  -- admins zero them via POST /admin/users/<id>/reset-usage.
   images_used INTEGER NOT NULL DEFAULT 0,
   images_quota INTEGER NOT NULL DEFAULT 500,
   prompts_used INTEGER NOT NULL DEFAULT 0,
-  prompts_quota INTEGER NOT NULL DEFAULT 5000,
-  -- Tier: 'demo' (self-signup, tiny quotas, no publish),
-  -- 'full' (email-verified, normal quotas, publish),
+  prompts_quota INTEGER NOT NULL DEFAULT 1000,
+  -- Tier: 'demo' (anonymous trial, tiny quotas, FLUX-only, no publish),
+  -- 'full' (email-verified self-signup, moderate quotas, FLUX-only, publish),
+  -- 'playtester' (admin-invited, high quotas, all models, publish),
   -- 'publish' (BYOK user, publish-only, no hub AI).
   tier TEXT NOT NULL DEFAULT 'full',
   -- Email-verified users can publish. Demo users can't until they

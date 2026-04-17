@@ -175,7 +175,9 @@ function TierBadge({ tier }: { tier: HubAccount["tier"] }) {
       ? "border-border-default bg-bg-elevated text-text-muted"
       : tier === "full"
         ? "border-accent/40 bg-accent/20 text-accent"
-        : "border-border-default bg-bg-elevated text-text-secondary";
+        : tier === "playtester"
+          ? "border-status-success/40 bg-status-success/15 text-status-success"
+          : "border-border-default bg-bg-elevated text-text-secondary";
   return (
     <span className={`rounded-full border px-2.5 py-0.5 text-[10px] uppercase tracking-wider ${style}`}>
       {tier}
@@ -284,7 +286,7 @@ function UpgradePanel({
         >
           <p className="text-2xs leading-5 text-text-muted">
             Enter your email — we'll send a 6-digit code to verify it. Once verified, your account is
-            promoted to full (500 images / 5000 prompts) and publishing is enabled.
+            promoted to full (500 images / 1000 prompts, FLUX models) and publishing is enabled.
           </p>
           <label className="flex flex-col gap-1">
             <span className="text-[10px] uppercase tracking-wider text-text-muted">Email</span>

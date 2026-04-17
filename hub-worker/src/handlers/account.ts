@@ -2,6 +2,7 @@ import type { Env } from "../env";
 import type { UserRow, UserTier } from "../db";
 import {
   bumpVerificationAttempts,
+  deleteUser,
   deleteVerificationCode,
   getUserByEmail,
   getUserById,
@@ -24,6 +25,7 @@ import {
 } from "../util";
 import { sendEmail, verificationEmail } from "../email";
 import { verifyTurnstile } from "../turnstile";
+import { deleteWorldFromR2 } from "./admin";
 
 // ─── Account endpoints ───────────────────────────────────────────────
 //
@@ -76,7 +78,23 @@ export async function getAccount(_req: Request, env: Env, user: UserRow): Promis
   );
 }
 
+// ─── DELETE /account ─────────────────────────────────────────────────
+// Self-service account erasure — GDPR right-to-delete. Wipes every
+// world the user owns from R2, then deletes the user row (worlds
+// cascade via FK). After this returns 204 the Bearer token is dead.
+
+export async function deleteAccount(_req: Request, env: Env, user: UserRow): Promise<Response> {
+  const worlds = await listWorldsForUser(env, user.id);
+  for (const world of worlds) {
+    await deleteWorldFromR2(env, world.slug);
+  }
+  await deleteUser(env, user.id);
+  return json({ ok: true, deletedWorlds: worlds.length }, {}, cors);
+}
+
 // ─── POST /account/rotate-key ────────────────────────────────────────
+// Mints a new key and invalidates the old one. Usage counters are
+// preserved — rotation is a security action, not a way to top up.
 
 export async function rotateKey(_req: Request, env: Env, user: UserRow): Promise<Response> {
   const { plain, hash } = await generateApiKey(user.tier);

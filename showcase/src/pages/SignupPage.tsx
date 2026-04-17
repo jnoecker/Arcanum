@@ -31,6 +31,7 @@ export function SignupPage() {
 
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [privacyConsent, setPrivacyConsent] = useState(false);
 
   useEffect(() => {
     fetchHubConfig()
@@ -100,6 +101,16 @@ export function SignupPage() {
           Arcanum Hub hosts AI image generation, LLM prompts, and published world showcases. Pick the
           path that fits — no credit card required for either one.
         </p>
+        <div className="mt-5 rounded border border-[var(--warning)]/40 bg-[var(--warning)]/5 p-4 text-xs leading-6 text-[var(--text)]">
+          <strong className="font-display uppercase tracking-[0.14em] text-[var(--warning)]">
+            Beta preview
+          </strong>
+          <span className="text-text-muted">
+            {" "}— Arcanum Hub is still under active development. Worlds, accounts, and usage counters
+            may be wiped without notice while we iterate. Accounts that exceed posted quotas or clearly
+            abuse the free tiers will be revoked. Treat anything you publish here as impermanent.
+          </span>
+        </div>
 
         {mode === "choose" && (
           <div className="mt-8 grid gap-3 sm:grid-cols-2">
@@ -115,7 +126,7 @@ export function SignupPage() {
             />
             <ChoiceCard
               title="Create an account"
-              description="Verify your email for 500 images, 5000 prompts, and the ability to publish."
+              description="Verify your email for 500 images, 1000 prompts (FLUX models), and the ability to publish."
               cta="Sign up"
               onClick={() => {
                 setError(null);
@@ -126,7 +137,7 @@ export function SignupPage() {
         )}
 
         {mode === "demo" && (
-          <Form onSubmit={doDemo} onBack={() => setMode("choose")} primary="Create demo account" busy={busy} disabled={Boolean(turnstileSiteKey) && !turnstileToken}>
+          <Form onSubmit={doDemo} onBack={() => setMode("choose")} primary="Create demo account" busy={busy} disabled={!privacyConsent || (Boolean(turnstileSiteKey) && !turnstileToken)}>
             <p className="text-xs leading-6 text-text-muted">
               A demo account gets you enough quota to sketch one small world and see how Arcanum feels.
               We'll show you the API key once — keep it somewhere safe.
@@ -143,6 +154,7 @@ export function SignupPage() {
               />
             </Field>
             <TurnstileWidget siteKey={turnstileSiteKey} onToken={setTurnstileToken} onError={setError} />
+            <PrivacyConsent checked={privacyConsent} onChange={setPrivacyConsent} disabled={busy} />
             {error && <p className="text-xs text-status-error">{error}</p>}
           </Form>
         )}
@@ -153,7 +165,7 @@ export function SignupPage() {
             onBack={() => setMode("choose")}
             primary="Send verification code"
             busy={busy}
-            disabled={!email.trim() || !displayName.trim() || (Boolean(turnstileSiteKey) && !turnstileToken)}
+            disabled={!privacyConsent || !email.trim() || !displayName.trim() || (Boolean(turnstileSiteKey) && !turnstileToken)}
           >
             <p className="text-xs leading-6 text-text-muted">
               We'll email a 6-digit code. Enter it on the next screen to finish signup.
@@ -182,6 +194,7 @@ export function SignupPage() {
               />
             </Field>
             <TurnstileWidget siteKey={turnstileSiteKey} onToken={setTurnstileToken} onError={setError} />
+            <PrivacyConsent checked={privacyConsent} onChange={setPrivacyConsent} disabled={busy} />
             {error && <p className="text-xs text-status-error">{error}</p>}
           </Form>
         )}
@@ -253,6 +266,13 @@ export function SignupPage() {
           </div>
         )}
       </main>
+
+      <footer className="border-t border-[var(--border)] px-6 py-6">
+        <div className="mx-auto flex max-w-xl justify-between text-xs text-text-muted">
+          <Link to="/privacy" className="hover:text-text-primary">Privacy policy</Link>
+          <Link to="/" className="hover:text-text-primary">Arcanum Hub</Link>
+        </div>
+      </footer>
     </div>
   );
 }
@@ -294,6 +314,37 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
     <label className="flex flex-col gap-1.5">
       <span className="text-xs uppercase tracking-wider text-text-muted">{label}</span>
       {children}
+    </label>
+  );
+}
+
+function PrivacyConsent({
+  checked,
+  onChange,
+  disabled,
+}: {
+  checked: boolean;
+  onChange: (v: boolean) => void;
+  disabled?: boolean;
+}) {
+  return (
+    <label className="flex items-start gap-2 text-xs leading-5 text-text-muted">
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={(e) => onChange(e.target.checked)}
+        disabled={disabled}
+        className="mt-0.5 accent-accent"
+        required
+      />
+      <span>
+        I've read and agree to the{" "}
+        <Link to="/privacy" target="_blank" className="text-accent underline">
+          privacy policy
+        </Link>
+        . Arcanum Hub stores my display name, email (if provided), and usage counters, and may
+        wipe them during beta development.
+      </span>
     </label>
   );
 }

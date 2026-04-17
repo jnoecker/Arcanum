@@ -1,6 +1,6 @@
 import type { Env } from "./env";
 
-export type UserTier = "full" | "publish";
+export type UserTier = "full" | "publish" | "demo";
 
 export interface UserRow {
   id: string;
@@ -14,6 +14,26 @@ export interface UserRow {
   prompts_used: number;
   prompts_quota: number;
   tier: UserTier;
+  email_verified: number;
+}
+
+// Default lifetime quotas by tier. Demo is deliberately tight — just
+// enough to experience the features end-to-end without costing real
+// money. Full is what email-verified signups get; publish is BYOK.
+export const DEFAULT_QUOTAS: Record<UserTier, { images: number; prompts: number }> = {
+  demo: { images: 10, prompts: 20 },
+  full: { images: 500, prompts: 5000 },
+  publish: { images: 0, prompts: 0 },
+};
+
+export interface VerificationCodeRow {
+  email: string;
+  code_hash: string;
+  display_name: string;
+  existing_user_id: string | null;
+  expires_at: number;
+  attempts: number;
+  created_at: number;
 }
 
 export interface WorldRow {
@@ -62,13 +82,67 @@ export async function createUser(
     email: string | null;
     api_key_hash: string;
     tier: UserTier;
+    email_verified?: boolean;
+    images_quota?: number;
+    prompts_quota?: number;
   },
 ): Promise<void> {
   const now = Date.now();
+  const quotas = DEFAULT_QUOTAS[user.tier];
+  const imagesQuota = user.images_quota ?? quotas.images;
+  const promptsQuota = user.prompts_quota ?? quotas.prompts;
+  const verified = user.email_verified ? 1 : 0;
   await env.DB.prepare(
-    "INSERT INTO users (id, display_name, email, api_key_hash, created_at, tier) VALUES (?, ?, ?, ?, ?, ?)",
+    `INSERT INTO users (id, display_name, email, api_key_hash, created_at, tier,
+       email_verified, images_quota, prompts_quota)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
   )
-    .bind(user.id, user.display_name, user.email, user.api_key_hash, now, user.tier)
+    .bind(
+      user.id,
+      user.display_name,
+      user.email,
+      user.api_key_hash,
+      now,
+      user.tier,
+      verified,
+      imagesQuota,
+      promptsQuota,
+    )
+    .run();
+}
+
+export async function getUserByEmail(env: Env, email: string): Promise<UserRow | null> {
+  return await env.DB.prepare("SELECT * FROM users WHERE email = ?").bind(email).first<UserRow>();
+}
+
+/**
+ * Promote a demo user to full tier. Rotates the API key (zeroing
+ * usage counters), attaches the verified email + display name, and
+ * bumps quotas to full defaults. All-in-one so callers don't have to
+ * juggle half-upgraded states.
+ */
+export async function promoteUserToFull(
+  env: Env,
+  userId: string,
+  email: string,
+  displayName: string,
+  apiKeyHash: string,
+): Promise<void> {
+  const { images, prompts } = DEFAULT_QUOTAS.full;
+  await env.DB.prepare(
+    `UPDATE users
+       SET tier = 'full',
+           email = ?,
+           display_name = ?,
+           email_verified = 1,
+           api_key_hash = ?,
+           images_used = 0,
+           prompts_used = 0,
+           images_quota = ?,
+           prompts_quota = ?
+     WHERE id = ?`,
+  )
+    .bind(email, displayName, apiKeyHash, images, prompts, userId)
     .run();
 }
 
@@ -231,4 +305,82 @@ export async function updateWorldPublish(
 
 export async function deleteWorld(env: Env, slug: string): Promise<void> {
   await env.DB.prepare("DELETE FROM worlds WHERE slug = ?").bind(slug).run();
+}
+
+// ─── Verification codes ──────────────────────────────────────────────
+
+export async function upsertVerificationCode(
+  env: Env,
+  row: {
+    email: string;
+    code_hash: string;
+    display_name: string;
+    existing_user_id: string | null;
+    expires_at: number;
+  },
+): Promise<void> {
+  const now = Date.now();
+  await env.DB.prepare(
+    `INSERT INTO verification_codes
+       (email, code_hash, display_name, existing_user_id, expires_at, attempts, created_at)
+     VALUES (?, ?, ?, ?, ?, 0, ?)
+     ON CONFLICT(email) DO UPDATE SET
+       code_hash = excluded.code_hash,
+       display_name = excluded.display_name,
+       existing_user_id = excluded.existing_user_id,
+       expires_at = excluded.expires_at,
+       attempts = 0,
+       created_at = excluded.created_at`,
+  )
+    .bind(row.email, row.code_hash, row.display_name, row.existing_user_id, row.expires_at, now)
+    .run();
+}
+
+export async function getVerificationCode(
+  env: Env,
+  email: string,
+): Promise<VerificationCodeRow | null> {
+  return await env.DB.prepare("SELECT * FROM verification_codes WHERE email = ?")
+    .bind(email)
+    .first<VerificationCodeRow>();
+}
+
+export async function bumpVerificationAttempts(env: Env, email: string): Promise<void> {
+  await env.DB.prepare(
+    "UPDATE verification_codes SET attempts = attempts + 1 WHERE email = ?",
+  )
+    .bind(email)
+    .run();
+}
+
+export async function deleteVerificationCode(env: Env, email: string): Promise<void> {
+  await env.DB.prepare("DELETE FROM verification_codes WHERE email = ?").bind(email).run();
+}
+
+// ─── Signup rate-limiting ────────────────────────────────────────────
+
+export async function recordSignupAttempt(env: Env, ip: string): Promise<void> {
+  await env.DB.prepare("INSERT INTO signup_attempts (ip, attempted_at) VALUES (?, ?)")
+    .bind(ip, Date.now())
+    .run();
+}
+
+export async function countRecentSignupAttempts(
+  env: Env,
+  ip: string,
+  windowMs: number,
+): Promise<number> {
+  const since = Date.now() - windowMs;
+  const row = await env.DB.prepare(
+    "SELECT COUNT(*) as n FROM signup_attempts WHERE ip = ? AND attempted_at >= ?",
+  )
+    .bind(ip, since)
+    .first<{ n: number }>();
+  return row?.n ?? 0;
+}
+
+/** Prune entries older than retainMs — called opportunistically. */
+export async function pruneOldSignupAttempts(env: Env, retainMs: number): Promise<void> {
+  const cutoff = Date.now() - retainMs;
+  await env.DB.prepare("DELETE FROM signup_attempts WHERE attempted_at < ?").bind(cutoff).run();
 }

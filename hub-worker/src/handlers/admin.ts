@@ -23,6 +23,7 @@ interface AdminUserView {
   id: string;
   displayName: string;
   email: string | null;
+  emailVerified: boolean;
   createdAt: number;
   lastPublishAt: number | null;
   tier: UserTier;
@@ -36,7 +37,7 @@ interface AdminUserView {
 }
 
 function parseTier(raw: unknown): UserTier | null {
-  if (raw === "full" || raw === "publish") return raw;
+  if (raw === "full" || raw === "publish" || raw === "demo") return raw;
   return null;
 }
 
@@ -63,6 +64,7 @@ function toUserView(user: UserRow, worlds: WorldRow[]): AdminUserView {
     id: user.id,
     displayName: user.display_name,
     email: user.email,
+    emailVerified: Boolean(user.email_verified),
     createdAt: user.created_at,
     lastPublishAt: user.last_publish_at,
     tier: user.tier,
@@ -174,7 +176,16 @@ async function adminCreateUser(req: Request, env: Env, c: Cors): Promise<Respons
   const { plain, hash } = await generateApiKey(tier);
   const id = newId();
   try {
-    await createUser(env, { id, display_name: displayName, email, api_key_hash: hash, tier });
+    await createUser(env, {
+      id,
+      display_name: displayName,
+      email,
+      api_key_hash: hash,
+      tier,
+      // Admin-minted users are trusted — no need to make them verify
+      // an email before publishing.
+      email_verified: true,
+    });
   } catch (e) {
     return error(500, `Failed to create user: ${String(e)}`, c);
   }

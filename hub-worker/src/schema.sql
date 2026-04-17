@@ -18,10 +18,39 @@ CREATE TABLE IF NOT EXISTS users (
   images_used INTEGER NOT NULL DEFAULT 0,
   images_quota INTEGER NOT NULL DEFAULT 500,
   prompts_used INTEGER NOT NULL DEFAULT 0,
-  prompts_quota INTEGER NOT NULL DEFAULT 5000
+  prompts_quota INTEGER NOT NULL DEFAULT 5000,
+  -- Tier: 'demo' (self-signup, tiny quotas, no publish),
+  -- 'full' (email-verified, normal quotas, publish),
+  -- 'publish' (BYOK user, publish-only, no hub AI).
+  tier TEXT NOT NULL DEFAULT 'full',
+  -- Email-verified users can publish. Demo users can't until they
+  -- verify an email (which promotes them to tier='full').
+  email_verified INTEGER NOT NULL DEFAULT 0
 );
 
 CREATE INDEX IF NOT EXISTS idx_users_api_key_hash ON users(api_key_hash);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_users_email ON users(email) WHERE email IS NOT NULL;
+
+-- Pending email verifications for self-signup and demo→full upgrades.
+CREATE TABLE IF NOT EXISTS verification_codes (
+  email TEXT PRIMARY KEY,
+  code_hash TEXT NOT NULL,
+  display_name TEXT NOT NULL,
+  existing_user_id TEXT,
+  expires_at INTEGER NOT NULL,
+  attempts INTEGER NOT NULL DEFAULT 0,
+  created_at INTEGER NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_verification_expires ON verification_codes(expires_at);
+
+-- Per-IP rate-limit log for signup endpoints.
+CREATE TABLE IF NOT EXISTS signup_attempts (
+  ip TEXT NOT NULL,
+  attempted_at INTEGER NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_signup_attempts_ip_time ON signup_attempts(ip, attempted_at);
 
 CREATE TABLE IF NOT EXISTS worlds (
   slug TEXT PRIMARY KEY,

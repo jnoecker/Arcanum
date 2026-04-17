@@ -5,6 +5,13 @@ import { handleAdmin, adminCorsHeaders } from "./handlers/admin";
 import { handleAi } from "./handlers/ai";
 import { checkExisting, uploadImage, uploadManifest } from "./handlers/publish";
 import { serveHubIndex, serveImage, serveShowcaseJson } from "./handlers/showcase";
+import { signupDemo, signupRequest, signupVerify } from "./handlers/signup";
+import {
+  getAccount,
+  rotateKey,
+  upgradeRequest,
+  upgradeVerify,
+} from "./handlers/account";
 import { injectOgForWorld } from "./og";
 import { corsHeaders, error, parseHost, preflight, RESERVED_SUBDOMAINS } from "./util";
 
@@ -97,6 +104,16 @@ async function routeApi(req: Request, env: Env, pathname: string): Promise<Respo
     if (req.method === "OPTIONS") return preflight({ origin: "*" });
     const user = await authenticateUser(req, env);
     if (!user) return error(401, "API key required", { origin: "*" });
+    // Publish is gated on email_verified. Demo users haven't verified,
+    // so we reject them with a distinct error code the creator can map
+    // to the "verify your email to publish" toast.
+    if (!user.email_verified || user.tier === "demo") {
+      return error(
+        403,
+        "publish_requires_verification: Verify your email to enable publishing.",
+        { origin: "*" },
+      );
+    }
 
     if (pathname === "/publish/check-existing" && req.method === "POST") {
       return await checkExisting(req, env, user);
@@ -108,6 +125,50 @@ async function routeApi(req: Request, env: Env, pathname: string): Promise<Respo
       return await uploadImage(req, env, user);
     }
     return error(404, "Not found", { origin: "*" });
+  }
+
+  // Signup endpoints — no auth, rate limited + Turnstile gated.
+  if (pathname.startsWith("/signup/")) {
+    if (req.method === "OPTIONS") return preflight({ origin: "*" });
+    if (pathname === "/signup/demo" && req.method === "POST") return await signupDemo(req, env);
+    if (pathname === "/signup/request" && req.method === "POST") return await signupRequest(req, env);
+    if (pathname === "/signup/verify" && req.method === "POST") return await signupVerify(req, env);
+    return error(404, "Not found", { origin: "*" });
+  }
+
+  // Account endpoints — Bearer auth.
+  if (pathname.startsWith("/account")) {
+    if (req.method === "OPTIONS") return preflight({ origin: "*" });
+    const user = await authenticateUser(req, env);
+    if (!user) return error(401, "API key required", { origin: "*" });
+    if (pathname === "/account" && req.method === "GET") return await getAccount(req, env, user);
+    if (pathname === "/account/rotate-key" && req.method === "POST") return await rotateKey(req, env, user);
+    if (pathname === "/account/upgrade/request" && req.method === "POST") {
+      return await upgradeRequest(req, env, user);
+    }
+    if (pathname === "/account/upgrade/verify" && req.method === "POST") {
+      return await upgradeVerify(req, env, user);
+    }
+    return error(404, "Not found", { origin: "*" });
+  }
+
+  // Public config for signup widgets — lets the frontend discover
+  // whether Turnstile is enabled and which site key to render with
+  // without baking it into the bundle at build time.
+  if (pathname === "/config") {
+    if (req.method === "OPTIONS") return preflight({ origin: "*" });
+    if (req.method !== "GET") return error(405, "Method not allowed", { origin: "*" });
+    return new Response(
+      JSON.stringify({ turnstileSiteKey: env.TURNSTILE_SITE_KEY ?? "" }),
+      {
+        status: 200,
+        headers: {
+          "Content-Type": "application/json",
+          "Cache-Control": "public, max-age=300",
+          "Access-Control-Allow-Origin": "*",
+        },
+      },
+    );
   }
 
   // AI generation endpoints (hub-proxied) — same Bearer auth as publish.

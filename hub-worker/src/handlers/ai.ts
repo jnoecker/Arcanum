@@ -66,10 +66,11 @@ export async function handleAi(
   if (req.method === "OPTIONS") return preflight(CORS);
 
   // Tier gate. Publish-only users have valid credentials for /publish/*
-  // but cannot spend AI budget. D1 is the authoritative tier — the
-  // `hubk_pub_` prefix on their key is just a UX hint the creator
-  // reads to disable the toggle. Never trust the prefix; check here.
-  if (user.tier !== "full") {
+  // but cannot spend AI budget. Demo and full tiers can — demo just
+  // has much tighter quotas via DEFAULT_QUOTAS at signup time. D1 is
+  // the authoritative tier; the `hubk_*_` prefix on the key is just a
+  // UX hint the creator reads. Never trust the prefix; check here.
+  if (user.tier === "publish") {
     return json(
       {
         error: "tier_forbidden",

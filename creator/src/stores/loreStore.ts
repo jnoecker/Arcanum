@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { WorldLore, Article, ArticleTemplate, ColorLabel, LoreMap, MapPin, CalendarSystem, TimelineEvent, LoreDocument, TemplateOverrides, ShowcaseSettings, CustomTemplateDefinition, CustomSceneTemplate, ArtStyle, ZonePlan } from "@/types/lore";
+import type { WorldLore, Article, ArticleTemplate, ColorLabel, LoreMap, MapPin, CalendarSystem, TimelineEvent, LoreDocument, TemplateOverrides, ShowcaseSettings, CustomTemplateDefinition, CustomSceneTemplate, ArtStyle, ZonePlan, ChatMessage } from "@/types/lore";
 import { snapshot as histSnapshot, undo as histUndo, redo as histRedo } from "@/lib/historyStack";
 import { HISTORY_DEPTHS } from "@/lib/historyDepths";
 
@@ -132,6 +132,10 @@ interface LoreStore extends LoreState {
   updateArtStyle: (id: string, patch: Partial<ArtStyle>) => void;
   deleteArtStyle: (id: string) => void;
   setActiveArtStyle: (id: string | null) => void;
+
+  // Lore chat assistant
+  appendChatMessage: (message: ChatMessage) => void;
+  clearChatSession: () => void;
 
   // Undo/redo
   undoLore: () => void;
@@ -897,6 +901,32 @@ export const useLoreStore = create<LoreStore>((set, get) => ({
         lore: { ...s.lore, activeArtStyleId: id ?? undefined },
         dirty: true,
       };
+    }),
+
+  // ─── Lore chat assistant ─────────────────────────────────────────
+  // Chat messages are persisted with lore but excluded from undo/redo —
+  // conversation turns aren't content edits.
+
+  appendChatMessage: (message) =>
+    set((s) => {
+      if (!s.lore) return s;
+      const now = new Date().toISOString();
+      const prev = s.lore.chatSession?.messages ?? [];
+      return {
+        lore: {
+          ...s.lore,
+          chatSession: { messages: [...prev, message], updatedAt: now },
+        },
+        dirty: true,
+      };
+    }),
+
+  clearChatSession: () =>
+    set((s) => {
+      if (!s.lore) return s;
+      if (!s.lore.chatSession) return s;
+      const { chatSession: _drop, ...rest } = s.lore;
+      return { lore: rest, dirty: true };
     }),
 
   // ─── Undo / Redo ─────────────────────────────────────────────────

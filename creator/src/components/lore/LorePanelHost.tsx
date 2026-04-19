@@ -5,6 +5,7 @@ import { useProjectStore } from "@/stores/projectStore";
 import { useToastStore } from "@/stores/toastStore";
 import { saveLore } from "@/lib/lorePersistence";
 import { PANEL_MAP } from "@/lib/panelRegistry";
+import { AI_ENABLED } from "@/lib/featureFlags";
 import { Spinner } from "@/components/ui/FormWidgets";
 import { UndoRedoButtons } from "@/components/ui/UndoRedoButtons";
 import configBg from "@/assets/config-bg.png";
@@ -57,6 +58,7 @@ export function LorePanelHost({ panelId }: { panelId: string }) {
   const lore = useLoreStore((s) => s.lore);
   const dirty = useLoreStore((s) => s.dirty);
   const project = useProjectStore((s) => s.project);
+  const setLoreChatOpen = useProjectStore((s) => s.setLoreChatOpen);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
 
@@ -153,6 +155,20 @@ export function LorePanelHost({ panelId }: { panelId: string }) {
                 useToastStore.getState().show("Change restored");
               }}
             />
+            {AI_ENABLED && (
+              <button
+                type="button"
+                onClick={() => setLoreChatOpen(true)}
+                aria-label="Ask your world (Ctrl+/)"
+                title="Ask your world (Ctrl+/)"
+                className="focus-ring flex items-center gap-1.5 rounded-full border border-[var(--chrome-stroke)] bg-bg-primary/80 px-3 py-1 text-2xs font-medium text-accent shadow-md transition hover:bg-bg-primary"
+              >
+                <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M3 4h10a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1H7l-3 2.5V12H3a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1z" />
+                </svg>
+                Ask
+              </button>
+            )}
             {(dirty || saving || saveError) && (
               <>
                 {saveError && <span role="alert" className="text-2xs text-status-error">Save failed</span>}

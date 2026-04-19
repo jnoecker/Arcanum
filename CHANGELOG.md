@@ -8,6 +8,11 @@ This project uses ad-hoc semantic versioning — minor bumps for feature work, p
 
 _No unreleased changes at this time._
 
+## [3.5.0] — 2026-04-18
+
+### Added
+- **Lore chat assistant ("Ask your world")** — a floating panel that answers natural-language questions about the current world by retrieving articles and relations and synthesising with the existing LLM dispatcher. Citations render as inline clickable links that open the referenced article. Reachable via Ctrl+/, the command palette, and a button in the lore toolbar. Conversation history persists per-world in `lore.yaml`.
+
 ## [2.5.0] — 2026-04-14
 
 ### Added

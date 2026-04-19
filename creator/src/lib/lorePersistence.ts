@@ -2,7 +2,7 @@ import { exists, readTextFile, writeTextFile } from "@tauri-apps/plugin-fs";
 import { parseDocument, stringify } from "yaml";
 import { useLoreStore } from "@/stores/loreStore";
 import { DEFAULT_WORLD_LORE } from "@/types/lore";
-import type { WorldLore, WorldLoreV1, Article, ArticleRelation, ArticleTemplate, LoreDocument, TemplateOverrides, ShowcaseSettings, CustomTemplateDefinition, CustomSceneTemplate, ArtStyle, ZonePlan } from "@/types/lore";
+import type { WorldLore, WorldLoreV1, Article, ArticleRelation, ArticleTemplate, LoreDocument, TemplateOverrides, ShowcaseSettings, CustomTemplateDefinition, CustomSceneTemplate, ArtStyle, ZonePlan, ChatSession } from "@/types/lore";
 import type { Project } from "@/types/project";
 import { CODEX_CATEGORY_TO_TEMPLATE } from "@/lib/loreTemplates";
 import { YAML_OPTS } from "@/lib/yamlOpts";
@@ -42,6 +42,9 @@ export async function loadLore(project: Project): Promise<WorldLore> {
         artStyles: Array.isArray(raw.artStyles) ? (raw.artStyles as ArtStyle[]) : undefined,
         activeArtStyleId: typeof raw.activeArtStyleId === "string" ? raw.activeArtStyleId : undefined,
         zonePlans: Array.isArray(raw.zonePlans) ? (raw.zonePlans as ZonePlan[]) : undefined,
+        chatSession: raw.chatSession && typeof raw.chatSession === "object" && Array.isArray((raw.chatSession as { messages?: unknown }).messages)
+          ? (raw.chatSession as ChatSession)
+          : undefined,
       };
     }
 

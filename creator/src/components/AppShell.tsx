@@ -21,6 +21,7 @@ const AssetGallery = lazy(() => import("./AssetGallery").then((m) => ({ default:
 const MudImportWizard = lazy(() => import("./MudImportWizard").then((m) => ({ default: m.MudImportWizard })));
 const SettingsOverlay = lazy(() => import("./settings/SettingsOverlay").then((m) => ({ default: m.SettingsOverlay })));
 const GettingStartedPanel = lazy(() => import("./GettingStartedPanel"));
+const LoreChatPanel = lazy(() => import("./lore/LoreChatPanel").then((m) => ({ default: m.LoreChatPanel })));
 
 const FILIGREE_MASK: React.CSSProperties = {
   maskImage: "linear-gradient(to bottom, transparent 0, black 18px, black 100%)",
@@ -43,6 +44,8 @@ export function AppShell({ onNewProject }: AppShellProps) {
   const openWorldMap = useProjectStore((s) => s.openWorldMap);
   const settingsOpen = useProjectStore((s) => s.settingsOpen);
   const setSettingsOpen = useProjectStore((s) => s.setSettingsOpen);
+  const loreChatOpen = useProjectStore((s) => s.loreChatOpen);
+  const setLoreChatOpen = useProjectStore((s) => s.setLoreChatOpen);
   const [showPalette, setShowPalette] = useState(false);
   const [showGuide, setShowGuide] = useState(false);
   const guideAutoShown = useRef(false);
@@ -81,6 +84,9 @@ export function AppShell({ onNewProject }: AppShellProps) {
       } else if ((e.ctrlKey || e.metaKey) && e.key === ",") {
         e.preventDefault();
         setSettingsOpen(true);
+      } else if ((e.ctrlKey || e.metaKey) && e.key === "/") {
+        e.preventDefault();
+        setLoreChatOpen(!useProjectStore.getState().loreChatOpen);
       } else if (e.key === "Escape" && mapView && typeof mapView === "object") {
         // Escape from an island detail returns to the world map.
         openWorldMap();
@@ -88,7 +94,7 @@ export function AppShell({ onNewProject }: AppShellProps) {
     }
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [mapView, openWorldMap, setSettingsOpen]);
+  }, [mapView, openWorldMap, setSettingsOpen, setLoreChatOpen]);
 
   return (
     <div className="relative flex h-screen h-dvh flex-col overflow-hidden bg-bg-abyss">
@@ -117,6 +123,7 @@ export function AppShell({ onNewProject }: AppShellProps) {
         {showMudImport && <MudImportWizard onClose={() => setShowMudImport(false)} />}
         {settingsOpen && <SettingsOverlay onClose={() => setSettingsOpen(false)} />}
         {showGuide && <GettingStartedPanel onClose={() => setShowGuide(false)} />}
+        {loreChatOpen && <LoreChatPanel onClose={() => setLoreChatOpen(false)} />}
       </Suspense>
       <Toast />
       <FloatingSaveButton />

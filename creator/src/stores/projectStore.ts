@@ -38,6 +38,8 @@ interface ProjectStore {
   mapView: MapView;
   /** True when the unified Settings modal is open. */
   settingsOpen: boolean;
+  /** True when the lore chat assistant panel is open. */
+  loreChatOpen: boolean;
 
   setProject: (project: Project) => void;
   closeProject: () => void;
@@ -62,6 +64,7 @@ interface ProjectStore {
   /** Close the map overlay and return to the active tab. */
   closeMap: () => void;
   setSettingsOpen: (open: boolean) => void;
+  setLoreChatOpen: (open: boolean) => void;
 }
 
 export const useProjectStore = create<ProjectStore>((set, get) => ({
@@ -75,6 +78,7 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
   showImportZone: false,
   mapView: "world",
   settingsOpen: false,
+  loreChatOpen: false,
 
   setProject: (project) => {
     set({
@@ -141,6 +145,7 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
   openIsland: (island) => set({ mapView: { island } }),
   closeMap: () => set({ mapView: null }),
   setSettingsOpen: (settingsOpen) => set({ settingsOpen }),
+  setLoreChatOpen: (loreChatOpen) => set({ loreChatOpen }),
 }));
 
 // ─── Debounced persistence ─────────────────────────────────────────

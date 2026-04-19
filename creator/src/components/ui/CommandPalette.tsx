@@ -67,6 +67,7 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
   const setShowImportZone = useProjectStore((s) => s.setShowImportZone);
   const openGenerator = useAssetStore((s) => s.openGenerator);
   const openGallery = useAssetStore((s) => s.openGallery);
+  const setLoreChatOpen = useProjectStore((s) => s.setLoreChatOpen);
   const selectArticle = useLoreStore((s) => s.selectArticle);
   const articles = useLoreStore(selectArticles);
   const zones = useZoneStore((s) => s.zones);
@@ -106,6 +107,16 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
       subtitle: "Open the asset gallery",
       action: () => openGallery(),
     });
+    if (AI_ENABLED) {
+      result.push({
+        id: "action:ask-your-world",
+        type: "action",
+        title: "Ask your world",
+        subtitle: "Open the lore chat assistant (Ctrl+/)",
+        searchText: "chat archivist lore question",
+        action: () => setLoreChatOpen(true),
+      });
+    }
 
     // Panels
     for (const panel of ALL_PANELS) {
@@ -245,7 +256,7 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
     }
 
     return result;
-  }, [articles, zones, openTab, navigateTo, selectArticle, setShowMudImport, setShowImportZone, openGenerator, openGallery]);
+  }, [articles, zones, openTab, navigateTo, selectArticle, setShowMudImport, setShowImportZone, openGenerator, openGallery, setLoreChatOpen]);
 
   // Filter. With no query, hide entity results so the resting palette stays
   // focused on navigation. Once a query is present, rank by match quality so

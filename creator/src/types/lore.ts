@@ -251,6 +251,24 @@ export interface ArtStyle {
   updatedAt: string;
 }
 
+// ─── Lore chat assistant ───────────────────────────────────────────
+
+export interface ChatMessage {
+  id: string;
+  role: "user" | "assistant";
+  content: string;
+  createdAt: string;
+  /** Article IDs included in the retrieval context for this turn. */
+  articlesReferenced?: string[];
+  /** True when the assistant reply was an error, not a lore answer. */
+  error?: boolean;
+}
+
+export interface ChatSession {
+  messages: ChatMessage[];
+  updatedAt: string;
+}
+
 // ─── Top-level lore container ──────────────────────────────────────
 
 export interface WorldLore {
@@ -268,6 +286,7 @@ export interface WorldLore {
   artStyles?: ArtStyle[];
   activeArtStyleId?: string;
   zonePlans?: ZonePlan[];
+  chatSession?: ChatSession;
 }
 
 export const DEFAULT_WORLD_LORE: WorldLore = {

@@ -58,6 +58,71 @@ describe("buildLoreChatPrompt", () => {
     expect(articlesUsed).not.toContain("f0");
   });
 
+  it("expands via @mention backlinks so facts on other articles surface", () => {
+    const many: Article[] = [];
+    for (let i = 0; i < 45; i++) {
+      many.push(mkArticle({ id: `f${i}`, title: `Filler ${i}`, content: "nothing relevant" }));
+    }
+    // Sylflorae article has no mention of its creator; that fact lives on Astriel's page.
+    many.push(
+      mkArticle({
+        id: "sylflorae",
+        title: "Sylflorae",
+        content: "Ancient forest-folk of the deep glens.",
+      }),
+    );
+    // Astriel's content @mentions Sylflorae via a TipTap mention node.
+    const astrielContent = JSON.stringify({
+      type: "doc",
+      content: [
+        {
+          type: "paragraph",
+          content: [
+            { type: "text", text: "Astriel shaped the " },
+            { type: "mention", attrs: { id: "sylflorae", label: "Sylflorae" } },
+            { type: "text", text: " in the first age." },
+          ],
+        },
+      ],
+    });
+    many.push(
+      mkArticle({ id: "astriel", title: "Astriel", content: astrielContent }),
+    );
+    const lore = mkLore(many);
+
+    const { articlesUsed } = buildLoreChatPrompt(lore, "Who created the Sylflorae?");
+    expect(articlesUsed).toContain("sylflorae");
+    // Backlink expansion pulls Astriel in even though the query doesn't name them.
+    expect(articlesUsed).toContain("astriel");
+  });
+
+  it("expands via forward @mentions from a primary match", () => {
+    const many: Article[] = [];
+    for (let i = 0; i < 45; i++) {
+      many.push(mkArticle({ id: `f${i}`, title: `Filler ${i}`, content: "nothing relevant" }));
+    }
+    const hostContent = JSON.stringify({
+      type: "doc",
+      content: [
+        {
+          type: "paragraph",
+          content: [
+            { type: "text", text: "The scribe references " },
+            { type: "mention", attrs: { id: "artifact", label: "Codex" } },
+            { type: "text", text: "." },
+          ],
+        },
+      ],
+    });
+    many.push(mkArticle({ id: "scribe", title: "Scribe of the Veil", content: hostContent }));
+    many.push(mkArticle({ id: "artifact", title: "Codex", content: "An old book." }));
+    const lore = mkLore(many);
+
+    const { articlesUsed } = buildLoreChatPrompt(lore, "tell me about the scribe");
+    expect(articlesUsed).toContain("scribe");
+    expect(articlesUsed).toContain("artifact");
+  });
+
   it("embeds history and new question into user prompt", () => {
     const lore = mkLore([mkArticle({ id: "a", title: "Alpha" })]);
     const { userPrompt } = buildLoreChatPrompt(

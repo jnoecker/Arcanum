@@ -1,5 +1,5 @@
 import type { Article, WorldLore } from "@/types/lore";
-import { tiptapToPlainText } from "./loreRelations";
+import { extractMentions, tiptapToPlainText } from "./loreRelations";
 
 export interface LoreChatTurn {
   role: "user" | "assistant";
@@ -94,6 +94,37 @@ function selectArticlesSmallWorld(
   return Object.values(articles);
 }
 
+/**
+ * Build a map from articleId → set of article IDs that mention it via @mentions
+ * in their TipTap content. Used to expand retrieval so that facts living on
+ * a *different* article (e.g. "Astriel created the Sylflorae" on Astriel's
+ * page) still surface when the question names the mentioned subject.
+ */
+function buildMentionIndex(
+  articles: Record<string, Article>,
+): { forward: Map<string, Set<string>>; backward: Map<string, Set<string>> } {
+  const forward = new Map<string, Set<string>>();
+  const backward = new Map<string, Set<string>>();
+  for (const a of Object.values(articles)) {
+    const mentions = extractMentions(a.content ?? "");
+    if (mentions.length === 0) continue;
+    const outgoing = new Set<string>();
+    for (const m of mentions) {
+      if (!articles[m.targetId]) continue;
+      if (m.targetId === a.id) continue;
+      outgoing.add(m.targetId);
+      let back = backward.get(m.targetId);
+      if (!back) {
+        back = new Set<string>();
+        backward.set(m.targetId, back);
+      }
+      back.add(a.id);
+    }
+    if (outgoing.size > 0) forward.set(a.id, outgoing);
+  }
+  return { forward, backward };
+}
+
 function selectArticlesLargeWorld(
   articles: Record<string, Article>,
   question: string,
@@ -130,6 +161,7 @@ function selectArticlesLargeWorld(
   }
   scored.sort((a, b) => b.score - a.score);
 
+  const { forward, backward } = buildMentionIndex(articles);
   const primary = scored.slice(0, PRIMARY_MATCH_CAP).map((s) => s.article);
   const expanded = new Map<string, Article>();
   for (const a of primary) {
@@ -140,6 +172,20 @@ function selectArticlesLargeWorld(
     for (const r of a.relations ?? []) {
       const target = articles[r.targetId];
       if (target) expanded.set(target.id, target);
+    }
+    const outgoing = forward.get(a.id);
+    if (outgoing) {
+      for (const id of outgoing) {
+        const target = articles[id];
+        if (target) expanded.set(id, target);
+      }
+    }
+    const incoming = backward.get(a.id);
+    if (incoming) {
+      for (const id of incoming) {
+        const source = articles[id];
+        if (source) expanded.set(id, source);
+      }
     }
   }
   return Array.from(expanded.values()).slice(0, MAX_SELECTED_ARTICLES);

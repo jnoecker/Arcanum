@@ -21,6 +21,7 @@ import { ParameterSection } from "./ParameterSection";
 import { MetricSectionCards } from "./MetricSectionCards";
 import { ApplyFooterBar } from "./ApplyFooterBar";
 import { HealthCheckBanner } from "./HealthCheckBanner";
+import { PacingPreview } from "./PacingPreview";
 import { ChartRow } from "./charts/ChartRow";
 import { SimulationLab } from "./simulations/SimulationLab";
 import { ActionButton, Spinner } from "@/components/ui/FormWidgets";
@@ -283,6 +284,11 @@ export function TuningWizard() {
           presetMetrics={activePresetMetrics}
           diffCounts={sectionDiffCounts}
         />
+      )}
+
+      {/* Pacing preview — surfaces over/under-tuned XP curves before apply */}
+      {selectedPresetId && presetConfig && (
+        <PacingPreview presetConfig={presetConfig} presetId={selectedPresetId} />
       )}
 
       {/* Chart visualizations (VIZ-01, VIZ-02, VIZ-03) */}

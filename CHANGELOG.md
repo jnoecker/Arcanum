@@ -6,6 +6,10 @@ This project uses ad-hoc semantic versioning — minor bumps for feature work, p
 
 ## [Unreleased]
 
+_No unreleased changes at this time._
+
+## [3.6.0] — 2026-04-21
+
 ### Changed
 - **GPT Image bumped from 1.5 → 2** (`openai:gpt-image@2`). Runware v2's `providerSettings.openai` dropped the `background` field, so transparent-background requests at the provider level are gone — client-side bg-removal still handles transparency. Per-image pricing is now token-based (see Runware docs). Legacy `openai:4@1` and `gpt-image-1` model IDs in user/project settings are transparently rewritten to the new ID.
 

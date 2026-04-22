@@ -8,6 +8,12 @@ This project uses ad-hoc semantic versioning — minor bumps for feature work, p
 
 _No unreleased changes at this time._
 
+## [3.8.0] — 2026-04-22
+
+### Added
+- **Achievement-gated exits** — `ExitValue` supports optional `requiresAchievement` and `lockedMessage` fields. The exit editor panel gains an "Achievement gate" section alongside the door editor, with a select populated from `config.achievementDefs`. `validateZone` warns when an exit references an undefined achievement. Server-side enforcement is not included here.
+- **Diminishing XP returns** — `progression.xp.diminishing` block (`{ enabled, thresholds: [{ levelsBelow, multiplier }] }`) on `application.yaml`. The Progression config panel gets a new "Diminishing Returns" section with an enable toggle and a thresholds editor. Existing worlds without the block parse as `undefined` and behave as before. Server-side enforcement is not included here.
+
 ## [3.7.0] — 2026-04-21
 
 ### Fixed

@@ -448,7 +448,7 @@ async fn save_runtime_sync_state(
         let _ = tokio::fs::create_dir_all(parent).await;
     }
     if let Ok(bytes) = serde_json::to_vec_pretty(state) {
-        let _ = tokio::fs::write(&path, bytes).await;
+        let _ = crate::fs_utils::atomic_write_bytes(&path, &bytes, "runtime sync state").await;
     }
 }
 

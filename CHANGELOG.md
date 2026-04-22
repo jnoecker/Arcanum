@@ -8,6 +8,11 @@ This project uses ad-hoc semantic versioning — minor bumps for feature work, p
 
 _No unreleased changes at this time._
 
+## [3.7.0] — 2026-04-21
+
+### Fixed
+- **Atomic JSON writes** — the asset manifest, user/project settings, admin config, vibes, arcanum meta, and the R2 runtime sync state are now written via a same-directory temp file + atomic rename. A crash, force-quit, or power loss during a write can no longer truncate these files. Resolves intermittent "Failed to parse manifest: EOF while parsing an object" errors that blocked publish flows.
+
 ## [3.6.0] — 2026-04-21
 
 ### Changed

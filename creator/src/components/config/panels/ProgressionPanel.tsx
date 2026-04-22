@@ -1,9 +1,11 @@
 import type { ConfigPanelProps, AppConfig } from "./types";
+import type { DiminishingXpConfig, DiminishingXpThreshold } from "@/types/config";
 import {
   Section,
   FieldRow,
   NumberInput,
   CheckboxInput,
+  IconButton,
 } from "@/components/ui/FormWidgets";
 
 export function ProgressionPanel({ config, onChange }: ConfigPanelProps) {
@@ -83,6 +85,16 @@ export function ProgressionPanel({ config, onChange }: ConfigPanelProps) {
       </Section>
 
       <Section
+        title="Diminishing Returns"
+        description="Scales down kill XP when a player over-levels a mob, so high-level characters can't farm trash for easy XP. Each threshold applies when the player is at least `levelsBelow` levels above the mob; the largest matching threshold wins."
+      >
+        <DiminishingReturnsEditor
+          value={p.xp.diminishing}
+          onChange={(next) => patchProg({ xp: { ...p.xp, diminishing: next } })}
+        />
+      </Section>
+
+      <Section
         title="Level-Up Rewards"
         description="What players gain each time they level up. HP and Mana per level stack with the values defined in the class designer, while the base values set the starting pool at level 1."
       >
@@ -152,5 +164,110 @@ export function ProgressionPanel({ config, onChange }: ConfigPanelProps) {
         </div>
       </Section>
     </>
+  );
+}
+
+function DiminishingReturnsEditor({
+  value,
+  onChange,
+}: {
+  value: DiminishingXpConfig | undefined;
+  onChange: (next: DiminishingXpConfig | undefined) => void;
+}) {
+  const enabled = !!value?.enabled;
+  const thresholds = value?.thresholds ?? [];
+
+  const setEnabled = (on: boolean) => {
+    if (!on && thresholds.length === 0) {
+      onChange(undefined);
+    } else {
+      onChange({ enabled: on, thresholds });
+    }
+  };
+
+  const patchThresholds = (next: DiminishingXpThreshold[]) => {
+    onChange({ enabled, thresholds: next });
+  };
+
+  const addThreshold = () => {
+    const last = thresholds[thresholds.length - 1];
+    const nextLevels = last ? last.levelsBelow + 5 : 5;
+    const nextMultiplier = last ? Math.max(0, last.multiplier / 2) : 0.5;
+    patchThresholds([
+      ...thresholds,
+      { levelsBelow: nextLevels, multiplier: Number(nextMultiplier.toFixed(2)) },
+    ]);
+  };
+
+  const updateThreshold = (index: number, patch: Partial<DiminishingXpThreshold>) => {
+    patchThresholds(
+      thresholds.map((t, i) => (i === index ? { ...t, ...patch } : t)),
+    );
+  };
+
+  const removeThreshold = (index: number) => {
+    patchThresholds(thresholds.filter((_, i) => i !== index));
+  };
+
+  return (
+    <div className="flex flex-col gap-2">
+      <CheckboxInput
+        checked={enabled}
+        onCommit={setEnabled}
+        label="Enable diminishing returns"
+      />
+      {enabled && (
+        <div className="flex flex-col gap-1.5">
+          {thresholds.length === 0 ? (
+            <p className="text-2xs text-text-muted">
+              No thresholds yet. Add one below — e.g. <code>levelsBelow: 5, multiplier: 0.5</code> halves XP once the player is 5+ levels over the mob.
+            </p>
+          ) : (
+            <ul className="flex flex-col gap-1.5">
+              {thresholds.map((threshold, i) => (
+                <li
+                  key={i}
+                  className="flex items-center gap-2 rounded border border-border-muted bg-bg-tertiary/35 px-2 py-1.5"
+                >
+                  <label className="flex min-w-0 flex-1 items-center gap-1.5 text-2xs text-text-muted">
+                    <span className="shrink-0">Levels below</span>
+                    <NumberInput
+                      value={threshold.levelsBelow}
+                      onCommit={(v) => updateThreshold(i, { levelsBelow: v ?? 0 })}
+                      min={0}
+                    />
+                  </label>
+                  <label className="flex min-w-0 flex-1 items-center gap-1.5 text-2xs text-text-muted">
+                    <span className="shrink-0">Multiplier</span>
+                    <NumberInput
+                      value={threshold.multiplier}
+                      onCommit={(v) => updateThreshold(i, { multiplier: v ?? 1 })}
+                      min={0}
+                      step={0.05}
+                    />
+                  </label>
+                  <IconButton
+                    onClick={() => removeThreshold(i)}
+                    title="Remove threshold"
+                    aria-label="Remove threshold"
+                    size="sm"
+                    danger
+                  >
+                    ×
+                  </IconButton>
+                </li>
+              ))}
+            </ul>
+          )}
+          <button
+            type="button"
+            onClick={addThreshold}
+            className="self-start rounded border border-accent/30 px-2 py-1 text-2xs text-accent transition-colors hover:bg-accent/10"
+          >
+            + Add threshold
+          </button>
+        </div>
+      )}
+    </div>
   );
 }

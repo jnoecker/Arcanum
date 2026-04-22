@@ -166,12 +166,27 @@ export interface MobActionDelayConfig {
 
 // ─── Progression ────────────────────────────────────────────────────
 
+export interface DiminishingXpThreshold {
+  /** Minimum level difference (player - mob) for this threshold to apply. */
+  levelsBelow: number;
+  /** Multiplier applied to the mob's kill XP when this threshold wins. */
+  multiplier: number;
+}
+
+export interface DiminishingXpConfig {
+  enabled: boolean;
+  /** Ordered lookup — the largest matching `levelsBelow` wins. */
+  thresholds: DiminishingXpThreshold[];
+}
+
 export interface XpCurveConfig {
   baseXp: number;
   exponent: number;
   linearXp: number;
   multiplier: number;
   defaultKillXp: number;
+  /** Optional diminishing-returns curve when a player over-levels a mob. */
+  diminishing?: DiminishingXpConfig;
 }
 
 export interface LevelRewardsConfig {

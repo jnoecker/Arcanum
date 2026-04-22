@@ -516,6 +516,25 @@ function parseMobActionDelayConfig(raw: unknown): AppConfig["mobActionDelay"] {
   };
 }
 
+function parseDiminishingXp(raw: unknown): AppConfig["progression"]["xp"]["diminishing"] {
+  if (raw == null) return undefined;
+  const s = (raw ?? {}) as Record<string, unknown>;
+  const rawThresholds = Array.isArray(s.thresholds) ? s.thresholds : [];
+  const thresholds = rawThresholds
+    .map((t) => {
+      const row = (t ?? {}) as Record<string, unknown>;
+      return {
+        levelsBelow: asNumber(row.levelsBelow, 0),
+        multiplier: asNumber(row.multiplier, 1.0),
+      };
+    })
+    .filter((t) => Number.isFinite(t.levelsBelow) && Number.isFinite(t.multiplier));
+  return {
+    enabled: asBool(s.enabled, false),
+    thresholds,
+  };
+}
+
 function parseProgressionConfig(raw: unknown): AppConfig["progression"] {
   const s = (raw ?? {}) as Record<string, unknown>;
   const xp = (s.xp ?? {}) as Record<string, unknown>;
@@ -528,6 +547,7 @@ function parseProgressionConfig(raw: unknown): AppConfig["progression"] {
       linearXp: asNumber(xp.linearXp, 0),
       multiplier: asNumber(xp.multiplier, 1.0),
       defaultKillXp: asNumber(xp.defaultKillXp, 50),
+      diminishing: parseDiminishingXp(xp.diminishing),
     },
     rewards: {
       hpPerLevel: asNumber(rewards.hpPerLevel, 2),

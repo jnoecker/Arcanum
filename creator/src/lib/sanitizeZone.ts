@@ -683,6 +683,21 @@ function cleanOutput(world: WorldFile): WorldFile {
   if (world.terrain) result.terrain = world.terrain;
   if (world.graphical) result.graphical = true;
   if (world.pvpEnabled) result.pvpEnabled = true;
+  if (
+    world.levelBand &&
+    Number.isFinite(world.levelBand.min) &&
+    Number.isFinite(world.levelBand.max) &&
+    world.levelBand.max >= world.levelBand.min
+  ) {
+    result.levelBand = { min: world.levelBand.min, max: world.levelBand.max };
+  }
+  if (
+    world.difficultyHint === "casual" ||
+    world.difficultyHint === "standard" ||
+    world.difficultyHint === "challenging"
+  ) {
+    result.difficultyHint = world.difficultyHint;
+  }
   if (world.faction?.trim()) result.faction = world.faction.trim();
   if (world.image) {
     // Strip zoneMap — it's Arcanum-only; the MUD server's ZoneImageDefaults

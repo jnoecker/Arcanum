@@ -10,6 +10,10 @@ export interface WorldFile {
   terrain?: string;
   graphical?: boolean;
   pvpEnabled?: boolean;
+  /** Intended level range for this zone. Drives the Rebalance Zone feature. */
+  levelBand?: { min: number; max: number };
+  /** Intended difficulty profile — informs rebalance stat targets. */
+  difficultyHint?: "casual" | "standard" | "challenging";
   /** Controlling faction ID (references FactionConfig.definitions). Drives "hostile territory" reactions. */
   faction?: string;
   puzzles?: Record<string, PuzzleFile>;

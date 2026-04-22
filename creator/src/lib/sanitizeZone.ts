@@ -145,7 +145,16 @@ function normalizeRoomOutput(room: RoomFile): RoomFile {
         exits[dir] = exit;
       } else {
         const door = normalizeDoorFile(exit.door);
-        exits[dir] = door ? { to: exit.to, door } : exit.to;
+        const gated = !!exit.requiresAchievement;
+        if (!door && !gated) {
+          exits[dir] = exit.to;
+        } else {
+          const out: ExitValue = { to: exit.to };
+          if (door) out.door = door;
+          if (exit.requiresAchievement) out.requiresAchievement = exit.requiresAchievement;
+          if (exit.lockedMessage) out.lockedMessage = exit.lockedMessage;
+          exits[dir] = out;
+        }
       }
     }
     next = { ...next, exits };

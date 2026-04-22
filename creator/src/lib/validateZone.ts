@@ -293,6 +293,7 @@ export function validateZone(
   equipmentSlots?: Record<string, EquipmentSlotDefinition>,
   validClasses?: ReadonlySet<string>,
   knownFactions?: ReadonlySet<string>,
+  knownAchievements?: ReadonlySet<string>,
 ): ValidationIssue[] {
   const issues: ValidationIssue[] = [];
   const roomIds = new Set(Object.keys(world.rooms));
@@ -334,6 +335,14 @@ export function validateZone(
       }
       if (typeof exit !== "string") {
         validateDoor(issues, entity, `Exit "${dir}" door`, exit.door, itemIds);
+        if (exit.requiresAchievement && knownAchievements && !knownAchievements.has(exit.requiresAchievement)) {
+          addIssue(
+            issues,
+            "warning",
+            entity,
+            `Exit "${dir}" requires achievement "${exit.requiresAchievement}" which is not defined in config`,
+          );
+        }
       }
     }
 
@@ -568,10 +577,11 @@ export function validateAllZones(
   equipmentSlots?: Record<string, EquipmentSlotDefinition>,
   validClasses?: ReadonlySet<string>,
   knownFactions?: ReadonlySet<string>,
+  knownAchievements?: ReadonlySet<string>,
 ): Map<string, ValidationIssue[]> {
   const results = new Map<string, ValidationIssue[]>();
   for (const [zoneId, zone] of zones) {
-    const issues = validateZone(zone.data, equipmentSlots, validClasses, knownFactions);
+    const issues = validateZone(zone.data, equipmentSlots, validClasses, knownFactions, knownAchievements);
     if (issues.length > 0) {
       results.set(zoneId, issues);
     }

@@ -20,7 +20,10 @@ export function serializeZone(zoneId: string): string {
   const knownFactions = config?.factions?.definitions
     ? new Set(Object.keys(config.factions.definitions))
     : undefined;
-  const issues = validateZone(sanitized, config?.equipmentSlots, validClasses, knownFactions);
+  const knownAchievements = config?.achievementDefs
+    ? new Set(Object.keys(config.achievementDefs))
+    : undefined;
+  const issues = validateZone(sanitized, config?.equipmentSlots, validClasses, knownFactions, knownAchievements);
   const errors = issues.filter((issue) => issue.severity === "error");
   if (errors.length > 0) {
     const summary = errors.slice(0, 5).map((issue) => `${issue.entity}: ${issue.message}`).join("; ");

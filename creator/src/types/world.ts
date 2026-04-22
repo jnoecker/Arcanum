@@ -73,6 +73,10 @@ export interface RoomFile {
 export interface ExitValue {
   to: string;
   door?: DoorFile;
+  /** Achievement ID the player must hold for the exit to be traversable. */
+  requiresAchievement?: string;
+  /** Shown when the player tries to take a gated exit they don't qualify for. */
+  lockedMessage?: string;
 }
 
 export interface DoorFile {

@@ -103,9 +103,12 @@ function resolveExitTarget(exit: string | ExitValue): {
   hasDoor: boolean;
   isLocked: boolean;
   keyItem?: string;
+  requiresAchievement?: string;
+  lockedMessage?: string;
+  hasGate: boolean;
 } {
   if (typeof exit === "string") {
-    return { target: exit, hasDoor: false, isLocked: false };
+    return { target: exit, hasDoor: false, isLocked: false, hasGate: false };
   }
   const state = exit.door?.initialState?.toLowerCase() ?? (exit.door?.locked ? "locked" : undefined);
   return {
@@ -114,6 +117,9 @@ function resolveExitTarget(exit: string | ExitValue): {
     hasDoor: !!exit.door,
     isLocked: state === "locked",
     keyItem: exit.door?.keyItemId ?? exit.door?.key,
+    requiresAchievement: exit.requiresAchievement,
+    lockedMessage: exit.lockedMessage,
+    hasGate: !!exit.requiresAchievement,
   };
 }
 
@@ -624,15 +630,21 @@ export function RoomPanel({
                       <button
                         onClick={() => setExpandedDoor(isExpanded ? null : exit.direction)}
                         className={`rounded px-2 py-1 text-2xs transition-colors ${
-                          exit.hasDoor
+                          exit.hasDoor || exit.hasGate
                             ? "text-status-warning hover:bg-bg-elevated"
                             : "text-text-muted hover:bg-bg-elevated hover:text-text-primary"
                         }`}
-                        title={exit.hasDoor ? "Edit door" : "Add door"}
-                        aria-label={exit.hasDoor ? "Edit door" : "Add door"}
+                        title={exit.hasDoor || exit.hasGate ? "Edit door / gate" : "Add door or gate"}
+                        aria-label={exit.hasDoor || exit.hasGate ? "Edit door / gate" : "Add door or gate"}
                         aria-expanded={isExpanded}
                       >
-                        {exit.hasDoor ? (exit.isLocked ? "\uD83D\uDD12 Door" : "\uD83D\uDEAA Door") : "+ Door"}
+                        {exit.hasDoor
+                          ? exit.isLocked
+                            ? "\uD83D\uDD12 Door"
+                            : "\uD83D\uDEAA Door"
+                          : exit.hasGate
+                            ? "\uD83C\uDFC6 Gate"
+                            : "+ Door"}
                       </button>
 
                       <button
@@ -652,6 +664,8 @@ export function RoomPanel({
                           roomId={roomId}
                           direction={exit.direction}
                           door={exit.door}
+                          requiresAchievement={exit.requiresAchievement}
+                          lockedMessage={exit.lockedMessage}
                           onWorldChange={onWorldChange}
                         />
                       </div>

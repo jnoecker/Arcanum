@@ -359,19 +359,20 @@ export function setExitDoor(
   }
   const next = clone(world);
   const exit = next.rooms[sourceRoom]!.exits![direction]!;
-  const to = typeof exit === "string" ? exit : exit.to;
-  const existingDoor = typeof exit === "string" ? undefined : exit.door;
-  const merged: DoorFile = { ...(existingDoor ?? {}), ...doorPatch };
+  const existing: ExitValue = typeof exit === "string" ? { to: exit } : exit;
+  const merged: DoorFile = { ...(existing.door ?? {}), ...doorPatch };
   const cleaned = cleanDoor(merged);
-  const nextExit: ExitValue = { to };
+  const nextExit: ExitValue = { to: existing.to };
   if (cleaned) nextExit.door = cleaned;
+  if (existing.requiresAchievement) nextExit.requiresAchievement = existing.requiresAchievement;
+  if (existing.lockedMessage) nextExit.lockedMessage = existing.lockedMessage;
   next.rooms[sourceRoom]!.exits![direction] = nextExit;
   return next;
 }
 
 /**
- * Remove the door from an exit. If the exit no longer has a door we collapse
- * the object form back to the shorthand string form for cleaner YAML.
+ * Remove the door from an exit. Collapses back to shorthand only if no other
+ * object-form fields (e.g. achievement gate) remain.
  */
 export function removeExitDoor(
   world: WorldFile,
@@ -385,7 +386,44 @@ export function removeExitDoor(
   const next = clone(world);
   const exit = next.rooms[sourceRoom]!.exits![direction]!;
   if (typeof exit === "string") return world;
-  next.rooms[sourceRoom]!.exits![direction] = exit.to;
+  if (exit.requiresAchievement || exit.lockedMessage) {
+    const { door: _door, ...rest } = exit;
+    next.rooms[sourceRoom]!.exits![direction] = rest;
+  } else {
+    next.rooms[sourceRoom]!.exits![direction] = exit.to;
+  }
+  return next;
+}
+
+/**
+ * Set or update the achievement gate on an exit. Converts shorthand (string)
+ * exits to the object form and preserves any existing door settings.
+ * Pass `undefined` for `requiresAchievement` to clear the gate.
+ */
+export function setExitAchievementGate(
+  world: WorldFile,
+  sourceRoom: string,
+  direction: string,
+  patch: { requiresAchievement?: string; lockedMessage?: string },
+): WorldFile {
+  const srcExits = world.rooms[sourceRoom]?.exits;
+  if (!srcExits || !(direction in srcExits)) {
+    throw new Error(`Exit "${direction}" from "${sourceRoom}" does not exist`);
+  }
+  const next = clone(world);
+  const exit = next.rooms[sourceRoom]!.exits![direction]!;
+  const existing: ExitValue = typeof exit === "string" ? { to: exit } : exit;
+  const nextExit: ExitValue = { to: existing.to };
+  if (existing.door) nextExit.door = existing.door;
+  const requires = patch.requiresAchievement !== undefined ? patch.requiresAchievement : existing.requiresAchievement;
+  const message = patch.lockedMessage !== undefined ? patch.lockedMessage : existing.lockedMessage;
+  if (requires) nextExit.requiresAchievement = requires;
+  if (message) nextExit.lockedMessage = message;
+  if (!nextExit.door && !nextExit.requiresAchievement && !nextExit.lockedMessage) {
+    next.rooms[sourceRoom]!.exits![direction] = nextExit.to;
+  } else {
+    next.rooms[sourceRoom]!.exits![direction] = nextExit;
+  }
   return next;
 }
 

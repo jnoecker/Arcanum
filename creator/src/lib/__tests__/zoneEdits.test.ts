@@ -28,6 +28,7 @@ import {
   generateEntityId,
   setExitDoor,
   removeExitDoor,
+  setExitAchievementGate,
   addFeature,
   updateFeature,
   removeFeature,
@@ -514,6 +515,61 @@ describe("removeExitDoor", () => {
     const world = makeWorld();
     const next = removeExitDoor(world, "room1", "n");
     expect(next.rooms.room1.exits?.n).toBe("room2");
+  });
+
+  it("keeps object form when an achievement gate is still set", () => {
+    let world = makeWorld();
+    world = setExitAchievementGate(world, "room1", "n", {
+      requiresAchievement: "academy_boss_slain",
+      lockedMessage: "Prove yourself first.",
+    });
+    world = setExitDoor(world, "room1", "n", { initialState: "closed" });
+    world = removeExitDoor(world, "room1", "n");
+    const exit = world.rooms.room1.exits?.n as any;
+    expect(typeof exit).toBe("object");
+    expect(exit.door).toBeUndefined();
+    expect(exit.requiresAchievement).toBe("academy_boss_slain");
+    expect(exit.lockedMessage).toBe("Prove yourself first.");
+    expect(exit.to).toBe("room2");
+  });
+});
+
+describe("setExitAchievementGate", () => {
+  it("converts a string exit into an object form with gate fields", () => {
+    const world = makeWorld();
+    const next = setExitAchievementGate(world, "room1", "n", {
+      requiresAchievement: "academy_boss_slain",
+      lockedMessage: "Prove yourself first.",
+    });
+    const exit = next.rooms.room1.exits?.n as any;
+    expect(exit.to).toBe("room2");
+    expect(exit.requiresAchievement).toBe("academy_boss_slain");
+    expect(exit.lockedMessage).toBe("Prove yourself first.");
+  });
+
+  it("preserves the door when setting a gate", () => {
+    let world = makeWorld();
+    world = setExitDoor(world, "room1", "n", { initialState: "locked", keyItemId: "sword" });
+    world = setExitAchievementGate(world, "room1", "n", {
+      requiresAchievement: "academy_boss_slain",
+    });
+    const exit = world.rooms.room1.exits?.n as any;
+    expect(exit.door.initialState).toBe("locked");
+    expect(exit.door.keyItemId).toBe("sword");
+    expect(exit.requiresAchievement).toBe("academy_boss_slain");
+  });
+
+  it("collapses back to shorthand when gate is cleared", () => {
+    let world = makeWorld();
+    world = setExitAchievementGate(world, "room1", "n", {
+      requiresAchievement: "academy_boss_slain",
+      lockedMessage: "Prove yourself first.",
+    });
+    world = setExitAchievementGate(world, "room1", "n", {
+      requiresAchievement: "",
+      lockedMessage: "",
+    });
+    expect(world.rooms.room1.exits?.n).toBe("room2");
   });
 });
 

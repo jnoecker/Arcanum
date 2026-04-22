@@ -91,7 +91,10 @@ export function runWorkspaceValidation(): ValidationSummary {
   const knownFactions = config?.factions?.definitions
     ? new Set(Object.keys(config.factions.definitions))
     : undefined;
-  const results = validateAllZones(zones, config?.equipmentSlots, validClasses, knownFactions);
+  const knownAchievements = config?.achievementDefs
+    ? new Set(Object.keys(config.achievementDefs))
+    : undefined;
+  const results = validateAllZones(zones, config?.equipmentSlots, validClasses, knownFactions, knownAchievements);
 
   if (config) {
     const configIssues = validateConfig(config);

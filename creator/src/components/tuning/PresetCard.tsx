@@ -2,11 +2,13 @@
 // Themed card for a tuning preset with selection glow and metric indicators.
 
 import type { TuningPreset } from "@/lib/tuning/presets";
+import type { ArchetypeEvaluation } from "@/lib/tuning/archetypeScore";
 import type { MetricSnapshot } from "@/lib/tuning/types";
 
 interface PresetCardProps {
   preset: TuningPreset;
   metrics: MetricSnapshot;
+  evaluation: ArchetypeEvaluation | null;
   isSelected: boolean;
   isDimmed: boolean;
   onSelect: () => void;
@@ -58,6 +60,21 @@ const DEFAULT_ACCENT = {
   bg: "bg-bg-secondary",
 };
 
+const CONTRACT_STYLES = {
+  validated: {
+    badge: "border-status-success/35 bg-status-success/[0.08] text-status-success",
+    label: "Validated",
+  },
+  close: {
+    badge: "border-status-warning/35 bg-status-warning/[0.08] text-status-warning",
+    label: "Close To Target",
+  },
+  "needs-tuning": {
+    badge: "border-status-error/35 bg-status-error/[0.08] text-status-error",
+    label: "Needs Tuning",
+  },
+} as const;
+
 /** Format a number with K/M suffix. */
 function abbreviate(n: number): string {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
@@ -100,8 +117,16 @@ function buildIndicators(
   return indicators;
 }
 
-export function PresetCard({ preset, metrics, isSelected, isDimmed, onSelect }: PresetCardProps) {
+export function PresetCard({
+  preset,
+  metrics,
+  evaluation,
+  isSelected,
+  isDimmed,
+  onSelect,
+}: PresetCardProps) {
   const accent = PRESET_ACCENTS[preset.id] ?? DEFAULT_ACCENT;
+  const contractStyle = evaluation ? CONTRACT_STYLES[evaluation.status] : null;
 
   const borderClass = isSelected ? accent.border : "border-border-muted";
   const glowClass = isSelected ? accent.glow : "";
@@ -128,9 +153,18 @@ export function PresetCard({ preset, metrics, isSelected, isDimmed, onSelect }: 
     >
       <div className="pointer-events-none absolute inset-x-5 top-0 h-px bg-gradient-to-r from-transparent via-accent/45 to-transparent opacity-70" />
       <div className="flex flex-col gap-4">
-        <p className={`font-display text-2xs uppercase tracking-wide-ui ${accent.text}`}>
-          Tuning preset
-        </p>
+        <div className="flex items-center justify-between gap-3">
+          <p className={`font-display text-2xs uppercase tracking-wide-ui ${accent.text}`}>
+            Arcanum archetype
+          </p>
+          {contractStyle && (
+            <span
+              className={`rounded-full border px-2 py-0.5 font-display text-2xs uppercase tracking-wide-ui ${contractStyle.badge}`}
+            >
+              {contractStyle.label}
+            </span>
+          )}
+        </div>
         {/* Preset name */}
         <h3 className="font-display text-lg font-semibold leading-[1.2] tracking-[0.5px] text-text-primary">
           {preset.name}
@@ -140,6 +174,11 @@ export function PresetCard({ preset, metrics, isSelected, isDimmed, onSelect }: 
         <p className="text-[15px] leading-[1.6] text-text-secondary line-clamp-2">
           {preset.description}
         </p>
+        {evaluation && (
+          <p className="text-2xs leading-[1.5] text-text-muted">
+            Contract score {evaluation.score}/100 · {evaluation.passCount} pass · {evaluation.warnCount} warn · {evaluation.failCount} fail
+          </p>
+        )}
 
         {/* Metric indicators */}
         <div className="flex flex-col gap-2">

@@ -4,7 +4,13 @@
 // arrays for visualization components. No side effects, no state.
 
 import type { AppConfig, StatBindings } from "@/types/config";
-import { xpForLevel, mobHpAtLevel, mobAvgDamageAtLevel } from "./formulas";
+import {
+  xpForLevel,
+  mobHpAtLevel,
+  mobAvgDamageAtLevel,
+  mobXpRewardAtLevel,
+  scaledXpReward,
+} from "./formulas";
 
 // ─── Interfaces ────────────────────────────────────────────────────
 
@@ -77,7 +83,10 @@ export function buildMobTierData(config: AppConfig, level: number): MobTierPoint
       hp: mobHpAtLevel(tier, level),
       damage: mobAvgDamageAtLevel(tier, level),
       armor: tier.baseArmor,
-      xp: tier.baseXpReward + tier.xpRewardPerLevel * level,
+      xp: scaledXpReward(
+        mobXpRewardAtLevel(tier, level),
+        config.progression.xp.multiplier,
+      ),
     };
   });
 

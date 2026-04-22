@@ -12,7 +12,12 @@ import type { AppConfig, MobTierConfig } from "@/types/config";
 import type { MobFile, WorldFile } from "@/types/world";
 import {
   mobAvgGoldAtLevel,
+  mobGoldMaxAtLevel,
+  mobGoldMinAtLevel,
   mobHpAtLevel,
+  mobMaxDamageAtLevel,
+  mobMinDamageAtLevel,
+  mobXpRewardAtLevel,
 } from "./tuning/formulas";
 
 export type MobClassification = "trash" | "named";
@@ -67,19 +72,27 @@ export interface ZoneRebalanceDiff {
 export function targetLevelForTier(
   tier: string,
   band: { min: number; max: number },
+  difficultyHint: ZoneRebalanceTarget["difficultyHint"] = "standard",
 ): number {
   const { min, max } = band;
   const mid = Math.round((min + max) / 2);
+  const offset =
+    difficultyHint === "casual"
+      ? -1
+      : difficultyHint === "challenging"
+        ? 1
+        : 0;
+  const clamp = (value: number) => Math.max(min, Math.min(max, value));
   switch (tier) {
     case "weak":
-      return min;
+      return difficultyHint === "challenging" ? clamp(min + 1) : min;
     case "elite":
-      return Math.max(min, max - 1);
+      return clamp(Math.max(min, max - 1) + offset);
     case "boss":
       return max;
     case "standard":
     default:
-      return mid;
+      return clamp(mid + offset);
   }
 }
 
@@ -133,8 +146,8 @@ function diffMobOverrides(
   if (mob.hp != null) {
     changes.push(computeOverrideChange("hp", mob.hp, mobHpAtLevel(tier, targetLevel)));
   }
-  const tierMinDmg = tier.baseMinDamage + tier.damagePerLevel * targetLevel;
-  const tierMaxDmg = tier.baseMaxDamage + tier.damagePerLevel * targetLevel;
+  const tierMinDmg = mobMinDamageAtLevel(tier, targetLevel);
+  const tierMaxDmg = mobMaxDamageAtLevel(tier, targetLevel);
   if (mob.minDamage != null) {
     changes.push(computeOverrideChange("minDamage", mob.minDamage, tierMinDmg));
   }
@@ -144,19 +157,21 @@ function diffMobOverrides(
   if (mob.armor != null) {
     changes.push(computeOverrideChange("armor", mob.armor, tier.baseArmor));
   }
-  const tierXp = tier.baseXpReward + tier.xpRewardPerLevel * targetLevel;
+  const tierXp = mobXpRewardAtLevel(tier, targetLevel);
   if (mob.xpReward != null) {
     changes.push(computeOverrideChange("xpReward", mob.xpReward, tierXp));
   }
-  const tierGoldAvg = mobAvgGoldAtLevel(tier, targetLevel);
+  const tierGoldMin = mobGoldMinAtLevel(tier, targetLevel);
+  const tierGoldMax = mobGoldMaxAtLevel(tier, targetLevel);
   if (mob.goldMin != null) {
-    changes.push(computeOverrideChange("goldMin", mob.goldMin, tier.baseGoldMin + tier.goldPerLevel * targetLevel));
+    changes.push(computeOverrideChange("goldMin", mob.goldMin, tierGoldMin));
   }
   if (mob.goldMax != null) {
-    changes.push(computeOverrideChange("goldMax", mob.goldMax, tier.baseGoldMax + tier.goldPerLevel * targetLevel));
+    changes.push(computeOverrideChange("goldMax", mob.goldMax, tierGoldMax));
   }
-  // quiet "tierGoldAvg used to derive both min and max" — currently informational
-  void tierGoldAvg;
+  // Keep the average helper referenced so the diff output stays consistent with
+  // the preview metrics elsewhere in the tuning UI.
+  void mobAvgGoldAtLevel(tier, targetLevel);
 
   return changes;
 }
@@ -202,7 +217,7 @@ export function computeZoneRebalance(
       skippedMobIds.push(mobId);
       continue;
     }
-    const targetLevel = targetLevelForTier(tierKey, target.levelBand);
+    const targetLevel = targetLevelForTier(tierKey, target.levelBand, target.difficultyHint);
     const currentLevel = mob.level ?? null;
     mobs.push({
       mobId,
@@ -257,6 +272,8 @@ export function applyZoneRebalance(
   };
   if (diff.target.difficultyHint) {
     next.difficultyHint = diff.target.difficultyHint;
+  } else {
+    delete next.difficultyHint;
   }
 
   for (const mobDiff of diff.mobs) {

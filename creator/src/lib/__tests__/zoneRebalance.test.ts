@@ -48,6 +48,14 @@ describe("targetLevelForTier", () => {
   it("clamps elite to band floor for narrow bands", () => {
     expect(targetLevelForTier("elite", { min: 5, max: 5 })).toBe(5);
   });
+
+  it("shifts standard and elite targets when difficulty changes", () => {
+    const band = { min: 3, max: 7 };
+    expect(targetLevelForTier("standard", band, "casual")).toBe(4);
+    expect(targetLevelForTier("standard", band, "challenging")).toBe(6);
+    expect(targetLevelForTier("elite", band, "casual")).toBe(5);
+    expect(targetLevelForTier("elite", band, "challenging")).toBe(7);
+  });
 });
 
 describe("classifyMob", () => {
@@ -116,10 +124,10 @@ describe("computeZoneRebalance", () => {
   });
 
   it("marks within-tolerance overrides as 'drop' and divergent as 'flag'", () => {
-    // weak tier @ L3: hp = 10 + 3*3 = 19, xpReward = 15 + 5*3 = 30
+    // weak tier @ L3: hp = 10 + (3 - 1)*3 = 16, xpReward = 15 + (3 - 1)*5 = 25
     const zone = zoneWith({
-      close: mob({ tier: "weak", hp: 20 }),       // within 10% of 19 → drop
-      far: mob({ tier: "weak", hp: 200 }),         // way off → flag
+      close: mob({ tier: "weak", hp: 17 }),
+      far: mob({ tier: "weak", hp: 200 }),
       authoredXp: mob({ tier: "weak", xpReward: 9999 }),
     });
     const diff = computeZoneRebalance(zone, MOCK_CONFIG, {
@@ -165,7 +173,7 @@ describe("applyZoneRebalance", () => {
 
   it("drops within-tolerance overrides and keeps flagged ones by default", () => {
     const zone = zoneWith({
-      goblin: mob({ tier: "weak", hp: 20, xpReward: 9999 }),
+      goblin: mob({ tier: "weak", hp: 17, xpReward: 9999 }),
     });
     const diff = computeZoneRebalance(zone, MOCK_CONFIG, {
       levelBand: { min: 3, max: 3 },
@@ -173,12 +181,12 @@ describe("applyZoneRebalance", () => {
     const next = applyZoneRebalance(zone, diff, {
       acceptedMobIds: new Set(["goblin"]),
     });
-    expect(next.mobs?.goblin?.hp).toBeUndefined();      // dropped
-    expect(next.mobs?.goblin?.xpReward).toBe(9999);     // kept
+    expect(next.mobs?.goblin?.hp).toBeUndefined();
+    expect(next.mobs?.goblin?.xpReward).toBe(9999);
   });
 
-  it("respects per-field overrides (drop → keep)", () => {
-    const zone = zoneWith({ goblin: mob({ tier: "weak", hp: 20 }) });
+  it("respects per-field overrides (drop -> keep)", () => {
+    const zone = zoneWith({ goblin: mob({ tier: "weak", hp: 17 }) });
     const diff = computeZoneRebalance(zone, MOCK_CONFIG, {
       levelBand: { min: 3, max: 3 },
     });
@@ -186,7 +194,19 @@ describe("applyZoneRebalance", () => {
       acceptedMobIds: new Set(["goblin"]),
       overrideOverrides: new Map([["goblin", new Map([["hp", "keep"]])]]),
     });
-    expect(next.mobs?.goblin?.hp).toBe(20);
+    expect(next.mobs?.goblin?.hp).toBe(17);
+  });
+
+  it("clears difficultyHint when the new target omits it", () => {
+    const zone = zoneWith({ goblin: mob({ tier: "weak", level: 1 }) });
+    zone.difficultyHint = "challenging";
+    const diff = computeZoneRebalance(zone, MOCK_CONFIG, {
+      levelBand: { min: 5, max: 5 },
+    });
+    const next = applyZoneRebalance(zone, diff, {
+      acceptedMobIds: new Set(["goblin"]),
+    });
+    expect(next.difficultyHint).toBeUndefined();
   });
 
   it("does not mutate the input zone", () => {

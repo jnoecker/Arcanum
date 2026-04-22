@@ -170,7 +170,11 @@ export function RebalanceZoneDialog({ zoneId, onClose }: RebalanceZoneDialogProp
   };
 
   const acceptedCount = acceptedMobIds.size;
-  const canApply = acceptedCount > 0 || zoneState?.data?.levelBand?.min !== bandMin || zoneState?.data?.levelBand?.max !== bandMax;
+  const canApply =
+    acceptedCount > 0 ||
+    zoneState?.data?.levelBand?.min !== bandMin ||
+    zoneState?.data?.levelBand?.max !== bandMax ||
+    zoneState?.data?.difficultyHint !== difficulty;
 
   if (!zoneState || !config) {
     return null;

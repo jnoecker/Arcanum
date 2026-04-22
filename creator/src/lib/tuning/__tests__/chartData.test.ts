@@ -5,7 +5,13 @@ import {
   buildStatRadarData,
 } from "@/lib/tuning/chartData";
 import { CHART_COLORS } from "@/lib/tuning/chartColors";
-import { xpForLevel, mobHpAtLevel, mobAvgDamageAtLevel } from "@/lib/tuning/formulas";
+import {
+  xpForLevel,
+  mobHpAtLevel,
+  mobAvgDamageAtLevel,
+  mobXpRewardAtLevel,
+  scaledXpReward,
+} from "@/lib/tuning/formulas";
 import type { AppConfig } from "@/types/config";
 import type { StatBindings } from "@/types/config";
 
@@ -146,11 +152,15 @@ describe("buildMobTierData", () => {
     expect(data[3]!.rawArmor).toBe(BOSS_TIER.baseArmor);
   });
 
-  it("raw xp equals baseXpReward + xpRewardPerLevel * level", () => {
+  it("raw xp follows the server mob reward formula", () => {
     const level = 30;
     const data = buildMobTierData(MOCK_CONFIG, level);
-    expect(data[0]!.rawXp).toBe(WEAK_TIER.baseXpReward + WEAK_TIER.xpRewardPerLevel * level);
-    expect(data[3]!.rawXp).toBe(BOSS_TIER.baseXpReward + BOSS_TIER.xpRewardPerLevel * level);
+    expect(data[0]!.rawXp).toBe(
+      scaledXpReward(mobXpRewardAtLevel(WEAK_TIER, level), MOCK_XP.multiplier),
+    );
+    expect(data[3]!.rawXp).toBe(
+      scaledXpReward(mobXpRewardAtLevel(BOSS_TIER, level), MOCK_XP.multiplier),
+    );
   });
 
   it("normalized values are percentages (0-100) with boss tier at 100", () => {

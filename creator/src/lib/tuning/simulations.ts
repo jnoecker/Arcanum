@@ -14,7 +14,9 @@ import {
   mobHpAtLevel,
   mobAvgDamageAtLevel,
   mobAvgGoldAtLevel,
+  mobXpRewardAtLevel,
   playerHpAtLevel,
+  scaledXpReward,
   statBonus,
   dodgeChance,
 } from "./formulas";
@@ -33,23 +35,15 @@ export const TIER_LABELS: Record<TierKey, string> = {
   boss: "Boss",
 };
 
-/** Approximate player armor at a level — grows linearly as a baseline. */
-function estimatedPlayerArmor(level: number): number {
-  return Math.floor(level * 1.5);
-}
-
-/** Combat config damage band average, gently scaled with level + stat. */
+/** Combat config damage band average, plus the server's melee stat bonus. */
 function playerBaseDamage(
   config: AppConfig,
-  level: number,
   meleeStatValue: number,
 ): number {
   const { minDamage, maxDamage } = config.combat;
   const base = (minDamage + maxDamage) / 2;
   const bonus = statBonus(meleeStatValue, config.stats.bindings.meleeDamageDivisor);
-  // Weapon scales loosely with level to reflect gear progression
-  const gearGrowth = level * 0.6;
-  return Math.max(1, base + bonus + gearGrowth);
+  return Math.max(1, base + bonus);
 }
 
 // ─── 1. Combat Encounter ───────────────────────────────────────────
@@ -94,7 +88,7 @@ export function simulateEncounter(
   const { playerLevel, mobTier, mobLevel } = inputs;
   const baseStat = inputs.baseStat ?? 10 + playerLevel * 2;
   const classDef = inputs.classId ? config.classes?.[inputs.classId] : undefined;
-  const classHpPerLevel = classDef?.hpPerLevel ?? 3;
+  const hpPerLevel = classDef?.hpPerLevel ?? config.progression.rewards.hpPerLevel;
 
   const tier = config.mobTiers[mobTier];
   const mobHp = mobHpAtLevel(tier, mobLevel);
@@ -103,18 +97,16 @@ export function simulateEncounter(
   const playerHp = playerHpAtLevel(
     playerLevel,
     config.progression.rewards,
-    classHpPerLevel,
+    hpPerLevel,
     baseStat,
     config.stats.bindings.hpScalingDivisor,
   );
 
-  const playerDmgRaw = playerBaseDamage(config, playerLevel, baseStat);
+  const playerDmgRaw = playerBaseDamage(config, baseStat);
   const playerDmgPerRound = Math.max(1, playerDmgRaw - tier.baseArmor);
 
-  const armor = estimatedPlayerArmor(playerLevel);
   const dodgePct = dodgeChance(baseStat, config.stats.bindings);
-  const mobDmgAfterArmor = Math.max(1, mobDmg - armor);
-  const mobDmgPerRound = mobDmgAfterArmor * (1 - dodgePct / 100);
+  const mobDmgPerRound = mobDmg * (1 - dodgePct / 100);
 
   const turnsToKill = Math.max(1, Math.ceil(mobHp / playerDmgPerRound));
   const turnsToDie =
@@ -196,7 +188,10 @@ export function simulateEconomy(
     const tier = config.mobTiers[k];
     const killsOfTier = killsPerHour * normalised[k];
     goldFromMobs += killsOfTier * mobAvgGoldAtLevel(tier, level);
-    xpFromMobs += killsOfTier * (tier.baseXpReward + tier.xpRewardPerLevel * level);
+    xpFromMobs += killsOfTier * scaledXpReward(
+      mobXpRewardAtLevel(tier, level),
+      config.progression.xp.multiplier,
+    );
   }
 
   // Shop revenue — sellRate is the fraction of acquired drops sold per hour.

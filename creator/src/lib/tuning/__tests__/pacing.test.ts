@@ -7,7 +7,6 @@ import {
 import {
   estimatePacing,
   estimateXpPerHour,
-  PRESET_PACING_TARGETS,
 } from "@/lib/tuning/pacing";
 import { checkPacingHealth } from "@/lib/tuning/healthCheck";
 import { deepMerge } from "@/lib/tuning/merge";
@@ -44,37 +43,33 @@ function configFromPreset(preset: { config: DeepPartial<AppConfig> }): AppConfig
 }
 
 describe("estimateXpPerHour", () => {
-  it("produces dramatically more XP for the Lore Explorer preset than Casual", () => {
-    const casual = configFromPreset(CASUAL_PRESET);
-    const lore = configFromPreset(LORE_EXPLORER_PRESET);
-    const casualXp = estimateXpPerHour(casual, 1);
-    const loreXp = estimateXpPerHour(lore, 1);
-    expect(loreXp).toBeGreaterThan(casualXp * 2);
-  });
-
-  it("scales XP rate with player level (per-level mob XP)", () => {
+  it("still scales XP rate with player level (per-level mob XP)", () => {
     const casual = configFromPreset(CASUAL_PRESET);
     expect(estimateXpPerHour(casual, 10)).toBeGreaterThan(estimateXpPerHour(casual, 1));
   });
+
+  it("does not assume raw XP/hour alone defines progression speed", () => {
+    const casual = configFromPreset(CASUAL_PRESET);
+    const lore = configFromPreset(LORE_EXPLORER_PRESET);
+    const casualPacing = estimatePacing(casual, "casual");
+    const lorePacing = estimatePacing(lore, "loreExplorer");
+    const casualL30 = casualPacing.milestones.find((m) => m.level === 30);
+    const loreL30 = lorePacing.milestones.find((m) => m.level === 30);
+    expect(casualL30?.minutesEstimated).toBeGreaterThan(loreL30?.minutesEstimated ?? Number.POSITIVE_INFINITY);
+  });
 });
 
-describe("estimatePacing + checkPacingHealth — Lore Explorer over-generosity", () => {
+describe("estimatePacing + checkPacingHealth — Lore Explorer now stays within contract", () => {
   const lore = configFromPreset(LORE_EXPLORER_PRESET);
 
-  it("flags level 20 as reachable much faster than the preset's own target", () => {
+  it("keeps every pacing milestone on-target for Lore Explorer's own archetype", () => {
     const pacing = estimatePacing(lore, "loreExplorer");
-    const m20 = pacing.milestones.find((m) => m.level === 20);
-    expect(m20).toBeDefined();
-    const target = PRESET_PACING_TARGETS.loreExplorer?.minutesToLevel[20];
-    expect(target).toBe(30);
-    expect(m20!.minutesEstimated).toBeLessThan(target! * 0.5);
-    expect(m20!.verdict === "fast" || m20!.verdict === "way-too-fast").toBe(true);
+    expect(pacing.milestones.every((milestone) => milestone.verdict === "on-target")).toBe(true);
   });
 
-  it("emits a too-fast pacing warning", () => {
+  it("does not emit a pacing warning", () => {
     const warnings = checkPacingHealth(lore, "loreExplorer");
-    expect(warnings.length).toBeGreaterThan(0);
-    expect(warnings[0]!.message).toMatch(/too fast/i);
+    expect(warnings).toEqual([]);
   });
 });
 

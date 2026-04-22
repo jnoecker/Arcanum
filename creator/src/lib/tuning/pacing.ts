@@ -9,7 +9,12 @@
 // Pure, deterministic, no RNG.
 
 import type { AppConfig } from "@/types/config";
-import { mobAvgGoldAtLevel, xpForLevel } from "./formulas";
+import {
+  mobAvgGoldAtLevel,
+  mobXpRewardAtLevel,
+  scaledXpReward,
+  xpForLevel,
+} from "./formulas";
 import type { TierKey } from "./simulations";
 import { TIER_KEYS } from "./simulations";
 
@@ -63,7 +68,8 @@ export const PRESET_PACING_TARGETS: Record<string, PacingTargets> = {
 
 /**
  * Estimate XP/hour the canonical trash run produces against a config.
- * Sampled at the player level (mob XP scales with level).
+ * Sampled at the player level (mob XP scales with level and then runs
+ * through the progression XP multiplier, matching the server).
  */
 export function estimateXpPerHour(config: AppConfig, playerLevel: number): number {
   const { killsPerHour, tierMix } = CANONICAL_TRASH_RUN;
@@ -72,7 +78,10 @@ export function estimateXpPerHour(config: AppConfig, playerLevel: number): numbe
     const tierConfig = config.mobTiers[tier];
     if (!tierConfig) continue;
     const fraction = tierMix[tier] ?? 0;
-    const xpPerKill = tierConfig.baseXpReward + tierConfig.xpRewardPerLevel * playerLevel;
+    const xpPerKill = scaledXpReward(
+      mobXpRewardAtLevel(tierConfig, playerLevel),
+      config.progression.xp.multiplier,
+    );
     xp += killsPerHour * fraction * xpPerKill;
   }
   return xp;

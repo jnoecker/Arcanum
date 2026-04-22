@@ -175,7 +175,7 @@ export const CASUAL_PRESET: TuningPreset = {
         baseXp: 80,
         exponent: 1.6,
         linearXp: 10,
-        multiplier: 1.0,
+        multiplier: 0.8,
         defaultKillXp: 15,
       },
       rewards: {
@@ -929,7 +929,7 @@ export const SOLO_STORY_PRESET: TuningPreset = {
     [TuningSection.EconomyCrafting]:
       "Abundant gold and cheap prices so gear and crafting never block progress. Crafting levels quickly for casual experimentation.",
     [TuningSection.ProgressionQuests]:
-      "Rapid leveling with low XP requirements. Quests give generous rewards and prestige is easy to reach for completionists.",
+      "Fast leveling that keeps the story moving without flattening the whole arc. Progress still advances quickly, but players have room to grow before they cap out.",
     [TuningSection.WorldSocial]:
       "Fast regen and short cooldowns minimize downtime. Social systems are available but not required — designed for solo-friendly play.",
   },
@@ -952,7 +952,7 @@ export const SOLO_STORY_PRESET: TuningPreset = {
     enchanting: { maxEnchantmentsPerItem: 5 },
     progression: {
       maxLevel: 40,
-      xp: { baseXp: 60, exponent: 1.4, linearXp: 5, multiplier: 1.2, defaultKillXp: 20 },
+      xp: { baseXp: 70, exponent: 1.45, linearXp: 5, multiplier: 0.7, defaultKillXp: 20 },
       rewards: { hpPerLevel: 4, manaPerLevel: 3, fullHealOnLevelUp: true, fullManaOnLevelUp: true, baseHp: 20, baseMana: 20 },
     },
     skillPoints: { interval: 2 },
@@ -1051,7 +1051,7 @@ export const LORE_EXPLORER_PRESET: TuningPreset = {
     [TuningSection.EconomyCrafting]:
       "Gold flows freely and everything is cheap. Crafting is instant gratification — max out skills quickly and experiment with recipes.",
     [TuningSection.ProgressionQuests]:
-      "Near-instant leveling. Players hit max level within a few sessions so they can access all content. Quest rewards are massive.",
+      "Very fast leveling. Players cap quickly over a short run of sessions so they can access content fast, but the curve no longer collapses into a few minutes of trash pulls.",
     [TuningSection.WorldSocial]:
       "Instant regen, no cooldowns. The world is a playground — no resource management, no waiting, just exploration.",
   },
@@ -1074,7 +1074,7 @@ export const LORE_EXPLORER_PRESET: TuningPreset = {
     enchanting: { maxEnchantmentsPerItem: 6 },
     progression: {
       maxLevel: 30,
-      xp: { baseXp: 30, exponent: 1.2, linearXp: 5, multiplier: 2.0, defaultKillXp: 50 },
+      xp: { baseXp: 40, exponent: 1.3, linearXp: 5, multiplier: 0.25, defaultKillXp: 50 },
       rewards: { hpPerLevel: 8, manaPerLevel: 6, fullHealOnLevelUp: true, fullManaOnLevelUp: true, baseHp: 50, baseMana: 50 },
     },
     skillPoints: { interval: 1 },

@@ -10,6 +10,7 @@ import type {
 } from "@/types/world";
 import type { EquipmentSlotDefinition, MobTiersConfig } from "@/types/config";
 import { resolveDoorKeyId, resolveDoorState } from "./doorHelpers";
+import { mobMaxDamageAtLevel, mobMinDamageAtLevel } from "./tuning/formulas";
 import { exitTarget } from "./zoneEdits";
 import { getTrainerClasses } from "./trainers";
 
@@ -74,8 +75,8 @@ function resolveMobDamage(
   const tier = tierId && mobTiers ? (mobTiers as unknown as Record<string, MobTiersConfig["weak"]>)[tierId] : undefined;
   if (!tier) return undefined;
   const level = mob.level ?? 1;
-  const tierMin = tier.baseMinDamage + tier.damagePerLevel * level;
-  const tierMax = tier.baseMaxDamage + tier.damagePerLevel * level;
+  const tierMin = mobMinDamageAtLevel(tier, level);
+  const tierMax = mobMaxDamageAtLevel(tier, level);
   const resolvedMin = hasMin ? mob.minDamage! : tierMin;
   const resolvedMax = hasMax ? mob.maxDamage! : tierMax;
   const inherited = hasMin ? "maxDamage" : "minDamage";

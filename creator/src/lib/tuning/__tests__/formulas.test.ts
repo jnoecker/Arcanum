@@ -33,16 +33,16 @@ const BOSS_TIER = {
 // ─── XP curve ──────────────────────────────────────────────────────
 
 describe("xpForLevel", () => {
-  it("returns 100 at level 1", () => {
-    expect(xpForLevel(1, DEFAULT_XP)).toBe(100);
+  it("returns 0 at level 1", () => {
+    expect(xpForLevel(1, DEFAULT_XP)).toBe(0);
   });
 
-  it("returns 10000 at level 10", () => {
-    expect(xpForLevel(10, DEFAULT_XP)).toBe(10000);
+  it("uses level-1 steps at level 10", () => {
+    expect(xpForLevel(10, DEFAULT_XP)).toBe(8100);
   });
 
-  it("returns 250000 at level 50", () => {
-    expect(xpForLevel(50, DEFAULT_XP)).toBe(250000);
+  it("uses level-1 steps at level 50", () => {
+    expect(xpForLevel(50, DEFAULT_XP)).toBe(240100);
   });
 });
 
@@ -50,11 +50,11 @@ describe("xpForLevel", () => {
 
 describe("mobHpAtLevel", () => {
   it("computes weak tier HP at level 10", () => {
-    expect(mobHpAtLevel(WEAK_TIER, 10)).toBe(25);
+    expect(mobHpAtLevel(WEAK_TIER, 10)).toBe(23);
   });
 
   it("computes boss tier HP at level 10", () => {
-    expect(mobHpAtLevel(BOSS_TIER, 10)).toBe(150);
+    expect(mobHpAtLevel(BOSS_TIER, 10)).toBe(140);
   });
 });
 
@@ -66,7 +66,7 @@ describe("mobAvgDamageAtLevel", () => {
   });
 
   it("computes boss tier avg damage at level 10 (with scaling)", () => {
-    expect(mobAvgDamageAtLevel(BOSS_TIER, 10)).toBe(25.5);
+    expect(mobAvgDamageAtLevel(BOSS_TIER, 10)).toBe(23.5);
   });
 });
 
@@ -74,19 +74,19 @@ describe("mobAvgDamageAtLevel", () => {
 
 describe("mobAvgGoldAtLevel", () => {
   it("computes weak tier avg gold at level 10", () => {
-    expect(mobAvgGoldAtLevel(WEAK_TIER, 10)).toBe(12);
+    expect(mobAvgGoldAtLevel(WEAK_TIER, 10)).toBe(11);
   });
 });
 
 // ─── Stat bonus ────────────────────────────────────────────────────
 
 describe("statBonus", () => {
-  it("returns floor(15/3) = 5", () => {
-    expect(statBonus(15, 3)).toBe(5);
+  it("counts only points above the base stat", () => {
+    expect(statBonus(15, 3)).toBe(1);
   });
 
-  it("returns floor(10/5) = 2", () => {
-    expect(statBonus(10, 5)).toBe(2);
+  it("returns 0 when the stat is at baseline", () => {
+    expect(statBonus(10, 5)).toBe(0);
   });
 });
 
@@ -94,11 +94,11 @@ describe("statBonus", () => {
 
 describe("dodgeChance", () => {
   it("caps at maxDodgePercent", () => {
-    expect(dodgeChance(20, { dodgePerPoint: 2, maxDodgePercent: 30 })).toBe(30);
+    expect(dodgeChance(30, { dodgePerPoint: 2, maxDodgePercent: 30 })).toBe(30);
   });
 
   it("returns uncapped value when below max", () => {
-    expect(dodgeChance(10, { dodgePerPoint: 2, maxDodgePercent: 30 })).toBe(20);
+    expect(dodgeChance(20, { dodgePerPoint: 2, maxDodgePercent: 30 })).toBe(20);
   });
 });
 
@@ -106,10 +106,9 @@ describe("dodgeChance", () => {
 
 describe("playerHpAtLevel", () => {
   it("computes player HP at level 10", () => {
-    // baseHp=10, hpPerLevel=2, classHpPerLevel=4, hpScalingStat=12, hpScalingDivisor=5
-    // statBonus(12, 5) = floor(12/5) = 2
-    // 10 + (2 + 4 + 2) * 10 = 90
-    expect(playerHpAtLevel(10, { baseHp: 10, hpPerLevel: 2 }, 4, 12, 5)).toBe(90);
+    // baseHp=10, perLevel=4, level steps=9, statBonus(12, 5)=0
+    // 10 + 9*4 = 46
+    expect(playerHpAtLevel(10, { baseHp: 10, hpPerLevel: 2 }, 4, 12, 5)).toBe(46);
   });
 });
 
@@ -117,8 +116,8 @@ describe("playerHpAtLevel", () => {
 
 describe("regenIntervalMs", () => {
   it("reduces interval based on stat", () => {
-    // 5000 - 200*10 = 3000, above min 1000
-    expect(regenIntervalMs(10, { baseIntervalMillis: 5000, minIntervalMillis: 1000 }, 200)).toBe(3000);
+    // Only points above the base stat accelerate regen.
+    expect(regenIntervalMs(15, { baseIntervalMillis: 5000, minIntervalMillis: 1000 }, 200)).toBe(4000);
   });
 
   it("clamps to min interval", () => {
@@ -190,12 +189,12 @@ describe("computeMetrics", () => {
   it("computes correct XP at level 10", () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const result = computeMetrics(mockConfig as any);
-    expect(result.xpPerLevel[10]).toBe(10000);
+    expect(result.xpPerLevel[10]).toBe(8100);
   });
 
   it("computes correct weak mob HP at level 10", () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const result = computeMetrics(mockConfig as any);
-    expect(result.mobHp["weak"]?.[10]).toBe(25);
+    expect(result.mobHp["weak"]?.[10]).toBe(23);
   });
 });

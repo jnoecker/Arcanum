@@ -50,8 +50,6 @@ describe("pacing calibration snapshots", () => {
   it.each(PRESETS)("does not way-too-fast-flag %s against its own targets", (id, preset) => {
     const pacing = estimatePacing(configFromPreset(preset), id);
     const wayTooFast = pacing.milestones.filter((m) => m.verdict === "way-too-fast");
-    expect(wayTooFast.map((m) => m.level)).toEqual(
-      id === "loreExplorer" ? expect.arrayContaining([20, 30]) : [],
-    );
+    expect(wayTooFast.map((m) => m.level)).toEqual([]);
   });
 });

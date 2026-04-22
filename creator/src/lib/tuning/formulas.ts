@@ -1,52 +1,110 @@
-// ─── Tuning Wizard Formula Evaluators ──────────────────────────────
+// ─── Tuning Wizard Formula Evaluators ───────────────────────────────
 //
 // Pure stateless functions that compute derived gameplay metrics from
-// AppConfig values. Used by preset comparison and visualization.
+// AppConfig values. These mirror the server's progression and world
+// loader rules so tuning previews stay grounded in the actual MUD.
 
-import type { AppConfig } from "@/types/config";
+import type { AppConfig, MobTierConfig } from "@/types/config";
 import type { MetricSnapshot } from "./types";
 import { REPRESENTATIVE_LEVELS } from "./types";
 
+const BASE_STAT = 10;
+
+function levelSteps(level: number): number {
+  return Math.max(1, level) - 1;
+}
+
 /**
- * XP required to reach a given level. Formula inferred from
- * XpCurveConfig field semantics.
+ * Total XP required to reach a given level.
+ * Mirrors PlayerProgression.totalXpForLevel in the server.
  */
 export function xpForLevel(
   level: number,
   xp: { baseXp: number; exponent: number; linearXp: number; multiplier: number },
 ): number {
-  return Math.floor(
-    (xp.baseXp * Math.pow(level, xp.exponent) + xp.linearXp * level) * xp.multiplier,
-  );
+  if (level <= 1) return 0;
+  const steps = levelSteps(level);
+  const total = xp.baseXp * Math.pow(steps, xp.exponent) + xp.linearXp * steps;
+  if (!Number.isFinite(total)) return Number.MAX_SAFE_INTEGER;
+  return Math.max(0, Math.round(total));
 }
 
 /** Mob hit points at a given level for a specific tier. */
 export function mobHpAtLevel(
-  tier: { baseHp: number; hpPerLevel: number },
+  tier: Pick<MobTierConfig, "baseHp" | "hpPerLevel">,
   level: number,
 ): number {
-  return tier.baseHp + tier.hpPerLevel * level;
+  return tier.baseHp + tier.hpPerLevel * levelSteps(level);
+}
+
+/** Mob min damage at a given level for a specific tier. */
+export function mobMinDamageAtLevel(
+  tier: Pick<MobTierConfig, "baseMinDamage" | "damagePerLevel">,
+  level: number,
+): number {
+  return tier.baseMinDamage + tier.damagePerLevel * levelSteps(level);
+}
+
+/** Mob max damage at a given level for a specific tier. */
+export function mobMaxDamageAtLevel(
+  tier: Pick<MobTierConfig, "baseMaxDamage" | "damagePerLevel">,
+  level: number,
+): number {
+  return tier.baseMaxDamage + tier.damagePerLevel * levelSteps(level);
 }
 
 /** Average mob damage at a given level for a specific tier. */
 export function mobAvgDamageAtLevel(
-  tier: { baseMinDamage: number; baseMaxDamage: number; damagePerLevel: number },
+  tier: Pick<MobTierConfig, "baseMinDamage" | "baseMaxDamage" | "damagePerLevel">,
   level: number,
 ): number {
-  return (tier.baseMinDamage + tier.baseMaxDamage) / 2 + tier.damagePerLevel * level;
+  return (mobMinDamageAtLevel(tier, level) + mobMaxDamageAtLevel(tier, level)) / 2;
+}
+
+/** Mob XP reward at a given level before progression multiplier is applied. */
+export function mobXpRewardAtLevel(
+  tier: Pick<MobTierConfig, "baseXpReward" | "xpRewardPerLevel">,
+  level: number,
+): number {
+  return tier.baseXpReward + tier.xpRewardPerLevel * levelSteps(level);
+}
+
+/** Mob gold minimum at a given level for a specific tier. */
+export function mobGoldMinAtLevel(
+  tier: Pick<MobTierConfig, "baseGoldMin" | "goldPerLevel">,
+  level: number,
+): number {
+  return tier.baseGoldMin + tier.goldPerLevel * levelSteps(level);
+}
+
+/** Mob gold maximum at a given level for a specific tier. */
+export function mobGoldMaxAtLevel(
+  tier: Pick<MobTierConfig, "baseGoldMax" | "goldPerLevel">,
+  level: number,
+): number {
+  return tier.baseGoldMax + tier.goldPerLevel * levelSteps(level);
 }
 
 /** Average mob gold drop at a given level for a specific tier. */
 export function mobAvgGoldAtLevel(
-  tier: { baseGoldMin: number; baseGoldMax: number; goldPerLevel: number },
+  tier: Pick<MobTierConfig, "baseGoldMin" | "baseGoldMax" | "goldPerLevel">,
   level: number,
 ): number {
-  return (tier.baseGoldMin + tier.baseGoldMax) / 2 + tier.goldPerLevel * level;
+  return (mobGoldMinAtLevel(tier, level) + mobGoldMaxAtLevel(tier, level)) / 2;
 }
 
-/** Stat-derived bonus: floor(statValue / divisor). */
+/** Applies the server's XP reward multiplier to a raw reward amount. */
+export function scaledXpReward(amount: number, multiplier: number): number {
+  if (amount <= 0) return 0;
+  const total = amount * multiplier;
+  if (!Number.isFinite(total)) return Number.MAX_SAFE_INTEGER;
+  return Math.max(0, Math.round(total));
+}
+
+/** Stat-derived bonus: points above base, divided with truncation toward zero. */
 export function statBonus(statValue: number, divisor: number): number {
-  return Math.floor(statValue / divisor);
+  if (divisor <= 0) return 0;
+  return Math.trunc((statValue - BASE_STAT) / divisor);
 }
 
 /** Dodge chance percentage, capped at maxDodgePercent. */
@@ -54,25 +112,29 @@ export function dodgeChance(
   dodgeStatValue: number,
   bindings: { dodgePerPoint: number; maxDodgePercent: number },
 ): number {
-  return Math.min(bindings.dodgePerPoint * dodgeStatValue, bindings.maxDodgePercent);
+  return Math.min(
+    Math.max((dodgeStatValue - BASE_STAT) * bindings.dodgePerPoint, 0),
+    bindings.maxDodgePercent,
+  );
 }
 
 /**
  * Player HP at a given level.
- * Approximation -- exact server formula involves full player model.
- * Stat bonus scales per level.
+ * Mirrors PlayerProgression.maxHpForLevel for a resolved hpPerLevel value.
  */
 export function playerHpAtLevel(
   level: number,
   rewards: { baseHp: number; hpPerLevel: number },
-  classHpPerLevel: number,
+  hpPerLevel: number,
   hpScalingStat: number,
   hpScalingDivisor: number,
 ): number {
-  return (
+  const steps = levelSteps(level);
+  const total =
     rewards.baseHp +
-    (rewards.hpPerLevel + classHpPerLevel + statBonus(hpScalingStat, hpScalingDivisor)) * level
-  );
+    steps * hpPerLevel +
+    steps * statBonus(hpScalingStat, hpScalingDivisor);
+  return Math.max(rewards.baseHp, total);
 }
 
 /** HP regen interval in milliseconds, clamped to minIntervalMillis. */
@@ -82,7 +144,7 @@ export function regenIntervalMs(
   hpRegenMsPerPoint: number,
 ): number {
   return Math.max(
-    regen.baseIntervalMillis - hpRegenMsPerPoint * statValue,
+    regen.baseIntervalMillis - hpRegenMsPerPoint * Math.max(statValue - BASE_STAT, 0),
     regen.minIntervalMillis,
   );
 }
@@ -92,13 +154,10 @@ export function regenIntervalMs(
  * formulas at the representative levels [1, 5, 10, 20, 30, 50].
  *
  * Assumptions for player-dependent metrics:
- * - Base stat value: 10 (reasonable starting character)
- * - Class HP per level: 3 (mid-range class)
+ * - Base stat value: 10 (server baseline)
+ * - HP-per-level uses the progression default rather than an invented class
  */
 export function computeMetrics(config: AppConfig): MetricSnapshot {
-  const BASE_STAT = 10;
-  const CLASS_HP_PER_LEVEL = 3;
-
   const xpPerLevel: Record<number, number> = {};
   const mobHp: Record<string, Record<number, number>> = {};
   const mobDamageAvg: Record<string, Record<number, number>> = {};
@@ -131,7 +190,7 @@ export function computeMetrics(config: AppConfig): MetricSnapshot {
     playerHpMap[level] = playerHpAtLevel(
       level,
       config.progression.rewards,
-      CLASS_HP_PER_LEVEL,
+      config.progression.rewards.hpPerLevel,
       BASE_STAT,
       config.stats.bindings.hpScalingDivisor,
     );

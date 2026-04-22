@@ -8,6 +8,7 @@ import { useProjectStore } from "@/stores/projectStore";
 import { useTuningWizardStore } from "@/stores/tuningWizardStore";
 import { TUNING_PRESETS } from "@/lib/tuning/presets";
 import type { TuningPreset } from "@/lib/tuning/presets";
+import { evaluateArchetype } from "@/lib/tuning/archetypeScore";
 import { computeMetrics } from "@/lib/tuning/formulas";
 import { FIELD_METADATA } from "@/lib/tuning/fieldMetadata";
 import { computeDiff, groupDiffBySection } from "@/lib/tuning/diffEngine";
@@ -16,6 +17,7 @@ import { deepMerge, setNestedValue } from "@/lib/tuning/merge";
 import type { AppConfig } from "@/types/config";
 import type { DeepPartial, FieldMeta, DiffEntry } from "@/lib/tuning/types";
 import { PresetCard } from "./PresetCard";
+import { ArchetypeContractPanel } from "./ArchetypeContractPanel";
 import { SearchFilterBar } from "./SearchFilterBar";
 import { ParameterSection } from "./ParameterSection";
 import { MetricSectionCards } from "./MetricSectionCards";
@@ -105,12 +107,21 @@ export function TuningWizard() {
   }, [project, saving, showToast]);
 
   /** Compute metrics for each preset by merging onto current config. */
-  const presetMetrics = useMemo(() => {
+  const presetSnapshots = useMemo(() => {
     if (!config) return null;
-    const map = new Map<string, ReturnType<typeof computeMetrics>>();
+    const map = new Map<
+      string,
+      {
+        metrics: ReturnType<typeof computeMetrics>;
+        evaluation: ReturnType<typeof evaluateArchetype>;
+      }
+    >();
     for (const preset of TUNING_PRESETS) {
       const merged = deepMerge(config as unknown as Record<string, unknown>, preset.config as unknown as DeepPartial<Record<string, unknown>>) as unknown as AppConfig;
-      map.set(preset.id, computeMetrics(merged));
+      map.set(preset.id, {
+        metrics: computeMetrics(merged),
+        evaluation: evaluateArchetype(merged, preset.id),
+      });
     }
     return map;
   }, [config]);
@@ -138,6 +149,11 @@ export function TuningWizard() {
     if (!presetConfig) return null;
     return computeMetrics(presetConfig);
   }, [presetConfig]);
+
+  const activePresetEvaluation = useMemo(() => {
+    if (!presetConfig || !selectedPresetId) return null;
+    return evaluateArchetype(presetConfig, selectedPresetId);
+  }, [presetConfig, selectedPresetId]);
 
   /** Diff counts per section for the World & Social footnote. */
   const sectionDiffCounts = useMemo(() => {
@@ -242,7 +258,7 @@ export function TuningWizard() {
             Tuning Wizard
           </h1>
           <p className="mt-2 max-w-3xl text-sm text-text-secondary">
-            Compare curated balance presets, accept the sections you want, and keep the final save explicit.
+            Compare Arcanum tuning archetypes, review their contract score, accept the sections you want, and keep the final save explicit.
           </p>
           {saveError && (
             <p role="alert" className="mt-2 text-2xs text-status-error">
@@ -269,13 +285,21 @@ export function TuningWizard() {
           <PresetCard
             key={preset.id}
             preset={preset}
-            metrics={presetMetrics!.get(preset.id)!}
+            metrics={presetSnapshots!.get(preset.id)!.metrics}
+            evaluation={presetSnapshots!.get(preset.id)!.evaluation}
             isSelected={selectedPresetId === preset.id}
             isDimmed={selectedPresetId !== null && selectedPresetId !== preset.id}
             onSelect={() => handleSelect(preset)}
           />
         ))}
       </div>
+
+      {selectedPreset && activePresetEvaluation && (
+        <ArchetypeContractPanel
+          preset={selectedPreset}
+          evaluation={activePresetEvaluation}
+        />
+      )}
 
       {/* Metric summary cards (D-05, D-06) */}
       {selectedPresetId && currentMetrics && activePresetMetrics && (

@@ -186,6 +186,13 @@ describe("preset structure", () => {
       expect(preset.description.length).toBeGreaterThan(0);
     }
   });
+
+  it("Balanced remains an Arcanum-owned archetype, not a mirrored MUD baseline", () => {
+    expect(BALANCED_PRESET.name).toBe("Balanced Realm");
+    expect(BALANCED_PRESET.config.dailyQuests?.enabled).toBe(true);
+    expect(BALANCED_PRESET.config.globalQuests?.enabled).toBe(true);
+    expect(BALANCED_PRESET.config.guild?.maxSize).toBe(30);
+  });
 });
 
 // ─── Section Descriptions ────────────────────────────────────────────

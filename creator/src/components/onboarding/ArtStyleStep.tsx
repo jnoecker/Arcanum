@@ -35,7 +35,7 @@ const STYLE_OPTIONS: StyleOption[] = [
     description:
       "Soft edges, gentle palettes, a storybook warmth. Reads more like animation concept art — approachable, friendly, and lightly whimsical.",
     provider: "openai",
-    model: "openai:4@1",
+    model: "openai:gpt-image@2",
     previewImage: "/onboarding/gpt-sample.jpg",
   },
 ];

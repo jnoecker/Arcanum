@@ -49,9 +49,13 @@ npx wrangler secret put RUNWARE_API_KEY
 # Hub admin
 cd hub-admin
 npm install
-VITE_HUB_API_URL=https://api.arcanum-hub.com npm run build
+VITE_HUB_API_URL=https://api.arcanum-hub.com npm run build        # bash/zsh
+# PowerShell equivalent:
+#   $env:VITE_HUB_API_URL = "https://api.arcanum-hub.com"; npm run build
 npx wrangler pages deploy dist --project-name=arcanum-hub-admin --branch=main
 ```
+
+Shell note: this repo is primarily developed on Windows. `VAR=value command` is bash/zsh syntax and fails in PowerShell 5.1 — use `$env:VAR = "value"; command` instead. PowerShell also has no `&&`; chain with `;` (unconditional) or `; if ($?) { ... }` (conditional on success).
 
 ## Architecture
 
@@ -149,7 +153,7 @@ All public functions exposed to the frontend are `#[tauri::command]` and return 
   - Publish endpoints gate on `email_verified` — demo users get a `publish_requires_verification` 403 until they upgrade.
 - **Publish API** (Bearer auth): `POST /publish/check-existing`, `PUT /publish/image/<hash>.webp`, `POST /publish/manifest`. Slug ownership enforced per publish. Creator side: `creator/src-tauri/src/hub.rs::publish_to_hub`.
 - **AI proxy** (Bearer auth, per-user lifetime quotas — default 500 images / 5000 LLM calls, stored on `users`, reset on API key rotation):
-  - `POST /ai/image/generate` → Runware (`runware:400@2` FLUX.2, `openai:4@1` GPT Image 1.5)
+  - `POST /ai/image/generate` → Runware (`runware:400@2` FLUX.2, `openai:gpt-image@2` GPT Image 2)
   - `POST /ai/llm/complete` → OpenRouter DeepSeek V3.2 (`deepseek/deepseek-v3.2-20251201`)
   - `POST /ai/llm/vision` → Claude Sonnet 4.6
   - Vision calls bill against `prompts_used`. Model allowlist + guardrails (steps ≤ 32, dimensions ≤ 1024, GPT quality forced to `"low"`) enforced server-side.

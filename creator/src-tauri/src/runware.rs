@@ -20,7 +20,6 @@ struct RunwareIpAdapter {
 #[serde(rename_all = "camelCase")]
 struct OpenAIImageSettings {
     quality: String,
-    background: String,
 }
 
 #[derive(Debug, Serialize)]
@@ -76,8 +75,9 @@ fn round_to_16(v: u32) -> u32 {
     rounded.clamp(128, 2048)
 }
 
-/// Snap to the nearest valid GPT Image 1.5 size that matches the target aspect ratio.
-/// Valid sizes: 1024×1024, 1536×1024, 1024×1536.
+/// Snap to the nearest valid GPT Image 1K-tier size that matches the target aspect ratio.
+/// Valid 1K sizes: 1024×1024, 1536×1024, 1024×1536. (v2 also supports 2K/4K 16:9 but
+/// Arcanum generation is capped at 1024px and resized in the backend, so we stay on 1K.)
 /// Prefers 1024×1024 when the target is roughly square (within 4:3).
 fn snap_gpt_image_dims(w: u32, h: u32) -> (u32, u32) {
     let ratio = w as f64 / h as f64;
@@ -90,10 +90,10 @@ fn snap_gpt_image_dims(w: u32, h: u32) -> (u32, u32) {
     }
 }
 
-/// Whether to request native transparent background from GPT Image 1.5.
-/// Disabled: transparent mode degrades GPT's output quality significantly
-/// (doll-like figures, wrong proportions, dark renders). The client-side
-/// bg-removal pipeline handles transparency after generation instead.
+/// Whether to request native transparent background from the image provider.
+/// Disabled across the board — GPT Image v2 dropped the provider-level
+/// `background` field, and the v1 transparent mode degraded output quality.
+/// The client-side bg-removal pipeline handles transparency after generation.
 fn wants_transparent_bg(_asset_type: Option<&str>) -> bool {
     false
 }
@@ -160,7 +160,7 @@ pub async fn runware_generate_image(
     let target_h = height.unwrap_or(1024);
     let mdl = model.unwrap_or_else(|| "runware:400@2".to_string());
 
-    // GPT Image 1.5 only supports fixed dimensions; FLUX models use multiples of 16
+    // GPT Image only supports a fixed set of dimensions; FLUX models use multiples of 16
     let (w, h) = if is_gpt_image_model(&mdl) {
         snap_gpt_image_dims(target_w, target_h)
     } else {
@@ -195,13 +195,12 @@ pub async fn runware_generate_image(
         }]
     });
 
-    // Build provider settings for GPT Image models
+    // Build provider settings for GPT Image models. v2 dropped the
+    // `background` field; only `quality` remains on providerSettings.openai.
     let provider_settings = if is_gpt_image_model(&mdl) {
-        let transparent = wants_transparent_bg(asset_type.as_deref());
         Some(ImageProviderSettings {
             openai: OpenAIImageSettings {
                 quality: "low".to_string(),
-                background: if transparent { "transparent" } else { "opaque" }.to_string(),
             },
         })
     } else {
@@ -263,9 +262,9 @@ pub async fn runware_generate_image(
         .await
         .map_err(|e| format!("Failed to read image bytes: {e}"))?
         .to_vec();
-    // GPT Image models with transparent background produce native transparency — tell the
-    // processing pipeline to preserve alpha instead of flattening against lavender.
-    let native_transparent = is_gpt_image_model(&mdl) && wants_transparent_bg(asset_type.as_deref());
+    // GPT Image v2 no longer exposes native transparency via providerSettings;
+    // background removal is handled client-side by the bg-removal pipeline.
+    let native_transparent = false;
     let behavior = generation::infer_behavior(
         asset_type.as_deref(),
         target_w,

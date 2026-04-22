@@ -5,7 +5,7 @@
 // clamp potentially-expensive parameters (dimensions, step counts,
 // GPT quality tier) so a single request can't blow through the budget.
 //
-//   POST /ai/image/generate            → Runware (FLUX.2 or GPT Image 1.5)
+//   POST /ai/image/generate            → Runware (FLUX.2 or GPT Image 2)
 //   POST /ai/image/remove-background   → Runware Bria RMBG v2.0
 //   POST /ai/llm/complete              → OpenRouter → DeepSeek V3.2
 //   POST /ai/llm/vision                → Anthropic Claude Sonnet 4.6
@@ -31,7 +31,7 @@ const CORS = { origin: "*" as const };
 const IMAGE_MODELS = new Set([
   "runware:400@1", // FLUX.2 [dev]
   "runware:400@2", // FLUX.2 (commercial)
-  "openai:4@1", // GPT Image 1.5
+  "openai:gpt-image@2", // GPT Image 2
 ]);
 
 // Background removal is locked to a single model — no caller choice.
@@ -147,7 +147,7 @@ interface RunwareImageTask {
   numberResults: number;
   includeCost: boolean;
   providerSettings?: {
-    openai: { quality: string; background: string };
+    openai: { quality: string };
   };
 }
 
@@ -189,7 +189,9 @@ async function imageGenerate(req: Request, env: Env, user: UserRow): Promise<Res
 
   const isGptImage = model.startsWith("openai:");
 
-  // GPT Image is ~10× the cost of FLUX per call. Only playtester-tier
+  // GPT Image is materially more expensive than FLUX per call (v2 is
+  // token-priced: $5/1M text in, $8/1M image in, $10/1M text out,
+  // $30/1M image out). Only playtester-tier
   // users (admin-invited) get access to it on the hub's dime; demo
   // and self-signup users are locked to FLUX regardless of what their
   // client asks for.
@@ -206,7 +208,8 @@ async function imageGenerate(req: Request, env: Env, user: UserRow): Promise<Res
       CORS,
     );
   }
-  const wantsTransparent = Boolean(body.transparentBackground);
+  // `body.transparentBackground` is accepted for wire compat but no longer
+  // influences the request — GPT Image v2 dropped providerSettings.openai.background.
 
   // ─── Dimension guardrail ─────────────────────────────────────────
   let width: number;
@@ -231,19 +234,19 @@ async function imageGenerate(req: Request, env: Env, user: UserRow): Promise<Res
     outputFormat: body.outputFormat ?? "PNG",
     numberResults: 1,
     // Ask Runware to include cost in the response so we can log it
-    // and surface it in the hub response. Used for verifying quality
-    // tier (low: ~$0.009, medium: ~$0.034, high: ~$0.133 for GPT Image).
+    // and surface it in the hub response. GPT Image v2 bills per-token
+    // (input + output), so per-image cost depends on prompt length
+    // and resolution — `cost` in the response is the source of truth.
     includeCost: true,
   };
 
   if (isGptImage) {
-    // Force quality "low" regardless of what the client asks — that's
-    // what current Arcanum uses and it keeps cost predictable
-    // (~$0.009/image instead of ~$0.133 at "high").
+    // Force quality "low" regardless of what the client asks. v2 dropped
+    // the `background` field on providerSettings.openai; transparency is
+    // no longer a provider-level toggle — the bg-removal pipeline handles it.
     task.providerSettings = {
       openai: {
         quality: "low",
-        background: wantsTransparent ? "transparent" : "opaque",
       },
     };
   } else {
@@ -597,7 +600,8 @@ function roundTo16(n: number): number {
   return Math.max(256, Math.round(n / 16) * 16);
 }
 
-/** GPT Image 1.5 only supports {1024x1024, 1024x1536, 1536x1024}. */
+/** GPT Image v2 supports {1024x1024, 1024x1536, 1536x1024, 2560x1440, 3840x2160};
+ *  we stay on the 1K tier because the rest of Arcanum caps generation at 1024px. */
 function snapGptImageDims(w: number, h: number): [number, number] {
   const aspect = w / h;
   if (aspect > 1.2) return [1536, 1024];

@@ -45,7 +45,7 @@ pub async fn openai_generate_image(
     let settings = settings::get_settings(app.clone()).await?;
 
     // Hub mode: route through the hub's Runware proxy, which serves
-    // GPT Image 1.5 under `openai:4@1`. The `quality` arg is ignored
+    // GPT Image v2 under `openai:gpt-image@2`. The `quality` arg is ignored
     // because the hub forces "low" server-side.
     if crate::hub_ai::is_enabled(&settings) {
         let _ = quality;
@@ -58,8 +58,8 @@ pub async fn openai_generate_image(
         .await?;
         // Map the OpenAI model name to the Runware AIR identifier.
         let hub_model = match model.as_deref() {
-            Some("gpt-image-1") | Some("openai:4@1") | None => Some("openai:4@1"),
-            Some(other) if other.starts_with("openai:") => Some("openai:4@1"),
+            Some("gpt-image-1") | Some("gpt-image-2") | Some("openai:4@1") | Some("openai:gpt-image@2") | None => Some("openai:gpt-image@2"),
+            Some(other) if other.starts_with("openai:") => Some("openai:gpt-image@2"),
             Some(_) => None,
         };
         return crate::hub_ai::generate_image(
@@ -87,7 +87,8 @@ pub async fn openai_generate_image(
 
     // Map internal model IDs to OpenAI model names
     let model_id = match model.as_deref() {
-        Some("openai:4@1") | None => "gpt-image-1".to_string(),
+        Some("openai:gpt-image@2") | None => "gpt-image-2".to_string(),
+        Some("openai:4@1") => "gpt-image-2".to_string(),
         Some(other) => other.to_string(),
     };
     let w = width.unwrap_or(1024);
@@ -117,8 +118,8 @@ pub async fn openai_generate_image(
         // Default to "low" to match the Runware path in runware.rs and
         // the hub proxy in hub_ai — all three now agree. Arcanum's
         // workflow generates a lot of images and low-quality GPT Image
-        // 1.5 is still visually strong for game assets at ~1/15th the
-        // price of high.
+        // is still visually strong for game assets while keeping
+        // token cost bounded.
         quality: quality.or_else(|| Some("low".to_string())),
         background: if behavior.transparent_background {
             Some("transparent".to_string())

@@ -9,7 +9,7 @@
 // — the frontend is intentionally unaware that hub mode even exists.
 //
 // The hub enforces:
-//   - model allowlist (FLUX.2, GPT Image 1.5, Claude Haiku 4.5, Claude Sonnet 4.6)
+//   - model allowlist (FLUX.2, GPT Image 2, Claude Haiku 4.5, Claude Sonnet 4.6)
 //   - lifetime usage quotas
 //   - dimension + step caps
 //   - quality clamp for GPT Image ("low" always)
@@ -384,7 +384,7 @@ pub fn translate_model_for_hub(direct_model: &str) -> Option<&'static str> {
         m if m.contains("FLUX-1-dev") || m.contains("FLUX-1-schnell") || m.contains("FLUX-1-pro") => {
             Some("runware:400@2")
         }
-        "gpt-image-1" => Some("openai:4@1"),
+        "gpt-image-1" | "gpt-image-2" | "openai:4@1" => Some("openai:gpt-image@2"),
         _ => None,
     }
 }

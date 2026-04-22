@@ -131,7 +131,7 @@ No account is required for either edition. If you don't want to manage AI provid
 
 ### Art generation (Full Edition)
 
-- **AI image generation** through DeepInfra (FLUX), Runware, or OpenAI (GPT Image 1.5), or through the Arcanum Hub proxy.
+- **AI image generation** through DeepInfra (FLUX), Runware, or OpenAI (GPT Image 2), or through the Arcanum Hub proxy.
 - **World-defined visual style** — every project declares its own art style, and that style is folded into the prompt for every generated image so your world stays visually coherent.
 - **Dedicated studios** for portraits, ability icons, zone backgrounds, sprites, housing interiors, and AI-illustrated zone maps generated from their actual room data.
 - **Live-preview showcase settings** — tune your published site's art and hero imagery with an AI art generator that previews the result in-place.

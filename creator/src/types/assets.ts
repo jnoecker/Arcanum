@@ -214,16 +214,16 @@ export const IMAGE_MODELS = [
     defaultGuidance: 3.5,
   },
   {
-    id: "openai:4@1",
-    label: "GPT Image 1.5",
-    description: "OpenAI gpt-image-1, high quality",
+    id: "openai:gpt-image@2",
+    label: "GPT Image 2",
+    description: "OpenAI gpt-image-2, strong prompt fidelity + layout",
     provider: "openai" as const,
     defaultSteps: 1,
   },
   {
-    id: "openai:4@1",
-    label: "GPT Image 1.5 (Runware)",
-    description: "GPT-image-1 via Runware, ~$0.009/image",
+    id: "openai:gpt-image@2",
+    label: "GPT Image 2 (Runware)",
+    description: "gpt-image-2 via Runware, token-priced",
     provider: "runware" as const,
     defaultSteps: 1,
   },
@@ -258,16 +258,17 @@ export function imageGenerateCommand(provider: string): string {
 
 /** Returns true if the model natively generates transparent backgrounds,
  *  meaning client-side BG removal should be skipped to avoid double processing.
- *  Currently always false — native transparency is disabled because GPT Image 1.5
- *  produces degraded output in transparent mode. */
+ *  Currently always false — native transparency is disabled because v1 of
+ *  GPT Image produced degraded output in transparent mode, and v2 dropped
+ *  the provider-level `background` field entirely. */
 export function modelNativelyTransparent(_provider: string, _modelId?: string): boolean {
   return false;
 }
 
 /** Whether to request native transparent background from the image provider.
- *  Disabled: GPT Image 1.5's transparent mode degrades output quality
- *  (doll-like figures, wrong proportions). Client-side bg-removal handles
- *  transparency after generation instead. */
+ *  Disabled: GPT Image v2 removed the provider-level transparency toggle,
+ *  and v1 produced degraded output in transparent mode. Client-side
+ *  bg-removal handles transparency after generation instead. */
 export function requestsTransparentBackground(_assetType?: AssetType | string | null): boolean {
   return false;
 }

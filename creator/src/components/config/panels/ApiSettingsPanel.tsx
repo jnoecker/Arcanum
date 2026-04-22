@@ -52,14 +52,14 @@ const PROVIDER_CARDS: ProviderCard[] = [
     label: "Runware",
     keyField: "runware_api_key",
     helpUrl: "runware.ai/account/api-keys",
-    uses: "Image generation (FLUX, FLUX.2, GPT Image 1.5).",
+    uses: "Image generation (FLUX, FLUX.2, GPT Image 2).",
   },
   {
     id: "openai",
     label: "OpenAI",
     keyField: "openai_api_key",
     helpUrl: "platform.openai.com/api-keys",
-    uses: "Image generation (GPT Image 1.5) and text-to-speech.",
+    uses: "Image generation (GPT Image 2) and text-to-speech.",
   },
 ];
 

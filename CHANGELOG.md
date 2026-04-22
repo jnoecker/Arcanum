@@ -8,6 +8,11 @@ This project uses ad-hoc semantic versioning — minor bumps for feature work, p
 
 _No unreleased changes at this time._
 
+## [3.8.1] — 2026-04-22
+
+### Fixed
+- **Mob damage invariant check** — `validateZone` now resolves each mob's min/max damage via its `tier` + `level` fallback (matching the server's `WorldLoader`) and errors when `resolvedMax < resolvedMin`. This catches the failure mode where a mob overrides only `maxDamage` (e.g. nerfed NPCs at `maxDamage: 1`) while the tier-derived `minDamage` drifts above that ceiling — previously the server would refuse to boot with `WorldLoadException: resolved maxDamage (X) must be >= minDamage (Y)` and Arcanum had no way to flag it before publish. The new error text points at which side is overridden vs inherited.
+
 ## [3.8.0] — 2026-04-22
 
 ### Added

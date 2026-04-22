@@ -1,7 +1,7 @@
 {
   "name": "arcanum",
   "private": true,
-  "version": "3.8.0",
+  "version": "3.8.1",
   "license": "SEE LICENSE IN ../LICENSE.md",
   "type": "module",
   "scripts": {

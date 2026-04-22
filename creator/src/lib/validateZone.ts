@@ -2,12 +2,13 @@ import type {
   WorldFile,
   DoorFile,
   FeatureFile,
+  MobFile,
   PuzzleFile,
   PuzzleReward,
   RareYieldFile,
   RecipeFile,
 } from "@/types/world";
-import type { EquipmentSlotDefinition } from "@/types/config";
+import type { EquipmentSlotDefinition, MobTiersConfig } from "@/types/config";
 import { resolveDoorKeyId, resolveDoorState } from "./doorHelpers";
 import { exitTarget } from "./zoneEdits";
 import { getTrainerClasses } from "./trainers";
@@ -46,6 +47,44 @@ function hasPositiveOnUse(item: NonNullable<WorldFile["items"]>[string]): boolea
   const onUse = item.onUse;
   if (!onUse) return false;
   return (onUse.healHp ?? 0) > 0 || (onUse.grantXp ?? 0) > 0;
+}
+
+/**
+ * Resolve a mob's effective min/max damage by falling back to its tier baseline
+ * at the mob's level when either override is absent. Returns undefined if we
+ * can't determine both sides (missing tier config + missing overrides).
+ *
+ * Mirrors the server's WorldLoader fallback: tier min/max = `base + perLevel * level`.
+ * Returning `undefined` means "can't check" — the server will use its own rules.
+ */
+function resolveMobDamage(
+  mob: MobFile,
+  mobTiers: MobTiersConfig | undefined,
+): { min: number; max: number; hint: string } | undefined {
+  const hasMin = mob.minDamage != null;
+  const hasMax = mob.maxDamage != null;
+  if (hasMin && hasMax) {
+    return {
+      min: mob.minDamage!,
+      max: mob.maxDamage!,
+      hint: "Both overrides set — adjust one or both so max >= min.",
+    };
+  }
+  const tierId = mob.tier;
+  const tier = tierId && mobTiers ? (mobTiers as unknown as Record<string, MobTiersConfig["weak"]>)[tierId] : undefined;
+  if (!tier) return undefined;
+  const level = mob.level ?? 1;
+  const tierMin = tier.baseMinDamage + tier.damagePerLevel * level;
+  const tierMax = tier.baseMaxDamage + tier.damagePerLevel * level;
+  const resolvedMin = hasMin ? mob.minDamage! : tierMin;
+  const resolvedMax = hasMax ? mob.maxDamage! : tierMax;
+  const inherited = hasMin ? "maxDamage" : "minDamage";
+  const overrideSide = hasMin ? "minDamage" : "maxDamage";
+  return {
+    min: resolvedMin,
+    max: resolvedMax,
+    hint: `${overrideSide} is overridden but ${inherited} inherits from tier "${tierId}" at level ${level} (${inherited === "minDamage" ? tierMin : tierMax}). Set both overrides explicitly.`,
+  };
 }
 
 function validateDoor(
@@ -294,6 +333,7 @@ export function validateZone(
   validClasses?: ReadonlySet<string>,
   knownFactions?: ReadonlySet<string>,
   knownAchievements?: ReadonlySet<string>,
+  mobTiers?: MobTiersConfig,
 ): ValidationIssue[] {
   const issues: ValidationIssue[] = [];
   const roomIds = new Set(Object.keys(world.rooms));
@@ -361,6 +401,16 @@ export function validateZone(
     }
     if (mob.respawnSeconds != null && mob.respawnSeconds <= 0) {
       addIssue(issues, "error", entity, "Respawn seconds must be greater than 0");
+    }
+
+    const resolvedDamage = resolveMobDamage(mob, mobTiers);
+    if (resolvedDamage && resolvedDamage.max < resolvedDamage.min) {
+      addIssue(
+        issues,
+        "error",
+        entity,
+        `Resolved maxDamage (${resolvedDamage.max}) must be >= minDamage (${resolvedDamage.min}). ${resolvedDamage.hint}`,
+      );
     }
 
     for (const [index, drop] of (mob.drops ?? []).entries()) {
@@ -578,10 +628,11 @@ export function validateAllZones(
   validClasses?: ReadonlySet<string>,
   knownFactions?: ReadonlySet<string>,
   knownAchievements?: ReadonlySet<string>,
+  mobTiers?: MobTiersConfig,
 ): Map<string, ValidationIssue[]> {
   const results = new Map<string, ValidationIssue[]>();
   for (const [zoneId, zone] of zones) {
-    const issues = validateZone(zone.data, equipmentSlots, validClasses, knownFactions, knownAchievements);
+    const issues = validateZone(zone.data, equipmentSlots, validClasses, knownFactions, knownAchievements, mobTiers);
     if (issues.length > 0) {
       results.set(zoneId, issues);
     }

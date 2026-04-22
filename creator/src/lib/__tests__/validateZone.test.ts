@@ -439,4 +439,42 @@ describe("validateZone", () => {
       expect(issues.filter((i) => i.message.includes("anything"))).toHaveLength(0);
     });
   });
+
+  describe("mob damage invariant", () => {
+    const tiers = {
+      weak: { baseHp: 8, hpPerLevel: 3, baseMinDamage: 1, baseMaxDamage: 3, damagePerLevel: 1, baseArmor: 0, baseXpReward: 10, xpRewardPerLevel: 3, baseGoldMin: 0, baseGoldMax: 2, goldPerLevel: 1 },
+      standard: { baseHp: 20, hpPerLevel: 5, baseMinDamage: 3, baseMaxDamage: 6, damagePerLevel: 2, baseArmor: 2, baseXpReward: 20, xpRewardPerLevel: 7, baseGoldMin: 1, baseGoldMax: 4, goldPerLevel: 2 },
+      elite: { baseHp: 50, hpPerLevel: 10, baseMinDamage: 5, baseMaxDamage: 10, damagePerLevel: 3, baseArmor: 4, baseXpReward: 50, xpRewardPerLevel: 15, baseGoldMin: 5, baseGoldMax: 15, goldPerLevel: 5 },
+      boss: { baseHp: 200, hpPerLevel: 30, baseMinDamage: 10, baseMaxDamage: 20, damagePerLevel: 5, baseArmor: 8, baseXpReward: 200, xpRewardPerLevel: 50, baseGoldMin: 50, baseGoldMax: 150, goldPerLevel: 20 },
+    };
+
+    it("errors when maxDamage override < tier-resolved minDamage", () => {
+      const world = makeValidWorld();
+      world.mobs!.rat = { name: "Rat", room: "room1", tier: "weak", level: 3, maxDamage: 1 };
+      const issues = errors(validateZone(world, undefined, undefined, undefined, undefined, tiers));
+      // weak tier at level 3: minDamage = 1 + 1*3 = 4, so maxDamage=1 < 4
+      expect(issues.some((i) => i.entity === "mob:rat" && i.message.includes("maxDamage") && i.message.includes("minDamage"))).toBe(true);
+    });
+
+    it("errors when both overrides set and max < min", () => {
+      const world = makeValidWorld();
+      world.mobs!.rat = { name: "Rat", room: "room1", minDamage: 5, maxDamage: 3 };
+      const issues = errors(validateZone(world, undefined, undefined, undefined, undefined, tiers));
+      expect(issues.some((i) => i.entity === "mob:rat")).toBe(true);
+    });
+
+    it("accepts matching explicit overrides", () => {
+      const world = makeValidWorld();
+      world.mobs!.rat = { name: "Rat", room: "room1", tier: "weak", level: 3, minDamage: 1, maxDamage: 1 };
+      const issues = errors(validateZone(world, undefined, undefined, undefined, undefined, tiers));
+      expect(issues.filter((i) => i.entity === "mob:rat")).toHaveLength(0);
+    });
+
+    it("skips the check when no tier config is provided and only one side is overridden", () => {
+      const world = makeValidWorld();
+      world.mobs!.rat = { name: "Rat", room: "room1", tier: "weak", level: 3, maxDamage: 1 };
+      const issues = errors(validateZone(world));
+      expect(issues.filter((i) => i.entity === "mob:rat" && i.message.includes("maxDamage"))).toHaveLength(0);
+    });
+  });
 });

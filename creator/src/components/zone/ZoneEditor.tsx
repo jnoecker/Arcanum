@@ -35,6 +35,7 @@ import { DirectionPicker } from "./DirectionPicker";
 import { BatchArtGenerator } from "./BatchArtGenerator";
 import { RethemeDialog } from "./RethemeDialog";
 import { DuplicateZoneDialog } from "@/components/DuplicateZoneDialog";
+import { RebalanceZoneDialog } from "@/components/zone/RebalanceZoneDialog";
 import { AI_ENABLED } from "@/lib/featureFlags";
 import { BulkBgRemoval, type BulkBgTarget } from "@/components/ui/BulkBgRemoval";
 import { ZoneAssetWorkbench } from "./ZoneAssetWorkbench";
@@ -173,6 +174,7 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
   const [showBatchArt, setShowBatchArt] = useState(false);
   const [showBulkBgRemoval, setShowBulkBgRemoval] = useState(false);
   const [showDuplicate, setShowDuplicate] = useState(false);
+  const [showRebalance, setShowRebalance] = useState(false);
   const [showRetheme, setShowRetheme] = useState(false);
   const assetsDir = useAssetStore((s) => s.assetsDir);
   const [viewMode, setViewMode] = useState<ViewMode>("map");
@@ -688,6 +690,15 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
             >
               Duplicate
             </button>
+            <button
+              onClick={() => setShowRebalance(true)}
+              disabled={!zoneState || Object.keys(zoneState.data.mobs ?? {}).length === 0}
+              className="h-6 rounded px-2 text-xs text-text-secondary transition-colors hover:bg-[var(--chrome-highlight)] hover:text-text-primary disabled:opacity-30 max-[1100px]:h-9"
+              title="Adjust mob levels and stats to a target band"
+              aria-label="Rebalance zone"
+            >
+              Rebalance
+            </button>
             {AI_ENABLED && (
               <button
                 onClick={() => setShowRetheme(true)}
@@ -1047,6 +1058,14 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
               <DuplicateZoneDialog
                 zoneId={zoneId}
                 onClose={() => setShowDuplicate(false)}
+              />
+            )}
+
+            {/* Rebalance zone */}
+            {showRebalance && (
+              <RebalanceZoneDialog
+                zoneId={zoneId}
+                onClose={() => setShowRebalance(false)}
               />
             )}
 

@@ -557,6 +557,28 @@ function parseProgressionConfig(raw: unknown): AppConfig["progression"] {
       baseHp: asNumber(rewards.baseHp, 10),
       baseMana: asNumber(rewards.baseMana, 20),
     },
+    quests: parseQuestXpConfig(s.quests),
+  };
+}
+
+function parseQuestXpConfig(raw: unknown): AppConfig["progression"]["quests"] {
+  if (raw == null) return undefined;
+  const s = raw as Record<string, unknown>;
+  const baseline = (s.baseline ?? {}) as Record<string, unknown>;
+  const tiersRaw = (s.tiers ?? {}) as Record<string, unknown>;
+  const tiers: Partial<Record<import("@/types/config").QuestDifficulty, number>> = {};
+  for (const [key, value] of Object.entries(tiersRaw)) {
+    const normalized = key.toLowerCase() as import("@/types/config").QuestDifficulty;
+    if (["trivial", "easy", "standard", "hard", "epic"].includes(normalized) && typeof value === "number") {
+      tiers[normalized] = value;
+    }
+  }
+  return {
+    baseline: {
+      baseXp: asNumber(baseline.baseXp, 50),
+      xpPerLevel: asNumber(baseline.xpPerLevel, 20),
+    },
+    tiers,
   };
 }
 

@@ -202,6 +202,39 @@ export interface ProgressionConfig {
   maxLevel: number;
   xp: XpCurveConfig;
   rewards: LevelRewardsConfig;
+  /** Engine-computed XP for quests. Authors pick a difficulty tier; engine computes XP at completion. */
+  quests?: QuestXpConfig;
+}
+
+export type QuestDifficulty = "trivial" | "easy" | "standard" | "hard" | "epic";
+
+export const QUEST_DIFFICULTIES: QuestDifficulty[] = ["trivial", "easy", "standard", "hard", "epic"];
+
+export const QUEST_DIFFICULTY_LABELS: Record<QuestDifficulty, string> = {
+  trivial: "Trivial",
+  easy: "Easy",
+  standard: "Standard",
+  hard: "Hard",
+  epic: "Epic",
+};
+
+export const QUEST_DIFFICULTY_DESCRIPTIONS: Record<QuestDifficulty, string> = {
+  trivial: "Fetch quests, tutorial steps. ~¼ of a standard reward.",
+  easy: "Short side quests. Half of a standard reward.",
+  standard: "Default pacing — baseline reward for the quest level.",
+  hard: "Tough chains or boss fights. ~1.75× the standard reward.",
+  epic: "Capstone / zone finale. ~3× the standard reward.",
+};
+
+export interface QuestBaselineConfig {
+  baseXp: number;
+  xpPerLevel: number;
+}
+
+export interface QuestXpConfig {
+  baseline: QuestBaselineConfig;
+  /** Per-tier XP multiplier applied on top of the baseline. */
+  tiers: Partial<Record<QuestDifficulty, number>>;
 }
 
 // ─── Economy ────────────────────────────────────────────────────────

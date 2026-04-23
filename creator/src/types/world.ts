@@ -287,6 +287,12 @@ export interface QuestFile {
    * legacy flat-award behaviour.
    */
   level?: number;
+  /**
+   * Engine-driven difficulty tier. When set and `rewards.xp` is absent/0, the
+   * engine computes XP from the progression config's quest baseline × the
+   * tier's multiplier. An explicit positive `rewards.xp` always wins.
+   */
+  difficulty?: import("./config").QuestDifficulty;
 }
 
 export interface QuestObjectiveFile {

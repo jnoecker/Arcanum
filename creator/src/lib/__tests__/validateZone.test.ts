@@ -230,6 +230,49 @@ describe("validateZone", () => {
     expect(issues.some((i) => i.message.includes("tier curve"))).toBe(false);
   });
 
+  it("warns when a quest XP override breaks its difficulty tier", () => {
+    const world = makeValidWorld();
+    world.mobs!.giver = { name: "Giver", room: "room1" };
+    world.quests = {
+      test_quest: {
+        name: "Test",
+        giver: "giver",
+        level: 5,
+        difficulty: "standard",
+        rewards: { xp: 500 },
+        objectives: [{ type: "kill", targetKey: "rat" }],
+      },
+    };
+    const questXpConfig = {
+      baseline: { baseXp: 50, xpPerLevel: 20 },
+      tiers: { standard: 1.0 } as const,
+    };
+    const issues = warnings(
+      validateZone(world, undefined, undefined, undefined, undefined, undefined, questXpConfig),
+    );
+    const match = issues.find(
+      (i) => i.entity === "quest:test_quest" && i.message.includes("override (500)"),
+    );
+    expect(match).toBeDefined();
+    expect(match!.message).toContain("would compute 130");
+  });
+
+  it("does not warn when a quest uses the computed difficulty XP", () => {
+    const world = makeValidWorld();
+    world.mobs!.giver = { name: "Giver", room: "room1" };
+    world.quests = {
+      test_quest: {
+        name: "Test",
+        giver: "giver",
+        level: 5,
+        difficulty: "standard",
+        objectives: [{ type: "kill", targetKey: "rat" }],
+      },
+    };
+    const issues = warnings(validateZone(world));
+    expect(issues.some((i) => i.entity === "quest:test_quest" && i.message.includes("override"))).toBe(false);
+  });
+
   // ─── Item checks ────────────────────────────────────────────
   it("errors if item room does not exist", () => {
     const world = makeValidWorld();

@@ -173,6 +173,36 @@ describe("validateZone", () => {
     expect(issues.some((i) => i.message.includes("root"))).toBe(true);
   });
 
+  it("warns when a prop mob has quests or dialogue", () => {
+    const world = makeValidWorld();
+    world.mobs!.rat.role = "prop";
+    world.mobs!.rat.quests = ["test:someQuest"];
+    world.quests = { "test:someQuest": { name: "Q", giver: "rat", objectives: [{ type: "kill", targetKey: "rat" }] } };
+    const issues = warnings(validateZone(world));
+    expect(issues.some((i) => i.entity === "mob:rat" && i.message.toLowerCase().includes("prop"))).toBe(true);
+  });
+
+  it("warns when a non-combat mob has combat-stat overrides", () => {
+    const world = makeValidWorld();
+    world.mobs!.rat.role = "vendor";
+    world.mobs!.rat.hp = 500;
+    world.mobs!.rat.xpReward = 100;
+    const issues = warnings(validateZone(world));
+    expect(
+      issues.some(
+        (i) => i.entity === "mob:rat" && i.message.toLowerCase().includes("ignore"),
+      ),
+    ).toBe(true);
+  });
+
+  it("does not warn when a combat mob has combat-stat overrides", () => {
+    const world = makeValidWorld();
+    world.mobs!.rat.hp = 500;
+    world.mobs!.rat.xpReward = 100;
+    const issues = warnings(validateZone(world));
+    expect(issues.some((i) => i.entity === "mob:rat" && i.message.toLowerCase().includes("ignore"))).toBe(false);
+  });
+
   // ─── Item checks ────────────────────────────────────────────
   it("errors if item room does not exist", () => {
     const world = makeValidWorld();

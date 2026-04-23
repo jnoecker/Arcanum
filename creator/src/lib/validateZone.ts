@@ -492,6 +492,28 @@ export function validateZone(
       addIssue(issues, "error", entity, "Respawn seconds must be greater than 0");
     }
 
+    const mobRole = mob.role ?? "combat";
+    if (mobRole === "prop" && ((mob.quests?.length ?? 0) > 0 || Object.keys(mob.dialogue ?? {}).length > 0)) {
+      addIssue(
+        issues,
+        "warning",
+        entity,
+        "Props can't offer quests or dialogue — consider role 'quest_giver' or 'dialog' instead.",
+      );
+    }
+    if (mobRole !== "combat") {
+      const combatFieldsSet =
+        mob.hp != null || mob.xpReward != null || mob.minDamage != null || mob.maxDamage != null || mob.armor != null;
+      if (combatFieldsSet) {
+        addIssue(
+          issues,
+          "warning",
+          entity,
+          `Role '${mobRole}' ignores combat stats (hp/xpReward/damage/armor). Remove the overrides to keep the editor clean.`,
+        );
+      }
+    }
+
     const resolvedDamage = resolveMobDamage(mob, mobTiers);
     if (resolvedDamage && resolvedDamage.max < resolvedDamage.min) {
       addIssue(

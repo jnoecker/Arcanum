@@ -1,10 +1,24 @@
-import type { AppConfig, DailyQuestsConfig, GlobalQuestsConfig } from "@/types/config";
+import type {
+  AppConfig,
+  DailyQuestDefinition,
+  DailyQuestsConfig,
+  GlobalQuestObjectiveConfig,
+  GlobalQuestsConfig,
+} from "@/types/config";
 import {
   Section,
   FieldRow,
   NumberInput,
   CheckboxInput,
+  SelectInput,
+  TextInput,
+  IconButton,
+  FieldGrid,
+  CompactField,
+  ArrayRow,
 } from "@/components/ui/FormWidgets";
+import { useArrayField } from "@/lib/useArrayField";
+import { useConfigOptions } from "@/lib/useConfigOptions";
 import { AutoQuestsPanel } from "./panels/AutoQuestsPanel";
 import { QuestTaxonomyDesigner } from "./QuestTaxonomyDesigner";
 
@@ -33,24 +47,62 @@ const DEFAULT_GLOBAL_QUESTS: GlobalQuestsConfig = {
   objectives: [],
 };
 
+const FALLBACK_OBJECTIVE_TYPES = [
+  { value: "kill", label: "Kill" },
+  { value: "collect", label: "Collect" },
+  { value: "gather", label: "Gather" },
+  { value: "craft", label: "Craft" },
+  { value: "dungeon", label: "Dungeon" },
+  { value: "pvpKill", label: "PvP Kill" },
+];
+
+const DEFAULT_DAILY_DEFINITION: DailyQuestDefinition = {
+  type: "",
+  targetCount: 1,
+};
+
+const DEFAULT_GLOBAL_OBJECTIVE: GlobalQuestObjectiveConfig = {
+  type: "",
+  targetCount: 1,
+};
+
 /**
  * Aggregated Living World → Quests panel. Surfaces enable + tuning knobs for
  * daily/weekly, bounty, and global quests, plus the existing taxonomy
- * designer. Pool/objective content authoring is not yet in the UI — until
- * then, sections flag unsatisfied prereqs and point users at Raw YAML.
+ * designer and row-level editors for dailyPool, weeklyPool, and
+ * globalQuests.objectives.
  */
 export function QuestsStudio({ config, onChange }: Props) {
+  const objectiveTypeOptions = useConfigOptions(
+    config.questObjectiveTypes,
+    FALLBACK_OBJECTIVE_TYPES,
+  );
+
   return (
     <div className="flex flex-col gap-6">
-      <DailyQuestsSection config={config} onChange={onChange} />
+      <DailyQuestsSection
+        config={config}
+        onChange={onChange}
+        objectiveTypeOptions={objectiveTypeOptions}
+      />
       <AutoQuestsPanel config={config} onChange={onChange} />
-      <GlobalQuestsSection config={config} onChange={onChange} />
+      <GlobalQuestsSection
+        config={config}
+        onChange={onChange}
+        objectiveTypeOptions={objectiveTypeOptions}
+      />
       <QuestTaxonomyDesigner config={config} onChange={onChange} />
     </div>
   );
 }
 
-function DailyQuestsSection({ config, onChange }: Props) {
+type ObjectiveOption = { value: string; label: string };
+
+function DailyQuestsSection({
+  config,
+  onChange,
+  objectiveTypeOptions,
+}: Props & { objectiveTypeOptions: ObjectiveOption[] }) {
   const dq = config.dailyQuests ?? DEFAULT_DAILY_QUESTS;
   const patch = (p: Partial<DailyQuestsConfig>) =>
     onChange({ dailyQuests: { ...dq, ...p } });
@@ -116,29 +168,149 @@ function DailyQuestsSection({ config, onChange }: Props) {
         </FieldRow>
       </div>
 
-      <PoolStatusLine
-        label="Daily pool"
-        have={dailyPoolLen}
+      <DailyPoolEditor
+        title="Daily pool"
         need={dailySlots}
+        pool={dq.dailyPool}
+        onChange={(dailyPool) => patch({ dailyPool })}
+        objectiveTypeOptions={objectiveTypeOptions}
       />
-      <PoolStatusLine
-        label="Weekly pool"
-        have={weeklyPoolLen}
+      <DailyPoolEditor
+        title="Weekly pool"
         need={weeklySlots}
+        pool={dq.weeklyPool}
+        onChange={(weeklyPool) => patch({ weeklyPool })}
+        objectiveTypeOptions={objectiveTypeOptions}
       />
 
-      {showPrereq && <PrereqWarning message="Daily quests are enabled but the pools aren't full enough. The server won't start with this config. Fill the pools (edit dailyPool / weeklyPool under Raw YAML) or turn dailies off until you do." />}
+      {showPrereq && (
+        <PrereqWarning message="Daily quests are enabled but the pools aren't full enough. The server won't start with this config. Add more pool entries above or turn dailies off until you do." />
+      )}
     </Section>
   );
 }
 
-function GlobalQuestsSection({ config, onChange }: Props) {
+function DailyPoolEditor({
+  title,
+  need,
+  pool,
+  onChange,
+  objectiveTypeOptions,
+}: {
+  title: string;
+  need: number;
+  pool: DailyQuestDefinition[] | undefined;
+  onChange: (next: DailyQuestDefinition[] | undefined) => void;
+  objectiveTypeOptions: ObjectiveOption[];
+}) {
+  const { items, add, update, remove } = useArrayField<DailyQuestDefinition>(
+    pool,
+    onChange,
+    DEFAULT_DAILY_DEFINITION,
+  );
+  const have = items.length;
+  const ok = have >= need;
+
+  return (
+    <div className="mt-4 rounded border border-border-muted/60 bg-[var(--chrome-fill-soft)]/40 p-2.5">
+      <div className="mb-2 flex items-center gap-2">
+        <span className="font-display text-2xs uppercase tracking-widest text-text-secondary">
+          {title}
+        </span>
+        <span className="text-2xs text-text-muted">
+          <span className={`font-mono ${ok ? "text-text-secondary" : "text-status-error"}`}>
+            {have}
+          </span>
+          <span className="text-text-muted/60"> / {need} needed</span>
+        </span>
+        <div className="ml-auto">
+          <IconButton onClick={add} title={`Add ${title.toLowerCase()} entry`} size="sm">
+            +
+          </IconButton>
+        </div>
+      </div>
+      {items.length === 0 ? (
+        <p className="text-2xs text-text-muted">No entries yet.</p>
+      ) : (
+        <div className="flex flex-col gap-2">
+          {items.map((entry, i) => (
+            <ArrayRow key={i} index={i} onRemove={() => remove(i)}>
+              <FieldGrid>
+                <CompactField label="Type">
+                  <SelectInput
+                    value={entry.type}
+                    options={objectiveTypeOptions}
+                    onCommit={(v) => update(i, "type", v)}
+                    placeholder="— select type —"
+                    dense
+                  />
+                </CompactField>
+                <CompactField label="Target count">
+                  <NumberInput
+                    value={entry.targetCount}
+                    onCommit={(v) => update(i, "targetCount", v ?? 1)}
+                    min={1}
+                    dense
+                  />
+                </CompactField>
+              </FieldGrid>
+              <FieldGrid>
+                <CompactField label="Gold reward">
+                  <NumberInput
+                    value={entry.goldReward}
+                    onCommit={(v) => update(i, "goldReward", v)}
+                    min={0}
+                    dense
+                  />
+                </CompactField>
+                <CompactField label="XP reward">
+                  <NumberInput
+                    value={entry.xpReward}
+                    onCommit={(v) => update(i, "xpReward", v)}
+                    min={0}
+                    dense
+                  />
+                </CompactField>
+              </FieldGrid>
+              <FieldGrid>
+                <CompactField label="Description" span>
+                  <TextInput
+                    value={entry.description ?? ""}
+                    onCommit={(v) => update(i, "description", v || undefined)}
+                    placeholder={
+                      entry.type
+                        ? `${entry.type} x${entry.targetCount ?? 1}`
+                        : "Optional"
+                    }
+                    dense
+                  />
+                </CompactField>
+              </FieldGrid>
+            </ArrayRow>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function GlobalQuestsSection({
+  config,
+  onChange,
+  objectiveTypeOptions,
+}: Props & { objectiveTypeOptions: ObjectiveOption[] }) {
   const gq = config.globalQuests ?? DEFAULT_GLOBAL_QUESTS;
   const patch = (p: Partial<GlobalQuestsConfig>) =>
     onChange({ globalQuests: { ...gq, ...p } });
 
   const objectiveCount = gq.objectives?.length ?? 0;
   const showPrereq = gq.enabled && objectiveCount === 0;
+
+  const { items, add, update, remove } = useArrayField<GlobalQuestObjectiveConfig>(
+    gq.objectives,
+    (objectives) => patch({ objectives }),
+    DEFAULT_GLOBAL_OBJECTIVE,
+  );
 
   return (
     <Section
@@ -183,22 +355,70 @@ function GlobalQuestsSection({ config, onChange }: Props) {
         </FieldRow>
       </div>
 
-      <div className="mt-3 text-2xs text-text-muted">
-        Objectives authored: <span className="font-mono text-text-secondary">{objectiveCount}</span>
+      <div className="mt-4 rounded border border-border-muted/60 bg-[var(--chrome-fill-soft)]/40 p-2.5">
+        <div className="mb-2 flex items-center gap-2">
+          <span className="font-display text-2xs uppercase tracking-widest text-text-secondary">
+            Objectives
+          </span>
+          <span className="text-2xs text-text-muted">
+            <span className="font-mono text-text-secondary">{items.length}</span>
+            <span className="text-text-muted/60"> authored</span>
+          </span>
+          <div className="ml-auto">
+            <IconButton onClick={add} title="Add objective" size="sm">
+              +
+            </IconButton>
+          </div>
+        </div>
+        {items.length === 0 ? (
+          <p className="text-2xs text-text-muted">No objectives yet.</p>
+        ) : (
+          <div className="flex flex-col gap-2">
+            {items.map((obj, i) => (
+              <ArrayRow key={i} index={i} onRemove={() => remove(i)}>
+                <FieldGrid>
+                  <CompactField label="Type">
+                    <SelectInput
+                      value={obj.type}
+                      options={objectiveTypeOptions}
+                      onCommit={(v) => update(i, "type", v)}
+                      placeholder="— select type —"
+                      dense
+                    />
+                  </CompactField>
+                  <CompactField label="Target count">
+                    <NumberInput
+                      value={obj.targetCount}
+                      onCommit={(v) => update(i, "targetCount", v ?? 1)}
+                      min={1}
+                      dense
+                    />
+                  </CompactField>
+                </FieldGrid>
+                <FieldGrid>
+                  <CompactField label="Description" span>
+                    <TextInput
+                      value={obj.description ?? ""}
+                      onCommit={(v) => update(i, "description", v || undefined)}
+                      placeholder={
+                        obj.type
+                          ? `${obj.type} x${obj.targetCount ?? 1}`
+                          : "Optional"
+                      }
+                      dense
+                    />
+                  </CompactField>
+                </FieldGrid>
+              </ArrayRow>
+            ))}
+          </div>
+        )}
       </div>
 
-      {showPrereq && <PrereqWarning message="Global quests are enabled but no objectives are authored. The server won't start with this config. Add at least one objective under Raw YAML (globalQuests.objectives) or turn global events off until you do." />}
+      {showPrereq && (
+        <PrereqWarning message="Global quests are enabled but no objectives are authored. The server won't start with this config. Add at least one objective above or turn global events off until you do." />
+      )}
     </Section>
-  );
-}
-
-function PoolStatusLine({ label, have, need }: { label: string; have: number; need: number }) {
-  const ok = have >= need;
-  return (
-    <div className="mt-0.5 text-2xs text-text-muted">
-      {label}: <span className={`font-mono ${ok ? "text-text-secondary" : "text-status-error"}`}>{have}</span>
-      <span className="text-text-muted/60"> / {need} needed</span>
-    </div>
   );
 }
 

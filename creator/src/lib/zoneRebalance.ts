@@ -204,7 +204,7 @@ export function inferLevelBand(zone: WorldFile): { min: number; max: number } {
  */
 export function computeZoneRebalance(
   zone: WorldFile,
-  config: AppConfig,
+  config: Pick<AppConfig, "mobTiers">,
   target: ZoneRebalanceTarget,
 ): ZoneRebalanceDiff {
   const mobs: MobRebalanceDiff[] = [];

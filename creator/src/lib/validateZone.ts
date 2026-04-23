@@ -11,6 +11,7 @@ import type {
 import type { EquipmentSlotDefinition, MobTiersConfig } from "@/types/config";
 import { resolveDoorKeyId, resolveDoorState } from "./doorHelpers";
 import { mobMaxDamageAtLevel, mobMinDamageAtLevel } from "./tuning/formulas";
+import { computeZoneRebalance } from "./zoneRebalance";
 import { exitTarget } from "./zoneEdits";
 import { getTrainerClasses } from "./trainers";
 
@@ -34,6 +35,10 @@ const LOCKABLE_STATES = new Set(["open", "closed", "locked"]);
 const LEVER_STATES = new Set(["up", "down"]);
 const PUZZLE_TYPES = new Set(["riddle", "sequence"]);
 const PUZZLE_REWARD_TYPES = new Set(["unlock_exit", "give_item", "give_gold", "give_xp"]);
+
+function isPositiveInteger(value: number | undefined): value is number {
+  return typeof value === "number" && Number.isInteger(value) && value > 0;
+}
 
 function addIssue(
   issues: ValidationIssue[],
@@ -86,6 +91,73 @@ function resolveMobDamage(
     max: resolvedMax,
     hint: `${overrideSide} is overridden but ${inherited} inherits from tier "${tierId}" at level ${level} (${inherited === "minDamage" ? tierMin : tierMax}). Set both overrides explicitly.`,
   };
+}
+
+function formatZoneTargetLabel(world: WorldFile): string {
+  if (!world.levelBand) return "unspecified zone target";
+  const bandLabel = `${world.levelBand.min}-${world.levelBand.max}`;
+  return world.difficultyHint ? `${bandLabel} (${world.difficultyHint})` : bandLabel;
+}
+
+function validateZoneBalanceTargets(
+  issues: ValidationIssue[],
+  world: WorldFile,
+  mobTiers: MobTiersConfig | undefined,
+): void {
+  if (!world.levelBand || !mobTiers || !world.mobs || Object.keys(world.mobs).length === 0) {
+    return;
+  }
+
+  const diff = computeZoneRebalance(world, { mobTiers }, {
+    levelBand: world.levelBand,
+    difficultyHint: world.difficultyHint,
+  });
+  const zoneTargetLabel = formatZoneTargetLabel(world);
+
+  for (const mobId of diff.skippedMobIds) {
+    const mob = world.mobs[mobId];
+    const tier = mob?.tier ?? "standard";
+    addIssue(
+      issues,
+      "warning",
+      `mob:${mobId}`,
+      `Tier "${tier}" is not defined in config, so the zone target ${zoneTargetLabel} cannot be validated for this mob.`,
+    );
+  }
+
+  for (const mobDiff of diff.mobs) {
+    const entity = `mob:${mobDiff.mobId}`;
+    if (mobDiff.levelChanged) {
+      if (mobDiff.currentLevel == null) {
+        addIssue(
+          issues,
+          "warning",
+          entity,
+          `Mob has no explicit level. Tier "${mobDiff.tier}" should target level ${mobDiff.targetLevel} for zone ${zoneTargetLabel}.`,
+        );
+      } else {
+        addIssue(
+          issues,
+          "warning",
+          entity,
+          `Mob level ${mobDiff.currentLevel} is outside the zone target for tier "${mobDiff.tier}". Expected level ${mobDiff.targetLevel} for zone ${zoneTargetLabel}.`,
+        );
+      }
+    }
+
+    const flaggedOverrides = mobDiff.overrideChanges.filter((change) => change.action === "flag");
+    if (flaggedOverrides.length > 0) {
+      const summary = flaggedOverrides
+        .map((change) => `${change.field} ${change.currentOverride} vs ${change.tierBaseline}`)
+        .join(", ");
+      addIssue(
+        issues,
+        "warning",
+        entity,
+        `Overrides diverge from the tier baseline at target level ${mobDiff.targetLevel}: ${summary}.`,
+      );
+    }
+  }
 }
 
 function validateDoor(
@@ -340,6 +412,7 @@ export function validateZone(
   const roomIds = new Set(Object.keys(world.rooms));
   const mobIds = new Set(Object.keys(world.mobs ?? {}));
   const itemIds = new Set(Object.keys(world.items ?? {}));
+  const levelBand = world.levelBand;
   const VALID_CLASSES = validClasses ?? DEFAULT_VALID_CLASSES;
   const factionCheck = (entity: string, factionId: string | undefined, label: string) => {
     if (!factionId || !knownFactions) return;
@@ -358,6 +431,21 @@ export function validateZone(
   }
   if (world.terrain && !VALID_TERRAINS.has(world.terrain)) {
     addIssue(issues, "warning", "zone", `Terrain "${world.terrain}" is not a recognized terrain type`);
+  }
+  if (levelBand) {
+    if (!isPositiveInteger(levelBand.min)) {
+      addIssue(issues, "error", "zone", "levelBand.min must be a positive integer");
+    }
+    if (!isPositiveInteger(levelBand.max)) {
+      addIssue(issues, "error", "zone", "levelBand.max must be a positive integer");
+    }
+    if (
+      isPositiveInteger(levelBand.min)
+      && isPositiveInteger(levelBand.max)
+      && levelBand.max < levelBand.min
+    ) {
+      addIssue(issues, "error", "zone", "levelBand.max must be greater than or equal to levelBand.min");
+    }
   }
   factionCheck("zone", world.faction, "Controlling faction");
 
@@ -458,6 +546,15 @@ export function validateZone(
         }
       }
     }
+  }
+
+  if (
+    levelBand
+    && isPositiveInteger(levelBand.min)
+    && isPositiveInteger(levelBand.max)
+    && levelBand.max >= levelBand.min
+  ) {
+    validateZoneBalanceTargets(issues, world, mobTiers);
   }
 
   for (const [itemId, item] of Object.entries(world.items ?? {})) {

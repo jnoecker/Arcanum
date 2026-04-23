@@ -8,6 +8,11 @@ This project uses ad-hoc semantic versioning — minor bumps for feature work, p
 
 _No unreleased changes at this time._
 
+## [3.9.0] — 2026-04-22
+
+### Changed
+- **Progression config merged into World** — the level cap, XP curve, diminishing returns, and level-up rewards editor now lives inside the World config panel instead of a standalone Orrery hotspot. Existing saved `panel:progression` tabs are remapped to `panel:world` on project open.
+
 ## [3.8.1] — 2026-04-22
 
 ### Fixed

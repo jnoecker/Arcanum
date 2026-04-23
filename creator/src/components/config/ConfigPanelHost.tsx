@@ -96,6 +96,8 @@ function renderPanel(panelId: string, props: ConfigPanelProps): ReactNode {
       return <StatusEffectDesigner config={config} onChange={onChange} />;
 
     // World
+    case "progression":
+      return <WorldPanel config={config} onChange={onChange} />;
     case "world":
       return <WorldPanel config={config} onChange={onChange} />;
     case "serverConfig":

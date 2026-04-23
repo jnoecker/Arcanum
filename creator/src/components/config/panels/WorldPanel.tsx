@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { ConfigPanelProps } from "./types";
 import { Section, FieldRow } from "@/components/ui/FormWidgets";
 import { useZoneStore } from "@/stores/zoneStore";
+import { ProgressionPanel } from "./ProgressionPanel";
 
 interface RoomOption {
   id: string;
@@ -232,6 +233,8 @@ export function WorldPanel({ config, onChange }: ConfigPanelProps) {
           )}
         </div>
       </Section>
+
+      <ProgressionPanel config={config} onChange={onChange} />
     </>
   );
 }

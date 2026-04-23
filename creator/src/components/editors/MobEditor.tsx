@@ -1,5 +1,6 @@
 import { useCallback, useState } from "react";
-import type { WorldFile, MobFile, MobDropFile, MobSpellFile } from "@/types/world";
+import type { WorldFile, MobFile, MobDropFile, MobSpellFile, MobRole } from "@/types/world";
+import { MOB_ROLES, MOB_ROLE_LABELS, MOB_ROLE_DESCRIPTIONS } from "@/types/world";
 import { updateMob, deleteMob } from "@/lib/zoneEdits";
 import { useEntityEditor } from "@/lib/useEntityEditor";
 import { useArrayField } from "@/lib/useArrayField";
@@ -36,6 +37,8 @@ const TIER_OPTIONS = [
   { value: "elite", label: "Elite" },
   { value: "boss", label: "Boss" },
 ];
+
+const ROLE_OPTIONS = MOB_ROLES.map((r) => ({ value: r, label: MOB_ROLE_LABELS[r] }));
 
 const CATEGORY_OPTIONS = [
   { value: "humanoid", label: "Humanoid" },
@@ -81,6 +84,13 @@ export function MobEditor({
     onDelete,
   );
   if (!mob) return null;
+
+  const role: MobRole = mob.role ?? "combat";
+  const isCombatant = role === "combat";
+  const visibleTabs = isCombatant
+    ? MOB_TABS
+    : MOB_TABS.filter((t) => t.value !== "rewards");
+  const effectiveTab: MobTab = !isCombatant && activeTab === "rewards" ? "mob" : activeTab;
 
   const zoneQuests = Object.entries(world.quests ?? {}).map(([id, q]) => ({
     id,
@@ -193,35 +203,48 @@ export function MobEditor({
         />
       </EntityHeader>
 
-      <TabBar tabs={MOB_TABS} active={activeTab} onChange={setActiveTab} />
+      <TabBar tabs={visibleTabs} active={activeTab} onChange={setActiveTab} />
 
-      {activeTab === "mob" && (
+      {effectiveTab === "mob" && (
         <>
           <Section title="Basics">
             <FieldGrid>
-              <CompactField label="Tier">
+              <CompactField label="Role" hint={MOB_ROLE_DESCRIPTIONS[role]} span>
                 <SelectInput
-                  value={mob.tier ?? "standard"}
-                  options={TIER_OPTIONS}
-                  onCommit={(v) => patch({ tier: v })}
+                  value={role}
+                  options={ROLE_OPTIONS}
+                  onCommit={(v) =>
+                    patch({ role: v === "combat" ? undefined : (v as MobRole) })
+                  }
                 />
               </CompactField>
-              <CompactField label="Level">
-                <NumberInput
-                  value={mob.level}
-                  onCommit={(v) => patch({ level: v })}
-                  placeholder="1"
-                  min={1}
-                />
-              </CompactField>
-              <CompactField label="Respawn (s)">
-                <NumberInput
-                  value={mob.respawnSeconds}
-                  onCommit={(v) => patch({ respawnSeconds: v })}
-                  placeholder="Default"
-                  min={0}
-                />
-              </CompactField>
+              {isCombatant && (
+                <>
+                  <CompactField label="Tier">
+                    <SelectInput
+                      value={mob.tier ?? "standard"}
+                      options={TIER_OPTIONS}
+                      onCommit={(v) => patch({ tier: v })}
+                    />
+                  </CompactField>
+                  <CompactField label="Level">
+                    <NumberInput
+                      value={mob.level}
+                      onCommit={(v) => patch({ level: v })}
+                      placeholder="1"
+                      min={1}
+                    />
+                  </CompactField>
+                  <CompactField label="Respawn (s)">
+                    <NumberInput
+                      value={mob.respawnSeconds}
+                      onCommit={(v) => patch({ respawnSeconds: v })}
+                      placeholder="Default"
+                      min={0}
+                    />
+                  </CompactField>
+                </>
+              )}
               <CompactField label="Category">
                 <div className="flex items-center gap-1.5">
                   {CATEGORY_ICONS[mob.category ?? "humanoid"] && (
@@ -244,6 +267,8 @@ export function MobEditor({
             </FieldGrid>
           </Section>
 
+          {isCombatant && (
+          <>
           <Section title="Behavior">
             <div className="flex flex-col gap-1.5">
               <FieldRow label="Template">
@@ -478,10 +503,12 @@ export function MobEditor({
               </CompactField>
             </FieldGrid>
           </Section>
+          </>
+          )}
         </>
       )}
 
-      {activeTab === "rewards" && (
+      {effectiveTab === "rewards" && isCombatant && (
         <>
           <Section
             title={`Drops (${mob.drops?.length ?? 0})`}
@@ -546,7 +573,7 @@ export function MobEditor({
         </>
       )}
 
-      {activeTab === "dialogue" && (
+      {effectiveTab === "dialogue" && (
         <DialogueEditor
           mobId={mobId}
           world={world}
@@ -554,7 +581,7 @@ export function MobEditor({
         />
       )}
 
-      {activeTab === "media" && (
+      {effectiveTab === "media" && (
         <MediaSection
           image={mob.image}
           onImageChange={(v) => patch({ image: v })}

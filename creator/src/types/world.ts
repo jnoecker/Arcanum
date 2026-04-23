@@ -108,10 +108,41 @@ export interface FeatureFile {
   text?: string;
 }
 
+/**
+ * Classifies what a mob is *for*, independent of how tough it is. Gates
+ * which behaviours the engine exposes — combatants can be attacked and award
+ * XP; vendors/quest-givers/dialog mobs surface their social affordances but
+ * refuse combat; props are examine-only set dressing.
+ */
+export type MobRole = "combat" | "vendor" | "quest_giver" | "dialog" | "prop";
+
+export const MOB_ROLES: MobRole[] = ["combat", "vendor", "quest_giver", "dialog", "prop"];
+
+export const MOB_ROLE_LABELS: Record<MobRole, string> = {
+  combat: "Combat",
+  vendor: "Vendor",
+  quest_giver: "Quest Giver",
+  dialog: "Dialog",
+  prop: "Prop",
+};
+
+export const MOB_ROLE_DESCRIPTIONS: Record<MobRole, string> = {
+  combat: "Can be attacked, fights back, awards XP and loot.",
+  vendor: "Shopkeeper. Cannot be attacked.",
+  quest_giver: "Offers and accepts quests. Cannot be attacked.",
+  dialog: "Conversational NPC. Cannot be attacked.",
+  prop: "Examine-only flavour entity. No interaction beyond look.",
+};
+
 export interface MobFile {
   name: string;
   description?: string;
   room: string;
+  /**
+   * What this mob is *for*. Omitted/missing defaults to "combat" to preserve
+   * legacy behaviour. Non-combat roles refuse attack commands server-side.
+   */
+  role?: MobRole;
   tier?: string;
   level?: number;
   category?: string;

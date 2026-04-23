@@ -101,7 +101,7 @@ const SYSTEMS_PANELS: PanelDef[] = [
   { id: "worldEvents", label: "Events", host: "config", kicker: "Seasonal", title: "World events", description: "Seasonal events with date schedules, flags, and broadcast messages.", maxWidth: "max-w-5xl", island: "livingWorld", glyph: "\u{1F342}" },
   { id: "weatherEnvironment", label: "Weather & Environment", host: "config", kicker: "Atmosphere", title: "Weather & environment", description: "Weather types, mote colors, sky gradients, room transitions, and per-zone visual overrides.", maxWidth: "max-w-5xl", island: "livingWorld", glyph: "\u{1F342}" },
   { id: "achievements", label: "Achievements", host: "config", kicker: "Content", title: "Achievements", description: "Achievement builder, categories, and criterion types.", maxWidth: "max-w-5xl", island: "orrery", glyph: "\u{1F3C6}" },
-  { id: "quests", label: "Quests", host: "config", kicker: "Content", title: "Quest taxonomy", description: "Quest objective and completion type definitions.", maxWidth: "max-w-5xl", island: "livingWorld", glyph: "\u{1F4DC}" },
+  { id: "quests", label: "Quests", host: "config", kicker: "Content", title: "Quests", description: "Daily/weekly, bounty, and global quest schedules plus objective and completion type taxonomy.", maxWidth: "max-w-5xl", island: "livingWorld", glyph: "\u{1F4DC}" },
 ];
 
 // ─── Lore panels ───────────────────────────────────────────────────

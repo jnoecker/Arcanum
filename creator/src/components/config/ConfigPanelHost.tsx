@@ -37,7 +37,7 @@ import { WeatherEnvironmentPanel } from "./panels/WeatherEnvironmentPanel";
 import { CurrenciesPanel } from "./panels/CurrenciesPanel";
 
 import { AchievementDesigner } from "./AchievementDesigner";
-import { QuestTaxonomyDesigner } from "./QuestTaxonomyDesigner";
+import { QuestsStudio } from "./QuestsStudio";
 import { SharedAssetsPanel } from "./panels/SharedAssetsPanel";
 
 import { ApiSettingsPanel } from "./panels/ApiSettingsPanel";
@@ -148,7 +148,7 @@ function renderPanel(panelId: string, props: ConfigPanelProps): ReactNode {
     case "achievements":
       return <AchievementDesigner config={config} onChange={onChange} />;
     case "quests":
-      return <QuestTaxonomyDesigner config={config} onChange={onChange} />;
+      return <QuestsStudio config={config} onChange={onChange} />;
     case "sharedAssets":
       return <SharedAssetsPanel config={config} onChange={onChange} />;
 

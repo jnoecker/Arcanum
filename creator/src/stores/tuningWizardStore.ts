@@ -133,6 +133,27 @@ export const useTuningWizardStore = create<TuningWizardStore>((set, get) => ({
       partial,
     ) as unknown as AppConfig;
 
+    // Don't silently flip on daily/global quests when the prereq content
+    // (dailyPool / weeklyPool / objectives) isn't authored — doing so produces
+    // config validation errors. Keep the flag off and warn the user.
+    const suppressedFeatures: string[] = [];
+    if (merged.dailyQuests?.enabled && !config.dailyQuests?.enabled) {
+      const dq = merged.dailyQuests;
+      const dailyOK = (dq.dailyPool?.length ?? 0) >= (dq.dailySlots ?? 3);
+      const weeklyOK = (dq.weeklyPool?.length ?? 0) >= (dq.weeklySlots ?? 1);
+      if (!dailyOK || !weeklyOK) {
+        merged.dailyQuests = { ...dq, enabled: false };
+        suppressedFeatures.push("Daily Quests");
+      }
+    }
+    if (merged.globalQuests?.enabled && !config.globalQuests?.enabled) {
+      const gq = merged.globalQuests;
+      if ((gq.objectives?.length ?? 0) === 0) {
+        merged.globalQuests = { ...gq, enabled: false };
+        suppressedFeatures.push("Global Quests");
+      }
+    }
+
     try {
       // Apply to configStore and persist (D-11)
       useConfigStore.getState().updateConfig(merged);
@@ -146,6 +167,13 @@ export const useTuningWizardStore = create<TuningWizardStore>((set, get) => ({
         ...checkTuningHealth(preMetrics, postMetrics, acceptedSections),
         ...checkPacingHealth(merged, selectedPresetId),
       ];
+      if (suppressedFeatures.length > 0) {
+        warnings.push({
+          severity: "warning",
+          message: `${suppressedFeatures.join(" and ")} left disabled — the preset would have enabled ${suppressedFeatures.length > 1 ? "them" : "it"}, but required content isn't authored yet.`,
+          detail: "Add at least dailySlots entries to dailyPool, weeklySlots entries to weeklyPool, and one objective to globalQuests, then toggle Enabled on the Daily Quests / Global Quests panels.",
+        });
+      }
 
       set({
         configSnapshot: snapshot,

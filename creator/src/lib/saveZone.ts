@@ -23,7 +23,15 @@ export function serializeZone(zoneId: string): string {
   const knownAchievements = config?.achievementDefs
     ? new Set(Object.keys(config.achievementDefs))
     : undefined;
-  const issues = validateZone(sanitized, config?.equipmentSlots, validClasses, knownFactions, knownAchievements, config?.mobTiers);
+  const issues = validateZone(
+    sanitized,
+    config?.equipmentSlots,
+    validClasses,
+    knownFactions,
+    knownAchievements,
+    config?.mobTiers,
+    config?.progression.xp,
+  );
   const errors = issues.filter((issue) => issue.severity === "error");
   if (errors.length > 0) {
     const summary = errors.slice(0, 5).map((issue) => `${issue.entity}: ${issue.message}`).join("; ");

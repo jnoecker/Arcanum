@@ -8,6 +8,7 @@ const TEST_MOB_TIERS = {
   elite: { baseHp: 50, hpPerLevel: 10, baseMinDamage: 5, baseMaxDamage: 10, damagePerLevel: 3, baseArmor: 4, baseXpReward: 50, xpRewardPerLevel: 15, baseGoldMin: 5, baseGoldMax: 15, goldPerLevel: 5 },
   boss: { baseHp: 200, hpPerLevel: 30, baseMinDamage: 10, baseMaxDamage: 20, damagePerLevel: 5, baseArmor: 8, baseXpReward: 200, xpRewardPerLevel: 50, baseGoldMin: 50, baseGoldMax: 150, goldPerLevel: 20 },
 };
+const TEST_XP = { baseXp: 100, exponent: 2.0, linearXp: 0, multiplier: 1.0, defaultKillXp: 10 };
 
 function makeValidWorld(): WorldFile {
   return {
@@ -526,6 +527,64 @@ describe("validateZone", () => {
       const issues = validateZone(world, undefined, undefined, undefined, undefined, TEST_MOB_TIERS);
 
       expect(issues).toHaveLength(0);
+    });
+  });
+
+  describe("zone XP guardrails", () => {
+    it("warns when fixed rewards dominate a zone's target band", () => {
+      const world = makeValidWorld();
+      world.levelBand = { min: 3, max: 3 };
+      world.quests = {
+        q1: {
+          name: "Big Reward",
+          giver: "rat",
+          objectives: [{ type: "KILL", targetKey: "rat", count: 1 }],
+          rewards: { xp: 300 },
+        },
+      };
+
+      const issues = warnings(validateZone(world, undefined, undefined, undefined, undefined, undefined, TEST_XP));
+
+      expect(issues.some((i) => i.entity === "zone" && i.message.includes("Fixed XP rewards total 300"))).toBe(true);
+      expect(issues.some((i) => i.entity === "zone" && i.message.includes("One-shot rewards should not dominate"))).toBe(true);
+    });
+
+    it("stays quiet when fixed rewards stay within the zone budget", () => {
+      const world = makeValidWorld();
+      world.levelBand = { min: 3, max: 3 };
+      world.quests = {
+        q1: {
+          name: "Small Reward",
+          giver: "rat",
+          objectives: [{ type: "KILL", targetKey: "rat", count: 1 }],
+          rewards: { xp: 100 },
+        },
+      };
+      world.items!.elixir = {
+        displayName: "Elixir",
+        room: "room1",
+        consumable: true,
+        onUse: { grantXp: 50 },
+      };
+
+      const issues = warnings(validateZone(world, undefined, undefined, undefined, undefined, undefined, TEST_XP));
+
+      expect(issues.filter((i) => i.entity === "zone" && i.message.includes("XP"))).toHaveLength(0);
+    });
+
+    it("warns when one authored sweep exceeds the zone's own band", () => {
+      const world = makeValidWorld();
+      world.levelBand = { min: 3, max: 3 };
+      world.mobs = {
+        brute_a: { name: "Brute A", room: "room1", xpReward: 250 },
+        brute_b: { name: "Brute B", room: "room1", xpReward: 250 },
+        brute_c: { name: "Brute C", room: "room2", xpReward: 250 },
+      };
+
+      const issues = warnings(validateZone(world, undefined, undefined, undefined, undefined, undefined, TEST_XP));
+
+      expect(issues.some((i) => i.entity === "zone" && i.message.includes("One full authored sweep grants about 750 XP"))).toBe(true);
+      expect(issues.some((i) => i.entity === "zone" && i.message.includes("single clear"))).toBe(true);
     });
   });
 });

@@ -606,6 +606,7 @@ export const BASE_ACADEMY_ZONE: WorldFile = {
       room: "grand_hall",
       tier: "weak",
       level: 1,
+      xpReward: 10,
       category: "elemental",
       respawnSeconds: 30,
       behavior: {
@@ -621,6 +622,7 @@ export const BASE_ACADEMY_ZONE: WorldFile = {
       room: "proving_grounds",
       tier: "weak",
       level: 1,
+      xpReward: 10,
       category: "elemental",
       respawnSeconds: 30,
       behavior: {
@@ -637,6 +639,7 @@ export const BASE_ACADEMY_ZONE: WorldFile = {
       tier: "standard",
       category: "aberration",
       level: 2,
+      xpReward: 25,
       respawnSeconds: 45,
       behavior: {
         template: "wander_aggro",
@@ -656,6 +659,7 @@ export const BASE_ACADEMY_ZONE: WorldFile = {
       room: "proving_grounds",
       tier: "standard",
       level: 3,
+      xpReward: 35,
       category: "aberration",
       respawnSeconds: 60,
       behavior: {
@@ -687,6 +691,7 @@ export const BASE_ACADEMY_ZONE: WorldFile = {
       room: "throne_room",
       tier: "boss",
       level: 7,
+      xpReward: 150,
       category: "undead",
       respawnSeconds: 180,
       behavior: {
@@ -739,6 +744,7 @@ export const BASE_ACADEMY_ZONE: WorldFile = {
       room: "mob_templates",
       tier: "standard",
       level: 3,
+      xpReward: 30,
       category: "undead",
       drops: [
         { itemId: "arcane_fragment", chance: 0.3 },
@@ -750,6 +756,7 @@ export const BASE_ACADEMY_ZONE: WorldFile = {
       room: "mob_templates",
       tier: "elite",
       level: 5,
+      xpReward: 80,
       category: "undead",
       spells: {
         spectral_touch: {
@@ -784,6 +791,7 @@ export const BASE_ACADEMY_ZONE: WorldFile = {
       room: "mob_templates",
       tier: "boss",
       level: 8,
+      xpReward: 200,
       category: "undead",
       spells: {
         rusted_cleave: {
@@ -888,7 +896,7 @@ export const BASE_ACADEMY_ZONE: WorldFile = {
       consumable: true,
       onUse: {
         healHp: 20,
-        grantXp: 25,
+        grantXp: 5,
       },
       basePrice: 20,
     },
@@ -947,7 +955,7 @@ export const BASE_ACADEMY_ZONE: WorldFile = {
       consumable: true,
       onUse: {
         healHp: 5,
-        grantXp: 50,
+        grantXp: 10,
       },
       basePrice: 25,
     },
@@ -1027,7 +1035,7 @@ export const BASE_ACADEMY_ZONE: WorldFile = {
         },
       ],
       rewards: {
-        xp: 150,
+        xp: 35,
         gold: 75,
       },
     },
@@ -1045,7 +1053,7 @@ export const BASE_ACADEMY_ZONE: WorldFile = {
         },
       ],
       rewards: {
-        xp: 100,
+        xp: 30,
         gold: 50,
       },
     },

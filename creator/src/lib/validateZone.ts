@@ -8,9 +8,9 @@ import type {
   RareYieldFile,
   RecipeFile,
 } from "@/types/world";
-import type { EquipmentSlotDefinition, MobTiersConfig } from "@/types/config";
+import type { EquipmentSlotDefinition, MobTiersConfig, XpCurveConfig } from "@/types/config";
 import { resolveDoorKeyId, resolveDoorState } from "./doorHelpers";
-import { mobMaxDamageAtLevel, mobMinDamageAtLevel } from "./tuning/formulas";
+import { mobMaxDamageAtLevel, mobMinDamageAtLevel, mobXpRewardAtLevel, scaledXpReward, xpForLevel } from "./tuning/formulas";
 import { computeZoneRebalance } from "./zoneRebalance";
 import { exitTarget } from "./zoneEdits";
 import { getTrainerClasses } from "./trainers";
@@ -157,6 +157,124 @@ function validateZoneBalanceTargets(
         `Overrides diverge from the tier baseline at target level ${mobDiff.targetLevel}: ${summary}.`,
       );
     }
+  }
+}
+
+interface ZoneXpBudget {
+  zoneSpanXp: number;
+  questXp: number;
+  itemXp: number;
+  gatheringXp: number;
+  recipeXp: number;
+  puzzleXp: number;
+  fixedXp: number;
+  sweepKillXp: number;
+}
+
+function resolveMobXp(
+  mob: MobFile,
+  mobTiers: MobTiersConfig | undefined,
+  xpCurve: XpCurveConfig,
+): number {
+  const explicit = mob.xpReward;
+  if (typeof explicit === "number") {
+    return scaledXpReward(Math.max(0, explicit), xpCurve.multiplier);
+  }
+
+  const tierId = mob.tier;
+  const tier = tierId && mobTiers
+    ? (mobTiers as unknown as Record<string, MobTiersConfig["weak"]>)[tierId]
+    : undefined;
+  if (tier) {
+    return scaledXpReward(mobXpRewardAtLevel(tier, mob.level ?? 1), xpCurve.multiplier);
+  }
+
+  return scaledXpReward(xpCurve.defaultKillXp, xpCurve.multiplier);
+}
+
+function sumPositive(values: number[]): number {
+  return values.reduce((total, value) => total + Math.max(0, value), 0);
+}
+
+function estimateZoneXpBudget(
+  world: WorldFile,
+  mobTiers: MobTiersConfig | undefined,
+  xpCurve: XpCurveConfig | undefined,
+): ZoneXpBudget | undefined {
+  const levelBand = world.levelBand;
+  if (
+    !xpCurve
+    || !levelBand
+    || !isPositiveInteger(levelBand.min)
+    || !isPositiveInteger(levelBand.max)
+    || levelBand.max < levelBand.min
+  ) {
+    return undefined;
+  }
+
+  const zoneSpanXp = Math.max(
+    1,
+    xpForLevel(levelBand.max + 1, xpCurve) - xpForLevel(levelBand.min, xpCurve),
+  );
+  const questXp = sumPositive(Object.values(world.quests ?? {}).map((quest) => quest.rewards?.xp ?? 0));
+  const itemXp = sumPositive(Object.values(world.items ?? {}).map((item) => item.onUse?.grantXp ?? 0));
+  const gatheringXp = sumPositive(Object.values(world.gatheringNodes ?? {}).map((node) => node.xpReward ?? 0));
+  const recipeXp = sumPositive(Object.values(world.recipes ?? {}).map((recipe) => recipe.xpReward ?? 0));
+  const puzzleXp = sumPositive(
+    Object.values(world.puzzles ?? {}).map((puzzle) => {
+      const reward = puzzle.reward;
+      if (reward.type.trim().toLowerCase() !== "give_xp") return 0;
+      return reward.xp ?? reward.amount ?? 0;
+    }),
+  );
+  const fixedXp = questXp + itemXp + gatheringXp + recipeXp + puzzleXp;
+  const sweepKillXp = sumPositive(
+    Object.values(world.mobs ?? {}).map((mob) => resolveMobXp(mob, mobTiers, xpCurve)),
+  );
+
+  return {
+    zoneSpanXp,
+    questXp,
+    itemXp,
+    gatheringXp,
+    recipeXp,
+    puzzleXp,
+    fixedXp,
+    sweepKillXp,
+  };
+}
+
+function xpShare(amount: number, total: number): string {
+  return `${Math.round((amount / total) * 100)}%`;
+}
+
+function validateZoneXpBudget(
+  issues: ValidationIssue[],
+  world: WorldFile,
+  mobTiers: MobTiersConfig | undefined,
+  xpCurve: XpCurveConfig | undefined,
+): void {
+  const budget = estimateZoneXpBudget(world, mobTiers, xpCurve);
+  if (!budget) return;
+
+  const zoneTargetLabel = formatZoneTargetLabel(world);
+  if (budget.fixedXp > budget.zoneSpanXp * 0.5) {
+    addIssue(
+      issues,
+      "warning",
+      "zone",
+      `Fixed XP rewards total ${budget.fixedXp} (${xpShare(budget.fixedXp, budget.zoneSpanXp)} of the ${zoneTargetLabel} span of ${budget.zoneSpanXp} XP): quests ${budget.questXp}, items ${budget.itemXp}, gathering ${budget.gatheringXp}, recipes ${budget.recipeXp}, puzzles ${budget.puzzleXp}. One-shot rewards should not dominate a zone's progression budget.`,
+    );
+  }
+
+  const fullSweepXp = budget.fixedXp + budget.sweepKillXp;
+  if (budget.sweepKillXp > 0 && fullSweepXp > budget.zoneSpanXp * 1.25) {
+    addIssue(
+      issues,
+      "warning",
+      "zone",
+      `One full authored sweep grants about ${fullSweepXp} XP (${xpShare(fullSweepXp, budget.zoneSpanXp)} of the ${zoneTargetLabel} span of ${budget.zoneSpanXp} XP): mobs ${budget.sweepKillXp}, fixed rewards ${budget.fixedXp}. Generated zones should not carry players far beyond their own target band in a single clear.`,
+    );
   }
 }
 
@@ -407,6 +525,7 @@ export function validateZone(
   knownFactions?: ReadonlySet<string>,
   knownAchievements?: ReadonlySet<string>,
   mobTiers?: MobTiersConfig,
+  xpCurve?: XpCurveConfig,
 ): ValidationIssue[] {
   const issues: ValidationIssue[] = [];
   const roomIds = new Set(Object.keys(world.rooms));
@@ -555,6 +674,7 @@ export function validateZone(
     && levelBand.max >= levelBand.min
   ) {
     validateZoneBalanceTargets(issues, world, mobTiers);
+    validateZoneXpBudget(issues, world, mobTiers, xpCurve);
   }
 
   for (const [itemId, item] of Object.entries(world.items ?? {})) {
@@ -727,10 +847,11 @@ export function validateAllZones(
   knownFactions?: ReadonlySet<string>,
   knownAchievements?: ReadonlySet<string>,
   mobTiers?: MobTiersConfig,
+  xpCurve?: XpCurveConfig,
 ): Map<string, ValidationIssue[]> {
   const results = new Map<string, ValidationIssue[]>();
   for (const [zoneId, zone] of zones) {
-    const issues = validateZone(zone.data, equipmentSlots, validClasses, knownFactions, knownAchievements, mobTiers);
+    const issues = validateZone(zone.data, equipmentSlots, validClasses, knownFactions, knownAchievements, mobTiers, xpCurve);
     if (issues.length > 0) {
       results.set(zoneId, issues);
     }

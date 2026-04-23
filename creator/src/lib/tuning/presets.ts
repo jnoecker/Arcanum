@@ -194,6 +194,10 @@ export const CASUAL_PRESET: TuningPreset = {
         baseHp: 15,
         baseMana: 15,
       },
+      quests: {
+        baseline: { baseXp: 40, xpPerLevel: 15 },
+        tiers: { trivial: 0.3, easy: 0.6, standard: 1.0, hard: 1.4, epic: 2.0 },
+      },
     },
 
     // ─── Skill Points ────────────────────────────────────────────────
@@ -500,6 +504,10 @@ export const BALANCED_PRESET: TuningPreset = {
         fullManaOnLevelUp: true,
         baseHp: 10,
         baseMana: 10,
+      },
+      quests: {
+        baseline: { baseXp: 50, xpPerLevel: 20 },
+        tiers: { trivial: 0.25, easy: 0.5, standard: 1.0, hard: 1.75, epic: 3.0 },
       },
     },
 
@@ -808,6 +816,10 @@ export const HARDCORE_PRESET: TuningPreset = {
         baseHp: 8,
         baseMana: 8,
       },
+      quests: {
+        baseline: { baseXp: 60, xpPerLevel: 25 },
+        tiers: { trivial: 0.2, easy: 0.4, standard: 1.0, hard: 2.0, epic: 3.5 },
+      },
     },
 
     // ─── Skill Points ────────────────────────────────────────────────
@@ -992,6 +1004,10 @@ export const SOLO_STORY_PRESET: TuningPreset = {
         },
       },
       rewards: { hpPerLevel: 4, manaPerLevel: 3, fullHealOnLevelUp: true, fullManaOnLevelUp: true, baseHp: 20, baseMana: 20 },
+      quests: {
+        baseline: { baseXp: 50, xpPerLevel: 30 },
+        tiers: { trivial: 0.3, easy: 0.6, standard: 1.0, hard: 1.5, epic: 2.5 },
+      },
     },
     skillPoints: { interval: 2 },
     multiclass: { minLevel: 8, goldCost: 100 },
@@ -1067,6 +1083,10 @@ export const PVP_ARENA_PRESET: TuningPreset = {
         },
       },
       rewards: { hpPerLevel: 2, manaPerLevel: 1, fullHealOnLevelUp: true, fullManaOnLevelUp: true, baseHp: 12, baseMana: 10 },
+      quests: {
+        baseline: { baseXp: 50, xpPerLevel: 10 },
+        tiers: { trivial: 0.25, easy: 0.5, standard: 1.0, hard: 1.75, epic: 2.5 },
+      },
     },
     skillPoints: { interval: 3 },
     multiclass: { minLevel: 20, goldCost: 1000 },
@@ -1141,6 +1161,10 @@ export const LORE_EXPLORER_PRESET: TuningPreset = {
         },
       },
       rewards: { hpPerLevel: 8, manaPerLevel: 6, fullHealOnLevelUp: true, fullManaOnLevelUp: true, baseHp: 50, baseMana: 50 },
+      quests: {
+        baseline: { baseXp: 30, xpPerLevel: 15 },
+        tiers: { trivial: 0.5, easy: 0.8, standard: 1.0, hard: 1.2, epic: 1.5 },
+      },
     },
     skillPoints: { interval: 1 },
     multiclass: { minLevel: 5, goldCost: 50 },

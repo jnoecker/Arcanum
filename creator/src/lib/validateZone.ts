@@ -15,6 +15,8 @@ import { computeZoneRebalance } from "./zoneRebalance";
 import { exitTarget } from "./zoneEdits";
 import { getTrainerClasses } from "./trainers";
 import { resolveMobStats } from "./resolveMobStats";
+import { resolveQuestXp } from "./resolveQuestXp";
+import type { QuestXpConfig } from "@/types/config";
 
 export type Severity = "error" | "warning";
 
@@ -408,6 +410,7 @@ export function validateZone(
   knownFactions?: ReadonlySet<string>,
   knownAchievements?: ReadonlySet<string>,
   mobTiers?: MobTiersConfig,
+  questXpConfig?: QuestXpConfig,
 ): ValidationIssue[] {
   const issues: ValidationIssue[] = [];
   const roomIds = new Set(Object.keys(world.rooms));
@@ -703,6 +706,15 @@ export function validateZone(
         "Quest awards >=100 XP but has no intended level — players who out-level this quest will still receive the full flat reward",
       );
     }
+    const resolvedXp = resolveQuestXp(quest, questXpConfig);
+    if (resolvedXp.reason === "override") {
+      addIssue(
+        issues,
+        "warning",
+        entity,
+        `XP override (${resolvedXp.authored}) breaks the difficulty tier — '${quest.difficulty}' at level ${quest.level ?? 1} would compute ${resolvedXp.computed}. Remove rewards.xp to use the tier, or pick a different difficulty.`,
+      );
+    }
   }
 
   for (const [nodeId, node] of Object.entries(world.gatheringNodes ?? {})) {
@@ -784,10 +796,11 @@ export function validateAllZones(
   knownFactions?: ReadonlySet<string>,
   knownAchievements?: ReadonlySet<string>,
   mobTiers?: MobTiersConfig,
+  questXpConfig?: QuestXpConfig,
 ): Map<string, ValidationIssue[]> {
   const results = new Map<string, ValidationIssue[]>();
   for (const [zoneId, zone] of zones) {
-    const issues = validateZone(zone.data, equipmentSlots, validClasses, knownFactions, knownAchievements, mobTiers);
+    const issues = validateZone(zone.data, equipmentSlots, validClasses, knownFactions, knownAchievements, mobTiers, questXpConfig);
     if (issues.length > 0) {
       results.set(zoneId, issues);
     }

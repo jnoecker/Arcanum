@@ -24,6 +24,13 @@ import { DeleteEntityButton } from "./EditorShared";
 import { ReputationGateEditor } from "./ReputationGateEditor";
 import { useConfigStore } from "@/stores/configStore";
 import { useConfigOptions } from "@/lib/useConfigOptions";
+import {
+  QUEST_DIFFICULTIES,
+  QUEST_DIFFICULTY_LABELS,
+  QUEST_DIFFICULTY_DESCRIPTIONS,
+  type QuestDifficulty,
+} from "@/types/config";
+import { resolveQuestXp } from "@/lib/resolveQuestXp";
 
 interface QuestEditorProps {
   questId: string;
@@ -44,6 +51,11 @@ const FALLBACK_OBJECTIVE_TYPES = [
   { value: "craft", label: "Craft" },
   { value: "dungeon", label: "Dungeon" },
   { value: "pvpKill", label: "PvP Kill" },
+];
+
+const DIFFICULTY_OPTIONS = [
+  { value: "", label: "— none (authored XP) —" },
+  ...QUEST_DIFFICULTIES.map((d) => ({ value: d, label: QUEST_DIFFICULTY_LABELS[d] })),
 ];
 
 export function QuestEditor({
@@ -99,6 +111,25 @@ export function QuestEditor({
     [rewards, patch],
   );
 
+  const questXpConfig = useConfigStore((s) => s.config?.progression.quests);
+  const resolvedXp = resolveQuestXp(quest, questXpConfig);
+  const xpFieldLabel =
+    resolvedXp.reason === "override"
+      ? `XP (tier would compute: ${resolvedXp.computed})`
+      : resolvedXp.reason === "computed"
+        ? `XP (computed: ${resolvedXp.computed})`
+        : "XP";
+  const xpPlaceholder =
+    resolvedXp.reason === "computed" ? String(resolvedXp.computed) : "0";
+  const xpDescription =
+    resolvedXp.reason === "computed"
+      ? `Difficulty '${QUEST_DIFFICULTY_LABELS[quest.difficulty!]}' at level ${quest.level ?? 1} → ${resolvedXp.computed} XP. Set a value below to override.`
+      : resolvedXp.reason === "override"
+        ? `Authored XP overrides the tier-computed value (${resolvedXp.computed}). Clear the XP field to use the tier.`
+        : resolvedXp.reason === "authored-no-tier"
+          ? "No difficulty set — engine uses the authored XP below as-is. Pick a difficulty to let the engine compute XP instead."
+          : undefined;
+
   return (
     <>
       <EntityHeader type="Quest">
@@ -135,13 +166,28 @@ export function QuestEditor({
           </CompactField>
           <CompactField
             label="Intended level"
-            hint="When set, XP reward diminishes if the player has out-levelled the quest."
+            hint="Engine uses this to compute tier XP and apply diminishing returns."
           >
             <NumberInput
               value={quest.level}
               onCommit={(v) => patch({ level: v && v > 0 ? v : undefined })}
               placeholder="—"
               min={1}
+              dense
+            />
+          </CompactField>
+          <CompactField
+            label="Difficulty"
+            hint={
+              quest.difficulty
+                ? QUEST_DIFFICULTY_DESCRIPTIONS[quest.difficulty]
+                : "Engine computes XP from this tier × level. Leave blank to use the authored XP below."
+            }
+          >
+            <SelectInput
+              value={quest.difficulty ?? ""}
+              options={DIFFICULTY_OPTIONS}
+              onCommit={(v) => patch({ difficulty: (v || undefined) as QuestDifficulty | undefined })}
               dense
             />
           </CompactField>
@@ -208,13 +254,28 @@ export function QuestEditor({
         )}
       </Section>
 
-      <Section title="Rewards" defaultExpanded={false}>
+      <Section
+        title={
+          resolvedXp.reason === "override"
+            ? "Rewards ●"
+            : "Rewards"
+        }
+        defaultExpanded={false}
+        description={xpDescription}
+      >
         <FieldGrid>
-          <CompactField label="XP">
+          <CompactField
+            label={xpFieldLabel}
+            hint={
+              resolvedXp.reason === "computed"
+                ? "Leave blank to use the computed value. Any number here overrides it."
+                : undefined
+            }
+          >
             <NumberInput
               value={rewards.xp}
               onCommit={(v) => handleRewardChange("xp", v)}
-              placeholder="0"
+              placeholder={xpPlaceholder}
               min={0}
               dense
             />

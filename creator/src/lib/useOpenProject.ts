@@ -96,25 +96,36 @@ export function useOpenProject() {
     // Restore previously saved tabs (filter out stale zone refs)
     const saved = loadUIState();
     if (saved && saved.lastProjectPath === mudDir && saved.tabs.length > 0) {
-      const validTabs = saved.tabs.filter((tab: Tab) => {
+      const remappedTabs = saved.tabs.map((tab: Tab) => {
+        if (tab.kind === "panel" && tab.id === "panel:progression") {
+          return { ...tab, id: "panel:world", label: "World", panelId: "world" };
+        }
+        return tab;
+      });
+      const seenTabIds = new Set<string>();
+      const validTabs = remappedTabs.filter((tab: Tab) => {
         if (tab.kind === "zone") {
           const zoneId = tab.id.replace(/^zone:/, "");
-          return zoneIds.has(zoneId);
-        }
-        if (tab.kind === "panel") {
+          if (!zoneIds.has(zoneId)) return false;
+        } else if (tab.kind === "panel") {
           const panelId = tab.id.replace(/^panel:/, "");
-          return !!PANEL_MAP[panelId];
+          if (!PANEL_MAP[panelId]) return false;
         }
-        return true; // config, console tabs always valid
+        if (seenTabIds.has(tab.id)) return false;
+        seenTabIds.add(tab.id);
+        return true;
       });
       if (validTabs.length > 0) {
+        const activeTabId = saved.activeTabId === "panel:progression"
+          ? "panel:world"
+          : saved.activeTabId;
         const activeStillExists = validTabs.some(
-          (t: Tab) => t.id === saved.activeTabId,
+          (t: Tab) => t.id === activeTabId,
         );
         restoreTabs(
           validTabs,
           activeStillExists
-            ? saved.activeTabId
+            ? activeTabId
             : validTabs[validTabs.length - 1]!.id,
         );
       }

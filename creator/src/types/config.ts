@@ -962,7 +962,6 @@ export interface AutoQuestsConfig {
   rewardXpPerLevel?: number;
   killCountMin?: number;
   killCountMax?: number;
-  rewardScaling?: number;
 }
 
 export interface DailyQuestDefinition {

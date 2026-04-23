@@ -53,8 +53,8 @@ export const CASUAL_PRESET: TuningPreset = {
         baseMaxDamage: 2,
         damagePerLevel: 0,
         baseArmor: 0,
-        baseXpReward: 20,
-        xpRewardPerLevel: 8,
+        baseXpReward: 3,
+        xpRewardPerLevel: 1,
         baseGoldMin: 2,
         baseGoldMax: 5,
         goldPerLevel: 2,
@@ -66,8 +66,8 @@ export const CASUAL_PRESET: TuningPreset = {
         baseMaxDamage: 3,
         damagePerLevel: 0,
         baseArmor: 0,
-        baseXpReward: 40,
-        xpRewardPerLevel: 15,
+        baseXpReward: 7,
+        xpRewardPerLevel: 2,
         baseGoldMin: 5,
         baseGoldMax: 12,
         goldPerLevel: 3,
@@ -79,8 +79,8 @@ export const CASUAL_PRESET: TuningPreset = {
         baseMaxDamage: 5,
         damagePerLevel: 1,
         baseArmor: 1,
-        baseXpReward: 100,
-        xpRewardPerLevel: 35,
+        baseXpReward: 16,
+        xpRewardPerLevel: 5,
         baseGoldMin: 15,
         baseGoldMax: 35,
         goldPerLevel: 7,
@@ -92,8 +92,8 @@ export const CASUAL_PRESET: TuningPreset = {
         baseMaxDamage: 6,
         damagePerLevel: 1,
         baseArmor: 2,
-        baseXpReward: 250,
-        xpRewardPerLevel: 60,
+        baseXpReward: 40,
+        xpRewardPerLevel: 10,
         baseGoldMin: 60,
         baseGoldMax: 120,
         goldPerLevel: 18,
@@ -117,7 +117,7 @@ export const CASUAL_PRESET: TuningPreset = {
         manaScalingDivisor: 4,
         hpRegenMsPerPoint: 250,
         manaRegenMsPerPoint: 250,
-        xpBonusPerPoint: 2,
+        xpBonusPerPoint: 0.02,
       },
     },
 
@@ -139,10 +139,10 @@ export const CASUAL_PRESET: TuningPreset = {
     // ─── Gambling ────────────────────────────────────────────────────
     gambling: {
       enabled: true,
-      minBet: 5,
-      maxBet: 500,
-      winChance: 0.5,
-      winMultiplier: 2.0,
+      diceMinBet: 5,
+      diceMaxBet: 500,
+      diceWinChance: 0.45,
+      diceWinMultiplier: 2.0,
     },
 
     // ─── Lottery ─────────────────────────────────────────────────────
@@ -150,7 +150,7 @@ export const CASUAL_PRESET: TuningPreset = {
       enabled: true,
       ticketCost: 10,
       drawingIntervalMs: 1800000,
-      jackpotBase: 1000,
+      jackpotSeedGold: 1000,
     },
 
     // ─── Stylist ─────────────────────────────────────────────────────
@@ -235,7 +235,6 @@ export const CASUAL_PRESET: TuningPreset = {
       enabled: true,
       timeLimitMs: 600000,
       cooldownMs: 120000,
-      rewardScaling: 1.5,
     },
 
     // ─── Daily Quests ────────────────────────────────────────────────
@@ -283,7 +282,7 @@ export const CASUAL_PRESET: TuningPreset = {
     group: {
       maxSize: 6,
       inviteTimeoutMs: 60000,
-      xpBonusPerMember: 15,
+      xpBonusPerMember: 0.15,
     },
 
     // ─── Navigation ──────────────────────────────────────────────────
@@ -307,7 +306,7 @@ export const CASUAL_PRESET: TuningPreset = {
     // ─── Guild Halls ─────────────────────────────────────────────────
     guildHalls: {
       enabled: true,
-      baseCost: 5000,
+      purchaseCost: 5000,
     },
 
     // ─── Housing ─────────────────────────────────────────────────────
@@ -428,7 +427,7 @@ export const BALANCED_PRESET: TuningPreset = {
         manaScalingDivisor: 5,
         hpRegenMsPerPoint: 200,
         manaRegenMsPerPoint: 200,
-        xpBonusPerPoint: 1,
+        xpBonusPerPoint: 0.01,
       },
     },
 
@@ -450,10 +449,10 @@ export const BALANCED_PRESET: TuningPreset = {
     // ─── Gambling ────────────────────────────────────────────────────
     gambling: {
       enabled: true,
-      minBet: 10,
-      maxBet: 1000,
-      winChance: 0.45,
-      winMultiplier: 2.0,
+      diceMinBet: 10,
+      diceMaxBet: 1000,
+      diceWinChance: 0.45,
+      diceWinMultiplier: 2.0,
     },
 
     // ─── Lottery ─────────────────────────────────────────────────────
@@ -461,7 +460,7 @@ export const BALANCED_PRESET: TuningPreset = {
       enabled: true,
       ticketCost: 25,
       drawingIntervalMs: 3600000,
-      jackpotBase: 500,
+      jackpotSeedGold: 500,
     },
 
     // ─── Stylist ─────────────────────────────────────────────────────
@@ -546,7 +545,6 @@ export const BALANCED_PRESET: TuningPreset = {
       enabled: true,
       timeLimitMs: 300000,
       cooldownMs: 300000,
-      rewardScaling: 1.0,
     },
 
     // ─── Daily Quests ────────────────────────────────────────────────
@@ -567,11 +565,11 @@ export const BALANCED_PRESET: TuningPreset = {
       maxPlayersPerTick: 10,
       baseIntervalMillis: 4500,
       minIntervalMillis: 1000,
-      regenAmount: 1,
+      regenAmount: 2,
       mana: {
         baseIntervalMillis: 4500,
         minIntervalMillis: 1000,
-        regenAmount: 1,
+        regenAmount: 2,
       },
     },
 
@@ -594,7 +592,7 @@ export const BALANCED_PRESET: TuningPreset = {
     group: {
       maxSize: 5,
       inviteTimeoutMs: 60000,
-      xpBonusPerMember: 10,
+      xpBonusPerMember: 0.10,
     },
 
     // ─── Navigation ──────────────────────────────────────────────────
@@ -618,7 +616,7 @@ export const BALANCED_PRESET: TuningPreset = {
     // ─── Guild Halls ─────────────────────────────────────────────────
     guildHalls: {
       enabled: true,
-      baseCost: 10000,
+      purchaseCost: 10000,
     },
 
     // ─── Housing ─────────────────────────────────────────────────────
@@ -739,7 +737,7 @@ export const HARDCORE_PRESET: TuningPreset = {
         manaScalingDivisor: 6,
         hpRegenMsPerPoint: 150,
         manaRegenMsPerPoint: 150,
-        xpBonusPerPoint: 1,
+        xpBonusPerPoint: 0.01,
       },
     },
 
@@ -761,10 +759,10 @@ export const HARDCORE_PRESET: TuningPreset = {
     // ─── Gambling ────────────────────────────────────────────────────
     gambling: {
       enabled: true,
-      minBet: 25,
-      maxBet: 2000,
-      winChance: 0.35,
-      winMultiplier: 2.5,
+      diceMinBet: 25,
+      diceMaxBet: 2000,
+      diceWinChance: 0.35,
+      diceWinMultiplier: 2.5,
     },
 
     // ─── Lottery ─────────────────────────────────────────────────────
@@ -772,7 +770,7 @@ export const HARDCORE_PRESET: TuningPreset = {
       enabled: true,
       ticketCost: 50,
       drawingIntervalMs: 7200000,
-      jackpotBase: 200,
+      jackpotSeedGold: 200,
     },
 
     // ─── Stylist ─────────────────────────────────────────────────────
@@ -842,7 +840,7 @@ export const HARDCORE_PRESET: TuningPreset = {
     prestige: {
       enabled: true,
       xpCostBase: 25000,
-      xpCostMultiplier: 2.0,
+      xpCostMultiplier: 1.35,
       maxRank: 10,
     },
 
@@ -857,7 +855,6 @@ export const HARDCORE_PRESET: TuningPreset = {
       enabled: true,
       timeLimitMs: 180000,
       cooldownMs: 600000,
-      rewardScaling: 0.8,
     },
 
     // ─── Daily Quests ────────────────────────────────────────────────
@@ -878,11 +875,11 @@ export const HARDCORE_PRESET: TuningPreset = {
       maxPlayersPerTick: 8,
       baseIntervalMillis: 6000,
       minIntervalMillis: 1500,
-      regenAmount: 1,
+      regenAmount: 2,
       mana: {
         baseIntervalMillis: 6000,
         minIntervalMillis: 1500,
-        regenAmount: 1,
+        regenAmount: 2,
       },
     },
 
@@ -905,7 +902,7 @@ export const HARDCORE_PRESET: TuningPreset = {
     group: {
       maxSize: 4,
       inviteTimeoutMs: 30000,
-      xpBonusPerMember: 5,
+      xpBonusPerMember: 0.05,
     },
 
     // ─── Navigation ──────────────────────────────────────────────────
@@ -929,7 +926,7 @@ export const HARDCORE_PRESET: TuningPreset = {
     // ─── Guild Halls ─────────────────────────────────────────────────
     guildHalls: {
       enabled: true,
-      baseCost: 25000,
+      purchaseCost: 25000,
     },
 
     // ─── Housing ─────────────────────────────────────────────────────
@@ -972,17 +969,17 @@ export const SOLO_STORY_PRESET: TuningPreset = {
   config: {
     combat: { tickMillis: 3500, minDamage: 1, maxDamage: 3 },
     mobTiers: {
-      weak: { baseHp: 2, hpPerLevel: 1, baseMinDamage: 1, baseMaxDamage: 1, damagePerLevel: 0, baseArmor: 0, baseXpReward: 25, xpRewardPerLevel: 10, baseGoldMin: 3, baseGoldMax: 8, goldPerLevel: 3 },
-      standard: { baseHp: 6, hpPerLevel: 2, baseMinDamage: 1, baseMaxDamage: 2, damagePerLevel: 0, baseArmor: 0, baseXpReward: 50, xpRewardPerLevel: 20, baseGoldMin: 8, baseGoldMax: 18, goldPerLevel: 5 },
-      elite: { baseHp: 14, hpPerLevel: 4, baseMinDamage: 2, baseMaxDamage: 4, damagePerLevel: 1, baseArmor: 1, baseXpReward: 120, xpRewardPerLevel: 40, baseGoldMin: 20, baseGoldMax: 45, goldPerLevel: 10 },
-      boss: { baseHp: 28, hpPerLevel: 6, baseMinDamage: 2, baseMaxDamage: 5, damagePerLevel: 1, baseArmor: 1, baseXpReward: 300, xpRewardPerLevel: 80, baseGoldMin: 80, baseGoldMax: 160, goldPerLevel: 25 },
+      weak: { baseHp: 2, hpPerLevel: 1, baseMinDamage: 1, baseMaxDamage: 1, damagePerLevel: 0, baseArmor: 0, baseXpReward: 3, xpRewardPerLevel: 1, baseGoldMin: 3, baseGoldMax: 8, goldPerLevel: 3 },
+      standard: { baseHp: 6, hpPerLevel: 2, baseMinDamage: 1, baseMaxDamage: 2, damagePerLevel: 0, baseArmor: 0, baseXpReward: 6, xpRewardPerLevel: 2, baseGoldMin: 8, baseGoldMax: 18, goldPerLevel: 5 },
+      elite: { baseHp: 14, hpPerLevel: 4, baseMinDamage: 2, baseMaxDamage: 4, damagePerLevel: 1, baseArmor: 1, baseXpReward: 15, xpRewardPerLevel: 5, baseGoldMin: 20, baseGoldMax: 45, goldPerLevel: 10 },
+      boss: { baseHp: 28, hpPerLevel: 6, baseMinDamage: 2, baseMaxDamage: 5, damagePerLevel: 1, baseArmor: 1, baseXpReward: 40, xpRewardPerLevel: 10, baseGoldMin: 80, baseGoldMax: 160, goldPerLevel: 25 },
     },
     mobActionDelay: { minActionDelayMillis: 3500, maxActionDelayMillis: 7000 },
-    stats: { bindings: { meleeDamageDivisor: 2, dodgePerPoint: 3, maxDodgePercent: 40, spellDamageDivisor: 2, hpScalingDivisor: 3, manaScalingDivisor: 3, hpRegenMsPerPoint: 300, manaRegenMsPerPoint: 300, xpBonusPerPoint: 3 } },
-    economy: { buyMultiplier: 0.6, sellMultiplier: 0.7 },
+    stats: { bindings: { meleeDamageDivisor: 2, dodgePerPoint: 3, maxDodgePercent: 40, spellDamageDivisor: 2, hpScalingDivisor: 3, manaScalingDivisor: 3, hpRegenMsPerPoint: 300, manaRegenMsPerPoint: 300, xpBonusPerPoint: 0.03 } },
+    economy: { buyMultiplier: 0.6, sellMultiplier: 0.4 },
     crafting: { maxSkillLevel: 40, baseXpPerLevel: 60, xpExponent: 1.2, gatherCooldownMs: 1500, stationBonusQuantity: 3 },
-    gambling: { enabled: true, minBet: 5, maxBet: 300, winChance: 0.55, winMultiplier: 2.0 },
-    lottery: { enabled: true, ticketCost: 5, drawingIntervalMs: 1200000, jackpotBase: 1500 },
+    gambling: { enabled: true, diceMinBet: 5, diceMaxBet: 300, diceWinChance: 0.45, diceWinMultiplier: 2.0 },
+    lottery: { enabled: true, ticketCost: 5, drawingIntervalMs: 1200000, jackpotSeedGold: 1500 },
     stylist: { feeGold: 200 },
     bank: { maxItems: 150 },
     enchanting: { maxEnchantmentsPerItem: 5 },
@@ -1014,17 +1011,17 @@ export const SOLO_STORY_PRESET: TuningPreset = {
     characterCreation: { startingGold: 500 },
     prestige: { enabled: true, xpCostBase: 3000, xpCostMultiplier: 1.2, maxRank: 10 },
     respec: { goldCost: 25, cooldownMs: 30000 },
-    autoQuests: { enabled: true, timeLimitMs: 900000, cooldownMs: 60000, rewardScaling: 2.0 },
+    autoQuests: { enabled: true, timeLimitMs: 900000, cooldownMs: 60000 },
     dailyQuests: { enabled: true, streakBonusPercent: 20 },
     globalQuests: { enabled: true, intervalMs: 3600000, durationMs: 1800000 },
     regen: { maxPlayersPerTick: 20, baseIntervalMillis: 2500, minIntervalMillis: 500, regenAmount: 3, mana: { baseIntervalMillis: 2500, minIntervalMillis: 500, regenAmount: 3 } },
     worldTime: { cycleLengthMs: 1200000, dawnHour: 5, dayHour: 7, duskHour: 18, nightHour: 20 },
     weather: { minTransitionMs: 120000, maxTransitionMs: 300000 },
-    group: { maxSize: 6, inviteTimeoutMs: 60000, xpBonusPerMember: 20 },
+    group: { maxSize: 6, inviteTimeoutMs: 60000, xpBonusPerMember: 0.20 },
     navigation: { recall: { cooldownMs: 15000 } },
     friends: { maxFriends: 100 },
     guild: { maxSize: 50, inviteTimeoutMs: 60000 },
-    guildHalls: { enabled: true, baseCost: 3000 },
+    guildHalls: { enabled: true, purchaseCost: 3000 },
     housing: { enabled: true },
     factions: { defaultReputation: 0, killPenalty: 3, killBonus: 5 },
     leaderboard: { refreshIntervalMs: 60000, topN: 20 },
@@ -1051,17 +1048,17 @@ export const PVP_ARENA_PRESET: TuningPreset = {
   config: {
     combat: { tickMillis: 1500, minDamage: 2, maxDamage: 8 },
     mobTiers: {
-      weak: { baseHp: 6, hpPerLevel: 2, baseMinDamage: 1, baseMaxDamage: 2, damagePerLevel: 1, baseArmor: 0, baseXpReward: 12, xpRewardPerLevel: 4, baseGoldMin: 1, baseGoldMax: 2, goldPerLevel: 1 },
-      standard: { baseHp: 14, hpPerLevel: 5, baseMinDamage: 2, baseMaxDamage: 5, damagePerLevel: 1, baseArmor: 1, baseXpReward: 25, xpRewardPerLevel: 8, baseGoldMin: 2, baseGoldMax: 6, goldPerLevel: 2 },
-      elite: { baseHp: 35, hpPerLevel: 9, baseMinDamage: 4, baseMaxDamage: 8, damagePerLevel: 2, baseArmor: 3, baseXpReward: 65, xpRewardPerLevel: 22, baseGoldMin: 8, baseGoldMax: 20, goldPerLevel: 4 },
-      boss: { baseHp: 70, hpPerLevel: 15, baseMinDamage: 5, baseMaxDamage: 12, damagePerLevel: 3, baseArmor: 4, baseXpReward: 180, xpRewardPerLevel: 45, baseGoldMin: 40, baseGoldMax: 80, goldPerLevel: 12 },
+      weak: { baseHp: 6, hpPerLevel: 2, baseMinDamage: 1, baseMaxDamage: 2, damagePerLevel: 1, baseArmor: 0, baseXpReward: 3, xpRewardPerLevel: 1, baseGoldMin: 1, baseGoldMax: 2, goldPerLevel: 1 },
+      standard: { baseHp: 14, hpPerLevel: 5, baseMinDamage: 2, baseMaxDamage: 5, damagePerLevel: 1, baseArmor: 1, baseXpReward: 6, xpRewardPerLevel: 2, baseGoldMin: 2, baseGoldMax: 6, goldPerLevel: 2 },
+      elite: { baseHp: 35, hpPerLevel: 9, baseMinDamage: 4, baseMaxDamage: 8, damagePerLevel: 2, baseArmor: 3, baseXpReward: 16, xpRewardPerLevel: 5, baseGoldMin: 8, baseGoldMax: 20, goldPerLevel: 4 },
+      boss: { baseHp: 70, hpPerLevel: 15, baseMinDamage: 5, baseMaxDamage: 12, damagePerLevel: 3, baseArmor: 4, baseXpReward: 45, xpRewardPerLevel: 11, baseGoldMin: 40, baseGoldMax: 80, goldPerLevel: 12 },
     },
     mobActionDelay: { minActionDelayMillis: 1500, maxActionDelayMillis: 3500 },
-    stats: { bindings: { meleeDamageDivisor: 3, dodgePerPoint: 2, maxDodgePercent: 25, spellDamageDivisor: 3, hpScalingDivisor: 4, manaScalingDivisor: 4, hpRegenMsPerPoint: 180, manaRegenMsPerPoint: 180, xpBonusPerPoint: 1 } },
+    stats: { bindings: { meleeDamageDivisor: 3, dodgePerPoint: 2, maxDodgePercent: 25, spellDamageDivisor: 3, hpScalingDivisor: 4, manaScalingDivisor: 4, hpRegenMsPerPoint: 180, manaRegenMsPerPoint: 180, xpBonusPerPoint: 0.01 } },
     economy: { buyMultiplier: 1.2, sellMultiplier: 0.4 },
     crafting: { maxSkillLevel: 80, baseXpPerLevel: 120, xpExponent: 1.6, gatherCooldownMs: 4000, stationBonusQuantity: 1 },
-    gambling: { enabled: true, minBet: 20, maxBet: 1500, winChance: 0.4, winMultiplier: 2.5 },
-    lottery: { enabled: false, ticketCost: 50, drawingIntervalMs: 7200000, jackpotBase: 300 },
+    gambling: { enabled: true, diceMinBet: 20, diceMaxBet: 1500, diceWinChance: 0.35, diceWinMultiplier: 2.5 },
+    lottery: { enabled: false, ticketCost: 50, drawingIntervalMs: 7200000, jackpotSeedGold: 300 },
     stylist: { feeGold: 1500 },
     bank: { maxItems: 40 },
     enchanting: { maxEnchantmentsPerItem: 2 },
@@ -1093,17 +1090,17 @@ export const PVP_ARENA_PRESET: TuningPreset = {
     characterCreation: { startingGold: 75 },
     prestige: { enabled: true, xpCostBase: 15000, xpCostMultiplier: 1.8, maxRank: 5 },
     respec: { goldCost: 250, cooldownMs: 600000 },
-    autoQuests: { enabled: true, timeLimitMs: 240000, cooldownMs: 300000, rewardScaling: 0.9 },
+    autoQuests: { enabled: true, timeLimitMs: 240000, cooldownMs: 300000 },
     dailyQuests: { enabled: true, streakBonusPercent: 8 },
     globalQuests: { enabled: true, intervalMs: 5400000, durationMs: 2700000 },
-    regen: { maxPlayersPerTick: 10, baseIntervalMillis: 5000, minIntervalMillis: 1200, regenAmount: 1, mana: { baseIntervalMillis: 5000, minIntervalMillis: 1200, regenAmount: 1 } },
+    regen: { maxPlayersPerTick: 10, baseIntervalMillis: 5000, minIntervalMillis: 1200, regenAmount: 2, mana: { baseIntervalMillis: 5000, minIntervalMillis: 1200, regenAmount: 2 } },
     worldTime: { cycleLengthMs: 1800000, dawnHour: 5, dayHour: 7, duskHour: 18, nightHour: 20 },
     weather: { minTransitionMs: 180000, maxTransitionMs: 600000 },
-    group: { maxSize: 4, inviteTimeoutMs: 30000, xpBonusPerMember: 15 },
+    group: { maxSize: 4, inviteTimeoutMs: 30000, xpBonusPerMember: 0.15 },
     navigation: { recall: { cooldownMs: 120000 } },
     friends: { maxFriends: 50 },
     guild: { maxSize: 25, inviteTimeoutMs: 30000 },
-    guildHalls: { enabled: true, baseCost: 15000 },
+    guildHalls: { enabled: true, purchaseCost: 15000 },
     housing: { enabled: true },
     factions: { defaultReputation: 0, killPenalty: 15, killBonus: 10 },
     leaderboard: { refreshIntervalMs: 60000, topN: 10 },
@@ -1130,17 +1127,17 @@ export const LORE_EXPLORER_PRESET: TuningPreset = {
   config: {
     combat: { tickMillis: 4000, minDamage: 2, maxDamage: 6 },
     mobTiers: {
-      weak: { baseHp: 1, hpPerLevel: 1, baseMinDamage: 1, baseMaxDamage: 1, damagePerLevel: 0, baseArmor: 0, baseXpReward: 50, xpRewardPerLevel: 20, baseGoldMin: 10, baseGoldMax: 25, goldPerLevel: 5 },
-      standard: { baseHp: 4, hpPerLevel: 1, baseMinDamage: 1, baseMaxDamage: 2, damagePerLevel: 0, baseArmor: 0, baseXpReward: 100, xpRewardPerLevel: 40, baseGoldMin: 20, baseGoldMax: 50, goldPerLevel: 10 },
-      elite: { baseHp: 10, hpPerLevel: 3, baseMinDamage: 1, baseMaxDamage: 3, damagePerLevel: 0, baseArmor: 0, baseXpReward: 250, xpRewardPerLevel: 80, baseGoldMin: 50, baseGoldMax: 100, goldPerLevel: 20 },
-      boss: { baseHp: 20, hpPerLevel: 5, baseMinDamage: 2, baseMaxDamage: 4, damagePerLevel: 1, baseArmor: 1, baseXpReward: 500, xpRewardPerLevel: 150, baseGoldMin: 150, baseGoldMax: 300, goldPerLevel: 50 },
+      weak: { baseHp: 1, hpPerLevel: 1, baseMinDamage: 1, baseMaxDamage: 1, damagePerLevel: 0, baseArmor: 0, baseXpReward: 2, xpRewardPerLevel: 1, baseGoldMin: 10, baseGoldMax: 25, goldPerLevel: 5 },
+      standard: { baseHp: 4, hpPerLevel: 1, baseMinDamage: 1, baseMaxDamage: 2, damagePerLevel: 0, baseArmor: 0, baseXpReward: 4, xpRewardPerLevel: 2, baseGoldMin: 20, baseGoldMax: 50, goldPerLevel: 10 },
+      elite: { baseHp: 10, hpPerLevel: 3, baseMinDamage: 1, baseMaxDamage: 3, damagePerLevel: 0, baseArmor: 0, baseXpReward: 10, xpRewardPerLevel: 3, baseGoldMin: 50, baseGoldMax: 100, goldPerLevel: 20 },
+      boss: { baseHp: 20, hpPerLevel: 5, baseMinDamage: 2, baseMaxDamage: 4, damagePerLevel: 1, baseArmor: 1, baseXpReward: 20, xpRewardPerLevel: 6, baseGoldMin: 150, baseGoldMax: 300, goldPerLevel: 50 },
     },
     mobActionDelay: { minActionDelayMillis: 4000, maxActionDelayMillis: 8000 },
-    stats: { bindings: { meleeDamageDivisor: 1, dodgePerPoint: 5, maxDodgePercent: 50, spellDamageDivisor: 1, hpScalingDivisor: 2, manaScalingDivisor: 2, hpRegenMsPerPoint: 400, manaRegenMsPerPoint: 400, xpBonusPerPoint: 5 } },
-    economy: { buyMultiplier: 0.3, sellMultiplier: 0.9 },
+    stats: { bindings: { meleeDamageDivisor: 1, dodgePerPoint: 5, maxDodgePercent: 55, spellDamageDivisor: 1, hpScalingDivisor: 2, manaScalingDivisor: 2, hpRegenMsPerPoint: 400, manaRegenMsPerPoint: 400, xpBonusPerPoint: 0.05 } },
+    economy: { buyMultiplier: 0.3, sellMultiplier: 0.2 },
     crafting: { maxSkillLevel: 30, baseXpPerLevel: 30, xpExponent: 1.1, gatherCooldownMs: 1000, stationBonusQuantity: 5 },
-    gambling: { enabled: true, minBet: 1, maxBet: 100, winChance: 0.6, winMultiplier: 3.0 },
-    lottery: { enabled: true, ticketCost: 1, drawingIntervalMs: 600000, jackpotBase: 5000 },
+    gambling: { enabled: true, diceMinBet: 1, diceMaxBet: 100, diceWinChance: 0.45, diceWinMultiplier: 2.0 },
+    lottery: { enabled: true, ticketCost: 1, drawingIntervalMs: 600000, jackpotSeedGold: 5000 },
     stylist: { feeGold: 50 },
     bank: { maxItems: 200 },
     enchanting: { maxEnchantmentsPerItem: 6 },
@@ -1171,17 +1168,17 @@ export const LORE_EXPLORER_PRESET: TuningPreset = {
     characterCreation: { startingGold: 2000 },
     prestige: { enabled: true, xpCostBase: 1000, xpCostMultiplier: 1.1, maxRank: 20 },
     respec: { goldCost: 0, cooldownMs: 0 },
-    autoQuests: { enabled: true, timeLimitMs: 1800000, cooldownMs: 30000, rewardScaling: 3.0 },
+    autoQuests: { enabled: true, timeLimitMs: 1800000, cooldownMs: 30000 },
     dailyQuests: { enabled: true, streakBonusPercent: 30 },
     globalQuests: { enabled: true, intervalMs: 1800000, durationMs: 900000 },
     regen: { maxPlayersPerTick: 25, baseIntervalMillis: 1500, minIntervalMillis: 300, regenAmount: 5, mana: { baseIntervalMillis: 1500, minIntervalMillis: 300, regenAmount: 5 } },
     worldTime: { cycleLengthMs: 900000, dawnHour: 5, dayHour: 7, duskHour: 18, nightHour: 20 },
     weather: { minTransitionMs: 60000, maxTransitionMs: 180000 },
-    group: { maxSize: 8, inviteTimeoutMs: 120000, xpBonusPerMember: 25 },
+    group: { maxSize: 8, inviteTimeoutMs: 120000, xpBonusPerMember: 0.25 },
     navigation: { recall: { cooldownMs: 5000 } },
     friends: { maxFriends: 200 },
     guild: { maxSize: 100, inviteTimeoutMs: 120000 },
-    guildHalls: { enabled: true, baseCost: 1000 },
+    guildHalls: { enabled: true, purchaseCost: 1000 },
     housing: { enabled: true },
     factions: { defaultReputation: 50, killPenalty: 1, killBonus: 10 },
     leaderboard: { refreshIntervalMs: 30000, topN: 50 },

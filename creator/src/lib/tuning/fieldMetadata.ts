@@ -381,14 +381,16 @@ export const FIELD_METADATA: Record<string, FieldMeta> = {
 
   "mobActionDelay.minActionDelayMillis": {
     label: "Mob Min Action Delay",
-    description: "Minimum milliseconds between mob actions",
+    description:
+      "Minimum milliseconds between mob behavior-tree evaluations (patrol, wander, aggro initiation). This is NOT combat attack speed -- swings are driven by combat.tickMillis. Server default: 8000ms.",
     section: TuningSection.CombatStats,
     min: 0,
     impact: "medium",
   },
   "mobActionDelay.maxActionDelayMillis": {
     label: "Mob Max Action Delay",
-    description: "Maximum milliseconds between mob actions",
+    description:
+      "Maximum milliseconds between mob behavior-tree evaluations (patrol, wander, aggro initiation). This is NOT combat attack speed -- swings are driven by combat.tickMillis. Server default: 20000ms.",
     section: TuningSection.CombatStats,
     min: 0,
     impact: "medium",
@@ -461,11 +463,14 @@ export const FIELD_METADATA: Record<string, FieldMeta> = {
   },
   "stats.bindings.xpBonusPerPoint": {
     label: "XP Bonus Per Point",
-    description: "Percentage XP bonus per point of the XP bonus stat",
+    description:
+      "Fractional XP multiplier per stat point above the base of 10. Formula: xpMultiplier = 1.0 + (stat - 10) * xpBonusPerPoint. 0.01 = 1% bonus per point; 0.10 = 10% per point. Server default: 0.005. Do not enter percentage integers.",
     section: TuningSection.CombatStats,
     min: 0,
+    max: 0.1,
     impact: "medium",
-    interactionNote: "Multiplicative XP scaling from charisma -- affects leveling speed",
+    interactionNote:
+      "Multiplicative XP scaling from the configured XP-bonus stat. Tiny changes compound with stat investment.",
   },
 
   // ─── Economy ───────────────────────────────────────────────────────
@@ -534,31 +539,33 @@ export const FIELD_METADATA: Record<string, FieldMeta> = {
     section: TuningSection.EconomyCrafting,
     impact: "low",
   },
-  "gambling.minBet": {
-    label: "Minimum Bet",
-    description: "Minimum gold amount for a single gamble",
+  "gambling.diceMinBet": {
+    label: "Dice Minimum Bet",
+    description: "Minimum gold amount for a single dice gamble. Server field: diceMinBet.",
     section: TuningSection.EconomyCrafting,
     min: 1,
     impact: "low",
   },
-  "gambling.maxBet": {
-    label: "Maximum Bet",
-    description: "Maximum gold amount for a single gamble",
+  "gambling.diceMaxBet": {
+    label: "Dice Maximum Bet",
+    description: "Maximum gold amount for a single dice gamble. Server field: diceMaxBet.",
     section: TuningSection.EconomyCrafting,
     min: 1,
     impact: "medium",
   },
-  "gambling.winChance": {
-    label: "Gambling Win Chance",
-    description: "Probability of winning a gamble (0-1)",
+  "gambling.diceWinChance": {
+    label: "Dice Win Chance",
+    description:
+      "Probability of winning a dice gamble (0-1). Server field: diceWinChance. Keep diceWinChance * diceWinMultiplier < 1 for a positive house edge.",
     section: TuningSection.EconomyCrafting,
     min: 0,
     max: 1,
     impact: "medium",
   },
-  "gambling.winMultiplier": {
-    label: "Gambling Win Multiplier",
-    description: "Multiplier applied to bet amount on a win",
+  "gambling.diceWinMultiplier": {
+    label: "Dice Win Multiplier",
+    description:
+      "Gross payout multiplier on a winning dice roll (2.0 means a 100g bet returns 200g). Server field: diceWinMultiplier.",
     section: TuningSection.EconomyCrafting,
     min: 1,
     impact: "medium",
@@ -586,9 +593,10 @@ export const FIELD_METADATA: Record<string, FieldMeta> = {
     min: 1000,
     impact: "low",
   },
-  "lottery.jackpotBase": {
-    label: "Lottery Jackpot Base",
-    description: "Starting jackpot amount before ticket sales accumulate",
+  "lottery.jackpotSeedGold": {
+    label: "Lottery Jackpot Seed",
+    description:
+      "Gold the jackpot resets to after each drawing (seed value, not a floor). Server field: jackpotSeedGold.",
     section: TuningSection.EconomyCrafting,
     min: 0,
     impact: "low",
@@ -794,7 +802,8 @@ export const FIELD_METADATA: Record<string, FieldMeta> = {
   },
   "respec.cooldownMs": {
     label: "Respec Cooldown",
-    description: "Milliseconds between allowed respecs",
+    description:
+      "Milliseconds between allowed respecs. Note: the server does not persist this cooldown across sessions -- players can reset the timer by disconnecting. Treat as a soft deterrent only.",
     section: TuningSection.ProgressionQuests,
     min: 0,
     impact: "low",
@@ -822,14 +831,6 @@ export const FIELD_METADATA: Record<string, FieldMeta> = {
     min: 0,
     impact: "medium",
   },
-  "autoQuests.rewardScaling": {
-    label: "Bounty Reward Scaling",
-    description: "Multiplier for bounty quest rewards based on difficulty",
-    section: TuningSection.ProgressionQuests,
-    min: 0,
-    impact: "medium",
-  },
-
   // ─── Daily Quests ──────────────────────────────────────────────────
 
   "dailyQuests.enabled": {
@@ -999,11 +1000,14 @@ export const FIELD_METADATA: Record<string, FieldMeta> = {
   },
   "group.xpBonusPerMember": {
     label: "Group XP Bonus/Member",
-    description: "XP bonus percentage per additional group member",
+    description:
+      "Fractional XP multiplier per additional group member beyond the first. Formula: groupMultiplier = 1.0 + (memberCount - 1) * xpBonusPerMember. 0.10 = 10% bonus per extra member. Server default: 0.10. Do not enter percentage integers.",
     section: TuningSection.WorldSocial,
     min: 0,
+    max: 1,
     impact: "medium",
-    interactionNote: "Incentivizes grouping -- higher values make solo play relatively less efficient",
+    interactionNote:
+      "Incentivizes grouping -- higher values make solo play relatively less efficient. Keep below 1.0.",
   },
 
   // ─── Navigation ────────────────────────────────────────────────────
@@ -1051,9 +1055,9 @@ export const FIELD_METADATA: Record<string, FieldMeta> = {
     section: TuningSection.WorldSocial,
     impact: "low",
   },
-  "guildHalls.baseCost": {
-    label: "Guild Hall Base Cost",
-    description: "Gold cost to purchase a guild hall",
+  "guildHalls.purchaseCost": {
+    label: "Guild Hall Purchase Cost",
+    description: "Gold cost to purchase a guild hall. Server field: purchaseCost.",
     section: TuningSection.WorldSocial,
     min: 0,
     impact: "medium",
@@ -1078,17 +1082,19 @@ export const FIELD_METADATA: Record<string, FieldMeta> = {
   },
   "factions.killPenalty": {
     label: "Faction Kill Penalty",
-    description: "Reputation lost when killing a faction member",
+    description:
+      "Base reputation lost when killing a faction member. Actual per-kill loss scales with mob level: killPenalty * (1 + mobLevel / 10).",
     section: TuningSection.WorldSocial,
     min: 0,
-    impact: "medium",
+    impact: "high",
   },
   "factions.killBonus": {
     label: "Faction Kill Bonus",
-    description: "Reputation gained with enemy factions when killing a faction member",
+    description:
+      "Base reputation gained with enemy factions when killing a faction member. Actual per-kill gain scales with mob level: killBonus * (1 + mobLevel / 10).",
     section: TuningSection.WorldSocial,
     min: 0,
-    impact: "medium",
+    impact: "high",
   },
 
   // ─── Leaderboard ───────────────────────────────────────────────────

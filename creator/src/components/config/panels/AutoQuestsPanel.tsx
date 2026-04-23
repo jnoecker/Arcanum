@@ -11,7 +11,6 @@ const DEFAULT_AUTO_QUESTS: AutoQuestsConfig = {
   enabled: false,
   timeLimitMs: 600_000,
   cooldownMs: 300_000,
-  rewardScaling: 1.0,
 };
 
 export function AutoQuestsPanel({ config, onChange }: ConfigPanelProps) {
@@ -44,14 +43,6 @@ export function AutoQuestsPanel({ config, onChange }: ConfigPanelProps) {
             value={aq.cooldownMs}
             onCommit={(v) => patch({ cooldownMs: v ?? 300_000 })}
             min={0}
-          />
-        </FieldRow>
-        <FieldRow label="Reward Scaling" hint="Multiplier applied to bounty rewards. 1.0 = normal, 1.5 = 50% bonus. Stacks with level scaling.">
-          <NumberInput
-            value={aq.rewardScaling}
-            onCommit={(v) => patch({ rewardScaling: v ?? 1.0 })}
-            min={0}
-            step={0.1}
           />
         </FieldRow>
       </div>

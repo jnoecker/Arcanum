@@ -760,7 +760,6 @@ function parseAutoQuestsConfig(raw: unknown): AppConfig["autoQuests"] {
     rewardXpPerLevel: asNumber(s.rewardXpPerLevel, 25),
     killCountMin: asNumber(s.killCountMin, 3),
     killCountMax: asNumber(s.killCountMax, 8),
-    rewardScaling: typeof s.rewardScaling === "number" ? s.rewardScaling : undefined,
   };
 }
 

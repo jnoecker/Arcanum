@@ -58,7 +58,7 @@ dependencies = [
 
 [[package]]
 name = "arcanum"
-version = "3.10.0"
+version = "3.11.0"
 dependencies = [
  "base64 0.22.1",
  "chrono",

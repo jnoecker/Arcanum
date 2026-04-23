@@ -3,6 +3,7 @@ import { TUNING_PRESETS } from "@/lib/tuning/presets";
 import type { TuningPreset } from "@/lib/tuning/presets";
 import { applyTemplate } from "@/lib/templates";
 import { estimatePacing } from "@/lib/tuning/pacing";
+import { evaluateArchetype } from "@/lib/tuning/archetypeScore";
 import type { AppConfig } from "@/types/config";
 
 const BASE_CONFIG = {
@@ -191,6 +192,21 @@ describe("preset invariants — server semantics", () => {
         const amount = merged.regen.regenAmount;
         const timeToFullSec = (playerHpAt25 * interval) / (amount * 1000);
         expect(timeToFullSec, `${preset.id}: ${timeToFullSec.toFixed(0)}s to regen ${playerHpAt25}hp`).toBeLessThan(180);
+      });
+    }
+  });
+
+  describe("each preset validates against its own archetype contract", () => {
+    for (const preset of TUNING_PRESETS) {
+      it(`${preset.id}: evaluateArchetype returns status=validated`, () => {
+        const merged = mergedConfig(preset);
+        const ev = evaluateArchetype(merged, preset.id);
+        expect(ev, `${preset.id}: no archetype contract found`).not.toBeNull();
+        const failing = ev!.checks.filter((c) => c.status !== "pass");
+        const detail = failing
+          .map((c) => `${c.category}/${c.label}: ${c.status} actual=${c.actual} expected=${c.expected}`)
+          .join("; ");
+        expect(ev!.status, `${preset.id}: score=${ev!.score} pass=${ev!.passCount} warn=${ev!.warnCount} fail=${ev!.failCount}${detail ? ` | ${detail}` : ""}`).toBe("validated");
       });
     }
   });

@@ -14,6 +14,7 @@ import { mobMaxDamageAtLevel, mobMinDamageAtLevel } from "./tuning/formulas";
 import { computeZoneRebalance } from "./zoneRebalance";
 import { exitTarget } from "./zoneEdits";
 import { getTrainerClasses } from "./trainers";
+import { resolveMobStats } from "./resolveMobStats";
 
 export type Severity = "error" | "warning";
 
@@ -510,6 +511,29 @@ export function validateZone(
           "warning",
           entity,
           `Role '${mobRole}' ignores combat stats (hp/xpReward/damage/armor). Remove the overrides to keep the editor clean.`,
+        );
+      }
+    } else {
+      const resolved = resolveMobStats(mob, mobTiers);
+      if (resolved?.anyOverridden) {
+        const breakdown = (
+          [
+            ["HP", resolved.hp],
+            ["min damage", resolved.minDamage],
+            ["max damage", resolved.maxDamage],
+            ["armor", resolved.armor],
+            ["XP", resolved.xpReward],
+            ["gold min", resolved.goldMin],
+            ["gold max", resolved.goldMax],
+          ] as const
+        )
+          .filter(([, s]) => s.overridden)
+          .map(([label, s]) => `${label} ${s.effective} (tier default ${s.tierDefault})`);
+        addIssue(
+          issues,
+          "warning",
+          entity,
+          `Stat override breaks tier curve: ${breakdown.join("; ")}. Prefer adjusting tier or level over hand-tuning numbers.`,
         );
       }
     }

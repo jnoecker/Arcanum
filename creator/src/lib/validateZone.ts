@@ -451,6 +451,35 @@ export function validateZone(
       addIssue(issues, "error", "zone", "levelBand.max must be greater than or equal to levelBand.min");
     }
   }
+  if (world.scaling) {
+    const { mode, levelRange } = world.scaling;
+    if (mode === "bounded") {
+      if (!levelRange || levelRange.length !== 2) {
+        addIssue(issues, "error", "zone", "scaling.mode 'bounded' requires a levelRange [min, max]");
+      } else {
+        const [min, max] = levelRange;
+        if (!isPositiveInteger(min) || !isPositiveInteger(max)) {
+          addIssue(issues, "error", "zone", "scaling.levelRange values must be positive integers");
+        } else if (max < min) {
+          addIssue(issues, "error", "zone", `scaling.levelRange max (${max}) must be >= min (${min})`);
+        }
+      }
+    } else if (mode === "player" && levelRange) {
+      addIssue(
+        issues,
+        "warning",
+        "zone",
+        "scaling.mode 'player' ignores levelRange — content tracks the reference player without bounds.",
+      );
+    } else if (mode === "static" && levelRange) {
+      addIssue(
+        issues,
+        "warning",
+        "zone",
+        "scaling.mode 'static' ignores levelRange — use levelBand for rebalance targets instead.",
+      );
+    }
+  }
   factionCheck("zone", world.faction, "Controlling faction");
 
   for (const [roomId, room] of Object.entries(world.rooms)) {

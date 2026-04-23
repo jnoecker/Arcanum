@@ -177,6 +177,14 @@ export const CASUAL_PRESET: TuningPreset = {
         linearXp: 10,
         multiplier: 0.8,
         defaultKillXp: 15,
+        diminishing: {
+          enabled: true,
+          thresholds: [
+            { levelsBelow: 4, multiplier: 0.5 },
+            { levelsBelow: 7, multiplier: 0.2 },
+            { levelsBelow: 10, multiplier: 0.0 },
+          ],
+        },
       },
       rewards: {
         hpPerLevel: 3,
@@ -472,10 +480,18 @@ export const BALANCED_PRESET: TuningPreset = {
       maxLevel: 50,
       xp: {
         baseXp: 100,
-        exponent: 1.8,
-        linearXp: 0,
+        exponent: 2.2,
+        linearXp: 150,
         multiplier: 1.0,
         defaultKillXp: 10,
+        diminishing: {
+          enabled: true,
+          thresholds: [
+            { levelsBelow: 3, multiplier: 0.5 },
+            { levelsBelow: 5, multiplier: 0.2 },
+            { levelsBelow: 8, multiplier: 0.0 },
+          ],
+        },
       },
       rewards: {
         hpPerLevel: 2,
@@ -771,10 +787,18 @@ export const HARDCORE_PRESET: TuningPreset = {
       maxLevel: 50,
       xp: {
         baseXp: 120,
-        exponent: 2.2,
-        linearXp: 0,
+        exponent: 2.4,
+        linearXp: 200,
         multiplier: 1.0,
         defaultKillXp: 5,
+        diminishing: {
+          enabled: true,
+          thresholds: [
+            { levelsBelow: 2, multiplier: 0.5 },
+            { levelsBelow: 4, multiplier: 0.2 },
+            { levelsBelow: 6, multiplier: 0.0 },
+          ],
+        },
       },
       rewards: {
         hpPerLevel: 1,
@@ -952,7 +976,21 @@ export const SOLO_STORY_PRESET: TuningPreset = {
     enchanting: { maxEnchantmentsPerItem: 5 },
     progression: {
       maxLevel: 40,
-      xp: { baseXp: 70, exponent: 1.45, linearXp: 5, multiplier: 0.7, defaultKillXp: 20 },
+      xp: {
+        baseXp: 70,
+        exponent: 1.45,
+        linearXp: 5,
+        multiplier: 0.7,
+        defaultKillXp: 20,
+        diminishing: {
+          enabled: true,
+          thresholds: [
+            { levelsBelow: 5, multiplier: 0.5 },
+            { levelsBelow: 8, multiplier: 0.2 },
+            { levelsBelow: 12, multiplier: 0.0 },
+          ],
+        },
+      },
       rewards: { hpPerLevel: 4, manaPerLevel: 3, fullHealOnLevelUp: true, fullManaOnLevelUp: true, baseHp: 20, baseMana: 20 },
     },
     skillPoints: { interval: 2 },
@@ -1013,7 +1051,21 @@ export const PVP_ARENA_PRESET: TuningPreset = {
     enchanting: { maxEnchantmentsPerItem: 2 },
     progression: {
       maxLevel: 50,
-      xp: { baseXp: 90, exponent: 1.7, linearXp: 5, multiplier: 1.0, defaultKillXp: 8 },
+      xp: {
+        baseXp: 90,
+        exponent: 1.7,
+        linearXp: 5,
+        multiplier: 1.0,
+        defaultKillXp: 8,
+        diminishing: {
+          enabled: true,
+          thresholds: [
+            { levelsBelow: 3, multiplier: 0.5 },
+            { levelsBelow: 5, multiplier: 0.2 },
+            { levelsBelow: 8, multiplier: 0.0 },
+          ],
+        },
+      },
       rewards: { hpPerLevel: 2, manaPerLevel: 1, fullHealOnLevelUp: true, fullManaOnLevelUp: true, baseHp: 12, baseMana: 10 },
     },
     skillPoints: { interval: 3 },
@@ -1074,7 +1126,20 @@ export const LORE_EXPLORER_PRESET: TuningPreset = {
     enchanting: { maxEnchantmentsPerItem: 6 },
     progression: {
       maxLevel: 30,
-      xp: { baseXp: 40, exponent: 1.3, linearXp: 5, multiplier: 0.25, defaultKillXp: 50 },
+      xp: {
+        baseXp: 40,
+        exponent: 1.3,
+        linearXp: 5,
+        multiplier: 0.25,
+        defaultKillXp: 50,
+        diminishing: {
+          enabled: true,
+          thresholds: [
+            { levelsBelow: 5, multiplier: 0.5 },
+            { levelsBelow: 10, multiplier: 0.0 },
+          ],
+        },
+      },
       rewards: { hpPerLevel: 8, manaPerLevel: 6, fullHealOnLevelUp: true, fullManaOnLevelUp: true, baseHp: 50, baseMana: 50 },
     },
     skillPoints: { interval: 1 },

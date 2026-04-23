@@ -646,6 +646,17 @@ export function validateZone(
         addIssue(issues, "error", entity, `Rep gate min (${min}) must be <= max (${max})`);
       }
     }
+    if (quest.level != null && quest.level < 1) {
+      addIssue(issues, "error", entity, `Intended level (${quest.level}) must be at least 1`);
+    }
+    if (quest.level == null && (quest.rewards?.xp ?? 0) >= 100) {
+      addIssue(
+        issues,
+        "warning",
+        entity,
+        "Quest awards >=100 XP but has no intended level — players who out-level this quest will still receive the full flat reward",
+      );
+    }
   }
 
   for (const [nodeId, node] of Object.entries(world.gatheringNodes ?? {})) {

@@ -249,6 +249,13 @@ export interface QuestFile {
   rewards?: QuestRewardsFile;
   /** Rep gate. Giver will not offer the quest when the requirement fails. */
   requiredReputation?: ReputationRequirement;
+  /**
+   * Intended player level. When set, XP rewards are scaled by the same
+   * diminishing-returns curve used for kills — players who have out-levelled
+   * the quest receive reduced XP rather than the flat reward. Omit to keep
+   * legacy flat-award behaviour.
+   */
+  level?: number;
 }
 
 export interface QuestObjectiveFile {

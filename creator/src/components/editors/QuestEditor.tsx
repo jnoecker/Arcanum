@@ -133,6 +133,18 @@ export function QuestEditor({
               dense
             />
           </CompactField>
+          <CompactField
+            label="Intended level"
+            hint="When set, XP reward diminishes if the player has out-levelled the quest."
+          >
+            <NumberInput
+              value={quest.level}
+              onCommit={(v) => patch({ level: v && v > 0 ? v : undefined })}
+              placeholder="—"
+              min={1}
+              dense
+            />
+          </CompactField>
         </FieldGrid>
       </Section>
 

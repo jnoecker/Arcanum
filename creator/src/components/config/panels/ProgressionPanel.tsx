@@ -86,7 +86,7 @@ export function ProgressionPanel({ config, onChange }: ConfigPanelProps) {
 
       <Section
         title="Diminishing Returns"
-        description="Scales down kill XP when a player over-levels a mob, so high-level characters can't farm trash for easy XP. Each threshold applies when the player is at least `levelsBelow` levels above the mob; the largest matching threshold wins."
+        description="Scales down XP when a player has out-levelled the source — applies to kills (mob level) and to quests or puzzles that declare an intended level. Each threshold kicks in when the gap is at least `levelsBelow`, and the largest matching threshold wins. Prevents trivial trash farming and flat-reward quest ladders from running away with progression."
       >
         <DiminishingReturnsEditor
           value={p.xp.diminishing}

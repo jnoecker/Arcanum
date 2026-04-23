@@ -21,6 +21,8 @@ import { DialogueEditor } from "./DialogueEditor";
 import { DeleteEntityButton, EnhanceDescriptionButton, MediaSection } from "./EditorShared";
 import { mobPrompt, mobContext } from "@/lib/entityPrompts";
 import { useVibeStore } from "@/stores/vibeStore";
+import { useConfigStore } from "@/stores/configStore";
+import { resolveMobStats } from "@/lib/resolveMobStats";
 import { CATEGORY_ICONS } from "@/assets/ui";
 
 interface MobEditorProps {
@@ -39,6 +41,18 @@ const TIER_OPTIONS = [
 ];
 
 const ROLE_OPTIONS = MOB_ROLES.map((r) => ({ value: r, label: MOB_ROLE_LABELS[r] }));
+
+function fieldLabel(
+  base: string,
+  stat: { tierDefault: number; overridden: boolean } | undefined,
+): string {
+  if (!stat || !stat.overridden) return base;
+  return `${base} (tier default: ${stat.tierDefault})`;
+}
+
+function fieldPlaceholder(stat: { tierDefault: number } | undefined): string {
+  return stat ? String(stat.tierDefault) : "Auto";
+}
 
 const CATEGORY_OPTIONS = [
   { value: "humanoid", label: "Humanoid" },
@@ -91,6 +105,20 @@ export function MobEditor({
     ? MOB_TABS
     : MOB_TABS.filter((t) => t.value !== "rewards");
   const effectiveTab: MobTab = !isCombatant && activeTab === "rewards" ? "mob" : activeTab;
+
+  const mobTiers = useConfigStore((s) => s.config?.mobTiers);
+  const stats = resolveMobStats(mob, mobTiers);
+  const clearAllOverrides = useCallback(() => {
+    patch({
+      hp: undefined,
+      minDamage: undefined,
+      maxDamage: undefined,
+      armor: undefined,
+      xpReward: undefined,
+      goldMin: undefined,
+      goldMax: undefined,
+    });
+  }, [patch]);
 
   const zoneQuests = Object.entries(world.quests ?? {}).map(([id, q]) => ({
     id,
@@ -440,64 +468,81 @@ export function MobEditor({
             </FieldRow>
           </Section>
 
-          <Section title="Stat Overrides" defaultExpanded={false}>
-            <p className="mb-1 text-2xs text-text-muted">
-              Leave blank to use tier defaults
-            </p>
+          <Section
+            title={stats?.anyOverridden ? "Stat Overrides ●" : "Stat Overrides"}
+            defaultExpanded={false}
+            description={
+              stats
+                ? "Every field below follows tier × level by default. Only set a value when you need to break from the curve — the engine uses whatever you type instead of the computed value."
+                : "Set this mob's tier and level to preview the computed stats. Any value you type below becomes an override."
+            }
+            actions={
+              stats?.anyOverridden ? (
+                <button
+                  type="button"
+                  onClick={clearAllOverrides}
+                  className="focus-ring text-2xs text-text-muted underline underline-offset-2 hover:text-text-primary"
+                  title="Remove all overrides and use tier defaults"
+                >
+                  Clear all
+                </button>
+              ) : undefined
+            }
+          >
             <FieldGrid>
-              <CompactField label="HP" span>
+              <CompactField label={fieldLabel("HP", stats?.hp)} span>
                 <NumberInput
                   value={mob.hp}
                   onCommit={(v) => patch({ hp: v })}
-                  placeholder="Auto"
+                  placeholder={fieldPlaceholder(stats?.hp)}
                   min={1}
                 />
               </CompactField>
-              <CompactField label="Min Damage">
+              <CompactField label={fieldLabel("Min Damage", stats?.minDamage)}>
                 <NumberInput
                   value={mob.minDamage}
                   onCommit={(v) => patch({ minDamage: v })}
-                  placeholder="Auto"
+                  placeholder={fieldPlaceholder(stats?.minDamage)}
                   min={0}
                 />
               </CompactField>
-              <CompactField label="Max Damage">
+              <CompactField label={fieldLabel("Max Damage", stats?.maxDamage)}>
                 <NumberInput
                   value={mob.maxDamage}
                   onCommit={(v) => patch({ maxDamage: v })}
-                  placeholder="Auto"
+                  placeholder={fieldPlaceholder(stats?.maxDamage)}
                   min={0}
                 />
               </CompactField>
-              <CompactField label="Armor" span>
+              <CompactField label={fieldLabel("Armor", stats?.armor)} span>
                 <NumberInput
                   value={mob.armor}
                   onCommit={(v) => patch({ armor: v })}
-                  placeholder="Auto"
+                  placeholder={fieldPlaceholder(stats?.armor)}
                   min={0}
                 />
               </CompactField>
-              <CompactField label="XP Reward" span>
+              <CompactField label={fieldLabel("XP Reward", stats?.xpReward)} span>
                 <NumberInput
                   value={mob.xpReward}
                   onCommit={(v) => patch({ xpReward: v })}
-                  placeholder="Auto"
+                  placeholder={fieldPlaceholder(stats?.xpReward)}
                   min={0}
                 />
               </CompactField>
-              <CompactField label="Gold Min">
+              <CompactField label={fieldLabel("Gold Min", stats?.goldMin)}>
                 <NumberInput
                   value={mob.goldMin}
                   onCommit={(v) => patch({ goldMin: v })}
-                  placeholder="Auto"
+                  placeholder={fieldPlaceholder(stats?.goldMin)}
                   min={0}
                 />
               </CompactField>
-              <CompactField label="Gold Max">
+              <CompactField label={fieldLabel("Gold Max", stats?.goldMax)}>
                 <NumberInput
                   value={mob.goldMax}
                   onCommit={(v) => patch({ goldMax: v })}
-                  placeholder="Auto"
+                  placeholder={fieldPlaceholder(stats?.goldMax)}
                   min={0}
                 />
               </CompactField>

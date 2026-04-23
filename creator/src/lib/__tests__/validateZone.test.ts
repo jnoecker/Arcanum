@@ -203,6 +203,33 @@ describe("validateZone", () => {
     expect(issues.some((i) => i.entity === "mob:rat" && i.message.toLowerCase().includes("ignore"))).toBe(false);
   });
 
+  it("warns a combat mob's tier curve is broken by overrides when tiers are configured", () => {
+    const world = makeValidWorld();
+    world.mobs!.rat.tier = "standard";
+    world.mobs!.rat.level = 5;
+    world.mobs!.rat.hp = 999;
+    const issues = warnings(validateZone(world, undefined, undefined, undefined, undefined, TEST_MOB_TIERS));
+    const match = issues.find((i) => i.entity === "mob:rat" && i.message.includes("tier curve"));
+    expect(match).toBeDefined();
+    expect(match!.message).toContain("HP 999");
+    expect(match!.message).toContain("tier default");
+  });
+
+  it("does not emit a tier-curve warning when no overrides are set", () => {
+    const world = makeValidWorld();
+    world.mobs!.rat.tier = "standard";
+    world.mobs!.rat.level = 5;
+    const issues = warnings(validateZone(world, undefined, undefined, undefined, undefined, TEST_MOB_TIERS));
+    expect(issues.some((i) => i.message.includes("tier curve"))).toBe(false);
+  });
+
+  it("silently skips the tier-curve nudge when mobTiers config is absent", () => {
+    const world = makeValidWorld();
+    world.mobs!.rat.hp = 999;
+    const issues = warnings(validateZone(world));
+    expect(issues.some((i) => i.message.includes("tier curve"))).toBe(false);
+  });
+
   // ─── Item checks ────────────────────────────────────────────
   it("errors if item room does not exist", () => {
     const world = makeValidWorld();

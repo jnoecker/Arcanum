@@ -41,7 +41,7 @@ export const CASUAL_PRESET: TuningPreset = {
     combat: {
       tickMillis: 3000,
       minDamage: 1,
-      maxDamage: 100,
+      maxDamage: 4,
     },
 
     // ─── Mob Tiers ───────────────────────────────────────────────────
@@ -352,7 +352,7 @@ export const BALANCED_PRESET: TuningPreset = {
     combat: {
       tickMillis: 2000,
       minDamage: 1,
-      maxDamage: 150,
+      maxDamage: 6,
     },
 
     // ─── Mob Tiers ───────────────────────────────────────────────────
@@ -662,8 +662,8 @@ export const HARDCORE_PRESET: TuningPreset = {
     // ─── Combat ──────────────────────────────────────────────────────
     combat: {
       tickMillis: 1500,
-      minDamage: 1,
-      maxDamage: 200,
+      minDamage: 2,
+      maxDamage: 10,
     },
 
     // ─── Mob Tiers ───────────────────────────────────────────────────
@@ -970,7 +970,7 @@ export const SOLO_STORY_PRESET: TuningPreset = {
       "Fast regen and short cooldowns minimize downtime. Social systems are available but not required — designed for solo-friendly play.",
   },
   config: {
-    combat: { tickMillis: 3500, minDamage: 2, maxDamage: 80 },
+    combat: { tickMillis: 3500, minDamage: 1, maxDamage: 3 },
     mobTiers: {
       weak: { baseHp: 2, hpPerLevel: 1, baseMinDamage: 1, baseMaxDamage: 1, damagePerLevel: 0, baseArmor: 0, baseXpReward: 25, xpRewardPerLevel: 10, baseGoldMin: 3, baseGoldMax: 8, goldPerLevel: 3 },
       standard: { baseHp: 6, hpPerLevel: 2, baseMinDamage: 1, baseMaxDamage: 2, damagePerLevel: 0, baseArmor: 0, baseXpReward: 50, xpRewardPerLevel: 20, baseGoldMin: 8, baseGoldMax: 18, goldPerLevel: 5 },
@@ -1049,7 +1049,7 @@ export const PVP_ARENA_PRESET: TuningPreset = {
       "Moderate regen that rewards preparation. Group play is strongly incentivized with generous XP bonuses. Factions have meaningful reputation swings.",
   },
   config: {
-    combat: { tickMillis: 1500, minDamage: 1, maxDamage: 180 },
+    combat: { tickMillis: 1500, minDamage: 2, maxDamage: 8 },
     mobTiers: {
       weak: { baseHp: 6, hpPerLevel: 2, baseMinDamage: 1, baseMaxDamage: 2, damagePerLevel: 1, baseArmor: 0, baseXpReward: 12, xpRewardPerLevel: 4, baseGoldMin: 1, baseGoldMax: 2, goldPerLevel: 1 },
       standard: { baseHp: 14, hpPerLevel: 5, baseMinDamage: 2, baseMaxDamage: 5, damagePerLevel: 1, baseArmor: 1, baseXpReward: 25, xpRewardPerLevel: 8, baseGoldMin: 2, baseGoldMax: 6, goldPerLevel: 2 },
@@ -1128,7 +1128,7 @@ export const LORE_EXPLORER_PRESET: TuningPreset = {
       "Instant regen, no cooldowns. The world is a playground — no resource management, no waiting, just exploration.",
   },
   config: {
-    combat: { tickMillis: 4000, minDamage: 5, maxDamage: 50 },
+    combat: { tickMillis: 4000, minDamage: 2, maxDamage: 6 },
     mobTiers: {
       weak: { baseHp: 1, hpPerLevel: 1, baseMinDamage: 1, baseMaxDamage: 1, damagePerLevel: 0, baseArmor: 0, baseXpReward: 50, xpRewardPerLevel: 20, baseGoldMin: 10, baseGoldMax: 25, goldPerLevel: 5 },
       standard: { baseHp: 4, hpPerLevel: 1, baseMinDamage: 1, baseMaxDamage: 2, damagePerLevel: 0, baseArmor: 0, baseXpReward: 100, xpRewardPerLevel: 40, baseGoldMin: 20, baseGoldMax: 50, goldPerLevel: 10 },

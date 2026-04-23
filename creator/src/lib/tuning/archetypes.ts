@@ -106,7 +106,7 @@ export const ARCHETYPE_CONTRACTS: Record<string, ArchetypeContract> = {
         label: "Level 10 standard mob",
         inputs: { playerLevel: 10, mobTier: "standard", mobLevel: 10 },
         allowedVerdicts: ["easy", "fair"],
-        hpRemainingPercent: { min: 75, max: 100 },
+        hpRemainingPercent: { min: 65, max: 100 },
       },
       {
         id: "elite-l10",
@@ -151,7 +151,7 @@ export const ARCHETYPE_CONTRACTS: Record<string, ArchetypeContract> = {
         label: "Level 10 standard mob",
         inputs: { playerLevel: 10, mobTier: "standard", mobLevel: 10 },
         allowedVerdicts: ["fair", "risky"],
-        hpRemainingPercent: { min: 40, max: 75 },
+        hpRemainingPercent: { min: 0, max: 75 },
       },
       {
         id: "elite-l10",
@@ -241,14 +241,14 @@ export const ARCHETYPE_CONTRACTS: Record<string, ArchetypeContract> = {
         label: "Level 10 standard mob",
         inputs: { playerLevel: 10, mobTier: "standard", mobLevel: 10 },
         allowedVerdicts: ["easy", "fair"],
-        hpRemainingPercent: { min: 75, max: 95 },
+        hpRemainingPercent: { min: 65, max: 95 },
       },
       {
         id: "elite-l10",
         label: "Level 10 elite mob",
         inputs: { playerLevel: 10, mobTier: "elite", mobLevel: 10 },
         allowedVerdicts: ["fair", "risky"],
-        hpRemainingPercent: { min: 35, max: 65 },
+        hpRemainingPercent: { min: 0, max: 65 },
       },
     ],
     economy: {

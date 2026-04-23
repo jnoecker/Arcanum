@@ -28,17 +28,23 @@ export const FIELD_METADATA: Record<string, FieldMeta> = {
   },
   "combat.minDamage": {
     label: "Global Min Damage",
-    description: "Minimum base damage for all combat hits",
+    description:
+      "Minimum of the per-swing random roll. This roll is ADDED on top of weapon damage and the melee stat bonus -- it is not a damage floor or cap. Keep small so weapons remain the dominant damage source.",
     section: TuningSection.CombatStats,
     min: 0,
-    impact: "medium",
+    impact: "high",
+    interactionNote:
+      "Added to weapon damage + melee stat bonus every swing. If large, drowns out item/class tuning.",
   },
   "combat.maxDamage": {
     label: "Global Max Damage",
-    description: "Maximum base damage for all combat hits",
+    description:
+      "Maximum of the per-swing random roll. This roll is ADDED on top of weapon damage and the melee stat bonus -- it is not a damage cap. A value much larger than typical weapon damage will dominate the formula and make weapon/class tuning feel like noise. Typical values: 4-10.",
     section: TuningSection.CombatStats,
     min: 1,
-    impact: "medium",
+    impact: "high",
+    interactionNote:
+      "Added to weapon damage + melee stat bonus every swing. Recommended to stay in the same order of magnitude as the strongest weapon's damage.",
   },
 
   // ─── Mob Tiers: Weak ───────────────────────────────────────────────

@@ -47,7 +47,7 @@ describe("deepMerge", () => {
 describe("buildPartialFromDiffs", () => {
   const sampleDiffs: DiffEntry[] = [
     { path: "combat.tickMillis", label: "Tick", section: TuningSection.CombatStats, oldValue: 3000, newValue: 2500 },
-    { path: "combat.maxDamage", label: "Max Damage", section: TuningSection.CombatStats, oldValue: 150, newValue: 100 },
+    { path: "combat.maxDamage", label: "Max Damage", section: TuningSection.CombatStats, oldValue: 6, newValue: 4 },
     { path: "economy.buyMultiplier", label: "Buy Mult", section: TuningSection.EconomyCrafting, oldValue: 1.0, newValue: 0.8 },
     { path: "progression.xp.exponent", label: "XP Exp", section: TuningSection.ProgressionQuests, oldValue: 1.8, newValue: 1.6 },
     { path: "regen.baseIntervalMillis", label: "Regen Base", section: TuningSection.WorldSocial, oldValue: 4500, newValue: 3500 },
@@ -82,7 +82,7 @@ describe("buildPartialFromDiffs", () => {
     const result = buildPartialFromDiffs(sampleDiffs, accepted);
 
     expect(result).toEqual({
-      combat: { tickMillis: 2500, maxDamage: 100 },
+      combat: { tickMillis: 2500, maxDamage: 4 },
     });
   });
 

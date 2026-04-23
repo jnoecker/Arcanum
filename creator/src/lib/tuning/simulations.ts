@@ -35,15 +35,31 @@ export const TIER_LABELS: Record<TierKey, string> = {
   boss: "Boss",
 };
 
-/** Combat config damage band average, plus the server's melee stat bonus. */
+/**
+ * Approximation of a level-appropriate player's weapon + class attack.
+ *
+ * The server formula is `playerRoll + playerAttack + playerStrBonus` where
+ * `playerAttack` comes from equipped items and class bonuses. The simulator
+ * doesn't have a specific loadout to draw from, so we model a typical player
+ * in level-appropriate gear. Without this term the simulator would produce
+ * results for a "naked, classless" player, which makes archetype contracts
+ * unrealistic whenever `combat.maxDamage` is set to a sensible value.
+ */
+function expectedGearAttack(playerLevel: number): number {
+  return 4 + 2 * playerLevel;
+}
+
+/** Combat config damage band average, plus the server's melee stat bonus and an assumed gear term. */
 function playerBaseDamage(
   config: AppConfig,
   meleeStatValue: number,
+  playerLevel: number,
 ): number {
   const { minDamage, maxDamage } = config.combat;
   const base = (minDamage + maxDamage) / 2;
   const bonus = statBonus(meleeStatValue, config.stats.bindings.meleeDamageDivisor);
-  return Math.max(1, base + bonus);
+  const gear = expectedGearAttack(playerLevel);
+  return Math.max(1, base + bonus + gear);
 }
 
 // ─── 1. Combat Encounter ───────────────────────────────────────────
@@ -102,7 +118,7 @@ export function simulateEncounter(
     config.stats.bindings.hpScalingDivisor,
   );
 
-  const playerDmgRaw = playerBaseDamage(config, baseStat);
+  const playerDmgRaw = playerBaseDamage(config, baseStat, playerLevel);
   const playerDmgPerRound = Math.max(1, playerDmgRaw - tier.baseArmor);
 
   const dodgePct = dodgeChance(baseStat, config.stats.bindings);

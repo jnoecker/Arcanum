@@ -56,6 +56,8 @@ export function DialogShell({
   status,
   role = "dialog",
   widthClassName = "max-w-2xl",
+  overlayClassName,
+  overlayStyle,
   className,
   bodyClassName,
   footer,
@@ -69,6 +71,8 @@ export function DialogShell({
   status?: ReactNode;
   role?: "dialog" | "alertdialog";
   widthClassName?: string;
+  overlayClassName?: string;
+  overlayStyle?: CSSProperties;
   className?: string;
   bodyClassName?: string;
   footer?: ReactNode;
@@ -76,7 +80,7 @@ export function DialogShell({
   children: ReactNode;
 }) {
   return (
-    <div className="dialog-overlay">
+    <div className={cx("dialog-overlay", overlayClassName)} style={overlayStyle}>
       <div
         ref={dialogRef}
         role={role}

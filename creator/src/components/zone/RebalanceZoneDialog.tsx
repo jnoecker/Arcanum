@@ -1,10 +1,6 @@
-// ─── Rebalance Zone Dialog ──────────────────────────────────────────
-// Modal for retargeting a zone's level band + difficulty. Shows a
-// per-mob diff (named mobs require review, trash auto-applies) and an
-// estimated time-to-clear under the chosen band so designers can
-// calibrate against world progression.
-
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
+import { ActionButton, DialogShell } from "@/components/ui/FormWidgets";
 import { useConfigStore } from "@/stores/configStore";
 import { useZoneStore } from "@/stores/zoneStore";
 import { useFocusTrap } from "@/lib/useFocusTrap";
@@ -14,10 +10,9 @@ import {
   inferLevelBand,
   type MobRebalanceDiff,
   type OverrideAction,
+  type OverrideField,
   type ZoneRebalanceTarget,
 } from "@/lib/zoneRebalance";
-import { estimateXpPerHour } from "@/lib/tuning/pacing";
-import { xpForLevel } from "@/lib/tuning/formulas";
 
 interface RebalanceZoneDialogProps {
   zoneId: string;
@@ -31,64 +26,264 @@ const TIER_LABELS: Record<string, string> = {
   boss: "Boss",
 };
 
-const DIFFICULTY_LABELS: Array<{ value: ZoneRebalanceTarget["difficultyHint"]; label: string }> = [
+const DIFFICULTY_LABELS: Array<{ value: NonNullable<ZoneRebalanceTarget["difficultyHint"]>; label: string }> = [
   { value: "casual", label: "Casual" },
   { value: "standard", label: "Standard" },
   { value: "challenging", label: "Challenging" },
 ];
 
-const ACTION_LABELS: Record<OverrideAction, string> = {
-  drop: "reset to tier",
-  keep: "kept",
-  flag: "kept (diverges)",
+const DIFFICULTY_COPY: Record<NonNullable<ZoneRebalanceTarget["difficultyHint"]>, string> = {
+  casual: "Bias standard and elite mobs toward the bottom of the band.",
+  standard: "Keep weak, standard, elite, and boss mobs spread evenly across the band.",
+  challenging: "Bias standard and elite mobs toward the top of the band.",
 };
 
-function fmtMinutes(min: number): string {
-  if (!Number.isFinite(min) || min <= 0) return "—";
-  if (min < 60) return `${Math.round(min)} min`;
-  const h = Math.floor(min / 60);
-  const m = Math.round(min - h * 60);
-  return m === 0 ? `${h}h` : `${h}h ${m}m`;
+const DIFFICULTY_NONE_OPTION = {
+  value: undefined,
+  label: "None",
+  description: "No spread bias",
+  tooltip: "Use the band only, with no extra spread bias.",
+} as const;
+
+const DIFFICULTY_OPTIONS: Array<{
+  value: ZoneRebalanceTarget["difficultyHint"] | undefined;
+  label: string;
+  description: string;
+  tooltip: string;
+}> = [
+  DIFFICULTY_NONE_OPTION,
+  ...DIFFICULTY_LABELS.map((option) => ({
+    value: option.value,
+    label: option.label,
+    description:
+      option.value === "casual"
+        ? "Favor lower levels"
+        : option.value === "challenging"
+          ? "Favor upper levels"
+          : "Even tier spread",
+    tooltip: DIFFICULTY_COPY[option.value],
+  })),
+];
+
+const FIELD_LABELS: Record<OverrideField, string> = {
+  hp: "HP",
+  minDamage: "min damage",
+  maxDamage: "max damage",
+  armor: "armor",
+  xpReward: "XP reward",
+  goldMin: "min gold",
+  goldMax: "max gold",
+};
+
+const REVIEW_TOOLTIP =
+  "Conservative heuristic: elite or boss mobs, or mobs with quests, dialogue, or drop tables. These are never auto-selected.";
+
+const BATCH_SAFE_TOOLTIP =
+  "Mobs that are not elite or boss and have no quests, dialogue, or drop tables attached.";
+
+const MOB_SELECTION_TOOLTIP =
+  "Selecting a mob rewrites that whole mob. Its level changes, and any stat cleanup shown on the row is applied automatically.";
+
+const DIFFICULTY_TOOLTIP =
+  "Controls where weak, standard, elite, and boss mobs land inside the selected level band.";
+
+function pluralize(count: number, singular: string, plural = `${singular}s`): string {
+  return count === 1 ? singular : plural;
 }
 
-function MobRow({
+function mobHasChanges(diff: MobRebalanceDiff): boolean {
+  return diff.levelChanged || diff.overrideChanges.length > 0;
+}
+
+function getLevelSummary(diff: MobRebalanceDiff): string {
+  if (!diff.levelChanged) {
+    return diff.currentLevel != null ? `Already at L${diff.targetLevel}` : `Uses default L${diff.targetLevel}`;
+  }
+  if (diff.currentLevel != null) {
+    return `Level L${diff.currentLevel} -> L${diff.targetLevel}`;
+  }
+  return `Set explicit level to L${diff.targetLevel}`;
+}
+
+function formatOverrideDetail(diff: MobRebalanceDiff, action: OverrideAction): string | null {
+  const matches = diff.overrideChanges.filter((change) => change.action === action);
+  if (matches.length === 0) return null;
+  return matches
+    .map((change) =>
+      action === "drop"
+        ? `${FIELD_LABELS[change.field]} ${change.currentOverride} -> ${change.tierBaseline}`
+        : `${FIELD_LABELS[change.field]} ${change.currentOverride} (tier default ${change.tierBaseline})`,
+    )
+    .join(", ");
+}
+
+function countOverrideAction(diff: MobRebalanceDiff, action: OverrideAction): number {
+  return diff.overrideChanges.filter((change) => change.action === action).length;
+}
+
+function HelpHint({ text }: { text: string }) {
+  return (
+    <span
+      title={text}
+      aria-label={text}
+      className="inline-flex h-5 w-5 cursor-help items-center justify-center rounded-full border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] text-[11px] text-text-muted"
+    >
+      ?
+    </span>
+  );
+}
+
+function SummaryTile({
+  label,
+  value,
+  hint,
+  tone = "default",
+}: {
+  label: string;
+  value: string;
+  hint?: string;
+  tone?: "default" | "accent" | "warning" | "success";
+}) {
+  const toneClass =
+    tone === "accent"
+      ? "text-accent"
+      : tone === "warning"
+        ? "text-status-warning"
+        : tone === "success"
+          ? "text-status-success"
+          : "text-text-primary";
+
+  return (
+    <div className="rounded-3xl border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] px-4 py-3">
+      <div className="flex items-center gap-2">
+        <p className="text-3xs uppercase tracking-wide-ui text-text-muted">{label}</p>
+        {hint && <HelpHint text={hint} />}
+      </div>
+      <p className={`mt-2 font-display text-base ${toneClass}`}>{value}</p>
+    </div>
+  );
+}
+
+function DifficultyHintPicker({
+  value,
+  onChange,
+}: {
+  value: ZoneRebalanceTarget["difficultyHint"];
+  onChange: (value: ZoneRebalanceTarget["difficultyHint"]) => void;
+}) {
+  return (
+    <div className="mt-2 grid gap-2 sm:grid-cols-2">
+      {DIFFICULTY_OPTIONS.map((option) => {
+        const selected = option.value === value;
+        return (
+          <button
+            key={option.value ?? "none"}
+            type="button"
+            aria-pressed={selected}
+            title={option.tooltip}
+            onClick={() => onChange(option.value)}
+            className={`min-h-[5.25rem] rounded-[1.1rem] border px-3 py-3 text-left transition ${
+              selected
+                ? "border-accent/35 bg-gradient-active text-text-primary shadow-[var(--shadow-glow)]"
+                : "border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] text-text-secondary hover:border-[var(--border-accent-ring)] hover:text-text-primary"
+            }`}
+          >
+            <div className="flex items-center justify-between gap-3">
+              <span className="font-display text-sm">{option.label}</span>
+              <span className={`text-xs ${selected ? "text-accent" : "text-text-muted"}`}>
+                {selected ? "Active" : ""}
+              </span>
+            </div>
+            <p className="mt-2 text-2xs leading-5 text-text-muted">{option.description}</p>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function MobDecisionCard({
   diff,
-  accepted,
+  included,
   onToggle,
 }: {
   diff: MobRebalanceDiff;
-  accepted: boolean;
+  included: boolean;
   onToggle: () => void;
 }) {
-  const levelLabel =
-    diff.currentLevel != null
-      ? `L${diff.currentLevel} → L${diff.targetLevel}`
-      : `tier-default → L${diff.targetLevel}`;
-  const overrideSummary = diff.overrideChanges.length
-    ? diff.overrideChanges
-        .map((c) => `${c.field}: ${c.currentOverride} ${ACTION_LABELS[c.action]} (~${c.tierBaseline})`)
-        .join(", ")
-    : "no override changes";
+  const resetDetail = formatOverrideDetail(diff, "drop");
+  const preservedDetail = formatOverrideDetail(diff, "flag");
+  const resetCount = countOverrideAction(diff, "drop");
+  const preservedCount = countOverrideAction(diff, "flag");
+  const groupLabel = diff.classification === "named" ? "Review first" : "Batch-safe";
+  const groupTooltip = diff.classification === "named" ? REVIEW_TOOLTIP : BATCH_SAFE_TOOLTIP;
 
   return (
-    <li className="flex items-start gap-3 px-3 py-2">
-      <input
-        id={`reb-mob-${diff.mobId}`}
-        type="checkbox"
-        checked={accepted}
-        onChange={onToggle}
-        className="mt-1"
-      />
-      <label htmlFor={`reb-mob-${diff.mobId}`} className="min-w-0 flex-1 cursor-pointer">
-        <div className="flex items-center justify-between gap-2">
-          <span className="font-display text-sm text-text-primary">{diff.displayName}</span>
-          <span className="font-mono text-2xs text-text-muted">
-            {TIER_LABELS[diff.tier] ?? diff.tier} · {levelLabel}
-          </span>
+    <article
+      className={`rounded-3xl border p-4 transition ${
+        included
+          ? "border-accent/45 bg-gradient-active shadow-[var(--shadow-glow)]"
+          : "border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] hover:border-[var(--border-accent-ring)]"
+      }`}
+    >
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <h4 className="font-display text-sm text-text-primary">{diff.displayName}</h4>
+            <span
+              title={groupTooltip}
+              className="rounded-full border border-[var(--chrome-stroke)] bg-[var(--chrome-highlight)] px-2.5 py-1 text-3xs uppercase tracking-label text-text-muted"
+            >
+              {groupLabel}
+            </span>
+            <span className="rounded-full border border-[var(--chrome-stroke)] bg-[var(--chrome-highlight)] px-2.5 py-1 text-3xs uppercase tracking-label text-text-muted">
+              {TIER_LABELS[diff.tier] ?? diff.tier}
+            </span>
+            <span className="rounded-full border border-accent/25 bg-accent/10 px-2.5 py-1 font-mono text-3xs text-text-secondary">
+              {getLevelSummary(diff)}
+            </span>
+          </div>
+          <div className="mt-3 flex flex-wrap gap-2 text-2xs text-text-muted">
+            {resetCount === 0 && preservedCount === 0 && (
+              <span className="rounded-full border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] px-2.5 py-1">
+                Level only
+              </span>
+            )}
+            {resetCount > 0 && (
+              <span
+                title={resetDetail ? `Reset to tier default: ${resetDetail}` : undefined}
+                className="rounded-full border border-status-warning/25 bg-status-warning/10 px-2.5 py-1 text-status-warning"
+              >
+                {resetCount} {pluralize(resetCount, "stat")} reset
+              </span>
+            )}
+            {preservedCount > 0 && (
+              <span
+                title={preservedDetail ? `Keep current custom values: ${preservedDetail}` : undefined}
+                className="rounded-full border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] px-2.5 py-1"
+              >
+                {preservedCount} {pluralize(preservedCount, "stat")} kept
+              </span>
+            )}
+          </div>
         </div>
-        <p className="mt-0.5 text-2xs leading-snug text-text-muted">{overrideSummary}</p>
-      </label>
-    </li>
+
+        <div className="flex shrink-0 flex-col items-start gap-2 lg:items-end">
+          <span
+            className={`rounded-full px-3 py-1 text-3xs uppercase tracking-wide-ui ${
+              included
+                ? "bg-accent/15 text-accent"
+                : "bg-[var(--chrome-highlight-strong)] text-text-muted"
+            }`}
+          >
+            {included ? "Rewriting now" : "Skipped"}
+          </span>
+          <ActionButton variant={included ? "primary" : "ghost"} size="sm" onClick={onToggle}>
+            {included ? "Leave alone" : "Rewrite mob"}
+          </ActionButton>
+        </div>
+      </div>
+    </article>
   );
 }
 
@@ -107,6 +302,7 @@ export function RebalanceZoneDialog({ zoneId, onClose }: RebalanceZoneDialogProp
   const [difficulty, setDifficulty] = useState<ZoneRebalanceTarget["difficultyHint"]>(
     zoneState?.data?.difficultyHint,
   );
+  const [acceptedMobIds, setAcceptedMobIds] = useState<Set<string>>(() => new Set());
 
   const target: ZoneRebalanceTarget = {
     levelBand: { min: bandMin, max: Math.max(bandMin, bandMax) },
@@ -118,17 +314,48 @@ export function RebalanceZoneDialog({ zoneId, onClose }: RebalanceZoneDialogProp
     return computeZoneRebalance(zoneState.data, config, target);
   }, [zoneState?.data, config, target]);
 
-  const namedMobs = diff?.mobs.filter((m) => m.classification === "named") ?? [];
-  const trashMobs = diff?.mobs.filter((m) => m.classification === "trash") ?? [];
-
-  const [acceptedMobIds, setAcceptedMobIds] = useState<Set<string>>(() => new Set());
-
-  const trashWithChanges = useMemo(
-    () => trashMobs.filter((m) => m.levelChanged || m.overrideChanges.length > 0),
-    [trashMobs],
+  const changedMobs = useMemo(
+    () => diff?.mobs.filter(mobHasChanges) ?? [],
+    [diff],
   );
-  const allTrashAccepted =
-    trashWithChanges.length > 0 && trashWithChanges.every((m) => acceptedMobIds.has(m.mobId));
+  const changedMobIdSignature = useMemo(
+    () => changedMobs.map((mob) => mob.mobId).join("|"),
+    [changedMobs],
+  );
+
+  useEffect(() => {
+    setAcceptedMobIds((prev) => {
+      const validIds = new Set(changedMobs.map((mob) => mob.mobId));
+      let mutated = false;
+      const next = new Set<string>();
+      for (const mobId of prev) {
+        if (validIds.has(mobId)) {
+          next.add(mobId);
+        } else {
+          mutated = true;
+        }
+      }
+      return mutated ? next : prev;
+    });
+  }, [changedMobIdSignature, changedMobs]);
+
+  const namedWithChanges = useMemo(
+    () => changedMobs.filter((mob) => mob.classification === "named"),
+    [changedMobs],
+  );
+  const trashWithChanges = useMemo(
+    () => changedMobs.filter((mob) => mob.classification === "trash"),
+    [changedMobs],
+  );
+  const reviewFirstMobs = namedWithChanges;
+  const batchSafeMobs = trashWithChanges;
+
+  const acceptedCount = acceptedMobIds.size;
+  const unchangedCount = (diff?.mobs.length ?? 0) - changedMobs.length;
+  const targetChanged =
+    zoneState?.data?.levelBand?.min !== bandMin ||
+    zoneState?.data?.levelBand?.max !== target.levelBand.max ||
+    zoneState?.data?.difficultyHint !== difficulty;
 
   const toggleMob = (mobId: string) => {
     setAcceptedMobIds((prev) => {
@@ -139,28 +366,16 @@ export function RebalanceZoneDialog({ zoneId, onClose }: RebalanceZoneDialogProp
     });
   };
 
-  const toggleAllTrash = () => {
+  const setGroupSelection = (mobs: MobRebalanceDiff[], included: boolean) => {
     setAcceptedMobIds((prev) => {
       const next = new Set(prev);
-      if (allTrashAccepted) {
-        for (const m of trashWithChanges) next.delete(m.mobId);
-      } else {
-        for (const m of trashWithChanges) next.add(m.mobId);
+      for (const mob of mobs) {
+        if (included) next.add(mob.mobId);
+        else next.delete(mob.mobId);
       }
       return next;
     });
   };
-
-  // Pacing readout: estimated minutes to clear levels across the band
-  const pacingEstimate = useMemo(() => {
-    if (!config) return null;
-    const xpRate = estimateXpPerHour(config, Math.round((bandMin + bandMax) / 2));
-    if (xpRate <= 0) return null;
-    const xpCurve = config.progression.xp;
-    const xpForBand = xpForLevel(bandMax + 1, xpCurve) - xpForLevel(bandMin, xpCurve);
-    const minutes = (xpForBand / xpRate) * 60;
-    return { minutes, xpRate: Math.round(xpRate) };
-  }, [config, bandMin, bandMax]);
 
   const handleApply = () => {
     if (!zoneState?.data || !diff) return;
@@ -169,178 +384,217 @@ export function RebalanceZoneDialog({ zoneId, onClose }: RebalanceZoneDialogProp
     onClose();
   };
 
-  const acceptedCount = acceptedMobIds.size;
-  const canApply =
-    acceptedCount > 0 ||
-    zoneState?.data?.levelBand?.min !== bandMin ||
-    zoneState?.data?.levelBand?.max !== bandMax ||
-    zoneState?.data?.difficultyHint !== difficulty;
+  const canApply = acceptedCount > 0 || targetChanged;
+
+  let applyLabel = "Apply Rebalance";
+  if (targetChanged && acceptedCount === 0) {
+    applyLabel = "Save Target Only";
+  } else if (targetChanged && acceptedCount > 0) {
+    applyLabel = `Save Target + ${acceptedCount} ${pluralize(acceptedCount, "Mob")} `;
+  } else if (acceptedCount > 0) {
+    applyLabel = `Apply ${acceptedCount} ${pluralize(acceptedCount, "Mob")} Change${acceptedCount === 1 ? "" : "s"}`;
+  }
+
+  let footerSummary = "Pick a target or select mobs.";
+  if (targetChanged && acceptedCount === 0) {
+    footerSummary = "Saving target only.";
+  } else if (targetChanged && acceptedCount > 0) {
+    footerSummary = `Saving target and rewriting ${acceptedCount} ${pluralize(acceptedCount, "mob")}.`;
+  } else if (acceptedCount > 0) {
+    footerSummary = `Rewriting ${acceptedCount} ${pluralize(acceptedCount, "mob")}.`;
+  }
 
   if (!zoneState || !config) {
     return null;
   }
 
-  return (
-    <div className="modal-overlay">
-      <div
-        ref={trapRef}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="rebalance-zone-title"
-        className="mx-4 flex max-h-[85vh] w-full max-w-3xl flex-col rounded-lg border border-border-default bg-bg-secondary shadow-xl"
-      >
-        <div className="border-b border-border-default px-5 py-3">
-          <h2 id="rebalance-zone-title" className="font-display text-sm tracking-wide text-text-primary">
-            Rebalance Zone — {zoneState.data.zone}
-          </h2>
-        </div>
-
-        <div className="flex flex-col gap-5 overflow-y-auto px-5 py-4">
-          {/* Target controls */}
-          <section className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-            <div>
-              <label className="mb-1 block text-2xs uppercase tracking-wider text-text-muted" htmlFor="rb-level-min">
-                Level min
-              </label>
-              <input
-                id="rb-level-min"
-                type="number"
-                min={1}
-                value={bandMin}
-                onChange={(e) => setBandMin(Math.max(1, Number(e.target.value) || 1))}
-                className="h-8 w-full rounded border border-border-default bg-bg-primary px-2 font-mono text-xs text-text-primary outline-none focus:border-accent"
-              />
-            </div>
-            <div>
-              <label className="mb-1 block text-2xs uppercase tracking-wider text-text-muted" htmlFor="rb-level-max">
-                Level max
-              </label>
-              <input
-                id="rb-level-max"
-                type="number"
-                min={1}
-                value={bandMax}
-                onChange={(e) => setBandMax(Math.max(1, Number(e.target.value) || 1))}
-                className="h-8 w-full rounded border border-border-default bg-bg-primary px-2 font-mono text-xs text-text-primary outline-none focus:border-accent"
-              />
-            </div>
-            <div>
-              <label className="mb-1 block text-2xs uppercase tracking-wider text-text-muted" htmlFor="rb-difficulty">
-                Difficulty hint
-              </label>
-              <select
-                id="rb-difficulty"
-                value={difficulty ?? ""}
-                onChange={(e) => setDifficulty((e.target.value || undefined) as ZoneRebalanceTarget["difficultyHint"])}
-                className="h-8 w-full rounded border border-border-default bg-bg-primary px-2 text-xs text-text-primary outline-none focus:border-accent"
-              >
-                <option value="">—</option>
-                {DIFFICULTY_LABELS.map((opt) => (
-                  <option key={opt.value} value={opt.value}>{opt.label}</option>
-                ))}
-              </select>
-            </div>
-          </section>
-
-          {/* Pacing readout */}
-          {pacingEstimate && (
-            <section className="rounded border border-border-default bg-bg-primary px-3 py-2">
-              <p className="text-2xs uppercase tracking-wider text-text-muted">
-                Estimated time to clear band L{bandMin}–L{bandMax}
-              </p>
-              <p className="mt-1 font-mono text-sm text-text-primary">
-                {fmtMinutes(pacingEstimate.minutes)}
-                <span className="ml-2 text-2xs text-text-muted">
-                  at {pacingEstimate.xpRate.toLocaleString()} XP/hr (canonical trash run)
-                </span>
-              </p>
-            </section>
-          )}
-
-          {/* Named mobs — review required */}
-          {namedMobs.length > 0 && (
-            <section>
-              <header className="mb-2 flex items-baseline justify-between">
-                <h3 className="font-display text-2xs uppercase tracking-wide text-text-secondary">
-                  Review required ({namedMobs.length})
-                </h3>
-                <span className="text-2xs text-text-muted">Bosses, quest-givers, mobs with drops</span>
-              </header>
-              <ul className="divide-y divide-border-default rounded border border-border-default bg-bg-primary">
-                {namedMobs.map((m) => (
-                  <MobRow
-                    key={m.mobId}
-                    diff={m}
-                    accepted={acceptedMobIds.has(m.mobId)}
-                    onToggle={() => toggleMob(m.mobId)}
-                  />
-                ))}
-              </ul>
-            </section>
-          )}
-
-          {/* Trash mobs — auto-apply block */}
-          {trashWithChanges.length > 0 && (
-            <section>
-              <header className="mb-2 flex items-baseline justify-between">
-                <h3 className="font-display text-2xs uppercase tracking-wide text-text-secondary">
-                  Trash mobs ({trashWithChanges.length})
-                </h3>
-                <button
-                  type="button"
-                  onClick={toggleAllTrash}
-                  className="text-2xs text-accent underline-offset-2 hover:underline"
-                >
-                  {allTrashAccepted ? "Deselect all" : "Accept all"}
-                </button>
-              </header>
-              <ul className="divide-y divide-border-default rounded border border-border-default bg-bg-primary">
-                {trashWithChanges.map((m) => (
-                  <MobRow
-                    key={m.mobId}
-                    diff={m}
-                    accepted={acceptedMobIds.has(m.mobId)}
-                    onToggle={() => toggleMob(m.mobId)}
-                  />
-                ))}
-              </ul>
-            </section>
-          )}
-
-          {diff && diff.mobs.length === 0 && (
-            <p className="text-xs text-text-muted">No mobs to rebalance in this zone.</p>
-          )}
-          {diff && trashWithChanges.length === 0 && namedMobs.length === 0 && diff.mobs.length > 0 && (
-            <p className="text-xs text-text-muted">All mobs already match the target band.</p>
-          )}
-          {diff && diff.skippedMobIds.length > 0 && (
-            <p className="text-2xs text-status-warning">
-              Skipped (unknown tier): {diff.skippedMobIds.join(", ")}
-            </p>
-          )}
-        </div>
-
-        <div className="flex items-center justify-between gap-2 border-t border-border-default px-5 py-3">
-          <span className="text-2xs text-text-muted">
-            {acceptedCount} mob{acceptedCount === 1 ? "" : "s"} selected
-          </span>
-          <div className="flex gap-2">
-            <button
-              onClick={onClose}
-              className="rounded bg-bg-elevated px-4 py-1.5 text-xs font-medium text-text-primary transition-colors hover:bg-bg-hover"
-            >
+  const content = (
+    <DialogShell
+      dialogRef={trapRef}
+      overlayStyle={{ zIndex: 85 }}
+      titleId="rebalance-zone-title"
+      title={`Rebalance Zone - ${zoneState.data.zone}`}
+      widthClassName="max-w-6xl"
+      onClose={onClose}
+      footer={(
+        <div className="flex w-full flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <p className="max-w-3xl text-xs leading-6 text-text-secondary">{footerSummary}</p>
+          <div className="flex shrink-0 gap-2">
+            <ActionButton onClick={onClose} variant="ghost">
               Cancel
-            </button>
-            <button
-              onClick={handleApply}
-              disabled={!canApply}
-              className="rounded bg-accent px-4 py-1.5 text-xs font-medium text-accent-emphasis transition-[color,background-color,box-shadow,filter,opacity] hover:shadow-[var(--glow-aurum)] hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              Apply Rebalance
-            </button>
+            </ActionButton>
+            <ActionButton onClick={handleApply} disabled={!canApply} variant="primary">
+              {applyLabel.trim()}
+            </ActionButton>
           </div>
         </div>
+      )}
+    >
+      <div className="flex min-h-[32rem] flex-col gap-4">
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,1.15fr)_minmax(18rem,0.85fr)]">
+            <div className="panel-surface-light rounded-3xl p-5">
+              <div className="flex items-center gap-2">
+                <div>
+                  <p className="text-3xs uppercase tracking-wide-ui text-text-muted">Zone target</p>
+                  <h3 className="mt-2 font-display text-base text-text-primary">Mob band</h3>
+                </div>
+              </div>
+
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                <label className="block">
+                  <span className="text-3xs uppercase tracking-wide-ui text-text-muted">Level min</span>
+                  <input
+                    id="rb-level-min"
+                    type="number"
+                    min={1}
+                    value={bandMin}
+                    onChange={(e) => setBandMin(Math.max(1, Number(e.target.value) || 1))}
+                    className="mt-2 h-11 w-full rounded-2xl border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] px-4 font-mono text-sm text-text-primary outline-none transition focus:border-[var(--border-accent-ring)] focus:shadow-[var(--glow-aurum)]"
+                  />
+                </label>
+                <label className="block">
+                  <span className="text-3xs uppercase tracking-wide-ui text-text-muted">Level max</span>
+                  <input
+                    id="rb-level-max"
+                    type="number"
+                    min={1}
+                    value={bandMax}
+                    onChange={(e) => setBandMax(Math.max(1, Number(e.target.value) || 1))}
+                    className="mt-2 h-11 w-full rounded-2xl border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] px-4 font-mono text-sm text-text-primary outline-none transition focus:border-[var(--border-accent-ring)] focus:shadow-[var(--glow-aurum)]"
+                  />
+                </label>
+                <label className="block sm:col-span-2">
+                  <span className="flex items-center gap-2 text-3xs uppercase tracking-wide-ui text-text-muted">
+                    Difficulty spread
+                    <HelpHint text={DIFFICULTY_TOOLTIP} />
+                  </span>
+                  <DifficultyHintPicker value={difficulty} onChange={setDifficulty} />
+                </label>
+              </div>
+            </div>
+
+            <div className="panel-surface-light rounded-3xl p-5">
+              <div className="flex items-center gap-2">
+                <p className="text-3xs uppercase tracking-wide-ui text-text-muted">Apply summary</p>
+                <HelpHint text={MOB_SELECTION_TOOLTIP} />
+              </div>
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                <SummaryTile
+                  label="Zone target"
+                  value={`L${bandMin}-${target.levelBand.max}`}
+                  tone={targetChanged ? "accent" : "default"}
+                />
+                <SummaryTile
+                  label="Mobs selected"
+                  value={`${acceptedCount} ${pluralize(acceptedCount, "mob")}`}
+                  hint={MOB_SELECTION_TOOLTIP}
+                  tone={acceptedCount > 0 ? "accent" : "default"}
+                />
+                <SummaryTile
+                  label="Review first"
+                  value={`${reviewFirstMobs.length} ${pluralize(reviewFirstMobs.length, "mob")}`}
+                  hint={REVIEW_TOOLTIP}
+                  tone={reviewFirstMobs.length > 0 ? "warning" : "success"}
+                />
+                <SummaryTile
+                  label="Batch-safe"
+                  value={`${batchSafeMobs.length} ${pluralize(batchSafeMobs.length, "mob")}`}
+                  hint={BATCH_SAFE_TOOLTIP}
+                  tone={batchSafeMobs.length > 0 ? "success" : "default"}
+                />
+              </div>
+            </div>
+        </div>
+
+        {reviewFirstMobs.length > 0 && (
+            <section className="panel-surface-light rounded-3xl p-5">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-center gap-2">
+                  <h3 className="font-display text-base text-text-primary">Review-first mobs</h3>
+                  <HelpHint text={REVIEW_TOOLTIP} />
+                </div>
+                <div className="flex gap-2">
+                  <ActionButton variant="ghost" size="sm" onClick={() => setGroupSelection(reviewFirstMobs, false)}>
+                    Clear
+                  </ActionButton>
+                  <ActionButton variant="secondary" size="sm" onClick={() => setGroupSelection(reviewFirstMobs, true)}>
+                    Select All
+                  </ActionButton>
+                </div>
+              </div>
+
+              <div className="mt-4 space-y-3">
+                {reviewFirstMobs.map((mob) => (
+                  <MobDecisionCard
+                    key={mob.mobId}
+                    diff={mob}
+                    included={acceptedMobIds.has(mob.mobId)}
+                    onToggle={() => toggleMob(mob.mobId)}
+                  />
+                ))}
+              </div>
+            </section>
+        )}
+
+        {batchSafeMobs.length > 0 && (
+            <section className="panel-surface-light rounded-3xl p-5">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-center gap-2">
+                  <h3 className="font-display text-base text-text-primary">Batch-safe mobs</h3>
+                  <HelpHint text={BATCH_SAFE_TOOLTIP} />
+                </div>
+                <div className="flex gap-2">
+                  <ActionButton variant="ghost" size="sm" onClick={() => setGroupSelection(batchSafeMobs, false)}>
+                    Clear
+                  </ActionButton>
+                  <ActionButton variant="secondary" size="sm" onClick={() => setGroupSelection(batchSafeMobs, true)}>
+                    Select All
+                  </ActionButton>
+                </div>
+              </div>
+
+              <div className="mt-4 space-y-3">
+                {batchSafeMobs.map((mob) => (
+                  <MobDecisionCard
+                    key={mob.mobId}
+                    diff={mob}
+                    included={acceptedMobIds.has(mob.mobId)}
+                    onToggle={() => toggleMob(mob.mobId)}
+                  />
+                ))}
+              </div>
+            </section>
+        )}
+
+        {diff && changedMobs.length === 0 && (
+            <div className="panel-surface-light flex min-h-[12rem] items-center justify-center rounded-3xl px-6 py-8 text-center">
+              <div>
+                <h3 className="font-display text-base text-text-primary">Everything already matches the target</h3>
+                <p className="mt-3 max-w-xl text-sm leading-7 text-text-secondary">
+                  There are no mob rewrites to review. Save the target only if you want this zone's level band and difficulty hint persisted for future validation and rebalance work.
+                </p>
+              </div>
+            </div>
+        )}
+
+        {diff && unchangedCount > 0 && changedMobs.length > 0 && (
+            <div className="rounded-3xl border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] px-4 py-3 text-xs leading-6 text-text-muted">
+              {unchangedCount} {pluralize(unchangedCount, "mob")} already match the target and are not shown below.
+            </div>
+        )}
+
+        {diff && diff.skippedMobIds.length > 0 && (
+            <div className="rounded-3xl border border-status-warning/30 bg-status-warning/10 px-4 py-3 text-sm text-status-warning">
+              These mobs were skipped because their tier is unknown: {diff.skippedMobIds.join(", ")}.
+            </div>
+        )}
       </div>
-    </div>
+    </DialogShell>
   );
+
+  if (typeof document === "undefined") {
+    return content;
+  }
+
+  return createPortal(content, document.body);
 }

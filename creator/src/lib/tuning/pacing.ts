@@ -47,32 +47,49 @@ export interface PacingTargets {
  */
 export const PRESET_PACING_TARGETS: Record<string, PacingTargets> = {
   loreExplorer: {
-    minutesToLevel: { 5: 5, 10: 15, 20: 30, 30: 45 },
+    minutesToLevel: { 5: 60, 10: 120, 20: 200, 30: 300 },
   },
   soloStory: {
-    minutesToLevel: { 5: 8, 10: 20, 20: 50, 30: 90 },
+    minutesToLevel: { 5: 45, 10: 90, 20: 200, 30: 320 },
   },
   casual: {
-    minutesToLevel: { 5: 10, 10: 30, 20: 90, 30: 180 },
+    minutesToLevel: { 5: 60, 10: 150, 20: 300, 30: 540 },
   },
   balanced: {
-    minutesToLevel: { 5: 20, 10: 60, 20: 180, 30: 360 },
+    minutesToLevel: { 5: 60, 10: 180, 20: 540, 30: 900 },
   },
   pvpArena: {
-    minutesToLevel: { 5: 20, 10: 60, 20: 120, 30: 240 },
+    minutesToLevel: { 5: 50, 10: 150, 20: 360, 30: 720 },
   },
   hardcore: {
-    minutesToLevel: { 5: 45, 10: 135, 20: 450, 30: 900 },
+    minutesToLevel: { 5: 150, 10: 450, 20: 1500, 30: 3000 },
   },
 };
 
 /**
+ * Representative XP-bonus stat value used to model a modestly invested
+ * player in the pacing sim. 5 above the BASE_STAT of 10 — not maxed,
+ * not neglected — captures the realistic multiplier without making
+ * pacing projections sensitive to minmaxed builds.
+ */
+const REPRESENTATIVE_XP_BONUS_STAT_OFFSET = 5;
+
+/**
  * Estimate XP/hour the canonical trash run produces against a config.
  * Sampled at the player level (mob XP scales with level and then runs
- * through the progression XP multiplier, matching the server).
+ * through the progression XP multiplier, matching the server). The
+ * server applies a stat-driven XP multiplier on top of the scaled
+ * reward (`1 + (stat - BASE_STAT) * xpBonusPerPoint`); we model that
+ * here against a representative invested stat so runaway xpBonusPerPoint
+ * values surface in time-to-level projections.
  */
 export function estimateXpPerHour(config: AppConfig, playerLevel: number): number {
   const { killsPerHour, tierMix } = CANONICAL_TRASH_RUN;
+  const xpBonusPerPoint = config.stats?.bindings?.xpBonusPerPoint ?? 0;
+  const statMultiplier = Math.max(
+    1,
+    1 + REPRESENTATIVE_XP_BONUS_STAT_OFFSET * xpBonusPerPoint,
+  );
   let xp = 0;
   for (const tier of TIER_KEYS) {
     const tierConfig = config.mobTiers[tier];
@@ -82,7 +99,7 @@ export function estimateXpPerHour(config: AppConfig, playerLevel: number): numbe
       mobXpRewardAtLevel(tierConfig, playerLevel),
       config.progression.xp.multiplier,
     );
-    xp += killsPerHour * fraction * xpPerKill;
+    xp += killsPerHour * fraction * xpPerKill * statMultiplier;
   }
   return xp;
 }

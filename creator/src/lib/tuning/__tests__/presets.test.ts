@@ -36,7 +36,7 @@ const FULL_MOCK_CONFIG: AppConfig = {
       manaScalingStat: "INT", manaScalingDivisor: 5,
       hpRegenStat: "CON", hpRegenMsPerPoint: 200,
       manaRegenStat: "INT", manaRegenMsPerPoint: 200,
-      xpBonusStat: "WIS", xpBonusPerPoint: 1,
+      xpBonusStat: "WIS", xpBonusPerPoint: 0.005,
     },
   },
   abilities: {},
@@ -62,7 +62,7 @@ const FULL_MOCK_CONFIG: AppConfig = {
   crafting: { maxSkillLevel: 75, baseXpPerLevel: 100, xpExponent: 1.5, gatherCooldownMs: 3000, stationBonusQuantity: 1 },
   navigation: { recall: { cooldownMs: 60000, messages: { combatBlocked: "", cooldownRemaining: "", castBegin: "", unreachable: "", departNotice: "", arriveNotice: "", arrival: "" } } },
   commands: {},
-  group: { maxSize: 5, inviteTimeoutMs: 60000, xpBonusPerMember: 10 },
+  group: { maxSize: 5, inviteTimeoutMs: 60000, xpBonusPerMember: 0.10 },
   classes: {
     WARRIOR: { displayName: "Warrior", hpPerLevel: 4, manaPerLevel: 1, primaryStat: "STR", description: "A fighter." },
   },
@@ -104,9 +104,9 @@ const FULL_MOCK_CONFIG: AppConfig = {
   prestige: { enabled: true, xpCostBase: 10000, xpCostMultiplier: 1.5, maxRank: 5, perks: {} },
   respec: { goldCost: 100, cooldownMs: 300000 },
   currencies: { definitions: {} },
-  lottery: { enabled: true, ticketCost: 25, drawingIntervalMs: 3600000, jackpotBase: 500 },
-  gambling: { enabled: true, minBet: 10, maxBet: 1000, winChance: 0.45, winMultiplier: 2.0 },
-  autoQuests: { enabled: true, timeLimitMs: 300000, cooldownMs: 300000, rewardScaling: 1.0 },
+  lottery: { enabled: true, ticketCost: 25, drawingIntervalMs: 3600000, jackpotSeedGold: 500 },
+  gambling: { enabled: true, diceMinBet: 10, diceMaxBet: 1000, diceWinChance: 0.45, diceWinMultiplier: 2.0 },
+  autoQuests: { enabled: true, timeLimitMs: 300000, cooldownMs: 300000 },
   dailyQuests: {
     enabled: true,
     resetTimeUtc: "06:00",
@@ -123,7 +123,7 @@ const FULL_MOCK_CONFIG: AppConfig = {
     objectives: [{ type: "kill", targetCount: 25, description: "Defeat 25 enemies" }],
     rewards: {},
   },
-  guildHalls: { enabled: true, baseCost: 10000, roomTemplates: {} },
+  guildHalls: { enabled: true, purchaseCost: 10000, roomTemplates: {} },
   leaderboard: { refreshIntervalMs: 120000, topN: 10 },
   globalAssets: {},
   persistence: { backend: "YAML", rootDir: "data/players", worker: { enabled: true, flushIntervalMs: 5000 } },
@@ -239,8 +239,8 @@ describe("validation", () => {
 describe("field coverage", () => {
   const allPaths = Object.keys(FIELD_METADATA);
 
-  it("FIELD_METADATA has 137 entries (sanity check)", () => {
-    expect(allPaths).toHaveLength(137);
+  it("FIELD_METADATA has 136 entries (sanity check)", () => {
+    expect(allPaths).toHaveLength(136);
   });
 
   for (const preset of TUNING_PRESETS) {

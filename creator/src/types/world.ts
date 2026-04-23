@@ -3,6 +3,23 @@ export type StatMap = Record<string, number>;
 
 // ─── Zone-level types (mirror world-yaml-dtos) ──────────────────────
 
+/**
+ * Controls how the engine resolves mob and quest levels at runtime.
+ * - "static" — author-authored levels are used verbatim (default).
+ * - "bounded" — content scales to the highest-level player in the zone,
+ *   clamped to `levelRange`. Keeps progression gates intact while letting
+ *   mixed-level parties play the same zone.
+ * - "player" — content tracks the reference player's level directly,
+ *   no bounds. Intended for tutorial zones and endgame social hubs.
+ */
+export type ScalingMode = "static" | "bounded" | "player";
+
+export interface ZoneScaling {
+  mode: ScalingMode;
+  /** Inclusive [min, max] band. Required when mode is "bounded"; ignored otherwise. */
+  levelRange?: [number, number];
+}
+
 export interface WorldFile {
   zone: string;
   lifespan?: number;
@@ -10,6 +27,8 @@ export interface WorldFile {
   terrain?: string;
   graphical?: boolean;
   pvpEnabled?: boolean;
+  /** Dynamic level-scaling config. Omit for static (authored levels) behaviour. */
+  scaling?: ZoneScaling;
   /** Intended level range for this zone. Drives the Rebalance Zone feature. */
   levelBand?: { min: number; max: number };
   /** Intended difficulty profile — informs rebalance stat targets. */

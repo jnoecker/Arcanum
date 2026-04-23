@@ -216,6 +216,33 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
     const v = e.target.value;
     updateZone(zoneId, { ...zoneState.data, faction: v || undefined });
   }, [zoneState, updateZone, zoneId]);
+  const handleScalingModeChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
+    if (!zoneState) return;
+    const mode = e.target.value as "" | import("@/types/world").ScalingMode;
+    if (!mode || mode === "static") {
+      updateZone(zoneId, { ...zoneState.data, scaling: undefined });
+      return;
+    }
+    const existing = zoneState.data.scaling;
+    const next: import("@/types/world").ZoneScaling =
+      mode === "bounded"
+        ? { mode: "bounded", levelRange: existing?.levelRange ?? [1, 5] }
+        : { mode: "player" };
+    updateZone(zoneId, { ...zoneState.data, scaling: next });
+  }, [zoneState, updateZone, zoneId]);
+  const handleScalingRangeChange = useCallback((idx: 0 | 1, raw: string) => {
+    if (!zoneState) return;
+    const existing = zoneState.data.scaling;
+    if (existing?.mode !== "bounded") return;
+    const n = Math.max(1, Math.round(Number(raw) || 1));
+    const [min, max] = existing.levelRange ?? [1, 5];
+    const next: [number, number] =
+      idx === 0 ? [n, Math.max(n, max)] : [Math.min(min, n), n];
+    updateZone(zoneId, {
+      ...zoneState.data,
+      scaling: { mode: "bounded", levelRange: next },
+    });
+  }, [zoneState, updateZone, zoneId]);
 
   // Auto-close entity panel if the selected entity was removed (e.g. by undo)
   useEffect(() => {
@@ -890,6 +917,49 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
                 </select>
               </label>
             )}
+
+            {/* Level scaling mode */}
+            <label
+              className="flex items-center gap-1.5 text-xs text-text-secondary max-[1100px]:min-h-9"
+              title="How the engine resolves mob and quest levels. Static uses authored numbers; bounded clamps to a range; player matches the reference player exactly."
+            >
+              <span className="whitespace-nowrap">Scaling</span>
+              <select
+                value={zoneState.data.scaling?.mode ?? "static"}
+                onChange={handleScalingModeChange}
+                className="ornate-input px-1.5 py-0.5 text-xs text-text-primary"
+              >
+                <option value="static">Static</option>
+                <option value="bounded">Bounded</option>
+                <option value="player">Player</option>
+              </select>
+              {zoneState.data.scaling?.mode === "bounded" && (
+                <>
+                  <span className="whitespace-nowrap text-2xs text-text-muted">L</span>
+                  <input
+                    type="number"
+                    min={1}
+                    max={99}
+                    step={1}
+                    value={zoneState.data.scaling.levelRange?.[0] ?? 1}
+                    onChange={(e) => handleScalingRangeChange(0, e.target.value)}
+                    className="ornate-input w-12 px-1.5 py-0.5 text-xs text-text-primary"
+                    aria-label="Minimum level"
+                  />
+                  <span className="text-2xs text-text-muted">–</span>
+                  <input
+                    type="number"
+                    min={1}
+                    max={99}
+                    step={1}
+                    value={zoneState.data.scaling.levelRange?.[1] ?? 5}
+                    onChange={(e) => handleScalingRangeChange(1, e.target.value)}
+                    className="ornate-input w-12 px-1.5 py-0.5 text-xs text-text-primary"
+                    aria-label="Maximum level"
+                  />
+                </>
+              )}
+            </label>
           </div>
 
           {/* Compact zone badge — visible only when the right column is hidden */}

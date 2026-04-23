@@ -257,6 +257,41 @@ describe("validateZone", () => {
     expect(match!.message).toContain("would compute 130");
   });
 
+  it("errors when scaling.mode 'bounded' has no levelRange", () => {
+    const world = makeValidWorld();
+    world.scaling = { mode: "bounded" };
+    const issues = errors(validateZone(world));
+    expect(issues.some((i) => i.entity === "zone" && i.message.includes("bounded"))).toBe(true);
+  });
+
+  it("errors on an inverted scaling levelRange", () => {
+    const world = makeValidWorld();
+    world.scaling = { mode: "bounded", levelRange: [10, 3] };
+    const issues = errors(validateZone(world));
+    expect(issues.some((i) => i.message.includes("max (3)"))).toBe(true);
+  });
+
+  it("accepts a valid bounded scaling config", () => {
+    const world = makeValidWorld();
+    world.scaling = { mode: "bounded", levelRange: [3, 8] };
+    const issues = errors(validateZone(world));
+    expect(issues.filter((i) => i.entity === "zone")).toHaveLength(0);
+  });
+
+  it("accepts player mode with no levelRange", () => {
+    const world = makeValidWorld();
+    world.scaling = { mode: "player" };
+    const issues = errors(validateZone(world));
+    expect(issues.filter((i) => i.entity === "zone")).toHaveLength(0);
+  });
+
+  it("warns when player mode has an unused levelRange", () => {
+    const world = makeValidWorld();
+    world.scaling = { mode: "player", levelRange: [3, 8] };
+    const issues = warnings(validateZone(world));
+    expect(issues.some((i) => i.entity === "zone" && i.message.includes("ignores levelRange"))).toBe(true);
+  });
+
   it("does not warn when a quest uses the computed difficulty XP", () => {
     const world = makeValidWorld();
     world.mobs!.giver = { name: "Giver", room: "room1" };

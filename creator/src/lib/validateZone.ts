@@ -8,6 +8,7 @@ import type {
   RareYieldFile,
   RecipeFile,
 } from "@/types/world";
+import { ITEM_TYPES } from "@/types/world";
 import type { EquipmentSlotDefinition, MobTiersConfig } from "@/types/config";
 import { resolveDoorKeyId, resolveDoorState } from "./doorHelpers";
 import { mobMaxDamageAtLevel, mobMinDamageAtLevel } from "./tuning/formulas";
@@ -656,6 +657,14 @@ export function validateZone(
       if (!equipmentSlots[item.slot] && !equipmentSlots[item.slot.toLowerCase()]) {
         addIssue(issues, "warning", entity, `Slot "${item.slot}" is not a defined equipment slot`);
       }
+    }
+    if (item.itemType != null && !(ITEM_TYPES as readonly string[]).includes(item.itemType)) {
+      addIssue(
+        issues,
+        "error",
+        entity,
+        `itemType "${item.itemType}" is not a known type. Valid: ${ITEM_TYPES.join(", ")}`,
+      );
     }
   }
 

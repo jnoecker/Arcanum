@@ -238,6 +238,21 @@ export interface BtNodeFile {
   maxDistance?: number;
 }
 
+/**
+ * Broad server-assigned item category. When omitted, the server infers it from
+ * slot / consumable / basePrice. `questItem: true` always resolves to "quest"
+ * regardless of this field.
+ */
+export type ItemType = "equipment" | "consumable" | "quest" | "treasure" | "misc";
+
+export const ITEM_TYPES: readonly ItemType[] = [
+  "equipment",
+  "consumable",
+  "quest",
+  "treasure",
+  "misc",
+] as const;
+
 export interface ItemFile {
   displayName: string;
   description?: string;
@@ -255,6 +270,16 @@ export interface ItemFile {
   basePrice?: number;
   image?: string;
   video?: string;
+  /**
+   * Explicit server-side category. Leave unset to let the server infer from
+   * other fields. Values are lowercase to match the server's `ItemType.label()`.
+   */
+  itemType?: ItemType;
+  /**
+   * Soulbound flag: quest items cannot be dropped, sold, traded, given, or
+   * stored in containers. Always resolves to the "quest" category server-side.
+   */
+  questItem?: boolean;
 }
 
 export interface ItemOnUse {

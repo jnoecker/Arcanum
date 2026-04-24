@@ -1,5 +1,6 @@
 import { useCallback, useState, memo } from "react";
-import type { WorldFile, ItemFile, ItemOnUse } from "@/types/world";
+import type { WorldFile, ItemFile, ItemOnUse, ItemType } from "@/types/world";
+import { ITEM_TYPES } from "@/types/world";
 import { updateItem, deleteItem } from "@/lib/zoneEdits";
 import { useEntityEditor } from "@/lib/useEntityEditor";
 import { useConfigOptions } from "@/lib/useConfigOptions";
@@ -58,6 +59,10 @@ export function ItemEditor({
     { value: "body", label: "Body" },
     { value: "hand", label: "Hand" },
   ]);
+  const itemTypeOptions = ITEM_TYPES.map((t) => ({
+    value: t,
+    label: t.charAt(0).toUpperCase() + t.slice(1),
+  }));
 
   if (!item) return null;
 
@@ -150,6 +155,22 @@ export function ItemEditor({
                   onCommit={(v) => patch({ basePrice: v })}
                   placeholder="0"
                   min={0}
+                />
+              </FieldRow>
+              <FieldRow label="Item Type">
+                <SelectInput
+                  value={item.itemType ?? ""}
+                  options={itemTypeOptions}
+                  onCommit={(v) => patch({ itemType: (v || undefined) as ItemType | undefined })}
+                  allowEmpty
+                  placeholder="— auto —"
+                />
+              </FieldRow>
+              <FieldRow label="Quest Item">
+                <CheckboxInput
+                  checked={item.questItem ?? false}
+                  onCommit={(v) => patch({ questItem: v || undefined })}
+                  label="Soulbound — cannot be dropped, sold, traded, or given"
                 />
               </FieldRow>
             </div>

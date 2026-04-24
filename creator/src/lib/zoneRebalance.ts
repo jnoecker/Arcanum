@@ -9,7 +9,7 @@
 // review) based on tier + presence of quests / dialogue / drops.
 
 import type { AppConfig, MobTierConfig } from "@/types/config";
-import type { MobFile, WorldFile } from "@/types/world";
+import type { MobFile, MobRole, WorldFile } from "@/types/world";
 import {
   mobAvgGoldAtLevel,
   mobGoldMaxAtLevel,
@@ -20,7 +20,14 @@ import {
   mobXpRewardAtLevel,
 } from "./tuning/formulas";
 
-export type MobClassification = "trash" | "named";
+export type MobClassification = "trash" | "named" | "non-combat";
+
+/**
+ * Why the engine declined to produce a diff at all. `player`-scaled zones
+ * derive mob levels from the reference player at runtime, so authored
+ * levels don't do anything — the wizard has nothing to rewrite.
+ */
+export type RebalanceAvailability = "applicable" | "player-scaled";
 
 export type OverrideField =
   | "hp"
@@ -61,6 +68,18 @@ export interface ZoneRebalanceDiff {
   mobs: MobRebalanceDiff[];
   /** Mob IDs without a known tier in config — engine couldn't compute baselines. */
   skippedMobIds: string[];
+  /**
+   * Whether the zone can be rebalanced at all. `player-scaled` zones bail out
+   * before any per-mob work — consumers should render the explanatory empty
+   * state rather than the usual review/apply UI.
+   */
+  availability: RebalanceAvailability;
+  /**
+   * True when the target band had to be narrowed to fit the zone's bounded
+   * scaling range. UI surfaces this as a hint so the designer knows their
+   * request was clamped.
+   */
+  bandClampedToScaling: boolean;
 }
 
 // ─── Heuristics ─────────────────────────────────────────────────────
@@ -97,11 +116,18 @@ export function targetLevelForTier(
 }
 
 /**
- * Classify a mob as trash (auto-apply) or named (review-required).
- * Named: boss tier, or has quests/dialogue/drops attached. Anything
- * else is trash.
+ * Classify a mob for the rebalance wizard.
+ *
+ * - `non-combat` — vendor / quest_giver / dialog / prop mobs. The engine
+ *   never rewrites their level or stats; leveling a shopkeeper or a flavor
+ *   NPC is almost always a mistake.
+ * - `named` — boss tier, or combat mobs with quests/dialogue/drops.
+ *   Require review before rewriting.
+ * - `trash` — everything else. Safe to batch-apply.
  */
 export function classifyMob(mob: MobFile): MobClassification {
+  const role: MobRole = mob.role ?? "combat";
+  if (role !== "combat") return "non-combat";
   if (mob.tier === "boss" || mob.tier === "elite") return "named";
   if (mob.quests && mob.quests.length > 0) return "named";
   if (mob.dialogue && Object.keys(mob.dialogue).length > 0) return "named";
@@ -180,17 +206,22 @@ function diffMobOverrides(
 
 /**
  * Infer a sensible default level band from the zone's existing mobs,
- * using whichever signal is available: explicit levels, then tier mix,
+ * using whichever signal is available: bounded-scaling range, then the
+ * zone's persisted levelBand, then explicit mob levels, then tier mix,
  * then a generic fallback.
  */
 export function inferLevelBand(zone: WorldFile): { min: number; max: number } {
+  if (zone.scaling?.mode === "bounded" && zone.scaling.levelRange) {
+    const [min, max] = zone.scaling.levelRange;
+    return { min, max };
+  }
   if (zone.levelBand) return zone.levelBand;
-  const mobs = Object.values(zone.mobs ?? {});
+  const mobs = Object.values(zone.mobs ?? {})
+    .filter((m) => (m.role ?? "combat") === "combat");
   const explicit = mobs.map((m) => m.level).filter((l): l is number => l != null && l > 0);
   if (explicit.length > 0) {
     return { min: Math.min(...explicit), max: Math.max(...explicit) };
   }
-  // Tier-only zones: rough span based on present tiers.
   const tiers = new Set(mobs.map((m) => m.tier).filter((t): t is string => !!t));
   if (tiers.has("boss") || tiers.has("elite")) return { min: 5, max: 10 };
   if (tiers.has("standard")) return { min: 3, max: 7 };
@@ -198,27 +229,77 @@ export function inferLevelBand(zone: WorldFile): { min: number; max: number } {
   return { min: 1, max: 5 };
 }
 
+function clampBandToScaling(
+  band: { min: number; max: number },
+  zone: WorldFile,
+): { band: { min: number; max: number }; clamped: boolean } {
+  if (zone.scaling?.mode !== "bounded" || !zone.scaling.levelRange) {
+    return { band, clamped: false };
+  }
+  const [scalingMin, scalingMax] = zone.scaling.levelRange;
+  const min = Math.max(scalingMin, Math.min(scalingMax, band.min));
+  const max = Math.max(min, Math.min(scalingMax, band.max));
+  const clamped = min !== band.min || max !== band.max;
+  return { band: { min, max }, clamped };
+}
+
 /**
  * Compute a structured diff describing how each mob would change under
  * the given target. Pure — does not mutate the zone.
+ *
+ * Player-scaled zones short-circuit: authored levels don't affect runtime,
+ * so the wizard returns `availability: "player-scaled"` with an empty
+ * mob list. Bounded zones have their target band clamped to the zone's
+ * scaling range; the returned `target.levelBand` reflects the clamped
+ * values and `bandClampedToScaling` flags when that happened.
  */
 export function computeZoneRebalance(
   zone: WorldFile,
   config: Pick<AppConfig, "mobTiers">,
   target: ZoneRebalanceTarget,
 ): ZoneRebalanceDiff {
+  if (zone.scaling?.mode === "player") {
+    return {
+      target,
+      mobs: [],
+      skippedMobIds: [],
+      availability: "player-scaled",
+      bandClampedToScaling: false,
+    };
+  }
+
+  const { band: effectiveBand, clamped } = clampBandToScaling(target.levelBand, zone);
+  const effectiveTarget: ZoneRebalanceTarget = { ...target, levelBand: effectiveBand };
+
   const mobs: MobRebalanceDiff[] = [];
   const skippedMobIds: string[] = [];
 
   for (const [mobId, mob] of Object.entries(zone.mobs ?? {})) {
+    const classification = classifyMob(mob);
     const tierKey = mob.tier ?? "standard";
     const tier = config.mobTiers?.[tierKey as keyof typeof config.mobTiers];
+    const currentLevel = mob.level ?? null;
+
+    if (classification === "non-combat") {
+      mobs.push({
+        mobId,
+        displayName: mob.name || mobId,
+        tier: tierKey,
+        currentLevel,
+        targetLevel: currentLevel ?? effectiveBand.min,
+        levelChanged: false,
+        classification,
+        overrideChanges: [],
+      });
+      continue;
+    }
+
     if (!tier) {
       skippedMobIds.push(mobId);
       continue;
     }
-    const targetLevel = targetLevelForTier(tierKey, target.levelBand, target.difficultyHint);
-    const currentLevel = mob.level ?? null;
+
+    const targetLevel = targetLevelForTier(tierKey, effectiveBand, target.difficultyHint);
     mobs.push({
       mobId,
       displayName: mob.name || mobId,
@@ -226,20 +307,27 @@ export function computeZoneRebalance(
       currentLevel,
       targetLevel,
       levelChanged: currentLevel !== targetLevel,
-      classification: classifyMob(mob),
+      classification,
       overrideChanges: diffMobOverrides(mob, tier, targetLevel),
     });
   }
 
-  // Stable sort: named first (so review work groups at top), then by id.
+  // Order: named first (review top), then trash, then non-combat (informational).
+  const rank: Record<MobClassification, number> = { named: 0, trash: 1, "non-combat": 2 };
   mobs.sort((a, b) => {
     if (a.classification !== b.classification) {
-      return a.classification === "named" ? -1 : 1;
+      return rank[a.classification] - rank[b.classification];
     }
     return a.mobId.localeCompare(b.mobId);
   });
 
-  return { target, mobs, skippedMobIds };
+  return {
+    target: effectiveTarget,
+    mobs,
+    skippedMobIds,
+    availability: "applicable",
+    bandClampedToScaling: clamped,
+  };
 }
 
 // ─── Apply ──────────────────────────────────────────────────────────

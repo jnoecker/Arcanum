@@ -70,6 +70,13 @@ describe("classifyMob", () => {
     expect(classifyMob(mob({ tier: "weak", quests: ["q1"] }))).toBe("named");
     expect(classifyMob(mob({ tier: "standard", drops: [{ itemId: "i1", chance: 0.1 }] }))).toBe("named");
   });
+
+  it("classifies non-combat roles as non-combat regardless of tier", () => {
+    expect(classifyMob(mob({ role: "vendor" }))).toBe("non-combat");
+    expect(classifyMob(mob({ role: "quest_giver", tier: "boss" }))).toBe("non-combat");
+    expect(classifyMob(mob({ role: "dialog", drops: [{ itemId: "i1", chance: 1 }] }))).toBe("non-combat");
+    expect(classifyMob(mob({ role: "prop" }))).toBe("non-combat");
+  });
 });
 
 describe("inferLevelBand", () => {
@@ -148,6 +155,67 @@ describe("computeZoneRebalance", () => {
     });
     expect(diff.mobs).toEqual([]);
     expect(diff.skippedMobIds).toEqual(["mystery"]);
+  });
+
+  it("returns non-combat mobs without proposing level or stat changes", () => {
+    const zone = zoneWith({
+      goblin: mob({ tier: "weak", level: 1 }),
+      shopkeep: mob({ role: "vendor", tier: "weak", level: 1 }),
+      somnius: mob({ role: "dialog", tier: "boss", level: 1 }),
+    });
+    const diff = computeZoneRebalance(zone, MOCK_CONFIG, { levelBand: { min: 5, max: 9 } });
+    const shopkeep = diff.mobs.find((m) => m.mobId === "shopkeep")!;
+    const somnius = diff.mobs.find((m) => m.mobId === "somnius")!;
+    expect(shopkeep.classification).toBe("non-combat");
+    expect(shopkeep.levelChanged).toBe(false);
+    expect(shopkeep.overrideChanges).toEqual([]);
+    expect(somnius.classification).toBe("non-combat");
+    expect(somnius.levelChanged).toBe(false);
+  });
+
+  it("orders named before trash before non-combat", () => {
+    const zone = zoneWith({
+      a_vendor: mob({ role: "vendor" }),
+      b_trash: mob({ tier: "weak" }),
+      c_named: mob({ tier: "elite" }),
+    });
+    const diff = computeZoneRebalance(zone, MOCK_CONFIG, { levelBand: { min: 3, max: 7 } });
+    const ids = diff.mobs.map((m) => m.mobId);
+    expect(ids).toEqual(["c_named", "b_trash", "a_vendor"]);
+  });
+
+  it("refuses to compute a diff for player-scaled zones", () => {
+    const zone = zoneWith({ goblin: mob({ tier: "weak" }) });
+    zone.scaling = { mode: "player" };
+    const diff = computeZoneRebalance(zone, MOCK_CONFIG, { levelBand: { min: 3, max: 7 } });
+    expect(diff.availability).toBe("player-scaled");
+    expect(diff.mobs).toEqual([]);
+  });
+
+  it("clamps the target band to a bounded zone's scaling range", () => {
+    const zone = zoneWith({ goblin: mob({ tier: "weak", level: 1 }) });
+    zone.scaling = { mode: "bounded", levelRange: [10, 15] };
+    const diff = computeZoneRebalance(zone, MOCK_CONFIG, { levelBand: { min: 1, max: 20 } });
+    expect(diff.availability).toBe("applicable");
+    expect(diff.bandClampedToScaling).toBe(true);
+    expect(diff.target.levelBand).toEqual({ min: 10, max: 15 });
+    expect(diff.mobs[0]?.targetLevel).toBe(10);
+  });
+
+  it("leaves bands inside the scaling range untouched", () => {
+    const zone = zoneWith({ goblin: mob({ tier: "weak" }) });
+    zone.scaling = { mode: "bounded", levelRange: [5, 20] };
+    const diff = computeZoneRebalance(zone, MOCK_CONFIG, { levelBand: { min: 8, max: 12 } });
+    expect(diff.bandClampedToScaling).toBe(false);
+    expect(diff.target.levelBand).toEqual({ min: 8, max: 12 });
+  });
+});
+
+describe("inferLevelBand with scaling", () => {
+  it("prefers a bounded zone's scaling range over explicit mob levels", () => {
+    const zone = zoneWith({ a: mob({ level: 50 }) });
+    zone.scaling = { mode: "bounded", levelRange: [5, 12] };
+    expect(inferLevelBand(zone)).toEqual({ min: 5, max: 12 });
   });
 });
 

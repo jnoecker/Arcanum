@@ -102,8 +102,8 @@ export const CASUAL_PRESET: TuningPreset = {
 
     // ─── Mob Action Delay ────────────────────────────────────────────
     mobActionDelay: {
-      minActionDelayMillis: 3000,
-      maxActionDelayMillis: 6000,
+      minActionDelayMillis: 5000,
+      maxActionDelayMillis: 10000,
     },
 
     // ─── Stat Bindings ───────────────────────────────────────────────
@@ -202,7 +202,7 @@ export const CASUAL_PRESET: TuningPreset = {
 
     // ─── Skill Points ────────────────────────────────────────────────
     skillPoints: {
-      interval: 2,
+      interval: 1,
     },
 
     // ─── Multiclass ──────────────────────────────────────────────────
@@ -412,8 +412,8 @@ export const BALANCED_PRESET: TuningPreset = {
 
     // ─── Mob Action Delay ────────────────────────────────────────────
     mobActionDelay: {
-      minActionDelayMillis: 2000,
-      maxActionDelayMillis: 5000,
+      minActionDelayMillis: 4000,
+      maxActionDelayMillis: 8000,
     },
 
     // ─── Stat Bindings ───────────────────────────────────────────────
@@ -512,7 +512,7 @@ export const BALANCED_PRESET: TuningPreset = {
 
     // ─── Skill Points ────────────────────────────────────────────────
     skillPoints: {
-      interval: 3,
+      interval: 2,
     },
 
     // ─── Multiclass ──────────────────────────────────────────────────
@@ -722,8 +722,8 @@ export const HARDCORE_PRESET: TuningPreset = {
 
     // ─── Mob Action Delay ────────────────────────────────────────────
     mobActionDelay: {
-      minActionDelayMillis: 1500,
-      maxActionDelayMillis: 4000,
+      minActionDelayMillis: 2500,
+      maxActionDelayMillis: 5000,
     },
 
     // ─── Stat Bindings ───────────────────────────────────────────────
@@ -822,7 +822,7 @@ export const HARDCORE_PRESET: TuningPreset = {
 
     // ─── Skill Points ────────────────────────────────────────────────
     skillPoints: {
-      interval: 5,
+      interval: 3,
     },
 
     // ─── Multiclass ──────────────────────────────────────────────────
@@ -974,7 +974,7 @@ export const SOLO_STORY_PRESET: TuningPreset = {
       elite: { baseHp: 14, hpPerLevel: 4, baseMinDamage: 2, baseMaxDamage: 4, damagePerLevel: 1, baseArmor: 1, baseXpReward: 15, xpRewardPerLevel: 5, baseGoldMin: 20, baseGoldMax: 45, goldPerLevel: 10 },
       boss: { baseHp: 28, hpPerLevel: 6, baseMinDamage: 2, baseMaxDamage: 5, damagePerLevel: 1, baseArmor: 1, baseXpReward: 40, xpRewardPerLevel: 10, baseGoldMin: 80, baseGoldMax: 160, goldPerLevel: 25 },
     },
-    mobActionDelay: { minActionDelayMillis: 3500, maxActionDelayMillis: 7000 },
+    mobActionDelay: { minActionDelayMillis: 6000, maxActionDelayMillis: 12000 },
     stats: { bindings: { meleeDamageDivisor: 2, dodgePerPoint: 3, maxDodgePercent: 40, spellDamageDivisor: 2, hpScalingDivisor: 3, manaScalingDivisor: 3, hpRegenMsPerPoint: 300, manaRegenMsPerPoint: 300, xpBonusPerPoint: 0.03 } },
     economy: { buyMultiplier: 0.6, sellMultiplier: 0.4 },
     crafting: { maxSkillLevel: 40, baseXpPerLevel: 60, xpExponent: 1.2, gatherCooldownMs: 1500, stationBonusQuantity: 3 },
@@ -1053,7 +1053,7 @@ export const PVP_ARENA_PRESET: TuningPreset = {
       elite: { baseHp: 35, hpPerLevel: 9, baseMinDamage: 4, baseMaxDamage: 8, damagePerLevel: 2, baseArmor: 3, baseXpReward: 16, xpRewardPerLevel: 5, baseGoldMin: 8, baseGoldMax: 20, goldPerLevel: 4 },
       boss: { baseHp: 70, hpPerLevel: 15, baseMinDamage: 5, baseMaxDamage: 12, damagePerLevel: 3, baseArmor: 4, baseXpReward: 45, xpRewardPerLevel: 11, baseGoldMin: 40, baseGoldMax: 80, goldPerLevel: 12 },
     },
-    mobActionDelay: { minActionDelayMillis: 1500, maxActionDelayMillis: 3500 },
+    mobActionDelay: { minActionDelayMillis: 2500, maxActionDelayMillis: 5000 },
     stats: { bindings: { meleeDamageDivisor: 3, dodgePerPoint: 2, maxDodgePercent: 25, spellDamageDivisor: 3, hpScalingDivisor: 4, manaScalingDivisor: 4, hpRegenMsPerPoint: 180, manaRegenMsPerPoint: 180, xpBonusPerPoint: 0.01 } },
     economy: { buyMultiplier: 1.2, sellMultiplier: 0.4 },
     crafting: { maxSkillLevel: 80, baseXpPerLevel: 120, xpExponent: 1.6, gatherCooldownMs: 4000, stationBonusQuantity: 1 },
@@ -1085,7 +1085,7 @@ export const PVP_ARENA_PRESET: TuningPreset = {
         tiers: { trivial: 0.25, easy: 0.5, standard: 1.0, hard: 1.75, epic: 2.5 },
       },
     },
-    skillPoints: { interval: 3 },
+    skillPoints: { interval: 2 },
     multiclass: { minLevel: 20, goldCost: 1000 },
     characterCreation: { startingGold: 75 },
     prestige: { enabled: true, xpCostBase: 15000, xpCostMultiplier: 1.8, maxRank: 5 },
@@ -1132,7 +1132,7 @@ export const LORE_EXPLORER_PRESET: TuningPreset = {
       elite: { baseHp: 10, hpPerLevel: 3, baseMinDamage: 1, baseMaxDamage: 3, damagePerLevel: 0, baseArmor: 0, baseXpReward: 10, xpRewardPerLevel: 3, baseGoldMin: 50, baseGoldMax: 100, goldPerLevel: 20 },
       boss: { baseHp: 20, hpPerLevel: 5, baseMinDamage: 2, baseMaxDamage: 4, damagePerLevel: 1, baseArmor: 1, baseXpReward: 20, xpRewardPerLevel: 6, baseGoldMin: 150, baseGoldMax: 300, goldPerLevel: 50 },
     },
-    mobActionDelay: { minActionDelayMillis: 4000, maxActionDelayMillis: 8000 },
+    mobActionDelay: { minActionDelayMillis: 6000, maxActionDelayMillis: 14000 },
     stats: { bindings: { meleeDamageDivisor: 1, dodgePerPoint: 5, maxDodgePercent: 55, spellDamageDivisor: 1, hpScalingDivisor: 2, manaScalingDivisor: 2, hpRegenMsPerPoint: 400, manaRegenMsPerPoint: 400, xpBonusPerPoint: 0.05 } },
     economy: { buyMultiplier: 0.3, sellMultiplier: 0.2 },
     crafting: { maxSkillLevel: 30, baseXpPerLevel: 30, xpExponent: 1.1, gatherCooldownMs: 1000, stationBonusQuantity: 5 },

@@ -6,6 +6,7 @@ import {
   ISLANDS,
 } from "@/lib/islandRegistry";
 import type { Island } from "@/lib/panelRegistry";
+import { Butterflies } from "./Butterflies";
 
 /**
  * Top-level map: renders mainview.jpg full-bleed with one clickable
@@ -115,6 +116,9 @@ export function WorldMap() {
               </button>
             );
           })}
+
+        {/* Drifting butterflies */}
+        {!calibrating && <Butterflies />}
 
         {/* Floating title card */}
         {!calibrating && (

@@ -421,7 +421,10 @@ const ChoiceRow = memo(function ChoiceRow({ choice, nextOptions, onUpdate, onDel
               placeholder="Any"
             />
           </FieldRow>
-          <FieldRow label="Action">
+          <FieldRow
+            label="Action"
+            hint="Trigger when chosen. Common: `unlock_flag:<name>` (sets a global flag — quests can gate on it via Requires dialogue flag), `accept_quest:<id>` (offers a quest)."
+          >
             <TextInput
               value={choice.action ?? ""}
               onCommit={(v) => onUpdate({ action: v || undefined })}

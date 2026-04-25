@@ -1,6 +1,6 @@
 [package]
 name = "arcanum"
-version = "3.13.87"
+version = "3.14.0"
 description = "Arcanum — world building, lore, and art generation tool"
 authors = []
 edition = "2021"

@@ -343,6 +343,7 @@ export function buildMonolithicConfigObject(
   }
 
   engine.navigation = c.navigation;
+  engine.death = c.death;
   engine.commands = { entries: c.commands };
   engine.group = c.group;
   engine.guildRanks = {

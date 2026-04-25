@@ -24,6 +24,19 @@ const BASE_CONFIG: AppConfig = {
       },
     },
   },
+  death: {
+    sanctumRoom: "",
+    respawnHpFraction: 0.2,
+    respawnManaFraction: 0.2,
+    xpPenaltyFraction: 0,
+    messages: {
+      arriveSanctum: "",
+      departNoSanctum: "",
+      departNoDeath: "",
+      departBegin: "",
+      departUnreachable: "",
+    },
+  },
   commands: {},
   classStartRooms: {},
   stats: {

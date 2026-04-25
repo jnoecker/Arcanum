@@ -80,7 +80,7 @@ const CHARACTER_PANELS: PanelDef[] = [
 
 const WORLD_PANELS: PanelDef[] = [
   { id: "tuningWizard", label: "Tuning Wizard", host: "command", kicker: "World", title: "Tuning Wizard", description: "Configure all game balance — presets, inline editing, and before/after comparison.", maxWidth: "max-w-7xl", island: "orrery", glyph: "\u2699\uFE0F" },
-  { id: "world", label: "World", host: "config", kicker: "World topology", title: "World", description: "Default spawn room, class overrides, XP progression, and level-up rewards.", maxWidth: "max-w-5xl", island: "orrery", glyph: "\u{1F30D}" },
+  { id: "world", label: "World", host: "config", kicker: "World topology", title: "World", description: "Default spawn room, class overrides, XP progression, level-up rewards, recall, and death/sanctum behavior.", maxWidth: "max-w-5xl", island: "orrery", glyph: "\u{1F30D}" },
   { id: "serverConfig", label: "Server Config", host: "config", kicker: "Server runtime", title: "Server config", description: "Ports, event loop, admin API, observability, and logging for the MUD server process.", maxWidth: "max-w-5xl", island: "spire", glyph: "\u{1F9EC}" },
   { id: "infrastructure", label: "Infrastructure", host: "config", kicker: "Deployment", title: "Infrastructure", description: "Deployment mode, persistence, login, transport, database, Redis, gRPC, gateway, and sharding.", maxWidth: "max-w-5xl", island: "orrery", glyph: "\u{1F3D7}\uFE0F" },
   { id: "commands", label: "Commands", host: "config", kicker: "Commands", title: "Command designer", description: "Custom commands, usage strings, and categories.", maxWidth: "max-w-5xl", island: "loom", glyph: "\u{1F58B}\uFE0F" },

@@ -1020,6 +1020,37 @@ export const FIELD_METADATA: Record<string, FieldMeta> = {
     impact: "low",
   },
 
+  // ─── Death / Sanctum ────────────────────────────────────────────────
+
+  "death.respawnHpFraction": {
+    label: "Respawn HP",
+    description: "Fraction of max HP restored when waking in the sanctum after death (0.05 - 1.0)",
+    section: TuningSection.WorldSocial,
+    min: 0.05,
+    max: 1.0,
+    impact: "medium",
+    interactionNote:
+      "Lower values make death more punishing -- players must rest in the sanctum before heading out again.",
+  },
+  "death.respawnManaFraction": {
+    label: "Respawn Mana",
+    description: "Fraction of max mana restored when waking in the sanctum after death (0 - 1.0)",
+    section: TuningSection.WorldSocial,
+    min: 0,
+    max: 1.0,
+    impact: "low",
+  },
+  "death.xpPenaltyFraction": {
+    label: "Death XP Penalty",
+    description: "Fraction of total XP deducted on death (0 - 0.5). 0 = forgiving, 0.1 = lose 10% of total XP per death",
+    section: TuningSection.WorldSocial,
+    min: 0,
+    max: 0.5,
+    impact: "high",
+    interactionNote:
+      "A penalty above 0 turns each death into real progression loss. Pair with cautious mob tuning so dying isn't routine.",
+  },
+
   // ─── Friends ───────────────────────────────────────────────────────
 
   "friends.maxFriends": {

@@ -1,7 +1,7 @@
 // ─── Tuning Presets ─────────────────────────────────────────────────
 //
 // Three themed presets (Casual, Balanced, Hardcore) as DeepPartial<AppConfig>
-// overlays covering all 137 tunable fields from FIELD_METADATA.
+// overlays covering all 139 tunable fields from FIELD_METADATA.
 //
 // Each preset is a standalone overlay -- not derived from Kotlin defaults.
 // Use with applyTemplate() from lib/templates.ts to merge onto a config.
@@ -290,6 +290,13 @@ export const CASUAL_PRESET: TuningPreset = {
       recall: {
         cooldownMs: 30000,
       },
+    },
+
+    // ─── Death ───────────────────────────────────────────────────────
+    death: {
+      respawnHpFraction: 0.5,
+      respawnManaFraction: 0.5,
+      xpPenaltyFraction: 0.0,
     },
 
     // ─── Friends ─────────────────────────────────────────────────────
@@ -602,6 +609,13 @@ export const BALANCED_PRESET: TuningPreset = {
       },
     },
 
+    // ─── Death ───────────────────────────────────────────────────────
+    death: {
+      respawnHpFraction: 0.2,
+      respawnManaFraction: 0.2,
+      xpPenaltyFraction: 0.0,
+    },
+
     // ─── Friends ─────────────────────────────────────────────────────
     friends: {
       maxFriends: 50,
@@ -912,6 +926,13 @@ export const HARDCORE_PRESET: TuningPreset = {
       },
     },
 
+    // ─── Death ───────────────────────────────────────────────────────
+    death: {
+      respawnHpFraction: 0.1,
+      respawnManaFraction: 0.0,
+      xpPenaltyFraction: 0.1,
+    },
+
     // ─── Friends ─────────────────────────────────────────────────────
     friends: {
       maxFriends: 25,
@@ -1019,6 +1040,7 @@ export const SOLO_STORY_PRESET: TuningPreset = {
     weather: { minTransitionMs: 120000, maxTransitionMs: 300000 },
     group: { maxSize: 6, inviteTimeoutMs: 60000, xpBonusPerMember: 0.20 },
     navigation: { recall: { cooldownMs: 15000 } },
+    death: { respawnHpFraction: 1.0, respawnManaFraction: 1.0, xpPenaltyFraction: 0.0 },
     friends: { maxFriends: 100 },
     guild: { maxSize: 50, inviteTimeoutMs: 60000 },
     guildHalls: { enabled: true, purchaseCost: 3000 },
@@ -1098,6 +1120,7 @@ export const PVP_ARENA_PRESET: TuningPreset = {
     weather: { minTransitionMs: 180000, maxTransitionMs: 600000 },
     group: { maxSize: 4, inviteTimeoutMs: 30000, xpBonusPerMember: 0.15 },
     navigation: { recall: { cooldownMs: 120000 } },
+    death: { respawnHpFraction: 0.5, respawnManaFraction: 0.3, xpPenaltyFraction: 0.0 },
     friends: { maxFriends: 50 },
     guild: { maxSize: 25, inviteTimeoutMs: 30000 },
     guildHalls: { enabled: true, purchaseCost: 15000 },
@@ -1176,6 +1199,7 @@ export const LORE_EXPLORER_PRESET: TuningPreset = {
     weather: { minTransitionMs: 60000, maxTransitionMs: 180000 },
     group: { maxSize: 8, inviteTimeoutMs: 120000, xpBonusPerMember: 0.25 },
     navigation: { recall: { cooldownMs: 5000 } },
+    death: { respawnHpFraction: 1.0, respawnManaFraction: 1.0, xpPenaltyFraction: 0.0 },
     friends: { maxFriends: 200 },
     guild: { maxSize: 100, inviteTimeoutMs: 120000 },
     guildHalls: { enabled: true, purchaseCost: 1000 },

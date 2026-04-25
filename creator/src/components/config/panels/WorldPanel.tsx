@@ -3,6 +3,7 @@ import type { ConfigPanelProps } from "./types";
 import { Section, FieldRow } from "@/components/ui/FormWidgets";
 import { useZoneStore } from "@/stores/zoneStore";
 import { ProgressionPanel } from "./ProgressionPanel";
+import { NavigationPanel } from "./NavigationPanel";
 
 interface RoomOption {
   id: string;
@@ -18,7 +19,7 @@ interface RoomPickerProps {
   allowClear?: boolean;
 }
 
-function RoomPicker({ value, onChange, placeholder, allowClear }: RoomPickerProps) {
+export function RoomPicker({ value, onChange, placeholder, allowClear }: RoomPickerProps) {
   const zones = useZoneStore((s) => s.zones);
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -235,6 +236,8 @@ export function WorldPanel({ config, onChange }: ConfigPanelProps) {
       </Section>
 
       <ProgressionPanel config={config} onChange={onChange} />
+
+      <NavigationPanel config={config} onChange={onChange} />
     </>
   );
 }

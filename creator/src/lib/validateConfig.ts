@@ -524,6 +524,40 @@ export function validateConfig(config: AppConfig): ValidationIssue[] {
     });
   }
 
+  // ─── Death / Sanctum ─────────────────────────────────────────
+  // Mirrors AppConfig.validateDeath() on the server.
+  const death = config.death;
+  if (death) {
+    if (death.respawnHpFraction < 0.05 || death.respawnHpFraction > 1.0) {
+      issues.push({
+        severity: "error",
+        entity: "death",
+        message: `respawnHpFraction must be in [0.05, 1.0] (got ${death.respawnHpFraction})`,
+      });
+    }
+    if (death.respawnManaFraction < 0 || death.respawnManaFraction > 1.0) {
+      issues.push({
+        severity: "error",
+        entity: "death",
+        message: `respawnManaFraction must be in [0.0, 1.0] (got ${death.respawnManaFraction})`,
+      });
+    }
+    if (death.xpPenaltyFraction < 0 || death.xpPenaltyFraction > 0.5) {
+      issues.push({
+        severity: "error",
+        entity: "death",
+        message: `xpPenaltyFraction must be in [0.0, 0.5] (got ${death.xpPenaltyFraction})`,
+      });
+    }
+    if (death.sanctumRoom && !death.sanctumRoom.includes(":")) {
+      issues.push({
+        severity: "error",
+        entity: "death",
+        message: `Sanctum room must be in 'zone:room' format (got '${death.sanctumRoom}')`,
+      });
+    }
+  }
+
   // ─── Mob action delay ────────────────────────────────────────
   if (config.mobActionDelay.minActionDelayMillis > config.mobActionDelay.maxActionDelayMillis) {
     issues.push({

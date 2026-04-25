@@ -444,6 +444,28 @@ export interface NavigationConfig {
   recall: RecallConfig;
 }
 
+// ─── Death / Sanctum ───────────────────────────────────────────────
+
+export interface DeathMessagesConfig {
+  arriveSanctum: string;
+  departNoSanctum: string;
+  departNoDeath: string;
+  departBegin: string;
+  departUnreachable: string;
+}
+
+export interface DeathConfig {
+  /** Fully-qualified "zone:room" sanctum room. Empty falls back to the dead player's zone start. */
+  sanctumRoom: string;
+  /** Fraction of maxHp restored on respawn. Server clamps to [0.05, 1.0]. */
+  respawnHpFraction: number;
+  /** Fraction of maxMana restored on respawn. Server clamps to [0.0, 1.0]. */
+  respawnManaFraction: number;
+  /** Fraction of current xpTotal deducted on death. Server clamps to [0.0, 0.5]. 0 = no penalty. */
+  xpPenaltyFraction: number;
+  messages: DeathMessagesConfig;
+}
+
 // ─── Commands ──────────────────────────────────────────────────────
 
 export interface CommandEntryConfig {
@@ -1060,6 +1082,7 @@ export interface AppConfig {
   regen: RegenConfig;
   crafting: CraftingConfig;
   navigation: NavigationConfig;
+  death: DeathConfig;
   commands: Record<string, CommandEntryConfig>;
   group: GroupConfig;
   classes: Record<string, ClassDefinitionConfig>;

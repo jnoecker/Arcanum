@@ -90,6 +90,7 @@ export function parseAppConfigYaml(content: string): AppConfig {
     regen: parseRegenConfig(engine.regen),
     crafting: parseCraftingConfig(engine.crafting),
     navigation: parseNavigationConfig(engine.navigation),
+    death: parseDeathConfig(engine.death),
     commands: withDefaults(parseMapSection(engine.commands, "entries"), DEFAULT_COMMANDS),
     group: parseSimpleSection(engine.group, { maxSize: 5, inviteTimeoutMs: 60000, xpBonusPerMember: 0.1 }),
     classes: parseMapSection(engine.classes, "definitions"),
@@ -885,7 +886,7 @@ function collectRawSections(
   ]);
   const knownEngine = new Set([
     "stats", "abilities", "statusEffects", "combat", "mob",
-    "regen", "economy", "crafting", "navigation", "commands",
+    "regen", "economy", "crafting", "navigation", "death", "commands",
     "group", "guild", "guildRanks", "classes",
     "races", "characterCreation", "equipment", "genders",
     "achievementCategories", "achievementCriterionTypes",
@@ -912,6 +913,27 @@ function collectRawSections(
   }
 
   return raw;
+}
+
+function parseDeathConfig(raw: unknown): AppConfig["death"] {
+  const s = (raw ?? {}) as Record<string, unknown>;
+  const msgs = (s.messages ?? {}) as Record<string, unknown>;
+  return {
+    sanctumRoom: asString(s.sanctumRoom, ""),
+    respawnHpFraction: asNumber(s.respawnHpFraction, 0.2),
+    respawnManaFraction: asNumber(s.respawnManaFraction, 0.2),
+    xpPenaltyFraction: asNumber(s.xpPenaltyFraction, 0.0),
+    messages: {
+      arriveSanctum: asString(
+        msgs.arriveSanctum,
+        "The world fades... and you awaken in the sanctum, your body mending.",
+      ),
+      departNoSanctum: asString(msgs.departNoSanctum, "You can only depart from the sanctum."),
+      departNoDeath: asString(msgs.departNoDeath, "You have nowhere to return to."),
+      departBegin: asString(msgs.departBegin, "You step through the spirit gate and return to the world."),
+      departUnreachable: asString(msgs.departUnreachable, "The spirit gate flickers, but nothing happens."),
+    },
+  };
 }
 
 function parseNavigationConfig(raw: unknown): AppConfig["navigation"] {
@@ -1338,6 +1360,7 @@ async function loadSplitConfig(projectDir: string): Promise<AppConfig | null> {
       world: parseWorldConfig(worldRaw.world),
       classStartRooms: parseClassStartRooms(worldRaw.classStartRooms),
       navigation: parseNavigationConfig(worldRaw.navigation),
+      death: parseDeathConfig(worldRaw.death),
       commands: withDefaults(asRecord(worldRaw.commands), DEFAULT_COMMANDS),
       group: parseSimpleSection(worldRaw.group, { maxSize: 5, inviteTimeoutMs: 60000, xpBonusPerMember: 0.1 }),
       housing: parseHousingConfig(worldRaw.housing),

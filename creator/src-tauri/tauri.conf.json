@@ -1,7 +1,7 @@
 {
   "$schema": "https://raw.githubusercontent.com/nicoverbruggen/tauri-v2-schema/main/schema.json",
   "productName": "Arcanum",
-  "version": "3.13.87",
+  "version": "3.14.0",
   "identifier": "dev.arcanum.app",
   "build": {
     "beforeDevCommand": "bun run dev",

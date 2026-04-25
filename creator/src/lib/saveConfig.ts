@@ -181,6 +181,7 @@ async function saveSplitConfig(projectDir: string): Promise<void> {
       world: config.world,
       classStartRooms: Object.keys(config.classStartRooms).length > 0 ? config.classStartRooms : undefined,
       navigation: config.navigation,
+      death: config.death,
       commands: Object.keys(config.commands).length > 0 ? config.commands : undefined,
       group: config.group,
       guildRanks: {

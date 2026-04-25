@@ -61,6 +61,7 @@ const FULL_MOCK_CONFIG: AppConfig = {
   },
   crafting: { maxSkillLevel: 75, baseXpPerLevel: 100, xpExponent: 1.5, gatherCooldownMs: 3000, stationBonusQuantity: 1 },
   navigation: { recall: { cooldownMs: 60000, messages: { combatBlocked: "", cooldownRemaining: "", castBegin: "", unreachable: "", departNotice: "", arriveNotice: "", arrival: "" } } },
+  death: { sanctumRoom: "", respawnHpFraction: 0.2, respawnManaFraction: 0.2, xpPenaltyFraction: 0, messages: { arriveSanctum: "", departNoSanctum: "", departNoDeath: "", departBegin: "", departUnreachable: "" } },
   commands: {},
   group: { maxSize: 5, inviteTimeoutMs: 60000, xpBonusPerMember: 0.10 },
   classes: {
@@ -239,8 +240,8 @@ describe("validation", () => {
 describe("field coverage", () => {
   const allPaths = Object.keys(FIELD_METADATA);
 
-  it("FIELD_METADATA has 136 entries (sanity check)", () => {
-    expect(allPaths).toHaveLength(136);
+  it("FIELD_METADATA has 139 entries (sanity check)", () => {
+    expect(allPaths).toHaveLength(139);
   });
 
   for (const preset of TUNING_PRESETS) {

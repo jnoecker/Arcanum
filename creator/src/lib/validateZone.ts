@@ -715,6 +715,14 @@ export function validateZone(
     } else if (!mobIds.has(quest.giver)) {
       addIssue(issues, "warning", entity, `Giver mob "${quest.giver}" is not a known mob in this zone`);
     }
+    if (quest.turnInMob && !mobIds.has(quest.turnInMob)) {
+      addIssue(
+        issues,
+        "warning",
+        entity,
+        `Turn-in mob "${quest.turnInMob}" is not a known mob in this zone — the engine still qualifies it with the zone id, so this is only valid if the mob lives elsewhere`,
+      );
+    }
     if (!quest.objectives || quest.objectives.length === 0) {
       addIssue(issues, "error", entity, "Quest must have at least one objective");
     } else {

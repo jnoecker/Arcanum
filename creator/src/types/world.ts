@@ -337,6 +337,20 @@ export interface QuestFile {
    * tier's multiplier. An explicit positive `rewards.xp` always wins.
    */
   difficulty?: import("./config").QuestDifficulty;
+  /**
+   * Optional dialogue-flag gate. When set, the quest stays hidden from
+   * `qoffers`, the canvas Quest indicator, and `accept` until the player has
+   * the named flag in their dialogueFlags set. Flags are added by dialogue
+   * choice actions of the form `unlock_flag:<name>` and are global strings,
+   * so the unlocking conversation can be on any NPC in any zone.
+   */
+  requiresDialogueFlag?: string;
+  /**
+   * Optional override for the NPC that accepts turn-ins. Bare mob keyword
+   * (e.g. `headmaster_aldric`); the loader qualifies it with the zone id.
+   * Defaults to `giver` when null/empty.
+   */
+  turnInMob?: string;
 }
 
 export interface QuestObjectiveFile {

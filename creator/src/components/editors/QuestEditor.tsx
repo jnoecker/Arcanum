@@ -156,9 +156,22 @@ export function QuestEditor({
               dense
             />
           </CompactField>
+          <CompactField
+            label="Turn-in NPC"
+            hint="Override the NPC that accepts the turn-in. Leave blank to default to the giver."
+          >
+            <SelectInput
+              value={quest.turnInMob ?? ""}
+              options={zoneMobs}
+              onCommit={(v) => patch({ turnInMob: v || undefined })}
+              placeholder="— same as giver —"
+              allowEmpty
+              dense
+            />
+          </CompactField>
           <CompactField label="Completion">
             <SelectInput
-              value={quest.completionType ?? "AUTO"}
+              value={quest.completionType ?? "NPC_TURN_IN"}
               options={completionOptions}
               onCommit={(v) => patch({ completionType: v })}
               dense
@@ -188,6 +201,17 @@ export function QuestEditor({
               value={quest.difficulty ?? ""}
               options={DIFFICULTY_OPTIONS}
               onCommit={(v) => patch({ difficulty: (v || undefined) as QuestDifficulty | undefined })}
+              dense
+            />
+          </CompactField>
+          <CompactField
+            label="Requires dialogue flag"
+            hint="Hidden until a dialogue choice action `unlock_flag:<name>` (on any NPC) sets this flag. Leave blank for no gate."
+          >
+            <TextInput
+              value={quest.requiresDialogueFlag ?? ""}
+              onCommit={(v) => patch({ requiresDialogueFlag: v.trim() || undefined })}
+              placeholder="— no gate —"
               dense
             />
           </CompactField>

@@ -131,7 +131,7 @@ function resolveExitTarget(
 function collectRoomMobs(world: WorldFile, roomId: string): Array<[string, MobFile]> {
   const out: Array<[string, MobFile]> = [];
   for (const [id, mob] of Object.entries(world.mobs ?? {})) {
-    if (mob.room === roomId) out.push([id, mob]);
+    if (mob.spawns?.some((s) => s.room === roomId)) out.push([id, mob]);
   }
   return out;
 }

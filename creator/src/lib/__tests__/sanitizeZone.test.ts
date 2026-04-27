@@ -116,16 +116,17 @@ describe("sanitizeZone — ID remapping", () => {
     expect(exits3002.s).toBe("room_3001");
   });
 
-  it("renames numeric mob IDs and updates room ref", () => {
+  it("renames numeric mob IDs and updates spawn room ref", () => {
     const world = makeWorld({
       mobs: {
-        "100": { name: "Goblin", room: "room_a" },
+        "100": { name: "Goblin", spawns: [{ room: "room_a" }] },
       },
     });
 
     const result = sanitizeZone(world);
     expect(result.mobs!["mob_100"]).toBeDefined();
-    expect(result.mobs!["mob_100"]!.room).toBe("room_a");
+    expect(result.mobs!["mob_100"]!.spawns).toEqual([{ room: "room_a" }]);
+    expect(result.mobs!["mob_100"]!.room).toBeUndefined();
     expect(result.mobs!["100"]).toBeUndefined();
   });
 
@@ -139,7 +140,7 @@ describe("sanitizeZone — ID remapping", () => {
         armory: { name: "Armory", room: "room_a", items: ["200", "201"] },
       },
       mobs: {
-        goblin: { name: "Goblin", room: "room_a", drops: [{ itemId: "200", chance: 50 }] },
+        goblin: { name: "Goblin", spawns: [{ room: "room_a" }], drops: [{ itemId: "200", chance: 50 }] },
       },
     });
 
@@ -163,7 +164,7 @@ describe("sanitizeZone — ID remapping", () => {
 
   it("renames numeric quest IDs and cascades to mob.quests", () => {
     const world = makeWorld({
-      mobs: { guard: { name: "Guard", room: "room_a", quests: ["10"] } },
+      mobs: { guard: { name: "Guard", spawns: [{ room: "room_a" }], quests: ["10"] } },
       quests: { "10": { name: "Fetch Sword", giver: "guard", objectives: [] } },
     });
 
@@ -192,8 +193,8 @@ describe("sanitizeZone — invalid entity stripping", () => {
   it("removes mobs with non-existent room refs", () => {
     const world = makeWorld({
       mobs: {
-        good_mob: { name: "Good", room: "room_a" },
-        bad_mob: { name: "Bad", room: "nonexistent" },
+        good_mob: { name: "Good", spawns: [{ room: "room_a" }] },
+        bad_mob: { name: "Bad", spawns: [{ room: "nonexistent" }] },
       },
     });
 
@@ -244,7 +245,7 @@ describe("sanitizeZone — invalid entity stripping", () => {
 
   it("defaults blank mob name to ID", () => {
     const world = makeWorld({
-      mobs: { goblin: { name: "", room: "room_a" } },
+      mobs: { goblin: { name: "", spawns: [{ room: "room_a" }] } },
     });
 
     const result = sanitizeZone(world);
@@ -314,7 +315,7 @@ describe("sanitizeZone — dangling reference cleanup", () => {
       mobs: {
         goblin: {
           name: "Goblin",
-          room: "room_a",
+          spawns: [{ room: "room_a" }],
           drops: [
             { itemId: "gold", chance: 0.5 },
             { itemId: "nonexistent", chance: 0.3 },
@@ -331,7 +332,7 @@ describe("sanitizeZone — dangling reference cleanup", () => {
     const world = makeWorld({
       quests: { fetch: { name: "Fetch", giver: "guard", objectives: [] } },
       mobs: {
-        guard: { name: "Guard", room: "room_a", quests: ["fetch", "nonexistent"] },
+        guard: { name: "Guard", spawns: [{ room: "room_a" }], quests: ["fetch", "nonexistent"] },
       },
     });
 
@@ -539,8 +540,8 @@ describe("sanitizeZone — end-to-end", () => {
         },
       },
       mobs: {
-        "100": { name: "City Guard", room: "3001", quests: ["500"] },
-        "101": { name: "Lost Traveler", room: "9999" },
+        "100": { name: "City Guard", spawns: [{ room: "3001" }], quests: ["500"] },
+        "101": { name: "Lost Traveler", spawns: [{ room: "9999" }] },
       },
       items: {
         "200": { displayName: "Iron Sword", stats: { strength: 3, dexterity: 0 } },
@@ -573,7 +574,7 @@ describe("sanitizeZone — end-to-end", () => {
 
     // Mob with valid room kept, mob with invalid room stripped
     expect(result.mobs!["mob_100"]).toBeDefined();
-    expect(result.mobs!["mob_100"]!.room).toBe("room_3001");
+    expect(result.mobs!["mob_100"]!.spawns).toEqual([{ room: "room_3001" }]);
     expect(result.mobs!["mob_101"]).toBeUndefined();
 
     // Quest ID remapped, mob.quests updated

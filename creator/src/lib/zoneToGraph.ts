@@ -105,7 +105,10 @@ export function zoneToGraph(
   const gatheringNodesPerRoom = new Map<string, number>();
 
   for (const mob of Object.values(world.mobs ?? {})) {
-    mobsPerRoom.set(mob.room, (mobsPerRoom.get(mob.room) ?? 0) + 1);
+    for (const spawn of mob.spawns ?? []) {
+      const n = spawn.count ?? 1;
+      mobsPerRoom.set(spawn.room, (mobsPerRoom.get(spawn.room) ?? 0) + n);
+    }
   }
   for (const item of Object.values(world.items ?? {})) {
     if (item.room) {
@@ -127,7 +130,12 @@ export function zoneToGraph(
     arr.push(sprite);
   };
   for (const [id, mob] of Object.entries(world.mobs ?? {})) {
-    pushEntity(mob.room, { id, kind: "mob", name: mob.name, image: mob.image });
+    const seenRooms = new Set<string>();
+    for (const spawn of mob.spawns ?? []) {
+      if (seenRooms.has(spawn.room)) continue;
+      seenRooms.add(spawn.room);
+      pushEntity(spawn.room, { id, kind: "mob", name: mob.name, image: mob.image });
+    }
   }
   for (const [id, item] of Object.entries(world.items ?? {})) {
     if (item.room) {

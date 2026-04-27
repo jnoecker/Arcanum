@@ -55,6 +55,26 @@ export function normalizeDir(dir: string): string {
 }
 
 /**
+ * Migrate the legacy `mob.room` shorthand to a single-entry `spawns` list.
+ * Idempotent: mobs that already declare `spawns` are left as-is, with their
+ * stale `room` field stripped. Mutates in place and returns the same world.
+ */
+export function normalizeMobSpawns(world: WorldFile): WorldFile {
+  if (!world.mobs) return world;
+  for (const mob of Object.values(world.mobs)) {
+    if (mob.spawns && mob.spawns.length > 0) {
+      delete mob.room;
+      continue;
+    }
+    if (mob.room) {
+      mob.spawns = [{ room: mob.room }];
+      delete mob.room;
+    }
+  }
+  return world;
+}
+
+/**
  * Normalize all exit direction keys in a WorldFile from long-form
  * ("north", "south") to abbreviated form ("n", "s").
  * Mutates in place and returns the same object.
@@ -151,7 +171,19 @@ function removeEntity(
 
 /** Remove all entities in a given room across room-bound collections. */
 function removeEntitiesInRoom(world: WorldFile, roomId: string): void {
-  const collections: EntityCollection[] = ["mobs", "items", "shops", "trainers", "gatheringNodes"];
+  // Mobs: drop matching spawn entries; delete the mob entirely if no spawns remain.
+  if (world.mobs) {
+    for (const [id, mob] of Object.entries(world.mobs)) {
+      const spawns = (mob.spawns ?? []).filter((s) => s.room !== roomId);
+      if (spawns.length === 0) {
+        delete world.mobs[id];
+      } else if (spawns.length !== (mob.spawns?.length ?? 0)) {
+        world.mobs[id] = { ...mob, spawns };
+      }
+    }
+  }
+  // Other room-bound collections: delete entity if its single room matches.
+  const collections: EntityCollection[] = ["items", "shops", "trainers", "gatheringNodes"];
   for (const col of collections) {
     const map = world[col] as Record<string, { room?: string }> | undefined;
     if (!map) continue;
@@ -635,7 +667,7 @@ export function exitTarget(exit: string | ExitValue): string {
 // ─── Mob operations ─────────────────────────────────────────────────
 
 export function addMob(world: WorldFile, mobId: string, mob: MobFile): WorldFile {
-  return addEntity(world, "mobs", mobId, mob, mob.room);
+  return addEntity(world, "mobs", mobId, mob, mob.spawns?.[0]?.room);
 }
 
 export function updateMob(world: WorldFile, mobId: string, patch: Partial<MobFile>): WorldFile {

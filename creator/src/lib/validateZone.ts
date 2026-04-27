@@ -19,6 +19,18 @@ import { resolveMobStats } from "./resolveMobStats";
 import { resolveQuestXp } from "./resolveQuestXp";
 import type { QuestXpConfig } from "@/types/config";
 
+/**
+ * A mob is a "unique NPC" iff it places exactly one runtime instance —
+ * a single spawn entry with count <= 1. Quest givers and turn-in NPCs
+ * must satisfy this so quest dialogue can resolve to a single mob.
+ */
+function isUniqueSpawn(mob: MobFile): boolean {
+  const spawns = mob.spawns ?? [];
+  if (spawns.length !== 1) return false;
+  const spawn = spawns[0]!;
+  return (spawn.count ?? 1) <= 1;
+}
+
 export type Severity = "error" | "warning";
 
 export interface ValidationIssue {
@@ -517,7 +529,20 @@ export function validateZone(
   for (const [mobId, mob] of Object.entries(world.mobs ?? {})) {
     const entity = `mob:${mobId}`;
     if (!mob.name?.trim()) addIssue(issues, "warning", entity, "Mob has no name");
-    if (!roomIds.has(mob.room)) addIssue(issues, "error", entity, `Room "${mob.room}" does not exist`);
+    const spawns = mob.spawns ?? [];
+    if (spawns.length === 0) {
+      addIssue(issues, "error", entity, "Mob has no spawns");
+    }
+    for (const [index, spawn] of spawns.entries()) {
+      if (!spawn.room) {
+        addIssue(issues, "error", entity, `Spawn #${index + 1} has no room`);
+      } else if (!roomIds.has(spawn.room)) {
+        addIssue(issues, "error", entity, `Spawn #${index + 1} room "${spawn.room}" does not exist`);
+      }
+      if (spawn.count != null && (!Number.isInteger(spawn.count) || spawn.count < 1)) {
+        addIssue(issues, "error", entity, `Spawn #${index + 1} count must be a positive integer`);
+      }
+    }
     factionCheck(entity, mob.faction, "Faction");
     if (mob.category && !VALID_MOB_CATEGORIES.has(mob.category)) {
       addIssue(issues, "warning", entity, `Category "${mob.category}" is not a recognized mob category`);
@@ -714,14 +739,36 @@ export function validateZone(
       addIssue(issues, "warning", entity, "Quest has no giver");
     } else if (!mobIds.has(quest.giver)) {
       addIssue(issues, "warning", entity, `Giver mob "${quest.giver}" is not a known mob in this zone`);
+    } else {
+      const giverMob = world.mobs?.[quest.giver];
+      if (giverMob && !isUniqueSpawn(giverMob)) {
+        addIssue(
+          issues,
+          "error",
+          entity,
+          `Giver mob "${quest.giver}" must have exactly one spawn with count 1 — quest givers are unique NPCs`,
+        );
+      }
     }
-    if (quest.turnInMob && !mobIds.has(quest.turnInMob)) {
-      addIssue(
-        issues,
-        "warning",
-        entity,
-        `Turn-in mob "${quest.turnInMob}" is not a known mob in this zone — the engine still qualifies it with the zone id, so this is only valid if the mob lives elsewhere`,
-      );
+    if (quest.turnInMob) {
+      if (!mobIds.has(quest.turnInMob)) {
+        addIssue(
+          issues,
+          "warning",
+          entity,
+          `Turn-in mob "${quest.turnInMob}" is not a known mob in this zone — the engine still qualifies it with the zone id, so this is only valid if the mob lives elsewhere`,
+        );
+      } else {
+        const turnInMob = world.mobs?.[quest.turnInMob];
+        if (turnInMob && !isUniqueSpawn(turnInMob)) {
+          addIssue(
+            issues,
+            "error",
+            entity,
+            `Turn-in mob "${quest.turnInMob}" must have exactly one spawn with count 1 — turn-in NPCs are unique`,
+          );
+        }
+      }
     }
     if (!quest.objectives || quest.objectives.length === 0) {
       addIssue(issues, "error", entity, "Quest must have at least one objective");

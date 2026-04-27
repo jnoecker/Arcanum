@@ -26,7 +26,7 @@ function makeValidWorld(): WorldFile {
       },
     },
     mobs: {
-      rat: { name: "Rat", room: "room1" },
+      rat: { name: "Rat", spawns: [{ room: "room1" }] },
     },
     items: {
       sword: { displayName: "Sword", room: "room1" },
@@ -104,9 +104,9 @@ describe("validateZone", () => {
   });
 
   // ─── Mob checks ──────────────────────────────────────────────
-  it("errors if mob room does not exist", () => {
+  it("errors if mob spawn room does not exist", () => {
     const world = makeValidWorld();
-    world.mobs!.rat.room = "missing";
+    world.mobs!.rat.spawns = [{ room: "missing" }];
     const issues = errors(validateZone(world));
     expect(issues.some((i) => i.entity === "mob:rat")).toBe(true);
   });
@@ -232,7 +232,7 @@ describe("validateZone", () => {
 
   it("warns when a quest XP override breaks its difficulty tier", () => {
     const world = makeValidWorld();
-    world.mobs!.giver = { name: "Giver", room: "room1" };
+    world.mobs!.giver = { name: "Giver", spawns: [{ room: "room1" }] };
     world.quests = {
       test_quest: {
         name: "Test",
@@ -294,7 +294,7 @@ describe("validateZone", () => {
 
   it("does not warn when a quest uses the computed difficulty XP", () => {
     const world = makeValidWorld();
-    world.mobs!.giver = { name: "Giver", room: "room1" };
+    world.mobs!.giver = { name: "Giver", spawns: [{ room: "room1" }] };
     world.quests = {
       test_quest: {
         name: "Test",
@@ -592,7 +592,7 @@ describe("validateZone", () => {
   describe("mob damage invariant", () => {
     it("errors when maxDamage override < tier-resolved minDamage", () => {
       const world = makeValidWorld();
-      world.mobs!.rat = { name: "Rat", room: "room1", tier: "weak", level: 3, maxDamage: 1 };
+      world.mobs!.rat = { name: "Rat", spawns: [{ room: "room1" }], tier: "weak", level: 3, maxDamage: 1 };
       const issues = errors(validateZone(world, undefined, undefined, undefined, undefined, TEST_MOB_TIERS));
       // weak tier at level 3: minDamage = 1 + 1*(3 - 1) = 3, so maxDamage=1 < 3
       expect(issues.some((i) => i.entity === "mob:rat" && i.message.includes("maxDamage") && i.message.includes("minDamage"))).toBe(true);
@@ -600,21 +600,21 @@ describe("validateZone", () => {
 
     it("errors when both overrides set and max < min", () => {
       const world = makeValidWorld();
-      world.mobs!.rat = { name: "Rat", room: "room1", minDamage: 5, maxDamage: 3 };
+      world.mobs!.rat = { name: "Rat", spawns: [{ room: "room1" }], minDamage: 5, maxDamage: 3 };
       const issues = errors(validateZone(world, undefined, undefined, undefined, undefined, TEST_MOB_TIERS));
       expect(issues.some((i) => i.entity === "mob:rat")).toBe(true);
     });
 
     it("accepts matching explicit overrides", () => {
       const world = makeValidWorld();
-      world.mobs!.rat = { name: "Rat", room: "room1", tier: "weak", level: 3, minDamage: 1, maxDamage: 1 };
+      world.mobs!.rat = { name: "Rat", spawns: [{ room: "room1" }], tier: "weak", level: 3, minDamage: 1, maxDamage: 1 };
       const issues = errors(validateZone(world, undefined, undefined, undefined, undefined, TEST_MOB_TIERS));
       expect(issues.filter((i) => i.entity === "mob:rat")).toHaveLength(0);
     });
 
     it("skips the check when no tier config is provided and only one side is overridden", () => {
       const world = makeValidWorld();
-      world.mobs!.rat = { name: "Rat", room: "room1", tier: "weak", level: 3, maxDamage: 1 };
+      world.mobs!.rat = { name: "Rat", spawns: [{ room: "room1" }], tier: "weak", level: 3, maxDamage: 1 };
       const issues = errors(validateZone(world));
       expect(issues.filter((i) => i.entity === "mob:rat" && i.message.includes("maxDamage"))).toHaveLength(0);
     });
@@ -624,7 +624,7 @@ describe("validateZone", () => {
     it("warns when a mob level drifts outside the zone target band", () => {
       const world = makeValidWorld();
       world.levelBand = { min: 3, max: 7 };
-      world.mobs!.rat = { name: "Rat", room: "room1", tier: "weak", level: 12 };
+      world.mobs!.rat = { name: "Rat", spawns: [{ room: "room1" }], tier: "weak", level: 12 };
 
       const issues = warnings(validateZone(world, undefined, undefined, undefined, undefined, TEST_MOB_TIERS));
 
@@ -635,7 +635,7 @@ describe("validateZone", () => {
     it("warns when authored overrides diverge from the target tier baseline", () => {
       const world = makeValidWorld();
       world.levelBand = { min: 3, max: 3 };
-      world.mobs!.rat = { name: "Rat", room: "room1", tier: "weak", level: 3, hp: 200, xpReward: 9999 };
+      world.mobs!.rat = { name: "Rat", spawns: [{ room: "room1" }], tier: "weak", level: 3, hp: 200, xpReward: 9999 };
 
       const issues = warnings(validateZone(world, undefined, undefined, undefined, undefined, TEST_MOB_TIERS));
 
@@ -646,7 +646,7 @@ describe("validateZone", () => {
     it("warns when a zone target cannot be validated because the mob tier is unknown", () => {
       const world = makeValidWorld();
       world.levelBand = { min: 3, max: 7 };
-      world.mobs!.rat = { name: "Rat", room: "room1", tier: "phantom", level: 5 };
+      world.mobs!.rat = { name: "Rat", spawns: [{ room: "room1" }], tier: "phantom", level: 5 };
 
       const issues = warnings(validateZone(world, undefined, undefined, undefined, undefined, TEST_MOB_TIERS));
 
@@ -656,7 +656,7 @@ describe("validateZone", () => {
     it("stays quiet when the mob already matches the zone target", () => {
       const world = makeValidWorld();
       world.levelBand = { min: 3, max: 7 };
-      world.mobs!.rat = { name: "Rat", room: "room1", tier: "weak", level: 3 };
+      world.mobs!.rat = { name: "Rat", spawns: [{ room: "room1" }], tier: "weak", level: 3 };
 
       const issues = validateZone(world, undefined, undefined, undefined, undefined, TEST_MOB_TIERS);
 

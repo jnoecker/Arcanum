@@ -536,7 +536,13 @@ export function applyZoneResets(
       case "M": {
         const mob = reset.mobVnum ? worldFile.mobs?.[reset.mobVnum] : undefined;
         if (reset.mobVnum && reset.roomVnum && mob) {
-          mob.room = reset.roomVnum;
+          if (!mob.spawns) mob.spawns = [];
+          const existing = mob.spawns.find((s) => s.room === reset.roomVnum);
+          if (existing) {
+            existing.count = (existing.count ?? 1) + 1;
+          } else {
+            mob.spawns.push({ room: reset.roomVnum });
+          }
           lastMobId = reset.mobVnum;
         } else if (reset.mobVnum) {
           warnings.push(`Zone reset: mob ${reset.mobVnum} not found in converted data`);
@@ -664,7 +670,7 @@ export function assembleWorldFile(
   for (const m of mobs) {
     mobMap[m.id] = {
       name: m.name,
-      room: "", // filled by zone resets
+      spawns: [], // filled by zone resets
       ...(m.description ? { description: m.description } : {}),
       ...(m.level ? { level: m.level } : {}),
       ...(m.hp ? { hp: m.hp } : {}),
@@ -703,12 +709,13 @@ export function assembleWorldFile(
     };
   }
 
-  // Derive shop rooms from keeper mob rooms
+  // Derive shop rooms from keeper mob spawn rooms
   for (const s of shops) {
     const keeper = s.keeperMobId ? mobMap[s.keeperMobId] : undefined;
     const shop = shopMap[s.id];
-    if (keeper && shop) {
-      shop.room = keeper.room;
+    const keeperRoom = keeper?.spawns?.[0]?.room;
+    if (keeper && shop && keeperRoom) {
+      shop.room = keeperRoom;
     }
   }
 

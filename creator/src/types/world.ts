@@ -153,10 +153,28 @@ export const MOB_ROLE_DESCRIPTIONS: Record<MobRole, string> = {
   prop: "Examine-only flavour entity. No interaction beyond look.",
 };
 
+/**
+ * One placement of a mob template in the world. A mob can have multiple
+ * spawn entries; each entry may produce `count` runtime instances. The
+ * legacy single-room `room` field on `MobFile` is no longer authored —
+ * loaders normalize it into `spawns: [{ room }]` on read.
+ */
+export interface SpawnEntry {
+  room: string;
+  count?: number;
+}
+
 export interface MobFile {
   name: string;
   description?: string;
-  room: string;
+  /**
+   * Where this mob template gets placed in the zone. New content always
+   * uses `spawns`; the loader synthesizes a single-entry list for legacy
+   * mobs that still have a top-level `room` shorthand, then drops `room`.
+   */
+  spawns?: SpawnEntry[];
+  /** @deprecated Legacy single-room placement — loaders migrate to `spawns`. */
+  room?: string;
   /**
    * What this mob is *for*. Omitted/missing defaults to "combat" to preserve
    * legacy behaviour. Non-combat roles refuse attack commands server-side.

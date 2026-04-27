@@ -30,11 +30,16 @@ export function renameRoom(world: WorldFile, oldId: string, newId: string): Worl
     if (changed) rooms[roomId] = { ...room, exits };
   }
 
-  // Update mob.room
+  // Update mob spawn rooms
   const mobs = world.mobs ? { ...world.mobs } : undefined;
   if (mobs) {
     for (const [mobId, mob] of Object.entries(mobs)) {
-      if (mob.room === oldId) mobs[mobId] = { ...mob, room: newId };
+      if (mob.spawns?.some((s) => s.room === oldId)) {
+        mobs[mobId] = {
+          ...mob,
+          spawns: mob.spawns.map((s) => (s.room === oldId ? { ...s, room: newId } : s)),
+        };
+      }
       if (mob.behavior?.params?.patrolRoute) {
         const route = mob.behavior.params.patrolRoute;
         if (route.includes(oldId)) {
@@ -273,7 +278,7 @@ export function countReferences(world: WorldFile, category: EntityCategory, enti
       }
     }
     for (const mob of Object.values(world.mobs ?? {})) {
-      if (mob.room === entityId) count++;
+      count += (mob.spawns ?? []).filter((s) => s.room === entityId).length;
       if (mob.behavior?.params?.patrolRoute?.includes(entityId)) count++;
     }
     for (const item of Object.values(world.items ?? {})) {

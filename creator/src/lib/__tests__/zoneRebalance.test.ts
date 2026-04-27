@@ -21,7 +21,7 @@ const MOCK_CONFIG = { mobTiers: TIER_CONFIG } as unknown as AppConfig;
 function mob(overrides: Partial<MobFile> = {}): MobFile {
   return {
     name: "Test Mob",
-    room: "room_1",
+    spawns: [{ room: "room_1" }],
     tier: "weak",
     ...overrides,
   };

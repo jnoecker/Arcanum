@@ -24,7 +24,7 @@ function world(): WorldFile {
       altar: { title: "Altar", description: "A stone altar.", exits: { s: "nave" } },
     },
     mobs: {
-      priest: { name: "Old Priest", description: "Bent with age.", room: "nave", hp: 40 },
+      priest: { name: "Old Priest", description: "Bent with age.", spawns: [{ room: "nave" }], hp: 40 },
     },
     items: {
       relic: { displayName: "Saint's Relic", description: "A bone.", room: "altar", damage: 2 },

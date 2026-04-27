@@ -81,8 +81,8 @@ describe("zoneToGraph", () => {
       },
       {
         mobs: {
-          mob1: { name: "Mob", room: "room1", tier: "weak" },
-          mob2: { name: "Mob 2", room: "room1", tier: "weak" },
+          mob1: { name: "Mob", spawns: [{ room: "room1" }], tier: "weak" },
+          mob2: { name: "Mob 2", spawns: [{ room: "room1" }], tier: "weak" },
         },
         items: {
           item1: { displayName: "Item", room: "room1" },

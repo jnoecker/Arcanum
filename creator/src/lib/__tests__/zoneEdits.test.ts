@@ -60,7 +60,7 @@ function makeWorld(): WorldFile {
       },
     },
     mobs: {
-      rat: { name: "Rat", room: "room1", level: 1 },
+      rat: { name: "Rat", spawns: [{ room: "room1" }], level: 1 },
     },
     items: {
       sword: { displayName: "Sword", room: "room1" },
@@ -245,7 +245,7 @@ describe("generateRoomId", () => {
 describe("addMob", () => {
   it("adds a mob to the world", () => {
     const world = makeWorld();
-    const next = addMob(world, "goblin", { name: "Goblin", room: "room1" });
+    const next = addMob(world, "goblin", { name: "Goblin", spawns: [{ room: "room1" }] });
     expect(next.mobs?.goblin?.name).toBe("Goblin");
     expect(world.mobs?.goblin).toBeUndefined();
   });
@@ -253,14 +253,14 @@ describe("addMob", () => {
   it("throws if mob already exists", () => {
     const world = makeWorld();
     expect(() =>
-      addMob(world, "rat", { name: "Rat2", room: "room1" }),
+      addMob(world, "rat", { name: "Rat2", spawns: [{ room: "room1" }] }),
     ).toThrow("already exists");
   });
 
   it("throws if room does not exist", () => {
     const world = makeWorld();
     expect(() =>
-      addMob(world, "goblin", { name: "Goblin", room: "no_room" }),
+      addMob(world, "goblin", { name: "Goblin", spawns: [{ room: "no_room" }] }),
     ).toThrow("does not exist");
   });
 });

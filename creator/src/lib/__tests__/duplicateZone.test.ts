@@ -14,7 +14,7 @@ function sampleWorld(): WorldFile {
       },
       next: { title: "Next", description: ".", exits: { s: "start" } },
     },
-    mobs: { goblin: { name: "Goblin", description: "g", room: "start", hp: 50 } },
+    mobs: { goblin: { name: "Goblin", description: "g", spawns: [{ room: "start" }], hp: 50 } },
     items: { sword: { displayName: "Sword", description: "s", room: "next", damage: 10 } },
     shops: {},
     quests: {},

@@ -19,7 +19,7 @@ function makeWorld(overrides?: Partial<WorldFile>): WorldFile {
       },
     },
     mobs: {
-      rat: { name: "Rat", room: "room1" },
+      rat: { name: "Rat", spawns: [{ room: "room1" }] },
     },
     items: {
       sword: { displayName: "Sword", room: "room1" },
@@ -43,7 +43,7 @@ describe("renameRoom", () => {
     expect(result.rooms["room1"]).toBeUndefined();
     expect(result.startRoom).toBe("tavern");
     expect(result.rooms["room2"]!.exits!["s"]).toBe("tavern");
-    expect(result.mobs!["rat"]!.room).toBe("tavern");
+    expect(result.mobs!["rat"]!.spawns).toEqual([{ room: "tavern" }]);
     expect(result.items!["sword"]!.room).toBe("tavern");
   });
 
@@ -52,7 +52,7 @@ describe("renameRoom", () => {
       mobs: {
         guard: {
           name: "Guard",
-          room: "room1",
+          spawns: [{ room: "room1" }],
           behavior: {
             template: "patrol",
             params: { patrolRoute: ["room1", "room2", "room1"] },
@@ -98,7 +98,7 @@ describe("renameItem", () => {
       mobs: {
         rat: {
           name: "Rat",
-          room: "room1",
+          spawns: [{ room: "room1" }],
           drops: [{ itemId: "sword", chance: 50 }],
         },
       },
@@ -130,7 +130,7 @@ describe("renameQuest", () => {
   it("renames a quest key and updates mob.quests", () => {
     const world = makeWorld({
       mobs: {
-        rat: { name: "Rat", room: "room1", quests: ["fetch"] },
+        rat: { name: "Rat", spawns: [{ room: "room1" }], quests: ["fetch"] },
       },
     });
     const result = renameQuest(world, "fetch", "retrieve");

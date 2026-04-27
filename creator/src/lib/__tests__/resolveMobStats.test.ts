@@ -59,7 +59,7 @@ const MOB_TIERS: MobTiersConfig = {
 };
 
 function mob(overrides: Partial<MobFile> = {}): MobFile {
-  return { name: "Test", room: "r1", tier: "standard", level: 1, ...overrides };
+  return { name: "Test", spawns: [{ room: "r1" }], tier: "standard", level: 1, ...overrides };
 }
 
 describe("resolveMobStats", () => {

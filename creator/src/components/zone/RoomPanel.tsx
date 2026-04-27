@@ -276,7 +276,7 @@ export function RoomPanel({
 
   // Find entities in this room
   const mobs = useMemo(
-    () => Object.entries(world.mobs ?? {}).filter(([, m]) => m.room === roomId),
+    () => Object.entries(world.mobs ?? {}).filter(([, m]) => m.spawns?.some((s) => s.room === roomId) ?? false),
     [world.mobs, roomId],
   );
   const items = useMemo(
@@ -304,7 +304,7 @@ export function RoomPanel({
         const giverMob = Object.entries(world.mobs ?? {}).find(
           ([mobId]) => mobId === q.giver || `${zoneId}:${mobId}` === q.giver,
         );
-        return giverMob && giverMob[1].room === roomId;
+        return !!giverMob && (giverMob[1].spawns?.some((s) => s.room === roomId) ?? false);
       }),
     [world.quests, world.mobs, zoneId, roomId],
   );

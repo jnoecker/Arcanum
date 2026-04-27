@@ -254,14 +254,18 @@ function applyIdRemaps(world: WorldFile, t: RemapTables): WorldFile {
     rooms[key ?? oldId] = r2;
   }
 
-  // Mobs: remap keys, room, drops, quests, patrol routes, BT routes
+  // Mobs: remap keys, spawn rooms, drops, quests, patrol routes, BT routes
   let mobs: Record<string, MobFile> | undefined;
   if (world.mobs) {
     mobs = {};
     for (const [oldId, mob] of Object.entries(world.mobs)) {
       const key = t.mob.get(oldId);
       if (key === "") continue;
-      let m: MobFile = { ...mob, room: rId(mob.room, t.room) };
+      const remappedSpawns = (mob.spawns ?? [])
+        .map((s) => ({ ...s, room: rId(s.room, t.room) }))
+        .filter((s) => t.room.get(s.room) !== "");
+      if (remappedSpawns.length === 0) continue;
+      let m: MobFile = { ...mob, spawns: remappedSpawns, room: undefined };
       if (mob.drops) m.drops = mob.drops.map((d) => ({
         ...d,
         itemId: rId(d.itemId, t.item),
@@ -441,20 +445,21 @@ function stripInvalidEntities(world: WorldFile): WorldFile {
     };
   }
 
-  // Mobs: remove if room doesn't exist, default name. Also strip the
-  // legacy `housingBroker` flag — the MUD's MobFile has no such field and
-  // the HousingSystem never checks the player's location for `house buy`,
-  // so the flag was dead weight in the YAML. Drop it on next save so old
-  // projects get cleaned up automatically.
+  // Mobs: drop spawns whose room doesn't exist; drop the mob if no spawns
+  // remain. Default name. Also strip the legacy `housingBroker` flag — the
+  // MUD's MobFile has no such field and the HousingSystem never checks the
+  // player's location for `house buy`, so the flag was dead weight in the
+  // YAML. Drop it on next save so old projects get cleaned up automatically.
   let mobs: Record<string, MobFile> | undefined;
   if (world.mobs) {
     mobs = {};
     for (const [id, mob] of Object.entries(world.mobs)) {
-      if (!roomIds.has(mob.room)) continue;
-      const { housingBroker: _legacyBroker, ...cleanMob } = mob as MobFile & {
+      const spawns = (mob.spawns ?? []).filter((s) => roomIds.has(s.room));
+      if (spawns.length === 0) continue;
+      const { housingBroker: _legacyBroker, room: _legacyRoom, ...cleanMob } = mob as MobFile & {
         housingBroker?: unknown;
       };
-      mobs[id] = { ...cleanMob, name: mob.name?.trim() || id };
+      mobs[id] = { ...cleanMob, spawns, name: mob.name?.trim() || id };
     }
   }
 

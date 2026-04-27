@@ -541,11 +541,12 @@ function buildMobs(
   const result: Record<string, MobFile> = {};
   for (const mob of mobs) {
     if (!mob.id) continue;
+    const room = roomIds.has(mob.room) ? mob.room : fallbackRoomId;
     result[mob.id] = {
       name: mob.name,
       description: mob.description,
       tier: mob.tier || "standard",
-      room: roomIds.has(mob.room) ? mob.room : fallbackRoomId,
+      spawns: [{ room }],
     };
   }
   return result;
@@ -653,7 +654,10 @@ function renameRoomsByTitle(world: WorldFile): WorldFile {
 
   const newMobs: Record<string, MobFile> = {};
   for (const [id, mob] of Object.entries(world.mobs ?? {})) {
-    newMobs[id] = { ...mob, room: remap.get(mob.room) ?? mob.room };
+    newMobs[id] = {
+      ...mob,
+      spawns: (mob.spawns ?? []).map((s) => ({ ...s, room: remap.get(s.room) ?? s.room })),
+    };
   }
 
   const newItems: Record<string, ItemFile> = {};

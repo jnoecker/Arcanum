@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import type { WorldFile, MobFile, MobDropFile, MobSpellFile, MobRole } from "@/types/world";
+import type { WorldFile, MobFile, MobDropFile, MobSpellFile, MobRole, SpawnEntry } from "@/types/world";
 import { MOB_ROLES, MOB_ROLE_LABELS, MOB_ROLE_DESCRIPTIONS } from "@/types/world";
 import { updateMob, deleteMob } from "@/lib/zoneEdits";
 import { useEntityEditor } from "@/lib/useEntityEditor";
@@ -101,6 +101,45 @@ export function MobEditor({
 
   const role: MobRole = mob.role ?? "combat";
   const isCombatant = role === "combat";
+  const requiresUniqueSpawn = role === "quest_giver";
+  const spawns = mob.spawns ?? [];
+
+  const handleAddSpawn = useCallback(() => {
+    const fallback = rooms[0]?.value ?? "";
+    const next: SpawnEntry[] = [...spawns, { room: fallback }];
+    patch({ spawns: next });
+  }, [spawns, rooms, patch]);
+
+  const handleUpdateSpawnRoom = useCallback(
+    (index: number, room: string) => {
+      const next = spawns.map((s, i) => (i === index ? { ...s, room } : s));
+      patch({ spawns: next });
+    },
+    [spawns, patch],
+  );
+
+  const handleUpdateSpawnCount = useCallback(
+    (index: number, count: number | undefined) => {
+      const next = spawns.map((s, i) => {
+        if (i !== index) return s;
+        if (count == null || count <= 1) {
+          const { count: _drop, ...rest } = s;
+          return rest;
+        }
+        return { ...s, count };
+      });
+      patch({ spawns: next });
+    },
+    [spawns, patch],
+  );
+
+  const handleRemoveSpawn = useCallback(
+    (index: number) => {
+      const next = spawns.filter((_, i) => i !== index);
+      patch({ spawns: next.length > 0 ? next : undefined });
+    },
+    [spawns, patch],
+  );
   const visibleTabs = isCombatant
     ? MOB_TABS
     : MOB_TABS.filter((t) => t.value !== "rewards");
@@ -224,17 +263,66 @@ export function MobEditor({
             vibe={zoneId ? useVibeStore.getState().getVibe(zoneId) : undefined}
           />
         </div>
-        <SelectInput
-          value={mob.room}
-          options={rooms}
-          onCommit={(v) => patch({ room: v })}
-        />
+        <div className="text-xs text-text-muted">
+          {spawns.length === 0
+            ? "No spawn locations — set one below"
+            : `${spawns.length} spawn${spawns.length === 1 ? "" : "s"} · ${spawns.reduce((n, s) => n + (s.count ?? 1), 0)} instance${spawns.reduce((n, s) => n + (s.count ?? 1), 0) === 1 ? "" : "s"}`}
+        </div>
       </EntityHeader>
 
       <TabBar tabs={visibleTabs} active={activeTab} onChange={setActiveTab} />
 
       {effectiveTab === "mob" && (
         <>
+          <Section
+            title="Spawns"
+            actions={
+              !(requiresUniqueSpawn && spawns.length >= 1) && (
+                <IconButton onClick={handleAddSpawn} title="Add spawn">+</IconButton>
+              )
+            }
+          >
+            {spawns.length === 0 ? (
+              <p className="text-xs text-text-muted">
+                No spawn locations. Add one to place this mob in the world.
+              </p>
+            ) : (
+              <div className="flex flex-col gap-1.5">
+                {spawns.map((spawn, i) => (
+                  <ArrayRow key={i} onRemove={() => handleRemoveSpawn(i)}>
+                    <div className="flex items-center gap-1">
+                      <div className="min-w-0 flex-1">
+                        <SelectInput
+                          value={spawn.room}
+                          options={rooms}
+                          onCommit={(v) => handleUpdateSpawnRoom(i, v)}
+                        />
+                      </div>
+                      {!requiresUniqueSpawn && (
+                        <>
+                          <span className="text-2xs text-text-muted">×</span>
+                          <div className="w-14 shrink-0">
+                            <NumberInput
+                              value={spawn.count ?? 1}
+                              onCommit={(v) => handleUpdateSpawnCount(i, v)}
+                              min={1}
+                              placeholder="1"
+                            />
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  </ArrayRow>
+                ))}
+              </div>
+            )}
+            {requiresUniqueSpawn && (
+              <p className="mt-1.5 text-2xs text-text-muted">
+                Quest givers are unique NPCs — only one spawn allowed.
+              </p>
+            )}
+          </Section>
+
           <Section title="Basics">
             <FieldGrid>
               <CompactField label="Role" hint={MOB_ROLE_DESCRIPTIONS[role]} span>

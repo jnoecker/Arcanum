@@ -89,10 +89,12 @@ describe("YAML zone structure", () => {
       const mobs = zone.mobs ?? {};
       const localRooms = new Set(Object.keys(zone.rooms));
       for (const [mobId, mob] of Object.entries(mobs)) {
-        const roomRef = mob.room;
-        // Cross-zone refs contain ":"
-        if (!roomRef.includes(":")) {
-          expect(localRooms.has(roomRef), `mob ${mobId} references unknown room: ${roomRef}`).toBe(true);
+        // Accept either legacy shorthand `room` or the new `spawns` list.
+        const roomRefs = mob.spawns?.map((s) => s.room) ?? (mob.room ? [mob.room] : []);
+        for (const roomRef of roomRefs) {
+          if (!roomRef.includes(":")) {
+            expect(localRooms.has(roomRef), `mob ${mobId} references unknown room: ${roomRef}`).toBe(true);
+          }
         }
       }
     });

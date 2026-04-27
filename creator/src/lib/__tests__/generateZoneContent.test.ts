@@ -235,7 +235,7 @@ describe("renameRoomsByTitle", () => {
         room_0: { title: "Crystal Lagoon", description: ".", exits: { e: "room_1" } },
         room_1: { title: "Obsidian Path", description: ".", exits: { w: "room_0" } },
       },
-      mobs: { slime: { name: "Slime", description: ".", tier: "weak", room: "room_1" } },
+      mobs: { slime: { name: "Slime", description: ".", tier: "weak", spawns: [{ room: "room_1" }] } },
       items: { blade: { displayName: "Blade", description: ".", room: "room_0" } },
       shops: {},
       quests: {},
@@ -249,7 +249,7 @@ describe("renameRoomsByTitle", () => {
     expect(out.startRoom).toBe("crystal_lagoon");
     expect(out.rooms["crystal_lagoon"]?.exits?.e).toBe("obsidian_path");
     expect(out.rooms["obsidian_path"]?.exits?.w).toBe("crystal_lagoon");
-    expect(out.mobs?.slime?.room).toBe("obsidian_path");
+    expect(out.mobs?.slime?.spawns?.[0]?.room).toBe("obsidian_path");
     expect(out.items?.blade?.room).toBe("crystal_lagoon");
   });
 

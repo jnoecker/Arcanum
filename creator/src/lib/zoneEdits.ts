@@ -58,17 +58,29 @@ export function normalizeDir(dir: string): string {
  * Migrate the legacy `mob.room` shorthand to a single-entry `spawns` list.
  * Idempotent: mobs that already declare `spawns` are left as-is, with their
  * stale `room` field stripped. Mutates in place and returns the same world.
+ *
+ * For migrating legacy entries we rebuild the mob object so `spawns` lands
+ * in the same key position `room` used to occupy — this keeps the YAML diff
+ * minimal on the next save (matching the MUD-side migrated format).
  */
 export function normalizeMobSpawns(world: WorldFile): WorldFile {
   if (!world.mobs) return world;
-  for (const mob of Object.values(world.mobs)) {
+  for (const [id, mob] of Object.entries(world.mobs)) {
     if (mob.spawns && mob.spawns.length > 0) {
-      delete mob.room;
+      if (mob.room !== undefined) delete mob.room;
       continue;
     }
     if (mob.room) {
-      mob.spawns = [{ room: mob.room }];
-      delete mob.room;
+      const room = mob.room;
+      const next: Record<string, unknown> = {};
+      for (const [k, v] of Object.entries(mob)) {
+        if (k === "room") {
+          next.spawns = [{ room }];
+        } else {
+          next[k] = v;
+        }
+      }
+      world.mobs[id] = next as unknown as MobFile;
     }
   }
   return world;

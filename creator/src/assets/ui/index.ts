@@ -61,49 +61,77 @@ import tbWorldMap from "./tb_world_map.png";
 import tbCompass from "./tb_compass.png";
 import tbSettings from "./tb_settings.png";
 
-// Panel sidebar icons (24×24) — navigation glyphs
-import panelMedia from "./panel_media.png";
-import panelIcons from "./panel_icons.png";
-import panelSprites from "./panel_sprites.png";
-import panelClasses from "./panel_classes.png";
-import panelRaces from "./panel_races.png";
-import panelCreation from "./panel_creation.png";
-import panelEquipment from "./panel_equipment.png";
-import panelStats from "./panel_stats.png";
-import panelAbilities from "./panel_abilities.png";
-import panelConditions from "./panel_conditions.png";
-import panelServer from "./panel_server.png";
-import panelInfra from "./panel_infra.png";
-import panelCommands from "./panel_commands.png";
-import panelCurrencies from "./panel_currencies.png";
-import panelScroll from "./panel_scroll.png";
-import panelEnchanting from "./panel_enchanting.png";
-import panelGuilds from "./panel_guilds.png";
-import panelHousing from "./panel_housing.png";
-import panelEmotes from "./panel_emotes.png";
-import panelPets from "./panel_pets.png";
-import panelSeasons from "./panel_seasons.png";
-import panelAchievements from "./panel_achievements.png";
-import panelCosmos from "./panel_cosmos.png";
-import panelHourglass from "./panel_hourglass.png";
-import panelRelations from "./panel_relations.png";
-import panelDocuments from "./panel_documents.png";
+// Panel sidebar icons (24×24) — only the ones still used after the
+// island-themed icon set replaced most generic panel icons.
 import panelHub from "./panel_hub.png";
 import panelShowcase from "./panel_showcase.png";
 import panelTemplates from "./panel_templates.png";
 import panelScenes from "./panel_scenes.png";
 import panelKey from "./panel_key.png";
 import panelCloud from "./panel_cloud.png";
-import panelDeploy from "./panel_deploy.png";
-import panelChest from "./panel_chest.png";
 import panelNotepad from "./panel_notepad.png";
 import panelBranch from "./panel_branch.png";
-import panelConsole from "./panel_console.png";
-import panelCrown from "./panel_crown.png";
 
 // Miscellaneous icons
 import miscCoin from "./misc_coin.png";
 import miscNoImage from "./misc_no_image.png";
+
+// ─── Island sidebar icons ───────────────────────────────────────────
+// 8 top-level entries (6 islands + Articles + Zones), plus a back arrow.
+import islandArcanum from "./island_arcanum.png";
+import islandForge from "./island_forge.png";
+import islandLoom from "./island_loom.png";
+import islandOrrery from "./island_orrery.png";
+import islandLivingWorld from "./island_living_world.png";
+import islandSpire from "./island_spire.png";
+import islandArticles from "./island_articles.png";
+import islandZones from "./island_zones.png";
+import uiArrow from "./ui_arrow.png";
+
+// Themed panel icons — replace the generic panel_*.png entries below
+// for panels that have a per-island themed version.
+import forgeArt from "./forge_art.png";
+import forgeArtStyle from "./forge_art_style.png";
+import forgeIcons from "./forge_icons.png";
+import forgeMedia from "./forge_media.png";
+import forgePlayerSprites from "./forge_player_sprites.png";
+import forgePlaytest from "./forge_playtest.png";
+import forgePortraits from "./forge_portraits.png";
+import loomAbilities from "./loom_abilities.png";
+import loomClasses from "./loom_classes.png";
+import loomCommands from "./loom_commands.png";
+import loomEquipment from "./loom_equipment.png";
+import loomPets from "./loom_pets.png";
+import loomRaces from "./loom_races.png";
+import loomStatus from "./loom_status.png";
+import orreryAchievements from "./orrery_achievements.png";
+import orreryCharacters from "./orrery_characters.png";
+import orreryCrafting from "./orrery_crafting.png";
+import orreryEnchanting from "./orrery_enchanting.png";
+import orreryFactions from "./orrery_factions.png";
+import orreryHousing from "./orrery_housing.png";
+import orreryInfrastructure from "./orrery_infrastructure.png";
+import orreryTuningWizard from "./orrery_tuning_wizard.png";
+import orreryWorld from "./orrery_world.png";
+import livingWorldCurrencies from "./living_world_currencies.png";
+import livingWorldEmotes from "./living_world_emotes.png";
+import livingWorldEvents from "./living_world_events.png";
+import livingWorldGuildHalls from "./living_world_guild_halls.png";
+import livingWorldGuilds from "./living_world_guilds.png";
+import livingWorldQuests from "./living_world_quests.png";
+import livingWorldSharedAssets from "./living_world_shared_assets.png";
+import livingWorldWeatherEnvironment from "./living_world_weather_environment.png";
+import arcanumDocuments from "./arcanum_documents.png";
+import arcanumMaps from "./arcanum_maps.png";
+import arcanumRelationships from "./arcanum_relationships.png";
+import arcanumStoryEditor from "./arcanum_story_editor.png";
+import arcanumTimeline from "./arcanum_timeline.png";
+import arcanumWorldSetting from "./arcanum_world_setting.png";
+import spireAdmin from "./spire_admin.png";
+import spireConsole from "./spire_console.png";
+import spireDeployment from "./spire_deployment.png";
+import spireServerConfig from "./spire_server_config.png";
+import spireStats from "./spire_stats.png";
 
 /** Room role key → icon URL. */
 export const ROLE_ICONS: Record<string, string> = {
@@ -179,58 +207,81 @@ export const TB_SETTINGS = tbSettings;
 
 /** Panel ID → icon URL. Used by sidebar, settings overlay, and command palette. */
 export const PANEL_ICONS: Record<string, string> = {
-  art: gsArt,
-  artStyle: gsArt,
-  media: panelMedia,
-  portraits: gsCharacters,
-  studioAbilities: panelIcons,
-  sprites: panelSprites,
-  classes: panelClasses,
-  races: panelRaces,
-  creation: panelCreation,
-  equipment: panelEquipment,
-  stats: panelStats,
-  abilityDesigner: panelAbilities,
-  conditions: panelConditions,
-  tuningWizard: gsConfig,
-  world: gsWorldMap,
-  serverConfig: panelServer,
-  infrastructure: panelInfra,
-  commands: panelCommands,
-  currencies: panelCurrencies,
-  crafting: panelScroll,
-  enchanting: panelEnchanting,
-  guilds: panelGuilds,
-  guildHalls: panelHousing,
-  factions: panelGuilds,
-  emotes: panelEmotes,
-  housing: panelHousing,
-  pets: panelPets,
-  worldEvents: panelSeasons,
-  weatherEnvironment: panelSeasons,
-  achievements: panelAchievements,
-  quests: panelScroll,
-  lore: panelScroll,
-  worldSetting: panelCosmos,
-  loreMaps: gsZone,
-  loreTimeline: panelHourglass,
-  loreRelations: panelRelations,
-  loreDocuments: panelDocuments,
+  // Forge
+  art: forgeArt,
+  artStyle: forgeArtStyle,
+  media: forgeMedia,
+  portraits: forgePortraits,
+  studioAbilities: forgeIcons,
+  sprites: forgePlayerSprites,
+  playtest: forgePlaytest,
+  // Loom
+  classes: loomClasses,
+  races: loomRaces,
+  equipment: loomEquipment,
+  abilityDesigner: loomAbilities,
+  conditions: loomStatus,
+  commands: loomCommands,
+  pets: loomPets,
+  // Orrery
+  creation: orreryCharacters,
+  world: orreryWorld,
+  infrastructure: orreryInfrastructure,
+  crafting: orreryCrafting,
+  enchanting: orreryEnchanting,
+  factions: orreryFactions,
+  housing: orreryHousing,
+  achievements: orreryAchievements,
+  tuningWizard: orreryTuningWizard,
+  // Living World
+  currencies: livingWorldCurrencies,
+  guilds: livingWorldGuilds,
+  guildHalls: livingWorldGuildHalls,
+  emotes: livingWorldEmotes,
+  worldEvents: livingWorldEvents,
+  weatherEnvironment: livingWorldWeatherEnvironment,
+  quests: livingWorldQuests,
+  sharedAssets: livingWorldSharedAssets,
+  // Arcanum
+  lore: islandArticles,
+  worldSetting: arcanumWorldSetting,
+  loreMaps: arcanumMaps,
+  loreTimeline: arcanumTimeline,
+  loreRelations: arcanumRelationships,
+  loreDocuments: arcanumDocuments,
+  storyEditor: arcanumStoryEditor,
+  // Spire
+  serverConfig: spireServerConfig,
+  stats: spireStats,
+  console: spireConsole,
+  admin: spireAdmin,
+  deployment: spireDeployment,
+  // Settings / Operations panels — keep generic icons (no themed art yet)
   hubSettings: panelHub,
   showcaseSettings: panelShowcase,
   templates: panelTemplates,
   sceneTemplates: panelScenes,
-  storyEditor: panelScenes,
   appearance: gsArt,
   services: panelKey,
   r2Settings: panelCloud,
-  deployment: panelDeploy,
-  sharedAssets: panelChest,
   rawYaml: panelNotepad,
   versionControl: panelBranch,
-  console: panelConsole,
-  admin: panelCrown,
 };
+
+/** Top-level sidebar entry → icon URL. */
+export const ISLAND_ICONS: Record<string, string> = {
+  orrery: islandOrrery,
+  loom: islandLoom,
+  forge: islandForge,
+  livingWorld: islandLivingWorld,
+  arcanum: islandArcanum,
+  spire: islandSpire,
+  articles: islandArticles,
+  zones: islandZones,
+};
+
+/** Decorative arrow used by the sidebar for back / expand chevrons. */
+export const UI_ARROW = uiArrow;
 
 /** Fallback coin icon for currencies without a custom glyph. */
 export const MISC_COIN = miscCoin;

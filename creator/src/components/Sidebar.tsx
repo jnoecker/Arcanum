@@ -1,619 +1,324 @@
-import { useState, useCallback, useMemo } from "react";
 import { useShallow } from "zustand/shallow";
-import { invoke } from "@tauri-apps/api/core";
-import { useZoneStore, type ZoneState } from "@/stores/zoneStore";
+import { useZoneStore } from "@/stores/zoneStore";
 import { useProjectStore } from "@/stores/projectStore";
 import { useLoreStore, selectArticles } from "@/stores/loreStore";
-import { useToastStore } from "@/stores/toastStore";
-import { saveZone } from "@/lib/saveZone";
-import type { WorldFile } from "@/types/world";
-import { ArticleTree } from "./lore/ArticleTree";
-import { BulkActionsBar } from "./lore/BulkActionsBar";
-import { panelTab } from "@/lib/panelRegistry";
-import { NewZoneDialog } from "./NewZoneDialog";
-import { ImportZoneDialog } from "./ImportZoneDialog";
-import { RenameZoneDialog } from "./RenameZoneDialog";
-import { DuplicateZoneDialog } from "./DuplicateZoneDialog";
-import { ConfirmDialog } from "./ConfirmDialog";
+import { useSidebarStore, type DrillTarget } from "@/stores/sidebarStore";
+import { panelTab, type Island } from "@/lib/panelRegistry";
+import { ISLANDS } from "@/lib/islandRegistry";
+import { ISLAND_ICONS, UI_ARROW } from "@/assets/ui";
 import { CosmicBackdrop } from "./ui/CosmicBackdrop";
-import {
-  addRoom,
-  addMob,
-  addItem,
-  addShop,
-  addTrainer,
-  addQuest,
-  addGatheringNode,
-  addRecipe,
-  setDungeon,
-  generateEntityId,
-  generateRoomId,
-} from "@/lib/zoneEdits";
-import type {
-  MobFile,
-  ItemFile,
-  ShopFile,
-  TrainerFile,
-  QuestFile,
-  GatheringNodeFile,
-  RecipeFile,
-} from "@/types/world";
+import { ArticlesPanel } from "./sidebar/ArticlesPanel";
+import { ZonesPanel } from "./sidebar/ZonesPanel";
+import { IslandPanelList } from "./sidebar/IslandPanelList";
 
+// ─── Sidebar entry registry ─────────────────────────────────────────
+// Order mirrors the world map (orrery, loom, forge — top row;
+// livingWorld, arcanum, spire — bottom row), then the two virtual
+// "islands" for entity collections.
 
-// ─── Zone entity categories ─────────────────────────────────────────
-
-interface CategoryDef {
-  key: string;
-  label: string;
-  collection: keyof WorldFile;
-  nameField: string;
-  addFn?: (world: WorldFile, zoneId: string) => WorldFile;
-  singular?: boolean;
-  targetView?: string;
+interface SidebarEntry {
+  target: Exclude<DrillTarget, null>;
+  icon: string;
+  title: string;
+  tagline: string;
 }
 
-const CATEGORY_COLORS: Record<string, string> = {
-  room: "var(--color-entity-room)",
-  mob: "var(--color-entity-mob)",
-  item: "var(--color-entity-item)",
-  shop: "var(--color-entity-shop)",
-  trainer: "var(--color-entity-trainer)",
-  quest: "var(--color-entity-quest)",
-  gatheringNode: "var(--color-entity-gather)",
-  recipe: "var(--color-entity-recipe)",
-  dungeon: "var(--color-entity-dungeon)",
-};
+function buildIslandEntry(id: Island): SidebarEntry {
+  const def = ISLANDS[id];
+  return {
+    target: id,
+    icon: ISLAND_ICONS[id] ?? "",
+    title: def?.title ?? id,
+    tagline: def?.tagline ?? "",
+  };
+}
 
-const CATEGORIES: CategoryDef[] = [
+const ENTRIES: SidebarEntry[] = [
+  buildIslandEntry("orrery"),
+  buildIslandEntry("loom"),
+  buildIslandEntry("forge"),
+  buildIslandEntry("livingWorld"),
+  buildIslandEntry("arcanum"),
+  buildIslandEntry("spire"),
   {
-    key: "room",
-    label: "Rooms",
-    collection: "rooms",
-    nameField: "title",
-    addFn: (world) => {
-      const id = generateRoomId(world);
-      return addRoom(world, id, { title: id, description: "", exits: {} });
-    },
+    target: "articles",
+    icon: ISLAND_ICONS.articles ?? "",
+    title: "Articles",
+    tagline: "Lore articles, characters, factions, locations.",
   },
   {
-    key: "mob",
-    label: "Mobs",
-    collection: "mobs",
-    nameField: "name",
-    addFn: (world) => {
-      const id = generateEntityId(world, "mobs");
-      const firstRoom = Object.keys(world.rooms)[0] ?? "";
-      return addMob(world, id, { name: id, room: firstRoom, tier: "standard", level: 1 } as MobFile);
-    },
-  },
-  {
-    key: "item",
-    label: "Items",
-    collection: "items",
-    nameField: "displayName",
-    addFn: (world) => {
-      const id = generateEntityId(world, "items");
-      return addItem(world, id, { displayName: id, description: "", keyword: id } as ItemFile);
-    },
-  },
-  {
-    key: "shop",
-    label: "Shops",
-    collection: "shops",
-    nameField: "name",
-    addFn: (world) => {
-      const id = generateEntityId(world, "shops");
-      const firstRoom = Object.keys(world.rooms)[0] ?? "";
-      return addShop(world, id, { name: id, room: firstRoom, items: [] } as ShopFile);
-    },
-  },
-  {
-    key: "trainer",
-    label: "Trainers",
-    collection: "trainers",
-    nameField: "name",
-    addFn: (world) => {
-      const id = generateEntityId(world, "trainers");
-      const firstRoom = Object.keys(world.rooms)[0] ?? "";
-      return addTrainer(world, id, { name: id, room: firstRoom } as TrainerFile);
-    },
-  },
-  {
-    key: "gatheringNode",
-    label: "Gathering Nodes",
-    collection: "gatheringNodes",
-    nameField: "displayName",
-    addFn: (world) => {
-      const id = generateEntityId(world, "gatheringNodes");
-      const firstRoom = Object.keys(world.rooms)[0] ?? "";
-      return addGatheringNode(world, id, {
-        displayName: id,
-        skill: "",
-        yields: [],
-        room: firstRoom,
-      } as GatheringNodeFile);
-    },
-  },
-  {
-    key: "quest",
-    label: "Quests",
-    collection: "quests",
-    nameField: "name",
-    addFn: (world) => {
-      const id = generateEntityId(world, "quests");
-      return addQuest(world, id, { name: id, giver: "" } as QuestFile);
-    },
-  },
-  {
-    key: "recipe",
-    label: "Recipes",
-    collection: "recipes",
-    nameField: "displayName",
-    addFn: (world) => {
-      const id = generateEntityId(world, "recipes");
-      return addRecipe(world, id, {
-        displayName: id,
-        skill: "",
-        materials: [],
-        outputItemId: "",
-      } as RecipeFile);
-    },
-  },
-  {
-    key: "dungeon",
-    label: "Dungeon",
-    collection: "dungeon",
-    nameField: "name",
-    singular: true,
-    targetView: "dungeon",
-    addFn: (world) =>
-      setDungeon(world, {
-        name: `${world.zone} Dungeon`,
-        roomCountMin: 20,
-        roomCountMax: 25,
-      }),
+    target: "zones",
+    icon: ISLAND_ICONS.zones ?? "",
+    title: "Zones",
+    tagline: "World map zones and their entities.",
   },
 ];
 
-
-// ─── Zone tree node ─────────────────────────────────────────────────
-
-function ZoneTree({
-  zoneId,
-  zoneState,
-  isActive,
-  onDelete,
-  onRename,
-  onDuplicate,
-}: {
-  zoneId: string;
-  zoneState: ZoneState;
-  isActive: boolean;
-  onDelete: (zoneId: string) => void;
-  onRename: (zoneId: string) => void;
-  onDuplicate: (zoneId: string) => void;
-}) {
-  const openTab = useProjectStore((s) => s.openTab);
-  const navigateTo = useProjectStore((s) => s.navigateTo);
-  const updateZone = useZoneStore((s) => s.updateZone);
-  const [expanded, setExpanded] = useState(false);
-  const [saving, setSaving] = useState(false);
-
-  const world = zoneState.data;
-
-  const handleZoneClick = () => {
-    openTab({ id: `zone:${zoneId}`, kind: "zone", label: zoneId });
-  };
-
-  const handleEntityClick = (cat: CategoryDef, entityId: string) => {
-    if (cat.targetView) {
-      navigateTo({ zoneId, view: cat.targetView });
-    } else if (cat.key === "room") {
-      navigateTo({ zoneId, roomId: entityId });
-    } else {
-      navigateTo({ zoneId, entityKind: cat.key, entityId });
-    }
-  };
-
-  const handleAdd = (cat: CategoryDef) => {
-    if (!cat.addFn) return;
-    try {
-      const next = cat.addFn(world, zoneId);
-      updateZone(zoneId, next);
-      if (cat.singular) {
-        if (cat.targetView) navigateTo({ zoneId, view: cat.targetView });
-        return;
-      }
-      const collection = next[cat.collection] as Record<string, unknown> | undefined;
-      const oldCollection = world[cat.collection] as Record<string, unknown> | undefined;
-      if (collection && oldCollection) {
-        const newId = Object.keys(collection).find((k) => !(k in oldCollection));
-        if (newId) {
-          if (cat.key === "room") {
-            navigateTo({ zoneId, roomId: newId });
-          } else {
-            navigateTo({ zoneId, entityKind: cat.key, entityId: newId });
-          }
-        }
-      }
-    } catch {
-      // ignore duplicate ID errors etc.
-    }
-  };
-
-  const handleSaveZone = async () => {
-    if (saving) return;
-    setSaving(true);
-    try {
-      await saveZone(zoneId);
-      useToastStore.getState().show({
-        kicker: "Saved",
-        message: zoneState.data.zone || zoneId,
-        variant: "astral",
-      });
-    } catch (err) {
-      console.error("Zone save failed:", err);
-      useToastStore.getState().show({
-        kicker: "Save failed",
-        message: err instanceof Error ? err.message : "Unknown error",
-        variant: "ember",
-      });
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  return (
-    <li className="group/zone">
-      <div className="flex items-center gap-1">
-        <button
-          onClick={() => setExpanded((v) => !v)}
-          aria-expanded={expanded}
-          aria-label={expanded ? `Collapse ${zoneState.data.zone || zoneId}` : `Expand ${zoneState.data.zone || zoneId}`}
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-2xs text-text-muted transition hover:bg-[var(--chrome-highlight-strong)] hover:text-text-primary"
-        >
-          {expanded ? "\u25BE" : "\u25B8"}
-        </button>
-        <button
-          onClick={handleZoneClick}
-          className={`flex min-w-0 flex-1 items-baseline gap-2 rounded-2xl border px-3 py-2 text-left text-sm transition ${
-            isActive
-              ? "border-border-active bg-gradient-active text-text-primary"
-              : "border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] text-text-secondary hover:bg-[var(--chrome-highlight-strong)] hover:text-text-primary"
-          }`}
-        >
-          <span className="min-w-0 truncate font-medium" title={zoneState.data.zone || zoneId}>{zoneState.data.zone || zoneId}</span>
-          <span className="shrink-0 text-2xs text-text-muted" title={zoneId}>{zoneId}</span>
-        </button>
-        {zoneState.dirty && (
-          <button
-            onClick={handleSaveZone}
-            disabled={saving}
-            className="shrink-0 rounded-full border border-accent/50 bg-accent/12 px-2.5 py-1.5 text-2xs font-semibold uppercase tracking-label text-accent shadow-[0_0_12px_rgb(var(--accent-rgb)/0.25)] transition hover:border-accent hover:bg-accent/20 hover:shadow-[0_0_18px_rgb(var(--accent-rgb)/0.45)] disabled:opacity-60 animate-warm-breathe"
-            title={`Save ${zoneState.data.zone || zoneId}`}
-            aria-label={`Save ${zoneState.data.zone || zoneId}`}
-          >
-            {saving ? "…" : "Save"}
-          </button>
-        )}
-      </div>
-
-      {expanded && (
-        <div className="ml-10 mt-2 flex flex-col gap-2.5 border-l border-accent/15 pl-4">
-          <div className="flex items-center gap-1.5 pb-0.5">
-            <button
-              onClick={() => onRename(zoneId)}
-              className="rounded-full border border-[var(--chrome-stroke)] px-2.5 py-1 text-2xs text-text-muted transition hover:border-accent/40 hover:text-accent"
-              title="Rename zone"
-              aria-label="Rename zone"
-            >
-              Rename
-            </button>
-            <button
-              onClick={() => onDuplicate(zoneId)}
-              className="rounded-full border border-[var(--chrome-stroke)] px-2.5 py-1 text-2xs text-text-muted transition hover:border-accent/40 hover:text-accent"
-              title="Duplicate zone"
-              aria-label="Duplicate zone"
-            >
-              Duplicate
-            </button>
-            <button
-              onClick={() => onDelete(zoneId)}
-              className="rounded-full border border-[var(--chrome-stroke)] px-2.5 py-1 text-2xs text-text-muted transition hover:border-status-danger/40 hover:text-status-danger"
-              title="Delete zone"
-              aria-label="Delete zone"
-            >
-              Remove
-            </button>
-          </div>
-          {CATEGORIES.map((cat) => {
-            if (cat.singular) {
-              const data = world[cat.collection] as Record<string, unknown> | undefined;
-              const present = !!data;
-              if (!present && !cat.addFn) return null;
-              const name = present && data ? (data[cat.nameField] as string | undefined) : undefined;
-              return (
-                <div key={cat.key} className="border-t border-[var(--chrome-stroke)] pt-2 first:border-t-0 first:pt-0">
-                  <div className="flex items-center gap-2">
-                    <span
-                      className="inline-block h-1.5 w-1.5 shrink-0 rounded-full"
-                      style={{ background: CATEGORY_COLORS[cat.key] }}
-                      aria-hidden="true"
-                    />
-                    <span className="font-display font-semibold text-2xs uppercase tracking-label text-text-secondary">
-                      {cat.label}
-                    </span>
-                    <span className="text-2xs text-text-muted">{present ? 1 : 0}</span>
-                    {!present && cat.addFn && (
-                      <button
-                        onClick={() => handleAdd(cat)}
-                        className="ml-auto rounded-full border border-[var(--chrome-stroke)] px-2 py-1 text-2xs text-text-muted transition hover:bg-[var(--chrome-highlight-strong)] hover:text-text-primary"
-                        title={`Add ${cat.label.toLowerCase()}`}
-                        aria-label={`Add ${cat.label.toLowerCase()}`}
-                      >
-                        Add
-                      </button>
-                    )}
-                  </div>
-                  {present && (
-                    <ul className="flex flex-col">
-                      <li>
-                        <button
-                          onClick={() => handleEntityClick(cat, cat.key)}
-                          className="w-full truncate rounded-xl px-2 py-1.5 text-left text-xs text-text-muted transition hover:bg-accent/8 hover:text-text-primary"
-                          title={name || cat.label}
-                        >
-                          {name || cat.label}
-                        </button>
-                      </li>
-                    </ul>
-                  )}
-                </div>
-              );
-            }
-
-            const collection = world[cat.collection] as Record<string, Record<string, unknown>> | undefined;
-            const entries = collection ? Object.entries(collection) : [];
-            if (entries.length === 0 && !cat.addFn) return null;
-
-            return (
-              <div key={cat.key} className="border-t border-[var(--chrome-stroke)] pt-2 first:border-t-0 first:pt-0">
-                <div className="flex items-center gap-2">
-                  <span
-                    className="inline-block h-1.5 w-1.5 shrink-0 rounded-full"
-                    style={{ background: CATEGORY_COLORS[cat.key] }}
-                    aria-hidden="true"
-                  />
-                  <span className="font-display font-semibold text-2xs uppercase tracking-label text-text-secondary">
-                    {cat.label}
-                  </span>
-                  <span className="text-2xs text-text-muted">
-                    {entries.length}
-                  </span>
-                  {cat.addFn && (
-                    <button
-                      onClick={() => handleAdd(cat)}
-                      className="ml-auto rounded-full border border-[var(--chrome-stroke)] px-2 py-1 text-2xs text-text-muted transition hover:bg-[var(--chrome-highlight-strong)] hover:text-text-primary"
-                      title={`Add ${cat.label.replace(/s$/, "").toLowerCase()}`}
-                      aria-label={`Add ${cat.label.replace(/s$/, "").toLowerCase()}`}
-                    >
-                      Add
-                    </button>
-                  )}
-                </div>
-                {entries.length > 0 && (
-                  <ul className="flex flex-col">
-                    {entries.map(([id, entity]) => {
-                      const name = (entity as Record<string, unknown>)[cat.nameField] as string | undefined;
-                      return (
-                        <li key={id}>
-                          <button
-                            onClick={() => handleEntityClick(cat, id)}
-                            className="w-full truncate rounded-xl px-2 py-1.5 text-left text-xs text-text-muted transition hover:bg-accent/8 hover:text-text-primary"
-                            title={name || id}
-                          >
-                            {name || id}
-                          </button>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      )}
-    </li>
-  );
-}
-
+const ENTRY_BY_TARGET: Record<string, SidebarEntry> = Object.fromEntries(
+  ENTRIES.map((e) => [e.target, e]),
+);
 
 // ─── Sidebar ────────────────────────────────────────────────────────
 
 export function Sidebar() {
-  const zones = useZoneStore((s) => s.zones);
-  const { tabs: openTabs, activeTabId, project } = useProjectStore(
-    useShallow((s) => ({ tabs: s.tabs, activeTabId: s.activeTabId, project: s.project })),
+  const { mode, drillTarget, toggleMode, drillInto, goBack } = useSidebarStore(
+    useShallow((s) => ({
+      mode: s.mode,
+      drillTarget: s.drillTarget,
+      toggleMode: s.toggleMode,
+      drillInto: s.drillInto,
+      goBack: s.goBack,
+    })),
   );
-  const closeTab = useProjectStore((s) => s.closeTab);
-  const openTab = useProjectStore((s) => s.openTab);
-  const removeZone = useZoneStore((s) => s.removeZone);
-  const articles = useLoreStore(selectArticles);
-  const articleCount = Object.keys(articles).length;
-  const [showNewZone, setShowNewZone] = useState(false);
-  const showImportZone = useProjectStore((s) => s.showImportZone);
-  const setShowImportZone = useProjectStore((s) => s.setShowImportZone);
-  const [renameTarget, setRenameTarget] = useState<string | null>(null);
-  const [duplicateTarget, setDuplicateTarget] = useState<string | null>(null);
-  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
-  const hasProject = !!project;
 
-  const handleDeleteZone = useCallback(async (zoneId: string) => {
-    const zoneState = zones.get(zoneId);
-    if (!zoneState) return;
-    try {
-      if (project?.format === "standalone") {
-        await invoke("delete_zone_directory", {
-          projectDir: project.mudDir,
-          zoneId,
-        });
-      } else {
-        await invoke("delete_zone_file", { filePath: zoneState.filePath });
-      }
-    } catch (err) {
-      console.error("Failed to delete zone:", err);
+  // Clicking "Articles" anywhere in the sidebar drills into the article tree
+  // AND opens the lore panel in the main area, so the user can keep editing
+  // whichever article is active.
+  const handlePick = (target: Exclude<DrillTarget, null>) => {
+    drillInto(target);
+    if (target === "articles") {
+      useProjectStore.getState().openTab(panelTab("lore"));
     }
-    closeTab(`zone:${zoneId}`);
-    removeZone(zoneId);
-    setDeleteTarget(null);
-  }, [zones, closeTab, removeZone, project]);
+  };
 
-  const sortedZones = useMemo(
-    () => [...zones.entries()].sort(([a], [b]) => a.localeCompare(b)),
-    [zones],
-  );
+  if (mode === "rail") {
+    return <RailSidebar onExpand={toggleMode} onPick={handlePick} drillTarget={drillTarget} />;
+  }
 
   return (
-    <nav aria-label="Main navigation" className="relative flex min-h-0 w-full shrink-0 flex-col overflow-hidden rounded-3xl border border-[var(--chrome-stroke)] bg-gradient-panel shadow-panel lg:w-[clamp(16rem,22vw,23rem)]">
+    <nav
+      aria-label="Main navigation"
+      className="relative flex min-h-0 w-full shrink-0 flex-col overflow-hidden rounded-3xl border border-[var(--chrome-stroke)] bg-gradient-panel shadow-panel lg:w-[clamp(16rem,22vw,23rem)]"
+    >
       <CosmicBackdrop variant="panel" className="opacity-90" />
       <div className="pointer-events-none absolute inset-x-0 top-0 h-48 bg-gradient-glow-top" />
 
-      {/* ── Stats bar ────────────────────────────────────────────── */}
-      <div className="relative z-10 shrink-0 px-4 pt-4 pb-2">
-        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 px-1 text-3xs text-text-muted">
-          <span className="whitespace-nowrap">{zones.size} zones</span>
-          <span className="text-border-default">&middot;</span>
-          <span className="whitespace-nowrap">{articleCount} lore</span>
-          <span className="text-border-default">&middot;</span>
-          <span className="whitespace-nowrap">{openTabs.length} open</span>
-          <button
-            onClick={() => openTab(panelTab("worldSetting"))}
-            className="focus-ring shell-pill ml-auto whitespace-nowrap rounded-full px-2 py-0.5 font-display text-[9px] font-semibold uppercase tracking-wide-ui text-accent"
-            title="Open world settings"
-            aria-label="Open world settings"
-          >
-            World Settings
-          </button>
-        </div>
-      </div>
+      {drillTarget ? (
+        <DrilledHeader target={drillTarget} onBack={goBack} onCollapse={toggleMode} />
+      ) : (
+        <TopLevelHeader onCollapse={toggleMode} />
+      )}
 
-      {/* ── Two-pane layout: Articles on top, Cartography on bottom ── */}
       <div className="relative z-10 flex min-h-0 flex-1 flex-col">
-        {/* ── Articles (top half) ──────────────────────────────────
-             ArticleTree has its own search bar and scroll container,
-             so we do NOT add overflow-y-auto here. */}
-        <div className="flex min-h-0 flex-1 flex-col px-4 pb-3">
-          <div className="mb-1 mt-1 shrink-0 flex items-center justify-between">
-            <h2 className="text-2xs font-medium uppercase tracking-label text-text-secondary">
-              Articles
-              <span className="ml-2 text-3xs font-normal text-text-muted">{articleCount}</span>
-            </h2>
-          </div>
-          <BulkActionsBar />
-          <ArticleTree />
-        </div>
-
-        {/* ── Divider ── */}
-        <div className="ornate-divider mx-4 shrink-0" aria-hidden="true" />
-
-        {/* ── Cartography (bottom half) ────────────────────────── */}
-        <section aria-label="Cartography" className="min-h-0 flex-1 overflow-y-auto px-4 pb-4 pt-3">
-          <div className="mb-3 flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
-            {hasProject ? (
-              <span className="whitespace-nowrap text-2xs uppercase tracking-label text-text-muted">
-                {sortedZones.length} zone{sortedZones.length === 1 ? "" : "s"}
-              </span>
-            ) : (
-              <span aria-hidden="true" />
-            )}
-            <div className="flex flex-wrap items-center gap-2">
-              <button
-                onClick={() => setShowImportZone(true)}
-                className="focus-ring shell-pill whitespace-nowrap rounded-full px-3 py-1 text-2xs font-medium"
-                title="Import zone YAML files"
-                aria-label="Import zone YAML files"
-              >
-                Import
-              </button>
-
-              <button
-                onClick={() => setShowNewZone(true)}
-                className="focus-ring shell-pill whitespace-nowrap rounded-full px-3 py-1 text-2xs font-medium"
-                title="New zone"
-              >
-                New zone
-              </button>
-            </div>
-          </div>
-          {sortedZones.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] px-4 py-5 text-sm text-text-muted">
-              {hasProject ? (
-                <>
-                  <p className="mb-3 leading-relaxed">
-                    This world has no zones yet. Create your first zone to
-                    begin shaping it.
-                  </p>
-                  <button
-                    onClick={() => setShowNewZone(true)}
-                    className="focus-ring rounded-full bg-accent px-4 py-1.5 text-2xs font-medium text-accent-emphasis transition-[box-shadow,filter] hover:shadow-[var(--glow-aurum)] hover:brightness-110"
-                  >
-                    Create your first zone
-                  </button>
-                </>
-              ) : (
-                <p className="leading-relaxed">Open a world to begin shaping it.</p>
-              )}
-            </div>
-          ) : (
-            <ul className="flex flex-col gap-0.5">
-              {sortedZones.map(([zoneId, zoneState]) => (
-                <ZoneTree
-                  key={zoneId}
-                  zoneId={zoneId}
-                  zoneState={zoneState}
-                  isActive={activeTabId === `zone:${zoneId}`}
-                  onDelete={(id) => setDeleteTarget(id)}
-                  onRename={(id) => setRenameTarget(id)}
-                  onDuplicate={(id) => setDuplicateTarget(id)}
-                />
-              ))}
-            </ul>
-          )}
-        </section>
+        {drillTarget ? <DrilledBody target={drillTarget} /> : <TopLevelList onPick={handlePick} />}
       </div>
 
-      {/* ── Footer hints ─────────────────────────────────────────── */}
       <div className="relative z-10 border-t border-[var(--chrome-stroke)] px-4 py-3 text-2xs text-text-muted">
-        Ctrl+M map | Ctrl+K palette | Ctrl+, settings
+        Ctrl+M map | Ctrl+K palette | Ctrl+, settings | Ctrl+\ collapse
+      </div>
+    </nav>
+  );
+}
+
+// ─── Top-level views ────────────────────────────────────────────────
+
+function TopLevelHeader({ onCollapse }: { onCollapse: () => void }) {
+  const zonesCount = useZoneStore((s) => s.zones.size);
+  const articleCount = useLoreStore((s) => Object.keys(selectArticles(s)).length);
+  const openTabs = useProjectStore((s) => s.tabs);
+  const openTab = useProjectStore((s) => s.openTab);
+
+  return (
+    <div className="relative z-10 shrink-0 px-4 pt-4 pb-3">
+      <div className="flex items-center gap-2">
+        <button
+          onClick={onCollapse}
+          className="focus-ring shell-pill flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-text-muted transition hover:text-text-primary"
+          title="Collapse sidebar (Ctrl+\\)"
+          aria-label="Collapse sidebar"
+        >
+          <img src={UI_ARROW} alt="" aria-hidden="true" className="h-4 w-4" />
+        </button>
+        <button
+          onClick={() => openTab(panelTab("worldSetting"))}
+          className="focus-ring shell-pill ml-auto whitespace-nowrap rounded-full px-2.5 py-1 font-display text-[9px] font-semibold uppercase tracking-wide-ui text-accent"
+          title="Open world settings"
+          aria-label="Open world settings"
+        >
+          World Settings
+        </button>
+      </div>
+      <div className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 px-1 text-3xs text-text-muted">
+        <span className="whitespace-nowrap">{zonesCount} zones</span>
+        <span className="text-border-default">·</span>
+        <span className="whitespace-nowrap">{articleCount} lore</span>
+        <span className="text-border-default">·</span>
+        <span className="whitespace-nowrap">{openTabs.length} open</span>
+      </div>
+    </div>
+  );
+}
+
+function TopLevelList({ onPick }: { onPick: (target: Exclude<DrillTarget, null>) => void }) {
+  return (
+    <ul className="flex min-h-0 flex-1 flex-col gap-1.5 overflow-y-auto px-3 pb-4">
+      {ENTRIES.map((entry) => (
+        <li key={entry.target}>
+          <button
+            onClick={() => onPick(entry.target)}
+            className="group/entry flex w-full items-center gap-3 rounded-2xl border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] px-3 py-2.5 text-left text-text-secondary transition hover:border-accent/40 hover:bg-[var(--chrome-highlight-strong)] hover:text-text-primary"
+            title={entry.tagline}
+          >
+            <img
+              src={entry.icon}
+              alt=""
+              aria-hidden="true"
+              className="h-9 w-9 shrink-0 rounded-lg object-contain"
+            />
+            <span className="min-w-0 flex-1">
+              <span className="block font-display text-sm font-semibold tracking-label">
+                {entry.title}
+              </span>
+              {entry.tagline && (
+                <span className="mt-0.5 block truncate text-2xs text-text-muted">
+                  {entry.tagline}
+                </span>
+              )}
+            </span>
+            <span
+              className="self-center text-text-muted transition group-hover/entry:translate-x-0.5 group-hover/entry:text-accent"
+              aria-hidden="true"
+            >
+              {"›"}
+            </span>
+          </button>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+// ─── Drilled views ──────────────────────────────────────────────────
+
+function DrilledHeader({
+  target,
+  onBack,
+  onCollapse,
+}: {
+  target: Exclude<DrillTarget, null>;
+  onBack: () => void;
+  onCollapse: () => void;
+}) {
+  const entry = ENTRY_BY_TARGET[target];
+  if (!entry) return null;
+  return (
+    <div className="relative z-10 shrink-0 px-4 pt-4 pb-3">
+      <div className="flex items-center gap-2">
+        <button
+          onClick={onBack}
+          className="focus-ring shell-pill flex h-8 shrink-0 items-center gap-1 rounded-full px-2.5 text-2xs text-text-muted transition hover:text-text-primary"
+          title="Back to islands"
+          aria-label="Back to islands"
+        >
+          <img
+            src={UI_ARROW}
+            alt=""
+            aria-hidden="true"
+            className="h-3.5 w-3.5 -scale-x-100"
+          />
+          <span>Back</span>
+        </button>
+        <button
+          onClick={onCollapse}
+          className="focus-ring shell-pill ml-auto flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-text-muted transition hover:text-text-primary"
+          title="Collapse sidebar (Ctrl+\\)"
+          aria-label="Collapse sidebar"
+        >
+          <img src={UI_ARROW} alt="" aria-hidden="true" className="h-4 w-4" />
+        </button>
+      </div>
+      <div className="mt-3 flex items-center gap-2 px-1">
+        <img
+          src={entry.icon}
+          alt=""
+          aria-hidden="true"
+          className="h-7 w-7 shrink-0 rounded-md object-contain"
+        />
+        <h2 className="font-display text-base font-semibold tracking-label text-text-primary">
+          {entry.title}
+        </h2>
+      </div>
+      {entry.tagline && (
+        <p className="mt-1 px-1 text-2xs text-text-muted">{entry.tagline}</p>
+      )}
+    </div>
+  );
+}
+
+function DrilledBody({ target }: { target: Exclude<DrillTarget, null> }) {
+  if (target === "articles") return <ArticlesPanel />;
+  if (target === "zones") return <ZonesPanel />;
+  if (target === "settings") {
+    return (
+      <div className="px-4 pb-4 pt-1 text-sm text-text-muted">
+        Open settings via Ctrl+, — they live in the modal, not the sidebar.
+      </div>
+    );
+  }
+  return <IslandPanelList island={target} />;
+}
+
+// ─── Rail view ──────────────────────────────────────────────────────
+
+function RailSidebar({
+  onExpand,
+  onPick,
+  drillTarget,
+}: {
+  onExpand: () => void;
+  onPick: (target: Exclude<DrillTarget, null>) => void;
+  drillTarget: DrillTarget;
+}) {
+  return (
+    <nav
+      aria-label="Main navigation (collapsed)"
+      className="relative flex min-h-0 w-14 shrink-0 flex-col overflow-hidden rounded-3xl border border-[var(--chrome-stroke)] bg-gradient-panel shadow-panel"
+    >
+      <CosmicBackdrop variant="panel" className="opacity-90" />
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-48 bg-gradient-glow-top" />
+
+      <div className="relative z-10 shrink-0 px-2 pt-3 pb-2">
+        <button
+          onClick={onExpand}
+          className="focus-ring shell-pill flex h-9 w-full items-center justify-center rounded-full text-text-muted transition hover:text-text-primary"
+          title="Expand sidebar (Ctrl+\\)"
+          aria-label="Expand sidebar"
+        >
+          <img
+            src={UI_ARROW}
+            alt=""
+            aria-hidden="true"
+            className="h-4 w-4 -scale-x-100"
+          />
+        </button>
       </div>
 
-      {showNewZone && <NewZoneDialog onClose={() => setShowNewZone(false)} />}
-      {showImportZone && <ImportZoneDialog onClose={() => setShowImportZone(false)} />}
-
-      {duplicateTarget && (
-        <DuplicateZoneDialog
-          zoneId={duplicateTarget}
-          onClose={() => setDuplicateTarget(null)}
-        />
-      )}
-
-      {renameTarget && (
-        <RenameZoneDialog
-          zoneId={renameTarget}
-          onClose={() => setRenameTarget(null)}
-        />
-      )}
-      {deleteTarget && (
-        <ConfirmDialog
-          title="Delete Zone"
-          message={`Delete zone "${deleteTarget}"? This will remove the YAML file from disk. Any cross-zone references to this zone will break.`}
-          confirmLabel="Delete"
-          destructive
-          onConfirm={() => handleDeleteZone(deleteTarget)}
-          onCancel={() => setDeleteTarget(null)}
-        />
-      )}
+      <ul className="relative z-10 flex min-h-0 flex-1 flex-col items-center gap-1.5 overflow-y-auto px-2 pb-4">
+        {ENTRIES.map((entry) => {
+          const isActive = drillTarget === entry.target;
+          return (
+            <li key={entry.target}>
+              <button
+                onClick={() => onPick(entry.target)}
+                className={`flex h-10 w-10 items-center justify-center rounded-xl border transition ${
+                  isActive
+                    ? "border-border-active bg-gradient-active"
+                    : "border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] hover:border-accent/40 hover:bg-[var(--chrome-highlight-strong)]"
+                }`}
+                title={`${entry.title} — ${entry.tagline}`}
+                aria-label={entry.title}
+              >
+                <img
+                  src={entry.icon}
+                  alt=""
+                  aria-hidden="true"
+                  className="h-7 w-7 object-contain"
+                />
+              </button>
+            </li>
+          );
+        })}
+      </ul>
     </nav>
   );
 }

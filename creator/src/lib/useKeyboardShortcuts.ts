@@ -4,6 +4,7 @@ import { useZoneStore } from "@/stores/zoneStore";
 import { useLoreStore } from "@/stores/loreStore";
 import { useStoryStore } from "@/stores/storyStore";
 import { useConfigStore } from "@/stores/configStore";
+import { useSidebarStore } from "@/stores/sidebarStore";
 import { saveEverything } from "@/lib/saveAll";
 import { PANEL_MAP, panelTab } from "@/lib/panelRegistry";
 import { useToastStore } from "@/stores/toastStore";
@@ -88,6 +89,13 @@ export function useKeyboardShortcuts() {
       if (e.key === ",") {
         e.preventDefault();
         useProjectStore.getState().openTab(panelTab("services"));
+        return;
+      }
+
+      // ─── Ctrl+\ → toggle sidebar rail/full ─────────────────
+      if (e.key === "\\") {
+        e.preventDefault();
+        useSidebarStore.getState().toggleMode();
         return;
       }
 

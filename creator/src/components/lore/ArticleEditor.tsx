@@ -282,6 +282,7 @@ export function ArticleEditor({ articleId }: { articleId: string }) {
         article={article}
         onImageChange={(image) => patch({ image })}
         onGalleryChange={(gallery) => patch({ gallery })}
+        onSubjectsChange={(sceneSubjects) => patch({ sceneSubjects })}
       />
 
       {/* Relations */}

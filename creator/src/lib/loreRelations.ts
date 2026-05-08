@@ -44,6 +44,40 @@ export function extractMentions(content: string): ArticleRelation[] {
 }
 
 /**
+ * Count how many times each article ID appears as a @mention in Tiptap
+ * content. Unlike `extractMentions`, this preserves frequency so callers
+ * can rank by prominence (e.g., picking the most-mentioned subject).
+ */
+export function extractMentionCounts(content: string): Map<string, number> {
+  const counts = new Map<string, number>();
+  if (!content || !content.startsWith("{")) return counts;
+
+  try {
+    const doc = JSON.parse(content);
+
+    function walk(node: unknown) {
+      if (!node || typeof node !== "object") return;
+      const n = node as Record<string, unknown>;
+
+      if (n.type === "mention" && n.attrs) {
+        const attrs = n.attrs as Record<string, unknown>;
+        const id = typeof attrs.id === "string" ? attrs.id : null;
+        if (id) counts.set(id, (counts.get(id) ?? 0) + 1);
+      }
+
+      if (Array.isArray(n.content)) {
+        for (const child of n.content) walk(child);
+      }
+    }
+
+    walk(doc);
+    return counts;
+  } catch {
+    return counts;
+  }
+}
+
+/**
  * Convert Tiptap JSON content to plain text (for LLM prompts).
  * Strips formatting, renders mentions as their labels.
  */

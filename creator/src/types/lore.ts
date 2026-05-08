@@ -42,6 +42,12 @@ export interface Article {
   relations?: ArticleRelation[];
   image?: string;
   gallery?: string[];
+  /**
+   * Article IDs of @mentioned entities that should be treated as visual
+   * subjects when generating art for this article. Undefined = use the
+   * template-specific auto-default; empty array = explicit "no subjects."
+   */
+  sceneSubjects?: string[];
   draft?: boolean;
   createdAt: string;
   updatedAt: string;

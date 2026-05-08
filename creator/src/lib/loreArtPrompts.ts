@@ -2,7 +2,14 @@ import type { Article, ArticleTemplate, TimelineEvent } from "@/types/lore";
 import { ARCANUM_PREAMBLE, GENTLE_MAGIC_PREAMBLE, type ArtStyle } from "@/lib/arcanumPrompts";
 import { buildVisualStyleDirective } from "@/lib/loreGeneration";
 import { useLoreStore } from "@/stores/loreStore";
-import { tiptapToPlainText } from "@/lib/loreRelations";
+import { extractMentionCounts, tiptapToPlainText } from "@/lib/loreRelations";
+
+const SCENE_SUBJECT_DEFAULT_TEMPLATES: ReadonlySet<ArticleTemplate> = new Set([
+  "event",
+  "story",
+]);
+
+const SCENE_SUBJECT_MAX = 3;
 
 // ─── Template → asset type mapping ──────────────────────────────────
 
@@ -151,6 +158,45 @@ export function getTimelineEventContext(event: TimelineEvent): string {
 }
 
 /**
+ * Pick the auto-default scene subjects when the user hasn't curated them.
+ * For event/story templates, surface the single most-frequently-mentioned
+ * entity. Other templates default to none — the article's own subject is
+ * implicit, and other @mentions tend to be backstory references the LLM
+ * shouldn't try to depict.
+ */
+export function defaultSceneSubjects(article: Article): string[] {
+  if (!SCENE_SUBJECT_DEFAULT_TEMPLATES.has(article.template)) return [];
+  const counts = extractMentionCounts(article.content);
+  if (counts.size === 0) return [];
+  let bestId: string | null = null;
+  let bestCount = 0;
+  for (const [id, n] of counts) {
+    if (n > bestCount) {
+      bestCount = n;
+      bestId = id;
+    }
+  }
+  return bestId ? [bestId] : [];
+}
+
+/**
+ * Resolve the effective scene subjects for an article. Returns the user's
+ * explicit choice when set (including empty for "none"), otherwise the
+ * template-driven default.
+ */
+export function resolveSceneSubjects(article: Article): string[] {
+  return article.sceneSubjects ?? defaultSceneSubjects(article);
+}
+
+/** Short visual-leaning summary for a referenced subject article. */
+function subjectSummary(article: Article): string {
+  const appearance = articleAppearance(article);
+  if (appearance) return appearance.slice(0, 400);
+  const plain = tiptapToPlainText(article.content);
+  return plain.slice(0, 400);
+}
+
+/**
  * Build rich entity context for LLM prompt enhancement.
  */
 export function getArticleContext(article: Article): string {
@@ -170,6 +216,24 @@ export function getArticleContext(article: Article): string {
   const plainContent = tiptapToPlainText(article.content);
   if (plainContent) {
     parts.push(`Description: ${plainContent.slice(0, 4000)}`);
+  }
+
+  const subjectIds = resolveSceneSubjects(article).slice(0, SCENE_SUBJECT_MAX);
+  if (subjectIds.length > 0) {
+    const articles = useLoreStore.getState().lore?.articles ?? {};
+    const lines: string[] = [];
+    for (const id of subjectIds) {
+      const subject = articles[id];
+      if (!subject) continue;
+      const summary = subjectSummary(subject);
+      const label = `${subject.title} (${subject.template})`;
+      lines.push(summary ? `- ${label}: ${summary}` : `- ${label}`);
+    }
+    if (lines.length > 0) {
+      parts.push(
+        `Scene subjects (visually depicted in this image — other @mentions in the description are backstory references, not subjects):\n${lines.join("\n")}`,
+      );
+    }
   }
 
   const ctx = worldContext();

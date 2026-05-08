@@ -238,8 +238,9 @@ export function ArticleTree() {
       updatedAt: now,
     });
     selectArticle(id);
+    openTab(panelTab("lore"));
     setNewTitle("");
-  }, [newTitle, newTemplate, articles, createArticle, selectArticle]);
+  }, [newTitle, newTemplate, articles, createArticle, selectArticle, openTab]);
 
   const handleMove = useCallback(
     ({ dragIds, parentId, index }: { dragIds: string[]; parentId: string | null; index: number }) => {
@@ -250,8 +251,10 @@ export function ArticleTree() {
     [moveArticle],
   );
 
+  // story is excluded — it requires storyId/zoneId fields and is created
+  // via NewStoryDialog from the Stories panel, not the generic sidebar form.
   const templateOptions = Object.entries(TEMPLATE_SCHEMAS)
-    .filter(([key]) => key !== "world_setting")
+    .filter(([key]) => key !== "world_setting" && key !== "story")
     .map(([key, s]) => ({ value: key, label: s.label }));
 
   return (

@@ -4,6 +4,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
 import { useAssetStore } from "@/stores/assetStore";
 import { useProjectStore } from "@/stores/projectStore";
+import { useLoreStore } from "@/stores/loreStore";
 import { useImageSrc, isLegacyImagePath, isR2HashPath } from "@/lib/useImageSrc";
 import { getEnhanceSystemPrompt, ART_STYLE_LABELS, getNegativePrompt, getStyleSuffix, type ArtStyle } from "@/lib/arcanumPrompts";
 import type { ArtStyleSurface } from "@/lib/loreGeneration";
@@ -23,6 +24,14 @@ interface EntityArtGeneratorProps {
   getPrompt: (style: ArtStyle) => string;
   /** Rich entity context description for the LLM to craft an image prompt from */
   entityContext?: string;
+  /**
+   * Minimal framing hint (format/aspect only) sent to the LLM as the reference
+   * template. When provided alongside entityContext, this replaces the full
+   * basePrompt as the LLM reference, avoiding duplication of the visualStyle
+   * (already in the system prompt) and the surface override's example framings
+   * (which can overwhelm the actual entity description).
+   */
+  framingHint?: string;
   /** Current image value (path or URL) */
   currentImage?: string;
   /** Called when user accepts a generated image */
@@ -65,6 +74,7 @@ function autoAcceptImage(
 export function EntityArtGenerator({
   getPrompt,
   entityContext,
+  framingHint,
   currentImage,
   onAccept,
   assetType,
@@ -76,6 +86,9 @@ export function EntityArtGenerator({
   const artStyle = useAssetStore((s) => s.artStyle);
   const setArtStyle = useAssetStore((s) => s.setArtStyle);
   const importAsset = useAssetStore((s) => s.importAsset);
+  const worldArtStyles = useLoreStore((s) => s.lore?.artStyles);
+  const activeArtStyleId = useLoreStore((s) => s.lore?.activeArtStyleId);
+  const setActiveArtStyle = useLoreStore((s) => s.setActiveArtStyle);
   const mudDir = useProjectStore((s) => s.project?.mudDir);
   const [stage, setStage] = useState<Stage>("idle");
   const [result, setResult] = useState<GeneratedImage | null>(null);
@@ -192,7 +205,8 @@ export function EntityArtGenerator({
       if (vibe) {
         parts.push(`\nZone atmosphere/vibe:\n${vibe}`);
       }
-      parts.push(`\nReference style template (adapt but prioritize the entity description above):\n${prompt}`);
+      const reference = framingHint ?? prompt;
+      parts.push(`\nReference framing (format and composition guidance — the entity above defines the subject):\n${reference}`);
     } else {
       parts.push(prompt);
       if (vibe) {
@@ -499,15 +513,27 @@ export function EntityArtGenerator({
             <div className="flex flex-col gap-1 rounded border border-border-default/60 bg-bg-primary/40 px-2 py-1.5">
               <div className="flex items-center gap-1">
                 <span className="w-10 shrink-0 text-2xs text-text-muted">Style</span>
-                <select
-                  value={artStyle}
-                  onChange={(e) => setArtStyle(e.target.value as ArtStyle)}
-                  className="ml-auto min-w-0 flex-1 rounded border border-border-default bg-bg-primary px-1 py-0.5 text-2xs text-text-secondary outline-none focus-visible:ring-2 focus-visible:ring-border-active"
-                >
-                  {(Object.keys(ART_STYLE_LABELS) as ArtStyle[]).map((style) => (
-                    <option key={style} value={style}>{ART_STYLE_LABELS[style]}</option>
-                  ))}
-                </select>
+                {worldArtStyles && worldArtStyles.length > 0 ? (
+                  <select
+                    value={activeArtStyleId ?? ""}
+                    onChange={(e) => setActiveArtStyle(e.target.value || null)}
+                    className="ml-auto min-w-0 flex-1 rounded border border-border-default bg-bg-primary px-1 py-0.5 text-2xs text-text-secondary outline-none focus-visible:ring-2 focus-visible:ring-border-active"
+                  >
+                    {worldArtStyles.map((style) => (
+                      <option key={style.id} value={style.id}>{style.name}</option>
+                    ))}
+                  </select>
+                ) : (
+                  <select
+                    value={artStyle}
+                    onChange={(e) => setArtStyle(e.target.value as ArtStyle)}
+                    className="ml-auto min-w-0 flex-1 rounded border border-border-default bg-bg-primary px-1 py-0.5 text-2xs text-text-secondary outline-none focus-visible:ring-2 focus-visible:ring-border-active"
+                  >
+                    {(Object.keys(ART_STYLE_LABELS) as ArtStyle[]).map((style) => (
+                      <option key={style} value={style}>{ART_STYLE_LABELS[style]}</option>
+                    ))}
+                  </select>
+                )}
               </div>
               <div className="flex items-center gap-1">
                 <span className="w-10 shrink-0 text-2xs text-text-muted">Size</span>

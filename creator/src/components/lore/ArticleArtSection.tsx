@@ -2,7 +2,7 @@ import { useState } from "react";
 import type { Article } from "@/types/lore";
 import { EntityArtGenerator } from "@/components/ui/EntityArtGenerator";
 import { Section, FieldRow, TextInput } from "@/components/ui/FormWidgets";
-import { getArticlePrompt, getArticleContext, TEMPLATE_ASSET_TYPE } from "@/lib/loreArtPrompts";
+import { getArticlePrompt, getArticleContext, getArticleFraming, TEMPLATE_ASSET_TYPE } from "@/lib/loreArtPrompts";
 import { useImageSrc } from "@/lib/useImageSrc";
 import type { AssetContext } from "@/types/assets";
 
@@ -105,6 +105,7 @@ export function ArticleArtSection({
         <EntityArtGenerator
           getPrompt={(style) => getArticlePrompt(article, style)}
           entityContext={getArticleContext(article)}
+          framingHint={getArticleFraming(article)}
           currentImage={article.image}
           onAccept={(filePath) => onImageChange(filePath)}
           assetType={assetType}
@@ -144,6 +145,7 @@ export function ArticleArtSection({
             <EntityArtGenerator
               getPrompt={(style) => getArticlePrompt(article, style)}
               entityContext={getArticleContext(article)}
+              framingHint={getArticleFraming(article)}
               currentImage={undefined}
               onAccept={handleAddToGallery}
               assetType={assetType}

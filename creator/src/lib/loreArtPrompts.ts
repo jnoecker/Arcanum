@@ -60,20 +60,33 @@ function worldContext(): string {
   return [name && `World: ${name}`, themes && `Themes: ${themes}`].filter(Boolean).join(". ");
 }
 
-function articleSummary(article: Article): string {
-  const parts: string[] = [`${article.title}`];
-
-  // Include key fields
-  for (const [key, val] of Object.entries(article.fields)) {
+/** Pull a visual-description-shaped field if the article has one. */
+function articleAppearance(article: Article): string {
+  const candidates = ["appearance", "description", "physicalDescription", "looks"];
+  for (const key of candidates) {
+    const val = article.fields[key];
     if (typeof val === "string" && val.trim()) {
-      parts.push(`${key}: ${val.slice(0, 100)}`);
+      return val.trim();
     }
   }
+  return "";
+}
 
-  // Include beginning of content
-  const plainContent = tiptapToPlainText(article.content);
-  if (plainContent) {
-    parts.push(plainContent.slice(0, 200));
+function articleSummary(article: Article): string {
+  const parts: string[] = [article.title];
+
+  // Prefer the explicit appearance field — keeps the un-enhanced prompt
+  // focused on visual cues without leaking plot/relationships into FLUX.
+  // Fall back to article content so empty-fields articles still get *some*
+  // context to work with.
+  const appearance = articleAppearance(article);
+  if (appearance) {
+    parts.push(appearance.slice(0, 600));
+  } else {
+    const plainContent = tiptapToPlainText(article.content);
+    if (plainContent) {
+      parts.push(plainContent.slice(0, 600));
+    }
   }
 
   return parts.join(". ");
@@ -156,11 +169,32 @@ export function getArticleContext(article: Article): string {
 
   const plainContent = tiptapToPlainText(article.content);
   if (plainContent) {
-    parts.push(`Description: ${plainContent.slice(0, 500)}`);
+    parts.push(`Description: ${plainContent.slice(0, 4000)}`);
   }
 
   const ctx = worldContext();
   if (ctx) parts.push(`World: ${ctx}`);
 
   return parts.join("\n");
+}
+
+/**
+ * Build a minimal framing hint for LLM enhancement — format/aspect only,
+ * with no visual style or content. The system prompt already carries the
+ * world's visualStyle, and the entity context carries the subject; passing
+ * the full basePrompt would duplicate the style and let the surface
+ * override's example framings ("garden alcoves", etc.) overwhelm the
+ * actual entity description.
+ */
+export function getArticleFraming(article: Article): string {
+  const format = FORMAT[article.template];
+  return `${format}. No text, no runes, no words, no letters`;
+}
+
+/**
+ * Minimal framing hint for timeline event LLM enhancement — same rationale
+ * as getArticleFraming.
+ */
+export function getTimelineEventFraming(): string {
+  return "16:9 cinematic scene illustration, dramatic atmospheric composition. No text, no runes, no words, no letters";
 }

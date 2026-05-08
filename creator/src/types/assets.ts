@@ -273,35 +273,37 @@ export function requestsTransparentBackground(_assetType?: AssetType | string | 
   return false;
 }
 
-/** Default image dimensions per entity type */
+/** Default image dimensions per entity type.
+ *  Sizes match GPT Image 2's three native canvases (1024×1024, 1024×1536,
+ *  1536×1024) so nothing gets upscaled or snap-shifted by the provider —
+ *  a known cause of "bubble-wrap" texture artifacts at low quality. */
 export const ENTITY_DIMENSIONS: Record<string, { width: number; height: number; label: string }> = {
-  room: { width: 1920, height: 1080, label: "1920×1080 (Landscape)" },
-  mob: { width: 512, height: 512, label: "512×512 (Portrait)" },
-  pet: { width: 512, height: 512, label: "512×512 (Portrait)" },
-  item: { width: 256, height: 256, label: "256×256 (Icon)" },
-  gathering_node: { width: 512, height: 512, label: "512×512 (Sprite)" },
-  ability: { width: 256, height: 256, label: "256×256 (Icon)" },
-  shop: { width: 1920, height: 1080, label: "1920×1080 (Landscape)" },
-  dungeon: { width: 1920, height: 1080, label: "1920×1080 (Landscape)" },
-  dungeonRoom: { width: 1920, height: 1080, label: "1920×1080 (Landscape)" },
-  housing_room: { width: 1920, height: 1080, label: "1920×1080 (Landscape)" },
-  player_sprite: { width: 512, height: 512, label: "512×512 (Portrait)" },
-  race_portrait: { width: 512, height: 768, label: "512×768 (Portrait)" },
-  lore_character: { width: 512, height: 768, label: "512×768 (Portrait)" },
-  lore_location: { width: 1920, height: 1080, label: "1920×1080 (Landscape)" },
-  lore_organization: { width: 512, height: 512, label: "512×512 (Banner)" },
-  lore_species: { width: 512, height: 512, label: "512×512 (Portrait)" },
-  lore_item: { width: 256, height: 256, label: "256×256 (Icon)" },
-  lore_event: { width: 1920, height: 1080, label: "1920×1080 (Scene)" },
-  showcase_banner: { width: 1792, height: 768, label: "1792×768 (Banner)" },
-  showcase_favicon: { width: 512, height: 512, label: "512×512 (Icon)" },
+  room: { width: 1536, height: 1024, label: "1536×1024 (Landscape)" },
+  mob: { width: 1024, height: 1024, label: "1024×1024 (Portrait)" },
+  pet: { width: 1024, height: 1024, label: "1024×1024 (Portrait)" },
+  item: { width: 1024, height: 1024, label: "1024×1024 (Icon)" },
+  gathering_node: { width: 1024, height: 1024, label: "1024×1024 (Sprite)" },
+  ability: { width: 1024, height: 1024, label: "1024×1024 (Icon)" },
+  shop: { width: 1536, height: 1024, label: "1536×1024 (Landscape)" },
+  dungeon: { width: 1536, height: 1024, label: "1536×1024 (Landscape)" },
+  dungeonRoom: { width: 1536, height: 1024, label: "1536×1024 (Landscape)" },
+  housing_room: { width: 1536, height: 1024, label: "1536×1024 (Landscape)" },
+  player_sprite: { width: 1024, height: 1024, label: "1024×1024 (Portrait)" },
+  race_portrait: { width: 1024, height: 1536, label: "1024×1536 (Portrait)" },
+  lore_character: { width: 1024, height: 1536, label: "1024×1536 (Portrait)" },
+  lore_location: { width: 1536, height: 1024, label: "1536×1024 (Landscape)" },
+  lore_organization: { width: 1024, height: 1024, label: "1024×1024 (Banner)" },
+  lore_species: { width: 1024, height: 1024, label: "1024×1024 (Portrait)" },
+  lore_item: { width: 1024, height: 1024, label: "1024×1024 (Icon)" },
+  lore_event: { width: 1536, height: 1024, label: "1536×1024 (Scene)" },
+  showcase_banner: { width: 1536, height: 1024, label: "1536×1024 (Banner)" },
+  showcase_favicon: { width: 1024, height: 1024, label: "1024×1024 (Icon)" },
 };
 
-/** Common dimension presets for override dropdown */
+/** Common dimension presets for override dropdown.
+ *  All entries match GPT Image 2 native sizes — see ENTITY_DIMENSIONS. */
 export const DIMENSION_PRESETS = [
-  { width: 256, height: 256, label: "256×256" },
-  { width: 512, height: 512, label: "512×512" },
-  { width: 1024, height: 1024, label: "1024×1024" },
-  { width: 1920, height: 1080, label: "1920×1080" },
-  { width: 1080, height: 1920, label: "1080×1920" },
+  { width: 1024, height: 1024, label: "1024×1024 (Square)" },
+  { width: 1024, height: 1536, label: "1024×1536 (Portrait)" },
+  { width: 1536, height: 1024, label: "1536×1024 (Landscape)" },
 ] as const;

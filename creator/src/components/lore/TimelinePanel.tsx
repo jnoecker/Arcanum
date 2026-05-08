@@ -19,7 +19,7 @@ import {
   IconButton,
 } from "@/components/ui/FormWidgets";
 import { EntityArtGenerator } from "@/components/ui/EntityArtGenerator";
-import { getTimelineEventPrompt, getTimelineEventContext } from "@/lib/loreArtPrompts";
+import { getTimelineEventPrompt, getTimelineEventContext, getTimelineEventFraming } from "@/lib/loreArtPrompts";
 import type { AssetContext } from "@/types/assets";
 import { TimelineView } from "./TimelineView";
 import { TimelineInferencePanel } from "./TimelineInferencePanel";
@@ -435,6 +435,7 @@ function EventInspector({
           <EntityArtGenerator
             getPrompt={(style) => getTimelineEventPrompt(event, style)}
             entityContext={getTimelineEventContext(event)}
+            framingHint={getTimelineEventFraming()}
             currentImage={event.image}
             onAccept={(filePath) => onUpdate({ image: filePath })}
             assetType="lore_event"

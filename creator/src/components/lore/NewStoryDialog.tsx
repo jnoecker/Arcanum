@@ -2,6 +2,8 @@ import { useState, useMemo } from "react";
 import { useLoreStore } from "@/stores/loreStore";
 import { useStoryStore } from "@/stores/storyStore";
 import { useZoneStore } from "@/stores/zoneStore";
+import { useProjectStore } from "@/stores/projectStore";
+import { panelTab } from "@/lib/panelRegistry";
 import { useImageSrc } from "@/lib/useImageSrc";
 import { DialogShell, ActionButton, Spinner } from "@/components/ui/FormWidgets";
 import { AssetPickerModal } from "@/components/ui/AssetPickerModal";
@@ -80,6 +82,7 @@ export function NewStoryDialog({ onClose }: NewStoryDialogProps) {
 
       // Select the new story article
       useLoreStore.getState().selectArticle(storyId);
+      useProjectStore.getState().openTab(panelTab("lore"));
 
       onClose();
     } catch (err) {

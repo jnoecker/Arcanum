@@ -24,8 +24,8 @@ export function ArticleBrowser() {
   return (
     <>
       <section className="panel-surface min-h-[32rem] rounded-3xl p-5">
-        {selectedArticle?.template === "story" ? (
-          <StoryEditorPanel storyId={selectedArticle.fields.storyId as string} />
+        {selectedArticle?.template === "story" && typeof selectedArticle.fields.storyId === "string" && selectedArticle.fields.storyId ? (
+          <StoryEditorPanel storyId={selectedArticle.fields.storyId} />
         ) : selectedArticleId ? (
           <ArticleEditor articleId={selectedArticleId} />
         ) : (

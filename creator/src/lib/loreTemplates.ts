@@ -71,6 +71,7 @@ export const TEMPLATE_SCHEMAS: Record<ArticleTemplate, TemplateSchema> = {
       { key: "magic", label: "Magic system", type: "textarea", placeholder: "How magic works, its sources and limits..." },
       { key: "technology", label: "Technology", type: "textarea", placeholder: "What level of technology exists?" },
       { key: "history", label: "History", type: "textarea", placeholder: "Creation myth, major ages, wars..." },
+      { key: "appearance", label: "Appearance", type: "textarea", placeholder: "What the world looks like — signature visual motifs, dominant colors, characteristic forms..." },
     ],
   },
 
@@ -84,6 +85,7 @@ export const TEMPLATE_SCHEMAS: Record<ArticleTemplate, TemplateSchema> = {
       { key: "territory", label: "Territory", type: "text", placeholder: "Regions or strongholds" },
       { key: "values", label: "Values", type: "tags", placeholder: "Add a core value..." },
       { key: "configFactionId", label: "Game faction", type: "config_faction_ref", placeholder: "Link to a mechanical faction" },
+      { key: "appearance", label: "Appearance", type: "textarea", placeholder: "Heraldry, regalia, signature colors and symbols..." },
     ],
   },
 
@@ -123,6 +125,7 @@ export const TEMPLATE_SCHEMAS: Record<ArticleTemplate, TemplateSchema> = {
       { key: "population", label: "Population", type: "text", placeholder: "Who lives here?" },
       { key: "government", label: "Government", type: "text", placeholder: "Ruling system or authority" },
       { key: "resources", label: "Resources", type: "tags", placeholder: "Add a resource..." },
+      { key: "appearance", label: "Appearance", type: "textarea", placeholder: "What the place looks like — architecture, terrain, signature visuals..." },
     ],
   },
 
@@ -144,6 +147,7 @@ export const TEMPLATE_SCHEMAS: Record<ArticleTemplate, TemplateSchema> = {
           { value: "extinct", label: "Extinct" },
         ],
       },
+      { key: "appearance", label: "Appearance", type: "textarea", placeholder: "Physical description — body, coloration, distinguishing features..." },
     ],
   },
 
@@ -174,6 +178,7 @@ export const TEMPLATE_SCHEMAS: Record<ArticleTemplate, TemplateSchema> = {
       },
       { key: "properties", label: "Properties", type: "textarea", placeholder: "Magical properties, effects..." },
       { key: "origin", label: "Origin", type: "text", placeholder: "Where it was made or found" },
+      { key: "appearance", label: "Appearance", type: "textarea", placeholder: "Physical description — materials, shape, ornamentation, colors..." },
     ],
   },
 
@@ -186,6 +191,7 @@ export const TEMPLATE_SCHEMAS: Record<ArticleTemplate, TemplateSchema> = {
       { key: "duration", label: "Duration", type: "text", placeholder: "A single day, decades, an age..." },
       { key: "participants", label: "Participants", type: "article_refs" },
       { key: "outcome", label: "Outcome", type: "textarea", placeholder: "What changed as a result?" },
+      { key: "appearance", label: "Appearance", type: "textarea", placeholder: "How the event looked — setting, key visuals, dramatic moment..." },
     ],
   },
 
@@ -197,6 +203,7 @@ export const TEMPLATE_SCHEMAS: Record<ArticleTemplate, TemplateSchema> = {
       { key: "speakers", label: "Speakers", type: "article_refs" },
       { key: "writingSystem", label: "Writing system", type: "text", placeholder: "Runes, glyphs, alphabet..." },
       { key: "samplePhrases", label: "Sample phrases", type: "textarea", placeholder: "Greetings, oaths, proverbs..." },
+      { key: "appearance", label: "Appearance", type: "textarea", placeholder: "Visual character of the script — letterforms, materials, decoration..." },
     ],
   },
 
@@ -218,6 +225,7 @@ export const TEMPLATE_SCHEMAS: Record<ArticleTemplate, TemplateSchema> = {
       { key: "strengths", label: "Strengths", type: "tags", placeholder: "Add a strength..." },
       { key: "weaknesses", label: "Weaknesses", type: "tags", placeholder: "Add a weakness..." },
       { key: "keyAbilities", label: "Key abilities", type: "article_refs" },
+      { key: "appearance", label: "Appearance", type: "textarea", placeholder: "Iconic look — armor, garb, signature weapons, stance..." },
     ],
   },
 
@@ -238,6 +246,7 @@ export const TEMPLATE_SCHEMAS: Record<ArticleTemplate, TemplateSchema> = {
       { key: "range", label: "Range", type: "text", placeholder: "Self, melee, 30m..." },
       { key: "effect", label: "Effect", type: "textarea", placeholder: "What the ability does mechanically and narratively..." },
       { key: "ranks", label: "Ranks / upgrades", type: "textarea", placeholder: "How it improves at higher levels..." },
+      { key: "appearance", label: "Appearance", type: "textarea", placeholder: "Visual effect — energy, color, shape, motion of the spell or skill..." },
     ],
   },
 
@@ -245,14 +254,16 @@ export const TEMPLATE_SCHEMAS: Record<ArticleTemplate, TemplateSchema> = {
     template: "freeform",
     label: "Freeform",
     pluralLabel: "Freeform",
-    fields: [],
+    fields: [
+      { key: "appearance", label: "Appearance", type: "textarea", placeholder: "Visual description for image generation — what should this look like?" },
+    ],
   },
 
   story: {
     template: "story",
-    label: "Story",
-    pluralLabel: "Stories",
-    description: "A cinematic zone story with scenes and narration.",
+    label: "Cinematic Story",
+    pluralLabel: "Cinematic Stories",
+    description: "A multi-scene cinematic with narration, voice, and music for a specific zone. Created from the Stories panel — not a freeform narrative article.",
     fields: [
       { key: "zoneId", label: "Linked zone", type: "text" },
       { key: "storyId", label: "Story ID", type: "text" },

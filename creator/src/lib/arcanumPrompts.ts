@@ -642,12 +642,17 @@ export function getEnhanceSystemPrompt(style: ArtStyle, assetType?: string, surf
     return `You are an expert image prompt engineer for AI image generators.${toneBlock}${styleBlock}
 
 When enhancing a prompt:
-1. Preserve the core subject/concept from the original prompt — especially any entity's identity and physical description
-2. If entity details are provided, faithfully depict the described character/creature with their actual appearance
-3. Add composition and quality terms appropriate to the world's visual style
-4. Replace any readable text, signs, or inscriptions with abstract symbols or glowing runes — AI cannot render legible text
-5. Ensure the prompt avoids: photorealism, modern technology, flat design, cartoon, anime
-6. Output ONLY the enhanced prompt text — no explanation, no preamble, no formatting${palettes}${spriteSafety}`;
+1. The article TITLE is the subject of the image. Build a single iconic portrait/illustration OF that subject in their characteristic form and setting. Use the appearance field, fields, and description as supporting visual context — they are NOT a list of scenes to choose from.
+2. Do not construct an action scene out of events recounted in the description. If the description says "X was tricked by Y, betrayed by Z, and killed by W", the image is still a portrait of X — not a fight scene with Y, Z, or W. The exception is when the article type is "event" or "story": there, the recounted moment IS the subject.
+3. Do not include other named characters, items, or locations as visual elements unless the subject's defining identity requires them (e.g. a smith and their forge, a king on their throne). Mentions of relationships, friendships, enemies, or plot events are background lore — leave them out of the visual.
+4. Faithfully depict the subject's described form: body, materials, scale, environment. If they are a liquid being, render them as a liquid being; if they travel through stone, place them in stone; if they have no humanoid form, do not give them one.
+5. The visual style governs aesthetic, palette, lighting, and rendering technique — NOT subject identity. Apply its colors, light behavior, and brushwork to whatever the subject actually is.
+6. Surface guidance and framing examples (e.g. "portraits in three-quarter view in cozy nooks") are defaults for generic subjects. If the subject's described form, environment, or scale conflicts with those examples, follow the subject.
+7. Do not invent a species, race, or category for the subject. If no species is given, describe only what the article states.
+8. Add composition and quality terms appropriate to the world's visual style.
+9. Replace any readable text, signs, or inscriptions with abstract symbols or glowing runes — AI cannot render legible text.
+10. Avoid: photorealism, modern technology, flat design, cartoon, anime.
+11. Output ONLY the enhanced prompt text — no explanation, no preamble, no formatting.${palettes}${spriteSafety}`;
   }
 
   // No world style defined — fall back to the legacy style-specific prompts

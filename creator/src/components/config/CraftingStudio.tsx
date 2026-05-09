@@ -1,14 +1,28 @@
-import type { AppConfig } from "@/types/config";
-import { FieldRow, NumberInput } from "@/components/ui/FormWidgets";
-import { DefinitionWorkbench } from "./DefinitionWorkbench";
-import {
-  CraftingSkillDetail,
-  CraftingStationTypeDetail,
-  defaultCraftingSkillDefinition,
-  defaultCraftingStationTypeDefinition,
-  summarizeCraftingSkill,
-  summarizeCraftingStationType,
-} from "@/components/config/panels/CraftingPanel";
+import { useCallback, useEffect, useState } from "react";
+import type {
+  AppConfig,
+  CraftingSkillDefinition,
+  CraftingStationTypeDefinition,
+} from "@/types/config";
+import { useConfigStore } from "@/stores/configStore";
+import { useProjectStore } from "@/stores/projectStore";
+import { useToastStore } from "@/stores/toastStore";
+import { saveProjectConfig } from "@/lib/saveConfig";
+
+import { CraftingHeader } from "./crafting/CraftingHeader";
+import { SkillCurveCard } from "./crafting/SkillCurveCard";
+import { HarvestPacingCard } from "./crafting/HarvestPacingCard";
+import { EntityList } from "./crafting/EntityList";
+import { CraftingSkillDesigner } from "./crafting/CraftingSkillDesigner";
+import { StationTypeDesigner } from "./crafting/StationTypeDesigner";
+import { SectionCard } from "./panels/factions/SectionCard";
+
+function nextId(prefix: string, existing: Record<string, unknown>): string {
+  if (!existing[prefix]) return prefix;
+  let i = 2;
+  while (existing[`${prefix}_${i}`]) i += 1;
+  return `${prefix}_${i}`;
+}
 
 export function CraftingStudio({
   config,
@@ -17,107 +31,218 @@ export function CraftingStudio({
   config: AppConfig;
   onChange: (patch: Partial<AppConfig>) => void;
 }) {
-  const patchCrafting = (patch: Partial<AppConfig["crafting"]>) =>
-    onChange({ crafting: { ...config.crafting, ...patch } });
+  const [selectedSkill, setSelectedSkill] = useState<string | null>(null);
+  const [selectedStation, setSelectedStation] = useState<string | null>(null);
+  const dirty = useConfigStore((s) => s.dirty);
+  const project = useProjectStore((s) => s.project);
+  const [saving, setSaving] = useState(false);
+
+  const patchCrafting = useCallback(
+    (patch: Partial<AppConfig["crafting"]>) =>
+      onChange({ crafting: { ...config.crafting, ...patch } }),
+    [config.crafting, onChange],
+  );
+
+  const patchSkill = useCallback(
+    (id: string, p: Partial<CraftingSkillDefinition>) => {
+      const cur = config.craftingSkills[id];
+      if (!cur) return;
+      onChange({
+        craftingSkills: { ...config.craftingSkills, [id]: { ...cur, ...p } },
+      });
+    },
+    [config.craftingSkills, onChange],
+  );
+
+  const patchStation = useCallback(
+    (id: string, p: Partial<CraftingStationTypeDefinition>) => {
+      const cur = config.craftingStationTypes[id];
+      if (!cur) return;
+      onChange({
+        craftingStationTypes: {
+          ...config.craftingStationTypes,
+          [id]: { ...cur, ...p },
+        },
+      });
+    },
+    [config.craftingStationTypes, onChange],
+  );
+
+  const addSkill = useCallback(() => {
+    const id = nextId("new_skill", config.craftingSkills);
+    onChange({
+      craftingSkills: {
+        ...config.craftingSkills,
+        [id]: { displayName: "New Skill", type: "crafting" },
+      },
+    });
+    setSelectedSkill(id);
+  }, [config.craftingSkills, onChange]);
+
+  const addStation = useCallback(() => {
+    const id = nextId("new_station", config.craftingStationTypes);
+    onChange({
+      craftingStationTypes: {
+        ...config.craftingStationTypes,
+        [id]: { displayName: "New Station" },
+      },
+    });
+    setSelectedStation(id);
+  }, [config.craftingStationTypes, onChange]);
+
+  const deleteSkill = useCallback(() => {
+    if (!selectedSkill) return;
+    const next = { ...config.craftingSkills };
+    delete next[selectedSkill];
+    onChange({ craftingSkills: next });
+    setSelectedSkill(null);
+  }, [selectedSkill, config.craftingSkills, onChange]);
+
+  const deleteStation = useCallback(() => {
+    if (!selectedStation) return;
+    const next = { ...config.craftingStationTypes };
+    delete next[selectedStation];
+    onChange({ craftingStationTypes: next });
+    setSelectedStation(null);
+  }, [selectedStation, config.craftingStationTypes, onChange]);
+
+  const handleSave = useCallback(async () => {
+    if (!project || !dirty || saving) return;
+    setSaving(true);
+    try {
+      await saveProjectConfig(project);
+      useToastStore.getState().show("Changes saved");
+    } catch (err) {
+      console.error("Save failed", err);
+    } finally {
+      setSaving(false);
+    }
+  }, [project, dirty, saving]);
+
+  useEffect(() => {
+    if (selectedSkill && config.craftingSkills[selectedSkill]) return;
+    setSelectedSkill(Object.keys(config.craftingSkills)[0] ?? null);
+  }, [selectedSkill, config.craftingSkills]);
+
+  useEffect(() => {
+    if (selectedStation && config.craftingStationTypes[selectedStation]) return;
+    setSelectedStation(Object.keys(config.craftingStationTypes)[0] ?? null);
+  }, [selectedStation, config.craftingStationTypes]);
+
+  const selectedSkillDef = selectedSkill
+    ? config.craftingSkills[selectedSkill] ?? null
+    : null;
+  const selectedStationDef = selectedStation
+    ? config.craftingStationTypes[selectedStation] ?? null
+    : null;
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="grid gap-5 xl:grid-cols-2">
-        <div className="rounded-3xl border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] p-5">
-          <p className="text-2xs uppercase tracking-ui text-text-muted">Progression</p>
-          <h4 className="mt-2 font-display text-2xl text-text-primary">Skill curve</h4>
-          <p className="mt-2 text-sm leading-7 text-text-secondary">
-            Crafting skills level independently from character level. Shape the time to mastery here before tuning the skill list itself.
-          </p>
-          <div className="mt-4 flex flex-col gap-1.5">
-            <FieldRow label="Max Skill Level" hint="Cap for all crafting skills. 100 is the classic mastery target.">
-              <NumberInput
-                value={config.crafting.maxSkillLevel}
-                onCommit={(v) => patchCrafting({ maxSkillLevel: v ?? 100 })}
-                min={1}
-              />
-            </FieldRow>
-            <FieldRow label="Base XP / Level" hint="Higher values make each level take longer.">
-              <NumberInput
-                value={config.crafting.baseXpPerLevel}
-                onCommit={(v) => patchCrafting({ baseXpPerLevel: v ?? 50 })}
-                min={1}
-              />
-            </FieldRow>
-            <FieldRow label="XP Exponent" hint="1.0 = linear, 1.5 = moderate curve, 2.0+ = steep mastery grind.">
-              <NumberInput
-                value={config.crafting.xpExponent}
-                onCommit={(v) => patchCrafting({ xpExponent: v ?? 1.5 })}
-                min={1}
-                step={0.1}
-              />
-            </FieldRow>
+    <div className="flex flex-col gap-5">
+      <CraftingHeader
+        hasUnsavedChanges={dirty}
+        saving={saving}
+        onSave={handleSave}
+      />
+
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+        <SkillCurveCard crafting={config.crafting} onPatch={patchCrafting} />
+        <HarvestPacingCard crafting={config.crafting} onPatch={patchCrafting} />
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
+        <div className="xl:col-span-4">
+          <div className="flex flex-col gap-4">
+            <EntityList
+              title="Crafting Skills"
+              items={config.craftingSkills}
+              selected={selectedSkill}
+              searchPlaceholder="Search skills…"
+              addLabel="Add Skill"
+              viewAllLabel="View all skills"
+              getDisplayName={(s) => s.displayName}
+              getSubtitle={(s) =>
+                s.type === "gathering" ? "Gathering" : "Crafting"
+              }
+              onSelect={setSelectedSkill}
+              onAdd={addSkill}
+            />
+            <EntityList
+              title="Station Types"
+              items={config.craftingStationTypes}
+              selected={selectedStation}
+              searchPlaceholder="Search station types…"
+              addLabel="Add Type"
+              viewAllLabel="View all station types"
+              getDisplayName={(s) => s.displayName}
+              getSubtitle={() => "Station"}
+              onSelect={setSelectedStation}
+              onAdd={addStation}
+            />
           </div>
         </div>
 
-        <div className="rounded-3xl border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] p-5">
-          <p className="text-2xs uppercase tracking-ui text-text-muted">Gathering loop</p>
-          <h4 className="mt-2 font-display text-2xl text-text-primary">Harvest pacing</h4>
-          <p className="mt-2 text-sm leading-7 text-text-secondary">
-            Control how quickly players harvest nodes and how much dedicated crafting stations outperform fieldwork.
-          </p>
-          <div className="mt-4 flex flex-col gap-1.5">
-            <FieldRow label="Cooldown (ms)" hint="Delay between gathering attempts on the same node.">
-              <NumberInput
-                value={config.crafting.gatherCooldownMs}
-                onCommit={(v) => patchCrafting({ gatherCooldownMs: v ?? 3000 })}
-                min={0}
+        <div className="xl:col-span-8">
+          <div className="flex flex-col gap-4">
+            {selectedSkill && selectedSkillDef ? (
+              <CraftingSkillDesigner
+                id={selectedSkill}
+                skill={selectedSkillDef}
+                onPatch={(p) => patchSkill(selectedSkill, p)}
+                onDelete={deleteSkill}
               />
-            </FieldRow>
-            <FieldRow label="Station Bonus" hint="Extra items yielded when gathering at a station instead of in the field.">
-              <NumberInput
-                value={config.crafting.stationBonusQuantity}
-                onCommit={(v) => patchCrafting({ stationBonusQuantity: v ?? 1 })}
-                min={0}
+            ) : (
+              <EmptyDesigner
+                title="Crafting Skill Designer"
+                cta="Add a crafting skill"
+                onAdd={addSkill}
               />
-            </FieldRow>
+            )}
+
+            {selectedStation && selectedStationDef ? (
+              <StationTypeDesigner
+                id={selectedStation}
+                station={selectedStationDef}
+                onPatch={(p) => patchStation(selectedStation, p)}
+                onDelete={deleteStation}
+              />
+            ) : (
+              <EmptyDesigner
+                title="Station Type Designer"
+                cta="Add a station type"
+                onAdd={addStation}
+              />
+            )}
           </div>
         </div>
       </div>
-
-      <DefinitionWorkbench
-        title="Crafting skill designer"
-        countLabel="Crafting skills"
-        description="Gathering and crafting skill definitions."
-        addPlaceholder="New skill id"
-        searchPlaceholder="Search skills"
-        emptyMessage="No crafting skills match the current search."
-        emptyTitle="No recipes written yet"
-        emptyDescription="Design the formulas and blueprints for crafting and creation."
-        items={config.craftingSkills}
-        defaultItem={defaultCraftingSkillDefinition}
-        getDisplayName={(skill) => skill.displayName}
-        renderSummary={summarizeCraftingSkill}
-        renderBadges={(skill) => [skill.type]}
-        renderDetail={(_id, skill, patch) => (
-          <CraftingSkillDetail skill={skill} patch={patch} />
-        )}
-        onItemsChange={(craftingSkills) => onChange({ craftingSkills })}
-      />
-
-      <DefinitionWorkbench
-        title="Station type designer"
-        countLabel="Station types"
-        description="Station types used by recipes and rooms."
-        addPlaceholder="New station type id"
-        searchPlaceholder="Search station types"
-        emptyMessage="No station types match the current search."
-        emptyTitle="No recipes written yet"
-        emptyDescription="Design the formulas and blueprints for crafting and creation."
-        items={config.craftingStationTypes}
-        defaultItem={defaultCraftingStationTypeDefinition}
-        getDisplayName={(stationType) => stationType.displayName}
-        renderSummary={summarizeCraftingStationType}
-        renderDetail={(_id, stationType, patch) => (
-          <CraftingStationTypeDetail stationType={stationType} patch={patch} />
-        )}
-        onItemsChange={(craftingStationTypes) => onChange({ craftingStationTypes })}
-      />
     </div>
+  );
+}
+
+function EmptyDesigner({
+  title,
+  cta,
+  onAdd,
+}: {
+  title: string;
+  cta: string;
+  onAdd: () => void;
+}) {
+  return (
+    <SectionCard title={title}>
+      <div className="rounded-xl border border-dashed border-[var(--chrome-stroke-strong)] bg-[var(--chrome-fill-soft)] px-4 py-10 text-center">
+        <p className="font-display text-xs text-text-muted">Nothing selected.</p>
+        <p className="mt-1 text-2xs leading-snug text-text-muted/70">
+          Pick an entry from the list, or create a new one.
+        </p>
+        <button
+          type="button"
+          onClick={onAdd}
+          className="focus-ring mt-3 inline-flex items-center gap-1.5 rounded-xl border border-accent/40 bg-accent/10 px-3 py-1.5 text-xs font-medium text-accent transition hover:bg-accent/20"
+        >
+          + {cta}
+        </button>
+      </div>
+    </SectionCard>
   );
 }

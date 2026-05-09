@@ -1,15 +1,14 @@
 import { useRef, useState } from "react";
 import type { AppConfig } from "@/types/config";
-import { DefinitionWorkbench } from "./DefinitionWorkbench";
 import { AchievementDefEditor } from "./AchievementDefEditor";
+import { TaxonomyWorkbench } from "./achievements/TaxonomyWorkbench";
 import {
-  AchievementCategoryDetail,
-  AchievementCriterionTypeDetail,
+  CategoryDetail,
+  CriterionTypeDetail,
   defaultAchievementCategoryDefinition,
   defaultAchievementCriterionTypeDefinition,
-  summarizeAchievementCategory,
-  summarizeAchievementCriterionType,
-} from "@/components/config/panels/AchievementsPanel";
+  summarizeCriterionType,
+} from "./achievements/TaxonomyDetails";
 
 type TabId = "builder" | "categories" | "criterionTypes";
 
@@ -89,45 +88,45 @@ export function AchievementDesigner({ config, onChange }: AchievementDesignerPro
         aria-labelledby={`achievement-tab-${active}`}
       >
         {active === "builder" && (
-          <AchievementDefEditor config={config} onChange={onChange} />
+          <AchievementDefEditor
+            config={config}
+            onChange={onChange}
+            onSwitchTab={setActive}
+          />
         )}
         {active === "categories" && (
-          <DefinitionWorkbench
-            title="Achievement category designer"
-            countLabel="Achievement categories"
-            description="Top-level groupings for the achievement system."
+          <TaxonomyWorkbench
+            listTitle="Categories"
+            detailKicker="Category"
             addPlaceholder="New category id"
-            searchPlaceholder="Search categories"
-            emptyMessage="No categories match the current search."
-            emptyTitle="No categories designed yet"
-            emptyDescription="Categories let you group achievements by theme (combat, crafting, exploration, etc.)."
+            searchPlaceholder="Search categories…"
+            emptyListMessage="No categories yet — add one above."
+            emptyDetailTitle="No category selected"
+            emptyDetailDescription="Categories let you group achievements by theme — combat, crafting, exploration, and so on."
             items={config.achievementCategories}
             defaultItem={defaultAchievementCategoryDefinition}
             getDisplayName={(category) => category.displayName}
-            renderSummary={summarizeAchievementCategory}
             renderDetail={(_id, category, patch) => (
-              <AchievementCategoryDetail category={category} patch={patch} />
+              <CategoryDetail category={category} patch={patch} />
             )}
             onItemsChange={(achievementCategories) => onChange({ achievementCategories })}
           />
         )}
         {active === "criterionTypes" && (
-          <DefinitionWorkbench
-            title="Criterion type designer"
-            countLabel="Criterion types"
-            description="Progress tracking types and display formats."
+          <TaxonomyWorkbench
+            listTitle="Criterion types"
+            detailKicker="Criterion type"
             addPlaceholder="New criterion type id"
-            searchPlaceholder="Search criterion types"
-            emptyMessage="No criterion types match the current search."
-            emptyTitle="No criterion types designed yet"
-            emptyDescription="Criterion types define how achievement progress is tracked and displayed (counters, percentages, collections)."
+            searchPlaceholder="Search criterion types…"
+            emptyListMessage="No criterion types yet — add one above."
+            emptyDetailTitle="No criterion type selected"
+            emptyDetailDescription="Criterion types control how achievement progress is shown to players — a counter, percentage, or simple boolean."
             items={config.achievementCriterionTypes}
             defaultItem={defaultAchievementCriterionTypeDefinition}
             getDisplayName={(criterion) => criterion.displayName}
-            renderSummary={summarizeAchievementCriterionType}
-            renderBadges={(criterion) => (criterion.progressFormat ? ["Tracked"] : ["Simple"])}
+            renderRowSummary={(_id, criterion) => summarizeCriterionType(criterion)}
             renderDetail={(_id, criterion, patch) => (
-              <AchievementCriterionTypeDetail criterion={criterion} patch={patch} />
+              <CriterionTypeDetail criterion={criterion} patch={patch} />
             )}
             onItemsChange={(achievementCriterionTypes) => onChange({ achievementCriterionTypes })}
           />

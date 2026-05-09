@@ -244,7 +244,7 @@ export function ConfigPanelHost({ panelId }: { panelId: string }) {
   }
 
   return (
-    <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+    <div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
       <div className="relative min-h-0 min-w-0 flex-1 overflow-y-auto">
         <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
           <img
@@ -257,24 +257,6 @@ export function ConfigPanelHost({ panelId }: { panelId: string }) {
 
         <div className={`relative z-10 mx-auto flex flex-col gap-6 px-6 py-5 ${def?.maxWidth ?? "max-w-5xl"}`}>
           <div className="pointer-events-auto sticky top-3 z-20 flex items-center justify-end gap-2">
-            <UndoRedoButtons
-              canUndo={undoDepth > 0}
-              canRedo={redoDepth > 0}
-              undoDepth={undoDepth}
-              redoDepth={redoDepth}
-              onUndo={() => {
-                if (undoDepth > 0) {
-                  undoConfig();
-                  useToastStore.getState().show("Change undone");
-                }
-              }}
-              onRedo={() => {
-                if (redoDepth > 0) {
-                  redoConfig();
-                  useToastStore.getState().show("Change restored");
-                }
-              }}
-            />
             {(dirty || saving || saveError) && (
               <>
                 {saveError && <span role="alert" className="text-2xs text-status-error">Save failed</span>}
@@ -290,6 +272,28 @@ export function ConfigPanelHost({ panelId }: { panelId: string }) {
             )}
           </div>
           {renderPanel(panelId, { config, onChange: handleChange })}
+        </div>
+      </div>
+      <div className="pointer-events-none absolute bottom-3 left-3 z-30">
+        <div className="pointer-events-auto rounded-full border border-[var(--chrome-stroke)] bg-bg-primary/80 px-1 py-0.5 shadow-md backdrop-blur">
+          <UndoRedoButtons
+            canUndo={undoDepth > 0}
+            canRedo={redoDepth > 0}
+            undoDepth={undoDepth}
+            redoDepth={redoDepth}
+            onUndo={() => {
+              if (undoDepth > 0) {
+                undoConfig();
+                useToastStore.getState().show("Change undone");
+              }
+            }}
+            onRedo={() => {
+              if (redoDepth > 0) {
+                redoConfig();
+                useToastStore.getState().show("Change restored");
+              }
+            }}
+          />
         </div>
       </div>
     </div>

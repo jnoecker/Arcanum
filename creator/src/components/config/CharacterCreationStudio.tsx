@@ -1,12 +1,12 @@
-import { useMemo } from "react";
-import type { AppConfig } from "@/types/config";
-import { FieldRow, NumberInput, SelectInput } from "@/components/ui/FormWidgets";
-import { DefinitionWorkbench } from "./DefinitionWorkbench";
-import {
-  GenderDetail,
-  defaultGenderDefinition,
-  summarizeGender,
-} from "@/components/config/panels/CharacterCreationPanel";
+import { useCallback, useState } from "react";
+import type { AppConfig, GenderDefinition } from "@/types/config";
+
+import { CreationHero } from "./creation/CreationHero";
+import { GenderTab } from "./creation/GenderTab";
+
+function normalizeId(raw: string): string {
+  return raw.trim().toLowerCase().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "");
+}
 
 export function CharacterCreationStudio({
   config,
@@ -15,108 +15,77 @@ export function CharacterCreationStudio({
   config: AppConfig;
   onChange: (patch: Partial<AppConfig>) => void;
 }) {
-  const patchCC = (p: Partial<AppConfig["characterCreation"]>) =>
-    onChange({ characterCreation: { ...config.characterCreation, ...p } });
+  const [selectedGender, setSelectedGender] = useState<string | null>(() => {
+    const first = Object.keys(config.genders)[0];
+    return first ?? null;
+  });
 
-  const raceOptions = useMemo(
-    () =>
-      Object.entries(config.races).map(([id, r]) => ({
-        value: id,
-        label: r.displayName || id,
-      })),
-    [config.races],
+  const patchCC = useCallback(
+    (p: Partial<AppConfig["characterCreation"]>) =>
+      onChange({ characterCreation: { ...config.characterCreation, ...p } }),
+    [config.characterCreation, onChange],
   );
 
-  const classOptions = useMemo(
-    () =>
-      Object.entries(config.classes).map(([id, c]) => ({
-        value: id,
-        label: c.displayName || id,
-      })),
-    [config.classes],
+  const patchGender = useCallback(
+    (id: string, p: Partial<GenderDefinition>) => {
+      const cur = config.genders[id];
+      if (!cur) return;
+      onChange({ genders: { ...config.genders, [id]: { ...cur, ...p } } });
+    },
+    [config.genders, onChange],
   );
 
-  const genderOptions = useMemo(
-    () =>
-      Object.entries(config.genders).map(([id, g]) => ({
-        value: id,
-        label: g.displayName || id,
-      })),
-    [config.genders],
+  const addGender = useCallback(
+    (rawId: string) => {
+      const id = normalizeId(rawId);
+      if (!id || config.genders[id]) return;
+      onChange({
+        genders: {
+          ...config.genders,
+          [id]: { displayName: rawId.trim() || id },
+        },
+      });
+      setSelectedGender(id);
+    },
+    [config.genders, onChange],
+  );
+
+  const deleteGender = useCallback(
+    (id: string) => {
+      const next = { ...config.genders };
+      delete next[id];
+      onChange({ genders: next });
+      if (selectedGender === id) setSelectedGender(null);
+    },
+    [config.genders, onChange, selectedGender],
+  );
+
+  const renameGender = useCallback(
+    (oldId: string, rawNewId: string) => {
+      const newId = normalizeId(rawNewId);
+      if (!newId || oldId === newId || config.genders[newId]) return;
+      const next: Record<string, GenderDefinition> = {};
+      for (const [k, v] of Object.entries(config.genders)) {
+        next[k === oldId ? newId : k] = v;
+      }
+      onChange({ genders: next });
+      if (selectedGender === oldId) setSelectedGender(newId);
+    },
+    [config.genders, onChange, selectedGender],
   );
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="rounded-3xl border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] p-5">
-        <p className="text-2xs uppercase tracking-ui text-text-muted">Character creation</p>
-        <h4 className="mt-2 font-display text-2xl text-text-primary">Starting resources</h4>
-        <p className="mt-2 max-w-3xl text-sm leading-7 text-text-secondary">
-          Set the baseline economy for new characters before class, race, and equipment decisions start differentiating them.
-        </p>
-        <div className="mt-4 flex flex-col gap-1.5">
-          <FieldRow label="Starting Gold" hint="Gold given to new characters. 0 = earn everything. 50-100 = enough for a basic weapon. 500+ = well-equipped start.">
-            <NumberInput
-              value={config.characterCreation.startingGold}
-              onCommit={(v) => patchCC({ startingGold: v ?? 0 })}
-              min={0}
-            />
-          </FieldRow>
-        </div>
-      </div>
+    <div className="flex flex-col gap-5">
+      <CreationHero config={config} onPatch={patchCC} />
 
-      <div className="rounded-3xl border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] p-5">
-        <p className="text-2xs uppercase tracking-ui text-text-muted">Character creation</p>
-        <h4 className="mt-2 font-display text-2xl text-text-primary">New-player defaults</h4>
-        <p className="mt-2 max-w-3xl text-sm leading-7 text-text-secondary">
-          Pre-selected values for new accounts. Players can still choose during character creation, but these set the initial selection.
-        </p>
-        <div className="mt-4 flex flex-col gap-1.5">
-          <FieldRow label="Default Race" hint="Pre-selected race for new characters.">
-            <SelectInput
-              value={config.characterCreation.defaultRace ?? ""}
-              options={raceOptions}
-              onCommit={(v) => patchCC({ defaultRace: v || undefined })}
-              allowEmpty
-              placeholder="(none)"
-            />
-          </FieldRow>
-          <FieldRow label="Default Class" hint="Pre-selected class for new characters.">
-            <SelectInput
-              value={config.characterCreation.defaultClass ?? ""}
-              options={classOptions}
-              onCommit={(v) => patchCC({ defaultClass: v || undefined })}
-              allowEmpty
-              placeholder="(none)"
-            />
-          </FieldRow>
-          <FieldRow label="Default Gender" hint="Pre-selected gender for new characters.">
-            <SelectInput
-              value={config.characterCreation.defaultGender ?? ""}
-              options={genderOptions}
-              onCommit={(v) => patchCC({ defaultGender: v || undefined })}
-              allowEmpty
-              placeholder="(none)"
-            />
-          </FieldRow>
-        </div>
-      </div>
-
-      <DefinitionWorkbench
-        title="Gender designer"
-        countLabel="Gender definitions"
-        description="Manage displayed gender labels and sprite filename codes."
-        addPlaceholder="New gender id"
-        searchPlaceholder="Search genders"
-        emptyMessage="No genders match the current search."
-        items={config.genders}
-        defaultItem={defaultGenderDefinition}
-        getDisplayName={(gender) => gender.displayName}
-        renderSummary={summarizeGender}
-        renderBadges={(gender) => (gender.spriteCode ? [gender.spriteCode] : ["Uses id"])}
-        renderDetail={(_id, gender, patch) => (
-          <GenderDetail gender={gender} patchGender={patch} />
-        )}
-        onItemsChange={(genders) => onChange({ genders })}
+      <GenderTab
+        genders={config.genders}
+        selected={selectedGender}
+        onSelect={setSelectedGender}
+        onAdd={addGender}
+        onPatch={patchGender}
+        onDelete={deleteGender}
+        onRename={renameGender}
       />
     </div>
   );

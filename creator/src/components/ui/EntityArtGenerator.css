@@ -143,7 +143,7 @@
   font-family: var(--font-display);
   font-size: 11px;
   cursor: pointer;
-  transition: all 180ms var(--ease-cosmic);
+  transition: color 180ms var(--ease-cosmic), border-color 180ms var(--ease-cosmic), box-shadow 180ms var(--ease-cosmic);
 }
 
 .art-hero-action:hover {
@@ -341,7 +341,7 @@
   overflow: hidden;
   padding: 0;
   cursor: pointer;
-  transition: all 180ms var(--ease-cosmic);
+  transition: border-color 180ms var(--ease-cosmic), box-shadow 180ms var(--ease-cosmic), transform 180ms var(--ease-cosmic);
 }
 
 .art-thumb img {
@@ -812,7 +812,7 @@
   letter-spacing: 0.18em;
   text-transform: uppercase;
   cursor: pointer;
-  transition: all 200ms var(--ease-cosmic);
+  transition: color 200ms var(--ease-cosmic), background 200ms var(--ease-cosmic), border-color 200ms var(--ease-cosmic), box-shadow 200ms var(--ease-cosmic), transform 200ms var(--ease-cosmic);
   position: relative;
   overflow: hidden;
 }
@@ -1030,7 +1030,7 @@
   text-transform: inherit;
   color: var(--color-text-secondary);
   cursor: pointer;
-  transition: all 160ms var(--ease-cosmic);
+  transition: color 160ms var(--ease-cosmic), border-color 160ms var(--ease-cosmic), background 160ms var(--ease-cosmic);
 }
 
 .art-lightbox__btn:hover {

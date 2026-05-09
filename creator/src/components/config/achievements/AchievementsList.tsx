@@ -81,7 +81,7 @@ export function AchievementsList({
               title={`Filter by category · ${activeCategoryLabel}`}
               aria-label={`Filter by category, current: ${activeCategoryLabel}`}
               className={cx(
-                "focus-ring inline-flex h-6 items-center gap-1 rounded-md border px-1.5 text-[0.6rem] uppercase tracking-wider transition",
+                "focus-ring inline-flex h-7 items-center gap-1 rounded-md border px-2 text-2xs uppercase tracking-wider transition",
                 activeCategory === ALL_CATEGORIES
                   ? "border-[var(--chrome-stroke)] bg-transparent text-text-muted hover:border-accent/30 hover:text-accent"
                   : "border-accent/40 bg-accent/10 text-accent",

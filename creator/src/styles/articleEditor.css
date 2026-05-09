@@ -20,7 +20,7 @@
   border: 1px solid var(--color-border-muted);
   background:
     radial-gradient(ellipse at 18% 12%, rgb(var(--accent-rgb) / 0.06), transparent 45%),
-    radial-gradient(ellipse at 82% 88%, rgba(53, 161, 176, 0.10), transparent 50%),
+    radial-gradient(ellipse at 82% 88%, rgb(var(--stellar-blue-rgb) / 0.10), transparent 50%),
     linear-gradient(180deg, var(--color-bg-primary), var(--color-bg-abyss));
 }
 .ae-app[data-rail="false"]      { grid-template-columns: var(--collapsed-w) 1fr var(--inspector-w); }
@@ -58,8 +58,8 @@
   background: color-mix(in srgb, var(--ae-tpl-color, var(--color-accent)) 16%, transparent);
   color: var(--ae-tpl-color, var(--color-accent));
   font-family: var(--font-display);
-  font-size: 9px;
-  letter-spacing: var(--letter-spacing-wide-ui);
+  font-size: 11px;
+  letter-spacing: var(--letter-spacing-ui);
   text-transform: uppercase;
   white-space: nowrap;
 }
@@ -84,6 +84,18 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  background: none;
+  border: none;
+  border-bottom: 1px dotted transparent;
+  padding: 0;
+  cursor: pointer;
+  transition: color 160ms ease, border-color 160ms ease;
+}
+.ae-topbar__slug:hover,
+.ae-topbar__slug:focus-visible {
+  color: var(--color-warm-pale);
+  border-bottom-color: var(--border-accent-subtle);
+  outline: none;
 }
 .ae-topbar__spacer { flex: 1; }
 .ae-topbar__group { display: flex; align-items: center; gap: 6px; }
@@ -95,10 +107,10 @@
   border-radius: 999px;
   color: var(--color-text-secondary);
   font-family: var(--font-display);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.2em;
   text-transform: uppercase;
-  transition: all 180ms ease;
+  transition: color 180ms ease, border-color 180ms ease, background 180ms ease, box-shadow 180ms ease;
 }
 .ae-topbar__btn:hover {
   color: var(--color-text-primary);
@@ -116,18 +128,18 @@
   color: var(--color-warm-pale);
 }
 .ae-topbar__btn[data-variant="danger"] {
-  border-color: rgb(var(--accent-rgb) / 0);
-  background: rgba(217, 117, 107, 0.10);
+  border-color: transparent;
+  background: rgb(var(--status-error-rgb) / 0.10);
   color: var(--color-status-danger);
 }
 .ae-topbar__btn[data-variant="danger"]:hover {
-  background: rgba(217, 117, 107, 0.20);
-  border-color: rgba(217, 117, 107, 0.45);
+  background: rgb(var(--status-error-rgb) / 0.20);
+  border-color: rgb(var(--status-error-rgb) / 0.45);
 }
 .ae-topbar__check {
   display: inline-flex; align-items: center; gap: 8px;
   font-family: var(--font-display);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.2em;
   text-transform: uppercase;
   color: var(--color-text-muted);
@@ -177,7 +189,7 @@
   display: flex; align-items: center; justify-content: space-between; gap: 6px;
   padding: 14px 14px 10px 18px;
   font-family: var(--font-display);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: var(--letter-spacing-ui);
   text-transform: uppercase;
   color: var(--color-text-muted);
@@ -186,14 +198,14 @@
   display: flex; align-items: center; gap: 8px;
 }
 .ae-collapse-btn {
-  width: 22px; height: 22px;
+  width: 28px; height: 28px;
   display: inline-flex; align-items: center; justify-content: center;
   border-radius: 6px;
   border: 1px solid var(--chrome-stroke);
   background: var(--chrome-fill);
   color: var(--color-text-muted);
   cursor: pointer;
-  font-size: 12px;
+  font-size: 14px;
   line-height: 1;
   padding: 0;
   transition: color 160ms ease, border-color 160ms ease;
@@ -202,9 +214,13 @@
   color: var(--color-warm-pale);
   border-color: var(--border-accent-subtle);
 }
+.ae-collapse-btn:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
 .ae-rail__title__count {
   font-family: var(--font-display);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.18em;
   color: var(--color-warm-pale);
 }
@@ -219,10 +235,13 @@
 .ae-rail__list {
   flex: 1; overflow-y: auto;
   padding: 4px 12px 8px;
+  margin: 0;
   display: flex; flex-direction: column; gap: 4px;
+  list-style: none;
 }
 .ae-rail__list::-webkit-scrollbar { width: 6px; }
 .ae-rail__list::-webkit-scrollbar-thumb { background: var(--color-border-muted); border-radius: 999px; }
+.ae-sec__wrap { list-style: none; }
 
 .ae-sec {
   position: relative;
@@ -234,7 +253,7 @@
   border: 1px solid transparent;
   border-radius: 10px;
   cursor: pointer;
-  transition: all 160ms ease;
+  transition: background 160ms ease, border-color 160ms ease, box-shadow 160ms ease, opacity 160ms ease;
   user-select: none;
   background: transparent;
   text-align: left;
@@ -250,6 +269,10 @@
   background: linear-gradient(90deg, rgb(var(--accent-rgb) / 0.16), var(--chrome-fill) 60%);
   border-color: var(--border-accent-subtle);
   box-shadow: inset 3px 0 0 var(--color-accent), 0 0 0 1px rgb(var(--accent-rgb) / 0.18);
+}
+.ae-sec:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
 }
 .ae-sec[data-active="true"] .ae-sec__title { color: var(--color-text-primary); }
 .ae-sec[data-active="true"] .ae-sec__icon { color: var(--color-warm-pale); }
@@ -296,6 +319,17 @@
   text-transform: uppercase;
   color: var(--color-text-secondary);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  display: inline-flex; align-items: center; gap: 6px;
+}
+.ae-sec__lock {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px; height: 14px;
+  font-size: 11px;
+  line-height: 1;
+  color: var(--color-status-warning);
+  flex: none;
 }
 .ae-sec__meta {
   font-family: var(--font-sans);
@@ -313,21 +347,31 @@
 }
 .ae-sec__num {
   font-family: var(--font-display);
-  font-size: 9px;
+  font-size: 10px;
   color: var(--color-text-muted);
-  opacity: 0.7;
+  opacity: 0.75;
   letter-spacing: 0.1em;
 }
 .ae-sec__del {
-  background: none; border: none; padding: 2px 4px;
+  background: none; border: none;
+  width: 28px; height: 28px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border-radius: 6px;
   color: var(--color-text-muted);
-  font-size: 14px; line-height: 1;
+  font-size: 16px; line-height: 1;
   opacity: 0;
-  transition: opacity 160ms ease, color 160ms ease;
+  transition: opacity 160ms ease, color 160ms ease, background 160ms ease;
   cursor: pointer;
+  padding: 0;
 }
-.ae-sec:hover .ae-sec__del { opacity: 0.5; }
-.ae-sec__del:hover { opacity: 1; color: var(--color-status-error); }
+.ae-sec:hover .ae-sec__del,
+.ae-sec:focus-within .ae-sec__del { opacity: 0.5; }
+.ae-sec__del:hover,
+.ae-sec__del:focus-visible { opacity: 1; color: var(--color-status-error); }
+.ae-sec__del:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 1px;
+}
 
 .ae-rail__add {
   position: relative;
@@ -339,10 +383,10 @@
   border-radius: 10px;
   color: var(--color-text-muted);
   font-family: var(--font-display);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: var(--letter-spacing-ui);
   text-transform: uppercase;
-  transition: all 200ms ease;
+  transition: color 200ms ease, border-color 200ms ease, background 200ms ease;
   cursor: pointer;
 }
 .ae-rail__add:hover {
@@ -354,6 +398,21 @@
   border-color: var(--border-accent-subtle);
   color: var(--color-warm-pale);
   background: rgb(var(--accent-rgb) / 0.12);
+}
+.ae-rail__add__trigger {
+  background: none;
+  border: none;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  padding: 0;
+  cursor: pointer;
+}
+.ae-rail__add__trigger:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 4px;
+  border-radius: 4px;
 }
 .ae-rail__addmenu {
   position: absolute;
@@ -387,18 +446,18 @@
   color: var(--color-text-primary);
 }
 .ae-rail__addmenu__item__icon {
-  width: 24px; height: 24px;
+  width: 26px; height: 26px;
   border-radius: 6px;
   background: rgb(var(--fill-rgb) / 0.6);
   border: 1px solid var(--color-border-muted);
   display: inline-flex; align-items: center; justify-content: center;
   color: var(--color-warm-pale);
   font-family: var(--font-display);
-  font-size: 11px;
+  font-size: 13px;
 }
 .ae-rail__addmenu__item__name {
   font-family: var(--font-display);
-  font-size: 11px;
+  font-size: 12px;
   letter-spacing: 0.2em;
   text-transform: uppercase;
   color: var(--color-text-primary);
@@ -431,8 +490,8 @@
 .ae-headblock__kicker {
   display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
   font-family: var(--font-display);
-  font-size: 10px;
-  letter-spacing: 0.24em;
+  font-size: 11px;
+  letter-spacing: 0.22em;
   text-transform: uppercase;
   color: var(--color-text-muted);
   margin-bottom: 8px;
@@ -451,9 +510,15 @@
   color: var(--color-text-primary);
   padding: 4px 0;
   outline: none;
+  border-bottom: 1px solid transparent;
+  transition: border-color 160ms ease, background 160ms ease;
+}
+.ae-headblock__title:hover {
+  border-bottom-color: var(--color-border-muted);
 }
 .ae-headblock__title:focus {
   background: linear-gradient(180deg, rgb(var(--accent-rgb) / 0.06), transparent);
+  border-bottom-color: var(--border-accent-subtle);
 }
 .ae-headblock__sub {
   margin-top: 8px;
@@ -464,9 +529,14 @@
   width: 100%;
   background: none; border: none; outline: none;
   padding: 4px 0;
+  border-bottom: 1px solid transparent;
+  transition: border-color 160ms ease;
 }
+.ae-headblock__sub:hover { border-bottom-color: var(--color-border-muted); }
+.ae-headblock__sub:focus { border-bottom-color: var(--border-accent-subtle); }
 .ae-headblock__sub::placeholder {
-  color: rgb(var(--text-rgb) / 0.42);
+  color: var(--color-text-muted);
+  opacity: 1;
 }
 
 /* ─── Section editor body ──────────────────────────────────────── */
@@ -481,8 +551,8 @@
 }
 .ae-editor__pretitle {
   font-family: var(--font-display);
-  font-size: 10px;
-  letter-spacing: 0.26em;
+  font-size: 11px;
+  letter-spacing: 0.22em;
   text-transform: uppercase;
   color: var(--color-text-muted);
   margin-bottom: 4px;
@@ -508,16 +578,18 @@
   padding: 2px 0;
   outline: none;
   border-bottom: 1px solid transparent;
+  transition: border-color 160ms ease;
 }
-.ae-editor__title:focus { border-bottom-color: var(--color-border-muted); }
+.ae-editor__title:hover { border-bottom-color: var(--color-border-muted); }
+.ae-editor__title:focus { border-bottom-color: var(--border-accent-subtle); }
 
 .ae-editor__visibility {
   display: inline-flex; align-items: center; gap: 6px;
-  padding: 4px 10px;
+  padding: 5px 12px;
   border: 1px solid var(--color-border-muted);
   border-radius: 999px;
   font-family: var(--font-display);
-  font-size: 9px;
+  font-size: 11px;
   letter-spacing: var(--letter-spacing-ui);
   text-transform: uppercase;
   color: var(--color-text-muted);
@@ -551,8 +623,8 @@
   margin-right: 4px;
   border-right: 1px solid var(--color-border-muted);
   font-family: var(--font-display);
-  font-size: 9px;
-  letter-spacing: var(--letter-spacing-ui);
+  font-size: 10px;
+  letter-spacing: var(--letter-spacing-label);
   text-transform: uppercase;
   font-style: normal;
   color: var(--color-warm-pale);
@@ -572,10 +644,10 @@
   background: none;
   border: 1px solid transparent;
   color: var(--color-text-link);
-  padding: 5px 10px;
+  padding: 6px 12px;
   border-radius: 6px;
   font-family: var(--font-display);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.18em;
   text-transform: uppercase;
   font-style: normal;
@@ -608,10 +680,17 @@
   background:
     radial-gradient(ellipse at center, rgb(var(--accent-rgb) / 0.04), transparent 70%),
     var(--color-graph-bg);
-  cursor: pointer;
   transition: border-color 200ms ease;
 }
+/* Cursor only signals click when the wrapper actually behaves as a button —
+   the empty state. With an image set, the overlay buttons handle the action. */
+.ae-imgsec__art[data-empty="true"] { cursor: pointer; }
 .ae-imgsec__art:hover { border-color: var(--border-accent-subtle); }
+.ae-imgsec__art[data-empty="true"]:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+  border-color: var(--border-accent-subtle);
+}
 .ae-imgsec__art img {
   display: block;
   max-width: 100%;
@@ -622,25 +701,33 @@
 .ae-imgsec__art[data-empty="true"] {
   min-height: 280px;
 }
+/* Empty state: empty-content placeholder carries the message at rest;
+   overlay only joins on hover/focus. With an image set, the overlay is
+   always partially visible so the user sees the surface is editable —
+   full reveal on hover/focus completes the action. */
 .ae-imgsec__art__overlay {
   position: absolute; inset: 0;
   display: flex; align-items: center; justify-content: center;
   gap: 14px;
-  background: rgb(var(--shadow-rgb) / 0.55);
-  opacity: 0;
-  transition: opacity 200ms ease;
+  background: linear-gradient(180deg, transparent 55%, rgb(var(--shadow-rgb) / 0.55));
+  opacity: 0.75;
+  transition: opacity 200ms ease, background 200ms ease;
 }
+.ae-imgsec__art[data-empty="true"] .ae-imgsec__art__overlay { opacity: 0; }
 .ae-imgsec__art:hover .ae-imgsec__art__overlay,
-.ae-imgsec__art:focus-within .ae-imgsec__art__overlay { opacity: 1; }
+.ae-imgsec__art:focus-within .ae-imgsec__art__overlay {
+  background: rgb(var(--shadow-rgb) / 0.55);
+  opacity: 1;
+}
 .ae-imgsec__art__action {
   background: rgb(var(--shadow-rgb) / 0.7);
   border: 1px solid var(--border-accent-subtle);
   color: var(--color-warm-pale);
   font-family: var(--font-display);
-  font-size: 11px;
-  letter-spacing: 0.2em;
+  font-size: 12px;
+  letter-spacing: 0.18em;
   text-transform: uppercase;
-  padding: 9px 16px;
+  padding: 10px 18px;
   border-radius: 999px;
   cursor: pointer;
   transition: background 160ms ease, color 160ms ease, transform 160ms ease;
@@ -652,8 +739,8 @@
 }
 .ae-imgsec__art__cta {
   font-family: var(--font-display);
-  font-size: 11px;
-  letter-spacing: 0.2em;
+  font-size: 12px;
+  letter-spacing: 0.18em;
   text-transform: uppercase;
   color: var(--color-warm-pale);
 }
@@ -674,8 +761,8 @@
   display: flex; flex-direction: column; align-items: center; justify-content: center;
   gap: 8px;
   font-family: var(--font-display);
-  font-size: 11px;
-  letter-spacing: var(--letter-spacing-ui);
+  font-size: 12px;
+  letter-spacing: var(--letter-spacing-label);
   text-transform: uppercase;
   color: var(--color-text-muted);
   text-align: center;
@@ -706,7 +793,7 @@
   overflow: hidden;
   border: 1px solid var(--color-border-muted);
   background: var(--color-graph-bg);
-  transition: all 220ms ease;
+  transition: border-color 220ms ease, transform 220ms ease, box-shadow 220ms ease;
   cursor: pointer;
 }
 .ae-gtile:hover {
@@ -728,7 +815,7 @@
   padding: 22px 10px 8px;
   background: linear-gradient(180deg, transparent, rgb(var(--shadow-rgb) / 0.85));
   font-family: var(--font-display);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.18em;
   color: var(--color-text-primary);
   text-transform: uppercase;
@@ -736,7 +823,7 @@
 .ae-gtile__strap__sub {
   display: block;
   font-family: var(--font-sans);
-  font-size: 10px;
+  font-size: 11px;
   font-style: italic;
   letter-spacing: 0;
   color: var(--color-warm-pale);
@@ -749,8 +836,8 @@
   background: var(--color-accent);
   color: var(--color-bg-abyss);
   font-family: var(--font-display);
-  font-size: 8px;
-  letter-spacing: var(--letter-spacing-ui);
+  font-size: 10px;
+  letter-spacing: var(--letter-spacing-label);
   text-transform: uppercase;
   font-weight: 600;
   border-radius: 4px;
@@ -758,7 +845,7 @@
 }
 .ae-gtile__remove {
   position: absolute; top: 6px; right: 6px;
-  width: 22px; height: 22px;
+  width: 28px; height: 28px;
   border-radius: 999px;
   background: rgb(var(--shadow-rgb) / 0.7);
   border: 1px solid var(--color-border-muted);
@@ -766,13 +853,20 @@
   display: inline-flex; align-items: center; justify-content: center;
   opacity: 0;
   transition: opacity 160ms ease;
-  font-size: 14px; line-height: 0;
+  font-size: 16px; line-height: 0;
   cursor: pointer;
+  padding: 0;
 }
-.ae-gtile:hover .ae-gtile__remove { opacity: 1; }
-.ae-gtile__remove:hover {
+.ae-gtile:hover .ae-gtile__remove,
+.ae-gtile:focus-within .ae-gtile__remove { opacity: 1; }
+.ae-gtile__remove:hover,
+.ae-gtile__remove:focus-visible {
   color: var(--color-status-error);
   border-color: color-mix(in srgb, var(--color-status-error) 60%, transparent);
+}
+.ae-gtile__remove:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
 }
 
 .ae-gallery__add {
@@ -784,10 +878,10 @@
   display: flex; flex-direction: column; align-items: center; justify-content: center;
   gap: 6px;
   font-family: var(--font-display);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.2em;
   text-transform: uppercase;
-  transition: all 200ms ease;
+  transition: color 200ms ease, border-color 200ms ease, background 200ms ease;
   cursor: pointer;
 }
 .ae-gallery__add:hover {
@@ -812,8 +906,8 @@
 }
 .ae-gallery__empty__title {
   font-family: var(--font-display);
-  font-size: 11px;
-  letter-spacing: var(--letter-spacing-ui);
+  font-size: 12px;
+  letter-spacing: var(--letter-spacing-label);
   text-transform: uppercase;
   color: var(--color-warm-pale);
   margin-bottom: 8px;
@@ -857,8 +951,8 @@
 }
 .ae-iblock__title {
   font-family: var(--font-display);
-  font-size: 10px;
-  letter-spacing: 0.24em;
+  font-size: 11px;
+  letter-spacing: 0.22em;
   text-transform: uppercase;
   color: var(--color-text-secondary);
 }
@@ -873,12 +967,12 @@
 .ae-field__lbl {
   display: block;
   font-family: var(--font-display);
-  font-size: 9px;
-  letter-spacing: 0.2em;
+  font-size: 10px;
+  letter-spacing: 0.18em;
   text-transform: uppercase;
   color: var(--color-text-muted);
   margin-bottom: 6px;
-  opacity: 0.85;
+  opacity: 0.9;
 }
 .ae-field__inp {
   width: 100%;
@@ -898,7 +992,8 @@
   background: rgb(var(--fill-rgb) / 0.55);
 }
 .ae-field__inp::placeholder {
-  color: rgb(var(--text-rgb) / 0.36);
+  color: var(--color-text-muted);
+  opacity: 1;
   font-style: italic;
 }
 .ae-field__inp[disabled] { opacity: 0.5; }
@@ -914,23 +1009,33 @@
 .ae-tagrow { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 .ae-tag {
   display: inline-flex; align-items: center; gap: 6px;
-  padding: 4px 10px;
+  padding: 4px 11px;
   border-radius: 999px;
   border: 1px solid color-mix(in srgb, var(--color-accent) 40%, var(--color-border-muted));
   background: rgb(var(--accent-rgb) / 0.12);
   color: var(--color-text-primary);
   font-family: var(--font-display);
-  font-size: 9px;
+  font-size: 10px;
   letter-spacing: 0.18em;
   text-transform: uppercase;
 }
 .ae-tag__x {
-  background: none; border: none; padding: 0;
+  background: none; border: none;
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 18px; height: 18px;
+  margin: -2px -4px -2px 0;
+  padding: 0;
+  border-radius: 999px;
   color: currentColor; opacity: 0.6;
-  font-size: 11px; line-height: 1;
+  font-size: 13px; line-height: 1;
   cursor: pointer;
 }
-.ae-tag__x:hover { opacity: 1; color: var(--color-status-error); }
+.ae-tag__x:hover,
+.ae-tag__x:focus-visible { opacity: 1; color: var(--color-status-error); }
+.ae-tag__x:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 1px;
+}
 .ae-tag--add {
   background: rgb(var(--fill-rgb) / 0.4);
   border-style: dashed;
@@ -952,10 +1057,10 @@
 }
 .ae-tag--input input {
   background: none; border: none; outline: none;
-  padding: 4px 10px;
+  padding: 4px 11px;
   color: var(--color-text-primary);
   font-family: var(--font-display);
-  font-size: 9px;
+  font-size: 10px;
   letter-spacing: 0.18em;
   text-transform: uppercase;
   width: 110px;
@@ -994,16 +1099,16 @@
 }
 .ae-conn__rel {
   font-family: var(--font-display);
-  font-size: 8.5px;
-  letter-spacing: 0.2em;
+  font-size: 10px;
+  letter-spacing: 0.18em;
   text-transform: uppercase;
   color: var(--color-text-muted);
-  margin-top: 1px;
+  margin-top: 2px;
 }
 .ae-conn__src {
   font-family: var(--font-display);
-  font-size: 8.5px;
-  letter-spacing: 0.18em;
+  font-size: 10px;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--color-text-muted);
   white-space: nowrap;
@@ -1012,23 +1117,40 @@
   gap: 6px;
 }
 .ae-conn__src[data-auto="true"] { color: var(--color-stellar-blue); }
-.ae-conn__del {
-  background: none; border: none; padding: 2px 4px;
+.ae-conn__del,
+.ae-conn__promote {
+  background: none; border: none;
+  width: 24px; height: 24px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border-radius: 6px;
+  padding: 0;
   color: var(--color-text-muted);
-  font-size: 14px;
+  font-size: 16px;
   line-height: 1;
   cursor: pointer;
+  transition: color 160ms ease, background 160ms ease;
 }
-.ae-conn__del:hover { color: var(--color-status-error); }
+.ae-conn__del:hover,
+.ae-conn__del:focus-visible { color: var(--color-status-error); }
+.ae-conn__promote:hover,
+.ae-conn__promote:focus-visible {
+  color: var(--color-stellar-blue);
+  background: rgb(var(--stellar-blue-rgb) / 0.10);
+}
+.ae-conn__del:focus-visible,
+.ae-conn__promote:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 1px;
+}
 
 .ae-inspector__add {
-  width: 100%; padding: 8px;
+  width: 100%; padding: 9px;
   background: none;
   border: 1px dashed var(--color-border-muted);
   border-radius: 8px;
   color: var(--color-text-muted);
   font-family: var(--font-display);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.2em;
   text-transform: uppercase;
   margin-top: 4px;
@@ -1046,8 +1168,8 @@
   background: linear-gradient(180deg, rgb(var(--bg-rgb) / 0.55), rgb(var(--abyss-rgb) / 0.55));
   border-top: 1px solid var(--color-border-muted);
   font-family: var(--font-display);
-  font-size: 9px;
-  letter-spacing: var(--letter-spacing-ui);
+  font-size: 10px;
+  letter-spacing: var(--letter-spacing-label);
   text-transform: uppercase;
   color: var(--color-text-muted);
 }
@@ -1098,7 +1220,7 @@
 .ae-modal__title {
   font-family: var(--font-display);
   font-size: 14px;
-  letter-spacing: var(--letter-spacing-ui);
+  letter-spacing: var(--letter-spacing-label);
   text-transform: uppercase;
   color: var(--color-warm-pale);
 }
@@ -1116,14 +1238,18 @@
   background: none;
   border: 1px solid var(--color-border-muted);
   color: var(--color-text-muted);
-  width: 32px; height: 32px;
+  width: 36px; height: 36px;
   border-radius: 999px;
-  font-size: 16px; line-height: 1;
+  font-size: 18px; line-height: 1;
   cursor: pointer;
 }
 .ae-modal__close:hover {
   color: var(--color-warm-pale);
   border-color: var(--border-accent-subtle);
+}
+.ae-modal__close:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
 }
 .ae-modal__filter {
   display: flex;
@@ -1147,14 +1273,14 @@
 
 .ae-chip {
   display: inline-flex; align-items: center; gap: 6px;
-  padding: 5px 12px;
+  padding: 6px 13px;
   border-radius: 999px;
   background: var(--chrome-fill);
   border: 1px solid var(--color-border-muted);
   color: var(--color-text-muted);
   font-family: var(--font-display);
-  font-size: 10px;
-  letter-spacing: 0.2em;
+  font-size: 11px;
+  letter-spacing: 0.18em;
   text-transform: uppercase;
   white-space: nowrap;
   cursor: pointer;
@@ -1185,8 +1311,8 @@
   display: flex; align-items: baseline; gap: 12px;
   margin: 14px 0 10px;
   font-family: var(--font-display);
-  font-size: 11px;
-  letter-spacing: 0.24em;
+  font-size: 12px;
+  letter-spacing: 0.22em;
   text-transform: uppercase;
   color: var(--color-warm-pale);
 }
@@ -1208,7 +1334,7 @@
   border: 1px solid var(--color-border-muted);
   overflow: hidden;
   cursor: pointer;
-  transition: all 180ms ease;
+  transition: border-color 180ms ease, transform 180ms ease, box-shadow 180ms ease;
   background: var(--color-graph-bg);
 }
 .ae-libtile:hover {
@@ -1255,7 +1381,7 @@
   padding: 18px 8px 6px;
   background: linear-gradient(180deg, transparent, rgb(var(--shadow-rgb) / 0.85));
   font-family: var(--font-display);
-  font-size: 9px;
+  font-size: 10px;
   letter-spacing: 0.18em;
   color: var(--color-text-primary);
   text-transform: uppercase;
@@ -1268,7 +1394,7 @@
 }
 .ae-modal__foot__count {
   font-family: var(--font-display);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: var(--letter-spacing-ui);
   text-transform: uppercase;
   color: var(--color-text-muted);
@@ -1276,16 +1402,16 @@
 .ae-modal__foot__spacer { flex: 1; }
 
 .ae-btn {
-  padding: 8px 18px;
+  padding: 9px 20px;
   border: 1px solid var(--color-border-muted);
   border-radius: 999px;
   background: var(--chrome-fill);
   color: var(--color-text-secondary);
   font-family: var(--font-display);
-  font-size: 11px;
-  letter-spacing: var(--letter-spacing-ui);
+  font-size: 12px;
+  letter-spacing: var(--letter-spacing-label);
   text-transform: uppercase;
-  transition: all 180ms ease;
+  transition: color 180ms ease, border-color 180ms ease, background 180ms ease, box-shadow 180ms ease, transform 180ms ease;
   cursor: pointer;
 }
 .ae-btn:hover {
@@ -1345,9 +1471,9 @@
 .ae-prose__bar button {
   background: none; border: none;
   color: var(--color-text-muted);
-  padding: 4px 9px;
+  padding: 5px 10px;
   font-family: var(--font-display);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.16em;
   text-transform: uppercase;
   border-radius: 5px;
@@ -1368,6 +1494,61 @@
   opacity: 0.6;
 }
 
+/* ─── Focus rings (final polish pass) ──────────────────────────── */
+/* Catch-all focus indicator for interactive surfaces that don't already
+   have a bespoke focus-visible rule. Outline (not box-shadow) so it
+   composes cleanly with rounded pills and tile shadows. */
+.ae-topbar__btn:focus-visible,
+.ae-aibar button:focus-visible,
+.ae-imgsec__art__action:focus-visible,
+.ae-rail__addmenu__item:focus-visible,
+.ae-prose__bar button:focus-visible,
+.ae-btn:focus-visible,
+.ae-chip:focus-visible,
+.ae-libtile:focus-visible,
+.ae-gtile:focus-visible,
+.ae-gallery__add:focus-visible,
+.ae-inspector__add:focus-visible,
+.ae-editor__visibility:focus-visible,
+.ae-forge-panel__close:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+/* Inline editable text fields use a stronger focus signal than the hover
+   bottom-border, since `outline: none` is set for the resting state. */
+.ae-headblock__title:focus-visible,
+.ae-headblock__sub:focus-visible,
+.ae-editor__title:focus-visible,
+.ae-imgsec__caption:focus-visible,
+.ae-modal__filter input:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 4px;
+  border-radius: 2px;
+}
+
+/* ─── Layout utilities (article editor scope) ───────────────────── */
+/* Tiny set of named classes that replace multi-property inline styles. */
+.ae-row    { display: flex; align-items: center; gap: 6px; }
+.ae-col    { display: flex; flex-direction: column; gap: 6px; }
+.ae-trunc-flex { flex: 1; min-width: 0; }
+.ae-trunc-min  { min-width: 0; }
+.ae-empty-note { color: var(--color-text-muted); font-style: italic; }
+.ae-empty-block {
+  padding: 60px 20px;
+  text-align: center;
+  color: var(--color-text-muted);
+  font-style: italic;
+}
+.ae-rename-input { width: 11rem; }
+.ae-aibar--flush { margin-top: 0; }
+.ae-field__readonly--mono {
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+.ae-iblock:last-child { margin-bottom: 0; }
+.ae-conn__addform { margin-top: 4px; }
+
 /* ─── Inline Forge generator panel ─────────────────────────────── */
 .ae-forge-panel {
   margin-top: 18px;
@@ -1384,7 +1565,7 @@
 }
 .ae-forge-panel__title {
   font-family: var(--font-display);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: var(--letter-spacing-ui);
   text-transform: uppercase;
   color: var(--color-warm-pale);

@@ -29,14 +29,68 @@ export interface ArticleRelation {
   label?: string;
 }
 
+/**
+ * A typed editing block within an Article. Articles are composed of an
+ * ordered list of sections; each section becomes one block on export.
+ *
+ * Three variants:
+ *  - `richtext` — TipTap JSON (string) prose with optional title.
+ *  - `image`    — single image reference + caption.
+ *  - `gallery`  — multiple image references with one designated as primary.
+ *
+ * Sections marked `private` are hidden from showcase export (Creator's Notes).
+ */
+export type ArticleSectionType = "richtext" | "image" | "gallery";
+
+interface ArticleSectionBase {
+  id: string;
+  type: ArticleSectionType;
+  title?: string;
+  /** When true, section is excluded from showcase export. */
+  private?: boolean;
+}
+
+export interface RichTextSection extends ArticleSectionBase {
+  type: "richtext";
+  /** TipTap JSON serialized as a string (matches Article.content format). */
+  body: string;
+}
+
+export interface ImageSection extends ArticleSectionBase {
+  type: "image";
+  /** Asset filename. Undefined = empty section. */
+  primary?: string;
+  caption?: string;
+}
+
+export interface GallerySection extends ArticleSectionBase {
+  type: "gallery";
+  /** Ordered list of asset filenames. */
+  images: string[];
+  /** Filename in `images` rendered first on export. */
+  primary?: string;
+}
+
+export type ArticleSection = RichTextSection | ImageSection | GallerySection;
+
 export interface Article {
   id: string;
   template: ArticleTemplate;
   title: string;
   parentId?: string;
   sortOrder?: number;
+  /** Optional one-line tagline rendered under the title. */
+  tagline?: string;
   fields: Record<string, unknown>;
+  /**
+   * Legacy single-blob TipTap content. Articles loaded before the section
+   * model was introduced still have this field; new content lives in
+   * `sections`. Kept for backward compatibility and as an export fallback
+   * when `sections` is absent.
+   */
   content: string;
+  /** Ordered list of typed sections. Replaces `content` going forward. */
+  sections?: ArticleSection[];
   privateNotes?: string;
   tags?: string[];
   relations?: ArticleRelation[];

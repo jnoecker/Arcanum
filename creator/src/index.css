@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "tippy.js/dist/tippy.css";
+@import "./styles/articleEditor.css";
 
 @theme {
   /* ─── Mode flag (overridden by JS theme system) ─── */

@@ -107,7 +107,7 @@ const SYSTEMS_PANELS: PanelDef[] = [
 // ─── Lore panels ───────────────────────────────────────────────────
 
 const LORE_PANELS: PanelDef[] = [
-  { id: "lore", label: "Articles", host: "lore", kicker: "Codex", title: "World lore", description: "All world-building articles — characters, locations, factions, and more.", maxWidth: "max-w-7xl", island: "arcanum", glyph: "\u{1F4DC}" },
+  { id: "lore", label: "Articles", host: "lore", kicker: "Codex", title: "World lore", description: "All world-building articles — characters, locations, factions, and more.", maxWidth: "max-w-none", island: "arcanum", glyph: "\u{1F4DC}" },
   { id: "worldSetting", label: "World Setting", host: "lore", kicker: "Foundation", title: "World setting", description: "Name, overview, history, themes, geography, and magic system.", maxWidth: "max-w-5xl", island: "arcanum", glyph: "\u{1F30C}" },
   { ...ART_STYLE_PANEL, kicker: "Foundation" },
   { id: "loreMaps", label: "Maps", host: "lore", kicker: "Cartography", title: "World maps", description: "Upload maps, place pins, link locations — and use the World Planner tab to generate draft zones from them.", maxWidth: "max-w-7xl", island: "arcanum", glyph: "\u{1F5FA}\uFE0F" },

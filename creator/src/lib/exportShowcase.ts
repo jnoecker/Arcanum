@@ -1,4 +1,4 @@
-import type { WorldLore, Article, ArticleRelation } from "@/types/lore";
+import type { WorldLore, Article, ArticleRelation, ArticleSection } from "@/types/lore";
 import type { Story } from "@/types/story";
 import { extractMentions } from "@/lib/loreRelations";
 
@@ -220,6 +220,106 @@ export function tiptapToHtml(content: string): string {
   }
 }
 
+// ─── Section flattening ───────────────────────────────────────────
+
+interface FlattenedSections {
+  /** Concatenated HTML of all non-private sections, in order. */
+  contentHtml: string;
+  /** Primary image filename: first image-section's primary, or first gallery primary. */
+  primaryImage?: string;
+  /** All image filenames referenced by non-private sections (for gallery export). */
+  galleryImages: string[];
+  /** All @mention-eligible TipTap bodies (used for mention scanning). */
+  bodyForMentions: string;
+}
+
+/**
+ * Flatten an article's sections into showcase HTML + aggregated image
+ * references. Private sections are skipped entirely. Image and gallery
+ * sections render as `<figure>` blocks so the showcase can style them.
+ */
+function flattenSections(
+  article: Article,
+  resolveImage: (f: string | undefined) => string | undefined,
+): FlattenedSections {
+  const out: FlattenedSections = {
+    contentHtml: "",
+    primaryImage: undefined,
+    galleryImages: [],
+    bodyForMentions: "",
+  };
+
+  const sections: ArticleSection[] | undefined = article.sections;
+  if (!sections || sections.length === 0) {
+    // Legacy article — no sections set. Use the original content blob and
+    // article-level image/gallery.
+    out.contentHtml = tiptapToHtml(article.content);
+    out.primaryImage = article.image;
+    out.galleryImages = [...(article.gallery ?? [])];
+    out.bodyForMentions = article.content;
+    return out;
+  }
+
+  const htmlParts: string[] = [];
+  const mentionParts: string[] = [];
+
+  for (const sec of sections) {
+    if (sec.private) continue;
+
+    if (sec.type === "richtext") {
+      const heading = sec.title ? `<h2>${escapeHtml(decodeHtmlEntities(sec.title))}</h2>` : "";
+      const body = tiptapToHtml(sec.body);
+      htmlParts.push(`<section class="lore-section lore-section--prose">${heading}${body}</section>`);
+      mentionParts.push(sec.body);
+      continue;
+    }
+
+    if (sec.type === "image") {
+      const url = resolveImage(sec.primary);
+      if (!sec.primary) continue;
+      if (!out.primaryImage) out.primaryImage = sec.primary;
+      out.galleryImages.push(sec.primary);
+      const heading = sec.title ? `<h2>${escapeHtml(decodeHtmlEntities(sec.title))}</h2>` : "";
+      const captionHtml = sec.caption
+        ? `<figcaption>${escapeHtml(decodeHtmlEntities(sec.caption))}</figcaption>`
+        : "";
+      const imgTag = url ? `<img src="${escapeHtml(url)}" alt="${escapeHtml(decodeHtmlEntities(sec.caption ?? sec.title ?? ""))}" />` : "";
+      htmlParts.push(
+        `<section class="lore-section lore-section--image">${heading}<figure>${imgTag}${captionHtml}</figure></section>`,
+      );
+      continue;
+    }
+
+    // gallery
+    if (sec.images.length === 0) continue;
+    if (!out.primaryImage) {
+      out.primaryImage = sec.primary ?? sec.images[0];
+    }
+    for (const f of sec.images) {
+      if (!out.galleryImages.includes(f)) out.galleryImages.push(f);
+    }
+    const heading = sec.title ? `<h2>${escapeHtml(decodeHtmlEntities(sec.title))}</h2>` : "";
+    const ordered = sec.primary
+      ? [sec.primary, ...sec.images.filter((f) => f !== sec.primary)]
+      : sec.images;
+    const tiles = ordered
+      .map((f) => {
+        const url = resolveImage(f);
+        if (!url) return "";
+        return `<figure><img src="${escapeHtml(url)}" alt="" /></figure>`;
+      })
+      .filter(Boolean)
+      .join("");
+    htmlParts.push(
+      `<section class="lore-section lore-section--gallery">${heading}<div class="lore-gallery">${tiles}</div></section>`,
+    );
+  }
+
+  out.contentHtml = htmlParts.join("\n");
+  out.bodyForMentions = mentionParts.join("\n");
+  return out;
+}
+
 // ─── Showcase story types ─────────────────────────────────────────
 
 export interface ShowcaseSceneEntity {
@@ -397,29 +497,48 @@ export function exportShowcaseData(
   const articles: ShowcaseArticle[] = Object.values(lore.articles)
     .filter((a) => !a.draft)
     .map((a) => {
-    // Merge explicit relations + extracted mentions (strip refs to draft articles)
+    const flat = flattenSections(a, resolveImage);
+
+    // Merge explicit relations + extracted mentions from every richtext body
+    // (sections + legacy content). Strip refs to draft articles.
     const explicit = (a.relations ?? []).filter((r) => !draftIds.has(r.targetId));
-    const mentions = extractMentions(a.content).filter((r) => !draftIds.has(r.targetId));
     const seenTargets = new Set(explicit.map((r) => `${r.targetId}:${r.type}`));
     const merged = [...explicit];
-    for (const m of mentions) {
-      const key = `${m.targetId}:${m.type}`;
-      if (!seenTargets.has(key)) {
+    const mentionScanInputs: string[] = [];
+    if (a.content) mentionScanInputs.push(a.content);
+    for (const sec of a.sections ?? []) {
+      if (sec.type === "richtext" && !sec.private && sec.body) mentionScanInputs.push(sec.body);
+    }
+    for (const body of mentionScanInputs) {
+      for (const m of extractMentions(body)) {
+        if (draftIds.has(m.targetId)) continue;
+        const key = `${m.targetId}:${m.type}`;
+        if (seenTargets.has(key)) continue;
         seenTargets.add(key);
         merged.push(m);
       }
     }
+
+    // Image/gallery resolution: prefer section-derived images; fall back to
+    // article-level fields for legacy articles or when sections are absent.
+    const primary = flat.primaryImage ?? a.image;
+    const galleryFiles = flat.galleryImages.length > 0
+      ? flat.galleryImages
+      : (a.gallery ?? []);
+    const galleryUrls = galleryFiles
+      .map(resolveImage)
+      .filter((u): u is string => !!u);
 
     return {
       id: a.id,
       template: a.template,
       title: decodeHtmlEntities(a.title),
       fields: decodeFields(a.fields),
-      contentHtml: tiptapToHtml(a.content),
+      contentHtml: flat.contentHtml,
       tags: (a.tags ?? []).map(decodeHtmlEntities),
       relations: merged.map((r) => ({ ...r, label: decodeMaybeString(r.label) })),
-      imageUrl: resolveImage(a.image),
-      galleryUrls: a.gallery?.length ? a.gallery.map(resolveImage).filter((u): u is string => !!u) : undefined,
+      imageUrl: resolveImage(primary),
+      galleryUrls: galleryUrls.length > 0 ? galleryUrls : undefined,
       createdAt: a.createdAt,
       updatedAt: a.updatedAt,
     };

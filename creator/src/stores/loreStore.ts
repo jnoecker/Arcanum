@@ -1,7 +1,8 @@
 import { create } from "zustand";
-import type { WorldLore, Article, ArticleTemplate, ColorLabel, LoreMap, MapPin, CalendarSystem, TimelineEvent, LoreDocument, TemplateOverrides, ShowcaseSettings, CustomTemplateDefinition, CustomSceneTemplate, ArtStyle, ZonePlan, ChatMessage } from "@/types/lore";
+import type { WorldLore, Article, ArticleSection, ArticleSectionType, ArticleTemplate, ColorLabel, LoreMap, MapPin, CalendarSystem, TimelineEvent, LoreDocument, TemplateOverrides, ShowcaseSettings, CustomTemplateDefinition, CustomSceneTemplate, ArtStyle, ZonePlan, ChatMessage } from "@/types/lore";
 import { snapshot as histSnapshot, undo as histUndo, redo as histRedo } from "@/lib/historyStack";
 import { HISTORY_DEPTHS } from "@/lib/historyDepths";
+import { ensureSections, makeSection } from "@/lib/loreSections";
 
 const MAX_LORE_HISTORY = HISTORY_DEPTHS.LORE;
 
@@ -45,6 +46,8 @@ interface LoreState {
   selectedArticleId: string | null;
   selectedMapId: string | null;
   selectedArticleIds: Set<string>;
+  /** Active section within the currently-open article. */
+  selectedSectionId: string | null;
 }
 
 interface LoreStore extends LoreState {
@@ -56,6 +59,15 @@ interface LoreStore extends LoreState {
   duplicateArticle: (id: string) => void;
   moveArticle: (id: string, newParentId: string | undefined, sortOrder: number) => void;
   selectArticle: (id: string | null) => void;
+
+  // Section operations (within an article)
+  selectSection: (sectionId: string | null) => void;
+  addSection: (articleId: string, type: ArticleSectionType) => string | null;
+  updateSection: (articleId: string, sectionId: string, patch: Partial<ArticleSection>) => void;
+  deleteSection: (articleId: string, sectionId: string) => void;
+  reorderSections: (articleId: string, dragId: string, dropBeforeId: string) => void;
+  /** One-time migration: ensure article has sections, syntheszing from legacy fields if needed. */
+  ensureArticleSections: (articleId: string) => void;
 
   // Multi-select operations
   toggleArticleSelection: (id: string) => void;
@@ -156,8 +168,9 @@ export const useLoreStore = create<LoreStore>((set, get) => ({
   selectedArticleId: null,
   selectedMapId: null,
   selectedArticleIds: new Set(),
+  selectedSectionId: null,
 
-  setLore: (lore) => set({ lore, dirty: false, lorePast: [], loreFuture: [], selectedArticleIds: new Set() }),
+  setLore: (lore) => set({ lore, dirty: false, lorePast: [], loreFuture: [], selectedArticleIds: new Set(), selectedSectionId: null }),
 
   createArticle: (article) =>
     set((s) => {
@@ -310,7 +323,136 @@ export const useLoreStore = create<LoreStore>((set, get) => ({
       };
     }),
 
-  selectArticle: (id) => set({ selectedArticleId: id }),
+  selectArticle: (id) => set({ selectedArticleId: id, selectedSectionId: null }),
+
+  // ─── Section operations ───────────────────────────────────────
+
+  selectSection: (sectionId) => set({ selectedSectionId: sectionId }),
+
+  ensureArticleSections: (articleId) =>
+    set((s) => {
+      if (!s.lore) return s;
+      const existing = s.lore.articles[articleId];
+      if (!existing) return s;
+      if (existing.sections && existing.sections.length > 0) return s;
+      const migrated = ensureSections(existing);
+      return {
+        lore: {
+          ...s.lore,
+          articles: { ...s.lore.articles, [articleId]: migrated },
+        },
+        // Migration alone shouldn't dirty the file; the user hasn't edited anything yet.
+      };
+    }),
+
+  addSection: (articleId, type) => {
+    const newSection = makeSection(type);
+    set((s) => {
+      if (!s.lore) return s;
+      const existing = s.lore.articles[articleId];
+      if (!existing) return s;
+      const sections = existing.sections ?? ensureSections(existing).sections ?? [];
+      return {
+        ...snapshotLore(s),
+        lore: {
+          ...s.lore,
+          articles: {
+            ...s.lore.articles,
+            [articleId]: {
+              ...existing,
+              sections: [...sections, newSection],
+              updatedAt: new Date().toISOString(),
+            },
+          },
+        },
+        dirty: true,
+        selectedSectionId: newSection.id,
+      };
+    });
+    return newSection.id;
+  },
+
+  updateSection: (articleId, sectionId, patch) =>
+    set((s) => {
+      if (!s.lore) return s;
+      const existing = s.lore.articles[articleId];
+      if (!existing) return s;
+      const sections = existing.sections ?? ensureSections(existing).sections ?? [];
+      let found = false;
+      const next = sections.map((sec) => {
+        if (sec.id !== sectionId) return sec;
+        found = true;
+        // Cast through unknown so TS allows the union-typed patch.
+        return { ...sec, ...(patch as object) } as ArticleSection;
+      });
+      if (!found) return s;
+      return {
+        ...snapshotLore(s),
+        lore: {
+          ...s.lore,
+          articles: {
+            ...s.lore.articles,
+            [articleId]: { ...existing, sections: next, updatedAt: new Date().toISOString() },
+          },
+        },
+        dirty: true,
+      };
+    }),
+
+  deleteSection: (articleId, sectionId) =>
+    set((s) => {
+      if (!s.lore) return s;
+      const existing = s.lore.articles[articleId];
+      if (!existing) return s;
+      const sections = existing.sections ?? ensureSections(existing).sections ?? [];
+      const next = sections.filter((sec) => sec.id !== sectionId);
+      if (next.length === sections.length) return s;
+      const wasSelected = s.selectedSectionId === sectionId;
+      const idx = sections.findIndex((sec) => sec.id === sectionId);
+      const fallback = wasSelected ? next[Math.max(0, idx - 1)]?.id ?? null : s.selectedSectionId;
+      return {
+        ...snapshotLore(s),
+        lore: {
+          ...s.lore,
+          articles: {
+            ...s.lore.articles,
+            [articleId]: { ...existing, sections: next, updatedAt: new Date().toISOString() },
+          },
+        },
+        dirty: true,
+        selectedSectionId: fallback,
+      };
+    }),
+
+  reorderSections: (articleId, dragId, dropBeforeId) =>
+    set((s) => {
+      if (!s.lore || dragId === dropBeforeId) return s;
+      const existing = s.lore.articles[articleId];
+      if (!existing) return s;
+      const sections = existing.sections ?? ensureSections(existing).sections ?? [];
+      const fromIdx = sections.findIndex((sec) => sec.id === dragId);
+      if (fromIdx < 0) return s;
+      const next = [...sections];
+      const [moved] = next.splice(fromIdx, 1);
+      if (!moved) return s;
+      const insertIdx = next.findIndex((sec) => sec.id === dropBeforeId);
+      if (insertIdx < 0) {
+        next.push(moved);
+      } else {
+        next.splice(insertIdx, 0, moved);
+      }
+      return {
+        ...snapshotLore(s),
+        lore: {
+          ...s.lore,
+          articles: {
+            ...s.lore.articles,
+            [articleId]: { ...existing, sections: next, updatedAt: new Date().toISOString() },
+          },
+        },
+        dirty: true,
+      };
+    }),
 
   // ─── Multi-select operations ──────────────────────────────────
   toggleArticleSelection: (id) =>
@@ -973,5 +1115,5 @@ export const useLoreStore = create<LoreStore>((set, get) => ({
   canRedoLore: () => get().loreFuture.length > 0,
 
   markClean: () => set({ dirty: false }),
-  clearLore: () => set({ lore: null, dirty: false, lorePast: [], loreFuture: [], selectedArticleId: null, selectedMapId: null, selectedArticleIds: new Set() }),
+  clearLore: () => set({ lore: null, dirty: false, lorePast: [], loreFuture: [], selectedArticleId: null, selectedMapId: null, selectedArticleIds: new Set(), selectedSectionId: null }),
 }));

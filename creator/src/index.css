@@ -75,6 +75,7 @@
   --color-accent-muted:    #c96300;
   --color-accent-emphasis: #ffecd1;
   --color-aurum:           #e2bc6a;
+  --color-aurum-pale:      #f4d98b;
 
   /* ─── Warm Accent (primary creative actions) ─── */
   --color-warm:          #ff7d00;
@@ -85,6 +86,8 @@
   --color-violet:       #c0622a;
   --color-stellar-blue: #35a1b0;
   --color-arcane-teal:  #15616d;
+  --color-era-violet:   #a897d2;
+  --color-era-teal:     #6ec0c2;
 
   /* ─── Status Colors ─── */
   --color-status-success: #7cb66d;

@@ -18,15 +18,15 @@ const SCRUBBER_HEIGHT = 60;
 const SCRUBBER_HANDLE = 14;
 const SCRUBBER_PAD = 12;
 
-const LEGENDARY_GOLD = "#d4b66e";
+const LEGENDARY_GOLD = "var(--color-aurum)";
 
 const ERA_COLORS = [
   "var(--color-status-warning)",
   "var(--color-stellar-blue)",
   LEGENDARY_GOLD,
   "var(--color-status-success)",
-  "#a897d2",
-  "#6ec0c2",
+  "var(--color-era-violet)",
+  "var(--color-era-teal)",
 ];
 
 function eventColor(importance: TimelineEvent["importance"]) {

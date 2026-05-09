@@ -215,7 +215,7 @@ function AchievementRow({
         className={cx(
           "focus-ring group flex w-full items-center gap-3 rounded-xl border p-2.5 text-left transition",
           selected
-            ? "border-accent/60 bg-accent/[0.07] shadow-[0_0_28px_-12px_rgb(var(--accent-rgb)/0.7)]"
+            ? "selected-card"
             : "border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] hover:border-accent/30 hover:bg-[var(--chrome-fill)]",
         )}
       >

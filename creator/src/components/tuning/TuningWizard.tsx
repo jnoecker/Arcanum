@@ -294,42 +294,76 @@ export function TuningWizard() {
         ))}
       </div>
 
-      {selectedPreset && activePresetEvaluation && (
-        <ArchetypeContractPanel
-          preset={selectedPreset}
-          evaluation={activePresetEvaluation}
+      {/* ─── Preview Chamber ─────────────────────────────────────
+          Once a preset is selected, the contract / metrics / charts /
+          simulation / pacing panels collapse into a single ornate
+          chamber so the story reads as one room rather than a stack
+          of peers. Sub-sections drop their heavy chrome and rely on
+          ornate dividers for rhythm. */}
+      {selectedPreset && activePresetEvaluation && currentMetrics && activePresetMetrics && presetConfig && (
+        <section
+          aria-label={`Previewing ${selectedPreset.name}`}
+          className="panel-surface bg-gradient-panel-light animate-unfurl-in relative mx-auto mt-8 w-full max-w-6xl overflow-hidden rounded-[1.75rem] px-6 py-8"
+        >
+          <div className="flourish-top-thread pointer-events-none absolute inset-x-0 top-0 h-px" />
+          <header className="mb-6 flex flex-col gap-1">
+            <p className="font-display text-2xs uppercase tracking-wide-ui text-text-muted">
+              Preview Chamber
+            </p>
+            <h2 className="font-display text-lg font-semibold uppercase tracking-[1px] text-text-primary">
+              Previewing: {selectedPreset.name}
+            </h2>
+            <p className="text-sm text-text-secondary">
+              Inspect the contract, metrics, simulations, and pacing this preset would produce — then accept the sections you want below.
+            </p>
+          </header>
+
+          <ArchetypeContractPanel
+            preset={selectedPreset}
+            evaluation={activePresetEvaluation}
+            nested
+          />
+
+          <div className="ornate-divider my-6" aria-hidden="true" />
+
+          <MetricSectionCards
+            currentMetrics={currentMetrics}
+            presetMetrics={activePresetMetrics}
+            diffCounts={sectionDiffCounts}
+            nested
+          />
+
+          <div className="ornate-divider my-6" aria-hidden="true" />
+
+          <ChartRow
+            currentConfig={config}
+            presetConfig={presetConfig}
+            currentMetrics={currentMetrics}
+            presetMetrics={activePresetMetrics}
+            nested
+          />
+
+          <div className="ornate-divider my-6" aria-hidden="true" />
+
+          <SimulationLab
+            activeConfig={presetConfig}
+            hasPresetSelected={true}
+            nested
+          />
+
+          <div className="ornate-divider my-6" aria-hidden="true" />
+
+          <PacingPreview presetConfig={presetConfig} presetId={selectedPresetId!} nested />
+        </section>
+      )}
+
+      {/* Simulation Lab — always visible when no preset, uses current config */}
+      {!selectedPreset && (
+        <SimulationLab
+          activeConfig={config}
+          hasPresetSelected={false}
         />
       )}
-
-      {/* Metric summary cards (D-05, D-06) */}
-      {selectedPresetId && currentMetrics && activePresetMetrics && (
-        <MetricSectionCards
-          currentMetrics={currentMetrics}
-          presetMetrics={activePresetMetrics}
-          diffCounts={sectionDiffCounts}
-        />
-      )}
-
-      {/* Pacing preview — surfaces over/under-tuned XP curves before apply */}
-      {selectedPresetId && presetConfig && (
-        <PacingPreview presetConfig={presetConfig} presetId={selectedPresetId} />
-      )}
-
-      {/* Chart visualizations (VIZ-01, VIZ-02, VIZ-03) */}
-      {selectedPresetId && currentMetrics && activePresetMetrics && presetConfig && (
-        <ChartRow
-          currentConfig={config}
-          presetConfig={presetConfig}
-          currentMetrics={currentMetrics}
-          presetMetrics={activePresetMetrics}
-        />
-      )}
-
-      {/* Simulation Lab — always visible, uses preset-merged config if active */}
-      <SimulationLab
-        activeConfig={presetConfig ?? config}
-        hasPresetSelected={selectedPresetId !== null}
-      />
 
       {/* Health check banner (D-08) -- after metric cards, before search */}
       <HealthCheckBanner />

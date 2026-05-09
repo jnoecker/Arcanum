@@ -25,6 +25,14 @@ function cx(...c: Array<string | false | null | undefined>) {
   return c.filter(Boolean).join(" ");
 }
 
+/**
+ * Editor surfaces sit visually beneath the Preview unlock card. Use a lighter
+ * gradient + thin border + no elevation so the Preview's shadow-glow-warm-strong
+ * and animate-warm-breathe halo wins the eye in the right pane.
+ */
+const EDITOR_CARD_CLASS =
+  "!bg-gradient-panel-light !shadow-none !border-[var(--chrome-stroke)]/60";
+
 const DEFAULT_CRITERION: AchievementCriterionFile = {
   type: "kill",
   targetId: "",
@@ -129,7 +137,7 @@ function BasicsCard({ id, def, categoryOptions, onPatch, onRename }: BasicsCardP
   const overLimit = remaining < 0;
 
   return (
-    <SectionCard title="Basics">
+    <SectionCard title="Basics" className={EDITOR_CARD_CLASS}>
       <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
         <div className="flex flex-col gap-3">
           <FieldLabel label="Display Name" required>
@@ -266,6 +274,7 @@ function CriteriaCard({
   return (
     <SectionCard
       title="Criteria"
+      className={EDITOR_CARD_CLASS}
       actions={
         <button
           type="button"
@@ -449,7 +458,7 @@ function RewardsCard({ rewards, onChange }: RewardsCardProps) {
   const title = rewards.title ?? "";
 
   return (
-    <SectionCard title="Rewards">
+    <SectionCard title="Rewards" className={EDITOR_CARD_CLASS}>
       <div className="grid grid-cols-2 gap-2">
         <FieldLabel label="XP">
           <NumberInput

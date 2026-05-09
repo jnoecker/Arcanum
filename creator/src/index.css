@@ -1247,6 +1247,39 @@ select,
 @utility shadow-glow {
   box-shadow: var(--shadow-glow);
 }
+@utility shadow-glow-warm {
+  box-shadow: var(--glow-warm);
+}
+@utility shadow-glow-warm-strong {
+  box-shadow: var(--glow-warm-strong);
+}
+
+/* ─── Selected list item — used across every Orrery destination's master list.
+   Replaces the inline `border-accent/60 bg-accent/[0.07]
+   shadow-[0_0_28px_-12px_rgb(var(--accent-rgb)/0.7)]` pattern that was
+   copy-pasted across 12+ sites. */
+@utility selected-card {
+  border-color: rgb(var(--accent-rgb) / 0.6);
+  background-color: rgb(var(--accent-rgb) / 0.07);
+  box-shadow: 0 0 28px -12px rgb(var(--accent-rgb) / 0.7);
+}
+@utility selected-pill {
+  border-color: rgb(var(--accent-rgb) / 0.6);
+  background-color: rgb(var(--accent-rgb) / 0.07);
+  box-shadow: 0 0 18px -10px rgb(var(--accent-rgb) / 0.7);
+}
+
+/* ─── Top-edge ember thread — baroque flourish for any panel-surface header
+   region. Apply to a child positioned absolutely inset-x-(some) top-0. */
+@utility flourish-top-thread {
+  background-image: linear-gradient(
+    to right,
+    transparent,
+    rgb(var(--accent-rgb) / 0.45),
+    transparent
+  );
+  opacity: 0.7;
+}
 
 /* ─── Ornate Divider (baroque glyph at midpoint) ─── */
 .ornate-divider {

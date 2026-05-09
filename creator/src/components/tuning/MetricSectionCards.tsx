@@ -17,15 +17,22 @@ interface MetricSectionCardsProps {
   currentMetrics: MetricSnapshot;
   presetMetrics: MetricSnapshot;
   diffCounts?: Map<string, number>;
+  /** When true, drop outer padding/margins — parent provides the frame. */
+  nested?: boolean;
 }
 
 export function MetricSectionCards({
   currentMetrics,
   presetMetrics,
   diffCounts,
+  nested = false,
 }: MetricSectionCardsProps) {
+  const wrapperClass = nested
+    ? "grid grid-cols-1 gap-4 xl:grid-cols-2"
+    : "animate-unfurl-in mb-6 mt-6 grid grid-cols-1 gap-4 px-6 xl:grid-cols-2";
+
   return (
-    <div className="animate-unfurl-in mb-6 mt-6 grid grid-cols-1 gap-4 px-6 xl:grid-cols-2">
+    <div className={wrapperClass}>
       {CARD_ORDER.map((section) => (
         <MetricCard
           key={section}
@@ -37,6 +44,7 @@ export function MetricSectionCards({
               ? diffCounts?.get(TuningSection.WorldSocial)
               : undefined
           }
+          nested={nested}
         />
       ))}
     </div>

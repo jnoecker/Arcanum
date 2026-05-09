@@ -56,7 +56,8 @@ export function RivalryMap({ definitions, factionLabelMap }: RivalryMapProps) {
       title="Rivalry Map"
       description="Lines mark hostile pairs. Killing a member of one faction earns rep with the other."
     >
-      <div className="rounded-xl border border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] p-2">
+      <div className="relative mx-auto w-full max-w-3xl overflow-hidden rounded-xl border border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] p-2">
+        <div className="flourish-top-thread pointer-events-none absolute inset-x-6 top-0 h-px" />
         <svg
           viewBox="0 0 360 300"
           className="block h-auto w-full"

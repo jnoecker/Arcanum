@@ -1,5 +1,5 @@
 import { memo, useState } from "react";
-import { TextInput, NumberInput, SelectInput } from "@/components/ui/FormWidgets";
+import { ActionButton, TextInput, NumberInput, SelectInput } from "@/components/ui/FormWidgets";
 import { SectionCard } from "./SectionCard";
 import { PlusIcon, TrashIcon, XIcon, CompassRoseIcon } from "./icons";
 
@@ -45,15 +45,16 @@ export function QuestRewards({
             if (e.key === "Enter") onAddQuest();
           }}
         />
-        <button
-          type="button"
+        <ActionButton
+          variant="primary"
+          size="sm"
           onClick={onAddQuest}
           disabled={!newQuestId.trim()}
-          className="focus-ring inline-flex shrink-0 items-center gap-1 rounded-lg border border-accent/40 bg-accent/10 px-3 py-1.5 text-xs font-medium text-accent transition hover:bg-accent/20 disabled:cursor-not-allowed disabled:opacity-40"
+          className="shrink-0"
         >
           <PlusIcon />
-          Map quest
-        </button>
+          Add Quest
+        </ActionButton>
       </div>
 
       {entries.length === 0 ? (
@@ -189,15 +190,16 @@ const QuestRewardRow = memo(function QuestRewardRow({
               dense
             />
           </div>
-          <button
-            type="button"
+          <ActionButton
+            variant="primary"
+            size="sm"
             onClick={addPair}
             disabled={!newFaction}
-            className="focus-ring inline-flex shrink-0 items-center gap-1 rounded-lg border border-accent/40 bg-accent/10 px-2 py-1 text-2xs font-medium text-accent transition hover:bg-accent/20 disabled:cursor-not-allowed disabled:opacity-40"
+            className="shrink-0"
           >
             <PlusIcon />
-            Add
-          </button>
+            Bind Faction
+          </ActionButton>
         </div>
       )}
     </div>

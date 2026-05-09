@@ -5,6 +5,8 @@ import type { TuningPreset } from "@/lib/tuning/presets";
 interface ArchetypeContractPanelProps {
   preset: TuningPreset;
   evaluation: ArchetypeEvaluation;
+  /** When true, drop heavy panel chrome — the parent owns the frame. */
+  nested?: boolean;
 }
 
 const STATUS_STYLES = {
@@ -52,6 +54,7 @@ function checkSortValue(check: ContractCheck): number {
 export function ArchetypeContractPanel({
   preset,
   evaluation,
+  nested = false,
 }: ArchetypeContractPanelProps) {
   const contract = getArchetypeContract(preset.id);
   if (!contract) return null;
@@ -63,10 +66,14 @@ export function ArchetypeContractPanel({
     return left.label.localeCompare(right.label);
   });
 
+  const wrapperClass = nested
+    ? "w-full"
+    : "panel-surface mx-auto mt-6 w-full max-w-6xl rounded-[1.75rem] border border-border-muted px-6 py-5";
+
   return (
     <section
       aria-label={`${preset.name} archetype contract`}
-      className="panel-surface mx-auto mt-6 w-full max-w-6xl rounded-[1.75rem] border border-border-muted px-6 py-5"
+      className={wrapperClass}
     >
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div className="min-w-0">

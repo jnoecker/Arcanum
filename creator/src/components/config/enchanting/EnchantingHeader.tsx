@@ -1,9 +1,12 @@
 import { XIcon, CopyIcon, TrashIcon, SaveIcon } from "./icons";
+import { NumberInput } from "@/components/ui/FormWidgets";
 
 interface EnchantingHeaderProps {
   selectedId: string | null;
   hasUnsavedChanges: boolean;
   saving: boolean;
+  maxPerItem: number;
+  onMaxPerItemChange: (v: number) => void;
   onClose: () => void;
   onSave: () => void;
   onDuplicate: () => void;
@@ -14,6 +17,8 @@ export function EnchantingHeader({
   selectedId,
   hasUnsavedChanges,
   saving,
+  maxPerItem,
+  onMaxPerItemChange,
   onClose,
   onSave,
   onDuplicate,
@@ -44,6 +49,22 @@ export function EnchantingHeader({
             runes, wards, etchings. Each one trains a crafting skill, burns
             materials, and stacks onto an item up to the per-item cap.
           </p>
+          <div className="mt-2.5 inline-flex items-center gap-2 rounded-lg border border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] px-2.5 py-1">
+            <span className="font-display text-[0.6rem] font-semibold uppercase tracking-[0.18em] text-text-muted">
+              Max per Item
+            </span>
+            <div className="w-12">
+              <NumberInput
+                value={maxPerItem}
+                onCommit={(v) => onMaxPerItemChange(Math.max(1, v ?? 1))}
+                min={1}
+                dense
+              />
+            </div>
+            <span className="text-2xs italic text-text-muted/70">
+              {maxPerItem === 1 ? "single inscription" : `up to ${maxPerItem} stacked`}
+            </span>
+          </div>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">

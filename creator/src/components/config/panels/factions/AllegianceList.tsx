@@ -1,4 +1,5 @@
 import type { FactionDefinition } from "@/types/config";
+import { ActionButton } from "@/components/ui/FormWidgets";
 import { SectionCard } from "./SectionCard";
 import { CompassRoseIcon, PlusIcon, SearchIcon } from "./icons";
 
@@ -45,15 +46,16 @@ export function AllegianceList({
             }}
           />
         </div>
-        <button
-          type="button"
+        <ActionButton
+          variant="primary"
+          size="sm"
           onClick={onAdd}
           disabled={!newId.trim()}
-          className="focus-ring inline-flex shrink-0 items-center gap-1 rounded-lg border border-accent/40 bg-accent/10 px-3 py-1.5 text-xs font-medium text-accent transition hover:bg-accent/20 disabled:cursor-not-allowed disabled:opacity-40"
+          className="shrink-0"
         >
           <PlusIcon />
-          Add
-        </button>
+          Add Allegiance
+        </ActionButton>
       </div>
 
       {factionIds.length === 0 ? (
@@ -104,7 +106,7 @@ function AllegianceRow({
         className={cx(
           "focus-ring group flex w-full items-center gap-3 rounded-xl border px-3 py-2.5 text-left transition",
           selected
-            ? "border-accent/60 bg-accent/[0.07] shadow-[0_0_28px_-12px_rgb(var(--accent-rgb)/0.7)]"
+            ? "selected-card"
             : "border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] hover:border-accent/30 hover:bg-[var(--chrome-fill)]",
         )}
       >

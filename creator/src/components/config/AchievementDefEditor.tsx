@@ -144,6 +144,7 @@ export function AchievementDefEditor({
         <AchievementPreview
           def={selected}
           categories={config.achievementCategories}
+          criterionTypes={config.achievementCriterionTypes}
         />
       )}
     </div>

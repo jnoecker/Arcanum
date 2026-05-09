@@ -2,7 +2,6 @@ import { useMemo, useState } from "react";
 import type { EnchantmentDefinitionConfig, AppConfig } from "@/types/config";
 import { Section } from "./Section";
 import { PlusIcon, SearchIcon, FilterIcon } from "./icons";
-import { NumberInput } from "@/components/ui/FormWidgets";
 
 function cx(...c: Array<string | false | null | undefined>) {
   return c.filter(Boolean).join(" ");
@@ -14,7 +13,6 @@ interface EnchantmentListProps {
   selectedId: string | null;
   onSelect: (id: string) => void;
   onAdd: () => void;
-  onPatchGlobal: (p: Partial<AppConfig["enchanting"]>) => void;
 }
 
 const ALL_SKILLS = "__all__";
@@ -25,7 +23,6 @@ export function EnchantmentList({
   selectedId,
   onSelect,
   onAdd,
-  onPatchGlobal,
 }: EnchantmentListProps) {
   const [query, setQuery] = useState("");
   const [skillFilter, setSkillFilter] = useState<string>(ALL_SKILLS);
@@ -43,16 +40,18 @@ export function EnchantmentList({
 
   return (
     <div className="flex flex-col gap-4">
-      <StatRow
-        maxPerItem={enchanting.maxEnchantmentsPerItem}
-        totalKnown={ids.length}
-        onMaxPerItemChange={(v) =>
-          onPatchGlobal({ maxEnchantmentsPerItem: Math.max(1, v) })
-        }
-      />
-
       <Section
-        title="Known Enchantments"
+        title={
+          <span className="inline-flex items-baseline gap-2">
+            <span>Known Enchantments</span>
+            <span className="font-display text-2xs font-normal tracking-normal text-text-muted/70">
+              ·
+            </span>
+            <span className="font-display text-2xs font-bold tabular-nums text-accent">
+              {ids.length}
+            </span>
+          </span>
+        }
         description="Every enchantment a player can learn and inscribe."
       >
         <div className="flex flex-col gap-3">
@@ -118,65 +117,6 @@ export function EnchantmentList({
   );
 }
 
-function StatRow({
-  maxPerItem,
-  totalKnown,
-  onMaxPerItemChange,
-}: {
-  maxPerItem: number;
-  totalKnown: number;
-  onMaxPerItemChange: (v: number) => void;
-}) {
-  return (
-    <div className="grid grid-cols-2 gap-3">
-      <StatTile
-        label="Max per Item"
-        helper={
-          maxPerItem === 1
-            ? "Single inscription per piece"
-            : `Up to ${maxPerItem} stacked`
-        }
-      >
-        <div className="w-12">
-          <NumberInput
-            value={maxPerItem}
-            onCommit={(v) => onMaxPerItemChange(v ?? 1)}
-            min={1}
-            dense
-          />
-        </div>
-      </StatTile>
-      <StatTile label="Total Known" helper="Enchantments">
-        <span className="font-display text-2xl font-bold leading-none text-text-primary">
-          {totalKnown}
-        </span>
-      </StatTile>
-    </div>
-  );
-}
-
-function StatTile({
-  label,
-  helper,
-  children,
-}: {
-  label: string;
-  helper: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="panel-surface flex items-center gap-3 rounded-2xl border border-accent/25 px-3 py-2.5 shadow-section">
-      <div className="min-w-0 flex-1">
-        <p className="font-display text-2xs font-semibold uppercase tracking-[0.18em] text-text-muted">
-          {label}
-        </p>
-        <div className="mt-0.5">{children}</div>
-        <p className="mt-0.5 text-2xs text-text-muted/70">{helper}</p>
-      </div>
-    </div>
-  );
-}
-
 interface EnchantmentRowProps {
   id: string;
   def: EnchantmentDefinitionConfig;
@@ -202,7 +142,7 @@ function EnchantmentRow({ id, def, skillLabel, selected, onSelect }: Enchantment
         className={cx(
           "focus-ring group flex w-full items-start gap-3 rounded-xl border p-3 text-left transition",
           selected
-            ? "border-accent/60 bg-accent/[0.07] shadow-[0_0_28px_-12px_rgb(var(--accent-rgb)/0.7)]"
+            ? "selected-card"
             : "border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] hover:border-accent/30 hover:bg-[var(--chrome-fill)]",
         )}
       >

@@ -11,6 +11,8 @@ import type { PacingMilestone, PacingVerdict } from "@/lib/tuning/pacing";
 interface PacingPreviewProps {
   presetConfig: AppConfig;
   presetId: string;
+  /** When true, drop heavy panel chrome — parent owns the frame. */
+  nested?: boolean;
 }
 
 const VERDICT_STYLES: Record<PacingVerdict, { dot: string; text: string; label: string }> = {
@@ -63,7 +65,7 @@ function worstVerdict(milestones: PacingMilestone[]): PacingVerdict {
   return "on-target";
 }
 
-export function PacingPreview({ presetConfig, presetId }: PacingPreviewProps) {
+export function PacingPreview({ presetConfig, presetId, nested = false }: PacingPreviewProps) {
   const pacing = useMemo(
     () => estimatePacing(presetConfig, presetId),
     [presetConfig, presetId],
@@ -74,10 +76,14 @@ export function PacingPreview({ presetConfig, presetId }: PacingPreviewProps) {
   const headline = worstVerdict(pacing.milestones);
   const headlineStyle = VERDICT_STYLES[headline];
 
+  const wrapperClass = nested
+    ? "w-full"
+    : "panel-surface mx-auto mt-6 w-full max-w-6xl rounded-[1.75rem] border border-border-muted px-6 py-5";
+
   return (
     <section
       aria-label="Estimated leveling pace"
-      className="panel-surface mx-auto mt-6 w-full max-w-6xl rounded-[1.75rem] border border-border-muted px-6 py-5"
+      className={wrapperClass}
     >
       <div className="mb-4 flex items-baseline justify-between gap-4">
         <div>

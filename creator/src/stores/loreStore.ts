@@ -96,6 +96,7 @@ interface LoreStore extends LoreState {
   addTimelineEvent: (event: TimelineEvent) => void;
   updateTimelineEvent: (id: string, patch: Partial<TimelineEvent>) => void;
   deleteTimelineEvent: (id: string) => void;
+  duplicateTimelineEvent: (id: string) => string | null;
 
   // Document operations
   createDocument: (doc: LoreDocument) => void;
@@ -630,6 +631,27 @@ export const useLoreStore = create<LoreStore>((set, get) => ({
         dirty: true,
       };
     }),
+
+  duplicateTimelineEvent: (id) => {
+    const state = get();
+    const source = state.lore?.timelineEvents?.find((e) => e.id === id);
+    if (!source || !state.lore) return null;
+    const newId = `evt_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+    const clone: TimelineEvent = {
+      ...source,
+      id: newId,
+      title: `${source.title} (copy)`,
+    };
+    set((s) => {
+      if (!s.lore) return s;
+      return {
+        ...snapshotLore(s),
+        lore: { ...s.lore, timelineEvents: [...(s.lore.timelineEvents ?? []), clone] },
+        dirty: true,
+      };
+    });
+    return newId;
+  },
 
   // ─── Document operations ──────────────────────────────────────────
 

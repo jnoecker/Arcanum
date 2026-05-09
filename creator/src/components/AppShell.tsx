@@ -104,7 +104,7 @@ export function AppShell({ onNewProject }: AppShellProps) {
         <div className="absolute bottom-[-14rem] right-[-12rem] h-[40rem] w-[40rem] rounded-full bg-[radial-gradient(circle,rgb(var(--accent-rgb)/0.10),transparent_72%)] blur-3xl" />
       </div>
       <header className="shrink-0"><Toolbar onNewProject={onNewProject} onToggleGuide={handleToggleGuide} guideOpen={showGuide} /></header>
-      <div className="relative z-10 flex min-h-0 flex-1 flex-col gap-3 px-4 pb-3 pt-5 lg:flex-row">
+      <div className="relative z-10 flex min-h-0 flex-1 flex-col gap-2 px-2 pb-2 pt-2 lg:flex-row">
         <Sidebar />
         <main
           aria-label="Content"

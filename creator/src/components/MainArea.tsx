@@ -45,7 +45,7 @@ function IslandBackPill({ island }: { island: Island }) {
   const def = ISLANDS[island];
   if (!def) return null;
   return (
-    <div className="flex-none px-4 pt-3 pb-1">
+    <div className="flex-none px-2 pb-1 pt-1">
       <button
         type="button"
         onClick={() => openIsland(island)}

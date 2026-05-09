@@ -122,20 +122,20 @@ function TopLevelHeader({ onCollapse }: { onCollapse: () => void }) {
     <div className="relative z-10 shrink-0 px-4 pt-4 pb-3">
       <div className="flex items-center gap-2">
         <button
-          onClick={onCollapse}
-          className="focus-ring shell-pill flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-text-muted transition hover:text-text-primary"
-          title="Collapse sidebar (Ctrl+\\)"
-          aria-label="Collapse sidebar"
-        >
-          <img src={UI_ARROW} alt="" aria-hidden="true" className="h-4 w-4" />
-        </button>
-        <button
           onClick={() => openTab(panelTab("worldSetting"))}
-          className="focus-ring shell-pill ml-auto whitespace-nowrap rounded-full px-2.5 py-1 font-display text-[9px] font-semibold uppercase tracking-wide-ui text-accent"
+          className="focus-ring shell-pill whitespace-nowrap rounded-full px-2.5 py-1 font-display text-[9px] font-semibold uppercase tracking-wide-ui text-accent"
           title="Open world settings"
           aria-label="Open world settings"
         >
           World Settings
+        </button>
+        <button
+          onClick={onCollapse}
+          className="focus-ring shell-pill ml-auto flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-text-muted transition hover:text-text-primary"
+          title="Collapse sidebar (Ctrl+\\)"
+          aria-label="Collapse sidebar"
+        >
+          <img src={UI_ARROW} alt="" aria-hidden="true" className="h-4 w-4" />
         </button>
       </div>
       <div className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 px-1 text-3xs text-text-muted">

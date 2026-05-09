@@ -123,7 +123,7 @@ function TopLevelHeader({ onCollapse }: { onCollapse: () => void }) {
       <div className="flex items-center gap-2">
         <button
           onClick={() => openTab(panelTab("worldSetting"))}
-          className="focus-ring shell-pill whitespace-nowrap rounded-full px-2.5 py-1 font-display text-[9px] font-semibold uppercase tracking-wide-ui text-accent"
+          className="focus-ring flex h-8 shrink-0 items-center whitespace-nowrap rounded-full border border-accent/40 bg-bg-abyss/90 px-3 font-display text-2xs uppercase tracking-wide-ui text-accent shadow-[var(--shadow-drop)] transition hover:border-accent hover:bg-accent/15"
           title="Open world settings"
           aria-label="Open world settings"
         >

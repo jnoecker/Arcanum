@@ -17,6 +17,7 @@ import {
 } from "@/lib/runtimeHandoff";
 import type { SyncProgress } from "@/types/assets";
 import { ActionButton, DialogShell, Spinner } from "./ui/FormWidgets";
+import { OrnateCard } from "./ui/OrnateCard";
 import { useFocusTrap } from "@/lib/useFocusTrap";
 
 const DiffModal = lazy(() => import("./ui/DiffModal").then((m) => ({ default: m.DiffModal })));
@@ -73,6 +74,16 @@ const STATUS_LABELS: Record<StepStatus, string> = {
   error: "failed",
   skipped: "skipped",
 };
+
+function StatusPill({ status }: { status: StepStatus }) {
+  return (
+    <span
+      className={`rounded-full border px-2.5 py-0.5 font-display text-3xs uppercase tracking-wide-ui ${STATUS_STYLES[status]}`}
+    >
+      {STATUS_LABELS[status]}
+    </span>
+  );
+}
 
 function formatSyncResult(result: SyncProgress, noun: string): string {
   const parts = [`${result.uploaded} ${noun} uploaded`];
@@ -332,6 +343,14 @@ export function PublishWorldModal({ onClose }: PublishWorldModalProps) {
         title="Publish World"
         subtitle="Save, validate, review, and deploy assets, config, and zones to R2 in one pass."
         widthClassName="max-w-3xl"
+        backdrop={
+          <img
+            src="/menus/world-publish-bg.jpg"
+            alt=""
+            className="h-full w-full object-cover opacity-[0.22] mix-blend-soft-light"
+            style={{ objectPosition: "center top" }}
+          />
+        }
         onClose={running ? undefined : onClose}
         status={
           hasPending ? (
@@ -386,39 +405,27 @@ export function PublishWorldModal({ onClose }: PublishWorldModalProps) {
             </div>
           )}
 
-          <ol className="flex flex-col gap-2">
+          <ol className="flex flex-col">
             {STEP_ORDER.map(({ key, title }, index) => {
               const state = steps[key];
               return (
-                <li
-                  key={key}
-                  className="flex items-start gap-3 rounded-2xl border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] p-3"
-                >
-                  <span
-                    className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-[var(--chrome-stroke)] bg-[var(--chrome-highlight)] font-display text-2xs text-text-muted"
-                    aria-hidden="true"
+                <li key={key}>
+                  <OrnateCard
+                    number={index + 1}
+                    title={title}
+                    description={state.detail}
+                    headerEnd={<StatusPill status={state.status} />}
+                    tone="scrimmed"
                   >
-                    {index + 1}
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <h3 className="font-display text-sm text-text-primary">{title}</h3>
-                      <span
-                        className={`rounded-full border px-2 py-0.5 text-3xs uppercase tracking-wide-ui ${STATUS_STYLES[state.status]}`}
-                      >
-                        {STATUS_LABELS[state.status]}
-                      </span>
-                    </div>
-                    <p className="mt-1 text-xs text-text-secondary">{state.detail}</p>
                     {state.errors.length > 0 && (
-                      <div className="mt-2 rounded-xl border border-status-error/20 bg-status-error/10 p-2 text-2xs text-status-error">
+                      <div className="rounded-xl border border-status-error/20 bg-status-error/10 p-2 text-2xs text-status-error">
                         {state.errors.slice(0, 3).map((e, i) => (
                           <div key={i}>{e}</div>
                         ))}
                         {state.errors.length > 3 && <div>...and {state.errors.length - 3} more</div>}
                       </div>
                     )}
-                  </div>
+                  </OrnateCard>
                 </li>
               );
             })}

@@ -8,7 +8,6 @@ import { PANEL_MAP } from "@/lib/panelRegistry";
 import { AI_ENABLED } from "@/lib/featureFlags";
 import { Spinner } from "@/components/ui/FormWidgets";
 import { UndoRedoButtons } from "@/components/ui/UndoRedoButtons";
-import configBg from "@/assets/config-bg.png";
 
 import { WorldSettingPanel } from "./WorldSettingPanel";
 import { ArticleBrowser } from "./ArticleBrowser";
@@ -177,18 +176,9 @@ export function LorePanelHost({ panelId }: { panelId: string }) {
 
   return (
     <div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
-      <div className="relative min-h-0 min-w-0 flex-1 overflow-y-auto">
-        <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
-          <img
-            src={configBg}
-            alt=""
-            className="h-full w-full object-cover opacity-[0.10] mix-blend-soft-light"
-            style={{ objectPosition: "center 40%" }}
-          />
-        </div>
-
+      <div className="min-h-0 min-w-0 flex-1 overflow-y-auto">
         <div
-          className={`relative z-10 flex min-h-full w-full flex-col px-3 py-3 ${
+          className={`flex min-h-full w-full flex-col px-3 py-3 ${
             isTimeline ? "max-w-none" : (def?.maxWidth ?? "max-w-5xl")
           }`}
         >

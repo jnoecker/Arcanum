@@ -60,6 +60,7 @@ export function DialogShell({
   overlayStyle,
   className,
   bodyClassName,
+  backdrop,
   footer,
   onClose,
   children,
@@ -75,6 +76,11 @@ export function DialogShell({
   overlayStyle?: CSSProperties;
   className?: string;
   bodyClassName?: string;
+  /** Optional atmospheric layer rendered absolutely inside the dialog-shell,
+   *  behind the header/body/footer but in front of the shell's gradient.
+   *  Use sparingly — modals don't need this; reserve for ceremonial flows
+   *  (Publish World, etc.) where a sense of place matters. */
+  backdrop?: ReactNode;
   footer?: ReactNode;
   onClose?: () => void;
   children: ReactNode;
@@ -88,7 +94,12 @@ export function DialogShell({
         aria-labelledby={titleId}
         className={cx("dialog-shell flex max-h-[88vh] w-full flex-col", widthClassName, className)}
       >
-        <div className="dialog-header">
+        {backdrop && (
+          <div aria-hidden="true" className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
+            {backdrop}
+          </div>
+        )}
+        <div className="relative z-10 dialog-header">
           <div className="min-w-0 flex-1">
             <h2 id={titleId} className="dialog-title">
               {title}
@@ -112,8 +123,8 @@ export function DialogShell({
             </div>
           )}
         </div>
-        <div className={cx("dialog-body", bodyClassName)}>{children}</div>
-        {footer && <div className="dialog-footer">{footer}</div>}
+        <div className={cx("relative z-10 dialog-body", bodyClassName)}>{children}</div>
+        {footer && <div className="relative z-10 dialog-footer">{footer}</div>}
       </div>
     </div>
   );

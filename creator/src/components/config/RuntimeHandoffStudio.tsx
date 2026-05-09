@@ -5,6 +5,7 @@ import { useAssetStore } from "@/stores/assetStore";
 import { useConfigStore } from "@/stores/configStore";
 import { useProjectStore } from "@/stores/projectStore";
 import { useZoneStore } from "@/stores/zoneStore";
+import { OrnateCard } from "@/components/ui/OrnateCard";
 import {
   deployRuntimeAchievements,
   deployRuntimeConfig,
@@ -41,12 +42,23 @@ interface StepState {
 
 const EXPORT_DIR_KEY = "arcanum-runtime-export-dir";
 
+// Bolder pill chrome — full-color borders + ~20% fills so the state is
+// readable at a glance instead of fading into the card. Idle stays muted
+// because "pending" shouldn't compete with active work.
 const STATUS_STYLES: Record<StepStatus, string> = {
-  idle: "border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] text-text-secondary",
-  running: "border-border-active bg-status-info/15 text-text-primary",
-  success: "border-status-success/30 bg-status-success/10 text-status-success",
-  warning: "border-status-warning/30 bg-status-warning/10 text-status-warning",
-  error: "border-status-error/30 bg-status-error/10 text-status-error",
+  idle: "border-[var(--chrome-stroke-strong)] bg-[var(--chrome-fill-strong)] text-text-muted",
+  running: "border-status-info bg-status-info/25 text-status-info",
+  success: "border-status-success bg-status-success/25 text-status-success",
+  warning: "border-status-warning bg-status-warning/25 text-status-warning",
+  error: "border-status-error bg-status-error/25 text-status-error",
+};
+
+const STATUS_LABELS: Record<StepStatus, string> = {
+  idle: "pending",
+  running: "running",
+  success: "done",
+  warning: "warning",
+  error: "failed",
 };
 
 function formatSyncResult(result: SyncProgress, noun: string): string {
@@ -57,6 +69,7 @@ function formatSyncResult(result: SyncProgress, noun: string): string {
 }
 
 function StepCard({
+  number,
   title,
   description,
   state,
@@ -65,6 +78,7 @@ function StepCard({
   onAction,
   children,
 }: {
+  number: number | string;
   title: string;
   description: string;
   state: StepState;
@@ -73,40 +87,41 @@ function StepCard({
   onAction: () => Promise<unknown> | void;
   children?: ReactNode;
 }) {
+  const statusPill = (
+    <span
+      className={`rounded-full border px-2.5 py-0.5 font-display text-3xs uppercase tracking-wide-ui ${STATUS_STYLES[state.status]}`}
+    >
+      {STATUS_LABELS[state.status]}
+    </span>
+  );
   return (
-    <section className="rounded-3xl border border-[var(--chrome-stroke)] bg-gradient-panel-light p-4 shadow-section">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0 flex-1">
-          <h3 className="font-display text-xl text-text-primary">{title}</h3>
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-text-secondary">{description}</p>
-        </div>
-        <span className={`rounded-full border px-3 py-1 text-2xs uppercase tracking-ui ${STATUS_STYLES[state.status]}`}>
-          {state.status}
-        </span>
-      </div>
-
-      {children && <div className="mt-3">{children}</div>}
-
-      <div className="mt-3 flex flex-wrap items-center gap-3">
+    <OrnateCard
+      number={number}
+      title={title}
+      description={description}
+      headerEnd={statusPill}
+    >
+      {children && <div className="mb-3">{children}</div>}
+      <div className="flex flex-wrap items-center gap-3">
         <button
           onClick={() => void onAction()}
           disabled={disabled || state.status === "running"}
-          className="rounded-full border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] px-4 py-2 text-xs font-medium text-text-primary transition enabled:hover:bg-[var(--chrome-highlight-strong)] disabled:cursor-not-allowed disabled:opacity-40"
+          className="rounded-full border border-accent/50 bg-accent/15 px-4 py-2 font-display text-2xs uppercase tracking-wide-ui text-accent shadow-[0_0_12px_rgb(var(--accent-rgb)/0.18)] transition enabled:hover:border-accent enabled:hover:bg-accent/25 enabled:hover:text-warm-pale enabled:hover:shadow-[0_0_18px_rgb(var(--accent-rgb)/0.32)] disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none"
         >
           {state.status === "running" ? "Working..." : actionLabel}
         </button>
-        <p className="text-xs text-text-secondary">{state.detail}</p>
+        <p className="text-2xs leading-relaxed text-text-secondary">{state.detail}</p>
       </div>
 
       {state.errors.length > 0 && (
-        <div className="mt-3 rounded-2xl border border-status-error/20 bg-[var(--chrome-fill)] p-3 text-2xs text-status-error">
+        <div className="mt-3 rounded-2xl border border-status-error/20 bg-status-error/10 p-3 text-2xs text-status-error">
           {state.errors.slice(0, 5).map((error, index) => (
             <div key={index}>{error}</div>
           ))}
           {state.errors.length > 5 && <div>...and {state.errors.length - 5} more</div>}
         </div>
       )}
-    </section>
+    </OrnateCard>
   );
 }
 
@@ -587,9 +602,10 @@ export function RuntimeHandoffStudio() {
         )}
       </section>
 
-      <div className="grid gap-4 xl:grid-cols-2">
+      <div className="gap-4 [column-fill:balance] md:columns-2">
         <StepCard
-          title="1. Save project"
+          number={1}
+          title="Save project"
           description="Save all config and zone data to the project folder."
           state={steps.save}
           actionLabel="Save world"
@@ -598,7 +614,8 @@ export function RuntimeHandoffStudio() {
 
         {isStandalone && (
           <StepCard
-            title="1b. Commit &amp; push"
+            number="1b"
+            title="Commit &amp; push"
             description="Commit project changes to git and push to remote."
             state={steps.gitCommit}
             actionLabel="Commit &amp; push"
@@ -615,7 +632,8 @@ export function RuntimeHandoffStudio() {
         )}
 
         <StepCard
-          title="2. Validate runtime data"
+          number={2}
+          title="Validate runtime data"
           description="Run config and zone validation before anything gets exported or published."
           state={steps.validate}
           actionLabel="Validate now"
@@ -623,7 +641,8 @@ export function RuntimeHandoffStudio() {
         />
 
         <StepCard
-          title="3. Export runtime bundle"
+          number={3}
+          title="Export runtime bundle"
           description="Export a complete server bundle to a local MUD directory."
           state={steps.export}
           actionLabel="Export runtime bundle"
@@ -635,7 +654,7 @@ export function RuntimeHandoffStudio() {
               value={exportDir}
               onChange={(event) => setExportDir(event.target.value)}
               placeholder="Choose a MUD checkout directory"
-              className="min-w-[18rem] flex-1 rounded-full border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] px-4 py-2 text-xs text-text-primary placeholder:text-text-muted outline-none focus:border-border-active focus-visible:ring-2 focus-visible:ring-border-active"
+              className="min-w-[14rem] flex-1 rounded-full border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] px-4 py-2 text-xs text-text-primary placeholder:text-text-muted outline-none focus:border-border-active focus-visible:ring-2 focus-visible:ring-border-active"
             />
             <button
               onClick={() => void handleChooseExportDir()}
@@ -647,7 +666,8 @@ export function RuntimeHandoffStudio() {
         </StepCard>
 
         <StepCard
-          title="4. Export curated images"
+          number={4}
+          title="Export curated images"
           description="Copy every approved image to a local folder. Works whether or not R2 is configured — handy for self-hosted deploys, backups, or handing art off to someone else."
           state={steps.exportImages}
           actionLabel={exportingLocal ? "Exporting..." : "Choose folder & export"}
@@ -655,7 +675,7 @@ export function RuntimeHandoffStudio() {
           onAction={handleExportLocal}
         >
           {localExportResult && localExportResult.errors.length > 0 && (
-            <div className="rounded-2xl border border-status-error/30 bg-[var(--chrome-fill)] px-4 py-3 text-2xs text-status-error">
+            <div className="rounded-2xl border border-status-error/30 bg-status-error/10 px-4 py-3 text-2xs text-status-error">
               {localExportResult.errors.slice(0, 5).map((e, i) => (
                 <div key={i}>{e}</div>
               ))}
@@ -667,7 +687,8 @@ export function RuntimeHandoffStudio() {
         </StepCard>
 
         <StepCard
-          title="5. Publish curated assets to R2"
+          number={5}
+          title="Publish curated assets to R2"
           description="Upload approved art and media to R2 for runtime delivery."
           state={steps.assets}
           actionLabel="Sync curated assets"
@@ -690,7 +711,8 @@ export function RuntimeHandoffStudio() {
         </StepCard>
 
         <StepCard
-          title="6. Publish explicit global assets"
+          number={6}
+          title="Publish explicit global assets"
           description="Upload global asset files to R2."
           state={steps.globals}
           actionLabel="Publish globals"
@@ -699,7 +721,8 @@ export function RuntimeHandoffStudio() {
         />
 
         <StepCard
-          title="7. Publish player sprites"
+          number={7}
+          title="Publish player sprites"
           description="Deploy the player sprite atlas files."
           state={steps.sprites}
           actionLabel="Publish sprites"
@@ -708,7 +731,8 @@ export function RuntimeHandoffStudio() {
         />
 
         <StepCard
-          title="8. Deploy runtime config"
+          number={8}
+          title="Deploy runtime config"
           description="Upload the assembled runtime config the MUD server pulls from R2."
           state={steps.config}
           actionLabel="Deploy config"
@@ -717,7 +741,8 @@ export function RuntimeHandoffStudio() {
         />
 
         <StepCard
-          title="9. Deploy achievements"
+          number={9}
+          title="Deploy achievements"
           description="Upload achievements.yaml to R2."
           state={steps.achievements}
           actionLabel="Deploy achievements"
@@ -726,7 +751,8 @@ export function RuntimeHandoffStudio() {
         />
 
         <StepCard
-          title="10. Deploy zone YAML"
+          number={10}
+          title="Deploy zone YAML"
           description="Upload zone files to R2."
           state={steps.zones}
           actionLabel="Deploy zones"

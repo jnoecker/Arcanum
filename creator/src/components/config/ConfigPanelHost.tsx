@@ -7,7 +7,9 @@ import type { AppConfig } from "@/types/config";
 import { Spinner } from "@/components/ui/FormWidgets";
 import { UndoRedoButtons } from "@/components/ui/UndoRedoButtons";
 import { useToastStore } from "@/stores/toastStore";
-import configBg from "@/assets/config-bg.png";
+
+// Atmospheric backgrounds are painted at the MainArea level (driven by the
+// active panel's island), so this host renders only its own chrome.
 
 import { ClassDesigner } from "./ClassDesigner";
 import { RaceDesigner } from "./RaceDesigner";
@@ -204,17 +206,8 @@ export function ConfigPanelHost({ panelId }: { panelId: string }) {
 
   return (
     <div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
-      <div className="relative min-h-0 min-w-0 flex-1 overflow-y-auto">
-        <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
-          <img
-            src={configBg}
-            alt=""
-            className="h-full w-full object-cover opacity-[0.10] mix-blend-soft-light"
-            style={{ objectPosition: "center 40%" }}
-          />
-        </div>
-
-        <div className={`relative z-10 mx-auto flex flex-col gap-3 px-4 py-3 ${def?.maxWidth ?? "max-w-5xl"}`}>
+      <div className="min-h-0 min-w-0 flex-1 overflow-y-auto">
+        <div className={`mx-auto flex flex-col gap-3 px-4 py-3 ${def?.maxWidth ?? "max-w-5xl"}`}>
           {renderPanel(panelId, { config, onChange: handleChange })}
         </div>
       </div>

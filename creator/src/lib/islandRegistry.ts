@@ -100,14 +100,14 @@ const ORRERY_PANELS = [
 ];
 
 const ORRERY_HOTSPOTS: PanelHotspot[] = [
-  { panelId: "factions",         x:  6, y: 25, w: 24, h: 17 },
-  { panelId: "world",            x: 33, y: 24, w: 33, h: 35 },
-  { panelId: "housing",          x: 68, y: 24, w: 28, h: 18 },
-  { panelId: "achievements",     x: 69, y: 43, w: 27, h: 22 },
-  { panelId: "enchanting",       x: 66, y: 65, w: 33, h: 23 },
-  { panelId: "crafting",         x: 30, y: 64, w: 36, h: 24 },
-  { panelId: "creation",         x:  1, y: 64, w: 29, h: 20 },
-  { panelId: "tuningWizard",     x:  3, y: 42, w: 27, h: 22 },
+  { panelId: "factions",         x:  5, y: 16, w: 29, h: 23 },
+  { panelId: "world",            x: 34, y: 12, w: 31, h: 44 },
+  { panelId: "housing",          x: 66, y: 15, w: 29, h: 24 },
+  { panelId: "achievements",     x: 72, y: 40, w: 28, h: 23 },
+  { panelId: "enchanting",       x: 68, y: 63, w: 32, h: 22 },
+  { panelId: "crafting",         x: 32, y: 70, w: 36, h: 28 },
+  { panelId: "creation",         x:  0, y: 62, w: 31, h: 23 },
+  { panelId: "tuningWizard",     x:  1, y: 38, w: 27, h: 24 },
 ];
 
 // ─── Living World ───────────────────────────────────────────────────
@@ -177,7 +177,7 @@ export const ISLANDS: Record<Island, IslandDef | null> = {
     id: "forge",
     title: "The Forge",
     tagline: "Where assets are created.",
-    image: "/menus/forge.png",
+    image: "/menus/forge.jpg",
     panelIds: FORGE_PANELS,
     hotspots: FORGE_HOTSPOTS,
     actions: [
@@ -200,7 +200,7 @@ export const ISLANDS: Record<Island, IslandDef | null> = {
     id: "loom",
     title: "The Loom",
     tagline: "Where the definitions of the world are crafted.",
-    image: "/menus/loom.png",
+    image: "/menus/loom.jpg",
     panelIds: LOOM_PANELS,
     hotspots: LOOM_HOTSPOTS,
   },
@@ -208,7 +208,7 @@ export const ISLANDS: Record<Island, IslandDef | null> = {
     id: "orrery",
     title: "The Orrery",
     tagline: "Where the systems of the world are tuned and balanced.",
-    image: "/menus/orrery.png",
+    image: "/menus/orrery.jpg",
     panelIds: ORRERY_PANELS,
     hotspots: ORRERY_HOTSPOTS,
   },
@@ -216,7 +216,7 @@ export const ISLANDS: Record<Island, IslandDef | null> = {
     id: "livingWorld",
     title: "The Living World",
     tagline: "Where the world grows and evolves.",
-    image: "/menus/livingworld.png",
+    image: "/menus/livingworld.jpg",
     panelIds: LIVING_WORLD_PANELS,
     hotspots: LIVING_WORLD_HOTSPOTS,
   },
@@ -224,7 +224,7 @@ export const ISLANDS: Record<Island, IslandDef | null> = {
     id: "arcanum",
     title: "The Arcanum",
     tagline: "The living book of all knowledge.",
-    image: "/menus/arcanum.png",
+    image: "/menus/arcanum.jpg",
     panelIds: ARCANUM_PANELS,
     hotspots: ARCANUM_HOTSPOTS,
   },
@@ -232,7 +232,7 @@ export const ISLANDS: Record<Island, IslandDef | null> = {
     id: "spire",
     title: "The Spire",
     tagline: "Where the Creator exerts control.",
-    image: "/menus/spire.png",
+    image: "/menus/spire.jpg",
     panelIds: SPIRE_PANELS,
     hotspots: SPIRE_HOTSPOTS,
     actions: SPIRE_ACTIONS,
@@ -245,4 +245,17 @@ export const MAP_ISLANDS: IslandDef[] = MAIN_VIEW_HOTSPOTS
   .map((h) => ISLANDS[h.id])
   .filter((i): i is IslandDef => !!i);
 
-export const MAIN_VIEW_IMAGE = "/menus/mainview.png";
+export const MAIN_VIEW_IMAGE = "/menus/mainview.jpg";
+
+/**
+ * Atmospheric background URL for any panel that lives under a given island.
+ * Used by MainArea to paint the island's map art behind every child panel,
+ * giving each editor surface a sense of place without duplicating per-panel
+ * bg wiring. Returns the world-map view as the fallback when there's no
+ * specific island (settings overlay, welcome screen, etc).
+ */
+export function getIslandBg(island?: Island | null): string {
+  if (!island) return MAIN_VIEW_IMAGE;
+  const def = ISLANDS[island];
+  return def?.image ?? MAIN_VIEW_IMAGE;
+}

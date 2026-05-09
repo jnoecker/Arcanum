@@ -199,9 +199,15 @@ export function themeToVars(theme: ThemePalette): Record<string, string> {
   const shadowColor = isLight ? text : "#000000";
   const overlayColor = isLight ? text : abyss;
 
-  const panelTop = isLight ? mix(surface, "#ffffff", 0.14) : surface;
+  // In dark mode, pull the panel-top toward the page bg so panels don't
+  // saturate as fully toward the surface anchor (which is otherwise a
+  // dominant teal/jewel hue at the top of every card). Combined with the
+  // lower alphas in --bg-panel below, this lets per-panel atmospheric art
+  // breathe through and gives the figure/ground separation the World panel
+  // gets right.
+  const panelTop = isLight ? mix(surface, "#ffffff", 0.14) : mix(surface, bg, 0.55);
   const panelBottom = isLight ? mix(bg, text, 0.04) : bg;
-  const panelLightTop = isLight ? mix(surface, "#ffffff", 0.24) : surface;
+  const panelLightTop = isLight ? mix(surface, "#ffffff", 0.24) : mix(surface, bg, 0.40);
   const panelLightBottom = isLight ? mix(bg, text, 0.02) : bg;
 
   const activeStart = isLight ? 0.18 : 0.16;
@@ -295,8 +301,24 @@ export function themeToVars(theme: ThemePalette): Record<string, string> {
 
     "--bg-active": `linear-gradient(135deg, rgb(var(--accent-rgb) / ${activeStart}), rgb(var(--accent-rgb) / ${activeEnd}))`,
     "--bg-active-strong": `linear-gradient(135deg, rgb(var(--accent-rgb) / ${activeStrongStart}), rgb(var(--accent-rgb) / ${activeStrongEnd}))`,
-    "--bg-panel": `linear-gradient(160deg, ${rgba(panelTop, 0.96)}, ${rgba(panelBottom, 0.92)})`,
-    "--bg-panel-light": `linear-gradient(160deg, ${rgba(panelLightTop, 0.88)}, ${rgba(panelLightBottom, 0.88)})`,
+    // Lower alphas in dark mode so per-panel atmospheric art and the body
+    // vignette show through the chrome — panels become frames onto a scene
+    // rather than opaque tealsphere. Light mode keeps high opacity (parchment
+    // doesn't have anything atmospheric behind it to reveal).
+    "--bg-panel": isLight
+      ? `linear-gradient(160deg, ${rgba(panelTop, 0.96)}, ${rgba(panelBottom, 0.92)})`
+      : `linear-gradient(160deg, ${rgba(panelTop, 0.78)}, ${rgba(panelBottom, 0.72)})`,
+    "--bg-panel-light": isLight
+      ? `linear-gradient(160deg, ${rgba(panelLightTop, 0.88)}, ${rgba(panelLightBottom, 0.88)})`
+      : `linear-gradient(160deg, ${rgba(panelLightTop, 0.62)}, ${rgba(panelLightBottom, 0.58)})`,
+    // Effectively opaque panel chrome for cards rendered over a strong
+    // backdrop image (Publish World, etc.). The image stays visible in the
+    // gaps between cards and the modal's empty regions, but inside each
+    // card the text sits on a solid surface — descriptions and muted pills
+    // (PENDING, etc.) need real contrast over bright color spots.
+    "--bg-panel-strong": isLight
+      ? `linear-gradient(160deg, ${rgba(panelTop, 1)}, ${rgba(panelBottom, 0.99)})`
+      : `linear-gradient(160deg, ${rgba(panelTop, 0.99)}, ${rgba(panelBottom, 0.97)})`,
     "--bg-glow-top": `linear-gradient(180deg, rgb(var(--accent-rgb) / ${glowTopAlpha}), transparent)`,
     "--graph-minimap-mask": rgba(graphBg, 0.8),
 

@@ -51,12 +51,12 @@ export interface IslandDef {
 // ─── Main view hotspots ─────────────────────────────────────────────
 
 export const MAIN_VIEW_HOTSPOTS: IslandHotspot[] = [
-  { id: "orrery",      x:  1, y:  2, w: 33, h: 39 },
-  { id: "loom",        x: 34, y:  2, w: 33, h: 39 },
-  { id: "forge",       x: 67, y:  2, w: 32, h: 39 },
-  { id: "livingWorld", x:  1, y: 41, w: 34, h: 43 },
-  { id: "arcanum",     x: 35, y: 41, w: 33, h: 43 },
-  { id: "spire",       x: 68, y: 41, w: 31, h: 43 },
+  { id: "orrery",      x: 10, y: 11, w: 31, h: 25 },
+  { id: "loom",        x: 58, y: 10, w: 34, h: 26 },
+  { id: "forge",       x:  0, y: 36, w: 33, h: 25 },
+  { id: "livingWorld", x: 68, y: 39, w: 31, h: 29 },
+  { id: "arcanum",     x: 11, y: 67, w: 36, h: 27 },
+  { id: "spire",       x: 50, y: 69, w: 33, h: 26 },
 ];
 
 // ─── Forge ──────────────────────────────────────────────────────────
@@ -83,13 +83,13 @@ const LOOM_PANELS = [
 ];
 
 const LOOM_HOTSPOTS: PanelHotspot[] = [
-  { panelId: "pets",             x:  0, y: 41, w: 27, h: 24 },
-  { panelId: "races",            x:  0, y: 18, w: 27, h: 23 },
-  { panelId: "classes",          x: 28, y: 12, w: 24, h: 23 },
-  { panelId: "abilityDesigner",  x: 52, y: 12, w: 22, h: 20 },
-  { panelId: "conditions",       x: 74, y: 20, w: 26, h: 22 },
-  { panelId: "commands",         x: 74, y: 42, w: 26, h: 24 },
-  { panelId: "equipment",        x: 28, y: 54, w: 28, h: 20 },
+  { panelId: "pets",             x:  5, y: 37, w: 23, h: 21 },
+  { panelId: "races",            x: 10, y: 13, w: 23, h: 24 },
+  { panelId: "classes",          x: 34, y: 11, w: 32, h: 24 },
+  { panelId: "abilityDesigner",  x: 65, y: 17, w: 23, h: 19 },
+  { panelId: "conditions",       x: 71, y: 37, w: 25, h: 22 },
+  { panelId: "commands",         x: 54, y: 57, w: 28, h: 24 },
+  { panelId: "equipment",        x: 17, y: 59, w: 26, h: 21 },
 ];
 
 // ─── Orrery ─────────────────────────────────────────────────────────
@@ -200,7 +200,7 @@ export const ISLANDS: Record<Island, IslandDef | null> = {
     id: "loom",
     title: "The Loom",
     tagline: "Where the definitions of the world are crafted.",
-    image: "/menus/loom.jpg",
+    image: "/menus/loom.png",
     panelIds: LOOM_PANELS,
     hotspots: LOOM_HOTSPOTS,
   },
@@ -245,4 +245,4 @@ export const MAP_ISLANDS: IslandDef[] = MAIN_VIEW_HOTSPOTS
   .map((h) => ISLANDS[h.id])
   .filter((i): i is IslandDef => !!i);
 
-export const MAIN_VIEW_IMAGE = "/menus/mainview.jpg";
+export const MAIN_VIEW_IMAGE = "/menus/mainview.png";

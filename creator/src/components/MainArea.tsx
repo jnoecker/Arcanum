@@ -1,7 +1,7 @@
 import { lazy, Suspense, Component, type ReactNode, type ErrorInfo } from "react";
 import { useProjectStore } from "@/stores/projectStore";
 import { PANEL_MAP, type Island } from "@/lib/panelRegistry";
-import { ISLANDS } from "@/lib/islandRegistry";
+import { ISLANDS, getIslandBg } from "@/lib/islandRegistry";
 import { StudioWorkspace } from "./StudioWorkspace";
 import { WorldMap } from "./map/WorldMap";
 import { IslandView } from "./map/IslandView";
@@ -153,21 +153,37 @@ export function MainArea() {
   }
 
   const showBackPill = panelIsland != null && panelIsland !== "settings";
+  const bgSrc = getIslandBg(panelIsland);
 
   return (
     <div
       id="workspace-panel"
       role="tabpanel"
       aria-labelledby={activeTabIndex >= 0 ? `workspace-tab-${activeTabIndex}` : undefined}
-      className="flex min-h-0 min-w-0 flex-1 flex-col"
+      className="relative flex min-h-0 min-w-0 flex-1 flex-col"
       style={{ viewTransitionName: "workspace-panel" }}
     >
-      {showBackPill && <IslandBackPill island={panelIsland!} />}
-      <PanelErrorBoundary>
-        <Suspense fallback={<LazyFallback />}>
-          {content}
-        </Suspense>
-      </PanelErrorBoundary>
+      {/* Atmospheric island background painted behind every panel that
+          lives under this island. Pinned to the workspace-panel padding box
+          (outside any scroll container) so it stays put as the user scrolls
+          tall content. Low opacity + soft-light blend keeps it as a sense
+          of place rather than wallpaper. */}
+      <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
+        <img
+          src={bgSrc}
+          alt=""
+          className="h-full w-full object-cover opacity-[0.16] mix-blend-soft-light"
+          style={{ objectPosition: "center 40%" }}
+        />
+      </div>
+      <div className="relative z-10 flex min-h-0 min-w-0 flex-1 flex-col">
+        {showBackPill && <IslandBackPill island={panelIsland!} />}
+        <PanelErrorBoundary>
+          <Suspense fallback={<LazyFallback />}>
+            {content}
+          </Suspense>
+        </PanelErrorBoundary>
+      </div>
     </div>
   );
 }

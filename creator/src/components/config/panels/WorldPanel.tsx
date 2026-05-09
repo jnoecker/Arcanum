@@ -2,7 +2,7 @@ import type { ConfigPanelProps, AppConfig } from "./types";
 import type { DiminishingXpConfig, DiminishingXpThreshold } from "@/types/config";
 import { NumberInput, TextInput, IconButton } from "@/components/ui/FormWidgets";
 
-import { OrnateCard } from "./world/OrnateCard";
+import { OrnateCard } from "@/components/ui/OrnateCard";
 import { Toggle } from "./world/Toggle";
 import { IconField } from "./world/IconField";
 import { XpCurveChart } from "./world/XpCurveChart";

@@ -1,12 +1,14 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { AppConfig, StatusEffectDefinitionConfig } from "@/types/config";
 import {
-  StatusEffectDetail,
   defaultStatusEffectDefinition,
   renameStatusEffectDefinition,
-  summarizeStatusEffect,
 } from "@/components/config/panels/StatusEffectsPanel";
-import { DefinitionWorkbench } from "./DefinitionWorkbench";
+import { ConditionsHeader } from "./conditions/ConditionsHeader";
+import { ConditionsList } from "./conditions/ConditionsList";
+import { ConditionEditor } from "./conditions/ConditionEditor";
+import { Section } from "./enchanting/Section";
+import { PlusIcon } from "./conditions/icons";
 
 const FALLBACK_EFFECT_TYPES = [
   { value: "dot", label: "Damage Over Time" },
@@ -24,19 +26,47 @@ const FALLBACK_STACK_BEHAVIORS = [
   { value: "none", label: "None" },
 ];
 
-function modifierCount(effect: StatusEffectDefinitionConfig) {
-  const flat = [effect.strMod, effect.dexMod, effect.conMod, effect.intMod, effect.wisMod, effect.chaMod].filter(Boolean).length;
-  return flat + Object.keys(effect.statMods ?? {}).length;
+function normalizeId(raw: string): string {
+  return raw
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, "_")
+    .replace(/[^a-z0-9_]/g, "");
 }
 
-export function StatusEffectDesigner({
-  config,
-  onChange,
-}: {
+function nextDefaultId(existing: Record<string, unknown>): string {
+  const base = "new_condition";
+  if (!existing[base]) return base;
+  let i = 2;
+  while (existing[`${base}_${i}`]) i += 1;
+  return `${base}_${i}`;
+}
+
+function nextDuplicateId(base: string, existing: Record<string, unknown>): string {
+  let i = 2;
+  while (existing[`${base}_copy_${i - 1}`]) i += 1;
+  return `${base}_copy_${i - 1}`;
+}
+
+interface StatusEffectDesignerProps {
   config: AppConfig;
   onChange: (patch: Partial<AppConfig>) => void;
-}) {
-  const statIds = useMemo(() => Object.keys(config.stats.definitions), [config.stats.definitions]);
+}
+
+export function StatusEffectDesigner({ config, onChange }: StatusEffectDesignerProps) {
+  const defs = config.statusEffects;
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (selectedId && defs[selectedId]) return;
+    const first = Object.keys(defs)[0] ?? null;
+    setSelectedId(first);
+  }, [defs, selectedId]);
+
+  const statIds = useMemo(
+    () => Object.keys(config.stats.definitions),
+    [config.stats.definitions],
+  );
 
   const effectTypeOptions = useMemo(() => {
     const entries = Object.entries(config.statusEffectTypes);
@@ -54,72 +84,118 @@ export function StatusEffectDesigner({
     return FALLBACK_STACK_BEHAVIORS;
   }, [config.stackBehaviors]);
 
+  const patchDef = (id: string, patch: Partial<StatusEffectDefinitionConfig>) => {
+    onChange({
+      statusEffects: {
+        ...defs,
+        [id]: { ...defs[id]!, ...patch },
+      },
+    });
+  };
+
+  const renameDef = (oldId: string, rawNewId: string) => {
+    const newId = normalizeId(rawNewId);
+    if (!newId || oldId === newId || defs[newId]) return;
+    const updated = renameStatusEffectDefinition(config, oldId, newId);
+    onChange({
+      statusEffects: updated.statusEffects,
+      abilities: updated.abilities,
+    });
+    if (selectedId === oldId) setSelectedId(newId);
+  };
+
+  const addDef = () => {
+    const id = nextDefaultId(defs);
+    onChange({
+      statusEffects: {
+        ...defs,
+        [id]: defaultStatusEffectDefinition("New Condition"),
+      },
+    });
+    setSelectedId(id);
+  };
+
+  const duplicateDef = () => {
+    if (!selectedId || !defs[selectedId]) return;
+    const source = defs[selectedId]!;
+    const newId = nextDuplicateId(selectedId, defs);
+    const cloned: StatusEffectDefinitionConfig = {
+      ...source,
+      displayName: `${source.displayName} (copy)`,
+      statMods: source.statMods ? { ...source.statMods } : undefined,
+    };
+    onChange({ statusEffects: { ...defs, [newId]: cloned } });
+    setSelectedId(newId);
+  };
+
+  const deleteDef = () => {
+    if (!selectedId || !defs[selectedId]) return;
+    const next = { ...defs };
+    delete next[selectedId];
+    onChange({ statusEffects: next });
+    setSelectedId(null);
+  };
+
+  const selected = selectedId ? defs[selectedId] ?? null : null;
+
   return (
-    <DefinitionWorkbench
-      title="Condition designer"
-      countLabel="Condition roster"
-      description="Tune ticking behavior, stack rules, and stat pressure for this condition in one editing pass."
-      addPlaceholder="New condition id"
-      searchPlaceholder="Search conditions"
-      emptyMessage="No conditions match the current search."
-      emptyTitle="Create a condition to start designing it."
-      items={config.statusEffects}
-      defaultItem={defaultStatusEffectDefinition}
-      getDisplayName={(effect) => effect.displayName}
-      renderSummary={summarizeStatusEffect}
-      idTransform={(raw) => raw.trim().toLowerCase().replace(/\s+/g, "_")}
-      searchFilter={(id, effect, q) => (
-        id.toLowerCase().includes(q) ||
-        effect.displayName.toLowerCase().includes(q) ||
-        effect.effectType.toLowerCase().includes(q) ||
-        (effect.stackBehavior ?? "").toLowerCase().includes(q)
-      )}
-      renderListCard={(id, effect) => (
-        <>
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0">
-              <div className="truncate font-display text-lg text-text-primary">{effect.displayName}</div>
-              <div className="mt-1 truncate text-2xs text-text-muted">{id}</div>
-            </div>
-            {effect.image && (
-              <span className="rounded-full bg-badge-success-bg px-2 py-1 text-2xs uppercase tracking-label text-badge-success">
-                Art
-              </span>
-            )}
-          </div>
-          <div className="mt-3 flex flex-wrap gap-2 text-2xs uppercase tracking-label text-text-muted">
-            <span>{effect.effectType}</span>
-            <span>{effect.stackBehavior ?? "REFRESH"}</span>
-            <span>{Math.round(effect.durationMs / 1000)}s</span>
-            {modifierCount(effect) > 0 && <span>{modifierCount(effect)} mods</span>}
-          </div>
-          <div className="mt-3 text-xs text-text-secondary">{summarizeStatusEffect(effect)}</div>
-        </>
-      )}
-      renderDetailHeader={(_, effect) => (
-        <div className="flex flex-wrap gap-2">
-          <span className="rounded-full bg-[var(--chrome-highlight-strong)] px-3 py-1 text-xs text-text-secondary">{effect.effectType}</span>
-          <span className="rounded-full bg-[var(--chrome-highlight-strong)] px-3 py-1 text-xs text-text-secondary">{effect.stackBehavior ?? "REFRESH"}</span>
-          <span className="rounded-full bg-[var(--chrome-highlight-strong)] px-3 py-1 text-xs text-text-secondary">{effect.durationMs}ms</span>
-          {effect.tickIntervalMs ? (
-            <span className="rounded-full bg-[var(--chrome-highlight-strong)] px-3 py-1 text-xs text-text-secondary">Tick {effect.tickIntervalMs}ms</span>
-          ) : null}
+    <div className="flex flex-col gap-4">
+      <ConditionsHeader
+        effectTypeCount={Object.keys(config.statusEffectTypes).length || effectTypeOptions.length}
+        stackBehaviorCount={Object.keys(config.stackBehaviors).length || stackBehaviorOptions.length}
+        selectedId={selectedId}
+        onDuplicate={duplicateDef}
+        onDelete={deleteDef}
+      />
+
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
+        <div className="xl:col-span-4">
+          <ConditionsList
+            defs={defs}
+            effectTypeOptions={effectTypeOptions}
+            selectedId={selectedId}
+            onSelect={setSelectedId}
+            onAdd={addDef}
+          />
         </div>
-      )}
-      onRename={(oldId, newId) => {
-        const updated = renameStatusEffectDefinition(config, oldId, newId);
-        onChange({ statusEffects: updated.statusEffects, abilities: updated.abilities });
-      }}
-      renderDetail={(_id, effect, patch) => (
-        <StatusEffectDetail
-          effect={effect}
-          patch={patch}
-          statIds={statIds}
-          effectTypeOptions={effectTypeOptions}
-          stackBehaviorOptions={stackBehaviorOptions}
-        />
-      )}
-      onItemsChange={(statusEffects) => onChange({ statusEffects })}
-    />
+
+        <div className="xl:col-span-8">
+          {selectedId && selected ? (
+            <ConditionEditor
+              id={selectedId}
+              def={selected}
+              statIds={statIds}
+              effectTypeOptions={effectTypeOptions}
+              stackBehaviorOptions={stackBehaviorOptions}
+              onPatch={(p) => patchDef(selectedId, p)}
+              onRename={(v) => renameDef(selectedId, v)}
+            />
+          ) : (
+            <Section
+              title="Editing Condition"
+              description="Pick a condition from the roster to refine its tick math, or scribe a new one."
+            >
+              <div className="rounded-xl border border-dashed border-[var(--chrome-stroke-strong)] bg-[var(--chrome-fill-soft)] px-4 py-12 text-center">
+                <p className="font-display text-xs text-text-muted">
+                  Nothing selected.
+                </p>
+                <p className="mx-auto mt-1 max-w-xs text-2xs leading-snug text-text-muted/70">
+                  Choose a condition from the roster to edit it, or add a new
+                  one to begin.
+                </p>
+                <button
+                  type="button"
+                  onClick={addDef}
+                  className="focus-ring mt-4 inline-flex items-center gap-1.5 rounded-xl border border-accent/40 bg-accent/10 px-3 py-2 text-xs font-medium text-accent transition hover:bg-accent/20"
+                >
+                  <PlusIcon />
+                  New Condition
+                </button>
+              </div>
+            </Section>
+          )}
+        </div>
+      </div>
+    </div>
   );
 }

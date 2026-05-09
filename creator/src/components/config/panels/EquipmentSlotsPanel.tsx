@@ -1,10 +1,16 @@
-import { useState, useCallback, useRef, useEffect, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import type { ConfigPanelProps } from "./types";
 import type { EquipmentSlotDefinition } from "@/types/config";
 import { useProjectStore } from "@/stores/projectStore";
-import { ActionButton, FieldRow, TextInput, NumberInput } from "@/components/ui/FormWidgets";
+import { TextInput, NumberInput } from "@/components/ui/FormWidgets";
 import mannequinImg from "@/assets/mannequin-slots.jpg";
+import {
+  PlusIcon,
+  TrashIcon,
+  ArrowUpIcon,
+  ArrowDownIcon,
+} from "../achievements/icons";
 
 interface SlotPosition {
   x: number;
@@ -29,32 +35,52 @@ const DEFAULT_POSITIONS: SlotPosition[] = [
   { x: 68, y: 28 },  // right shoulder
 ];
 
-/** Get the position for a slot, reading from its config x/y fields. */
-function getSlotPosition(slot: EquipmentSlotDefinition, fallbackIndex: number): SlotPosition {
-  if (slot.x != null && slot.y != null) {
-    return { x: slot.x, y: slot.y };
-  }
+function getSlotPosition(
+  slot: EquipmentSlotDefinition,
+  fallbackIndex: number,
+): SlotPosition {
+  if (slot.x != null && slot.y != null) return { x: slot.x, y: slot.y };
   return DEFAULT_POSITIONS[fallbackIndex % DEFAULT_POSITIONS.length]!;
+}
+
+function cx(...c: Array<string | false | null | undefined>) {
+  return c.filter(Boolean).join(" ");
+}
+
+function normalizeId(raw: string): string {
+  return raw
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, "_")
+    .replace(/[^a-z0-9_]/g, "");
+}
+
+function defaultDisplayName(id: string): string {
+  return id
+    .split("_")
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
 }
 
 export function EquipmentSlotsPanel({ config, onChange }: ConfigPanelProps) {
   const mudDir = useProjectStore((s) => s.project?.mudDir);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [newSlotId, setNewSlotId] = useState("");
-  const [dragging, setDragging] = useState<string | null>(null);
-  const [dragPos, setDragPos] = useState<SlotPosition | null>(null);
-  const [migrated, setMigrated] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
-
   const slots = config.equipmentSlots;
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [migrated, setMigrated] = useState(false);
+
   const sortedSlots = useMemo(
-    () =>
-      Object.entries(slots).sort(([, a], [, b]) => a.order - b.order),
+    () => Object.entries(slots).sort(([, a], [, b]) => a.order - b.order),
     [slots],
   );
 
-  // One-time migration: if any slot is missing x/y but arcanum-meta has
-  // positions, migrate them into the config store.
+  // Auto-select first slot whenever selection becomes invalid.
+  useEffect(() => {
+    if (selectedId && slots[selectedId]) return;
+    setSelectedId(sortedSlots[0]?.[0] ?? null);
+  }, [slots, selectedId, sortedSlots]);
+
+  // One-time migration: pull x/y from legacy arcanum-meta if any slot is missing them.
   useEffect(() => {
     if (migrated || !mudDir) return;
     const slotEntries = Object.entries(slots);
@@ -66,7 +92,6 @@ export function EquipmentSlotsPanel({ config, onChange }: ConfigPanelProps) {
     invoke<ArcanumMeta>("load_arcanum_meta", { mudDir })
       .then((meta) => {
         const metaPositions = meta.wearSlotPositions ?? {};
-        // Lowercase keys to match config slot IDs
         const normalized: Record<string, SlotPosition> = {};
         for (const [id, pos] of Object.entries(metaPositions)) {
           normalized[id.trim().toLowerCase()] = pos;
@@ -86,34 +111,46 @@ export function EquipmentSlotsPanel({ config, onChange }: ConfigPanelProps) {
             patched[id] = slot;
           }
         }
-        if (changed) {
-          onChange({ equipmentSlots: patched });
-        }
+        if (changed) onChange({ equipmentSlots: patched });
         setMigrated(true);
       })
-      .catch(() => {
-        setMigrated(true);
-      });
+      .catch(() => setMigrated(true));
   }, [mudDir, migrated, slots, onChange]);
 
+  const handlePatchSlot = useCallback(
+    (id: string, patch: Partial<EquipmentSlotDefinition>) => {
+      onChange({
+        equipmentSlots: { ...slots, [id]: { ...slots[id]!, ...patch } },
+      });
+    },
+    [slots, onChange],
+  );
+
   const handleAddSlot = useCallback(() => {
-    const id = newSlotId.trim().toLowerCase().replace(/\s+/g, "_");
-    if (!id || slots[id]) return;
-    const nextOrder =
-      sortedSlots.length > 0
-        ? Math.max(...sortedSlots.map(([, s]) => s.order)) + 1
-        : 0;
+    let base = "new_slot";
+    let id = base;
+    let n = 2;
+    while (slots[id]) {
+      id = `${base}_${n}`;
+      n += 1;
+    }
+    const orders = Object.values(slots).map((s) => s.order);
+    const nextOrder = orders.length > 0 ? Math.max(...orders) + 1 : 0;
     const posIndex = Object.keys(slots).length % DEFAULT_POSITIONS.length;
-    const defaultPos = DEFAULT_POSITIONS[posIndex]!;
+    const seed = DEFAULT_POSITIONS[posIndex]!;
     onChange({
       equipmentSlots: {
         ...slots,
-        [id]: { displayName: newSlotId.trim(), order: nextOrder, x: defaultPos.x, y: defaultPos.y },
+        [id]: {
+          displayName: "New Slot",
+          order: nextOrder,
+          x: seed.x,
+          y: seed.y,
+        },
       },
     });
-    setNewSlotId("");
     setSelectedId(id);
-  }, [newSlotId, slots, sortedSlots, onChange]);
+  }, [slots, onChange]);
 
   const handleDeleteSlot = useCallback(
     (id: string) => {
@@ -125,14 +162,98 @@ export function EquipmentSlotsPanel({ config, onChange }: ConfigPanelProps) {
     [slots, selectedId, onChange],
   );
 
-  const handlePatchSlot = useCallback(
-    (id: string, patch: Partial<EquipmentSlotDefinition>) => {
+  const handleRenameSlot = useCallback(
+    (oldId: string, rawNewId: string) => {
+      const newId = normalizeId(rawNewId);
+      if (!newId || oldId === newId || slots[newId]) return;
+      const next: Record<string, EquipmentSlotDefinition> = {};
+      for (const [k, v] of Object.entries(slots)) {
+        next[k === oldId ? newId : k] = v;
+      }
+      onChange({ equipmentSlots: next });
+      if (selectedId === oldId) setSelectedId(newId);
+    },
+    [slots, selectedId, onChange],
+  );
+
+  // Reorder by swapping `order` values with the neighbour above/below.
+  const handleMove = useCallback(
+    (id: string, direction: -1 | 1) => {
+      const idx = sortedSlots.findIndex(([sid]) => sid === id);
+      if (idx === -1) return;
+      const targetIdx = idx + direction;
+      if (targetIdx < 0 || targetIdx >= sortedSlots.length) return;
+      const [aId, aSlot] = sortedSlots[idx]!;
+      const [bId, bSlot] = sortedSlots[targetIdx]!;
       onChange({
-        equipmentSlots: { ...slots, [id]: { ...slots[id]!, ...patch } },
+        equipmentSlots: {
+          ...slots,
+          [aId]: { ...aSlot, order: bSlot.order },
+          [bId]: { ...bSlot, order: aSlot.order },
+        },
       });
     },
-    [slots, onChange],
+    [slots, sortedSlots, onChange],
   );
+
+  const selected = selectedId ? slots[selectedId] ?? null : null;
+
+  return (
+    <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
+      <div className="xl:col-span-3">
+        <SlotsList
+          sortedSlots={sortedSlots}
+          selectedId={selectedId}
+          onSelect={setSelectedId}
+          onAdd={handleAddSlot}
+          onMove={handleMove}
+          onDelete={handleDeleteSlot}
+        />
+      </div>
+
+      <div className="xl:col-span-5">
+        <MannequinView
+          sortedSlots={sortedSlots}
+          selectedId={selectedId}
+          onSelect={setSelectedId}
+          onPatch={handlePatchSlot}
+        />
+      </div>
+
+      <div className="xl:col-span-4">
+        {selectedId && selected ? (
+          <SlotEditor
+            id={selectedId}
+            slot={selected}
+            onPatch={(p) => handlePatchSlot(selectedId, p)}
+            onRename={(v) => handleRenameSlot(selectedId, v)}
+          />
+        ) : (
+          <EmptyEditor onAdd={handleAddSlot} />
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── Mannequin ─────────────────────────────────────────────────────
+
+interface MannequinViewProps {
+  sortedSlots: Array<[string, EquipmentSlotDefinition]>;
+  selectedId: string | null;
+  onSelect: (id: string) => void;
+  onPatch: (id: string, patch: Partial<EquipmentSlotDefinition>) => void;
+}
+
+function MannequinView({
+  sortedSlots,
+  selectedId,
+  onSelect,
+  onPatch,
+}: MannequinViewProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [dragging, setDragging] = useState<string | null>(null);
+  const [dragPos, setDragPos] = useState<SlotPosition | null>(null);
 
   const handlePointerDown = useCallback(
     (e: React.PointerEvent, slotId: string) => {
@@ -141,17 +262,23 @@ export function EquipmentSlotsPanel({ config, onChange }: ConfigPanelProps) {
       (e.target as HTMLElement).setPointerCapture(e.pointerId);
       setDragging(slotId);
       setDragPos(null);
-      setSelectedId(slotId);
+      onSelect(slotId);
     },
-    [],
+    [onSelect],
   );
 
   const handlePointerMove = useCallback(
     (e: React.PointerEvent) => {
       if (!dragging || !containerRef.current) return;
       const rect = containerRef.current.getBoundingClientRect();
-      const x = Math.max(0, Math.min(100, ((e.clientX - rect.left) / rect.width) * 100));
-      const y = Math.max(0, Math.min(100, ((e.clientY - rect.top) / rect.height) * 100));
+      const x = Math.max(
+        0,
+        Math.min(100, ((e.clientX - rect.left) / rect.width) * 100),
+      );
+      const y = Math.max(
+        0,
+        Math.min(100, ((e.clientY - rect.top) / rect.height) * 100),
+      );
       setDragPos({ x, y });
     },
     [dragging],
@@ -159,188 +286,421 @@ export function EquipmentSlotsPanel({ config, onChange }: ConfigPanelProps) {
 
   const handlePointerUp = useCallback(() => {
     if (dragging && dragPos) {
-      handlePatchSlot(dragging, { x: dragPos.x, y: dragPos.y });
+      onPatch(dragging, { x: dragPos.x, y: dragPos.y });
     }
     setDragging(null);
     setDragPos(null);
-  }, [dragging, dragPos, handlePatchSlot]);
-
-  const selected = selectedId ? slots[selectedId] : null;
+  }, [dragging, dragPos, onPatch]);
 
   return (
-    <div className="flex flex-col gap-5 xl:flex-row" style={{ minHeight: "min(520px, 64vh)" }}>
-      {/* Left side: slot list + detail form */}
-      <div className="flex w-full shrink-0 flex-col gap-4 xl:w-80">
-        {/* Add new slot */}
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            handleAddSlot();
-          }}
-          className="panel-surface-light flex items-center gap-2 rounded-3xl p-3"
-        >
-          <input
-            value={newSlotId}
-            onChange={(e) => setNewSlotId(e.target.value)}
-            aria-label="New slot ID"
-            placeholder="New slot id..."
-            className="ornate-input min-h-11 flex-1 rounded-2xl px-4 py-3 text-sm"
-          />
-          <ActionButton
-            type="submit"
-            disabled={!newSlotId.trim()}
-            variant="primary"
-          >
-            Add Slot
-          </ActionButton>
-        </form>
+    <section className="panel-surface flex flex-col gap-3 rounded-2xl p-4 shadow-section">
+      <header className="flex items-baseline justify-between gap-3">
+        <div>
+          <h3 className="font-display text-xs font-semibold uppercase tracking-[0.18em] text-text-secondary">
+            Position Reference
+          </h3>
+          <p className="mt-0.5 text-2xs leading-snug text-text-muted">
+            Drag a marker to reposition. Arrow keys nudge (Shift = ×5).
+          </p>
+        </div>
+      </header>
 
-        {/* Slot list */}
-        <div className="panel-surface-light flex flex-col gap-1 rounded-3xl p-3">
-          {sortedSlots.map(([id, slot]) => (
+      <div
+        ref={containerRef}
+        className="relative aspect-square w-full select-none overflow-hidden rounded-xl border border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)]"
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+      >
+        <img
+          src={mannequinImg}
+          alt="Equipment mannequin"
+          loading="lazy"
+          draggable={false}
+          className="pointer-events-none h-full w-full object-cover"
+        />
+
+        {sortedSlots.map(([id, slot], index) => {
+          const isDraggingThis = id === dragging;
+          const pos =
+            isDraggingThis && dragPos
+              ? dragPos
+              : getSlotPosition(slot, index);
+          const isSelected = id === selectedId;
+          return (
             <div
               key={id}
               role="button"
               tabIndex={0}
-              onClick={() => setSelectedId(id)}
+              aria-label={`${slot.displayName || id} slot position`}
+              title={`${slot.displayName || id} (${id})`}
+              onPointerDown={(e) => handlePointerDown(e, id)}
+              onClick={() => onSelect(id)}
               onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault();
-                  setSelectedId(id);
-                }
+                const step = e.shiftKey ? 5 : 1;
+                let dx = 0;
+                let dy = 0;
+                if (e.key === "ArrowLeft") dx = -step;
+                else if (e.key === "ArrowRight") dx = step;
+                else if (e.key === "ArrowUp") dy = -step;
+                else if (e.key === "ArrowDown") dy = step;
+                else return;
+                e.preventDefault();
+                onSelect(id);
+                const cur = getSlotPosition(slot, index);
+                onPatch(id, {
+                  x: Math.max(0, Math.min(100, cur.x + dx)),
+                  y: Math.max(0, Math.min(100, cur.y + dy)),
+                });
               }}
-              className={`group focus-ring flex min-h-11 cursor-pointer items-center gap-3 rounded-2xl px-3 py-2 text-sm transition ${
-                selectedId === id
-                  ? "border border-[var(--border-glow-strong)] bg-[linear-gradient(145deg,rgb(var(--accent-rgb)/0.18),rgb(var(--bg-rgb)/0.9))] text-text-primary shadow-glow"
-                  : "border border-transparent text-text-secondary hover:bg-[var(--chrome-highlight)] hover:text-text-primary"
-              }`}
-              aria-label={`${slot.displayName} slot`}
+              className={cx(
+                "focus-ring absolute flex items-center justify-center rounded-full transition-[transform,border-color,background-color,box-shadow] duration-150",
+                isDraggingThis
+                  ? "z-20 cursor-grabbing shadow-lg ring-1 ring-accent/30"
+                  : "cursor-grab",
+              )}
+              style={{
+                width: 44,
+                height: 44,
+                left: `${pos.x}%`,
+                top: `${pos.y}%`,
+                transform: "translate(-50%, -50%)",
+              }}
             >
-              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] text-2xs text-text-muted">
-                {slot.order}
+              <span
+                className={cx(
+                  "flex h-7 w-7 select-none items-center justify-center rounded-full border text-[9px] font-bold text-text-primary shadow-glow",
+                  isSelected
+                    ? "border-accent bg-accent/70 ring-2 ring-accent"
+                    : "border-accent/60 bg-accent/40",
+                )}
+              >
+                {(slot.displayName || id).charAt(0).toUpperCase()}
               </span>
-              <span className="font-mono text-2xs text-text-muted">{id}</span>
-              <span className="flex-1 truncate">{slot.displayName}</span>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleDeleteSlot(id);
-                }}
-                className="focus-ring flex h-9 w-9 items-center justify-center rounded-full text-text-muted opacity-0 transition hover:bg-status-danger/10 hover:text-status-danger group-hover:opacity-100"
-                title="Delete slot"
-              >
-                x
-              </button>
             </div>
-          ))}
-          {sortedSlots.length === 0 && (
-            <p className="px-2 py-4 text-sm text-text-muted">
-              No equipment slots defined yet.
-            </p>
-          )}
-        </div>
-
-        {/* Detail form for selected slot */}
-        {selectedId && selected && (
-          <div className="panel-surface-light rounded-3xl p-4">
-            <h4 className="mb-3 font-display text-xs uppercase tracking-widest text-text-muted">
-              Edit: {selectedId}
-            </h4>
-            <div className="flex flex-col gap-1.5">
-              <FieldRow label="Display Name">
-                <TextInput
-                  value={selected.displayName}
-                  onCommit={(v) => handlePatchSlot(selectedId, { displayName: v })}
-                />
-              </FieldRow>
-              <FieldRow label="Order">
-                <NumberInput
-                  value={selected.order}
-                  onCommit={(v) =>
-                    handlePatchSlot(selectedId, { order: v ?? 0 })
-                  }
-                  min={0}
-                />
-              </FieldRow>
-            </div>
-          </div>
-        )}
+          );
+        })}
       </div>
+    </section>
+  );
+}
 
-      {/* Right side: Mannequin visual */}
-      <div className="flex min-w-0 flex-1 items-start justify-center">
-        <div
-          ref={containerRef}
-          className="panel-surface-light relative aspect-square w-full max-w-[480px] select-none overflow-hidden rounded-3xl p-3"
-          onPointerMove={handlePointerMove}
-          onPointerUp={handlePointerUp}
+// ─── List ──────────────────────────────────────────────────────────
+
+interface SlotsListProps {
+  sortedSlots: Array<[string, EquipmentSlotDefinition]>;
+  selectedId: string | null;
+  onSelect: (id: string) => void;
+  onAdd: () => void;
+  onMove: (id: string, direction: -1 | 1) => void;
+  onDelete: (id: string) => void;
+}
+
+function SlotsList({
+  sortedSlots,
+  selectedId,
+  onSelect,
+  onAdd,
+  onMove,
+  onDelete,
+}: SlotsListProps) {
+  return (
+    <aside className="panel-surface flex flex-col gap-2 rounded-2xl p-3 shadow-section">
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-baseline gap-2">
+          <h3 className="font-display text-xs font-semibold uppercase tracking-[0.18em] text-text-secondary">
+            Equipment Positions
+          </h3>
+          <span className="font-mono text-2xs text-text-muted/70">
+            {sortedSlots.length}
+          </span>
+        </div>
+        <button
+          type="button"
+          onClick={onAdd}
+          title="Add slot"
+          className="focus-ring inline-flex items-center gap-1 rounded-lg border border-accent/40 bg-accent/10 px-2 py-1 text-2xs font-medium text-accent transition hover:bg-accent/20"
         >
-          {/* Mannequin artwork */}
-          <img
-            src={mannequinImg}
-            alt="Equipment mannequin"
-            loading="lazy"
-            className="pointer-events-none h-full w-full rounded-3xl object-cover"
-            draggable={false}
-          />
+          <PlusIcon />
+          Add
+        </button>
+      </div>
 
-          {/* Slot markers */}
-          {sortedSlots.map(([id, slot], index) => {
-            const isDraggingThis = id === dragging;
-            const pos = isDraggingThis && dragPos
-              ? dragPos
-              : getSlotPosition(slot, index);
-            const isSelected = id === selectedId;
-            return (
-              <div
-                key={id}
-                role="button"
-                tabIndex={0}
-                aria-label={`${slot.displayName} slot position`}
-                onPointerDown={(e) => handlePointerDown(e, id)}
-                onClick={() => setSelectedId(id)}
-                onKeyDown={(e) => {
-                  const step = e.shiftKey ? 5 : 1;
-                  let dx = 0, dy = 0;
-                  if (e.key === "ArrowLeft") dx = -step;
-                  else if (e.key === "ArrowRight") dx = step;
-                  else if (e.key === "ArrowUp") dy = -step;
-                  else if (e.key === "ArrowDown") dy = step;
-                  else return;
-                  e.preventDefault();
-                  setSelectedId(id);
-                  const cur = getSlotPosition(slot, index);
-                  handlePatchSlot(id, {
-                    x: Math.max(0, Math.min(100, cur.x + dx)),
-                    y: Math.max(0, Math.min(100, cur.y + dy)),
-                  });
-                }}
-                className={`focus-ring absolute flex items-center justify-center rounded-full transition-[transform,border-color,background-color,box-shadow] duration-150 ${
-                  isDraggingThis ? "z-20 cursor-grabbing shadow-lg ring-1 ring-accent/30" : "cursor-grab"
-                }`}
-                style={{
-                  width: 44,
-                  height: 44,
-                  left: `${pos.x}%`,
-                  top: `${pos.y}%`,
-                  transform: "translate(-50%, -50%)",
-                }}
-                title={`${slot.displayName} (${id})`}
-              >
-                <div
-                  className={`flex h-7 w-7 items-center justify-center rounded-full border text-[9px] font-bold text-text-primary shadow-glow select-none ${
-                    isSelected
-                      ? "border-accent bg-accent/70 ring-2 ring-accent-emphasis"
-                      : "border-accent/60 bg-accent/40"
-                  } ${!isDraggingThis && !isSelected ? "animate-aurum-pulse" : ""}`}
-                >
-                  {slot.displayName.charAt(0).toUpperCase()}
-                </div>
-              </div>
-            );
-          })}
+      <ul className="-mx-0.5 flex max-h-[calc(100vh-12rem)] flex-col gap-1 overflow-y-auto px-0.5 pb-0.5">
+        {sortedSlots.length === 0 ? (
+          <li>
+            <div className="rounded-lg border border-dashed border-[var(--chrome-stroke-strong)] bg-[var(--chrome-fill-soft)] px-3 py-5 text-center text-2xs italic text-text-muted/70">
+              No equipment slots defined yet.
+            </div>
+          </li>
+        ) : (
+          sortedSlots.map(([id, slot], index) => (
+            <SlotRow
+              key={id}
+              id={id}
+              slot={slot}
+              index={index}
+              total={sortedSlots.length}
+              selected={selectedId === id}
+              onSelect={() => onSelect(id)}
+              onMoveUp={() => onMove(id, -1)}
+              onMoveDown={() => onMove(id, 1)}
+              onDelete={() => onDelete(id)}
+            />
+          ))
+        )}
+      </ul>
+    </aside>
+  );
+}
+
+interface SlotRowProps {
+  id: string;
+  slot: EquipmentSlotDefinition;
+  index: number;
+  total: number;
+  selected: boolean;
+  onSelect: () => void;
+  onMoveUp: () => void;
+  onMoveDown: () => void;
+  onDelete: () => void;
+}
+
+function SlotRow({
+  id,
+  slot,
+  index,
+  total,
+  selected,
+  onSelect,
+  onMoveUp,
+  onMoveDown,
+  onDelete,
+}: SlotRowProps) {
+  return (
+    <li>
+      <div
+        className={cx(
+          "group flex items-center gap-2 rounded-lg border px-2 py-1.5 transition",
+          selected
+            ? "border-accent/60 bg-accent/[0.07] shadow-[0_0_18px_-10px_rgb(var(--accent-rgb)/0.7)]"
+            : "border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] hover:border-accent/30 hover:bg-[var(--chrome-fill)]",
+        )}
+      >
+        <span
+          aria-hidden="true"
+          className={cx(
+            "inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border font-mono text-[0.6rem] font-semibold",
+            selected
+              ? "border-accent/60 bg-accent/15 text-accent"
+              : "border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] text-text-muted",
+          )}
+        >
+          {index + 1}
+        </span>
+
+        <button
+          type="button"
+          onClick={onSelect}
+          aria-pressed={selected}
+          className="focus-ring flex min-w-0 flex-1 items-baseline gap-1.5 text-left"
+        >
+          <span className="truncate font-display text-xs font-semibold text-text-primary">
+            {slot.displayName || id}
+          </span>
+          <span className="truncate font-mono text-[0.6rem] text-text-muted/70">
+            {id}
+          </span>
+        </button>
+
+        <div className="flex items-center opacity-50 transition group-hover:opacity-100">
+          <IconAction
+            label="Move up"
+            onClick={onMoveUp}
+            disabled={index === 0}
+          >
+            <ArrowUpIcon />
+          </IconAction>
+          <IconAction
+            label="Move down"
+            onClick={onMoveDown}
+            disabled={index === total - 1}
+          >
+            <ArrowDownIcon />
+          </IconAction>
+          <IconAction label="Delete slot" onClick={onDelete} danger>
+            <TrashIcon />
+          </IconAction>
         </div>
       </div>
+    </li>
+  );
+}
+
+// ─── Editor ────────────────────────────────────────────────────────
+
+interface SlotEditorProps {
+  id: string;
+  slot: EquipmentSlotDefinition;
+  onPatch: (p: Partial<EquipmentSlotDefinition>) => void;
+  onRename: (newId: string) => void;
+}
+
+function SlotEditor({ id, slot, onPatch, onRename }: SlotEditorProps) {
+  return (
+    <section className="panel-surface flex flex-col gap-3 rounded-2xl p-3 shadow-section">
+      <header className="flex items-baseline justify-between gap-2 border-b border-[var(--chrome-stroke)] pb-2">
+        <div className="min-w-0">
+          <span className="font-display text-2xs uppercase tracking-[0.18em] text-text-muted">
+            Editing
+          </span>
+          <h3 className="truncate font-display text-base font-semibold text-text-primary">
+            {slot.displayName || id}
+          </h3>
+        </div>
+        <span className="shrink-0 rounded-full border border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] px-2 py-0.5 font-mono text-[0.6rem] text-text-muted">
+          {id}
+        </span>
+      </header>
+
+      <div className="grid grid-cols-2 gap-3">
+        <FieldLabel label="Display Name" required>
+          <TextInput
+            value={slot.displayName}
+            onCommit={(v) =>
+              onPatch({ displayName: v || defaultDisplayName(id) })
+            }
+            placeholder={defaultDisplayName(id) || "Head"}
+            dense
+          />
+        </FieldLabel>
+
+        <FieldLabel label="Order" required>
+          <NumberInput
+            value={slot.order}
+            onCommit={(v) => onPatch({ order: v ?? 0 })}
+            min={0}
+            dense
+          />
+        </FieldLabel>
+      </div>
+
+      <FieldLabel label="Internal ID (slug)" required>
+        <SlugRenamer id={id} onRename={onRename} />
+        <p className="mt-1 text-[0.6rem] leading-snug text-text-muted/70">
+          Canonical slot key — items reference this. Renaming is destructive.
+        </p>
+      </FieldLabel>
+    </section>
+  );
+}
+
+function SlugRenamer({
+  id,
+  onRename,
+}: {
+  id: string;
+  onRename: (v: string) => void;
+}) {
+  const [draft, setDraft] = useState(id);
+  const [focused, setFocused] = useState(false);
+
+  if (!focused && draft !== id) setDraft(id);
+
+  const commit = () => {
+    if (draft.trim() && draft !== id) onRename(draft);
+    else setDraft(id);
+  };
+
+  return (
+    <input
+      className="ornate-input min-h-9 w-full px-2.5 py-1.5 font-mono text-xs text-text-primary"
+      value={draft}
+      onChange={(e) => setDraft(e.target.value)}
+      onFocus={() => setFocused(true)}
+      onBlur={() => {
+        setFocused(false);
+        commit();
+      }}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+        if (e.key === "Escape") {
+          setDraft(id);
+          (e.target as HTMLInputElement).blur();
+        }
+      }}
+      placeholder="head"
+    />
+  );
+}
+
+function EmptyEditor({ onAdd }: { onAdd: () => void }) {
+  return (
+    <div className="panel-surface flex flex-col items-center justify-center gap-2 rounded-2xl px-4 py-8 text-center shadow-section">
+      <p className="font-display text-sm text-text-primary">No slot selected</p>
+      <p className="max-w-xs text-2xs text-text-muted/80">
+        Choose an equipment position from the list, or add a new one.
+      </p>
+      <button
+        type="button"
+        onClick={onAdd}
+        className="focus-ring mt-1 inline-flex items-center gap-1 rounded-lg border border-accent/40 bg-accent/10 px-2.5 py-1 text-2xs font-medium text-accent transition hover:bg-accent/20"
+      >
+        <PlusIcon />
+        Add Slot
+      </button>
     </div>
+  );
+}
+
+// ─── Shared primitives ─────────────────────────────────────────────
+
+function FieldLabel({
+  label,
+  required,
+  children,
+}: {
+  label: string;
+  required?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="flex flex-col gap-1">
+      <span className="font-display text-2xs uppercase tracking-wider text-text-muted">
+        {label} {required && <span className="text-accent">*</span>}
+      </span>
+      {children}
+    </div>
+  );
+}
+
+function IconAction({
+  label,
+  onClick,
+  disabled,
+  danger,
+  children,
+}: {
+  label: string;
+  onClick: () => void;
+  disabled?: boolean;
+  danger?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      title={label}
+      aria-label={label}
+      className={cx(
+        "focus-ring inline-flex h-5 w-5 items-center justify-center rounded transition disabled:cursor-not-allowed disabled:opacity-30",
+        danger
+          ? "text-text-muted/70 hover:bg-status-error/15 hover:text-status-error"
+          : "text-text-muted/70 hover:bg-[var(--chrome-fill)] hover:text-text-primary",
+      )}
+    >
+      {children}
+    </button>
   );
 }

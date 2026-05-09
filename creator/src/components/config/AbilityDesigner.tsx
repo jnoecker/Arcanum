@@ -1,18 +1,53 @@
-import { useCallback, useMemo } from "react";
-import type { AbilityDefinitionConfig, AbilityEffectConfig, AppConfig } from "@/types/config";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import type {
+  AbilityDefinitionConfig,
+  AbilityEffectConfig,
+  AppConfig,
+} from "@/types/config";
 import {
-  AbilityDetail,
   defaultAbilityDefinition,
   renameAbilityDefinition,
-  summarizeAbility,
 } from "@/components/config/panels/AbilitiesPanel";
-import { DefinitionWorkbench } from "./DefinitionWorkbench";
+import { AbilitiesHeader } from "./abilities/AbilitiesHeader";
+import {
+  AbilitiesList,
+  ABILITY_CATEGORIES,
+  categoryFor,
+  type AbilityCategoryKey,
+} from "./abilities/AbilitiesList";
+import { AbilityEditor } from "./abilities/AbilityEditor";
 
 const FALLBACK_TARGET_TYPES = [
   { value: "enemy", label: "Enemy" },
   { value: "self", label: "Self" },
   { value: "ally", label: "Ally" },
 ];
+
+function normalizeId(raw: string): string {
+  return raw
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, "_")
+    .replace(/[^a-z0-9_/]/g, "");
+}
+
+function nextDefaultId(existing: Record<string, unknown>): string {
+  const base = "new_ability";
+  if (!existing[base]) return base;
+  let i = 2;
+  while (existing[`${base}_${i}`]) i += 1;
+  return `${base}_${i}`;
+}
+
+function nextDuplicateId(base: string, existing: Record<string, unknown>): string {
+  let i = 2;
+  while (existing[`${base}_copy_${i - 1}`]) i += 1;
+  return `${base}_copy_${i - 1}`;
+}
+
+function cx(...c: Array<string | false | null | undefined>) {
+  return c.filter(Boolean).join(" ");
+}
 
 export function AbilityDesigner({
   config,
@@ -21,6 +56,30 @@ export function AbilityDesigner({
   config: AppConfig;
   onChange: (patch: Partial<AppConfig>) => void;
 }) {
+  const abilities = config.abilities;
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [category, setCategory] = useState<AbilityCategoryKey>("all");
+
+  useEffect(() => {
+    if (selectedId && abilities[selectedId]) return;
+    const first = Object.keys(abilities)[0] ?? null;
+    setSelectedId(first);
+  }, [abilities, selectedId]);
+
+  // Auto-jump category to match the selected ability when the user picks one
+  // outside the current filter.
+  useEffect(() => {
+    if (!selectedId) return;
+    const a = abilities[selectedId];
+    if (!a) return;
+    if (category === "all") return;
+    if (categoryFor(a) !== category) {
+      setCategory("all");
+    }
+    // We deliberately omit `category` from deps so jumping happens only on selection change.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedId, abilities]);
+
   const targetTypeOptions = useMemo(() => {
     const entries = Object.entries(config.abilityTargetTypes);
     if (entries.length > 0) {
@@ -56,117 +115,164 @@ export function AbilityDesigner({
     [config.pets],
   );
 
-  const patchEffect = useCallback(
-    (
-      ability: AbilityDefinitionConfig,
-      patch: (p: Partial<AbilityDefinitionConfig>) => void,
-      effectPatch: Partial<AbilityEffectConfig>,
-    ) => {
-      const nextEffect =
-        effectPatch.type && effectPatch.type !== ability.effect.type
-          ? { type: effectPatch.type } as AbilityEffectConfig
-          : { ...ability.effect, ...effectPatch };
-      patch({ effect: nextEffect });
+  const filteredCount = useMemo(() => {
+    if (category === "all") return Object.keys(abilities).length;
+    return Object.values(abilities).filter((a) => categoryFor(a) === category).length;
+  }, [abilities, category]);
+
+  const patchAbility = useCallback(
+    (id: string, p: Partial<AbilityDefinitionConfig>) => {
+      const cur = abilities[id];
+      if (!cur) return;
+      onChange({ abilities: { ...abilities, [id]: { ...cur, ...p } } });
     },
-    [],
+    [abilities, onChange],
   );
 
+  const patchEffect = useCallback(
+    (id: string, p: Partial<AbilityEffectConfig>) => {
+      const cur = abilities[id];
+      if (!cur) return;
+      const nextEffect: AbilityEffectConfig =
+        p.type && p.type !== cur.effect.type
+          ? ({ type: p.type } as AbilityEffectConfig)
+          : { ...cur.effect, ...p };
+      onChange({
+        abilities: { ...abilities, [id]: { ...cur, effect: nextEffect } },
+      });
+    },
+    [abilities, onChange],
+  );
+
+  const renameAbility = useCallback(
+    (oldId: string, rawNewId: string) => {
+      const newId = normalizeId(rawNewId);
+      if (!newId || oldId === newId || abilities[newId]) return;
+      onChange({ abilities: renameAbilityDefinition(config, oldId, newId) });
+      if (selectedId === oldId) setSelectedId(newId);
+    },
+    [abilities, config, onChange, selectedId],
+  );
+
+  const addAbility = useCallback(() => {
+    const id = nextDefaultId(abilities);
+    onChange({
+      abilities: {
+        ...abilities,
+        [id]: defaultAbilityDefinition("New Ability"),
+      },
+    });
+    setSelectedId(id);
+  }, [abilities, onChange]);
+
+  const duplicateAbility = useCallback(() => {
+    if (!selectedId) return;
+    const source = abilities[selectedId];
+    if (!source) return;
+    const newId = nextDuplicateId(selectedId, abilities);
+    const cloned: AbilityDefinitionConfig = {
+      ...source,
+      displayName: `${source.displayName} (copy)`,
+      effect: { ...source.effect },
+      prerequisites: source.prerequisites
+        ? [...source.prerequisites]
+        : undefined,
+    };
+    onChange({ abilities: { ...abilities, [newId]: cloned } });
+    setSelectedId(newId);
+  }, [abilities, onChange, selectedId]);
+
+  const deleteAbility = useCallback(() => {
+    if (!selectedId) return;
+    const next = { ...abilities };
+    delete next[selectedId];
+    onChange({ abilities: next });
+    setSelectedId(null);
+  }, [abilities, onChange, selectedId]);
+
+  const selected = selectedId ? abilities[selectedId] ?? null : null;
+
   return (
-    <DefinitionWorkbench
-      title="Ability designer"
-      countLabel="Ability roster"
-      description="Target rules, class access, effects, and icon identity."
-      addPlaceholder="New ability id"
-      searchPlaceholder="Search abilities"
-      emptyMessage="No abilities match the current search."
-      emptyTitle="Create an ability to start designing it."
-      items={config.abilities}
-      defaultItem={defaultAbilityDefinition}
-      getDisplayName={(ability) => ability.displayName}
-      renderSummary={summarizeAbility}
-      idTransform={(raw) => raw.trim().toLowerCase().replace(/\s+/g, "_")}
-      searchFilter={(id, ability, q) => {
-        const restriction = ability.requiredClass || ability.classRestriction || "";
-        return (
-          id.toLowerCase().includes(q) ||
-          ability.displayName.toLowerCase().includes(q) ||
-          restriction.toLowerCase().includes(q) ||
-          ability.effect.type.toLowerCase().includes(q)
-        );
-      }}
-      renderListCard={(id, ability) => {
-        const classId = ability.requiredClass || ability.classRestriction;
-        return (
-          <>
-            <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0">
-                <div className="truncate font-display text-lg text-text-primary">{ability.displayName}</div>
-                <div className="mt-1 truncate text-2xs text-text-muted">{id}</div>
-              </div>
-              {ability.image && (
-                <span className="rounded-full bg-badge-success-bg px-2 py-1 text-2xs uppercase tracking-label text-badge-success">
-                  Art
-                </span>
+    <div className="flex flex-col gap-4">
+      <AbilitiesHeader
+        total={Object.keys(abilities).length}
+        filtered={filteredCount}
+        selectedId={selectedId}
+        onDuplicate={duplicateAbility}
+        onDelete={deleteAbility}
+      />
+
+      <div className="panel-surface flex flex-wrap items-center gap-1.5 rounded-2xl px-3 py-2 shadow-section">
+        {ABILITY_CATEGORIES.map((c) => {
+          const active = category === c.key;
+          return (
+            <button
+              key={c.key}
+              type="button"
+              onClick={() => setCategory(c.key)}
+              aria-pressed={active}
+              className={cx(
+                "focus-ring inline-flex items-center rounded-full border px-3 py-1 font-display text-2xs uppercase tracking-[0.16em] transition",
+                active
+                  ? "border-accent/60 bg-accent/15 text-accent"
+                  : "border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] text-text-muted hover:border-accent/30 hover:text-accent",
               )}
-            </div>
-            <div className="mt-3 flex flex-wrap gap-2 text-2xs uppercase tracking-label text-text-muted">
-              <span>{ability.effect.type}</span>
-              <span>{ability.targetType}</span>
-              <span>Lvl {ability.levelRequired}</span>
-              {classId && <span>{classId}</span>}
-              {(ability.skillPointCost ?? 1) === 0 ? (
-                <span className="text-badge-success">Auto</span>
-              ) : (
-                <span>{ability.skillPointCost ?? 1} SP</span>
-              )}
-            </div>
-            <div className="mt-3 text-xs text-text-secondary">{summarizeAbility(ability)}</div>
-          </>
-        );
-      }}
-      renderDetailHeader={(_, ability) => (
-        <div className="flex flex-wrap gap-2">
-          <span className="rounded-full bg-[var(--chrome-highlight-strong)] px-3 py-1 text-xs text-text-secondary">{ability.effect.type}</span>
-          <span className="rounded-full bg-[var(--chrome-highlight-strong)] px-3 py-1 text-xs text-text-secondary">{ability.targetType}</span>
-          <span className="rounded-full bg-[var(--chrome-highlight-strong)] px-3 py-1 text-xs text-text-secondary">Mana {ability.manaCost}</span>
-          <span className="rounded-full bg-[var(--chrome-highlight-strong)] px-3 py-1 text-xs text-text-secondary">CD {ability.cooldownMs}ms</span>
-          {(() => {
-            const cost = ability.skillPointCost ?? 1;
-            return (
-              <span
-                className={`rounded-full px-3 py-1 text-xs ${
-                  cost === 0
-                    ? "bg-badge-success-bg text-badge-success"
-                    : "bg-[var(--chrome-highlight-strong)] text-text-secondary"
-                }`}
-                title={
-                  cost === 0
-                    ? "Auto-learned when level, class, and prerequisites are met"
-                    : `Costs ${cost} skill ${cost === 1 ? "point" : "points"} at a trainer`
-                }
-              >
-                {cost === 0 ? "Auto-learn" : `${cost} SP`}
-              </span>
-            );
-          })()}
+            >
+              {c.label}
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
+        <div className="xl:col-span-3">
+          <AbilitiesList
+            abilities={abilities}
+            category={category}
+            selectedId={selectedId}
+            onSelect={setSelectedId}
+            onAdd={addAbility}
+          />
         </div>
-      )}
-      onRename={(oldId, newId) => {
-        onChange({ abilities: renameAbilityDefinition(config, oldId, newId) });
-      }}
-      renderDetail={(id, ability, patch) => (
-        <AbilityDetail
-          id={id}
-          ability={ability}
-          patch={patch}
-          classOptions={classOptions}
-          statusEffectOptions={statusEffectOptions}
-          targetTypeOptions={targetTypeOptions}
-          petOptions={petOptions}
-          patchEffect={patchEffect}
-        />
-      )}
-      onItemsChange={(abilities) => onChange({ abilities })}
-    />
+
+        <div className="xl:col-span-9">
+          {selectedId && selected ? (
+            <AbilityEditor
+              id={selectedId}
+              ability={selected}
+              classOptions={classOptions}
+              statusEffectOptions={statusEffectOptions}
+              targetTypeOptions={targetTypeOptions}
+              petOptions={petOptions}
+              onPatch={(p) => patchAbility(selectedId, p)}
+              onPatchEffect={(p) => patchEffect(selectedId, p)}
+              onRename={(v) => renameAbility(selectedId, v)}
+            />
+          ) : (
+            <EmptyEditor onAdd={addAbility} />
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function EmptyEditor({ onAdd }: { onAdd: () => void }) {
+  return (
+    <div className="panel-surface flex flex-col items-center justify-center gap-3 rounded-2xl px-6 py-12 text-center shadow-section">
+      <div>
+        <p className="font-display text-base text-text-primary">No ability selected</p>
+        <p className="mt-1 max-w-xs text-2xs text-text-muted/80">
+          Choose an ability from the roster, or create a new one to get started.
+        </p>
+      </div>
+      <button
+        type="button"
+        onClick={onAdd}
+        className="focus-ring inline-flex items-center gap-1.5 rounded-xl border border-accent/40 bg-accent/10 px-3 py-2 text-xs font-medium text-accent transition hover:bg-accent/20"
+      >
+        + Add Ability
+      </button>
+    </div>
   );
 }

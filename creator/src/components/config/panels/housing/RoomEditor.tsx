@@ -242,23 +242,15 @@ function BackgroundArtCard({
       title="Background Art"
       description="Choose art for this room. AI-generated from your prompt."
     >
-      <div className="flex flex-col gap-2">
-        <TextInput
-          value={t.image ?? ""}
-          onCommit={(v) => onPatch({ image: v || undefined })}
-          placeholder="Optional asset filename"
-          dense
-        />
-        <EntityArtGenerator
-          getPrompt={(style) => housingRoomPrompt(id, t, style)}
-          entityContext={housingRoomContext(id, t)}
-          currentImage={t.image}
-          onAccept={(filePath) => onPatch({ image: filePath })}
-          assetType="background"
-          context={{ zone: "config", entity_type: "housing_room", entity_id: id }}
-          surface="worldbuilding"
-        />
-      </div>
+      <EntityArtGenerator
+        getPrompt={(style) => housingRoomPrompt(id, t, style)}
+        entityContext={housingRoomContext(id, t)}
+        currentImage={t.image}
+        onAccept={(filePath) => onPatch({ image: filePath })}
+        assetType="background"
+        context={{ zone: "config", entity_type: "housing_room", entity_id: id }}
+        surface="worldbuilding"
+      />
     </SectionCard>
   );
 }

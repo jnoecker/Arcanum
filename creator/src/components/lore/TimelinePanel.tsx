@@ -883,16 +883,6 @@ function EventInspector({
       <div className="border-t border-border-muted/30 pt-4">
         <p className="text-[0.6rem] uppercase tracking-[0.22em] text-text-muted">Event Image</p>
         <div className="mt-3">
-          <FieldRow label="Filename">
-            <TextInput
-              value={event.image ?? ""}
-              onCommit={(value) => onUpdate({ image: value || undefined })}
-              placeholder="None"
-              dense
-            />
-          </FieldRow>
-        </div>
-        <div className="mt-3">
           <EntityArtGenerator
             getPrompt={(style) => getTimelineEventPrompt(event, style)}
             entityContext={getTimelineEventContext(event)}

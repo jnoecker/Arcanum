@@ -13,7 +13,7 @@ import {
 type TabId = "builder" | "categories" | "criterionTypes";
 
 const TABS: Array<{ id: TabId; label: string }> = [
-  { id: "builder", label: "Builder" },
+  { id: "builder", label: "Achievements" },
   { id: "categories", label: "Categories" },
   { id: "criterionTypes", label: "Criterion Types" },
 ];
@@ -48,6 +48,7 @@ export function AchievementDesigner({ config, onChange }: AchievementDesignerPro
             return (
               <button
                 key={tab.id}
+                id={`achievement-tabbtn-${tab.id}`}
                 ref={(node) => {
                   tabRefs.current[index] = node;
                 }}
@@ -85,7 +86,7 @@ export function AchievementDesigner({ config, onChange }: AchievementDesignerPro
       <div
         id={`achievement-tab-${active}`}
         role="tabpanel"
-        aria-labelledby={`achievement-tab-${active}`}
+        aria-labelledby={`achievement-tabbtn-${active}`}
       >
         {active === "builder" && (
           <AchievementDefEditor

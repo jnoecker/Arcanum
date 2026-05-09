@@ -166,7 +166,7 @@ export function ParameterRow({
         tabIndex={0}
         title={tooltipText}
         aria-label={`${meta.label}. ${tooltipText}`}
-        className="focus-ring rounded-sm text-[15px] font-semibold text-text-primary"
+        className="focus-ring rounded-sm text-base font-semibold text-text-primary"
       >
         {meta.label}
       </span>

@@ -1,8 +1,12 @@
 // ─── Apply Footer Bar ───────────────────────────────────────────────
-// Sticky footer with Apply/Undo/Reset buttons and section count summary.
+// Sticky footer with Apply (working set), Commit (disk), Undo, and
+// Reset actions plus section count summary.
 
 import { useState, useEffect } from "react";
 import { useTuningWizardStore } from "@/stores/tuningWizardStore";
+import { useConfigStore } from "@/stores/configStore";
+import { useProjectStore } from "@/stores/projectStore";
+import { useToastStore } from "@/stores/toastStore";
 import { TuningSection } from "@/lib/tuning/types";
 import { ActionButton, Spinner } from "@/components/ui/FormWidgets";
 
@@ -24,7 +28,13 @@ export function ApplyFooterBar() {
   const clearApplySuccess = useTuningWizardStore((s) => s.clearApplySuccess);
   const clearActionError = useTuningWizardStore((s) => s.clearActionError);
 
+  const dirty = useConfigStore((s) => s.dirty);
+  const project = useProjectStore((s) => s.project);
+  const showToast = useToastStore((s) => s.show);
+
   const [applying, setApplying] = useState(false);
+  const [committing, setCommitting] = useState(false);
+  const [commitError, setCommitError] = useState<string | null>(null);
   const acceptedCount = acceptedSections.size;
   const totalSections = ALL_SECTIONS.length;
 
@@ -44,6 +54,36 @@ export function ApplyFooterBar() {
     }
   }
 
+  async function handleCommit() {
+    if (!project || committing || !dirty) return;
+    setCommitting(true);
+    setCommitError(null);
+    try {
+      const { saveProjectConfig } = await import("@/lib/saveConfig");
+      await saveProjectConfig(project);
+      useConfigStore.getState().markClean();
+      showToast({
+        kicker: "Tuning Wizard",
+        message: "Committed to application.yaml.",
+        variant: "astral",
+      });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      setCommitError(message);
+      showToast(
+        {
+          kicker: "Tuning Wizard",
+          message: `Commit failed: ${message}`,
+          variant: "ember",
+        },
+        4000,
+      );
+      console.error("Tuning commit failed:", err);
+    } finally {
+      setCommitting(false);
+    }
+  }
+
   return (
     <div className="sticky bottom-0 z-10 border-t border-border-muted bg-bg-primary/95 px-6 py-3 shadow-section animate-unfurl-in">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
@@ -60,6 +100,11 @@ export function ApplyFooterBar() {
           {actionError && (
             <span role="alert" className="text-sm text-status-error sm:ml-3">
               {actionError}
+            </span>
+          )}
+          {commitError && !actionError && (
+            <span role="alert" className="text-sm text-status-error sm:ml-3">
+              Commit failed: {commitError}
             </span>
           )}
         </div>
@@ -88,7 +133,25 @@ export function ApplyFooterBar() {
                 Applying...
               </>
             ) : (
-              `Apply ${acceptedCount} ${acceptedCount === 1 ? "Section" : "Sections"}`
+              `Apply ${acceptedCount} ${acceptedCount === 1 ? "Section" : "Sections"} to Working Set`
+            )}
+          </ActionButton>
+          <ActionButton
+            variant="ghost"
+            disabled={!dirty || committing}
+            onClick={() => {
+              setCommitError(null);
+              void handleCommit();
+            }}
+            aria-label={committing ? "Committing to application.yaml" : "Commit to application.yaml"}
+          >
+            {committing ? (
+              <>
+                <Spinner className="mr-2" />
+                Committing...
+              </>
+            ) : (
+              "Commit to application.yaml"
             )}
           </ActionButton>
         </div>

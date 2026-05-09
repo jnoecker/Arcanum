@@ -25,8 +25,11 @@ interface RoomTemplatesListProps {
   entryExitDirection: string;
   onPatchHousing: (p: Partial<HousingConfig>) => void;
   onAdd: () => void;
+  onSeedStarter: () => void;
   onSelect: (id: string) => void;
 }
+
+const GOLD_FORMATTER = new Intl.NumberFormat();
 
 export function RoomTemplatesList({
   templates,
@@ -35,6 +38,7 @@ export function RoomTemplatesList({
   entryExitDirection,
   onPatchHousing,
   onAdd,
+  onSeedStarter,
   onSelect,
 }: RoomTemplatesListProps) {
   const [query, setQuery] = useState("");
@@ -54,7 +58,7 @@ export function RoomTemplatesList({
   }, [ids, query, templates]);
 
   return (
-    <SectionCard title="Room Templates">
+    <SectionCard title="Dwellings">
       <div className="flex flex-col gap-3">
         <div className="flex flex-wrap items-center gap-2 rounded-xl border border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] p-2">
           <EnabledToggle
@@ -82,7 +86,7 @@ export function RoomTemplatesList({
               <SearchIcon className="text-text-muted/70" />
               <input
                 className="min-w-0 flex-1 bg-transparent text-xs text-text-primary outline-none placeholder:text-text-muted/60"
-                placeholder="Search templates…"
+                placeholder="Search dwellings…"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 disabled={!enabled}
@@ -92,7 +96,7 @@ export function RoomTemplatesList({
               type="button"
               onClick={onAdd}
               disabled={!enabled}
-              title="Create a new room template"
+              title="Commission a new dwelling"
               className="focus-ring inline-flex shrink-0 items-center gap-1 rounded-lg border border-accent/40 bg-accent/10 px-3 py-1.5 text-xs font-medium text-accent transition hover:bg-accent/20 disabled:cursor-not-allowed disabled:opacity-40"
             >
               <PlusIcon />
@@ -101,10 +105,10 @@ export function RoomTemplatesList({
           </div>
 
           {ids.length === 0 ? (
-            <EmptyTemplates />
+            <EmptyTemplates onSeedStarter={onSeedStarter} onAdd={onAdd} />
           ) : filtered.length === 0 ? (
             <p className="rounded-xl border border-dashed border-[var(--chrome-stroke-strong)] bg-[var(--chrome-fill-soft)] px-4 py-6 text-center text-2xs italic text-text-muted/70">
-              No templates match "{query}".
+              No dwellings match "{query}".
             </p>
           ) : (
             <ul className="flex flex-col gap-2">
@@ -231,10 +235,10 @@ function RoomCard({ id, t, selected, onSelect }: RoomCardProps) {
             </div>
             <div className="flex shrink-0 items-baseline gap-1">
               <span className="font-display text-base font-semibold leading-none text-warm">
-                {t.cost}
+                {GOLD_FORMATTER.format(t.cost ?? 0)}
               </span>
               <span className="font-display text-[0.6rem] uppercase tracking-wider text-warm/70">
-                Gold
+                g
               </span>
             </div>
           </div>
@@ -270,14 +274,39 @@ function RoomCard({ id, t, selected, onSelect }: RoomCardProps) {
   );
 }
 
-function EmptyTemplates() {
+function EmptyTemplates({
+  onSeedStarter,
+  onAdd,
+}: {
+  onSeedStarter: () => void;
+  onAdd: () => void;
+}) {
   return (
-    <div className="rounded-xl border border-dashed border-[var(--chrome-stroke-strong)] bg-[var(--chrome-fill-soft)] px-4 py-10 text-center">
-      <p className="font-display text-xs text-text-muted">No room templates yet.</p>
-      <p className="mt-1 text-2xs text-text-muted/70">
-        Click "Add Template" to start with an entry hall, then add specialized
-        rooms — vault, forge, bedroom.
+    <div className="bg-gradient-panel-light relative overflow-hidden rounded-xl border border-[var(--chrome-stroke)] px-5 py-8 text-center shadow-section">
+      <div className="pointer-events-none absolute inset-x-6 top-0 h-px flourish-top-thread" />
+      <p className="font-display text-base font-semibold text-text-primary">
+        No dwellings yet.
       </p>
+      <p className="mt-2 text-2xs leading-snug text-text-muted/80">
+        Begin with a starter set — Entry Hall, Bedchamber, Vault, Forge — or
+        build your own.
+      </p>
+      <div className="mt-4 flex flex-col items-stretch gap-2">
+        <button
+          type="button"
+          onClick={onSeedStarter}
+          className="focus-ring inline-flex items-center justify-center gap-1.5 rounded-lg border border-accent/40 bg-accent/15 px-3 py-2 font-display text-2xs font-semibold uppercase tracking-[0.18em] text-accent transition hover:bg-accent/25"
+        >
+          Begin with starter set
+        </button>
+        <button
+          type="button"
+          onClick={onAdd}
+          className="focus-ring inline-flex items-center justify-center gap-1.5 rounded-lg border border-[var(--chrome-stroke)] bg-transparent px-3 py-1.5 text-2xs text-text-muted transition hover:border-accent/30 hover:text-text-secondary"
+        >
+          Start blank
+        </button>
+      </div>
     </div>
   );
 }

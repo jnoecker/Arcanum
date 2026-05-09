@@ -18,9 +18,12 @@ function base(p: IconProps) {
 }
 
 export function PlusIcon(p: IconProps) {
+  // Sigil-cross: a four-point star with serif tips. Reads as "inscribe".
   return (
     <svg {...base(p)}>
-      <path d="M12 5v14M5 12h14" />
+      <path d="M12 4v16M4 12h16" />
+      <path d="M10 4h4M10 20h4M4 10v4M20 10v4" />
+      <circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none" />
     </svg>
   );
 }
@@ -60,12 +63,11 @@ export function CopyIcon(p: IconProps) {
 }
 
 export function TrashIcon(p: IconProps) {
+  // Broken-seal glyph: a wax seal with a jagged crack through it.
   return (
     <svg {...base(p)}>
-      <path d="M4 7h16" />
-      <path d="M9 7V4h6v3" />
-      <path d="M6 7l1 13a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-13" />
-      <path d="M10 11v7M14 11v7" />
+      <circle cx="12" cy="12" r="7.5" />
+      <path d="M14 4.5l-3.5 6 4 3-3 6" />
     </svg>
   );
 }

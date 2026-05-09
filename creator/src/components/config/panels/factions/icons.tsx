@@ -67,6 +67,15 @@ export function TrashIcon(p: IconProps) {
   );
 }
 
+export function PencilIcon(p: IconProps) {
+  return (
+    <svg {...base(p)}>
+      <path d="M12 20h9" />
+      <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z" />
+    </svg>
+  );
+}
+
 /** Eight-pointed compass-rose star used as the faction emblem. */
 export function CompassRoseIcon(p: IconProps) {
   return (

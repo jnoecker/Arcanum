@@ -96,6 +96,14 @@ export function ArrowDownIcon(p: IconProps) {
   );
 }
 
+export function FunnelIcon(p: IconProps) {
+  return (
+    <svg {...base(p)}>
+      <path d="M3 5h18l-7 9v6l-4-2v-4L3 5z" />
+    </svg>
+  );
+}
+
 export function EyeOffIcon(p: IconProps) {
   return (
     <svg {...base(p)}>

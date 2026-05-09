@@ -31,7 +31,7 @@ export function AllegianceList({
   return (
     <SectionCard
       title="Allegiances"
-      description="Every political group in the world. Mobs and quests reference these IDs."
+      description="Every faction in the world. Mobs and quests bind to these IDs."
     >
       <div className="mb-3 flex items-center gap-2">
         <div className="ornate-input flex min-w-0 flex-1 items-center gap-2 px-2.5 py-1.5">
@@ -170,9 +170,12 @@ function EmptyState() {
   return (
     <div className="rounded-xl border border-dashed border-[var(--chrome-stroke-strong)] bg-[var(--chrome-fill-soft)] px-4 py-8 text-center">
       <CompassRoseIcon className="mx-auto mb-2 h-6 w-6 text-text-muted/50" />
-      <p className="font-display text-xs text-text-muted">No factions defined.</p>
-      <p className="mt-1 text-2xs text-text-muted/70">
-        Try <code className="text-text-muted">thieves_guild</code> or{" "}
+      <p className="font-display text-xs text-text-muted">
+        Every world needs its quarrels.
+      </p>
+      <p className="mt-1 text-2xs leading-snug text-text-muted/70">
+        Name a guild, a court, a thieves' den — and tell us who hates whom. Try{" "}
+        <code className="text-text-muted">thieves_guild</code> or{" "}
         <code className="text-text-muted">royal_court</code>.
       </p>
     </div>

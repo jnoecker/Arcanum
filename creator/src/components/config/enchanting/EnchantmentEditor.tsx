@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type {
   EnchantmentDefinitionConfig,
   EnchantmentMaterialConfig,
@@ -8,6 +8,7 @@ import {
   NumberInput,
   SelectInput,
 } from "@/components/ui/FormWidgets";
+import { useZoneStore } from "@/stores/zoneStore";
 import { Section } from "./Section";
 import { PlusIcon, XIcon, TrashIcon } from "./icons";
 
@@ -34,6 +35,17 @@ export function EnchantmentEditor({
   onPatch,
   onRename,
 }: EnchantmentEditorProps) {
+  const zones = useZoneStore((s) => s.zones);
+  const knownItemIds = useMemo(() => {
+    const set = new Set<string>();
+    for (const z of zones.values()) {
+      const items = z.data.items;
+      if (!items) continue;
+      for (const itemId of Object.keys(items)) set.add(itemId);
+    }
+    return set;
+  }, [zones]);
+
   return (
     <div className="flex flex-col gap-4">
       <IdentityRequirementsCard
@@ -52,7 +64,7 @@ export function EnchantmentEditor({
           equipSlotOptions={equipSlotOptions}
           onPatch={onPatch}
         />
-        <MaterialsCard def={def} onPatch={onPatch} />
+        <MaterialsCard def={def} onPatch={onPatch} knownItemIds={knownItemIds} />
       </div>
     </div>
   );
@@ -132,7 +144,9 @@ function IdentityRequirementsCard({
 function SlugRenamer({ id, onRename }: { id: string; onRename: (v: string) => void }) {
   const [draft, setDraft] = useState(id);
   const [focused, setFocused] = useState(false);
-  if (!focused && draft !== id) setDraft(id);
+  useEffect(() => {
+    if (!focused) setDraft(id);
+  }, [id, focused]);
 
   const commit = () => {
     if (draft.trim() && draft !== id) onRename(draft);
@@ -384,9 +398,11 @@ function SlotChip({
 function MaterialsCard({
   def,
   onPatch,
+  knownItemIds,
 }: {
   def: EnchantmentDefinitionConfig;
   onPatch: (p: Partial<EnchantmentDefinitionConfig>) => void;
+  knownItemIds: Set<string>;
 }) {
   const materials = def.materials;
 
@@ -425,37 +441,52 @@ function MaterialsCard({
         </div>
       ) : (
         <div className="flex flex-col gap-1.5">
-          {materials.map((mat, i) => (
-            <div
-              key={i}
-              className="flex items-center gap-2 rounded-lg border border-status-warning/25 bg-status-warning/[0.05] px-2 py-1.5"
-            >
-              <div className="min-w-0 flex-1">
-                <TextInput
-                  value={mat.itemId}
-                  onCommit={(v) => updateMaterial(i, { itemId: v })}
-                  placeholder="item_id"
-                  dense
-                />
+          {materials.map((mat, i) => {
+            const trimmed = mat.itemId.trim();
+            const unknown = trimmed.length > 0 && !knownItemIds.has(trimmed);
+            return (
+              <div key={i} className="flex flex-col gap-1">
+                <div className="flex items-center gap-2 rounded-lg border border-status-warning/25 bg-status-warning/[0.05] px-2 py-1.5">
+                  <div className="min-w-0 flex-1">
+                    <TextInput
+                      value={mat.itemId}
+                      onCommit={(v) => updateMaterial(i, { itemId: v })}
+                      placeholder="iron_dust"
+                      dense
+                    />
+                  </div>
+                  <div className="w-16 shrink-0">
+                    <NumberInput
+                      value={mat.quantity}
+                      onCommit={(v) => updateMaterial(i, { quantity: v ?? 1 })}
+                      min={1}
+                      dense
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => removeMaterial(i)}
+                    aria-label="Remove material"
+                    className="focus-ring inline-flex h-7 w-7 items-center justify-center rounded text-text-muted/60 transition hover:bg-status-error/15 hover:text-status-error"
+                  >
+                    <TrashIcon />
+                  </button>
+                </div>
+                {unknown && (
+                  <span
+                    role="status"
+                    className="ml-2 inline-flex w-fit items-center gap-1 rounded-md border border-status-warning/40 bg-status-warning/10 px-1.5 py-0.5 font-mono text-[0.6rem] text-status-warning"
+                  >
+                    No item with ID “{trimmed}” found in loaded zones.
+                  </span>
+                )}
               </div>
-              <div className="w-16 shrink-0">
-                <NumberInput
-                  value={mat.quantity}
-                  onCommit={(v) => updateMaterial(i, { quantity: v ?? 1 })}
-                  min={1}
-                  dense
-                />
-              </div>
-              <button
-                type="button"
-                onClick={() => removeMaterial(i)}
-                aria-label="Remove material"
-                className="focus-ring inline-flex h-7 w-7 items-center justify-center rounded text-text-muted/60 transition hover:bg-status-error/15 hover:text-status-error"
-              >
-                <TrashIcon />
-              </button>
-            </div>
-          ))}
+            );
+          })}
+          <p className="mt-1 ml-2 text-2xs italic text-text-muted/70">
+            Each entry must match an existing item ID (e.g.{" "}
+            <span className="font-mono not-italic">iron_dust</span>).
+          </p>
           <button
             type="button"
             onClick={addMaterial}

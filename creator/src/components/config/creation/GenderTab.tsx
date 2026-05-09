@@ -1,13 +1,9 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import type { GenderDefinition } from "@/types/config";
 import { TextInput } from "@/components/ui/FormWidgets";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { SectionCard } from "../panels/factions/SectionCard";
-import {
-  PlusIcon,
-  SearchIcon,
-  TrashIcon,
-  MoreVerticalIcon,
-} from "./icons";
+import { PlusIcon, SearchIcon, TrashIcon } from "./icons";
 
 function cx(...c: Array<string | false | null | undefined>) {
   return c.filter(Boolean).join(" ");
@@ -59,13 +55,12 @@ export function GenderTab({
         ) : (
           <SectionCard
             title="Gender Designer"
-            description="Edit the selected gender's details."
+            description="Refine this form."
           >
             <div className="rounded-xl border border-dashed border-[var(--chrome-stroke-strong)] bg-[var(--chrome-fill-soft)] px-4 py-12 text-center">
-              <p className="font-display text-xs text-text-muted">Nothing selected.</p>
+              <p className="font-display text-xs text-text-muted">No form chosen.</p>
               <p className="mt-1 text-2xs leading-snug text-text-muted/70">
-                Pick a gender from the list to edit its display name and sprite
-                code.
+                Pick one from the list.
               </p>
             </div>
           </SectionCard>
@@ -110,7 +105,7 @@ function GenderList({ genders, selected, onSelect, onAdd, onDelete }: GenderList
   return (
     <SectionCard
       title="Gender Definitions"
-      description="Manage the list of available genders."
+      description="Forms a soul may take."
       actions={
         <span className="inline-flex items-center gap-1 rounded-full border border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] px-2 py-0.5 font-display text-[0.55rem] uppercase tracking-wider text-text-muted">
           {ids.length} {ids.length === 1 ? "Entry" : "Entries"}
@@ -136,7 +131,7 @@ function GenderList({ genders, selected, onSelect, onAdd, onDelete }: GenderList
             className="focus-ring inline-flex shrink-0 items-center gap-1 rounded-lg border border-accent/40 bg-accent/10 px-3 py-1.5 text-xs font-medium text-accent transition hover:bg-accent/20 disabled:cursor-not-allowed disabled:opacity-40"
           >
             <PlusIcon />
-            Add
+            Inscribe Form
           </button>
         </div>
 
@@ -184,18 +179,7 @@ interface GenderRowProps {
 }
 
 function GenderRow({ id, gender, selected, onSelect, onDelete }: GenderRowProps) {
-  const [menuOpen, setMenuOpen] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!menuOpen) return;
-    const onDoc = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node))
-        setMenuOpen(false);
-    };
-    document.addEventListener("mousedown", onDoc);
-    return () => document.removeEventListener("mousedown", onDoc);
-  }, [menuOpen]);
+  const [confirming, setConfirming] = useState(false);
 
   return (
     <li>
@@ -224,35 +208,31 @@ function GenderRow({ id, gender, selected, onSelect, onDelete }: GenderRowProps)
           </div>
         </button>
 
-        <div ref={menuRef} className="relative shrink-0">
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              setMenuOpen((v) => !v);
-            }}
-            aria-label="Row actions"
-            className="focus-ring inline-flex h-7 w-7 items-center justify-center rounded-lg text-text-muted/60 transition hover:bg-[var(--chrome-fill)] hover:text-text-primary"
-          >
-            <MoreVerticalIcon />
-          </button>
-          {menuOpen && (
-            <div className="absolute right-0 top-9 z-20 w-32 overflow-hidden rounded-xl border border-[var(--chrome-stroke)] bg-bg-elevated text-xs shadow-lg">
-              <button
-                type="button"
-                onClick={() => {
-                  setMenuOpen(false);
-                  onDelete();
-                }}
-                className="flex w-full items-center gap-2 px-3 py-2 text-left text-status-error transition hover:bg-status-error/10"
-              >
-                <TrashIcon />
-                Delete
-              </button>
-            </div>
-          )}
-        </div>
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            setConfirming(true);
+          }}
+          aria-label={`Erase ${gender.displayName || id}`}
+          className="focus-ring inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-text-muted/60 transition hover:bg-status-error/10 hover:text-status-error"
+        >
+          <TrashIcon />
+        </button>
       </div>
+      {confirming && (
+        <ConfirmDialog
+          title="Erase this form?"
+          message={`"${gender.displayName || id}" will be removed from the list of available genders. Existing characters who chose it may need to be reassigned. This cannot be undone.`}
+          confirmLabel="Erase"
+          destructive
+          onConfirm={() => {
+            setConfirming(false);
+            onDelete();
+          }}
+          onCancel={() => setConfirming(false)}
+        />
+      )}
     </li>
   );
 }
@@ -272,18 +252,20 @@ function GenderDesigner({
   onDelete,
   onRename,
 }: GenderDesignerProps) {
+  const [confirming, setConfirming] = useState(false);
   return (
+    <>
     <SectionCard
       title="Gender Designer"
-      description="Edit the selected gender's details."
+      description="Refine this form."
       actions={
         <button
           type="button"
-          onClick={onDelete}
+          onClick={() => setConfirming(true)}
           className="focus-ring inline-flex items-center gap-1.5 rounded-lg border border-status-error/40 bg-status-error/10 px-2.5 py-1.5 text-2xs font-medium text-status-error transition hover:bg-status-error/20"
         >
           <TrashIcon />
-          Delete
+          Erase
         </button>
       }
     >
@@ -330,8 +312,8 @@ function GenderDesigner({
             </div>
           </div>
           <p className="mt-1 text-2xs text-text-muted/70">
-            Code used in sprite filenames (e.g. <code>'m'</code> or{" "}
-            <code>'f'</code>).
+            Code used in sprite filenames (e.g. <code className="font-mono">'m'</code> or{" "}
+            <code className="font-mono">'f'</code>).
             <br />
             Defaults to the gender's ID if left blank.
           </p>
@@ -349,6 +331,20 @@ function GenderDesigner({
         </div>
       </div>
     </SectionCard>
+    {confirming && (
+      <ConfirmDialog
+        title="Erase this form?"
+        message={`"${gender.displayName || id}" will be removed from the list of available genders. Existing characters who chose it may need to be reassigned. This cannot be undone.`}
+        confirmLabel="Erase"
+        destructive
+        onConfirm={() => {
+          setConfirming(false);
+          onDelete();
+        }}
+        onCancel={() => setConfirming(false)}
+      />
+    )}
+    </>
   );
 }
 

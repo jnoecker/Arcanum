@@ -65,6 +65,45 @@ export function HousingPanel({ config, onChange }: ConfigPanelProps) {
     setSelected(id);
   };
 
+  const seedStarterSet = () => {
+    const starter: Record<string, HousingTemplateDefinition> = {
+      entry_hall: {
+        title: "Entry Hall",
+        description:
+          "A welcoming threshold lit by hanging lanterns. Stone underfoot, a coat hook by the door.",
+        cost: 500,
+        isEntry: true,
+        safe: true,
+      },
+      bedchamber: {
+        title: "Bedchamber",
+        description:
+          "A quiet place to rest. Down-stuffed pillows, a writing desk, the soft hush of curtains.",
+        cost: 1200,
+        safe: true,
+      },
+      vault: {
+        title: "Vault",
+        description:
+          "A reinforced strongroom for goods you would rather not lose. Iron-bound chests line the walls.",
+        cost: 2500,
+        safe: true,
+        maxDroppedItems: 50,
+      },
+      forge: {
+        title: "Forge",
+        description:
+          "A working smithy — anvil, bellows, racks of cooling steel. The air tastes of coal smoke.",
+        cost: 2000,
+        station: "forge",
+      },
+    };
+    patchHousing({
+      templates: { ...housing.templates, ...starter },
+    });
+    setSelected("entry_hall");
+  };
+
   const duplicateTemplate = (sourceId: string) => {
     const source = housing.templates[sourceId];
     if (!source) return;
@@ -108,6 +147,7 @@ export function HousingPanel({ config, onChange }: ConfigPanelProps) {
           entryExitDirection={housing.entryExitDirection}
           onPatchHousing={patchHousing}
           onAdd={addTemplate}
+          onSeedStarter={seedStarterSet}
           onSelect={(id) => setSelected(selected === id ? null : id)}
         />
       </div>
@@ -125,12 +165,11 @@ export function HousingPanel({ config, onChange }: ConfigPanelProps) {
         ) : (
           <div className="panel-surface flex h-full items-center justify-center rounded-2xl p-8 shadow-section">
             <div className="text-center">
-              <p className="font-display text-xs uppercase tracking-wider text-text-muted">
-                Nothing selected
+              <p className="font-display text-xs uppercase tracking-[0.22em] text-text-muted">
+                No dwelling chosen
               </p>
               <p className="mt-2 text-2xs leading-snug text-text-muted/70">
-                Click a room on the left to start editing — or add a new
-                template to get started.
+                Pick a room from the catalog, or commission a new one.
               </p>
             </div>
           </div>

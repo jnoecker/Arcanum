@@ -33,7 +33,7 @@ export function QuestRewards({
   return (
     <SectionCard
       title="Quest Reputation Rewards"
-      description="Reputation changes granted when a quest completes. Push players toward or away from factions based on the jobs they accept."
+      description="What a finished quest does to a player's standing. Use it to court allies — or burn bridges — based on the work they take."
     >
       <div className="mb-3 flex items-center gap-2">
         <input
@@ -61,10 +61,10 @@ export function QuestRewards({
         <div className="rounded-xl border border-dashed border-[var(--chrome-stroke-strong)] bg-[var(--chrome-fill-soft)] px-4 py-8 text-center">
           <CompassRoseIcon className="mx-auto mb-2 h-6 w-6 text-text-muted/40" />
           <p className="text-2xs leading-snug text-text-muted/80">
-            No quest rewards mapped.
+            No quests bound to reputation yet.
           </p>
           <p className="mt-0.5 text-2xs leading-snug text-text-muted/60">
-            Type a quest ID above to connect it to reputation changes.
+            Name a quest above, then tie it to the factions it pleases or offends.
           </p>
         </div>
       ) : (

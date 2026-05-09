@@ -234,12 +234,12 @@ export function FactionPanel() {
         ) : (
           <SectionCard
             title="Editing Faction"
-            description="Pick an allegiance from the list to edit its display name, flavor description, and rivalries."
+            description="Choose an allegiance to set its name, story, and rivals."
           >
             <div className="rounded-xl border border-dashed border-[var(--chrome-stroke-strong)] bg-[var(--chrome-fill-soft)] px-4 py-10 text-center">
               <CompassRoseIcon className="mx-auto mb-2 h-7 w-7 text-text-muted/50" />
               <p className="text-2xs italic text-text-muted/80">
-                Nothing selected. Click a faction on the left to edit it.
+                No allegiance chosen. Pick one from the rolls.
               </p>
             </div>
           </SectionCard>

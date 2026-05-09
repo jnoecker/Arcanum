@@ -63,10 +63,10 @@ const MetricRow = memo(function MetricRow({
       {showHeader && (
         <div className="mb-1 grid grid-cols-[minmax(0,1fr)_auto_auto] items-baseline gap-2">
           <span className="flex-1" />
-          <span className="text-right text-[12px] uppercase tracking-wide text-text-muted">
+          <span className="text-right text-xs uppercase tracking-wide text-text-muted">
             Current
           </span>
-          <span className="text-right text-[12px] uppercase tracking-wide text-text-muted">
+          <span className="text-right text-xs uppercase tracking-wide text-text-muted">
             Preset
           </span>
         </div>
@@ -76,14 +76,14 @@ const MetricRow = memo(function MetricRow({
           tabIndex={0}
           title={formulaTooltip}
           aria-label={`${label}. ${formulaTooltip}`}
-          className="focus-ring rounded-sm text-[14px] text-text-secondary"
+          className="focus-ring rounded-sm text-sm text-text-secondary"
         >
           {label}
         </span>
-        <span className="text-right font-mono text-[13px] text-text-muted">
+        <span className="text-right font-mono text-xs text-text-muted">
           {format(current)}
         </span>
-        <span className={`text-right font-mono text-[13px] ${color}`}>
+        <span className={`text-right font-mono text-xs ${color}`}>
           {format(preset)}{" "}
           {dir !== "same" ? delta : "\u2014"}
         </span>
@@ -195,19 +195,19 @@ export function MetricCard({ section, currentMetrics, presetMetrics, diffCount, 
 
   return (
     <div className={cardClass}>
-      <h3 className="mb-2 font-display text-[14px] font-normal uppercase tracking-[0.5px] text-text-secondary">
+      <h3 className="mb-2 font-display text-sm font-normal uppercase tracking-label text-text-secondary">
         {section}
       </h3>
       {rows.map((row, i) => (
         <MetricRow key={row.label} {...row} showHeader={i === 0} />
       ))}
       {section === TuningSection.EconomyCrafting && (
-        <p className="mt-2 text-[12px] text-text-muted">
+        <p className="mt-2 text-xs text-text-muted">
           Buy/sell multipliers visible in raw fields below
         </p>
       )}
       {section === TuningSection.WorldSocial && diffCount != null && diffCount > 0 && (
-        <p className="mt-2 text-[12px] text-text-muted">
+        <p className="mt-2 text-xs text-text-muted">
           {diffCount} other fields changed
         </p>
       )}

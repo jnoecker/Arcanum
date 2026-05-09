@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import type { FactionDefinition } from "@/types/config";
 import { TextInput, CommitTextarea } from "@/components/ui/FormWidgets";
 import { SectionCard } from "./SectionCard";
-import { XIcon, TrashIcon } from "./icons";
+import { XIcon, TrashIcon, PencilIcon } from "./icons";
 
 function cx(...c: Array<string | false | null | undefined>) {
   return c.filter(Boolean).join(" ");
@@ -161,10 +161,11 @@ function RenamableId({ id, onRename }: { id: string; onRename: (v: string) => vo
           setDraft(id);
           setEditing(true);
         }}
-        className="font-mono text-xs text-text-muted/80 underline-offset-2 hover:text-text-primary hover:underline"
-        title="Rename ID"
+        className="group inline-flex items-center gap-1 font-mono text-xs text-text-muted/80 underline-offset-2 hover:text-text-primary hover:underline"
+        title="Rename — Esc to cancel"
       >
-        ID: {id}
+        <span>ID: {id}</span>
+        <PencilIcon className="h-3 w-3 opacity-50 transition group-hover:opacity-100" />
       </button>
     );
   }

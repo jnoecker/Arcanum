@@ -2,7 +2,7 @@ import type { ReputationTier } from "@/types/config";
 import { DEFAULT_REPUTATION_TIERS } from "@/types/config";
 import { ActionButton, TextInput, NumberInput } from "@/components/ui/FormWidgets";
 import { SectionCard } from "./SectionCard";
-import { GripIcon, PlusIcon, TrashIcon } from "./icons";
+import { PlusIcon, TrashIcon } from "./icons";
 
 function normalizeId(raw: string): string {
   return raw
@@ -48,7 +48,7 @@ export function ReputationTiersTable({ tiers, onChange }: ReputationTiersTablePr
   return (
     <SectionCard
       title="Reputation Tiers"
-      description="Named bands of standing. Each tier covers everything from its threshold up to the next one. Referenced by reputation gates on shops and quests."
+      description="Named bands of standing. Each tier runs from its threshold up to the next. Shops and quests gate on these names."
       actions={
         <div className="flex items-center gap-1.5">
           {!isDefault && (
@@ -67,18 +67,17 @@ export function ReputationTiersTable({ tiers, onChange }: ReputationTiersTablePr
         <table className="w-full text-xs">
           <thead className="bg-[var(--chrome-fill-soft)]">
             <tr className="text-left">
-              <th className="w-6 px-2 py-1.5"></th>
               <th className="px-2 py-1.5 font-display text-2xs font-semibold uppercase tracking-wider text-text-muted">
-                Name
+                Title
               </th>
               <th className="px-2 py-1.5 font-display text-2xs font-semibold uppercase tracking-wider text-text-muted">
                 Key
               </th>
               <th className="px-2 py-1.5 font-display text-2xs font-semibold uppercase tracking-wider text-text-muted">
-                Threshold
+                From
               </th>
               <th className="px-2 py-1.5 font-display text-2xs font-semibold uppercase tracking-wider text-text-muted">
-                Range
+                Up to
               </th>
               <th className="w-8 px-2 py-1.5"></th>
             </tr>
@@ -91,15 +90,6 @@ export function ReputationTiersTable({ tiers, onChange }: ReputationTiersTablePr
                   key={i}
                   className="border-t border-[var(--chrome-stroke)] hover:bg-[var(--chrome-fill-soft)]"
                 >
-                  <td className="px-2 py-1.5">
-                    <span
-                      aria-hidden="true"
-                      className="inline-flex h-5 w-5 cursor-grab items-center justify-center text-text-muted/50"
-                      title="Drag to reorder (sorted by threshold)"
-                    >
-                      <GripIcon className="h-3 w-3" />
-                    </span>
-                  </td>
                   <td className="px-2 py-1.5">
                     <TextInput
                       value={tier.label}
@@ -146,7 +136,7 @@ export function ReputationTiersTable({ tiers, onChange }: ReputationTiersTablePr
       </div>
       {isDefault && (
         <p className="mt-2 text-2xs italic text-text-muted/70">
-          Using built-in defaults. Edit any value to override.
+          Showing the default ladder. Edit any row to make it your own.
         </p>
       )}
     </SectionCard>

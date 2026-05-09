@@ -81,12 +81,12 @@ export function MobTierChart({ currentConfig, nested = false }: MobTierChartProp
   return (
     <div className={cardClass}>
       <div className="mb-2 flex items-center justify-between">
-        <h3 className="font-display text-[14px] font-normal uppercase tracking-[0.5px] text-text-secondary">
+        <h3 className="font-display text-sm font-normal uppercase tracking-label text-text-secondary">
           MOB POWER
         </h3>
         <select
           aria-label="Select mob power preview level"
-          className="ornate-input px-2 py-0.5 text-[13px]"
+          className="ornate-input px-2 py-0.5 text-xs"
           value={selectedLevel}
           onChange={(e) => setSelectedLevel(Number(e.target.value))}
         >

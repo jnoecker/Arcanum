@@ -9,7 +9,7 @@ import {
 import { EntityArtGenerator } from "@/components/ui/EntityArtGenerator";
 import { useImageSrc } from "@/lib/useImageSrc";
 import { housingRoomPrompt, housingRoomContext } from "@/lib/entityPrompts";
-import { CopyIcon, TrashIcon, EyeIcon } from "./icons";
+import { CopyIcon, TrashIcon } from "./icons";
 
 // TODO: lift into @/lib/cx once the shared utility lands.
 function cx(...c: Array<string | false | null | undefined>) {
@@ -53,23 +53,14 @@ export function RoomEditor({
         <MechanicsSection t={t} stationOptions={stationOptions} onPatch={onPatch} />
       </div>
 
-      <div className="flex flex-wrap items-center justify-between gap-2 border-t border-[var(--chrome-stroke)] px-5 py-3">
+      <div className="flex flex-wrap items-center justify-end gap-2 border-t border-[var(--chrome-stroke)] px-5 py-3">
         <button
           type="button"
           onClick={onDelete}
           className="focus-ring inline-flex items-center gap-1.5 rounded-lg border border-status-error/40 bg-status-error/10 px-3 py-1.5 text-2xs font-medium text-status-error transition hover:bg-status-error/20"
         >
           <TrashIcon />
-          Delete Room
-        </button>
-        <button
-          type="button"
-          disabled
-          title="Coming soon — preview the assembled house in the world"
-          className="focus-ring inline-flex items-center gap-1.5 rounded-lg border border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] px-3 py-1.5 text-2xs font-medium text-text-muted transition disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          <EyeIcon />
-          Preview in World
+          Raze this room
         </button>
       </div>
     </div>
@@ -211,7 +202,7 @@ function DetailsSection({
 }) {
   return (
     <section className="flex flex-col gap-3">
-      <SectionHeading>Details</SectionHeading>
+      <SectionHeading>Particulars</SectionHeading>
       <Field label="Title">
         <TextInput
           value={t.title}
@@ -257,7 +248,7 @@ function MechanicsSection({
 }) {
   return (
     <section className="flex flex-col gap-3">
-      <SectionHeading>Mechanics</SectionHeading>
+      <SectionHeading>Workings</SectionHeading>
       <InlineNumericField
         label="Gold cost"
         value={t.cost}
@@ -269,11 +260,11 @@ function MechanicsSection({
         onCommit={(v) =>
           onPatch({ maxDroppedItems: v && v > 0 ? v : undefined })
         }
-        hint="If > 0, dropped items persist across resets up to this count."
+        hint="Dropped items persist across resets, up to this count. Leave at 0 for an ordinary room."
       />
       <Field
         label="Crafting station"
-        hint="Optional station this room provides (forge, alchemy, etc.)."
+        hint="Optional. The station this dwelling houses — forge, alchemy bench, loom."
       >
         <SelectInput
           value={t.station ?? ""}

@@ -42,7 +42,7 @@ export function XpCurveChart({ data, nested = false }: XpCurveChartProps) {
 
   return (
     <div className={cardClass}>
-      <h3 className="mb-2 font-display text-[14px] font-normal uppercase tracking-[0.5px] text-text-secondary">
+      <h3 className="mb-2 font-display text-sm font-normal uppercase tracking-label text-text-secondary">
         XP CURVE
       </h3>
       <ResponsiveContainer width="100%" height={220}>

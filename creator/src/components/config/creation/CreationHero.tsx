@@ -210,7 +210,7 @@ export function CreationHero({ config, onPatch }: CreationHeroProps) {
           </span>
           <LedgerNumber
             label="Gold"
-            hint="Coins given to new characters. 0 = earn everything; 50–100 = a basic weapon; 500+ = well-equipped."
+            hint="Coins pressed into a new soul's palm. 0 — they earn every copper. 50–100 — a plain weapon. 500+ — already well-shod."
             value={cc.startingGold}
             onCommit={(v) => onPatch({ startingGold: v })}
             min={0}

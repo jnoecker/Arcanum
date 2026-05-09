@@ -1,10 +1,9 @@
-import { useState, useCallback, useEffect, useMemo, memo } from "react";
+import { useState, useCallback, useEffect, useMemo, memo, useRef, type ReactNode } from "react";
 import { useLoreStore, selectArticles, selectCalendars, selectEvents } from "@/stores/loreStore";
 import type { CalendarSystem, CalendarEra, TimelineEvent } from "@/types/lore";
 import {
   buildChronicleGroups,
   filterResolvedTimelineEvents,
-  formatEventDate,
   getTimelineNeighbors,
   resolveTimelineEvents,
   timelineAbsoluteWindow,
@@ -12,6 +11,7 @@ import {
 } from "@/lib/loreCalendar";
 import {
   ActionButton,
+  DialogShell,
   FieldRow,
   TextInput,
   NumberInput,
@@ -23,6 +23,18 @@ import { getTimelineEventPrompt, getTimelineEventContext, getTimelineEventFramin
 import type { AssetContext } from "@/types/assets";
 import { TimelineView } from "./TimelineView";
 import { TimelineInferencePanel } from "./TimelineInferencePanel";
+
+type ViewMode = "timeline" | "list";
+
+// Solid era anchors — keep parity with TimelineView.tsx ERA_COLORS.
+const ERA_PALETTE = [
+  "#ff9d3d", // ember
+  "#35a1b0", // stellar blue
+  "#d4b66e", // soft gold
+  "#7cb66d", // moss green
+  "#a897d2", // lavender
+  "#6ec0c2", // pale teal
+];
 
 const IMPORTANCE_OPTIONS: Array<{ value: TimelineEvent["importance"]; label: string }> = [
   { value: "minor", label: "Minor" },
@@ -48,8 +60,8 @@ function parseYearInput(value: string): number | undefined {
 function importanceClasses(importance: TimelineEvent["importance"]) {
   if (importance === "legendary") {
     return {
-      dot: "bg-[var(--color-warm)] shadow-[0_0_18px_rgb(var(--accent-rgb)/0.32)]",
-      pill: "border-[rgb(var(--accent-rgb)/0.28)] bg-[rgb(var(--accent-rgb)/0.12)] text-[var(--color-warm-pale)]",
+      dot: "bg-[#d4b66e] shadow-[0_0_18px_rgb(212_182_110/0.34)]",
+      pill: "border-[#d4b66e]/45 bg-[#d4b66e]/15 text-[#f4d98b]",
     };
   }
   if (importance === "major") {
@@ -64,39 +76,28 @@ function importanceClasses(importance: TimelineEvent["importance"]) {
   };
 }
 
-function FilterPill({ label }: { label: string }) {
-  return (
-    <span className="rounded-full border border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] px-3 py-1 text-2xs text-text-muted">
-      {label}
-    </span>
-  );
+interface BoolFilters {
+  unlinked: boolean;
+  hasDescription: boolean;
+  hasImage: boolean;
 }
 
-function UtilityToggle({
-  title,
-  open,
-  onToggle,
-}: {
-  title: string;
-  open: boolean;
-  onToggle: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onToggle}
-      aria-expanded={open}
-      className={`focus-ring flex min-h-11 items-center justify-between gap-3 rounded-[1.2rem] border px-4 py-3 text-left transition ${
-        open
-          ? "border-[var(--border-accent-ring)] bg-[var(--bg-active)] text-text-primary shadow-[var(--shadow-glow)]"
-          : "border-border-muted/40 bg-bg-secondary/35 text-text-secondary hover:border-[var(--chrome-stroke-emphasis)] hover:bg-bg-secondary/55"
-      }`}
-    >
-      <p className="min-w-0 font-display text-base text-text-primary">{title}</p>
-      <span className="shrink-0 text-xs text-text-muted">{open ? "Hide" : "Show"}</span>
-    </button>
-  );
+function applyBoolFilters(entries: ResolvedTimelineEvent[], filters: BoolFilters): ResolvedTimelineEvent[] {
+  if (!filters.unlinked && !filters.hasDescription && !filters.hasImage) return entries;
+  return entries.filter((entry) => {
+    if (filters.unlinked && entry.event.articleId) return false;
+    if (filters.hasDescription && !(entry.event.description && entry.event.description.trim().length > 0)) return false;
+    if (filters.hasImage && !(entry.event.image && entry.event.image.trim().length > 0)) return false;
+    return true;
+  });
 }
+
+function applyEraFilter(entries: ResolvedTimelineEvent[], eraId: string | null): ResolvedTimelineEvent[] {
+  if (!eraId) return entries;
+  return entries.filter((entry) => entry.event.eraId === eraId);
+}
+
+// ─── Calendar editor (used inside the manage dialog) ──────────────────────
 
 function CalendarEditor({
   calendars,
@@ -151,10 +152,6 @@ function CalendarEditor({
 
   return (
     <div className="flex flex-col gap-4">
-      <p className="text-[0.65rem] uppercase tracking-[0.28em] text-[var(--color-warm)]/80">
-        Calendar Setup
-      </p>
-
       {calendars.length === 0 && (
         <div className="rounded-[1.4rem] border border-dashed border-border-muted/50 bg-bg-secondary/20 px-4 py-6 text-sm text-text-muted">
           No calendar systems exist yet. Add one below to begin placing dated events.
@@ -190,7 +187,7 @@ function CalendarEditor({
                 <input
                   type="color"
                   aria-label={`Color for ${era.name}`}
-                  value={era.color || "#ff7d00"} /* design-system: --color-accent */
+                  value={era.color || "#ff7d00"}
                   onChange={(e) => patchEra(calendar.id, era.id, { color: e.target.value })}
                   className="h-11 w-11 cursor-pointer rounded-full border border-[var(--chrome-stroke)] bg-transparent p-1"
                   title="Era color"
@@ -237,41 +234,476 @@ function CalendarEditor({
   );
 }
 
+// ─── Manage Calendars Dialog ──────────────────────────────────────────────
+
+function ManageCalendarsDialog({
+  open,
+  calendars,
+  onChange,
+  onClose,
+}: {
+  open: boolean;
+  calendars: CalendarSystem[];
+  onChange: (calendars: CalendarSystem[]) => void;
+  onClose: () => void;
+}) {
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const previousFocus = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    previousFocus.current = (document.activeElement as HTMLElement) ?? null;
+    const node = dialogRef.current;
+    node?.focus();
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      previousFocus.current?.focus?.();
+    };
+  }, [open, onClose]);
+
+  if (!open) return null;
+  return (
+    <DialogShell
+      dialogRef={dialogRef}
+      titleId="manage-calendars-title"
+      title="Manage Calendars & Eras"
+      subtitle="Define the calendar systems and eras that anchor your timeline events."
+      onClose={onClose}
+      widthClassName="max-w-3xl"
+      footer={
+        <div className="flex justify-end">
+          <ActionButton variant="primary" onClick={onClose}>
+            Done
+          </ActionButton>
+        </div>
+      }
+    >
+      <CalendarEditor calendars={calendars} onChange={onChange} />
+    </DialogShell>
+  );
+}
+
+// ─── Filter Rail ─────────────────────────────────────────────────────────
+
+interface FilterRailProps {
+  search: string;
+  onSearch: (value: string) => void;
+  calendars: CalendarSystem[];
+  calendarFilter: string;
+  onCalendarFilter: (value: string) => void;
+  eraFilter: string | null;
+  onEraFilter: (value: string | null) => void;
+  importanceFilter: string;
+  onImportanceFilter: (value: string) => void;
+  windowStart: string;
+  windowEnd: string;
+  onWindowStart: (value: string) => void;
+  onWindowEnd: (value: string) => void;
+  onFullRange: () => void;
+  onSelectedEra: () => void;
+  onThisEra: () => void;
+  hasSelected: boolean;
+  boolFilters: BoolFilters;
+  onBoolFilters: (next: BoolFilters) => void;
+  visibleByCalendar: Map<string, number>;
+  onManageCalendars: () => void;
+  fullWindowMin?: number;
+  fullWindowMax?: number;
+}
+
+function FilterRail({
+  search,
+  onSearch,
+  calendars,
+  calendarFilter,
+  onCalendarFilter,
+  eraFilter,
+  onEraFilter,
+  importanceFilter,
+  onImportanceFilter,
+  windowStart,
+  windowEnd,
+  onWindowStart,
+  onWindowEnd,
+  onFullRange,
+  onSelectedEra,
+  onThisEra,
+  hasSelected,
+  boolFilters,
+  onBoolFilters,
+  visibleByCalendar,
+  onManageCalendars,
+  fullWindowMin,
+  fullWindowMax,
+}: FilterRailProps) {
+  const erasForCalendar = useMemo(() => {
+    if (calendarFilter !== "all") {
+      const cal = calendars.find((c) => c.id === calendarFilter);
+      return cal ? cal.eras : [];
+    }
+    return calendars.flatMap((cal) =>
+      cal.eras.map((era) => ({ ...era, calendarName: cal.name, calendarId: cal.id })),
+    );
+  }, [calendarFilter, calendars]);
+
+  const toggleImportance = (value: TimelineEvent["importance"]) => {
+    onImportanceFilter(importanceFilter === value ? "all" : value);
+  };
+
+  const toggleBool = (key: keyof BoolFilters) => {
+    onBoolFilters({ ...boolFilters, [key]: !boolFilters[key] });
+  };
+
+  return (
+    <aside className="flex min-h-0 flex-col gap-4 overflow-y-auto rounded-[0.9rem] border border-border-muted/45 bg-[linear-gradient(180deg,rgb(var(--bg-rgb)/0.94),rgb(var(--abyss-rgb)/0.98))] p-4 shadow-[var(--shadow-panel)]">
+      <div>
+        <p className="text-[0.62rem] uppercase tracking-[0.32em] text-[var(--color-warm)]/80">
+          Filter & Navigate
+        </p>
+      </div>
+
+      <label className="flex flex-col gap-1.5">
+        <span className="text-[0.6rem] uppercase tracking-[0.22em] text-text-muted">Search</span>
+        <input
+          value={search}
+          onChange={(e) => onSearch(e.target.value)}
+          placeholder="Search events, notes, eras…"
+          className="ornate-input min-h-9 rounded-[0.55rem] px-3 py-2 text-sm text-text-primary"
+          aria-label="Search timeline events"
+        />
+      </label>
+
+      <label className="flex flex-col gap-1.5">
+        <span className="text-[0.6rem] uppercase tracking-[0.22em] text-text-muted">Calendar</span>
+        <select
+          value={calendarFilter}
+          onChange={(e) => {
+            onCalendarFilter(e.target.value);
+            onEraFilter(null);
+          }}
+          className="ornate-input min-h-9 rounded-[0.55rem] px-3 py-2 text-sm text-text-primary"
+        >
+          <option value="all">All calendars</option>
+          {calendars.map((c) => (
+            <option key={c.id} value={c.id}>{c.name}</option>
+          ))}
+        </select>
+      </label>
+
+      <label className="flex flex-col gap-1.5">
+        <span className="text-[0.6rem] uppercase tracking-[0.22em] text-text-muted">Era</span>
+        <select
+          value={eraFilter ?? ""}
+          onChange={(e) => onEraFilter(e.target.value || null)}
+          className="ornate-input min-h-9 rounded-[0.55rem] px-3 py-2 text-sm text-text-primary"
+          disabled={erasForCalendar.length === 0}
+        >
+          <option value="">All eras</option>
+          {erasForCalendar.map((era) => (
+            <option key={era.id} value={era.id}>{era.name}</option>
+          ))}
+        </select>
+      </label>
+
+      <label className="flex flex-col gap-1.5">
+        <span className="text-[0.6rem] uppercase tracking-[0.22em] text-text-muted">Importance</span>
+        <select
+          value={importanceFilter}
+          onChange={(e) => onImportanceFilter(e.target.value)}
+          className="ornate-input min-h-9 rounded-[0.55rem] px-3 py-2 text-sm text-text-primary"
+        >
+          {IMPORTANCE_FILTER_OPTIONS.map((option) => (
+            <option key={option.value} value={option.value}>{option.label}</option>
+          ))}
+        </select>
+      </label>
+
+      <div className="flex flex-col gap-2">
+        <span className="text-[0.6rem] uppercase tracking-[0.22em] text-text-muted">Date Range</span>
+        <div className="flex items-center gap-2">
+          <input
+            value={windowStart}
+            onChange={(e) => onWindowStart(e.target.value)}
+            inputMode="numeric"
+            placeholder={fullWindowMin !== undefined ? String(fullWindowMin) : "0"}
+            aria-label="Range start year"
+            className="ornate-input min-h-9 w-full rounded-[0.55rem] px-3 py-2 text-sm text-text-primary"
+          />
+          <span className="text-text-muted">–</span>
+          <input
+            value={windowEnd}
+            onChange={(e) => onWindowEnd(e.target.value)}
+            inputMode="numeric"
+            placeholder={fullWindowMax !== undefined ? String(fullWindowMax) : ""}
+            aria-label="Range end year"
+            className="ornate-input min-h-9 w-full rounded-[0.55rem] px-3 py-2 text-sm text-text-primary"
+          />
+        </div>
+        <div className="flex flex-wrap gap-1.5">
+          <RangeButton onClick={onFullRange}>Full Range</RangeButton>
+          <RangeButton onClick={onSelectedEra} active>Selected Era</RangeButton>
+          <RangeButton onClick={onThisEra} disabled={!hasSelected}>This Era</RangeButton>
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <span className="text-[0.6rem] uppercase tracking-[0.22em] text-text-muted">Quick Filters</span>
+        <div className="flex flex-wrap gap-1.5">
+          <Chip selected={importanceFilter === "legendary"} onClick={() => toggleImportance("legendary")}>
+            Legendary
+          </Chip>
+          <Chip selected={importanceFilter === "major"} onClick={() => toggleImportance("major")}>
+            Major
+          </Chip>
+          <Chip selected={importanceFilter === "minor"} onClick={() => toggleImportance("minor")}>
+            Minor
+          </Chip>
+          <Chip selected={boolFilters.unlinked} onClick={() => toggleBool("unlinked")}>
+            Unlinked
+          </Chip>
+          <Chip selected={boolFilters.hasDescription} onClick={() => toggleBool("hasDescription")}>
+            Has Description
+          </Chip>
+          <Chip selected={boolFilters.hasImage} onClick={() => toggleBool("hasImage")}>
+            Has Image
+          </Chip>
+        </div>
+      </div>
+
+      {calendars.length > 0 && (
+        <div className="flex flex-col gap-2">
+          <span className="text-[0.6rem] uppercase tracking-[0.22em] text-text-muted">Calendars</span>
+          <div className="flex flex-col gap-1">
+            {calendars.map((calendar, index) => {
+              const color = ERA_PALETTE[index % ERA_PALETTE.length];
+              const count = visibleByCalendar.get(calendar.id) ?? 0;
+              const active = calendarFilter === calendar.id;
+              return (
+                <button
+                  key={calendar.id}
+                  type="button"
+                  onClick={() => {
+                    onCalendarFilter(active ? "all" : calendar.id);
+                    onEraFilter(null);
+                  }}
+                  className={`focus-ring flex items-center justify-between gap-2 rounded-[0.45rem] border px-2.5 py-1.5 text-left transition ${
+                    active
+                      ? "border-[var(--border-accent-ring)] bg-[var(--bg-active)] text-text-primary"
+                      : "border-transparent text-text-secondary hover:border-border-muted/40 hover:bg-bg-secondary/30"
+                  }`}
+                >
+                  <span className="flex min-w-0 items-center gap-2">
+                    <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: color }} />
+                    <span className="truncate text-sm">{calendar.name}</span>
+                  </span>
+                  <span className="shrink-0 text-2xs tabular-nums text-text-muted">{count}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {erasForCalendar.length > 0 && (
+        <div className="flex flex-col gap-2">
+          <span className="text-[0.6rem] uppercase tracking-[0.22em] text-text-muted">Eras</span>
+          <div className="flex flex-col gap-1">
+            {erasForCalendar.map((era) => {
+              const active = eraFilter === era.id;
+              return (
+                <button
+                  key={era.id}
+                  type="button"
+                  onClick={() => onEraFilter(active ? null : era.id)}
+                  className={`focus-ring flex items-center justify-between gap-2 rounded-[0.45rem] border px-2.5 py-1.5 text-left transition ${
+                    active
+                      ? "border-[var(--border-accent-ring)] bg-[var(--bg-active)] text-text-primary"
+                      : "border-transparent text-text-secondary hover:border-border-muted/40 hover:bg-bg-secondary/30"
+                  }`}
+                >
+                  <span className="truncate text-sm">{era.name}</span>
+                  <span className="shrink-0 text-2xs tabular-nums text-text-muted">
+                    {formatYear(era.startYear)}+
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      <div className="mt-auto pt-2">
+        <button
+          type="button"
+          onClick={onManageCalendars}
+          className="focus-ring flex w-full items-center justify-between gap-2 rounded-[0.55rem] border border-border-muted/40 bg-bg-secondary/30 px-3 py-2.5 text-sm text-text-secondary transition hover:border-[var(--chrome-stroke-emphasis)] hover:bg-bg-secondary/55 hover:text-text-primary"
+        >
+          <span>Manage Calendars & Eras</span>
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4" aria-hidden="true">
+            <circle cx="8" cy="8" r="2.5" />
+            <path d="M8 1.5v1.7M8 12.8v1.7M14.5 8h-1.7M3.2 8H1.5M12.6 3.4l-1.2 1.2M4.6 11.4l-1.2 1.2M12.6 12.6l-1.2-1.2M4.6 4.6L3.4 3.4" />
+          </svg>
+        </button>
+      </div>
+    </aside>
+  );
+}
+
+function Chip({
+  selected,
+  onClick,
+  children,
+}: {
+  selected: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={selected}
+      className={`focus-ring rounded-[0.45rem] border px-2.5 py-1 text-2xs transition ${
+        selected
+          ? "border-[var(--border-accent-ring)] bg-[var(--bg-accent-subtle)] text-[var(--color-warm-pale)]"
+          : "border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] text-text-muted hover:border-[var(--chrome-stroke-emphasis)] hover:text-text-primary"
+      }`}
+    >
+      {children}
+    </button>
+  );
+}
+
+function RangeButton({
+  onClick,
+  disabled,
+  active,
+  children,
+}: {
+  onClick: () => void;
+  disabled?: boolean;
+  active?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className={`focus-ring rounded-[0.45rem] border px-2.5 py-1 text-2xs transition disabled:cursor-not-allowed disabled:opacity-40 ${
+        active
+          ? "border-[var(--border-accent-ring)] bg-[var(--bg-active)] text-text-primary"
+          : "border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] text-text-muted hover:border-[var(--chrome-stroke-emphasis)] hover:text-text-primary"
+      }`}
+    >
+      {children}
+    </button>
+  );
+}
+
+// ─── Event Inspector ──────────────────────────────────────────────────────
+
+function CommitTextArea({
+  value,
+  onCommit,
+  placeholder,
+  maxLength,
+}: {
+  value: string;
+  onCommit: (value: string) => void;
+  placeholder?: string;
+  maxLength?: number;
+}) {
+  const [draft, setDraft] = useState(value);
+  const [focused, setFocused] = useState(false);
+
+  if (!focused && draft !== value) {
+    setDraft(value);
+  }
+
+  const commit = () => {
+    if (draft !== value) onCommit(draft);
+  };
+
+  return (
+    <div className="relative">
+      <textarea
+        value={draft}
+        placeholder={placeholder}
+        maxLength={maxLength}
+        rows={4}
+        onChange={(e) => setDraft(e.target.value)}
+        onFocus={() => setFocused(true)}
+        onBlur={() => {
+          setFocused(false);
+          commit();
+        }}
+        onKeyDown={(e) => {
+          if (e.key === "Escape") {
+            setDraft(value);
+            (e.target as HTMLTextAreaElement).blur();
+          }
+        }}
+        className="ornate-input min-h-20 w-full resize-none px-3 py-2 pr-16 text-xs leading-relaxed text-text-primary"
+      />
+      {maxLength !== undefined && (
+        <span className="pointer-events-none absolute bottom-2 right-3 text-[0.6rem] text-text-muted">
+          {draft.length} / {maxLength}
+        </span>
+      )}
+    </div>
+  );
+}
+
 function EventInspector({
   resolvedEvent,
   calendars,
-  previous,
-  next,
-  onNavigate,
   onUpdate,
   onDelete,
+  onDuplicate,
+  onClose,
+  className = "",
 }: {
   resolvedEvent: ResolvedTimelineEvent | null;
   calendars: CalendarSystem[];
-  previous: ResolvedTimelineEvent | null;
-  next: ResolvedTimelineEvent | null;
-  onNavigate: (id: string) => void;
   onUpdate: (patch: Partial<TimelineEvent>) => void;
   onDelete: () => void;
+  onDuplicate: () => void;
+  onClose: () => void;
+  className?: string;
 }) {
   const articles = useLoreStore(selectArticles);
   const selectArticle = useLoreStore((s) => s.selectArticle);
 
   if (!resolvedEvent) {
     return (
-      <aside className="rounded-[2rem] border border-border-muted/40 bg-[var(--bg-deep-panel)] p-5 shadow-[var(--shadow-panel)]">
-        <p className="text-[0.65rem] uppercase tracking-[0.28em] text-[var(--color-warm)]/80">
-          Event Inspector
-        </p>
-        <h2 className="mt-3 font-display text-2xl text-[var(--color-warm-pale)]">
-          No event selected
-        </h2>
+      <aside className={`min-h-0 overflow-y-auto rounded-[0.9rem] border border-border-muted/45 bg-[linear-gradient(180deg,rgb(var(--bg-rgb)/0.94),rgb(var(--abyss-rgb)/0.98))] p-5 shadow-[var(--shadow-panel)] ${className}`}>
+        <div className="flex items-start justify-between gap-2">
+          <p className="text-[0.62rem] uppercase tracking-[0.28em] text-[var(--color-warm)]/80">
+            Event Inspector
+          </p>
+        </div>
+        <div className="mt-8 flex flex-col items-center gap-3 text-center">
+          <div className="flex h-12 w-12 items-center justify-center rounded-full border border-border-muted/40 bg-bg-secondary/40 text-text-muted">
+            <svg width="20" height="20" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4" aria-hidden="true">
+              <circle cx="8" cy="8" r="6" />
+              <path d="M8 5v3l2 2" />
+            </svg>
+          </div>
+          <p className="font-display text-base text-[var(--color-warm-pale)]">No event selected</p>
+          <p className="max-w-xs text-2xs leading-relaxed text-text-muted">
+            Click an event in the timeline or chronicle list to edit its details here.
+          </p>
+        </div>
       </aside>
     );
   }
 
-  const { event, absoluteYear, calendarName, eraName } = resolvedEvent;
-  const calendar = calendars.find((entry) => entry.id === event.calendarId);
+  const { event, absoluteYear, calendar, era } = resolvedEvent;
   const calendarOptions = [
     ...(calendar
       ? []
@@ -281,153 +713,143 @@ function EventInspector({
     ...calendars.map((entry) => ({ value: entry.id, label: entry.name })),
   ];
   const eraOptions = [
-    ...(calendar?.eras.some((era) => era.id === event.eraId) || !event.eraId
+    ...(calendar?.eras.some((e) => e.id === event.eraId) || !event.eraId
       ? []
       : [{ value: event.eraId, label: `Missing era (${event.eraId})` }]),
     { value: "", label: "No era" },
-    ...(calendar?.eras ?? []).map((era) => ({ value: era.id, label: era.name })),
+    ...(calendar?.eras ?? []).map((e) => ({ value: e.id, label: e.name })),
   ];
   const articleOptions = [
-    { value: "", label: "-- none --" },
+    { value: "", label: "— None —" },
     ...Object.values(articles)
       .sort((left, right) => left.title.localeCompare(right.title))
       .map((article) => ({ value: article.id, label: article.title })),
   ];
   const selectedArticle = event.articleId ? articles[event.articleId] : undefined;
-  const style = importanceClasses(event.importance);
 
   return (
-    <aside className="rounded-[2rem] border border-border-muted/40 bg-[var(--bg-deep-panel)] p-5 shadow-[var(--shadow-panel)] xl:sticky xl:top-5">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <p className="text-[0.65rem] uppercase tracking-[0.28em] text-[var(--color-warm)]/80">
+    <aside className={`flex min-h-0 flex-col gap-4 overflow-y-auto rounded-[0.9rem] border border-border-muted/45 bg-[linear-gradient(180deg,rgb(var(--bg-rgb)/0.94),rgb(var(--abyss-rgb)/0.98))] p-5 shadow-[var(--shadow-panel)] ${className}`}>
+      <div className="flex items-start justify-between gap-2">
+        <p className="text-[0.62rem] uppercase tracking-[0.28em] text-[var(--color-warm)]/80">
             Event Inspector
           </p>
-          <h2 className="mt-3 font-display text-2xl leading-tight text-[var(--color-warm-pale)]">
-            {event.title}
-          </h2>
-          <p className="mt-2 text-sm text-text-muted">
-            {formatEventDate(event, calendars)}
-          </p>
-        </div>
-        <span className={`rounded-full border px-3 py-1 text-2xs uppercase tracking-[0.2em] ${style.pill}`}>
-          {event.importance}
-        </span>
-      </div>
-
-      <div className="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-1">
-        <div className="rounded-[1.2rem] border border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] px-4 py-3">
-          <p className="text-[0.65rem] uppercase tracking-[0.24em] text-text-muted">Calendar</p>
-          <p className="mt-1 font-display text-lg text-text-primary">{calendarName}</p>
-        </div>
-        <div className="rounded-[1.2rem] border border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] px-4 py-3">
-          <p className="text-[0.65rem] uppercase tracking-[0.24em] text-text-muted">Absolute Year</p>
-          <p className="mt-1 font-display text-lg text-text-primary">{formatYear(absoluteYear)}</p>
-          <p className="text-2xs text-text-muted">{eraName}</p>
-        </div>
-      </div>
-
-      <div className="mt-4 flex gap-2">
-        <ActionButton
-          onClick={() => previous && onNavigate(previous.event.id)}
-          disabled={!previous}
-          variant="ghost"
-          size="sm"
-          className="flex-1"
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Close inspector"
+          title="Close inspector"
+          className="focus-ring rounded-[0.45rem] border border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] px-2 py-0.5 text-2xs text-text-muted transition hover:text-text-primary"
         >
-          Previous
-        </ActionButton>
-        <ActionButton
-          onClick={() => next && onNavigate(next.event.id)}
-          disabled={!next}
-          variant="ghost"
-          size="sm"
-          className="flex-1"
-        >
-          Next
-        </ActionButton>
+          ✕
+        </button>
       </div>
 
-      <div className="mt-5 flex flex-col gap-1.5">
-        <FieldRow label="Title">
-          <TextInput value={event.title} onCommit={(value) => onUpdate({ title: value })} />
-        </FieldRow>
-        <FieldRow label="Calendar">
-          <SelectInput
-            value={event.calendarId}
-            options={calendarOptions}
-            onCommit={(value) => {
-              const nextCalendar = calendars.find((entry) => entry.id === value);
-              const nextEraId = nextCalendar?.eras.some((era) => era.id === event.eraId)
-                ? event.eraId
-                : (nextCalendar?.eras[0]?.id ?? "");
-              onUpdate({ calendarId: value, eraId: nextEraId });
-            }}
-          />
-        </FieldRow>
-        <FieldRow label="Era">
-          <SelectInput
-            value={event.eraId}
-            options={eraOptions}
-            onCommit={(value) => onUpdate({ eraId: value })}
-          />
-        </FieldRow>
-        <FieldRow label="Year">
-          <NumberInput value={event.year} onCommit={(value) => onUpdate({ year: value ?? 0 })} />
-        </FieldRow>
-        <FieldRow label="Importance">
-          <SelectInput
-            value={event.importance}
-            options={IMPORTANCE_OPTIONS}
-            onCommit={(value) => onUpdate({ importance: value as TimelineEvent["importance"] })}
-          />
-        </FieldRow>
-        <FieldRow label="Article">
-          <SelectInput
-            value={event.articleId ?? ""}
-            options={articleOptions}
-            onCommit={(value) => onUpdate({ articleId: value || undefined })}
-          />
-        </FieldRow>
-        <FieldRow label="Description">
-          <TextInput
-            value={event.description ?? ""}
-            onCommit={(value) => onUpdate({ description: value || undefined })}
-            placeholder="Short chronicle note"
-            dense
-          />
-        </FieldRow>
+      <div>
+        <p className="text-[0.6rem] uppercase tracking-[0.22em] text-text-muted">Event Details</p>
       </div>
 
-      <div className="mt-5 rounded-[1.2rem] border border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] px-4 py-4">
-        <p className="text-[0.65rem] uppercase tracking-[0.24em] text-text-muted">Linked Article</p>
-        {selectedArticle ? (
-          <>
-            <p className="mt-2 font-display text-lg text-text-primary">{selectedArticle.title}</p>
-            <button
-              type="button"
-              onClick={() => selectArticle(selectedArticle.id)}
-              className="focus-ring mt-3 rounded-full border border-[var(--border-accent-subtle)] px-3 py-1 text-2xs text-accent transition hover:bg-[var(--bg-accent-subtle)]"
-            >
-              Jump to article
-            </button>
-          </>
-        ) : (
-          <p className="mt-2 text-sm leading-6 text-text-muted">None</p>
-        )}
-      </div>
+      <FieldRow label="Title">
+        <TextInput value={event.title} onCommit={(value) => onUpdate({ title: value })} dense />
+      </FieldRow>
 
-      <div className="mt-5 rounded-[1.2rem] border border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] px-4 py-4">
-        <p className="text-[0.65rem] uppercase tracking-[0.24em] text-text-muted">Event Image</p>
-        <p className="mt-1 text-2xs text-text-muted/80">
-          Renders as a transparent backdrop on the timeline. Independent of any linked article.
-        </p>
+      <FieldRow label="Calendar">
+        <SelectInput
+          value={event.calendarId}
+          options={calendarOptions}
+          dense
+          onCommit={(value) => {
+            const nextCalendar = calendars.find((entry) => entry.id === value);
+            const nextEraId = nextCalendar?.eras.some((era) => era.id === event.eraId)
+              ? event.eraId
+              : (nextCalendar?.eras[0]?.id ?? "");
+            onUpdate({ calendarId: value, eraId: nextEraId });
+          }}
+        />
+      </FieldRow>
+
+      <FieldRow label="Era">
+        <SelectInput
+          value={event.eraId}
+          options={eraOptions}
+          dense
+          onCommit={(value) => onUpdate({ eraId: value })}
+        />
+      </FieldRow>
+
+      <FieldRow label="Year">
+        <NumberInput value={event.year} onCommit={(value) => onUpdate({ year: value ?? 0 })} dense />
+      </FieldRow>
+
+      <FieldRow label="Absolute Year" hint={era ? `${era.name} starts at ${formatYear(era.startYear)}` : undefined}>
+        <div className="rounded-[0.55rem] border border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] px-3 py-2 text-xs tabular-nums text-text-primary">
+          {formatYear(absoluteYear)}
+        </div>
+      </FieldRow>
+
+      <FieldRow label="Importance">
+        <SelectInput
+          value={event.importance}
+          options={IMPORTANCE_OPTIONS}
+          dense
+          onCommit={(value) => onUpdate({ importance: value as TimelineEvent["importance"] })}
+        />
+      </FieldRow>
+
+      <FieldRow label="Linked Article">
+        <div className="flex items-center gap-1.5">
+          <div className="min-w-0 flex-1">
+            <SelectInput
+              value={event.articleId ?? ""}
+              options={articleOptions}
+              dense
+              onCommit={(value) => onUpdate({ articleId: value || undefined })}
+            />
+          </div>
+          {selectedArticle && (
+            <>
+              <button
+                type="button"
+                onClick={() => selectArticle(selectedArticle.id)}
+                title="Jump to article"
+                aria-label="Jump to article"
+                className="focus-ring rounded-[0.45rem] border border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] px-2 py-1 text-2xs text-accent transition hover:bg-[var(--bg-accent-subtle)]"
+              >
+                <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
+                  <path d="M6 2H3v3M10 14h3v-3M3 13l10-10" />
+                </svg>
+              </button>
+              <button
+                type="button"
+                onClick={() => onUpdate({ articleId: undefined })}
+                title="Unlink article"
+                aria-label="Unlink article"
+                className="focus-ring rounded-[0.45rem] border border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] px-2 py-1 text-2xs text-text-muted transition hover:text-status-error"
+              >
+                ✕
+              </button>
+            </>
+          )}
+        </div>
+      </FieldRow>
+
+      <FieldRow label="Description">
+        <CommitTextArea
+          value={event.description ?? ""}
+          onCommit={(value) => onUpdate({ description: value || undefined })}
+          placeholder="Short chronicle note"
+          maxLength={500}
+        />
+      </FieldRow>
+
+      <div className="border-t border-border-muted/30 pt-4">
+        <p className="text-[0.6rem] uppercase tracking-[0.22em] text-text-muted">Event Image</p>
         <div className="mt-3">
           <FieldRow label="Filename">
             <TextInput
               value={event.image ?? ""}
               onCommit={(value) => onUpdate({ image: value || undefined })}
               placeholder="None"
+              dense
             />
           </FieldRow>
         </div>
@@ -447,16 +869,22 @@ function EventInspector({
             surface="lore"
           />
         </div>
+        <p className="mt-2 text-[0.6rem] text-text-muted">Recommended: 16:9, 1920×1080</p>
       </div>
 
-      <div className="mt-5">
-        <ActionButton onClick={onDelete} variant="danger" size="sm">
-          Delete Event
+      <div className="grid grid-cols-2 gap-2">
+        <ActionButton variant="secondary" onClick={onDuplicate}>
+          Duplicate
+        </ActionButton>
+        <ActionButton variant="danger" onClick={onDelete}>
+          Delete
         </ActionButton>
       </div>
     </aside>
   );
 }
+
+// ─── Event row ────────────────────────────────────────────────────────────
 
 const ChronicleEventRow = memo(function ChronicleEventRow({
   entry,
@@ -485,57 +913,142 @@ const ChronicleEventRow = memo(function ChronicleEventRow({
           onMoveSelection("prev");
         }
       }}
-      className={`focus-ring group relative grid w-full gap-4 rounded-[1.35rem] border px-4 py-4 text-left transition md:grid-cols-[9.5rem_minmax(0,1fr)] ${
-        selected
-          ? "border-[var(--border-accent-ring)] bg-[linear-gradient(145deg,rgb(var(--accent-rgb)/0.16),rgb(var(--bg-rgb)/0.92))] shadow-[var(--shadow-glow)]"
-          : "border-transparent bg-transparent hover:border-border-muted/40 hover:bg-bg-secondary/25"
-      }`}
       aria-pressed={selected}
+      className={`focus-ring group relative grid w-full grid-cols-[0.8rem_5rem_minmax(0,1fr)] items-center gap-3 rounded-[0.45rem] border px-3 py-2 text-left transition md:grid-cols-[0.8rem_5rem_minmax(0,1fr)_7rem_10rem_1.5rem] ${
+        selected
+          ? "border-[var(--border-accent-ring)] bg-[linear-gradient(90deg,rgb(var(--accent-rgb)/0.12),rgb(var(--bg-rgb)/0.30))] shadow-[var(--shadow-glow)]"
+          : "border-border-muted/18 bg-bg-abyss/18 hover:border-border-muted/45 hover:bg-bg-secondary/22"
+      }`}
     >
-      <span
-        className={`absolute left-[-0.68rem] top-8 h-3.5 w-3.5 rounded-full border border-bg-primary ${style.dot}`}
-        aria-hidden="true"
-      />
-
-      <div className="pl-4 md:pl-0">
-        <p className="text-[0.65rem] uppercase tracking-[0.24em] text-text-muted">{entry.eraName}</p>
-        <p className="mt-2 font-display text-3xl leading-none text-[var(--color-warm-pale)]">
-          Y{formatYear(entry.event.year)}
-        </p>
-        <p className="mt-2 text-2xs uppercase tracking-[0.2em] text-text-muted">
-          Absolute {formatYear(entry.absoluteYear)}
-        </p>
-      </div>
-
-      <div className="min-w-0">
-        <div className="flex flex-wrap items-center gap-2">
-          <h4 className="break-words font-display text-2xl leading-tight text-text-primary">
-            {entry.event.title}
-          </h4>
-          <span className={`rounded-full border px-2.5 py-1 text-2xs uppercase tracking-[0.18em] ${style.pill}`}>
-            {entry.event.importance}
-          </span>
-        </div>
-
-        {entry.event.description && (
-          <p className="mt-3 break-words text-sm leading-7 text-text-secondary">
-            {entry.event.description}
-          </p>
-        )}
-
-        <div className="mt-3 flex flex-wrap items-center gap-2 text-2xs text-text-muted">
-          <span>{entry.calendarName}</span>
-          {entry.event.articleId && (
-            <>
-              <span className="text-text-muted/60">/</span>
-              <span>Linked article</span>
-            </>
-          )}
-        </div>
-      </div>
+      <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${style.dot}`} aria-hidden="true" />
+      <span className="shrink-0 font-display text-sm tabular-nums text-[var(--color-warm-pale)]">
+        Y{formatYear(entry.event.year)}
+      </span>
+      <span className="min-w-0 flex-1 truncate text-sm text-text-primary">
+        {entry.event.title}
+      </span>
+      <span className={`hidden shrink-0 justify-self-start rounded-full border px-2 py-0.5 text-[0.6rem] uppercase tracking-[0.2em] md:inline-block ${style.pill}`}>
+        {entry.event.importance}
+      </span>
+      <span className="hidden min-w-0 truncate text-xs text-text-muted md:block">
+        {entry.calendar?.name ?? "Uncalendared"}
+      </span>
+      <span className="hidden justify-self-end text-lg leading-none text-text-muted md:block">
+        ...
+      </span>
     </button>
   );
 });
+
+// ─── Event List ──────────────────────────────────────────────────────────
+
+function EventList({
+  groups,
+  totalVisible,
+  selectedEventId,
+  onSelect,
+  onMoveSelection,
+  floatingInspector,
+}: {
+  groups: ReturnType<typeof buildChronicleGroups>;
+  totalVisible: number;
+  selectedEventId: string | null;
+  onSelect: (id: string) => void;
+  onMoveSelection: (direction: "prev" | "next") => void;
+  floatingInspector?: ReactNode;
+}) {
+  const [sortMode, setSortMode] = useState<"year" | "importance">("year");
+
+  return (
+    <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-[0.9rem] border border-border-muted/40 bg-[linear-gradient(180deg,rgb(var(--bg-rgb)/0.88),rgb(var(--abyss-rgb)/0.94))] shadow-[var(--shadow-panel)]">
+      <div className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-b border-border-muted/30 px-4 py-3">
+        <p className="font-display text-sm uppercase tracking-[0.28em] text-text-muted">
+          {totalVisible} {totalVisible === 1 ? "Event" : "Events"}
+        </p>
+        <div className="flex items-center gap-2">
+          <label className="flex items-center gap-1.5 text-2xs text-text-muted">
+            Sort by
+            <select
+              value={sortMode}
+              onChange={(e) => setSortMode(e.target.value as "year" | "importance")}
+              className="ornate-input min-h-7 rounded-md px-2 py-0.5 text-2xs text-text-primary"
+              aria-label="Sort chronicle events"
+            >
+              <option value="year">Year</option>
+              <option value="importance">Importance</option>
+            </select>
+          </label>
+        </div>
+      </div>
+
+      <div className={`grid min-h-0 flex-1 overflow-hidden ${floatingInspector ? "xl:grid-cols-[minmax(0,1fr)_22rem]" : ""}`}>
+        <div className="min-h-0 overflow-y-auto p-2">
+          {groups.map((calendarGroup) =>
+              calendarGroup.eras.map((eraGroup) => {
+            if (eraGroup.events.length === 0) return null;
+            const orderedEvents = sortMode === "importance"
+              ? [...eraGroup.events].sort((a, b) => importanceWeight(b.event.importance) - importanceWeight(a.event.importance))
+              : eraGroup.events;
+            return (
+              <section key={`${calendarGroup.id}:${eraGroup.id}`} className="border-b border-border-muted/25 last:border-b-0">
+                <div className="flex items-baseline gap-4 bg-[linear-gradient(90deg,rgb(var(--accent-rgb)/0.10),transparent_72%)] px-4 py-2">
+                  <p className="font-display text-2xs uppercase tracking-[0.28em] text-[var(--color-warm)]/85">
+                    {eraGroup.eraName}
+                  </p>
+                  {eraGroup.startYear !== null && (
+                    <p className="text-[0.6rem] uppercase tracking-[0.22em] text-text-muted">
+                      {formatYear(eraGroup.startYear)} – {formatYear(eraEndYear(calendarGroup, eraGroup))}
+                    </p>
+                  )}
+                </div>
+                <div className="flex flex-col gap-1 p-2">
+                  {orderedEvents.map((entry) => (
+                    <ChronicleEventRow
+                      key={entry.event.id}
+                      entry={entry}
+                      selected={entry.event.id === selectedEventId}
+                      onSelect={() => onSelect(entry.event.id)}
+                      onMoveSelection={onMoveSelection}
+                    />
+                  ))}
+                </div>
+              </section>
+            );
+              }),
+            )}
+        </div>
+        {floatingInspector && (
+          <div className="hidden min-h-0 border-l border-border-muted/30 p-2 xl:block">
+            {floatingInspector}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function importanceWeight(importance: TimelineEvent["importance"]) {
+  if (importance === "legendary") return 3;
+  if (importance === "major") return 2;
+  return 1;
+}
+
+function eraEndYear(
+  calendarGroup: ReturnType<typeof buildChronicleGroups>[number],
+  eraGroup: ReturnType<typeof buildChronicleGroups>[number]["eras"][number],
+): number {
+  if (eraGroup.startYear === null) return 0;
+  const sortedEras = [...calendarGroup.eras]
+    .filter((e) => e.startYear !== null)
+    .sort((a, b) => (a.startYear ?? 0) - (b.startYear ?? 0));
+  const idx = sortedEras.findIndex((e) => e.id === eraGroup.id);
+  const next = idx >= 0 ? sortedEras[idx + 1] : undefined;
+  if (next?.startYear !== undefined && next.startYear !== null) return next.startYear;
+  const lastEvent = eraGroup.events[eraGroup.events.length - 1];
+  return lastEvent ? Math.max(eraGroup.startYear, lastEvent.absoluteYear) : eraGroup.startYear;
+}
+
+// ─── Main Panel ──────────────────────────────────────────────────────────
 
 export function TimelinePanel() {
   const calendars = useLoreStore(selectCalendars);
@@ -544,29 +1057,37 @@ export function TimelinePanel() {
   const addEvent = useLoreStore((s) => s.addTimelineEvent);
   const updateEvent = useLoreStore((s) => s.updateTimelineEvent);
   const deleteEvent = useLoreStore((s) => s.deleteTimelineEvent);
+  const duplicateEvent = useLoreStore((s) => s.duplicateTimelineEvent);
 
+  const [viewMode, setViewMode] = useState<ViewMode>("timeline");
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [calendarFilter, setCalendarFilter] = useState("all");
+  const [eraFilter, setEraFilter] = useState<string | null>(null);
   const [importanceFilter, setImportanceFilter] = useState("all");
-  const [windowStart, setWindowStart] = useState<string>("");
-  const [windowEnd, setWindowEnd] = useState<string>("");
-  const [showCalendarSetup, setShowCalendarSetup] = useState(false);
+  const [windowStart, setWindowStart] = useState("");
+  const [windowEnd, setWindowEnd] = useState("");
+  const [boolFilters, setBoolFilters] = useState<BoolFilters>({
+    unlinked: false,
+    hasDescription: false,
+    hasImage: false,
+  });
+  const [showCalendarManager, setShowCalendarManager] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
 
   const resolvedEvents = useMemo(() => resolveTimelineEvents(events, calendars), [events, calendars]);
-  const baseFilteredEvents = useMemo(
-    () =>
-      filterResolvedTimelineEvents(resolvedEvents, {
-        search,
-        calendarId: calendarFilter === "all" ? undefined : calendarFilter,
-        importance:
-          importanceFilter === "all"
-            ? undefined
-            : (importanceFilter as TimelineEvent["importance"]),
-      }),
-    [calendarFilter, importanceFilter, resolvedEvents, search],
-  );
+
+  const baseFilteredEvents = useMemo(() => {
+    const filtered = filterResolvedTimelineEvents(resolvedEvents, {
+      search,
+      calendarId: calendarFilter === "all" ? undefined : calendarFilter,
+      importance: importanceFilter === "all" ? undefined : (importanceFilter as TimelineEvent["importance"]),
+    });
+    return applyBoolFilters(applyEraFilter(filtered, eraFilter), boolFilters);
+  }, [calendarFilter, importanceFilter, eraFilter, resolvedEvents, search, boolFilters]);
+
+  const fullWindow = useMemo(() => timelineAbsoluteWindow(baseFilteredEvents), [baseFilteredEvents]);
+
   const activeWindow = useMemo(
     () =>
       timelineAbsoluteWindow(baseFilteredEvents, {
@@ -575,6 +1096,7 @@ export function TimelinePanel() {
       }),
     [baseFilteredEvents, windowEnd, windowStart],
   );
+
   const filteredEvents = useMemo(
     () =>
       filterResolvedTimelineEvents(baseFilteredEvents, {
@@ -583,10 +1105,23 @@ export function TimelinePanel() {
       }),
     [activeWindow?.max, activeWindow?.min, baseFilteredEvents],
   );
+
   const chronicleGroups = useMemo(
-    () => buildChronicleGroups(filteredEvents, calendars).filter((group) => group.visibleEventCount > 0),
+    () => buildChronicleGroups(filteredEvents, calendars).filter((g) => g.visibleEventCount > 0),
     [filteredEvents, calendars],
   );
+
+  const visibleByCalendar = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const cal of calendars) map.set(cal.id, 0);
+    for (const entry of resolvedEvents) {
+      if (entry.event.calendarId) {
+        map.set(entry.event.calendarId, (map.get(entry.event.calendarId) ?? 0) + 1);
+      }
+    }
+    return map;
+  }, [calendars, resolvedEvents]);
+
   const neighbors = useMemo(
     () => getTimelineNeighbors(filteredEvents, selectedEventId),
     [filteredEvents, selectedEventId],
@@ -600,11 +1135,13 @@ export function TimelinePanel() {
   }, [filteredEvents, selectedEventId]);
 
   const handleAddEvent = useCallback(() => {
-    const calendar = calendars[0];
+    const calendar = calendars.find((c) => c.id === (calendarFilter !== "all" ? calendarFilter : undefined)) ?? calendars[0];
     if (!calendar) return;
-    const era = calendar.eras[0];
+    const era = eraFilter
+      ? calendar.eras.find((e) => e.id === eraFilter) ?? calendar.eras[0]
+      : calendar.eras[0];
     const event: TimelineEvent = {
-      id: `evt_${Date.now()}`,
+      id: `evt_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
       calendarId: calendar.id,
       eraId: era?.id ?? "",
       year: 0,
@@ -613,35 +1150,36 @@ export function TimelinePanel() {
     };
     addEvent(event);
     setSelectedEventId(event.id);
-  }, [calendars, addEvent]);
+  }, [calendars, addEvent, calendarFilter, eraFilter]);
 
   const handleMoveSelection = useCallback(
     (direction: "prev" | "next") => {
       const target = direction === "prev" ? neighbors.previous : neighbors.next;
-      if (target) {
-        setSelectedEventId(target.event.id);
-      }
+      if (target) setSelectedEventId(target.event.id);
     },
     [neighbors.next, neighbors.previous],
   );
+
   const selectedResolved = neighbors.current;
 
-  const handleClearFilters = useCallback(() => {
-    setSearch("");
-    setCalendarFilter("all");
-    setImportanceFilter("all");
+  const handleFullRange = useCallback(() => {
     setWindowStart("");
     setWindowEnd("");
   }, []);
 
-  const fullWindow = useMemo(() => timelineAbsoluteWindow(baseFilteredEvents), [baseFilteredEvents]);
+  const handleSelectedEra = useCallback(() => {
+    if (!eraFilter) return;
+    const cal = calendars.find((c) => c.eras.some((e) => e.id === eraFilter));
+    const era = cal?.eras.find((e) => e.id === eraFilter);
+    if (!era || !cal) return;
+    const sorted = [...cal.eras].sort((a, b) => a.startYear - b.startYear);
+    const idx = sorted.findIndex((e) => e.id === era.id);
+    const next = idx >= 0 ? sorted[idx + 1] : undefined;
+    setWindowStart(String(era.startYear));
+    setWindowEnd(String(next ? next.startYear - 1 : era.startYear + 200));
+  }, [calendars, eraFilter]);
 
-  const handleResetWindow = useCallback(() => {
-    setWindowStart("");
-    setWindowEnd("");
-  }, []);
-
-  const handleFocusSelectedEra = useCallback(() => {
+  const handleThisEra = useCallback(() => {
     if (!selectedResolved) return;
     const era = selectedResolved.era;
     if (!era) {
@@ -650,304 +1188,251 @@ export function TimelinePanel() {
       return;
     }
     const sortedEras = [...(selectedResolved.calendar?.eras ?? [])].sort((a, b) => a.startYear - b.startYear);
-    const currentIndex = sortedEras.findIndex((entry) => entry.id === era.id);
-    const nextStart = currentIndex >= 0 ? sortedEras[currentIndex + 1]?.startYear : undefined;
+    const idx = sortedEras.findIndex((e) => e.id === era.id);
+    const nextStart = idx >= 0 ? sortedEras[idx + 1]?.startYear : undefined;
     const end = nextStart !== undefined ? nextStart - 1 : Math.max(selectedResolved.absoluteYear, era.startYear + 50);
     setWindowStart(String(era.startYear));
     setWindowEnd(String(end));
   }, [selectedResolved]);
 
-  const hasActiveFilters =
-    search.trim().length > 0 || calendarFilter !== "all" || importanceFilter !== "all" || windowStart.trim().length > 0 || windowEnd.trim().length > 0;
-  const visibleCalendarCount = new Set(filteredEvents.map((entry) => entry.event.calendarId)).size;
-  const calendarLabel =
-    calendarFilter === "all"
-      ? `${visibleCalendarCount || calendars.length || 0} calendar${(visibleCalendarCount || calendars.length || 0) === 1 ? "" : "s"}`
-      : (calendars.find((entry) => entry.id === calendarFilter)?.name ?? "Unknown calendar");
+  const handleWindowChange = useCallback(
+    (next: { min: number; max: number } | null) => {
+      if (!next || !fullWindow) {
+        setWindowStart("");
+        setWindowEnd("");
+        return;
+      }
+      setWindowStart(String(next.min));
+      setWindowEnd(String(next.max));
+    },
+    [fullWindow],
+  );
+
+  const handleDuplicate = useCallback(() => {
+    if (!selectedResolved) return;
+    const newId = duplicateEvent(selectedResolved.event.id);
+    if (newId) setSelectedEventId(newId);
+  }, [duplicateEvent, selectedResolved]);
+
+  const handleDeleteSelected = useCallback(() => {
+    if (!selectedResolved) return;
+    deleteEvent(selectedResolved.event.id);
+    setSelectedEventId(null);
+  }, [deleteEvent, selectedResolved]);
+
+  const headerTitle = useMemo(() => {
+    if (calendarFilter !== "all") {
+      const cal = calendars.find((c) => c.id === calendarFilter);
+      if (cal) return cal.name;
+    }
+    if (eraFilter) {
+      const era = calendars.flatMap((c) => c.eras).find((e) => e.id === eraFilter);
+      if (era) return era.name;
+    }
+    return "Chronicle";
+  }, [calendars, calendarFilter, eraFilter]);
+
+  const ribbon = (
+    <TimelineView
+      events={filteredEvents.map((entry) => entry.event)}
+      calendars={calendars}
+      selectedEventId={selectedEventId}
+      onSelectEvent={setSelectedEventId}
+      fullWindow={fullWindow}
+      activeWindow={activeWindow}
+      onWindowChange={handleWindowChange}
+    />
+  );
+
+  const inspector = (
+    <EventInspector
+      resolvedEvent={selectedResolved}
+      calendars={calendars}
+      onUpdate={(patch) => selectedResolved && updateEvent(selectedResolved.event.id, patch)}
+      onDelete={handleDeleteSelected}
+      onDuplicate={handleDuplicate}
+      onClose={() => setSelectedEventId(null)}
+      className="h-full"
+    />
+  );
+
+  const list = (
+    <EventList
+      groups={chronicleGroups}
+      totalVisible={filteredEvents.length}
+      selectedEventId={selectedEventId}
+      onSelect={setSelectedEventId}
+      onMoveSelection={handleMoveSelection}
+      floatingInspector={inspector}
+    />
+  );
 
   return (
-    <div className="flex flex-col gap-6">
-      <section className="rounded-[2rem] border border-border-muted/40 bg-[radial-gradient(circle_at_top_left,rgb(var(--accent-rgb)/0.12),transparent_36%),linear-gradient(155deg,rgb(var(--bg-rgb)/0.98),rgb(var(--abyss-rgb)/0.96))] p-6 shadow-[var(--shadow-panel)]">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <p className="text-[0.65rem] uppercase tracking-[0.32em] text-[var(--color-warm)]/80">
-              Chronicle Workspace
-            </p>
-            <h1 className="mt-3 max-w-3xl font-display text-3xl leading-tight text-[var(--color-warm-pale)] sm:text-4xl">
-              Timeline
-            </h1>
+    <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-[0.9rem] border border-border-muted/45 bg-[linear-gradient(180deg,rgb(var(--bg-rgb)/0.72),rgb(var(--abyss-rgb)/0.92))] shadow-[var(--shadow-panel)]">
+      {/* Header */}
+      <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border-muted/45 bg-[radial-gradient(circle_at_top_left,rgb(var(--accent-rgb)/0.10),transparent_38%),linear-gradient(160deg,rgb(var(--bg-rgb)/0.96),rgb(var(--abyss-rgb)/0.94))] px-5 py-3">
+        <div className="min-w-0">
+          <p className="text-[0.6rem] uppercase tracking-[0.32em] text-[var(--color-warm)]/80">
+            Chronicle · Timeline Editor
+          </p>
+          <h1 className="mt-1 truncate font-display text-2xl text-text-primary">
+            {headerTitle}
+          </h1>
+        </div>
+
+        <div className="mr-44 flex flex-wrap items-center gap-2">
+          <div className="flex items-center gap-0.5 rounded-[0.7rem] border border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] p-0.5">
+            {(["timeline", "list"] as ViewMode[]).map((mode) => (
+              <button
+                key={mode}
+                type="button"
+                onClick={() => setViewMode(mode)}
+                aria-pressed={viewMode === mode}
+                className={`focus-ring flex items-center gap-1.5 rounded-[0.55rem] px-3 py-1.5 text-2xs transition ${
+                  viewMode === mode
+                    ? "bg-[var(--bg-active-strong)] text-text-primary shadow-[var(--shadow-glow)]"
+                    : "text-text-muted hover:text-text-primary"
+                }`}
+              >
+                <ViewModeIcon mode={mode} />
+                {mode.charAt(0).toUpperCase() + mode.slice(1)}
+              </button>
+            ))}
           </div>
+
+          <ActionButton
+            onClick={() => setShowSuggestions((v) => !v)}
+            variant={showSuggestions ? "secondary" : "ghost"}
+            size="sm"
+          >
+            {showSuggestions ? "Hide AI" : "AI Suggest"}
+          </ActionButton>
+
           <ActionButton onClick={handleAddEvent} variant="primary" disabled={calendars.length === 0}>
-            Add Event
+            + Add Event
           </ActionButton>
         </div>
+      </header>
 
-        <div className="mt-6 grid gap-3 xl:grid-cols-[minmax(0,1.35fr)_minmax(12rem,0.7fr)_minmax(12rem,0.7fr)_minmax(10rem,0.55fr)_minmax(10rem,0.55fr)_auto]">
-          <label className="flex flex-col gap-2">
-            <span className="text-[0.65rem] uppercase tracking-[0.24em] text-text-muted">Search</span>
-            <input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search titles, notes, eras, or importance"
-              className="ornate-input min-h-11 rounded-2xl px-4 py-3 text-sm text-text-primary"
-              aria-label="Search timeline events"
-            />
-          </label>
-
-          <label className="flex flex-col gap-2">
-            <span className="text-[0.65rem] uppercase tracking-[0.24em] text-text-muted">Calendar</span>
-            <select
-              value={calendarFilter}
-              onChange={(e) => setCalendarFilter(e.target.value)}
-              className="ornate-input min-h-11 rounded-2xl px-4 py-3 text-sm text-text-primary"
-              aria-label="Filter by calendar"
-            >
-              <option value="all">All calendars</option>
-              {calendars.map((calendar) => (
-                <option key={calendar.id} value={calendar.id}>
-                  {calendar.name}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <label className="flex flex-col gap-2">
-            <span className="text-[0.65rem] uppercase tracking-[0.24em] text-text-muted">Importance</span>
-            <select
-              value={importanceFilter}
-              onChange={(e) => setImportanceFilter(e.target.value)}
-              className="ornate-input min-h-11 rounded-2xl px-4 py-3 text-sm text-text-primary"
-              aria-label="Filter by importance"
-            >
-              {IMPORTANCE_FILTER_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <label className="flex flex-col gap-2">
-            <span className="text-[0.65rem] uppercase tracking-[0.24em] text-text-muted">From</span>
-            <input
-              value={windowStart}
-              onChange={(e) => setWindowStart(e.target.value)}
-              inputMode="numeric"
-              placeholder={fullWindow ? String(fullWindow.min) : ""}
-              className="ornate-input min-h-11 rounded-2xl px-4 py-3 text-sm text-text-primary"
-              aria-label="Timeline range start year"
-            />
-          </label>
-
-          <label className="flex flex-col gap-2">
-            <span className="text-[0.65rem] uppercase tracking-[0.24em] text-text-muted">To</span>
-            <input
-              value={windowEnd}
-              onChange={(e) => setWindowEnd(e.target.value)}
-              inputMode="numeric"
-              placeholder={fullWindow ? String(fullWindow.max) : ""}
-              className="ornate-input min-h-11 rounded-2xl px-4 py-3 text-sm text-text-primary"
-              aria-label="Timeline range end year"
-            />
-          </label>
-
-          <div className="flex items-end">
-            <ActionButton
-              onClick={handleClearFilters}
-              variant="ghost"
-              disabled={!hasActiveFilters}
-              className="w-full xl:w-auto"
-            >
-              Clear Filters
-            </ActionButton>
-          </div>
+      {showSuggestions && (
+        <div className="border-b border-border-muted/35 bg-[var(--bg-deep-section)] p-4">
+          <TimelineInferencePanel />
         </div>
+      )}
 
-        <div className="mt-5 flex flex-wrap items-center gap-2">
-          <FilterPill label={`${filteredEvents.length} visible of ${events.length}`} />
-          <FilterPill label={calendarLabel} />
-          <FilterPill
-            label={
-              importanceFilter === "all"
-                ? "all importance"
-                : `${importanceFilter} only`
-            }
-          />
-          {activeWindow && fullWindow && (activeWindow.min !== fullWindow.min || activeWindow.max !== fullWindow.max) && (
-            <FilterPill label={`${formatYear(activeWindow.min)}-${formatYear(activeWindow.max)}`} />
-          )}
-          {search.trim() && <FilterPill label={`search: ${search.trim()}`} />}
-        </div>
-
-        <div className="mt-5 flex flex-wrap gap-2">
-          <ActionButton onClick={handleResetWindow} variant="ghost" size="sm" disabled={windowStart.trim() === "" && windowEnd.trim() === ""}>
-            Full Range
-          </ActionButton>
-          <ActionButton onClick={handleFocusSelectedEra} variant="ghost" size="sm" disabled={!selectedResolved}>
-            Selected Era
-          </ActionButton>
-        </div>
-
-        <div className="mt-5 grid gap-3 lg:grid-cols-2">
-          <UtilityToggle
-            title="AI Suggestions"
-            open={showSuggestions}
-            onToggle={() => setShowSuggestions((value) => !value)}
-          />
-          <UtilityToggle
-            title="Calendar Setup"
-            open={showCalendarSetup}
-            onToggle={() => setShowCalendarSetup((value) => !value)}
-          />
-        </div>
-      </section>
-
-      <div className="grid min-h-0 gap-6 xl:grid-cols-[minmax(0,1.65fr)_24rem]">
-        <section className="min-h-[44rem] rounded-[2rem] border border-border-muted/40 bg-[var(--bg-deep-panel)] p-5 shadow-[var(--shadow-panel)]">
-          {(showSuggestions || showCalendarSetup) && (
-            <div className="mb-5 flex flex-col gap-4">
-              {showSuggestions && (
-                <div className="rounded-[1.6rem] border border-border-muted/35 bg-[var(--bg-deep-section)] p-5">
-                  <TimelineInferencePanel />
-                </div>
-              )}
-              {showCalendarSetup && (
-                <div className="rounded-[1.6rem] border border-border-muted/35 bg-[var(--bg-deep-section)] p-5">
-                  <CalendarEditor calendars={calendars} onChange={setCalendars} />
-                </div>
-              )}
-            </div>
-          )}
-
-          {calendars.length === 0 ? (
-            <div className="flex min-h-[30rem] flex-col items-center justify-center gap-4 rounded-[1.6rem] border border-dashed border-border-muted/45 bg-bg-secondary/10 px-6 text-center">
-              <p className="font-display text-2xl text-[var(--color-warm-pale)]">No calendar systems yet</p>
-              <ActionButton onClick={() => setShowCalendarSetup(true)} variant="secondary">
-                Open Calendar Setup
-              </ActionButton>
-            </div>
-          ) : events.length === 0 ? (
-            <div className="flex min-h-[30rem] flex-col items-center justify-center gap-4 rounded-[1.6rem] border border-dashed border-border-muted/45 bg-bg-secondary/10 px-6 text-center">
-              <p className="font-display text-2xl text-[var(--color-warm-pale)]">The chronicle is still blank</p>
-              <div className="flex flex-wrap justify-center gap-2">
-                <ActionButton onClick={handleAddEvent} variant="primary">
-                  Add Event
-                </ActionButton>
-                <ActionButton onClick={() => setShowSuggestions(true)} variant="ghost">
-                  Open Suggestions
-                </ActionButton>
-              </div>
-            </div>
-          ) : filteredEvents.length === 0 ? (
-            <div className="flex min-h-[30rem] flex-col items-center justify-center gap-4 rounded-[1.6rem] border border-dashed border-border-muted/45 bg-bg-secondary/10 px-6 text-center">
-              <p className="font-display text-2xl text-[var(--color-warm-pale)]">No events match these filters</p>
-              <ActionButton onClick={handleClearFilters} variant="secondary">
-                Clear Filters
-              </ActionButton>
-            </div>
-          ) : (
-            <div className="flex flex-col gap-5">
-              <TimelineView
-                events={filteredEvents.map((entry) => entry.event)}
-                calendars={calendars}
-                selectedEventId={selectedEventId}
-                onSelectEvent={setSelectedEventId}
-                range={activeWindow}
-              />
-
-              <div className="rounded-[1.6rem] border border-border-muted/35 bg-[var(--bg-deep-panel)] p-5">
-                <div className="flex flex-wrap items-end justify-between gap-3 border-b border-border-muted/25 pb-4">
-                  <div>
-                    <p className="text-[0.65rem] uppercase tracking-[0.28em] text-[var(--color-warm)]/80">
-                      Chronicle
-                    </p>
-                    <h2 className="mt-2 font-display text-2xl text-text-primary">
-                      Ordered by time, grouped by era
-                    </h2>
-                  </div>
-                </div>
-
-                <div className="mt-6 space-y-8">
-                  {chronicleGroups.map((calendarGroup) => (
-                    <section key={calendarGroup.id}>
-                      <div className="flex flex-wrap items-end justify-between gap-3">
-                        <div>
-                          <p className="text-[0.65rem] uppercase tracking-[0.28em] text-text-muted">
-                            Calendar
-                          </p>
-                          <h3 className="mt-1 font-display text-3xl text-[var(--color-warm-pale)]">
-                            {calendarGroup.calendarName}
-                          </h3>
-                        </div>
-                        <p className="text-2xs uppercase tracking-[0.22em] text-text-muted">
-                          {calendarGroup.visibleEventCount} event{calendarGroup.visibleEventCount === 1 ? "" : "s"}
-                        </p>
-                      </div>
-
-                      <div className="mt-5 space-y-6">
-                        {calendarGroup.eras.map((eraGroup) => (
-                          <div key={eraGroup.id} className="rounded-[1.4rem] border border-border-muted/25 bg-bg-secondary/15 px-4 py-4">
-                            <div className="flex flex-wrap items-end justify-between gap-2">
-                              <div>
-                                <p className="text-[0.65rem] uppercase tracking-[0.24em] text-text-muted">
-                                  Era
-                                </p>
-                                <h4 className="mt-1 font-display text-xl text-text-primary">
-                                  {eraGroup.eraName}
-                                </h4>
-                              </div>
-                              {eraGroup.startYear !== null && (
-                                <p className="text-2xs uppercase tracking-[0.22em] text-text-muted">
-                                  Begins at {formatYear(eraGroup.startYear)}
-                                </p>
-                              )}
-                            </div>
-
-                            {eraGroup.events.length === 0 ? (
-                              <p className="mt-4 rounded-[1rem] border border-dashed border-border-muted/35 px-4 py-3 text-sm text-text-muted">
-                                No visible events are recorded in this era yet.
-                              </p>
-                            ) : (
-                              <div className="relative mt-5 pl-5">
-                                <div className="absolute bottom-3 left-[0.4rem] top-3 w-px bg-gradient-to-b from-[var(--color-warm)]/45 via-border-muted/40 to-transparent" />
-                                <div className="space-y-3">
-                                  {eraGroup.events.map((entry) => (
-                                    <ChronicleEventRow
-                                      key={entry.event.id}
-                                      entry={entry}
-                                      selected={entry.event.id === selectedEventId}
-                                      onSelect={() => setSelectedEventId(entry.event.id)}
-                                      onMoveSelection={handleMoveSelection}
-                                    />
-                                  ))}
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    </section>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-        </section>
-
-        <EventInspector
-          resolvedEvent={selectedResolved}
+      {/* Body */}
+      <div className="grid min-h-0 flex-1 gap-4 overflow-hidden p-3 lg:grid-cols-[16rem_minmax(0,1fr)]">
+        <FilterRail
+          search={search}
+          onSearch={setSearch}
           calendars={calendars}
-          previous={neighbors.previous}
-          next={neighbors.next}
-          onNavigate={setSelectedEventId}
-          onUpdate={(patch) => selectedResolved && updateEvent(selectedResolved.event.id, patch)}
-          onDelete={() => {
-            if (!selectedResolved) return;
-            deleteEvent(selectedResolved.event.id);
-            setSelectedEventId(null);
-          }}
+          calendarFilter={calendarFilter}
+          onCalendarFilter={setCalendarFilter}
+          eraFilter={eraFilter}
+          onEraFilter={setEraFilter}
+          importanceFilter={importanceFilter}
+          onImportanceFilter={setImportanceFilter}
+          windowStart={windowStart}
+          windowEnd={windowEnd}
+          onWindowStart={setWindowStart}
+          onWindowEnd={setWindowEnd}
+          onFullRange={handleFullRange}
+          onSelectedEra={handleSelectedEra}
+          onThisEra={handleThisEra}
+          hasSelected={!!selectedResolved}
+          boolFilters={boolFilters}
+          onBoolFilters={setBoolFilters}
+          visibleByCalendar={visibleByCalendar}
+          onManageCalendars={() => setShowCalendarManager(true)}
+          fullWindowMin={fullWindow?.min}
+          fullWindowMax={fullWindow?.max}
         />
+
+        <main className="flex min-h-0 min-w-0 flex-col gap-3 overflow-hidden">
+          {calendars.length === 0 ? (
+            <EmptyState
+              title="No calendar systems yet"
+              body="Add a calendar to begin recording dated events on the timeline."
+              action={{
+                label: "Manage Calendars",
+                onClick: () => setShowCalendarManager(true),
+              }}
+            />
+          ) : events.length === 0 ? (
+            <EmptyState
+              title="The chronicle is still blank"
+              body="Add your first event to start building this world's history."
+              action={{ label: "+ Add Event", onClick: handleAddEvent }}
+            />
+          ) : filteredEvents.length === 0 ? (
+            <EmptyState
+              title="No events match these filters"
+              body="Adjust the filters in the sidebar, or clear them to see all events."
+            />
+          ) : (
+            <>
+              {viewMode === "timeline" && (
+                <>
+                  <div className="shrink-0">{ribbon}</div>
+                  {list}
+                </>
+              )}
+              {viewMode === "list" && list}
+            </>
+          )}
+        </main>
+
       </div>
+
+      <ManageCalendarsDialog
+        open={showCalendarManager}
+        calendars={calendars}
+        onChange={setCalendars}
+        onClose={() => setShowCalendarManager(false)}
+      />
     </div>
   );
+}
+
+function EmptyState({
+  title,
+  body,
+  action,
+}: {
+  title: string;
+  body: string;
+  action?: { label: string; onClick: () => void };
+}) {
+  return (
+    <div className="flex min-h-[24rem] flex-col items-center justify-center gap-3 rounded-[1.5rem] border border-dashed border-border-muted/45 bg-bg-secondary/15 px-6 text-center">
+      <p className="font-display text-2xl text-[var(--color-warm-pale)]">{title}</p>
+      <p className="max-w-md text-sm text-text-muted">{body}</p>
+      {action && (
+        <ActionButton onClick={action.onClick} variant="primary">
+          {action.label}
+        </ActionButton>
+      )}
+    </div>
+  );
+}
+
+function ViewModeIcon({ mode }: { mode: ViewMode }) {
+  if (mode === "timeline") {
+    return (
+      <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
+        <path d="M2 8h12" />
+        <circle cx="4" cy="8" r="1.4" fill="currentColor" />
+        <circle cx="8" cy="8" r="1.4" fill="currentColor" />
+        <circle cx="12" cy="8" r="1.4" fill="currentColor" />
+      </svg>
+    );
+  }
+  if (mode === "list") {
+    return (
+      <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
+        <path d="M3 4h10M3 8h10M3 12h10" />
+      </svg>
+    );
+  }
+  return null;
 }

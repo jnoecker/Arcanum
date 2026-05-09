@@ -148,15 +148,6 @@ export function IslandView({ island }: IslandViewProps) {
           className="pointer-events-none absolute inset-0 h-full w-full select-none rounded-3xl shadow-[var(--shadow-vignette)]"
         />
 
-        {/* Title block (top center) */}
-        <div className="pointer-events-none absolute left-1/2 top-4 -translate-x-1/2 select-none rounded-2xl border border-accent/40 bg-bg-abyss/90 px-6 py-3 text-center shadow-[var(--shadow-dialog)]">
-          <div className="text-3xs uppercase tracking-[0.28em] text-text-muted">
-            Realm
-          </div>
-          <div className="mt-1 font-display text-2xl text-accent">{def.title}</div>
-          <div className="mt-1 text-sm italic text-text-secondary">{def.tagline}</div>
-        </div>
-
         {/* Back button (top-left) */}
         <button
           type="button"

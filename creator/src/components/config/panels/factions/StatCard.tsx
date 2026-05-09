@@ -54,7 +54,7 @@ export function StatCard({
 
   return (
     <div
-      className={`panel-surface flex items-center gap-4 rounded-2xl border p-3 pl-4 ${t.ring} ${t.glow}`}
+      className={`flex items-center gap-4 rounded-2xl border bg-[var(--chrome-fill)] p-3 pl-4 ${t.ring} ${t.glow}`}
     >
       <div className="min-w-0 flex-1">
         <p className="font-display text-2xs font-semibold uppercase tracking-[0.18em] text-text-muted">

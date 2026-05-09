@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useMemo, memo, useRef, type ReactNode } from "react";
+import { useState, useCallback, useEffect, useMemo, memo, useRef, type KeyboardEvent as ReactKeyboardEvent, type ReactNode } from "react";
 import { useLoreStore, selectArticles, selectCalendars, selectEvents } from "@/stores/loreStore";
 import type { CalendarSystem, CalendarEra, TimelineEvent } from "@/types/lore";
 import {
@@ -929,30 +929,21 @@ const ChronicleEventRow = memo(function ChronicleEventRow({
   entry,
   selected,
   onSelect,
-  onMoveSelection,
 }: {
   entry: ResolvedTimelineEvent;
   selected: boolean;
   onSelect: () => void;
-  onMoveSelection: (direction: "prev" | "next") => void;
 }) {
   const style = importanceClasses(entry.event.importance);
 
   return (
     <button
       type="button"
+      id={`chronicle-row-${entry.event.id}`}
+      role="option"
+      aria-selected={selected}
+      tabIndex={-1}
       onClick={onSelect}
-      onKeyDown={(e) => {
-        if (e.key === "ArrowDown") {
-          e.preventDefault();
-          onMoveSelection("next");
-        }
-        if (e.key === "ArrowUp") {
-          e.preventDefault();
-          onMoveSelection("prev");
-        }
-      }}
-      aria-pressed={selected}
       className={`focus-ring group relative grid w-full grid-cols-[0.8rem_5rem_minmax(0,1fr)] items-center gap-3 rounded-[0.45rem] border px-3 py-2 text-left transition md:grid-cols-[0.8rem_5rem_minmax(0,1fr)_7rem_10rem] ${
         selected
           ? "border-[var(--border-accent-ring)] bg-[linear-gradient(90deg,rgb(var(--accent-rgb)/0.12),rgb(var(--bg-rgb)/0.30))] shadow-[var(--shadow-glow)]"
@@ -978,6 +969,23 @@ const ChronicleEventRow = memo(function ChronicleEventRow({
 
 // ─── Event List ──────────────────────────────────────────────────────────
 
+function flattenDisplayedEvents(
+  groups: ReturnType<typeof buildChronicleGroups>,
+  sortMode: "year" | "importance",
+): ResolvedTimelineEvent[] {
+  const flat: ResolvedTimelineEvent[] = [];
+  for (const calendarGroup of groups) {
+    for (const eraGroup of calendarGroup.eras) {
+      if (eraGroup.events.length === 0) continue;
+      const ordered = sortMode === "importance"
+        ? [...eraGroup.events].sort((a, b) => importanceWeight(b.event.importance) - importanceWeight(a.event.importance))
+        : eraGroup.events;
+      for (const entry of ordered) flat.push(entry);
+    }
+  }
+  return flat;
+}
+
 function EventList({
   groups,
   totalVisible,
@@ -994,6 +1002,52 @@ function EventList({
   floatingInspector?: ReactNode;
 }) {
   const [sortMode, setSortMode] = useState<"year" | "importance">("year");
+
+  useEffect(() => {
+    if (!selectedEventId) return;
+    document.getElementById(`chronicle-row-${selectedEventId}`)?.scrollIntoView({ block: "nearest" });
+  }, [selectedEventId]);
+
+  const handleListKeyDown = (e: ReactKeyboardEvent<HTMLDivElement>) => {
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      onMoveSelection("next");
+      return;
+    }
+    if (e.key === "ArrowUp") {
+      e.preventDefault();
+      onMoveSelection("prev");
+      return;
+    }
+    if (e.key === "Home") {
+      e.preventDefault();
+      const flat = flattenDisplayedEvents(groups, sortMode);
+      const first = flat[0];
+      if (first) onSelect(first.event.id);
+      return;
+    }
+    if (e.key === "End") {
+      e.preventDefault();
+      const flat = flattenDisplayedEvents(groups, sortMode);
+      const last = flat[flat.length - 1];
+      if (last) onSelect(last.event.id);
+      return;
+    }
+    if (e.key === "PageDown" || e.key === "PageUp") {
+      e.preventDefault();
+      const flat = flattenDisplayedEvents(groups, sortMode);
+      if (flat.length === 0) return;
+      const currentIdx = selectedEventId
+        ? flat.findIndex((entry) => entry.event.id === selectedEventId)
+        : -1;
+      const step = e.key === "PageDown" ? 10 : -10;
+      const baseIdx = currentIdx === -1 ? (e.key === "PageDown" ? -1 : flat.length) : currentIdx;
+      const nextIdx = Math.max(0, Math.min(flat.length - 1, baseIdx + step));
+      const target = flat[nextIdx];
+      if (target) onSelect(target.event.id);
+      return;
+    }
+  };
 
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-[0.9rem] border border-border-muted/40 bg-[linear-gradient(180deg,rgb(var(--bg-rgb)/0.88),rgb(var(--abyss-rgb)/0.94))] shadow-[var(--shadow-panel)]">
@@ -1020,7 +1074,14 @@ function EventList({
       </div>
 
       <div className={`grid min-h-0 flex-1 overflow-hidden ${floatingInspector ? "xl:grid-cols-[minmax(0,1fr)_22rem]" : ""}`}>
-        <div className="min-h-0 overflow-y-auto p-2">
+        <div
+          role="listbox"
+          aria-label="Timeline events"
+          aria-activedescendant={selectedEventId ? `chronicle-row-${selectedEventId}` : undefined}
+          tabIndex={0}
+          onKeyDown={handleListKeyDown}
+          className="focus-ring min-h-0 overflow-y-auto p-2"
+        >
           {groups.map((calendarGroup) =>
               calendarGroup.eras.map((eraGroup) => {
             if (eraGroup.events.length === 0) return null;
@@ -1030,9 +1091,9 @@ function EventList({
             return (
               <section key={`${calendarGroup.id}:${eraGroup.id}`} className="border-b border-border-muted/25 last:border-b-0">
                 <div className="flex items-baseline gap-4 bg-[linear-gradient(90deg,rgb(var(--accent-rgb)/0.10),transparent_72%)] px-4 py-2">
-                  <p className="font-display text-2xs uppercase tracking-[0.28em] text-[var(--color-warm)]/85">
+                  <h3 className="font-display text-2xs uppercase tracking-[0.28em] text-[var(--color-warm)]/85">
                     {eraGroup.eraName}
-                  </p>
+                  </h3>
                   {eraGroup.startYear !== null && (
                     <p className="text-[0.6rem] uppercase tracking-[0.22em] text-text-muted">
                       {formatYear(eraGroup.startYear)} – {formatYear(eraEndYear(calendarGroup, eraGroup))}
@@ -1046,7 +1107,6 @@ function EventList({
                       entry={entry}
                       selected={entry.event.id === selectedEventId}
                       onSelect={() => onSelect(entry.event.id)}
-                      onMoveSelection={onMoveSelection}
                     />
                   ))}
                 </div>

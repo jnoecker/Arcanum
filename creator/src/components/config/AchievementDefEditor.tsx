@@ -1,293 +1,185 @@
-import { useCallback, useMemo } from "react";
-import type {
-  AppConfig,
-  AchievementDefFile,
-  AchievementCriterionFile,
-  AchievementRewardsFile,
-} from "@/types/config";
-import { DefinitionWorkbench } from "./DefinitionWorkbench";
-import { useArrayField } from "@/lib/useArrayField";
-import {
-  Section,
-  FieldRow,
-  TextInput,
-  NumberInput,
-  SelectInput,
-  IconButton,
-} from "@/components/ui/FormWidgets";
+import { useEffect, useState } from "react";
+import type { AppConfig, AchievementDefFile } from "@/types/config";
+import { AchievementsHeader } from "./achievements/AchievementsHeader";
+import { AchievementsList } from "./achievements/AchievementsList";
+import { AchievementEditor } from "./achievements/AchievementEditor";
+import { AchievementPreview } from "./achievements/AchievementPreview";
 
-// ─── Defaults ──────────────────────────────────────────────────────
-
-const DEFAULT_CRITERION: AchievementCriterionFile = {
-  type: "kill",
-  targetId: "",
-  count: 1,
-  description: "",
-};
-
-function defaultAchievementDef(raw: string): AchievementDefFile {
-  // Derive category from the id prefix if it contains a slash
-  const slash = raw.indexOf("/");
-  const category = slash > 0 ? raw.slice(0, slash) : "combat";
+function defaultAchievementDef(displayName: string): AchievementDefFile {
+  const cleaned = displayName.trim() || "New Achievement";
   return {
-    displayName: raw
-      .slice(slash + 1)
-      .replace(/_/g, " ")
-      .replace(/\b\w/g, (c) => c.toUpperCase()),
+    displayName: cleaned,
     description: "",
-    category,
+    category: "combat",
     hidden: false,
     criteria: [],
   };
 }
 
-// ─── Detail component ──────────────────────────────────────────────
+function nextDefaultId(existing: Record<string, unknown>): string {
+  const base = "new_achievement";
+  if (!existing[base]) return base;
+  let i = 2;
+  while (existing[`${base}_${i}`]) i += 1;
+  return `${base}_${i}`;
+}
 
-function AchievementDefDetail({
-  def,
-  patch,
-  config,
-}: {
-  def: AchievementDefFile;
-  patch: (p: Partial<AchievementDefFile>) => void;
+function nextDuplicateId(base: string, existing: Record<string, unknown>): string {
+  let i = 2;
+  while (existing[`${base}_copy_${i - 1}`]) i += 1;
+  return `${base}_copy_${i - 1}`;
+}
+
+function normalizeId(raw: string): string {
+  return raw
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, "_")
+    .replace(/[^a-z0-9_/]/g, "");
+}
+
+interface AchievementDefEditorProps {
   config: AppConfig;
-}) {
-  // Category dropdown from taxonomy
-  const categoryOptions = useMemo(
-    () =>
-      Object.entries(config.achievementCategories).map(([id, cat]) => ({
-        value: id,
-        label: cat.displayName || id,
-      })),
-    [config.achievementCategories],
-  );
-
-  // Criterion type dropdown from taxonomy
-  const criterionTypeOptions = useMemo(
-    () =>
-      Object.entries(config.achievementCriterionTypes).map(([id, ct]) => ({
-        value: id,
-        label: ct.displayName || id,
-      })),
-    [config.achievementCriterionTypes],
-  );
-
-  // ─── Criteria array helpers ──────────────────────────────────
-  const {
-    items: criteria,
-    add: handleAddCriterion,
-    update: handleUpdateCriterion,
-    remove: handleDeleteCriterion,
-  } = useArrayField<AchievementCriterionFile>(
-    def.criteria,
-    (criteria) => patch({ criteria: criteria ?? [] }),
-    DEFAULT_CRITERION,
-  );
-
-  // ─── Rewards helpers ─────────────────────────────────────────
-  const rewards = def.rewards ?? {};
-
-  const handleRewardChange = useCallback(
-    (field: keyof AchievementRewardsFile, value: string | number | undefined) => {
-      const next: AchievementRewardsFile = { ...rewards, [field]: value };
-      const hasReward =
-        (next.xp ?? 0) > 0 || (next.gold ?? 0) > 0 || (next.title ?? "").length > 0;
-      patch({ rewards: hasReward ? next : undefined });
-    },
-    [rewards, patch],
-  );
-
-  return (
-    <div className="flex flex-col gap-4">
-      <Section title="Basics">
-        <div className="flex flex-col gap-1.5">
-          <FieldRow label="Display name">
-            <TextInput
-              value={def.displayName}
-              onCommit={(v) => patch({ displayName: v })}
-            />
-          </FieldRow>
-          <FieldRow label="Description">
-            <TextInput
-              value={def.description ?? ""}
-              onCommit={(v) => patch({ description: v || undefined })}
-              placeholder="None"
-            />
-          </FieldRow>
-          <FieldRow label="Category">
-            <SelectInput
-              value={def.category}
-              options={categoryOptions}
-              onCommit={(v) => patch({ category: v })}
-              placeholder="— select category —"
-            />
-          </FieldRow>
-          <FieldRow label="Hidden">
-            <label className="flex items-center gap-2 text-xs">
-              <input
-                type="checkbox"
-                checked={def.hidden ?? false}
-                onChange={(e) => patch({ hidden: e.target.checked || undefined })}
-                className="accent-accent"
-              />
-              <span className="text-text-secondary">
-                Hide until unlocked
-              </span>
-            </label>
-          </FieldRow>
-        </div>
-      </Section>
-
-      <Section
-        title={`Criteria (${criteria.length})`}
-        actions={
-          <IconButton onClick={handleAddCriterion} title="Add criterion">
-            +
-          </IconButton>
-        }
-      >
-        {criteria.length === 0 ? (
-          <p className="text-xs text-text-muted">
-            No criteria — add at least one to make this achievement earnable.
-          </p>
-        ) : (
-          <div className="flex flex-col gap-2">
-            {criteria.map((crit, i) => (
-              <div
-                key={i}
-                className="rounded border border-border-muted p-1.5"
-              >
-                <div className="mb-1 flex items-center justify-between">
-                  <span className="text-2xs font-medium text-text-muted">
-                    #{i + 1}
-                  </span>
-                  <IconButton
-                    onClick={() => handleDeleteCriterion(i)}
-                    title="Remove criterion"
-                    danger
-                  >
-                    &times;
-                  </IconButton>
-                </div>
-                <div className="flex flex-col gap-1">
-                  <FieldRow label="Type">
-                    <SelectInput
-                      value={crit.type}
-                      options={criterionTypeOptions}
-                      onCommit={(v) => handleUpdateCriterion(i, "type", v)}
-                    />
-                  </FieldRow>
-                  <FieldRow label="Target ID">
-                    <TextInput
-                      value={crit.targetId ?? ""}
-                      onCommit={(v) =>
-                        handleUpdateCriterion(i, "targetId", v || undefined)
-                      }
-                      placeholder="zone:mob_id or empty"
-                    />
-                  </FieldRow>
-                  <FieldRow label="Count">
-                    <NumberInput
-                      value={crit.count ?? 1}
-                      onCommit={(v) =>
-                        handleUpdateCriterion(i, "count", v ?? 1)
-                      }
-                      min={1}
-                    />
-                  </FieldRow>
-                  <FieldRow label="Description">
-                    <TextInput
-                      value={crit.description ?? ""}
-                      onCommit={(v) =>
-                        handleUpdateCriterion(i, "description", v || undefined)
-                      }
-                      placeholder="Optional flavor text"
-                    />
-                  </FieldRow>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </Section>
-
-      <Section title="Rewards" defaultExpanded={false}>
-        <div className="flex flex-col gap-1.5">
-          <FieldRow label="XP">
-            <NumberInput
-              value={rewards.xp}
-              onCommit={(v) => handleRewardChange("xp", v)}
-              placeholder="0"
-              min={0}
-            />
-          </FieldRow>
-          <FieldRow label="Gold">
-            <NumberInput
-              value={rewards.gold}
-              onCommit={(v) => handleRewardChange("gold", v)}
-              placeholder="0"
-              min={0}
-            />
-          </FieldRow>
-          <FieldRow label="Title">
-            <TextInput
-              value={rewards.title ?? ""}
-              onCommit={(v) => handleRewardChange("title", v || undefined)}
-              placeholder="Optional title reward"
-            />
-          </FieldRow>
-        </div>
-      </Section>
-    </div>
-  );
+  onChange: (patch: Partial<AppConfig>) => void;
+  onSwitchTab: (tab: "categories" | "criterionTypes") => void;
 }
-
-// ─── Summary helpers ───────────────────────────────────────────────
-
-function summarizeAchievementDef(def: AchievementDefFile): string {
-  const parts: string[] = [];
-  if (def.criteria.length > 0) {
-    parts.push(`${def.criteria.length} criteria`);
-  }
-  if (def.rewards?.xp) parts.push(`${def.rewards.xp} XP`);
-  if (def.rewards?.gold) parts.push(`${def.rewards.gold} gold`);
-  if (def.rewards?.title) parts.push(`"${def.rewards.title}"`);
-  return parts.join(" · ") || "No criteria or rewards";
-}
-
-function badgesForDef(def: AchievementDefFile): string[] {
-  const badges: string[] = [def.category || "uncategorized"];
-  if (def.hidden) badges.push("Hidden");
-  return badges;
-}
-
-// ─── Main editor ───────────────────────────────────────────────────
 
 export function AchievementDefEditor({
   config,
   onChange,
-}: {
-  config: AppConfig;
-  onChange: (patch: Partial<AppConfig>) => void;
-}) {
+  onSwitchTab,
+}: AchievementDefEditorProps) {
+  const defs = config.achievementDefs;
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (selectedId && defs[selectedId]) return;
+    const first = Object.keys(defs)[0] ?? null;
+    setSelectedId(first);
+  }, [defs, selectedId]);
+
+  const patchDef = (id: string, patch: Partial<AchievementDefFile>) => {
+    onChange({
+      achievementDefs: {
+        ...defs,
+        [id]: { ...defs[id]!, ...patch },
+      },
+    });
+  };
+
+  const renameDef = (oldId: string, rawNewId: string) => {
+    const newId = normalizeId(rawNewId);
+    if (!newId || oldId === newId || defs[newId]) return;
+    const next: Record<string, AchievementDefFile> = {};
+    for (const [k, v] of Object.entries(defs)) {
+      next[k === oldId ? newId : k] = v;
+    }
+    onChange({ achievementDefs: next });
+    if (selectedId === oldId) setSelectedId(newId);
+  };
+
+  const addDef = () => {
+    const id = nextDefaultId(defs);
+    onChange({
+      achievementDefs: {
+        ...defs,
+        [id]: defaultAchievementDef("New Achievement"),
+      },
+    });
+    setSelectedId(id);
+  };
+
+  const duplicateDef = () => {
+    if (!selectedId || !defs[selectedId]) return;
+    const source = defs[selectedId];
+    const newId = nextDuplicateId(selectedId, defs);
+    const cloned: AchievementDefFile = {
+      ...source,
+      displayName: `${source.displayName} (copy)`,
+      criteria: source.criteria.map((c) => ({ ...c })),
+      rewards: source.rewards ? { ...source.rewards } : undefined,
+    };
+    onChange({ achievementDefs: { ...defs, [newId]: cloned } });
+    setSelectedId(newId);
+  };
+
+  const deleteDef = () => {
+    if (!selectedId || !defs[selectedId]) return;
+    const next = { ...defs };
+    delete next[selectedId];
+    onChange({ achievementDefs: next });
+    setSelectedId(null);
+  };
+
+  const selected = selectedId ? defs[selectedId] ?? null : null;
+
   return (
-    <DefinitionWorkbench
-      title="Achievement definition designer"
-      countLabel="Achievements"
-      description="Individual achievement definitions with criteria and rewards. IDs use category/name format (e.g. combat/first_blood)."
-      addPlaceholder="combat/new_achievement"
-      searchPlaceholder="Search achievements"
-      emptyMessage="No achievements match the current search."
-      items={config.achievementDefs}
-      defaultItem={defaultAchievementDef}
-      getDisplayName={(def) => def.displayName}
-      renderSummary={summarizeAchievementDef}
-      renderBadges={badgesForDef}
-      renderDetail={(_id, def, patch) => (
-        <AchievementDefDetail def={def} patch={patch} config={config} />
-      )}
-      onItemsChange={(achievementDefs) => onChange({ achievementDefs })}
-      idTransform={(raw) => raw.trim().toLowerCase().replace(/\s+/g, "_")}
-    />
+    <div className="flex flex-col gap-4">
+      <AchievementsHeader
+        categoryCount={Object.keys(config.achievementCategories).length}
+        criterionTypeCount={Object.keys(config.achievementCriterionTypes).length}
+        selectedId={selectedId}
+        onDuplicate={duplicateDef}
+        onDelete={deleteDef}
+        onSwitchTab={onSwitchTab}
+      />
+
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
+        <div className="xl:col-span-3">
+          <AchievementsList
+            defs={defs}
+            categories={config.achievementCategories}
+            selectedId={selectedId}
+            onSelect={setSelectedId}
+            onAdd={addDef}
+          />
+        </div>
+
+        <div className="xl:col-span-6">
+          {selectedId && selected ? (
+            <AchievementEditor
+              id={selectedId}
+              def={selected}
+              config={config}
+              onPatch={(p) => patchDef(selectedId, p)}
+              onRename={(v) => renameDef(selectedId, v)}
+            />
+          ) : (
+            <EmptyEditor onAdd={addDef} />
+          )}
+        </div>
+
+        <div className="xl:col-span-3">
+          {selectedId && selected ? (
+            <AchievementPreview
+              id={selectedId}
+              def={selected}
+              categories={config.achievementCategories}
+            />
+          ) : null}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function EmptyEditor({ onAdd }: { onAdd: () => void }) {
+  return (
+    <div className="panel-surface flex flex-col items-center justify-center gap-3 rounded-2xl px-6 py-12 text-center shadow-section">
+      <div>
+        <p className="font-display text-base text-text-primary">No achievement selected</p>
+        <p className="mt-1 max-w-xs text-2xs text-text-muted/80">
+          Choose an achievement from the list, or create a new one to get
+          started.
+        </p>
+      </div>
+      <button
+        type="button"
+        onClick={onAdd}
+        className="focus-ring inline-flex items-center gap-1.5 rounded-xl border border-accent/40 bg-accent/10 px-3 py-2 text-xs font-medium text-accent transition hover:bg-accent/20"
+      >
+        + Add Achievement
+      </button>
+    </div>
   );
 }

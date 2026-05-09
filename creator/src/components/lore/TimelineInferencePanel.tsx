@@ -55,13 +55,13 @@ export function TimelineInferencePanel() {
         title: s.title,
         year: s.year,
         eraId: s.eraId,
-        calendarId: lore?.calendarSystems?.[0]?.id ?? "",
+        calendarId: s.calendarId,
         importance: s.importance,
         articleId: s.articleId,
         description: s.evidence,
       });
     },
-    [lore, addTimelineEvent],
+    [addTimelineEvent],
   );
 
   const handleApproveAll = useCallback(
@@ -169,13 +169,13 @@ export function TimelineInferencePanel() {
                 <div className="ml-auto flex gap-2">
                   <button
                     onClick={onApprove}
-                    className="rounded-full border border-accent/30 bg-accent/10 px-2.5 py-1 text-2xs text-accent hover:bg-accent/20"
+                    className="min-h-9 rounded-full border border-accent/30 bg-accent/10 px-3 py-1.5 text-2xs text-accent hover:bg-accent/20"
                   >
                     Approve
                   </button>
                   <button
                     onClick={onDismiss}
-                    className="rounded-full border border-[var(--chrome-stroke)] px-2.5 py-1 text-2xs text-text-muted hover:bg-[var(--chrome-highlight-strong)]"
+                    className="min-h-9 rounded-full border border-[var(--chrome-stroke)] px-3 py-1.5 text-2xs text-text-muted hover:bg-[var(--chrome-highlight-strong)]"
                   >
                     Deny
                   </button>

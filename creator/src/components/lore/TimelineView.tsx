@@ -18,19 +18,19 @@ const SCRUBBER_HEIGHT = 60;
 const SCRUBBER_HANDLE = 14;
 const SCRUBBER_PAD = 12;
 
-// Solid era colors — avoid red/pink, align with Arcanum's ember + teal palette.
-// These are full-saturation anchors; tinted via color-mix at render time.
+const LEGENDARY_GOLD = "#d4b66e";
+
 const ERA_COLORS = [
-  "#ff9d3d", // ember
-  "#35a1b0", // stellar blue
-  "#d4b66e", // soft gold
-  "#7cb66d", // moss green
-  "#a897d2", // lavender
-  "#6ec0c2", // pale teal
+  "var(--color-status-warning)",
+  "var(--color-stellar-blue)",
+  LEGENDARY_GOLD,
+  "var(--color-status-success)",
+  "#a897d2",
+  "#6ec0c2",
 ];
 
 function eventColor(importance: TimelineEvent["importance"]) {
-  if (importance === "legendary") return "#d4b66e";
+  if (importance === "legendary") return LEGENDARY_GOLD;
   if (importance === "major") return "var(--color-accent)";
   return "var(--color-stellar-blue)";
 }
@@ -41,8 +41,10 @@ function eventRadius(importance: TimelineEvent["importance"]) {
   return 4;
 }
 
+const YEAR_FORMATTER = new Intl.NumberFormat();
+
 function formatYear(value: number) {
-  return new Intl.NumberFormat().format(Math.round(value));
+  return YEAR_FORMATTER.format(Math.round(value));
 }
 
 function niceTickStep(span: number, target: number): number {
@@ -183,7 +185,7 @@ export function TimelineView({
               type="button"
               onClick={() => handleNudgeZoom(-1)}
               aria-label="Zoom out"
-              className="focus-ring rounded-full px-2 py-0.5 text-text-muted transition hover:text-text-primary"
+              className="focus-ring inline-flex min-h-9 min-w-9 items-center justify-center rounded-full px-2 py-1.5 text-text-muted transition hover:text-text-primary"
             >
               −
             </button>
@@ -193,7 +195,7 @@ export function TimelineView({
                 type="button"
                 onClick={() => handlePresetZoom(value)}
                 aria-pressed={Math.abs(zoom - value) < 0.01}
-                className={`focus-ring rounded-md px-2.5 py-0.5 text-2xs transition ${
+                className={`focus-ring inline-flex min-h-9 min-w-9 items-center justify-center rounded-md px-2.5 py-1.5 text-2xs transition ${
                   Math.abs(zoom - value) < 0.01
                     ? "bg-[var(--bg-active-strong)] text-text-primary shadow-[var(--shadow-glow)]"
                     : "text-text-muted hover:text-text-primary"
@@ -206,7 +208,7 @@ export function TimelineView({
               type="button"
               onClick={() => handleNudgeZoom(1)}
               aria-label="Zoom in"
-              className="focus-ring rounded-full px-2 py-0.5 text-text-muted transition hover:text-text-primary"
+              className="focus-ring inline-flex min-h-9 min-w-9 items-center justify-center rounded-full px-2 py-1.5 text-text-muted transition hover:text-text-primary"
             >
               +
             </button>
@@ -224,7 +226,7 @@ export function TimelineView({
             disabled={!selectedEventId}
             aria-label="Focus selected event"
             title="Focus selected event"
-            className="focus-ring rounded-[0.55rem] border border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] px-2 py-1 text-text-muted transition hover:text-text-primary disabled:cursor-not-allowed disabled:opacity-40"
+            className="focus-ring inline-flex min-h-9 min-w-9 items-center justify-center rounded-[0.55rem] border border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] px-2 py-1.5 text-text-muted transition hover:text-text-primary disabled:cursor-not-allowed disabled:opacity-40"
           >
             <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4" aria-hidden="true">
               <circle cx="8" cy="8" r="3" />
@@ -239,7 +241,7 @@ export function TimelineView({
             onClick={handleResetWindow}
             aria-label="Reset to full range"
             title="Reset to full range"
-            className="focus-ring rounded-[0.55rem] border border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] px-2 py-1 text-text-muted transition hover:text-text-primary"
+            className="focus-ring inline-flex min-h-9 min-w-9 items-center justify-center rounded-[0.55rem] border border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] px-2 py-1.5 text-text-muted transition hover:text-text-primary"
           >
             <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4" aria-hidden="true">
               <path d="M2 6V2h4M14 6V2h-4M2 10v4h4M14 10v4h-4" />
@@ -319,7 +321,7 @@ export function TimelineView({
                   textAnchor="middle"
                   fill="var(--color-text-secondary)"
                   fontSize={11}
-                  style={{ fontFamily: "var(--font-mono), Consolas, monospace" }}
+                  style={{ fontFamily: "var(--font-mono), Consolas, monospace", fontVariantNumeric: "tabular-nums" }}
                 >
                   {formatYear(year)}
                 </text>
@@ -340,7 +342,6 @@ export function TimelineView({
                 key={event.id}
                 className="cursor-pointer"
                 onClick={() => onSelectEvent(event.id)}
-                tabIndex={0}
                 role="button"
                 aria-label={`${event.title} (year ${event.year})`}
                 onKeyDown={(e) => {
@@ -434,6 +435,8 @@ function Scrubber({
   const [width, setWidth] = useState(900);
   const ref = useRef<HTMLDivElement | null>(null);
   const dragRef = useRef<{ kind: "left" | "right" | "range"; startX: number; startMin: number; startMax: number } | null>(null);
+  const rafRef = useRef<number | null>(null);
+  const pendingWindowRef = useRef<{ min: number; max: number } | null>(null);
 
   useEffect(() => {
     const node = ref.current;
@@ -444,6 +447,15 @@ function Scrubber({
     const observer = new ResizeObserver(update);
     observer.observe(node);
     return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (rafRef.current != null) {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
+      }
+    };
   }, []);
 
   if (!fullWindow) return null;
@@ -457,6 +469,27 @@ function Scrubber({
 
   const leftX = yearToX(window_.min);
   const rightX = yearToX(window_.max);
+
+  const scheduleWindowChange = (next: { min: number; max: number }) => {
+    pendingWindowRef.current = next;
+    if (rafRef.current != null) return;
+    rafRef.current = requestAnimationFrame(() => {
+      rafRef.current = null;
+      const pending = pendingWindowRef.current;
+      pendingWindowRef.current = null;
+      if (pending) onWindowChange(pending);
+    });
+  };
+
+  const flushPending = () => {
+    if (rafRef.current != null) {
+      cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
+    }
+    const pending = pendingWindowRef.current;
+    pendingWindowRef.current = null;
+    if (pending) onWindowChange(pending);
+  };
 
   const startDrag = (kind: "left" | "right" | "range", e: React.PointerEvent) => {
     e.preventDefault();
@@ -488,17 +521,30 @@ function Scrubber({
       nextMin = Math.max(lowerBound, Math.min(upperBound, drag.startMin + deltaYears));
       nextMax = nextMin + span;
     }
-    onWindowChange({ min: Math.round(nextMin), max: Math.round(nextMax) });
+    scheduleWindowChange({ min: Math.round(nextMin), max: Math.round(nextMax) });
   };
 
   const endDrag = (e: React.PointerEvent) => {
     if (!dragRef.current) return;
     dragRef.current = null;
+    flushPending();
     try {
       (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
     } catch {
-      // ignore — capture may have been released
+      // intentionally empty
     }
+  };
+
+  const nudgeLeft = (delta: number) => {
+    const nextMin = Math.max(fullWindow.min, Math.min(window_.max - 1, window_.min + delta));
+    if (nextMin === window_.min) return;
+    onWindowChange({ min: Math.round(nextMin), max: window_.max });
+  };
+
+  const nudgeRight = (delta: number) => {
+    const nextMax = Math.max(window_.min + 1, Math.min(fullWindow.max, window_.max + delta));
+    if (nextMax === window_.max) return;
+    onWindowChange({ min: window_.min, max: Math.round(nextMax) });
   };
 
   return (
@@ -554,6 +600,14 @@ function Scrubber({
           onPointerMove={moveDrag}
           onPointerUp={endDrag}
           ariaLabel="Adjust window start year"
+          valueMin={fullWindow.min}
+          valueMax={window_.max - 1}
+          valueNow={window_.min}
+          onNudge={nudgeLeft}
+          onHomeEnd={(which) => {
+            if (which === "home") onWindowChange({ min: fullWindow.min, max: window_.max });
+            else onWindowChange({ min: window_.max - 1, max: window_.max });
+          }}
         />
         <ScrubberHandle
           x={rightX}
@@ -561,9 +615,17 @@ function Scrubber({
           onPointerMove={moveDrag}
           onPointerUp={endDrag}
           ariaLabel="Adjust window end year"
+          valueMin={window_.min + 1}
+          valueMax={fullWindow.max}
+          valueNow={window_.max}
+          onNudge={nudgeRight}
+          onHomeEnd={(which) => {
+            if (which === "home") onWindowChange({ min: window_.min, max: window_.min + 1 });
+            else onWindowChange({ min: window_.min, max: fullWindow.max });
+          }}
         />
       </svg>
-      <div className="mt-1 flex items-center justify-between text-[0.65rem] uppercase tracking-[0.22em] text-text-muted">
+      <div className="mt-1 flex items-center justify-between text-[0.65rem] uppercase tracking-[0.22em] text-text-muted tabular-nums">
         <span>{formatYear(fullWindow.min)}</span>
         <span>
           {formatYear(window_.min)} – {formatYear(window_.max)}
@@ -574,21 +636,78 @@ function Scrubber({
   );
 }
 
+interface ScrubberHandleProps {
+  x: number;
+  onPointerDown: (e: React.PointerEvent) => void;
+  onPointerMove: (e: React.PointerEvent) => void;
+  onPointerUp: (e: React.PointerEvent) => void;
+  ariaLabel: string;
+  valueMin: number;
+  valueMax: number;
+  valueNow: number;
+  onNudge: (delta: number) => void;
+  onHomeEnd: (which: "home" | "end") => void;
+}
+
 function ScrubberHandle({
   x,
   onPointerDown,
   onPointerMove,
   onPointerUp,
   ariaLabel,
-}: {
-  x: number;
-  onPointerDown: (e: React.PointerEvent) => void;
-  onPointerMove: (e: React.PointerEvent) => void;
-  onPointerUp: (e: React.PointerEvent) => void;
-  ariaLabel: string;
-}) {
+  valueMin,
+  valueMax,
+  valueNow,
+  onNudge,
+  onHomeEnd,
+}: ScrubberHandleProps) {
+  const [focused, setFocused] = useState(false);
+
+  const handleKeyDown = (e: React.KeyboardEvent<SVGGElement>) => {
+    const step = e.shiftKey ? 10 : 1;
+    if (e.key === "ArrowLeft" || e.key === "ArrowDown") {
+      e.preventDefault();
+      onNudge(-step);
+    } else if (e.key === "ArrowRight" || e.key === "ArrowUp") {
+      e.preventDefault();
+      onNudge(step);
+    } else if (e.key === "Home") {
+      e.preventDefault();
+      onHomeEnd("home");
+    } else if (e.key === "End") {
+      e.preventDefault();
+      onHomeEnd("end");
+    }
+  };
+
   return (
-    <g style={{ cursor: "ew-resize" }} role="slider" aria-label={ariaLabel}>
+    <g
+      style={{ cursor: "ew-resize", outline: "none" }}
+      tabIndex={0}
+      role="slider"
+      aria-label={ariaLabel}
+      aria-orientation="horizontal"
+      aria-valuemin={Math.round(valueMin)}
+      aria-valuemax={Math.round(valueMax)}
+      aria-valuenow={Math.round(valueNow)}
+      aria-valuetext={formatYear(valueNow)}
+      onKeyDown={handleKeyDown}
+      onFocus={() => setFocused(true)}
+      onBlur={() => setFocused(false)}
+    >
+      {focused && (
+        <rect
+          x={x - SCRUBBER_HANDLE / 2 - 3}
+          y={5}
+          width={SCRUBBER_HANDLE + 6}
+          height={SCRUBBER_HEIGHT - 10}
+          rx={8}
+          fill="none"
+          stroke="var(--color-accent)"
+          strokeWidth={2}
+          pointerEvents="none"
+        />
+      )}
       <rect
         x={x - SCRUBBER_HANDLE / 2}
         y={8}
@@ -607,7 +726,7 @@ function ScrubberHandle({
         y1={16}
         x2={x}
         y2={SCRUBBER_HEIGHT - 16}
-        stroke="var(--bg-primary)"
+        stroke="var(--color-bg-primary)"
         strokeWidth={1}
         pointerEvents="none"
       />

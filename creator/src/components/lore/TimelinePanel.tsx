@@ -26,15 +26,30 @@ import { TimelineInferencePanel } from "./TimelineInferencePanel";
 
 type ViewMode = "timeline" | "list";
 
-// Solid era anchors — keep parity with TimelineView.tsx ERA_COLORS.
 const ERA_PALETTE = [
-  "#ff9d3d", // ember
-  "#35a1b0", // stellar blue
-  "#d4b66e", // soft gold
-  "#7cb66d", // moss green
-  "#a897d2", // lavender
-  "#6ec0c2", // pale teal
+  "var(--color-status-warning)",
+  "var(--color-stellar-blue)",
+  "#d4b66e",
+  "var(--color-status-success)",
+  "#a897d2",
+  "#6ec0c2",
 ];
+
+function XGlyph() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" aria-hidden="true">
+      <path d="M4 4l8 8M12 4l-8 8" />
+    </svg>
+  );
+}
+
+function PlusGlyph() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" aria-hidden="true">
+      <path d="M8 3v10M3 8h10" />
+    </svg>
+  );
+}
 
 const IMPORTANCE_OPTIONS: Array<{ value: TimelineEvent["importance"]; label: string }> = [
   { value: "minor", label: "Minor" },
@@ -171,10 +186,10 @@ function CalendarEditor({
               onChange={(e) => patchCalendar(calendar.id, { name: e.target.value })}
             />
             <IconButton onClick={() => addEra(calendar.id)} title="Add era">
-              +
+              <span className="flex h-full w-full items-center justify-center"><PlusGlyph /></span>
             </IconButton>
             <IconButton onClick={() => deleteCalendar(calendar.id)} title="Delete calendar" danger>
-              x
+              <span className="flex h-full w-full items-center justify-center"><XGlyph /></span>
             </IconButton>
           </div>
 
@@ -210,7 +225,7 @@ function CalendarEditor({
                   />
                 </label>
                 <IconButton onClick={() => deleteEra(calendar.id, era.id)} title="Delete era" danger>
-                  x
+                  <span className="flex h-full w-full items-center justify-center"><XGlyph /></span>
                 </IconButton>
               </div>
             ))}
@@ -236,6 +251,9 @@ function CalendarEditor({
 
 // ─── Manage Calendars Dialog ──────────────────────────────────────────────
 
+const FOCUSABLE_SELECTOR =
+  'a[href], button:not([disabled]), textarea, input, select, [tabindex]:not([tabindex="-1"])';
+
 function ManageCalendarsDialog({
   open,
   calendars,
@@ -254,9 +272,33 @@ function ManageCalendarsDialog({
     if (!open) return;
     previousFocus.current = (document.activeElement as HTMLElement) ?? null;
     const node = dialogRef.current;
-    node?.focus();
+    const firstFocusable = node?.querySelector<HTMLElement>(FOCUSABLE_SELECTOR);
+    if (firstFocusable) firstFocusable.focus();
+    else node?.focus();
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape") {
+        onClose();
+        return;
+      }
+      if (e.key !== "Tab" || !node) return;
+      const focusables = Array.from(
+        node.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR),
+      ).filter((el) => !el.hasAttribute("disabled"));
+      if (focusables.length === 0) {
+        e.preventDefault();
+        node.focus();
+        return;
+      }
+      const first = focusables[0]!;
+      const last = focusables[focusables.length - 1]!;
+      const active = document.activeElement as HTMLElement | null;
+      if (e.shiftKey && active === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && active === last) {
+        e.preventDefault();
+        first.focus();
+      }
     };
     document.addEventListener("keydown", onKey);
     return () => {
@@ -379,47 +421,42 @@ function FilterRail({
 
       <label className="flex flex-col gap-1.5">
         <span className="text-[0.6rem] uppercase tracking-[0.22em] text-text-muted">Calendar</span>
-        <select
+        <SelectInput
           value={calendarFilter}
-          onChange={(e) => {
-            onCalendarFilter(e.target.value);
+          dense
+          options={[
+            { value: "all", label: "All calendars" },
+            ...calendars.map((c) => ({ value: c.id, label: c.name })),
+          ]}
+          onCommit={(value) => {
+            onCalendarFilter(value);
             onEraFilter(null);
           }}
-          className="ornate-input min-h-9 rounded-[0.55rem] px-3 py-2 text-sm text-text-primary"
-        >
-          <option value="all">All calendars</option>
-          {calendars.map((c) => (
-            <option key={c.id} value={c.id}>{c.name}</option>
-          ))}
-        </select>
+        />
       </label>
 
       <label className="flex flex-col gap-1.5">
         <span className="text-[0.6rem] uppercase tracking-[0.22em] text-text-muted">Era</span>
-        <select
+        <SelectInput
           value={eraFilter ?? ""}
-          onChange={(e) => onEraFilter(e.target.value || null)}
-          className="ornate-input min-h-9 rounded-[0.55rem] px-3 py-2 text-sm text-text-primary"
-          disabled={erasForCalendar.length === 0}
-        >
-          <option value="">All eras</option>
-          {erasForCalendar.map((era) => (
-            <option key={era.id} value={era.id}>{era.name}</option>
-          ))}
-        </select>
+          dense
+          placeholder="All eras"
+          options={erasForCalendar.map((era) => ({ value: era.id, label: era.name }))}
+          onCommit={(value) => onEraFilter(value || null)}
+        />
       </label>
 
       <label className="flex flex-col gap-1.5">
         <span className="text-[0.6rem] uppercase tracking-[0.22em] text-text-muted">Importance</span>
-        <select
+        <SelectInput
           value={importanceFilter}
-          onChange={(e) => onImportanceFilter(e.target.value)}
-          className="ornate-input min-h-9 rounded-[0.55rem] px-3 py-2 text-sm text-text-primary"
-        >
-          {IMPORTANCE_FILTER_OPTIONS.map((option) => (
-            <option key={option.value} value={option.value}>{option.label}</option>
-          ))}
-        </select>
+          dense
+          options={IMPORTANCE_FILTER_OPTIONS.map((option) => ({
+            value: String(option.value),
+            label: option.label,
+          }))}
+          onCommit={(value) => onImportanceFilter(value)}
+        />
       </label>
 
       <div className="flex flex-col gap-2">
@@ -445,7 +482,7 @@ function FilterRail({
         </div>
         <div className="flex flex-wrap gap-1.5">
           <RangeButton onClick={onFullRange}>Full Range</RangeButton>
-          <RangeButton onClick={onSelectedEra} active>Selected Era</RangeButton>
+          <RangeButton onClick={onSelectedEra} disabled={!eraFilter}>Selected Era</RangeButton>
           <RangeButton onClick={onThisEra} disabled={!hasSelected}>This Era</RangeButton>
         </div>
       </div>
@@ -567,7 +604,7 @@ function Chip({
       type="button"
       onClick={onClick}
       aria-pressed={selected}
-      className={`focus-ring rounded-[0.45rem] border px-2.5 py-1 text-2xs transition ${
+      className={`focus-ring inline-flex min-h-9 items-center rounded-[0.45rem] border px-3 py-1.5 text-2xs transition ${
         selected
           ? "border-[var(--border-accent-ring)] bg-[var(--bg-accent-subtle)] text-[var(--color-warm-pale)]"
           : "border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] text-text-muted hover:border-[var(--chrome-stroke-emphasis)] hover:text-text-primary"
@@ -594,7 +631,7 @@ function RangeButton({
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className={`focus-ring rounded-[0.45rem] border px-2.5 py-1 text-2xs transition disabled:cursor-not-allowed disabled:opacity-40 ${
+      className={`focus-ring inline-flex min-h-9 items-center rounded-[0.45rem] border px-3 py-1.5 text-2xs transition disabled:cursor-not-allowed disabled:opacity-40 ${
         active
           ? "border-[var(--border-accent-ring)] bg-[var(--bg-active)] text-text-primary"
           : "border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] text-text-muted hover:border-[var(--chrome-stroke-emphasis)] hover:text-text-primary"
@@ -621,9 +658,11 @@ function CommitTextArea({
   const [draft, setDraft] = useState(value);
   const [focused, setFocused] = useState(false);
 
-  if (!focused && draft !== value) {
-    setDraft(value);
-  }
+  useEffect(() => {
+    if (!focused && draft !== value) {
+      setDraft(value);
+    }
+  }, [focused, value, draft]);
 
   const commit = () => {
     if (draft !== value) onCommit(draft);
@@ -738,9 +777,9 @@ function EventInspector({
           onClick={onClose}
           aria-label="Close inspector"
           title="Close inspector"
-          className="focus-ring rounded-[0.45rem] border border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] px-2 py-0.5 text-2xs text-text-muted transition hover:text-text-primary"
+          className="focus-ring inline-flex min-h-9 min-w-9 items-center justify-center rounded-[0.45rem] border border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] text-text-muted transition hover:text-text-primary"
         >
-          ✕
+          <XGlyph />
         </button>
       </div>
 
@@ -823,9 +862,9 @@ function EventInspector({
                 onClick={() => onUpdate({ articleId: undefined })}
                 title="Unlink article"
                 aria-label="Unlink article"
-                className="focus-ring rounded-[0.45rem] border border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] px-2 py-1 text-2xs text-text-muted transition hover:text-status-error"
+                className="focus-ring inline-flex min-h-9 min-w-9 items-center justify-center rounded-[0.45rem] border border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] text-text-muted transition hover:text-status-error"
               >
-                ✕
+                <XGlyph />
               </button>
             </>
           )}
@@ -914,7 +953,7 @@ const ChronicleEventRow = memo(function ChronicleEventRow({
         }
       }}
       aria-pressed={selected}
-      className={`focus-ring group relative grid w-full grid-cols-[0.8rem_5rem_minmax(0,1fr)] items-center gap-3 rounded-[0.45rem] border px-3 py-2 text-left transition md:grid-cols-[0.8rem_5rem_minmax(0,1fr)_7rem_10rem_1.5rem] ${
+      className={`focus-ring group relative grid w-full grid-cols-[0.8rem_5rem_minmax(0,1fr)] items-center gap-3 rounded-[0.45rem] border px-3 py-2 text-left transition md:grid-cols-[0.8rem_5rem_minmax(0,1fr)_7rem_10rem] ${
         selected
           ? "border-[var(--border-accent-ring)] bg-[linear-gradient(90deg,rgb(var(--accent-rgb)/0.12),rgb(var(--bg-rgb)/0.30))] shadow-[var(--shadow-glow)]"
           : "border-border-muted/18 bg-bg-abyss/18 hover:border-border-muted/45 hover:bg-bg-secondary/22"
@@ -932,9 +971,6 @@ const ChronicleEventRow = memo(function ChronicleEventRow({
       </span>
       <span className="hidden min-w-0 truncate text-xs text-text-muted md:block">
         {entry.calendar?.name ?? "Uncalendared"}
-      </span>
-      <span className="hidden justify-self-end text-lg leading-none text-text-muted md:block">
-        ...
       </span>
     </button>
   );
@@ -968,15 +1004,17 @@ function EventList({
         <div className="flex items-center gap-2">
           <label className="flex items-center gap-1.5 text-2xs text-text-muted">
             Sort by
-            <select
-              value={sortMode}
-              onChange={(e) => setSortMode(e.target.value as "year" | "importance")}
-              className="ornate-input min-h-7 rounded-md px-2 py-0.5 text-2xs text-text-primary"
-              aria-label="Sort chronicle events"
-            >
-              <option value="year">Year</option>
-              <option value="importance">Importance</option>
-            </select>
+            <span className="w-32">
+              <SelectInput
+                value={sortMode}
+                dense
+                options={[
+                  { value: "year", label: "Year" },
+                  { value: "importance", label: "Importance" },
+                ]}
+                onCommit={(value) => setSortMode(value as "year" | "importance")}
+              />
+            </span>
           </label>
         </div>
       </div>
@@ -1273,14 +1311,14 @@ export function TimelinePanel() {
       <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border-muted/45 bg-[radial-gradient(circle_at_top_left,rgb(var(--accent-rgb)/0.10),transparent_38%),linear-gradient(160deg,rgb(var(--bg-rgb)/0.96),rgb(var(--abyss-rgb)/0.94))] px-5 py-3">
         <div className="min-w-0">
           <p className="text-[0.6rem] uppercase tracking-[0.32em] text-[var(--color-warm)]/80">
-            Chronicle · Timeline Editor
+            {headerTitle === "Chronicle" ? "Timeline Editor" : "Chronicle · Timeline Editor"}
           </p>
           <h1 className="mt-1 truncate font-display text-2xl text-text-primary">
             {headerTitle}
           </h1>
         </div>
 
-        <div className="mr-44 flex flex-wrap items-center gap-2">
+        <div className="ml-auto flex flex-wrap items-center gap-2">
           <div className="flex items-center gap-0.5 rounded-[0.7rem] border border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] p-0.5">
             {(["timeline", "list"] as ViewMode[]).map((mode) => (
               <button
@@ -1305,7 +1343,7 @@ export function TimelinePanel() {
             variant={showSuggestions ? "secondary" : "ghost"}
             size="sm"
           >
-            {showSuggestions ? "Hide AI" : "AI Suggest"}
+            {showSuggestions ? "Hide Suggestions" : "AI Suggestions"}
           </ActionButton>
 
           <ActionButton onClick={handleAddEvent} variant="primary" disabled={calendars.length === 0}>

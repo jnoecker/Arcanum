@@ -145,6 +145,20 @@ export function EntityArtGenerator({
   const contextRef = useRef(context);
   contextRef.current = context;
 
+  // Mirror context-shaping props in refs so handleGenerate/handleEnhance can read
+  // the latest values *after* yielding a tick — necessary because commit-on-blur
+  // textareas (e.g. an Appearance field above the panel) commit synchronously
+  // when the user clicks Conjure, but React batches the resulting state update,
+  // leaving these props stale in the click handler's closure.
+  const entityContextRef = useRef(entityContext);
+  entityContextRef.current = entityContext;
+  const framingHintRef = useRef(framingHint);
+  framingHintRef.current = framingHint;
+  const vibeRef = useRef(vibe);
+  vibeRef.current = vibe;
+  const getPromptRef = useRef(getPrompt);
+  getPromptRef.current = getPrompt;
+
   const mountedRef = useRef(false);
   useEffect(() => {
     mountedRef.current = true;
@@ -222,21 +236,26 @@ export function EntityArtGenerator({
 
   const nativeTransparency = modelNativelyTransparent(imageProvider, resolveImageModel(imageProvider, settings?.image_model)?.id);
 
-  const enhancePrompt = async (prompt: string): Promise<string> => {
+  const enhancePromptWith = async (
+    prompt: string,
+    ec: string | undefined,
+    fh: string | undefined,
+    vb: string | undefined,
+  ): Promise<string> => {
     const systemPrompt = getEnhanceSystemPrompt(artStyle, assetType, surface, nativeTransparency);
     const parts: string[] = [];
 
-    if (entityContext) {
-      parts.push(`Generate an image prompt for this entity:\n${entityContext}`);
-      if (vibe) {
-        parts.push(`\nZone atmosphere/vibe:\n${vibe}`);
+    if (ec) {
+      parts.push(`Generate an image prompt for this entity:\n${ec}`);
+      if (vb) {
+        parts.push(`\nZone atmosphere/vibe:\n${vb}`);
       }
-      const reference = framingHint ?? prompt;
+      const reference = fh ?? prompt;
       parts.push(`\nReference framing (format and composition guidance — the entity above defines the subject):\n${reference}`);
     } else {
       parts.push(prompt);
-      if (vibe) {
-        parts.push(`\nZone atmosphere/vibe to weave into the image prompt:\n${vibe}`);
+      if (vb) {
+        parts.push(`\nZone atmosphere/vibe to weave into the image prompt:\n${vb}`);
       }
     }
 
@@ -244,10 +263,23 @@ export function EntityArtGenerator({
     return invoke<string>("llm_complete", { systemPrompt, userPrompt });
   };
 
+  /** Yield one macrotask so any commit-on-blur edits flush into the store
+   *  before we read context props. */
+  const flushPendingCommits = () => new Promise<void>((r) => setTimeout(r, 0));
+
   const handleGenerate = async () => {
     setStage("generating");
     setError(null);
     try {
+      // Let any pending commit-on-blur edits (Appearance, Description, etc.)
+      // flush into the store *before* we read context off our props.
+      await flushPendingCommits();
+      const ec = entityContextRef.current;
+      const fh = framingHintRef.current;
+      const vb = vibeRef.current;
+      const freshBase = getPromptRef.current(artStyle);
+      const promptToUse = editedPrompt ?? freshBase;
+
       const selectedModel = modelOverride === "__custom__"
         ? customModel.trim()
         : modelOverride;
@@ -259,12 +291,12 @@ export function EntityArtGenerator({
         throw new Error(`No models available for provider: ${imageProvider}`);
       }
 
-      let finalPrompt = activePrompt;
+      let finalPrompt = promptToUse;
       if (enhanced) {
-        setLastEnhancedPrompt(activePrompt);
+        setLastEnhancedPrompt(promptToUse);
       } else if (hasLlmKey) {
         try {
-          finalPrompt = await enhancePrompt(activePrompt);
+          finalPrompt = await enhancePromptWith(promptToUse, ec, fh, vb);
           setLastEnhancedPrompt(finalPrompt);
         } catch {
           // Fall back to base prompt if LLM fails
@@ -305,7 +337,13 @@ export function EntityArtGenerator({
     setEnhancing(true);
     setError(null);
     try {
-      const enhancedText = await enhancePrompt(activePrompt);
+      await flushPendingCommits();
+      const ec = entityContextRef.current;
+      const fh = framingHintRef.current;
+      const vb = vibeRef.current;
+      const freshBase = getPromptRef.current(artStyle);
+      const promptToEnhance = editedPrompt ?? freshBase;
+      const enhancedText = await enhancePromptWith(promptToEnhance, ec, fh, vb);
       setEditedPrompt(enhancedText);
       setEnhanced(true);
     } catch (e) {
@@ -725,12 +763,8 @@ function HeroCanvas({
         className="art-hero art-hero--gen"
         style={{ "--art-hero-aspect": heroAspect } as React.CSSProperties}
       >
-        <div className="art-hero__gen-grid">
-          {[0, 1, 2, 3].map((i) => (
-            <div key={i} className="art-hero__gen-tile" style={{ animationDelay: `${i * 0.18}s` }}>
-              <div className="art-hero__gen-shimmer" />
-            </div>
-          ))}
+        <div className="art-hero__gen-pane">
+          <div className="art-hero__gen-shimmer" />
         </div>
         <div className="art-hero__gen-readout">
           <span className="art-hero__gen-orb" />

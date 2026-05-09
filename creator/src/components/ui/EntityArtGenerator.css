@@ -217,21 +217,14 @@
   gap: 10px;
 }
 
-.art-hero__gen-grid {
+.art-hero__gen-pane {
   flex: 1;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  grid-template-rows: 1fr 1fr;
-  gap: 10px;
-  min-height: 0;
-}
-
-.art-hero__gen-tile {
   position: relative;
   border-radius: 8px;
   background: rgb(var(--abyss-rgb) / 0.6);
   border: 1px solid var(--chrome-stroke);
   overflow: hidden;
+  min-height: 0;
   animation: art-gen-breathe 2.4s var(--ease-cosmic) infinite;
 }
 

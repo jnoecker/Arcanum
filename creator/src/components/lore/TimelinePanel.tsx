@@ -29,10 +29,10 @@ type ViewMode = "timeline" | "list";
 const ERA_PALETTE = [
   "var(--color-status-warning)",
   "var(--color-stellar-blue)",
-  "#d4b66e",
+  "var(--color-aurum)",
   "var(--color-status-success)",
-  "#a897d2",
-  "#6ec0c2",
+  "var(--color-era-violet)",
+  "var(--color-era-teal)",
 ];
 
 function XGlyph() {
@@ -75,8 +75,8 @@ function parseYearInput(value: string): number | undefined {
 function importanceClasses(importance: TimelineEvent["importance"]) {
   if (importance === "legendary") {
     return {
-      dot: "bg-[#d4b66e] shadow-[0_0_18px_rgb(212_182_110/0.34)]",
-      pill: "border-[#d4b66e]/45 bg-[#d4b66e]/15 text-[#f4d98b]",
+      dot: "bg-[var(--color-aurum)] shadow-[0_0_18px_rgb(var(--aurum-rgb)/0.34)]",
+      pill: "border-[rgb(var(--aurum-rgb)/0.45)] bg-[rgb(var(--aurum-rgb)/0.15)] text-[var(--color-aurum-pale)]",
     };
   }
   if (importance === "major") {

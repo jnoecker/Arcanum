@@ -317,7 +317,7 @@ function DefinitionsList({
                   className={cx(
                     "focus-ring flex w-full items-center gap-2 rounded-lg border px-2 py-1.5 text-left transition",
                     isSelected
-                      ? "border-accent/60 bg-accent/[0.07] shadow-[0_0_18px_-10px_rgb(var(--accent-rgb)/0.7)]"
+                      ? "selected-pill"
                       : "border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] hover:border-accent/30 hover:bg-[var(--chrome-fill)]",
                   )}
                 >

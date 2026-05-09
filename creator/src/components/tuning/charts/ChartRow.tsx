@@ -16,11 +16,14 @@ interface ChartRowProps {
   presetConfig: AppConfig;
   currentMetrics: MetricSnapshot;
   presetMetrics: MetricSnapshot;
+  /** When true, drop outer padding/margins — parent owns the frame. */
+  nested?: boolean;
 }
 
 export function ChartRow({
   currentConfig,
   presetConfig,
+  nested = false,
 }: ChartRowProps) {
   const xpCurveData = useMemo(
     () => buildXpCurveData(currentConfig, presetConfig),
@@ -32,11 +35,15 @@ export function ChartRow({
     [currentConfig, presetConfig],
   );
 
+  const wrapperClass = nested
+    ? "grid grid-cols-1 gap-4 lg:grid-cols-2 2xl:grid-cols-3"
+    : "animate-unfurl-in mb-4 mt-4 grid grid-cols-1 gap-4 px-6 lg:grid-cols-2 2xl:grid-cols-3";
+
   return (
-    <div className="animate-unfurl-in mb-4 mt-4 grid grid-cols-1 gap-4 px-6 lg:grid-cols-2 2xl:grid-cols-3">
-      <XpCurveChart data={xpCurveData} />
-      <MobTierChart currentConfig={presetConfig} />
-      <StatRadarChart data={statRadarData} />
+    <div className={wrapperClass}>
+      <XpCurveChart data={xpCurveData} nested={nested} />
+      <MobTierChart currentConfig={presetConfig} nested={nested} />
+      <StatRadarChart data={statRadarData} nested={nested} />
     </div>
   );
 }

@@ -112,21 +112,42 @@ export function ParameterRow({
     );
   } else if (isNumeric && onValueChange) {
     const displayStr = editingValue !== null ? editingValue : String(currentValue);
+    const isEditing = editingValue !== null;
     valueCell = (
-      <input
-        type="text"
-        inputMode="decimal"
-        value={displayStr}
-        onChange={(e) => setEditingValue(e.target.value)}
-        onBlur={(e) => commitNumericEdit(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === "Enter") commitNumericEdit((e.target as HTMLInputElement).value);
-          if (e.key === "Escape") setEditingValue(null);
-        }}
-        onFocus={() => setEditingValue(String(currentValue))}
-        aria-label={`Edit ${meta.label}`}
-        className="min-h-11 w-full rounded bg-transparent px-1.5 py-0.5 text-right font-mono text-sm text-text-secondary outline-none ring-1 ring-transparent transition-colors hover:ring-[var(--chrome-stroke-strong)] focus:ring-accent/50"
-      />
+      <span className="group/value relative flex items-center justify-end">
+        <input
+          type="text"
+          inputMode="decimal"
+          value={displayStr}
+          onChange={(e) => setEditingValue(e.target.value)}
+          onBlur={(e) => commitNumericEdit(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") commitNumericEdit((e.target as HTMLInputElement).value);
+            if (e.key === "Escape") setEditingValue(null);
+          }}
+          onFocus={() => setEditingValue(String(currentValue))}
+          aria-label={`Edit ${meta.label}`}
+          className={`min-h-11 w-full rounded bg-transparent px-1.5 py-0.5 pr-5 text-right font-mono text-sm text-text-secondary outline-none transition-colors hover:bg-bg-hover/40 group-hover/value:border-[var(--chrome-stroke-strong)] focus:border-transparent focus:ring-1 focus:ring-accent/50 ${
+            isEditing
+              ? "border border-transparent"
+              : "border-b border-dotted border-[var(--chrome-stroke)]"
+          }`}
+        />
+        {/* Pencil glyph — persistent on hover, muted opacity until then. */}
+        <svg
+          aria-hidden="true"
+          viewBox="0 0 16 16"
+          className="pointer-events-none absolute right-1 h-3 w-3 text-text-muted opacity-0 transition-opacity duration-150 group-hover/value:opacity-70"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.4"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="M11.5 1.5l3 3-9 9H2.5v-3l9-9z" />
+          <path d="M10 3l3 3" />
+        </svg>
+      </span>
     );
   } else {
     valueCell = (

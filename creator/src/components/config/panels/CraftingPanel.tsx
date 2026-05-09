@@ -72,94 +72,123 @@ export function CraftingPanel({ config, onChange }: ConfigPanelProps) {
 
   return (
     <>
-      <Section
-        title="Skill Progression"
-        description="Crafting skills level independently from character level. The XP formula is: XP(level) = baseXp * level^exponent. Higher exponents make mastery take significantly longer, rewarding dedicated crafters."
-      >
-        <div className="flex flex-col gap-1.5">
-          <FieldRow label="Max Skill Level" hint="Cap for all crafting skills. 100 is the classic 'mastery' target. Lower values (e.g. 50) make crafting easier to max out.">
-            <NumberInput
-              value={c.maxSkillLevel}
-              onCommit={(v) => patch({ maxSkillLevel: v ?? 100 })}
-              min={1}
-            />
-          </FieldRow>
-          <FieldRow label="Base XP / Level" hint="XP constant in the skill-up formula. Higher values make each level take longer. 50 is a moderate pace.">
-            <NumberInput
-              value={c.baseXpPerLevel}
-              onCommit={(v) => patch({ baseXpPerLevel: v ?? 50 })}
-              min={1}
-            />
-          </FieldRow>
-          <FieldRow label="XP Exponent" hint="Growth rate of XP requirements. 1.0 = linear (every level takes the same effort). 1.5 = moderate curve. 2.0+ = steep late-game grind.">
-            <NumberInput
-              value={c.xpExponent}
-              onCommit={(v) => patch({ xpExponent: v ?? 1.5 })}
-              min={1}
-              step={0.1}
-            />
-          </FieldRow>
+      <div className="relative overflow-hidden rounded-xl border border-border-muted/50 bg-gradient-panel-light px-4 py-3">
+        <div className="flourish-top-thread pointer-events-none absolute inset-x-6 top-0 h-px" />
+        <p className="font-body text-sm leading-snug text-text-muted">
+          <span className="text-text-primary">Recipes are defined per-zone in the Zone Builder.</span>{" "}
+          This panel governs the systems they slot into.
+        </p>
+      </div>
+
+      <div className="ornate-divider" aria-hidden="true" />
+
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <div className="flex flex-col gap-3">
+          <h3 className="font-display text-lg uppercase tracking-wide-ui text-text-primary">
+            Tuning
+          </h3>
+          <Section
+            title="Skill Progression"
+            description="Crafting skills level independently from character level. The XP formula is: XP(level) = baseXp * level^exponent. Higher exponents make mastery take significantly longer, rewarding dedicated crafters."
+          >
+            <div className="flex flex-col gap-1.5">
+              <FieldRow label="Max Skill Level" hint="Cap for all crafting skills. 100 is the classic 'mastery' target. Lower values (e.g. 50) make crafting easier to max out.">
+                <NumberInput
+                  value={c.maxSkillLevel}
+                  onCommit={(v) => patch({ maxSkillLevel: v ?? 100 })}
+                  min={1}
+                />
+              </FieldRow>
+              <FieldRow label="Base XP / Level" hint="XP constant in the skill-up formula. Higher values make each level take longer. 50 is a moderate pace.">
+                <NumberInput
+                  value={c.baseXpPerLevel}
+                  onCommit={(v) => patch({ baseXpPerLevel: v ?? 50 })}
+                  min={1}
+                />
+              </FieldRow>
+              <FieldRow label="XP Exponent" hint="Growth rate of XP requirements. 1.0 = linear (every level takes the same effort). 1.5 = moderate curve. 2.0+ = steep late-game grind.">
+                <NumberInput
+                  value={c.xpExponent}
+                  onCommit={(v) => patch({ xpExponent: v ?? 1.5 })}
+                  min={1}
+                  step={0.1}
+                />
+              </FieldRow>
+            </div>
+          </Section>
+
+          <Section
+            title="Gathering"
+            description="Controls the resource-gathering loop. Gathering cooldown determines how often players can harvest nodes, while the station bonus rewards players who craft at dedicated stations rather than in the field."
+          >
+            <div className="flex flex-col gap-1.5">
+              <FieldRow label="Cooldown (ms)" hint="Delay between gathering attempts on the same node. 3000ms (3s) feels responsive. Higher values (10000+) make gathering a slower, more deliberate activity.">
+                <NumberInput
+                  value={c.gatherCooldownMs}
+                  onCommit={(v) => patch({ gatherCooldownMs: v ?? 3000 })}
+                  min={0}
+                />
+              </FieldRow>
+              <FieldRow label="Station Bonus" hint="Extra items yielded when gathering at a crafting station vs. in the field. 1 = one bonus item. Set to 0 to remove the station advantage.">
+                <NumberInput
+                  value={c.stationBonusQuantity}
+                  onCommit={(v) => patch({ stationBonusQuantity: v ?? 1 })}
+                  min={0}
+                />
+              </FieldRow>
+              <FieldRow label="Specialization XP Bonus" hint="Fractional XP bonus for a player's specialized crafting skill. 0.25 = +25% XP.">
+                <NumberInput
+                  value={c.specializationXpBonus}
+                  onCommit={(v) => patch({ specializationXpBonus: v })}
+                  placeholder="0.25"
+                  min={0}
+                  step={0.05}
+                />
+              </FieldRow>
+            </div>
+          </Section>
         </div>
-      </Section>
 
-      <Section
-        title="Gathering"
-        description="Controls the resource-gathering loop. Gathering cooldown determines how often players can harvest nodes, while the station bonus rewards players who craft at dedicated stations rather than in the field."
-      >
-        <div className="flex flex-col gap-1.5">
-          <FieldRow label="Cooldown (ms)" hint="Delay between gathering attempts on the same node. 3000ms (3s) feels responsive. Higher values (10000+) make gathering a slower, more deliberate activity.">
-            <NumberInput
-              value={c.gatherCooldownMs}
-              onCommit={(v) => patch({ gatherCooldownMs: v ?? 3000 })}
-              min={0}
+        <div className="flex flex-col gap-3">
+          <h3 className="font-display text-lg uppercase tracking-wide-ui text-text-primary">
+            Registries
+          </h3>
+
+          <div className="relative overflow-hidden rounded-xl border border-border-muted/50 bg-gradient-panel-light">
+            <div className="flourish-top-thread pointer-events-none absolute inset-x-6 top-0 h-px" />
+            <RegistryPanel<CraftingSkillDefinition>
+              title="Crafting Skills"
+              items={config.craftingSkills}
+              onItemsChange={(craftingSkills) => onChange({ craftingSkills })}
+              placeholder="New skill"
+              idTransform={(raw) => raw.trim().toLowerCase().replace(/\s+/g, "_")}
+              getDisplayName={(s) => s.displayName}
+              defaultItem={defaultCraftingSkillDefinition}
+              renderSummary={(_id, s) => summarizeCraftingSkill(s)}
+              renderDetail={(_id, s, patch) => (
+                <CraftingSkillDetail skill={s} patch={patch} />
+              )}
             />
-          </FieldRow>
-          <FieldRow label="Station Bonus" hint="Extra items yielded when gathering at a crafting station vs. in the field. 1 = one bonus item. Set to 0 to remove the station advantage.">
-            <NumberInput
-              value={c.stationBonusQuantity}
-              onCommit={(v) => patch({ stationBonusQuantity: v ?? 1 })}
-              min={0}
+          </div>
+
+          <div className="relative overflow-hidden rounded-xl border border-border-muted/50 bg-gradient-panel-light">
+            <div className="flourish-top-thread pointer-events-none absolute inset-x-6 top-0 h-px" />
+            <RegistryPanel<CraftingStationTypeDefinition>
+              title="Station Types"
+              items={config.craftingStationTypes}
+              onItemsChange={(craftingStationTypes) => onChange({ craftingStationTypes })}
+              placeholder="New station type"
+              idTransform={(raw) => raw.trim().toLowerCase().replace(/\s+/g, "_")}
+              getDisplayName={(s) => s.displayName}
+              defaultItem={defaultCraftingStationTypeDefinition}
+              renderSummary={summarizeCraftingStationType}
+              renderDetail={(_id, s, patch) => (
+                <CraftingStationTypeDetail stationType={s} patch={patch} />
+              )}
             />
-          </FieldRow>
-          <FieldRow label="Specialization XP Bonus" hint="Fractional XP bonus for a player's specialized crafting skill. 0.25 = +25% XP.">
-            <NumberInput
-              value={c.specializationXpBonus}
-              onCommit={(v) => patch({ specializationXpBonus: v })}
-              placeholder="0.25"
-              min={0}
-              step={0.05}
-            />
-          </FieldRow>
+          </div>
         </div>
-      </Section>
-
-      <RegistryPanel<CraftingSkillDefinition>
-        title="Crafting Skills"
-        items={config.craftingSkills}
-        onItemsChange={(craftingSkills) => onChange({ craftingSkills })}
-        placeholder="New skill"
-        idTransform={(raw) => raw.trim().toLowerCase().replace(/\s+/g, "_")}
-        getDisplayName={(s) => s.displayName}
-        defaultItem={defaultCraftingSkillDefinition}
-        renderSummary={(_id, s) => summarizeCraftingSkill(s)}
-        renderDetail={(_id, s, patch) => (
-          <CraftingSkillDetail skill={s} patch={patch} />
-        )}
-      />
-
-      <RegistryPanel<CraftingStationTypeDefinition>
-        title="Station Types"
-        items={config.craftingStationTypes}
-        onItemsChange={(craftingStationTypes) => onChange({ craftingStationTypes })}
-        placeholder="New station type"
-        idTransform={(raw) => raw.trim().toLowerCase().replace(/\s+/g, "_")}
-        getDisplayName={(s) => s.displayName}
-        defaultItem={defaultCraftingStationTypeDefinition}
-        renderSummary={summarizeCraftingStationType}
-        renderDetail={(_id, s, patch) => (
-          <CraftingStationTypeDetail stationType={s} patch={patch} />
-        )}
-      />
+      </div>
     </>
   );
 }

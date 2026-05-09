@@ -36,18 +36,15 @@ export function EnchantmentEditor({
 }: EnchantmentEditorProps) {
   return (
     <div className="flex flex-col gap-4">
-      <IdentityCard id={id} def={def} onPatch={onPatch} onRename={onRename} />
-
-      <RequirementsCard
+      <IdentityRequirementsCard
+        id={id}
         def={def}
         craftingSkillOptions={craftingSkillOptions}
         onPatch={onPatch}
+        onRename={onRename}
       />
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <BonusesCard def={def} onPatch={onPatch} />
-        <StatBonusesCard def={def} statOptions={statOptions} onPatch={onPatch} />
-      </div>
+      <EffectsCard def={def} statOptions={statOptions} onPatch={onPatch} />
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <SlotCompatibilityCard
@@ -61,33 +58,72 @@ export function EnchantmentEditor({
   );
 }
 
-// ─── Identity ──────────────────────────────────────────────────────
+// ─── Identity + Requirements (Primary) ─────────────────────────────
 
-function IdentityCard({
+function IdentityRequirementsCard({
   id,
   def,
+  craftingSkillOptions,
   onPatch,
   onRename,
 }: {
   id: string;
   def: EnchantmentDefinitionConfig;
+  craftingSkillOptions: { value: string; label: string }[];
   onPatch: (p: Partial<EnchantmentDefinitionConfig>) => void;
   onRename: (v: string) => void;
 }) {
   return (
-    <Section title="Identity">
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-        <Field label="Display Name" hint="The name players will see.">
-          <TextInput
-            value={def.displayName}
-            onCommit={(v) => onPatch({ displayName: v })}
-            placeholder="Runes of Warding"
-            dense
-          />
-        </Field>
-        <Field label="Internal ID" hint="Unique identifier used by the system.">
-          <SlugRenamer id={id} onRename={onRename} />
-        </Field>
+    <Section
+      tier="primary"
+      title="Identity & Requirements"
+      description="Name, slug, and the discipline that gates this inscription."
+    >
+      <div className="flex flex-col gap-4">
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+          <Field label="Display Name" hint="The name players will see.">
+            <TextInput
+              value={def.displayName}
+              onCommit={(v) => onPatch({ displayName: v })}
+              placeholder="Runes of Warding"
+              dense
+            />
+          </Field>
+          <Field label="Internal ID" hint="Unique identifier used by the system.">
+            <SlugRenamer id={id} onRename={onRename} />
+          </Field>
+        </div>
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+          <Field
+            label="Crafting Skill"
+            hint="Which discipline trains and gates this inscription."
+          >
+            <SelectInput
+              value={def.skill}
+              onCommit={(v) => onPatch({ skill: v })}
+              options={craftingSkillOptions}
+              allowEmpty
+              placeholder="Enchanting"
+              dense
+            />
+          </Field>
+          <Field label="Skill Required" hint="Minimum skill level to attempt.">
+            <NumberInput
+              value={def.skillRequired}
+              onCommit={(v) => onPatch({ skillRequired: v ?? 1 })}
+              min={1}
+              dense
+            />
+          </Field>
+          <Field label="XP Reward" hint="XP granted on successful craft.">
+            <NumberInput
+              value={def.xpReward}
+              onCommit={(v) => onPatch({ xpReward: v ?? 30 })}
+              min={0}
+              dense
+            />
+          </Field>
+        </div>
       </div>
     </Section>
   );
@@ -125,100 +161,9 @@ function SlugRenamer({ id, onRename }: { id: string; onRename: (v: string) => vo
   );
 }
 
-// ─── Requirements ──────────────────────────────────────────────────
+// ─── Effects (Bonuses + Stat Bonuses, Secondary) ───────────────────
 
-function RequirementsCard({
-  def,
-  craftingSkillOptions,
-  onPatch,
-}: {
-  def: EnchantmentDefinitionConfig;
-  craftingSkillOptions: { value: string; label: string }[];
-  onPatch: (p: Partial<EnchantmentDefinitionConfig>) => void;
-}) {
-  return (
-    <Section
-      title="Requirements"
-      description="What's needed to learn and apply this inscription."
-    >
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-        <Field
-          label="Crafting Skill"
-          hint="Which discipline trains and gates this inscription."
-        >
-          <SelectInput
-            value={def.skill}
-            onCommit={(v) => onPatch({ skill: v })}
-            options={craftingSkillOptions}
-            allowEmpty
-            placeholder="Enchanting"
-            dense
-          />
-        </Field>
-        <Field label="Skill Required" hint="Minimum skill level to attempt.">
-          <NumberInput
-            value={def.skillRequired}
-            onCommit={(v) => onPatch({ skillRequired: v ?? 1 })}
-            min={1}
-            dense
-          />
-        </Field>
-        <Field label="XP Reward" hint="XP granted on successful craft.">
-          <NumberInput
-            value={def.xpReward}
-            onCommit={(v) => onPatch({ xpReward: v ?? 30 })}
-            min={0}
-            dense
-          />
-        </Field>
-      </div>
-    </Section>
-  );
-}
-
-// ─── Bonuses ──────────────────────────────────────────────────────
-
-function BonusesCard({
-  def,
-  onPatch,
-}: {
-  def: EnchantmentDefinitionConfig;
-  onPatch: (p: Partial<EnchantmentDefinitionConfig>) => void;
-}) {
-  return (
-    <Section
-      title="Bonuses"
-      description="Flat bonuses granted to the enchanted item."
-    >
-      <div className="grid grid-cols-2 gap-3">
-        <Field label="Damage Bonus" hint="Flat damage added to weapon hits.">
-          <NumberInput
-            value={def.damageBonus ?? 0}
-            onCommit={(v) =>
-              onPatch({ damageBonus: v && v > 0 ? v : undefined })
-            }
-            min={0}
-            dense
-          />
-        </Field>
-        <Field label="Armor Bonus" hint="Flat armor added to the equipped piece.">
-          <NumberInput
-            value={def.armorBonus ?? 0}
-            onCommit={(v) =>
-              onPatch({ armorBonus: v && v > 0 ? v : undefined })
-            }
-            min={0}
-            dense
-          />
-        </Field>
-      </div>
-    </Section>
-  );
-}
-
-// ─── Stat Bonuses ──────────────────────────────────────────────────
-
-function StatBonusesCard({
+function EffectsCard({
   def,
   statOptions,
   onPatch,
@@ -251,69 +196,107 @@ function StatBonusesCard({
 
   return (
     <Section
-      title="Stat Bonuses"
-      description="Attribute buffs granted while equipped."
+      tier="secondary"
+      title="Effects"
+      description="What this inscription does to the item it lands on."
     >
-      {entries.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-[var(--chrome-stroke-strong)] bg-[var(--chrome-fill-soft)] px-3 py-5 text-center">
-          <p className="mb-2 text-2xs text-text-muted/80">
-            No stat bonuses added yet.
-          </p>
-          <button
-            type="button"
-            onClick={addStat}
-            disabled={allUsed}
-            className="focus-ring inline-flex items-center gap-1 rounded-lg border border-accent/40 bg-accent/10 px-3 py-1.5 text-2xs font-medium text-accent transition hover:bg-accent/20 disabled:cursor-not-allowed disabled:opacity-40"
-          >
-            <PlusIcon />
-            Add Stat Bonus
-          </button>
+      <div className="flex flex-col gap-3">
+        <div>
+          <h4 className="mb-2 font-display text-2xs font-semibold uppercase tracking-[0.18em] text-text-muted">
+            Flat Bonuses
+          </h4>
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Damage Bonus" hint="Flat damage added to weapon hits.">
+              <NumberInput
+                value={def.damageBonus ?? 0}
+                onCommit={(v) =>
+                  onPatch({ damageBonus: v && v > 0 ? v : undefined })
+                }
+                min={0}
+                dense
+              />
+            </Field>
+            <Field label="Armor Bonus" hint="Flat armor added to the equipped piece.">
+              <NumberInput
+                value={def.armorBonus ?? 0}
+                onCommit={(v) =>
+                  onPatch({ armorBonus: v && v > 0 ? v : undefined })
+                }
+                min={0}
+                dense
+              />
+            </Field>
+          </div>
         </div>
-      ) : (
-        <div className="flex flex-col gap-1.5">
-          {entries.map(([stat, val]) => (
-            <div
-              key={stat}
-              className="flex items-center gap-2 rounded-lg border border-violet/25 bg-violet/[0.06] px-2 py-1.5"
-            >
-              <div className="min-w-0 flex-1">
-                <SelectInput
-                  value={stat}
-                  onCommit={(v) => updateStat(stat, v, val)}
-                  options={statOptions}
-                  dense
-                />
-              </div>
-              <div className="w-16 shrink-0">
-                <NumberInput
-                  value={val}
-                  onCommit={(v) => updateStat(stat, stat, v ?? 1)}
-                  min={1}
-                  dense
-                />
-              </div>
+
+        <div className="ornate-divider" aria-hidden="true" />
+
+        <div>
+          <h4 className="mb-2 font-display text-2xs font-semibold uppercase tracking-[0.18em] text-text-muted">
+            Stat Bonuses
+          </h4>
+          {entries.length === 0 ? (
+            <div className="rounded-xl border border-dashed border-[var(--chrome-stroke-strong)] bg-[var(--chrome-fill-soft)] px-3 py-5 text-center">
+              <p className="mb-2 text-2xs text-text-muted/80">
+                No stat bonuses added yet.
+              </p>
               <button
                 type="button"
-                onClick={() => removeStat(stat)}
-                aria-label="Remove stat bonus"
-                className="focus-ring inline-flex h-7 w-7 items-center justify-center rounded text-text-muted/60 transition hover:bg-status-error/15 hover:text-status-error"
+                onClick={addStat}
+                disabled={allUsed}
+                className="focus-ring inline-flex items-center gap-1 rounded-lg border border-accent/40 bg-accent/10 px-3 py-1.5 text-2xs font-medium text-accent transition hover:bg-accent/20 disabled:cursor-not-allowed disabled:opacity-40"
               >
-                <XIcon className="h-3 w-3" />
+                <PlusIcon />
+                Add Stat Bonus
               </button>
             </div>
-          ))}
-          {!allUsed && (
-            <button
-              type="button"
-              onClick={addStat}
-              className="focus-ring mt-1 inline-flex items-center justify-center gap-1 rounded-lg border border-dashed border-accent/40 bg-transparent px-3 py-1.5 text-2xs font-medium text-accent transition hover:bg-accent/10"
-            >
-              <PlusIcon />
-              Add Stat Bonus
-            </button>
+          ) : (
+            <div className="flex flex-col gap-1.5">
+              {entries.map(([stat, val]) => (
+                <div
+                  key={stat}
+                  className="flex items-center gap-2 rounded-lg border border-violet/25 bg-violet/[0.06] px-2 py-1.5"
+                >
+                  <div className="min-w-0 flex-1">
+                    <SelectInput
+                      value={stat}
+                      onCommit={(v) => updateStat(stat, v, val)}
+                      options={statOptions}
+                      dense
+                    />
+                  </div>
+                  <div className="w-16 shrink-0">
+                    <NumberInput
+                      value={val}
+                      onCommit={(v) => updateStat(stat, stat, v ?? 1)}
+                      min={1}
+                      dense
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => removeStat(stat)}
+                    aria-label="Remove stat bonus"
+                    className="focus-ring inline-flex h-7 w-7 items-center justify-center rounded text-text-muted/60 transition hover:bg-status-error/15 hover:text-status-error"
+                  >
+                    <XIcon className="h-3 w-3" />
+                  </button>
+                </div>
+              ))}
+              {!allUsed && (
+                <button
+                  type="button"
+                  onClick={addStat}
+                  className="focus-ring mt-1 inline-flex items-center justify-center gap-1 rounded-lg border border-dashed border-accent/40 bg-transparent px-3 py-1.5 text-2xs font-medium text-accent transition hover:bg-accent/10"
+                >
+                  <PlusIcon />
+                  Add Stat Bonus
+                </button>
+              )}
+            </div>
           )}
         </div>
-      )}
+      </div>
     </Section>
   );
 }
@@ -345,6 +328,7 @@ function SlotCompatibilityCard({
 
   return (
     <Section
+      tier="ghost"
       title="Slot Compatibility"
       description="Where the inscription can land."
     >
@@ -421,6 +405,7 @@ function MaterialsCard({
 
   return (
     <Section
+      tier="ghost"
       title="Materials Consumed"
       description="Items burned each time this enchantment is applied."
     >

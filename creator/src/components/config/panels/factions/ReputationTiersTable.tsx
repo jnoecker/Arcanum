@@ -1,6 +1,6 @@
 import type { ReputationTier } from "@/types/config";
 import { DEFAULT_REPUTATION_TIERS } from "@/types/config";
-import { TextInput, NumberInput } from "@/components/ui/FormWidgets";
+import { ActionButton, TextInput, NumberInput } from "@/components/ui/FormWidgets";
 import { SectionCard } from "./SectionCard";
 import { GripIcon, PlusIcon, TrashIcon } from "./icons";
 
@@ -52,22 +52,14 @@ export function ReputationTiersTable({ tiers, onChange }: ReputationTiersTablePr
       actions={
         <div className="flex items-center gap-1.5">
           {!isDefault && (
-            <button
-              type="button"
-              onClick={resetToDefaults}
-              className="focus-ring rounded-lg border border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] px-2 py-1 text-2xs text-text-muted transition hover:border-accent/30 hover:text-text-primary"
-            >
+            <ActionButton variant="ghost" size="sm" onClick={resetToDefaults}>
               Reset
-            </button>
+            </ActionButton>
           )}
-          <button
-            type="button"
-            onClick={addTier}
-            className="focus-ring inline-flex items-center gap-1 rounded-lg border border-accent/40 bg-accent/10 px-2.5 py-1 text-2xs font-medium text-accent transition hover:bg-accent/20"
-          >
+          <ActionButton variant="primary" size="sm" onClick={addTier}>
             <PlusIcon />
-            Add tier
-          </button>
+            Add Tier
+          </ActionButton>
         </div>
       }
     >

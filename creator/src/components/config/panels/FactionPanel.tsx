@@ -246,31 +246,26 @@ export function FactionPanel() {
         )}
       </div>
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
-        <div className="lg:col-span-5">
-          <ReputationTiersTable
-            tiers={factions.tiers}
-            onChange={(tiers) => patch({ tiers })}
-          />
-        </div>
-        <div className="lg:col-span-3">
-          <RivalryMap
-            definitions={factions.definitions}
-            factionLabelMap={factionLabelMap}
-          />
-        </div>
-        <div className="lg:col-span-4">
-          <QuestRewards
-            questRewards={factions.questRewards}
-            factionOptions={factionOptions}
-            newQuestId={newQuestId}
-            onNewQuestIdChange={setNewQuestId}
-            onAddQuest={addQuestReward}
-            onPatchPair={patchQuestReward}
-            onRenameQuest={renameQuestReward}
-            onDeleteQuest={deleteQuestReward}
-          />
-        </div>
+      <RivalryMap
+        definitions={factions.definitions}
+        factionLabelMap={factionLabelMap}
+      />
+
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <ReputationTiersTable
+          tiers={factions.tiers}
+          onChange={(tiers) => patch({ tiers })}
+        />
+        <QuestRewards
+          questRewards={factions.questRewards}
+          factionOptions={factionOptions}
+          newQuestId={newQuestId}
+          onNewQuestIdChange={setNewQuestId}
+          onAddQuest={addQuestReward}
+          onPatchPair={patchQuestReward}
+          onRenameQuest={renameQuestReward}
+          onDeleteQuest={deleteQuestReward}
+        />
       </div>
     </div>
   );

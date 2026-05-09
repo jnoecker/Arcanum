@@ -24,14 +24,23 @@ interface SimulationLabProps {
   activeConfig: AppConfig;
   /** Whether a preset is currently highlighted. */
   hasPresetSelected: boolean;
+  /** When true, drop outer padding/margins — parent owns the frame. */
+  nested?: boolean;
 }
 
-export function SimulationLab({ activeConfig, hasPresetSelected }: SimulationLabProps) {
+export function SimulationLab({ activeConfig, hasPresetSelected, nested = false }: SimulationLabProps) {
   const [tab, setTab] = useState<SimTab>("combat");
 
+  const sectionClass = nested
+    ? "w-full"
+    : "animate-unfurl-in mx-auto mb-6 w-full max-w-6xl px-6";
+  const innerClass = nested
+    ? "rounded-[1.25rem] border border-border-muted bg-bg-secondary/30 p-5"
+    : "panel-surface rounded-[1.5rem] p-5";
+
   return (
-    <section className="animate-unfurl-in mx-auto mb-6 w-full max-w-6xl px-6">
-      <div className="panel-surface rounded-[1.5rem] p-5">
+    <section className={sectionClass}>
+      <div className={innerClass}>
         <div className="mb-4 flex flex-wrap items-baseline justify-between gap-2">
           <div>
             <h3 className="font-display text-[14px] font-normal uppercase tracking-[0.5px] text-text-secondary">

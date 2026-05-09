@@ -172,7 +172,7 @@ export function CriterionTypeDetail({
                 className={cx(
                   "focus-ring flex flex-col gap-1 rounded-xl border px-3 py-2.5 text-left transition",
                   active
-                    ? "border-accent/60 bg-accent/[0.07] shadow-[0_0_18px_-10px_rgb(var(--accent-rgb)/0.7)]"
+                    ? "selected-pill"
                     : "border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] hover:border-accent/30 hover:bg-[var(--chrome-fill)]",
                 )}
               >

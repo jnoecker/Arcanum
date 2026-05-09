@@ -169,6 +169,10 @@ export function EnchantingPanel({ config, onChange }: ConfigPanelProps) {
         selectedId={selected}
         hasUnsavedChanges={dirty}
         saving={saving}
+        maxPerItem={enchanting.maxEnchantmentsPerItem}
+        onMaxPerItemChange={(v) =>
+          patchGlobal({ maxEnchantmentsPerItem: Math.max(1, v) })
+        }
         onClose={() => setSelected(null)}
         onSave={handleSave}
         onDuplicate={duplicateEnchantment}
@@ -183,7 +187,6 @@ export function EnchantingPanel({ config, onChange }: ConfigPanelProps) {
             selectedId={selected}
             onSelect={(id) => setSelected(id)}
             onAdd={addEnchantment}
-            onPatchGlobal={patchGlobal}
           />
         </div>
 

@@ -203,7 +203,7 @@ function GenderRow({ id, gender, selected, onSelect, onDelete }: GenderRowProps)
         className={cx(
           "group relative flex items-center gap-3 rounded-2xl border p-3 transition",
           selected
-            ? "border-accent/60 bg-accent/[0.07] shadow-[0_0_28px_-12px_rgb(var(--accent-rgb)/0.7)]"
+            ? "selected-card border-l-[3px] border-l-accent"
             : "border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] hover:border-accent/30 hover:bg-[var(--chrome-fill)]",
         )}
       >

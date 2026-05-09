@@ -40,6 +40,8 @@ interface MetricCardProps {
   currentMetrics: MetricSnapshot;
   presetMetrics: MetricSnapshot;
   diffCount?: number;
+  /** When true, use a lighter card frame — parent owns the heavy chrome. */
+  nested?: boolean;
 }
 
 // ─── MetricRow (internal) ───────────────────────────────────────────
@@ -181,14 +183,18 @@ function getMetricRows(
 
 // ─── MetricCard Component ───────────────────────────────────────────
 
-export function MetricCard({ section, currentMetrics, presetMetrics, diffCount }: MetricCardProps) {
+export function MetricCard({ section, currentMetrics, presetMetrics, diffCount, nested = false }: MetricCardProps) {
   const rows = useMemo(
     () => getMetricRows(section, currentMetrics, presetMetrics),
     [section, currentMetrics, presetMetrics],
   );
 
+  const cardClass = nested
+    ? "rounded-[1.25rem] border border-border-muted bg-bg-secondary/30 p-4"
+    : "panel-surface rounded-[1.5rem] p-4";
+
   return (
-    <div className="panel-surface rounded-[1.5rem] p-4">
+    <div className={cardClass}>
       <h3 className="mb-2 font-display text-[14px] font-normal uppercase tracking-[0.5px] text-text-secondary">
         {section}
       </h3>

@@ -20,6 +20,8 @@ import { usePrefersReducedMotion } from "@/lib/usePrefersReducedMotion";
 
 interface MobTierChartProps {
   currentConfig: AppConfig;
+  /** When true, use lighter card chrome — parent owns the heavy frame. */
+  nested?: boolean;
 }
 
 const LEVEL_OPTIONS = [10, 20, 30, 50] as const;
@@ -63,7 +65,7 @@ function MobTierTooltip({ active, payload, label }: {
   );
 }
 
-export function MobTierChart({ currentConfig }: MobTierChartProps) {
+export function MobTierChart({ currentConfig, nested = false }: MobTierChartProps) {
   const [selectedLevel, setSelectedLevel] = useState(30);
   const prefersReducedMotion = usePrefersReducedMotion();
 
@@ -72,8 +74,12 @@ export function MobTierChart({ currentConfig }: MobTierChartProps) {
     [currentConfig, selectedLevel],
   );
 
+  const cardClass = nested
+    ? "rounded-[1.25rem] border border-border-muted bg-bg-secondary/30 p-4"
+    : "panel-surface rounded-[1.5rem] p-4";
+
   return (
-    <div className="panel-surface rounded-[1.5rem] p-4">
+    <div className={cardClass}>
       <div className="mb-2 flex items-center justify-between">
         <h3 className="font-display text-[14px] font-normal uppercase tracking-[0.5px] text-text-secondary">
           MOB POWER

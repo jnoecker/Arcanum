@@ -3,6 +3,7 @@ import {
   Area,
   AreaChart,
   CartesianGrid,
+  ReferenceDot,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -14,6 +15,8 @@ interface XpCurveChartProps {
   xp: XpCurveConfig;
   maxLevel: number;
   height?: number;
+  /** Optional Cinzel kicker rendered above the chart. */
+  eyebrow?: string;
 }
 
 const TICK_STYLE = {
@@ -36,9 +39,10 @@ function xpForLevel(level: number, xp: XpCurveConfig): number {
   return (base * Math.pow(level, exp) + linear * level) * mult;
 }
 
-export function XpCurveChart({ xp, maxLevel, height = 130 }: XpCurveChartProps) {
+export function XpCurveChart({ xp, maxLevel, height = 220, eyebrow }: XpCurveChartProps) {
+  const cap = Math.max(2, Math.min(maxLevel || 50, 200));
+
   const data = useMemo(() => {
-    const cap = Math.max(2, Math.min(maxLevel || 50, 200));
     const stride = cap > 60 ? Math.ceil(cap / 30) : 1;
     const points: { level: number; xp: number }[] = [];
     for (let lv = 1; lv <= cap; lv += stride) {
@@ -48,31 +52,71 @@ export function XpCurveChart({ xp, maxLevel, height = 130 }: XpCurveChartProps) 
       points.push({ level: cap, xp: xpForLevel(cap, xp) });
     }
     return points;
-  }, [xp, maxLevel]);
+  }, [xp, cap]);
+
+  // Plot 1–3 milestone dots depending on the level cap.
+  const milestones = useMemo(() => {
+    const marks: { level: number; xp: number; label: string }[] = [];
+    if (cap >= 50) {
+      [10, 50].forEach((lv) => {
+        if (lv < cap) {
+          marks.push({ level: lv, xp: xpForLevel(lv, xp), label: `Lv ${lv}` });
+        }
+      });
+      const late = Math.round(cap * 0.85);
+      if (late > 50 && late < cap) {
+        marks.push({ level: late, xp: xpForLevel(late, xp), label: `Lv ${late}` });
+      }
+    } else {
+      const half = Math.max(2, Math.round(cap / 2));
+      marks.push({ level: half, xp: xpForLevel(half, xp), label: `Lv ${half}` });
+    }
+    return marks;
+  }, [cap, xp]);
 
   return (
-    <div className="rounded-lg border border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] px-2 py-2">
-      <div className="mb-1 flex items-center justify-between px-1">
-        <span className="font-display text-2xs uppercase tracking-wider text-text-muted">
-          XP Required per Level
-        </span>
-        <span className="font-mono text-2xs text-text-muted/70">
-          peak {formatLargeNumber(xpForLevel(maxLevel || 50, xp))}
-        </span>
+    <div className="relative overflow-hidden rounded-2xl border border-[var(--chrome-stroke)] bg-[var(--bg-panel)] px-4 pb-3 pt-3 shadow-section">
+      <div
+        aria-hidden="true"
+        className="flourish-top-thread pointer-events-none absolute inset-x-12 top-0 h-px"
+      />
+      <div className="mb-2 flex items-end justify-between gap-3">
+        <div className="min-w-0">
+          {eyebrow && (
+            <div className="font-display text-2xs uppercase tracking-[0.22em] text-accent/80">
+              {eyebrow}
+            </div>
+          )}
+          <div className="mt-0.5 font-display text-sm font-semibold tracking-wide text-text-primary">
+            XP Required per Level
+          </div>
+          <p className="mt-0.5 text-2xs leading-snug text-text-muted/80">
+            Tide-teal in the early levels gives way to ember as the late game heats up.
+          </p>
+        </div>
+        <div className="shrink-0 text-right">
+          <div className="font-display text-2xs uppercase tracking-wider text-text-muted/80">
+            Peak
+          </div>
+          <div className="font-mono text-sm text-accent">
+            {formatLargeNumber(xpForLevel(cap, xp))}
+          </div>
+        </div>
       </div>
       <ResponsiveContainer width="100%" height={height}>
-        <AreaChart data={data} margin={{ top: 4, right: 6, bottom: 0, left: 0 }}>
+        <AreaChart data={data} margin={{ top: 8, right: 12, bottom: 4, left: 4 }}>
           <defs>
             <linearGradient id="xpCurveFill" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="var(--color-accent)" stopOpacity={0.45} />
-              <stop offset="100%" stopColor="var(--color-accent)" stopOpacity={0.02} />
+              <stop offset="0%" stopColor="var(--color-accent)" stopOpacity={0.55} />
+              <stop offset="55%" stopColor="var(--color-arcane-teal)" stopOpacity={0.28} />
+              <stop offset="100%" stopColor="var(--color-arcane-teal)" stopOpacity={0.04} />
+            </linearGradient>
+            <linearGradient id="xpCurveStroke" x1="0" y1="1" x2="1" y2="0">
+              <stop offset="0%" stopColor="var(--color-arcane-teal)" />
+              <stop offset="100%" stopColor="var(--color-accent)" />
             </linearGradient>
           </defs>
-          <CartesianGrid
-            strokeDasharray="2 4"
-            stroke="var(--color-border-muted)"
-            vertical={false}
-          />
+          <CartesianGrid stroke="var(--chrome-stroke)" vertical={false} />
           <XAxis
             dataKey="level"
             tick={TICK_STYLE}
@@ -86,7 +130,7 @@ export function XpCurveChart({ xp, maxLevel, height = 130 }: XpCurveChartProps) 
             tickLine={false}
             axisLine={false}
             tickFormatter={formatLargeNumber}
-            width={42}
+            width={48}
           />
           <Tooltip
             contentStyle={{
@@ -104,18 +148,39 @@ export function XpCurveChart({ xp, maxLevel, height = 130 }: XpCurveChartProps) 
           <Area
             type="monotone"
             dataKey="xp"
-            stroke="var(--color-accent)"
-            strokeWidth={2}
+            stroke="url(#xpCurveStroke)"
+            strokeWidth={2.25}
             fill="url(#xpCurveFill)"
             isAnimationActive={false}
-            dot={{ r: 2, fill: "var(--color-accent)", stroke: "none" }}
-            activeDot={{ r: 4, fill: "var(--color-accent)", stroke: "var(--bg-primary)", strokeWidth: 2 }}
+            dot={false}
+            activeDot={{
+              r: 4,
+              fill: "var(--color-accent)",
+              stroke: "var(--bg-primary)",
+              strokeWidth: 2,
+            }}
           />
+          {milestones.map((m) => (
+            <ReferenceDot
+              key={m.level}
+              x={m.level}
+              y={m.xp}
+              r={4}
+              fill="var(--color-accent)"
+              stroke="var(--bg-primary)"
+              strokeWidth={2}
+              ifOverflow="extendDomain"
+              label={{
+                value: m.label,
+                position: "top",
+                fill: "var(--color-text-muted)",
+                fontSize: 10,
+                fontFamily: "'Cinzel', serif",
+              }}
+            />
+          ))}
         </AreaChart>
       </ResponsiveContainer>
-      <p className="mt-1 px-1 text-[10px] leading-tight text-text-muted/60">
-        Higher exponents create a steeper late-game curve.
-      </p>
     </div>
   );
 }

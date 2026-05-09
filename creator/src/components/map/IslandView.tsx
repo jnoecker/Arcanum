@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef, lazy, Suspense, useMemo } from "react";
 import { useProjectStore } from "@/stores/projectStore";
+import { useSidebarStore } from "@/stores/sidebarStore";
 import { useZoneStore } from "@/stores/zoneStore";
 import { ISLANDS, type IslandAction } from "@/lib/islandRegistry";
 import {
@@ -31,6 +32,7 @@ export function IslandView({ island }: IslandViewProps) {
   const openTab = useProjectStore((s) => s.openTab);
   const openWorldMap = useProjectStore((s) => s.openWorldMap);
   const setSettingsOpen = useProjectStore((s) => s.setSettingsOpen);
+  const drillInto = useSidebarStore((s) => s.drillInto);
   const [hoveredPanelId, setHoveredPanelId] = useState<string | null>(null);
   const [showNewZone, setShowNewZone] = useState(false);
   const [showZonePicker, setShowZonePicker] = useState(false);
@@ -89,8 +91,11 @@ export function IslandView({ island }: IslandViewProps) {
       const p = PANEL_MAP[panelId];
       if (!p) return;
       openTab(panelTab(panelId));
+      if (panelId === "lore") {
+        drillInto("articles");
+      }
     },
-    [openTab],
+    [openTab, drillInto],
   );
 
   const handleAction = useCallback(

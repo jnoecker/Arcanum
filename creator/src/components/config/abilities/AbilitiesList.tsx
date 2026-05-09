@@ -203,7 +203,7 @@ function AbilityRow({ id, ability, selected, onSelect }: AbilityRowProps) {
           <div className="mt-0.5 truncate font-mono text-2xs text-text-muted/70">
             {id}
           </div>
-          <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[0.6rem] uppercase tracking-[0.14em] text-text-muted">
+          <div className="mt-1 flex flex-wrap items-center gap-1.5 text-2xs uppercase tracking-[0.14em] text-text-muted">
             <span>Lvl {ability.levelRequired}</span>
             <span className="text-text-muted/40">·</span>
             <span>{ability.targetType}</span>

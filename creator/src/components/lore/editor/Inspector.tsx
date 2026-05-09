@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import type { Article, ArticleRelation } from "@/types/lore";
 import { useLoreStore, selectArticles } from "@/stores/loreStore";
-import { TEMPLATE_SCHEMAS } from "@/lib/loreTemplates";
+import { TEMPLATE_SCHEMAS, templateTint } from "@/lib/loreTemplates";
 import { TemplateFields } from "@/components/lore/TemplateFields";
 import { totalWordCount } from "@/lib/loreSections";
 import { extractMentionCounts } from "@/lib/loreRelations";
@@ -13,25 +13,6 @@ interface InspectorProps {
   onRelationsChange: (relations: ArticleRelation[] | undefined) => void;
   onCollapse: () => void;
   onExpand: () => void;
-}
-
-const TEMPLATE_TINTS: Partial<Record<string, string>> = {
-  world_setting: "var(--color-template-world)",
-  character:     "var(--color-template-character)",
-  location:      "var(--color-template-location)",
-  organization:  "var(--color-template-organization)",
-  item:          "var(--color-template-item)",
-  species:       "var(--color-template-species)",
-  event:         "var(--color-template-event)",
-  language:      "var(--color-template-language)",
-  profession:    "var(--color-template-profession)",
-  ability:       "var(--color-template-ability)",
-  freeform:      "var(--color-template-freeform)",
-  story:         "var(--color-template-story)",
-};
-
-function tintFor(template: string): string {
-  return TEMPLATE_TINTS[template] ?? "var(--color-arcane-teal)";
 }
 
 // ─── Tag pill row ──────────────────────────────────────────────────
@@ -168,10 +149,14 @@ function ConnectionsPanel({
     return out;
   }, [relations, mentionIds, articles]);
 
-  const linkedIds = new Set(relations.map((r) => r.targetId));
-  const available = Object.values(articles).filter(
-    (a) => a.id !== article.id && !linkedIds.has(a.id),
-  );
+  // Memoize the available-articles list so we don't filter the entire article
+  // index on every parent re-render (e.g. on every title/tagline keystroke).
+  const available = useMemo(() => {
+    const linkedIds = new Set(relations.map((r) => r.targetId));
+    return Object.values(articles).filter(
+      (a) => a.id !== article.id && !linkedIds.has(a.id),
+    );
+  }, [relations, articles, article.id]);
 
   const removeRelation = (targetId: string) => {
     const next = relations.filter((r) => r.targetId !== targetId);
@@ -207,7 +192,7 @@ function ConnectionsPanel({
         </span>
       </div>
       {rows.map((row) => {
-        const tint = tintFor(row.template);
+        const tint = templateTint(row.template, "var(--color-arcane-teal)");
         const initial = (row.title[0] || "?").toUpperCase();
         const isAuto = !relations.some((r) => r.targetId === row.targetId);
         return (
@@ -217,7 +202,7 @@ function ConnectionsPanel({
             style={{ ["--ae-conn-bg" as string]: tint }}
           >
             <span className="ae-conn__icon" aria-hidden>{initial}</span>
-            <div style={{ minWidth: 0 }}>
+            <div className="ae-trunc-min">
               <div className="ae-conn__name">{row.title}</div>
               <div className="ae-conn__rel">
                 {row.type} · {row.template.replace(/_/g, " ")}
@@ -228,12 +213,12 @@ function ConnectionsPanel({
               {isAuto ? (
                 <button
                   type="button"
-                  className="ae-conn__del"
-                  title="Promote to manual connection"
+                  className="ae-conn__promote"
+                  title="Pin as a manual connection"
                   onClick={() => promoteToRelation(row.targetId)}
-                  aria-label={`Promote ${row.title} to manual connection`}
+                  aria-label={`Pin ${row.title} as a manual connection`}
                 >
-                  +
+                  ↗
                 </button>
               ) : (
                 <button
@@ -251,14 +236,14 @@ function ConnectionsPanel({
         );
       })}
       {adding ? (
-        <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 4 }}>
+        <div className="ae-col ae-conn__addform">
           <select
             className="ae-field__inp"
             value={pickTarget}
             onChange={(e) => setPickTarget(e.target.value)}
             aria-label="Article to link"
           >
-            <option value="">Connect to a legend…</option>
+            <option value="">Pick an article to connect…</option>
             {available.map((a) => (
               <option key={a.id} value={a.id}>{a.title}</option>
             ))}
@@ -270,7 +255,7 @@ function ConnectionsPanel({
             placeholder="Relation (e.g. allied with)"
             aria-label="Relation type"
           />
-          <div style={{ display: "flex", gap: 6 }}>
+          <div className="ae-row">
             <button
               className="ae-btn"
               data-variant="ember"
@@ -299,7 +284,7 @@ function ConnectionsPanel({
             className="ae-inspector__add"
             onClick={() => setAdding(true)}
           >
-            + Connect a legend
+            + Connect another article
           </button>
         )
       )}
@@ -377,7 +362,7 @@ export function Inspector({
 
       <ConnectionsPanel article={article} onRelationsChange={onRelationsChange} />
 
-      <div className="ae-iblock" style={{ marginBottom: 0 }}>
+      <div className="ae-iblock">
         <div className="ae-iblock__head">
           <span className="ae-iblock__title">Lifecycle</span>
         </div>
@@ -387,10 +372,7 @@ export function Inspector({
         </div>
         <div className="ae-field">
           <label className="ae-field__lbl">Word Count</label>
-          <div
-            className="ae-field__inp ae-field__readonly"
-            style={{ fontFamily: "var(--font-mono)", fontSize: 12 }}
-          >
+          <div className="ae-field__inp ae-field__readonly ae-field__readonly--mono">
             {wordCount} words across {sections.length} {sections.length === 1 ? "section" : "sections"}
           </div>
         </div>

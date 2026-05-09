@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { useAssetStore } from "@/stores/assetStore";
 import { useLoreStore, selectArticles } from "@/stores/loreStore";
 import { useImageSrc } from "@/lib/useImageSrc";
+import { useFocusTrap } from "@/lib/useFocusTrap";
 import type { AssetEntry } from "@/types/assets";
 
 export type ArchivePickerMode = "single" | "multi";
@@ -86,8 +87,7 @@ export function ArchivePickerModal({
   const [picked, setPicked] = useState<string[]>([]);
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<FilterId>("all");
-  const dialogRef = useRef<HTMLDivElement | null>(null);
-  const lastFocused = useRef<HTMLElement | null>(null);
+  const dialogRef = useFocusTrap<HTMLDivElement>(onClose);
 
   useEffect(() => {
     if (!open) return;
@@ -95,33 +95,6 @@ export function ArchivePickerModal({
     setQuery("");
     setFilter("all");
   }, [open]);
-
-  // Focus management: trap focus inside the dialog while open, restore on close.
-  useEffect(() => {
-    if (!open) return;
-    lastFocused.current = (document.activeElement as HTMLElement | null);
-    const node = dialogRef.current;
-    if (node) {
-      const first = node.querySelector<HTMLElement>("input, button, [tabindex]:not([tabindex='-1'])");
-      first?.focus();
-    }
-    return () => {
-      lastFocused.current?.focus();
-    };
-  }, [open]);
-
-  // ESC closes.
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        e.stopPropagation();
-        onClose();
-      }
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [open, onClose]);
 
   // Filter to lore-zone assets.
   const loreAssets = useMemo(() => assets.filter((a) => a.context.zone === "lore"), [assets]);
@@ -249,14 +222,7 @@ export function ArchivePickerModal({
 
         <div className="ae-modal__body">
           {groups.length === 0 ? (
-            <div
-              style={{
-                padding: "60px 20px",
-                textAlign: "center",
-                color: "var(--color-text-muted)",
-                fontStyle: "italic",
-              }}
-            >
+            <div className="ae-empty-block">
               {loreAssets.length === 0
                 ? "The archive is empty. Generate art for any lore article and it will appear here."
                 : "No images match that query."}

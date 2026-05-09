@@ -198,7 +198,7 @@ function StatPill({ label, accent }: { label: string; accent?: boolean }) {
   return (
     <span
       className={cx(
-        "inline-flex items-center rounded-full border px-1.5 py-0.5 font-mono text-[0.6rem] leading-none",
+        "inline-flex items-center rounded-full border px-2 py-0.5 font-mono text-2xs leading-none",
         accent
           ? "border-accent/40 bg-accent/10 text-accent"
           : "border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] text-text-muted",

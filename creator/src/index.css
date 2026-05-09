@@ -20,6 +20,14 @@
   --overlay-rgb: 0 10 18;
   --aurum-rgb: 226 188 106;
 
+  /* RGB tuples mirroring named accent/status hues so opacity-tinted overlays
+     and shadows can compose against them via rgb(var(--*) / α). Keep these in
+     sync with --color-stellar-blue / --color-status-error / --color-status-success
+     below. */
+  --stellar-blue-rgb: 53 161 176;
+  --status-error-rgb: 217 117 107;
+  --status-success-rgb: 124 182 109;
+
   /* ─── Typography ─── */
   --font-sans: 'Crimson Pro', Georgia, serif;
   --font-display: 'Cinzel', Palatino, serif;
@@ -108,8 +116,8 @@
 
   /* ─── Badge Colors (vivid variants for small text on dark backgrounds) ─── */
   --color-badge-success:    #9ace8b;
-  --color-badge-success-bg: rgba(124, 182, 109, 0.16);
-  --color-badge-dirty-bg:   rgba(255, 125, 0, 0.16);
+  --color-badge-success-bg: rgb(var(--status-success-rgb) / 0.16);
+  --color-badge-dirty-bg:   rgb(var(--accent-rgb) / 0.16);
 
   /* ─── Server Status ─── */
   --color-server-stopped:  #6d8b92;

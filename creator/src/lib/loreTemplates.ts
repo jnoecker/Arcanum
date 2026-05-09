@@ -325,3 +325,35 @@ export function getAllTemplateSchemas(
   const custom = (customTemplates ?? []).map(customToSchema);
   return [...builtIn, ...custom];
 }
+
+// ─── Template tints ─────────────────────────────────────────────────
+// Each built-in template owns a CSS-token tint used for badges, connection
+// avatars, and the article editor's accent rule. Custom templates fall back
+// to the generic accent. Keep these in sync with --color-template-* in
+// creator/src/index.css.
+
+const TEMPLATE_TINTS: Partial<Record<string, string>> = {
+  world_setting: "var(--color-template-world)",
+  character:     "var(--color-template-character)",
+  location:      "var(--color-template-location)",
+  organization:  "var(--color-template-organization)",
+  item:          "var(--color-template-item)",
+  species:       "var(--color-template-species)",
+  event:         "var(--color-template-event)",
+  language:      "var(--color-template-language)",
+  profession:    "var(--color-template-profession)",
+  ability:       "var(--color-template-ability)",
+  freeform:      "var(--color-template-freeform)",
+  story:         "var(--color-template-story)",
+};
+
+/**
+ * Resolve a CSS-token color expression for a given template. Pass a fallback
+ * to override the default `--color-accent`.
+ */
+export function templateTint(
+  template: string,
+  fallback: string = "var(--color-accent)",
+): string {
+  return TEMPLATE_TINTS[template] ?? fallback;
+}

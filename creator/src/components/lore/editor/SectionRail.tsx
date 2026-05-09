@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { ArticleSection, ArticleSectionType } from "@/types/lore";
 import { plainTextFromBody } from "@/lib/loreSections";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 
 interface SectionRailProps {
   sections: ArticleSection[];
@@ -56,6 +57,57 @@ export function SectionRail({
   const [addOpen, setAddOpen] = useState(false);
   const [dragId, setDragId] = useState<string | null>(null);
   const [overId, setOverId] = useState<string | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<{ id: string; title: string } | null>(null);
+
+  const addBtnRef = useRef<HTMLButtonElement | null>(null);
+  const addMenuRef = useRef<HTMLDivElement | null>(null);
+
+  // Close add-menu on Escape, outside click, and focus the first item on open.
+  useEffect(() => {
+    if (!addOpen) return;
+
+    const firstItem = addMenuRef.current?.querySelector<HTMLButtonElement>(
+      "[role='menuitem']",
+    );
+    firstItem?.focus();
+
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        e.stopPropagation();
+        setAddOpen(false);
+        addBtnRef.current?.focus();
+      }
+    };
+    const onPointer = (e: PointerEvent) => {
+      const t = e.target as Node | null;
+      if (!t) return;
+      if (addMenuRef.current?.contains(t)) return;
+      if (addBtnRef.current?.contains(t)) return;
+      setAddOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    window.addEventListener("pointerdown", onPointer);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      window.removeEventListener("pointerdown", onPointer);
+    };
+  }, [addOpen]);
+
+  const focusMenuItemAt = (delta: 1 | -1) => {
+    const items = Array.from(
+      addMenuRef.current?.querySelectorAll<HTMLButtonElement>("[role='menuitem']") ?? [],
+    );
+    if (items.length === 0) return;
+    const current = document.activeElement as HTMLElement | null;
+    const idx = current ? items.indexOf(current as HTMLButtonElement) : -1;
+    const next = (idx + delta + items.length) % items.length;
+    items[next]?.focus();
+  };
+
+  const requestDelete = (section: ArticleSection) => {
+    setPendingDelete({ id: section.id, title: section.title || "Untitled" });
+  };
 
   return (
     <nav className="ae-rail" aria-label="Article sections">
@@ -90,116 +142,130 @@ export function SectionRail({
         </button>
       </div>
       <p className="ae-rail__hint">
-        Click to focus. Drag to reorder. Each becomes a block on export.
+        Click to focus. Drag, or hold Alt and use ↑/↓, to reorder.
       </p>
 
-      <div className="ae-rail__list">
-        {sections.map((section, i) => (
-          <button
-            type="button"
-            key={section.id}
-            className="ae-sec"
-            data-active={activeId === section.id || undefined}
-            data-private={section.private || undefined}
-            data-dragging={dragId === section.id || undefined}
-            data-dropbefore={(overId === section.id && dragId !== section.id) || undefined}
-            draggable
-            onDragStart={(e) => {
-              setDragId(section.id);
-              e.dataTransfer.effectAllowed = "move";
-              try {
-                e.dataTransfer.setData("text/plain", section.id);
-              } catch {
-                // Some browsers throw on setData in certain contexts; ignore.
-              }
-            }}
-            onDragEnd={() => {
-              setDragId(null);
-              setOverId(null);
-            }}
-            onDragOver={(e) => {
-              if (dragId && dragId !== section.id) {
-                e.preventDefault();
-                setOverId(section.id);
-              }
-            }}
-            onDragLeave={() => {
-              if (overId === section.id) setOverId(null);
-            }}
-            onDrop={(e) => {
+      <ul className="ae-rail__list" role="list">
+        {sections.map((section, i) => {
+          const isActive = activeId === section.id;
+          const onRowKey = (e: React.KeyboardEvent<HTMLDivElement>) => {
+            if (e.key === "Enter" || e.key === " ") {
               e.preventDefault();
-              if (dragId && dragId !== section.id) onReorder(dragId, section.id);
-              setDragId(null);
-              setOverId(null);
-            }}
-            onClick={() => onSelect(section.id)}
-          >
-            <span className="ae-sec__handle" aria-hidden>⋮⋮</span>
-            <span className="ae-sec__icon" aria-hidden>{iconForType(section.type)}</span>
-            <span className="ae-sec__body">
-              <span className="ae-sec__title">{section.title || "Untitled"}</span>
-              <span className="ae-sec__meta">
-                {previewFor(section)}
-                {section.private ? " · private" : ""}
-              </span>
-            </span>
-            <span className="ae-sec__tail">
-              <span className="ae-sec__num">{String(i + 1).padStart(2, "0")}</span>
-              {!section.required && (
-                <span
-                  role="button"
-                  tabIndex={0}
-                  className="ae-sec__del"
-                  aria-label={`Remove section ${section.title || "Untitled"}`}
-                  title="Remove section"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (window.confirm(`Remove section "${section.title || "Untitled"}"?`)) {
-                      onDelete(section.id);
-                    }
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      if (window.confirm(`Remove section "${section.title || "Untitled"}"?`)) {
-                        onDelete(section.id);
-                      }
-                    }
-                  }}
-                >
-                  ×
+              onSelect(section.id);
+            }
+          };
+          return (
+            <li key={section.id} className="ae-sec__wrap">
+              <div
+                className="ae-sec"
+                role="button"
+                tabIndex={0}
+                aria-pressed={isActive}
+                aria-label={`${section.title || "Untitled"} section${section.private ? ", private" : ""}`}
+                data-active={isActive || undefined}
+                data-private={section.private || undefined}
+                data-dragging={dragId === section.id || undefined}
+                data-dropbefore={(overId === section.id && dragId !== section.id) || undefined}
+                draggable
+                onDragStart={(e) => {
+                  setDragId(section.id);
+                  e.dataTransfer.effectAllowed = "move";
+                  try {
+                    e.dataTransfer.setData("text/plain", section.id);
+                  } catch {
+                    // Some browsers throw on setData in certain contexts; ignore.
+                  }
+                }}
+                onDragEnd={() => {
+                  setDragId(null);
+                  setOverId(null);
+                }}
+                onDragOver={(e) => {
+                  if (dragId && dragId !== section.id) {
+                    e.preventDefault();
+                    setOverId(section.id);
+                  }
+                }}
+                onDragLeave={() => {
+                  if (overId === section.id) setOverId(null);
+                }}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  if (dragId && dragId !== section.id) onReorder(dragId, section.id);
+                  setDragId(null);
+                  setOverId(null);
+                }}
+                onClick={() => onSelect(section.id)}
+                onKeyDown={onRowKey}
+              >
+                <span className="ae-sec__handle" aria-hidden>⋮⋮</span>
+                <span className="ae-sec__icon" aria-hidden>{iconForType(section.type)}</span>
+                <span className="ae-sec__body">
+                  <span className="ae-sec__title">
+                    {section.title || "Untitled"}
+                    {section.private && (
+                      <span className="ae-sec__lock" aria-hidden title="Private — creator's eyes only">
+                        ◐
+                      </span>
+                    )}
+                  </span>
+                  <span className="ae-sec__meta">
+                    {previewFor(section)}
+                    {section.private ? " · private" : ""}
+                  </span>
                 </span>
-              )}
-            </span>
-          </button>
-        ))}
-      </div>
+                <span className="ae-sec__tail">
+                  <span className="ae-sec__num" aria-hidden>{String(i + 1).padStart(2, "0")}</span>
+                  {!section.required && (
+                    <button
+                      type="button"
+                      className="ae-sec__del"
+                      aria-label={`Remove section ${section.title || "Untitled"}`}
+                      title="Remove section"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        requestDelete(section);
+                      }}
+                    >
+                      ×
+                    </button>
+                  )}
+                </span>
+              </div>
+            </li>
+          );
+        })}
+      </ul>
 
       <div className="ae-rail__add" data-open={addOpen || undefined}>
         <button
+          ref={addBtnRef}
           type="button"
+          className="ae-rail__add__trigger"
           onClick={() => setAddOpen((o) => !o)}
           aria-expanded={addOpen}
           aria-haspopup="menu"
-          style={{
-            background: "none",
-            border: "none",
-            color: "inherit",
-            font: "inherit",
-            letterSpacing: "inherit",
-            textTransform: "inherit",
-            padding: 0,
-            cursor: "pointer",
-          }}
         >
           + Add a section
         </button>
         {addOpen && (
           <div
+            ref={addMenuRef}
             className="ae-rail__addmenu"
             role="menu"
             onClick={(e) => e.stopPropagation()}
+            onKeyDown={(e) => {
+              if (e.key === "ArrowDown") {
+                e.preventDefault();
+                focusMenuItemAt(1);
+              } else if (e.key === "ArrowUp") {
+                e.preventDefault();
+                focusMenuItemAt(-1);
+              } else if (e.key === "Tab") {
+                // Tab out closes the menu rather than trapping; cleaner for keyboard flow.
+                setAddOpen(false);
+              }
+            }}
           >
             {SECTION_TYPES.map((t) => (
               <button
@@ -210,6 +276,7 @@ export function SectionRail({
                 onClick={() => {
                   onAdd(t.id);
                   setAddOpen(false);
+                  addBtnRef.current?.focus();
                 }}
               >
                 <span className="ae-rail__addmenu__item__icon">{t.icon}</span>
@@ -222,6 +289,22 @@ export function SectionRail({
           </div>
         )}
       </div>
+
+      {pendingDelete && (
+        <ConfirmDialog
+          title="Remove section"
+          message={`Remove section "${pendingDelete.title}"? This cannot be undone.`}
+          confirmLabel="Remove"
+          cancelLabel="Keep it"
+          destructive
+          onCancel={() => setPendingDelete(null)}
+          onConfirm={() => {
+            const id = pendingDelete.id;
+            setPendingDelete(null);
+            onDelete(id);
+          }}
+        />
+      )}
     </nav>
   );
 }

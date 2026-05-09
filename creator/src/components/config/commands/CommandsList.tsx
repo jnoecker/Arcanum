@@ -83,7 +83,7 @@ export function CommandsList({
               title={`Filter by category · ${activeCategoryLabel}`}
               aria-label={`Filter by category, current: ${activeCategoryLabel}`}
               className={cx(
-                "focus-ring inline-flex h-6 items-center gap-1 rounded-md border px-1.5 text-[0.6rem] uppercase tracking-wider transition",
+                "focus-ring inline-flex h-7 items-center gap-1 rounded-md border px-2 text-2xs uppercase tracking-wider transition",
                 activeCategory === ALL_CATEGORIES
                   ? "border-[var(--chrome-stroke)] bg-transparent text-text-muted hover:border-accent/30 hover:text-accent"
                   : "border-accent/40 bg-accent/10 text-accent",
@@ -218,7 +218,7 @@ function CommandRow({ id, cmd, selected, onSelect }: CommandRowProps) {
               {displayName}
             </span>
             {cmd.staff && (
-              <span className="rounded-full border border-warm/40 bg-warm/10 px-1.5 py-0.5 font-display text-[0.55rem] uppercase tracking-[0.18em] text-warm">
+              <span className="rounded-full border border-warm/40 bg-warm/10 px-2 py-0.5 font-display text-2xs uppercase tracking-[0.18em] text-warm">
                 Staff
               </span>
             )}

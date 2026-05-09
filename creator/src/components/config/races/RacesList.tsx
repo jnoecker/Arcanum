@@ -150,7 +150,7 @@ function RaceRow({ id, race, selected, onSelect }: RaceRowProps) {
               {race.displayName || id}
             </span>
           </div>
-          <div className="mt-0.5 truncate font-mono text-[0.6rem] uppercase tracking-[0.16em] text-text-muted/70">
+          <div className="mt-0.5 truncate font-mono text-2xs uppercase tracking-[0.14em] text-text-muted/70">
             {id}
           </div>
           {modEntries.length > 0 && (
@@ -197,7 +197,7 @@ function ModChip({ stat, value }: { stat: string; value: number }) {
   return (
     <span
       className={cx(
-        "inline-flex items-center gap-1 rounded-md border bg-bg-primary/40 px-1.5 py-0.5 font-mono text-[0.6rem] uppercase tracking-[0.12em]",
+        "inline-flex items-center gap-1 rounded-md border bg-bg-primary/40 px-2 py-0.5 font-mono text-2xs uppercase tracking-[0.12em]",
         tone,
       )}
     >

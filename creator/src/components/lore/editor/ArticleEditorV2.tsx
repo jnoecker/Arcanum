@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLoreStore } from "@/stores/loreStore";
 import type { Article, ArticleSection } from "@/types/lore";
-import { TEMPLATE_SCHEMAS } from "@/lib/loreTemplates";
+import { TEMPLATE_SCHEMAS, templateTint } from "@/lib/loreTemplates";
 import { buildWorldContext } from "@/lib/loreGeneration";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { RewriteDialog } from "@/components/lore/RewriteDialog";
@@ -15,21 +15,6 @@ interface PickerState {
   sectionId: string;
   mode: ArchivePickerMode;
 }
-
-const TEMPLATE_TINTS: Partial<Record<string, string>> = {
-  world_setting: "var(--color-template-world)",
-  character:     "var(--color-template-character)",
-  location:      "var(--color-template-location)",
-  organization:  "var(--color-template-organization)",
-  item:          "var(--color-template-item)",
-  species:       "var(--color-template-species)",
-  event:         "var(--color-template-event)",
-  language:      "var(--color-template-language)",
-  profession:    "var(--color-template-profession)",
-  ability:       "var(--color-template-ability)",
-  freeform:      "var(--color-template-freeform)",
-  story:         "var(--color-template-story)",
-};
 
 export function ArticleEditorV2({ articleId }: { articleId: string }) {
   // ─── Store wiring ───────────────────────────────────────────────
@@ -156,17 +141,37 @@ export function ArticleEditorV2({ articleId }: { articleId: string }) {
       }
       if (!sections.length) return;
       const idx = sections.findIndex((s) => s.id === selectedSectionId);
-      if ((e.key === "ArrowDown" || e.key === "j") && idx < sections.length - 1) {
+      const isUp = e.key === "ArrowUp" || e.key === "k";
+      const isDown = e.key === "ArrowDown" || e.key === "j";
+
+      // Alt + ↑/↓ reorders the selected section. Skip required (anchor)
+      // sections so we don't fight the loreSections invariants.
+      if ((isUp || isDown) && e.altKey && idx >= 0) {
+        const current = sections[idx]!;
+        if (current.required) return;
+        if (isUp && idx > 0) {
+          e.preventDefault();
+          reorderSections(articleId, current.id, sections[idx - 1]!.id);
+        } else if (isDown && idx < sections.length - 1) {
+          e.preventDefault();
+          // dropBeforeId = section after the next one; "" pushes to end.
+          const after = sections[idx + 2]?.id ?? "";
+          reorderSections(articleId, current.id, after);
+        }
+        return;
+      }
+
+      if (isDown && idx < sections.length - 1) {
         e.preventDefault();
         selectSection(sections[idx + 1]!.id);
-      } else if ((e.key === "ArrowUp" || e.key === "k") && idx > 0) {
+      } else if (isUp && idx > 0) {
         e.preventDefault();
         selectSection(sections[idx - 1]!.id);
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [sections, selectedSectionId, selectSection]);
+  }, [sections, selectedSectionId, selectSection, reorderSections, articleId]);
 
   if (!article) {
     return (
@@ -178,14 +183,14 @@ export function ArticleEditorV2({ articleId }: { articleId: string }) {
 
   const schema = TEMPLATE_SCHEMAS[article.template];
   const tplLabel = schema?.label ?? article.template;
-  const tplTint = TEMPLATE_TINTS[article.template] ?? "var(--color-accent)";
+  const tplTint = templateTint(article.template);
 
   // Save indicator: derived from updatedAt; "saved X ago"
   const savedLabel = formatRelativeTime(article.updatedAt);
 
   const draftLabel = article.draft
-    ? "Draft — not yet awakened"
-    : "Awakened to the showcase";
+    ? "Draft — not yet published"
+    : "Published to showcase";
   const draftClass = article.draft ? "var(--color-status-warning)" : "var(--color-status-success)";
 
   const slugSummary = `${article.id} · ${sections.length} ${sections.length === 1 ? "section" : "sections"} · ${savedLabel}`;
@@ -204,6 +209,7 @@ export function ArticleEditorV2({ articleId }: { articleId: string }) {
           <span className="ae-tplbadge">{tplLabel}</span>
           {renaming ? (
             <form
+              className="ae-row"
               onSubmit={(e) => {
                 e.preventDefault();
                 const id = renameDraft
@@ -214,12 +220,10 @@ export function ArticleEditorV2({ articleId }: { articleId: string }) {
                 if (id && id !== articleId) renameArticle(articleId, id);
                 setRenaming(false);
               }}
-              style={{ display: "flex", alignItems: "center", gap: 6 }}
             >
               <input
                 autoFocus
-                className="ae-field__inp"
-                style={{ width: 160 }}
+                className="ae-field__inp ae-rename-input"
                 value={renameDraft}
                 onChange={(e) => setRenameDraft(e.target.value)}
                 onKeyDown={(e) => e.key === "Escape" && setRenaming(false)}
@@ -240,12 +244,11 @@ export function ArticleEditorV2({ articleId }: { articleId: string }) {
               <button
                 type="button"
                 className="ae-topbar__slug"
-                style={{ background: "none", border: "none", cursor: "pointer", padding: 0 }}
                 onClick={() => {
                   setRenameDraft(article.id);
                   setRenaming(true);
                 }}
-                title="Click to rename article id"
+                title="Rename — changes this article's id and showcase URL"
               >
                 {slugSummary}
               </button>
@@ -346,13 +349,7 @@ export function ArticleEditorV2({ articleId }: { articleId: string }) {
             }
           />
         ) : (
-          <div
-            className="ae-editor"
-            style={{
-              color: "var(--color-text-muted)",
-              fontStyle: "italic",
-            }}
-          >
+          <div className="ae-editor ae-empty-note">
             No section selected. Add one from the rail.
           </div>
         )}
@@ -380,7 +377,8 @@ export function ArticleEditorV2({ articleId }: { articleId: string }) {
         <span className="ae-statusbar__sep">·</span>
         <span>{savedLabel}</span>
         <span className="ae-statusbar__right">
-          <span className="ae-statusbar__kbd"><b>↑</b> <b>↓</b> step sections</span>
+          <span className="ae-statusbar__kbd"><b>↑</b> <b>↓</b> step</span>
+          <span className="ae-statusbar__kbd"><b>Alt</b> + <b>↑</b> <b>↓</b> reorder</span>
         </span>
       </footer>
 

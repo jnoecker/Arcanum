@@ -160,7 +160,7 @@ function ImageSectionEditor({
         aria-label="Image caption"
       />
 
-      <div className="ae-aibar" style={{ marginTop: 0 }}>
+      <div className="ae-aibar ae-aibar--flush">
         <span className="ae-aibar__label">The Forge</span>
         <span className="ae-aibar__copy">
           {section.primary
@@ -336,7 +336,7 @@ function GallerySectionEditor({
       )}
 
       {images.length > 0 && (
-        <div className="ae-aibar" style={{ marginTop: 18 }}>
+        <div className="ae-aibar">
           <span className="ae-aibar__label">Gallery</span>
           <span className="ae-aibar__copy">
             <em>{images.length}</em> {images.length === 1 ? "image" : "images"}.
@@ -400,7 +400,7 @@ export function SectionEditorBody({
   return (
     <div className="ae-editor ae-fade-in" key={section.id}>
       <div className="ae-editor__head">
-        <div style={{ flex: 1, minWidth: 0 }}>
+        <div className="ae-trunc-flex">
           <div className="ae-editor__pretitle">
             <span>Section</span>
             <span className="ae-editor__pretitle__sep">·</span>

@@ -209,7 +209,7 @@ function RoomCard({ id, t, selected, onSelect }: RoomCardProps) {
             />
           ) : (
             <div className="flex h-full w-full items-center justify-center bg-bg-abyss/40">
-              <span className="font-display text-[0.55rem] uppercase tracking-[0.2em] text-text-muted/50">
+              <span className="font-display text-2xs uppercase tracking-[0.18em] text-text-muted/50">
                 Room
               </span>
             </div>

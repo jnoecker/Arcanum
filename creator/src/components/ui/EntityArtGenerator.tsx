@@ -523,37 +523,49 @@ export function EntityArtGenerator({
                   <span className="art-prompter__count">{activePrompt.length} chars</span>
                 </div>
               </div>
-              {injectedChips.length > 0 && (
-                <div className="art-injected">
-                  <span className="art-injected__label">Auto-injected</span>
-                  <div className="art-injected__chips">
-                    {injectedChips.map((c) => (
-                      <span key={c.k} className="art-ichip" title={`${c.k}: ${c.v}`}>
-                        <span className="art-ichip__k">{c.k}</span>
-                        <span className="art-ichip__v">{c.v}</span>
-                      </span>
-                    ))}
+              <div className="art-prompt-toolbar">
+                {injectedChips.length > 0 && (
+                  <div className="art-injected art-injected--popover">
+                    <span
+                      className="art-injected__pill"
+                      aria-label="Auto-injected context"
+                      tabIndex={0}
+                    >
+                      ⓘ Auto-injected
+                    </span>
+                    <div className="art-injected__popover" role="tooltip">
+                      <span className="art-injected__popover-title">Auto-injected</span>
+                      <div className="art-injected__chips">
+                        {injectedChips.map((c) => (
+                          <span key={c.k} className="art-ichip">
+                            <span className="art-ichip__k">{c.k}</span>
+                            <span className="art-ichip__v">{c.v}</span>
+                          </span>
+                        ))}
+                      </div>
+                    </div>
                   </div>
-                </div>
-              )}
-              {editedPrompt && (
-                <button
-                  onClick={() => { setEditedPrompt(null); setEnhanced(false); }}
-                  className="art-block__minor self-start"
-                  style={{ alignSelf: "flex-start" }}
-                >
-                  ↺ Reset prompt
-                </button>
-              )}
-            </div>
-          )}
-
-          {AI_ENABLED && hasApiKey && (
-            <div className="art-block">
-              <div className="art-block__label">
-                <span>Forge settings</span>
-              </div>
-              <div className="art-settings">
+                )}
+                {editedPrompt && (
+                  <button
+                    onClick={() => { setEditedPrompt(null); setEnhanced(false); }}
+                    className="art-block__minor"
+                  >
+                    ↺ Reset prompt
+                  </button>
+                )}
+                {AI_ENABLED && hasApiKey && (
+                  <details className="art-forge-gear">
+                    <summary
+                      className="art-forge-gear__btn"
+                      title="Forge settings"
+                      aria-label="Forge settings"
+                    >
+                      ⚙
+                    </summary>
+                    <div className="art-forge-gear__popover" role="dialog" aria-label="Forge settings">
+                      <div className="art-forge-gear__title">Forge settings</div>
+                      <div className="art-settings">
                 <div className="art-setting art-setting--wide">
                   <span className="art-setting__k">Style</span>
                   {worldArtStyles && worldArtStyles.length > 0 ? (
@@ -617,14 +629,18 @@ export function EntityArtGenerator({
                   </div>
                 )}
 
-                {modelOverride === "__custom__" && (
-                  <input
-                    type="text"
-                    className="art-setting__custom art-setting--wide"
-                    value={customModel}
-                    onChange={(e) => setCustomModel(e.target.value)}
-                    placeholder="e.g. runware:400@2"
-                  />
+                        {modelOverride === "__custom__" && (
+                          <input
+                            type="text"
+                            className="art-setting__custom art-setting--wide"
+                            value={customModel}
+                            onChange={(e) => setCustomModel(e.target.value)}
+                            placeholder="e.g. runware:400@2"
+                          />
+                        )}
+                      </div>
+                    </div>
+                  </details>
                 )}
               </div>
             </div>

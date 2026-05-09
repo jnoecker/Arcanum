@@ -893,14 +893,6 @@ export function DungeonEditor({
             >
               <HeroImage image={dungeon.image} />
               <div className="flex flex-col gap-1.5">
-                <FieldRow label="Filename">
-                  <TextInput
-                    value={dungeon.image ?? ""}
-                    onCommit={(v) => patch({ image: v || undefined })}
-                    placeholder="Asset filename"
-                    dense
-                  />
-                </FieldRow>
                 <EntityArtGenerator
                   getPrompt={(style) => dungeonPrompt(dungeon, style)}
                   entityContext={dungeonContext(dungeon, world.zone)}

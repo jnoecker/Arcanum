@@ -1,3 +1,4 @@
+import "./EntityArtGenerator.css";
 import { useState, useEffect, useRef, useMemo } from "react";
 import { AI_ENABLED } from "@/lib/featureFlags";
 import { invoke } from "@tauri-apps/api/core";
@@ -9,9 +10,8 @@ import { useImageSrc, isLegacyImagePath, isR2HashPath } from "@/lib/useImageSrc"
 import { getEnhanceSystemPrompt, ART_STYLE_LABELS, getNegativePrompt, getStyleSuffix, type ArtStyle } from "@/lib/arcanumPrompts";
 import type { ArtStyleSurface } from "@/lib/loreGeneration";
 import { IMAGE_MODELS, ENTITY_DIMENSIONS, DIMENSION_PRESETS, resolveImageModel, modelNativelyTransparent } from "@/types/assets";
-import type { AssetContext, GeneratedImage } from "@/types/assets";
+import type { AssetContext, AssetEntry, GeneratedImage } from "@/types/assets";
 import { generateAssetImageWithRetry } from "@/lib/imageGen";
-import { VariantStrip } from "./VariantStrip";
 import { AssetPickerModal } from "./AssetPickerModal";
 import { removeBgAndSave, shouldRemoveBg } from "@/lib/useBackgroundRemoval";
 import { InlineError } from "./FormWidgets";
@@ -71,6 +71,25 @@ function autoAcceptImage(
   }
 }
 
+function gcd(a: number, b: number): number {
+  return b === 0 ? a : gcd(b, a % b);
+}
+
+function aspectRatioStyle(width: number, height: number): string {
+  const g = gcd(width, height) || 1;
+  return `${width / g} / ${height / g}`;
+}
+
+function aspectLabel(width: number, height: number): string {
+  const g = gcd(width, height) || 1;
+  return `${width / g}:${height / g}`;
+}
+
+function humanizeKey(s?: string): string {
+  if (!s) return "";
+  return s.replace(/^lore_/, "").replace(/_/g, " ");
+}
+
 export function EntityArtGenerator({
   getPrompt,
   entityContext,
@@ -86,15 +105,20 @@ export function EntityArtGenerator({
   const artStyle = useAssetStore((s) => s.artStyle);
   const setArtStyle = useAssetStore((s) => s.setArtStyle);
   const importAsset = useAssetStore((s) => s.importAsset);
+  const listVariants = useAssetStore((s) => s.listVariants);
+  const setActiveVariant = useAssetStore((s) => s.setActiveVariant);
+  const assetCount = useAssetStore((s) => s.assets.length);
+  const assetsDir = useAssetStore((s) => s.assetsDir);
   const worldArtStyles = useLoreStore((s) => s.lore?.artStyles);
   const activeArtStyleId = useLoreStore((s) => s.lore?.activeArtStyleId);
   const setActiveArtStyle = useLoreStore((s) => s.setActiveArtStyle);
-  const mudDir = useProjectStore((s) => s.project?.mudDir);
+  const project = useProjectStore((s) => s.project);
+  const mudDir = project?.mudDir;
+  const projectName = project?.name;
   const [stage, setStage] = useState<Stage>("idle");
   const [result, setResult] = useState<GeneratedImage | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [editedPrompt, setEditedPrompt] = useState<string | null>(null);
-  const [showAdvanced, setShowAdvanced] = useState(false);
   const [enhancing, setEnhancing] = useState(false);
   const [importing, setImporting] = useState(false);
   const [dimOverride, setDimOverride] = useState<{ width: number; height: number } | null>(null);
@@ -108,6 +132,8 @@ export function EntityArtGenerator({
   const [flipping, setFlipping] = useState(false);
   const [showGalleryPicker, setShowGalleryPicker] = useState(false);
   const [showSketch, setShowSketch] = useState(false);
+  const [variants, setVariants] = useState<AssetEntry[]>([]);
+  const [lightbox, setLightbox] = useState<string | null>(null);
 
   // Refs to track pending results across unmount — auto-accept if user navigates away
   const pendingResultRef = useRef<GeneratedImage | null>(null);
@@ -119,10 +145,6 @@ export function EntityArtGenerator({
   const contextRef = useRef(context);
   contextRef.current = context;
 
-  // Track whether the component is currently mounted so handleGenerate can
-  // auto-accept results that arrive after the user navigated away. The setup
-  // body must reset this to true so StrictMode's mount→cleanup→mount cycle
-  // doesn't leave it stuck at false on a still-mounted component.
   const mountedRef = useRef(false);
   useEffect(() => {
     mountedRef.current = true;
@@ -130,7 +152,6 @@ export function EntityArtGenerator({
       mountedRef.current = false;
       const img = pendingResultRef.current;
       if (!img) return;
-      // Component is unmounting with an unaccepted generated image — auto-accept it
       autoAcceptImage(img, pendingPromptRef.current, onAcceptRef.current, assetTypeRef.current, contextRef.current);
     };
   }, []);
@@ -150,18 +171,17 @@ export function EntityArtGenerator({
   const activePrompt = editedPrompt ?? basePrompt;
   const variantGroup = computeVariantGroup(context);
 
-  // Determine dimensions from entity type
   const entityType = context?.entity_type ?? "";
   const defaultDims = ENTITY_DIMENSIONS[entityType] ?? { width: 1024, height: 1024, label: "1024×1024" };
   const activeDims = dimOverride ?? defaultDims;
+  const heroAspect = aspectRatioStyle(activeDims.width, activeDims.height);
+  const heroAspectLabel = aspectLabel(activeDims.width, activeDims.height);
 
-  // Filter models by configured provider
   const availableModels = useMemo(
     () => IMAGE_MODELS.filter((m) => m.provider === imageProvider),
     [imageProvider],
   );
 
-  // Auto-import legacy images
   const importedRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
@@ -191,15 +211,21 @@ export function EntityArtGenerator({
     })();
   }, [currentImage, mudDir, assetType, context, importAsset, variantGroup]);
 
+  // Load variant entries for the active group
+  useEffect(() => {
+    if (!variantGroup) {
+      setVariants([]);
+      return;
+    }
+    listVariants(variantGroup).then(setVariants).catch(() => {});
+  }, [variantGroup, listVariants, assetCount]);
+
   const nativeTransparency = modelNativelyTransparent(imageProvider, resolveImageModel(imageProvider, settings?.image_model)?.id);
 
-  /** Enhance a prompt via LLM, injecting entity context, style guide, and zone vibe. */
   const enhancePrompt = async (prompt: string): Promise<string> => {
     const systemPrompt = getEnhanceSystemPrompt(artStyle, assetType, surface, nativeTransparency);
     const parts: string[] = [];
 
-    // When we have rich entity context, lead with that so the LLM
-    // prioritizes the actual entity description over the style template
     if (entityContext) {
       parts.push(`Generate an image prompt for this entity:\n${entityContext}`);
       if (vibe) {
@@ -233,9 +259,6 @@ export function EntityArtGenerator({
         throw new Error(`No models available for provider: ${imageProvider}`);
       }
 
-      // If the prompt was already enhanced via the Enhance button, send it as-is.
-      // Otherwise auto-enhance via LLM when available — the LLM gets the entity
-      // description, style guide, and zone vibe and crafts a proper image prompt.
       let finalPrompt = activePrompt;
       if (enhanced) {
         setLastEnhancedPrompt(activePrompt);
@@ -248,7 +271,6 @@ export function EntityArtGenerator({
         }
       }
 
-      // Append style suffix to ensure consistent aesthetic
       const styleSuffix = getStyleSuffix(surface);
       if (!finalPrompt.includes(styleSuffix.slice(0, 40))) {
         finalPrompt = `${finalPrompt}\n\n${styleSuffix}`;
@@ -265,7 +287,6 @@ export function EntityArtGenerator({
         negativePrompt: getNegativePrompt(assetType),
       });
       if (!mountedRef.current) {
-        // Component unmounted during generation — auto-accept the result
         autoAcceptImage(image, finalPrompt, onAcceptRef.current, assetTypeRef.current, contextRef.current);
         return;
       }
@@ -337,8 +358,6 @@ export function EntityArtGenerator({
     setLastEnhancedPrompt(null);
     setEnhanced(false);
 
-    // Run BG removal after returning to idle so the user can keep working,
-    // but show an inline spinner so they know the operation isn't actually done.
     if (needsBgRemoval && savedDataUrl && assetType) {
       setRemovingBg(true);
       try {
@@ -361,269 +380,290 @@ export function EntityArtGenerator({
     setLastEnhancedPrompt(null);
   };
 
+  const handleFlip = async () => {
+    if (!currentImage || !isR2HashPath(currentImage)) return;
+    setFlipping(true);
+    try {
+      const newFileName = await invoke<string>("flip_image", { imageRef: currentImage });
+      onAccept(newFileName);
+    } catch (e) {
+      console.error("Flip failed:", e);
+    } finally {
+      setFlipping(false);
+    }
+  };
+
+  const handleSelectVariant = async (entry: AssetEntry) => {
+    if (!variantGroup) return;
+    await setActiveVariant(variantGroup, entry.id);
+    onAccept(entry.file_name);
+  };
+
   const savedImageSrc = useImageSrc(currentImage);
 
   const previewSrc = stage === "preview" && result
     ? result.data_url
     : savedImageSrc;
 
+  const promptKeyHandler = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+      e.preventDefault();
+      if (AI_ENABLED && hasApiKey && stage === "idle" && !removingBg) {
+        handleGenerate();
+      }
+    }
+  };
+
+  // Auto-injected context chips (informational — read-only)
+  const injectedChips: { k: string; v: string }[] = [];
+  if (projectName) injectedChips.push({ k: "world", v: projectName });
+  if (surface === "lore") injectedChips.push({ k: "surface", v: "lore" });
+  const ent = humanizeKey(context?.entity_type);
+  if (ent) injectedChips.push({ k: "entity", v: ent });
+  if (vibe) injectedChips.push({ k: "vibe", v: vibe.length > 24 ? `${vibe.slice(0, 22)}…` : vibe });
+
+  const showStudio = AI_ENABLED && (hasApiKey || hasLlmKey);
+
   return (
-    <div className="flex flex-col gap-2">
-      {previewSrc && (
-        <div className="overflow-hidden rounded border border-border-default">
-          <img
-            src={previewSrc}
-            alt="Entity art"
-            className="w-full"
-            onError={(e) => {
-              (e.target as HTMLImageElement).style.display = "none";
-            }}
+    <section className="art-panel">
+      <div className="art-panel__body">
+        {/* ─── Hero column ─── */}
+        <div className="art-panel__hero-col">
+          <HeroCanvas
+            stage={stage}
+            previewSrc={previewSrc ?? undefined}
+            heroAspect={heroAspect}
+            heroAspectLabel={heroAspectLabel}
+            isPrimary={!!currentImage && stage !== "preview"}
+            modelLabel={resolveImageModel(imageProvider, settings?.image_model)?.label}
+            canFlip={!!currentImage && isR2HashPath(currentImage) && stage === "idle"}
+            flipping={flipping}
+            onFlip={handleFlip}
+            onZoom={(src) => setLightbox(src)}
           />
+
+          {variantGroup && variants.length > 0 && stage === "idle" && (
+            <VariantsRail
+              variants={variants}
+              currentImage={currentImage}
+              assetsDir={assetsDir}
+              onSelect={handleSelectVariant}
+              onReroll={AI_ENABLED && hasApiKey ? handleGenerate : undefined}
+              rerollDisabled={removingBg}
+            />
+          )}
         </div>
-      )}
 
-      {/* Flip button */}
-      {stage === "idle" && currentImage && isR2HashPath(currentImage) && (
-        <button
-          onClick={async () => {
-            setFlipping(true);
-            try {
-              const newFileName = await invoke<string>("flip_image", { imageRef: currentImage });
-              onAccept(newFileName);
-            } catch (e) {
-              console.error("Flip failed:", e);
-            } finally {
-              setFlipping(false);
-            }
-          }}
-          disabled={flipping}
-          className="self-start rounded px-1.5 py-0.5 text-2xs text-text-secondary transition-colors hover:bg-accent/10 hover:text-accent disabled:opacity-40"
-          title="Flip image horizontally"
-        >
-          {flipping ? "Flipping..." : "\u21C4 Flip"}
-        </button>
-      )}
-
-      {/* Variant history strip */}
-      {variantGroup && stage === "idle" && (
-        <VariantStrip
-          variantGroup={variantGroup}
-          onSelect={(entry) => {
-            onAccept(entry.file_name);
-          }}
-        />
-      )}
-
-      {stage === "idle" && (
-        <div className="flex flex-col gap-1.5">
-          {/* Prompt box — visible when AI is enabled and any key is configured */}
-          {AI_ENABLED && (hasApiKey || hasLlmKey) && (
-            <div className="flex flex-col gap-1">
-              <textarea
-                value={activePrompt}
-                onChange={(e) => setEditedPrompt(e.target.value)}
-                rows={4}
-                className="w-full resize-y rounded border border-border-default bg-bg-primary px-2 py-1 font-mono text-2xs leading-relaxed text-text-secondary outline-none focus:border-accent/50 focus-visible:ring-2 focus-visible:ring-border-active"
-              />
-              <div className="flex items-center gap-1">
+        {/* ─── Studio column ─── */}
+        <div className="art-panel__studio">
+          {showStudio && (
+            <div className="art-block">
+              <div className="art-block__label">
+                <span>Prompt</span>
                 <button
+                  className={`art-block__minor${enhanced ? " art-block__minor--active" : ""}`}
                   onClick={handleEnhance}
                   disabled={enhancing || !hasLlmKey}
                   title={!hasLlmKey ? "Configure an LLM provider to enable prompt enhancement" : undefined}
-                  className="rounded px-1.5 py-0.5 text-2xs text-accent transition-colors hover:bg-accent/10 disabled:opacity-40"
                 >
-                  {enhancing ? "Enhancing..." : enhanced ? "Re-enhance" : "Enhance Prompt"}
+                  ✦ {enhancing ? "Enhancing…" : enhanced ? "Re-enhance" : "Enhance"}
                 </button>
-                {enhanced && (
-                  <span className="rounded bg-accent/15 px-1.5 py-0.5 text-2xs font-medium text-accent">
-                    Enhanced
-                  </span>
-                )}
-                {editedPrompt && (
-                  <button
-                    onClick={() => {
-                      setEditedPrompt(null);
-                      setEnhanced(false);
-                    }}
-                    className="rounded px-1.5 py-0.5 text-2xs text-text-muted transition-colors hover:text-text-secondary"
-                  >
-                    Reset
-                  </button>
-                )}
-                {(entityContext || vibe) && !enhanced && hasLlmKey && (
-                  <span className="ml-auto truncate text-2xs italic text-text-muted">
-                    Entity + vibe auto-injected on generate
-                  </span>
-                )}
               </div>
-            </div>
-          )}
-
-          {/* Action row: Generate / Pick / Gallery + advanced toggle */}
-          <div className="flex gap-1">
-            {AI_ENABLED && hasApiKey && (
-              <button
-                onClick={handleGenerate}
-                disabled={removingBg}
-                className="flex-1 rounded bg-accent/15 px-2 py-1 text-2xs font-medium text-accent transition-colors hover:bg-accent/25 disabled:opacity-50"
-              >
-                Generate Art
-              </button>
-            )}
-            <button
-              onClick={handlePickImage}
-              disabled={importing || removingBg}
-              className="flex-1 rounded bg-bg-elevated px-2 py-1 text-2xs font-medium text-text-secondary transition-colors hover:bg-bg-hover hover:text-text-primary disabled:opacity-50"
-            >
-              {importing ? "Importing..." : "Pick Image"}
-            </button>
-            <button
-              onClick={() => setShowGalleryPicker(true)}
-              disabled={removingBg}
-              className="flex-1 rounded bg-bg-elevated px-2 py-1 text-2xs font-medium text-text-secondary transition-colors hover:bg-bg-hover hover:text-text-primary disabled:opacity-50"
-            >
-              Gallery
-            </button>
-            <button
-              onClick={() => setShowSketch(true)}
-              disabled={removingBg}
-              title="Draw a sketch (mouse or tablet)"
-              className="flex-1 rounded bg-bg-elevated px-2 py-1 text-2xs font-medium text-text-secondary transition-colors hover:bg-bg-hover hover:text-text-primary disabled:opacity-50"
-            >
-              Sketch
-            </button>
-            {AI_ENABLED && hasApiKey && (
-              <button
-                onClick={() => setShowAdvanced((v) => !v)}
-                aria-expanded={showAdvanced}
-                title="Model & size"
-                className={`shrink-0 rounded px-2 py-1 text-2xs transition-colors ${
-                  showAdvanced
-                    ? "bg-accent/15 text-accent"
-                    : "text-text-muted hover:bg-bg-elevated hover:text-text-secondary"
-                }`}
-              >
-                ⚙
-              </button>
-            )}
-          </div>
-
-          {/* Advanced: style + model + dimension overrides (hidden by default) */}
-          {AI_ENABLED && showAdvanced && hasApiKey && (
-            <div className="flex flex-col gap-1 rounded border border-border-default/60 bg-bg-primary/40 px-2 py-1.5">
-              <div className="flex items-center gap-1">
-                <span className="w-10 shrink-0 text-2xs text-text-muted">Style</span>
-                {worldArtStyles && worldArtStyles.length > 0 ? (
-                  <select
-                    value={activeArtStyleId ?? ""}
-                    onChange={(e) => setActiveArtStyle(e.target.value || null)}
-                    className="ml-auto min-w-0 flex-1 rounded border border-border-default bg-bg-primary px-1 py-0.5 text-2xs text-text-secondary outline-none focus-visible:ring-2 focus-visible:ring-border-active"
-                  >
-                    {worldArtStyles.map((style) => (
-                      <option key={style.id} value={style.id}>{style.name}</option>
-                    ))}
-                  </select>
-                ) : (
-                  <select
-                    value={artStyle}
-                    onChange={(e) => setArtStyle(e.target.value as ArtStyle)}
-                    className="ml-auto min-w-0 flex-1 rounded border border-border-default bg-bg-primary px-1 py-0.5 text-2xs text-text-secondary outline-none focus-visible:ring-2 focus-visible:ring-border-active"
-                  >
-                    {(Object.keys(ART_STYLE_LABELS) as ArtStyle[]).map((style) => (
-                      <option key={style} value={style}>{ART_STYLE_LABELS[style]}</option>
-                    ))}
-                  </select>
-                )}
-              </div>
-              <div className="flex items-center gap-1">
-                <span className="w-10 shrink-0 text-2xs text-text-muted">Size</span>
-                <span className="shrink-0 text-2xs text-text-muted">{activeDims.width}×{activeDims.height}</span>
-                <select
-                  value={dimOverride ? `${dimOverride.width}x${dimOverride.height}` : ""}
-                  onChange={(e) => {
-                    if (!e.target.value) {
-                      setDimOverride(null);
-                    } else {
-                      const parts = e.target.value.split("x").map(Number);
-                      setDimOverride({ width: parts[0]!, height: parts[1]! });
-                    }
-                  }}
-                  className="ml-auto rounded border border-border-default bg-bg-primary px-1 py-0.5 text-2xs text-text-secondary outline-none focus-visible:ring-2 focus-visible:ring-border-active"
-                >
-                  <option value="">Default</option>
-                  {DIMENSION_PRESETS.map((p) => (
-                    <option key={p.label} value={`${p.width}x${p.height}`}>{p.label}</option>
-                  ))}
-                </select>
-              </div>
-              {availableModels.length > 0 && (
-                <div className="flex flex-col gap-1">
-                  <div className="flex items-center gap-1">
-                    <span className="w-10 shrink-0 text-2xs text-text-muted">Model</span>
-                    <select
-                      value={modelOverride ?? ""}
-                      onChange={(e) => setModelOverride(e.target.value || null)}
-                      className="ml-auto min-w-0 flex-1 rounded border border-border-default bg-bg-primary px-1 py-0.5 text-2xs text-text-secondary outline-none focus-visible:ring-2 focus-visible:ring-border-active"
-                    >
-                      <option value="">Default ({resolveImageModel(imageProvider, settings?.image_model)?.label ?? "first available"})</option>
-                      {availableModels.map((m) => (
-                        <option key={m.id} value={m.id}>{m.label}</option>
-                      ))}
-                      <option value="__custom__">Custom...</option>
-                    </select>
-                  </div>
-                  {modelOverride === "__custom__" && (
-                    <input
-                      type="text"
-                      value={customModel}
-                      onChange={(e) => setCustomModel(e.target.value)}
-                      placeholder="e.g. runware:400@2"
-                      className="rounded border border-border-default bg-bg-primary px-1.5 py-0.5 font-mono text-2xs text-text-secondary outline-none focus:border-accent/50 focus-visible:ring-2 focus-visible:ring-border-active"
-                    />
-                  )}
+              <div className="art-prompter">
+                <textarea
+                  className="art-prompter__field"
+                  value={activePrompt}
+                  onChange={(e) => setEditedPrompt(e.target.value)}
+                  onKeyDown={promptKeyHandler}
+                  rows={4}
+                  placeholder="Describe the form you wish to summon…"
+                />
+                <div className="art-prompter__footer">
+                  {(entityContext || vibe) && !enhanced && hasLlmKey ? (
+                    <span className="art-prompter__hint">Entity + vibe auto-injected on generate</span>
+                  ) : <span />}
+                  <span className="art-prompter__count">{activePrompt.length} chars</span>
                 </div>
+              </div>
+              {injectedChips.length > 0 && (
+                <div className="art-injected">
+                  <span className="art-injected__label">Auto-injected</span>
+                  <div className="art-injected__chips">
+                    {injectedChips.map((c) => (
+                      <span key={c.k} className="art-ichip" title={`${c.k}: ${c.v}`}>
+                        <span className="art-ichip__k">{c.k}</span>
+                        <span className="art-ichip__v">{c.v}</span>
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {editedPrompt && (
+                <button
+                  onClick={() => { setEditedPrompt(null); setEnhanced(false); }}
+                  className="art-block__minor self-start"
+                  style={{ alignSelf: "flex-start" }}
+                >
+                  ↺ Reset prompt
+                </button>
               )}
             </div>
           )}
-        </div>
-      )}
 
-      {AI_ENABLED && stage === "generating" && (
-        <div className="flex items-center gap-2 py-2">
-          <div className="h-4 w-4 rounded-full border-2 border-accent border-t-transparent animate-spin" />
-          <span className="text-2xs text-text-secondary">
-            {hasLlmKey && !enhanced ? "Crafting prompt & generating..." : "Generating..."}
-          </span>
-        </div>
-      )}
+          {AI_ENABLED && hasApiKey && (
+            <div className="art-block">
+              <div className="art-block__label">
+                <span>Forge settings</span>
+              </div>
+              <div className="art-settings">
+                <div className="art-setting art-setting--wide">
+                  <span className="art-setting__k">Style</span>
+                  {worldArtStyles && worldArtStyles.length > 0 ? (
+                    <select
+                      className="art-setting__v"
+                      value={activeArtStyleId ?? ""}
+                      onChange={(e) => setActiveArtStyle(e.target.value || null)}
+                    >
+                      {worldArtStyles.map((style) => (
+                        <option key={style.id} value={style.id}>{style.name}</option>
+                      ))}
+                    </select>
+                  ) : (
+                    <select
+                      className="art-setting__v"
+                      value={artStyle}
+                      onChange={(e) => setArtStyle(e.target.value as ArtStyle)}
+                    >
+                      {(Object.keys(ART_STYLE_LABELS) as ArtStyle[]).map((style) => (
+                        <option key={style} value={style}>{ART_STYLE_LABELS[style]}</option>
+                      ))}
+                    </select>
+                  )}
+                </div>
 
-      {removingBg && stage === "idle" && (
-        <div className="flex items-center gap-2 py-1">
-          <div className="h-3 w-3 rounded-full border-2 border-accent border-t-transparent animate-spin" />
-          <span className="text-2xs text-text-secondary">Removing background...</span>
-        </div>
-      )}
+                <div className="art-setting">
+                  <span className="art-setting__k">Ratio</span>
+                  <select
+                    className="art-setting__v"
+                    value={dimOverride ? `${dimOverride.width}x${dimOverride.height}` : ""}
+                    onChange={(e) => {
+                      if (!e.target.value) {
+                        setDimOverride(null);
+                      } else {
+                        const parts = e.target.value.split("x").map(Number);
+                        setDimOverride({ width: parts[0]!, height: parts[1]! });
+                      }
+                    }}
+                  >
+                    <option value="">Default · {defaultDims.width}×{defaultDims.height}</option>
+                    {DIMENSION_PRESETS.map((p) => (
+                      <option key={p.label} value={`${p.width}x${p.height}`}>{p.label}</option>
+                    ))}
+                  </select>
+                </div>
 
-      {AI_ENABLED && stage === "preview" && (
-        <div className="flex gap-1">
-          <button
-            onClick={handleAccept}
-            className="flex-1 rounded bg-accent/15 px-2 py-1 text-2xs font-medium text-accent transition-colors hover:bg-accent/25"
-          >
-            Accept
-          </button>
-          <button
-            onClick={handleReject}
-            className="flex-1 rounded px-2 py-1 text-2xs text-text-muted transition-colors hover:text-text-secondary"
-          >
-            Reject
-          </button>
-        </div>
-      )}
+                {availableModels.length > 0 && (
+                  <div className="art-setting">
+                    <span className="art-setting__k">Model</span>
+                    <select
+                      className="art-setting__v"
+                      value={modelOverride ?? ""}
+                      onChange={(e) => setModelOverride(e.target.value || null)}
+                    >
+                      <option value="">{resolveImageModel(imageProvider, settings?.image_model)?.label ?? "Default"}</option>
+                      {availableModels.map((m) => (
+                        <option key={m.id} value={m.id}>{m.label}</option>
+                      ))}
+                      <option value="__custom__">Custom…</option>
+                    </select>
+                  </div>
+                )}
 
-      {error && (
-        <InlineError error={error} onDismiss={() => setError(null)} onRetry={handleGenerate} />
-      )}
+                {modelOverride === "__custom__" && (
+                  <input
+                    type="text"
+                    className="art-setting__custom art-setting--wide"
+                    value={customModel}
+                    onChange={(e) => setCustomModel(e.target.value)}
+                    placeholder="e.g. runware:400@2"
+                  />
+                )}
+              </div>
+            </div>
+          )}
+
+          <div className="art-actions">
+            {AI_ENABLED && hasApiKey && stage === "idle" && (
+              <button
+                className="art-btn art-btn--ember art-btn--big"
+                onClick={handleGenerate}
+                disabled={removingBg}
+              >
+                <span className="art-btn__rune">⚒</span>
+                <span>Conjure</span>
+                <span className="art-btn__sub">⌘↵</span>
+              </button>
+            )}
+
+            {AI_ENABLED && stage === "generating" && (
+              <button className="art-btn art-btn--ember art-btn--big" disabled>
+                <span className="art-inline-status__spinner" />
+                <span>{hasLlmKey && !enhanced ? "Crafting prompt…" : "Conjuring…"}</span>
+              </button>
+            )}
+
+            {AI_ENABLED && stage === "preview" && (
+              <div className="art-preview-actions">
+                <span className="art-preview-actions__label">Vision summoned · accept?</span>
+                <button className="art-btn art-btn--ember art-btn--small" onClick={handleAccept}>
+                  ✓ Keep
+                </button>
+                <button className="art-btn art-btn--ghost art-btn--small" onClick={handleReject}>
+                  ✕ Reject
+                </button>
+              </div>
+            )}
+
+            {stage === "idle" && (
+              <div className="art-actions__row">
+                <button
+                  className="art-btn art-btn--ghost art-btn--small"
+                  onClick={handlePickImage}
+                  disabled={importing || removingBg}
+                >
+                  {importing ? "Importing…" : "↑ Pick file"}
+                </button>
+                <button
+                  className="art-btn art-btn--ghost art-btn--small"
+                  onClick={() => setShowSketch(true)}
+                  disabled={removingBg}
+                  title="Draw a sketch (mouse or tablet)"
+                >
+                  ✎ Sketch
+                </button>
+                <button
+                  className="art-btn art-btn--ghost art-btn--small"
+                  onClick={() => setShowGalleryPicker(true)}
+                  disabled={removingBg}
+                >
+                  ⊞ Gallery
+                </button>
+              </div>
+            )}
+          </div>
+
+          {removingBg && (
+            <div className="art-inline-status">
+              <span className="art-inline-status__spinner" />
+              <span>Removing background…</span>
+            </div>
+          )}
+
+          {error && (
+            <InlineError error={error} onDismiss={() => setError(null)} onRetry={handleGenerate} />
+          )}
+        </div>
+      </div>
 
       {showGalleryPicker && (
         <AssetPickerModal
@@ -646,6 +686,353 @@ export function EntityArtGenerator({
           onAccept(entry.file_name);
         }}
       />
+
+      {lightbox && (
+        <ImageLightbox src={lightbox} onClose={() => setLightbox(null)} />
+      )}
+    </section>
+  );
+}
+
+/* ─── Hero canvas — own component for state isolation ───────────────── */
+
+function HeroCanvas({
+  stage,
+  previewSrc,
+  heroAspect,
+  heroAspectLabel,
+  isPrimary,
+  modelLabel,
+  canFlip,
+  flipping,
+  onFlip,
+  onZoom,
+}: {
+  stage: Stage;
+  previewSrc?: string;
+  heroAspect: string;
+  heroAspectLabel: string;
+  isPrimary: boolean;
+  modelLabel?: string;
+  canFlip: boolean;
+  flipping: boolean;
+  onFlip: () => void;
+  onZoom?: (src: string) => void;
+}) {
+  if (stage === "generating") {
+    return (
+      <div
+        className="art-hero art-hero--gen"
+        style={{ "--art-hero-aspect": heroAspect } as React.CSSProperties}
+      >
+        <div className="art-hero__gen-grid">
+          {[0, 1, 2, 3].map((i) => (
+            <div key={i} className="art-hero__gen-tile" style={{ animationDelay: `${i * 0.18}s` }}>
+              <div className="art-hero__gen-shimmer" />
+            </div>
+          ))}
+        </div>
+        <div className="art-hero__gen-readout">
+          <span className="art-hero__gen-orb" />
+          <div>
+            <p className="art-hero__gen-eyebrow">The Forge is shaping your vision</p>
+            <p className="art-hero__gen-progress">{modelLabel ?? "Generating"} · {heroAspectLabel}</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!previewSrc) {
+    return (
+      <div
+        className="art-hero art-hero--empty"
+        style={{ "--art-hero-aspect": heroAspect } as React.CSSProperties}
+      >
+        <div className="art-hero__empty-mark">
+          <svg viewBox="0 0 64 64" width="56" height="56" aria-hidden="true">
+            <circle cx="32" cy="32" r="20" fill="none" stroke="currentColor" strokeWidth="0.8" opacity="0.4" />
+            <circle cx="32" cy="32" r="10" fill="none" stroke="currentColor" strokeWidth="1" opacity="0.7" />
+            <circle cx="32" cy="32" r="3" fill="currentColor" />
+          </svg>
+        </div>
+        <p className="art-hero__empty-eyebrow">Awaiting your command</p>
+        <p className="art-hero__empty-line">No image has yet been summoned.</p>
+        <p className="art-hero__empty-line art-hero__empty-line--soft">
+          Describe what you wish to see, then strike <em>Conjure</em>.
+        </p>
+      </div>
+    );
+  }
+
+  const clickable = !!onZoom;
+  return (
+    <div
+      className={`art-hero${clickable ? " art-hero--clickable" : ""}`}
+      style={{ "--art-hero-aspect": heroAspect } as React.CSSProperties}
+      onClick={clickable ? () => onZoom?.(previewSrc) : undefined}
+      role={clickable ? "button" : undefined}
+      tabIndex={clickable ? 0 : undefined}
+      onKeyDown={clickable ? (e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onZoom?.(previewSrc);
+        }
+      } : undefined}
+      title={clickable ? "Click to zoom" : undefined}
+    >
+      <img
+        src={previewSrc}
+        alt="Entity art"
+        className="art-hero__img"
+        onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+      />
+      <div className="art-hero__scrim" />
+      <div className="art-hero__meta">
+        {isPrimary && (
+          <span className="art-chip art-chip--primary">
+            <span className="art-chip__star">✦</span> Primary
+          </span>
+        )}
+        {stage === "preview" && (
+          <span className="art-chip art-chip--primary">
+            <span className="art-chip__star">✦</span> Preview
+          </span>
+        )}
+        <span className="art-chip">{heroAspectLabel}</span>
+        {modelLabel && <span className="art-chip art-chip--muted">{modelLabel}</span>}
+      </div>
+      <div className="art-hero__actions">
+        {canFlip && (
+          <button
+            className="art-hero-action"
+            onClick={(e) => { e.stopPropagation(); onFlip(); }}
+            disabled={flipping}
+            title="Flip horizontally"
+          >
+            ⇄
+          </button>
+        )}
+      </div>
     </div>
+  );
+}
+
+/* ─── Variants rail — filmstrip ─────────────────────────────────────── */
+
+function VariantsRail({
+  variants,
+  currentImage,
+  assetsDir,
+  onSelect,
+  onReroll,
+  rerollDisabled,
+}: {
+  variants: AssetEntry[];
+  currentImage?: string;
+  assetsDir: string;
+  onSelect: (entry: AssetEntry) => void;
+  onReroll?: () => void;
+  rerollDisabled?: boolean;
+}) {
+  return (
+    <div className="art-rail">
+      <div className="art-rail__label">
+        <span className="art-rail__title">Variants</span>
+        <span className="art-rail__count">{variants.length}</span>
+      </div>
+      <div className="art-rail__strip">
+        {variants.map((v) => (
+          <VariantThumb
+            key={v.id}
+            entry={v}
+            assetsDir={assetsDir}
+            isPrimary={v.is_active || v.file_name === currentImage}
+            onClick={() => onSelect(v)}
+          />
+        ))}
+        {onReroll && (
+          <button
+            className="art-thumb art-thumb--add"
+            onClick={onReroll}
+            disabled={rerollDisabled}
+            title="Generate another variant with the current prompt"
+          >
+            <span className="art-thumb__plus">↻</span>
+            <span className="art-thumb__addlabel">Reroll</span>
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ─── Lightbox — click-to-zoom ──────────────────────────────────────── */
+
+function ImageLightbox({ src, onClose }: { src: string; onClose: () => void }) {
+  const [zoom, setZoom] = useState(1);
+  const [pan, setPan] = useState({ x: 0, y: 0 });
+  const [dragging, setDragging] = useState(false);
+  const dragStart = useRef({ x: 0, y: 0, panX: 0, panY: 0 });
+  const dragMovedRef = useRef(false);
+  const closeBtnRef = useRef<HTMLButtonElement>(null);
+  const stageRef = useRef<HTMLDivElement>(null);
+
+  // Stash + restore focus, listen for Escape
+  useEffect(() => {
+    const previouslyFocused = document.activeElement as HTMLElement | null;
+    closeBtnRef.current?.focus();
+
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        onClose();
+      } else if (e.key === "0") {
+        setZoom(1);
+        setPan({ x: 0, y: 0 });
+      } else if (e.key === "+" || e.key === "=") {
+        setZoom((z) => Math.min(8, z * 1.2));
+      } else if (e.key === "-" || e.key === "_") {
+        setZoom((z) => Math.max(0.5, z / 1.2));
+      }
+    };
+    window.addEventListener("keydown", handleKey);
+    return () => {
+      window.removeEventListener("keydown", handleKey);
+      previouslyFocused?.focus?.();
+    };
+  }, [onClose]);
+
+  // Native wheel listener so we can preventDefault (React onWheel is passive)
+  useEffect(() => {
+    const stage = stageRef.current;
+    if (!stage) return;
+    const handleWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      const factor = e.deltaY < 0 ? 1.12 : 1 / 1.12;
+      setZoom((z) => Math.max(0.5, Math.min(8, z * factor)));
+    };
+    stage.addEventListener("wheel", handleWheel, { passive: false });
+    return () => stage.removeEventListener("wheel", handleWheel);
+  }, []);
+
+  const onMouseDown = (e: React.MouseEvent) => {
+    setDragging(true);
+    dragMovedRef.current = false;
+    dragStart.current = { x: e.clientX, y: e.clientY, panX: pan.x, panY: pan.y };
+  };
+  const onMouseMove = (e: React.MouseEvent) => {
+    if (!dragging) return;
+    const dx = e.clientX - dragStart.current.x;
+    const dy = e.clientY - dragStart.current.y;
+    if (Math.abs(dx) > 3 || Math.abs(dy) > 3) {
+      dragMovedRef.current = true;
+    }
+    setPan({
+      x: dragStart.current.panX + dx,
+      y: dragStart.current.panY + dy,
+    });
+  };
+  const onMouseUp = () => {
+    setDragging(false);
+    if (!dragMovedRef.current) {
+      onClose();
+    }
+  };
+  const onMouseLeave = () => setDragging(false);
+
+  return (
+    <div
+      className="art-lightbox"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Image preview"
+      onClick={onClose}
+    >
+      <div
+        ref={stageRef}
+        className={`art-lightbox__stage${dragging ? " art-lightbox__stage--grabbing" : ""}`}
+        onClick={(e) => e.stopPropagation()}
+        onMouseDown={onMouseDown}
+        onMouseMove={onMouseMove}
+        onMouseUp={onMouseUp}
+        onMouseLeave={onMouseLeave}
+      >
+        <img
+          src={src}
+          alt=""
+          className="art-lightbox__img"
+          style={{
+            transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
+          }}
+        />
+      </div>
+      <div className="art-lightbox__hud" onClick={(e) => e.stopPropagation()}>
+        <button
+          className="art-lightbox__btn"
+          onClick={() => setZoom((z) => Math.max(0.5, z / 1.2))}
+          title="Zoom out"
+        >
+          −
+        </button>
+        <span className="art-lightbox__zoom">{Math.round(zoom * 100)}%</span>
+        <button
+          className="art-lightbox__btn"
+          onClick={() => setZoom((z) => Math.min(8, z * 1.2))}
+          title="Zoom in"
+        >
+          +
+        </button>
+        <button
+          className="art-lightbox__btn"
+          onClick={() => { setZoom(1); setPan({ x: 0, y: 0 }); }}
+          title="Reset zoom"
+        >
+          Reset
+        </button>
+        <span className="art-lightbox__hint">scroll to zoom · drag to pan</span>
+        <button
+          ref={closeBtnRef}
+          className="art-lightbox__btn"
+          onClick={onClose}
+        >
+          Close · Esc
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function VariantThumb({
+  entry,
+  assetsDir,
+  isPrimary,
+  onClick,
+}: {
+  entry: AssetEntry;
+  assetsDir: string;
+  isPrimary: boolean;
+  onClick: () => void;
+}) {
+  const imagePath = `${assetsDir}\\images\\${entry.file_name}`;
+  const src = useImageSrc(imagePath);
+  return (
+    <button
+      type="button"
+      className="art-thumb"
+      data-primary={isPrimary}
+      onClick={onClick}
+      title={isPrimary ? "Primary" : "Set as primary"}
+    >
+      {src ? (
+        <img src={src} alt="" loading="lazy" />
+      ) : (
+        <div style={{ width: "100%", height: "100%", background: "rgb(var(--bg-rgb) / 0.6)" }} />
+      )}
+      {isPrimary && <span className="art-thumb__star">✦</span>}
+      {!isPrimary && (
+        <div className="art-thumb__hover">Set primary</div>
+      )}
+    </button>
   );
 }

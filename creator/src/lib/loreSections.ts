@@ -29,28 +29,37 @@ export function getEffectiveSections(article: Article): ArticleSection[] {
 }
 
 /**
- * One-time migration: ensure `article.sections` is populated. If sections
- * already exist, returns the article untouched. Otherwise builds the
- * default layout from legacy fields and returns a new Article with
- * `sections` set (legacy `content`/`image`/`gallery` are preserved on the
- * article so older code paths keep working during the transition).
+ * One-time migration: ensure `article.sections` is populated and contains a
+ * required Visage image section. If sections already exist but no Visage is
+ * present (e.g. an article created before the Visage requirement landed),
+ * a Visage section is prepended.
  */
 export function ensureSections(article: Article): Article {
-  if (article.sections && article.sections.length > 0) return article;
-  return { ...article, sections: synthesizeLegacySections(article) };
+  if (!article.sections || article.sections.length === 0) {
+    return { ...article, sections: synthesizeLegacySections(article) };
+  }
+  const hasVisage = article.sections.some((s) => s.type === "image" && s.required);
+  if (hasVisage) return article;
+  const visage: ImageSection = {
+    id: newSectionId(),
+    type: "image",
+    title: "Visage",
+    required: true,
+    ...(article.image ? { primary: article.image } : {}),
+  };
+  return { ...article, sections: [visage, ...article.sections] };
 }
 
 function synthesizeLegacySections(article: Article): ArticleSection[] {
   const sections: ArticleSection[] = [];
 
-  if (article.image) {
-    sections.push({
-      id: newSectionId(),
-      type: "image",
-      title: "Visage",
-      primary: article.image,
-    });
-  }
+  sections.push({
+    id: newSectionId(),
+    type: "image",
+    title: "Visage",
+    required: true,
+    ...(article.image ? { primary: article.image } : {}),
+  });
 
   if (article.content && article.content.trim()) {
     sections.push({

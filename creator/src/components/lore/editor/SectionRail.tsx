@@ -145,30 +145,32 @@ export function SectionRail({
             </span>
             <span className="ae-sec__tail">
               <span className="ae-sec__num">{String(i + 1).padStart(2, "0")}</span>
-              <span
-                role="button"
-                tabIndex={0}
-                className="ae-sec__del"
-                aria-label={`Remove section ${section.title || "Untitled"}`}
-                title="Remove section"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (window.confirm(`Remove section "${section.title || "Untitled"}"?`)) {
-                    onDelete(section.id);
-                  }
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
+              {!section.required && (
+                <span
+                  role="button"
+                  tabIndex={0}
+                  className="ae-sec__del"
+                  aria-label={`Remove section ${section.title || "Untitled"}`}
+                  title="Remove section"
+                  onClick={(e) => {
                     e.stopPropagation();
                     if (window.confirm(`Remove section "${section.title || "Untitled"}"?`)) {
                       onDelete(section.id);
                     }
-                  }
-                }}
-              >
-                ×
-              </span>
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      if (window.confirm(`Remove section "${section.title || "Untitled"}"?`)) {
+                        onDelete(section.id);
+                      }
+                    }
+                  }}
+                >
+                  ×
+                </span>
+              )}
             </span>
           </button>
         ))}

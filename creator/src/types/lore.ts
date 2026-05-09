@@ -48,6 +48,8 @@ interface ArticleSectionBase {
   title?: string;
   /** When true, section is excluded from showcase export. */
   private?: boolean;
+  /** When true, the section cannot be deleted from the editor (e.g. Visage). */
+  required?: boolean;
 }
 
 export interface RichTextSection extends ArticleSectionBase {

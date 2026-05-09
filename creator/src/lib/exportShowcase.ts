@@ -519,8 +519,8 @@ export function exportShowcaseData(
       }
     }
 
-    // Image/gallery resolution: prefer section-derived images; fall back to
-    // article-level fields for legacy articles or when sections are absent.
+    // Image/gallery resolution: prefer section-derived images (the Visage
+    // section is canonical); fall back to legacy article-level fields.
     const primary = flat.primaryImage ?? a.image;
     const galleryFiles = flat.galleryImages.length > 0
       ? flat.galleryImages

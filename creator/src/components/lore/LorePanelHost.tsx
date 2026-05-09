@@ -123,8 +123,60 @@ export function LorePanelHost({ panelId }: { panelId: string }) {
     );
   }
 
+  const toolbarButtons = (
+    <>
+      <UndoRedoButtons
+        canUndo={undoDepth > 0}
+        canRedo={redoDepth > 0}
+        undoDepth={undoDepth}
+        redoDepth={redoDepth}
+        onUndo={() => {
+          if (undoDepth === 0) return;
+          if (isStoryPanel) useStoryStore.getState().undoStory();
+          else useLoreStore.getState().undoLore();
+          useToastStore.getState().show("Change undone");
+        }}
+        onRedo={() => {
+          if (redoDepth === 0) return;
+          if (isStoryPanel) useStoryStore.getState().redoStory();
+          else useLoreStore.getState().redoLore();
+          useToastStore.getState().show("Change restored");
+        }}
+      />
+      {AI_ENABLED && (
+        <button
+          type="button"
+          onClick={() => setLoreChatOpen(true)}
+          aria-label="Ask your world (Ctrl+/)"
+          title="Ask your world (Ctrl+/)"
+          className="focus-ring flex items-center gap-1.5 rounded-full border border-[var(--chrome-stroke)] bg-bg-primary/80 px-3 py-1 text-2xs font-medium text-accent shadow-md transition hover:bg-bg-primary"
+        >
+          <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M3 4h10a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1H7l-3 2.5V12H3a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1z" />
+          </svg>
+          Ask
+        </button>
+      )}
+      {(dirty || saving || saveError) && (
+        <>
+          {saveError && <span role="alert" className="text-2xs text-status-error">Save failed</span>}
+          <button
+            onClick={handleSave}
+            disabled={!dirty || saving}
+            aria-label={saving ? "Saving lore" : "Save lore"}
+            className="focus-ring rounded-full border border-[var(--chrome-stroke)] bg-bg-primary/80 px-3 py-1 text-2xs font-medium text-accent shadow-md transition hover:bg-bg-primary disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            {saving ? <span className="flex items-center gap-1.5"><Spinner />Saving</span> : "Save Lore"}
+          </button>
+        </>
+      )}
+    </>
+  );
+
+  const isTimeline = panelId === "loreTimeline";
+
   return (
-    <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+    <div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
       <div className="relative min-h-0 min-w-0 flex-1 overflow-y-auto">
         <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
           <img
@@ -137,65 +189,22 @@ export function LorePanelHost({ panelId }: { panelId: string }) {
 
         <div
           className={`relative z-10 flex min-h-full w-full flex-col px-3 py-3 ${
-            panelId === "loreTimeline" ? "max-w-none" : (def?.maxWidth ?? "max-w-5xl")
+            isTimeline ? "max-w-none" : (def?.maxWidth ?? "max-w-5xl")
           }`}
         >
-          <div
-            className={`pointer-events-auto z-20 flex items-center justify-end gap-2 ${
-              panelId === "loreTimeline"
-                ? "mb-2 self-end"
-                : "absolute right-5 top-5"
-            }`}
-          >
-            <UndoRedoButtons
-              canUndo={undoDepth > 0}
-              canRedo={redoDepth > 0}
-              undoDepth={undoDepth}
-              redoDepth={redoDepth}
-              onUndo={() => {
-                if (undoDepth === 0) return;
-                if (isStoryPanel) useStoryStore.getState().undoStory();
-                else useLoreStore.getState().undoLore();
-                useToastStore.getState().show("Change undone");
-              }}
-              onRedo={() => {
-                if (redoDepth === 0) return;
-                if (isStoryPanel) useStoryStore.getState().redoStory();
-                else useLoreStore.getState().redoLore();
-                useToastStore.getState().show("Change restored");
-              }}
-            />
-            {AI_ENABLED && (
-              <button
-                type="button"
-                onClick={() => setLoreChatOpen(true)}
-                aria-label="Ask your world (Ctrl+/)"
-                title="Ask your world (Ctrl+/)"
-                className="focus-ring flex items-center gap-1.5 rounded-full border border-[var(--chrome-stroke)] bg-bg-primary/80 px-3 py-1 text-2xs font-medium text-accent shadow-md transition hover:bg-bg-primary"
-              >
-                <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                  <path d="M3 4h10a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1H7l-3 2.5V12H3a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1z" />
-                </svg>
-                Ask
-              </button>
-            )}
-            {(dirty || saving || saveError) && (
-              <>
-                {saveError && <span role="alert" className="text-2xs text-status-error">Save failed</span>}
-                <button
-                  onClick={handleSave}
-                  disabled={!dirty || saving}
-                  aria-label={saving ? "Saving lore" : "Save lore"}
-                  className="focus-ring rounded-full border border-[var(--chrome-stroke)] bg-bg-primary/80 px-3 py-1 text-2xs font-medium text-accent shadow-md transition hover:bg-bg-primary disabled:cursor-not-allowed disabled:opacity-40"
-                >
-                  {saving ? <span className="flex items-center gap-1.5"><Spinner />Saving</span> : "Save Lore"}
-                </button>
-              </>
-            )}
-          </div>
+          {isTimeline && (
+            <div className="pointer-events-auto z-20 mb-2 flex items-center justify-end gap-2 self-end">
+              {toolbarButtons}
+            </div>
+          )}
           {renderPanel(panelId)}
         </div>
       </div>
+      {!isTimeline && (
+        <div className="pointer-events-auto absolute bottom-4 left-4 z-30 flex items-center gap-2">
+          {toolbarButtons}
+        </div>
+      )}
     </div>
   );
 }

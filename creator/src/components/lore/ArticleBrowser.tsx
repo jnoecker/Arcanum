@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useLoreStore, selectArticleCount, selectArticles } from "@/stores/loreStore";
 import { ArticleEditorV2 } from "./editor/ArticleEditorV2";
 import { ArticleGenerator } from "./ArticleGenerator";
+import { NewArticleDialog } from "./NewArticleDialog";
 import { WorldSeedWizard } from "./WorldSeedWizard";
 import { StoryEditorPanel } from "./StoryEditorPanel";
 
@@ -12,6 +13,7 @@ export function ArticleBrowser() {
   const articleCount = useLoreStore(selectArticleCount);
   const selectedArticle = selectedArticleId ? articles[selectedArticleId] : null;
   const [showGenerator, setShowGenerator] = useState(false);
+  const [showNewArticle, setShowNewArticle] = useState(false);
   const [showSeedWizard, setShowSeedWizard] = useState(false);
 
   useEffect(() => {
@@ -62,13 +64,22 @@ export function ArticleBrowser() {
                 Seed the Setting
               </button>
             )}
-            <button
-              onClick={() => setShowGenerator(true)}
-              title="Generate article with AI"
-              className={`focus-ring ${articleCount === 0 ? "action-button action-button-secondary action-button-sm" : "action-button action-button-primary action-button-md"}`}
-            >
-              Generate Article
-            </button>
+            <div className="flex flex-wrap items-center justify-center gap-2">
+              <button
+                onClick={() => setShowNewArticle(true)}
+                title="Create a blank article"
+                className={`focus-ring action-button ${articleCount === 0 ? "action-button-secondary action-button-sm" : "action-button-primary action-button-md"}`}
+              >
+                New Article
+              </button>
+              <button
+                onClick={() => setShowGenerator(true)}
+                title="Generate article with AI"
+                className={`focus-ring action-button ${articleCount === 0 ? "action-button-secondary action-button-sm" : "action-button-secondary action-button-md"}`}
+              >
+                Generate Article
+              </button>
+            </div>
           </div>
         </div>
       </section>
@@ -76,6 +87,9 @@ export function ArticleBrowser() {
       {/* Dialogs */}
       {showGenerator && (
         <ArticleGenerator onClose={() => setShowGenerator(false)} />
+      )}
+      {showNewArticle && (
+        <NewArticleDialog onClose={() => setShowNewArticle(false)} />
       )}
       {showSeedWizard && (
         <WorldSeedWizard onClose={() => setShowSeedWizard(false)} />

@@ -334,8 +334,8 @@ export const useLoreStore = create<LoreStore>((set, get) => ({
       if (!s.lore) return s;
       const existing = s.lore.articles[articleId];
       if (!existing) return s;
-      if (existing.sections && existing.sections.length > 0) return s;
       const migrated = ensureSections(existing);
+      if (migrated === existing) return s;
       return {
         lore: {
           ...s.lore,
@@ -405,6 +405,8 @@ export const useLoreStore = create<LoreStore>((set, get) => ({
       const existing = s.lore.articles[articleId];
       if (!existing) return s;
       const sections = existing.sections ?? ensureSections(existing).sections ?? [];
+      const target = sections.find((sec) => sec.id === sectionId);
+      if (!target || target.required) return s;
       const next = sections.filter((sec) => sec.id !== sectionId);
       if (next.length === sections.length) return s;
       const wasSelected = s.selectedSectionId === sectionId;

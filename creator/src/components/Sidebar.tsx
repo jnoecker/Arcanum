@@ -206,16 +206,13 @@ function DrilledHeader({
       <div className="flex items-center gap-2">
         <button
           onClick={onBack}
-          className="focus-ring shell-pill flex h-8 shrink-0 items-center gap-1 rounded-full px-2.5 text-2xs text-text-muted transition hover:text-text-primary"
+          className="focus-ring group/back flex h-8 shrink-0 items-center gap-1.5 rounded-full border border-accent/40 bg-bg-abyss/90 px-3 font-display text-2xs uppercase tracking-wide-ui text-accent shadow-[var(--shadow-drop)] transition hover:border-accent hover:bg-accent/15"
           title="Back to islands"
           aria-label="Back to islands"
         >
-          <img
-            src={UI_ARROW}
-            alt=""
-            aria-hidden="true"
-            className="h-3.5 w-3.5 -scale-x-100"
-          />
+          <span aria-hidden="true" className="transition group-hover/back:-translate-x-0.5">
+            ←
+          </span>
           <span>Back</span>
         </button>
         <button

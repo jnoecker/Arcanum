@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import type { RaceDefinitionConfig } from "@/types/config";
 import { useImageSrc } from "@/lib/useImageSrc";
 import { useAssetStore } from "@/stores/assetStore";
-import { SearchIcon, PlusIcon } from "../achievements/icons";
+import { SearchIcon, PlusIcon, CopyIcon, TrashIcon } from "../achievements/icons";
 
 function cx(...c: Array<string | false | null | undefined>) {
   return c.filter(Boolean).join(" ");
@@ -13,9 +13,19 @@ interface RacesListProps {
   selectedId: string | null;
   onSelect: (id: string) => void;
   onAdd: () => void;
+  onDuplicate: () => void;
+  onDelete: () => void;
 }
 
-export function RacesList({ races, selectedId, onSelect, onAdd }: RacesListProps) {
+export function RacesList({
+  races,
+  selectedId,
+  onSelect,
+  onAdd,
+  onDuplicate,
+  onDelete,
+}: RacesListProps) {
+  const hasSelection = selectedId !== null;
   const [query, setQuery] = useState("");
 
   const filtered = useMemo(() => {
@@ -31,7 +41,7 @@ export function RacesList({ races, selectedId, onSelect, onAdd }: RacesListProps
   }, [races, query]);
 
   return (
-    <aside className="panel-surface flex flex-col gap-3 rounded-2xl p-4 shadow-section">
+    <aside className="panel-surface flex flex-col gap-2 rounded-2xl p-3 shadow-section">
       <div className="flex items-center justify-between gap-2">
         <h3 className="font-display text-xs font-semibold uppercase tracking-[0.18em] text-text-secondary">
           Race Roster
@@ -51,14 +61,36 @@ export function RacesList({ races, selectedId, onSelect, onAdd }: RacesListProps
         />
       </div>
 
-      <button
-        type="button"
-        onClick={onAdd}
-        className="focus-ring inline-flex items-center justify-center gap-1.5 rounded-xl border border-accent/40 bg-accent/10 px-3 py-2 text-xs font-medium text-accent transition hover:bg-accent/20"
-      >
-        <PlusIcon />
-        Add Race
-      </button>
+      <div className="flex items-center gap-1.5">
+        <button
+          type="button"
+          onClick={onAdd}
+          className="focus-ring inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-accent/40 bg-accent/10 px-2.5 py-1.5 text-2xs font-medium text-accent transition hover:bg-accent/20"
+        >
+          <PlusIcon />
+          Add
+        </button>
+        <button
+          type="button"
+          onClick={onDuplicate}
+          disabled={!hasSelection}
+          title="Duplicate the selected race"
+          aria-label="Duplicate the selected race"
+          className="focus-ring inline-flex h-7 w-7 items-center justify-center rounded-lg border border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] text-text-muted transition hover:border-accent/30 hover:text-text-primary disabled:cursor-not-allowed disabled:opacity-30"
+        >
+          <CopyIcon />
+        </button>
+        <button
+          type="button"
+          onClick={onDelete}
+          disabled={!hasSelection}
+          title="Delete the selected race"
+          aria-label="Delete the selected race"
+          className="focus-ring inline-flex h-7 w-7 items-center justify-center rounded-lg border border-status-error/40 bg-status-error/10 text-status-error transition hover:bg-status-error/20 disabled:cursor-not-allowed disabled:opacity-30"
+        >
+          <TrashIcon />
+        </button>
+      </div>
 
       <ul className="-mx-1 flex max-h-[64vh] flex-col gap-2 overflow-y-auto px-1 pb-1">
         {filtered.length === 0 ? (

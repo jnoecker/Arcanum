@@ -64,7 +64,11 @@ function buildStatusEffectContext(id: string, effect: StatusEffectDefinitionConf
 }
 
 function abilityVariantGroup(target: StudioTarget): string {
-  return `${target.kind}:${target.id}`;
+  // Must match `computeVariantGroup` in EntityArtGenerator so that variants
+  // generated here and from the per-entity editors (Loom panels) bucket
+  // together. Format: `${entity_type}:${zone}:${entity_id}`, zone empty for
+  // project-config entities.
+  return `${target.kind}::${target.id}`;
 }
 
 function assetTypeForTarget(target: StudioTarget): "ability_icon" | "status_effect_icon" {

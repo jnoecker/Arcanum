@@ -11,6 +11,7 @@ import {
   CommitTextarea,
 } from "@/components/ui/FormWidgets";
 import { useArrayField } from "@/lib/useArrayField";
+import { useZoneStore } from "@/stores/zoneStore";
 import { SectionCard } from "../panels/factions/SectionCard";
 import {
   PlusIcon,
@@ -18,7 +19,7 @@ import {
   ArrowUpIcon,
   ArrowDownIcon,
 } from "./icons";
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 
 function cx(...c: Array<string | false | null | undefined>) {
   return c.filter(Boolean).join(" ");
@@ -88,7 +89,7 @@ export function AchievementEditor({
   );
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-3">
       <BasicsCard
         id={id}
         def={def}
@@ -97,16 +98,17 @@ export function AchievementEditor({
         onRename={onRename}
       />
 
-      <CriteriaCard
-        criteria={criteria}
-        criterionTypeOptions={criterionTypeOptions}
-        onAdd={() => handleAddCriterion()}
-        onUpdate={handleUpdateCriterion}
-        onRemove={handleRemoveCriterion}
-        onMove={moveCriterion}
-      />
-
-      <RewardsCard rewards={rewards} onChange={handleRewardChange} />
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+        <CriteriaCard
+          criteria={criteria}
+          criterionTypeOptions={criterionTypeOptions}
+          onAdd={() => handleAddCriterion()}
+          onUpdate={handleUpdateCriterion}
+          onRemove={handleRemoveCriterion}
+          onMove={moveCriterion}
+        />
+        <RewardsCard rewards={rewards} onChange={handleRewardChange} />
+      </div>
     </div>
   );
 }
@@ -129,52 +131,51 @@ function BasicsCard({ id, def, categoryOptions, onPatch, onRename }: BasicsCardP
   return (
     <SectionCard title="Basics">
       <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-        <FieldLabel label="Display Name" required>
-          <TextInput
-            value={def.displayName}
-            onCommit={(v) => onPatch({ displayName: v })}
-            placeholder="First Blood"
-            dense
-          />
-        </FieldLabel>
+        <div className="flex flex-col gap-3">
+          <FieldLabel label="Display Name" required>
+            <TextInput
+              value={def.displayName}
+              onCommit={(v) => onPatch({ displayName: v })}
+              placeholder="First Blood"
+              dense
+            />
+          </FieldLabel>
+          <FieldLabel label="Slug" required>
+            <SlugRenamer id={id} onRename={onRename} />
+          </FieldLabel>
+          <FieldLabel label="Category" required>
+            <SelectInput
+              value={def.category}
+              options={categoryOptions}
+              onCommit={(v) => onPatch({ category: v })}
+              placeholder="— select category —"
+              dense
+            />
+          </FieldLabel>
+        </div>
 
-        <FieldLabel label="Description">
+        <div className="flex flex-col gap-2">
+          <div className="flex items-baseline justify-between gap-2">
+            <span className="font-display text-2xs uppercase tracking-wider text-text-muted">
+              Description
+            </span>
+            <span
+              className={cx(
+                "font-mono text-[0.6rem]",
+                overLimit ? "text-status-error" : "text-text-muted/60",
+              )}
+            >
+              {desc.length} / {DESCRIPTION_LIMIT}
+            </span>
+          </div>
           <CommitTextarea
             label=""
             value={desc}
             onCommit={(v) => onPatch({ description: v || undefined })}
             placeholder="Defeat your first enemy in combat."
-            rows={3}
+            rows={5}
           />
-          <p
-            className={cx(
-              "mt-0.5 text-right font-mono text-2xs",
-              overLimit ? "text-status-error" : "text-text-muted/70",
-            )}
-          >
-            {desc.length} / {DESCRIPTION_LIMIT}
-          </p>
-        </FieldLabel>
-
-        <FieldLabel label="Internal ID (slug)" required>
-          <SlugRenamer id={id} onRename={onRename} />
-          <p className="mt-0.5 text-2xs text-text-muted/70">
-            Used for references (must be unique).
-          </p>
-        </FieldLabel>
-
-        <FieldLabel label="Category" required>
-          <SelectInput
-            value={def.category}
-            options={categoryOptions}
-            onCommit={(v) => onPatch({ category: v })}
-            placeholder="— select category —"
-            dense
-          />
-        </FieldLabel>
-
-        <div className="md:col-span-2">
-          <HiddenToggle
+          <CompactHiddenToggle
             checked={def.hidden ?? false}
             onChange={(v) => onPatch({ hidden: v || undefined })}
           />
@@ -217,7 +218,7 @@ function SlugRenamer({ id, onRename }: { id: string; onRename: (v: string) => vo
   );
 }
 
-function HiddenToggle({
+function CompactHiddenToggle({
   checked,
   onChange,
 }: {
@@ -225,40 +226,17 @@ function HiddenToggle({
   onChange: (v: boolean) => void;
 }) {
   return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={checked}
-      onClick={() => onChange(!checked)}
-      className={cx(
-        "focus-ring flex w-full items-center gap-3 rounded-xl border px-3 py-2 text-left transition",
-        checked
-          ? "border-accent/40 bg-accent/10"
-          : "border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] hover:border-accent/30",
-      )}
-    >
-      <div className="min-w-0 flex-1">
-        <p className="font-display text-2xs font-semibold uppercase tracking-[0.18em] text-text-muted">
-          Hidden
-        </p>
-        <p className="text-2xs text-text-muted/80">
-          Hide this achievement until it is unlocked.
-        </p>
-      </div>
-      <span
-        className={cx(
-          "relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors",
-          checked ? "bg-accent/80" : "bg-[var(--chrome-fill-strong)]",
-        )}
-      >
-        <span
-          className={cx(
-            "inline-block h-4 w-4 rounded-full bg-bg-primary shadow-md transition-transform",
-            checked ? "translate-x-[1.125rem]" : "translate-x-0.5",
-          )}
-        />
+    <label className="focus-within:ring-1 focus-within:ring-accent inline-flex cursor-pointer select-none items-center gap-2 self-start rounded-lg border border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] px-2 py-1 transition hover:border-accent/30">
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={(e) => onChange(e.target.checked)}
+        className="h-3 w-3 cursor-pointer accent-accent"
+      />
+      <span className="font-display text-2xs uppercase tracking-wider text-text-muted">
+        Hidden until unlocked
       </span>
-    </button>
+    </label>
   );
 }
 
@@ -351,27 +329,23 @@ function CriterionRow({
   onMoveDown,
 }: CriterionRowProps) {
   const desc = criterion.description ?? "";
-  const remaining = CRITERION_DESC_LIMIT - desc.length;
-  const overLimit = remaining < 0;
+  const overLimit = desc.length > CRITERION_DESC_LIMIT;
+  const mobOptions = useMobOptions();
 
   return (
-    <div className="rounded-xl border border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] p-3">
+    <div className="rounded-xl border border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] p-2.5">
       <div className="flex items-center gap-2">
         <span
           aria-hidden="true"
-          className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-accent/40 bg-accent/10 font-display text-2xs font-semibold text-accent"
+          className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-accent/40 bg-accent/10 font-mono text-[0.6rem] font-semibold text-accent"
         >
           {index + 1}
         </span>
-        <p className="min-w-0 flex-1 truncate font-display text-sm font-semibold text-text-primary">
+        <p className="min-w-0 flex-1 truncate font-display text-xs font-semibold text-text-primary">
           {criterion.description?.trim() || `Defeat a ${criterion.type}`}
         </p>
-        <div className="flex items-center gap-0.5">
-          <IconAction
-            label="Move up"
-            onClick={onMoveUp}
-            disabled={index === 0}
-          >
+        <div className="flex items-center opacity-60 transition group-hover:opacity-100">
+          <IconAction label="Move up" onClick={onMoveUp} disabled={index === 0}>
             <ArrowUpIcon />
           </IconAction>
           <IconAction
@@ -387,7 +361,7 @@ function CriterionRow({
         </div>
       </div>
 
-      <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
+      <div className="mt-2 grid grid-cols-2 gap-2">
         <FieldLabel label="Type" required>
           <SelectInput
             value={criterion.type}
@@ -396,19 +370,6 @@ function CriterionRow({
             dense
           />
         </FieldLabel>
-        <FieldLabel label="Target ID" required>
-          <TextInput
-            value={criterion.targetId ?? ""}
-            onCommit={(v) => onUpdate("targetId", v || undefined)}
-            placeholder="bone:mob_id or empty"
-            dense
-          />
-          <p className="mt-0.5 text-2xs text-text-muted/70">
-            Mob ID (e.g.{" "}
-            <code className="text-text-muted">bone:mob_goblin_warrior</code>)
-            or leave empty for any.
-          </p>
-        </FieldLabel>
         <FieldLabel label="Count" required>
           <NumberInput
             value={criterion.count ?? 1}
@@ -416,30 +377,63 @@ function CriterionRow({
             min={1}
             dense
           />
-          <p className="mt-0.5 text-2xs text-text-muted/70">
-            Number of times required.
-          </p>
         </FieldLabel>
-        <FieldLabel label="Description (optional)">
+        <div className="col-span-2">
+          <FieldLabel label="Target">
+            <SelectInput
+              value={criterion.targetId ?? ""}
+              options={mobOptions}
+              onCommit={(v) => onUpdate("targetId", v || undefined)}
+              allowEmpty
+              placeholder="— any —"
+              dense
+            />
+          </FieldLabel>
+        </div>
+        <div className="col-span-2">
+          <div className="flex items-baseline justify-between gap-2">
+            <span className="font-display text-2xs uppercase tracking-wider text-text-muted">
+              Description
+            </span>
+            <span
+              className={cx(
+                "font-mono text-[0.6rem]",
+                overLimit ? "text-status-error" : "text-text-muted/60",
+              )}
+            >
+              {desc.length} / {CRITERION_DESC_LIMIT}
+            </span>
+          </div>
           <CommitTextarea
             label=""
             value={desc}
             onCommit={(v) => onUpdate("description", v || undefined)}
-            placeholder="Optional flavor text for this criterion…"
+            placeholder="Optional flavor text…"
             rows={2}
           />
-          <p
-            className={cx(
-              "mt-0.5 text-right font-mono text-2xs",
-              overLimit ? "text-status-error" : "text-text-muted/70",
-            )}
-          >
-            {desc.length} / {CRITERION_DESC_LIMIT}
-          </p>
-        </FieldLabel>
+        </div>
       </div>
     </div>
   );
+}
+
+function useMobOptions(): { value: string; label: string }[] {
+  const zones = useZoneStore((s) => s.zones);
+  return useMemo(() => {
+    const out: { value: string; label: string }[] = [];
+    const zoneIds = Array.from(zones.keys()).sort();
+    for (const zoneId of zoneIds) {
+      const zone = zones.get(zoneId);
+      const mobs = zone?.data.mobs ?? {};
+      const mobIds = Object.keys(mobs).sort();
+      for (const mobId of mobIds) {
+        const mob = mobs[mobId]!;
+        const label = `${zoneId} · ${mob.name || mobId}`;
+        out.push({ value: `${zoneId}:${mobId}`, label });
+      }
+    }
+    return out;
+  }, [zones]);
 }
 
 // ─── Rewards ───────────────────────────────────────────────────────
@@ -456,75 +450,35 @@ function RewardsCard({ rewards, onChange }: RewardsCardProps) {
 
   return (
     <SectionCard title="Rewards">
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <NumericRewardField
-          label="XP"
-          value={xp}
-          onChange={(v) => onChange("xp", v)}
-        />
-        <NumericRewardField
-          label="Gold"
-          value={gold}
-          onChange={(v) => onChange("gold", v)}
-        />
-        <FieldLabel label="Title (optional)">
-          <TextInput
-            value={title}
-            onCommit={(v) => onChange("title", v || undefined)}
-            placeholder="Optional title reward"
+      <div className="grid grid-cols-2 gap-2">
+        <FieldLabel label="XP">
+          <NumberInput
+            value={xp}
+            onCommit={(v) => onChange("xp", v)}
+            min={0}
             dense
           />
         </FieldLabel>
-        <button
-          type="button"
-          disabled
-          title="Add additional reward types — coming soon"
-          className="focus-ring inline-flex items-center justify-center gap-1.5 rounded-xl border border-dashed border-[var(--chrome-stroke-strong)] bg-transparent px-3 py-2 text-2xs font-medium text-text-muted transition disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          <PlusIcon />
-          <span className="text-left leading-tight">
-            Add Reward
-            <span className="block text-[0.55rem] font-normal text-text-muted/70">
-              Future rewards
-            </span>
-          </span>
-        </button>
+        <FieldLabel label="Gold">
+          <NumberInput
+            value={gold}
+            onCommit={(v) => onChange("gold", v)}
+            min={0}
+            dense
+          />
+        </FieldLabel>
       </div>
-
-      <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-[var(--chrome-stroke)] pt-3">
-        <span className="font-display text-2xs uppercase tracking-[0.18em] text-text-muted">
-          Reward Summary
-        </span>
-        <span className="flex items-center gap-2 font-mono text-2xs text-text-muted">
-          <span className="text-accent">{xp} XP</span>
-          <span className="text-text-muted/40">·</span>
-          <span className="text-warm">{gold} Gold</span>
-          <span className="text-text-muted/40">·</span>
-          <span>{title.trim() ? `“${title}”` : "No Title"}</span>
-        </span>
+      <div className="mt-2">
+        <FieldLabel label="Title">
+          <TextInput
+            value={title}
+            onCommit={(v) => onChange("title", v || undefined)}
+            placeholder="Optional"
+            dense
+          />
+        </FieldLabel>
       </div>
     </SectionCard>
-  );
-}
-
-function NumericRewardField({
-  label,
-  value,
-  onChange,
-}: {
-  label: string;
-  value: number;
-  onChange: (v: number | undefined) => void;
-}) {
-  return (
-    <FieldLabel label={label}>
-      <NumberInput
-        value={value}
-        onCommit={(v) => onChange(v)}
-        min={0}
-        dense
-      />
-    </FieldLabel>
   );
 }
 

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import type {
   AbilityDefinitionConfig,
   AbilityEffectConfig,
@@ -52,6 +52,8 @@ function buildAbilityContext(ability: AbilityDefinitionConfig): string {
 interface AbilityEditorProps {
   id: string;
   ability: AbilityDefinitionConfig;
+  abilities: Record<string, AbilityDefinitionConfig>;
+  knownTrees: string[];
   classOptions: { value: string; label: string }[];
   statusEffectOptions: { value: string; label: string }[];
   targetTypeOptions: { value: string; label: string }[];
@@ -64,6 +66,8 @@ interface AbilityEditorProps {
 export function AbilityEditor({
   id,
   ability,
+  abilities,
+  knownTrees,
   classOptions,
   statusEffectOptions,
   targetTypeOptions,
@@ -73,95 +77,61 @@ export function AbilityEditor({
   onRename,
 }: AbilityEditorProps) {
   return (
-    <div className="flex flex-col gap-4">
-      <DetailHeader ability={ability} />
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <IdentityCard ability={ability} onPatch={onPatch} />
-        <ActionCostCard
-          ability={ability}
-          classOptions={classOptions}
-          targetTypeOptions={targetTypeOptions}
-          onPatch={onPatch}
-        />
-        <CombatEffectCard
-          ability={ability}
-          statusEffectOptions={statusEffectOptions}
-          petOptions={petOptions}
-          onPatchEffect={onPatchEffect}
-        />
-        <VisualIdentityCard
-          id={id}
-          ability={ability}
-          onPatch={onPatch}
-        />
-      </div>
-      <MetadataCard id={id} ability={ability} onPatch={onPatch} onRename={onRename} />
+    <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+      <IdentityCard
+        id={id}
+        ability={ability}
+        knownTrees={knownTrees}
+        onPatch={onPatch}
+        onRename={onRename}
+      />
+      <ActionCostCard
+        ability={ability}
+        classOptions={classOptions}
+        targetTypeOptions={targetTypeOptions}
+        onPatch={onPatch}
+      />
+      <CombatEffectCard
+        id={id}
+        ability={ability}
+        abilities={abilities}
+        statusEffectOptions={statusEffectOptions}
+        petOptions={petOptions}
+        onPatch={onPatch}
+        onPatchEffect={onPatchEffect}
+      />
+      <VisualIdentityCard
+        id={id}
+        ability={ability}
+        onPatch={onPatch}
+      />
     </div>
-  );
-}
-
-// ─── Detail header (kicker + title) ────────────────────────────────
-
-function DetailHeader({ ability }: { ability: AbilityDefinitionConfig }) {
-  const cost = ability.skillPointCost ?? 1;
-  return (
-    <div className="panel-surface rounded-2xl px-5 py-4 shadow-section">
-      <p className="font-display text-2xs uppercase tracking-[0.22em] text-text-muted">
-        Abilities <span className="text-text-muted/50">›</span>{" "}
-        <span className="text-accent">{ability.displayName || "Untitled"}</span>
-      </p>
-      <h2 className="mt-1 font-display text-2xl font-semibold text-text-primary">
-        {ability.displayName || "Untitled Ability"}
-      </h2>
-      <p className="mt-0.5 max-w-2xl text-2xs text-text-muted">
-        Target rules, class access, effects, and identity.
-      </p>
-      <div className="mt-3 flex flex-wrap items-center gap-2">
-        <Pill>{prettyType(ability.effect.type)}</Pill>
-        <Pill>{ability.targetType}</Pill>
-        <Pill>Mana {ability.manaCost}</Pill>
-        <Pill>CD {ability.cooldownMs}ms</Pill>
-        {cost === 0 ? (
-          <span
-            className="rounded-full border border-badge-success/40 bg-badge-success-bg px-3 py-1 text-2xs uppercase tracking-[0.14em] text-badge-success"
-            title="Auto-learned when level, class, and prerequisites are met"
-          >
-            Auto-learn
-          </span>
-        ) : (
-          <Pill>{cost} SP</Pill>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function prettyType(t: string) {
-  return t.toLowerCase().replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
-}
-
-function Pill({ children }: { children: React.ReactNode }) {
-  return (
-    <span className="rounded-full border border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] px-3 py-1 text-2xs uppercase tracking-[0.14em] text-text-secondary">
-      {children}
-    </span>
   );
 }
 
 // ─── Identity ──────────────────────────────────────────────────────
 
 function IdentityCard({
+  id,
   ability,
+  knownTrees,
   onPatch,
+  onRename,
 }: {
+  id: string;
   ability: AbilityDefinitionConfig;
+  knownTrees: string[];
   onPatch: (p: Partial<AbilityDefinitionConfig>) => void;
+  onRename: (v: string) => void;
 }) {
   const desc = ability.description ?? "";
   const overLimit = desc.length > DESCRIPTION_LIMIT;
   return (
     <SectionCard title="Identity">
-      <div className="flex flex-col gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <FieldLabel label="Slug" required>
+          <SlugRenamer id={id} onRename={onRename} />
+        </FieldLabel>
         <FieldLabel label="Display Name" required>
           <TextInput
             value={ability.displayName}
@@ -170,25 +140,100 @@ function IdentityCard({
             dense
           />
         </FieldLabel>
-        <FieldLabel label="Description">
-          <CommitTextarea
-            label=""
-            value={desc}
-            onCommit={(v) => onPatch({ description: v || undefined })}
-            placeholder="A powerful blow that deals heavy damage to a single target."
-            rows={3}
+      </div>
+
+      <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-[1fr_6rem]">
+        <FieldLabel label="Skill Tree" hint="Group related abilities (e.g. warrior_arms).">
+          <SkillTreePicker
+            value={ability.tree ?? ""}
+            knownTrees={knownTrees}
+            onCommit={(v) => onPatch({ tree: v || undefined })}
           />
-          <p
+        </FieldLabel>
+        <FieldLabel label="Tier" hint="Depth in the tree.">
+          <NumberInput
+            value={ability.tier ?? 0}
+            onCommit={(v) => onPatch({ tier: v ?? 0 })}
+            min={0}
+            dense
+          />
+        </FieldLabel>
+      </div>
+
+      <div className="mt-3 flex flex-col gap-1">
+        <div className="flex items-baseline justify-between gap-2">
+          <span className="font-display text-2xs uppercase tracking-wider text-text-muted">
+            Description
+          </span>
+          <span
             className={cx(
-              "mt-0.5 text-right font-mono text-2xs",
-              overLimit ? "text-status-error" : "text-text-muted/70",
+              "font-mono text-[0.6rem]",
+              overLimit ? "text-status-error" : "text-text-muted/60",
             )}
           >
             {desc.length} / {DESCRIPTION_LIMIT}
-          </p>
-        </FieldLabel>
+          </span>
+        </div>
+        <CommitTextarea
+          label=""
+          value={desc}
+          onCommit={(v) => onPatch({ description: v || undefined })}
+          placeholder="A powerful blow that deals heavy damage to a single target."
+          rows={3}
+        />
       </div>
     </SectionCard>
+  );
+}
+
+function SkillTreePicker({
+  value,
+  knownTrees,
+  onCommit,
+}: {
+  value: string;
+  knownTrees: string[];
+  onCommit: (v: string) => void;
+}) {
+  const [draft, setDraft] = useState(value);
+  const [focused, setFocused] = useState(false);
+  const listId = "skill-tree-options";
+
+  if (!focused && draft !== value) setDraft(value);
+
+  const commit = () => {
+    const next = draft.trim().toLowerCase().replace(/\s+/g, "_");
+    if (next !== value) onCommit(next);
+    setDraft(next);
+  };
+
+  return (
+    <>
+      <input
+        list={listId}
+        className="ornate-input min-h-9 w-full px-2.5 py-1.5 font-mono text-xs text-text-primary"
+        value={draft}
+        onChange={(e) => setDraft(e.target.value)}
+        onFocus={() => setFocused(true)}
+        onBlur={() => {
+          setFocused(false);
+          commit();
+        }}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+          if (e.key === "Escape") {
+            setDraft(value);
+            (e.target as HTMLInputElement).blur();
+          }
+        }}
+        placeholder="warrior_arms"
+      />
+      <datalist id={listId}>
+        {knownTrees.map((t) => (
+          <option key={t} value={t} />
+        ))}
+      </datalist>
+    </>
   );
 }
 
@@ -277,20 +322,25 @@ function ActionCostCard({
 // ─── Combat Effect ─────────────────────────────────────────────────
 
 function CombatEffectCard({
+  id,
   ability,
+  abilities,
   statusEffectOptions,
   petOptions,
+  onPatch,
   onPatchEffect,
 }: {
+  id: string;
   ability: AbilityDefinitionConfig;
+  abilities: Record<string, AbilityDefinitionConfig>;
   statusEffectOptions: { value: string; label: string }[];
   petOptions: { value: string; label: string }[];
+  onPatch: (p: Partial<AbilityDefinitionConfig>) => void;
   onPatchEffect: (p: Partial<AbilityEffectConfig>) => void;
 }) {
   const t = ability.effect.type;
   const hasDamage = t === "DIRECT_DAMAGE" || t === "AREA_DAMAGE";
   const hasHeal = t === "DIRECT_HEAL" || t === "AREA_DAMAGE";
-  const hasValue = hasDamage || hasHeal;
   const hasThreat = t === "TAUNT" || t === "AREA_DAMAGE";
 
   return (
@@ -306,7 +356,7 @@ function CombatEffectCard({
         </FieldLabel>
 
         {hasDamage && (
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             <FieldLabel label="Min Damage">
               <NumberInput
                 value={ability.effect.minDamage ?? 0}
@@ -323,10 +373,21 @@ function CombatEffectCard({
                 dense
               />
             </FieldLabel>
-            <FieldLabel label="Damage / Level" hint="Scales per level above the requirement.">
+            <FieldLabel label="Damage / Lvl">
               <NumberInput
                 value={ability.effect.damagePerLevel ?? 0}
                 onCommit={(v) => onPatchEffect({ damagePerLevel: v ?? 0 })}
+                min={0}
+                dense
+              />
+            </FieldLabel>
+            <FieldLabel
+              label="Legacy"
+              hint="Used when min/max are 0."
+            >
+              <NumberInput
+                value={ability.effect.value ?? 0}
+                onCommit={(v) => onPatchEffect({ value: v ?? 0 })}
                 min={0}
                 dense
               />
@@ -335,7 +396,7 @@ function CombatEffectCard({
         )}
 
         {hasHeal && (
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             <FieldLabel label="Min Heal">
               <NumberInput
                 value={ability.effect.minHeal ?? 0}
@@ -352,7 +413,7 @@ function CombatEffectCard({
                 dense
               />
             </FieldLabel>
-            <FieldLabel label="Heal / Level">
+            <FieldLabel label="Heal / Lvl">
               <NumberInput
                 value={ability.effect.healPerLevel ?? 0}
                 onCommit={(v) => onPatchEffect({ healPerLevel: v ?? 0 })}
@@ -360,21 +421,20 @@ function CombatEffectCard({
                 dense
               />
             </FieldLabel>
+            {!hasDamage && (
+              <FieldLabel
+                label="Legacy"
+                hint="Used when min/max are 0."
+              >
+                <NumberInput
+                  value={ability.effect.value ?? 0}
+                  onCommit={(v) => onPatchEffect({ value: v ?? 0 })}
+                  min={0}
+                  dense
+                />
+              </FieldLabel>
+            )}
           </div>
-        )}
-
-        {hasValue && (
-          <FieldLabel
-            label="Legacy Value"
-            hint="Used when min/max are both 0."
-          >
-            <NumberInput
-              value={ability.effect.value ?? 0}
-              onCommit={(v) => onPatchEffect({ value: v ?? 0 })}
-              min={0}
-              dense
-            />
-          </FieldLabel>
         )}
 
         {t === "APPLY_STATUS" && (
@@ -437,8 +497,161 @@ function CombatEffectCard({
             </FieldLabel>
           </div>
         )}
+
+        <PrerequisitesPicker
+          selfId={id}
+          selectedTree={ability.tree}
+          prereqs={ability.prerequisites ?? []}
+          abilities={abilities}
+          onChange={(next) =>
+            onPatch({ prerequisites: next.length > 0 ? next : undefined })
+          }
+        />
       </div>
     </SectionCard>
+  );
+}
+
+function PrerequisitesPicker({
+  selfId,
+  selectedTree,
+  prereqs,
+  abilities,
+  onChange,
+}: {
+  selfId: string;
+  selectedTree: string | undefined;
+  prereqs: string[];
+  abilities: Record<string, AbilityDefinitionConfig>;
+  onChange: (next: string[]) => void;
+}) {
+  const [pickerOpen, setPickerOpen] = useState(false);
+
+  const candidates = useMemo(() => {
+    return Object.entries(abilities)
+      .filter(([id]) => id !== selfId && !prereqs.includes(id))
+      .sort(([, a], [, b]) => {
+        const aSame = a.tree === selectedTree ? 0 : 1;
+        const bSame = b.tree === selectedTree ? 0 : 1;
+        if (aSame !== bSame) return aSame - bSame;
+        return (a.tree ?? "").localeCompare(b.tree ?? "");
+      });
+  }, [abilities, prereqs, selfId, selectedTree]);
+
+  const removeOne = (pid: string) => {
+    onChange(prereqs.filter((p) => p !== pid));
+  };
+
+  const addOne = (pid: string) => {
+    onChange([...prereqs, pid]);
+    setPickerOpen(false);
+  };
+
+  return (
+    <div className="mt-2 flex flex-col gap-2 border-t border-[var(--chrome-stroke)] pt-3">
+      <div className="flex items-baseline justify-between gap-2">
+        <span className="font-display text-2xs uppercase tracking-wider text-text-muted">
+          Prerequisites
+        </span>
+        <button
+          type="button"
+          onClick={() => setPickerOpen((v) => !v)}
+          disabled={candidates.length === 0}
+          className="focus-ring inline-flex items-center gap-1 rounded-md border border-accent/40 bg-accent/10 px-2 py-0.5 font-display text-[0.6rem] uppercase tracking-wider text-accent transition hover:bg-accent/20 disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          + Add
+        </button>
+      </div>
+
+      {prereqs.length === 0 ? (
+        <p className="rounded-lg border border-dashed border-[var(--chrome-stroke-strong)] bg-[var(--chrome-fill-soft)] px-3 py-2 text-2xs italic text-text-muted/70">
+          None — this ability has no gates beyond level and class.
+        </p>
+      ) : (
+        <ul className="flex flex-wrap gap-1.5">
+          {prereqs.map((pid) => {
+            const target = abilities[pid];
+            const label = target?.displayName ?? pid;
+            const tree = target?.tree;
+            const orphan = !target;
+            return (
+              <li
+                key={pid}
+                className={cx(
+                  "inline-flex items-center gap-1.5 rounded-md border bg-[var(--chrome-fill-soft)] py-1 pl-2 pr-1 text-2xs",
+                  orphan
+                    ? "border-status-warning/40 text-status-warning"
+                    : "border-[var(--chrome-stroke)] text-text-secondary",
+                )}
+              >
+                <span className="font-display">{label}</span>
+                {tree && (
+                  <span className="rounded-full border border-[var(--chrome-stroke-strong)] px-1.5 py-0.5 font-mono text-[0.55rem] uppercase tracking-wider text-text-muted/80">
+                    {tree}
+                  </span>
+                )}
+                {orphan && (
+                  <span className="font-mono text-[0.55rem] uppercase tracking-wider">
+                    missing
+                  </span>
+                )}
+                <button
+                  type="button"
+                  onClick={() => removeOne(pid)}
+                  title={`Remove ${label}`}
+                  aria-label={`Remove ${label}`}
+                  className="focus-ring inline-flex h-4 w-4 items-center justify-center rounded text-text-muted/70 transition hover:bg-status-error/15 hover:text-status-error"
+                >
+                  ×
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+
+      {pickerOpen && (
+        <div className="rounded-lg border border-[var(--chrome-stroke)] bg-bg-elevated p-1 shadow-lg">
+          <ul className="max-h-48 overflow-y-auto">
+            {candidates.map(([cid, c]) => {
+              const sameTree = c.tree && c.tree === selectedTree;
+              return (
+                <li key={cid}>
+                  <button
+                    type="button"
+                    onClick={() => addOne(cid)}
+                    className="focus-ring flex w-full items-center justify-between gap-2 rounded-md px-2 py-1 text-left text-xs text-text-secondary transition hover:bg-[var(--chrome-fill-soft)] hover:text-text-primary"
+                  >
+                    <span className="truncate font-display">
+                      {c.displayName || cid}
+                    </span>
+                    <span className="flex items-center gap-1.5">
+                      {c.tree && (
+                        <span
+                          className={cx(
+                            "rounded-full border px-1.5 py-0.5 font-mono text-[0.55rem] uppercase tracking-wider",
+                            sameTree
+                              ? "border-accent/40 bg-accent/10 text-accent"
+                              : "border-[var(--chrome-stroke)] text-text-muted/70",
+                          )}
+                        >
+                          {c.tree}
+                        </span>
+                      )}
+                      {typeof c.tier === "number" && c.tier > 0 && (
+                        <span className="font-mono text-[0.55rem] text-text-muted/60">
+                          T{c.tier}
+                        </span>
+                      )}
+                    </span>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -458,15 +671,6 @@ function VisualIdentityCard({
   return (
     <SectionCard title="Visual Identity">
       <div className="flex flex-col gap-3">
-        <FieldLabel label="Image Reference">
-          <TextInput
-            value={ability.image ?? ""}
-            onCommit={(v) => onPatch({ image: v || undefined })}
-            placeholder="None"
-            dense
-          />
-        </FieldLabel>
-
         {color && (
           <div className="flex items-center gap-2 rounded-xl border border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] px-3 py-2">
             <span
@@ -489,65 +693,6 @@ function VisualIdentityCard({
           context={{ zone: "", entity_type: "ability", entity_id: id }}
           surface="worldbuilding"
         />
-      </div>
-    </SectionCard>
-  );
-}
-
-// ─── Notes / Metadata ──────────────────────────────────────────────
-
-function MetadataCard({
-  id,
-  ability,
-  onPatch,
-  onRename,
-}: {
-  id: string;
-  ability: AbilityDefinitionConfig;
-  onPatch: (p: Partial<AbilityDefinitionConfig>) => void;
-  onRename: (newId: string) => void;
-}) {
-  return (
-    <SectionCard title="Notes / Metadata">
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-        <FieldLabel label="Internal ID (slug)" required>
-          <SlugRenamer id={id} onRename={onRename} />
-          <p className="mt-0.5 text-2xs text-text-muted/70">
-            Used for references (must be unique).
-          </p>
-        </FieldLabel>
-        <FieldLabel label="Skill Tree" hint="Optional grouping (e.g. warrior_arms).">
-          <TextInput
-            value={ability.tree ?? ""}
-            onCommit={(v) => onPatch({ tree: v || undefined })}
-            placeholder="—"
-            dense
-          />
-        </FieldLabel>
-        <FieldLabel label="Tier" hint="Depth in the skill tree (0 = root).">
-          <NumberInput
-            value={ability.tier ?? 0}
-            onCommit={(v) => onPatch({ tier: v ?? 0 })}
-            min={0}
-            dense
-          />
-        </FieldLabel>
-        <div className="md:col-span-3">
-          <FieldLabel label="Prerequisites" hint="Comma-separated ability IDs.">
-            <TextInput
-              value={(ability.prerequisites ?? []).join(", ")}
-              onCommit={(v) => {
-                const list = v
-                  .split(",")
-                  .map((s) => s.trim())
-                  .filter(Boolean);
-                onPatch({ prerequisites: list.length > 0 ? list : undefined });
-              }}
-              placeholder="ability_id_a, ability_id_b"
-              dense
-            />
-          </FieldLabel>
-        </div>
       </div>
     </SectionCard>
   );

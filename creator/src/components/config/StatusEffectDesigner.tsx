@@ -4,10 +4,8 @@ import {
   defaultStatusEffectDefinition,
   renameStatusEffectDefinition,
 } from "@/components/config/panels/StatusEffectsPanel";
-import { ConditionsHeader } from "./conditions/ConditionsHeader";
 import { ConditionsList } from "./conditions/ConditionsList";
 import { ConditionEditor } from "./conditions/ConditionEditor";
-import { Section } from "./enchanting/Section";
 import { PlusIcon } from "./conditions/icons";
 
 const FALLBACK_EFFECT_TYPES = [
@@ -109,7 +107,7 @@ export function StatusEffectDesigner({ config, onChange }: StatusEffectDesignerP
     onChange({
       statusEffects: {
         ...defs,
-        [id]: defaultStatusEffectDefinition("New Condition"),
+        [id]: defaultStatusEffectDefinition("New Status Effect"),
       },
     });
     setSelectedId(id);
@@ -139,62 +137,48 @@ export function StatusEffectDesigner({ config, onChange }: StatusEffectDesignerP
   const selected = selectedId ? defs[selectedId] ?? null : null;
 
   return (
-    <div className="flex flex-col gap-4">
-      <ConditionsHeader
-        effectTypeCount={Object.keys(config.statusEffectTypes).length || effectTypeOptions.length}
-        stackBehaviorCount={Object.keys(config.stackBehaviors).length || stackBehaviorOptions.length}
-        selectedId={selectedId}
-        onDuplicate={duplicateDef}
-        onDelete={deleteDef}
-      />
+    <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
+      <div className="xl:col-span-3">
+        <ConditionsList
+          defs={defs}
+          effectTypeOptions={effectTypeOptions}
+          selectedId={selectedId}
+          onSelect={setSelectedId}
+          onAdd={addDef}
+          onDuplicate={duplicateDef}
+          onDelete={deleteDef}
+        />
+      </div>
 
-      <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
-        <div className="xl:col-span-4">
-          <ConditionsList
-            defs={defs}
+      <div className="xl:col-span-9">
+        {selectedId && selected ? (
+          <ConditionEditor
+            id={selectedId}
+            def={selected}
+            statIds={statIds}
             effectTypeOptions={effectTypeOptions}
-            selectedId={selectedId}
-            onSelect={setSelectedId}
-            onAdd={addDef}
+            stackBehaviorOptions={stackBehaviorOptions}
+            onPatch={(p) => patchDef(selectedId, p)}
+            onRename={(v) => renameDef(selectedId, v)}
           />
-        </div>
-
-        <div className="xl:col-span-8">
-          {selectedId && selected ? (
-            <ConditionEditor
-              id={selectedId}
-              def={selected}
-              statIds={statIds}
-              effectTypeOptions={effectTypeOptions}
-              stackBehaviorOptions={stackBehaviorOptions}
-              onPatch={(p) => patchDef(selectedId, p)}
-              onRename={(v) => renameDef(selectedId, v)}
-            />
-          ) : (
-            <Section
-              title="Editing Condition"
-              description="Pick a condition from the roster to refine its tick math, or scribe a new one."
+        ) : (
+          <div className="panel-surface flex flex-col items-center justify-center gap-2 rounded-2xl px-6 py-12 text-center shadow-section">
+            <p className="font-display text-sm text-text-primary">
+              Nothing selected
+            </p>
+            <p className="max-w-xs text-2xs text-text-muted/80">
+              Choose a status effect from the roster, or add a new one to begin.
+            </p>
+            <button
+              type="button"
+              onClick={addDef}
+              className="focus-ring mt-1 inline-flex items-center gap-1 rounded-lg border border-accent/40 bg-accent/10 px-2.5 py-1 text-2xs font-medium text-accent transition hover:bg-accent/20"
             >
-              <div className="rounded-xl border border-dashed border-[var(--chrome-stroke-strong)] bg-[var(--chrome-fill-soft)] px-4 py-12 text-center">
-                <p className="font-display text-xs text-text-muted">
-                  Nothing selected.
-                </p>
-                <p className="mx-auto mt-1 max-w-xs text-2xs leading-snug text-text-muted/70">
-                  Choose a condition from the roster to edit it, or add a new
-                  one to begin.
-                </p>
-                <button
-                  type="button"
-                  onClick={addDef}
-                  className="focus-ring mt-4 inline-flex items-center gap-1.5 rounded-xl border border-accent/40 bg-accent/10 px-3 py-2 text-xs font-medium text-accent transition hover:bg-accent/20"
-                >
-                  <PlusIcon />
-                  New Condition
-                </button>
-              </div>
-            </Section>
-          )}
-        </div>
+              <PlusIcon />
+              New Status Effect
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

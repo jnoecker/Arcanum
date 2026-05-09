@@ -7,6 +7,7 @@ import { EnhanceDescriptionButton } from "@/components/editors/EditorShared";
 import { getBackstoryEnhancePrompt } from "@/lib/lorePrompts";
 import { composePrompt, type ArtStyle } from "@/lib/arcanumPrompts";
 import { useAssetStore } from "@/stores/assetStore";
+import { useImageSrc } from "@/lib/useImageSrc";
 import { useStatMods } from "@/lib/useStatMods";
 import { SectionCard } from "../panels/factions/SectionCard";
 import { PlusIcon, TrashIcon } from "../achievements/icons";
@@ -23,18 +24,6 @@ Rules:
 - Match the visual tone to the world's setting and themes
 - Do NOT include clothing, armor, or weapons — the class system handles those
 - Output ONLY the description text — no quotes, no explanation`;
-
-const STAFF_PROMPT_SYSTEM_PROMPT = `You are an expert AI image prompt engineer writing god-tier staff sprite prompts for a fantasy MUD RPG.
-
-Given a race's name and body description, write a COMPLETE image generation prompt for an ascended/divine administrator version of this race. This should be dramatically more powerful and visually impressive than any player tier.
-
-Rules:
-- 3-6 sentences of vivid, dense prompt detail
-- The figure should radiate cosmic/divine authority — golden light, celestial effects, impossible scale
-- Incorporate the race's core visual identity but elevated to godlike levels
-- Include dramatic magical effects: halos, orbiting elements, reality distortion, blazing energy
-- Must be unmistakably different from player sprites — a being of supreme authority
-- Output ONLY the prompt text — no quotes, no explanation`;
 
 function cx(...c: Array<string | false | null | undefined>) {
   return c.filter(Boolean).join(" ");
@@ -74,75 +63,47 @@ export function RaceEditor({
 
   return (
     <div className="flex flex-col gap-4">
-      <TitleBlock id={id} race={race} patch={patch} />
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <IdentityCard id={id} race={race} onRename={onRename} patch={patch} />
+        <BackstoryLoreCard race={race} patch={patch} buildContext={buildContext} />
+      </div>
 
-      <IdentityCard id={id} race={race} onRename={onRename} patch={patch} />
-
-      <SynopsisCard race={race} patch={patch} buildContext={buildContext} />
-
-      <StatModifiersCard
-        statMods={race.statMods}
-        statIds={statIds}
-        statDefs={statDefs}
-        onChange={(mods) => patch({ statMods: mods })}
-      />
-
-      <SectionCard title="Ability Restrictions" description="Race-locked abilities and unlocks (referenced by id).">
-        <StringListEditor
-          items={race.abilities ?? []}
-          onChange={(abilities) => patch({ abilities: abilities.length > 0 ? abilities : undefined })}
-          placeholder="e.g. STONE_FORM"
-          monospace
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <StatModifiersCard
+          statMods={race.statMods}
+          statIds={statIds}
+          statDefs={statDefs}
+          onChange={(mods) => patch({ statMods: mods })}
         />
-      </SectionCard>
 
-      <SectionCard title="Trait Bonuses" description="Innate descriptors and feats granted at character creation.">
-        <StringListEditor
-          items={race.traits ?? []}
-          onChange={(traits) => patch({ traits: traits.length > 0 ? traits : undefined })}
-          placeholder="e.g. Darkvision"
-        />
-      </SectionCard>
+        <div className="flex flex-col gap-4">
+          <SectionCard title="Ability Restrictions">
+            <StringListEditor
+              items={race.abilities ?? []}
+              onChange={(abilities) =>
+                patch({ abilities: abilities.length > 0 ? abilities : undefined })
+              }
+              placeholder="e.g. STONE_FORM"
+              monospace
+            />
+          </SectionCard>
 
-      <PortraitDescriptionCard race={race} patch={patch} buildContext={buildContext} />
+          <SectionCard title="Trait Bonuses">
+            <StringListEditor
+              items={race.traits ?? []}
+              onChange={(traits) =>
+                patch({ traits: traits.length > 0 ? traits : undefined })
+              }
+              placeholder="e.g. Darkvision"
+            />
+          </SectionCard>
+        </div>
+      </div>
 
-      <SectionCard title="Concept Art" description="Generated portrait art for the race roster and codex.">
+      <SectionCard title="Concept Art">
         <ConceptArt id={id} race={race} patch={patch} buildContext={buildContext} />
       </SectionCard>
     </div>
-  );
-}
-
-// ─── Title Block ───────────────────────────────────────────────────
-
-function TitleBlock({
-  id,
-  race,
-  patch,
-}: {
-  id: string;
-  race: RaceDefinitionConfig;
-  patch: (p: Partial<RaceDefinitionConfig>) => void;
-}) {
-  return (
-    <section className="panel-surface rounded-2xl px-5 py-4 shadow-section">
-      <p className="font-display text-[0.6rem] font-semibold uppercase tracking-[0.32em] text-text-muted">
-        Races <span className="mx-1.5 text-text-muted/40">›</span>
-        <span className="text-accent">{(race.displayName || id).toUpperCase()}</span>
-      </p>
-      <input
-        className="mt-1.5 w-full bg-transparent font-display text-3xl font-semibold text-text-primary outline-none placeholder:text-text-muted/40"
-        value={race.displayName}
-        onChange={(e) => patch({ displayName: e.target.value })}
-        placeholder="Untitled Race"
-      />
-      <input
-        className="mt-1 w-full bg-transparent font-display text-sm italic text-text-secondary outline-none placeholder:text-text-muted/50"
-        value={race.description ?? ""}
-        onChange={(e) => patch({ description: e.target.value || undefined })}
-        placeholder="A short lore tagline — what makes this people unmistakable."
-      />
-    </section>
   );
 }
 
@@ -159,14 +120,17 @@ function IdentityCard({
   onRename: (newId: string) => void;
   patch: (p: Partial<RaceDefinitionConfig>) => void;
 }) {
+  const desc = race.description ?? "";
+  const remaining = DESCRIPTION_LIMIT - desc.length;
+  const overLimit = remaining < 0;
+
   return (
-    <SectionCard title="Identity" description="The unique slug used by the engine and references.">
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-        <FieldLabel label="Internal ID (slug)" required>
+    <SectionCard title="Identity">
+      <IdentityPortrait race={race} />
+
+      <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <FieldLabel label="Slug" required>
           <SlugRenamer id={id} onRename={onRename} />
-          <p className="mt-0.5 text-2xs text-text-muted/70">
-            Used in YAML refs (must be unique).
-          </p>
         </FieldLabel>
         <FieldLabel label="Display Name" required>
           <TextInput
@@ -177,7 +141,62 @@ function IdentityCard({
           />
         </FieldLabel>
       </div>
+      <div className="mt-3 flex flex-col gap-1">
+        <div className="flex items-baseline justify-between gap-2">
+          <span className="font-display text-2xs uppercase tracking-wider text-text-muted">
+            Short Tagline
+          </span>
+          <span
+            className={cx(
+              "font-mono text-[0.6rem]",
+              overLimit ? "text-status-error" : "text-text-muted/60",
+            )}
+          >
+            {desc.length} / {DESCRIPTION_LIMIT}
+          </span>
+        </div>
+        <TextInput
+          value={desc}
+          onCommit={(v) => patch({ description: v || undefined })}
+          placeholder="One-line tagline shown in the race picker."
+          dense
+        />
+      </div>
     </SectionCard>
+  );
+}
+
+function IdentityPortrait({ race }: { race: RaceDefinitionConfig }) {
+  const assetsDir = useAssetStore((s) => s.assetsDir);
+  const imagePath =
+    race.image && assetsDir ? `${assetsDir}\\images\\${race.image}` : undefined;
+  const src = useImageSrc(imagePath);
+  const initial = race.displayName.trim().charAt(0).toUpperCase() || "?";
+
+  return (
+    <div
+      className={cx(
+        "relative flex h-44 w-full items-center justify-center overflow-hidden rounded-xl border bg-[var(--chrome-fill)]",
+        src ? "border-[var(--chrome-stroke)]" : "border-dashed border-[var(--chrome-stroke-strong)]",
+      )}
+      aria-label={src ? `${race.displayName} portrait` : "No portrait set"}
+    >
+      {src ? (
+        <img
+          src={src}
+          alt=""
+          loading="lazy"
+          className="max-h-full max-w-full object-contain"
+        />
+      ) : (
+        <div className="flex flex-col items-center gap-1 text-text-muted/60">
+          <span className="font-display text-3xl">{initial}</span>
+          <span className="font-display text-[0.55rem] uppercase tracking-[0.22em]">
+            No portrait
+          </span>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -214,9 +233,9 @@ function SlugRenamer({ id, onRename }: { id: string; onRename: (v: string) => vo
   );
 }
 
-// ─── Synopsis ──────────────────────────────────────────────────────
+// ─── Backstory & Lore (with body description) ─────────────────────
 
-function SynopsisCard({
+function BackstoryLoreCard({
   race,
   patch,
   buildContext,
@@ -225,46 +244,43 @@ function SynopsisCard({
   patch: (p: Partial<RaceDefinitionConfig>) => void;
   buildContext: () => string;
 }) {
-  const desc = race.description ?? "";
-  const remaining = DESCRIPTION_LIMIT - desc.length;
-  const overLimit = remaining < 0;
-
   return (
-    <SectionCard title="Synopsis" description="The lore that grounds this race in your world.">
-      <FieldLabel label="Short Tagline">
-        <TextInput
-          value={desc}
-          onCommit={(v) => patch({ description: v || undefined })}
-          placeholder="One-line tagline shown in the race picker."
-          dense
+    <SectionCard title="Backstory & Lore">
+      <CommitTextarea
+        label=""
+        value={race.backstory ?? ""}
+        onCommit={(v) => patch({ backstory: v || undefined })}
+        placeholder="Lore, history, and cultural background — what shaped them, and what they want."
+        rows={6}
+      />
+      <div className="mt-1.5 flex justify-end">
+        <EnhanceDescriptionButton
+          entitySummary={buildContext()}
+          currentDescription={race.backstory}
+          onAccept={(text) => patch({ backstory: text })}
+          systemPrompt={getBackstoryEnhancePrompt()}
+          label="Enhance"
         />
-        <p
-          className={cx(
-            "mt-0.5 text-right font-mono text-2xs",
-            overLimit ? "text-status-error" : "text-text-muted/70",
-          )}
-        >
-          {desc.length} / {DESCRIPTION_LIMIT}
-        </p>
-      </FieldLabel>
+      </div>
 
-      <div className="mt-3">
-        <FieldLabel label="Backstory & Lore">
-          <CommitTextarea
-            label=""
-            value={race.backstory ?? ""}
-            onCommit={(v) => patch({ backstory: v || undefined })}
-            placeholder="Lore, history, and cultural background — what shaped them, and what they want."
-            rows={6}
-          />
-        </FieldLabel>
-        <div className="mt-2">
+      <div className="mt-4 flex flex-col gap-1">
+        <span className="font-display text-2xs uppercase tracking-wider text-text-muted">
+          Body Description
+        </span>
+        <CommitTextarea
+          label=""
+          value={race.bodyDescription ?? ""}
+          onCommit={(v) => patch({ bodyDescription: v || undefined })}
+          placeholder="Physical appearance for sprite/portrait prompts (e.g. 'tall luminous humanoid with translucent crystalline skin…')."
+          rows={3}
+        />
+        <div className="mt-1.5 flex justify-end">
           <EnhanceDescriptionButton
             entitySummary={buildContext()}
-            currentDescription={race.backstory}
-            onAccept={(text) => patch({ backstory: text })}
-            systemPrompt={getBackstoryEnhancePrompt()}
-            label="Enhance backstory"
+            currentDescription={race.bodyDescription}
+            onAccept={(v) => patch({ bodyDescription: v })}
+            systemPrompt={BODY_DESC_SYSTEM_PROMPT}
+            label="AI generate"
           />
         </div>
       </div>
@@ -291,7 +307,6 @@ function StatModifiersCard({
   return (
     <SectionCard
       title="Stat Modifiers"
-      description="Per-stat racial offsets layered on the world baseline."
       actions={
         <span
           className={cx(
@@ -387,65 +402,6 @@ function StepperButton({
     >
       {children}
     </button>
-  );
-}
-
-// ─── Portrait & Description ────────────────────────────────────────
-
-function PortraitDescriptionCard({
-  race,
-  patch,
-  buildContext,
-}: {
-  race: RaceDefinitionConfig;
-  patch: (p: Partial<RaceDefinitionConfig>) => void;
-  buildContext: () => string;
-}) {
-  return (
-    <SectionCard
-      title="Portrait & Description"
-      description="Prompt fragments that drive sprite, portrait, and god-tier generations."
-    >
-      <FieldLabel label="Body Description">
-        <CommitTextarea
-          label=""
-          value={race.bodyDescription ?? ""}
-          onCommit={(v) => patch({ bodyDescription: v || undefined })}
-          placeholder="Physical appearance for sprite/portrait prompts (e.g. 'tall luminous humanoid with translucent crystalline skin…')."
-          rows={3}
-        />
-        <div className="mt-2">
-          <EnhanceDescriptionButton
-            entitySummary={buildContext()}
-            currentDescription={race.bodyDescription}
-            onAccept={(v) => patch({ bodyDescription: v })}
-            systemPrompt={BODY_DESC_SYSTEM_PROMPT}
-            label="AI generate body description"
-          />
-        </div>
-      </FieldLabel>
-
-      <div className="mt-4">
-        <FieldLabel label="Staff Tier Prompt">
-          <CommitTextarea
-            label=""
-            value={race.staffPrompt ?? ""}
-            onCommit={(v) => patch({ staffPrompt: v || undefined })}
-            placeholder="Optional override for the god-tier (tstaff) sprite. Leave blank to use the default template."
-            rows={4}
-          />
-          <div className="mt-2">
-            <EnhanceDescriptionButton
-              entitySummary={buildContext()}
-              currentDescription={race.staffPrompt}
-              onAccept={(v) => patch({ staffPrompt: v })}
-              systemPrompt={STAFF_PROMPT_SYSTEM_PROMPT}
-              label="AI generate staff prompt"
-            />
-          </div>
-        </FieldLabel>
-      </div>
-    </SectionCard>
   );
 }
 

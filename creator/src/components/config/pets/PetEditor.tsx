@@ -62,45 +62,17 @@ interface PetEditorProps {
 
 export function PetEditor({ id, pet, onPatch, onRename }: PetEditorProps) {
   const role = threatRole(pet.threatMultiplier);
-  const roleLabel = THREAT_ROLES.find((r) => r.value === role)?.label ?? "Balanced";
 
   return (
-    <div className="flex flex-col gap-4">
-      <BreadcrumbBar name={pet.name || id} role={roleLabel} />
-
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
-        <div className="lg:col-span-7 flex flex-col gap-4">
-          <IdentityCard id={id} pet={pet} onPatch={onPatch} onRename={onRename} />
-          <FlavorCard pet={pet} onPatch={onPatch} />
-          <CombatStatsCard pet={pet} onPatch={onPatch} />
-          <SpellsCard pet={pet} onPatch={onPatch} />
-        </div>
-
-        <div className="lg:col-span-5 flex flex-col gap-4">
-          <PortraitCard id={id} pet={pet} onPatch={onPatch} />
-          <BehaviorCard pet={pet} onPatch={onPatch} role={role} />
-        </div>
+    <div className="grid grid-cols-1 gap-3 lg:grid-cols-12">
+      <div className="lg:col-span-7 flex flex-col gap-3">
+        <IdentityCard id={id} pet={pet} onPatch={onPatch} onRename={onRename} />
+        <CombatStatsCard pet={pet} onPatch={onPatch} role={role} />
+        <SpellsCard pet={pet} onPatch={onPatch} />
       </div>
-    </div>
-  );
-}
 
-// ─── Breadcrumb / title bar ────────────────────────────────────────
-
-function BreadcrumbBar({ name, role }: { name: string; role: string }) {
-  return (
-    <div className="panel-surface rounded-2xl px-5 py-4 shadow-section">
-      <p className="font-display text-[0.6rem] uppercase tracking-[0.22em] text-text-muted">
-        Bestiary <span className="text-text-muted/40">›</span>{" "}
-        <span className="text-text-secondary">Lost Pet</span>
-      </p>
-      <div className="mt-1 flex flex-wrap items-baseline gap-3">
-        <h1 className="font-display text-2xl font-semibold text-text-primary">
-          {name}
-        </h1>
-        <span className="font-display text-2xs uppercase tracking-[0.18em] text-text-muted">
-          Spirit Companion <span className="text-text-muted/40">·</span> {role}
-        </span>
+      <div className="lg:col-span-5">
+        <PortraitCard id={id} pet={pet} onPatch={onPatch} />
       </div>
     </div>
   );
@@ -121,7 +93,10 @@ function IdentityCard({
 }) {
   return (
     <SectionCard title="Identity">
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <FieldLabel label="Slug" required>
+          <SlugRenamer id={id} onRename={onRename} />
+        </FieldLabel>
         <FieldLabel label="Display Name" required>
           <TextInput
             value={pet.name}
@@ -130,11 +105,16 @@ function IdentityCard({
             dense
           />
         </FieldLabel>
-        <FieldLabel label="Internal ID (slug)" required>
-          <SlugRenamer id={id} onRename={onRename} />
-          <p className="mt-0.5 text-2xs text-text-muted/70">
-            Used for references (must be unique).
-          </p>
+      </div>
+      <div className="mt-3">
+        <FieldLabel label="Flavor Description">
+          <CommitTextarea
+            label=""
+            value={pet.description ?? ""}
+            onCommit={(v) => onPatch({ description: v || undefined })}
+            placeholder="A long grey wolf with sharp yellow eyes…"
+            rows={3}
+          />
         </FieldLabel>
       </div>
     </SectionCard>
@@ -174,45 +154,20 @@ function SlugRenamer({ id, onRename }: { id: string; onRename: (v: string) => vo
   );
 }
 
-// ─── Flavor description ────────────────────────────────────────────
-
-function FlavorCard({
-  pet,
-  onPatch,
-}: {
-  pet: PetDefinitionConfig;
-  onPatch: (p: Partial<PetDefinitionConfig>) => void;
-}) {
-  return (
-    <SectionCard
-      title="Flavor Description"
-      description="One or two evocative sentences shown when players examine the companion."
-    >
-      <CommitTextarea
-        label=""
-        value={pet.description ?? ""}
-        onCommit={(v) => onPatch({ description: v || undefined })}
-        placeholder="A long grey wolf with sharp yellow eyes, trained to fight alongside its bonded ranger…"
-        rows={3}
-      />
-    </SectionCard>
-  );
-}
-
-// ─── Combat stats ──────────────────────────────────────────────────
+// ─── Combat stats (with role + default attack) ─────────────────────
 
 function CombatStatsCard({
   pet,
   onPatch,
+  role,
 }: {
   pet: PetDefinitionConfig;
   onPatch: (p: Partial<PetDefinitionConfig>) => void;
+  role: string;
 }) {
+  const spellIds = Object.keys(pet.spells ?? {});
   return (
-    <SectionCard
-      title="Combat Stats"
-      description="Level-1 baseline · scales +10% per owner level."
-    >
+    <SectionCard title="Combat Stats">
       <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
         <StatBlock
           label="HP"
@@ -238,6 +193,30 @@ function CombatStatsCard({
           onCommit={(v) => onPatch({ armor: v ?? 0 })}
           tone="blue"
         />
+      </div>
+
+      <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <FieldLabel label="Role">
+          <SelectInput
+            value={role}
+            onCommit={(v) => onPatch({ threatMultiplier: THREAT_VALUES[v] })}
+            options={THREAT_ROLES}
+            dense
+          />
+        </FieldLabel>
+        <FieldLabel label="Default Attack">
+          <SelectInput
+            value={pet.defaultAttack ?? ""}
+            onCommit={(v) => onPatch({ defaultAttack: v || undefined })}
+            options={spellIds.map((sid) => ({
+              value: sid,
+              label: pet.spells?.[sid]?.displayName || sid,
+            }))}
+            placeholder="Standard melee"
+            allowEmpty
+            dense
+          />
+        </FieldLabel>
       </div>
     </SectionCard>
   );
@@ -294,56 +273,6 @@ function PortraitCard({
         context={{ zone: "", entity_type: "pet", entity_id: id }}
         surface="worldbuilding"
       />
-    </SectionCard>
-  );
-}
-
-// ─── Traits & Behavior ─────────────────────────────────────────────
-
-function BehaviorCard({
-  pet,
-  onPatch,
-  role,
-}: {
-  pet: PetDefinitionConfig;
-  onPatch: (p: Partial<PetDefinitionConfig>) => void;
-  role: string;
-}) {
-  const spellIds = Object.keys(pet.spells ?? {});
-  return (
-    <SectionCard
-      title="Traits &amp; Behavior"
-      description="Combat role and default attack template."
-    >
-      <div className="grid grid-cols-1 gap-3">
-        <FieldLabel label="Role">
-          <SelectInput
-            value={role}
-            onCommit={(v) => onPatch({ threatMultiplier: THREAT_VALUES[v] })}
-            options={THREAT_ROLES}
-            dense
-          />
-          <p className="mt-0.5 text-2xs text-text-muted/70">
-            Tank pets pull threat aggressively; DPS pets stay off the front line.
-          </p>
-        </FieldLabel>
-        <FieldLabel label="Default Attack">
-          <SelectInput
-            value={pet.defaultAttack ?? ""}
-            onCommit={(v) => onPatch({ defaultAttack: v || undefined })}
-            options={spellIds.map((sid) => ({
-              value: sid,
-              label: pet.spells?.[sid]?.displayName || sid,
-            }))}
-            placeholder="Standard melee"
-            allowEmpty
-            dense
-          />
-          <p className="mt-0.5 text-2xs text-text-muted/70">
-            Which spell replaces the standard melee. Leave empty for normal attacks.
-          </p>
-        </FieldLabel>
-      </div>
     </SectionCard>
   );
 }

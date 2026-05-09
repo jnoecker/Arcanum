@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import type { StatusEffectDefinitionConfig } from "@/types/config";
 import { useImageSrc } from "@/lib/useImageSrc";
-import { SearchIcon, PlusIcon, MoreIcon } from "./icons";
+import { SearchIcon, PlusIcon, MoreIcon, CopyIcon, TrashIcon } from "./icons";
 
 function cx(...c: Array<string | false | null | undefined>) {
   return c.filter(Boolean).join(" ");
@@ -13,6 +13,8 @@ interface ConditionsListProps {
   selectedId: string | null;
   onSelect: (id: string) => void;
   onAdd: () => void;
+  onDuplicate: () => void;
+  onDelete: () => void;
 }
 
 const ALL_TYPES = "__all__";
@@ -23,10 +25,13 @@ export function ConditionsList({
   selectedId,
   onSelect,
   onAdd,
+  onDuplicate,
+  onDelete,
 }: ConditionsListProps) {
   const [query, setQuery] = useState("");
   const [activeType, setActiveType] = useState<string>(ALL_TYPES);
-  const [moreOpen, setMoreOpen] = useState(false);
+  const [filterOpen, setFilterOpen] = useState(false);
+  const hasSelection = selectedId !== null;
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -47,14 +52,18 @@ export function ConditionsList({
     });
   }, [defs, query, activeType]);
 
-  const visibleTypeChips = effectTypeOptions.slice(0, 3);
-  const overflowTypes = effectTypeOptions.slice(3);
+  const activeTypeLabel =
+    activeType === ALL_TYPES
+      ? "All"
+      : (effectTypeOptions.find(
+          (t) => t.value.toLowerCase() === activeType.toLowerCase(),
+        )?.label ?? activeType);
 
   return (
-    <aside className="panel-surface flex flex-col gap-3 rounded-2xl p-4 shadow-section">
+    <aside className="panel-surface flex flex-col gap-2 rounded-2xl p-3 shadow-section">
       <div className="flex items-center justify-between gap-2">
         <h3 className="font-display text-xs font-semibold uppercase tracking-[0.18em] text-text-secondary">
-          Conditions Roster
+          Status Effects
         </h3>
         <span className="font-mono text-2xs text-text-muted/70">
           {Object.keys(defs).length}
@@ -65,81 +74,105 @@ export function ConditionsList({
         <SearchIcon className="text-text-muted/70" />
         <input
           className="min-w-0 flex-1 bg-transparent text-xs text-text-primary outline-none placeholder:text-text-muted/60"
-          placeholder="Search conditions…"
+          placeholder="Search status effects…"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />
-      </div>
-
-      <div className="flex flex-wrap items-center gap-1.5">
-        <TypeChip
-          active={activeType === ALL_TYPES}
-          onClick={() => setActiveType(ALL_TYPES)}
-        >
-          All
-        </TypeChip>
-        {visibleTypeChips.map((t) => (
-          <TypeChip
-            key={t.value}
-            active={activeType.toLowerCase() === t.value.toLowerCase()}
-            onClick={() => setActiveType(t.value)}
-          >
-            {t.label}
-          </TypeChip>
-        ))}
-        {overflowTypes.length > 0 && (
-          <div className="relative">
-            <button
-              type="button"
-              onClick={() => setMoreOpen((v) => !v)}
-              aria-label="More effect types"
-              className="focus-ring inline-flex h-7 w-7 items-center justify-center rounded-full border border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] text-text-muted transition hover:border-accent/30 hover:text-accent"
-            >
-              <MoreIcon />
-            </button>
-            {moreOpen && (
-              <div className="absolute right-0 top-9 z-20 w-44 overflow-hidden rounded-xl border border-[var(--chrome-stroke)] bg-bg-elevated shadow-lg">
-                {overflowTypes.map((t) => {
-                  const active = activeType.toLowerCase() === t.value.toLowerCase();
-                  return (
-                    <button
-                      key={t.value}
-                      type="button"
-                      onClick={() => {
-                        setActiveType(t.value);
-                        setMoreOpen(false);
-                      }}
-                      className={cx(
-                        "flex w-full items-center gap-2 border-b border-[var(--chrome-stroke)] px-3 py-2 text-left text-xs transition last:border-b-0",
-                        active
-                          ? "bg-accent/10 text-accent"
-                          : "text-text-secondary hover:bg-[var(--chrome-fill-soft)]",
-                      )}
-                    >
-                      <span className="truncate">{t.label}</span>
-                    </button>
-                  );
-                })}
-              </div>
+        <div className="relative">
+          <button
+            type="button"
+            onClick={() => setFilterOpen((v) => !v)}
+            title={`Filter by type · ${activeTypeLabel}`}
+            aria-label={`Filter by type, current: ${activeTypeLabel}`}
+            className={cx(
+              "focus-ring inline-flex h-6 items-center gap-1 rounded-md border px-1.5 text-[0.6rem] uppercase tracking-wider transition",
+              activeType === ALL_TYPES
+                ? "border-[var(--chrome-stroke)] bg-transparent text-text-muted hover:border-accent/30 hover:text-accent"
+                : "border-accent/40 bg-accent/10 text-accent",
             )}
-          </div>
-        )}
+          >
+            <MoreIcon className="h-3 w-3" />
+            <span>{activeTypeLabel}</span>
+          </button>
+          {filterOpen && (
+            <div className="absolute right-0 top-7 z-20 w-44 overflow-hidden rounded-xl border border-[var(--chrome-stroke)] bg-bg-elevated shadow-lg">
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveType(ALL_TYPES);
+                  setFilterOpen(false);
+                }}
+                className={cx(
+                  "flex w-full items-center gap-2 border-b border-[var(--chrome-stroke)] px-3 py-2 text-left text-xs transition",
+                  activeType === ALL_TYPES
+                    ? "bg-accent/10 text-accent"
+                    : "text-text-secondary hover:bg-[var(--chrome-fill-soft)]",
+                )}
+              >
+                All
+              </button>
+              {effectTypeOptions.map((t) => {
+                const active = activeType.toLowerCase() === t.value.toLowerCase();
+                return (
+                  <button
+                    key={t.value}
+                    type="button"
+                    onClick={() => {
+                      setActiveType(t.value);
+                      setFilterOpen(false);
+                    }}
+                    className={cx(
+                      "flex w-full items-center gap-2 border-b border-[var(--chrome-stroke)] px-3 py-2 text-left text-xs transition last:border-b-0",
+                      active
+                        ? "bg-accent/10 text-accent"
+                        : "text-text-secondary hover:bg-[var(--chrome-fill-soft)]",
+                    )}
+                  >
+                    <span className="truncate">{t.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
       </div>
 
-      <button
-        type="button"
-        onClick={onAdd}
-        className="focus-ring inline-flex items-center justify-center gap-1.5 rounded-xl border border-accent/40 bg-accent/10 px-3 py-2 text-xs font-medium text-accent transition hover:bg-accent/20"
-      >
-        <PlusIcon />
-        Add Condition
-      </button>
+      <div className="flex items-center gap-1.5">
+        <button
+          type="button"
+          onClick={onAdd}
+          className="focus-ring inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-accent/40 bg-accent/10 px-2.5 py-1.5 text-2xs font-medium text-accent transition hover:bg-accent/20"
+        >
+          <PlusIcon />
+          Add
+        </button>
+        <button
+          type="button"
+          onClick={onDuplicate}
+          disabled={!hasSelection}
+          title="Duplicate the selected status effect"
+          aria-label="Duplicate the selected status effect"
+          className="focus-ring inline-flex h-7 w-7 items-center justify-center rounded-lg border border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] text-text-muted transition hover:border-accent/30 hover:text-text-primary disabled:cursor-not-allowed disabled:opacity-30"
+        >
+          <CopyIcon />
+        </button>
+        <button
+          type="button"
+          onClick={onDelete}
+          disabled={!hasSelection}
+          title="Delete the selected status effect"
+          aria-label="Delete the selected status effect"
+          className="focus-ring inline-flex h-7 w-7 items-center justify-center rounded-lg border border-status-error/40 bg-status-error/10 text-status-error transition hover:bg-status-error/20 disabled:cursor-not-allowed disabled:opacity-30"
+        >
+          <TrashIcon />
+        </button>
+      </div>
 
-      <ul className="-mx-1 flex max-h-[60vh] flex-col gap-1.5 overflow-y-auto px-1 pb-1">
+      <ul className="-mx-1 flex max-h-[64vh] flex-col gap-1.5 overflow-y-auto px-1 pb-1">
         {filtered.length === 0 ? (
           <li>
             <div className="rounded-xl border border-dashed border-[var(--chrome-stroke-strong)] bg-[var(--chrome-fill-soft)] px-3 py-6 text-center text-2xs italic text-text-muted/70">
-              No conditions match your filters.
+              No status effects match your filters.
             </div>
           </li>
         ) : (
@@ -230,28 +263,3 @@ function ConditionThumb({ image }: { image: string | undefined }) {
   );
 }
 
-function TypeChip({
-  active,
-  onClick,
-  children,
-}: {
-  active: boolean;
-  onClick: () => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-pressed={active}
-      className={cx(
-        "focus-ring inline-flex items-center gap-1 rounded-full border px-2 py-1 font-display text-2xs transition",
-        active
-          ? "border-accent/60 bg-accent/15 text-accent"
-          : "border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] text-text-muted hover:border-accent/30 hover:text-accent",
-      )}
-    >
-      <span>{children}</span>
-    </button>
-  );
-}

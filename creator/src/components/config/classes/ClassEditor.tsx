@@ -66,76 +66,34 @@ export function ClassEditor({
   };
 
   return (
-    <div className="flex flex-col gap-4">
-      <DetailHeader id={id} cls={cls} onRename={onRename} onPatch={onPatch} />
-
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <IdentityCard cls={cls} onPatch={onPatch} />
-        <LoreCard cls={cls} buildContext={buildContext} onPatch={onPatch} />
-        <ProgressionCard
-          cls={cls}
-          maxLevel={config.progression.maxLevel}
-          baseHp={config.progression.rewards.baseHp}
-          baseMana={config.progression.rewards.baseMana}
-          onPatch={onPatch}
-        />
-        <RoleIdentityCard
-          cls={cls}
-          statOptions={statOptions}
-          onPatch={onPatch}
-        />
-        <ArtCard
-          id={id}
-          cls={cls}
-          raceOptions={raceOptions}
-          buildContext={buildContext}
-          onPatch={onPatch}
-        />
-        <NotesCard cls={cls} />
-      </div>
+    <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+      <IdentityCard
+        id={id}
+        cls={cls}
+        raceOptions={raceOptions}
+        onPatch={onPatch}
+        onRename={onRename}
+      />
+      <LoreCard cls={cls} buildContext={buildContext} onPatch={onPatch} />
+      <ProgressionCard
+        cls={cls}
+        maxLevel={config.progression.maxLevel}
+        baseHp={config.progression.rewards.baseHp}
+        baseMana={config.progression.rewards.baseMana}
+        onPatch={onPatch}
+      />
+      <RoleIdentityCard
+        cls={cls}
+        statOptions={statOptions}
+        onPatch={onPatch}
+      />
+      <ArtCard
+        id={id}
+        cls={cls}
+        buildContext={buildContext}
+        onPatch={onPatch}
+      />
     </div>
-  );
-}
-
-// ─── Header (kicker breadcrumb + title + tagline + actions) ─────────
-
-function DetailHeader({
-  id,
-  cls,
-  onRename,
-  onPatch,
-}: {
-  id: string;
-  cls: ClassDefinitionConfig;
-  onRename: (v: string) => void;
-  onPatch: (p: Partial<ClassDefinitionConfig>) => void;
-}) {
-  return (
-    <header className="panel-surface rounded-2xl p-5 shadow-section">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div className="min-w-0 flex-1">
-          <p className="font-display text-2xs uppercase tracking-[0.22em] text-text-muted">
-            Classes <span className="text-text-muted/40">›</span>{" "}
-            <span className="text-text-secondary">{id}</span>
-          </p>
-          <h1 className="mt-1 truncate font-display text-3xl font-semibold text-text-primary">
-            {cls.displayName || "Untitled Class"}
-          </h1>
-          <p className="mt-1.5 max-w-2xl text-xs leading-relaxed text-text-secondary">
-            {cls.description?.trim() ||
-              "Tune progression, identity, and presentation for this class."}
-          </p>
-        </div>
-
-        <div className="flex shrink-0 items-center gap-2">
-          <SlugRenamer id={id} onRename={onRename} />
-          <SelectableToggle
-            checked={cls.selectable ?? true}
-            onChange={(v) => onPatch({ selectable: v })}
-          />
-        </div>
-      </div>
-    </header>
   );
 }
 
@@ -228,15 +186,32 @@ function SelectableToggle({
 // ─── Identity ───────────────────────────────────────────────────────
 
 function IdentityCard({
+  id,
   cls,
+  raceOptions,
   onPatch,
+  onRename,
 }: {
+  id: string;
   cls: ClassDefinitionConfig;
+  raceOptions: { value: string; label: string }[];
   onPatch: (p: Partial<ClassDefinitionConfig>) => void;
+  onRename: (v: string) => void;
 }) {
   return (
-    <SectionCard title="Identity">
-      <div className="grid grid-cols-1 gap-3">
+    <SectionCard
+      title="Identity"
+      actions={
+        <SelectableToggle
+          checked={cls.selectable ?? true}
+          onChange={(v) => onPatch({ selectable: v })}
+        />
+      }
+    >
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <FieldLabel label="Slug" required>
+          <SlugRenamer id={id} onRename={onRename} />
+        </FieldLabel>
         <FieldLabel label="Display Name" required>
           <TextInput
             value={cls.displayName}
@@ -245,15 +220,28 @@ function IdentityCard({
             dense
           />
         </FieldLabel>
-
-        <FieldLabel
-          label="Tagline"
-          hint="Short tagline shown during character creation."
-        >
+      </div>
+      <div className="mt-3">
+        <FieldLabel label="Tagline">
           <TextInput
             value={cls.description ?? ""}
             onCommit={(v) => onPatch({ description: v || undefined })}
             placeholder="Master of arcane forces"
+            dense
+          />
+        </FieldLabel>
+      </div>
+      <div className="mt-3">
+        <FieldLabel
+          label="Showcase Race"
+          hint="Race paired with this class for portrait generation."
+        >
+          <SelectInput
+            value={cls.showcaseRace ?? ""}
+            options={raceOptions}
+            onCommit={(v) => onPatch({ showcaseRace: v || undefined })}
+            allowEmpty
+            placeholder="— default —"
             dense
           />
         </FieldLabel>
@@ -275,21 +263,48 @@ function LoreCard({
 }) {
   return (
     <SectionCard title="Lore & Theme">
-      <div className="flex flex-col gap-2">
-        <CommitTextarea
-          label="Backstory"
-          value={cls.backstory ?? ""}
-          onCommit={(v) => onPatch({ backstory: v || undefined })}
-          placeholder="Lore, training traditions, role in the world…"
-          rows={5}
+      <CommitTextarea
+        label=""
+        value={cls.backstory ?? ""}
+        onCommit={(v) => onPatch({ backstory: v || undefined })}
+        placeholder="Lore, training traditions, role in the world…"
+        rows={5}
+      />
+      <div className="mt-1.5 flex justify-end">
+        <EnhanceDescriptionButton
+          entitySummary={buildContext()}
+          currentDescription={cls.backstory}
+          onAccept={(text) => onPatch({ backstory: text })}
+          systemPrompt={getBackstoryEnhancePrompt()}
+          label="Enhance"
         />
-        <div>
+      </div>
+
+      <div className="mt-4 flex flex-col gap-1">
+        <span className="font-display text-2xs uppercase tracking-wider text-text-muted">
+          Outfit Description
+        </span>
+        <p className="text-2xs leading-snug text-text-muted/70">
+          Used by sprite/portrait prompts. Body description comes from the race.
+        </p>
+        <CommitTextarea
+          label=""
+          value={cls.outfitDescription ?? ""}
+          onCommit={(v) => onPatch({ outfitDescription: v || undefined })}
+          placeholder="Heavy plate armor with tower shield…"
+          rows={4}
+        />
+        <div className="mt-1.5 flex justify-end">
           <EnhanceDescriptionButton
-            entitySummary={buildContext()}
-            currentDescription={cls.backstory}
-            onAccept={(text) => onPatch({ backstory: text })}
-            systemPrompt={getBackstoryEnhancePrompt()}
-            label="Enhance backstory"
+            entitySummary={`Class: ${cls.displayName}\n${
+              cls.description ? `Description: ${cls.description}` : ""
+            }${cls.backstory ? `\nBackstory: ${cls.backstory}` : ""}${
+              cls.primaryStat ? `\nPrimary stat: ${cls.primaryStat}` : ""
+            }`}
+            currentDescription={cls.outfitDescription}
+            onAccept={(v) => onPatch({ outfitDescription: v })}
+            systemPrompt={OUTFIT_DESC_SYSTEM_PROMPT}
+            label="AI generate"
           />
         </div>
       </div>
@@ -314,7 +329,15 @@ function ProgressionCard({
 }) {
   return (
     <SectionCard title="Progression">
-      <div className="grid grid-cols-2 gap-3">
+      <HpManaCurve
+        hpPerLevel={cls.hpPerLevel}
+        manaPerLevel={cls.manaPerLevel}
+        maxLevel={maxLevel}
+        baseHp={baseHp}
+        baseMana={baseMana}
+      />
+
+      <div className="mt-3 grid grid-cols-2 gap-3">
         <FieldLabel
           label="HP / Level"
           hint="Class-specific HP gained per level."
@@ -337,16 +360,6 @@ function ProgressionCard({
             dense
           />
         </FieldLabel>
-      </div>
-
-      <div className="mt-3">
-        <HpManaCurve
-          hpPerLevel={cls.hpPerLevel}
-          manaPerLevel={cls.manaPerLevel}
-          maxLevel={maxLevel}
-          baseHp={baseHp}
-          baseMana={baseMana}
-        />
       </div>
     </SectionCard>
   );
@@ -392,35 +405,21 @@ function RoleIdentityCard({
             dense
           />
         </FieldLabel>
-
-        <FieldLabel
-          label="Start Room Override"
-          hint="Leave blank to use the world default."
-        >
-          <TextInput
-            value={cls.startRoom ?? ""}
-            onCommit={(v) => onPatch({ startRoom: v || undefined })}
-            placeholder="zone:room_id"
-            dense
-          />
-        </FieldLabel>
       </div>
     </SectionCard>
   );
 }
 
-// ─── Art & Progression (portrait + outfit + showcase race) ──────────
+// ─── Art ────────────────────────────────────────────────────────────
 
 function ArtCard({
   id,
   cls,
-  raceOptions,
   buildContext,
   onPatch,
 }: {
   id: string;
   cls: ClassDefinitionConfig;
-  raceOptions: { value: string; label: string }[];
   buildContext: () => string;
   onPatch: (p: Partial<ClassDefinitionConfig>) => void;
 }) {
@@ -429,130 +428,22 @@ function ArtCard({
     cls.image && assetsDir ? `${assetsDir}\\images\\${cls.image}` : undefined;
 
   return (
-    <SectionCard
-      title="Art & Portrait"
-      className="lg:col-span-2"
-    >
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_minmax(0,1fr)]">
-        <div className="flex flex-col gap-3">
-          <EntityArtGenerator
-            getPrompt={(style: ArtStyle) =>
-              composePrompt(
-                "class_portrait",
-                style,
-                `Class: ${cls.displayName}`,
-              )
-            }
-            entityContext={buildContext()}
-            currentImage={imagePath}
-            onAccept={(filePath) => {
-              const fileName = filePath.split(/[\\/]/).pop() ?? "";
-              onPatch({ image: fileName });
-            }}
-            assetType="class_portrait"
-            context={{ zone: "", entity_type: "class", entity_id: id }}
-            surface="worldbuilding"
-          />
-        </div>
-
-        <div className="flex flex-col gap-3">
-          <FieldLabel
-            label="Outfit Description"
-            hint="Used by sprite/portrait prompts. Body description comes from the race."
-          >
-            <CommitTextarea
-              label=""
-              value={cls.outfitDescription ?? ""}
-              onCommit={(v) => onPatch({ outfitDescription: v || undefined })}
-              placeholder="Heavy plate armor with tower shield…"
-              rows={4}
-            />
-          </FieldLabel>
-          <div>
-            <EnhanceDescriptionButton
-              entitySummary={`Class: ${cls.displayName}\n${
-                cls.description ? `Description: ${cls.description}` : ""
-              }${cls.backstory ? `\nBackstory: ${cls.backstory}` : ""}${
-                cls.primaryStat ? `\nPrimary stat: ${cls.primaryStat}` : ""
-              }`}
-              currentDescription={cls.outfitDescription}
-              onAccept={(v) => onPatch({ outfitDescription: v })}
-              systemPrompt={OUTFIT_DESC_SYSTEM_PROMPT}
-              label="AI Generate Outfit"
-            />
-          </div>
-
-          <FieldLabel
-            label="Showcase Race"
-            hint="Race paired with this class for portrait generation."
-          >
-            <SelectInput
-              value={cls.showcaseRace ?? ""}
-              options={raceOptions}
-              onCommit={(v) => onPatch({ showcaseRace: v || undefined })}
-              allowEmpty
-              placeholder="— default —"
-              dense
-            />
-          </FieldLabel>
-        </div>
-      </div>
+    <SectionCard title="Portrait" className="lg:col-span-2">
+      <EntityArtGenerator
+        getPrompt={(style: ArtStyle) =>
+          composePrompt("class_portrait", style, `Class: ${cls.displayName}`)
+        }
+        entityContext={buildContext()}
+        currentImage={imagePath}
+        onAccept={(filePath) => {
+          const fileName = filePath.split(/[\\/]/).pop() ?? "";
+          onPatch({ image: fileName });
+        }}
+        assetType="class_portrait"
+        context={{ zone: "", entity_type: "class", entity_id: id }}
+        surface="worldbuilding"
+      />
     </SectionCard>
-  );
-}
-
-// ─── Notes ──────────────────────────────────────────────────────────
-
-function NotesCard({ cls }: { cls: ClassDefinitionConfig }) {
-  return (
-    <SectionCard title="Notes" className="lg:col-span-2">
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-        <div className="rounded-xl border border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] p-3">
-          <p className="font-display text-2xs uppercase tracking-[0.18em] text-text-muted">
-            Tagline preview
-          </p>
-          <p className="mt-1.5 text-xs leading-relaxed text-text-secondary">
-            {cls.description?.trim() ||
-              "No tagline yet — players see this on the class card during character creation."}
-          </p>
-        </div>
-
-        <ChecklistTip
-          items={[
-            cls.displayName.trim()
-              ? "Display name set"
-              : "Add a display name",
-            cls.primaryStat ? "Primary stat assigned" : "Pick a primary stat",
-            cls.image ? "Portrait artwork attached" : "Generate a portrait",
-            cls.outfitDescription
-              ? "Outfit description written"
-              : "Describe the class outfit",
-          ]}
-        />
-      </div>
-
-      <p className="mt-3 text-2xs italic text-text-muted/70">
-        Internal class ids should be uppercase with underscores (e.g.{" "}
-        <code className="font-mono text-text-muted">SHADOW_DANCER</code>). All
-        edits autosave with the rest of the project config.
-      </p>
-    </SectionCard>
-  );
-}
-
-function ChecklistTip({ items }: { items: string[] }) {
-  return (
-    <ul className="rounded-xl border border-dashed border-[var(--chrome-stroke-strong)] bg-[var(--chrome-fill-soft)] p-3 text-2xs text-text-muted/80">
-      <p className="mb-1.5 font-display text-2xs font-semibold uppercase tracking-[0.18em] text-text-muted">
-        Polish checklist
-      </p>
-      {items.map((item, i) => (
-        <li key={i} className="flex items-baseline gap-1.5 leading-snug">
-          <span className="text-text-muted/40">·</span>
-          <span>{item}</span>
-        </li>
-      ))}
-    </ul>
   );
 }
 

@@ -1,9 +1,12 @@
+import { useRef, useState } from "react";
 import type {
   AppConfig,
   DailyQuestDefinition,
   DailyQuestsConfig,
   GlobalQuestObjectiveConfig,
   GlobalQuestsConfig,
+  QuestCompletionTypeDefinition,
+  QuestObjectiveTypeDefinition,
 } from "@/types/config";
 import {
   Section,
@@ -20,12 +23,20 @@ import {
 import { useArrayField } from "@/lib/useArrayField";
 import { useConfigOptions } from "@/lib/useConfigOptions";
 import { AutoQuestsPanel } from "./panels/AutoQuestsPanel";
-import { QuestTaxonomyDesigner } from "./QuestTaxonomyDesigner";
+import { TaxonomyWorkbench } from "./achievements/TaxonomyWorkbench";
 
 interface Props {
   config: AppConfig;
   onChange: (patch: Partial<AppConfig>) => void;
 }
+
+type TabId = "config" | "objectiveTypes" | "completionTypes";
+
+const TABS: Array<{ id: TabId; label: string }> = [
+  { id: "config", label: "Config" },
+  { id: "objectiveTypes", label: "Objective Types" },
+  { id: "completionTypes", label: "Completion Types" },
+];
 
 const DEFAULT_DAILY_QUESTS: DailyQuestsConfig = {
   enabled: false,
@@ -66,13 +77,138 @@ const DEFAULT_GLOBAL_OBJECTIVE: GlobalQuestObjectiveConfig = {
   targetCount: 1,
 };
 
+function defaultObjectiveType(raw: string): QuestObjectiveTypeDefinition {
+  return { displayName: raw.trim() || "New Objective Type" };
+}
+
+function defaultCompletionType(raw: string): QuestCompletionTypeDefinition {
+  return { displayName: raw.trim() || "New Completion Type" };
+}
+
 /**
- * Aggregated Living World → Quests panel. Surfaces enable + tuning knobs for
- * daily/weekly, bounty, and global quests, plus the existing taxonomy
- * designer and row-level editors for dailyPool, weeklyPool, and
- * globalQuests.objectives.
+ * Living World → Quests. Three tabs, mirroring the Orrery → Achievements pattern:
+ * Config (daily/weekly + auto-quest + global tuning), Objective Types
+ * (taxonomy), and Completion Types (taxonomy).
  */
 export function QuestsStudio({ config, onChange }: Props) {
+  const [active, setActive] = useState<TabId>("config");
+  const tabRefs = useRef<Array<HTMLButtonElement | null>>([]);
+
+  const objectiveCount = Object.keys(config.questObjectiveTypes).length;
+  const completionCount = Object.keys(config.questCompletionTypes).length;
+
+  return (
+    <div className="flex flex-col gap-5">
+      <div className="flex items-center justify-between gap-3">
+        <div
+          className="segmented-control"
+          role="tablist"
+          aria-label="Quest views"
+        >
+          {TABS.map((tab, index) => {
+            const count =
+              tab.id === "objectiveTypes"
+                ? objectiveCount
+                : tab.id === "completionTypes"
+                  ? completionCount
+                  : null;
+            return (
+              <button
+                key={tab.id}
+                ref={(node) => {
+                  tabRefs.current[index] = node;
+                }}
+                role="tab"
+                aria-selected={active === tab.id}
+                aria-controls={`quest-tab-${tab.id}`}
+                tabIndex={active === tab.id ? 0 : -1}
+                onClick={() => setActive(tab.id)}
+                onKeyDown={(event) => {
+                  if (event.key === "ArrowRight") {
+                    event.preventDefault();
+                    const next = (index + 1) % TABS.length;
+                    setActive(TABS[next]!.id);
+                    tabRefs.current[next]?.focus();
+                  } else if (event.key === "ArrowLeft") {
+                    event.preventDefault();
+                    const next = (index - 1 + TABS.length) % TABS.length;
+                    setActive(TABS[next]!.id);
+                    tabRefs.current[next]?.focus();
+                  }
+                }}
+                className="segmented-button focus-ring px-4 py-2 text-xs font-medium"
+                data-active={active === tab.id}
+              >
+                {tab.label}
+                {count !== null && (
+                  <span className="ml-2 text-2xs text-text-muted">{count}</span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      <div
+        id={`quest-tab-${active}`}
+        role="tabpanel"
+        aria-labelledby={`quest-tab-${active}`}
+      >
+        {active === "config" && <QuestsConfigPanel config={config} onChange={onChange} />}
+
+        {active === "objectiveTypes" && (
+          <TaxonomyWorkbench
+            listTitle="Objective Types"
+            detailKicker="Objective Type"
+            addPlaceholder="New objective type id"
+            searchPlaceholder="Search objective types…"
+            emptyListMessage="No objective types yet — add one above."
+            emptyDetailTitle="No objective type selected"
+            emptyDetailDescription="Objective types are the verbs quest authors pick from when they build quest steps — kill, collect, gather, dungeon, and so on."
+            items={config.questObjectiveTypes}
+            defaultItem={defaultObjectiveType}
+            getDisplayName={(t) => t.displayName}
+            renderDetail={(_id, t, patch) => (
+              <DisplayNameDetail
+                value={t.displayName}
+                placeholder="Kill"
+                onCommit={(v) => patch({ displayName: v })}
+              />
+            )}
+            onItemsChange={(questObjectiveTypes) => onChange({ questObjectiveTypes })}
+          />
+        )}
+
+        {active === "completionTypes" && (
+          <TaxonomyWorkbench
+            listTitle="Completion Types"
+            detailKicker="Completion Type"
+            addPlaceholder="New completion type id"
+            searchPlaceholder="Search completion types…"
+            emptyListMessage="No completion types yet — add one above."
+            emptyDetailTitle="No completion type selected"
+            emptyDetailDescription="Completion types describe how a quest is turned in — talk to NPC, drop off item, return to questgiver."
+            items={config.questCompletionTypes}
+            defaultItem={defaultCompletionType}
+            getDisplayName={(t) => t.displayName}
+            renderDetail={(_id, t, patch) => (
+              <DisplayNameDetail
+                value={t.displayName}
+                placeholder="Talk to NPC"
+                onCommit={(v) => patch({ displayName: v })}
+              />
+            )}
+            onItemsChange={(questCompletionTypes) => onChange({ questCompletionTypes })}
+          />
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── Config tab ────────────────────────────────────────────────────
+
+function QuestsConfigPanel({ config, onChange }: Props) {
   const objectiveTypeOptions = useConfigOptions(
     config.questObjectiveTypes,
     FALLBACK_OBJECTIVE_TYPES,
@@ -91,10 +227,32 @@ export function QuestsStudio({ config, onChange }: Props) {
         onChange={onChange}
         objectiveTypeOptions={objectiveTypeOptions}
       />
-      <QuestTaxonomyDesigner config={config} onChange={onChange} />
     </div>
   );
 }
+
+// ─── Display-name-only detail used by both taxonomy tabs ──────────
+
+function DisplayNameDetail({
+  value,
+  placeholder,
+  onCommit,
+}: {
+  value: string;
+  placeholder: string;
+  onCommit: (v: string) => void;
+}) {
+  return (
+    <div className="flex flex-col gap-1">
+      <span className="font-display text-2xs uppercase tracking-wider text-text-muted">
+        Display Name
+      </span>
+      <TextInput value={value} onCommit={onCommit} placeholder={placeholder} dense />
+    </div>
+  );
+}
+
+// ─── Daily / Weekly section (preserved from prior studio) ─────────
 
 type ObjectiveOption = { value: string; label: string };
 

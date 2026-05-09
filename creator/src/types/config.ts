@@ -1041,6 +1041,7 @@ export interface GuildHallRoomTemplate {
   description: string;
   cost?: number;
   hasStorage?: boolean;
+  image?: string;
 }
 
 export interface GuildHallsConfig {

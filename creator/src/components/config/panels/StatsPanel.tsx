@@ -1,18 +1,46 @@
-import { useState, useCallback } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { ConfigPanelProps } from "./types";
-import type { StatDefinition, StatBindings } from "@/types/config";
+import type { StatBindings, StatDefinition } from "@/types/config";
 import {
-  Section,
-  FieldRow,
-  NumberInput,
   TextInput,
+  NumberInput,
   SelectInput,
-  IconButton,
+  CommitTextarea,
 } from "@/components/ui/FormWidgets";
+import { SectionCard } from "./factions/SectionCard";
+import {
+  PlusIcon,
+  TrashIcon,
+  SearchIcon,
+} from "../achievements/icons";
 
-export function StatsPanel({ config, onChange, showDefinitions = true }: ConfigPanelProps & { showDefinitions?: boolean }) {
+function cx(...c: Array<string | false | null | undefined>) {
+  return c.filter(Boolean).join(" ");
+}
+
+function normalizeStatId(raw: string): string {
+  return raw
+    .trim()
+    .toUpperCase()
+    .replace(/\s+/g, "_")
+    .replace(/[^A-Z0-9_]/g, "");
+}
+
+interface StatsPanelProps extends ConfigPanelProps {
+  showDefinitions?: boolean;
+}
+
+type TabId = "definitions" | "bindings";
+
+const TABS: Array<{ id: TabId; label: string }> = [
+  { id: "definitions", label: "Definitions" },
+  { id: "bindings", label: "Bindings" },
+];
+
+export function StatsPanel({ config, onChange, showDefinitions = true }: StatsPanelProps) {
   const { definitions, bindings } = config.stats;
-  const statIds = Object.keys(definitions);
+  const [active, setActive] = useState<TabId>(showDefinitions ? "definitions" : "bindings");
+  const tabRefs = useRef<Array<HTMLButtonElement | null>>([]);
 
   const patchDef = (id: string, p: Partial<StatDefinition>) =>
     onChange({
@@ -30,264 +58,602 @@ export function StatsPanel({ config, onChange, showDefinitions = true }: ConfigP
       stats: { ...config.stats, bindings: { ...bindings, ...p } },
     });
 
-  const deleteStat = (id: string) => {
-    const next = { ...definitions };
-    delete next[id];
-    onChange({ stats: { ...config.stats, definitions: next } });
-  };
-
-  const [newId, setNewId] = useState("");
-
-  const addStat = useCallback(() => {
-    const id = newId.trim().toUpperCase();
-    if (!id || definitions[id]) return;
+  const addStat = (id: string) => {
+    const cleaned = normalizeStatId(id);
+    if (!cleaned || definitions[cleaned]) return cleaned;
     onChange({
       stats: {
         ...config.stats,
         definitions: {
           ...definitions,
-          [id]: {
-            id,
-            displayName: id,
-            abbreviation: id.slice(0, 3),
+          [cleaned]: {
+            id: cleaned,
+            displayName: cleaned,
+            abbreviation: cleaned.slice(0, 3),
             description: "",
             baseStat: 10,
           },
         },
       },
     });
-    setNewId("");
-  }, [newId, definitions, config.stats, onChange]);
+    return cleaned;
+  };
 
-  const statOptions = statIds.map((id) => ({
-    value: id,
-    label: definitions[id]!.displayName,
-  }));
+  const deleteStat = (id: string) => {
+    const next = { ...definitions };
+    delete next[id];
+    onChange({ stats: { ...config.stats, definitions: next } });
+  };
+
+  const statOptions = useMemo(
+    () =>
+      Object.keys(definitions).map((id) => ({
+        value: id,
+        label: definitions[id]!.displayName || id,
+      })),
+    [definitions],
+  );
+
+  const definitionCount = Object.keys(definitions).length;
+  const visibleTabs = showDefinitions ? TABS : TABS.filter((t) => t.id === "bindings");
 
   return (
-    <>
-      {showDefinitions && <Section
-        title="Stat Definitions"
-        description="Define the core attributes for player characters. Common setups include the classic six (STR, DEX, CON, INT, WIS, CHA) or simplified systems with 3-4 stats. Each stat can be linked to game mechanics via Stat Bindings below."
-        actions={
-          <div className="flex items-center gap-1">
-            <input
-              className="w-20 rounded border border-border-default bg-bg-primary px-1.5 py-0.5 text-xs text-text-primary outline-none focus:border-accent/50 focus-visible:ring-2 focus-visible:ring-border-active"
-              placeholder="NEW_ID"
-              value={newId}
-              onChange={(e) => setNewId(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") addStat();
-              }}
-            />
-            <IconButton onClick={addStat} title="Add stat">
-              +
-            </IconButton>
+    <div className="flex flex-col gap-5">
+      {showDefinitions && (
+        <div className="flex items-center justify-between gap-3">
+          <div
+            className="segmented-control"
+            role="tablist"
+            aria-label="Stats views"
+          >
+            {visibleTabs.map((tab, index) => (
+              <button
+                key={tab.id}
+                ref={(node) => {
+                  tabRefs.current[index] = node;
+                }}
+                role="tab"
+                aria-selected={active === tab.id}
+                aria-controls={`stats-tab-${tab.id}`}
+                tabIndex={active === tab.id ? 0 : -1}
+                onClick={() => setActive(tab.id)}
+                onKeyDown={(event) => {
+                  if (event.key === "ArrowRight") {
+                    event.preventDefault();
+                    const next = (index + 1) % visibleTabs.length;
+                    setActive(visibleTabs[next]!.id);
+                    tabRefs.current[next]?.focus();
+                  } else if (event.key === "ArrowLeft") {
+                    event.preventDefault();
+                    const next = (index - 1 + visibleTabs.length) % visibleTabs.length;
+                    setActive(visibleTabs[next]!.id);
+                    tabRefs.current[next]?.focus();
+                  }
+                }}
+                className="segmented-button focus-ring px-4 py-2 text-xs font-medium"
+                data-active={active === tab.id}
+              >
+                {tab.label}
+                {tab.id === "definitions" && (
+                  <span className="ml-2 text-2xs text-text-muted">{definitionCount}</span>
+                )}
+              </button>
+            ))}
           </div>
-        }
+        </div>
+      )}
+
+      <div
+        id={`stats-tab-${active}`}
+        role="tabpanel"
+        aria-labelledby={`stats-tab-${active}`}
       >
-        {statIds.length === 0 ? (
-          <p className="text-xs text-text-muted">No stats defined</p>
+        {active === "definitions" && showDefinitions && (
+          <StatDefinitionsBuilder
+            definitions={definitions}
+            onAdd={addStat}
+            onPatch={patchDef}
+            onDelete={deleteStat}
+          />
+        )}
+
+        {active === "bindings" && (
+          <StatBindingsGrid
+            bindings={bindings}
+            statOptions={statOptions}
+            onPatch={patchBindings}
+          />
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── Definitions: roster + editor ──────────────────────────────────
+
+function StatDefinitionsBuilder({
+  definitions,
+  onAdd,
+  onPatch,
+  onDelete,
+}: {
+  definitions: Record<string, StatDefinition>;
+  onAdd: (id: string) => string;
+  onPatch: (id: string, p: Partial<StatDefinition>) => void;
+  onDelete: (id: string) => void;
+}) {
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (selectedId && definitions[selectedId]) return;
+    setSelectedId(Object.keys(definitions)[0] ?? null);
+  }, [definitions, selectedId]);
+
+  const handleAdd = () => {
+    let base = "NEW_STAT";
+    let candidate = base;
+    let i = 2;
+    while (definitions[candidate]) {
+      candidate = `${base}_${i}`;
+      i += 1;
+    }
+    const created = onAdd(candidate);
+    if (created) setSelectedId(created);
+  };
+
+  const handleDelete = (id: string) => {
+    onDelete(id);
+    if (selectedId === id) setSelectedId(null);
+  };
+
+  const selected = selectedId ? definitions[selectedId] ?? null : null;
+
+  return (
+    <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
+      <div className="lg:col-span-4">
+        <DefinitionsList
+          definitions={definitions}
+          selectedId={selectedId}
+          onSelect={setSelectedId}
+          onAdd={handleAdd}
+        />
+      </div>
+      <div className="lg:col-span-8">
+        {selectedId && selected ? (
+          <DefinitionEditor
+            id={selectedId}
+            def={selected}
+            onPatch={(p) => onPatch(selectedId, p)}
+            onDelete={() => handleDelete(selectedId)}
+          />
         ) : (
-          <div className="flex flex-col gap-3">
-            {statIds.map((id) => {
-              const def = definitions[id]!;
-              return (
-                <div
-                  key={id}
-                  className="rounded border border-border-muted bg-bg-primary p-2"
-                >
-                  <div className="mb-1.5 flex items-center justify-between">
-                    <span className="text-xs font-semibold text-text-primary">
-                      {id}
-                    </span>
-                    <IconButton
-                      onClick={() => deleteStat(id)}
-                      title="Delete stat"
-                      danger
-                    >
-                      x
-                    </IconButton>
-                  </div>
-                  <div className="flex flex-col gap-1">
-                    <FieldRow label="Display Name" hint="Shown in the character sheet and UI.">
-                      <TextInput
-                        value={def.displayName}
-                        onCommit={(v) => patchDef(id, { displayName: v })}
-                      />
-                    </FieldRow>
-                    <FieldRow label="Abbreviation" hint="Short form used in compact displays (e.g. STR, DEX).">
-                      <TextInput
-                        value={def.abbreviation}
-                        onCommit={(v) => patchDef(id, { abbreviation: v })}
-                      />
-                    </FieldRow>
-                    <FieldRow label="Description" hint="Flavor text explaining what this stat does for the player.">
-                      <TextInput
-                        value={def.description}
-                        onCommit={(v) => patchDef(id, { description: v })}
-                      />
-                    </FieldRow>
-                    <FieldRow label="Base Value" hint="Default value before racial modifiers and equipment. 10 is a standard neutral baseline.">
-                      <NumberInput
-                        value={def.baseStat}
-                        onCommit={(v) => patchDef(id, { baseStat: v ?? 10 })}
-                        min={0}
-                      />
-                    </FieldRow>
-                  </div>
-                </div>
-              );
-            })}
+          <div className="panel-surface flex h-full items-center justify-center rounded-2xl p-8 shadow-section">
+            <div className="text-center">
+              <p className="font-display text-xs uppercase tracking-wider text-text-muted">
+                Nothing selected
+              </p>
+              <p className="mt-2 text-2xs leading-snug text-text-muted/70">
+                Pick a stat from the list, or add a new one to begin.
+              </p>
+            </div>
           </div>
         )}
-      </Section>}
+      </div>
+    </div>
+  );
+}
 
-      <Section
-        title="Stat Bindings"
-        description="Connect stats to game mechanics. Each binding links a stat to a formula that affects combat, regen, or progression. Divisors control how many stat points are needed per unit of effect — higher divisors make stats less impactful per point."
+function DefinitionsList({
+  definitions,
+  selectedId,
+  onSelect,
+  onAdd,
+}: {
+  definitions: Record<string, StatDefinition>;
+  selectedId: string | null;
+  onSelect: (id: string) => void;
+  onAdd: () => void;
+}) {
+  const [query, setQuery] = useState("");
+  const ids = Object.keys(definitions);
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return ids;
+    return ids.filter((id) => {
+      const d = definitions[id]!;
+      return (
+        id.toLowerCase().includes(q) ||
+        d.displayName.toLowerCase().includes(q) ||
+        d.abbreviation.toLowerCase().includes(q)
+      );
+    });
+  }, [ids, definitions, query]);
+
+  return (
+    <aside className="panel-surface flex flex-col gap-2 rounded-2xl p-3 shadow-section">
+      <div className="flex items-center justify-between gap-2">
+        <h3 className="font-display text-xs font-semibold uppercase tracking-[0.18em] text-text-secondary">
+          Stat Definitions
+        </h3>
+        <span className="font-mono text-2xs text-text-muted/70">{ids.length}</span>
+      </div>
+
+      <div className="ornate-input flex items-center gap-2 px-2.5 py-1.5">
+        <SearchIcon className="text-text-muted/70" />
+        <input
+          className="min-w-0 flex-1 bg-transparent text-xs text-text-primary outline-none placeholder:text-text-muted/60"
+          placeholder="Search stats…"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+        />
+      </div>
+
+      <button
+        type="button"
+        onClick={onAdd}
+        className="focus-ring inline-flex items-center justify-center gap-1.5 rounded-lg border border-accent/40 bg-accent/10 px-2.5 py-1.5 text-2xs font-medium text-accent transition hover:bg-accent/20"
       >
-        <div className="flex flex-col gap-1.5">
-          <FieldRow label="Melee Dmg Stat" hint="Which stat adds bonus melee damage. Typically Strength.">
-            <SelectInput
-              value={bindings.meleeDamageStat}
-              onCommit={(v) => patchBindings({ meleeDamageStat: v })}
-              options={statOptions}
-            />
-          </FieldRow>
-          <FieldRow label="Melee Divisor" hint="Bonus damage = stat / divisor. At divisor 3, a stat of 15 adds +5 damage. Lower divisor = stronger scaling.">
-            <NumberInput
-              value={bindings.meleeDamageDivisor}
-              onCommit={(v) =>
-                patchBindings({ meleeDamageDivisor: v ?? 3 })
-              }
-              min={1}
-            />
-          </FieldRow>
-          <FieldRow label="Dodge Stat" hint="Which stat grants dodge chance. Typically Dexterity or Agility.">
-            <SelectInput
-              value={bindings.dodgeStat}
-              onCommit={(v) => patchBindings({ dodgeStat: v })}
-              options={statOptions}
-            />
-          </FieldRow>
-          <FieldRow label="Dodge / Point" hint="Dodge % gained per stat point. At 2.0, a stat of 15 gives 30% dodge (capped by Max Dodge %).">
-            <NumberInput
-              value={bindings.dodgePerPoint}
-              onCommit={(v) => patchBindings({ dodgePerPoint: v ?? 2 })}
-              min={0}
-              step={0.1}
-            />
-          </FieldRow>
-          <FieldRow label="Max Dodge %" hint="Hard cap on dodge chance regardless of stat investment. 30% is a classic cap. 50%+ makes dodge builds dominant.">
-            <NumberInput
-              value={bindings.maxDodgePercent}
-              onCommit={(v) =>
-                patchBindings({ maxDodgePercent: v ?? 30 })
-              }
-              min={0}
-              max={100}
-            />
-          </FieldRow>
-          <FieldRow label="Spell Dmg Stat" hint="Which stat adds bonus spell/ability damage. Typically Intelligence or Wisdom.">
-            <SelectInput
-              value={bindings.spellDamageStat}
-              onCommit={(v) => patchBindings({ spellDamageStat: v })}
-              options={statOptions}
-            />
-          </FieldRow>
-          <FieldRow label="Spell Divisor" hint="Bonus spell damage = stat / divisor. Same scaling logic as melee. Typically matched to melee divisor for balance.">
-            <NumberInput
-              value={bindings.spellDamageDivisor}
-              onCommit={(v) =>
-                patchBindings({ spellDamageDivisor: v ?? 3 })
-              }
-              min={1}
-            />
-          </FieldRow>
-          <FieldRow label="HP Scaling Stat" hint="Which stat provides bonus max HP. Typically Constitution or Vitality.">
-            <SelectInput
-              value={bindings.hpScalingStat}
-              onCommit={(v) => patchBindings({ hpScalingStat: v })}
-              options={statOptions}
-            />
-          </FieldRow>
-          <FieldRow label="HP Divisor" hint="Bonus HP = stat / divisor. At divisor 5, a stat of 20 adds +4 max HP. Lower values make the stat more impactful.">
-            <NumberInput
-              value={bindings.hpScalingDivisor}
-              onCommit={(v) =>
-                patchBindings({ hpScalingDivisor: v ?? 5 })
-              }
-              min={1}
-            />
-          </FieldRow>
-          <FieldRow label="Mana Stat" hint="Which stat provides bonus max mana. Typically Intelligence or Wisdom.">
-            <SelectInput
-              value={bindings.manaScalingStat}
-              onCommit={(v) => patchBindings({ manaScalingStat: v })}
-              options={statOptions}
-            />
-          </FieldRow>
-          <FieldRow label="Mana Divisor" hint="Bonus mana = stat / divisor. Same logic as HP divisor but for the mana pool.">
-            <NumberInput
-              value={bindings.manaScalingDivisor}
-              onCommit={(v) =>
-                patchBindings({ manaScalingDivisor: v ?? 5 })
-              }
-              min={1}
-            />
-          </FieldRow>
-          <FieldRow label="HP Regen Stat" hint="Which stat speeds up HP regeneration. Typically Constitution.">
-            <SelectInput
-              value={bindings.hpRegenStat}
-              onCommit={(v) => patchBindings({ hpRegenStat: v })}
-              options={statOptions}
-            />
-          </FieldRow>
-          <FieldRow label="HP Regen ms/pt" hint="Milliseconds reduced from regen interval per stat point. At 200, a stat of 10 shaves 2s off the regen timer.">
-            <NumberInput
-              value={bindings.hpRegenMsPerPoint}
-              onCommit={(v) =>
-                patchBindings({ hpRegenMsPerPoint: v ?? 200 })
-              }
-              min={1}
-            />
-          </FieldRow>
-          <FieldRow label="Mana Regen Stat" hint="Which stat speeds up mana regeneration. Typically Wisdom or Intelligence.">
-            <SelectInput
-              value={bindings.manaRegenStat}
-              onCommit={(v) => patchBindings({ manaRegenStat: v })}
-              options={statOptions}
-            />
-          </FieldRow>
-          <FieldRow label="Mana Regen ms/pt" hint="Milliseconds reduced from mana regen interval per stat point. Same mechanic as HP regen.">
-            <NumberInput
-              value={bindings.manaRegenMsPerPoint}
-              onCommit={(v) =>
-                patchBindings({ manaRegenMsPerPoint: v ?? 200 })
-              }
-              min={1}
-            />
-          </FieldRow>
-          <FieldRow label="XP Bonus Stat" hint="Which stat grants bonus XP from kills. A niche stat that rewards players who invest in it with faster leveling.">
-            <SelectInput
-              value={bindings.xpBonusStat}
-              onCommit={(v) => patchBindings({ xpBonusStat: v })}
-              options={statOptions}
-            />
-          </FieldRow>
-          <FieldRow label="XP / Point" hint="Fractional XP bonus per stat point. At 0.005, a stat of 20 gives +10% bonus XP. Keep this small to avoid snowballing.">
-            <NumberInput
-              value={bindings.xpBonusPerPoint}
-              onCommit={(v) =>
-                patchBindings({ xpBonusPerPoint: v ?? 0.005 })
-              }
-              min={0}
-              step={0.001}
-            />
-          </FieldRow>
-        </div>
-      </Section>
-    </>
+        <PlusIcon />
+        Add
+      </button>
+
+      <ul className="-mx-1 flex max-h-[60vh] flex-col gap-1 overflow-y-auto px-1 pb-1">
+        {filtered.length === 0 ? (
+          <li>
+            <div className="rounded-xl border border-dashed border-[var(--chrome-stroke-strong)] bg-[var(--chrome-fill-soft)] px-3 py-6 text-center text-2xs italic text-text-muted/70">
+              {ids.length === 0 ? "No stats yet — add one above." : `No stats match "${query}".`}
+            </div>
+          </li>
+        ) : (
+          filtered.map((id) => {
+            const def = definitions[id]!;
+            const isSelected = selectedId === id;
+            return (
+              <li key={id}>
+                <button
+                  type="button"
+                  onClick={() => onSelect(id)}
+                  aria-pressed={isSelected}
+                  className={cx(
+                    "focus-ring flex w-full items-center gap-2 rounded-lg border px-2 py-1.5 text-left transition",
+                    isSelected
+                      ? "border-accent/60 bg-accent/[0.07] shadow-[0_0_18px_-10px_rgb(var(--accent-rgb)/0.7)]"
+                      : "border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] hover:border-accent/30 hover:bg-[var(--chrome-fill)]",
+                  )}
+                >
+                  <span
+                    aria-hidden="true"
+                    className={cx(
+                      "inline-flex h-7 w-9 shrink-0 items-center justify-center rounded-md border font-mono text-[0.6rem] font-semibold tracking-wider",
+                      isSelected
+                        ? "border-accent/60 bg-accent/15 text-accent"
+                        : "border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] text-text-muted",
+                    )}
+                  >
+                    {def.abbreviation || id.slice(0, 3)}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate font-display text-xs font-semibold text-text-primary">
+                      {def.displayName || id}
+                    </div>
+                    <div className="truncate font-mono text-[0.6rem] text-text-muted/70">
+                      {id} · base {def.baseStat}
+                    </div>
+                  </div>
+                </button>
+              </li>
+            );
+          })
+        )}
+      </ul>
+    </aside>
+  );
+}
+
+function DefinitionEditor({
+  id,
+  def,
+  onPatch,
+  onDelete,
+}: {
+  id: string;
+  def: StatDefinition;
+  onPatch: (p: Partial<StatDefinition>) => void;
+  onDelete: () => void;
+}) {
+  return (
+    <SectionCard
+      title={def.displayName || id}
+      actions={
+        <button
+          type="button"
+          onClick={onDelete}
+          title="Delete stat"
+          aria-label="Delete stat"
+          className="focus-ring inline-flex h-7 w-7 items-center justify-center rounded-md border border-status-error/40 bg-status-error/10 text-status-error transition hover:bg-status-error/20"
+        >
+          <TrashIcon />
+        </button>
+      }
+    >
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <Field label="Internal ID">
+          <input
+            value={id}
+            disabled
+            className="ornate-input min-h-9 w-full px-2.5 py-1.5 font-mono text-xs uppercase tracking-wider text-text-muted opacity-70"
+          />
+        </Field>
+        <Field label="Abbreviation">
+          <TextInput
+            value={def.abbreviation}
+            onCommit={(v) => onPatch({ abbreviation: v })}
+            placeholder="STR"
+            dense
+          />
+        </Field>
+        <Field label="Display Name" required>
+          <TextInput
+            value={def.displayName}
+            onCommit={(v) => onPatch({ displayName: v })}
+            placeholder="Strength"
+            dense
+          />
+        </Field>
+        <Field label="Base Value">
+          <NumberInput
+            value={def.baseStat}
+            onCommit={(v) => onPatch({ baseStat: v ?? 10 })}
+            min={0}
+            dense
+          />
+        </Field>
+      </div>
+      <div className="mt-3">
+        <Field label="Description">
+          <CommitTextarea
+            label=""
+            value={def.description}
+            onCommit={(v) => onPatch({ description: v })}
+            placeholder="Flavor text shown on the character sheet."
+            rows={2}
+          />
+        </Field>
+      </div>
+    </SectionCard>
+  );
+}
+
+// ─── Bindings: card grid ───────────────────────────────────────────
+
+function StatBindingsGrid({
+  bindings,
+  statOptions,
+  onPatch,
+}: {
+  bindings: StatBindings;
+  statOptions: { value: string; label: string }[];
+  onPatch: (p: Partial<StatBindings>) => void;
+}) {
+  return (
+    <SectionCard
+      title="Stat Bindings"
+      description="Connect a stat to each derived attribute. Lower divisors mean each point of the stat does more."
+    >
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+        <BindingCard
+          title="Melee Damage"
+          formula={(stat, n) => `+ ${stat} / ${n}`}
+          stat={bindings.meleeDamageStat}
+          statOptions={statOptions}
+          onStat={(v) => onPatch({ meleeDamageStat: v })}
+          numeric={{
+            label: "Divisor",
+            value: bindings.meleeDamageDivisor,
+            min: 1,
+            onCommit: (v) => onPatch({ meleeDamageDivisor: v ?? 3 }),
+          }}
+        />
+
+        <BindingCard
+          title="Dodge"
+          formula={(stat, n) => `+ ${stat} × ${n}%  (cap ${bindings.maxDodgePercent}%)`}
+          stat={bindings.dodgeStat}
+          statOptions={statOptions}
+          onStat={(v) => onPatch({ dodgeStat: v })}
+          numeric={{
+            label: "% / point",
+            value: bindings.dodgePerPoint,
+            min: 0,
+            step: 0.1,
+            onCommit: (v) => onPatch({ dodgePerPoint: v ?? 2 }),
+          }}
+          extra={
+            <Field label="Max %" hint="Hard cap regardless of stat investment.">
+              <NumberInput
+                value={bindings.maxDodgePercent}
+                onCommit={(v) => onPatch({ maxDodgePercent: v ?? 30 })}
+                min={0}
+                max={100}
+                dense
+              />
+            </Field>
+          }
+        />
+
+        <BindingCard
+          title="Spell Damage"
+          formula={(stat, n) => `+ ${stat} / ${n}`}
+          stat={bindings.spellDamageStat}
+          statOptions={statOptions}
+          onStat={(v) => onPatch({ spellDamageStat: v })}
+          numeric={{
+            label: "Divisor",
+            value: bindings.spellDamageDivisor,
+            min: 1,
+            onCommit: (v) => onPatch({ spellDamageDivisor: v ?? 3 }),
+          }}
+        />
+
+        <BindingCard
+          title="HP Scaling"
+          formula={(stat, n) => `+ ${stat} / ${n} max HP`}
+          stat={bindings.hpScalingStat}
+          statOptions={statOptions}
+          onStat={(v) => onPatch({ hpScalingStat: v })}
+          numeric={{
+            label: "Divisor",
+            value: bindings.hpScalingDivisor,
+            min: 1,
+            onCommit: (v) => onPatch({ hpScalingDivisor: v ?? 5 }),
+          }}
+        />
+
+        <BindingCard
+          title="Mana Scaling"
+          formula={(stat, n) => `+ ${stat} / ${n} max Mana`}
+          stat={bindings.manaScalingStat}
+          statOptions={statOptions}
+          onStat={(v) => onPatch({ manaScalingStat: v })}
+          numeric={{
+            label: "Divisor",
+            value: bindings.manaScalingDivisor,
+            min: 1,
+            onCommit: (v) => onPatch({ manaScalingDivisor: v ?? 5 }),
+          }}
+        />
+
+        <BindingCard
+          title="HP Regen"
+          formula={(stat, n) => `– ${stat} × ${n}ms from regen tick`}
+          stat={bindings.hpRegenStat}
+          statOptions={statOptions}
+          onStat={(v) => onPatch({ hpRegenStat: v })}
+          numeric={{
+            label: "ms / point",
+            value: bindings.hpRegenMsPerPoint,
+            min: 1,
+            onCommit: (v) => onPatch({ hpRegenMsPerPoint: v ?? 200 }),
+          }}
+        />
+
+        <BindingCard
+          title="Mana Regen"
+          formula={(stat, n) => `– ${stat} × ${n}ms from regen tick`}
+          stat={bindings.manaRegenStat}
+          statOptions={statOptions}
+          onStat={(v) => onPatch({ manaRegenStat: v })}
+          numeric={{
+            label: "ms / point",
+            value: bindings.manaRegenMsPerPoint,
+            min: 1,
+            onCommit: (v) => onPatch({ manaRegenMsPerPoint: v ?? 200 }),
+          }}
+        />
+
+        <BindingCard
+          title="XP Bonus"
+          formula={(stat, n) => `+ ${stat} × ${(n * 100).toFixed(1)}% XP`}
+          stat={bindings.xpBonusStat}
+          statOptions={statOptions}
+          onStat={(v) => onPatch({ xpBonusStat: v })}
+          numeric={{
+            label: "Per point",
+            value: bindings.xpBonusPerPoint,
+            min: 0,
+            step: 0.001,
+            onCommit: (v) => onPatch({ xpBonusPerPoint: v ?? 0.005 }),
+          }}
+        />
+      </div>
+    </SectionCard>
+  );
+}
+
+function BindingCard({
+  title,
+  formula,
+  stat,
+  statOptions,
+  onStat,
+  numeric,
+  extra,
+}: {
+  title: string;
+  formula: (statLabel: string, n: number) => string;
+  stat: string;
+  statOptions: { value: string; label: string }[];
+  onStat: (v: string) => void;
+  numeric: {
+    label: string;
+    value: number;
+    min?: number;
+    step?: number;
+    onCommit: (v: number | undefined) => void;
+  };
+  extra?: React.ReactNode;
+}) {
+  const statLabel =
+    statOptions.find((o) => o.value === stat)?.label ??
+    (stat ? stat : "stat");
+  return (
+    <div className="rounded-2xl border border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] p-3">
+      <div className="flex items-baseline justify-between gap-2">
+        <h4 className="font-display text-2xs font-semibold uppercase tracking-[0.18em] text-text-secondary">
+          {title}
+        </h4>
+        <span className="truncate font-mono text-[0.6rem] text-text-muted/80">
+          {formula(statLabel, numeric.value)}
+        </span>
+      </div>
+
+      <div className="mt-2 grid grid-cols-2 gap-2">
+        <Field label="Stat">
+          <SelectInput
+            value={stat}
+            options={statOptions}
+            onCommit={onStat}
+            dense
+          />
+        </Field>
+        <Field label={numeric.label}>
+          <NumberInput
+            value={numeric.value}
+            onCommit={numeric.onCommit}
+            min={numeric.min}
+            step={numeric.step}
+            dense
+          />
+        </Field>
+      </div>
+
+      {extra && <div className="mt-2">{extra}</div>}
+    </div>
+  );
+}
+
+// ─── Shared ────────────────────────────────────────────────────────
+
+function Field({
+  label,
+  hint,
+  required,
+  children,
+}: {
+  label: string;
+  hint?: string;
+  required?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="flex flex-col gap-1">
+      <span className="font-display text-2xs uppercase tracking-wider text-text-muted">
+        {label} {required && <span className="text-accent">*</span>}
+      </span>
+      {children}
+      {hint && (
+        <p className="text-2xs leading-snug text-text-muted/70">{hint}</p>
+      )}
+    </div>
   );
 }

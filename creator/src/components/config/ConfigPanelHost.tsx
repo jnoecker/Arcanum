@@ -19,10 +19,7 @@ import { AbilityDesigner } from "./AbilityDesigner";
 import { StatusEffectDesigner } from "./StatusEffectDesigner";
 
 import { WorldPanel } from "./panels/WorldPanel";
-import { ServerPanel } from "./panels/ServerPanel";
-import { AdminConfigPanel } from "./panels/AdminConfigPanel";
-import { ObservabilityPanel } from "./panels/ObservabilityPanel";
-import { LoggingPanel } from "./panels/LoggingPanel";
+import { ServerConfigStudio } from "./ServerConfigStudio";
 import { CommandDesigner } from "./CommandDesigner";
 import { CraftingStudio } from "./CraftingStudio";
 import { GuildDesigner } from "./GuildDesigner";
@@ -47,29 +44,6 @@ import { RuntimeHandoffStudio } from "./RuntimeHandoffStudio";
 import { RawYamlPanel } from "./panels/RawYamlPanel";
 import { VersionControlPanel } from "./panels/VersionControlPanel";
 import { InfrastructurePanel } from "./panels/InfrastructurePanel";
-
-function Section({
-  kicker,
-  title,
-  description,
-  children,
-}: {
-  kicker: string;
-  title: string;
-  description: string;
-  children: ReactNode;
-}) {
-  return (
-    <section className="panel-surface rounded-3xl p-5 shadow-section">
-      <div className="mb-5 border-b border-border-muted pb-4">
-        <p className="border-l-2 border-[rgb(var(--surface-rgb)/0.3)] pl-2 text-2xs uppercase tracking-wide-ui text-text-muted">{kicker}</p>
-        <h3 className="mt-2 font-display font-semibold text-xl text-text-primary">{title}</h3>
-        <p className="mt-2 max-w-3xl text-sm leading-6 text-text-secondary">{description}</p>
-      </div>
-      <div>{children}</div>
-    </section>
-  );
-}
 
 type ConfigPanelProps = { config: AppConfig; onChange: (patch: Partial<AppConfig>) => void };
 
@@ -101,22 +75,7 @@ function renderPanel(panelId: string, props: ConfigPanelProps): ReactNode {
     case "world":
       return <WorldPanel config={config} onChange={onChange} />;
     case "serverConfig":
-      return (
-        <>
-          <Section kicker="Server runtime" title="Ports and server process behavior" description="Ports and server process settings.">
-            <ServerPanel config={config} onChange={onChange} />
-          </Section>
-          <Section kicker="Admin server" title="Remote administration API" description="Enable the admin HTTP server for the Arcanum to connect to. Set a token for authentication.">
-            <AdminConfigPanel config={config} onChange={onChange} />
-          </Section>
-          <Section kicker="Observability" title="Metrics and monitoring" description="Prometheus metrics endpoint for server health and performance data.">
-            <ObservabilityPanel config={config} onChange={onChange} />
-          </Section>
-          <Section kicker="Logging" title="Log levels" description="Control the verbosity of server logs. Per-package overrides let you debug specific systems without flooding the console.">
-            <LoggingPanel config={config} onChange={onChange} />
-          </Section>
-        </>
-      );
+      return <ServerConfigStudio config={config} onChange={onChange} />;
     case "infrastructure":
       return <InfrastructurePanel config={config} onChange={onChange} />;
     case "commands":
@@ -255,22 +214,7 @@ export function ConfigPanelHost({ panelId }: { panelId: string }) {
           />
         </div>
 
-        <div className={`relative z-10 mx-auto flex flex-col gap-6 px-6 py-5 ${def?.maxWidth ?? "max-w-5xl"}`}>
-          <div className="pointer-events-auto sticky top-3 z-20 flex items-center justify-end gap-2">
-            {(dirty || saving || saveError) && (
-              <>
-                {saveError && <span role="alert" className="text-2xs text-status-error">Save failed</span>}
-                <button
-                  onClick={handleSave}
-                  disabled={!dirty || saving}
-                  aria-label={saving ? "Saving configuration" : "Save configuration"}
-                  className="focus-ring rounded-full border border-[var(--chrome-stroke)] bg-bg-primary/80 px-3 py-1 text-2xs font-medium text-accent shadow-md transition hover:bg-bg-primary disabled:cursor-not-allowed disabled:opacity-40"
-                >
-                  {saving ? <span className="flex items-center gap-1.5"><Spinner />Saving</span> : "Save Config"}
-                </button>
-              </>
-            )}
-          </div>
+        <div className={`relative z-10 mx-auto flex flex-col gap-3 px-4 py-3 ${def?.maxWidth ?? "max-w-5xl"}`}>
           {renderPanel(panelId, { config, onChange: handleChange })}
         </div>
       </div>
@@ -296,6 +240,26 @@ export function ConfigPanelHost({ panelId }: { panelId: string }) {
           />
         </div>
       </div>
+      {(dirty || saving || saveError) && (
+        <div className="pointer-events-none absolute bottom-3 right-3 z-30 flex items-center gap-2">
+          {saveError && (
+            <span
+              role="alert"
+              className="pointer-events-auto rounded-full border border-status-error/40 bg-bg-primary/80 px-3 py-1 text-2xs text-status-error shadow-md backdrop-blur"
+            >
+              Save failed
+            </span>
+          )}
+          <button
+            onClick={handleSave}
+            disabled={!dirty || saving}
+            aria-label={saving ? "Saving configuration" : "Save configuration"}
+            className="focus-ring pointer-events-auto rounded-full border border-accent/40 bg-bg-primary/80 px-3 py-1.5 text-2xs font-medium text-accent shadow-md backdrop-blur transition hover:bg-bg-primary hover:border-accent/60 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            {saving ? <span className="flex items-center gap-1.5"><Spinner />Saving</span> : "Save Config"}
+          </button>
+        </div>
+      )}
     </div>
   );
 }

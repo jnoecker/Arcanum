@@ -67,13 +67,13 @@ const STUDIO_PANELS: PanelDef[] = [
 // ─── Character panels (includes former Ability panels) ─────────────
 
 const CHARACTER_PANELS: PanelDef[] = [
-  { id: "classes", label: "Classes", host: "config", kicker: "Classes", title: "Class designer", description: "Class identity, scaling, visual direction, and start-room overrides.", maxWidth: "max-w-5xl", island: "loom", glyph: "\u2692\uFE0F" },
-  { id: "races", label: "Races", host: "config", kicker: "Races", title: "Race designer", description: "Race lore, traits, stat modifiers, portraits, and staff-tier overrides.", maxWidth: "max-w-5xl", island: "loom", glyph: "\u{1F3FA}" },
+  { id: "classes", label: "Classes", host: "config", kicker: "Classes", title: "Class designer", description: "Class identity, scaling, and visual direction.", maxWidth: "max-w-7xl", island: "loom", glyph: "\u2692\uFE0F" },
+  { id: "races", label: "Races", host: "config", kicker: "Races", title: "Race designer", description: "Race lore, traits, stat modifiers, portraits, and staff-tier overrides.", maxWidth: "max-w-7xl", island: "loom", glyph: "\u{1F3FA}" },
   { id: "creation", label: "Creation", host: "config", kicker: "Character foundations", title: "Character creation", description: "Starting state and gender definitions.", maxWidth: "max-w-7xl", island: "orrery", glyph: "\u{1F300}" },
   { id: "equipment", label: "Equipment", host: "config", kicker: "Equipment", title: "Equipment slots", description: "Wear slots and layout.", maxWidth: "max-w-7xl", island: "loom", glyph: "\u{1F6E1}\uFE0F" },
-  { id: "stats", label: "Stats", host: "config", kicker: "Stats", title: "Stat definitions", description: "Primary stats, abbreviations, and base values.", maxWidth: "max-w-5xl", island: "spire", glyph: "\u{1F4CA}" },
-  { id: "abilityDesigner", label: "Abilities", host: "config", kicker: "Abilities", title: "Ability designer", description: "Class restrictions, costs, cooldowns, targets, and effects.", maxWidth: "max-w-5xl", island: "loom", glyph: "\u26A1" },
-  { id: "conditions", label: "Conditions", host: "config", kicker: "Status effects", title: "Condition designer", description: "Status effects, stack rules, and ticking behavior.", maxWidth: "max-w-5xl", island: "loom", glyph: "\u{1F9EA}" },
+  { id: "stats", label: "Stats", host: "config", kicker: "Stats", title: "Stat definitions", description: "Primary stats, abbreviations, and base values.", maxWidth: "max-w-7xl", island: "spire", glyph: "\u{1F4CA}" },
+  { id: "abilityDesigner", label: "Abilities", host: "config", kicker: "Abilities", title: "Ability designer", description: "Class restrictions, costs, cooldowns, targets, and effects.", maxWidth: "max-w-7xl", island: "loom", glyph: "\u26A1" },
+  { id: "conditions", label: "Status Effects", host: "config", kicker: "Status effects", title: "Status effect designer", description: "DoTs, buffs, debuffs, stacks, and ticking behavior.", maxWidth: "max-w-7xl", island: "loom", glyph: "\u{1F9EA}" },
 ];
 
 // ─── World panels ───────────────────────────────────────────────────
@@ -81,9 +81,9 @@ const CHARACTER_PANELS: PanelDef[] = [
 const WORLD_PANELS: PanelDef[] = [
   { id: "tuningWizard", label: "Tuning Wizard", host: "command", kicker: "World", title: "Tuning Wizard", description: "Configure all game balance — presets, inline editing, and before/after comparison.", maxWidth: "max-w-7xl", island: "orrery", glyph: "\u2699\uFE0F" },
   { id: "world", label: "World", host: "config", kicker: "World topology", title: "World", description: "Default spawn room, class overrides, XP progression, level-up rewards, recall, and death/sanctum behavior.", maxWidth: "max-w-6xl", island: "orrery", glyph: "\u{1F30D}" },
-  { id: "serverConfig", label: "Server Config", host: "config", kicker: "Server runtime", title: "Server config", description: "Ports, event loop, admin API, observability, and logging for the MUD server process.", maxWidth: "max-w-5xl", island: "spire", glyph: "\u{1F9EC}" },
+  { id: "serverConfig", label: "Server Config", host: "config", kicker: "Server runtime", title: "Server config", description: "Ports, event loop, admin API, observability, and logging for the MUD server process.", maxWidth: "max-w-7xl", island: "spire", glyph: "\u{1F9EC}" },
   { id: "infrastructure", label: "Infrastructure", host: "config", kicker: "Deployment", title: "Infrastructure", description: "Deployment mode, persistence, login, transport, database, Redis, gRPC, gateway, and sharding.", maxWidth: "max-w-5xl", island: "orrery", glyph: "\u{1F3D7}\uFE0F" },
-  { id: "commands", label: "Commands", host: "config", kicker: "Commands", title: "Command designer", description: "Custom commands, usage strings, and categories.", maxWidth: "max-w-5xl", island: "loom", glyph: "\u{1F58B}\uFE0F" },
+  { id: "commands", label: "Commands", host: "config", kicker: "Commands", title: "Command designer", description: "Custom commands, usage strings, and categories.", maxWidth: "max-w-7xl", island: "loom", glyph: "\u{1F58B}\uFE0F" },
 ];
 
 // ─── Systems panels ────────────────────────────────────────────────
@@ -93,15 +93,15 @@ const SYSTEMS_PANELS: PanelDef[] = [
   { id: "crafting", label: "Crafting", host: "config", kicker: "Crafting", title: "Crafting & gathering", description: "Skill leveling, station types, gathering, and recipes.", maxWidth: "max-w-7xl", island: "orrery", glyph: "\u{1F4DC}" },
   { id: "enchanting", label: "Enchanting", host: "config", kicker: "Enchanting", title: "Enchanting system", description: "Enchantment definitions, materials, stat bonuses, and target slots.", maxWidth: "max-w-7xl", island: "orrery", glyph: "\u2728" },
   { id: "guilds", label: "Guilds", host: "config", kicker: "Guilds", title: "Guild system", description: "Guild ranks, permissions, friends, and defaults.", maxWidth: "max-w-5xl", island: "livingWorld", glyph: "\u{1F3DB}\uFE0F" },
-  { id: "guildHalls", label: "Guild Halls", host: "config", kicker: "Social", title: "Guild halls", description: "Guild housing costs, room templates, and hall configuration.", maxWidth: "max-w-5xl", island: "livingWorld", glyph: "\u{1F3E0}" },
+  { id: "guildHalls", label: "Guild Halls", host: "config", kicker: "Social", title: "Guild halls", description: "Guild housing costs, room templates, and hall configuration.", maxWidth: "max-w-7xl", island: "livingWorld", glyph: "\u{1F3E0}" },
   { id: "factions", label: "Factions", host: "config", kicker: "Factions", title: "Faction system", description: "Reputation factions, enemy relationships, and quest rewards.", maxWidth: "max-w-7xl", island: "orrery", glyph: "\u{1F3DB}\uFE0F" },
-  { id: "emotes", label: "Emotes", host: "config", kicker: "Social", title: "Emote presets", description: "Quick-action emotes available to players in the chat panel.", maxWidth: "max-w-5xl", island: "livingWorld", glyph: "\u{1F60A}" },
+  { id: "emotes", label: "Emotes", host: "config", kicker: "Social", title: "Emote presets", description: "Quick-action emotes available to players in the chat panel.", maxWidth: "max-w-7xl", island: "livingWorld", glyph: "\u{1F60A}" },
   { id: "housing", label: "Housing", host: "config", kicker: "Housing", title: "Player housing", description: "Room templates, costs, and housing system settings.", maxWidth: "max-w-7xl", island: "orrery", glyph: "\u{1F3E0}" },
-  { id: "pets", label: "Pets", host: "config", kicker: "Companions", title: "Pet system", description: "Define pet templates that can be summoned by abilities.", maxWidth: "max-w-5xl", island: "loom", glyph: "\u{1F43E}" },
-  { id: "worldEvents", label: "Events", host: "config", kicker: "Seasonal", title: "World events", description: "Seasonal events with date schedules, flags, and broadcast messages.", maxWidth: "max-w-5xl", island: "livingWorld", glyph: "\u{1F342}" },
+  { id: "pets", label: "Pets", host: "config", kicker: "Companions", title: "Pet system", description: "Define pet templates that can be summoned by abilities.", maxWidth: "max-w-7xl", island: "loom", glyph: "\u{1F43E}" },
+  { id: "worldEvents", label: "Events", host: "config", kicker: "Seasonal", title: "Seasonal events", description: "Scheduled or permanent world events with flags and broadcast messages.", maxWidth: "max-w-7xl", island: "livingWorld", glyph: "\u{1F342}" },
   { id: "weatherEnvironment", label: "Weather & Environment", host: "config", kicker: "Atmosphere", title: "Weather & environment", description: "Weather types, mote colors, sky gradients, room transitions, and per-zone visual overrides.", maxWidth: "max-w-5xl", island: "livingWorld", glyph: "\u{1F342}" },
   { id: "achievements", label: "Achievements", host: "config", kicker: "Content", title: "Achievements", description: "Achievement builder, categories, and criterion types.", maxWidth: "max-w-7xl", island: "orrery", glyph: "\u{1F3C6}" },
-  { id: "quests", label: "Quests", host: "config", kicker: "Content", title: "Quests", description: "Daily/weekly, bounty, and global quest schedules plus objective and completion type taxonomy.", maxWidth: "max-w-5xl", island: "livingWorld", glyph: "\u{1F4DC}" },
+  { id: "quests", label: "Quests", host: "config", kicker: "Content", title: "Quests", description: "Daily/weekly, bounty, and global quest schedules plus objective and completion type taxonomy.", maxWidth: "max-w-7xl", island: "livingWorld", glyph: "\u{1F4DC}" },
 ];
 
 // ─── Lore panels ───────────────────────────────────────────────────

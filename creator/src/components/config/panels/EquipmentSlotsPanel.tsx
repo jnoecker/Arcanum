@@ -4,7 +4,7 @@ import type { ConfigPanelProps } from "./types";
 import type { EquipmentSlotDefinition } from "@/types/config";
 import { useProjectStore } from "@/stores/projectStore";
 import { TextInput, NumberInput } from "@/components/ui/FormWidgets";
-import mannequinImg from "@/assets/mannequin-slots.jpg";
+import mannequinImg from "@/assets/mannequin-slots.png";
 import {
   PlusIcon,
   TrashIcon,
@@ -300,7 +300,7 @@ function MannequinView({
             Position Reference
           </h3>
           <p className="mt-0.5 text-2xs leading-snug text-text-muted">
-            Drag a marker to reposition. Arrow keys nudge (Shift = ×5).
+            Drag a marker to reposition.
           </p>
         </div>
       </header>
@@ -316,7 +316,7 @@ function MannequinView({
           alt="Equipment mannequin"
           loading="lazy"
           draggable={false}
-          className="pointer-events-none h-full w-full object-cover"
+          className="pointer-events-none h-full w-full object-contain"
         />
 
         {sortedSlots.map(([id, slot], index) => {

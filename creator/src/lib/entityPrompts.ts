@@ -1,5 +1,5 @@
 import type { RoomFile, MobFile, ItemFile, ShopFile, TrainerFile, GatheringNodeFile, WorldFile, DungeonFile, DungeonRoomTemplate } from "@/types/world";
-import type { HousingTemplateDefinition } from "@/types/config";
+import type { GuildHallRoomTemplate, HousingTemplateDefinition } from "@/types/config";
 import { getTrainerPrimaryClass } from "@/lib/trainers";
 import { type ArtStyle, getPreamble, getStyleSuffix, FORMAT_BY_TYPE, withSpriteSafety } from "./arcanumPrompts";
 
@@ -203,6 +203,56 @@ ${getStyleSuffix("worldbuilding")}`;
   return `${preamble}
 
 ${setting}${station} Rendered as a baroque personal chamber — warm aurum-gold light from ornate fixtures pooling on fine surfaces, rococo scrollwork framing doorways and furniture, deep indigo shadows in the corners giving depth, a sense of personal sanctuary and comfort, painterly, luminous, wide composition suitable for a game room background
+
+${EMPTY_SCENE_DIRECTIVE}`;
+}
+
+function guildHallRoomTitle(template: GuildHallRoomTemplate, id: string): string {
+  return template.title || template.displayName || id;
+}
+
+/** Build a context description for a guild hall room template. */
+export function guildHallRoomContext(id: string, template: GuildHallRoomTemplate): string {
+  const title = guildHallRoomTitle(template, id);
+  const parts = [`Guild hall room "${title}" (id: ${id})`];
+  if (template.description) parts.push(`Description: ${template.description}`);
+  if (template.hasStorage) parts.push("Houses shared guild storage / vault.");
+  parts.push(
+    "Composition: wide landscape, a shared communal hall room — guild banner energy, evidence of many members using the space, communal not personal.",
+  );
+  parts.push(EMPTY_SCENE_DIRECTIVE);
+  return parts.join("\n");
+}
+
+/** Build a full prompt for a guild hall room template image. */
+export function guildHallRoomPrompt(
+  id: string,
+  template: GuildHallRoomTemplate,
+  style: ArtStyle = "gentle_magic",
+): string {
+  const preamble = getPreamble(style, "worldbuilding");
+  const title = guildHallRoomTitle(template, id);
+  const setting = template.description
+    ? `A guild hall room called "${title}": ${template.description}.`
+    : `A communal guild hall chamber known as "${title}".`;
+
+  const storage = template.hasStorage
+    ? " Vault chests, ledger stands, and shared storage are visible."
+    : "";
+
+  if (style === "gentle_magic") {
+    return `${FORMAT_BY_TYPE.room}. ${preamble}
+
+${setting}${storage} Rendered as a shared guild chamber — soft amber and golden lantern light, banners and crests on the walls, long tables and benches scaled for many members, evidence of shared craft and ritual, wood and stone with warm metal accents, floating motes of warm light, a sense of fellowship and shared purpose, painterly, luminous, breathable
+
+${EMPTY_SCENE_DIRECTIVE}
+
+${getStyleSuffix("worldbuilding")}`;
+  }
+
+  return `${preamble}
+
+${setting}${storage} Rendered as a baroque guild chamber — warm aurum-gold light from ornate sconces pooling on long communal tables, heraldic banners and rococo scrollwork on the walls, deep indigo shadows giving depth, a sense of shared ritual and fellowship, painterly, luminous, wide composition suitable for a game room background
 
 ${EMPTY_SCENE_DIRECTIVE}`;
 }

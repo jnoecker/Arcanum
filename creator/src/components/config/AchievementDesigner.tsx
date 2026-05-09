@@ -91,7 +91,6 @@ export function AchievementDesigner({ config, onChange }: AchievementDesignerPro
           <AchievementDefEditor
             config={config}
             onChange={onChange}
-            onSwitchTab={setActive}
           />
         )}
         {active === "categories" && (

@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import type { RaceDefinitionConfig } from "@/types/config";
 import type { ConfigPanelProps } from "./panels/types";
-import { RacesHeader } from "./races/RacesHeader";
 import { RacesList } from "./races/RacesList";
 import { RaceEditor } from "./races/RaceEditor";
 import {
@@ -105,39 +104,31 @@ export function RaceDesigner({ config, onChange }: ConfigPanelProps) {
   const selected = selectedId ? races[selectedId] ?? null : null;
 
   return (
-    <div className="flex flex-col gap-4">
-      <RacesHeader
-        raceCount={Object.keys(races).length}
-        selectedId={selectedId}
-        selectedName={selected?.displayName}
-        onDuplicate={duplicateRace}
-        onDelete={deleteRace}
-      />
+    <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
+      <div className="xl:col-span-3">
+        <RacesList
+          races={races}
+          selectedId={selectedId}
+          onSelect={setSelectedId}
+          onAdd={addRace}
+          onDuplicate={duplicateRace}
+          onDelete={deleteRace}
+        />
+      </div>
 
-      <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
-        <div className="xl:col-span-3">
-          <RacesList
-            races={races}
-            selectedId={selectedId}
-            onSelect={setSelectedId}
-            onAdd={addRace}
+      <div className="xl:col-span-9">
+        {selectedId && selected ? (
+          <RaceEditor
+            id={selectedId}
+            race={selected}
+            patch={(p) => patchRace(selectedId, p)}
+            onRename={(v) => renameRace(selectedId, v)}
+            statIds={statIds}
+            statDefs={statDefs}
           />
-        </div>
-
-        <div className="xl:col-span-9">
-          {selectedId && selected ? (
-            <RaceEditor
-              id={selectedId}
-              race={selected}
-              patch={(p) => patchRace(selectedId, p)}
-              onRename={(v) => renameRace(selectedId, v)}
-              statIds={statIds}
-              statDefs={statDefs}
-            />
-          ) : (
-            <EmptyEditor onAdd={addRace} />
-          )}
-        </div>
+        ) : (
+          <EmptyEditor onAdd={addRace} />
+        )}
       </div>
     </div>
   );

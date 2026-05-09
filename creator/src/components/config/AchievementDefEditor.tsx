@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import type { AppConfig, AchievementDefFile } from "@/types/config";
-import { AchievementsHeader } from "./achievements/AchievementsHeader";
 import { AchievementsList } from "./achievements/AchievementsList";
 import { AchievementEditor } from "./achievements/AchievementEditor";
 import { AchievementPreview } from "./achievements/AchievementPreview";
@@ -41,13 +40,11 @@ function normalizeId(raw: string): string {
 interface AchievementDefEditorProps {
   config: AppConfig;
   onChange: (patch: Partial<AppConfig>) => void;
-  onSwitchTab: (tab: "categories" | "criterionTypes") => void;
 }
 
 export function AchievementDefEditor({
   config,
   onChange,
-  onSwitchTab,
 }: AchievementDefEditorProps) {
   const defs = config.achievementDefs;
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -114,16 +111,7 @@ export function AchievementDefEditor({
   const selected = selectedId ? defs[selectedId] ?? null : null;
 
   return (
-    <div className="flex flex-col gap-4">
-      <AchievementsHeader
-        categoryCount={Object.keys(config.achievementCategories).length}
-        criterionTypeCount={Object.keys(config.achievementCriterionTypes).length}
-        selectedId={selectedId}
-        onDuplicate={duplicateDef}
-        onDelete={deleteDef}
-        onSwitchTab={onSwitchTab}
-      />
-
+    <div className="flex flex-col gap-3">
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
         <div className="xl:col-span-3">
           <AchievementsList
@@ -132,10 +120,12 @@ export function AchievementDefEditor({
             selectedId={selectedId}
             onSelect={setSelectedId}
             onAdd={addDef}
+            onDuplicate={duplicateDef}
+            onDelete={deleteDef}
           />
         </div>
 
-        <div className="xl:col-span-6">
+        <div className="xl:col-span-9">
           {selectedId && selected ? (
             <AchievementEditor
               id={selectedId}
@@ -148,17 +138,14 @@ export function AchievementDefEditor({
             <EmptyEditor onAdd={addDef} />
           )}
         </div>
-
-        <div className="xl:col-span-3">
-          {selectedId && selected ? (
-            <AchievementPreview
-              id={selectedId}
-              def={selected}
-              categories={config.achievementCategories}
-            />
-          ) : null}
-        </div>
       </div>
+
+      {selectedId && selected && (
+        <AchievementPreview
+          def={selected}
+          categories={config.achievementCategories}
+        />
+      )}
     </div>
   );
 }

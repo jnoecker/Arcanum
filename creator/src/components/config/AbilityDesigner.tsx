@@ -8,7 +8,6 @@ import {
   defaultAbilityDefinition,
   renameAbilityDefinition,
 } from "@/components/config/panels/AbilitiesPanel";
-import { AbilitiesHeader } from "./abilities/AbilitiesHeader";
 import {
   AbilitiesList,
   ABILITY_CATEGORIES,
@@ -115,10 +114,13 @@ export function AbilityDesigner({
     [config.pets],
   );
 
-  const filteredCount = useMemo(() => {
-    if (category === "all") return Object.keys(abilities).length;
-    return Object.values(abilities).filter((a) => categoryFor(a) === category).length;
-  }, [abilities, category]);
+  const knownTrees = useMemo(() => {
+    const set = new Set<string>();
+    for (const a of Object.values(abilities)) {
+      if (a.tree) set.add(a.tree);
+    }
+    return Array.from(set).sort();
+  }, [abilities]);
 
   const patchAbility = useCallback(
     (id: string, p: Partial<AbilityDefinitionConfig>) => {
@@ -193,15 +195,7 @@ export function AbilityDesigner({
   const selected = selectedId ? abilities[selectedId] ?? null : null;
 
   return (
-    <div className="flex flex-col gap-4">
-      <AbilitiesHeader
-        total={Object.keys(abilities).length}
-        filtered={filteredCount}
-        selectedId={selectedId}
-        onDuplicate={duplicateAbility}
-        onDelete={deleteAbility}
-      />
-
+    <div className="flex flex-col gap-3">
       <div className="panel-surface flex flex-wrap items-center gap-1.5 rounded-2xl px-3 py-2 shadow-section">
         {ABILITY_CATEGORIES.map((c) => {
           const active = category === c.key;
@@ -232,6 +226,8 @@ export function AbilityDesigner({
             selectedId={selectedId}
             onSelect={setSelectedId}
             onAdd={addAbility}
+            onDuplicate={duplicateAbility}
+            onDelete={deleteAbility}
           />
         </div>
 
@@ -240,6 +236,8 @@ export function AbilityDesigner({
             <AbilityEditor
               id={selectedId}
               ability={selected}
+              abilities={abilities}
+              knownTrees={knownTrees}
               classOptions={classOptions}
               statusEffectOptions={statusEffectOptions}
               targetTypeOptions={targetTypeOptions}

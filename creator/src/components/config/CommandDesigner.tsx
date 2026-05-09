@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
 import type { AppConfig, CommandEntryConfig } from "@/types/config";
-import { CommandsHeader } from "./commands/CommandsHeader";
 import { CommandsList } from "./commands/CommandsList";
 import { CommandEditor } from "./commands/CommandEditor";
 
@@ -123,44 +122,32 @@ export function CommandDesigner({
   };
 
   const selected = selectedId ? commands[selectedId] ?? null : null;
-  const staffCount = useMemo(
-    () => Object.values(commands).filter((c) => c.staff).length,
-    [commands],
-  );
 
   return (
-    <div className="flex flex-col gap-4">
-      <CommandsHeader
-        totalCount={Object.keys(commands).length}
-        staffCount={staffCount}
-        selectedId={selectedId}
-        onDuplicate={duplicateCommand}
-        onDelete={deleteCommand}
-      />
+    <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
+      <div className="xl:col-span-3">
+        <CommandsList
+          commands={commands}
+          selectedId={selectedId}
+          onSelect={setSelectedId}
+          onAdd={addCommand}
+          onDuplicate={duplicateCommand}
+          onDelete={deleteCommand}
+        />
+      </div>
 
-      <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
-        <div className="xl:col-span-3">
-          <CommandsList
-            commands={commands}
-            selectedId={selectedId}
-            onSelect={setSelectedId}
-            onAdd={addCommand}
+      <div className="xl:col-span-9">
+        {selectedId && selected ? (
+          <CommandEditor
+            id={selectedId}
+            cmd={selected}
+            categoryOptions={categoryOptions}
+            onPatch={(p) => patchCommand(selectedId, p)}
+            onRename={(v) => renameCommand(selectedId, v)}
           />
-        </div>
-
-        <div className="xl:col-span-9">
-          {selectedId && selected ? (
-            <CommandEditor
-              id={selectedId}
-              cmd={selected}
-              categoryOptions={categoryOptions}
-              onPatch={(p) => patchCommand(selectedId, p)}
-              onRename={(v) => renameCommand(selectedId, v)}
-            />
-          ) : (
-            <EmptyEditor onAdd={addCommand} />
-          )}
-        </div>
+        ) : (
+          <EmptyEditor onAdd={addCommand} />
+        )}
       </div>
     </div>
   );

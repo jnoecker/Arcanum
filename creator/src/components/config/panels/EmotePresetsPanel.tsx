@@ -1,198 +1,304 @@
-import { useCallback } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { ConfigPanelProps } from "./types";
 import type { EmotePreset } from "@/types/config";
+import { TextInput } from "@/components/ui/FormWidgets";
 import {
-  TextInput,
-  CompactField,
-  FieldGrid,
-  IconButton,
-} from "@/components/ui/FormWidgets";
+  PlusIcon,
+  SearchIcon,
+  TrashIcon,
+  ArrowUpIcon,
+  ArrowDownIcon,
+  XIcon,
+} from "../achievements/icons";
 
-// Roleplay-classic quick picks — one click inserts them into the emoji field.
-const QUICK_EMOJI = [
-  "\u{1F44B}", // 👋 wave
-  "\u{1F642}", // 🙂 smile
-  "\u{1F602}", // 😂 laugh
-  "\u{1F64F}", // 🙏 bow
-  "\u{1F44F}", // 👏 applaud
-  "\u{1F64C}", // 🙌 cheer
-  "\u{1F3B5}", // 🎵 sing
-  "\u{1F91D}", // 🤝 handshake
-  "\u{1F451}", // 👑 regal
-  "\u{1F914}", // 🤔 think
-  "\u{1F62D}", // 😭 sob
-  "\u{1F483}", // 💃 dance
-] as const;
-
-// ─── Panel ──────────────────────────────────────────────────────────
+function cx(...c: Array<string | false | null | undefined>) {
+  return c.filter(Boolean).join(" ");
+}
 
 export function EmotePresetsPanel({ config, onChange }: ConfigPanelProps) {
   const presets = config.emotePresets.presets;
+  const [selectedIdx, setSelectedIdx] = useState<number | null>(null);
+  const [query, setQuery] = useState("");
 
-  const update = useCallback(
-    (next: EmotePreset[]) => onChange({ emotePresets: { presets: next } }),
-    [onChange],
-  );
+  // Auto-select the first preset on mount; stay valid as the array shrinks.
+  useEffect(() => {
+    if (selectedIdx !== null && selectedIdx < presets.length) return;
+    if (presets.length === 0) {
+      setSelectedIdx(null);
+      return;
+    }
+    setSelectedIdx(0);
+  }, [presets.length, selectedIdx]);
 
-  const patchPreset = useCallback(
-    (index: number, patch: Partial<EmotePreset>) => {
-      update(presets.map((p, i) => (i === index ? { ...p, ...patch } : p)));
-    },
-    [presets, update],
-  );
+  const update = (next: EmotePreset[]) =>
+    onChange({ emotePresets: { presets: next } });
 
-  const addPreset = useCallback(
-    () => update([...presets, { label: "", emoji: "", action: "" }]),
-    [presets, update],
-  );
+  const patchAt = (idx: number, p: Partial<EmotePreset>) => {
+    update(presets.map((pre, i) => (i === idx ? { ...pre, ...p } : pre)));
+  };
 
-  const removePreset = useCallback(
-    (index: number) => update(presets.filter((_, i) => i !== index)),
-    [presets, update],
-  );
+  const addPreset = () => {
+    const next = [...presets, { label: "", emoji: "", action: "" }];
+    update(next);
+    setSelectedIdx(next.length - 1);
+  };
 
-  const movePreset = useCallback(
-    (from: number, to: number) => {
-      if (to < 0 || to >= presets.length) return;
-      const next = [...presets];
-      const [item] = next.splice(from, 1);
-      if (!item) return;
-      next.splice(to, 0, item);
-      update(next);
-    },
-    [presets, update],
-  );
+  const removeAt = (idx: number) => {
+    const next = presets.filter((_, i) => i !== idx);
+    update(next);
+    if (selectedIdx === idx) {
+      setSelectedIdx(next.length === 0 ? null : Math.min(idx, next.length - 1));
+    } else if (selectedIdx !== null && idx < selectedIdx) {
+      setSelectedIdx(selectedIdx - 1);
+    }
+  };
+
+  const moveAt = (idx: number, direction: -1 | 1) => {
+    const target = idx + direction;
+    if (target < 0 || target >= presets.length) return;
+    const next = [...presets];
+    const [item] = next.splice(idx, 1);
+    if (!item) return;
+    next.splice(target, 0, item);
+    update(next);
+    if (selectedIdx === idx) setSelectedIdx(target);
+  };
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return presets
+      .map((p, idx) => ({ p, idx }))
+      .filter(({ p }) => {
+        if (!q) return true;
+        return (
+          p.label.toLowerCase().includes(q) ||
+          p.action.toLowerCase().includes(q) ||
+          p.emoji.includes(q)
+        );
+      });
+  }, [presets, query]);
+
+  const selected = selectedIdx !== null ? presets[selectedIdx] ?? null : null;
 
   return (
-    <div className="flex flex-col gap-6">
-      {/* ── Hero ─────────────────────────────────────────────────── */}
-      <section className="panel-surface relative overflow-hidden rounded-3xl p-6 shadow-section">
-        <div className="relative z-10 flex flex-col gap-5">
-          <div className="max-w-2xl">
-            <p className="border-l-2 border-accent/30 pl-2 text-2xs uppercase tracking-wide-ui text-text-muted">
-              Chat quick-actions
-            </p>
-            <h2 className="mt-2 font-display font-semibold text-xl text-text-primary">
-              Emote Presets
-            </h2>
-            <p className="mt-2 text-sm leading-6 text-text-secondary">
-              Roleplay gestures surfaced as buttons in the player's chat panel.
-              Each preset broadcasts a short room message
-              (e.g. <em>Lira waves.</em>) when clicked — one click for the
-              classics, so social MUDs feel alive without typing. The order
-              here is the order players see in the client.
-            </p>
-          </div>
+    <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
+      <div className="xl:col-span-3">
+        <EmotesList
+          presets={presets}
+          filtered={filtered}
+          query={query}
+          onQuery={setQuery}
+          selectedIdx={selectedIdx}
+          onSelect={setSelectedIdx}
+          onAdd={addPreset}
+        />
+      </div>
 
-          <div className="flex flex-wrap items-center gap-5 border-t border-border-muted/50 pt-4">
-            <div className="flex items-center gap-3 rounded-2xl border border-accent/25 bg-accent/[0.06] px-4 py-2">
-              <span
-                className="text-xl leading-none"
-                aria-hidden="true"
-              >
-                &#x1F44B;
-              </span>
-              <div>
-                <p className="font-display text-xs font-semibold uppercase tracking-wider text-accent">
-                  Name prepended automatically
-                </p>
-                <p className="text-2xs text-text-muted/80">
-                  An action of <code className="font-mono">waves.</code>{" "}
-                  broadcasts as <em>Lira waves.</em>
-                </p>
-              </div>
-            </div>
-
-            <div className="ml-auto text-right">
-              <p className="font-display text-2xl font-semibold leading-none text-text-primary">
-                {presets.length}
-              </p>
-              <p className="mt-1 text-2xs uppercase tracking-wider text-text-muted">
-                {presets.length === 1 ? "preset" : "presets"}
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ── Grid ─────────────────────────────────────────────────── */}
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 2xl:grid-cols-3">
-        {presets.map((preset, i) => (
-          <EmoteCard
-            key={i}
-            preset={preset}
-            index={i}
+      <div className="xl:col-span-9">
+        {selected !== null && selectedIdx !== null ? (
+          <EmoteEditor
+            preset={selected}
+            index={selectedIdx}
             total={presets.length}
-            onPatch={(p) => patchPreset(i, p)}
-            onMoveUp={() => movePreset(i, i - 1)}
-            onMoveDown={() => movePreset(i, i + 1)}
-            onRemove={() => removePreset(i)}
+            onPatch={(p) => patchAt(selectedIdx, p)}
+            onRemove={() => removeAt(selectedIdx)}
+            onMoveUp={() => moveAt(selectedIdx, -1)}
+            onMoveDown={() => moveAt(selectedIdx, 1)}
+            onClose={() => setSelectedIdx(null)}
           />
-        ))}
-        <AddEmoteCard onClick={addPreset} />
+        ) : (
+          <div className="panel-surface flex h-full items-center justify-center rounded-2xl p-8 shadow-section">
+            <div className="text-center">
+              <p className="font-display text-xs uppercase tracking-wider text-text-muted">
+                Nothing selected
+              </p>
+              <p className="mt-2 text-2xs leading-snug text-text-muted/70">
+                Pick an emote from the roster, or add a new one to begin.
+              </p>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
 }
 
-// ─── Card ───────────────────────────────────────────────────────────
+// ─── List ──────────────────────────────────────────────────────────
 
-function EmoteCard({
+function EmotesList({
+  presets,
+  filtered,
+  query,
+  onQuery,
+  selectedIdx,
+  onSelect,
+  onAdd,
+}: {
+  presets: EmotePreset[];
+  filtered: { p: EmotePreset; idx: number }[];
+  query: string;
+  onQuery: (v: string) => void;
+  selectedIdx: number | null;
+  onSelect: (idx: number) => void;
+  onAdd: () => void;
+}) {
+  return (
+    <aside className="panel-surface flex flex-col gap-2 rounded-2xl p-3 shadow-section">
+      <div className="flex items-center justify-between gap-2">
+        <h3 className="font-display text-xs font-semibold uppercase tracking-[0.18em] text-text-secondary">
+          Emotes
+        </h3>
+        <span className="font-mono text-2xs text-text-muted/70">
+          {presets.length}
+        </span>
+      </div>
+
+      <div className="ornate-input flex items-center gap-2 px-2.5 py-1.5">
+        <SearchIcon className="text-text-muted/70" />
+        <input
+          className="min-w-0 flex-1 bg-transparent text-xs text-text-primary outline-none placeholder:text-text-muted/60"
+          placeholder="Search emotes…"
+          value={query}
+          onChange={(e) => onQuery(e.target.value)}
+        />
+      </div>
+
+      <button
+        type="button"
+        onClick={onAdd}
+        className="focus-ring inline-flex items-center justify-center gap-1.5 rounded-lg border border-accent/40 bg-accent/10 px-2.5 py-1.5 text-2xs font-medium text-accent transition hover:bg-accent/20"
+      >
+        <PlusIcon />
+        Add
+      </button>
+
+      <ul className="-mx-1 flex max-h-[64vh] flex-col gap-1 overflow-y-auto px-1 pb-1">
+        {filtered.length === 0 ? (
+          <li>
+            <div className="rounded-xl border border-dashed border-[var(--chrome-stroke-strong)] bg-[var(--chrome-fill-soft)] px-3 py-6 text-center text-2xs italic text-text-muted/70">
+              {presets.length === 0
+                ? "No emotes yet — add one above."
+                : `No emotes match "${query}".`}
+            </div>
+          </li>
+        ) : (
+          filtered.map(({ p, idx }) => {
+            const isSelected = selectedIdx === idx;
+            return (
+              <li key={idx}>
+                <button
+                  type="button"
+                  onClick={() => onSelect(idx)}
+                  aria-pressed={isSelected}
+                  className={cx(
+                    "focus-ring flex w-full items-center gap-2 rounded-lg border px-2 py-1.5 text-left transition",
+                    isSelected
+                      ? "border-accent/60 bg-accent/[0.07] shadow-[0_0_18px_-10px_rgb(var(--accent-rgb)/0.7)]"
+                      : "border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] hover:border-accent/30 hover:bg-[var(--chrome-fill)]",
+                  )}
+                >
+                  <span
+                    className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-[var(--chrome-stroke)] bg-bg-primary/40 text-base leading-none"
+                    aria-hidden="true"
+                  >
+                    {p.emoji || "·"}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate font-display text-xs font-semibold text-text-primary">
+                      {p.label || "Untitled"}
+                    </div>
+                    {p.action.trim() && (
+                      <div className="truncate text-[0.6rem] italic text-text-muted/70">
+                        {p.action}
+                      </div>
+                    )}
+                  </div>
+                </button>
+              </li>
+            );
+          })
+        )}
+      </ul>
+    </aside>
+  );
+}
+
+// ─── Editor ────────────────────────────────────────────────────────
+
+function EmoteEditor({
   preset,
   index,
   total,
   onPatch,
+  onRemove,
   onMoveUp,
   onMoveDown,
-  onRemove,
+  onClose,
 }: {
   preset: EmotePreset;
   index: number;
   total: number;
   onPatch: (p: Partial<EmotePreset>) => void;
+  onRemove: () => void;
   onMoveUp: () => void;
   onMoveDown: () => void;
-  onRemove: () => void;
+  onClose: () => void;
 }) {
-  const labelText = preset.label.trim() || "Label";
+  const labelText = preset.label.trim() || "Untitled";
   const actionText = preset.action.trim() || "…";
 
   return (
-    <div className="group/card relative flex flex-col gap-3 rounded-2xl border border-border-default bg-bg-primary/40 p-4 transition-colors hover:border-accent/40 hover:bg-bg-primary/60">
-      {/* Header — index + hover rail */}
-      <div className="flex items-center justify-between">
-        <span className="font-display text-3xs uppercase tracking-widest text-text-muted">
-          #{index + 1}
-        </span>
-        <div className="flex items-center gap-0.5 opacity-0 transition-opacity group-hover/card:opacity-100 focus-within:opacity-100">
-          {index > 0 && (
-            <IconButton onClick={onMoveUp} title="Move up" size="sm">
-              &#x2191;
-            </IconButton>
-          )}
-          {index < total - 1 && (
-            <IconButton onClick={onMoveDown} title="Move down" size="sm">
-              &#x2193;
-            </IconButton>
-          )}
-          <IconButton
-            onClick={onRemove}
-            title="Remove preset"
-            danger
-            size="sm"
+    <section className="panel-surface flex flex-col gap-4 rounded-2xl p-4 shadow-section">
+      <header className="flex items-center justify-between gap-3 border-b border-[var(--chrome-stroke)] pb-3">
+        <div className="flex min-w-0 items-center gap-3">
+          <span
+            aria-hidden="true"
+            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-[var(--chrome-stroke)] bg-bg-primary/40 text-2xl leading-none"
           >
-            &#x2715;
-          </IconButton>
+            {preset.emoji || "·"}
+          </span>
+          <div className="min-w-0">
+            <span className="font-display text-2xs uppercase tracking-[0.18em] text-text-muted">
+              #{index + 1}
+            </span>
+            <h2 className="truncate font-display text-xl font-semibold text-text-primary">
+              {labelText}
+            </h2>
+          </div>
         </div>
-      </div>
 
-      {/* Live preview */}
-      <div className="flex flex-col gap-1.5 rounded-xl border border-border-muted/60 bg-bg-abyss/40 px-3 py-2.5">
-        <span className="text-[9px] uppercase tracking-widest text-text-muted/70">
+        <div className="flex items-center gap-1">
+          <IconAction label="Move up" onClick={onMoveUp} disabled={index === 0}>
+            <ArrowUpIcon />
+          </IconAction>
+          <IconAction
+            label="Move down"
+            onClick={onMoveDown}
+            disabled={index === total - 1}
+          >
+            <ArrowDownIcon />
+          </IconAction>
+          <IconAction label="Delete emote" onClick={onRemove} danger>
+            <TrashIcon />
+          </IconAction>
+          <button
+            type="button"
+            onClick={onClose}
+            title="Close editor"
+            aria-label="Close editor"
+            className="focus-ring inline-flex h-7 w-7 items-center justify-center rounded-md border border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] text-text-muted transition hover:border-accent/30 hover:text-text-primary"
+          >
+            <XIcon className="h-3 w-3" />
+          </button>
+        </div>
+      </header>
+
+      <div className="rounded-xl border border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] px-3 py-2.5">
+        <span className="font-display text-2xs uppercase tracking-wider text-text-muted">
           In-game preview
         </span>
-        <div className="flex items-center">
-          <div className="flex items-center gap-1.5 rounded border border-border-default bg-bg-primary/70 px-2 py-1 text-xs text-text-secondary">
+        <div className="mt-1.5 flex items-center gap-2">
+          <span className="inline-flex items-center gap-1.5 rounded-md border border-[var(--chrome-stroke)] bg-bg-primary/60 px-2 py-1 text-xs text-text-secondary">
             {preset.emoji ? (
               <span className="text-sm leading-none" aria-hidden="true">
                 {preset.emoji}
@@ -202,93 +308,100 @@ function EmoteCard({
                 className="text-sm leading-none text-text-muted/50"
                 aria-hidden="true"
               >
-                &#x25CB;
+                ·
               </span>
             )}
             <span className="truncate">{labelText}</span>
-          </div>
+          </span>
+          <p className="text-2xs italic text-text-muted">
+            <span className="text-text-secondary">Lira</span> {actionText}
+          </p>
         </div>
-        <p className="pl-0.5 text-2xs italic text-text-muted">
-          <span className="text-text-secondary">Lira</span> {actionText}
-        </p>
       </div>
 
-      {/* Fields */}
-      <FieldGrid cols={2}>
-        <CompactField label="Label">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-[6rem_1fr]">
+        <FieldLabel label="Emoji">
+          <TextInput
+            value={preset.emoji}
+            onCommit={(v) => onPatch({ emoji: v })}
+            placeholder="👋"
+            dense
+          />
+        </FieldLabel>
+        <FieldLabel label="Label">
           <TextInput
             value={preset.label}
             onCommit={(v) => onPatch({ label: v })}
             placeholder="Wave"
             dense
           />
-        </CompactField>
-        <CompactField label="Emoji">
-          <TextInput
-            value={preset.emoji}
-            onCommit={(v) => onPatch({ emoji: v })}
-            placeholder="\u{1F44B}"
-            dense
-          />
-        </CompactField>
-        <CompactField
-          label="Action"
-          hint="Broadcast text. Player name is prepended automatically."
-          span
-        >
-          <TextInput
-            value={preset.action}
-            onCommit={(v) => onPatch({ action: v })}
-            placeholder="waves."
-            dense
-          />
-        </CompactField>
-      </FieldGrid>
-
-      {/* Quick-pick emoji chips */}
-      <div className="flex flex-col gap-1">
-        <span className="text-[9px] uppercase tracking-widest text-text-muted/70">
-          Quick picks
-        </span>
-        <div className="flex flex-wrap gap-1">
-          {QUICK_EMOJI.map((e) => {
-            const active = preset.emoji === e;
-            return (
-              <button
-                key={e}
-                type="button"
-                onClick={() => onPatch({ emoji: e })}
-                className={`focus-ring flex h-7 w-7 items-center justify-center rounded border text-base leading-none transition-colors ${
-                  active
-                    ? "border-accent/60 bg-accent/15"
-                    : "border-border-default bg-bg-primary/50 hover:border-accent/40 hover:bg-accent/5"
-                }`}
-                title={`Use ${e}`}
-                aria-label={`Use ${e}`}
-                aria-pressed={active}
-              >
-                {e}
-              </button>
-            );
-          })}
-        </div>
+        </FieldLabel>
       </div>
+
+      <FieldLabel label="Action" hint="Player name is prepended automatically.">
+        <TextInput
+          value={preset.action}
+          onCommit={(v) => onPatch({ action: v })}
+          placeholder="waves."
+          dense
+        />
+      </FieldLabel>
+    </section>
+  );
+}
+
+// ─── Shared ────────────────────────────────────────────────────────
+
+function FieldLabel({
+  label,
+  hint,
+  children,
+}: {
+  label: string;
+  hint?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="flex flex-col gap-1">
+      <span className="font-display text-2xs uppercase tracking-wider text-text-muted">
+        {label}
+      </span>
+      {children}
+      {hint && (
+        <p className="text-2xs leading-snug text-text-muted/70">{hint}</p>
+      )}
     </div>
   );
 }
 
-function AddEmoteCard({ onClick }: { onClick: () => void }) {
+function IconAction({
+  label,
+  onClick,
+  disabled,
+  danger,
+  children,
+}: {
+  label: string;
+  onClick: () => void;
+  disabled?: boolean;
+  danger?: boolean;
+  children: React.ReactNode;
+}) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className="group focus-ring flex min-h-[320px] items-center justify-center rounded-2xl border border-dashed border-border-muted/60 bg-bg-primary/20 p-6 text-text-muted transition-colors hover:border-accent/40 hover:bg-bg-primary/40 hover:text-accent"
-      aria-label="Add emote preset"
+      disabled={disabled}
+      title={label}
+      aria-label={label}
+      className={cx(
+        "focus-ring inline-flex h-7 w-7 items-center justify-center rounded-md transition disabled:cursor-not-allowed disabled:opacity-30",
+        danger
+          ? "text-text-muted/70 hover:bg-status-error/15 hover:text-status-error"
+          : "text-text-muted/70 hover:bg-[var(--chrome-fill)] hover:text-text-primary",
+      )}
     >
-      <div className="flex flex-col items-center gap-2">
-        <span className="font-display text-2xl leading-none">+</span>
-        <span className="text-2xs uppercase tracking-widest">Add Emote</span>
-      </div>
+      {children}
     </button>
   );
 }

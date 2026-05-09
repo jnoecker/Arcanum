@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { CommandEntryConfig } from "@/types/config";
-import { TextInput, SelectInput, CommitTextarea } from "@/components/ui/FormWidgets";
+import { TextInput, SelectInput } from "@/components/ui/FormWidgets";
 import { SectionCard } from "../panels/factions/SectionCard";
 import { XIcon, PlusIcon } from "../achievements/icons";
 
@@ -23,13 +23,9 @@ export function CommandEditor({
   onPatch,
   onRename,
 }: CommandEditorProps) {
-  const displayName = (cmd.usage.split(/\s/)[0] || id).toUpperCase();
-
   return (
-    <div className="flex flex-col gap-4">
-      <EditorHeader id={id} displayName={displayName} cmd={cmd} />
-
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-5">
+    <div className="flex flex-col gap-3">
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-5">
         <div className="lg:col-span-3">
           <BasicDetailsCard
             id={id}
@@ -40,68 +36,12 @@ export function CommandEditor({
           />
         </div>
         <div className="lg:col-span-2">
-          <HelpPreviewCard id={id} cmd={cmd} />
-        </div>
-
-        <div className="lg:col-span-3">
           <AliasesCard id={id} />
         </div>
-        <div className="lg:col-span-2">
-          <VisibilityCard cmd={cmd} onPatch={onPatch} />
-        </div>
-
-        <div className="lg:col-span-3">
-          <CategoryMetadataCard cmd={cmd} categoryOptions={categoryOptions} />
-        </div>
-        <div className="lg:col-span-2">
-          <NotesCard />
-        </div>
       </div>
+      <HelpPreviewCard id={id} cmd={cmd} />
     </div>
   );
-}
-
-// ─── Header ──────────────────────────────────────────────────────
-
-function EditorHeader({
-  id,
-  displayName,
-  cmd,
-}: {
-  id: string;
-  displayName: string;
-  cmd: CommandEntryConfig;
-}) {
-  return (
-    <div className="flex flex-col gap-1.5">
-      <p className="font-display text-2xs uppercase tracking-[0.22em] text-text-muted">
-        Commands{" "}
-        <span className="mx-1 text-text-muted/50">›</span>{" "}
-        <span className="text-accent">Edit</span>
-      </p>
-      <div className="flex items-baseline gap-3">
-        <h2 className="font-display text-2xl font-semibold text-text-primary">
-          {displayName}
-        </h2>
-        <span className="font-mono text-xs text-text-muted">
-          {id}
-        </span>
-      </div>
-      <p className="text-xs leading-relaxed text-text-muted">
-        {summarizeUsage(cmd)}
-      </p>
-    </div>
-  );
-}
-
-function summarizeUsage(cmd: CommandEntryConfig): string {
-  const parts: string[] = [];
-  if (cmd.usage) parts.push(`Usage “${cmd.usage}”`);
-  if (cmd.category) parts.push(`category ${cmd.category}`);
-  if (cmd.staff) parts.push("staff only");
-  return parts.length > 0
-    ? parts.join(", ") + "."
-    : "Usage, category, and staff visibility.";
 }
 
 // ─── Basic Details ──────────────────────────────────────────────
@@ -208,33 +148,34 @@ function StaffToggle({
       role="switch"
       aria-checked={checked}
       onClick={() => onChange(!checked)}
+      aria-label="Staff only"
       className={cx(
-        "focus-ring flex w-full items-center gap-3 rounded-xl border px-3 py-2 text-left transition",
+        "focus-ring inline-flex items-center gap-2 rounded-lg border px-2.5 py-1.5 transition",
         checked
           ? "border-accent/40 bg-accent/10"
           : "border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] hover:border-accent/30",
       )}
     >
-      <span className="min-w-0 flex-1">
-        <span className="block font-display text-2xs font-semibold uppercase tracking-[0.18em] text-text-muted">
-          Staff Only
-        </span>
-        <span className="block text-2xs text-text-muted/80">
-          Restrict to staff accounts.
-        </span>
-      </span>
       <span
         className={cx(
-          "relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors",
+          "relative inline-flex h-4 w-7 shrink-0 items-center rounded-full transition-colors",
           checked ? "bg-accent/80" : "bg-[var(--chrome-fill-strong)]",
         )}
       >
         <span
           className={cx(
-            "inline-block h-4 w-4 rounded-full bg-bg-primary shadow-md transition-transform",
-            checked ? "translate-x-[1.125rem]" : "translate-x-0.5",
+            "inline-block h-3 w-3 rounded-full bg-bg-primary shadow-md transition-transform",
+            checked ? "translate-x-[0.875rem]" : "translate-x-0.5",
           )}
         />
+      </span>
+      <span
+        className={cx(
+          "font-display text-2xs font-semibold uppercase tracking-wider",
+          checked ? "text-accent" : "text-text-muted",
+        )}
+      >
+        {checked ? "Staff" : "Public"}
       </span>
     </button>
   );
@@ -333,167 +274,6 @@ function AliasesCard({ id }: { id: string }) {
       </div>
       <p className="mt-2 text-2xs text-text-muted/70">
         Multiple aliases per command will land in a future release.
-      </p>
-    </SectionCard>
-  );
-}
-
-// ─── Visibility & Permissions ──────────────────────────────────
-
-function VisibilityCard({
-  cmd,
-  onPatch,
-}: {
-  cmd: CommandEntryConfig;
-  onPatch: (p: Partial<CommandEntryConfig>) => void;
-}) {
-  return (
-    <SectionCard title="Visibility & Permissions">
-      <div className="flex flex-col gap-2">
-        <PermissionRow
-          label="Staff Only"
-          description="Only staff accounts can run this command."
-          active={cmd.staff}
-          onClick={() => onPatch({ staff: !cmd.staff })}
-        />
-        <PermissionRow
-          label="Player Visible"
-          description="Listed in player help indexes."
-          active={!cmd.staff}
-          onClick={() => onPatch({ staff: !cmd.staff })}
-        />
-      </div>
-      <p className="mt-2 text-2xs text-text-muted/70">
-        Toggle staff-only to control who can invoke or see this command.
-      </p>
-    </SectionCard>
-  );
-}
-
-function PermissionRow({
-  label,
-  description,
-  active,
-  onClick,
-}: {
-  label: string;
-  description: string;
-  active: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cx(
-        "focus-ring flex w-full items-center justify-between gap-3 rounded-xl border px-3 py-2 text-left transition",
-        active
-          ? "border-accent/40 bg-accent/10"
-          : "border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] hover:border-accent/30",
-      )}
-    >
-      <span className="min-w-0">
-        <span className="block font-display text-2xs font-semibold uppercase tracking-[0.18em] text-text-secondary">
-          {label}
-        </span>
-        <span className="mt-0.5 block text-2xs text-text-muted/80">
-          {description}
-        </span>
-      </span>
-      <span
-        className={cx(
-          "rounded-full px-2 py-0.5 font-display text-[0.55rem] uppercase tracking-[0.18em]",
-          active
-            ? "bg-accent/15 text-accent"
-            : "bg-[var(--chrome-fill-strong)] text-text-muted",
-        )}
-      >
-        {active ? "Enabled" : "Off"}
-      </span>
-    </button>
-  );
-}
-
-// ─── Category Metadata ─────────────────────────────────────────
-
-function CategoryMetadataCard({
-  cmd,
-  categoryOptions,
-}: {
-  cmd: CommandEntryConfig;
-  categoryOptions: { value: string; label: string }[];
-}) {
-  const match = categoryOptions.find((o) => o.value === cmd.category);
-  return (
-    <SectionCard title="Category Metadata">
-      <dl className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-        <MetaRow label="Category Slug" value={cmd.category || "—"} mono />
-        <MetaRow label="Display Label" value={match?.label ?? cmd.category ?? "—"} />
-        <MetaRow
-          label="Help Tier"
-          value={cmd.staff ? "Staff" : "Player"}
-        />
-        <MetaRow
-          label="Usage Length"
-          value={`${cmd.usage.length} chars`}
-        />
-      </dl>
-      <p className="mt-3 text-2xs text-text-muted/70">
-        Categories are defined in the broader command taxonomy.
-      </p>
-    </SectionCard>
-  );
-}
-
-function MetaRow({
-  label,
-  value,
-  mono,
-}: {
-  label: string;
-  value: string;
-  mono?: boolean;
-}) {
-  return (
-    <div className="flex flex-col gap-0.5 rounded-lg border border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] p-2">
-      <dt className="font-display text-[0.55rem] uppercase tracking-[0.18em] text-text-muted">
-        {label}
-      </dt>
-      <dd
-        className={cx(
-          "truncate text-xs text-text-primary",
-          mono && "font-mono",
-        )}
-      >
-        {value}
-      </dd>
-    </div>
-  );
-}
-
-// ─── Notes ─────────────────────────────────────────────────────
-
-function NotesCard() {
-  const [draft, setDraft] = useState("");
-  return (
-    <SectionCard
-      title="Notes"
-      description="Private notes about this command. Not shown to players."
-      actions={
-        <span className="rounded-full border border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] px-2 py-0.5 font-display text-[0.55rem] uppercase tracking-[0.18em] text-text-muted">
-          Local
-        </span>
-      }
-    >
-      <CommitTextarea
-        label=""
-        value={draft}
-        onCommit={(v) => setDraft(v)}
-        placeholder="Design intent, edge cases, beginner-friendly..."
-        rows={4}
-      />
-      <p className="mt-1 text-2xs text-text-muted/70">
-        Notes are session-local until persisted notes are added to the schema.
       </p>
     </SectionCard>
   );

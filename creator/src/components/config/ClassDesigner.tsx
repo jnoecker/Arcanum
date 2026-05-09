@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import type { AppConfig, ClassDefinitionConfig } from "@/types/config";
 import { renameClassInConfig } from "@/lib/refactorId";
-import { ClassesHeader } from "./classes/ClassesHeader";
 import { ClassesList } from "./classes/ClassesList";
 import { ClassEditor } from "./classes/ClassEditor";
 
@@ -107,37 +106,30 @@ export function ClassDesigner({ config, onChange }: ClassDesignerProps) {
   const selected = selectedId ? classes[selectedId] ?? null : null;
 
   return (
-    <div className="flex flex-col gap-4">
-      <ClassesHeader
-        classCount={Object.keys(classes).length}
-        selectedId={selectedId}
-        onDuplicate={duplicateClass}
-        onDelete={deleteClass}
-      />
+    <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
+      <div className="xl:col-span-3">
+        <ClassesList
+          classes={classes}
+          selectedId={selectedId}
+          onSelect={setSelectedId}
+          onAdd={addClass}
+          onDuplicate={duplicateClass}
+          onDelete={deleteClass}
+        />
+      </div>
 
-      <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
-        <div className="xl:col-span-3">
-          <ClassesList
-            classes={classes}
-            selectedId={selectedId}
-            onSelect={setSelectedId}
-            onAdd={addClass}
+      <div className="xl:col-span-9">
+        {selectedId && selected ? (
+          <ClassEditor
+            id={selectedId}
+            cls={selected}
+            config={config}
+            onPatch={(p) => patchClass(selectedId, p)}
+            onRename={(v) => renameClass(selectedId, v)}
           />
-        </div>
-
-        <div className="xl:col-span-9">
-          {selectedId && selected ? (
-            <ClassEditor
-              id={selectedId}
-              cls={selected}
-              config={config}
-              onPatch={(p) => patchClass(selectedId, p)}
-              onRename={(v) => renameClass(selectedId, v)}
-            />
-          ) : (
-            <EmptyEditor onAdd={addClass} />
-          )}
-        </div>
+        ) : (
+          <EmptyEditor onAdd={addClass} />
+        )}
       </div>
     </div>
   );

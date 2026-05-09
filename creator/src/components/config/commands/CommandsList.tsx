@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import type { CommandEntryConfig } from "@/types/config";
-import { SearchIcon, PlusIcon, MoreIcon } from "../achievements/icons";
+import { SearchIcon, PlusIcon, MoreIcon, CopyIcon, TrashIcon } from "../achievements/icons";
 
 function cx(...c: Array<string | false | null | undefined>) {
   return c.filter(Boolean).join(" ");
@@ -11,6 +11,8 @@ interface CommandsListProps {
   selectedId: string | null;
   onSelect: (id: string) => void;
   onAdd: () => void;
+  onDuplicate: () => void;
+  onDelete: () => void;
 }
 
 const ALL_CATEGORIES = "__all__";
@@ -20,10 +22,13 @@ export function CommandsList({
   selectedId,
   onSelect,
   onAdd,
+  onDuplicate,
+  onDelete,
 }: CommandsListProps) {
   const [query, setQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState<string>(ALL_CATEGORIES);
-  const [moreOpen, setMoreOpen] = useState(false);
+  const [filterOpen, setFilterOpen] = useState(false);
+  const hasSelection = selectedId !== null;
 
   const allCategories = useMemo(() => {
     const set = new Set<string>();
@@ -48,17 +53,17 @@ export function CommandsList({
     });
   }, [commands, query, activeCategory]);
 
-  const visibleChips = allCategories.slice(0, 3);
-  const overflowChips = allCategories.slice(3);
+  const activeCategoryLabel =
+    activeCategory === ALL_CATEGORIES ? "All" : activeCategory;
 
   return (
-    <aside className="panel-surface flex flex-col gap-3 rounded-2xl p-4 shadow-section">
+    <aside className="panel-surface flex flex-col gap-2 rounded-2xl p-3 shadow-section">
       <div className="flex items-center justify-between gap-2">
         <h3 className="font-display text-xs font-semibold uppercase tracking-[0.18em] text-text-secondary">
           Commands
         </h3>
         <span className="font-mono text-2xs text-text-muted/70">
-          {Object.keys(commands).length} entries
+          {Object.keys(commands).length}
         </span>
       </div>
 
@@ -70,37 +75,41 @@ export function CommandsList({
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />
-      </div>
-
-      <div className="flex flex-wrap items-center gap-1.5">
-        <CategoryChip
-          active={activeCategory === ALL_CATEGORIES}
-          onClick={() => setActiveCategory(ALL_CATEGORIES)}
-        >
-          All
-        </CategoryChip>
-        {visibleChips.map((cat) => (
-          <CategoryChip
-            key={cat}
-            active={activeCategory === cat}
-            onClick={() => setActiveCategory(cat)}
-          >
-            {cat}
-          </CategoryChip>
-        ))}
-        {overflowChips.length > 0 && (
+        {allCategories.length > 0 && (
           <div className="relative">
             <button
               type="button"
-              onClick={() => setMoreOpen((v) => !v)}
-              aria-label="More categories"
-              className="focus-ring inline-flex h-7 w-7 items-center justify-center rounded-full border border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] text-text-muted transition hover:border-accent/30 hover:text-accent"
+              onClick={() => setFilterOpen((v) => !v)}
+              title={`Filter by category · ${activeCategoryLabel}`}
+              aria-label={`Filter by category, current: ${activeCategoryLabel}`}
+              className={cx(
+                "focus-ring inline-flex h-6 items-center gap-1 rounded-md border px-1.5 text-[0.6rem] uppercase tracking-wider transition",
+                activeCategory === ALL_CATEGORIES
+                  ? "border-[var(--chrome-stroke)] bg-transparent text-text-muted hover:border-accent/30 hover:text-accent"
+                  : "border-accent/40 bg-accent/10 text-accent",
+              )}
             >
-              <MoreIcon />
+              <MoreIcon className="h-3 w-3" />
+              <span>{activeCategoryLabel}</span>
             </button>
-            {moreOpen && (
-              <div className="absolute right-0 top-9 z-20 w-44 overflow-hidden rounded-xl border border-[var(--chrome-stroke)] bg-bg-elevated shadow-lg">
-                {overflowChips.map((cat) => {
+            {filterOpen && (
+              <div className="absolute right-0 top-7 z-20 w-44 overflow-hidden rounded-xl border border-[var(--chrome-stroke)] bg-bg-elevated shadow-lg">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveCategory(ALL_CATEGORIES);
+                    setFilterOpen(false);
+                  }}
+                  className={cx(
+                    "flex w-full items-center gap-2 border-b border-[var(--chrome-stroke)] px-3 py-2 text-left text-xs transition",
+                    activeCategory === ALL_CATEGORIES
+                      ? "bg-accent/10 text-accent"
+                      : "text-text-secondary hover:bg-[var(--chrome-fill-soft)]",
+                  )}
+                >
+                  All
+                </button>
+                {allCategories.map((cat) => {
                   const active = activeCategory === cat;
                   return (
                     <button
@@ -108,7 +117,7 @@ export function CommandsList({
                       type="button"
                       onClick={() => {
                         setActiveCategory(cat);
-                        setMoreOpen(false);
+                        setFilterOpen(false);
                       }}
                       className={cx(
                         "flex w-full items-center gap-2 border-b border-[var(--chrome-stroke)] px-3 py-2 text-left text-xs transition last:border-b-0",
@@ -127,16 +136,38 @@ export function CommandsList({
         )}
       </div>
 
-      <button
-        type="button"
-        onClick={onAdd}
-        className="focus-ring inline-flex items-center justify-center gap-1.5 rounded-xl border border-accent/40 bg-accent/10 px-3 py-2 text-xs font-medium text-accent transition hover:bg-accent/20"
-      >
-        <PlusIcon />
-        New Command
-      </button>
+      <div className="flex items-center gap-1.5">
+        <button
+          type="button"
+          onClick={onAdd}
+          className="focus-ring inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-accent/40 bg-accent/10 px-2.5 py-1.5 text-2xs font-medium text-accent transition hover:bg-accent/20"
+        >
+          <PlusIcon />
+          Add
+        </button>
+        <button
+          type="button"
+          onClick={onDuplicate}
+          disabled={!hasSelection}
+          title="Duplicate the selected command"
+          aria-label="Duplicate the selected command"
+          className="focus-ring inline-flex h-7 w-7 items-center justify-center rounded-lg border border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] text-text-muted transition hover:border-accent/30 hover:text-text-primary disabled:cursor-not-allowed disabled:opacity-30"
+        >
+          <CopyIcon />
+        </button>
+        <button
+          type="button"
+          onClick={onDelete}
+          disabled={!hasSelection}
+          title="Delete the selected command"
+          aria-label="Delete the selected command"
+          className="focus-ring inline-flex h-7 w-7 items-center justify-center rounded-lg border border-status-error/40 bg-status-error/10 text-status-error transition hover:bg-status-error/20 disabled:cursor-not-allowed disabled:opacity-30"
+        >
+          <TrashIcon />
+        </button>
+      </div>
 
-      <ul className="-mx-1 flex max-h-[60vh] flex-col gap-1.5 overflow-y-auto px-1 pb-1">
+      <ul className="-mx-1 flex max-h-[64vh] flex-col gap-1.5 overflow-y-auto px-1 pb-1">
         {filtered.length === 0 ? (
           <li>
             <div className="rounded-xl border border-dashed border-[var(--chrome-stroke-strong)] bg-[var(--chrome-fill-soft)] px-3 py-6 text-center text-2xs italic text-text-muted/70">
@@ -201,28 +232,3 @@ function CommandRow({ id, cmd, selected, onSelect }: CommandRowProps) {
   );
 }
 
-function CategoryChip({
-  active,
-  onClick,
-  children,
-}: {
-  active: boolean;
-  onClick: () => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-pressed={active}
-      className={cx(
-        "focus-ring inline-flex items-center gap-1 rounded-full border px-2 py-1 font-display text-2xs transition",
-        active
-          ? "border-accent/60 bg-accent/15 text-accent"
-          : "border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] text-text-muted hover:border-accent/30 hover:text-accent",
-      )}
-    >
-      <span>{children}</span>
-    </button>
-  );
-}

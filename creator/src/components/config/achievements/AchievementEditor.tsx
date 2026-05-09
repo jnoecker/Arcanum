@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/FormWidgets";
 import { useArrayField } from "@/lib/useArrayField";
 import { useZoneStore } from "@/stores/zoneStore";
+// TODO: extract SectionCard to components/ui/ — currently borrowed from factions panel
 import { SectionCard } from "../panels/factions/SectionCard";
 import {
   PlusIcon,
@@ -282,14 +283,14 @@ function CriteriaCard({
           className="focus-ring inline-flex items-center gap-1 rounded-lg border border-accent/40 bg-accent/10 px-2.5 py-1 text-2xs font-medium text-accent transition hover:bg-accent/20"
         >
           <PlusIcon />
-          Add Criterion
+          Add Trial
         </button>
       }
     >
       {criteria.length === 0 ? (
         <div className="rounded-xl border border-dashed border-[var(--chrome-stroke-strong)] bg-[var(--chrome-fill-soft)] px-4 py-6 text-center">
           <p className="text-2xs italic text-text-muted/80">
-            No criteria yet — add at least one to make this achievement earnable.
+            An achievement without trial cannot be earned. Add a deed to require.
           </p>
         </div>
       ) : (

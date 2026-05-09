@@ -2,9 +2,8 @@
 // Root component for the Tuning Wizard. Shows preset cards, a sticky
 // search/filter bar, and a parameter browser with diff highlighting.
 
-import { useMemo, useEffect, useRef, useState, useCallback } from "react";
+import { useMemo, useEffect, useRef, useCallback } from "react";
 import { useConfigStore } from "@/stores/configStore";
-import { useProjectStore } from "@/stores/projectStore";
 import { useTuningWizardStore } from "@/stores/tuningWizardStore";
 import { TUNING_PRESETS } from "@/lib/tuning/presets";
 import type { TuningPreset } from "@/lib/tuning/presets";
@@ -26,8 +25,6 @@ import { HealthCheckBanner } from "./HealthCheckBanner";
 import { PacingPreview } from "./PacingPreview";
 import { ChartRow } from "./charts/ChartRow";
 import { SimulationLab } from "./simulations/SimulationLab";
-import { ActionButton, Spinner } from "@/components/ui/FormWidgets";
-import { useToastStore } from "@/stores/toastStore";
 import { usePrefersReducedMotion } from "@/lib/usePrefersReducedMotion";
 
 const ALL_SECTIONS_ORDERED = [
@@ -50,7 +47,6 @@ export function TuningWizard() {
   const config = useConfigStore((s) => s.config);
   const dirty = useConfigStore((s) => s.dirty);
   const updateConfig = useConfigStore((s) => s.updateConfig);
-  const project = useProjectStore((s) => s.project);
   const selectedPresetId = useTuningWizardStore((s) => s.selectedPresetId);
   const selectPreset = useTuningWizardStore((s) => s.selectPreset);
   const searchQuery = useTuningWizardStore((s) => s.searchQuery);
@@ -62,9 +58,6 @@ export function TuningWizard() {
   const toggleAccepted = useTuningWizardStore((s) => s.toggleAccepted);
 
   const browserRef = useRef<HTMLDivElement>(null);
-  const [saving, setSaving] = useState(false);
-  const [saveError, setSaveError] = useState<string | null>(null);
-  const showToast = useToastStore((s) => s.show);
   const prefersReducedMotion = usePrefersReducedMotion();
 
   /** Inline edit: update a single field by dot-path in the config. */
@@ -77,34 +70,6 @@ export function TuningWizard() {
     },
     [config, updateConfig],
   );
-
-  /** Explicit save to disk. */
-  const handleSave = useCallback(async () => {
-    if (!project || saving) return;
-    setSaving(true);
-    setSaveError(null);
-    try {
-      const { saveProjectConfig } = await import("@/lib/saveConfig");
-      await saveProjectConfig(project);
-      useConfigStore.getState().markClean();
-      showToast({
-        kicker: "Tuning Wizard",
-        message: "Configuration saved.",
-        variant: "astral",
-      });
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      setSaveError(message);
-      showToast({
-        kicker: "Tuning Wizard",
-        message: `Save failed: ${message}`,
-        variant: "ember",
-      }, 4000);
-      console.error("Tuning save failed:", err);
-    } finally {
-      setSaving(false);
-    }
-  }, [project, saving, showToast]);
 
   /** Compute metrics for each preset by merging onto current config. */
   const presetSnapshots = useMemo(() => {
@@ -242,7 +207,7 @@ export function TuningWizard() {
         <h2 className="text-lg font-semibold text-text-secondary">
           No configuration loaded
         </h2>
-        <p className="mt-2 text-[15px] text-text-muted">
+        <p className="mt-2 text-base text-text-muted">
           Open a project with an application.yaml to begin tuning.
         </p>
       </div>
@@ -251,32 +216,16 @@ export function TuningWizard() {
 
   return (
     <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto">
-      {/* Title section + save button */}
-      <div className="flex flex-col gap-4 px-6 pt-12 md:flex-row md:items-start md:justify-between">
+      {/* Title section */}
+      <div className="flex flex-col gap-4 px-6 pt-12">
         <div className="min-w-0">
           <h1 className="font-display text-[22px] leading-[1.2] tracking-[1px] text-text-primary">
             Tuning Wizard
           </h1>
           <p className="mt-2 max-w-3xl text-sm text-text-secondary">
-            Compare Arcanum tuning archetypes, review their contract score, accept the sections you want, and keep the final save explicit.
+            Compare Arcanum tuning archetypes, review their contract score, accept the sections you want, then apply them to your working set and commit when ready.
           </p>
-          {saveError && (
-            <p role="alert" className="mt-2 text-2xs text-status-error">
-              Save failed: {saveError}
-            </p>
-          )}
         </div>
-        {(dirty || saving || saveError) && (
-          <ActionButton
-            variant="secondary"
-            onClick={handleSave}
-            disabled={!dirty || saving}
-            aria-label={saving ? "Saving tuning changes" : "Save tuning changes"}
-            className="self-start"
-          >
-            {saving ? <><Spinner />Saving</> : "Save Changes"}
-          </ActionButton>
-        )}
       </div>
 
       {/* Preset card grid */}
@@ -378,7 +327,7 @@ export function TuningWizard() {
             <p className="text-lg font-semibold text-text-secondary">
               No parameters found
             </p>
-            <p className="mt-2 text-[15px] text-text-muted">
+            <p className="mt-2 text-base text-text-muted">
               Try broadening your search or enabling more section filters.
             </p>
           </div>
@@ -413,8 +362,9 @@ export function TuningWizard() {
         )}
       </div>
 
-      {/* Apply footer bar (D-04) */}
-      {selectedPresetId && <ApplyFooterBar />}
+      {/* Apply footer bar (D-04) — shown whenever there's preset work pending
+          or unsaved inline edits to commit. */}
+      {(selectedPresetId || dirty) && <ApplyFooterBar />}
     </div>
   );
 }

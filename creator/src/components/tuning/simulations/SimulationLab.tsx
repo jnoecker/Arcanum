@@ -43,7 +43,7 @@ export function SimulationLab({ activeConfig, hasPresetSelected, nested = false 
       <div className={innerClass}>
         <div className="mb-4 flex flex-wrap items-baseline justify-between gap-2">
           <div>
-            <h3 className="font-display text-[14px] font-normal uppercase tracking-[0.5px] text-text-secondary">
+            <h3 className="font-display text-sm font-normal uppercase tracking-label text-text-secondary">
               Simulation Lab
             </h3>
             <p className="mt-1 text-xs text-text-muted">
@@ -74,7 +74,7 @@ export function SimulationLab({ activeConfig, hasPresetSelected, nested = false 
                     : "border-transparent text-text-muted hover:text-text-secondary"
                 }`}
               >
-                <span className="block font-display text-[13px] uppercase tracking-wider">
+                <span className="block font-display text-xs uppercase tracking-wider">
                   {t.label}
                 </span>
                 <span className="block text-2xs text-text-muted group-hover:text-text-secondary">

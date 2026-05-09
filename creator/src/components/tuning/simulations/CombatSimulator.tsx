@@ -18,7 +18,7 @@ interface CombatSimulatorProps {
 
 const VERDICT_STYLE: Record<string, { label: string; tone: string }> = {
   easy: { label: "Easy", tone: "text-status-success" },
-  fair: { label: "Fair", tone: "text-warm" },
+  fair: { label: "Fair", tone: "text-text-primary" },
   risky: { label: "Risky", tone: "text-status-warning" },
   lethal: { label: "Lethal", tone: "text-status-error" },
 };
@@ -111,7 +111,7 @@ export function CombatSimulator({ config }: CombatSimulatorProps) {
       {/* Verdict headline */}
       <div className="flex items-baseline justify-between gap-3 rounded-lg border border-border-muted bg-bg-secondary/40 px-4 py-3">
         <div>
-          <p className="font-display text-[12px] uppercase tracking-wider text-text-muted">
+          <p className="font-display text-xs uppercase tracking-wider text-text-muted">
             Encounter Verdict
           </p>
           <p className={`font-display text-2xl tracking-wide ${verdict.tone}`}>{verdict.label}</p>

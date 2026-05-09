@@ -83,7 +83,7 @@ export function ParameterSection({
         </span>
 
         {/* Section name */}
-        <span id={titleId} className="font-display text-sm uppercase tracking-[0.5px] text-text-secondary">
+        <span id={titleId} className="font-display text-sm uppercase tracking-label text-text-secondary">
           {section}
         </span>
 
@@ -94,7 +94,7 @@ export function ParameterSection({
 
         {/* Changes count badge -- shown when collapsed with preset active */}
         {hasPreset && changedCount > 0 && (
-          <span className="rounded-full bg-status-success/[0.14] px-2 py-0.5 text-[13px] text-status-success">
+          <span className="rounded-full bg-status-success/[0.14] px-2 py-0.5 text-xs text-status-success">
             {changedCount} changed
           </span>
         )}

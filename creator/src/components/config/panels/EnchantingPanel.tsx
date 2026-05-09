@@ -13,7 +13,7 @@ import { EnchantingHeader } from "../enchanting/EnchantingHeader";
 import { EnchantmentList } from "../enchanting/EnchantmentList";
 import { EnchantmentEditor } from "../enchanting/EnchantmentEditor";
 import { EnchantmentPreview } from "../enchanting/EnchantmentPreview";
-import { PlusIcon } from "../enchanting/icons";
+import { PlusIcon, SaveIcon } from "../enchanting/icons";
 import { Section } from "../enchanting/Section";
 
 function normalizeId(raw: string): string {
@@ -162,6 +162,7 @@ export function EnchantingPanel({ config, onChange }: ConfigPanelProps) {
   );
 
   const selectedDef = selected ? enchanting.definitions[selected] : undefined;
+  const isEmpty = Object.keys(enchanting.definitions).length === 0;
 
   return (
     <div className="flex flex-col gap-4">
@@ -179,6 +180,9 @@ export function EnchantingPanel({ config, onChange }: ConfigPanelProps) {
         onDelete={deleteEnchantment}
       />
 
+      {isEmpty ? (
+        <FirstWardHero onBegin={addEnchantment} />
+      ) : (
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
         <div className="xl:col-span-4">
           <EnchantmentList
@@ -236,6 +240,47 @@ export function EnchantingPanel({ config, onChange }: ConfigPanelProps) {
           )}
         </div>
       </div>
+      )}
     </div>
+  );
+}
+
+function FirstWardHero({ onBegin }: { onBegin: () => void }) {
+  // Reuse SaveIcon as a faint background sigil — its layered geometry
+  // reads as a closed reliquary / chest, fitting "first ward".
+  return (
+    <section className="panel-surface bg-gradient-glow-top shadow-section shadow-glow-warm relative overflow-hidden rounded-3xl border-accent/25 px-8 py-16 text-center">
+      <span
+        aria-hidden="true"
+        className="flourish-top-thread pointer-events-none absolute inset-x-10 top-0 h-px"
+      />
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 flex items-center justify-center opacity-[0.10]"
+      >
+        <SaveIcon className="h-[260px] w-[260px] text-accent" />
+      </div>
+      <div className="relative z-10 mx-auto flex max-w-xl flex-col items-center gap-4">
+        <p className="font-display text-2xs font-semibold uppercase tracking-[0.28em] text-accent/80">
+          The Enchanter's Ledger
+        </p>
+        <h2 className="font-display text-3xl font-semibold leading-tight text-text-primary">
+          Scribe the First Ward.
+        </h2>
+        <p className="max-w-md text-sm leading-relaxed text-text-secondary">
+          Enchantments inscribe stat bonuses and other augments onto specific
+          equipment slots when crafted. Your ledger is empty — begin a ward
+          and the discipline takes shape from there.
+        </p>
+        <button
+          type="button"
+          onClick={onBegin}
+          className="focus-ring mt-2 inline-flex items-center gap-2 rounded-xl border border-accent/50 bg-accent/15 px-5 py-2.5 font-display text-sm font-semibold tracking-wide text-accent shadow-[0_0_28px_-12px_rgb(var(--accent-rgb)/0.7)] transition hover:bg-accent/25"
+        >
+          <PlusIcon className="h-4 w-4" />
+          Begin a Ward
+        </button>
+      </div>
+    </section>
   );
 }

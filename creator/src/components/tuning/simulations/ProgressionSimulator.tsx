@@ -93,7 +93,7 @@ export function ProgressionSimulator({ config }: ProgressionSimulatorProps) {
       </div>
 
       <div className="panel-surface rounded-[1.5rem] p-4">
-        <h3 className="mb-2 font-display text-[14px] font-normal uppercase tracking-[0.5px] text-text-secondary">
+        <h3 className="mb-2 font-display text-sm font-normal uppercase tracking-label text-text-secondary">
           Cumulative Hours to Level
         </h3>
         <ResponsiveContainer width="100%" height={220}>

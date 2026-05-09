@@ -1,6 +1,6 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { AchievementDefFile, AchievementCategoryDefinition } from "@/types/config";
-import { SearchIcon, PlusIcon, EyeOffIcon, MoreIcon, CopyIcon, TrashIcon } from "./icons";
+import { SearchIcon, PlusIcon, EyeOffIcon, FunnelIcon, CopyIcon, TrashIcon } from "./icons";
 
 function cx(...c: Array<string | false | null | undefined>) {
   return c.filter(Boolean).join(" ");
@@ -30,7 +30,25 @@ export function AchievementsList({
   const [query, setQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState<string>(ALL_CATEGORIES);
   const [filterOpen, setFilterOpen] = useState(false);
+  const filterRef = useRef<HTMLDivElement | null>(null);
   const hasSelection = selectedId !== null;
+
+  useEffect(() => {
+    if (!filterOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setFilterOpen(false);
+    };
+    const onClick = (e: MouseEvent) => {
+      if (!filterRef.current) return;
+      if (!filterRef.current.contains(e.target as Node)) setFilterOpen(false);
+    };
+    document.addEventListener("keydown", onKey);
+    document.addEventListener("mousedown", onClick);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.removeEventListener("mousedown", onClick);
+    };
+  }, [filterOpen]);
 
   const allCategoryIds = Object.keys(categories);
 
@@ -74,12 +92,14 @@ export function AchievementsList({
           onChange={(e) => setQuery(e.target.value)}
         />
         {allCategoryIds.length > 0 && (
-          <div className="relative">
+          <div className="relative" ref={filterRef}>
             <button
               type="button"
               onClick={() => setFilterOpen((v) => !v)}
               title={`Filter by category · ${activeCategoryLabel}`}
               aria-label={`Filter by category, current: ${activeCategoryLabel}`}
+              aria-haspopup="menu"
+              aria-expanded={filterOpen}
               className={cx(
                 "focus-ring inline-flex h-7 items-center gap-1 rounded-md border px-2 text-2xs uppercase tracking-wider transition",
                 activeCategory === ALL_CATEGORIES
@@ -87,13 +107,18 @@ export function AchievementsList({
                   : "border-accent/40 bg-accent/10 text-accent",
               )}
             >
-              <MoreIcon className="h-3 w-3" />
+              <FunnelIcon className="h-3 w-3" />
               <span>{activeCategoryLabel}</span>
             </button>
             {filterOpen && (
-              <div className="absolute right-0 top-7 z-20 w-44 overflow-hidden rounded-xl border border-[var(--chrome-stroke)] bg-bg-elevated shadow-lg">
+              <div
+                role="menu"
+                aria-label="Filter by category"
+                className="absolute right-0 top-7 z-20 w-44 overflow-hidden rounded-xl border border-[var(--chrome-stroke)] bg-bg-elevated shadow-lg"
+              >
                 <button
                   type="button"
+                  role="menuitem"
                   onClick={() => {
                     setActiveCategory(ALL_CATEGORIES);
                     setFilterOpen(false);
@@ -114,6 +139,7 @@ export function AchievementsList({
                     <button
                       key={cid}
                       type="button"
+                      role="menuitem"
                       onClick={() => {
                         setActiveCategory(cid);
                         setFilterOpen(false);

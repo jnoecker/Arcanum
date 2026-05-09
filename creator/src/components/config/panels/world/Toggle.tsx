@@ -6,7 +6,7 @@ interface ToggleProps {
   label: string;
 }
 
-/** Switch-style toggle. Shows On/Off label to the right of the track. */
+/** Switch-style toggle. The track itself is the affordance — no redundant On/Off word. */
 export function Toggle({ checked, onChange, label }: ToggleProps) {
   const id = useId();
   return (
@@ -19,6 +19,7 @@ export function Toggle({ checked, onChange, label }: ToggleProps) {
         className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors ${
           checked ? "bg-accent/80" : "bg-[var(--chrome-fill-strong)]"
         }`}
+        aria-hidden="true"
       >
         <span
           className={`inline-block h-4 w-4 rounded-full bg-bg-primary shadow-md transition-transform ${
@@ -26,18 +27,13 @@ export function Toggle({ checked, onChange, label }: ToggleProps) {
           }`}
         />
       </span>
-      <span
-        className={`w-7 text-2xs font-semibold uppercase tracking-wider ${
-          checked ? "text-accent" : "text-text-muted"
-        }`}
-      >
-        {checked ? "On" : "Off"}
-      </span>
       <input
         id={id}
         type="checkbox"
         checked={checked}
         onChange={(e) => onChange(e.target.checked)}
+        aria-label={label}
+        aria-pressed={checked}
         className="sr-only"
       />
     </label>

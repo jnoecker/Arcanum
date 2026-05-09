@@ -166,12 +166,12 @@ export function PresetCard({
           )}
         </div>
         {/* Preset name */}
-        <h3 className="font-display text-lg font-semibold leading-[1.2] tracking-[0.5px] text-text-primary">
+        <h3 className="font-display text-lg font-semibold leading-[1.2] tracking-label text-text-primary">
           {preset.name}
         </h3>
 
         {/* Description */}
-        <p className="text-[15px] leading-[1.6] text-text-secondary line-clamp-2">
+        <p className="text-base leading-[1.6] text-text-secondary line-clamp-2">
           {preset.description}
         </p>
         {evaluation && (

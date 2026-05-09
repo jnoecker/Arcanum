@@ -54,7 +54,7 @@ export function RivalryMap({ definitions, factionLabelMap }: RivalryMapProps) {
   return (
     <SectionCard
       title="Rivalry Map"
-      description="Lines mark hostile pairs. Killing a member of one faction earns rep with the other."
+      description="Lines mark hostile pairs. Strike one faction and the other rewards you in kind."
     >
       <div className="relative mx-auto w-full max-w-3xl overflow-hidden rounded-xl border border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] p-2">
         <div className="flourish-top-thread pointer-events-none absolute inset-x-6 top-0 h-px" />
@@ -96,8 +96,8 @@ export function RivalryMap({ definitions, factionLabelMap }: RivalryMapProps) {
               fontStyle="italic"
             >
               {ids.length === 0
-                ? "Add factions to see the rivalry map"
-                : "Add another faction to draw rivalries"}
+                ? "Name a faction or two to draw the map"
+                : "One faction can't have rivals alone — add another"}
             </text>
           )}
 
@@ -111,7 +111,7 @@ export function RivalryMap({ definitions, factionLabelMap }: RivalryMapProps) {
               fontSize="11"
               fontStyle="italic"
             >
-              No rivalries defined yet
+              Peace, for now — no rivalries declared
             </text>
           )}
 

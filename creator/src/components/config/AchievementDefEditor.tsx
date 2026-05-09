@@ -155,10 +155,9 @@ function EmptyEditor({ onAdd }: { onAdd: () => void }) {
   return (
     <div className="panel-surface flex flex-col items-center justify-center gap-3 rounded-2xl px-6 py-12 text-center shadow-section">
       <div>
-        <p className="font-display text-base text-text-primary">No achievement selected</p>
+        <p className="font-display text-base text-text-primary">No deed chosen</p>
         <p className="mt-1 max-w-xs text-2xs text-text-muted/80">
-          Choose an achievement from the list, or create a new one to get
-          started.
+          Pick one from the rolls, or inscribe a new one.
         </p>
       </div>
       <button
@@ -166,7 +165,7 @@ function EmptyEditor({ onAdd }: { onAdd: () => void }) {
         onClick={onAdd}
         className="focus-ring inline-flex items-center gap-1.5 rounded-xl border border-accent/40 bg-accent/10 px-3 py-2 text-xs font-medium text-accent transition hover:bg-accent/20"
       >
-        + Add Achievement
+        Inscribe Achievement
       </button>
     </div>
   );

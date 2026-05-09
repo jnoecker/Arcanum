@@ -21,6 +21,34 @@ interface ActProps {
   first?: boolean;
 }
 
+interface MessageRowProps {
+  label: string;
+  value: string;
+  onCommit: (next: string) => void;
+  /** Sample seconds value substituted into {seconds} for the preview. */
+  sampleSeconds?: number;
+  placeholder?: string;
+}
+
+/** Two-column message editor: input on the left, "as the player sees it" preview on the right. */
+function MessageRow({ label, value, onCommit, sampleSeconds = 300, placeholder }: MessageRowProps) {
+  const rendered = (value ?? "").replace(/\{seconds\}/g, String(sampleSeconds));
+  return (
+    <div className="py-0.5">
+      <div className="mb-1 text-2xs uppercase tracking-wider text-text-muted">{label}</div>
+      <div className="grid grid-cols-1 items-start gap-2 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+        <TextInput value={value} onCommit={onCommit} placeholder={placeholder} dense />
+        <div
+          aria-hidden="true"
+          className="min-h-[2.25rem] rounded-md border border-[var(--chrome-stroke-soft)] bg-[color:rgb(var(--accent-rgb)/0.04)] px-2.5 py-1.5 font-body text-xs italic leading-snug text-text-secondary/85"
+        >
+          {rendered.trim() ? rendered : <span className="text-text-muted/50 not-italic">—</span>}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function Act({ eyebrow, title, description, children, first }: ActProps) {
   return (
     <section className="mb-6">
@@ -93,7 +121,7 @@ export function WorldPanel({ config, onChange }: ConfigPanelProps) {
         <div className="gap-4 [column-fill:balance] md:columns-2">
           <OrnateCard
             title="Default Start Room"
-            description="Where new players spawn when their class has no override. Saved as zone_id:room_id."
+            description="Where new players spawn when their class has no override."
           >
             <RoomPicker
               value={config.world.startRoom}
@@ -201,7 +229,11 @@ export function WorldPanel({ config, onChange }: ConfigPanelProps) {
             title="Default Kill XP"
             description="XP awarded per mob kill when no specific XP is set on the mob."
           >
-            <IconField label="Default Kill XP" layout="column">
+            <IconField
+              label="Default Kill XP"
+              layout="column"
+              hint="25 = quick kills · 50 = standard · 100 = slower climb"
+            >
               <NumberInput
                 value={p.xp.defaultKillXp}
                 onCommit={(v) => patchXp({ defaultKillXp: v ?? 50 })}
@@ -286,7 +318,7 @@ export function WorldPanel({ config, onChange }: ConfigPanelProps) {
           >
             <IconField
               label="Cooldown (seconds)"
-              hint="300 = 5 min (classic). 0 = unlimited recall. 600 for a more punishing world."
+              hint="300 = 5 min classic · 600 = 10 min punishing · 0 = unlimited"
             >
               <NumberInput
                 value={Math.round((recall.cooldownMs ?? 0) / 1000)}
@@ -301,57 +333,46 @@ export function WorldPanel({ config, onChange }: ConfigPanelProps) {
             title="Recall Messages"
             description="Customize the messages players see during recall. Use {seconds} for the cooldown placeholder."
           >
+            <p className="mb-2 font-body text-xs italic leading-snug text-text-muted">
+              Words the player hears at the threshold.
+            </p>
             <div className="flex flex-col gap-1.5">
-              <IconField label="Combat Blocked">
-                <TextInput
-                  value={recall.messages.combatBlocked}
-                  onCommit={(v) => patchRecallMessages({ combatBlocked: v })}
-                  dense
-                />
-              </IconField>
-              <IconField label="Cooldown">
-                <TextInput
-                  value={recall.messages.cooldownRemaining}
-                  onCommit={(v) => patchRecallMessages({ cooldownRemaining: v })}
-                  placeholder="Use {seconds} for remaining time"
-                  dense
-                />
-              </IconField>
-              <IconField label="Cast Begin">
-                <TextInput
-                  value={recall.messages.castBegin}
-                  onCommit={(v) => patchRecallMessages({ castBegin: v })}
-                  dense
-                />
-              </IconField>
-              <IconField label="Unreachable">
-                <TextInput
-                  value={recall.messages.unreachable}
-                  onCommit={(v) => patchRecallMessages({ unreachable: v })}
-                  dense
-                />
-              </IconField>
-              <IconField label="Depart Notice">
-                <TextInput
-                  value={recall.messages.departNotice}
-                  onCommit={(v) => patchRecallMessages({ departNotice: v })}
-                  dense
-                />
-              </IconField>
-              <IconField label="Arrive Notice">
-                <TextInput
-                  value={recall.messages.arriveNotice}
-                  onCommit={(v) => patchRecallMessages({ arriveNotice: v })}
-                  dense
-                />
-              </IconField>
-              <IconField label="Arrival">
-                <TextInput
-                  value={recall.messages.arrival}
-                  onCommit={(v) => patchRecallMessages({ arrival: v })}
-                  dense
-                />
-              </IconField>
+              <MessageRow
+                label="Combat Blocked"
+                value={recall.messages.combatBlocked}
+                onCommit={(v) => patchRecallMessages({ combatBlocked: v })}
+              />
+              <MessageRow
+                label="Cooldown"
+                value={recall.messages.cooldownRemaining}
+                onCommit={(v) => patchRecallMessages({ cooldownRemaining: v })}
+                placeholder="Use {seconds} for remaining time"
+              />
+              <MessageRow
+                label="Cast Begin"
+                value={recall.messages.castBegin}
+                onCommit={(v) => patchRecallMessages({ castBegin: v })}
+              />
+              <MessageRow
+                label="Unreachable"
+                value={recall.messages.unreachable}
+                onCommit={(v) => patchRecallMessages({ unreachable: v })}
+              />
+              <MessageRow
+                label="Depart Notice"
+                value={recall.messages.departNotice}
+                onCommit={(v) => patchRecallMessages({ departNotice: v })}
+              />
+              <MessageRow
+                label="Arrive Notice"
+                value={recall.messages.arriveNotice}
+                onCommit={(v) => patchRecallMessages({ arriveNotice: v })}
+              />
+              <MessageRow
+                label="Arrival"
+                value={recall.messages.arrival}
+                onCommit={(v) => patchRecallMessages({ arrival: v })}
+              />
             </div>
           </OrnateCard>
         </div>
@@ -420,42 +441,35 @@ export function WorldPanel({ config, onChange }: ConfigPanelProps) {
             title="Sanctum Messages"
             description="Customize messages related to the sanctum, departure, and edge cases."
           >
+            <p className="mb-2 font-body text-xs italic leading-snug text-text-muted">
+              Words the player hears returning from death.
+            </p>
             <div className="flex flex-col gap-1.5">
-              <IconField label="Arrive Sanctum">
-                <TextInput
-                  value={death.messages.arriveSanctum}
-                  onCommit={(v) => patchDeathMessages({ arriveSanctum: v })}
-                  dense
-                />
-              </IconField>
-              <IconField label="Depart Begin">
-                <TextInput
-                  value={death.messages.departBegin}
-                  onCommit={(v) => patchDeathMessages({ departBegin: v })}
-                  dense
-                />
-              </IconField>
-              <IconField label="Depart Outside Sanctum">
-                <TextInput
-                  value={death.messages.departNoSanctum}
-                  onCommit={(v) => patchDeathMessages({ departNoSanctum: v })}
-                  dense
-                />
-              </IconField>
-              <IconField label="Depart Without Death">
-                <TextInput
-                  value={death.messages.departNoDeath}
-                  onCommit={(v) => patchDeathMessages({ departNoDeath: v })}
-                  dense
-                />
-              </IconField>
-              <IconField label="Depart Unreachable">
-                <TextInput
-                  value={death.messages.departUnreachable}
-                  onCommit={(v) => patchDeathMessages({ departUnreachable: v })}
-                  dense
-                />
-              </IconField>
+              <MessageRow
+                label="Arrive Sanctum"
+                value={death.messages.arriveSanctum}
+                onCommit={(v) => patchDeathMessages({ arriveSanctum: v })}
+              />
+              <MessageRow
+                label="Depart Begin"
+                value={death.messages.departBegin}
+                onCommit={(v) => patchDeathMessages({ departBegin: v })}
+              />
+              <MessageRow
+                label="Depart Outside Sanctum"
+                value={death.messages.departNoSanctum}
+                onCommit={(v) => patchDeathMessages({ departNoSanctum: v })}
+              />
+              <MessageRow
+                label="Depart Without Death"
+                value={death.messages.departNoDeath}
+                onCommit={(v) => patchDeathMessages({ departNoDeath: v })}
+              />
+              <MessageRow
+                label="Depart Unreachable"
+                value={death.messages.departUnreachable}
+                onCommit={(v) => patchDeathMessages({ departUnreachable: v })}
+              />
             </div>
           </OrnateCard>
         </div>
@@ -519,36 +533,43 @@ function DiminishingReturnsEditor({
               {thresholds.map((threshold, i) => (
                 <li
                   key={i}
-                  className="flex items-center gap-2 rounded border border-border-muted bg-bg-tertiary/35 px-2 py-1.5"
+                  className="flex flex-col gap-1 rounded border border-border-muted bg-bg-tertiary/35 px-2 py-1.5"
                 >
-                  <label className="flex min-w-0 flex-1 items-center gap-1.5 text-2xs text-text-muted">
-                    <span className="shrink-0">Levels below</span>
-                    <NumberInput
-                      value={threshold.levelsBelow}
-                      onCommit={(v) => updateThreshold(i, { levelsBelow: v ?? 0 })}
-                      min={0}
-                      dense
-                    />
-                  </label>
-                  <label className="flex min-w-0 flex-1 items-center gap-1.5 text-2xs text-text-muted">
-                    <span className="shrink-0">Multiplier</span>
-                    <NumberInput
-                      value={threshold.multiplier}
-                      onCommit={(v) => updateThreshold(i, { multiplier: v ?? 1 })}
-                      min={0}
-                      step={0.05}
-                      dense
-                    />
-                  </label>
-                  <IconButton
-                    onClick={() => removeThreshold(i)}
-                    title="Remove threshold"
-                    aria-label="Remove threshold"
-                    size="sm"
-                    danger
-                  >
-                    ×
-                  </IconButton>
+                  <div className="flex items-center gap-2">
+                    <label className="flex min-w-0 flex-1 items-center gap-1.5 text-2xs text-text-muted">
+                      <span className="shrink-0">Levels below</span>
+                      <NumberInput
+                        value={threshold.levelsBelow}
+                        onCommit={(v) => updateThreshold(i, { levelsBelow: v ?? 0 })}
+                        min={0}
+                        dense
+                      />
+                    </label>
+                    <label className="flex min-w-0 flex-1 items-center gap-1.5 text-2xs text-text-muted">
+                      <span className="shrink-0">Multiplier</span>
+                      <NumberInput
+                        value={threshold.multiplier}
+                        onCommit={(v) => updateThreshold(i, { multiplier: v ?? 1 })}
+                        min={0}
+                        step={0.05}
+                        dense
+                      />
+                    </label>
+                    <IconButton
+                      onClick={() => removeThreshold(i)}
+                      title="Remove threshold"
+                      aria-label="Remove threshold"
+                      size="sm"
+                      danger
+                    >
+                      ×
+                    </IconButton>
+                  </div>
+                  {i === 0 && (
+                    <p className="text-2xs leading-snug text-text-muted/60">
+                      5 levels · 0.5× = gentle · 3 levels · 0.25× = strict · 10 levels · 0.1× = generous
+                    </p>
+                  )}
                 </li>
               ))}
             </ul>

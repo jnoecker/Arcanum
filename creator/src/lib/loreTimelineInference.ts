@@ -8,6 +8,7 @@ export interface TimelineSuggestion {
   year: number;
   eraId: string;
   eraName: string;
+  calendarId: string;
   importance: "minor" | "major" | "legendary";
   articleId: string;
   articleTitle: string;
@@ -19,7 +20,8 @@ const SYSTEM_PROMPT = `You are a timeline analyst for a fantasy world-building t
 For each temporal reference found, output a JSON array of objects with:
 - "title": short event title (max 60 chars)
 - "year": numeric year in the calendar
-- "eraId": which era this belongs to (from the provided era list)
+- "calendarId": which calendar this era belongs to (from the provided calendar list)
+- "eraId": which era this belongs to (from the provided era list, must belong to the named calendar)
 - "importance": "minor", "major", or "legendary"
 - "articleId": ID of the source article
 - "evidence": the exact quote or paraphrase that indicates this temporal reference (max 100 chars)
@@ -62,7 +64,7 @@ export async function inferTimelineEvents(
       ? calendars
           .map(
             (c) =>
-              `Calendar: ${c.name}\nEras: ${c.eras.map((e) => `${e.name} (id: ${e.id}, starts year ${e.startYear})`).join(", ")}`,
+              `Calendar: ${c.name} (id: ${c.id})\nEras: ${c.eras.map((e) => `${e.name} (id: ${e.id}, starts year ${e.startYear})`).join(", ")}`,
           )
           .join("\n\n")
       : "No calendar system defined. Use year numbers directly and eraId 'unknown'.";
@@ -108,14 +110,25 @@ export async function inferTimelineEvents(
       if (Array.isArray(parsed)) {
         for (const item of parsed) {
           const article = batch.find((a) => a.id === item.articleId);
+          const rawEraId = String(item.eraId ?? "");
+          const rawCalendarId = String(item.calendarId ?? "");
+          const proposedCalendar = calendars.find((c) => c.id === rawCalendarId);
+          const eraOwner = calendars.find((c) =>
+            c.eras.some((e) => e.id === rawEraId),
+          );
+          const resolvedCalendarId =
+            proposedCalendar && proposedCalendar.eras.some((e) => e.id === rawEraId)
+              ? proposedCalendar.id
+              : (eraOwner?.id ?? calendars[0]?.id ?? "");
           allSuggestions.push({
             title: String(item.title ?? ""),
             year: Number(item.year ?? 0),
-            eraId: String(item.eraId ?? ""),
+            eraId: rawEraId,
             eraName:
               calendars
                 .flatMap((c) => c.eras)
-                .find((e) => e.id === item.eraId)?.name ?? item.eraId,
+                .find((e) => e.id === rawEraId)?.name ?? rawEraId,
+            calendarId: resolvedCalendarId,
             importance: ["minor", "major", "legendary"].includes(
               item.importance,
             )

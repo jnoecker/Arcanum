@@ -140,7 +140,13 @@ export function LorePanelHost({ panelId }: { panelId: string }) {
             panelId === "loreTimeline" ? "max-w-none" : (def?.maxWidth ?? "max-w-5xl")
           }`}
         >
-          <div className="pointer-events-auto absolute right-5 top-5 z-20 flex items-center justify-end gap-2">
+          <div
+            className={`pointer-events-auto z-20 flex items-center justify-end gap-2 ${
+              panelId === "loreTimeline"
+                ? "mb-2 self-end"
+                : "absolute right-5 top-5"
+            }`}
+          >
             <UndoRedoButtons
               canUndo={undoDepth > 0}
               canRedo={redoDepth > 0}

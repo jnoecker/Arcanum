@@ -993,6 +993,7 @@ function EventList({
   onSelect,
   onMoveSelection,
   floatingInspector,
+  onCloseInspector,
 }: {
   groups: ReturnType<typeof buildChronicleGroups>;
   totalVisible: number;
@@ -1000,8 +1001,65 @@ function EventList({
   onSelect: (id: string) => void;
   onMoveSelection: (direction: "prev" | "next") => void;
   floatingInspector?: ReactNode;
+  onCloseInspector?: () => void;
 }) {
   const [sortMode, setSortMode] = useState<"year" | "importance">("year");
+  const [isXl, setIsXl] = useState(() =>
+    typeof window !== "undefined" ? window.matchMedia("(min-width: 1280px)").matches : true,
+  );
+  const slideOverRef = useRef<HTMLDivElement>(null);
+  const previousFocus = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const mql = window.matchMedia("(min-width: 1280px)");
+    const onChange = (e: MediaQueryListEvent) => setIsXl(e.matches);
+    setIsXl(mql.matches);
+    mql.addEventListener("change", onChange);
+    return () => mql.removeEventListener("change", onChange);
+  }, []);
+
+  const slideOverOpen = !isXl && !!floatingInspector && !!selectedEventId;
+
+  useEffect(() => {
+    if (!slideOverOpen) return;
+    previousFocus.current = (document.activeElement as HTMLElement) ?? null;
+    const node = slideOverRef.current;
+    const firstFocusable = node?.querySelector<HTMLElement>(FOCUSABLE_SELECTOR);
+    if (firstFocusable) firstFocusable.focus();
+    else node?.focus();
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        onCloseInspector?.();
+        return;
+      }
+      if (e.key !== "Tab" || !node) return;
+      const focusables = Array.from(
+        node.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR),
+      ).filter((el) => !el.hasAttribute("disabled"));
+      if (focusables.length === 0) {
+        e.preventDefault();
+        node.focus();
+        return;
+      }
+      const first = focusables[0]!;
+      const last = focusables[focusables.length - 1]!;
+      const active = document.activeElement as HTMLElement | null;
+      if (e.shiftKey && active === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && active === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    };
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      previousFocus.current?.focus?.();
+    };
+  }, [slideOverOpen, onCloseInspector]);
 
   useEffect(() => {
     if (!selectedEventId) return;
@@ -1073,7 +1131,7 @@ function EventList({
         </div>
       </div>
 
-      <div className={`grid min-h-0 flex-1 overflow-hidden ${floatingInspector ? "xl:grid-cols-[minmax(0,1fr)_22rem]" : ""}`}>
+      <div className={`grid min-h-0 flex-1 overflow-hidden ${floatingInspector && isXl ? "xl:grid-cols-[minmax(0,1fr)_22rem]" : ""}`}>
         <div
           role="listbox"
           aria-label="Timeline events"
@@ -1115,12 +1173,35 @@ function EventList({
               }),
             )}
         </div>
-        {floatingInspector && (
-          <div className="hidden min-h-0 border-l border-border-muted/30 p-2 xl:block">
+        {floatingInspector && isXl && (
+          <div className="min-h-0 border-l border-border-muted/30 p-2">
             {floatingInspector}
           </div>
         )}
       </div>
+      {floatingInspector && !isXl && (
+        <>
+          <div
+            className={`fixed inset-0 z-30 bg-black/40 transition-opacity duration-200 ${
+              slideOverOpen ? "opacity-100" : "pointer-events-none opacity-0"
+            }`}
+            aria-hidden="true"
+            onClick={() => onCloseInspector?.()}
+          />
+          <div
+            ref={slideOverRef}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Event inspector"
+            tabIndex={-1}
+            className={`fixed inset-y-0 right-0 z-40 flex w-[22rem] max-w-[calc(100vw-2rem)] flex-col p-2 shadow-[var(--shadow-panel)] transition-transform duration-200 ${
+              slideOverOpen ? "translate-x-0" : "pointer-events-none translate-x-full"
+            }`}
+          >
+            {floatingInspector}
+          </div>
+        </>
+      )}
     </div>
   );
 }
@@ -1233,10 +1314,15 @@ export function TimelinePanel() {
   }, [filteredEvents, selectedEventId]);
 
   const handleAddEvent = useCallback(() => {
-    const calendar = calendars.find((c) => c.id === (calendarFilter !== "all" ? calendarFilter : undefined)) ?? calendars[0];
+    const calendar =
+      calendarFilter !== "all"
+        ? calendars.find((c) => c.id === calendarFilter)
+        : eraFilter
+          ? calendars.find((c) => c.eras.some((e) => e.id === eraFilter)) ?? calendars[0]
+          : calendars[0];
     if (!calendar) return;
-    const era = eraFilter
-      ? calendar.eras.find((e) => e.id === eraFilter) ?? calendar.eras[0]
+    const era = eraFilter && calendar.eras.some((e) => e.id === eraFilter)
+      ? calendar.eras.find((e) => e.id === eraFilter)
       : calendar.eras[0];
     const event: TimelineEvent = {
       id: `evt_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
@@ -1362,6 +1448,7 @@ export function TimelinePanel() {
       onSelect={setSelectedEventId}
       onMoveSelection={handleMoveSelection}
       floatingInspector={inspector}
+      onCloseInspector={() => setSelectedEventId(null)}
     />
   );
 

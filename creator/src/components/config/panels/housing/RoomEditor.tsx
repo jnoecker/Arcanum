@@ -7,11 +7,10 @@ import {
   CommitTextarea,
 } from "@/components/ui/FormWidgets";
 import { EntityArtGenerator } from "@/components/ui/EntityArtGenerator";
-import { useImageSrc } from "@/lib/useImageSrc";
+import { SectionCard } from "@/components/ui/SectionCard";
 import { housingRoomPrompt, housingRoomContext } from "@/lib/entityPrompts";
 import { CopyIcon, TrashIcon } from "./icons";
 
-// TODO: lift into @/lib/cx once the shared utility lands.
 function cx(...c: Array<string | false | null | undefined>) {
   return c.filter(Boolean).join(" ");
 }
@@ -35,25 +34,28 @@ export function RoomEditor({
   onDuplicate,
   onRename,
 }: RoomEditorProps) {
-  return (
-    <div className="panel-surface bg-gradient-glow-top relative flex flex-col overflow-hidden rounded-2xl shadow-section">
-      <div className="pointer-events-none absolute inset-x-8 top-0 h-px flourish-top-thread" />
+  const title = t.title || id;
 
-      <HeroArtBand
+  return (
+    <div className="panel-surface flex flex-col gap-4 rounded-2xl p-4 shadow-section">
+      <EditorHeader
         id={id}
-        t={t}
-        onPatch={onPatch}
+        title={title}
         onDuplicate={onDuplicate}
         onRename={onRename}
       />
 
-      <div className="bg-gradient-panel-light flex flex-col gap-4 p-5">
-        <DetailsSection t={t} onPatch={onPatch} />
-        <div className="ornate-divider" aria-hidden />
-        <MechanicsSection t={t} stationOptions={stationOptions} onPatch={onPatch} />
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-5">
+        <div className="flex flex-col gap-4 xl:col-span-2">
+          <DetailsCard t={t} onPatch={onPatch} />
+          <MechanicsCard t={t} stationOptions={stationOptions} onPatch={onPatch} />
+        </div>
+        <div className="xl:col-span-3">
+          <BackgroundArtCard id={id} t={t} onPatch={onPatch} />
+        </div>
       </div>
 
-      <div className="flex flex-wrap items-center justify-end gap-2 border-t border-[var(--chrome-stroke)] px-5 py-3">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-t border-[var(--chrome-stroke)] pt-3">
         <button
           type="button"
           onClick={onDelete}
@@ -67,20 +69,17 @@ export function RoomEditor({
   );
 }
 
-function HeroArtBand({
+function EditorHeader({
   id,
-  t,
-  onPatch,
+  title,
   onDuplicate,
   onRename,
 }: {
   id: string;
-  t: HousingTemplateDefinition;
-  onPatch: (p: Partial<HousingTemplateDefinition>) => void;
+  title: string;
   onDuplicate: () => void;
   onRename: (v: string) => void;
 }) {
-  const heroSrc = useImageSrc(t.image || undefined);
   const [editingId, setEditingId] = useState(false);
   const [draft, setDraft] = useState(id);
 
@@ -90,110 +89,58 @@ function HeroArtBand({
   };
 
   return (
-    <div className="relative h-60 w-full shrink-0 overflow-hidden border-b border-[var(--chrome-stroke)]">
-      {heroSrc ? (
-        <img
-          src={heroSrc}
-          alt={t.title || id}
-          className="h-full w-full object-cover"
-        />
-      ) : (
-        <HeroPlaceholder />
-      )}
-
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-bg-primary/95 via-bg-primary/30 to-transparent" />
-
-      <div className="absolute right-3 top-3 z-10">
-        <div className="rounded-xl border border-[var(--chrome-stroke)] bg-bg-primary/70 p-1 backdrop-blur-md shadow-glow-warm">
-          <EntityArtGenerator
-            getPrompt={(style) => housingRoomPrompt(id, t, style)}
-            entityContext={housingRoomContext(id, t)}
-            currentImage={t.image}
-            onAccept={(filePath) => onPatch({ image: filePath })}
-            assetType="background"
-            context={{ zone: "config", entity_type: "housing_room", entity_id: id }}
-            surface="worldbuilding"
-          />
+    <header className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--chrome-stroke)] pb-3">
+      <div className="min-w-0 flex-1">
+        <div className="flex items-baseline gap-2">
+          <h3 className="truncate font-display text-xl font-semibold text-text-primary">
+            {title}
+          </h3>
+          {editingId ? (
+            <input
+              autoFocus
+              className="ornate-input min-h-7 px-2 py-0.5 font-mono text-xs"
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              onBlur={commitRename}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") commitRename();
+                if (e.key === "Escape") {
+                  setDraft(id);
+                  setEditingId(false);
+                }
+              }}
+            />
+          ) : (
+            <button
+              type="button"
+              onClick={() => {
+                setDraft(id);
+                setEditingId(true);
+              }}
+              title="Rename ID"
+              className="font-mono text-xs text-text-muted/80 underline-offset-2 hover:text-text-primary hover:underline"
+            >
+              {id}
+            </button>
+          )}
         </div>
       </div>
-
-      <div className="absolute inset-x-0 bottom-0 z-10 flex flex-wrap items-end justify-between gap-3 px-5 pb-4 pt-10">
-        <div className="min-w-0 flex-1">
-          <h3 className="truncate font-display text-2xl font-semibold leading-tight text-text-primary drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">
-            {t.title || id}
-          </h3>
-          <div className="mt-1 flex items-center gap-2">
-            {editingId ? (
-              <input
-                autoFocus
-                className="ornate-input min-h-7 px-2 py-0.5 font-mono text-xs"
-                value={draft}
-                onChange={(e) => setDraft(e.target.value)}
-                onBlur={commitRename}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") commitRename();
-                  if (e.key === "Escape") {
-                    setDraft(id);
-                    setEditingId(false);
-                  }
-                }}
-              />
-            ) : (
-              <button
-                type="button"
-                onClick={() => {
-                  setDraft(id);
-                  setEditingId(true);
-                }}
-                title="Rename ID"
-                className="font-mono text-xs text-text-secondary/90 underline-offset-2 drop-shadow-[0_1px_4px_rgba(0,0,0,0.8)] hover:text-accent hover:underline"
-              >
-                {id}
-              </button>
-            )}
-          </div>
-        </div>
+      <div className="flex items-center gap-2">
         <button
           type="button"
           onClick={onDuplicate}
           title="Duplicate this room template"
-          className="focus-ring inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-[var(--chrome-stroke)] bg-bg-primary/70 px-3 py-1.5 text-xs font-medium text-text-secondary backdrop-blur-md transition hover:border-accent/40 hover:text-text-primary"
+          className="focus-ring inline-flex items-center gap-1.5 rounded-lg border border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] px-3 py-1.5 text-xs font-medium text-text-secondary transition hover:border-accent/30 hover:text-text-primary"
         >
           <CopyIcon />
           Duplicate
         </button>
       </div>
-    </div>
+    </header>
   );
 }
 
-function HeroPlaceholder() {
-  return (
-    <div className="relative flex h-full w-full items-center justify-center overflow-hidden bg-bg-abyss/60">
-      <div className="pointer-events-none absolute inset-0 opacity-60 [background:radial-gradient(circle_at_50%_60%,rgb(var(--accent-rgb)/0.18),transparent_60%)]" />
-      <svg
-        viewBox="0 0 64 64"
-        className="h-20 w-20 text-text-muted/40"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.25"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        aria-hidden
-      >
-        <path d="M8 30L32 12l24 18" />
-        <path d="M14 28v22h36V28" />
-        <path d="M26 50V36h12v14" />
-        <path d="M20 36h2M42 36h2" />
-      </svg>
-      <span className="absolute bottom-3 font-display text-2xs uppercase tracking-[0.22em] text-text-muted/60">
-        No room art yet
-      </span>
-    </div>
-  );
-}
-
-function DetailsSection({
+function DetailsCard({
   t,
   onPatch,
 }: {
@@ -201,43 +148,43 @@ function DetailsSection({
   onPatch: (p: Partial<HousingTemplateDefinition>) => void;
 }) {
   return (
-    <section className="flex flex-col gap-3">
-      <SectionHeading>Particulars</SectionHeading>
-      <Field label="Title">
-        <TextInput
-          value={t.title}
-          onCommit={(v) => onPatch({ title: v })}
-          placeholder="Basic Room"
-          dense
-        />
-      </Field>
-      <Field label="Description">
-        <CommitTextarea
-          label=""
-          value={t.description}
-          onCommit={(v) => onPatch({ description: v })}
-          placeholder="A cozy chamber lit by hanging lanterns..."
-          rows={3}
-        />
-      </Field>
-
-      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-        <FlagToggle
-          label="Entry Room"
-          active={t.isEntry ?? false}
-          onToggle={() => onPatch({ isEntry: !t.isEntry || undefined })}
-        />
-        <FlagToggle
-          label="Safe Zone"
-          active={t.safe ?? false}
-          onToggle={() => onPatch({ safe: !t.safe || undefined })}
-        />
+    <SectionCard title="Particulars">
+      <div className="flex flex-col gap-3">
+        <Field label="Title">
+          <TextInput
+            value={t.title}
+            onCommit={(v) => onPatch({ title: v })}
+            placeholder="Basic Room"
+            dense
+          />
+        </Field>
+        <Field label="Description">
+          <CommitTextarea
+            label=""
+            value={t.description}
+            onCommit={(v) => onPatch({ description: v })}
+            placeholder="A cozy chamber lit by hanging lanterns..."
+            rows={3}
+          />
+        </Field>
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+          <FlagToggle
+            label="Entry Room"
+            active={t.isEntry ?? false}
+            onToggle={() => onPatch({ isEntry: !t.isEntry || undefined })}
+          />
+          <FlagToggle
+            label="Safe Zone"
+            active={t.safe ?? false}
+            onToggle={() => onPatch({ safe: !t.safe || undefined })}
+          />
+        </div>
       </div>
-    </section>
+    </SectionCard>
   );
 }
 
-function MechanicsSection({
+function MechanicsCard({
   t,
   stationOptions,
   onPatch,
@@ -247,41 +194,58 @@ function MechanicsSection({
   onPatch: (p: Partial<HousingTemplateDefinition>) => void;
 }) {
   return (
-    <section className="flex flex-col gap-3">
-      <SectionHeading>Workings</SectionHeading>
-      <InlineNumericField
-        label="Gold cost"
-        value={t.cost}
-        onCommit={(v) => onPatch({ cost: v ?? 0 })}
-      />
-      <InlineNumericField
-        label="Vault capacity"
-        value={t.maxDroppedItems ?? 0}
-        onCommit={(v) =>
-          onPatch({ maxDroppedItems: v && v > 0 ? v : undefined })
-        }
-        hint="Dropped items persist across resets, up to this count. Leave at 0 for an ordinary room."
-      />
-      <Field
-        label="Crafting station"
-        hint="Optional. The station this dwelling houses — forge, alchemy bench, loom."
-      >
-        <SelectInput
-          value={t.station ?? ""}
-          options={stationOptions}
-          onCommit={(v) => onPatch({ station: v || undefined })}
-          dense
+    <SectionCard title="Workings">
+      <div className="flex flex-col gap-3">
+        <InlineNumericField
+          label="Gold cost"
+          value={t.cost}
+          onCommit={(v) => onPatch({ cost: v ?? 0 })}
         />
-      </Field>
-    </section>
+        <InlineNumericField
+          label="Vault capacity"
+          value={t.maxDroppedItems ?? 0}
+          onCommit={(v) =>
+            onPatch({ maxDroppedItems: v && v > 0 ? v : undefined })
+          }
+          hint="Dropped items persist across resets, up to this count. Leave at 0 for an ordinary room."
+        />
+        <Field
+          label="Crafting station"
+          hint="Optional. The station this dwelling houses — forge, alchemy bench, loom."
+        >
+          <SelectInput
+            value={t.station ?? ""}
+            options={stationOptions}
+            onCommit={(v) => onPatch({ station: v || undefined })}
+            dense
+          />
+        </Field>
+      </div>
+    </SectionCard>
   );
 }
 
-function SectionHeading({ children }: { children: React.ReactNode }) {
+function BackgroundArtCard({
+  id,
+  t,
+  onPatch,
+}: {
+  id: string;
+  t: HousingTemplateDefinition;
+  onPatch: (p: Partial<HousingTemplateDefinition>) => void;
+}) {
   return (
-    <h4 className="font-display text-2xs font-semibold uppercase tracking-[0.22em] text-text-secondary">
-      {children}
-    </h4>
+    <SectionCard title="Background Art">
+      <EntityArtGenerator
+        getPrompt={(style) => housingRoomPrompt(id, t, style)}
+        entityContext={housingRoomContext(id, t)}
+        currentImage={t.image}
+        onAccept={(filePath) => onPatch({ image: filePath })}
+        assetType="background"
+        context={{ zone: "config", entity_type: "housing_room", entity_id: id }}
+        surface="worldbuilding"
+      />
+    </SectionCard>
   );
 }
 

@@ -2,6 +2,9 @@
 import type { FactionDefinition } from "@/types/config";
 import { TextInput, CommitTextarea } from "@/components/ui/FormWidgets";
 import { SectionCard } from "@/components/ui/SectionCard";
+import { EntityArtGenerator } from "@/components/ui/EntityArtGenerator";
+import { useAssetStore } from "@/stores/assetStore";
+import { composePrompt, type ArtStyle } from "@/lib/arcanumPrompts";
 import { XIcon, TrashIcon, PencilIcon } from "./icons";
 
 function cx(...c: Array<string | false | null | undefined>) {
@@ -31,6 +34,11 @@ export function FactionEditor({
 }: FactionEditorProps) {
   const enemies = definition.enemies ?? [];
   const others = factionIds.filter((fid) => fid !== id);
+  const assetsDir = useAssetStore((s) => s.assetsDir);
+  const emblemPath =
+    definition.image && assetsDir
+      ? `${assetsDir}\\images\\${definition.image}`
+      : undefined;
 
   const toggleEnemy = (enemyId: string) => {
     const next = enemies.includes(enemyId)
@@ -85,6 +93,40 @@ export function FactionEditor({
           />
         </Field>
 
+        <Field
+          label="Heraldic color"
+          hint="Used on the rivalry map and as the badge ring in the allegiance list."
+        >
+          <ColorField
+            value={definition.color ?? ""}
+            onChange={(hex) => onPatch({ color: hex || undefined })}
+          />
+        </Field>
+
+        <Field
+          label="Emblem"
+          hint="Sigil rendered on the rivalry map and beside the faction name. Generate with AI or pick from the asset library."
+        >
+          <EntityArtGenerator
+            getPrompt={(style: ArtStyle) =>
+              composePrompt(
+                "faction_emblem",
+                style,
+                `Faction emblem for ${definition.name || id}${definition.description ? `. ${definition.description}` : ""}`,
+              )
+            }
+            entityContext={`Faction: ${definition.name || id}${definition.description ? `\n${definition.description}` : ""}`}
+            currentImage={emblemPath}
+            onAccept={(filePath) => {
+              const fileName = filePath.split(/[\\/]/).pop() ?? "";
+              onPatch({ image: fileName || undefined });
+            }}
+            assetType="faction_emblem"
+            context={{ zone: "", entity_type: "faction", entity_id: id }}
+            surface="worldbuilding"
+          />
+        </Field>
+
         <div>
           <p className="font-display text-2xs uppercase tracking-wider text-text-muted">
             Rivals
@@ -119,6 +161,74 @@ export function FactionEditor({
         </div>
       </div>
     </SectionCard>
+  );
+}
+
+function ColorField({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (hex: string) => void;
+}) {
+  const [text, setText] = useState(value);
+  useEffect(() => {
+    setText(value);
+  }, [value]);
+
+  const commit = (raw: string) => {
+    const trimmed = raw.trim();
+    if (!trimmed) {
+      onChange("");
+      return;
+    }
+    const hex = trimmed.startsWith("#") ? trimmed : `#${trimmed}`;
+    if (/^#[0-9a-fA-F]{6}$/.test(hex)) {
+      onChange(hex.toLowerCase());
+      setText(hex.toLowerCase());
+    } else {
+      setText(value);
+    }
+  };
+
+  return (
+    <div className="flex items-center gap-2">
+      <input
+        type="color"
+        value={value || "#7a8aa6"}
+        onChange={(e) => {
+          onChange(e.target.value);
+          setText(e.target.value);
+        }}
+        className="h-9 w-12 cursor-pointer rounded border border-[var(--chrome-stroke)] bg-bg-primary"
+        aria-label="Faction color"
+      />
+      <input
+        type="text"
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        onBlur={() => commit(text)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            commit(text);
+            (e.target as HTMLInputElement).blur();
+          }
+        }}
+        placeholder="#7a8aa6"
+        spellCheck={false}
+        className="ornate-input min-h-9 w-28 px-2 py-1 font-mono text-xs"
+      />
+      {value && (
+        <button
+          type="button"
+          onClick={() => onChange("")}
+          className="focus-ring inline-flex items-center rounded-md border border-[var(--chrome-stroke)] px-2 py-1 text-2xs text-text-muted transition hover:border-status-error/40 hover:text-status-error"
+          title="Clear color"
+        >
+          Clear
+        </button>
+      )}
+    </div>
   );
 }
 

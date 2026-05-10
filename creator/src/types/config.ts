@@ -386,6 +386,12 @@ export interface FactionDefinition {
   name: string;
   description?: string;
   enemies?: string[];
+  /** Heraldic accent color (hex like "#abcdef"). Used on the rivalry map
+   *  and as the badge ring in the allegiance list. */
+  color?: string;
+  /** Sigil / emblem image (asset hash filename). Renders in place of the
+   *  default compass rose. */
+  image?: string;
 }
 
 export interface ReputationTier {

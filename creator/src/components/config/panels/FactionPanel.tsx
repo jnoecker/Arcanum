@@ -230,7 +230,7 @@ export function FactionPanel() {
 
   return (
     <div className="flex flex-col gap-4">
-      <Hero factions={factions} count={factionIds.length} onPatch={patch} />
+      <Hero factions={factions} onPatch={patch} />
 
       {usageReport.orphanIds.length > 0 && (
         <OrphanReferencesBanner

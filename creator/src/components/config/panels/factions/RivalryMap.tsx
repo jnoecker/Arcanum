@@ -1,6 +1,7 @@
 ﻿import { useMemo } from "react";
 import type { FactionDefinition } from "@/types/config";
 import { SectionCard } from "@/components/ui/SectionCard";
+import { useImageSrc } from "@/lib/useImageSrc";
 
 interface RivalryMapProps {
   definitions: Record<string, FactionDefinition>;
@@ -136,40 +137,83 @@ export function RivalryMap({ definitions, factionLabelMap }: RivalryMapProps) {
           {ids.map((id, i) => {
             const p = layout.get(id);
             if (!p) return null;
+            const def = definitions[id]!;
             const label = factionLabelMap.get(id) ?? id;
-            const isFirst = i === 0;
-            const ringStroke = isFirst
-              ? "rgb(var(--stellar-blue-rgb))"
-              : "rgb(var(--accent-rgb))";
+            const fallbackStroke =
+              i === 0 ? "rgb(var(--stellar-blue-rgb))" : "rgb(var(--accent-rgb))";
             return (
-              <g key={id}>
-                <circle
-                  cx={p.x}
-                  cy={p.y}
-                  r={20}
-                  fill="rgb(var(--bg-panel-rgb, var(--bg-rgb)))"
-                  stroke={ringStroke}
-                  strokeOpacity="0.75"
-                  strokeWidth="1.5"
-                />
-                <CompassRoseGlyph cx={p.x} cy={p.y} stroke={ringStroke} />
-                <text
-                  x={p.x}
-                  y={p.y + 38}
-                  textAnchor="middle"
-                  fill="var(--color-text-primary)"
-                  fontFamily="'Cinzel', serif"
-                  fontSize="11"
-                  fontWeight="600"
-                >
-                  {label.length > 16 ? label.slice(0, 14) + "…" : label}
-                </text>
-              </g>
+              <FactionNode
+                key={id}
+                id={id}
+                cx={p.x}
+                cy={p.y}
+                color={def.color || fallbackStroke}
+                image={def.image}
+                label={label}
+              />
             );
           })}
         </svg>
       </div>
     </SectionCard>
+  );
+}
+
+interface FactionNodeProps {
+  id: string;
+  cx: number;
+  cy: number;
+  color: string;
+  image: string | undefined;
+  label: string;
+}
+
+function FactionNode({ id: _id, cx, cy, color, image, label }: FactionNodeProps) {
+  const emblemSrc = useImageSrc(image);
+  const r = 20;
+  return (
+    <g>
+      <circle
+        cx={cx}
+        cy={cy}
+        r={r}
+        fill="rgb(var(--bg-panel-rgb, var(--bg-rgb)))"
+        stroke={color}
+        strokeOpacity="0.75"
+        strokeWidth="1.5"
+      />
+      {emblemSrc ? (
+        <>
+          <defs>
+            <clipPath id={`faction-emblem-clip-${_id}`}>
+              <circle cx={cx} cy={cy} r={r - 2} />
+            </clipPath>
+          </defs>
+          <image
+            href={emblemSrc}
+            x={cx - (r - 2)}
+            y={cy - (r - 2)}
+            width={(r - 2) * 2}
+            height={(r - 2) * 2}
+            clipPath={`url(#faction-emblem-clip-${_id})`}
+            preserveAspectRatio="xMidYMid slice"
+          />
+        </>
+      ) : (
+        <CompassRoseGlyph cx={cx} cy={cy} stroke={color} />
+      )}
+      <text
+        x={cx}
+        y={cy + 38}
+        textAnchor="middle"
+        fill="var(--color-text-primary)"
+        fontFamily="'Cinzel', serif"
+        fontSize="11"
+        fontWeight="600"
+      >
+        {label.length > 16 ? label.slice(0, 14) + "…" : label}
+      </text>
+    </g>
   );
 }
 

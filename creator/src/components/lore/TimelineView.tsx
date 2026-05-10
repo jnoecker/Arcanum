@@ -14,6 +14,8 @@ const MIN_TRACK_Y = 170;            // preserves the airy single-lane look at lo
 const LANE_STEP_BELOW = 18;         // tighter pitch for minor-event labels under the track
 const BELOW_LABEL_HEIGHT = 22;      // ~10px year + 9px title + leading
 const BELOW_BOTTOM_PADDING = 8;
+const DOT_DODGE_GAP = 2;            // min pixel gap between adjacent dot edges before dodging
+const DOT_DODGE_STEP = 16;          // vertical step per dodge ring (>= 2 * legendaryRadius + gap)
 const LABEL_PX_PER_CHAR = 6.4;
 const LABEL_PX_PER_CHAR_MINOR = 5.4; // smaller glyphs pack tighter horizontally
 const LABEL_MIN_GAP = 14;
@@ -72,6 +74,8 @@ interface LabeledEvent {
   /** Which side of the track the label sits on. Minor events go below;
    *  major and legendary go above. */
   side: "above" | "below";
+  /** Vertical offset of the dot from the track axis (beeswarm dodge). */
+  dotOffset: number;
 }
 
 interface RibbonProps {
@@ -136,6 +140,9 @@ export function TimelineView({
   const { labeledEvents, lanesUsedAbove, lanesUsedBelow } = useMemo(() => {
     const lanesAbove: number[] = [];
     const lanesBelow: number[] = [];
+    let lastDotX = -Infinity;
+    let lastDotR = 0;
+    let clusterIdx = 0;
     const entries: LabeledEvent[] = sortedEvents.map((event) => {
       const absY = absoluteYear(event, calendars);
       const x = SCRUBBER_PAD + (absY - window_.min) * pxPerYear;
@@ -147,19 +154,40 @@ export function TimelineView({
       const labelStart = x - 6;
       const labelEnd = labelStart + approxWidth + LABEL_MIN_GAP;
 
+      // Dot dodging: alternate above/below the axis as a cluster grows so
+      // markers don't merge into a single blob in dense periods.
+      const r = eventRadius(event.importance);
+      if (x - lastDotX < lastDotR + r + DOT_DODGE_GAP) {
+        clusterIdx += 1;
+      } else {
+        clusterIdx = 0;
+      }
+      lastDotX = x;
+      lastDotR = r;
+      const dotOffset =
+        clusterIdx === 0
+          ? 0
+          : (clusterIdx % 2 === 1 ? -1 : 1) *
+            Math.ceil(clusterIdx / 2) *
+            DOT_DODGE_STEP;
+
+      let laneIndex = 0;
       for (let i = 0; ; i++) {
         const end = lanes[i];
         if (end === undefined || end <= labelStart) {
           lanes[i] = labelEnd;
-          return {
-            event,
-            absYear: absY,
-            x,
-            laneIndex: i,
-            side: isMinor ? ("below" as const) : ("above" as const),
-          };
+          laneIndex = i;
+          break;
         }
       }
+      return {
+        event,
+        absYear: absY,
+        x,
+        laneIndex,
+        side: isMinor ? ("below" as const) : ("above" as const),
+        dotOffset,
+      };
     });
     return {
       labeledEvents: entries,
@@ -367,11 +395,12 @@ export function TimelineView({
           })}
 
           {labeledEvents.map((entry) => {
-            const { event, x, laneIndex, side } = entry;
+            const { event, x, laneIndex, side, dotOffset } = entry;
             const isAbove = side === "above";
             const isSelected = event.id === selectedEventId;
             const fill = eventColor(event.importance);
             const radius = eventRadius(event.importance);
+            const dotY = trackY + dotOffset;
             const labelY = isAbove
               ? lane0BaselineY - laneIndex * LANE_STEP
               : lane0BelowBaselineY + laneIndex * LANE_STEP_BELOW;
@@ -429,7 +458,7 @@ export function TimelineView({
 
                 <line
                   x1={x}
-                  y1={trackY}
+                  y1={dotY}
                   x2={x}
                   y2={isAbove ? labelY + 4 : labelY - 12}
                   stroke={fill}
@@ -438,11 +467,11 @@ export function TimelineView({
                 />
 
                 {isSelected && (
-                  <circle cx={x} cy={trackY} r={radius + 6} fill={fill} opacity={0.18} />
+                  <circle cx={x} cy={dotY} r={radius + 6} fill={fill} opacity={0.18} />
                 )}
                 <circle
                   cx={x}
-                  cy={trackY}
+                  cy={dotY}
                   r={radius}
                   fill={fill}
                   stroke={isSelected ? "var(--color-text-primary)" : "var(--color-bg-primary)"}

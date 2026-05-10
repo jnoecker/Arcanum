@@ -13,6 +13,7 @@ const LANE_STEP = 22;
 const MAX_LANES = 4;
 const LABEL_PX_PER_CHAR = 6.4;
 const LABEL_MIN_GAP = 14;
+const LABEL_RIGHT_OVERHANG = 220;    // extra SVG width past the last tick so right-edge labels fit
 
 const SCRUBBER_HEIGHT = 60;
 const SCRUBBER_HANDLE = 14;
@@ -102,8 +103,12 @@ export function TimelineView({
 
   const window_ = activeWindow ?? fullWindow ?? { min: 0, max: 100 };
   const span = Math.max(1, window_.max - window_.min);
-  const ribbonWidth = Math.max(containerWidth, containerWidth * zoom);
-  const innerWidth = ribbonWidth - SCRUBBER_PAD * 2;
+  // The track plots events into trackContentWidth; the SVG and ribbon
+  // are wider so labels anchored at the rightmost events can extend
+  // past the last tick without being clipped.
+  const trackContentWidth = Math.max(containerWidth, containerWidth * zoom);
+  const ribbonWidth = trackContentWidth + LABEL_RIGHT_OVERHANG;
+  const innerWidth = trackContentWidth - SCRUBBER_PAD * 2;
   const pxPerYear = innerWidth / span;
 
   const yearToX = useCallback(
@@ -253,7 +258,10 @@ export function TimelineView({
       <div className="overflow-x-auto rounded-[0.7rem] border border-[var(--chrome-stroke)] bg-[var(--chrome-highlight)]">
         <div className="relative" style={{ width: ribbonWidth, minWidth: "100%" }}>
           {eraBands.length > 0 && (
-            <div className="relative h-14 border-b border-border-muted/25 bg-bg-abyss/25">
+            <div
+              className="relative h-14 border-b border-border-muted/25 bg-bg-abyss/25"
+              style={{ width: trackContentWidth }}
+            >
             {eraBands.map((band, index) => {
               const x = yearToX(band.startYear);
               const width = Math.max(8, yearToX(band.endYear) - x);
@@ -295,7 +303,7 @@ export function TimelineView({
           <line
             x1={0}
             y1={TRACK_Y}
-            x2={ribbonWidth}
+            x2={trackContentWidth}
             y2={TRACK_Y}
             stroke="var(--color-warm)"
             strokeOpacity={0.55}

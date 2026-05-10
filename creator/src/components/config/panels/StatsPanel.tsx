@@ -169,7 +169,7 @@ export function StatsPanel({ config, onChange, showDefinitions = true }: StatsPa
   );
 }
 
-// â”€â”€â”€ Definitions: roster + editor â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Definitions: roster + editor ──────────────────────────────────
 
 function StatDefinitionsBuilder({
   definitions,
@@ -424,7 +424,7 @@ function DefinitionEditor({
   );
 }
 
-// â”€â”€â”€ Bindings: card grid â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Bindings: card grid ───────────────────────────────────────────
 
 function StatBindingsGrid({
   bindings,
@@ -632,7 +632,7 @@ function BindingCard({
   );
 }
 
-// â”€â”€â”€ Shared â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Shared ────────────────────────────────────────────────────────
 
 function Field({
   label,

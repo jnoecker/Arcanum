@@ -107,7 +107,7 @@ export function RaceEditor({
   );
 }
 
-// â”€â”€â”€ Identity â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Identity ──────────────────────────────────────────────────────
 
 function IdentityCard({
   id,
@@ -233,7 +233,7 @@ function SlugRenamer({ id, onRename }: { id: string; onRename: (v: string) => vo
   );
 }
 
-// â”€â”€â”€ Backstory & Lore (with body description) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Backstory & Lore (with body description) ─────────────────────
 
 function BackstoryLoreCard({
   race,
@@ -288,7 +288,7 @@ function BackstoryLoreCard({
   );
 }
 
-// â”€â”€â”€ Stat Modifiers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Stat Modifiers ────────────────────────────────────────────────
 
 function StatModifiersCard({
   statMods,
@@ -345,7 +345,10 @@ function StatModifiersCard({
                 className="flex items-center gap-2 rounded-xl border border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] px-3 py-2"
               >
                 <div className="min-w-0 flex-1">
-                  <p className="truncate font-display text-2xs font-semibold uppercase tracking-[0.16em] text-text-secondary">
+                  <p
+                    className="font-display text-2xs font-semibold uppercase tracking-wide text-text-secondary"
+                    title={def.displayName || statId}
+                  >
                     {def.displayName || statId}
                   </p>
                   <p className="mt-0.5 font-mono text-[0.6rem] text-text-muted/70">
@@ -357,7 +360,7 @@ function StatModifiersCard({
                     onClick={() => updateMod(statId, mod - 1)}
                     label={`Decrease ${statId}`}
                   >
-                    âˆ’
+                    −
                   </StepperButton>
                   <span
                     className={cx(
@@ -405,7 +408,7 @@ function StepperButton({
   );
 }
 
-// â”€â”€â”€ Concept Art â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Concept Art ───────────────────────────────────────────────────
 
 function ConceptArt({
   id,
@@ -440,7 +443,7 @@ function ConceptArt({
   );
 }
 
-// â”€â”€â”€ String list editor (traits / abilities) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── String list editor (traits / abilities) ───────────────────────
 
 function StringListEditor({
   items,
@@ -540,7 +543,7 @@ function StringListEditor({
   );
 }
 
-// â”€â”€â”€ Shared label â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Shared label ──────────────────────────────────────────────────
 
 function FieldLabel({
   label,

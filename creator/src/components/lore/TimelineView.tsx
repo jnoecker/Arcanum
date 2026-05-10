@@ -6,20 +6,13 @@ const ZOOM_PRESETS = [0.75, 1, 1.5, 2] as const;
 const ZOOM_MIN = 0.5;
 const ZOOM_MAX = 4;
 
-const TOP_PADDING = 10;
+const RIBBON_HEIGHT = 210;
+const TRACK_Y = 170;
+const LANE_BASE_Y = 76;
 const LANE_STEP = 22;
-const TRACK_TO_LANE0 = 94;          // gap from track axis to lane-0 (above) baseline
-const TRACK_BOTTOM_AREA = 40;       // tick numerals + breathing room before below lane 0
-const MIN_TRACK_Y = 170;            // preserves the airy single-lane look at low density
-const LANE_STEP_BELOW = 18;         // tighter pitch for minor-event labels under the track
-const BELOW_LABEL_HEIGHT = 22;      // ~10px year + 9px title + leading
-const BELOW_BOTTOM_PADDING = 8;
-const DOT_DODGE_GAP = 2;            // min pixel gap between adjacent dot edges before dodging
-const DOT_DODGE_STEP = 16;          // vertical step per dodge ring (>= 2 * legendaryRadius + gap)
+const MAX_LANES = 4;
 const LABEL_PX_PER_CHAR = 6.4;
-const LABEL_PX_PER_CHAR_MINOR = 5.4; // smaller glyphs pack tighter horizontally
 const LABEL_MIN_GAP = 14;
-const LABEL_RIGHT_OVERHANG = 220;    // extra SVG width past the last tick so right-edge labels fit
 
 const SCRUBBER_HEIGHT = 60;
 const SCRUBBER_HANDLE = 14;
@@ -70,13 +63,7 @@ interface LabeledEvent {
   event: TimelineEvent;
   absYear: number;
   x: number;
-  /** Lane index on its side; 0 sits closest to the track. */
-  laneIndex: number;
-  /** Which side of the track the label sits on. Minor events go below;
-   *  major and legendary go above. */
-  side: "above" | "below";
-  /** Vertical offset of the dot from the track axis (beeswarm dodge). */
-  dotOffset: number;
+  laneY: number | null;
 }
 
 interface RibbonProps {
@@ -115,12 +102,8 @@ export function TimelineView({
 
   const window_ = activeWindow ?? fullWindow ?? { min: 0, max: 100 };
   const span = Math.max(1, window_.max - window_.min);
-  // The track plots events into trackContentWidth; the SVG and ribbon
-  // are wider so labels anchored at the rightmost events can extend
-  // past the last tick without being clipped.
-  const trackContentWidth = Math.max(containerWidth, containerWidth * zoom);
-  const ribbonWidth = trackContentWidth + LABEL_RIGHT_OVERHANG;
-  const innerWidth = trackContentWidth - SCRUBBER_PAD * 2;
+  const ribbonWidth = Math.max(containerWidth, containerWidth * zoom);
+  const innerWidth = ribbonWidth - SCRUBBER_PAD * 2;
   const pxPerYear = innerWidth / span;
 
   const yearToX = useCallback(
@@ -139,108 +122,30 @@ export function TimelineView({
     return out;
   }, [tickStep, window_.max, window_.min]);
 
-  // Greedy lane packing on both sides of the track. Major / legendary
-  // events stack above; minor events stack below. Both stacks are
-  // unbounded — the ribbon grows vertically to accommodate dense periods.
-  const { labeledEvents, lanesUsedAbove, lanesUsedBelow } = useMemo(() => {
-    const lanesAbove: number[] = [];
-    const lanesBelow: number[] = [];
-
-    const measureLabelEnd = (event: TimelineEvent, x: number, isMinor: boolean) => {
-      const pxPerChar = isMinor ? LABEL_PX_PER_CHAR_MINOR : LABEL_PX_PER_CHAR;
-      const labelText = `Y${formatYear(event.year)} ${event.title}`;
-      const approxWidth = Math.min(220, Math.max(80, labelText.length * pxPerChar));
-      return (x - 6) + approxWidth + LABEL_MIN_GAP;
-    };
-
-    // Selection rescue: pre-reserve lane 0 on the selected event's side
-    // so it always sits closest to the track instead of being buried in
-    // a deep stack of nearby events.
-    if (selectedEventId) {
-      const selected = sortedEvents.find((e) => e.id === selectedEventId);
-      if (selected) {
-        const absY = absoluteYear(selected, calendars);
-        const x = SCRUBBER_PAD + (absY - window_.min) * pxPerYear;
-        const isMinor = selected.importance === "minor";
-        const labelEnd = measureLabelEnd(selected, x, isMinor);
-        if (isMinor) lanesBelow[0] = labelEnd;
-        else lanesAbove[0] = labelEnd;
-      }
-    }
-
-    let lastDotX = -Infinity;
-    let lastDotR = 0;
-    let clusterIdx = 0;
-    const entries: LabeledEvent[] = sortedEvents.map((event) => {
+  // Greedy lane assignment for labeled (non-minor) events
+  const labeledEvents = useMemo<LabeledEvent[]>(() => {
+    const lanes: Array<{ end: number }> = [];
+    return sortedEvents.map((event) => {
       const absY = absoluteYear(event, calendars);
       const x = SCRUBBER_PAD + (absY - window_.min) * pxPerYear;
-      const isMinor = event.importance === "minor";
-      const lanes = isMinor ? lanesBelow : lanesAbove;
-      const labelEnd = measureLabelEnd(event, x, isMinor);
-      const labelStart = x - 6;
-
-      // Dot dodging: alternate above/below the axis as a cluster grows so
-      // markers don't merge into a single blob in dense periods.
-      const r = eventRadius(event.importance);
-      if (x - lastDotX < lastDotR + r + DOT_DODGE_GAP) {
-        clusterIdx += 1;
-      } else {
-        clusterIdx = 0;
+      if (event.importance === "minor") {
+        return { event, absYear: absY, x, laneY: null };
       }
-      lastDotX = x;
-      lastDotR = r;
-      const dotOffset =
-        clusterIdx === 0
-          ? 0
-          : (clusterIdx % 2 === 1 ? -1 : 1) *
-            Math.ceil(clusterIdx / 2) *
-            DOT_DODGE_STEP;
+      const labelText = `Y${formatYear(event.year)} ${event.title}`;
+      const approxWidth = Math.min(220, Math.max(80, labelText.length * LABEL_PX_PER_CHAR));
+      const labelStart = x - 6;
+      const labelEnd = labelStart + approxWidth + LABEL_MIN_GAP;
 
-      let laneIndex = 0;
-      if (event.id === selectedEventId) {
-        // Slot already reserved at lane 0 above; do not re-pack.
-        laneIndex = 0;
-      } else {
-        for (let i = 0; ; i++) {
-          const end = lanes[i];
-          if (end === undefined || end <= labelStart) {
-            lanes[i] = labelEnd;
-            laneIndex = i;
-            break;
-          }
+      for (let i = 0; i < MAX_LANES; i++) {
+        const lane = lanes[i];
+        if (!lane || lane.end <= labelStart) {
+          lanes[i] = { end: labelEnd };
+          return { event, absYear: absY, x, laneY: LANE_BASE_Y - i * LANE_STEP };
         }
       }
-      return {
-        event,
-        absYear: absY,
-        x,
-        laneIndex,
-        side: isMinor ? ("below" as const) : ("above" as const),
-        dotOffset,
-      };
+      return { event, absYear: absY, x, laneY: null };
     });
-    return {
-      labeledEvents: entries,
-      lanesUsedAbove: lanesAbove.length,
-      lanesUsedBelow: lanesBelow.length,
-    };
-  }, [calendars, pxPerYear, sortedEvents, window_.min, selectedEventId]);
-
-  const trackY = Math.max(
-    MIN_TRACK_Y,
-    TOP_PADDING +
-      Math.max(0, lanesUsedAbove - 1) * LANE_STEP +
-      TRACK_TO_LANE0,
-  );
-  const lane0BaselineY = trackY - TRACK_TO_LANE0;
-  const lane0BelowBaselineY = trackY + TRACK_BOTTOM_AREA;
-  const ribbonHeight =
-    lanesUsedBelow > 0
-      ? lane0BelowBaselineY +
-        (lanesUsedBelow - 1) * LANE_STEP_BELOW +
-        BELOW_LABEL_HEIGHT +
-        BELOW_BOTTOM_PADDING
-      : trackY + TRACK_BOTTOM_AREA;
+  }, [calendars, pxPerYear, sortedEvents, window_.min]);
 
   const handlePresetZoom = useCallback((value: number) => {
     setZoom(Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, value)));
@@ -348,10 +253,7 @@ export function TimelineView({
       <div className="overflow-x-auto rounded-[0.7rem] border border-[var(--chrome-stroke)] bg-[var(--chrome-highlight)]">
         <div className="relative" style={{ width: ribbonWidth, minWidth: "100%" }}>
           {eraBands.length > 0 && (
-            <div
-              className="relative h-14 border-b border-border-muted/25 bg-bg-abyss/25"
-              style={{ width: trackContentWidth }}
-            >
+            <div className="relative h-14 border-b border-border-muted/25 bg-bg-abyss/25">
             {eraBands.map((band, index) => {
               const x = yearToX(band.startYear);
               const width = Math.max(8, yearToX(band.endYear) - x);
@@ -385,16 +287,16 @@ export function TimelineView({
 
           <svg
             width={ribbonWidth}
-            height={ribbonHeight}
+            height={RIBBON_HEIGHT}
             className="block select-none"
             role="img"
             aria-label={`Timeline overview with ${events.length} events`}
           >
           <line
             x1={0}
-            y1={trackY}
-            x2={trackContentWidth}
-            y2={trackY}
+            y1={TRACK_Y}
+            x2={ribbonWidth}
+            y2={TRACK_Y}
             stroke="var(--color-warm)"
             strokeOpacity={0.55}
             strokeWidth={1.6}
@@ -406,16 +308,16 @@ export function TimelineView({
               <g key={year}>
                 <line
                   x1={x}
-                  y1={trackY - 5}
+                  y1={TRACK_Y - 5}
                   x2={x}
-                  y2={trackY + 5}
+                  y2={TRACK_Y + 5}
                   stroke="var(--color-warm)"
                   strokeOpacity={0.6}
                   strokeWidth={1}
                 />
                 <text
                   x={x}
-                  y={trackY + 22}
+                  y={TRACK_Y + 22}
                   textAnchor="middle"
                   fill="var(--color-text-secondary)"
                   fontSize={11}
@@ -428,29 +330,12 @@ export function TimelineView({
           })}
 
           {labeledEvents.map((entry) => {
-            const { event, x, laneIndex, side, dotOffset } = entry;
-            const isAbove = side === "above";
+            const { event, x, laneY } = entry;
             const isSelected = event.id === selectedEventId;
             const fill = eventColor(event.importance);
             const radius = eventRadius(event.importance);
-            const dotY = trackY + dotOffset;
-            const labelY = isAbove
-              ? lane0BaselineY - laneIndex * LANE_STEP
-              : lane0BelowBaselineY + laneIndex * LANE_STEP_BELOW;
-            const yearLabel = `Y${formatYear(event.year)}`;
-            const titleMax = isAbove ? 36 : 30;
-            const titleEllipsisAt = isAbove ? 34 : 28;
-            const titleText =
-              event.title.length > titleMax
-                ? `${event.title.slice(0, titleEllipsisAt)}…`
-                : event.title;
-            const yearFontSize = isAbove ? 12 : 10;
-            const titleFontSize = isAbove ? 11 : 9;
-            const titleOffset = isAbove ? 14 : 11;
-            const yearFill = isAbove ? "var(--color-warm)" : "var(--color-text-muted)";
-            const titleFill = isSelected
-              ? "var(--color-text-primary)"
-              : "var(--color-text-secondary)";
+            const labelY = laneY;
+            const labelText = `Y${formatYear(event.year)}`;
 
             return (
               <g
@@ -466,45 +351,47 @@ export function TimelineView({
                   }
                 }}
               >
-                <g>
-                  <text
-                    x={x}
-                    y={labelY}
-                    textAnchor="start"
-                    fill={yearFill}
-                    fontSize={yearFontSize}
-                    style={{ fontFamily: "var(--font-display), Palatino, serif" }}
-                  >
-                    {yearLabel}
-                  </text>
-                  <text
-                    x={x}
-                    y={labelY + titleOffset}
-                    textAnchor="start"
-                    fill={titleFill}
-                    fontSize={titleFontSize}
-                    style={{ fontFamily: "var(--font-body), Palatino, serif" }}
-                  >
-                    {titleText}
-                  </text>
-                </g>
+                {labelY !== null && labelY !== undefined && (
+                  <g>
+                    <text
+                      x={x}
+                      y={labelY}
+                      textAnchor="start"
+                      fill="var(--color-warm)"
+                      fontSize={12}
+                      style={{ fontFamily: "var(--font-display), Palatino, serif" }}
+                    >
+                      {labelText}
+                    </text>
+                    <text
+                      x={x}
+                      y={labelY + 14}
+                      textAnchor="start"
+                      fill={isSelected ? "var(--color-text-primary)" : "var(--color-text-secondary)"}
+                      fontSize={11}
+                      style={{ fontFamily: "var(--font-body), Palatino, serif" }}
+                    >
+                      {event.title.length > 36 ? `${event.title.slice(0, 34)}…` : event.title}
+                    </text>
+                  </g>
+                )}
 
                 <line
                   x1={x}
-                  y1={dotY}
+                  y1={TRACK_Y}
                   x2={x}
-                  y2={isAbove ? labelY + 4 : labelY - 12}
+                  y2={labelY !== null ? (labelY ?? TRACK_Y) + 4 : TRACK_Y - 18}
                   stroke={fill}
                   strokeWidth={isSelected ? 1.6 : 1}
                   opacity={isSelected ? 0.9 : 0.4}
                 />
 
                 {isSelected && (
-                  <circle cx={x} cy={dotY} r={radius + 6} fill={fill} opacity={0.18} />
+                  <circle cx={x} cy={TRACK_Y} r={radius + 6} fill={fill} opacity={0.18} />
                 )}
                 <circle
                   cx={x}
-                  cy={dotY}
+                  cy={TRACK_Y}
                   r={radius}
                   fill={fill}
                   stroke={isSelected ? "var(--color-text-primary)" : "var(--color-bg-primary)"}

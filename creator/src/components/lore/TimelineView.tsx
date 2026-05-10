@@ -140,6 +140,29 @@ export function TimelineView({
   const { labeledEvents, lanesUsedAbove, lanesUsedBelow } = useMemo(() => {
     const lanesAbove: number[] = [];
     const lanesBelow: number[] = [];
+
+    const measureLabelEnd = (event: TimelineEvent, x: number, isMinor: boolean) => {
+      const pxPerChar = isMinor ? LABEL_PX_PER_CHAR_MINOR : LABEL_PX_PER_CHAR;
+      const labelText = `Y${formatYear(event.year)} ${event.title}`;
+      const approxWidth = Math.min(220, Math.max(80, labelText.length * pxPerChar));
+      return (x - 6) + approxWidth + LABEL_MIN_GAP;
+    };
+
+    // Selection rescue: pre-reserve lane 0 on the selected event's side
+    // so it always sits closest to the track instead of being buried in
+    // a deep stack of nearby events.
+    if (selectedEventId) {
+      const selected = sortedEvents.find((e) => e.id === selectedEventId);
+      if (selected) {
+        const absY = absoluteYear(selected, calendars);
+        const x = SCRUBBER_PAD + (absY - window_.min) * pxPerYear;
+        const isMinor = selected.importance === "minor";
+        const labelEnd = measureLabelEnd(selected, x, isMinor);
+        if (isMinor) lanesBelow[0] = labelEnd;
+        else lanesAbove[0] = labelEnd;
+      }
+    }
+
     let lastDotX = -Infinity;
     let lastDotR = 0;
     let clusterIdx = 0;
@@ -148,11 +171,8 @@ export function TimelineView({
       const x = SCRUBBER_PAD + (absY - window_.min) * pxPerYear;
       const isMinor = event.importance === "minor";
       const lanes = isMinor ? lanesBelow : lanesAbove;
-      const pxPerChar = isMinor ? LABEL_PX_PER_CHAR_MINOR : LABEL_PX_PER_CHAR;
-      const labelText = `Y${formatYear(event.year)} ${event.title}`;
-      const approxWidth = Math.min(220, Math.max(80, labelText.length * pxPerChar));
+      const labelEnd = measureLabelEnd(event, x, isMinor);
       const labelStart = x - 6;
-      const labelEnd = labelStart + approxWidth + LABEL_MIN_GAP;
 
       // Dot dodging: alternate above/below the axis as a cluster grows so
       // markers don't merge into a single blob in dense periods.
@@ -172,12 +192,17 @@ export function TimelineView({
             DOT_DODGE_STEP;
 
       let laneIndex = 0;
-      for (let i = 0; ; i++) {
-        const end = lanes[i];
-        if (end === undefined || end <= labelStart) {
-          lanes[i] = labelEnd;
-          laneIndex = i;
-          break;
+      if (event.id === selectedEventId) {
+        // Slot already reserved at lane 0 above; do not re-pack.
+        laneIndex = 0;
+      } else {
+        for (let i = 0; ; i++) {
+          const end = lanes[i];
+          if (end === undefined || end <= labelStart) {
+            lanes[i] = labelEnd;
+            laneIndex = i;
+            break;
+          }
         }
       }
       return {
@@ -194,7 +219,7 @@ export function TimelineView({
       lanesUsedAbove: lanesAbove.length,
       lanesUsedBelow: lanesBelow.length,
     };
-  }, [calendars, pxPerYear, sortedEvents, window_.min]);
+  }, [calendars, pxPerYear, sortedEvents, window_.min, selectedEventId]);
 
   const trackY = Math.max(
     MIN_TRACK_Y,

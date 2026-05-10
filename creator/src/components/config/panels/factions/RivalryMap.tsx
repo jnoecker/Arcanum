@@ -52,34 +52,13 @@ export function RivalryMap({ definitions, factionLabelMap }: RivalryMapProps) {
   }, [ids]);
 
   return (
-    <div className="relative mx-auto w-full max-w-3xl overflow-hidden rounded-xl border border-[var(--chrome-stroke)] bg-[var(--chrome-highlight)] p-2">
-      <div className="flourish-top-thread pointer-events-none absolute inset-x-6 top-0 h-px" />
+    <div className="relative mx-auto w-full max-w-3xl">
         <svg
           viewBox="0 0 360 300"
           className="block h-auto w-full"
           role="img"
           aria-label="Faction rivalry graph"
         >
-          <defs>
-            <radialGradient id="rivalry-orbit" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stopColor="rgb(var(--accent-rgb))" stopOpacity="0" />
-              <stop offset="80%" stopColor="rgb(var(--accent-rgb))" stopOpacity="0.08" />
-              <stop offset="100%" stopColor="rgb(var(--accent-rgb))" stopOpacity="0" />
-            </radialGradient>
-          </defs>
-
-          <ellipse cx={180} cy={150} rx={155} ry={110} fill="url(#rivalry-orbit)" />
-          <ellipse
-            cx={180}
-            cy={150}
-            rx={155}
-            ry={110}
-            fill="none"
-            stroke="rgb(var(--accent-rgb))"
-            strokeOpacity="0.1"
-            strokeWidth="1"
-          />
-
           {ids.length < 2 && (
             <text
               x={180}

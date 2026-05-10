@@ -174,7 +174,7 @@ export function TimelineView({
   return (
     <div
       ref={containerRef}
-      className="rounded-[0.8rem] border border-border-muted/40 bg-[radial-gradient(circle_at_50%_0%,rgb(var(--accent-rgb)/0.08),transparent_42%),linear-gradient(180deg,rgb(var(--bg-rgb)/0.90),rgb(var(--abyss-rgb)/0.95))] p-4 shadow-[var(--shadow-section)]"
+      className="rounded-[0.8rem] border border-[var(--chrome-stroke-strong)] bg-[radial-gradient(circle_at_50%_0%,rgb(var(--accent-rgb)/0.06),transparent_42%),var(--chrome-fill-soft)] p-4 shadow-[0_1px_0_rgb(var(--highlight-rgb)/0.04)_inset,0_8px_24px_-12px_rgb(0_0_0/0.35)] backdrop-blur-sm"
     >
       {/* Toolbar */}
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
@@ -250,7 +250,7 @@ export function TimelineView({
         </div>
       </div>
 
-      <div className="overflow-x-auto rounded-[0.7rem] border border-border-muted/35 bg-[linear-gradient(180deg,rgb(var(--abyss-rgb)/0.58),rgb(var(--bg-rgb)/0.28))]">
+      <div className="overflow-x-auto rounded-[0.7rem] border border-[var(--chrome-stroke)] bg-[var(--chrome-highlight)]">
         <div className="relative" style={{ width: ribbonWidth, minWidth: "100%" }}>
           {eraBands.length > 0 && (
             <div className="relative h-14 border-b border-border-muted/25 bg-bg-abyss/25">

@@ -6,11 +6,11 @@ const ZOOM_PRESETS = [0.75, 1, 1.5, 2] as const;
 const ZOOM_MIN = 0.5;
 const ZOOM_MAX = 4;
 
-const RIBBON_HEIGHT = 210;
-const TRACK_Y = 170;
-const LANE_BASE_Y = 76;
+const TOP_PADDING = 10;
 const LANE_STEP = 22;
-const MAX_LANES = 4;
+const TRACK_TO_LANE0 = 94;       // gap from track axis to lane-0 label baseline
+const TRACK_BOTTOM_AREA = 40;    // space below the track for tick numerals
+const MIN_TRACK_Y = 170;         // preserves the airy single-lane look at low density
 const LABEL_PX_PER_CHAR = 6.4;
 const LABEL_MIN_GAP = 14;
 
@@ -63,7 +63,8 @@ interface LabeledEvent {
   event: TimelineEvent;
   absYear: number;
   x: number;
-  laneY: number | null;
+  /** Lane index above the track; 0 sits closest. null = no label. */
+  laneIndex: number | null;
 }
 
 interface RibbonProps {
@@ -122,30 +123,40 @@ export function TimelineView({
     return out;
   }, [tickStep, window_.max, window_.min]);
 
-  // Greedy lane assignment for labeled (non-minor) events
-  const labeledEvents = useMemo<LabeledEvent[]>(() => {
-    const lanes: Array<{ end: number }> = [];
-    return sortedEvents.map((event) => {
+  // Greedy lane assignment for labeled (non-minor) events. Lane count is
+  // unbounded — the ribbon grows vertically to accommodate dense periods.
+  const { labeledEvents, lanesUsedAbove } = useMemo(() => {
+    const laneEnds: number[] = [];
+    const entries: LabeledEvent[] = sortedEvents.map((event) => {
       const absY = absoluteYear(event, calendars);
       const x = SCRUBBER_PAD + (absY - window_.min) * pxPerYear;
       if (event.importance === "minor") {
-        return { event, absYear: absY, x, laneY: null };
+        return { event, absYear: absY, x, laneIndex: null };
       }
       const labelText = `Y${formatYear(event.year)} ${event.title}`;
       const approxWidth = Math.min(220, Math.max(80, labelText.length * LABEL_PX_PER_CHAR));
       const labelStart = x - 6;
       const labelEnd = labelStart + approxWidth + LABEL_MIN_GAP;
 
-      for (let i = 0; i < MAX_LANES; i++) {
-        const lane = lanes[i];
-        if (!lane || lane.end <= labelStart) {
-          lanes[i] = { end: labelEnd };
-          return { event, absYear: absY, x, laneY: LANE_BASE_Y - i * LANE_STEP };
+      for (let i = 0; ; i++) {
+        const end = laneEnds[i];
+        if (end === undefined || end <= labelStart) {
+          laneEnds[i] = labelEnd;
+          return { event, absYear: absY, x, laneIndex: i };
         }
       }
-      return { event, absYear: absY, x, laneY: null };
     });
+    return { labeledEvents: entries, lanesUsedAbove: laneEnds.length };
   }, [calendars, pxPerYear, sortedEvents, window_.min]);
+
+  const trackY = Math.max(
+    MIN_TRACK_Y,
+    TOP_PADDING +
+      Math.max(0, lanesUsedAbove - 1) * LANE_STEP +
+      TRACK_TO_LANE0,
+  );
+  const lane0BaselineY = trackY - TRACK_TO_LANE0;
+  const ribbonHeight = trackY + TRACK_BOTTOM_AREA;
 
   const handlePresetZoom = useCallback((value: number) => {
     setZoom(Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, value)));
@@ -287,16 +298,16 @@ export function TimelineView({
 
           <svg
             width={ribbonWidth}
-            height={RIBBON_HEIGHT}
+            height={ribbonHeight}
             className="block select-none"
             role="img"
             aria-label={`Timeline overview with ${events.length} events`}
           >
           <line
             x1={0}
-            y1={TRACK_Y}
+            y1={trackY}
             x2={ribbonWidth}
-            y2={TRACK_Y}
+            y2={trackY}
             stroke="var(--color-warm)"
             strokeOpacity={0.55}
             strokeWidth={1.6}
@@ -308,16 +319,16 @@ export function TimelineView({
               <g key={year}>
                 <line
                   x1={x}
-                  y1={TRACK_Y - 5}
+                  y1={trackY - 5}
                   x2={x}
-                  y2={TRACK_Y + 5}
+                  y2={trackY + 5}
                   stroke="var(--color-warm)"
                   strokeOpacity={0.6}
                   strokeWidth={1}
                 />
                 <text
                   x={x}
-                  y={TRACK_Y + 22}
+                  y={trackY + 22}
                   textAnchor="middle"
                   fill="var(--color-text-secondary)"
                   fontSize={11}
@@ -330,11 +341,11 @@ export function TimelineView({
           })}
 
           {labeledEvents.map((entry) => {
-            const { event, x, laneY } = entry;
+            const { event, x, laneIndex } = entry;
             const isSelected = event.id === selectedEventId;
             const fill = eventColor(event.importance);
             const radius = eventRadius(event.importance);
-            const labelY = laneY;
+            const labelY = laneIndex !== null ? lane0BaselineY - laneIndex * LANE_STEP : null;
             const labelText = `Y${formatYear(event.year)}`;
 
             return (
@@ -351,7 +362,7 @@ export function TimelineView({
                   }
                 }}
               >
-                {labelY !== null && labelY !== undefined && (
+                {labelY !== null && (
                   <g>
                     <text
                       x={x}
@@ -378,20 +389,20 @@ export function TimelineView({
 
                 <line
                   x1={x}
-                  y1={TRACK_Y}
+                  y1={trackY}
                   x2={x}
-                  y2={labelY !== null ? (labelY ?? TRACK_Y) + 4 : TRACK_Y - 18}
+                  y2={labelY !== null ? labelY + 4 : trackY - 18}
                   stroke={fill}
                   strokeWidth={isSelected ? 1.6 : 1}
                   opacity={isSelected ? 0.9 : 0.4}
                 />
 
                 {isSelected && (
-                  <circle cx={x} cy={TRACK_Y} r={radius + 6} fill={fill} opacity={0.18} />
+                  <circle cx={x} cy={trackY} r={radius + 6} fill={fill} opacity={0.18} />
                 )}
                 <circle
                   cx={x}
-                  cy={TRACK_Y}
+                  cy={trackY}
                   r={radius}
                   fill={fill}
                   stroke={isSelected ? "var(--color-text-primary)" : "var(--color-bg-primary)"}

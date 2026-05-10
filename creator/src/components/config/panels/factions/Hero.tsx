@@ -4,7 +4,6 @@ import { NumberInput } from "@/components/ui/FormWidgets";
 
 interface HeroProps {
   factions: FactionConfig;
-  count: number;
   onPatch: (patch: Partial<FactionConfig>) => void;
 }
 
@@ -78,60 +77,37 @@ function EconomicsKnob({ label, hint, value, onCommit, min }: EconomicsKnobProps
 }
 
 /**
- * Factions panel header. Intentionally chrome-light — kicker, title, and
- * lede sit directly on the panel bg, with a single horizontal "Reputation
- * Economics" row of inline labelled values (no cards, no halos).
+ * Slim Reputation Economics strip. Originally accompanied a kicker / title
+ * / lede block; those were removed in favor of going straight to the data.
  */
-export function Hero({ factions, count, onPatch }: HeroProps) {
+export function Hero({ factions, onPatch }: HeroProps) {
   return (
-    <section className="flex flex-col gap-5 px-1 pt-1">
-      <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
-        <p className="font-display text-2xs font-semibold uppercase tracking-[0.22em] text-text-muted">
-          Political Landscape
-        </p>
-        <span aria-hidden="true" className="text-text-muted/40">·</span>
-        <p className="font-display text-2xs uppercase tracking-[0.18em] text-text-muted">
-          {count} {count === 1 ? "faction" : "factions"}
-        </p>
-      </div>
-      <div className="flex flex-col gap-2">
-        <h2 className="font-display text-2xl font-semibold text-text-primary">
-          Factions &amp; Reputation
-        </h2>
-        <p className="max-w-2xl text-xs leading-relaxed text-text-secondary">
-          Guilds, courts, cabals, and mercenary companies. Players earn or
-          lose standing with each through quests and combat; reputation
-          gates shops, quests, and regions tied to each group.
-        </p>
-      </div>
-
-      <div className="flex flex-wrap items-baseline gap-x-6 gap-y-3">
-        <span className="font-display text-2xs font-semibold uppercase tracking-[0.22em] text-text-muted/80">
-          Reputation Economics
-        </span>
-        <EconomicsKnob
-          label="Starting"
-          hint="Where new players begin with every faction."
-          value={factions.defaultReputation}
-          onCommit={(v) => onPatch({ defaultReputation: v })}
-        />
-        <span aria-hidden="true" className="text-text-muted/40">·</span>
-        <EconomicsKnob
-          label="Kill Penalty"
-          hint="Lost with the mob's own faction per kill (× level)."
-          value={factions.killPenalty}
-          onCommit={(v) => onPatch({ killPenalty: v })}
-          min={0}
-        />
-        <span aria-hidden="true" className="text-text-muted/40">·</span>
-        <EconomicsKnob
-          label="Kill Bonus"
-          hint="Gained with the victim's enemy factions per kill (× level)."
-          value={factions.killBonus}
-          onCommit={(v) => onPatch({ killBonus: v })}
-          min={0}
-        />
-      </div>
-    </section>
+    <div className="flex flex-wrap items-baseline gap-x-6 gap-y-3 px-1 pt-1">
+      <span className="font-display text-2xs font-semibold uppercase tracking-[0.22em] text-text-muted/80">
+        Reputation Economics
+      </span>
+      <EconomicsKnob
+        label="Starting"
+        hint="Where new players begin with every faction."
+        value={factions.defaultReputation}
+        onCommit={(v) => onPatch({ defaultReputation: v })}
+      />
+      <span aria-hidden="true" className="text-text-muted/40">·</span>
+      <EconomicsKnob
+        label="Kill Penalty"
+        hint="Lost with the mob's own faction per kill (× level)."
+        value={factions.killPenalty}
+        onCommit={(v) => onPatch({ killPenalty: v })}
+        min={0}
+      />
+      <span aria-hidden="true" className="text-text-muted/40">·</span>
+      <EconomicsKnob
+        label="Kill Bonus"
+        hint="Gained with the victim's enemy factions per kill (× level)."
+        value={factions.killBonus}
+        onCommit={(v) => onPatch({ killBonus: v })}
+        min={0}
+      />
+    </div>
   );
 }

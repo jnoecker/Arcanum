@@ -55,6 +55,7 @@ export type AssetType =
   | "player_sprite"
   | "race_portrait"
   | "class_portrait"
+  | "faction_emblem"
   | "lore_character"
   | "lore_location"
   | "lore_organization"

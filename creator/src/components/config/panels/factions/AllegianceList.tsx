@@ -2,6 +2,7 @@
 import type { FactionUsage } from "@/lib/factionUsage";
 import { ActionButton } from "@/components/ui/FormWidgets";
 import { SectionCard } from "@/components/ui/SectionCard";
+import { useImageSrc } from "@/lib/useImageSrc";
 import { CompassRoseIcon, PlusIcon, SearchIcon } from "./icons";
 
 function cx(...c: Array<string | false | null | undefined>) {
@@ -106,6 +107,8 @@ function AllegianceRow({
   const questCount = usage?.questCount ?? 0;
   const zoneCount = usage?.zones.size ?? 0;
   const isUnused = mobCount === 0 && questCount === 0;
+  const emblemSrc = useImageSrc(definition.image);
+  const factionColor = definition.color || undefined;
 
   return (
     <li>
@@ -124,13 +127,32 @@ function AllegianceRow({
         <span
           aria-hidden="true"
           className={cx(
-            "inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border transition",
-            selected
-              ? "border-accent/60 bg-accent/15 text-accent"
-              : "border-[var(--chrome-stroke)] bg-[var(--bg-panel)] text-text-muted group-hover:border-accent/30 group-hover:text-accent/80",
+            "inline-flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full border transition",
+            !factionColor &&
+              (selected
+                ? "border-accent/60 bg-accent/15 text-accent"
+                : "border-[var(--chrome-stroke)] bg-[var(--bg-panel)] text-text-muted group-hover:border-accent/30 group-hover:text-accent/80"),
           )}
+          style={
+            factionColor
+              ? {
+                  borderColor: factionColor,
+                  background: `color-mix(in srgb, ${factionColor} 15%, transparent)`,
+                  color: factionColor,
+                }
+              : undefined
+          }
         >
-          <CompassRoseIcon className="h-4 w-4" />
+          {emblemSrc ? (
+            <img
+              src={emblemSrc}
+              alt=""
+              className="h-full w-full object-cover"
+              draggable={false}
+            />
+          ) : (
+            <CompassRoseIcon className="h-4 w-4" />
+          )}
         </span>
         <div className="min-w-0 flex-1">
           <p className="truncate font-display text-sm font-semibold text-text-primary">

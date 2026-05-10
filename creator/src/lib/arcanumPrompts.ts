@@ -91,6 +91,7 @@ export const FORMAT_BY_TYPE: Record<string, string> = {
   status_effect_icon: "1:1 square status effect icon centered in frame, symbolic/iconic representation",
   race_portrait: "2:3 portrait orientation character portrait, close-up to mid-shot framing, richly detailed painterly environment background",
   class_portrait: "2:3 portrait orientation action portrait, mid-shot framing, dynamic or atmospheric pose, richly detailed painterly environment background",
+  faction_emblem: "1:1 square heraldic sigil centered in frame, single iconic emblem fills most of the canvas, dark uniform background suitable for a circular badge, no text, no scenery, no characters",
 };
 
 export const FORMAT_BY_ASSET_TYPE: Partial<Record<AssetType, string>> = {
@@ -116,6 +117,7 @@ export const FORMAT_BY_ASSET_TYPE: Partial<Record<AssetType, string>> = {
   player_sprite: FORMAT_BY_TYPE.mob,
   race_portrait: FORMAT_BY_TYPE.race_portrait,
   class_portrait: FORMAT_BY_TYPE.class_portrait,
+  faction_emblem: FORMAT_BY_TYPE.faction_emblem,
 };
 
 export function getFormatForAssetType(assetType: AssetType): string {
@@ -379,6 +381,13 @@ export const ASSET_TEMPLATES: Record<AssetType, { label: string; templates: Reco
     templates: {
       arcanum: `A solitary interactable resource node grounded on a dark cosmic-stone floor — perhaps an aurum-veined ore outcrop, a cluster of luminous crystalline herbs, a glowing tide-pool, or a hollow at the base of an ancient tree — rendered with faithful material detail in the Arcanum palette, warm aurum-gold light pooling on the harvestable surfaces with soft bloom, baroque energy filaments curling from the node like delicate scrollwork tendrils, deep cosmic indigo and abyssal navy void surrounding it, blue-violet atmospheric mist drifting around the base, the silhouette is clearly readable as something a player would walk up to and gather from, centered square composition with the node grounded at the lower third of the frame, painterly oil technique, extremely detailed, no characters, no hands, no UI`,
       gentle_magic: `A solitary interactable resource node resting on a soft mossy patch of ground — perhaps a pale silver ore vein in a weathered stone, a cluster of luminous lavender mushrooms, a small herb patch with dusty rose blossoms, or a calm reflective pool flecked with soft gold — rendered with warm gentle detail in the Gentle Magic palette, source-ambiguous diffused light with no harsh shadows, faint floating motes of warm gold drifting upward from the harvestable surfaces, pale blue and lavender atmospheric haze fading to deep mist behind, tiny moss-green tufts and dusty rose buds at the base, the silhouette is clearly readable as something a player would walk up to and gather from, centered square composition with the node grounded at the lower third of the frame, painterly, luminous, dreamlike, no characters, no hands, no UI`,
+    },
+  },
+  faction_emblem: {
+    label: "Faction Emblem",
+    templates: {
+      arcanum: `A single heraldic faction sigil rendered as a bold iconic emblem against deep cosmic indigo void, the central symbol forged in aurum-gold and blue-violet — a beast, weapon, sun, tree, crown, or abstract glyph that captures the faction's spirit — surrounded by a subtle baroque scrollwork ring that dissolves into darkness at the edges, soft warm bloom haloing the central form, centered square composition reading clearly at small sizes, painterly, luminous, no text, no characters, no scenery`,
+      gentle_magic: `A single heraldic faction sigil rendered as a soft iconic emblem against deep mist-blue background, the central symbol — a beast, weapon, leaf, sun, hand, or abstract glyph that captures the faction's spirit — drawn with warm muted colors and a gentle inner glow in lavender or pale gold, surrounded by a faint ring of floating light motes, centered square composition reading clearly at small sizes, painterly, luminous, dreamlike, no text, no characters, no scenery`,
     },
   },
   ability_icon: {

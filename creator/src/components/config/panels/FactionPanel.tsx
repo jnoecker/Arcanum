@@ -62,6 +62,39 @@ export function FactionPanel() {
     [factions.definitions, patch],
   );
 
+  /**
+   * Toggle a rival or ally edge between two factions in a single patch.
+   * Always keeps both sides synced — flipping the relationship from one
+   * side's editor view also flips it on the other side.
+   */
+  const toggleRelation = useCallback(
+    (kind: "enemies" | "allies", aId: string, bId: string) => {
+      if (aId === bId) return;
+      const defs = factions.definitions;
+      const a = defs[aId];
+      const b = defs[bId];
+      if (!a || !b) return;
+      const aHas = (a[kind] ?? []).includes(bId);
+      const setSide = (def: FactionDefinition, otherId: string): FactionDefinition => {
+        const list = def[kind] ?? [];
+        const filtered = list.filter((x) => x !== otherId);
+        const next = aHas ? filtered : [...filtered, otherId];
+        const updated = { ...def };
+        if (next.length > 0) updated[kind] = next;
+        else delete updated[kind];
+        return updated;
+      };
+      patch({
+        definitions: {
+          ...defs,
+          [aId]: setSide(a, bId),
+          [bId]: setSide(b, aId),
+        },
+      });
+    },
+    [factions.definitions, patch],
+  );
+
   const addFaction = useCallback(() => {
     const base = "new_faction";
     let id = base;
@@ -302,6 +335,8 @@ export function FactionPanel() {
               factionIds={factionIds}
               factionLabelMap={factionLabelMap}
               onPatch={(p) => patchDefinition(selected, p)}
+              onToggleEnemy={(otherId) => toggleRelation("enemies", selected, otherId)}
+              onToggleAlly={(otherId) => toggleRelation("allies", selected, otherId)}
               onClose={() => setSelected(null)}
               onDelete={() => deleteFaction(selected)}
               onRename={(v) => renameFaction(selected, v)}

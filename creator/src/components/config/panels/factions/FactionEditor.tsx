@@ -100,6 +100,12 @@ interface FactionEditorProps {
   factionIds: string[];
   factionLabelMap: Map<string, string>;
   onPatch: (p: Partial<FactionDefinition>) => void;
+  /** Toggle a rivalry between this faction and `otherId` — stays
+   *  symmetric so both factions agree. */
+  onToggleEnemy: (otherId: string) => void;
+  /** Toggle an alliance between this faction and `otherId` — stays
+   *  symmetric so both factions agree. */
+  onToggleAlly: (otherId: string) => void;
   onClose: () => void;
   onDelete: () => void;
   onRename: (newId: string) => void;
@@ -111,6 +117,8 @@ export function FactionEditor({
   factionIds,
   factionLabelMap,
   onPatch,
+  onToggleEnemy,
+  onToggleAlly,
   onClose,
   onDelete,
   onRename,
@@ -123,20 +131,6 @@ export function FactionEditor({
     definition.image && assetsDir
       ? `${assetsDir}\\images\\${definition.image}`
       : undefined;
-
-  const toggleEnemy = (enemyId: string) => {
-    const next = enemies.includes(enemyId)
-      ? enemies.filter((e) => e !== enemyId)
-      : [...enemies, enemyId];
-    onPatch({ enemies: next.length > 0 ? next : undefined });
-  };
-
-  const toggleAlly = (allyId: string) => {
-    const next = allies.includes(allyId)
-      ? allies.filter((a) => a !== allyId)
-      : [...allies, allyId];
-    onPatch({ allies: next.length > 0 ? next : undefined });
-  };
 
   return (
     <div className="flex flex-col gap-3">
@@ -194,7 +188,7 @@ export function FactionEditor({
                 all={others}
                 selected={enemies}
                 factionLabelMap={factionLabelMap}
-                onToggle={toggleEnemy}
+                onToggle={onToggleEnemy}
               />
             )}
             <p className="mt-2 text-2xs leading-snug text-text-muted/70">
@@ -214,7 +208,7 @@ export function FactionEditor({
                 all={others}
                 selected={allies}
                 factionLabelMap={factionLabelMap}
-                onToggle={toggleAlly}
+                onToggle={onToggleAlly}
               />
             )}
             <p className="mt-2 text-2xs leading-snug text-text-muted/70">

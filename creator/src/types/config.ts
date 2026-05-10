@@ -386,6 +386,9 @@ export interface FactionDefinition {
   name: string;
   description?: string;
   enemies?: string[];
+  /** Informational allies — for the relationship graph only. Does not
+   *  affect reputation or combat. */
+  allies?: string[];
   /** Heraldic accent color (hex like "#abcdef"). Used on the rivalry map
    *  and as the badge ring in the allegiance list. */
   color?: string;

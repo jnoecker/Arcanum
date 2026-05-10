@@ -243,7 +243,7 @@ export function TuningWizard() {
       {selectedPreset && activePresetEvaluation && currentMetrics && activePresetMetrics && presetConfig && (
         <section
           aria-label={`Previewing ${selectedPreset.name}`}
-          className="panel-surface bg-gradient-panel-light animate-unfurl-in relative mx-auto mt-8 w-full max-w-6xl overflow-hidden rounded-[1.75rem] px-6 py-8"
+          className="panel-surface bg-gradient-panel-light animate-unfurl-in relative mx-auto mt-8 w-full max-w-6xl shrink-0 overflow-hidden rounded-[1.75rem] px-6 py-8"
         >
           <div className="flourish-top-thread pointer-events-none absolute inset-x-0 top-0 h-px" />
           <header className="mb-6 flex flex-col gap-1">

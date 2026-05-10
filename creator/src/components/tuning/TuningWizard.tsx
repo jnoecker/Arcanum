@@ -219,20 +219,8 @@ export function TuningWizard() {
 
   return (
     <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto">
-      {/* Title section */}
-      <div className="flex flex-col gap-4 px-6 pt-12">
-        <div className="min-w-0">
-          <h1 className="font-display text-[22px] leading-[1.2] tracking-[1px] text-text-primary">
-            Tuning Wizard
-          </h1>
-          <p className="mt-2 max-w-3xl text-sm text-text-secondary">
-            Compare Arcanum tuning archetypes, review their contract score, accept the sections you want, then apply them to your working set and commit when ready.
-          </p>
-        </div>
-      </div>
-
       {/* Preset card grid */}
-      <div className="mx-auto mt-8 grid w-full max-w-6xl grid-cols-1 gap-4 px-6 lg:grid-cols-2 2xl:grid-cols-3">
+      <div className="mx-auto mt-6 grid w-full max-w-6xl grid-cols-1 gap-4 px-6 lg:grid-cols-2 2xl:grid-cols-3">
         {TUNING_PRESETS.map((preset) => (
           <PresetCard
             key={preset.id}

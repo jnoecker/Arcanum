@@ -59,7 +59,7 @@ function LedgerNumber({ label, hint, value, onCommit, min }: LedgerNumberProps) 
         {value}
       </button>
       {open && (
-        <div className="absolute left-0 top-full z-20 mt-2 w-48 rounded-lg border border-[var(--chrome-stroke-strong)] bg-[var(--bg-panel)] p-2 shadow-glow-warm">
+        <div className="absolute left-0 top-full z-50 mt-2 w-48 rounded-lg border border-[var(--chrome-stroke-strong)] bg-[var(--bg-panel)] p-2 shadow-glow-warm">
           <p className="mb-1 font-display text-2xs font-semibold uppercase tracking-[0.18em] text-text-muted">
             {label}
           </p>
@@ -137,7 +137,7 @@ function LedgerSelect({
         {display}
       </button>
       {open && (
-        <div className="absolute left-0 top-full z-20 mt-2 w-56 rounded-lg border border-[var(--chrome-stroke-strong)] bg-[var(--bg-panel)] p-2 shadow-glow-warm">
+        <div className="absolute left-0 top-full z-50 mt-2 w-56 rounded-lg border border-[var(--chrome-stroke-strong)] bg-[var(--bg-panel)] p-2 shadow-glow-warm">
           <p className="mb-1 font-display text-2xs font-semibold uppercase tracking-[0.18em] text-text-muted">
             {label}
           </p>

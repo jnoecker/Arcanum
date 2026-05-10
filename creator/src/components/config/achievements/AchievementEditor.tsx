@@ -2,6 +2,7 @@ import type {
   AppConfig,
   AchievementDefFile,
   AchievementCriterionFile,
+  AchievementCriterionTypeDefinition,
   AchievementRewardsFile,
 } from "@/types/config";
 import {
@@ -20,6 +21,11 @@ import {
   ArrowDownIcon,
 } from "./icons";
 import { useCallback, useMemo, useState } from "react";
+import {
+  buildCriterionTargetIndex,
+  validateCriterion,
+  type CriterionTargetIndex,
+} from "@/lib/criterionValidation";
 
 function cx(...c: Array<string | false | null | undefined>) {
   return c.filter(Boolean).join(" ");
@@ -49,6 +55,8 @@ interface AchievementEditorProps {
   config: AppConfig;
   onPatch: (p: Partial<AchievementDefFile>) => void;
   onRename: (newId: string) => void;
+  /** Fires when the displayName transitions empty → non-empty (used to bloom the Preview). */
+  onTitleFilled?: () => void;
 }
 
 export function AchievementEditor({
@@ -57,6 +65,7 @@ export function AchievementEditor({
   config,
   onPatch,
   onRename,
+  onTitleFilled,
 }: AchievementEditorProps) {
   const categoryOptions = Object.entries(config.achievementCategories).map(
     ([cid, cat]) => ({ value: cid, label: cat.displayName || cid }),
@@ -64,6 +73,12 @@ export function AchievementEditor({
 
   const criterionTypeOptions = Object.entries(config.achievementCriterionTypes).map(
     ([tid, ct]) => ({ value: tid, label: ct.displayName || tid }),
+  );
+
+  const zones = useZoneStore((s) => s.zones);
+  const targetIndex = useMemo(
+    () => buildCriterionTargetIndex(zones, config),
+    [zones, config],
   );
 
   const {
@@ -85,6 +100,16 @@ export function AchievementEditor({
     onPatch({ criteria: next });
   };
 
+  const handleDisplayNameCommit = useCallback(
+    (next: string) => {
+      const wasEmpty = !def.displayName?.trim();
+      const isFilled = next.trim().length > 0;
+      onPatch({ displayName: next });
+      if (wasEmpty && isFilled) onTitleFilled?.();
+    },
+    [def.displayName, onPatch, onTitleFilled],
+  );
+
   const rewards = def.rewards ?? {};
   const handleRewardChange = useCallback(
     (field: keyof AchievementRewardsFile, value: string | number | undefined) => {
@@ -96,6 +121,10 @@ export function AchievementEditor({
     [rewards, onPatch],
   );
 
+  const maxCount = criteria.reduce((acc, c) => Math.max(acc, c.count ?? 0), 0);
+  const tier: "legendary" | "rare" | null =
+    maxCount > 200 ? "legendary" : maxCount > 50 ? "rare" : null;
+
   return (
     <div className="flex flex-col gap-3">
       <BasicsCard
@@ -103,13 +132,17 @@ export function AchievementEditor({
         def={def}
         categoryOptions={categoryOptions}
         onPatch={onPatch}
+        onDisplayNameCommit={handleDisplayNameCommit}
         onRename={onRename}
       />
 
       <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
         <CriteriaCard
           criteria={criteria}
+          criterionTypes={config.achievementCriterionTypes}
           criterionTypeOptions={criterionTypeOptions}
+          targetIndex={targetIndex}
+          tier={tier}
           onAdd={() => handleAddCriterion()}
           onUpdate={handleUpdateCriterion}
           onRemove={handleRemoveCriterion}
@@ -128,10 +161,18 @@ interface BasicsCardProps {
   def: AchievementDefFile;
   categoryOptions: { value: string; label: string }[];
   onPatch: (p: Partial<AchievementDefFile>) => void;
+  onDisplayNameCommit: (v: string) => void;
   onRename: (newId: string) => void;
 }
 
-function BasicsCard({ id, def, categoryOptions, onPatch, onRename }: BasicsCardProps) {
+function BasicsCard({
+  id,
+  def,
+  categoryOptions,
+  onPatch,
+  onDisplayNameCommit,
+  onRename,
+}: BasicsCardProps) {
   const desc = def.description ?? "";
   const remaining = DESCRIPTION_LIMIT - desc.length;
   const overLimit = remaining < 0;
@@ -143,7 +184,7 @@ function BasicsCard({ id, def, categoryOptions, onPatch, onRename }: BasicsCardP
           <FieldLabel label="Display Name" required>
             <TextInput
               value={def.displayName}
-              onCommit={(v) => onPatch({ displayName: v })}
+              onCommit={onDisplayNameCommit}
               placeholder="First Blood"
               dense
             />
@@ -252,7 +293,10 @@ function CompactHiddenToggle({
 
 interface CriteriaCardProps {
   criteria: AchievementCriterionFile[];
+  criterionTypes: Record<string, AchievementCriterionTypeDefinition>;
   criterionTypeOptions: { value: string; label: string }[];
+  targetIndex: CriterionTargetIndex;
+  tier: "legendary" | "rare" | null;
   onAdd: () => void;
   onUpdate: (
     index: number,
@@ -265,7 +309,10 @@ interface CriteriaCardProps {
 
 function CriteriaCard({
   criteria,
+  criterionTypes,
   criterionTypeOptions,
+  targetIndex,
+  tier,
   onAdd,
   onUpdate,
   onRemove,
@@ -276,14 +323,32 @@ function CriteriaCard({
       title="Criteria"
       className={EDITOR_CARD_CLASS}
       actions={
-        <button
-          type="button"
-          onClick={onAdd}
-          className="focus-ring inline-flex items-center gap-1 rounded-lg border border-accent/40 bg-accent/10 px-2.5 py-1 text-2xs font-medium text-accent transition hover:bg-accent/20"
-        >
-          <PlusIcon />
-          Add Trial
-        </button>
+        <div className="flex items-center gap-2">
+          {tier === "legendary" && (
+            <span
+              className="inline-flex items-center gap-1 rounded-md border border-warm-pale/40 bg-warm-pale/10 px-2 py-0.5 font-display text-[0.6rem] font-semibold uppercase tracking-[0.18em] text-warm-pale shadow-glow-warm"
+              title="A criterion requires more than 200 — a legendary undertaking."
+            >
+              Legendary
+            </span>
+          )}
+          {tier === "rare" && (
+            <span
+              className="inline-flex items-center gap-1 rounded-md border border-aurum/40 bg-aurum/10 px-2 py-0.5 font-display text-[0.6rem] font-semibold uppercase tracking-[0.18em] text-aurum"
+              title="A criterion requires more than 50 — a rare deed."
+            >
+              Rare deed
+            </span>
+          )}
+          <button
+            type="button"
+            onClick={onAdd}
+            className="focus-ring inline-flex items-center gap-1 rounded-lg border border-accent/40 bg-accent/10 px-2.5 py-1 text-2xs font-medium text-accent transition hover:bg-accent/20"
+          >
+            <PlusIcon />
+            Add Trial
+          </button>
+        </div>
       }
     >
       {criteria.length === 0 ? (
@@ -300,7 +365,9 @@ function CriteriaCard({
               index={i}
               criterion={crit}
               total={criteria.length}
+              criterionType={criterionTypes[crit.type]}
               criterionTypeOptions={criterionTypeOptions}
+              targetIndex={targetIndex}
               onUpdate={(field, value) => onUpdate(i, field, value)}
               onRemove={() => onRemove(i)}
               onMoveUp={() => onMove(i, i - 1)}
@@ -317,7 +384,9 @@ interface CriterionRowProps {
   index: number;
   total: number;
   criterion: AchievementCriterionFile;
+  criterionType: AchievementCriterionTypeDefinition | undefined;
   criterionTypeOptions: { value: string; label: string }[];
+  targetIndex: CriterionTargetIndex;
   onUpdate: (
     field: keyof AchievementCriterionFile,
     value: AchievementCriterionFile[keyof AchievementCriterionFile],
@@ -331,7 +400,9 @@ function CriterionRow({
   index,
   total,
   criterion,
+  criterionType,
   criterionTypeOptions,
+  targetIndex,
   onUpdate,
   onRemove,
   onMoveUp,
@@ -340,6 +411,10 @@ function CriterionRow({
   const desc = criterion.description ?? "";
   const overLimit = desc.length > CRITERION_DESC_LIMIT;
   const mobOptions = useMobOptions();
+  const validation = useMemo(
+    () => validateCriterion(criterion, criterionType, targetIndex),
+    [criterion, criterionType, targetIndex],
+  );
 
   return (
     <div className="rounded-xl border border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] p-2.5">
@@ -387,7 +462,7 @@ function CriterionRow({
             dense
           />
         </FieldLabel>
-        <div className="col-span-2">
+        <div className="col-span-2 flex flex-col gap-1">
           <FieldLabel label="Target">
             <SelectInput
               value={criterion.targetId ?? ""}
@@ -398,6 +473,22 @@ function CriterionRow({
               dense
             />
           </FieldLabel>
+          {validation.showChip && validation.ok && validation.resolvedName && (
+            <span className="ml-1 inline-flex w-fit items-center gap-1 rounded-md border border-status-success/40 bg-status-success/10 px-1.5 py-0.5 font-display text-[0.6rem] uppercase tracking-[0.16em] text-status-success">
+              <span aria-hidden="true">→</span>
+              <span className="font-mono normal-case tracking-normal text-[0.65rem]">
+                {validation.resolvedName}
+              </span>
+            </span>
+          )}
+          {validation.showChip && !validation.ok && (
+            <span
+              role="status"
+              className="ml-1 inline-flex w-fit items-center gap-1 rounded-md border border-status-warning/40 bg-status-warning/10 px-1.5 py-0.5 font-mono text-[0.6rem] text-status-warning"
+            >
+              {validation.warning}
+            </span>
+          )}
         </div>
         <div className="col-span-2">
           <div className="flex items-baseline justify-between gap-2">

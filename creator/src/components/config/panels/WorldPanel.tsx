@@ -1,13 +1,14 @@
 import type { ReactNode } from "react";
 import type { ConfigPanelProps, AppConfig } from "./types";
 import type { DiminishingXpConfig, DiminishingXpThreshold } from "@/types/config";
-import { NumberInput, TextInput, IconButton } from "@/components/ui/FormWidgets";
+import { NumberInput, TextInput, IconButton, ActionButton } from "@/components/ui/FormWidgets";
 
 import { OrnateCard } from "@/components/ui/OrnateCard";
 import { Toggle } from "./world/Toggle";
 import { IconField } from "./world/IconField";
 import { XpCurveChart } from "./world/XpCurveChart";
 import { RoomPicker } from "./world/RoomPicker";
+import { DiminishingStaircase } from "./world/DiminishingStaircase";
 
 // Re-export RoomPicker for backwards compatibility — historically lived here.
 export { RoomPicker } from "./world/RoomPicker";
@@ -300,6 +301,7 @@ export function WorldPanel({ config, onChange }: ConfigPanelProps) {
             <DiminishingReturnsEditor
               value={p.xp.diminishing}
               onChange={(next) => patchXp({ diminishing: next })}
+              maxLevel={p.maxLevel}
             />
           </OrnateCard>
         </div>
@@ -478,12 +480,34 @@ export function WorldPanel({ config, onChange }: ConfigPanelProps) {
   );
 }
 
+function TrashGlyph() {
+  return (
+    <svg
+      className="h-3.5 w-3.5"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.75}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M4 7h16" />
+      <path d="M9 7V4h6v3" />
+      <path d="M6 7l1 13a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-13" />
+      <path d="M10 11v7M14 11v7" />
+    </svg>
+  );
+}
+
 function DiminishingReturnsEditor({
   value,
   onChange,
+  maxLevel,
 }: {
   value: DiminishingXpConfig | undefined;
   onChange: (next: DiminishingXpConfig | undefined) => void;
+  maxLevel: number;
 }) {
   const enabled = !!value?.enabled;
   const thresholds = value?.thresholds ?? [];
@@ -516,71 +540,103 @@ function DiminishingReturnsEditor({
   };
 
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-2.5">
       <Toggle
         checked={enabled}
         onChange={setEnabled}
         label="Enable diminishing returns"
       />
       {enabled && (
-        <div className="flex flex-col gap-1.5">
+        <div className="flex flex-col gap-2">
+          {/* Inline staircase visualization */}
+          <div className="flex flex-col gap-1">
+            <p className="font-body text-2xs italic leading-snug text-text-muted/85">
+              How XP earned compounds: each kill in this level band yields the listed fraction.
+            </p>
+            <DiminishingStaircase
+              thresholds={thresholds}
+              maxLevel={maxLevel}
+              height={68}
+            />
+            <div className="flex items-center justify-between font-display text-[10px] uppercase tracking-[0.18em] text-text-muted/65">
+              <span>0 lvl above</span>
+              <span>{Math.max(5, maxLevel || 50)} lvl above</span>
+            </div>
+          </div>
+
           {thresholds.length === 0 ? (
-            <p className="text-2xs text-text-muted">
-              No thresholds yet. Add one below — e.g. <code>levelsBelow: 5, multiplier: 0.5</code> halves XP once the player is 5+ levels over the mob.
+            <p className="text-2xs leading-snug text-text-muted">
+              No thresholds yet. Add one below — e.g.{" "}
+              <code className="font-mono text-[11px]">levelsBelow: 5, multiplier: 0.5</code>{" "}
+              halves XP once the player is 5+ levels over the mob.
             </p>
           ) : (
-            <ul className="flex flex-col gap-1.5">
+            <ul className="flex flex-col" role="list">
+              <li
+                className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_auto] items-center gap-2 border-b border-[var(--chrome-stroke-soft)] py-1 font-display text-[10px] uppercase tracking-[0.18em] text-text-muted/70"
+                aria-hidden="true"
+              >
+                <span>Levels above</span>
+                <span className="opacity-0">→</span>
+                <span>Multiplier</span>
+                <span className="opacity-0">·</span>
+              </li>
               {thresholds.map((threshold, i) => (
                 <li
                   key={i}
-                  className="flex flex-col gap-1 rounded border border-border-muted bg-bg-tertiary/35 px-2 py-1.5"
+                  className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_auto] items-center gap-2 border-b border-[var(--chrome-stroke-soft)] py-1.5 last:border-b-0"
                 >
-                  <div className="flex items-center gap-2">
-                    <label className="flex min-w-0 flex-1 items-center gap-1.5 text-2xs text-text-muted">
-                      <span className="shrink-0">Levels below</span>
-                      <NumberInput
-                        value={threshold.levelsBelow}
-                        onCommit={(v) => updateThreshold(i, { levelsBelow: v ?? 0 })}
-                        min={0}
-                        dense
-                      />
-                    </label>
-                    <label className="flex min-w-0 flex-1 items-center gap-1.5 text-2xs text-text-muted">
-                      <span className="shrink-0">Multiplier</span>
-                      <NumberInput
-                        value={threshold.multiplier}
-                        onCommit={(v) => updateThreshold(i, { multiplier: v ?? 1 })}
-                        min={0}
-                        step={0.05}
-                        dense
-                      />
-                    </label>
-                    <IconButton
-                      onClick={() => removeThreshold(i)}
-                      title="Remove threshold"
-                      aria-label="Remove threshold"
-                      size="sm"
-                      danger
-                    >
-                      ×
-                    </IconButton>
-                  </div>
-                  {i === 0 && (
-                    <p className="text-2xs leading-snug text-text-muted/60">
-                      5 levels · 0.5× = gentle · 3 levels · 0.25× = strict · 10 levels · 0.1× = generous
-                    </p>
-                  )}
+                  <label className="flex min-w-0 items-center gap-2">
+                    <span className="sr-only">Levels above for threshold {i + 1}</span>
+                    <NumberInput
+                      value={threshold.levelsBelow}
+                      onCommit={(v) => updateThreshold(i, { levelsBelow: v ?? 0 })}
+                      min={0}
+                      dense
+                    />
+                  </label>
+                  <span
+                    aria-hidden="true"
+                    className="font-display text-base leading-none text-accent/60"
+                  >
+                    →
+                  </span>
+                  <label className="flex min-w-0 items-center gap-2">
+                    <span className="sr-only">Multiplier for threshold {i + 1}</span>
+                    <NumberInput
+                      value={threshold.multiplier}
+                      onCommit={(v) => updateThreshold(i, { multiplier: v ?? 1 })}
+                      min={0}
+                      step={0.05}
+                      dense
+                    />
+                    <span className="font-mono text-2xs text-text-muted/80">×</span>
+                  </label>
+                  <IconButton
+                    onClick={() => removeThreshold(i)}
+                    title="Remove threshold"
+                    aria-label={`Remove threshold ${i + 1}`}
+                    size="sm"
+                    danger
+                  >
+                    <TrashGlyph />
+                  </IconButton>
                 </li>
               ))}
             </ul>
           )}
-          <button
-            type="button"
-            onClick={addThreshold}
-            className="self-start rounded border border-accent/30 px-2 py-1 text-2xs text-accent transition-colors hover:bg-accent/10"
-          >
-            + Add threshold
-          </button>
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-2xs leading-snug text-text-muted/65">
+              Largest matching <span className="font-mono">levelsBelow</span> wins.
+            </p>
+            <ActionButton
+              variant="ghost"
+              size="sm"
+              onClick={addThreshold}
+            >
+              Add Threshold
+            </ActionButton>
+          </div>
         </div>
       )}
     </div>

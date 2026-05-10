@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { AppConfig, AchievementDefFile } from "@/types/config";
 import { AchievementsList } from "./achievements/AchievementsList";
 import { AchievementEditor } from "./achievements/AchievementEditor";
@@ -48,12 +48,29 @@ export function AchievementDefEditor({
 }: AchievementDefEditorProps) {
   const defs = config.achievementDefs;
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [bloomTick, setBloomTick] = useState(0);
+  const bloomTimer = useRef<number | null>(null);
 
   useEffect(() => {
     if (selectedId && defs[selectedId]) return;
     const first = Object.keys(defs)[0] ?? null;
     setSelectedId(first);
   }, [defs, selectedId]);
+
+  useEffect(() => {
+    return () => {
+      if (bloomTimer.current !== null) window.clearTimeout(bloomTimer.current);
+    };
+  }, []);
+
+  const triggerBloom = () => {
+    if (bloomTimer.current !== null) window.clearTimeout(bloomTimer.current);
+    setBloomTick((n) => n + 1);
+    bloomTimer.current = window.setTimeout(() => {
+      setBloomTick(0);
+      bloomTimer.current = null;
+    }, 1200);
+  };
 
   const patchDef = (id: string, patch: Partial<AchievementDefFile>) => {
     onChange({
@@ -133,6 +150,7 @@ export function AchievementDefEditor({
               config={config}
               onPatch={(p) => patchDef(selectedId, p)}
               onRename={(v) => renameDef(selectedId, v)}
+              onTitleFilled={triggerBloom}
             />
           ) : (
             <EmptyEditor onAdd={addDef} />
@@ -141,11 +159,16 @@ export function AchievementDefEditor({
       </div>
 
       {selectedId && selected && (
-        <AchievementPreview
-          def={selected}
-          categories={config.achievementCategories}
-          criterionTypes={config.achievementCriterionTypes}
-        />
+        <div
+          key={bloomTick}
+          className={bloomTick > 0 ? "animate-ember-bloom rounded-2xl" : undefined}
+        >
+          <AchievementPreview
+            def={selected}
+            categories={config.achievementCategories}
+            criterionTypes={config.achievementCriterionTypes}
+          />
+        </div>
       )}
     </div>
   );

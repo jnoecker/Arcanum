@@ -105,7 +105,7 @@ export function AppShell({ onNewProject }: AppShellProps) {
       </div>
       <header className="shrink-0"><Toolbar onNewProject={onNewProject} onToggleGuide={handleToggleGuide} guideOpen={showGuide} /></header>
       <div className="relative z-10 flex min-h-0 flex-1 flex-col gap-2 px-2 pb-2 pt-2 lg:flex-row">
-        <Sidebar />
+        {mapView === null && <Sidebar />}
         <main
           aria-label="Content"
           className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden"

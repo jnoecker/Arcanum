@@ -1,6 +1,8 @@
-import { useCallback, useMemo, useState } from "react";
+﻿import { useCallback, useMemo, useRef, useState } from "react";
 import { useConfigStore } from "@/stores/configStore";
+import { useZoneStore } from "@/stores/zoneStore";
 import type { FactionConfig, FactionDefinition } from "@/types/config";
+import { buildFactionUsage } from "@/lib/factionUsage";
 
 import { Hero } from "./factions/Hero";
 import { AllegianceList } from "./factions/AllegianceList";
@@ -8,7 +10,7 @@ import { FactionEditor } from "./factions/FactionEditor";
 import { ReputationTiersTable } from "./factions/ReputationTiersTable";
 import { RivalryMap } from "./factions/RivalryMap";
 import { QuestRewards } from "./factions/QuestRewards";
-import { SectionCard } from "./factions/SectionCard";
+import { SectionCard } from "@/components/ui/SectionCard";
 import { CompassRoseIcon } from "./factions/icons";
 
 function normalizeId(raw: string): string {
@@ -33,9 +35,11 @@ const DEFAULT_FACTION_CONFIG: FactionConfig = {
 export function FactionPanel() {
   const config = useConfigStore((s) => s.config);
   const updateConfig = useConfigStore((s) => s.updateConfig);
+  const zones = useZoneStore((s) => s.zones);
   const [selected, setSelected] = useState<string | null>(null);
   const [newId, setNewId] = useState("");
   const [newQuestId, setNewQuestId] = useState("");
+  const allegianceListRef = useRef<HTMLDivElement>(null);
 
   const rawFactions = config?.factions;
   const factions: FactionConfig = {
@@ -202,23 +206,54 @@ export function FactionPanel() {
     [factionIds, factions.definitions],
   );
 
+  const definedIdsSet = useMemo(() => new Set(factionIds), [factionIds]);
+  const usageReport = useMemo(
+    () => buildFactionUsage(zones, definedIdsSet, factions.questRewards),
+    [zones, definedIdsSet, factions.questRewards],
+  );
+
+  const handleAdoptOrphanId = useCallback(
+    (orphanId: string) => {
+      setNewId(orphanId);
+      requestAnimationFrame(() => {
+        const node = allegianceListRef.current;
+        if (!node) return;
+        node.scrollIntoView({ behavior: "smooth", block: "start" });
+        const input = node.querySelector<HTMLInputElement>('input[placeholder="new_faction_id"]');
+        input?.focus();
+      });
+    },
+    [],
+  );
+
   if (!config) return null;
 
   return (
     <div className="flex flex-col gap-4">
       <Hero factions={factions} count={factionIds.length} onPatch={patch} />
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <AllegianceList
-          factionIds={factionIds}
-          definitions={factions.definitions}
-          factionLabelMap={factionLabelMap}
-          selected={selected}
-          newId={newId}
-          onNewIdChange={setNewId}
-          onAdd={addFaction}
-          onSelect={(id) => setSelected(selected === id ? null : id)}
+      {usageReport.orphanIds.length > 0 && (
+        <OrphanReferencesBanner
+          orphanIds={usageReport.orphanIds}
+          usage={usageReport.usage}
+          onAdopt={handleAdoptOrphanId}
         />
+      )}
+
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <div ref={allegianceListRef}>
+          <AllegianceList
+            factionIds={factionIds}
+            definitions={factions.definitions}
+            factionLabelMap={factionLabelMap}
+            usage={usageReport.usage}
+            selected={selected}
+            newId={newId}
+            onNewIdChange={setNewId}
+            onAdd={addFaction}
+            onSelect={(id) => setSelected(selected === id ? null : id)}
+          />
+        </div>
 
         {selected && factions.definitions[selected] ? (
           <FactionEditor
@@ -266,6 +301,56 @@ export function FactionPanel() {
           onRenameQuest={renameQuestReward}
           onDeleteQuest={deleteQuestReward}
         />
+      </div>
+    </div>
+  );
+}
+
+interface OrphanReferencesBannerProps {
+  orphanIds: string[];
+  usage: Map<string, { mobCount: number; questCount: number; zones: Set<string> }>;
+  onAdopt: (id: string) => void;
+}
+
+function OrphanReferencesBanner({
+  orphanIds,
+  usage,
+  onAdopt,
+}: OrphanReferencesBannerProps) {
+  return (
+    <div
+      role="status"
+      className="rounded-xl border border-status-warning/30 bg-status-warning/[0.08] px-4 py-3"
+    >
+      <div className="flex flex-col gap-1.5">
+        <p className="font-display text-2xs uppercase tracking-wider text-status-warning">
+          {orphanIds.length === 1
+            ? "1 reference to an undefined faction"
+            : `${orphanIds.length} references to undefined factions`}
+        </p>
+        <p className="text-2xs leading-snug text-text-muted/85">
+          Mobs or quests cite faction IDs that don't exist in the allegiance roll.
+          Click an ID to prefill the add field below â€” or rename the offending references.
+        </p>
+        <div className="mt-1 flex flex-wrap gap-1.5">
+          {orphanIds.map((oid) => {
+            const stats = usage.get(oid);
+            const tip = stats
+              ? `${stats.mobCount} mob${stats.mobCount === 1 ? "" : "s"} Â· ${stats.questCount} quest${stats.questCount === 1 ? "" : "s"} Â· ${stats.zones.size} zone${stats.zones.size === 1 ? "" : "s"}`
+              : undefined;
+            return (
+              <button
+                key={oid}
+                type="button"
+                onClick={() => onAdopt(oid)}
+                title={tip ? `Define this faction (${tip})` : "Define this faction"}
+                className="focus-ring inline-flex items-center gap-1 rounded-md border border-status-warning/40 bg-status-warning/10 px-2 py-0.5 font-mono text-2xs text-status-warning transition hover:border-status-warning/60 hover:bg-status-warning/20"
+              >
+                {oid}
+              </button>
+            );
+          })}
+        </div>
       </div>
     </div>
   );

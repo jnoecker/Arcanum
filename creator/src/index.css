@@ -191,6 +191,18 @@
 
   /* ─── Miscellaneous ─── */
   --color-text-dirty: #ffb07a;
+
+  /* ─── Tuning Archetype Hues ─── */
+  /* Distinct from semantic status palette so each preset has its own
+     identity instead of borrowing meaning from error/warning/success. */
+  --archetype-default-rgb:      173 157 136; /* parchment-grey */
+  --archetype-balanced-rgb:      77 158 172; /* steady tide-teal */
+  --archetype-hardcore-rgb:     163  72  56; /* deep crimson-bronze */
+  --archetype-pvp-rgb:          120 110 178; /* steel-violet */
+  --archetype-casual-rgb:       232 168  84; /* warm amber */
+  --archetype-loreExplorer-rgb: 110 174 158; /* sage / tide-teal */
+  --archetype-soloStory-rgb:    140 178 110; /* moss-leaf */
+  --archetype-speedrun-rgb:     220 132  98; /* coral-spark */
 }
 
 /* ─── Arcanum Design Tokens ─── */

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+﻿import { useMemo, useState } from "react";
 import type {
   AbilityDefinitionConfig,
   AbilityEffectConfig,
@@ -13,7 +13,7 @@ import { EntityArtGenerator } from "@/components/ui/EntityArtGenerator";
 import { getPreamble } from "@/lib/arcanumPrompts";
 import type { ArtStyle } from "@/lib/arcanumPrompts";
 import { classColor } from "@/lib/cssTokens";
-import { SectionCard } from "../panels/factions/SectionCard";
+import { SectionCard } from "@/components/ui/SectionCard";
 
 function cx(...c: Array<string | false | null | undefined>) {
   return c.filter(Boolean).join(" ");
@@ -33,7 +33,7 @@ const DESCRIPTION_LIMIT = 240;
 function abilityPrompt(ability: AbilityDefinitionConfig, style: ArtStyle): string {
   const preamble = getPreamble(style, "worldbuilding");
   const effectDesc = ability.effect.type.toLowerCase().replace(/_/g, " ");
-  return `${preamble}, a game ability icon for "${ability.displayName}" — ${effectDesc} spell, ${ability.description || "magical ability"}, centered square composition like an RPG ability sprite, iconic symbol rendered as flowing energy, no text, no figures`;
+  return `${preamble}, a game ability icon for "${ability.displayName}" â€” ${effectDesc} spell, ${ability.description || "magical ability"}, centered square composition like an RPG ability sprite, iconic symbol rendered as flowing energy, no text, no figures`;
 }
 
 function buildAbilityContext(ability: AbilityDefinitionConfig): string {
@@ -109,7 +109,7 @@ export function AbilityEditor({
   );
 }
 
-// ─── Identity ──────────────────────────────────────────────────────
+// â”€â”€â”€ Identity â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function IdentityCard({
   id,
@@ -237,7 +237,7 @@ function SkillTreePicker({
   );
 }
 
-// ─── Action & Cost ─────────────────────────────────────────────────
+// â”€â”€â”€ Action & Cost â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function ActionCostCard({
   ability,
@@ -310,7 +310,7 @@ function ActionCostCard({
             }
             options={classOptions}
             allowEmpty
-            placeholder="— any class —"
+            placeholder="â€” any class â€”"
             dense
           />
         </FieldLabel>
@@ -319,7 +319,7 @@ function ActionCostCard({
   );
 }
 
-// ─── Combat Effect ─────────────────────────────────────────────────
+// â”€â”€â”€ Combat Effect â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function CombatEffectCard({
   id,
@@ -446,7 +446,7 @@ function CombatEffectCard({
               }
               options={statusEffectOptions}
               allowEmpty
-              placeholder="— select —"
+              placeholder="â€” select â€”"
               dense
             />
           </FieldLabel>
@@ -483,7 +483,7 @@ function CombatEffectCard({
                 }
                 options={petOptions}
                 allowEmpty
-                placeholder="— select pet —"
+                placeholder="â€” select pet â€”"
                 dense
               />
             </FieldLabel>
@@ -565,7 +565,7 @@ function PrerequisitesPicker({
 
       {prereqs.length === 0 ? (
         <p className="rounded-lg border border-dashed border-[var(--chrome-stroke-strong)] bg-[var(--chrome-fill-soft)] px-3 py-2 text-2xs italic text-text-muted/70">
-          None — this ability has no gates beyond level and class.
+          None â€” this ability has no gates beyond level and class.
         </p>
       ) : (
         <ul className="flex flex-wrap gap-1.5">
@@ -602,7 +602,7 @@ function PrerequisitesPicker({
                   aria-label={`Remove ${label}`}
                   className="focus-ring inline-flex h-4 w-4 items-center justify-center rounded text-text-muted/70 transition hover:bg-status-error/15 hover:text-status-error"
                 >
-                  ×
+                  Ã—
                 </button>
               </li>
             );
@@ -655,7 +655,7 @@ function PrerequisitesPicker({
   );
 }
 
-// ─── Visual Identity ───────────────────────────────────────────────
+// â”€â”€â”€ Visual Identity â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function VisualIdentityCard({
   id,
@@ -731,7 +731,7 @@ function SlugRenamer({ id, onRename }: { id: string; onRename: (v: string) => vo
   );
 }
 
-// ─── Shared primitives ─────────────────────────────────────────────
+// â”€â”€â”€ Shared primitives â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function FieldLabel({
   label,

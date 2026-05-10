@@ -151,7 +151,9 @@ export function XpCurveChart({ xp, maxLevel, height = 220, eyebrow }: XpCurveCha
             stroke="url(#xpCurveStroke)"
             strokeWidth={2.25}
             fill="url(#xpCurveFill)"
-            isAnimationActive={false}
+            isAnimationActive={true}
+            animationDuration={400}
+            animationEasing="ease-out"
             dot={false}
             activeDot={{
               r: 4,

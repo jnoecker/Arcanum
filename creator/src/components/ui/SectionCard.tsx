@@ -10,7 +10,7 @@ interface SectionCardProps {
 }
 
 /**
- * Section card used throughout the Factions panel.
+ * Generic ornate section card used across config editors.
  */
 export function SectionCard({
   title,

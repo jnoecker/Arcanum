@@ -1,5 +1,5 @@
-import { useMemo, useState } from "react";
-import { SectionCard } from "../panels/factions/SectionCard";
+﻿import { useMemo, useState } from "react";
+import { SectionCard } from "@/components/ui/SectionCard";
 import { PlusIcon, SearchIcon, ChevronRightIcon } from "./icons";
 
 function cx(...c: Array<string | false | null | undefined>) {
@@ -88,7 +88,7 @@ export function EntityList<T>({
         <ul className="flex flex-col gap-1.5">
           {displayed.length === 0 ? (
             <li className="rounded-xl border border-dashed border-[var(--chrome-stroke-strong)] bg-[var(--chrome-fill-soft)] px-3 py-6 text-center text-2xs italic text-text-muted/70">
-              {ids.length === 0 ? `Nothing yet — click ${addLabel}.` : "No matches."}
+              {ids.length === 0 ? `Nothing yet â€” click ${addLabel}.` : "No matches."}
             </li>
           ) : (
             displayed.map((id) => (

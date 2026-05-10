@@ -1,6 +1,6 @@
-import type { CraftingSkillDefinition } from "@/types/config";
+﻿import type { CraftingSkillDefinition } from "@/types/config";
 import { TextInput, SelectInput } from "@/components/ui/FormWidgets";
-import { SectionCard } from "../panels/factions/SectionCard";
+import { SectionCard } from "@/components/ui/SectionCard";
 import { TrashIcon } from "./icons";
 
 interface CraftingSkillDesignerProps {
@@ -88,7 +88,7 @@ export function CraftingSkillDesigner({
             <span className="text-text-muted/60">(optional)</span>
           </span>
           <span aria-hidden="true" className="text-text-muted/60">
-            ▾
+            â–¾
           </span>
         </summary>
         <div className="border-t border-[var(--chrome-stroke)] px-3 py-2 text-2xs text-text-muted/70">

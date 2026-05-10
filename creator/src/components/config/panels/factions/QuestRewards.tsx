@@ -1,6 +1,6 @@
-import { memo, useState } from "react";
+﻿import { memo, useState } from "react";
 import { ActionButton, TextInput, NumberInput, SelectInput } from "@/components/ui/FormWidgets";
-import { SectionCard } from "./SectionCard";
+import { SectionCard } from "@/components/ui/SectionCard";
 import { PlusIcon, TrashIcon, XIcon, CompassRoseIcon } from "./icons";
 
 function cx(...c: Array<string | false | null | undefined>) {
@@ -33,7 +33,7 @@ export function QuestRewards({
   return (
     <SectionCard
       title="Quest Reputation Rewards"
-      description="What a finished quest does to a player's standing. Use it to court allies — or burn bridges — based on the work they take."
+      description="What a finished quest does to a player's standing. Use it to court allies â€” or burn bridges â€” based on the work they take."
     >
       <div className="mb-3 flex items-center gap-2">
         <input
@@ -179,7 +179,7 @@ const QuestRewardRow = memo(function QuestRewardRow({
             <SelectInput
               value={newFaction}
               onCommit={setNewFaction}
-              options={[{ value: "", label: "— pick a faction —" }, ...available]}
+              options={[{ value: "", label: "â€” pick a faction â€”" }, ...available]}
               dense
             />
           </div>

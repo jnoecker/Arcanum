@@ -1,7 +1,7 @@
-import { useState, useEffect, useRef } from "react";
+﻿import { useState, useEffect, useRef } from "react";
 import type { FactionDefinition } from "@/types/config";
 import { TextInput, CommitTextarea } from "@/components/ui/FormWidgets";
-import { SectionCard } from "./SectionCard";
+import { SectionCard } from "@/components/ui/SectionCard";
 import { XIcon, TrashIcon, PencilIcon } from "./icons";
 
 function cx(...c: Array<string | false | null | undefined>) {
@@ -162,7 +162,7 @@ function RenamableId({ id, onRename }: { id: string; onRename: (v: string) => vo
           setEditing(true);
         }}
         className="group inline-flex items-center gap-1 font-mono text-xs text-text-muted/80 underline-offset-2 hover:text-text-primary hover:underline"
-        title="Rename — Esc to cancel"
+        title="Rename â€” Esc to cancel"
       >
         <span>ID: {id}</span>
         <PencilIcon className="h-3 w-3 opacity-50 transition group-hover:opacity-100" />
@@ -205,22 +205,38 @@ function RivalChips({ all, selected, factionLabelMap, onToggle }: RivalChipsProp
   return (
     <div className="rounded-lg border border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] p-2">
       <div className="flex flex-wrap gap-1.5">
-        {selected.map((eid) => (
-          <span
-            key={eid}
-            className="inline-flex items-center gap-1 rounded-md border border-status-error/40 bg-status-error/10 px-2 py-1 font-display text-2xs text-status-error"
-          >
-            {factionLabelMap.get(eid) ?? eid}
-            <button
-              type="button"
-              onClick={() => onToggle(eid)}
-              aria-label={`Remove ${factionLabelMap.get(eid) ?? eid}`}
-              className="focus-ring -mr-0.5 rounded p-0.5 text-status-error/70 transition hover:bg-status-error/20 hover:text-status-error"
+        {selected.map((eid) => {
+          const label = factionLabelMap.get(eid);
+          const missing = !label;
+          return (
+            <span
+              key={eid}
+              title={missing ? `Unknown faction: ${eid}. Define it or remove the rivalry.` : undefined}
+              className={cx(
+                "inline-flex items-center gap-1 rounded-md border px-2 py-1 font-display text-2xs",
+                missing
+                  ? "border-status-warning/40 bg-status-warning/10 text-status-warning"
+                  : "border-status-error/40 bg-status-error/10 text-status-error",
+              )}
             >
-              <XIcon className="h-3 w-3" />
-            </button>
-          </span>
-        ))}
+              {missing && <span aria-hidden="true">{"⚠ "}</span>}
+              {label ?? eid}
+              <button
+                type="button"
+                onClick={() => onToggle(eid)}
+                aria-label={`Remove ${label ?? eid}`}
+                className={cx(
+                  "focus-ring -mr-0.5 rounded p-0.5 transition",
+                  missing
+                    ? "text-status-warning/70 hover:bg-status-warning/20 hover:text-status-warning"
+                    : "text-status-error/70 hover:bg-status-error/20 hover:text-status-error",
+                )}
+              >
+                <XIcon className="h-3 w-3" />
+              </button>
+            </span>
+          );
+        })}
       </div>
       {all.filter((id) => !selected.includes(id)).length > 0 && (
         <div className="mt-2 flex flex-wrap gap-1.5 border-t border-[var(--chrome-stroke)] pt-2">

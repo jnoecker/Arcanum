@@ -1,6 +1,7 @@
-import type { FactionDefinition } from "@/types/config";
+﻿import type { FactionDefinition } from "@/types/config";
+import type { FactionUsage } from "@/lib/factionUsage";
 import { ActionButton } from "@/components/ui/FormWidgets";
-import { SectionCard } from "./SectionCard";
+import { SectionCard } from "@/components/ui/SectionCard";
 import { CompassRoseIcon, PlusIcon, SearchIcon } from "./icons";
 
 function cx(...c: Array<string | false | null | undefined>) {
@@ -11,6 +12,7 @@ interface AllegianceListProps {
   factionIds: string[];
   definitions: Record<string, FactionDefinition>;
   factionLabelMap: Map<string, string>;
+  usage: Map<string, FactionUsage>;
   selected: string | null;
   newId: string;
   onNewIdChange: (v: string) => void;
@@ -22,6 +24,7 @@ export function AllegianceList({
   factionIds,
   definitions,
   factionLabelMap,
+  usage,
   selected,
   newId,
   onNewIdChange,
@@ -68,6 +71,7 @@ export function AllegianceList({
               id={id}
               definition={definitions[id]!}
               factionLabelMap={factionLabelMap}
+              usage={usage.get(id)}
               selected={selected === id}
               onSelect={() => onSelect(id)}
             />
@@ -82,6 +86,7 @@ interface AllegianceRowProps {
   id: string;
   definition: FactionDefinition;
   factionLabelMap: Map<string, string>;
+  usage: FactionUsage | undefined;
   selected: boolean;
   onSelect: () => void;
 }
@@ -90,12 +95,17 @@ function AllegianceRow({
   id,
   definition,
   factionLabelMap,
+  usage,
   selected,
   onSelect,
 }: AllegianceRowProps) {
   const enemies = definition.enemies ?? [];
   const visible = enemies.slice(0, 3);
   const overflow = enemies.length - visible.length;
+  const mobCount = usage?.mobCount ?? 0;
+  const questCount = usage?.questCount ?? 0;
+  const zoneCount = usage?.zones.size ?? 0;
+  const isUnused = mobCount === 0 && questCount === 0;
 
   return (
     <li>
@@ -104,12 +114,13 @@ function AllegianceRow({
         onClick={onSelect}
         aria-pressed={selected}
         className={cx(
-          "focus-ring group flex w-full items-center gap-3 rounded-xl border px-3 py-2.5 text-left transition",
+          "focus-ring group flex w-full flex-col gap-1.5 rounded-xl border px-3 py-2.5 text-left transition",
           selected
             ? "selected-card"
             : "border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] hover:border-accent/30 hover:bg-[var(--chrome-fill)]",
         )}
       >
+        <div className="flex w-full items-center gap-3">
         <span
           aria-hidden="true"
           className={cx(
@@ -135,7 +146,7 @@ function AllegianceRow({
           ) : (
             <>
               <span className="font-display text-2xs uppercase tracking-wider text-text-muted/70">
-                Rivals ·
+                Rivals Â·
               </span>
               {visible.map((eid) => {
                 const label = factionLabelMap.get(eid);
@@ -161,8 +172,47 @@ function AllegianceRow({
             </>
           )}
         </div>
+        </div>
+        <UsageMeta
+          mobCount={mobCount}
+          questCount={questCount}
+          zoneCount={zoneCount}
+          isUnused={isUnused}
+        />
       </button>
     </li>
+  );
+}
+
+interface UsageMetaProps {
+  mobCount: number;
+  questCount: number;
+  zoneCount: number;
+  isUnused: boolean;
+}
+
+function UsageMeta({ mobCount, questCount, zoneCount, isUnused }: UsageMetaProps) {
+  if (isUnused) {
+    return (
+      <p
+        className="pl-12 font-display text-[0.65rem] uppercase tracking-wider text-text-muted/60"
+        title="No mobs or quests reference this faction yet."
+      >
+        Unused &mdash; no mobs or quests reference this faction.
+      </p>
+    );
+  }
+  const mobLabel = `${mobCount} ${mobCount === 1 ? "mob" : "mobs"}`;
+  const questLabel = `${questCount} ${questCount === 1 ? "quest" : "quests"}`;
+  const zoneLabel = `${zoneCount} ${zoneCount === 1 ? "zone" : "zones"}`;
+  return (
+    <p
+      className="pl-12 font-mono text-[0.65rem] text-text-muted/70"
+      title={`Referenced by ${mobLabel}, ${questLabel}, across ${zoneLabel}.`}
+    >
+      <span aria-hidden="true" className="text-accent/70">{"✦ "}</span>
+      {mobLabel} {"·"} {questLabel} {"·"} {zoneLabel}
+    </p>
   );
 }
 
@@ -174,7 +224,7 @@ function EmptyState() {
         Every world needs its quarrels.
       </p>
       <p className="mt-1 text-2xs leading-snug text-text-muted/70">
-        Name a guild, a court, a thieves' den — and tell us who hates whom. Try{" "}
+        Name a guild, a court, a thieves' den â€” and tell us who hates whom. Try{" "}
         <code className="text-text-muted">thieves_guild</code> or{" "}
         <code className="text-text-muted">royal_court</code>.
       </p>

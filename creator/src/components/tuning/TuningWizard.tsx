@@ -34,13 +34,16 @@ const ALL_SECTIONS_ORDERED = [
   TuningSection.WorldSocial,
 ];
 
+/** Per-archetype left border colour used to mark changed parameter rows.
+ * Uses the same dedicated archetype hues as PresetCard so the colour reads
+ * as "this preset" rather than borrowing meaning from the semantic palette. */
 const PRESET_BORDER: Record<string, string> = {
-  casual: "border-warm",
-  balanced: "border-stellar-blue",
-  hardcore: "border-status-error",
-  soloStory: "border-status-success",
-  pvpArena: "border-status-warning",
-  loreExplorer: "border-accent",
+  casual: "border-l-[rgb(var(--archetype-casual-rgb))]",
+  balanced: "border-l-[rgb(var(--archetype-balanced-rgb))]",
+  hardcore: "border-l-[rgb(var(--archetype-hardcore-rgb))]",
+  soloStory: "border-l-[rgb(var(--archetype-soloStory-rgb))]",
+  pvpArena: "border-l-[rgb(var(--archetype-pvp-rgb))]",
+  loreExplorer: "border-l-[rgb(var(--archetype-loreExplorer-rgb))]",
 };
 
 export function TuningWizard() {

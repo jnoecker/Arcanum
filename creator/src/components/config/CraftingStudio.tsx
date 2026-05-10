@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+﻿import { useCallback, useEffect, useState } from "react";
 import type {
   AppConfig,
   CraftingSkillDefinition,
@@ -15,7 +15,7 @@ import { HarvestPacingCard } from "./crafting/HarvestPacingCard";
 import { EntityList } from "./crafting/EntityList";
 import { CraftingSkillDesigner } from "./crafting/CraftingSkillDesigner";
 import { StationTypeDesigner } from "./crafting/StationTypeDesigner";
-import { SectionCard } from "./panels/factions/SectionCard";
+import { SectionCard } from "@/components/ui/SectionCard";
 
 function nextId(prefix: string, existing: Record<string, unknown>): string {
   if (!existing[prefix]) return prefix;
@@ -156,7 +156,7 @@ export function CraftingStudio({
               title="Crafting Skills"
               items={config.craftingSkills}
               selected={selectedSkill}
-              searchPlaceholder="Search skills…"
+              searchPlaceholder="Search skillsâ€¦"
               addLabel="Add Skill"
               viewAllLabel="View all skills"
               getDisplayName={(s) => s.displayName}
@@ -170,7 +170,7 @@ export function CraftingStudio({
               title="Station Types"
               items={config.craftingStationTypes}
               selected={selectedStation}
-              searchPlaceholder="Search station types…"
+              searchPlaceholder="Search station typesâ€¦"
               addLabel="Add Type"
               viewAllLabel="View all station types"
               getDisplayName={(s) => s.displayName}

@@ -1,6 +1,6 @@
-import type { AppConfig } from "@/types/config";
+﻿import type { AppConfig } from "@/types/config";
 import { NumberInput } from "@/components/ui/FormWidgets";
-import { SectionCard } from "../panels/factions/SectionCard";
+import { SectionCard } from "@/components/ui/SectionCard";
 
 interface HarvestPacingCardProps {
   crafting: AppConfig["crafting"];

@@ -174,7 +174,7 @@ export function EnchantingPanel({ config, onChange }: ConfigPanelProps) {
         onMaxPerItemChange={(v) =>
           patchGlobal({ maxEnchantmentsPerItem: Math.max(1, v) })
         }
-        onClose={() => setSelected(null)}
+        onDeselect={() => setSelected(null)}
         onSave={handleSave}
         onDuplicate={duplicateEnchantment}
         onDelete={deleteEnchantment}
@@ -203,6 +203,9 @@ export function EnchantingPanel({ config, onChange }: ConfigPanelProps) {
                 craftingSkillOptions={craftingSkillOptions}
                 equipSlotOptions={equipSlotOptions}
                 statOptions={statOptions}
+                craftingSkills={config.craftingSkills}
+                craftingStationTypes={config.craftingStationTypes}
+                equipmentSlots={config.equipmentSlots}
                 onPatch={(p) => patchEnchantment(selected, p)}
                 onRename={(v) => renameEnchantment(selected, v)}
               />
@@ -210,6 +213,7 @@ export function EnchantingPanel({ config, onChange }: ConfigPanelProps) {
                 id={selected}
                 def={selectedDef}
                 craftingSkills={config.craftingSkills}
+                craftingStationTypes={config.craftingStationTypes}
                 equipmentSlots={config.equipmentSlots}
                 stats={config.stats}
               />

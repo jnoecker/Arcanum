@@ -12,8 +12,7 @@ import {
 } from "@/components/ui/FormWidgets";
 import { useArrayField } from "@/lib/useArrayField";
 import { useZoneStore } from "@/stores/zoneStore";
-// TODO: extract SectionCard to components/ui/ — currently borrowed from factions panel
-import { SectionCard } from "../panels/factions/SectionCard";
+import { SectionCard } from "@/components/ui/SectionCard";
 import {
   PlusIcon,
   TrashIcon,

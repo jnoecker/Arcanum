@@ -5,6 +5,7 @@ interface EnchantmentPreviewProps {
   id: string;
   def: EnchantmentDefinitionConfig;
   craftingSkills: AppConfig["craftingSkills"];
+  craftingStationTypes: AppConfig["craftingStationTypes"];
   equipmentSlots: AppConfig["equipmentSlots"];
   stats: AppConfig["stats"];
 }
@@ -13,10 +14,17 @@ export function EnchantmentPreview({
   id,
   def,
   craftingSkills,
+  craftingStationTypes,
   equipmentSlots,
   stats,
 }: EnchantmentPreviewProps) {
-  const skillLabel = craftingSkills[def.skill]?.displayName ?? def.skill;
+  const skillDef = craftingSkills[def.skill];
+  const skillLabel = skillDef?.displayName ?? def.skill;
+  const stationKey = skillDef?.type?.trim() ?? "";
+  const stationLabel =
+    (stationKey && craftingStationTypes[stationKey]?.displayName) ||
+    stationKey ||
+    "an unspecified station";
 
   const slotsText =
     !def.targetSlots || def.targetSlots.length === 0
@@ -99,6 +107,10 @@ export function EnchantmentPreview({
           {skillLabel}
         </span>
       </div>
+      <p className="mt-1.5 font-display text-[0.65rem] italic tracking-[0.04em] text-text-muted/70">
+        Inscribed at {stationLabel} — requires skill level {def.skillRequired} to
+        attempt.
+      </p>
     </Section>
   );
 }

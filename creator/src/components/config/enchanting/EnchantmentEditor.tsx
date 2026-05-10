@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import type {
+  AppConfig,
   EnchantmentDefinitionConfig,
   EnchantmentMaterialConfig,
 } from "@/types/config";
@@ -22,6 +23,9 @@ interface EnchantmentEditorProps {
   craftingSkillOptions: { value: string; label: string }[];
   equipSlotOptions: { value: string; label: string }[];
   statOptions: { value: string; label: string }[];
+  craftingSkills: AppConfig["craftingSkills"];
+  craftingStationTypes: AppConfig["craftingStationTypes"];
+  equipmentSlots: AppConfig["equipmentSlots"];
   onPatch: (p: Partial<EnchantmentDefinitionConfig>) => void;
   onRename: (newId: string) => void;
 }
@@ -32,18 +36,23 @@ export function EnchantmentEditor({
   craftingSkillOptions,
   equipSlotOptions,
   statOptions,
+  craftingSkills,
+  craftingStationTypes,
+  equipmentSlots,
   onPatch,
   onRename,
 }: EnchantmentEditorProps) {
   const zones = useZoneStore((s) => s.zones);
-  const knownItemIds = useMemo(() => {
-    const set = new Set<string>();
+  const itemDisplayNames = useMemo(() => {
+    const map = new Map<string, string>();
     for (const z of zones.values()) {
       const items = z.data.items;
       if (!items) continue;
-      for (const itemId of Object.keys(items)) set.add(itemId);
+      for (const [itemId, item] of Object.entries(items)) {
+        if (!map.has(itemId)) map.set(itemId, item?.displayName ?? itemId);
+      }
     }
-    return set;
+    return map;
   }, [zones]);
 
   return (
@@ -52,6 +61,8 @@ export function EnchantmentEditor({
         id={id}
         def={def}
         craftingSkillOptions={craftingSkillOptions}
+        craftingSkills={craftingSkills}
+        craftingStationTypes={craftingStationTypes}
         onPatch={onPatch}
         onRename={onRename}
       />
@@ -62,9 +73,14 @@ export function EnchantmentEditor({
         <SlotCompatibilityCard
           def={def}
           equipSlotOptions={equipSlotOptions}
+          equipmentSlots={equipmentSlots}
           onPatch={onPatch}
         />
-        <MaterialsCard def={def} onPatch={onPatch} knownItemIds={knownItemIds} />
+        <MaterialsCard
+          def={def}
+          onPatch={onPatch}
+          itemDisplayNames={itemDisplayNames}
+        />
       </div>
     </div>
   );
@@ -76,15 +92,29 @@ function IdentityRequirementsCard({
   id,
   def,
   craftingSkillOptions,
+  craftingSkills,
+  craftingStationTypes,
   onPatch,
   onRename,
 }: {
   id: string;
   def: EnchantmentDefinitionConfig;
   craftingSkillOptions: { value: string; label: string }[];
+  craftingSkills: AppConfig["craftingSkills"];
+  craftingStationTypes: AppConfig["craftingStationTypes"];
   onPatch: (p: Partial<EnchantmentDefinitionConfig>) => void;
   onRename: (v: string) => void;
 }) {
+  const skillKey = def.skill?.trim() ?? "";
+  const skillDef = skillKey ? craftingSkills[skillKey] : undefined;
+  const skillName = skillDef?.displayName || skillKey;
+  const stationKey = skillDef?.type?.trim() ?? "";
+  const stationName =
+    (stationKey && craftingStationTypes[stationKey]?.displayName) ||
+    stationKey ||
+    "—";
+  const skillMissing = skillKey.length > 0 && !skillDef;
+
   return (
     <Section
       tier="primary"
@@ -136,6 +166,26 @@ function IdentityRequirementsCard({
             />
           </Field>
         </div>
+        {skillMissing ? (
+          <span
+            role="status"
+            className="inline-flex w-fit items-center gap-1 rounded-md border border-status-warning/40 bg-status-warning/10 px-2 py-0.5 font-mono text-[0.6rem] text-status-warning"
+          >
+            Skill “{skillKey}” not found in crafting registry.
+          </span>
+        ) : skillKey ? (
+          <p className="font-display text-2xs uppercase tracking-[0.18em] text-text-muted">
+            Requires:{" "}
+            <span className="text-text-secondary">{skillName}</span>
+            <span className="px-1 text-text-muted/50">·</span>
+            Level{" "}
+            <span className="font-bold tabular-nums text-accent">
+              {def.skillRequired}
+            </span>
+            <span className="px-1 text-text-muted/50">·</span>
+            <span className="text-text-secondary">{stationName}</span>
+          </p>
+        ) : null}
       </div>
     </Section>
   );
@@ -320,14 +370,18 @@ function EffectsCard({
 function SlotCompatibilityCard({
   def,
   equipSlotOptions,
+  equipmentSlots,
   onPatch,
 }: {
   def: EnchantmentDefinitionConfig;
   equipSlotOptions: { value: string; label: string }[];
+  equipmentSlots: AppConfig["equipmentSlots"];
   onPatch: (p: Partial<EnchantmentDefinitionConfig>) => void;
 }) {
   const targetSlots = def.targetSlots ?? [];
   const anySlot = targetSlots.length === 0;
+  const knownSlotIds = new Set(equipSlotOptions.map((o) => o.value));
+  const orphanSlots = targetSlots.filter((s) => !knownSlotIds.has(s));
 
   const setAnySlot = () => {
     onPatch({ targetSlots: undefined });
@@ -350,13 +404,28 @@ function SlotCompatibilityCard({
         <SlotChip active={anySlot} onClick={setAnySlot}>
           Any slot
         </SlotChip>
-        {equipSlotOptions.map(({ value, label }) => (
+        {equipSlotOptions.map(({ value, label }) => {
+          const active = targetSlots.includes(value);
+          const slotName = equipmentSlots[value]?.displayName || label;
+          return (
+            <SlotChip
+              key={value}
+              active={active}
+              onClick={() => toggleSlot(value)}
+            >
+              {slotName}
+            </SlotChip>
+          );
+        })}
+        {orphanSlots.map((value) => (
           <SlotChip
-            key={value}
-            active={targetSlots.includes(value)}
+            key={`orphan-${value}`}
+            active
+            warn
             onClick={() => toggleSlot(value)}
+            title={`Slot “${value}” is not defined in equipment slots. Click to remove.`}
           >
-            {label}
+            {value} (unknown)
           </SlotChip>
         ))}
       </div>
@@ -371,21 +440,28 @@ function SlotChip({
   active,
   onClick,
   children,
+  warn,
+  title,
 }: {
   active: boolean;
   onClick: () => void;
   children: React.ReactNode;
+  warn?: boolean;
+  title?: string;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
       aria-pressed={active}
+      title={title}
       className={cx(
         "focus-ring inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 font-display text-2xs font-medium transition",
-        active
-          ? "border-accent/60 bg-accent/15 text-accent shadow-[0_0_18px_-10px_rgb(var(--accent-rgb)/0.6)]"
-          : "border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] text-text-secondary hover:border-accent/30 hover:text-text-primary",
+        warn
+          ? "border-status-warning/50 bg-status-warning/10 text-status-warning hover:bg-status-warning/15"
+          : active
+            ? "border-accent/60 bg-accent/15 text-accent shadow-[0_0_18px_-10px_rgb(var(--accent-rgb)/0.6)]"
+            : "border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] text-text-secondary hover:border-accent/30 hover:text-text-primary",
       )}
     >
       {children}
@@ -398,11 +474,11 @@ function SlotChip({
 function MaterialsCard({
   def,
   onPatch,
-  knownItemIds,
+  itemDisplayNames,
 }: {
   def: EnchantmentDefinitionConfig;
   onPatch: (p: Partial<EnchantmentDefinitionConfig>) => void;
-  knownItemIds: Set<string>;
+  itemDisplayNames: Map<string, string>;
 }) {
   const materials = def.materials;
 
@@ -443,7 +519,9 @@ function MaterialsCard({
         <div className="flex flex-col gap-1.5">
           {materials.map((mat, i) => {
             const trimmed = mat.itemId.trim();
-            const unknown = trimmed.length > 0 && !knownItemIds.has(trimmed);
+            const known = trimmed.length > 0 && itemDisplayNames.has(trimmed);
+            const unknown = trimmed.length > 0 && !known;
+            const displayName = known ? itemDisplayNames.get(trimmed) : undefined;
             return (
               <div key={i} className="flex flex-col gap-1">
                 <div className="flex items-center gap-2 rounded-lg border border-status-warning/25 bg-status-warning/[0.05] px-2 py-1.5">
@@ -478,6 +556,11 @@ function MaterialsCard({
                     className="ml-2 inline-flex w-fit items-center gap-1 rounded-md border border-status-warning/40 bg-status-warning/10 px-1.5 py-0.5 font-mono text-[0.6rem] text-status-warning"
                   >
                     No item with ID “{trimmed}” found in loaded zones.
+                  </span>
+                )}
+                {known && displayName && (
+                  <span className="ml-2 inline-flex w-fit items-center gap-1 rounded-md border border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] px-1.5 py-0.5 font-display text-[0.6rem] uppercase tracking-[0.16em] text-text-muted">
+                    → {displayName}
                   </span>
                 )}
               </div>

@@ -1,6 +1,6 @@
-import { useMemo } from "react";
+﻿import { useMemo } from "react";
 import type { FactionDefinition } from "@/types/config";
-import { SectionCard } from "./SectionCard";
+import { SectionCard } from "@/components/ui/SectionCard";
 
 interface RivalryMapProps {
   definitions: Record<string, FactionDefinition>;
@@ -97,7 +97,7 @@ export function RivalryMap({ definitions, factionLabelMap }: RivalryMapProps) {
             >
               {ids.length === 0
                 ? "Name a faction or two to draw the map"
-                : "One faction can't have rivals alone — add another"}
+                : "One faction can't have rivals alone â€” add another"}
             </text>
           )}
 
@@ -111,7 +111,7 @@ export function RivalryMap({ definitions, factionLabelMap }: RivalryMapProps) {
               fontSize="11"
               fontStyle="italic"
             >
-              Peace, for now — no rivalries declared
+              Peace, for now â€” no rivalries declared
             </text>
           )}
 
@@ -162,7 +162,7 @@ export function RivalryMap({ definitions, factionLabelMap }: RivalryMapProps) {
                   fontSize="11"
                   fontWeight="600"
                 >
-                  {label.length > 16 ? label.slice(0, 14) + "…" : label}
+                  {label.length > 16 ? label.slice(0, 14) + "â€¦" : label}
                 </text>
               </g>
             );

@@ -1,6 +1,6 @@
-import type { CraftingStationTypeDefinition } from "@/types/config";
+﻿import type { CraftingStationTypeDefinition } from "@/types/config";
 import { TextInput } from "@/components/ui/FormWidgets";
-import { SectionCard } from "../panels/factions/SectionCard";
+import { SectionCard } from "@/components/ui/SectionCard";
 import { TrashIcon } from "./icons";
 
 interface StationTypeDesignerProps {

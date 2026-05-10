@@ -1,4 +1,4 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import type { PetDefinitionConfig, PetSpellConfig } from "@/types/config";
 import {
   TextInput,
@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/FormWidgets";
 import { EntityArtGenerator } from "@/components/ui/EntityArtGenerator";
 import { getPreamble, type ArtStyle } from "@/lib/arcanumPrompts";
-import { SectionCard } from "../panels/factions/SectionCard";
+import { SectionCard } from "@/components/ui/SectionCard";
 import { PlusIcon, TrashIcon } from "../achievements/icons";
 
 function cx(...c: Array<string | false | null | undefined>) {
@@ -39,7 +39,7 @@ function threatRole(multiplier: number | undefined): string {
 
 function petPrompt(pet: PetDefinitionConfig, style: ArtStyle): string {
   const preamble = getPreamble(style, "worldbuilding");
-  return `${preamble}, a summoned companion creature — "${pet.name}", ${pet.description || "a loyal magical pet"}, full body portrait, RPG companion creature, no text`;
+  return `${preamble}, a summoned companion creature â€” "${pet.name}", ${pet.description || "a loyal magical pet"}, full body portrait, RPG companion creature, no text`;
 }
 
 function buildPetContext(pet: PetDefinitionConfig): string {
@@ -78,7 +78,7 @@ export function PetEditor({ id, pet, onPatch, onRename }: PetEditorProps) {
   );
 }
 
-// ─── Identity ──────────────────────────────────────────────────────
+// â”€â”€â”€ Identity â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function IdentityCard({
   id,
@@ -112,7 +112,7 @@ function IdentityCard({
             label=""
             value={pet.description ?? ""}
             onCommit={(v) => onPatch({ description: v || undefined })}
-            placeholder="A long grey wolf with sharp yellow eyes…"
+            placeholder="A long grey wolf with sharp yellow eyesâ€¦"
             rows={3}
           />
         </FieldLabel>
@@ -154,7 +154,7 @@ function SlugRenamer({ id, onRename }: { id: string; onRename: (v: string) => vo
   );
 }
 
-// ─── Combat stats (with role + default attack) ─────────────────────
+// â”€â”€â”€ Combat stats (with role + default attack) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function CombatStatsCard({
   pet,
@@ -251,7 +251,7 @@ function StatBlock({
   );
 }
 
-// ─── Portrait ──────────────────────────────────────────────────────
+// â”€â”€â”€ Portrait â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function PortraitCard({
   id,
@@ -277,7 +277,7 @@ function PortraitCard({
   );
 }
 
-// ─── Spells ────────────────────────────────────────────────────────
+// â”€â”€â”€ Spells â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function SpellsCard({
   pet,
@@ -551,7 +551,7 @@ function Caret({ expanded }: { expanded: boolean }) {
   );
 }
 
-// ─── Shared label primitive ────────────────────────────────────────
+// â”€â”€â”€ Shared label primitive â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function FieldLabel({
   label,

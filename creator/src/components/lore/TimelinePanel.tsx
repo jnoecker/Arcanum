@@ -333,6 +333,8 @@ function ManageCalendarsDialog({
 // ─── Filter Rail ─────────────────────────────────────────────────────────
 
 interface FilterRailProps {
+  open: boolean;
+  onToggle: () => void;
   search: string;
   onSearch: (value: string) => void;
   calendars: CalendarSystem[];
@@ -359,6 +361,8 @@ interface FilterRailProps {
 }
 
 function FilterRail({
+  open,
+  onToggle,
   search,
   onSearch,
   calendars,
@@ -402,13 +406,40 @@ function FilterRail({
   };
 
   return (
-    <aside className="flex min-h-0 flex-col gap-4 overflow-y-auto rounded-[0.9rem] border border-[var(--chrome-stroke-strong)] bg-[var(--chrome-fill-soft)] p-4 shadow-[0_1px_0_rgb(var(--highlight-rgb)/0.04)_inset,0_8px_24px_-12px_rgb(0_0_0/0.35)] backdrop-blur-sm">
-      <div>
-        <p className="text-[0.62rem] uppercase tracking-[0.32em] text-[var(--color-warm)]/80">
-          Filter & Navigate
-        </p>
+    <aside
+      className={`flex min-h-0 flex-col rounded-[0.9rem] border border-[var(--chrome-stroke-strong)] bg-[var(--chrome-fill-soft)] shadow-[0_1px_0_rgb(var(--highlight-rgb)/0.04)_inset,0_8px_24px_-12px_rgb(0_0_0/0.35)] backdrop-blur-sm ${
+        open ? "gap-4 overflow-y-auto p-4" : "items-center gap-3 overflow-hidden p-2"
+      }`}
+    >
+      <div className={open ? "flex w-full items-center justify-between gap-2" : "flex w-full justify-center"}>
+        {open && (
+          <p className="text-[0.62rem] uppercase tracking-[0.32em] text-[var(--color-warm)]/80">
+            Filter & Navigate
+          </p>
+        )}
+        <button
+          type="button"
+          onClick={onToggle}
+          aria-label={open ? "Collapse filter panel" : "Expand filter panel"}
+          aria-expanded={open}
+          title={open ? "Collapse filters" : "Expand filters"}
+          className="focus-ring inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-text-muted transition hover:bg-[var(--chrome-highlight-strong)] hover:text-text-primary"
+        >
+          <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true">
+            <path d={open ? "M10 3L5 8l5 5" : "M6 3l5 5-5 5"} strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </button>
       </div>
-
+      {!open && (
+        <span
+          className="select-none whitespace-nowrap text-[0.6rem] uppercase tracking-[0.32em] text-text-muted/70"
+          style={{ writingMode: "vertical-rl" }}
+        >
+          Filter & Navigate
+        </span>
+      )}
+      {open && (
+        <>
       <label className="flex flex-col gap-1.5">
         <span className="text-[0.6rem] uppercase tracking-[0.22em] text-text-muted">Search</span>
         <input
@@ -587,6 +618,8 @@ function FilterRail({
           </svg>
         </button>
       </div>
+        </>
+      )}
     </aside>
   );
 }
@@ -1272,6 +1305,7 @@ export function TimelinePanel() {
   });
   const [showCalendarManager, setShowCalendarManager] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [filterRailOpen, setFilterRailOpen] = useState(true);
 
   const resolvedEvents = useMemo(() => resolveTimelineEvents(events, calendars), [events, calendars]);
 
@@ -1536,8 +1570,16 @@ export function TimelinePanel() {
       )}
 
       {/* Body */}
-      <div className="grid min-h-0 flex-1 gap-4 overflow-hidden p-3 lg:grid-cols-[16rem_minmax(0,1fr)]">
+      <div
+        className={`grid min-h-0 flex-1 gap-4 overflow-hidden p-3 ${
+          filterRailOpen
+            ? "lg:grid-cols-[16rem_minmax(0,1fr)]"
+            : "lg:grid-cols-[2.5rem_minmax(0,1fr)]"
+        }`}
+      >
         <FilterRail
+          open={filterRailOpen}
+          onToggle={() => setFilterRailOpen((v) => !v)}
           search={search}
           onSearch={setSearch}
           calendars={calendars}

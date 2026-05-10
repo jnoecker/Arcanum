@@ -128,48 +128,45 @@ export function AchievementDefEditor({
   const selected = selectedId ? defs[selectedId] ?? null : null;
 
   return (
-    <div className="flex flex-col gap-3">
-      <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
-        <div className="xl:col-span-3">
-          <AchievementsList
-            defs={defs}
-            categories={config.achievementCategories}
-            selectedId={selectedId}
-            onSelect={setSelectedId}
-            onAdd={addDef}
-            onDuplicate={duplicateDef}
-            onDelete={deleteDef}
-          />
-        </div>
-
-        <div className="xl:col-span-9">
-          {selectedId && selected ? (
-            <AchievementEditor
-              id={selectedId}
-              def={selected}
-              config={config}
-              onPatch={(p) => patchDef(selectedId, p)}
-              onRename={(v) => renameDef(selectedId, v)}
-              onTitleFilled={triggerBloom}
-            />
-          ) : (
-            <EmptyEditor onAdd={addDef} />
-          )}
-        </div>
+    <div className="grid grid-cols-1 gap-4 xl:grid-cols-12 xl:items-start">
+      <div className="xl:sticky xl:top-3 xl:col-span-3 xl:max-h-[calc(100vh-2rem)]">
+        <AchievementsList
+          defs={defs}
+          categories={config.achievementCategories}
+          selectedId={selectedId}
+          onSelect={setSelectedId}
+          onAdd={addDef}
+          onDuplicate={duplicateDef}
+          onDelete={deleteDef}
+        />
       </div>
 
-      {selectedId && selected && (
-        <div
-          key={bloomTick}
-          className={bloomTick > 0 ? "animate-ember-bloom rounded-2xl" : undefined}
-        >
-          <AchievementPreview
+      <div className="flex flex-col gap-3 xl:col-span-9">
+        {selectedId && selected ? (
+          <AchievementEditor
+            id={selectedId}
             def={selected}
-            categories={config.achievementCategories}
-            criterionTypes={config.achievementCriterionTypes}
+            config={config}
+            onPatch={(p) => patchDef(selectedId, p)}
+            onRename={(v) => renameDef(selectedId, v)}
+            onTitleFilled={triggerBloom}
           />
-        </div>
-      )}
+        ) : (
+          <EmptyEditor onAdd={addDef} />
+        )}
+        {selectedId && selected && (
+          <div
+            key={bloomTick}
+            className={bloomTick > 0 ? "animate-ember-bloom rounded-2xl" : undefined}
+          >
+            <AchievementPreview
+              def={selected}
+              categories={config.achievementCategories}
+              criterionTypes={config.achievementCriterionTypes}
+            />
+          </div>
+        )}
+      </div>
     </div>
   );
 }

@@ -73,7 +73,7 @@ export function AchievementsList({
       : (categories[activeCategory]?.displayName ?? activeCategory);
 
   return (
-    <aside className="panel-surface flex flex-col gap-2 rounded-2xl p-3 shadow-section">
+    <aside className="panel-surface flex h-full max-h-[calc(100vh-2rem)] min-h-[28rem] flex-col gap-2 rounded-2xl p-3 shadow-section">
       <div className="flex items-center justify-between gap-2">
         <h3 className="font-display text-xs font-semibold uppercase tracking-[0.18em] text-text-secondary">
           Achievements
@@ -192,7 +192,7 @@ export function AchievementsList({
         </button>
       </div>
 
-      <ul className="-mx-1 flex max-h-[64vh] flex-col gap-1.5 overflow-y-auto px-1 pb-1">
+      <ul className="-mx-1 flex min-h-0 flex-1 flex-col gap-1.5 overflow-y-auto px-1 pb-1">
         {filtered.length === 0 ? (
           <li>
             <div className="rounded-xl border border-dashed border-[var(--chrome-stroke-strong)] bg-[var(--chrome-fill-soft)] px-3 py-6 text-center text-2xs italic text-text-muted/70">

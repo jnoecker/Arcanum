@@ -401,7 +401,7 @@ function FilterRail({
   };
 
   return (
-    <aside className="flex min-h-0 flex-col gap-4 overflow-y-auto rounded-[0.9rem] border border-border-muted/45 bg-[linear-gradient(180deg,rgb(var(--bg-rgb)/0.94),rgb(var(--abyss-rgb)/0.98))] p-4 shadow-[var(--shadow-panel)]">
+    <aside className="flex min-h-0 flex-col gap-4 overflow-y-auto rounded-[0.9rem] border border-[var(--chrome-stroke-strong)] bg-[var(--chrome-fill-soft)] p-4 shadow-[0_1px_0_rgb(var(--highlight-rgb)/0.04)_inset,0_8px_24px_-12px_rgb(0_0_0/0.35)] backdrop-blur-sm">
       <div>
         <p className="text-[0.62rem] uppercase tracking-[0.32em] text-[var(--color-warm)]/80">
           Filter & Navigate
@@ -720,7 +720,7 @@ function EventInspector({
 
   if (!resolvedEvent) {
     return (
-      <aside className={`min-h-0 overflow-y-auto rounded-[0.9rem] border border-border-muted/45 bg-[linear-gradient(180deg,rgb(var(--bg-rgb)/0.94),rgb(var(--abyss-rgb)/0.98))] p-5 shadow-[var(--shadow-panel)] ${className}`}>
+      <aside className={`min-h-0 overflow-y-auto rounded-[0.9rem] border border-[var(--chrome-stroke-strong)] bg-[var(--chrome-fill-soft)] p-5 shadow-[0_1px_0_rgb(var(--highlight-rgb)/0.04)_inset,0_8px_24px_-12px_rgb(0_0_0/0.35)] backdrop-blur-sm ${className}`}>
         <div className="flex items-start justify-between gap-2">
           <p className="text-[0.62rem] uppercase tracking-[0.28em] text-[var(--color-warm)]/80">
             Event Inspector
@@ -767,7 +767,7 @@ function EventInspector({
   const selectedArticle = event.articleId ? articles[event.articleId] : undefined;
 
   return (
-    <aside className={`flex min-h-0 flex-col gap-4 overflow-y-auto rounded-[0.9rem] border border-border-muted/45 bg-[linear-gradient(180deg,rgb(var(--bg-rgb)/0.94),rgb(var(--abyss-rgb)/0.98))] p-5 shadow-[var(--shadow-panel)] ${className}`}>
+    <aside className={`flex min-h-0 flex-col gap-4 overflow-y-auto rounded-[0.9rem] border border-[var(--chrome-stroke-strong)] bg-[var(--chrome-fill-soft)] p-5 shadow-[0_1px_0_rgb(var(--highlight-rgb)/0.04)_inset,0_8px_24px_-12px_rgb(0_0_0/0.35)] backdrop-blur-sm ${className}`}>
       <div className="flex items-start justify-between gap-2">
         <p className="text-[0.62rem] uppercase tracking-[0.28em] text-[var(--color-warm)]/80">
             Event Inspector
@@ -1443,9 +1443,9 @@ export function TimelinePanel() {
   );
 
   return (
-    <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-[0.9rem] border border-border-muted/45 shadow-[var(--shadow-panel)]">
+    <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-[0.9rem] border border-[var(--chrome-stroke-strong)] bg-[var(--chrome-fill-soft)] shadow-[0_1px_0_rgb(var(--highlight-rgb)/0.04)_inset,0_8px_24px_-12px_rgb(0_0_0/0.35)] backdrop-blur-sm">
       {/* Header */}
-      <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border-muted/45 bg-[radial-gradient(circle_at_top_left,rgb(var(--accent-rgb)/0.10),transparent_38%),linear-gradient(160deg,rgb(var(--bg-rgb)/0.96),rgb(var(--abyss-rgb)/0.94))] px-5 py-3">
+      <header className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--chrome-stroke)] bg-[radial-gradient(circle_at_top_left,rgb(var(--accent-rgb)/0.08),transparent_38%)] px-5 py-3">
         <div className="min-w-0">
           <p className="text-[0.6rem] uppercase tracking-[0.32em] text-[var(--color-warm)]/80">
             {headerTitle === "Chronicle" ? "Timeline Editor" : "Chronicle · Timeline Editor"}

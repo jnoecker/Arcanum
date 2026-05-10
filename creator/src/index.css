@@ -485,6 +485,27 @@ select,
     0 0 0 4px rgb(var(--accent-rgb) / 0.42);
 }
 
+/* Ornate cards sit over the island background image. The surface is kept
+   translucent so the bg still reads through, but a backdrop blur softens
+   the noise behind values and labels — atmospheric, not busy. */
+.ornate-card {
+  background: linear-gradient(
+    160deg,
+    rgb(var(--surface-rgb) / 0.68),
+    rgb(var(--bg-rgb) / 0.6)
+  );
+  -webkit-backdrop-filter: blur(12px) saturate(1.06);
+  backdrop-filter: blur(12px) saturate(1.06);
+}
+
+.ornate-card.scrimmed {
+  background: linear-gradient(
+    160deg,
+    rgb(var(--surface-rgb) / 0.94),
+    rgb(var(--bg-rgb) / 0.9)
+  );
+}
+
 .ornate-input {
   border: 1px solid var(--color-border-default);
   border-radius: 0.5rem;

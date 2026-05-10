@@ -1,4 +1,6 @@
 import { useId, useState, type ButtonHTMLAttributes, type ReactNode, type Ref, type CSSProperties } from "react";
+import { createPortal } from "react-dom";
+import { useThemeStore } from "@/stores/themeStore";
 
 function cx(...classes: Array<string | false | null | undefined>) {
   return classes.filter(Boolean).join(" ");
@@ -85,7 +87,12 @@ export function DialogShell({
   onClose?: () => void;
   children: ReactNode;
 }) {
-  return (
+  const panelBackgrounds = useThemeStore((s) => s.panelBackgrounds);
+  // Portal to <body> so dialogs escape any ancestor that creates a containing
+  // block for fixed descendants (e.g. <main> has mask-image, which breaks
+  // viewport-relative `position: fixed`). Without this, dialogs center to
+  // their parent region (right of the sidebar) instead of the screen.
+  return createPortal(
     <div className={cx("dialog-overlay", overlayClassName)} style={overlayStyle}>
       <div
         ref={dialogRef}
@@ -94,7 +101,7 @@ export function DialogShell({
         aria-labelledby={titleId}
         className={cx("dialog-shell flex max-h-[88vh] w-full flex-col", widthClassName, className)}
       >
-        {backdrop && (
+        {backdrop && panelBackgrounds && (
           <div aria-hidden="true" className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
             {backdrop}
           </div>
@@ -126,7 +133,8 @@ export function DialogShell({
         <div className={cx("relative z-10 dialog-body", bodyClassName)}>{children}</div>
         {footer && <div className="relative z-10 dialog-footer">{footer}</div>}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
 

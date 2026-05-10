@@ -40,10 +40,9 @@ export function OrnateCard({
   className,
   children,
 }: OrnateCardProps) {
-  const bg = tone === "scrimmed" ? "bg-[var(--bg-panel-strong)]" : "bg-[var(--bg-panel)]";
   return (
     <section
-      className={`ornate-card mb-4 break-inside-avoid rounded-2xl border border-[var(--chrome-stroke)] ${bg} p-4 shadow-section ${className ?? ""}`}
+      className={`ornate-card mb-4 break-inside-avoid rounded-2xl border border-[var(--chrome-stroke)] p-4 shadow-section ${tone === "scrimmed" ? "scrimmed" : ""} ${className ?? ""}`}
     >
       <header className="mb-3 flex items-start gap-3">
         {number !== undefined && (

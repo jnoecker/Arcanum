@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
 import { writeTextFile } from "@tauri-apps/plugin-fs";
@@ -21,6 +22,8 @@ import {
 import type { WorldFile } from "@/types/world";
 import type { SketchParseResult } from "@/types/sketch";
 import { ActionButton } from "@/components/ui/FormWidgets";
+import { FORGE_NEW_ZONE_BG } from "@/lib/islandRegistry";
+import { useThemeStore } from "@/stores/themeStore";
 import {
   ZONE_ID_RE,
   SIZE_PRESETS,
@@ -69,6 +72,7 @@ export function NewZoneDialog({ onClose, prefill, onCreated }: NewZoneDialogProp
   const config = useConfigStore((s) => s.config);
   const saveVibe = useVibeStore((s) => s.saveVibe);
   const vibes = useVibeStore((s) => s.vibes);
+  const panelBackgrounds = useThemeStore((s) => s.panelBackgrounds);
 
   // ─── Wizard state ─────────────────────────────────────────────
   const [step, setStep] = useState<WizardStep>(prefill ? "content" : "target");
@@ -408,17 +412,31 @@ export function NewZoneDialog({ onClose, prefill, onCreated }: NewZoneDialogProp
 
   // ─── Render ───────────────────────────────────────────────────
 
-  return (
+  // Portal to <body> so the dialog escapes the workspace's mask-image
+  // containing block and centers to the viewport, not to <main>.
+  return createPortal(
     <div className="modal-overlay">
       <div
         ref={trapRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby="new-zone-dialog-title"
-        className="mx-4 flex max-h-[90vh] w-full max-w-[min(44rem,calc(100vw-2rem))] flex-col overflow-hidden rounded-lg border border-border-default bg-bg-secondary shadow-xl"
+        className="relative mx-4 flex max-h-[90vh] w-full max-w-[min(44rem,calc(100vw-2rem))] flex-col overflow-hidden rounded-lg border border-border-default bg-bg-secondary shadow-xl"
       >
+        {/* Atmospheric backdrop — forge anvil/blueprint art bleeds through
+            the chrome to give zone creation a sense of place. Hidden when
+            the user has disabled panel backgrounds for accessibility. */}
+        {panelBackgrounds && (
+          <div aria-hidden="true" className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
+            <img
+              src={FORGE_NEW_ZONE_BG}
+              alt=""
+              className="h-full w-full object-cover opacity-[0.18] mix-blend-soft-light"
+            />
+          </div>
+        )}
         {/* Header */}
-        <div className="shrink-0 border-b border-border-default px-5 py-3">
+        <div className="relative z-10 shrink-0 border-b border-border-default px-5 py-3">
           <h2
             id="new-zone-dialog-title"
             className="font-display text-sm tracking-wide text-accent-emphasis"
@@ -429,7 +447,7 @@ export function NewZoneDialog({ onClose, prefill, onCreated }: NewZoneDialogProp
         </div>
 
         {/* Body */}
-        <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
+        <div className="relative z-10 min-h-0 flex-1 overflow-y-auto px-5 py-4">
           {step === "target" && (
             <TargetStep
               target={target}
@@ -513,7 +531,7 @@ export function NewZoneDialog({ onClose, prefill, onCreated }: NewZoneDialogProp
         </div>
 
         {/* Footer */}
-        <div className="flex shrink-0 flex-col-reverse gap-2 border-t border-border-default px-5 py-3 sm:flex-row sm:justify-between">
+        <div className="relative z-10 flex shrink-0 flex-col-reverse gap-2 border-t border-border-default px-5 py-3 sm:flex-row sm:justify-between">
           <ActionButton variant="ghost" size="sm" onClick={onClose} disabled={creating}>
             {step === "done" ? "Close" : "Cancel"}
           </ActionButton>
@@ -580,7 +598,8 @@ export function NewZoneDialog({ onClose, prefill, onCreated }: NewZoneDialogProp
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
 

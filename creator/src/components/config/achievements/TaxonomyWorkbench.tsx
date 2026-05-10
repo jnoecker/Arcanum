@@ -96,8 +96,8 @@ export function TaxonomyWorkbench<T>({
   };
 
   return (
-    <div className="grid grid-cols-1 gap-4 xl:grid-cols-12 xl:items-start">
-      <aside className="panel-surface flex max-h-[calc(100vh-2rem)] min-h-[34rem] flex-col gap-3 rounded-2xl p-4 shadow-section xl:sticky xl:top-3 xl:col-span-4">
+    <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
+      <aside className="panel-surface flex max-h-[calc(100vh-2rem)] flex-col gap-3 rounded-2xl p-4 shadow-section xl:sticky xl:top-3 xl:col-span-4 xl:self-start">
         <div className="flex items-center justify-between gap-2">
           <h3 className="font-display text-xs font-semibold uppercase tracking-[0.18em] text-text-secondary">
             {listTitle}

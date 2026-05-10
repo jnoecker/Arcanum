@@ -8,10 +8,14 @@ const ZOOM_MAX = 4;
 
 const TOP_PADDING = 10;
 const LANE_STEP = 22;
-const TRACK_TO_LANE0 = 94;       // gap from track axis to lane-0 label baseline
-const TRACK_BOTTOM_AREA = 40;    // space below the track for tick numerals
-const MIN_TRACK_Y = 170;         // preserves the airy single-lane look at low density
+const TRACK_TO_LANE0 = 94;          // gap from track axis to lane-0 (above) baseline
+const TRACK_BOTTOM_AREA = 40;       // tick numerals + breathing room before below lane 0
+const MIN_TRACK_Y = 170;            // preserves the airy single-lane look at low density
+const LANE_STEP_BELOW = 18;         // tighter pitch for minor-event labels under the track
+const BELOW_LABEL_HEIGHT = 22;      // ~10px year + 9px title + leading
+const BELOW_BOTTOM_PADDING = 8;
 const LABEL_PX_PER_CHAR = 6.4;
+const LABEL_PX_PER_CHAR_MINOR = 5.4; // smaller glyphs pack tighter horizontally
 const LABEL_MIN_GAP = 14;
 
 const SCRUBBER_HEIGHT = 60;
@@ -63,8 +67,11 @@ interface LabeledEvent {
   event: TimelineEvent;
   absYear: number;
   x: number;
-  /** Lane index above the track; 0 sits closest. null = no label. */
-  laneIndex: number | null;
+  /** Lane index on its side; 0 sits closest to the track. */
+  laneIndex: number;
+  /** Which side of the track the label sits on. Minor events go below;
+   *  major and legendary go above. */
+  side: "above" | "below";
 }
 
 interface RibbonProps {
@@ -123,30 +130,42 @@ export function TimelineView({
     return out;
   }, [tickStep, window_.max, window_.min]);
 
-  // Greedy lane assignment for labeled (non-minor) events. Lane count is
+  // Greedy lane packing on both sides of the track. Major / legendary
+  // events stack above; minor events stack below. Both stacks are
   // unbounded — the ribbon grows vertically to accommodate dense periods.
-  const { labeledEvents, lanesUsedAbove } = useMemo(() => {
-    const laneEnds: number[] = [];
+  const { labeledEvents, lanesUsedAbove, lanesUsedBelow } = useMemo(() => {
+    const lanesAbove: number[] = [];
+    const lanesBelow: number[] = [];
     const entries: LabeledEvent[] = sortedEvents.map((event) => {
       const absY = absoluteYear(event, calendars);
       const x = SCRUBBER_PAD + (absY - window_.min) * pxPerYear;
-      if (event.importance === "minor") {
-        return { event, absYear: absY, x, laneIndex: null };
-      }
+      const isMinor = event.importance === "minor";
+      const lanes = isMinor ? lanesBelow : lanesAbove;
+      const pxPerChar = isMinor ? LABEL_PX_PER_CHAR_MINOR : LABEL_PX_PER_CHAR;
       const labelText = `Y${formatYear(event.year)} ${event.title}`;
-      const approxWidth = Math.min(220, Math.max(80, labelText.length * LABEL_PX_PER_CHAR));
+      const approxWidth = Math.min(220, Math.max(80, labelText.length * pxPerChar));
       const labelStart = x - 6;
       const labelEnd = labelStart + approxWidth + LABEL_MIN_GAP;
 
       for (let i = 0; ; i++) {
-        const end = laneEnds[i];
+        const end = lanes[i];
         if (end === undefined || end <= labelStart) {
-          laneEnds[i] = labelEnd;
-          return { event, absYear: absY, x, laneIndex: i };
+          lanes[i] = labelEnd;
+          return {
+            event,
+            absYear: absY,
+            x,
+            laneIndex: i,
+            side: isMinor ? ("below" as const) : ("above" as const),
+          };
         }
       }
     });
-    return { labeledEvents: entries, lanesUsedAbove: laneEnds.length };
+    return {
+      labeledEvents: entries,
+      lanesUsedAbove: lanesAbove.length,
+      lanesUsedBelow: lanesBelow.length,
+    };
   }, [calendars, pxPerYear, sortedEvents, window_.min]);
 
   const trackY = Math.max(
@@ -156,7 +175,14 @@ export function TimelineView({
       TRACK_TO_LANE0,
   );
   const lane0BaselineY = trackY - TRACK_TO_LANE0;
-  const ribbonHeight = trackY + TRACK_BOTTOM_AREA;
+  const lane0BelowBaselineY = trackY + TRACK_BOTTOM_AREA;
+  const ribbonHeight =
+    lanesUsedBelow > 0
+      ? lane0BelowBaselineY +
+        (lanesUsedBelow - 1) * LANE_STEP_BELOW +
+        BELOW_LABEL_HEIGHT +
+        BELOW_BOTTOM_PADDING
+      : trackY + TRACK_BOTTOM_AREA;
 
   const handlePresetZoom = useCallback((value: number) => {
     setZoom(Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, value)));
@@ -341,12 +367,28 @@ export function TimelineView({
           })}
 
           {labeledEvents.map((entry) => {
-            const { event, x, laneIndex } = entry;
+            const { event, x, laneIndex, side } = entry;
+            const isAbove = side === "above";
             const isSelected = event.id === selectedEventId;
             const fill = eventColor(event.importance);
             const radius = eventRadius(event.importance);
-            const labelY = laneIndex !== null ? lane0BaselineY - laneIndex * LANE_STEP : null;
-            const labelText = `Y${formatYear(event.year)}`;
+            const labelY = isAbove
+              ? lane0BaselineY - laneIndex * LANE_STEP
+              : lane0BelowBaselineY + laneIndex * LANE_STEP_BELOW;
+            const yearLabel = `Y${formatYear(event.year)}`;
+            const titleMax = isAbove ? 36 : 30;
+            const titleEllipsisAt = isAbove ? 34 : 28;
+            const titleText =
+              event.title.length > titleMax
+                ? `${event.title.slice(0, titleEllipsisAt)}…`
+                : event.title;
+            const yearFontSize = isAbove ? 12 : 10;
+            const titleFontSize = isAbove ? 11 : 9;
+            const titleOffset = isAbove ? 14 : 11;
+            const yearFill = isAbove ? "var(--color-warm)" : "var(--color-text-muted)";
+            const titleFill = isSelected
+              ? "var(--color-text-primary)"
+              : "var(--color-text-secondary)";
 
             return (
               <g
@@ -362,36 +404,34 @@ export function TimelineView({
                   }
                 }}
               >
-                {labelY !== null && (
-                  <g>
-                    <text
-                      x={x}
-                      y={labelY}
-                      textAnchor="start"
-                      fill="var(--color-warm)"
-                      fontSize={12}
-                      style={{ fontFamily: "var(--font-display), Palatino, serif" }}
-                    >
-                      {labelText}
-                    </text>
-                    <text
-                      x={x}
-                      y={labelY + 14}
-                      textAnchor="start"
-                      fill={isSelected ? "var(--color-text-primary)" : "var(--color-text-secondary)"}
-                      fontSize={11}
-                      style={{ fontFamily: "var(--font-body), Palatino, serif" }}
-                    >
-                      {event.title.length > 36 ? `${event.title.slice(0, 34)}…` : event.title}
-                    </text>
-                  </g>
-                )}
+                <g>
+                  <text
+                    x={x}
+                    y={labelY}
+                    textAnchor="start"
+                    fill={yearFill}
+                    fontSize={yearFontSize}
+                    style={{ fontFamily: "var(--font-display), Palatino, serif" }}
+                  >
+                    {yearLabel}
+                  </text>
+                  <text
+                    x={x}
+                    y={labelY + titleOffset}
+                    textAnchor="start"
+                    fill={titleFill}
+                    fontSize={titleFontSize}
+                    style={{ fontFamily: "var(--font-body), Palatino, serif" }}
+                  >
+                    {titleText}
+                  </text>
+                </g>
 
                 <line
                   x1={x}
                   y1={trackY}
                   x2={x}
-                  y2={labelY !== null ? labelY + 4 : trackY - 18}
+                  y2={isAbove ? labelY + 4 : labelY - 12}
                   stroke={fill}
                   strokeWidth={isSelected ? 1.6 : 1}
                   opacity={isSelected ? 0.9 : 0.4}

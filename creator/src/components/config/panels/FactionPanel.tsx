@@ -91,6 +91,7 @@ export function FactionPanel() {
       ...source,
       name: `${source.name} (copy)`,
       enemies: source.enemies ? [...source.enemies] : undefined,
+      allies: source.allies ? [...source.allies] : undefined,
     };
     patch({
       definitions: { ...factions.definitions, [newId]: cloned },
@@ -106,9 +107,13 @@ export function FactionPanel() {
         cleaned[k] = {
           ...def,
           enemies: def.enemies?.filter((e) => e !== id),
+          allies: def.allies?.filter((a) => a !== id),
         };
         if (cleaned[k]!.enemies?.length === 0) {
           delete cleaned[k]!.enemies;
+        }
+        if (cleaned[k]!.allies?.length === 0) {
+          delete cleaned[k]!.allies;
         }
       }
       const nextRewards = factions.questRewards
@@ -140,6 +145,9 @@ export function FactionPanel() {
         const def = { ...v };
         if (def.enemies) {
           def.enemies = def.enemies.map((e) => (e === oldId ? newIdNorm : e));
+        }
+        if (def.allies) {
+          def.allies = def.allies.map((a) => (a === oldId ? newIdNorm : a));
         }
         next[k === oldId ? newIdNorm : k] = def;
       }

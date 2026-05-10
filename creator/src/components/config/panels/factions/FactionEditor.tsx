@@ -33,6 +33,7 @@ export function FactionEditor({
   onRename,
 }: FactionEditorProps) {
   const enemies = definition.enemies ?? [];
+  const allies = definition.allies ?? [];
   const others = factionIds.filter((fid) => fid !== id);
   const assetsDir = useAssetStore((s) => s.assetsDir);
   const emblemPath =
@@ -45,6 +46,13 @@ export function FactionEditor({
       ? enemies.filter((e) => e !== enemyId)
       : [...enemies, enemyId];
     onPatch({ enemies: next.length > 0 ? next : undefined });
+  };
+
+  const toggleAlly = (allyId: string) => {
+    const next = allies.includes(allyId)
+      ? allies.filter((a) => a !== allyId)
+      : [...allies, allyId];
+    onPatch({ allies: next.length > 0 ? next : undefined });
   };
 
   return (
@@ -98,7 +106,8 @@ export function FactionEditor({
                 Add another faction to set up rivalries.
               </p>
             ) : (
-              <RivalChips
+              <RelationChips
+                tone="rival"
                 all={others}
                 selected={enemies}
                 factionLabelMap={factionLabelMap}
@@ -108,6 +117,26 @@ export function FactionEditor({
             <p className="mt-2 text-2xs leading-snug text-text-muted/70">
               Killing a member of this faction grants reputation with the
               selected rivals, and vice versa.
+            </p>
+          </Section>
+
+          <Section title="Allies">
+            {others.length === 0 ? (
+              <p className="text-2xs italic text-text-muted/60">
+                Add another faction to declare alliances.
+              </p>
+            ) : (
+              <RelationChips
+                tone="ally"
+                all={others}
+                selected={allies}
+                factionLabelMap={factionLabelMap}
+                onToggle={toggleAlly}
+              />
+            )}
+            <p className="mt-2 text-2xs leading-snug text-text-muted/70">
+              Lore-only — alliances appear on the relationship map but
+              don't affect reputation, kill bonuses, or quest gating.
             </p>
           </Section>
         </div>
@@ -309,14 +338,28 @@ function RenamableId({ id, onRename }: { id: string; onRename: (v: string) => vo
   );
 }
 
-interface RivalChipsProps {
+interface RelationChipsProps {
+  tone: "rival" | "ally";
   all: string[];
   selected: string[];
   factionLabelMap: Map<string, string>;
   onToggle: (id: string) => void;
 }
 
-function RivalChips({ all, selected, factionLabelMap, onToggle }: RivalChipsProps) {
+function RelationChips({ tone, all, selected, factionLabelMap, onToggle }: RelationChipsProps) {
+  const chipClasses =
+    tone === "rival"
+      ? "border-status-error/40 bg-status-error/10 text-status-error"
+      : "border-status-success/40 bg-status-success/10 text-status-success";
+  const removeClasses =
+    tone === "rival"
+      ? "text-status-error/70 hover:bg-status-error/20 hover:text-status-error"
+      : "text-status-success/70 hover:bg-status-success/20 hover:text-status-success";
+  const missingTooltip =
+    tone === "rival"
+      ? "Define it or remove the rivalry."
+      : "Define it or remove the alliance.";
+
   return (
     <div className="rounded-lg border border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] p-2">
       <div className="flex flex-wrap gap-1.5">
@@ -326,12 +369,12 @@ function RivalChips({ all, selected, factionLabelMap, onToggle }: RivalChipsProp
           return (
             <span
               key={eid}
-              title={missing ? `Unknown faction: ${eid}. Define it or remove the rivalry.` : undefined}
+              title={missing ? `Unknown faction: ${eid}. ${missingTooltip}` : undefined}
               className={cx(
                 "inline-flex items-center gap-1 rounded-md border px-2 py-1 font-display text-2xs",
                 missing
                   ? "border-status-warning/40 bg-status-warning/10 text-status-warning"
-                  : "border-status-error/40 bg-status-error/10 text-status-error",
+                  : chipClasses,
               )}
             >
               {missing && <span aria-hidden="true">{"⚠ "}</span>}
@@ -344,7 +387,7 @@ function RivalChips({ all, selected, factionLabelMap, onToggle }: RivalChipsProp
                   "focus-ring -mr-0.5 rounded p-0.5 transition",
                   missing
                     ? "text-status-warning/70 hover:bg-status-warning/20 hover:text-status-warning"
-                    : "text-status-error/70 hover:bg-status-error/20 hover:text-status-error",
+                    : removeClasses,
                 )}
               >
                 <XIcon className="h-3 w-3" />
@@ -364,7 +407,9 @@ function RivalChips({ all, selected, factionLabelMap, onToggle }: RivalChipsProp
                 onClick={() => onToggle(eid)}
                 className={cx(
                   "focus-ring inline-flex items-center gap-1 rounded-md border border-dashed border-[var(--chrome-stroke-strong)] bg-transparent px-2 py-1 font-display text-2xs text-text-muted transition",
-                  "hover:border-accent/40 hover:text-accent",
+                  tone === "rival"
+                    ? "hover:border-status-error/40 hover:text-status-error"
+                    : "hover:border-status-success/40 hover:text-status-success",
                 )}
               >
                 + {factionLabelMap.get(eid) ?? eid}

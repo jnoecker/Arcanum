@@ -10,11 +10,26 @@ interface RivalryMapProps {
 export function RivalryMap({ definitions, factionLabelMap }: RivalryMapProps) {
   const ids = Object.keys(definitions);
 
-  const edges = useMemo(() => {
+  const rivalEdges = useMemo(() => {
     const seen = new Set<string>();
     const pairs: Array<[string, string]> = [];
     for (const [aid, def] of Object.entries(definitions)) {
       for (const bid of def.enemies ?? []) {
+        if (!definitions[bid]) continue;
+        const key = aid < bid ? `${aid}|${bid}` : `${bid}|${aid}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        pairs.push([aid, bid]);
+      }
+    }
+    return pairs;
+  }, [definitions]);
+
+  const allyEdges = useMemo(() => {
+    const seen = new Set<string>();
+    const pairs: Array<[string, string]> = [];
+    for (const [aid, def] of Object.entries(definitions)) {
+      for (const bid of def.allies ?? []) {
         if (!definitions[bid]) continue;
         const key = aid < bid ? `${aid}|${bid}` : `${bid}|${aid}`;
         if (seen.has(key)) continue;
@@ -76,7 +91,7 @@ export function RivalryMap({ definitions, factionLabelMap }: RivalryMapProps) {
             </text>
           )}
 
-          {edges.length === 0 && ids.length >= 2 && (
+          {rivalEdges.length === 0 && allyEdges.length === 0 && ids.length >= 2 && (
             <text
               x={180}
               y={32}
@@ -86,24 +101,43 @@ export function RivalryMap({ definitions, factionLabelMap }: RivalryMapProps) {
               fontSize="11"
               fontStyle="italic"
             >
-              Peace, for now — no rivalries declared
+              No relationships declared
             </text>
           )}
 
-          {edges.map(([a, b], i) => {
+          {allyEdges.map(([a, b], i) => {
             const pa = layout.get(a);
             const pb = layout.get(b);
             if (!pa || !pb) return null;
             return (
               <line
-                key={i}
+                key={`ally-${i}`}
                 x1={pa.x}
                 y1={pa.y}
                 x2={pb.x}
                 y2={pb.y}
-                stroke="rgb(var(--accent-rgb))"
+                stroke="rgb(var(--status-success-rgb))"
                 strokeOpacity="0.55"
                 strokeWidth="1.5"
+              />
+            );
+          })}
+
+          {rivalEdges.map(([a, b], i) => {
+            const pa = layout.get(a);
+            const pb = layout.get(b);
+            if (!pa || !pb) return null;
+            return (
+              <line
+                key={`rival-${i}`}
+                x1={pa.x}
+                y1={pa.y}
+                x2={pb.x}
+                y2={pb.y}
+                stroke="rgb(var(--status-error-rgb))"
+                strokeOpacity="0.55"
+                strokeWidth="1.5"
+                strokeDasharray="6 4"
               />
             );
           })}

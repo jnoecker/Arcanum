@@ -139,15 +139,19 @@ function AllegianceRow({
   onSelect,
 }: AllegianceRowProps) {
   const enemies = definition.enemies ?? [];
+  const allies = definition.allies ?? [];
   const mobCount = usage?.mobCount ?? 0;
   const questCount = usage?.questCount ?? 0;
-  const isUnused = mobCount === 0 && questCount === 0 && enemies.length === 0;
+  const isUnused =
+    mobCount === 0 && questCount === 0 && enemies.length === 0 && allies.length === 0;
   const emblemSrc = useImageSrc(definition.image);
   const factionColor = definition.color || undefined;
 
   const metaPieces: string[] = [];
   if (enemies.length > 0)
     metaPieces.push(`${enemies.length} ${enemies.length === 1 ? "rival" : "rivals"}`);
+  if (allies.length > 0)
+    metaPieces.push(`${allies.length} ${allies.length === 1 ? "ally" : "allies"}`);
   if (mobCount > 0)
     metaPieces.push(`${mobCount} ${mobCount === 1 ? "mob" : "mobs"}`);
   if (questCount > 0)

@@ -1,4 +1,4 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import type { GuildHallRoomTemplate } from "@/types/config";
 import {
   TextInput,
@@ -10,7 +10,7 @@ import {
   guildHallRoomPrompt,
   guildHallRoomContext,
 } from "@/lib/entityPrompts";
-import { SectionCard } from "../factions/SectionCard";
+import { SectionCard } from "@/components/ui/SectionCard";
 import { CopyIcon, TrashIcon } from "../housing/icons";
 
 function cx(...c: Array<string | false | null | undefined>) {
@@ -163,7 +163,7 @@ function DetailsCard({
             label=""
             value={t.description}
             onCommit={(v) => onPatch({ description: v })}
-            placeholder="A fortified vault lined with enchanted stone…"
+            placeholder="A fortified vault lined with enchanted stoneâ€¦"
             rows={3}
           />
         </Field>

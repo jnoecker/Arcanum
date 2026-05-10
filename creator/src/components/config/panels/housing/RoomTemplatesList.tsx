@@ -1,8 +1,8 @@
-import { useMemo, useState } from "react";
+﻿import { useMemo, useState } from "react";
 import type { HousingConfig, HousingTemplateDefinition } from "@/types/config";
 import { useImageSrc } from "@/lib/useImageSrc";
 import { SelectInput } from "@/components/ui/FormWidgets";
-import { SectionCard } from "../factions/SectionCard";
+import { SectionCard } from "@/components/ui/SectionCard";
 import { PlusIcon, SearchIcon, ChevronRightIcon } from "./icons";
 
 function cx(...c: Array<string | false | null | undefined>) {
@@ -86,7 +86,7 @@ export function RoomTemplatesList({
               <SearchIcon className="text-text-muted/70" />
               <input
                 className="min-w-0 flex-1 bg-transparent text-xs text-text-primary outline-none placeholder:text-text-muted/60"
-                placeholder="Search dwellings…"
+                placeholder="Search dwellingsâ€¦"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 disabled={!enabled}
@@ -257,7 +257,7 @@ function RoomCard({ id, t, selected, onSelect }: RoomCardProps) {
             )}
             {vaultCap > 0 && (
               <span className="inline-flex items-center gap-1 rounded-md border border-status-warning/30 bg-status-warning/10 px-1.5 py-0.5 font-display text-[0.55rem] font-semibold uppercase tracking-wider text-status-warning">
-                Vault · {vaultCap}
+                Vault Â· {vaultCap}
               </span>
             )}
           </div>
@@ -288,7 +288,7 @@ function EmptyTemplates({
         No dwellings yet.
       </p>
       <p className="mt-2 text-2xs leading-snug text-text-muted/80">
-        Begin with a starter set — Entry Hall, Bedchamber, Vault, Forge — or
+        Begin with a starter set â€” Entry Hall, Bedchamber, Vault, Forge â€” or
         build your own.
       </p>
       <div className="mt-4 flex flex-col items-stretch gap-2">

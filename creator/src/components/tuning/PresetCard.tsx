@@ -14,51 +14,34 @@ interface PresetCardProps {
   onSelect: () => void;
 }
 
-const PRESET_ACCENTS: Record<string, { border: string; glow: string; text: string; bg: string }> = {
-  casual: {
-    border: "border-warm",
-    glow: "shadow-[0_0_20px_rgb(var(--accent-rgb)/0.35)]",
-    text: "text-warm",
-    bg: "bg-warm/[0.14]",
-  },
-  balanced: {
-    border: "border-stellar-blue",
-    glow: "shadow-[0_0_20px_rgba(47,147,161,0.35)]",
-    text: "text-stellar-blue",
-    bg: "bg-stellar-blue/[0.14]",
-  },
-  hardcore: {
-    border: "border-status-error",
-    glow: "shadow-[0_0_20px_rgba(219,184,184,0.35)]",
-    text: "text-status-error",
-    bg: "bg-status-error/[0.14]",
-  },
-  soloStory: {
-    border: "border-status-success",
-    glow: "shadow-[0_0_20px_rgba(152,195,121,0.35)]",
-    text: "text-status-success",
-    bg: "bg-status-success/[0.14]",
-  },
-  pvpArena: {
-    border: "border-status-warning",
-    glow: "shadow-[0_0_20px_rgba(229,192,123,0.35)]",
-    text: "text-status-warning",
-    bg: "bg-status-warning/[0.14]",
-  },
-  loreExplorer: {
-    border: "border-accent",
-    glow: "shadow-[0_0_20px_rgb(var(--accent-rgb)/0.35)]",
-    text: "text-accent",
-    bg: "bg-accent/[0.14]",
-  },
+/** CSS variable name for each preset's archetype hue. Defined in index.css. */
+const ARCHETYPE_VAR: Record<string, string> = {
+  casual: "--archetype-casual-rgb",
+  balanced: "--archetype-balanced-rgb",
+  hardcore: "--archetype-hardcore-rgb",
+  soloStory: "--archetype-soloStory-rgb",
+  pvpArena: "--archetype-pvp-rgb",
+  loreExplorer: "--archetype-loreExplorer-rgb",
 };
 
-const DEFAULT_ACCENT = {
-  border: "border-border-muted",
-  glow: "",
-  text: "text-text-muted",
-  bg: "bg-bg-secondary",
-};
+interface ArchetypeStyle {
+  borderStyle: React.CSSProperties;
+  glowStyle: React.CSSProperties;
+  textStyle: React.CSSProperties;
+  bgStyle: React.CSSProperties;
+}
+
+/** Build inline-style colors from the preset's archetype hue token. */
+function archetypeStyle(presetId: string): ArchetypeStyle {
+  const v = ARCHETYPE_VAR[presetId] ?? "--archetype-default-rgb";
+  const tuple = `var(${v})`;
+  return {
+    borderStyle: { borderColor: `rgb(${tuple})` },
+    glowStyle: { boxShadow: `0 0 20px rgb(${tuple} / 0.35)` },
+    textStyle: { color: `rgb(${tuple})` },
+    bgStyle: { backgroundColor: `rgb(${tuple} / 0.14)` },
+  };
+}
 
 const CONTRACT_STYLES = {
   validated: {
@@ -125,14 +108,16 @@ export function PresetCard({
   isDimmed,
   onSelect,
 }: PresetCardProps) {
-  const accent = PRESET_ACCENTS[preset.id] ?? DEFAULT_ACCENT;
+  const accent = archetypeStyle(preset.id);
   const contractStyle = evaluation ? CONTRACT_STYLES[evaluation.status] : null;
 
-  const borderClass = isSelected ? accent.border : "border-border-muted";
-  const glowClass = isSelected ? accent.glow : "";
   const dimClass = isDimmed ? "opacity-[0.65]" : "";
 
   const indicators = buildIndicators(preset, metrics);
+
+  const surfaceStyle: React.CSSProperties = isSelected
+    ? { ...accent.borderStyle, ...accent.glowStyle }
+    : {};
 
   return (
     <button
@@ -140,12 +125,12 @@ export function PresetCard({
       onClick={onSelect}
       aria-pressed={isSelected}
       aria-label={`${preset.name} preset${isSelected ? ", selected" : ""}`}
+      style={surfaceStyle}
       className={[
         "focus-ring panel-surface relative w-full overflow-hidden rounded-[1.75rem] p-6 text-left",
         "min-h-[16rem] cursor-pointer",
         "transition-[color,background-color,border-color,box-shadow,opacity] duration-200 hover:bg-bg-hover",
-        borderClass,
-        glowClass,
+        isSelected ? "" : "border-border-muted",
         dimClass,
       ]
         .filter(Boolean)
@@ -154,7 +139,10 @@ export function PresetCard({
       <div className="pointer-events-none absolute inset-x-5 top-0 h-px bg-gradient-to-r from-transparent via-accent/45 to-transparent opacity-70" />
       <div className="flex flex-col gap-4">
         <div className="flex items-center justify-between gap-3">
-          <p className={`font-display text-2xs uppercase tracking-wide-ui ${accent.text}`}>
+          <p
+            className="font-display text-2xs uppercase tracking-wide-ui"
+            style={accent.textStyle}
+          >
             Arcanum archetype
           </p>
           {contractStyle && (
@@ -186,7 +174,8 @@ export function PresetCard({
             <div key={ind.label} className="flex items-center justify-between gap-2">
               <span className="text-sm text-text-muted">{ind.label}</span>
               <span
-                className={`${accent.bg} ${accent.text} rounded-full px-2 py-0.5 font-mono text-sm`}
+                className="rounded-full px-2 py-0.5 font-mono text-sm"
+                style={{ ...accent.bgStyle, ...accent.textStyle }}
               >
                 {ind.value}
               </span>

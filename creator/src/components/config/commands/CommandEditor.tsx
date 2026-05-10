@@ -1,7 +1,7 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import type { CommandEntryConfig } from "@/types/config";
 import { TextInput, SelectInput } from "@/components/ui/FormWidgets";
-import { SectionCard } from "../panels/factions/SectionCard";
+import { SectionCard } from "@/components/ui/SectionCard";
 import { XIcon, PlusIcon } from "../achievements/icons";
 
 function cx(...c: Array<string | false | null | undefined>) {
@@ -44,7 +44,7 @@ export function CommandEditor({
   );
 }
 
-// ─── Basic Details ──────────────────────────────────────────────
+// â”€â”€â”€ Basic Details â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function BasicDetailsCard({
   id,
@@ -79,7 +79,7 @@ function BasicDetailsCard({
             value={cmd.category}
             options={categoryOptions}
             onCommit={(v) => onPatch({ category: v })}
-            placeholder="— select category —"
+            placeholder="â€” select category â€”"
             dense
           />
         </FieldLabel>
@@ -181,7 +181,7 @@ function StaffToggle({
   );
 }
 
-// ─── Help Preview ───────────────────────────────────────────────
+// â”€â”€â”€ Help Preview â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function HelpPreviewCard({ id, cmd }: { id: string; cmd: CommandEntryConfig }) {
   const name = (cmd.usage.split(/\s/)[0] || id);
@@ -218,7 +218,7 @@ function HelpPreviewCard({ id, cmd }: { id: string; cmd: CommandEntryConfig }) {
   );
 }
 
-// ─── Aliases ────────────────────────────────────────────────────
+// â”€â”€â”€ Aliases â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function AliasesCard({ id }: { id: string }) {
   const [draft, setDraft] = useState("");
@@ -279,7 +279,7 @@ function AliasesCard({ id }: { id: string }) {
   );
 }
 
-// ─── Shared primitives ─────────────────────────────────────────
+// â”€â”€â”€ Shared primitives â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function FieldLabel({
   label,

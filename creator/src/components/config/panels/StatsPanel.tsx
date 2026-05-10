@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+﻿import { useEffect, useMemo, useRef, useState } from "react";
 import type { ConfigPanelProps } from "./types";
 import type { StatBindings, StatDefinition } from "@/types/config";
 import {
@@ -7,7 +7,7 @@ import {
   SelectInput,
   CommitTextarea,
 } from "@/components/ui/FormWidgets";
-import { SectionCard } from "./factions/SectionCard";
+import { SectionCard } from "@/components/ui/SectionCard";
 import {
   PlusIcon,
   TrashIcon,
@@ -169,7 +169,7 @@ export function StatsPanel({ config, onChange, showDefinitions = true }: StatsPa
   );
 }
 
-// ─── Definitions: roster + editor ──────────────────────────────────
+// â”€â”€â”€ Definitions: roster + editor â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function StatDefinitionsBuilder({
   definitions,
@@ -282,7 +282,7 @@ function DefinitionsList({
         <SearchIcon className="text-text-muted/70" />
         <input
           className="min-w-0 flex-1 bg-transparent text-xs text-text-primary outline-none placeholder:text-text-muted/60"
-          placeholder="Search stats…"
+          placeholder="Search statsâ€¦"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />
@@ -301,7 +301,7 @@ function DefinitionsList({
         {filtered.length === 0 ? (
           <li>
             <div className="rounded-xl border border-dashed border-[var(--chrome-stroke-strong)] bg-[var(--chrome-fill-soft)] px-3 py-6 text-center text-2xs italic text-text-muted/70">
-              {ids.length === 0 ? "No stats yet — add one above." : `No stats match "${query}".`}
+              {ids.length === 0 ? "No stats yet â€” add one above." : `No stats match "${query}".`}
             </div>
           </li>
         ) : (
@@ -337,7 +337,7 @@ function DefinitionsList({
                       {def.displayName || id}
                     </div>
                     <div className="truncate font-mono text-[0.6rem] text-text-muted/70">
-                      {id} · base {def.baseStat}
+                      {id} Â· base {def.baseStat}
                     </div>
                   </div>
                 </button>
@@ -424,7 +424,7 @@ function DefinitionEditor({
   );
 }
 
-// ─── Bindings: card grid ───────────────────────────────────────────
+// â”€â”€â”€ Bindings: card grid â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function StatBindingsGrid({
   bindings,
@@ -457,7 +457,7 @@ function StatBindingsGrid({
 
         <BindingCard
           title="Dodge"
-          formula={(stat, n) => `+ ${stat} × ${n}%  (cap ${bindings.maxDodgePercent}%)`}
+          formula={(stat, n) => `+ ${stat} Ã— ${n}%  (cap ${bindings.maxDodgePercent}%)`}
           stat={bindings.dodgeStat}
           statOptions={statOptions}
           onStat={(v) => onPatch({ dodgeStat: v })}
@@ -525,7 +525,7 @@ function StatBindingsGrid({
 
         <BindingCard
           title="HP Regen"
-          formula={(stat, n) => `– ${stat} × ${n}ms from regen tick`}
+          formula={(stat, n) => `â€“ ${stat} Ã— ${n}ms from regen tick`}
           stat={bindings.hpRegenStat}
           statOptions={statOptions}
           onStat={(v) => onPatch({ hpRegenStat: v })}
@@ -539,7 +539,7 @@ function StatBindingsGrid({
 
         <BindingCard
           title="Mana Regen"
-          formula={(stat, n) => `– ${stat} × ${n}ms from regen tick`}
+          formula={(stat, n) => `â€“ ${stat} Ã— ${n}ms from regen tick`}
           stat={bindings.manaRegenStat}
           statOptions={statOptions}
           onStat={(v) => onPatch({ manaRegenStat: v })}
@@ -553,7 +553,7 @@ function StatBindingsGrid({
 
         <BindingCard
           title="XP Bonus"
-          formula={(stat, n) => `+ ${stat} × ${(n * 100).toFixed(1)}% XP`}
+          formula={(stat, n) => `+ ${stat} Ã— ${(n * 100).toFixed(1)}% XP`}
           stat={bindings.xpBonusStat}
           statOptions={statOptions}
           onStat={(v) => onPatch({ xpBonusStat: v })}
@@ -632,7 +632,7 @@ function BindingCard({
   );
 }
 
-// ─── Shared ────────────────────────────────────────────────────────
+// â”€â”€â”€ Shared â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function Field({
   label,

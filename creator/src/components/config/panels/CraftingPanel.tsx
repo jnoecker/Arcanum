@@ -1,7 +1,8 @@
-import { useCallback } from "react";
+import { useCallback, useMemo } from "react";
 import type { ConfigPanelProps, AppConfig } from "./types";
 import type { CraftingSkillDefinition, CraftingStationTypeDefinition } from "@/types/config";
 import { Section, FieldRow, NumberInput, TextInput, SelectInput } from "@/components/ui/FormWidgets";
+import { useZoneStore } from "@/stores/zoneStore";
 import { RegistryPanel } from "./RegistryPanel";
 
 export function defaultCraftingSkillDefinition(raw: string): CraftingSkillDefinition {
@@ -101,10 +102,89 @@ function EmptyRegistryCard({ prompt, buttonLabel, onAdd }: EmptyRegistryCardProp
   );
 }
 
+interface OrphanWarningCardProps {
+  count: number;
+  singular: string;
+  plural: string;
+  ids: string[];
+  hint: string;
+}
+
+function OrphanWarningCard({ count, singular, plural, ids, hint }: OrphanWarningCardProps) {
+  const heading = `${count} ${count === 1 ? singular : plural}`;
+  return (
+    <div
+      role="status"
+      className="rounded-xl border border-status-warning/30 bg-status-warning/[0.08] px-4 py-3"
+    >
+      <h4 className="font-display text-2xs font-semibold uppercase tracking-[0.18em] text-status-warning">
+        {heading}
+      </h4>
+      <p className="mt-1 font-body text-xs leading-snug text-text-muted">
+        {hint}
+      </p>
+      <div className="mt-2 flex flex-wrap gap-1.5">
+        {ids.map((id) => (
+          <span
+            key={id}
+            className="inline-flex items-center rounded-md border border-status-warning/30 bg-status-warning/10 px-1.5 py-0.5 font-mono text-[0.65rem] text-status-warning"
+          >
+            {id}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export function CraftingPanel({ config, onChange }: ConfigPanelProps) {
   const c = config.crafting;
   const patch = (p: Partial<AppConfig["crafting"]>) =>
     onChange({ crafting: { ...c, ...p } });
+
+  const zones = useZoneStore((s) => s.zones);
+  // Re-aggregate only when a zone's recipes object identity changes — keystrokes
+  // inside non-recipe edits don't reach this list because zoneEdits returns a
+  // shallow-merged WorldFile (recipes ref is preserved unless recipes themselves change).
+  const recipeCollections = useMemo(() => {
+    const out: Array<Record<string, { skill: string; station?: string }>> = [];
+    for (const z of zones.values()) {
+      if (z.data.recipes) out.push(z.data.recipes);
+    }
+    return out;
+  }, [zones]);
+
+  const { skillUsage, stationUsage } = useMemo(() => {
+    const skillMap = new Map<string, number>();
+    const stationMap = new Map<string, number>();
+    for (const recipes of recipeCollections) {
+      for (const recipe of Object.values(recipes)) {
+        if (recipe.skill) {
+          skillMap.set(recipe.skill, (skillMap.get(recipe.skill) ?? 0) + 1);
+        }
+        if (recipe.station) {
+          stationMap.set(recipe.station, (stationMap.get(recipe.station) ?? 0) + 1);
+        }
+      }
+    }
+    return { skillUsage: skillMap, stationUsage: stationMap };
+  }, [recipeCollections]);
+
+  const orphanSkillIds = useMemo(
+    () =>
+      Object.keys(config.craftingSkills ?? {}).filter(
+        (id) => (skillUsage.get(id) ?? 0) === 0,
+      ),
+    [config.craftingSkills, skillUsage],
+  );
+
+  const orphanStationIds = useMemo(
+    () =>
+      Object.keys(config.craftingStationTypes ?? {}).filter(
+        (id) => (stationUsage.get(id) ?? 0) === 0,
+      ),
+    [config.craftingStationTypes, stationUsage],
+  );
 
   const seedStarterSkills = useCallback(() => {
     const next = { ...(config.craftingSkills ?? {}) };
@@ -124,6 +204,9 @@ export function CraftingPanel({ config, onChange }: ConfigPanelProps) {
 
   const skillsEmpty = Object.keys(config.craftingSkills ?? {}).length === 0;
   const stationsEmpty = Object.keys(config.craftingStationTypes ?? {}).length === 0;
+
+  const formatRecipeCount = (n: number) =>
+    n === 1 ? "1 recipe" : `${n} recipes`;
 
   return (
     <>
@@ -216,6 +299,15 @@ export function CraftingPanel({ config, onChange }: ConfigPanelProps) {
               onAdd={seedStarterSkills}
             />
           )}
+          {orphanSkillIds.length > 0 && (
+            <OrphanWarningCard
+              count={orphanSkillIds.length}
+              singular="unused discipline"
+              plural="unused disciplines"
+              ids={orphanSkillIds}
+              hint="No recipes lean on these yet — either teach a recipe or trim them from the registry."
+            />
+          )}
           <div className="relative overflow-hidden rounded-xl border border-border-muted/50 bg-gradient-panel-light">
             <div className="flourish-top-thread pointer-events-none absolute inset-x-6 top-0 h-px" />
             {/*
@@ -223,6 +315,10 @@ export function CraftingPanel({ config, onChange }: ConfigPanelProps) {
               and does not accept addGlyph / deleteGlyph props. We leave it alone here
               because it is shared across many panels — swapping the glyphs needs a
               coordinated change to the shared component, not a local override.
+
+              TODO: RegistryPanel.renderSummary currently takes a string. Once it accepts
+              JSX, swap these template strings for proper Cinzel pill badges so the
+              count and warning treatment can read with their own styling.
             */}
             <RegistryPanel<CraftingSkillDefinition>
               title="The Disciplines"
@@ -232,7 +328,13 @@ export function CraftingPanel({ config, onChange }: ConfigPanelProps) {
               idTransform={(raw) => raw.trim().toLowerCase().replace(/\s+/g, "_")}
               getDisplayName={(s) => s.displayName}
               defaultItem={defaultCraftingSkillDefinition}
-              renderSummary={(_id, s) => summarizeCraftingSkill(s)}
+              renderSummary={(id, s) => {
+                const count = skillUsage.get(id) ?? 0;
+                const tail = count === 0
+                  ? "0 recipes (unused)"
+                  : `used by ${formatRecipeCount(count)}`;
+                return `${summarizeCraftingSkill(s)} · ${tail}`;
+              }}
               renderDetail={(_id, s, patch) => (
                 <CraftingSkillDetail skill={s} patch={patch} />
               )}
@@ -246,6 +348,15 @@ export function CraftingPanel({ config, onChange }: ConfigPanelProps) {
               onAdd={seedStarterStations}
             />
           )}
+          {orphanStationIds.length > 0 && (
+            <OrphanWarningCard
+              count={orphanStationIds.length}
+              singular="unused workbench"
+              plural="unused workbenches"
+              ids={orphanStationIds}
+              hint="No recipe currently calls for these stations. Wire them into a recipe or retire them."
+            />
+          )}
           <div className="relative overflow-hidden rounded-xl border border-border-muted/50 bg-gradient-panel-light">
             <div className="flourish-top-thread pointer-events-none absolute inset-x-6 top-0 h-px" />
             <RegistryPanel<CraftingStationTypeDefinition>
@@ -256,7 +367,12 @@ export function CraftingPanel({ config, onChange }: ConfigPanelProps) {
               idTransform={(raw) => raw.trim().toLowerCase().replace(/\s+/g, "_")}
               getDisplayName={(s) => s.displayName}
               defaultItem={defaultCraftingStationTypeDefinition}
-              renderSummary={summarizeCraftingStationType}
+              renderSummary={(id) => {
+                const count = stationUsage.get(id) ?? 0;
+                return count === 0
+                  ? "0 recipes (unused)"
+                  : `used by ${formatRecipeCount(count)}`;
+              }}
               renderDetail={(_id, s, patch) => (
                 <CraftingStationTypeDetail stationType={s} patch={patch} />
               )}

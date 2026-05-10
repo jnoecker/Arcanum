@@ -1,4 +1,4 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import type { AppConfig, ClassDefinitionConfig } from "@/types/config";
 import {
   TextInput,
@@ -6,7 +6,7 @@ import {
   SelectInput,
   CommitTextarea,
 } from "@/components/ui/FormWidgets";
-import { SectionCard } from "../panels/factions/SectionCard";
+import { SectionCard } from "@/components/ui/SectionCard";
 import { EnhanceDescriptionButton } from "@/components/editors/EditorShared";
 import { getBackstoryEnhancePrompt } from "@/lib/lorePrompts";
 import { EntityArtGenerator } from "@/components/ui/EntityArtGenerator";
@@ -16,15 +16,15 @@ import { chartTokens } from "@/lib/cssTokens";
 
 const OUTFIT_DESC_SYSTEM_PROMPT = `You are an expert AI image prompt engineer writing outfit descriptions for fantasy RPG character class sprites.
 
-Given a class's name, lore, and role, write a concise but vivid prompt fragment describing the class's OUTFIT, WEAPONS, AND ACCESSORIES ONLY — not the body (that comes from the race).
+Given a class's name, lore, and role, write a concise but vivid prompt fragment describing the class's OUTFIT, WEAPONS, AND ACCESSORIES ONLY â€” not the body (that comes from the race).
 
 Rules:
 - 1-2 sentences of dense visual detail optimized for AI image generation
 - Focus on: armor type, materials, weapons held, magical accessories, signature visual elements
-- Describe the class fantasy silhouette — what makes this class instantly recognizable
+- Describe the class fantasy silhouette â€” what makes this class instantly recognizable
 - Include specific details: weapon types, armor weight, magical effects on gear
-- Do NOT describe the body, face, skin, or hair — the race system handles those
-- Output ONLY the description text — no quotes, no explanation`;
+- Do NOT describe the body, face, skin, or hair â€” the race system handles those
+- Output ONLY the description text â€” no quotes, no explanation`;
 
 function cx(...c: Array<string | false | null | undefined>) {
   return c.filter(Boolean).join(" ");
@@ -183,7 +183,7 @@ function SelectableToggle({
   );
 }
 
-// ─── Identity ───────────────────────────────────────────────────────
+// â”€â”€â”€ Identity â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function IdentityCard({
   id,
@@ -241,7 +241,7 @@ function IdentityCard({
             options={raceOptions}
             onCommit={(v) => onPatch({ showcaseRace: v || undefined })}
             allowEmpty
-            placeholder="— default —"
+            placeholder="â€” default â€”"
             dense
           />
         </FieldLabel>
@@ -250,7 +250,7 @@ function IdentityCard({
   );
 }
 
-// ─── Lore & Theme ───────────────────────────────────────────────────
+// â”€â”€â”€ Lore & Theme â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function LoreCard({
   cls,
@@ -267,7 +267,7 @@ function LoreCard({
         label=""
         value={cls.backstory ?? ""}
         onCommit={(v) => onPatch({ backstory: v || undefined })}
-        placeholder="Lore, training traditions, role in the world…"
+        placeholder="Lore, training traditions, role in the worldâ€¦"
         rows={5}
       />
       <div className="mt-1.5 flex justify-end">
@@ -291,7 +291,7 @@ function LoreCard({
           label=""
           value={cls.outfitDescription ?? ""}
           onCommit={(v) => onPatch({ outfitDescription: v || undefined })}
-          placeholder="Heavy plate armor with tower shield…"
+          placeholder="Heavy plate armor with tower shieldâ€¦"
           rows={4}
         />
         <div className="mt-1.5 flex justify-end">
@@ -312,7 +312,7 @@ function LoreCard({
   );
 }
 
-// ─── Progression ────────────────────────────────────────────────────
+// â”€â”€â”€ Progression â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function ProgressionCard({
   cls,
@@ -365,7 +365,7 @@ function ProgressionCard({
   );
 }
 
-// ─── Role Identity ──────────────────────────────────────────────────
+// â”€â”€â”€ Role Identity â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function RoleIdentityCard({
   cls,
@@ -388,7 +388,7 @@ function RoleIdentityCard({
             options={statOptions}
             onCommit={(v) => onPatch({ primaryStat: v || undefined })}
             allowEmpty
-            placeholder="— none —"
+            placeholder="â€” none â€”"
             dense
           />
         </FieldLabel>
@@ -410,7 +410,7 @@ function RoleIdentityCard({
   );
 }
 
-// ─── Art ────────────────────────────────────────────────────────────
+// â”€â”€â”€ Art â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function ArtCard({
   id,
@@ -447,7 +447,7 @@ function ArtCard({
   );
 }
 
-// ─── Shared primitives ──────────────────────────────────────────────
+// â”€â”€â”€ Shared primitives â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function FieldLabel({
   label,
@@ -473,7 +473,7 @@ function FieldLabel({
   );
 }
 
-// ─── HP / Mana growth chart (preserved from the old detail) ─────────
+// â”€â”€â”€ HP / Mana growth chart (preserved from the old detail) â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function HpManaCurve({
   hpPerLevel,
@@ -529,7 +529,7 @@ function HpManaCurve({
   return (
     <div className="rounded-xl border border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] p-3">
       <p className="mb-1.5 font-display text-2xs font-semibold uppercase tracking-[0.18em] text-text-muted">
-        HP / Mana growth (Lv 1–{levels})
+        HP / Mana growth (Lv 1â€“{levels})
       </p>
       <svg viewBox={`0 0 ${w} ${h}`} className="w-full" style={{ maxWidth: w }}>
         {yTicks.map((tick) => (

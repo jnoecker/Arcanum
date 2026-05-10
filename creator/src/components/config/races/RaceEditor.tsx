@@ -1,4 +1,4 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import type { RaceDefinitionConfig } from "@/types/config";
 import type { StatMap } from "@/types/world";
 import { TextInput, CommitTextarea } from "@/components/ui/FormWidgets";
@@ -9,21 +9,21 @@ import { composePrompt, type ArtStyle } from "@/lib/arcanumPrompts";
 import { useAssetStore } from "@/stores/assetStore";
 import { useImageSrc } from "@/lib/useImageSrc";
 import { useStatMods } from "@/lib/useStatMods";
-import { SectionCard } from "../panels/factions/SectionCard";
+import { SectionCard } from "@/components/ui/SectionCard";
 import { PlusIcon, TrashIcon } from "../achievements/icons";
 
 const DESCRIPTION_LIMIT = 200;
 
 const BODY_DESC_SYSTEM_PROMPT = `You are an expert AI image prompt engineer writing body descriptions for fantasy RPG character sprites.
 
-Given a race's name, lore, and traits, write a concise but vivid prompt fragment describing the race's PHYSICAL BODY ONLY — not clothing or gear (those come from the class).
+Given a race's name, lore, and traits, write a concise but vivid prompt fragment describing the race's PHYSICAL BODY ONLY â€” not clothing or gear (those come from the class).
 
 Rules:
 - 1-3 sentences of dense visual detail optimized for AI image generation
 - Focus on: body shape, skin/surface material, colors, face, hair/head features, any magical visual effects
 - Match the visual tone to the world's setting and themes
-- Do NOT include clothing, armor, or weapons — the class system handles those
-- Output ONLY the description text — no quotes, no explanation`;
+- Do NOT include clothing, armor, or weapons â€” the class system handles those
+- Output ONLY the description text â€” no quotes, no explanation`;
 
 function cx(...c: Array<string | false | null | undefined>) {
   return c.filter(Boolean).join(" ");
@@ -107,7 +107,7 @@ export function RaceEditor({
   );
 }
 
-// ─── Identity ──────────────────────────────────────────────────────
+// â”€â”€â”€ Identity â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function IdentityCard({
   id,
@@ -233,7 +233,7 @@ function SlugRenamer({ id, onRename }: { id: string; onRename: (v: string) => vo
   );
 }
 
-// ─── Backstory & Lore (with body description) ─────────────────────
+// â”€â”€â”€ Backstory & Lore (with body description) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function BackstoryLoreCard({
   race,
@@ -250,7 +250,7 @@ function BackstoryLoreCard({
         label=""
         value={race.backstory ?? ""}
         onCommit={(v) => patch({ backstory: v || undefined })}
-        placeholder="Lore, history, and cultural background — what shaped them, and what they want."
+        placeholder="Lore, history, and cultural background â€” what shaped them, and what they want."
         rows={6}
       />
       <div className="mt-1.5 flex justify-end">
@@ -271,7 +271,7 @@ function BackstoryLoreCard({
           label=""
           value={race.bodyDescription ?? ""}
           onCommit={(v) => patch({ bodyDescription: v || undefined })}
-          placeholder="Physical appearance for sprite/portrait prompts (e.g. 'tall luminous humanoid with translucent crystalline skin…')."
+          placeholder="Physical appearance for sprite/portrait prompts (e.g. 'tall luminous humanoid with translucent crystalline skinâ€¦')."
           rows={3}
         />
         <div className="mt-1.5 flex justify-end">
@@ -288,7 +288,7 @@ function BackstoryLoreCard({
   );
 }
 
-// ─── Stat Modifiers ────────────────────────────────────────────────
+// â”€â”€â”€ Stat Modifiers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function StatModifiersCard({
   statMods,
@@ -318,7 +318,7 @@ function StatModifiersCard({
         >
           Net {netTotal >= 0 ? "+" : ""}
           {netTotal}
-          {netTotal === 0 ? " · balanced" : ""}
+          {netTotal === 0 ? " Â· balanced" : ""}
         </span>
       }
     >
@@ -349,7 +349,7 @@ function StatModifiersCard({
                     {def.displayName || statId}
                   </p>
                   <p className="mt-0.5 font-mono text-[0.6rem] text-text-muted/70">
-                    base {def.baseStat} · effective {effective}
+                    base {def.baseStat} Â· effective {effective}
                   </p>
                 </div>
                 <div className="flex items-center gap-1">
@@ -357,7 +357,7 @@ function StatModifiersCard({
                     onClick={() => updateMod(statId, mod - 1)}
                     label={`Decrease ${statId}`}
                   >
-                    −
+                    âˆ’
                   </StepperButton>
                   <span
                     className={cx(
@@ -405,7 +405,7 @@ function StepperButton({
   );
 }
 
-// ─── Concept Art ───────────────────────────────────────────────────
+// â”€â”€â”€ Concept Art â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function ConceptArt({
   id,
@@ -440,7 +440,7 @@ function ConceptArt({
   );
 }
 
-// ─── String list editor (traits / abilities) ───────────────────────
+// â”€â”€â”€ String list editor (traits / abilities) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function StringListEditor({
   items,
@@ -540,7 +540,7 @@ function StringListEditor({
   );
 }
 
-// ─── Shared label ──────────────────────────────────────────────────
+// â”€â”€â”€ Shared label â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function FieldLabel({
   label,

@@ -1,7 +1,7 @@
-import type { ReputationTier } from "@/types/config";
+﻿import type { ReputationTier } from "@/types/config";
 import { DEFAULT_REPUTATION_TIERS } from "@/types/config";
 import { ActionButton, TextInput, NumberInput } from "@/components/ui/FormWidgets";
-import { SectionCard } from "./SectionCard";
+import { SectionCard } from "@/components/ui/SectionCard";
 import { PlusIcon, TrashIcon } from "./icons";
 
 function normalizeId(raw: string): string {
@@ -114,7 +114,7 @@ export function ReputationTiersTable({ tiers, onChange }: ReputationTiersTablePr
                     />
                   </td>
                   <td className="whitespace-nowrap px-2 py-1.5 font-mono text-2xs text-text-muted/70">
-                    {nextMin != null ? `→ ${nextMin - 1}` : "—"}
+                    {nextMin != null ? `â†’ ${nextMin - 1}` : "â€”"}
                   </td>
                   <td className="px-2 py-1.5">
                     <button

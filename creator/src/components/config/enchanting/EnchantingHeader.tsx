@@ -7,7 +7,7 @@ interface EnchantingHeaderProps {
   saving: boolean;
   maxPerItem: number;
   onMaxPerItemChange: (v: number) => void;
-  onClose: () => void;
+  onDeselect: () => void;
   onSave: () => void;
   onDuplicate: () => void;
   onDelete: () => void;
@@ -19,7 +19,7 @@ export function EnchantingHeader({
   saving,
   maxPerItem,
   onMaxPerItemChange,
-  onClose,
+  onDeselect,
   onSave,
   onDuplicate,
   onDelete,
@@ -70,8 +70,8 @@ export function EnchantingHeader({
         <div className="flex flex-wrap items-center gap-2">
           <HeaderButton
             icon={<XIcon className="h-3.5 w-3.5" />}
-            label="Close"
-            onClick={onClose}
+            label="Deselect"
+            onClick={onDeselect}
             disabled={!hasSelection}
           />
           <HeaderButton

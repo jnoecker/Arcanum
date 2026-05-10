@@ -1,8 +1,8 @@
-import { useMemo, useState } from "react";
+﻿import { useMemo, useState } from "react";
 import type { GenderDefinition } from "@/types/config";
 import { TextInput } from "@/components/ui/FormWidgets";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
-import { SectionCard } from "../panels/factions/SectionCard";
+import { SectionCard } from "@/components/ui/SectionCard";
 import { PlusIcon, SearchIcon, TrashIcon } from "./icons";
 
 function cx(...c: Array<string | false | null | undefined>) {
@@ -139,7 +139,7 @@ function GenderList({ genders, selected, onSelect, onAdd, onDelete }: GenderList
           <SearchIcon className="text-text-muted/70" />
           <input
             className="min-w-0 flex-1 bg-transparent text-xs text-text-primary outline-none placeholder:text-text-muted/60"
-            placeholder="Search genders…"
+            placeholder="Search gendersâ€¦"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
           />

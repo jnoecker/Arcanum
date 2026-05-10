@@ -33,7 +33,7 @@ const DESCRIPTION_LIMIT = 240;
 function abilityPrompt(ability: AbilityDefinitionConfig, style: ArtStyle): string {
   const preamble = getPreamble(style, "worldbuilding");
   const effectDesc = ability.effect.type.toLowerCase().replace(/_/g, " ");
-  return `${preamble}, a game ability icon for "${ability.displayName}" â€” ${effectDesc} spell, ${ability.description || "magical ability"}, centered square composition like an RPG ability sprite, iconic symbol rendered as flowing energy, no text, no figures`;
+  return `${preamble}, a game ability icon for "${ability.displayName}" — ${effectDesc} spell, ${ability.description || "magical ability"}, centered square composition like an RPG ability sprite, iconic symbol rendered as flowing energy, no text, no figures`;
 }
 
 function buildAbilityContext(ability: AbilityDefinitionConfig): string {
@@ -310,7 +310,7 @@ function ActionCostCard({
             }
             options={classOptions}
             allowEmpty
-            placeholder="â€” any class â€”"
+            placeholder="— any class —"
             dense
           />
         </FieldLabel>
@@ -446,7 +446,7 @@ function CombatEffectCard({
               }
               options={statusEffectOptions}
               allowEmpty
-              placeholder="â€” select â€”"
+              placeholder="— select —"
               dense
             />
           </FieldLabel>
@@ -483,7 +483,7 @@ function CombatEffectCard({
                 }
                 options={petOptions}
                 allowEmpty
-                placeholder="â€” select pet â€”"
+                placeholder="— select pet —"
                 dense
               />
             </FieldLabel>
@@ -565,7 +565,7 @@ function PrerequisitesPicker({
 
       {prereqs.length === 0 ? (
         <p className="rounded-lg border border-dashed border-[var(--chrome-stroke-strong)] bg-[var(--chrome-fill-soft)] px-3 py-2 text-2xs italic text-text-muted/70">
-          None â€” this ability has no gates beyond level and class.
+          None — this ability has no gates beyond level and class.
         </p>
       ) : (
         <ul className="flex flex-wrap gap-1.5">

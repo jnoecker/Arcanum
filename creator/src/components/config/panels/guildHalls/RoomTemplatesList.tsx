@@ -78,7 +78,7 @@ export function RoomTemplatesList({
               <SearchIcon className="text-text-muted/70" />
               <input
                 className="min-w-0 flex-1 bg-transparent text-xs text-text-primary outline-none placeholder:text-text-muted/60"
-                placeholder="Search templatesâ€¦"
+                placeholder="Search templates…"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 disabled={!enabled}
@@ -261,7 +261,7 @@ function EmptyTemplates() {
     <div className="rounded-xl border border-dashed border-[var(--chrome-stroke-strong)] bg-[var(--chrome-fill-soft)] px-4 py-10 text-center">
       <p className="font-display text-xs text-text-muted">No room templates yet.</p>
       <p className="mt-1 text-2xs text-text-muted/70">
-        Add a chamber â€” vault, training room, library, communal hall.
+        Add a chamber — vault, training room, library, communal hall.
       </p>
     </div>
   );

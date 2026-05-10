@@ -282,7 +282,7 @@ function DefinitionsList({
         <SearchIcon className="text-text-muted/70" />
         <input
           className="min-w-0 flex-1 bg-transparent text-xs text-text-primary outline-none placeholder:text-text-muted/60"
-          placeholder="Search statsâ€¦"
+          placeholder="Search stats…"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />
@@ -301,7 +301,7 @@ function DefinitionsList({
         {filtered.length === 0 ? (
           <li>
             <div className="rounded-xl border border-dashed border-[var(--chrome-stroke-strong)] bg-[var(--chrome-fill-soft)] px-3 py-6 text-center text-2xs italic text-text-muted/70">
-              {ids.length === 0 ? "No stats yet â€” add one above." : `No stats match "${query}".`}
+              {ids.length === 0 ? "No stats yet — add one above." : `No stats match "${query}".`}
             </div>
           </li>
         ) : (
@@ -337,7 +337,7 @@ function DefinitionsList({
                       {def.displayName || id}
                     </div>
                     <div className="truncate font-mono text-[0.6rem] text-text-muted/70">
-                      {id} Â· base {def.baseStat}
+                      {id} · base {def.baseStat}
                     </div>
                   </div>
                 </button>
@@ -525,7 +525,7 @@ function StatBindingsGrid({
 
         <BindingCard
           title="HP Regen"
-          formula={(stat, n) => `â€“ ${stat} Ã— ${n}ms from regen tick`}
+          formula={(stat, n) => `– ${stat} Ã— ${n}ms from regen tick`}
           stat={bindings.hpRegenStat}
           statOptions={statOptions}
           onStat={(v) => onPatch({ hpRegenStat: v })}
@@ -539,7 +539,7 @@ function StatBindingsGrid({
 
         <BindingCard
           title="Mana Regen"
-          formula={(stat, n) => `â€“ ${stat} Ã— ${n}ms from regen tick`}
+          formula={(stat, n) => `– ${stat} Ã— ${n}ms from regen tick`}
           stat={bindings.manaRegenStat}
           statOptions={statOptions}
           onStat={(v) => onPatch({ manaRegenStat: v })}

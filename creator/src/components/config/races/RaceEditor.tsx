@@ -16,14 +16,14 @@ const DESCRIPTION_LIMIT = 200;
 
 const BODY_DESC_SYSTEM_PROMPT = `You are an expert AI image prompt engineer writing body descriptions for fantasy RPG character sprites.
 
-Given a race's name, lore, and traits, write a concise but vivid prompt fragment describing the race's PHYSICAL BODY ONLY â€” not clothing or gear (those come from the class).
+Given a race's name, lore, and traits, write a concise but vivid prompt fragment describing the race's PHYSICAL BODY ONLY — not clothing or gear (those come from the class).
 
 Rules:
 - 1-3 sentences of dense visual detail optimized for AI image generation
 - Focus on: body shape, skin/surface material, colors, face, hair/head features, any magical visual effects
 - Match the visual tone to the world's setting and themes
-- Do NOT include clothing, armor, or weapons â€” the class system handles those
-- Output ONLY the description text â€” no quotes, no explanation`;
+- Do NOT include clothing, armor, or weapons — the class system handles those
+- Output ONLY the description text — no quotes, no explanation`;
 
 function cx(...c: Array<string | false | null | undefined>) {
   return c.filter(Boolean).join(" ");
@@ -250,7 +250,7 @@ function BackstoryLoreCard({
         label=""
         value={race.backstory ?? ""}
         onCommit={(v) => patch({ backstory: v || undefined })}
-        placeholder="Lore, history, and cultural background â€” what shaped them, and what they want."
+        placeholder="Lore, history, and cultural background — what shaped them, and what they want."
         rows={6}
       />
       <div className="mt-1.5 flex justify-end">
@@ -271,7 +271,7 @@ function BackstoryLoreCard({
           label=""
           value={race.bodyDescription ?? ""}
           onCommit={(v) => patch({ bodyDescription: v || undefined })}
-          placeholder="Physical appearance for sprite/portrait prompts (e.g. 'tall luminous humanoid with translucent crystalline skinâ€¦')."
+          placeholder="Physical appearance for sprite/portrait prompts (e.g. 'tall luminous humanoid with translucent crystalline skin…')."
           rows={3}
         />
         <div className="mt-1.5 flex justify-end">
@@ -318,7 +318,7 @@ function StatModifiersCard({
         >
           Net {netTotal >= 0 ? "+" : ""}
           {netTotal}
-          {netTotal === 0 ? " Â· balanced" : ""}
+          {netTotal === 0 ? " · balanced" : ""}
         </span>
       }
     >
@@ -349,7 +349,7 @@ function StatModifiersCard({
                     {def.displayName || statId}
                   </p>
                   <p className="mt-0.5 font-mono text-[0.6rem] text-text-muted/70">
-                    base {def.baseStat} Â· effective {effective}
+                    base {def.baseStat} · effective {effective}
                   </p>
                 </div>
                 <div className="flex items-center gap-1">

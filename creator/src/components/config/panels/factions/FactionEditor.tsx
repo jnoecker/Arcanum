@@ -162,7 +162,7 @@ function RenamableId({ id, onRename }: { id: string; onRename: (v: string) => vo
           setEditing(true);
         }}
         className="group inline-flex items-center gap-1 font-mono text-xs text-text-muted/80 underline-offset-2 hover:text-text-primary hover:underline"
-        title="Rename â€” Esc to cancel"
+        title="Rename — Esc to cancel"
       >
         <span>ID: {id}</span>
         <PencilIcon className="h-3 w-3 opacity-50 transition group-hover:opacity-100" />

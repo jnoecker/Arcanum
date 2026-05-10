@@ -114,7 +114,7 @@ export function ReputationTiersTable({ tiers, onChange }: ReputationTiersTablePr
                     />
                   </td>
                   <td className="whitespace-nowrap px-2 py-1.5 font-mono text-2xs text-text-muted/70">
-                    {nextMin != null ? `â†’ ${nextMin - 1}` : "â€”"}
+                    {nextMin != null ? `→ ${nextMin - 1}` : "—"}
                   </td>
                   <td className="px-2 py-1.5">
                     <button

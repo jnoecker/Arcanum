@@ -29,7 +29,7 @@ export function QuestRewards({
   return (
     <SectionCard
       title="Quest Reputation Rewards"
-      description="What a finished quest does to a player's standing. Use it to court allies â€” or burn bridges â€” based on the work they take."
+      description="What a finished quest does to a player's standing. Use it to court allies — or burn bridges — based on the work they take."
     >
       <div className="mb-3 flex items-center gap-2">
         <input

@@ -1,9 +1,8 @@
-﻿import type { FactionDefinition } from "@/types/config";
+import { useMemo, useState } from "react";
+import type { FactionDefinition } from "@/types/config";
 import type { FactionUsage } from "@/lib/factionUsage";
-import { ActionButton } from "@/components/ui/FormWidgets";
-import { SectionCard } from "@/components/ui/SectionCard";
 import { useImageSrc } from "@/lib/useImageSrc";
-import { CompassRoseIcon, PlusIcon, SearchIcon } from "./icons";
+import { CompassRoseIcon, CopyIcon, PlusIcon, SearchIcon, TrashIcon } from "./icons";
 
 function cx(...c: Array<string | false | null | undefined>) {
   return c.filter(Boolean).join(" ");
@@ -12,81 +11,121 @@ function cx(...c: Array<string | false | null | undefined>) {
 interface AllegianceListProps {
   factionIds: string[];
   definitions: Record<string, FactionDefinition>;
-  factionLabelMap: Map<string, string>;
   usage: Map<string, FactionUsage>;
   selected: string | null;
-  newId: string;
-  onNewIdChange: (v: string) => void;
-  onAdd: () => void;
   onSelect: (id: string) => void;
+  onAdd: () => void;
+  onDuplicate: () => void;
+  onDelete: () => void;
 }
 
 export function AllegianceList({
   factionIds,
   definitions,
-  factionLabelMap,
   usage,
   selected,
-  newId,
-  onNewIdChange,
-  onAdd,
   onSelect,
+  onAdd,
+  onDuplicate,
+  onDelete,
 }: AllegianceListProps) {
+  const [query, setQuery] = useState("");
+  const hasSelection = selected !== null;
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return factionIds;
+    return factionIds.filter((id) => {
+      const def = definitions[id]!;
+      return (
+        id.toLowerCase().includes(q) ||
+        def.name.toLowerCase().includes(q) ||
+        (def.description ?? "").toLowerCase().includes(q)
+      );
+    });
+  }, [factionIds, definitions, query]);
+
   return (
-    <SectionCard
-      title="Allegiances"
-      description="Every faction in the world. Mobs and quests bind to these IDs."
-    >
-      <div className="mb-3 flex items-center gap-2">
-        <div className="ornate-input flex min-w-0 flex-1 items-center gap-2 px-2.5 py-1.5">
-          <SearchIcon className="text-text-muted/70" />
-          <input
-            className="min-w-0 flex-1 bg-transparent text-xs text-text-primary outline-none placeholder:text-text-muted/60"
-            placeholder="new_faction_id"
-            value={newId}
-            onChange={(e) => onNewIdChange(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") onAdd();
-            }}
-          />
-        </div>
-        <ActionButton
-          variant="primary"
-          size="sm"
-          onClick={onAdd}
-          disabled={!newId.trim()}
-          className="shrink-0"
-        >
-          <PlusIcon />
-          Add Allegiance
-        </ActionButton>
+    <aside className="panel-surface sticky top-3 flex max-h-[calc(100vh-2rem)] flex-col gap-2 rounded-2xl p-3 shadow-section xl:self-start">
+      <div className="flex items-center justify-between gap-2">
+        <h3 className="font-display text-xs font-semibold uppercase tracking-[0.18em] text-text-secondary">
+          Allegiances
+        </h3>
+        <span className="font-mono text-2xs text-text-muted/70">
+          {factionIds.length}
+        </span>
       </div>
 
-      {factionIds.length === 0 ? (
-        <EmptyState />
-      ) : (
-        <ul className="flex flex-col gap-2">
-          {factionIds.map((id) => (
+      <div className="ornate-input flex items-center gap-2 px-2.5 py-1.5">
+        <SearchIcon className="text-text-muted/70" />
+        <input
+          className="min-w-0 flex-1 bg-transparent text-xs text-text-primary outline-none placeholder:text-text-muted/60"
+          placeholder="Search allegiances…"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+        />
+      </div>
+
+      <div className="flex items-center gap-1.5">
+        <button
+          type="button"
+          onClick={onAdd}
+          className="focus-ring inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-accent/40 bg-accent/10 px-2.5 py-1.5 text-2xs font-medium text-accent transition hover:bg-accent/20"
+        >
+          <PlusIcon />
+          Add
+        </button>
+        <button
+          type="button"
+          onClick={onDuplicate}
+          disabled={!hasSelection}
+          title="Duplicate the selected faction"
+          aria-label="Duplicate the selected faction"
+          className="focus-ring inline-flex h-7 w-7 items-center justify-center rounded-lg border border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] text-text-muted transition hover:border-accent/30 hover:text-text-primary disabled:cursor-not-allowed disabled:opacity-30"
+        >
+          <CopyIcon />
+        </button>
+        <button
+          type="button"
+          onClick={onDelete}
+          disabled={!hasSelection}
+          title="Delete the selected faction"
+          aria-label="Delete the selected faction"
+          className="focus-ring inline-flex h-7 w-7 items-center justify-center rounded-lg border border-status-error/40 bg-status-error/10 text-status-error transition hover:bg-status-error/20 disabled:cursor-not-allowed disabled:opacity-30"
+        >
+          <TrashIcon />
+        </button>
+      </div>
+
+      <ul className="-mx-1 flex min-h-0 flex-1 flex-col gap-1.5 overflow-y-auto px-1 pb-1">
+        {filtered.length === 0 ? (
+          <li>
+            <div className="rounded-xl border border-dashed border-[var(--chrome-stroke-strong)] bg-[var(--chrome-fill-soft)] px-3 py-6 text-center text-2xs italic text-text-muted/70">
+              {factionIds.length === 0
+                ? "Every world needs its quarrels — add one to begin."
+                : `No allegiances match "${query}".`}
+            </div>
+          </li>
+        ) : (
+          filtered.map((id) => (
             <AllegianceRow
               key={id}
               id={id}
               definition={definitions[id]!}
-              factionLabelMap={factionLabelMap}
               usage={usage.get(id)}
               selected={selected === id}
               onSelect={() => onSelect(id)}
             />
-          ))}
-        </ul>
-      )}
-    </SectionCard>
+          ))
+        )}
+      </ul>
+    </aside>
   );
 }
 
 interface AllegianceRowProps {
   id: string;
   definition: FactionDefinition;
-  factionLabelMap: Map<string, string>;
   usage: FactionUsage | undefined;
   selected: boolean;
   onSelect: () => void;
@@ -95,20 +134,25 @@ interface AllegianceRowProps {
 function AllegianceRow({
   id,
   definition,
-  factionLabelMap,
   usage,
   selected,
   onSelect,
 }: AllegianceRowProps) {
   const enemies = definition.enemies ?? [];
-  const visible = enemies.slice(0, 3);
-  const overflow = enemies.length - visible.length;
   const mobCount = usage?.mobCount ?? 0;
   const questCount = usage?.questCount ?? 0;
-  const zoneCount = usage?.zones.size ?? 0;
-  const isUnused = mobCount === 0 && questCount === 0;
+  const isUnused = mobCount === 0 && questCount === 0 && enemies.length === 0;
   const emblemSrc = useImageSrc(definition.image);
   const factionColor = definition.color || undefined;
+
+  const metaPieces: string[] = [];
+  if (enemies.length > 0)
+    metaPieces.push(`${enemies.length} ${enemies.length === 1 ? "rival" : "rivals"}`);
+  if (mobCount > 0)
+    metaPieces.push(`${mobCount} ${mobCount === 1 ? "mob" : "mobs"}`);
+  if (questCount > 0)
+    metaPieces.push(`${questCount} ${questCount === 1 ? "quest" : "quests"}`);
+  if (isUnused) metaPieces.push("unused");
 
   return (
     <li>
@@ -117,17 +161,16 @@ function AllegianceRow({
         onClick={onSelect}
         aria-pressed={selected}
         className={cx(
-          "focus-ring group flex w-full flex-col gap-1.5 rounded-xl border px-3 py-2.5 text-left transition",
+          "focus-ring group flex w-full items-center gap-3 rounded-xl border p-2 text-left transition",
           selected
             ? "selected-card"
             : "border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] hover:border-accent/30 hover:bg-[var(--chrome-fill)]",
         )}
       >
-        <div className="flex w-full items-center gap-3">
         <span
           aria-hidden="true"
           className={cx(
-            "inline-flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full border transition",
+            "inline-flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full border",
             !factionColor &&
               (selected
                 ? "border-accent/60 bg-accent/15 text-accent"
@@ -147,6 +190,7 @@ function AllegianceRow({
             <img
               src={emblemSrc}
               alt=""
+              loading="lazy"
               className="h-full w-full object-cover"
               draggable={false}
             />
@@ -155,102 +199,14 @@ function AllegianceRow({
           )}
         </span>
         <div className="min-w-0 flex-1">
-          <p className="truncate font-display text-sm font-semibold text-text-primary">
+          <div className="truncate font-display text-sm font-semibold text-text-primary">
             {definition.name || id}
-          </p>
-          <p className="truncate font-mono text-2xs text-text-muted/70">
-            ID: {id}
-          </p>
+          </div>
+          <div className="truncate text-2xs text-text-muted/80">
+            {metaPieces.length > 0 ? metaPieces.join(" · ") : id}
+          </div>
         </div>
-        <div className="flex shrink-0 flex-wrap items-center justify-end gap-1.5">
-          {enemies.length === 0 ? (
-            <span className="text-2xs italic text-text-muted/60">No rivals</span>
-          ) : (
-            <>
-              <span className="font-display text-2xs uppercase tracking-wider text-text-muted/70">
-                Rivals ·
-              </span>
-              {visible.map((eid) => {
-                const label = factionLabelMap.get(eid);
-                const missing = !label;
-                return (
-                  <span
-                    key={eid}
-                    title={missing ? `Unknown faction: ${eid}` : undefined}
-                    className={cx(
-                      "rounded-md px-1.5 py-0.5 font-display text-2xs",
-                      missing
-                        ? "bg-status-warning/15 text-status-warning"
-                        : "bg-status-error/15 text-status-error",
-                    )}
-                  >
-                    {label ?? `? ${eid}`}
-                  </span>
-                );
-              })}
-              {overflow > 0 && (
-                <span className="text-2xs text-text-muted/60">+{overflow}</span>
-              )}
-            </>
-          )}
-        </div>
-        </div>
-        <UsageMeta
-          mobCount={mobCount}
-          questCount={questCount}
-          zoneCount={zoneCount}
-          isUnused={isUnused}
-        />
       </button>
     </li>
   );
 }
-
-interface UsageMetaProps {
-  mobCount: number;
-  questCount: number;
-  zoneCount: number;
-  isUnused: boolean;
-}
-
-function UsageMeta({ mobCount, questCount, zoneCount, isUnused }: UsageMetaProps) {
-  if (isUnused) {
-    return (
-      <p
-        className="pl-12 font-display text-[0.65rem] uppercase tracking-wider text-text-muted/60"
-        title="No mobs or quests reference this faction yet."
-      >
-        Unused &mdash; no mobs or quests reference this faction.
-      </p>
-    );
-  }
-  const mobLabel = `${mobCount} ${mobCount === 1 ? "mob" : "mobs"}`;
-  const questLabel = `${questCount} ${questCount === 1 ? "quest" : "quests"}`;
-  const zoneLabel = `${zoneCount} ${zoneCount === 1 ? "zone" : "zones"}`;
-  return (
-    <p
-      className="pl-12 font-mono text-[0.65rem] text-text-muted/70"
-      title={`Referenced by ${mobLabel}, ${questLabel}, across ${zoneLabel}.`}
-    >
-      <span aria-hidden="true" className="text-accent/70">{"✦ "}</span>
-      {mobLabel} {"·"} {questLabel} {"·"} {zoneLabel}
-    </p>
-  );
-}
-
-function EmptyState() {
-  return (
-    <div className="rounded-xl border border-dashed border-[var(--chrome-stroke-strong)] bg-[var(--chrome-fill-soft)] px-4 py-8 text-center">
-      <CompassRoseIcon className="mx-auto mb-2 h-6 w-6 text-text-muted/50" />
-      <p className="font-display text-xs text-text-muted">
-        Every world needs its quarrels.
-      </p>
-      <p className="mt-1 text-2xs leading-snug text-text-muted/70">
-        Name a guild, a court, a thieves' den — and tell us who hates whom. Try{" "}
-        <code className="text-text-muted">thieves_guild</code> or{" "}
-        <code className="text-text-muted">royal_court</code>.
-      </p>
-    </div>
-  );
-}
-

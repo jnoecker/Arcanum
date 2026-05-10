@@ -2,10 +2,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { CalendarSystem, TimelineEvent } from "@/types/lore";
 import { absoluteYear, buildEraBands, sortEvents } from "@/lib/loreCalendar";
 
-const ZOOM_PRESETS = [0.75, 1, 1.5, 2] as const;
-const ZOOM_MIN = 0.5;
-const ZOOM_MAX = 4;
-
 const RIBBON_HEIGHT = 210;
 const TRACK_Y = 170;
 const LANE_BASE_Y = 76;
@@ -48,6 +44,13 @@ function formatYear(value: number) {
   return YEAR_FORMATTER.format(Math.round(value));
 }
 
+function formatSpan(years: number): string {
+  if (years >= 1000) return `${formatYear(years)} yrs`;
+  if (years >= 2) return `${Math.round(years)} yrs`;
+  if (years >= 1) return "1 yr";
+  return "<1 yr";
+}
+
 function niceTickStep(span: number, target: number): number {
   if (span <= 0) return 1;
   const raw = span / Math.max(1, target);
@@ -86,7 +89,6 @@ export function TimelineView({
   activeWindow,
   onWindowChange,
 }: RibbonProps) {
-  const [zoom, setZoom] = useState(1);
   const [containerWidth, setContainerWidth] = useState(960);
   const containerRef = useRef<HTMLDivElement | null>(null);
 
@@ -103,11 +105,14 @@ export function TimelineView({
 
   const window_ = activeWindow ?? fullWindow ?? { min: 0, max: 100 };
   const span = Math.max(1, window_.max - window_.min);
-  // The track plots events into trackContentWidth; the SVG and ribbon
-  // are wider so labels anchored at the rightmost events can extend
-  // past the last tick without being clipped.
-  const trackContentWidth = Math.max(containerWidth, containerWidth * zoom);
-  const ribbonWidth = trackContentWidth + LABEL_RIGHT_OVERHANG;
+  const fullSpan = fullWindow ? Math.max(1, fullWindow.max - fullWindow.min) : span;
+  // The SVG always fills the container; events plot into the left
+  // portion (trackContentWidth) and labels can extend rightward into
+  // the LABEL_RIGHT_OVERHANG zone. Zooming in shrinks the active
+  // window — events spread out, the visible span gets shorter — but
+  // there is no horizontal scroll.
+  const trackContentWidth = Math.max(360, containerWidth - LABEL_RIGHT_OVERHANG);
+  const ribbonWidth = containerWidth;
   const innerWidth = trackContentWidth - SCRUBBER_PAD * 2;
   const pxPerYear = innerWidth / span;
 
@@ -152,29 +157,71 @@ export function TimelineView({
     });
   }, [calendars, pxPerYear, sortedEvents, window_.min]);
 
-  const handlePresetZoom = useCallback((value: number) => {
-    setZoom(Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, value)));
-  }, []);
+  const setVisibleSpan = useCallback(
+    (newSpan: number) => {
+      if (!fullWindow) return;
+      const totalSpan = Math.max(1, fullWindow.max - fullWindow.min);
+      const clamped = Math.max(1, Math.min(totalSpan, newSpan));
+      if (clamped >= totalSpan) {
+        onWindowChange(null);
+        return;
+      }
+      const center = (window_.min + window_.max) / 2;
+      let nextMin = center - clamped / 2;
+      if (nextMin < fullWindow.min) nextMin = fullWindow.min;
+      let nextMax = nextMin + clamped;
+      if (nextMax > fullWindow.max) {
+        nextMax = fullWindow.max;
+        nextMin = nextMax - clamped;
+      }
+      onWindowChange({ min: Math.round(nextMin), max: Math.round(nextMax) });
+    },
+    [fullWindow, onWindowChange, window_.max, window_.min],
+  );
 
-  const handleNudgeZoom = useCallback((direction: 1 | -1) => {
-    setZoom((z) => Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, +(z + direction * 0.25).toFixed(2))));
-  }, []);
+  const handleZoomIn = useCallback(() => setVisibleSpan(span / 2), [setVisibleSpan, span]);
+  const handleZoomOut = useCallback(() => setVisibleSpan(span * 2), [setVisibleSpan, span]);
+  const handleFitAll = useCallback(() => onWindowChange(null), [onWindowChange]);
+
+  const TARGET_FOCUS_EVENT_COUNT = 15;
 
   const handleFocusSelected = useCallback(() => {
     if (!selectedEventId || !fullWindow) return;
     const ev = events.find((e) => e.id === selectedEventId);
     if (!ev) return;
     const center = absoluteYear(ev, calendars);
-    const fullSpan = fullWindow.max - fullWindow.min || 100;
-    const targetSpan = Math.max(40, fullSpan * 0.25);
-    const min = Math.max(fullWindow.min, Math.round(center - targetSpan / 2));
-    const max = Math.min(fullWindow.max, Math.round(center + targetSpan / 2));
-    onWindowChange({ min, max });
-  }, [calendars, events, fullWindow, onWindowChange, selectedEventId]);
+    const totalSpan = Math.max(1, fullWindow.max - fullWindow.min);
 
-  const handleResetWindow = useCallback(() => {
-    onWindowChange(null);
-  }, [onWindowChange]);
+    // Pick a window that surrounds the selection with roughly
+    // TARGET_FOCUS_EVENT_COUNT events, then pad and clamp.
+    const yearsById = events
+      .map((e) => ({ id: e.id, year: absoluteYear(e, calendars) }))
+      .sort((a, b) => a.year - b.year);
+    const idx = yearsById.findIndex((e) => e.id === selectedEventId);
+    let targetSpan: number;
+    if (idx === -1 || yearsById.length <= 1) {
+      targetSpan = Math.max(10, totalSpan * 0.05);
+    } else {
+      const half = Math.floor(TARGET_FOCUS_EVENT_COUNT / 2);
+      const lo = Math.max(0, idx - half);
+      const hi = Math.min(yearsById.length - 1, idx + half);
+      const naturalSpan = yearsById[hi]!.year - yearsById[lo]!.year;
+      // Pad by 30% so the boundary events aren't pinned to the edges.
+      // Floor at 10 years so a single isolated event still gets context.
+      targetSpan = Math.max(10, Math.min(totalSpan, naturalSpan * 1.3));
+    }
+    if (targetSpan >= totalSpan) {
+      onWindowChange(null);
+      return;
+    }
+    let nextMin = Math.max(fullWindow.min, center - targetSpan / 2);
+    let nextMax = nextMin + targetSpan;
+    if (nextMax > fullWindow.max) {
+      nextMax = fullWindow.max;
+      nextMin = nextMax - targetSpan;
+    }
+    onWindowChange({ min: Math.round(nextMin), max: Math.round(nextMax) });
+  }, [calendars, events, fullWindow, onWindowChange, selectedEventId]);
 
   return (
     <div
@@ -188,32 +235,38 @@ export function TimelineView({
           <div className="flex items-center gap-1 rounded-[0.7rem] border border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] px-1.5 py-1">
             <button
               type="button"
-              onClick={() => handleNudgeZoom(-1)}
+              onClick={handleFitAll}
+              disabled={span >= fullSpan}
+              aria-pressed={span >= fullSpan}
+              title="Fit all years"
+              className={`focus-ring inline-flex min-h-9 items-center justify-center rounded-md px-2.5 py-1.5 text-2xs transition ${
+                span >= fullSpan
+                  ? "bg-[var(--bg-active-strong)] text-text-primary shadow-[var(--shadow-glow)]"
+                  : "text-text-muted hover:text-text-primary disabled:opacity-40"
+              }`}
+            >
+              All
+            </button>
+            <button
+              type="button"
+              onClick={handleZoomOut}
+              disabled={span >= fullSpan}
               aria-label="Zoom out"
-              className="focus-ring inline-flex min-h-9 min-w-9 items-center justify-center rounded-full px-2 py-1.5 text-text-muted transition hover:text-text-primary"
+              title="Show twice as many years"
+              className="focus-ring inline-flex min-h-9 min-w-9 items-center justify-center rounded-full px-2 py-1.5 text-text-muted transition hover:text-text-primary disabled:cursor-not-allowed disabled:opacity-40"
             >
               −
             </button>
-            {ZOOM_PRESETS.map((value) => (
-              <button
-                key={value}
-                type="button"
-                onClick={() => handlePresetZoom(value)}
-                aria-pressed={Math.abs(zoom - value) < 0.01}
-                className={`focus-ring inline-flex min-h-9 min-w-9 items-center justify-center rounded-md px-2.5 py-1.5 text-2xs transition ${
-                  Math.abs(zoom - value) < 0.01
-                    ? "bg-[var(--bg-active-strong)] text-text-primary shadow-[var(--shadow-glow)]"
-                    : "text-text-muted hover:text-text-primary"
-                }`}
-              >
-                {value}x
-              </button>
-            ))}
+            <span className="min-w-[5rem] px-2 text-center text-text-secondary tabular-nums normal-case tracking-normal">
+              {formatSpan(span)}
+            </span>
             <button
               type="button"
-              onClick={() => handleNudgeZoom(1)}
+              onClick={handleZoomIn}
+              disabled={span <= 1}
               aria-label="Zoom in"
-              className="focus-ring inline-flex min-h-9 min-w-9 items-center justify-center rounded-full px-2 py-1.5 text-text-muted transition hover:text-text-primary"
+              title="Show half as many years"
+              className="focus-ring inline-flex min-h-9 min-w-9 items-center justify-center rounded-full px-2 py-1.5 text-text-muted transition hover:text-text-primary disabled:cursor-not-allowed disabled:opacity-40"
             >
               +
             </button>
@@ -222,9 +275,6 @@ export function TimelineView({
 
         <div className="flex items-center gap-2">
           <span className="text-2xs uppercase tracking-[0.24em] text-text-muted">View</span>
-          <div className="rounded-[0.55rem] border border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] px-3 py-1 text-2xs text-text-primary">
-            Years
-          </div>
           <button
             type="button"
             onClick={handleFocusSelected}
@@ -241,21 +291,10 @@ export function TimelineView({
               <line x1="12.5" y1="8" x2="14.5" y2="8" />
             </svg>
           </button>
-          <button
-            type="button"
-            onClick={handleResetWindow}
-            aria-label="Reset to full range"
-            title="Reset to full range"
-            className="focus-ring inline-flex min-h-9 min-w-9 items-center justify-center rounded-[0.55rem] border border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] px-2 py-1.5 text-text-muted transition hover:text-text-primary"
-          >
-            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4" aria-hidden="true">
-              <path d="M2 6V2h4M14 6V2h-4M2 10v4h4M14 10v4h-4" />
-            </svg>
-          </button>
         </div>
       </div>
 
-      <div className="overflow-x-auto rounded-[0.7rem] border border-[var(--chrome-stroke)] bg-[var(--chrome-highlight)]">
+      <div className="overflow-hidden rounded-[0.7rem] border border-[var(--chrome-stroke)] bg-[var(--chrome-highlight)]">
         <div className="relative" style={{ width: ribbonWidth, minWidth: "100%" }}>
           {eraBands.length > 0 && (
             <div

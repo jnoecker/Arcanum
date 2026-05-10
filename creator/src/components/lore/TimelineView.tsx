@@ -16,6 +16,8 @@ const BELOW_LABEL_HEIGHT = 22;      // ~10px year + 9px title + leading
 const BELOW_BOTTOM_PADDING = 8;
 const DOT_DODGE_GAP = 2;            // min pixel gap between adjacent dot edges before dodging
 const DOT_DODGE_STEP = 16;          // vertical step per dodge ring (>= 2 * legendaryRadius + gap)
+const CLUSTER_WINDOW_PX = 14;       // events within this distance form a cluster candidate
+const MIN_CLUSTER_SIZE = 4;         // smallest run that collapses into a +N bubble
 const LABEL_PX_PER_CHAR = 6.4;
 const LABEL_PX_PER_CHAR_MINOR = 5.4; // smaller glyphs pack tighter horizontally
 const LABEL_MIN_GAP = 14;
@@ -78,6 +80,12 @@ interface LabeledEvent {
   dotOffset: number;
 }
 
+interface ClusterGroup {
+  id: string;
+  centerX: number;
+  members: { event: TimelineEvent; absYear: number }[];
+}
+
 interface RibbonProps {
   events: TimelineEvent[];
   calendars: CalendarSystem[];
@@ -134,10 +142,51 @@ export function TimelineView({
     return out;
   }, [tickStep, window_.max, window_.min]);
 
-  // Greedy lane packing on both sides of the track. Major / legendary
-  // events stack above; minor events stack below. Both stacks are
-  // unbounded — the ribbon grows vertically to accommodate dense periods.
-  const { labeledEvents, lanesUsedAbove, lanesUsedBelow } = useMemo(() => {
+  // First detect tight clusters (collapsed to a +N bubble), then greedy-
+  // pack the remaining events into above (major/legendary) and below
+  // (minor) lane stacks. Both stacks are unbounded — the ribbon grows
+  // vertically to accommodate dense periods. The selected event is
+  // always rescued from any cluster and pinned to lane 0.
+  const { labeledEvents, clusters, lanesUsedAbove, lanesUsedBelow } = useMemo(() => {
+    const positioned = sortedEvents.map((event) => {
+      const absY = absoluteYear(event, calendars);
+      return {
+        event,
+        absYear: absY,
+        x: SCRUBBER_PAD + (absY - window_.min) * pxPerYear,
+      };
+    });
+
+    const clusters: ClusterGroup[] = [];
+    const clusteredIds = new Set<string>();
+    let i = 0;
+    while (i < positioned.length) {
+      const start = i;
+      let j = i + 1;
+      while (
+        j < positioned.length &&
+        positioned[j]!.x - positioned[j - 1]!.x <= CLUSTER_WINDOW_PX
+      ) {
+        j += 1;
+      }
+      if (j - start >= MIN_CLUSTER_SIZE) {
+        const candidates = positioned
+          .slice(start, j)
+          .filter((m) => m.event.id !== selectedEventId);
+        if (candidates.length >= MIN_CLUSTER_SIZE) {
+          const centerX =
+            (candidates[0]!.x + candidates[candidates.length - 1]!.x) / 2;
+          clusters.push({
+            id: candidates.map((m) => m.event.id).join(":"),
+            centerX,
+            members: candidates.map(({ event, absYear }) => ({ event, absYear })),
+          });
+          for (const m of candidates) clusteredIds.add(m.event.id);
+        }
+      }
+      i = j;
+    }
+
     const lanesAbove: number[] = [];
     const lanesBelow: number[] = [];
 
@@ -148,16 +197,11 @@ export function TimelineView({
       return (x - 6) + approxWidth + LABEL_MIN_GAP;
     };
 
-    // Selection rescue: pre-reserve lane 0 on the selected event's side
-    // so it always sits closest to the track instead of being buried in
-    // a deep stack of nearby events.
     if (selectedEventId) {
-      const selected = sortedEvents.find((e) => e.id === selectedEventId);
+      const selected = positioned.find((p) => p.event.id === selectedEventId);
       if (selected) {
-        const absY = absoluteYear(selected, calendars);
-        const x = SCRUBBER_PAD + (absY - window_.min) * pxPerYear;
-        const isMinor = selected.importance === "minor";
-        const labelEnd = measureLabelEnd(selected, x, isMinor);
+        const isMinor = selected.event.importance === "minor";
+        const labelEnd = measureLabelEnd(selected.event, selected.x, isMinor);
         if (isMinor) lanesBelow[0] = labelEnd;
         else lanesAbove[0] = labelEnd;
       }
@@ -166,16 +210,15 @@ export function TimelineView({
     let lastDotX = -Infinity;
     let lastDotR = 0;
     let clusterIdx = 0;
-    const entries: LabeledEvent[] = sortedEvents.map((event) => {
-      const absY = absoluteYear(event, calendars);
-      const x = SCRUBBER_PAD + (absY - window_.min) * pxPerYear;
+    const entries: LabeledEvent[] = [];
+    for (const p of positioned) {
+      if (clusteredIds.has(p.event.id)) continue;
+      const { event, absYear, x } = p;
       const isMinor = event.importance === "minor";
       const lanes = isMinor ? lanesBelow : lanesAbove;
       const labelEnd = measureLabelEnd(event, x, isMinor);
       const labelStart = x - 6;
 
-      // Dot dodging: alternate above/below the axis as a cluster grows so
-      // markers don't merge into a single blob in dense periods.
       const r = eventRadius(event.importance);
       if (x - lastDotX < lastDotR + r + DOT_DODGE_GAP) {
         clusterIdx += 1;
@@ -193,33 +236,68 @@ export function TimelineView({
 
       let laneIndex = 0;
       if (event.id === selectedEventId) {
-        // Slot already reserved at lane 0 above; do not re-pack.
         laneIndex = 0;
       } else {
-        for (let i = 0; ; i++) {
-          const end = lanes[i];
+        for (let k = 0; ; k++) {
+          const end = lanes[k];
           if (end === undefined || end <= labelStart) {
-            lanes[i] = labelEnd;
-            laneIndex = i;
+            lanes[k] = labelEnd;
+            laneIndex = k;
             break;
           }
         }
       }
-      return {
+      entries.push({
         event,
-        absYear: absY,
+        absYear,
         x,
         laneIndex,
-        side: isMinor ? ("below" as const) : ("above" as const),
+        side: isMinor ? "below" : "above",
         dotOffset,
-      };
-    });
+      });
+    }
+
     return {
       labeledEvents: entries,
+      clusters,
       lanesUsedAbove: lanesAbove.length,
       lanesUsedBelow: lanesBelow.length,
     };
   }, [calendars, pxPerYear, sortedEvents, window_.min, selectedEventId]);
+
+  const [openClusterId, setOpenClusterId] = useState<string | null>(null);
+  const openCluster = useMemo(
+    () => (openClusterId ? clusters.find((c) => c.id === openClusterId) ?? null : null),
+    [openClusterId, clusters],
+  );
+
+  // Reset the open popover whenever the cluster set changes shape (e.g.
+  // zoom or window change collapses/breaks up clusters).
+  useEffect(() => {
+    if (openClusterId && !clusters.some((c) => c.id === openClusterId)) {
+      setOpenClusterId(null);
+    }
+  }, [clusters, openClusterId]);
+
+  useEffect(() => {
+    if (!openClusterId) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpenClusterId(null);
+    };
+    const onDocClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (!target) return;
+      if (target.closest("[data-cluster-popover]")) return;
+      if (target.closest("[data-cluster-bubble]")) return;
+      setOpenClusterId(null);
+    };
+    document.addEventListener("keydown", onKey);
+    document.addEventListener("mousedown", onDocClick);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.removeEventListener("mousedown", onDocClick);
+    };
+  }, [openClusterId]);
 
   const trackY = Math.max(
     MIN_TRACK_Y,
@@ -505,7 +583,89 @@ export function TimelineView({
               </g>
             );
           })}
+
+          {clusters.map((cluster) => {
+            const isOpen = openClusterId === cluster.id;
+            const r = 11;
+            const firstYear = cluster.members[0]!.event.year;
+            const lastYear = cluster.members[cluster.members.length - 1]!.event.year;
+            return (
+              <g
+                key={cluster.id}
+                data-cluster-bubble
+                className="cursor-pointer"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setOpenClusterId(isOpen ? null : cluster.id);
+                }}
+                role="button"
+                aria-haspopup="dialog"
+                aria-expanded={isOpen}
+                aria-label={`${cluster.members.length} clustered events between Y${formatYear(firstYear)} and Y${formatYear(lastYear)}`}
+              >
+                <circle
+                  cx={cluster.centerX}
+                  cy={trackY}
+                  r={r + 4}
+                  fill="var(--color-warm)"
+                  opacity={isOpen ? 0.28 : 0.16}
+                />
+                <circle
+                  cx={cluster.centerX}
+                  cy={trackY}
+                  r={r}
+                  fill="var(--color-warm)"
+                  stroke={isOpen ? "var(--color-text-primary)" : "var(--color-bg-primary)"}
+                  strokeWidth={isOpen ? 2 : 1.4}
+                />
+                <text
+                  x={cluster.centerX}
+                  y={trackY + 4}
+                  textAnchor="middle"
+                  fill="var(--color-bg-primary)"
+                  fontSize={11}
+                  fontWeight="bold"
+                  style={{ fontFamily: "var(--font-display), Palatino, serif", pointerEvents: "none" }}
+                >
+                  +{cluster.members.length}
+                </text>
+              </g>
+            );
+          })}
           </svg>
+
+          {openCluster && (
+            <div
+              data-cluster-popover
+              role="dialog"
+              aria-label="Clustered timeline events"
+              className="absolute z-20 max-h-64 w-64 overflow-y-auto rounded-[0.6rem] border border-[var(--chrome-stroke-strong)] bg-[var(--color-bg-primary)] p-2 shadow-[var(--shadow-panel)] backdrop-blur-sm"
+              style={{
+                left: Math.max(8, Math.min(ribbonWidth - 264, openCluster.centerX - 128)),
+                top: (eraBands.length > 0 ? 56 : 0) + trackY + 18,
+              }}
+            >
+              <p className="mb-1 px-1 text-[0.6rem] uppercase tracking-[0.22em] text-text-muted">
+                {openCluster.members.length} events
+              </p>
+              {openCluster.members.map((m) => (
+                <button
+                  key={m.event.id}
+                  type="button"
+                  onClick={() => {
+                    onSelectEvent(m.event.id);
+                    setOpenClusterId(null);
+                  }}
+                  className="focus-ring flex w-full items-baseline gap-2 rounded px-2 py-1 text-left text-2xs text-text-secondary transition hover:bg-[var(--bg-active)] hover:text-text-primary"
+                >
+                  <span className="font-mono text-[0.65rem] text-text-muted tabular-nums">
+                    Y{formatYear(m.event.year)}
+                  </span>
+                  <span className="truncate">{m.event.title}</span>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 

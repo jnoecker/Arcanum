@@ -1,7 +1,8 @@
 import { create } from "zustand";
 import { invoke } from "@tauri-apps/api/core";
 import { saveUIState, loadUIState } from "@/lib/uiPersistence";
-import type { Island } from "@/lib/panelRegistry";
+import { PANEL_MAP, type Island } from "@/lib/panelRegistry";
+import { useSidebarStore } from "@/stores/sidebarStore";
 import type {
   Project,
   Tab,
@@ -67,6 +68,30 @@ interface ProjectStore {
   setLoreChatOpen: (open: boolean) => void;
 }
 
+/**
+ * Mirror the active tab into the sidebar's drill target so the sidebar
+ * always matches what the user is editing — whether they got here via the
+ * world map, the command palette, an inline link, or by switching tabs.
+ * Uses setDrillTarget (not drillInto) so we don't force-expand the rail.
+ */
+function syncSidebarToTab(tab: Tab | undefined): void {
+  if (!tab) return;
+  if (tab.kind === "zone" || tab.kind === "zoneAtlas") {
+    useSidebarStore.getState().setDrillTarget("zones");
+    return;
+  }
+  if (tab.kind === "panel" && tab.panelId) {
+    if (tab.panelId === "lore") {
+      useSidebarStore.getState().setDrillTarget("articles");
+      return;
+    }
+    const def = PANEL_MAP[tab.panelId];
+    if (def?.island) {
+      useSidebarStore.getState().setDrillTarget(def.island);
+    }
+  }
+}
+
 export const useProjectStore = create<ProjectStore>((set, get) => ({
   project: null,
   tabs: [],
@@ -107,6 +132,7 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
     } else {
       set({ tabs: [...tabs, tab], activeTabId: tab.id, mapView: null });
     }
+    syncSidebarToTab(tab);
   },
 
   closeTab: (tabId) => {
@@ -121,10 +147,15 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
 
   closeAllTabs: () => set({ tabs: [], activeTabId: null, mapView: "world" }),
 
-  setActiveTab: (tabId) => set({ activeTabId: tabId, mapView: null }),
+  setActiveTab: (tabId) => {
+    set({ activeTabId: tabId, mapView: null });
+    syncSidebarToTab(get().tabs.find((t) => t.id === tabId));
+  },
 
-  restoreTabs: (tabs, activeTabId) =>
-    set({ tabs, activeTabId, mapView: tabs.length > 0 ? null : "world" }),
+  restoreTabs: (tabs, activeTabId) => {
+    set({ tabs, activeTabId, mapView: tabs.length > 0 ? null : "world" });
+    if (activeTabId) syncSidebarToTab(tabs.find((t) => t.id === activeTabId));
+  },
   setAdminSubView: (adminSubView) => set({ adminSubView }),
   setAdminContentSubView: (adminContentSubView) => set({ adminContentSubView }),
 

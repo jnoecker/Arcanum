@@ -254,7 +254,15 @@ export function FactionPanel() {
 
   return (
     <div className="flex flex-col gap-4">
-      <Hero factions={factions} onPatch={patch} />
+      <section className="panel-surface flex flex-col gap-4 rounded-2xl p-4 shadow-section">
+        <RivalryMap
+          definitions={factions.definitions}
+          factionLabelMap={factionLabelMap}
+        />
+        <div className="border-t border-[var(--chrome-stroke)] pt-3">
+          <Hero factions={factions} onPatch={patch} />
+        </div>
+      </section>
 
       {usageReport.orphanIds.length > 0 && (
         <OrphanReferencesBanner
@@ -303,11 +311,6 @@ export function FactionPanel() {
           )}
         </div>
       </div>
-
-      <RivalryMap
-        definitions={factions.definitions}
-        factionLabelMap={factionLabelMap}
-      />
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <ReputationTiersTable

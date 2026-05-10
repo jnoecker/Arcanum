@@ -1,6 +1,5 @@
 ﻿import { useMemo } from "react";
 import type { FactionDefinition } from "@/types/config";
-import { SectionCard } from "@/components/ui/SectionCard";
 import { useImageSrc } from "@/lib/useImageSrc";
 
 interface RivalryMapProps {
@@ -53,12 +52,8 @@ export function RivalryMap({ definitions, factionLabelMap }: RivalryMapProps) {
   }, [ids]);
 
   return (
-    <SectionCard
-      title="Rivalry Map"
-      description="Lines mark hostile pairs. Strike one faction and the other rewards you in kind."
-    >
-      <div className="relative mx-auto w-full max-w-3xl overflow-hidden rounded-xl border border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] p-2">
-        <div className="flourish-top-thread pointer-events-none absolute inset-x-6 top-0 h-px" />
+    <div className="relative mx-auto w-full max-w-3xl overflow-hidden rounded-xl border border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] p-2">
+      <div className="flourish-top-thread pointer-events-none absolute inset-x-6 top-0 h-px" />
         <svg
           viewBox="0 0 360 300"
           className="block h-auto w-full"
@@ -154,8 +149,7 @@ export function RivalryMap({ definitions, factionLabelMap }: RivalryMapProps) {
             );
           })}
         </svg>
-      </div>
-    </SectionCard>
+    </div>
   );
 }
 

@@ -1,4 +1,4 @@
-﻿import { useCallback, useMemo, useRef, useState } from "react";
+﻿import { useCallback, useMemo, useState } from "react";
 import { useConfigStore } from "@/stores/configStore";
 import { useZoneStore } from "@/stores/zoneStore";
 import type { FactionConfig, FactionDefinition } from "@/types/config";
@@ -10,7 +10,6 @@ import { FactionEditor } from "./factions/FactionEditor";
 import { ReputationTiersTable } from "./factions/ReputationTiersTable";
 import { RivalryMap } from "./factions/RivalryMap";
 import { QuestRewards } from "./factions/QuestRewards";
-import { SectionCard } from "@/components/ui/SectionCard";
 import { CompassRoseIcon } from "./factions/icons";
 
 function normalizeId(raw: string): string {
@@ -37,9 +36,7 @@ export function FactionPanel() {
   const updateConfig = useConfigStore((s) => s.updateConfig);
   const zones = useZoneStore((s) => s.zones);
   const [selected, setSelected] = useState<string | null>(null);
-  const [newId, setNewId] = useState("");
   const [newQuestId, setNewQuestId] = useState("");
-  const allegianceListRef = useRef<HTMLDivElement>(null);
 
   const rawFactions = config?.factions;
   const factions: FactionConfig = {
@@ -66,16 +63,40 @@ export function FactionPanel() {
   );
 
   const addFaction = useCallback(() => {
-    const id = normalizeId(newId);
-    if (!id || factions.definitions[id]) return;
+    const base = "new_faction";
+    let id = base;
+    let i = 2;
+    while (factions.definitions[id]) {
+      id = `${base}_${i}`;
+      i += 1;
+    }
     const defs = {
       ...factions.definitions,
-      [id]: { name: titleCaseFromId(id) },
+      [id]: { name: "New Faction" },
     };
     patch({ definitions: defs });
-    setNewId("");
     setSelected(id);
-  }, [newId, factions.definitions, patch]);
+  }, [factions.definitions, patch]);
+
+  const duplicateFaction = useCallback(() => {
+    if (!selected || !factions.definitions[selected]) return;
+    const source = factions.definitions[selected]!;
+    let newId = `${selected}_copy`;
+    let i = 2;
+    while (factions.definitions[newId]) {
+      newId = `${selected}_copy_${i}`;
+      i += 1;
+    }
+    const cloned: FactionDefinition = {
+      ...source,
+      name: `${source.name} (copy)`,
+      enemies: source.enemies ? [...source.enemies] : undefined,
+    };
+    patch({
+      definitions: { ...factions.definitions, [newId]: cloned },
+    });
+    setSelected(newId);
+  }, [factions.definitions, patch, selected]);
 
   const deleteFaction = useCallback(
     (id: string) => {
@@ -214,16 +235,19 @@ export function FactionPanel() {
 
   const handleAdoptOrphanId = useCallback(
     (orphanId: string) => {
-      setNewId(orphanId);
-      requestAnimationFrame(() => {
-        const node = allegianceListRef.current;
-        if (!node) return;
-        node.scrollIntoView({ behavior: "smooth", block: "start" });
-        const input = node.querySelector<HTMLInputElement>('input[placeholder="new_faction_id"]');
-        input?.focus();
-      });
+      const id = normalizeId(orphanId);
+      if (!id || factions.definitions[id]) {
+        setSelected(id);
+        return;
+      }
+      const defs = {
+        ...factions.definitions,
+        [id]: { name: titleCaseFromId(id) },
+      };
+      patch({ definitions: defs });
+      setSelected(id);
     },
-    [],
+    [factions.definitions, patch],
   );
 
   if (!config) return null;
@@ -240,45 +264,44 @@ export function FactionPanel() {
         />
       )}
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <div ref={allegianceListRef}>
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
+        <div className="xl:col-span-3">
           <AllegianceList
             factionIds={factionIds}
             definitions={factions.definitions}
-            factionLabelMap={factionLabelMap}
             usage={usageReport.usage}
             selected={selected}
-            newId={newId}
-            onNewIdChange={setNewId}
-            onAdd={addFaction}
             onSelect={(id) => setSelected(selected === id ? null : id)}
+            onAdd={addFaction}
+            onDuplicate={duplicateFaction}
+            onDelete={() => selected && deleteFaction(selected)}
           />
         </div>
 
-        {selected && factions.definitions[selected] ? (
-          <FactionEditor
-            id={selected}
-            definition={factions.definitions[selected]!}
-            factionIds={factionIds}
-            factionLabelMap={factionLabelMap}
-            onPatch={(p) => patchDefinition(selected, p)}
-            onClose={() => setSelected(null)}
-            onDelete={() => deleteFaction(selected)}
-            onRename={(v) => renameFaction(selected, v)}
-          />
-        ) : (
-          <SectionCard
-            title="Editing Faction"
-            description="Choose an allegiance to set its name, story, and rivals."
-          >
-            <div className="rounded-xl border border-dashed border-[var(--chrome-stroke-strong)] bg-[var(--chrome-fill-soft)] px-4 py-10 text-center">
-              <CompassRoseIcon className="mx-auto mb-2 h-7 w-7 text-text-muted/50" />
-              <p className="text-2xs italic text-text-muted/80">
-                No allegiance chosen. Pick one from the rolls.
+        <div className="xl:col-span-9">
+          {selected && factions.definitions[selected] ? (
+            <FactionEditor
+              id={selected}
+              definition={factions.definitions[selected]!}
+              factionIds={factionIds}
+              factionLabelMap={factionLabelMap}
+              onPatch={(p) => patchDefinition(selected, p)}
+              onClose={() => setSelected(null)}
+              onDelete={() => deleteFaction(selected)}
+              onRename={(v) => renameFaction(selected, v)}
+            />
+          ) : (
+            <div className="panel-surface flex flex-col items-center justify-center gap-2 rounded-2xl px-6 py-16 text-center shadow-section">
+              <CompassRoseIcon className="mb-1 h-7 w-7 text-text-muted/50" />
+              <p className="font-display text-sm text-text-primary">
+                No allegiance chosen
+              </p>
+              <p className="max-w-xs text-2xs text-text-muted/80">
+                Pick one from the rolls, or inscribe a new faction.
               </p>
             </div>
-          </SectionCard>
-        )}
+          )}
+        </div>
       </div>
 
       <RivalryMap

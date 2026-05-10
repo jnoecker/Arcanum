@@ -1,10 +1,10 @@
-﻿import { useState, useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { FactionDefinition } from "@/types/config";
 import { TextInput, CommitTextarea } from "@/components/ui/FormWidgets";
-import { SectionCard } from "@/components/ui/SectionCard";
 import { EntityArtGenerator } from "@/components/ui/EntityArtGenerator";
 import { useAssetStore } from "@/stores/assetStore";
 import { composePrompt, type ArtStyle } from "@/lib/arcanumPrompts";
+import { Section } from "../../enchanting/Section";
 import { XIcon, TrashIcon, PencilIcon } from "./icons";
 
 function cx(...c: Array<string | false | null | undefined>) {
@@ -48,119 +48,119 @@ export function FactionEditor({
   };
 
   return (
-    <SectionCard
-      title="Editing Faction"
-      actions={
-        <button
-          type="button"
-          onClick={onClose}
-          className="focus-ring inline-flex items-center gap-1 rounded-lg border border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] px-2.5 py-1 text-2xs text-text-muted transition hover:border-accent/30 hover:text-text-primary"
-        >
-          <XIcon className="h-3 w-3" />
-          Close
-        </button>
-      }
-    >
-      <div className="flex flex-col gap-3">
-        <div className="flex items-center gap-3 border-b border-[var(--chrome-stroke)] pb-3">
-          <div className="min-w-0 flex-1">
-            <h4 className="font-display text-base font-semibold text-text-primary">
-              {definition.name || id}
-            </h4>
-            <RenamableId id={id} onRename={onRename} />
-          </div>
-        </div>
-
-        <Field label="Display name" hint="Shown in reputation readouts, quest text, and faction commands.">
-          <TextInput
-            value={definition.name}
-            onCommit={(v) => onPatch({ name: v })}
-            placeholder="The Royal Court"
-            dense
-          />
-        </Field>
-
-        <Field
-          label="Flavor description"
-          hint="Short summary shown in faction info and help text."
-        >
-          <CommitTextarea
-            label=""
-            value={definition.description ?? ""}
-            onCommit={(v) => onPatch({ description: v || undefined })}
-            placeholder="A secretive order of spellwrights who..."
-            rows={2}
-          />
-        </Field>
-
-        <Field
-          label="Heraldic color"
-          hint="Used on the rivalry map and as the badge ring in the allegiance list."
-        >
-          <ColorField
-            value={definition.color ?? ""}
-            onChange={(hex) => onPatch({ color: hex || undefined })}
-          />
-        </Field>
-
-        <Field
-          label="Emblem"
-          hint="Sigil rendered on the rivalry map and beside the faction name. Generate with AI or pick from the asset library."
-        >
-          <EntityArtGenerator
-            getPrompt={(style: ArtStyle) =>
-              composePrompt(
-                "faction_emblem",
-                style,
-                `Faction emblem for ${definition.name || id}${definition.description ? `. ${definition.description}` : ""}`,
-              )
+    <div className="flex flex-col gap-3">
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-12">
+        <div className="flex flex-col gap-3 lg:col-span-8">
+          <Section
+            title="Identity"
+            actions={
+              <button
+                type="button"
+                onClick={onClose}
+                className="focus-ring inline-flex items-center gap-1 rounded-lg border border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] px-2.5 py-1 text-2xs text-text-muted transition hover:border-accent/30 hover:text-text-primary"
+              >
+                <XIcon className="h-3 w-3" />
+                Close
+              </button>
             }
-            entityContext={`Faction: ${definition.name || id}${definition.description ? `\n${definition.description}` : ""}`}
-            currentImage={emblemPath}
-            onAccept={(filePath) => {
-              const fileName = filePath.split(/[\\/]/).pop() ?? "";
-              onPatch({ image: fileName || undefined });
-            }}
-            assetType="faction_emblem"
-            context={{ zone: "", entity_type: "faction", entity_id: id }}
-            surface="worldbuilding"
-          />
-        </Field>
+          >
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <Field label="Display name" required>
+                <TextInput
+                  value={definition.name}
+                  onCommit={(v) => onPatch({ name: v })}
+                  placeholder="The Royal Court"
+                  dense
+                />
+              </Field>
+              <Field label="Slug" hint="Stable id used by mobs and quests.">
+                <RenamableId id={id} onRename={onRename} />
+              </Field>
+            </div>
+            <Field
+              className="mt-3"
+              label="Flavor description"
+              hint="Short summary shown in faction info and help text."
+            >
+              <CommitTextarea
+                label=""
+                value={definition.description ?? ""}
+                onCommit={(v) => onPatch({ description: v || undefined })}
+                placeholder="A secretive order of spellwrights who…"
+                rows={3}
+              />
+            </Field>
+          </Section>
 
-        <div>
-          <p className="font-display text-2xs uppercase tracking-wider text-text-muted">
-            Rivals
-          </p>
-          <p className="mb-2 mt-0.5 text-2xs leading-snug text-text-muted/70">
-            Killing a member of this faction grants reputation with the
-            selected rivals, and vice versa.
-          </p>
-          {others.length === 0 ? (
-            <p className="text-2xs italic text-text-muted/60">
-              Add another faction to set up rivalries.
+          <Section title="Rivals">
+            {others.length === 0 ? (
+              <p className="text-2xs italic text-text-muted/60">
+                Add another faction to set up rivalries.
+              </p>
+            ) : (
+              <RivalChips
+                all={others}
+                selected={enemies}
+                factionLabelMap={factionLabelMap}
+                onToggle={toggleEnemy}
+              />
+            )}
+            <p className="mt-2 text-2xs leading-snug text-text-muted/70">
+              Killing a member of this faction grants reputation with the
+              selected rivals, and vice versa.
             </p>
-          ) : (
-            <RivalChips
-              all={others}
-              selected={enemies}
-              factionLabelMap={factionLabelMap}
-              onToggle={toggleEnemy}
-            />
-          )}
+          </Section>
         </div>
 
-        <div className="mt-1 flex justify-end border-t border-[var(--chrome-stroke)] pt-3">
-          <button
-            type="button"
-            onClick={onDelete}
-            className="focus-ring inline-flex items-center gap-1.5 rounded-lg border border-status-error/40 bg-status-error/10 px-3 py-1.5 text-2xs font-medium text-status-error transition hover:bg-status-error/20"
-          >
-            <TrashIcon />
-            Delete faction
-          </button>
+        <div className="flex flex-col gap-3 lg:col-span-4">
+          <Section title="Heraldry">
+            <Field
+              label="Color"
+              hint="Used on the rivalry map and the badge ring in the list."
+            >
+              <ColorField
+                value={definition.color ?? ""}
+                onChange={(hex) => onPatch({ color: hex || undefined })}
+              />
+            </Field>
+            <div className="mt-3">
+              <p className="mb-1 font-display text-2xs uppercase tracking-wider text-text-muted">
+                Emblem
+              </p>
+              <EntityArtGenerator
+                getPrompt={(style: ArtStyle) =>
+                  composePrompt(
+                    "faction_emblem",
+                    style,
+                    `Faction emblem for ${definition.name || id}${definition.description ? `. ${definition.description}` : ""}`,
+                  )
+                }
+                entityContext={`Faction: ${definition.name || id}${definition.description ? `\n${definition.description}` : ""}`}
+                currentImage={emblemPath}
+                onAccept={(filePath) => {
+                  const fileName = filePath.split(/[\\/]/).pop() ?? "";
+                  onPatch({ image: fileName || undefined });
+                }}
+                assetType="faction_emblem"
+                context={{ zone: "", entity_type: "faction", entity_id: id }}
+                surface="worldbuilding"
+              />
+            </div>
+          </Section>
         </div>
       </div>
-    </SectionCard>
+
+      <div className="flex justify-end">
+        <button
+          type="button"
+          onClick={onDelete}
+          className="focus-ring inline-flex items-center gap-1.5 rounded-lg border border-status-error/40 bg-status-error/10 px-3 py-1.5 text-2xs font-medium text-status-error transition hover:bg-status-error/20"
+        >
+          <TrashIcon />
+          Delete faction
+        </button>
+      </div>
+    </div>
   );
 }
 
@@ -235,16 +235,21 @@ function ColorField({
 function Field({
   label,
   hint,
+  required,
+  className,
   children,
 }: {
   label: string;
   hint?: string;
+  required?: boolean;
+  className?: string;
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex flex-col gap-1">
+    <div className={cx("flex flex-col gap-1", className)}>
       <span className="font-display text-2xs uppercase tracking-wider text-text-muted">
         {label}
+        {required && <span className="ml-1 text-accent">*</span>}
       </span>
       {children}
       {hint && (
@@ -271,10 +276,10 @@ function RenamableId({ id, onRename }: { id: string; onRename: (v: string) => vo
           setDraft(id);
           setEditing(true);
         }}
-        className="group inline-flex items-center gap-1 font-mono text-xs text-text-muted/80 underline-offset-2 hover:text-text-primary hover:underline"
+        className="group ornate-input inline-flex w-full min-h-9 items-center justify-between gap-2 px-2.5 py-1.5 font-mono text-xs text-text-muted transition hover:text-text-primary"
         title="Rename — Esc to cancel"
       >
-        <span>ID: {id}</span>
+        <span className="truncate">{id}</span>
         <PencilIcon className="h-3 w-3 opacity-50 transition group-hover:opacity-100" />
       </button>
     );
@@ -289,7 +294,7 @@ function RenamableId({ id, onRename }: { id: string; onRename: (v: string) => vo
     <input
       ref={inputRef}
       autoFocus
-      className="ornate-input min-h-7 px-2 py-0.5 font-mono text-xs"
+      className="ornate-input min-h-9 w-full px-2.5 py-1.5 font-mono text-xs"
       value={draft}
       onChange={(e) => setDraft(e.target.value)}
       onBlur={commit}

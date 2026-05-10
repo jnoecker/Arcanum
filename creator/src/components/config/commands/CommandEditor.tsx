@@ -79,7 +79,7 @@ function BasicDetailsCard({
             value={cmd.category}
             options={categoryOptions}
             onCommit={(v) => onPatch({ category: v })}
-            placeholder="â€” select category â€”"
+            placeholder="— select category —"
             dense
           />
         </FieldLabel>

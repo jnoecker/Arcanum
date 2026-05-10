@@ -39,7 +39,7 @@ function threatRole(multiplier: number | undefined): string {
 
 function petPrompt(pet: PetDefinitionConfig, style: ArtStyle): string {
   const preamble = getPreamble(style, "worldbuilding");
-  return `${preamble}, a summoned companion creature â€” "${pet.name}", ${pet.description || "a loyal magical pet"}, full body portrait, RPG companion creature, no text`;
+  return `${preamble}, a summoned companion creature — "${pet.name}", ${pet.description || "a loyal magical pet"}, full body portrait, RPG companion creature, no text`;
 }
 
 function buildPetContext(pet: PetDefinitionConfig): string {
@@ -112,7 +112,7 @@ function IdentityCard({
             label=""
             value={pet.description ?? ""}
             onCommit={(v) => onPatch({ description: v || undefined })}
-            placeholder="A long grey wolf with sharp yellow eyesâ€¦"
+            placeholder="A long grey wolf with sharp yellow eyes…"
             rows={3}
           />
         </FieldLabel>

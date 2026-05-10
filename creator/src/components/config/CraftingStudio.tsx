@@ -156,7 +156,7 @@ export function CraftingStudio({
               title="Crafting Skills"
               items={config.craftingSkills}
               selected={selectedSkill}
-              searchPlaceholder="Search skillsâ€¦"
+              searchPlaceholder="Search skills…"
               addLabel="Add Skill"
               viewAllLabel="View all skills"
               getDisplayName={(s) => s.displayName}
@@ -170,7 +170,7 @@ export function CraftingStudio({
               title="Station Types"
               items={config.craftingStationTypes}
               selected={selectedStation}
-              searchPlaceholder="Search station typesâ€¦"
+              searchPlaceholder="Search station types…"
               addLabel="Add Type"
               viewAllLabel="View all station types"
               getDisplayName={(s) => s.displayName}

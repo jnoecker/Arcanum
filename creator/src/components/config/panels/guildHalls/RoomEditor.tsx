@@ -163,7 +163,7 @@ function DetailsCard({
             label=""
             value={t.description}
             onCommit={(v) => onPatch({ description: v })}
-            placeholder="A fortified vault lined with enchanted stoneâ€¦"
+            placeholder="A fortified vault lined with enchanted stone…"
             rows={3}
           />
         </Field>

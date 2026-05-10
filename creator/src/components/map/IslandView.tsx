@@ -2,7 +2,7 @@ import { useState, useCallback, useRef, lazy, Suspense, useMemo } from "react";
 import { useProjectStore } from "@/stores/projectStore";
 import { useSidebarStore } from "@/stores/sidebarStore";
 import { useZoneStore } from "@/stores/zoneStore";
-import { ISLANDS, type IslandAction } from "@/lib/islandRegistry";
+import { ISLANDS, FORGE_OPEN_ZONE_BG, type IslandAction } from "@/lib/islandRegistry";
 import {
   PANEL_MAP,
   panelTab,
@@ -347,6 +347,13 @@ function ZonePickerDialog({
       title="Open Zone"
       subtitle="Pick a zone to open the map view."
       widthClassName="max-w-md"
+      backdrop={
+        <img
+          src={FORGE_OPEN_ZONE_BG}
+          alt=""
+          className="h-full w-full object-cover opacity-[0.18] mix-blend-soft-light"
+        />
+      }
       onClose={onClose}
     >
       <button

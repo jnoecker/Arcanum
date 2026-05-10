@@ -384,6 +384,27 @@ export function saveStoredTheme(theme: ThemePalette | null): void {
   }
 }
 
+const PANEL_BG_STORAGE_KEY = "arcanum.panelBackgrounds.v1";
+
+/** Read the panel-backgrounds preference. Defaults to true (enabled). */
+export function loadStoredPanelBackgrounds(): boolean {
+  try {
+    const raw = localStorage.getItem(PANEL_BG_STORAGE_KEY);
+    if (raw === null) return true;
+    return raw === "1";
+  } catch {
+    return true;
+  }
+}
+
+export function saveStoredPanelBackgrounds(enabled: boolean): void {
+  try {
+    localStorage.setItem(PANEL_BG_STORAGE_KEY, enabled ? "1" : "0");
+  } catch (err) {
+    console.error("Failed to write panel-backgrounds preference:", err);
+  }
+}
+
 /** Validate a hex color string. */
 export function isValidHex(s: string): boolean {
   return /^#?[0-9a-fA-F]{6}$/.test(s.trim()) || /^#?[0-9a-fA-F]{3}$/.test(s.trim());

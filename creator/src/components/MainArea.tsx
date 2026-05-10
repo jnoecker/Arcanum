@@ -1,7 +1,8 @@
 import { lazy, Suspense, Component, type ReactNode, type ErrorInfo } from "react";
 import { useProjectStore } from "@/stores/projectStore";
+import { useThemeStore } from "@/stores/themeStore";
 import { PANEL_MAP, type Island } from "@/lib/panelRegistry";
-import { ISLANDS, getIslandBg } from "@/lib/islandRegistry";
+import { ISLANDS, getIslandBg, WORLD_ATLAS_BG_KEY, ZONE_EDITOR_BG_KEY } from "@/lib/islandRegistry";
 import { StudioWorkspace } from "./StudioWorkspace";
 import { WorldMap } from "./map/WorldMap";
 import { IslandView } from "./map/IslandView";
@@ -74,6 +75,7 @@ export function MainArea() {
   const tabs = useProjectStore((s) => s.tabs);
   const activeTabId = useProjectStore((s) => s.activeTabId);
   const mapView = useProjectStore((s) => s.mapView);
+  const panelBackgrounds = useThemeStore((s) => s.panelBackgrounds);
   const activeTab = tabs.find((t) => t.id === activeTabId);
   const activeTabIndex = tabs.findIndex((t) => t.id === activeTabId);
 
@@ -97,12 +99,14 @@ export function MainArea() {
 
   let content: React.ReactNode;
   let panelIsland: Island | undefined;
+  let bgPanelKey: string | undefined;
 
   switch (activeTab.kind) {
     case "panel": {
       const panelId = activeTab.panelId ?? "art";
       const def = PANEL_MAP[panelId];
       panelIsland = def?.island;
+      bgPanelKey = panelId;
       if (def?.host === "studio") {
         content = <StudioWorkspace panelId={panelId} />;
       } else if (def?.host === "lore") {
@@ -127,11 +131,13 @@ export function MainArea() {
     case "zone": {
       const zoneId = activeTab.id.replace(/^zone:/, "");
       panelIsland = "forge";
+      bgPanelKey = ZONE_EDITOR_BG_KEY;
       content = <ZoneEditor key={zoneId} zoneId={zoneId} />;
       break;
     }
     case "zoneAtlas": {
       panelIsland = "forge";
+      bgPanelKey = WORLD_ATLAS_BG_KEY;
       content = <ZoneAtlasView />;
       break;
     }
@@ -153,7 +159,7 @@ export function MainArea() {
   }
 
   const showBackPill = panelIsland != null && panelIsland !== "settings";
-  const bgSrc = getIslandBg(panelIsland);
+  const bgSrc = getIslandBg(panelIsland, bgPanelKey);
 
   return (
     <div
@@ -168,14 +174,16 @@ export function MainArea() {
           (outside any scroll container) so it stays put as the user scrolls
           tall content. Low opacity + soft-light blend keeps it as a sense
           of place rather than wallpaper. */}
-      <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
-        <img
-          src={bgSrc}
-          alt=""
-          className="h-full w-full object-cover opacity-[0.16] mix-blend-soft-light"
-          style={{ objectPosition: "center 40%" }}
-        />
-      </div>
+      {panelBackgrounds && (
+        <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
+          <img
+            src={bgSrc}
+            alt=""
+            className="h-full w-full object-cover opacity-[0.16] mix-blend-soft-light"
+            style={{ objectPosition: "center 40%" }}
+          />
+        </div>
+      )}
       <div className="relative z-10 flex min-h-0 min-w-0 flex-1 flex-col">
         {showBackPill && <IslandBackPill island={panelIsland!} />}
         <PanelErrorBoundary>

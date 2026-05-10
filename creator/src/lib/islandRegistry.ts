@@ -153,12 +153,12 @@ const SPIRE_PANELS = [
 ];
 
 const SPIRE_HOTSPOTS: PanelHotspot[] = [
-  { panelId: "serverConfig",     x: 23, y: 71, w: 55, h: 13 },
-  { panelId: "stats",            x: 22, y: 59, w: 56, h: 12 },
-  { panelId: "console",          x: 25, y: 47, w: 50, h: 13 },
-  { panelId: "deployment",       x: 28, y: 34, w: 44, h: 13 },
-  { panelId: "admin",            x: 31, y: 24, w: 38, h: 12 },
-  { panelId: "infrastructure",   x: 35, y: 10, w: 31, h: 15 },
+  { panelId: "deployment",       x: 37, y:  0, w: 28, h: 58 },
+  { panelId: "admin",            x: 10, y: 23, w: 25, h: 26 },
+  { panelId: "serverConfig",     x:  6, y: 49, w: 27, h: 23 },
+  { panelId: "stats",            x: 31, y: 73, w: 37, h: 26 },
+  { panelId: "infrastructure",   x: 66, y: 51, w: 27, h: 22 },
+  { panelId: "console",          x: 66, y: 29, w: 23, h: 20 },
 ];
 
 // ─── Island definitions ─────────────────────────────────────────────
@@ -238,14 +238,85 @@ export const MAP_ISLANDS: IslandDef[] = MAIN_VIEW_HOTSPOTS
 export const MAIN_VIEW_IMAGE = "/menus/mainview.jpg";
 
 /**
- * Atmospheric background URL for any panel that lives under a given island.
- * Used by MainArea to paint the island's map art behind every child panel,
- * giving each editor surface a sense of place without duplicating per-panel
- * bg wiring. Returns the world-map view as the fallback when there's no
- * specific island (settings overlay, welcome screen, etc).
+ * Per-panel background overrides. When a panel has its own dedicated art,
+ * MainArea uses this in preference to the parent island's map view. Panels
+ * without an entry fall through to the island bg.
  */
-export function getIslandBg(island?: Island | null): string {
+const PANEL_BG_OVERRIDES: Record<string, string> = {
+  // Forge
+  art:              "/menus/panels/forge-art.jpg",
+  artStyle:         "/menus/panels/forge-art-style.jpg",
+  studioAbilities:  "/menus/panels/forge-icons.jpg",
+  media:            "/menus/panels/forge-media.jpg",
+  portraits:        "/menus/panels/forge-portraits.jpg",
+  sprites:          "/menus/panels/forge-player-sprites.jpg",
+  // Loom
+  pets:            "/menus/panels/loom-pets.jpg",
+  races:           "/menus/panels/loom-races.jpg",
+  classes:         "/menus/panels/loom-classes.jpg",
+  abilityDesigner: "/menus/panels/loom-abilities.jpg",
+  conditions:      "/menus/panels/loom-status-effects.jpg",
+  commands:        "/menus/panels/loom-commands.jpg",
+  equipment:       "/menus/panels/loom-equipment.jpg",
+  // Spire
+  serverConfig:    "/menus/panels/spire-server-config.jpg",
+  stats:           "/menus/panels/spire-stats.jpg",
+  console:         "/menus/panels/spire-console.jpg",
+  deployment:      "/menus/panels/spire-deployment.jpg",
+  admin:           "/menus/panels/spire-admin.jpg",
+  infrastructure:  "/menus/panels/spire-infrastructure.jpg",
+  // Arcanum
+  lore:                "/menus/panels/arcanum-articles.jpg",
+  loreMaps:            "/menus/panels/arcanum-maps.jpg",
+  loreTimeline:        "/menus/panels/arcanum-timeline.jpg",
+  storyEditor:         "/menus/panels/arcanum-story.jpg",
+  loreRelations:       "/menus/panels/arcanum-relationships.jpg",
+  loreDocuments:       "/menus/panels/arcanum-documents.jpg",
+  worldSetting:        "/menus/panels/arcanum-world-setting.jpg",
+  // Living World
+  currencies:          "/menus/panels/living-world-currency.jpg",
+  guilds:              "/menus/panels/living-world-guilds.jpg",
+  guildHalls:          "/menus/panels/living-world-guild-halls.jpg",
+  worldEvents:         "/menus/panels/living-world-events.jpg",
+  quests:              "/menus/panels/living-world-quests.jpg",
+  sharedAssets:        "/menus/panels/living-world-shared-assets.jpg",
+  emotes:              "/menus/panels/living-world-emotes.jpg",
+  weatherEnvironment:  "/menus/panels/living-world-weather-environment.jpg",
+  // Orrery
+  factions:        "/menus/panels/orrery-factions.jpg",
+  world:           "/menus/panels/orrery-world.jpg",
+  housing:         "/menus/panels/orrery-housing.jpg",
+  achievements:    "/menus/panels/orrery-achievements.jpg",
+  enchanting:      "/menus/panels/orrery-enchanting.jpg",
+  crafting:        "/menus/panels/orrery-crafting.jpg",
+  creation:        "/menus/panels/orrery-creation.jpg",
+  tuningWizard:    "/menus/panels/orrery-tuning-wizard.jpg",
+};
+
+/**
+ * Atmospheric background URL for any panel that lives under a given island.
+ * Used by MainArea to paint art behind every child panel, giving each editor
+ * surface a sense of place. Per-panel overrides win over the parent island's
+ * map view; falls back to the world map when nothing else matches.
+ */
+export function getIslandBg(island?: Island | null, panelId?: string | null): string {
+  if (panelId) {
+    const override = PANEL_BG_OVERRIDES[panelId];
+    if (override) return override;
+  }
   if (!island) return MAIN_VIEW_IMAGE;
   const def = ISLANDS[island];
   return def?.image ?? MAIN_VIEW_IMAGE;
 }
+
+/** Backdrop art for forge zone-action popouts (open / new zone dialogs). */
+export const FORGE_OPEN_ZONE_BG = "/menus/panels/forge-open-zone.jpg";
+export const FORGE_NEW_ZONE_BG = "/menus/panels/forge-new-zone.jpg";
+
+/** Synthetic bg keys for tab kinds that don't map to a panelId. Pass these
+ *  as the `panelId` argument to `getIslandBg` from MainArea. */
+export const WORLD_ATLAS_BG_KEY = "__worldAtlas";
+export const ZONE_EDITOR_BG_KEY = "__zoneEditor";
+
+PANEL_BG_OVERRIDES[WORLD_ATLAS_BG_KEY] = FORGE_OPEN_ZONE_BG;
+PANEL_BG_OVERRIDES[ZONE_EDITOR_BG_KEY] = "/menus/panels/map-editor.jpg";

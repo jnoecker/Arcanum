@@ -141,7 +141,7 @@ export function MapViewer({
           L.latLng(-map.height * 0.1, -map.width * 0.1),
           L.latLng(map.height * 1.1, map.width * 1.1),
         )}
-        style={{ width: "100%", height: "100%", background: "var(--color-graph-bg)", borderRadius: "12px" }}
+        style={{ width: "100%", height: "100%", background: "transparent", borderRadius: "12px" }}
         zoomSnap={0.25}
         minZoom={-2}
         maxZoom={3}

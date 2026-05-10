@@ -1098,7 +1098,7 @@ function EventList({
   };
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-[0.9rem] border border-border-muted/40 bg-[linear-gradient(180deg,rgb(var(--bg-rgb)/0.88),rgb(var(--abyss-rgb)/0.94))] shadow-[var(--shadow-panel)]">
+    <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-[0.9rem] border border-border-muted/40 shadow-[var(--shadow-panel)]">
       <div className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-b border-border-muted/30 px-4 py-3">
         <p className="font-display text-sm uppercase tracking-[0.28em] text-text-muted">
           {totalVisible} {totalVisible === 1 ? "Event" : "Events"}
@@ -1443,7 +1443,7 @@ export function TimelinePanel() {
   );
 
   return (
-    <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-[0.9rem] border border-border-muted/45 bg-[linear-gradient(180deg,rgb(var(--bg-rgb)/0.72),rgb(var(--abyss-rgb)/0.92))] shadow-[var(--shadow-panel)]">
+    <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-[0.9rem] border border-border-muted/45 shadow-[var(--shadow-panel)]">
       {/* Header */}
       <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border-muted/45 bg-[radial-gradient(circle_at_top_left,rgb(var(--accent-rgb)/0.10),transparent_38%),linear-gradient(160deg,rgb(var(--bg-rgb)/0.96),rgb(var(--abyss-rgb)/0.94))] px-5 py-3">
         <div className="min-w-0">

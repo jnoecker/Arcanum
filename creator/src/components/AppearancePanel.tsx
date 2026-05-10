@@ -258,6 +258,8 @@ export function AppearancePanel() {
   const setTheme = useThemeStore((s) => s.setTheme);
   const previewTheme = useThemeStore((s) => s.previewTheme);
   const cancelPreview = useThemeStore((s) => s.cancelPreview);
+  const panelBackgrounds = useThemeStore((s) => s.panelBackgrounds);
+  const setPanelBackgrounds = useThemeStore((s) => s.setPanelBackgrounds);
 
   const initial: ThemePalette = persisted ?? DEFAULT_THEME;
   const [draft, setDraft] = useState<ThemePalette>(initial);
@@ -352,6 +354,23 @@ export function AppearancePanel() {
             Accent drive every UI surface while semantic colors stay fixed.
           </p>
         </header>
+
+        <section className="panel-surface rounded-3xl p-5 shadow-section">
+          <h3 className="mb-2 font-display text-lg text-text-primary">Atmosphere</h3>
+          <p className="mb-3 max-w-3xl text-xs leading-relaxed text-text-muted">
+            Each panel and dialog renders a low-opacity atmospheric image behind its content. Turn this
+            off if you find the imagery distracting or if it interferes with reading.
+          </p>
+          <label className="flex cursor-pointer items-center gap-3 text-sm text-text-primary">
+            <input
+              type="checkbox"
+              checked={panelBackgrounds}
+              onChange={(e) => setPanelBackgrounds(e.target.checked)}
+              className="h-4 w-4 accent-accent"
+            />
+            <span>Show atmospheric panel backgrounds</span>
+          </label>
+        </section>
 
         <section className="panel-surface rounded-3xl p-5 shadow-section">
           <h3 className="mb-3 font-display text-lg text-text-primary">Presets</h3>

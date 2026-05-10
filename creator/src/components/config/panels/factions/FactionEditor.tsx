@@ -11,6 +11,89 @@ function cx(...c: Array<string | false | null | undefined>) {
   return c.filter(Boolean).join(" ");
 }
 
+/** Best-effort plain-language name for a hex color so prompts can read
+ *  "deep teal" alongside "#1e6a6f" — image models pick up either, and the
+ *  pair gives the LLM enhancer a fighting chance at writing it through. */
+function describeColor(hex: string): string | null {
+  if (!/^#[0-9a-f]{6}$/i.test(hex)) return null;
+  const r = parseInt(hex.slice(1, 3), 16) / 255;
+  const g = parseInt(hex.slice(3, 5), 16) / 255;
+  const b = parseInt(hex.slice(5, 7), 16) / 255;
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  const l = (max + min) / 2;
+  const d = max - min;
+  const s = d === 0 ? 0 : d / (1 - Math.abs(2 * l - 1));
+  let h = 0;
+  if (d !== 0) {
+    if (max === r) h = ((g - b) / d) % 6;
+    else if (max === g) h = (b - r) / d + 2;
+    else h = (r - g) / d + 4;
+    h *= 60;
+    if (h < 0) h += 360;
+  }
+  if (s < 0.1) {
+    if (l < 0.2) return "near-black";
+    if (l < 0.4) return "dark grey";
+    if (l < 0.7) return "muted grey";
+    if (l < 0.9) return "light grey";
+    return "near-white";
+  }
+  let hueName = "red";
+  if (h < 15 || h >= 345) hueName = "red";
+  else if (h < 45) hueName = "orange";
+  else if (h < 70) hueName = "amber";
+  else if (h < 90) hueName = "yellow";
+  else if (h < 150) hueName = "green";
+  else if (h < 195) hueName = "teal";
+  else if (h < 255) hueName = "blue";
+  else if (h < 295) hueName = "violet";
+  else hueName = "magenta";
+  let lightness = "";
+  if (l < 0.25) lightness = "deep ";
+  else if (l < 0.4) lightness = "dark ";
+  else if (l > 0.78) lightness = "pale ";
+  else if (l > 0.6) lightness = "soft ";
+  const sat = s < 0.35 ? "muted " : "";
+  return `${sat}${lightness}${hueName}`.trim();
+}
+
+function buildEmblemCustomization(
+  name: string,
+  description: string | undefined,
+  color: string | undefined,
+): string {
+  const parts = [`Faction emblem for ${name}`];
+  if (description) parts.push(description);
+  if (color) {
+    const named = describeColor(color);
+    parts.push(
+      named
+        ? `heraldic color is ${named} (${color}) — render the central symbol predominantly in this hue`
+        : `heraldic color ${color} — render the central symbol predominantly in this hue`,
+    );
+  }
+  return parts.join(". ");
+}
+
+function buildEmblemContext(
+  name: string,
+  description: string | undefined,
+  color: string | undefined,
+): string {
+  const lines = [`Faction: ${name}`];
+  if (description) lines.push(description);
+  if (color) {
+    const named = describeColor(color);
+    lines.push(
+      named
+        ? `Heraldic color: ${named} (${color}) — the emblem should be rendered predominantly in this hue.`
+        : `Heraldic color: ${color} — the emblem should be rendered predominantly in this hue.`,
+    );
+  }
+  return lines.join("\n");
+}
+
 interface FactionEditorProps {
   id: string;
   definition: FactionDefinition;
@@ -161,10 +244,18 @@ export function FactionEditor({
                   composePrompt(
                     "faction_emblem",
                     style,
-                    `Faction emblem for ${definition.name || id}${definition.description ? `. ${definition.description}` : ""}`,
+                    buildEmblemCustomization(
+                      definition.name || id,
+                      definition.description,
+                      definition.color,
+                    ),
                   )
                 }
-                entityContext={`Faction: ${definition.name || id}${definition.description ? `\n${definition.description}` : ""}`}
+                entityContext={buildEmblemContext(
+                  definition.name || id,
+                  definition.description,
+                  definition.color,
+                )}
                 currentImage={emblemPath}
                 onAccept={(filePath) => {
                   const fileName = filePath.split(/[\\/]/).pop() ?? "";

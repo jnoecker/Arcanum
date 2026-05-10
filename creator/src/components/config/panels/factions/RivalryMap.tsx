@@ -52,7 +52,7 @@ export function RivalryMap({ definitions, factionLabelMap }: RivalryMapProps) {
   }, [ids]);
 
   return (
-    <div className="relative mx-auto w-full max-w-3xl overflow-hidden rounded-xl border border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] p-2">
+    <div className="relative mx-auto w-full max-w-3xl overflow-hidden rounded-xl border border-[var(--chrome-stroke)] bg-[var(--chrome-highlight)] p-2">
       <div className="flourish-top-thread pointer-events-none absolute inset-x-6 top-0 h-px" />
         <svg
           viewBox="0 0 360 300"

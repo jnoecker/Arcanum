@@ -47,7 +47,6 @@ import { ZoneLayoutDoctor } from "./ZoneLayoutDoctor";
 import { DungeonEditor, DungeonEmptyState } from "@/components/editors/DungeonEditor";
 import { setDungeon, removeDungeon } from "@/lib/zoneEdits";
 import { normalizeAssetRef } from "@/lib/assetRefs";
-import builderBg from "@/assets/builder-bg.jpg";
 import subtoolbarBg from "@/assets/subtoolbar-bg.jpg";
 import { TERRAIN_ICONS } from "@/assets/ui";
 
@@ -1080,13 +1079,6 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
               />
             </ReactFlow>
             </ExitDeleteContext.Provider>
-
-            {/* Atmospheric background overlay */}
-            <img
-              src={builderBg}
-              alt=""
-              className="pointer-events-none absolute inset-0 z-[1] h-full w-full object-cover opacity-[0.18] mix-blend-screen"
-            />
 
             {/* First-zone onboarding hint */}
             {roomCount <= 1 && !hintDismissed && viewMode === "map" && (

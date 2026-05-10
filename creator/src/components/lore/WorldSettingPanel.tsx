@@ -1,7 +1,7 @@
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, useState, type ReactNode } from "react";
 import { useLoreStore, selectArticles } from "@/stores/loreStore";
 import type { Article } from "@/types/lore";
-import { Section, FieldRow, TextInput } from "@/components/ui/FormWidgets";
+import { FieldRow, TextInput } from "@/components/ui/FormWidgets";
 import { LoreTextArea } from "./LoreTextArea";
 import { LoreEditor } from "./LoreEditor";
 import { TagListEditor } from "./TagListEditor";
@@ -17,6 +17,72 @@ function getField(article: Article, key: string): string {
 function getFieldTags(article: Article, key: string): string[] {
   const v = article.fields[key];
   return Array.isArray(v) ? v : [];
+}
+
+// ─── Card ───────────────────────────────────────────────────────────
+
+function WorldCard({
+  index,
+  title,
+  description,
+  defaultExpanded = true,
+  children,
+}: {
+  index: number;
+  title: string;
+  description?: string;
+  defaultExpanded?: boolean;
+  children: ReactNode;
+}) {
+  const [expanded, setExpanded] = useState(defaultExpanded);
+  const headingId = `world-card-heading-${index}`;
+  const bodyId = `world-card-body-${index}`;
+
+  return (
+    <section
+      aria-labelledby={headingId}
+      className="relative flex h-fit flex-col overflow-hidden rounded-2xl border border-[var(--chrome-stroke-strong)] bg-[var(--chrome-fill-soft)] shadow-[0_1px_0_rgb(var(--highlight-rgb)/0.04)_inset,0_8px_24px_-12px_rgb(0_0_0/0.35)] backdrop-blur-sm [transition:border-color_200ms_var(--ease-unfurl),background-color_200ms_var(--ease-unfurl)] hover:border-[var(--chrome-stroke-emphasis)]"
+    >
+      <button
+        type="button"
+        onClick={() => setExpanded((v) => !v)}
+        aria-expanded={expanded}
+        aria-controls={bodyId}
+        className="focus-ring group flex w-full items-center gap-3 px-4 py-3 text-left"
+      >
+        <span
+          aria-hidden="true"
+          className="ornate-card-badge inline-flex h-7 min-w-[1.75rem] shrink-0 items-center justify-center rounded-full border border-accent/40 bg-accent/10 px-1.5 font-display text-2xs font-semibold tracking-wider text-accent shadow-[0_0_0_3px_rgb(var(--bg-rgb))_inset,0_0_8px_rgb(var(--accent-rgb)/0.15)]"
+        >
+          {index}
+        </span>
+        <h3
+          id={headingId}
+          className="font-display text-sm font-semibold tracking-wide text-text-primary [transition:color_200ms_var(--ease-unfurl)]"
+        >
+          {title}
+        </h3>
+        <span
+          aria-hidden="true"
+          className={`ml-auto inline-block text-[11px] text-text-muted [transition:transform_220ms_var(--ease-unfurl)] ${
+            expanded ? "rotate-180" : ""
+          }`}
+        >
+          &#x25BC;
+        </span>
+      </button>
+      {expanded && (
+        <div id={bodyId} className="flex flex-col gap-2 px-4 pb-4">
+          {description && (
+            <p className="-mt-1 mb-1 text-2xs leading-relaxed text-text-muted/80">
+              {description}
+            </p>
+          )}
+          {children}
+        </div>
+      )}
+    </section>
+  );
 }
 
 // ─── Main panel ────────────────────────────────────────────────────
@@ -66,6 +132,7 @@ export function WorldSettingPanel() {
 
   const fields = article?.fields ?? {};
   const content = article?.content ?? "";
+  const stub = (article ?? ({ fields: {} } as Article)) as Article;
 
   // Build world context string for LLM generation
   const worldContext = useMemo(() => {
@@ -85,123 +152,130 @@ export function WorldSettingPanel() {
   }, [fields, content]);
 
   return (
-    <div className="flex flex-col gap-6">
-      <Section title="Identity">
-        <div className="flex flex-col gap-2">
-          <FieldRow label="World name">
-            <TextInput
-              value={getField(article ?? { fields: {} } as Article, "name")}
-              onCommit={(v) => patchField("name", v || undefined)}
-              placeholder="The name of your world"
-            />
-          </FieldRow>
-          <FieldRow label="Tagline">
-            <TextInput
-              value={getField(article ?? { fields: {} } as Article, "tagline")}
-              onCommit={(v) => patchField("tagline", v || undefined)}
-              placeholder="A one-line hook for your setting"
-            />
-          </FieldRow>
-          <FieldRow label="Tone">
-            <TextInput
-              value={getField(article ?? { fields: {} } as Article, "tone")}
-              onCommit={(v) => patchField("tone", v || undefined)}
-              placeholder="e.g. whimsical, grimdark, heroic, cozy, surreal"
-            />
-          </FieldRow>
-          <FieldRow label="Current era">
-            <TextInput
-              value={getField(article ?? { fields: {} } as Article, "era")}
-              onCommit={(v) => patchField("era", v || undefined)}
-              placeholder="e.g. The Age of Fractures"
-            />
-          </FieldRow>
-        </div>
-      </Section>
+    <div className="flex flex-col gap-4 md:flex-row md:items-start">
+      {/* ── Left column ────────────────────────────────────────── */}
+      <div className="flex flex-1 flex-col gap-4">
+        <WorldCard index={1} title="Identity">
+          <div className="flex flex-col gap-1">
+            <FieldRow label="World name">
+              <TextInput
+                value={getField(stub, "name")}
+                onCommit={(v) => patchField("name", v || undefined)}
+                placeholder="The name of your world"
+              />
+            </FieldRow>
+            <FieldRow label="Tagline">
+              <TextInput
+                value={getField(stub, "tagline")}
+                onCommit={(v) => patchField("tagline", v || undefined)}
+                placeholder="A one-line hook for your setting"
+              />
+            </FieldRow>
+            <FieldRow label="Tone">
+              <TextInput
+                value={getField(stub, "tone")}
+                onCommit={(v) => patchField("tone", v || undefined)}
+                placeholder="e.g. whimsical, grimdark, heroic, cozy, surreal"
+              />
+            </FieldRow>
+            <FieldRow label="Current era">
+              <TextInput
+                value={getField(stub, "era")}
+                onCommit={(v) => patchField("era", v || undefined)}
+                placeholder="e.g. The Age of Fractures"
+              />
+            </FieldRow>
+          </div>
+        </WorldCard>
 
-      <Section title="Themes">
-        <p className="mb-2 text-xs text-text-muted">
-          Narrative tone and recurring motifs that shape your world's stories.
-        </p>
-        <TagListEditor
-          items={getFieldTags(article ?? { fields: {} } as Article, "themes")}
-          onChange={(themes) => patchField("themes", themes)}
-          placeholder="Add a theme..."
-        />
-      </Section>
+        <WorldCard
+          index={2}
+          title="Themes"
+          description="Narrative tone and recurring motifs that shape your world's stories."
+        >
+          <TagListEditor
+            items={getFieldTags(stub, "themes")}
+            onChange={(themes) => patchField("themes", themes)}
+            placeholder="Add a theme..."
+          />
+        </WorldCard>
 
-      <Section title="Visual Style">
-        <LoreTextArea
-          label="Art direction for generated images"
-          value={getField(article ?? { fields: {} } as Article, "visualStyle")}
-          onCommit={(v) => patchField("visualStyle", v || undefined)}
-          placeholder="Describe the image-generation style for this world — e.g. dreamy watercolor storybook, gritty dark fantasy oil painting, painterly high fantasy with desaturated earth tones..."
-          rows={5}
-        />
-      </Section>
+        <WorldCard index={3} title="Visual Style">
+          <LoreTextArea
+            label="Art direction for generated images"
+            value={getField(stub, "visualStyle")}
+            onCommit={(v) => patchField("visualStyle", v || undefined)}
+            placeholder="Describe the image-generation style for this world — e.g. dreamy watercolor storybook, gritty dark fantasy oil painting, painterly high fantasy with desaturated earth tones..."
+            rows={5}
+          />
+        </WorldCard>
 
-      <Section title="Overview">
-        <LoreEditor
-          value={content}
-          onCommit={(v) => patchContent(v || "")}
-          placeholder="Describe your world at a high level — its defining features, cultures, and conflicts..."
-          generateSystemPrompt={getWorldSettingGeneratePrompt()}
-          generateUserPrompt="Write a vivid world overview for this fantasy MUD setting."
-          context={worldContext}
-        />
-      </Section>
+        <WorldCard index={4} title="Overview">
+          <LoreEditor
+            value={content}
+            onCommit={(v) => patchContent(v || "")}
+            placeholder="Describe your world at a high level — its defining features, cultures, and conflicts..."
+            generateSystemPrompt={getWorldSettingGeneratePrompt()}
+            generateUserPrompt="Write a vivid world overview for this fantasy MUD setting."
+            context={worldContext}
+          />
+        </WorldCard>
+      </div>
 
-      <Section title="History">
-        <LoreTextArea
-          label="Creation and history"
-          value={getField(article ?? { fields: {} } as Article, "history")}
-          onCommit={(v) => patchField("history", v || undefined)}
-          placeholder="The creation myth, major ages, wars, and turning points..."
-          rows={8}
-          generateSystemPrompt={getWorldSettingGeneratePrompt()}
-          generateUserPrompt="Write a rich creation myth and historical timeline for this world."
-          context={worldContext}
-        />
-      </Section>
+      {/* ── Right column ───────────────────────────────────────── */}
+      <div className="flex flex-1 flex-col gap-4">
+        <WorldCard index={5} title="History">
+          <LoreTextArea
+            label="Creation and history"
+            value={getField(stub, "history")}
+            onCommit={(v) => patchField("history", v || undefined)}
+            placeholder="The creation myth, major ages, wars, and turning points..."
+            rows={8}
+            generateSystemPrompt={getWorldSettingGeneratePrompt()}
+            generateUserPrompt="Write a rich creation myth and historical timeline for this world."
+            context={worldContext}
+          />
+        </WorldCard>
 
-      <Section title="Geography">
-        <LoreTextArea
-          label="Geography and regions"
-          value={getField(article ?? { fields: {} } as Article, "geography")}
-          onCommit={(v) => patchField("geography", v || undefined)}
-          placeholder="Continents, biomes, major landmarks, and how geography shapes civilisation..."
-          rows={6}
-          generateSystemPrompt={getWorldSettingGeneratePrompt()}
-          generateUserPrompt="Describe the broad geography and major regions of this world."
-          context={worldContext}
-        />
-      </Section>
+        <WorldCard index={6} title="Geography">
+          <LoreTextArea
+            label="Geography and regions"
+            value={getField(stub, "geography")}
+            onCommit={(v) => patchField("geography", v || undefined)}
+            placeholder="Continents, biomes, major landmarks, and how geography shapes civilisation..."
+            rows={6}
+            generateSystemPrompt={getWorldSettingGeneratePrompt()}
+            generateUserPrompt="Describe the broad geography and major regions of this world."
+            context={worldContext}
+          />
+        </WorldCard>
 
-      <Section title="Magic system">
-        <LoreTextArea
-          label="Magic and the supernatural"
-          value={getField(article ?? { fields: {} } as Article, "magic")}
-          onCommit={(v) => patchField("magic", v || undefined)}
-          placeholder="How magic works, its sources, limits, and cultural significance..."
-          rows={6}
-          generateSystemPrompt={getWorldSettingGeneratePrompt()}
-          generateUserPrompt="Design a magic system for this world — its sources, rules, and cultural role."
-          context={worldContext}
-        />
-      </Section>
+        <WorldCard index={7} title="Magic System">
+          <LoreTextArea
+            label="Magic and the supernatural"
+            value={getField(stub, "magic")}
+            onCommit={(v) => patchField("magic", v || undefined)}
+            placeholder="How magic works, its sources, limits, and cultural significance..."
+            rows={6}
+            generateSystemPrompt={getWorldSettingGeneratePrompt()}
+            generateUserPrompt="Design a magic system for this world — its sources, rules, and cultural role."
+            context={worldContext}
+          />
+        </WorldCard>
 
-      <Section title="Technology and civilisation">
-        <LoreTextArea
-          label="Technology level"
-          value={getField(article ?? { fields: {} } as Article, "technology")}
-          onCommit={(v) => patchField("technology", v || undefined)}
-          placeholder="What level of technology exists? How does it interact with magic?..."
-          rows={6}
-          generateSystemPrompt={getWorldSettingGeneratePrompt()}
-          generateUserPrompt="Describe the technology level and civilisational development of this world."
-          context={worldContext}
-        />
-      </Section>
+        <WorldCard index={8} title="Technology and civilisation">
+          <LoreTextArea
+            label="Technology level"
+            value={getField(stub, "technology")}
+            onCommit={(v) => patchField("technology", v || undefined)}
+            placeholder="What level of technology exists? How does it interact with magic?..."
+            rows={6}
+            generateSystemPrompt={getWorldSettingGeneratePrompt()}
+            generateUserPrompt="Describe the technology level and civilisational development of this world."
+            context={worldContext}
+          />
+        </WorldCard>
+      </div>
     </div>
   );
 }

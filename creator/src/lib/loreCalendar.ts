@@ -20,6 +20,51 @@ export function sortEvents(events: TimelineEvent[], calendars: CalendarSystem[])
 }
 
 /**
+ * Pick an active-window range that surrounds the given event with roughly
+ * `targetEventCount` neighboring events, padded by 30%, and clamped to the
+ * full timeline window. Returns `null` when the result would be the full
+ * window (callers should pass that through to onWindowChange to mean "fit
+ * all").
+ */
+export function computeFocusWindow(
+  eventId: string,
+  events: TimelineEvent[],
+  calendars: CalendarSystem[],
+  fullWindow: { min: number; max: number },
+  targetEventCount: number = 15,
+): { min: number; max: number } | null {
+  const ev = events.find((e) => e.id === eventId);
+  if (!ev) return null;
+  const center = absoluteYear(ev, calendars);
+  const totalSpan = Math.max(1, fullWindow.max - fullWindow.min);
+
+  const yearsById = events
+    .map((e) => ({ id: e.id, year: absoluteYear(e, calendars) }))
+    .sort((a, b) => a.year - b.year);
+  const idx = yearsById.findIndex((e) => e.id === eventId);
+
+  let targetSpan: number;
+  if (idx === -1 || yearsById.length <= 1) {
+    targetSpan = Math.max(10, totalSpan * 0.05);
+  } else {
+    const half = Math.floor(targetEventCount / 2);
+    const lo = Math.max(0, idx - half);
+    const hi = Math.min(yearsById.length - 1, idx + half);
+    const naturalSpan = yearsById[hi]!.year - yearsById[lo]!.year;
+    targetSpan = Math.max(10, Math.min(totalSpan, naturalSpan * 1.3));
+  }
+  if (targetSpan >= totalSpan) return null;
+
+  let nextMin = Math.max(fullWindow.min, center - targetSpan / 2);
+  let nextMax = nextMin + targetSpan;
+  if (nextMax > fullWindow.max) {
+    nextMax = fullWindow.max;
+    nextMin = nextMax - targetSpan;
+  }
+  return { min: Math.round(nextMin), max: Math.round(nextMax) };
+}
+
+/**
  * Get the absolute year range spanned by all events.
  */
 export function eventRange(

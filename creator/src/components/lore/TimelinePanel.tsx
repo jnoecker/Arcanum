@@ -3,6 +3,7 @@ import { useLoreStore, selectArticles, selectCalendars, selectEvents } from "@/s
 import type { CalendarSystem, CalendarEra, TimelineEvent } from "@/types/lore";
 import {
   buildChronicleGroups,
+  computeFocusWindow,
   filterResolvedTimelineEvents,
   getTimelineNeighbors,
   resolveTimelineEvents,
@@ -919,22 +920,29 @@ const ChronicleEventRow = memo(function ChronicleEventRow({
   entry,
   selected,
   onSelect,
+  onShowInTimeline,
 }: {
   entry: ResolvedTimelineEvent;
   selected: boolean;
   onSelect: () => void;
+  onShowInTimeline: () => void;
 }) {
   const style = importanceClasses(entry.event.importance);
 
   return (
-    <button
-      type="button"
+    <div
       id={`chronicle-row-${entry.event.id}`}
       role="option"
       aria-selected={selected}
       tabIndex={-1}
       onClick={onSelect}
-      className={`focus-ring group relative grid w-full grid-cols-[0.8rem_5rem_minmax(0,1fr)] items-center gap-3 rounded-[0.45rem] border px-3 py-2 text-left transition md:grid-cols-[0.8rem_5rem_minmax(0,1fr)_7rem_10rem] ${
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onSelect();
+        }
+      }}
+      className={`focus-ring group relative grid w-full cursor-pointer grid-cols-[0.8rem_5rem_minmax(0,1fr)_2.25rem] items-center gap-3 rounded-[0.45rem] border px-3 py-2 text-left transition md:grid-cols-[0.8rem_5rem_minmax(0,1fr)_7rem_10rem_2.25rem] ${
         selected
           ? "border-[var(--border-accent-ring)] bg-[linear-gradient(90deg,rgb(var(--accent-rgb)/0.12),rgb(var(--bg-rgb)/0.30))] shadow-[var(--shadow-glow)]"
           : "border-border-muted/18 bg-bg-abyss/18 hover:border-border-muted/45 hover:bg-bg-secondary/22"
@@ -953,7 +961,25 @@ const ChronicleEventRow = memo(function ChronicleEventRow({
       <span className="hidden min-w-0 truncate text-xs text-text-muted md:block">
         {entry.calendar?.name ?? "Uncalendared"}
       </span>
-    </button>
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          onShowInTimeline();
+        }}
+        aria-label={`Show ${entry.event.title} on the timeline`}
+        title="Show on timeline"
+        className="focus-ring inline-flex h-7 w-7 shrink-0 items-center justify-center justify-self-end rounded-md border border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] text-text-muted opacity-0 transition hover:text-text-primary group-hover:opacity-100 group-focus-within:opacity-100 aria-pressed:opacity-100"
+      >
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4" aria-hidden="true">
+          <circle cx="8" cy="8" r="3" />
+          <line x1="8" y1="1.5" x2="8" y2="3.5" />
+          <line x1="8" y1="12.5" x2="8" y2="14.5" />
+          <line x1="1.5" y1="8" x2="3.5" y2="8" />
+          <line x1="12.5" y1="8" x2="14.5" y2="8" />
+        </svg>
+      </button>
+    </div>
   );
 });
 
@@ -981,6 +1007,7 @@ function EventList({
   totalVisible,
   selectedEventId,
   onSelect,
+  onShowInTimeline,
   onMoveSelection,
   floatingInspector,
   onCloseInspector,
@@ -989,6 +1016,7 @@ function EventList({
   totalVisible: number;
   selectedEventId: string | null;
   onSelect: (id: string) => void;
+  onShowInTimeline: (id: string) => void;
   onMoveSelection: (direction: "prev" | "next") => void;
   floatingInspector?: ReactNode;
   onCloseInspector?: () => void;
@@ -1155,6 +1183,7 @@ function EventList({
                       entry={entry}
                       selected={entry.event.id === selectedEventId}
                       onSelect={() => onSelect(entry.event.id)}
+                      onShowInTimeline={() => onShowInTimeline(entry.event.id)}
                     />
                   ))}
                 </div>
@@ -1382,6 +1411,16 @@ export function TimelinePanel() {
     [fullWindow],
   );
 
+  const handleShowInTimeline = useCallback(
+    (eventId: string) => {
+      setSelectedEventId(eventId);
+      setViewMode("timeline");
+      if (!fullWindow) return;
+      handleWindowChange(computeFocusWindow(eventId, events, calendars, fullWindow));
+    },
+    [calendars, events, fullWindow, handleWindowChange],
+  );
+
   const handleDuplicate = useCallback(() => {
     if (!selectedResolved) return;
     const newId = duplicateEvent(selectedResolved.event.id);
@@ -1436,6 +1475,7 @@ export function TimelinePanel() {
       totalVisible={filteredEvents.length}
       selectedEventId={selectedEventId}
       onSelect={setSelectedEventId}
+      onShowInTimeline={handleShowInTimeline}
       onMoveSelection={handleMoveSelection}
       floatingInspector={inspector}
       onCloseInspector={() => setSelectedEventId(null)}

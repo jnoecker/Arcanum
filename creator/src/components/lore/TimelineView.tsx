@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { CalendarSystem, TimelineEvent } from "@/types/lore";
-import { absoluteYear, buildEraBands, sortEvents } from "@/lib/loreCalendar";
+import { absoluteYear, buildEraBands, computeFocusWindow, sortEvents } from "@/lib/loreCalendar";
 
 const RIBBON_HEIGHT = 210;
 const TRACK_Y = 170;
@@ -183,44 +183,9 @@ export function TimelineView({
   const handleZoomOut = useCallback(() => setVisibleSpan(span * 2), [setVisibleSpan, span]);
   const handleFitAll = useCallback(() => onWindowChange(null), [onWindowChange]);
 
-  const TARGET_FOCUS_EVENT_COUNT = 15;
-
   const handleFocusSelected = useCallback(() => {
     if (!selectedEventId || !fullWindow) return;
-    const ev = events.find((e) => e.id === selectedEventId);
-    if (!ev) return;
-    const center = absoluteYear(ev, calendars);
-    const totalSpan = Math.max(1, fullWindow.max - fullWindow.min);
-
-    // Pick a window that surrounds the selection with roughly
-    // TARGET_FOCUS_EVENT_COUNT events, then pad and clamp.
-    const yearsById = events
-      .map((e) => ({ id: e.id, year: absoluteYear(e, calendars) }))
-      .sort((a, b) => a.year - b.year);
-    const idx = yearsById.findIndex((e) => e.id === selectedEventId);
-    let targetSpan: number;
-    if (idx === -1 || yearsById.length <= 1) {
-      targetSpan = Math.max(10, totalSpan * 0.05);
-    } else {
-      const half = Math.floor(TARGET_FOCUS_EVENT_COUNT / 2);
-      const lo = Math.max(0, idx - half);
-      const hi = Math.min(yearsById.length - 1, idx + half);
-      const naturalSpan = yearsById[hi]!.year - yearsById[lo]!.year;
-      // Pad by 30% so the boundary events aren't pinned to the edges.
-      // Floor at 10 years so a single isolated event still gets context.
-      targetSpan = Math.max(10, Math.min(totalSpan, naturalSpan * 1.3));
-    }
-    if (targetSpan >= totalSpan) {
-      onWindowChange(null);
-      return;
-    }
-    let nextMin = Math.max(fullWindow.min, center - targetSpan / 2);
-    let nextMax = nextMin + targetSpan;
-    if (nextMax > fullWindow.max) {
-      nextMax = fullWindow.max;
-      nextMin = nextMax - targetSpan;
-    }
-    onWindowChange({ min: Math.round(nextMin), max: Math.round(nextMax) });
+    onWindowChange(computeFocusWindow(selectedEventId, events, calendars, fullWindow));
   }, [calendars, events, fullWindow, onWindowChange, selectedEventId]);
 
   return (

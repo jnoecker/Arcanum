@@ -146,7 +146,7 @@ function AllegianceRow({
           ) : (
             <>
               <span className="font-display text-2xs uppercase tracking-wider text-text-muted/70">
-                Rivals Â·
+                Rivals ·
               </span>
               {visible.map((eid) => {
                 const label = factionLabelMap.get(eid);
@@ -224,7 +224,7 @@ function EmptyState() {
         Every world needs its quarrels.
       </p>
       <p className="mt-1 text-2xs leading-snug text-text-muted/70">
-        Name a guild, a court, a thieves' den â€” and tell us who hates whom. Try{" "}
+        Name a guild, a court, a thieves' den — and tell us who hates whom. Try{" "}
         <code className="text-text-muted">thieves_guild</code> or{" "}
         <code className="text-text-muted">royal_court</code>.
       </p>

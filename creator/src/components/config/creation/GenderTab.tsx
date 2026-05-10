@@ -139,7 +139,7 @@ function GenderList({ genders, selected, onSelect, onAdd, onDelete }: GenderList
           <SearchIcon className="text-text-muted/70" />
           <input
             className="min-w-0 flex-1 bg-transparent text-xs text-text-primary outline-none placeholder:text-text-muted/60"
-            placeholder="Search gendersâ€¦"
+            placeholder="Search genders…"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
           />

@@ -330,13 +330,13 @@ function OrphanReferencesBanner({
         </p>
         <p className="text-2xs leading-snug text-text-muted/85">
           Mobs or quests cite faction IDs that don't exist in the allegiance roll.
-          Click an ID to prefill the add field below â€” or rename the offending references.
+          Click an ID to prefill the add field below — or rename the offending references.
         </p>
         <div className="mt-1 flex flex-wrap gap-1.5">
           {orphanIds.map((oid) => {
             const stats = usage.get(oid);
             const tip = stats
-              ? `${stats.mobCount} mob${stats.mobCount === 1 ? "" : "s"} Â· ${stats.questCount} quest${stats.questCount === 1 ? "" : "s"} Â· ${stats.zones.size} zone${stats.zones.size === 1 ? "" : "s"}`
+              ? `${stats.mobCount} mob${stats.mobCount === 1 ? "" : "s"} · ${stats.questCount} quest${stats.questCount === 1 ? "" : "s"} · ${stats.zones.size} zone${stats.zones.size === 1 ? "" : "s"}`
               : undefined;
             return (
               <button

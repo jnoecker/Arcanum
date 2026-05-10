@@ -149,7 +149,7 @@ const ARCANUM_HOTSPOTS: PanelHotspot[] = [
 
 const SPIRE_PANELS = [
   "serverConfig", "stats", "console",
-  "deployment", "admin",
+  "deployment", "admin", "infrastructure",
 ];
 
 const SPIRE_HOTSPOTS: PanelHotspot[] = [
@@ -158,16 +158,7 @@ const SPIRE_HOTSPOTS: PanelHotspot[] = [
   { panelId: "console",          x: 25, y: 47, w: 50, h: 13 },
   { panelId: "deployment",       x: 28, y: 34, w: 44, h: 13 },
   { panelId: "admin",            x: 31, y: 24, w: 38, h: 12 },
-];
-
-const SPIRE_ACTIONS: IslandAction[] = [
-  {
-    id: "openSettings",
-    label: "Settings",
-    kind: "openSettings",
-    glyph: "\u2699\uFE0F",
-    hotspot: { x: 35, y: 10, w: 31, h: 15 },
-  },
+  { panelId: "infrastructure",   x: 35, y: 10, w: 31, h: 15 },
 ];
 
 // ─── Island definitions ─────────────────────────────────────────────
@@ -235,7 +226,6 @@ export const ISLANDS: Record<Island, IslandDef | null> = {
     image: "/menus/spire.jpg",
     panelIds: SPIRE_PANELS,
     hotspots: SPIRE_HOTSPOTS,
-    actions: SPIRE_ACTIONS,
   },
   settings: null,
 };

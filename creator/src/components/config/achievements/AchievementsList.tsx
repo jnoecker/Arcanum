@@ -73,7 +73,7 @@ export function AchievementsList({
       : (categories[activeCategory]?.displayName ?? activeCategory);
 
   return (
-    <aside className="panel-surface flex h-full max-h-[calc(100vh-2rem)] min-h-[28rem] flex-col gap-2 rounded-2xl p-3 shadow-section">
+    <aside className="panel-surface sticky top-3 flex max-h-[calc(100vh-2rem)] flex-col gap-2 rounded-2xl p-3 shadow-section">
       <div className="flex items-center justify-between gap-2">
         <h3 className="font-display text-xs font-semibold uppercase tracking-[0.18em] text-text-secondary">
           Achievements

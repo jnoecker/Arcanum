@@ -128,8 +128,8 @@ export function AchievementDefEditor({
   const selected = selectedId ? defs[selectedId] ?? null : null;
 
   return (
-    <div className="grid grid-cols-1 gap-4 xl:grid-cols-12 xl:items-start">
-      <div className="xl:sticky xl:top-3 xl:col-span-3 xl:max-h-[calc(100vh-2rem)]">
+    <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
+      <div className="xl:col-span-3">
         <AchievementsList
           defs={defs}
           categories={config.achievementCategories}

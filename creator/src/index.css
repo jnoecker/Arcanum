@@ -395,6 +395,24 @@ select,
   50%      { box-shadow: 0 0 20px rgb(var(--accent-rgb) / 0.4); }
 }
 
+@keyframes ember-bloom {
+  0% {
+    box-shadow:
+      0 0 0 0 rgb(var(--accent-rgb) / 0.0),
+      0 0 0 0 rgb(var(--accent-rgb) / 0.0);
+  }
+  35% {
+    box-shadow:
+      0 0 28px 6px rgb(var(--accent-rgb) / 0.55),
+      0 0 56px 18px rgb(var(--accent-rgb) / 0.32);
+  }
+  100% {
+    box-shadow:
+      0 0 0 0 rgb(var(--accent-rgb) / 0.0),
+      0 0 0 0 rgb(var(--accent-rgb) / 0.0);
+  }
+}
+
 @keyframes celestial-bloom {
   0% {
     opacity: 0;
@@ -449,6 +467,11 @@ select,
 
 .animate-warm-breathe {
   animation: warm-breathe 3s var(--ease-cosmic) infinite;
+}
+
+.animate-ember-bloom {
+  animation: ember-bloom 1200ms var(--ease-cosmic) forwards;
+  border-radius: 1rem;
 }
 
 .animate-cosmic-glimmer {

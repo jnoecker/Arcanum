@@ -3,10 +3,6 @@ import { ActionButton, TextInput, NumberInput, SelectInput } from "@/components/
 import { SectionCard } from "@/components/ui/SectionCard";
 import { PlusIcon, TrashIcon, XIcon, CompassRoseIcon } from "./icons";
 
-function cx(...c: Array<string | false | null | undefined>) {
-  return c.filter(Boolean).join(" ");
-}
-
 interface QuestRewardsProps {
   questRewards: Record<string, Record<string, number>> | undefined;
   factionOptions: { value: string; label: string }[];
@@ -58,17 +54,14 @@ export function QuestRewards({
       </div>
 
       {entries.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-[var(--chrome-stroke-strong)] bg-[var(--chrome-fill-soft)] px-4 py-8 text-center">
+        <div className="px-2 py-6 text-center">
           <CompassRoseIcon className="mx-auto mb-2 h-6 w-6 text-text-muted/40" />
-          <p className="text-2xs leading-snug text-text-muted/80">
-            No quests bound to reputation yet.
-          </p>
-          <p className="mt-0.5 text-2xs leading-snug text-text-muted/60">
-            Name a quest above, then tie it to the factions it pleases or offends.
+          <p className="font-body text-2xs italic leading-snug text-text-muted/80">
+            No quests bound to reputation yet. Name a quest above, then tie it to the factions it pleases or offends.
           </p>
         </div>
       ) : (
-        <div className="flex flex-col gap-2">
+        <ul className="flex flex-col divide-y divide-[var(--chrome-stroke)]">
           {entries.map(([qid, rewards]) => (
             <QuestRewardRow
               key={qid}
@@ -80,7 +73,7 @@ export function QuestRewards({
               onDelete={() => onDeleteQuest(qid)}
             />
           ))}
-        </div>
+        </ul>
       )}
     </SectionCard>
   );
@@ -116,12 +109,12 @@ const QuestRewardRow = memo(function QuestRewardRow({
   };
 
   return (
-    <div className="rounded-xl border border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] p-3">
+    <li className="py-3 first:pt-1 last:pb-1">
       <div className="flex items-center gap-2">
         <span className="font-display text-2xs uppercase tracking-wider text-text-muted">
           Quest
         </span>
-        <div className="min-w-0 flex-1">
+        <div className="min-w-0 flex-1 font-mono">
           <TextInput value={questId} onCommit={onRename} placeholder="quest_id" dense />
         </div>
         <button
@@ -135,28 +128,31 @@ const QuestRewardRow = memo(function QuestRewardRow({
       </div>
 
       {entries.length > 0 && (
-        <div className="mt-2 flex flex-col gap-1.5">
+        <div className="mt-1.5 flex flex-col gap-0.5 pl-[3.25rem]">
           {entries.map(([fid, delta]) => {
             const positive = delta >= 0;
             return (
-              <div
-                key={fid}
-                className={cx(
-                  "flex items-center gap-2 rounded-lg border px-2 py-1.5",
-                  positive
-                    ? "border-status-success/30 bg-status-success/[0.08]"
-                    : "border-status-error/30 bg-status-error/[0.08]",
-                )}
-              >
-                <span
-                  className={cx(
-                    "min-w-0 flex-1 truncate font-display text-xs font-semibold",
-                    positive ? "text-status-success" : "text-status-error",
-                  )}
-                >
+              <div key={fid} className="flex items-center gap-2 py-0.5">
+                <span className="min-w-0 flex-1 truncate font-body text-xs text-text-secondary">
                   {factionOptions.find((o) => o.value === fid)?.label ?? fid}
                 </span>
-                <div className="w-20 shrink-0">
+                <span
+                  aria-hidden
+                  className={
+                    positive
+                      ? "shrink-0 select-none font-mono text-2xs font-semibold tabular-nums text-status-success"
+                      : "shrink-0 select-none font-mono text-2xs font-semibold tabular-nums text-status-error"
+                  }
+                >
+                  {positive ? "+" : "−"}
+                </span>
+                <div
+                  className={
+                    positive
+                      ? "w-16 shrink-0 [&_input]:font-mono [&_input]:font-semibold [&_input]:tabular-nums [&_input]:text-status-success"
+                      : "w-16 shrink-0 [&_input]:font-mono [&_input]:font-semibold [&_input]:tabular-nums [&_input]:text-status-error"
+                  }
+                >
                   <NumberInput value={delta} onCommit={(v) => onPatch(fid, v)} dense />
                 </div>
                 <button
@@ -174,16 +170,16 @@ const QuestRewardRow = memo(function QuestRewardRow({
       )}
 
       {available.length > 0 && (
-        <div className="mt-2 flex items-center gap-2 border-t border-[var(--chrome-stroke)] pt-2">
+        <div className="mt-2 flex items-center gap-2 pl-[3.25rem]">
           <div className="min-w-0 flex-1">
             <SelectInput
               value={newFaction}
               onCommit={setNewFaction}
-              options={[{ value: "", label: "â€” pick a faction â€”" }, ...available]}
+              options={[{ value: "", label: "— pick a faction —" }, ...available]}
               dense
             />
           </div>
-          <div className="w-20 shrink-0">
+          <div className="w-16 shrink-0">
             <NumberInput
               value={newAmount}
               onCommit={(v) => setNewAmount(v ?? 0)}
@@ -202,6 +198,6 @@ const QuestRewardRow = memo(function QuestRewardRow({
           </ActionButton>
         </div>
       )}
-    </div>
+    </li>
   );
 });

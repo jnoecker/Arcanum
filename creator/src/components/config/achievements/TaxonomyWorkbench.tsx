@@ -96,8 +96,8 @@ export function TaxonomyWorkbench<T>({
   };
 
   return (
-    <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
-      <aside className="panel-surface flex flex-col gap-3 rounded-2xl p-4 shadow-section xl:col-span-4">
+    <div className="grid grid-cols-1 gap-4 xl:grid-cols-12 xl:items-start">
+      <aside className="panel-surface flex max-h-[calc(100vh-2rem)] min-h-[34rem] flex-col gap-3 rounded-2xl p-4 shadow-section xl:sticky xl:top-3 xl:col-span-4">
         <div className="flex items-center justify-between gap-2">
           <h3 className="font-display text-xs font-semibold uppercase tracking-[0.18em] text-text-secondary">
             {listTitle}
@@ -140,7 +140,7 @@ export function TaxonomyWorkbench<T>({
           </button>
         </div>
 
-        <ul className="-mx-1 flex max-h-[60vh] flex-col gap-1.5 overflow-y-auto px-1 pb-1">
+        <ul className="-mx-1 flex min-h-0 flex-1 flex-col gap-1.5 overflow-y-auto px-1 pb-1">
           {filtered.length === 0 ? (
             <li>
               <div className="rounded-xl border border-dashed border-[var(--chrome-stroke-strong)] bg-[var(--chrome-fill-soft)] px-3 py-6 text-center text-2xs italic text-text-muted/70">
@@ -185,7 +185,7 @@ export function TaxonomyWorkbench<T>({
 
       <section className="xl:col-span-8">
         {selectedId && selected ? (
-          <div className="panel-surface flex flex-col gap-4 rounded-2xl p-4 shadow-section">
+          <div className="panel-surface flex min-h-[34rem] flex-col gap-4 rounded-2xl p-4 shadow-section">
             <header className="flex flex-wrap items-start justify-between gap-3 border-b border-[var(--chrome-stroke)] pb-3">
               <div className="min-w-0 flex-1">
                 <p className="font-display text-2xs font-semibold uppercase tracking-[0.18em] text-text-muted">
@@ -210,7 +210,7 @@ export function TaxonomyWorkbench<T>({
             {renderDetail(selectedId, selected, (p) => patchItem(selectedId, p))}
           </div>
         ) : (
-          <div className="panel-surface flex flex-col items-center justify-center gap-2 rounded-2xl px-6 py-12 text-center shadow-section">
+          <div className="panel-surface flex min-h-[34rem] flex-col items-center justify-center gap-2 rounded-2xl px-6 py-12 text-center shadow-section">
             <p className="font-display text-base text-text-primary">
               {emptyDetailTitle}
             </p>

@@ -901,17 +901,16 @@ export function InfrastructurePanel({ config, onChange }: ConfigPanelProps) {
           <DemoBody config={config} onChange={onChange} />
         </OrnateCard>
 
-        {/* 6 — Database (gated on POSTGRES backend) */}
-        <OrnateCard
-          number={6}
-          title="Database"
-          description="PostgreSQL connection used when the persistence backend is POSTGRES."
-          headerEnd={!isPostgres ? <DimPill>Postgres backend only</DimPill> : undefined}
-        >
-          <DimWrap dimmed={!isPostgres}>
+        {/* 6 — Database (only when persistence backend is POSTGRES) */}
+        {isPostgres && (
+          <OrnateCard
+            number={6}
+            title="Database"
+            description="PostgreSQL connection used when the persistence backend is POSTGRES."
+          >
             <DatabaseBody config={config} onChange={onChange} />
-          </DimWrap>
-        </OrnateCard>
+          </OrnateCard>
+        )}
 
         {/* 7 — Redis */}
         <OrnateCard
@@ -922,41 +921,34 @@ export function InfrastructurePanel({ config, onChange }: ConfigPanelProps) {
           <RedisBody config={config} onChange={onChange} />
         </OrnateCard>
 
-        {/* 8 — gRPC (cluster only) */}
-        <OrnateCard
-          number={8}
-          title="gRPC"
-          description="Control-plane wiring between Engine and Gateway processes."
-          headerEnd={isStandalone ? <DimPill>Sharded mode only</DimPill> : undefined}
-        >
-          <DimWrap dimmed={isStandalone}>
-            <GrpcBody config={config} onChange={onChange} />
-          </DimWrap>
-        </OrnateCard>
+        {/* 8–10 — Cluster sections, only shown in sharded modes */}
+        {!isStandalone && (
+          <>
+            <OrnateCard
+              number={8}
+              title="gRPC"
+              description="Control-plane wiring between Engine and Gateway processes."
+            >
+              <GrpcBody config={config} onChange={onChange} />
+            </OrnateCard>
 
-        {/* 9 — Gateway (cluster only) */}
-        <OrnateCard
-          number={9}
-          title="Gateway"
-          description="How a Gateway process identifies itself, reconnects, and routes new players."
-          headerEnd={isStandalone ? <DimPill>Sharded mode only</DimPill> : undefined}
-        >
-          <DimWrap dimmed={isStandalone}>
-            <GatewayBody config={config} onChange={onChange} />
-          </DimWrap>
-        </OrnateCard>
+            <OrnateCard
+              number={9}
+              title="Gateway"
+              description="How a Gateway process identifies itself, reconnects, and routes new players."
+            >
+              <GatewayBody config={config} onChange={onChange} />
+            </OrnateCard>
 
-        {/* 10 — Sharding (cluster only) */}
-        <OrnateCard
-          number={10}
-          title="Sharding"
-          description="Distribute zones across engines, with auto-scaling for crowded instances."
-          headerEnd={isStandalone ? <DimPill>Sharded mode only</DimPill> : undefined}
-        >
-          <DimWrap dimmed={isStandalone}>
-            <ShardingBody config={config} onChange={onChange} />
-          </DimWrap>
-        </OrnateCard>
+            <OrnateCard
+              number={10}
+              title="Sharding"
+              description="Distribute zones across engines, with auto-scaling for crowded instances."
+            >
+              <ShardingBody config={config} onChange={onChange} />
+            </OrnateCard>
+          </>
+        )}
       </div>
     </div>
   );

@@ -132,6 +132,7 @@ const OPERATIONS_PANELS: PanelDef[] = [
   { id: "rawYaml", label: "Raw YAML", host: "config", kicker: "Advanced", title: "Raw configuration", description: "Inspect or edit the exact serialized YAML when the structured editors are not enough.", maxWidth: "max-w-6xl", island: "settings", glyph: "\u{1F4DD}" },
   { id: "versionControl", label: "Version Control", host: "config", kicker: "Operations", title: "Version control", description: "Git status, commits, push/pull, and conflict resolution for standalone projects.", maxWidth: "max-w-5xl", island: "settings", glyph: "\u{1F33F}" },
   { id: "backup", label: "Backups", host: "command", kicker: "Operations", title: "Backups & Snapshots", description: "Autosave, periodic snapshots, and zip archives. A safety net beyond git.", maxWidth: "max-w-5xl", island: "settings", glyph: "\u{1F5C4}\uFE0F" },
+  { id: "loreIndex", label: "Lore Index", host: "config", kicker: "Operations", title: "Lore index", description: "Searchable embedding index over lore, timelines, maps, and entity descriptions. Rebuild manually after major edits.", maxWidth: "max-w-5xl", island: "settings", glyph: "\u{1F50D}" },
 ];
 
 // ─── Command panels ─────────────────────────────────────────────────

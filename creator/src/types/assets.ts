@@ -101,6 +101,7 @@ export interface Settings {
   hub_api_url: string;
   hub_api_key: string;
   use_hub_ai: boolean;
+  voyage_api_key?: string;
 }
 
 /** Project-level settings stored in <project_dir>/.arcanum/settings.json */

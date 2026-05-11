@@ -46,6 +46,7 @@ import { RuntimeHandoffStudio } from "./RuntimeHandoffStudio";
 import { RawYamlPanel } from "./panels/RawYamlPanel";
 import { VersionControlPanel } from "./panels/VersionControlPanel";
 import { InfrastructurePanel } from "./panels/InfrastructurePanel";
+import { LoreIndexPanel } from "./panels/LoreIndexPanel";
 
 type ConfigPanelProps = { config: AppConfig; onChange: (patch: Partial<AppConfig>) => void };
 
@@ -126,6 +127,8 @@ function renderPanel(panelId: string, props: ConfigPanelProps): ReactNode {
       return <RawYamlPanel config={config} onChange={onChange} />;
     case "versionControl":
       return <VersionControlPanel />;
+    case "loreIndex":
+      return <LoreIndexPanel />;
 
     default:
       return <div className="px-6 py-8 text-sm text-text-muted/60">Panel not found: {panelId}</div>;

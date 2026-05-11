@@ -9,16 +9,18 @@
 //   POST /ai/image/remove-background   → Runware Bria RMBG v2.0
 //   POST /ai/llm/complete              → OpenRouter → DeepSeek V3.2
 //   POST /ai/llm/vision                → Anthropic Claude Sonnet 4.6
+//   POST /ai/embed                     → Voyage AI (voyage-3-lite)
 //
-// Vision calls bill against the same `prompts_used` counter as
-// completions — they're bucketed together as "LLM calls" per the
-// spec. Image calls use `images_used`. Counters are decoupled from
+// Vision and embedding calls bill against the same `prompts_used`
+// counter as completions — they're bucketed together as "LLM calls"
+// per the spec. Embeddings count one prompt per input string in the
+// batch. Image calls use `images_used`. Counters are decoupled from
 // key rotation; an admin resets them explicitly via
 // POST /admin/users/<id>/reset-usage.
 
 import type { Env } from "../env";
 import type { UserRow } from "../db";
-import { incrementImageUsage, incrementPromptUsage } from "../db";
+import { incrementImageUsage, incrementPromptUsage, incrementPromptUsageBy } from "../db";
 import { error, json, preflight } from "../util";
 
 const CORS = { origin: "*" as const };
@@ -48,6 +50,18 @@ const LLM_MODEL = "claude-haiku-4-5-20251001";
 
 // Claude Sonnet 4.6 for vision.
 const VISION_MODEL = "claude-sonnet-4-6";
+
+// Voyage AI embedding models. voyage-3-lite is the small/fast tier
+// used by lore RAG; it's the only model exposed via the hub.
+const EMBEDDING_MODELS = new Set(["voyage-3-lite"]);
+const DEFAULT_EMBEDDING_MODEL = "voyage-3-lite";
+
+// Voyage caps batch size at 128 inputs per call. Clients chunk on
+// their side; the hub just rejects oversize batches.
+const MAX_EMBEDDING_BATCH = 128;
+// voyage-3-lite handles ~32k token contexts, but we don't need to
+// allow runaway inputs through the proxy.
+const MAX_EMBEDDING_INPUT_CHARS = 8000;
 
 // ─── Guardrails ──────────────────────────────────────────────────────
 
@@ -95,6 +109,9 @@ export async function handleAi(
   }
   if (pathname === "/ai/llm/vision" && req.method === "POST") {
     return await llmVision(req, env, user);
+  }
+  if (pathname === "/ai/embed" && req.method === "POST") {
+    return await embed(req, env, user);
   }
   return error(404, "Not found", CORS);
 }
@@ -582,6 +599,145 @@ async function llmVision(req: Request, env: Env, user: UserRow): Promise<Respons
         prompts_quota: user.prompts_quota,
         input_tokens: raw.usage?.input_tokens,
         output_tokens: raw.usage?.output_tokens,
+      },
+    },
+    {},
+    CORS,
+  );
+}
+
+// ─── Embeddings (Voyage AI) ──────────────────────────────────────────
+//
+// Bills against the same `prompts_used` lifetime counter as LLM
+// completions and vision calls — one prompt per input string in the
+// batch. Voyage caps batch size at 128; we reject anything larger
+// with a clear error so the client can chunk.
+
+interface EmbedBody {
+  model?: string;
+  input?: unknown;
+}
+
+interface VoyageEmbedItem {
+  object?: string;
+  embedding?: number[];
+  index?: number;
+}
+
+interface VoyageEmbedResponse {
+  data?: VoyageEmbedItem[];
+  model?: string;
+  usage?: { total_tokens?: number };
+}
+
+async function embed(req: Request, env: Env, user: UserRow): Promise<Response> {
+  if (user.prompts_used >= user.prompts_quota) {
+    return quotaExceeded("prompts", user.prompts_used, user.prompts_quota);
+  }
+
+  let body: EmbedBody;
+  try {
+    body = (await req.json()) as EmbedBody;
+  } catch {
+    return error(400, "Invalid JSON body", CORS);
+  }
+
+  const model = (body.model ?? DEFAULT_EMBEDDING_MODEL).trim();
+  if (!EMBEDDING_MODELS.has(model)) {
+    return error(
+      400,
+      `Unsupported embedding model "${model}". Allowed: ${[...EMBEDDING_MODELS].join(", ")}`,
+      CORS,
+    );
+  }
+
+  if (!Array.isArray(body.input) || body.input.length === 0) {
+    return error(400, "input must be a non-empty array of strings", CORS);
+  }
+  if (body.input.length > MAX_EMBEDDING_BATCH) {
+    return json(
+      {
+        error: "batch_too_large",
+        message: `Maximum ${MAX_EMBEDDING_BATCH} inputs per embedding call`,
+      },
+      { status: 400 },
+      CORS,
+    );
+  }
+
+  const inputs: string[] = [];
+  for (let i = 0; i < body.input.length; i++) {
+    const item = body.input[i];
+    if (typeof item !== "string") {
+      return error(400, `input[${i}] must be a string`, CORS);
+    }
+    if (item.length === 0) {
+      return error(400, `input[${i}] must be non-empty`, CORS);
+    }
+    if (item.length > MAX_EMBEDDING_INPUT_CHARS) {
+      return error(
+        400,
+        `input[${i}] exceeds ${MAX_EMBEDDING_INPUT_CHARS} character cap`,
+        CORS,
+      );
+    }
+    inputs.push(item);
+  }
+
+  // Quota check on the full batch — refuse rather than partially
+  // billing if the call would push the user over their quota.
+  if (user.prompts_used + inputs.length > user.prompts_quota) {
+    return quotaExceeded("prompts", user.prompts_used, user.prompts_quota);
+  }
+
+  const upstream = await fetch("https://api.voyageai.com/v1/embeddings", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${env.VOYAGE_API_KEY}`,
+    },
+    body: JSON.stringify({ model, input: inputs }),
+  });
+
+  if (!upstream.ok) {
+    const text = await upstream.text().catch(() => "");
+    return error(upstream.status, `Voyage error (${upstream.status}): ${text.slice(0, 500)}`, CORS);
+  }
+
+  const raw = (await upstream.json()) as VoyageEmbedResponse;
+  if (!raw.data || raw.data.length !== inputs.length) {
+    return error(502, "Voyage returned mismatched embedding count", CORS);
+  }
+
+  // Preserve the request order using the `index` field — Voyage may
+  // not guarantee ordered output. Fall back to array position if
+  // index is missing.
+  const embeddings: number[][] = new Array(inputs.length);
+  for (let i = 0; i < raw.data.length; i++) {
+    const entry: VoyageEmbedItem | undefined = raw.data[i];
+    if (!entry || !Array.isArray(entry.embedding)) {
+      return error(502, "Voyage returned a malformed embedding", CORS);
+    }
+    const idx = typeof entry.index === "number" ? entry.index : i;
+    if (idx < 0 || idx >= inputs.length) {
+      return error(502, "Voyage returned an out-of-range embedding index", CORS);
+    }
+    embeddings[idx] = entry.embedding;
+  }
+  for (let i = 0; i < embeddings.length; i++) {
+    if (!embeddings[i]) return error(502, "Voyage returned an incomplete embedding set", CORS);
+  }
+
+  await incrementPromptUsageBy(env, user.id, inputs.length);
+
+  return json(
+    {
+      embeddings,
+      model,
+      usage: {
+        prompts_used: user.prompts_used + inputs.length,
+        prompts_quota: user.prompts_quota,
+        total_tokens: raw.usage?.total_tokens,
       },
     },
     {},

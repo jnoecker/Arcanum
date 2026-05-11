@@ -204,6 +204,17 @@ export async function incrementPromptUsage(env: Env, userId: string): Promise<vo
     .run();
 }
 
+export async function incrementPromptUsageBy(
+  env: Env,
+  userId: string,
+  amount: number,
+): Promise<void> {
+  if (!Number.isFinite(amount) || amount <= 0) return;
+  await env.DB.prepare("UPDATE users SET prompts_used = prompts_used + ? WHERE id = ?")
+    .bind(Math.floor(amount), userId)
+    .run();
+}
+
 export async function setUserQuotas(
   env: Env,
   userId: string,

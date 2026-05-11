@@ -36,7 +36,6 @@ export function FactionPanel() {
   const updateConfig = useConfigStore((s) => s.updateConfig);
   const zones = useZoneStore((s) => s.zones);
   const [selected, setSelected] = useState<string | null>(null);
-  const [newQuestId, setNewQuestId] = useState("");
 
   const rawFactions = config?.factions;
   const factions: FactionConfig = {
@@ -202,14 +201,16 @@ export function FactionPanel() {
     [factions.definitions, factions.questRewards, patch, selected],
   );
 
-  const addQuestReward = useCallback(() => {
-    const qid = newQuestId.trim();
-    if (!qid) return;
-    const existing = factions.questRewards ?? {};
-    if (existing[qid]) return;
-    patch({ questRewards: { ...existing, [qid]: {} } });
-    setNewQuestId("");
-  }, [newQuestId, factions.questRewards, patch]);
+  const addQuestReward = useCallback(
+    (questId: string) => {
+      const qid = questId.trim();
+      if (!qid) return;
+      const existing = factions.questRewards ?? {};
+      if (existing[qid]) return;
+      patch({ questRewards: { ...existing, [qid]: {} } });
+    },
+    [factions.questRewards, patch],
+  );
 
   const patchQuestReward = useCallback(
     (questId: string, factionId: string, amount: number | undefined) => {
@@ -218,21 +219,6 @@ export function FactionPanel() {
       if (amount == null || amount === 0) delete entry[factionId];
       else entry[factionId] = amount;
       patch({ questRewards: { ...existing, [questId]: entry } });
-    },
-    [factions.questRewards, patch],
-  );
-
-  const renameQuestReward = useCallback(
-    (oldQid: string, newQid: string) => {
-      const trimmed = newQid.trim();
-      if (!trimmed || oldQid === trimmed) return;
-      const existing = factions.questRewards ?? {};
-      if (existing[trimmed]) return;
-      const next: Record<string, Record<string, number>> = {};
-      for (const [qid, rewards] of Object.entries(existing)) {
-        next[qid === oldQid ? trimmed : qid] = rewards;
-      }
-      patch({ questRewards: next });
     },
     [factions.questRewards, patch],
   );
@@ -364,11 +350,8 @@ export function FactionPanel() {
         <QuestRewards
           questRewards={factions.questRewards}
           factionOptions={factionOptions}
-          newQuestId={newQuestId}
-          onNewQuestIdChange={setNewQuestId}
           onAddQuest={addQuestReward}
           onPatchPair={patchQuestReward}
-          onRenameQuest={renameQuestReward}
           onDeleteQuest={deleteQuestReward}
         />
       </div>

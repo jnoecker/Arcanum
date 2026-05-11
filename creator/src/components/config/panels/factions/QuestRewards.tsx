@@ -1,30 +1,26 @@
-﻿import { memo, useState } from "react";
-import { ActionButton, TextInput, NumberInput, SelectInput } from "@/components/ui/FormWidgets";
+import { memo, useState } from "react";
+import { ActionButton, NumberInput, SelectInput } from "@/components/ui/FormWidgets";
 import { SectionCard } from "@/components/ui/SectionCard";
+import { QuestPicker, QuestRefBadge } from "@/components/config/panels/QuestPicker";
 import { PlusIcon, TrashIcon, XIcon, CompassRoseIcon } from "./icons";
 
 interface QuestRewardsProps {
   questRewards: Record<string, Record<string, number>> | undefined;
   factionOptions: { value: string; label: string }[];
-  newQuestId: string;
-  onNewQuestIdChange: (v: string) => void;
-  onAddQuest: () => void;
+  onAddQuest: (questId: string) => void;
   onPatchPair: (questId: string, factionId: string, amount: number | undefined) => void;
-  onRenameQuest: (oldId: string, newId: string) => void;
   onDeleteQuest: (questId: string) => void;
 }
 
 export function QuestRewards({
   questRewards,
   factionOptions,
-  newQuestId,
-  onNewQuestIdChange,
   onAddQuest,
   onPatchPair,
-  onRenameQuest,
   onDeleteQuest,
 }: QuestRewardsProps) {
   const entries = Object.entries(questRewards ?? {});
+  const existingIds = entries.map(([qid]) => qid);
 
   return (
     <SectionCard
@@ -32,32 +28,22 @@ export function QuestRewards({
       description="What a finished quest does to a player's standing. Use it to court allies — or burn bridges — based on the work they take."
     >
       <div className="mb-3 flex items-center gap-2">
-        <input
-          className="ornate-input min-w-0 flex-1 px-2.5 py-1.5 text-xs text-text-primary"
-          placeholder="quest_id"
-          value={newQuestId}
-          onChange={(e) => onNewQuestIdChange(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") onAddQuest();
-          }}
-        />
-        <ActionButton
-          variant="primary"
-          size="sm"
-          onClick={onAddQuest}
-          disabled={!newQuestId.trim()}
-          className="shrink-0"
-        >
-          <PlusIcon />
-          Add Quest
-        </ActionButton>
+        <div className="min-w-0 flex-1">
+          <QuestPicker
+            value=""
+            onChange={(qid) => qid && onAddQuest(qid)}
+            excludeIds={existingIds}
+            placeholder="Pick a quest to bind…"
+            allowCreate
+          />
+        </div>
       </div>
 
       {entries.length === 0 ? (
         <div className="px-2 py-6 text-center">
           <CompassRoseIcon className="mx-auto mb-2 h-6 w-6 text-text-muted/40" />
           <p className="font-body text-2xs italic leading-snug text-text-muted/80">
-            No quests bound to reputation yet. Name a quest above, then tie it to the factions it pleases or offends.
+            No quests bound to reputation yet. Pick one above, then tie it to the factions it pleases or offends.
           </p>
         </div>
       ) : (
@@ -68,7 +54,6 @@ export function QuestRewards({
               questId={qid}
               rewards={rewards}
               factionOptions={factionOptions}
-              onRename={(v) => onRenameQuest(qid, v)}
               onPatch={(fid, amount) => onPatchPair(qid, fid, amount)}
               onDelete={() => onDeleteQuest(qid)}
             />
@@ -83,7 +68,6 @@ interface QuestRewardRowProps {
   questId: string;
   rewards: Record<string, number>;
   factionOptions: { value: string; label: string }[];
-  onRename: (v: string) => void;
   onPatch: (factionId: string, amount: number | undefined) => void;
   onDelete: () => void;
 }
@@ -92,7 +76,6 @@ const QuestRewardRow = memo(function QuestRewardRow({
   questId,
   rewards,
   factionOptions,
-  onRename,
   onPatch,
   onDelete,
 }: QuestRewardRowProps) {
@@ -114,8 +97,8 @@ const QuestRewardRow = memo(function QuestRewardRow({
         <span className="font-display text-2xs uppercase tracking-wider text-text-muted">
           Quest
         </span>
-        <div className="min-w-0 flex-1 font-mono">
-          <TextInput value={questId} onCommit={onRename} placeholder="quest_id" dense />
+        <div className="min-w-0 flex-1">
+          <QuestRefBadge questId={questId} />
         </div>
         <button
           type="button"

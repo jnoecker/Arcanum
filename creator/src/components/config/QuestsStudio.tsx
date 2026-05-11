@@ -24,18 +24,21 @@ import { useArrayField } from "@/lib/useArrayField";
 import { useConfigOptions } from "@/lib/useConfigOptions";
 import { AutoQuestsPanel } from "./panels/AutoQuestsPanel";
 import { TaxonomyWorkbench } from "./achievements/TaxonomyWorkbench";
+import { QuestsAuthoringPanel } from "./QuestsAuthoringPanel";
+import { useZoneStore } from "@/stores/zoneStore";
 
 interface Props {
   config: AppConfig;
   onChange: (patch: Partial<AppConfig>) => void;
 }
 
-type TabId = "config" | "objectiveTypes" | "completionTypes";
+type TabId = "quests" | "objectiveTypes" | "completionTypes" | "config";
 
 const TABS: Array<{ id: TabId; label: string }> = [
-  { id: "config", label: "Config" },
+  { id: "quests", label: "Quests" },
   { id: "objectiveTypes", label: "Objective Types" },
   { id: "completionTypes", label: "Completion Types" },
+  { id: "config", label: "Config" },
 ];
 
 const DEFAULT_DAILY_QUESTS: DailyQuestsConfig = {
@@ -91,11 +94,19 @@ function defaultCompletionType(raw: string): QuestCompletionTypeDefinition {
  * (taxonomy), and Completion Types (taxonomy).
  */
 export function QuestsStudio({ config, onChange }: Props) {
-  const [active, setActive] = useState<TabId>("config");
+  const [active, setActive] = useState<TabId>("quests");
   const tabRefs = useRef<Array<HTMLButtonElement | null>>([]);
 
   const objectiveCount = Object.keys(config.questObjectiveTypes).length;
   const completionCount = Object.keys(config.questCompletionTypes).length;
+  const zones = useZoneStore((s) => s.zones);
+  const questCount = (() => {
+    let total = 0;
+    for (const zone of zones.values()) {
+      total += Object.keys(zone.data.quests ?? {}).length;
+    }
+    return total;
+  })();
 
   return (
     <div className="flex flex-col gap-5">
@@ -107,11 +118,13 @@ export function QuestsStudio({ config, onChange }: Props) {
         >
           {TABS.map((tab, index) => {
             const count =
-              tab.id === "objectiveTypes"
-                ? objectiveCount
-                : tab.id === "completionTypes"
-                  ? completionCount
-                  : null;
+              tab.id === "quests"
+                ? questCount
+                : tab.id === "objectiveTypes"
+                  ? objectiveCount
+                  : tab.id === "completionTypes"
+                    ? completionCount
+                    : null;
             return (
               <button
                 key={tab.id}
@@ -154,6 +167,8 @@ export function QuestsStudio({ config, onChange }: Props) {
         role="tabpanel"
         aria-labelledby={`quest-tab-${active}`}
       >
+        {active === "quests" && <QuestsAuthoringPanel />}
+
         {active === "config" && <QuestsConfigPanel config={config} onChange={onChange} />}
 
         {active === "objectiveTypes" && (

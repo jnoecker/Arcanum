@@ -272,12 +272,14 @@ export function EditableTextArea({
 /** Collapsible section with a header label. Click header to toggle. */
 export function Section({
   title,
+  titleTooltip,
   description,
   children,
   actions,
   defaultExpanded = true,
 }: {
   title: string;
+  titleTooltip?: string;
   description?: string;
   children: ReactNode;
   actions?: ReactNode;
@@ -306,10 +308,14 @@ export function Section({
           >
             &#x25B6;
           </span>
-          <h4 className={cx(
-            "font-display font-semibold text-2xs uppercase tracking-widest [transition:color_200ms_var(--ease-unfurl)]",
-            expanded ? "text-text-secondary" : "text-text-muted"
-          )}>
+          <h4
+            title={titleTooltip}
+            className={cx(
+              "font-display font-semibold text-2xs uppercase tracking-widest [transition:color_200ms_var(--ease-unfurl)]",
+              expanded ? "text-text-secondary" : "text-text-muted",
+              titleTooltip ? "cursor-help decoration-text-muted/40 decoration-dotted underline-offset-2 hover:underline" : undefined,
+            )}
+          >
             {title}
           </h4>
         </button>
@@ -331,16 +337,26 @@ export function Section({
 export function FieldRow({
   label,
   hint,
+  labelTooltip,
   children,
 }: {
   label: string;
   hint?: string;
+  labelTooltip?: string;
   children: ReactNode;
 }) {
   return (
     <div className="py-0.5">
       <label className="flex items-center gap-2 text-xs">
-        <span className="w-24 shrink-0 text-text-muted">{label}</span>
+        <span
+          title={labelTooltip}
+          className={cx(
+            "w-24 shrink-0 text-text-muted",
+            labelTooltip && "cursor-help decoration-text-muted/40 decoration-dotted underline-offset-2 hover:underline",
+          )}
+        >
+          {label}
+        </span>
         <div className="min-w-0 flex-1">{children}</div>
       </label>
       {hint && (

@@ -13,6 +13,7 @@ import {
 } from "@/lib/zoneLayoutDoctorLlm";
 import type { WorldFile } from "@/types/world";
 import { ActionButton, Spinner } from "@/components/ui/FormWidgets";
+import sidebarBg from "@/assets/sidebar-bg.png";
 
 interface ZoneLayoutDoctorProps {
   zoneId: string;
@@ -135,6 +136,57 @@ export function ZoneLayoutDoctor({ world, onWorldChange }: ZoneLayoutDoctorProps
 
   const roomCount = Object.keys(world.rooms).length;
 
+  if (!analyzed) {
+    return (
+      <div className="relative flex min-h-0 flex-1 flex-col">
+        <img
+          src={sidebarBg}
+          alt=""
+          className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-[0.12]"
+        />
+        <div className="relative z-10 flex min-h-0 flex-1 items-center justify-center overflow-y-auto p-8">
+          <div className="flex max-w-md flex-col items-center gap-4 text-center">
+            <div className="flex h-16 w-16 items-center justify-center rounded-full border border-border-muted bg-[var(--chrome-fill-soft)] text-accent shadow-[0_1px_0_var(--chrome-highlight)_inset]">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.3"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="h-8 w-8"
+              >
+                <circle cx="11" cy="11" r="7" />
+                <path d="m20 20-3.5-3.5" />
+                <path d="M11 8v6" />
+                <path d="M8 11h6" />
+              </svg>
+            </div>
+            <div>
+              <h2 className="font-display text-xl uppercase tracking-widest text-accent">
+                No Analysis Yet
+              </h2>
+              <p className="mt-1 text-xs uppercase tracking-wider text-text-muted">
+                Zone Structural Audit
+              </p>
+            </div>
+            <p className="text-sm leading-relaxed text-text-secondary">
+              Scan this zone's {roomCount} room{roomCount === 1 ? "" : "s"} for structural problems
+              and directional references in room descriptions that no longer match the layout.
+            </p>
+            <button
+              onClick={handleAnalyze}
+              disabled={roomCount === 0}
+              className="rounded-full border border-[rgb(var(--accent-rgb)/0.35)] bg-gradient-active-strong px-5 py-2 text-xs uppercase tracking-widest text-text-primary transition hover:shadow-glow disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Analyze Zone
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-6">
       {/* Header */}
@@ -151,22 +203,9 @@ export function ZoneLayoutDoctor({ world, onWorldChange }: ZoneLayoutDoctorProps
           onClick={handleAnalyze}
           disabled={roomCount === 0}
         >
-          {analyzed ? "Re-analyze" : "Analyze Zone"}
+          Re-analyze
         </ActionButton>
       </div>
-
-      {/* Empty state */}
-      {!analyzed && (
-        <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border-muted bg-bg-elevated/50 px-8 py-16">
-          <div className="font-display text-base uppercase tracking-widest text-text-muted">
-            No Analysis Yet
-          </div>
-          <p className="mt-2 max-w-md text-center text-2xs text-text-secondary">
-            Run the Layout Doctor to scan this zone's {roomCount} rooms for structural issues
-            and text/exit mismatches.
-          </p>
-        </div>
-      )}
 
       {/* Results summary */}
       {analyzed && (

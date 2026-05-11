@@ -37,6 +37,7 @@ wrangler secret put TURNSTILE_SECRET_KEY  # CF Turnstile (pair with TURNSTILE_SI
 wrangler secret put RUNWARE_API_KEY       # image generation
 wrangler secret put OPENROUTER_API_KEY    # text LLM
 wrangler secret put ANTHROPIC_API_KEY     # vision LLM
+wrangler secret put VOYAGE_API_KEY        # embeddings (/ai/embed, lore RAG)
 
 # Dev server on http://127.0.0.1:8787:
 npm run dev

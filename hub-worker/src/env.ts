@@ -10,6 +10,8 @@ export interface Env {
   RUNWARE_API_KEY: string;
   OPENROUTER_API_KEY: string;
   ANTHROPIC_API_KEY: string;
+  /** Voyage AI embeddings, used by /ai/embed for lore RAG indexing. */
+  VOYAGE_API_KEY: string;
   // ─── Self-registration ──────────────────────────────────────────────
   // Resend transactional email for verification codes. Domain must be
   // verified in the Resend console and FROM_EMAIL must be on that domain.

@@ -8,6 +8,10 @@ mod cancellation;
 mod captions;
 #[cfg(feature = "ai")]
 mod deepinfra;
+#[cfg(feature = "ai")]
+mod embeddings;
+#[cfg(feature = "ai")]
+mod rag;
 mod ffmpeg;
 mod ffmpeg_progress;
 mod fs_utils;
@@ -175,6 +179,10 @@ pub fn run() {
                     openai_images::openai_generate_image,
                     openai_tts::openai_tts_generate,
                     sketch::analyze_sketch,
+                    rag::rag_upsert_chunks,
+                    rag::rag_retrieve,
+                    rag::rag_index_stats,
+                    rag::rag_clear_index,
                 ]
             }
             #[cfg(not(feature = "ai"))]

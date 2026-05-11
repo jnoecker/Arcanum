@@ -79,3 +79,7 @@ TURNSTILE_SITE_KEY = "0x4AAAAAAC-tx5qpomJo9lmk"
 #   TURNSTILE_SECRET_KEY   — CF Turnstile secret; pair with the public
 #                            site key in [vars]. Leave unset to skip
 #                            Turnstile verification.
+#   RUNWARE_API_KEY        — image generation
+#   OPENROUTER_API_KEY     — text LLM (currently unused; Claude via Anthropic)
+#   ANTHROPIC_API_KEY      — text + vision LLM
+#   VOYAGE_API_KEY         — embeddings for /ai/embed (lore RAG)

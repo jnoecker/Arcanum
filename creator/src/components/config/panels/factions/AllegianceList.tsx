@@ -46,7 +46,7 @@ export function AllegianceList({
   }, [factionIds, definitions, query]);
 
   return (
-    <aside className="panel-surface sticky top-3 flex max-h-[calc(100vh-2rem)] flex-col gap-2 rounded-2xl p-3 shadow-section xl:self-start">
+    <aside className="panel-surface flex h-[34rem] min-h-0 flex-col gap-2 rounded-2xl p-3 shadow-section xl:h-full xl:self-stretch">
       <div className="flex items-center justify-between gap-2">
         <h3 className="font-display text-xs font-semibold uppercase tracking-[0.18em] text-text-secondary">
           Allegiances

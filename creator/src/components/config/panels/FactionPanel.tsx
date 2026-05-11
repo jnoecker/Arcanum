@@ -313,8 +313,8 @@ export function FactionPanel() {
         />
       )}
 
-      <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
-        <div className="xl:col-span-3">
+      <div className="grid grid-cols-1 gap-4 xl:h-[clamp(34rem,calc(100vh-10rem),46rem)] xl:grid-cols-12">
+        <div className="h-full min-h-0 xl:col-span-3">
           <AllegianceList
             factionIds={factionIds}
             definitions={factions.definitions}
@@ -327,11 +327,12 @@ export function FactionPanel() {
           />
         </div>
 
-        <div className="xl:col-span-9">
+        <div className="h-full min-h-0 xl:col-span-9">
           {selected && factions.definitions[selected] ? (
             <FactionEditor
               id={selected}
               definition={factions.definitions[selected]!}
+              definitions={factions.definitions}
               factionIds={factionIds}
               factionLabelMap={factionLabelMap}
               onPatch={(p) => patchDefinition(selected, p)}
@@ -342,7 +343,7 @@ export function FactionPanel() {
               onRename={(v) => renameFaction(selected, v)}
             />
           ) : (
-            <div className="panel-surface flex flex-col items-center justify-center gap-2 rounded-2xl px-6 py-16 text-center shadow-section">
+            <div className="panel-surface flex h-full min-h-[22rem] flex-col items-center justify-center gap-2 rounded-2xl px-6 py-16 text-center shadow-section xl:min-h-0">
               <CompassRoseIcon className="mb-1 h-7 w-7 text-text-muted/50" />
               <p className="font-display text-sm text-text-primary">
                 No allegiance chosen

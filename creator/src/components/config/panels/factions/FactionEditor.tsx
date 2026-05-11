@@ -3,16 +3,17 @@ import type { FactionDefinition } from "@/types/config";
 import { TextInput, CommitTextarea } from "@/components/ui/FormWidgets";
 import { EntityArtGenerator } from "@/components/ui/EntityArtGenerator";
 import { useAssetStore } from "@/stores/assetStore";
+import { useImageSrc } from "@/lib/useImageSrc";
 import { composePrompt, type ArtStyle } from "@/lib/arcanumPrompts";
 import { Section } from "../../enchanting/Section";
-import { XIcon, TrashIcon, PencilIcon } from "./icons";
+import { CompassRoseIcon, PlusIcon, XIcon, TrashIcon, PencilIcon } from "./icons";
 
 function cx(...c: Array<string | false | null | undefined>) {
   return c.filter(Boolean).join(" ");
 }
 
 /** Best-effort plain-language name for a hex color so prompts can read
- *  "deep teal" alongside "#1e6a6f" — image models pick up either, and the
+ *  "deep teal" alongside "#1e6a6f" - image models pick up either, and the
  *  pair gives the LLM enhancer a fighting chance at writing it through. */
 function describeColor(hex: string): string | null {
   if (!/^#[0-9a-f]{6}$/i.test(hex)) return null;
@@ -69,8 +70,8 @@ function buildEmblemCustomization(
     const named = describeColor(color);
     parts.push(
       named
-        ? `heraldic color is ${named} (${color}) — render the central symbol predominantly in this hue`
-        : `heraldic color ${color} — render the central symbol predominantly in this hue`,
+        ? `heraldic color is ${named} (${color}) - render the central symbol predominantly in this hue`
+        : `heraldic color ${color} - render the central symbol predominantly in this hue`,
     );
   }
   return parts.join(". ");
@@ -87,8 +88,8 @@ function buildEmblemContext(
     const named = describeColor(color);
     lines.push(
       named
-        ? `Heraldic color: ${named} (${color}) — the emblem should be rendered predominantly in this hue.`
-        : `Heraldic color: ${color} — the emblem should be rendered predominantly in this hue.`,
+        ? `Heraldic color: ${named} (${color}) - the emblem should be rendered predominantly in this hue.`
+        : `Heraldic color: ${color} - the emblem should be rendered predominantly in this hue.`,
     );
   }
   return lines.join("\n");
@@ -97,13 +98,14 @@ function buildEmblemContext(
 interface FactionEditorProps {
   id: string;
   definition: FactionDefinition;
+  definitions: Record<string, FactionDefinition>;
   factionIds: string[];
   factionLabelMap: Map<string, string>;
   onPatch: (p: Partial<FactionDefinition>) => void;
-  /** Toggle a rivalry between this faction and `otherId` — stays
+  /** Toggle a rivalry between this faction and `otherId` - stays
    *  symmetric so both factions agree. */
   onToggleEnemy: (otherId: string) => void;
-  /** Toggle an alliance between this faction and `otherId` — stays
+  /** Toggle an alliance between this faction and `otherId` - stays
    *  symmetric so both factions agree. */
   onToggleAlly: (otherId: string) => void;
   onClose: () => void;
@@ -114,6 +116,7 @@ interface FactionEditorProps {
 export function FactionEditor({
   id,
   definition,
+  definitions,
   factionIds,
   factionLabelMap,
   onPatch,
@@ -126,6 +129,8 @@ export function FactionEditor({
   const enemies = definition.enemies ?? [];
   const allies = definition.allies ?? [];
   const others = factionIds.filter((fid) => fid !== id);
+  const availableRivals = others.filter((fid) => !enemies.includes(fid));
+  const availableAllies = others.filter((fid) => !allies.includes(fid));
   const assetsDir = useAssetStore((s) => s.assetsDir);
   const emblemPath =
     definition.image && assetsDir
@@ -133,20 +138,31 @@ export function FactionEditor({
       : undefined;
 
   return (
-    <div className="flex flex-col gap-3">
-      <div className="grid grid-cols-1 gap-3 lg:grid-cols-12">
-        <div className="flex flex-col gap-3 lg:col-span-8">
+    <div className="flex h-full min-h-0 flex-col overflow-hidden">
+      <div className="grid h-full min-h-0 grid-cols-1 gap-3 lg:grid-cols-12">
+        <div className="flex min-h-0 flex-col gap-3 overflow-y-auto pb-1 pr-1 lg:col-span-8">
           <Section
             title="Identity"
             actions={
-              <button
-                type="button"
-                onClick={onClose}
-                className="focus-ring inline-flex items-center gap-1 rounded-lg border border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] px-2.5 py-1 text-2xs text-text-muted transition hover:border-accent/30 hover:text-text-primary"
-              >
-                <XIcon className="h-3 w-3" />
-                Close
-              </button>
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="focus-ring inline-flex items-center gap-1 rounded-lg border border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] px-2.5 py-1 text-2xs text-text-muted transition hover:border-accent/30 hover:text-text-primary"
+                >
+                  <XIcon className="h-3 w-3" />
+                  Close
+                </button>
+                <button
+                  type="button"
+                  onClick={onDelete}
+                  title="Delete faction"
+                  aria-label="Delete faction"
+                  className="focus-ring inline-flex h-7 w-7 items-center justify-center rounded-lg border border-status-error/40 bg-status-error/10 text-status-error transition hover:bg-status-error/20"
+                >
+                  <TrashIcon className="h-3 w-3" />
+                </button>
+              </div>
             }
           >
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -171,108 +187,113 @@ export function FactionEditor({
                 label=""
                 value={definition.description ?? ""}
                 onCommit={(v) => onPatch({ description: v || undefined })}
-                placeholder="A secretive order of spellwrights who…"
+                placeholder="A secretive order of spellwrights who..."
                 rows={3}
               />
             </Field>
           </Section>
 
-          <Section title="Rivals">
+          <Section
+            title="Rivals"
+            className="!overflow-visible !p-3"
+            actions={
+              <RelationAddMenu
+                tone="rival"
+                available={availableRivals}
+                factionLabelMap={factionLabelMap}
+                onToggle={onToggleEnemy}
+              />
+            }
+          >
             {others.length === 0 ? (
               <p className="text-2xs italic text-text-muted/60">
                 Add another faction to set up rivalries.
               </p>
             ) : (
-              <RelationChips
+              <RelationCards
                 tone="rival"
-                all={others}
                 selected={enemies}
+                definitions={definitions}
                 factionLabelMap={factionLabelMap}
-                onToggle={onToggleEnemy}
+                onRemove={onToggleEnemy}
               />
             )}
-            <p className="mt-2 text-2xs leading-snug text-text-muted/70">
-              Killing a member of this faction grants reputation with the
-              selected rivals, and vice versa.
-            </p>
           </Section>
 
-          <Section title="Allies">
+          <Section
+            title="Allies"
+            className="!overflow-visible !p-3 lg:flex-1"
+            actions={
+              <div className="flex items-center gap-1.5">
+                <InfoTooltip text="Lore-only alliances appear on the relationship map but don't affect reputation, kill bonuses, or quest gating." />
+                <RelationAddMenu
+                  tone="ally"
+                  available={availableAllies}
+                  factionLabelMap={factionLabelMap}
+                  onToggle={onToggleAlly}
+                />
+              </div>
+            }
+          >
             {others.length === 0 ? (
               <p className="text-2xs italic text-text-muted/60">
                 Add another faction to declare alliances.
               </p>
             ) : (
-              <RelationChips
+              <RelationCards
                 tone="ally"
-                all={others}
                 selected={allies}
+                definitions={definitions}
                 factionLabelMap={factionLabelMap}
-                onToggle={onToggleAlly}
+                onRemove={onToggleAlly}
               />
             )}
-            <p className="mt-2 text-2xs leading-snug text-text-muted/70">
-              Lore-only — alliances appear on the relationship map but
-              don't affect reputation, kill bonuses, or quest gating.
-            </p>
           </Section>
         </div>
 
-        <div className="flex flex-col gap-3 lg:col-span-4">
-          <Section title="Heraldry">
-            <Field
-              label="Color"
-              hint="Used on the rivalry map and the badge ring in the list."
-            >
+        <div className="flex min-h-0 flex-col gap-3 overflow-y-auto pb-1 pr-1 lg:col-span-4">
+          <Section title="Heraldry" className="!p-3 lg:min-h-full">
+            <Field label="Color">
               <ColorField
                 value={definition.color ?? ""}
                 onChange={(hex) => onPatch({ color: hex || undefined })}
               />
             </Field>
-            <div className="mt-3">
+            <div className="mt-2">
               <p className="mb-1 font-display text-2xs uppercase tracking-wider text-text-muted">
                 Emblem
               </p>
-              <EntityArtGenerator
-                getPrompt={(style: ArtStyle) =>
-                  composePrompt(
-                    "faction_emblem",
-                    style,
-                    buildEmblemCustomization(
-                      definition.name || id,
-                      definition.description,
-                      definition.color,
-                    ),
-                  )
-                }
-                entityContext={buildEmblemContext(
-                  definition.name || id,
-                  definition.description,
-                  definition.color,
-                )}
-                currentImage={emblemPath}
-                onAccept={(filePath) => {
-                  const fileName = filePath.split(/[\\/]/).pop() ?? "";
-                  onPatch({ image: fileName || undefined });
-                }}
-                assetType="faction_emblem"
-                context={{ zone: "", entity_type: "faction", entity_id: id }}
-                surface="worldbuilding"
-              />
+              <div className="faction-emblem-generator">
+                <EntityArtGenerator
+                  getPrompt={(style: ArtStyle) =>
+                    composePrompt(
+                      "faction_emblem",
+                      style,
+                      buildEmblemCustomization(
+                        definition.name || id,
+                        definition.description,
+                        definition.color,
+                      ),
+                    )
+                  }
+                  entityContext={buildEmblemContext(
+                    definition.name || id,
+                    definition.description,
+                    definition.color,
+                  )}
+                  currentImage={emblemPath}
+                  onAccept={(filePath) => {
+                    const fileName = filePath.split(/[\\/]/).pop() ?? "";
+                    onPatch({ image: fileName || undefined });
+                  }}
+                  assetType="faction_emblem"
+                  context={{ zone: "", entity_type: "faction", entity_id: id }}
+                  surface="worldbuilding"
+                />
+              </div>
             </div>
           </Section>
         </div>
-      </div>
-
-      <div className="flex justify-end">
-        <button
-          type="button"
-          onClick={onDelete}
-          className="focus-ring inline-flex items-center gap-1.5 rounded-lg border border-status-error/40 bg-status-error/10 px-3 py-1.5 text-2xs font-medium text-status-error transition hover:bg-status-error/20"
-        >
-          <TrashIcon />
-          Delete faction
-        </button>
       </div>
     </div>
   );
@@ -391,7 +412,7 @@ function RenamableId({ id, onRename }: { id: string; onRename: (v: string) => vo
           setEditing(true);
         }}
         className="group ornate-input inline-flex w-full min-h-9 items-center justify-between gap-2 px-2.5 py-1.5 font-mono text-xs text-text-muted transition hover:text-text-primary"
-        title="Rename — Esc to cancel"
+        title="Rename - Esc to cancel"
       >
         <span className="truncate">{id}</span>
         <PencilIcon className="h-3 w-3 opacity-50 transition group-hover:opacity-100" />
@@ -423,85 +444,222 @@ function RenamableId({ id, onRename }: { id: string; onRename: (v: string) => vo
   );
 }
 
-interface RelationChipsProps {
+interface RelationCardsProps {
   tone: "rival" | "ally";
-  all: string[];
   selected: string[];
+  definitions: Record<string, FactionDefinition>;
   factionLabelMap: Map<string, string>;
-  onToggle: (id: string) => void;
+  onRemove: (id: string) => void;
 }
 
-function RelationChips({ tone, all, selected, factionLabelMap, onToggle }: RelationChipsProps) {
-  const chipClasses =
-    tone === "rival"
-      ? "border-status-error/40 bg-status-error/10 text-status-error"
-      : "border-status-success/40 bg-status-success/10 text-status-success";
-  const removeClasses =
-    tone === "rival"
-      ? "text-status-error/70 hover:bg-status-error/20 hover:text-status-error"
-      : "text-status-success/70 hover:bg-status-success/20 hover:text-status-success";
+function RelationCards({
+  tone,
+  selected,
+  definitions,
+  factionLabelMap,
+  onRemove,
+}: RelationCardsProps) {
   const missingTooltip =
     tone === "rival"
       ? "Define it or remove the rivalry."
       : "Define it or remove the alliance.";
+  const cardClasses =
+    tone === "rival"
+      ? "border-status-error/45 bg-status-error/[0.07]"
+      : "border-status-success/45 bg-status-success/[0.07]";
+  const labelClasses =
+    tone === "rival"
+      ? "text-status-error"
+      : "text-status-success";
 
   return (
-    <div className="rounded-lg border border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] p-2">
-      <div className="flex flex-wrap gap-1.5">
-        {selected.map((eid) => {
-          const label = factionLabelMap.get(eid);
-          const missing = !label;
-          return (
-            <span
-              key={eid}
-              title={missing ? `Unknown faction: ${eid}. ${missingTooltip}` : undefined}
-              className={cx(
-                "inline-flex items-center gap-1 rounded-md border px-2 py-1 font-display text-2xs",
-                missing
-                  ? "border-status-warning/40 bg-status-warning/10 text-status-warning"
-                  : chipClasses,
-              )}
-            >
-              {missing && <span aria-hidden="true">{"⚠ "}</span>}
-              {label ?? eid}
-              <button
-                type="button"
-                onClick={() => onToggle(eid)}
-                aria-label={`Remove ${label ?? eid}`}
-                className={cx(
-                  "focus-ring -mr-0.5 rounded p-0.5 transition",
-                  missing
-                    ? "text-status-warning/70 hover:bg-status-warning/20 hover:text-status-warning"
-                    : removeClasses,
-                )}
-              >
-                <XIcon className="h-3 w-3" />
-              </button>
-            </span>
-          );
-        })}
+    <div className="flex flex-col gap-2">
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-4">
+        {selected.length === 0 ? (
+          <div className="col-span-full rounded-xl border border-dashed border-[var(--chrome-stroke-strong)] bg-[var(--chrome-fill-soft)] px-3 py-4 text-center text-2xs italic text-text-muted/70">
+            {tone === "rival"
+              ? "No rivalries marked yet."
+              : "No alliances marked yet."}
+          </div>
+        ) : (
+          selected.map((relId) => {
+            const label = factionLabelMap.get(relId);
+            const missing = !label;
+            return (
+              <RelationCard
+                key={relId}
+                id={relId}
+                label={label ?? relId}
+                definition={definitions[relId]}
+                tone={tone}
+                missing={missing}
+                title={missing ? `Unknown faction: ${relId}. ${missingTooltip}` : undefined}
+                className={missing ? "border-status-warning/45 bg-status-warning/[0.08]" : cardClasses}
+                labelClassName={missing ? "text-status-warning" : labelClasses}
+                onRemove={() => onRemove(relId)}
+              />
+            );
+          })
+        )}
       </div>
-      {all.filter((id) => !selected.includes(id)).length > 0 && (
-        <div className="mt-2 flex flex-wrap gap-1.5 border-t border-[var(--chrome-stroke)] pt-2">
-          {all
-            .filter((id) => !selected.includes(id))
-            .map((eid) => (
-              <button
-                key={eid}
-                type="button"
-                onClick={() => onToggle(eid)}
-                className={cx(
-                  "focus-ring inline-flex items-center gap-1 rounded-md border border-dashed border-[var(--chrome-stroke-strong)] bg-transparent px-2 py-1 font-display text-2xs text-text-muted transition",
-                  tone === "rival"
-                    ? "hover:border-status-error/40 hover:text-status-error"
-                    : "hover:border-status-success/40 hover:text-status-success",
-                )}
-              >
-                + {factionLabelMap.get(eid) ?? eid}
-              </button>
-            ))}
-        </div>
-      )}
     </div>
+  );
+}
+
+interface RelationCardProps {
+  id: string;
+  label: string;
+  definition: FactionDefinition | undefined;
+  tone: "rival" | "ally";
+  missing: boolean;
+  title?: string;
+  className: string;
+  labelClassName: string;
+  onRemove: () => void;
+}
+
+function RelationCard({
+  id,
+  label,
+  definition,
+  tone,
+  missing,
+  title,
+  className,
+  labelClassName,
+  onRemove,
+}: RelationCardProps) {
+  const emblemSrc = useImageSrc(definition?.image);
+  const factionColor = definition?.color || undefined;
+
+  return (
+    <div
+      title={title}
+      className={cx(
+        "relative flex h-28 flex-col items-center justify-center gap-1.5 rounded-xl border px-2.5 py-3 text-center",
+        "bg-gradient-to-b from-[var(--chrome-fill)] to-[var(--chrome-fill-soft)]",
+        className,
+      )}
+    >
+      <button
+        type="button"
+        onClick={onRemove}
+        aria-label={`Remove ${label}`}
+        className="focus-ring absolute right-2 top-2 inline-flex h-6 w-6 items-center justify-center rounded-md text-text-muted transition hover:bg-[var(--chrome-highlight)] hover:text-text-primary"
+      >
+        <XIcon className="h-3 w-3" />
+      </button>
+
+      <span
+        aria-hidden="true"
+        className={cx(
+          "inline-flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full border",
+          !factionColor &&
+            "border-[var(--chrome-stroke)] bg-[var(--bg-panel)] text-text-muted",
+        )}
+        style={
+          factionColor
+            ? {
+                borderColor: factionColor,
+                background: `color-mix(in srgb, ${factionColor} 15%, transparent)`,
+                color: factionColor,
+              }
+            : undefined
+        }
+      >
+        {emblemSrc ? (
+          <img
+            src={emblemSrc}
+            alt=""
+            loading="lazy"
+            className="h-full w-full object-cover"
+            draggable={false}
+          />
+        ) : (
+          <CompassRoseIcon className="h-4 w-4" />
+        )}
+      </span>
+
+      <div className="min-w-0">
+        <div className="line-clamp-2 font-display text-xs font-semibold leading-tight text-text-primary">
+          {missing ? id : label}
+        </div>
+        <div className={cx("mt-2 font-display text-3xs uppercase tracking-[0.22em]", labelClassName)}>
+          {missing ? "Missing" : tone === "rival" ? "Rival" : "Ally"}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+interface RelationAddMenuProps {
+  tone: "rival" | "ally";
+  available: string[];
+  factionLabelMap: Map<string, string>;
+  onToggle: (id: string) => void;
+}
+
+function RelationAddMenu({
+  tone,
+  available,
+  factionLabelMap,
+  onToggle,
+}: RelationAddMenuProps) {
+  if (available.length === 0) {
+    return (
+      <button
+        type="button"
+        disabled
+        title={tone === "rival" ? "No rivals available" : "No allies available"}
+        aria-label={tone === "rival" ? "No rivals available" : "No allies available"}
+        className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] text-text-muted/40"
+      >
+        <PlusIcon className="h-3 w-3" />
+      </button>
+    );
+  }
+
+  return (
+    <details className="group relative">
+      <summary
+        className="focus-ring flex h-6 w-6 cursor-pointer list-none items-center justify-center rounded-full border border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] text-text-muted transition hover:border-accent/40 hover:text-accent"
+        aria-label={tone === "rival" ? "Add rival" : "Add ally"}
+        title={tone === "rival" ? "Add rival" : "Add ally"}
+      >
+        <PlusIcon className="h-3 w-3" />
+      </summary>
+      <div className="absolute right-0 top-8 z-30 flex min-w-56 flex-col gap-1 rounded-xl border border-[var(--chrome-stroke)] bg-[var(--bg-panel)] p-2 shadow-panel">
+        {available.map((relId) => (
+          <button
+            key={relId}
+            type="button"
+            onClick={() => onToggle(relId)}
+            className="focus-ring flex w-full items-center rounded-lg px-2 py-1.5 text-left font-display text-2xs text-text-secondary transition hover:bg-[var(--chrome-fill)] hover:text-accent"
+          >
+            {factionLabelMap.get(relId) ?? relId}
+          </button>
+        ))}
+      </div>
+    </details>
+  );
+}
+
+function InfoTooltip({ text }: { text: string }) {
+  return (
+    <span className="group relative inline-flex">
+      <button
+        type="button"
+        className="focus-ring inline-flex h-6 w-6 items-center justify-center rounded-full border border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] font-mono text-3xs text-text-muted transition hover:border-accent/40 hover:text-accent"
+        aria-label={text}
+      >
+        i
+      </button>
+      <span
+        role="tooltip"
+        className="pointer-events-none absolute right-0 top-8 z-20 hidden w-64 rounded-xl border border-[var(--chrome-stroke)] bg-[var(--bg-panel)] px-3 py-2 text-left text-2xs leading-snug text-text-secondary shadow-panel group-hover:block group-focus-within:block"
+      >
+        {text}
+      </span>
+    </span>
   );
 }

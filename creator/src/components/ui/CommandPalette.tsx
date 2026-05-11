@@ -4,6 +4,7 @@ import { useLoreStore, selectArticles } from "@/stores/loreStore";
 import { useZoneStore } from "@/stores/zoneStore";
 import { useAssetStore } from "@/stores/assetStore";
 import { ALL_PANELS, panelTab } from "@/lib/panelRegistry";
+import { useQuestAuthoringStore } from "@/stores/questAuthoringStore";
 import { AI_ENABLED } from "@/lib/featureFlags";
 import { useFocusTrap } from "@/lib/useFocusTrap";
 
@@ -220,7 +221,10 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
           title: quest.name || questId,
           subtitle: zoneName,
           searchText: questId,
-          action: () => navigateTo({ zoneId, entityKind: "quest", entityId: questId }),
+          action: () => {
+            useQuestAuthoringStore.getState().setPendingFocus({ zoneId, questId });
+            openTab(panelTab("quests"));
+          },
         });
       }
       for (const [nodeId, node] of Object.entries(zone.gatheringNodes ?? {})) {

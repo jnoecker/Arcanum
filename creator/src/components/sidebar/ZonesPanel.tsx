@@ -16,7 +16,6 @@ import {
   addItem,
   addShop,
   addTrainer,
-  addQuest,
   addGatheringNode,
   addRecipe,
   setDungeon,
@@ -28,7 +27,6 @@ import type {
   ItemFile,
   ShopFile,
   TrainerFile,
-  QuestFile,
   GatheringNodeFile,
   RecipeFile,
 } from "@/types/world";
@@ -123,16 +121,6 @@ const CATEGORIES: CategoryDef[] = [
         yields: [],
         room: firstRoom,
       } as GatheringNodeFile);
-    },
-  },
-  {
-    key: "quest",
-    label: "Quests",
-    collection: "quests",
-    nameField: "name",
-    addFn: (world) => {
-      const id = generateEntityId(world, "quests");
-      return addQuest(world, id, { name: id, giver: "" } as QuestFile);
     },
   },
   {

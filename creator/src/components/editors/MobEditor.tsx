@@ -24,6 +24,7 @@ import { useVibeStore } from "@/stores/vibeStore";
 import { useConfigStore } from "@/stores/configStore";
 import { resolveMobStats } from "@/lib/resolveMobStats";
 import { CATEGORY_ICONS } from "@/assets/ui";
+import { QuestPicker, QuestRefBadge } from "@/components/config/panels/QuestPicker";
 
 interface MobEditorProps {
   mobId: string;
@@ -159,11 +160,6 @@ export function MobEditor({
     });
   }, [patch]);
 
-  const zoneQuests = Object.entries(world.quests ?? {}).map(([id, q]) => ({
-    id,
-    name: q.name,
-  }));
-
   const {
     add: handleAddDrop,
     update: handleUpdateDrop,
@@ -186,13 +182,21 @@ export function MobEditor({
     [mob.behavior, patch],
   );
 
-  const handleToggleQuest = useCallback(
+  const handleAddQuest = useCallback(
+    (questId: string) => {
+      if (!questId) return;
+      const current = mob.quests ?? [];
+      if (current.includes(questId)) return;
+      patch({ quests: [...current, questId] });
+    },
+    [mob.quests, patch],
+  );
+
+  const handleRemoveQuest = useCallback(
     (questId: string) => {
       const current = mob.quests ?? [];
-      const quests = current.includes(questId)
-        ? current.filter((q) => q !== questId)
-        : [...current, questId];
-      patch({ quests: quests.length > 0 ? quests : undefined });
+      const next = current.filter((q) => q !== questId);
+      patch({ quests: next.length > 0 ? next : undefined });
     },
     [mob.quests, patch],
   );
@@ -682,26 +686,32 @@ export function MobEditor({
           </Section>
 
           <Section title={`Quests (${mob.quests?.length ?? 0})`}>
-            {zoneQuests.length === 0 ? (
-              <p className="text-xs text-text-muted">No quests defined in this zone</p>
-            ) : (
-              <div className="flex flex-col gap-0.5">
-                {zoneQuests.map((q) => (
-                  <label
-                    key={q.id}
-                    className="flex items-center gap-1.5 rounded px-1 py-0.5 text-xs text-text-secondary hover:bg-bg-tertiary"
-                  >
-                    <input
-                      type="checkbox"
-                      checked={(mob.quests ?? []).includes(q.id)}
-                      onChange={() => handleToggleQuest(q.id)}
-                      className="accent-accent"
-                    />
-                    {q.name || q.id}
-                  </label>
-                ))}
-              </div>
-            )}
+            <div className="flex flex-col gap-2">
+              {(mob.quests ?? []).length > 0 && (
+                <div className="flex flex-wrap items-center gap-1.5">
+                  {(mob.quests ?? []).map((qid) => (
+                    <div key={qid} className="inline-flex items-center gap-1">
+                      <QuestRefBadge questId={qid} />
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveQuest(qid)}
+                        aria-label={`Remove ${qid}`}
+                        className="focus-ring inline-flex h-5 w-5 items-center justify-center rounded text-text-muted/70 transition hover:bg-status-error/15 hover:text-status-error"
+                      >
+                        &times;
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <QuestPicker
+                value=""
+                onChange={handleAddQuest}
+                excludeIds={mob.quests}
+                placeholder="Pick a quest this mob gives or turns in…"
+                allowCreate
+              />
+            </div>
           </Section>
         </>
       )}

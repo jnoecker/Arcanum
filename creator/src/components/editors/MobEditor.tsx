@@ -563,10 +563,10 @@ export function MobEditor({
           <Section
             title={stats?.anyOverridden ? "Stat Overrides ●" : "Stat Overrides"}
             defaultExpanded={false}
-            description={
+            titleTooltip={
               stats
-                ? "Every field below follows tier × level by default. Only set a value when you need to break from the curve — the engine uses whatever you type instead of the computed value."
-                : "Set this mob's tier and level to preview the computed stats. Any value you type below becomes an override."
+                ? "Fields follow tier × level by default. Type a value to override the curve."
+                : "Set tier and level first to preview computed stats. Any value typed here overrides the curve."
             }
             actions={
               stats?.anyOverridden ? (

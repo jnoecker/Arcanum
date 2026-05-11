@@ -14,6 +14,7 @@ import { zoneToGraph } from "@/lib/zoneToGraph";
 import type { WorldFile } from "@/types/world";
 import type { LoreMap, MapPin } from "@/types/lore";
 import { ActionButton } from "@/components/ui/FormWidgets";
+import sidebarBg from "@/assets/sidebar-bg.png";
 
 interface ZoneMapPanelProps {
   zoneId: string;
@@ -191,117 +192,161 @@ export function ZoneMapPanel({ zoneId, world, onWorldChange }: ZoneMapPanelProps
   );
 
   const roomCount = Object.keys(world.rooms).length;
+  const showEmptyState = !previewSrc && !currentMapSrc && !generating;
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="font-display text-sm uppercase tracking-widest text-accent">
-            Zone Map
-          </h2>
-          <p className="mt-1 text-2xs text-text-muted">
-            Generate an illustrated fantasy map from this zone's rooms and connections.
-          </p>
-        </div>
-      </div>
+    <div className="relative flex min-h-0 flex-1 flex-col">
+      <img
+        src={sidebarBg}
+        alt=""
+        className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-[0.12]"
+      />
 
-      {/* Current map display */}
-      {(previewSrc || currentMapSrc) && (
-        <div className="relative shrink-0 overflow-hidden rounded-xl border border-border-default bg-bg-abyss">
-          <img
-            src={previewSrc ?? currentMapSrc!}
-            alt={`${world.zone} zone map`}
-            className="block w-full"
-          />
-          {previewSrc && (
-            <div className="absolute inset-x-0 bottom-0 flex items-center justify-center gap-2 bg-gradient-to-t from-[var(--bg-scrim-heavy)] to-transparent px-4 pb-4 pt-10">
-              <span className="mr-2 text-2xs uppercase tracking-widest text-text-muted">
-                Preview
-              </span>
-              <ActionButton onClick={handleAccept} size="sm">
-                Accept
-              </ActionButton>
-              <ActionButton onClick={() => setPreview(null)} variant="secondary" size="sm">
-                Discard
-              </ActionButton>
+      {showEmptyState ? (
+        <div className="relative z-10 flex min-h-0 flex-1 items-center justify-center overflow-y-auto p-8">
+          <div className="flex max-w-md flex-col items-center gap-4 text-center">
+            <div className="flex h-16 w-16 items-center justify-center rounded-full border border-border-muted bg-[var(--chrome-fill-soft)] text-accent shadow-[0_1px_0_var(--chrome-highlight)_inset]">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.3"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="h-8 w-8"
+              >
+                <path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2Z" />
+                <path d="M9 4v14" />
+                <path d="M15 6v14" />
+              </svg>
+            </div>
+            <div>
+              <h2 className="font-display text-xl uppercase tracking-widest text-accent">
+                No Zone Map
+              </h2>
+              <p className="mt-1 text-xs uppercase tracking-wider text-text-muted">
+                Illustrated Zone Atlas
+              </p>
+            </div>
+            <p className="text-sm leading-relaxed text-text-secondary">
+              Generate an illustrated map showing the geography and landmarks of this zone, built
+              from your {roomCount} room{roomCount === 1 ? "" : "s"}, their descriptions, exits, and
+              the zone vibe.
+            </p>
+            {AI_ENABLED && (
+              <button
+                onClick={handleGenerate}
+                disabled={!hasImageKey || roomCount === 0}
+                className="rounded-full border border-[rgb(var(--accent-rgb)/0.35)] bg-gradient-active-strong px-5 py-2 text-xs uppercase tracking-widest text-text-primary transition hover:shadow-glow disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Generate Zone Map
+              </button>
+            )}
+            {!hasImageKey && AI_ENABLED && (
+              <p className="text-2xs italic text-text-muted">
+                Configure an image provider API key in Settings to generate maps.
+              </p>
+            )}
+            {!vibe && AI_ENABLED && hasImageKey && (
+              <p className="text-2xs italic text-text-muted">
+                Tip: Generate a zone vibe first (in the Map view sidebar) for richer results.
+              </p>
+            )}
+          </div>
+        </div>
+      ) : (
+        <div className="relative z-10 flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="font-display text-sm uppercase tracking-widest text-accent">
+                Zone Map
+              </h2>
+              <p className="mt-1 text-2xs text-text-muted">
+                Illustrated atlas built from this zone's rooms, exits, and vibe.
+              </p>
+            </div>
+          </div>
+
+          {(previewSrc || currentMapSrc) && (
+            <div className="relative shrink-0 overflow-hidden rounded-xl border border-border-default bg-bg-abyss">
+              <img
+                src={previewSrc ?? currentMapSrc!}
+                alt={`${world.zone} zone map`}
+                className="block w-full"
+              />
+              {previewSrc && (
+                <div className="absolute inset-x-0 bottom-0 flex items-center justify-center gap-2 bg-gradient-to-t from-[var(--bg-scrim-heavy)] to-transparent px-4 pb-4 pt-10">
+                  <span className="mr-2 text-2xs uppercase tracking-widest text-text-muted">
+                    Preview
+                  </span>
+                  <ActionButton onClick={handleAccept} size="sm">
+                    Accept
+                  </ActionButton>
+                  <ActionButton onClick={() => setPreview(null)} variant="secondary" size="sm">
+                    Discard
+                  </ActionButton>
+                </div>
+              )}
             </div>
           )}
-        </div>
-      )}
 
-      {/* Empty state */}
-      {!previewSrc && !currentMapSrc && !generating && (
-        <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border-muted bg-bg-elevated/50 px-8 py-16">
-          <div className="font-display text-base uppercase tracking-widest text-text-muted">
-            No Zone Map
+          {generating && (
+            <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-border-muted bg-bg-elevated/50 px-8 py-16">
+              <div className="h-8 w-8 rounded-full border-2 border-accent border-t-transparent animate-spin" />
+              <span className="text-2xs uppercase tracking-widest text-text-muted">
+                Generating zone map...
+              </span>
+            </div>
+          )}
+
+          <div className="flex flex-wrap items-center gap-2">
+            {AI_ENABLED && (
+              <ActionButton
+                onClick={handleGenerate}
+                disabled={generating || !hasImageKey || roomCount === 0}
+              >
+                {generating
+                  ? "Generating..."
+                  : currentMapFile
+                    ? "Regenerate Map"
+                    : "Generate Zone Map"}
+              </ActionButton>
+            )}
+
+            {currentMapFile && !existingLoreMap && !createdLoreMap && (
+              <ActionButton onClick={handleCreateLoreMap} variant="secondary">
+                Create Lore Map with Pins
+              </ActionButton>
+            )}
+
+            {createdLoreMap && (
+              <span className="text-2xs text-status-success">
+                Lore map created with {Object.keys(world.rooms).length} room pins
+              </span>
+            )}
+
+            {existingLoreMap && (
+              <span className="text-2xs text-text-muted">
+                Lore map exists: "{existingLoreMap.title}"
+              </span>
+            )}
           </div>
-          <p className="mt-2 max-w-md text-center text-2xs text-text-secondary">
-            Generate an illustrated map showing the geography and landmarks of this zone.
-            The map is built from your {roomCount} rooms, their descriptions, exits, and the zone vibe.
-          </p>
+
+          {!hasImageKey && AI_ENABLED && (
+            <p className="text-2xs italic text-text-muted">
+              Configure an image provider API key in Settings to generate maps.
+            </p>
+          )}
+
+          {!vibe && AI_ENABLED && (
+            <p className="text-2xs italic text-text-muted">
+              Tip: Generate a zone vibe first (in the Map view sidebar) for better results.
+            </p>
+          )}
+
+          {error && <p className="text-2xs italic text-status-error">{error}</p>}
         </div>
       )}
-
-      {/* Generation spinner */}
-      {generating && (
-        <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-border-muted bg-bg-elevated/50 px-8 py-16">
-          <div className="h-8 w-8 rounded-full border-2 border-accent border-t-transparent animate-spin" />
-          <span className="text-2xs uppercase tracking-widest text-text-muted">
-            Generating zone map...
-          </span>
-        </div>
-      )}
-
-      {/* Actions */}
-      <div className="flex flex-wrap items-center gap-2">
-        {AI_ENABLED && (
-          <ActionButton
-            onClick={handleGenerate}
-            disabled={generating || !hasImageKey || roomCount === 0}
-          >
-            {generating
-              ? "Generating..."
-              : currentMapFile
-                ? "Regenerate Map"
-                : "Generate Zone Map"}
-          </ActionButton>
-        )}
-
-        {currentMapFile && !existingLoreMap && !createdLoreMap && (
-          <ActionButton onClick={handleCreateLoreMap} variant="secondary">
-            Create Lore Map with Pins
-          </ActionButton>
-        )}
-
-        {createdLoreMap && (
-          <span className="text-2xs text-status-success">
-            Lore map created with {Object.keys(world.rooms).length} room pins
-          </span>
-        )}
-
-        {existingLoreMap && (
-          <span className="text-2xs text-text-muted">
-            Lore map exists: "{existingLoreMap.title}"
-          </span>
-        )}
-      </div>
-
-      {/* Info */}
-      {!hasImageKey && AI_ENABLED && (
-        <p className="text-2xs italic text-text-muted">
-          Configure an image provider API key in Settings to generate maps.
-        </p>
-      )}
-
-      {!vibe && AI_ENABLED && (
-        <p className="text-2xs italic text-text-muted">
-          Tip: Generate a zone vibe first (in the Map view sidebar) for better results.
-          The vibe text is injected into the map generation prompt.
-        </p>
-      )}
-
-      {error && <p className="text-2xs italic text-status-error">{error}</p>}
     </div>
   );
 }

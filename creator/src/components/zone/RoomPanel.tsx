@@ -543,10 +543,7 @@ export function RoomPanel({
       </Section>
 
       {/* Exits */}
-      <Section
-        title={`Exits (${exits.length})`}
-        description="Edit room links here. Cross-zone targets use the `zone:room` format and stay one-way from this zone."
-      >
+      <Section title={`Exits (${exits.length})`}>
         <div className="flex flex-col gap-2">
           {exitError && (
             <p className="rounded border border-status-error/30 bg-status-error/10 px-3 py-2 text-2xs text-status-error">
@@ -677,15 +674,7 @@ export function RoomPanel({
           )}
 
           <div className="rounded-xl border border-accent/25 bg-[linear-gradient(180deg,rgba(var(--accent-rgb),0.12),rgba(var(--accent-rgb),0.04))] p-3 shadow-[inset_0_1px_0_rgb(var(--text-rgb)/0.03)]">
-            <div className="flex items-center gap-2">
-              <span className="rounded-full border border-accent/35 bg-accent/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-accent">
-                New
-              </span>
-              <p className="text-2xs uppercase tracking-widest text-text-secondary">Create Exit</p>
-            </div>
-            <p className="mt-1 text-2xs leading-relaxed text-text-muted">
-              Start with a direction, then target a local room or type a loaded foreign zone like <span className="font-mono text-accent">otherzone:</span>.
-            </p>
+            <p className="text-2xs uppercase tracking-widest text-text-secondary">Create Exit</p>
             <div className="mt-2 grid grid-cols-[5.5rem_minmax(0,1fr)] gap-2">
               <label className="text-2xs text-text-muted">
                 Direction
@@ -767,7 +756,6 @@ export function RoomPanel({
       {/* Room features */}
       <Section
         title={`Features (${Object.keys(room.features ?? {}).length})`}
-        description="Containers, levers, and signs players can interact with in this room. Sequence puzzles below can reference these same feature keys."
         defaultExpanded={Object.keys(room.features ?? {}).length > 0}
       >
         <RoomFeaturesEditor
@@ -781,13 +769,10 @@ export function RoomPanel({
       {/* Terrain override */}
       <Section
         title="Terrain"
-        description="Override the zone-level terrain for this room. Leave blank to inherit the zone default."
+        titleTooltip="Drives weather effects and the default room background. Sheltered terrains (inside, underground, underwater) suppress weather particles. Leave blank to inherit the zone default."
         defaultExpanded={!!room.terrain}
       >
-        <FieldRow
-          label="Terrain"
-          hint="Determines weather effects and default room background. Sheltered terrains (inside, underground, underwater) suppress weather particles."
-        >
+        <FieldRow label="Terrain">
           <div className="flex items-center gap-2">
             {room.terrain && TERRAIN_ICONS[room.terrain] && (
               <img src={TERRAIN_ICONS[room.terrain]} alt="" className="h-5 w-5 rounded" />
@@ -947,7 +932,6 @@ export function RoomPanel({
       <Section
         title={`Services (${shops.length + trainers.length + gatheringNodes.length})`}
         defaultExpanded={false}
-        description="Room-scoped services and interactables that players use here."
         actions={
           <div className="flex items-center gap-1">
             <button
@@ -1092,7 +1076,6 @@ export function RoomPanel({
       {/* Puzzles */}
       <Section
         title={`Puzzles (${puzzles.length})`}
-        description="Sequence puzzles usually target room features like levers and containers defined above."
         defaultExpanded={puzzles.length > 0}
         actions={
           <div className="flex items-center gap-1">

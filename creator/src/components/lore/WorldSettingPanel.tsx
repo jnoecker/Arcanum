@@ -8,7 +8,12 @@ import { TagListEditor } from "./TagListEditor";
 import { getWorldSettingGeneratePrompt } from "@/lib/lorePrompts";
 import { buildRagContext } from "@/lib/rag/loreContext";
 import { DeriveFieldDialog } from "./DeriveFieldDialog";
-import { deriveWorldHistory, deriveWorldOverview } from "@/lib/loreDerive";
+import {
+  deriveWorldHistory,
+  deriveWorldMagicSystem,
+  deriveWorldOverview,
+  deriveWorldTechCiv,
+} from "@/lib/loreDerive";
 import { plainTextToTiptap } from "@/lib/loreRelations";
 
 // ─── Helpers ────────────────────────────────────────────────────────
@@ -95,7 +100,9 @@ export function WorldSettingPanel() {
   const articles = useLoreStore(selectArticles);
   const updateArticle = useLoreStore((s) => s.updateArticle);
   const createArticle = useLoreStore((s) => s.createArticle);
-  const [deriveOpen, setDeriveOpen] = useState<null | "history" | "overview">(null);
+  const [deriveOpen, setDeriveOpen] = useState<
+    null | "history" | "overview" | "magic" | "tech"
+  >(null);
 
   // Find or create the world_setting article
   const article = useMemo(
@@ -305,6 +312,16 @@ export function WorldSettingPanel() {
             generateUserPrompt="Design a magic system for this world — its sources, rules, and cultural role."
             getActionContext={makeFieldContext("Magic system — sources, rules, limits, cultural role")}
           />
+          <div className="mt-1 flex items-center justify-end">
+            <button
+              type="button"
+              onClick={() => setDeriveOpen("magic")}
+              className="focus-ring rounded px-2 py-0.5 text-2xs text-accent transition hover:bg-accent/10"
+              title="Synthesize the Magic System field from magic-tagged articles, abilities, and related lore."
+            >
+              Derive from lore
+            </button>
+          </div>
         </WorldCard>
 
         <WorldCard index={8} title="Technology and civilisation">
@@ -318,6 +335,16 @@ export function WorldSettingPanel() {
             generateUserPrompt="Describe the technology level and civilisational development of this world."
             getActionContext={makeFieldContext("Technology and civilisation — tech level, governance, economy, culture")}
           />
+          <div className="mt-1 flex items-center justify-end">
+            <button
+              type="button"
+              onClick={() => setDeriveOpen("tech")}
+              className="focus-ring rounded px-2 py-0.5 text-2xs text-accent transition hover:bg-accent/10"
+              title="Synthesize the Technology and civilisation field from culture, faction, and item lore."
+            >
+              Derive from lore
+            </button>
+          </div>
         </WorldCard>
       </div>
 
@@ -343,6 +370,32 @@ export function WorldSettingPanel() {
           currentValue={content}
           onAccept={(overview) =>
             patchContent(overview.trim() ? plainTextToTiptap(overview) : "")
+          }
+          onClose={() => setDeriveOpen(null)}
+        />
+      )}
+      {deriveOpen === "magic" && (
+        <DeriveFieldDialog
+          title="Derive Magic System from Lore"
+          subtitle="Synthesized from magic-tagged articles, abilities, and related lore"
+          derive={deriveWorldMagicSystem}
+          fieldNoun="Magic System"
+          currentValue={getField(stub, "magic")}
+          onAccept={(magic) =>
+            patchField("magic", magic.trim() ? magic : undefined)
+          }
+          onClose={() => setDeriveOpen(null)}
+        />
+      )}
+      {deriveOpen === "tech" && (
+        <DeriveFieldDialog
+          title="Derive Technology and Civilisation from Lore"
+          subtitle="Synthesized from culture, faction, settlement, and item lore"
+          derive={deriveWorldTechCiv}
+          fieldNoun="Technology and Civilisation"
+          currentValue={getField(stub, "technology")}
+          onAccept={(tech) =>
+            patchField("technology", tech.trim() ? tech : undefined)
           }
           onClose={() => setDeriveOpen(null)}
         />

@@ -138,14 +138,26 @@ function summariseSources(diagnostic: RetrievalDiagnostic): DeriveSource[] {
   }));
 }
 
+interface FacetOptions {
+  /** What the model is writing (e.g. "world overview", "magic system"). */
+  facet: string;
+  /** Single-sentence brief describing the target prose. */
+  brief: string;
+  /** Length guidance baked into the prompt. */
+  lengthGuidance: string;
+  /** Extra retrieval-bias terms (besides the structured world facts). */
+  queryHints: string[];
+  /** maxTokens for the LLM call. */
+  maxTokens: number;
+}
+
 /**
- * Synthesize a 1–3 paragraph world overview suitable for the wiki / showcase
- * landing intro. Pulls a broad, balanced slice of the corpus via RAG —
- * across geography, history, factions, magic, characters — and stitches in
- * the structured world_setting fields (name, tagline, tone, era, themes)
- * as a deterministic header so the elevator pitch always knows the basics.
+ * Shared scaffolding for World Setting field derivations. Stitches the
+ * structured world_setting fields (name/tagline/tone/era/themes) into a
+ * deterministic header, biases RAG retrieval toward the facet, and asks
+ * the LLM to synthesize prose without inventing facts.
  */
-export async function deriveWorldOverview(): Promise<DeriveResult> {
+async function deriveWorldFacet(opts: FacetOptions): Promise<DeriveResult> {
   if (!AI_ENABLED) throw new Error("AI features are not available in Community Edition");
 
   const lore = useLoreStore.getState().lore;
@@ -157,7 +169,9 @@ export async function deriveWorldOverview(): Promise<DeriveResult> {
   const tagline = typeof fields.tagline === "string" ? fields.tagline : "";
   const tone = typeof fields.tone === "string" ? fields.tone : "";
   const era = typeof fields.era === "string" ? fields.era : "";
-  const themes = Array.isArray(fields.themes) ? fields.themes.filter((t): t is string => typeof t === "string") : [];
+  const themes = Array.isArray(fields.themes)
+    ? fields.themes.filter((t): t is string => typeof t === "string")
+    : [];
 
   const headerLines: string[] = [];
   if (name) headerLines.push(`World name: ${name}`);
@@ -167,12 +181,7 @@ export async function deriveWorldOverview(): Promise<DeriveResult> {
   if (themes.length) headerLines.push(`Themes: ${themes.join(", ")}`);
   const worldHeader = headerLines.join("\n");
 
-  const query = [
-    "world overview — defining features, peoples, conflicts, geography, magic, factions, tone",
-    name,
-    tagline,
-    ...themes,
-  ]
+  const query = [opts.brief, name, tagline, ...themes, ...opts.queryHints]
     .filter(Boolean)
     .join("\n");
 
@@ -185,11 +194,12 @@ export async function deriveWorldOverview(): Promise<DeriveResult> {
 
   const toneDirective = buildToneDirective();
 
-  const systemPrompt = `You are a worldbuilding wiki editor writing the elevator-pitch overview for a fantasy world.
+  const systemPrompt = `You are a worldbuilding wiki editor writing the ${opts.facet} section for a fantasy world.
 
-Output 1-3 paragraphs of prose suitable for the Overview / landing intro of a worldbuilding wiki. Rules:
+${opts.brief}. ${opts.lengthGuidance}
+
+Rules:
 - Synthesize from the provided world facts and lore context. Do NOT invent peoples, places, factions, or claims absent from the source material.
-- The first sentence should anchor: what kind of world is this, in one line. Subsequent sentences expand on tone, geography, factions, magic, and conflict — only what's actually in the source.
 - Where you reference a specific person, place, organisation, or event that appears in the source artefacts, cite it inline in square brackets — e.g. [Tessikar], [Emberfell].
 - Voice should be evocative but grounded. No second-person address ("you"), no editorial framing ("In this section…"), no marketing puff.
 - Output plain prose. No markdown headings, no bullet points, no JSON, no preamble.${toneDirective ? `\n\nVoice directive:\n${toneDirective}` : ""}`;
@@ -204,12 +214,12 @@ Output 1-3 paragraphs of prose suitable for the Overview / landing intro of a wo
   if (!worldHeader && !ragContext) {
     userPromptParts.push("(No structured world facts or lore context available yet.)");
   }
-  userPromptParts.push("", "---", "Write the world overview.");
+  userPromptParts.push("", "---", `Write the ${opts.facet}.`);
 
   const result = await invoke<string>("llm_complete", {
     systemPrompt,
     userPrompt: userPromptParts.join("\n"),
-    maxTokens: 1024,
+    maxTokens: opts.maxTokens,
   });
 
   return {
@@ -217,4 +227,49 @@ Output 1-3 paragraphs of prose suitable for the Overview / landing intro of a wo
     sources: summariseSources(diagnostic),
     usedRag: diagnostic.usedRag,
   };
+}
+
+/** 1–3 paragraph elevator pitch synthesized across the lore corpus. */
+export function deriveWorldOverview(): Promise<DeriveResult> {
+  return deriveWorldFacet({
+    facet: "world overview",
+    brief:
+      "Write the elevator-pitch overview for a worldbuilding wiki — defining features, peoples, conflicts, geography, magic, factions, tone",
+    lengthGuidance:
+      "Output 1-3 paragraphs. The first sentence should anchor what kind of world this is; subsequent sentences expand on tone, geography, factions, magic, and conflict.",
+    queryHints: [
+      "world overview defining features peoples conflicts geography magic factions",
+    ],
+    maxTokens: 1024,
+  });
+}
+
+/** 2–4 paragraph synthesis of the world's magic system. */
+export function deriveWorldMagicSystem(): Promise<DeriveResult> {
+  return deriveWorldFacet({
+    facet: "magic system",
+    brief:
+      "Describe how magic works in this world — its sources, costs, limits, who can wield it, the schools and traditions, and its place in society",
+    lengthGuidance:
+      "Output 2-4 paragraphs covering source / cost / limits, practitioners and traditions, and social attitudes toward magic.",
+    queryHints: [
+      "magic spells abilities schools traditions deities artefacts rituals magical sources costs limits",
+    ],
+    maxTokens: 1536,
+  });
+}
+
+/** 2–4 paragraph synthesis of the world's technology and civilisation. */
+export function deriveWorldTechCiv(): Promise<DeriveResult> {
+  return deriveWorldFacet({
+    facet: "technology and civilisation",
+    brief:
+      "Describe the world's technological tier, social organisation, economic structure, and cultural shape of its peoples",
+    lengthGuidance:
+      "Output 2-4 paragraphs covering tech level (and how it interacts with magic if relevant), governance and economy, and the texture of daily life across the cultures present.",
+    queryHints: [
+      "civilisation culture technology craft trade governance economy settlement faction guild order",
+    ],
+    maxTokens: 1536,
+  });
 }

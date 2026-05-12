@@ -132,10 +132,11 @@ const LIVING_WORLD_HOTSPOTS: PanelHotspot[] = [
 
 const ARCANUM_PANELS = [
   "lore", "loreMaps", "loreTimeline", "storyEditor",
-  "loreRelations", "loreDocuments", "worldSetting",
+  "loreRelations", "loreDocuments", "worldSetting", "loreAudit",
 ];
 
 const ARCANUM_HOTSPOTS: PanelHotspot[] = [
+  { panelId: "loreAudit",        x: 12, y:  6, w:  8, h:  8 },
   { panelId: "loreTimeline",     x: 31, y:  5, w: 41, h: 17 },
   { panelId: "lore",             x:  2, y: 26, w: 18, h: 42 },
   { panelId: "loreMaps",         x: 20, y: 35, w: 26, h: 26 },

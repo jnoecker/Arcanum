@@ -19,6 +19,7 @@ import { TemplateEditorPanel } from "./TemplateEditorPanel";
 import { SceneTemplateEditorPanel } from "./SceneTemplateEditorPanel";
 import { StoryBrowser } from "./StoryBrowser";
 import { ArtStylePanel } from "./ArtStylePanel";
+import { AuditPanel } from "./AuditPanel";
 
 // Lazy-load MapPanel to isolate Leaflet CSS from the main bundle.
 // MapPanel hosts both the cartography view and the World Planner as tabs.
@@ -38,6 +39,8 @@ function renderPanel(panelId: string): ReactNode {
       return <TimelinePanel />;
     case "loreRelations":
       return <RelationGraphPanel />;
+    case "loreAudit":
+      return <AuditPanel />;
     case "loreDocuments":
       return <DocumentLibraryPanel />;
     case "showcaseSettings":

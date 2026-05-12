@@ -9,6 +9,7 @@ import { getWorldSettingGeneratePrompt } from "@/lib/lorePrompts";
 import { buildRagContext } from "@/lib/rag/loreContext";
 import { DeriveFieldDialog } from "./DeriveFieldDialog";
 import {
+  deriveWorldGeography,
   deriveWorldHistory,
   deriveWorldMagicSystem,
   deriveWorldOverview,
@@ -101,7 +102,7 @@ export function WorldSettingPanel() {
   const updateArticle = useLoreStore((s) => s.updateArticle);
   const createArticle = useLoreStore((s) => s.createArticle);
   const [deriveOpen, setDeriveOpen] = useState<
-    null | "history" | "overview" | "magic" | "tech"
+    null | "history" | "overview" | "geography" | "magic" | "tech"
   >(null);
 
   // Find or create the world_setting article
@@ -299,6 +300,16 @@ export function WorldSettingPanel() {
             generateUserPrompt="Describe the broad geography and major regions of this world."
             getActionContext={makeFieldContext("World geography — continents, biomes, landmarks, regions")}
           />
+          <div className="mt-1 flex items-center justify-end">
+            <button
+              type="button"
+              onClick={() => setDeriveOpen("geography")}
+              className="focus-ring rounded px-2 py-0.5 text-2xs text-accent transition hover:bg-accent/10"
+              title="Synthesize the Geography field from your world map (via vision) plus geography-tagged lore."
+            >
+              Derive from lore + map
+            </button>
+          </div>
         </WorldCard>
 
         <WorldCard index={7} title="Magic System">
@@ -370,6 +381,19 @@ export function WorldSettingPanel() {
           currentValue={content}
           onAccept={(overview) =>
             patchContent(overview.trim() ? plainTextToTiptap(overview) : "")
+          }
+          onClose={() => setDeriveOpen(null)}
+        />
+      )}
+      {deriveOpen === "geography" && (
+        <DeriveFieldDialog
+          title="Derive Geography from Lore + Map"
+          subtitle="Synthesized from your world map (via vision) and geography-tagged lore"
+          derive={deriveWorldGeography}
+          fieldNoun="Geography"
+          currentValue={getField(stub, "geography")}
+          onAccept={(geography) =>
+            patchField("geography", geography.trim() ? geography : undefined)
           }
           onClose={() => setDeriveOpen(null)}
         />

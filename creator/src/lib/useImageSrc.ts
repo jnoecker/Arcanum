@@ -107,3 +107,37 @@ export function useImageSrcStatus(filePath: string | undefined): ImageLoadResult
 export function useImageSrc(filePath: string | undefined): string | null {
   return useImageSrcStatus(filePath).src;
 }
+
+/**
+ * Imperative variant of `useImageSrcStatus` — resolves an image to a data URL
+ * outside of a React render. Mirrors the hook's candidate-path logic
+ * (R2 hash → asset cache, legacy → MUD images dir, otherwise → direct path)
+ * and returns null if every candidate fails. Useful for action handlers
+ * (e.g. derive flows) that need an image data URL on demand.
+ */
+export async function resolveImageDataUrl(
+  filePath: string | undefined,
+): Promise<string | null> {
+  if (!filePath) return null;
+  const mudDir = useProjectStore.getState().project?.mudDir;
+  const assetsDir = useAssetStore.getState().assetsDir;
+
+  const candidates: string[] = [];
+  if (isR2HashPath(filePath)) {
+    if (assetsDir) candidates.push(`${assetsDir}\\images\\${filePath}`);
+  } else if (!isLegacyImagePath(filePath)) {
+    candidates.push(filePath);
+  } else if (mudDir) {
+    candidates.push(`${mudDir}/src/main/resources/world/images/${filePath}`);
+    candidates.push(`${mudDir}/src/main/resources/images/${filePath}`);
+  }
+
+  for (const path of candidates) {
+    try {
+      return await invoke<string>("read_image_data_url", { path });
+    } catch {
+      // Try next candidate.
+    }
+  }
+  return null;
+}

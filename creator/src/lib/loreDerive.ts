@@ -3,7 +3,13 @@ import { useLoreStore } from "@/stores/loreStore";
 import { AI_ENABLED } from "@/lib/featureFlags";
 import { buildToneDirective } from "@/lib/loreGeneration";
 import { buildRagContext, type RetrievalDiagnostic } from "@/lib/rag/loreContext";
-import type { CalendarEra, CalendarSystem, TimelineEvent } from "@/types/lore";
+import { resolveImageDataUrl } from "@/lib/useImageSrc";
+import type {
+  CalendarEra,
+  CalendarSystem,
+  LoreMap,
+  TimelineEvent,
+} from "@/types/lore";
 
 export interface DeriveSource {
   id: string;
@@ -257,6 +263,127 @@ export function deriveWorldMagicSystem(): Promise<DeriveResult> {
     ],
     maxTokens: 1536,
   });
+}
+
+/**
+ * Vision-backed synthesis of the world's geography. Sends the primary map
+ * image to the vision LLM along with its pin metadata and a RAG-retrieved
+ * slice of geography-tagged lore. The model is asked to reconcile what's
+ * visible on the map with what's described in the articles — and to flag
+ * contradictions inline rather than silently picking one.
+ */
+export async function deriveWorldGeography(): Promise<DeriveResult> {
+  if (!AI_ENABLED) throw new Error("AI features are not available in Community Edition");
+
+  const lore = useLoreStore.getState().lore;
+  if (!lore) throw new Error("No lore loaded.");
+
+  const map = (lore.maps ?? [])[0];
+  if (!map) {
+    throw new Error(
+      "No world map found. Add a map in the Maps panel before deriving Geography.",
+    );
+  }
+
+  const imageDataUrl = await resolveImageDataUrl(map.imageAsset);
+  if (!imageDataUrl) {
+    throw new Error(
+      `Could not load map image "${map.imageAsset}" — check that the file exists in your asset cache.`,
+    );
+  }
+
+  const pinSummary = summarisePins(map, lore.articles ?? {});
+
+  const ws = Object.values(lore.articles ?? {}).find(
+    (a) => a.template === "world_setting",
+  );
+  const fields = ws?.fields ?? {};
+  const name = typeof fields.name === "string" ? fields.name : "";
+  const themes = Array.isArray(fields.themes)
+    ? fields.themes.filter((t): t is string => typeof t === "string")
+    : [];
+
+  const query = [
+    "world geography — continents, biomes, climate, regions, coastlines, landmarks, settlements",
+    map.title,
+    name,
+    ...themes,
+    ...pinSummary.titles.slice(0, 8),
+  ]
+    .filter(Boolean)
+    .join("\n");
+
+  const { context: ragContext, diagnostic } = await buildRagContext({
+    query,
+    k: 14,
+    maxChars: 8000,
+    fallback: () => "",
+  });
+
+  const toneDirective = buildToneDirective();
+
+  const systemPrompt = `You are a worldbuilding wiki editor writing the Geography section for a fantasy world, using a world map image as primary visual reference plus textual lore as context.
+
+Output 2-4 paragraphs covering the major continents and regions, the climate variation across them, and the notable landmarks and settlements. Rules:
+- Reconcile what's visible on the map with what's stated in the lore. If the two disagree (e.g. an article calls a region "northern tundra" but its pin sits in the south-east), call it out inline as a flagged contradiction rather than picking a side.
+- Synthesize only from the visual map and the provided lore context. Do NOT invent regions, peoples, or features absent from both.
+- Where you reference a labelled location, region, or settlement that appears in the source artefacts, cite it inline in square brackets — e.g. [Kaerinlith], [Emberfell].
+- Voice should be evocative but grounded. No second-person address ("you"), no editorial framing.
+- Output plain prose. No markdown headings, no bullet points, no JSON, no preamble.${toneDirective ? `\n\nVoice directive:\n${toneDirective}` : ""}`;
+
+  const userPromptParts: string[] = [
+    `Primary map: "${map.title}" (${map.width}×${map.height} pixels)`,
+  ];
+  if (pinSummary.lines) {
+    userPromptParts.push("", "Pinned features on this map:", pinSummary.lines);
+  } else {
+    userPromptParts.push("", "(No pins on this map yet.)");
+  }
+  if (ragContext) {
+    userPromptParts.push("", "Geography-relevant lore context:", ragContext);
+  }
+  userPromptParts.push("", "---", "Write the world geography.");
+
+  const result = await invoke<string>("llm_complete_with_vision", {
+    systemPrompt,
+    userPrompt: userPromptParts.join("\n"),
+    imageDataUrl,
+    maxTokens: 1536,
+  });
+
+  return {
+    content: result.trim(),
+    sources: summariseSources(diagnostic),
+    usedRag: diagnostic.usedRag,
+  };
+}
+
+interface PinSummary {
+  lines: string;
+  titles: string[];
+}
+
+function summarisePins(
+  map: LoreMap,
+  articles: Record<string, { title: string }>,
+): PinSummary {
+  const titles: string[] = [];
+  const lines = map.pins
+    .map((p) => {
+      const articleTitle = p.articleId ? articles[p.articleId]?.title : undefined;
+      const label = p.label || articleTitle || p.id;
+      if (articleTitle) titles.push(articleTitle);
+      else if (p.label) titles.push(p.label);
+      // Convert Leaflet CRS.Simple [lat, lng] → pixel coords (x from left, y from top).
+      const lng = p.position[1];
+      const lat = p.position[0];
+      const px = Math.round(lng);
+      const py = Math.round(map.height - lat);
+      const linkBit = articleTitle && articleTitle !== label ? ` → ${articleTitle}` : "";
+      return `- ${label} (px ${px},${py})${linkBit}`;
+    })
+    .join("\n");
+  return { lines, titles };
 }
 
 /** 2–4 paragraph synthesis of the world's technology and civilisation. */

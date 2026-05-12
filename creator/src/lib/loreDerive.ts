@@ -13,12 +13,13 @@ export interface DeriveSource {
 }
 
 export interface DeriveResult {
-  /** Plain-text prose suitable for the `worldSetting.history` field. */
+  /** Plain-text prose. The caller decides whether to write it directly to a
+   *  string field or wrap it in TipTap JSON via `plainTextToTiptap`. */
   content: string;
   /** Articles / events pulled in as context, top first. */
   sources: DeriveSource[];
-  /** Number of timeline events included in the chronology. */
-  eventCount: number;
+  /** Number of timeline events included (History only). Omitted otherwise. */
+  eventCount?: number;
   /** Did RAG retrieval succeed (vs. falling back to legacy summary)? */
   usedRag: boolean;
 }
@@ -135,4 +136,85 @@ function summariseSources(diagnostic: RetrievalDiagnostic): DeriveSource[] {
     title: s.title,
     score: s.score,
   }));
+}
+
+/**
+ * Synthesize a 1–3 paragraph world overview suitable for the wiki / showcase
+ * landing intro. Pulls a broad, balanced slice of the corpus via RAG —
+ * across geography, history, factions, magic, characters — and stitches in
+ * the structured world_setting fields (name, tagline, tone, era, themes)
+ * as a deterministic header so the elevator pitch always knows the basics.
+ */
+export async function deriveWorldOverview(): Promise<DeriveResult> {
+  if (!AI_ENABLED) throw new Error("AI features are not available in Community Edition");
+
+  const lore = useLoreStore.getState().lore;
+  if (!lore) throw new Error("No lore loaded.");
+
+  const ws = Object.values(lore.articles).find((a) => a.template === "world_setting");
+  const fields = ws?.fields ?? {};
+  const name = typeof fields.name === "string" ? fields.name : "";
+  const tagline = typeof fields.tagline === "string" ? fields.tagline : "";
+  const tone = typeof fields.tone === "string" ? fields.tone : "";
+  const era = typeof fields.era === "string" ? fields.era : "";
+  const themes = Array.isArray(fields.themes) ? fields.themes.filter((t): t is string => typeof t === "string") : [];
+
+  const headerLines: string[] = [];
+  if (name) headerLines.push(`World name: ${name}`);
+  if (tagline) headerLines.push(`Tagline: ${tagline}`);
+  if (tone) headerLines.push(`Tone: ${tone}`);
+  if (era) headerLines.push(`Current era: ${era}`);
+  if (themes.length) headerLines.push(`Themes: ${themes.join(", ")}`);
+  const worldHeader = headerLines.join("\n");
+
+  const query = [
+    "world overview — defining features, peoples, conflicts, geography, magic, factions, tone",
+    name,
+    tagline,
+    ...themes,
+  ]
+    .filter(Boolean)
+    .join("\n");
+
+  const { context: ragContext, diagnostic } = await buildRagContext({
+    query,
+    k: 14,
+    maxChars: 9000,
+    fallback: () => "",
+  });
+
+  const toneDirective = buildToneDirective();
+
+  const systemPrompt = `You are a worldbuilding wiki editor writing the elevator-pitch overview for a fantasy world.
+
+Output 1-3 paragraphs of prose suitable for the Overview / landing intro of a worldbuilding wiki. Rules:
+- Synthesize from the provided world facts and lore context. Do NOT invent peoples, places, factions, or claims absent from the source material.
+- The first sentence should anchor: what kind of world is this, in one line. Subsequent sentences expand on tone, geography, factions, magic, and conflict — only what's actually in the source.
+- Where you reference a specific person, place, organisation, or event that appears in the source artefacts, cite it inline in square brackets — e.g. [Tessikar], [Emberfell].
+- Voice should be evocative but grounded. No second-person address ("you"), no editorial framing ("In this section…"), no marketing puff.
+- Output plain prose. No markdown headings, no bullet points, no JSON, no preamble.${toneDirective ? `\n\nVoice directive:\n${toneDirective}` : ""}`;
+
+  const userPromptParts: string[] = [];
+  if (worldHeader) {
+    userPromptParts.push("Core world facts:", worldHeader);
+  }
+  if (ragContext) {
+    userPromptParts.push("", "Related lore context:", ragContext);
+  }
+  if (!worldHeader && !ragContext) {
+    userPromptParts.push("(No structured world facts or lore context available yet.)");
+  }
+  userPromptParts.push("", "---", "Write the world overview.");
+
+  const result = await invoke<string>("llm_complete", {
+    systemPrompt,
+    userPrompt: userPromptParts.join("\n"),
+    maxTokens: 1024,
+  });
+
+  return {
+    content: result.trim(),
+    sources: summariseSources(diagnostic),
+    usedRag: diagnostic.usedRag,
+  };
 }

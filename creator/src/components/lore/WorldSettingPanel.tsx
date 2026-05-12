@@ -7,7 +7,9 @@ import { LoreEditor } from "./LoreEditor";
 import { TagListEditor } from "./TagListEditor";
 import { getWorldSettingGeneratePrompt } from "@/lib/lorePrompts";
 import { buildRagContext } from "@/lib/rag/loreContext";
-import { DeriveHistoryDialog } from "./DeriveHistoryDialog";
+import { DeriveFieldDialog } from "./DeriveFieldDialog";
+import { deriveWorldHistory, deriveWorldOverview } from "@/lib/loreDerive";
+import { plainTextToTiptap } from "@/lib/loreRelations";
 
 // ─── Helpers ────────────────────────────────────────────────────────
 
@@ -93,7 +95,7 @@ export function WorldSettingPanel() {
   const articles = useLoreStore(selectArticles);
   const updateArticle = useLoreStore((s) => s.updateArticle);
   const createArticle = useLoreStore((s) => s.createArticle);
-  const [deriveHistoryOpen, setDeriveHistoryOpen] = useState(false);
+  const [deriveOpen, setDeriveOpen] = useState<null | "history" | "overview">(null);
 
   // Find or create the world_setting article
   const article = useMemo(
@@ -241,6 +243,16 @@ export function WorldSettingPanel() {
             generateUserPrompt="Write a vivid world overview for this fantasy MUD setting."
             getActionContext={makeFieldContext("World overview — defining features, cultures, conflicts")}
           />
+          <div className="mt-1 flex items-center justify-end">
+            <button
+              type="button"
+              onClick={() => setDeriveOpen("overview")}
+              className="focus-ring rounded px-2 py-0.5 text-2xs text-accent transition hover:bg-accent/10"
+              title="Synthesize the Overview field from your world facts and lore corpus."
+            >
+              Derive from lore
+            </button>
+          </div>
         </WorldCard>
       </div>
 
@@ -260,7 +272,7 @@ export function WorldSettingPanel() {
           <div className="mt-1 flex items-center justify-end">
             <button
               type="button"
-              onClick={() => setDeriveHistoryOpen(true)}
+              onClick={() => setDeriveOpen("history")}
               className="focus-ring rounded px-2 py-0.5 text-2xs text-accent transition hover:bg-accent/10"
               title="Synthesize the History field from your timeline events and history-tagged articles."
             >
@@ -309,13 +321,30 @@ export function WorldSettingPanel() {
         </WorldCard>
       </div>
 
-      {deriveHistoryOpen && (
-        <DeriveHistoryDialog
+      {deriveOpen === "history" && (
+        <DeriveFieldDialog
+          title="Derive History from Lore"
+          subtitle="Synthesized from timeline events and lore articles"
+          derive={deriveWorldHistory}
+          fieldNoun="History"
           currentValue={getField(stub, "history")}
           onAccept={(history) =>
             patchField("history", history.trim() ? history : undefined)
           }
-          onClose={() => setDeriveHistoryOpen(false)}
+          onClose={() => setDeriveOpen(null)}
+        />
+      )}
+      {deriveOpen === "overview" && (
+        <DeriveFieldDialog
+          title="Derive Overview from Lore"
+          subtitle="Synthesized from world facts and the broader lore corpus"
+          derive={deriveWorldOverview}
+          fieldNoun="Overview"
+          currentValue={content}
+          onAccept={(overview) =>
+            patchContent(overview.trim() ? plainTextToTiptap(overview) : "")
+          }
+          onClose={() => setDeriveOpen(null)}
         />
       )}
     </div>

@@ -97,24 +97,33 @@ export function auditLore(lore: WorldLore): AuditIssue[] {
     }
   }
 
-  // 6. Timeline events outside era ranges
+  // 6. Timeline events outside era ranges.
+  // `event.year` is era-relative (see loreCalendar.ts::absoluteYear) — it
+  // counts years since the era's startYear. An era is in range when
+  // 0 <= event.year < (nextEraStart - era.startYear). The last era in a
+  // calendar has no upper bound, so negative years are the only failure
+  // case there.
   if (lore.timelineEvents && lore.calendarSystems) {
-    const eras = new Map<string, { start: number; end: number }>();
+    const eras = new Map<string, { startYear: number; spanYears: number }>();
     for (const cal of lore.calendarSystems) {
       const sortedEras = [...cal.eras].sort((a, b) => a.startYear - b.startYear);
       for (let i = 0; i < sortedEras.length; i++) {
         const era = sortedEras[i]!;
         const nextStart = sortedEras[i + 1]?.startYear ?? Infinity;
-        eras.set(era.id, { start: era.startYear, end: nextStart - 1 });
+        const spanYears = nextStart === Infinity ? Infinity : nextStart - era.startYear;
+        eras.set(era.id, { startYear: era.startYear, spanYears });
       }
     }
     for (const event of lore.timelineEvents) {
-      const eraRange = eras.get(event.eraId);
-      if (eraRange && (event.year < eraRange.start || event.year > eraRange.end)) {
+      const era = eras.get(event.eraId);
+      if (!era) continue;
+      const outOfRange = event.year < 0 || event.year >= era.spanYears;
+      if (outOfRange) {
+        const upper = era.spanYears === Infinity ? "no ceiling" : `${era.spanYears - 1}`;
         issues.push({
           severity: "warning",
           category: "Timeline mismatch",
-          message: `Event "${event.title}" (year ${event.year}) is outside its era's range (${eraRange.start}–${eraRange.end})`,
+          message: `Event "${event.title}" (era-relative year ${event.year}) is outside its era's span (0–${upper})`,
           articleIds: event.articleId ? [event.articleId] : [],
         });
       }

@@ -7,6 +7,7 @@ import { LoreEditor } from "./LoreEditor";
 import { TagListEditor } from "./TagListEditor";
 import { getWorldSettingGeneratePrompt } from "@/lib/lorePrompts";
 import { buildRagContext } from "@/lib/rag/loreContext";
+import { DeriveHistoryDialog } from "./DeriveHistoryDialog";
 
 // ─── Helpers ────────────────────────────────────────────────────────
 
@@ -92,6 +93,7 @@ export function WorldSettingPanel() {
   const articles = useLoreStore(selectArticles);
   const updateArticle = useLoreStore((s) => s.updateArticle);
   const createArticle = useLoreStore((s) => s.createArticle);
+  const [deriveHistoryOpen, setDeriveHistoryOpen] = useState(false);
 
   // Find or create the world_setting article
   const article = useMemo(
@@ -255,6 +257,16 @@ export function WorldSettingPanel() {
             generateUserPrompt="Write a rich creation myth and historical timeline for this world."
             getActionContext={makeFieldContext("World history — creation myth, ages, wars, turning points")}
           />
+          <div className="mt-1 flex items-center justify-end">
+            <button
+              type="button"
+              onClick={() => setDeriveHistoryOpen(true)}
+              className="focus-ring rounded px-2 py-0.5 text-2xs text-accent transition hover:bg-accent/10"
+              title="Synthesize the History field from your timeline events and history-tagged articles."
+            >
+              Derive from lore
+            </button>
+          </div>
         </WorldCard>
 
         <WorldCard index={6} title="Geography">
@@ -296,6 +308,16 @@ export function WorldSettingPanel() {
           />
         </WorldCard>
       </div>
+
+      {deriveHistoryOpen && (
+        <DeriveHistoryDialog
+          currentValue={getField(stub, "history")}
+          onAccept={(history) =>
+            patchField("history", history.trim() ? history : undefined)
+          }
+          onClose={() => setDeriveHistoryOpen(false)}
+        />
+      )}
     </div>
   );
 }

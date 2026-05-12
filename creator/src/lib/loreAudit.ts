@@ -1,4 +1,5 @@
 import type { WorldLore } from "@/types/lore";
+import { getEffectiveSections, plainTextFromBody } from "@/lib/loreSections";
 
 export type AuditSeverity = "error" | "warning" | "info";
 
@@ -61,17 +62,22 @@ export function auditLore(lore: WorldLore): AuditIssue[] {
     }
   }
 
-  // 4. Empty content — articles with no body text
+  // 4. Empty content — articles with no body text. Read from the
+  // section-based model so this isn't fooled by a stale legacy
+  // article.content field when the user has migrated to sections.
   for (const article of Object.values(articles)) {
-    if (!article.content || article.content === "" || article.content === '{"type":"doc","content":[]}') {
-      if (article.template !== "world_setting") {
-        issues.push({
-          severity: "info",
-          category: "Empty content",
-          message: `"${article.title}" has no body content`,
-          articleIds: [article.id],
-        });
-      }
+    if (article.template === "world_setting") continue;
+    const sections = getEffectiveSections(article);
+    const hasBody = sections.some(
+      (s) => s.type === "richtext" && !s.private && plainTextFromBody(s.body).trim().length > 0,
+    );
+    if (!hasBody) {
+      issues.push({
+        severity: "info",
+        category: "Empty content",
+        message: `"${article.title}" has no body content`,
+        articleIds: [article.id],
+      });
     }
   }
 

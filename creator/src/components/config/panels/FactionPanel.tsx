@@ -281,7 +281,7 @@ export function FactionPanel() {
 
   return (
     <div className="flex flex-col gap-4">
-      <section className="flex flex-col gap-4 rounded-2xl border border-[var(--chrome-stroke-strong)] bg-[var(--chrome-fill-soft)] p-4 shadow-[0_1px_0_rgb(var(--highlight-rgb)/0.04)_inset,0_8px_24px_-12px_rgb(0_0_0/0.35)] backdrop-blur-sm">
+      <section className="popover-host flex flex-col gap-4 rounded-2xl border border-[var(--chrome-stroke-strong)] bg-[var(--chrome-fill-soft)] p-4 shadow-[0_1px_0_rgb(var(--highlight-rgb)/0.04)_inset,0_8px_24px_-12px_rgb(0_0_0/0.35)] backdrop-blur-sm">
         <RivalryMap
           definitions={factions.definitions}
           factionLabelMap={factionLabelMap}

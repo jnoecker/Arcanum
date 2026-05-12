@@ -195,7 +195,7 @@ export function FactionEditor({
 
           <Section
             title="Rivals"
-            className="!overflow-visible !p-3"
+            className="popover-host !overflow-visible !p-3"
             actions={
               <RelationAddMenu
                 tone="rival"
@@ -221,18 +221,20 @@ export function FactionEditor({
           </Section>
 
           <Section
-            title="Allies"
-            className="!overflow-visible !p-3 lg:flex-1"
-            actions={
-              <div className="flex items-center gap-1.5">
+            title={
+              <span className="inline-flex items-center gap-2">
+                Allies
                 <InfoTooltip text="Lore-only alliances appear on the relationship map but don't affect reputation, kill bonuses, or quest gating." />
-                <RelationAddMenu
-                  tone="ally"
-                  available={availableAllies}
-                  factionLabelMap={factionLabelMap}
-                  onToggle={onToggleAlly}
-                />
-              </div>
+              </span>
+            }
+            className="popover-host !overflow-visible !p-3 lg:flex-1"
+            actions={
+              <RelationAddMenu
+                tone="ally"
+                available={availableAllies}
+                factionLabelMap={factionLabelMap}
+                onToggle={onToggleAlly}
+              />
             }
           >
             {others.length === 0 ? (
@@ -605,6 +607,25 @@ function RelationAddMenu({
   factionLabelMap,
   onToggle,
 }: RelationAddMenuProps) {
+  const [open, setOpen] = useState(false);
+  const wrapRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const handle = (e: MouseEvent) => {
+      if (!wrapRef.current?.contains(e.target as Node)) setOpen(false);
+    };
+    const esc = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("mousedown", handle);
+    document.addEventListener("keydown", esc);
+    return () => {
+      document.removeEventListener("mousedown", handle);
+      document.removeEventListener("keydown", esc);
+    };
+  }, [open]);
+
   if (available.length === 0) {
     return (
       <button
@@ -619,28 +640,44 @@ function RelationAddMenu({
     );
   }
 
+  const label = tone === "rival" ? "Add rival" : "Add ally";
+
   return (
-    <details className="group relative">
-      <summary
-        className="focus-ring flex h-6 w-6 cursor-pointer list-none items-center justify-center rounded-full border border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] text-text-muted transition hover:border-accent/40 hover:text-accent"
-        aria-label={tone === "rival" ? "Add rival" : "Add ally"}
-        title={tone === "rival" ? "Add rival" : "Add ally"}
+    <div ref={wrapRef} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        aria-label={label}
+        aria-expanded={open}
+        aria-haspopup="menu"
+        title={label}
+        className="focus-ring flex h-6 w-6 items-center justify-center rounded-full border border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] text-text-muted transition hover:border-accent/40 hover:text-accent"
       >
         <PlusIcon className="h-3 w-3" />
-      </summary>
-      <div className="absolute right-0 top-8 z-30 flex min-w-56 flex-col gap-1 rounded-xl border border-[var(--chrome-stroke)] bg-[var(--bg-panel)] p-2 shadow-panel">
-        {available.map((relId) => (
-          <button
-            key={relId}
-            type="button"
-            onClick={() => onToggle(relId)}
-            className="focus-ring flex w-full items-center rounded-lg px-2 py-1.5 text-left font-display text-2xs text-text-secondary transition hover:bg-[var(--chrome-fill)] hover:text-accent"
-          >
-            {factionLabelMap.get(relId) ?? relId}
-          </button>
-        ))}
-      </div>
-    </details>
+      </button>
+      {open && (
+        <div
+          role="menu"
+          data-popover-open
+          className="absolute right-0 top-8 z-30 flex min-w-56 flex-col gap-1 rounded-xl border border-[var(--chrome-stroke)] bg-[var(--bg-panel)] p-2 shadow-panel"
+        >
+          {available.map((relId) => (
+            <button
+              key={relId}
+              type="button"
+              role="menuitem"
+              onClick={() => {
+                onToggle(relId);
+                setOpen(false);
+              }}
+              className="focus-ring flex w-full items-center rounded-lg px-2 py-1.5 text-left font-display text-2xs text-text-secondary transition hover:bg-[var(--chrome-fill)] hover:text-accent"
+            >
+              {factionLabelMap.get(relId) ?? relId}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
 

@@ -56,7 +56,10 @@ function EconomicsKnob({ label, hint, value, onCommit, min }: EconomicsKnobProps
         {value}
       </button>
       {open && (
-        <div className="absolute left-0 top-full z-20 mt-2 w-44 rounded-lg border border-[var(--chrome-stroke-strong)] bg-[var(--bg-panel)] p-2 shadow-glow-warm">
+        <div
+          data-popover-open
+          className="absolute left-0 top-full z-20 mt-2 w-44 rounded-lg border border-[var(--chrome-stroke-strong)] bg-[var(--bg-panel)] p-2 shadow-glow-warm"
+        >
           <p className="mb-1 font-display text-2xs font-semibold uppercase tracking-[0.18em] text-text-muted">
             {label}
           </p>

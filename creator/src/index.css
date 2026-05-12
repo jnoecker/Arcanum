@@ -1617,6 +1617,16 @@ textarea:focus-visible,
   }
 }
 
+/* ─── Popover host stacking ─────────────────────────────────────────────
+ * Hoist any container marked .popover-host above its later siblings
+ * while it owns an open popover. Lets sectioned editors keep absolute-
+ * positioned dropdowns inside their own DOM tree without getting
+ * painted under the next flex/grid item. */
+.popover-host:has([data-popover-open]) {
+  position: relative;
+  z-index: 50;
+}
+
 /* ─── Reduced-motion overrides ──────────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
   *,

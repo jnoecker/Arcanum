@@ -39,7 +39,9 @@ export function ArticleEditorV2({ articleId }: { articleId: string }) {
   const [renaming, setRenaming] = useState(false);
   const [renameDraft, setRenameDraft] = useState("");
   const [showRewrite, setShowRewrite] = useState(false);
-  const [showScaffold, setShowScaffold] = useState<null | "class" | "race">(null);
+  const [showScaffold, setShowScaffold] = useState<
+    null | "class" | "race" | "talent" | "creature_power"
+  >(null);
   const config = useConfigStore((s) => s.config);
   const updateConfig = useConfigStore((s) => s.updateConfig);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -309,6 +311,26 @@ export function ArticleEditorV2({ articleId }: { articleId: string }) {
               title="Scaffold a gameplay race from this article — adds a row to application.yaml::races"
             >
               Scaffold race
+            </button>
+          )}
+          {article && article.template === "talent" && config && (
+            <button
+              type="button"
+              className="ae-topbar__btn"
+              onClick={() => setShowScaffold("talent")}
+              title="Scaffold a player talent (AbilityDefinitionConfig) from this article"
+            >
+              Scaffold talent
+            </button>
+          )}
+          {article && article.template === "creature_power" && config && (
+            <button
+              type="button"
+              className="ae-topbar__btn"
+              onClick={() => setShowScaffold("creature_power")}
+              title="Scaffold a creature power (AbilityDefinitionConfig with scope=creature) from this article"
+            >
+              Scaffold power
             </button>
           )}
           <button

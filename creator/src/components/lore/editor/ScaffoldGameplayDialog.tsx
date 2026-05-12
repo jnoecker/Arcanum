@@ -2,15 +2,23 @@ import { useEffect, useState } from "react";
 import { useFocusTrap } from "@/lib/useFocusTrap";
 import { DialogShell, ActionButton, Spinner } from "@/components/ui/FormWidgets";
 import type { Article } from "@/types/lore";
-import type { AppConfig, ClassDefinitionConfig, RaceDefinitionConfig } from "@/types/config";
+import type {
+  AbilityDefinitionConfig,
+  AppConfig,
+  ClassDefinitionConfig,
+  RaceDefinitionConfig,
+} from "@/types/config";
 import {
   generateClassFromArticle,
+  generateCreaturePowerFromArticle,
   generateRaceFromArticle,
+  generateTalentFromArticle,
+  type AbilityScaffoldResult,
   type ClassScaffoldResult,
   type RaceScaffoldResult,
 } from "@/lib/articleToGameplay";
 
-type Kind = "class" | "race";
+type Kind = "class" | "race" | "talent" | "creature_power";
 
 interface ScaffoldGameplayDialogProps {
   kind: Kind;
@@ -21,7 +29,9 @@ interface ScaffoldGameplayDialogProps {
 }
 
 export function ScaffoldGameplayDialog(props: ScaffoldGameplayDialogProps) {
-  return props.kind === "class" ? <ClassScaffold {...props} /> : <RaceScaffold {...props} />;
+  if (props.kind === "class") return <ClassScaffold {...props} />;
+  if (props.kind === "race") return <RaceScaffold {...props} />;
+  return <AbilityScaffold {...props} />;
 }
 
 // ─── Class ──────────────────────────────────────────────────────────
@@ -460,6 +470,253 @@ function ChipList({
         className="ornate-input w-full px-2 py-1 text-2xs"
       />
     </div>
+  );
+}
+
+function AbilityScaffold({ kind, article, config, onAccept, onClose }: ScaffoldGameplayDialogProps) {
+  const isCreature = kind === "creature_power";
+  const trapRef = useFocusTrap<HTMLDivElement>(onClose);
+  const [loading, setLoading] = useState(true);
+  const [result, setResult] = useState<AbilityScaffoldResult | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [id, setId] = useState("");
+  const [draft, setDraft] = useState<AbilityDefinitionConfig | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    setError(null);
+    const opts = {
+      article,
+      existingAbilityIds: new Set(Object.keys(config.abilities ?? {}).map((s) => s.toLowerCase())),
+      existingAbilityDisplayNames: new Set(
+        Object.values(config.abilities ?? {}).map((a) => a.displayName.toLowerCase()),
+      ),
+    };
+    const promise = isCreature
+      ? generateCreaturePowerFromArticle(opts)
+      : generateTalentFromArticle(opts);
+    promise
+      .then((r) => {
+        if (cancelled) return;
+        setResult(r);
+        setId(r.id);
+        setDraft(r.config);
+      })
+      .catch((e) => {
+        if (cancelled) return;
+        setError(e instanceof Error ? e.message : String(e));
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [article, config.abilities, isCreature]);
+
+  const collision =
+    !!id &&
+    (Object.keys(config.abilities ?? {}).some((k) => k.toLowerCase() === id.toLowerCase()) ||
+      Object.values(config.abilities ?? {}).some(
+        (a) => a.displayName.toLowerCase() === draft?.displayName.toLowerCase(),
+      ));
+
+  const handleAccept = () => {
+    if (!draft || !id || collision) return;
+    const nextAbilities = { ...(config.abilities ?? {}), [id]: draft };
+    onAccept({ ...config, abilities: nextAbilities });
+    onClose();
+  };
+
+  const title = isCreature
+    ? "Scaffold Creature Power from Article"
+    : "Scaffold Player Talent from Article";
+  const acceptLabel = isCreature ? "Add Creature Power" : "Add Talent";
+
+  return (
+    <DialogShell
+      dialogRef={trapRef}
+      titleId="scaffold-ability-title"
+      title={title}
+      subtitle={article.title}
+      widthClassName="max-w-3xl"
+      onClose={onClose}
+      footer={
+        <div className="flex justify-end gap-2">
+          <ActionButton variant="ghost" size="sm" onClick={onClose}>
+            Cancel
+          </ActionButton>
+          <ActionButton
+            variant="primary"
+            size="sm"
+            onClick={handleAccept}
+            disabled={loading || !draft || !id || collision}
+          >
+            {acceptLabel}
+          </ActionButton>
+        </div>
+      }
+    >
+      {loading ? (
+        <div className="flex items-center gap-3 py-8 text-sm text-text-secondary">
+          <Spinner /> Reading the article and synthesizing the ability…
+        </div>
+      ) : error ? (
+        <p className="text-sm text-status-error">{error}</p>
+      ) : result && draft ? (
+        <div className="flex flex-col gap-3">
+          <RetrievalBanner sources={result.diagnostic.sources.length} usedRag={result.diagnostic.usedRag} />
+          {collision && (
+            <div className="rounded-lg border border-status-warning/30 bg-status-warning/[0.06] px-3 py-2 text-xs text-status-warning">
+              An ability with this id or display name already exists. Edit the id or display name before accepting.
+            </div>
+          )}
+
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Id (slug)">
+              <input
+                type="text"
+                value={id}
+                onChange={(e) => setId(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ""))}
+                className="ornate-input w-full px-2.5 py-1.5 font-mono text-xs"
+              />
+            </Field>
+            <Field label="Display name">
+              <input
+                type="text"
+                value={draft.displayName}
+                onChange={(e) => setDraft({ ...draft, displayName: e.target.value })}
+                className="ornate-input w-full px-2.5 py-1.5 text-sm"
+              />
+            </Field>
+          </div>
+
+          <Field label="Description">
+            <textarea
+              value={draft.description ?? ""}
+              onChange={(e) => setDraft({ ...draft, description: e.target.value || undefined })}
+              rows={2}
+              className="ornate-input w-full px-2.5 py-1.5 text-sm"
+            />
+          </Field>
+
+          {!isCreature && (
+            <Field label="Required class (id)">
+              <input
+                type="text"
+                value={draft.requiredClass ?? ""}
+                onChange={(e) =>
+                  setDraft({ ...draft, requiredClass: e.target.value || undefined })
+                }
+                placeholder="e.g. wizard, paladin"
+                className="ornate-input w-full px-2.5 py-1.5 font-mono text-xs"
+              />
+            </Field>
+          )}
+
+          <div className="grid grid-cols-4 gap-3">
+            <Field label="Mana cost">
+              <input
+                type="number"
+                value={draft.manaCost}
+                onChange={(e) => setDraft({ ...draft, manaCost: Number(e.target.value) || 0 })}
+                className="ornate-input w-full px-2.5 py-1.5 font-mono text-sm"
+              />
+            </Field>
+            <Field label="Cooldown (ms)">
+              <input
+                type="number"
+                value={draft.cooldownMs}
+                onChange={(e) => setDraft({ ...draft, cooldownMs: Number(e.target.value) || 0 })}
+                className="ornate-input w-full px-2.5 py-1.5 font-mono text-sm"
+              />
+            </Field>
+            <Field label="Level required">
+              <input
+                type="number"
+                value={draft.levelRequired}
+                onChange={(e) => setDraft({ ...draft, levelRequired: Number(e.target.value) || 1 })}
+                className="ornate-input w-full px-2.5 py-1.5 font-mono text-sm"
+              />
+            </Field>
+            <Field label="Target type">
+              <select
+                value={draft.targetType}
+                onChange={(e) => setDraft({ ...draft, targetType: e.target.value })}
+                className="ornate-input w-full px-2 py-1.5 text-sm"
+              >
+                <option value="self">Self</option>
+                <option value="ally">Ally</option>
+                <option value="enemy">Enemy</option>
+                <option value="area">Area</option>
+              </select>
+            </Field>
+          </div>
+
+          <Field label="Effect">
+            <div className="grid grid-cols-4 gap-2">
+              <select
+                value={draft.effect.type}
+                onChange={(e) =>
+                  setDraft({ ...draft, effect: { ...draft.effect, type: e.target.value } })
+                }
+                className="ornate-input col-span-2 w-full px-2 py-1.5 text-xs"
+              >
+                <option value="DIRECT_DAMAGE">Direct Damage</option>
+                <option value="AREA_DAMAGE">Area Damage</option>
+                <option value="DIRECT_HEAL">Heal</option>
+                <option value="APPLY_STATUS">Apply Status</option>
+                <option value="TAUNT">Taunt</option>
+                <option value="SUMMON_PET">Summon Pet</option>
+              </select>
+              <EffectNumberInput label="min" value={draft.effect.minDamage ?? draft.effect.minHeal} onChange={(n) => {
+                const next = { ...draft.effect };
+                if (next.type === "DIRECT_HEAL") next.minHeal = n;
+                else next.minDamage = n;
+                setDraft({ ...draft, effect: next });
+              }} />
+              <EffectNumberInput label="max" value={draft.effect.maxDamage ?? draft.effect.maxHeal} onChange={(n) => {
+                const next = { ...draft.effect };
+                if (next.type === "DIRECT_HEAL") next.maxHeal = n;
+                else next.maxDamage = n;
+                setDraft({ ...draft, effect: next });
+              }} />
+            </div>
+          </Field>
+
+          <p className="text-2xs text-text-muted">
+            Fine-tune effect parameters in the full Ability Designer after accepting — this form
+            covers the core fields only.
+          </p>
+        </div>
+      ) : null}
+    </DialogShell>
+  );
+}
+
+function EffectNumberInput({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: number | undefined;
+  onChange: (next: number | undefined) => void;
+}) {
+  return (
+    <label className="flex flex-col gap-0.5">
+      <span className="font-display text-3xs uppercase tracking-wider text-text-muted">{label}</span>
+      <input
+        type="number"
+        value={value ?? ""}
+        onChange={(e) => {
+          const n = Number(e.target.value);
+          onChange(Number.isFinite(n) && e.target.value !== "" ? n : undefined);
+        }}
+        className="ornate-input w-full px-1.5 py-1 font-mono text-xs"
+      />
+    </label>
   );
 }
 

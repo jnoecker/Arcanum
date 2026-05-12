@@ -6,6 +6,7 @@ import { LoreTextArea } from "./LoreTextArea";
 import { LoreEditor } from "./LoreEditor";
 import { TagListEditor } from "./TagListEditor";
 import { getWorldSettingGeneratePrompt } from "@/lib/lorePrompts";
+import { buildRagContext } from "@/lib/rag/loreContext";
 
 // ─── Helpers ────────────────────────────────────────────────────────
 
@@ -134,8 +135,11 @@ export function WorldSettingPanel() {
   const content = article?.content ?? "";
   const stub = (article ?? ({ fields: {} } as Article)) as Article;
 
-  // Build world context string for LLM generation
-  const worldContext = useMemo(() => {
+  // Always-present header summarising the structured world-setting fields.
+  // RAG retrieval picks up everything else from the corpus, but the
+  // top-of-funnel facts (name, tone, era, themes) live in fields, not in
+  // article bodies — so we synthesize them as a fallback / header here.
+  const worldHeader = useMemo(() => {
     const parts: string[] = [];
     const name = typeof fields.name === "string" ? fields.name : "";
     const tagline = typeof fields.tagline === "string" ? fields.tagline : "";
@@ -150,6 +154,22 @@ export function WorldSettingPanel() {
     if (content) parts.push(`Overview: ${content}`);
     return parts.join("\n") || "A fantasy MUD game world";
   }, [fields, content]);
+
+  /** Build a per-field RAG context callback. Each World Setting field
+   *  (Overview, History, Geography, Magic, Tech) retrieves around its
+   *  own concept; the structured world header always rides along. */
+  const makeFieldContext = useCallback(
+    (topic: string) =>
+      async (_action: string, text: string): Promise<string> => {
+        const query = `${topic}: ${text.slice(0, 600)}`.trim();
+        const { context } = await buildRagContext({
+          query,
+          fallback: () => worldHeader,
+        });
+        return context ? `${worldHeader}\n\n${context}` : worldHeader;
+      },
+    [worldHeader],
+  );
 
   return (
     <div className="flex flex-col gap-4 md:flex-row md:items-start">
@@ -217,7 +237,7 @@ export function WorldSettingPanel() {
             placeholder="Describe your world at a high level — its defining features, cultures, and conflicts..."
             generateSystemPrompt={getWorldSettingGeneratePrompt()}
             generateUserPrompt="Write a vivid world overview for this fantasy MUD setting."
-            context={worldContext}
+            getActionContext={makeFieldContext("World overview — defining features, cultures, conflicts")}
           />
         </WorldCard>
       </div>
@@ -233,7 +253,7 @@ export function WorldSettingPanel() {
             rows={8}
             generateSystemPrompt={getWorldSettingGeneratePrompt()}
             generateUserPrompt="Write a rich creation myth and historical timeline for this world."
-            context={worldContext}
+            getActionContext={makeFieldContext("World history — creation myth, ages, wars, turning points")}
           />
         </WorldCard>
 
@@ -246,7 +266,7 @@ export function WorldSettingPanel() {
             rows={6}
             generateSystemPrompt={getWorldSettingGeneratePrompt()}
             generateUserPrompt="Describe the broad geography and major regions of this world."
-            context={worldContext}
+            getActionContext={makeFieldContext("World geography — continents, biomes, landmarks, regions")}
           />
         </WorldCard>
 
@@ -259,7 +279,7 @@ export function WorldSettingPanel() {
             rows={6}
             generateSystemPrompt={getWorldSettingGeneratePrompt()}
             generateUserPrompt="Design a magic system for this world — its sources, rules, and cultural role."
-            context={worldContext}
+            getActionContext={makeFieldContext("Magic system — sources, rules, limits, cultural role")}
           />
         </WorldCard>
 
@@ -272,7 +292,7 @@ export function WorldSettingPanel() {
             rows={6}
             generateSystemPrompt={getWorldSettingGeneratePrompt()}
             generateUserPrompt="Describe the technology level and civilisational development of this world."
-            context={worldContext}
+            getActionContext={makeFieldContext("Technology and civilisation — tech level, governance, economy, culture")}
           />
         </WorldCard>
       </div>

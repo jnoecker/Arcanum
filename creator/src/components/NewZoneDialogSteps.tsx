@@ -387,7 +387,7 @@ export function ContentStep({
           }
           generateSystemPrompt={ZONE_DESC_GENERATE_SYSTEM}
           generateUserPrompt={ZONE_DESC_GENERATE_USER}
-          context={buildToneDirective()}
+          getActionContext={async () => buildToneDirective()}
         />
         <p className="mt-1 text-2xs text-text-muted">
           Use Generate, Expand, or Enhance to draft with AI.{" "}

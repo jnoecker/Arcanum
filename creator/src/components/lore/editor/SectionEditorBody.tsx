@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import type {
   Article,
   ArticleSection,
@@ -7,8 +7,10 @@ import type {
   RichTextSection,
 } from "@/types/lore";
 import { useImageSrc } from "@/lib/useImageSrc";
-import { LoreEditor } from "@/components/lore/LoreEditor";
+import { LoreEditor, type LoreEditorAction } from "@/components/lore/LoreEditor";
 import { EntityArtGenerator } from "@/components/ui/EntityArtGenerator";
+import { buildRagContext } from "@/lib/rag/loreContext";
+import { buildWorldContext } from "@/lib/loreGeneration";
 import { getCodexGeneratePrompt } from "@/lib/lorePrompts";
 import {
   getArticlePrompt,
@@ -21,10 +23,34 @@ import type { AssetContext } from "@/types/assets";
 interface SectionEditorBodyProps {
   article: Article;
   section: ArticleSection;
-  worldContext: string;
   onChange: (patch: Partial<ArticleSection>) => void;
   onPick: (mode: "single" | "multi") => void;
   onTogglePrivate: () => void;
+}
+
+/**
+ * Build an RAG-backed context callback scoped to the article and section.
+ * The query varies by action so retrieval targets the right neighborhood
+ * of lore: "Write the X section of article Y" for generate, the prose
+ * itself for enhance/continue. Falls back to the legacy world summary
+ * when the index is empty or retrieval errors.
+ */
+function makeSectionContextProvider(
+  article: Article,
+  sectionTitle: string,
+): (action: LoreEditorAction, text: string) => Promise<string> {
+  return async (action, text) => {
+    const query =
+      action === "generate"
+        ? `${article.title} — ${sectionTitle || "section"}`
+        : (text.slice(0, 800) || article.title);
+    const { context } = await buildRagContext({
+      query,
+      excludeSourceIds: [article.id],
+      fallback: () => buildWorldContext().slice(0, 1500),
+    });
+    return context;
+  };
 }
 
 function labelForType(t: ArticleSection["type"]): string {
@@ -38,14 +64,16 @@ function labelForType(t: ArticleSection["type"]): string {
 function RichTextSectionEditor({
   article,
   section,
-  worldContext,
   onChange,
 }: {
   article: Article;
   section: RichTextSection;
-  worldContext: string;
   onChange: (patch: Partial<RichTextSection>) => void;
 }) {
+  const getContext = useMemo(
+    () => makeSectionContextProvider(article, section.title || ""),
+    [article, section.title],
+  );
   return (
     <div className="ae-prose">
       <LoreEditor
@@ -54,7 +82,7 @@ function RichTextSectionEditor({
         placeholder={`Write the ${section.title || "section"}...`}
         generateSystemPrompt={getCodexGeneratePrompt()}
         generateUserPrompt={`Write the "${section.title || "Untitled"}" section of the lore article titled "${article.title}".`}
-        context={worldContext}
+        getActionContext={getContext}
       />
     </div>
   );
@@ -392,7 +420,6 @@ function GallerySectionEditor({
 export function SectionEditorBody({
   article,
   section,
-  worldContext,
   onChange,
   onPick,
   onTogglePrivate,
@@ -429,7 +456,6 @@ export function SectionEditorBody({
         <RichTextSectionEditor
           article={article}
           section={section}
-          worldContext={worldContext}
           onChange={onChange as (patch: Partial<RichTextSection>) => void}
         />
       )}

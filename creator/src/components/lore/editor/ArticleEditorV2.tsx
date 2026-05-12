@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLoreStore } from "@/stores/loreStore";
 import type { Article, ArticleSection } from "@/types/lore";
 import { TEMPLATE_SCHEMAS, templateTint } from "@/lib/loreTemplates";
-import { buildWorldContext } from "@/lib/loreGeneration";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { RewriteDialog } from "@/components/lore/RewriteDialog";
 import type { RewriteResult } from "@/lib/loreRewrite";
@@ -58,8 +57,6 @@ export function ArticleEditorV2({ articleId }: { articleId: string }) {
     () => sections.find((s) => s.id === selectedSectionId),
     [sections, selectedSectionId],
   );
-
-  const worldContext = useMemo(() => buildWorldContext(), [articleId]);
 
   // ─── Patches ────────────────────────────────────────────────────
   const patchArticle = useCallback(
@@ -351,7 +348,6 @@ export function ArticleEditorV2({ articleId }: { articleId: string }) {
           <SectionEditorBody
             article={article}
             section={activeSection}
-            worldContext={worldContext}
             onChange={handleSectionPatch}
             onPick={openPicker}
             onTogglePrivate={() =>

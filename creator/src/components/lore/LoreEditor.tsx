@@ -15,6 +15,8 @@ import { useLoreStore } from "@/stores/loreStore";
 import { MentionList, type MentionListRef } from "./MentionList";
 import { AI_ENABLED } from "@/lib/featureFlags";
 
+export type LoreEditorAction = "generate" | "enhance" | "continue";
+
 interface LoreEditorProps {
   value: string;
   onCommit: (json: string) => void;
@@ -23,8 +25,10 @@ interface LoreEditorProps {
   generateSystemPrompt?: string;
   /** User prompt for generation. */
   generateUserPrompt?: string;
-  /** Extra context appended to the user prompt. */
-  context?: string;
+  /** Per-action async context. Lets callers swap in RAG-backed retrieval
+   *  with an action-specific query (the section's intent for `generate`,
+   *  the current prose for `enhance` / `continue`). */
+  getActionContext?: (action: LoreEditorAction, currentText: string) => Promise<string>;
 }
 
 function ToolbarButton({
@@ -133,7 +137,7 @@ export function LoreEditor({
   placeholder: placeholderText,
   generateSystemPrompt,
   generateUserPrompt,
-  context,
+  getActionContext,
 }: LoreEditorProps) {
   const [loading, setLoading] = useState<"generate" | "enhance" | "continue" | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -284,6 +288,9 @@ export function LoreEditor({
     setError(null);
     try {
       const parts = [generateUserPrompt];
+      const context = getActionContext
+        ? await getActionContext("generate", generateUserPrompt)
+        : "";
       if (context) parts.push(`\nWorld context: ${context}`);
       const result = await invoke<string>("llm_complete", {
         systemPrompt: generateSystemPrompt,
@@ -305,7 +312,7 @@ export function LoreEditor({
     } finally {
       setLoading(null);
     }
-  }, [context, editor, generateSystemPrompt, generateUserPrompt, llmConfigurationError]);
+  }, [editor, generateSystemPrompt, generateUserPrompt, getActionContext, llmConfigurationError]);
 
   const handleEnhance = useCallback(async () => {
     if (!plainText) return;
@@ -318,6 +325,9 @@ export function LoreEditor({
     setError(null);
     try {
       const parts = [plainText];
+      const context = getActionContext
+        ? await getActionContext("enhance", plainText)
+        : "";
       if (context) parts.push(`\nWorld context: ${context}`);
       const result = await invoke<string>("llm_complete", {
         systemPrompt: getLoreEnhancePrompt(),
@@ -339,7 +349,7 @@ export function LoreEditor({
     } finally {
       setLoading(null);
     }
-  }, [context, editor, llmConfigurationError, plainText]);
+  }, [editor, getActionContext, llmConfigurationError, plainText]);
 
   const handleContinue = useCallback(async () => {
     if (!plainText) return;
@@ -355,6 +365,9 @@ export function LoreEditor({
         "Continue writing from where the author left off. Maintain the same voice, tone, and style. Do not repeat what was already written. Output only the new continuation text.\n",
         `Existing text:\n${plainText}`,
       ];
+      const context = getActionContext
+        ? await getActionContext("continue", plainText)
+        : "";
       if (context) parts.push(`\nWorld context: ${context}`);
       const result = await invoke<string>("llm_complete", {
         systemPrompt: getContinueWritingPrompt(),
@@ -379,7 +392,7 @@ export function LoreEditor({
     } finally {
       setLoading(null);
     }
-  }, [context, editor, llmConfigurationError, plainText]);
+  }, [editor, getActionContext, llmConfigurationError, plainText]);
 
   const showGenerate = generateSystemPrompt && generateUserPrompt && isEmpty;
   const showEnhance = !isEmpty;

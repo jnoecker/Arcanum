@@ -6,6 +6,8 @@ import { getPromptLlmConfigurationError } from "@/lib/promptLlm";
 import { useAssetStore } from "@/stores/assetStore";
 import { AI_ENABLED } from "@/lib/featureFlags";
 
+export type LoreTextAreaAction = "generate" | "enhance";
+
 interface LoreTextAreaProps {
   label: string;
   value: string;
@@ -18,8 +20,8 @@ interface LoreTextAreaProps {
   generateUserPrompt?: string;
   /** System prompt for enhancing existing text. Defaults to getLoreEnhancePrompt(). */
   enhanceSystemPrompt?: string;
-  /** Extra context appended to the user prompt. */
-  context?: string;
+  /** Per-action async context. Lets callers swap in RAG-backed retrieval. */
+  getActionContext?: (action: LoreTextAreaAction, currentText: string) => Promise<string>;
 }
 
 /**
@@ -35,7 +37,7 @@ export function LoreTextArea({
   generateSystemPrompt,
   generateUserPrompt,
   enhanceSystemPrompt,
-  context,
+  getActionContext,
 }: LoreTextAreaProps) {
   const [loading, setLoading] = useState<"generate" | "enhance" | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -53,6 +55,9 @@ export function LoreTextArea({
     setError(null);
     try {
       const parts = [generateUserPrompt];
+      const context = getActionContext
+        ? await getActionContext("generate", generateUserPrompt)
+        : "";
       if (context) parts.push(`\nWorld context: ${context}`);
       const result = await invoke<string>("llm_complete", {
         systemPrompt: generateSystemPrompt,
@@ -68,7 +73,7 @@ export function LoreTextArea({
     } finally {
       setLoading(null);
     }
-  }, [context, generateSystemPrompt, generateUserPrompt, llmConfigurationError, onCommit]);
+  }, [generateSystemPrompt, generateUserPrompt, getActionContext, llmConfigurationError, onCommit]);
 
   const handleEnhance = useCallback(async () => {
     if (!value) return;
@@ -81,6 +86,9 @@ export function LoreTextArea({
     setError(null);
     try {
       const parts = [value];
+      const context = getActionContext
+        ? await getActionContext("enhance", value)
+        : "";
       if (context) parts.push(`\nWorld context: ${context}`);
       const result = await invoke<string>("llm_complete", {
         systemPrompt: enhanceSystemPrompt ?? getLoreEnhancePrompt(),
@@ -96,7 +104,7 @@ export function LoreTextArea({
     } finally {
       setLoading(null);
     }
-  }, [context, enhanceSystemPrompt, llmConfigurationError, onCommit, value]);
+  }, [enhanceSystemPrompt, getActionContext, llmConfigurationError, onCommit, value]);
 
   const showGenerate = generateSystemPrompt && generateUserPrompt && !value;
   const showEnhance = !!value;

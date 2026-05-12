@@ -267,13 +267,26 @@ export function ArticleTree() {
     <div className="flex min-h-0 flex-1 flex-col">
       {/* Search */}
       <div className="mb-2 flex items-center gap-1.5">
-        <input
-          aria-label="Search articles"
-          className="ornate-input min-w-0 flex-1 px-2 py-1.5 text-xs text-text-primary"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder={searchContent ? "Search all content..." : "Search legends..."}
-        />
+        <div className="relative min-w-0 flex-1">
+          <input
+            aria-label="Search articles"
+            className="ornate-input w-full px-2 py-1.5 pr-7 text-xs text-text-primary"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder={searchContent ? "Search all content..." : "Search legends..."}
+          />
+          {search.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setSearch("")}
+              aria-label="Clear search"
+              title="Clear search"
+              className="focus-ring absolute right-1.5 top-1/2 inline-flex h-5 w-5 -translate-y-1/2 items-center justify-center rounded text-text-muted transition hover:bg-[var(--chrome-highlight)] hover:text-text-primary"
+            >
+              ×
+            </button>
+          )}
+        </div>
         <button
           onClick={() => setSearchContent((v) => !v)}
           title={searchContent ? "Searching content" : "Searching titles only"}

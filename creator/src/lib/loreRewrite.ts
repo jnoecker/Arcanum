@@ -7,6 +7,18 @@ import { getRewriteSystemPrompt } from "@/lib/lorePrompts";
 import { AI_ENABLED } from "@/lib/featureFlags";
 import { retrieveLoreContext } from "@/lib/rag";
 import { formatContextForPrompt } from "@/lib/rag/promptAssembly";
+import type { RetrievedChunk } from "@/lib/rag/types";
+
+export interface RetrievalDiagnostic {
+  usedRag: boolean;
+  /** Distinct artefacts pulled from the index, top first. */
+  sources: { id: string; kind: string; title: string; score: number }[];
+}
+
+interface ContextBuildResult {
+  context: string;
+  diagnostic: RetrievalDiagnostic;
+}
 
 /**
  * Pick the most relevant lore context for a rewrite. Prefers RAG retrieval
@@ -18,23 +30,49 @@ import { formatContextForPrompt } from "@/lib/rag/promptAssembly";
 async function buildRewriteContext(
   article: Article,
   instructions: string,
-): Promise<string> {
+): Promise<ContextBuildResult> {
   try {
     const query = `${article.title}\n${instructions}`;
     const chunks = await retrieveLoreContext({ query, k: 10 });
     const filtered = chunks.filter((c) => c.source_id !== article.id);
     if (filtered.length > 0) {
-      return formatContextForPrompt(filtered, 8000);
+      return {
+        context: formatContextForPrompt(filtered, 8000),
+        diagnostic: { usedRag: true, sources: summariseSources(filtered) },
+      };
     }
   } catch (e) {
     console.warn("[loreRewrite] RAG retrieval failed; falling back to legacy context", e);
   }
-  return buildWorldContext().slice(0, 1500);
+  return {
+    context: buildWorldContext().slice(0, 1500),
+    diagnostic: { usedRag: false, sources: [] },
+  };
+}
+
+function summariseSources(
+  chunks: RetrievedChunk[],
+): RetrievalDiagnostic["sources"] {
+  const seen = new Map<string, RetrievalDiagnostic["sources"][number]>();
+  for (const c of chunks) {
+    const key = `${c.kind}:${c.source_id}`;
+    const prior = seen.get(key);
+    if (!prior || c.score > prior.score) {
+      seen.set(key, {
+        id: c.source_id,
+        kind: c.kind,
+        title: c.title || c.source_id,
+        score: c.score,
+      });
+    }
+  }
+  return [...seen.values()].sort((a, b) => b.score - a.score);
 }
 
 export interface RewriteResult {
   content: string; // TipTap JSON string
   fields: Record<string, unknown>; // Only changed fields
+  diagnostic: RetrievalDiagnostic;
 }
 
 export async function rewriteArticle(
@@ -43,7 +81,10 @@ export async function rewriteArticle(
 ): Promise<RewriteResult> {
   if (!AI_ENABLED) throw new Error("AI features are not available in Community Edition");
   const schema = TEMPLATE_SCHEMAS[article.template];
-  const worldContext = await buildRewriteContext(article, instructions);
+  const { context: worldContext, diagnostic } = await buildRewriteContext(
+    article,
+    instructions,
+  );
   const currentContent = tiptapToPlainText(article.content);
 
   const fieldSummary = schema
@@ -79,11 +120,13 @@ export async function rewriteArticle(
     return {
       content: plainTextToTiptap(raw.trim()),
       fields: {},
+      diagnostic,
     };
   }
 
   return {
     content: parsed.content ? plainTextToTiptap(parsed.content) : article.content,
     fields: parsed.fields ?? {},
+    diagnostic,
   };
 }

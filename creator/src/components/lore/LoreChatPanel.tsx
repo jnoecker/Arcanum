@@ -115,7 +115,7 @@ export function LoreChatPanel({ onClose }: LoreChatPanelProps) {
           role: m.role,
           content: m.content,
         }));
-        const built = buildLoreChatPrompt(lore, q, history, { worldName });
+        const built = await buildLoreChatPrompt(lore, q, history, { worldName });
         const response = await invoke<string>("llm_complete", {
           systemPrompt: built.systemPrompt,
           userPrompt: built.userPrompt,

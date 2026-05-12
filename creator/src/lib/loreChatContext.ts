@@ -1,5 +1,7 @@
 import type { Article, WorldLore } from "@/types/lore";
 import { extractMentions, tiptapToPlainText } from "./loreRelations";
+import { retrieveLoreContext } from "@/lib/rag";
+import type { RetrievedChunk } from "@/lib/rag/types";
 
 export interface LoreChatTurn {
   role: "user" | "assistant";
@@ -23,6 +25,8 @@ const PRIMARY_MATCH_CAP = 30;
 const CONTENT_SNIPPET_CHARS = 500;
 const HISTORY_TURNS_USED_FOR_RETRIEVAL = 2;
 const MAX_HISTORY_TURNS_IN_PROMPT = 10;
+const RAG_K = 30;
+const MAX_FRAGMENTS = 20;
 
 function tokenize(s: string): string[] {
   return s.toLowerCase().match(/[a-z0-9]{3,}/g) ?? [];
@@ -195,27 +199,118 @@ function selectArticlesLargeWorld(
  * Build a prompt pair for the lore chat assistant. The system prompt carries
  * the retrieved lore context + citation instructions; the user prompt carries
  * the conversation history and the new question.
+ *
+ * Retrieval strategy:
+ * - Small worlds (≤40 articles) get every article — no retrieval needed.
+ * - Larger worlds try RAG first (semantic embedding search over articles,
+ *   events, pins, relationships, entity descriptions), then fall back to
+ *   the legacy token-match + relation/mention expansion if RAG is empty
+ *   (no index built yet) or unavailable.
  */
-export function buildLoreChatPrompt(
+export async function buildLoreChatPrompt(
   lore: WorldLore,
   question: string,
   history: LoreChatTurn[] = [],
   options: BuildLoreChatPromptOptions = {},
-): LoreChatPrompt {
+): Promise<LoreChatPrompt> {
   const articles = lore.articles ?? {};
   const articleList = Object.values(articles);
 
-  const selected = articleList.length <= SMALL_WORLD_THRESHOLD
-    ? selectArticlesSmallWorld(articles)
-    : selectArticlesLargeWorld(articles, question, history);
+  if (articleList.length <= SMALL_WORLD_THRESHOLD) {
+    return assemblePrompt(
+      selectArticlesSmallWorld(articles),
+      [],
+      articles,
+      question,
+      history,
+      options,
+    );
+  }
 
+  try {
+    const queryParts = [
+      question,
+      ...history
+        .slice(-HISTORY_TURNS_USED_FOR_RETRIEVAL)
+        .map((t) => t.content),
+    ];
+    const chunks = await retrieveLoreContext({
+      query: queryParts.join("\n"),
+      k: RAG_K,
+    });
+    if (chunks.length > 0) {
+      const { articleHits, fragments } = splitChunks(chunks, articles);
+      return assemblePrompt(articleHits, fragments, articles, question, history, options);
+    }
+  } catch (e) {
+    console.warn("[loreChat] RAG retrieval failed; using token-match fallback", e);
+  }
+
+  return assemblePrompt(
+    selectArticlesLargeWorld(articles, question, history),
+    [],
+    articles,
+    question,
+    history,
+    options,
+  );
+}
+
+interface ChunkFragment {
+  kind: string;
+  title: string;
+  body: string;
+}
+
+function splitChunks(
+  chunks: RetrievedChunk[],
+  articles: Record<string, Article>,
+): { articleHits: Article[]; fragments: ChunkFragment[] } {
+  const seenArticles = new Set<string>();
+  const articleHits: Article[] = [];
+  const fragments: ChunkFragment[] = [];
+  for (const c of chunks) {
+    if (c.kind === "article") {
+      if (seenArticles.has(c.source_id)) continue;
+      const a = articles[c.source_id];
+      if (a) {
+        seenArticles.add(c.source_id);
+        articleHits.push(a);
+      }
+    } else {
+      fragments.push({ kind: c.kind, title: c.title, body: c.body });
+    }
+  }
+  return {
+    articleHits: articleHits.slice(0, MAX_SELECTED_ARTICLES),
+    fragments: fragments.slice(0, MAX_FRAGMENTS),
+  };
+}
+
+function fragmentBlock(f: ChunkFragment): string {
+  const label = f.kind.charAt(0).toUpperCase() + f.kind.slice(1);
+  return `[${label}: ${f.title}]\n${f.body.trim()}`;
+}
+
+function assemblePrompt(
+  selected: Article[],
+  fragments: ChunkFragment[],
+  articles: Record<string, Article>,
+  question: string,
+  history: LoreChatTurn[],
+  options: BuildLoreChatPromptOptions,
+): LoreChatPrompt {
   const lorePart = selected.length > 0
     ? selected.map((a) => articleBlock(a, articles)).join("\n\n---\n\n")
     : "(No articles yet — the world is unwritten.)";
 
+  const fragmentsPart = fragments.length > 0
+    ? fragments.map(fragmentBlock).join("\n\n---\n\n")
+    : "";
+
   const worldLabel = options.worldName?.trim() || "this world";
 
-  const systemPrompt = [
+  const sections = [
     `You are the lore archivist for ${worldLabel}. The user is the world's creator, asking you questions about the world they've written.`,
     ``,
     `Ground every answer in the articles below. When the lore doesn't cover something, say so plainly — do not invent facts, names, or relationships. If a thoughtful next step would help the creator, offer it.`,
@@ -227,7 +322,16 @@ export function buildLoreChatPrompt(
     `=== LORE ARTICLES ===`,
     lorePart,
     `=== END LORE ===`,
-  ].join("\n");
+  ];
+  if (fragmentsPart) {
+    sections.push(
+      ``,
+      `=== ADDITIONAL LORE FRAGMENTS (events, map pins, relationships, entity descriptions) ===`,
+      fragmentsPart,
+      `=== END FRAGMENTS ===`,
+    );
+  }
+  const systemPrompt = sections.join("\n");
 
   const trimmedHistory = history.slice(-MAX_HISTORY_TURNS_IN_PROMPT);
   const lines: string[] = [];

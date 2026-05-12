@@ -21,18 +21,18 @@ function mkLore(articles: Article[]): WorldLore {
 }
 
 describe("buildLoreChatPrompt", () => {
-  it("includes every article in small-world mode", () => {
+  it("includes every article in small-world mode", async () => {
     const lore = mkLore([
       mkArticle({ id: "a", title: "Alpha", content: "First entry." }),
       mkArticle({ id: "b", title: "Beta", content: "Second entry." }),
     ]);
-    const { systemPrompt, articlesUsed } = buildLoreChatPrompt(lore, "What's here?");
+    const { systemPrompt, articlesUsed } = await buildLoreChatPrompt(lore, "What's here?");
     expect(articlesUsed.sort()).toEqual(["a", "b"]);
     expect(systemPrompt).toContain("[Alpha]");
     expect(systemPrompt).toContain("[Beta]");
   });
 
-  it("keyword-filters in large-world mode and expands via relations", () => {
+  it("keyword-filters in large-world mode and expands via relations", async () => {
     const many: Article[] = [];
     for (let i = 0; i < 45; i++) {
       many.push(mkArticle({ id: `f${i}`, title: `Filler ${i}`, content: "nothing relevant" }));
@@ -48,7 +48,7 @@ describe("buildLoreChatPrompt", () => {
     many.push(mkArticle({ id: "lair", title: "Ashen Caldera", content: "Volcanic ruin." }));
     const lore = mkLore(many);
 
-    const { articlesUsed, systemPrompt } = buildLoreChatPrompt(lore, "tell me about the dragon");
+    const { articlesUsed, systemPrompt } = await buildLoreChatPrompt(lore, "tell me about the dragon");
     expect(articlesUsed).toContain("dragon");
     // Relation expansion pulls in the lair even though the query didn't mention it
     expect(articlesUsed).toContain("lair");
@@ -58,7 +58,7 @@ describe("buildLoreChatPrompt", () => {
     expect(articlesUsed).not.toContain("f0");
   });
 
-  it("expands via @mention backlinks so facts on other articles surface", () => {
+  it("expands via @mention backlinks so facts on other articles surface", async () => {
     const many: Article[] = [];
     for (let i = 0; i < 45; i++) {
       many.push(mkArticle({ id: `f${i}`, title: `Filler ${i}`, content: "nothing relevant" }));
@@ -90,13 +90,13 @@ describe("buildLoreChatPrompt", () => {
     );
     const lore = mkLore(many);
 
-    const { articlesUsed } = buildLoreChatPrompt(lore, "Who created the Sylflorae?");
+    const { articlesUsed } = await buildLoreChatPrompt(lore, "Who created the Sylflorae?");
     expect(articlesUsed).toContain("sylflorae");
     // Backlink expansion pulls Astriel in even though the query doesn't name them.
     expect(articlesUsed).toContain("astriel");
   });
 
-  it("expands via forward @mentions from a primary match", () => {
+  it("expands via forward @mentions from a primary match", async () => {
     const many: Article[] = [];
     for (let i = 0; i < 45; i++) {
       many.push(mkArticle({ id: `f${i}`, title: `Filler ${i}`, content: "nothing relevant" }));
@@ -118,14 +118,14 @@ describe("buildLoreChatPrompt", () => {
     many.push(mkArticle({ id: "artifact", title: "Codex", content: "An old book." }));
     const lore = mkLore(many);
 
-    const { articlesUsed } = buildLoreChatPrompt(lore, "tell me about the scribe");
+    const { articlesUsed } = await buildLoreChatPrompt(lore, "tell me about the scribe");
     expect(articlesUsed).toContain("scribe");
     expect(articlesUsed).toContain("artifact");
   });
 
-  it("embeds history and new question into user prompt", () => {
+  it("embeds history and new question into user prompt", async () => {
     const lore = mkLore([mkArticle({ id: "a", title: "Alpha" })]);
-    const { userPrompt } = buildLoreChatPrompt(
+    const { userPrompt } = await buildLoreChatPrompt(
       lore,
       "Second question?",
       [
@@ -139,16 +139,16 @@ describe("buildLoreChatPrompt", () => {
     expect(userPrompt.trimEnd().endsWith("Archivist:")).toBe(true);
   });
 
-  it("emits citation instructions in the system prompt", () => {
+  it("emits citation instructions in the system prompt", async () => {
     const lore = mkLore([mkArticle({ id: "a", title: "Alpha" })]);
-    const { systemPrompt } = buildLoreChatPrompt(lore, "x");
+    const { systemPrompt } = await buildLoreChatPrompt(lore, "x");
     expect(systemPrompt.toLowerCase()).toContain("cite");
     expect(systemPrompt).toMatch(/\[[^\]]+\]/);
   });
 
-  it("handles an empty world gracefully", () => {
+  it("handles an empty world gracefully", async () => {
     const lore = mkLore([]);
-    const { systemPrompt, articlesUsed } = buildLoreChatPrompt(lore, "anything?");
+    const { systemPrompt, articlesUsed } = await buildLoreChatPrompt(lore, "anything?");
     expect(articlesUsed).toEqual([]);
     expect(systemPrompt).toContain("No articles yet");
   });

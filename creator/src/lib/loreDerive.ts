@@ -5,6 +5,7 @@ import { buildToneDirective } from "@/lib/loreGeneration";
 import { buildRagContext, type RetrievalDiagnostic } from "@/lib/rag/loreContext";
 import { resolveImageDataUrl } from "@/lib/useImageSrc";
 import { llmCompleteWithVision } from "@/lib/llmVision";
+import { composeImageGrid } from "@/lib/imageGrid";
 import type {
   CalendarEra,
   CalendarSystem,
@@ -29,6 +30,11 @@ export interface DeriveResult {
   eventCount?: number;
   /** Did RAG retrieval succeed (vs. falling back to legacy summary)? */
   usedRag: boolean;
+}
+
+export interface VisualStyleDeriveOptions {
+  /** Asset filenames to include as visual reference (composited into a grid). */
+  assetFileNames: string[];
 }
 
 const MAX_EVENTS = 100;
@@ -385,6 +391,91 @@ function summarisePins(
     })
     .join("\n");
   return { lines, titles };
+}
+
+/**
+ * Vision-backed synthesis of the world's *human-readable* visual style.
+ * Takes a handful of representative rendered images plus the active
+ * ArtStyle's technical guide, asks the vision LLM to describe in 2-4
+ * sentences what the world actually LOOKS like — suitable for the
+ * worldSetting.visualStyle field, distinct from the technical style
+ * prompt the Forge already maintains.
+ *
+ * Multiple images are composited into a single grid frame because the
+ * current vision IPC takes one image per call; the model reads them as
+ * panels of a single image.
+ */
+export async function deriveWorldVisualStyle(
+  options: VisualStyleDeriveOptions,
+): Promise<DeriveResult> {
+  if (!AI_ENABLED) throw new Error("AI features are not available in Community Edition");
+
+  if (options.assetFileNames.length === 0) {
+    throw new Error("Pick at least one source image to derive Visual Style from.");
+  }
+
+  const lore = useLoreStore.getState().lore;
+  const activeStyle = lore?.activeArtStyleId
+    ? (lore.artStyles ?? []).find((s) => s.id === lore.activeArtStyleId)
+    : undefined;
+
+  const loaded = await Promise.all(
+    options.assetFileNames.map((name) => resolveImageDataUrl(name)),
+  );
+  const dataUrls = loaded.filter((u): u is string => !!u);
+  if (dataUrls.length === 0) {
+    throw new Error(
+      "Could not load any of the selected source images — check that the assets exist in your cache.",
+    );
+  }
+
+  const composite = await composeImageGrid(dataUrls);
+
+  const styleContextLines: string[] = [];
+  if (activeStyle) {
+    styleContextLines.push(`Active art style: ${activeStyle.name}`);
+    if (activeStyle.description) {
+      styleContextLines.push(`Description: ${activeStyle.description}`);
+    }
+    styleContextLines.push(`Technical style guide:\n${activeStyle.basePrompt}`);
+  }
+  const styleContext = styleContextLines.length > 0
+    ? styleContextLines.join("\n")
+    : "(No active art style defined — describe the rendered images on their own terms.)";
+
+  const sampleCount = dataUrls.length;
+  const gridNote =
+    sampleCount === 1
+      ? "One sample image is attached."
+      : `${sampleCount} sample images are attached, composited into a single grid frame as panels.`;
+
+  const systemPrompt = `You are writing a short, human-readable visual-style description for a worldbuilding wiki's "Visual Style" field. It must communicate, in 2-4 sentences, what this world's art actually looks like — not how to prompt for it.
+
+Rules:
+- Describe the rendered samples, anchored by the technical style guide. Where the two diverge, trust what you see in the images.
+- Mention the dominant palette, the rendering medium / brushwork, the lighting feel, and any signature compositional or atmospheric traits visible across the samples.
+- Output plain prose, 2-4 sentences. Tone: descriptive and confident, like an art-book caption.
+- Do NOT use markdown, bullet points, headings, or framing phrases ("this style features…", "the visual style is…", "in this section…"). The output goes directly into a wiki field; it should read as standalone descriptive prose.`;
+
+  const userPrompt = [styleContext, "", gridNote, "Synthesize the visual-style description now."].join("\n");
+
+  const result = await llmCompleteWithVision({
+    systemPrompt,
+    userPrompt,
+    imageDataUrl: composite,
+    maxTokens: 512,
+  });
+
+  return {
+    content: result.trim(),
+    sources: dataUrls.map((_, i) => ({
+      id: options.assetFileNames[i] ?? `image_${i}`,
+      kind: "image",
+      title: options.assetFileNames[i] ?? `image_${i}`,
+      score: 1,
+    })),
+    usedRag: false,
+  };
 }
 
 /** 2–4 paragraph synthesis of the world's technology and civilisation. */

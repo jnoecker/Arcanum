@@ -8,6 +8,7 @@ import { TagListEditor } from "./TagListEditor";
 import { getWorldSettingGeneratePrompt } from "@/lib/lorePrompts";
 import { buildRagContext } from "@/lib/rag/loreContext";
 import { DeriveFieldDialog } from "./DeriveFieldDialog";
+import { DeriveVisualStyleDialog } from "./DeriveVisualStyleDialog";
 import {
   deriveWorldGeography,
   deriveWorldHistory,
@@ -102,7 +103,7 @@ export function WorldSettingPanel() {
   const updateArticle = useLoreStore((s) => s.updateArticle);
   const createArticle = useLoreStore((s) => s.createArticle);
   const [deriveOpen, setDeriveOpen] = useState<
-    null | "history" | "overview" | "geography" | "magic" | "tech"
+    null | "history" | "overview" | "geography" | "magic" | "tech" | "visualStyle"
   >(null);
 
   // Find or create the world_setting article
@@ -240,6 +241,16 @@ export function WorldSettingPanel() {
             placeholder="Describe the image-generation style for this world — e.g. dreamy watercolor storybook, gritty dark fantasy oil painting, painterly high fantasy with desaturated earth tones..."
             rows={5}
           />
+          <div className="mt-1 flex items-center justify-end">
+            <button
+              type="button"
+              onClick={() => setDeriveOpen("visualStyle")}
+              className="focus-ring rounded px-2 py-0.5 text-2xs text-accent transition hover:bg-accent/10"
+              title="Synthesize a human-readable visual style description from your generated art and the active Forge art style."
+            >
+              Derive from art
+            </button>
+          </div>
         </WorldCard>
 
         <WorldCard index={4} title="Overview">
@@ -407,6 +418,15 @@ export function WorldSettingPanel() {
           currentValue={getField(stub, "magic")}
           onAccept={(magic) =>
             patchField("magic", magic.trim() ? magic : undefined)
+          }
+          onClose={() => setDeriveOpen(null)}
+        />
+      )}
+      {deriveOpen === "visualStyle" && (
+        <DeriveVisualStyleDialog
+          currentValue={getField(stub, "visualStyle")}
+          onAccept={(value) =>
+            patchField("visualStyle", value.trim() ? value : undefined)
           }
           onClose={() => setDeriveOpen(null)}
         />

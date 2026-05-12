@@ -7,6 +7,8 @@ import { RewriteDialog } from "@/components/lore/RewriteDialog";
 import type { RewriteResult } from "@/lib/loreRewrite";
 import { ScaffoldGameplayDialog } from "./ScaffoldGameplayDialog";
 import { useConfigStore } from "@/stores/configStore";
+import { NewZoneDialog, type NewZoneDialogPrefill } from "@/components/NewZoneDialog";
+import { buildZonePrefillFromArticle } from "@/lib/loreToZone";
 import { SectionRail } from "./SectionRail";
 import { SectionEditorBody } from "./SectionEditorBody";
 import { Inspector } from "./Inspector";
@@ -42,8 +44,25 @@ export function ArticleEditorV2({ articleId }: { articleId: string }) {
   const [showScaffold, setShowScaffold] = useState<
     null | "class" | "race" | "talent" | "creature_power"
   >(null);
+  const [zoneWizardPrefill, setZoneWizardPrefill] = useState<NewZoneDialogPrefill | null>(null);
+  const [buildingZonePrefill, setBuildingZonePrefill] = useState(false);
+  const [zoneBuildError, setZoneBuildError] = useState<string | null>(null);
   const config = useConfigStore((s) => s.config);
   const updateConfig = useConfigStore((s) => s.updateConfig);
+
+  const handleScaffoldZone = useCallback(async () => {
+    if (!article || buildingZonePrefill) return;
+    setBuildingZonePrefill(true);
+    setZoneBuildError(null);
+    try {
+      const { prefill } = await buildZonePrefillFromArticle(article);
+      setZoneWizardPrefill(prefill);
+    } catch (e) {
+      setZoneBuildError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setBuildingZonePrefill(false);
+    }
+  }, [article, buildingZonePrefill]);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   // Migrate legacy articles into the section model on first open.
@@ -333,6 +352,17 @@ export function ArticleEditorV2({ articleId }: { articleId: string }) {
               Scaffold power
             </button>
           )}
+          {article && article.template === "location" && (
+            <button
+              type="button"
+              className="ae-topbar__btn"
+              onClick={handleScaffoldZone}
+              disabled={buildingZonePrefill}
+              title="Generate a game zone from this region — pulls characters, factions, events, and geography via RAG"
+            >
+              {buildingZonePrefill ? "Reading lore…" : "Generate zone"}
+            </button>
+          )}
           <button
             type="button"
             className="ae-topbar__btn"
@@ -461,6 +491,28 @@ export function ArticleEditorV2({ articleId }: { articleId: string }) {
             deleteArticle(articleId);
           }}
         />
+      )}
+      {zoneWizardPrefill && (
+        <NewZoneDialog
+          prefill={zoneWizardPrefill}
+          onClose={() => setZoneWizardPrefill(null)}
+        />
+      )}
+      {zoneBuildError && (
+        <div
+          role="status"
+          className="fixed bottom-4 left-1/2 z-50 -translate-x-1/2 rounded-lg border border-status-error/40 bg-bg-primary px-4 py-2 text-xs text-status-error shadow-panel"
+        >
+          Could not build zone prefill: {zoneBuildError}
+          <button
+            type="button"
+            onClick={() => setZoneBuildError(null)}
+            className="ml-3 text-text-muted hover:text-text-primary"
+            aria-label="Dismiss"
+          >
+            ×
+          </button>
+        </div>
       )}
       {showScaffold && article && config && (
         <ScaffoldGameplayDialog

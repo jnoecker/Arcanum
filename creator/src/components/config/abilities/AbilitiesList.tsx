@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import type { AbilityDefinitionConfig } from "@/types/config";
+import { abilityScope, type AbilityDefinitionConfig } from "@/types/config";
 import { useImageSrc } from "@/lib/useImageSrc";
 import { SearchIcon, PlusIcon, CopyIcon, TrashIcon } from "../achievements/icons";
 
@@ -24,6 +24,14 @@ export const ABILITY_CATEGORIES: { key: AbilityCategoryKey; label: string }[] = 
   { key: "POWER", label: "Power & Identity" },
 ];
 
+export type AbilityScopeFilter = "all" | "player" | "creature";
+
+export const ABILITY_SCOPE_FILTERS: { key: AbilityScopeFilter; label: string }[] = [
+  { key: "all", label: "All" },
+  { key: "player", label: "Player talents" },
+  { key: "creature", label: "Creature powers" },
+];
+
 const POWER_TYPES = new Set(["TAUNT", "SUMMON_PET"]);
 
 export function categoryFor(ability: AbilityDefinitionConfig): AbilityCategoryKey {
@@ -39,6 +47,7 @@ export function categoryFor(ability: AbilityDefinitionConfig): AbilityCategoryKe
 interface AbilitiesListProps {
   abilities: Record<string, AbilityDefinitionConfig>;
   category: AbilityCategoryKey;
+  scope: AbilityScopeFilter;
   selectedId: string | null;
   onSelect: (id: string) => void;
   onAdd: () => void;
@@ -49,6 +58,7 @@ interface AbilitiesListProps {
 export function AbilitiesList({
   abilities,
   category,
+  scope,
   selectedId,
   onSelect,
   onAdd,
@@ -62,6 +72,7 @@ export function AbilitiesList({
     const q = query.trim().toLowerCase();
     return Object.entries(abilities).filter(([id, a]) => {
       if (category !== "all" && categoryFor(a) !== category) return false;
+      if (scope !== "all" && abilityScope(a) !== scope) return false;
       if (!q) return true;
       const restriction = a.requiredClass || a.classRestriction || "";
       return (
@@ -71,7 +82,7 @@ export function AbilitiesList({
         a.effect.type.toLowerCase().includes(q)
       );
     });
-  }, [abilities, query, category]);
+  }, [abilities, query, category, scope]);
 
   return (
     <aside className="panel-surface flex flex-col gap-2 rounded-2xl p-3 shadow-section">

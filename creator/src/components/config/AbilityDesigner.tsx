@@ -11,8 +11,10 @@ import {
 import {
   AbilitiesList,
   ABILITY_CATEGORIES,
+  ABILITY_SCOPE_FILTERS,
   categoryFor,
   type AbilityCategoryKey,
+  type AbilityScopeFilter,
 } from "./abilities/AbilitiesList";
 import { AbilityEditor } from "./abilities/AbilityEditor";
 
@@ -58,6 +60,7 @@ export function AbilityDesigner({
   const abilities = config.abilities;
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [category, setCategory] = useState<AbilityCategoryKey>("all");
+  const [scope, setScope] = useState<AbilityScopeFilter>("all");
 
   useEffect(() => {
     if (selectedId && abilities[selectedId]) return;
@@ -216,6 +219,26 @@ export function AbilityDesigner({
             </button>
           );
         })}
+        <span aria-hidden="true" className="mx-1 h-4 w-px bg-[var(--chrome-stroke)]" />
+        {ABILITY_SCOPE_FILTERS.map((s) => {
+          const active = scope === s.key;
+          return (
+            <button
+              key={s.key}
+              type="button"
+              onClick={() => setScope(s.key)}
+              aria-pressed={active}
+              className={cx(
+                "focus-ring inline-flex items-center rounded-full border px-3 py-1 font-display text-2xs uppercase tracking-[0.16em] transition",
+                active
+                  ? "border-accent/60 bg-accent/15 text-accent"
+                  : "border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] text-text-muted hover:border-accent/30 hover:text-accent",
+              )}
+            >
+              {s.label}
+            </button>
+          );
+        })}
       </div>
 
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
@@ -223,6 +246,7 @@ export function AbilityDesigner({
           <AbilitiesList
             abilities={abilities}
             category={category}
+            scope={scope}
             selectedId={selectedId}
             onSelect={setSelectedId}
             onAdd={addAbility}

@@ -22,6 +22,8 @@ const TEMPLATE_DOT_COLORS: Record<ArticleTemplate, string> = {
   class: "var(--color-template-profession)",
   occupation: "var(--color-template-profession)",
   profession: "var(--color-template-profession)",
+  talent: "var(--color-template-ability)",
+  creature_power: "var(--color-template-ability)",
   ability: "var(--color-template-ability)",
   freeform: "var(--color-template-freeform)",
   story: "var(--color-template-story)",

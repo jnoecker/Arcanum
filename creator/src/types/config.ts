@@ -98,6 +98,19 @@ export interface AbilityDefinitionConfig {
    * once the player meets level, class, and prerequisite gates.
    */
   skillPointCost?: number;
+  /**
+   * Who wields this ability. When omitted, falls back to "player" if a
+   * `requiredClass` is set, otherwise "creature". Set explicitly to
+   * disambiguate creature powers without a `requiredClass`.
+   */
+  scope?: "player" | "creature";
+}
+
+/** Resolve the effective scope of an ability, honoring the explicit field
+ *  when set and otherwise inferring from `requiredClass`. */
+export function abilityScope(ability: AbilityDefinitionConfig): "player" | "creature" {
+  if (ability.scope) return ability.scope;
+  return ability.requiredClass || ability.classRestriction ? "player" : "creature";
 }
 
 // ─── Status Effects ─────────────────────────────────────────────────

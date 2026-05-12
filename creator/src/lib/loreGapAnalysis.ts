@@ -30,6 +30,7 @@ export function analyzeLoreGaps(lore: WorldLore): LoreGap[] {
     { template: "item", label: "Items" },
     { template: "class", label: "Classes" },
     { template: "occupation", label: "Occupations" },
+    { template: "talent", label: "Talents" },
     { template: "language", label: "Languages" },
   ];
   for (const { template, label } of expectedTemplates) {

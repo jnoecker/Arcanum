@@ -8,7 +8,7 @@ import { extractMentionCounts } from "@/lib/loreRelations";
 
 /** Legacy template ids that we keep loadable but should not surface as a
  *  template you'd switch INTO via the Inspector picker. */
-const HIDDEN_LEGACY_TEMPLATES = new Set(["species", "profession"]);
+const HIDDEN_LEGACY_TEMPLATES = new Set(["species", "profession", "ability"]);
 
 function TemplateChooser({
   article,

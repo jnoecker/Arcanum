@@ -56,8 +56,8 @@ export const DEFAULT_TEMPLATE_BY_KIND: Record<SourceKind, ArticleTemplate> = {
   // playable peoples, so they land in the Bestiary.
   race: "ancestry",
   class: "class",
-  ability: "ability",
-  statusEffect: "ability",
+  ability: "talent",
+  statusEffect: "talent",
   pet: "bestiary",
   mob: "bestiary",
   item: "item",
@@ -265,11 +265,11 @@ function convertAbility(id: string, ability: AbilityDefinitionConfig): Omit<Worl
 
   const fields: Record<string, unknown> = {
     abilityType: "spell",
-    resource_cost: `${ability.manaCost} mana`,
+    resourceCost: `${ability.manaCost} mana`,
     cooldown: `${ability.cooldownMs} ms`,
     effect: ability.description ?? "",
   };
-  if (ability.requiredClass) fields.profession = ability.requiredClass;
+  if (ability.requiredClass) fields.owningClass = ability.requiredClass;
 
   return {
     loreId: makeLoreId("ability", title),

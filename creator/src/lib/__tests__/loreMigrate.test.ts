@@ -113,4 +113,41 @@ describe("migrateLegacyTemplates", () => {
     expect(result.speciesToAncestry).toBe(0);
     expect(result.professionToClass).toBe(0);
   });
+
+  it("reroutes ability articles linked to a class via profession ref to talent", () => {
+    const lore = mkLore([
+      mkArticle({ id: "wiz", title: "Wizard", template: "profession" }),
+      mkArticle({
+        id: "fireball",
+        title: "Fireball",
+        template: "ability",
+        fields: { profession: "wiz" },
+      }),
+      mkArticle({
+        id: "draconic_roar",
+        title: "Draconic Roar",
+        template: "ability",
+        fields: {},
+      }),
+    ]);
+    const config = mkConfig({ classes: { wizard: "Wizard" } });
+
+    const result = migrateLegacyTemplates(lore, config);
+    // profession ref points at an article that migrates to class → talent
+    expect(result.lore.articles.fireball!.template).toBe("talent");
+    // no class ref, project has gameplay classes → creature_power
+    expect(result.lore.articles.draconic_roar!.template).toBe("creature_power");
+    expect(result.abilityToTalent).toBe(1);
+    expect(result.abilityToCreaturePower).toBe(1);
+  });
+
+  it("defaults orphan ability articles to talent in lore-first mode", () => {
+    const lore = mkLore([
+      mkArticle({ id: "spark", title: "Cantrip Spark", template: "ability", fields: {} }),
+    ]);
+
+    const result = migrateLegacyTemplates(lore, null);
+    expect(result.lore.articles.spark!.template).toBe("talent");
+    expect(result.abilityToTalent).toBe(1);
+  });
 });

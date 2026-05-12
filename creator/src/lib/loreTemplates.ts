@@ -311,10 +311,66 @@ export const TEMPLATE_SCHEMAS: Record<ArticleTemplate, TemplateSchema> = {
     ],
   },
 
+  talent: {
+    template: "talent",
+    label: "Talent",
+    pluralLabel: "Talents",
+    fields: [
+      { key: "abilityType", label: "Type", type: "select", options: [
+        { value: "spell", label: "Spell" },
+        { value: "skill", label: "Skill" },
+        { value: "passive", label: "Passive" },
+        { value: "ultimate", label: "Ultimate" },
+      ]},
+      { key: "owningClass", label: "Class", type: "article_ref", placeholder: "Which class wields this talent" },
+      { key: "resourceCost", label: "Cost", type: "text", placeholder: "50 mana, 2 charges..." },
+      { key: "cooldown", label: "Cooldown", type: "text", placeholder: "Instant, 10s, 5 min..." },
+      { key: "range", label: "Range", type: "text", placeholder: "Self, melee, 30m..." },
+      { key: "tier", label: "Tier", type: "select", options: [
+        { value: "novice", label: "Novice" },
+        { value: "adept", label: "Adept" },
+        { value: "master", label: "Master" },
+        { value: "transcendent", label: "Transcendent" },
+      ]},
+      { key: "prerequisites", label: "Prerequisite talents", type: "article_refs" },
+      { key: "effect", label: "Effect", type: "textarea", placeholder: "What the talent does mechanically and narratively..." },
+      { key: "ranks", label: "Ranks / upgrades", type: "textarea", placeholder: "How it improves at higher levels..." },
+      { key: "appearance", label: "Appearance", type: "textarea", placeholder: "Visual effect — energy, color, shape, motion of the spell or skill..." },
+    ],
+  },
+
+  creature_power: {
+    template: "creature_power",
+    label: "Creature power",
+    pluralLabel: "Creature powers",
+    fields: [
+      { key: "powerType", label: "Type", type: "select", options: [
+        { value: "signature_attack", label: "Signature attack" },
+        { value: "ritual", label: "Ritual" },
+        { value: "passive_aura", label: "Passive aura" },
+        { value: "transformation", label: "Transformation" },
+        { value: "mythic_event", label: "Mythic event" },
+      ]},
+      { key: "originatingCreature", label: "Wielder", type: "article_ref", placeholder: "Which bestiary entry, faction, or mythic figure uses this" },
+      { key: "frequency", label: "Frequency", type: "text", placeholder: "Signature move, once per encounter, rare..." },
+      { key: "dangerLevel", label: "Danger", type: "select", options: [
+        { value: "nuisance", label: "Nuisance" },
+        { value: "harmful", label: "Harmful" },
+        { value: "lethal", label: "Lethal" },
+        { value: "calamitous", label: "Calamitous" },
+        { value: "world_ending", label: "World-ending" },
+      ]},
+      { key: "roomMessage", label: "Room message", type: "text", placeholder: "The lich raises its hand and the air screams..." },
+      { key: "effect", label: "Effect", type: "textarea", placeholder: "What the power does mechanically and narratively..." },
+      { key: "appearance", label: "Appearance", type: "textarea", placeholder: "Visual effect — energy, color, shape, motion..." },
+    ],
+  },
+
+  /** @deprecated Replaced by `talent` (player) and `creature_power` (NPC/mythic). Kept for back-compat with old saves. */
   ability: {
     template: "ability",
-    label: "Ability",
-    pluralLabel: "Abilities",
+    label: "Ability (legacy)",
+    pluralLabel: "Abilities (legacy)",
     fields: [
       { key: "abilityType", label: "Type", type: "select", options: [
         { value: "spell", label: "Spell" },
@@ -428,6 +484,8 @@ const TEMPLATE_TINTS: Partial<Record<string, string>> = {
   class:         "var(--color-template-profession)",
   occupation:    "var(--color-template-profession)",
   profession:    "var(--color-template-profession)",
+  talent:        "var(--color-template-ability)",
+  creature_power: "var(--color-template-ability)",
   ability:       "var(--color-template-ability)",
   freeform:      "var(--color-template-freeform)",
   story:         "var(--color-template-story)",

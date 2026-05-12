@@ -12,6 +12,9 @@ export interface LegacyTemplateMigrationResult {
   /** profession → class (matched a class) or occupation (no match). */
   professionToClass: number;
   professionToOccupation: number;
+  /** ability → talent (linked to a class) or creature_power (orphan). */
+  abilityToTalent: number;
+  abilityToCreaturePower: number;
 }
 
 /**
@@ -45,9 +48,14 @@ export function migrateLegacyTemplates(
   let speciesToBestiary = 0;
   let professionToClass = 0;
   let professionToOccupation = 0;
+  let abilityToTalent = 0;
+  let abilityToCreaturePower = 0;
   let changed = false;
   const nextArticles: Record<string, Article> = {};
 
+  // First pass: migrate species and profession. The result of this pass is
+  // what the ability migration consults when checking whether an ability's
+  // `profession` field points at a now-class article.
   for (const [id, article] of Object.entries(articles)) {
     if (article.template === "species") {
       const target = hasRaces
@@ -70,12 +78,48 @@ export function migrateLegacyTemplates(
     }
   }
 
+  // Second pass: migrate legacy ability articles. An ability whose
+  // `profession` ref points at a (now) Class article becomes a Talent.
+  // Lore-first projects (no gameplay classes) default to Talent so the
+  // lore-to-config arc keeps flowing. The user can flip the rare
+  // creature_power case via the Inspector template picker.
+  for (const [id, article] of Object.entries(nextArticles)) {
+    if (article.template !== "ability") continue;
+    const professionRef = typeof article.fields.profession === "string"
+      ? article.fields.profession
+      : "";
+    const linkedArticle = professionRef ? nextArticles[professionRef] : undefined;
+    let target: "talent" | "creature_power";
+    if (linkedArticle?.template === "class") {
+      target = "talent";
+    } else if (linkedArticle?.template === "occupation" || linkedArticle?.template === "bestiary") {
+      target = "creature_power";
+    } else if (!hasClasses) {
+      // Lore-first: optimistically a player talent.
+      target = "talent";
+    } else if (professionRef) {
+      // Profession ref pointed somewhere — but not a Class. Probably a
+      // miswritten ref or a vestigial occupation; non-player.
+      target = "creature_power";
+    } else {
+      // No ref at all and the project has gameplay classes — treat as a
+      // creature power until proven otherwise.
+      target = "creature_power";
+    }
+    if (target === "talent") abilityToTalent++;
+    else abilityToCreaturePower++;
+    nextArticles[id] = { ...article, template: target };
+    changed = true;
+  }
+
   return {
     lore: changed ? { ...lore, articles: nextArticles } : lore,
     speciesToAncestry,
     speciesToBestiary,
     professionToClass,
     professionToOccupation,
+    abilityToTalent,
+    abilityToCreaturePower,
   };
 }
 

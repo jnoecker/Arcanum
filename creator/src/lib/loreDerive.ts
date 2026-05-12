@@ -4,6 +4,7 @@ import { AI_ENABLED } from "@/lib/featureFlags";
 import { buildToneDirective } from "@/lib/loreGeneration";
 import { buildRagContext, type RetrievalDiagnostic } from "@/lib/rag/loreContext";
 import { resolveImageDataUrl } from "@/lib/useImageSrc";
+import { llmCompleteWithVision } from "@/lib/llmVision";
 import type {
   CalendarEra,
   CalendarSystem,
@@ -344,7 +345,7 @@ Output 2-4 paragraphs covering the major continents and regions, the climate var
   }
   userPromptParts.push("", "---", "Write the world geography.");
 
-  const result = await invoke<string>("llm_complete_with_vision", {
+  const result = await llmCompleteWithVision({
     systemPrompt,
     userPrompt: userPromptParts.join("\n"),
     imageDataUrl,

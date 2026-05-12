@@ -1,4 +1,3 @@
-import { invoke } from "@tauri-apps/api/core";
 import type { WorldLore, LoreMap, ZonePlan, ZonePlanRegion } from "@/types/lore";
 import {
   cellRangeToPixelBox,
@@ -7,6 +6,7 @@ import {
   type GridSpec,
 } from "./gridOverlay";
 import { AI_ENABLED } from "@/lib/featureFlags";
+import { llmCompleteWithVision } from "@/lib/llmVision";
 
 // ─── Generation contract ────────────────────────────────────────────
 
@@ -322,7 +322,7 @@ async function runStructurePass(
     "Identify the zones and their cardinal regions. JSON only.",
   ].join("\n");
 
-  const response = await invoke<string>("llm_complete_with_vision", {
+  const response = await llmCompleteWithVision({
     systemPrompt: STRUCTURE_SYSTEM_PROMPT,
     userPrompt,
     imageDataUrl,
@@ -405,7 +405,7 @@ Output ONLY valid JSON: { "zones": [ { "name": "...", "colStart": "A", "colEnd":
     `Reminder: place every one of the ${structure.length} zones. JSON only.`,
   ].join("\n");
 
-  const response = await invoke<string>("llm_complete_with_vision", {
+  const response = await llmCompleteWithVision({
     systemPrompt,
     userPrompt,
     imageDataUrl: gridDataUrl,
@@ -542,7 +542,7 @@ async function runSelfCheckPass(
     "Output the corrected JSON only.",
   ].join("\n");
 
-  const response = await invoke<string>("llm_complete_with_vision", {
+  const response = await llmCompleteWithVision({
     systemPrompt: SELF_CHECK_SYSTEM_PROMPT,
     userPrompt,
     imageDataUrl,
@@ -624,7 +624,7 @@ export async function generateZonePlans(
       "Identify the zones from the map, then for each zone report the bounding cell range using the visible grid labels. Respond with JSON only.",
     ].join("\n");
 
-    const response = await invoke<string>("llm_complete_with_vision", {
+    const response = await llmCompleteWithVision({
       systemPrompt: buildGridSystemPrompt(spec),
       userPrompt,
       imageDataUrl: overlay.dataUrl,
@@ -659,7 +659,7 @@ export async function generateZonePlans(
     "Before answering, mentally divide the map into thirds vertically and horizontally so you can spread zones across all populated regions. Then respond with JSON only.",
   ].join("\n");
 
-  const response = await invoke<string>("llm_complete_with_vision", {
+  const response = await llmCompleteWithVision({
     systemPrompt: SYSTEM_PROMPT,
     userPrompt,
     imageDataUrl,

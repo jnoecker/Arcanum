@@ -1,6 +1,6 @@
-import { invoke } from "@tauri-apps/api/core";
 import type { WorldLore, LoreMap } from "@/types/lore";
 import { AI_ENABLED } from "@/lib/featureFlags";
+import { llmCompleteWithVision } from "@/lib/llmVision";
 
 export interface MapFeatureSuggestion {
   label: string;
@@ -54,7 +54,7 @@ ${articleTitles.map((a) => `- ${a.title} (${a.template})`).join("\n")}
 
 Identify features on this map and estimate their pixel coordinates.`;
 
-  const response = await invoke<string>("llm_complete_with_vision", {
+  const response = await llmCompleteWithVision({
     systemPrompt: SYSTEM_PROMPT,
     userPrompt,
     imageDataUrl,

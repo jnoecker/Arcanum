@@ -129,10 +129,55 @@ export const TEMPLATE_SCHEMAS: Record<ArticleTemplate, TemplateSchema> = {
     ],
   },
 
+  ancestry: {
+    template: "ancestry",
+    label: "Ancestry",
+    pluralLabel: "Ancestries",
+    fields: [
+      { key: "heritage", label: "Heritage", type: "textarea", placeholder: "Cultural origin, lineage, and shared history..." },
+      { key: "size", label: "Size", type: "text", placeholder: "Small, medium, large..." },
+      { key: "traits", label: "Innate traits", type: "tags", placeholder: "Add a trait..." },
+      { key: "signatureAbilities", label: "Signature abilities", type: "tags", placeholder: "Add a signature ability..." },
+      { key: "statTendencies", label: "Stat tendencies", type: "text", placeholder: "Common stat leanings — Strong, Wise, Quick..." },
+      { key: "appearance", label: "Appearance", type: "textarea", placeholder: "Physical description — body, coloration, distinguishing features..." },
+    ],
+  },
+
+  bestiary: {
+    template: "bestiary",
+    label: "Bestiary entry",
+    pluralLabel: "Bestiary",
+    fields: [
+      { key: "habitat", label: "Habitat", type: "text", placeholder: "Where this creature lives" },
+      { key: "size", label: "Size", type: "text", placeholder: "Small, medium, large..." },
+      { key: "temperament", label: "Temperament", type: "text", placeholder: "Docile, aggressive, cunning..." },
+      {
+        key: "dangerRating", label: "Danger rating", type: "select", options: [
+          { value: "harmless", label: "Harmless" },
+          { value: "threat", label: "Threat" },
+          { value: "lethal", label: "Lethal" },
+          { value: "mythic", label: "Mythic" },
+        ],
+      },
+      { key: "signatureBehaviors", label: "Signature behaviors", type: "tags", placeholder: "Hunts in packs, mimics voices..." },
+      {
+        key: "rarity", label: "Rarity", type: "select", options: [
+          { value: "common", label: "Common" },
+          { value: "uncommon", label: "Uncommon" },
+          { value: "rare", label: "Rare" },
+          { value: "legendary", label: "Legendary" },
+          { value: "extinct", label: "Extinct" },
+        ],
+      },
+      { key: "appearance", label: "Appearance", type: "textarea", placeholder: "Physical description — body, coloration, distinguishing features..." },
+    ],
+  },
+
+  /** @deprecated Replaced by `ancestry` (playable) and `bestiary` (non-playable). Kept for back-compat with old saves. */
   species: {
     template: "species",
-    label: "Species",
-    pluralLabel: "Species",
+    label: "Species (legacy)",
+    pluralLabel: "Species (legacy)",
     fields: [
       { key: "habitat", label: "Habitat", type: "text", placeholder: "Where this species lives" },
       { key: "size", label: "Size", type: "text", placeholder: "Small, medium, large..." },
@@ -207,10 +252,47 @@ export const TEMPLATE_SCHEMAS: Record<ArticleTemplate, TemplateSchema> = {
     ],
   },
 
+  class: {
+    template: "class",
+    label: "Class",
+    pluralLabel: "Classes",
+    fields: [
+      { key: "role", label: "Role", type: "select", options: [
+        { value: "tank", label: "Tank" },
+        { value: "healer", label: "Healer" },
+        { value: "damage", label: "Damage" },
+        { value: "support", label: "Support" },
+        { value: "hybrid", label: "Hybrid" },
+      ]},
+      { key: "primaryStat", label: "Primary stat", type: "text", placeholder: "Strength, Intelligence, etc." },
+      { key: "resource", label: "Resource", type: "text", placeholder: "Mana, Rage, Energy..." },
+      { key: "playstyle", label: "Playstyle", type: "textarea", placeholder: "How this class plays in combat and exploration..." },
+      { key: "strengths", label: "Strengths", type: "tags", placeholder: "Add a strength..." },
+      { key: "weaknesses", label: "Weaknesses", type: "tags", placeholder: "Add a weakness..." },
+      { key: "keyAbilities", label: "Key abilities", type: "article_refs" },
+      { key: "appearance", label: "Appearance", type: "textarea", placeholder: "Iconic look — armor, garb, signature weapons, stance..." },
+    ],
+  },
+
+  occupation: {
+    template: "occupation",
+    label: "Occupation",
+    pluralLabel: "Occupations",
+    fields: [
+      { key: "socialRole", label: "Social role", type: "text", placeholder: "Innkeeper, blacksmith, scribe, magistrate..." },
+      { key: "whereFound", label: "Where found", type: "text", placeholder: "Settlements, courts, wilderness..." },
+      { key: "dailyWork", label: "Daily work", type: "textarea", placeholder: "What they actually do day-to-day..." },
+      { key: "tools", label: "Tools of the trade", type: "tags", placeholder: "Add a tool..." },
+      { key: "culturalSignificance", label: "Cultural significance", type: "textarea", placeholder: "Standing, traditions, guild structures, taboos..." },
+      { key: "appearance", label: "Appearance", type: "textarea", placeholder: "Garb, tools-on-belt, signs of the trade..." },
+    ],
+  },
+
+  /** @deprecated Replaced by `class` (playable) and `occupation` (non-playable). Kept for back-compat with old saves. */
   profession: {
     template: "profession",
-    label: "Profession",
-    pluralLabel: "Professions",
+    label: "Profession (legacy)",
+    pluralLabel: "Professions (legacy)",
     fields: [
       { key: "role", label: "Role", type: "select", options: [
         { value: "tank", label: "Tank" },

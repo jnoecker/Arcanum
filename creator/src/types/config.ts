@@ -674,6 +674,9 @@ export interface RaceDefinitionConfig {
   statMods?: StatMap;
   bodyDescription?: string;
   staffPrompt?: string;
+  /** Whether this race appears in character creation. Defaults to true when
+   *  omitted. Mirrors the same field on `ClassDefinitionConfig`. */
+  selectable?: boolean;
 }
 
 // ─── Images ─────────────────────────────────────────────────────────

@@ -24,10 +24,12 @@ export function analyzeLoreGaps(lore: WorldLore): LoreGap[] {
     { template: "character", label: "Characters" },
     { template: "location", label: "Locations" },
     { template: "organization", label: "Organizations" },
-    { template: "species", label: "Species" },
+    { template: "ancestry", label: "Ancestries" },
+    { template: "bestiary", label: "Bestiary" },
     { template: "event", label: "Events" },
     { template: "item", label: "Items" },
-    { template: "profession", label: "Professions" },
+    { template: "class", label: "Classes" },
+    { template: "occupation", label: "Occupations" },
     { template: "language", label: "Languages" },
   ];
   for (const { template, label } of expectedTemplates) {
@@ -64,9 +66,13 @@ export function analyzeLoreGaps(lore: WorldLore): LoreGap[] {
     }
   }
 
-  // 3. Species with no characters
-  const species = byTemplate.get("species") ?? [];
-  for (const sp of species) {
+  // 3. Ancestries / bestiary with no characters
+  const peoples = [
+    ...(byTemplate.get("ancestry") ?? []),
+    ...(byTemplate.get("bestiary") ?? []),
+    ...(byTemplate.get("species") ?? []),
+  ];
+  for (const sp of peoples) {
     const hasChars = articles.some(
       (a) =>
         a.template === "character" &&
@@ -74,14 +80,17 @@ export function analyzeLoreGaps(lore: WorldLore): LoreGap[] {
           (a.fields.race as string)?.toLowerCase() ===
             sp.title.toLowerCase() ||
           (a.fields.species as string)?.toLowerCase() ===
+            sp.title.toLowerCase() ||
+          (a.fields.ancestry as string)?.toLowerCase() ===
             sp.title.toLowerCase()),
     );
     if (!hasChars) {
+      const label = sp.template === "bestiary" ? "Unencountered creature" : "Unrepresented ancestry";
       gaps.push({
-        category: "Unrepresented species",
-        message: `Species "${sp.title}" has no associated character articles`,
+        category: label,
+        message: `${sp.template === "bestiary" ? "Creature" : "Ancestry"} "${sp.title}" has no associated character articles`,
         articleIds: [sp.id],
-        suggestion: `Create a character of species ${sp.title}`,
+        suggestion: `Create a character linked to ${sp.title}`,
       });
     }
   }

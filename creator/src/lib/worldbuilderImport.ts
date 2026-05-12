@@ -51,12 +51,15 @@ export const KIND_LABELS: Record<SourceKind, string> = {
 };
 
 export const DEFAULT_TEMPLATE_BY_KIND: Record<SourceKind, ArticleTemplate> = {
-  race: "species",
-  class: "profession",
+  // Selectable gameplay races become playable Ancestry articles; classes
+  // become playable Class articles. Mobs and pets are creatures, not
+  // playable peoples, so they land in the Bestiary.
+  race: "ancestry",
+  class: "class",
   ability: "ability",
   statusEffect: "ability",
-  pet: "species",
-  mob: "species",
+  pet: "bestiary",
+  mob: "bestiary",
   item: "item",
   shop: "location",
   quest: "event",

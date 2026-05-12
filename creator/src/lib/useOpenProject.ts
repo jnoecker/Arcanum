@@ -7,6 +7,7 @@ import { useConfigStore } from "@/stores/configStore";
 import { useLoreStore } from "@/stores/loreStore";
 import { loadProjectZones, loadProjectConfig } from "@/lib/loader";
 import { loadLore } from "@/lib/lorePersistence";
+import { migrateLegacyTemplates } from "@/lib/loreMigrate";
 import { useSpriteDefinitionStore } from "@/stores/spriteDefinitionStore";
 import { useStoryStore } from "@/stores/storyStore";
 import { loadAllStoryIds } from "@/lib/storyPersistence";
@@ -74,9 +75,15 @@ export function useOpenProject() {
       setConfig(config);
     }
 
-    // Load lore (creator-only, not deployed)
+    // Load lore (creator-only, not deployed). Reroute legacy species /
+    // profession articles to the ancestry/bestiary/class/occupation
+    // taxonomy once the config is in hand so the heuristic can match
+    // article titles against gameplay race/class definitions.
     loadLore(project)
-      .then((lore) => useLoreStore.getState().setLore(lore))
+      .then((lore) => {
+        const { lore: migrated } = migrateLegacyTemplates(lore, config ?? null);
+        useLoreStore.getState().setLore(migrated);
+      })
       .catch(() => {});
 
     // Scan story IDs (lazy -- full stories loaded on selection)

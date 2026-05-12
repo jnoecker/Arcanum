@@ -9,13 +9,21 @@ export type ArticleTemplate =
   | "location"
   | "organization"
   | "item"
-  | "species"
+  | "ancestry"
+  | "bestiary"
   | "event"
   | "language"
-  | "profession"
+  | "class"
+  | "occupation"
   | "ability"
   | "freeform"
-  | "story";
+  | "story"
+  // Legacy template ids — kept in the union so old YAML still loads cleanly.
+  // The migration in `loreMigrate.ts` reroutes these to ancestry/bestiary /
+  // class/occupation on project open; any leftover articles still render via
+  // their fallback schemas in TEMPLATE_SCHEMAS.
+  | "species"
+  | "profession";
 
 /** Custom template ID — any string not in the built-in set */
 export type CustomTemplateId = string;

@@ -3,11 +3,32 @@ import type { Article } from "@/types/lore";
 import { TEMPLATE_SCHEMAS } from "@/lib/loreTemplates";
 import { buildWorldContext } from "@/lib/loreGeneration";
 import { tiptapToPlainText, plainTextToTiptap } from "@/lib/loreRelations";
+import { getEffectiveSections } from "@/lib/loreSections";
 import { getRewriteSystemPrompt } from "@/lib/lorePrompts";
 import { AI_ENABLED } from "@/lib/featureFlags";
 import { retrieveLoreContext } from "@/lib/rag";
 import { formatContextForPrompt } from "@/lib/rag/promptAssembly";
 import type { RetrievedChunk } from "@/lib/rag/types";
+
+/**
+ * Read the article body the way the editor sees it: pull from richtext
+ * sections (skipping private ones), falling back to the legacy `content`
+ * field for articles that haven't been migrated yet. Multi-section
+ * articles get all public richtext bodies concatenated.
+ */
+function readArticleBody(article: Article): string {
+  const sections = getEffectiveSections(article);
+  const richtext = sections.filter((s) => s.type === "richtext" && !s.private);
+  if (richtext.length === 0) return tiptapToPlainText(article.content);
+  return richtext
+    .map((s) => {
+      const heading = s.title ? `## ${s.title}\n` : "";
+      const body = tiptapToPlainText(("body" in s ? s.body : "") ?? "");
+      return `${heading}${body}`.trim();
+    })
+    .filter(Boolean)
+    .join("\n\n");
+}
 
 export interface RetrievalDiagnostic {
   usedRag: boolean;
@@ -85,7 +106,7 @@ export async function rewriteArticle(
     article,
     instructions,
   );
-  const currentContent = tiptapToPlainText(article.content);
+  const currentContent = readArticleBody(article);
 
   const fieldSummary = schema
     ? schema.fields

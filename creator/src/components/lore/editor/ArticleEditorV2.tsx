@@ -86,14 +86,26 @@ export function ArticleEditorV2({ articleId }: { articleId: string }) {
   const handleRewriteAccept = useCallback(
     (result: RewriteResult) => {
       if (!article) return;
+      // Update fields and keep the legacy `content` field in sync (used by
+      // exporters and the section-migration path), but the source of truth
+      // for what the editor renders is the richtext section bodies.
       const merged: Partial<Article> = {};
       if (result.content) merged.content = result.content;
       if (Object.keys(result.fields).length > 0) {
         merged.fields = { ...article.fields, ...result.fields };
       }
       updateArticle(article.id, merged);
+
+      if (result.content) {
+        const firstRichtext = sections.find(
+          (s) => s.type === "richtext" && !s.private,
+        );
+        if (firstRichtext) {
+          updateSection(article.id, firstRichtext.id, { body: result.content });
+        }
+      }
     },
-    [article, updateArticle],
+    [article, sections, updateArticle, updateSection],
   );
 
   // ─── Picker plumbing ────────────────────────────────────────────

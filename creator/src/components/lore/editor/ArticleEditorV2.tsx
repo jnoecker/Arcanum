@@ -5,6 +5,8 @@ import { TEMPLATE_SCHEMAS, templateTint } from "@/lib/loreTemplates";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { RewriteDialog } from "@/components/lore/RewriteDialog";
 import type { RewriteResult } from "@/lib/loreRewrite";
+import { ScaffoldGameplayDialog } from "./ScaffoldGameplayDialog";
+import { useConfigStore } from "@/stores/configStore";
 import { SectionRail } from "./SectionRail";
 import { SectionEditorBody } from "./SectionEditorBody";
 import { Inspector } from "./Inspector";
@@ -37,6 +39,9 @@ export function ArticleEditorV2({ articleId }: { articleId: string }) {
   const [renaming, setRenaming] = useState(false);
   const [renameDraft, setRenameDraft] = useState("");
   const [showRewrite, setShowRewrite] = useState(false);
+  const [showScaffold, setShowScaffold] = useState<null | "class" | "race">(null);
+  const config = useConfigStore((s) => s.config);
+  const updateConfig = useConfigStore((s) => s.updateConfig);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   // Migrate legacy articles into the section model on first open.
@@ -286,6 +291,26 @@ export function ArticleEditorV2({ articleId }: { articleId: string }) {
           >
             Rewrite
           </button>
+          {article && article.template === "class" && config && (
+            <button
+              type="button"
+              className="ae-topbar__btn"
+              onClick={() => setShowScaffold("class")}
+              title="Scaffold a gameplay class from this article — adds a row to application.yaml::classes"
+            >
+              Scaffold class
+            </button>
+          )}
+          {article && article.template === "ancestry" && config && (
+            <button
+              type="button"
+              className="ae-topbar__btn"
+              onClick={() => setShowScaffold("race")}
+              title="Scaffold a gameplay race from this article — adds a row to application.yaml::races"
+            >
+              Scaffold race
+            </button>
+          )}
           <button
             type="button"
             className="ae-topbar__btn"
@@ -367,6 +392,7 @@ export function ArticleEditorV2({ articleId }: { articleId: string }) {
       <Inspector
         article={article}
         onFieldChange={handleFieldChange}
+        onTemplateChange={(template) => patchArticle({ template })}
         onTagsChange={(tags) => patchArticle({ tags })}
         onRelationsChange={(relations) => patchArticle({ relations })}
         onCollapse={() => setShowInspector(false)}
@@ -412,6 +438,15 @@ export function ArticleEditorV2({ articleId }: { articleId: string }) {
             setConfirmDelete(false);
             deleteArticle(articleId);
           }}
+        />
+      )}
+      {showScaffold && article && config && (
+        <ScaffoldGameplayDialog
+          kind={showScaffold}
+          article={article}
+          config={config}
+          onAccept={(next) => updateConfig(next)}
+          onClose={() => setShowScaffold(null)}
         />
       )}
       {showRewrite && (

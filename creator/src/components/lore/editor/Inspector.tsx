@@ -1,14 +1,51 @@
 import { useMemo, useState } from "react";
 import type { Article, ArticleRelation } from "@/types/lore";
 import { useLoreStore, selectArticles } from "@/stores/loreStore";
-import { TEMPLATE_SCHEMAS, templateTint } from "@/lib/loreTemplates";
+import { TEMPLATE_SCHEMAS, getAllTemplateSchemas, templateTint } from "@/lib/loreTemplates";
 import { TemplateFields } from "@/components/lore/TemplateFields";
 import { totalWordCount } from "@/lib/loreSections";
 import { extractMentionCounts } from "@/lib/loreRelations";
 
+/** Legacy template ids that we keep loadable but should not surface as a
+ *  template you'd switch INTO via the Inspector picker. */
+const HIDDEN_LEGACY_TEMPLATES = new Set(["species", "profession"]);
+
+function TemplateChooser({
+  article,
+  onChange,
+}: {
+  article: Article;
+  onChange: (template: Article["template"]) => void;
+}) {
+  const customTemplates = useLoreStore((s) => s.lore?.customTemplates);
+  const schemas = useMemo(
+    () =>
+      getAllTemplateSchemas(customTemplates).filter(
+        (s) =>
+          !HIDDEN_LEGACY_TEMPLATES.has(s.template) || s.template === article.template,
+      ),
+    [customTemplates, article.template],
+  );
+  return (
+    <select
+      value={article.template}
+      onChange={(e) => onChange(e.target.value as Article["template"])}
+      className="ornate-input mb-2 w-full px-2 py-1 text-2xs"
+      aria-label="Article template"
+    >
+      {schemas.map((s) => (
+        <option key={s.template} value={s.template}>
+          {s.label}
+        </option>
+      ))}
+    </select>
+  );
+}
+
 interface InspectorProps {
   article: Article;
   onFieldChange: (key: string, value: unknown) => void;
+  onTemplateChange: (template: Article["template"]) => void;
   onTagsChange: (tags: string[] | undefined) => void;
   onRelationsChange: (relations: ArticleRelation[] | undefined) => void;
   onCollapse: () => void;
@@ -297,6 +334,7 @@ function ConnectionsPanel({
 export function Inspector({
   article,
   onFieldChange,
+  onTemplateChange,
   onTagsChange,
   onRelationsChange,
   onCollapse,
@@ -342,15 +380,16 @@ export function Inspector({
         </button>
       </div>
 
-      {schema && schema.fields.length > 0 && (
-        <div className="ae-iblock">
-          <div className="ae-iblock__head">
-            <span className="ae-iblock__title">{schema.label} · Template</span>
-            <span className="ae-iblock__chip">{article.id}</span>
-          </div>
-          <TemplateFields article={article} onFieldChange={onFieldChange} />
+      <div className="ae-iblock">
+        <div className="ae-iblock__head">
+          <span className="ae-iblock__title">Template</span>
+          <span className="ae-iblock__chip">{article.id}</span>
         </div>
-      )}
+        <TemplateChooser article={article} onChange={onTemplateChange} />
+        {schema && schema.fields.length > 0 && (
+          <TemplateFields article={article} onFieldChange={onFieldChange} />
+        )}
+      </div>
 
       <div className="ae-iblock">
         <div className="ae-iblock__head">

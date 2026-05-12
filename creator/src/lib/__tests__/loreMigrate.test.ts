@@ -71,15 +71,34 @@ describe("migrateLegacyTemplates", () => {
     expect(result.professionToOccupation).toBe(1);
   });
 
-  it("falls back to non-playable when no config is available", () => {
+  it("defaults to playable variants when the project has no gameplay races/classes (lore-first flow)", () => {
     const lore = mkLore([
       mkArticle({ id: "elf", title: "Sylflorae", template: "species" }),
+      mkArticle({ id: "dragon", title: "Obsidian Wyrm", template: "species" }),
       mkArticle({ id: "wiz", title: "Wizard", template: "profession" }),
+      mkArticle({ id: "smith", title: "Blacksmith", template: "profession" }),
     ]);
 
     const result = migrateLegacyTemplates(lore, null);
-    expect(result.lore.articles.elf!.template).toBe("bestiary");
-    expect(result.lore.articles.wiz!.template).toBe("occupation");
+    // Lore-first: everything goes playable so the user can keep flowing
+    // into gameplay scaffolding. They can flip individual entries (e.g. the
+    // wyrm, the blacksmith) back to bestiary/occupation via the Inspector.
+    expect(result.lore.articles.elf!.template).toBe("ancestry");
+    expect(result.lore.articles.dragon!.template).toBe("ancestry");
+    expect(result.lore.articles.wiz!.template).toBe("class");
+    expect(result.lore.articles.smith!.template).toBe("class");
+  });
+
+  it("only routes non-matches to bestiary/occupation when gameplay races/classes do exist", () => {
+    const lore = mkLore([
+      mkArticle({ id: "elf", title: "Sylflorae", template: "species" }),
+      mkArticle({ id: "dragon", title: "Obsidian Wyrm", template: "species" }),
+    ]);
+    const config = mkConfig({ races: { sylflorae: "Sylflorae" } });
+
+    const result = migrateLegacyTemplates(lore, config);
+    expect(result.lore.articles.elf!.template).toBe("ancestry");
+    expect(result.lore.articles.dragon!.template).toBe("bestiary");
   });
 
   it("leaves non-legacy templates untouched and returns the same lore reference when nothing changes", () => {

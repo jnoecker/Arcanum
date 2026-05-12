@@ -16,14 +16,17 @@ export interface LegacyTemplateMigrationResult {
 
 /**
  * Reroute legacy `species` and `profession` articles to the playable /
- * non-playable variants introduced by #236. The heuristic compares the
- * article's title (case-insensitive) against the project's gameplay race
- * and class definitions:
+ * non-playable variants introduced by #236.
  *
- * - `species` whose title matches a `config.races[*]` displayName or id
- *   becomes an `ancestry` article. Otherwise it becomes a `bestiary` entry.
- * - `profession` whose title matches a `config.classes[*]` displayName or
- *   id becomes a `class` article. Otherwise it becomes an `occupation`.
+ * - If gameplay races/classes exist, compare the article's title
+ *   (case-insensitive) against `config.races[*]` / `config.classes[*]`.
+ *   A match → playable variant (ancestry / class). No match → non-playable
+ *   variant (bestiary / occupation).
+ * - If gameplay races/classes do NOT exist yet (lore-first projects), we
+ *   default to the playable variant. The whole point of writing the lore
+ *   first is to scaffold gameplay from it; routing everything to bestiary
+ *   would frustrate that flow. The user can flip individual articles
+ *   back to bestiary/occupation via the Inspector's template picker.
  *
  * Pure transform — the loaded YAML on disk only changes once the caller
  * persists the returned lore.
@@ -35,6 +38,8 @@ export function migrateLegacyTemplates(
   const articles = lore.articles ?? {};
   const racesByKey = buildKeyLookup(config?.races, (r) => r.displayName);
   const classesByKey = buildKeyLookup(config?.classes, (c) => c.displayName);
+  const hasRaces = racesByKey.size > 0;
+  const hasClasses = classesByKey.size > 0;
 
   let speciesToAncestry = 0;
   let speciesToBestiary = 0;
@@ -45,13 +50,17 @@ export function migrateLegacyTemplates(
 
   for (const [id, article] of Object.entries(articles)) {
     if (article.template === "species") {
-      const target = matches(article.title, racesByKey) ? "ancestry" : "bestiary";
+      const target = hasRaces
+        ? matches(article.title, racesByKey) ? "ancestry" : "bestiary"
+        : "ancestry"; // lore-first default — assume the article is a playable people
       if (target === "ancestry") speciesToAncestry++;
       else speciesToBestiary++;
       nextArticles[id] = { ...article, template: target };
       changed = true;
     } else if (article.template === "profession") {
-      const target = matches(article.title, classesByKey) ? "class" : "occupation";
+      const target = hasClasses
+        ? matches(article.title, classesByKey) ? "class" : "occupation"
+        : "class"; // lore-first default — assume the article is a playable class
       if (target === "class") professionToClass++;
       else professionToOccupation++;
       nextArticles[id] = { ...article, template: target };

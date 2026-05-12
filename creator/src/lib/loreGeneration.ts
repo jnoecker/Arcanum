@@ -4,6 +4,7 @@ import type { Article, ArticleTemplate, CalendarSystem, CalendarEra, TimelineEve
 import { TEMPLATE_SCHEMAS } from "@/lib/loreTemplates";
 import { tiptapToPlainText } from "@/lib/loreRelations";
 import { AI_ENABLED } from "@/lib/featureFlags";
+import { buildRagContext } from "@/lib/rag/loreContext";
 
 // ─── World context builder ──────────────────────────────────────────
 
@@ -198,7 +199,7 @@ export function buildWorldContext(): string {
   return parts.join("\n") || "A fantasy MUD game world";
 }
 
-/** @deprecated Use buildWorldContext() instead */
+/** @deprecated Used only as the legacy fallback when RAG retrieval is empty/unavailable. */
 function worldContextSummary(): string {
   return buildWorldContext();
 }
@@ -266,6 +267,15 @@ export async function generateArticle(opts: GenerateArticleOptions): Promise<Art
   const schema = TEMPLATE_SCHEMAS[opts.template];
   const fieldDesc = schema?.fields.map((f) => `  "${f.key}": ${f.type}`).join(",\n") ?? "";
 
+  const { context: worldContext, diagnostic } = await buildRagContext({
+    query: `${schema?.label ?? opts.template}: ${opts.concept}`,
+    fallback: () => worldContextSummary(),
+  });
+  console.log("[ArticleGen] context retrieval", {
+    usedRag: diagnostic.usedRag,
+    sources: diagnostic.sources.length,
+  });
+
   const userPrompt = `Generate a ${schema?.label ?? opts.template} article.
 Concept: ${opts.concept}
 
@@ -275,7 +285,7 @@ ${fieldDesc}
 }
 
 World context:
-${worldContextSummary()}`;
+${worldContext}`;
 
   const result = await invoke<string>("llm_complete", {
     systemPrompt: getArticleGenSystem(),
@@ -316,6 +326,16 @@ export interface GenerateRelatedOptions {
 
 export async function generateRelatedArticles(opts: GenerateRelatedOptions): Promise<Article[]> {
   if (!AI_ENABLED) throw new Error("AI features are not available in Community Edition");
+  const { context: worldContext, diagnostic } = await buildRagContext({
+    query: `${opts.sourceArticle.title} (${opts.sourceArticle.template}) ${opts.relationType}`,
+    excludeSourceIds: [opts.sourceArticle.id],
+    fallback: () => worldContextSummary(),
+  });
+  console.log("[RelatedGen] context retrieval", {
+    usedRag: diagnostic.usedRag,
+    sources: diagnostic.sources.length,
+  });
+
   const userPrompt = `Given this existing article:
 Title: ${opts.sourceArticle.title}
 Type: ${opts.sourceArticle.template}
@@ -326,7 +346,7 @@ Return a JSON array of articles, each with: { "title", "template", "fields", "co
 Valid templates: character, location, organization, item, species, event, language, profession, ability, freeform.
 
 World context:
-${worldContextSummary()}`;
+${worldContext}`;
 
   const result = await invoke<string>("llm_complete", {
     systemPrompt: getArticleGenSystem().replace("Generate a complete article as JSON", "Generate an array of articles as JSON"),

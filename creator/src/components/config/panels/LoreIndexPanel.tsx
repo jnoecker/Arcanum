@@ -1,16 +1,13 @@
 import { useEffect, useState } from "react";
 import { useAssetStore } from "@/stores/assetStore";
-import { useConfigStore } from "@/stores/configStore";
-import { useLoreStore } from "@/stores/loreStore";
 import { useProjectStore } from "@/stores/projectStore";
-import { useZoneStore } from "@/stores/zoneStore";
 import {
   clearIndex,
   getIndexStats,
   rebuildIndex,
-  type ChunkerInput,
   type IndexStats,
 } from "@/lib/rag";
+import { gatherChunkerInput } from "@/lib/rag/chunkerInput";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import type { Settings } from "@/types/assets";
 
@@ -68,22 +65,13 @@ export function LoreIndexPanel() {
     };
   }, [projectDir]);
 
-  function gatherInput(): ChunkerInput {
-    const lore = useLoreStore.getState().lore;
-    const config = useConfigStore.getState().config;
-    const zones = Array.from(useZoneStore.getState().zones.entries()).map(
-      ([zoneId, z]) => ({ zoneId, data: z.data }),
-    );
-    return { lore, config, zones };
-  }
-
   async function handleRebuild() {
     if (rebuilding) return;
     setError(null);
     setRebuilding(true);
     setProgressLine("Chunking…");
     try {
-      const next = await rebuildIndex(gatherInput(), (stage) => setProgressLine(stage));
+      const next = await rebuildIndex(gatherChunkerInput(), (stage) => setProgressLine(stage));
       setStats(next);
       setProgressLine("Done");
       setTimeout(() => setProgressLine(""), 1500);

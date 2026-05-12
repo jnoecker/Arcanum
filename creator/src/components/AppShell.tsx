@@ -6,6 +6,7 @@ import { MainArea } from "./MainArea";
 import { StatusBar } from "./StatusBar";
 import { useKeyboardShortcuts } from "@/lib/useKeyboardShortcuts";
 import { useAutoBackup } from "@/lib/useAutoBackup";
+import { useAutoIndexLore } from "@/lib/rag/autoIndex";
 import { useAssetStore } from "@/stores/assetStore";
 import { useProjectStore } from "@/stores/projectStore";
 import { CommandPalette } from "./ui/CommandPalette";
@@ -35,6 +36,7 @@ interface AppShellProps {
 export function AppShell({ onNewProject }: AppShellProps) {
   const { showHelp, setShowHelp } = useKeyboardShortcuts();
   useAutoBackup();
+  useAutoIndexLore();
   const generatorOpen = useAssetStore((s) => s.generatorOpen);
   const galleryOpen = useAssetStore((s) => s.galleryOpen);
   const closeGallery = useAssetStore((s) => s.closeGallery);

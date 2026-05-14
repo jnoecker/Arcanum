@@ -546,23 +546,31 @@ function SpellRow({
                 dense
               />
             </FieldLabel>
-            <FieldLabel label="Message">
+            <FieldLabel
+              label="Message"
+              tooltip="Sent only to the pet's owner. Leave blank to use the default — e.g. '{pet} hits {target} with <name> for N damage.'"
+            >
               <TextInput
                 value={spell.message}
                 onCommit={(v) => onUpdate("message", v)}
-                placeholder="Combat message shown to target"
+                placeholder="{pet} bites {target} for {damage} damage."
                 dense
               />
             </FieldLabel>
-            <FieldLabel label="Room Message">
+            <FieldLabel
+              label="Room Message"
+              tooltip="Broadcast to other players in the room (owner is excluded). Falls back to Message when blank."
+            >
               <TextInput
                 value={spell.roomMessage ?? ""}
                 onCommit={(v) => onUpdate("roomMessage", v || undefined)}
-                placeholder="Optional message shown to the room"
+                placeholder="{pet} sinks its fangs into {target}."
                 dense
               />
             </FieldLabel>
           </div>
+
+          <MessageHelp hasDamage={(spell.minDamage ?? 0) > 0 || (spell.maxDamage ?? 0) > 0} />
 
           <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
             <StatBlock
@@ -665,18 +673,63 @@ function Caret({ expanded }: { expanded: boolean }) {
 function FieldLabel({
   label,
   required,
+  tooltip,
   children,
 }: {
   label: string;
   required?: boolean;
+  tooltip?: string;
   children: React.ReactNode;
 }) {
   return (
     <div className="flex flex-col gap-1">
-      <span className="font-display text-2xs uppercase tracking-wider text-text-muted">
+      <span
+        className={cx(
+          "font-display text-2xs uppercase tracking-wider text-text-muted",
+          tooltip && "cursor-help decoration-text-muted/40 decoration-dotted underline-offset-2 hover:underline",
+        )}
+        title={tooltip}
+      >
         {label} {required && <span className="text-accent">*</span>}
       </span>
       {children}
+    </div>
+  );
+}
+
+function MessageHelp({ hasDamage }: { hasDamage: boolean }) {
+  return (
+    <div className="rounded-lg border border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] px-3 py-2 text-2xs text-text-muted/90">
+      <p className="mb-1 font-display uppercase tracking-wider text-text-secondary">
+        Placeholders
+      </p>
+      <ul className="space-y-0.5">
+        <li>
+          <code className="font-mono text-accent">{"{pet}"}</code> — the pet's
+          display name (e.g. <em>a wolf companion</em>)
+        </li>
+        <li>
+          <code className="font-mono text-accent">{"{target}"}</code> — the
+          target mob's display name
+        </li>
+        <li>
+          <code className="font-mono text-accent">{"{damage}"}</code> — final
+          damage after armor.{" "}
+          {hasDamage ? (
+            <span className="text-text-muted/70">Substituted on this skill.</span>
+          ) : (
+            <span className="text-status-warning">
+              This skill deals no damage — <code className="font-mono">{"{damage}"}</code> would render literally. Omit it.
+            </span>
+          )}
+        </li>
+      </ul>
+      <p className="mt-1.5 text-text-muted/70">
+        <strong className="font-semibold text-text-secondary">Message</strong>{" "}
+        goes to the owner;{" "}
+        <strong className="font-semibold text-text-secondary">Room Message</strong>{" "}
+        to others in the room. Both lines appear in the main game scrollback.
+      </p>
     </div>
   );
 }

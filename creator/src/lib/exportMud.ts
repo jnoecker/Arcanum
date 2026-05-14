@@ -728,7 +728,21 @@ export function abilityToPlain(a: AppConfig["abilities"][string]): Record<string
   if (a.tree) obj.tree = a.tree;
   if (a.tier != null) obj.tier = a.tier;
   if (a.skillPointCost != null && a.skillPointCost !== 1) obj.skillPointCost = a.skillPointCost;
+  const visual = abilityVisualToPlain(a.visual);
+  if (visual) obj.visual = visual;
   return obj;
+}
+
+function abilityVisualToPlain(
+  v: AppConfig["abilities"][string]["visual"],
+): Record<string, unknown> | undefined {
+  if (!v) return undefined;
+  const out: Record<string, unknown> = {};
+  if (v.archetype) out.archetype = v.archetype;
+  if (v.projectileImage) out.projectileImage = normalizeAssetRef(v.projectileImage);
+  if (v.color) out.color = v.color;
+  if (v.accentColor) out.accentColor = v.accentColor;
+  return Object.keys(out).length > 0 ? out : undefined;
 }
 
 export function statusEffectToPlain(e: AppConfig["statusEffects"][string]): Record<string, unknown> {

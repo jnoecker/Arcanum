@@ -90,6 +90,29 @@ export interface AbilityEffectConfig {
   durationMs?: number;
 }
 
+/**
+ * Combat-canvas visuals for the cast moment of an ability. Archetype drives
+ * the animation kind (projectile / aura / burst / etc.). All fields are
+ * optional: leave `archetype` blank for server-side auto-derivation from
+ * effect + target + class. `projectileImage` falls back to the ability's
+ * spellbook icon, and the colors fall back to per-archetype defaults.
+ */
+export type AbilityVisualArchetype =
+  | "RANGED_PROJECTILE"
+  | "MELEE_STRIKE"
+  | "HEAL_AURA"
+  | "BUFF_AURA"
+  | "DEBUFF_AURA"
+  | "AREA_BURST"
+  | "SUMMON_POOF";
+
+export interface AbilityVisualConfig {
+  archetype?: AbilityVisualArchetype | "";
+  projectileImage?: string;
+  color?: string;
+  accentColor?: string;
+}
+
 export interface AbilityDefinitionConfig {
   displayName: string;
   description?: string;
@@ -101,6 +124,8 @@ export interface AbilityDefinitionConfig {
   requiredClass?: string;
   classRestriction?: string;
   image?: string;
+  /** Combat-canvas visuals (cast animation). See {@link AbilityVisualConfig}. */
+  visual?: AbilityVisualConfig;
   /** Skill tree this ability belongs to (e.g., "warrior_arms", "mage_fire") */
   tree?: string;
   /** Depth in the skill tree (0 = root, higher = deeper) */

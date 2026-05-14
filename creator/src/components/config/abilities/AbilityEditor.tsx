@@ -2,6 +2,8 @@
 import type {
   AbilityDefinitionConfig,
   AbilityEffectConfig,
+  AbilityVisualArchetype,
+  AbilityVisualConfig,
 } from "@/types/config";
 import {
   TextInput,
@@ -105,6 +107,179 @@ export function AbilityEditor({
         ability={ability}
         onPatch={onPatch}
       />
+      <CombatVisualsCard ability={ability} onPatch={onPatch} />
+    </div>
+  );
+}
+
+// ─── Combat Visuals ────────────────────────────────────────────────
+
+const ARCHETYPE_OPTIONS: { value: AbilityVisualArchetype; label: string; hint: string }[] = [
+  { value: "RANGED_PROJECTILE", label: "Ranged Projectile", hint: "Icon or sprite arcs caster → target." },
+  { value: "MELEE_STRIKE", label: "Melee Strike", hint: "Lunge + icon pulses at impact (no red slash)." },
+  { value: "HEAL_AURA", label: "Heal Aura", hint: "Rising green/gold aura on target." },
+  { value: "BUFF_AURA", label: "Buff Aura", hint: "Rising aura + icon flash on self/ally." },
+  { value: "DEBUFF_AURA", label: "Debuff Aura", hint: "Sinking dark aura on enemy." },
+  { value: "AREA_BURST", label: "Area Burst", hint: "Radial expanding wave at target." },
+  { value: "SUMMON_POOF", label: "Summon Poof", hint: "Sparkle puff at the caster." },
+];
+
+const ARCHETYPE_LABEL: Record<AbilityVisualArchetype, string> = Object.fromEntries(
+  ARCHETYPE_OPTIONS.map((o) => [o.value, o.label]),
+) as Record<AbilityVisualArchetype, string>;
+
+/**
+ * Mirrors the Kotlin `deriveDefaultVisual` on the server so the editor can
+ * show the auto-derived choice without a roundtrip. Keep in sync with
+ * `engine/abilities/AbilityDefinition.kt`.
+ */
+function deriveDefaultArchetype(ability: AbilityDefinitionConfig): AbilityVisualArchetype {
+  const tt = (ability.targetType || "").toUpperCase();
+  const cls = (ability.requiredClass || ability.classRestriction || "").toUpperCase();
+  switch (ability.effect.type) {
+    case "DIRECT_DAMAGE":
+      return cls === "WARRIOR" || cls === "ROGUE" ? "MELEE_STRIKE" : "RANGED_PROJECTILE";
+    case "DIRECT_HEAL":
+      return "HEAL_AURA";
+    case "APPLY_STATUS":
+      return tt === "ENEMY" || tt === "ALL_ENEMIES" ? "DEBUFF_AURA" : "BUFF_AURA";
+    case "AREA_DAMAGE":
+      return "AREA_BURST";
+    case "TAUNT":
+      return "BUFF_AURA";
+    case "SUMMON_PET":
+      return "SUMMON_POOF";
+    default:
+      return "RANGED_PROJECTILE";
+  }
+}
+
+function CombatVisualsCard({
+  ability,
+  onPatch,
+}: {
+  ability: AbilityDefinitionConfig;
+  onPatch: (p: Partial<AbilityDefinitionConfig>) => void;
+}) {
+  const visual = ability.visual ?? {};
+  const auto = deriveDefaultArchetype(ability);
+  const archetype = visual.archetype || "";
+  const effective = (archetype as AbilityVisualArchetype) || auto;
+  const effectiveHint =
+    ARCHETYPE_OPTIONS.find((o) => o.value === effective)?.hint ?? "";
+
+  const patchVisual = (delta: Partial<AbilityVisualConfig>) => {
+    const next: AbilityVisualConfig = { ...visual, ...delta };
+    // Drop empty strings so the YAML stays minimal.
+    const cleaned: AbilityVisualConfig = {};
+    if (next.archetype) cleaned.archetype = next.archetype;
+    if (next.projectileImage) cleaned.projectileImage = next.projectileImage;
+    if (next.color) cleaned.color = next.color;
+    if (next.accentColor) cleaned.accentColor = next.accentColor;
+    onPatch({ visual: Object.keys(cleaned).length > 0 ? cleaned : undefined });
+  };
+
+  return (
+    <SectionCard title="Combat Visuals">
+      <div className="flex flex-col gap-3">
+        <FieldLabel
+          label="Cast Animation"
+          hint={
+            archetype
+              ? effectiveHint
+              : `Auto — derived from effect, target, and class. ${effectiveHint}`
+          }
+        >
+          <SelectInput
+            value={archetype}
+            onCommit={(v) => patchVisual({ archetype: (v as AbilityVisualArchetype) || "" })}
+            options={ARCHETYPE_OPTIONS.map((o) => ({
+              value: o.value,
+              label: o.label,
+            }))}
+            allowEmpty
+            placeholder={`— Auto (${ARCHETYPE_LABEL[auto]}) —`}
+            dense
+          />
+        </FieldLabel>
+
+        <FieldLabel
+          label="Projectile / Pulse Image"
+          hint="Optional override. Defaults to the ability icon above."
+        >
+          <TextInput
+            value={visual.projectileImage ?? ""}
+            onCommit={(v) => patchVisual({ projectileImage: v.trim() || undefined })}
+            placeholder="e.g. ice_lance.png"
+            dense
+          />
+        </FieldLabel>
+
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <FieldLabel
+            label="Primary Color"
+            hint="Tint for projectile head, aura, or burst."
+          >
+            <ColorField
+              value={visual.color}
+              onCommit={(v) => patchVisual({ color: v })}
+            />
+          </FieldLabel>
+          <FieldLabel
+            label="Accent Color"
+            hint="Trail glow / secondary sparkles. Falls back to primary."
+          >
+            <ColorField
+              value={visual.accentColor}
+              onCommit={(v) => patchVisual({ accentColor: v })}
+            />
+          </FieldLabel>
+        </div>
+      </div>
+    </SectionCard>
+  );
+}
+
+function ColorField({
+  value,
+  onCommit,
+}: {
+  value: string | undefined;
+  onCommit: (v: string | undefined) => void;
+}) {
+  const hasValue = !!value;
+  const display = value || "#888888";
+  return (
+    <div className="flex items-center gap-2">
+      <input
+        type="color"
+        value={display}
+        aria-label="Pick color"
+        onChange={(e) => onCommit(e.target.value)}
+        className="h-8 w-10 cursor-pointer rounded border border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)]"
+      />
+      <TextInput
+        value={value ?? ""}
+        onCommit={(v) => {
+          const trimmed = v.trim();
+          if (!trimmed) onCommit(undefined);
+          else if (/^#?[0-9a-fA-F]{6}$/.test(trimmed)) {
+            onCommit(trimmed.startsWith("#") ? trimmed : `#${trimmed}`);
+          }
+        }}
+        placeholder="#c8a8f0"
+        dense
+      />
+      {hasValue && (
+        <button
+          type="button"
+          onClick={() => onCommit(undefined)}
+          className="focus-ring rounded-md border border-[var(--chrome-stroke)] px-2 py-1 font-display text-[0.6rem] uppercase tracking-wider text-text-muted transition hover:bg-[var(--chrome-fill-soft)] hover:text-text-primary"
+          aria-label="Clear color"
+        >
+          Clear
+        </button>
+      )}
     </div>
   );
 }

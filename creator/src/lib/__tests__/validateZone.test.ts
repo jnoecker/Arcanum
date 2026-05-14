@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { validateZone, type ValidationIssue } from "../validateZone";
 import type { WorldFile } from "@/types/world";
+import { DEFAULT_ITEM_BUDGET } from "@/types/config";
 
 const TEST_MOB_TIERS = {
   weak: { baseHp: 8, hpPerLevel: 3, baseMinDamage: 1, baseMaxDamage: 3, damagePerLevel: 1, baseArmor: 0, baseXpReward: 10, xpRewardPerLevel: 3, baseGoldMin: 0, baseGoldMax: 2, goldPerLevel: 1 },
@@ -661,6 +662,27 @@ describe("validateZone", () => {
       const issues = validateZone(world, undefined, undefined, undefined, undefined, TEST_MOB_TIERS);
 
       expect(issues).toHaveLength(0);
+    });
+  });
+
+  describe("item power budget", () => {
+    it("warns when a level-1 common weapon with damage 4 exceeds its slot+level budget", () => {
+      const world = makeValidWorld();
+      world.items!.sword = { displayName: "Sword", slot: "weapon", room: "room1", damage: 4, level: 1 };
+      const issues = validateZone(
+        world,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        DEFAULT_ITEM_BUDGET,
+      );
+      const overBudget = issues.filter(
+        (i) => i.entity === "item:sword" && i.severity === "warning" && i.message.includes("over power budget"),
+      );
+      expect(overBudget).toHaveLength(1);
     });
   });
 });

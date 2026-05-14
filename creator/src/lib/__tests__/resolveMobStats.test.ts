@@ -111,4 +111,66 @@ describe("resolveMobStats", () => {
     const stats = resolveMobStats(mob({ tier: undefined, level: 1 }), MOB_TIERS)!;
     expect(stats.hp.tierDefault).toBe(20);
   });
+
+  it("hpMult scales tier-derived hp at level 5", () => {
+    const stats = resolveMobStats(
+      mob({ tier: "standard", level: 5, hpMult: 1.5 }),
+      MOB_TIERS,
+    )!;
+    // baseline at level 5 = 20 + 5*4 = 40, * 1.5 = 60
+    expect(stats.hp.tierDefault).toBe(60);
+    expect(stats.hp.effective).toBe(60);
+    expect(stats.hp.overridden).toBe(false);
+  });
+
+  it("dmgMult scales both min and max damage", () => {
+    const stats = resolveMobStats(
+      mob({ tier: "standard", level: 5, dmgMult: 2 }),
+      MOB_TIERS,
+    )!;
+    // min at level 5 = 2 + 2*4 = 10, * 2 = 20
+    expect(stats.minDamage.tierDefault).toBe(20);
+    // max at level 5 = 4 + 2*4 = 12, * 2 = 24
+    expect(stats.maxDamage.tierDefault).toBe(24);
+  });
+
+  it("xpMult and goldMult scale rewards", () => {
+    const stats = resolveMobStats(
+      mob({ tier: "standard", level: 3, xpMult: 2.5, goldMult: 0.5 }),
+      MOB_TIERS,
+    )!;
+    // xp at level 3 = 30 + 10*2 = 50, * 2.5 = 125
+    expect(stats.xpReward.tierDefault).toBe(125);
+    // goldMin at level 3 = 3 + 2*2 = 7, * 0.5 = 3.5 -> 4
+    expect(stats.goldMin.tierDefault).toBe(4);
+    // goldMax at level 3 = 8 + 2*2 = 12, * 0.5 = 6
+    expect(stats.goldMax.tierDefault).toBe(6);
+  });
+
+  it("absolute override beats multiplier", () => {
+    const stats = resolveMobStats(
+      mob({ tier: "standard", level: 1, hp: 100, hpMult: 5 }),
+      MOB_TIERS,
+    )!;
+    expect(stats.hp.overridden).toBe(true);
+    expect(stats.hp.effective).toBe(100);
+  });
+
+  it("hpMult clamps to at least 1 on a small mob", () => {
+    const stats = resolveMobStats(
+      mob({ tier: "weak", level: 1, hpMult: 0.01 }),
+      MOB_TIERS,
+    )!;
+    expect(stats.hp.tierDefault).toBe(1);
+  });
+
+  it("maxDamage stays at least the multiplier-applied minDamage", () => {
+    const stats = resolveMobStats(
+      mob({ tier: "weak", level: 1, dmgMult: 0.01 }),
+      MOB_TIERS,
+    )!;
+    // both clamp to 1; max must not fall below min
+    expect(stats.minDamage.tierDefault).toBe(1);
+    expect(stats.maxDamage.tierDefault).toBeGreaterThanOrEqual(stats.minDamage.tierDefault);
+  });
 });

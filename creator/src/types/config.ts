@@ -217,6 +217,68 @@ export interface MobActionDelayConfig {
   maxActionDelayMillis: number;
 }
 
+// ─── Item Power Budget ──────────────────────────────────────────────
+
+/**
+ * Power-budget rules for equippable items. Mirrors `dev.ambon.config.ItemBudgetConfig`
+ * on the AmbonMUD server. Validation is opt-in per item: items without a `level:`
+ * or `rarity:` are treated as legacy and skipped.
+ *
+ * Budget formula:
+ *   `budget = (slotBaseBudget[slot] + level * pointsPerLevel) * rarityMultiplier[rarity]`
+ *
+ * Spent points:
+ *   `spent = damage * damagePointCost + armor * armorPointCost + sum(stats.values) * statPointCost`
+ *
+ * An item is flagged when `spent > budget * (1 + tolerance)`.
+ */
+export interface ItemBudgetConfig {
+  enabled: boolean;
+  /** When true, over-budget items log a warning. When false, they fail the world load. */
+  warnOnly: boolean;
+  /** Tolerance above budget before a violation is reported (0.05 = 5% slack). */
+  tolerance: number;
+  pointsPerLevel: number;
+  damagePointCost: number;
+  armorPointCost: number;
+  statPointCost: number;
+  slotBaseBudget: Record<string, number>;
+  rarityMultiplier: Record<string, number>;
+  /** Rarity assumed when an item declares a level but no rarity. */
+  defaultRarity: string;
+}
+
+/** Built-in defaults, matched to the Kotlin `ItemBudgetConfig` defaults. */
+export const DEFAULT_ITEM_BUDGET: ItemBudgetConfig = {
+  enabled: true,
+  warnOnly: true,
+  tolerance: 0.05,
+  pointsPerLevel: 2.0,
+  damagePointCost: 5.0,
+  armorPointCost: 2.0,
+  statPointCost: 1.0,
+  slotBaseBudget: {
+    weapon: 6,
+    head: 3,
+    body: 5,
+    hand: 3,
+    feet: 3,
+    neck: 3,
+    wrist: 2,
+    finger: 2,
+    ranged: 5,
+    shield: 4,
+  },
+  rarityMultiplier: {
+    common: 1.0,
+    uncommon: 1.25,
+    rare: 1.5,
+    epic: 2.0,
+    legendary: 2.5,
+  },
+  defaultRarity: "common",
+};
+
 // ─── Progression ────────────────────────────────────────────────────
 
 export interface DiminishingXpThreshold {
@@ -1194,6 +1256,13 @@ export interface AppConfig {
   globalQuests?: GlobalQuestsConfig;
   guildHalls?: GuildHallsConfig;
   leaderboard?: LeaderboardConfig;
+  /**
+   * Power-budget rules for equippable items. Mirrors `engine.items.budget` on
+   * the AmbonMUD server — when an authored item declares `level:` or `rarity:`,
+   * the validator compares its stat/damage/armor cost to the slot+level+rarity
+   * budget and warns when over.
+   */
+  itemBudget: ItemBudgetConfig;
   globalAssets: Record<string, string>;
   defaultAssets: Record<string, string>;
   persistence: PersistenceConfig;

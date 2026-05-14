@@ -55,6 +55,12 @@ function fieldPlaceholder(stat: { tierDefault: number } | undefined): string {
   return stat ? String(stat.tierDefault) : "Auto";
 }
 
+function isInvalidMult(value: number | undefined): boolean {
+  if (value == null) return false;
+  if (!Number.isFinite(value)) return true;
+  return value <= 0 || value > 10;
+}
+
 const CATEGORY_OPTIONS = [
   { value: "humanoid", label: "Humanoid" },
   { value: "beast", label: "Beast" },
@@ -558,6 +564,66 @@ export function MobEditor({
                 onCommit={(v) => patch({ defaultAttack: v || undefined })}
               />
             </FieldRow>
+          </Section>
+
+          <Section
+            title="Stat Multipliers"
+            defaultExpanded={false}
+            titleTooltip="Scale the tier × level baseline before any absolute override below applies. Default 1.0. Absolute overrides still win for the fields they set."
+          >
+            <FieldGrid>
+              <CompactField label="HP Mult">
+                <NumberInput
+                  value={mob.hpMult}
+                  onCommit={(v) => patch({ hpMult: v })}
+                  placeholder="1.0"
+                  step={0.05}
+                  min={0}
+                />
+                {isInvalidMult(mob.hpMult) && (
+                  <p className="mt-1 text-2xs text-status-error">Must be &gt; 0 and ≤ 10</p>
+                )}
+              </CompactField>
+              <CompactField label="Damage Mult">
+                <NumberInput
+                  value={mob.dmgMult}
+                  onCommit={(v) => patch({ dmgMult: v })}
+                  placeholder="1.0"
+                  step={0.05}
+                  min={0}
+                />
+                {isInvalidMult(mob.dmgMult) && (
+                  <p className="mt-1 text-2xs text-status-error">Must be &gt; 0 and ≤ 10</p>
+                )}
+              </CompactField>
+              <CompactField label="XP Mult">
+                <NumberInput
+                  value={mob.xpMult}
+                  onCommit={(v) => patch({ xpMult: v })}
+                  placeholder="1.0"
+                  step={0.05}
+                  min={0}
+                />
+                {isInvalidMult(mob.xpMult) && (
+                  <p className="mt-1 text-2xs text-status-error">Must be &gt; 0 and ≤ 10</p>
+                )}
+              </CompactField>
+              <CompactField label="Gold Mult">
+                <NumberInput
+                  value={mob.goldMult}
+                  onCommit={(v) => patch({ goldMult: v })}
+                  placeholder="1.0"
+                  step={0.05}
+                  min={0}
+                />
+                {isInvalidMult(mob.goldMult) && (
+                  <p className="mt-1 text-2xs text-status-error">Must be &gt; 0 and ≤ 10</p>
+                )}
+              </CompactField>
+            </FieldGrid>
+            <p className="mt-1.5 text-2xs text-text-muted">
+              Multipliers scale the tier × level baseline. Absolute overrides below always win for the fields they set.
+            </p>
           </Section>
 
           <Section

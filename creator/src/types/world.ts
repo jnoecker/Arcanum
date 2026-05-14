@@ -183,6 +183,16 @@ export interface MobFile {
   tier?: string;
   level?: number;
   category?: string;
+  /**
+   * Multiplicative tuning knobs applied to tier×level baselines *before* any
+   * absolute override below. Use to express relative tuning ("hits ~20% harder
+   * than baseline") without typing raw numbers. Each must be in (0, 10]; the
+   * server rejects values outside that range. Default 1.0 (no change).
+   */
+  hpMult?: number;
+  dmgMult?: number;
+  xpMult?: number;
+  goldMult?: number;
   hp?: number;
   minDamage?: number;
   maxDamage?: number;
@@ -271,6 +281,20 @@ export const ITEM_TYPES: readonly ItemType[] = [
   "misc",
 ] as const;
 
+/**
+ * Rarity tier for item power-budget tuning. Multiplies the slot+level budget;
+ * see {@link ItemBudgetConfig} for the default scale.
+ */
+export type ItemRarity = "common" | "uncommon" | "rare" | "epic" | "legendary";
+
+export const ITEM_RARITIES: readonly ItemRarity[] = [
+  "common",
+  "uncommon",
+  "rare",
+  "epic",
+  "legendary",
+] as const;
+
 export interface ItemFile {
   displayName: string;
   description?: string;
@@ -298,6 +322,17 @@ export interface ItemFile {
    * stored in containers. Always resolves to the "quest" category server-side.
    */
   questItem?: boolean;
+  /**
+   * Intended item level. Setting this (or {@link rarity}) opts the item into
+   * the server's power-budget validator (see {@link ItemBudgetConfig}). Items
+   * without a level are treated as legacy and skipped by the validator.
+   */
+  level?: number;
+  /**
+   * Rarity tier. Multiplies the slot+level budget. Defaults to `common` on the
+   * server when only {@link level} is set.
+   */
+  rarity?: ItemRarity;
 }
 
 export interface ItemOnUse {

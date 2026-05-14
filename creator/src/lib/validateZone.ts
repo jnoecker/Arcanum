@@ -9,7 +9,7 @@ import type {
   RecipeFile,
 } from "@/types/world";
 import { ITEM_TYPES } from "@/types/world";
-import type { EquipmentSlotDefinition, MobTiersConfig } from "@/types/config";
+import type { EquipmentSlotDefinition, ItemBudgetConfig, MobTiersConfig } from "@/types/config";
 import { resolveDoorKeyId, resolveDoorState } from "./doorHelpers";
 import { mobMaxDamageAtLevel, mobMinDamageAtLevel } from "./tuning/formulas";
 import { computeZoneRebalance } from "./zoneRebalance";
@@ -17,6 +17,7 @@ import { exitTarget } from "./zoneEdits";
 import { getTrainerClasses } from "./trainers";
 import { resolveMobStats } from "./resolveMobStats";
 import { resolveQuestXp } from "./resolveQuestXp";
+import { evaluateItemBudget, summarizeItemBudget } from "./itemBudget";
 import type { QuestXpConfig } from "@/types/config";
 
 /**
@@ -424,6 +425,7 @@ export function validateZone(
   knownAchievements?: ReadonlySet<string>,
   mobTiers?: MobTiersConfig,
   questXpConfig?: QuestXpConfig,
+  itemBudget?: ItemBudgetConfig,
 ): ValidationIssue[] {
   const issues: ValidationIssue[] = [];
   const roomIds = new Set(Object.keys(world.rooms));
@@ -650,6 +652,17 @@ export function validateZone(
         }
       }
     }
+
+    const multCheck = (label: "hpMult" | "dmgMult" | "xpMult" | "goldMult", value: number | undefined) => {
+      if (value == null) return;
+      if (!Number.isFinite(value) || value <= 0 || value > 10) {
+        addIssue(issues, "error", entity, `${label} must be a finite number in (0, 10] — got ${value}`);
+      }
+    };
+    multCheck("hpMult", mob.hpMult);
+    multCheck("dmgMult", mob.dmgMult);
+    multCheck("xpMult", mob.xpMult);
+    multCheck("goldMult", mob.goldMult);
   }
 
   if (
@@ -691,6 +704,16 @@ export function validateZone(
         entity,
         `itemType "${item.itemType}" is not a known type. Valid: ${ITEM_TYPES.join(", ")}`,
       );
+    }
+    if (itemBudget) {
+      try {
+        const evaluation = evaluateItemBudget(itemId, item, itemBudget);
+        if (evaluation && evaluation.overBudget) {
+          addIssue(issues, "warning", entity, summarizeItemBudget(evaluation));
+        }
+      } catch (err) {
+        addIssue(issues, "error", entity, err instanceof Error ? err.message : String(err));
+      }
     }
   }
 
@@ -891,10 +914,11 @@ export function validateAllZones(
   knownAchievements?: ReadonlySet<string>,
   mobTiers?: MobTiersConfig,
   questXpConfig?: QuestXpConfig,
+  itemBudget?: ItemBudgetConfig,
 ): Map<string, ValidationIssue[]> {
   const results = new Map<string, ValidationIssue[]>();
   for (const [zoneId, zone] of zones) {
-    const issues = validateZone(zone.data, equipmentSlots, validClasses, knownFactions, knownAchievements, mobTiers, questXpConfig);
+    const issues = validateZone(zone.data, equipmentSlots, validClasses, knownFactions, knownAchievements, mobTiers, questXpConfig, itemBudget);
     if (issues.length > 0) {
       results.set(zoneId, issues);
     }

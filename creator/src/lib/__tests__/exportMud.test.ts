@@ -3,6 +3,7 @@ import { parse } from "yaml";
 import { buildMonolithicConfigObject } from "../exportMud";
 import { parseAppConfigYaml } from "../loader";
 import type { AppConfig } from "@/types/config";
+import { DEFAULT_ITEM_BUDGET } from "@/types/config";
 
 const BASE_CONFIG: AppConfig = {
   mode: "STANDALONE",
@@ -122,6 +123,7 @@ const BASE_CONFIG: AppConfig = {
   guildRanks: {},
   friends: { maxFriends: 50 },
   mobActionDelay: { minActionDelayMillis: 8000, maxActionDelayMillis: 20000 },
+  itemBudget: DEFAULT_ITEM_BUDGET,
   images: { baseUrl: "https://assets.ambon.dev" },
   globalAssets: {},
   skillPoints: {

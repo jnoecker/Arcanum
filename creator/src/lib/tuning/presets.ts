@@ -423,6 +423,38 @@ export const BALANCED_PRESET: TuningPreset = {
       maxActionDelayMillis: 8000,
     },
 
+    // ─── Item Budget ─────────────────────────────────────────────────
+    // Must match DEFAULT_ITEM_BUDGET in @/types/config — keep in sync.
+    itemBudget: {
+      enabled: true,
+      warnOnly: true,
+      tolerance: 0.05,
+      pointsPerLevel: 2.0,
+      damagePointCost: 5.0,
+      armorPointCost: 2.0,
+      statPointCost: 1.0,
+      slotBaseBudget: {
+        weapon: 6,
+        head: 3,
+        body: 5,
+        hand: 3,
+        feet: 3,
+        neck: 3,
+        wrist: 2,
+        finger: 2,
+        ranged: 5,
+        shield: 4,
+      },
+      rarityMultiplier: {
+        common: 1.0,
+        uncommon: 1.25,
+        rare: 1.5,
+        epic: 2.0,
+        legendary: 2.5,
+      },
+      defaultRarity: "common",
+    },
+
     // ─── Stat Bindings ───────────────────────────────────────────────
     stats: {
       bindings: {

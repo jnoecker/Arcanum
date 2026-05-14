@@ -7,6 +7,7 @@ import { applyTemplate } from "@/lib/templates";
 import { validateConfig } from "@/lib/validateConfig";
 import { computeMetrics } from "@/lib/tuning/formulas";
 import type { AppConfig } from "@/types/config";
+import { DEFAULT_ITEM_BUDGET } from "@/types/config";
 
 // ─── Full Mock Config ───────────────────────────────────────────────
 // A complete AppConfig that passes validateConfig with zero errors.
@@ -49,6 +50,7 @@ const FULL_MOCK_CONFIG: AppConfig = {
     boss: { baseHp: 50, hpPerLevel: 10, baseMinDamage: 3, baseMaxDamage: 8, damagePerLevel: 2, baseArmor: 3, baseXpReward: 200, xpRewardPerLevel: 50, baseGoldMin: 50, baseGoldMax: 100, goldPerLevel: 15 },
   },
   mobActionDelay: { minActionDelayMillis: 2000, maxActionDelayMillis: 5000 },
+  itemBudget: DEFAULT_ITEM_BUDGET,
   progression: {
     maxLevel: 50,
     xp: { baseXp: 100, exponent: 2.0, linearXp: 0, multiplier: 1.0, defaultKillXp: 10 },
@@ -193,6 +195,10 @@ describe("preset structure", () => {
     expect(BALANCED_PRESET.config.dailyQuests?.enabled).toBe(true);
     expect(BALANCED_PRESET.config.globalQuests?.enabled).toBe(true);
     expect(BALANCED_PRESET.config.guild?.maxSize).toBe(30);
+  });
+
+  it("Balanced itemBudget overlay mirrors DEFAULT_ITEM_BUDGET exactly", () => {
+    expect(BALANCED_PRESET.config.itemBudget).toEqual(DEFAULT_ITEM_BUDGET);
   });
 });
 

@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { validateConfig } from "../validateConfig";
 import type { AppConfig } from "@/types/config";
+import { DEFAULT_ITEM_BUDGET } from "@/types/config";
 
 /** Minimal valid config for tests to spread over */
 const BASE_CONFIG: AppConfig = {
@@ -126,6 +127,7 @@ const BASE_CONFIG: AppConfig = {
   multiclass: { minLevel: 10, goldCost: 500 },
   guildRanks: {},
   mobActionDelay: { minActionDelayMillis: 8000, maxActionDelayMillis: 20000 },
+  itemBudget: DEFAULT_ITEM_BUDGET,
   characterCreation: { startingGold: 0 },
   images: { baseUrl: "/images/" },
   globalAssets: {

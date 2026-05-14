@@ -2,7 +2,8 @@ import { readDir, readTextFile } from "@tauri-apps/plugin-fs";
 import { exists } from "@tauri-apps/plugin-fs";
 import { parseDocument } from "yaml";
 import type { WorldFile } from "@/types/world";
-import type { AppConfig } from "@/types/config";
+import type { AppConfig, ItemBudgetConfig } from "@/types/config";
+import { DEFAULT_ITEM_BUDGET } from "@/types/config";
 import type { Project } from "@/types/project";
 import { normalizeExitDirections, normalizeMobSpawns } from "@/lib/zoneEdits";
 import {
@@ -86,6 +87,7 @@ export function parseAppConfigYaml(content: string): AppConfig {
     combat: parseCombatConfig(engine.combat),
     mobTiers: parseMobTiersConfig(engine.mob),
     mobActionDelay: parseMobActionDelayConfig(engine.mob),
+    itemBudget: parseItemBudgetConfig(engine.items),
     progression: parseProgressionConfig(progression),
     economy: parseSimpleSection(engine.economy, { buyMultiplier: 1.0, sellMultiplier: 0.5 }),
     regen: parseRegenConfig(engine.regen),
@@ -508,6 +510,45 @@ function parseMobTiersConfig(raw: unknown): AppConfig["mobTiers"] {
     standard: parseTier(tiers.standard, { baseHp: 10, hpPerLevel: 3, baseMinDamage: 1, baseMaxDamage: 4, damagePerLevel: 1, baseArmor: 0, baseXpReward: 30, xpRewardPerLevel: 10, baseGoldMin: 2, baseGoldMax: 8, goldPerLevel: 2 }),
     elite: parseTier(tiers.elite, { baseHp: 20, hpPerLevel: 5, baseMinDamage: 2, baseMaxDamage: 6, damagePerLevel: 1, baseArmor: 1, baseXpReward: 75, xpRewardPerLevel: 20, baseGoldMin: 10, baseGoldMax: 25, goldPerLevel: 5 }),
     boss: parseTier(tiers.boss, { baseHp: 50, hpPerLevel: 10, baseMinDamage: 3, baseMaxDamage: 8, damagePerLevel: 2, baseArmor: 3, baseXpReward: 200, xpRewardPerLevel: 50, baseGoldMin: 50, baseGoldMax: 100, goldPerLevel: 15 }),
+  };
+}
+
+function parseItemBudgetConfig(raw: unknown): ItemBudgetConfig {
+  const items = (raw ?? {}) as Record<string, unknown>;
+  const budgetRaw = items.budget;
+  if (!budgetRaw || typeof budgetRaw !== "object") {
+    return {
+      ...DEFAULT_ITEM_BUDGET,
+      slotBaseBudget: { ...DEFAULT_ITEM_BUDGET.slotBaseBudget },
+      rarityMultiplier: { ...DEFAULT_ITEM_BUDGET.rarityMultiplier },
+    };
+  }
+  const b = budgetRaw as Record<string, unknown>;
+  const mergeNumberMap = (
+    overlay: unknown,
+    defaults: Record<string, number>,
+  ): Record<string, number> => {
+    const out: Record<string, number> = { ...defaults };
+    if (overlay && typeof overlay === "object") {
+      for (const [k, v] of Object.entries(overlay)) {
+        if (typeof v === "number" && Number.isFinite(v)) out[k] = v;
+      }
+    }
+    return out;
+  };
+  const num = (val: unknown, fallback: number): number =>
+    typeof val === "number" && Number.isFinite(val) ? val : fallback;
+  return {
+    enabled: asBool(b.enabled, DEFAULT_ITEM_BUDGET.enabled),
+    warnOnly: asBool(b.warnOnly, DEFAULT_ITEM_BUDGET.warnOnly),
+    tolerance: num(b.tolerance, DEFAULT_ITEM_BUDGET.tolerance),
+    pointsPerLevel: num(b.pointsPerLevel, DEFAULT_ITEM_BUDGET.pointsPerLevel),
+    damagePointCost: num(b.damagePointCost, DEFAULT_ITEM_BUDGET.damagePointCost),
+    armorPointCost: num(b.armorPointCost, DEFAULT_ITEM_BUDGET.armorPointCost),
+    statPointCost: num(b.statPointCost, DEFAULT_ITEM_BUDGET.statPointCost),
+    slotBaseBudget: mergeNumberMap(b.slotBaseBudget, DEFAULT_ITEM_BUDGET.slotBaseBudget),
+    rarityMultiplier: mergeNumberMap(b.rarityMultiplier, DEFAULT_ITEM_BUDGET.rarityMultiplier),
+    defaultRarity: asString(b.defaultRarity, DEFAULT_ITEM_BUDGET.defaultRarity),
   };
 }
 
@@ -1439,6 +1480,7 @@ async function loadSplitConfig(projectDir: string): Promise<AppConfig | null> {
       combat: parseCombatConfig(combatRaw.combat ?? combatRaw),
       mobTiers: parseMobTiersConfig(combatRaw.mob ?? combatRaw),
       mobActionDelay: parseMobActionDelayConfig(combatRaw.mob ?? combatRaw),
+      itemBudget: parseItemBudgetConfig(combatRaw.items ?? worldRaw.items),
 
       // classes.yaml
       classes: asRecord(classesRaw.definitions ?? classesRaw),

@@ -22,9 +22,9 @@ import {
 export interface MobStatValue {
   /** Effective value the engine will use (override when set, else tier default). */
   effective: number;
-  /** What the tier+level would produce if the author removed the override. */
+  /** What the tier+level (with any multiplier applied) would produce if the author removed the override. */
   tierDefault: number;
-  /** True when the author set an explicit value overriding the tier default. */
+  /** True when the author set an explicit absolute value overriding the tier default. */
   overridden: boolean;
 }
 
@@ -46,10 +46,25 @@ function tierFor(mob: MobFile, mobTiers: MobTiersConfig | undefined): MobTierCon
   return (mobTiers as unknown as Record<string, MobTierConfig>)[id];
 }
 
+function multOrDefault(value: number | undefined): number {
+  if (value == null || !Number.isFinite(value) || value <= 0) return 1;
+  return value;
+}
+
 /**
  * Resolve every combat stat for a mob using the tier + level math the MUD
- * engine runs at load time. Returns both the effective value and the tier
- * default so the editor can show one alongside the other.
+ * engine runs at load time, then applies the per-mob multipliers
+ * (`hpMult`, `dmgMult`, `xpMult`, `goldMult`) before falling back to any
+ * absolute author override.
+ *
+ * Resolution order (matches `ResolvedMobStats.resolveMobStats` in the
+ * AmbonMUD Kotlin source — `src/main/kotlin/dev/ambon/domain/world/
+ * ResolvedMobStats.kt` — which is the source of truth):
+ *   1. tier × level baseline
+ *   2. multiplier (default 1.0; clamp resulting hp/min/max damage to ≥ 1,
+ *      xp/gold to ≥ 0, and maxDamage to ≥ multiplier-applied minDamage)
+ *   3. absolute override (`mob.hp`, `mob.minDamage`, …) — always wins,
+ *      multiplier is ignored for that specific field.
  *
  * Returns undefined if the tier lookup fails (no mobTiers config, or the
  * mob references an unknown tier). Callers should treat that as "can't
@@ -63,6 +78,18 @@ export function resolveMobStats(
   if (!tier) return undefined;
   const level = mob.level ?? 1;
 
+  const hpMult = multOrDefault(mob.hpMult);
+  const dmgMult = multOrDefault(mob.dmgMult);
+  const xpMult = multOrDefault(mob.xpMult);
+  const goldMult = multOrDefault(mob.goldMult);
+
+  const baseHp = Math.max(1, Math.round(mobHpAtLevel(tier, level) * hpMult));
+  const baseMin = Math.max(1, Math.round(mobMinDamageAtLevel(tier, level) * dmgMult));
+  const baseMax = Math.max(baseMin, Math.round(mobMaxDamageAtLevel(tier, level) * dmgMult));
+  const baseXp = Math.max(0, Math.round(mobXpRewardAtLevel(tier, level) * xpMult));
+  const baseGoldMin = Math.max(0, Math.round(mobGoldMinAtLevel(tier, level) * goldMult));
+  const baseGoldMax = Math.max(baseGoldMin, Math.round(mobGoldMaxAtLevel(tier, level) * goldMult));
+
   const make = (authored: number | undefined, tierDefault: number): MobStatValue => ({
     effective: authored ?? tierDefault,
     tierDefault,
@@ -70,13 +97,13 @@ export function resolveMobStats(
   });
 
   const stats: ResolvedMobStats = {
-    hp: make(mob.hp, mobHpAtLevel(tier, level)),
-    minDamage: make(mob.minDamage, mobMinDamageAtLevel(tier, level)),
-    maxDamage: make(mob.maxDamage, mobMaxDamageAtLevel(tier, level)),
+    hp: make(mob.hp, baseHp),
+    minDamage: make(mob.minDamage, baseMin),
+    maxDamage: make(mob.maxDamage, baseMax),
     armor: make(mob.armor, tier.baseArmor),
-    xpReward: make(mob.xpReward, mobXpRewardAtLevel(tier, level)),
-    goldMin: make(mob.goldMin, mobGoldMinAtLevel(tier, level)),
-    goldMax: make(mob.goldMax, mobGoldMaxAtLevel(tier, level)),
+    xpReward: make(mob.xpReward, baseXp),
+    goldMin: make(mob.goldMin, baseGoldMin),
+    goldMax: make(mob.goldMax, baseGoldMax),
     anyOverridden: false,
   };
   stats.anyOverridden =

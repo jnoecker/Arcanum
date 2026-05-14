@@ -31,6 +31,7 @@ export function serializeZone(zoneId: string): string {
     knownAchievements,
     config?.mobTiers,
     config?.progression.quests,
+    config?.itemBudget,
   );
   const errors = issues.filter((issue) => issue.severity === "error");
   if (errors.length > 0) {

@@ -1,6 +1,7 @@
-import { useCallback, useState, memo } from "react";
-import type { WorldFile, ItemFile, ItemOnUse, ItemType } from "@/types/world";
-import { ITEM_TYPES } from "@/types/world";
+import { useCallback, useMemo, useState, memo } from "react";
+import type { WorldFile, ItemFile, ItemOnUse, ItemRarity, ItemType } from "@/types/world";
+import { ITEM_RARITIES, ITEM_TYPES } from "@/types/world";
+import { evaluateItemBudget } from "@/lib/itemBudget";
 import { updateItem, deleteItem } from "@/lib/zoneEdits";
 import { useEntityEditor } from "@/lib/useEntityEditor";
 import { useConfigOptions } from "@/lib/useConfigOptions";
@@ -54,6 +55,7 @@ export function ItemEditor({
     onDelete,
   );
   const equipmentSlots = useConfigStore((s) => s.config?.equipmentSlots);
+  const itemBudgetConfig = useConfigStore((s) => s.config?.itemBudget);
   const slotOptions = useConfigOptions(equipmentSlots, [
     { value: "head", label: "Head" },
     { value: "body", label: "Body" },
@@ -63,6 +65,19 @@ export function ItemEditor({
     value: t,
     label: t.charAt(0).toUpperCase() + t.slice(1),
   }));
+  const rarityOptions = ITEM_RARITIES.map((r) => ({
+    value: r,
+    label: r.charAt(0).toUpperCase() + r.slice(1),
+  }));
+
+  const budgetReadout = useMemo(() => {
+    if (!item || !itemBudgetConfig) return null;
+    try {
+      return evaluateItemBudget(itemId, item, itemBudgetConfig);
+    } catch {
+      return null;
+    }
+  }, [item, itemBudgetConfig, itemId]);
 
   if (!item) return null;
 
@@ -278,6 +293,41 @@ export function ItemEditor({
                 onAdd={(statId) => handleStatChange(statId, 1)}
               />
             </div>
+          </Section>
+
+          <Section title="Power Budget">
+            <p className="mb-1 text-2xs text-text-muted">
+              Set level or rarity to opt this item into the server's power-budget
+              check. Leave blank to skip validation (legacy items).
+            </p>
+            <FieldGrid cols={2}>
+              <CompactField label="Level">
+                <NumberInput
+                  value={item.level}
+                  onCommit={(v) => patch({ level: v == null ? undefined : Math.max(1, Math.floor(v)) })}
+                  placeholder="—"
+                  min={1}
+                  dense
+                />
+              </CompactField>
+              <CompactField label="Rarity">
+                <SelectInput
+                  value={item.rarity ?? ""}
+                  options={rarityOptions}
+                  onCommit={(v) => patch({ rarity: (v || undefined) as ItemRarity | undefined })}
+                  allowEmpty
+                  placeholder="—"
+                  dense
+                />
+              </CompactField>
+            </FieldGrid>
+            {budgetReadout && (
+              <p className={`mt-1 text-2xs ${budgetReadout.overBudget ? "text-warm" : "text-text-muted"}`}>
+                Spent {budgetReadout.spent.toFixed(1)} / {budgetReadout.budget.toFixed(1)} pts
+                {budgetReadout.breakdown.length > 0 ? ` — ${budgetReadout.breakdown.join(", ")}` : ""}
+                {budgetReadout.overBudget ? " (over budget)" : ""}
+              </p>
+            )}
           </Section>
         </>
       )}

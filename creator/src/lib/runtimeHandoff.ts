@@ -102,6 +102,7 @@ export function runWorkspaceValidation(): ValidationSummary {
     knownAchievements,
     config?.mobTiers,
     config?.progression.quests,
+    config?.itemBudget,
   );
 
   if (config) {

@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/FormWidgets";
 import { EntityArtGenerator } from "@/components/ui/EntityArtGenerator";
 import { getPreamble, type ArtStyle } from "@/lib/arcanumPrompts";
+import { useImageSrc } from "@/lib/useImageSrc";
 import { SectionCard } from "@/components/ui/SectionCard";
 import { PlusIcon, TrashIcon } from "../achievements/icons";
 
@@ -42,6 +43,38 @@ function petPrompt(pet: PetDefinitionConfig, style: ArtStyle): string {
   return `${preamble}, a summoned companion creature — "${pet.name}", ${pet.description || "a loyal magical pet"}, full body portrait, RPG companion creature, no text`;
 }
 
+function petSpellPrompt(
+  pet: PetDefinitionConfig,
+  spell: PetSpellConfig,
+  spellId: string,
+  style: ArtStyle,
+): string {
+  const preamble = getPreamble(style, "worldbuilding");
+  const label = spell.displayName || spellId;
+  const flavor = spell.message || spell.roomMessage || "a special pet ability";
+  return `${preamble}, a game ability icon for "${label}" — a skill cast by a ${pet.name || "companion"}, ${flavor}, centered square composition like an RPG ability sprite, iconic symbol rendered as flowing energy, no text, no figures`;
+}
+
+function buildPetSpellContext(
+  pet: PetDefinitionConfig,
+  spell: PetSpellConfig,
+  spellId: string,
+): string {
+  const parts = [
+    `Pet: ${pet.name}`,
+    `Spell: ${spell.displayName || spellId}`,
+    spell.message ? `Message: ${spell.message}` : null,
+    spell.statusEffectId ? `Applies status: ${spell.statusEffectId}` : null,
+    spell.minDamage != null && spell.maxDamage != null
+      ? `Damage: ${spell.minDamage}-${spell.maxDamage}`
+      : null,
+    spell.healMin != null && spell.healMax != null && (spell.healMin || spell.healMax)
+      ? `Heal: ${spell.healMin}-${spell.healMax}`
+      : null,
+  ];
+  return parts.filter(Boolean).join("\n");
+}
+
 function buildPetContext(pet: PetDefinitionConfig): string {
   const parts = [
     `Pet: ${pet.name}`,
@@ -71,6 +104,7 @@ export function PetEditor({ id, pet, statusEffectIds, onPatch, onRename }: PetEd
         <IdentityCard id={id} pet={pet} onPatch={onPatch} onRename={onRename} />
         <CombatStatsCard pet={pet} onPatch={onPatch} role={role} />
         <SpellsCard
+          petId={id}
           pet={pet}
           onPatch={onPatch}
           statusEffectIds={statusEffectIds ?? []}
@@ -287,11 +321,13 @@ function PortraitCard({
 // ─── Spells ────────────────────────────────────────────────────────
 
 function SpellsCard({
+  petId,
   pet,
   onPatch,
   statusEffectIds,
   showThreatBonus,
 }: {
+  petId: string;
   pet: PetDefinitionConfig;
   onPatch: (p: Partial<PetDefinitionConfig>) => void;
   statusEffectIds: string[];
@@ -401,6 +437,8 @@ function SpellsCard({
             <SpellRow
               key={sid}
               id={sid}
+              petId={petId}
+              pet={pet}
               spell={spells[sid]!}
               expanded={expanded === sid}
               statusEffectIds={statusEffectIds}
@@ -418,6 +456,8 @@ function SpellsCard({
 
 function SpellRow({
   id,
+  petId,
+  pet,
   spell,
   expanded,
   statusEffectIds,
@@ -427,6 +467,8 @@ function SpellRow({
   onDelete,
 }: {
   id: string;
+  petId: string;
+  pet: PetDefinitionConfig;
   spell: PetSpellConfig;
   expanded: boolean;
   statusEffectIds: string[];
@@ -435,6 +477,7 @@ function SpellRow({
   onUpdate: (field: string, value: unknown) => void;
   onDelete: () => void;
 }) {
+  const iconSrc = useImageSrc(spell.image || undefined);
   return (
     <div
       className={cx(
@@ -452,6 +495,22 @@ function SpellRow({
           className="focus-ring flex min-w-0 flex-1 items-center gap-2 text-left"
         >
           <Caret expanded={expanded} />
+          <div
+            className={cx(
+              "flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-md border",
+              expanded
+                ? "border-accent/40"
+                : "border-[var(--chrome-stroke)] group-hover:border-[var(--chrome-stroke-strong)]",
+            )}
+          >
+            {iconSrc ? (
+              <img src={iconSrc} alt="" loading="lazy" className="h-full w-full object-cover" />
+            ) : (
+              <span aria-hidden="true" className="font-display text-2xs text-text-muted/40">
+                ◆
+              </span>
+            )}
+          </div>
           <span className="truncate font-display text-sm font-semibold text-text-primary">
             {spell.displayName || id}
           </span>
@@ -561,6 +620,18 @@ function SpellRow({
               />
             </FieldLabel>
           </div>
+
+          <FieldLabel label="Skill Icon">
+            <EntityArtGenerator
+              getPrompt={(style) => petSpellPrompt(pet, spell, id, style)}
+              entityContext={buildPetSpellContext(pet, spell, id)}
+              currentImage={spell.image}
+              onAccept={(filePath) => onUpdate("image", filePath)}
+              assetType="ability_icon"
+              context={{ zone: "", entity_type: "pet_spell", entity_id: `${petId}__${id}` }}
+              surface="worldbuilding"
+            />
+          </FieldLabel>
         </div>
       )}
     </div>

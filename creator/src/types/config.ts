@@ -49,6 +49,8 @@ export interface PetSpellConfig {
    * entry, which is rarely intended.
    */
   threatBonus?: number;
+  /** Icon shown in the player UI for manual triggering. */
+  image?: string;
 }
 
 export interface PetDefinitionConfig {

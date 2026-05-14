@@ -1227,6 +1227,7 @@ function parsePetSpells(raw: unknown): Record<string, import("@/types/config").P
       cooldownMs: typeof s.cooldownMs === "number" ? s.cooldownMs : undefined,
       weight: typeof s.weight === "number" ? s.weight : undefined,
       threatBonus: typeof s.threatBonus === "number" ? s.threatBonus : undefined,
+      image: typeof s.image === "string" ? s.image : undefined,
     };
   }
   return Object.keys(result).length > 0 ? result : undefined;

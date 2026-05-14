@@ -841,6 +841,7 @@ function petSpellToPlain(spell: import("@/types/config").PetSpellConfig): Record
   if (spell.cooldownMs != null && spell.cooldownMs !== 0) obj.cooldownMs = spell.cooldownMs;
   if (spell.weight != null && spell.weight !== 1) obj.weight = spell.weight;
   if (spell.threatBonus != null && spell.threatBonus !== 0) obj.threatBonus = spell.threatBonus;
+  if (spell.image) obj.image = normalizeAssetRef(spell.image);
   return obj;
 }
 

@@ -146,7 +146,11 @@ export const UNIVERSAL_NEGATIVE = `text, words, letters, runes, glyphs, watermar
 // soft language like "preferably" or "try to".
 
 /** Asset types that undergo background removal after generation.
- *  Single source of truth — `useBackgroundRemoval.ts` imports from here. */
+ *  Single source of truth — `useBackgroundRemoval.ts` imports from here.
+ *
+ *  race_portrait / class_portrait are intentionally excluded: those render
+ *  as lore-style cards in-game with their painterly environment intact, so
+ *  they must keep their background (and skip the flat-lavender directive). */
 export const BG_REMOVAL_ASSET_TYPES: ReadonlySet<string> = new Set([
   "mob",
   "item",
@@ -155,8 +159,6 @@ export const BG_REMOVAL_ASSET_TYPES: ReadonlySet<string> = new Set([
   "gathering_node",
   "ability_sprite",
   "player_sprite",
-  "race_portrait",
-  "class_portrait",
 ]);
 
 /** True if the asset type's final image will have its background removed. */

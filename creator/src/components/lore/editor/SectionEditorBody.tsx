@@ -9,6 +9,7 @@ import type {
 import { useImageSrc } from "@/lib/useImageSrc";
 import { LoreEditor, type LoreEditorAction } from "@/components/lore/LoreEditor";
 import { EntityArtGenerator } from "@/components/ui/EntityArtGenerator";
+import { ImageLightbox } from "@/components/ui/ImageLightbox";
 import { buildRagContext } from "@/lib/rag/loreContext";
 import { buildWorldContext } from "@/lib/loreGeneration";
 import { getCodexGeneratePrompt } from "@/lib/lorePrompts";
@@ -90,12 +91,6 @@ function RichTextSectionEditor({
 
 // ─── Image · Caption variant ───────────────────────────────────────
 
-function ImageThumb({ filename }: { filename: string }) {
-  const src = useImageSrc(filename);
-  if (!src) return null;
-  return <img src={src} alt="" loading="lazy" />;
-}
-
 function ImageSectionEditor({
   article,
   section,
@@ -108,6 +103,7 @@ function ImageSectionEditor({
   onPick: (mode: "single" | "multi") => void;
 }) {
   const [forgeOpen, setForgeOpen] = useState(false);
+  const [zoomOpen, setZoomOpen] = useState(false);
   const assetType = TEMPLATE_ASSET_TYPE[article.template] ?? "lore_location";
   const context: AssetContext = {
     zone: "lore",
@@ -116,31 +112,31 @@ function ImageSectionEditor({
   };
 
   const hasImage = !!section.primary;
+  const imageSrc = useImageSrc(section.primary ?? "");
+  const openPicker = () => onPick("single");
+  const openZoom = () => setZoomOpen(true);
+  const surfaceClick = hasImage ? openZoom : openPicker;
+  const surfaceLabel = hasImage ? "Zoom image" : "Choose image from archive";
+
   return (
     <div className="ae-imgsec">
       <div
         className="ae-imgsec__art"
         data-empty={!hasImage || undefined}
-        // Only the empty-state behaves as one big click target. With an image
-        // set, the overlay's two explicit buttons handle the action.
-        onClick={!hasImage ? () => onPick("single") : undefined}
-        role={!hasImage ? "button" : undefined}
-        tabIndex={!hasImage ? 0 : undefined}
-        aria-label={!hasImage ? "Choose image from archive" : undefined}
-        onKeyDown={
-          !hasImage
-            ? (e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault();
-                  onPick("single");
-                }
-              }
-            : undefined
-        }
+        onClick={surfaceClick}
+        role="button"
+        tabIndex={0}
+        aria-label={surfaceLabel}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            surfaceClick();
+          }
+        }}
       >
-        {hasImage ? (
-          <ImageThumb filename={section.primary!} />
-        ) : (
+        {hasImage && imageSrc ? (
+          <img src={imageSrc} alt="" loading="lazy" />
+        ) : !hasImage ? (
           <div className="ae-imgsec__empty">
             <span className="ae-imgsec__empty__sigil" aria-hidden>◇</span>
             <span>Awaiting your command</span>
@@ -148,34 +144,11 @@ function ImageSectionEditor({
               Click to choose an image from the Forge's archive, or conjure a new one below.
             </span>
           </div>
-        )}
+        ) : null}
         <div className="ae-imgsec__art__overlay">
-          {hasImage ? (
-            <>
-              <button
-                type="button"
-                className="ae-imgsec__art__action"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onPick("single");
-                }}
-              >
-                From Archive
-              </button>
-              <button
-                type="button"
-                className="ae-imgsec__art__action"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setForgeOpen(true);
-                }}
-              >
-                Conjure New
-              </button>
-            </>
-          ) : (
-            <span className="ae-imgsec__art__cta">Choose from archive</span>
-          )}
+          <span className="ae-imgsec__art__cta">
+            {hasImage ? "Click to zoom" : "Choose from archive"}
+          </span>
         </div>
       </div>
 
@@ -236,6 +209,10 @@ function ImageSectionEditor({
             surface="lore"
           />
         </div>
+      )}
+
+      {zoomOpen && imageSrc && (
+        <ImageLightbox src={imageSrc} onClose={() => setZoomOpen(false)} />
       )}
     </div>
   );

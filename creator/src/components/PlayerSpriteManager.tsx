@@ -1,10 +1,13 @@
-import { useState, useMemo, useCallback, useEffect, useRef } from "react";
+import { memo, useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { useSpriteDefinitionStore } from "@/stores/spriteDefinitionStore";
 import { useConfigStore } from "@/stores/configStore";
 import { useProjectStore } from "@/stores/projectStore";
 import { useAssetStore } from "@/stores/assetStore";
 import { removeBgAndSave } from "@/lib/useBackgroundRemoval";
+import { resolveImageDataUrl } from "@/lib/useImageSrc";
+import { save as saveDialog } from "@tauri-apps/plugin-dialog";
+import { writeFile } from "@tauri-apps/plugin-fs";
 import { BulkBgRemoval } from "@/components/ui/BulkBgRemoval";
 import { AI_ENABLED } from "@/lib/featureFlags";
 import { ENTITY_DIMENSIONS, resolveImageModel } from "@/types/assets";
@@ -99,6 +102,83 @@ function spritePromptNotes(definition: SpriteDefinition, variant?: SpriteVariant
   return notes.length > 0 ? notes.join(". ") : undefined;
 }
 
+function hasAnyImage(
+  id: string,
+  def: SpriteDefinition,
+  assetMap: Map<string, { fileName: string; assetId: string }>,
+): boolean {
+  if (def.variants && def.variants.length > 0) {
+    return def.variants.some((v) => assetMap.has(v.imageId));
+  }
+  return assetMap.has(id);
+}
+
+// ─── List row (memoized) ────────────────────────────────────────────
+
+interface SpriteListRowProps {
+  id: string;
+  def: SpriteDefinition;
+  selected: boolean;
+  checked: boolean;
+  fileName: string | undefined;
+  onSelect: (id: string) => void;
+  onToggleChecked: (id: string) => void;
+}
+
+const SpriteListRow = memo(function SpriteListRow({
+  id,
+  def,
+  selected,
+  checked,
+  fileName,
+  onSelect,
+  onToggleChecked,
+}: SpriteListRowProps) {
+  return (
+    <div
+      className={`flex w-full items-center gap-2 border-b border-[var(--chrome-stroke)] px-3 py-2.5 text-left text-xs transition ${
+        selected
+          ? "bg-gradient-active text-text-primary"
+          : "text-text-secondary hover:bg-[var(--chrome-highlight)]"
+      }`}
+      style={{ contentVisibility: "auto", containIntrinsicSize: "0 76px" }}
+    >
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={() => onToggleChecked(id)}
+        className="shrink-0 accent-accent"
+        onClick={(e) => e.stopPropagation()}
+      />
+      <button
+        onClick={() => onSelect(id)}
+        className="flex min-w-0 flex-1 items-center gap-2 text-left"
+      >
+        <SpriteThumbnail fileName={fileName} label={def.displayName} />
+        <div className="min-w-0 flex-1">
+          <div className="truncate font-medium">{def.displayName}</div>
+          <div className="truncate text-2xs text-text-muted">{id}</div>
+          {def.requirements.length > 0 && (
+            <div className="mt-0.5 flex flex-wrap gap-1">
+              {def.requirements.map((req, i) => (
+                <span
+                  key={i}
+                  className="rounded-full bg-[var(--chrome-highlight-strong)] px-1.5 py-0.5 text-3xs text-text-muted"
+                >
+                  {requirementLabel(req)}
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+        <span className="shrink-0 text-2xs text-text-muted">
+          {def.category === "staff" ? "S" : def.sortOrder}
+        </span>
+      </button>
+    </div>
+  );
+});
+
 // ─── Main component ─────────────────────────────────────────────────
 
 export function PlayerSpriteManager() {
@@ -121,8 +201,16 @@ export function PlayerSpriteManager() {
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [newId, setNewId] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filterCategory, setFilterCategory] = useState<"all" | "general" | "staff">("all");
+  const [filterRace, setFilterRace] = useState<string>("all");
+  const [filterClass, setFilterClass] = useState<string>("all");
+  const [filterGender, setFilterGender] = useState<string>("all");
+  const [filterImage, setFilterImage] = useState<"all" | "with" | "without">("all");
+  const [filterStale, setFilterStale] = useState<"all" | "race" | "class" | "any">("all");
   const [generating, setGenerating] = useState<string | null>(null);
   const [deploying, setDeploying] = useState(false);
+  const [exportingSheet, setExportingSheet] = useState(false);
   const [deployResult, setDeployResult] = useState<SyncProgress | null>(null);
   const [viewSprite, setViewSprite] = useState<{ key: string; fileName: string; assetId: string } | null>(null);
   const [generationError, setGenerationError] = useState<string | null>(null);
@@ -172,6 +260,78 @@ export function PlayerSpriteManager() {
     () => Object.entries(definitions).sort(([, a], [, b]) => a.sortOrder - b.sortOrder),
     [definitions],
   );
+
+  const filteredDefs = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+    const raceSet = new Set(races);
+    const classSet = new Set(classes);
+    return sortedDefs.filter(([id, def]) => {
+      if (query) {
+        const hay = `${id} ${def.displayName}`.toLowerCase();
+        if (!hay.includes(query)) return false;
+      }
+      if (filterCategory !== "all" && def.category !== filterCategory) return false;
+      if (filterRace !== "all") {
+        const raceReqs = def.requirements.filter((r): r is Extract<SpriteRequirement, { type: "race" }> => r.type === "race");
+        if (filterRace === "__none__") {
+          if (raceReqs.length > 0) return false;
+        } else if (!raceReqs.some((r) => r.race === filterRace)) {
+          return false;
+        }
+      }
+      if (filterClass !== "all") {
+        const classReqs = def.requirements.filter((r): r is Extract<SpriteRequirement, { type: "class" }> => r.type === "class");
+        if (filterClass === "__none__") {
+          if (classReqs.length > 0) return false;
+        } else if (!classReqs.some((r) => r.playerClass === filterClass)) {
+          return false;
+        }
+      }
+      if (filterGender !== "all") {
+        if (filterGender === "__none__") {
+          if (def.gender) return false;
+        } else if (def.gender !== filterGender) {
+          return false;
+        }
+      }
+      if (filterImage !== "all") {
+        const present = hasAnyImage(id, def, spriteAssetMap);
+        if (filterImage === "with" && !present) return false;
+        if (filterImage === "without" && present) return false;
+      }
+      if (filterStale !== "all") {
+        const hasStaleRace = def.requirements.some(
+          (r) => r.type === "race" && r.race.length > 0 && !raceSet.has(r.race),
+        );
+        const hasStaleClass = def.requirements.some(
+          (r) => r.type === "class" && r.playerClass.length > 0 && !classSet.has(r.playerClass),
+        );
+        if (filterStale === "race" && !hasStaleRace) return false;
+        if (filterStale === "class" && !hasStaleClass) return false;
+        if (filterStale === "any" && !hasStaleRace && !hasStaleClass) return false;
+      }
+      return true;
+    });
+  }, [sortedDefs, searchQuery, filterCategory, filterRace, filterClass, filterGender, filterImage, filterStale, spriteAssetMap, races, classes]);
+
+  const hasActiveFilter =
+    searchQuery.trim().length > 0 ||
+    filterCategory !== "all" ||
+    filterRace !== "all" ||
+    filterClass !== "all" ||
+    filterGender !== "all" ||
+    filterImage !== "all" ||
+    filterStale !== "all";
+
+  const clearFilters = useCallback(() => {
+    setSearchQuery("");
+    setFilterCategory("all");
+    setFilterRace("all");
+    setFilterClass("all");
+    setFilterGender("all");
+    setFilterImage("all");
+    setFilterStale("all");
+  }, []);
 
   const selectedDef = selectedId ? definitions[selectedId] : null;
 
@@ -296,6 +456,118 @@ export function PlayerSpriteManager() {
     [acceptAsset, config, definitions, ensureSpriteTemplate, hasApiKey, imageProvider, loadAssets, settings],
   );
 
+  const handleExportSheet = useCallback(async () => {
+    if (filteredDefs.length === 0 || exportingSheet) return;
+    setExportingSheet(true);
+    setGenerationError(null);
+    try {
+      const cellSize = 256;
+      const cols = 20;
+      const rows = Math.ceil(filteredDefs.length / cols);
+      const canvas = document.createElement("canvas");
+      canvas.width = cols * cellSize;
+      canvas.height = rows * cellSize;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) throw new Error("Canvas 2D context unavailable");
+
+      try {
+        await document.fonts.load(`16px "Cinzel"`);
+      } catch {
+        // Font load is best-effort; fall back silently.
+      }
+
+      const resolved = await Promise.all(
+        filteredDefs.map(async ([id, def]) => {
+          const fileName = spriteAssetMap.get(primaryAssetKey(id, def))?.fileName;
+          const src = fileName ? await resolveImageDataUrl(fileName) : null;
+          return { id, def, src };
+        }),
+      );
+
+      const loadImage = (src: string) =>
+        new Promise<HTMLImageElement>((resolve, reject) => {
+          const img = new Image();
+          img.onload = () => resolve(img);
+          img.onerror = () => reject(new Error("image decode failed"));
+          img.src = src;
+        });
+
+      ctx.fillStyle = "#0d1115";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      for (let i = 0; i < resolved.length; i++) {
+        const entry = resolved[i]!;
+        const col = i % cols;
+        const row = Math.floor(i / cols);
+        const x = col * cellSize;
+        const y = row * cellSize;
+
+        if (entry.src) {
+          try {
+            const img = await loadImage(entry.src);
+            ctx.drawImage(img, x, y, cellSize, cellSize);
+            continue;
+          } catch {
+            // Fall through to placeholder rendering on decode error.
+          }
+        }
+
+        ctx.fillStyle = "#161b21";
+        ctx.fillRect(x, y, cellSize, cellSize);
+        ctx.strokeStyle = "#3a4148";
+        ctx.lineWidth = 1;
+        ctx.setLineDash([6, 6]);
+        ctx.strokeRect(x + 6, y + 6, cellSize - 12, cellSize - 12);
+        ctx.setLineDash([]);
+
+        ctx.fillStyle = "#8a8f96";
+        ctx.font = `15px "Cinzel", serif`;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        const words = entry.def.displayName.split(/\s+/);
+        const lines: string[] = [];
+        let current = "";
+        for (const word of words) {
+          const test = current ? `${current} ${word}` : word;
+          if (ctx.measureText(test).width > cellSize - 24 && current) {
+            lines.push(current);
+            current = word;
+          } else {
+            current = test;
+          }
+        }
+        if (current) lines.push(current);
+        const visible = lines.slice(0, 4);
+        const lineHeight = 18;
+        const startY = y + cellSize / 2 - ((visible.length - 1) * lineHeight) / 2;
+        visible.forEach((line, idx) => {
+          ctx.fillText(line, x + cellSize / 2, startY + idx * lineHeight);
+        });
+      }
+
+      const defaultName = `sprite-sheet-${filteredDefs.length}.png`;
+      const target = await saveDialog({
+        title: "Export sprite sheet",
+        defaultPath: defaultName,
+        filters: [{ name: "PNG image", extensions: ["png"] }],
+      });
+      if (!target) return;
+
+      const blob = await new Promise<Blob | null>((resolve) =>
+        canvas.toBlob(resolve, "image/png"),
+      );
+      if (!blob) throw new Error("Canvas export failed");
+      const bytes = new Uint8Array(await blob.arrayBuffer());
+      await writeFile(target as string, bytes);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      setGenerationError(message);
+      console.error("Sprite sheet export failed:", err);
+    } finally {
+      setExportingSheet(false);
+    }
+  }, [filteredDefs, spriteAssetMap, exportingSheet]);
+
   const handleDeploy = useCallback(async () => {
     setDeploying(true);
     setDeployResult(null);
@@ -322,10 +594,18 @@ export function PlayerSpriteManager() {
 
   const toggleAllChecked = useCallback(() => {
     setCheckedIds((prev) => {
-      if (prev.size === sortedDefs.length) return new Set();
-      return new Set(sortedDefs.map(([id]) => id));
+      const visibleIds = filteredDefs.map(([id]) => id);
+      const allSelected = visibleIds.length > 0 && visibleIds.every((id) => prev.has(id));
+      if (allSelected) {
+        const next = new Set(prev);
+        for (const id of visibleIds) next.delete(id);
+        return next;
+      }
+      const next = new Set(prev);
+      for (const id of visibleIds) next.add(id);
+      return next;
     });
-  }, [sortedDefs]);
+  }, [filteredDefs]);
 
   const handleBulkDelete = useCallback(async () => {
     for (const id of checkedIds) {
@@ -427,7 +707,9 @@ export function PlayerSpriteManager() {
           Player Sprites
         </h2>
         <span className="text-2xs text-text-muted">
-          {sortedDefs.length} definition{sortedDefs.length !== 1 ? "s" : ""}
+          {hasActiveFilter
+            ? `${filteredDefs.length} of ${sortedDefs.length}`
+            : `${sortedDefs.length} definition${sortedDefs.length !== 1 ? "s" : ""}`}
         </span>
         <div className="flex-1" />
         {dirty && <span className="text-xs text-accent">modified</span>}
@@ -452,6 +734,19 @@ export function PlayerSpriteManager() {
           size="sm"
         >
           Remove BGs
+        </ActionButton>
+        <ActionButton
+          onClick={handleExportSheet}
+          disabled={exportingSheet || filteredDefs.length === 0}
+          variant="secondary"
+          size="sm"
+          title={
+            hasActiveFilter
+              ? `Export ${filteredDefs.length} filtered sprite${filteredDefs.length === 1 ? "" : "s"} as a 20-wide PNG sheet`
+              : `Export all ${filteredDefs.length} sprites as a 20-wide PNG sheet`
+          }
+        >
+          {exportingSheet ? "Exporting..." : "Export Sheet"}
         </ActionButton>
         <ActionButton
           onClick={handleDeploy}
@@ -526,6 +821,95 @@ export function PlayerSpriteManager() {
               Add
             </ActionButton>
           </div>
+          {/* Filter bar */}
+          <div className="flex flex-col gap-2 border-b border-border-default px-3 py-2">
+            <div className="flex items-center gap-1">
+              <input
+                className="ornate-input min-h-9 flex-1 rounded-2xl px-3 py-2 text-xs text-text-primary"
+                placeholder="Search sprites…"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+              {hasActiveFilter && (
+                <button
+                  onClick={clearFilters}
+                  className="shrink-0 px-1.5 text-2xs text-text-muted hover:text-text-primary"
+                  title="Clear all filters"
+                >
+                  clear
+                </button>
+              )}
+            </div>
+            <div className="flex flex-wrap gap-1">
+              <select
+                className="ornate-input min-h-7 rounded-xl px-2 py-1 text-2xs text-text-primary"
+                value={filterCategory}
+                onChange={(e) => setFilterCategory(e.target.value as "all" | "general" | "staff")}
+                title="Category"
+              >
+                <option value="all">All categories</option>
+                <option value="general">General</option>
+                <option value="staff">Staff</option>
+              </select>
+              <select
+                className="ornate-input min-h-7 rounded-xl px-2 py-1 text-2xs text-text-primary"
+                value={filterRace}
+                onChange={(e) => setFilterRace(e.target.value)}
+                title="Race requirement"
+              >
+                <option value="all">All races</option>
+                <option value="__none__">No race req</option>
+                {races.map((r) => (
+                  <option key={r} value={r}>{r}</option>
+                ))}
+              </select>
+              <select
+                className="ornate-input min-h-7 rounded-xl px-2 py-1 text-2xs text-text-primary"
+                value={filterClass}
+                onChange={(e) => setFilterClass(e.target.value)}
+                title="Class requirement"
+              >
+                <option value="all">All classes</option>
+                <option value="__none__">No class req</option>
+                {classes.map((c) => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+              </select>
+              <select
+                className="ornate-input min-h-7 rounded-xl px-2 py-1 text-2xs text-text-primary"
+                value={filterGender}
+                onChange={(e) => setFilterGender(e.target.value)}
+                title="Gender"
+              >
+                <option value="all">All genders</option>
+                <option value="__none__">No gender</option>
+                <option value="male">Male</option>
+                <option value="female">Female</option>
+                <option value="nonbinary">Nonbinary</option>
+              </select>
+              <select
+                className="ornate-input min-h-7 rounded-xl px-2 py-1 text-2xs text-text-primary"
+                value={filterImage}
+                onChange={(e) => setFilterImage(e.target.value as "all" | "with" | "without")}
+                title="Image status"
+              >
+                <option value="all">Any image</option>
+                <option value="with">With image</option>
+                <option value="without">Without image</option>
+              </select>
+              <select
+                className="ornate-input min-h-7 rounded-xl px-2 py-1 text-2xs text-text-primary"
+                value={filterStale}
+                onChange={(e) => setFilterStale(e.target.value as "all" | "race" | "class" | "any")}
+                title="Sprites whose race/class requirement points to a missing config entry"
+              >
+                <option value="all">Any refs</option>
+                <option value="race">Stale race ref</option>
+                <option value="class">Stale class ref</option>
+                <option value="any">Stale (any)</option>
+              </select>
+            </div>
+          </div>
           {/* Bulk action bar */}
           {checkedIds.size > 0 && (
             <div className="flex items-center gap-2 border-b border-border-default bg-bg-elevated px-3 py-1.5">
@@ -533,7 +917,9 @@ export function PlayerSpriteManager() {
                 onClick={toggleAllChecked}
                 className="text-2xs text-accent hover:text-accent/80"
               >
-                {checkedIds.size === sortedDefs.length ? "Deselect All" : "Select All"}
+                {filteredDefs.length > 0 && filteredDefs.every(([id]) => checkedIds.has(id))
+                  ? hasActiveFilter ? "Deselect Visible" : "Deselect All"
+                  : hasActiveFilter ? "Select Visible" : "Select All"}
               </button>
               <span className="text-2xs text-text-muted">
                 {checkedIds.size} selected
@@ -549,56 +935,33 @@ export function PlayerSpriteManager() {
             </div>
           )}
           <div className="flex-1 overflow-y-auto">
-            {sortedDefs.map(([id, def]) => {
-              const assetKey = primaryAssetKey(id, def);
-              return (
-                <div
-                  key={id}
-                  className={`flex w-full items-center gap-2 border-b border-[var(--chrome-stroke)] px-3 py-2.5 text-left text-xs transition ${
-                    selectedId === id
-                      ? "bg-gradient-active text-text-primary"
-                      : "text-text-secondary hover:bg-[var(--chrome-highlight)]"
-                  }`}
-                >
-                  <input
-                    type="checkbox"
-                    checked={checkedIds.has(id)}
-                    onChange={() => toggleChecked(id)}
-                    className="shrink-0 accent-accent"
-                    onClick={(e) => e.stopPropagation()}
-                  />
-                  <button
-                    onClick={() => setSelectedId(id)}
-                    className="flex min-w-0 flex-1 items-center gap-2 text-left"
-                  >
-                    <SpriteThumbnail fileName={spriteAssetMap.get(assetKey)?.fileName} label={def.displayName} />
-                    <div className="min-w-0 flex-1">
-                      <div className="truncate font-medium">{def.displayName}</div>
-                      <div className="truncate text-2xs text-text-muted">{id}</div>
-                      {def.requirements.length > 0 && (
-                        <div className="mt-0.5 flex flex-wrap gap-1">
-                          {def.requirements.map((req, i) => (
-                            <span
-                              key={i}
-                              className="rounded-full bg-[var(--chrome-highlight-strong)] px-1.5 py-0.5 text-3xs text-text-muted"
-                            >
-                              {requirementLabel(req)}
-                            </span>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                    <span className="shrink-0 text-2xs text-text-muted">
-                      {def.category === "staff" ? "S" : def.sortOrder}
-                    </span>
-                  </button>
-                </div>
-              );
-            })}
+            {filteredDefs.map(([id, def]) => (
+              <SpriteListRow
+                key={id}
+                id={id}
+                def={def}
+                selected={selectedId === id}
+                checked={checkedIds.has(id)}
+                fileName={spriteAssetMap.get(primaryAssetKey(id, def))?.fileName}
+                onSelect={setSelectedId}
+                onToggleChecked={toggleChecked}
+              />
+            ))}
             {sortedDefs.length === 0 && (
               <div className="flex flex-col gap-2 px-3 py-6 text-xs text-text-muted">
                 <p>No sprite definitions yet.</p>
                 <p>Add one above, or use <strong className="text-text-secondary">Fill Gaps</strong> to auto-create sprites for all race/class/tier combinations.</p>
+              </div>
+            )}
+            {sortedDefs.length > 0 && filteredDefs.length === 0 && (
+              <div className="flex flex-col gap-2 px-3 py-6 text-xs text-text-muted">
+                <p>No sprites match the current filters.</p>
+                <button
+                  onClick={clearFilters}
+                  className="self-start text-2xs text-accent hover:text-accent/80"
+                >
+                  Clear filters
+                </button>
               </div>
             )}
           </div>

@@ -137,6 +137,14 @@ No account is required for either edition. If you don't want to manage AI provid
 - **Live-preview showcase settings** — tune your published site's art and hero imagery with an AI art generator that previews the result in-place.
 - **Asset gallery** with type/zone filters, variant grouping, and one-click Cloudflare R2 sync for serving images from your own CDN.
 
+### Retrieval-augmented writing (Full Edition)
+
+- **Embedded lore index** — every article, timeline event, map pin, region, relationship, and entity description is chunked and embedded with Voyage AI's `voyage-3-lite` model (512-dim, stored locally per project) so the LLM works from your world's actual contents instead of a single article and a guess.
+- **Always-fresh index** — after the first rebuild, the index auto-reindexes (debounced) whenever you edit lore. Clearing the index is a real off-switch — no rebuild fires until you ask for one.
+- **Used everywhere AI writes** — article rewrites, consistency audits, gap analysis, @mention suggestions, timeline and relationship inference, and zone/quest generation all retrieve relevant context from the index rather than stuffing the prompt with everything.
+- **Bring your own key or route through the Hub** — set a Voyage AI key in the Lore Index settings panel, or flip on the Hub AI proxy to use the Hub's shared embedding key with the same per-user quota as image and LLM calls.
+- **Status at a glance** — the Lore Index panel shows total chunks, breakdown by kind, model and dimensionality, and when the last embed ran, plus manual Rebuild and Clear controls.
+
 ### Publishing
 
 - **One-click showcase** — publish your world as a read-only public website. Host it yourself, or publish to `yourworld.arcanum-hub.com` for free via the Arcanum Hub.
@@ -155,7 +163,7 @@ No account is required for either edition. If you don't want to manage AI provid
 
 The Hub is optional infrastructure for Arcanum users who'd rather not manage their own AI provider accounts or publishing host.
 
-- **AI proxy** — one key routes image generation, LLM writing, and vision analysis through the Hub's providers. Turn it on with a checkbox in settings; the rest of the app doesn't need to know.
+- **AI proxy** — one key routes image generation, LLM writing, vision analysis, and Voyage AI embeddings (for the lore RAG index) through the Hub's providers. Turn it on with a checkbox in settings; the rest of the app doesn't need to know.
 - **Free public hosting** — publish to `yourworld.arcanum-hub.com` with a single click. The Hub serves your showcase and its images from its own CDN.
 - **World directory** — the Hub landing page lets anyone discover published worlds with rich previews and search.
 

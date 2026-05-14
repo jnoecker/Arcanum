@@ -68,7 +68,7 @@ function addIssue(
 function hasPositiveOnUse(item: NonNullable<WorldFile["items"]>[string]): boolean {
   const onUse = item.onUse;
   if (!onUse) return false;
-  return (onUse.healHp ?? 0) > 0 || (onUse.grantXp ?? 0) > 0;
+  return (onUse.healHp ?? 0) > 0 || (onUse.healMana ?? 0) > 0 || (onUse.grantXp ?? 0) > 0;
 }
 
 /**
@@ -675,6 +675,7 @@ export function validateZone(
     }
     if (item.onUse) {
       if ((item.onUse.healHp ?? 0) < 0) addIssue(issues, "error", entity, "onUse.healHp must be >= 0");
+      if ((item.onUse.healMana ?? 0) < 0) addIssue(issues, "error", entity, "onUse.healMana must be >= 0");
       if ((item.onUse.grantXp ?? 0) < 0) addIssue(issues, "error", entity, "onUse.grantXp must be >= 0");
       if (!hasPositiveOnUse(item)) addIssue(issues, "error", entity, "onUse must define at least one positive effect");
     }

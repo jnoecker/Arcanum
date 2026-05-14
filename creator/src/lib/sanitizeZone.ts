@@ -663,7 +663,7 @@ function cleanOutput(world: WorldFile): WorldFile {
       let cleaned: ItemFile = { ...item, stats: stripZeroStats(item.stats) };
       // Strip onUse if no positive effect
       if (cleaned.onUse) {
-        const hasEffect = (cleaned.onUse.healHp ?? 0) > 0 || (cleaned.onUse.grantXp ?? 0) > 0;
+        const hasEffect = (cleaned.onUse.healHp ?? 0) > 0 || (cleaned.onUse.healMana ?? 0) > 0 || (cleaned.onUse.grantXp ?? 0) > 0;
         if (!hasEffect) cleaned = { ...cleaned, onUse: undefined };
       }
       // Strip charges if invalid (must be > 0 when present)

@@ -536,6 +536,7 @@ function InspectPanel({
     if (target.item.basePrice) stats.push(["Price", `${target.item.basePrice}g`]);
     if (target.item.consumable) stats.push(["Consumable", target.item.charges ?? "—"]);
     if (target.item.onUse?.healHp) stats.push(["Heals", `${target.item.onUse.healHp} HP`]);
+    if (target.item.onUse?.healMana) stats.push(["Restores", `${target.item.onUse.healMana} Mana`]);
     if (target.item.onUse?.grantXp) stats.push(["Grants", `${target.item.onUse.grantXp} XP`]);
     if (target.item.stats) {
       for (const [k, v] of Object.entries(target.item.stats)) {

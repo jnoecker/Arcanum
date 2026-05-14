@@ -410,10 +410,13 @@ export function buildMonolithicConfigObject(
   }
 
   // Pets
-  if (Object.keys(c.pets ?? {}).length > 0) {
-    engine.pets = {
-      definitions: mapEntries(c.pets, petToPlain),
-    };
+  if (Object.keys(c.pets ?? {}).length > 0 || c.petsConfig?.manualSkillGraceMs != null) {
+    const petsOut: Record<string, unknown> = {};
+    if (c.petsConfig?.manualSkillGraceMs != null) {
+      petsOut.manualSkillGraceMs = c.petsConfig.manualSkillGraceMs;
+    }
+    petsOut.definitions = mapEntries(c.pets, petToPlain);
+    engine.pets = petsOut;
   }
 
   // Skill Points
@@ -814,6 +817,30 @@ export function petToPlain(pet: AppConfig["pets"][string]): Record<string, unkno
   };
   if (pet.description) obj.description = pet.description;
   if (pet.image) obj.image = normalizeAssetRef(pet.image);
+  if (pet.threatMultiplier != null && pet.threatMultiplier !== 0) {
+    obj.threatMultiplier = pet.threatMultiplier;
+  }
+  if (pet.defaultAttack) obj.defaultAttack = pet.defaultAttack;
+  if (pet.spells && Object.keys(pet.spells).length > 0) {
+    obj.spells = mapEntries(pet.spells, petSpellToPlain);
+  }
+  return obj;
+}
+
+function petSpellToPlain(spell: import("@/types/config").PetSpellConfig): Record<string, unknown> {
+  const obj: Record<string, unknown> = {
+    displayName: spell.displayName,
+    message: spell.message,
+  };
+  if (spell.roomMessage) obj.roomMessage = spell.roomMessage;
+  if (spell.minDamage != null) obj.minDamage = spell.minDamage;
+  if (spell.maxDamage != null) obj.maxDamage = spell.maxDamage;
+  if (spell.healMin) obj.healMin = spell.healMin;
+  if (spell.healMax) obj.healMax = spell.healMax;
+  if (spell.statusEffectId) obj.statusEffectId = spell.statusEffectId;
+  if (spell.cooldownMs != null && spell.cooldownMs !== 0) obj.cooldownMs = spell.cooldownMs;
+  if (spell.weight != null && spell.weight !== 1) obj.weight = spell.weight;
+  if (spell.threatBonus != null && spell.threatBonus !== 0) obj.threatBonus = spell.threatBonus;
   return obj;
 }
 

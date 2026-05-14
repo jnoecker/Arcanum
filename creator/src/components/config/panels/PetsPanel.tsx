@@ -3,6 +3,8 @@ import type { ConfigPanelProps } from "./types";
 import type { PetDefinitionConfig } from "@/types/config";
 import { PetsList } from "../pets/PetsList";
 import { PetEditor } from "../pets/PetEditor";
+import { NumberInput } from "@/components/ui/FormWidgets";
+import { SectionCard } from "@/components/ui/SectionCard";
 
 function defaultPetDefinition(displayName: string): PetDefinitionConfig {
   return {
@@ -102,31 +104,58 @@ export function PetsPanel({ config, onChange }: ConfigPanelProps) {
   }, [pets, selectedId, patchPets]);
 
   const selected = selectedId ? pets[selectedId] ?? null : null;
+  const manualGrace = config.petsConfig?.manualSkillGraceMs ?? 8000;
 
   return (
-    <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
-      <div className="xl:col-span-3">
-        <PetsList
-          pets={pets}
-          selectedId={selectedId}
-          onSelect={setSelectedId}
-          onAdd={addPet}
-          onDuplicate={duplicatePet}
-          onDelete={deletePet}
-        />
-      </div>
+    <div className="flex flex-col gap-4">
+      <SectionCard title="Pet System">
+        <div className="grid grid-cols-1 gap-3 sm:max-w-sm">
+          <label className="flex flex-col gap-1">
+            <span className="font-display text-2xs uppercase tracking-wider text-text-muted">
+              Manual Skill Grace (ms)
+            </span>
+            <NumberInput
+              value={manualGrace}
+              onCommit={(v) =>
+                onChange({
+                  petsConfig: { ...(config.petsConfig ?? {}), manualSkillGraceMs: v ?? 8000 },
+                })
+              }
+              min={0}
+              dense
+            />
+            <span className="text-2xs text-text-muted/80">
+              Auto-cast suppression window after a manual skill trigger. Default 8000.
+            </span>
+          </label>
+        </div>
+      </SectionCard>
 
-      <div className="xl:col-span-9">
-        {selectedId && selected ? (
-          <PetEditor
-            id={selectedId}
-            pet={selected}
-            onPatch={(p) => patchPet(selectedId, p)}
-            onRename={(v) => renamePet(selectedId, v)}
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
+        <div className="xl:col-span-3">
+          <PetsList
+            pets={pets}
+            selectedId={selectedId}
+            onSelect={setSelectedId}
+            onAdd={addPet}
+            onDuplicate={duplicatePet}
+            onDelete={deletePet}
           />
-        ) : (
-          <EmptyEditor onAdd={addPet} />
-        )}
+        </div>
+
+        <div className="xl:col-span-9">
+          {selectedId && selected ? (
+            <PetEditor
+              id={selectedId}
+              pet={selected}
+              statusEffectIds={Object.keys(config.statusEffects ?? {})}
+              onPatch={(p) => patchPet(selectedId, p)}
+              onRename={(v) => renamePet(selectedId, v)}
+            />
+          ) : (
+            <EmptyEditor onAdd={addPet} />
+          )}
+        </div>
       </div>
     </div>
   );

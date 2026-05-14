@@ -84,7 +84,7 @@ export function ItemEditor({
   const handleOnUseChange = useCallback(
     (field: keyof ItemOnUse, value: number | undefined) => {
       const next: ItemOnUse = { ...onUse, [field]: value };
-      const hasEffect = (next.healHp ?? 0) > 0 || (next.grantXp ?? 0) > 0;
+      const hasEffect = (next.healHp ?? 0) > 0 || (next.healMana ?? 0) > 0 || (next.grantXp ?? 0) > 0;
       patch({ onUse: hasEffect ? next : undefined });
     },
     [onUse, patch],
@@ -229,6 +229,15 @@ export function ItemEditor({
                     <NumberInput
                       value={onUse.healHp}
                       onCommit={(v) => handleOnUseChange("healHp", v)}
+                      placeholder="0"
+                      min={0}
+                      dense
+                    />
+                  </CompactField>
+                  <CompactField label="Heal Mana">
+                    <NumberInput
+                      value={onUse.healMana}
+                      onCommit={(v) => handleOnUseChange("healMana", v)}
                       placeholder="0"
                       min={0}
                       dense

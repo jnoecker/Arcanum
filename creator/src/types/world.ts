@@ -302,6 +302,7 @@ export interface ItemFile {
 
 export interface ItemOnUse {
   healHp?: number;
+  healMana?: number;
   grantXp?: number;
 }
 

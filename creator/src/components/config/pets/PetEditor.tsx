@@ -56,19 +56,26 @@ function buildPetContext(pet: PetDefinitionConfig): string {
 interface PetEditorProps {
   id: string;
   pet: PetDefinitionConfig;
+  statusEffectIds?: string[];
   onPatch: (p: Partial<PetDefinitionConfig>) => void;
   onRename: (newId: string) => void;
 }
 
-export function PetEditor({ id, pet, onPatch, onRename }: PetEditorProps) {
+export function PetEditor({ id, pet, statusEffectIds, onPatch, onRename }: PetEditorProps) {
   const role = threatRole(pet.threatMultiplier);
+  const isTank = (pet.threatMultiplier ?? 0) > 0;
 
   return (
     <div className="grid grid-cols-1 gap-3 lg:grid-cols-12">
       <div className="lg:col-span-7 flex flex-col gap-3">
         <IdentityCard id={id} pet={pet} onPatch={onPatch} onRename={onRename} />
         <CombatStatsCard pet={pet} onPatch={onPatch} role={role} />
-        <SpellsCard pet={pet} onPatch={onPatch} />
+        <SpellsCard
+          pet={pet}
+          onPatch={onPatch}
+          statusEffectIds={statusEffectIds ?? []}
+          showThreatBonus={isTank}
+        />
       </div>
 
       <div className="lg:col-span-5">
@@ -282,9 +289,13 @@ function PortraitCard({
 function SpellsCard({
   pet,
   onPatch,
+  statusEffectIds,
+  showThreatBonus,
 }: {
   pet: PetDefinitionConfig;
   onPatch: (p: Partial<PetDefinitionConfig>) => void;
+  statusEffectIds: string[];
+  showThreatBonus: boolean;
 }) {
   const [adding, setAdding] = useState(false);
   const [newId, setNewId] = useState("");
@@ -392,6 +403,8 @@ function SpellsCard({
               id={sid}
               spell={spells[sid]!}
               expanded={expanded === sid}
+              statusEffectIds={statusEffectIds}
+              showThreatBonus={showThreatBonus}
               onToggle={() => setExpanded(expanded === sid ? null : sid)}
               onUpdate={(field, value) => updateSpell(sid, field, value)}
               onDelete={() => deleteSpell(sid)}
@@ -407,6 +420,8 @@ function SpellRow({
   id,
   spell,
   expanded,
+  statusEffectIds,
+  showThreatBonus,
   onToggle,
   onUpdate,
   onDelete,
@@ -414,6 +429,8 @@ function SpellRow({
   id: string;
   spell: PetSpellConfig;
   expanded: boolean;
+  statusEffectIds: string[];
+  showThreatBonus: boolean;
   onToggle: () => void;
   onUpdate: (field: string, value: unknown) => void;
   onDelete: () => void;
@@ -522,6 +539,27 @@ function SpellRow({
               onCommit={(v) => onUpdate("cooldownMs", v || undefined)}
               tone="blue"
             />
+            {showThreatBonus && (
+              <StatBlock
+                label="Threat Bonus"
+                value={spell.threatBonus ?? 0}
+                onCommit={(v) => onUpdate("threatBonus", v || undefined)}
+                tone="warm"
+              />
+            )}
+          </div>
+
+          <div className="grid grid-cols-1 gap-3">
+            <FieldLabel label="Applies Status Effect">
+              <SelectInput
+                value={spell.statusEffectId ?? ""}
+                onCommit={(v) => onUpdate("statusEffectId", v || undefined)}
+                options={statusEffectIds.map((sid) => ({ value: sid, label: sid }))}
+                placeholder="None"
+                allowEmpty
+                dense
+              />
+            </FieldLabel>
           </div>
         </div>
       )}

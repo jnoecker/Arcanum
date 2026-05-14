@@ -119,6 +119,7 @@ export function parseAppConfigYaml(content: string): AppConfig {
     environment: parseEnvironmentConfig(engine.environment),
     worldEvents: parseWorldEventsConfig(engine.worldEvents),
     pets: parsePetDefinitions(engine.pets),
+    petsConfig: parsePetsTopLevel(engine.pets),
     guild: parseGuildConfig(engine.guildRanks),
     guildRanks: parseMapSection(engine.guildRanks, "ranks"),
     friends: parseFriendsConfig(engine.friends),
@@ -1199,10 +1200,43 @@ function parsePetDefinitions(raw: unknown): Record<string, import("@/types/confi
       minDamage: asNumber(pet.minDamage, 1),
       maxDamage: asNumber(pet.maxDamage, 4),
       armor: asNumber(pet.armor, 0),
+      threatMultiplier: typeof pet.threatMultiplier === "number" ? pet.threatMultiplier : undefined,
+      defaultAttack: typeof pet.defaultAttack === "string" ? pet.defaultAttack : undefined,
+      spells: parsePetSpells(pet.spells),
       image: typeof pet.image === "string" ? pet.image : undefined,
     };
   }
   return result;
+}
+
+function parsePetSpells(raw: unknown): Record<string, import("@/types/config").PetSpellConfig> | undefined {
+  if (!raw || typeof raw !== "object") return undefined;
+  const result: Record<string, import("@/types/config").PetSpellConfig> = {};
+  for (const [sid, v] of Object.entries(raw as Record<string, unknown>)) {
+    if (!v || typeof v !== "object") continue;
+    const s = v as Record<string, unknown>;
+    result[sid] = {
+      displayName: asString(s.displayName, ""),
+      message: asString(s.message, ""),
+      roomMessage: typeof s.roomMessage === "string" ? s.roomMessage : undefined,
+      minDamage: typeof s.minDamage === "number" ? s.minDamage : undefined,
+      maxDamage: typeof s.maxDamage === "number" ? s.maxDamage : undefined,
+      healMin: typeof s.healMin === "number" ? s.healMin : undefined,
+      healMax: typeof s.healMax === "number" ? s.healMax : undefined,
+      statusEffectId: typeof s.statusEffectId === "string" ? s.statusEffectId : undefined,
+      cooldownMs: typeof s.cooldownMs === "number" ? s.cooldownMs : undefined,
+      weight: typeof s.weight === "number" ? s.weight : undefined,
+      threatBonus: typeof s.threatBonus === "number" ? s.threatBonus : undefined,
+    };
+  }
+  return Object.keys(result).length > 0 ? result : undefined;
+}
+
+function parsePetsTopLevel(raw: unknown): import("@/types/config").PetsTopLevelConfig | undefined {
+  if (!raw || typeof raw !== "object") return undefined;
+  const s = raw as Record<string, unknown>;
+  if (typeof s.manualSkillGraceMs !== "number") return undefined;
+  return { manualSkillGraceMs: s.manualSkillGraceMs };
 }
 
 function parseFriendsConfig(raw: unknown): AppConfig["friends"] {
@@ -1372,6 +1406,7 @@ async function loadSplitConfig(projectDir: string): Promise<AppConfig | null> {
       environment: parseEnvironmentConfig(worldRaw.environment),
       worldEvents: parseWorldEventsConfig(worldRaw.worldEvents),
       pets: parsePetDefinitions(petsRaw),
+      petsConfig: parsePetsTopLevel(petsRaw),
       guild: parseGuildConfig(worldRaw.guildRanks),
       guildRanks: parseMapSection(worldRaw.guildRanks, "ranks"),
       friends: parseFriendsConfig(worldRaw.friends),

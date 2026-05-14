@@ -241,9 +241,15 @@ async function saveSplitConfig(projectDir: string): Promise<void> {
       }),
     })),
 
-    write("pets", Object.keys(config.pets ?? {}).length > 0
-      ? { definitions: mapEntries(config.pets, petToPlain) }
-      : {}),
+    write("pets", (() => {
+      const hasDefs = Object.keys(config.pets ?? {}).length > 0;
+      const hasGrace = config.petsConfig?.manualSkillGraceMs != null;
+      if (!hasDefs && !hasGrace) return {};
+      const out: Record<string, unknown> = {};
+      if (hasGrace) out.manualSkillGraceMs = config.petsConfig!.manualSkillGraceMs;
+      if (hasDefs) out.definitions = mapEntries(config.pets, petToPlain);
+      return out;
+    })()),
 
     // achievements.yaml lives at project root (not in config/)
     writeTextFile(

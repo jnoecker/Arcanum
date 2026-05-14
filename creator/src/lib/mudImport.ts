@@ -77,7 +77,7 @@ interface ConvertedItem {
   armor?: number;
   stats?: Record<string, number>;
   consumable?: boolean;
-  onUse?: { healHp?: number };
+  onUse?: { healHp?: number; healMana?: number };
   basePrice?: number;
   _warnings?: string[];
 }
@@ -341,7 +341,7 @@ Wear flag to slot mapping: b(2)=finger, c(4)=neck, d(8)=body, e(16)=head, f(32)=
 Object type handling:
 - Type 5 (WEAPON): damage = val1 * val2 average = val1*(val2+1)/2, slot = "weapon"
 - Type 9 (ARMOR): armor = val0, determine slot from wear_flags
-- Type 10 (POTION): consumable=true, onUse.healHp if it has a heal spell
+- Type 10 (POTION): consumable=true, onUse.healHp if it has a heal spell, onUse.healMana if it restores mana
 - Type 19 (FOOD): consumable=true
 - Type 18 (KEY): keyword="key"
 - Type 1 (LIGHT): slot="held"
@@ -359,7 +359,7 @@ Output a JSON array:
   "armor": <armor value or omit>,
   "stats": { "<stat>": <value> } or omit if empty,
   "consumable": true/false,
-  "onUse": { "healHp": <value> } or omit,
+  "onUse": { "healHp": <value>, "healMana": <value> } or omit,
   "basePrice": <cost value>,
   "_warnings": ["<unmapped fields>"]
 }

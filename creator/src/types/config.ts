@@ -40,8 +40,15 @@ export interface PetSpellConfig {
   maxDamage?: number;
   healMin?: number;
   healMax?: number;
+  statusEffectId?: string;
   cooldownMs?: number;
   weight?: number;
+  /**
+   * Flat threat added on cast. Only useful when the parent pet has
+   * threatMultiplier > 0; on DPS pets this falls onto the owner's threat
+   * entry, which is rarely intended.
+   */
+  threatBonus?: number;
 }
 
 export interface PetDefinitionConfig {
@@ -55,6 +62,12 @@ export interface PetDefinitionConfig {
   spells?: Record<string, PetSpellConfig>;
   defaultAttack?: string;
   image?: string;
+}
+
+/** Top-level pet configuration (siblings of `pets.definitions`). */
+export interface PetsTopLevelConfig {
+  /** Auto-cast suppression window after a manual skill trigger. Default: 8000ms. */
+  manualSkillGraceMs?: number;
 }
 
 // ─── Abilities ──────────────────────────────────────────────────────
@@ -1142,6 +1155,7 @@ export interface AppConfig {
   environment: EnvironmentConfig;
   worldEvents: WorldEventsConfig;
   pets: Record<string, PetDefinitionConfig>;
+  petsConfig?: PetsTopLevelConfig;
   prestige?: PrestigeConfig;
   respec?: RespecConfig;
   currencies?: CurrenciesConfig;

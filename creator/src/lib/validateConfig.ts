@@ -123,6 +123,38 @@ export function validateConfig(config: AppConfig): ValidationIssue[] {
         message: "Min damage exceeds max damage",
       });
     }
+    const petIsTank = (pet.threatMultiplier ?? 0) > 0;
+    for (const [sid, spell] of Object.entries(pet.spells ?? {})) {
+      const entity = `pet:${id}.spells.${sid}`;
+      if (spell.statusEffectId && !statusEffectIds.has(spell.statusEffectId)) {
+        issues.push({
+          severity: "error",
+          entity,
+          message: `Unknown status effect "${spell.statusEffectId}"`,
+        });
+      }
+      if (spell.weight != null && spell.weight < 1) {
+        issues.push({
+          severity: "warning",
+          entity,
+          message: "weight should be ≥ 1 (relative weight in auto-cast roll)",
+        });
+      }
+      if (spell.cooldownMs != null && spell.cooldownMs <= 0) {
+        issues.push({
+          severity: "warning",
+          entity,
+          message: "cooldownMs should be > 0 (auto-cast will pick this every tick otherwise)",
+        });
+      }
+      if ((spell.threatBonus ?? 0) > 0 && !petIsTank) {
+        issues.push({
+          severity: "warning",
+          entity,
+          message: "threatBonus has no effect when the pet's threatMultiplier is 0 (DPS pet)",
+        });
+      }
+    }
   }
 
   // ─── Abilities ────────────────────────────────────────────────

@@ -70,14 +70,22 @@ const CATEGORY_OPTIONS = [
   { value: "aberration", label: "Aberration" },
 ];
 
+// Mirrors the server's BehaviorTemplates registry. Match case-insensitively
+// for legacy YAML that used uppercase values.
 const BEHAVIOR_TEMPLATES = [
   { value: "", label: "— none —" },
-  { value: "PATROL", label: "Patrol" },
-  { value: "WANDER", label: "Wander" },
-  { value: "AGGRESSIVE", label: "Aggressive" },
-  { value: "FLEE_LOW_HP", label: "Flee Low HP" },
-  { value: "STATIC", label: "Static" },
+  { value: "aggro_guard", label: "Aggro Guard" },
+  { value: "patrol", label: "Patrol" },
+  { value: "patrol_aggro", label: "Patrol + Aggro" },
+  { value: "wander", label: "Wander" },
+  { value: "wander_aggro", label: "Wander + Aggro" },
+  { value: "coward", label: "Coward (flee)" },
 ];
+
+const TEMPLATES_WITH_PATROL_ROUTE = new Set(["patrol", "patrol_aggro"]);
+const TEMPLATES_WITH_WANDER_DISTANCE = new Set(["wander", "wander_aggro", "coward"]);
+const TEMPLATES_WITH_AGGRO_MSG = new Set(["aggro_guard", "patrol_aggro", "wander_aggro"]);
+const TEMPLATES_WITH_FLEE = new Set(["coward"]);
 
 type MobTab = "mob" | "rewards" | "dialogue" | "media";
 const MOB_TABS: readonly { value: MobTab; label: string }[] = [
@@ -412,21 +420,23 @@ export function MobEditor({
             </Section>
           )}
 
-          {isCombatant && (
+          {isCombatant && (() => {
+            const templateNorm = (mob.behavior?.template ?? "").toLowerCase();
+            return (
           <>
           <Section title="Behavior">
             <div className="flex flex-col gap-1.5">
               <FieldRow label="Template">
                 <SelectInput
-                  value={mob.behavior?.template ?? ""}
+                  value={templateNorm}
                   options={BEHAVIOR_TEMPLATES}
                   onCommit={handleBehaviorTemplate}
                 />
               </FieldRow>
-              {mob.behavior?.template === "PATROL" && (
+              {TEMPLATES_WITH_PATROL_ROUTE.has(templateNorm) && (
                 <FieldRow label="Patrol Route">
                   <TextInput
-                    value={(mob.behavior.params?.patrolRoute ?? []).join(", ")}
+                    value={(mob.behavior!.params?.patrolRoute ?? []).join(", ")}
                     onCommit={(v) => {
                       const route = v
                         .split(",")
@@ -443,10 +453,10 @@ export function MobEditor({
                   />
                 </FieldRow>
               )}
-              {mob.behavior?.template === "FLEE_LOW_HP" && (
+              {TEMPLATES_WITH_FLEE.has(templateNorm) && (
                 <FieldRow label="Flee HP %">
                   <NumberInput
-                    value={mob.behavior.params?.fleeHpPercent ?? 20}
+                    value={mob.behavior!.params?.fleeHpPercent ?? 20}
                     onCommit={(v) =>
                       patch({
                         behavior: {
@@ -460,10 +470,10 @@ export function MobEditor({
                   />
                 </FieldRow>
               )}
-              {mob.behavior?.template === "WANDER" && (
+              {TEMPLATES_WITH_WANDER_DISTANCE.has(templateNorm) && (
                 <FieldRow label="Max Distance">
                   <NumberInput
-                    value={mob.behavior.params?.maxWanderDistance ?? 3}
+                    value={mob.behavior!.params?.maxWanderDistance ?? 3}
                     onCommit={(v) =>
                       patch({
                         behavior: {
@@ -476,43 +486,43 @@ export function MobEditor({
                   />
                 </FieldRow>
               )}
-              {mob.behavior && (
-                <>
-                  <FieldRow label="Aggro Msg">
-                    <TextInput
-                      value={mob.behavior.params?.aggroMessage ?? ""}
-                      onCommit={(v) =>
-                        patch({
-                          behavior: {
-                            ...mob.behavior!,
-                            params: {
-                              ...mob.behavior!.params,
-                              aggroMessage: v || undefined,
-                            },
+              {TEMPLATES_WITH_AGGRO_MSG.has(templateNorm) && (
+                <FieldRow label="Aggro Msg">
+                  <TextInput
+                    value={mob.behavior!.params?.aggroMessage ?? ""}
+                    onCommit={(v) =>
+                      patch({
+                        behavior: {
+                          ...mob.behavior!,
+                          params: {
+                            ...mob.behavior!.params,
+                            aggroMessage: v || undefined,
                           },
-                        })
-                      }
-                      placeholder="Optional"
-                    />
-                  </FieldRow>
-                  <FieldRow label="Flee Msg">
-                    <TextInput
-                      value={mob.behavior.params?.fleeMessage ?? ""}
-                      onCommit={(v) =>
-                        patch({
-                          behavior: {
-                            ...mob.behavior!,
-                            params: {
-                              ...mob.behavior!.params,
-                              fleeMessage: v || undefined,
-                            },
+                        },
+                      })
+                    }
+                    placeholder="Optional"
+                  />
+                </FieldRow>
+              )}
+              {TEMPLATES_WITH_FLEE.has(templateNorm) && (
+                <FieldRow label="Flee Msg">
+                  <TextInput
+                    value={mob.behavior!.params?.fleeMessage ?? ""}
+                    onCommit={(v) =>
+                      patch({
+                        behavior: {
+                          ...mob.behavior!,
+                          params: {
+                            ...mob.behavior!.params,
+                            fleeMessage: v || undefined,
                           },
-                        })
-                      }
-                      placeholder="Optional"
-                    />
-                  </FieldRow>
-                </>
+                        },
+                      })
+                    }
+                    placeholder="Optional"
+                  />
+                </FieldRow>
               )}
             </div>
           </Section>
@@ -714,7 +724,8 @@ export function MobEditor({
             </FieldGrid>
           </Section>
           </>
-          )}
+            );
+          })()}
         </>
       )}
 

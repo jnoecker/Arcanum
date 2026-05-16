@@ -12,7 +12,7 @@ import { ITEM_TYPES } from "@/types/world";
 import type { EquipmentSlotDefinition, MobTiersConfig } from "@/types/config";
 import { resolveDoorKeyId, resolveDoorState } from "./doorHelpers";
 import { mobMaxDamageAtLevel, mobMinDamageAtLevel } from "./tuning/formulas";
-import { computeZoneRebalance } from "./zoneRebalance";
+import { classifyMob, targetLevelForTier } from "./zoneRebalance";
 import { exitTarget } from "./zoneEdits";
 import { getTrainerClasses } from "./trainers";
 import { resolveMobStats } from "./resolveMobStats";
@@ -124,53 +124,31 @@ function validateZoneBalanceTargets(
     return;
   }
 
-  const diff = computeZoneRebalance(world, { mobTiers }, {
-    levelBand: world.levelBand,
-    difficultyHint: world.difficultyHint,
-  });
   const zoneTargetLabel = formatZoneTargetLabel(world);
+  const band = world.levelBand;
+  const difficulty = world.difficultyHint ?? "standard";
 
-  for (const mobId of diff.skippedMobIds) {
-    const mob = world.mobs[mobId];
-    const tier = mob?.tier ?? "standard";
-    addIssue(
-      issues,
-      "warning",
-      `mob:${mobId}`,
-      `Tier "${tier}" is not defined in config, so the zone target ${zoneTargetLabel} cannot be validated for this mob.`,
-    );
-  }
-
-  for (const mobDiff of diff.mobs) {
-    const entity = `mob:${mobDiff.mobId}`;
-    if (mobDiff.levelChanged) {
-      if (mobDiff.currentLevel == null) {
-        addIssue(
-          issues,
-          "warning",
-          entity,
-          `Mob has no explicit level. Tier "${mobDiff.tier}" should target level ${mobDiff.targetLevel} for zone ${zoneTargetLabel}.`,
-        );
-      } else {
-        addIssue(
-          issues,
-          "warning",
-          entity,
-          `Mob level ${mobDiff.currentLevel} is outside the zone target for tier "${mobDiff.tier}". Expected level ${mobDiff.targetLevel} for zone ${zoneTargetLabel}.`,
-        );
-      }
-    }
-
-    const flaggedOverrides = mobDiff.overrideChanges.filter((change) => change.action === "flag");
-    if (flaggedOverrides.length > 0) {
-      const summary = flaggedOverrides
-        .map((change) => `${change.field} ${change.currentOverride} vs ${change.tierBaseline}`)
-        .join(", ");
+  for (const [mobId, mob] of Object.entries(world.mobs)) {
+    if (classifyMob(mob) === "non-combat") continue;
+    const tierKey = mob.tier ?? "standard";
+    const tier = mobTiers[tierKey as keyof typeof mobTiers];
+    if (!tier) {
       addIssue(
         issues,
         "warning",
-        entity,
-        `Overrides diverge from the tier baseline at target level ${mobDiff.targetLevel}: ${summary}.`,
+        `mob:${mobId}`,
+        `Tier "${tierKey}" is not defined in config, so the zone target ${zoneTargetLabel} cannot be validated for this mob.`,
+      );
+      continue;
+    }
+
+    const expectedLevel = targetLevelForTier(tierKey, band, difficulty);
+    if (mob.level != null && mob.level !== expectedLevel) {
+      addIssue(
+        issues,
+        "warning",
+        `mob:${mobId}`,
+        `Mob level ${mob.level} is outside the zone target for tier "${tierKey}". Expected level ${expectedLevel} for zone ${zoneTargetLabel}. Run "Rebalance to tier" to fix.`,
       );
     }
   }
@@ -691,6 +669,13 @@ export function validateZone(
         entity,
         `itemType "${item.itemType}" is not a known type. Valid: ${ITEM_TYPES.join(", ")}`,
       );
+    }
+    if (item.classes && item.classes.length > 0) {
+      for (const cls of item.classes) {
+        if (!VALID_CLASSES.has(cls.toUpperCase())) {
+          addIssue(issues, "warning", entity, `Class restriction "${cls}" is not a known class`);
+        }
+      }
     }
   }
 

@@ -333,6 +333,13 @@ export interface ItemFile {
   secondaryStat?: string;
   /** Tertiary stat: receives the smallest share of the stat-budget. */
   tertiaryStat?: string;
+  /**
+   * Class restriction. When non-empty, only players whose `playerClass` matches
+   * one of these IDs can equip the item. Null/absent = unrestricted. Mirrors
+   * AmbonMUD's `ItemFile.classes` field; the server's equip handler enforces
+   * the wall. Loader normalizes entries to uppercase.
+   */
+  classes?: string[];
 }
 
 export interface ItemOnUse {

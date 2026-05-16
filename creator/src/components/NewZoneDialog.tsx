@@ -40,6 +40,7 @@ import {
   type SizePresetId,
 } from "./NewZoneDialogSteps";
 import { YAML_OPTS } from "@/lib/yamlOpts";
+import { rebalanceZone } from "@/lib/zoneRebalance";
 
 // ─── Wizard component ──────────────────────────────────────────────
 
@@ -282,6 +283,14 @@ export function NewZoneDialog({ onClose, prefill, onCreated }: NewZoneDialogProp
       } else {
         world = await generateZoneContent(buildGenParams(zoneId));
       }
+    }
+
+    // Run the deterministic rebalance pass so the zone ships with stats that
+    // match the world's tier baselines and item budgets instead of whatever
+    // numbers the LLM rolled. Safe to skip if config isn't loaded yet — the
+    // user can run the manual "Rebalance to tier" button later.
+    if (config) {
+      world = rebalanceZone(world, config).world;
     }
 
     // Standalone projects need a zone directory before the file write

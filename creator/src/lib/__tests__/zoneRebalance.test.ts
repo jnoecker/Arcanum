@@ -1,13 +1,15 @@
 import { describe, it, expect } from "vitest";
 import {
-  applyZoneRebalance,
   classifyMob,
-  computeZoneRebalance,
   inferLevelBand,
+  rebalanceZone,
+  restatItem,
+  restatMob,
+  targetLevelForItemTier,
   targetLevelForTier,
 } from "@/lib/zoneRebalance";
 import type { AppConfig } from "@/types/config";
-import type { MobFile, WorldFile } from "@/types/world";
+import type { ItemFile, MobFile, WorldFile } from "@/types/world";
 
 const TIER_CONFIG = {
   weak: { baseHp: 10, hpScalingRate: 1.1, baseMinDamage: 1, baseMaxDamage: 2, damageScalingRate: 1.0, baseArmor: 0, baseXpReward: 15, xpScalingRate: 1.15, baseGoldMin: 1, baseGoldMax: 3, goldScalingRate: 1.1 },
@@ -27,12 +29,26 @@ function mob(overrides: Partial<MobFile> = {}): MobFile {
   };
 }
 
-function zoneWith(mobs: Record<string, MobFile>): WorldFile {
+function item(overrides: Partial<ItemFile> = {}): ItemFile {
+  return {
+    displayName: "Test Item",
+    slot: "weapon",
+    tier: "common",
+    archetype: "damage",
+    ...overrides,
+  };
+}
+
+function zoneWith(
+  mobs: Record<string, MobFile>,
+  items: Record<string, ItemFile> = {},
+): WorldFile {
   return {
     zone: "test_zone",
     startRoom: "room_1",
     rooms: { room_1: { description: "" } as never },
     mobs,
+    items,
   };
 }
 
@@ -55,6 +71,18 @@ describe("targetLevelForTier", () => {
     expect(targetLevelForTier("standard", band, "challenging")).toBe(6);
     expect(targetLevelForTier("elite", band, "casual")).toBe(5);
     expect(targetLevelForTier("elite", band, "challenging")).toBe(7);
+  });
+});
+
+describe("targetLevelForItemTier", () => {
+  it("places rarer items higher in the band", () => {
+    const band = { min: 3, max: 9 };
+    expect(targetLevelForItemTier("trash", band)).toBe(3);
+    expect(targetLevelForItemTier("common", band)).toBe(5); // mid - 1
+    expect(targetLevelForItemTier("uncommon", band)).toBe(6); // mid
+    expect(targetLevelForItemTier("rare", band)).toBe(7);    // mid + 1
+    expect(targetLevelForItemTier("epic", band)).toBe(9);
+    expect(targetLevelForItemTier("legendary", band)).toBe(9);
   });
 });
 
@@ -103,186 +131,173 @@ describe("inferLevelBand", () => {
   });
 });
 
-describe("computeZoneRebalance", () => {
-  it("classifies trash separately from named and sorts named first", () => {
-    const zone = zoneWith({
-      goblin: mob({ tier: "weak" }),
-      boss_fight: mob({ tier: "boss" }),
-      shopkeep: mob({ tier: "standard", quests: ["q1"] }),
+describe("restatMob", () => {
+  it("sets the level and drops authored stat overrides", () => {
+    const before = mob({
+      tier: "weak",
+      level: 1,
+      hp: 999,
+      minDamage: 50,
+      maxDamage: 75,
+      armor: 12,
+      xpReward: 1000,
+      goldMin: 100,
+      goldMax: 200,
     });
-    const diff = computeZoneRebalance(zone, MOCK_CONFIG, {
-      levelBand: { min: 3, max: 7 },
-    });
-    const ids = diff.mobs.map((m) => m.mobId);
-    expect(ids.slice(0, 2).sort()).toEqual(["boss_fight", "shopkeep"]);
-    expect(ids[2]).toBe("goblin");
-    expect(diff.mobs.find((m) => m.mobId === "goblin")?.classification).toBe("trash");
-    expect(diff.mobs.find((m) => m.mobId === "boss_fight")?.classification).toBe("named");
+    const after = restatMob(before, 5, TIER_CONFIG.weak);
+    expect(after.level).toBe(5);
+    expect(after.hp).toBeUndefined();
+    expect(after.minDamage).toBeUndefined();
+    expect(after.maxDamage).toBeUndefined();
+    expect(after.armor).toBeUndefined();
+    expect(after.xpReward).toBeUndefined();
+    expect(after.goldMin).toBeUndefined();
+    expect(after.goldMax).toBeUndefined();
   });
 
-  it("flags level changes when current differs from target", () => {
-    const zone = zoneWith({ goblin: mob({ tier: "weak", level: 12 }) });
-    const diff = computeZoneRebalance(zone, MOCK_CONFIG, {
-      levelBand: { min: 3, max: 7 },
+  it("preserves flavor knobs (toughness + mults) and graph fields", () => {
+    const before = mob({
+      tier: "elite",
+      hp: 500,
+      toughness: 2,
+      hpMult: 1.5,
+      dmgMult: 1.25,
+      drops: [{ itemId: "shiny", chance: 0.5 }],
+      dialogue: { greet: { text: "Hello." } as never },
+      quests: ["q_first_blood"],
+      faction: "lawful",
     });
-    const goblin = diff.mobs[0]!;
-    expect(goblin.targetLevel).toBe(3);
-    expect(goblin.levelChanged).toBe(true);
+    const after = restatMob(before, 8, TIER_CONFIG.elite);
+    expect(after.toughness).toBe(2);
+    expect(after.hpMult).toBe(1.5);
+    expect(after.dmgMult).toBe(1.25);
+    expect(after.drops).toEqual([{ itemId: "shiny", chance: 0.5 }]);
+    expect(after.dialogue).toBeDefined();
+    expect(after.quests).toEqual(["q_first_blood"]);
+    expect(after.faction).toBe("lawful");
+  });
+});
+
+describe("restatItem", () => {
+  it("rebuilds damage and stats from the budget pipeline", () => {
+    const before = item({
+      slot: "weapon",
+      tier: "rare",
+      archetype: "damage",
+      level: 1,
+      damage: 1,        // wrong — should be rebuilt
+      armor: 99,        // wrong for damage archetype — should be dropped
+      primaryStat: "STR",
+    });
+    const after = restatItem(before, 6);
+    expect(after.level).toBe(6);
+    expect(after.tier).toBe("rare");
+    expect(after.damage).toBeGreaterThan(0);
+    // damage-archetype weapons get zero armor budget — should be dropped, not zero
+    expect(after.armor).toBeUndefined();
+    expect(after.displayName).toBe("Test Item");
+    expect(after.slot).toBe("weapon");
+    expect(after.stats).toBeDefined();
   });
 
-  it("marks within-tolerance overrides as 'drop' and divergent as 'flag'", () => {
-    // weak tier @ L3: hp = floor(10 × 1.1^2) = 12, xpReward = floor(15 × 1.15^2) = 19
-    const zone = zoneWith({
-      close: mob({ tier: "weak", hp: 13 }),
-      far: mob({ tier: "weak", hp: 200 }),
-      authoredXp: mob({ tier: "weak", xpReward: 9999 }),
+  it("preserves class restrictions and authored slot/archetype", () => {
+    const before = item({
+      slot: "chest",
+      tier: "epic",
+      archetype: "armor",
+      classes: ["WARRIOR"],
     });
-    const diff = computeZoneRebalance(zone, MOCK_CONFIG, {
-      levelBand: { min: 3, max: 3 },
-    });
-    const close = diff.mobs.find((m) => m.mobId === "close")!;
-    const far = diff.mobs.find((m) => m.mobId === "far")!;
-    const authored = diff.mobs.find((m) => m.mobId === "authoredXp")!;
-    expect(close.overrideChanges[0]?.action).toBe("drop");
-    expect(far.overrideChanges[0]?.action).toBe("flag");
-    expect(authored.overrideChanges[0]?.action).toBe("flag");
+    const after = restatItem(before, 10);
+    expect(after.classes).toEqual(["WARRIOR"]);
+    expect(after.slot).toBe("chest");
+    expect(after.archetype).toBe("armor");
+    expect(after.armor).toBeGreaterThan(0);
   });
 
-  it("skips mobs whose tier is not in config", () => {
-    const zone = zoneWith({ mystery: mob({ tier: "phantom" }) });
-    const diff = computeZoneRebalance(zone, MOCK_CONFIG, {
-      levelBand: { min: 3, max: 7 },
-    });
-    expect(diff.mobs).toEqual([]);
-    expect(diff.skippedMobIds).toEqual(["mystery"]);
+  it("skips consumables and items without a slot", () => {
+    const noSlot = item({ slot: undefined });
+    expect(restatItem(noSlot, 5)).toBe(noSlot);
+    const potion = item({ slot: undefined, consumable: true, onUse: { healHp: 20 } });
+    expect(restatItem(potion, 5)).toBe(potion);
   });
 
-  it("returns non-combat mobs without proposing level or stat changes", () => {
-    const zone = zoneWith({
-      goblin: mob({ tier: "weak", level: 1 }),
-      shopkeep: mob({ role: "vendor", tier: "weak", level: 1 }),
-      somnius: mob({ role: "dialog", tier: "boss", level: 1 }),
-    });
-    const diff = computeZoneRebalance(zone, MOCK_CONFIG, { levelBand: { min: 5, max: 9 } });
-    const shopkeep = diff.mobs.find((m) => m.mobId === "shopkeep")!;
-    const somnius = diff.mobs.find((m) => m.mobId === "somnius")!;
-    expect(shopkeep.classification).toBe("non-combat");
-    expect(shopkeep.levelChanged).toBe(false);
-    expect(shopkeep.overrideChanges).toEqual([]);
-    expect(somnius.classification).toBe("non-combat");
-    expect(somnius.levelChanged).toBe(false);
+  it("defaults missing tier to common and infers archetype from slot", () => {
+    const before = item({ slot: "chest", tier: undefined, archetype: undefined });
+    const after = restatItem(before, 4);
+    expect(after.tier).toBe("common");
+    // inferArchetypeFromSlot("chest") → "armor"
+    expect(after.archetype).toBe("armor");
+    expect(after.armor).toBeGreaterThan(0);
+  });
+});
+
+describe("rebalanceZone", () => {
+  it("restates every combatant mob and equippable item", () => {
+    const zone = zoneWith(
+      {
+        wisp: mob({ tier: "weak", level: 1, hp: 999, minDamage: 99 }),
+        captain: mob({ tier: "boss", level: 1, hp: 1, xpReward: 1 }),
+        innkeeper: mob({ role: "vendor", tier: "standard" }),
+      },
+      {
+        rusty_sword: item({ slot: "weapon", tier: "common", damage: 99 }),
+        chain_vest: item({ slot: "chest", tier: "uncommon", archetype: "armor" }),
+        healing_potion: item({ slot: undefined, consumable: true, onUse: { healHp: 25 } }),
+      },
+    );
+    zone.levelBand = { min: 3, max: 8 };
+
+    const { world, summary } = rebalanceZone(zone, MOCK_CONFIG);
+
+    // Mobs
+    expect(world.mobs!.wisp.level).toBe(3);   // weak → band.min
+    expect(world.mobs!.wisp.hp).toBeUndefined();
+    expect(world.mobs!.wisp.minDamage).toBeUndefined();
+    expect(world.mobs!.captain.level).toBe(8); // boss → band.max
+    expect(world.mobs!.captain.hp).toBeUndefined();
+    expect(world.mobs!.captain.xpReward).toBeUndefined();
+    // Non-combat mob untouched
+    expect(world.mobs!.innkeeper).toBe(zone.mobs!.innkeeper);
+
+    // Items
+    expect(world.items!.rusty_sword.damage).toBeGreaterThan(0);
+    expect(world.items!.rusty_sword.damage).not.toBe(99);
+    expect(world.items!.chain_vest.armor).toBeGreaterThan(0);
+    // Consumable untouched
+    expect(world.items!.healing_potion).toBe(zone.items!.healing_potion);
+
+    // Persisted band + difficulty
+    expect(world.levelBand).toEqual({ min: 3, max: 8 });
+    expect(world.difficultyHint).toBe("standard");
+
+    // Summary
+    expect(summary.mobsRestated).toBe(2);
+    expect(summary.mobsSkippedNonCombat).toBe(1);
+    expect(summary.itemsRestated).toBe(2);
+    expect(summary.itemsSkipped).toBe(1);
+    expect(summary.playerScaledNoOp).toBe(false);
   });
 
-  it("orders named before trash before non-combat", () => {
-    const zone = zoneWith({
-      a_vendor: mob({ role: "vendor" }),
-      b_trash: mob({ tier: "weak" }),
-      c_named: mob({ tier: "elite" }),
-    });
-    const diff = computeZoneRebalance(zone, MOCK_CONFIG, { levelBand: { min: 3, max: 7 } });
-    const ids = diff.mobs.map((m) => m.mobId);
-    expect(ids).toEqual(["c_named", "b_trash", "a_vendor"]);
-  });
-
-  it("refuses to compute a diff for player-scaled zones", () => {
-    const zone = zoneWith({ goblin: mob({ tier: "weak" }) });
+  it("is a no-op for player-scaled zones", () => {
+    const zone = zoneWith({ a: mob({ hp: 1, level: 1 }) });
     zone.scaling = { mode: "player" };
-    const diff = computeZoneRebalance(zone, MOCK_CONFIG, { levelBand: { min: 3, max: 7 } });
-    expect(diff.availability).toBe("player-scaled");
-    expect(diff.mobs).toEqual([]);
+
+    const { world, summary } = rebalanceZone(zone, MOCK_CONFIG);
+
+    expect(world).toBe(zone);
+    expect(summary.playerScaledNoOp).toBe(true);
+    expect(summary.mobsRestated).toBe(0);
   });
 
-  it("clamps the target band to a bounded zone's scaling range", () => {
-    const zone = zoneWith({ goblin: mob({ tier: "weak", level: 1 }) });
-    zone.scaling = { mode: "bounded", levelRange: [10, 15] };
-    const diff = computeZoneRebalance(zone, MOCK_CONFIG, { levelBand: { min: 1, max: 20 } });
-    expect(diff.availability).toBe("applicable");
-    expect(diff.bandClampedToScaling).toBe(true);
-    expect(diff.target.levelBand).toEqual({ min: 10, max: 15 });
-    expect(diff.mobs[0]?.targetLevel).toBe(10);
-  });
+  it("clamps the band to bounded scaling range", () => {
+    const zone = zoneWith({ a: mob({ tier: "boss" }) });
+    zone.levelBand = { min: 1, max: 100 };
+    zone.scaling = { mode: "bounded", levelRange: [5, 10] };
 
-  it("leaves bands inside the scaling range untouched", () => {
-    const zone = zoneWith({ goblin: mob({ tier: "weak" }) });
-    zone.scaling = { mode: "bounded", levelRange: [5, 20] };
-    const diff = computeZoneRebalance(zone, MOCK_CONFIG, { levelBand: { min: 8, max: 12 } });
-    expect(diff.bandClampedToScaling).toBe(false);
-    expect(diff.target.levelBand).toEqual({ min: 8, max: 12 });
-  });
-});
+    const { world, summary } = rebalanceZone(zone, MOCK_CONFIG);
 
-describe("inferLevelBand with scaling", () => {
-  it("prefers a bounded zone's scaling range over explicit mob levels", () => {
-    const zone = zoneWith({ a: mob({ level: 50 }) });
-    zone.scaling = { mode: "bounded", levelRange: [5, 12] };
-    expect(inferLevelBand(zone)).toEqual({ min: 5, max: 12 });
-  });
-});
-
-describe("applyZoneRebalance", () => {
-  it("sets level on accepted mobs, leaves un-accepted alone, persists levelBand", () => {
-    const zone = zoneWith({
-      goblin: mob({ tier: "weak", level: 1 }),
-      brute: mob({ tier: "standard", level: 1 }),
-    });
-    const diff = computeZoneRebalance(zone, MOCK_CONFIG, {
-      levelBand: { min: 5, max: 9 },
-      difficultyHint: "standard",
-    });
-    const next = applyZoneRebalance(zone, diff, {
-      acceptedMobIds: new Set(["goblin"]),
-    });
-
-    expect(next.levelBand).toEqual({ min: 5, max: 9 });
-    expect(next.difficultyHint).toBe("standard");
-    expect(next.mobs?.goblin?.level).toBe(5);
-    expect(next.mobs?.brute?.level).toBe(1);
-  });
-
-  it("drops within-tolerance overrides and keeps flagged ones by default", () => {
-    // weak tier @ L3: hp = floor(10 × 1.1^2) = 12, so hp=13 is within tolerance.
-    const zone = zoneWith({
-      goblin: mob({ tier: "weak", hp: 13, xpReward: 9999 }),
-    });
-    const diff = computeZoneRebalance(zone, MOCK_CONFIG, {
-      levelBand: { min: 3, max: 3 },
-    });
-    const next = applyZoneRebalance(zone, diff, {
-      acceptedMobIds: new Set(["goblin"]),
-    });
-    expect(next.mobs?.goblin?.hp).toBeUndefined();
-    expect(next.mobs?.goblin?.xpReward).toBe(9999);
-  });
-
-  it("respects per-field overrides (drop -> keep)", () => {
-    const zone = zoneWith({ goblin: mob({ tier: "weak", hp: 17 }) });
-    const diff = computeZoneRebalance(zone, MOCK_CONFIG, {
-      levelBand: { min: 3, max: 3 },
-    });
-    const next = applyZoneRebalance(zone, diff, {
-      acceptedMobIds: new Set(["goblin"]),
-      overrideOverrides: new Map([["goblin", new Map([["hp", "keep"]])]]),
-    });
-    expect(next.mobs?.goblin?.hp).toBe(17);
-  });
-
-  it("clears difficultyHint when the new target omits it", () => {
-    const zone = zoneWith({ goblin: mob({ tier: "weak", level: 1 }) });
-    zone.difficultyHint = "challenging";
-    const diff = computeZoneRebalance(zone, MOCK_CONFIG, {
-      levelBand: { min: 5, max: 5 },
-    });
-    const next = applyZoneRebalance(zone, diff, {
-      acceptedMobIds: new Set(["goblin"]),
-    });
-    expect(next.difficultyHint).toBeUndefined();
-  });
-
-  it("does not mutate the input zone", () => {
-    const zone = zoneWith({ goblin: mob({ tier: "weak", level: 1 }) });
-    const before = JSON.stringify(zone);
-    const diff = computeZoneRebalance(zone, MOCK_CONFIG, { levelBand: { min: 5, max: 5 } });
-    applyZoneRebalance(zone, diff, { acceptedMobIds: new Set(["goblin"]) });
-    expect(JSON.stringify(zone)).toBe(before);
+    expect(world.levelBand).toEqual({ min: 5, max: 10 });
+    expect(summary.bandClampedToScaling).toBe(true);
+    expect(world.mobs!.a.level).toBe(10);
   });
 });

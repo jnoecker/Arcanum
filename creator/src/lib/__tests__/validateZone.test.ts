@@ -632,16 +632,10 @@ describe("validateZone", () => {
       expect(issues.some((i) => i.entity === "mob:rat" && i.message.includes("Expected level 3"))).toBe(true);
     });
 
-    it("warns when authored overrides diverge from the target tier baseline", () => {
-      const world = makeValidWorld();
-      world.levelBand = { min: 3, max: 3 };
-      world.mobs!.rat = { name: "Rat", spawns: [{ room: "room1" }], tier: "weak", level: 3, hp: 200, xpReward: 9999 };
-
-      const issues = warnings(validateZone(world, undefined, undefined, undefined, undefined, TEST_MOB_TIERS));
-
-      expect(issues.some((i) => i.entity === "mob:rat" && i.message.includes("Overrides diverge"))).toBe(true);
-      expect(issues.some((i) => i.entity === "mob:rat" && i.message.includes("hp 200"))).toBe(true);
-    });
+    // (Override-divergence warnings were removed when the rebalance flow
+    // switched from "review overrides" to "deterministic restat": authored
+    // hp/dmg/etc. are silently rewritten by Rebalance to tier, so flagging
+    // them in validation duplicates the recommendation without adding info.)
 
     it("warns when a zone target cannot be validated because the mob tier is unknown", () => {
       const world = makeValidWorld();

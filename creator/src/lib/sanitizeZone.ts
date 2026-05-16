@@ -670,6 +670,18 @@ function cleanOutput(world: WorldFile): WorldFile {
       if (cleaned.charges != null && cleaned.charges <= 0) {
         cleaned = { ...cleaned, charges: undefined };
       }
+      // Normalize class restriction: uppercase, dedupe, drop if empty.
+      // Matches the server's loader behavior so YAML casing doesn't matter
+      // and authors don't accidentally ship `classes: []` (which the server
+      // warns about and treats as null anyway).
+      if (cleaned.classes !== undefined) {
+        const normalized = Array.from(
+          new Set(cleaned.classes.map((c) => String(c).trim().toUpperCase()).filter(Boolean)),
+        );
+        cleaned = normalized.length > 0
+          ? { ...cleaned, classes: normalized }
+          : { ...cleaned, classes: undefined };
+      }
       items[id] = cleaned;
     }
   }

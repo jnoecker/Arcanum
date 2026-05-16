@@ -1,7 +1,36 @@
 import type { RoomFile, MobFile, ItemFile, ShopFile, TrainerFile, GatheringNodeFile, WorldFile, DungeonFile, DungeonRoomTemplate } from "@/types/world";
 import type { GuildHallRoomTemplate, HousingTemplateDefinition } from "@/types/config";
 import { getTrainerPrimaryClass } from "@/lib/trainers";
-import { type ArtStyle, getPreamble, getStyleSuffix, FORMAT_BY_TYPE, withSpriteSafety } from "./arcanumPrompts";
+import {
+  type ArtStyle,
+  buildZoneVibeBlock,
+  buildZoneVibeReiteration,
+  FORMAT_BY_TYPE,
+  getPreamble,
+  getStyleSuffix,
+  type PromptPaletteOptions,
+  withSpriteSafety,
+} from "./arcanumPrompts";
+
+/**
+ * Wrap an entity prompt with zone-vibe primacy framing when a vibe is set.
+ * The vibe block goes at the top (priming) and the reiteration at the bottom
+ * (recency bias). Caller is responsible for passing palette-stripped body
+ * text in `inner` when a vibe is present.
+ */
+function withZoneVibe(inner: string, zoneVibe: string | null | undefined): string {
+  const trimmed = zoneVibe?.trim();
+  if (!trimmed) return inner;
+  return `${buildZoneVibeBlock(trimmed)}
+
+${inner}
+
+${buildZoneVibeReiteration(trimmed)}`;
+}
+
+function paletteOpts(zoneVibe: string | null | undefined): PromptPaletteOptions {
+  return zoneVibe?.trim() ? { paletteAuthority: "zone-vibe" } : {};
+}
 
 export type DefaultImageKind = "room" | "mob" | "item";
 
@@ -303,8 +332,14 @@ export function defaultImageContext(kind: DefaultImageKind, world: WorldFile): s
 // details in a format that works directly with FLUX.
 
 /** Build a full prompt for a room image. */
-export function roomPrompt(_roomId: string, room: RoomFile, style: ArtStyle = "gentle_magic"): string {
-  const preamble = getPreamble(style, "worldbuilding");
+export function roomPrompt(
+  _roomId: string,
+  room: RoomFile,
+  style: ArtStyle = "gentle_magic",
+  zoneVibe?: string | null,
+): string {
+  const opts = paletteOpts(zoneVibe);
+  const preamble = getPreamble(style, "worldbuilding", opts);
   const setting = room.description
     ? `A place called "${room.title}": ${room.description}.`
     : `A chamber known as "${room.title}".`;
@@ -313,47 +348,65 @@ export function roomPrompt(_roomId: string, room: RoomFile, style: ArtStyle = "g
     ? ` A ${room.station.toLowerCase()} crafting station is present.`
     : "";
 
-  if (style === "gentle_magic") {
-    return `${FORMAT_BY_TYPE.room}. ${preamble}
+  // Palette-rich body for the no-vibe case; composition-only body when a
+  // vibe owns palette so the hardcoded color words don't fight it.
+  const body = opts.paletteAuthority === "zone-vibe"
+    ? (style === "gentle_magic"
+        ? `${setting}${station} Rendered as a dreamlike interior space — gentle atmospheric haze, organic curves and lived-in details, painterly, luminous, breathable`
+        : `${setting}${station} Rendered as a baroque cosmic interior — rococo scrollwork framing the space, atmospheric mist, painterly, luminous, extremely detailed, wide composition suitable for a game room background`)
+    : (style === "gentle_magic"
+        ? `${setting}${station} Rendered as a dreamlike interior space — soft lavender and pale blue ambient light diffusing through gentle atmospheric haze, floating motes of warm light drifting lazily, organic curves and lived-in details, moss green and dusty rose accents on natural surfaces, soft gold highlights on magical elements, painterly, luminous, breathable`
+        : `${setting}${station} Rendered as a baroque cosmic interior — deep indigo shadows, aurum-gold light pooling at architectural details, rococo scrollwork framing the space, blue-violet atmospheric mist, painterly, luminous, extremely detailed, wide composition suitable for a game room background`);
 
-${setting}${station} Rendered as a dreamlike interior space — soft lavender and pale blue ambient light diffusing through gentle atmospheric haze, floating motes of warm light drifting lazily, organic curves and lived-in details, moss green and dusty rose accents on natural surfaces, soft gold highlights on magical elements, painterly, luminous, breathable
+  const inner = style === "gentle_magic"
+    ? `${FORMAT_BY_TYPE.room}. ${preamble}\n\n${body}\n\n${EMPTY_SCENE_DIRECTIVE}\n\n${getStyleSuffix("worldbuilding", opts)}`
+    : `${preamble}\n\n${body}\n\n${EMPTY_SCENE_DIRECTIVE}`;
 
-${EMPTY_SCENE_DIRECTIVE}
-
-${getStyleSuffix("worldbuilding")}`;
-  }
-
-  return `${preamble}
-
-${setting}${station} Rendered as a baroque cosmic interior — deep indigo shadows, aurum-gold light pooling at architectural details, rococo scrollwork framing the space, blue-violet atmospheric mist, painterly, luminous, extremely detailed, wide composition suitable for a game room background
-
-${EMPTY_SCENE_DIRECTIVE}`;
+  return withZoneVibe(inner, zoneVibe);
 }
 
 /** Build a full prompt for a mob portrait. */
-export function mobPrompt(_mobId: string, mob: MobFile, style: ArtStyle = "gentle_magic"): string {
-  const preamble = getPreamble(style, "worldbuilding");
+export function mobPrompt(
+  _mobId: string,
+  mob: MobFile,
+  style: ArtStyle = "gentle_magic",
+  zoneVibe?: string | null,
+): string {
+  const opts = paletteOpts(zoneVibe);
+  const preamble = getPreamble(style, "worldbuilding", opts);
   const tier = mob.tier ?? "standard";
   const level = mob.level ?? 1;
   const mobDesc = mob.description ? ` ${mob.description}.` : "";
+  const hasVibe = opts.paletteAuthority === "zone-vibe";
 
   if (style === "gentle_magic") {
-    const tierDesc: Record<string, string> = {
+    // Drop the "soft organic forms / gentle curves / subtle magical glow"
+    // tier descriptors when the zone vibe owns palette — vibe should be
+    // free to call for sharp edges, harsh light, etc. without the prompt
+    // contradicting itself.
+    const tierDesc: Record<string, string> = hasVibe ? {
+      weak: "a small creature",
+      standard: "a formidable creature",
+      elite: "a powerful creature with visible magical aura",
+      boss: "an immense ancient being radiating overwhelming power",
+    } : {
       weak: "a small, gentle creature",
       standard: "a quietly formidable creature",
       elite: "a powerful creature surrounded by softly swirling magical energy",
       boss: "an immense ancient being radiating gentle but overwhelming power",
     };
     const desc = tierDesc[tier] ?? tierDesc.standard;
+    const tail = hasVibe
+      ? `Portrait composition, painterly, luminous`
+      : `Depicted with soft organic forms and gentle curves, subtle magical glow emanating naturally from within, painterly, luminous`;
 
-    return withSpriteSafety(
-      `${FORMAT_BY_TYPE.mob}. ${preamble}
+    const inner = `${FORMAT_BY_TYPE.mob}. ${preamble}
 
-Portrait of ${desc} known as "${mob.name}", level ${level}.${mobDesc} Depicted with soft organic forms and gentle curves, subtle magical glow emanating naturally from within, painterly, luminous
+Portrait of ${desc} known as "${mob.name}", level ${level}.${mobDesc} ${tail}
 
-${getStyleSuffix("worldbuilding")}`,
-      "mob",
-    );
+${getStyleSuffix("worldbuilding", opts)}`;
+
+    return withSpriteSafety(withZoneVibe(inner, zoneVibe), "mob");
   }
 
   const tierDesc: Record<string, string> = {
@@ -363,18 +416,27 @@ ${getStyleSuffix("worldbuilding")}`,
     boss: "a vast, terrifying entity of immense power, dominating the composition",
   };
   const desc = tierDesc[tier] ?? tierDesc.standard;
+  const tail = hasVibe
+    ? `Painterly, luminous, centered composition`
+    : `Rendered with aurum-gold highlights on key features, painterly, luminous, centered composition`;
 
-  return withSpriteSafety(
-    `${FORMAT_BY_TYPE.mob}. ${preamble}
+  const inner = `${FORMAT_BY_TYPE.mob}. ${preamble}
 
-Portrait of ${desc} known as "${mob.name}", level ${level}.${mobDesc} Rendered with aurum-gold highlights on key features, painterly, luminous, centered composition`,
-    "mob",
-  );
+Portrait of ${desc} known as "${mob.name}", level ${level}.${mobDesc} ${tail}`;
+
+  return withSpriteSafety(withZoneVibe(inner, zoneVibe), "mob");
 }
 
 /** Build a full prompt for an item image. */
-export function itemPrompt(_itemId: string, item: ItemFile, style: ArtStyle = "gentle_magic"): string {
-  const preamble = getPreamble(style, "worldbuilding");
+export function itemPrompt(
+  _itemId: string,
+  item: ItemFile,
+  style: ArtStyle = "gentle_magic",
+  zoneVibe?: string | null,
+): string {
+  const opts = paletteOpts(zoneVibe);
+  const preamble = getPreamble(style, "worldbuilding", opts);
+  const hasVibe = opts.paletteAuthority === "zone-vibe";
   const slotDesc = item.slot
     ? ` worn in the ${item.slot.toLowerCase()} slot`
     : "";
@@ -386,28 +448,42 @@ export function itemPrompt(_itemId: string, item: ItemFile, style: ArtStyle = "g
   const isArmor = item.armor && item.armor > 0;
 
   if (style === "gentle_magic") {
-    const typeHint = isWeapon
-      ? "a weapon with a soft magical glow"
-      : isArmor
-        ? "protective armor with gentle enchantment traces"
-        : "a warmly glowing magical artifact";
+    const typeHint = hasVibe
+      ? (isWeapon ? "a weapon" : isArmor ? "a piece of protective armor" : "a magical artifact")
+      : (isWeapon
+          ? "a weapon with a soft magical glow"
+          : isArmor
+            ? "protective armor with gentle enchantment traces"
+            : "a warmly glowing magical artifact");
+    const tail = hasVibe
+      ? `Still life composition, painterly`
+      : `Rendered as a gently luminous object resting on a soft surface, ambient lavender and pale blue light diffusing around it, subtle floating motes of warm gold, soft atmospheric haze, organic gentle forms, dreamlike quality, painterly`;
 
-    return `${FORMAT_BY_TYPE.item}. ${preamble}
+    const inner = `${FORMAT_BY_TYPE.item}. ${preamble}
 
-Still life of ${typeHint} called "${item.displayName}"${slotDesc}.${desc} Rendered as a gently luminous object resting on a soft surface, ambient lavender and pale blue light diffusing around it, subtle floating motes of warm gold, soft atmospheric haze, organic gentle forms, dreamlike quality, painterly
+Still life of ${typeHint} called "${item.displayName}"${slotDesc}.${desc} ${tail}
 
-${getStyleSuffix("worldbuilding")}`;
+${getStyleSuffix("worldbuilding", opts)}`;
+
+    return withZoneVibe(inner, zoneVibe);
   }
 
-  const typeHint = isWeapon
-    ? "a weapon radiating aurum energy"
-    : isArmor
-      ? "protective armor traced with baroque scrollwork"
-      : "a luminous artifact";
+  const typeHint = hasVibe
+    ? (isWeapon ? "a weapon" : isArmor ? "a piece of protective armor" : "a luminous artifact")
+    : (isWeapon
+        ? "a weapon radiating aurum energy"
+        : isArmor
+          ? "protective armor traced with baroque scrollwork"
+          : "a luminous artifact");
+  const tail = hasVibe
+    ? `Centered still-life composition suitable for an inventory icon, painterly`
+    : `Rendered as a glowing object floating in deep cosmic indigo void, baroque energy threads curling around it, aurum-gold light emanating from its core, blue-violet ambient fill, ornate and detailed, painterly, centered composition suitable for an inventory icon`;
 
-  return `${preamble}
+  const inner = `${preamble}
 
-Still life of ${typeHint} called "${item.displayName}"${slotDesc}.${desc} Rendered as a glowing object floating in deep cosmic indigo void, baroque energy threads curling around it, aurum-gold light emanating from its core, blue-violet ambient fill, ornate and detailed, painterly, centered composition suitable for an inventory icon`;
+Still life of ${typeHint} called "${item.displayName}"${slotDesc}.${desc} ${tail}`;
+
+  return withZoneVibe(inner, zoneVibe);
 }
 
 /** Build a full prompt for a shop image. */
@@ -488,14 +564,15 @@ export function entityPrompt(
   id: string,
   entity: unknown,
   style: ArtStyle = "gentle_magic",
+  zoneVibe?: string | null,
 ): string {
   switch (kind) {
     case "room":
-      return roomPrompt(id, entity as RoomFile, style);
+      return roomPrompt(id, entity as RoomFile, style, zoneVibe);
     case "mob":
-      return mobPrompt(id, entity as MobFile, style);
+      return mobPrompt(id, entity as MobFile, style, zoneVibe);
     case "item":
-      return itemPrompt(id, entity as ItemFile, style);
+      return itemPrompt(id, entity as ItemFile, style, zoneVibe);
     case "shop":
       return shopPrompt(id, entity as ShopFile, style);
     case "trainer":
@@ -503,10 +580,20 @@ export function entityPrompt(
     case "gatheringNode":
       return gatheringNodePrompt(id, entity as GatheringNodeFile, style);
     default: {
-      const preamble = getPreamble(style, "worldbuilding");
-      return style === "gentle_magic"
-        ? `${preamble}\n\nDreamlike portrait of a ${kind} entity called "${id}", rendered in soft magical style, lavender and pale blue tones, gentle ambient glow, floating motes of warm light, painterly, luminous\n\n${getStyleSuffix("worldbuilding")}`
-        : `${preamble}\n\nArcane portrait of a ${kind} entity called "${id}", rendered in baroque cosmic style, aurum-gold highlights, deep indigo background, painterly, luminous`;
+      const opts = paletteOpts(zoneVibe);
+      const preamble = getPreamble(style, "worldbuilding", opts);
+      const hasVibe = opts.paletteAuthority === "zone-vibe";
+      const body = style === "gentle_magic"
+        ? (hasVibe
+            ? `Portrait of a ${kind} entity called "${id}", painterly, luminous`
+            : `Dreamlike portrait of a ${kind} entity called "${id}", rendered in soft magical style, lavender and pale blue tones, gentle ambient glow, floating motes of warm light, painterly, luminous`)
+        : (hasVibe
+            ? `Portrait of a ${kind} entity called "${id}", painterly, luminous`
+            : `Arcane portrait of a ${kind} entity called "${id}", rendered in baroque cosmic style, aurum-gold highlights, deep indigo background, painterly, luminous`);
+      const inner = style === "gentle_magic"
+        ? `${preamble}\n\n${body}\n\n${getStyleSuffix("worldbuilding", opts)}`
+        : `${preamble}\n\n${body}`;
+      return withZoneVibe(inner, zoneVibe);
     }
   }
 }

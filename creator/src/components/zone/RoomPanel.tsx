@@ -1136,7 +1136,7 @@ export function RoomPanel({
               <span className="truncate text-text-secondary">{room.image || "none"}</span>
             </div>
             <EntityArtGenerator
-              getPrompt={(style) => roomPrompt(roomId, room, style)}
+              getPrompt={(style) => roomPrompt(roomId, room, style, vibe)}
               entityContext={roomContext(roomId, room)}
               currentImage={room.image}
               onAccept={(filePath) => onWorldChange(updateRoom(world, roomId, { image: filePath }))}

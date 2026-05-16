@@ -503,7 +503,7 @@ export function ItemEditor({
           onImageChange={(v) => patch({ image: v })}
           video={item.video}
           onVideoChange={(v) => patch({ video: v })}
-          getPrompt={(style) => itemPrompt(itemId, item, style)}
+          getPrompt={(style) => itemPrompt(itemId, item, style, zoneId ? useVibeStore.getState().getVibe(zoneId) : undefined)}
           entityContext={itemContext(itemId, item)}
           assetType="entity_portrait"
           context={zoneId ? { zone: zoneId, entity_type: "item", entity_id: itemId } : undefined}

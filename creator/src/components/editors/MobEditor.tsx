@@ -814,7 +814,7 @@ export function MobEditor({
           onImageChange={(v) => patch({ image: v })}
           video={mob.video}
           onVideoChange={(v) => patch({ video: v })}
-          getPrompt={(style) => mobPrompt(mobId, mob, style)}
+          getPrompt={(style) => mobPrompt(mobId, mob, style, zoneId ? useVibeStore.getState().getVibe(zoneId) : undefined)}
           entityContext={mobContext(mobId, mob)}
           assetType="entity_portrait"
           context={zoneId ? { zone: zoneId, entity_type: "mob", entity_id: mobId } : undefined}

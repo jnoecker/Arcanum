@@ -152,10 +152,11 @@ export function getTargetPrompt(
   target: BatchTarget,
   world: WorldFile,
   style: ArtStyle,
+  zoneVibe?: string | null,
 ): string {
   const { kind, id } = target;
   if (kind === "room") {
-    return roomPrompt(id, world.rooms[id]!, style);
+    return roomPrompt(id, world.rooms[id]!, style, zoneVibe);
   }
   if (kind === "dungeon" && world.dungeon) {
     return dungeonPrompt(world.dungeon, style);
@@ -169,7 +170,7 @@ export function getTargetPrompt(
   const entity = (
     world as unknown as Record<string, Record<string, unknown> | undefined>
   )[collectionForKind(kind)]?.[id];
-  return entityPrompt(kind, id, entity, style);
+  return entityPrompt(kind, id, entity, style, zoneVibe);
 }
 
 export function getTargetContext(
@@ -236,7 +237,13 @@ export async function runBatchArtGeneration(
 
   const model = resolveImageModel(imageProvider, configuredModel);
   const nativeTransparency = modelNativelyTransparent(imageProvider, model?.id);
-  const styleSuffix = getStyleSuffix("worldbuilding");
+  // When a zone vibe is present it owns palette/atmosphere; the appended
+  // suffix should only enforce composition + format rules so the LLM /
+  // image model doesn't get two competing color directives.
+  const styleSuffix = getStyleSuffix(
+    "worldbuilding",
+    vibe ? { paletteAuthority: "zone-vibe" } : {},
+  );
 
   const worker = async () => {
     while (queue.length > 0 && !abortRef.current) {
@@ -248,7 +255,7 @@ export async function runBatchArtGeneration(
       callbacks.onTargetUpdate(idx, { status: "generating" });
 
       try {
-        const basePrompt = getTargetPrompt(target, worldRef.current, artStyle);
+        const basePrompt = getTargetPrompt(target, worldRef.current, artStyle, vibe);
         const context = getTargetContext(target, worldRef.current);
         const batchAssetType = assetTypeForKind(target.kind);
 

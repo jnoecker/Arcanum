@@ -357,7 +357,11 @@ async fn object_exists(
     Ok(resp.status().is_success())
 }
 
-/// Upload a file to R2.
+/// Upload a file to R2. Retries transient failures (5xx, 429, and transport
+/// errors) with exponential backoff — R2 occasionally returns
+/// `500 InternalError` on busy traffic and Cloudflare's docs explicitly say to
+/// retry. Each attempt re-signs the request since SigV4 signatures are tied to
+/// a wall-clock timestamp.
 async fn upload_object(
     client: &reqwest::Client,
     account_id: &str,
@@ -368,22 +372,44 @@ async fn upload_object(
     body: Vec<u8>,
     content_type: &str,
 ) -> Result<(), String> {
-    let (url, headers) = build_signed_put(
-        account_id, bucket, access_key, secret_key, object_key, &body, content_type,
-    )?;
+    const MAX_ATTEMPTS: u32 = 4;
+    let mut last_err = String::new();
 
-    let mut req = client.put(&url).body(body);
-    for (k, v) in headers {
-        req = req.header(&k, &v);
+    for attempt in 1..=MAX_ATTEMPTS {
+        let (url, headers) = build_signed_put(
+            account_id, bucket, access_key, secret_key, object_key, &body, content_type,
+        )?;
+
+        let mut req = client.put(&url).body(body.clone());
+        for (k, v) in &headers {
+            req = req.header(k, v);
+        }
+
+        match req.send().await {
+            Ok(resp) if resp.status().is_success() => return Ok(()),
+            Ok(resp) => {
+                let status = resp.status();
+                let text = resp.text().await.unwrap_or_default();
+                let retryable = status.is_server_error() || status.as_u16() == 429;
+                last_err = format!("R2 upload failed ({status}): {text}");
+                if !retryable || attempt == MAX_ATTEMPTS {
+                    return Err(last_err);
+                }
+            }
+            Err(e) => {
+                last_err = format!("PUT request failed: {e}");
+                if attempt == MAX_ATTEMPTS {
+                    return Err(last_err);
+                }
+            }
+        }
+
+        // Exponential backoff: 500ms, 1s, 2s before the next attempt.
+        let delay_ms = 500u64 << (attempt - 1);
+        tokio::time::sleep(std::time::Duration::from_millis(delay_ms)).await;
     }
 
-    let resp = req.send().await.map_err(|e| format!("PUT request failed: {e}"))?;
-    if !resp.status().is_success() {
-        let status = resp.status();
-        let text = resp.text().await.unwrap_or_default();
-        return Err(format!("R2 upload failed ({status}): {text}"));
-    }
-    Ok(())
+    Err(last_err)
 }
 
 // ─── Tauri commands ─────────────────────────────────────────────────

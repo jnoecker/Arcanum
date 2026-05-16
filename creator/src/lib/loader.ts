@@ -1131,15 +1131,20 @@ function parseSkillPointsConfig(raw: unknown): import("@/types/config").SkillPoi
   return { interval: asNumber(s.interval, 2) };
 }
 
+// Cap at JVM Int.MAX_VALUE so values round-trip safely into the Kotlin server's
+// `Int`-typed MulticlassConfig.maxClasses field. Using Number.MAX_SAFE_INTEGER
+// here would emit 9007199254740991 to YAML and crash the server on boot.
+const KOTLIN_INT_MAX = 2147483647;
+
 function parseMulticlassConfig(raw: unknown): import("@/types/config").MulticlassConfig {
   if (!raw || typeof raw !== "object") {
-    return { minLevel: 10, goldCost: 500, maxClasses: Number.MAX_SAFE_INTEGER, goldCostMultiplier: 1.0 };
+    return { minLevel: 10, goldCost: 500, maxClasses: KOTLIN_INT_MAX, goldCostMultiplier: 1.0 };
   }
   const s = raw as Record<string, unknown>;
   return {
     minLevel: asNumber(s.minLevel, 10),
     goldCost: asNumber(s.goldCost, 500),
-    maxClasses: asNumber(s.maxClasses, Number.MAX_SAFE_INTEGER),
+    maxClasses: Math.min(asNumber(s.maxClasses, KOTLIN_INT_MAX), KOTLIN_INT_MAX),
     goldCostMultiplier: asNumber(s.goldCostMultiplier, 1.0),
   };
 }

@@ -130,7 +130,7 @@ const BASE_CONFIG: AppConfig = {
   multiclass: {
     minLevel: 10,
     goldCost: 500,
-    maxClasses: Number.MAX_SAFE_INTEGER,
+    maxClasses: 2147483647,
     goldCostMultiplier: 1.0,
   },
   admin: {

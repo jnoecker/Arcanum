@@ -146,7 +146,11 @@ async function saveSplitConfig(projectDir: string): Promise<void> {
       multiclass: {
         minLevel: config.multiclass.minLevel,
         goldCost: config.multiclass.goldCost,
-        maxClasses: config.multiclass.maxClasses,
+        // Kotlin's MulticlassConfig.maxClasses is an Int (max 2_147_483_647).
+        // Clamp on the way out so anything stored above that range (legacy
+        // Number.MAX_SAFE_INTEGER from an earlier build, for example) doesn't
+        // crash the server during Hoplite decode.
+        maxClasses: Math.min(config.multiclass.maxClasses, 2147483647),
         goldCostMultiplier: config.multiclass.goldCostMultiplier,
       },
     }),

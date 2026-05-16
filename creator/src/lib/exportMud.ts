@@ -422,11 +422,12 @@ export function buildMonolithicConfigObject(
   // Skill Points
   engine.skillPoints = { interval: c.skillPoints.interval };
 
-  // Multiclass
+  // Multiclass — clamp maxClasses to JVM Int.MAX_VALUE so it round-trips into
+  // the Kotlin server's Int-typed field.
   engine.multiclass = {
     minLevel: c.multiclass.minLevel,
     goldCost: c.multiclass.goldCost,
-    maxClasses: c.multiclass.maxClasses,
+    maxClasses: Math.min(c.multiclass.maxClasses, 2147483647),
     goldCostMultiplier: c.multiclass.goldCostMultiplier,
   };
 

@@ -33,14 +33,14 @@ import { useAssetStore } from "@/stores/assetStore";
 export function defaultClassDefinition(raw: string): ClassDefinitionConfig {
   return {
     displayName: raw,
-    hpPerLevel: 6,
-    manaPerLevel: 8,
+    hpScalingRate: 1.1,
+    manaScalingRate: 1.1,
     selectable: true,
   };
 }
 
 export function summarizeClass(cls: ClassDefinitionConfig): string {
-  const parts = [`HP+${cls.hpPerLevel} / MP+${cls.manaPerLevel}`];
+  const parts = [`HP ×${cls.hpScalingRate} / MP ×${cls.manaScalingRate}`];
   if (cls.primaryStat) parts.push(cls.primaryStat);
   if (cls.image) parts.push("art");
   return parts.join(" | ");
@@ -127,7 +127,7 @@ export function ClassDetail({
     if (cls.description) parts.push(`Tagline: ${cls.description}`);
     if (cls.backstory) parts.push(`Backstory: ${cls.backstory}`);
     if (cls.primaryStat) parts.push(`Primary stat: ${cls.primaryStat}`);
-    parts.push(`HP/level: ${cls.hpPerLevel}, Mana/level: ${cls.manaPerLevel}`);
+    parts.push(`HP scaling: ${cls.hpScalingRate}, Mana scaling: ${cls.manaScalingRate}`);
     if (cls.threatMultiplier != null && cls.threatMultiplier !== 1.0) {
       parts.push(`Threat multiplier: ${cls.threatMultiplier}`);
     }
@@ -165,18 +165,22 @@ export function ClassDetail({
         label="Enhance backstory"
       />
 
-      <FieldRow label="HP / Level" hint="Class-specific HP gained per level, stacked with the global HP/level in Progression.">
+      <FieldRow label="HP Scaling Rate" hint="Per-level multiplicative growth (e.g. 1.1 = ~10%/level). Combined with the global rate in Progression.">
         <NumberInput
-          value={cls.hpPerLevel}
-          onCommit={(v) => patch({ hpPerLevel: v ?? 6 })}
-          min={0}
+          value={cls.hpScalingRate}
+          onCommit={(v) => patch({ hpScalingRate: v ?? 1.1 })}
+          min={1.0}
+          max={2.0}
+          step={0.005}
         />
       </FieldRow>
-      <FieldRow label="Mana / Level" hint="Class-specific mana gained per level. Set high for casters, low for melee.">
+      <FieldRow label="Mana Scaling Rate" hint="Per-level multiplicative growth applied to max mana. Higher for casters, lower for melee.">
         <NumberInput
-          value={cls.manaPerLevel}
-          onCommit={(v) => patch({ manaPerLevel: v ?? 8 })}
-          min={0}
+          value={cls.manaScalingRate}
+          onCommit={(v) => patch({ manaScalingRate: v ?? 1.1 })}
+          min={1.0}
+          max={2.0}
+          step={0.005}
         />
       </FieldRow>
       <FieldRow label="Primary Stat" hint="The stat this class benefits from most. Used for UI hints and may influence ability scaling.">
@@ -210,8 +214,8 @@ export function ClassDetail({
       />
 
       <HpManaCurve
-        hpPerLevel={cls.hpPerLevel}
-        manaPerLevel={cls.manaPerLevel}
+        hpScalingRate={cls.hpScalingRate}
+        manaScalingRate={cls.manaScalingRate}
         maxLevel={maxLevel}
         baseHp={baseHp}
         baseMana={baseMana}
@@ -275,14 +279,14 @@ export function ClassDetail({
  * Formula: basePool + (level - 1) * perLevel
  */
 function HpManaCurve({
-  hpPerLevel,
-  manaPerLevel,
+  hpScalingRate,
+  manaScalingRate,
   maxLevel,
   baseHp,
   baseMana,
 }: {
-  hpPerLevel: number;
-  manaPerLevel: number;
+  hpScalingRate: number;
+  manaScalingRate: number;
   maxLevel: number;
   baseHp: number;
   baseMana: number;
@@ -290,8 +294,8 @@ function HpManaCurve({
   const chart = chartTokens();
   const levels = Math.max(maxLevel, 2);
 
-  const hpAt = (lvl: number) => baseHp + (lvl - 1) * hpPerLevel;
-  const manaAt = (lvl: number) => baseMana + (lvl - 1) * manaPerLevel;
+  const hpAt = (lvl: number) => Math.floor(baseHp * Math.pow(hpScalingRate, lvl - 1));
+  const manaAt = (lvl: number) => Math.floor(baseMana * Math.pow(manaScalingRate, lvl - 1));
 
   const maxVal = Math.max(hpAt(levels), manaAt(levels), 1);
 

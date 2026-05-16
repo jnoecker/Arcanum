@@ -3,10 +3,10 @@ import { validateZone, type ValidationIssue } from "../validateZone";
 import type { WorldFile } from "@/types/world";
 
 const TEST_MOB_TIERS = {
-  weak: { baseHp: 8, hpPerLevel: 3, baseMinDamage: 1, baseMaxDamage: 3, damagePerLevel: 1, baseArmor: 0, baseXpReward: 10, xpRewardPerLevel: 3, baseGoldMin: 0, baseGoldMax: 2, goldPerLevel: 1 },
-  standard: { baseHp: 20, hpPerLevel: 5, baseMinDamage: 3, baseMaxDamage: 6, damagePerLevel: 2, baseArmor: 2, baseXpReward: 20, xpRewardPerLevel: 7, baseGoldMin: 1, baseGoldMax: 4, goldPerLevel: 2 },
-  elite: { baseHp: 50, hpPerLevel: 10, baseMinDamage: 5, baseMaxDamage: 10, damagePerLevel: 3, baseArmor: 4, baseXpReward: 50, xpRewardPerLevel: 15, baseGoldMin: 5, baseGoldMax: 15, goldPerLevel: 5 },
-  boss: { baseHp: 200, hpPerLevel: 30, baseMinDamage: 10, baseMaxDamage: 20, damagePerLevel: 5, baseArmor: 8, baseXpReward: 200, xpRewardPerLevel: 50, baseGoldMin: 50, baseGoldMax: 150, goldPerLevel: 20 },
+  weak: { baseHp: 8, hpScalingRate: 1.1, baseMinDamage: 1, baseMaxDamage: 3, damageScalingRate: 1.1, baseArmor: 0, baseXpReward: 10, xpScalingRate: 1.15, baseGoldMin: 0, baseGoldMax: 2, goldScalingRate: 1.1 },
+  standard: { baseHp: 20, hpScalingRate: 1.1, baseMinDamage: 3, baseMaxDamage: 6, damageScalingRate: 1.1, baseArmor: 2, baseXpReward: 20, xpScalingRate: 1.15, baseGoldMin: 1, baseGoldMax: 4, goldScalingRate: 1.1 },
+  elite: { baseHp: 50, hpScalingRate: 1.1, baseMinDamage: 5, baseMaxDamage: 10, damageScalingRate: 1.1, baseArmor: 4, baseXpReward: 50, xpScalingRate: 1.15, baseGoldMin: 5, baseGoldMax: 15, goldScalingRate: 1.1 },
+  boss: { baseHp: 200, hpScalingRate: 1.1, baseMinDamage: 10, baseMaxDamage: 20, damageScalingRate: 1.1, baseArmor: 8, baseXpReward: 200, xpScalingRate: 1.15, baseGoldMin: 50, baseGoldMax: 150, goldScalingRate: 1.1 },
 };
 
 function makeValidWorld(): WorldFile {
@@ -592,9 +592,9 @@ describe("validateZone", () => {
   describe("mob damage invariant", () => {
     it("errors when maxDamage override < tier-resolved minDamage", () => {
       const world = makeValidWorld();
-      world.mobs!.rat = { name: "Rat", spawns: [{ room: "room1" }], tier: "weak", level: 3, maxDamage: 1 };
+      // weak tier at level 15: minDamage = floor(1 × 1.1^14) ≈ 3, so maxDamage=1 < 3
+      world.mobs!.rat = { name: "Rat", spawns: [{ room: "room1" }], tier: "weak", level: 15, maxDamage: 1 };
       const issues = errors(validateZone(world, undefined, undefined, undefined, undefined, TEST_MOB_TIERS));
-      // weak tier at level 3: minDamage = 1 + 1*(3 - 1) = 3, so maxDamage=1 < 3
       expect(issues.some((i) => i.entity === "mob:rat" && i.message.includes("maxDamage") && i.message.includes("minDamage"))).toBe(true);
     });
 

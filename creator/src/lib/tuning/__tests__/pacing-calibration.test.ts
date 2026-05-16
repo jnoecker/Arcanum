@@ -18,15 +18,15 @@ import type { DeepPartial } from "@/lib/tuning/types";
 
 const BASE_CONFIG = {
   progression: {
-    maxLevel: 50,
-    xp: { baseXp: 100, exponent: 2.0, linearXp: 0, multiplier: 1.0, defaultKillXp: 10 },
-    rewards: { hpPerLevel: 4, manaPerLevel: 3, fullHealOnLevelUp: true, fullManaOnLevelUp: true, baseHp: 30, baseMana: 30 },
+    maxLevel: 30,
+    xp: { baseXp: 800, exponent: 2.2, linearXp: 1200, multiplier: 1.0, defaultKillXp: 60 },
+    rewards: { hpScalingRate: 1.099, manaScalingRate: 1.096, fullHealOnLevelUp: true, fullManaOnLevelUp: true, baseHp: 130, baseMana: 120 },
   },
   mobTiers: {
-    weak: { baseHp: 10, hpPerLevel: 3, baseMinDamage: 1, baseMaxDamage: 2, damagePerLevel: 0, baseArmor: 0, baseXpReward: 15, xpRewardPerLevel: 5, baseGoldMin: 1, baseGoldMax: 3, goldPerLevel: 1 },
-    standard: { baseHp: 20, hpPerLevel: 5, baseMinDamage: 2, baseMaxDamage: 4, damagePerLevel: 1, baseArmor: 1, baseXpReward: 30, xpRewardPerLevel: 10, baseGoldMin: 3, baseGoldMax: 8, goldPerLevel: 2 },
-    elite: { baseHp: 40, hpPerLevel: 8, baseMinDamage: 3, baseMaxDamage: 6, damagePerLevel: 1, baseArmor: 2, baseXpReward: 75, xpRewardPerLevel: 25, baseGoldMin: 10, baseGoldMax: 25, goldPerLevel: 5 },
-    boss: { baseHp: 80, hpPerLevel: 15, baseMinDamage: 6, baseMaxDamage: 12, damagePerLevel: 2, baseArmor: 4, baseXpReward: 200, xpRewardPerLevel: 50, baseGoldMin: 30, baseGoldMax: 80, goldPerLevel: 15 },
+    weak: { baseHp: 36, hpScalingRate: 1.097, baseMinDamage: 1, baseMaxDamage: 3, damageScalingRate: 1.085, baseArmor: 0, baseXpReward: 70, xpScalingRate: 1.087, baseGoldMin: 2, baseGoldMax: 6, goldScalingRate: 1.085 },
+    standard: { baseHp: 150, hpScalingRate: 1.085, baseMinDamage: 5, baseMaxDamage: 12, damageScalingRate: 1.075, baseArmor: 1, baseXpReward: 220, xpScalingRate: 1.078, baseGoldMin: 5, baseGoldMax: 14, goldScalingRate: 1.080 },
+    elite: { baseHp: 400, hpScalingRate: 1.054, baseMinDamage: 10, baseMaxDamage: 22, damageScalingRate: 1.057, baseArmor: 2, baseXpReward: 600, xpScalingRate: 1.075, baseGoldMin: 18, baseGoldMax: 45, goldScalingRate: 1.072 },
+    boss: { baseHp: 1000, hpScalingRate: 1.068, baseMinDamage: 20, baseMaxDamage: 45, damageScalingRate: 1.072, baseArmor: 4, baseXpReward: 2000, xpScalingRate: 1.068, baseGoldMin: 70, baseGoldMax: 150, goldScalingRate: 1.059 },
   },
 } as unknown as Record<string, unknown>;
 

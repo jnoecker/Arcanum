@@ -55,13 +55,14 @@ export const FIELD_METADATA: Record<string, FieldMeta> = {
     section: TuningSection.CombatStats,
     min: 1,
     impact: "high",
-    interactionNote: "Combined with hpPerLevel to determine mob survivability curve",
+    interactionNote: "Combined with hpScalingRate to determine mob survivability curve",
   },
-  "mobTiers.weak.hpPerLevel": {
-    label: "Weak Mob HP/Level",
-    description: "Additional hit points gained per level for weak mobs",
+  "mobTiers.weak.hpScalingRate": {
+    label: "Weak Mob HP Scaling Rate",
+    description: "Per-level multiplicative growth rate. 1.1 means HP grows ~10% per level (~15x over 30 levels).",
     section: TuningSection.CombatStats,
-    min: 0,
+    min: 1.0,
+    max: 2.0,
     impact: "high",
     interactionNote: "Scales mob tankiness -- affects kill times at all levels",
   },
@@ -79,11 +80,12 @@ export const FIELD_METADATA: Record<string, FieldMeta> = {
     min: 1,
     impact: "medium",
   },
-  "mobTiers.weak.damagePerLevel": {
-    label: "Weak Mob Damage/Level",
-    description: "Additional damage per level for weak mobs",
+  "mobTiers.weak.damageScalingRate": {
+    label: "Weak Mob Damage Scaling Rate",
+    description: "Per-level multiplicative growth rate applied to both min and max damage.",
     section: TuningSection.CombatStats,
-    min: 0,
+    min: 1.0,
+    max: 2.0,
     impact: "medium",
   },
   "mobTiers.weak.baseArmor": {
@@ -101,11 +103,12 @@ export const FIELD_METADATA: Record<string, FieldMeta> = {
     impact: "high",
     interactionNote: "Core XP income source -- affects leveling speed directly",
   },
-  "mobTiers.weak.xpRewardPerLevel": {
-    label: "Weak Mob XP/Level",
-    description: "Additional XP reward per mob level for weak mobs",
+  "mobTiers.weak.xpScalingRate": {
+    label: "Weak Mob XP Scaling Rate",
+    description: "Per-level multiplicative growth rate applied to base kill XP.",
     section: TuningSection.CombatStats,
-    min: 0,
+    min: 1.0,
+    max: 2.0,
     impact: "high",
   },
   "mobTiers.weak.baseGoldMin": {
@@ -122,11 +125,12 @@ export const FIELD_METADATA: Record<string, FieldMeta> = {
     min: 0,
     impact: "medium",
   },
-  "mobTiers.weak.goldPerLevel": {
-    label: "Weak Mob Gold/Level",
-    description: "Additional gold per mob level for weak mobs",
+  "mobTiers.weak.goldScalingRate": {
+    label: "Weak Mob Gold Scaling Rate",
+    description: "Per-level multiplicative growth rate applied to both min and max gold drops.",
     section: TuningSection.CombatStats,
-    min: 0,
+    min: 1.0,
+    max: 2.0,
     impact: "medium",
   },
 
@@ -138,13 +142,14 @@ export const FIELD_METADATA: Record<string, FieldMeta> = {
     section: TuningSection.CombatStats,
     min: 1,
     impact: "high",
-    interactionNote: "Combined with hpPerLevel to determine mob survivability curve",
+    interactionNote: "Combined with hpScalingRate to determine mob survivability curve",
   },
-  "mobTiers.standard.hpPerLevel": {
-    label: "Standard Mob HP/Level",
-    description: "Additional hit points gained per level for standard mobs",
+  "mobTiers.standard.hpScalingRate": {
+    label: "Standard Mob HP Scaling Rate",
+    description: "Per-level multiplicative growth rate. 1.1 means HP grows ~10% per level (~15x over 30 levels).",
     section: TuningSection.CombatStats,
-    min: 0,
+    min: 1.0,
+    max: 2.0,
     impact: "high",
     interactionNote: "Scales mob tankiness -- affects kill times at all levels",
   },
@@ -162,11 +167,12 @@ export const FIELD_METADATA: Record<string, FieldMeta> = {
     min: 1,
     impact: "medium",
   },
-  "mobTiers.standard.damagePerLevel": {
-    label: "Standard Mob Damage/Level",
-    description: "Additional damage per level for standard mobs",
+  "mobTiers.standard.damageScalingRate": {
+    label: "Standard Mob Damage Scaling Rate",
+    description: "Per-level multiplicative growth rate applied to both min and max damage.",
     section: TuningSection.CombatStats,
-    min: 0,
+    min: 1.0,
+    max: 2.0,
     impact: "medium",
   },
   "mobTiers.standard.baseArmor": {
@@ -184,11 +190,12 @@ export const FIELD_METADATA: Record<string, FieldMeta> = {
     impact: "high",
     interactionNote: "Primary XP income source for most players",
   },
-  "mobTiers.standard.xpRewardPerLevel": {
-    label: "Standard Mob XP/Level",
-    description: "Additional XP reward per mob level for standard mobs",
+  "mobTiers.standard.xpScalingRate": {
+    label: "Standard Mob XP Scaling Rate",
+    description: "Per-level multiplicative growth rate applied to base kill XP.",
     section: TuningSection.CombatStats,
-    min: 0,
+    min: 1.0,
+    max: 2.0,
     impact: "high",
   },
   "mobTiers.standard.baseGoldMin": {
@@ -205,11 +212,12 @@ export const FIELD_METADATA: Record<string, FieldMeta> = {
     min: 0,
     impact: "medium",
   },
-  "mobTiers.standard.goldPerLevel": {
-    label: "Standard Mob Gold/Level",
-    description: "Additional gold per mob level for standard mobs",
+  "mobTiers.standard.goldScalingRate": {
+    label: "Standard Mob Gold Scaling Rate",
+    description: "Per-level multiplicative growth rate applied to both min and max gold drops.",
     section: TuningSection.CombatStats,
-    min: 0,
+    min: 1.0,
+    max: 2.0,
     impact: "medium",
   },
 
@@ -223,11 +231,12 @@ export const FIELD_METADATA: Record<string, FieldMeta> = {
     impact: "high",
     interactionNote: "Elite mobs are challenging encounters -- HP must outpace standard tier",
   },
-  "mobTiers.elite.hpPerLevel": {
-    label: "Elite Mob HP/Level",
-    description: "Additional hit points gained per level for elite mobs",
+  "mobTiers.elite.hpScalingRate": {
+    label: "Elite Mob HP Scaling Rate",
+    description: "Per-level multiplicative growth rate. 1.1 means HP grows ~10% per level (~15x over 30 levels).",
     section: TuningSection.CombatStats,
-    min: 0,
+    min: 1.0,
+    max: 2.0,
     impact: "high",
   },
   "mobTiers.elite.baseMinDamage": {
@@ -244,11 +253,12 @@ export const FIELD_METADATA: Record<string, FieldMeta> = {
     min: 1,
     impact: "medium",
   },
-  "mobTiers.elite.damagePerLevel": {
-    label: "Elite Mob Damage/Level",
-    description: "Additional damage per level for elite mobs",
+  "mobTiers.elite.damageScalingRate": {
+    label: "Elite Mob Damage Scaling Rate",
+    description: "Per-level multiplicative growth rate applied to both min and max damage.",
     section: TuningSection.CombatStats,
-    min: 0,
+    min: 1.0,
+    max: 2.0,
     impact: "medium",
   },
   "mobTiers.elite.baseArmor": {
@@ -266,11 +276,12 @@ export const FIELD_METADATA: Record<string, FieldMeta> = {
     impact: "high",
     interactionNote: "High XP reward makes elites valuable targets for leveling",
   },
-  "mobTiers.elite.xpRewardPerLevel": {
-    label: "Elite Mob XP/Level",
-    description: "Additional XP reward per mob level for elite mobs",
+  "mobTiers.elite.xpScalingRate": {
+    label: "Elite Mob XP Scaling Rate",
+    description: "Per-level multiplicative growth rate applied to base kill XP.",
     section: TuningSection.CombatStats,
-    min: 0,
+    min: 1.0,
+    max: 2.0,
     impact: "high",
   },
   "mobTiers.elite.baseGoldMin": {
@@ -287,11 +298,12 @@ export const FIELD_METADATA: Record<string, FieldMeta> = {
     min: 0,
     impact: "medium",
   },
-  "mobTiers.elite.goldPerLevel": {
-    label: "Elite Mob Gold/Level",
-    description: "Additional gold per mob level for elite mobs",
+  "mobTiers.elite.goldScalingRate": {
+    label: "Elite Mob Gold Scaling Rate",
+    description: "Per-level multiplicative growth rate applied to both min and max gold drops.",
     section: TuningSection.CombatStats,
-    min: 0,
+    min: 1.0,
+    max: 2.0,
     impact: "medium",
   },
 
@@ -305,11 +317,12 @@ export const FIELD_METADATA: Record<string, FieldMeta> = {
     impact: "high",
     interactionNote: "Boss HP defines encounter length -- too high causes tedium, too low trivializes content",
   },
-  "mobTiers.boss.hpPerLevel": {
-    label: "Boss Mob HP/Level",
-    description: "Additional hit points gained per level for boss mobs",
+  "mobTiers.boss.hpScalingRate": {
+    label: "Boss Mob HP Scaling Rate",
+    description: "Per-level multiplicative growth rate. 1.1 means HP grows ~10% per level (~15x over 30 levels).",
     section: TuningSection.CombatStats,
-    min: 0,
+    min: 1.0,
+    max: 2.0,
     impact: "high",
   },
   "mobTiers.boss.baseMinDamage": {
@@ -326,11 +339,12 @@ export const FIELD_METADATA: Record<string, FieldMeta> = {
     min: 1,
     impact: "high",
   },
-  "mobTiers.boss.damagePerLevel": {
-    label: "Boss Mob Damage/Level",
-    description: "Additional damage per level for boss mobs",
+  "mobTiers.boss.damageScalingRate": {
+    label: "Boss Mob Damage Scaling Rate",
+    description: "Per-level multiplicative growth rate applied to both min and max damage.",
     section: TuningSection.CombatStats,
-    min: 0,
+    min: 1.0,
+    max: 2.0,
     impact: "high",
   },
   "mobTiers.boss.baseArmor": {
@@ -348,11 +362,12 @@ export const FIELD_METADATA: Record<string, FieldMeta> = {
     impact: "high",
     interactionNote: "Major XP reward -- affects whether boss farming is viable",
   },
-  "mobTiers.boss.xpRewardPerLevel": {
-    label: "Boss Mob XP/Level",
-    description: "Additional XP reward per mob level for boss mobs",
+  "mobTiers.boss.xpScalingRate": {
+    label: "Boss Mob XP Scaling Rate",
+    description: "Per-level multiplicative growth rate applied to base kill XP.",
     section: TuningSection.CombatStats,
-    min: 0,
+    min: 1.0,
+    max: 2.0,
     impact: "high",
   },
   "mobTiers.boss.baseGoldMin": {
@@ -369,11 +384,12 @@ export const FIELD_METADATA: Record<string, FieldMeta> = {
     min: 0,
     impact: "medium",
   },
-  "mobTiers.boss.goldPerLevel": {
-    label: "Boss Mob Gold/Level",
-    description: "Additional gold per mob level for boss mobs",
+  "mobTiers.boss.goldScalingRate": {
+    label: "Boss Mob Gold Scaling Rate",
+    description: "Per-level multiplicative growth rate applied to both min and max gold drops.",
     section: TuningSection.CombatStats,
-    min: 0,
+    min: 1.0,
+    max: 2.0,
     impact: "medium",
   },
 
@@ -680,19 +696,21 @@ export const FIELD_METADATA: Record<string, FieldMeta> = {
     min: 0,
     impact: "medium",
   },
-  "progression.rewards.hpPerLevel": {
-    label: "HP Per Level",
-    description: "Hit points gained per level from base progression",
+  "progression.rewards.hpScalingRate": {
+    label: "HP Scaling Rate",
+    description: "Per-level multiplicative growth rate for max HP. 1.1 means HP grows ~10% per level (~15x over 30 levels).",
     section: TuningSection.ProgressionQuests,
-    min: 0,
+    min: 1.0,
+    max: 2.0,
     impact: "high",
-    interactionNote: "Combined with class HP/level and stat scaling for total HP growth",
+    interactionNote: "Combined with class hpScalingRate and stat scaling for total HP growth",
   },
-  "progression.rewards.manaPerLevel": {
-    label: "Mana Per Level",
-    description: "Mana points gained per level from base progression",
+  "progression.rewards.manaScalingRate": {
+    label: "Mana Scaling Rate",
+    description: "Per-level multiplicative growth rate for max mana.",
     section: TuningSection.ProgressionQuests,
-    min: 0,
+    min: 1.0,
+    max: 2.0,
     impact: "high",
   },
   "progression.rewards.fullHealOnLevelUp": {

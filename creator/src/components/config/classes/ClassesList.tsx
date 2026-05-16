@@ -148,8 +148,8 @@ function ClassRow({ id, cls, selected, onSelect }: ClassRowProps) {
             {cls.displayName || id}
           </div>
           <div className="mt-1 flex flex-wrap items-center gap-1">
-            <StatPill label={`HP +${cls.hpPerLevel}`} />
-            <StatPill label={`MP +${cls.manaPerLevel}`} />
+            <StatPill label={`HP ×${cls.hpScalingRate}`} />
+            <StatPill label={`MP ×${cls.manaScalingRate}`} />
             {cls.primaryStat && <StatPill label={cls.primaryStat} accent />}
           </div>
         </div>

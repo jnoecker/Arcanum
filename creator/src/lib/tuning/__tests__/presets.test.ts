@@ -43,16 +43,16 @@ const FULL_MOCK_CONFIG: AppConfig = {
   statusEffects: {},
   combat: { tickMillis: 2000, minDamage: 1, maxDamage: 150, feedback: { enabled: true, roomBroadcastEnabled: true } },
   mobTiers: {
-    weak: { baseHp: 5, hpPerLevel: 2, baseMinDamage: 1, baseMaxDamage: 2, damagePerLevel: 0, baseArmor: 0, baseXpReward: 15, xpRewardPerLevel: 5, baseGoldMin: 1, baseGoldMax: 3, goldPerLevel: 1 },
-    standard: { baseHp: 10, hpPerLevel: 4, baseMinDamage: 2, baseMaxDamage: 4, damagePerLevel: 1, baseArmor: 1, baseXpReward: 30, xpRewardPerLevel: 10, baseGoldMin: 3, baseGoldMax: 8, goldPerLevel: 2 },
-    elite: { baseHp: 25, hpPerLevel: 7, baseMinDamage: 3, baseMaxDamage: 6, damagePerLevel: 1, baseArmor: 2, baseXpReward: 75, xpRewardPerLevel: 25, baseGoldMin: 10, baseGoldMax: 25, goldPerLevel: 5 },
-    boss: { baseHp: 50, hpPerLevel: 10, baseMinDamage: 3, baseMaxDamage: 8, damagePerLevel: 2, baseArmor: 3, baseXpReward: 200, xpRewardPerLevel: 50, baseGoldMin: 50, baseGoldMax: 100, goldPerLevel: 15 },
+    weak: { baseHp: 5, hpScalingRate: 1.1, baseMinDamage: 1, baseMaxDamage: 2, damageScalingRate: 1.1, baseArmor: 0, baseXpReward: 15, xpScalingRate: 1.15, baseGoldMin: 1, baseGoldMax: 3, goldScalingRate: 1.1 },
+    standard: { baseHp: 10, hpScalingRate: 1.1, baseMinDamage: 2, baseMaxDamage: 4, damageScalingRate: 1.1, baseArmor: 1, baseXpReward: 30, xpScalingRate: 1.15, baseGoldMin: 3, baseGoldMax: 8, goldScalingRate: 1.1 },
+    elite: { baseHp: 25, hpScalingRate: 1.1, baseMinDamage: 3, baseMaxDamage: 6, damageScalingRate: 1.1, baseArmor: 2, baseXpReward: 75, xpScalingRate: 1.15, baseGoldMin: 10, baseGoldMax: 25, goldScalingRate: 1.1 },
+    boss: { baseHp: 50, hpScalingRate: 1.1, baseMinDamage: 3, baseMaxDamage: 8, damageScalingRate: 1.1, baseArmor: 3, baseXpReward: 200, xpScalingRate: 1.15, baseGoldMin: 50, baseGoldMax: 100, goldScalingRate: 1.1 },
   },
   mobActionDelay: { minActionDelayMillis: 2000, maxActionDelayMillis: 5000 },
   progression: {
     maxLevel: 50,
     xp: { baseXp: 100, exponent: 2.0, linearXp: 0, multiplier: 1.0, defaultKillXp: 10 },
-    rewards: { hpPerLevel: 2, manaPerLevel: 1, fullHealOnLevelUp: true, fullManaOnLevelUp: true, baseHp: 10, baseMana: 10 },
+    rewards: { hpScalingRate: 1.1, manaScalingRate: 1.1, fullHealOnLevelUp: true, fullManaOnLevelUp: true, baseHp: 10, baseMana: 10 },
   },
   economy: { buyMultiplier: 1.0, sellMultiplier: 0.5 },
   regen: {
@@ -65,7 +65,7 @@ const FULL_MOCK_CONFIG: AppConfig = {
   commands: {},
   group: { maxSize: 5, inviteTimeoutMs: 60000, xpBonusPerMember: 0.10 },
   classes: {
-    WARRIOR: { displayName: "Warrior", hpPerLevel: 4, manaPerLevel: 1, primaryStat: "STR", description: "A fighter." },
+    WARRIOR: { displayName: "Warrior", hpScalingRate: 1.1, manaScalingRate: 1.05, primaryStat: "STR", description: "A fighter." },
   },
   races: {
     HUMAN: { displayName: "Human", description: "Versatile." },

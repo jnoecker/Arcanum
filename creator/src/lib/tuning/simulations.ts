@@ -44,9 +44,14 @@ export const TIER_LABELS: Record<TierKey, string> = {
  * in level-appropriate gear. Without this term the simulator would produce
  * results for a "naked, classless" player, which makes archetype contracts
  * unrealistic whenever `combat.maxDamage` is set to a sensible value.
+ *
+ * Scales at the 1.1×/level combat rate off a level-1 sword swing of ~30
+ * damage (see docs/DERIVED_STATS.md "Aardwolf L1 anchor"). At L30 this lands
+ * near ~475, matching the weapon-damage ceiling derived from the same rate.
  */
 function expectedGearAttack(playerLevel: number): number {
-  return 4 + 2 * playerLevel;
+  const lv = Math.max(1, playerLevel);
+  return Math.round(30 * Math.pow(1.1, lv - 1));
 }
 
 /** Combat config damage band average, plus the server's melee stat bonus and an assumed gear term. */
@@ -104,7 +109,7 @@ export function simulateEncounter(
   const { playerLevel, mobTier, mobLevel } = inputs;
   const baseStat = inputs.baseStat ?? 10 + playerLevel * 2;
   const classDef = inputs.classId ? config.classes?.[inputs.classId] : undefined;
-  const hpPerLevel = classDef?.hpPerLevel ?? config.progression.rewards.hpPerLevel;
+  const hpScalingRate = classDef?.hpScalingRate ?? config.progression.rewards.hpScalingRate;
 
   const tier = config.mobTiers[mobTier];
   const mobHp = mobHpAtLevel(tier, mobLevel);
@@ -113,7 +118,7 @@ export function simulateEncounter(
   const playerHp = playerHpAtLevel(
     playerLevel,
     config.progression.rewards,
-    hpPerLevel,
+    hpScalingRate,
     baseStat,
     config.stats.bindings.hpScalingDivisor,
   );

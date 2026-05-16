@@ -23,6 +23,12 @@ import { mobPrompt, mobContext } from "@/lib/entityPrompts";
 import { useVibeStore } from "@/stores/vibeStore";
 import { useConfigStore } from "@/stores/configStore";
 import { resolveMobStats } from "@/lib/resolveMobStats";
+import {
+  TOUGHNESS_STEPS,
+  TOUGHNESS_PROFILES,
+  inferToughness,
+  toughnessPatch,
+} from "@/lib/mobToughness";
 import { CATEGORY_ICONS } from "@/assets/ui";
 import { QuestPicker, QuestRefBadge } from "@/components/config/panels/QuestPicker";
 
@@ -387,6 +393,25 @@ export function MobEditor({
             </FieldGrid>
           </Section>
 
+          {isCombatant && stats && (
+            <Section title="Combat Readout">
+              <div className="flex flex-col gap-2">
+                <div className="rounded border border-border-default bg-bg-tertiary px-2 py-1.5 text-xs">
+                  <div className="font-medium text-text-primary">
+                    HP {stats.hp.effective} · DMG {stats.minDamage.effective}–{stats.maxDamage.effective} · ARMOR {stats.armor.effective}
+                  </div>
+                  <div className="text-2xs text-text-muted">
+                    XP {stats.xpReward.effective.toLocaleString()} · GOLD {stats.goldMin.effective}–{stats.goldMax.effective}
+                  </div>
+                </div>
+                <ToughnessSelector
+                  mob={mob}
+                  onChange={(p) => patch(p)}
+                />
+              </div>
+            </Section>
+          )}
+
           {isCombatant && (
           <>
           <Section title="Behavior">
@@ -640,6 +665,54 @@ export function MobEditor({
               </CompactField>
             </FieldGrid>
           </Section>
+
+          <Section
+            title="Power-user Multipliers"
+            defaultExpanded={false}
+            titleTooltip="Raw mults applied to the tier × level baseline. Edit these directly to break out of the toughness presets."
+          >
+            <p className="mb-1 text-2xs text-text-muted">
+              Setting any mult here puts the toughness selector into "Custom" mode.
+            </p>
+            <FieldGrid>
+              <CompactField label="HP ×">
+                <NumberInput
+                  value={mob.hpMult}
+                  onCommit={(v) => patch({ hpMult: v, toughness: undefined })}
+                  placeholder="1.0"
+                  min={0}
+                  step={0.05}
+                />
+              </CompactField>
+              <CompactField label="Damage ×">
+                <NumberInput
+                  value={mob.dmgMult}
+                  onCommit={(v) => patch({ dmgMult: v, toughness: undefined })}
+                  placeholder="1.0"
+                  min={0}
+                  step={0.05}
+                />
+              </CompactField>
+              <CompactField label="XP ×">
+                <NumberInput
+                  value={mob.xpMult}
+                  onCommit={(v) => patch({ xpMult: v, toughness: undefined })}
+                  placeholder="1.0"
+                  min={0}
+                  step={0.05}
+                />
+              </CompactField>
+              <CompactField label="Gold ×">
+                <NumberInput
+                  value={mob.goldMult}
+                  onCommit={(v) => patch({ goldMult: v, toughness: undefined })}
+                  placeholder="1.0"
+                  min={0}
+                  step={0.05}
+                />
+              </CompactField>
+            </FieldGrid>
+          </Section>
           </>
           )}
         </>
@@ -879,6 +952,55 @@ function SpellCard({
             </button>
           </div>
         </div>
+      )}
+    </div>
+  );
+}
+
+function ToughnessSelector({
+  mob,
+  onChange,
+}: {
+  mob: MobFile;
+  onChange: (patch: Partial<MobFile>) => void;
+}) {
+  const inferred = inferToughness(mob);
+  const current = inferred;
+  return (
+    <div className="flex flex-col gap-1">
+      <div className="flex items-center justify-between">
+        <span className="text-2xs text-text-muted">Toughness</span>
+        <span className="text-2xs text-text-muted">
+          {current != null
+            ? TOUGHNESS_PROFILES[current].label
+            : "Custom"}
+        </span>
+      </div>
+      <div className="grid grid-cols-5 gap-1">
+        {TOUGHNESS_STEPS.map((step) => {
+          const selected = current === step;
+          const profile = TOUGHNESS_PROFILES[step];
+          return (
+            <button
+              key={step}
+              type="button"
+              onClick={() => onChange(toughnessPatch(step))}
+              title={`${profile.label} — ${profile.description} (mults ×${profile.hpMult})`}
+              className={
+                selected
+                  ? "focus-ring rounded border border-accent bg-accent/10 px-1 py-1 text-2xs font-medium text-accent"
+                  : "focus-ring rounded border border-border-default px-1 py-1 text-2xs text-text-muted transition-colors hover:border-border-active hover:text-text-primary"
+              }
+            >
+              {step > 0 ? `+${step}` : step}
+            </button>
+          );
+        })}
+      </div>
+      {current == null && (
+        <p className="text-2xs text-text-muted">
+          Mults are hand-tuned. Pick a preset to reset to a profile.
+        </p>
       )}
     </div>
   );

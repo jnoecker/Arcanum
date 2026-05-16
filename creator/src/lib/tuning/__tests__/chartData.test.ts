@@ -20,31 +20,31 @@ import type { StatBindings } from "@/types/config";
 const MOCK_XP = { baseXp: 100, exponent: 2.0, linearXp: 0, multiplier: 1.0, defaultKillXp: 10 };
 
 const WEAK_TIER = {
-  baseHp: 5, hpPerLevel: 2,
-  baseMinDamage: 1, baseMaxDamage: 2, damagePerLevel: 0,
-  baseArmor: 0, baseXpReward: 15, xpRewardPerLevel: 5,
-  baseGoldMin: 1, baseGoldMax: 3, goldPerLevel: 1,
+  baseHp: 5, hpScalingRate: 1.1,
+  baseMinDamage: 1, baseMaxDamage: 2, damageScalingRate: 1.0,
+  baseArmor: 0, baseXpReward: 15, xpScalingRate: 1.15,
+  baseGoldMin: 1, baseGoldMax: 3, goldScalingRate: 1.1,
 };
 
 const STANDARD_TIER = {
-  baseHp: 10, hpPerLevel: 4,
-  baseMinDamage: 2, baseMaxDamage: 4, damagePerLevel: 1,
-  baseArmor: 1, baseXpReward: 30, xpRewardPerLevel: 10,
-  baseGoldMin: 3, baseGoldMax: 8, goldPerLevel: 2,
+  baseHp: 10, hpScalingRate: 1.1,
+  baseMinDamage: 2, baseMaxDamage: 4, damageScalingRate: 1.1,
+  baseArmor: 1, baseXpReward: 30, xpScalingRate: 1.15,
+  baseGoldMin: 3, baseGoldMax: 8, goldScalingRate: 1.1,
 };
 
 const ELITE_TIER = {
-  baseHp: 25, hpPerLevel: 7,
-  baseMinDamage: 3, baseMaxDamage: 6, damagePerLevel: 1,
-  baseArmor: 2, baseXpReward: 75, xpRewardPerLevel: 25,
-  baseGoldMin: 10, baseGoldMax: 25, goldPerLevel: 5,
+  baseHp: 25, hpScalingRate: 1.1,
+  baseMinDamage: 3, baseMaxDamage: 6, damageScalingRate: 1.1,
+  baseArmor: 2, baseXpReward: 75, xpScalingRate: 1.15,
+  baseGoldMin: 10, baseGoldMax: 25, goldScalingRate: 1.1,
 };
 
 const BOSS_TIER = {
-  baseHp: 50, hpPerLevel: 10,
-  baseMinDamage: 3, baseMaxDamage: 8, damagePerLevel: 2,
-  baseArmor: 3, baseXpReward: 200, xpRewardPerLevel: 50,
-  baseGoldMin: 50, baseGoldMax: 100, goldPerLevel: 15,
+  baseHp: 50, hpScalingRate: 1.1,
+  baseMinDamage: 3, baseMaxDamage: 8, damageScalingRate: 1.1,
+  baseArmor: 3, baseXpReward: 200, xpScalingRate: 1.15,
+  baseGoldMin: 50, baseGoldMax: 100, goldScalingRate: 1.1,
 };
 
 const MOCK_BINDINGS: StatBindings = {
@@ -62,7 +62,7 @@ const MOCK_CONFIG = {
   progression: {
     maxLevel: 50,
     xp: MOCK_XP,
-    rewards: { hpPerLevel: 2, manaPerLevel: 1, fullHealOnLevelUp: true, fullManaOnLevelUp: true, baseHp: 10, baseMana: 10 },
+    rewards: { hpScalingRate: 1.1, manaScalingRate: 1.1, fullHealOnLevelUp: true, fullManaOnLevelUp: true, baseHp: 10, baseMana: 10 },
   },
   mobTiers: {
     weak: WEAK_TIER,

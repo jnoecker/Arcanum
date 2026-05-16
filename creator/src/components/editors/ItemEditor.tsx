@@ -1,4 +1,4 @@
-import { useCallback, useState, memo } from "react";
+import { useCallback, useState, useMemo, memo } from "react";
 import type { WorldFile, ItemFile, ItemOnUse, ItemType } from "@/types/world";
 import { ITEM_TYPES } from "@/types/world";
 import { updateItem, deleteItem } from "@/lib/zoneEdits";
@@ -21,6 +21,14 @@ import { itemPrompt, itemContext } from "@/lib/entityPrompts";
 import { keywordFromId } from "@/lib/sanitizeZone";
 import { useVibeStore } from "@/stores/vibeStore";
 import { useConfigStore } from "@/stores/configStore";
+import {
+  ITEM_TIERS,
+  ITEM_ARCHETYPES,
+  ACCESSORY_SLOTS,
+  deriveItemStats,
+  type ItemTier,
+  type ItemArchetype,
+} from "@/lib/tuning/itemBudget";
 
 interface ItemEditorProps {
   itemId: string;
@@ -64,9 +72,87 @@ export function ItemEditor({
     label: t.charAt(0).toUpperCase() + t.slice(1),
   }));
 
+  const statDefinitions = useConfigStore((s) => s.config?.stats?.definitions);
+  const statOptions = useMemo(() => {
+    const opts = statDefinitions
+      ? Object.entries(statDefinitions).map(([id, def]) => ({
+          value: id,
+          label: def.abbreviation ?? id,
+        }))
+      : [
+          { value: "STR", label: "STR" },
+          { value: "DEX", label: "DEX" },
+          { value: "CON", label: "CON" },
+          { value: "INT", label: "INT" },
+          { value: "WIS", label: "WIS" },
+        ];
+    return opts;
+  }, [statDefinitions]);
+
+  const tierOptions = useMemo(
+    () =>
+      ITEM_TIERS.map((t) => ({
+        value: t,
+        label: t.charAt(0).toUpperCase() + t.slice(1),
+      })),
+    [],
+  );
+
+  const archetypeOptions = useMemo(
+    () =>
+      ITEM_ARCHETYPES.map((a) => ({
+        value: a,
+        label: a.charAt(0).toUpperCase() + a.slice(1),
+      })),
+    [],
+  );
+
+  const derivation = useMemo(() => {
+    if (!item) return null;
+    if (item.level == null || !item.tier || !item.archetype || !item.slot) return null;
+    return deriveItemStats({
+      slot: item.slot,
+      level: item.level,
+      tier: item.tier as ItemTier,
+      archetype: item.archetype as ItemArchetype,
+      primaryStat: item.primaryStat,
+      secondaryStat: item.secondaryStat,
+      tertiaryStat: item.tertiaryStat,
+    });
+  }, [item]);
+
+  const isAccessory = item?.slot ? ACCESSORY_SLOTS.has(item.slot) : false;
+
   if (!item) return null;
 
   const stats = item.stats ?? {};
+
+  const renderOverrideLabel = (
+    label: string,
+    authored: number | undefined,
+    derived: number | undefined,
+  ) => {
+    if (derived == null) return <>{label}</>;
+    const isOverride = authored != null && authored !== derived;
+    if (!isOverride) return <>{label}</>;
+    return (
+      <span className="flex items-center gap-1">
+        {label}
+        <span
+          className="inline-block h-1.5 w-1.5 rounded-full bg-accent"
+          title={`Overridden (derived: ${derived})`}
+        />
+        <button
+          type="button"
+          onClick={() => patch({ [label.toLowerCase()]: derived } as Partial<ItemFile>)}
+          className="text-2xs text-text-muted hover:text-accent"
+          title="Reset to derived value"
+        >
+          reset
+        </button>
+      </span>
+    );
+  };
   const handleStatChange = useCallback(
     (statId: string, value: number | undefined) => {
       const next = { ...stats };
@@ -131,6 +217,104 @@ export function ItemEditor({
 
       {activeTab === "item" && (
         <>
+          <Section title="Power">
+            <p className="mb-1 text-2xs text-text-muted">
+              Pick the item's level, rarity, and role. Arcanum derives damage, armor, and stat values from these — edit a derived field below to mark it as an override.
+            </p>
+            <div className="flex flex-col gap-1.5">
+              <FieldGrid cols={2}>
+                <CompactField label="Level">
+                  <NumberInput
+                    value={item.level}
+                    onCommit={(v) => patch({ level: v })}
+                    placeholder="—"
+                    min={1}
+                    max={30}
+                    dense
+                  />
+                </CompactField>
+                <CompactField label="Tier">
+                  <SelectInput
+                    value={item.tier ?? ""}
+                    options={tierOptions}
+                    onCommit={(v) => patch({ tier: (v || undefined) as ItemFile["tier"] })}
+                    allowEmpty
+                    placeholder="—"
+                    dense
+                  />
+                </CompactField>
+                <CompactField label="Archetype" span>
+                  <SelectInput
+                    value={isAccessory ? "stat" : (item.archetype ?? "")}
+                    options={archetypeOptions}
+                    onCommit={(v) => patch({ archetype: (v || undefined) as ItemFile["archetype"] })}
+                    allowEmpty
+                    placeholder={isAccessory ? "stat (accessory)" : "—"}
+                    disabled={isAccessory}
+                    dense
+                  />
+                </CompactField>
+                <CompactField label="Primary Stat">
+                  <SelectInput
+                    value={item.primaryStat ?? ""}
+                    options={statOptions}
+                    onCommit={(v) => patch({ primaryStat: v || undefined })}
+                    allowEmpty
+                    placeholder="—"
+                    dense
+                  />
+                </CompactField>
+                <CompactField label="Secondary Stat">
+                  <SelectInput
+                    value={item.secondaryStat ?? ""}
+                    options={statOptions}
+                    onCommit={(v) => patch({ secondaryStat: v || undefined })}
+                    allowEmpty
+                    placeholder="—"
+                    dense
+                  />
+                </CompactField>
+                <CompactField label="Tertiary Stat" span>
+                  <SelectInput
+                    value={item.tertiaryStat ?? ""}
+                    options={statOptions}
+                    onCommit={(v) => patch({ tertiaryStat: v || undefined })}
+                    allowEmpty
+                    placeholder="—"
+                    dense
+                  />
+                </CompactField>
+              </FieldGrid>
+              {derivation && (
+                <div className="rounded border border-border-default bg-bg-tertiary px-2 py-1.5 text-2xs">
+                  <div className="font-medium text-text-primary">
+                    Budget: {Math.round(derivation.budget.totalBudget)}
+                  </div>
+                  <div className="text-text-muted">
+                    {derivation.budget.damageBudget > 0 && (
+                      <span>{Math.round(derivation.budget.damageBudget)} dmg</span>
+                    )}
+                    {derivation.budget.damageBudget > 0 && derivation.budget.armorBudget > 0 && " · "}
+                    {derivation.budget.armorBudget > 0 && (
+                      <span>{Math.round(derivation.budget.armorBudget)} armor</span>
+                    )}
+                    {(derivation.budget.damageBudget > 0 || derivation.budget.armorBudget > 0) &&
+                      derivation.budget.statBudget > 0 &&
+                      " · "}
+                    {derivation.budget.statBudget > 0 && (
+                      <span>{Math.round(derivation.budget.statBudget)} stat</span>
+                    )}
+                  </div>
+                </div>
+              )}
+              {!derivation && (item.slot || item.level != null || item.tier || item.archetype) && (
+                <div className="rounded border border-dashed border-border-default bg-bg-tertiary px-2 py-1 text-2xs text-text-muted">
+                  Set slot, level, tier, and archetype to enable derivation.
+                </div>
+              )}
+            </div>
+          </Section>
+
           <Section title="Identity">
             <div className="flex flex-col gap-1.5">
               <FieldRow label="Keyword">
@@ -189,20 +373,20 @@ export function ItemEditor({
                     dense
                   />
                 </CompactField>
-                <CompactField label="Damage">
+                <CompactField label={renderOverrideLabel("Damage", item.damage, derivation?.damage)}>
                   <NumberInput
                     value={item.damage}
                     onCommit={(v) => patch({ damage: v })}
-                    placeholder="0"
+                    placeholder={derivation ? String(derivation.damage) : "0"}
                     min={0}
                     dense
                   />
                 </CompactField>
-                <CompactField label="Armor">
+                <CompactField label={renderOverrideLabel("Armor", item.armor, derivation?.armor)}>
                   <NumberInput
                     value={item.armor}
                     onCommit={(v) => patch({ armor: v })}
-                    placeholder="0"
+                    placeholder={derivation ? String(derivation.armor) : "0"}
                     min={0}
                     dense
                   />
@@ -259,20 +443,51 @@ export function ItemEditor({
 
           <Section title="Stat Bonuses">
             <p className="mb-1 text-2xs text-text-muted">
-              Only non-zero values are saved
+              {derivation
+                ? "Derived from Power settings. Edit a value to override; clear to restore the derived default."
+                : "Only non-zero values are saved."}
             </p>
             <div className="flex flex-col gap-1">
-              {Object.entries(stats).map(([statId, value]) => (
-                <div key={statId} className="flex items-center gap-1">
-                  <span className="w-16 shrink-0 text-xs font-medium text-text-primary">
-                    {statId}
-                  </span>
-                  <NumberInput
-                    value={value}
-                    onCommit={(v) => handleStatChange(statId, v)}
-                  />
-                </div>
-              ))}
+              {(() => {
+                const derivedStats = derivation?.stats ?? {};
+                const allStatIds = new Set<string>([
+                  ...Object.keys(derivedStats),
+                  ...Object.keys(stats),
+                ]);
+                return Array.from(allStatIds).map((statId) => {
+                  const authored = stats[statId];
+                  const derived = derivedStats[statId];
+                  const isOverride = authored != null && derived != null && authored !== derived;
+                  return (
+                    <div key={statId} className="flex items-center gap-1">
+                      <span className="flex w-20 shrink-0 items-center gap-1 text-xs font-medium text-text-primary">
+                        {statId}
+                        {isOverride && (
+                          <span
+                            className="inline-block h-1.5 w-1.5 rounded-full bg-accent"
+                            title={`Overridden (derived: ${derived})`}
+                          />
+                        )}
+                      </span>
+                      <NumberInput
+                        value={authored}
+                        onCommit={(v) => handleStatChange(statId, v)}
+                        placeholder={derived != null ? String(derived) : "0"}
+                      />
+                      {isOverride && derived != null && (
+                        <button
+                          type="button"
+                          onClick={() => handleStatChange(statId, derived)}
+                          className="text-2xs text-text-muted hover:text-accent"
+                          title="Reset to derived value"
+                        >
+                          reset
+                        </button>
+                      )}
+                    </div>
+                  );
+                });
+              })()}
               <AddStatRow
                 existingStats={Object.keys(stats)}
                 onAdd={(statId) => handleStatChange(statId, 1)}

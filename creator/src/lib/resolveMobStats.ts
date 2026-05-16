@@ -63,6 +63,13 @@ export function resolveMobStats(
   if (!tier) return undefined;
   const level = mob.level ?? 1;
 
+  // Tier+level baseline multiplied by per-mob mult. Mults default to 1.0 so
+  // mobs without a toughness setting resolve to the pure tier baseline.
+  const hpMult = mob.hpMult ?? 1;
+  const dmgMult = mob.dmgMult ?? 1;
+  const xpMult = mob.xpMult ?? 1;
+  const goldMult = mob.goldMult ?? 1;
+
   const make = (authored: number | undefined, tierDefault: number): MobStatValue => ({
     effective: authored ?? tierDefault,
     tierDefault,
@@ -70,13 +77,13 @@ export function resolveMobStats(
   });
 
   const stats: ResolvedMobStats = {
-    hp: make(mob.hp, mobHpAtLevel(tier, level)),
-    minDamage: make(mob.minDamage, mobMinDamageAtLevel(tier, level)),
-    maxDamage: make(mob.maxDamage, mobMaxDamageAtLevel(tier, level)),
+    hp: make(mob.hp, Math.floor(mobHpAtLevel(tier, level) * hpMult)),
+    minDamage: make(mob.minDamage, Math.floor(mobMinDamageAtLevel(tier, level) * dmgMult)),
+    maxDamage: make(mob.maxDamage, Math.floor(mobMaxDamageAtLevel(tier, level) * dmgMult)),
     armor: make(mob.armor, tier.baseArmor),
-    xpReward: make(mob.xpReward, mobXpRewardAtLevel(tier, level)),
-    goldMin: make(mob.goldMin, mobGoldMinAtLevel(tier, level)),
-    goldMax: make(mob.goldMax, mobGoldMaxAtLevel(tier, level)),
+    xpReward: make(mob.xpReward, Math.floor(mobXpRewardAtLevel(tier, level) * xpMult)),
+    goldMin: make(mob.goldMin, Math.floor(mobGoldMinAtLevel(tier, level) * goldMult)),
+    goldMax: make(mob.goldMax, Math.floor(mobGoldMaxAtLevel(tier, level) * goldMult)),
     anyOverridden: false,
   };
   stats.anyOverridden =

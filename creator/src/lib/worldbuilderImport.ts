@@ -228,8 +228,8 @@ function convertClass(id: string, cls: ClassDefinitionConfig): Omit<Worldbuilder
   }
 
   const statBits: string[] = [];
-  statBits.push(`HP per level: ${cls.hpPerLevel}`);
-  statBits.push(`Mana per level: ${cls.manaPerLevel}`);
+  statBits.push(`HP scaling rate: ${cls.hpScalingRate}`);
+  statBits.push(`Mana scaling rate: ${cls.manaScalingRate}`);
   if (cls.threatMultiplier !== undefined) statBits.push(`Threat multiplier: ${cls.threatMultiplier}`);
   nodes.push(heading(2, "Progression"));
   nodes.push(bulletList(statBits));

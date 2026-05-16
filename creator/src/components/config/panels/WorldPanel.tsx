@@ -198,19 +198,23 @@ export function WorldPanel({ config, onChange }: ConfigPanelProps) {
           description="Stat growth and rewards players receive on level up."
         >
           <div className="grid grid-cols-2 gap-2">
-            <IconField label="HP / Level" layout="column">
+            <IconField label="HP Scaling Rate" layout="column">
               <NumberInput
-                value={p.rewards.hpPerLevel}
-                onCommit={(v) => patchRewards({ hpPerLevel: v ?? 2 })}
-                min={0}
+                value={p.rewards.hpScalingRate}
+                onCommit={(v) => patchRewards({ hpScalingRate: v ?? 1.1 })}
+                min={1.0}
+                max={2.0}
+                step={0.005}
                 dense
               />
             </IconField>
-            <IconField label="Mana / Level" layout="column">
+            <IconField label="Mana Scaling Rate" layout="column">
               <NumberInput
-                value={p.rewards.manaPerLevel}
-                onCommit={(v) => patchRewards({ manaPerLevel: v ?? 5 })}
-                min={0}
+                value={p.rewards.manaScalingRate}
+                onCommit={(v) => patchRewards({ manaScalingRate: v ?? 1.1 })}
+                min={1.0}
+                max={2.0}
+                step={0.005}
                 dense
               />
             </IconField>

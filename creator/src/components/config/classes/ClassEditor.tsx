@@ -58,7 +58,7 @@ export function ClassEditor({
     if (cls.description) parts.push(`Tagline: ${cls.description}`);
     if (cls.backstory) parts.push(`Backstory: ${cls.backstory}`);
     if (cls.primaryStat) parts.push(`Primary stat: ${cls.primaryStat}`);
-    parts.push(`HP/level: ${cls.hpPerLevel}, Mana/level: ${cls.manaPerLevel}`);
+    parts.push(`HP scaling rate: ${cls.hpScalingRate}, Mana scaling rate: ${cls.manaScalingRate}`);
     if (cls.threatMultiplier != null && cls.threatMultiplier !== 1.0) {
       parts.push(`Threat multiplier: ${cls.threatMultiplier}`);
     }
@@ -330,8 +330,8 @@ function ProgressionCard({
   return (
     <SectionCard title="Progression">
       <HpManaCurve
-        hpPerLevel={cls.hpPerLevel}
-        manaPerLevel={cls.manaPerLevel}
+        hpScalingRate={cls.hpScalingRate}
+        manaScalingRate={cls.manaScalingRate}
         maxLevel={maxLevel}
         baseHp={baseHp}
         baseMana={baseMana}
@@ -339,24 +339,28 @@ function ProgressionCard({
 
       <div className="mt-3 grid grid-cols-2 gap-3">
         <FieldLabel
-          label="HP / Level"
-          hint="Class-specific HP gained per level."
+          label="HP Scaling Rate"
+          hint="Per-level multiplicative growth (1.1 = ~10%/level)."
         >
           <NumberInput
-            value={cls.hpPerLevel}
-            onCommit={(v) => onPatch({ hpPerLevel: v ?? 6 })}
-            min={0}
+            value={cls.hpScalingRate}
+            onCommit={(v) => onPatch({ hpScalingRate: v ?? 1.1 })}
+            min={1.0}
+            max={2.0}
+            step={0.005}
             dense
           />
         </FieldLabel>
         <FieldLabel
-          label="Mana / Level"
-          hint="High for casters, low for melee."
+          label="Mana Scaling Rate"
+          hint="Higher for casters, lower for melee."
         >
           <NumberInput
-            value={cls.manaPerLevel}
-            onCommit={(v) => onPatch({ manaPerLevel: v ?? 8 })}
-            min={0}
+            value={cls.manaScalingRate}
+            onCommit={(v) => onPatch({ manaScalingRate: v ?? 1.1 })}
+            min={1.0}
+            max={2.0}
+            step={0.005}
             dense
           />
         </FieldLabel>
@@ -476,14 +480,14 @@ function FieldLabel({
 // ─── HP / Mana growth chart (preserved from the old detail) ─────────
 
 function HpManaCurve({
-  hpPerLevel,
-  manaPerLevel,
+  hpScalingRate,
+  manaScalingRate,
   maxLevel,
   baseHp,
   baseMana,
 }: {
-  hpPerLevel: number;
-  manaPerLevel: number;
+  hpScalingRate: number;
+  manaScalingRate: number;
   maxLevel: number;
   baseHp: number;
   baseMana: number;
@@ -491,8 +495,8 @@ function HpManaCurve({
   const chart = chartTokens();
   const levels = Math.max(maxLevel, 2);
 
-  const hpAt = (lvl: number) => baseHp + (lvl - 1) * hpPerLevel;
-  const manaAt = (lvl: number) => baseMana + (lvl - 1) * manaPerLevel;
+  const hpAt = (lvl: number) => Math.floor(baseHp * Math.pow(hpScalingRate, lvl - 1));
+  const manaAt = (lvl: number) => Math.floor(baseMana * Math.pow(manaScalingRate, lvl - 1));
 
   const maxVal = Math.max(hpAt(levels), manaAt(levels), 1);
 

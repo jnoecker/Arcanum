@@ -11,18 +11,18 @@ const TIER_DESCRIPTIONS: Record<(typeof TIER_NAMES)[number], string> = {
   boss: "Zone bosses and storyline antagonists. Designed for group content or high-level solo players. High HP pools create extended encounters. Generous gold and XP rewards make them worth seeking out.",
 };
 
-const TIER_FIELDS: { key: keyof MobTierConfig; label: string; hint?: string }[] = [
+const TIER_FIELDS: { key: keyof MobTierConfig; label: string; hint?: string; step?: number }[] = [
   { key: "baseHp", label: "Base HP", hint: "Starting HP at level 1. Higher values mean longer fights." },
-  { key: "hpPerLevel", label: "HP / Level", hint: "HP gained per mob level. Controls how much tougher higher-level mobs feel." },
+  { key: "hpScalingRate", label: "HP Scaling Rate", hint: "Per-level multiplicative growth (e.g. 1.1 = ~10%/level, ~15x over 30 levels).", step: 0.005 },
   { key: "baseMinDamage", label: "Min Damage", hint: "Minimum damage per hit at level 1." },
   { key: "baseMaxDamage", label: "Max Damage", hint: "Maximum damage per hit at level 1." },
-  { key: "damagePerLevel", label: "Dmg / Level", hint: "Extra damage added per mob level. Keep this modest to avoid one-shotting players." },
+  { key: "damageScalingRate", label: "Damage Scaling Rate", hint: "Per-level multiplicative growth applied to both min and max damage.", step: 0.005 },
   { key: "baseArmor", label: "Armor", hint: "Flat damage reduction. High armor makes mobs feel 'tanky' against weak attacks." },
   { key: "baseXpReward", label: "Base XP", hint: "XP granted at level 1. Balance against the XP curve in Progression to control leveling speed." },
-  { key: "xpRewardPerLevel", label: "XP / Level", hint: "Additional XP per mob level. Higher values reward players for fighting tougher enemies." },
+  { key: "xpScalingRate", label: "XP Scaling Rate", hint: "Per-level multiplicative growth applied to base kill XP.", step: 0.005 },
   { key: "baseGoldMin", label: "Gold Min", hint: "Minimum gold dropped at level 1." },
   { key: "baseGoldMax", label: "Gold Max", hint: "Maximum gold dropped at level 1. The min/max range adds loot variance." },
-  { key: "goldPerLevel", label: "Gold / Level", hint: "Extra gold per mob level. Controls how quickly gold accumulates at higher levels." },
+  { key: "goldScalingRate", label: "Gold Scaling Rate", hint: "Per-level multiplicative growth applied to gold drops.", step: 0.005 },
 ];
 
 export function MobTiersPanel({ config, onChange }: ConfigPanelProps) {
@@ -78,17 +78,22 @@ export function MobTiersPanel({ config, onChange }: ConfigPanelProps) {
           description={TIER_DESCRIPTIONS[tier]}
         >
           <div className="flex flex-col gap-1.5">
-            {TIER_FIELDS.map((field) => (
-              <FieldRow key={field.key} label={field.label} hint={field.hint}>
-                <NumberInput
-                  value={config.mobTiers[tier][field.key]}
-                  onCommit={(v) =>
-                    patchTier(tier, { [field.key]: v ?? 0 })
-                  }
-                  min={0}
-                />
-              </FieldRow>
-            ))}
+            {TIER_FIELDS.map((field) => {
+              const isRate = field.key.endsWith("ScalingRate");
+              return (
+                <FieldRow key={field.key} label={field.label} hint={field.hint}>
+                  <NumberInput
+                    value={config.mobTiers[tier][field.key]}
+                    onCommit={(v) =>
+                      patchTier(tier, { [field.key]: v ?? (isRate ? 1.1 : 0) })
+                    }
+                    min={isRate ? 1.0 : 0}
+                    max={isRate ? 2.0 : undefined}
+                    step={field.step}
+                  />
+                </FieldRow>
+              );
+            })}
           </div>
         </Section>
       ))}

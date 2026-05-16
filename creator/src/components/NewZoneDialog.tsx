@@ -41,6 +41,7 @@ import {
 } from "./NewZoneDialogSteps";
 import { YAML_OPTS } from "@/lib/yamlOpts";
 import { rebalanceZone } from "@/lib/zoneRebalance";
+import { ensureLootComposition } from "@/lib/zoneLoot";
 
 // ─── Wizard component ──────────────────────────────────────────────
 
@@ -287,10 +288,14 @@ export function NewZoneDialog({ onClose, prefill, onCreated }: NewZoneDialogProp
 
     // Run the deterministic rebalance pass so the zone ships with stats that
     // match the world's tier baselines and item budgets instead of whatever
-    // numbers the LLM rolled. Safe to skip if config isn't loaded yet — the
-    // user can run the manual "Rebalance to tier" button later.
+    // numbers the LLM rolled. Then fill loot composition gaps so the zone
+    // has one epic per class, the rare/uncommon/common pools, and drops are
+    // assigned to tier-appropriate mobs. Both safe to skip if config isn't
+    // loaded yet — the user can run "Rebalance to tier" manually later.
     if (config) {
       world = rebalanceZone(world, config).world;
+      const classIds = Object.keys(config.classes ?? {});
+      world = ensureLootComposition(world, config, classIds).world;
     }
 
     // Standalone projects need a zone directory before the file write

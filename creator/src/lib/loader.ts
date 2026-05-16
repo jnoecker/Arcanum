@@ -491,23 +491,23 @@ function parseMobTiersConfig(raw: unknown): AppConfig["mobTiers"] {
     const r = (t ?? {}) as Record<string, unknown>;
     return {
       baseHp: asNumber(r.baseHp, defaults.baseHp),
-      hpPerLevel: asNumber(r.hpPerLevel, defaults.hpPerLevel),
+      hpScalingRate: asNumber(r.hpScalingRate, defaults.hpScalingRate),
       baseMinDamage: asNumber(r.baseMinDamage, defaults.baseMinDamage),
       baseMaxDamage: asNumber(r.baseMaxDamage, defaults.baseMaxDamage),
-      damagePerLevel: asNumber(r.damagePerLevel, defaults.damagePerLevel),
+      damageScalingRate: asNumber(r.damageScalingRate, defaults.damageScalingRate),
       baseArmor: asNumber(r.baseArmor, defaults.baseArmor),
       baseXpReward: asNumber(r.baseXpReward, defaults.baseXpReward),
-      xpRewardPerLevel: asNumber(r.xpRewardPerLevel, defaults.xpRewardPerLevel),
+      xpScalingRate: asNumber(r.xpScalingRate, defaults.xpScalingRate),
       baseGoldMin: asNumber(r.baseGoldMin, defaults.baseGoldMin),
       baseGoldMax: asNumber(r.baseGoldMax, defaults.baseGoldMax),
-      goldPerLevel: asNumber(r.goldPerLevel, defaults.goldPerLevel),
+      goldScalingRate: asNumber(r.goldScalingRate, defaults.goldScalingRate),
     };
   };
   return {
-    weak: parseTier(tiers.weak, { baseHp: 5, hpPerLevel: 2, baseMinDamage: 1, baseMaxDamage: 2, damagePerLevel: 0, baseArmor: 0, baseXpReward: 15, xpRewardPerLevel: 5, baseGoldMin: 1, baseGoldMax: 3, goldPerLevel: 1 }),
-    standard: parseTier(tiers.standard, { baseHp: 10, hpPerLevel: 3, baseMinDamage: 1, baseMaxDamage: 4, damagePerLevel: 1, baseArmor: 0, baseXpReward: 30, xpRewardPerLevel: 10, baseGoldMin: 2, baseGoldMax: 8, goldPerLevel: 2 }),
-    elite: parseTier(tiers.elite, { baseHp: 20, hpPerLevel: 5, baseMinDamage: 2, baseMaxDamage: 6, damagePerLevel: 1, baseArmor: 1, baseXpReward: 75, xpRewardPerLevel: 20, baseGoldMin: 10, baseGoldMax: 25, goldPerLevel: 5 }),
-    boss: parseTier(tiers.boss, { baseHp: 50, hpPerLevel: 10, baseMinDamage: 3, baseMaxDamage: 8, damagePerLevel: 2, baseArmor: 3, baseXpReward: 200, xpRewardPerLevel: 50, baseGoldMin: 50, baseGoldMax: 100, goldPerLevel: 15 }),
+    weak: parseTier(tiers.weak, { baseHp: 5, hpScalingRate: 1.1, baseMinDamage: 1, baseMaxDamage: 2, damageScalingRate: 1.1, baseArmor: 0, baseXpReward: 15, xpScalingRate: 1.5, baseGoldMin: 1, baseGoldMax: 3, goldScalingRate: 1.1 }),
+    standard: parseTier(tiers.standard, { baseHp: 10, hpScalingRate: 1.1, baseMinDamage: 1, baseMaxDamage: 4, damageScalingRate: 1.1, baseArmor: 0, baseXpReward: 30, xpScalingRate: 1.5, baseGoldMin: 2, baseGoldMax: 8, goldScalingRate: 1.1 }),
+    elite: parseTier(tiers.elite, { baseHp: 20, hpScalingRate: 1.1, baseMinDamage: 2, baseMaxDamage: 6, damageScalingRate: 1.1, baseArmor: 1, baseXpReward: 75, xpScalingRate: 1.5, baseGoldMin: 10, baseGoldMax: 25, goldScalingRate: 1.1 }),
+    boss: parseTier(tiers.boss, { baseHp: 50, hpScalingRate: 1.1, baseMinDamage: 3, baseMaxDamage: 8, damageScalingRate: 1.1, baseArmor: 3, baseXpReward: 200, xpScalingRate: 1.5, baseGoldMin: 50, baseGoldMax: 100, goldScalingRate: 1.1 }),
   };
 }
 
@@ -553,8 +553,8 @@ function parseProgressionConfig(raw: unknown): AppConfig["progression"] {
       diminishing: parseDiminishingXp(xp.diminishing),
     },
     rewards: {
-      hpPerLevel: asNumber(rewards.hpPerLevel, 2),
-      manaPerLevel: asNumber(rewards.manaPerLevel, 5),
+      hpScalingRate: asNumber(rewards.hpScalingRate, 1.1),
+      manaScalingRate: asNumber(rewards.manaScalingRate, 1.1),
       fullHealOnLevelUp: asBool(rewards.fullHealOnLevelUp, true),
       fullManaOnLevelUp: asBool(rewards.fullManaOnLevelUp, true),
       baseHp: asNumber(rewards.baseHp, 10),

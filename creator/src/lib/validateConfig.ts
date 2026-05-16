@@ -612,8 +612,8 @@ export function validateConfig(config: AppConfig): ValidationIssue[] {
     if (tier.baseHp <= 0) {
       issues.push({ severity: "error", entity, message: "baseHp must be > 0" });
     }
-    if (tier.hpPerLevel < 0) {
-      issues.push({ severity: "error", entity, message: "hpPerLevel must be >= 0" });
+    if (tier.hpScalingRate < 1.0 || tier.hpScalingRate > 2.0) {
+      issues.push({ severity: "error", entity, message: `hpScalingRate must be in [1.0, 2.0] (got ${tier.hpScalingRate})` });
     }
     if (tier.baseMinDamage <= 0) {
       issues.push({ severity: "error", entity, message: "baseMinDamage must be > 0" });
@@ -621,8 +621,8 @@ export function validateConfig(config: AppConfig): ValidationIssue[] {
     if (tier.baseMaxDamage < tier.baseMinDamage) {
       issues.push({ severity: "error", entity, message: "baseMaxDamage must be >= baseMinDamage" });
     }
-    if (tier.damagePerLevel < 0) {
-      issues.push({ severity: "error", entity, message: "damagePerLevel must be >= 0" });
+    if (tier.damageScalingRate < 1.0 || tier.damageScalingRate > 2.0) {
+      issues.push({ severity: "error", entity, message: `damageScalingRate must be in [1.0, 2.0] (got ${tier.damageScalingRate})` });
     }
     if (tier.baseArmor < 0) {
       issues.push({ severity: "error", entity, message: "baseArmor must be >= 0" });
@@ -630,8 +630,8 @@ export function validateConfig(config: AppConfig): ValidationIssue[] {
     if (tier.baseXpReward < 0) {
       issues.push({ severity: "error", entity, message: "baseXpReward must be >= 0" });
     }
-    if (tier.xpRewardPerLevel < 0) {
-      issues.push({ severity: "error", entity, message: "xpRewardPerLevel must be >= 0" });
+    if (tier.xpScalingRate < 1.0 || tier.xpScalingRate > 2.0) {
+      issues.push({ severity: "error", entity, message: `xpScalingRate must be in [1.0, 2.0] (got ${tier.xpScalingRate})` });
     }
     if (tier.baseGoldMin < 0) {
       issues.push({ severity: "error", entity, message: "baseGoldMin must be >= 0" });
@@ -639,8 +639,8 @@ export function validateConfig(config: AppConfig): ValidationIssue[] {
     if (tier.baseGoldMax < tier.baseGoldMin) {
       issues.push({ severity: "error", entity, message: "baseGoldMax must be >= baseGoldMin" });
     }
-    if (tier.goldPerLevel < 0) {
-      issues.push({ severity: "error", entity, message: "goldPerLevel must be >= 0" });
+    if (tier.goldScalingRate < 1.0 || tier.goldScalingRate > 2.0) {
+      issues.push({ severity: "error", entity, message: `goldScalingRate must be in [1.0, 2.0] (got ${tier.goldScalingRate})` });
     }
   }
 
@@ -665,6 +665,37 @@ export function validateConfig(config: AppConfig): ValidationIssue[] {
       entity: "progression",
       message: "Base mana must be >= 0",
     });
+  }
+  const rewards = config.progression.rewards;
+  if (rewards.hpScalingRate < 1.0 || rewards.hpScalingRate > 2.0) {
+    issues.push({
+      severity: "error",
+      entity: "progression",
+      message: `rewards.hpScalingRate must be in [1.0, 2.0] (got ${rewards.hpScalingRate})`,
+    });
+  }
+  if (rewards.manaScalingRate < 1.0 || rewards.manaScalingRate > 2.0) {
+    issues.push({
+      severity: "error",
+      entity: "progression",
+      message: `rewards.manaScalingRate must be in [1.0, 2.0] (got ${rewards.manaScalingRate})`,
+    });
+  }
+  for (const [id, cls] of Object.entries(config.classes)) {
+    if (cls.hpScalingRate != null && (cls.hpScalingRate < 1.0 || cls.hpScalingRate > 2.0)) {
+      issues.push({
+        severity: "error",
+        entity: `class:${id}`,
+        message: `hpScalingRate must be in [1.0, 2.0] (got ${cls.hpScalingRate})`,
+      });
+    }
+    if (cls.manaScalingRate != null && (cls.manaScalingRate < 1.0 || cls.manaScalingRate > 2.0)) {
+      issues.push({
+        severity: "error",
+        entity: `class:${id}`,
+        message: `manaScalingRate must be in [1.0, 2.0] (got ${cls.manaScalingRate})`,
+      });
+    }
   }
 
   // ─── Character creation ─────────────────────────────────────

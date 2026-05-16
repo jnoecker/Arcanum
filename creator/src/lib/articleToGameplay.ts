@@ -68,7 +68,10 @@ function asString(v: unknown): string | undefined {
 function asNumber(v: unknown, fallback: number, min: number, max: number): number {
   const n = typeof v === "number" ? v : typeof v === "string" ? Number(v) : NaN;
   if (!Number.isFinite(n)) return fallback;
-  return Math.max(min, Math.min(max, Math.round(n)));
+  // Preserve fractional precision when the bounds suggest a non-integer (e.g. scaling rates).
+  const allowFractional = !Number.isInteger(min) || !Number.isInteger(max) || max - min < 5;
+  const clamped = Math.max(min, Math.min(max, n));
+  return allowFractional ? Math.round(clamped * 1000) / 1000 : Math.round(clamped);
 }
 
 function asStringArray(v: unknown): string[] {
@@ -136,15 +139,15 @@ JSON shape:
   "displayName": "Title Case",
   "description": "One short line shown in the class roster.",
   "backstory": "1-3 short paragraphs of in-world history grounded in the article.",
-  "hpPerLevel": 8-20,
-  "manaPerLevel": 0-20,
+  "hpScalingRate": 1.05-1.12,
+  "manaScalingRate": 1.05-1.12,
   "primaryStat": "strength | intelligence | wisdom | dexterity | constitution | charisma | <other>",
   "outfitDescription": "Iconic look — armor, garb, weapons, stance. For sprite generation.",
   "suggestedAbilities": ["ability name 1", "ability name 2", ...]
 }
 
 Rules:
-- hp/mana per level pace classes against each other: a tank/martial archetype gets high hp (16-20) and low mana (0-4); a caster gets lower hp (8-12) and high mana (14-20); hybrids land in the middle.
+- hp/mana scaling rates pace classes against each other (per-level multiplicative growth, 1.0 = no growth). A tank/martial archetype gets a high HP rate (1.10-1.12) and low mana rate (1.02-1.05); a caster gets a lower HP rate (1.07-1.10) and high mana rate (1.10-1.12); hybrids land in the middle. Stay within [1.0, 2.0].
 - The id is the slug form of the title (lowercase, underscores, no punctuation).
 - suggestedAbilities is a short list of 3-6 names — concrete enough that an ability designer can act on them, but not full definitions.
 - Output ONLY valid JSON — no markdown fences, no preamble, no trailing commentary.${toneDirective ? `\n\nVoice directive for backstory and description:\n${toneDirective}` : ""}`;
@@ -173,8 +176,8 @@ Rules:
     displayName,
     description: asString(parsed.description),
     backstory: asString(parsed.backstory),
-    hpPerLevel: asNumber(parsed.hpPerLevel, 12, 1, 50),
-    manaPerLevel: asNumber(parsed.manaPerLevel, 10, 0, 50),
+    hpScalingRate: asNumber(parsed.hpScalingRate, 1.1, 1.0, 2.0),
+    manaScalingRate: asNumber(parsed.manaScalingRate, 1.1, 1.0, 2.0),
     primaryStat: asString(parsed.primaryStat),
     selectable: true,
     outfitDescription: asString(parsed.outfitDescription),

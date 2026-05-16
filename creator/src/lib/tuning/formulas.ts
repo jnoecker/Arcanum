@@ -31,31 +31,31 @@ export function xpForLevel(
 
 /** Mob hit points at a given level for a specific tier. */
 export function mobHpAtLevel(
-  tier: Pick<MobTierConfig, "baseHp" | "hpPerLevel">,
+  tier: Pick<MobTierConfig, "baseHp" | "hpScalingRate">,
   level: number,
 ): number {
-  return tier.baseHp + tier.hpPerLevel * levelSteps(level);
+  return Math.floor(tier.baseHp * Math.pow(tier.hpScalingRate, levelSteps(level)));
 }
 
 /** Mob min damage at a given level for a specific tier. */
 export function mobMinDamageAtLevel(
-  tier: Pick<MobTierConfig, "baseMinDamage" | "damagePerLevel">,
+  tier: Pick<MobTierConfig, "baseMinDamage" | "damageScalingRate">,
   level: number,
 ): number {
-  return tier.baseMinDamage + tier.damagePerLevel * levelSteps(level);
+  return Math.floor(tier.baseMinDamage * Math.pow(tier.damageScalingRate, levelSteps(level)));
 }
 
 /** Mob max damage at a given level for a specific tier. */
 export function mobMaxDamageAtLevel(
-  tier: Pick<MobTierConfig, "baseMaxDamage" | "damagePerLevel">,
+  tier: Pick<MobTierConfig, "baseMaxDamage" | "damageScalingRate">,
   level: number,
 ): number {
-  return tier.baseMaxDamage + tier.damagePerLevel * levelSteps(level);
+  return Math.floor(tier.baseMaxDamage * Math.pow(tier.damageScalingRate, levelSteps(level)));
 }
 
 /** Average mob damage at a given level for a specific tier. */
 export function mobAvgDamageAtLevel(
-  tier: Pick<MobTierConfig, "baseMinDamage" | "baseMaxDamage" | "damagePerLevel">,
+  tier: Pick<MobTierConfig, "baseMinDamage" | "baseMaxDamage" | "damageScalingRate">,
   level: number,
 ): number {
   return (mobMinDamageAtLevel(tier, level) + mobMaxDamageAtLevel(tier, level)) / 2;
@@ -63,31 +63,31 @@ export function mobAvgDamageAtLevel(
 
 /** Mob XP reward at a given level before progression multiplier is applied. */
 export function mobXpRewardAtLevel(
-  tier: Pick<MobTierConfig, "baseXpReward" | "xpRewardPerLevel">,
+  tier: Pick<MobTierConfig, "baseXpReward" | "xpScalingRate">,
   level: number,
 ): number {
-  return tier.baseXpReward + tier.xpRewardPerLevel * levelSteps(level);
+  return Math.floor(tier.baseXpReward * Math.pow(tier.xpScalingRate, levelSteps(level)));
 }
 
 /** Mob gold minimum at a given level for a specific tier. */
 export function mobGoldMinAtLevel(
-  tier: Pick<MobTierConfig, "baseGoldMin" | "goldPerLevel">,
+  tier: Pick<MobTierConfig, "baseGoldMin" | "goldScalingRate">,
   level: number,
 ): number {
-  return tier.baseGoldMin + tier.goldPerLevel * levelSteps(level);
+  return Math.floor(tier.baseGoldMin * Math.pow(tier.goldScalingRate, levelSteps(level)));
 }
 
 /** Mob gold maximum at a given level for a specific tier. */
 export function mobGoldMaxAtLevel(
-  tier: Pick<MobTierConfig, "baseGoldMax" | "goldPerLevel">,
+  tier: Pick<MobTierConfig, "baseGoldMax" | "goldScalingRate">,
   level: number,
 ): number {
-  return tier.baseGoldMax + tier.goldPerLevel * levelSteps(level);
+  return Math.floor(tier.baseGoldMax * Math.pow(tier.goldScalingRate, levelSteps(level)));
 }
 
 /** Average mob gold drop at a given level for a specific tier. */
 export function mobAvgGoldAtLevel(
-  tier: Pick<MobTierConfig, "baseGoldMin" | "baseGoldMax" | "goldPerLevel">,
+  tier: Pick<MobTierConfig, "baseGoldMin" | "baseGoldMax" | "goldScalingRate">,
   level: number,
 ): number {
   return (mobGoldMinAtLevel(tier, level) + mobGoldMaxAtLevel(tier, level)) / 2;
@@ -120,20 +120,21 @@ export function dodgeChance(
 
 /**
  * Player HP at a given level.
- * Mirrors PlayerProgression.maxHpForLevel for a resolved hpPerLevel value.
+ * Mirrors PlayerProgression.maxHpForLevel for a resolved hpScalingRate value.
+ *
+ * `hpScalingRate` is a multiplicative per-level growth rate (e.g. 1.1 = +10%/level).
+ * Stat bonuses remain additive on top of the multiplicative base curve.
  */
 export function playerHpAtLevel(
   level: number,
-  rewards: { baseHp: number; hpPerLevel: number },
-  hpPerLevel: number,
+  rewards: { baseHp: number },
+  hpScalingRate: number,
   hpScalingStat: number,
   hpScalingDivisor: number,
 ): number {
   const steps = levelSteps(level);
-  const total =
-    rewards.baseHp +
-    steps * hpPerLevel +
-    steps * statBonus(hpScalingStat, hpScalingDivisor);
+  const scaled = Math.floor(rewards.baseHp * Math.pow(hpScalingRate, steps));
+  const total = scaled + steps * statBonus(hpScalingStat, hpScalingDivisor);
   return Math.max(rewards.baseHp, total);
 }
 
@@ -190,7 +191,7 @@ export function computeMetrics(config: AppConfig): MetricSnapshot {
     playerHpMap[level] = playerHpAtLevel(
       level,
       config.progression.rewards,
-      config.progression.rewards.hpPerLevel,
+      config.progression.rewards.hpScalingRate,
       BASE_STAT,
       config.stats.bindings.hpScalingDivisor,
     );

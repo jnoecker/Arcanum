@@ -81,7 +81,7 @@ export const ARCHETYPE_CONTRACTS: Record<string, ArchetypeContract> = {
         sellRate: 0.5,
         consumableSpendPerHour: 500,
       },
-      goldPerHour: { min: 2500, max: 4500 },
+      goldPerHour: { min: 5000, max: 9000 },
     },
     regen: {
       id: "regen-stat30",
@@ -126,7 +126,7 @@ export const ARCHETYPE_CONTRACTS: Record<string, ArchetypeContract> = {
         sellRate: 0.5,
         consumableSpendPerHour: 500,
       },
-      goldPerHour: { min: 1400, max: 2300 },
+      goldPerHour: { min: 2800, max: 4600 },
     },
     regen: {
       id: "regen-stat30",
@@ -171,7 +171,7 @@ export const ARCHETYPE_CONTRACTS: Record<string, ArchetypeContract> = {
         sellRate: 0.5,
         consumableSpendPerHour: 500,
       },
-      goldPerHour: { min: 900, max: 1400 },
+      goldPerHour: { min: 1300, max: 2200 },
     },
     regen: {
       id: "regen-stat30",
@@ -216,7 +216,7 @@ export const ARCHETYPE_CONTRACTS: Record<string, ArchetypeContract> = {
         sellRate: 0.5,
         consumableSpendPerHour: 500,
       },
-      goldPerHour: { min: 4000, max: 6500 },
+      goldPerHour: { min: 8000, max: 13000 },
     },
     regen: {
       id: "regen-stat30",
@@ -261,7 +261,7 @@ export const ARCHETYPE_CONTRACTS: Record<string, ArchetypeContract> = {
         sellRate: 0.5,
         consumableSpendPerHour: 500,
       },
-      goldPerHour: { min: 1300, max: 1900 },
+      goldPerHour: { min: 2600, max: 4000 },
     },
     regen: {
       id: "regen-stat30",
@@ -306,7 +306,7 @@ export const ARCHETYPE_CONTRACTS: Record<string, ArchetypeContract> = {
         sellRate: 0.5,
         consumableSpendPerHour: 500,
       },
-      goldPerHour: { min: 8000, max: 12000 },
+      goldPerHour: { min: 18000, max: 28000 },
     },
     regen: {
       id: "regen-stat30",

@@ -494,6 +494,7 @@ export function SelectInput({
   placeholder,
   allowEmpty,
   dense = false,
+  disabled = false,
 }: {
   value: string;
   onCommit: (value: string) => void;
@@ -501,14 +502,17 @@ export function SelectInput({
   placeholder?: string;
   allowEmpty?: boolean;
   dense?: boolean;
+  disabled?: boolean;
 }) {
   return (
     <select
       className={cx(
         "ornate-input w-full text-xs text-text-primary",
         dense ? "min-h-9 px-2 py-1" : "min-h-11 px-3 py-2",
+        disabled && "cursor-not-allowed opacity-60",
       )}
       value={value}
+      disabled={disabled}
       onChange={(e) => onCommit(e.target.value)}
     >
       {(allowEmpty || !value) && (
@@ -698,7 +702,7 @@ export function CompactField({
   span,
   children,
 }: {
-  label: string;
+  label: ReactNode;
   hint?: string;
   /** Span the full grid width. */
   span?: boolean;

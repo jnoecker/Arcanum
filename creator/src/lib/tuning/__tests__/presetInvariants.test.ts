@@ -8,9 +8,9 @@ import type { AppConfig } from "@/types/config";
 
 const BASE_CONFIG = {
   progression: {
-    maxLevel: 50,
-    xp: { baseXp: 100, exponent: 2.0, linearXp: 0, multiplier: 1.0, defaultKillXp: 10 },
-    rewards: { hpPerLevel: 2, manaPerLevel: 1, fullHealOnLevelUp: true, fullManaOnLevelUp: true, baseHp: 10, baseMana: 10 },
+    maxLevel: 30,
+    xp: { baseXp: 800, exponent: 2.2, linearXp: 1200, multiplier: 1.0, defaultKillXp: 60 },
+    rewards: { hpScalingRate: 1.099, manaScalingRate: 1.096, fullHealOnLevelUp: true, fullManaOnLevelUp: true, baseHp: 130, baseMana: 120 },
   },
   stats: {
     bindings: {
@@ -85,7 +85,7 @@ describe("preset invariants — server semantics", () => {
 
   describe("mob HP tier ordering (weak < standard < elite < boss)", () => {
     for (const preset of TUNING_PRESETS) {
-      it(`${preset.id}: baseHp, hpPerLevel, baseXpReward ascend across tiers`, () => {
+      it(`${preset.id}: baseHp and baseXpReward ascend across tiers`, () => {
         const t = preset.config.mobTiers!;
         const weak = t.weak!;
         const standard = t.standard!;
@@ -94,9 +94,6 @@ describe("preset invariants — server semantics", () => {
         expect(weak.baseHp).toBeLessThan(standard.baseHp!);
         expect(standard.baseHp).toBeLessThan(elite.baseHp!);
         expect(elite.baseHp).toBeLessThan(boss.baseHp!);
-        expect(weak.hpPerLevel).toBeLessThanOrEqual(standard.hpPerLevel!);
-        expect(standard.hpPerLevel).toBeLessThanOrEqual(elite.hpPerLevel!);
-        expect(elite.hpPerLevel).toBeLessThanOrEqual(boss.hpPerLevel!);
         expect(weak.baseXpReward).toBeLessThanOrEqual(standard.baseXpReward!);
         expect(standard.baseXpReward).toBeLessThanOrEqual(elite.baseXpReward!);
         expect(elite.baseXpReward).toBeLessThanOrEqual(boss.baseXpReward!);
@@ -187,7 +184,7 @@ describe("preset invariants — server semantics", () => {
       it(`${preset.id}: post-fight regen time is reasonable`, () => {
         const merged = mergedConfig(preset);
         const rewards = merged.progression.rewards;
-        const playerHpAt25 = rewards.baseHp + 24 * rewards.hpPerLevel;
+        const playerHpAt25 = Math.floor(rewards.baseHp * Math.pow(rewards.hpScalingRate, 24));
         const interval = merged.regen.baseIntervalMillis;
         const amount = merged.regen.regenAmount;
         const timeToFullSec = (playerHpAt25 * interval) / (amount * 1000);

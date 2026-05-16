@@ -107,14 +107,14 @@ function getMetricRows(
           current: current.mobHp["standard"]?.[10] ?? 0,
           preset: preset.mobHp["standard"]?.[10] ?? 0,
           format: fmtInt,
-          formulaTooltip: "baseHp + hpPerLevel \u00D7 level (Normal tier)",
+          formulaTooltip: "floor(baseHp \u00D7 hpScalingRate^(level-1)) (Normal tier)",
         },
         {
           label: "Mob HP \u2014 Lv30",
           current: current.mobHp["standard"]?.[30] ?? 0,
           preset: preset.mobHp["standard"]?.[30] ?? 0,
           format: fmtInt,
-          formulaTooltip: "baseHp + hpPerLevel \u00D7 level (Normal tier)",
+          formulaTooltip: "floor(baseHp \u00D7 hpScalingRate^(level-1)) (Normal tier)",
         },
         {
           label: "Dodge Chance",
@@ -146,7 +146,7 @@ function getMetricRows(
           current: current.playerHp[10] ?? 0,
           preset: preset.playerHp[10] ?? 0,
           format: fmtInt,
-          formulaTooltip: "baseHp + hpPerLevel \u00D7 level",
+          formulaTooltip: "floor(baseHp \u00D7 hpScalingRate^(level-1))",
         },
       ];
 

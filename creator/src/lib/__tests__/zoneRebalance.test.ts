@@ -10,10 +10,10 @@ import type { AppConfig } from "@/types/config";
 import type { MobFile, WorldFile } from "@/types/world";
 
 const TIER_CONFIG = {
-  weak: { baseHp: 10, hpPerLevel: 3, baseMinDamage: 1, baseMaxDamage: 2, damagePerLevel: 0, baseArmor: 0, baseXpReward: 15, xpRewardPerLevel: 5, baseGoldMin: 1, baseGoldMax: 3, goldPerLevel: 1 },
-  standard: { baseHp: 20, hpPerLevel: 5, baseMinDamage: 2, baseMaxDamage: 4, damagePerLevel: 1, baseArmor: 1, baseXpReward: 30, xpRewardPerLevel: 10, baseGoldMin: 3, baseGoldMax: 8, goldPerLevel: 2 },
-  elite: { baseHp: 40, hpPerLevel: 8, baseMinDamage: 3, baseMaxDamage: 6, damagePerLevel: 1, baseArmor: 2, baseXpReward: 75, xpRewardPerLevel: 25, baseGoldMin: 10, baseGoldMax: 25, goldPerLevel: 5 },
-  boss: { baseHp: 80, hpPerLevel: 15, baseMinDamage: 6, baseMaxDamage: 12, damagePerLevel: 2, baseArmor: 4, baseXpReward: 200, xpRewardPerLevel: 50, baseGoldMin: 30, baseGoldMax: 80, goldPerLevel: 15 },
+  weak: { baseHp: 10, hpScalingRate: 1.1, baseMinDamage: 1, baseMaxDamage: 2, damageScalingRate: 1.0, baseArmor: 0, baseXpReward: 15, xpScalingRate: 1.15, baseGoldMin: 1, baseGoldMax: 3, goldScalingRate: 1.1 },
+  standard: { baseHp: 20, hpScalingRate: 1.1, baseMinDamage: 2, baseMaxDamage: 4, damageScalingRate: 1.1, baseArmor: 1, baseXpReward: 30, xpScalingRate: 1.15, baseGoldMin: 3, baseGoldMax: 8, goldScalingRate: 1.1 },
+  elite: { baseHp: 40, hpScalingRate: 1.1, baseMinDamage: 3, baseMaxDamage: 6, damageScalingRate: 1.1, baseArmor: 2, baseXpReward: 75, xpScalingRate: 1.15, baseGoldMin: 10, baseGoldMax: 25, goldScalingRate: 1.1 },
+  boss: { baseHp: 80, hpScalingRate: 1.1, baseMinDamage: 6, baseMaxDamage: 12, damageScalingRate: 1.1, baseArmor: 4, baseXpReward: 200, xpScalingRate: 1.15, baseGoldMin: 30, baseGoldMax: 80, goldScalingRate: 1.1 },
 };
 
 const MOCK_CONFIG = { mobTiers: TIER_CONFIG } as unknown as AppConfig;
@@ -131,9 +131,9 @@ describe("computeZoneRebalance", () => {
   });
 
   it("marks within-tolerance overrides as 'drop' and divergent as 'flag'", () => {
-    // weak tier @ L3: hp = 10 + (3 - 1)*3 = 16, xpReward = 15 + (3 - 1)*5 = 25
+    // weak tier @ L3: hp = floor(10 × 1.1^2) = 12, xpReward = floor(15 × 1.15^2) = 19
     const zone = zoneWith({
-      close: mob({ tier: "weak", hp: 17 }),
+      close: mob({ tier: "weak", hp: 13 }),
       far: mob({ tier: "weak", hp: 200 }),
       authoredXp: mob({ tier: "weak", xpReward: 9999 }),
     });
@@ -240,8 +240,9 @@ describe("applyZoneRebalance", () => {
   });
 
   it("drops within-tolerance overrides and keeps flagged ones by default", () => {
+    // weak tier @ L3: hp = floor(10 × 1.1^2) = 12, so hp=13 is within tolerance.
     const zone = zoneWith({
-      goblin: mob({ tier: "weak", hp: 17, xpReward: 9999 }),
+      goblin: mob({ tier: "weak", hp: 13, xpReward: 9999 }),
     });
     const diff = computeZoneRebalance(zone, MOCK_CONFIG, {
       levelBand: { min: 3, max: 3 },

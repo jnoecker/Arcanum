@@ -771,8 +771,8 @@ export function statusEffectToPlain(e: AppConfig["statusEffects"][string]): Reco
 export function classToPlain(cls: AppConfig["classes"][string]): Record<string, unknown> {
   const obj: Record<string, unknown> = {
     displayName: cls.displayName,
-    hpPerLevel: cls.hpPerLevel,
-    manaPerLevel: cls.manaPerLevel,
+    hpScalingRate: cls.hpScalingRate,
+    manaScalingRate: cls.manaScalingRate,
   };
   if (cls.description) obj.description = cls.description;
   if (cls.backstory) obj.backstory = cls.backstory;

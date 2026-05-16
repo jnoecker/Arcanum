@@ -193,16 +193,20 @@ export interface CombatConfig {
 
 export interface MobTierConfig {
   baseHp: number;
-  hpPerLevel: number;
+  /** Per-level multiplicative growth rate. 1.1 means HP grows ~10% per level. */
+  hpScalingRate: number;
   baseMinDamage: number;
   baseMaxDamage: number;
-  damagePerLevel: number;
+  /** Per-level multiplicative growth rate for both min and max damage. */
+  damageScalingRate: number;
   baseArmor: number;
   baseXpReward: number;
-  xpRewardPerLevel: number;
+  /** Per-level multiplicative growth rate for kill XP. */
+  xpScalingRate: number;
   baseGoldMin: number;
   baseGoldMax: number;
-  goldPerLevel: number;
+  /** Per-level multiplicative growth rate for both gold min and max. */
+  goldScalingRate: number;
 }
 
 export interface MobTiersConfig {
@@ -243,8 +247,10 @@ export interface XpCurveConfig {
 }
 
 export interface LevelRewardsConfig {
-  hpPerLevel: number;
-  manaPerLevel: number;
+  /** Per-level multiplicative growth rate for max HP. 1.1 means ~10% per level. */
+  hpScalingRate: number;
+  /** Per-level multiplicative growth rate for max mana. */
+  manaScalingRate: number;
   fullHealOnLevelUp: boolean;
   fullManaOnLevelUp: boolean;
   baseHp: number;
@@ -685,8 +691,10 @@ export interface ClassDefinitionConfig {
   displayName: string;
   description?: string;
   backstory?: string;
-  hpPerLevel: number;
-  manaPerLevel: number;
+  /** Per-level multiplicative growth rate this class contributes to max HP. */
+  hpScalingRate: number;
+  /** Per-level multiplicative growth rate this class contributes to max mana. */
+  manaScalingRate: number;
   primaryStat?: string;
   selectable?: boolean;
   startRoom?: string;

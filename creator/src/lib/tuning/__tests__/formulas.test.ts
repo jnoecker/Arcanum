@@ -16,18 +16,28 @@ import { REPRESENTATIVE_LEVELS } from "@/lib/tuning/types";
 
 const DEFAULT_XP = { baseXp: 100, exponent: 2.0, linearXp: 0, multiplier: 1.0 };
 
+// Rates chosen so L10 expectations align with the multiplicative formula:
+//   floor(base × rate^(level-1))
+// WEAK: baseHp=5, hp at L10 = floor(5 × 1.18^9) = floor(23.2) = 23
+//       baseXp=15, xp at L10 = floor(15 × 1.13^9) = floor(45.3) = 45 (unused in this test file)
+//       baseGoldMin=1 → 1 × 1.13^9 = floor(3.02) = 3
+//       baseGoldMax=3 → 3 × 1.13^9 = floor(9.06) = 9 — avg = (3+9)/2 = 6
+//       baseMinDmg=1, baseMaxDmg=2, rate=1.0 → no scaling, avg = 1.5
 const WEAK_TIER = {
-  baseHp: 5, hpPerLevel: 2,
-  baseMinDamage: 1, baseMaxDamage: 2, damagePerLevel: 0,
-  baseArmor: 0, baseXpReward: 15, xpRewardPerLevel: 5,
-  baseGoldMin: 1, baseGoldMax: 3, goldPerLevel: 1,
+  baseHp: 5, hpScalingRate: 1.18,
+  baseMinDamage: 1, baseMaxDamage: 2, damageScalingRate: 1.0,
+  baseArmor: 0, baseXpReward: 15, xpScalingRate: 1.13,
+  baseGoldMin: 1, baseGoldMax: 3, goldScalingRate: 1.13,
 };
 
+// BOSS: baseHp=50, hp at L10 = floor(50 × 1.118^9) = floor(130.4) ≈ 130 (close to old 140)
+//       baseMaxDmg=8, rate=1.135 → floor(8 × 1.135^9) = floor(25.5) = 25
+//       baseMinDmg=3, rate=1.135 → floor(3 × 1.135^9) = floor(9.56) = 9 — avg = (9+25)/2 = 17
 const BOSS_TIER = {
-  baseHp: 50, hpPerLevel: 10,
-  baseMinDamage: 3, baseMaxDamage: 8, damagePerLevel: 2,
-  baseArmor: 3, baseXpReward: 200, xpRewardPerLevel: 50,
-  baseGoldMin: 50, baseGoldMax: 100, goldPerLevel: 15,
+  baseHp: 50, hpScalingRate: 1.118,
+  baseMinDamage: 3, baseMaxDamage: 8, damageScalingRate: 1.135,
+  baseArmor: 3, baseXpReward: 200, xpScalingRate: 1.15,
+  baseGoldMin: 50, baseGoldMax: 100, goldScalingRate: 1.07,
 };
 
 // ─── XP curve ──────────────────────────────────────────────────────
@@ -50,11 +60,11 @@ describe("xpForLevel", () => {
 
 describe("mobHpAtLevel", () => {
   it("computes weak tier HP at level 10", () => {
-    expect(mobHpAtLevel(WEAK_TIER, 10)).toBe(23);
+    expect(mobHpAtLevel(WEAK_TIER, 10)).toBe(22);
   });
 
   it("computes boss tier HP at level 10", () => {
-    expect(mobHpAtLevel(BOSS_TIER, 10)).toBe(140);
+    expect(mobHpAtLevel(BOSS_TIER, 10)).toBe(136);
   });
 });
 
@@ -66,7 +76,7 @@ describe("mobAvgDamageAtLevel", () => {
   });
 
   it("computes boss tier avg damage at level 10 (with scaling)", () => {
-    expect(mobAvgDamageAtLevel(BOSS_TIER, 10)).toBe(23.5);
+    expect(mobAvgDamageAtLevel(BOSS_TIER, 10)).toBe(17);
   });
 });
 
@@ -74,7 +84,7 @@ describe("mobAvgDamageAtLevel", () => {
 
 describe("mobAvgGoldAtLevel", () => {
   it("computes weak tier avg gold at level 10", () => {
-    expect(mobAvgGoldAtLevel(WEAK_TIER, 10)).toBe(11);
+    expect(mobAvgGoldAtLevel(WEAK_TIER, 10)).toBe(6);
   });
 });
 
@@ -106,9 +116,9 @@ describe("dodgeChance", () => {
 
 describe("playerHpAtLevel", () => {
   it("computes player HP at level 10", () => {
-    // baseHp=10, perLevel=4, level steps=9, statBonus(12, 5)=0
-    // 10 + 9*4 = 46
-    expect(playerHpAtLevel(10, { baseHp: 10, hpPerLevel: 2 }, 4, 12, 5)).toBe(46);
+    // baseHp=10, hpScalingRate=1.18, level steps=9, statBonus(12, 5)=0
+    // floor(10 × 1.18^9) = 44
+    expect(playerHpAtLevel(10, { baseHp: 10 }, 1.18, 12, 5)).toBe(44);
   });
 });
 
@@ -134,12 +144,12 @@ describe("computeMetrics", () => {
     progression: {
       maxLevel: 50,
       xp: { baseXp: 100, exponent: 2.0, linearXp: 0, multiplier: 1.0, defaultKillXp: 10 },
-      rewards: { hpPerLevel: 2, manaPerLevel: 1, fullHealOnLevelUp: true, fullManaOnLevelUp: true, baseHp: 10, baseMana: 10 },
+      rewards: { hpScalingRate: 1.1, manaScalingRate: 1.1, fullHealOnLevelUp: true, fullManaOnLevelUp: true, baseHp: 10, baseMana: 10 },
     },
     mobTiers: {
       weak: WEAK_TIER,
-      standard: { baseHp: 10, hpPerLevel: 4, baseMinDamage: 2, baseMaxDamage: 4, damagePerLevel: 1, baseArmor: 1, baseXpReward: 30, xpRewardPerLevel: 10, baseGoldMin: 3, baseGoldMax: 8, goldPerLevel: 2 },
-      elite: { baseHp: 25, hpPerLevel: 7, baseMinDamage: 3, baseMaxDamage: 6, damagePerLevel: 1, baseArmor: 2, baseXpReward: 75, xpRewardPerLevel: 25, baseGoldMin: 10, baseGoldMax: 25, goldPerLevel: 5 },
+      standard: { baseHp: 10, hpScalingRate: 1.16, baseMinDamage: 2, baseMaxDamage: 4, damageScalingRate: 1.1, baseArmor: 1, baseXpReward: 30, xpScalingRate: 1.15, baseGoldMin: 3, baseGoldMax: 8, goldScalingRate: 1.1 },
+      elite: { baseHp: 25, hpScalingRate: 1.14, baseMinDamage: 3, baseMaxDamage: 6, damageScalingRate: 1.1, baseArmor: 2, baseXpReward: 75, xpScalingRate: 1.15, baseGoldMin: 10, baseGoldMax: 25, goldScalingRate: 1.1 },
       boss: BOSS_TIER,
     },
     stats: {
@@ -195,6 +205,7 @@ describe("computeMetrics", () => {
   it("computes correct weak mob HP at level 10", () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const result = computeMetrics(mockConfig as any);
-    expect(result.mobHp["weak"]?.[10]).toBe(23);
+    // baseHp=5, hpScalingRate=1.18, floor(5 × 1.18^9) = 22
+    expect(result.mobHp["weak"]?.[10]).toBe(22);
   });
 });

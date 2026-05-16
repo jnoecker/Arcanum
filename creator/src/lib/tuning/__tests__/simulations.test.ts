@@ -16,8 +16,8 @@ const MOCK_CONFIG = {
     maxLevel: 50,
     xp: { baseXp: 100, exponent: 2.0, linearXp: 0, multiplier: 1.0, defaultKillXp: 10 },
     rewards: {
-      hpPerLevel: 4,
-      manaPerLevel: 3,
+      hpScalingRate: 1.1,
+      manaScalingRate: 1.1,
       fullHealOnLevelUp: true,
       fullManaOnLevelUp: true,
       baseHp: 30,
@@ -33,28 +33,28 @@ const MOCK_CONFIG = {
   },
   mobTiers: {
     weak: {
-      baseHp: 10, hpPerLevel: 3,
-      baseMinDamage: 1, baseMaxDamage: 2, damagePerLevel: 0,
-      baseArmor: 0, baseXpReward: 15, xpRewardPerLevel: 5,
-      baseGoldMin: 1, baseGoldMax: 3, goldPerLevel: 1,
+      baseHp: 10, hpScalingRate: 1.1,
+      baseMinDamage: 1, baseMaxDamage: 2, damageScalingRate: 1.0,
+      baseArmor: 0, baseXpReward: 15, xpScalingRate: 1.15,
+      baseGoldMin: 1, baseGoldMax: 3, goldScalingRate: 1.1,
     },
     standard: {
-      baseHp: 20, hpPerLevel: 5,
-      baseMinDamage: 2, baseMaxDamage: 4, damagePerLevel: 1,
-      baseArmor: 1, baseXpReward: 30, xpRewardPerLevel: 10,
-      baseGoldMin: 3, baseGoldMax: 8, goldPerLevel: 2,
+      baseHp: 20, hpScalingRate: 1.1,
+      baseMinDamage: 2, baseMaxDamage: 4, damageScalingRate: 1.1,
+      baseArmor: 1, baseXpReward: 30, xpScalingRate: 1.15,
+      baseGoldMin: 3, baseGoldMax: 8, goldScalingRate: 1.1,
     },
     elite: {
-      baseHp: 40, hpPerLevel: 8,
-      baseMinDamage: 3, baseMaxDamage: 6, damagePerLevel: 1,
-      baseArmor: 2, baseXpReward: 75, xpRewardPerLevel: 25,
-      baseGoldMin: 10, baseGoldMax: 25, goldPerLevel: 5,
+      baseHp: 40, hpScalingRate: 1.1,
+      baseMinDamage: 3, baseMaxDamage: 6, damageScalingRate: 1.1,
+      baseArmor: 2, baseXpReward: 75, xpScalingRate: 1.15,
+      baseGoldMin: 10, baseGoldMax: 25, goldScalingRate: 1.1,
     },
     boss: {
-      baseHp: 80, hpPerLevel: 15,
-      baseMinDamage: 6, baseMaxDamage: 12, damagePerLevel: 2,
-      baseArmor: 4, baseXpReward: 200, xpRewardPerLevel: 50,
-      baseGoldMin: 30, baseGoldMax: 80, goldPerLevel: 15,
+      baseHp: 80, hpScalingRate: 1.1,
+      baseMinDamage: 6, baseMaxDamage: 12, damageScalingRate: 1.1,
+      baseArmor: 4, baseXpReward: 200, xpScalingRate: 1.15,
+      baseGoldMin: 30, baseGoldMax: 80, goldScalingRate: 1.1,
     },
   },
   stats: {
@@ -88,8 +88,8 @@ const MOCK_CONFIG = {
   classes: {
     warrior: {
       displayName: "Warrior",
-      hpPerLevel: 6,
-      manaPerLevel: 2,
+      hpScalingRate: 1.15,
+      manaScalingRate: 1.05,
       selectable: true,
     },
   },
@@ -120,7 +120,7 @@ describe("simulateEncounter", () => {
     expect(r.playerWins).toBe(false);
   });
 
-  it("uses class hpPerLevel when classId is supplied", () => {
+  it("uses class hpScalingRate when classId is supplied", () => {
     const r1 = simulateEncounter(MOCK_CONFIG, {
       playerLevel: 10,
       mobTier: "standard",
@@ -132,7 +132,7 @@ describe("simulateEncounter", () => {
       mobTier: "standard",
       mobLevel: 10,
     });
-    // Warrior has 6 hpPerLevel vs default 3 → strictly more HP
+    // Warrior has hpScalingRate 1.15 vs default 1.1 → strictly more HP
     expect(r2.playerHp).toBeGreaterThan(r1.playerHp);
   });
 

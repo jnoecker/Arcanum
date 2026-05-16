@@ -14,6 +14,7 @@ import {
   type OverrideField,
   type ZoneRebalanceTarget,
 } from "@/lib/zoneRebalance";
+import { analyzeZoneComposition } from "@/lib/zoneComposition";
 
 interface RebalanceZoneDialogProps {
   zoneId: string;
@@ -482,6 +483,67 @@ export function RebalanceZoneDialog({ zoneId, onClose }: RebalanceZoneDialogProp
             </div>
           </div>
         </div>
+
+        {/* Zone composition analysis */}
+        {(() => {
+          const composition = analyzeZoneComposition(zoneState.data);
+          if (composition.totalMobs === 0) return null;
+          const maxCount = Math.max(1, ...composition.buckets.map((b) => b.count));
+          const shapeStyles: Record<typeof composition.shape, string> = {
+            anchor: "border-accent/35 bg-accent/10 text-accent",
+            bridge: "border-accent/25 bg-accent/5 text-accent",
+            wide: "border-status-warning/25 bg-status-warning/10 text-status-warning",
+            "off-spec": "border-status-warning/35 bg-status-warning/15 text-status-warning",
+            empty: "border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] text-text-muted",
+          };
+          return (
+            <div className="flex flex-col gap-2 rounded-2xl border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] px-4 py-3">
+              <div className="flex items-center justify-between gap-3">
+                <span className="font-display text-xs text-text-primary">Composition</span>
+                <span
+                  className={`rounded-full border px-2 py-0.5 text-2xs uppercase tracking-wide-ui ${shapeStyles[composition.shape]}`}
+                  title={composition.summary}
+                >
+                  {composition.shape}
+                </span>
+              </div>
+              <p className="text-2xs text-text-muted">{composition.summary}</p>
+              {composition.buckets.length > 0 && (
+                <div className="flex flex-col gap-0.5">
+                  {composition.buckets.map((bucket) => (
+                    <div key={bucket.level} className="flex items-center gap-2 text-2xs">
+                      <span className="w-10 shrink-0 font-mono text-text-muted">L{bucket.level}</span>
+                      <div className="h-2 flex-1 overflow-hidden rounded bg-[var(--chrome-stroke)]/30">
+                        <div
+                          className="h-full bg-accent/60"
+                          style={{ width: `${(bucket.count / maxCount) * 100}%` }}
+                        />
+                      </div>
+                      <span className="w-16 shrink-0 text-right font-mono text-text-muted">
+                        {bucket.count} ({Math.round(bucket.percent)}%)
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {composition.missingLevelCount > 0 && (
+                <p className="text-2xs text-status-warning">
+                  {composition.missingLevelCount}{" "}
+                  {composition.missingLevelCount === 1 ? "mob is" : "mobs are"} missing a level (defaults to 1).
+                </p>
+              )}
+              {composition.warnings.length > 0 && (
+                <ul className="mt-1 flex flex-col gap-0.5 text-2xs text-status-warning">
+                  {composition.warnings.map((w) => (
+                    <li key={w.mobId}>
+                      <span className="font-mono">{w.mobId}</span>: {w.message}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          );
+        })()}
 
         {/* Scaling hints */}
         {playerScaled && (

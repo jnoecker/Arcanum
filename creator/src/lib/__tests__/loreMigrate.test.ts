@@ -27,7 +27,7 @@ function mkConfig(opts: { races?: Record<string, string>; classes?: Record<strin
   }
   const classes: AppConfig["classes"] = {};
   for (const [id, name] of Object.entries(opts.classes ?? {})) {
-    classes[id] = { displayName: name, hpPerLevel: 10, manaPerLevel: 10 };
+    classes[id] = { displayName: name, hpScalingRate: 1.1, manaScalingRate: 1.1 };
   }
   return { races, classes } as AppConfig;
 }

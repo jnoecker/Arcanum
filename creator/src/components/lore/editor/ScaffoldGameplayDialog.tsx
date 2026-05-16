@@ -164,19 +164,21 @@ function ClassScaffold({ article, config, onAccept, onClose }: ScaffoldGameplayD
           </Field>
 
           <div className="grid grid-cols-3 gap-3">
-            <Field label="HP per level">
+            <Field label="HP scaling rate">
               <input
                 type="number"
-                value={draft.hpPerLevel}
-                onChange={(e) => setDraft({ ...draft, hpPerLevel: Number(e.target.value) || 0 })}
+                step={0.005}
+                value={draft.hpScalingRate}
+                onChange={(e) => setDraft({ ...draft, hpScalingRate: Number(e.target.value) || 1.1 })}
                 className="ornate-input w-full px-2.5 py-1.5 font-mono text-sm"
               />
             </Field>
-            <Field label="Mana per level">
+            <Field label="Mana scaling rate">
               <input
                 type="number"
-                value={draft.manaPerLevel}
-                onChange={(e) => setDraft({ ...draft, manaPerLevel: Number(e.target.value) || 0 })}
+                step={0.005}
+                value={draft.manaScalingRate}
+                onChange={(e) => setDraft({ ...draft, manaScalingRate: Number(e.target.value) || 1.1 })}
                 className="ornate-input w-full px-2.5 py-1.5 font-mono text-sm"
               />
             </Field>

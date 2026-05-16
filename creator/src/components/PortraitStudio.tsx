@@ -53,7 +53,7 @@ function buildClassContext(id: string, cls: NonNullable<ReturnType<typeof useCon
   if (cls.primaryStat) parts.push(`Primary stat: ${cls.primaryStat}`);
   if (cls.outfitDescription) parts.push(`Outfit description: ${cls.outfitDescription}`);
   if (cls.showcaseRace) parts.push(`Showcase race: ${cls.showcaseRace}`);
-  parts.push(`HP/level: ${cls.hpPerLevel}, Mana/level: ${cls.manaPerLevel}`);
+  parts.push(`HP scaling rate: ${cls.hpScalingRate}, Mana scaling rate: ${cls.manaScalingRate}`);
   return parts.join("\n");
 }
 

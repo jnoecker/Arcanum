@@ -198,7 +198,7 @@ describe("chunkLore", () => {
           },
         },
         classes: {
-          mage: { displayName: "Mage", description: "Wields arcane fire.", hpPerLevel: 5, manaPerLevel: 10 },
+          mage: { displayName: "Mage", description: "Wields arcane fire.", hpScalingRate: 1.08, manaScalingRate: 1.12 },
         },
         abilities: {
           firebolt: {

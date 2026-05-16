@@ -190,6 +190,23 @@ export interface MobFile {
   xpReward?: number;
   goldMin?: number;
   goldMax?: number;
+  /**
+   * Power-user multiplier on tier+level HP baseline. 1.0 = no change.
+   * Authors typically use `toughness` instead, which writes through to all
+   * four mults. Range (0, 10].
+   */
+  hpMult?: number;
+  /** Power-user multiplier on tier+level damage baseline. */
+  dmgMult?: number;
+  /** Power-user multiplier on tier+level XP-reward baseline. */
+  xpMult?: number;
+  /** Power-user multiplier on tier+level gold baseline. */
+  goldMult?: number;
+  /**
+   * Single-dial difficulty knob. Maps to all four mults at once. Arcanum-side
+   * convenience: server only sees the resolved mults. Range -2 to +2.
+   */
+  toughness?: -2 | -1 | 0 | 1 | 2;
   drops?: MobDropFile[];
   respawnSeconds?: number;
   behavior?: BehaviorFile;
@@ -298,6 +315,24 @@ export interface ItemFile {
    * stored in containers. Always resolves to the "quest" category server-side.
    */
   questItem?: boolean;
+  /** Intended player level. Drives the level multiplier in budget derivation. */
+  level?: number;
+  /** Rarity tier. Drives the tier multiplier in budget derivation. */
+  tier?:
+    | "trash"
+    | "common"
+    | "uncommon"
+    | "rare"
+    | "epic"
+    | "legendary";
+  /** Budget split: damage / armor / balanced / stat. Accessory slots force "stat". */
+  archetype?: "damage" | "armor" | "balanced" | "stat";
+  /** Primary stat: receives the largest share of the stat-budget. */
+  primaryStat?: string;
+  /** Secondary stat: receives the middle share of the stat-budget. */
+  secondaryStat?: string;
+  /** Tertiary stat: receives the smallest share of the stat-budget. */
+  tertiaryStat?: string;
 }
 
 export interface ItemOnUse {

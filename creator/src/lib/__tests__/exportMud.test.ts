@@ -48,15 +48,15 @@ const BASE_CONFIG: AppConfig = {
     feedback: { enabled: false, roomBroadcastEnabled: false },
   },
   mobTiers: {
-    weak: { baseHp: 10, hpPerLevel: 3, baseMinDamage: 1, baseMaxDamage: 4, damagePerLevel: 1, baseArmor: 0, baseXpReward: 30, xpRewardPerLevel: 10, baseGoldMin: 0, baseGoldMax: 0, goldPerLevel: 0 },
-    standard: { baseHp: 20, hpPerLevel: 5, baseMinDamage: 2, baseMaxDamage: 6, damagePerLevel: 1, baseArmor: 0, baseXpReward: 50, xpRewardPerLevel: 15, baseGoldMin: 0, baseGoldMax: 0, goldPerLevel: 0 },
-    elite: { baseHp: 40, hpPerLevel: 8, baseMinDamage: 4, baseMaxDamage: 10, damagePerLevel: 2, baseArmor: 2, baseXpReward: 100, xpRewardPerLevel: 25, baseGoldMin: 0, baseGoldMax: 0, goldPerLevel: 0 },
-    boss: { baseHp: 100, hpPerLevel: 15, baseMinDamage: 8, baseMaxDamage: 20, damagePerLevel: 3, baseArmor: 5, baseXpReward: 300, xpRewardPerLevel: 50, baseGoldMin: 0, baseGoldMax: 0, goldPerLevel: 0 },
+    weak: { baseHp: 10, hpScalingRate: 1.1, baseMinDamage: 1, baseMaxDamage: 4, damageScalingRate: 1.1, baseArmor: 0, baseXpReward: 30, xpScalingRate: 1.15, baseGoldMin: 0, baseGoldMax: 0, goldScalingRate: 1.0 },
+    standard: { baseHp: 20, hpScalingRate: 1.1, baseMinDamage: 2, baseMaxDamage: 6, damageScalingRate: 1.1, baseArmor: 0, baseXpReward: 50, xpScalingRate: 1.15, baseGoldMin: 0, baseGoldMax: 0, goldScalingRate: 1.0 },
+    elite: { baseHp: 40, hpScalingRate: 1.1, baseMinDamage: 4, baseMaxDamage: 10, damageScalingRate: 1.1, baseArmor: 2, baseXpReward: 100, xpScalingRate: 1.15, baseGoldMin: 0, baseGoldMax: 0, goldScalingRate: 1.0 },
+    boss: { baseHp: 100, hpScalingRate: 1.1, baseMinDamage: 8, baseMaxDamage: 20, damageScalingRate: 1.1, baseArmor: 5, baseXpReward: 300, xpScalingRate: 1.15, baseGoldMin: 0, baseGoldMax: 0, goldScalingRate: 1.0 },
   },
   progression: {
     maxLevel: 50,
     xp: { baseXp: 100, exponent: 2, linearXp: 0, multiplier: 1, defaultKillXp: 50 },
-    rewards: { hpPerLevel: 2, manaPerLevel: 5, fullHealOnLevelUp: true, fullManaOnLevelUp: true, baseHp: 10, baseMana: 20 },
+    rewards: { hpScalingRate: 1.1, manaScalingRate: 1.05, fullHealOnLevelUp: true, fullManaOnLevelUp: true, baseHp: 10, baseMana: 20 },
   },
   economy: { buyMultiplier: 1.0, sellMultiplier: 0.5 },
   regen: {
@@ -309,7 +309,7 @@ ambonmud:
   progression:
     maxLevel: 50
     xp: { baseXp: 100, exponent: 2, linearXp: 0, multiplier: 1, defaultKillXp: 50 }
-    rewards: { hpPerLevel: 2, manaPerLevel: 5, fullHealOnLevelUp: true, fullManaOnLevelUp: true, baseHp: 10, baseMana: 20 }
+    rewards: { hpScalingRate: 1.1, manaScalingRate: 1.05, fullHealOnLevelUp: true, fullManaOnLevelUp: true, baseHp: 10, baseMana: 20 }
   images:
     baseUrl: https://assets.ambon.dev/
     globalAssets:

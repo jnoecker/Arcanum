@@ -7,8 +7,8 @@ import { ClassEditor } from "./classes/ClassEditor";
 function defaultClass(displayName: string): ClassDefinitionConfig {
   return {
     displayName: displayName.trim() || "New Class",
-    hpPerLevel: 6,
-    manaPerLevel: 8,
+    hpScalingRate: 1.1,
+    manaScalingRate: 1.1,
     selectable: true,
   };
 }

@@ -37,7 +37,7 @@ pub async fn complete_from_settings(
                 return Err("Anthropic API key not configured. Set it in Settings.".to_string());
             }
             let model = if s.enhance_model.is_empty() || !s.enhance_model.starts_with("claude-") {
-                "claude-sonnet-4-20250514"
+                "claude-sonnet-4-6"
             } else {
                 &s.enhance_model
             };
@@ -158,7 +158,7 @@ pub async fn llm_complete_with_vision(
         .ok_or("Invalid image data URL: missing ';base64,' delimiter")?;
 
     let model = if s.enhance_model.is_empty() || !s.enhance_model.starts_with("claude-") {
-        "claude-sonnet-4-20250514"
+        "claude-sonnet-4-6"
     } else {
         &s.enhance_model
     };

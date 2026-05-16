@@ -44,11 +44,10 @@ const BG_REMOVAL_MODEL = "bria:2@1";
 // Default Runware FLUX model matches creator/src-tauri/src/runware.rs.
 const DEFAULT_IMAGE_MODEL = "runware:400@2";
 
-// Claude Haiku 4.5 via direct Anthropic API. Fast (~180 tok/s),
-// excellent at structured JSON, and cheap.
-const LLM_MODEL = "claude-haiku-4-5-20251001";
-
-// Claude Sonnet 4.6 for vision.
+// Claude Sonnet 4.6 via direct Anthropic API. Higher cost than Haiku but
+// produces noticeably better zone generation and structured JSON. Vision
+// uses the same model.
+const LLM_MODEL = "claude-sonnet-4-6";
 const VISION_MODEL = "claude-sonnet-4-6";
 
 // Voyage AI embedding models. voyage-3-lite is the small/fast tier

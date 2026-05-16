@@ -2,7 +2,7 @@ use tauri::AppHandle;
 
 use crate::{anthropic, settings};
 
-const SKETCH_MODEL: &str = "claude-sonnet-4-20250514";
+const SKETCH_MODEL: &str = "claude-sonnet-4-6";
 
 const SYSTEM_PROMPT: &str = r#"You are analyzing a hand-drawn map for a text-based MUD game.
 Identify rooms (rectangles, squares, circles, or any enclosed shapes) and

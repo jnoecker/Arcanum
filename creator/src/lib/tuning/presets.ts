@@ -253,15 +253,17 @@ export const CASUAL_PRESET: TuningPreset = {
     },
 
     // ─── Regen ───────────────────────────────────────────────────────
+    // 3/3000ms = 1.0 HP/s sustained — full heal in ~2.5 min for a starter
+    // pirate, but standard-tier mobs at ~1 DPS+ still apply real pressure.
     regen: {
       maxPlayersPerTick: 15,
       baseIntervalMillis: 3000,
       minIntervalMillis: 800,
-      regenAmount: 50,
+      regenAmount: 3,
       mana: {
         baseIntervalMillis: 3000,
         minIntervalMillis: 800,
-        regenAmount: 45,
+        regenAmount: 3,
       },
     },
 
@@ -572,15 +574,17 @@ export const BALANCED_PRESET: TuningPreset = {
     },
 
     // ─── Regen ───────────────────────────────────────────────────────
+    // 6/4000ms = 1.5 HP/s sustained — light healing between fights, but
+    // standard-tier mobs (~1.4 DPS) still out-DPS regen so combat matters.
     regen: {
       maxPlayersPerTick: 10,
       baseIntervalMillis: 4000,
       minIntervalMillis: 1000,
-      regenAmount: 40,
+      regenAmount: 6,
       mana: {
         baseIntervalMillis: 4000,
         minIntervalMillis: 1000,
-        regenAmount: 38,
+        regenAmount: 5,
       },
     },
 
@@ -891,15 +895,17 @@ export const HARDCORE_PRESET: TuningPreset = {
     },
 
     // ─── Regen ───────────────────────────────────────────────────────
+    // 3/5500ms = 0.55 HP/s sustained — every fight leaves a mark, every
+    // standard-tier mob is a real threat. Hardcore by design.
     regen: {
       maxPlayersPerTick: 8,
       baseIntervalMillis: 5500,
       minIntervalMillis: 2800,
-      regenAmount: 50,
+      regenAmount: 3,
       mana: {
         baseIntervalMillis: 5500,
         minIntervalMillis: 2800,
-        regenAmount: 45,
+        regenAmount: 3,
       },
     },
 
@@ -1041,7 +1047,8 @@ export const SOLO_STORY_PRESET: TuningPreset = {
     autoQuests: { enabled: true, timeLimitMs: 900000, cooldownMs: 60000 },
     dailyQuests: { enabled: true, streakBonusPercent: 20 },
     globalQuests: { enabled: true, intervalMs: 3600000, durationMs: 1800000 },
-    regen: { maxPlayersPerTick: 20, baseIntervalMillis: 2000, minIntervalMillis: 500, regenAmount: 65, mana: { baseIntervalMillis: 2000, minIntervalMillis: 500, regenAmount: 60 } },
+    // 12/2000ms = 6 HP/s — sandbox forgiveness without total invulnerability.
+    regen: { maxPlayersPerTick: 20, baseIntervalMillis: 2000, minIntervalMillis: 500, regenAmount: 12, mana: { baseIntervalMillis: 2000, minIntervalMillis: 500, regenAmount: 10 } },
     worldTime: { cycleLengthMs: 1200000, dawnHour: 5, dayHour: 7, duskHour: 18, nightHour: 20 },
     weather: { minTransitionMs: 120000, maxTransitionMs: 300000 },
     group: { maxSize: 6, inviteTimeoutMs: 60000, xpBonusPerMember: 0.20 },
@@ -1121,7 +1128,9 @@ export const PVP_ARENA_PRESET: TuningPreset = {
     autoQuests: { enabled: true, timeLimitMs: 240000, cooldownMs: 300000 },
     dailyQuests: { enabled: true, streakBonusPercent: 8 },
     globalQuests: { enabled: true, intervalMs: 5400000, durationMs: 2700000 },
-    regen: { maxPlayersPerTick: 10, baseIntervalMillis: 4800, minIntervalMillis: 1300, regenAmount: 50, mana: { baseIntervalMillis: 4800, minIntervalMillis: 1300, regenAmount: 45 } },
+    // 5/4800ms ≈ 1.04 HP/s — PvE recovery is light; PvP-tier fights are
+    // decided by burst, not by waiting out a regen war.
+    regen: { maxPlayersPerTick: 10, baseIntervalMillis: 4800, minIntervalMillis: 1300, regenAmount: 5, mana: { baseIntervalMillis: 4800, minIntervalMillis: 1300, regenAmount: 4 } },
     worldTime: { cycleLengthMs: 1800000, dawnHour: 5, dayHour: 7, duskHour: 18, nightHour: 20 },
     weather: { minTransitionMs: 180000, maxTransitionMs: 600000 },
     group: { maxSize: 4, inviteTimeoutMs: 30000, xpBonusPerMember: 0.15 },
@@ -1200,7 +1209,9 @@ export const LORE_EXPLORER_PRESET: TuningPreset = {
     autoQuests: { enabled: true, timeLimitMs: 1800000, cooldownMs: 30000 },
     dailyQuests: { enabled: true, streakBonusPercent: 30 },
     globalQuests: { enabled: true, intervalMs: 1800000, durationMs: 900000 },
-    regen: { maxPlayersPerTick: 25, baseIntervalMillis: 1200, minIntervalMillis: 280, regenAmount: 90, mana: { baseIntervalMillis: 1200, minIntervalMillis: 280, regenAmount: 85 } },
+    // 30/1200ms = 25 HP/s — explorer-grade self-healing. Combat still
+    // exists as flavor but nothing short of a boss can drop you.
+    regen: { maxPlayersPerTick: 25, baseIntervalMillis: 1200, minIntervalMillis: 280, regenAmount: 30, mana: { baseIntervalMillis: 1200, minIntervalMillis: 280, regenAmount: 25 } },
     worldTime: { cycleLengthMs: 900000, dawnHour: 5, dayHour: 7, duskHour: 18, nightHour: 20 },
     weather: { minTransitionMs: 60000, maxTransitionMs: 180000 },
     group: { maxSize: 8, inviteTimeoutMs: 120000, xpBonusPerMember: 0.25 },

@@ -179,7 +179,13 @@ describe("preset invariants — server semantics", () => {
     }
   });
 
-  describe("regen-to-full downtime is under 180 seconds at level 25", () => {
+  describe("regen-to-full downtime is bounded at level 25", () => {
+    // Regen is intentionally slow enough that combat applies real pressure
+    // (otherwise standing-still healing trivializes weak/standard mobs — see
+    // checkAbsoluteHealth's regen-vs-DPS rule). The bound here just catches
+    // obviously broken configs (regenAmount = 0, interval = 1h, etc.) without
+    // re-enforcing the old "fast regen" philosophy. Hardcore is the slowest
+    // legitimate preset; 45 minutes for full heal at L25 is acceptable there.
     for (const preset of TUNING_PRESETS) {
       it(`${preset.id}: post-fight regen time is reasonable`, () => {
         const merged = mergedConfig(preset);
@@ -188,7 +194,7 @@ describe("preset invariants — server semantics", () => {
         const interval = merged.regen.baseIntervalMillis;
         const amount = merged.regen.regenAmount;
         const timeToFullSec = (playerHpAt25 * interval) / (amount * 1000);
-        expect(timeToFullSec, `${preset.id}: ${timeToFullSec.toFixed(0)}s to regen ${playerHpAt25}hp`).toBeLessThan(180);
+        expect(timeToFullSec, `${preset.id}: ${timeToFullSec.toFixed(0)}s to regen ${playerHpAt25}hp`).toBeLessThan(2700);
       });
     }
   });

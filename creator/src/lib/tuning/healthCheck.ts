@@ -77,6 +77,81 @@ export function checkPacingHealth(
 }
 
 /**
+ * Check the final merged config for *absolute* imbalances that make the
+ * world feel broken regardless of which preset / sections were applied.
+ * Examples: regen so high that mob damage doesn't matter, weak-tier mobs
+ * with TTK measured in minutes, etc. Runs on every apply.
+ */
+export function checkAbsoluteHealth(config: AppConfig): HealthWarning[] {
+  const warnings: HealthWarning[] = [];
+
+  const regen = config.regen;
+  const combat = config.combat;
+  const weak = config.mobTiers?.weak;
+  const standard = config.mobTiers?.standard;
+  const mobDelay = config.mobActionDelay;
+  const baseHp = config.progression?.rewards?.baseHp;
+
+  if (!regen || !combat || !weak || !standard || !mobDelay) return warnings;
+
+  const regenHpPerSec = (regen.regenAmount * 1000) / regen.baseIntervalMillis;
+  const avgMobDelaySec =
+    (mobDelay.minActionDelayMillis + mobDelay.maxActionDelayMillis) / 2 / 1000;
+  const stdAvgDmg = (standard.baseMinDamage + standard.baseMaxDamage) / 2;
+  const stdDps = avgMobDelaySec > 0 ? stdAvgDmg / avgMobDelaySec : 0;
+
+  // Rule A: regen swamps standard-tier mob DPS by 3× or more. Standard mobs
+  // are the workhorse threat tier — if a stationary player out-regens them,
+  // combat has no tension.
+  if (stdDps > 0 && regenHpPerSec / stdDps >= 3) {
+    warnings.push({
+      severity: "warning",
+      message: `Regen (${regenHpPerSec.toFixed(1)} HP/s) outpaces standard-tier mob DPS (${stdDps.toFixed(2)}/s) by ${(regenHpPerSec / stdDps).toFixed(1)}× — combat may feel inconsequential.`,
+      detail:
+        "Regen runs continuously, including during combat. Lower regen.regenAmount, raise mob damage, or shorten mobActionDelay so standard-tier fights apply real pressure.",
+    });
+  }
+
+  // Rule B: weak-tier L1 TTK is absurd. Indicates a tier baseline mismatch
+  // for tutorial mobs (what triggered this whole audit).
+  const playerAvgDmg = (combat.minDamage + combat.maxDamage) / 2;
+  if (playerAvgDmg > 0 && weak.baseHp > 0) {
+    const weakTtkSec = (weak.baseHp / playerAvgDmg) * (combat.tickMillis / 1000);
+    if (weakTtkSec > 30) {
+      warnings.push({
+        severity: "warning",
+        message: `Weak-tier L1 mob takes ~${Math.round(weakTtkSec)}s to kill with base player damage — fights may feel grindy.`,
+        detail:
+          "Lower mobTiers.weak.baseHp, raise combat.minDamage/maxDamage, or reduce combat.tickMillis. Weak-tier should land in the 5–20s range for a level-1 player.",
+      });
+    } else if (weakTtkSec < 2) {
+      warnings.push({
+        severity: "info",
+        message: `Weak-tier L1 mob dies in ~${weakTtkSec.toFixed(1)}s — too quick for skill expression.`,
+        detail:
+          "Raise mobTiers.weak.baseHp or lower combat base damage for fights that breathe.",
+      });
+    }
+  }
+
+  // Rule C: full HP recovery is so slow players will rely on consumables for
+  // every fight. Surfaces a knob mismatch rather than a balance opinion.
+  if (regenHpPerSec > 0 && baseHp && baseHp > 0) {
+    const fullHealSec = baseHp / regenHpPerSec;
+    if (fullHealSec > 600) {
+      warnings.push({
+        severity: "info",
+        message: `Out-of-combat HP recovery is very slow (~${Math.round(fullHealSec / 60)} min to full at base regen).`,
+        detail:
+          "If that's intentional for a survival-economy feel, ignore. Otherwise raise regen.regenAmount or lower regen.baseIntervalMillis.",
+      });
+    }
+  }
+
+  return warnings;
+}
+
+/**
  * Check for imbalanced metric combinations after a selective apply.
  * Only runs when fewer than all 4 sections were accepted (per D-09).
  * Compares pre-apply and post-apply metrics to detect cross-section imbalances.

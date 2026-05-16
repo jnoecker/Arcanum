@@ -1,8 +1,9 @@
 import { describe, it, expect } from "vitest";
-import { checkTuningHealth } from "@/lib/tuning/healthCheck";
+import { checkTuningHealth, checkAbsoluteHealth } from "@/lib/tuning/healthCheck";
 import type { HealthWarning } from "@/lib/tuning/healthCheck";
 import { TuningSection } from "@/lib/tuning/types";
 import type { MetricSnapshot } from "@/lib/tuning/types";
+import type { AppConfig } from "@/types/config";
 
 // ─── Helpers ────────────────────────────────────────────────────────
 
@@ -124,5 +125,111 @@ describe("checkTuningHealth", () => {
     const result = checkTuningHealth(pre, post, accepted);
 
     expect(result).toEqual([]);
+  });
+});
+
+// ─── checkAbsoluteHealth ────────────────────────────────────────────
+
+/**
+ * Build a partial AppConfig that exercises the fields checkAbsoluteHealth
+ * actually reads. Cast through unknown to satisfy TS without spelling out
+ * dozens of unrelated sections.
+ */
+function makeConfig(overrides: {
+  regenAmount?: number;
+  regenInterval?: number;
+  weakBaseHp?: number;
+  weakDmgMin?: number;
+  weakDmgMax?: number;
+  stdDmgMin?: number;
+  stdDmgMax?: number;
+  mobDelayMin?: number;
+  mobDelayMax?: number;
+  playerMinDmg?: number;
+  playerMaxDmg?: number;
+  tickMillis?: number;
+  baseHp?: number;
+} = {}): AppConfig {
+  return ({
+    regen: {
+      regenAmount: overrides.regenAmount ?? 2,
+      baseIntervalMillis: overrides.regenInterval ?? 4000,
+    },
+    combat: {
+      minDamage: overrides.playerMinDmg ?? 5,
+      maxDamage: overrides.playerMaxDmg ?? 12,
+      tickMillis: overrides.tickMillis ?? 2000,
+    },
+    mobTiers: {
+      weak: {
+        baseHp: overrides.weakBaseHp ?? 36,
+        baseMinDamage: overrides.weakDmgMin ?? 1,
+        baseMaxDamage: overrides.weakDmgMax ?? 3,
+      },
+      standard: {
+        baseMinDamage: overrides.stdDmgMin ?? 5,
+        baseMaxDamage: overrides.stdDmgMax ?? 12,
+      },
+    },
+    mobActionDelay: {
+      minActionDelayMillis: overrides.mobDelayMin ?? 4000,
+      maxActionDelayMillis: overrides.mobDelayMax ?? 8000,
+    },
+    progression: {
+      rewards: { baseHp: overrides.baseHp ?? 150 },
+    },
+  } as unknown) as AppConfig;
+}
+
+describe("checkAbsoluteHealth", () => {
+  it("returns empty for a reasonably-tuned config", () => {
+    const result = checkAbsoluteHealth(makeConfig());
+    expect(result).toEqual([]);
+  });
+
+  it("warns when regen swamps standard-tier mob DPS by 3× or more", () => {
+    // regen 10/s, std DPS ~1.42/s → 7× ratio
+    const result = checkAbsoluteHealth(
+      makeConfig({ regenAmount: 40, regenInterval: 4000 }),
+    );
+    expect(result.some((w) => /Regen.*outpaces standard-tier/.test(w.message))).toBe(true);
+  });
+
+  it("does not warn when regen is below standard-tier DPS", () => {
+    // regen 0.5/s, std DPS ~1.42/s → 0.35× ratio
+    const result = checkAbsoluteHealth(
+      makeConfig({ regenAmount: 2, regenInterval: 4000 }),
+    );
+    expect(result.some((w) => /Regen.*outpaces standard-tier/.test(w.message))).toBe(false);
+  });
+
+  it("warns when weak-tier TTK exceeds 30s", () => {
+    // 150 HP weak / 8.5 avg dmg × 2s tick = ~35s
+    const result = checkAbsoluteHealth(
+      makeConfig({ weakBaseHp: 150, playerMinDmg: 5, playerMaxDmg: 12 }),
+    );
+    expect(result.some((w) => /grindy/.test(w.message))).toBe(true);
+  });
+
+  it("hints when weak-tier TTK is under 2s", () => {
+    // 4 HP weak / 8.5 avg dmg × 2s tick = ~0.9s
+    const result = checkAbsoluteHealth(
+      makeConfig({ weakBaseHp: 4, playerMinDmg: 5, playerMaxDmg: 12 }),
+    );
+    expect(result.some((w) => /too quick/.test(w.message) && w.severity === "info")).toBe(true);
+  });
+
+  it("hints when out-of-combat recovery exceeds 10 minutes", () => {
+    // baseHp 1000, regen 1/4s = 0.25/s → 4000s = 66 min
+    const result = checkAbsoluteHealth(
+      makeConfig({ regenAmount: 1, regenInterval: 4000, baseHp: 1000 }),
+    );
+    expect(result.some((w) => /recovery is very slow/.test(w.message))).toBe(true);
+  });
+
+  it("bails gracefully when required config sections are missing", () => {
+    const partial = ({ regen: undefined } as unknown) as AppConfig;
+    expect(() => checkAbsoluteHealth(partial)).not.toThrow();
+    expect(checkAbsoluteHealth(partial)).toEqual([]);
   });
 });

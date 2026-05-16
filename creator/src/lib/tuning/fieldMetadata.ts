@@ -928,10 +928,11 @@ export const FIELD_METADATA: Record<string, FieldMeta> = {
   },
   "regen.regenAmount": {
     label: "HP Regen Amount",
-    description: "Hit points restored per regen tick",
+    description:
+      "Hit points restored per regen tick. Regen runs continuously (in and out of combat), so this directly competes with incoming mob DPS — if regenAmount/baseIntervalMillis exceeds avg-mob-damage/avg-mob-attack-delay, fights feel pointless.",
     section: TuningSection.WorldSocial,
     min: 1,
-    impact: "medium",
+    impact: "high",
   },
   "regen.mana.baseIntervalMillis": {
     label: "Mana Regen Base Interval",

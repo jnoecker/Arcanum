@@ -10,7 +10,7 @@ import { TUNING_PRESETS } from "@/lib/tuning/presets";
 import { computeDiff } from "@/lib/tuning/diffEngine";
 import { computeMetrics } from "@/lib/tuning/formulas";
 import { deepMerge, buildPartialFromDiffs } from "@/lib/tuning/merge";
-import { checkTuningHealth, checkPacingHealth } from "@/lib/tuning/healthCheck";
+import { checkTuningHealth, checkPacingHealth, checkAbsoluteHealth } from "@/lib/tuning/healthCheck";
 import type { HealthWarning } from "@/lib/tuning/healthCheck";
 import type { AppConfig } from "@/types/config";
 import { useToastStore } from "@/stores/toastStore";
@@ -166,6 +166,7 @@ export const useTuningWizardStore = create<TuningWizardStore>((set, get) => ({
       const warnings = [
         ...checkTuningHealth(preMetrics, postMetrics, acceptedSections),
         ...checkPacingHealth(merged, selectedPresetId),
+        ...checkAbsoluteHealth(merged),
       ];
       if (suppressedFeatures.length > 0) {
         warnings.push({

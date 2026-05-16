@@ -95,7 +95,7 @@ const FULL_MOCK_CONFIG: AppConfig = {
   factions: { defaultReputation: 0, killPenalty: 10, killBonus: 5, definitions: {} },
   enchanting: { maxEnchantmentsPerItem: 3, definitions: {} },
   skillPoints: { interval: 3 },
-  multiclass: { minLevel: 15, goldCost: 500 },
+  multiclass: { minLevel: 15, goldCost: 500, maxClasses: 3, goldCostMultiplier: 2.0 },
   bank: { maxItems: 50 },
   worldTime: { cycleLengthMs: 1800000, dawnHour: 5, dayHour: 7, duskHour: 18, nightHour: 20 },
   weather: { minTransitionMs: 180000, maxTransitionMs: 600000, types: { CLEAR: { displayName: "Clear", weight: 3.0 }, RAIN: { displayName: "Rain", weight: 2.0 } } },
@@ -240,8 +240,8 @@ describe("validation", () => {
 describe("field coverage", () => {
   const allPaths = Object.keys(FIELD_METADATA);
 
-  it("FIELD_METADATA has 139 entries (sanity check)", () => {
-    expect(allPaths).toHaveLength(139);
+  it("FIELD_METADATA has 141 entries (sanity check)", () => {
+    expect(allPaths).toHaveLength(141);
   });
 
   for (const preset of TUNING_PRESETS) {

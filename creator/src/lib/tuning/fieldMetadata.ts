@@ -762,9 +762,23 @@ export const FIELD_METADATA: Record<string, FieldMeta> = {
   },
   "multiclass.goldCost": {
     label: "Multiclass Gold Cost",
-    description: "Gold required to change class",
+    description: "Base gold cost for the first trainer unlock",
     section: TuningSection.ProgressionQuests,
     min: 0,
+    impact: "medium",
+  },
+  "multiclass.maxClasses": {
+    label: "Multiclass Max Classes",
+    description: "Hard cap on total unlocked classes per player (includes the starter class)",
+    section: TuningSection.ProgressionQuests,
+    min: 1,
+    impact: "medium",
+  },
+  "multiclass.goldCostMultiplier": {
+    label: "Multiclass Gold Cost Multiplier",
+    description: "Exponential scaling per additional unlock — Nth unlock costs goldCost × multiplier^(N-1). 1.0 = flat.",
+    section: TuningSection.ProgressionQuests,
+    min: 1,
     impact: "medium",
   },
 

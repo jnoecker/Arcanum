@@ -209,6 +209,8 @@ export const CASUAL_PRESET: TuningPreset = {
     multiclass: {
       minLevel: 10,
       goldCost: 200,
+      maxClasses: 4,
+      goldCostMultiplier: 1.5,
     },
 
     // ─── Character Creation ──────────────────────────────────────────
@@ -526,6 +528,8 @@ export const BALANCED_PRESET: TuningPreset = {
     multiclass: {
       minLevel: 15,
       goldCost: 500,
+      maxClasses: 3,
+      goldCostMultiplier: 2.0,
     },
 
     // ─── Character Creation ──────────────────────────────────────────
@@ -843,6 +847,8 @@ export const HARDCORE_PRESET: TuningPreset = {
     multiclass: {
       minLevel: 25,
       goldCost: 2000,
+      maxClasses: 2,
+      goldCostMultiplier: 3.0,
     },
 
     // ─── Character Creation ──────────────────────────────────────────
@@ -1028,7 +1034,7 @@ export const SOLO_STORY_PRESET: TuningPreset = {
       },
     },
     skillPoints: { interval: 2 },
-    multiclass: { minLevel: 8, goldCost: 100 },
+    multiclass: { minLevel: 8, goldCost: 100, maxClasses: 5, goldCostMultiplier: 1.5 },
     characterCreation: { startingGold: 500 },
     prestige: { enabled: true, xpCostBase: 3000, xpCostMultiplier: 1.2, maxRank: 10 },
     respec: { goldCost: 25, cooldownMs: 30000 },
@@ -1108,7 +1114,7 @@ export const PVP_ARENA_PRESET: TuningPreset = {
       },
     },
     skillPoints: { interval: 2 },
-    multiclass: { minLevel: 20, goldCost: 1000 },
+    multiclass: { minLevel: 20, goldCost: 1000, maxClasses: 2, goldCostMultiplier: 2.5 },
     characterCreation: { startingGold: 75 },
     prestige: { enabled: true, xpCostBase: 15000, xpCostMultiplier: 1.8, maxRank: 5 },
     respec: { goldCost: 250, cooldownMs: 600000 },
@@ -1187,7 +1193,7 @@ export const LORE_EXPLORER_PRESET: TuningPreset = {
       },
     },
     skillPoints: { interval: 1 },
-    multiclass: { minLevel: 5, goldCost: 50 },
+    multiclass: { minLevel: 5, goldCost: 50, maxClasses: 6, goldCostMultiplier: 1.0 },
     characterCreation: { startingGold: 2000 },
     prestige: { enabled: true, xpCostBase: 1000, xpCostMultiplier: 1.1, maxRank: 20 },
     respec: { goldCost: 0, cooldownMs: 0 },

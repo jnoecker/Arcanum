@@ -407,6 +407,17 @@ export interface SkillPointsConfig {
 export interface MulticlassConfig {
   minLevel: number;
   goldCost: number;
+  /**
+   * Hard cap on the player's total unlocked classes (including the starter class).
+   * Defaults to effectively unlimited so existing worlds keep working unchanged.
+   */
+  maxClasses: number;
+  /**
+   * Exponential multiplier applied per additional class beyond the first trainer unlock.
+   * Cost for the Nth trainer unlock is `goldCost * goldCostMultiplier^(N-1)`. Default
+   * 1.0 keeps the cost flat (no-op).
+   */
+  goldCostMultiplier: number;
 }
 
 // ─── Bank ──────────────────────────────────────────────────────────

@@ -1132,11 +1132,15 @@ function parseSkillPointsConfig(raw: unknown): import("@/types/config").SkillPoi
 }
 
 function parseMulticlassConfig(raw: unknown): import("@/types/config").MulticlassConfig {
-  if (!raw || typeof raw !== "object") return { minLevel: 10, goldCost: 500 };
+  if (!raw || typeof raw !== "object") {
+    return { minLevel: 10, goldCost: 500, maxClasses: Number.MAX_SAFE_INTEGER, goldCostMultiplier: 1.0 };
+  }
   const s = raw as Record<string, unknown>;
   return {
     minLevel: asNumber(s.minLevel, 10),
     goldCost: asNumber(s.goldCost, 500),
+    maxClasses: asNumber(s.maxClasses, Number.MAX_SAFE_INTEGER),
+    goldCostMultiplier: asNumber(s.goldCostMultiplier, 1.0),
   };
 }
 

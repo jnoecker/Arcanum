@@ -146,6 +146,8 @@ async function saveSplitConfig(projectDir: string): Promise<void> {
       multiclass: {
         minLevel: config.multiclass.minLevel,
         goldCost: config.multiclass.goldCost,
+        maxClasses: config.multiclass.maxClasses,
+        goldCostMultiplier: config.multiclass.goldCostMultiplier,
       },
     }),
 

@@ -426,6 +426,8 @@ export function buildMonolithicConfigObject(
   engine.multiclass = {
     minLevel: c.multiclass.minLevel,
     goldCost: c.multiclass.goldCost,
+    maxClasses: c.multiclass.maxClasses,
+    goldCostMultiplier: c.multiclass.goldCostMultiplier,
   };
 
   // Housing

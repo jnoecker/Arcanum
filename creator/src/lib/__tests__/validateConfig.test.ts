@@ -123,7 +123,7 @@ const BASE_CONFIG: AppConfig = {
   worldEvents: { definitions: {} },
   pets: {},
   skillPoints: { interval: 2 },
-  multiclass: { minLevel: 10, goldCost: 500 },
+  multiclass: { minLevel: 10, goldCost: 500, maxClasses: Number.MAX_SAFE_INTEGER, goldCostMultiplier: 1.0 },
   guildRanks: {},
   mobActionDelay: { minActionDelayMillis: 8000, maxActionDelayMillis: 20000 },
   characterCreation: { startingGold: 0 },

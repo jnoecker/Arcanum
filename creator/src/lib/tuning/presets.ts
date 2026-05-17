@@ -40,8 +40,6 @@ export const CASUAL_PRESET: TuningPreset = {
     // ─── Combat ──────────────────────────────────────────────────────
     combat: {
       tickMillis: 3500,
-      minDamage: 3,
-      maxDamage: 8,
     },
 
     // ─── Mob Tiers ───────────────────────────────────────────────────
@@ -109,7 +107,12 @@ export const CASUAL_PRESET: TuningPreset = {
     // ─── Stat Bindings ───────────────────────────────────────────────
     stats: {
       bindings: {
-        meleeDamageDivisor: 2,
+        meleeStatMultiplier: 0.20,
+        meleeLevelScalingRate: 1.25,
+        meleeVarianceMin: 0.85,
+        meleeVarianceMax: 1.15,
+        meleeBaseAttackPower: 1,
+        meleeArmorMitigationK: 22,
         dodgePerPoint: 3,
         maxDodgePercent: 35,
         spellDamageDivisor: 2,
@@ -361,8 +364,6 @@ export const BALANCED_PRESET: TuningPreset = {
     // ─── Combat ──────────────────────────────────────────────────────
     combat: {
       tickMillis: 3000,
-      minDamage: 4,
-      maxDamage: 10,
     },
 
     // ─── Mob Tiers ───────────────────────────────────────────────────
@@ -430,7 +431,12 @@ export const BALANCED_PRESET: TuningPreset = {
     // ─── Stat Bindings ───────────────────────────────────────────────
     stats: {
       bindings: {
-        meleeDamageDivisor: 3,
+        meleeStatMultiplier: 0.25,
+        meleeLevelScalingRate: 1.30,
+        meleeVarianceMin: 0.85,
+        meleeVarianceMax: 1.15,
+        meleeBaseAttackPower: 1,
+        meleeArmorMitigationK: 20,
         dodgePerPoint: 2,
         maxDodgePercent: 30,
         spellDamageDivisor: 3,
@@ -682,8 +688,6 @@ export const HARDCORE_PRESET: TuningPreset = {
     // ─── Combat ──────────────────────────────────────────────────────
     combat: {
       tickMillis: 2000,
-      minDamage: 5,
-      maxDamage: 12,
     },
 
     // ─── Mob Tiers ───────────────────────────────────────────────────
@@ -751,7 +755,12 @@ export const HARDCORE_PRESET: TuningPreset = {
     // ─── Stat Bindings ───────────────────────────────────────────────
     stats: {
       bindings: {
-        meleeDamageDivisor: 4,
+        meleeStatMultiplier: 0.30,
+        meleeLevelScalingRate: 1.35,
+        meleeVarianceMin: 0.80,
+        meleeVarianceMax: 1.20,
+        meleeBaseAttackPower: 1,
+        meleeArmorMitigationK: 18,
         dodgePerPoint: 1,
         maxDodgePercent: 20,
         spellDamageDivisor: 4,
@@ -1000,7 +1009,7 @@ export const SOLO_STORY_PRESET: TuningPreset = {
       "Fast regen and short cooldowns minimize downtime. Social systems are available but not required — designed for solo-friendly play.",
   },
   config: {
-    combat: { tickMillis: 4000, minDamage: 3, maxDamage: 6 },
+    combat: { tickMillis: 4000 },
     mobTiers: {
       weak: { baseHp: 18, hpScalingRate: 1.095, baseMinDamage: 1, baseMaxDamage: 1, damageScalingRate: 1.0, baseArmor: 0, baseXpReward: 80, xpScalingRate: 1.087, baseGoldMin: 8, baseGoldMax: 20, goldScalingRate: 1.190 },
       standard: { baseHp: 70, hpScalingRate: 1.083, baseMinDamage: 2, baseMaxDamage: 5, damageScalingRate: 1.068, baseArmor: 0, baseXpReward: 320, xpScalingRate: 1.079, baseGoldMin: 14, baseGoldMax: 32, goldScalingRate: 1.190 },
@@ -1008,7 +1017,7 @@ export const SOLO_STORY_PRESET: TuningPreset = {
       boss: { baseHp: 500, hpScalingRate: 1.071, baseMinDamage: 8, baseMaxDamage: 18, damageScalingRate: 1.072, baseArmor: 2, baseXpReward: 2800, xpScalingRate: 1.068, baseGoldMin: 120, baseGoldMax: 260, goldScalingRate: 1.190 },
     },
     mobActionDelay: { minActionDelayMillis: 6000, maxActionDelayMillis: 12000 },
-    stats: { bindings: { meleeDamageDivisor: 2, dodgePerPoint: 3, maxDodgePercent: 40, spellDamageDivisor: 2, hpScalingDivisor: 3, manaScalingDivisor: 3, hpRegenMsPerPoint: 300, manaRegenMsPerPoint: 300, xpBonusPerPoint: 0.03 } },
+    stats: { bindings: { meleeStatMultiplier: 0.20, meleeLevelScalingRate: 1.22, meleeVarianceMin: 0.85, meleeVarianceMax: 1.15, meleeBaseAttackPower: 1, meleeArmorMitigationK: 24, dodgePerPoint: 3, maxDodgePercent: 40, spellDamageDivisor: 2, hpScalingDivisor: 3, manaScalingDivisor: 3, hpRegenMsPerPoint: 300, manaRegenMsPerPoint: 300, xpBonusPerPoint: 0.03 } },
     economy: { buyMultiplier: 0.6, sellMultiplier: 0.4 },
     crafting: { maxSkillLevel: 40, baseXpPerLevel: 60, xpExponent: 1.2, gatherCooldownMs: 1500, stationBonusQuantity: 3 },
     gambling: { enabled: true, diceMinBet: 5, diceMaxBet: 300, diceWinChance: 0.45, diceWinMultiplier: 2.0 },
@@ -1081,7 +1090,7 @@ export const PVP_ARENA_PRESET: TuningPreset = {
       "Moderate regen that rewards preparation. Group play is strongly incentivized with generous XP bonuses. Factions have meaningful reputation swings.",
   },
   config: {
-    combat: { tickMillis: 1500, minDamage: 5, maxDamage: 11 },
+    combat: { tickMillis: 1500 },
     mobTiers: {
       weak: { baseHp: 32, hpScalingRate: 1.097, baseMinDamage: 1, baseMaxDamage: 4, damageScalingRate: 1.075, baseArmor: 0, baseXpReward: 65, xpScalingRate: 1.086, baseGoldMin: 2, baseGoldMax: 5, goldScalingRate: 1.195 },
       standard: { baseHp: 135, hpScalingRate: 1.085, baseMinDamage: 6, baseMaxDamage: 14, damageScalingRate: 1.080, baseArmor: 1, baseXpReward: 200, xpScalingRate: 1.079, baseGoldMin: 4, baseGoldMax: 12, goldScalingRate: 1.195 },
@@ -1089,7 +1098,7 @@ export const PVP_ARENA_PRESET: TuningPreset = {
       boss: { baseHp: 900, hpScalingRate: 1.072, baseMinDamage: 24, baseMaxDamage: 54, damageScalingRate: 1.072, baseArmor: 4, baseXpReward: 1700, xpScalingRate: 1.070, baseGoldMin: 55, baseGoldMax: 130, goldScalingRate: 1.195 },
     },
     mobActionDelay: { minActionDelayMillis: 2500, maxActionDelayMillis: 5000 },
-    stats: { bindings: { meleeDamageDivisor: 3, dodgePerPoint: 2, maxDodgePercent: 25, spellDamageDivisor: 3, hpScalingDivisor: 4, manaScalingDivisor: 4, hpRegenMsPerPoint: 180, manaRegenMsPerPoint: 180, xpBonusPerPoint: 0.01 } },
+    stats: { bindings: { meleeStatMultiplier: 0.28, meleeLevelScalingRate: 1.32, meleeVarianceMin: 0.82, meleeVarianceMax: 1.18, meleeBaseAttackPower: 1, meleeArmorMitigationK: 18, dodgePerPoint: 2, maxDodgePercent: 25, spellDamageDivisor: 3, hpScalingDivisor: 4, manaScalingDivisor: 4, hpRegenMsPerPoint: 180, manaRegenMsPerPoint: 180, xpBonusPerPoint: 0.01 } },
     economy: { buyMultiplier: 1.2, sellMultiplier: 0.4 },
     crafting: { maxSkillLevel: 80, baseXpPerLevel: 120, xpExponent: 1.6, gatherCooldownMs: 4000, stationBonusQuantity: 1 },
     gambling: { enabled: true, diceMinBet: 20, diceMaxBet: 1500, diceWinChance: 0.35, diceWinMultiplier: 2.5 },
@@ -1163,7 +1172,7 @@ export const LORE_EXPLORER_PRESET: TuningPreset = {
       "Instant regen, no cooldowns. The world is a playground — no resource management, no waiting, just exploration.",
   },
   config: {
-    combat: { tickMillis: 4000, minDamage: 6, maxDamage: 14 },
+    combat: { tickMillis: 4000 },
     mobTiers: {
       weak: { baseHp: 10, hpScalingRate: 1.099, baseMinDamage: 1, baseMaxDamage: 1, damageScalingRate: 1.0, baseArmor: 0, baseXpReward: 40, xpScalingRate: 1.089, baseGoldMin: 25, baseGoldMax: 60, goldScalingRate: 1.143 },
       standard: { baseHp: 45, hpScalingRate: 1.078, baseMinDamage: 1, baseMaxDamage: 3, damageScalingRate: 1.0, baseArmor: 0, baseXpReward: 120, xpScalingRate: 1.081, baseGoldMin: 45, baseGoldMax: 110, goldScalingRate: 1.143 },
@@ -1171,7 +1180,7 @@ export const LORE_EXPLORER_PRESET: TuningPreset = {
       boss: { baseHp: 250, hpScalingRate: 1.074, baseMinDamage: 5, baseMaxDamage: 12, damageScalingRate: 1.063, baseArmor: 1, baseXpReward: 1100, xpScalingRate: 1.071, baseGoldMin: 320, baseGoldMax: 700, goldScalingRate: 1.143 },
     },
     mobActionDelay: { minActionDelayMillis: 6000, maxActionDelayMillis: 14000 },
-    stats: { bindings: { meleeDamageDivisor: 1, dodgePerPoint: 5, maxDodgePercent: 55, spellDamageDivisor: 1, hpScalingDivisor: 2, manaScalingDivisor: 2, hpRegenMsPerPoint: 400, manaRegenMsPerPoint: 400, xpBonusPerPoint: 0.05 } },
+    stats: { bindings: { meleeStatMultiplier: 0.15, meleeLevelScalingRate: 1.20, meleeVarianceMin: 0.90, meleeVarianceMax: 1.10, meleeBaseAttackPower: 1, meleeArmorMitigationK: 28, dodgePerPoint: 5, maxDodgePercent: 55, spellDamageDivisor: 1, hpScalingDivisor: 2, manaScalingDivisor: 2, hpRegenMsPerPoint: 400, manaRegenMsPerPoint: 400, xpBonusPerPoint: 0.05 } },
     economy: { buyMultiplier: 0.3, sellMultiplier: 0.2 },
     crafting: { maxSkillLevel: 30, baseXpPerLevel: 30, xpExponent: 1.1, gatherCooldownMs: 1000, stationBonusQuantity: 5 },
     gambling: { enabled: true, diceMinBet: 1, diceMaxBet: 100, diceWinChance: 0.45, diceWinMultiplier: 2.0 },

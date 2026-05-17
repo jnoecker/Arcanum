@@ -48,7 +48,13 @@ const BOSS_TIER = {
 };
 
 const MOCK_BINDINGS: StatBindings = {
-  meleeDamageStat: "str", meleeDamageDivisor: 4,
+  meleeDamageStat: "str",
+  meleeStatMultiplier: 0.25,
+  meleeLevelScalingRate: 1.30,
+  meleeVarianceMin: 0.85,
+  meleeVarianceMax: 1.15,
+  meleeBaseAttackPower: 1,
+  meleeArmorMitigationK: 20,
   dodgeStat: "dex", dodgePerPoint: 2.5, maxDodgePercent: 30,
   spellDamageStat: "int", spellDamageDivisor: 3,
   hpScalingStat: "con", hpScalingDivisor: 5,
@@ -199,10 +205,10 @@ describe("buildStatRadarData", () => {
     ]);
   });
 
-  it("divisor fields are inverted (1/divisor)", () => {
+  it("melee uses statMultiplier directly; divisor fields are inverted (1/divisor)", () => {
     const data = buildStatRadarData(MOCK_BINDINGS, MOCK_BINDINGS);
-    // meleeDamageDivisor=4, so result should be 0.25
-    expect(data[0]!.current).toBe(1 / 4);
+    // meleeStatMultiplier=0.25 — used as-is
+    expect(data[0]!.current).toBe(0.25);
     // spellDamageDivisor=3, so result should be 1/3
     expect(data[1]!.current).toBeCloseTo(1 / 3);
     // hpScalingDivisor=5

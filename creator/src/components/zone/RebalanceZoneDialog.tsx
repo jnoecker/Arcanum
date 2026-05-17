@@ -1,13 +1,15 @@
 import { useMemo, useState } from "react";
-import { ActionButton, DialogShell, NumberInput, SelectInput } from "@/components/ui/FormWidgets";
+import { ActionButton, DialogShell, NumberInput } from "@/components/ui/FormWidgets";
 import { useConfigStore } from "@/stores/configStore";
 import { useZoneStore } from "@/stores/zoneStore";
 import { useToastStore } from "@/stores/toastStore";
 import { useFocusTrap } from "@/lib/useFocusTrap";
 import {
+  bandAndDifficultyFromLevelMix,
   inferLevelBand,
+  levelMixFromBandAndDifficulty,
   rebalanceZone,
-  type DifficultyHint,
+  type LevelMix,
   type ZoneRebalanceSummary,
 } from "@/lib/zoneRebalance";
 
@@ -16,10 +18,28 @@ interface RebalanceZoneDialogProps {
   onClose: () => void;
 }
 
-const DIFFICULTY_OPTIONS: Array<{ value: DifficultyHint; label: string }> = [
-  { value: "casual", label: "Casual — standard/elite biased low" },
-  { value: "standard", label: "Standard — even spread" },
-  { value: "challenging", label: "Challenging — standard/elite biased high" },
+interface MixOption {
+  value: LevelMix;
+  label: string;
+  hint: (level: number) => string;
+}
+
+const MIX_OPTIONS: MixOption[] = [
+  {
+    value: "easy",
+    label: "Easy",
+    hint: (n) => `Everything at level ${n}.`,
+  },
+  {
+    value: "medium",
+    label: "Medium",
+    hint: (n) => `Mostly level ${n}, with a level ${n + 1} boss.`,
+  },
+  {
+    value: "hard",
+    label: "Hard",
+    hint: (n) => `Mostly level ${n + 1}, with level ${n} trash.`,
+  },
 ];
 
 export function RebalanceZoneDialog({ zoneId, onClose }: RebalanceZoneDialogProps) {
@@ -30,15 +50,14 @@ export function RebalanceZoneDialog({ zoneId, onClose }: RebalanceZoneDialogProp
   const trapRef = useFocusTrap<HTMLDivElement>(onClose);
 
   const initial = useMemo(() => {
-    if (!zoneState?.data) return { band: { min: 1, max: 5 }, difficulty: "standard" as DifficultyHint };
+    if (!zoneState?.data) return { level: 1, mix: "easy" as LevelMix };
     const band = zoneState.data.levelBand ?? inferLevelBand(zoneState.data);
-    const difficulty: DifficultyHint = zoneState.data.difficultyHint ?? "standard";
-    return { band, difficulty };
+    const difficulty = zoneState.data.difficultyHint ?? "standard";
+    return levelMixFromBandAndDifficulty(band, difficulty);
   }, [zoneState?.data]);
 
-  const [bandMin, setBandMin] = useState(initial.band.min);
-  const [bandMax, setBandMax] = useState(initial.band.max);
-  const [difficulty, setDifficulty] = useState<DifficultyHint>(initial.difficulty);
+  const [level, setLevel] = useState(initial.level);
+  const [mix, setMix] = useState<LevelMix>(initial.mix);
   const [summary, setSummary] = useState<ZoneRebalanceSummary | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -48,10 +67,10 @@ export function RebalanceZoneDialog({ zoneId, onClose }: RebalanceZoneDialogProp
 
   const handleRebalance = () => {
     setError(null);
-    const effectiveMax = Math.max(bandMin, bandMax);
+    const { band, difficulty } = bandAndDifficultyFromLevelMix(level, mix);
     const stagedWorld = {
       ...zoneState.data,
-      levelBand: { min: bandMin, max: effectiveMax },
+      levelBand: band,
       difficultyHint: difficulty,
     };
     try {
@@ -66,6 +85,8 @@ export function RebalanceZoneDialog({ zoneId, onClose }: RebalanceZoneDialogProp
       setError(err instanceof Error ? err.message : String(err));
     }
   };
+
+  const activeOption = MIX_OPTIONS.find((o) => o.value === mix) ?? MIX_OPTIONS[0]!;
 
   return (
     <DialogShell
@@ -94,33 +115,45 @@ export function RebalanceZoneDialog({ zoneId, onClose }: RebalanceZoneDialogProp
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-2 gap-3">
-              <label className="flex flex-col gap-1 text-sm">
-                <span className="text-text-secondary">Level band min</span>
-                <NumberInput
-                  value={bandMin}
-                  onCommit={(v) => setBandMin(Math.max(1, v ?? 1))}
-                  min={1}
-                />
-              </label>
-              <label className="flex flex-col gap-1 text-sm">
-                <span className="text-text-secondary">Level band max</span>
-                <NumberInput
-                  value={bandMax}
-                  onCommit={(v) => setBandMax(Math.max(bandMin, v ?? bandMin))}
-                  min={bandMin}
-                />
-              </label>
-            </div>
-
             <label className="flex flex-col gap-1 text-sm">
-              <span className="text-text-secondary">Difficulty</span>
-              <SelectInput
-                value={difficulty}
-                options={DIFFICULTY_OPTIONS}
-                onCommit={(v) => setDifficulty((v || "standard") as DifficultyHint)}
+              <span className="text-text-secondary">Target level</span>
+              <NumberInput
+                value={level}
+                onCommit={(v) => setLevel(Math.max(1, v ?? 1))}
+                min={1}
               />
+              <span className="text-2xs text-text-muted">
+                The level players are expected to be at when they enter this zone.
+              </span>
             </label>
+
+            <div className="flex flex-col gap-1 text-sm">
+              <span className="text-text-secondary">Mix</span>
+              <div role="radiogroup" aria-label="Difficulty mix" className="flex gap-2">
+                {MIX_OPTIONS.map((opt) => {
+                  const active = opt.value === mix;
+                  return (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      role="radio"
+                      aria-checked={active}
+                      onClick={() => setMix(opt.value)}
+                      className={`flex-1 rounded-md border px-3 py-2 text-xs font-medium transition-colors ${
+                        active
+                          ? "border-accent bg-accent/15 text-accent"
+                          : "border-border-default bg-bg-primary text-text-muted hover:border-border-focus hover:text-text-primary"
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  );
+                })}
+              </div>
+              <span className="text-2xs text-text-muted">
+                {activeOption.hint(Math.max(1, Math.floor(level)))}
+              </span>
+            </div>
           </>
         )}
 

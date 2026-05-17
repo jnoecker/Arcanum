@@ -29,7 +29,13 @@ const FULL_MOCK_CONFIG: AppConfig = {
       WIS: { id: "WIS", displayName: "Wisdom", abbreviation: "WIS", description: "Insight", baseStat: 10 },
     },
     bindings: {
-      meleeDamageStat: "STR", meleeDamageDivisor: 3,
+      meleeDamageStat: "STR",
+      meleeStatMultiplier: 0.25,
+      meleeLevelScalingRate: 1.30,
+      meleeVarianceMin: 0.85,
+      meleeVarianceMax: 1.15,
+      meleeBaseAttackPower: 1,
+      meleeArmorMitigationK: 20,
       dodgeStat: "DEX", dodgePerPoint: 2, maxDodgePercent: 30,
       spellDamageStat: "INT", spellDamageDivisor: 3,
       hpScalingStat: "CON", hpScalingDivisor: 5,
@@ -41,7 +47,7 @@ const FULL_MOCK_CONFIG: AppConfig = {
   },
   abilities: {},
   statusEffects: {},
-  combat: { tickMillis: 2000, minDamage: 1, maxDamage: 150, feedback: { enabled: true, roomBroadcastEnabled: true } },
+  combat: { tickMillis: 2000, feedback: { enabled: true, roomBroadcastEnabled: true } },
   mobTiers: {
     weak: { baseHp: 5, hpScalingRate: 1.1, baseMinDamage: 1, baseMaxDamage: 2, damageScalingRate: 1.1, baseArmor: 0, baseXpReward: 15, xpScalingRate: 1.15, baseGoldMin: 1, baseGoldMax: 3, goldScalingRate: 1.1 },
     standard: { baseHp: 10, hpScalingRate: 1.1, baseMinDamage: 2, baseMaxDamage: 4, damageScalingRate: 1.1, baseArmor: 1, baseXpReward: 30, xpScalingRate: 1.15, baseGoldMin: 3, baseGoldMax: 8, goldScalingRate: 1.1 },
@@ -240,8 +246,8 @@ describe("validation", () => {
 describe("field coverage", () => {
   const allPaths = Object.keys(FIELD_METADATA);
 
-  it("FIELD_METADATA has 141 entries (sanity check)", () => {
-    expect(allPaths).toHaveLength(141);
+  it("FIELD_METADATA has 144 entries (sanity check)", () => {
+    expect(allPaths).toHaveLength(144);
   });
 
   for (const preset of TUNING_PRESETS) {

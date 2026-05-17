@@ -12,7 +12,33 @@ export interface StatDefinition {
 
 export interface StatBindings {
   meleeDamageStat: string;
-  meleeDamageDivisor: number;
+  /**
+   * Multiplicative bonus per stat point above the stat's baseStat. Compounds
+   * with level via the level-scaling rate, so keep this modest.
+   */
+  meleeStatMultiplier: number;
+  /**
+   * Per-level multiplicative growth applied to (attackPower + statBonus).
+   * Mirror this with `progression.rewards.hpScalingRate` so player damage
+   * and player HP track each other across the curve.
+   */
+  meleeLevelScalingRate: number;
+  /** Multiplicative variance band applied to each swing's core damage. */
+  meleeVarianceMin: number;
+  meleeVarianceMax: number;
+  /**
+   * Floor attack power for the basic swing — keeps unarmed damage non-zero
+   * and gives equipped weapons a strictly-better target to clear.
+   * Final attackPower is `meleeBaseAttackPower + equipmentAttack`.
+   */
+  meleeBaseAttackPower: number;
+  /**
+   * Half-mitigation constant for multiplicative armor:
+   *   mitigation = armor / (armor + meleeArmorMitigationK)
+   * At K=20, armor 5 ≈ 20% reduction, armor 20 ≈ 50%. Self-scaling — armor
+   * stays meaningful at every level.
+   */
+  meleeArmorMitigationK: number;
   dodgeStat: string;
   dodgePerPoint: number;
   maxDodgePercent: number;
@@ -28,6 +54,35 @@ export interface StatBindings {
   manaRegenMsPerPoint: number;
   xpBonusStat: string;
   xpBonusPerPoint: number;
+}
+
+/**
+ * A single "school" of attack-shaped damage. Captures the curve and binding
+ * knobs that drive a basic-attack roll. Melee is the only school populated
+ * today; spell damage / heal / utility schools will follow the same shape
+ * when the server reworks ability scaling.
+ */
+export interface DamageSchool {
+  statId: string;
+  statMultiplier: number;
+  levelScalingRate: number;
+  varianceMin: number;
+  varianceMax: number;
+  baseAttackPower: number;
+  mitigationK: number;
+}
+
+/** Pull the melee `DamageSchool` out of the stat bindings. */
+export function extractMeleeSchool(bindings: StatBindings): DamageSchool {
+  return {
+    statId: bindings.meleeDamageStat,
+    statMultiplier: bindings.meleeStatMultiplier,
+    levelScalingRate: bindings.meleeLevelScalingRate,
+    varianceMin: bindings.meleeVarianceMin,
+    varianceMax: bindings.meleeVarianceMax,
+    baseAttackPower: bindings.meleeBaseAttackPower,
+    mitigationK: bindings.meleeArmorMitigationK,
+  };
 }
 
 // ─── Pets / Companions ─────────────────────────────────────────────
@@ -181,8 +236,6 @@ export interface StatusEffectDefinitionConfig {
 export interface CombatConfig {
   maxCombatsPerTick: number;
   tickMillis: number;
-  minDamage: number;
-  maxDamage: number;
   feedback: {
     enabled: boolean;
     roomBroadcastEnabled: boolean;

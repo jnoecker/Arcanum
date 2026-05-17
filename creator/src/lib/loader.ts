@@ -449,7 +449,12 @@ function parseStatsConfig(raw: unknown): AppConfig["stats"] {
     definitions,
     bindings: {
       meleeDamageStat: asString(bindings.meleeDamageStat, "STR"),
-      meleeDamageDivisor: asNumber(bindings.meleeDamageDivisor, 3),
+      meleeStatMultiplier: asNumber(bindings.meleeStatMultiplier, 0.25),
+      meleeLevelScalingRate: asNumber(bindings.meleeLevelScalingRate, 1.30),
+      meleeVarianceMin: asNumber(bindings.meleeVarianceMin, 0.85),
+      meleeVarianceMax: asNumber(bindings.meleeVarianceMax, 1.15),
+      meleeBaseAttackPower: asNumber(bindings.meleeBaseAttackPower, 1),
+      meleeArmorMitigationK: asNumber(bindings.meleeArmorMitigationK, 20),
       dodgeStat: asString(bindings.dodgeStat, "DEX"),
       dodgePerPoint: asNumber(bindings.dodgePerPoint, 2),
       maxDodgePercent: asNumber(bindings.maxDodgePercent, 30),
@@ -475,8 +480,6 @@ function parseCombatConfig(raw: unknown): AppConfig["combat"] {
   return {
     maxCombatsPerTick: asNumber(s.maxCombatsPerTick, 20),
     tickMillis: asNumber(s.tickMillis, 2000),
-    minDamage: asNumber(s.minDamage, 1),
-    maxDamage: asNumber(s.maxDamage, 4),
     feedback: {
       enabled: asBool(feedback.enabled, false),
       roomBroadcastEnabled: asBool(feedback.roomBroadcastEnabled, false),

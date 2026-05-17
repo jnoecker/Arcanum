@@ -16,8 +16,9 @@ import {
   mobAvgGoldAtLevel,
   mobXpRewardAtLevel,
   playerHpAtLevel,
+  playerMeleeDamage,
+  armorMitigation,
   scaledXpReward,
-  statBonus,
   dodgeChance,
 } from "./formulas";
 
@@ -36,35 +37,31 @@ export const TIER_LABELS: Record<TierKey, string> = {
 };
 
 /**
- * Approximation of a level-appropriate player's weapon + class attack.
+ * Flat equipment attack the simulator assumes a level-appropriate player
+ * carries. The server's combat formula multiplies (baseAttackPower +
+ * equipAttack + statBonus) by `meleeLevelScalingRate^(level-1)` — so this
+ * value is a *flat* level-1 weapon attack (think: starter sword), and the
+ * level scaling lives entirely in the combat formula.
  *
- * The server formula is `playerRoll + playerAttack + playerStrBonus` where
- * `playerAttack` comes from equipped items and class bonuses. The simulator
- * doesn't have a specific loadout to draw from, so we model a typical player
- * in level-appropriate gear. Without this term the simulator would produce
- * results for a "naked, classless" player, which makes archetype contracts
- * unrealistic whenever `combat.maxDamage` is set to a sensible value.
- *
- * Scales at the 1.1×/level combat rate off a level-1 sword swing of ~30
- * damage (see docs/DERIVED_STATS.md "Aardwolf L1 anchor"). At L30 this lands
- * near ~475, matching the weapon-damage ceiling derived from the same rate.
+ * Without this term the simulator runs with unarmed-only attackPower,
+ * which under-represents what a player at any realistic point in the
+ * progression actually swings.
  */
-function expectedGearAttack(playerLevel: number): number {
-  const lv = Math.max(1, playerLevel);
-  return Math.round(30 * Math.pow(1.1, lv - 1));
-}
+const ASSUMED_LEVEL_APPROPRIATE_EQUIP_ATTACK = 5;
 
-/** Combat config damage band average, plus the server's melee stat bonus and an assumed gear term. */
+/** Pre-armor average swing for a level-appropriate player. */
 function playerBaseDamage(
   config: AppConfig,
   meleeStatValue: number,
   playerLevel: number,
 ): number {
-  const { minDamage, maxDamage } = config.combat;
-  const base = (minDamage + maxDamage) / 2;
-  const bonus = statBonus(meleeStatValue, config.stats.bindings.meleeDamageDivisor);
-  const gear = expectedGearAttack(playerLevel);
-  return Math.max(1, base + bonus + gear);
+  return playerMeleeDamage(
+    config.stats.bindings,
+    playerLevel,
+    ASSUMED_LEVEL_APPROPRIATE_EQUIP_ATTACK,
+    meleeStatValue,
+    0,
+  ).avg;
 }
 
 // ─── 1. Combat Encounter ───────────────────────────────────────────
@@ -123,10 +120,16 @@ export function simulateEncounter(
     config.stats.bindings.hpScalingDivisor,
   );
 
+  const mitigationK = config.stats.bindings.meleeArmorMitigationK;
   const playerDmgRaw = playerBaseDamage(config, baseStat, playerLevel);
-  const playerDmgPerRound = Math.max(1, playerDmgRaw - tier.baseArmor);
+  const mobMitigation = armorMitigation(tier.baseArmor, mitigationK);
+  const playerDmgPerRound = Math.max(1, playerDmgRaw * (1 - mobMitigation));
 
   const dodgePct = dodgeChance(baseStat, config.stats.bindings);
+  // Mob attacks don't have an authored "player armor" term in the simulator's
+  // inputs yet, so we model mob damage with dodge only — equipment-armor
+  // mitigation lives in `playerMeleeDamage`'s mirror call for the mob side
+  // when we wire it up. For now: mobDmg * (1 - dodge%).
   const mobDmgPerRound = mobDmg * (1 - dodgePct / 100);
 
   const turnsToKill = Math.max(1, Math.ceil(mobHp / playerDmgPerRound));

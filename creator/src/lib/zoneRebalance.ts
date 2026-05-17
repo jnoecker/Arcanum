@@ -35,6 +35,57 @@ export type MobClassification = "trash" | "named" | "non-combat";
 
 export type DifficultyHint = "casual" | "standard" | "challenging";
 
+/**
+ * User-facing difficulty model. The wizard UI thinks in terms of a single
+ * `(targetLevel, mix)` pair; storage still uses `levelBand` + `difficultyHint`
+ * so the deterministic math is unchanged.
+ *
+ *   easy   — all mobs at level N (homogeneous)
+ *   medium — mostly N, the boss at N+1
+ *   hard   — mostly N+1, weak mobs left at N
+ */
+export type LevelMix = "easy" | "medium" | "hard";
+
+export interface LevelMixSelection {
+  level: number;
+  mix: LevelMix;
+}
+
+/** Convert a user-facing (level, mix) pair into the stored band + difficulty. */
+export function bandAndDifficultyFromLevelMix(
+  level: number,
+  mix: LevelMix,
+): { band: { min: number; max: number }; difficulty: DifficultyHint } {
+  const n = Math.max(1, Math.floor(level));
+  switch (mix) {
+    case "easy":
+      return { band: { min: n, max: n }, difficulty: "standard" };
+    case "medium":
+      return { band: { min: n, max: n + 1 }, difficulty: "casual" };
+    case "hard":
+      return { band: { min: n, max: n + 1 }, difficulty: "challenging" };
+  }
+}
+
+/**
+ * Read an existing zone's stored band + difficulty back into the user-facing
+ * model. Wider bands (>= 3 levels) don't fit cleanly; we collapse them to
+ * `easy` at the floor and let the user re-pick.
+ */
+export function levelMixFromBandAndDifficulty(
+  band: { min: number; max: number },
+  difficulty: DifficultyHint,
+): LevelMixSelection {
+  const min = Math.max(1, band.min);
+  const max = Math.max(min, band.max);
+  const spread = max - min;
+  if (spread <= 0) return { level: min, mix: "easy" };
+  if (spread === 1) {
+    return { level: min, mix: difficulty === "challenging" ? "hard" : "medium" };
+  }
+  return { level: min, mix: "easy" };
+}
+
 export interface ZoneRebalanceSummary {
   band: { min: number; max: number };
   difficulty: DifficultyHint;
@@ -71,7 +122,7 @@ export function targetLevelForTier(
   const clamp = (value: number) => Math.max(min, Math.min(max, value));
   switch (tier) {
     case "weak":
-      return difficultyHint === "challenging" ? clamp(min + 1) : min;
+      return min;
     case "elite":
       return clamp(Math.max(min, max - 1) + offset);
     case "boss":
@@ -243,7 +294,6 @@ export function restatItem(
   const archetype: ItemArchetype = item.archetype ?? inferArchetypeFromSlot(item.slot);
   const derived = deriveItemStats({
     slot: item.slot,
-    level,
     tier,
     archetype,
     primaryStat: item.primaryStat,

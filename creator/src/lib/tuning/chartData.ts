@@ -124,8 +124,8 @@ export function buildStatRadarData(
   return [
     {
       stat: "Melee Dmg",
-      current: 1 / currentBindings.meleeDamageDivisor,
-      preset: 1 / presetBindings.meleeDamageDivisor,
+      current: currentBindings.meleeStatMultiplier,
+      preset: presetBindings.meleeStatMultiplier,
     },
     {
       stat: "Spell Dmg",

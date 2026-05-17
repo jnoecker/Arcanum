@@ -1,7 +1,9 @@
 import { describe, it, expect } from "vitest";
 import {
+  bandAndDifficultyFromLevelMix,
   classifyMob,
   inferLevelBand,
+  levelMixFromBandAndDifficulty,
   rebalanceZone,
   restatItem,
   restatMob,
@@ -71,6 +73,88 @@ describe("targetLevelForTier", () => {
     expect(targetLevelForTier("standard", band, "challenging")).toBe(6);
     expect(targetLevelForTier("elite", band, "casual")).toBe(5);
     expect(targetLevelForTier("elite", band, "challenging")).toBe(7);
+  });
+
+  it("keeps weak at the floor regardless of difficulty", () => {
+    const band = { min: 3, max: 7 };
+    expect(targetLevelForTier("weak", band, "casual")).toBe(3);
+    expect(targetLevelForTier("weak", band, "standard")).toBe(3);
+    expect(targetLevelForTier("weak", band, "challenging")).toBe(3);
+  });
+});
+
+describe("bandAndDifficultyFromLevelMix", () => {
+  it("easy → flat band at N, standard difficulty", () => {
+    expect(bandAndDifficultyFromLevelMix(5, "easy")).toEqual({
+      band: { min: 5, max: 5 },
+      difficulty: "standard",
+    });
+  });
+
+  it("medium → {N, N+1} casual: everything at N except the boss at N+1", () => {
+    const { band, difficulty } = bandAndDifficultyFromLevelMix(5, "medium");
+    expect(band).toEqual({ min: 5, max: 6 });
+    expect(difficulty).toBe("casual");
+    expect(targetLevelForTier("weak", band, difficulty)).toBe(5);
+    expect(targetLevelForTier("standard", band, difficulty)).toBe(5);
+    expect(targetLevelForTier("elite", band, difficulty)).toBe(5);
+    expect(targetLevelForTier("boss", band, difficulty)).toBe(6);
+  });
+
+  it("hard → {N, N+1} challenging: weak at N, everything else at N+1", () => {
+    const { band, difficulty } = bandAndDifficultyFromLevelMix(5, "hard");
+    expect(band).toEqual({ min: 5, max: 6 });
+    expect(difficulty).toBe("challenging");
+    expect(targetLevelForTier("weak", band, difficulty)).toBe(5);
+    expect(targetLevelForTier("standard", band, difficulty)).toBe(6);
+    expect(targetLevelForTier("elite", band, difficulty)).toBe(6);
+    expect(targetLevelForTier("boss", band, difficulty)).toBe(6);
+  });
+
+  it("clamps non-positive levels to 1", () => {
+    expect(bandAndDifficultyFromLevelMix(0, "easy").band).toEqual({ min: 1, max: 1 });
+    expect(bandAndDifficultyFromLevelMix(-5, "medium").band).toEqual({ min: 1, max: 2 });
+  });
+});
+
+describe("levelMixFromBandAndDifficulty", () => {
+  it("flat band → easy at the floor", () => {
+    expect(levelMixFromBandAndDifficulty({ min: 5, max: 5 }, "standard")).toEqual({
+      level: 5,
+      mix: "easy",
+    });
+  });
+
+  it("2-level band + casual/standard → medium", () => {
+    expect(levelMixFromBandAndDifficulty({ min: 4, max: 5 }, "casual")).toEqual({
+      level: 4,
+      mix: "medium",
+    });
+    expect(levelMixFromBandAndDifficulty({ min: 4, max: 5 }, "standard")).toEqual({
+      level: 4,
+      mix: "medium",
+    });
+  });
+
+  it("2-level band + challenging → hard", () => {
+    expect(levelMixFromBandAndDifficulty({ min: 4, max: 5 }, "challenging")).toEqual({
+      level: 4,
+      mix: "hard",
+    });
+  });
+
+  it("wide bands collapse to easy at the floor", () => {
+    expect(levelMixFromBandAndDifficulty({ min: 3, max: 8 }, "standard")).toEqual({
+      level: 3,
+      mix: "easy",
+    });
+  });
+
+  it("round-trips through bandAndDifficultyFromLevelMix", () => {
+    for (const mix of ["easy", "medium", "hard"] as const) {
+      const { band, difficulty } = bandAndDifficultyFromLevelMix(7, mix);
+      expect(levelMixFromBandAndDifficulty(band, difficulty)).toEqual({ level: 7, mix });
+    }
   });
 });
 

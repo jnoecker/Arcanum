@@ -129,8 +129,8 @@ export function buildStatRadarData(
     },
     {
       stat: "Spell Dmg",
-      current: 1 / currentBindings.spellDamageDivisor,
-      preset: 1 / presetBindings.spellDamageDivisor,
+      current: currentBindings.spellStatMultiplier,
+      preset: presetBindings.spellStatMultiplier,
     },
     {
       stat: "HP Scaling",

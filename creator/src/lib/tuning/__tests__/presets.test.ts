@@ -27,6 +27,7 @@ const FULL_MOCK_CONFIG: AppConfig = {
       CON: { id: "CON", displayName: "Constitution", abbreviation: "CON", description: "Endurance", baseStat: 10 },
       INT: { id: "INT", displayName: "Intelligence", abbreviation: "INT", description: "Magic", baseStat: 10 },
       WIS: { id: "WIS", displayName: "Wisdom", abbreviation: "WIS", description: "Insight", baseStat: 10 },
+      CHA: { id: "CHA", displayName: "Charisma", abbreviation: "CHA", description: "Presence", baseStat: 10 },
     },
     bindings: {
       meleeDamageStat: "STR",
@@ -37,7 +38,12 @@ const FULL_MOCK_CONFIG: AppConfig = {
       meleeBaseAttackPower: 1,
       meleeArmorMitigationK: 20,
       dodgeStat: "DEX", dodgePerPoint: 2, maxDodgePercent: 30,
-      spellDamageStat: "INT", spellDamageDivisor: 3,
+      spellDamageStat: "INT",
+      spellStatMultiplier: 0.25, spellLevelScalingRate: 1.30,
+      spellVarianceMin: 0.85, spellVarianceMax: 1.15,
+      healStat: "WIS", healStatMultiplier: 0.25, healLevelScalingRate: 1.30,
+      healVarianceMin: 0.85, healVarianceMax: 1.15,
+      buffStat: "CHA", buffDurationPerStat: 0.02, buffMagnitudePerStat: 0.02,
       hpScalingStat: "CON", hpScalingDivisor: 5,
       manaScalingStat: "INT", manaScalingDivisor: 5,
       hpRegenStat: "CON", hpRegenMsPerPoint: 200,
@@ -246,8 +252,8 @@ describe("validation", () => {
 describe("field coverage", () => {
   const allPaths = Object.keys(FIELD_METADATA);
 
-  it("FIELD_METADATA has 144 entries (sanity check)", () => {
-    expect(allPaths).toHaveLength(144);
+  it("FIELD_METADATA has 155 entries (sanity check)", () => {
+    expect(allPaths).toHaveLength(155);
   });
 
   for (const preset of TUNING_PRESETS) {

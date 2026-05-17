@@ -56,7 +56,19 @@ const MOCK_BINDINGS: StatBindings = {
   meleeBaseAttackPower: 1,
   meleeArmorMitigationK: 20,
   dodgeStat: "dex", dodgePerPoint: 2.5, maxDodgePercent: 30,
-  spellDamageStat: "int", spellDamageDivisor: 3,
+  spellDamageStat: "int",
+  spellStatMultiplier: 0.25,
+  spellLevelScalingRate: 1.30,
+  spellVarianceMin: 0.85,
+  spellVarianceMax: 1.15,
+  healStat: "wis",
+  healStatMultiplier: 0.25,
+  healLevelScalingRate: 1.30,
+  healVarianceMin: 0.85,
+  healVarianceMax: 1.15,
+  buffStat: "cha",
+  buffDurationPerStat: 0.02,
+  buffMagnitudePerStat: 0.02,
   hpScalingStat: "con", hpScalingDivisor: 5,
   manaScalingStat: "int", manaScalingDivisor: 6,
   hpRegenStat: "con", hpRegenMsPerPoint: 200,
@@ -205,12 +217,12 @@ describe("buildStatRadarData", () => {
     ]);
   });
 
-  it("melee uses statMultiplier directly; divisor fields are inverted (1/divisor)", () => {
+  it("melee + spell use statMultiplier directly; HP/mana divisors inverted (1/divisor)", () => {
     const data = buildStatRadarData(MOCK_BINDINGS, MOCK_BINDINGS);
     // meleeStatMultiplier=0.25 — used as-is
     expect(data[0]!.current).toBe(0.25);
-    // spellDamageDivisor=3, so result should be 1/3
-    expect(data[1]!.current).toBeCloseTo(1 / 3);
+    // spellStatMultiplier=0.25 — used as-is
+    expect(data[1]!.current).toBe(0.25);
     // hpScalingDivisor=5
     expect(data[2]!.current).toBe(1 / 5);
     // manaScalingDivisor=6

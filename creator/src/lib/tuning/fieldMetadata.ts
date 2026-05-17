@@ -465,13 +465,93 @@ export const FIELD_METADATA: Record<string, FieldMeta> = {
     impact: "high",
     interactionNote: "Hard cap on avoidance -- prevents full dodge builds from being unkillable",
   },
-  "stats.bindings.spellDamageDivisor": {
-    label: "Spell Damage Divisor",
-    description: "Stat points divided by this value gives spell damage bonus",
+  "stats.bindings.spellStatMultiplier": {
+    label: "Spell Stat Multiplier",
+    description:
+      "Multiplicative bonus per stat point above baseStat for spell damage. Mirror of meleeStatMultiplier — keep modest (~0.25) so caster stat allocation stays meaningful without dominating.",
+    section: TuningSection.CombatStats,
+    min: 0,
+    impact: "high",
+    interactionNote:
+      "Compounds with level via spellLevelScalingRate. Tune in lockstep with meleeStatMultiplier so casters and fighters scale on par.",
+  },
+  "stats.bindings.spellLevelScalingRate": {
+    label: "Spell Level Scaling Rate",
+    description:
+      "Per-level multiplicative growth applied to (anchor + statBonus) for spells. Anchor is the ability's authored damage midpoint. Should track meleeLevelScalingRate and progression.rewards.hpScalingRate.",
     section: TuningSection.CombatStats,
     min: 1,
     impact: "high",
-    interactionNote: "Lower divisor = more spell damage per stat point. Core caster scaling.",
+    interactionNote:
+      "Spells bypass armor — same rate as melee makes physical and magical damage track each other across the curve.",
+  },
+  "stats.bindings.spellVarianceMin": {
+    label: "Spell Variance Min",
+    description: "Lower bound of the per-cast variance band.",
+    section: TuningSection.CombatStats,
+    min: 0,
+    impact: "medium",
+  },
+  "stats.bindings.spellVarianceMax": {
+    label: "Spell Variance Max",
+    description: "Upper bound of the per-cast variance band.",
+    section: TuningSection.CombatStats,
+    min: 1,
+    impact: "medium",
+  },
+  "stats.bindings.healStat": {
+    label: "Heal Stat",
+    description: "Stat that scales healing output. Defaults to WIS so healers don't compete with INT casters.",
+    section: TuningSection.CombatStats,
+    impact: "high",
+  },
+  "stats.bindings.healStatMultiplier": {
+    label: "Heal Stat Multiplier",
+    description: "Multiplicative bonus per stat point above baseStat for healing. Mirror of meleeStatMultiplier.",
+    section: TuningSection.CombatStats,
+    min: 0,
+    impact: "high",
+  },
+  "stats.bindings.healLevelScalingRate": {
+    label: "Heal Level Scaling Rate",
+    description: "Per-level multiplicative growth applied to heal output. Should track meleeLevelScalingRate so healing keeps pace with incoming damage.",
+    section: TuningSection.CombatStats,
+    min: 1,
+    impact: "high",
+  },
+  "stats.bindings.healVarianceMin": {
+    label: "Heal Variance Min",
+    description: "Lower bound of the per-cast heal variance band.",
+    section: TuningSection.CombatStats,
+    min: 0,
+    impact: "medium",
+  },
+  "stats.bindings.healVarianceMax": {
+    label: "Heal Variance Max",
+    description: "Upper bound of the per-cast heal variance band.",
+    section: TuningSection.CombatStats,
+    min: 1,
+    impact: "medium",
+  },
+  "stats.bindings.buffStat": {
+    label: "Buff Stat (reserved)",
+    description: "Stat that will scale buff duration / magnitude for support classes (bard, herald). Reserved — the server does not yet apply this lane to ApplyStatus effects.",
+    section: TuningSection.CombatStats,
+    impact: "low",
+  },
+  "stats.bindings.buffDurationPerStat": {
+    label: "Buff Duration / Stat (reserved)",
+    description: "Reserved fractional bonus to buff duration per buffStat point above baseStat. Not yet wired into ApplyStatus.",
+    section: TuningSection.CombatStats,
+    min: 0,
+    impact: "low",
+  },
+  "stats.bindings.buffMagnitudePerStat": {
+    label: "Buff Magnitude / Stat (reserved)",
+    description: "Reserved fractional bonus to buff magnitude per buffStat point above baseStat. Not yet wired into ApplyStatus.",
+    section: TuningSection.CombatStats,
+    min: 0,
+    impact: "low",
   },
   "stats.bindings.hpScalingDivisor": {
     label: "HP Scaling Divisor",

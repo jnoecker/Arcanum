@@ -548,14 +548,6 @@ function CombatEffectCard({
                 dense
               />
             </FieldLabel>
-            <FieldLabel label="Damage / Lvl">
-              <NumberInput
-                value={ability.effect.damagePerLevel ?? 0}
-                onCommit={(v) => onPatchEffect({ damagePerLevel: v ?? 0 })}
-                min={0}
-                dense
-              />
-            </FieldLabel>
             <FieldLabel
               label="Legacy"
               hint="Used when min/max are 0."
@@ -584,14 +576,6 @@ function CombatEffectCard({
               <NumberInput
                 value={ability.effect.maxHeal ?? 0}
                 onCommit={(v) => onPatchEffect({ maxHeal: v ?? 0 })}
-                min={0}
-                dense
-              />
-            </FieldLabel>
-            <FieldLabel label="Heal / Lvl">
-              <NumberInput
-                value={ability.effect.healPerLevel ?? 0}
-                onCommit={(v) => onPatchEffect({ healPerLevel: v ?? 0 })}
                 min={0}
                 dense
               />

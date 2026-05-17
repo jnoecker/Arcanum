@@ -36,28 +36,6 @@ export function CombatPanel({ config, onChange }: ConfigPanelProps) {
       </Section>
 
       <Section
-        title="Base Damage"
-        description="Unarmed/base damage range before stat bonuses, equipment, and abilities are applied. This is the floor for all combat damage calculations."
-      >
-        <div className="flex flex-col gap-1.5">
-          <FieldRow label="Min Damage" hint="Minimum base damage per hit. Even with bad rolls, players deal at least this much. Set to 0 for potential misses, 1+ to guarantee some damage.">
-            <NumberInput
-              value={c.minDamage}
-              onCommit={(v) => patch({ minDamage: v ?? 1 })}
-              min={0}
-            />
-          </FieldRow>
-          <FieldRow label="Max Damage" hint="Maximum base damage per hit. The gap between min and max creates variance — a wider range feels more unpredictable. Suggested: 3-6 for low-level content.">
-            <NumberInput
-              value={c.maxDamage}
-              onCommit={(v) => patch({ maxDamage: v ?? 4 })}
-              min={0}
-            />
-          </FieldRow>
-        </div>
-      </Section>
-
-      <Section
         title="Feedback"
         description="Combat feedback shows damage numbers and hit/miss messages to players. Room broadcast lets bystanders see fights happening around them, adding immersion."
       >

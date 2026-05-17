@@ -112,7 +112,6 @@ export function ItemEditor({
     if (item.level == null || !item.tier || !item.archetype || !item.slot) return null;
     return deriveItemStats({
       slot: item.slot,
-      level: item.level,
       tier: item.tier as ItemTier,
       archetype: item.archetype as ItemArchetype,
       primaryStat: item.primaryStat,

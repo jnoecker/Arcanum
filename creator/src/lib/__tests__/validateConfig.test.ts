@@ -50,7 +50,12 @@ const BASE_CONFIG: AppConfig = {
     },
     bindings: {
       meleeDamageStat: "STR",
-      meleeDamageDivisor: 3,
+      meleeStatMultiplier: 0.25,
+      meleeLevelScalingRate: 1.30,
+      meleeVarianceMin: 0.85,
+      meleeVarianceMax: 1.15,
+      meleeBaseAttackPower: 1,
+      meleeArmorMitigationK: 20,
       dodgeStat: "DEX",
       dodgePerPoint: 2,
       maxDodgePercent: 30,
@@ -73,8 +78,6 @@ const BASE_CONFIG: AppConfig = {
   combat: {
     maxCombatsPerTick: 20,
     tickMillis: 2000,
-    minDamage: 1,
-    maxDamage: 4,
     feedback: { enabled: false, roomBroadcastEnabled: false },
   },
   mobTiers: {
@@ -412,15 +415,46 @@ describe("validateConfig", () => {
     );
   });
 
-  // ─── Combat ─────────────────────────────────────────────────
-  it("warns when min damage exceeds max damage", () => {
+  // ─── Stat bindings (melee combat formula) ──────────────────────
+  it("errors when meleeStatMultiplier is negative", () => {
     const cfg = {
       ...BASE_CONFIG,
-      combat: { ...BASE_CONFIG.combat, minDamage: 10, maxDamage: 3 },
+      stats: {
+        ...BASE_CONFIG.stats,
+        bindings: { ...BASE_CONFIG.stats.bindings, meleeStatMultiplier: -0.1 },
+      },
     };
     const issues = validateConfig(cfg);
     expect(issues).toContainEqual(
-      expect.objectContaining({ entity: "combat", severity: "warning" }),
+      expect.objectContaining({ entity: "stats.bindings", severity: "error" }),
+    );
+  });
+
+  it("errors when meleeLevelScalingRate is below 1.0", () => {
+    const cfg = {
+      ...BASE_CONFIG,
+      stats: {
+        ...BASE_CONFIG.stats,
+        bindings: { ...BASE_CONFIG.stats.bindings, meleeLevelScalingRate: 0.9 },
+      },
+    };
+    const issues = validateConfig(cfg);
+    expect(issues).toContainEqual(
+      expect.objectContaining({ entity: "stats.bindings", severity: "error" }),
+    );
+  });
+
+  it("errors when meleeArmorMitigationK is zero or negative", () => {
+    const cfg = {
+      ...BASE_CONFIG,
+      stats: {
+        ...BASE_CONFIG.stats,
+        bindings: { ...BASE_CONFIG.stats.bindings, meleeArmorMitigationK: 0 },
+      },
+    };
+    const issues = validateConfig(cfg);
+    expect(issues).toContainEqual(
+      expect.objectContaining({ entity: "stats.bindings", severity: "error" }),
     );
   });
 

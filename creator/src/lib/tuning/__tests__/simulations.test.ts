@@ -27,8 +27,6 @@ const MOCK_CONFIG = {
   combat: {
     maxCombatsPerTick: 10,
     tickMillis: 1000,
-    minDamage: 2,
-    maxDamage: 4,
     feedback: { enabled: true, roomBroadcastEnabled: true },
   },
   mobTiers: {
@@ -60,7 +58,13 @@ const MOCK_CONFIG = {
   stats: {
     definitions: {},
     bindings: {
-      meleeDamageStat: "str", meleeDamageDivisor: 3,
+      meleeDamageStat: "str",
+      meleeStatMultiplier: 0.25,
+      meleeLevelScalingRate: 1.30,
+      meleeVarianceMin: 0.85,
+      meleeVarianceMax: 1.15,
+      meleeBaseAttackPower: 1,
+      meleeArmorMitigationK: 20,
       dodgeStat: "dex", dodgePerPoint: 0.5, maxDodgePercent: 30,
       spellDamageStat: "int", spellDamageDivisor: 3,
       hpScalingStat: "con", hpScalingDivisor: 5,

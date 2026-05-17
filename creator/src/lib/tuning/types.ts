@@ -41,7 +41,8 @@ export interface MetricSnapshot {
   mobHp: Record<string, Record<number, number>>;
   mobDamageAvg: Record<string, Record<number, number>>;
   mobGoldAvg: Record<string, Record<number, number>>;
-  playerDamageBonus: Record<number, number>;
+  /** Baseline (unarmed, base stat, 0 armor) melee swing average per level. */
+  playerMeleeAvgDamage: Record<number, number>;
   playerHp: Record<number, number>;
   dodgeChance: Record<number, number>;
   regenInterval: Record<number, number>;

@@ -14,7 +14,7 @@ function makeMetrics(overrides: Partial<MetricSnapshot> = {}): MetricSnapshot {
     mobHp: { standard: { 10: 52 } },
     mobDamageAvg: { standard: { 10: 13 } },
     mobGoldAvg: { standard: { 10: 25.5 } },
-    playerDamageBonus: { 10: 3 },
+    playerMeleeAvgDamage: { 10: 3 },
     playerHp: { 10: 60 },
     dodgeChance: { 10: 20 },
     regenInterval: { 10: 3000 },
@@ -139,16 +139,23 @@ function makeConfig(overrides: {
   regenAmount?: number;
   regenInterval?: number;
   weakBaseHp?: number;
+  weakBaseArmor?: number;
   weakDmgMin?: number;
   weakDmgMax?: number;
   stdDmgMin?: number;
   stdDmgMax?: number;
   mobDelayMin?: number;
   mobDelayMax?: number;
-  playerMinDmg?: number;
-  playerMaxDmg?: number;
+  /** Unarmed level-1 swing = meleeBaseAttackPower × varianceMid. */
+  meleeBaseAttackPower?: number;
+  meleeLevelScalingRate?: number;
+  meleeVarianceMin?: number;
+  meleeVarianceMax?: number;
+  meleeArmorMitigationK?: number;
   tickMillis?: number;
   baseHp?: number;
+  /** Player HP scaling rate — paired with melee level scaling rate for symmetry check. */
+  hpScalingRate?: number;
 } = {}): AppConfig {
   return ({
     regen: {
@@ -156,13 +163,22 @@ function makeConfig(overrides: {
       baseIntervalMillis: overrides.regenInterval ?? 4000,
     },
     combat: {
-      minDamage: overrides.playerMinDmg ?? 5,
-      maxDamage: overrides.playerMaxDmg ?? 12,
       tickMillis: overrides.tickMillis ?? 2000,
+    },
+    stats: {
+      bindings: {
+        meleeBaseAttackPower: overrides.meleeBaseAttackPower ?? 1,
+        meleeLevelScalingRate: overrides.meleeLevelScalingRate ?? 1.30,
+        meleeVarianceMin: overrides.meleeVarianceMin ?? 0.85,
+        meleeVarianceMax: overrides.meleeVarianceMax ?? 1.15,
+        meleeArmorMitigationK: overrides.meleeArmorMitigationK ?? 20,
+        meleeStatMultiplier: 0.25,
+      },
     },
     mobTiers: {
       weak: {
-        baseHp: overrides.weakBaseHp ?? 36,
+        baseHp: overrides.weakBaseHp ?? 8,
+        baseArmor: overrides.weakBaseArmor ?? 0,
         baseMinDamage: overrides.weakDmgMin ?? 1,
         baseMaxDamage: overrides.weakDmgMax ?? 3,
       },
@@ -176,7 +192,10 @@ function makeConfig(overrides: {
       maxActionDelayMillis: overrides.mobDelayMax ?? 8000,
     },
     progression: {
-      rewards: { baseHp: overrides.baseHp ?? 150 },
+      rewards: {
+        baseHp: overrides.baseHp ?? 150,
+        hpScalingRate: overrides.hpScalingRate ?? 1.30,
+      },
     },
   } as unknown) as AppConfig;
 }
@@ -204,19 +223,41 @@ describe("checkAbsoluteHealth", () => {
   });
 
   it("warns when weak-tier TTK exceeds 30s", () => {
-    // 150 HP weak / 8.5 avg dmg × 2s tick = ~35s
+    // 150 HP weak / 1 avg unarmed dmg × 2s tick = 300s
     const result = checkAbsoluteHealth(
-      makeConfig({ weakBaseHp: 150, playerMinDmg: 5, playerMaxDmg: 12 }),
+      makeConfig({ weakBaseHp: 150, meleeBaseAttackPower: 1 }),
     );
     expect(result.some((w) => /grindy/.test(w.message))).toBe(true);
   });
 
   it("hints when weak-tier TTK is under 2s", () => {
-    // 4 HP weak / 8.5 avg dmg × 2s tick = ~0.9s
+    // 4 HP weak / 5 avg dmg × 2s tick = ~1.6s
     const result = checkAbsoluteHealth(
-      makeConfig({ weakBaseHp: 4, playerMinDmg: 5, playerMaxDmg: 12 }),
+      makeConfig({ weakBaseHp: 4, meleeBaseAttackPower: 5 }),
     );
     expect(result.some((w) => /too quick/.test(w.message) && w.severity === "info")).toBe(true);
+  });
+
+  it("warns when melee level scaling and HP scaling diverge", () => {
+    const result = checkAbsoluteHealth(
+      makeConfig({ meleeLevelScalingRate: 1.30, hpScalingRate: 1.10 }),
+    );
+    expect(
+      result.some((w) =>
+        /Melee level scaling.*player HP scaling.*diverge/.test(w.message),
+      ),
+    ).toBe(true);
+  });
+
+  it("does not warn when melee and HP rates are within 0.05 of each other", () => {
+    const result = checkAbsoluteHealth(
+      makeConfig({ meleeLevelScalingRate: 1.30, hpScalingRate: 1.32 }),
+    );
+    expect(
+      result.some((w) =>
+        /Melee level scaling.*player HP scaling.*diverge/.test(w.message),
+      ),
+    ).toBe(false);
   });
 
   it("hints when out-of-combat recovery exceeds 10 minutes", () => {

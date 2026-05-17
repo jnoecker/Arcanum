@@ -20,7 +20,12 @@ const BASE_CONFIG: AppConfig = {
     },
     bindings: {
       meleeDamageStat: "STR",
-      meleeDamageDivisor: 3,
+      meleeStatMultiplier: 0.25,
+      meleeLevelScalingRate: 1.30,
+      meleeVarianceMin: 0.85,
+      meleeVarianceMax: 1.15,
+      meleeBaseAttackPower: 1,
+      meleeArmorMitigationK: 20,
       dodgeStat: "DEX",
       dodgePerPoint: 2,
       maxDodgePercent: 30,
@@ -43,8 +48,6 @@ const BASE_CONFIG: AppConfig = {
   combat: {
     maxCombatsPerTick: 20,
     tickMillis: 2000,
-    minDamage: 1,
-    maxDamage: 4,
     feedback: { enabled: false, roomBroadcastEnabled: false },
   },
   mobTiers: {

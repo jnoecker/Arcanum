@@ -4,10 +4,38 @@ import { buildToneDirective } from "@/lib/loreGeneration";
 import { sanitizeLabel, inferDirection } from "@/lib/sketchToZone";
 import { LoreEditor } from "./lore/LoreEditor";
 import { SketchCanvas } from "./SketchCanvas";
+import { NumberInput } from "@/components/ui/FormWidgets";
 import { AI_ENABLED } from "@/lib/featureFlags";
+import type { LevelMix } from "@/lib/zoneRebalance";
 import type { WorldFile } from "@/types/world";
 import type { SketchParseResult } from "@/types/sketch";
 import type { FixedLayout, FixedLayoutRoom } from "@/lib/generateZoneContent";
+
+// ─── Level/mix options ──────────────────────────────────────────────
+
+interface LevelMixOption {
+  value: LevelMix;
+  label: string;
+  hint: (level: number) => string;
+}
+
+export const LEVEL_MIX_OPTIONS: LevelMixOption[] = [
+  {
+    value: "easy",
+    label: "Easy",
+    hint: (n) => `Everything at level ${n}.`,
+  },
+  {
+    value: "medium",
+    label: "Medium",
+    hint: (n) => `Mostly level ${n}, with a level ${n + 1} boss.`,
+  },
+  {
+    value: "hard",
+    label: "Hard",
+    hint: (n) => `Mostly level ${n + 1}, with level ${n} trash.`,
+  },
+];
 
 // ─── Constants ──────────────────────────────────────────────────────
 
@@ -423,6 +451,10 @@ export interface LayoutStepProps {
   target: "new" | "existing";
   size: SizePresetId;
   setSize: (s: SizePresetId) => void;
+  level: number;
+  setLevel: (n: number) => void;
+  mix: LevelMix;
+  setMix: (m: LevelMix) => void;
   sketchMode: "none" | "photo" | "draw";
   setSketchMode: (m: "none" | "photo" | "draw") => void;
   sketchParse: SketchParseResult | null;
@@ -437,6 +469,10 @@ export function LayoutStep({
   target,
   size,
   setSize,
+  level,
+  setLevel,
+  mix,
+  setMix,
   sketchMode,
   setSketchMode,
   sketchParse,
@@ -446,8 +482,56 @@ export function LayoutStep({
   clearSketch,
 }: LayoutStepProps) {
   const hasSketch = !!sketchParse;
+  const activeMix =
+    LEVEL_MIX_OPTIONS.find((o) => o.value === mix) ?? LEVEL_MIX_OPTIONS[0]!;
+  const safeLevel = Math.max(1, Math.floor(level));
   return (
     <div className="flex flex-col gap-5">
+      {/* Difficulty (target level + mix) — only when creating, not extending */}
+      {target === "new" && (
+        <div className="flex flex-col gap-2">
+          <label className="block text-2xs uppercase tracking-wider text-text-muted">
+            Difficulty
+          </label>
+          <div className="flex items-end gap-3">
+            <label className="flex w-24 flex-col gap-1 text-2xs text-text-muted">
+              Target level
+              <NumberInput
+                value={level}
+                onCommit={(v) => setLevel(Math.max(1, v ?? 1))}
+                min={1}
+              />
+            </label>
+            <div
+              role="radiogroup"
+              aria-label="Difficulty mix"
+              className="flex flex-1 gap-2"
+            >
+              {LEVEL_MIX_OPTIONS.map((opt) => {
+                const active = opt.value === mix;
+                return (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    role="radio"
+                    aria-checked={active}
+                    onClick={() => setMix(opt.value)}
+                    className={`flex-1 rounded-md border px-3 py-2 text-xs font-medium transition-colors ${
+                      active
+                        ? "border-accent bg-accent/15 text-accent"
+                        : "border-border-default bg-bg-primary text-text-muted hover:border-border-focus hover:text-text-primary"
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+          <p className="text-2xs text-text-muted">{activeMix.hint(safeLevel)}</p>
+        </div>
+      )}
+
       {/* Size preset */}
       <div>
         <label className="mb-1 block text-2xs uppercase tracking-wider text-text-muted">
@@ -607,6 +691,8 @@ export interface ReviewStepProps {
   itemCount: number;
   hasSketch: boolean;
   sketchRoomCount: number;
+  level: number;
+  mix: LevelMix;
   creating: boolean;
 }
 
@@ -621,8 +707,12 @@ export function ReviewStep({
   itemCount,
   hasSketch,
   sketchRoomCount,
+  level,
+  mix,
   creating,
 }: ReviewStepProps) {
+  const mixLabel =
+    LEVEL_MIX_OPTIONS.find((o) => o.value === mix)?.label ?? "Easy";
   return (
     <div className="flex flex-col gap-4">
       <p className="text-xs text-text-muted">
@@ -656,6 +746,12 @@ export function ReviewStep({
         </Row>
         <Row label="Mobs">{mobCount}</Row>
         <Row label="Items">{itemCount}</Row>
+        {target === "new" && (
+          <Row label="Difficulty">
+            <span className="text-text-primary">Level {Math.max(1, Math.floor(level))}</span>{" "}
+            <span className="text-text-muted">({mixLabel})</span>
+          </Row>
+        )}
         <Row label="Description">
           {description ? (
             <span className="text-text-secondary">

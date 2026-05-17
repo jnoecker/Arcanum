@@ -40,7 +40,11 @@ import {
   type SizePresetId,
 } from "./NewZoneDialogSteps";
 import { YAML_OPTS } from "@/lib/yamlOpts";
-import { rebalanceZone } from "@/lib/zoneRebalance";
+import {
+  bandAndDifficultyFromLevelMix,
+  rebalanceZone,
+  type LevelMix,
+} from "@/lib/zoneRebalance";
 
 // ─── Wizard component ──────────────────────────────────────────────
 
@@ -94,6 +98,8 @@ export function NewZoneDialog({ onClose, prefill, onCreated }: NewZoneDialogProp
 
   // Layout
   const [size, setSize] = useState<SizePresetId>("small");
+  const [level, setLevel] = useState(1);
+  const [mix, setMix] = useState<LevelMix>("easy");
   const [sketchMode, setSketchMode] = useState<"none" | "photo" | "draw">("none");
   const [sketchBase64, setSketchBase64] = useState<string | null>(null);
   const [sketchParse, setSketchParse] = useState<SketchParseResult | null>(null);
@@ -283,6 +289,14 @@ export function NewZoneDialog({ onClose, prefill, onCreated }: NewZoneDialogProp
       } else {
         world = await generateZoneContent(buildGenParams(zoneId));
       }
+    }
+
+    // Stamp the wizard's level + mix selection onto the world so the
+    // rebalance pass distributes mob and item levels around the chosen
+    // target instead of inferring from whatever the LLM rolled.
+    {
+      const { band, difficulty } = bandAndDifficultyFromLevelMix(level, mix);
+      world = { ...world, levelBand: band, difficultyHint: difficulty };
     }
 
     // Run the deterministic rebalance pass so the zone ships with stats
@@ -489,6 +503,10 @@ export function NewZoneDialog({ onClose, prefill, onCreated }: NewZoneDialogProp
               target={target}
               size={size}
               setSize={setSize}
+              level={level}
+              setLevel={setLevel}
+              mix={mix}
+              setMix={setMix}
               sketchMode={sketchMode}
               setSketchMode={setSketchMode}
               sketchParse={sketchParse}
@@ -512,6 +530,8 @@ export function NewZoneDialog({ onClose, prefill, onCreated }: NewZoneDialogProp
               itemCount={preset.items}
               hasSketch={!!sketchParse}
               sketchRoomCount={sketchParse?.rooms.length ?? 0}
+              level={level}
+              mix={mix}
               creating={creating}
             />
           )}

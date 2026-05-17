@@ -4,11 +4,19 @@
 // AppConfig values. These mirror the server's progression and world
 // loader rules so tuning previews stay grounded in the actual MUD.
 
-import type { AppConfig, MobTierConfig } from "@/types/config";
+import type {
+  AppConfig,
+  DamageSchool,
+  MobTierConfig,
+  StatBindings,
+} from "@/types/config";
+import { extractMeleeSchool } from "@/types/config";
 import type { MetricSnapshot } from "./types";
 import { REPRESENTATIVE_LEVELS } from "./types";
 
 const BASE_STAT = 10;
+
+export { extractMeleeSchool };
 
 function levelSteps(level: number): number {
   return Math.max(1, level) - 1;
@@ -118,6 +126,86 @@ export function dodgeChance(
   );
 }
 
+// ─── Damage-school formula ──────────────────────────────────────────
+//
+// Mirrors the server's `computePlayerMeleeSwing` (CombatSystem.kt). The
+// shape is generic over `DamageSchool` so spell-damage / heal / utility
+// schools can plug into the same math once they exist server-side.
+//
+//   attackPower = school.baseAttackPower + equipmentContribution
+//   statBonus   = (statValue - baseStat) * school.statMultiplier
+//   levelScale  = school.levelScalingRate ^ (level - 1)
+//   core        = (attackPower + statBonus) * levelScale
+//   raw[min,max]= round(core * varianceMin/Max)
+//   mitigation  = enemyDefense / (enemyDefense + school.mitigationK)
+//   final       = round(raw * (1 - mitigation)), clamped >= 1
+
+export interface AttackDamageRange {
+  min: number;
+  max: number;
+  avg: number;
+}
+
+/**
+ * Multiplicative armor (or spell-resist) mitigation. Self-scaling: matched
+ * to the school's `mitigationK`, defensive stats stay meaningful at every
+ * level instead of evaporating against the level-scaled damage curve.
+ */
+export function armorMitigation(armor: number, mitigationK: number): number {
+  if (armor <= 0 || mitigationK <= 0) return 0;
+  return armor / (armor + mitigationK);
+}
+
+/**
+ * Damage range a single basic attack would land at the given level against
+ * a target with the given defense. Variance is baked into the [min, max]
+ * band; `avg` is the midpoint.
+ */
+export function computeAttackDamage(
+  school: DamageSchool,
+  attackPower: number,
+  statValue: number,
+  level: number,
+  enemyDefense: number,
+  baseStat: number = BASE_STAT,
+): AttackDamageRange {
+  const steps = levelSteps(level);
+  const statBonusValue = (statValue - baseStat) * school.statMultiplier;
+  const levelScale = Math.pow(school.levelScalingRate, steps);
+  const core = (attackPower + statBonusValue) * levelScale;
+  const mitigation = armorMitigation(enemyDefense, school.mitigationK);
+  const survives = Math.max(0, 1 - mitigation);
+  const rawMin = Math.round(core * school.varianceMin);
+  const rawMax = Math.round(core * school.varianceMax);
+  const min = Math.max(1, Math.round(rawMin * survives));
+  const max = Math.max(min, Math.round(rawMax * survives));
+  return { min, max, avg: (min + max) / 2 };
+}
+
+/**
+ * Player basic-melee damage range at the given level. Convenience wrapper
+ * around [computeAttackDamage] that pulls the melee `DamageSchool` from
+ * the config bindings and adds the bindings' `meleeBaseAttackPower` to the
+ * caller-supplied equipment attack value.
+ */
+export function playerMeleeDamage(
+  bindings: StatBindings,
+  level: number,
+  equipmentAttack: number = 0,
+  statValue: number = BASE_STAT,
+  enemyArmor: number = 0,
+): AttackDamageRange {
+  const school = extractMeleeSchool(bindings);
+  const attackPower = school.baseAttackPower + equipmentAttack;
+  return computeAttackDamage(
+    school,
+    attackPower,
+    statValue,
+    level,
+    enemyArmor,
+  );
+}
+
 /**
  * Player HP at a given level.
  * Mirrors PlayerProgression.maxHpForLevel for a resolved hpScalingRate value.
@@ -163,7 +251,7 @@ export function computeMetrics(config: AppConfig): MetricSnapshot {
   const mobHp: Record<string, Record<number, number>> = {};
   const mobDamageAvg: Record<string, Record<number, number>> = {};
   const mobGoldAvg: Record<string, Record<number, number>> = {};
-  const playerDamageBonus: Record<number, number> = {};
+  const playerMeleeAvgDamage: Record<number, number> = {};
   const playerHpMap: Record<number, number> = {};
   const dodgeChanceMap: Record<number, number> = {};
   const regenIntervalMap: Record<number, number> = {};
@@ -186,7 +274,13 @@ export function computeMetrics(config: AppConfig): MetricSnapshot {
       mobGoldAvg[tierKey]![level] = mobAvgGoldAtLevel(tier, level);
     }
 
-    playerDamageBonus[level] = statBonus(BASE_STAT, config.stats.bindings.meleeDamageDivisor);
+    // Baseline unarmed melee avg at base stat against a 0-armor target. The
+    // tuning charts call playerMeleeDamage() directly when they need to
+    // sweep equipment / stat values.
+    playerMeleeAvgDamage[level] = playerMeleeDamage(
+      config.stats.bindings,
+      level,
+    ).avg;
 
     playerHpMap[level] = playerHpAtLevel(
       level,
@@ -210,7 +304,7 @@ export function computeMetrics(config: AppConfig): MetricSnapshot {
     mobHp,
     mobDamageAvg,
     mobGoldAvg,
-    playerDamageBonus,
+    playerMeleeAvgDamage,
     playerHp: playerHpMap,
     dodgeChance: dodgeChanceMap,
     regenInterval: regenIntervalMap,

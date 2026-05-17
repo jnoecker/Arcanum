@@ -114,24 +114,58 @@ export function checkAbsoluteHealth(config: AppConfig): HealthWarning[] {
 
   // Rule B: weak-tier L1 TTK is absurd. Indicates a tier baseline mismatch
   // for tutorial mobs (what triggered this whole audit).
-  const playerAvgDmg = (combat.minDamage + combat.maxDamage) / 2;
-  if (playerAvgDmg > 0 && weak.baseHp > 0) {
+  //
+  // Player baseline melee swing at L1, unarmed, base stat: from the bindings,
+  // that's `meleeBaseAttackPower × varianceMid × (1 - mitigation(weak.armor))`.
+  // No equipment, no stat bonus, no level scaling at level 1.
+  const b = config.stats.bindings;
+  const mitigation =
+    weak.baseArmor > 0
+      ? weak.baseArmor / (weak.baseArmor + b.meleeArmorMitigationK)
+      : 0;
+  const playerAvgDmg = Math.max(
+    1,
+    b.meleeBaseAttackPower *
+      ((b.meleeVarianceMin + b.meleeVarianceMax) / 2) *
+      (1 - mitigation),
+  );
+  if (weak.baseHp > 0) {
     const weakTtkSec = (weak.baseHp / playerAvgDmg) * (combat.tickMillis / 1000);
     if (weakTtkSec > 30) {
       warnings.push({
         severity: "warning",
-        message: `Weak-tier L1 mob takes ~${Math.round(weakTtkSec)}s to kill with base player damage — fights may feel grindy.`,
+        message: `Weak-tier L1 mob takes ~${Math.round(weakTtkSec)}s to kill with an unarmed level-1 player — fights may feel grindy.`,
         detail:
-          "Lower mobTiers.weak.baseHp, raise combat.minDamage/maxDamage, or reduce combat.tickMillis. Weak-tier should land in the 5–20s range for a level-1 player.",
+          "Lower mobTiers.weak.baseHp, raise stats.bindings.meleeBaseAttackPower, or reduce combat.tickMillis. Weak-tier should land in the 5–20s range for a level-1 unarmed player.",
       });
     } else if (weakTtkSec < 2) {
       warnings.push({
         severity: "info",
         message: `Weak-tier L1 mob dies in ~${weakTtkSec.toFixed(1)}s — too quick for skill expression.`,
         detail:
-          "Raise mobTiers.weak.baseHp or lower combat base damage for fights that breathe.",
+          "Raise mobTiers.weak.baseHp or lower stats.bindings.meleeBaseAttackPower for fights that breathe.",
       });
     }
+  }
+
+  // Rule D: melee level scaling rate diverges from HP scaling rate. When the
+  // two curves drift apart, same-level fight pacing changes across the level
+  // band — over-leveled mobs become punishing or trivial in ways that aren't
+  // a deliberate design choice. Mirroring rates keeps damage:HP ratios
+  // stable across the curve (the whole point of the new combat formula).
+  const hpRate = config.progression.rewards.hpScalingRate;
+  const meleeRate = b.meleeLevelScalingRate;
+  if (
+    hpRate > 0 &&
+    meleeRate > 0 &&
+    Math.abs(meleeRate - hpRate) >= 0.05
+  ) {
+    warnings.push({
+      severity: "warning",
+      message: `Melee level scaling (${meleeRate.toFixed(2)}) and player HP scaling (${hpRate.toFixed(2)}) diverge — same-level fight pacing will drift across the level band.`,
+      detail:
+        "Set stats.bindings.meleeLevelScalingRate equal to progression.rewards.hpScalingRate so damage and HP track in lockstep. Asymmetric rates either trivialize high-level combat (HP runs away) or make it lethal (damage runs away).",
+    });
   }
 
   // Rule C: full HP recovery is so slow players will rely on consumables for

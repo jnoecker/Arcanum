@@ -26,26 +26,6 @@ export const FIELD_METADATA: Record<string, FieldMeta> = {
     impact: "high",
     interactionNote: "Affects overall combat speed and DPS calculations",
   },
-  "combat.minDamage": {
-    label: "Global Min Damage",
-    description:
-      "Minimum of the per-swing random roll. This roll is ADDED on top of weapon damage and the melee stat bonus -- it is not a damage floor or cap. Keep small so weapons remain the dominant damage source.",
-    section: TuningSection.CombatStats,
-    min: 0,
-    impact: "high",
-    interactionNote:
-      "Added to weapon damage + melee stat bonus every swing. If large, drowns out item/class tuning.",
-  },
-  "combat.maxDamage": {
-    label: "Global Max Damage",
-    description:
-      "Maximum of the per-swing random roll. This roll is ADDED on top of weapon damage and the melee stat bonus -- it is not a damage cap. A value much larger than typical weapon damage will dominate the formula and make weapon/class tuning feel like noise. Typical values: 4-10.",
-    section: TuningSection.CombatStats,
-    min: 1,
-    impact: "high",
-    interactionNote:
-      "Added to weapon damage + melee stat bonus every swing. Recommended to stay in the same order of magnitude as the strongest weapon's damage.",
-  },
 
   // ─── Mob Tiers: Weak ───────────────────────────────────────────────
 
@@ -414,13 +394,59 @@ export const FIELD_METADATA: Record<string, FieldMeta> = {
 
   // ─── Stat Bindings (numeric fields only) ───────────────────────────
 
-  "stats.bindings.meleeDamageDivisor": {
-    label: "Melee Damage Divisor",
-    description: "Stat points divided by this value gives melee damage bonus",
+  "stats.bindings.meleeStatMultiplier": {
+    label: "Melee Stat Multiplier",
+    description:
+      "Multiplicative bonus per stat point above the stat's baseStat. The bonus is added to attackPower BEFORE level scaling, so it compounds with level — keep modest (~0.25 default).",
+    section: TuningSection.CombatStats,
+    min: 0,
+    impact: "high",
+    interactionNote:
+      "Larger values let stat allocation eclipse gear at high level. 0.25 keeps stat allocation relevant without dominating.",
+  },
+  "stats.bindings.meleeLevelScalingRate": {
+    label: "Melee Level Scaling Rate",
+    description:
+      "Per-level multiplicative growth applied to (attackPower + statBonus). 1.30 = +30% per level, mirroring player HP scaling so damage:HP ratios stay stable across the curve.",
     section: TuningSection.CombatStats,
     min: 1,
     impact: "high",
-    interactionNote: "Lower divisor = more damage per stat point. Core melee scaling factor.",
+    interactionNote:
+      "Should track progression.rewards.hpScalingRate. Asymmetric rates produce runaway HP or runaway damage.",
+  },
+  "stats.bindings.meleeVarianceMin": {
+    label: "Melee Variance Min",
+    description: "Lower bound of the per-swing variance band (e.g. 0.85 = swings can hit 15% low).",
+    section: TuningSection.CombatStats,
+    min: 0,
+    impact: "medium",
+    interactionNote: "Paired with max — tighter band = more predictable combat.",
+  },
+  "stats.bindings.meleeVarianceMax": {
+    label: "Melee Variance Max",
+    description: "Upper bound of the per-swing variance band (e.g. 1.15 = swings can hit 15% high).",
+    section: TuningSection.CombatStats,
+    min: 1,
+    impact: "medium",
+    interactionNote: "Paired with min. Wide bands feel swingy; narrow bands feel rote.",
+  },
+  "stats.bindings.meleeBaseAttackPower": {
+    label: "Melee Base Attack Power",
+    description:
+      "Floor attack power for the basic swing — keeps unarmed damage non-zero. Final attackPower is meleeBaseAttackPower + equipmentAttack.",
+    section: TuningSection.CombatStats,
+    min: 0,
+    impact: "medium",
+    interactionNote: "Sets the unarmed damage floor. Any weapon attack > 0 is strictly better than fists.",
+  },
+  "stats.bindings.meleeArmorMitigationK": {
+    label: "Melee Armor Mitigation K",
+    description:
+      "Half-mitigation constant for multiplicative armor. mitigation = armor / (armor + K). At K=20, armor 5 ≈ 20% reduction, armor 20 ≈ 50%, armor 40 ≈ 66%. Self-scaling — armor stays meaningful at every level.",
+    section: TuningSection.CombatStats,
+    min: 1,
+    impact: "high",
+    interactionNote: "Larger K = armor matters less. Tune alongside item armor values.",
   },
   "stats.bindings.dodgePerPoint": {
     label: "Dodge % Per Point",

@@ -438,21 +438,90 @@ function StatBindingsGrid({
   return (
     <SectionCard
       title="Stat Bindings"
-      description="Connect a stat to each derived attribute. Lower divisors mean each point of the stat does more."
+      description="Connect a stat to each derived attribute. Melee uses a level-scaled multiplicative curve; other bindings still use stat / divisor."
     >
       <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
         <BindingCard
           title="Melee Damage"
-          formula={(stat, n) => `+ ${stat} / ${n}`}
+          formula={(stat, n) =>
+            `(${n} + equipAttack + (${stat}-base)Ã—${bindings.meleeStatMultiplier}) Ã— ${bindings.meleeLevelScalingRate}^(L-1)`
+          }
           stat={bindings.meleeDamageStat}
           statOptions={statOptions}
           onStat={(v) => onPatch({ meleeDamageStat: v })}
           numeric={{
-            label: "Divisor",
-            value: bindings.meleeDamageDivisor,
-            min: 1,
-            onCommit: (v) => onPatch({ meleeDamageDivisor: v ?? 3 }),
+            label: "Base attack",
+            value: bindings.meleeBaseAttackPower,
+            min: 0,
+            step: 1,
+            onCommit: (v) => onPatch({ meleeBaseAttackPower: v ?? 1 }),
           }}
+          extra={
+            <div className="grid grid-cols-2 gap-2">
+              <Field
+                label="Stat mult"
+                hint="Multiplicative bonus per stat point above base. Compounds with level."
+              >
+                <NumberInput
+                  value={bindings.meleeStatMultiplier}
+                  onCommit={(v) => onPatch({ meleeStatMultiplier: v ?? 0.25 })}
+                  min={0}
+                  step={0.05}
+                  dense
+                />
+              </Field>
+              <Field
+                label="Level scale"
+                hint="Per-level multiplicative growth. Mirror progression.rewards.hpScalingRate."
+              >
+                <NumberInput
+                  value={bindings.meleeLevelScalingRate}
+                  onCommit={(v) =>
+                    onPatch({ meleeLevelScalingRate: v ?? 1.30 })
+                  }
+                  min={1}
+                  step={0.01}
+                  dense
+                />
+              </Field>
+              <Field
+                label="Variance min"
+                hint="Lower bound of the per-swing variance band."
+              >
+                <NumberInput
+                  value={bindings.meleeVarianceMin}
+                  onCommit={(v) => onPatch({ meleeVarianceMin: v ?? 0.85 })}
+                  min={0}
+                  step={0.05}
+                  dense
+                />
+              </Field>
+              <Field
+                label="Variance max"
+                hint="Upper bound of the per-swing variance band."
+              >
+                <NumberInput
+                  value={bindings.meleeVarianceMax}
+                  onCommit={(v) => onPatch({ meleeVarianceMax: v ?? 1.15 })}
+                  min={1}
+                  step={0.05}
+                  dense
+                />
+              </Field>
+              <Field
+                label="Armor K"
+                hint="Half-mitigation constant. Armor K = 50% damage reduction."
+              >
+                <NumberInput
+                  value={bindings.meleeArmorMitigationK}
+                  onCommit={(v) => onPatch({ meleeArmorMitigationK: v ?? 20 })}
+                  min={1}
+                  step={1}
+                  dense
+                />
+              </Field>
+            </div>
+          }
         />
 
         <BindingCard

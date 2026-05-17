@@ -97,6 +97,44 @@ export function validateConfig(config: AppConfig): ValidationIssue[] {
         });
       }
     }
+
+    // Numeric checks on the melee damage knobs — mirror the server's
+    // require() rules in AppConfig.validateStatsBindings.
+    if (b.meleeStatMultiplier < 0) {
+      issues.push({
+        severity: "error",
+        entity: "stats.bindings",
+        message: `meleeStatMultiplier must be >= 0 (got ${b.meleeStatMultiplier})`,
+      });
+    }
+    if (b.meleeLevelScalingRate < 1) {
+      issues.push({
+        severity: "error",
+        entity: "stats.bindings",
+        message: `meleeLevelScalingRate must be >= 1.0 — use 1.0 to disable (got ${b.meleeLevelScalingRate})`,
+      });
+    }
+    if (b.meleeVarianceMin <= 0 || b.meleeVarianceMax < b.meleeVarianceMin) {
+      issues.push({
+        severity: "error",
+        entity: "stats.bindings",
+        message: `meleeVarianceMin/Max must satisfy 0 < min <= max (got ${b.meleeVarianceMin} / ${b.meleeVarianceMax})`,
+      });
+    }
+    if (b.meleeBaseAttackPower < 0) {
+      issues.push({
+        severity: "error",
+        entity: "stats.bindings",
+        message: `meleeBaseAttackPower must be >= 0 (got ${b.meleeBaseAttackPower})`,
+      });
+    }
+    if (b.meleeArmorMitigationK <= 0) {
+      issues.push({
+        severity: "error",
+        entity: "stats.bindings",
+        message: `meleeArmorMitigationK must be > 0 (got ${b.meleeArmorMitigationK})`,
+      });
+    }
   }
 
   // ─── Pets ─────────────────────────────────────────────────────
@@ -545,15 +583,6 @@ export function validateConfig(config: AppConfig): ValidationIssue[] {
     if (evt.startDate && evt.endDate && evt.startDate > evt.endDate) {
       issues.push({ severity: "warning", entity: `worldEvent:${id}`, message: "Start date is after end date" });
     }
-  }
-
-  // ─── Combat ───────────────────────────────────────────────────
-  if (config.combat.minDamage > config.combat.maxDamage) {
-    issues.push({
-      severity: "warning",
-      entity: "combat",
-      message: "Min damage exceeds max damage",
-    });
   }
 
   // ─── Death / Sanctum ─────────────────────────────────────────

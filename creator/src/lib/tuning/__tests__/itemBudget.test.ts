@@ -1,8 +1,6 @@
 import { describe, it, expect } from "vitest";
 import {
-  LEVEL_SCALING_RATE,
   STAT_CAP,
-  XP_LEVEL_MULTIPLIER,
   TIER_MULTIPLIERS,
   ARCHETYPE_SPLITS,
   DEFAULT_POINT_COSTS,
@@ -10,7 +8,6 @@ import {
   FALLBACK_SLOT_BASE,
   ACCESSORY_SLOTS,
   ITEM_TIERS,
-  levelBudgetMultiplier,
   resolveSlotBase,
   effectiveArchetypeForSlot,
   itemTotalBudget,
@@ -20,18 +17,14 @@ import {
 } from "@/lib/tuning/itemBudget";
 
 describe("calibration constants", () => {
-  it("matches docs/DERIVED_STATS.md anchors", () => {
-    expect(LEVEL_SCALING_RATE).toBe(1.1);
+  it("stat cap is in place", () => {
     expect(STAT_CAP).toBe(100);
-    expect(XP_LEVEL_MULTIPLIER).toBe(1.5);
   });
 
   it("tier curve places Legendary at +5 common levels", () => {
-    // Legendary multiplier should equal 1.1^5 ≈ 1.61.
     expect(TIER_MULTIPLIERS.legendary).toBeCloseTo(Math.pow(1.1, 5), 1);
     expect(TIER_MULTIPLIERS.common).toBe(1.0);
     expect(TIER_MULTIPLIERS.trash).toBeLessThan(1.0);
-    // Tiers strictly ascending.
     let prev = 0;
     for (const tier of ITEM_TIERS) {
       expect(TIER_MULTIPLIERS[tier]).toBeGreaterThan(prev);
@@ -44,22 +37,6 @@ describe("calibration constants", () => {
       const total = split.damage + split.armor + split.stats;
       expect(total, `archetype ${name}`).toBeCloseTo(1.0, 5);
     }
-  });
-});
-
-describe("levelBudgetMultiplier", () => {
-  it("is 1.0 at level 1", () => {
-    expect(levelBudgetMultiplier(1)).toBe(1);
-  });
-
-  it("is 1.1^(level-1)", () => {
-    expect(levelBudgetMultiplier(5)).toBeCloseTo(Math.pow(1.1, 4), 5);
-    expect(levelBudgetMultiplier(30)).toBeCloseTo(Math.pow(1.1, 29), 5);
-  });
-
-  it("clamps levels below 1 to multiplier 1", () => {
-    expect(levelBudgetMultiplier(0)).toBe(1);
-    expect(levelBudgetMultiplier(-3)).toBe(1);
   });
 });
 
@@ -103,18 +80,21 @@ describe("effectiveArchetypeForSlot", () => {
 });
 
 describe("itemTotalBudget", () => {
-  it("equals slotBase × levelMult × tierMult", () => {
-    // L1 common weapon = 100 × 1 × 1 = 100
-    expect(itemTotalBudget("weapon", 1, "common")).toBe(100);
-    // L5 rare weapon = 100 × 1.1^4 × 1.27 ≈ 185.9
-    expect(itemTotalBudget("weapon", 5, "rare")).toBeCloseTo(
-      100 * Math.pow(1.1, 4) * TIER_MULTIPLIERS.rare,
+  // The server treats item.damage and item.armor as flat authored values;
+  // level scaling lives in the combat formula. Item budgets are therefore
+  // flat across levels — tier is the only multiplier.
+  it("equals slotBase × tierMult, flat across levels", () => {
+    // Common weapon = 100 × 1 = 100
+    expect(itemTotalBudget("weapon", "common")).toBe(100);
+    // Rare weapon = 100 × 1.27
+    expect(itemTotalBudget("weapon", "rare")).toBeCloseTo(
+      100 * TIER_MULTIPLIERS.rare,
       3,
     );
   });
 
   it("respects per-world slot overrides", () => {
-    expect(itemTotalBudget("weapon", 1, "common", { weapon: 200 })).toBe(200);
+    expect(itemTotalBudget("weapon", "common", { weapon: 200 })).toBe(200);
   });
 });
 
@@ -175,35 +155,33 @@ describe("distributeStats", () => {
 });
 
 describe("deriveItemStats", () => {
-  it("worked example: L5 rare damage weapon (STR/DEX/CON)", () => {
+  it("worked example: rare damage weapon (STR/DEX/CON)", () => {
     const out = deriveItemStats({
       slot: "weapon",
-      level: 5,
       tier: "rare",
       archetype: "damage",
       primaryStat: "STR",
       secondaryStat: "DEX",
       tertiaryStat: "CON",
     });
-    // Total = 100 × 1.1^4 × 1.27 ≈ 185.9
-    // Damage budget = 60% × 185.9 ≈ 111.5 → /20 = 5.6 → round to 6
-    // Stat budget   = 40% × 185.9 ≈ 74.4
-    //   STR = 50% × 74.4 / 5 ≈ 7.4 → 7
-    //   DEX = 30% × 74.4 / 5 ≈ 4.5 → 4 or 5 (Math.round of 4.46 is 4)
-    //   CON = 20% × 74.4 / 5 ≈ 2.97 → 3
+    // Total = 100 × 1.27 = 127
+    // Damage budget = 60% × 127 ≈ 76.2 → /20 = 3.81 → round to 4
+    // Stat budget   = 40% × 127 ≈ 50.8
+    //   STR = 50% × 50.8 / 5 ≈ 5.08 → 5
+    //   DEX = 30% × 50.8 / 5 ≈ 3.05 → 3
+    //   CON = 20% × 50.8 / 5 ≈ 2.03 → 2
     expect(out.effectiveArchetype).toBe("damage");
-    expect(out.budget.totalBudget).toBeCloseTo(100 * Math.pow(1.1, 4) * 1.27, 3);
-    expect(out.damage).toBe(6);
+    expect(out.budget.totalBudget).toBeCloseTo(100 * 1.27, 3);
+    expect(out.damage).toBe(4);
     expect(out.armor).toBe(0);
-    expect(out.stats.STR).toBe(7);
-    expect(out.stats.DEX).toBe(4);
-    expect(out.stats.CON).toBe(3);
+    expect(out.stats.STR).toBe(5);
+    expect(out.stats.DEX).toBe(3);
+    expect(out.stats.CON).toBe(2);
   });
 
   it("accessory slot forces archetype to stat", () => {
     const out = deriveItemStats({
       slot: "ring",
-      level: 1,
       tier: "common",
       archetype: "damage", // requested damage but slot can't carry it
       primaryStat: "INT",
@@ -211,19 +189,18 @@ describe("deriveItemStats", () => {
     expect(out.effectiveArchetype).toBe("stat");
     expect(out.damage).toBe(0);
     expect(out.armor).toBe(0);
-    // Ring at L1 common: base 40, all stat → INT = 40/5 = 8
+    // Ring common: base 40 × 1 = 40, all stat → INT = 40/5 = 8
     expect(out.stats.INT).toBe(8);
   });
 
   it("balanced shield writes both damage and armor", () => {
     const out = deriveItemStats({
       slot: "shield",
-      level: 1,
       tier: "common",
       archetype: "balanced",
       primaryStat: "CON",
     });
-    // Shield base 70 × 1 × 1 = 70
+    // Shield base 70 × 1 = 70
     // Damage 30% × 70 / 20 = 1.05 → 1
     // Armor  30% × 70 / 10 = 2.1 → 2
     // Stats  40% × 70 / 5  = 5.6 → 6 (single stat = 100%)
@@ -235,7 +212,6 @@ describe("deriveItemStats", () => {
   it("no stats picked yields empty stat map", () => {
     const out = deriveItemStats({
       slot: "weapon",
-      level: 1,
       tier: "common",
       archetype: "damage",
     });
@@ -246,7 +222,6 @@ describe("deriveItemStats", () => {
   it("respects custom point costs", () => {
     const out = deriveItemStats({
       slot: "weapon",
-      level: 1,
       tier: "common",
       archetype: "damage",
       primaryStat: "STR",
@@ -257,20 +232,13 @@ describe("deriveItemStats", () => {
   });
 });
 
-describe("L30 ceiling sanity check", () => {
-  it("L30 common weapon budget ~15× L1 common weapon", () => {
-    const l1 = itemTotalBudget("weapon", 1, "common");
-    const l30 = itemTotalBudget("weapon", 30, "common");
-    // 1.1^29 ≈ 15.86
-    expect(l30 / l1).toBeCloseTo(Math.pow(1.1, 29), 2);
-    expect(l30 / l1).toBeGreaterThan(15);
-    expect(l30 / l1).toBeLessThan(17);
-  });
-
-  it("legendary L1 ≈ common L6", () => {
-    const legL1 = itemTotalBudget("weapon", 1, "legendary");
-    const commonL6 = itemTotalBudget("weapon", 6, "common");
-    // 1.61 vs 1.1^5 ≈ 1.61
-    expect(legL1).toBeCloseTo(commonL6, 0);
+describe("flat-budget invariant", () => {
+  it("budget is independent of any 'level' input — level lives in the combat formula", () => {
+    // Spot-check: a common weapon's budget is 100 regardless of context.
+    // The combat formula's meleeLevelScalingRate handles per-level growth.
+    const common = itemTotalBudget("weapon", "common");
+    const legendary = itemTotalBudget("weapon", "legendary");
+    expect(common).toBe(100);
+    expect(legendary).toBeCloseTo(100 * TIER_MULTIPLIERS.legendary, 3);
   });
 });

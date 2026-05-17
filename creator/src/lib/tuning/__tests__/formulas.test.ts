@@ -155,7 +155,13 @@ describe("computeMetrics", () => {
     stats: {
       definitions: {},
       bindings: {
-        meleeDamageStat: "str", meleeDamageDivisor: 3,
+        meleeDamageStat: "str",
+        meleeStatMultiplier: 0.25,
+        meleeLevelScalingRate: 1.30,
+        meleeVarianceMin: 0.85,
+        meleeVarianceMax: 1.15,
+        meleeBaseAttackPower: 1,
+        meleeArmorMitigationK: 20,
         dodgeStat: "dex", dodgePerPoint: 2, maxDodgePercent: 30,
         spellDamageStat: "int", spellDamageDivisor: 3,
         hpScalingStat: "con", hpScalingDivisor: 5,
@@ -181,7 +187,7 @@ describe("computeMetrics", () => {
     expect(result).toHaveProperty("mobHp");
     expect(result).toHaveProperty("mobDamageAvg");
     expect(result).toHaveProperty("mobGoldAvg");
-    expect(result).toHaveProperty("playerDamageBonus");
+    expect(result).toHaveProperty("playerMeleeAvgDamage");
     expect(result).toHaveProperty("playerHp");
     expect(result).toHaveProperty("dodgeChance");
     expect(result).toHaveProperty("regenInterval");

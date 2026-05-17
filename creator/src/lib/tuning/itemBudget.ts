@@ -1,28 +1,28 @@
 // ─── Item Budget Derivation ─────────────────────────────────────────
 //
-// Pure math for tier-based item authoring. Authors pick slot + level +
-// tier + archetype + 1–3 stats; this module computes damage / armor /
-// per-stat values from those inputs.
+// Pure math for tier-based item authoring. Authors pick slot + tier +
+// archetype + 1–3 stats; this module computes the flat damage / armor /
+// per-stat values that the server treats as authoritative on the item.
 //
-// Anchored to docs/DERIVED_STATS.md. Calibration:
-// - Level scaling 1.1×/level (same as combat scaling rate)
-// - Tier curve sized so Legendary = Common at +5 levels
-// - Worked example: L5 Rare Damage weapon → ~329 budget →
-//   ~10 damage + ~26 stat points (13 / 8 / 5 across primary/secondary/tertiary)
+// **No level scaling.** The server treats `ItemFile.damage` / `armor`
+// as flat additive bonuses (see `ItemFile.kt` and `ResolvedMobStats.kt`).
+// Level scaling lives entirely in the combat formula
+// (`meleeLevelScalingRate^(level-1)`) — adding any per-level growth in
+// the budget would double-scale damage/armor at high level.
+//
+// The item's `level` field is retained on `ItemFile` as design metadata
+// (drop tables, UI grouping) but does not influence the budget here.
+//
+// Tier curve: Legendary ≈ 1.6× Common budget. The combat formula's
+// level scaling carries growth — a +3 weapon at level 30 already hits
+// dramatically harder than the same weapon at level 5 via the curve.
 
 import type { StatMap } from "@/types/world";
 
 // ─── Constants ──────────────────────────────────────────────────────
 
-/** Combat scaling rate. Player HP, player damage, mob HP, mob damage, and
- *  item budgets all scale at this rate per level. */
-export const LEVEL_SCALING_RATE = 1.1;
-
 /** Hard cap on any single character stat. */
 export const STAT_CAP = 100;
-
-/** XP-per-level growth (xpToNext(n) = XP_L1 × XP_LEVEL_MULTIPLIER^(n-1)). */
-export const XP_LEVEL_MULTIPLIER = 1.5;
 
 export type ItemTier =
   | "trash"
@@ -132,7 +132,6 @@ export const DEFAULT_POINT_COSTS: PointCosts = {
 
 export interface ItemDerivationInput {
   slot: string;
-  level: number;
   tier: ItemTier;
   archetype: ItemArchetype;
   primaryStat?: string;
@@ -162,17 +161,6 @@ export interface ItemDerivationOutput {
 
 // ─── Pure functions ────────────────────────────────────────────────
 
-/** Multiplier on item budget for a given level (1.1^(level-1)). */
-export function levelBudgetMultiplier(level: number): number {
-  const steps = Math.max(0, level - 1);
-  return Math.pow(LEVEL_SCALING_RATE, steps);
-}
-
-/** Multiplier on combat stats (player HP, damage, mob HP, etc.) for level. */
-export function combatScalingAtLevel(level: number): number {
-  return levelBudgetMultiplier(level);
-}
-
 /** Look up the slot's base budget, falling back to default then FALLBACK_SLOT_BASE. */
 export function resolveSlotBase(
   slot: string,
@@ -194,16 +182,16 @@ export function effectiveArchetypeForSlot(
   return archetype;
 }
 
-/** Total raw budget points before archetype split. */
+/** Total raw budget points before archetype split. Flat across levels —
+ *  level scaling lives in the combat formula. */
 export function itemTotalBudget(
   slot: string,
-  level: number,
   tier: ItemTier,
   slotBudgets?: Record<string, number>,
 ): number {
   const slotBase = resolveSlotBase(slot, slotBudgets);
   const tierMult = TIER_MULTIPLIERS[tier];
-  return slotBase * levelBudgetMultiplier(level) * tierMult;
+  return slotBase * tierMult;
 }
 
 /** Split total budget into damage / armor / stat buckets per archetype. */
@@ -263,7 +251,7 @@ export function distributeStats(
 /** Top-level entry: given author inputs, produce derived item stats. */
 export function deriveItemStats(input: ItemDerivationInput): ItemDerivationOutput {
   const effectiveArchetype = effectiveArchetypeForSlot(input.slot, input.archetype);
-  const totalBudget = itemTotalBudget(input.slot, input.level, input.tier, input.slotBudgets);
+  const totalBudget = itemTotalBudget(input.slot, input.tier, input.slotBudgets);
   const breakdown = splitItemBudget(totalBudget, effectiveArchetype);
 
   const costs: PointCosts = { ...DEFAULT_POINT_COSTS, ...input.pointCosts };

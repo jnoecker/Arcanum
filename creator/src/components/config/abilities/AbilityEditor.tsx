@@ -65,6 +65,24 @@ interface AbilityEditorProps {
   onRename: (newId: string) => void;
 }
 
+/**
+ * The server's spell/heal formula collapses authored min/max to their
+ * midpoint as the L1 anchor, then applies global `*VarianceMin/Max` on top.
+ * The Arcanum editor surfaces a single value to avoid the footgun of
+ * authoring a spread that the server then ignores. On save we mirror that
+ * value into both min and max so the YAML stays compatible with any
+ * server-side code that still reads either field independently.
+ *
+ * For imported configs that have asymmetric min/max, we display the midpoint
+ * — that's what the server uses as the anchor.
+ */
+function midpointOrZero(min: number | undefined, max: number | undefined): number {
+  const lo = min ?? 0;
+  const hi = max ?? 0;
+  if (lo === 0 && hi === 0) return 0;
+  return Math.round((lo + hi) / 2);
+}
+
 export function AbilityEditor({
   id,
   ability,
@@ -532,29 +550,15 @@ function CombatEffectCard({
 
         {hasDamage && (
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <FieldLabel label="Min Damage">
-              <NumberInput
-                value={ability.effect.minDamage ?? 0}
-                onCommit={(v) => onPatchEffect({ minDamage: v ?? 0 })}
-                min={0}
-                dense
-              />
-            </FieldLabel>
-            <FieldLabel label="Max Damage">
-              <NumberInput
-                value={ability.effect.maxDamage ?? 0}
-                onCommit={(v) => onPatchEffect({ maxDamage: v ?? 0 })}
-                min={0}
-                dense
-              />
-            </FieldLabel>
             <FieldLabel
-              label="Legacy"
-              hint="Used when min/max are 0."
+              label="Damage"
+              hint="Authored L1 damage. Level scaling and variance are applied automatically by the server's spell formula."
             >
               <NumberInput
-                value={ability.effect.value ?? 0}
-                onCommit={(v) => onPatchEffect({ value: v ?? 0 })}
+                value={midpointOrZero(ability.effect.minDamage, ability.effect.maxDamage)}
+                onCommit={(v) =>
+                  onPatchEffect({ minDamage: v ?? 0, maxDamage: v ?? 0 })
+                }
                 min={0}
                 dense
               />
@@ -564,35 +568,19 @@ function CombatEffectCard({
 
         {hasHeal && (
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <FieldLabel label="Min Heal">
+            <FieldLabel
+              label="Heal"
+              hint="Authored L1 heal. Level scaling and variance are applied automatically by the server's heal formula."
+            >
               <NumberInput
-                value={ability.effect.minHeal ?? 0}
-                onCommit={(v) => onPatchEffect({ minHeal: v ?? 0 })}
+                value={midpointOrZero(ability.effect.minHeal, ability.effect.maxHeal)}
+                onCommit={(v) =>
+                  onPatchEffect({ minHeal: v ?? 0, maxHeal: v ?? 0 })
+                }
                 min={0}
                 dense
               />
             </FieldLabel>
-            <FieldLabel label="Max Heal">
-              <NumberInput
-                value={ability.effect.maxHeal ?? 0}
-                onCommit={(v) => onPatchEffect({ maxHeal: v ?? 0 })}
-                min={0}
-                dense
-              />
-            </FieldLabel>
-            {!hasDamage && (
-              <FieldLabel
-                label="Legacy"
-                hint="Used when min/max are 0."
-              >
-                <NumberInput
-                  value={ability.effect.value ?? 0}
-                  onCommit={(v) => onPatchEffect({ value: v ?? 0 })}
-                  min={0}
-                  dense
-                />
-              </FieldLabel>
-            )}
           </div>
         )}
 

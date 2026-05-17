@@ -306,7 +306,7 @@ describe("validateConfig", () => {
           levelRequired: 1,
           targetType: "ENEMY",
           skillPointCost: -1,
-          effect: { type: "DIRECT_DAMAGE", value: 5 },
+          effect: { type: "DIRECT_DAMAGE", minDamage: 5, maxDamage: 5 },
         },
       },
     };
@@ -331,7 +331,7 @@ describe("validateConfig", () => {
           levelRequired: 1,
           targetType: "ENEMY",
           skillPointCost: 0,
-          effect: { type: "DIRECT_DAMAGE", value: 3 },
+          effect: { type: "DIRECT_DAMAGE", minDamage: 3, maxDamage: 3 },
         },
       },
     };
@@ -353,7 +353,7 @@ describe("validateConfig", () => {
           levelRequired: 1,
           targetType: "ENEMY",
           classRestriction: "PALADIN",
-          effect: { type: "DIRECT_DAMAGE", value: 5 },
+          effect: { type: "DIRECT_DAMAGE", minDamage: 5, maxDamage: 5 },
         },
       },
     };

@@ -703,7 +703,6 @@ export function mapEntries<T>(
 
 export function abilityToPlain(a: AppConfig["abilities"][string]): Record<string, unknown> {
   const effect: Record<string, unknown> = { type: a.effect.type };
-  if (a.effect.value != null) effect.value = a.effect.value;
   if (a.effect.statusEffectId) effect.statusEffectId = a.effect.statusEffectId;
   if (a.effect.minDamage != null) effect.minDamage = a.effect.minDamage;
   if (a.effect.maxDamage != null) effect.maxDamage = a.effect.maxDamage;

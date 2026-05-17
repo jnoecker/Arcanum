@@ -1,9 +1,6 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { PlusIcon, SearchIcon, TrashIcon } from "./icons";
-
-function cx(...c: Array<string | false | null | undefined>) {
-  return c.filter(Boolean).join(" ");
-}
+import { PlusIcon, SearchIcon, TrashIcon } from "@/components/config/icons";
+import { cx } from "@/components/ui/FormWidgets";
 
 function defaultIdTransform(raw: string): string {
   return raw

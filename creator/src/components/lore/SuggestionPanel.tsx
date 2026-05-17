@@ -102,7 +102,7 @@ export function SuggestionPanel<T extends Suggestion>({
           {onApproveAll && (
             <button
               onClick={handleApproveAllVisible}
-              className="focus-ring rounded-full border border-accent/30 bg-accent/10 px-3 py-1.5 text-2xs text-accent transition hover:bg-accent/20"
+              className="action-button action-button-secondary action-button-sm"
             >
               Approve all ({visible.length})
             </button>

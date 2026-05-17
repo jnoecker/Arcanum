@@ -1,10 +1,7 @@
 import { useMemo, useState } from "react";
 import type { CommandEntryConfig } from "@/types/config";
-import { SearchIcon, PlusIcon, MoreIcon, CopyIcon, TrashIcon } from "../achievements/icons";
-
-function cx(...c: Array<string | false | null | undefined>) {
-  return c.filter(Boolean).join(" ");
-}
+import { SearchIcon, PlusIcon, MoreIcon, CopyIcon, TrashIcon } from "@/components/config/icons";
+import { cx } from "@/components/ui/FormWidgets";
 
 interface CommandsListProps {
   commands: Record<string, CommandEntryConfig>;

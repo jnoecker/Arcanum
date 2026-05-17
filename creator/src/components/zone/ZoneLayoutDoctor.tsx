@@ -260,7 +260,7 @@ export function ZoneLayoutDoctor({ world, onWorldChange }: ZoneLayoutDoctorProps
                   {issue.fix && (
                     <button
                       onClick={() => handleApplyFix(issue)}
-                      className="focus-ring rounded-full border border-accent/30 bg-accent/10 px-3 py-1 text-2xs text-accent transition hover:bg-accent/20"
+                      className="action-button action-button-secondary action-button-sm"
                     >
                       {issue.fix.label}
                     </button>
@@ -291,7 +291,7 @@ export function ZoneLayoutDoctor({ world, onWorldChange }: ZoneLayoutDoctorProps
                 size="sm"
                 variant="secondary"
               >
-                {rewriting ? <><Spinner className="mr-1.5" /> Rewriting...</> : "Auto-fix with AI"}
+                {rewriting ? <><Spinner className="mr-1.5" /> Rewriting...</> : "Suggest fixes"}
               </ActionButton>
             )}
           </div>
@@ -372,7 +372,7 @@ export function ZoneLayoutDoctor({ world, onWorldChange }: ZoneLayoutDoctorProps
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => handleApplyRewrite(result)}
-                  className="focus-ring rounded-full border border-accent/30 bg-accent/10 px-3 py-1 text-2xs text-accent transition hover:bg-accent/20"
+                  className="action-button action-button-secondary action-button-sm"
                 >
                   Accept
                 </button>

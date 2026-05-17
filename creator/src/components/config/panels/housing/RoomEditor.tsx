@@ -5,15 +5,12 @@ import {
   NumberInput,
   SelectInput,
   CommitTextarea,
+  cx,
 } from "@/components/ui/FormWidgets";
 import { EntityArtGenerator } from "@/components/ui/EntityArtGenerator";
 import { SectionCard } from "@/components/ui/SectionCard";
 import { housingRoomPrompt, housingRoomContext } from "@/lib/entityPrompts";
-import { CopyIcon, TrashIcon } from "./icons";
-
-function cx(...c: Array<string | false | null | undefined>) {
-  return c.filter(Boolean).join(" ");
-}
+import { CopyIcon, TrashIcon } from "@/components/config/icons";
 
 interface RoomEditorProps {
   id: string;

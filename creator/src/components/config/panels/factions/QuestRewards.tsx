@@ -2,7 +2,7 @@ import { memo, useState } from "react";
 import { ActionButton, NumberInput, SelectInput } from "@/components/ui/FormWidgets";
 import { SectionCard } from "@/components/ui/SectionCard";
 import { QuestPicker, QuestRefBadge } from "@/components/config/panels/QuestPicker";
-import { PlusIcon, TrashIcon, XIcon, CompassRoseIcon } from "./icons";
+import { PlusIcon, TrashIcon, XIcon, CompassRoseIcon } from "@/components/config/icons";
 
 interface QuestRewardsProps {
   questRewards: Record<string, Record<string, number>> | undefined;

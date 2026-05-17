@@ -6,7 +6,7 @@ import {
 } from "@/components/config/panels/StatusEffectsPanel";
 import { ConditionsList } from "./conditions/ConditionsList";
 import { ConditionEditor } from "./conditions/ConditionEditor";
-import { PlusIcon } from "./conditions/icons";
+import { PlusIcon } from "@/components/config/icons";
 
 const FALLBACK_EFFECT_TYPES = [
   { value: "dot", label: "Damage Over Time" },

@@ -1,11 +1,8 @@
 import { useMemo, useState } from "react";
 import { abilityScope, type AbilityDefinitionConfig } from "@/types/config";
 import { useImageSrc } from "@/lib/useImageSrc";
-import { SearchIcon, PlusIcon, CopyIcon, TrashIcon } from "../achievements/icons";
-
-function cx(...c: Array<string | false | null | undefined>) {
-  return c.filter(Boolean).join(" ");
-}
+import { SearchIcon, PlusIcon, CopyIcon, TrashIcon } from "@/components/config/icons";
+import { cx } from "@/components/ui/FormWidgets";
 
 export type AbilityCategoryKey =
   | "all"

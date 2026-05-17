@@ -74,10 +74,10 @@ export function ArticleBrowser() {
               </button>
               <button
                 onClick={() => setShowGenerator(true)}
-                title="Generate article with AI"
+                title="Seed an article from a short prompt"
                 className={`focus-ring action-button ${articleCount === 0 ? "action-button-secondary action-button-sm" : "action-button-secondary action-button-md"}`}
               >
-                Generate Article
+                Conjure Article
               </button>
             </div>
           </div>

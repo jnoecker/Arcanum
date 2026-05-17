@@ -1,10 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { AchievementDefFile, AchievementCategoryDefinition } from "@/types/config";
-import { SearchIcon, PlusIcon, EyeOffIcon, FunnelIcon, CopyIcon, TrashIcon } from "./icons";
-
-function cx(...c: Array<string | false | null | undefined>) {
-  return c.filter(Boolean).join(" ");
-}
+import { SearchIcon, PlusIcon, EyeOffIcon, FunnelIcon, CopyIcon, TrashIcon } from "@/components/config/icons";
+import { cx } from "@/components/ui/FormWidgets";
 
 interface AchievementsListProps {
   defs: Record<string, AchievementDefFile>;

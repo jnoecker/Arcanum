@@ -13,6 +13,7 @@ import { PresentationMode } from "./PresentationMode";
 import { StorySettingsSection } from "./StorySettingsSection";
 import { StoryAIToolbar } from "./StoryAIToolbar";
 import { StoryExportDialog } from "./StoryExportDialog";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 
 interface StoryEditorPanelProps {
   storyId: string;
@@ -32,6 +33,7 @@ export function StoryEditorPanel({ storyId, onDelete }: StoryEditorPanelProps) {
   const [loadError, setLoadError] = useState(false);
   const [isPresenting, setIsPresenting] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   // Stores needed for the export dialog (resolved scenes + audio paths).
   const assetsDir = useAssetStore((s) => s.assetsDir);
@@ -265,11 +267,7 @@ export function StoryEditorPanel({ storyId, onDelete }: StoryEditorPanelProps) {
               <ActionButton
                 variant="ghost"
                 size="icon"
-                onClick={() => {
-                  if (confirm(`Delete story "${story.title}"?`)) {
-                    onDelete();
-                  }
-                }}
+                onClick={() => setConfirmDelete(true)}
                 aria-label="Delete story"
                 className="text-text-muted hover:text-status-error"
               >
@@ -331,6 +329,20 @@ export function StoryEditorPanel({ storyId, onDelete }: StoryEditorPanelProps) {
           project={project}
           assetsDir={assetsDir}
           onClose={() => setIsExporting(false)}
+        />
+      )}
+      {confirmDelete && story && onDelete && (
+        <ConfirmDialog
+          title={`Delete "${story.title}"?`}
+          message="The story and its scenes are removed permanently. Use git to recover if needed."
+          confirmLabel="Delete story"
+          cancelLabel="Keep"
+          destructive
+          onConfirm={() => {
+            setConfirmDelete(false);
+            onDelete();
+          }}
+          onCancel={() => setConfirmDelete(false)}
         />
       )}
     </div>

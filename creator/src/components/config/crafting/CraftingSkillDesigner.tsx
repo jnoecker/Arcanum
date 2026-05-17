@@ -1,7 +1,7 @@
 ﻿import type { CraftingSkillDefinition } from "@/types/config";
 import { TextInput, SelectInput } from "@/components/ui/FormWidgets";
 import { SectionCard } from "@/components/ui/SectionCard";
-import { TrashIcon } from "./icons";
+import { TrashIcon } from "@/components/config/icons";
 
 interface CraftingSkillDesignerProps {
   id: string;

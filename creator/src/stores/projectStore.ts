@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { invoke } from "@tauri-apps/api/core";
 import { saveUIState, loadUIState } from "@/lib/uiPersistence";
-import { PANEL_MAP, type Island } from "@/lib/panelRegistry";
+import { type Island } from "@/lib/panelRegistry";
 import { useSidebarStore } from "@/stores/sidebarStore";
 import type {
   Project,
@@ -80,15 +80,8 @@ function syncSidebarToTab(tab: Tab | undefined): void {
     useSidebarStore.getState().setDrillTarget("zones");
     return;
   }
-  if (tab.kind === "panel" && tab.panelId) {
-    if (tab.panelId === "lore") {
-      useSidebarStore.getState().setDrillTarget("articles");
-      return;
-    }
-    const def = PANEL_MAP[tab.panelId];
-    if (def?.island) {
-      useSidebarStore.getState().setDrillTarget(def.island);
-    }
+  if (tab.kind === "panel" && tab.panelId === "lore") {
+    useSidebarStore.getState().setDrillTarget("articles");
   }
 }
 

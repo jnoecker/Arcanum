@@ -5,7 +5,8 @@ import { useQuestAuthoringStore } from "@/stores/questAuthoringStore";
 import { addQuest, generateEntityId } from "@/lib/zoneEdits";
 import type { QuestFile, WorldFile } from "@/types/world";
 import { QuestEditor } from "@/components/editors/QuestEditor";
-import { PlusIcon, SearchIcon } from "./achievements/icons";
+import { PlusIcon, SearchIcon } from "@/components/config/icons";
+import { cx } from "@/components/ui/FormWidgets";
 
 interface QuestRow {
   zoneId: string;
@@ -16,10 +17,6 @@ interface QuestRow {
 interface Selection {
   zoneId: string;
   questId: string;
-}
-
-function cx(...c: Array<string | false | null | undefined>) {
-  return c.filter(Boolean).join(" ");
 }
 
 function getActiveZoneId(): string | null {

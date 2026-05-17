@@ -1,14 +1,11 @@
 import { useState } from "react";
 import { ONBOARDING_FLAVORS } from "@/lib/baseTemplate/flavors";
 import type { OnboardingFlavor } from "@/lib/baseTemplate/flavors";
+import { cx } from "@/components/ui/FormWidgets";
 
 interface FlavorStepProps {
   onDone: (flavor: OnboardingFlavor) => void;
   onBack: () => void;
-}
-
-function cx(...classes: Array<string | false | null | undefined>) {
-  return classes.filter(Boolean).join(" ");
 }
 
 export function FlavorStep({ onDone, onBack }: FlavorStepProps) {
@@ -26,7 +23,7 @@ export function FlavorStep({ onDone, onBack }: FlavorStepProps) {
       seedPrompt: trimmed,
       classExamples: {},
       raceExamples: {},
-      gradientColors: ["#374151", "#6b7280"],
+      gradientColors: ["#15616d", "#ff7d00"],
       icon: "\u2728",
     };
     onDone(customFlavor);

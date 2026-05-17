@@ -17,6 +17,7 @@ import {
   type AbilityScopeFilter,
 } from "./abilities/AbilitiesList";
 import { AbilityEditor } from "./abilities/AbilityEditor";
+import { cx } from "@/components/ui/FormWidgets";
 
 const FALLBACK_TARGET_TYPES = [
   { value: "enemy", label: "Enemy" },
@@ -44,10 +45,6 @@ function nextDuplicateId(base: string, existing: Record<string, unknown>): strin
   let i = 2;
   while (existing[`${base}_copy_${i - 1}`]) i += 1;
   return `${base}_copy_${i - 1}`;
-}
-
-function cx(...c: Array<string | false | null | undefined>) {
-  return c.filter(Boolean).join(" ");
 }
 
 export function AbilityDesigner({

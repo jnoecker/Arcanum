@@ -28,21 +28,6 @@ interface StoryAIToolbarProps {
 
 type LoadingState = null | "outline" | "next" | "synopsis";
 
-// ─── Sparkle icon ─────────────────────────────────────────────────
-
-function SparkleIcon({ size = 12 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 16 16" fill="none" aria-hidden="true">
-      <path
-        d="M8 1l1.5 4.5L14 7l-4.5 1.5L8 13l-1.5-4.5L2 7l4.5-1.5L8 1z"
-        stroke="currentColor"
-        strokeWidth="1.2"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
 // ─── Main toolbar ─────────────────────────────────────────────────
 
 export function StoryAIToolbar({ story }: StoryAIToolbarProps) {
@@ -197,10 +182,9 @@ export function StoryAIToolbar({ story }: StoryAIToolbarProps) {
           onClick={handleOutline}
           disabled={loading !== null}
           className={btn(loading === "outline")}
-          title="Generate scene stubs from the synopsis"
+          title="Stub out scenes from the synopsis"
         >
-          <SparkleIcon />
-          {loading === "outline" ? "Outlining..." : "Outline"}
+          {loading === "outline" ? "Outlining..." : "Stub scenes"}
         </button>
         <button
           type="button"
@@ -209,18 +193,16 @@ export function StoryAIToolbar({ story }: StoryAIToolbarProps) {
           className={btn(loading === "next")}
           title="Append a new scene continuing the story"
         >
-          <SparkleIcon />
-          {loading === "next" ? "Writing..." : "Next scene"}
+          {loading === "next" ? "Drafting..." : "Continue"}
         </button>
         <button
           type="button"
           onClick={handleSynopsis}
           disabled={loading !== null}
           className={btn(loading === "synopsis")}
-          title="Fill the synopsis from existing scenes"
+          title="Distill a synopsis from the existing scenes"
         >
-          <SparkleIcon />
-          {loading === "synopsis" ? "Summarising..." : "Synopsise"}
+          {loading === "synopsis" ? "Distilling..." : "Distill synopsis"}
         </button>
       </div>
       {error && (
@@ -232,7 +214,7 @@ export function StoryAIToolbar({ story }: StoryAIToolbarProps) {
       {confirmReplace && (
         <ConfirmDialog
           title="Replace All Scenes?"
-          message={`This will delete the ${sortedScenes.length} existing scene${sortedScenes.length === 1 ? "" : "s"} and replace them with ${confirmReplace.scenes.length} new scene${confirmReplace.scenes.length === 1 ? "" : "s"} from the AI outline. You can undo.`}
+          message={`This will discard the ${sortedScenes.length} existing scene${sortedScenes.length === 1 ? "" : "s"} and replace them with ${confirmReplace.scenes.length} fresh stub${confirmReplace.scenes.length === 1 ? "" : "s"}. You can undo.`}
           confirmLabel="Replace"
           cancelLabel="Keep current"
           destructive

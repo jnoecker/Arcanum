@@ -131,8 +131,8 @@ function CreateMenu({
                 onClick={() => { onAi(); setOpen(false); }}
                 className="block w-full border-b border-border-muted px-3 py-2 text-left text-xs text-text-primary transition hover:bg-bg-hover"
               >
-                <span className="font-medium text-accent">✦ Generate with AI</span>
-                <span className="mt-0.5 block text-2xs text-text-muted">From a theme prompt</span>
+                <span className="font-medium text-accent">Conjure from a prompt</span>
+                <span className="mt-0.5 block text-2xs text-text-muted">Describe a mood; the prompts follow</span>
               </button>
             )}
             {ART_STYLE_PRESETS.map((preset) => (
@@ -420,7 +420,7 @@ export function ArtStylePanel() {
             <div className="flex gap-2">
               {AI_ENABLED && (
                 <ActionButton variant="primary" size="sm" onClick={() => setShowAiDialog(true)}>
-                  ✦ Generate with AI
+                  Conjure from prompt
                 </ActionButton>
               )}
               <CreateMenu
@@ -506,7 +506,7 @@ export function ArtStylePanel() {
                 )}
                 {AI_ENABLED && (
                   <ActionButton variant="ghost" size="sm" onClick={() => setShowRefineDialog(true)}>
-                    ✦ Refine with AI
+                    Refine
                   </ActionButton>
                 )}
                 <ActionButton variant="ghost" size="sm" onClick={() => handleDuplicate(selected.id)}>

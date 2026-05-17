@@ -13,7 +13,7 @@ import { EnchantingHeader } from "../enchanting/EnchantingHeader";
 import { EnchantmentList } from "../enchanting/EnchantmentList";
 import { EnchantmentEditor } from "../enchanting/EnchantmentEditor";
 import { EnchantmentPreview } from "../enchanting/EnchantmentPreview";
-import { PlusIcon, SaveIcon } from "../enchanting/icons";
+import { PlusIcon, SaveIcon } from "@/components/config/icons";
 import { Section } from "../enchanting/Section";
 
 function normalizeId(raw: string): string {

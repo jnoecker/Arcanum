@@ -520,7 +520,7 @@ function RegionEditor({
                   variant="primary"
                   size="sm"
                 >
-                  Generate with AI…
+                  Conjure draft…
                 </ActionButton>
               )}
               <ActionButton

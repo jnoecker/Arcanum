@@ -9,6 +9,7 @@ import {
 } from "@/lib/hubClient";
 import { TurnstileWidget } from "@/components/onboarding/TurnstileWidget";
 import { useAssetStore } from "@/stores/assetStore";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 
 interface HubAccountStatusProps {
   apiKey: string;
@@ -27,6 +28,7 @@ export function HubAccountStatus({ apiKey, apiUrl }: HubAccountStatusProps) {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [showUpgrade, setShowUpgrade] = useState(false);
+  const [confirmRotate, setConfirmRotate] = useState(false);
 
   const refresh = async () => {
     setLoading(true);
@@ -47,9 +49,9 @@ export function HubAccountStatus({ apiKey, apiUrl }: HubAccountStatusProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [apiKey, apiUrl]);
 
-  const handleRotate = async () => {
+  const doRotate = async () => {
     if (!settings) return;
-    if (!confirm("Rotate your API key? The current key will be invalidated and usage counters will reset.")) return;
+    setConfirmRotate(false);
     try {
       setLoading(true);
       const { apiKey: fresh } = await rotateKey(apiKey, apiUrl);
@@ -157,7 +159,7 @@ export function HubAccountStatus({ apiKey, apiUrl }: HubAccountStatusProps) {
       <div className="mt-3 flex items-center justify-between gap-2 text-2xs text-text-muted">
         <span>Rotating your key starts a fresh usage allowance.</span>
         <button
-          onClick={handleRotate}
+          onClick={() => setConfirmRotate(true)}
           disabled={loading}
           className="rounded border border-border-default px-3 py-1 text-text-secondary transition hover:border-accent/50 hover:text-text-primary disabled:opacity-50"
         >
@@ -165,6 +167,17 @@ export function HubAccountStatus({ apiKey, apiUrl }: HubAccountStatusProps) {
         </button>
       </div>
       {error && <p className="mt-2 text-2xs text-status-error">{error}</p>}
+      {confirmRotate && (
+        <ConfirmDialog
+          title="Rotate API key?"
+          message="The current key stops working immediately and your usage counters reset to zero. There's no undo."
+          confirmLabel="Rotate key"
+          cancelLabel="Keep current"
+          destructive
+          onConfirm={() => void doRotate()}
+          onCancel={() => setConfirmRotate(false)}
+        />
+      )}
     </div>
   );
 }

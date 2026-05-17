@@ -1,10 +1,7 @@
 ﻿import { useMemo, useState } from "react";
 import { SectionCard } from "@/components/ui/SectionCard";
-import { PlusIcon, SearchIcon, ChevronRightIcon } from "./icons";
-
-function cx(...c: Array<string | false | null | undefined>) {
-  return c.filter(Boolean).join(" ");
-}
+import { PlusIcon, SearchIcon, ChevronRightIcon } from "@/components/config/icons";
+import { cx } from "@/components/ui/FormWidgets";
 
 interface EntityListProps<T> {
   title: string;
@@ -161,19 +158,6 @@ function EntityRow({ id, title, subtitle, selected, onSelect }: EntityRowProps) 
           </p>
           <p className="truncate text-2xs text-text-muted/80">{subtitle}</p>
         </div>
-        <span className="inline-flex shrink-0 items-center gap-1 text-2xs">
-          <span
-            className="inline-block h-1.5 w-1.5 rounded-full bg-status-success"
-            aria-hidden="true"
-          />
-          <span className="text-status-success">Active</span>
-        </span>
-        <ChevronRightIcon
-          className={cx(
-            "h-4 w-4 shrink-0 transition-colors",
-            selected ? "text-accent" : "text-text-muted/40",
-          )}
-        />
       </button>
     </li>
   );

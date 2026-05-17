@@ -4,6 +4,7 @@ import {
   TextInput,
   NumberInput,
   CommitTextarea,
+  cx,
 } from "@/components/ui/FormWidgets";
 import { EntityArtGenerator } from "@/components/ui/EntityArtGenerator";
 import {
@@ -11,11 +12,7 @@ import {
   guildHallRoomContext,
 } from "@/lib/entityPrompts";
 import { SectionCard } from "@/components/ui/SectionCard";
-import { CopyIcon, TrashIcon } from "../housing/icons";
-
-function cx(...c: Array<string | false | null | undefined>) {
-  return c.filter(Boolean).join(" ");
-}
+import { CopyIcon, TrashIcon } from "@/components/config/icons";
 
 interface RoomEditorProps {
   id: string;

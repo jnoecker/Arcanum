@@ -10,7 +10,7 @@ import { FactionEditor } from "./factions/FactionEditor";
 import { ReputationTiersTable } from "./factions/ReputationTiersTable";
 import { RivalryMap } from "./factions/RivalryMap";
 import { QuestRewards } from "./factions/QuestRewards";
-import { CompassRoseIcon } from "./factions/icons";
+import { CompassRoseIcon } from "@/components/config/icons";
 
 function normalizeId(raw: string): string {
   return raw

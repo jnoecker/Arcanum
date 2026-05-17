@@ -148,14 +148,9 @@ export function CurrenciesPanel({ config, onChange }: ConfigPanelProps) {
               </button>
             </div>
 
-            <div className="ml-auto text-right">
-              <p className="font-display text-2xl font-semibold leading-none text-text-primary">
-                {entries.length}
-              </p>
-              <p className="mt-1 text-2xs uppercase tracking-wider text-text-muted">
-                {entries.length === 1 ? "currency" : "currencies"}
-              </p>
-            </div>
+            <p className="ml-auto self-center text-2xs uppercase tracking-ui text-text-muted">
+              {entries.length} {entries.length === 1 ? "currency" : "currencies"}
+            </p>
           </div>
         </div>
       </section>

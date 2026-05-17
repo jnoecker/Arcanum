@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { ConfigPanelProps } from "./types";
 import type { EmotePreset } from "@/types/config";
-import { TextInput } from "@/components/ui/FormWidgets";
+import { TextInput, cx } from "@/components/ui/FormWidgets";
 import {
   PlusIcon,
   SearchIcon,
@@ -9,11 +9,7 @@ import {
   ArrowUpIcon,
   ArrowDownIcon,
   XIcon,
-} from "../achievements/icons";
-
-function cx(...c: Array<string | false | null | undefined>) {
-  return c.filter(Boolean).join(" ");
-}
+} from "@/components/config/icons";
 
 export function EmotePresetsPanel({ config, onChange }: ConfigPanelProps) {
   const presets = config.emotePresets.presets;

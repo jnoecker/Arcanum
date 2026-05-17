@@ -1,7 +1,8 @@
-import { lazy, Suspense, useState, useEffect, useMemo } from "react";
+import { lazy, Suspense, useState, useMemo } from "react";
 import { PANEL_MAP, panelsForIsland } from "@/lib/panelRegistry";
 import type { PanelDef } from "@/lib/panelRegistry";
 import { PANEL_ICONS } from "@/assets/ui";
+import { useFocusTrap } from "@/lib/useFocusTrap";
 
 const ConfigPanelHost = lazy(() =>
   import("../config/ConfigPanelHost").then((m) => ({ default: m.ConfigPanelHost })),
@@ -33,17 +34,7 @@ export function SettingsOverlay({ onClose }: SettingsOverlayProps) {
   const panels = useMemo<PanelDef[]>(() => panelsForIsland("settings"), []);
   const [activeId, setActiveId] = useState<string>(() => panels[0]?.id ?? "services");
   const active = PANEL_MAP[activeId];
-
-  useEffect(() => {
-    function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape") {
-        e.preventDefault();
-        onClose();
-      }
-    }
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
+  const trapRef = useFocusTrap<HTMLDivElement>(onClose);
 
   let body: React.ReactNode = null;
   if (active) {
@@ -59,12 +50,13 @@ export function SettingsOverlay({ onClose }: SettingsOverlayProps) {
   return (
     <div
       className="dialog-overlay fixed inset-0 z-[90] flex items-center justify-center p-6"
-      role="dialog"
-      aria-modal="true"
-      aria-label="Settings"
       onClick={onClose}
     >
       <div
+        ref={trapRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="settings-overlay-title"
         className="panel-surface relative flex h-full max-h-[min(900px,92vh)] w-full max-w-6xl flex-col overflow-hidden rounded-3xl border border-accent/30 bg-bg-primary shadow-[var(--shadow-overlay)]"
         onClick={(e) => e.stopPropagation()}
       >
@@ -74,7 +66,7 @@ export function SettingsOverlay({ onClose }: SettingsOverlayProps) {
             <div className="text-3xs uppercase tracking-[0.28em] text-text-muted">
               Arcanum
             </div>
-            <h2 className="mt-1 font-display text-2xl text-accent">Settings</h2>
+            <h2 id="settings-overlay-title" className="mt-1 font-display text-2xl text-accent">Settings</h2>
           </div>
           <button
             type="button"

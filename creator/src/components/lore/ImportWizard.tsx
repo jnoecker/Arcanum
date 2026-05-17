@@ -188,7 +188,7 @@ export function ImportWizard({ onClose }: { onClose: () => void }) {
               <button
                 onClick={handleSelectFolder}
                 disabled={loading}
-                className="focus-ring rounded-full border border-accent/30 bg-accent/10 px-6 py-3 text-sm font-medium text-accent transition hover:bg-accent/20 disabled:opacity-40"
+                className="action-button action-button-primary action-button-md"
               >
                 {loading ? "Scanning..." : "Choose Folder"}
               </button>
@@ -296,7 +296,7 @@ export function ImportWizard({ onClose }: { onClose: () => void }) {
               <button
                 onClick={handleImport}
                 disabled={selectedCount === 0}
-                className="focus-ring rounded-full border border-accent/30 bg-accent/10 px-5 py-2 text-xs font-medium text-accent transition hover:bg-accent/20 disabled:opacity-40"
+                className="action-button action-button-primary action-button-md"
               >
                 Import {selectedCount} article
                 {selectedCount !== 1 ? "s" : ""}

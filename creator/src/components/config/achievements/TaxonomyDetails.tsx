@@ -2,11 +2,7 @@ import type {
   AchievementCategoryDefinition,
   AchievementCriterionTypeDefinition,
 } from "@/types/config";
-import { TextInput } from "@/components/ui/FormWidgets";
-
-function cx(...c: Array<string | false | null | undefined>) {
-  return c.filter(Boolean).join(" ");
-}
+import { TextInput, cx } from "@/components/ui/FormWidgets";
 
 export function defaultAchievementCategoryDefinition(
   raw: string,

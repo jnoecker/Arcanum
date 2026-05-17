@@ -199,7 +199,7 @@ export function SpriteLightbox({
   );
 }
 
-// ─── Art direction field with AI assist ─────────────────────────────
+// ─── Art direction field ────────────────────────────────────────────
 
 interface ArtDirectionFieldProps {
   def: SpriteDefinition;

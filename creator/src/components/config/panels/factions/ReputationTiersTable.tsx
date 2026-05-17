@@ -2,7 +2,7 @@
 import { DEFAULT_REPUTATION_TIERS } from "@/types/config";
 import { ActionButton, TextInput, NumberInput } from "@/components/ui/FormWidgets";
 import { SectionCard } from "@/components/ui/SectionCard";
-import { PlusIcon, TrashIcon } from "./icons";
+import { PlusIcon, TrashIcon } from "@/components/config/icons";
 import reputation1 from "@/assets/ui/reputation/reputation-1.png";
 import reputation2 from "@/assets/ui/reputation/reputation-2.png";
 import reputation3 from "@/assets/ui/reputation/reputation-3.png";

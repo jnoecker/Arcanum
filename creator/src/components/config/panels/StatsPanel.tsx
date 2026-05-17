@@ -552,16 +552,129 @@ function StatBindingsGrid({
 
         <BindingCard
           title="Spell Damage"
-          formula={(stat, n) => `+ ${stat} / ${n}`}
+          formula={(stat) =>
+            `(anchor + (${stat}-base)Ã—${bindings.spellStatMultiplier}) Ã— ${bindings.spellLevelScalingRate}^(L-1) — armor bypass`
+          }
           stat={bindings.spellDamageStat}
           statOptions={statOptions}
           onStat={(v) => onPatch({ spellDamageStat: v })}
           numeric={{
-            label: "Divisor",
-            value: bindings.spellDamageDivisor,
-            min: 1,
-            onCommit: (v) => onPatch({ spellDamageDivisor: v ?? 3 }),
+            label: "Stat mult",
+            value: bindings.spellStatMultiplier,
+            min: 0,
+            step: 0.05,
+            onCommit: (v) => onPatch({ spellStatMultiplier: v ?? 0.25 }),
           }}
+          extra={
+            <div className="grid grid-cols-2 gap-2">
+              <Field label="Level scale" hint="Per-level multiplicative growth. Mirror melee + HP rates.">
+                <NumberInput
+                  value={bindings.spellLevelScalingRate}
+                  onCommit={(v) => onPatch({ spellLevelScalingRate: v ?? 1.30 })}
+                  min={1}
+                  step={0.01}
+                  dense
+                />
+              </Field>
+              <Field label="Variance min">
+                <NumberInput
+                  value={bindings.spellVarianceMin}
+                  onCommit={(v) => onPatch({ spellVarianceMin: v ?? 0.85 })}
+                  min={0}
+                  step={0.05}
+                  dense
+                />
+              </Field>
+              <Field label="Variance max">
+                <NumberInput
+                  value={bindings.spellVarianceMax}
+                  onCommit={(v) => onPatch({ spellVarianceMax: v ?? 1.15 })}
+                  min={1}
+                  step={0.05}
+                  dense
+                />
+              </Field>
+            </div>
+          }
+        />
+
+        <BindingCard
+          title="Heal"
+          formula={(stat) =>
+            `(anchor + (${stat}-base)Ã—${bindings.healStatMultiplier}) Ã— ${bindings.healLevelScalingRate}^(L-1)`
+          }
+          stat={bindings.healStat}
+          statOptions={statOptions}
+          onStat={(v) => onPatch({ healStat: v })}
+          numeric={{
+            label: "Stat mult",
+            value: bindings.healStatMultiplier,
+            min: 0,
+            step: 0.05,
+            onCommit: (v) => onPatch({ healStatMultiplier: v ?? 0.25 }),
+          }}
+          extra={
+            <div className="grid grid-cols-2 gap-2">
+              <Field label="Level scale" hint="Mirror HP scaling so healing keeps pace with damage.">
+                <NumberInput
+                  value={bindings.healLevelScalingRate}
+                  onCommit={(v) => onPatch({ healLevelScalingRate: v ?? 1.30 })}
+                  min={1}
+                  step={0.01}
+                  dense
+                />
+              </Field>
+              <Field label="Variance min">
+                <NumberInput
+                  value={bindings.healVarianceMin}
+                  onCommit={(v) => onPatch({ healVarianceMin: v ?? 0.85 })}
+                  min={0}
+                  step={0.05}
+                  dense
+                />
+              </Field>
+              <Field label="Variance max">
+                <NumberInput
+                  value={bindings.healVarianceMax}
+                  onCommit={(v) => onPatch({ healVarianceMax: v ?? 1.15 })}
+                  min={1}
+                  step={0.05}
+                  dense
+                />
+              </Field>
+            </div>
+          }
+        />
+
+        <BindingCard
+          title="Buff (reserved)"
+          formula={() =>
+            `+${bindings.buffDurationPerStat}/pt duration, +${bindings.buffMagnitudePerStat}/pt magnitude — wiring TBD`
+          }
+          stat={bindings.buffStat}
+          statOptions={statOptions}
+          onStat={(v) => onPatch({ buffStat: v })}
+          numeric={{
+            label: "Duration / pt",
+            value: bindings.buffDurationPerStat,
+            min: 0,
+            step: 0.005,
+            onCommit: (v) => onPatch({ buffDurationPerStat: v ?? 0.02 }),
+          }}
+          extra={
+            <Field
+              label="Magnitude / pt"
+              hint="Reserved — server does not yet apply this to status effects."
+            >
+              <NumberInput
+                value={bindings.buffMagnitudePerStat}
+                onCommit={(v) => onPatch({ buffMagnitudePerStat: v ?? 0.02 })}
+                min={0}
+                step={0.005}
+                dense
+              />
+            </Field>
+          }
         />
 
         <BindingCard

@@ -168,6 +168,28 @@ export function checkAbsoluteHealth(config: AppConfig): HealthWarning[] {
     });
   }
 
+  // Spell + heal scaling should also track HP scaling. The three schools
+  // can diverge intentionally (e.g. casters fall off late-game) but more
+  // often it's a tuning oversight worth flagging.
+  const spellRate = b.spellLevelScalingRate;
+  if (spellRate > 0 && hpRate > 0 && Math.abs(spellRate - hpRate) >= 0.05) {
+    warnings.push({
+      severity: "warning",
+      message: `Spell level scaling (${spellRate.toFixed(2)}) and player HP scaling (${hpRate.toFixed(2)}) diverge — caster damage will drift relative to player survivability.`,
+      detail:
+        "Set stats.bindings.spellLevelScalingRate equal to progression.rewards.hpScalingRate so casters keep pace with the HP curve.",
+    });
+  }
+  const healRate = b.healLevelScalingRate;
+  if (healRate > 0 && hpRate > 0 && Math.abs(healRate - hpRate) >= 0.05) {
+    warnings.push({
+      severity: "warning",
+      message: `Heal level scaling (${healRate.toFixed(2)}) and player HP scaling (${hpRate.toFixed(2)}) diverge — healers will out-heal or under-heal incoming damage across the level band.`,
+      detail:
+        "Set stats.bindings.healLevelScalingRate equal to progression.rewards.hpScalingRate so healing keeps up with the HP and damage curves.",
+    });
+  }
+
   // Rule C: full HP recovery is so slow players will rely on consumables for
   // every fight. Surfaces a knob mismatch rather than a balance opinion.
   if (regenHpPerSec > 0 && baseHp && baseHp > 0) {

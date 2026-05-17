@@ -42,8 +42,36 @@ export interface StatBindings {
   dodgeStat: string;
   dodgePerPoint: number;
   maxDodgePercent: number;
+  /**
+   * Spell damage school. Same shape as melee minus armor — spells bypass
+   * physical mitigation. The "attackPower" anchor for a given ability is
+   * the midpoint of its authored `effect.minDamage`/`maxDamage`; per-ability
+   * `damagePerLevel` has been removed in favor of `spellLevelScalingRate`.
+   */
   spellDamageStat: string;
-  spellDamageDivisor: number;
+  spellStatMultiplier: number;
+  spellLevelScalingRate: number;
+  spellVarianceMin: number;
+  spellVarianceMax: number;
+  /**
+   * Healing school. Mirrors spell damage but anchored on the ability's
+   * `effect.minHeal`/`maxHeal` midpoint. Default stat is WIS so dedicated
+   * healers don't compete with INT casters for a single scaling stat.
+   */
+  healStat: string;
+  healStatMultiplier: number;
+  healLevelScalingRate: number;
+  healVarianceMin: number;
+  healVarianceMax: number;
+  /**
+   * Buff school — reserved scaling lane for utility / support classes
+   * (bard, herald). The config fields exist now so the wiring has a
+   * defined home, but `ApplyStatus` duration/magnitude does not yet
+   * consume them server-side.
+   */
+  buffStat: string;
+  buffDurationPerStat: number;
+  buffMagnitudePerStat: number;
   hpScalingStat: string;
   hpScalingDivisor: number;
   manaScalingStat: string;
@@ -82,6 +110,40 @@ export function extractMeleeSchool(bindings: StatBindings): DamageSchool {
     varianceMax: bindings.meleeVarianceMax,
     baseAttackPower: bindings.meleeBaseAttackPower,
     mitigationK: bindings.meleeArmorMitigationK,
+  };
+}
+
+/**
+ * Pull the spell `DamageSchool` out of the bindings. Spells bypass armor
+ * (`mitigationK: 0`) and don't have a flat `baseAttackPower` — the caller
+ * passes the ability's authored damage anchor as `attackPower`.
+ */
+export function extractSpellSchool(bindings: StatBindings): DamageSchool {
+  return {
+    statId: bindings.spellDamageStat,
+    statMultiplier: bindings.spellStatMultiplier,
+    levelScalingRate: bindings.spellLevelScalingRate,
+    varianceMin: bindings.spellVarianceMin,
+    varianceMax: bindings.spellVarianceMax,
+    baseAttackPower: 0,
+    mitigationK: 0,
+  };
+}
+
+/**
+ * Pull the heal `DamageSchool` out of the bindings. Heals have no enemy
+ * defense to mitigate against; the caller passes the ability's authored
+ * heal anchor as `attackPower`.
+ */
+export function extractHealSchool(bindings: StatBindings): DamageSchool {
+  return {
+    statId: bindings.healStat,
+    statMultiplier: bindings.healStatMultiplier,
+    levelScalingRate: bindings.healLevelScalingRate,
+    varianceMin: bindings.healVarianceMin,
+    varianceMax: bindings.healVarianceMax,
+    baseAttackPower: 0,
+    mitigationK: 0,
   };
 }
 
@@ -133,12 +195,19 @@ export interface AbilityEffectConfig {
   type: string;
   value?: number;
   statusEffectId?: string;
+  /**
+   * Authored damage range. The server scales this via the global
+   * `spellLevelScalingRate` / `spellStatMultiplier`; per-ability
+   * `damagePerLevel` has been removed in favor of the unified curve.
+   */
   minDamage?: number;
   maxDamage?: number;
-  damagePerLevel?: number;
+  /**
+   * Authored heal range. Scaled by `healLevelScalingRate` /
+   * `healStatMultiplier`; per-ability `healPerLevel` has been removed.
+   */
   minHeal?: number;
   maxHeal?: number;
-  healPerLevel?: number;
   flatThreat?: number;
   margin?: number;
   petTemplateKey?: string;

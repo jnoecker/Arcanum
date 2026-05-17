@@ -82,6 +82,8 @@ export function validateConfig(config: AppConfig): ValidationIssue[] {
       ["meleeDamageStat", b.meleeDamageStat],
       ["dodgeStat", b.dodgeStat],
       ["spellDamageStat", b.spellDamageStat],
+      ["healStat", b.healStat],
+      ["buffStat", b.buffStat],
       ["hpScalingStat", b.hpScalingStat],
       ["manaScalingStat", b.manaScalingStat],
       ["hpRegenStat", b.hpRegenStat],
@@ -133,6 +135,68 @@ export function validateConfig(config: AppConfig): ValidationIssue[] {
         severity: "error",
         entity: "stats.bindings",
         message: `meleeArmorMitigationK must be > 0 (got ${b.meleeArmorMitigationK})`,
+      });
+    }
+
+    // Spell damage knobs — same shape as melee, no mitigationK.
+    if (b.spellStatMultiplier < 0) {
+      issues.push({
+        severity: "error",
+        entity: "stats.bindings",
+        message: `spellStatMultiplier must be >= 0 (got ${b.spellStatMultiplier})`,
+      });
+    }
+    if (b.spellLevelScalingRate < 1) {
+      issues.push({
+        severity: "error",
+        entity: "stats.bindings",
+        message: `spellLevelScalingRate must be >= 1.0 — use 1.0 to disable (got ${b.spellLevelScalingRate})`,
+      });
+    }
+    if (b.spellVarianceMin <= 0 || b.spellVarianceMax < b.spellVarianceMin) {
+      issues.push({
+        severity: "error",
+        entity: "stats.bindings",
+        message: `spellVarianceMin/Max must satisfy 0 < min <= max (got ${b.spellVarianceMin} / ${b.spellVarianceMax})`,
+      });
+    }
+
+    // Heal knobs — mirror of spell.
+    if (b.healStatMultiplier < 0) {
+      issues.push({
+        severity: "error",
+        entity: "stats.bindings",
+        message: `healStatMultiplier must be >= 0 (got ${b.healStatMultiplier})`,
+      });
+    }
+    if (b.healLevelScalingRate < 1) {
+      issues.push({
+        severity: "error",
+        entity: "stats.bindings",
+        message: `healLevelScalingRate must be >= 1.0 — use 1.0 to disable (got ${b.healLevelScalingRate})`,
+      });
+    }
+    if (b.healVarianceMin <= 0 || b.healVarianceMax < b.healVarianceMin) {
+      issues.push({
+        severity: "error",
+        entity: "stats.bindings",
+        message: `healVarianceMin/Max must satisfy 0 < min <= max (got ${b.healVarianceMin} / ${b.healVarianceMax})`,
+      });
+    }
+
+    // Buff knobs — reserved scaling lane (server doesn't consume them yet).
+    if (b.buffDurationPerStat < 0) {
+      issues.push({
+        severity: "error",
+        entity: "stats.bindings",
+        message: `buffDurationPerStat must be >= 0 (got ${b.buffDurationPerStat})`,
+      });
+    }
+    if (b.buffMagnitudePerStat < 0) {
+      issues.push({
+        severity: "error",
+        entity: "stats.bindings",
+        message: `buffMagnitudePerStat must be >= 0 (got ${b.buffMagnitudePerStat})`,
       });
     }
   }

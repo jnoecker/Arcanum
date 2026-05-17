@@ -38,7 +38,7 @@ export function defaultAbilityDefinition(raw: string): AbilityDefinitionConfig {
     cooldownMs: 0,
     levelRequired: 1,
     targetType: "ENEMY",
-    effect: { type: "DIRECT_DAMAGE", value: 3 },
+    effect: { type: "DIRECT_DAMAGE", minDamage: 3, maxDamage: 3 },
   };
 }
 
@@ -331,19 +331,6 @@ export function AbilityDetail({
                 />
               </FieldRow>
             </>
-          )}
-          {(ability.effect.type === "DIRECT_DAMAGE" ||
-            ability.effect.type === "AREA_DAMAGE" ||
-            ability.effect.type === "DIRECT_HEAL") && (
-            <FieldRow label="Value" hint="Legacy flat value. Used when min/max are both 0.">
-              <NumberInput
-                value={ability.effect.value}
-                onCommit={(v) =>
-                  patchEffect(ability, patch, { value: v ?? 1 })
-                }
-                min={0}
-              />
-            </FieldRow>
           )}
           {ability.effect.type === "APPLY_STATUS" && (
             <FieldRow label="Status Effect">

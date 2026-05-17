@@ -193,7 +193,6 @@ export interface PetsTopLevelConfig {
 
 export interface AbilityEffectConfig {
   type: string;
-  value?: number;
   statusEffectId?: string;
   /**
    * Authored damage range. The server scales this via the global

@@ -273,7 +273,7 @@ describe("buildMonolithicConfigObject", () => {
           levelRequired: 1,
           targetType: "ENEMY",
           skillPointCost: 0,
-          effect: { type: "DIRECT_DAMAGE", value: 3 },
+          effect: { type: "DIRECT_DAMAGE", minDamage: 3, maxDamage: 3 },
         },
         pricey_blast: {
           displayName: "Pricey Blast",
@@ -282,7 +282,7 @@ describe("buildMonolithicConfigObject", () => {
           levelRequired: 5,
           targetType: "ENEMY",
           skillPointCost: 3,
-          effect: { type: "DIRECT_DAMAGE", value: 20 },
+          effect: { type: "DIRECT_DAMAGE", minDamage: 20, maxDamage: 20 },
         },
       },
     };
@@ -380,7 +380,7 @@ ambonmud:
           levelRequired: 1
           skillPointCost: 0
           targetType: ENEMY
-          effect: { type: DIRECT_DAMAGE, value: 3 }
+          effect: { type: DIRECT_DAMAGE, minDamage: 3, maxDamage: 3 }
         pricey_blast:
           displayName: Pricey Blast
           manaCost: 10
@@ -388,7 +388,7 @@ ambonmud:
           levelRequired: 5
           skillPointCost: 3
           targetType: ENEMY
-          effect: { type: DIRECT_DAMAGE, value: 20 }
+          effect: { type: DIRECT_DAMAGE, minDamage: 20, maxDamage: 20 }
 `;
 
     const config = parseAppConfigYaml(yaml);

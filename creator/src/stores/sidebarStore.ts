@@ -20,6 +20,12 @@ interface PersistedState {
   drillTarget: DrillTarget;
 }
 
+const VALID_DRILL_TARGETS = new Set<DrillTarget>(["articles", "zones"]);
+
+function coerceDrillTarget(value: unknown): DrillTarget {
+  return VALID_DRILL_TARGETS.has(value as DrillTarget) ? (value as DrillTarget) : null;
+}
+
 function readPersisted(): PersistedState {
   if (typeof window === "undefined") return { mode: "full", drillTarget: null };
   try {
@@ -27,8 +33,7 @@ function readPersisted(): PersistedState {
     if (!raw) return { mode: "full", drillTarget: null };
     const parsed = JSON.parse(raw) as Partial<PersistedState>;
     const mode = parsed.mode === "rail" ? "rail" : "full";
-    const drillTarget = (parsed.drillTarget ?? null) as DrillTarget;
-    return { mode, drillTarget };
+    return { mode, drillTarget: coerceDrillTarget(parsed.drillTarget) };
   } catch {
     return { mode: "full", drillTarget: null };
   }

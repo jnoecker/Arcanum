@@ -2,6 +2,9 @@
 import type {
   AbilityDefinitionConfig,
   AbilityEffectConfig,
+  AppConfig,
+  MobTiersConfig,
+  StatBindings,
   AbilityVisualArchetype,
   AbilityVisualConfig,
 } from "@/types/config";
@@ -16,6 +19,15 @@ import { getPreamble } from "@/lib/arcanumPrompts";
 import type { ArtStyle } from "@/lib/arcanumPrompts";
 import { classColor } from "@/lib/cssTokens";
 import { SectionCard } from "@/components/ui/SectionCard";
+import {
+  abilityHitsForAuthoredPower,
+  authoredPowerForAbilityHits,
+  standardMobHpForAbilityLevel,
+} from "@/lib/abilityPacing";
+import {
+  manaCostFromPct,
+  playerBaseManaAtLevel,
+} from "@/lib/abilityMana";
 
 function cx(...c: Array<string | false | null | undefined>) {
   return c.filter(Boolean).join(" ");
@@ -46,7 +58,7 @@ function buildAbilityContext(ability: AbilityDefinitionConfig): string {
     `Effect: ${ability.effect.type}`,
     `Target: ${ability.targetType}`,
     `Level required: ${ability.levelRequired}`,
-    `Mana cost: ${ability.manaCost}`,
+    `Mana cost: ${ability.manaCostPct}% base mana`,
   ];
   return parts.filter(Boolean).join("\n");
 }
@@ -60,6 +72,10 @@ interface AbilityEditorProps {
   statusEffectOptions: { value: string; label: string }[];
   targetTypeOptions: { value: string; label: string }[];
   petOptions: { value: string; label: string }[];
+  mobTiers: MobTiersConfig;
+  statBindings: StatBindings;
+  classes: AppConfig["classes"];
+  progression: AppConfig["progression"];
   onPatch: (p: Partial<AbilityDefinitionConfig>) => void;
   onPatchEffect: (p: Partial<AbilityEffectConfig>) => void;
   onRename: (newId: string) => void;
@@ -92,6 +108,10 @@ export function AbilityEditor({
   statusEffectOptions,
   targetTypeOptions,
   petOptions,
+  mobTiers,
+  statBindings,
+  classes,
+  progression,
   onPatch,
   onPatchEffect,
   onRename,
@@ -109,6 +129,8 @@ export function AbilityEditor({
         ability={ability}
         classOptions={classOptions}
         targetTypeOptions={targetTypeOptions}
+        classes={classes}
+        progression={progression}
         onPatch={onPatch}
       />
       <CombatEffectCard
@@ -117,6 +139,8 @@ export function AbilityEditor({
         abilities={abilities}
         statusEffectOptions={statusEffectOptions}
         petOptions={petOptions}
+        mobTiers={mobTiers}
+        statBindings={statBindings}
         onPatch={onPatch}
         onPatchEffect={onPatchEffect}
       />
@@ -125,7 +149,7 @@ export function AbilityEditor({
         ability={ability}
         onPatch={onPatch}
       />
-      <CombatVisualsCard ability={ability} onPatch={onPatch} />
+      <CombatVisualsCard id={id} ability={ability} onPatch={onPatch} />
     </div>
   );
 }
@@ -172,10 +196,89 @@ function deriveDefaultArchetype(ability: AbilityDefinitionConfig): AbilityVisual
   }
 }
 
+function effectVisualLanguage(ability: AbilityDefinitionConfig, archetype: AbilityVisualArchetype): string {
+  switch (ability.effect.type) {
+    case "DIRECT_DAMAGE":
+      return archetype === "MELEE_STRIKE"
+        ? "a compact impact flash for a weapon strike, one clear burst of force, sharp contact flare, no weapon or character"
+        : "a single readable projectile or bolt moving through air, bright head, trailing energy tail, clean silhouette";
+    case "DIRECT_HEAL":
+      return "a restorative aura sprite with rising luminous strands, soft circular halo, gentle life-energy motes";
+    case "APPLY_STATUS":
+      return ability.targetType.toUpperCase().includes("ENEMY")
+        ? "a harmful status aura with sinking wisps, curse motes, constricting rings, readable debuff silhouette"
+        : "a beneficial status aura with ascending wisps, protective rings, empowering glow, readable buff silhouette";
+    case "AREA_DAMAGE":
+      return "an expanding radial burst or ground-wave sprite, circular shock ring, central flare, clear area-of-effect silhouette";
+    case "TAUNT":
+      return "a threat-pulse sprite, commanding pressure wave, ember-bright focus mark, force pulling attention inward";
+    case "SUMMON_PET":
+      return "a summoning poof sprite, compact magical arrival cloud, sparks and ritual motes held in one readable silhouette";
+    default:
+      return "a readable combat VFX sprite matching the ability effect";
+  }
+}
+
+function combatVisualFramingHint(archetype: AbilityVisualArchetype): string {
+  const common = "Square isolated combat VFX sprite, centered, full effect contained with padding, generated for background removal or transparency. No character, no UI frame, no text, no scene background.";
+  switch (archetype) {
+    case "RANGED_PROJECTILE":
+      return `${common} The projectile should travel left-to-right with a bright head and visible trail.`;
+    case "MELEE_STRIKE":
+      return `${common} The impact flash should be compact and readable at small combat-canvas size.`;
+    case "HEAL_AURA":
+    case "BUFF_AURA":
+    case "DEBUFF_AURA":
+      return `${common} The aura should read as a vertical or circular pulse that can overlay a target sprite.`;
+    case "AREA_BURST":
+      return `${common} The burst should read from above as a radial wave or expanding ring.`;
+    case "SUMMON_POOF":
+      return `${common} The poof should be compact enough to appear at the caster's feet.`;
+    default:
+      return common;
+  }
+}
+
+function buildCombatVisualContext(
+  ability: AbilityDefinitionConfig,
+  archetype: AbilityVisualArchetype,
+  visual: AbilityVisualConfig,
+): string {
+  const parts = [
+    `Ability combat visual: ${ability.displayName}`,
+    ability.description ? `Ability description: ${ability.description}` : null,
+    ability.requiredClass || ability.classRestriction ? `Class: ${ability.requiredClass || ability.classRestriction}` : null,
+    `Effect type: ${ability.effect.type}`,
+    `Target type: ${ability.targetType}`,
+    `Animation archetype: ${ARCHETYPE_LABEL[archetype]}`,
+    `Visual treatment: ${effectVisualLanguage(ability, archetype)}`,
+    visual.color ? `Primary color: ${visual.color}` : null,
+    visual.accentColor ? `Accent color: ${visual.accentColor}` : null,
+  ];
+  return parts.filter(Boolean).join("\n");
+}
+
+function combatVisualPrompt(
+  ability: AbilityDefinitionConfig,
+  archetype: AbilityVisualArchetype,
+  visual: AbilityVisualConfig,
+  style: ArtStyle,
+): string {
+  const preamble = getPreamble(style, "worldbuilding");
+  const colors = [
+    visual.color ? `primary color ${visual.color}` : null,
+    visual.accentColor ? `accent color ${visual.accentColor}` : null,
+  ].filter(Boolean).join(", ");
+  const colorClause = colors ? `, ${colors}` : "";
+  return `${preamble}, isolated combat VFX sprite for "${ability.displayName}", ${ARCHETYPE_LABEL[archetype].toLowerCase()}, ${effectVisualLanguage(ability, archetype)}${colorClause}, centered square composition, transparent-ready silhouette, no text, no character, no UI frame`;
+}
+
 function CombatVisualsCard({
+  id,
   ability,
   onPatch,
 }: {
+  id: string;
   ability: AbilityDefinitionConfig;
   onPatch: (p: Partial<AbilityDefinitionConfig>) => void;
 }) {
@@ -221,17 +324,18 @@ function CombatVisualsCard({
           />
         </FieldLabel>
 
-        <FieldLabel
-          label="Projectile / Pulse Image"
-          hint="Optional override. Defaults to the ability icon above."
-        >
-          <TextInput
-            value={visual.projectileImage ?? ""}
-            onCommit={(v) => patchVisual({ projectileImage: v.trim() || undefined })}
-            placeholder="e.g. ice_lance.png"
-            dense
+        <div className="rounded-2xl border border-[var(--chrome-stroke)] bg-gradient-panel-light p-3">
+          <EntityArtGenerator
+            getPrompt={(style) => combatVisualPrompt(ability, effective, visual, style)}
+            entityContext={buildCombatVisualContext(ability, effective, visual)}
+            framingHint={combatVisualFramingHint(effective)}
+            currentImage={visual.projectileImage}
+            onAccept={(filePath) => patchVisual({ projectileImage: filePath })}
+            assetType="ability_sprite"
+            context={{ zone: "", entity_type: "ability_visual", entity_id: id }}
+            surface="worldbuilding"
           />
-        </FieldLabel>
+        </div>
 
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <FieldLabel
@@ -436,21 +540,35 @@ function ActionCostCard({
   ability,
   classOptions,
   targetTypeOptions,
+  classes,
+  progression,
   onPatch,
 }: {
   ability: AbilityDefinitionConfig;
   classOptions: { value: string; label: string }[];
   targetTypeOptions: { value: string; label: string }[];
+  classes: AppConfig["classes"];
+  progression: AppConfig["progression"];
   onPatch: (p: Partial<AbilityDefinitionConfig>) => void;
 }) {
+  const resolvedLevel = Math.max(1, ability.levelRequired || 1);
+  const requiredClass = ability.requiredClass?.trim() || ability.classRestriction?.trim() || "";
+  const classManaScalingRate = requiredClass ? classes[requiredClass]?.manaScalingRate : undefined;
+  const baseMana = playerBaseManaAtLevel(resolvedLevel, progression.rewards, classManaScalingRate);
+  const resolvedManaCost = manaCostFromPct(ability.manaCostPct, baseMana);
+
   return (
     <SectionCard title="Action & Cost">
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <FieldLabel label="Mana Cost">
+        <FieldLabel
+          label="Mana Cost %"
+          hint={`Costs ${resolvedManaCost} mana at level ${resolvedLevel} (${baseMana} base mana).`}
+        >
           <NumberInput
-            value={ability.manaCost}
-            onCommit={(v) => onPatch({ manaCost: v ?? 0 })}
+            value={ability.manaCostPct}
+            onCommit={(v) => onPatch({ manaCostPct: v ?? 0 })}
             min={0}
+            step={0.1}
             dense
           />
         </FieldLabel>
@@ -520,6 +638,8 @@ function CombatEffectCard({
   abilities,
   statusEffectOptions,
   petOptions,
+  mobTiers,
+  statBindings,
   onPatch,
   onPatchEffect,
 }: {
@@ -528,6 +648,8 @@ function CombatEffectCard({
   abilities: Record<string, AbilityDefinitionConfig>;
   statusEffectOptions: { value: string; label: string }[];
   petOptions: { value: string; label: string }[];
+  mobTiers: MobTiersConfig;
+  statBindings: StatBindings;
   onPatch: (p: Partial<AbilityDefinitionConfig>) => void;
   onPatchEffect: (p: Partial<AbilityEffectConfig>) => void;
 }) {
@@ -549,39 +671,27 @@ function CombatEffectCard({
         </FieldLabel>
 
         {hasDamage && (
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <FieldLabel
-              label="Damage"
-              hint="Authored L1 damage. Level scaling and variance are applied automatically by the server's spell formula."
-            >
-              <NumberInput
-                value={midpointOrZero(ability.effect.minDamage, ability.effect.maxDamage)}
-                onCommit={(v) =>
-                  onPatchEffect({ minDamage: v ?? 0, maxDamage: v ?? 0 })
-                }
-                min={0}
-                dense
-              />
-            </FieldLabel>
-          </div>
+          <AbilityPowerPacingField
+            label="Damage Casts"
+            kind="damage"
+            level={ability.levelRequired}
+            authoredPower={midpointOrZero(ability.effect.minDamage, ability.effect.maxDamage)}
+            mobTiers={mobTiers}
+            statBindings={statBindings}
+            onCommit={(v) => onPatchEffect({ minDamage: v, maxDamage: v })}
+          />
         )}
 
         {hasHeal && (
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <FieldLabel
-              label="Heal"
-              hint="Authored L1 heal. Level scaling and variance are applied automatically by the server's heal formula."
-            >
-              <NumberInput
-                value={midpointOrZero(ability.effect.minHeal, ability.effect.maxHeal)}
-                onCommit={(v) =>
-                  onPatchEffect({ minHeal: v ?? 0, maxHeal: v ?? 0 })
-                }
-                min={0}
-                dense
-              />
-            </FieldLabel>
-          </div>
+          <AbilityPowerPacingField
+            label="Heal Casts"
+            kind="heal"
+            level={ability.levelRequired}
+            authoredPower={midpointOrZero(ability.effect.minHeal, ability.effect.maxHeal)}
+            mobTiers={mobTiers}
+            statBindings={statBindings}
+            onCommit={(v) => onPatchEffect({ minHeal: v, maxHeal: v })}
+          />
         )}
 
         {t === "APPLY_STATUS" && (
@@ -656,6 +766,72 @@ function CombatEffectCard({
         />
       </div>
     </SectionCard>
+  );
+}
+
+function roundPacing(value: number): number {
+  if (!Number.isFinite(value)) return 0;
+  return Math.round(value * 100) / 100;
+}
+
+function AbilityPowerPacingField({
+  label,
+  kind,
+  level,
+  authoredPower,
+  mobTiers,
+  statBindings,
+  onCommit,
+}: {
+  label: string;
+  kind: "damage" | "heal";
+  level: number;
+  authoredPower: number;
+  mobTiers: MobTiersConfig;
+  statBindings: StatBindings;
+  onCommit: (authoredPower: number) => void;
+}) {
+  const resolvedLevel = Math.max(1, level || 1);
+  const standardHp = standardMobHpForAbilityLevel(mobTiers, resolvedLevel);
+  const hits = roundPacing(abilityHitsForAuthoredPower(
+    authoredPower,
+    resolvedLevel,
+    mobTiers,
+    statBindings,
+    kind,
+  ));
+  const noun = kind === "heal" ? "healing" : "damage";
+
+  return (
+    <div className="grid grid-cols-1 gap-2 sm:grid-cols-[minmax(9rem,12rem)_1fr]">
+      <FieldLabel
+        label={label}
+        hint={`Casts to match a level ${resolvedLevel} standard mob's ${standardHp} HP.`}
+      >
+        <NumberInput
+          value={hits}
+          onCommit={(v) => {
+            const next = authoredPowerForAbilityHits(
+              v ?? 0,
+              resolvedLevel,
+              mobTiers,
+              statBindings,
+              kind,
+            );
+            onCommit(next);
+          }}
+          min={0}
+          step={0.25}
+          dense
+        />
+      </FieldLabel>
+      <div className="self-end rounded-xl border border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] px-3 py-2">
+        <p className="font-display text-2xs uppercase tracking-wider text-text-muted">
+          Authored L1 {noun}
+        </p>
+        <p className="mt-0.5 font-mono text-sm text-text-primary">{authoredPower}</p>
+      </div>
+    </div>
   );
 }
 

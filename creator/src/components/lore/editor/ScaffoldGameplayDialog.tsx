@@ -618,11 +618,11 @@ function AbilityScaffold({ kind, article, config, onAccept, onClose }: ScaffoldG
           )}
 
           <div className="grid grid-cols-4 gap-3">
-            <Field label="Mana cost">
+            <Field label="Mana cost %">
               <input
                 type="number"
-                value={draft.manaCost}
-                onChange={(e) => setDraft({ ...draft, manaCost: Number(e.target.value) || 0 })}
+                value={draft.manaCostPct}
+                onChange={(e) => setDraft({ ...draft, manaCostPct: Number(e.target.value) || 0 })}
                 className="ornate-input w-full px-2.5 py-1.5 font-mono text-sm"
               />
             </Field>

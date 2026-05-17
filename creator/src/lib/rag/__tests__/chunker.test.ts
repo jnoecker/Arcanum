@@ -204,7 +204,7 @@ describe("chunkLore", () => {
           firebolt: {
             displayName: "Firebolt",
             description: "Hurls flame.",
-            manaCost: 5,
+            manaCostPct: 5,
             cooldownMs: 1000,
             levelRequired: 1,
             targetType: "single",

@@ -239,7 +239,10 @@ export interface AbilityVisualConfig {
 export interface AbilityDefinitionConfig {
   displayName: string;
   description?: string;
-  manaCost: number;
+  /** Percent of the ability-level base mana pool spent per cast. */
+  manaCostPct: number;
+  /** @deprecated Legacy flat mana cost, migrated to manaCostPct on load. */
+  manaCost?: number;
   cooldownMs: number;
   levelRequired: number;
   targetType: string;

@@ -28,6 +28,8 @@ const AbilityRow = memo(function AbilityRow({
   ability: AbilityEntry;
   onSelect: (id: string) => void;
 }) {
+  const manaLabel = ability.manaCostPct > 0 ? `${ability.manaCostPct}% mana` : `Mana ${ability.manaCost ?? 0}`;
+
   return (
     <button
       onClick={() => onSelect(ability.id)}
@@ -44,7 +46,7 @@ const AbilityRow = memo(function AbilityRow({
         </div>
         <div className="mt-1 flex flex-wrap gap-2 text-2xs">
           <span className="text-text-muted">
-            Mana {ability.manaCost}
+            {manaLabel}
           </span>
           <span className="text-text-muted">
             CD {(ability.cooldownMs / 1000).toFixed(1)}s
@@ -66,6 +68,8 @@ function AbilityDetail({
   ability: AbilityEntry;
   onBack: () => void;
 }) {
+  const manaLabel = ability.manaCostPct > 0 ? `${ability.manaCostPct}% base mana` : ability.manaCost ?? 0;
+
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center gap-3">
@@ -86,7 +90,7 @@ function AbilityDetail({
         <StatRow label="Display Name" value={ability.displayName} />
         <StatRow label="Effect Type" value={ability.effectType} />
         <StatRow label="Target Type" value={ability.targetType} />
-        <StatRow label="Mana Cost" value={ability.manaCost} />
+        <StatRow label="Mana Cost" value={manaLabel} />
         <StatRow label="Cooldown" value={`${(ability.cooldownMs / 1000).toFixed(1)}s`} />
         <StatRow label="Level Required" value={ability.levelRequired} />
         {ability.requiredClass && (

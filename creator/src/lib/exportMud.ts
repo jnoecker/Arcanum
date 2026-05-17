@@ -714,7 +714,7 @@ export function abilityToPlain(a: AppConfig["abilities"][string]): Record<string
   if (a.effect.durationMs != null) effect.durationMs = a.effect.durationMs;
   const obj: Record<string, unknown> = {
     displayName: a.displayName,
-    manaCost: a.manaCost,
+    manaCostPct: a.manaCostPct,
     cooldownMs: a.cooldownMs,
     levelRequired: a.levelRequired,
     targetType: a.targetType,

@@ -44,7 +44,7 @@ function buildAbilityContext(id: string, ability: AbilityDefinitionConfig): stri
     `Effect: ${ability.effect.type}`,
     `Target: ${ability.targetType}`,
     `Level required: ${ability.levelRequired}`,
-    `Mana cost: ${ability.manaCost}`,
+    `Mana cost: ${ability.manaCostPct}% base mana`,
   ];
   return parts.filter(Boolean).join("\n");
 }

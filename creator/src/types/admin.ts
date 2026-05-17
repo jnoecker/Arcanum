@@ -134,7 +134,8 @@ export interface AbilityEntry {
   id: string;
   displayName: string;
   description: string;
-  manaCost: number;
+  manaCost?: number;
+  manaCostPct: number;
   cooldownMs: number;
   levelRequired: number;
   targetType: string;

@@ -34,11 +34,22 @@ export function RegenPanel({ config, onChange }: ConfigPanelProps) {
               min={100}
             />
           </FieldRow>
-          <FieldRow label="Regen Amount" hint="HP restored per tick. 1 is slow and steady; higher values create burst healing between fights. Scale with your HP pools.">
+          <FieldRow label="Regen Percent" hint="Fraction of max HP restored per tick (e.g. 0.05 = 5%). Scales automatically with player level, so the same value feels right at every tier. Must be in (0, 1].">
             <NumberInput
-              value={r.regenAmount}
-              onCommit={(v) => patch({ regenAmount: v ?? 1 })}
-              min={1}
+              value={r.regenPercent}
+              onCommit={(v) => patch({ regenPercent: v ?? 0.05 })}
+              min={0.0001}
+              max={1}
+              step={0.01}
+            />
+          </FieldRow>
+          <FieldRow label="In-Combat Multiplier" hint="Multiplier applied to regen while the player is in combat. 1.0 keeps full regen; 0.5 halves it; 0.0 disables in-combat regen entirely. Range [0, 1].">
+            <NumberInput
+              value={r.inCombatMultiplier}
+              onCommit={(v) => patch({ inCombatMultiplier: v ?? 0.5 })}
+              min={0}
+              max={1}
+              step={0.05}
             />
           </FieldRow>
         </div>
@@ -71,15 +82,17 @@ export function RegenPanel({ config, onChange }: ConfigPanelProps) {
               min={100}
             />
           </FieldRow>
-          <FieldRow label="Regen Amount" hint="Mana restored per tick. Higher values let casters recover faster between encounters. Balance against ability mana costs.">
+          <FieldRow label="Regen Percent" hint="Fraction of max mana restored per tick (e.g. 0.05 = 5%). Scales with the player's mana pool so casters recover at a consistent pace across levels. Must be in (0, 1].">
             <NumberInput
-              value={r.mana.regenAmount}
+              value={r.mana.regenPercent}
               onCommit={(v) =>
                 patch({
-                  mana: { ...r.mana, regenAmount: v ?? 1 },
+                  mana: { ...r.mana, regenPercent: v ?? 0.05 },
                 })
               }
-              min={1}
+              min={0.0001}
+              max={1}
+              step={0.01}
             />
           </FieldRow>
         </div>

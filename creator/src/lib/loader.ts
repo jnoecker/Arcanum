@@ -611,11 +611,12 @@ function parseRegenConfig(raw: unknown): AppConfig["regen"] {
     maxPlayersPerTick: asNumber(s.maxPlayersPerTick, 50),
     baseIntervalMillis: asNumber(s.baseIntervalMillis, 5000),
     minIntervalMillis: asNumber(s.minIntervalMillis, 1000),
-    regenAmount: asNumber(s.regenAmount, 1),
+    regenPercent: asNumber(s.regenPercent, 0.05),
+    inCombatMultiplier: asNumber(s.inCombatMultiplier, 0.5),
     mana: {
       baseIntervalMillis: asNumber(mana.baseIntervalMillis, 3000),
       minIntervalMillis: asNumber(mana.minIntervalMillis, 1000),
-      regenAmount: asNumber(mana.regenAmount, 1),
+      regenPercent: asNumber(mana.regenPercent, 0.05),
     },
   };
 }

@@ -1032,12 +1032,22 @@ export const FIELD_METADATA: Record<string, FieldMeta> = {
     min: 100,
     impact: "medium",
   },
-  "regen.regenAmount": {
-    label: "HP Regen Amount",
+  "regen.regenPercent": {
+    label: "HP Regen Percent",
     description:
-      "Hit points restored per regen tick. Regen runs continuously (in and out of combat), so this directly competes with incoming mob DPS — if regenAmount/baseIntervalMillis exceeds avg-mob-damage/avg-mob-attack-delay, fights feel pointless.",
+      "Fraction of max HP restored per regen tick (0.05 = 5%). Scales automatically with player level, so the same percent feels right across the curve. In-combat regen is further multiplied by regen.inCombatMultiplier.",
     section: TuningSection.WorldSocial,
-    min: 1,
+    min: 0.0001,
+    max: 1,
+    impact: "high",
+  },
+  "regen.inCombatMultiplier": {
+    label: "In-Combat Regen Multiplier",
+    description:
+      "Multiplier applied to regen while in combat. 1.0 keeps the full out-of-combat rate; 0.5 halves it; 0.0 disables regen entirely during fights. Lower values let mob DPS apply real pressure.",
+    section: TuningSection.WorldSocial,
+    min: 0,
+    max: 1,
     impact: "high",
   },
   "regen.mana.baseIntervalMillis": {
@@ -1054,11 +1064,12 @@ export const FIELD_METADATA: Record<string, FieldMeta> = {
     min: 100,
     impact: "medium",
   },
-  "regen.mana.regenAmount": {
-    label: "Mana Regen Amount",
-    description: "Mana points restored per regen tick",
+  "regen.mana.regenPercent": {
+    label: "Mana Regen Percent",
+    description: "Fraction of max mana restored per regen tick (0.05 = 5%). Scales with the player's mana pool.",
     section: TuningSection.WorldSocial,
-    min: 1,
+    min: 0.0001,
+    max: 1,
     impact: "medium",
   },
 

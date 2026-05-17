@@ -92,23 +92,25 @@ export function checkAbsoluteHealth(config: AppConfig): HealthWarning[] {
   const mobDelay = config.mobActionDelay;
   const baseHp = config.progression?.rewards?.baseHp;
 
-  if (!regen || !combat || !weak || !standard || !mobDelay) return warnings;
+  if (!regen || !combat || !weak || !standard || !mobDelay || !baseHp) return warnings;
 
-  const regenHpPerSec = (regen.regenAmount * 1000) / regen.baseIntervalMillis;
+  const regenHpPerSecBase = (regen.regenPercent * baseHp * 1000) / regen.baseIntervalMillis;
+  const regenHpPerSecInCombat = regenHpPerSecBase * regen.inCombatMultiplier;
   const avgMobDelaySec =
     (mobDelay.minActionDelayMillis + mobDelay.maxActionDelayMillis) / 2 / 1000;
   const stdAvgDmg = (standard.baseMinDamage + standard.baseMaxDamage) / 2;
   const stdDps = avgMobDelaySec > 0 ? stdAvgDmg / avgMobDelaySec : 0;
 
-  // Rule A: regen swamps standard-tier mob DPS by 3× or more. Standard mobs
-  // are the workhorse threat tier — if a stationary player out-regens them,
-  // combat has no tension.
-  if (stdDps > 0 && regenHpPerSec / stdDps >= 3) {
+  // Rule A: in-combat regen swamps standard-tier mob DPS by 3× or more.
+  // Standard mobs are the workhorse threat tier — if a stationary player
+  // out-regens them mid-fight, combat has no tension. Uses the in-combat
+  // multiplier since out-of-combat regen doesn't compete with mob DPS.
+  if (stdDps > 0 && regenHpPerSecInCombat / stdDps >= 3) {
     warnings.push({
       severity: "warning",
-      message: `Regen (${regenHpPerSec.toFixed(1)} HP/s) outpaces standard-tier mob DPS (${stdDps.toFixed(2)}/s) by ${(regenHpPerSec / stdDps).toFixed(1)}× — combat may feel inconsequential.`,
+      message: `In-combat regen (${regenHpPerSecInCombat.toFixed(1)} HP/s) outpaces standard-tier mob DPS (${stdDps.toFixed(2)}/s) by ${(regenHpPerSecInCombat / stdDps).toFixed(1)}× — combat may feel inconsequential.`,
       detail:
-        "Regen runs continuously, including during combat. Lower regen.regenAmount, raise mob damage, or shorten mobActionDelay so standard-tier fights apply real pressure.",
+        "Lower regen.regenPercent, lower regen.inCombatMultiplier, raise mob damage, or shorten mobActionDelay so standard-tier fights apply real pressure.",
     });
   }
 
@@ -192,14 +194,16 @@ export function checkAbsoluteHealth(config: AppConfig): HealthWarning[] {
 
   // Rule C: full HP recovery is so slow players will rely on consumables for
   // every fight. Surfaces a knob mismatch rather than a balance opinion.
-  if (regenHpPerSec > 0 && baseHp && baseHp > 0) {
-    const fullHealSec = baseHp / regenHpPerSec;
+  // Out-of-combat rate ignores inCombatMultiplier — the percent system makes
+  // this a constant time-to-full regardless of level.
+  if (regenHpPerSecBase > 0) {
+    const fullHealSec = baseHp / regenHpPerSecBase;
     if (fullHealSec > 600) {
       warnings.push({
         severity: "info",
         message: `Out-of-combat HP recovery is very slow (~${Math.round(fullHealSec / 60)} min to full at base regen).`,
         detail:
-          "If that's intentional for a survival-economy feel, ignore. Otherwise raise regen.regenAmount or lower regen.baseIntervalMillis.",
+          "If that's intentional for a survival-economy feel, ignore. Otherwise raise regen.regenPercent or lower regen.baseIntervalMillis.",
       });
     }
   }

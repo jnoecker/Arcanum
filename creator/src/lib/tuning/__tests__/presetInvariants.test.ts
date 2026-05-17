@@ -190,22 +190,22 @@ describe("preset invariants — server semantics", () => {
     }
   });
 
-  describe("regen-to-full downtime is bounded at level 25", () => {
+  describe("regen-to-full downtime is bounded", () => {
     // Regen is intentionally slow enough that combat applies real pressure
     // (otherwise standing-still healing trivializes weak/standard mobs — see
-    // checkAbsoluteHealth's regen-vs-DPS rule). The bound here just catches
-    // obviously broken configs (regenAmount = 0, interval = 1h, etc.) without
-    // re-enforcing the old "fast regen" philosophy. Hardcore is the slowest
-    // legitimate preset; 45 minutes for full heal at L25 is acceptable there.
+    // checkAbsoluteHealth's regen-vs-DPS rule). Under percent-based regen,
+    // time-to-full is independent of level: ticks needed = 1 / percent, so
+    // total seconds = interval / (percent * 1000). The bound here just
+    // catches obviously broken configs (percent = 0, interval = 1h, etc.).
+    // Hardcore is the slowest legitimate preset; 45 minutes for full heal
+    // is acceptable there.
     for (const preset of TUNING_PRESETS) {
       it(`${preset.id}: post-fight regen time is reasonable`, () => {
         const merged = mergedConfig(preset);
-        const rewards = merged.progression.rewards;
-        const playerHpAt25 = Math.floor(rewards.baseHp * Math.pow(rewards.hpScalingRate, 24));
         const interval = merged.regen.baseIntervalMillis;
-        const amount = merged.regen.regenAmount;
-        const timeToFullSec = (playerHpAt25 * interval) / (amount * 1000);
-        expect(timeToFullSec, `${preset.id}: ${timeToFullSec.toFixed(0)}s to regen ${playerHpAt25}hp`).toBeLessThan(2700);
+        const percent = merged.regen.regenPercent;
+        const timeToFullSec = interval / (percent * 1000);
+        expect(timeToFullSec, `${preset.id}: ${timeToFullSec.toFixed(0)}s to fully regen at ${(percent * 100).toFixed(1)}%/tick`).toBeLessThan(2700);
       });
     }
   });

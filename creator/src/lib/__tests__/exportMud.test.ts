@@ -77,8 +77,9 @@ const BASE_CONFIG: AppConfig = {
     maxPlayersPerTick: 50,
     baseIntervalMillis: 5000,
     minIntervalMillis: 1000,
-    regenAmount: 1,
-    mana: { baseIntervalMillis: 3000, minIntervalMillis: 1000, regenAmount: 1 },
+    regenPercent: 0.05,
+    inCombatMultiplier: 0.5,
+    mana: { baseIntervalMillis: 3000, minIntervalMillis: 1000, regenPercent: 0.05 },
   },
   crafting: { maxSkillLevel: 100, baseXpPerLevel: 50, xpExponent: 1.5, gatherCooldownMs: 3000, stationBonusQuantity: 1 },
   navigation: {

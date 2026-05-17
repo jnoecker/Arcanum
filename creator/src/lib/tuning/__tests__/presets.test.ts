@@ -68,8 +68,8 @@ const FULL_MOCK_CONFIG: AppConfig = {
   },
   economy: { buyMultiplier: 1.0, sellMultiplier: 0.5 },
   regen: {
-    maxPlayersPerTick: 10, baseIntervalMillis: 5000, minIntervalMillis: 1000, regenAmount: 1,
-    mana: { baseIntervalMillis: 5000, minIntervalMillis: 1000, regenAmount: 1 },
+    maxPlayersPerTick: 10, baseIntervalMillis: 5000, minIntervalMillis: 1000, regenPercent: 0.05, inCombatMultiplier: 0.5,
+    mana: { baseIntervalMillis: 5000, minIntervalMillis: 1000, regenPercent: 0.05 },
   },
   crafting: { maxSkillLevel: 75, baseXpPerLevel: 100, xpExponent: 1.5, gatherCooldownMs: 3000, stationBonusQuantity: 1 },
   navigation: { recall: { cooldownMs: 60000, messages: { combatBlocked: "", cooldownRemaining: "", castBegin: "", unreachable: "", departNotice: "", arriveNotice: "", arrival: "" } } },
@@ -252,8 +252,8 @@ describe("validation", () => {
 describe("field coverage", () => {
   const allPaths = Object.keys(FIELD_METADATA);
 
-  it("FIELD_METADATA has 155 entries (sanity check)", () => {
-    expect(allPaths).toHaveLength(155);
+  it("FIELD_METADATA has 156 entries (sanity check)", () => {
+    expect(allPaths).toHaveLength(156);
   });
 
   for (const preset of TUNING_PRESETS) {

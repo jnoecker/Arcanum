@@ -136,7 +136,8 @@ describe("checkTuningHealth", () => {
  * dozens of unrelated sections.
  */
 function makeConfig(overrides: {
-  regenAmount?: number;
+  regenPercent?: number;
+  inCombatMultiplier?: number;
   regenInterval?: number;
   weakBaseHp?: number;
   weakBaseArmor?: number;
@@ -159,7 +160,8 @@ function makeConfig(overrides: {
 } = {}): AppConfig {
   return ({
     regen: {
-      regenAmount: overrides.regenAmount ?? 2,
+      regenPercent: overrides.regenPercent ?? 0.02,
+      inCombatMultiplier: overrides.inCombatMultiplier ?? 0.5,
       baseIntervalMillis: overrides.regenInterval ?? 4000,
     },
     combat: {
@@ -206,20 +208,28 @@ describe("checkAbsoluteHealth", () => {
     expect(result).toEqual([]);
   });
 
-  it("warns when regen swamps standard-tier mob DPS by 3× or more", () => {
-    // regen 10/s, std DPS ~1.42/s → 7× ratio
+  it("warns when in-combat regen swamps standard-tier mob DPS by 3× or more", () => {
+    // 20% of 150 HP / 4s × 1.0 in-combat = 7.5 HP/s; std DPS ~1.42/s → ~5× ratio
     const result = checkAbsoluteHealth(
-      makeConfig({ regenAmount: 40, regenInterval: 4000 }),
+      makeConfig({ regenPercent: 0.2, inCombatMultiplier: 1, regenInterval: 4000 }),
     );
-    expect(result.some((w) => /Regen.*outpaces standard-tier/.test(w.message))).toBe(true);
+    expect(result.some((w) => /In-combat regen.*outpaces standard-tier/.test(w.message))).toBe(true);
   });
 
-  it("does not warn when regen is below standard-tier DPS", () => {
-    // regen 0.5/s, std DPS ~1.42/s → 0.35× ratio
+  it("does not warn when in-combat regen is well below standard-tier DPS", () => {
+    // 1% of 150 HP / 4s × 0.5 in-combat = 0.19 HP/s; std DPS ~1.42/s → 0.13× ratio
     const result = checkAbsoluteHealth(
-      makeConfig({ regenAmount: 2, regenInterval: 4000 }),
+      makeConfig({ regenPercent: 0.01, inCombatMultiplier: 0.5, regenInterval: 4000 }),
     );
-    expect(result.some((w) => /Regen.*outpaces standard-tier/.test(w.message))).toBe(false);
+    expect(result.some((w) => /In-combat regen.*outpaces standard-tier/.test(w.message))).toBe(false);
+  });
+
+  it("does not warn when in-combat multiplier is zero, even at high base percent", () => {
+    // 50% per tick out of combat, but in-combat regen is fully disabled.
+    const result = checkAbsoluteHealth(
+      makeConfig({ regenPercent: 0.5, inCombatMultiplier: 0, regenInterval: 4000 }),
+    );
+    expect(result.some((w) => /In-combat regen.*outpaces standard-tier/.test(w.message))).toBe(false);
   });
 
   it("warns when weak-tier TTK exceeds 30s", () => {
@@ -261,9 +271,9 @@ describe("checkAbsoluteHealth", () => {
   });
 
   it("hints when out-of-combat recovery exceeds 10 minutes", () => {
-    // baseHp 1000, regen 1/4s = 0.25/s → 4000s = 66 min
+    // 0.5% per 4s = 800s to full regardless of baseHp.
     const result = checkAbsoluteHealth(
-      makeConfig({ regenAmount: 1, regenInterval: 4000, baseHp: 1000 }),
+      makeConfig({ regenPercent: 0.005, regenInterval: 4000 }),
     );
     expect(result.some((w) => /recovery is very slow/.test(w.message))).toBe(true);
   });

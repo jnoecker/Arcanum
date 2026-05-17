@@ -96,8 +96,9 @@ const MOCK_CONFIG = {
     maxPlayersPerTick: 10,
     baseIntervalMillis: 5000,
     minIntervalMillis: 1000,
-    regenAmount: 1,
-    mana: { baseIntervalMillis: 5000, minIntervalMillis: 1000, regenAmount: 1 },
+    regenPercent: 0.05,
+    inCombatMultiplier: 0.5,
+    mana: { baseIntervalMillis: 5000, minIntervalMillis: 1000, regenPercent: 0.05 },
   },
 } as unknown as AppConfig;
 

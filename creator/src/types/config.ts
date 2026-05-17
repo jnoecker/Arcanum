@@ -433,11 +433,12 @@ export interface RegenConfig {
   maxPlayersPerTick: number;
   baseIntervalMillis: number;
   minIntervalMillis: number;
-  regenAmount: number;
+  regenPercent: number;
+  inCombatMultiplier: number;
   mana: {
     baseIntervalMillis: number;
     minIntervalMillis: number;
-    regenAmount: number;
+    regenPercent: number;
   };
 }
 

@@ -190,7 +190,7 @@ describe("buildMonolithicConfigObject", () => {
       abilities: {
         shield_bash: {
           displayName: "Shield Bash",
-          manaCost: 5,
+          manaCostPct: 5,
           cooldownMs: 1000,
           levelRequired: 1,
           targetType: "enemy",
@@ -268,7 +268,7 @@ describe("buildMonolithicConfigObject", () => {
       abilities: {
         free_spark: {
           displayName: "Free Spark",
-          manaCost: 5,
+          manaCostPct: 5,
           cooldownMs: 0,
           levelRequired: 1,
           targetType: "ENEMY",
@@ -277,7 +277,7 @@ describe("buildMonolithicConfigObject", () => {
         },
         pricey_blast: {
           displayName: "Pricey Blast",
-          manaCost: 10,
+          manaCostPct: 10,
           cooldownMs: 2000,
           levelRequired: 5,
           targetType: "ENEMY",
@@ -375,7 +375,7 @@ ambonmud:
       definitions:
         free_spark:
           displayName: Free Spark
-          manaCost: 5
+          manaCostPct: 5
           cooldownMs: 0
           levelRequired: 1
           skillPointCost: 0
@@ -383,7 +383,7 @@ ambonmud:
           effect: { type: DIRECT_DAMAGE, minDamage: 3, maxDamage: 3 }
         pricey_blast:
           displayName: Pricey Blast
-          manaCost: 10
+          manaCostPct: 10
           cooldownMs: 2000
           levelRequired: 5
           skillPointCost: 3
@@ -393,11 +393,62 @@ ambonmud:
 
     const config = parseAppConfigYaml(yaml);
     expect(config.abilities.free_spark?.skillPointCost).toBe(0);
+    expect(config.abilities.free_spark?.manaCostPct).toBe(5);
+    expect(config.abilities.free_spark).not.toHaveProperty("manaCost");
     expect(config.abilities.pricey_blast?.skillPointCost).toBe(3);
+    expect(config.abilities.pricey_blast?.manaCostPct).toBe(10);
+    expect(config.abilities.pricey_blast).not.toHaveProperty("manaCost");
 
     const runtime = buildMonolithicConfigObject(config) as any;
     const defs = runtime.engine.abilities.definitions;
     expect(defs.free_spark.skillPointCost).toBe(0);
+    expect(defs.free_spark.manaCostPct).toBe(5);
+    expect(defs.free_spark).not.toHaveProperty("manaCost");
     expect(defs.pricey_blast.skillPointCost).toBe(3);
+    expect(defs.pricey_blast.manaCostPct).toBe(10);
+    expect(defs.pricey_blast).not.toHaveProperty("manaCost");
+  });
+
+  it("migrates legacy ability manaCost to manaCostPct on first load", () => {
+    const yaml = `
+ambonmud:
+  server:
+    telnetPort: 4000
+    webPort: 8080
+  world:
+    startRoom: hub:square
+    resources: []
+  progression:
+    rewards:
+      baseMana: 100
+      manaScalingRate: 1.5
+  engine:
+    classes:
+      definitions:
+        MAGE:
+          displayName: Mage
+          hpScalingRate: 1.1
+          manaScalingRate: 2
+    abilities:
+      definitions:
+        fireball:
+          displayName: Fireball
+          manaCost: 50
+          cooldownMs: 1000
+          levelRequired: 2
+          requiredClass: MAGE
+          targetType: ENEMY
+          effect: { type: DIRECT_DAMAGE, minDamage: 8, maxDamage: 8 }
+`;
+
+    const config = parseAppConfigYaml(yaml);
+
+    expect(config.abilities.fireball?.manaCostPct).toBe(25);
+    expect(config.abilities.fireball).not.toHaveProperty("manaCost");
+
+    const runtime = buildMonolithicConfigObject(config) as any;
+    const defs = runtime.engine.abilities.definitions;
+    expect(defs.fireball.manaCostPct).toBe(25);
+    expect(defs.fireball).not.toHaveProperty("manaCost");
   });
 });

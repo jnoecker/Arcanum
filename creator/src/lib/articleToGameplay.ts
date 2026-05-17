@@ -416,7 +416,7 @@ JSON shape:
   "id": "snake_case_slug",
   "displayName": "Title Case",
   "description": "One-line summary surfaced in the spellbook.",
-  "manaCost": 0-100,
+  "manaCostPct": 0-100,
   "cooldownMs": 0-300000,
   "levelRequired": 1-60,
   "targetType": "self | ally | enemy | area",
@@ -462,7 +462,7 @@ Rules:
   const config: AbilityDefinitionConfig = {
     displayName,
     description: asString(parsed.description),
-    manaCost: asNumber(parsed.manaCost, 10, 0, 500),
+    manaCostPct: asNumber(parsed.manaCostPct ?? parsed.manaCost, 10, 0, 100),
     cooldownMs: asNumber(parsed.cooldownMs, 5000, 0, 600000),
     levelRequired: asNumber(parsed.levelRequired, 1, 1, 100),
     targetType: asTargetType(parsed.targetType),
@@ -504,7 +504,7 @@ JSON shape:
   "id": "snake_case_slug",
   "displayName": "Title Case",
   "description": "One-line summary, written from a third-person observer's perspective.",
-  "manaCost": 0,
+  "manaCostPct": 0,
   "cooldownMs": 0-600000,
   "levelRequired": 1-100,
   "targetType": "self | ally | enemy | area",
@@ -518,7 +518,7 @@ JSON shape:
 
 Rules:
 - This is a creature power, NOT a player talent. Do not set requiredClass.
-- manaCost should usually be 0 — creatures don't pay mana.
+- manaCostPct should usually be 0 — creatures don't pay mana.
 - levelRequired reflects the encounter tier where this power becomes threatening.
 - cooldownMs controls frequency: signature once-per-encounter moves get high cooldowns (60000+), rapid-fire attacks get low ones.
 - Effect type matches the action: most creature powers are DIRECT_DAMAGE / AREA_DAMAGE / APPLY_STATUS.
@@ -549,7 +549,7 @@ Rules:
   const config: AbilityDefinitionConfig = {
     displayName,
     description: asString(parsed.description),
-    manaCost: asNumber(parsed.manaCost, 0, 0, 500),
+    manaCostPct: asNumber(parsed.manaCostPct ?? parsed.manaCost, 0, 0, 100),
     cooldownMs: asNumber(parsed.cooldownMs, 15000, 0, 600000),
     levelRequired: asNumber(parsed.levelRequired, 1, 1, 100),
     targetType: asTargetType(parsed.targetType),

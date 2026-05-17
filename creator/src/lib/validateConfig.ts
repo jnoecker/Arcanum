@@ -299,6 +299,13 @@ export function validateConfig(config: AppConfig): ValidationIssue[] {
         message: `skillPointCost must be >= 0 (got ${a.skillPointCost})`,
       });
     }
+    if (a.manaCostPct < 0) {
+      issues.push({
+        severity: "error",
+        entity: `ability:${id}`,
+        message: `manaCostPct must be >= 0 (got ${a.manaCostPct})`,
+      });
+    }
   }
 
   // ─── Status effects ──────────────────────────────────────────

@@ -34,7 +34,7 @@ const EFFECT_TYPES = [
 export function defaultAbilityDefinition(raw: string): AbilityDefinitionConfig {
   return {
     displayName: raw,
-    manaCost: 5,
+    manaCostPct: 10,
     cooldownMs: 0,
     levelRequired: 1,
     targetType: "ENEMY",
@@ -71,7 +71,7 @@ function buildAbilityContext(ability: AbilityDefinitionConfig): string {
     `Effect: ${ability.effect.type}`,
     `Target: ${ability.targetType}`,
     `Level required: ${ability.levelRequired}`,
-    `Mana cost: ${ability.manaCost}`,
+    `Mana cost: ${ability.manaCostPct}% base mana`,
   ];
   return parts.filter(Boolean).join("\n");
 }
@@ -226,11 +226,12 @@ export function AbilityDetail({
           placeholder="Optional"
         />
       </FieldRow>
-      <FieldRow label="Mana Cost">
+      <FieldRow label="Mana Cost %" hint="Percent of the ability-level base mana pool spent per cast.">
         <NumberInput
-          value={ability.manaCost}
-          onCommit={(v) => patch({ manaCost: v ?? 0 })}
+          value={ability.manaCostPct}
+          onCommit={(v) => patch({ manaCostPct: v ?? 0 })}
           min={0}
+          step={0.1}
         />
       </FieldRow>
       <FieldRow label="Cooldown (ms)">

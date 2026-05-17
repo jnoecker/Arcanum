@@ -9,6 +9,7 @@ import {
   BASE_RACES,
   BASE_PETS,
 } from "@/lib/baseTemplate/baseConfig";
+import { normalizeAbilityManaCost } from "@/lib/abilityMana";
 
 type DeepPartial<T> = {
   [P in keyof T]?: T[P] extends object ? DeepPartial<T[P]> : T[P];
@@ -78,7 +79,18 @@ export function applyTemplate(
   config: AppConfig,
   overrides: DeepPartial<AppConfig>,
 ): AppConfig {
-  return deepMerge(config as unknown as Record<string, unknown>, overrides as unknown as Record<string, unknown>) as unknown as AppConfig;
+  const merged = deepMerge(
+    config as unknown as Record<string, unknown>,
+    overrides as unknown as Record<string, unknown>,
+  ) as unknown as AppConfig;
+  if (!merged.abilities || !merged.classes || !merged.progression) {
+    return merged;
+  }
+  const abilities: AppConfig["abilities"] = {};
+  for (const [id, ability] of Object.entries(merged.abilities)) {
+    abilities[id] = normalizeAbilityManaCost(ability, merged.classes, merged.progression);
+  }
+  return { ...merged, abilities };
 }
 
 function deepMerge(target: Record<string, unknown>, source: Record<string, unknown>): Record<string, unknown> {

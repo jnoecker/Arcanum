@@ -266,6 +266,10 @@ export function AbilityDesigner({
               statusEffectOptions={statusEffectOptions}
               targetTypeOptions={targetTypeOptions}
               petOptions={petOptions}
+              mobTiers={config.mobTiers}
+              statBindings={config.stats.bindings}
+              classes={config.classes}
+              progression={config.progression}
               onPatch={(p) => patchAbility(selectedId, p)}
               onPatchEffect={(p) => patchEffect(selectedId, p)}
               onRename={(v) => renameAbility(selectedId, v)}

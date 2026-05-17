@@ -20,6 +20,7 @@ import {
   DEFAULT_ENVIRONMENT_CONFIG,
   DEFAULT_ENVIRONMENT_THEME,
 } from "@/lib/configDefaults";
+import { normalizeAbilityManaCost } from "@/lib/abilityMana";
 
 /**
  * Load all zone YAML files from the world directory.
@@ -72,6 +73,10 @@ export function parseAppConfigYaml(content: string): AppConfig {
   const engine = (root.engine ?? {}) as Record<string, unknown>;
   const progression = (root.progression ?? {}) as Record<string, unknown>;
 
+  const statsConfig = parseStatsConfig(engine.stats);
+  const progressionConfig = parseProgressionConfig(progression);
+  const classesConfig = parseMapSection<AppConfig["classes"][string]>(engine.classes, "definitions");
+
   return {
     mode: parseDeploymentMode(root.mode),
     server: parseServerConfig(root.server),
@@ -80,13 +85,13 @@ export function parseAppConfigYaml(content: string): AppConfig {
     logging: parseLoggingConfig(root.logging),
     world: parseWorldConfig(root.world),
     classStartRooms: parseClassStartRooms(engine.classStartRooms),
-    stats: parseStatsConfig(engine.stats),
-    abilities: parseMapSection(engine.abilities, "definitions"),
+    stats: statsConfig,
+    abilities: parseAbilityDefinitions(engine.abilities, classesConfig, progressionConfig),
     statusEffects: withDefaults(parseMapSection(engine.statusEffects, "definitions"), DEFAULT_STATUS_EFFECTS),
     combat: parseCombatConfig(engine.combat),
     mobTiers: parseMobTiersConfig(engine.mob),
     mobActionDelay: parseMobActionDelayConfig(engine.mob),
-    progression: parseProgressionConfig(progression),
+    progression: progressionConfig,
     economy: parseSimpleSection(engine.economy, { buyMultiplier: 1.0, sellMultiplier: 0.5 }),
     regen: parseRegenConfig(engine.regen),
     crafting: parseCraftingConfig(engine.crafting),
@@ -94,7 +99,7 @@ export function parseAppConfigYaml(content: string): AppConfig {
     death: parseDeathConfig(engine.death),
     commands: withDefaults(parseMapSection(engine.commands, "entries"), DEFAULT_COMMANDS),
     group: parseSimpleSection(engine.group, { maxSize: 5, inviteTimeoutMs: 60000, xpBonusPerMember: 0.1 }),
-    classes: parseMapSection(engine.classes, "definitions"),
+    classes: classesConfig,
     races: parseMapSection(engine.races, "definitions"),
     equipmentSlots: normalizeEquipmentSlotKeys(parseMapSection(engine.equipment, "slots")),
     characterCreation: parseCharacterCreationConfig(engine.characterCreation),
@@ -854,6 +859,27 @@ function parseMapSection<T>(raw: unknown, key: string): Record<string, T> {
   return section as Record<string, T>;
 }
 
+function parseAbilityDefinitions(
+  raw: unknown,
+  classes: AppConfig["classes"],
+  progression: AppConfig["progression"],
+): AppConfig["abilities"] {
+  const definitions = parseMapSection<AppConfig["abilities"][string]>(raw, "definitions");
+  return mapAbilityDefinitions(definitions, classes, progression);
+}
+
+function mapAbilityDefinitions(
+  definitions: Record<string, AppConfig["abilities"][string]>,
+  classes: AppConfig["classes"],
+  progression: AppConfig["progression"],
+): AppConfig["abilities"] {
+  const result: AppConfig["abilities"] = {};
+  for (const [id, ability] of Object.entries(definitions)) {
+    result[id] = normalizeAbilityManaCost(ability, classes, progression);
+  }
+  return result;
+}
+
 function parseNestedMapSection<T>(
   raw: unknown,
   sectionKey: string,
@@ -1410,6 +1436,15 @@ async function loadSplitConfig(projectDir: string): Promise<AppConfig | null> {
       }
     } catch { /* no achievements file yet */ }
 
+    const statsConfig = parseStatsConfig(statsRaw);
+    const progressionConfig = parseProgressionConfig(progressionRaw.progression ?? progressionRaw);
+    const classesConfig = asRecord<AppConfig["classes"][string]>(classesRaw.definitions ?? classesRaw);
+    const abilitiesConfig = mapAbilityDefinitions(
+      asRecord<AppConfig["abilities"][string]>(abilitiesRaw.definitions ?? abilitiesRaw),
+      classesConfig,
+      progressionConfig,
+    );
+
     const config: AppConfig = {
       // world.yaml
       mode: parseDeploymentMode(worldRaw.mode),
@@ -1444,10 +1479,10 @@ async function loadSplitConfig(projectDir: string): Promise<AppConfig | null> {
       questCompletionTypes: withDefaults(asRecord((worldRaw.questCompletionTypes as Record<string, unknown> | undefined)?.types ?? worldRaw.questCompletionTypes), DEFAULT_QUEST_COMPLETION_TYPES),
 
       // stats.yaml
-      stats: parseStatsConfig(statsRaw),
+      stats: statsConfig,
 
       // abilities.yaml
-      abilities: asRecord(abilitiesRaw.definitions ?? abilitiesRaw),
+      abilities: abilitiesConfig,
 
       // status-effects.yaml
       statusEffects: withDefaults(
@@ -1464,7 +1499,7 @@ async function loadSplitConfig(projectDir: string): Promise<AppConfig | null> {
       mobActionDelay: parseMobActionDelayConfig(combatRaw.mob ?? combatRaw),
 
       // classes.yaml
-      classes: asRecord(classesRaw.definitions ?? classesRaw),
+      classes: classesConfig,
 
       // races.yaml
       races: asRecord(racesRaw.definitions ?? racesRaw),
@@ -1481,7 +1516,7 @@ async function loadSplitConfig(projectDir: string): Promise<AppConfig | null> {
       multiclass: parseMulticlassConfig(combatRaw.multiclass ?? worldRaw.multiclass),
 
       // progression.yaml
-      progression: parseProgressionConfig(progressionRaw.progression ?? progressionRaw),
+      progression: progressionConfig,
       economy: parseSimpleSection(progressionRaw.economy, { buyMultiplier: 1.0, sellMultiplier: 0.5 }),
       regen: parseRegenConfig(progressionRaw.regen),
 

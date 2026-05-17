@@ -256,7 +256,7 @@ describe("validateConfig", () => {
       abilities: {
         poison_strike: {
           displayName: "Poison Strike",
-          manaCost: 5,
+          manaCostPct: 5,
           cooldownMs: 0,
           levelRequired: 1,
           targetType: "ENEMY",
@@ -283,7 +283,7 @@ describe("validateConfig", () => {
       abilities: {
         poison_strike: {
           displayName: "Poison Strike",
-          manaCost: 5,
+          manaCostPct: 5,
           cooldownMs: 0,
           levelRequired: 1,
           targetType: "ENEMY",
@@ -301,7 +301,7 @@ describe("validateConfig", () => {
       abilities: {
         bogus_cost: {
           displayName: "Bogus Cost",
-          manaCost: 5,
+          manaCostPct: 5,
           cooldownMs: 0,
           levelRequired: 1,
           targetType: "ENEMY",
@@ -326,7 +326,7 @@ describe("validateConfig", () => {
       abilities: {
         free_spark: {
           displayName: "Free Spark",
-          manaCost: 5,
+          manaCostPct: 5,
           cooldownMs: 0,
           levelRequired: 1,
           targetType: "ENEMY",
@@ -348,7 +348,7 @@ describe("validateConfig", () => {
       abilities: {
         smite: {
           displayName: "Smite",
-          manaCost: 5,
+          manaCostPct: 5,
           cooldownMs: 0,
           levelRequired: 1,
           targetType: "ENEMY",

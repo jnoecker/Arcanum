@@ -255,7 +255,7 @@ function convertAbility(id: string, ability: AbilityDefinitionConfig): Omit<Worl
   if (ability.description) nodes.push(paragraph(ability.description));
 
   const mechBits: string[] = [];
-  mechBits.push(`Mana cost: ${ability.manaCost}`);
+  mechBits.push(`Mana cost: ${ability.manaCostPct}% base mana`);
   mechBits.push(`Cooldown: ${ability.cooldownMs} ms`);
   mechBits.push(`Level required: ${ability.levelRequired}`);
   mechBits.push(`Target: ${ability.targetType}`);
@@ -265,7 +265,7 @@ function convertAbility(id: string, ability: AbilityDefinitionConfig): Omit<Worl
 
   const fields: Record<string, unknown> = {
     abilityType: "spell",
-    resourceCost: `${ability.manaCost} mana`,
+    resourceCost: `${ability.manaCostPct}% base mana`,
     cooldown: `${ability.cooldownMs} ms`,
     effect: ability.description ?? "",
   };

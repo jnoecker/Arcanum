@@ -227,7 +227,7 @@ export const BASE_ABILITIES: Record<string, AbilityDefinitionConfig> = {
   power_strike: {
     displayName: "Power Strike",
     description: "A forceful melee attack that channels raw strength into a single devastating blow.",
-    manaCost: 0,
+    manaCostPct: 0,
     cooldownMs: 0,
     levelRequired: 1,
     targetType: "ENEMY",
@@ -241,7 +241,7 @@ export const BASE_ABILITIES: Record<string, AbilityDefinitionConfig> = {
   shield_bash: {
     displayName: "Shield Bash",
     description: "Slams the shield into an enemy's face, leaving them dazed and unable to act.",
-    manaCost: 10,
+    manaCostPct: 12,
     cooldownMs: 8000,
     levelRequired: 3,
     targetType: "ENEMY",
@@ -254,7 +254,7 @@ export const BASE_ABILITIES: Record<string, AbilityDefinitionConfig> = {
   war_cry: {
     displayName: "War Cry",
     description: "A thunderous battle shout that forces nearby enemies to focus their aggression on the warrior.",
-    manaCost: 12,
+    manaCostPct: 14,
     cooldownMs: 10000,
     levelRequired: 5,
     targetType: "SELF",
@@ -268,7 +268,7 @@ export const BASE_ABILITIES: Record<string, AbilityDefinitionConfig> = {
   fortify: {
     displayName: "Fortify",
     description: "Braces behind the shield, generating a temporary barrier that absorbs incoming damage.",
-    manaCost: 15,
+    manaCostPct: 18,
     cooldownMs: 15000,
     levelRequired: 7,
     targetType: "SELF",
@@ -281,7 +281,7 @@ export const BASE_ABILITIES: Record<string, AbilityDefinitionConfig> = {
   cleave: {
     displayName: "Cleave",
     description: "A wide sweeping strike that carves through all enemies within reach.",
-    manaCost: 25,
+    manaCostPct: 25,
     cooldownMs: 12000,
     levelRequired: 9,
     targetType: "ENEMY",
@@ -297,7 +297,7 @@ export const BASE_ABILITIES: Record<string, AbilityDefinitionConfig> = {
   arcane_bolt: {
     displayName: "Arcane Bolt",
     description: "Launches a concentrated bolt of raw arcane energy at a single target.",
-    manaCost: 8,
+    manaCostPct: 10,
     cooldownMs: 0,
     levelRequired: 1,
     targetType: "ENEMY",
@@ -311,7 +311,7 @@ export const BASE_ABILITIES: Record<string, AbilityDefinitionConfig> = {
   flame_brand: {
     displayName: "Flame Brand",
     description: "Sears the target with magical fire that continues to burn over time.",
-    manaCost: 15,
+    manaCostPct: 15,
     cooldownMs: 6000,
     levelRequired: 3,
     targetType: "ENEMY",
@@ -324,7 +324,7 @@ export const BASE_ABILITIES: Record<string, AbilityDefinitionConfig> = {
   arcane_shield: {
     displayName: "Arcane Shield",
     description: "Conjures a shimmering barrier of magical force that absorbs incoming damage.",
-    manaCost: 12,
+    manaCostPct: 15,
     cooldownMs: 15000,
     levelRequired: 5,
     targetType: "SELF",
@@ -337,7 +337,7 @@ export const BASE_ABILITIES: Record<string, AbilityDefinitionConfig> = {
   chain_lightning: {
     displayName: "Chain Lightning",
     description: "Unleashes a crackling arc of lightning that leaps between nearby enemies.",
-    manaCost: 22,
+    manaCostPct: 25,
     cooldownMs: 8000,
     levelRequired: 7,
     targetType: "ENEMY",
@@ -351,7 +351,7 @@ export const BASE_ABILITIES: Record<string, AbilityDefinitionConfig> = {
   hex: {
     displayName: "Hex",
     description: "Curses the target with dark magic, sapping their physical attributes.",
-    manaCost: 14,
+    manaCostPct: 18,
     cooldownMs: 10000,
     levelRequired: 9,
     targetType: "ENEMY",
@@ -366,7 +366,7 @@ export const BASE_ABILITIES: Record<string, AbilityDefinitionConfig> = {
   heal: {
     displayName: "Heal",
     description: "Channels divine energy to mend the cleric's own wounds.",
-    manaCost: 10,
+    manaCostPct: 12,
     cooldownMs: 0,
     levelRequired: 1,
     targetType: "SELF",
@@ -380,7 +380,7 @@ export const BASE_ABILITIES: Record<string, AbilityDefinitionConfig> = {
   restore: {
     displayName: "Restore",
     description: "Extends a hand of sacred light to heal an injured ally.",
-    manaCost: 12,
+    manaCostPct: 15,
     cooldownMs: 3000,
     levelRequired: 3,
     targetType: "ALLY",
@@ -394,7 +394,7 @@ export const BASE_ABILITIES: Record<string, AbilityDefinitionConfig> = {
   blessing: {
     displayName: "Blessing",
     description: "Invokes a divine blessing that fortifies the body and sharpens the mind.",
-    manaCost: 14,
+    manaCostPct: 18,
     cooldownMs: 20000,
     levelRequired: 5,
     targetType: "SELF",
@@ -407,7 +407,7 @@ export const BASE_ABILITIES: Record<string, AbilityDefinitionConfig> = {
   purge: {
     displayName: "Purge",
     description: "Calls down a searing radiance that burns the unholy with sustained divine fire.",
-    manaCost: 12,
+    manaCostPct: 15,
     cooldownMs: 8000,
     levelRequired: 7,
     targetType: "ENEMY",
@@ -420,7 +420,7 @@ export const BASE_ABILITIES: Record<string, AbilityDefinitionConfig> = {
   sanctuary: {
     displayName: "Sanctuary",
     description: "Wraps the cleric in a sustained aura of restorative energy that heals wounds over time.",
-    manaCost: 18,
+    manaCostPct: 22,
     cooldownMs: 12000,
     levelRequired: 9,
     targetType: "SELF",
@@ -435,7 +435,7 @@ export const BASE_ABILITIES: Record<string, AbilityDefinitionConfig> = {
   backstab: {
     displayName: "Backstab",
     description: "Drives a blade into a vulnerable spot, dealing heavy damage from close range.",
-    manaCost: 6,
+    manaCostPct: 8,
     cooldownMs: 0,
     levelRequired: 1,
     targetType: "ENEMY",
@@ -449,7 +449,7 @@ export const BASE_ABILITIES: Record<string, AbilityDefinitionConfig> = {
   blind: {
     displayName: "Blind",
     description: "Throws a handful of blinding powder into an enemy's eyes, leaving them stunned.",
-    manaCost: 8,
+    manaCostPct: 10,
     cooldownMs: 10000,
     levelRequired: 3,
     targetType: "ENEMY",
@@ -462,7 +462,7 @@ export const BASE_ABILITIES: Record<string, AbilityDefinitionConfig> = {
   envenom: {
     displayName: "Envenom",
     description: "Coats a weapon in virulent poison that eats at the target's vitality over time.",
-    manaCost: 12,
+    manaCostPct: 15,
     cooldownMs: 8000,
     levelRequired: 5,
     targetType: "ENEMY",
@@ -475,7 +475,7 @@ export const BASE_ABILITIES: Record<string, AbilityDefinitionConfig> = {
   shadow_step: {
     displayName: "Shadow Step",
     description: "Slips into the shadows, gaining a burst of supernatural agility and resilience.",
-    manaCost: 14,
+    manaCostPct: 18,
     cooldownMs: 25000,
     levelRequired: 7,
     targetType: "SELF",
@@ -488,7 +488,7 @@ export const BASE_ABILITIES: Record<string, AbilityDefinitionConfig> = {
   ambush: {
     displayName: "Ambush",
     description: "Strikes from concealment with lethal precision, dealing massive damage to an unsuspecting target.",
-    manaCost: 22,
+    manaCostPct: 25,
     cooldownMs: 8000,
     levelRequired: 9,
     targetType: "ENEMY",
@@ -504,7 +504,7 @@ export const BASE_ABILITIES: Record<string, AbilityDefinitionConfig> = {
   summon_wolf: {
     displayName: "Summon Wolf",
     description: "Calls a loyal wolf companion to fight at the ranger's side.",
-    manaCost: 15,
+    manaCostPct: 18,
     cooldownMs: 5000,
     levelRequired: 1,
     targetType: "SELF",
@@ -517,7 +517,7 @@ export const BASE_ABILITIES: Record<string, AbilityDefinitionConfig> = {
   aimed_shot: {
     displayName: "Aimed Shot",
     description: "Takes careful aim and releases a precise arrow that strikes a vital area.",
-    manaCost: 10,
+    manaCostPct: 12,
     cooldownMs: 5000,
     levelRequired: 3,
     targetType: "ENEMY",
@@ -531,7 +531,7 @@ export const BASE_ABILITIES: Record<string, AbilityDefinitionConfig> = {
   summon_hawk: {
     displayName: "Summon Hawk",
     description: "Calls a fierce spirit hawk to harry enemies from above.",
-    manaCost: 18,
+    manaCostPct: 20,
     cooldownMs: 5000,
     levelRequired: 5,
     targetType: "SELF",
@@ -544,7 +544,7 @@ export const BASE_ABILITIES: Record<string, AbilityDefinitionConfig> = {
   natures_gift: {
     displayName: "Nature's Gift",
     description: "Draws on the vitality of the natural world to gradually restore health over time.",
-    manaCost: 14,
+    manaCostPct: 18,
     cooldownMs: 15000,
     levelRequired: 7,
     targetType: "SELF",
@@ -557,7 +557,7 @@ export const BASE_ABILITIES: Record<string, AbilityDefinitionConfig> = {
   summon_bear: {
     displayName: "Summon Bear",
     description: "Calls a massive bear guardian to absorb damage and protect the ranger.",
-    manaCost: 25,
+    manaCostPct: 28,
     cooldownMs: 5000,
     levelRequired: 9,
     targetType: "SELF",

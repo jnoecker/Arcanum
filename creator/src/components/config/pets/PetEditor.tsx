@@ -5,16 +5,13 @@ import {
   NumberInput,
   SelectInput,
   CommitTextarea,
+  cx,
 } from "@/components/ui/FormWidgets";
 import { EntityArtGenerator } from "@/components/ui/EntityArtGenerator";
 import { getPreamble, type ArtStyle } from "@/lib/arcanumPrompts";
 import { useImageSrc } from "@/lib/useImageSrc";
 import { SectionCard } from "@/components/ui/SectionCard";
-import { PlusIcon, TrashIcon } from "../achievements/icons";
-
-function cx(...c: Array<string | false | null | undefined>) {
-  return c.filter(Boolean).join(" ");
-}
+import { PlusIcon, TrashIcon } from "@/components/config/icons";
 
 function normalizeId(raw: string): string {
   return raw.trim().toLowerCase().replace(/\s+/g, "_");

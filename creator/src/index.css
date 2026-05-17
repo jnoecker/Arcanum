@@ -1501,7 +1501,16 @@ textarea:focus-visible,
 
 .lore-editor-content a {
   color: var(--color-accent);
+  text-decoration: none;
+  text-underline-offset: 2px;
+  transition: color 180ms var(--ease-cosmic);
+}
+
+.lore-editor-content a:hover {
+  color: var(--color-warm-pale);
   text-decoration: underline;
+  text-decoration-color: rgb(var(--accent-rgb) / 0.6);
+  text-decoration-thickness: 1px;
 }
 
 .lore-editor-content .mention {

@@ -35,7 +35,7 @@ export function GapAnalysisPanel() {
         <button
           onClick={handleAnalyze}
           disabled={!lore || loading}
-          className="focus-ring rounded-full border border-accent/30 bg-accent/10 px-4 py-2 text-xs font-medium text-accent transition hover:bg-accent/20 disabled:opacity-40"
+          className="action-button action-button-secondary action-button-md"
         >
           {loading ? "Analyzing..." : analyzed ? "Re-analyze" : "Analyze Gaps"}
         </button>

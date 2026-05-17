@@ -1,4 +1,4 @@
-import { XIcon, CopyIcon, TrashIcon, SaveIcon } from "./icons";
+import { XIcon, CopyIcon, TrashIcon, SaveIcon } from "@/components/config/icons";
 import { NumberInput } from "@/components/ui/FormWidgets";
 
 interface EnchantingHeaderProps {

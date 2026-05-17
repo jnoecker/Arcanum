@@ -1,13 +1,9 @@
 ﻿import { useMemo, useState } from "react";
 import type { GenderDefinition } from "@/types/config";
-import { TextInput } from "@/components/ui/FormWidgets";
+import { TextInput, cx } from "@/components/ui/FormWidgets";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { SectionCard } from "@/components/ui/SectionCard";
-import { PlusIcon, SearchIcon, TrashIcon } from "./icons";
-
-function cx(...c: Array<string | false | null | undefined>) {
-  return c.filter(Boolean).join(" ");
-}
+import { PlusIcon, SearchIcon, TrashIcon } from "@/components/config/icons";
 
 function normalizeId(raw: string): string {
   return raw.trim().toLowerCase().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "");

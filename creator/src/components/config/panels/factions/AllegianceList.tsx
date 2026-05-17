@@ -2,11 +2,8 @@ import { useMemo, useState } from "react";
 import type { FactionDefinition } from "@/types/config";
 import type { FactionUsage } from "@/lib/factionUsage";
 import { useImageSrc } from "@/lib/useImageSrc";
-import { CompassRoseIcon, CopyIcon, PlusIcon, SearchIcon, TrashIcon } from "./icons";
-
-function cx(...c: Array<string | false | null | undefined>) {
-  return c.filter(Boolean).join(" ");
-}
+import { CompassRoseIcon, CopyIcon, PlusIcon, SearchIcon, TrashIcon } from "@/components/config/icons";
+import { cx } from "@/components/ui/FormWidgets";
 
 interface AllegianceListProps {
   factionIds: string[];

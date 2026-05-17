@@ -13,6 +13,7 @@ import {
   NumberInput,
   SelectInput,
   CommitTextarea,
+  cx,
 } from "@/components/ui/FormWidgets";
 import { EntityArtGenerator } from "@/components/ui/EntityArtGenerator";
 import { getPreamble } from "@/lib/arcanumPrompts";
@@ -28,10 +29,6 @@ import {
   manaCostFromPct,
   playerBaseManaAtLevel,
 } from "@/lib/abilityMana";
-
-function cx(...c: Array<string | false | null | undefined>) {
-  return c.filter(Boolean).join(" ");
-}
 
 const EFFECT_TYPES = [
   { value: "DIRECT_DAMAGE", label: "Direct Damage" },

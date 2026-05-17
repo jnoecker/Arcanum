@@ -2,7 +2,7 @@ import { useId, useState, type ButtonHTMLAttributes, type ReactNode, type Ref, t
 import { createPortal } from "react-dom";
 import { useThemeStore } from "@/stores/themeStore";
 
-function cx(...classes: Array<string | false | null | undefined>) {
+export function cx(...classes: Array<string | false | null | undefined>) {
   return classes.filter(Boolean).join(" ");
 }
 

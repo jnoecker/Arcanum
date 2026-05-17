@@ -8,6 +8,7 @@ import { useImageSrc } from "@/lib/useImageSrc";
 import { StoryEditorPanel } from "./StoryEditorPanel";
 import { NewStoryDialog } from "./NewStoryDialog";
 import { Spinner } from "@/components/ui/FormWidgets";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 
 /** Thumbnail for a story's cover image. */
 function StoryThumb({ fileName }: { fileName: string }) {
@@ -29,6 +30,7 @@ export function StoryBrowser() {
 
   const [showNewStory, setShowNewStory] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [pendingDelete, setPendingDelete] = useState<{ articleId: string; storyId: string; title: string } | null>(null);
 
   const handleDelete = useCallback(
     async (articleId: string, storyId: string) => {
@@ -179,9 +181,7 @@ export function StoryBrowser() {
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
-                    if (confirm(`Delete story "${article.title}"?`)) {
-                      handleDelete(article.id, storyId);
-                    }
+                    setPendingDelete({ articleId: article.id, storyId, title: article.title });
                   }}
                   className="absolute right-2 top-2 rounded p-1 text-text-muted opacity-0 transition-all hover:bg-status-error/10 hover:text-status-error group-hover:opacity-100"
                   title="Delete story"
@@ -198,6 +198,20 @@ export function StoryBrowser() {
 
       {showNewStory && (
         <NewStoryDialog onClose={() => setShowNewStory(false)} />
+      )}
+      {pendingDelete && (
+        <ConfirmDialog
+          title={`Delete "${pendingDelete.title}"?`}
+          message="The story and its underlying article are removed permanently. Use git to recover if needed."
+          confirmLabel="Delete story"
+          cancelLabel="Keep"
+          destructive
+          onConfirm={() => {
+            void handleDelete(pendingDelete.articleId, pendingDelete.storyId);
+            setPendingDelete(null);
+          }}
+          onCancel={() => setPendingDelete(null)}
+        />
       )}
     </div>
   );

@@ -1,11 +1,8 @@
 import { useMemo, useState } from "react";
 import type { StatusEffectDefinitionConfig } from "@/types/config";
 import { useImageSrc } from "@/lib/useImageSrc";
-import { SearchIcon, PlusIcon, MoreIcon, CopyIcon, TrashIcon } from "./icons";
-
-function cx(...c: Array<string | false | null | undefined>) {
-  return c.filter(Boolean).join(" ");
-}
+import { SearchIcon, PlusIcon, MoreIcon, CopyIcon, TrashIcon } from "@/components/config/icons";
+import { cx } from "@/components/ui/FormWidgets";
 
 interface ConditionsListProps {
   defs: Record<string, StatusEffectDefinitionConfig>;

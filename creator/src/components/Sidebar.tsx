@@ -3,18 +3,15 @@ import { useZoneStore } from "@/stores/zoneStore";
 import { useProjectStore } from "@/stores/projectStore";
 import { useLoreStore, selectArticles } from "@/stores/loreStore";
 import { useSidebarStore, type DrillTarget } from "@/stores/sidebarStore";
-import { panelTab, type Island } from "@/lib/panelRegistry";
-import { ISLANDS } from "@/lib/islandRegistry";
+import { panelTab } from "@/lib/panelRegistry";
 import { ISLAND_ICONS, UI_ARROW } from "@/assets/ui";
 import { CosmicBackdrop } from "./ui/CosmicBackdrop";
 import { ArticlesPanel } from "./sidebar/ArticlesPanel";
 import { ZonesPanel } from "./sidebar/ZonesPanel";
-import { IslandPanelList } from "./sidebar/IslandPanelList";
 
-// ─── Sidebar entry registry ─────────────────────────────────────────
-// Order mirrors the world map (orrery, loom, forge — top row;
-// livingWorld, arcanum, spire — bottom row), then the two virtual
-// "islands" for entity collections.
+// The sidebar is for browsing world content — articles and zones — only.
+// Everything else (panel discovery, settings, system surfaces) is reached
+// through the World Map (Ctrl+M) or Command Palette (Ctrl+K).
 
 interface SidebarEntry {
   target: Exclude<DrillTarget, null>;
@@ -23,23 +20,7 @@ interface SidebarEntry {
   tagline: string;
 }
 
-function buildIslandEntry(id: Island): SidebarEntry {
-  const def = ISLANDS[id];
-  return {
-    target: id,
-    icon: ISLAND_ICONS[id] ?? "",
-    title: def?.title ?? id,
-    tagline: def?.tagline ?? "",
-  };
-}
-
 const ENTRIES: SidebarEntry[] = [
-  buildIslandEntry("orrery"),
-  buildIslandEntry("loom"),
-  buildIslandEntry("forge"),
-  buildIslandEntry("livingWorld"),
-  buildIslandEntry("arcanum"),
-  buildIslandEntry("spire"),
   {
     target: "articles",
     icon: ISLAND_ICONS.articles ?? "",
@@ -71,9 +52,6 @@ export function Sidebar() {
     })),
   );
 
-  // Clicking "Articles" anywhere in the sidebar drills into the article tree
-  // AND opens the lore panel in the main area, so the user can keep editing
-  // whichever article is active.
   const handlePick = (target: Exclude<DrillTarget, null>) => {
     drillInto(target);
     if (target === "articles") {
@@ -175,15 +153,13 @@ function TopLevelList({ onPick }: { onPick: (target: Exclude<DrillTarget, null>)
                 </span>
               )}
             </span>
-            <span
-              className="self-center text-text-muted transition group-hover/entry:translate-x-0.5 group-hover/entry:text-accent"
-              aria-hidden="true"
-            >
-              {"›"}
-            </span>
           </button>
         </li>
       ))}
+      <li className="mt-4 px-2 text-3xs leading-relaxed text-text-muted">
+        Open the World Map (Ctrl+M) to reach the islands. Press Ctrl+K for the
+        command palette.
+      </li>
     </ul>
   );
 }
@@ -207,8 +183,8 @@ function DrilledHeader({
         <button
           onClick={onBack}
           className="focus-ring group/back flex h-8 shrink-0 items-center gap-1.5 rounded-full border border-accent/40 bg-bg-abyss/90 px-3 font-display text-2xs uppercase tracking-wide-ui text-accent shadow-[var(--shadow-drop)] transition hover:border-accent hover:bg-accent/15"
-          title="Back to islands"
-          aria-label="Back to islands"
+          title="Back to library"
+          aria-label="Back to library"
         >
           <span aria-hidden="true" className="transition group-hover/back:-translate-x-0.5">
             ←
@@ -245,14 +221,7 @@ function DrilledHeader({
 function DrilledBody({ target }: { target: Exclude<DrillTarget, null> }) {
   if (target === "articles") return <ArticlesPanel />;
   if (target === "zones") return <ZonesPanel />;
-  if (target === "settings") {
-    return (
-      <div className="px-4 pb-4 pt-1 text-sm text-text-muted">
-        Open settings via Ctrl+, — they live in the modal, not the sidebar.
-      </div>
-    );
-  }
-  return <IslandPanelList island={target} />;
+  return null;
 }
 
 // ─── Rail view ──────────────────────────────────────────────────────

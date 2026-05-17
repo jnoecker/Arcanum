@@ -34,42 +34,17 @@ function formatBytes(bytes: number): string {
 
 function UsageBar({ used, quota, label }: { used: number; quota: number; label: string }) {
   const pct = quota === 0 ? 0 : Math.min(100, Math.round((used / quota) * 100));
-  const color = pct >= 95 ? "var(--danger)" : pct >= 80 ? "var(--warning)" : "var(--accent)";
+  const color = pct >= 95 ? "var(--danger)" : pct >= 80 ? "var(--warning)" : "var(--success)";
   return (
-    <div style={{ minWidth: 140 }}>
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          fontSize: "0.72rem",
-          color: "var(--muted)",
-          marginBottom: 3,
-          letterSpacing: "0.06em",
-        }}
-      >
+    <div className="usage-bar">
+      <div className="usage-bar__label">
         <span>{label}</span>
-        <span style={{ fontVariantNumeric: "tabular-nums" }}>
+        <span className="usage-bar__count">
           {used.toLocaleString()} / {quota.toLocaleString()}
         </span>
       </div>
-      <div
-        style={{
-          height: 5,
-          width: "100%",
-          background: "var(--bg-abyss)",
-          borderRadius: 3,
-          overflow: "hidden",
-          border: "1px solid var(--border)",
-        }}
-      >
-        <div
-          style={{
-            height: "100%",
-            width: `${pct}%`,
-            background: color,
-            transition: "width 0.3s",
-          }}
-        />
+      <div className="usage-bar__track">
+        <div className="usage-bar__fill" style={{ width: `${pct}%`, background: color }} />
       </div>
     </div>
   );
@@ -95,6 +70,8 @@ export function UsersPage({ adminKey, onLogout }: UsersPageProps) {
 
   const [confirmState, setConfirmState] = useState<ConfirmState>(null);
   const [quotaTarget, setQuotaTarget] = useState<HubUser | null>(null);
+  const [manageTarget, setManageTarget] = useState<HubUser | null>(null);
+  const manageTitleId = useId();
 
   const [creating, setCreating] = useState(false);
   const [newName, setNewName] = useState("");
@@ -404,34 +381,7 @@ export function UsersPage({ adminKey, onLogout }: UsersPageProps) {
                     </td>
                     <td className="muted">{formatDate(user.lastPublishAt)}</td>
                     <td>
-                      <div className="action-stack">
-                        {user.tier !== "publish" && (
-                          <>
-                            <button onClick={() => setQuotaTarget(user)}>Edit quotas</button>
-                            <button onClick={() => askResetUsage(user)}>Reset usage</button>
-                          </>
-                        )}
-                        {user.tier !== "playtester" && (
-                          <button onClick={() => askSetTier(user, "playtester")}>
-                            → Playtester
-                          </button>
-                        )}
-                        {user.tier !== "full" && (
-                          <button onClick={() => askSetTier(user, "full")}>
-                            → Full (self-signed)
-                          </button>
-                        )}
-                        {user.tier !== "publish" && (
-                          <button onClick={() => askSetTier(user, "publish")}>
-                            → Publish-only
-                          </button>
-                        )}
-                        <button onClick={() => askRegenerate(user)}>Rotate key</button>
-                        <hr />
-                        <button className="danger" onClick={() => askDeleteUser(user)}>
-                          Delete user
-                        </button>
-                      </div>
+                      <button onClick={() => setManageTarget(user)}>Manage…</button>
                     </td>
                   </tr>
                 ))}
@@ -488,6 +438,60 @@ export function UsersPage({ adminKey, onLogout }: UsersPageProps) {
           onSubmit={submitQuotas}
           onCancel={() => setQuotaTarget(null)}
         />
+      )}
+
+      {manageTarget && (
+        <Dialog
+          open={true}
+          onClose={() => setManageTarget(null)}
+          labelledBy={manageTitleId}
+        >
+          <h2 id={manageTitleId} style={{ color: "var(--accent)", marginTop: 0 }}>
+            Manage {manageTarget.displayName}
+          </h2>
+          <p className="muted" style={{ marginTop: 0 }}>
+            Tier: <strong>{manageTarget.tier}</strong> · Worlds: {manageTarget.worlds.length}
+          </p>
+          <div className="action-stack" style={{ minWidth: 0 }}>
+            {manageTarget.tier !== "publish" && (
+              <>
+                <button onClick={() => { const u = manageTarget; setManageTarget(null); setQuotaTarget(u); }}>
+                  Edit quotas
+                </button>
+                <button onClick={() => { const u = manageTarget; setManageTarget(null); askResetUsage(u); }}>
+                  Reset usage
+                </button>
+              </>
+            )}
+            {manageTarget.tier !== "playtester" && (
+              <button onClick={() => { const u = manageTarget; setManageTarget(null); askSetTier(u, "playtester"); }}>
+                → Playtester
+              </button>
+            )}
+            {manageTarget.tier !== "full" && (
+              <button onClick={() => { const u = manageTarget; setManageTarget(null); askSetTier(u, "full"); }}>
+                → Full (self-signed)
+              </button>
+            )}
+            {manageTarget.tier !== "publish" && (
+              <button onClick={() => { const u = manageTarget; setManageTarget(null); askSetTier(u, "publish"); }}>
+                → Publish-only
+              </button>
+            )}
+            <button onClick={() => { const u = manageTarget; setManageTarget(null); askRegenerate(u); }}>
+              Rotate key
+            </button>
+            <hr />
+            <button className="danger" onClick={() => { const u = manageTarget; setManageTarget(null); askDeleteUser(u); }}>
+              Delete user
+            </button>
+          </div>
+          <div className="row" style={{ justifyContent: "flex-end", marginTop: "1rem" }}>
+            <button onClick={() => setManageTarget(null)} autoFocus>
+              Done
+            </button>
+          </div>
+        </Dialog>
       )}
     </>
   );

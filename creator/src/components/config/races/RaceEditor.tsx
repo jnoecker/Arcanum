@@ -1,7 +1,7 @@
 ﻿import { useState } from "react";
 import type { RaceDefinitionConfig } from "@/types/config";
 import type { StatMap } from "@/types/world";
-import { TextInput, CommitTextarea } from "@/components/ui/FormWidgets";
+import { TextInput, CommitTextarea, cx } from "@/components/ui/FormWidgets";
 import { EntityArtGenerator } from "@/components/ui/EntityArtGenerator";
 import { EnhanceDescriptionButton } from "@/components/editors/EditorShared";
 import { getBackstoryEnhancePrompt } from "@/lib/lorePrompts";
@@ -10,7 +10,7 @@ import { useAssetStore } from "@/stores/assetStore";
 import { useImageSrc } from "@/lib/useImageSrc";
 import { useStatMods } from "@/lib/useStatMods";
 import { SectionCard } from "@/components/ui/SectionCard";
-import { PlusIcon, TrashIcon } from "../achievements/icons";
+import { PlusIcon, TrashIcon } from "@/components/config/icons";
 
 const DESCRIPTION_LIMIT = 200;
 
@@ -25,9 +25,6 @@ Rules:
 - Do NOT include clothing, armor, or weapons — the class system handles those
 - Output ONLY the description text — no quotes, no explanation`;
 
-function cx(...c: Array<string | false | null | undefined>) {
-  return c.filter(Boolean).join(" ");
-}
 
 interface RaceEditorProps {
   id: string;

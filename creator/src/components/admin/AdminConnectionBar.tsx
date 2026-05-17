@@ -96,12 +96,26 @@ export function AdminConnectionBar() {
             <button
               type="button"
               onClick={() => setShowToken((v) => !v)}
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-text-muted hover:text-text-primary focus-visible:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-active"
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-text-muted transition hover:text-text-primary focus-visible:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-active"
               title={showToken ? "Hide token" : "Show token"}
               aria-label={showToken ? "Hide token" : "Show token"}
-              aria-expanded={showToken}
+              aria-pressed={showToken}
             >
-              {showToken ? "Hide" : "Show"}
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                {showToken ? (
+                  <>
+                    <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z" />
+                    <circle cx="12" cy="12" r="3" />
+                  </>
+                ) : (
+                  <>
+                    <path d="M17.5 17.5C16 18.4 14 19 12 19c-6.5 0-10-7-10-7s1.7-3.4 5-5.5" />
+                    <path d="M22 12s-1.7 3.4-5 5.5" />
+                    <path d="M9.9 5.3A10 10 0 0 1 12 5c6.5 0 10 7 10 7" />
+                    <path d="M3 3l18 18" />
+                  </>
+                )}
+              </svg>
             </button>
           </div>
         </div>

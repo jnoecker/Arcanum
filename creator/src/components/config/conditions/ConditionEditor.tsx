@@ -11,7 +11,7 @@ import {
 import { EntityArtGenerator } from "@/components/ui/EntityArtGenerator";
 import { composePrompt, type ArtStyle } from "@/lib/arcanumPrompts";
 import { Section } from "../enchanting/Section";
-import { XIcon } from "./icons";
+import { XIcon } from "@/components/config/icons";
 
 interface ConditionEditorProps {
   id: string;

@@ -27,15 +27,10 @@ function CopyIcon() {
   );
 }
 
-function SparkleIcon() {
+function TemplateIcon() {
   return (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-      <path
-        d="M8 1l1.5 4.5L14 7l-4.5 1.5L8 13l-1.5-4.5L2 7l4.5-1.5L8 1z"
-        stroke="currentColor"
-        strokeWidth="1.2"
-        strokeLinejoin="round"
-      />
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+      <path d="M3 3h10v3H3zM3 7.5h10v2H3zM3 11h10v2H3z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round" />
     </svg>
   );
 }
@@ -247,7 +242,7 @@ export function SceneContextMenu({
             }
           }}
         >
-          <SparkleIcon />
+          <TemplateIcon />
           Apply Template
           <span className="ml-auto text-text-muted">&#x25B8;</span>
         </button>

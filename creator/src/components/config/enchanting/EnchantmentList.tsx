@@ -1,11 +1,8 @@
 import { useMemo, useState } from "react";
 import type { EnchantmentDefinitionConfig, AppConfig } from "@/types/config";
 import { Section } from "./Section";
-import { PlusIcon, SearchIcon, FilterIcon } from "./icons";
-
-function cx(...c: Array<string | false | null | undefined>) {
-  return c.filter(Boolean).join(" ");
-}
+import { PlusIcon, SearchIcon, FilterIcon } from "@/components/config/icons";
+import { cx } from "@/components/ui/FormWidgets";
 
 interface EnchantmentListProps {
   enchanting: AppConfig["enchanting"];

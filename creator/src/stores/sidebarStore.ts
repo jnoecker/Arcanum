@@ -1,8 +1,7 @@
 import { create } from "zustand";
-import type { Island } from "@/lib/panelRegistry";
 
 export type SidebarMode = "full" | "rail";
-export type DrillTarget = Island | "articles" | "zones" | null;
+export type DrillTarget = "articles" | "zones" | null;
 
 interface SidebarState {
   mode: SidebarMode;

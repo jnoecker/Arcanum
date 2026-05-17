@@ -418,7 +418,7 @@ export function ContentStep({
           getActionContext={async () => buildToneDirective()}
         />
         <p className="mt-1 text-2xs text-text-muted">
-          Use Generate, Expand, or Enhance to draft with AI.{" "}
+          Use Generate, Expand, or Enhance to draft a description.{" "}
           {target === "new" && "Leave blank for an empty stub zone."}
         </p>
       </div>

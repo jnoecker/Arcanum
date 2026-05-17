@@ -491,7 +491,7 @@ export function WorldbuilderImportWizard({ onClose }: { onClose: () => void }) {
               {firstImportedId && (
                 <button
                   onClick={handleOpenFirst}
-                  className="mt-2 focus-ring rounded-full border border-accent/30 bg-accent/10 px-5 py-2 text-xs font-medium text-accent transition hover:bg-accent/20"
+                  className="mt-2 action-button action-button-secondary action-button-md"
                 >
                   Open first imported article
                 </button>
@@ -521,7 +521,7 @@ export function WorldbuilderImportWizard({ onClose }: { onClose: () => void }) {
               <button
                 onClick={handleScan}
                 disabled={!hasAnySelection}
-                className="focus-ring rounded-full border border-accent/30 bg-accent/10 px-5 py-2 text-xs font-medium text-accent transition hover:bg-accent/20 disabled:opacity-40"
+                className="action-button action-button-primary action-button-md"
               >
                 Scan
               </button>
@@ -530,7 +530,7 @@ export function WorldbuilderImportWizard({ onClose }: { onClose: () => void }) {
               <button
                 onClick={handleImport}
                 disabled={selectedCount === 0 || (existingSkipCount === selectedCount && !overwriteExisting)}
-                className="focus-ring rounded-full border border-accent/30 bg-accent/10 px-5 py-2 text-xs font-medium text-accent transition hover:bg-accent/20 disabled:opacity-40"
+                className="action-button action-button-primary action-button-md"
               >
                 Import {selectedCount - (overwriteExisting ? 0 : existingSkipCount)}
               </button>

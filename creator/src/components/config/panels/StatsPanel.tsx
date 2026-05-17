@@ -6,17 +6,14 @@ import {
   NumberInput,
   SelectInput,
   CommitTextarea,
+  cx,
 } from "@/components/ui/FormWidgets";
 import { SectionCard } from "@/components/ui/SectionCard";
 import {
   PlusIcon,
   TrashIcon,
   SearchIcon,
-} from "../achievements/icons";
-
-function cx(...c: Array<string | false | null | undefined>) {
-  return c.filter(Boolean).join(" ");
-}
+} from "@/components/config/icons";
 
 function normalizeStatId(raw: string): string {
   return raw

@@ -1,13 +1,9 @@
 ﻿import { useMemo, useState } from "react";
 import type { HousingConfig, HousingTemplateDefinition } from "@/types/config";
 import { useImageSrc } from "@/lib/useImageSrc";
-import { SelectInput } from "@/components/ui/FormWidgets";
+import { SelectInput, cx } from "@/components/ui/FormWidgets";
 import { SectionCard } from "@/components/ui/SectionCard";
-import { PlusIcon, SearchIcon, ChevronRightIcon } from "./icons";
-
-function cx(...c: Array<string | false | null | undefined>) {
-  return c.filter(Boolean).join(" ");
-}
+import { PlusIcon, SearchIcon, ChevronRightIcon } from "@/components/config/icons";
 
 const DIRECTION_OPTIONS = [
   { value: "NORTH", label: "North" },

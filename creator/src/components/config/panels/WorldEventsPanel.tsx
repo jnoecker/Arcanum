@@ -1,11 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { ConfigPanelProps } from "./types";
 import type { WorldEventDefinitionConfig } from "@/types/config";
-import { TextInput, CommitTextarea } from "@/components/ui/FormWidgets";
-
-function cx(...c: Array<string | false | null | undefined>) {
-  return c.filter(Boolean).join(" ");
-}
+import { TextInput, CommitTextarea, cx } from "@/components/ui/FormWidgets";
 
 function normalizeId(raw: string): string {
   return raw

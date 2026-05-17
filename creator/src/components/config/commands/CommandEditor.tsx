@@ -1,12 +1,8 @@
 ﻿import { useState } from "react";
 import type { CommandEntryConfig } from "@/types/config";
-import { TextInput, SelectInput } from "@/components/ui/FormWidgets";
+import { TextInput, SelectInput, cx } from "@/components/ui/FormWidgets";
 import { SectionCard } from "@/components/ui/SectionCard";
-import { XIcon, PlusIcon } from "../achievements/icons";
-
-function cx(...c: Array<string | false | null | undefined>) {
-  return c.filter(Boolean).join(" ");
-}
+import { XIcon, PlusIcon } from "@/components/config/icons";
 
 interface CommandEditorProps {
   id: string;

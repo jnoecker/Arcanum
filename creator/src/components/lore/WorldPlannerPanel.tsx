@@ -484,7 +484,7 @@ function ZonePlanEditor({
                   variant="primary"
                   size="sm"
                 >
-                  Generate with AI…
+                  Conjure draft…
                 </ActionButton>
               )}
               <ActionButton

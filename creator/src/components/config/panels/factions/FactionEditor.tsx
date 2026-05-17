@@ -1,16 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import type { FactionDefinition } from "@/types/config";
-import { TextInput, CommitTextarea } from "@/components/ui/FormWidgets";
+import { TextInput, CommitTextarea, cx } from "@/components/ui/FormWidgets";
 import { EntityArtGenerator } from "@/components/ui/EntityArtGenerator";
 import { useAssetStore } from "@/stores/assetStore";
 import { useImageSrc } from "@/lib/useImageSrc";
 import { composePrompt, type ArtStyle } from "@/lib/arcanumPrompts";
 import { Section } from "../../enchanting/Section";
-import { CompassRoseIcon, PlusIcon, XIcon, TrashIcon, PencilIcon } from "./icons";
-
-function cx(...c: Array<string | false | null | undefined>) {
-  return c.filter(Boolean).join(" ");
-}
+import { CompassRoseIcon, PlusIcon, XIcon, TrashIcon, PencilIcon } from "@/components/config/icons";
 
 /** Best-effort plain-language name for a hex color so prompts can read
  *  "deep teal" alongside "#1e6a6f" - image models pick up either, and the

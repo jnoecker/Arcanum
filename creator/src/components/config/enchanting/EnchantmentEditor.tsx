@@ -8,14 +8,11 @@ import {
   TextInput,
   NumberInput,
   SelectInput,
+  cx,
 } from "@/components/ui/FormWidgets";
 import { useZoneStore } from "@/stores/zoneStore";
 import { Section } from "./Section";
-import { PlusIcon, XIcon, TrashIcon } from "./icons";
-
-function cx(...c: Array<string | false | null | undefined>) {
-  return c.filter(Boolean).join(" ");
-}
+import { PlusIcon, XIcon, TrashIcon } from "@/components/config/icons";
 
 interface EnchantmentEditorProps {
   id: string;

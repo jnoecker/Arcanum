@@ -6,11 +6,8 @@ import {
   PlusIcon,
   SearchIcon,
   ChevronRightIcon,
-} from "../housing/icons";
-
-function cx(...c: Array<string | false | null | undefined>) {
-  return c.filter(Boolean).join(" ");
-}
+} from "@/components/config/icons";
+import { cx } from "@/components/ui/FormWidgets";
 
 interface RoomTemplatesListProps {
   templates: Record<string, GuildHallRoomTemplate>;

@@ -5,6 +5,7 @@ import {
   NumberInput,
   SelectInput,
   CommitTextarea,
+  cx,
 } from "@/components/ui/FormWidgets";
 import { SectionCard } from "@/components/ui/SectionCard";
 import { EnhanceDescriptionButton } from "@/components/editors/EditorShared";
@@ -25,10 +26,6 @@ Rules:
 - Include specific details: weapon types, armor weight, magical effects on gear
 - Do NOT describe the body, face, skin, or hair — the race system handles those
 - Output ONLY the description text — no quotes, no explanation`;
-
-function cx(...c: Array<string | false | null | undefined>) {
-  return c.filter(Boolean).join(" ");
-}
 
 interface ClassEditorProps {
   id: string;

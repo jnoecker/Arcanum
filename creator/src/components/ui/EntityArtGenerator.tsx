@@ -505,7 +505,7 @@ export function EntityArtGenerator({
                   disabled={enhancing || !hasLlmKey}
                   title={!hasLlmKey ? "Configure an LLM provider to enable prompt enhancement" : undefined}
                 >
-                  ✦ {enhancing ? "Enhancing…" : enhanced ? "Re-enhance" : "Enhance"}
+                  {enhancing ? "Enhancing…" : enhanced ? "Re-enhance" : "Enhance"}
                 </button>
               </div>
               <div className="art-prompter">

@@ -10,6 +10,7 @@ import {
   NumberInput,
   SelectInput,
   CommitTextarea,
+  cx,
 } from "@/components/ui/FormWidgets";
 import { useArrayField } from "@/lib/useArrayField";
 import { useZoneStore } from "@/stores/zoneStore";
@@ -19,17 +20,13 @@ import {
   TrashIcon,
   ArrowUpIcon,
   ArrowDownIcon,
-} from "./icons";
+} from "@/components/config/icons";
 import { useCallback, useMemo, useState } from "react";
 import {
   buildCriterionTargetIndex,
   validateCriterion,
   type CriterionTargetIndex,
 } from "@/lib/criterionValidation";
-
-function cx(...c: Array<string | false | null | undefined>) {
-  return c.filter(Boolean).join(" ");
-}
 
 /**
  * Editor surfaces sit visually beneath the Preview unlock card. Use a lighter

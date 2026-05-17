@@ -3,14 +3,14 @@ import { invoke } from "@tauri-apps/api/core";
 import type { ConfigPanelProps } from "./types";
 import type { EquipmentSlotDefinition } from "@/types/config";
 import { useProjectStore } from "@/stores/projectStore";
-import { TextInput, NumberInput } from "@/components/ui/FormWidgets";
+import { TextInput, NumberInput, cx } from "@/components/ui/FormWidgets";
 import mannequinImg from "@/assets/mannequin-slots.png";
 import {
   PlusIcon,
   TrashIcon,
   ArrowUpIcon,
   ArrowDownIcon,
-} from "../achievements/icons";
+} from "@/components/config/icons";
 
 interface SlotPosition {
   x: number;
@@ -41,10 +41,6 @@ function getSlotPosition(
 ): SlotPosition {
   if (slot.x != null && slot.y != null) return { x: slot.x, y: slot.y };
   return DEFAULT_POSITIONS[fallbackIndex % DEFAULT_POSITIONS.length]!;
-}
-
-function cx(...c: Array<string | false | null | undefined>) {
-  return c.filter(Boolean).join(" ");
 }
 
 function normalizeId(raw: string): string {

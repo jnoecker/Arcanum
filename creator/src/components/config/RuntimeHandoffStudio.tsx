@@ -568,32 +568,36 @@ export function RuntimeHandoffStudio() {
           </div>
         </div>
 
-        <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-          <div className="rounded-2xl border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] p-3">
-            <p className="text-2xs uppercase tracking-ui text-text-muted">Project</p>
-            <p className="mt-2 text-sm text-text-primary">{project.mudDir}</p>
-            <p className="mt-2 text-xs text-text-secondary">
-              {zones.size} loaded zone{zones.size !== 1 ? "s" : ""} | {dirtyZones} dirty
-            </p>
+        <dl className="mt-4 divide-y divide-[var(--chrome-stroke)] rounded-2xl border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] px-4 py-1 text-sm">
+          <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1 py-2">
+            <dt className="w-28 shrink-0 text-2xs uppercase tracking-ui text-text-muted">Project</dt>
+            <dd className="min-w-0 flex-1 truncate font-mono text-xs text-text-primary">{project.mudDir}</dd>
+            <dd className="text-xs text-text-secondary">
+              {zones.size} loaded zone{zones.size !== 1 ? "s" : ""} · {dirtyZones} dirty
+            </dd>
           </div>
-          <div className="rounded-2xl border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] p-3">
-            <p className="text-2xs uppercase tracking-ui text-text-muted">R2 delivery</p>
-            <p className="mt-2 text-sm text-text-primary">{settings?.r2_bucket || "No bucket configured"}</p>
-            <p className="mt-2 text-xs text-text-secondary">
-              {settings?.r2_custom_domain || "No custom domain"} | {hasR2 ? "ready" : "credentials incomplete"}
-            </p>
+          <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1 py-2">
+            <dt className="w-28 shrink-0 text-2xs uppercase tracking-ui text-text-muted">R2 delivery</dt>
+            <dd className="min-w-0 flex-1 truncate text-xs text-text-primary">
+              {settings?.r2_bucket || "No bucket configured"}
+            </dd>
+            <dd className="text-xs text-text-secondary">
+              {settings?.r2_custom_domain || "No custom domain"} · {hasR2 ? "ready" : "credentials incomplete"}
+            </dd>
           </div>
-          <div className="rounded-2xl border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] p-3">
-            <p className="text-2xs uppercase tracking-ui text-text-muted">Curated assets</p>
-            <p className="mt-2 text-sm text-text-primary">{curatedAssetCount} active assets</p>
-            <p className="mt-2 text-xs text-text-secondary">{unsyncedCuratedAssetCount} not yet synced to R2</p>
+          <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1 py-2">
+            <dt className="w-28 shrink-0 text-2xs uppercase tracking-ui text-text-muted">Curated assets</dt>
+            <dd className="min-w-0 flex-1 text-xs text-text-primary">{curatedAssetCount} active assets</dd>
+            <dd className="text-xs text-text-secondary">{unsyncedCuratedAssetCount} not yet synced to R2</dd>
           </div>
-          <div className="rounded-2xl border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] p-3">
-            <p className="text-2xs uppercase tracking-ui text-text-muted">Config state</p>
-            <p className="mt-2 text-sm text-text-primary">{configDirty ? "Config has unsaved edits" : "Config is clean"}</p>
-            <p className="mt-2 text-xs text-text-secondary">{globalAssetCount} registered global asset keys</p>
+          <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1 py-2">
+            <dt className="w-28 shrink-0 text-2xs uppercase tracking-ui text-text-muted">Config state</dt>
+            <dd className="min-w-0 flex-1 text-xs text-text-primary">
+              {configDirty ? "Config has unsaved edits" : "Config is clean"}
+            </dd>
+            <dd className="text-xs text-text-secondary">{globalAssetCount} registered global asset keys</dd>
           </div>
-        </div>
+        </dl>
 
         {workflowMessage && (
           <div className="mt-3 rounded-2xl border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] px-4 py-3 text-sm text-text-secondary">

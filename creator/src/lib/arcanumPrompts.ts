@@ -696,6 +696,20 @@ SPRITE FRAMING (this asset will be rendered on a transparent background):
 - The subject should be a single connected figure with a clear silhouette.
 - Do NOT describe a specific background — the model will generate transparency automatically.`;
 
+/** Room/location scene block — keeps the image confined to THIS room, not neighbors. */
+const ROOM_SCENE_ENHANCER_BLOCK = `
+
+ROOM SCENE RULES (this image depicts ONLY the current room):
+- Room descriptions in MUDs often mention what lies through the exits ("to the north a meadow rolls away", "you can hear the ocean to the east", "a door leads down into the cellar"). Treat those as navigation cues for the player, NOT as elements to render in the image.
+- Do not depict the meadow, ocean, cellar, neighboring chamber, distant tower, or any other location described as being beyond an exit, doorway, window, or pathway. The image is the interior/contents of THIS room, viewed from inside it.
+- Exits themselves may appear as architectural features (a doorway, an archway, a window, a path) but show only the threshold or near framing — do not extend the visible scene into the adjacent room or biome.
+- If the room description names another zone, landmark, or location for context ("the ancient capital of Vellis"), do not paint that landmark into the scene unless the room IS that landmark.`;
+
+/** Asset types that depict a room/location scene and need the "don't show neighbors" rule. */
+function isRoomScene(assetType: string | undefined): boolean {
+  return assetType === "room" || assetType === "background" || assetType === "lore_location";
+}
+
 /** Get the system prompt for prompt enhancement — defers to world visual style when defined.
  *  Pass `nativeTransparency` to use lighter framing rules instead of full BG-removal safety. */
 export function getEnhanceSystemPrompt(style: ArtStyle, assetType?: string, surface?: ArtStyleSurface, nativeTransparency?: boolean): string {
@@ -704,6 +718,7 @@ export function getEnhanceSystemPrompt(style: ArtStyle, assetType?: string, surf
   const spriteSafety = assetType && needsBgRemovalSafety(assetType)
     ? (nativeTransparency ? SPRITE_FRAMING_ENHANCER_BLOCK : SPRITE_SAFETY_ENHANCER_BLOCK)
     : "";
+  const roomScene = isRoomScene(assetType) ? ROOM_SCENE_ENHANCER_BLOCK : "";
 
   // If the world defines a visual style, use a generic enhancer that defers to it
   if (visualStyle || tone) {
@@ -728,7 +743,7 @@ When enhancing a prompt:
 8. Add composition and quality terms appropriate to the world's visual style.
 9. Replace any readable text, signs, or inscriptions with abstract symbols or glowing runes — AI cannot render legible text.
 10. Avoid: photorealism, modern technology, flat design, cartoon, anime.
-11. Output ONLY the enhanced prompt text — no explanation, no preamble, no formatting.${palettes}${spriteSafety}`;
+11. Output ONLY the enhanced prompt text — no explanation, no preamble, no formatting.${palettes}${spriteSafety}${roomScene}`;
   }
 
   // No world style defined — fall back to the legacy style-specific prompts
@@ -738,7 +753,7 @@ When enhancing a prompt:
   const palettes = (assetType === "ability_icon" || assetType === "status_effect_icon" || assetType === "ability_sprite")
     ? `\n\n${CLASS_COLOR_PALETTES}`
     : "";
-  return `${base}${palettes}${spriteSafety}`;
+  return `${base}${palettes}${spriteSafety}${roomScene}`;
 }
 
 const CUSTOM_ASSET_SYSTEM_PROMPT_ARCANUM = `You are an expert image prompt engineer for AI image generators. You work exclusively within the Arcanum art style (arcanum_v1).

@@ -838,6 +838,17 @@ export interface ClassDefinitionConfig {
   image?: string;
   outfitDescription?: string;
   showcaseRace?: string;
+  /**
+   * Items granted to a new character of this class at creation. Order is
+   * preserved. `equip: false` keeps the item in inventory; omitted/true asks
+   * the server to equip it (no-op for items without a slot).
+   */
+  starterEquipment?: StarterEquipmentEntry[];
+}
+
+export interface StarterEquipmentEntry {
+  itemId: string;
+  equip?: boolean;
 }
 
 // ─── Character Creation ────────────────────────────────────────────

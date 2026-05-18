@@ -783,6 +783,13 @@ export function classToPlain(cls: AppConfig["classes"][string]): Record<string, 
   if (cls.image) obj.image = normalizeAssetRef(cls.image);
   if (cls.outfitDescription) obj.outfitDescription = cls.outfitDescription;
   if (cls.showcaseRace) obj.showcaseRace = cls.showcaseRace;
+  if (cls.starterEquipment && cls.starterEquipment.length > 0) {
+    obj.starterEquipment = cls.starterEquipment.map((entry) => {
+      const out: Record<string, unknown> = { itemId: entry.itemId };
+      if (entry.equip === false) out.equip = false;
+      return out;
+    });
+  }
   return obj;
 }
 

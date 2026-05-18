@@ -1,8 +1,13 @@
 import { useCallback, useState } from "react";
-import type { AppConfig, GenderDefinition } from "@/types/config";
+import type {
+  AppConfig,
+  ClassDefinitionConfig,
+  GenderDefinition,
+} from "@/types/config";
 
 import { CreationHero } from "./creation/CreationHero";
 import { GenderTab } from "./creation/GenderTab";
+import { StarterEquipmentTab } from "./creation/StarterEquipmentTab";
 
 function normalizeId(raw: string): string {
   return raw.trim().toLowerCase().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "");
@@ -24,6 +29,15 @@ export function CharacterCreationStudio({
     (p: Partial<AppConfig["characterCreation"]>) =>
       onChange({ characterCreation: { ...config.characterCreation, ...p } }),
     [config.characterCreation, onChange],
+  );
+
+  const patchClass = useCallback(
+    (id: string, p: Partial<ClassDefinitionConfig>) => {
+      const cur = config.classes[id];
+      if (!cur) return;
+      onChange({ classes: { ...config.classes, [id]: { ...cur, ...p } } });
+    },
+    [config.classes, onChange],
   );
 
   const patchGender = useCallback(
@@ -77,6 +91,8 @@ export function CharacterCreationStudio({
   return (
     <div className="flex flex-col gap-5">
       <CreationHero config={config} onPatch={patchCC} />
+
+      <StarterEquipmentTab classes={config.classes} onPatchClass={patchClass} />
 
       <GenderTab
         genders={config.genders}

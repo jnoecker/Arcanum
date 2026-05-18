@@ -1169,6 +1169,11 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
                 world={zoneState.data}
                 onWorldChange={applyWorldChange}
                 onClose={() => setSelectedEntity(null)}
+                onRename={(newId) =>
+                  setSelectedEntity((current) =>
+                    current ? { ...current, id: newId } : current,
+                  )
+                }
                 zoneId={zoneId}
               />
             </SpringPanel>
@@ -1181,6 +1186,18 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
                 onWorldChange={applyWorldChange}
                 onClose={() => setSelectedRoomId(null)}
                 onRoomDeleted={() => setSelectedRoomId(null)}
+                onRoomRenamed={(newId) => {
+                  // Preserve the room's canvas position by re-keying the
+                  // existing ReactFlow node before the layout effect runs.
+                  // Otherwise the layout diff treats the renamed room as
+                  // brand-new and drops it at the viewport center.
+                  setNodes((current) =>
+                    current.map((n) =>
+                      n.id === selectedRoomId ? { ...n, id: newId } : n,
+                    ),
+                  );
+                  setSelectedRoomId(newId);
+                }}
                 onSelectEntity={setSelectedEntity}
                 activeTab={roomPanelTab}
                 onTabChange={setRoomPanelTab}

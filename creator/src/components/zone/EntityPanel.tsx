@@ -10,6 +10,7 @@ import { GatheringNodeEditor } from "@/components/editors/GatheringNodeEditor";
 import { RecipeEditor } from "@/components/editors/RecipeEditor";
 import { PuzzleEditor } from "@/components/editors/PuzzleEditor";
 import { YamlPreview } from "@/components/ui/YamlPreview";
+import { RenameEntityDialog } from "./RenameEntityDialog";
 import sidebarBg from "@/assets/sidebar-bg.png";
 
 const COLLECTION_MAP: Record<string, string> = {
@@ -28,6 +29,7 @@ interface EntityPanelProps {
   world: WorldFile;
   onWorldChange: (world: WorldFile) => void;
   onClose: () => void;
+  onRename?: (newId: string) => void;
   zoneId?: string;
 }
 
@@ -36,9 +38,14 @@ export function EntityPanel({
   world,
   onWorldChange,
   onClose,
+  onRename,
   zoneId,
 }: EntityPanelProps) {
   const [showYaml, setShowYaml] = useState(false);
+  const [renaming, setRenaming] = useState(false);
+
+  const canRename =
+    onRename != null && (selection.kind === "mob" || selection.kind === "item");
 
   const handleDelete = useCallback(() => {
     onClose();
@@ -68,6 +75,28 @@ export function EntityPanel({
         <span className="min-w-0 flex-1 truncate text-xs font-medium text-text-primary" title={selection.id}>
           {selection.id}
         </span>
+        {canRename && (
+          <button
+            onClick={() => setRenaming(true)}
+            className="shrink-0 rounded px-1.5 py-0.5 text-xs text-text-muted transition-colors hover:bg-bg-elevated hover:text-text-primary"
+            title="Rename ID"
+            aria-label="Rename ID"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={1.75}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="h-3.5 w-3.5"
+              aria-hidden="true"
+            >
+              <path d="M12 20h9" />
+              <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z" />
+            </svg>
+          </button>
+        )}
         <button
           onClick={() => setShowYaml((v) => !v)}
           className={`ml-auto rounded px-1.5 py-0.5 font-mono text-2xs transition-colors ${
@@ -171,6 +200,19 @@ export function EntityPanel({
       </>
       )}
       </div>
+
+      {renaming && canRename && (
+        <RenameEntityDialog
+          category={selection.kind as "mob" | "item"}
+          currentId={selection.id}
+          world={world}
+          onConfirm={(nextWorld, newId) => {
+            onWorldChange(nextWorld);
+            onRename?.(newId);
+          }}
+          onClose={() => setRenaming(false)}
+        />
+      )}
     </div>
   );
 }

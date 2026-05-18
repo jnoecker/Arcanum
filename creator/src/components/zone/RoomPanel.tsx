@@ -33,6 +33,7 @@ import { useAssetStore } from "@/stores/assetStore";
 import { useZoneStore } from "@/stores/zoneStore";
 import { useConfigStore } from "@/stores/configStore";
 import { ZoneVibePanel } from "./ZoneVibePanel";
+import { RenameEntityDialog } from "./RenameEntityDialog";
 import sidebarBg from "@/assets/sidebar-bg.png";
 import { ROLE_ICONS, TERRAIN_ICONS, ENTITY_ICONS } from "@/assets/ui";
 
@@ -50,6 +51,7 @@ interface RoomPanelProps {
   onWorldChange: (world: WorldFile) => void;
   onClose: () => void;
   onRoomDeleted: () => void;
+  onRoomRenamed?: (newId: string) => void;
   onSelectEntity: (selection: EntitySelection) => void;
   activeTab?: "room" | "entities" | "media";
   onTabChange?: (tab: "room" | "entities" | "media") => void;
@@ -188,11 +190,13 @@ export function RoomPanel({
   onWorldChange,
   onClose,
   onRoomDeleted,
+  onRoomRenamed,
   onSelectEntity,
   activeTab: controlledTab,
   onTabChange,
 }: RoomPanelProps) {
   const [showYaml, setShowYaml] = useState(false);
+  const [renaming, setRenaming] = useState(false);
   const activeTab = controlledTab ?? "room";
   const setActiveTab = (tab: RoomTab) => onTabChange?.(tab);
   const [expandedDoor, setExpandedDoor] = useState<string | null>(null);
@@ -483,8 +487,31 @@ export function RoomPanel({
               className="truncate text-sm font-semibold text-text-primary"
               label="room title"
             />
-            <p className="mt-0.5 truncate text-xs text-text-muted" title={roomId}>
-              {roomId}
+            <p className="mt-0.5 flex items-center gap-1 text-xs text-text-muted">
+              <span className="truncate" title={roomId}>{roomId}</span>
+              {onRoomRenamed && (
+                <button
+                  type="button"
+                  onClick={() => setRenaming(true)}
+                  className="shrink-0 rounded p-0.5 text-text-muted transition-colors hover:bg-bg-elevated hover:text-text-primary"
+                  title="Rename ID"
+                  aria-label="Rename room ID"
+                >
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth={1.75}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="h-3 w-3"
+                    aria-hidden="true"
+                  >
+                    <path d="M12 20h9" />
+                    <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z" />
+                  </svg>
+                </button>
+              )}
             </p>
             {isStartRoom && (
               <span className="mt-1 inline-block rounded bg-accent/20 px-1.5 py-0.5 text-2xs font-medium text-accent">
@@ -1284,6 +1311,19 @@ export function RoomPanel({
       </>
       )}
       </div>
+
+      {renaming && onRoomRenamed && (
+        <RenameEntityDialog
+          category="room"
+          currentId={roomId}
+          world={world}
+          onConfirm={(nextWorld, newId) => {
+            onWorldChange(nextWorld);
+            onRoomRenamed(newId);
+          }}
+          onClose={() => setRenaming(false)}
+        />
+      )}
     </div>
   );
 }

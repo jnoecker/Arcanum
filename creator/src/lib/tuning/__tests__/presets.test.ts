@@ -200,11 +200,14 @@ describe("preset structure", () => {
     }
   });
 
-  it("Balanced remains an Arcanum-owned archetype, not a mirrored MUD baseline", () => {
+  it("Balanced reflects the Spawningold playtest tuning", () => {
     expect(BALANCED_PRESET.name).toBe("Balanced Realm");
-    expect(BALANCED_PRESET.config.dailyQuests?.enabled).toBe(true);
-    expect(BALANCED_PRESET.config.globalQuests?.enabled).toBe(true);
-    expect(BALANCED_PRESET.config.guild?.maxSize).toBe(30);
+    expect(BALANCED_PRESET.config.progression?.rewards?.hpScalingRate).toBe(1.3);
+    expect(BALANCED_PRESET.config.progression?.rewards?.manaScalingRate).toBe(1.3);
+    expect(BALANCED_PRESET.config.mobTiers?.standard?.hpScalingRate).toBe(1.5);
+    expect(BALANCED_PRESET.config.regen?.regenPercent).toBe(0.15);
+    expect(BALANCED_PRESET.config.regen?.inCombatMultiplier).toBe(0.33);
+    expect(BALANCED_PRESET.config.multiclass?.minLevel).toBe(30);
   });
 });
 

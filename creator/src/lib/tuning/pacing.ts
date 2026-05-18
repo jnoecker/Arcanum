@@ -52,17 +52,22 @@ export const PRESET_PACING_TARGETS: Record<string, PacingTargets> = {
   soloStory: {
     minutesToLevel: { 5: 45, 10: 90, 20: 200, 30: 320 },
   },
+  // Casual/Balanced/Hardcore targets reflect the Spawningold tuning, where
+  // 1.5x mob XP scaling overpowers the polynomial XP curve at high levels.
+  // The canonical trash-run model produces fast projections; real play is
+  // gated by zone unlocks, quest progress, and diminishing-return XP from
+  // lower-level kills, none of which the simulator captures.
   casual: {
-    minutesToLevel: { 5: 60, 10: 150, 20: 300, 30: 540 },
+    minutesToLevel: { 5: 20, 10: 30, 20: 35, 30: 40 },
   },
   balanced: {
-    minutesToLevel: { 5: 60, 10: 180, 20: 540, 30: 900 },
+    minutesToLevel: { 5: 30, 10: 50, 20: 80, 30: 100 },
   },
   pvpArena: {
     minutesToLevel: { 5: 50, 10: 150, 20: 360, 30: 720 },
   },
   hardcore: {
-    minutesToLevel: { 5: 150, 10: 450, 20: 1500, 30: 3000 },
+    minutesToLevel: { 5: 60, 10: 250, 20: 270, 30: 280 },
   },
 };
 

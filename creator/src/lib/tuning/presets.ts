@@ -43,58 +43,61 @@ export const CASUAL_PRESET: TuningPreset = {
     },
 
     // ─── Mob Tiers ───────────────────────────────────────────────────
+    // Same 1.5x HP / 1.35-1.5x damage / 1.45-1.5x XP+gold scaling shape as
+    // Balanced, but with smaller base values so early-game friction is
+    // gentler. Gold base is the highest of the three difficulty presets.
     mobTiers: {
       weak: {
-        baseHp: 28,
-        hpScalingRate: 1.097,
-        baseMinDamage: 1,
-        baseMaxDamage: 2,
-        damageScalingRate: 1.099,
+        baseHp: 12,
+        hpScalingRate: 1.5,
+        baseMinDamage: 6,
+        baseMaxDamage: 9,
+        damageScalingRate: 1.35,
         baseArmor: 0,
-        baseXpReward: 60,
-        xpScalingRate: 1.088,
-        baseGoldMin: 4,
-        baseGoldMax: 10,
-        goldScalingRate: 1.21,
+        baseXpReward: 80,
+        xpScalingRate: 1.45,
+        baseGoldMin: 6,
+        baseGoldMax: 12,
+        goldScalingRate: 1.45,
       },
       standard: {
-        baseHp: 120,
-        hpScalingRate: 1.085,
-        baseMinDamage: 4,
-        baseMaxDamage: 10,
-        damageScalingRate: 1.068,
+        baseHp: 24,
+        hpScalingRate: 1.5,
+        baseMinDamage: 9,
+        baseMaxDamage: 12,
+        damageScalingRate: 1.4,
         baseArmor: 0,
-        baseXpReward: 260,
-        xpScalingRate: 1.080,
-        baseGoldMin: 8,
-        baseGoldMax: 20,
-        goldScalingRate: 1.21,
+        baseXpReward: 160,
+        xpScalingRate: 1.5,
+        baseGoldMin: 12,
+        baseGoldMax: 30,
+        goldScalingRate: 1.5,
       },
       elite: {
-        baseHp: 320,
-        hpScalingRate: 1.064,
-        baseMinDamage: 8,
-        baseMaxDamage: 16,
-        damageScalingRate: 1.066,
+        baseHp: 48,
+        hpScalingRate: 1.5,
+        baseMinDamage: 12,
+        baseMaxDamage: 15,
+        damageScalingRate: 1.45,
         baseArmor: 1,
-        baseXpReward: 720,
-        xpScalingRate: 1.075,
-        baseGoldMin: 25,
-        baseGoldMax: 60,
-        goldScalingRate: 1.21,
+        baseXpReward: 240,
+        xpScalingRate: 1.5,
+        baseGoldMin: 30,
+        baseGoldMax: 75,
+        goldScalingRate: 1.5,
       },
       boss: {
-        baseHp: 800,
-        hpScalingRate: 1.075,
-        baseMinDamage: 16,
-        baseMaxDamage: 36,
-        damageScalingRate: 1.072,
+        baseHp: 120,
+        hpScalingRate: 1.5,
+        baseMinDamage: 12,
+        baseMaxDamage: 24,
+        damageScalingRate: 1.5,
         baseArmor: 3,
-        baseXpReward: 2400,
-        xpScalingRate: 1.068,
-        baseGoldMin: 100,
-        baseGoldMax: 220,
-        goldScalingRate: 1.21,
+        baseXpReward: 320,
+        xpScalingRate: 1.52,
+        baseGoldMin: 120,
+        baseGoldMax: 260,
+        goldScalingRate: 1.52,
       },
     },
 
@@ -107,21 +110,21 @@ export const CASUAL_PRESET: TuningPreset = {
     // ─── Stat Bindings ───────────────────────────────────────────────
     stats: {
       bindings: {
-        meleeStatMultiplier: 0.20,
-        meleeLevelScalingRate: 1.25,
+        meleeStatMultiplier: 0.25,
+        meleeLevelScalingRate: 1.30,
         meleeVarianceMin: 0.85,
         meleeVarianceMax: 1.15,
-        meleeBaseAttackPower: 1,
+        meleeBaseAttackPower: 10,
         meleeArmorMitigationK: 22,
         dodgePerPoint: 3,
         maxDodgePercent: 35,
-        spellStatMultiplier: 0.20,
-        spellLevelScalingRate: 1.25,
+        spellStatMultiplier: 0.25,
+        spellLevelScalingRate: 1.30,
         spellVarianceMin: 0.85,
         spellVarianceMax: 1.15,
         healStat: "WIS",
-        healStatMultiplier: 0.20,
-        healLevelScalingRate: 1.25,
+        healStatMultiplier: 0.25,
+        healLevelScalingRate: 1.30,
         healVarianceMin: 0.85,
         healVarianceMax: 1.15,
         buffStat: "CHA",
@@ -186,27 +189,28 @@ export const CASUAL_PRESET: TuningPreset = {
     progression: {
       maxLevel: 30,
       xp: {
-        baseXp: 3200,
-        exponent: 1.6,
-        linearXp: 420,
-        multiplier: 0.8,
-        defaultKillXp: 80,
+        baseXp: 500,
+        exponent: 1.5,
+        linearXp: 60,
+        multiplier: 1.0,
+        defaultKillXp: 120,
         diminishing: {
           enabled: true,
           thresholds: [
-            { levelsBelow: 4, multiplier: 0.5 },
-            { levelsBelow: 7, multiplier: 0.2 },
-            { levelsBelow: 10, multiplier: 0.0 },
+            { levelsBelow: 1, multiplier: 0.9 },
+            { levelsBelow: 3, multiplier: 0.7 },
+            { levelsBelow: 5, multiplier: 0.4 },
+            { levelsBelow: 10, multiplier: 0.1 },
           ],
         },
       },
       rewards: {
-        hpScalingRate: 1.103,
-        manaScalingRate: 1.096,
+        hpScalingRate: 1.3,
+        manaScalingRate: 1.3,
         fullHealOnLevelUp: true,
         fullManaOnLevelUp: true,
-        baseHp: 140,
-        baseMana: 130,
+        baseHp: 160,
+        baseMana: 140,
       },
       quests: {
         baseline: { baseXp: 200, xpPerLevel: 80 },
@@ -267,19 +271,19 @@ export const CASUAL_PRESET: TuningPreset = {
     },
 
     // ─── Regen ───────────────────────────────────────────────────────
-    // 2%/3000ms ≈ 0.93 HP/s sustained on a 140-HP starter — scales up
-    // with the player automatically. In-combat regen drops to 50% so
-    // standard-tier mobs still apply pressure.
+    // 25%/3000ms = full pool in ~12s out of combat, 15% during fights.
+    // Casual is the most forgiving difficulty: in-combat regen actually
+    // helps you survive mistakes rather than just smoothing downtime.
     regen: {
       maxPlayersPerTick: 15,
       baseIntervalMillis: 3000,
       minIntervalMillis: 800,
-      regenPercent: 0.02,
-      inCombatMultiplier: 0.5,
+      regenPercent: 0.25,
+      inCombatMultiplier: 0.6,
       mana: {
         baseIntervalMillis: 3000,
         minIntervalMillis: 800,
-        regenPercent: 0.02,
+        regenPercent: 0.25,
       },
     },
 
@@ -362,76 +366,80 @@ export const BALANCED_PRESET: TuningPreset = {
   id: "balanced",
   name: "Balanced Realm",
   description:
-    "A well-tuned middle ground with satisfying combat pacing, steady progression, and a healthy economy. Good for most builders.",
+    "The Spawningold playtest tuning: mobs scale faster than players (1.5x vs 1.3x) so encounters stay tense across the level band, paired with generous out-of-combat regen and full heal on level up. Solid default for most builders.",
   sectionDescriptions: {
     [TuningSection.CombatStats]:
-      "Measured combat where positioning and preparation matter. Mob tiers scale steadily and stat investments feel rewarding without being overpowered.",
+      "Measured combat where mobs out-scale players at higher levels; gear and abilities pick up the slack. 2s combat ticks keep fights snappy and the 1.5x mob HP curve makes elites and bosses meaningful threats deep into the run.",
     [TuningSection.EconomyCrafting]:
       "A healthy buy/sell spread that makes gold meaningful. Crafting has a satisfying progression curve and gambling is a modest side activity.",
     [TuningSection.ProgressionQuests]:
-      "Steady leveling that rewards consistent play. The XP curve accelerates at higher levels, and quest systems provide meaningful alternatives to grinding.",
+      "Steady leveling with aggressive diminishing-return penalties for killing lower-level mobs, so players advance through zones rather than farming the starter area. Daily/global/auto quests are off by default to keep the core loop tight.",
     [TuningSection.WorldSocial]:
-      "Moderate regen pacing that encourages resource management. Group play is incentivized and guild systems are fully featured.",
+      "Percent-based regen (15% per tick) heals fully in ~27s out of combat, dropping to 33% during fights so encounters apply real pressure. Group play is incentivized and guild systems are fully featured.",
   },
   config: {
     // ─── Combat ──────────────────────────────────────────────────────
+    // Calibrated against the Spawningold playtest: 2s ticks pair with the
+    // 1.3x player + 1.5x mob scaling so combat tightens up the higher you
+    // climb. Tier baselines are deliberately small — mobs out-scale players,
+    // but diminishing XP and full-heal-on-level-up keep the curve fair.
     combat: {
-      tickMillis: 3000,
+      tickMillis: 2000,
     },
 
     // ─── Mob Tiers ───────────────────────────────────────────────────
     mobTiers: {
       weak: {
-        baseHp: 36,
-        hpScalingRate: 1.097,
-        baseMinDamage: 1,
-        baseMaxDamage: 3,
-        damageScalingRate: 1.085,
+        baseHp: 20,
+        hpScalingRate: 1.5,
+        baseMinDamage: 10,
+        baseMaxDamage: 15,
+        damageScalingRate: 1.35,
         baseArmor: 0,
-        baseXpReward: 70,
-        xpScalingRate: 1.087,
+        baseXpReward: 50,
+        xpScalingRate: 1.45,
         baseGoldMin: 2,
         baseGoldMax: 6,
-        goldScalingRate: 1.186,
+        goldScalingRate: 1.45,
       },
       standard: {
-        baseHp: 150,
-        hpScalingRate: 1.085,
-        baseMinDamage: 5,
-        baseMaxDamage: 12,
-        damageScalingRate: 1.075,
+        baseHp: 40,
+        hpScalingRate: 1.5,
+        baseMinDamage: 15,
+        baseMaxDamage: 20,
+        damageScalingRate: 1.4,
         baseArmor: 1,
-        baseXpReward: 220,
-        xpScalingRate: 1.078,
+        baseXpReward: 100,
+        xpScalingRate: 1.5,
         baseGoldMin: 5,
         baseGoldMax: 14,
-        goldScalingRate: 1.186,
+        goldScalingRate: 1.5,
       },
       elite: {
-        baseHp: 400,
-        hpScalingRate: 1.054,
-        baseMinDamage: 10,
-        baseMaxDamage: 22,
-        damageScalingRate: 1.057,
+        baseHp: 80,
+        hpScalingRate: 1.5,
+        baseMinDamage: 20,
+        baseMaxDamage: 25,
+        damageScalingRate: 1.45,
         baseArmor: 2,
-        baseXpReward: 600,
-        xpScalingRate: 1.075,
+        baseXpReward: 150,
+        xpScalingRate: 1.5,
         baseGoldMin: 18,
         baseGoldMax: 45,
-        goldScalingRate: 1.186,
+        goldScalingRate: 1.5,
       },
       boss: {
-        baseHp: 1000,
-        hpScalingRate: 1.068,
+        baseHp: 200,
+        hpScalingRate: 1.5,
         baseMinDamage: 20,
-        baseMaxDamage: 45,
-        damageScalingRate: 1.072,
+        baseMaxDamage: 40,
+        damageScalingRate: 1.5,
         baseArmor: 4,
-        baseXpReward: 2000,
-        xpScalingRate: 1.068,
+        baseXpReward: 200,
+        xpScalingRate: 1.52,
         baseGoldMin: 70,
         baseGoldMax: 150,
-        goldScalingRate: 1.186,
+        goldScalingRate: 1.52,
       },
     },
 
@@ -448,7 +456,7 @@ export const BALANCED_PRESET: TuningPreset = {
         meleeLevelScalingRate: 1.30,
         meleeVarianceMin: 0.85,
         meleeVarianceMax: 1.15,
-        meleeBaseAttackPower: 1,
+        meleeBaseAttackPower: 10,
         meleeArmorMitigationK: 20,
         dodgePerPoint: 2,
         maxDodgePercent: 30,
@@ -524,22 +532,24 @@ export const BALANCED_PRESET: TuningPreset = {
       maxLevel: 30,
       xp: {
         baseXp: 800,
-        exponent: 2.2,
-        linearXp: 1200,
+        exponent: 1.5,
+        linearXp: 100,
         multiplier: 1.0,
-        defaultKillXp: 60,
+        defaultKillXp: 100,
         diminishing: {
           enabled: true,
           thresholds: [
+            { levelsBelow: 1, multiplier: 0.8 },
+            { levelsBelow: 2, multiplier: 0.6 },
             { levelsBelow: 3, multiplier: 0.5 },
-            { levelsBelow: 5, multiplier: 0.2 },
-            { levelsBelow: 8, multiplier: 0.0 },
+            { levelsBelow: 5, multiplier: 0.25 },
+            { levelsBelow: 10, multiplier: 0.05 },
           ],
         },
       },
       rewards: {
-        hpScalingRate: 1.099,
-        manaScalingRate: 1.096,
+        hpScalingRate: 1.3,
+        manaScalingRate: 1.3,
         fullHealOnLevelUp: true,
         fullManaOnLevelUp: true,
         baseHp: 130,
@@ -553,14 +563,14 @@ export const BALANCED_PRESET: TuningPreset = {
 
     // ─── Skill Points ────────────────────────────────────────────────
     skillPoints: {
-      interval: 2,
+      interval: 1,
     },
 
     // ─── Multiclass ──────────────────────────────────────────────────
     multiclass: {
-      minLevel: 15,
-      goldCost: 500,
-      maxClasses: 3,
+      minLevel: 30,
+      goldCost: 50000,
+      maxClasses: 2,
       goldCostMultiplier: 2.0,
     },
 
@@ -571,7 +581,7 @@ export const BALANCED_PRESET: TuningPreset = {
 
     // ─── Prestige ────────────────────────────────────────────────────
     prestige: {
-      enabled: true,
+      enabled: false,
       xpCostBase: 10000,
       xpCostMultiplier: 1.5,
       maxRank: 5,
@@ -579,44 +589,44 @@ export const BALANCED_PRESET: TuningPreset = {
 
     // ─── Respec ──────────────────────────────────────────────────────
     respec: {
-      goldCost: 100,
+      goldCost: 1500,
       cooldownMs: 300000,
     },
 
     // ─── Auto Quests ─────────────────────────────────────────────────
     autoQuests: {
-      enabled: true,
+      enabled: false,
       timeLimitMs: 300000,
       cooldownMs: 300000,
     },
 
     // ─── Daily Quests ────────────────────────────────────────────────
     dailyQuests: {
-      enabled: true,
+      enabled: false,
       streakBonusPercent: 10,
     },
 
     // ─── Global Quests ───────────────────────────────────────────────
     globalQuests: {
-      enabled: true,
+      enabled: false,
       intervalMs: 7200000,
       durationMs: 3600000,
     },
 
     // ─── Regen ───────────────────────────────────────────────────────
-    // 5%/4000ms ≈ 1.6 HP/s sustained on a 130-HP starter — light healing
-    // between fights. In combat the multiplier halves it so standard-tier
-    // mobs still out-DPS regen.
+    // 15%/4000ms = full pool in ~27s out of combat, 1/3 of that during
+    // fights. Generous healing between encounters compensates for the
+    // 1.5x mob HP scaling without trivializing actual combat.
     regen: {
       maxPlayersPerTick: 10,
       baseIntervalMillis: 4000,
       minIntervalMillis: 1000,
-      regenPercent: 0.05,
-      inCombatMultiplier: 0.5,
+      regenPercent: 0.15,
+      inCombatMultiplier: 0.33,
       mana: {
         baseIntervalMillis: 4000,
         minIntervalMillis: 1000,
-        regenPercent: 0.04,
+        regenPercent: 0.15,
       },
     },
 
@@ -717,58 +727,61 @@ export const HARDCORE_PRESET: TuningPreset = {
     },
 
     // ─── Mob Tiers ───────────────────────────────────────────────────
+    // Same scaling shape as Balanced (1.5x HP, 1.35-1.5x damage), but
+    // base HP and damage land 50% higher and gold is sharply lower.
+    // Standard-tier mobs are real threats from the start.
     mobTiers: {
       weak: {
-        baseHp: 50,
-        hpScalingRate: 1.13,
-        baseMinDamage: 2,
-        baseMaxDamage: 5,
-        damageScalingRate: 1.10,
+        baseHp: 30,
+        hpScalingRate: 1.5,
+        baseMinDamage: 15,
+        baseMaxDamage: 22,
+        damageScalingRate: 1.35,
         baseArmor: 0,
-        baseXpReward: 50,
-        xpScalingRate: 1.18,
+        baseXpReward: 30,
+        xpScalingRate: 1.45,
         baseGoldMin: 1,
         baseGoldMax: 3,
-        goldScalingRate: 1.162,
+        goldScalingRate: 1.45,
       },
       standard: {
-        baseHp: 195,
-        hpScalingRate: 1.13,
-        baseMinDamage: 7,
-        baseMaxDamage: 16,
-        damageScalingRate: 1.12,
+        baseHp: 60,
+        hpScalingRate: 1.5,
+        baseMinDamage: 22,
+        baseMaxDamage: 30,
+        damageScalingRate: 1.4,
         baseArmor: 2,
-        baseXpReward: 170,
-        xpScalingRate: 1.18,
-        baseGoldMin: 3,
-        baseGoldMax: 9,
-        goldScalingRate: 1.162,
+        baseXpReward: 60,
+        xpScalingRate: 1.5,
+        baseGoldMin: 2,
+        baseGoldMax: 5,
+        goldScalingRate: 1.5,
       },
       elite: {
-        baseHp: 520,
-        hpScalingRate: 1.10,
-        baseMinDamage: 13,
-        baseMaxDamage: 28,
-        damageScalingRate: 1.10,
+        baseHp: 120,
+        hpScalingRate: 1.5,
+        baseMinDamage: 30,
+        baseMaxDamage: 38,
+        damageScalingRate: 1.45,
         baseArmor: 4,
-        baseXpReward: 450,
-        xpScalingRate: 1.18,
-        baseGoldMin: 12,
-        baseGoldMax: 30,
-        goldScalingRate: 1.162,
+        baseXpReward: 90,
+        xpScalingRate: 1.5,
+        baseGoldMin: 6,
+        baseGoldMax: 15,
+        goldScalingRate: 1.5,
       },
       boss: {
-        baseHp: 1300,
-        hpScalingRate: 1.10,
-        baseMinDamage: 26,
-        baseMaxDamage: 58,
-        damageScalingRate: 1.10,
+        baseHp: 300,
+        hpScalingRate: 1.5,
+        baseMinDamage: 30,
+        baseMaxDamage: 60,
+        damageScalingRate: 1.5,
         baseArmor: 5,
-        baseXpReward: 1500,
-        xpScalingRate: 1.15,
-        baseGoldMin: 45,
-        baseGoldMax: 100,
-        goldScalingRate: 1.162,
+        baseXpReward: 120,
+        xpScalingRate: 1.52,
+        baseGoldMin: 24,
+        baseGoldMax: 50,
+        goldScalingRate: 1.52,
       },
     },
 
@@ -781,21 +794,21 @@ export const HARDCORE_PRESET: TuningPreset = {
     // ─── Stat Bindings ───────────────────────────────────────────────
     stats: {
       bindings: {
-        meleeStatMultiplier: 0.30,
-        meleeLevelScalingRate: 1.35,
+        meleeStatMultiplier: 0.25,
+        meleeLevelScalingRate: 1.30,
         meleeVarianceMin: 0.80,
         meleeVarianceMax: 1.20,
-        meleeBaseAttackPower: 1,
+        meleeBaseAttackPower: 10,
         meleeArmorMitigationK: 18,
         dodgePerPoint: 1,
         maxDodgePercent: 20,
-        spellStatMultiplier: 0.30,
-        spellLevelScalingRate: 1.35,
+        spellStatMultiplier: 0.25,
+        spellLevelScalingRate: 1.30,
         spellVarianceMin: 0.80,
         spellVarianceMax: 1.20,
         healStat: "WIS",
-        healStatMultiplier: 0.30,
-        healLevelScalingRate: 1.35,
+        healStatMultiplier: 0.25,
+        healLevelScalingRate: 1.30,
         healVarianceMin: 0.80,
         healVarianceMax: 1.20,
         buffStat: "CHA",
@@ -860,27 +873,29 @@ export const HARDCORE_PRESET: TuningPreset = {
     progression: {
       maxLevel: 30,
       xp: {
-        baseXp: 2400,
-        exponent: 2.4,
-        linearXp: 3000,
+        baseXp: 1500,
+        exponent: 1.55,
+        linearXp: 150,
         multiplier: 1.0,
-        defaultKillXp: 40,
+        defaultKillXp: 80,
         diminishing: {
           enabled: true,
           thresholds: [
-            { levelsBelow: 2, multiplier: 0.5 },
-            { levelsBelow: 4, multiplier: 0.2 },
-            { levelsBelow: 6, multiplier: 0.0 },
+            { levelsBelow: 1, multiplier: 0.6 },
+            { levelsBelow: 2, multiplier: 0.4 },
+            { levelsBelow: 3, multiplier: 0.25 },
+            { levelsBelow: 5, multiplier: 0.1 },
+            { levelsBelow: 10, multiplier: 0.0 },
           ],
         },
       },
       rewards: {
-        hpScalingRate: 1.098,
-        manaScalingRate: 1.096,
+        hpScalingRate: 1.3,
+        manaScalingRate: 1.3,
         fullHealOnLevelUp: false,
         fullManaOnLevelUp: false,
-        baseHp: 120,
-        baseMana: 110,
+        baseHp: 110,
+        baseMana: 100,
       },
       quests: {
         baseline: { baseXp: 500, xpPerLevel: 200 },
@@ -941,19 +956,19 @@ export const HARDCORE_PRESET: TuningPreset = {
     },
 
     // ─── Regen ───────────────────────────────────────────────────────
-    // 2.5%/5500ms ≈ 0.55 HP/s sustained on a 120-HP starter — every fight
-    // leaves a mark. In-combat regen is disabled entirely so standard-tier
-    // mobs are unambiguous threats. Hardcore by design.
+    // 8%/5500ms = full pool in ~69s out of combat, zero in-combat. Every
+    // fight leaves a mark and standard-tier mobs are unambiguous threats.
+    // Hardcore by design.
     regen: {
       maxPlayersPerTick: 8,
       baseIntervalMillis: 5500,
       minIntervalMillis: 2800,
-      regenPercent: 0.025,
+      regenPercent: 0.08,
       inCombatMultiplier: 0,
       mana: {
         baseIntervalMillis: 5500,
         minIntervalMillis: 2800,
-        regenPercent: 0.025,
+        regenPercent: 0.08,
       },
     },
 

@@ -48,14 +48,13 @@ describe("estimateXpPerHour", () => {
     expect(estimateXpPerHour(casual, 10)).toBeGreaterThan(estimateXpPerHour(casual, 1));
   });
 
-  it("does not assume raw XP/hour alone defines progression speed", () => {
+  it("milestone minutes are monotonic in level for Casual", () => {
     const casual = configFromPreset(CASUAL_PRESET);
-    const lore = configFromPreset(LORE_EXPLORER_PRESET);
-    const casualPacing = estimatePacing(casual, "casual");
-    const lorePacing = estimatePacing(lore, "loreExplorer");
-    const casualL30 = casualPacing.milestones.find((m) => m.level === 30);
-    const loreL30 = lorePacing.milestones.find((m) => m.level === 30);
-    expect(casualL30?.minutesEstimated).toBeGreaterThan(loreL30?.minutesEstimated ?? Number.POSITIVE_INFINITY);
+    const pacing = estimatePacing(casual, "casual");
+    const ms = pacing.milestones.map((m) => m.minutesEstimated);
+    for (let i = 1; i < ms.length; i++) {
+      expect(ms[i]).toBeGreaterThanOrEqual(ms[i - 1]!);
+    }
   });
 });
 

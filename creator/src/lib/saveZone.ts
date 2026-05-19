@@ -23,6 +23,13 @@ export function serializeZone(zoneId: string): string {
   const knownAchievements = config?.achievementDefs
     ? new Set(Object.keys(config.achievementDefs))
     : undefined;
+  const classStatPriorities = config?.classes
+    ? Object.fromEntries(
+        Object.entries(config.classes)
+          .filter(([, cls]) => cls.statPriorities && cls.statPriorities.length > 0)
+          .map(([id, cls]) => [id, cls.statPriorities!]),
+      )
+    : undefined;
   const issues = validateZone(
     sanitized,
     config?.equipmentSlots,
@@ -31,6 +38,7 @@ export function serializeZone(zoneId: string): string {
     knownAchievements,
     config?.mobTiers,
     config?.progression.quests,
+    classStatPriorities,
   );
   const errors = issues.filter((issue) => issue.severity === "error");
   if (errors.length > 0) {

@@ -1,6 +1,6 @@
 import { useCallback, useState, useMemo, memo } from "react";
 import type { WorldFile, ItemFile, ItemOnUse, ItemType } from "@/types/world";
-import { ITEM_TYPES } from "@/types/world";
+import { ITEM_TYPES, ARCHETYPAL_STATS } from "@/types/world";
 import { updateItem, deleteItem } from "@/lib/zoneEdits";
 import { useEntityEditor } from "@/lib/useEntityEditor";
 import { useConfigOptions } from "@/lib/useConfigOptions";
@@ -489,6 +489,7 @@ export function ItemEditor({
               })()}
               <AddStatRow
                 existingStats={Object.keys(stats)}
+                statOptions={statOptions}
                 onAdd={(statId) => handleStatChange(statId, 1)}
               />
             </div>
@@ -517,58 +518,78 @@ export function ItemEditor({
 
 const AddStatRow = memo(function AddStatRow({
   existingStats,
+  statOptions,
   onAdd,
 }: {
   existingStats: string[];
+  statOptions: { value: string; label: string }[];
   onAdd: (statId: string) => void;
 }) {
   const [editing, setEditing] = useState(false);
-  const [value, setValue] = useState("");
-
-  const handleSubmit = () => {
-    const id = value.trim().toUpperCase();
-    if (id && !existingStats.includes(id)) {
-      onAdd(id);
-    }
-    setValue("");
-    setEditing(false);
-  };
+  const existingSet = useMemo(() => new Set(existingStats), [existingStats]);
+  const archetypalAvailable = useMemo(
+    () => ARCHETYPAL_STATS.filter((s) => !existingSet.has(s)),
+    [existingSet],
+  );
+  const concreteAvailable = useMemo(
+    () => statOptions.filter((o) => !existingSet.has(o.value)),
+    [statOptions, existingSet],
+  );
+  const hasOptions = archetypalAvailable.length > 0 || concreteAvailable.length > 0;
 
   if (editing) {
     return (
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          handleSubmit();
-        }}
-        className="mt-1 flex items-center gap-1"
-      >
-        <input
-          value={value}
-          onChange={(e) => setValue(e.target.value)}
-          placeholder="e.g. STR, DEX"
+      <div className="mt-1 flex items-center gap-1">
+        <select
           autoFocus
-          className="h-5 flex-1 rounded border border-border-default bg-bg-primary px-1.5 text-2xs text-text-primary outline-none focus:border-accent focus-visible:ring-2 focus-visible:ring-border-active"
-          onBlur={handleSubmit}
-        />
-        <button
-          type="button"
-          onClick={() => {
-            setValue("");
+          defaultValue=""
+          onChange={(e) => {
+            const id = e.target.value;
+            if (id) onAdd(id);
             setEditing(false);
           }}
+          onBlur={() => setEditing(false)}
+          className="h-6 flex-1 rounded border border-border-default bg-bg-primary px-1.5 text-2xs text-text-primary outline-none focus:border-accent focus-visible:ring-2 focus-visible:ring-border-active"
+        >
+          <option value="" disabled>
+            Pick a stat…
+          </option>
+          {archetypalAvailable.length > 0 && (
+            <optgroup label="Adaptive (resolves per class)">
+              {archetypalAvailable.map((s) => (
+                <option key={s} value={s}>
+                  {s}
+                </option>
+              ))}
+            </optgroup>
+          )}
+          {concreteAvailable.length > 0 && (
+            <optgroup label="Concrete">
+              {concreteAvailable.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </optgroup>
+          )}
+        </select>
+        <button
+          type="button"
+          onClick={() => setEditing(false)}
           className="text-2xs text-text-muted hover:text-text-primary"
         >
           &times;
         </button>
-      </form>
+      </div>
     );
   }
 
   return (
     <button
+      type="button"
       onClick={() => setEditing(true)}
-      className="mt-1 rounded border border-border-default px-2 py-0.5 text-2xs text-text-muted transition-colors hover:bg-bg-tertiary hover:text-text-primary"
+      disabled={!hasOptions}
+      className="mt-1 rounded border border-border-default px-2 py-0.5 text-2xs text-text-muted transition-colors hover:bg-bg-tertiary hover:text-text-primary disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:text-text-muted"
     >
       + Add Stat Bonus
     </button>

@@ -1,5 +1,34 @@
-/** Dynamic stat map: stat ID -> numeric value */
+/**
+ * Dynamic stat map: stat ID -> numeric value.
+ *
+ * Two flavors of key are accepted:
+ *
+ * - **Concrete** stat IDs (lowercase by convention, e.g. `strength`,
+ *   `dexterity`) must be defined in `application.yaml::stats.definitions`.
+ *   These apply uniformly to anyone wearing the item.
+ *
+ * - **Archetypal** stat IDs ({@link ARCHETYPAL_STATS}) are uppercase placeholders
+ *   that resolve at equip time against the wearer's active class
+ *   `statPriorities`:
+ *     PRIMARY   → statPriorities[0]
+ *     SECONDARY → statPriorities[1]
+ *     TERTIARY  → statPriorities[2]
+ *
+ *   Items can mix both — `{ PRIMARY: 3, dexterity: 1 }` gives flat DEX to
+ *   everyone plus 3 to the wearer's primary stat. When the active class has
+ *   no priority slot for the archetypal key, the server silently drops it.
+ */
 export type StatMap = Record<string, number>;
+
+/** Archetypal stat keys that resolve to a concrete stat at equip time
+ *  via the wearer's class `statPriorities`. */
+export const ARCHETYPAL_STATS = ["PRIMARY", "SECONDARY", "TERTIARY"] as const;
+export type ArchetypalStat = (typeof ARCHETYPAL_STATS)[number];
+
+/** True if `key` is one of `PRIMARY`/`SECONDARY`/`TERTIARY`. */
+export function isArchetypalStat(key: string): key is ArchetypalStat {
+  return (ARCHETYPAL_STATS as readonly string[]).includes(key);
+}
 
 // ─── Zone-level types (mirror world-yaml-dtos) ──────────────────────
 

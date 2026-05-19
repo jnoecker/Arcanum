@@ -832,6 +832,22 @@ export interface ClassDefinitionConfig {
   /** Per-level multiplicative growth rate this class contributes to max mana. */
   manaScalingRate: number;
   primaryStat?: string;
+  /**
+   * Ordered stat IDs from most to least valued for this class. Used to resolve
+   * archetypal item stats (`PRIMARY`/`SECONDARY`/`TERTIARY` in a StatMap) at
+   * equip time:
+   *   PRIMARY   → statPriorities[0]
+   *   SECONDARY → statPriorities[1]
+   *   TERTIARY  → statPriorities[2]
+   *
+   * Provide at least three entries to fully support adaptive items. When this
+   * field is empty or missing, the server falls back to `[primaryStat]` —
+   * which leaves SECONDARY/TERTIARY unresolvable (items using them silently
+   * drop those bonuses for this class).
+   *
+   * Example for a Wizard: `["intelligence", "wisdom", "constitution"]`.
+   */
+  statPriorities?: string[];
   selectable?: boolean;
   startRoom?: string;
   threatMultiplier?: number;

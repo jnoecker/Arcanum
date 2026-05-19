@@ -8,7 +8,7 @@ import type {
   RareYieldFile,
   RecipeFile,
 } from "@/types/world";
-import { ITEM_TYPES } from "@/types/world";
+import { ITEM_TYPES, ARCHETYPAL_STATS, isArchetypalStat } from "@/types/world";
 import type { EquipmentSlotDefinition, MobTiersConfig } from "@/types/config";
 import { resolveDoorKeyId, resolveDoorState } from "./doorHelpers";
 import { mobMaxDamageAtLevel, mobMinDamageAtLevel } from "./tuning/formulas";
@@ -402,6 +402,9 @@ export function validateZone(
   knownAchievements?: ReadonlySet<string>,
   mobTiers?: MobTiersConfig,
   questXpConfig?: QuestXpConfig,
+  /** Class id -> ordered statPriorities. Used to warn when an item uses an
+   *  archetypal stat slot that no class fills (the bonus would silently drop). */
+  classStatPriorities?: Record<string, string[]>,
 ): ValidationIssue[] {
   const issues: ValidationIssue[] = [];
   const roomIds = new Set(Object.keys(world.rooms));
@@ -677,6 +680,26 @@ export function validateZone(
         }
       }
     }
+    // Archetypal stats (PRIMARY/SECONDARY/TERTIARY) silently drop for classes
+    // whose statPriorities is too shallow. Surface the gap so authors don't
+    // ship an item that gives a hidden Mage no bonus.
+    if (item.stats && classStatPriorities && Object.keys(classStatPriorities).length > 0) {
+      const usedArchetypal = Object.keys(item.stats).filter(isArchetypalStat);
+      for (const key of usedArchetypal) {
+        const depthNeeded = ARCHETYPAL_STATS.indexOf(key) + 1;
+        const shallow = Object.entries(classStatPriorities)
+          .filter(([, prio]) => prio.length < depthNeeded)
+          .map(([id]) => id);
+        if (shallow.length > 0) {
+          addIssue(
+            issues,
+            "warning",
+            entity,
+            `Stat "${key}" has no resolution for class${shallow.length > 1 ? "es" : ""} ${shallow.join(", ")} — extend their statPriorities or remove this bonus`,
+          );
+        }
+      }
+    }
   }
 
   for (const [shopId, shop] of Object.entries(world.shops ?? {})) {
@@ -876,10 +899,11 @@ export function validateAllZones(
   knownAchievements?: ReadonlySet<string>,
   mobTiers?: MobTiersConfig,
   questXpConfig?: QuestXpConfig,
+  classStatPriorities?: Record<string, string[]>,
 ): Map<string, ValidationIssue[]> {
   const results = new Map<string, ValidationIssue[]>();
   for (const [zoneId, zone] of zones) {
-    const issues = validateZone(zone.data, equipmentSlots, validClasses, knownFactions, knownAchievements, mobTiers, questXpConfig);
+    const issues = validateZone(zone.data, equipmentSlots, validClasses, knownFactions, knownAchievements, mobTiers, questXpConfig, classStatPriorities);
     if (issues.length > 0) {
       results.set(zoneId, issues);
     }

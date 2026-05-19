@@ -332,6 +332,30 @@ export function validateConfig(config: AppConfig): ValidationIssue[] {
         message: `Primary stat "${cls.primaryStat}" is not defined`,
       });
     }
+    if (cls.statPriorities && cls.statPriorities.length > 0) {
+      // Every entry must reference a known stat — drops would be silent at
+      // equip time, so prefer a hard error here.
+      if (statIds.size > 0) {
+        for (const statId of cls.statPriorities) {
+          if (!statIds.has(statId)) {
+            issues.push({
+              severity: "error",
+              entity: `class:${id}`,
+              message: `statPriorities references unknown stat "${statId}"`,
+            });
+          }
+        }
+      }
+      // primaryStat is the legacy single-stat field. Disagreement between it
+      // and statPriorities[0] usually means the legacy field is stale.
+      if (cls.primaryStat && cls.statPriorities[0] && cls.statPriorities[0] !== cls.primaryStat) {
+        issues.push({
+          severity: "warning",
+          entity: `class:${id}`,
+          message: `primaryStat "${cls.primaryStat}" disagrees with statPriorities[0] "${cls.statPriorities[0]}" — these should match`,
+        });
+      }
+    }
     if (cls.threatMultiplier != null && cls.threatMultiplier < 0) {
       issues.push({
         severity: "error",

@@ -94,6 +94,13 @@ export function runWorkspaceValidation(): ValidationSummary {
   const knownAchievements = config?.achievementDefs
     ? new Set(Object.keys(config.achievementDefs))
     : undefined;
+  const classStatPriorities = config?.classes
+    ? Object.fromEntries(
+        Object.entries(config.classes)
+          .filter(([, cls]) => cls.statPriorities && cls.statPriorities.length > 0)
+          .map(([id, cls]) => [id, cls.statPriorities!]),
+      )
+    : undefined;
   const results = validateAllZones(
     zones,
     config?.equipmentSlots,
@@ -102,6 +109,7 @@ export function runWorkspaceValidation(): ValidationSummary {
     knownAchievements,
     config?.mobTiers,
     config?.progression.quests,
+    classStatPriorities,
   );
 
   if (config) {

@@ -858,6 +858,9 @@ export interface CharacterCreationConfig {
   defaultRace?: string;
   defaultClass?: string;
   defaultGender?: string;
+  /** When true, new players can join as a one-tap demo character with a random
+   *  name. They can later claim the account by setting a password. */
+  demoEnabled?: boolean;
 }
 
 // ─── Emote Presets ─────────────────────────────────────────────────

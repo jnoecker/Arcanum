@@ -218,6 +218,33 @@ function LedgerSelect({
   );
 }
 
+interface LedgerToggleProps {
+  label: string;
+  hint: string;
+  value: boolean;
+  onCommit: (v: boolean) => void;
+}
+
+function LedgerToggle({ label, hint, value, onCommit }: LedgerToggleProps) {
+  return (
+    <div className="flex items-baseline gap-2">
+      <span className="font-display text-2xs font-semibold uppercase tracking-[0.22em] text-text-muted">
+        {label}
+      </span>
+      <button
+        type="button"
+        onClick={() => onCommit(!value)}
+        title={hint}
+        aria-label={`${label}: ${value ? "on" : "off"} (click to toggle)`}
+        aria-pressed={value}
+        className="focus-ring rounded font-display text-sm font-semibold leading-none text-text-primary transition hover:text-accent"
+      >
+        {value ? "On" : "Off"}
+      </button>
+    </div>
+  );
+}
+
 // ─── Header ────────────────────────────────────────────────────────
 
 /**
@@ -278,6 +305,13 @@ export function CreationHero({ config, onPatch }: CreationHeroProps) {
         options={genderOptions}
         onCommit={(v) => onPatch({ defaultGender: v || undefined })}
         placeholder="None"
+      />
+      <span aria-hidden="true" className="text-text-muted/40">·</span>
+      <LedgerToggle
+        label="Demo Characters"
+        hint="When on, players can join as a one-tap demo character with a random name. They can later claim the account by setting a password — great for letting curious visitors try the game without a sign-up wall."
+        value={cc.demoEnabled ?? false}
+        onCommit={(v) => onPatch({ demoEnabled: v || undefined })}
       />
     </div>
   );

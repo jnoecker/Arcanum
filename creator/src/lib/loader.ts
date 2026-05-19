@@ -640,6 +640,7 @@ function parseCharacterCreationConfig(raw: unknown): AppConfig["characterCreatio
     defaultRace: typeof s.defaultRace === "string" ? s.defaultRace : undefined,
     defaultClass: typeof s.defaultClass === "string" ? s.defaultClass : undefined,
     defaultGender: typeof s.defaultGender === "string" ? s.defaultGender : undefined,
+    demoEnabled: typeof s.demoEnabled === "boolean" ? s.demoEnabled : undefined,
   };
 }
 

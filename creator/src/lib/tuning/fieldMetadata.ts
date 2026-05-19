@@ -897,6 +897,12 @@ export const FIELD_METADATA: Record<string, FieldMeta> = {
     min: 0,
     impact: "medium",
   },
+  "characterCreation.demoEnabled": {
+    label: "Demo Characters",
+    description: "Allow players to join as a one-tap demo character with a random name. They can later claim the account by setting a password.",
+    section: TuningSection.ProgressionQuests,
+    impact: "low",
+  },
 
   // ─── Prestige ──────────────────────────────────────────────────────
 

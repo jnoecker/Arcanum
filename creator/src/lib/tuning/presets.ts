@@ -234,6 +234,7 @@ export const CASUAL_PRESET: TuningPreset = {
     // ─── Character Creation ──────────────────────────────────────────
     characterCreation: {
       startingGold: 200,
+      demoEnabled: true,
     },
 
     // ─── Prestige ────────────────────────────────────────────────────
@@ -577,6 +578,7 @@ export const BALANCED_PRESET: TuningPreset = {
     // ─── Character Creation ──────────────────────────────────────────
     characterCreation: {
       startingGold: 100,
+      demoEnabled: true,
     },
 
     // ─── Prestige ────────────────────────────────────────────────────
@@ -919,6 +921,7 @@ export const HARDCORE_PRESET: TuningPreset = {
     // ─── Character Creation ──────────────────────────────────────────
     characterCreation: {
       startingGold: 25,
+      demoEnabled: false,
     },
 
     // ─── Prestige ────────────────────────────────────────────────────
@@ -1104,7 +1107,7 @@ export const SOLO_STORY_PRESET: TuningPreset = {
     },
     skillPoints: { interval: 2 },
     multiclass: { minLevel: 8, goldCost: 100, maxClasses: 5, goldCostMultiplier: 1.5 },
-    characterCreation: { startingGold: 500 },
+    characterCreation: { startingGold: 500, demoEnabled: true },
     prestige: { enabled: true, xpCostBase: 3000, xpCostMultiplier: 1.2, maxRank: 10 },
     respec: { goldCost: 25, cooldownMs: 30000 },
     autoQuests: { enabled: true, timeLimitMs: 900000, cooldownMs: 60000 },
@@ -1186,7 +1189,7 @@ export const PVP_ARENA_PRESET: TuningPreset = {
     },
     skillPoints: { interval: 2 },
     multiclass: { minLevel: 20, goldCost: 1000, maxClasses: 2, goldCostMultiplier: 2.5 },
-    characterCreation: { startingGold: 75 },
+    characterCreation: { startingGold: 75, demoEnabled: false },
     prestige: { enabled: true, xpCostBase: 15000, xpCostMultiplier: 1.8, maxRank: 5 },
     respec: { goldCost: 250, cooldownMs: 600000 },
     autoQuests: { enabled: true, timeLimitMs: 240000, cooldownMs: 300000 },
@@ -1268,7 +1271,7 @@ export const LORE_EXPLORER_PRESET: TuningPreset = {
     },
     skillPoints: { interval: 1 },
     multiclass: { minLevel: 5, goldCost: 50, maxClasses: 6, goldCostMultiplier: 1.0 },
-    characterCreation: { startingGold: 2000 },
+    characterCreation: { startingGold: 2000, demoEnabled: true },
     prestige: { enabled: true, xpCostBase: 1000, xpCostMultiplier: 1.1, maxRank: 20 },
     respec: { goldCost: 0, cooldownMs: 0 },
     autoQuests: { enabled: true, timeLimitMs: 1800000, cooldownMs: 30000 },

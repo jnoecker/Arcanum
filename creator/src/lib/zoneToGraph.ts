@@ -47,6 +47,7 @@ export interface RoomNodeData extends Record<string, unknown> {
   station?: string;
   bank?: boolean;
   tavern?: boolean;
+  inn?: boolean;
   dungeon?: boolean;
   auction?: boolean;
   stylist?: boolean;
@@ -168,6 +169,7 @@ export function zoneToGraph(
         station: room.station,
         bank: room.bank,
         tavern: room.tavern,
+        inn: room.inn,
         dungeon: room.dungeon,
         auction: room.auction,
         stylist: room.stylist,

@@ -81,6 +81,8 @@ export interface RoomFile {
   auction?: boolean;
   stylist?: boolean;
   housingBroker?: boolean;
+  /** True if this room is an inn. Players can `rest` here to set their recall point. */
+  inn?: boolean;
   image?: string;
   video?: string;
   music?: string;

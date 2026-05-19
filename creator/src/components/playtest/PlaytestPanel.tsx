@@ -1062,6 +1062,7 @@ function RoomBadges({ room }: { room: RoomFile }) {
   const flags: string[] = [];
   if (room.bank) flags.push("Bank");
   if (room.tavern) flags.push("Tavern");
+  if (room.inn) flags.push("Inn");
   if (room.dungeon) flags.push("Dungeon");
   if (room.auction) flags.push("Auction");
   if (room.stylist) flags.push("Stylist");

@@ -9,6 +9,7 @@ import roleBank from "./role_bank.png";
 import roleDungeon from "./role_dungeon.png";
 import roleStation from "./role_station.png";
 import roleHousingBroker from "./role_housing_broker.png";
+import roleInn from "./role_inn.png";
 import roleStylist from "./role_stylist.png";
 import roleTavern from "./role_tavern.png";
 
@@ -142,6 +143,7 @@ export const ROLE_ICONS: Record<string, string> = {
   station: roleStation,
   stylist: roleStylist,
   housingBroker: roleHousingBroker,
+  inn: roleInn,
 };
 
 /** Feature type (lowercase) → icon URL. */

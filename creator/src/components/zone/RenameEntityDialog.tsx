@@ -6,17 +6,22 @@ import {
   renameMob,
   renameItem,
   renameQuest,
+  renameShop,
   type EntityCategory,
 } from "@/lib/refactorId";
 import { useFocusTrap } from "@/lib/useFocusTrap";
 
-type RenamableCategory = Extract<EntityCategory, "room" | "mob" | "item" | "quest">;
+type RenamableCategory = Extract<EntityCategory, "room" | "mob" | "item" | "quest" | "shop">;
 
-const COLLECTION_BY_CATEGORY: Record<RenamableCategory, "rooms" | "mobs" | "items" | "quests"> = {
+const COLLECTION_BY_CATEGORY: Record<
+  RenamableCategory,
+  "rooms" | "mobs" | "items" | "quests" | "shops"
+> = {
   room: "rooms",
   mob: "mobs",
   item: "items",
   quest: "quests",
+  shop: "shops",
 };
 
 const LABELS: Record<RenamableCategory, { singular: string; placeholder: string }> = {
@@ -24,6 +29,7 @@ const LABELS: Record<RenamableCategory, { singular: string; placeholder: string 
   mob: { singular: "Mob", placeholder: "e.g. grizzled_innkeeper" },
   item: { singular: "Item", placeholder: "e.g. iron_sword" },
   quest: { singular: "Quest", placeholder: "e.g. rescue_the_scholar" },
+  shop: { singular: "Shop", placeholder: "e.g. iron_anvil_armory" },
 };
 
 interface RenameEntityDialogProps {
@@ -72,6 +78,9 @@ export function RenameEntityDialog({
         break;
       case "quest":
         next = renameQuest(world, currentId, trimmedId);
+        break;
+      case "shop":
+        next = renameShop(world, currentId, trimmedId);
         break;
     }
     onConfirm(next, trimmedId);

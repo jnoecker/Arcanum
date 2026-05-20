@@ -44,7 +44,10 @@ export function EntityPanel({
 
   const canRename =
     onRename != null &&
-    (selection.kind === "mob" || selection.kind === "item" || selection.kind === "quest");
+    (selection.kind === "mob" ||
+      selection.kind === "item" ||
+      selection.kind === "quest" ||
+      selection.kind === "shop");
 
   const handleDelete = useCallback(() => {
     onClose();
@@ -193,7 +196,7 @@ export function EntityPanel({
 
       {renaming && canRename && (
         <RenameEntityDialog
-          category={selection.kind as "mob" | "item" | "quest"}
+          category={selection.kind as "mob" | "item" | "quest" | "shop"}
           currentId={selection.id}
           world={world}
           onConfirm={(nextWorld, newId) => {

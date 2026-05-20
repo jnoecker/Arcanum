@@ -117,6 +117,7 @@ export function ItemEditor({
       primaryStat: item.primaryStat,
       secondaryStat: item.secondaryStat,
       tertiaryStat: item.tertiaryStat,
+      disableTertiary: item.disableTertiary,
     });
   }, [item]);
 
@@ -297,9 +298,18 @@ export function ItemEditor({
                 </CompactField>
                 <CompactField label="Tertiary Override" span>
                   <SelectInput
-                    value={item.tertiaryStat ?? ""}
-                    options={statOptions}
-                    onCommit={(v) => patch({ tertiaryStat: v || undefined })}
+                    value={item.disableTertiary ? "__none__" : (item.tertiaryStat ?? "")}
+                    options={[
+                      { value: "__none__", label: "— skip tertiary (60/40 split) —" },
+                      ...statOptions,
+                    ]}
+                    onCommit={(v) => {
+                      if (v === "__none__") {
+                        patch({ tertiaryStat: undefined, disableTertiary: true });
+                      } else {
+                        patch({ tertiaryStat: v || undefined, disableTertiary: undefined });
+                      }
+                    }}
                     allowEmpty
                     placeholder="TERTIARY (adaptive)"
                     dense

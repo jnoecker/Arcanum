@@ -179,6 +179,22 @@ describe("distributeStats", () => {
     // All three slots → same key: (50 + 30 + 20) / 5 = 20
     expect(out.STR).toBe(20);
   });
+
+  it("disableTertiary drops tertiary and uses a 60/40 split", () => {
+    const out = distributeStats(100, undefined, undefined, undefined, undefined, true);
+    expect(out.PRIMARY).toBe(Math.round(60 / DEFAULT_POINT_COSTS.statPointCost));
+    expect(out.SECONDARY).toBe(Math.round(40 / DEFAULT_POINT_COSTS.statPointCost));
+    expect(out.TERTIARY).toBeUndefined();
+  });
+
+  it("disableTertiary respects primary/secondary overrides", () => {
+    const out = distributeStats(100, "STR", "DEX", "ignored", undefined, true);
+    expect(out.STR).toBe(Math.round(60 / DEFAULT_POINT_COSTS.statPointCost));
+    expect(out.DEX).toBe(Math.round(40 / DEFAULT_POINT_COSTS.statPointCost));
+    // tertiary slot is dropped — the "ignored" override has no effect.
+    expect(out.ignored).toBeUndefined();
+    expect(out.TERTIARY).toBeUndefined();
+  });
 });
 
 describe("deriveItemStats", () => {

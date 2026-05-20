@@ -299,6 +299,7 @@ export function restatItem(
     primaryStat: item.primaryStat,
     secondaryStat: item.secondaryStat,
     tertiaryStat: item.tertiaryStat,
+    disableTertiary: item.disableTertiary,
     slotBudgets,
   });
 

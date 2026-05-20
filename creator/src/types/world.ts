@@ -451,6 +451,17 @@ export interface QuestRewardsFile {
   xp?: number;
   gold?: number;
   currencies?: Record<string, number>;
+  /**
+   * Items spawned into the player's inventory on quest completion. Each entry
+   * is `{ itemId, count? }` where `itemId` is a bare ID for same-zone refs and
+   * `zone:itemId` for cross-zone. `count` defaults to 1 server-side.
+   */
+  items?: QuestItemReward[];
+}
+
+export interface QuestItemReward {
+  itemId: string;
+  count?: number;
 }
 
 export interface DialogueNodeFile {

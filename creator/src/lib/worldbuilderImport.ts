@@ -450,6 +450,12 @@ function convertQuest(id: string, quest: QuestFile, zoneId: string): Omit<Worldb
       rewardBits.push(`${v} ${k}`);
     }
   }
+  if (quest.rewards?.items) {
+    for (const reward of quest.rewards.items) {
+      const count = reward.count && reward.count > 1 ? `${reward.count}× ` : "";
+      rewardBits.push(`${count}${reward.itemId}`);
+    }
+  }
   const outcome = rewardBits.length > 0 ? `Rewards: ${rewardBits.join(", ")}.` : "";
 
   return {

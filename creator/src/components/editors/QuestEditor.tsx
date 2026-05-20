@@ -1,10 +1,15 @@
-import { useCallback } from "react";
+import { useCallback, useMemo, useState } from "react";
 import type {
   WorldFile,
   QuestFile,
   QuestObjectiveFile,
   QuestRewardsFile,
 } from "@/types/world";
+import {
+  ItemPickerDialog,
+  useItemCatalog,
+  type ItemCatalogEntry,
+} from "@/components/ui/ItemPickerDialog";
 import { updateQuest, deleteQuest } from "@/lib/zoneEdits";
 import { useEntityEditor } from "@/lib/useEntityEditor";
 import { useArrayField } from "@/lib/useArrayField";
@@ -102,14 +107,93 @@ export function QuestEditor({
   // ─── Rewards helpers ──────────────────────────────────────────
   const rewards = quest.rewards ?? {};
 
+  /** True when the rewards object carries any payload worth keeping on disk. */
+  const rewardsHaveContent = (r: QuestRewardsFile): boolean =>
+    (r.xp ?? 0) > 0 ||
+    (r.gold ?? 0) > 0 ||
+    (r.currencies && Object.keys(r.currencies).length > 0) ||
+    (r.items && r.items.length > 0) ||
+    false;
+
+  const commitRewards = useCallback(
+    (next: QuestRewardsFile) => {
+      patch({ rewards: rewardsHaveContent(next) ? next : undefined });
+    },
+    [patch],
+  );
+
   const handleRewardChange = useCallback(
     (field: keyof QuestRewardsFile, value: number | undefined) => {
-      const next: QuestRewardsFile = { ...rewards, [field]: value };
-      const hasReward = (next.xp ?? 0) > 0 || (next.gold ?? 0) > 0 || (next.currencies && Object.keys(next.currencies).length > 0);
-      patch({ rewards: hasReward ? next : undefined });
+      commitRewards({ ...rewards, [field]: value });
     },
-    [rewards, patch],
+    [rewards, commitRewards],
   );
+
+  // ─── Item rewards ─────────────────────────────────────────────
+  const zoneId = world.zone;
+  const itemCatalog = useItemCatalog();
+  const [itemRewardPicker, setItemRewardPicker] = useState<
+    | { mode: "add" }
+    | { mode: "replace"; index: number }
+    | null
+  >(null);
+
+  const handleAddItemReward = useCallback(
+    (entry: ItemCatalogEntry) => {
+      const resolved = entry.zoneId === zoneId ? entry.itemId : entry.fullId;
+      const current = rewards.items ?? [];
+      if (itemRewardPicker?.mode === "replace") {
+        const next = current.map((it, i) =>
+          i === itemRewardPicker.index ? { ...it, itemId: resolved } : it,
+        );
+        commitRewards({ ...rewards, items: next });
+      } else {
+        commitRewards({ ...rewards, items: [...current, { itemId: resolved }] });
+      }
+      setItemRewardPicker(null);
+    },
+    [itemRewardPicker, rewards, commitRewards, zoneId],
+  );
+
+  const handleItemRewardCount = useCallback(
+    (index: number, count: number) => {
+      const current = rewards.items ?? [];
+      // `count: 1` is the implicit default — drop it to keep YAML minimal.
+      const next = current.map((it, i) =>
+        i === index ? (count > 1 ? { ...it, count } : { itemId: it.itemId }) : it,
+      );
+      commitRewards({ ...rewards, items: next });
+    },
+    [rewards, commitRewards],
+  );
+
+  const handleRemoveItemReward = useCallback(
+    (index: number) => {
+      const current = rewards.items ?? [];
+      const next = current.filter((_, i) => i !== index);
+      commitRewards({ ...rewards, items: next.length > 0 ? next : undefined });
+    },
+    [rewards, commitRewards],
+  );
+
+  const itemRewardExcludeIds = useMemo(() => {
+    const out = new Set<string>();
+    for (const reward of rewards.items ?? []) {
+      if (!reward.itemId) continue;
+      if (reward.itemId.includes(":")) out.add(reward.itemId);
+      else if (zoneId) out.add(`${zoneId}:${reward.itemId}`);
+    }
+    return out;
+  }, [rewards.items, zoneId]);
+
+  const itemLookup = useMemo(() => {
+    const map = new Map<string, ItemCatalogEntry>();
+    for (const entry of itemCatalog) {
+      map.set(entry.fullId, entry);
+      if (entry.zoneId === zoneId) map.set(entry.itemId, entry);
+    }
+    return map;
+  }, [itemCatalog, zoneId]);
 
   const questXpConfig = useConfigStore((s) => s.config?.progression.quests);
   const resolvedXp = resolveQuestXp(quest, questXpConfig);
@@ -315,6 +399,74 @@ export function QuestEditor({
           </CompactField>
         </FieldGrid>
         <div className="mt-2">
+          <FieldRow label="Items" hint="Items spawned into the player's inventory on completion.">
+            <div className="flex flex-col gap-1">
+              {(rewards.items ?? []).map((reward, i) => {
+                const lookupKey = reward.itemId.includes(":")
+                  ? reward.itemId
+                  : zoneId
+                    ? `${zoneId}:${reward.itemId}`
+                    : reward.itemId;
+                const entry = itemLookup.get(lookupKey) ?? itemLookup.get(reward.itemId);
+                const missing = !entry && reward.itemId !== "";
+                return (
+                  <div key={i} className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setItemRewardPicker({ mode: "replace", index: i })}
+                      className={`focus-ring flex min-w-0 flex-1 items-center gap-2 rounded border px-2 py-1 text-left text-xs transition ${
+                        missing
+                          ? "border-status-warning/40 bg-status-warning/5 text-status-warning"
+                          : "border-border-default bg-bg-tertiary text-text-primary hover:border-accent/40"
+                      }`}
+                      title={
+                        entry
+                          ? entry.zoneId === zoneId
+                            ? entry.itemId
+                            : entry.fullId
+                          : reward.itemId || "Pick an item"
+                      }
+                    >
+                      <span className="min-w-0 flex-1 truncate">
+                        {entry ? entry.displayName : reward.itemId || "Choose item…"}
+                      </span>
+                      {entry?.slot && (
+                        <span className="shrink-0 rounded bg-[var(--chrome-fill)] px-1 font-display text-[0.55rem] uppercase tracking-wider text-text-muted">
+                          {entry.slot}
+                        </span>
+                      )}
+                      {entry && entry.zoneId !== zoneId && (
+                        <span className="shrink-0 rounded bg-bg-tertiary px-1 font-mono text-2xs text-text-muted">
+                          {entry.zoneId}
+                        </span>
+                      )}
+                    </button>
+                    <div className="w-16 shrink-0">
+                      <NumberInput
+                        value={reward.count ?? 1}
+                        onCommit={(v) => handleItemRewardCount(i, v ?? 1)}
+                        min={1}
+                        placeholder="1"
+                      />
+                    </div>
+                    <span className="text-2xs text-text-muted">×</span>
+                    <IconButton onClick={() => handleRemoveItemReward(i)} title="Remove">
+                      &times;
+                    </IconButton>
+                  </div>
+                );
+              })}
+              <button
+                onClick={() => setItemRewardPicker({ mode: "add" })}
+                className="self-start rounded border border-border-default px-2 py-0.5 text-2xs text-text-secondary hover:bg-bg-tertiary"
+              >
+                + Add item
+              </button>
+            </div>
+          </FieldRow>
+        </div>
+
+        <div className="mt-2">
           <FieldRow label="Currencies" hint="Secondary currency rewards (e.g. quest_points, honor)">
             <div className="flex flex-col gap-1">
               {Object.entries(rewards.currencies ?? {}).map(([key, amount]) => (
@@ -370,6 +522,17 @@ export function QuestEditor({
       />
 
       <DeleteEntityButton onClick={handleDelete} label="Delete Quest" />
+
+      {itemRewardPicker && (
+        <ItemPickerDialog
+          catalog={itemCatalog}
+          excludeIds={itemRewardExcludeIds}
+          title={itemRewardPicker.mode === "add" ? "Add Reward Item" : "Change Reward Item"}
+          description="Item spawned into the player's inventory on quest completion."
+          onPick={handleAddItemReward}
+          onClose={() => setItemRewardPicker(null)}
+        />
+      )}
     </>
   );
 }

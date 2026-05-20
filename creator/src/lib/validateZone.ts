@@ -832,6 +832,21 @@ export function validateZone(
         `XP override (${resolvedXp.authored}) breaks the difficulty tier — '${quest.difficulty}' at level ${quest.level ?? 1} would compute ${resolvedXp.computed}. Remove rewards.xp to use the tier, or pick a different difficulty.`,
       );
     }
+    for (const reward of quest.rewards?.items ?? []) {
+      if (!reward.itemId) {
+        addIssue(issues, "warning", entity, "Reward item has empty item ID");
+      } else if (!reward.itemId.includes(":") && !itemIds.has(reward.itemId)) {
+        addIssue(
+          issues,
+          "warning",
+          entity,
+          `Reward item "${reward.itemId}" is not a known item in this zone`,
+        );
+      }
+      if (reward.count != null && reward.count < 1) {
+        addIssue(issues, "error", entity, `Reward item "${reward.itemId}" has invalid count ${reward.count}`);
+      }
+    }
   }
 
   for (const [nodeId, node] of Object.entries(world.gatheringNodes ?? {})) {

@@ -305,12 +305,24 @@ function applyIdRemaps(world: WorldFile, t: RemapTables): WorldFile {
     }
   }
 
-  // Quests: remap keys, giver ref
+  // Quests: remap keys, giver ref, and item-reward IDs.
   const quests = world.quests
     ? Object.fromEntries(
         Object.entries(world.quests)
           .filter(([id]) => t.quest.get(id) !== "")
-          .map(([id, q]) => [t.quest.get(id) ?? id, { ...q, giver: rId(q.giver, t.mob) }]),
+          .map(([id, q]) => {
+            let next = { ...q, giver: rId(q.giver, t.mob) };
+            if (q.rewards?.items && t.item.size > 0) {
+              next = {
+                ...next,
+                rewards: {
+                  ...q.rewards,
+                  items: q.rewards.items.map((r) => ({ ...r, itemId: rId(r.itemId, t.item) })),
+                },
+              };
+            }
+            return [t.quest.get(id) ?? id, next];
+          }),
       )
     : undefined;
 
@@ -558,12 +570,25 @@ function stripDanglingReferences(world: WorldFile): WorldFile {
     }
   }
 
-  // Quest giver
+  // Quest giver + reward item refs
   let quests: Record<string, QuestFile> | undefined;
   if (world.quests) {
     quests = {};
     for (const [id, quest] of Object.entries(world.quests)) {
-      quests[id] = { ...quest, giver: mobIds.has(quest.giver) ? quest.giver : "" };
+      let cleaned: QuestFile = { ...quest, giver: mobIds.has(quest.giver) ? quest.giver : "" };
+      if (quest.rewards?.items && quest.rewards.items.length > 0) {
+        const validItems = quest.rewards.items.filter((r) => {
+          if (!r.itemId) return false;
+          // Cross-zone refs (zone:item) we can't fully verify here; pass them through.
+          if (r.itemId.includes(":")) return true;
+          return itemIds.has(r.itemId);
+        });
+        const rewards = { ...quest.rewards };
+        if (validItems.length > 0) rewards.items = validItems;
+        else delete rewards.items;
+        cleaned = { ...cleaned, rewards };
+      }
+      quests[id] = cleaned;
     }
   }
 

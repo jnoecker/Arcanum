@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import type { ItemFile } from "@/types/world";
 import { useZoneStore } from "@/stores/zoneStore";
 import { SearchIcon, XIcon } from "@/components/config/icons";
@@ -123,7 +124,11 @@ export function ItemPickerDialog({
     });
   }, [catalog, excludeIds, query]);
 
-  return (
+  // Portal to document.body so we escape any ancestor stacking context.
+  // SectionCard / panel-surface containers use `isolation: isolate` + a
+  // mix-blend-mode overlay, which can trap fixed-positioned descendants and
+  // make the dialog render under sibling content.
+  return createPortal(
     <div
       ref={dialogRef}
       role="dialog"
@@ -206,6 +211,7 @@ export function ItemPickerDialog({
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

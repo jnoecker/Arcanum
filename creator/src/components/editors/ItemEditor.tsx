@@ -107,21 +107,28 @@ export function ItemEditor({
     [],
   );
 
+  const isAccessory = item?.slot ? ACCESSORY_SLOTS.has(item.slot) : false;
+
   const derivation = useMemo(() => {
     if (!item) return null;
-    if (item.level == null || !item.tier || !item.archetype || !item.slot) return null;
+    // Accessory slots are locked to the "stat" archetype, so the picker
+    // never writes one. Treat them as `stat` here so the budget readout
+    // still shows up — authors get a starting point even when they can't
+    // change the archetype.
+    const effectiveArchetype: ItemArchetype | undefined = isAccessory
+      ? "stat"
+      : (item.archetype as ItemArchetype | undefined);
+    if (item.level == null || !item.tier || !effectiveArchetype || !item.slot) return null;
     return deriveItemStats({
       slot: item.slot,
       tier: item.tier as ItemTier,
-      archetype: item.archetype as ItemArchetype,
+      archetype: effectiveArchetype,
       primaryStat: item.primaryStat,
       secondaryStat: item.secondaryStat,
       tertiaryStat: item.tertiaryStat,
       disableTertiary: item.disableTertiary,
     });
-  }, [item]);
-
-  const isAccessory = item?.slot ? ACCESSORY_SLOTS.has(item.slot) : false;
+  }, [item, isAccessory]);
 
   if (!item) return null;
 
@@ -179,14 +186,19 @@ export function ItemEditor({
   const [justApplied, setJustApplied] = useState(false);
   const handleApplyDerivation = useCallback(() => {
     if (!derivation) return;
-    patch({
+    const update: Partial<ItemFile> = {
       damage: derivation.damage > 0 ? derivation.damage : undefined,
       armor: derivation.armor > 0 ? derivation.armor : undefined,
       stats: Object.keys(derivation.stats).length > 0 ? derivation.stats : undefined,
-    });
+    };
+    // Backfill the archetype on accessories so the item carries its bucket
+    // explicitly. Non-accessory items already have a user-picked archetype —
+    // don't clobber it.
+    if (isAccessory) update.archetype = "stat";
+    patch(update);
     setJustApplied(true);
     setTimeout(() => setJustApplied(false), 1500);
-  }, [derivation, patch]);
+  }, [derivation, isAccessory, patch]);
 
   return (
     <>
@@ -357,7 +369,9 @@ export function ItemEditor({
               )}
               {!derivation && (item.slot || item.level != null || item.tier || item.archetype) && (
                 <div className="rounded border border-dashed border-border-default bg-bg-tertiary px-2 py-1 text-2xs text-text-muted">
-                  Set slot, level, tier, and archetype to enable the calculator.
+                  {isAccessory
+                    ? "Set slot, level, and tier to enable the calculator. Accessories are locked to the stat archetype."
+                    : "Set slot, level, tier, and archetype to enable the calculator."}
                 </div>
               )}
             </div>

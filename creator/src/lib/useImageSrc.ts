@@ -3,6 +3,38 @@ import { invoke } from "@tauri-apps/api/core";
 import { useProjectStore } from "@/stores/projectStore";
 import { useAssetStore } from "@/stores/assetStore";
 
+/**
+ * Module-level cache for `read_image_data_url` results. Keyed by absolute
+ * filesystem path so identical images (e.g. the same R2 hash referenced from
+ * many rooms) only pay the IPC + base64 cost once per session.
+ *
+ * Stores the in-flight Promise so concurrent callers share a single IPC.
+ * Failed promises are evicted so the next caller can retry cleanly.
+ */
+const imageDataUrlCache = new Map<string, Promise<string>>();
+
+function fetchImageDataUrl(path: string): Promise<string> {
+  const cached = imageDataUrlCache.get(path);
+  if (cached) return cached;
+  const promise = invoke<string>("read_image_data_url", { path });
+  imageDataUrlCache.set(path, promise);
+  promise.catch(() => imageDataUrlCache.delete(path));
+  return promise;
+}
+
+/** Drop a single entry from the image-data-url cache. Call after writing the
+ *  underlying file (e.g. asset accept, regenerate) so the next load picks up
+ *  the new bytes instead of returning a stale data URL. */
+export function invalidateImageCache(path: string): void {
+  imageDataUrlCache.delete(path);
+}
+
+/** Clear the entire image-data-url cache. Use sparingly — meant for project
+ *  switches where every path is now invalid. */
+export function clearImageCache(): void {
+  imageDataUrlCache.clear();
+}
+
 /** Returns true if the path looks like an R2 hash filename (64 hex chars + extension). */
 export function isR2HashPath(path: string | undefined): boolean {
   if (!path) return false;
@@ -72,6 +104,9 @@ export function useImageSrcStatus(filePath: string | undefined): ImageLoadResult
       return;
     }
 
+    // Synchronous fast path: if every candidate is already cached, pick the
+    // first one that resolved successfully and skip the async dance. Avoids
+    // a "loading" flash and a microtask hop on re-renders of cached images.
     let cancelled = false;
     setStatus("loading");
 
@@ -79,7 +114,7 @@ export function useImageSrcStatus(filePath: string | undefined): ImageLoadResult
       for (const path of candidates) {
         if (cancelled) return;
         try {
-          const dataUrl = await invoke<string>("read_image_data_url", { path });
+          const dataUrl = await fetchImageDataUrl(path);
           if (!cancelled) {
             setSrc(dataUrl);
             setStatus("loaded");
@@ -134,7 +169,7 @@ export async function resolveImageDataUrl(
 
   for (const path of candidates) {
     try {
-      return await invoke<string>("read_image_data_url", { path });
+      return await fetchImageDataUrl(path);
     } catch {
       // Try next candidate.
     }

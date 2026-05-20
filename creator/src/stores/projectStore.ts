@@ -3,6 +3,8 @@ import { invoke } from "@tauri-apps/api/core";
 import { saveUIState, loadUIState } from "@/lib/uiPersistence";
 import { type Island } from "@/lib/panelRegistry";
 import { useSidebarStore } from "@/stores/sidebarStore";
+import { clearImageCache } from "@/lib/useImageSrc";
+import { clearRoomDataCache } from "@/lib/zoneToGraph";
 import type {
   Project,
   Tab,
@@ -99,6 +101,11 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
   loreChatOpen: false,
 
   setProject: (project) => {
+    // Drop project-scoped caches. Asset paths are absolute and a new project
+    // resolves entirely different files, so the old cache contents are at
+    // best wasteful and at worst stale.
+    clearImageCache();
+    clearRoomDataCache();
     set({
       project,
       tabs: [],
@@ -113,6 +120,8 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
   },
 
   closeProject: () => {
+    clearImageCache();
+    clearRoomDataCache();
     invoke("set_active_project_dir", { projectDir: null }).catch(() => {});
     set({ project: null, tabs: [], activeTabId: null, mapView: "world" });
   },

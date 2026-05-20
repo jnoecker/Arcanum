@@ -62,6 +62,51 @@ export interface CrossZoneNodeData extends Record<string, unknown> {
   label: string;
 }
 
+// ─── Per-room memoization ───────────────────────────────────────────
+//
+// Without this, every call to `zoneToGraph` (one per edit) produces fresh
+// `RoomNodeData` objects for *every* room. RoomNode's `memo()` then can't
+// short-circuit, so every node re-renders and re-runs its image-loading
+// effects even when only one unrelated room changed. The cache here keys
+// on a fingerprint of every field RoomNode actually reads and returns the
+// previous data reference when nothing displayed has changed.
+
+interface RoomCacheEntry {
+  fingerprint: string;
+  data: RoomNodeData;
+}
+
+const roomDataCache = new Map<string, RoomCacheEntry>();
+
+function buildEntityFingerprint(entities: EntitySprite[]): string {
+  // Order is preserved by zoneToGraph's insertion sequence (mobs, items,
+  // shops, gathering nodes) so a stable fingerprint requires no sort.
+  return entities.map((e) => `${e.kind}:${e.id}:${e.image ?? ""}`).join(",");
+}
+
+function cachedRoomData(
+  roomId: string,
+  build: () => RoomNodeData & { _fingerprint: string },
+): RoomNodeData {
+  const next = build();
+  const fingerprint = next._fingerprint;
+  const cached = roomDataCache.get(roomId);
+  if (cached && cached.fingerprint === fingerprint) {
+    return cached.data;
+  }
+  // Strip the internal fingerprint field — RoomNodeData doesn't carry it.
+  const { _fingerprint: _ignore, ...data } = next;
+  void _ignore;
+  roomDataCache.set(roomId, { fingerprint, data });
+  return data;
+}
+
+/** Free room-data cache entries. Call when switching projects so the cache
+ *  doesn't pin memory for rooms that no longer exist. */
+export function clearRoomDataCache(): void {
+  roomDataCache.clear();
+}
+
 // ─── Helpers ────────────────────────────────────────────────────────
 
 function resolveExit(exit: string | ExitValue): {
@@ -153,19 +198,39 @@ export function zoneToGraph(
   // Build room nodes
   const nodes: Node[] = [];
   for (const [roomId, room] of Object.entries(world.rooms)) {
-    nodes.push({
-      id: roomId,
-      type: "room",
-      position: { x: 0, y: 0 },
-      data: {
+    const isStartRoom = roomId === world.startRoom;
+    const mobCount = mobsPerRoom.get(roomId) ?? 0;
+    const itemCount = itemsPerRoom.get(roomId) ?? 0;
+    const shopCount = shopsPerRoom.get(roomId) ?? 0;
+    const gatheringNodeCount = gatheringNodesPerRoom.get(roomId) ?? 0;
+    const entities = entitiesPerRoom.get(roomId) ?? [];
+
+    const data = cachedRoomData(roomId, () => {
+      // Fingerprint of every field RoomNode renders. `description` is
+      // intentionally excluded — it's authored frequently but not displayed
+      // in the graph node, so editing it shouldn't bust the memo.
+      const flags = `${room.bank ? 1 : 0}${room.tavern ? 1 : 0}${room.inn ? 1 : 0}${room.dungeon ? 1 : 0}${room.auction ? 1 : 0}${room.stylist ? 1 : 0}${room.housingBroker ? 1 : 0}`;
+      const fingerprint = [
+        room.title,
+        room.image ?? "",
+        room.station ?? "",
+        flags,
+        isStartRoom ? 1 : 0,
+        mobCount,
+        itemCount,
+        shopCount,
+        gatheringNodeCount,
+        buildEntityFingerprint(entities),
+      ].join("|");
+      return {
         roomId,
         title: room.title,
         description: room.description,
-        isStartRoom: roomId === world.startRoom,
-        mobCount: mobsPerRoom.get(roomId) ?? 0,
-        itemCount: itemsPerRoom.get(roomId) ?? 0,
-        shopCount: shopsPerRoom.get(roomId) ?? 0,
-        gatheringNodeCount: gatheringNodesPerRoom.get(roomId) ?? 0,
+        isStartRoom,
+        mobCount,
+        itemCount,
+        shopCount,
+        gatheringNodeCount,
         station: room.station,
         bank: room.bank,
         tavern: room.tavern,
@@ -175,8 +240,16 @@ export function zoneToGraph(
         stylist: room.stylist,
         housingBroker: room.housingBroker,
         image: room.image,
-        entities: entitiesPerRoom.get(roomId) ?? [],
-      } satisfies RoomNodeData,
+        entities,
+        _fingerprint: fingerprint,
+      };
+    });
+
+    nodes.push({
+      id: roomId,
+      type: "room",
+      position: { x: 0, y: 0 },
+      data,
     });
   }
 

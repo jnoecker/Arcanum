@@ -1,27 +1,16 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type {
   ClassDefinitionConfig,
   StarterEquipmentEntry,
 } from "@/types/config";
-import type { ItemFile } from "@/types/world";
-import { useZoneStore } from "@/stores/zoneStore";
 import { SectionCard } from "@/components/ui/SectionCard";
 import { cx } from "@/components/ui/FormWidgets";
+import { PlusIcon, TrashIcon } from "@/components/config/icons";
 import {
-  PlusIcon,
-  SearchIcon,
-  TrashIcon,
-  XIcon,
-} from "@/components/config/icons";
-
-interface CatalogItem {
-  fullId: string;
-  zoneId: string;
-  itemId: string;
-  displayName: string;
-  hasSlot: boolean;
-  slot?: string;
-}
+  ItemPickerDialog,
+  useItemCatalog,
+  type ItemCatalogEntry,
+} from "@/components/ui/ItemPickerDialog";
 
 interface StarterEquipmentTabProps {
   classes: Record<string, ClassDefinitionConfig>;
@@ -29,8 +18,6 @@ interface StarterEquipmentTabProps {
 }
 
 export function StarterEquipmentTab({ classes, onPatchClass }: StarterEquipmentTabProps) {
-  const zones = useZoneStore((s) => s.zones);
-
   const classIds = useMemo(
     () => Object.keys(classes).filter((id) => classes[id]!.selectable !== false),
     [classes],
@@ -47,29 +34,9 @@ export function StarterEquipmentTab({ classes, onPatchClass }: StarterEquipmentT
     setSelectedClassId(classIds[0] ?? allClassIds[0] ?? null);
   }, [classes, classIds, allClassIds, selectedClassId]);
 
-  const catalog = useMemo<CatalogItem[]>(() => {
-    const out: CatalogItem[] = [];
-    for (const [zoneId, state] of zones) {
-      const items = state.data.items;
-      if (!items) continue;
-      for (const [itemId, item] of Object.entries(items)) {
-        const file = item as ItemFile;
-        out.push({
-          fullId: `${zoneId}:${itemId}`,
-          zoneId,
-          itemId,
-          displayName: file?.displayName || itemId,
-          hasSlot: Boolean(file?.slot),
-          slot: file?.slot,
-        });
-      }
-    }
-    out.sort((a, b) => a.fullId.localeCompare(b.fullId));
-    return out;
-  }, [zones]);
-
+  const catalog = useItemCatalog();
   const catalogById = useMemo(() => {
-    const map = new Map<string, CatalogItem>();
+    const map = new Map<string, ItemCatalogEntry>();
     for (const c of catalog) map.set(c.fullId, c);
     return map;
   }, [catalog]);
@@ -184,8 +151,8 @@ function StarterEditor({
 }: {
   classId: string;
   cls: ClassDefinitionConfig;
-  catalog: CatalogItem[];
-  catalogById: Map<string, CatalogItem>;
+  catalog: ItemCatalogEntry[];
+  catalogById: Map<string, ItemCatalogEntry>;
   onPatch: (p: Partial<ClassDefinitionConfig>) => void;
 }) {
   const entries = cls.starterEquipment ?? [];
@@ -292,7 +259,9 @@ function StarterEditor({
         <ItemPickerDialog
           catalog={catalog}
           excludeIds={usedIds}
-          onPick={handleAdd}
+          title="Add Starter Item"
+          description="Items from every loaded zone. Use the search to narrow by id, name, or slot."
+          onPick={(entry) => handleAdd(entry.fullId)}
           onClose={() => setPickerOpen(false)}
         />
       )}
@@ -314,7 +283,7 @@ function EquipmentRow({
   onRemove,
 }: {
   entry: StarterEquipmentEntry;
-  meta: CatalogItem | undefined;
+  meta: ItemCatalogEntry | undefined;
   equipFlag: boolean;
   canMoveUp: boolean;
   canMoveDown: boolean;
@@ -446,160 +415,5 @@ function EquipToggle({
         {effective ? "Equip" : "Bag"}
       </span>
     </button>
-  );
-}
-
-// ─── Item picker dialog ─────────────────────────────────────────────
-
-function ItemPickerDialog({
-  catalog,
-  excludeIds,
-  onPick,
-  onClose,
-}: {
-  catalog: CatalogItem[];
-  excludeIds: Set<string>;
-  onPick: (fullId: string) => void;
-  onClose: () => void;
-}) {
-  const [query, setQuery] = useState("");
-  const inputRef = useRef<HTMLInputElement>(null);
-  const dialogRef = useRef<HTMLDivElement>(null);
-  const previousFocus = useRef<HTMLElement | null>(null);
-
-  useEffect(() => {
-    previousFocus.current = document.activeElement as HTMLElement | null;
-    inputRef.current?.focus();
-    return () => {
-      previousFocus.current?.focus?.();
-    };
-  }, []);
-
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        e.stopPropagation();
-        onClose();
-      }
-      if (e.key === "Tab") {
-        const root = dialogRef.current;
-        if (!root) return;
-        const focusable = root.querySelectorAll<HTMLElement>(
-          'a, button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])',
-        );
-        if (focusable.length === 0) return;
-        const first = focusable[0]!;
-        const last = focusable[focusable.length - 1]!;
-        if (e.shiftKey && document.activeElement === first) {
-          e.preventDefault();
-          last.focus();
-        } else if (!e.shiftKey && document.activeElement === last) {
-          e.preventDefault();
-          first.focus();
-        }
-      }
-    };
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [onClose]);
-
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    const visible = catalog.filter((c) => !excludeIds.has(c.fullId));
-    if (!q) return visible;
-    return visible.filter((c) => {
-      return (
-        c.fullId.toLowerCase().includes(q) ||
-        c.displayName.toLowerCase().includes(q) ||
-        c.slot?.toLowerCase().includes(q)
-      );
-    });
-  }, [catalog, excludeIds, query]);
-
-  return (
-    <div
-      ref={dialogRef}
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="starter-eq-picker-title"
-      className="dialog-overlay fixed inset-0 z-[80] flex items-center justify-center p-4"
-      onMouseDown={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
-    >
-      <div className="panel-surface relative flex max-h-[80vh] w-full max-w-xl flex-col gap-3 rounded-2xl p-4 shadow-section">
-        <header className="flex items-start gap-3">
-          <div className="min-w-0 flex-1">
-            <h3
-              id="starter-eq-picker-title"
-              className="font-display text-xs font-semibold uppercase tracking-[0.18em] text-text-secondary"
-            >
-              Add Starter Item
-            </h3>
-            <p className="mt-0.5 text-2xs text-text-muted/70">
-              Items from every loaded zone. Use the search to narrow by id,
-              name, or slot.
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Close"
-            className="focus-ring inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-text-muted/70 transition hover:bg-[var(--chrome-fill)] hover:text-text-primary"
-          >
-            <XIcon />
-          </button>
-        </header>
-
-        <div className="ornate-input flex items-center gap-2 px-2.5 py-1.5">
-          <SearchIcon className="text-text-muted/70" />
-          <input
-            ref={inputRef}
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search items by id, name, or slot…"
-            className="min-w-0 flex-1 bg-transparent text-xs text-text-primary outline-none placeholder:text-text-muted/60"
-          />
-        </div>
-
-        <div className="min-h-0 flex-1 overflow-y-auto rounded-xl border border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)]">
-          {filtered.length === 0 ? (
-            <div className="px-4 py-10 text-center text-2xs italic text-text-muted/70">
-              {catalog.length === 0
-                ? "No items in any loaded zone. Open a zone with items first."
-                : query
-                  ? `No items match “${query}”.`
-                  : "Every item is already in the kit."}
-            </div>
-          ) : (
-            <ul className="flex flex-col">
-              {filtered.map((c) => (
-                <li key={c.fullId}>
-                  <button
-                    type="button"
-                    onClick={() => onPick(c.fullId)}
-                    className="focus-ring flex w-full items-center gap-3 border-b border-[var(--chrome-stroke)]/50 px-3 py-2 text-left transition last:border-b-0 hover:bg-[var(--chrome-fill)]"
-                  >
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate font-display text-sm text-text-primary">
-                        {c.displayName}
-                      </p>
-                      <p className="truncate font-mono text-2xs text-text-muted/70">
-                        {c.fullId}
-                      </p>
-                    </div>
-                    {c.slot && (
-                      <span className="shrink-0 rounded-full bg-[var(--chrome-fill)] px-1.5 py-px font-display text-[0.55rem] uppercase tracking-wider text-text-muted">
-                        {c.slot}
-                      </span>
-                    )}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-      </div>
-    </div>
   );
 }

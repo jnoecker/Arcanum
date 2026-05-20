@@ -1,9 +1,8 @@
 import { useCallback, useMemo, useState } from "react";
-import type { WorldFile, MobFile, MobDropFile, MobSpellFile, MobRole, SpawnEntry } from "@/types/world";
+import type { WorldFile, MobFile, MobSpellFile, MobRole, SpawnEntry } from "@/types/world";
 import { MOB_ROLES, MOB_ROLE_LABELS, MOB_ROLE_DESCRIPTIONS } from "@/types/world";
 import { updateMob, deleteMob } from "@/lib/zoneEdits";
 import { useEntityEditor } from "@/lib/useEntityEditor";
-import { useArrayField } from "@/lib/useArrayField";
 import {
   Section,
   FieldRow,
@@ -33,6 +32,11 @@ import { CATEGORY_ICONS } from "@/assets/ui";
 import { QuestPicker, QuestRefBadge } from "@/components/config/panels/QuestPicker";
 import { useConfigOptions } from "@/lib/useConfigOptions";
 import { getTrainerClasses, setTrainerClasses } from "@/lib/trainers";
+import {
+  ItemPickerDialog,
+  useItemCatalog,
+  type ItemCatalogEntry,
+} from "@/components/ui/ItemPickerDialog";
 
 interface MobEditorProps {
   mobId: string;
@@ -231,15 +235,69 @@ export function MobEditor({
     });
   }, [patch]);
 
-  const {
-    add: handleAddDrop,
-    update: handleUpdateDrop,
-    remove: handleDeleteDrop,
-  } = useArrayField<MobDropFile>(
-    mob.drops,
-    (drops) => patch({ drops }),
-    { itemId: "", chance: 1 },
+  // Drop rows are picker-driven: the bare itemId text input was easy to
+  // typo, especially as item lists grew. The picker filters across every
+  // loaded zone and writes the bare id for same-zone items, `zone:item` for
+  // cross-zone — matching the convention the loader normalises against.
+  const itemCatalog = useItemCatalog();
+  const [dropPicker, setDropPicker] = useState<
+    | { mode: "add" }
+    | { mode: "replace"; index: number }
+    | null
+  >(null);
+  const handleUpdateDropChance = useCallback(
+    (index: number, chance: number) => {
+      const current = mob.drops ?? [];
+      const next = current.map((d, i) => (i === index ? { ...d, chance } : d));
+      patch({ drops: next });
+    },
+    [mob.drops, patch],
   );
+  const handleDeleteDrop = useCallback(
+    (index: number) => {
+      const current = mob.drops ?? [];
+      const next = current.filter((_, i) => i !== index);
+      patch({ drops: next.length > 0 ? next : undefined });
+    },
+    [mob.drops, patch],
+  );
+  const handlePickDrop = useCallback(
+    (entry: ItemCatalogEntry) => {
+      const resolved = entry.zoneId === zoneId ? entry.itemId : entry.fullId;
+      const current = mob.drops ?? [];
+      if (dropPicker?.mode === "replace") {
+        const next = current.map((d, i) =>
+          i === dropPicker.index ? { ...d, itemId: resolved } : d,
+        );
+        patch({ drops: next });
+      } else {
+        patch({ drops: [...current, { itemId: resolved, chance: 1 }] });
+      }
+      setDropPicker(null);
+    },
+    [dropPicker, mob.drops, patch, zoneId],
+  );
+  // Cross-zone refs use `zone:itemId`, same-zone refs use the bare id. We
+  // exclude both forms so the picker doesn't offer items already on the mob.
+  const dropExcludeIds = useMemo(() => {
+    const out = new Set<string>();
+    for (const drop of mob.drops ?? []) {
+      if (!drop.itemId) continue;
+      if (drop.itemId.includes(":")) out.add(drop.itemId);
+      else if (zoneId) out.add(`${zoneId}:${drop.itemId}`);
+    }
+    return out;
+  }, [mob.drops, zoneId]);
+  // Lookup table for showing the chosen item's display name and slot badge
+  // on each drop row. Indexed by both id forms.
+  const itemLookup = useMemo(() => {
+    const map = new Map<string, ItemCatalogEntry>();
+    for (const entry of itemCatalog) {
+      map.set(entry.fullId, entry);
+      if (entry.zoneId === zoneId) map.set(entry.itemId, entry);
+    }
+    return map;
+  }, [itemCatalog, zoneId]);
 
   const handleBehaviorTemplate = useCallback(
     (template: string) => {
@@ -856,37 +914,74 @@ export function MobEditor({
           <Section
             title={`Drops (${mob.drops?.length ?? 0})`}
             actions={
-              <IconButton onClick={handleAddDrop} title="Add drop">+</IconButton>
+              <IconButton
+                onClick={() => setDropPicker({ mode: "add" })}
+                title="Add drop"
+              >
+                +
+              </IconButton>
             }
           >
             {(mob.drops ?? []).length === 0 ? (
               <p className="text-xs text-text-muted">No drops</p>
             ) : (
               <div className="flex flex-col gap-1.5">
-                {(mob.drops ?? []).map((drop, i) => (
-                  <ArrayRow key={i} onRemove={() => handleDeleteDrop(i)}>
-                    <div className="flex items-center gap-1">
-                      <div className="min-w-0 flex-1">
-                        <TextInput
-                          value={drop.itemId}
-                          onCommit={(v) => handleUpdateDrop(i, "itemId", v)}
-                          placeholder="item_id"
-                        />
-                      </div>
-                      <div className="w-16 shrink-0">
-                        <NumberInput
-                          value={Math.round((drop.chance ?? 1) * 100)}
-                          onCommit={(v) =>
-                            handleUpdateDrop(i, "chance", (v ?? 100) / 100)
+                {(mob.drops ?? []).map((drop, i) => {
+                  const lookupKey = drop.itemId.includes(":")
+                    ? drop.itemId
+                    : zoneId
+                      ? `${zoneId}:${drop.itemId}`
+                      : drop.itemId;
+                  const entry = itemLookup.get(lookupKey) ?? itemLookup.get(drop.itemId);
+                  const missing = !entry && drop.itemId !== "";
+                  return (
+                    <ArrayRow key={i} onRemove={() => handleDeleteDrop(i)}>
+                      <div className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => setDropPicker({ mode: "replace", index: i })}
+                          className={`focus-ring flex min-w-0 flex-1 items-center gap-2 rounded border px-2 py-1 text-left text-xs transition ${
+                            missing
+                              ? "border-status-warning/40 bg-status-warning/5 text-status-warning"
+                              : "border-border-default bg-bg-tertiary text-text-primary hover:border-accent/40"
+                          }`}
+                          title={
+                            entry
+                              ? entry.zoneId === zoneId
+                                ? entry.itemId
+                                : entry.fullId
+                              : drop.itemId || "Pick an item"
                           }
-                          min={0}
-                          max={100}
-                        />
+                        >
+                          <span className="min-w-0 flex-1 truncate">
+                            {entry ? entry.displayName : drop.itemId || "Choose item…"}
+                          </span>
+                          {entry?.slot && (
+                            <span className="shrink-0 rounded bg-[var(--chrome-fill)] px-1 font-display text-[0.55rem] uppercase tracking-wider text-text-muted">
+                              {entry.slot}
+                            </span>
+                          )}
+                          {entry && entry.zoneId !== zoneId && (
+                            <span className="shrink-0 rounded bg-bg-tertiary px-1 font-mono text-2xs text-text-muted">
+                              {entry.zoneId}
+                            </span>
+                          )}
+                        </button>
+                        <div className="w-16 shrink-0">
+                          <NumberInput
+                            value={Math.round((drop.chance ?? 1) * 100)}
+                            onCommit={(v) =>
+                              handleUpdateDropChance(i, (v ?? 100) / 100)
+                            }
+                            min={0}
+                            max={100}
+                          />
+                        </div>
+                        <span className="text-2xs text-text-muted">%</span>
                       </div>
-                      <span className="text-2xs text-text-muted">%</span>
-                    </div>
-                  </ArrayRow>
-                ))}
+                    </ArrayRow>
+                  );
+                })}
               </div>
             )}
           </Section>
@@ -945,6 +1040,17 @@ export function MobEditor({
       )}
 
       <DeleteEntityButton onClick={handleDelete} label="Delete Mob" />
+
+      {dropPicker && (
+        <ItemPickerDialog
+          catalog={itemCatalog}
+          excludeIds={dropExcludeIds}
+          title={dropPicker.mode === "add" ? "Add Drop" : "Change Drop Item"}
+          description="Pick an item from any loaded zone. Same-zone items are stored bare; cross-zone refs become zone:item."
+          onPick={handlePickDrop}
+          onClose={() => setDropPicker(null)}
+        />
+      )}
     </>
   );
 }

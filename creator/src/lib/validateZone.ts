@@ -794,15 +794,25 @@ export function validateZone(
         }
       }
     }
-    if (!quest.objectives || quest.objectives.length === 0) {
-      addIssue(issues, "error", entity, "Quest must have at least one objective");
-    } else {
-      for (const [index, obj] of quest.objectives.entries()) {
-        if (!obj.type) addIssue(issues, "warning", entity, "Objective has no type");
-        if (!obj.targetKey) addIssue(issues, "warning", entity, "Objective has no target key");
-        if (obj.count != null && obj.count < 1) {
-          addIssue(issues, "error", entity, `Objective #${index + 1} count must be at least 1`);
-        }
+    // Objective-less quests are valid for the npc_turn_in completion type
+    // (use case: "go visit this other NPC"). Auto-completion needs at least
+    // one objective — otherwise it has no trigger to fire on.
+    const hasObjectives = (quest.objectives?.length ?? 0) > 0;
+    const completion = quest.completionType ?? "NPC_TURN_IN";
+    const isAutoCompletion = completion.toLowerCase() === "auto";
+    if (!hasObjectives && isAutoCompletion) {
+      addIssue(
+        issues,
+        "error",
+        entity,
+        "Auto-completion quests must have at least one objective — otherwise the engine has nothing to listen for. Switch to NPC Turn-in or add an objective.",
+      );
+    }
+    for (const [index, obj] of quest.objectives?.entries() ?? []) {
+      if (!obj.type) addIssue(issues, "warning", entity, "Objective has no type");
+      if (!obj.targetKey) addIssue(issues, "warning", entity, "Objective has no target key");
+      if (obj.count != null && obj.count < 1) {
+        addIssue(issues, "error", entity, `Objective #${index + 1} count must be at least 1`);
       }
     }
     if (quest.requiredReputation) {

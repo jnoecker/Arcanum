@@ -148,7 +148,9 @@ export function QuestEditor({
         );
         commitRewards({ ...rewards, items: next });
       } else {
-        commitRewards({ ...rewards, items: [...current, { itemId: resolved }] });
+        // Always emit `count` so the YAML is self-describing and the server
+        // can require the field rather than inferring a default.
+        commitRewards({ ...rewards, items: [...current, { itemId: resolved, count: 1 }] });
       }
       setItemRewardPicker(null);
     },
@@ -158,9 +160,9 @@ export function QuestEditor({
   const handleItemRewardCount = useCallback(
     (index: number, count: number) => {
       const current = rewards.items ?? [];
-      // `count: 1` is the implicit default — drop it to keep YAML minimal.
+      const safeCount = count >= 1 ? count : 1;
       const next = current.map((it, i) =>
-        i === index ? (count > 1 ? { ...it, count } : { itemId: it.itemId }) : it,
+        i === index ? { ...it, count: safeCount } : it,
       );
       commitRewards({ ...rewards, items: next });
     },
@@ -311,7 +313,11 @@ export function QuestEditor({
         }
       >
         {objectives.length === 0 ? (
-          <p className="text-xs text-text-muted">No objectives</p>
+          <p className="text-xs text-text-muted">
+            {(quest.completionType ?? "NPC_TURN_IN").toLowerCase() === "auto"
+              ? "Auto-completion needs at least one objective. Add one above, or switch Completion to NPC Turn-in for a visit-this-mob style quest."
+              : "No objectives — the quest completes when the player turns it in to the giver (or Turn-in NPC). Useful for “go visit X” style quests."}
+          </p>
         ) : (
           <div className="flex flex-col gap-2">
             {objectives.map((obj, i) => (

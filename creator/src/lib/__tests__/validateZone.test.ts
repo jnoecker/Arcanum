@@ -361,13 +361,24 @@ describe("validateZone", () => {
     expect(issues.some((i) => i.message.includes("missing_mob"))).toBe(true);
   });
 
-  it("errors if quest has no objectives", () => {
+  it("errors if an auto-completion quest has no objectives", () => {
     const world = makeValidWorld();
     world.quests = {
-      q1: { name: "Quest", giver: "rat" },
+      q1: { name: "Quest", giver: "rat", completionType: "AUTO" },
     };
     const issues = errors(validateZone(world));
     expect(issues.some((i) => i.message.includes("at least one objective"))).toBe(true);
+  });
+
+  it("allows objectiveless quests when completion is NPC Turn-in", () => {
+    // Use case: "go visit this other NPC" quests have no kill/collect
+    // objective — they complete when the player turns them in to the giver.
+    const world = makeValidWorld();
+    world.quests = {
+      q1: { name: "Visit the Elder", giver: "rat", completionType: "NPC_TURN_IN" },
+    };
+    const issues = errors(validateZone(world));
+    expect(issues.some((i) => i.message.includes("at least one objective"))).toBe(false);
   });
 
   // ─── Gathering node checks ────────────────────────────────

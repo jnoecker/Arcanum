@@ -577,12 +577,16 @@ function stripDanglingReferences(world: WorldFile): WorldFile {
     for (const [id, quest] of Object.entries(world.quests)) {
       let cleaned: QuestFile = { ...quest, giver: mobIds.has(quest.giver) ? quest.giver : "" };
       if (quest.rewards?.items && quest.rewards.items.length > 0) {
-        const validItems = quest.rewards.items.filter((r) => {
-          if (!r.itemId) return false;
-          // Cross-zone refs (zone:item) we can't fully verify here; pass them through.
-          if (r.itemId.includes(":")) return true;
-          return itemIds.has(r.itemId);
-        });
+        const validItems = quest.rewards.items
+          .filter((r) => {
+            if (!r.itemId) return false;
+            // Cross-zone refs (zone:item) we can't fully verify here; pass them through.
+            if (r.itemId.includes(":")) return true;
+            return itemIds.has(r.itemId);
+          })
+          // Always emit `count` — backfills to 1 when missing or invalid so the
+          // YAML is self-describing and the server can require the field.
+          .map((r) => ({ itemId: r.itemId, count: r.count && r.count >= 1 ? r.count : 1 }));
         const rewards = { ...quest.rewards };
         if (validItems.length > 0) rewards.items = validItems;
         else delete rewards.items;

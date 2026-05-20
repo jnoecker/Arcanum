@@ -122,26 +122,43 @@ describe("splitItemBudget", () => {
 });
 
 describe("distributeStats", () => {
-  it("returns empty map when no stats picked", () => {
-    expect(distributeStats(100)).toEqual({});
+  it("defaults all three slots to archetypal keys when no overrides given", () => {
+    const out = distributeStats(100);
+    expect(out.PRIMARY).toBe(Math.round(50 / DEFAULT_POINT_COSTS.statPointCost));
+    expect(out.SECONDARY).toBe(Math.round(30 / DEFAULT_POINT_COSTS.statPointCost));
+    expect(out.TERTIARY).toBe(Math.round(20 / DEFAULT_POINT_COSTS.statPointCost));
   });
 
-  it("puts 100% into primary when only one stat is picked", () => {
+  it("primary override pins slot 0 to a concrete stat, leaves others adaptive", () => {
     const out = distributeStats(100, "STR");
-    expect(out).toEqual({ STR: Math.round(100 / DEFAULT_POINT_COSTS.statPointCost) });
+    expect(out.STR).toBe(Math.round(50 / DEFAULT_POINT_COSTS.statPointCost));
+    expect(out.SECONDARY).toBe(Math.round(30 / DEFAULT_POINT_COSTS.statPointCost));
+    expect(out.TERTIARY).toBe(Math.round(20 / DEFAULT_POINT_COSTS.statPointCost));
+    expect(out.PRIMARY).toBeUndefined();
   });
 
-  it("splits 60/40 across primary/secondary", () => {
+  it("two overrides leave only tertiary adaptive", () => {
     const out = distributeStats(100, "STR", "DEX");
-    expect(out.STR).toBe(Math.round(60 / DEFAULT_POINT_COSTS.statPointCost));
-    expect(out.DEX).toBe(Math.round(40 / DEFAULT_POINT_COSTS.statPointCost));
+    expect(out.STR).toBe(Math.round(50 / DEFAULT_POINT_COSTS.statPointCost));
+    expect(out.DEX).toBe(Math.round(30 / DEFAULT_POINT_COSTS.statPointCost));
+    expect(out.TERTIARY).toBe(Math.round(20 / DEFAULT_POINT_COSTS.statPointCost));
   });
 
-  it("splits 50/30/20 across all three", () => {
+  it("all three overrides produce a fully concrete distribution", () => {
     const out = distributeStats(100, "STR", "DEX", "CON");
     expect(out.STR).toBe(Math.round(50 / DEFAULT_POINT_COSTS.statPointCost));
     expect(out.DEX).toBe(Math.round(30 / DEFAULT_POINT_COSTS.statPointCost));
     expect(out.CON).toBe(Math.round(20 / DEFAULT_POINT_COSTS.statPointCost));
+    expect(out.PRIMARY).toBeUndefined();
+    expect(out.SECONDARY).toBeUndefined();
+    expect(out.TERTIARY).toBeUndefined();
+  });
+
+  it("weights are fixed regardless of override count", () => {
+    // 1 override: same primary weight as 3 overrides.
+    const one = distributeStats(100, "STR");
+    const three = distributeStats(100, "STR", "DEX", "CON");
+    expect(one.STR).toBe(three.STR);
   });
 
   it("returns empty when statBudget is zero", () => {
@@ -150,7 +167,17 @@ describe("distributeStats", () => {
 
   it("respects custom statPointCost", () => {
     const out = distributeStats(100, "STR", undefined, undefined, 10);
-    expect(out).toEqual({ STR: 10 });
+    // 50% * 100 / 10 = 5 for the primary override
+    expect(out.STR).toBe(5);
+    // SECONDARY / TERTIARY also recomputed against the custom cost
+    expect(out.SECONDARY).toBe(3);
+    expect(out.TERTIARY).toBe(2);
+  });
+
+  it("stacks when the same stat ID is used in multiple slots", () => {
+    const out = distributeStats(100, "STR", "STR", "STR");
+    // All three slots → same key: (50 + 30 + 20) / 5 = 20
+    expect(out.STR).toBe(20);
   });
 });
 
@@ -189,8 +216,13 @@ describe("deriveItemStats", () => {
     expect(out.effectiveArchetype).toBe("stat");
     expect(out.damage).toBe(0);
     expect(out.armor).toBe(0);
-    // Ring common: base 40 × 1 = 40, all stat → INT = 40/5 = 8
-    expect(out.stats.INT).toBe(8);
+    // Ring common: base 40 × 1 = 40, all stat
+    //   INT = 50% × 40 / 5 = 4 (primary override)
+    //   SECONDARY = 30% × 40 / 5 ≈ 2
+    //   TERTIARY  = 20% × 40 / 5 ≈ 2
+    expect(out.stats.INT).toBe(4);
+    expect(out.stats.SECONDARY).toBe(2);
+    expect(out.stats.TERTIARY).toBe(2);
   });
 
   it("balanced shield writes both damage and armor", () => {
@@ -203,20 +235,31 @@ describe("deriveItemStats", () => {
     // Shield base 70 × 1 = 70
     // Damage 30% × 70 / 20 = 1.05 → 1
     // Armor  30% × 70 / 10 = 2.1 → 2
-    // Stats  40% × 70 / 5  = 5.6 → 6 (single stat = 100%)
+    // Stats  40% × 70 = 28 stat budget:
+    //   CON       = 50% × 28 / 5 ≈ 3 (primary override)
+    //   SECONDARY = 30% × 28 / 5 ≈ 2
+    //   TERTIARY  = 20% × 28 / 5 ≈ 1
     expect(out.damage).toBe(1);
     expect(out.armor).toBe(2);
-    expect(out.stats.CON).toBe(6);
+    expect(out.stats.CON).toBe(3);
+    expect(out.stats.SECONDARY).toBe(2);
+    expect(out.stats.TERTIARY).toBe(1);
   });
 
-  it("no stats picked yields empty stat map", () => {
+  it("no overrides given yields fully adaptive stat map", () => {
     const out = deriveItemStats({
       slot: "weapon",
       tier: "common",
       archetype: "damage",
     });
-    expect(out.damage).toBe(3); // 60/20 = 3
-    expect(out.stats).toEqual({});
+    // Damage = 60/20 = 3, stat budget = 40
+    //   PRIMARY   = 50% × 40 / 5 = 4
+    //   SECONDARY = 30% × 40 / 5 ≈ 2
+    //   TERTIARY  = 20% × 40 / 5 ≈ 2
+    expect(out.damage).toBe(3);
+    expect(out.stats.PRIMARY).toBe(4);
+    expect(out.stats.SECONDARY).toBe(2);
+    expect(out.stats.TERTIARY).toBe(2);
   });
 
   it("respects custom point costs", () => {
@@ -227,8 +270,15 @@ describe("deriveItemStats", () => {
       primaryStat: "STR",
       pointCosts: { damagePointCost: 10, statPointCost: 2 },
     });
-    expect(out.damage).toBe(6); // 60/10 = 6
-    expect(out.stats.STR).toBe(20); // 40/2 = 20
+    // Damage budget = 60, divided by 10 → 6
+    // Stat budget = 40 with statPointCost=2:
+    //   STR       = 50% × 40 / 2 = 10
+    //   SECONDARY = 30% × 40 / 2 = 6
+    //   TERTIARY  = 20% × 40 / 2 = 4
+    expect(out.damage).toBe(6);
+    expect(out.stats.STR).toBe(10);
+    expect(out.stats.SECONDARY).toBe(6);
+    expect(out.stats.TERTIARY).toBe(4);
   });
 });
 

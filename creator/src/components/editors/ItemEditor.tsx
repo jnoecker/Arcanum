@@ -175,6 +175,18 @@ export function ItemEditor({
     [onUse, patch],
   );
 
+  const [justApplied, setJustApplied] = useState(false);
+  const handleApplyDerivation = useCallback(() => {
+    if (!derivation) return;
+    patch({
+      damage: derivation.damage > 0 ? derivation.damage : undefined,
+      armor: derivation.armor > 0 ? derivation.armor : undefined,
+      stats: Object.keys(derivation.stats).length > 0 ? derivation.stats : undefined,
+    });
+    setJustApplied(true);
+    setTimeout(() => setJustApplied(false), 1500);
+  }, [derivation, patch]);
+
   return (
     <>
       <EntityHeader type="Item">
@@ -218,10 +230,20 @@ export function ItemEditor({
         <>
           <Section title="Power">
             <p className="mb-1 text-2xs text-text-muted">
-              Pick the item's level, rarity, and role. Arcanum derives damage, armor, and stat values from these — edit a derived field below to mark it as an override.
+              Set slot, level, rarity, and role. The calculator suggests damage, armor, and stat bonuses below — click <strong>Apply</strong> to write them onto the item. Override dropdowns left blank produce adaptive stats (PRIMARY/SECONDARY/TERTIARY) that resolve per class at equip time.
             </p>
             <div className="flex flex-col gap-1.5">
               <FieldGrid cols={2}>
+                <CompactField label="Slot" span>
+                  <SelectInput
+                    value={item.slot ?? ""}
+                    options={slotOptions}
+                    onCommit={(v) => patch({ slot: v || undefined })}
+                    allowEmpty
+                    placeholder="— none —"
+                    dense
+                  />
+                </CompactField>
                 <CompactField label="Level">
                   <NumberInput
                     value={item.level}
@@ -253,62 +275,79 @@ export function ItemEditor({
                     dense
                   />
                 </CompactField>
-                <CompactField label="Primary Stat">
+                <CompactField label="Primary Override">
                   <SelectInput
                     value={item.primaryStat ?? ""}
                     options={statOptions}
                     onCommit={(v) => patch({ primaryStat: v || undefined })}
                     allowEmpty
-                    placeholder="—"
+                    placeholder="PRIMARY (adaptive)"
                     dense
                   />
                 </CompactField>
-                <CompactField label="Secondary Stat">
+                <CompactField label="Secondary Override">
                   <SelectInput
                     value={item.secondaryStat ?? ""}
                     options={statOptions}
                     onCommit={(v) => patch({ secondaryStat: v || undefined })}
                     allowEmpty
-                    placeholder="—"
+                    placeholder="SECONDARY (adaptive)"
                     dense
                   />
                 </CompactField>
-                <CompactField label="Tertiary Stat" span>
+                <CompactField label="Tertiary Override" span>
                   <SelectInput
                     value={item.tertiaryStat ?? ""}
                     options={statOptions}
                     onCommit={(v) => patch({ tertiaryStat: v || undefined })}
                     allowEmpty
-                    placeholder="—"
+                    placeholder="TERTIARY (adaptive)"
                     dense
                   />
                 </CompactField>
               </FieldGrid>
               {derivation && (
                 <div className="rounded border border-border-default bg-bg-tertiary px-2 py-1.5 text-2xs">
-                  <div className="font-medium text-text-primary">
-                    Budget: {Math.round(derivation.budget.totalBudget)}
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-medium text-text-primary">
+                      Budget: {Math.round(derivation.budget.totalBudget)} pts
+                    </span>
+                    <div className="flex items-center gap-2">
+                      {justApplied && (
+                        <span className="text-2xs text-status-success">Applied ✓</span>
+                      )}
+                      <button
+                        type="button"
+                        onClick={handleApplyDerivation}
+                        className="rounded border border-accent/40 bg-accent/10 px-2 py-0.5 text-2xs font-medium text-accent transition-colors hover:bg-accent/20"
+                        title="Overwrites Damage, Armor, and Stat Bonuses with the values shown below."
+                      >
+                        Apply
+                      </button>
+                    </div>
                   </div>
-                  <div className="text-text-muted">
-                    {derivation.budget.damageBudget > 0 && (
-                      <span>{Math.round(derivation.budget.damageBudget)} dmg</span>
+                  <div className="mt-1 flex flex-wrap gap-x-2 gap-y-0.5 text-text-muted">
+                    {derivation.damage > 0 && (
+                      <span>
+                        <span className="text-text-primary">+{derivation.damage}</span> damage
+                      </span>
                     )}
-                    {derivation.budget.damageBudget > 0 && derivation.budget.armorBudget > 0 && " · "}
-                    {derivation.budget.armorBudget > 0 && (
-                      <span>{Math.round(derivation.budget.armorBudget)} armor</span>
+                    {derivation.armor > 0 && (
+                      <span>
+                        <span className="text-text-primary">+{derivation.armor}</span> armor
+                      </span>
                     )}
-                    {(derivation.budget.damageBudget > 0 || derivation.budget.armorBudget > 0) &&
-                      derivation.budget.statBudget > 0 &&
-                      " · "}
-                    {derivation.budget.statBudget > 0 && (
-                      <span>{Math.round(derivation.budget.statBudget)} stat</span>
-                    )}
+                    {Object.entries(derivation.stats).map(([id, v]) => (
+                      <span key={id}>
+                        <span className="text-text-primary">+{v}</span> {id}
+                      </span>
+                    ))}
                   </div>
                 </div>
               )}
               {!derivation && (item.slot || item.level != null || item.tier || item.archetype) && (
                 <div className="rounded border border-dashed border-border-default bg-bg-tertiary px-2 py-1 text-2xs text-text-muted">
-                  Set slot, level, tier, and archetype to enable derivation.
+                  Set slot, level, tier, and archetype to enable the calculator.
                 </div>
               )}
             </div>
@@ -356,47 +395,13 @@ export function ItemEditor({
                   label="Soulbound — cannot be dropped, sold, traded, or given"
                 />
               </FieldRow>
-            </div>
-          </Section>
-
-          <Section title="Properties">
-            <div className="flex flex-col gap-1.5">
-              <FieldGrid cols={2}>
-                <CompactField label="Slot" span>
-                  <SelectInput
-                    value={item.slot ?? ""}
-                    options={slotOptions}
-                    onCommit={(v) => patch({ slot: v || undefined })}
-                    allowEmpty
-                    placeholder="— none —"
-                    dense
-                  />
-                </CompactField>
-                <CompactField label={renderOverrideLabel("Damage", item.damage, derivation?.damage)}>
-                  <NumberInput
-                    value={item.damage}
-                    onCommit={(v) => patch({ damage: v })}
-                    placeholder={derivation ? String(derivation.damage) : "0"}
-                    min={0}
-                    dense
-                  />
-                </CompactField>
-                <CompactField label={renderOverrideLabel("Armor", item.armor, derivation?.armor)}>
-                  <NumberInput
-                    value={item.armor}
-                    onCommit={(v) => patch({ armor: v })}
-                    placeholder={derivation ? String(derivation.armor) : "0"}
-                    min={0}
-                    dense
-                  />
-                </CompactField>
-              </FieldGrid>
-              <hr className="my-2 border-border-muted" />
-              <CheckboxInput
-                checked={item.consumable ?? false}
-                onCommit={(v) => patch({ consumable: v || undefined })}
-                label="Is consumable"
-              />
+              <FieldRow label="Consumable">
+                <CheckboxInput
+                  checked={item.consumable ?? false}
+                  onCommit={(v) => patch({ consumable: v || undefined })}
+                  label="Used up on use (potion, scroll, food)"
+                />
+              </FieldRow>
               {item.consumable && (
                 <FieldGrid cols={2}>
                   <CompactField label="Charges" span>
@@ -437,6 +442,34 @@ export function ItemEditor({
                   </CompactField>
                 </FieldGrid>
               )}
+            </div>
+          </Section>
+
+          <Section title="Properties">
+            <p className="mb-1 text-2xs text-text-muted">
+              The actual numbers the server reads. Use Power's Apply button to populate from the calculator, or edit directly to author by hand.
+            </p>
+            <div className="flex flex-col gap-1.5">
+              <FieldGrid cols={2}>
+                <CompactField label={renderOverrideLabel("Damage", item.damage, derivation?.damage)}>
+                  <NumberInput
+                    value={item.damage}
+                    onCommit={(v) => patch({ damage: v })}
+                    placeholder={derivation ? String(derivation.damage) : "0"}
+                    min={0}
+                    dense
+                  />
+                </CompactField>
+                <CompactField label={renderOverrideLabel("Armor", item.armor, derivation?.armor)}>
+                  <NumberInput
+                    value={item.armor}
+                    onCommit={(v) => patch({ armor: v })}
+                    placeholder={derivation ? String(derivation.armor) : "0"}
+                    min={0}
+                    dense
+                  />
+                </CompactField>
+              </FieldGrid>
             </div>
           </Section>
 

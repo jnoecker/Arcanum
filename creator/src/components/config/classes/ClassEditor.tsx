@@ -377,19 +377,84 @@ function RoleIdentityCard({
   statOptions: { value: string; label: string }[];
   onPatch: (p: Partial<ClassDefinitionConfig>) => void;
 }) {
+  // Source of truth for the three priority slots: prefer the new
+  // `statPriorities` array, fall back to legacy `primaryStat` for slot 0.
+  const priorities = cls.statPriorities ?? [];
+  const primary = priorities[0] ?? cls.primaryStat ?? "";
+  const secondary = priorities[1] ?? "";
+  const tertiary = priorities[2] ?? "";
+
+  function setPriority(index: 0 | 1 | 2, value: string) {
+    const next = [primary, secondary, tertiary];
+    next[index] = value;
+    // Clearing primary clears everything below it — keeps the array
+    // contiguous so the server-side resolve doesn't see a hole at [0].
+    if (index === 0 && !value) {
+      next[1] = "";
+      next[2] = "";
+    } else if (index === 1 && !value) {
+      next[2] = "";
+    }
+    // Trim trailing empties and drop the array entirely when empty.
+    const trimmed: string[] = [];
+    for (const slot of next) {
+      if (slot) trimmed.push(slot);
+      else break;
+    }
+    const patch: Partial<ClassDefinitionConfig> = {
+      statPriorities: trimmed.length > 0 ? trimmed : undefined,
+    };
+    if (index === 0) {
+      // Keep legacy primaryStat in sync with statPriorities[0] so older
+      // call sites (article scaffolding, etc.) stay coherent.
+      patch.primaryStat = value || undefined;
+    }
+    onPatch(patch);
+  }
+
   return (
     <SectionCard title="Role Identity">
       <div className="grid grid-cols-1 gap-3">
         <FieldLabel
           label="Primary Stat"
-          hint="Influences UI hints and may scale class abilities."
+          hint="Resolves PRIMARY on adaptive items and drives ability scaling."
         >
           <SelectInput
-            value={cls.primaryStat ?? ""}
+            value={primary}
             options={statOptions}
-            onCommit={(v) => onPatch({ primaryStat: v || undefined })}
+            onCommit={(v) => setPriority(0, v)}
             allowEmpty
             placeholder="— none —"
+            dense
+          />
+        </FieldLabel>
+
+        <FieldLabel
+          label="Secondary Stat"
+          hint="Resolves SECONDARY on adaptive items. Disabled until Primary is set."
+        >
+          <SelectInput
+            value={secondary}
+            options={statOptions}
+            onCommit={(v) => setPriority(1, v)}
+            allowEmpty
+            placeholder={primary ? "— none —" : "set Primary first"}
+            disabled={!primary}
+            dense
+          />
+        </FieldLabel>
+
+        <FieldLabel
+          label="Tertiary Stat"
+          hint="Resolves TERTIARY on adaptive items. Disabled until Secondary is set."
+        >
+          <SelectInput
+            value={tertiary}
+            options={statOptions}
+            onCommit={(v) => setPriority(2, v)}
+            allowEmpty
+            placeholder={secondary ? "— none —" : "set Secondary first"}
+            disabled={!secondary}
             dense
           />
         </FieldLabel>

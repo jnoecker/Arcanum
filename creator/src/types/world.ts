@@ -365,6 +365,12 @@ export interface ItemFile {
   /** Tertiary stat: receives the smallest share of the stat-budget. */
   tertiaryStat?: string;
   /**
+   * When true, the tertiary slot is dropped entirely and the stat budget is
+   * split 60/40 between primary and secondary instead of the default 50/30/20.
+   * Use for items that should only carry two stat bonuses.
+   */
+  disableTertiary?: boolean;
+  /**
    * Class restriction. When non-empty, only players whose `playerClass` matches
    * one of these IDs can equip the item. Null/absent = unrestricted. Mirrors
    * AmbonMUD's `ItemFile.classes` field; the server's equip handler enforces

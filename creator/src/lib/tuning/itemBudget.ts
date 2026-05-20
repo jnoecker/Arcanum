@@ -137,6 +137,8 @@ export interface ItemDerivationInput {
   primaryStat?: string;
   secondaryStat?: string;
   tertiaryStat?: string;
+  /** When true, drop the tertiary slot — split 60/40 across primary/secondary. */
+  disableTertiary?: boolean;
   /** Optional per-world override map. Falls back to DEFAULT_SLOT_BASE_BUDGETS. */
   slotBudgets?: Record<string, number>;
   /** Optional point-cost overrides. Falls back to DEFAULT_POINT_COSTS. */
@@ -216,9 +218,12 @@ export function splitItemBudget(
  *  specific stat (e.g. flavor a "boots of speed" with literal DEX in the
  *  primary slot while keeping SECONDARY / TERTIARY adaptive).
  *
- *  Weights are fixed at 50% primary / 30% secondary / 20% tertiary regardless
- *  of how many slots are overridden — overrides change *what* a slot resolves
- *  to, not *how much* of the budget it gets.
+ *  Weights are fixed at 50% / 30% / 20% regardless of how many slots are
+ *  overridden — overrides change *what* a slot resolves to, not *how much*
+ *  of the budget it gets.
+ *
+ *  Setting `disableTertiary` drops the tertiary slot and splits the budget
+ *  60/40 across primary/secondary, matching the historical two-stat layout.
  */
 export function distributeStats(
   statBudget: number,
@@ -226,14 +231,20 @@ export function distributeStats(
   secondary?: string,
   tertiary?: string,
   statPointCost: number = DEFAULT_POINT_COSTS.statPointCost,
+  disableTertiary: boolean = false,
 ): StatMap {
   if (statBudget <= 0 || statPointCost <= 0) return {};
 
-  const slots: [string, number][] = [
-    [primary || "PRIMARY", 0.5],
-    [secondary || "SECONDARY", 0.3],
-    [tertiary || "TERTIARY", 0.2],
-  ];
+  const slots: [string, number][] = disableTertiary
+    ? [
+        [primary || "PRIMARY", 0.6],
+        [secondary || "SECONDARY", 0.4],
+      ]
+    : [
+        [primary || "PRIMARY", 0.5],
+        [secondary || "SECONDARY", 0.3],
+        [tertiary || "TERTIARY", 0.2],
+      ];
 
   const out: StatMap = {};
   for (const [id, weight] of slots) {
@@ -268,6 +279,7 @@ export function deriveItemStats(input: ItemDerivationInput): ItemDerivationOutpu
     input.secondaryStat,
     input.tertiaryStat,
     costs.statPointCost,
+    input.disableTertiary ?? false,
   );
 
   return {

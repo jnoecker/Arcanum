@@ -1059,6 +1059,10 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
               onPaneClick={onPaneClick}
               minZoom={0.1}
               maxZoom={2}
+              // Skip mounting nodes outside the viewport. Big perf win for
+              // zones with many image-backed rooms — each off-screen node
+              // would otherwise hold a base64 background in the DOM.
+              onlyRenderVisibleElements
               proOptions={{ hideAttribution: true }}
               style={{ background: "var(--color-surface-scrim)" }}
             >

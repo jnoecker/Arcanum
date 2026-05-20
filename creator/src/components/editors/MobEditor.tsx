@@ -130,6 +130,7 @@ export function MobEditor({
   const role: MobRole = mob.role ?? "combat";
   const isCombatant = role === "combat";
   const isTrainer = role === "trainer";
+  const isQuestGiver = role === "quest_giver";
   const requiresUniqueSpawn = role === "quest_giver";
   const spawns = mob.spawns ?? [];
 
@@ -581,6 +582,37 @@ export function MobEditor({
             </Section>
           )}
 
+          {isQuestGiver && (
+            <Section title={`Quests (${mob.quests?.length ?? 0})`}>
+              <div className="flex flex-col gap-2">
+                {(mob.quests ?? []).length > 0 && (
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    {(mob.quests ?? []).map((qid) => (
+                      <div key={qid} className="inline-flex items-center gap-1">
+                        <QuestRefBadge questId={qid} />
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveQuest(qid)}
+                          aria-label={`Remove ${qid}`}
+                          className="focus-ring inline-flex h-5 w-5 items-center justify-center rounded text-text-muted/70 transition hover:bg-status-error/15 hover:text-status-error"
+                        >
+                          &times;
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <QuestPicker
+                  value=""
+                  onChange={handleAddQuest}
+                  excludeIds={mob.quests}
+                  placeholder="Pick a quest this mob gives or turns in…"
+                  allowCreate
+                />
+              </div>
+            </Section>
+          )}
+
           {isCombatant && stats && (
             <Section title="Combat Readout">
               <div className="flex flex-col gap-2">
@@ -986,34 +1018,6 @@ export function MobEditor({
             )}
           </Section>
 
-          <Section title={`Quests (${mob.quests?.length ?? 0})`}>
-            <div className="flex flex-col gap-2">
-              {(mob.quests ?? []).length > 0 && (
-                <div className="flex flex-wrap items-center gap-1.5">
-                  {(mob.quests ?? []).map((qid) => (
-                    <div key={qid} className="inline-flex items-center gap-1">
-                      <QuestRefBadge questId={qid} />
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveQuest(qid)}
-                        aria-label={`Remove ${qid}`}
-                        className="focus-ring inline-flex h-5 w-5 items-center justify-center rounded text-text-muted/70 transition hover:bg-status-error/15 hover:text-status-error"
-                      >
-                        &times;
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-              <QuestPicker
-                value=""
-                onChange={handleAddQuest}
-                excludeIds={mob.quests}
-                placeholder="Pick a quest this mob gives or turns in…"
-                allowCreate
-              />
-            </div>
-          </Section>
         </>
       )}
 

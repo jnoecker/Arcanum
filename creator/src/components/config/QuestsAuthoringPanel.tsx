@@ -7,6 +7,7 @@ import type { QuestFile, WorldFile } from "@/types/world";
 import { QuestEditor } from "@/components/editors/QuestEditor";
 import { PlusIcon, SearchIcon } from "@/components/config/icons";
 import { cx } from "@/components/ui/FormWidgets";
+import { RenameEntityDialog } from "@/components/zone/RenameEntityDialog";
 
 interface QuestRow {
   zoneId: string;
@@ -43,6 +44,7 @@ export function QuestsAuthoringPanel() {
   const [selection, setSelection] = useState<Selection | null>(null);
   const [query, setQuery] = useState("");
   const [newQuestZone, setNewQuestZone] = useState<string>(() => getActiveZoneId() ?? "");
+  const [renaming, setRenaming] = useState(false);
 
   // Flat list of every quest across loaded zones, alphabetised by zone then name.
   const allQuests: QuestRow[] = useMemo(() => {
@@ -269,7 +271,30 @@ export function QuestsAuthoringPanel() {
                 <h3 className="mt-1 truncate font-display text-xl font-semibold text-text-primary">
                   {selectedWorld.quests?.[selection.questId]?.name || selection.questId}
                 </h3>
-                <p className="mt-0.5 font-mono text-2xs text-text-muted/70">{selection.questId}</p>
+                <div className="mt-0.5 flex items-center gap-1.5">
+                  <span className="font-mono text-2xs text-text-muted/70">{selection.questId}</span>
+                  <button
+                    type="button"
+                    onClick={() => setRenaming(true)}
+                    className="focus-ring rounded px-1 py-0.5 text-2xs text-text-muted transition hover:bg-[var(--chrome-fill)] hover:text-accent"
+                    title="Rename ID"
+                    aria-label="Rename quest ID"
+                  >
+                    <svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth={1.75}
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="h-3 w-3"
+                      aria-hidden="true"
+                    >
+                      <path d="M12 20h9" />
+                      <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z" />
+                    </svg>
+                  </button>
+                </div>
               </div>
             </header>
             <QuestEditor
@@ -289,6 +314,19 @@ export function QuestsAuthoringPanel() {
           </div>
         )}
       </section>
+
+      {renaming && selection && selectedWorld && selectedExists && (
+        <RenameEntityDialog
+          category="quest"
+          currentId={selection.questId}
+          world={selectedWorld}
+          onConfirm={(nextWorld, newId) => {
+            updateZone(selection.zoneId, nextWorld);
+            setSelection({ zoneId: selection.zoneId, questId: newId });
+          }}
+          onClose={() => setRenaming(false)}
+        />
+      )}
     </div>
   );
 }

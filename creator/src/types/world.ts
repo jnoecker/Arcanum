@@ -71,7 +71,6 @@ export interface WorldFile {
   mobs?: Record<string, MobFile>;
   items?: Record<string, ItemFile>;
   shops?: Record<string, ShopFile>;
-  trainers?: Record<string, TrainerFile>;
   quests?: Record<string, QuestFile>;
   gatheringNodes?: Record<string, GatheringNodeFile>;
   recipes?: Record<string, RecipeFile>;
@@ -164,14 +163,15 @@ export interface FeatureFile {
  * XP; vendors/quest-givers/dialog mobs surface their social affordances but
  * refuse combat; props are examine-only set dressing.
  */
-export type MobRole = "combat" | "vendor" | "quest_giver" | "dialog" | "prop";
+export type MobRole = "combat" | "vendor" | "quest_giver" | "trainer" | "dialog" | "prop";
 
-export const MOB_ROLES: MobRole[] = ["combat", "vendor", "quest_giver", "dialog", "prop"];
+export const MOB_ROLES: MobRole[] = ["combat", "vendor", "quest_giver", "trainer", "dialog", "prop"];
 
 export const MOB_ROLE_LABELS: Record<MobRole, string> = {
   combat: "Combat",
   vendor: "Vendor",
   quest_giver: "Quest Giver",
+  trainer: "Trainer",
   dialog: "Dialog",
   prop: "Prop",
 };
@@ -180,6 +180,7 @@ export const MOB_ROLE_DESCRIPTIONS: Record<MobRole, string> = {
   combat: "Can be attacked, fights back, awards XP and loot.",
   vendor: "Shopkeeper. Cannot be attacked.",
   quest_giver: "Offers and accepts quests. Cannot be attacked.",
+  trainer: "Teaches class abilities. Marks each spawn room as a training room.",
   dialog: "Conversational NPC. Cannot be attacked.",
   prop: "Examine-only flavour entity. No interaction beyond look.",
 };
@@ -248,6 +249,13 @@ export interface MobFile {
   defaultAttack?: string;
   image?: string;
   video?: string;
+  /**
+   * When `role === "trainer"`, the class IDs this NPC teaches. One entry =
+   * single-class trainer; two or more = multi-class trainer. Each spawn room
+   * becomes a training room for these classes on save. Empty/missing on
+   * non-trainer mobs.
+   */
+  trainerClasses?: string[];
 }
 
 export interface MobSpellFile {
@@ -392,25 +400,6 @@ export interface ShopFile {
   image?: string;
   /** Rep gate. Shop refuses to trade when the requirement fails. */
   requiredReputation?: ReputationRequirement;
-}
-
-export interface TrainerFile {
-  name: string;
-  /**
-   * Legacy single-class field. Still supported for existing content and for
-   * trainers that only teach one class (which is the common case). The MUD's
-   * TrainerFile keeps this around for backwards compatibility.
-   */
-  class?: string;
-  /**
-   * Multi-class list. When set and non-empty, takes precedence over {@link class}
-   * — matches the server's WorldLoader precedence rule. Use this for
-   * trainers that teach two or more classes (e.g. a combat academy master
-   * teaching WARRIOR + ROGUE + RANGER).
-   */
-  classes?: string[];
-  room: string;
-  image?: string;
 }
 
 export interface QuestFile {

@@ -118,21 +118,6 @@ function collectBgRemovalTargets(world: WorldFile, zoneId: string, assetsDir: st
     });
   }
 
-  for (const [id, trainer] of Object.entries(world.trainers ?? {})) {
-    if (!trainer.image) continue;
-    const resolvedPath = resolveImagePath(trainer.image);
-    if (!resolvedPath) continue;
-    targets.push({
-      id: `trainer:${id}`,
-      label: `${trainer.name} (trainer)`,
-      imagePath: trainer.image,
-      resolvedPath,
-      assetType: "entity_portrait",
-      variantGroup: `trainer:${zoneId}:${id}`,
-      context: { zone: zoneId, entity_type: "trainer", entity_id: id },
-    });
-  }
-
   for (const [id, node] of Object.entries(world.gatheringNodes ?? {})) {
     if (!node.image) continue;
     const resolvedPath = resolveImagePath(node.image);

@@ -9,7 +9,6 @@ import {
   addMob,
   addItem,
   addShop,
-  addTrainer,
   addGatheringNode,
   addPuzzle,
   defaultPuzzle,
@@ -37,7 +36,7 @@ import { RenameEntityDialog } from "./RenameEntityDialog";
 import sidebarBg from "@/assets/sidebar-bg.png";
 import { ROLE_ICONS, TERRAIN_ICONS, ENTITY_ICONS } from "@/assets/ui";
 
-export type EntityKind = "mob" | "item" | "shop" | "trainer" | "quest" | "gatheringNode" | "recipe" | "puzzle";
+export type EntityKind = "mob" | "item" | "shop" | "quest" | "gatheringNode" | "recipe" | "puzzle";
 
 export interface EntitySelection {
   kind: EntityKind;
@@ -291,9 +290,14 @@ export function RoomPanel({
     () => Object.entries(world.shops ?? {}).filter(([, s]) => s.room === roomId),
     [world.shops, roomId],
   );
+  // Trainers in this room are mobs with role=trainer that spawn here. The
+  // server-facing `trainers:` map is synthesized at save time from this set.
   const trainers = useMemo(
-    () => Object.entries(world.trainers ?? {}).filter(([, t]) => t.room === roomId),
-    [world.trainers, roomId],
+    () =>
+      Object.entries(world.mobs ?? {}).filter(
+        ([, m]) => m.role === "trainer" && (m.spawns?.some((s) => s.room === roomId) ?? false),
+      ),
+    [world.mobs, roomId],
   );
   const gatheringNodes = useMemo(
     () =>
@@ -445,10 +449,17 @@ export function RoomPanel({
   }, [world, roomId, onWorldChange, onSelectEntity]);
 
   const handleAddTrainer = useCallback(() => {
-    const id = generateEntityId(world, "trainers");
-    const next = addTrainer(world, id, { name: "New Trainer", class: "WARRIOR", room: roomId });
+    // Trainer is a mob role + class list. The synthesizer in sanitizeZone
+    // emits the server-facing `trainers:` entry on save.
+    const id = generateEntityId(world, "mobs", `${world.zone.replace(/[^a-zA-Z0-9]/g, "_")}_trainer`);
+    const next = addMob(world, id, {
+      name: "New Trainer",
+      spawns: [{ room: roomId }],
+      role: "trainer",
+      trainerClasses: ["WARRIOR"],
+    });
     onWorldChange(next);
-    onSelectEntity({ kind: "trainer", id });
+    onSelectEntity({ kind: "mob", id });
   }, [world, roomId, onWorldChange, onSelectEntity]);
 
   const handleAddGatheringNode = useCallback(() => {
@@ -1028,18 +1039,18 @@ export function RoomPanel({
                 <p className="text-xs italic text-text-muted">No training service in this room</p>
               ) : (
                 <ul className="flex flex-col gap-0.5">
-                  {trainers.map(([id, trainer]) => (
+                  {trainers.map(([id, trainerMob]) => (
                     <li key={id}>
                       <button
-                        onClick={() => onSelectEntity({ kind: "trainer", id })}
+                        onClick={() => onSelectEntity({ kind: "mob", id })}
                         className="flex w-full min-w-0 items-baseline gap-1 rounded px-1 py-0.5 text-left text-xs transition-colors hover:bg-bg-tertiary"
                       >
                         <img src={ENTITY_ICONS.trainer} alt="" className="h-3.5 w-3.5 shrink-0 self-center" />
-                        <span className="truncate font-medium text-text-primary" title={trainer.name}>
-                          {trainer.name}
+                        <span className="truncate font-medium text-text-primary" title={trainerMob.name}>
+                          {trainerMob.name}
                         </span>
                         <span className="truncate text-text-muted">
-                          [{getTrainerClasses(trainer).join(", ") || "?"}]
+                          [{getTrainerClasses(trainerMob).join(", ") || "?"}]
                         </span>
                       </button>
                     </li>

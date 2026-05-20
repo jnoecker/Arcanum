@@ -7,7 +7,6 @@ import type {
   MobFile,
   ItemFile,
   ShopFile,
-  TrainerFile,
   QuestFile,
   GatheringNodeFile,
   RecipeFile,
@@ -87,6 +86,83 @@ export function normalizeMobSpawns(world: WorldFile): WorldFile {
 }
 
 /**
+ * Fold the legacy `trainers:` map into the matching mobs. Arcanum stores
+ * trainer config on mobs (role + trainerClasses) and synthesizes the server's
+ * `trainers:` map at save time. On load we reverse that: each trainer entry
+ * is matched to a mob in its room (preferring one whose name matches), and
+ * that mob is promoted to `role: "trainer"` with `trainerClasses` filled in.
+ *
+ * If no mob lives in the trainer's room, we synthesize a minimal one from
+ * the trainer entry so legacy zones don't silently lose content. The original
+ * `world.trainers` map is dropped from the in-memory model — it only exists
+ * on disk going forward.
+ *
+ * Mutates in place and returns the same world.
+ */
+export function mergeTrainersIntoMobs(world: WorldFile): WorldFile {
+  const trainers = (world as { trainers?: Record<string, {
+    name?: string;
+    class?: string;
+    classes?: string[];
+    room: string;
+    image?: string;
+  }> }).trainers;
+  if (!trainers) return world;
+  if (!world.mobs) world.mobs = {};
+
+  for (const [trainerId, trainer] of Object.entries(trainers)) {
+    const room = trainer.room;
+    if (!room) continue;
+
+    const classList = (trainer.classes && trainer.classes.length > 0
+      ? trainer.classes
+      : trainer.class
+        ? [trainer.class]
+        : []
+    )
+      .map((c) => c.trim())
+      .filter((c) => c.length > 0);
+
+    // Find a mob in the same room. Prefer one already marked as a trainer
+    // (idempotent re-load), then one whose name matches, then any mob.
+    const candidates = Object.entries(world.mobs).filter(([, mob]) =>
+      (mob.spawns ?? []).some((s) => s.room === room),
+    );
+    let match: [string, MobFile] | undefined =
+      candidates.find(([, m]) => m.role === "trainer") ??
+      (trainer.name
+        ? candidates.find(([, m]) => m.name?.trim() === trainer.name!.trim())
+        : undefined) ??
+      candidates[0];
+
+    if (match) {
+      const [, mob] = match;
+      mob.role = "trainer";
+      if (classList.length > 0) mob.trainerClasses = classList;
+      if (trainer.image && !mob.image) mob.image = trainer.image;
+    } else {
+      // No matching mob — synthesize one so the training room survives.
+      let id = trainerId;
+      let n = 2;
+      while (world.mobs[id]) {
+        id = `${trainerId}_${n}`;
+        n++;
+      }
+      world.mobs[id] = {
+        name: trainer.name?.trim() || trainerId,
+        spawns: [{ room }],
+        role: "trainer",
+        trainerClasses: classList.length > 0 ? classList : undefined,
+        image: trainer.image,
+      };
+    }
+  }
+
+  delete (world as { trainers?: unknown }).trainers;
+  return world;
+}
+
+/**
  * Normalize all exit direction keys in a WorldFile from long-form
  * ("north", "south") to abbreviated form ("n", "s").
  * Mutates in place and returns the same object.
@@ -114,7 +190,6 @@ type EntityCollection =
   | "mobs"
   | "items"
   | "shops"
-  | "trainers"
   | "quests"
   | "gatheringNodes"
   | "recipes"
@@ -124,7 +199,6 @@ const ENTITY_LABELS: Record<EntityCollection, string> = {
   mobs: "Mob",
   items: "Item",
   shops: "Shop",
-  trainers: "Trainer",
   quests: "Quest",
   gatheringNodes: "Gathering node",
   recipes: "Recipe",
@@ -195,7 +269,7 @@ function removeEntitiesInRoom(world: WorldFile, roomId: string): void {
     }
   }
   // Other room-bound collections: delete entity if its single room matches.
-  const collections: EntityCollection[] = ["items", "shops", "trainers", "gatheringNodes"];
+  const collections: EntityCollection[] = ["items", "shops", "gatheringNodes"];
   for (const col of collections) {
     const map = world[col] as Record<string, { room?: string }> | undefined;
     if (!map) continue;
@@ -744,20 +818,6 @@ export function deleteShop(world: WorldFile, shopId: string): WorldFile {
   return removeEntity(world, "shops", shopId);
 }
 
-// ─── Trainer operations ─────────────────────────────────────────────
-
-export function addTrainer(world: WorldFile, trainerId: string, trainer: TrainerFile): WorldFile {
-  return addEntity(world, "trainers", trainerId, trainer, trainer.room);
-}
-
-export function updateTrainer(world: WorldFile, trainerId: string, patch: Partial<TrainerFile>): WorldFile {
-  return updateEntity(world, "trainers", trainerId, patch);
-}
-
-export function deleteTrainer(world: WorldFile, trainerId: string): WorldFile {
-  return removeEntity(world, "trainers", trainerId);
-}
-
 // ─── Quest operations ───────────────────────────────────────────────
 
 export function addQuest(world: WorldFile, questId: string, quest: QuestFile): WorldFile {
@@ -850,7 +910,7 @@ export function generateEntityId(
   prefix?: string,
 ): string {
   const base = prefix ?? world.zone.replace(/[^a-zA-Z0-9]/g, "_");
-  const suffix = collection === "gatheringNodes" ? "node" : collection === "trainers" ? "trainer" : collection.replace(/s$/, "");
+  const suffix = collection === "gatheringNodes" ? "node" : collection.replace(/s$/, "");
   const existing = world[collection] ?? {};
   let n = Object.keys(existing).length + 1;
   while (existing[`${base}_${suffix}${n}`]) {

@@ -1,4 +1,4 @@
-import type { RoomFile, MobFile, ItemFile, ShopFile, TrainerFile, GatheringNodeFile, WorldFile, DungeonFile, DungeonRoomTemplate } from "@/types/world";
+import type { RoomFile, MobFile, ItemFile, ShopFile, GatheringNodeFile, WorldFile, DungeonFile, DungeonRoomTemplate } from "@/types/world";
 import type { GuildHallRoomTemplate, HousingTemplateDefinition } from "@/types/config";
 import { getTrainerPrimaryClass } from "@/lib/trainers";
 import {
@@ -507,16 +507,20 @@ An arcane marketplace interior called "${shop.name}" — baroque display cases o
 ${EMPTY_SCENE_DIRECTIVE}`;
 }
 
-/** Build a full prompt for a trainer image. */
-export function trainerPrompt(_trainerId: string, trainer: TrainerFile, style: ArtStyle = "gentle_magic"): string {
+/**
+ * Build a full prompt for a trainer mob image. Same shape as mobPrompt but
+ * leans the description on the trainer's primary class so the portrait reads
+ * as a mentor figure rather than a generic NPC.
+ */
+export function trainerPrompt(_mobId: string, mob: MobFile, style: ArtStyle = "gentle_magic"): string {
   const preamble = getPreamble(style, "worldbuilding");
-  const cls = getTrainerPrimaryClass(trainer)?.toLowerCase() ?? "warrior";
+  const cls = getTrainerPrimaryClass(mob)?.toLowerCase() ?? "warrior";
 
   if (style === "gentle_magic") {
     return withSpriteSafety(
       `${FORMAT_BY_TYPE.mob}. ${preamble}
 
-A gentle magical portrait of a ${cls} class trainer called "${trainer.name}" — a wise mentor figure in soft flowing robes or battle-worn attire appropriate for a ${cls}, a sense of knowledge and patient guidance, painterly, luminous
+A gentle magical portrait of a ${cls} class trainer called "${mob.name}" — a wise mentor figure in soft flowing robes or battle-worn attire appropriate for a ${cls}, a sense of knowledge and patient guidance, painterly, luminous
 
 ${getStyleSuffix("worldbuilding")}`,
       "mob",
@@ -526,7 +530,7 @@ ${getStyleSuffix("worldbuilding")}`,
   return withSpriteSafety(
     `${FORMAT_BY_TYPE.mob}. ${preamble}
 
-An arcane portrait of a ${cls} class trainer called "${trainer.name}" — a powerful mentor in baroque armor or robes befitting a ${cls}, a sense of mastery and ancient knowledge, painterly, luminous`,
+An arcane portrait of a ${cls} class trainer called "${mob.name}" — a powerful mentor in baroque armor or robes befitting a ${cls}, a sense of mastery and ancient knowledge, painterly, luminous`,
     "mob",
   );
 }
@@ -575,8 +579,6 @@ export function entityPrompt(
       return itemPrompt(id, entity as ItemFile, style, zoneVibe);
     case "shop":
       return shopPrompt(id, entity as ShopFile, style);
-    case "trainer":
-      return trainerPrompt(id, entity as TrainerFile, style);
     case "gatheringNode":
       return gatheringNodePrompt(id, entity as GatheringNodeFile, style);
     default: {

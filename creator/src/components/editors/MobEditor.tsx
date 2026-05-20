@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import type { WorldFile, MobFile, MobDropFile, MobSpellFile, MobRole, SpawnEntry } from "@/types/world";
 import { MOB_ROLES, MOB_ROLE_LABELS, MOB_ROLE_DESCRIPTIONS } from "@/types/world";
 import { updateMob, deleteMob } from "@/lib/zoneEdits";
@@ -31,6 +31,8 @@ import {
 } from "@/lib/mobToughness";
 import { CATEGORY_ICONS } from "@/assets/ui";
 import { QuestPicker, QuestRefBadge } from "@/components/config/panels/QuestPicker";
+import { useConfigOptions } from "@/lib/useConfigOptions";
+import { getTrainerClasses, setTrainerClasses } from "@/lib/trainers";
 
 interface MobEditorProps {
   mobId: string;
@@ -48,6 +50,13 @@ const TIER_OPTIONS = [
 ];
 
 const ROLE_OPTIONS = MOB_ROLES.map((r) => ({ value: r, label: MOB_ROLE_LABELS[r] }));
+
+const FALLBACK_TRAINER_CLASSES = [
+  { value: "WARRIOR", label: "Warrior" },
+  { value: "MAGE", label: "Mage" },
+  { value: "CLERIC", label: "Cleric" },
+  { value: "ROGUE", label: "Rogue" },
+];
 
 function fieldLabel(
   base: string,
@@ -116,6 +125,7 @@ export function MobEditor({
 
   const role: MobRole = mob.role ?? "combat";
   const isCombatant = role === "combat";
+  const isTrainer = role === "trainer";
   const requiresUniqueSpawn = role === "quest_giver";
   const spawns = mob.spawns ?? [];
 
@@ -155,6 +165,53 @@ export function MobEditor({
     },
     [spawns, patch],
   );
+
+  const classConfig = useConfigStore((s) => s.config?.classes);
+  const trainerClassOptions = useConfigOptions(classConfig, FALLBACK_TRAINER_CLASSES);
+  const trainerClasses = useMemo(() => getTrainerClasses(mob), [mob]);
+  const availableTrainerClasses = useMemo(
+    () => trainerClassOptions.filter((opt) => !trainerClasses.includes(opt.value)),
+    [trainerClassOptions, trainerClasses],
+  );
+  const handleAddTrainerClass = useCallback(
+    (classId: string) => {
+      if (!classId) return;
+      patch(setTrainerClasses([...trainerClasses, classId]));
+    },
+    [trainerClasses, patch],
+  );
+  const handleRemoveTrainerClass = useCallback(
+    (classId: string) => {
+      patch(setTrainerClasses(trainerClasses.filter((c) => c !== classId)));
+    },
+    [trainerClasses, patch],
+  );
+  const handleReplaceTrainerClass = useCallback(
+    (oldId: string, newId: string) => {
+      patch(setTrainerClasses(trainerClasses.map((c) => (c === oldId ? newId : c))));
+    },
+    [trainerClasses, patch],
+  );
+  const trainerClassLabel = useCallback(
+    (value: string): string =>
+      trainerClassOptions.find((opt) => opt.value === value)?.label ?? value,
+    [trainerClassOptions],
+  );
+
+  // Switching role away from trainer would leave dead trainerClasses behind;
+  // clear them at the same time so the YAML stays clean.
+  const handleRoleChange = useCallback(
+    (next: MobRole | undefined) => {
+      const wasTrainer = mob.role === "trainer";
+      if (wasTrainer && next !== "trainer") {
+        patch({ role: next, trainerClasses: undefined });
+      } else {
+        patch({ role: next });
+      }
+    },
+    [mob.role, patch],
+  );
+
   const visibleTabs = isCombatant
     ? MOB_TABS
     : MOB_TABS.filter((t) => t.value !== "rewards");
@@ -348,7 +405,7 @@ export function MobEditor({
                   value={role}
                   options={ROLE_OPTIONS}
                   onCommit={(v) =>
-                    patch({ role: v === "combat" ? undefined : (v as MobRole) })
+                    handleRoleChange(v === "combat" ? undefined : (v as MobRole))
                   }
                 />
               </CompactField>
@@ -400,6 +457,71 @@ export function MobEditor({
               </CompactField>
             </FieldGrid>
           </Section>
+
+          {isTrainer && (
+            <Section
+              title="Trainer"
+              description={
+                trainerClasses.length > 1
+                  ? "Multi-class trainer — every spawn room teaches all listed classes."
+                  : trainerClasses.length === 1
+                    ? "Single-class trainer. Add another class to teach more from the same rooms."
+                    : "Pick at least one class. Each spawn room becomes a training room for these classes."
+              }
+            >
+              <div className="flex flex-col gap-1.5">
+                {trainerClasses.length === 0 ? (
+                  <div className="text-xs italic text-text-muted">No class assigned</div>
+                ) : (
+                  <div className="flex flex-wrap gap-1.5">
+                    {trainerClasses.map((classId) => (
+                      <div
+                        key={classId}
+                        className="flex items-center gap-1 rounded border border-border-default bg-bg-tertiary/60 px-1 py-0.5"
+                      >
+                        <SelectInput
+                          value={classId}
+                          options={[
+                            { value: classId, label: trainerClassLabel(classId) },
+                            ...availableTrainerClasses,
+                          ]}
+                          onCommit={(v) => handleReplaceTrainerClass(classId, v)}
+                        />
+                        {trainerClasses.length > 1 && (
+                          <IconButton
+                            onClick={() => handleRemoveTrainerClass(classId)}
+                            title={`Remove ${trainerClassLabel(classId)}`}
+                            danger
+                          >
+                            ✕
+                          </IconButton>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {availableTrainerClasses.length > 0 && (
+                  <select
+                    className="ornate-input self-start border border-border-default bg-bg-primary px-2 py-1 text-xs text-text-primary"
+                    value=""
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      if (v) handleAddTrainerClass(v);
+                    }}
+                  >
+                    <option value="">
+                      + add {trainerClasses.length === 0 ? "class" : "another class"}
+                    </option>
+                    {availableTrainerClasses.map((opt) => (
+                      <option key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </div>
+            </Section>
+          )}
 
           {isCombatant && stats && (
             <Section title="Combat Readout">

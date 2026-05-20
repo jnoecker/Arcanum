@@ -15,7 +15,6 @@ import {
   addMob,
   addItem,
   addShop,
-  addTrainer,
   addGatheringNode,
   addRecipe,
   setDungeon,
@@ -26,7 +25,6 @@ import type {
   MobFile,
   ItemFile,
   ShopFile,
-  TrainerFile,
   GatheringNodeFile,
   RecipeFile,
 } from "@/types/world";
@@ -46,7 +44,6 @@ const CATEGORY_COLORS: Record<string, string> = {
   mob: "var(--color-entity-mob)",
   item: "var(--color-entity-item)",
   shop: "var(--color-entity-shop)",
-  trainer: "var(--color-entity-trainer)",
   quest: "var(--color-entity-quest)",
   gatheringNode: "var(--color-entity-gather)",
   recipe: "var(--color-entity-recipe)",
@@ -94,17 +91,6 @@ const CATEGORIES: CategoryDef[] = [
       const id = generateEntityId(world, "shops");
       const firstRoom = Object.keys(world.rooms)[0] ?? "";
       return addShop(world, id, { name: id, room: firstRoom, items: [] } as ShopFile);
-    },
-  },
-  {
-    key: "trainer",
-    label: "Trainers",
-    collection: "trainers",
-    nameField: "name",
-    addFn: (world) => {
-      const id = generateEntityId(world, "trainers");
-      const firstRoom = Object.keys(world.rooms)[0] ?? "";
-      return addTrainer(world, id, { name: id, room: firstRoom } as TrainerFile);
     },
   },
   {

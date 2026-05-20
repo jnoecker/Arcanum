@@ -5,7 +5,6 @@ import type {
   MobFile,
   ItemFile,
   ShopFile,
-  TrainerFile,
   QuestFile,
   GatheringNodeFile,
   RecipeFile,
@@ -16,7 +15,7 @@ import type {
   DungeonLootTable,
 } from "@/types/world";
 import { resolveDoorKeyId } from "./doorHelpers";
-import { getTrainerClasses, setTrainerClasses } from "./trainers";
+import { getTrainerClasses } from "./trainers";
 
 /** Derive keyword from entity ID: extract part after last colon, or full ID. Matches Kotlin `keywordFromId`. */
 export function keywordFromId(id: string): string {
@@ -174,13 +173,6 @@ function normalizeRoomOutput(room: RoomFile): RoomFile {
   return next;
 }
 
-function normalizeTrainerOutput(trainer: TrainerFile): TrainerFile {
-  return {
-    ...trainer,
-    ...setTrainerClasses(getTrainerClasses(trainer)),
-  };
-}
-
 function normalizePuzzleReward(
   reward: NonNullable<WorldFile["puzzles"]>[string]["reward"],
 ): NonNullable<WorldFile["puzzles"]>[string]["reward"] {
@@ -200,14 +192,13 @@ interface RemapTables {
   mob: Map<string, string>;
   item: Map<string, string>;
   shop: Map<string, string>;
-  trainer: Map<string, string>;
   quest: Map<string, string>;
   node: Map<string, string>;
   recipe: Map<string, string>;
 }
 
 function applyIdRemaps(world: WorldFile, t: RemapTables): WorldFile {
-  const hasRemaps = [t.room, t.mob, t.item, t.shop, t.trainer, t.quest, t.node, t.recipe].some(
+  const hasRemaps = [t.room, t.mob, t.item, t.shop, t.quest, t.node, t.recipe].some(
     (m) => m.size > 0,
   );
   if (!hasRemaps) return world;
@@ -314,15 +305,6 @@ function applyIdRemaps(world: WorldFile, t: RemapTables): WorldFile {
     }
   }
 
-  // Trainers: remap keys, room
-  const trainers = world.trainers
-    ? Object.fromEntries(
-        Object.entries(world.trainers)
-          .filter(([id]) => t.trainer.get(id) !== "")
-          .map(([id, tr]) => [t.trainer.get(id) ?? id, { ...tr, room: rId(tr.room, t.room) }]),
-      )
-    : undefined;
-
   // Quests: remap keys, giver ref
   const quests = world.quests
     ? Object.fromEntries(
@@ -421,7 +403,6 @@ function applyIdRemaps(world: WorldFile, t: RemapTables): WorldFile {
     mobs,
     items,
     shops,
-    trainers: trainers && Object.keys(trainers).length > 0 ? trainers : undefined,
     quests: quests && Object.keys(quests).length > 0 ? quests : undefined,
     gatheringNodes,
     recipes,
@@ -484,16 +465,6 @@ function stripInvalidEntities(world: WorldFile): WorldFile {
     }
   }
 
-  // Trainers: remove if room doesn't exist, default name
-  let trainers: Record<string, TrainerFile> | undefined;
-  if (world.trainers) {
-    trainers = {};
-    for (const [id, trainer] of Object.entries(world.trainers)) {
-      if (!roomIds.has(trainer.room)) continue;
-      trainers[id] = { ...trainer, name: trainer.name?.trim() || id };
-    }
-  }
-
   // Gathering nodes: remove if room doesn't exist, default displayName
   let gatheringNodes: Record<string, GatheringNodeFile> | undefined;
   if (world.gatheringNodes) {
@@ -505,7 +476,7 @@ function stripInvalidEntities(world: WorldFile): WorldFile {
     }
   }
 
-  return { ...world, rooms, mobs, items, shops, trainers, gatheringNodes };
+  return { ...world, rooms, mobs, items, shops, gatheringNodes };
 }
 
 // ─── Phase 3: Strip dangling references in surviving entities ─────
@@ -643,6 +614,47 @@ function hasEntries(obj?: Record<string, unknown> | unknown[]): boolean {
   return Object.keys(obj).length > 0;
 }
 
+interface SynthesizedTrainer {
+  name: string;
+  class?: string;
+  classes?: string[];
+  room: string;
+  image?: string;
+}
+
+function buildTrainersMap(world: WorldFile): Record<string, SynthesizedTrainer> | undefined {
+  if (!world.mobs) return undefined;
+  const out: Record<string, SynthesizedTrainer> = {};
+  const seenRooms = new Set<string>();
+  for (const [mobId, mob] of Object.entries(world.mobs)) {
+    if (mob.role !== "trainer") continue;
+    const classes = getTrainerClasses(mob);
+    if (classes.length === 0) continue;
+    const spawns = mob.spawns ?? [];
+    let first = true;
+    for (const spawn of spawns) {
+      const room = spawn.room;
+      if (!room) continue;
+      // "One trainer per room" — drop later duplicates so the server doesn't
+      // see ambiguous bindings. The mob's UI presence in that room is still
+      // intact because mobs already collapsed by mob ID, not by training.
+      if (seenRooms.has(room)) continue;
+      seenRooms.add(room);
+      const key = first ? mobId : `${mobId}__${room}`;
+      first = false;
+      const entry: SynthesizedTrainer = {
+        name: mob.name?.trim() || mobId,
+        room,
+      };
+      if (classes.length === 1) entry.class = classes[0];
+      else entry.classes = [...classes];
+      if (mob.image) entry.image = mob.image;
+      out[key] = entry;
+    }
+  }
+  return Object.keys(out).length > 0 ? out : undefined;
+}
+
 function cleanOutput(world: WorldFile): WorldFile {
   const roomIds = new Set(Object.keys(world.rooms));
 
@@ -690,17 +702,39 @@ function cleanOutput(world: WorldFile): WorldFile {
     Object.entries(world.rooms).map(([id, room]) => [id, normalizeRoomOutput(room)]),
   );
 
-  const trainers = world.trainers && hasEntries(world.trainers)
-    ? Object.fromEntries(
-        Object.entries(world.trainers).map(([id, trainer]) => [id, normalizeTrainerOutput(trainer)]),
-      )
-    : undefined;
+  // Synthesize the server-facing `trainers:` map from mobs with role=trainer.
+  // One entry per (mob, spawn room) pair so each room independently registers
+  // as a training room. Key shape: `<mobId>` for the first spawn, then
+  // `<mobId>__<roomId>` for subsequent spawns to keep keys unique. The class
+  // list collapses to legacy `class: X` when length is 1 to minimize YAML
+  // churn against existing world content.
+  const trainers = buildTrainersMap(world);
 
   const puzzles = world.puzzles && hasEntries(world.puzzles)
     ? Object.fromEntries(
         Object.entries(world.puzzles).map(([id, puzzle]) => [id, { ...puzzle, reward: normalizePuzzleReward(puzzle.reward) }]),
       )
     : undefined;
+
+  // Strip Arcanum-only trainer fields from mob output. The server's MobRole
+  // enum doesn't include TRAINER, so emitting `role: trainer` crashes the
+  // loader; `trainerClasses` is likewise unknown server-side. The training
+  // binding lives entirely in the synthesized `trainers:` map below.
+  let mobsOut = world.mobs;
+  if (mobsOut) {
+    let touched = false;
+    const next: Record<string, MobFile> = {};
+    for (const [id, mob] of Object.entries(mobsOut)) {
+      if (mob.role === "trainer" || mob.trainerClasses) {
+        touched = true;
+        const { trainerClasses: _tc, ...rest } = mob;
+        next[id] = mob.role === "trainer" ? { ...rest, role: undefined } : rest;
+      } else {
+        next[id] = mob;
+      }
+    }
+    if (touched) mobsOut = next;
+  }
 
   // Build result with only non-empty optional collections
   const result: WorldFile = { zone, startRoom, rooms };
@@ -734,10 +768,14 @@ function cleanOutput(world: WorldFile): WorldFile {
     }
   }
   if (world.audio) result.audio = world.audio;
-  if (hasEntries(world.mobs)) result.mobs = world.mobs;
+  if (hasEntries(mobsOut)) result.mobs = mobsOut;
   if (hasEntries(items)) result.items = items;
   if (hasEntries(world.shops)) result.shops = world.shops;
-  if (hasEntries(trainers)) result.trainers = trainers;
+  if (hasEntries(trainers)) {
+    // Attach as extra top-level YAML field; type intentionally doesn't carry
+    // it because in-memory trainers live on mobs.
+    (result as { trainers?: Record<string, SynthesizedTrainer> }).trainers = trainers;
+  }
   if (hasEntries(world.quests)) result.quests = world.quests;
   if (hasEntries(world.gatheringNodes)) result.gatheringNodes = world.gatheringNodes;
   if (hasEntries(world.recipes)) result.recipes = world.recipes;
@@ -765,7 +803,6 @@ export function sanitizeZone(world: WorldFile): WorldFile {
     mob: buildIdRemap(Object.keys(world.mobs ?? {}), "mob"),
     item: buildIdRemap(Object.keys(world.items ?? {}), "item"),
     shop: buildIdRemap(Object.keys(world.shops ?? {}), "shop"),
-    trainer: buildIdRemap(Object.keys(world.trainers ?? {}), "trainer"),
     quest: buildIdRemap(Object.keys(world.quests ?? {}), "quest"),
     node: buildIdRemap(Object.keys(world.gatheringNodes ?? {}), "node"),
     recipe: buildIdRemap(Object.keys(world.recipes ?? {}), "recipe"),

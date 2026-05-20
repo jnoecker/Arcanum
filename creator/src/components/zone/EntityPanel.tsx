@@ -4,7 +4,6 @@ import type { EntitySelection } from "./RoomPanel";
 import { MobEditor } from "@/components/editors/MobEditor";
 import { ItemEditor } from "@/components/editors/ItemEditor";
 import { ShopEditor } from "@/components/editors/ShopEditor";
-import { TrainerEditor } from "@/components/editors/TrainerEditor";
 import { QuestEditor } from "@/components/editors/QuestEditor";
 import { GatheringNodeEditor } from "@/components/editors/GatheringNodeEditor";
 import { RecipeEditor } from "@/components/editors/RecipeEditor";
@@ -17,7 +16,6 @@ const COLLECTION_MAP: Record<string, string> = {
   mob: "mobs",
   item: "items",
   shop: "shops",
-  trainer: "trainers",
   quest: "quests",
   gatheringNode: "gatheringNodes",
   recipe: "recipes",
@@ -148,15 +146,6 @@ export function EntityPanel({
       {selection.kind === "shop" && (
         <ShopEditor
           shopId={selection.id}
-          world={world}
-          onWorldChange={onWorldChange}
-          onDelete={handleDelete}
-          zoneId={zoneId}
-        />
-      )}
-      {selection.kind === "trainer" && (
-        <TrainerEditor
-          trainerId={selection.id}
           world={world}
           onWorldChange={onWorldChange}
           onDelete={handleDelete}

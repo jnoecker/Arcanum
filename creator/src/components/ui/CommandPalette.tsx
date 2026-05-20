@@ -17,7 +17,6 @@ type PaletteItemType =
   | "mob"
   | "item"
   | "shop"
-  | "trainer"
   | "quest"
   | "gather"
   | "recipe"
@@ -39,7 +38,6 @@ const ENTITY_TYPES: ReadonlySet<PaletteItemType> = new Set([
   "mob",
   "item",
   "shop",
-  "trainer",
   "quest",
   "gather",
   "recipe",
@@ -156,7 +154,7 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
       });
     }
 
-    // Entities across all loaded zones (rooms, mobs, items, shops, trainers,
+    // Entities across all loaded zones (rooms, mobs, items, shops,
     // quests, gathering nodes, recipes, puzzles). Only surfaced when the user
     // types a query — see `filtered` below — so the palette's resting state
     // stays focused on navigation.
@@ -175,12 +173,20 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
         });
       }
       for (const [mobId, mob] of Object.entries(zone.mobs ?? {})) {
+        const roleHint = mob.role === "trainer"
+          ? " · trainer"
+          : mob.role === "vendor"
+            ? " · vendor"
+            : mob.role === "quest_giver"
+              ? " · quest giver"
+              : "";
         result.push({
           id: `mob:${zoneId}:${mobId}`,
           type: "mob",
           title: mob.name || mobId,
-          subtitle: zoneName,
-          searchText: mobId,
+          subtitle: `${zoneName}${roleHint}`,
+          // Mob ID + role keyword so "trainer" still surfaces trainer mobs.
+          searchText: mob.role === "trainer" ? `${mobId} trainer` : mobId,
           action: () => navigateTo({ zoneId, entityKind: "mob", entityId: mobId }),
         });
       }
@@ -202,16 +208,6 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
           subtitle: zoneName,
           searchText: shopId,
           action: () => navigateTo({ zoneId, entityKind: "shop", entityId: shopId }),
-        });
-      }
-      for (const [trainerId, trainer] of Object.entries(zone.trainers ?? {})) {
-        result.push({
-          id: `trainer:${zoneId}:${trainerId}`,
-          type: "trainer",
-          title: trainer.name || trainerId,
-          subtitle: zoneName,
-          searchText: trainerId,
-          action: () => navigateTo({ zoneId, entityKind: "trainer", entityId: trainerId }),
         });
       }
       for (const [questId, quest] of Object.entries(zone.quests ?? {})) {
@@ -329,7 +325,7 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
   );
 
   const typeBadge = (type: string) => {
-    // Color buckets: rooms = aurum (spatial), mobs/trainers/shops = terracotta
+    // Color buckets: rooms = aurum (spatial), mobs/shops = terracotta
     // (living things with names), remaining content kinds = violet.
     const colors: Record<string, string> = {
       panel: "bg-stellar-blue/20 text-stellar-blue",
@@ -338,7 +334,6 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
       action: "bg-warm/20 text-warm",
       room: "bg-aurum/20 text-aurum",
       mob: "bg-status-danger/20 text-status-danger",
-      trainer: "bg-status-danger/20 text-status-danger",
       shop: "bg-status-danger/20 text-status-danger",
       item: "bg-violet/25 text-violet",
       quest: "bg-violet/25 text-violet",
@@ -357,7 +352,6 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
       action: "\u25B8", // ▸ (action)
       room: "\u25AB", // ▫ (room)
       mob: "\u2620", // ☠ (mob/creature)
-      trainer: "\u2694", // ⚔ (trainer / combat)
       shop: "\u2696", // ⚖ (shop / commerce)
       item: "\u25C6", // ◆ (item)
       quest: "\u2726", // ✦ (quest goal)

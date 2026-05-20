@@ -720,25 +720,40 @@ export function validateZone(
     }
   }
 
-  const trainerRooms = new Set<string>();
-  for (const [trainerId, trainer] of Object.entries(world.trainers ?? {})) {
-    const entity = `trainer:${trainerId}`;
-    if (!trainer.name?.trim()) addIssue(issues, "warning", entity, "Trainer has no name");
-    if (!roomIds.has(trainer.room)) addIssue(issues, "error", entity, `Room "${trainer.room}" does not exist`);
-    const trainerClassList = getTrainerClasses(trainer);
-    if (trainerClassList.length === 0) {
-      addIssue(issues, "error", entity, "Trainer has no class");
+  // Trainer mobs: validate the trainer-specific fields on each mob whose
+  // role is "trainer". The server-facing `trainers:` map is synthesized at
+  // save time, so all validation lives on the mob.
+  const trainerRoomOwner = new Map<string, string>();
+  for (const [mobId, mob] of Object.entries(world.mobs ?? {})) {
+    if (mob.role !== "trainer") continue;
+    const entity = `mob:${mobId}`;
+    const classList = getTrainerClasses(mob);
+    if (classList.length === 0) {
+      addIssue(issues, "error", entity, "Trainer mob has no class");
     } else {
-      for (const cls of trainerClassList) {
+      for (const cls of classList) {
         if (!VALID_CLASSES.has(cls.toUpperCase())) {
           addIssue(issues, "warning", entity, `Class "${cls}" is not a standard class`);
         }
       }
     }
-    if (trainerRooms.has(trainer.room)) {
-      addIssue(issues, "warning", entity, `Room "${trainer.room}" already has a trainer`);
+    const spawns = mob.spawns ?? [];
+    if (spawns.length === 0) {
+      addIssue(issues, "error", entity, "Trainer mob has no spawn room");
     }
-    trainerRooms.add(trainer.room);
+    for (const spawn of spawns) {
+      const existing = trainerRoomOwner.get(spawn.room);
+      if (existing && existing !== mobId) {
+        addIssue(
+          issues,
+          "warning",
+          entity,
+          `Room "${spawn.room}" already trains via mob "${existing}" — only one trainer per room is honoured`,
+        );
+      } else if (!existing) {
+        trainerRoomOwner.set(spawn.room, mobId);
+      }
+    }
   }
 
   for (const [questId, quest] of Object.entries(world.quests ?? {})) {

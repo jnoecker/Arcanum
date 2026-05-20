@@ -40,6 +40,7 @@ import {
   updatePuzzle,
   deletePuzzle,
   defaultPuzzle,
+  mergeTrainersIntoMobs,
 } from "../zoneEdits";
 import type { WorldFile } from "@/types/world";
 
@@ -723,5 +724,61 @@ describe("deleteRoom cascades to puzzles", () => {
     world = addPuzzle(world, "p1", defaultPuzzle("room2", "riddle"));
     world = deleteRoom(world, "room2");
     expect(world.puzzles?.p1).toBeUndefined();
+  });
+});
+
+describe("mergeTrainersIntoMobs", () => {
+  function withLegacyTrainers(
+    legacy: Record<string, { name?: string; class?: string; classes?: string[]; room: string; image?: string }>,
+    extraMobs: WorldFile["mobs"] = {},
+  ): WorldFile {
+    const base = makeWorld();
+    base.mobs = { ...(base.mobs ?? {}), ...extraMobs };
+    (base as { trainers?: typeof legacy }).trainers = legacy;
+    return base;
+  }
+
+  it("promotes the matching mob in the trainer's room", () => {
+    const world = withLegacyTrainers(
+      { warrior_trainer: { name: "Captain Varek", class: "WARRIOR", room: "room1" } },
+      { captain_varek: { name: "Captain Varek", spawns: [{ room: "room1" }] } },
+    );
+    const result = mergeTrainersIntoMobs(world);
+    expect((result as { trainers?: unknown }).trainers).toBeUndefined();
+    expect(result.mobs!.captain_varek!.role).toBe("trainer");
+    expect(result.mobs!.captain_varek!.trainerClasses).toEqual(["WARRIOR"]);
+  });
+
+  it("prefers a name-matched mob over an arbitrary co-resident", () => {
+    const world = withLegacyTrainers(
+      { mage_trainer: { name: "Archmage Solen", class: "MAGE", room: "room1" } },
+      {
+        rat: { name: "Rat", spawns: [{ room: "room1" }] },
+        archmage_solen: { name: "Archmage Solen", spawns: [{ room: "room1" }] },
+      },
+    );
+    const result = mergeTrainersIntoMobs(world);
+    expect(result.mobs!.archmage_solen!.role).toBe("trainer");
+    expect(result.mobs!.rat!.role).toBeUndefined();
+  });
+
+  it("collapses multi-class lists onto the mob", () => {
+    const world = withLegacyTrainers(
+      { combat_master: { name: "Master", classes: ["WARRIOR", "ROGUE"], room: "room1" } },
+      { master: { name: "Master", spawns: [{ room: "room1" }] } },
+    );
+    const result = mergeTrainersIntoMobs(world);
+    expect(result.mobs!.master!.trainerClasses).toEqual(["WARRIOR", "ROGUE"]);
+  });
+
+  it("synthesizes a mob when no candidate exists in the room", () => {
+    const world = withLegacyTrainers({
+      ranger_trainer: { name: "Forester Lenna", class: "RANGER", room: "room2" },
+    });
+    const result = mergeTrainersIntoMobs(world);
+    const synthesized = result.mobs!.ranger_trainer!;
+    expect(synthesized.role).toBe("trainer");
+    expect(synthesized.trainerClasses).toEqual(["RANGER"]);
+    expect(synthesized.spawns).toEqual([{ room: "room2" }]);
   });
 });

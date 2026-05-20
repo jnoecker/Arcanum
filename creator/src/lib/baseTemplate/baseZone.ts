@@ -378,6 +378,8 @@ export const BASE_ACADEMY_ZONE: WorldFile = {
     instructor_valence: {
       name: "Instructor Valence",
       room: "training_yard",
+      role: "trainer",
+      trainerClasses: ["WARRIOR", "MAGE", "CLERIC", "ROGUE", "RANGER"],
       tier: "elite",
       level: 10,
       hp: 999,
@@ -1003,13 +1005,6 @@ export const BASE_ACADEMY_ZONE: WorldFile = {
         "hearty_ration",
         "elixir_of_clarity",
       ],
-    },
-  },
-  trainers: {
-    valence_trainer: {
-      name: "Instructor Valence",
-      room: "training_yard",
-      classes: ["WARRIOR", "MAGE", "CLERIC", "ROGUE", "RANGER"],
     },
   },
   quests: {

@@ -203,17 +203,33 @@ describe("sanitizeZone — invalid entity stripping", () => {
     expect(result.mobs!["bad_mob"]).toBeUndefined();
   });
 
-  it("removes trainers with non-existent room refs", () => {
+  it("drops trainer synthesis for mobs whose spawn room is invalid", () => {
+    // Trainer registry is synthesized from mobs at save time. Mobs whose
+    // spawns all reference missing rooms get stripped first (existing rule),
+    // so no `trainers:` entry should be emitted for them.
     const world = makeWorld({
-      trainers: {
-        valid: { name: "Valid", class: "WARRIOR", room: "room_a" },
-        broken: { name: "Broken", class: "MAGE", room: "nonexistent" },
+      mobs: {
+        valid_trainer: {
+          name: "Valid",
+          spawns: [{ room: "room_a" }],
+          role: "trainer",
+          trainerClasses: ["WARRIOR"],
+        },
+        broken_trainer: {
+          name: "Broken",
+          spawns: [{ room: "nonexistent" }],
+          role: "trainer",
+          trainerClasses: ["MAGE"],
+        },
       },
     });
 
-    const result = sanitizeZone(world);
-    expect(result.trainers!["valid"]).toBeDefined();
-    expect(result.trainers!["broken"]).toBeUndefined();
+    const result = sanitizeZone(world) as WorldFile & {
+      trainers?: Record<string, { name: string; class?: string; classes?: string[]; room: string }>;
+    };
+    expect(result.trainers!["valid_trainer"]).toBeDefined();
+    expect(result.trainers!["valid_trainer"]!.room).toBe("room_a");
+    expect(result.trainers!["broken_trainer"]).toBeUndefined();
   });
 
   it("removes gathering nodes with non-existent room refs", () => {
@@ -404,13 +420,12 @@ describe("sanitizeZone — output cleanup", () => {
       mobs: {},
       items: {},
       shops: {},
-      trainers: {},
       quests: {},
       gatheringNodes: {},
       recipes: {},
     });
 
-    const result = sanitizeZone(world);
+    const result = sanitizeZone(world) as WorldFile & { trainers?: unknown };
     expect(result.mobs).toBeUndefined();
     expect(result.items).toBeUndefined();
     expect(result.shops).toBeUndefined();
@@ -503,15 +518,67 @@ describe("sanitizeZone — output cleanup", () => {
     expect(result.rooms.room_a.audio).toBeUndefined();
   });
 
-  it("writes single-class and multi-class trainers in minimal schema", () => {
+  it("synthesizes single-class and multi-class trainers from mobs", () => {
     const result = sanitizeZone(makeWorld({
-      trainers: {
-        warrior_trainer: { name: "Trainer", class: "WARRIOR", classes: ["WARRIOR"], room: "room_a" },
-        academy_master: { name: "Master", class: "WARRIOR", classes: ["WARRIOR", "ROGUE"], room: "room_b" },
+      mobs: {
+        warrior_trainer: {
+          name: "Trainer",
+          spawns: [{ room: "room_a" }],
+          role: "trainer",
+          trainerClasses: ["WARRIOR"],
+        },
+        academy_master: {
+          name: "Master",
+          spawns: [{ room: "room_b" }],
+          role: "trainer",
+          trainerClasses: ["WARRIOR", "ROGUE"],
+        },
       },
-    }));
-    expect(result.trainers!.warrior_trainer).toMatchObject({ class: "WARRIOR", classes: undefined });
-    expect(result.trainers!.academy_master).toMatchObject({ class: undefined, classes: ["WARRIOR", "ROGUE"] });
+    })) as WorldFile & {
+      trainers?: Record<string, { name: string; class?: string; classes?: string[]; room: string }>;
+    };
+    expect(result.trainers!.warrior_trainer).toMatchObject({
+      class: "WARRIOR",
+      room: "room_a",
+    });
+    expect(result.trainers!.warrior_trainer).not.toHaveProperty("classes");
+    expect(result.trainers!.academy_master).toMatchObject({
+      classes: ["WARRIOR", "ROGUE"],
+      room: "room_b",
+    });
+    expect(result.trainers!.academy_master).not.toHaveProperty("class");
+    // Mob output strips the Arcanum-only role and trainerClasses so the
+    // server's MobRole parser doesn't choke on `trainer`.
+    expect(result.mobs!.warrior_trainer!.role).toBeUndefined();
+    expect(result.mobs!.warrior_trainer!.trainerClasses).toBeUndefined();
+  });
+
+  it("emits one trainers entry per spawn room and skips duplicates", () => {
+    const world: WorldFile = {
+      zone: "test",
+      startRoom: "room_a",
+      rooms: {
+        room_a: { title: "A", description: "A" },
+        room_b: { title: "B", description: "B" },
+      },
+      mobs: {
+        wandering_trainer: {
+          name: "Wanderer",
+          spawns: [{ room: "room_a" }, { room: "room_b" }],
+          role: "trainer",
+          trainerClasses: ["MAGE"],
+        },
+      },
+    };
+    const result = sanitizeZone(world) as WorldFile & {
+      trainers?: Record<string, { room: string; class?: string }>;
+    };
+    const ids = Object.keys(result.trainers ?? {}).sort();
+    expect(ids).toHaveLength(2);
+    // First spawn keeps the mob ID; later spawns get a `__<room>` suffix to
+    // stay unique without colliding with other trainer entries.
+    expect(result.trainers!["wandering_trainer"]!.room).toBe("room_a");
+    expect(result.trainers!["wandering_trainer__room_b"]!.room).toBe("room_b");
   });
 });
 

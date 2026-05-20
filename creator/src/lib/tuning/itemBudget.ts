@@ -208,13 +208,17 @@ export function splitItemBudget(
   };
 }
 
-/** Distribute a stat-budget across 1–3 stat IDs.
+/** Distribute a stat-budget across the three priority slots.
  *
- *  Returns an empty map if no stats are picked or statBudget is 0.
- *  Distribution:
- *    1 stat  → 100% primary
- *    2 stats → 60% primary / 40% secondary
- *    3 stats → 50% primary / 30% secondary / 20% tertiary
+ *  Each slot defaults to its archetypal key (PRIMARY / SECONDARY / TERTIARY)
+ *  which the server resolves per-class at equip time. A builder can override
+ *  any slot with a concrete stat ID to pin that portion of the budget to a
+ *  specific stat (e.g. flavor a "boots of speed" with literal DEX in the
+ *  primary slot while keeping SECONDARY / TERTIARY adaptive).
+ *
+ *  Weights are fixed at 50% primary / 30% secondary / 20% tertiary regardless
+ *  of how many slots are overridden — overrides change *what* a slot resolves
+ *  to, not *how much* of the budget it gets.
  */
 export function distributeStats(
   statBudget: number,
@@ -225,23 +229,17 @@ export function distributeStats(
 ): StatMap {
   if (statBudget <= 0 || statPointCost <= 0) return {};
 
-  const picks: string[] = [];
-  if (primary) picks.push(primary);
-  if (secondary) picks.push(secondary);
-  if (tertiary) picks.push(tertiary);
-  if (picks.length === 0) return {};
-
-  let weights: number[];
-  if (picks.length === 1) weights = [1.0];
-  else if (picks.length === 2) weights = [0.6, 0.4];
-  else weights = [0.5, 0.3, 0.2];
+  const slots: [string, number][] = [
+    [primary || "PRIMARY", 0.5],
+    [secondary || "SECONDARY", 0.3],
+    [tertiary || "TERTIARY", 0.2],
+  ];
 
   const out: StatMap = {};
-  for (let i = 0; i < picks.length; i++) {
-    const id = picks[i]!;
-    const points = Math.round((statBudget * weights[i]!) / statPointCost);
+  for (const [id, weight] of slots) {
+    const points = Math.round((statBudget * weight) / statPointCost);
     if (points > 0) {
-      // Stack if author picked the same stat twice (defensive; UI should prevent).
+      // Stack if the same concrete stat is used for more than one slot.
       out[id] = (out[id] ?? 0) + points;
     }
   }

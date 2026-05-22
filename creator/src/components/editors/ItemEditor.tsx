@@ -16,7 +16,7 @@ import {
   CompactField,
   TabBar,
 } from "@/components/ui/FormWidgets";
-import { DeleteEntityButton, EnhanceDescriptionButton, MediaSection } from "./EditorShared";
+import { DeleteEntityButton, EnhanceDescriptionButton, EntityActionsFooter, MediaSection } from "./EditorShared";
 import { itemPrompt, itemContext } from "@/lib/entityPrompts";
 import { keywordFromId } from "@/lib/sanitizeZone";
 import { useVibeStore } from "@/stores/vibeStore";
@@ -35,6 +35,7 @@ interface ItemEditorProps {
   world: WorldFile;
   onWorldChange: (world: WorldFile) => void;
   onDelete: () => void;
+  onDuplicate?: () => void;
   zoneId?: string;
 }
 
@@ -50,6 +51,7 @@ export function ItemEditor({
   world,
   onWorldChange,
   onDelete,
+  onDuplicate,
 }: ItemEditorProps) {
   const [activeTab, setActiveTab] = useState<ItemTab>("item");
   const { entity: item, patch, handleDelete, rooms } = useEntityEditor<ItemFile>(
@@ -568,7 +570,16 @@ export function ItemEditor({
         />
       )}
 
-      <DeleteEntityButton onClick={handleDelete} label="Delete Item" />
+      {onDuplicate ? (
+        <EntityActionsFooter
+          onDuplicate={onDuplicate}
+          onDelete={handleDelete}
+          duplicateLabel="Duplicate Item"
+          deleteLabel="Delete Item"
+        />
+      ) : (
+        <DeleteEntityButton onClick={handleDelete} label="Delete Item" />
+      )}
     </>
   );
 }

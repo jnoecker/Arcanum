@@ -1,5 +1,7 @@
 import { useCallback, useState, useMemo } from "react";
 import type { WorldFile } from "@/types/world";
+import { duplicateMob, duplicateItem } from "@/lib/zoneEdits";
+import { useToastStore } from "@/stores/toastStore";
 import type { EntitySelection } from "./RoomPanel";
 import { MobEditor } from "@/components/editors/MobEditor";
 import { ItemEditor } from "@/components/editors/ItemEditor";
@@ -52,6 +54,32 @@ export function EntityPanel({
   const handleDelete = useCallback(() => {
     onClose();
   }, [onClose]);
+
+  const handleDuplicateMob = useCallback(() => {
+    try {
+      const { world: next, newId } = duplicateMob(world, selection.id);
+      onWorldChange(next);
+      onRename?.(newId);
+      useToastStore.getState().show(`Duplicated as "${newId}"`);
+    } catch (err) {
+      useToastStore.getState().show(
+        err instanceof Error ? err.message : "Failed to duplicate mob",
+      );
+    }
+  }, [world, selection.id, onWorldChange, onRename]);
+
+  const handleDuplicateItem = useCallback(() => {
+    try {
+      const { world: next, newId } = duplicateItem(world, selection.id);
+      onWorldChange(next);
+      onRename?.(newId);
+      useToastStore.getState().show(`Duplicated as "${newId}"`);
+    } catch (err) {
+      useToastStore.getState().show(
+        err instanceof Error ? err.message : "Failed to duplicate item",
+      );
+    }
+  }, [world, selection.id, onWorldChange, onRename]);
 
   const entityData = useMemo(() => {
     const collection = COLLECTION_MAP[selection.kind];
@@ -135,6 +163,7 @@ export function EntityPanel({
           world={world}
           onWorldChange={onWorldChange}
           onDelete={handleDelete}
+          onDuplicate={onRename ? handleDuplicateMob : undefined}
           zoneId={zoneId}
         />
       )}
@@ -144,6 +173,7 @@ export function EntityPanel({
           world={world}
           onWorldChange={onWorldChange}
           onDelete={handleDelete}
+          onDuplicate={onRename ? handleDuplicateItem : undefined}
           zoneId={zoneId}
         />
       )}

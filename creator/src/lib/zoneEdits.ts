@@ -760,6 +760,22 @@ export function updateMob(world: WorldFile, mobId: string, patch: Partial<MobFil
   return updateEntity(world, "mobs", mobId, patch);
 }
 
+/** Duplicate an existing mob under a fresh ID. Deep-clones the source so
+ *  edits to the copy don't bleed back into the original. Returns the new
+ *  world plus the generated id (so the caller can re-select the copy). */
+export function duplicateMob(
+  world: WorldFile,
+  mobId: string,
+): { world: WorldFile; newId: string } {
+  const source = world.mobs?.[mobId];
+  if (!source) {
+    throw new Error(`Mob "${mobId}" does not exist`);
+  }
+  const newId = uniqueCopyId(world.mobs ?? {}, mobId);
+  const cloned = structuredClone(source);
+  return { world: addMob(world, newId, cloned), newId };
+}
+
 export function deleteMob(world: WorldFile, mobId: string): WorldFile {
   const next = removeEntity(world, "mobs", mobId);
   // Clear quest giver references pointing to this mob
@@ -781,6 +797,21 @@ export function addItem(world: WorldFile, itemId: string, item: ItemFile): World
 
 export function updateItem(world: WorldFile, itemId: string, patch: Partial<ItemFile>): WorldFile {
   return updateEntity(world, "items", itemId, patch);
+}
+
+/** Duplicate an existing item under a fresh ID. Deep-clones the source so
+ *  edits to the copy don't bleed back into the original. */
+export function duplicateItem(
+  world: WorldFile,
+  itemId: string,
+): { world: WorldFile; newId: string } {
+  const source = world.items?.[itemId];
+  if (!source) {
+    throw new Error(`Item "${itemId}" does not exist`);
+  }
+  const newId = uniqueCopyId(world.items ?? {}, itemId);
+  const cloned = structuredClone(source);
+  return { world: addItem(world, newId, cloned), newId };
 }
 
 export function deleteItem(world: WorldFile, itemId: string): WorldFile {
@@ -903,6 +934,18 @@ export function defaultPuzzle(roomId: string, type: "riddle" | "sequence"): Puzz
 }
 
 // ─── ID generation helpers ──────────────────────────────────────────
+
+/** Generate an unused "<sourceId>_copy[_N]" id within an entity collection. */
+function uniqueCopyId(
+  existing: Record<string, unknown>,
+  sourceId: string,
+): string {
+  const base = `${sourceId}_copy`;
+  if (!existing[base]) return base;
+  let n = 2;
+  while (existing[`${base}_${n}`]) n++;
+  return `${base}_${n}`;
+}
 
 export function generateEntityId(
   world: WorldFile,

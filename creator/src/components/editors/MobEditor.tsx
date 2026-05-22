@@ -17,7 +17,7 @@ import {
   TabBar,
 } from "@/components/ui/FormWidgets";
 import { DialogueEditor } from "./DialogueEditor";
-import { DeleteEntityButton, EnhanceDescriptionButton, MediaSection } from "./EditorShared";
+import { DeleteEntityButton, EnhanceDescriptionButton, EntityActionsFooter, MediaSection } from "./EditorShared";
 import { mobPrompt, mobContext } from "@/lib/entityPrompts";
 import { useVibeStore } from "@/stores/vibeStore";
 import { useConfigStore } from "@/stores/configStore";
@@ -43,6 +43,7 @@ interface MobEditorProps {
   world: WorldFile;
   onWorldChange: (world: WorldFile) => void;
   onDelete: () => void;
+  onDuplicate?: () => void;
   zoneId?: string;
 }
 
@@ -113,6 +114,7 @@ export function MobEditor({
   world,
   onWorldChange,
   onDelete,
+  onDuplicate,
   zoneId,
 }: MobEditorProps) {
   const [activeTab, setActiveTab] = useState<MobTab>("mob");
@@ -1043,7 +1045,16 @@ export function MobEditor({
         />
       )}
 
-      <DeleteEntityButton onClick={handleDelete} label="Delete Mob" />
+      {onDuplicate ? (
+        <EntityActionsFooter
+          onDuplicate={onDuplicate}
+          onDelete={handleDelete}
+          duplicateLabel="Duplicate Mob"
+          deleteLabel="Delete Mob"
+        />
+      ) : (
+        <DeleteEntityButton onClick={handleDelete} label="Delete Mob" />
+      )}
 
       {dropPicker && (
         <ItemPickerDialog

@@ -84,6 +84,53 @@ export function DeleteEntityButton({
   );
 }
 
+/** Footer with Duplicate + Delete actions for entity editors. Shares the
+ *  same visual separator as the standalone DeleteEntityButton so editors
+ *  that don't support duplication can keep using that one. */
+export function EntityActionsFooter({
+  onDuplicate,
+  onDelete,
+  duplicateLabel,
+  deleteLabel,
+}: {
+  onDuplicate: () => void;
+  onDelete: () => void;
+  duplicateLabel: string;
+  deleteLabel: string;
+}) {
+  const [confirming, setConfirming] = useState(false);
+
+  return (
+    <div className="mt-4 flex flex-col gap-2 border-t border-border-muted pt-3">
+      <button
+        onClick={onDuplicate}
+        className="w-full rounded border border-border-default px-2 py-1.5 text-xs text-text-secondary transition-colors hover:bg-bg-elevated hover:text-text-primary"
+      >
+        {duplicateLabel}
+      </button>
+      <button
+        onClick={() => setConfirming(true)}
+        className="w-full rounded border border-status-danger/40 px-2 py-1.5 text-xs text-status-danger transition-colors hover:bg-status-danger/10"
+      >
+        {deleteLabel}
+      </button>
+      {confirming && (
+        <ConfirmDialog
+          title="Confirm Removal"
+          message={`${deleteLabel}? This action cannot be undone.`}
+          confirmLabel="Remove"
+          destructive
+          onConfirm={() => {
+            setConfirming(false);
+            onDelete();
+          }}
+          onCancel={() => setConfirming(false)}
+        />
+      )}
+    </div>
+  );
+}
+
 const DESCRIBE_SYSTEM_PROMPT = `You are a creative writer for a fantasy MUD (text-based RPG). Given an entity's current data, write a vivid visual description suitable for both in-game flavor text and AI art generation.
 
 Rules:

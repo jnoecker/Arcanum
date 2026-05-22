@@ -6,6 +6,7 @@ import { parseDocument } from "yaml";
 import { stringify } from "yaml";
 import { useProjectStore } from "@/stores/projectStore";
 import { useZoneStore } from "@/stores/zoneStore";
+import { useAssetStore } from "@/stores/assetStore";
 import { zoneFilePath } from "@/lib/projectPaths";
 import { useFocusTrap } from "@/lib/useFocusTrap";
 import { DialogShell, ActionButton, Spinner } from "./ui/FormWidgets";
@@ -30,6 +31,8 @@ interface ParsedZone {
   roomCount: number;
   /** Whether a zone with this ID already exists. */
   collision: boolean;
+  /** Count of image-library entries detected in the source project for this zone. */
+  assetCount: number;
   /** Error message if file failed to parse. */
   error?: string;
 }
@@ -40,6 +43,15 @@ interface ImportResult {
   zoneId: string;
   status: "imported" | "skipped" | "renamed" | "overwritten" | "error";
   message: string;
+  /** Counts from the asset-library copy step (omitted when nothing was imported). */
+  assets?: { imported: number; skipped: number; missingBlobs: number };
+}
+
+interface ImportZoneAssetsResult {
+  imported: number;
+  skipped: number;
+  missing_blobs: string[];
+  source_manifest_found: boolean;
 }
 
 // ─── Helpers ────────────────────────────────────────────────────────
@@ -71,10 +83,12 @@ export function ImportZoneDialog({ onClose }: { onClose: () => void }) {
   const openTab = useProjectStore((s) => s.openTab);
   const loadZone = useZoneStore((s) => s.loadZone);
   const zones = useZoneStore((s) => s.zones);
+  const loadAssets = useAssetStore((s) => s.loadAssets);
 
   const [step, setStep] = useState<"select" | "review" | "importing" | "done">("select");
   const [parsed, setParsed] = useState<ParsedZone[]>([]);
   const [conflictStrategy, setConflictStrategy] = useState<ConflictStrategy>("rename");
+  const [importImages, setImportImages] = useState(true);
   const [results, setResults] = useState<ImportResult[]>([]);
   const [selectError, setSelectError] = useState<string | null>(null);
 
@@ -112,6 +126,7 @@ export function ImportZoneDialog({ onClose }: { onClose: () => void }) {
             data: data as WorldFile,
             roomCount: 0,
             collision: false,
+            assetCount: 0,
             error: "Not a valid zone file (missing 'zone' or 'rooms' field)",
           });
           continue;
@@ -121,6 +136,16 @@ export function ImportZoneDialog({ onClose }: { onClose: () => void }) {
           ? data.zone
           : sanitizeZoneId(data.zone);
 
+        let assetCount = 0;
+        try {
+          assetCount = await invoke<number>("count_zone_assets", {
+            sourceZoneFile: filePath,
+            sourceZoneId: data.zone,
+          });
+        } catch {
+          // Source project has no manifest, or it's unreadable — treat as 0.
+        }
+
         results.push({
           filePath,
           fileName,
@@ -128,6 +153,7 @@ export function ImportZoneDialog({ onClose }: { onClose: () => void }) {
           data,
           roomCount: Object.keys(data.rooms).length,
           collision: existingIds.has(zoneId),
+          assetCount,
         });
       } catch (err) {
         results.push({
@@ -137,6 +163,7 @@ export function ImportZoneDialog({ onClose }: { onClose: () => void }) {
           data: {} as WorldFile,
           roomCount: 0,
           collision: false,
+          assetCount: 0,
           error: `Parse error: ${String(err)}`,
         });
       }
@@ -210,6 +237,37 @@ export function ImportZoneDialog({ onClose }: { onClose: () => void }) {
         loadZone(finalId, filePath, data);
         existingIds.add(finalId);
 
+        let assetSummary: ImportResult["assets"] | undefined;
+        if (importImages && entry.assetCount > 0) {
+          try {
+            const r = await invoke<ImportZoneAssetsResult>("import_zone_assets", {
+              sourceZoneFile: entry.filePath,
+              sourceZoneId: entry.data.zone,
+              targetZoneId: finalId,
+            });
+            if (r.source_manifest_found) {
+              assetSummary = {
+                imported: r.imported,
+                skipped: r.skipped,
+                missingBlobs: r.missing_blobs.length,
+              };
+            }
+          } catch (err) {
+            console.error(`Asset import failed for zone "${finalId}":`, err);
+          }
+        }
+
+        const baseMessage = entry.collision && conflictStrategy === "rename"
+          ? `Imported as "${finalId}" (renamed from "${entry.zoneId}").`
+          : `Imported with ${Object.keys(data.rooms).length} rooms.`;
+        const assetTail = assetSummary
+          ? ` Image library: ${assetSummary.imported} new, ${assetSummary.skipped} duplicate${
+              assetSummary.missingBlobs > 0
+                ? `, ${assetSummary.missingBlobs} blob${assetSummary.missingBlobs === 1 ? "" : "s"} missing locally`
+                : ""
+            }.`
+          : "";
+
         importResults.push({
           zoneId: finalId,
           status: entry.collision
@@ -217,9 +275,8 @@ export function ImportZoneDialog({ onClose }: { onClose: () => void }) {
               ? "renamed"
               : "overwritten"
             : "imported",
-          message: entry.collision && conflictStrategy === "rename"
-            ? `Imported as "${finalId}" (renamed from "${entry.zoneId}").`
-            : `Imported with ${Object.keys(data.rooms).length} rooms.`,
+          message: baseMessage + assetTail,
+          assets: assetSummary,
         });
       } catch (err) {
         importResults.push({
@@ -232,7 +289,12 @@ export function ImportZoneDialog({ onClose }: { onClose: () => void }) {
 
     setResults(importResults);
     setStep("done");
-  }, [project, parsed, conflictStrategy, zones, loadZone]);
+
+    // Refresh the asset library so newly imported entries show up immediately.
+    if (importImages && importResults.some((r) => r.assets && r.assets.imported > 0)) {
+      loadAssets().catch(() => {});
+    }
+  }, [project, parsed, conflictStrategy, importImages, zones, loadZone, loadAssets]);
 
   // ── Open imported zones ────────────────────────────────────────
 
@@ -249,6 +311,7 @@ export function ImportZoneDialog({ onClose }: { onClose: () => void }) {
 
   const validCount = parsed.filter((p) => !p.error).length;
   const collisionCount = parsed.filter((p) => p.collision && !p.error).length;
+  const totalAssetCount = parsed.reduce((sum, p) => sum + (p.error ? 0 : p.assetCount), 0);
   const successCount = results.filter(
     (r) => r.status === "imported" || r.status === "renamed" || r.status === "overwritten",
   ).length;
@@ -349,11 +412,31 @@ export function ImportZoneDialog({ onClose }: { onClose: () => void }) {
                     {entry.roomCount} room{entry.roomCount === 1 ? "" : "s"}
                     {entry.data.mobs ? ` \u00b7 ${Object.keys(entry.data.mobs).length} mobs` : ""}
                     {entry.data.items ? ` \u00b7 ${Object.keys(entry.data.items).length} items` : ""}
+                    {entry.assetCount > 0 ? ` \u00b7 ${entry.assetCount} image${entry.assetCount === 1 ? "" : "s"}` : ""}
                   </p>
                 )}
               </li>
             ))}
           </ul>
+
+          {/* Image library opt-in */}
+          {totalAssetCount > 0 && (
+            <label className="flex items-start gap-2 rounded-lg border border-border-default bg-bg-secondary px-3 py-2.5 text-xs text-text-secondary">
+              <input
+                type="checkbox"
+                checked={importImages}
+                onChange={(e) => setImportImages(e.target.checked)}
+                className="mt-0.5 accent-accent"
+              />
+              <span>
+                Also import the image library
+                {" "}
+                <span className="text-text-muted">
+                  ({totalAssetCount} generated image{totalAssetCount === 1 ? "" : "s"} detected across the selected zone{validCount === 1 ? "" : "s"})
+                </span>
+              </span>
+            </label>
+          )}
 
           {/* Conflict strategy */}
           {collisionCount > 0 && (

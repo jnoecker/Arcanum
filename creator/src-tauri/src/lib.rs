@@ -88,6 +88,8 @@ macro_rules! base_handler {
             assets::import_player_sprites,
             assets::bulk_import_images,
             assets::export_assets_to_dir,
+            assets::count_zone_assets,
+            assets::import_zone_assets,
             assets::migrate_sprite_tier,
             assets::expand_base_sprites,
             assets::flip_image,

@@ -1064,3 +1064,135 @@ pub async fn flip_image(app: AppHandle, image_ref: String) -> Result<String, Str
 
     Ok(file_name)
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ImportZoneAssetsResult {
+    pub imported: u32,
+    pub skipped: u32,
+    pub missing_blobs: Vec<String>,
+    pub source_manifest_found: bool,
+}
+
+/// Walk up from `zone_file` looking for `.arcanum/manifest.json`.
+fn find_sibling_manifest(zone_file: &std::path::Path) -> Option<PathBuf> {
+    let mut cursor = zone_file.parent().map(|p| p.to_path_buf());
+    while let Some(dir) = cursor {
+        let candidate = dir.join(".arcanum").join("manifest.json");
+        if candidate.exists() {
+            return Some(candidate);
+        }
+        cursor = dir.parent().map(|p| p.to_path_buf());
+    }
+    None
+}
+
+async fn read_external_manifest(path: &std::path::Path) -> Result<Manifest, String> {
+    let data = tokio::fs::read_to_string(path)
+        .await
+        .map_err(|e| format!("Failed to read source manifest: {e}"))?;
+    serde_json::from_str(&data).map_err(|e| format!("Failed to parse source manifest: {e}"))
+}
+
+/// Preview: how many active manifest entries the source project has for a given zone.
+/// Returns 0 if no sibling `.arcanum/manifest.json` is found.
+#[tauri::command]
+pub async fn count_zone_assets(
+    source_zone_file: String,
+    source_zone_id: String,
+) -> Result<u32, String> {
+    let zone_path = PathBuf::from(&source_zone_file);
+    let Some(manifest_path) = find_sibling_manifest(&zone_path) else {
+        return Ok(0);
+    };
+    let manifest = read_external_manifest(&manifest_path).await?;
+    let count = manifest
+        .assets
+        .iter()
+        .filter(|a| a.context.zone == source_zone_id)
+        .count() as u32;
+    Ok(count)
+}
+
+/// Copy a zone's manifest entries from another Arcanum project's `.arcanum/manifest.json`
+/// into the active project's manifest. Blob files live globally in the app data dir and
+/// are already shared between projects on the same machine, so no file copying is needed
+/// for local imports. Entries whose blob is missing locally are reported as `missing_blobs`
+/// (they're still added to the manifest — the user can re-sync from R2 or regenerate).
+///
+/// `target_zone_id` rewrites `context.zone` on the imported entries so they group under
+/// the (possibly renamed) zone in the target project. Existing entries with the same
+/// content hash are skipped to avoid duplicates.
+#[tauri::command]
+pub async fn import_zone_assets(
+    app: AppHandle,
+    source_zone_file: String,
+    source_zone_id: String,
+    target_zone_id: String,
+) -> Result<ImportZoneAssetsResult, String> {
+    let zone_path = PathBuf::from(&source_zone_file);
+    let Some(src_manifest_path) = find_sibling_manifest(&zone_path) else {
+        return Ok(ImportZoneAssetsResult {
+            imported: 0,
+            skipped: 0,
+            missing_blobs: Vec::new(),
+            source_manifest_found: false,
+        });
+    };
+
+    let src_manifest = read_external_manifest(&src_manifest_path).await?;
+    let candidates: Vec<AssetEntry> = src_manifest
+        .assets
+        .into_iter()
+        .filter(|a| a.context.zone == source_zone_id)
+        .collect();
+
+    if candidates.is_empty() {
+        return Ok(ImportZoneAssetsResult {
+            imported: 0,
+            skipped: 0,
+            missing_blobs: Vec::new(),
+            source_manifest_found: true,
+        });
+    }
+
+    let blob_base = assets_dir(&app)?;
+    let mut missing_blobs = Vec::new();
+
+    let _lock = MANIFEST_LOCK.lock().await;
+    let mut target_manifest = load_manifest(&app).await?;
+    let existing_hashes: std::collections::HashSet<String> = target_manifest
+        .assets
+        .iter()
+        .map(|a| a.hash.clone())
+        .collect();
+
+    let mut imported = 0u32;
+    let mut skipped = 0u32;
+
+    for entry in candidates {
+        let blob_present = ["images", "video", "audio"]
+            .iter()
+            .any(|sub| blob_base.join(sub).join(&entry.file_name).exists());
+        if !blob_present {
+            missing_blobs.push(entry.file_name.clone());
+        }
+        if existing_hashes.contains(&entry.hash) {
+            skipped += 1;
+            continue;
+        }
+        let mut new_entry = entry;
+        new_entry.context.zone = target_zone_id.clone();
+        new_entry.sync_status = "local".to_string();
+        target_manifest.assets.push(new_entry);
+        imported += 1;
+    }
+
+    save_manifest(&app, &target_manifest).await?;
+
+    Ok(ImportZoneAssetsResult {
+        imported,
+        skipped,
+        missing_blobs,
+        source_manifest_found: true,
+    })
+}

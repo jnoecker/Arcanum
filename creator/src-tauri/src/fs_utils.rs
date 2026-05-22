@@ -1,6 +1,11 @@
 use base64::Engine;
 use serde::Serialize;
 use std::path::Path;
+use std::sync::atomic::{AtomicU64, Ordering};
+
+/// Monotonic counter to guarantee temp-file uniqueness even when two atomic
+/// writes inside the same process race in the same millisecond.
+static TMP_COUNTER: AtomicU64 = AtomicU64::new(0);
 
 /// Serialize `data` as pretty-printed JSON and write it to `path` atomically.
 /// `label` is used in error messages (e.g. "admin config", "settings").
@@ -20,6 +25,11 @@ pub async fn write_json_file<T: Serialize>(
 
 /// Write `bytes` to `path` atomically: temp file in the same directory,
 /// then rename over the target. Same-dir rename is atomic on NTFS and POSIX.
+///
+/// On Windows, `rename` over an existing file occasionally fails with
+/// `ERROR_ACCESS_DENIED (os error 5)` when antivirus or the Search Indexer
+/// momentarily holds the temp file or target open. The failure is transient
+/// — we retry with short backoff (≤ ~600ms total) before giving up.
 pub async fn atomic_write_bytes(path: &Path, bytes: &[u8], label: &str) -> Result<(), String> {
     let parent = path
         .parent()
@@ -28,20 +38,32 @@ pub async fn atomic_write_bytes(path: &Path, bytes: &[u8], label: &str) -> Resul
         .file_name()
         .ok_or_else(|| format!("Invalid path for {label} (no file name): {}", path.display()))?
         .to_string_lossy();
+    let seq = TMP_COUNTER.fetch_add(1, Ordering::Relaxed);
     let tmp_path = parent.join(format!(
-        ".{file_name}.tmp.{}",
+        ".{file_name}.tmp.{}.{}",
         std::process::id(),
+        seq,
     ));
 
     tokio::fs::write(&tmp_path, bytes)
         .await
         .map_err(|e| format!("Failed to write {label} temp file: {e}"))?;
 
-    if let Err(e) = tokio::fs::rename(&tmp_path, path).await {
-        let _ = tokio::fs::remove_file(&tmp_path).await;
-        return Err(format!("Failed to atomically replace {label}: {e}"));
+    const BACKOFFS_MS: &[u64] = &[20, 40, 80, 160, 320];
+    let mut last_err: Option<std::io::Error> = None;
+    for (attempt, delay) in std::iter::once(0u64).chain(BACKOFFS_MS.iter().copied()).enumerate() {
+        if attempt > 0 {
+            tokio::time::sleep(std::time::Duration::from_millis(delay)).await;
+        }
+        match tokio::fs::rename(&tmp_path, path).await {
+            Ok(()) => return Ok(()),
+            Err(e) => last_err = Some(e),
+        }
     }
-    Ok(())
+
+    let _ = tokio::fs::remove_file(&tmp_path).await;
+    let err = last_err.expect("rename loop always populates last_err on failure");
+    Err(format!("Failed to atomically replace {label}: {err}"))
 }
 
 pub fn detect_extension(bytes: &[u8]) -> &'static str {

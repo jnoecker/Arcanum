@@ -1165,6 +1165,7 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
           {selectedEntity ? (
             <SpringPanel contentKey={`entity:${selectedEntity.kind}:${selectedEntity.id}`} className="max-[1100px]:w-full">
               <EntityPanel
+                key={`${selectedEntity.kind}:${selectedEntity.id}`}
                 selection={selectedEntity}
                 world={zoneState.data}
                 onWorldChange={applyWorldChange}
@@ -1180,6 +1181,7 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
           ) : selectedRoomId ? (
             <SpringPanel contentKey={`room:${selectedRoomId}`} className="max-[1100px]:w-full">
               <RoomPanel
+                key={selectedRoomId}
                 zoneId={zoneId}
                 roomId={selectedRoomId}
                 world={zoneState.data}

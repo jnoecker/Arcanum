@@ -52,6 +52,55 @@ export interface LayoutMeasurement {
   height: number;
 }
 
+// ─── Layout memoization ──────────────────────────────────────────────
+//
+// `compassLayout` runs on every `updateZone` via ZoneEditor's useMemo. For
+// large zones the BFS + grid packing is the second-biggest cost after
+// `zoneToGraph` itself. The layout only depends on room IDs + exits +
+// startRoom — title/image/role flag edits leave it untouched. We cache the
+// result on a layout-only fingerprint and short-circuit when nothing
+// structural changed.
+//
+// The cache also stores the rawNodes ref it last saw. If `zoneToGraph` hit
+// its own cache, rawNodes is identical and we return the previous result
+// verbatim. If `zoneToGraph` missed but the layout fingerprint matches
+// (e.g. only a mob image changed), we reuse cached positions on the new
+// rawNodes refs.
+//
+// Skipped entirely when measurements are passed — that's the relayout path
+// which intentionally recomputes against fresh DOM dimensions.
+
+interface LayoutCacheEntry {
+  fingerprint: string;
+  rawNodesRef: Node[];
+  result: Node[];
+}
+
+let layoutCache: LayoutCacheEntry | null = null;
+
+/** Free the layout cache. Call when switching projects so the cache doesn't
+ *  pin memory for rooms that no longer exist. */
+export function clearLayoutCache(): void {
+  layoutCache = null;
+}
+
+function buildLayoutFingerprint(world: WorldFile): string {
+  const parts: string[] = [`s:${world.startRoom}`];
+  for (const [id, room] of Object.entries(world.rooms)) {
+    let exits = "";
+    if (room.exits) {
+      const exitParts: string[] = [];
+      for (const [dir, val] of Object.entries(room.exits)) {
+        const target = typeof val === "string" ? val : val.to;
+        exitParts.push(`${dir}>${target}`);
+      }
+      exits = exitParts.join(";");
+    }
+    parts.push(`r:${id}|${exits}`);
+  }
+  return parts.join("\n");
+}
+
 /**
  * Layout rooms on a grid using compass directions from exits.
  *
@@ -81,6 +130,31 @@ export function compassLayout(
   measurements?: Map<string, LayoutMeasurement>,
 ): Node[] {
   if (nodes.length === 0) return nodes;
+
+  // Cache hits only when not measuring (the measurement path is for the
+  // user-triggered relayout and must always recompute).
+  if (!measurements && layoutCache) {
+    if (layoutCache.rawNodesRef === nodes) {
+      return layoutCache.result;
+    }
+    const fp = buildLayoutFingerprint(world);
+    if (layoutCache.fingerprint === fp) {
+      // Layout structure unchanged, but rawNodes refs differ (zoneToGraph
+      // had to rebuild for a non-layout-affecting reason). Apply cached
+      // positions to the new rawNodes so downstream consumers still see
+      // a stable visual layout.
+      const posById = new Map<string, { x: number; y: number }>();
+      for (const n of layoutCache.result) {
+        posById.set(n.id, n.position);
+      }
+      const result = nodes.map((n) => {
+        const pos = posById.get(n.id);
+        return pos ? { ...n, position: pos } : n;
+      });
+      layoutCache = { fingerprint: fp, rawNodesRef: nodes, result };
+      return result;
+    }
+  }
 
   const allNodeIds = new Set(nodes.map((n) => n.id));
   const grid = new Map<string, string>();
@@ -204,14 +278,24 @@ export function compassLayout(
 
   // Heuristic: if many placements collided in the main BFS, the graph isn't
   // grid-embeddable. Throw it away and run a proper hierarchical layout.
+  let result: Node[];
   if (
     mainPlaced >= 8 &&
     mainCollisions / Math.max(1, mainPlaced) > COLLISION_FALLBACK_RATIO
   ) {
-    return dagreLayout(nodes, world, measurements);
+    result = dagreLayout(nodes, world, measurements);
+  } else {
+    result = gridToPixels(nodes, pos, measurements);
   }
 
-  return gridToPixels(nodes, pos, measurements);
+  if (!measurements) {
+    layoutCache = {
+      fingerprint: buildLayoutFingerprint(world),
+      rawNodesRef: nodes,
+      result,
+    };
+  }
+  return result;
 }
 
 /**

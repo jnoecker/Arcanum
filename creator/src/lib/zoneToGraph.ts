@@ -105,6 +105,72 @@ function cachedRoomData(
  *  doesn't pin memory for rooms that no longer exist. */
 export function clearRoomDataCache(): void {
   roomDataCache.clear();
+  graphCache = null;
+}
+
+// ─── Whole-graph memoization ─────────────────────────────────────────
+//
+// Without this, `zoneToGraph` rebuilds the entire nodes/edges arrays on every
+// `updateZone` — even edits that don't touch the graph at all (e.g. typing a
+// room description, editing mob stats). The per-room cache above stabilizes
+// inner `data` refs but the outer arrays are still fresh on each call, which
+// triggers ReactFlow reconciliation and the layout-sync effect downstream.
+//
+// We compute a fingerprint covering every field that affects what `zoneToGraph`
+// produces (graph nodes display + edge styling + cross-zone ghosts). On a hit,
+// we return the cached arrays verbatim so both the outer refs and the inner
+// data refs stay stable, and the layout effect skips entirely.
+
+interface GraphCacheEntry {
+  fingerprint: string;
+  nodes: Node[];
+  edges: Edge[];
+}
+
+let graphCache: GraphCacheEntry | null = null;
+
+function buildGraphFingerprint(world: WorldFile): string {
+  const parts: string[] = [`s:${world.startRoom}`];
+
+  for (const [id, room] of Object.entries(world.rooms)) {
+    const flags = `${room.bank ? 1 : 0}${room.tavern ? 1 : 0}${room.inn ? 1 : 0}${room.dungeon ? 1 : 0}${room.auction ? 1 : 0}${room.stylist ? 1 : 0}${room.housingBroker ? 1 : 0}`;
+    let exits = "";
+    if (room.exits) {
+      const exitParts: string[] = [];
+      for (const [dir, val] of Object.entries(room.exits)) {
+        if (typeof val === "string") {
+          exitParts.push(`${dir}>${val}`);
+        } else {
+          const door = val.door
+            ? `|d${val.door.locked ? "L" : ""}${val.door.closed ? "C" : ""}`
+            : "";
+          exitParts.push(`${dir}>${val.to}${door}`);
+        }
+      }
+      exits = exitParts.join(";");
+    }
+    parts.push(`r:${id}|${room.title}|${room.image ?? ""}|${room.station ?? ""}|${flags}|${exits}`);
+  }
+
+  for (const [id, mob] of Object.entries(world.mobs ?? {})) {
+    const spawns = (mob.spawns ?? [])
+      .map((s) => `${s.room}x${s.count ?? 1}`)
+      .join(",");
+    parts.push(`m:${id}|${mob.name}|${mob.image ?? ""}|${spawns}`);
+  }
+  for (const [id, item] of Object.entries(world.items ?? {})) {
+    if (item.room) {
+      parts.push(`i:${id}|${item.displayName}|${item.image ?? ""}|${item.room}`);
+    }
+  }
+  for (const [id, shop] of Object.entries(world.shops ?? {})) {
+    parts.push(`sh:${id}|${shop.name}|${shop.image ?? ""}|${shop.room}`);
+  }
+  for (const [id, node] of Object.entries(world.gatheringNodes ?? {})) {
+    parts.push(`g:${id}|${node.displayName}|${node.image ?? ""}|${node.room}`);
+  }
+
+  return parts.join("\n");
 }
 
 // ─── Helpers ────────────────────────────────────────────────────────
@@ -144,6 +210,11 @@ export function zoneToGraph(
   nodes: Node[];
   edges: Edge[];
 } {
+  const fingerprint = buildGraphFingerprint(world);
+  if (graphCache && graphCache.fingerprint === fingerprint) {
+    return { nodes: graphCache.nodes, edges: graphCache.edges };
+  }
+
   // Count entities per room
   const mobsPerRoom = new Map<string, number>();
   const itemsPerRoom = new Map<string, number>();
@@ -344,5 +415,6 @@ export function zoneToGraph(
     });
   }
 
+  graphCache = { fingerprint, nodes, edges };
   return { nodes, edges };
 }

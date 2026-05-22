@@ -5,6 +5,7 @@ import { type Island } from "@/lib/panelRegistry";
 import { useSidebarStore } from "@/stores/sidebarStore";
 import { clearImageCache } from "@/lib/useImageSrc";
 import { clearRoomDataCache } from "@/lib/zoneToGraph";
+import { clearLayoutCache } from "@/lib/dagreLayout";
 import type {
   Project,
   Tab,
@@ -106,6 +107,7 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
     // best wasteful and at worst stale.
     clearImageCache();
     clearRoomDataCache();
+    clearLayoutCache();
     set({
       project,
       tabs: [],
@@ -122,6 +124,7 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
   closeProject: () => {
     clearImageCache();
     clearRoomDataCache();
+    clearLayoutCache();
     invoke("set_active_project_dir", { projectDir: null }).catch(() => {});
     set({ project: null, tabs: [], activeTabId: null, mapView: "world" });
   },

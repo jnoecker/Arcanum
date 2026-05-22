@@ -285,14 +285,19 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
     selectedRoomIdRef.current = selectedRoomId;
   }, [selectedRoomId]);
 
-  // Keep nodes/edges in sync with layout when WorldFile changes,
-  // but preserve positions of existing nodes. For brand-new nodes, place
-  // them next to the currently selected room (or in the viewport center)
-  // so the user doesn't have to hunt for them.
-  const prevWorldRef = useRef<WorldFile | null>(null);
+  // Keep nodes/edges in sync with layout when the cached layout output
+  // actually changes, preserving positions of existing nodes. For brand-new
+  // nodes, place them next to the currently selected room (or in the viewport
+  // center) so the user doesn't have to hunt for them.
+  //
+  // Gating on layoutNodes/Edges *ref* equality (not zoneState.data identity)
+  // means edits that don't affect the graph — typing a description, editing
+  // stats, etc. — fall through to a no-op here because zoneToGraph/compassLayout
+  // both return their cached refs.
+  const prevLayoutNodesRef = useRef<typeof layoutNodes | null>(null);
   useEffect(() => {
-    if (!zoneState || zoneState.data === prevWorldRef.current) return;
-    prevWorldRef.current = zoneState.data;
+    if (layoutNodes === prevLayoutNodesRef.current) return;
+    prevLayoutNodesRef.current = layoutNodes;
     setNodes((currentNodes) => {
       const existingPositions = new Map(
         currentNodes.map((node) => [node.id, node.position]),
@@ -333,8 +338,14 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
         return node;
       });
     });
+  }, [layoutNodes, setNodes, reactFlow]);
+
+  const prevLayoutEdgesRef = useRef<typeof layoutEdges | null>(null);
+  useEffect(() => {
+    if (layoutEdges === prevLayoutEdgesRef.current) return;
+    prevLayoutEdgesRef.current = layoutEdges;
     setEdges(layoutEdges);
-  }, [layoutEdges, layoutNodes, setEdges, setNodes, zoneState, reactFlow]);
+  }, [layoutEdges, setEdges]);
 
   // ─── Re-layout ───────────────────────────────────────────────────
   // Discard manual positions and re-run the BFS/compass layout using the

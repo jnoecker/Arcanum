@@ -2,7 +2,7 @@ import { readDir, readTextFile } from "@tauri-apps/plugin-fs";
 import { exists } from "@tauri-apps/plugin-fs";
 import { parseDocument } from "yaml";
 import type { WorldFile } from "@/types/world";
-import type { AppConfig } from "@/types/config";
+import type { AppConfig, RaceDefinitionConfig } from "@/types/config";
 import type { Project } from "@/types/project";
 import { normalizeExitDirections, normalizeMobSpawns, mergeTrainersIntoMobs } from "@/lib/zoneEdits";
 import {
@@ -101,7 +101,7 @@ export function parseAppConfigYaml(content: string): AppConfig {
     commands: withDefaults(parseMapSection(engine.commands, "entries"), DEFAULT_COMMANDS),
     group: parseSimpleSection(engine.group, { maxSize: 5, inviteTimeoutMs: 60000, xpBonusPerMember: 0.1 }),
     classes: classesConfig,
-    races: parseMapSection(engine.races, "definitions"),
+    races: normalizeRaceStatMods(parseMapSection(engine.races, "definitions"), statsConfig.definitions),
     equipmentSlots: normalizeEquipmentSlotKeys(parseMapSection(engine.equipment, "slots")),
     characterCreation: parseCharacterCreationConfig(engine.characterCreation),
     genders: parseMapSection(engine, "genders"),
@@ -1506,7 +1506,10 @@ async function loadSplitConfig(projectDir: string): Promise<AppConfig | null> {
       classes: classesConfig,
 
       // races.yaml
-      races: asRecord(racesRaw.definitions ?? racesRaw),
+      races: normalizeRaceStatMods(
+        asRecord(racesRaw.definitions ?? racesRaw),
+        statsConfig.definitions,
+      ),
 
       // equipment.yaml
       equipmentSlots: normalizeEquipmentSlotKeys(asRecord(equipmentRaw.slots ?? equipmentRaw)),
@@ -1577,6 +1580,61 @@ export function normalizeEquipmentSlotKeys<T>(slots: Record<string, T>): Record<
   for (const [id, slot] of Object.entries(slots)) {
     const key = id.trim().toLowerCase();
     if (key) out[key] = slot;
+  }
+  return out;
+}
+
+/**
+ * Build a lookup from stat aliases (id / displayName / abbreviation, lowercased)
+ * to the canonical stat id. The Race editor reads `statMods[statId]`, so any
+ * race that stores keys like `strength` or `intelligence` (often emitted by
+ * the LLM scaffold or by hand-edited YAML) reads as 0 in the UI and clicks
+ * generate orphan keys alongside the originals. Normalizing on read heals
+ * those projects.
+ */
+export function buildStatAliasMap(
+  statDefs: AppConfig["stats"]["definitions"],
+): Map<string, string> {
+  const aliases = new Map<string, string>();
+  for (const [id, def] of Object.entries(statDefs)) {
+    aliases.set(id.toLowerCase(), id);
+    if (def.displayName) aliases.set(def.displayName.toLowerCase(), id);
+    if (def.abbreviation) aliases.set(def.abbreviation.toLowerCase(), id);
+  }
+  return aliases;
+}
+
+/** Remap statMod keys to the canonical stat id; sum colliding aliases; drop zeros. */
+export function normalizeStatMods(
+  mods: Record<string, number> | undefined,
+  statDefs: AppConfig["stats"]["definitions"],
+): Record<string, number> | undefined {
+  if (!mods) return undefined;
+  const aliases = buildStatAliasMap(statDefs);
+  const out: Record<string, number> = {};
+  for (const [key, value] of Object.entries(mods)) {
+    if (typeof value !== "number" || !Number.isFinite(value)) continue;
+    const canonical = statDefs[key] ? key : aliases.get(key.trim().toLowerCase()) ?? key;
+    out[canonical] = (out[canonical] ?? 0) + value;
+  }
+  for (const k of Object.keys(out)) {
+    if (out[k] === 0) delete out[k];
+  }
+  return Object.keys(out).length > 0 ? out : undefined;
+}
+
+/** Apply `normalizeStatMods` to every race in a registry. */
+export function normalizeRaceStatMods(
+  races: Record<string, RaceDefinitionConfig>,
+  statDefs: AppConfig["stats"]["definitions"],
+): Record<string, RaceDefinitionConfig> {
+  const out: Record<string, RaceDefinitionConfig> = {};
+  for (const [id, race] of Object.entries(races)) {
+    if (!race.statMods) {
+      out[id] = race;
+      continue;
+    }
+    out[id] = { ...race, statMods: normalizeStatMods(race.statMods, statDefs) };
   }
   return out;
 }

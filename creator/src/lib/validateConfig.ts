@@ -203,57 +203,113 @@ export function validateConfig(config: AppConfig): ValidationIssue[] {
 
   // ─── Pets ─────────────────────────────────────────────────────
   const petIds = new Set(Object.keys(config.pets ?? {}));
+  const petsCfg = config.petsConfig;
+  if (petsCfg) {
+    if (petsCfg.maxHpRatio != null && petsCfg.maxHpRatio < 0) {
+      issues.push({ severity: "error", entity: "pets", message: "maxHpRatio must be >= 0" });
+    }
+    if (petsCfg.maxDamageRatio != null && petsCfg.maxDamageRatio < 0) {
+      issues.push({ severity: "error", entity: "pets", message: "maxDamageRatio must be >= 0" });
+    }
+    if (petsCfg.maxArmorRatio != null && petsCfg.maxArmorRatio < 0) {
+      issues.push({ severity: "error", entity: "pets", message: "maxArmorRatio must be >= 0" });
+    }
+  }
   for (const [id, pet] of Object.entries(config.pets ?? {})) {
+    const entity = `pet:${id}`;
     if (!pet.name?.trim()) {
-      issues.push({
-        severity: "error",
-        entity: `pet:${id}`,
-        message: "Name is required",
-      });
+      issues.push({ severity: "error", entity, message: "Name is required" });
     }
-    if (pet.hp < 1) {
-      issues.push({
-        severity: "error",
-        entity: `pet:${id}`,
-        message: "HP must be at least 1",
-      });
+    if (pet.hpRatio < 0) {
+      issues.push({ severity: "error", entity, message: "hpRatio must be >= 0" });
     }
-    if (pet.minDamage > pet.maxDamage) {
+    if (pet.damageRatio < 0) {
+      issues.push({ severity: "error", entity, message: "damageRatio must be >= 0" });
+    }
+    if (pet.armorRatio < 0) {
+      issues.push({ severity: "error", entity, message: "armorRatio must be >= 0" });
+    }
+    if (pet.baseHp < 1) {
+      issues.push({ severity: "error", entity, message: "Base HP must be at least 1" });
+    }
+    if (pet.baseMinDamage < 1) {
+      issues.push({ severity: "error", entity, message: "Base min damage must be at least 1" });
+    }
+    if (pet.baseMaxDamage < pet.baseMinDamage) {
       issues.push({
         severity: "warning",
-        entity: `pet:${id}`,
-        message: "Min damage exceeds max damage",
+        entity,
+        message: "Base max damage is below base min damage",
+      });
+    }
+    if (pet.baseArmor < 0) {
+      issues.push({ severity: "error", entity, message: "Base armor must be >= 0" });
+    }
+    // Caps on the world bite per-template ratios; warn so the user knows the cap will trim them.
+    if (petsCfg?.maxHpRatio != null && pet.hpRatio > petsCfg.maxHpRatio) {
+      issues.push({
+        severity: "warning",
+        entity,
+        message: `hpRatio ${pet.hpRatio} exceeds the world cap (${petsCfg.maxHpRatio}); it will be clamped at summon time`,
+      });
+    }
+    if (petsCfg?.maxDamageRatio != null && pet.damageRatio > petsCfg.maxDamageRatio) {
+      issues.push({
+        severity: "warning",
+        entity,
+        message: `damageRatio ${pet.damageRatio} exceeds the world cap (${petsCfg.maxDamageRatio}); it will be clamped at summon time`,
+      });
+    }
+    if (petsCfg?.maxArmorRatio != null && pet.armorRatio > petsCfg.maxArmorRatio) {
+      issues.push({
+        severity: "warning",
+        entity,
+        message: `armorRatio ${pet.armorRatio} exceeds the world cap (${petsCfg.maxArmorRatio}); it will be clamped at summon time`,
       });
     }
     const petIsTank = (pet.threatMultiplier ?? 0) > 0;
     for (const [sid, spell] of Object.entries(pet.spells ?? {})) {
-      const entity = `pet:${id}.spells.${sid}`;
+      const spellEntity = `pet:${id}.spells.${sid}`;
       if (spell.statusEffectId && !statusEffectIds.has(spell.statusEffectId)) {
         issues.push({
           severity: "error",
-          entity,
+          entity: spellEntity,
           message: `Unknown status effect "${spell.statusEffectId}"`,
         });
       }
       if (spell.weight != null && spell.weight < 1) {
         issues.push({
           severity: "warning",
-          entity,
+          entity: spellEntity,
           message: "weight should be ≥ 1 (relative weight in auto-cast roll)",
         });
       }
       if (spell.cooldownMs != null && spell.cooldownMs <= 0) {
         issues.push({
           severity: "warning",
-          entity,
+          entity: spellEntity,
           message: "cooldownMs should be > 0 (auto-cast will pick this every tick otherwise)",
         });
       }
       if ((spell.threatBonus ?? 0) > 0 && !petIsTank) {
         issues.push({
           severity: "warning",
-          entity,
+          entity: spellEntity,
           message: "threatBonus has no effect when the pet's threatMultiplier is 0 (DPS pet)",
+        });
+      }
+      if (spell.damageRatio != null && spell.damageRatio < 0) {
+        issues.push({
+          severity: "error",
+          entity: spellEntity,
+          message: "damageRatio must be >= 0",
+        });
+      }
+      if (spell.healRatio != null && spell.healRatio < 0) {
+        issues.push({
+          severity: "error",
+          entity: spellEntity,
+          message: "healRatio must be >= 0",
         });
       }
     }

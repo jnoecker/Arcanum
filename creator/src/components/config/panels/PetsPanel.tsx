@@ -9,10 +9,13 @@ import { SectionCard } from "@/components/ui/SectionCard";
 function defaultPetDefinition(displayName: string): PetDefinitionConfig {
   return {
     name: displayName.trim() || "New Companion",
-    hp: 20,
-    minDamage: 1,
-    maxDamage: 4,
-    armor: 0,
+    hpRatio: 0.6,
+    damageRatio: 0.5,
+    armorRatio: 0.4,
+    baseHp: 20,
+    baseMinDamage: 1,
+    baseMaxDamage: 4,
+    baseArmor: 0,
   };
 }
 
@@ -104,23 +107,26 @@ export function PetsPanel({ config, onChange }: ConfigPanelProps) {
   }, [pets, selectedId, patchPets]);
 
   const selected = selectedId ? pets[selectedId] ?? null : null;
-  const manualGrace = config.petsConfig?.manualSkillGraceMs ?? 8000;
+  const petsCfg = config.petsConfig ?? {};
+  const manualGrace = petsCfg.manualSkillGraceMs ?? 8000;
+  const maxHpRatio = petsCfg.maxHpRatio ?? 1.0;
+  const maxDamageRatio = petsCfg.maxDamageRatio ?? 0.8;
+  const maxArmorRatio = petsCfg.maxArmorRatio ?? 1.0;
+
+  const patchTopLevel = (patch: Partial<typeof petsCfg>) =>
+    onChange({ petsConfig: { ...petsCfg, ...patch } });
 
   return (
     <div className="flex flex-col gap-4">
       <SectionCard title="Pet System">
-        <div className="grid grid-cols-1 gap-3 sm:max-w-sm">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <label className="flex flex-col gap-1">
             <span className="font-display text-2xs uppercase tracking-wider text-text-muted">
               Manual Skill Grace (ms)
             </span>
             <NumberInput
               value={manualGrace}
-              onCommit={(v) =>
-                onChange({
-                  petsConfig: { ...(config.petsConfig ?? {}), manualSkillGraceMs: v ?? 8000 },
-                })
-              }
+              onCommit={(v) => patchTopLevel({ manualSkillGraceMs: v ?? 8000 })}
               min={0}
               dense
             />
@@ -128,6 +134,31 @@ export function PetsPanel({ config, onChange }: ConfigPanelProps) {
               Auto-cast suppression window after a manual skill trigger. Default 8000.
             </span>
           </label>
+          <div className="flex flex-col gap-2">
+            <span className="font-display text-2xs uppercase tracking-wider text-text-muted">
+              Global Scaling Caps
+            </span>
+            <div className="grid grid-cols-3 gap-2">
+              <RatioField
+                label="Max HP"
+                value={maxHpRatio}
+                onCommit={(v) => patchTopLevel({ maxHpRatio: v ?? 1.0 })}
+              />
+              <RatioField
+                label="Max DMG"
+                value={maxDamageRatio}
+                onCommit={(v) => patchTopLevel({ maxDamageRatio: v ?? 0.8 })}
+              />
+              <RatioField
+                label="Max Armor"
+                value={maxArmorRatio}
+                onCommit={(v) => patchTopLevel({ maxArmorRatio: v ?? 1.0 })}
+              />
+            </div>
+            <span className="text-2xs text-text-muted/80">
+              Per-template ratios are clamped at summon time. 1.0 means "may match the owner."
+            </span>
+          </div>
         </div>
       </SectionCard>
 
@@ -158,6 +189,25 @@ export function PetsPanel({ config, onChange }: ConfigPanelProps) {
         </div>
       </div>
     </div>
+  );
+}
+
+function RatioField({
+  label,
+  value,
+  onCommit,
+}: {
+  label: string;
+  value: number;
+  onCommit: (v: number | undefined) => void;
+}) {
+  return (
+    <label className="flex flex-col gap-1">
+      <span className="font-display text-[0.6rem] uppercase tracking-[0.18em] text-text-muted/80">
+        {label}
+      </span>
+      <NumberInput value={value} onCommit={onCommit} min={0} step={0.05} dense />
+    </label>
   );
 }
 

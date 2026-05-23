@@ -11,6 +11,7 @@ import {
   raceToPlain,
   housingToPlain,
   petToPlain,
+  hasPetsTopLevel,
   enchantmentToPlain,
   buildMonolithicConfigObject,
   normalizeLotteryConfig,
@@ -249,10 +250,15 @@ async function saveSplitConfig(projectDir: string): Promise<void> {
 
     write("pets", (() => {
       const hasDefs = Object.keys(config.pets ?? {}).length > 0;
-      const hasGrace = config.petsConfig?.manualSkillGraceMs != null;
-      if (!hasDefs && !hasGrace) return {};
+      const hasTop = hasPetsTopLevel(config.petsConfig);
+      if (!hasDefs && !hasTop) return {};
       const out: Record<string, unknown> = {};
-      if (hasGrace) out.manualSkillGraceMs = config.petsConfig!.manualSkillGraceMs;
+      if (config.petsConfig?.manualSkillGraceMs != null) {
+        out.manualSkillGraceMs = config.petsConfig.manualSkillGraceMs;
+      }
+      if (config.petsConfig?.maxHpRatio != null) out.maxHpRatio = config.petsConfig.maxHpRatio;
+      if (config.petsConfig?.maxDamageRatio != null) out.maxDamageRatio = config.petsConfig.maxDamageRatio;
+      if (config.petsConfig?.maxArmorRatio != null) out.maxArmorRatio = config.petsConfig.maxArmorRatio;
       if (hasDefs) out.definitions = mapEntries(config.pets, petToPlain);
       return out;
     })()),

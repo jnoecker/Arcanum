@@ -410,11 +410,14 @@ export function buildMonolithicConfigObject(
   }
 
   // Pets
-  if (Object.keys(c.pets ?? {}).length > 0 || c.petsConfig?.manualSkillGraceMs != null) {
+  if (Object.keys(c.pets ?? {}).length > 0 || hasPetsTopLevel(c.petsConfig)) {
     const petsOut: Record<string, unknown> = {};
     if (c.petsConfig?.manualSkillGraceMs != null) {
       petsOut.manualSkillGraceMs = c.petsConfig.manualSkillGraceMs;
     }
+    if (c.petsConfig?.maxHpRatio != null) petsOut.maxHpRatio = c.petsConfig.maxHpRatio;
+    if (c.petsConfig?.maxDamageRatio != null) petsOut.maxDamageRatio = c.petsConfig.maxDamageRatio;
+    if (c.petsConfig?.maxArmorRatio != null) petsOut.maxArmorRatio = c.petsConfig.maxArmorRatio;
     petsOut.definitions = mapEntries(c.pets, petToPlain);
     engine.pets = petsOut;
   }
@@ -831,13 +834,26 @@ export function raceToPlain(race: AppConfig["races"][string]): Record<string, un
   return obj;
 }
 
+export function hasPetsTopLevel(cfg: AppConfig["petsConfig"]): boolean {
+  if (!cfg) return false;
+  return (
+    cfg.manualSkillGraceMs != null ||
+    cfg.maxHpRatio != null ||
+    cfg.maxDamageRatio != null ||
+    cfg.maxArmorRatio != null
+  );
+}
+
 export function petToPlain(pet: AppConfig["pets"][string]): Record<string, unknown> {
   const obj: Record<string, unknown> = {
     name: pet.name,
-    hp: pet.hp,
-    minDamage: pet.minDamage,
-    maxDamage: pet.maxDamage,
-    armor: pet.armor,
+    hpRatio: pet.hpRatio,
+    damageRatio: pet.damageRatio,
+    armorRatio: pet.armorRatio,
+    baseHp: pet.baseHp,
+    baseMinDamage: pet.baseMinDamage,
+    baseMaxDamage: pet.baseMaxDamage,
+    baseArmor: pet.baseArmor,
   };
   if (pet.description) obj.description = pet.description;
   if (pet.image) obj.image = normalizeAssetRef(pet.image);
@@ -857,6 +873,8 @@ function petSpellToPlain(spell: import("@/types/config").PetSpellConfig): Record
     message: spell.message,
   };
   if (spell.roomMessage) obj.roomMessage = spell.roomMessage;
+  if (spell.damageRatio != null) obj.damageRatio = spell.damageRatio;
+  if (spell.healRatio != null) obj.healRatio = spell.healRatio;
   if (spell.minDamage != null) obj.minDamage = spell.minDamage;
   if (spell.maxDamage != null) obj.maxDamage = spell.maxDamage;
   if (spell.healMin) obj.healMin = spell.healMin;

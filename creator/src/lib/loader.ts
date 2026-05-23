@@ -1245,13 +1245,24 @@ function parsePetDefinitions(raw: unknown): Record<string, import("@/types/confi
   for (const [id, v] of Object.entries(defs)) {
     if (!v || typeof v !== "object") continue;
     const pet = v as Record<string, unknown>;
+    // Legacy migration: pre-ratio YAML stored flat `hp` / `minDamage` /
+    // `maxDamage` / `armor`. The server has since renamed those to the
+    // `base*` floors and added per-ratio scaling. Fall back to the legacy
+    // keys when the new ones are missing so existing projects don't reset.
+    const baseHp = asNumber(pet.baseHp, asNumber(pet.hp, 20));
+    const baseMinDamage = asNumber(pet.baseMinDamage, asNumber(pet.minDamage, 1));
+    const baseMaxDamage = asNumber(pet.baseMaxDamage, asNumber(pet.maxDamage, 4));
+    const baseArmor = asNumber(pet.baseArmor, asNumber(pet.armor, 0));
     result[id] = {
       name: asString(pet.name, "a pet"),
       description: typeof pet.description === "string" ? pet.description : undefined,
-      hp: asNumber(pet.hp, 20),
-      minDamage: asNumber(pet.minDamage, 1),
-      maxDamage: asNumber(pet.maxDamage, 4),
-      armor: asNumber(pet.armor, 0),
+      hpRatio: asNumber(pet.hpRatio, 0.6),
+      damageRatio: asNumber(pet.damageRatio, 0.5),
+      armorRatio: asNumber(pet.armorRatio, 0.4),
+      baseHp,
+      baseMinDamage,
+      baseMaxDamage,
+      baseArmor,
       threatMultiplier: typeof pet.threatMultiplier === "number" ? pet.threatMultiplier : undefined,
       defaultAttack: typeof pet.defaultAttack === "string" ? pet.defaultAttack : undefined,
       spells: parsePetSpells(pet.spells),
@@ -1271,6 +1282,8 @@ function parsePetSpells(raw: unknown): Record<string, import("@/types/config").P
       displayName: asString(s.displayName, ""),
       message: asString(s.message, ""),
       roomMessage: typeof s.roomMessage === "string" ? s.roomMessage : undefined,
+      damageRatio: typeof s.damageRatio === "number" ? s.damageRatio : undefined,
+      healRatio: typeof s.healRatio === "number" ? s.healRatio : undefined,
       minDamage: typeof s.minDamage === "number" ? s.minDamage : undefined,
       maxDamage: typeof s.maxDamage === "number" ? s.maxDamage : undefined,
       healMin: typeof s.healMin === "number" ? s.healMin : undefined,
@@ -1288,8 +1301,17 @@ function parsePetSpells(raw: unknown): Record<string, import("@/types/config").P
 function parsePetsTopLevel(raw: unknown): import("@/types/config").PetsTopLevelConfig | undefined {
   if (!raw || typeof raw !== "object") return undefined;
   const s = raw as Record<string, unknown>;
-  if (typeof s.manualSkillGraceMs !== "number") return undefined;
-  return { manualSkillGraceMs: s.manualSkillGraceMs };
+  const hasGrace = typeof s.manualSkillGraceMs === "number";
+  const hasHpCap = typeof s.maxHpRatio === "number";
+  const hasDmgCap = typeof s.maxDamageRatio === "number";
+  const hasArmorCap = typeof s.maxArmorRatio === "number";
+  if (!hasGrace && !hasHpCap && !hasDmgCap && !hasArmorCap) return undefined;
+  const out: import("@/types/config").PetsTopLevelConfig = {};
+  if (hasGrace) out.manualSkillGraceMs = s.manualSkillGraceMs as number;
+  if (hasHpCap) out.maxHpRatio = s.maxHpRatio as number;
+  if (hasDmgCap) out.maxDamageRatio = s.maxDamageRatio as number;
+  if (hasArmorCap) out.maxArmorRatio = s.maxArmorRatio as number;
+  return out;
 }
 
 function parseFriendsConfig(raw: unknown): AppConfig["friends"] {

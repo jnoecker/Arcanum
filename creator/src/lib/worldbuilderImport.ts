@@ -139,6 +139,10 @@ function buildDoc(nodes: TipTapNode[]): string {
   return JSON.stringify({ type: "doc", content: nodes });
 }
 
+function formatPct(ratio: number): string {
+  return `${Math.round(ratio * 100)}%`;
+}
+
 // ─── Helpers ──────────────────────────────────────────────────────
 
 function slugify(input: string): string {
@@ -317,9 +321,9 @@ function convertPet(id: string, pet: PetDefinitionConfig): Omit<WorldbuilderCand
   nodes.push(heading(2, "Combat"));
   nodes.push(
     bulletList([
-      `HP: ${pet.hp}`,
-      `Damage: ${pet.minDamage}–${pet.maxDamage}`,
-      `Armor: ${pet.armor}`,
+      `HP: ${formatPct(pet.hpRatio)} of owner (floor ${pet.baseHp})`,
+      `Damage: ${formatPct(pet.damageRatio)} of owner (floor ${pet.baseMinDamage}–${pet.baseMaxDamage})`,
+      `Armor: ${formatPct(pet.armorRatio)} of owner (floor ${pet.baseArmor})`,
     ]),
   );
 

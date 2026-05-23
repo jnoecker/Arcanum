@@ -52,6 +52,26 @@ function petSpellPrompt(
   return `${preamble}, a game ability icon for "${label}" — a skill cast by a ${pet.name || "companion"}, ${flavor}, centered square composition like an RPG ability sprite, iconic symbol rendered as flowing energy, no text, no figures`;
 }
 
+function formatPct(ratio: number): string {
+  return `${Math.round(ratio * 100)}%`;
+}
+
+function describeSpellDamage(spell: PetSpellConfig): string | null {
+  if (spell.damageRatio != null) return `Damage: ${spell.damageRatio.toFixed(1)}× pet's swing`;
+  if (spell.minDamage != null || spell.maxDamage != null) {
+    return `Damage: ${spell.minDamage ?? 1}-${spell.maxDamage ?? spell.minDamage ?? 1} (flat)`;
+  }
+  return null;
+}
+
+function describeSpellHeal(spell: PetSpellConfig): string | null {
+  if (spell.healRatio != null) return `Heal: ${formatPct(spell.healRatio)} of owner maxHp`;
+  if ((spell.healMin ?? 0) > 0 || (spell.healMax ?? 0) > 0) {
+    return `Heal: ${spell.healMin ?? 0}-${spell.healMax ?? 0} (flat)`;
+  }
+  return null;
+}
+
 function buildPetSpellContext(
   pet: PetDefinitionConfig,
   spell: PetSpellConfig,
@@ -62,12 +82,8 @@ function buildPetSpellContext(
     `Spell: ${spell.displayName || spellId}`,
     spell.message ? `Message: ${spell.message}` : null,
     spell.statusEffectId ? `Applies status: ${spell.statusEffectId}` : null,
-    spell.minDamage != null && spell.maxDamage != null
-      ? `Damage: ${spell.minDamage}-${spell.maxDamage}`
-      : null,
-    spell.healMin != null && spell.healMax != null && (spell.healMin || spell.healMax)
-      ? `Heal: ${spell.healMin}-${spell.healMax}`
-      : null,
+    describeSpellDamage(spell),
+    describeSpellHeal(spell),
   ];
   return parts.filter(Boolean).join("\n");
 }
@@ -76,9 +92,9 @@ function buildPetContext(pet: PetDefinitionConfig): string {
   const parts = [
     `Pet: ${pet.name}`,
     pet.description ? `Description: ${pet.description}` : null,
-    `HP: ${pet.hp}`,
-    `Damage: ${pet.minDamage}-${pet.maxDamage}`,
-    `Armor: ${pet.armor}`,
+    `HP: ${formatPct(pet.hpRatio)} of owner (floor ${pet.baseHp})`,
+    `Damage: ${formatPct(pet.damageRatio)} of owner (floor ${pet.baseMinDamage}-${pet.baseMaxDamage})`,
+    `Armor: ${formatPct(pet.armorRatio)} of owner (floor ${pet.baseArmor})`,
   ];
   return parts.filter(Boolean).join("\n");
 }
@@ -206,32 +222,67 @@ function CombatStatsCard({
   const spellIds = Object.keys(pet.spells ?? {});
   return (
     <SectionCard title="Combat Stats">
-      <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
-        <StatBlock
+      <div className="flex flex-col gap-2">
+        <ScalingRow
           label="HP"
-          value={pet.hp}
-          onCommit={(v) => onPatch({ hp: v ?? 20 })}
           tone="rose"
+          ratio={pet.hpRatio}
+          onRatio={(v) => onPatch({ hpRatio: v ?? 0.6 })}
+          ratioHint="× owner.maxHp"
+          floorInputs={
+            <FloorInput
+              label="Floor"
+              value={pet.baseHp}
+              onCommit={(v) => onPatch({ baseHp: v ?? 20 })}
+              min={1}
+            />
+          }
         />
-        <StatBlock
-          label="Min DMG"
-          value={pet.minDamage}
-          onCommit={(v) => onPatch({ minDamage: v ?? 1 })}
+        <ScalingRow
+          label="Damage"
           tone="warm"
+          ratio={pet.damageRatio}
+          onRatio={(v) => onPatch({ damageRatio: v ?? 0.5 })}
+          ratioHint="× owner damage"
+          floorInputs={
+            <div className="flex items-center gap-1">
+              <FloorInput
+                label="Min"
+                value={pet.baseMinDamage}
+                onCommit={(v) => onPatch({ baseMinDamage: v ?? 1 })}
+                min={1}
+              />
+              <span className="px-0.5 text-text-muted/60">–</span>
+              <FloorInput
+                label="Max"
+                value={pet.baseMaxDamage}
+                onCommit={(v) => onPatch({ baseMaxDamage: v ?? 4 })}
+                min={1}
+              />
+            </div>
+          }
         />
-        <StatBlock
-          label="Max DMG"
-          value={pet.maxDamage}
-          onCommit={(v) => onPatch({ maxDamage: v ?? 4 })}
-          tone="warm"
-        />
-        <StatBlock
+        <ScalingRow
           label="Armor"
-          value={pet.armor}
-          onCommit={(v) => onPatch({ armor: v ?? 0 })}
           tone="blue"
+          ratio={pet.armorRatio}
+          onRatio={(v) => onPatch({ armorRatio: v ?? 0.4 })}
+          ratioHint="× owner armor"
+          floorInputs={
+            <FloorInput
+              label="Floor"
+              value={pet.baseArmor}
+              onCommit={(v) => onPatch({ baseArmor: v ?? 0 })}
+              min={0}
+            />
+          }
         />
       </div>
+
+      <p className="mt-2 rounded-lg border border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] px-2.5 py-1.5 text-2xs text-text-muted/80">
+        At summon, each stat = max(ratio × owner stat, floor). Ratios are clamped by the
+        global caps in <strong className="font-semibold text-text-secondary">Pet System</strong>.
+      </p>
 
       <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
         <FieldLabel label="Role">
@@ -257,6 +308,71 @@ function CombatStatsCard({
         </FieldLabel>
       </div>
     </SectionCard>
+  );
+}
+
+function ScalingRow({
+  label,
+  tone,
+  ratio,
+  onRatio,
+  ratioHint,
+  floorInputs,
+}: {
+  label: string;
+  tone: "rose" | "warm" | "blue";
+  ratio: number;
+  onRatio: (v: number | undefined) => void;
+  ratioHint: string;
+  floorInputs: React.ReactNode;
+}) {
+  const toneClass =
+    tone === "rose"
+      ? "border-status-error/30 bg-status-error/[0.06]"
+      : tone === "warm"
+        ? "border-accent/30 bg-accent/[0.06]"
+        : "border-stellar-blue/30 bg-stellar-blue/[0.06]";
+  return (
+    <div
+      className={cx(
+        "grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 rounded-xl border px-3 py-2",
+        toneClass,
+      )}
+    >
+      <p className="font-display text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-text-muted">
+        {label}
+      </p>
+      <div className="flex items-center gap-2">
+        <div className="w-20">
+          <NumberInput value={ratio} onCommit={onRatio} min={0} step={0.05} dense />
+        </div>
+        <span className="font-mono text-2xs text-text-muted/70">{ratioHint}</span>
+      </div>
+      {floorInputs}
+    </div>
+  );
+}
+
+function FloorInput({
+  label,
+  value,
+  onCommit,
+  min,
+}: {
+  label: string;
+  value: number;
+  onCommit: (v: number | undefined) => void;
+  min: number;
+}) {
+  return (
+    <label className="flex items-center gap-1.5">
+      <span className="font-display text-[0.55rem] uppercase tracking-[0.18em] text-text-muted/70">
+        {label}
+      </span>
+      <div className="w-16">
+        <NumberInput value={value} onCommit={onCommit} min={min} dense />
+      </div>
+    </label>
   );
 }
 
@@ -567,34 +683,15 @@ function SpellRow({
             </FieldLabel>
           </div>
 
-          <MessageHelp hasDamage={(spell.minDamage ?? 0) > 0 || (spell.maxDamage ?? 0) > 0} />
+          <MessageHelp
+            hasDamage={
+              spell.damageRatio != null ||
+              (spell.minDamage ?? 0) > 0 ||
+              (spell.maxDamage ?? 0) > 0
+            }
+          />
 
-          <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
-            <StatBlock
-              label="Min DMG"
-              value={spell.minDamage ?? 0}
-              onCommit={(v) => onUpdate("minDamage", v || undefined)}
-              tone="warm"
-            />
-            <StatBlock
-              label="Max DMG"
-              value={spell.maxDamage ?? 0}
-              onCommit={(v) => onUpdate("maxDamage", v || undefined)}
-              tone="warm"
-            />
-            <StatBlock
-              label="Heal Min"
-              value={spell.healMin ?? 0}
-              onCommit={(v) => onUpdate("healMin", v || undefined)}
-              tone="rose"
-            />
-            <StatBlock
-              label="Heal Max"
-              value={spell.healMax ?? 0}
-              onCommit={(v) => onUpdate("healMax", v || undefined)}
-              tone="rose"
-            />
-          </div>
+          <SpellScalingBlock spell={spell} onUpdate={onUpdate} />
 
           <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
             <StatBlock
@@ -639,6 +736,178 @@ function SpellRow({
           </FieldLabel>
         </div>
       )}
+    </div>
+  );
+}
+
+function SpellScalingBlock({
+  spell,
+  onUpdate,
+}: {
+  spell: PetSpellConfig;
+  onUpdate: (field: string, value: unknown) => void;
+}) {
+  const usesDamageRatio = spell.damageRatio != null;
+  const usesHealRatio = spell.healRatio != null;
+  return (
+    <div className="flex flex-col gap-3">
+      {/* Damage */}
+      <div className="rounded-xl border border-accent/30 bg-accent/[0.06] px-3 py-2.5">
+        <div className="flex items-center justify-between gap-2">
+          <p className="font-display text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-text-muted">
+            Damage
+          </p>
+          <ScalingModeToggle
+            ratioLabel="Ratio of swing"
+            active={usesDamageRatio}
+            onActivateRatio={() => {
+              onUpdate("damageRatio", 1.5);
+              onUpdate("minDamage", undefined);
+              onUpdate("maxDamage", undefined);
+            }}
+            onActivateFlat={() => {
+              onUpdate("damageRatio", undefined);
+              if (spell.minDamage == null) onUpdate("minDamage", 1);
+              if (spell.maxDamage == null) onUpdate("maxDamage", spell.minDamage ?? 1);
+            }}
+          />
+        </div>
+        {usesDamageRatio ? (
+          <div className="mt-2 flex items-center gap-2">
+            <div className="w-24">
+              <NumberInput
+                value={spell.damageRatio ?? 1.5}
+                onCommit={(v) => onUpdate("damageRatio", v ?? 1.5)}
+                min={0}
+                step={0.1}
+                dense
+              />
+            </div>
+            <span className="font-mono text-2xs text-text-muted/70">
+              × pet's scaled melee swing
+            </span>
+          </div>
+        ) : (
+          <div className="mt-2 flex items-center gap-2">
+            <FloorInput
+              label="Min"
+              value={spell.minDamage ?? 0}
+              onCommit={(v) => onUpdate("minDamage", v || undefined)}
+              min={0}
+            />
+            <span className="px-0.5 text-text-muted/60">–</span>
+            <FloorInput
+              label="Max"
+              value={spell.maxDamage ?? 0}
+              onCommit={(v) => onUpdate("maxDamage", v || undefined)}
+              min={0}
+            />
+          </div>
+        )}
+      </div>
+
+      {/* Heal */}
+      <div className="rounded-xl border border-status-error/30 bg-status-error/[0.06] px-3 py-2.5">
+        <div className="flex items-center justify-between gap-2">
+          <p className="font-display text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-text-muted">
+            Heal
+          </p>
+          <ScalingModeToggle
+            ratioLabel="% of owner maxHp"
+            active={usesHealRatio}
+            onActivateRatio={() => {
+              onUpdate("healRatio", 0.1);
+              onUpdate("healMin", undefined);
+              onUpdate("healMax", undefined);
+            }}
+            onActivateFlat={() => {
+              onUpdate("healRatio", undefined);
+              if (spell.healMin == null) onUpdate("healMin", 0);
+              if (spell.healMax == null) onUpdate("healMax", 0);
+            }}
+          />
+        </div>
+        {usesHealRatio ? (
+          <div className="mt-2 flex items-center gap-2">
+            <div className="w-24">
+              <NumberInput
+                value={spell.healRatio ?? 0.1}
+                onCommit={(v) => onUpdate("healRatio", v ?? 0.1)}
+                min={0}
+                step={0.05}
+                dense
+              />
+            </div>
+            <span className="font-mono text-2xs text-text-muted/70">
+              × owner.maxHp
+            </span>
+          </div>
+        ) : (
+          <div className="mt-2 flex items-center gap-2">
+            <FloorInput
+              label="Min"
+              value={spell.healMin ?? 0}
+              onCommit={(v) => onUpdate("healMin", v || undefined)}
+              min={0}
+            />
+            <span className="px-0.5 text-text-muted/60">–</span>
+            <FloorInput
+              label="Max"
+              value={spell.healMax ?? 0}
+              onCommit={(v) => onUpdate("healMax", v || undefined)}
+              min={0}
+            />
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function ScalingModeToggle({
+  ratioLabel,
+  active,
+  onActivateRatio,
+  onActivateFlat,
+}: {
+  ratioLabel: string;
+  active: boolean;
+  onActivateRatio: () => void;
+  onActivateFlat: () => void;
+}) {
+  return (
+    <div
+      role="radiogroup"
+      className="inline-flex rounded-lg border border-[var(--chrome-stroke)] bg-bg-primary/40 p-0.5 text-[0.6rem]"
+    >
+      <button
+        type="button"
+        role="radio"
+        aria-checked={active}
+        onClick={onActivateRatio}
+        className={cx(
+          "rounded-md px-2 py-0.5 font-display uppercase tracking-wider transition",
+          active
+            ? "bg-accent/20 text-accent"
+            : "text-text-muted/70 hover:text-text-primary",
+        )}
+      >
+        {ratioLabel}
+      </button>
+      <button
+        type="button"
+        role="radio"
+        aria-checked={!active}
+        onClick={onActivateFlat}
+        className={cx(
+          "rounded-md px-2 py-0.5 font-display uppercase tracking-wider transition",
+          !active
+            ? "bg-accent/20 text-accent"
+            : "text-text-muted/70 hover:text-text-primary",
+        )}
+      >
+        Flat
+      </button>
     </div>
   );
 }

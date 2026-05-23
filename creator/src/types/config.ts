@@ -153,8 +153,18 @@ export interface PetSpellConfig {
   displayName: string;
   message: string;
   roomMessage?: string;
+  /**
+   * Spell damage as a multiple of the pet's already-scaled melee swing.
+   * 1.0 = same as a normal swing; 2.0 = twice as hard. Wins over
+   * `minDamage`/`maxDamage` when set, so spells inherit level/gear scaling.
+   */
+  damageRatio?: number;
+  /** Heal as a fraction of the owner's maxHp. Wins over `healMin`/`healMax` when set. */
+  healRatio?: number;
+  /** Absolute fallback damage range, used when `damageRatio` is null. */
   minDamage?: number;
   maxDamage?: number;
+  /** Absolute fallback heal range, used when `healRatio` is null. */
   healMin?: number;
   healMax?: number;
   statusEffectId?: string;
@@ -173,10 +183,20 @@ export interface PetSpellConfig {
 export interface PetDefinitionConfig {
   name: string;
   description?: string;
-  hp: number;
-  minDamage: number;
-  maxDamage: number;
-  armor: number;
+  /** Pet HP as a fraction of the owner's effective maxHp. 1.0 = same as owner. */
+  hpRatio: number;
+  /** Pet melee damage as a fraction of the owner's displayed damage range. */
+  damageRatio: number;
+  /** Pet armor as a fraction of the owner's equipped armor. */
+  armorRatio: number;
+  /** Floor applied to scaled HP. Also used when no owner stats are available. */
+  baseHp: number;
+  /** Floor applied to scaled min damage. */
+  baseMinDamage: number;
+  /** Floor applied to scaled max damage. */
+  baseMaxDamage: number;
+  /** Floor applied to scaled armor. */
+  baseArmor: number;
   threatMultiplier?: number;
   spells?: Record<string, PetSpellConfig>;
   defaultAttack?: string;
@@ -187,6 +207,12 @@ export interface PetDefinitionConfig {
 export interface PetsTopLevelConfig {
   /** Auto-cast suppression window after a manual skill trigger. Default: 8000ms. */
   manualSkillGraceMs?: number;
+  /** Global cap on per-template `hpRatio`. */
+  maxHpRatio?: number;
+  /** Global cap on per-template `damageRatio`. */
+  maxDamageRatio?: number;
+  /** Global cap on per-template `armorRatio`. */
+  maxArmorRatio?: number;
 }
 
 // ─── Abilities ──────────────────────────────────────────────────────

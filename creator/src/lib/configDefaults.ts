@@ -100,6 +100,7 @@ export const DEFAULT_ABILITY_TARGET_TYPES: AppConfig["abilityTargetTypes"] = {
   enemy: { displayName: "Enemy" },
   self: { displayName: "Self" },
   ally: { displayName: "Ally" },
+  pet: { displayName: "Pet" },
 };
 
 // ─── Canonical status effects ("conditions") ───────────────────────

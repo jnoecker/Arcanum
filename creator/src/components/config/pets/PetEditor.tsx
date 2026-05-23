@@ -17,18 +17,6 @@ function normalizeId(raw: string): string {
   return raw.trim().toLowerCase().replace(/\s+/g, "_");
 }
 
-const THREAT_ROLES: { value: string; label: string }[] = [
-  { value: "tank", label: "Tank" },
-  { value: "balanced", label: "Balanced" },
-  { value: "dps", label: "DPS" },
-];
-
-const THREAT_VALUES: Record<string, number> = {
-  tank: 3.0,
-  balanced: 1.0,
-  dps: 0.0,
-};
-
 function threatRole(multiplier: number | undefined): string {
   if (multiplier !== undefined && multiplier >= 2.0) return "tank";
   if (multiplier === 0 || multiplier === undefined) return "dps";
@@ -285,13 +273,19 @@ function CombatStatsCard({
       </p>
 
       <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <FieldLabel label="Role">
-          <SelectInput
-            value={role}
-            onCommit={(v) => onPatch({ threatMultiplier: THREAT_VALUES[v] })}
-            options={THREAT_ROLES}
-            dense
-          />
+        <FieldLabel label="Threat Multiplier">
+          <div className="flex items-center gap-2">
+            <NumberInput
+              value={pet.threatMultiplier ?? 0}
+              onCommit={(v) => onPatch({ threatMultiplier: v ?? 0 })}
+              min={0}
+              step={0.1}
+              dense
+            />
+            <span className="text-2xs text-text-muted/80 whitespace-nowrap">
+              {role === "tank" ? "Tank" : role === "balanced" ? "Balanced" : "DPS"}
+            </span>
+          </div>
         </FieldLabel>
         <FieldLabel label="Default Attack">
           <SelectInput
@@ -468,6 +462,12 @@ function SpellsCard({
     onPatch({ spells: next });
   };
 
+  const patchSpell = (sid: string, partial: Partial<PetSpellConfig>) => {
+    const next = { ...spells };
+    next[sid] = { ...next[sid], ...partial } as PetSpellConfig;
+    onPatch({ spells: next });
+  };
+
   const deleteSpell = (sid: string) => {
     const next = { ...spells };
     delete next[sid];
@@ -558,6 +558,7 @@ function SpellsCard({
               showThreatBonus={showThreatBonus}
               onToggle={() => setExpanded(expanded === sid ? null : sid)}
               onUpdate={(field, value) => updateSpell(sid, field, value)}
+              onPatchSpell={(partial) => patchSpell(sid, partial)}
               onDelete={() => deleteSpell(sid)}
             />
           ))}
@@ -577,6 +578,7 @@ function SpellRow({
   showThreatBonus,
   onToggle,
   onUpdate,
+  onPatchSpell,
   onDelete,
 }: {
   id: string;
@@ -588,6 +590,7 @@ function SpellRow({
   showThreatBonus: boolean;
   onToggle: () => void;
   onUpdate: (field: string, value: unknown) => void;
+  onPatchSpell: (partial: Partial<PetSpellConfig>) => void;
   onDelete: () => void;
 }) {
   const iconSrc = useImageSrc(spell.image || undefined);
@@ -691,7 +694,7 @@ function SpellRow({
             }
           />
 
-          <SpellScalingBlock spell={spell} onUpdate={onUpdate} />
+          <SpellScalingBlock spell={spell} onUpdate={onUpdate} onPatchSpell={onPatchSpell} />
 
           <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
             <StatBlock
@@ -743,9 +746,11 @@ function SpellRow({
 function SpellScalingBlock({
   spell,
   onUpdate,
+  onPatchSpell,
 }: {
   spell: PetSpellConfig;
   onUpdate: (field: string, value: unknown) => void;
+  onPatchSpell: (partial: Partial<PetSpellConfig>) => void;
 }) {
   const usesDamageRatio = spell.damageRatio != null;
   const usesHealRatio = spell.healRatio != null;
@@ -761,14 +766,18 @@ function SpellScalingBlock({
             ratioLabel="Ratio of swing"
             active={usesDamageRatio}
             onActivateRatio={() => {
-              onUpdate("damageRatio", 1.5);
-              onUpdate("minDamage", undefined);
-              onUpdate("maxDamage", undefined);
+              onPatchSpell({
+                damageRatio: 1.5,
+                minDamage: undefined,
+                maxDamage: undefined,
+              });
             }}
             onActivateFlat={() => {
-              onUpdate("damageRatio", undefined);
-              if (spell.minDamage == null) onUpdate("minDamage", 1);
-              if (spell.maxDamage == null) onUpdate("maxDamage", spell.minDamage ?? 1);
+              onPatchSpell({
+                damageRatio: undefined,
+                minDamage: spell.minDamage ?? 1,
+                maxDamage: spell.maxDamage ?? spell.minDamage ?? 1,
+              });
             }}
           />
         </div>
@@ -816,14 +825,18 @@ function SpellScalingBlock({
             ratioLabel="% of owner maxHp"
             active={usesHealRatio}
             onActivateRatio={() => {
-              onUpdate("healRatio", 0.1);
-              onUpdate("healMin", undefined);
-              onUpdate("healMax", undefined);
+              onPatchSpell({
+                healRatio: 0.1,
+                healMin: undefined,
+                healMax: undefined,
+              });
             }}
             onActivateFlat={() => {
-              onUpdate("healRatio", undefined);
-              if (spell.healMin == null) onUpdate("healMin", 0);
-              if (spell.healMax == null) onUpdate("healMax", 0);
+              onPatchSpell({
+                healRatio: undefined,
+                healMin: spell.healMin ?? 0,
+                healMax: spell.healMax ?? 0,
+              });
             }}
           />
         </div>

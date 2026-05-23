@@ -41,7 +41,7 @@ interface EntityArtGeneratorProps {
   assetType?: string;
   /** Context tags for the asset manifest */
   context?: AssetContext;
-  /** Zone vibe text to inject into LLM prompt generation */
+  /** @deprecated Vibe no longer influences generation; field kept for callers pending cleanup. */
   vibe?: string;
   /** Which art-style surface to apply — "worldbuilding" for zone/entity/game art, "lore" for lore article illustrations */
   surface?: ArtStyleSurface;
@@ -99,7 +99,7 @@ export function EntityArtGenerator({
   onAccept,
   assetType,
   context,
-  vibe,
+  vibe: _vibe,
   surface,
 }: EntityArtGeneratorProps) {
   const settings = useAssetStore((s) => s.settings);
@@ -155,8 +155,6 @@ export function EntityArtGenerator({
   entityContextRef.current = entityContext;
   const framingHintRef = useRef(framingHint);
   framingHintRef.current = framingHint;
-  const vibeRef = useRef(vibe);
-  vibeRef.current = vibe;
   const getPromptRef = useRef(getPrompt);
   getPromptRef.current = getPrompt;
 
@@ -241,23 +239,16 @@ export function EntityArtGenerator({
     prompt: string,
     ec: string | undefined,
     fh: string | undefined,
-    vb: string | undefined,
   ): Promise<string> => {
     const systemPrompt = getEnhanceSystemPrompt(artStyle, assetType, surface, nativeTransparency);
     const parts: string[] = [];
 
     if (ec) {
       parts.push(`Generate an image prompt for this entity:\n${ec}`);
-      if (vb) {
-        parts.push(`\nZone atmosphere/vibe:\n${vb}`);
-      }
       const reference = fh ?? prompt;
       parts.push(`\nReference framing (format and composition guidance — the entity above defines the subject):\n${reference}`);
     } else {
       parts.push(prompt);
-      if (vb) {
-        parts.push(`\nZone atmosphere/vibe to weave into the image prompt:\n${vb}`);
-      }
     }
 
     const userPrompt = parts.join("\n");
@@ -277,7 +268,6 @@ export function EntityArtGenerator({
       await flushPendingCommits();
       const ec = entityContextRef.current;
       const fh = framingHintRef.current;
-      const vb = vibeRef.current;
       const freshBase = getPromptRef.current(artStyle);
       const promptToUse = editedPrompt ?? freshBase;
 
@@ -297,7 +287,7 @@ export function EntityArtGenerator({
         setLastEnhancedPrompt(promptToUse);
       } else if (hasLlmKey) {
         try {
-          finalPrompt = await enhancePromptWith(promptToUse, ec, fh, vb);
+          finalPrompt = await enhancePromptWith(promptToUse, ec, fh);
           setLastEnhancedPrompt(finalPrompt);
         } catch {
           // Fall back to base prompt if LLM fails
@@ -341,10 +331,9 @@ export function EntityArtGenerator({
       await flushPendingCommits();
       const ec = entityContextRef.current;
       const fh = framingHintRef.current;
-      const vb = vibeRef.current;
       const freshBase = getPromptRef.current(artStyle);
       const promptToEnhance = editedPrompt ?? freshBase;
-      const enhancedText = await enhancePromptWith(promptToEnhance, ec, fh, vb);
+      const enhancedText = await enhancePromptWith(promptToEnhance, ec, fh);
       setEditedPrompt(enhancedText);
       setEnhanced(true);
     } catch (e) {
@@ -459,7 +448,6 @@ export function EntityArtGenerator({
   if (surface === "lore") injectedChips.push({ k: "surface", v: "lore" });
   const ent = humanizeKey(context?.entity_type);
   if (ent) injectedChips.push({ k: "entity", v: ent });
-  if (vibe) injectedChips.push({ k: "vibe", v: vibe.length > 24 ? `${vibe.slice(0, 22)}…` : vibe });
 
   const showStudio = AI_ENABLED && (hasApiKey || hasLlmKey);
 
@@ -518,8 +506,8 @@ export function EntityArtGenerator({
                   placeholder="Describe the form you wish to summon…"
                 />
                 <div className="art-prompter__footer">
-                  {(entityContext || vibe) && !enhanced && hasLlmKey ? (
-                    <span className="art-prompter__hint">Entity + vibe auto-injected on generate</span>
+                  {entityContext && !enhanced && hasLlmKey ? (
+                    <span className="art-prompter__hint">Entity auto-injected on generate</span>
                   ) : <span />}
                   <span className="art-prompter__count">{activePrompt.length} chars</span>
                 </div>

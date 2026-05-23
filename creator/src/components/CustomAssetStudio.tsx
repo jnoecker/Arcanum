@@ -188,9 +188,9 @@ export function CustomAssetStudio({ selectedZoneId }: { selectedZoneId: string |
       setPromptGeneratedByLlm(Boolean(activeVariant.enhanced_prompt));
       return;
     }
-    setPromptDraft(buildCustomAssetPrompt(assetType, description, zoneVibe, artStyle, "worldbuilding"));
+    setPromptDraft(buildCustomAssetPrompt(assetType, description, null, artStyle, "worldbuilding"));
     setPromptGeneratedByLlm(false);
-  }, [artStyle, assetType, description, variants, zoneVibe]);
+  }, [artStyle, assetType, description, variants]);
 
   useEffect(() => {
     if (!globalAssetKey.trim()) return;
@@ -218,12 +218,11 @@ export function CustomAssetStudio({ selectedZoneId }: { selectedZoneId: string |
       `Format: ${getFormatForAssetType(assetType)}`,
       title.trim() ? `Asset title: ${title.trim()}` : "",
       `User description: ${description.trim()}`,
-      zoneVibe ? `Zone atmosphere: ${zoneVibe}` : "",
-      `Required style suffix (adapt and preserve the aesthetic):\n${buildCustomAssetPrompt(assetType, description, zoneVibe, artStyle, "worldbuilding")}`,
+      `Required style suffix (adapt and preserve the aesthetic):\n${buildCustomAssetPrompt(assetType, description, null, artStyle, "worldbuilding")}`,
     ].filter(Boolean).join("\n\n");
 
     return invoke<string>("llm_complete", { systemPrompt, userPrompt });
-  }, [artStyle, assetType, description, title, zoneVibe]);
+  }, [artStyle, assetType, description, title]);
 
   const runGeneration = useCallback(async (prompt: string, activate: boolean) => {
     if (!defaultModel) throw new Error(`No image model configured for provider ${imageProvider}.`);

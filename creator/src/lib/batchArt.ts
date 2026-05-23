@@ -237,13 +237,7 @@ export async function runBatchArtGeneration(
 
   const model = resolveImageModel(imageProvider, configuredModel);
   const nativeTransparency = modelNativelyTransparent(imageProvider, model?.id);
-  // When a zone vibe is present it owns palette/atmosphere; the appended
-  // suffix should only enforce composition + format rules so the LLM /
-  // image model doesn't get two competing color directives.
-  const styleSuffix = getStyleSuffix(
-    "worldbuilding",
-    vibe ? { paletteAuthority: "zone-vibe" } : {},
-  );
+  const styleSuffix = getStyleSuffix("worldbuilding");
 
   const worker = async () => {
     while (queue.length > 0 && !abortRef.current) {
@@ -262,22 +256,9 @@ export async function runBatchArtGeneration(
         let finalPrompt = basePrompt;
         try {
           const systemPrompt = getEnhanceSystemPrompt(artStyle, batchAssetType, "worldbuilding", nativeTransparency);
-          let userPrompt: string;
-          if (context) {
-            const parts = [
-              `Generate an image prompt for this entity:\n${context}`,
-            ];
-            if (vibe)
-              parts.push(`\nZone atmosphere/vibe:\n${vibe}`);
-            parts.push(
-              `\nReference style template (adapt but prioritize the entity description above):\n${basePrompt}`,
-            );
-            userPrompt = parts.join("\n");
-          } else {
-            userPrompt = vibe
-              ? `${basePrompt}\n\nZone atmosphere/vibe:\n${vibe}`
-              : basePrompt;
-          }
+          const userPrompt = context
+            ? `Generate an image prompt for this entity:\n${context}\n\nReference style template (adapt but prioritize the entity description above):\n${basePrompt}`
+            : basePrompt;
           finalPrompt = await invoke<string>("llm_complete", {
             systemPrompt,
             userPrompt,

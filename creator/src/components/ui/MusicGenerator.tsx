@@ -10,6 +10,7 @@ import { InlineError, Spinner } from "@/components/ui/FormWidgets";
 interface MusicGeneratorProps {
   roomTitle?: string;
   roomDescription?: string;
+  /** @deprecated Vibe no longer influences generation; field kept for callers pending cleanup. */
   vibe?: string;
   currentAudio?: string;
   onAccept: (fileName: string) => void;
@@ -28,7 +29,7 @@ const TRACK_LABELS: Record<AudioTrackType, string> = {
 export function MusicGenerator({
   roomTitle,
   roomDescription,
-  vibe,
+  vibe: _vibe,
   currentAudio,
   onAccept,
   trackType = "music",
@@ -66,7 +67,6 @@ export function MusicGenerator({
       const context = [
         roomTitle ? `Room: "${roomTitle}"` : "",
         roomDescription ? `Description: ${roomDescription}` : "",
-        vibe ? `Zone atmosphere: ${vibe}` : "",
       ]
         .filter(Boolean)
         .join("\n");

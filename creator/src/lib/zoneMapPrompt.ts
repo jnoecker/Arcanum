@@ -89,7 +89,7 @@ function describeZoneGeography(world: WorldFile): string {
 /** Build the full image generation prompt for a zone map. */
 export function buildZoneMapPrompt(
   world: WorldFile,
-  vibe: string,
+  _vibe: string,
   artStyle: ArtStyle,
 ): string {
   const zoneName = world.zone || "Unknown Zone";
@@ -110,8 +110,6 @@ export function buildZoneMapPrompt(
     "Zone geography and key locations:",
     geography,
     "",
-    vibe ? `Zone atmosphere: ${vibe}` : "",
-    "",
     `Visual reference: ${template}`,
     "",
     format,
@@ -125,13 +123,12 @@ export function buildZoneMapPrompt(
 }
 
 /** Build a short context summary for LLM prompt enhancement. */
-export function buildZoneMapContext(world: WorldFile, vibe: string): string {
+export function buildZoneMapContext(world: WorldFile, _vibe: string): string {
   const zoneName = world.zone || "Unknown Zone";
   const geography = describeZoneGeography(world);
   return [
     `Generate an illustrated fantasy map for the zone "${zoneName}".`,
     geography,
-    vibe ? `\nZone atmosphere: ${vibe}` : "",
     "\nThe map should be a top-down or elevated perspective fantasy cartography illustration showing the zone's geography, key landmarks, and how locations connect to each other.",
     "Do NOT include readable text, labels, or words — use visual landmarks and terrain features to distinguish locations.",
   ].join("\n");

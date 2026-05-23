@@ -147,13 +147,14 @@ export function EnhanceDescriptionButton({
   entitySummary,
   currentDescription,
   onAccept,
-  vibe,
+  vibe: _vibe,
   systemPrompt,
   label,
 }: {
   entitySummary: string;
   currentDescription?: string;
   onAccept: (description: string) => void;
+  /** @deprecated Vibe no longer influences enhancement; field kept for callers pending cleanup. */
   vibe?: string;
   /** Override the default system prompt (e.g. for lore/backstory enhancement). */
   systemPrompt?: string;
@@ -170,9 +171,6 @@ export function EnhanceDescriptionButton({
       const parts = [entitySummary];
       if (currentDescription) {
         parts.push(`\nCurrent description (improve or expand on this): ${currentDescription}`);
-      }
-      if (vibe) {
-        parts.push(`\nZone atmosphere: ${vibe}`);
       }
       const result = await invoke<string>("llm_complete", {
         systemPrompt: systemPrompt ?? DESCRIBE_SYSTEM_PROMPT,

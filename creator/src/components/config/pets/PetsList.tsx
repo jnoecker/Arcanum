@@ -120,7 +120,9 @@ interface PetRowProps {
 
 function PetRow({ id, pet, selected, onSelect }: PetRowProps) {
   const thumb = useImageSrc(pet.image || undefined);
-  const dmg = `${pet.minDamage}–${pet.maxDamage}`;
+  const hpPill = `${Math.round(pet.hpRatio * 100)}%`;
+  const dmgPill = `${Math.round(pet.damageRatio * 100)}%`;
+  const armorPill = `${Math.round(pet.armorRatio * 100)}%`;
 
   return (
     <li>
@@ -165,10 +167,10 @@ function PetRow({ id, pet, selected, onSelect }: PetRowProps) {
             {id}
           </div>
           <div className="mt-1.5 flex flex-wrap items-center gap-1">
-            <RowPill label="HP" value={pet.hp} tone="rose" />
-            <RowPill label="DMG" value={dmg} tone="warm" />
-            {pet.armor > 0 && (
-              <RowPill label="ARM" value={pet.armor} tone="blue" />
+            <RowPill label="HP" value={hpPill} tone="rose" />
+            <RowPill label="DMG" value={dmgPill} tone="warm" />
+            {pet.armorRatio > 0 && (
+              <RowPill label="ARM" value={armorPill} tone="blue" />
             )}
           </div>
         </div>

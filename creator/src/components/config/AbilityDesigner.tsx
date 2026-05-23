@@ -23,6 +23,7 @@ const FALLBACK_TARGET_TYPES = [
   { value: "enemy", label: "Enemy" },
   { value: "self", label: "Self" },
   { value: "ally", label: "Ally" },
+  { value: "pet", label: "Pet" },
 ];
 
 function normalizeId(raw: string): string {

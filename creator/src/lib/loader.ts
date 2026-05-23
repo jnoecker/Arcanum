@@ -2,7 +2,7 @@ import { readDir, readTextFile } from "@tauri-apps/plugin-fs";
 import { exists } from "@tauri-apps/plugin-fs";
 import { parseDocument } from "yaml";
 import type { WorldFile } from "@/types/world";
-import type { AppConfig, RaceDefinitionConfig } from "@/types/config";
+import type { AppConfig, AbilityTargetTypeDefinition, RaceDefinitionConfig } from "@/types/config";
 import type { Project } from "@/types/project";
 import { normalizeExitDirections, normalizeMobSpawns, mergeTrainersIntoMobs } from "@/lib/zoneEdits";
 import {
@@ -112,7 +112,7 @@ export function parseAppConfigYaml(content: string): AppConfig {
     questCompletionTypes: withDefaults(parseNestedMapSection(engine, "questCompletionTypes", "types"), DEFAULT_QUEST_COMPLETION_TYPES),
     statusEffectTypes: withDefaults(parseMapSection(engine.effectTypes, "types"), DEFAULT_STATUS_EFFECT_TYPES),
     stackBehaviors: withDefaults(parseMapSection(engine.stackBehaviors, "behaviors"), DEFAULT_STACK_BEHAVIORS),
-    abilityTargetTypes: withDefaults(parseMapSection(engine.targetTypes, "types"), DEFAULT_ABILITY_TARGET_TYPES),
+    abilityTargetTypes: ensurePetTargetType(withDefaults(parseMapSection(engine.targetTypes, "types"), DEFAULT_ABILITY_TARGET_TYPES)),
     craftingSkills: parseMapSection(engine.craftingSkills, "skills"),
     craftingStationTypes: parseMapSection(engine.craftingStationTypes, "stationTypes"),
     housing: parseHousingConfig(engine.housing),
@@ -1517,7 +1517,7 @@ async function loadSplitConfig(projectDir: string): Promise<AppConfig | null> {
       ),
       statusEffectTypes: withDefaults(asRecord(statusEffectsRaw.effectTypes), DEFAULT_STATUS_EFFECT_TYPES),
       stackBehaviors: withDefaults(asRecord(statusEffectsRaw.stackBehaviors), DEFAULT_STACK_BEHAVIORS),
-      abilityTargetTypes: withDefaults(asRecord(statusEffectsRaw.targetTypes), DEFAULT_ABILITY_TARGET_TYPES),
+      abilityTargetTypes: ensurePetTargetType(withDefaults(asRecord(statusEffectsRaw.targetTypes), DEFAULT_ABILITY_TARGET_TYPES)),
 
       // combat.yaml
       combat: parseCombatConfig(combatRaw.combat ?? combatRaw),
@@ -1670,6 +1670,19 @@ export function normalizeRaceStatMods(
 
 function withDefaults<T>(parsed: Record<string, T>, defaults: Record<string, T>): Record<string, T> {
   return Object.keys(parsed).length > 0 ? parsed : defaults;
+}
+
+/**
+ * Ensure the `pet` ability target type is present. The server added a `pet`
+ * targetType (heals/buffs that route to the caster's active pet); existing
+ * projects whose abilityTargetTypes map was populated before that change
+ * won't get it via the empty-fallback path, so backfill it here.
+ */
+function ensurePetTargetType(
+  parsed: Record<string, AbilityTargetTypeDefinition>,
+): Record<string, AbilityTargetTypeDefinition> {
+  if (parsed.pet) return parsed;
+  return { ...parsed, pet: { displayName: "Pet" } };
 }
 
 /** Return the MUD canonical emote preset set if the parsed list is empty. */

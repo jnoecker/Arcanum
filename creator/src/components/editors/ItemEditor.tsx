@@ -421,6 +421,13 @@ export function ItemEditor({
                   label="Soulbound — cannot be dropped, sold, traded, or given"
                 />
               </FieldRow>
+              <FieldRow label="Takeable">
+                <CheckboxInput
+                  checked={item.takeable !== false}
+                  onCommit={(v) => patch({ takeable: v ? undefined : false })}
+                  label="Players can pick this up (uncheck for fixed scenery / flavor)"
+                />
+              </FieldRow>
               <FieldRow label="Consumable">
                 <CheckboxInput
                   checked={item.consumable ?? false}

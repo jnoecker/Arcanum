@@ -354,6 +354,12 @@ export interface ItemFile {
    * stored in containers. Always resolves to the "quest" category server-side.
    */
   questItem?: boolean;
+  /**
+   * When false, the item is fixed scenery — it can't be picked up, moved, or
+   * removed from its room. Useful for flavor objects players can examine but
+   * not loot. Server default is true; only persist when explicitly false.
+   */
+  takeable?: boolean;
   /** Intended player level. Drives the level multiplier in budget derivation. */
   level?: number;
   /** Rarity tier. Drives the tier multiplier in budget derivation. */

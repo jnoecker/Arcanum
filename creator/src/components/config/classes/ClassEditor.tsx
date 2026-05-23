@@ -59,6 +59,15 @@ export function ClassEditor({
     if (cls.threatMultiplier != null && cls.threatMultiplier !== 1.0) {
       parts.push(`Threat multiplier: ${cls.threatMultiplier}`);
     }
+    if (cls.outfitDescription) parts.push(`Outfit: ${cls.outfitDescription}`);
+
+    const raceId = cls.showcaseRace || config.characterCreation?.defaultRace;
+    const race = raceId ? config.races[raceId] : undefined;
+    if (race) {
+      parts.push(`Race: ${race.displayName || raceId}`);
+      if (race.description) parts.push(`Race description: ${race.description}`);
+      if (race.bodyDescription) parts.push(`Race body: ${race.bodyDescription}`);
+    }
     return parts.join("\n");
   };
 

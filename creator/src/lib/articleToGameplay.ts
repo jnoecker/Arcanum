@@ -12,6 +12,18 @@ import { getEffectiveSections } from "@/lib/loreSections";
 import { buildToneDirective } from "@/lib/loreGeneration";
 import { buildRagContext, type RetrievalDiagnostic } from "@/lib/rag/loreContext";
 import { AI_ENABLED } from "@/lib/featureFlags";
+import { normalizeStatMods } from "@/lib/loader";
+import type { AppConfig } from "@/types/config";
+
+type StatDefs = AppConfig["stats"]["definitions"];
+
+function describeStatsForPrompt(statDefs: StatDefs): string {
+  const entries = Object.entries(statDefs);
+  if (entries.length === 0) return "(none defined)";
+  return entries
+    .map(([id, def]) => `${id} (${def.displayName || id})`)
+    .join(", ");
+}
 
 // ─── Shared plumbing ────────────────────────────────────────────────
 
@@ -209,6 +221,9 @@ interface ScaffoldRaceOptions {
   article: Article;
   existingRaceIds: Set<string>;
   existingRaceDisplayNames: Set<string>;
+  /** The project's stat definitions. The LLM is told to use these exact
+   *  stat IDs so the resulting statMods line up with the race editor. */
+  statDefs: StatDefs;
 }
 
 export async function generateRaceFromArticle(
@@ -216,10 +231,17 @@ export async function generateRaceFromArticle(
 ): Promise<RaceScaffoldResult> {
   if (!AI_ENABLED) throw new Error("AI features are not available in Community Edition");
 
-  const { article, existingRaceIds, existingRaceDisplayNames } = opts;
+  const { article, existingRaceIds, existingRaceDisplayNames, statDefs } = opts;
   const body = articleBodyPlainText(article);
   const fieldSummary = articleFieldSummary(article);
   const toneDirective = buildToneDirective();
+  const statIds = Object.keys(statDefs);
+  const statList = describeStatsForPrompt(statDefs);
+  const statExample = statIds.length >= 2
+    ? `{ "${statIds[0]}": 1, "${statIds[1]}": -1 }`
+    : statIds.length === 1
+      ? `{ "${statIds[0]}": 1 }`
+      : `{}`;
 
   const { context: ragContext, diagnostic } = await buildRagContext({
     query: `${article.title} ancestry — heritage, traits, stat tendencies, signature abilities, body description`,
@@ -239,12 +261,12 @@ JSON shape:
   "backstory": "1-3 short paragraphs of in-world heritage grounded in the article.",
   "traits": ["trait one", "trait two", ...],
   "abilities": ["signature ability name 1", ...],
-  "statMods": { "strength": 1, "intelligence": -1, ... },
+  "statMods": ${statExample},
   "bodyDescription": "Concrete physical description suitable for sprite generation — body shape, proportions, distinguishing features. NO clothing or outfits."
 }
 
 Rules:
-- statMods is small adjustments in the range -2..+2 against the standard stats (strength, intelligence, wisdom, dexterity, constitution, charisma). Use only the stats the article actually supports. Omit zero values.
+- statMods keys MUST be drawn from this project's stat ids: ${statList}. Use the id exactly as shown (case-sensitive). Values are small adjustments in the range -2..+2. Use only the stats the article actually supports. Omit zero values.
 - traits is short tag-style phrases (1-4 words each), not paragraphs.
 - abilities is a short list of named signature abilities (3-6 entries) — concrete enough that an ability designer can act on them, but not full definitions.
 - bodyDescription is physical only. No clothing, garb, or accessories — those belong on classes.
@@ -277,7 +299,7 @@ Rules:
     backstory: asString(parsed.backstory),
     traits: asStringArray(parsed.traits),
     abilities: asStringArray(parsed.abilities),
-    statMods: asStatMap(parsed.statMods),
+    statMods: normalizeStatMods(asStatMap(parsed.statMods), statDefs),
     bodyDescription: asString(parsed.bodyDescription),
     selectable: true,
   };

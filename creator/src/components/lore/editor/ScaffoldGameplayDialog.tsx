@@ -241,6 +241,7 @@ function RaceScaffold({ article, config, onAccept, onClose }: ScaffoldGameplayDi
       existingRaceDisplayNames: new Set(
         Object.values(config.races ?? {}).map((r) => r.displayName.toLowerCase()),
       ),
+      statDefs: config.stats.definitions,
     })
       .then((r) => {
         if (cancelled) return;

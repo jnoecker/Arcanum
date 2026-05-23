@@ -57,7 +57,7 @@ function getShowcaseRace(cls: string): string {
 export async function generatePortraitTemplate(
   races: string[],
   classes: string[],
-  zoneVibe: string,
+  _zoneVibe: string,
 ): Promise<PortraitPromptTemplate> {
   if (!AI_ENABLED) throw new Error("AI features are not available in Community Edition");
   const raceList = races
@@ -102,9 +102,7 @@ Races:
 ${raceList}
 
 Classes:
-${classList}
-
-Zone atmosphere: ${zoneVibe}`;
+${classList}`;
 
   const response = await invoke<string>("llm_complete", {
     systemPrompt,

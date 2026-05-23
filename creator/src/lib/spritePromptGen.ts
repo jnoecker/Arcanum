@@ -116,7 +116,7 @@ export function fillSpriteTemplate(
 export async function generateSpriteTemplate(
   races: string[],
   classes: string[],
-  zoneVibe: string,
+  _zoneVibe: string,
 ): Promise<SpritePromptTemplate> {
   if (!AI_ENABLED) throw new Error("AI features are not available in Community Edition");
   const raceList = races
@@ -147,9 +147,7 @@ Output ONLY valid JSON.`;
 ${raceList}
 
 Classes:
-${classList}
-
-Setting: ${zoneVibe}`;
+${classList}`;
 
   const response = await invoke<string>("llm_complete", {
     systemPrompt,

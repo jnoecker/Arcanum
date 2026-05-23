@@ -330,11 +330,10 @@ export function ZoneAssetWorkbench({ zoneId, world, onWorldChange }: ZoneAssetWo
       selectedTarget.mode === "default"
         ? `Generate a fallback/default image prompt for this zone asset:\n${buildContext()}`
         : `Generate an image prompt for this entity:\n${buildContext()}`,
-      zoneVibe ? `\nZone atmosphere/vibe:\n${zoneVibe}` : "",
       `\nReference style template (adapt but prioritize the context above):\n${promptDraft}`,
     ].join("\n");
     return invoke<string>("llm_complete", { systemPrompt, userPrompt });
-  }, [selectedTarget, artStyle, buildContext, zoneVibe, promptDraft]);
+  }, [selectedTarget, artStyle, buildContext, promptDraft]);
 
   const persistImageSelection = useCallback((fileName: string) => {
     if (!selectedTarget) return;

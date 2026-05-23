@@ -3,8 +3,6 @@ import type { GuildHallRoomTemplate, HousingTemplateDefinition } from "@/types/c
 import { getTrainerPrimaryClass } from "@/lib/trainers";
 import {
   type ArtStyle,
-  buildZoneVibeBlock,
-  buildZoneVibeReiteration,
   FORMAT_BY_TYPE,
   getPreamble,
   getStyleSuffix,
@@ -13,23 +11,15 @@ import {
 } from "./arcanumPrompts";
 
 /**
- * Wrap an entity prompt with zone-vibe primacy framing when a vibe is set.
- * The vibe block goes at the top (priming) and the reiteration at the bottom
- * (recency bias). Caller is responsible for passing palette-stripped body
- * text in `inner` when a vibe is present.
+ * Vibe no longer affects entity prompts (kept as a no-op so the surrounding
+ * call sites and their `vibe` parameters can be cleaned up in a later pass).
  */
-function withZoneVibe(inner: string, zoneVibe: string | null | undefined): string {
-  const trimmed = zoneVibe?.trim();
-  if (!trimmed) return inner;
-  return `${buildZoneVibeBlock(trimmed)}
-
-${inner}
-
-${buildZoneVibeReiteration(trimmed)}`;
+function withZoneVibe(inner: string, _zoneVibe: string | null | undefined): string {
+  return inner;
 }
 
-function paletteOpts(zoneVibe: string | null | undefined): PromptPaletteOptions {
-  return zoneVibe?.trim() ? { paletteAuthority: "zone-vibe" } : {};
+function paletteOpts(_zoneVibe: string | null | undefined): PromptPaletteOptions {
+  return {};
 }
 
 export type DefaultImageKind = "room" | "mob" | "item";
@@ -603,21 +593,18 @@ export function entityPrompt(
 export function defaultImagePrompt(
   kind: DefaultImageKind,
   world: WorldFile,
-  zoneVibe: string,
+  _zoneVibe: string,
   style: ArtStyle = "gentle_magic",
 ): string {
   const preamble = getPreamble(style, "worldbuilding");
   const zoneSummary = buildZoneSummary(world);
-  const vibeSection = zoneVibe
-    ? `Zone atmosphere: ${zoneVibe}`
-    : "Zone atmosphere: soft magical fallback that reflects the zone's dominant mood and palette.";
 
   if (style === "gentle_magic") {
     switch (kind) {
       case "room":
         return `${FORMAT_BY_TYPE.room}. ${preamble}
 
-Fallback room illustration for ${world.zone}. ${vibeSection}
+Fallback room illustration for ${world.zone}.
 ${zoneSummary}
 
 Focus on an atmospheric establishing scene that can gracefully stand in for any unillustrated room in the zone. Painterly, luminous, softly enchanted, emotionally safe. No readable text.
@@ -628,7 +615,7 @@ ${getStyleSuffix("worldbuilding")}`;
       case "mob":
         return `${FORMAT_BY_TYPE.mob}. ${preamble}
 
-Fallback mob portrait for ${world.zone}. ${vibeSection}
+Fallback mob portrait for ${world.zone}.
 ${zoneSummary}
 
 Depict a generic inhabitant or creature archetype that feels native to the zone without representing any named NPC. The figure should feel characterful and approachable, with subtle magical details and a soft ambient glow.
@@ -637,7 +624,7 @@ ${getStyleSuffix("worldbuilding")}`;
       case "item":
         return `${FORMAT_BY_TYPE.item}. ${preamble}
 
-Fallback item icon for ${world.zone}. ${vibeSection}
+Fallback item icon for ${world.zone}.
 ${zoneSummary}
 
 Depict a generic magical object or artifact that could plausibly belong anywhere in this zone. Keep the silhouette clear, the materials handcrafted, and the enchantment subtle but visible.
@@ -650,7 +637,7 @@ ${getStyleSuffix("worldbuilding")}`;
     case "room":
       return `${preamble}
 
-Fallback room illustration for ${world.zone}. ${vibeSection}
+Fallback room illustration for ${world.zone}.
 ${zoneSummary}
 
 Wide atmospheric environment art suitable for any room in the zone.
@@ -659,14 +646,14 @@ ${EMPTY_SCENE_DIRECTIVE}`;
     case "mob":
       return `${preamble}
 
-Fallback creature portrait for ${world.zone}. ${vibeSection}
+Fallback creature portrait for ${world.zone}.
 ${zoneSummary}
 
 Generic zone inhabitant portrait suitable for mobs without explicit art.`;
     case "item":
       return `${preamble}
 
-Fallback item illustration for ${world.zone}. ${vibeSection}
+Fallback item illustration for ${world.zone}.
 ${zoneSummary}
 
 Generic zone-themed artifact icon suitable for items without explicit art.`;

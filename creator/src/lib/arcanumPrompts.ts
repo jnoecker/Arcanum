@@ -104,26 +104,17 @@ export function getStyleSuffix(
 }
 
 /**
- * Build the zone-vibe authority block. Goes at the TOP of the prompt so the
- * image model and the enhancing LLM both see the zone's palette/atmosphere
- * before any other style content. The wording is deliberately strong because
- * downstream model-prompts (preamble + style suffix + per-entity templates)
- * have their own palette opinions that this block has to overrule.
+ * Zone vibe no longer influences image prompts — the room/entity description
+ * plus the world's art style provide enough direction, and folding vibe in
+ * tended to override the writer's intent across larger, varied zones. Kept
+ * as no-op stubs so downstream callers don't need updating in lockstep.
  */
-export function buildZoneVibeBlock(zoneVibe: string): string {
-  return `ZONE ART DIRECTION — primary authority for color, lighting, and atmosphere (overrides any default style colors or palette directives below):
-${zoneVibe.trim()}
-The palette, lighting character, and atmosphere above govern this image. Composition and format guidance below is subordinate; any color words later in the prompt are reference frames only — replace them with this palette.`;
+export function buildZoneVibeBlock(_zoneVibe: string): string {
+  return "";
 }
 
-/**
- * Trailing reiteration of the zone vibe, placed at the END of the prompt to
- * leverage recency bias in image models. Shorter than the opening block.
- */
-export function buildZoneVibeReiteration(zoneVibe: string): string {
-  return `ZONE PALETTE OVERRIDE — the only palette and lighting character to use:
-${zoneVibe.trim()}
-Ignore any default style colors that conflict.`;
+export function buildZoneVibeReiteration(_zoneVibe: string): string {
+  return "";
 }
 
 /** @deprecated Use getStyleSuffix() — kept for backward compatibility during migration */
@@ -724,8 +715,8 @@ export function getEnhanceSystemPrompt(style: ArtStyle, assetType?: string, surf
   if (visualStyle || tone) {
     const toneBlock = tone ? `\n\nWorld context: ${tone}` : "";
     const styleBlock = visualStyle
-      ? `\n\nWorld visual style: ${visualStyle}\nAll enhanced prompts must conform to this visual style, EXCEPT when the user prompt contains a "ZONE ART DIRECTION" block — that block's palette, lighting character, and atmosphere take precedence over the world style for color decisions. The world style still governs composition, brushwork, and rendering technique.`
-      : `\n\nWhen the user prompt contains a "ZONE ART DIRECTION" block, treat it as the highest-priority art direction for color, lighting, and atmosphere.`;
+      ? `\n\nWorld visual style: ${visualStyle}\nAll enhanced prompts must conform to this visual style.`
+      : "";
     const palettes = (assetType === "ability_icon" || assetType === "status_effect_icon" || assetType === "ability_sprite")
       ? `\n\n${CLASS_COLOR_PALETTES}`
       : "";
@@ -809,30 +800,19 @@ Output ONLY the finished prompt text — no explanation, no labels, no markdown.
 export function buildCustomAssetPrompt(
   assetType: AssetType,
   description: string,
-  zoneVibe?: string | null,
+  _zoneVibe?: string | null,
   style: ArtStyle = "gentle_magic",
   surface?: ArtStyleSurface,
 ): string {
   const formatSpec = getFormatForAssetType(assetType);
-  const trimmedVibe = zoneVibe?.trim() || null;
-  const opts: PromptPaletteOptions = trimmedVibe
-    ? { paletteAuthority: "zone-vibe" }
-    : {};
-  const preamble = getPreamble(style, surface, opts);
-  const suffix = getStyleSuffix(surface, opts);
+  const preamble = getPreamble(style, surface);
+  const suffix = getStyleSuffix(surface);
 
-  // Vibe-primacy framing: zone art-direction block at the top + reiteration
-  // at the end. Both image models and the enhancing LLM tend to weight the
-  // framing tokens heavily, so the vibe wins on any palette conflict with
-  // the global style.
-  const vibeHeader = trimmedVibe ? `${buildZoneVibeBlock(trimmedVibe)}\n\n` : "";
-  const vibeFooter = trimmedVibe ? `\n\n${buildZoneVibeReiteration(trimmedVibe)}` : "";
-
-  const base = `${vibeHeader}${formatSpec}. ${preamble}
+  const base = `${formatSpec}. ${preamble}
 
 User brief: ${description}
 
-${suffix}${vibeFooter}`;
+${suffix}`;
 
   return withSpriteSafety(base, assetType);
 }

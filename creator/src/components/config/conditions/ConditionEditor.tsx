@@ -1,5 +1,9 @@
 import { useState } from "react";
-import type { StatusEffectDefinitionConfig } from "@/types/config";
+import type {
+  StatBindings,
+  StatusEffectDefinitionConfig,
+  StatusEffectTypeDefinition,
+} from "@/types/config";
 import type { StatMap } from "@/types/world";
 import { useStatMods } from "@/lib/useStatMods";
 import { useProjectStore } from "@/stores/projectStore";
@@ -10,6 +14,13 @@ import {
 } from "@/components/ui/FormWidgets";
 import { EntityArtGenerator } from "@/components/ui/EntityArtGenerator";
 import { composePrompt, type ArtStyle } from "@/lib/arcanumPrompts";
+import {
+  authoredTickAnchor,
+  scaledTickAnchor,
+  tickKindFor,
+  tickScalingStat,
+  type TickKind,
+} from "@/lib/dotHotPacing";
 import { Section } from "../enchanting/Section";
 import { XIcon } from "@/components/config/icons";
 
@@ -19,6 +30,8 @@ interface ConditionEditorProps {
   statIds: string[];
   effectTypeOptions: { value: string; label: string }[];
   stackBehaviorOptions: { value: string; label: string }[];
+  bindings: StatBindings;
+  effectTypeDefs: Record<string, StatusEffectTypeDefinition>;
   onPatch: (p: Partial<StatusEffectDefinitionConfig>) => void;
   onRename: (newId: string) => void;
 }
@@ -29,11 +42,18 @@ export function ConditionEditor({
   statIds,
   effectTypeOptions,
   stackBehaviorOptions,
+  bindings,
+  effectTypeDefs,
   onPatch,
   onRename,
 }: ConditionEditorProps) {
   const et = (def.effectType ?? "").toUpperCase();
-  const showTick = et === "DOT" || et === "HOT";
+  // Mirror the server's data-driven check: the configured effect type's
+  // ticksDamage/ticksHealing flags decide whether tick fields are shown.
+  // Fall back to the legacy DOT/HOT id check for configs that pre-date the
+  // ticksDamage/ticksHealing flags on EffectTypesConfig.
+  const tickKind: TickKind = tickKindFor(def.effectType, effectTypeDefs);
+  const showTick = tickKind !== null || et === "DOT" || et === "HOT";
   const showStatMods = et === "STAT_BUFF" || et === "STAT_DEBUFF";
   const showShield = et === "SHIELD";
   const showHooks = showStatMods || showShield;
@@ -50,7 +70,12 @@ export function ConditionEditor({
           onPatch={onPatch}
         />
         {showTick ? (
-          <TickValuesCard def={def} onPatch={onPatch} />
+          <TickValuesCard
+            def={def}
+            tickKind={tickKind}
+            bindings={bindings}
+            onPatch={onPatch}
+          />
         ) : (
           <VisualIdentityCard id={id} def={def} onPatch={onPatch} />
         )}
@@ -202,11 +227,19 @@ function EffectAndStackingCard({
 
 function TickValuesCard({
   def,
+  tickKind,
+  bindings,
   onPatch,
 }: {
   def: StatusEffectDefinitionConfig;
+  tickKind: TickKind;
+  bindings: StatBindings;
   onPatch: (p: Partial<StatusEffectDefinitionConfig>) => void;
 }) {
+  const scalingStat = tickScalingStat(tickKind, bindings);
+  const minMaxHint = tickKind
+    ? `L1 base-stat anchor — scales with caster level and ${scalingStat ?? "stat"} at runtime, same as direct ${tickKind === "damage" ? "spell damage" : "heals"}.`
+    : undefined;
   return (
     <Section title="Tick Values">
       <div className="grid grid-cols-2 gap-3">
@@ -229,7 +262,7 @@ function TickValuesCard({
             dense
           />
         </Field>
-        <Field label="Min">
+        <Field label="Min" hint={minMaxHint}>
           <NumberInput
             value={def.tickMinValue ?? 0}
             onCommit={(v) => onPatch({ tickMinValue: v ?? 0 })}
@@ -237,7 +270,7 @@ function TickValuesCard({
             dense
           />
         </Field>
-        <Field label="Max">
+        <Field label="Max" hint={tickKind ? "Upper end of the L1 anchor. Variance is rolled per tick." : undefined}>
           <NumberInput
             value={def.tickMaxValue ?? 0}
             onCommit={(v) => onPatch({ tickMaxValue: v ?? 0 })}
@@ -246,7 +279,52 @@ function TickValuesCard({
           />
         </Field>
       </div>
+      {tickKind && <ScaledTickPreview def={def} kind={tickKind} bindings={bindings} />}
     </Section>
+  );
+}
+
+/**
+ * Read-only preview of the per-tick value at representative caster levels for
+ * a base-stat caster. Mirrors the server's `StatusEffectSystem.computeTickAnchor`
+ * (anchor + statBonus) × levelScale, with no per-tick variance.
+ */
+function ScaledTickPreview({
+  def,
+  kind,
+  bindings,
+}: {
+  def: StatusEffectDefinitionConfig;
+  kind: NonNullable<TickKind>;
+  bindings: StatBindings;
+}) {
+  const anchor = authoredTickAnchor(def);
+  if (anchor <= 0) return null;
+  const levels = [1, 10, 20, 30];
+  const noun = kind === "damage" ? "damage" : "heal";
+  return (
+    <div className="mt-3 rounded-xl border border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] px-3 py-2">
+      <div className="mb-1.5 flex items-baseline justify-between gap-2">
+        <span className="font-display text-2xs uppercase tracking-wider text-text-muted">
+          Scaled tick · {noun}
+        </span>
+        <span className="font-mono text-[0.6rem] text-text-muted/70">base-stat caster</span>
+      </div>
+      <div className="flex flex-wrap gap-1.5">
+        {levels.map((lvl) => {
+          const scaled = scaledTickAnchor(def, kind, bindings, lvl);
+          return (
+            <div
+              key={lvl}
+              className="flex items-baseline gap-1 rounded-lg border border-[var(--chrome-stroke)] bg-bg-primary px-2 py-0.5"
+            >
+              <span className="font-display text-[0.6rem] uppercase tracking-wider text-text-muted/80">L{lvl}</span>
+              <span className="font-mono text-xs text-text-primary">{Math.round(scaled)}</span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
   );
 }
 

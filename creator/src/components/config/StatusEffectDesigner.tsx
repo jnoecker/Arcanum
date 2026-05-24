@@ -158,6 +158,8 @@ export function StatusEffectDesigner({ config, onChange }: StatusEffectDesignerP
             statIds={statIds}
             effectTypeOptions={effectTypeOptions}
             stackBehaviorOptions={stackBehaviorOptions}
+            bindings={config.stats.bindings}
+            effectTypeDefs={config.statusEffectTypes}
             onPatch={(p) => patchDef(selectedId, p)}
             onRename={(v) => renameDef(selectedId, v)}
           />

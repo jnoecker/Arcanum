@@ -12,7 +12,7 @@ import { ITEM_TYPES, ARCHETYPAL_STATS, isArchetypalStat } from "@/types/world";
 import type { EquipmentSlotDefinition, MobTiersConfig } from "@/types/config";
 import { resolveDoorKeyId, resolveDoorState } from "./doorHelpers";
 import { mobMaxDamageAtLevel, mobMinDamageAtLevel } from "./tuning/formulas";
-import { classifyMob, targetLevelForTier } from "./zoneRebalance";
+import { classifyMob, inferLevelBand, targetLevelForTier } from "./zoneRebalance";
 import { exitTarget } from "./zoneEdits";
 import { getTrainerClasses } from "./trainers";
 import { resolveMobStats } from "./resolveMobStats";
@@ -109,10 +109,12 @@ function resolveMobDamage(
   };
 }
 
-function formatZoneTargetLabel(world: WorldFile): string {
-  if (!world.levelBand) return "unspecified zone target";
-  const bandLabel = `${world.levelBand.min}-${world.levelBand.max}`;
-  return world.difficultyHint ? `${bandLabel} (${world.difficultyHint})` : bandLabel;
+function formatZoneTargetLabel(
+  band: { min: number; max: number },
+  difficultyHint: string | undefined,
+): string {
+  const bandLabel = `${band.min}-${band.max}`;
+  return difficultyHint ? `${bandLabel} (${difficultyHint})` : bandLabel;
 }
 
 function validateZoneBalanceTargets(
@@ -120,13 +122,22 @@ function validateZoneBalanceTargets(
   world: WorldFile,
   mobTiers: MobTiersConfig | undefined,
 ): void {
-  if (!world.levelBand || !mobTiers || !world.mobs || Object.keys(world.mobs).length === 0) {
-    return;
-  }
+  if (!mobTiers || !world.mobs || Object.keys(world.mobs).length === 0) return;
 
-  const zoneTargetLabel = formatZoneTargetLabel(world);
-  const band = world.levelBand;
+  // Player-scaled zones intentionally track the reference player's level —
+  // authored mob levels are seeds, not bounds. Skip the tier-band check.
+  if (world.scaling?.mode === "player") return;
+
+  // Prefer the bounded-scaling range when set (that's what the zone editor
+  // writes to); fall back to the authored levelBand, then to inferred bounds
+  // from mobs/tiers. Without any signal at all, skip.
+  const hasBoundedRange =
+    world.scaling?.mode === "bounded" && !!world.scaling.levelRange;
+  if (!hasBoundedRange && !world.levelBand) return;
+
+  const band = inferLevelBand(world);
   const difficulty = world.difficultyHint ?? "standard";
+  const zoneTargetLabel = formatZoneTargetLabel(band, world.difficultyHint);
 
   for (const [mobId, mob] of Object.entries(world.mobs)) {
     if (classifyMob(mob) === "non-combat") continue;
